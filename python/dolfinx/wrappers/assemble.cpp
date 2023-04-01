@@ -202,7 +202,7 @@ void declare_assembly_functions(py::module& m)
              coeffs,
          const std::vector<std::vector<
              std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>>& bcs1,
-         const std::vector<py::array_t<T, py::array::c_style>>& x0, U scale)
+         const std::vector<py::array_t<T, py::array::c_style>>& x0, T scale)
       {
         std::vector<std::span<const T>> _x0;
         for (const auto& x : x0)
@@ -231,7 +231,7 @@ void declare_assembly_functions(py::module& m)
       [](py::array_t<T, py::array::c_style> b,
          const std::vector<
              std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>& bcs,
-         const py::array_t<T, py::array::c_style>& x0, U scale)
+         const py::array_t<T, py::array::c_style>& x0, T scale)
       {
         if (x0.ndim() == 0)
         {
@@ -247,7 +247,7 @@ void declare_assembly_functions(py::module& m)
           throw std::runtime_error("Wrong array dimension.");
       },
       py::arg("b"), py::arg("bcs"), py::arg("x0") = py::none(),
-      py::arg("scale") = 1.0);
+      py::arg("scale") = T(1));
 }
 
 void petsc_module(py::module& m)
