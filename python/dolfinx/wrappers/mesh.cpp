@@ -135,36 +135,31 @@ void declare_meshtags(py::module& m, std::string type)
         });
 }
 
-// dolfinx::mesh::Geometry class
 template <typename T>
 void declare_mesh(py::module& m, std::string type)
 {
   std::string pyclass_geometry_name = std::string("Geometry_") + type;
-  //   std::string pyclass_geometry_name = std::string("Geometry");
   py::class_<dolfinx::mesh::Geometry<T>,
              std::shared_ptr<dolfinx::mesh::Geometry<T>>>(
       m, pyclass_geometry_name.c_str(), "Geometry object")
-      .def_property_readonly("dim", &dolfinx::mesh::Geometry<double>::dim,
+      .def_property_readonly("dim", &dolfinx::mesh::Geometry<T>::dim,
                              "Geometric dimension")
-      .def_property_readonly("dofmap", &dolfinx::mesh::Geometry<double>::dofmap)
-      .def("index_map", &dolfinx::mesh::Geometry<double>::index_map)
+      .def_property_readonly("dofmap", &dolfinx::mesh::Geometry<T>::dofmap)
+      .def("index_map", &dolfinx::mesh::Geometry<T>::index_map)
       .def_property_readonly(
           "x",
-          [](const dolfinx::mesh::Geometry<double>& self)
+          [](const dolfinx::mesh::Geometry<T>& self)
           {
             std::array<std::size_t, 2> shape = {self.x().size() / 3, 3};
-            return py::array_t<double>(shape, self.x().data(), py::cast(self));
+            return py::array_t<T>(shape, self.x().data(), py::cast(self));
           },
           "Return coordinates of all geometry points. Each row is the "
           "coordinate of a point.")
-      .def_property_readonly("cmaps", &dolfinx::mesh::Geometry<double>::cmaps,
+      .def_property_readonly("cmaps", &dolfinx::mesh::Geometry<T>::cmaps,
                              "The coordinate maps")
-      .def_property_readonly(
-          "input_global_indices",
-          &dolfinx::mesh::Geometry<double>::input_global_indices);
+      .def_property_readonly("input_global_indices",
+                             &dolfinx::mesh::Geometry<T>::input_global_indices);
 
-  // dolfinx::mesh::Mesh
-  //   std::string pyclass_mesh_name = std::string("Mesh");
   std::string pyclass_mesh_name = std::string("Mesh_") + type;
   py::class_<dolfinx::mesh::Mesh<T>, std::shared_ptr<dolfinx::mesh::Mesh<T>>>(
       m, pyclass_mesh_name.c_str(), py::dynamic_attr(), "Mesh object")
@@ -232,13 +227,12 @@ void declare_mesh(py::module& m, std::string type)
          const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
          const dolfinx::fem::CoordinateElement& element,
          const py::array_t<T, py::array::c_style>& x,
-         const PythonPartitioningFunction& partitioner)
+         const PythonPartitioningFunction& p)
       {
-        auto partitioner_wrapper
-            = [partitioner](
-                  MPI_Comm comm, int n, int tdim,
+        auto p_wrap
+            = [p](MPI_Comm comm, int n, int tdim,
                   const dolfinx::graph::AdjacencyList<std::int64_t>& cells)
-        { return partitioner(MPICommWrapper(comm), n, tdim, cells); };
+        { return p(MPICommWrapper(comm), n, tdim, cells); };
 
         std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape()[1];
         std::vector shape{std::size_t(x.shape(0)), shape1};
@@ -246,7 +240,7 @@ void declare_mesh(py::module& m, std::string type)
             comm.get(), cells, {element}, std::span(x.data(), x.size()),
             {static_cast<std::size_t>(x.shape(0)),
              static_cast<std::size_t>(x.shape(1))},
-            partitioner_wrapper);
+            p_wrap);
       },
       py::arg("comm"), py::arg("cells"), py::arg("element"),
       py::arg("x").noconvert(), py::arg("partitioner"),
@@ -265,7 +259,6 @@ void declare_mesh(py::module& m, std::string type)
 
 void mesh(py::module& m)
 {
-
   py::enum_<dolfinx::mesh::CellType>(m, "CellType")
       .value("point", dolfinx::mesh::CellType::point)
       .value("interval", dolfinx::mesh::CellType::interval)
@@ -443,6 +436,7 @@ void mesh(py::module& m)
   declare_meshtags<std::int64_t>(m, "int64");
   declare_meshtags<double>(m, "float64");
 
+  declare_mesh<float>(m, "float32");
   declare_mesh<double>(m, "float64");
 
   m.def("create_cell_partitioner",
