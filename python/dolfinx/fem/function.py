@@ -22,11 +22,11 @@ import ufl
 import ufl.algorithms
 import ufl.algorithms.analysis
 from dolfinx.fem import dofmap
-from petsc4py import PETSc
+
 from ufl.domain import extract_unique_domain
 
 from dolfinx import cpp as _cpp
-from dolfinx import jit, la
+from dolfinx import default_scalar_type, jit, la
 
 
 class Constant(ufl.Constant):
@@ -85,7 +85,7 @@ class Constant(ufl.Constant):
 class Expression:
     def __init__(self, ufl_expression: ufl.core.expr.Expr, X: np.ndarray,
                  form_compiler_options: dict = {}, jit_options: dict = {},
-                 dtype=PETSc.ScalarType):
+                 dtype=default_scalar_type):
         """Create DOLFINx Expression.
 
         Represents a mathematical expression evaluated at a pre-defined
@@ -240,7 +240,7 @@ class Function(ufl.Coefficient):
     """
 
     def __init__(self, V: FunctionSpace, x: typing.Optional[la.VectorMetaClass] = None,
-                 name: typing.Optional[str] = None, dtype: np.dtype = PETSc.ScalarType):
+                 name: typing.Optional[str] = None, dtype: np.dtype = default_scalar_type):
         """Initialize a finite element Function.
 
         Args:
@@ -322,7 +322,7 @@ class Function(ufl.Coefficient):
         # Allocate memory for return value if not provided
         if u is None:
             value_size = ufl.product(self.ufl_element().value_shape())
-            if np.issubdtype(PETSc.ScalarType, np.complexfloating):
+            if np.issubdtype(default_scalar_type, np.complexfloating):
                 u = np.empty((num_points, value_size), dtype=np.complex128)
             else:
                 u = np.empty((num_points, value_size))

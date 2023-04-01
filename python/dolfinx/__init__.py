@@ -32,7 +32,6 @@ from dolfinx import fem, geometry, graph, io, jit, la, log, mesh, nls, plot
 # Initialise logging
 from dolfinx.common import (TimingType, git_commit_hash, has_debug, has_kahip,
                             has_parmetis, list_timings, timing)
-# Import cpp modules
 from dolfinx.cpp import __version__
 
 _cpp.common.init_logging(sys.argv)
@@ -48,6 +47,10 @@ def get_include(user=False):
         # Package is from a source directory
         return os.path.join(os.path.dirname(d), "src")
 
+
+from petsc4py import PETSc as PETSc
+
+default_scalar_type = PETSc.ScalarType
 
 __all__ = [
     "fem", "common", "geometry", "graph", "io", "jit", "la", "log", "mesh", "nls", "plot",
