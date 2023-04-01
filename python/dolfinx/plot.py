@@ -44,7 +44,9 @@ def create_vtk_mesh(msh: mesh.Mesh, dim: typing.Optional[int] = None, entities=N
     if len(msh.topology.cell_types) != 1:
         raise RuntimeError("Multiple cell types")
     cell_type = _cpp.mesh.cell_entity_type(msh.topology.cell_types[0], dim, 0)
-    degree = msh.geometry.cmap.degree
+    assert len(msh.geometry.cmaps) == 1
+    cmap = msh.geometry.cmaps[0]
+    degree = cmap.degree
     if cell_type == mesh.CellType.prism:
         raise RuntimeError("Plotting of prism meshes not supported")
 
@@ -53,7 +55,7 @@ def create_vtk_mesh(msh: mesh.Mesh, dim: typing.Optional[int] = None, entities=N
         entities = range(msh.topology.index_map(dim).size_local)
 
     if dim == tdim:
-        vtk_topology = _cpp.io.extract_vtk_connectivity(msh.geometry, msh.topology.cell_type)[entities]
+        vtk_topology = _cpp.io.extract_vtk_connectivity(msh.geometry, cell_type)[entities]
         num_nodes_per_cell = vtk_topology.shape[1]
     else:
         # NOTE: This linearizes higher order geometries
