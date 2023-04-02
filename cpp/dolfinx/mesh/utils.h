@@ -477,17 +477,29 @@ compute_vertex_coords(const mesh::Mesh<T>& mesh)
 
 } // namespace impl
 
-/// Compute indices of all mesh entities that evaluate to true for the
-/// provided geometric marking function. An entity is considered marked
-/// if the marker function evaluates true for all of its vertices.
+/// Requirements on function for geometry marking
+template <typename Fn, typename T>
+concept MarkerFn = std::is_invocable_r<
+    std::vector<std::int8_t>, Fn,
+    std::experimental::mdspan<
+        const T,
+        std::experimental::extents<std::size_t, 3,
+                                   std::experimental::dynamic_extent>>>::value;
+
+/// @brief Compute indices of all mesh entities that evaluate to true
+/// for the provided geometric marking function.
 ///
-/// @param[in] mesh The mesh
-/// @param[in] dim The topological dimension of the entities to be
-/// considered
-/// @param[in] marker The marking function
+/// An entity is considered marked if the marker function evaluates true
+/// for all of its vertices.
+///
+/// @param[in] mesh Mesh to mark entities on.
+/// @param[in] dim Topological dimension of the entities to be
+/// considered.
+/// @param[in] marker Marking function, returns `true` for a point that
+/// is 'marked', and `false` otherwise.
 /// @returns List of marked entity indices, including any ghost indices
 /// (indices local to the process)
-template <std::floating_point T, typename U>
+template <std::floating_point T, MarkerFn<T> U>
 std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
                                           U marker)
 {
@@ -537,10 +549,12 @@ std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
   return entities;
 }
 
-/// Compute indices of all mesh entities that are attached to an owned
-/// boundary facet and evaluate to true for the provided geometric
-/// marking function. An entity is considered marked if the marker
-/// function evaluates true for all of its vertices.
+/// @brief Compute indices of all mesh entities that are attached to an
+/// owned boundary facet and evaluate to true for the provided geometric
+/// marking function.
+///
+/// An entity is considered marked if the marker function evaluates true
+/// for all of its vertices.
 ///
 /// @note For vertices and edges, in parallel this function will not
 /// necessarily mark all entities that are on the exterior boundary. For
@@ -551,13 +565,14 @@ std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
 /// returned by this function must typically perform some parallel
 /// communication.
 ///
-/// @param[in] mesh The mesh
-/// @param[in] dim The topological dimension of the entities to be
+/// @param[in] mesh Mesh to mark entities on.
+/// @param[in] dim Topological dimension of the entities to be
 /// considered. Must be less than the topological dimension of the mesh.
-/// @param[in] marker The marking function
+/// @param[in] marker Marking function, returns `true` for a point that
+/// is 'marked', and `false` otherwise.
 /// @returns List of marked entity indices (indices local to the
 /// process)
-template <std::floating_point T, typename U>
+template <std::floating_point T, MarkerFn<T> U>
 std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
                                                    U marker)
 {

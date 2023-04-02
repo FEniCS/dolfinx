@@ -191,7 +191,6 @@ void declare_mesh(py::module& m, std::string type)
       },
       py::arg("comm"), py::arg("n"), py::arg("p"), py::arg("ghost_mode"),
       py::arg("partitioner"));
-
   m.def(
       std::string("create_rectangle_" + type).c_str(),
       [](const MPICommWrapper comm,
@@ -206,7 +205,6 @@ void declare_mesh(py::module& m, std::string type)
       },
       py::arg("comm"), py::arg("p"), py::arg("n"), py::arg("celltype"),
       py::arg("partitioner"), py::arg("diagonal"));
-
   m.def(
       std::string("create_box_" + type).c_str(),
       [](const MPICommWrapper comm,
@@ -220,7 +218,6 @@ void declare_mesh(py::module& m, std::string type)
       },
       py::arg("comm"), py::arg("p"), py::arg("n"), py::arg("celltype"),
       py::arg("partitioner"));
-
   m.def(
       "create_mesh",
       [](const MPICommWrapper comm,
@@ -245,7 +242,6 @@ void declare_mesh(py::module& m, std::string type)
       py::arg("comm"), py::arg("cells"), py::arg("element"),
       py::arg("x").noconvert(), py::arg("partitioner"),
       "Helper function for creating meshes.");
-
   m.def(
       "create_submesh",
       [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
@@ -253,6 +249,39 @@ void declare_mesh(py::module& m, std::string type)
       {
         return dolfinx::mesh::create_submesh(
             mesh, dim, std::span(entities.data(), entities.size()));
+      },
+      py::arg("mesh"), py::arg("dim"), py::arg("entities"));
+
+  m.def(
+      "cell_normals",
+      [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
+         const py::array_t<std::int32_t, py::array::c_style>& entities)
+      {
+        std::vector<T> n = dolfinx::mesh::cell_normals(
+            mesh, dim, std::span(entities.data(), entities.size()));
+        return as_pyarray(std::move(n),
+                          std::array<std::size_t, 2>{n.size() / 3, 3});
+      },
+      py::arg("mesh"), py::arg("dim"), py::arg("entities"));
+  m.def(
+      "h",
+      [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
+         const py::array_t<std::int32_t, py::array::c_style>& entities)
+      {
+        return as_pyarray(dolfinx::mesh::h(
+            mesh, std::span(entities.data(), entities.size()), dim));
+      },
+      py::arg("mesh"), py::arg("dim"), py::arg("entities"),
+      "Compute maximum distsance between any two vertices.");
+  m.def(
+      "compute_midpoints",
+      [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
+         py::array_t<std::int32_t, py::array::c_style> entities)
+      {
+        std::vector<T> x = dolfinx::mesh::compute_midpoints(
+            mesh, dim, std::span(entities.data(), entities.size()));
+        std::array<std::size_t, 2> shape = {(std::size_t)entities.size(), 3};
+        return as_pyarray(std::move(x), shape);
       },
       py::arg("mesh"), py::arg("dim"), py::arg("entities"));
 }
@@ -280,44 +309,10 @@ void mesh(py::module& m)
         py::arg("dim"));
   m.def("cell_num_vertices", &dolfinx::mesh::num_cell_vertices,
         py::arg("type"));
-  m.def(
-      "cell_normals",
-      [](const dolfinx::mesh::Mesh<double>& mesh, int dim,
-         const py::array_t<std::int32_t, py::array::c_style>& entities)
-      {
-        std::vector<double> n = dolfinx::mesh::cell_normals(
-            mesh, dim, std::span(entities.data(), entities.size()));
-        return as_pyarray(std::move(n),
-                          std::array<std::size_t, 2>{n.size() / 3, 3});
-      },
-      py::arg("mesh"), py::arg("dim"), py::arg("entities"));
   m.def("get_entity_vertices", &dolfinx::mesh::get_entity_vertices,
         py::arg("type"), py::arg("dim"));
   m.def("extract_topology", &dolfinx::mesh::extract_topology,
         py::arg("cell_type"), py::arg("layout"), py::arg("cells"));
-
-  m.def(
-      "h",
-      [](const dolfinx::mesh::Mesh<double>& mesh, int dim,
-         const py::array_t<std::int32_t, py::array::c_style>& entities)
-      {
-        return as_pyarray(dolfinx::mesh::h(
-            mesh, std::span(entities.data(), entities.size()), dim));
-      },
-      py::arg("mesh"), py::arg("dim"), py::arg("entities"),
-      "Compute maximum distance between any two vertices.");
-
-  m.def(
-      "compute_midpoints",
-      [](const dolfinx::mesh::Mesh<double>& mesh, int dim,
-         py::array_t<std::int32_t, py::array::c_style> entities)
-      {
-        std::vector<double> x = dolfinx::mesh::compute_midpoints(
-            mesh, dim, std::span(entities.data(), entities.size()));
-        std::array<std::size_t, 2> shape = {(std::size_t)entities.size(), 3};
-        return as_pyarray(std::move(x), shape);
-      },
-      py::arg("mesh"), py::arg("dim"), py::arg("entities"));
 
   m.def(
       "build_dual_graph",
@@ -332,31 +327,6 @@ void mesh(py::module& m)
       .value("none", dolfinx::mesh::GhostMode::none)
       .value("shared_facet", dolfinx::mesh::GhostMode::shared_facet)
       .value("shared_vertex", dolfinx::mesh::GhostMode::shared_vertex);
-
-  //   // dolfinx::mesh::Geometry class
-  //   py::class_<dolfinx::mesh::Geometry<double>,
-  //              std::shared_ptr<dolfinx::mesh::Geometry<double>>>(
-  //       m, "Geometry", "Geometry object")
-  //       .def_property_readonly("dim", &dolfinx::mesh::Geometry<double>::dim,
-  //                              "Geometric dimension")
-  //       .def_property_readonly("dofmap",
-  //       &dolfinx::mesh::Geometry<double>::dofmap) .def("index_map",
-  //       &dolfinx::mesh::Geometry<double>::index_map) .def_property_readonly(
-  //           "x",
-  //           [](const dolfinx::mesh::Geometry<double>& self)
-  //           {
-  //             std::array<std::size_t, 2> shape = {self.x().size() / 3, 3};
-  //             return py::array_t<double>(shape, self.x().data(),
-  //             py::cast(self));
-  //           },
-  //           "Return coordinates of all geometry points. Each row is the "
-  //           "coordinate of a point.")
-  //       .def_property_readonly("cmaps",
-  //       &dolfinx::mesh::Geometry<double>::cmaps,
-  //                              "The coordinate maps")
-  //       .def_property_readonly(
-  //           "input_global_indices",
-  //           &dolfinx::mesh::Geometry<double>::input_global_indices);
 
   // dolfinx::mesh::TopologyComputation
   m.def(
@@ -426,7 +396,7 @@ void mesh(py::module& m)
              return dolfinx::mesh::to_string(self.cell_types()[0]);
            })
       .def("interprocess_facets", &dolfinx::mesh::Topology::interprocess_facets)
-      .def_property_readonly("comm", [](dolfinx::mesh::Mesh<double>& self)
+      .def_property_readonly("comm", [](dolfinx::mesh::Topology& self)
                              { return MPICommWrapper(self.comm()); });
 
   // dolfinx::mesh::MeshTags
