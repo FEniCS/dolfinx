@@ -12,3 +12,4 @@ namespace dolfinx::la
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/petsc.h>
 #include <dolfinx/la/slepc.h>
+#include <dolfinx/la/utils.h>

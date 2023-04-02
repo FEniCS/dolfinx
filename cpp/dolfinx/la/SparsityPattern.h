@@ -25,16 +25,14 @@ class IndexMap;
 
 namespace dolfinx::la
 {
-
 /// This class provides a sparsity pattern data structure that can be
 /// used to initialize sparse matrices. After assembly, column indices
 /// are always sorted in increasing order. Ghost entries are kept after
 /// assembly.
 class SparsityPattern
 {
-
 public:
-  /// Create an empty sparsity pattern with specified dimensions
+  /// @brief sCreate an empty sparsity pattern with specified dimensions
   /// @param[in] comm The communicator that the pattenr is defined on
   /// @param[in] maps The index maps describing the [0] row and [1]
   /// column index ranges (up to a block size)
@@ -74,25 +72,25 @@ public:
   /// Move assignment
   SparsityPattern& operator=(SparsityPattern&& pattern) = default;
 
-  /// Insert non-zero locations using local (process-wise) indices
+  /// @brief Insert non-zero locations using local (process-wise) indices
   void insert(const std::span<const std::int32_t>& rows,
               const std::span<const std::int32_t>& cols);
 
-  /// Insert non-zero locations on the diagonal
+  /// @brief Insert non-zero locations on the diagonal
   /// @param[in] rows The rows in local (process-wise) indices. The
   /// indices must exist in the row IndexMap.
   void insert_diagonal(std::span<const std::int32_t> rows);
 
-  /// Finalize sparsity pattern and communicate off-process entries
+  /// @brief Finalize sparsity pattern and communicate off-process entries
   void assemble();
 
-  /// Index map for given dimension dimension. Returns the index map for
-  /// rows and columns that will be set by the current MPI rank.
+  /// @brief Index map for given dimension dimension. Returns the index
+  /// map for rows and columns that will be set by the current MPI rank.
   /// @param[in] dim The requested map, row (0) or column (1)
   /// @return The index map
   std::shared_ptr<const common::IndexMap> index_map(int dim) const;
 
-  /// Global indices of non-zero columns on owned rows
+  /// @brief Global indices of non-zero columns on owned rows.
   ///
   /// @note The ghosts are computed only once SparsityPattern::assemble
   /// has been called
@@ -100,38 +98,40 @@ public:
   /// including ghosts
   std::vector<std::int64_t> column_indices() const;
 
-  /// Builds the index map for columns after assembly of the sparsity
-  /// pattern
+  /// @brief Builds the index map for columns after assembly of the
+  /// sparsity pattern
   /// @return Map for all non-zero columns on this process, including
   /// ghosts
   /// @todo Should this be compted and stored when finalising the
   /// SparsityPattern?
   common::IndexMap column_index_map() const;
 
-  /// Return index map block size for dimension dim
+  /// @brief Return index map block size for dimension dim
   int block_size(int dim) const;
 
-  /// Number of nonzeros on this rank after assembly, including ghost
-  /// rows.
+  /// @brief Number of nonzeros on this rank after assembly, including
+  /// ghost rows.
   std::int64_t num_nonzeros() const;
 
-  /// Number of non-zeros in owned columns (diagonal block) on a given row
+  /// @brief Number of non-zeros in owned columns (diagonal block) on a given
+  /// row
   /// @note Can also be used on ghost rows
   std::int32_t nnz_diag(std::int32_t row) const;
 
-  /// Number of non-zeros in unowned columns (off-diagonal block) on a
-  /// given row
+  /// @brief Number of non-zeros in unowned columns (off-diagonal block)
+  /// on a given row
   /// @note Can also be used on ghost rows
   std::int32_t nnz_off_diag(std::int32_t row) const;
 
-  /// Sparsity pattern graph after assembly. Uses local indices for the
-  /// columns.
+  /// @brief Sparsity pattern graph after assembly. Uses local indices
+  /// for the columns.
   /// @note Column global indices can be obtained from
   /// SparsityPattern::column_index_map()
   /// @note Includes ghost rows
   const graph::AdjacencyList<std::int32_t>& graph() const;
 
-  /// Row-wise start of off-diagonal (unowned columns) on each row
+  /// @brief Row-wise start of off-diagonal (unowned columns) on each
+  /// row
   /// @note Includes ghost rows
   std::span<const int> off_diagonal_offset() const;
 
@@ -150,6 +150,7 @@ private:
 
   // Non-zero ghost columns in owned rows
   std::vector<std::int64_t> _col_ghosts;
+
   // Owning process of ghost columns in owned rows
   std::vector<std::int32_t> _col_ghost_owners;
 

@@ -18,6 +18,9 @@
 #include <mpi.h>
 #include <span>
 
+/// @file utils.h
+/// @brief Functions supporting mesh operations
+
 namespace dolfinx::fem
 {
 class ElementDofLayout;
@@ -81,10 +84,10 @@ namespace impl
 ///
 /// @pre The provided facets must be on the boundary of the mesh.
 ///
-/// @param[in] mesh The mesh to compute the vertex coordinates for
-/// @param[in] dim The topological dimension of the entities
+/// @param[in] mesh Mesh to compute the vertex coordinates for
+/// @param[in] dim Topological dimension of the entities
 /// @param[in] facets List of facets on the meh boundary
-/// @return (0) The entities attached to the boundary facets, (1) vertex
+/// @return (0) Entities attached to the boundary facets, (1) vertex
 /// coordinates (shape is `(3, num_vertices)`) and (2) map from vertex
 /// in the full mesh to the position (column) in the vertex coordinates
 /// array (set to -1 if vertex in full mesh is not in the coordinate
@@ -172,7 +175,7 @@ compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
 ///
 /// @note Collective
 ///
-/// @param[in] topology The mesh topology
+/// @param[in] topology Mesh topology
 /// @return Sorted list of owned facet indices that are exterior facets
 /// of the mesh.
 std::vector<std::int32_t> exterior_facet_indices(const Topology& topology);
@@ -214,11 +217,11 @@ extract_topology(const CellType& cell_type, const fem::ElementDofLayout& layout,
 
 /// @brief Compute greatest distance between any two vertices of the
 /// mesh entities (`h`).
-/// @param[in] mesh The mesh that the entities belong to.
+/// @param[in] mesh Mesh that the entities belong to.
 /// @param[in] entities Indices (local to process) of entities to
 /// compute `h` for.
 /// @param[in] dim Topological dimension of the entities.
-/// @returns The greatest distance between any two vertices, `h[i]`
+/// @returns Greatest distance between any two vertices, `h[i]`
 /// corresponds to the entity `entities[i]`.
 template <typename T>
 std::vector<T> h(const Mesh<T>& mesh, std::span<const std::int32_t> entities,
@@ -433,7 +436,7 @@ std::vector<T> compute_midpoints(const Mesh<T>& mesh, int dim,
 namespace impl
 {
 /// The coordinates for all 'vertices' in the mesh
-/// @param[in] mesh The mesh to compute the vertex coordinates for
+/// @param[in] mesh Mesh to compute the vertex coordinates for
 /// @return The vertex coordinates. The shape is `(3, num_vertices)` and
 /// the jth column hold the coordinates of vertex j.
 template <typename T>

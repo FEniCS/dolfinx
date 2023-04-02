@@ -101,7 +101,7 @@ get_cell_facet_pairs(std::int32_t f, const std::span<const std::int32_t>& cells,
 /// @param[in] entities List of tagged mesh entities
 /// @param[in] dim Topological dimension of tagged entities
 /// @param[in] values Value associated with each entity
-/// @return A list of (integral id, entities) pairs
+/// @return List of `(integral id, entities)` pairs
 /// @pre The topological dimension of the integral entity type and the
 /// topological dimension of mesh tag data must be equal.
 /// @pre For facet integrals, the topology facet-to-cell and
@@ -161,7 +161,7 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
   if (a.rank() != 2)
   {
     throw std::runtime_error(
-        "Cannot create sparsity pattern. Form is not a bilinear form");
+        "Cannot create sparsity pattern. Form is not a bilinearZZ.");
   }
 
   // Get dof maps and mesh
@@ -176,7 +176,7 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
       or types.find(IntegralType::exterior_facet) != types.end())
   {
     // FIXME: cleanup these calls? Some of the happen internally again.
-    const int tdim = mesh->topology()->dim();
+    int tdim = mesh->topology()->dim();
     mesh->topology_mutable()->create_entities(tdim - 1);
     mesh->topology_mutable()->create_connectivity(tdim - 1, tdim);
   }
@@ -223,8 +223,8 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
         const std::vector<std::int32_t>& facets = a.exterior_facet_domains(id);
         std::vector<std::int32_t> cells;
         cells.reserve(facets.size() / 2);
-        for (std::size_t i = 0; i < facets.size() / 2; ++i)
-          cells.push_back(facets[2 * i]);
+        for (std::size_t i = 0; i < facets.size(); i += 2)
+          cells.push_back(facets[i]);
         sparsitybuild::cells(pattern, cells, {{dofmaps[0], dofmaps[1]}});
       }
       break;
@@ -564,15 +564,15 @@ Form<T, U> create_form(
                     needs_facet_permutations, mesh);
 }
 
-/// @brief Create a Form from UFC input
-/// @param[in] ufcx_form The UFC form
-/// @param[in] spaces The function spaces for the Form arguments
-/// @param[in] coefficients Coefficient fields in the form (by name)
-/// @param[in] constants Spatial constants in the form (by name)
-/// @param[in] subdomains Subdomain makers
-/// @pre Each value in `subdomains` must be sorted by domain id
-/// @param[in] mesh The mesh of the domain. This is required if the form
-/// has no arguments, e.g. a functional
+/// @brief Create a Form from UFC input.
+/// @param[in] ufcx_form UFC form
+/// @param[in] spaces Function spaces for the Form arguments.
+/// @param[in] coefficients Coefficient fields in the form (by name).
+/// @param[in] constants Spatial constants in the form (by name).
+/// @param[in] subdomains Subdomain makers.
+/// @pre Each value in `subdomains` must be sorted by domain id.
+/// @param[in] mesh Mesh of the domain. This is required if the form has
+/// no arguments, e.g. a functional.
 /// @return A Form
 template <typename T, typename U = dolfinx::scalar_value_type_t<T>>
 Form<T, U> create_form(
@@ -614,16 +614,16 @@ Form<T, U> create_form(
 }
 
 /// @brief Create a Form using a factory function that returns a pointer
-/// to a ufcx_form
-/// @param[in] fptr pointer to a function returning a pointer to
-/// ufcx_form
-/// @param[in] spaces The function spaces for the Form arguments
-/// @param[in] coefficients Coefficient fields in the form (by name)
-/// @param[in] constants Spatial constants in the form (by name)
-/// @param[in] subdomains Subdomain markers
-/// @pre Each value in `subdomains` must be sorted by domain id
-/// @param[in] mesh The mesh of the domain. This is required if the form
-/// has no arguments, e.g. a functional.
+/// to a ufcx_form.
+/// @param[in] fptr Pointer to a function returning a pointer to
+/// ufcx_form.
+/// @param[in] spaces Function spaces for the Form arguments.
+/// @param[in] coefficients Coefficient fields in the form (by name),
+/// @param[in] constants Spatial constants in the form (by name),
+/// @param[in] subdomains Subdomain markers.
+/// @pre Each value in `subdomains` must be sorted by domain id.
+/// @param[in] mesh Mesh of the domain. This is required if the form has
+/// no arguments, e.g. a functional.
 /// @return A Form
 template <typename T, typename U = dolfinx::scalar_value_type_t<T>>
 Form<T, U> create_form(
@@ -645,11 +645,11 @@ Form<T, U> create_form(
   return L;
 }
 
-/// @brief Create a FunctionSpace from a Basix element
+/// @brief Create a function space from a Basix element.
 /// @param[in] mesh Mesh
-/// @param[in] e Basix finite element
+/// @param[in] e Basix finite element.
 /// @param[in] bs The block size, e.g. 3 for a 'vector' Lagrange element
-/// in 3D
+/// in 3D.
 /// @param[in] reorder_fn The graph reordering function to call on the
 /// dofmap. If `nullptr`, the default re-ordering is used.
 /// @return The created function space
@@ -690,18 +690,16 @@ create_functionspace(std::shared_ptr<mesh::Mesh<T>> mesh,
   return FunctionSpace(mesh, _e, dofmap);
 }
 
-/// Create a FunctionSpace from UFC data
-///
-/// @param[in] fptr Function Pointer to a ufcx_function_space_create
-/// function
+/// @brief Create a FunctionSpace from UFC data.
+/// @param[in] fptr Pointer to a ufcx_function_space_create function.
 /// @param[in] function_name Name of a function whose function space to
 /// create. Function name is the name of Python variable for
 /// ufl.Coefficient, ufl.TrialFunction or ufl.TestFunction as defined in
 /// the UFL file.
 /// @param[in] mesh Mesh
-/// @param[in] reorder_fn The graph reordering function to call on the
+/// @param[in] reorder_fn Graph reordering function to call on the
 /// dofmap. If `nullptr`, the default re-ordering is used.
-/// @return The created function space
+/// @return The created function space.
 template <std::floating_point T>
 FunctionSpace<T>
 create_functionspace(ufcx_function_space* (*fptr)(const char*),
@@ -820,14 +818,14 @@ concept FetchCells = requires(F&& f, std::span<const std::int32_t> v) {
 
 /// @brief Pack a single coefficient for a set of active entities.
 ///
-/// @param[out] c The coefficient to be packed
-/// @param[in] cstride The total number of coefficient values to pack
-/// for each entity
-/// @param[in] u The function to extract coefficient data from
+/// @param[out] c Coefficient to be packed
+/// @param[in] cstride Total number of coefficient values to pack for
+/// each entity.
+/// @param[in] u Function to extract coefficient data from.
 /// @param[in] cell_info Array of bytes describing which transformation
-/// has to be applied on the cell to map it to the reference element
-/// @param[in] entities The set of active entities
-/// @param[in] estride The stride for each entity in active entities.
+/// has to be applied on the cell to map it to the reference element.
+/// @param[in] entities Set of active entities
+/// @param[in] estride Stride for each entity in active entities.
 /// @param[in] fetch_cells Function that fetches the cell index for an
 /// entity in active_entities.
 /// @param[in] offset The offset for c
@@ -847,7 +845,6 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
   int space_dim = element->space_dimension();
   const auto transformation
       = element->get_dof_transformation_function<T>(false, true);
-
   const int bs = dofmap.bs();
   switch (bs)
   {
@@ -892,8 +889,8 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
 
 } // namespace impl
 
-/// @brief Allocate storage for coefficients of a pair (integral_type,
-/// id) from a fem::Form form
+/// @brief Allocate storage for coefficients of a pair `(integral_type,
+/// id)` from a Form.
 /// @param[in] form The Form
 /// @param[in] integral_type Type of integral
 /// @param[in] id The id of the integration domain
@@ -933,10 +930,10 @@ allocate_coefficient_storage(const Form<T, U>& form, IntegralType integral_type,
   return {std::vector<T>(num_entities * cstride), cstride};
 }
 
-/// @brief Allocate memory for packed coefficients of a Form
+/// @brief Allocate memory for packed coefficients of a Form.
 /// @param[in] form The Form
-/// @return A map from a form (integral_type, domain_id) pair to a
-/// (coeffs, cstride) pair
+/// @return Map from a form `(integral_type, domain_id)` pair to a
+/// `(coeffs, cstride)` pair
 template <typename T, std::floating_point U>
 std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>
 allocate_coefficient_storage(const Form<T, U>& form)
