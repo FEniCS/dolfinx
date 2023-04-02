@@ -122,7 +122,7 @@ namespace impl_adios2
 /// field
 constexpr std::array field_ext = {"_real", "_imag"};
 
-stemplate <class... Ts>
+template <class... Ts>
 struct overload : Ts...
 {
   using Ts::operator()...;
