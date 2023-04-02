@@ -155,7 +155,7 @@ extract_function_spaces(const std::vector<std::vector<const Form<T, U>*>>& a)
 /// for calling SparsityPattern::assemble.
 la::SparsityPattern create_sparsity_pattern(
     const mesh::Topology& topology,
-    const std::array<std::reference_wrapper<const DofMap>, 2>& dofmaps,
+    std::array<std::reference_wrapper<const DofMap>, 2> dofmaps,
     const std::set<IntegralType>& integrals);
 
 /// @brief Create a sparsity pattern for a given form.
@@ -215,8 +215,14 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
       for (int id : ids)
       {
         const std::vector<std::int32_t>& facets = a.interior_facet_domains(id);
-        sparsitybuild::interior_facets(pattern, facets,
-                                       {{dofmaps[0], dofmaps[1]}});
+        std::vector<std::int32_t> f;
+        f.reserve(facets.size() / 2);
+        for (std::size_t i = 0; i < facets.size(); i += 4)
+        {
+          f.push_back(facets[i]);
+          f.push_back(facets[i + 2]);
+        }
+        sparsitybuild::interior_facets(pattern, f, {{dofmaps[0], dofmaps[1]}});
       }
       break;
     case IntegralType::exterior_facet:

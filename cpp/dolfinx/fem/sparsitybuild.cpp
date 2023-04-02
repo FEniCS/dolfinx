@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2019 Garth N. Wells
+// Copyright (C) 2007-2023 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -17,7 +17,7 @@ using namespace dolfinx::fem;
 //-----------------------------------------------------------------------------
 void sparsitybuild::cells(
     la::SparsityPattern& pattern, std::span<const std::int32_t> cells,
-    const std::array<const std::reference_wrapper<const DofMap>, 2>& dofmaps)
+    std::array<std::reference_wrapper<const DofMap>, 2> dofmaps)
 {
   const DofMap& map0 = dofmaps[0].get();
   const DofMap& map1 = dofmaps[1].get();
@@ -37,49 +37,42 @@ void sparsitybuild::interior_facets(
   if (!connectivity)
     throw std::runtime_error("Facet-cell connectivity has not been computed.");
 
-  // Array to store macro-dofs, if required (for interior facets)
+  // Array to store macro-dofs
   std::array<std::vector<std::int32_t>, 2> macro_dofs;
 
   // Loop over owned facets
   auto map = topology.index_map(D - 1);
   assert(map);
-  const std::int32_t num_facets = map->size_local();
-  for (int f = 0; f < num_facets; ++f)
+  for (int f = 0; f < map->size_local(); ++f)
   {
-    // Get cells incident with facet
-    auto cells = connectivity->links(f);
-
-    // Proceed to next facet if only connection
-    if (cells.size() == 1)
-      continue;
-
-    // Tabulate dofs for each dimension on macro element
-    assert(cells.size() == 2);
-    const int cell0 = cells[0];
-    const int cell1 = cells[1];
-    for (std::size_t i = 0; i < 2; i++)
+    if (auto cells = connectivity->links(f); cells.size() == 2)
     {
-      auto cell_dofs0 = dofmaps[i].get().cell_dofs(cell0);
-      auto cell_dofs1 = dofmaps[i].get().cell_dofs(cell1);
-      macro_dofs[i].resize(cell_dofs0.size() + cell_dofs1.size());
-      std::copy(cell_dofs0.begin(), cell_dofs0.end(), macro_dofs[i].begin());
-      std::copy(cell_dofs1.begin(), cell_dofs1.end(),
-                std::next(macro_dofs[i].begin(), cell_dofs0.size()));
+      // Tabulate dofs for each dimension on macro element
+      const int cell0 = cells[0];
+      const int cell1 = cells[1];
+      for (std::size_t i = 0; i < 2; i++)
+      {
+        auto cell_dofs0 = dofmaps[i].get().cell_dofs(cell0);
+        auto cell_dofs1 = dofmaps[i].get().cell_dofs(cell1);
+        macro_dofs[i].resize(cell_dofs0.size() + cell_dofs1.size());
+        std::copy(cell_dofs0.begin(), cell_dofs0.end(), macro_dofs[i].begin());
+        std::copy(cell_dofs1.begin(), cell_dofs1.end(),
+                  std::next(macro_dofs[i].begin(), cell_dofs0.size()));
+      }
+      pattern.insert(macro_dofs[0], macro_dofs[1]);
     }
-
-    pattern.insert(macro_dofs[0], macro_dofs[1]);
   }
 }
 //-----------------------------------------------------------------------------
 void sparsitybuild::interior_facets(
     la::SparsityPattern& pattern, std::span<const std::int32_t> facets,
-    const std::array<const std::reference_wrapper<const DofMap>, 2>& dofmaps)
+    std::array<std::reference_wrapper<const DofMap>, 2> dofmaps)
 {
   std::array<std::vector<std::int32_t>, 2> macro_dofs;
-  for (std::size_t index = 0; index < facets.size(); index += 4)
+  for (std::size_t index = 0; index < facets.size(); index += 2)
   {
     int cell_0 = facets[index];
-    int cell_1 = facets[index + 2];
+    int cell_1 = facets[index + 1];
     for (std::size_t i = 0; i < 2; ++i)
     {
       auto cell_dofs_0 = dofmaps[i].get().cell_dofs(cell_0);
@@ -89,7 +82,6 @@ void sparsitybuild::interior_facets(
       std::copy(cell_dofs_1.begin(), cell_dofs_1.end(),
                 std::next(macro_dofs[i].begin(), cell_dofs_0.size()));
     }
-
     pattern.insert(macro_dofs[0], macro_dofs[1]);
   }
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2019 Garth N. Wells
+// Copyright (C) 2007-2023 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -34,19 +34,17 @@ namespace sparsitybuild
 /// @param[in] cells The cell indices
 /// @param[in] dofmaps Dofmaps to used in building the sparsity pattern
 /// @note The sparsity pattern is not finalised
-void cells(
-    la::SparsityPattern& pattern, std::span<const std::int32_t> cells,
-    const std::array<const std::reference_wrapper<const DofMap>, 2>& dofmaps);
+void cells(la::SparsityPattern& pattern, std::span<const std::int32_t> cells,
+           std::array<std::reference_wrapper<const DofMap>, 2> dofmaps);
 
 /// @brief Iterate over interior facets and insert entries into sparsity
 /// pattern.
 ///
-/// @param[in,out] pattern The sparsity pattern to insert into
-/// @param[in] topology The mesh topology to build the sparsity pattern
-/// over
-/// @param[in] dofmaps The dofmap to use in building the sparsity
-/// pattern
-/// @note The sparsity pattern is not finalised
+/// @param[in,out] pattern Sparsity pattern to insert into.
+/// @param[in] topology Mesh topology to build the sparsity pattern
+/// over.
+/// @param[in] dofmaps Dofmap to use in building the sparsity pattern.
+/// @note The sparsity pattern is not finalised.
 void interior_facets(
     la::SparsityPattern& pattern, const mesh::Topology& topology,
     const std::array<const std::reference_wrapper<const DofMap>, 2>& dofmaps);
@@ -54,15 +52,14 @@ void interior_facets(
 /// @brief Iterate over interior facets and insert entries into sparsity
 /// pattern.
 ///
-/// @param[in,out] pattern The sparsity pattern to insert into
-/// @param[in] facets The facets as `(cell, local_index)` pairs, where
-/// `local_index` is the index of the facet relative to the `cell`
+/// @param[in,out] pattern Sparsity pattern to insert into
+/// @param[in] facets Facets as `(cell0, cell1)` pairs.
 /// @param[in] dofmaps The dofmap to use in building the sparsity
-/// pattern
-/// @note The sparsity pattern is not finalised
+/// pattern.
+/// @note The sparsity pattern is not finalised.
 void interior_facets(
     la::SparsityPattern& pattern, std::span<const std::int32_t> facets,
-    const std::array<const std::reference_wrapper<const DofMap>, 2>& dofmaps);
+    std::array<std::reference_wrapper<const DofMap>, 2> dofmaps);
 
 } // namespace sparsitybuild
 } // namespace dolfinx::fem

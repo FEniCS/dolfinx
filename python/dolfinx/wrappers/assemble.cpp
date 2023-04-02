@@ -100,7 +100,7 @@ void declare_assembly_functions(py::module& m)
       py::arg("form"), "Pack constants for a Form.");
   m.def(
       "pack_constants",
-      [](const dolfinx::fem::Expression<T, double>& e)
+      [](const dolfinx::fem::Expression<T, U>& e)
       { return dolfinx_wrappers::as_pyarray(dolfinx::fem::pack_constants(e)); },
       py::arg("e"), "Pack constants for an Expression.");
 
