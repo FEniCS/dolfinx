@@ -16,6 +16,7 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
+#include <dolfinx/fem/Function.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <filesystem>
@@ -501,7 +502,7 @@ public:
       : ADIOS2Writer<T>(comm, filename, "Fides mesh writer", mesh),
         _mesh_reuse_policy(FidesMeshPolicy::update)
   {
-    assert(this->_io_io);
+    assert(this->_io);
     assert(mesh);
     impl_fides::initialize_mesh_attributes(*this->_io, *mesh);
   }
@@ -1050,6 +1051,12 @@ public:
 template <typename U, typename T>
 VTXWriter(MPI_Comm comm, U filename, T mesh)
     -> VTXWriter<typename std::remove_cvref<
+        typename T::element_type>::type::geometry_type::value_type>;
+
+/// Type deduction
+template <typename U, typename T>
+FidesWriter(MPI_Comm comm, U filename, T mesh)
+    -> FidesWriter<typename std::remove_cvref<
         typename T::element_type>::type::geometry_type::value_type>;
 
 } // namespace dolfinx::io
