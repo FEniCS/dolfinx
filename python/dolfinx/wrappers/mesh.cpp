@@ -284,6 +284,66 @@ void declare_mesh(py::module& m, std::string type)
         return as_pyarray(std::move(x), shape);
       },
       py::arg("mesh"), py::arg("dim"), py::arg("entities"));
+
+  m.def(
+      "locate_entities",
+      [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
+         const std::function<py::array_t<bool>(
+             const py::array_t<T, py::array::c_style>&)>& marker)
+      {
+        auto cpp_marker = [&marker](auto x)
+        {
+          std::array<std::size_t, 2> shape = {x.extent(0), x.extent(1)};
+          py::array_t<T> x_view(shape, x.data_handle(), py::none());
+          py::array_t<bool> marked = marker(x_view);
+          return std::vector<std::int8_t>(marked.data(),
+                                          marked.data() + marked.size());
+        };
+
+        return as_pyarray(
+            dolfinx::mesh::locate_entities(mesh, dim, cpp_marker));
+      },
+      py::arg("mesh"), py::arg("dim"), py::arg("marker"));
+
+  m.def(
+      "locate_entities_boundary",
+      [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
+         const std::function<py::array_t<bool>(
+             const py::array_t<T, py::array::c_style>&)>& marker)
+      {
+        auto cpp_marker = [&marker](auto x)
+        {
+          std::array<std::size_t, 2> shape = {x.extent(0), x.extent(1)};
+          py::array_t<T> x_view(shape, x.data_handle(), py::none());
+          py::array_t<bool> marked = marker(x_view);
+          return std::vector<std::int8_t>(marked.data(),
+                                          marked.data() + marked.size());
+        };
+        return as_pyarray(
+            dolfinx::mesh::locate_entities_boundary(mesh, dim, cpp_marker));
+      },
+      py::arg("mesh"), py::arg("dim"), py::arg("marker"));
+
+  m.def(
+      "entities_to_geometry",
+      [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
+         py::array_t<std::int32_t, py::array::c_style> entities, bool orient)
+      {
+        std::vector<std::int32_t> idx = dolfinx::mesh::entities_to_geometry(
+            mesh, dim, std::span(entities.data(), entities.size()), orient);
+
+        auto topology = mesh.topology();
+        assert(topology);
+        if (topology->cell_types().size() > 1)
+          throw std::runtime_error("Multiple cell type not supported.");
+        dolfinx::mesh::CellType cell_type = topology->cell_types()[0];
+        std::size_t num_vertices = dolfinx::mesh::num_cell_vertices(
+            cell_entity_type(cell_type, dim, 0));
+        std::array<std::size_t, 2> shape
+            = {(std::size_t)entities.size(), num_vertices};
+        return as_pyarray(std::move(idx), shape);
+      },
+      py::arg("mesh"), py::arg("dim"), py::arg("entities"), py::arg("orient"));
 }
 
 void mesh(py::module& m)
@@ -428,65 +488,7 @@ void mesh(py::module& m)
                 ghost_mode, create_cell_partitioner_cpp(part)));
       },
       py::arg("part"), py::arg("ghost_mode") = dolfinx::mesh::GhostMode::none);
-  m.def(
-      "locate_entities",
-      [](const dolfinx::mesh::Mesh<double>& mesh, int dim,
-         const std::function<py::array_t<bool>(
-             const py::array_t<double, py::array::c_style>&)>& marker)
-      {
-        auto cpp_marker = [&marker](auto x)
-        {
-          std::array<std::size_t, 2> shape = {x.extent(0), x.extent(1)};
-          py::array_t<double> x_view(shape, x.data_handle(), py::none());
-          py::array_t<bool> marked = marker(x_view);
-          return std::vector<std::int8_t>(marked.data(),
-                                          marked.data() + marked.size());
-        };
 
-        return as_pyarray(
-            dolfinx::mesh::locate_entities(mesh, dim, cpp_marker));
-      },
-      py::arg("mesh"), py::arg("dim"), py::arg("marker"));
-
-  m.def(
-      "locate_entities_boundary",
-      [](const dolfinx::mesh::Mesh<double>& mesh, int dim,
-         const std::function<py::array_t<bool>(
-             const py::array_t<double, py::array::c_style>&)>& marker)
-      {
-        auto cpp_marker = [&marker](auto x)
-        {
-          std::array<std::size_t, 2> shape = {x.extent(0), x.extent(1)};
-          py::array_t<double> x_view(shape, x.data_handle(), py::none());
-          py::array_t<bool> marked = marker(x_view);
-          return std::vector<std::int8_t>(marked.data(),
-                                          marked.data() + marked.size());
-        };
-        return as_pyarray(
-            dolfinx::mesh::locate_entities_boundary(mesh, dim, cpp_marker));
-      },
-      py::arg("mesh"), py::arg("dim"), py::arg("marker"));
-
-  m.def(
-      "entities_to_geometry",
-      [](const dolfinx::mesh::Mesh<double>& mesh, int dim,
-         py::array_t<std::int32_t, py::array::c_style> entities, bool orient)
-      {
-        std::vector<std::int32_t> idx = dolfinx::mesh::entities_to_geometry(
-            mesh, dim, std::span(entities.data(), entities.size()), orient);
-
-        auto topology = mesh.topology();
-        assert(topology);
-        if (topology->cell_types().size() > 1)
-          throw std::runtime_error("Multiple cell type not supported.");
-        dolfinx::mesh::CellType cell_type = topology->cell_types()[0];
-        std::size_t num_vertices = dolfinx::mesh::num_cell_vertices(
-            cell_entity_type(cell_type, dim, 0));
-        std::array<std::size_t, 2> shape
-            = {(std::size_t)entities.size(), num_vertices};
-        return as_pyarray(std::move(idx), shape);
-      },
-      py::arg("mesh"), py::arg("dim"), py::arg("entities"), py::arg("orient"));
   m.def(
       "exterior_facet_indices",
       [](const dolfinx::mesh::Topology& t)
