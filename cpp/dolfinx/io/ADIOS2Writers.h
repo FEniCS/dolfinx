@@ -627,9 +627,11 @@ public:
     }
 
     for (auto& v : this->_u)
+    {
       std::visit([&](const auto& u)
                  { impl_fides::write_data(*this->_io, *this->_engine, *u); },
                  v);
+    }
 
     this->_engine->EndStep();
   }
