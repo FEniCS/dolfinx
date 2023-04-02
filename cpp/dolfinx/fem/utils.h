@@ -153,14 +153,6 @@ extract_function_spaces(const std::vector<std::vector<const Form<T, U>*>>& a)
 /// @brief Create a sparsity pattern for a given form.
 /// @note The pattern is not finalised, i.e. the caller is responsible
 /// for calling SparsityPattern::assemble.
-la::SparsityPattern create_sparsity_pattern(
-    const mesh::Topology& topology,
-    std::array<std::reference_wrapper<const DofMap>, 2> dofmaps,
-    const std::set<IntegralType>& integrals);
-
-/// @brief Create a sparsity pattern for a given form.
-/// @note The pattern is not finalised, i.e. the caller is responsible
-/// for calling SparsityPattern::assemble.
 /// @param[in] a A bilinear form
 /// @return The corresponding sparsity pattern
 template <typename T, std::floating_point U>
