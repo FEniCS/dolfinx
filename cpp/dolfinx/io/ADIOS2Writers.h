@@ -21,10 +21,12 @@
 #include <filesystem>
 #include <memory>
 #include <mpi.h>
-#include <pugixml.hpp>
 #include <string>
 #include <variant>
 #include <vector>
+
+/// @file ADIOS2Writers.h
+/// @brief ADIOS2-based output writers
 
 namespace dolfinx::fem
 {
