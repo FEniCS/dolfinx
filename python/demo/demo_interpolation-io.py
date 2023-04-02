@@ -20,13 +20,11 @@
 
 # +
 import numpy as np
-
-from dolfinx import plot
 from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
 from dolfinx.mesh import CellType, create_rectangle, locate_entities
-
 from mpi4py import MPI
-from petsc4py.PETSc import ScalarType
+
+from dolfinx import default_scalar_type, plot
 
 # -
 
@@ -38,7 +36,7 @@ msh = create_rectangle(MPI.COMM_WORLD, ((0.0, 0.0), (1.0, 1.0)), (16, 16), CellT
 # Create a Nédélec function space and finite element Function
 
 V = FunctionSpace(msh, ("Nedelec 1st kind H(curl)", 1))
-u = Function(V, dtype=ScalarType)
+u = Function(V, dtype=default_scalar_type)
 
 # Find cells with *all* vertices (0) $x_0 <= 0.5$ or (1) $x_0 >= 0.5$:
 
@@ -57,7 +55,7 @@ u.interpolate(lambda x: np.vstack((x[0] + 1, x[1])), cells1)
 # interpolate the $H({\rm curl})$ function `u`
 
 V0 = VectorFunctionSpace(msh, ("Discontinuous Lagrange", 1))
-u0 = Function(V0, dtype=ScalarType)
+u0 = Function(V0, dtype=default_scalar_type)
 u0.interpolate(u)
 
 # We save the interpolated function `u0` in VTX format. When visualising

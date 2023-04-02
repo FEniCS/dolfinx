@@ -18,19 +18,17 @@
 # We begin this demo by importing the required modules.
 
 # +
-import matplotlib.pylab as plt
-import numpy as np
-
 import basix
 import basix.ufl
+import matplotlib.pylab as plt
+import numpy as np
 import ufl
-from dolfinx import fem, mesh
+from mpi4py import MPI
 from ufl import ds, dx, grad, inner
 
-from mpi4py import MPI
-from petsc4py.PETSc import ScalarType
+from dolfinx import default_scalar_type, fem, mesh
 
-if np.issubdtype(ScalarType, np.complexfloating):
+if np.issubdtype(default_scalar_type, np.complexfloating):
     print("Demo should only be executed with DOLFINx real mode")
     exit(0)
 # -
@@ -60,7 +58,7 @@ element = basix.create_element(basix.ElementFamily.P, basix.CellType.interval, 1
                                basix.LagrangeVariant.equispaced)
 pts = basix.create_lattice(basix.CellType.interval, 200, basix.LatticeType.equispaced, True)
 values = element.tabulate(0, pts)[0, :, :, 0]
-if MPI.COMM_WORLD.size == 1:  # Skip this plotting in parallel
+if MPI.COMM_WORLD.size == 1:
     for i in range(values.shape[1]):
         plt.plot(pts, values[:, i])
     plt.plot(element.points, [0 for _ in element.points], "ko")
@@ -123,7 +121,7 @@ facets = mesh.locate_entities_boundary(msh, dim=1,
                                        marker=lambda x: np.logical_or(np.isclose(x[0], 0.0),
                                                                       np.isclose(x[0], 2.0)))
 dofs = fem.locate_dofs_topological(V=V, entity_dim=1, entities=facets)
-bc = fem.dirichletbc(value=ScalarType(0), dofs=dofs, V=V)
+bc = fem.dirichletbc(value=default_scalar_type(0), dofs=dofs, V=V)
 
 u = ufl.TrialFunction(V)
 v = ufl.TestFunction(V)
