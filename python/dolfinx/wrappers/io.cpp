@@ -178,20 +178,20 @@ void io(py::module& m)
 
 #ifdef HAS_ADIOS2
   // dolfinx::io::FidesWriter
-  py::class_<dolfinx::io::FidesWriter,
-             std::shared_ptr<dolfinx::io::FidesWriter>>
+  py::class_<dolfinx::io::FidesWriter<double>,
+             std::shared_ptr<dolfinx::io::FidesWriter<double>>>
       fides_writer(m, "FidesWriter", "FidesWriter object");
 
-  py::enum_<dolfinx::io::FidesWriter::MeshPolicy>(fides_writer, "MeshPolicy")
-      .value("update", dolfinx::io::FidesWriter::MeshPolicy::update)
-      .value("reuse", dolfinx::io::FidesWriter::MeshPolicy::reuse);
+  py::enum_<dolfinx::io::FidesMeshPolicy>(fides_writer, "FidesMeshPolicy")
+      .value("update", dolfinx::io::FidesMeshPolicy::update)
+      .value("reuse", dolfinx::io::FidesMeshPolicy::reuse);
 
   fides_writer
       .def(py::init(
                [](MPICommWrapper comm, std::filesystem::path filename,
                   std::shared_ptr<const dolfinx::mesh::Mesh<double>> mesh)
                {
-                 return std::make_unique<dolfinx::io::FidesWriter>(
+                 return std::make_unique<dolfinx::io::FidesWriter<double>>(
                      comm.get(), filename, mesh);
                }),
            py::arg("comm"), py::arg("filename"), py::arg("mesh"))
@@ -206,17 +206,19 @@ void io(py::module& m)
                           std::complex<float>, double>>,
                       std::shared_ptr<const dolfinx::fem::Function<
                           std::complex<double>, double>>>>& u,
-                  dolfinx::io::FidesWriter::MeshPolicy policy)
+                  dolfinx::io::FidesMeshPolicy policy)
                {
-                 return std::make_unique<dolfinx::io::FidesWriter>(
+                 return std::make_unique<dolfinx::io::FidesWriter<double>>(
                      comm.get(), filename, u, policy);
                }),
            py::arg("comm"), py::arg("filename"), py::arg("u"),
-           py::arg("policy") = dolfinx::io::FidesWriter::MeshPolicy::update)
-      .def("close", [](dolfinx::io::FidesWriter& self) { self.close(); })
+           py::arg("policy") = dolfinx::io::FidesMeshPolicy::update)
+      .def("close",
+           [](dolfinx::io::FidesWriter<double>& self) { self.close(); })
       .def(
           "write",
-          [](dolfinx::io::FidesWriter& self, double t) { self.write(t); },
+          [](dolfinx::io::FidesWriter<double>& self, double t)
+          { self.write(t); },
           py::arg("t"));
 
   // dolfinx::io::VTXWriter
