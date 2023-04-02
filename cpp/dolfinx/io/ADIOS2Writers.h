@@ -238,7 +238,7 @@ void initialize_mesh_attributes(adios2::IO& io, const mesh::Mesh<T>& mesh)
 /// Initialize function related attributes for the ADIOS2 file used in
 /// Fides
 /// @param[in] io The ADIOS2 IO
-/// @param[in] functions The list of functions
+/// @param[in] u List of functions
 template <typename T>
 void initialize_function_attributes(adios2::IO& io,
                                     const typename ADIOS2Writer<T>::U& u)
