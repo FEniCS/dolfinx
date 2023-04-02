@@ -124,11 +124,13 @@ namespace impl_adios2
 /// field
 constexpr std::array field_ext = {"_real", "_imag"};
 
+/// @private
 template <class... Ts>
 struct overload : Ts...
 {
   using Ts::operator()...;
 };
+/// @private
 template <class... Ts>
 overload(Ts...) -> overload<Ts...>; // line not needed in C++20...
 
@@ -163,6 +165,7 @@ adios2::Variable<T> define_variable(adios2::IO& io, std::string name,
     return io.DefineVariable<T>(name, shape, start, count);
 }
 
+/// Extract common mesh from list of Functions
 template <typename T>
 std::shared_ptr<const mesh::Mesh<T>>
 extract_common_mesh(const typename ADIOS2Writer<T>::U& u)
