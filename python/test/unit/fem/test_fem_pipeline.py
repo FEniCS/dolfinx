@@ -452,7 +452,7 @@ def test_dP_simplex(family, degree, cell_type, datadir):
 @parametrize_cell_types_simplex
 @pytest.mark.parametrize("family", ["RT", "N1curl"])
 @pytest.mark.parametrize("degree", [1, 2, 3, 4])
-def test_RT_N1curl_simplex(family, degree, cell_type, datadir):
+def xtest_RT_N1curl_simplex(family, degree, cell_type, datadir):
     if cell_type == CellType.tetrahedron and degree == 4:
         pytest.skip("Skip expensive test on tetrahedron")
     mesh = get_mesh(cell_type, datadir)

@@ -104,9 +104,9 @@ Mat create_matrix_block(
 
         if (form->num_integrals(IntegralType::cell) > 0)
         {
-          auto cells = topology->connectivity(tdim, 0);
-          assert(cells);
-          std::vector<std::int32_t> c(cells->num_nodes(), 0);
+          auto map = topology->index_map(tdim);
+          assert(map);
+          std::vector<std::int32_t> c(map->size_local(), 0);
           std::iota(c.begin(), c.end(), 0);
           sparsitybuild::cells(*sp, c, dofmaps);
         }

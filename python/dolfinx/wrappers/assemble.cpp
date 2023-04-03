@@ -380,9 +380,9 @@ void petsc_module(py::module& m)
             {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
 
         int tdim = mesh->topology()->dim();
-        auto cells = mesh->topology()->connectivity(tdim, 0);
-        assert(cells);
-        std::vector<std::int32_t> c(cells->num_nodes(), 0);
+        auto map = mesh->topology()->index_map(tdim);
+        assert(map);
+        std::vector<std::int32_t> c(map->size_local(), 0);
         std::iota(c.begin(), c.end(), 0);
         dolfinx::fem::sparsitybuild::cells(sp, c, {*dofmap1, *dofmap0});
         sp.assemble();
@@ -421,9 +421,9 @@ void petsc_module(py::module& m)
             {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
 
         int tdim = mesh->topology()->dim();
-        auto cells = mesh->topology()->connectivity(tdim, 0);
-        assert(cells);
-        std::vector<std::int32_t> c(cells->num_nodes(), 0);
+        auto map = mesh->topology()->index_map(tdim);
+        assert(map);
+        std::vector<std::int32_t> c(map->size_local(), 0);
         std::iota(c.begin(), c.end(), 0);
         dolfinx::fem::sparsitybuild::cells(sp, c, {*dofmap1, *dofmap0});
         sp.assemble();
