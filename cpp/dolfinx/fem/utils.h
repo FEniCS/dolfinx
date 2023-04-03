@@ -210,10 +210,7 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
         std::vector<std::int32_t> f;
         f.reserve(facets.size() / 2);
         for (std::size_t i = 0; i < facets.size(); i += 4)
-        {
-          f.push_back(facets[i]);
-          f.push_back(facets[i + 2]);
-        }
+          f.insert(f.end(), {facets[i], facets[i + 2]});
         sparsitybuild::interior_facets(pattern, f, {{dofmaps[0], dofmaps[1]}});
       }
       break;

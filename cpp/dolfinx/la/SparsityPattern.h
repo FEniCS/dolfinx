@@ -25,18 +25,17 @@ class IndexMap;
 
 namespace dolfinx::la
 {
-/// This class provides a sparsity pattern data structure that can be
-/// used to initialize sparse matrices. After assembly, column indices
-/// are always sorted in increasing order. Ghost entries are kept after
-/// assembly.
+/// Sparsity pattern data structure that can be used to initialize
+/// sparse matrices. After assembly, column indices are always sorted in
+/// increasing order. Ghost entries are kept after assembly.
 class SparsityPattern
 {
 public:
-  /// @brief sCreate an empty sparsity pattern with specified dimensions
-  /// @param[in] comm The communicator that the pattenr is defined on
-  /// @param[in] maps The index maps describing the [0] row and [1]
-  /// column index ranges (up to a block size)
-  /// @param[in] bs The block sizes for the [0] row and [1] column maps
+  /// @brief Create an empty sparsity pattern with specified dimensions.
+  /// @param[in] comm Communicator that the pattern is defined on.
+  /// @param[in] maps Index maps describing the [0] row and [1] column
+  /// index ranges (up to a block size).
+  /// @param[in] bs Block sizes for the [0] row and [1] column maps.
   SparsityPattern(
       MPI_Comm comm,
       const std::array<std::shared_ptr<const common::IndexMap>, 2>& maps,
@@ -46,12 +45,12 @@ public:
   /// pattern =[ pattern00 ][ pattern 01]
   ///          [ pattern10 ][ pattern 11]
   ///
-  /// @param[in] comm The MPI communicator
+  /// @param[in] comm Communicator that the pattern is defined on.
   /// @param[in] patterns Rectangular array of sparsity pattern. The
-  ///   patterns must not be finalised. Null block are permitted
+  /// patterns must not be finalised. Null block are permitted/
   /// @param[in] maps Pairs of (index map, block size) for each row
-  ///   block (maps[0]) and column blocks (maps[1])
-  /// @param[in] bs Block sizes for the sparsity pattern entries
+  /// block (maps[0]) and column blocks (maps[1])/
+  /// @param[in] bs Block sizes for the sparsity pattern entries/
   SparsityPattern(
       MPI_Comm comm,
       const std::vector<std::vector<const SparsityPattern*>>& patterns,
@@ -77,8 +76,8 @@ public:
               const std::span<const std::int32_t>& cols);
 
   /// @brief Insert non-zero locations on the diagonal
-  /// @param[in] rows The rows in local (process-wise) indices. The
-  /// indices must exist in the row IndexMap.
+  /// @param[in] rows Rows in local (process-wise) indices. The indices
+  /// must exist in the row IndexMap.
   void insert_diagonal(std::span<const std::int32_t> rows);
 
   /// @brief Finalize sparsity pattern and communicate off-process entries
@@ -86,16 +85,16 @@ public:
 
   /// @brief Index map for given dimension dimension. Returns the index
   /// map for rows and columns that will be set by the current MPI rank.
-  /// @param[in] dim The requested map, row (0) or column (1)
-  /// @return The index map
+  /// @param[in] dim Requested map, row (0) or column (1).
+  /// @return The index map.
   std::shared_ptr<const common::IndexMap> index_map(int dim) const;
 
   /// @brief Global indices of non-zero columns on owned rows.
   ///
   /// @note The ghosts are computed only once SparsityPattern::assemble
-  /// has been called
-  /// @return The global index non-zero columns on this process,
-  /// including ghosts
+  /// has been called.
+  /// @return Global index non-zero columns on this process, including
+  /// ghosts.
   std::vector<std::int64_t> column_indices() const;
 
   /// @brief Builds the index map for columns after assembly of the
@@ -113,13 +112,13 @@ public:
   /// ghost rows.
   std::int64_t num_nonzeros() const;
 
-  /// @brief Number of non-zeros in owned columns (diagonal block) on a given
-  /// row
+  /// @brief Number of non-zeros in owned columns (diagonal block) on a
+  /// given row.
   /// @note Can also be used on ghost rows
   std::int32_t nnz_diag(std::int32_t row) const;
 
   /// @brief Number of non-zeros in unowned columns (off-diagonal block)
-  /// on a given row
+  /// on a given row.
   /// @note Can also be used on ghost rows
   std::int32_t nnz_off_diag(std::int32_t row) const;
 
@@ -131,7 +130,7 @@ public:
   const graph::AdjacencyList<std::int32_t>& graph() const;
 
   /// @brief Row-wise start of off-diagonal (unowned columns) on each
-  /// row
+  /// row.
   /// @note Includes ghost rows
   std::span<const int> off_diagonal_offset() const;
 
