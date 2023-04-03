@@ -161,7 +161,7 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
   if (a.rank() != 2)
   {
     throw std::runtime_error(
-        "Cannot create sparsity pattern. Form is not a bilinearZZ.");
+        "Cannot create sparsity pattern. Form is not a bilinear.");
   }
 
   // Get dof maps and mesh
