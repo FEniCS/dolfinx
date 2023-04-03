@@ -556,7 +556,7 @@ def test_empty_rank_mesh(dtype):
         x = np.array([[0., 0.], [1., 0.], [1., 1.], [0., 1.]], dtype=dtype)
     else:
         cells = graph.create_adjacencylist(np.empty((0, 3), dtype=np.int64))
-        x = np.empty((0, 2), dtype=np.float64)
+        x = np.empty((0, 2), dtype=dtype)
 
     mesh = _mesh.create_mesh(comm, cells, x, domain, partitioner)
     assert mesh.geometry.x.dtype == dtype
