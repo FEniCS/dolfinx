@@ -232,7 +232,7 @@ void initialize_mesh_attributes(adios2::IO& io, const mesh::Mesh<T>& mesh)
   // and topology
   impl_adios2::define_attribute<std::string>(io, "Fides_Coordinates_Variable",
                                              "points");
-  impl_adios2::define_attribute<std::string>(io, "Fides_Connecticity_Variable",
+  impl_adios2::define_attribute<std::string>(io, "Fides_Connectivity_Variable",
                                              "connectivity");
 
   std::string cell_type = to_fides_cell(topology->cell_types()[0]);
