@@ -65,22 +65,25 @@ template <typename T, std::floating_point U = dolfinx::scalar_value_type_t<T>>
 class Form
 {
 public:
+  /// Scalar type
+  using scalar_type = T;
+
   /// @brief Create a finite element form.
   ///
-  /// @note User applications will normally call a fem::Form builder
-  /// function rather using this interface directly.
+  /// @note User applications will normally call a builder function
+  /// rather using this interface directly.
   ///
   /// @param[in] V Function spaces for the form arguments
-  /// @param[in] integrals The integrals in the form. The first key is
-  /// the domain type. For each key there is a list of tuples (domain id,
+  /// @param[in] integrals Integrals in the form. The first key is the
+  /// domain type. For each key there is a list of tuples (domain id,
   /// integration kernel, entities).
   /// @param[in] coefficients
   /// @param[in] constants Constants in the Form
   /// @param[in] needs_facet_permutations Set to true is any of the
   /// integration kernels require cell permutation data
-  /// @param[in] mesh The mesh of the domain. This is required when
-  /// there are not argument functions from which the mesh can be
-  /// extracted, e.g. for functionals
+  /// @param[in] mesh Mesh of the domain. This is required when there
+  /// are no argument functions from which the mesh can be extracted,
+  /// e.g. for functionals.
   Form(const std::vector<std::shared_ptr<const FunctionSpace<U>>>& V,
        const std::map<IntegralType,
                       std::vector<std::tuple<
@@ -324,9 +327,6 @@ public:
   {
     return _constants;
   }
-
-  /// Scalar type (T)
-  using scalar_type = T;
 
 private:
   using kern = std::function<void(T*, const T*, const T*,

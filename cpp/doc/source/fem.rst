@@ -93,9 +93,6 @@ Sparsity pattern construction
 .. doxygenfunction:: dolfinx::fem::create_sparsity_pattern(const Form<T, double>&)
    :project: DOLFINx
 
-.. doxygenfunction:: dolfinx::fem::create_sparsity_pattern(const mesh::Topology &topology, const std::array<std::reference_wrapper<const DofMap>, 2> &dofmaps, const std::set<IntegralType> &integrals)
-   :project: DOLFINx
-
 
 PETSc helpers
 -------------

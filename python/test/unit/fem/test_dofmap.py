@@ -9,16 +9,15 @@ import sys
 
 import numpy as np
 import pytest
-
-import dolfinx
 import ufl
-from basix.ufl import mixed_element, element
+from basix.ufl import element, mixed_element
 from dolfinx.fem import FunctionSpace, VectorFunctionSpace
 from dolfinx.graph import create_adjacencylist
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_interval, create_unit_square)
-
 from mpi4py import MPI
+
+import dolfinx
 
 xfail = pytest.mark.xfail(strict=True)
 
@@ -224,15 +223,15 @@ def test_readonly_view_local_to_global_unwoned(mesh):
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("points, celltype, order", [
-    (np.array([[0, 0], [1, 0], [0, 2], [1, 2]]),
+    (np.array([[0, 0], [1, 0], [0, 2], [1, 2]], dtype=np.float64),
      CellType.quadrilateral, 1),
     (np.array([[0, 0], [1, 0], [0, 2], [1, 2],
-               [0.5, 0], [0, 1], [1, 1], [0.5, 2], [0.5, 1]]),
+               [0.5, 0], [0, 1], [1, 1], [0.5, 2], [0.5, 1]], dtype=np.float64),
      CellType.quadrilateral, 2),
-    (np.array([[0, 0], [1, 0], [0, 2], [0.5, 1], [0, 1], [0.5, 0]]),
+    (np.array([[0, 0], [1, 0], [0, 2], [0.5, 1], [0, 1], [0.5, 0]], dtype=np.float64),
      CellType.triangle, 2),
     (np.array([[0, 0, 0], [1, 0, 0], [0, 2, 0], [1, 2, 0],
-               [0, 0, 3], [1, 0, 3], [0, 2, 3], [1, 2, 3]]),
+               [0, 0, 3], [1, 0, 3], [0, 2, 3], [1, 2, 3]], dtype=np.float64),
      CellType.hexahedron, 1),
     (np.array([[0, 0, 0], [1, 0, 0], [0, 2, 0], [1, 2, 0],
                [0, 0, 3], [1, 0, 3], [0, 2, 3], [1, 2, 3],
@@ -240,7 +239,7 @@ def test_readonly_view_local_to_global_unwoned(mesh):
                [1, 0, 1.5], [0.5, 2, 0], [0, 2, 1.5], [1, 2, 1.5],
                [0.5, 0, 3], [0, 1, 3], [1, 1, 3], [0.5, 2, 3],
                [0.5, 1, 0], [0.5, 0, 1.5], [0, 1, 1.5], [1, 1, 1.5],
-               [0.5, 2, 1.5], [0.5, 1, 3], [0.5, 1, 1.5]]),
+               [0.5, 2, 1.5], [0.5, 1, 3], [0.5, 1, 1.5]], dtype=np.float64),
      CellType.hexahedron, 2)
 ])
 def test_higher_order_coordinate_map(points, celltype, order):

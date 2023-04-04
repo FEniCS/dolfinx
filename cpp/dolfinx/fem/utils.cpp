@@ -28,48 +28,6 @@
 using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
-la::SparsityPattern fem::create_sparsity_pattern(
-    const mesh::Topology& topology,
-    const std::array<std::reference_wrapper<const DofMap>, 2>& dofmaps,
-    const std::set<IntegralType>& integrals)
-{
-  common::Timer t0("Build sparsity");
-
-  // Get common::IndexMaps for each dimension
-  const std::array index_maps{dofmaps[0].get().index_map,
-                              dofmaps[1].get().index_map};
-  const std::array bs
-      = {dofmaps[0].get().index_map_bs(), dofmaps[1].get().index_map_bs()};
-
-  // Create and build sparsity pattern
-  assert(dofmaps[0].get().index_map);
-  la::SparsityPattern pattern(dofmaps[0].get().index_map->comm(), index_maps,
-                              bs);
-  for (auto type : integrals)
-  {
-    switch (type)
-    {
-    case IntegralType::cell:
-      sparsitybuild::cells(pattern, topology, {{dofmaps[0], dofmaps[1]}});
-      break;
-    case IntegralType::interior_facet:
-      sparsitybuild::interior_facets(pattern, topology,
-                                     {{dofmaps[0], dofmaps[1]}});
-      break;
-    case IntegralType::exterior_facet:
-      sparsitybuild::exterior_facets(pattern, topology,
-                                     {{dofmaps[0], dofmaps[1]}});
-      break;
-    default:
-      throw std::runtime_error("Unsupported integral type");
-    }
-  }
-
-  t0.stop();
-
-  return pattern;
-}
-//-----------------------------------------------------------------------------
 fem::ElementDofLayout
 fem::create_element_dof_layout(const ufcx_dofmap& dofmap,
                                const mesh::CellType cell_type,
@@ -231,11 +189,12 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
           "Topology facet-to-cell connectivity has not been computed.");
     }
     auto c_to_f = topology.connectivity(tdim, tdim - 1);
+    if (!c_to_f)
     {
-      if (!c_to_f)
-        throw std::runtime_error(
-            "Topology cell-to-facet connectivity has not been computed.");
+      throw std::runtime_error(
+          "Topology cell-to-facet connectivity has not been computed.");
     }
+
     switch (integral_type)
     {
     case IntegralType::exterior_facet:

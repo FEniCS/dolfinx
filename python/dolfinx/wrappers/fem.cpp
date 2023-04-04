@@ -552,6 +552,10 @@ void declare_form(py::module& m, const std::string& type)
       py::arg("form"), py::arg("spaces"), py::arg("coefficients"),
       py::arg("constants"), py::arg("subdomains"), py::arg("mesh"),
       "Create Form from a pointer to ufcx_form.");
+
+  m.def("create_sparsity_pattern",
+        &dolfinx::fem ::create_sparsity_pattern<T, double>, py::arg("a"),
+        "Create a sparsity pattern.");
 }
 } // namespace
 
@@ -574,23 +578,6 @@ void fem(py::module& m)
   declare_form<std::complex<double>>(m, "complex128");
 
   m.def(
-      "create_sparsity_pattern",
-      [](const dolfinx::mesh::Topology& topology,
-         const std::vector<std::reference_wrapper<const dolfinx::fem::DofMap>>&
-             dofmaps,
-         const std::set<dolfinx::fem::IntegralType>& types)
-      {
-        if (dofmaps.size() != 2)
-        {
-          throw std::runtime_error(
-              "create_sparsity_pattern requires exactly two dofmaps.");
-        }
-        return dolfinx::fem::create_sparsity_pattern(
-            topology, {dofmaps[0], dofmaps[1]}, types);
-      },
-      py::arg("topology"), py::arg("dofmaps"), py::arg("types"),
-      "Create a sparsity pattern.");
-  m.def(
       "create_element_dof_layout",
       [](std::uintptr_t dofmap, const dolfinx::mesh::CellType cell_type,
          const std::vector<int>& parent_map)
@@ -609,7 +596,6 @@ void fem(py::module& m)
       {
         ufcx_dofmap* p = reinterpret_cast<ufcx_dofmap*>(dofmap);
         assert(p);
-
         dolfinx::fem::ElementDofLayout layout
             = dolfinx::fem::create_element_dof_layout(
                 *p, topology.cell_types().back());

@@ -243,7 +243,8 @@ void apply_lifting(
 /// local index.
 template <typename T, std::floating_point U>
 void assemble_matrix(
-    auto mat_add, const Form<T, U>& a, std::span<const T> constants,
+    la::MatSet<T> auto mat_add, const Form<T, U>& a,
+    std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients,
     std::span<const std::int8_t> dof_marker0,

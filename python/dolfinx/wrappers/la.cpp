@@ -271,9 +271,9 @@ void la(py::module& m)
                              py::return_value_policy::reference_internal);
 
   // Declare objects that are templated over type
-  declare_objects<double>(m, "float64");
   declare_objects<float>(m, "float32");
-  declare_objects<std::complex<double>>(m, "complex128");
+  declare_objects<double>(m, "float64");
   declare_objects<std::complex<float>>(m, "complex64");
+  declare_objects<std::complex<double>>(m, "complex128");
 }
 } // namespace dolfinx_wrappers

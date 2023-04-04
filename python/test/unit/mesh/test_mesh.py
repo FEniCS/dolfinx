@@ -537,7 +537,8 @@ def test_submesh_boundary(d, n, boundary, ghost_mode):
     submesh_geometry_test(mesh, submesh, entity_map, geom_map, edim)
 
 
-def test_empty_rank_mesh():
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_empty_rank_mesh(dtype):
     """Construction of mesh where some ranks are empty"""
     comm = MPI.COMM_WORLD
     cell_type = CellType.triangle
@@ -552,12 +553,13 @@ def test_empty_rank_mesh():
     if comm.rank == 0:
         cells = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.int64)
         cells = graph.create_adjacencylist(cells)
-        x = np.array([[0., 0.], [1., 0.], [1., 1.], [0., 1.]])
+        x = np.array([[0., 0.], [1., 0.], [1., 1.], [0., 1.]], dtype=dtype)
     else:
         cells = graph.create_adjacencylist(np.empty((0, 3), dtype=np.int64))
-        x = np.empty((0, 2), dtype=np.float64)
+        x = np.empty((0, 2), dtype=dtype)
 
     mesh = _mesh.create_mesh(comm, cells, x, domain, partitioner)
+    assert mesh.geometry.x.dtype == dtype
     topology = mesh.topology
 
     # Check number of vertices

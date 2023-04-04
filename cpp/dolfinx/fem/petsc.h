@@ -72,7 +72,9 @@ Mat create_matrix_block(
 
   std::shared_ptr mesh = V[0][0]->mesh();
   assert(mesh);
-  const int tdim = mesh->topology()->dim();
+  auto topology = mesh->topology();
+  assert(topology);
+  const int tdim = topology->dim();
 
   // Build sparsity pattern for each block
   std::vector<std::vector<std::unique_ptr<la::SparsityPattern>>> patterns(
@@ -94,22 +96,58 @@ Mat create_matrix_block(
         // Build sparsity pattern for block
         assert(V[0][row]->dofmap());
         assert(V[1][col]->dofmap());
-        std::array<const std::reference_wrapper<const DofMap>, 2> dofmaps{
+        std::array<std::reference_wrapper<const DofMap>, 2> dofmaps{
             *V[0][row]->dofmap(), *V[1][col]->dofmap()};
         assert(patterns[row].back());
         auto& sp = patterns[row].back();
         assert(sp);
+
         if (form->num_integrals(IntegralType::cell) > 0)
-          sparsitybuild::cells(*sp, *mesh->topology(), dofmaps);
+        {
+          auto map = topology->index_map(tdim);
+          assert(map);
+          std::vector<std::int32_t> c(map->size_local(), 0);
+          std::iota(c.begin(), c.end(), 0);
+          sparsitybuild::cells(*sp, c, dofmaps);
+        }
+
         if (form->num_integrals(IntegralType::interior_facet) > 0)
         {
+          // Loop over owned facets
           mesh->topology_mutable()->create_entities(tdim - 1);
-          sparsitybuild::interior_facets(*sp, *mesh->topology(), dofmaps);
+          auto f_to_c = topology->connectivity(tdim - 1, tdim);
+          if (!f_to_c)
+          {
+            throw std::runtime_error(
+                "Facet-cell connectivity has not been computed.");
+          }
+          auto map = topology->index_map(tdim - 1);
+          assert(map);
+          std::vector<std::int32_t> facets;
+          facets.reserve(2 * map->size_local());
+          for (int f = 0; f < map->size_local(); ++f)
+            if (auto cells = f_to_c->links(f); cells.size() == 2)
+              facets.insert(facets.end(), {cells[0], cells[1]});
+          sparsitybuild::interior_facets(*sp, facets, dofmaps);
         }
+
         if (form->num_integrals(IntegralType::exterior_facet) > 0)
         {
+          // Loop over owned facets
           mesh->topology_mutable()->create_entities(tdim - 1);
-          sparsitybuild::exterior_facets(*sp, *mesh->topology(), dofmaps);
+          auto connectivity = topology->connectivity(tdim - 1, tdim);
+          if (!connectivity)
+          {
+            throw std::runtime_error(
+                "Facet-cell connectivity has not been computed.");
+          }
+          auto map = topology->index_map(tdim - 1);
+          assert(map);
+          std::vector<std::int32_t> cells;
+          for (int f = 0; f < map->size_local(); ++f)
+            if (auto c = connectivity->links(f); c.size() == 1)
+              cells.push_back(c[0]);
+          sparsitybuild::cells(*sp, cells, dofmaps);
         }
       }
       else
