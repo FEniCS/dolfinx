@@ -133,20 +133,21 @@ Mat create_matrix_block(
 
         if (form->num_integrals(IntegralType::exterior_facet) > 0)
         {
-          // Loop over owned facets
           mesh->topology_mutable()->create_entities(tdim - 1);
+          const std::vector facets = mesh::exterior_facet_indices(*topology);
           auto connectivity = topology->connectivity(tdim - 1, tdim);
           if (!connectivity)
           {
             throw std::runtime_error(
                 "Facet-cell connectivity has not been computed.");
           }
-          auto map = topology->index_map(tdim - 1);
-          assert(map);
           std::vector<std::int32_t> cells;
-          for (int f = 0; f < map->size_local(); ++f)
-            if (auto c = connectivity->links(f); c.size() == 1)
-              cells.push_back(c[0]);
+          for (auto f : facets)
+          {
+            auto c = connectivity->links(f);
+            assert(c.size() == 1);
+            cells.push_back(c[0]);
+          }
           sparsitybuild::cells(*sp, cells, dofmaps);
         }
       }
