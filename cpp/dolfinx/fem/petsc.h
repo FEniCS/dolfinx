@@ -70,98 +70,28 @@ Mat create_matrix_block(
       bs_dofs[i].push_back(_V->dofmap()->bs());
   }
 
-  std::shared_ptr mesh = V[0][0]->mesh();
-  assert(mesh);
-  // auto topology = mesh->topology();
-  // assert(topology);
-  // const int tdim = topology->dim();
-
   // Build sparsity pattern for each block
+  std::shared_ptr<const mesh::Mesh<T>> mesh;
   std::vector<std::vector<std::unique_ptr<la::SparsityPattern>>> patterns(
       V[0].size());
   for (std::size_t row = 0; row < V[0].size(); ++row)
   {
     for (std::size_t col = 0; col < V[1].size(); ++col)
     {
-      // const std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
-      //     = {{V[0][row]->dofmap()->index_map, V[1][col]->dofmap()->index_map}};
-      // const std::array bs = {V[0][row]->dofmap()->index_map_bs(),
-      //                        V[1][col]->dofmap()->index_map_bs()};
       if (const Form<PetscScalar, T>* form = a[row][col]; form)
       {
-        // Create sparsity pattern for block
         patterns[row].push_back(std::make_unique<la::SparsityPattern>(
             create_sparsity_pattern(*form)));
-
-        /*
-        // Create sparsity pattern for block
-        patterns[row].push_back(std::make_unique<la::SparsityPattern>(
-            mesh->comm(), index_maps, bs));
-
-
-        // Build sparsity pattern for block
-        assert(V[0][row]->dofmap());
-        assert(V[1][col]->dofmap());
-        std::array<std::reference_wrapper<const DofMap>, 2> dofmaps{
-            *V[0][row]->dofmap(), *V[1][col]->dofmap()};
-        assert(patterns[row].back());
-        auto& sp = patterns[row].back();
-        assert(sp);
-
-        if (form->num_integrals(IntegralType::cell) > 0)
-        {
-          auto map = topology->index_map(tdim);
-          assert(map);
-          std::vector<std::int32_t> c(map->size_local(), 0);
-          std::iota(c.begin(), c.end(), 0);
-          sparsitybuild::cells(*sp, c, dofmaps);
-        }
-
-        if (form->num_integrals(IntegralType::interior_facet) > 0)
-        {
-          // Loop over owned facets
-          mesh->topology_mutable()->create_entities(tdim - 1);
-          auto f_to_c = topology->connectivity(tdim - 1, tdim);
-          if (!f_to_c)
-          {
-            throw std::runtime_error(
-                "Facet-cell connectivity has not been computed.");
-          }
-          auto map = topology->index_map(tdim - 1);
-          assert(map);
-          std::vector<std::int32_t> facets;
-          facets.reserve(2 * map->size_local());
-          for (int f = 0; f < map->size_local(); ++f)
-            if (auto cells = f_to_c->links(f); cells.size() == 2)
-              facets.insert(facets.end(), {cells[0], cells[1]});
-          sparsitybuild::interior_facets(*sp, facets, dofmaps);
-        }
-
-        if (form->num_integrals(IntegralType::exterior_facet) > 0)
-        {
-          mesh->topology_mutable()->create_entities(tdim - 1);
-          const std::vector facets = mesh::exterior_facet_indices(*topology);
-          auto connectivity = topology->connectivity(tdim - 1, tdim);
-          if (!connectivity)
-          {
-            throw std::runtime_error(
-                "Facet-cell connectivity has not been computed.");
-          }
-          std::vector<std::int32_t> cells;
-          for (auto f : facets)
-          {
-            auto c = connectivity->links(f);
-            assert(c.size() == 1);
-            cells.push_back(c[0]);
-          }
-          sparsitybuild::cells(*sp, cells, dofmaps);
-        }
-      */
+        if (!mesh)
+          mesh = form->mesh();
       }
       else
         patterns[row].push_back(nullptr);
     }
   }
+
+  if (!mesh)
+    throw std::runtime_error("Could not find a Mesh.");
 
   // Compute offsets for the fields
   std::array<std::vector<std::pair<
@@ -248,9 +178,9 @@ Mat create_matrix_block(
   return A;
 }
 
-/// Create nested (MatNest) matrix
+/// @brief Create nested (MatNest) matrix.
 ///
-/// The caller is responsible for destroying the Mat object
+/// @note The caller is responsible for destroying the Mat object.
 template <std::floating_point T>
 Mat create_matrix_nest(
     const std::vector<std::vector<const Form<PetscScalar, T>*>>& a,
@@ -265,21 +195,28 @@ Mat create_matrix_nest(
     _types = types;
 
   // Loop over each form and create matrix
-  const int rows = a.size();
-  const int cols = a.front().size();
+  int rows = a.size();
+  int cols = a.front().size();
   std::vector<Mat> mats(rows * cols, nullptr);
+  std::shared_ptr<const mesh::Mesh<T>> mesh;
   for (int i = 0; i < rows; ++i)
   {
     for (int j = 0; j < cols; ++j)
     {
       if (const Form<PetscScalar, T>* form = a[i][j]; form)
+      {
         mats[i * cols + j] = create_matrix(*form, _types[i][j]);
+        mesh = form->mesh();
+      }
     }
   }
 
+  if (!mesh)
+    throw std::runtime_error("Could not find a Mesh.");
+
   // Initialise block (MatNest) matrix
   Mat A;
-  MatCreate(V[0][0]->mesh()->comm(), &A);
+  MatCreate(mesh->comm(), &A);
   MatSetType(A, MATNEST);
   MatNestSetSubMats(A, rows, nullptr, cols, nullptr, mats.data());
   MatSetUp(A);
