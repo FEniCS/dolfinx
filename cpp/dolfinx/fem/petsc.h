@@ -72,9 +72,9 @@ Mat create_matrix_block(
 
   std::shared_ptr mesh = V[0][0]->mesh();
   assert(mesh);
-  auto topology = mesh->topology();
-  assert(topology);
-  const int tdim = topology->dim();
+  // auto topology = mesh->topology();
+  // assert(topology);
+  // const int tdim = topology->dim();
 
   // Build sparsity pattern for each block
   std::vector<std::vector<std::unique_ptr<la::SparsityPattern>>> patterns(
@@ -83,15 +83,21 @@ Mat create_matrix_block(
   {
     for (std::size_t col = 0; col < V[1].size(); ++col)
     {
-      const std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
-          = {{V[0][row]->dofmap()->index_map, V[1][col]->dofmap()->index_map}};
-      const std::array bs = {V[0][row]->dofmap()->index_map_bs(),
-                             V[1][col]->dofmap()->index_map_bs()};
+      // const std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
+      //     = {{V[0][row]->dofmap()->index_map, V[1][col]->dofmap()->index_map}};
+      // const std::array bs = {V[0][row]->dofmap()->index_map_bs(),
+      //                        V[1][col]->dofmap()->index_map_bs()};
       if (const Form<PetscScalar, T>* form = a[row][col]; form)
       {
         // Create sparsity pattern for block
         patterns[row].push_back(std::make_unique<la::SparsityPattern>(
+            create_sparsity_pattern(*form)));
+
+        /*
+        // Create sparsity pattern for block
+        patterns[row].push_back(std::make_unique<la::SparsityPattern>(
             mesh->comm(), index_maps, bs));
+
 
         // Build sparsity pattern for block
         assert(V[0][row]->dofmap());
@@ -150,6 +156,7 @@ Mat create_matrix_block(
           }
           sparsitybuild::cells(*sp, cells, dofmaps);
         }
+      */
       }
       else
         patterns[row].push_back(nullptr);
