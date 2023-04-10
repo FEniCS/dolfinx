@@ -199,7 +199,19 @@ public:
   }
 
   /// @brief Get the list of cell indices for the ith integral (kernel)
-  /// for the cell domain type
+  /// for the cell domain type.
+  ///
+  /// For IntegralType::cell, returns a list of cell indices.
+  ///
+  /// For IntegralType::exterior_facet, returns a list of (cell_index,
+  /// local_facet_index) pairs. Data is flattened with row-major layout,
+  /// `shape=(num_facets, 2)`.
+  ///
+  /// For IntegralType::interior_facet, returns list of tuples of the
+  /// form `(cell_index_0, local_facet_index_0, cell_index_1,
+  /// local_facet_index_1)`. Data is flattened with row-major layout,
+  /// `shape=(num_facets, 4)`.
+  ///
   /// @param[in] i Integral ID, i.e. (sub)domain index
   /// @return List of active cell entities for the given integral (kernel)
   const std::vector<std::int32_t>& domain(IntegralType type, int i) const
@@ -209,41 +221,6 @@ public:
       return it->second.second;
     else
       throw std::runtime_error("No mesh entities for requested domain index.");
-  }
-
-  /// @brief List of (cell_index, local_facet_index) pairs for the ith
-  /// integral (kernel) for the exterior facet domain type.
-  /// @param[in] i Integral ID, i.e. (sub)domain index
-  /// @return List of (cell_index, local_facet_index) pairs. This data is
-  /// flattened with row-major layout, shape=(num_facets, 2)
-  const std::vector<std::int32_t>& exterior_facet_domains(int i) const
-  {
-    auto it = _integrals[static_cast<std::size_t>(IntegralType::exterior_facet)]
-                  .find(i);
-    if (it
-        == _integrals[static_cast<std::size_t>(IntegralType::exterior_facet)]
-               .end())
-      throw std::runtime_error("No mesh entities for requested domain index.");
-    return it->second.second;
-  }
-
-  /// Get the list of (cell_index_0, local_facet_index_0, cell_index_1,
-  /// local_facet_index_1) quadruplets for the ith integral (kernel) for the
-  /// interior facet domain type.
-  /// @param[in] i Integral ID, i.e. (sub)domain index
-  /// @return List of tuples of the form
-  /// (cell_index_0, local_facet_index_0, cell_index_1,
-  /// local_facet_index_1). This data is flattened with row-major layout,
-  /// shape=(num_facets, 4)
-  const std::vector<std::int32_t>& interior_facet_domains(int i) const
-  {
-    auto it = _integrals[static_cast<std::size_t>(IntegralType::interior_facet)]
-                  .find(i);
-    if (it
-        == _integrals[static_cast<std::size_t>(IntegralType::interior_facet)]
-               .end())
-      throw std::runtime_error("No mesh entities for requested domain index.");
-    return it->second.second;
   }
 
   /// Access coefficients

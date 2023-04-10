@@ -805,9 +805,10 @@ void lift_bc(std::span<T> b, const Form<T, U>& a,
   for (int i : a.integral_ids(IntegralType::exterior_facet))
   {
     auto kernel = a.kernel(IntegralType::exterior_facet, i);
-    const auto& [coeffs, cstride]
+    auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
-    const std::vector<std::int32_t>& facets = a.exterior_facet_domains(i);
+    const std::vector<std::int32_t>& facets
+        = a.domain(IntegralType::exterior_facet, i);
     _lift_bc_exterior_facets(b, geometry, kernel, facets, dof_transform,
                              dofmap0, bs0, dof_transform_to_transpose, dofmap1,
                              bs1, constants, coeffs, cstride, cell_info,
@@ -836,9 +837,10 @@ void lift_bc(std::span<T> b, const Form<T, U>& a,
     for (int i : a.integral_ids(IntegralType::interior_facet))
     {
       auto kernel = a.kernel(IntegralType::interior_facet, i);
-      const auto& [coeffs, cstride]
+      auto& [coeffs, cstride]
           = coefficients.at({IntegralType::interior_facet, i});
-      const std::vector<std::int32_t>& facets = a.interior_facet_domains(i);
+      const std::vector<std::int32_t>& facets
+          = a.domain(IntegralType::interior_facet, i);
       _lift_bc_interior_facets(
           b, geometry, num_cell_facets, kernel, facets, dof_transform, dofmap0,
           bs0, dof_transform_to_transpose, dofmap1, bs1, constants, coeffs,
@@ -994,9 +996,10 @@ void assemble_vector(
   for (int i : L.integral_ids(IntegralType::exterior_facet))
   {
     auto fn = L.kernel(IntegralType::exterior_facet, i);
-    const auto& [coeffs, cstride]
+    auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
-    const std::vector<std::int32_t>& facets = L.exterior_facet_domains(i);
+    const std::vector<std::int32_t>& facets
+        = L.domain(IntegralType::exterior_facet, i);
     if (bs == 1)
     {
       impl::assemble_exterior_facets<T, 1>(dof_transform, b, geometry, facets,
@@ -1038,9 +1041,10 @@ void assemble_vector(
     for (int i : L.integral_ids(IntegralType::interior_facet))
     {
       auto fn = L.kernel(IntegralType::interior_facet, i);
-      const auto& [coeffs, cstride]
+      auto& [coeffs, cstride]
           = coefficients.at({IntegralType::interior_facet, i});
-      const std::vector<std::int32_t>& facets = L.interior_facet_domains(i);
+      const std::vector<std::int32_t>& facets
+          = L.domain(IntegralType::interior_facet, i);
       if (bs == 1)
       {
         impl::assemble_interior_facets<T, 1>(
