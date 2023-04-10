@@ -199,14 +199,14 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
     case IntegralType::cell:
       for (int id : ids)
       {
-        const std::vector<std::int32_t>& cells = a.cell_domains(id);
+        const std::vector<std::int32_t>& cells = a.domain(type, id);
         sparsitybuild::cells(pattern, cells, {{dofmaps[0], dofmaps[1]}});
       }
       break;
     case IntegralType::interior_facet:
       for (int id : ids)
       {
-        const std::vector<std::int32_t>& facets = a.interior_facet_domains(id);
+        const std::vector<std::int32_t>& facets = a.domain(type, id);
         std::vector<std::int32_t> f;
         f.reserve(facets.size() / 2);
         for (std::size_t i = 0; i < facets.size(); i += 4)
@@ -217,7 +217,7 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
     case IntegralType::exterior_facet:
       for (int id : ids)
       {
-        const std::vector<std::int32_t>& facets = a.exterior_facet_domains(id);
+        const std::vector<std::int32_t>& facets = a.domain(type, id);
         std::vector<std::int32_t> cells;
         cells.reserve(facets.size() / 2);
         for (std::size_t i = 0; i < facets.size(); i += 2)
@@ -907,20 +907,11 @@ allocate_coefficient_storage(const Form<T, U>& form, IntegralType integral_type,
   if (!coefficients.empty())
   {
     cstride = offsets.back();
-    switch (integral_type)
+    num_entities = form.domain(integral_type, id).size();
+    if (integral_type == IntegralType::exterior_facet
+        or integral_type == IntegralType::interior_facet)
     {
-    case IntegralType::cell:
-      num_entities = form.cell_domains(id).size();
-      break;
-    case IntegralType::exterior_facet:
-      num_entities = form.exterior_facet_domains(id).size() / 2;
-      break;
-    case IntegralType::interior_facet:
-      num_entities = form.interior_facet_domains(id).size() / 2;
-      break;
-    default:
-      throw std::runtime_error("Could not allocate coefficient data. "
-                               "Integral type not supported.");
+      num_entities /= 2;
     }
   }
 
@@ -975,7 +966,8 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
     case IntegralType::cell:
     {
       auto fetch_cell = [](auto entity) { return entity.front(); };
-      const std::vector<std::int32_t>& cells = form.cell_domains(id);
+      const std::vector<std::int32_t>& cells
+          = form.domain(IntegralType::cell, id);
 
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
@@ -988,7 +980,8 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
     }
     case IntegralType::exterior_facet:
     {
-      const std::vector<std::int32_t>& facets = form.exterior_facet_domains(id);
+      const std::vector<std::int32_t>& facets
+          = form.domain(IntegralType::exterior_facet, id);
 
       // Function to fetch cell index from exterior facet entity
       auto fetch_cell = [](auto entity) { return entity.front(); };
@@ -1004,7 +997,8 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
     }
     case IntegralType::interior_facet:
     {
-      const std::vector<std::int32_t>& facets = form.interior_facet_domains(id);
+      const std::vector<std::int32_t>& facets
+          = form.domain(IntegralType::interior_facet, id);
 
       // Functions to fetch cell indices from interior facet entity
       auto fetch_cell0 = [](auto entity) { return entity[0]; };

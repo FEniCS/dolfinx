@@ -478,18 +478,16 @@ void declare_form(py::module& m, const std::string& type)
              dolfinx::fem::IntegralType type,
              int i) -> py::array_t<std::int32_t>
           {
+            const std::vector<std::int32_t>& _d = self.domain(type, i);
             switch (type)
             {
             case dolfinx::fem::IntegralType::cell:
             {
-              return py::array_t<std::int32_t>(self.cell_domains(i).size(),
-                                               self.cell_domains(i).data(),
+              return py::array_t<std::int32_t>(_d.size(), _d.data(),
                                                py::cast(self));
             }
             case dolfinx::fem::IntegralType::exterior_facet:
             {
-              const std::vector<std::int32_t>& _d
-                  = self.exterior_facet_domains(i);
               std::array<py::ssize_t, 2> shape
                   = {py::ssize_t(_d.size()) / 2, 2};
               return py::array_t<std::int32_t>(shape, _d.data(),
@@ -497,8 +495,6 @@ void declare_form(py::module& m, const std::string& type)
             }
             case dolfinx::fem::IntegralType::interior_facet:
             {
-              const std::vector<std::int32_t>& _d
-                  = self.interior_facet_domains(i);
               std::array<py::ssize_t, 3> shape
                   = {py::ssize_t(_d.size()) / 4, 2, 2};
               return py::array_t<std::int32_t>(shape, _d.data(),
