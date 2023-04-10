@@ -817,7 +817,6 @@ void lift_bc(std::span<T> b, const Form<T, U>& a,
 
   if (a.num_integrals(IntegralType::interior_facet) > 0)
   {
-
     std::function<std::uint8_t(std::size_t)> get_perm;
     if (a.needs_facet_permutations())
     {
