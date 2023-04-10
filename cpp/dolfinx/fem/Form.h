@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Garth N. Wells and Chris Richardson
+// Copyright (C) 2019-2023 Garth N. Wells and Chris Richardson
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -13,7 +13,6 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshTags.h>
 #include <functional>
 #include <memory>
 #include <span>
@@ -30,7 +29,6 @@ template <typename T, std::floating_point U>
 class Function;
 
 /// @brief Type of integral
-// enum class IntegralType : std::int8_t
 enum class IntegralType : std::int8_t
 {
   cell = 0,           ///< Cell
@@ -114,32 +112,9 @@ public:
     // Store kernels, looping over integrals by domain type (dimension)
     for (auto& [type, kernels] : integrals)
     {
-      // Loop over integrals kernels and set domains
-      switch (type)
-      {
-      case IntegralType::cell:
-      {
-        auto& integrals
-            = _integrals[static_cast<std::size_t>(IntegralType::cell)];
-        for (auto& [id, kern, e] : kernels)
-          integrals.insert({id, {kern, std::vector(e.begin(), e.end())}});
-      }
-      break;
-      case IntegralType::exterior_facet:
-        for (auto& [id, kern, e] : kernels)
-        {
-          _integrals[static_cast<std::size_t>(IntegralType::exterior_facet)]
-              .insert({id, {kern, std::vector(e.begin(), e.end())}});
-        }
-        break;
-      case IntegralType::interior_facet:
-        for (auto& [id, kern, e] : kernels)
-        {
-          _integrals[static_cast<std::size_t>(IntegralType::interior_facet)]
-              .insert({id, {kern, std::vector(e.begin(), e.end())}});
-        }
-        break;
-      }
+      auto& integrals = _integrals[static_cast<std::size_t>(type)];
+      for (auto& [id, kern, e] : kernels)
+        integrals.insert({id, {kern, std::vector(e.begin(), e.end())}});
     }
   }
 
@@ -169,8 +144,8 @@ public:
     return _function_spaces;
   }
 
-  /// Get the function for 'kernel' for integral i of given
-  /// type
+  /// @brief Get the kernel function for integral i on given domain
+  /// type.
   /// @param[in] type Integral type
   /// @param[in] i Domain index
   /// @return Function to call for tabulate_tensor
@@ -179,60 +154,33 @@ public:
                            const std::uint8_t*)>&
   kernel(IntegralType type, int i) const
   {
-    switch (type)
-    {
-    case IntegralType::cell:
-      return get_kernel_from_integrals(
-          _integrals[static_cast<std::size_t>(IntegralType::cell)], i);
-    case IntegralType::exterior_facet:
-      return get_kernel_from_integrals(
-          _integrals[static_cast<std::size_t>(IntegralType::exterior_facet)],
-          i);
-    case IntegralType::interior_facet:
-      return get_kernel_from_integrals(
-          _integrals[static_cast<std::size_t>(IntegralType::interior_facet)],
-          i);
-    default:
-      throw std::runtime_error(
-          "Cannot access kernel. Integral type not supported.");
-    }
+    auto integrals = _integrals[static_cast<std::size_t>(type)];
+    if (auto it = integrals.find(i); it != integrals.end())
+      return it->second.first;
+    else
+      throw std::runtime_error("No kernel for requested domain index.");
   }
 
-  /// Get types of integrals in the form
-  /// @return Integrals types
+  /// @brief Get types of integrals in the form.
+  /// @return Integrals types.
   std::set<IntegralType> integral_types() const
   {
     std::set<IntegralType> set;
-    if (!_integrals[static_cast<std::size_t>(IntegralType::cell)].empty())
-      set.insert(IntegralType::cell);
-    if (!_integrals[static_cast<std::size_t>(IntegralType::exterior_facet)]
-             .empty())
-      set.insert(IntegralType::exterior_facet);
-    if (!_integrals[static_cast<std::size_t>(IntegralType::interior_facet)]
-             .empty())
-      set.insert(IntegralType::interior_facet);
+    for (std::size_t i = 0; i < _integrals.size(); ++i)
+    {
+      if (!_integrals[i].empty())
+        set.insert(static_cast<IntegralType>(i));
+    }
 
     return set;
   }
 
-  /// Number of integrals of given type
-  /// @param[in] type Integral type
-  /// @return Number of integrals
+  /// @brief Number of integrals on given domain type.
+  /// @param[in] type Integral type.
+  /// @return Number of integrals.
   int num_integrals(IntegralType type) const
   {
-    switch (type)
-    {
-    case IntegralType::cell:
-      return _integrals[static_cast<std::size_t>(IntegralType::cell)].size();
-    case IntegralType::exterior_facet:
-      return _integrals[static_cast<std::size_t>(IntegralType::exterior_facet)]
-          .size();
-    case IntegralType::interior_facet:
-      return _integrals[static_cast<std::size_t>(IntegralType::interior_facet)]
-          .size();
-    default:
-      throw std::runtime_error("Integral type not supported.");
-    }
+    return _integrals[static_cast<std::size_t>(type)].size();
   }
 
   /// Get the IDs for integrals (kernels) for given integral type. The
@@ -244,39 +192,23 @@ public:
   std::vector<int> integral_ids(IntegralType type) const
   {
     std::vector<int> ids;
-    switch (type)
-    {
-    case IntegralType::cell:
-      std::transform(
-          _integrals[static_cast<std::size_t>(IntegralType::cell)].begin(),
-          _integrals[static_cast<std::size_t>(IntegralType::cell)].end(),
-          std::back_inserter(ids),
-          [](auto& integral) { return integral.first; });
-      break;
-    case IntegralType::exterior_facet:
-      std::transform(
-          _integrals[static_cast<std::size_t>(IntegralType::exterior_facet)]
-              .begin(),
-          _integrals[static_cast<std::size_t>(IntegralType::exterior_facet)]
-              .end(),
-          std::back_inserter(ids),
-          [](auto& integral) { return integral.first; });
-      break;
-    case IntegralType::interior_facet:
-      std::transform(
-          _integrals[static_cast<std::size_t>(IntegralType::interior_facet)]
-              .begin(),
-          _integrals[static_cast<std::size_t>(IntegralType::interior_facet)]
-              .end(),
-          std::back_inserter(ids),
-          [](auto& integral) { return integral.first; });
-      break;
-    default:
-      throw std::runtime_error(
-          "Cannot return IDs. Integral type not supported.");
-    }
-
+    auto& integrals = _integrals[static_cast<std::size_t>(type)];
+    std::transform(integrals.begin(), integrals.end(), std::back_inserter(ids),
+                   [](auto& integral) { return integral.first; });
     return ids;
+  }
+
+  /// @brief Get the list of cell indices for the ith integral (kernel)
+  /// for the cell domain type
+  /// @param[in] i Integral ID, i.e. (sub)domain index
+  /// @return List of active cell entities for the given integral (kernel)
+  const std::vector<std::int32_t>& domains(IntegralType type, int i) const
+  {
+    auto& integral = _integrals[static_cast<std::size_t>(type)];
+    if (auto it = integral.find(i); it != integral.end())
+      return it->second.second;
+    else
+      throw std::runtime_error("No mesh entities for requested domain index.");
   }
 
   /// Get the list of cell indices for the ith integral (kernel)
@@ -363,23 +295,6 @@ private:
                                   const scalar_value_type_t<T>*, const int*,
                                   const std::uint8_t*)>;
 
-  /// Helper function to get the kernel for integral i from a map
-  /// of integrals i.e. from _cell_integrals
-  /// @param[in] integrals Map of integrals
-  /// @param[in] i Domain index
-  /// @return Function to call for tabulate_tensor
-  template <typename X>
-  const std::function<void(T*, const T*, const T*,
-                           const scalar_value_type_t<T>*, const int*,
-                           const std::uint8_t*)>&
-  get_kernel_from_integrals(const X& integrals, int i) const
-  {
-    auto it = integrals.find(i);
-    if (it == integrals.end())
-      throw std::runtime_error("No kernel for requested domain index.");
-    return it->second.first;
-  }
-
   // Function spaces (one for each argument)
   std::vector<std::shared_ptr<const FunctionSpace<U>>> _function_spaces;
 
@@ -392,20 +307,10 @@ private:
   // The mesh
   std::shared_ptr<const mesh::Mesh<U>> _mesh;
 
-  // Integrals
+  // Integrals. Array index is
+  // static_cast<std::size_t(IntegralType::foo)
   std::array<std::map<int, std::pair<kern, std::vector<std::int32_t>>>, 4>
       _integrals;
-
-  // Cell integrals
-  // std::map<int, std::pair<kern, std::vector<std::int32_t>>> _cell_integrals;
-
-  // Exterior facet integrals
-  // std::map<int, std::pair<kern, std::vector<std::int32_t>>>
-  //     _exterior_facet_integrals;
-
-  // Interior facet integrals
-  // std::map<int, std::pair<kern, std::vector<std::int32_t>>>
-  //     _interior_facet_integrals;
 
   // True if permutation data needs to be passed into these integrals
   bool _needs_facet_permutations;
