@@ -212,6 +212,7 @@ public:
   /// local_facet_index_1)`. Data is flattened with row-major layout,
   /// `shape=(num_facets, 4)`.
   ///
+  /// @param[in] type Integral domain type
   /// @param[in] i Integral ID, i.e. (sub)domain index
   /// @return List of active cell entities for the given integral (kernel)
   const std::vector<std::int32_t>& domain(IntegralType type, int i) const
