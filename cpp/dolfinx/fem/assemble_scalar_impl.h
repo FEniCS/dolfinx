@@ -176,8 +176,8 @@ T assemble_scalar(
   for (int i : M.integral_ids(IntegralType::cell))
   {
     auto fn = M.kernel(IntegralType::cell, i);
-    const auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
-    const std::vector<std::int32_t>& cells = M.cell_domains(i);
+    auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
+    const std::vector<std::int32_t>& cells = M.domain(IntegralType::cell, i);
     value += impl::assemble_cells(geometry, cells, fn, constants, coeffs,
                                   cstride);
   }
@@ -185,9 +185,10 @@ T assemble_scalar(
   for (int i : M.integral_ids(IntegralType::exterior_facet))
   {
     auto fn = M.kernel(IntegralType::exterior_facet, i);
-    const auto& [coeffs, cstride]
+    auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
-    const std::vector<std::int32_t>& facets = M.exterior_facet_domains(i);
+    const std::vector<std::int32_t>& facets
+        = M.domain(IntegralType::exterior_facet, i);
     value += impl::assemble_exterior_facets(geometry, facets, fn, constants,
                                             coeffs, cstride);
   }
@@ -195,10 +196,8 @@ T assemble_scalar(
   if (M.num_integrals(IntegralType::interior_facet) > 0)
   {
     mesh->topology_mutable()->create_entity_permutations();
-
     const std::vector<std::uint8_t>& perms
         = mesh->topology()->get_facet_permutations();
-
     auto cell_types = mesh->topology()->cell_types();
     if (cell_types.size() > 1)
       throw std::runtime_error("Multiple cell types in the assembler");
@@ -208,9 +207,10 @@ T assemble_scalar(
     for (int i : M.integral_ids(IntegralType::interior_facet))
     {
       auto fn = M.kernel(IntegralType::interior_facet, i);
-      const auto& [coeffs, cstride]
+      auto& [coeffs, cstride]
           = coefficients.at({IntegralType::interior_facet, i});
-      const std::vector<std::int32_t>& facets = M.interior_facet_domains(i);
+      const std::vector<std::int32_t>& facets
+          = M.domain(IntegralType::interior_facet, i);
       value += impl::assemble_interior_facets(geometry, num_cell_facets, facets,
                                               fn, constants, coeffs, cstride,
                                               c_offsets, perms);

@@ -777,8 +777,8 @@ void lift_bc(std::span<T> b, const Form<T, U>& a,
   for (int i : a.integral_ids(IntegralType::cell))
   {
     auto kernel = a.kernel(IntegralType::cell, i);
-    const auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
-    const std::vector<std::int32_t>& cells = a.cell_domains(i);
+    auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
+    const std::vector<std::int32_t>& cells = a.domain(IntegralType::cell, i);
     if (bs0 == 1 and bs1 == 1)
     {
       _lift_bc_cells<T, 1, 1>(b, geometry, kernel, cells, dof_transform,
@@ -972,8 +972,8 @@ void assemble_vector(
   for (int i : L.integral_ids(IntegralType::cell))
   {
     auto fn = L.kernel(IntegralType::cell, i);
-    const auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
-    const std::vector<std::int32_t>& cells = L.cell_domains(i);
+    auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
+    const std::vector<std::int32_t>& cells = L.domain(IntegralType::cell, i);
     if (bs == 1)
     {
       impl::assemble_cells<T, 1>(dof_transform, b, geometry, cells, dofs, bs,

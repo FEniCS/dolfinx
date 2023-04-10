@@ -202,25 +202,13 @@ public:
   /// for the cell domain type
   /// @param[in] i Integral ID, i.e. (sub)domain index
   /// @return List of active cell entities for the given integral (kernel)
-  const std::vector<std::int32_t>& domains(IntegralType type, int i) const
+  const std::vector<std::int32_t>& domain(IntegralType type, int i) const
   {
     auto& integral = _integrals[static_cast<std::size_t>(type)];
     if (auto it = integral.find(i); it != integral.end())
       return it->second.second;
     else
       throw std::runtime_error("No mesh entities for requested domain index.");
-  }
-
-  /// Get the list of cell indices for the ith integral (kernel)
-  /// for the cell domain type
-  /// @param[in] i Integral ID, i.e. (sub)domain index
-  /// @return List of active cell entities for the given integral (kernel)
-  const std::vector<std::int32_t>& cell_domains(int i) const
-  {
-    auto it = _integrals[static_cast<std::size_t>(IntegralType::cell)].find(i);
-    if (it == _integrals[static_cast<std::size_t>(IntegralType::cell)].end())
-      throw std::runtime_error("No mesh entities for requested domain index.");
-    return it->second.second;
   }
 
   /// @brief List of (cell_index, local_facet_index) pairs for the ith
