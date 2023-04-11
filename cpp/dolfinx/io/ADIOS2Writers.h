@@ -1066,8 +1066,9 @@ public:
     this->_engine->EndStep();
   }
 
-  // @brief  Read mesh from a given time-step
-  // @param[in] t The time step
+  /// @brief  Read mesh from a given time-step
+  /// @param[in] t The time step
+  /// @param[in] mode The ghost mode
   mesh::Mesh<T> read_mesh(double t, mesh::GhostMode mode)
   {
     assert(this->_io);
