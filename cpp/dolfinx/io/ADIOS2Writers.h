@@ -1034,7 +1034,6 @@ public:
   ///
   /// @param[in] comm The MPI communicator to open the file on
   /// @param[in] filename Name of input file
-  /// @param[in] mesh The mesh
   /// @note This format support arbitrary degree meshes
   ADIOS2Checkpointer(MPI_Comm comm, const std::filesystem::path& filename)
       : _adios(std::make_unique<adios2::ADIOS>(comm)),
