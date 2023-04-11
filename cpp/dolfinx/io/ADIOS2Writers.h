@@ -899,6 +899,144 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
 }
 } // namespace impl_vtx
 
+/// @privatesection
+namespace impl_checkpoint
+{
+/// Write mesh to file using VTX format
+/// @param[in] io The ADIOS2 io object
+/// @param[in] engine The ADIOS2 engine object
+/// @param[in] mesh The mesh
+template <typename T>
+void write_mesh(adios2::IO& io, adios2::Engine& engine,
+                const mesh::Mesh<T>& mesh)
+{
+  const mesh::Geometry<T>& geometry = mesh.geometry();
+
+  // "Put" geometry
+  std::int32_t num_xdofs_local = geometry.index_map()->size_local();
+  std::int32_t num_xdofs_global = geometry.index_map()->size_global();
+  std::array<std::int64_t, 2> local_range = geometry.index_map()->local_range();
+
+  std::span<const T> nodes = geometry.x();
+  int gdim = geometry.dim();
+  int num_nodes = nodes.size() / 3;
+  // Truncate geometry to gdim
+  std::vector<T> geometry_trunc;
+  geometry_trunc.reserve(num_nodes * gdim);
+  for (std::size_t i = 0; i < num_nodes; ++i)
+    for (std::size_t j = 0; j < gdim; ++j)
+      geometry_trunc.push_back(nodes[3 * i + j]);
+
+  // Define geometry variable and "put"
+  adios2::Variable<T> local_geometry = impl_adios2::define_variable<T>(
+      io, "geometry", {num_xdofs_global, gdim}, {local_range[0], 0},
+      {num_xdofs_local, gdim});
+  engine.Put<T>(local_geometry, geometry_trunc.data());
+
+  // Put topology (connectivity)
+  auto topology = mesh.topology_mutable();
+  assert(topology);
+
+  // Extract cell information
+  auto cell_imap = topology->index_map(topology->dim());
+  std::int32_t num_cells_local = cell_imap->size_local();
+  std::int64_t num_cells_global = cell_imap->size_global();
+  std::array<std::int64_t, 2> local_range_cell = cell_imap->local_range();
+
+  // Extract geometry information
+  if (geometry.cmaps().size() > 1)
+    throw std::runtime_error("Multiple coordinate maps not supported");
+  fem::ElementDofLayout geom_layout = geometry.cmaps()[0].create_dof_layout();
+  int num_dofs_per_cell = geom_layout.num_entity_closure_dofs(geometry.dim());
+  auto geometry_imap = geometry.index_map();
+  const std::vector<std::int32_t>& geometry_dmap = geometry.dofmap().array();
+
+  // Convert local geometry to global geometry
+  std::vector<std::int64_t> connectivity_out(num_cells_local
+                                             * num_dofs_per_cell);
+
+  std::span<const std::int32_t> local_dmap(geometry_dmap.begin(),
+                                           num_cells_local * num_dofs_per_cell);
+  geometry_imap->local_to_global(local_dmap, connectivity_out);
+
+  // Put local topology in global dataset
+  adios2::Variable<std::int64_t> local_topology
+      = impl_adios2::define_variable<std::int64_t>(
+          io, "connectivity", {num_cells_global, num_dofs_per_cell},
+          {local_range_cell[0], 0}, {num_cells_local, num_dofs_per_cell});
+  engine.Put<std::int64_t>(local_topology, connectivity_out.data());
+
+  // Compute mesh permutations
+  topology->create_entity_permutations();
+  const std::vector<std::uint32_t>& cell_perm
+      = topology->get_cell_permutation_info();
+  adios2::Variable<std::uint32_t> local_cell_perm
+      = impl_adios2::define_variable<std::uint32_t>(
+          io, "CellPermutations", {num_cells_global}, {local_range_cell[0]},
+          {num_cells_local});
+  engine.Put<std::uint32_t>(local_cell_perm, cell_perm.data());
+
+  engine.PerformPuts();
+}
+
+} // namespace impl_checkpoint
+
+template <std::floating_point T>
+class ADIOS2CheckpointWriter : public ADIOS2Writer<T>
+{
+public:
+  /// @brief Create a ADIOS2 checkpointer for writing a mesh
+  ///
+  /// This format supports arbitrary degree meshes.
+  ///
+  /// @param[in] comm The MPI communicator to open the file on
+  /// @param[in] filename Name of output file
+  /// @param[in] mesh The mesh to write
+  /// @note This format support arbitrary degree meshes
+  /// @note The mesh geometry can be updated between write steps but the
+  /// topology should not be changed between write steps
+  ADIOS2CheckpointWriter(MPI_Comm comm, const std::filesystem::path& filename,
+                         std::shared_ptr<const mesh::Mesh<T>> mesh)
+      : ADIOS2Writer<T>(comm, filename, "ADIOS2 checkpoint writer", mesh)
+  {
+    // Define time independent attributes
+    auto topology = mesh->topology();
+    assert(topology);
+    if (topology->cell_types().size() > 1)
+      throw std::runtime_error("Multiple cell types not supported");
+    impl_adios2::define_attribute<std::string>(
+        *this->_io, "CellType",
+        dolfinx::mesh::to_string(topology->cell_types()[0]));
+
+    const mesh::Geometry<T>& geometry = mesh->geometry();
+    if (geometry.cmaps().size() > 1)
+      throw std::runtime_error("Multiple coordinate maps not supported");
+    impl_adios2::define_attribute<int>(*this->_io, "Degree",
+                                       geometry.cmaps()[0].degree());
+    impl_adios2::define_attribute<int>(*this->_io, "LagrangeVariant",
+                                       int(geometry.cmaps()[0].variant()));
+  }
+
+  /// @brief  Write data with a given time
+  /// @param[in] t The time step
+  void write(double t)
+  {
+    assert(this->_io);
+    assert(this->_engine);
+    adios2::Variable<double> var_step
+        = impl_adios2::define_variable<double>(*this->_io, "step");
+
+    this->_engine->BeginStep();
+    this->_engine->template Put<double>(var_step, t);
+
+    impl_checkpoint::write_mesh(*this->_io, *this->_engine, *this->_mesh);
+    // If we have no functions write the mesh to file
+    // if (this->_u.empty())
+
+    this->_engine->EndStep();
+  }
+};
+
 /// @brief Writer for meshes and functions using the ADIOS2 VTX format,
 /// see
 /// https://adios2.readthedocs.io/en/latest/ecosystem/visualization.html#using-vtk-and-paraview.
@@ -982,8 +1120,8 @@ public:
             assert(element);
             if (*element != *element0)
             {
-              throw std::runtime_error(
-                  "All functions in VTXWriter must have the same element type");
+              throw std::runtime_error("All functions in VTXWriter must have "
+                                       "the same element type");
             }
           },
           v);
