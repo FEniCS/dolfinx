@@ -23,10 +23,11 @@ template <typename T>
 class Constant;
 
 /// @brief Represents a mathematical expression evaluated at a
-/// pre-defined set of points on the reference cell. This class closely
-/// follows the concept of a UFC Expression.
+/// pre-defined set of points on the reference cell.
 ///
-/// This functionality can be used to evaluate a gradient of a Function
+//// This class closely follows the concept of a UFC Expression.
+///
+/// The functionality can be used to evaluate a gradient of a Function
 /// at quadrature points in all cells. This evaluated gradient can then
 /// be used as input in to a non-FEniCS function that calculates a
 /// material constitutive model.
@@ -54,9 +55,9 @@ public:
       const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients,
       const std::vector<std::shared_ptr<const Constant<T>>>& constants,
       std::span<const U> X, std::array<std::size_t, 2> Xshape,
-      const std::function<void(T*, const T*, const T*,
-                               const dolfinx::scalar_value_type_t<T>*,
-                               const int*, const uint8_t*)>
+      std::function<void(T*, const T*, const T*,
+                         const dolfinx::scalar_value_type_t<T>*, const int*,
+                         const uint8_t*)>
           fn,
       const std::vector<int>& value_shape,
       std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr,
