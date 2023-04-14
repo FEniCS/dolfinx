@@ -1141,9 +1141,9 @@ void pack_coefficients(const Form<T, U>& form,
 }
 
 /// @brief Pack coefficients of a Expression u for a give list of active
-/// cells
+/// cells.
 ///
-/// @param[in] u The Expression
+/// @param[in] e The Expression
 /// @param[in] cells A list of active cells
 /// @return A pair of the form (coeffs, cstride)
 template <typename T, std::floating_point U>
