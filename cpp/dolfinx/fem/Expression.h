@@ -1,4 +1,4 @@
-// Copyright (C) 2020 - 2021 Jack S. Hale and Michal Habera
+// Copyright (C) 2020-2021 Jack S. Hale and Michal Habera.
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -22,29 +22,30 @@ namespace dolfinx::fem
 template <typename T>
 class Constant;
 
-/// Represents a mathematical expression evaluated at a pre-defined set
-/// of points on the reference cell. This class closely follows the
-/// concept of a UFC Expression.
+/// @brief Represents a mathematical expression evaluated at a
+/// pre-defined set of points on the reference cell. This class closely
+/// follows the concept of a UFC Expression.
 ///
 /// This functionality can be used to evaluate a gradient of a Function
 /// at quadrature points in all cells. This evaluated gradient can then
 /// be used as input in to a non-FEniCS function that calculates a
 /// material constitutive model.
+///
 /// @tparam T The scalar type
 /// @tparam U The mesh geometry scalar type
 template <typename T, std::floating_point U = dolfinx::scalar_value_type_t<T>>
 class Expression
 {
 public:
-  /// @brief Create an Expression
+  /// @brief Create an Expression.
   ///
-  /// @note Users should prefer the create_expression factory functions
+  /// @note Users should prefer the @ref create_expression factory functions.
   ///
   /// @param[in] coefficients Coefficients in the Expression
   /// @param[in] constants Constants in the Expression
   /// @param[in] mesh
-  /// @param[in] X points on reference cell, shape=(number of points,
-  /// tdim) and storage is row-major.
+  /// @param[in] X points on reference cell, `shape=(number of points,
+  /// tdim)` and storage is row-major.
   /// @param[in] Xshape Shape of `X`.
   /// @param[in] fn function for tabulating expression
   /// @param[in] value_shape shape of expression evaluated at single point
@@ -83,32 +84,34 @@ public:
   /// Destructor
   virtual ~Expression() = default;
 
-  /// Get argument function space
+  /// @brief Get argument function space.
   /// @return The argument function space, nullptr if there is no argument.
   std::shared_ptr<const FunctionSpace<U>> argument_function_space() const
   {
     return _argument_function_space;
   };
 
-  /// Get coefficients
-  /// @return Vector of attached coefficients
+  /// @brief Get coefficients,
+  /// @return Vector of attached coefficients.
   const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients() const
   {
     return _coefficients;
   }
 
-  /// Get constants
+  /// @brief Get constants.
   /// @return Vector of attached constants with their names. Names are
-  ///   used to set constants in user's c++ code. Index in the vector is
-  ///   the position of the constant in the original (nonsimplified) form.
+  /// used to set constants in user's c++ code. Index in the vector is
+  /// the position of the constant in the original (nonsimplified) form.
   const std::vector<std::shared_ptr<const Constant<T>>>& constants() const
   {
     return _constants;
   }
 
-  /// Offset for each coefficient expansion array on a cell. Used to
-  /// pack data for multiple coefficients in a flat array. The last
-  /// entry is the size required to store all coefficients.
+  /// @brief Offset for each coefficient expansion array on a cell.
+  ///
+  /// Used to pack data for multiple coefficients in a flat array. The
+  /// last entry is the size required to store all coefficients.
+  /// @return The offsets.
   std::vector<int> coefficient_offsets() const
   {
     std::vector<int> n{0};
@@ -124,21 +127,19 @@ public:
   /// @brief Evaluate the expression on cells
   /// @param[in] cells Cells on which to evaluate the Expression
   /// @param[out] values A 2D array to store the result. Caller
-  /// is responsible for correct sizing which should be (num_cells,
-  /// num_points * value_size * num_all_argument_dofs columns).
-  /// @param[in] vshape The shape of `values` (row-major storage).
+  /// is responsible for correct sizing which should be `(num_cells,
+  /// num_points * value_size * num_all_argument_dofs columns)`.
+  /// @param[in] vshape The shape of @p values (row-major storage).
   void eval(std::span<const std::int32_t> cells, std::span<T> values,
             std::array<std::size_t, 2> vshape) const
   {
-    // Extract data from Expression
-    assert(_mesh);
-
     // Prepare coefficients and constants
     const auto [coeffs, cstride] = pack_coefficients(*this, cells);
     const std::vector<T> constant_data = pack_constants(*this);
     const auto& fn = this->get_tabulate_expression();
 
     // Prepare cell geometry
+    assert(_mesh);
     const graph::AdjacencyList<std::int32_t>& x_dofmap
         = _mesh->geometry().dofmap();
 
@@ -150,8 +151,7 @@ public:
     std::span<const U> x_g = _mesh->geometry().x();
 
     // Create data structures used in evaluation
-    std::vector<dolfinx::scalar_value_type_t<T>> coordinate_dofs(3
-                                                                 * num_dofs_g);
+    std::vector<dolfinx::scalar_value_type_t<T>> coord_dofs(3 * num_dofs_g);
 
     int num_argument_dofs = 1;
     std::span<const std::uint32_t> cell_info;
@@ -182,34 +182,31 @@ public:
       }
     }
 
+    // Iterate over cells and 'assemble' into values
     const int size0 = _x_ref.second[0] * value_size();
     std::vector<T> values_local(size0 * num_argument_dofs, 0);
-    const std::span<T> _values_local(values_local);
-
-    // Iterate over cells and 'assemble' into values
     for (std::size_t c = 0; c < cells.size(); ++c)
     {
       const std::int32_t cell = cells[c];
-
       auto x_dofs = x_dofmap.links(cell);
       for (std::size_t i = 0; i < x_dofs.size(); ++i)
       {
         std::copy_n(std::next(x_g.begin(), 3 * x_dofs[i]), 3,
-                    std::next(coordinate_dofs.begin(), 3 * i));
+                    std::next(coord_dofs.begin(), 3 * i));
       }
 
       const T* coeff_cell = coeffs.data() + c * cstride;
       std::fill(values_local.begin(), values_local.end(), 0);
       _fn(values_local.data(), coeff_cell, constant_data.data(),
-          coordinate_dofs.data(), nullptr, nullptr);
+          coord_dofs.data(), nullptr, nullptr);
 
-      dof_transform_to_transpose(_values_local, cell_info, c, size0);
+      dof_transform_to_transpose(values_local, cell_info, c, size0);
       for (std::size_t j = 0; j < values_local.size(); ++j)
         values[c * vshape[1] + j] = values_local[j];
     }
   }
 
-  /// Get function for tabulate_expression.
+  /// @brief Get function for tabulate_expression.
   /// @return fn Function to tabulate expression.
   const std::function<void(T*, const T*, const T*,
                            const dolfinx::scalar_value_type_t<T>*, const int*,
@@ -219,30 +216,33 @@ public:
     return _fn;
   }
 
-  /// Get mesh
-  /// @return The mesh
+  /// @brief Get mesh.
+  /// @return The mesh.
   std::shared_ptr<const mesh::Mesh<U>> mesh() const { return _mesh; }
 
-  /// Get value size
-  /// @return value_size
+  /// @brief Get value size
+  /// @return The value size.
   int value_size() const
   {
     return std::reduce(_value_shape.begin(), _value_shape.end(), 1,
                        std::multiplies{});
   }
 
-  /// Get value shape
-  /// @return value shape
+  /// @brief Get value shape.
+  /// @return The value shape.
   const std::vector<int>& value_shape() const { return _value_shape; }
 
-  /// @brief Evaluation points on the reference cell
-  /// @return Evaluation points
+  /// @brief Evaluation points on the reference cell.
+  /// @return Evaluation points.
   std::pair<std::vector<U>, std::array<std::size_t, 2>> X() const
   {
     return _x_ref;
   }
 
-  /// Scalar type (T)
+  /// @brief Scalar type (T)
+  ///
+  /// The scalar type for the form, e.g. `double`,
+  /// `std::complex<float>`, etc.
   using scalar_type = T;
 
 private:
@@ -267,7 +267,8 @@ private:
   // Shape of the evaluated expression
   std::vector<int> _value_shape;
 
-  // Evaluation points on reference cell. Synonymous with X in public interface.
+  // Evaluation points on reference cell. Synonymous with X in public
+  // interface.
   std::pair<std::vector<U>, std::array<std::size_t, 2>> _x_ref;
 };
 } // namespace dolfinx::fem
