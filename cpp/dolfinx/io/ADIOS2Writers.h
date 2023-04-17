@@ -38,54 +38,36 @@ class Function;
 namespace dolfinx::io
 {
 
+namespace adios2_writer
+{
+/// @privatesection
+template <typename T>
+using Fd32 = fem::Function<float, T>;
+template <typename T>
+using Fd64 = fem::Function<double, T>;
+template <typename T>
+using Fc64 = fem::Function<std::complex<float>, T>;
+template <typename T>
+using Fc128 = fem::Function<std::complex<double>, T>;
+
+template <typename T>
+using U = std::vector<std::variant<
+    std::shared_ptr<const Fd32<T>>, std::shared_ptr<const Fd64<T>>,
+    std::shared_ptr<const Fc64<T>>, std::shared_ptr<const Fc128<T>>>>;
+
+} // namespace adios2_writer
+
 /// Base class for ADIOS2-based writers
-/// @tparam T Geometry type for common mesh::Mesh.
-template <std::floating_point T>
 class ADIOS2Writer
 {
-public:
-  /// @privatesection
-  using Fd32 = fem::Function<float, T>;
-  using Fd64 = fem::Function<double, T>;
-  using Fc64 = fem::Function<std::complex<float>, T>;
-  using Fc128 = fem::Function<std::complex<double>, T>;
-  using U = std::vector<
-      std::variant<std::shared_ptr<const Fd32>, std::shared_ptr<const Fd64>,
-                   std::shared_ptr<const Fc64>, std::shared_ptr<const Fc128>>>;
-
 protected:
   /// @brief Create an ADIOS2-based writer
   /// @param[in] comm The MPI communicator
   /// @param[in] filename Name of output file
   /// @param[in] tag The ADIOS2 object name
-  /// @param[in] mesh
-  /// @param[in] u
   /// @param[in] engine ADIOS2 engine type
   ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
-               std::string tag, std::shared_ptr<const mesh::Mesh<T>> mesh,
-               const U& u, std::string engine)
-      : _adios(std::make_unique<adios2::ADIOS>(comm)),
-        _io(std::make_unique<adios2::IO>(_adios->DeclareIO(tag))),
-        _engine(std::make_unique<adios2::Engine>(
-            _io->Open(filename, adios2::Mode::Write))),
-        _mesh(mesh), _u(u)
-  {
-    _io->SetEngine(engine);
-  }
-
-  /// @brief Create an ADIOS2-based writer for a mesh
-  /// @param[in] comm The MPI communicator
-  /// @param[in] filename Name of output file
-  /// @param[in] tag The ADIOS2 object name
-  /// @param[in] mesh The mesh
-  /// @param[in] engine ADIOS2 engine type
-  ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
-               std::string tag, std::shared_ptr<const mesh::Mesh<T>> mesh,
-               std::string engine)
-      : ADIOS2Writer(comm, filename, tag, mesh, {}, engine)
-  {
-    // Do nothing
-  }
+               std::string tag, std::string engine);
 
   /// @brief Move constructor
   ADIOS2Writer(ADIOS2Writer&& writer) = default;
@@ -94,7 +76,7 @@ protected:
   ADIOS2Writer(const ADIOS2Writer&) = delete;
 
   /// @brief Destructor
-  ~ADIOS2Writer() { close(); }
+  ~ADIOS2Writer();
 
   /// @brief Move assignment
   ADIOS2Writer& operator=(ADIOS2Writer&& writer) = default;
@@ -104,21 +86,12 @@ protected:
 
 public:
   /// @brief  Close the file
-  void close()
-  {
-    assert(_engine);
-    // The reason this looks odd is that ADIOS2 uses `operator bool()`
-    // to test if the engine is open
-    if (*_engine)
-      _engine->Close();
-  }
+  void close();
 
 protected:
   std::unique_ptr<adios2::ADIOS> _adios;
   std::unique_ptr<adios2::IO> _io;
   std::unique_ptr<adios2::Engine> _engine;
-  std::shared_ptr<const mesh::Mesh<T>> _mesh;
-  U _u;
 };
 
 /// @privatesection
@@ -172,7 +145,7 @@ adios2::Variable<T> define_variable(adios2::IO& io, std::string name,
 /// Extract common mesh from list of Functions
 template <typename T>
 std::shared_ptr<const mesh::Mesh<T>>
-extract_common_mesh(const typename ADIOS2Writer<T>::U& u)
+extract_common_mesh(const typename adios2_writer::U<T>& u)
 {
   // Extract mesh from first function
   assert(!u.empty());
@@ -250,7 +223,7 @@ void initialize_mesh_attributes(adios2::IO& io, const mesh::Mesh<T>& mesh)
 /// @param[in] u List of functions
 template <typename T>
 void initialize_function_attributes(adios2::IO& io,
-                                    const typename ADIOS2Writer<T>::U& u)
+                                    const typename adios2_writer::U<T>& u)
 {
   // Array of function (name, cell association types) for each function
   // added to the file
@@ -260,21 +233,21 @@ void initialize_function_attributes(adios2::IO& io,
   {
     auto n = std::visit(
         impl_adios2::overload{
-            [](const std::shared_ptr<const typename ADIOS2Writer<T>::Fd32>& u)
+            [](const std::shared_ptr<const typename adios2_writer::Fd32<T>>& u)
                 -> X {
               return {{u->name, "points"}};
             },
-            [](const std::shared_ptr<const typename ADIOS2Writer<T>::Fd64>& u)
+            [](const std::shared_ptr<const typename adios2_writer::Fd64<T>>& u)
                 -> X {
               return {{u->name, "points"}};
             },
-            [](const std::shared_ptr<const typename ADIOS2Writer<T>::Fc64>& u)
+            [](const std::shared_ptr<const typename adios2_writer::Fc64<T>>& u)
                 -> X
             {
               return {{u->name + impl_adios2::field_ext[0], "points"},
                       {u->name + impl_adios2::field_ext[1], "points"}};
             },
-            [](const std::shared_ptr<const typename ADIOS2Writer<T>::Fc128>& u)
+            [](const std::shared_ptr<const typename adios2_writer::Fc128<T>>& u)
                 -> X
             {
               return {{u->name + impl_adios2::field_ext[0], "points"},
@@ -491,7 +464,7 @@ enum class FidesMeshPolicy
 /// Paraview reader, see
 /// https://fides.readthedocs.io/en/latest/paraview/paraview.html.
 template <std::floating_point T>
-class FidesWriter : public ADIOS2Writer<T>
+class FidesWriter : public ADIOS2Writer
 {
 public:
   /// @brief  Create Fides writer for a mesh
@@ -504,8 +477,8 @@ public:
   FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
               std::shared_ptr<const mesh::Mesh<T>> mesh,
               std::string engine = "BPFile")
-      : ADIOS2Writer<T>(comm, filename, "Fides mesh writer", mesh, engine),
-        _mesh_reuse_policy(FidesMeshPolicy::update)
+      : ADIOS2Writer(comm, filename, "Fides mesh writer", engine),
+        _mesh_reuse_policy(FidesMeshPolicy::update), _mesh(mesh)
   {
     assert(this->_io);
     assert(mesh);
@@ -523,11 +496,11 @@ public:
   /// the first time step only or is re-written (updated) at each time
   /// step.
   FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
-              const typename ADIOS2Writer<T>::U& u, std::string engine,
+              const typename adios2_writer::U<T>& u, std::string engine,
               const FidesMeshPolicy mesh_policy = FidesMeshPolicy::update)
-      : ADIOS2Writer<T>(comm, filename, "Fides function writer",
-                        impl_adios2::extract_common_mesh<T>(u), u, engine),
-        _mesh_reuse_policy(mesh_policy)
+      : ADIOS2Writer(comm, filename, "Fides function writer", engine),
+        _mesh_reuse_policy(mesh_policy),
+        _mesh(impl_adios2::extract_common_mesh<T>(u)), _u(u)
   {
     if (u.empty())
       throw std::runtime_error("FidesWriter fem::Function list is empty");
@@ -609,11 +582,11 @@ public:
   /// the first time step only or is re-written (updated) at each time
   /// step.
   FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
-              const typename ADIOS2Writer<T>::U& u,
+              const typename adios2_writer::U<T>& u,
               const FidesMeshPolicy mesh_policy = FidesMeshPolicy::update)
-      : ADIOS2Writer<T>(comm, filename, "Fides function writer",
-                        impl_adios2::extract_common_mesh<T>(u), u, "BPfile"),
-        _mesh_reuse_policy(mesh_policy)
+      : ADIOS2Writer(comm, filename, "Fides function writer", "BPfile"),
+        _mesh_reuse_policy(mesh_policy),
+        _mesh(impl_adios2::extract_common_mesh<T>(u)), _u(u)
   {
   }
 
@@ -665,6 +638,9 @@ private:
   // Control whether the mesh is written to file once or at every time
   // step
   FidesMeshPolicy _mesh_reuse_policy;
+
+  std::shared_ptr<const mesh::Mesh<T>> _mesh;
+  adios2_writer::U<T> _u;
 };
 
 /// @privatesection
@@ -678,7 +654,7 @@ std::stringstream create_vtk_schema(const std::vector<std::string>& point_data,
 /// Extract name of functions and split into real and imaginary component
 template <typename T>
 std::vector<std::string>
-extract_function_names(const typename ADIOS2Writer<T>::U& u)
+extract_function_names(const typename adios2_writer::U<T>& u)
 {
   std::vector<std::string> names;
   using X = decltype(names);
@@ -686,17 +662,17 @@ extract_function_names(const typename ADIOS2Writer<T>::U& u)
   {
     auto n = std::visit(
         impl_adios2::overload{
-            [](const std::shared_ptr<const typename ADIOS2Writer<T>::Fd32>& u)
+            [](const std::shared_ptr<const typename adios2_writer::Fd32<T>>& u)
                 -> X { return {u->name}; },
-            [](const std::shared_ptr<const typename ADIOS2Writer<T>::Fd64>& u)
+            [](const std::shared_ptr<const typename adios2_writer::Fd64<T>>& u)
                 -> X { return {u->name}; },
-            [](const std::shared_ptr<const typename ADIOS2Writer<T>::Fc64>& u)
+            [](const std::shared_ptr<const typename adios2_writer::Fc64<T>>& u)
                 -> X
             {
               return {u->name + impl_adios2::field_ext[0],
                       u->name + impl_adios2::field_ext[1]};
             },
-            [](const std::shared_ptr<const typename ADIOS2Writer<T>::Fc128>& u)
+            [](const std::shared_ptr<const typename adios2_writer::Fc128<T>>& u)
                 -> X
             {
               return {u->name + impl_adios2::field_ext[0],
@@ -930,7 +906,7 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
 ///
 /// The output files can be visualized using ParaView.
 template <std::floating_point T>
-class VTXWriter : public ADIOS2Writer<T>
+class VTXWriter : public ADIOS2Writer
 {
 public:
   /// @brief Create a VTX writer for a mesh.
@@ -947,7 +923,7 @@ public:
   VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
             std::shared_ptr<const mesh::Mesh<T>> mesh,
             std::string engine = "BPFile")
-      : ADIOS2Writer<T>(comm, filename, "VTX mesh writer", mesh, engine)
+      : ADIOS2Writer(comm, filename, "VTX mesh writer", engine), _mesh(mesh)
   {
     // Define VTK scheme attribute for mesh
     std::string vtk_scheme = impl_vtx::create_vtk_schema({}, {}).str();
@@ -967,9 +943,10 @@ public:
   /// @param[in] engine ADIOS2 engine type.
   /// @note This format supports arbitrary degree meshes
   VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
-            const typename ADIOS2Writer<T>::U& u, std::string engine = "BPFile")
-      : ADIOS2Writer<T>(comm, filename, "VTX function writer",
-                        impl_adios2::extract_common_mesh<T>(u), u, engine)
+            const typename adios2_writer::U<T>& u,
+            std::string engine = "BPFile")
+      : ADIOS2Writer(comm, filename, "VTX function writer", engine),
+        _mesh(impl_adios2::extract_common_mesh<T>(u)), _u(u)
   {
     if (u.empty())
       throw std::runtime_error("VTXWriter fem::Function list is empty");
@@ -1078,6 +1055,10 @@ public:
 
     this->_engine->EndStep();
   }
+
+private:
+  std::shared_ptr<const mesh::Mesh<T>> _mesh;
+  adios2_writer::U<T> _u;
 };
 
 /// Type deduction

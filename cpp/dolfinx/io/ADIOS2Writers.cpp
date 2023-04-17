@@ -16,6 +16,29 @@ using namespace dolfinx;
 using namespace dolfinx::io;
 
 //-----------------------------------------------------------------------------
+ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
+                           std::string tag, std::string engine)
+    : _adios(std::make_unique<adios2::ADIOS>(comm)),
+      _io(std::make_unique<adios2::IO>(_adios->DeclareIO(tag))),
+      _engine(std::make_unique<adios2::Engine>(
+          _io->Open(filename, adios2::Mode::Write)))
+{
+  _io->SetEngine(engine);
+}
+//-----------------------------------------------------------------------------
+
+ADIOS2Writer::~ADIOS2Writer() { close(); }
+//-----------------------------------------------------------------------------
+void ADIOS2Writer::close()
+{
+  assert(_engine);
+  // The reason this looks odd is that ADIOS2 uses `operator bool()`
+  // to test if the engine is open
+  if (*_engine)
+    _engine->Close();
+}
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 std::string impl_fides::to_fides_cell(mesh::CellType type)
 {
   switch (type)
