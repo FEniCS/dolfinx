@@ -129,7 +129,7 @@ adios2::Variable<T> define_variable(adios2::IO& io, std::string name,
                                     const adios2::Dims& start = adios2::Dims(),
                                     const adios2::Dims& count = adios2::Dims())
 {
-  if (adios2::Variable<T> v = io.InquireVariable<T>(name); v)
+  if (adios2::Variable v = io.InquireVariable<T>(name); v)
   {
     if (v.Count() != count and v.ShapeID() == adios2::ShapeID::LocalArray)
       v.SetSelection({start, count});
@@ -245,7 +245,7 @@ void initialize_function_attributes(adios2::IO& io,
 }
 
 /// Pack Function data at vertices. The mesh and the function must both
-/// be 'P1'
+/// be 'P1'.
 template <typename T, std::floating_point U>
 std::vector<T> pack_function_data(const fem::Function<T, U>& u)
 {
@@ -264,23 +264,22 @@ std::vector<T> pack_function_data(const fem::Function<T, U>& u)
   assert(dofmap->element_dof_layout()
          == geometry.cmaps()[0].create_dof_layout());
 
-  const int tdim = topology->dim();
+  int tdim = topology->dim();
   auto cell_map = topology->index_map(tdim);
   assert(cell_map);
-  const std::int32_t num_cells
-      = cell_map->size_local() + cell_map->num_ghosts();
+  std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
 
   auto vertex_map = topology->index_map(0);
   assert(vertex_map);
-  const std::uint32_t num_vertices
+  std::uint32_t num_vertices
       = vertex_map->size_local() + vertex_map->num_ghosts();
 
-  const int rank = V->element()->value_shape().size();
-  const std::uint32_t num_components = std::pow(3, rank);
+  int rank = V->element()->value_shape().size();
+  std::uint32_t num_components = std::pow(3, rank);
 
   // Get dof array and pack into array (padded where appropriate)
   const graph::AdjacencyList<std::int32_t>& dofmap_x = geometry.dofmap();
-  const int bs = dofmap->bs();
+  int bs = dofmap->bs();
   const auto& u_data = u.x()->array();
   std::vector<T> data(num_vertices * num_components, 0);
   for (std::int32_t c = 0; c < num_cells; ++c)
@@ -316,8 +315,8 @@ void write_data(adios2::IO& io, adios2::Engine& engine,
   const int gdim = mesh->geometry().dim();
 
   // Vectors and tensor need padding in gdim < 3
-  const int rank = V->element()->value_shape().size();
-  const bool need_padding = rank > 0 and gdim != 3 ? true : false;
+  int rank = V->element()->value_shape().size();
+  bool need_padding = rank > 0 and gdim != 3 ? true : false;
 
   // Get vertex data. If the mesh and function dofmaps are the same we
   // can work directly with the dof array.
@@ -333,20 +332,20 @@ void write_data(adios2::IO& io, adios2::Engine& engine,
 
   auto vertex_map = mesh->topology()->index_map(0);
   assert(vertex_map);
-  const std::uint32_t num_vertices
+  std::uint32_t num_vertices
       = vertex_map->size_local() + vertex_map->num_ghosts();
 
   // Write each real and imaginary part of the function
-  const std::uint32_t num_components = std::pow(3, rank);
+  std::uint32_t num_components = std::pow(3, rank);
   assert(data.size() % num_components == 0);
   if constexpr (std::is_scalar_v<T>)
   {
     // ---- Real
-    adios2::Variable<T> local_output = impl_adios2::define_variable<T>(
+    adios2::Variable local_output = impl_adios2::define_variable<T>(
         io, u.name, {}, {}, {num_vertices, num_components});
 
     // To reuse out_data, we use sync mode here
-    engine.Put<T>(local_output, data.data());
+    engine.Put(local_output, data.data());
     engine.PerformPuts();
   }
   else
@@ -356,19 +355,19 @@ void write_data(adios2::IO& io, adios2::Engine& engine,
 
     std::vector<X> data_real(data.size()), data_imag(data.size());
 
-    adios2::Variable<X> local_output_r = impl_adios2::define_variable<X>(
+    adios2::Variable local_output_r = impl_adios2::define_variable<X>(
         io, u.name + impl_adios2::field_ext[0], {}, {},
         {num_vertices, num_components});
     std::transform(data.begin(), data.end(), data_real.begin(),
                    [](auto& x) -> X { return std::real(x); });
-    engine.Put<X>(local_output_r, data_real.data());
+    engine.Put(local_output_r, data_real.data());
 
-    adios2::Variable<X> local_output_c = impl_adios2::define_variable<X>(
+    adios2::Variable local_output_c = impl_adios2::define_variable<X>(
         io, u.name + impl_adios2::field_ext[1], {}, {},
         {num_vertices, num_components});
     std::transform(data.begin(), data.end(), data_imag.begin(),
                    [](auto& x) -> X { return std::imag(x); });
-    engine.Put<X>(local_output_c, data_imag.data());
+    engine.Put(local_output_c, data_imag.data());
     engine.PerformPuts();
   }
 }
@@ -387,28 +386,26 @@ void write_mesh(adios2::IO& io, adios2::Engine& engine,
 
   // "Put" geometry data
   auto x_map = geometry.index_map();
-  const std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
-  adios2::Variable<T> local_geometry = impl_adios2::define_variable<T>(
+  std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
+  adios2::Variable local_geometry = impl_adios2::define_variable<T>(
       io, "points", {}, {}, {num_vertices, 3});
-  engine.Put<T>(local_geometry, geometry.x().data());
+  engine.Put(local_geometry, geometry.x().data());
 
   // TODO: The DOLFINx and VTK topology are the same for some cell types
   // - no need to repack via extract_vtk_connectivity in these cases
 
   // Get topological dimenson, number of cells and number of 'nodes' per
   // cell, and compute 'VTK' connectivity
-  const int tdim = topology->dim();
-  const std::int32_t num_cells = topology->index_map(tdim)->size_local();
-  const int num_nodes = geometry.cmaps()[0].dim();
-  const auto [cells, shape] = io::extract_vtk_connectivity(
-      mesh.geometry().dofmap(), topology->cell_types()[0]);
+  int tdim = topology->dim();
+  std::int32_t num_cells = topology->index_map(tdim)->size_local();
+  int num_nodes = geometry.cmaps()[0].dim();
+  auto [cells, shape] = io::extract_vtk_connectivity(mesh.geometry().dofmap(),
+                                                     topology->cell_types()[0]);
 
   // "Put" topology data in the result in the ADIOS2 file
-  adios2::Variable<std::int64_t> local_topology
-      = impl_adios2::define_variable<std::int64_t>(
-          io, "connectivity", {}, {}, {std::size_t(num_cells * num_nodes)});
-  engine.Put<std::int64_t>(local_topology, cells.data());
-
+  adios2::Variable local_topology = impl_adios2::define_variable<std::int64_t>(
+      io, "connectivity", {}, {}, {std::size_t(num_cells * num_nodes)});
+  engine.Put(local_topology, cells.data());
   engine.PerformPuts();
 }
 
@@ -442,18 +439,14 @@ public:
       : ADIOS2Writer(comm, filename, "Fides mesh writer", engine),
         _mesh_reuse_policy(FidesMeshPolicy::update), _mesh(mesh)
   {
-    assert(this->_io);
+    assert(_io);
     assert(mesh);
     auto topology = mesh->topology();
     assert(topology);
-    if (mesh->geometry().cmaps()[0].dim()
-        != mesh::cell_num_entities(topology->cell_types()[0], 0))
-    {
+    mesh::CellType type = topology->cell_types()[0];
+    if (mesh->geometry().cmaps()[0].dim() != mesh::cell_num_entities(type, 0))
       throw std::runtime_error("Fides only supports lowest-order meshes.");
-    }
-
-    impl_fides::initialize_mesh_attributes(*this->_io,
-                                           topology->cell_types()[0]);
+    impl_fides::initialize_mesh_attributes(*_io, type);
   }
 
   /// @brief Create Fides writer for list of functions
@@ -489,8 +482,10 @@ public:
 
     // Check if function is mixed
     if (element0->is_mixed())
+    {
       throw std::runtime_error(
           "Mixed functions are not supported by VTXWriter");
+    }
 
     // Check if function is DG 0
     if (element0->space_dimension() / element0->block_size() == 1)
@@ -503,9 +498,8 @@ public:
     // Lagrange element? Check that element is Lagrange
     if (!element0->interpolation_ident())
     {
-      throw std::runtime_error(
-          "Only Lagrange functions are "
-          "supported. Interpolate Functions before output.");
+      throw std::runtime_error("Only Lagrange functions are supported. "
+                               "Interpolate Functions before output.");
     }
 
     // Check that all functions are first order Lagrange
@@ -513,7 +507,7 @@ public:
     if (cell_types.size() > 1)
       throw std::runtime_error("Multiple cell types in IO.");
     int num_vertices_per_cell = mesh::cell_num_entities(cell_types.back(), 0);
-    for (auto& v : this->_u)
+    for (auto& v : _u)
     {
       std::visit(
           [&](const auto& u)
@@ -540,15 +534,11 @@ public:
 
     auto topology = mesh->topology();
     assert(topology);
-    if (mesh->geometry().cmaps()[0].dim()
-        != mesh::cell_num_entities(topology->cell_types()[0], 0))
-    {
+    mesh::CellType type = topology->cell_types()[0];
+    if (mesh->geometry().cmaps()[0].dim() != mesh::cell_num_entities(type, 0))
       throw std::runtime_error("Fides only supports lowest-order meshes.");
-    }
-
-    impl_fides::initialize_mesh_attributes(*this->_io,
-                                           topology->cell_types()[0]);
-    impl_fides::initialize_function_attributes<T>(*this->_io, u);
+    impl_fides::initialize_mesh_attributes(*_io, type);
+    impl_fides::initialize_function_attributes<T>(*_io, u);
   }
 
   /// @brief Create Fides writer for list of functions using default
@@ -589,29 +579,27 @@ public:
   /// @param[in] t The time step
   void write(double t)
   {
-    assert(this->_io);
-    assert(this->_engine);
+    assert(_io);
+    assert(_engine);
+    _engine->BeginStep();
+    adios2::Variable var_step
+        = impl_adios2::define_variable<double>(*_io, "step");
+    _engine->template Put<double>(var_step, t);
 
-    this->_engine->BeginStep();
-    adios2::Variable<double> var_step
-        = impl_adios2::define_variable<double>(*this->_io, "step");
-    this->_engine->template Put<double>(var_step, t);
-
-    if (auto v
-        = this->_io->template InquireVariable<std::int64_t>("connectivity");
+    if (auto v = _io->template InquireVariable<std::int64_t>("connectivity");
         !v or _mesh_reuse_policy == FidesMeshPolicy::update)
     {
-      impl_fides::write_mesh(*this->_io, *this->_engine, *this->_mesh);
+      impl_fides::write_mesh(*_io, *_engine, *_mesh);
     }
 
-    for (auto& v : this->_u)
+    for (auto& v : _u)
     {
       std::visit([&](const auto& u)
-                 { impl_fides::write_data(*this->_io, *this->_engine, *u); },
+                 { impl_fides::write_data(*_io, *_engine, *u); },
                  v);
     }
 
-    this->_engine->EndStep();
+    _engine->EndStep();
   }
 
 private:
@@ -682,17 +670,17 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
   // Get function data array and information about layout
   assert(u.x());
   std::span<const T> u_vector = u.x()->array();
-  const int rank = u.function_space()->element()->value_shape().size();
-  const std::uint32_t num_comp = std::pow(3, rank);
+  int rank = u.function_space()->element()->value_shape().size();
+  std::uint32_t num_comp = std::pow(3, rank);
   std::shared_ptr<const fem::DofMap> dofmap = u.function_space()->dofmap();
   assert(dofmap);
   std::shared_ptr<const common::IndexMap> index_map = dofmap->index_map;
   assert(index_map);
-  const int index_map_bs = dofmap->index_map_bs();
-  const int dofmap_bs = dofmap->bs();
-  const std::uint32_t num_dofs
-      = index_map_bs * (index_map->size_local() + index_map->num_ghosts())
-        / dofmap_bs;
+  int index_map_bs = dofmap->index_map_bs();
+  int dofmap_bs = dofmap->bs();
+  std::uint32_t num_dofs = index_map_bs
+                           * (index_map->size_local() + index_map->num_ghosts())
+                           / dofmap_bs;
 
   if constexpr (std::is_scalar_v<T>)
   {
@@ -702,9 +690,9 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
       for (int j = 0; j < index_map_bs; ++j)
         data[i * num_comp + j] = u_vector[i * index_map_bs + j];
 
-    adios2::Variable<T> output = impl_adios2::define_variable<T>(
+    adios2::Variable output = impl_adios2::define_variable<T>(
         io, u.name, {}, {}, {num_dofs, num_comp});
-    engine.Put<T>(output, data.data(), adios2::Mode::Sync);
+    engine.Put(output, data.data(), adios2::Mode::Sync);
   }
   else
   {
@@ -716,17 +704,17 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
       for (int j = 0; j < index_map_bs; ++j)
         data[i * num_comp + j] = std::real(u_vector[i * index_map_bs + j]);
 
-    adios2::Variable<U> output_real = impl_adios2::define_variable<U>(
+    adios2::Variable output_real = impl_adios2::define_variable<U>(
         io, u.name + impl_adios2::field_ext[0], {}, {}, {num_dofs, num_comp});
-    engine.Put<U>(output_real, data.data(), adios2::Mode::Sync);
+    engine.Put(output_real, data.data(), adios2::Mode::Sync);
 
     std::fill(data.begin(), data.end(), 0);
     for (std::size_t i = 0; i < num_dofs; ++i)
       for (int j = 0; j < index_map_bs; ++j)
         data[i * num_comp + j] = std::imag(u_vector[i * index_map_bs + j]);
-    adios2::Variable<U> output_imag = impl_adios2::define_variable<U>(
+    adios2::Variable output_imag = impl_adios2::define_variable<U>(
         io, u.name + impl_adios2::field_ext[1], {}, {}, {num_dofs, num_comp});
-    engine.Put<U>(output_imag, data.data(), adios2::Mode::Sync);
+    engine.Put(output_imag, data.data(), adios2::Mode::Sync);
   }
 }
 
@@ -744,32 +732,29 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
 
   // "Put" geometry
   std::shared_ptr<const common::IndexMap> x_map = geometry.index_map();
-  const std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
-  adios2::Variable<T> local_geometry = impl_adios2::define_variable<T>(
+  std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
+  adios2::Variable local_geometry = impl_adios2::define_variable<T>(
       io, "geometry", {}, {}, {num_vertices, 3});
-  engine.Put<T>(local_geometry, geometry.x().data());
+  engine.Put(local_geometry, geometry.x().data());
 
   // Put number of nodes. The mesh data is written with local indices,
   // therefore we need the ghost vertices.
-  adios2::Variable<std::uint32_t> vertices
-      = impl_adios2::define_variable<std::uint32_t>(io, "NumberOfNodes",
-                                                    {adios2::LocalValueDim});
+  adios2::Variable vertices = impl_adios2::define_variable<std::uint32_t>(
+      io, "NumberOfNodes", {adios2::LocalValueDim});
   engine.Put<std::uint32_t>(vertices, num_vertices);
 
-  const auto [vtkcells, shape] = io::extract_vtk_connectivity(
+  auto [vtkcells, shape] = io::extract_vtk_connectivity(
       geometry.dofmap(), topology->cell_types()[0]);
 
   // Add cell metadata
-  const int tdim = topology->dim();
-  adios2::Variable<std::uint32_t> cell_variable
-      = impl_adios2::define_variable<std::uint32_t>(io, "NumberOfCells",
-                                                    {adios2::LocalValueDim});
-  engine.Put<std::uint32_t>(cell_variable, shape[0]);
-  adios2::Variable<std::uint32_t> celltype_variable
+  int tdim = topology->dim();
+  adios2::Variable cell_var = impl_adios2::define_variable<std::uint32_t>(
+      io, "NumberOfCells", {adios2::LocalValueDim});
+  engine.Put<std::uint32_t>(cell_var, shape[0]);
+  adios2::Variable celltype_var
       = impl_adios2::define_variable<std::uint32_t>(io, "types");
   engine.Put<std::uint32_t>(
-      celltype_variable,
-      cells::get_vtk_cell_type(topology->cell_types()[0], tdim));
+      celltype_var, cells::get_vtk_cell_type(topology->cell_types()[0], tdim));
 
   // Pack mesh 'nodes'. Output is written as [N0, v0_0,...., v0_N0, N1,
   // v1_0,...., v1_N1,....], where N is the number of cell nodes and v0,
@@ -783,24 +768,20 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   }
 
   // Put topology (nodes)
-  adios2::Variable<std::int64_t> local_topology
-      = impl_adios2::define_variable<std::int64_t>(io, "connectivity", {}, {},
-                                                   {shape[0], shape[1] + 1});
-  engine.Put<std::int64_t>(local_topology, cells.data());
+  adios2::Variable local_topology = impl_adios2::define_variable<std::int64_t>(
+      io, "connectivity", {}, {}, {shape[0], shape[1] + 1});
+  engine.Put(local_topology, cells.data());
 
   // Vertex global ids and ghost markers
-  adios2::Variable<std::int64_t> orig_id
-      = impl_adios2::define_variable<std::int64_t>(io, "vtkOriginalPointIds",
-                                                   {}, {}, {num_vertices});
-  engine.Put<std::int64_t>(orig_id, geometry.input_global_indices().data());
+  adios2::Variable orig_id = impl_adios2::define_variable<std::int64_t>(
+      io, "vtkOriginalPointIds", {}, {}, {num_vertices});
+  engine.Put(orig_id, geometry.input_global_indices().data());
 
   std::vector<std::uint8_t> x_ghost(num_vertices, 0);
   std::fill(std::next(x_ghost.begin(), x_map->size_local()), x_ghost.end(), 1);
-  adios2::Variable<std::uint8_t> ghost
-      = impl_adios2::define_variable<std::uint8_t>(io, "vtkGhostType", {}, {},
-                                                   {x_ghost.size()});
-  engine.Put<std::uint8_t>(ghost, x_ghost.data());
-
+  adios2::Variable ghost = impl_adios2::define_variable<std::uint8_t>(
+      io, "vtkGhostType", {}, {}, {x_ghost.size()});
+  engine.Put(ghost, x_ghost.data());
   engine.PerformPuts();
 }
 
@@ -819,11 +800,10 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   assert(mesh);
   auto topology = mesh->topology();
   assert(topology);
-  const int tdim = topology->dim();
+  int tdim = topology->dim();
 
   // Get a VTK mesh with points at the 'nodes'
-  const auto [x, xshape, x_id, x_ghost, vtk, vtkshape]
-      = io::vtk_mesh_from_space(V);
+  auto [x, xshape, x_id, x_ghost, vtk, vtkshape] = io::vtk_mesh_from_space(V);
 
   std::uint32_t num_dofs = xshape[0];
 
@@ -844,37 +824,32 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
 
   // Define ADIOS2 variables for geometry, topology, celltypes and
   // corresponding VTK data
-  adios2::Variable<T> local_geometry
+  adios2::Variable local_geometry
       = impl_adios2::define_variable<T>(io, "geometry", {}, {}, {num_dofs, 3});
-  adios2::Variable<std::int64_t> local_topology
-      = impl_adios2::define_variable<std::int64_t>(
-          io, "connectivity", {}, {}, {vtkshape[0], vtkshape[1] + 1});
-  adios2::Variable<std::uint32_t> cell_type
+  adios2::Variable local_topology = impl_adios2::define_variable<std::int64_t>(
+      io, "connectivity", {}, {}, {vtkshape[0], vtkshape[1] + 1});
+  adios2::Variable cell_type
       = impl_adios2::define_variable<std::uint32_t>(io, "types");
-  adios2::Variable<std::uint32_t> vertices
-      = impl_adios2::define_variable<std::uint32_t>(io, "NumberOfNodes",
-                                                    {adios2::LocalValueDim});
-  adios2::Variable<std::uint32_t> elements
-      = impl_adios2::define_variable<std::uint32_t>(io, "NumberOfEntities",
-                                                    {adios2::LocalValueDim});
+  adios2::Variable vertices = impl_adios2::define_variable<std::uint32_t>(
+      io, "NumberOfNodes", {adios2::LocalValueDim});
+  adios2::Variable elements = impl_adios2::define_variable<std::uint32_t>(
+      io, "NumberOfEntities", {adios2::LocalValueDim});
 
   // Write mesh information to file
   engine.Put<std::uint32_t>(vertices, num_dofs);
   engine.Put<std::uint32_t>(elements, vtkshape[0]);
   engine.Put<std::uint32_t>(
       cell_type, cells::get_vtk_cell_type(topology->cell_types()[0], tdim));
-  engine.Put<T>(local_geometry, x.data());
-  engine.Put<std::int64_t>(local_topology, cells.data());
+  engine.Put(local_geometry, x.data());
+  engine.Put(local_topology, cells.data());
 
   // Node global ids
-  adios2::Variable<std::int64_t> orig_id
-      = impl_adios2::define_variable<std::int64_t>(io, "vtkOriginalPointIds",
-                                                   {}, {}, {x_id.size()});
-  engine.Put<std::int64_t>(orig_id, x_id.data());
-  adios2::Variable<std::uint8_t> ghost
-      = impl_adios2::define_variable<std::uint8_t>(io, "vtkGhostType", {}, {},
-                                                   {x_ghost.size()});
-  engine.Put<std::uint8_t>(ghost, x_ghost.data());
+  adios2::Variable orig_id = impl_adios2::define_variable<std::int64_t>(
+      io, "vtkOriginalPointIds", {}, {}, {x_id.size()});
+  engine.Put(orig_id, x_id.data());
+  adios2::Variable ghost = impl_adios2::define_variable<std::uint8_t>(
+      io, "vtkGhostType", {}, {}, {x_ghost.size()});
+  engine.Put(ghost, x_ghost.data());
 
   engine.PerformPuts();
 }
@@ -907,8 +882,7 @@ public:
   {
     // Define VTK scheme attribute for mesh
     std::string vtk_scheme = impl_vtx::create_vtk_schema({}, {}).str();
-    impl_adios2::define_attribute<std::string>(*this->_io, "vtk.xml",
-                                               vtk_scheme);
+    impl_adios2::define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
   }
 
   /// @brief Create a VTX writer for list of functions
@@ -961,7 +935,7 @@ public:
     }
 
     // Check that all functions come from same element type
-    for (auto& v : this->_u)
+    for (auto& v : _u)
     {
       std::visit(
           [element0](const auto& u)
@@ -980,8 +954,7 @@ public:
     // Define VTK scheme attribute for set of functions
     std::vector<std::string> names = impl_vtx::extract_function_names<T>(u);
     std::string vtk_scheme = impl_vtx::create_vtk_schema(names, {}).str();
-    impl_adios2::define_attribute<std::string>(*this->_io, "vtk.xml",
-                                               vtk_scheme);
+    impl_adios2::define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
   }
 
   // Copy constructor
@@ -1003,37 +976,35 @@ public:
   /// @param[in] t The time step
   void write(double t)
   {
-    assert(this->_io);
-    assert(this->_engine);
-    adios2::Variable<double> var_step
-        = impl_adios2::define_variable<double>(*this->_io, "step");
+    assert(_io);
+    assert(_engine);
+    adios2::Variable var_step
+        = impl_adios2::define_variable<double>(*_io, "step");
 
-    this->_engine->BeginStep();
-    this->_engine->template Put<double>(var_step, t);
+    _engine->BeginStep();
+    _engine->template Put<double>(var_step, t);
 
     // If we have no functions write the mesh to file
-    if (this->_u.empty())
-      impl_vtx::vtx_write_mesh(*this->_io, *this->_engine, *this->_mesh);
+    if (_u.empty())
+      impl_vtx::vtx_write_mesh(*_io, *_engine, *_mesh);
     else
     {
       // Write a single mesh for functions as they share finite element
       std::visit(
-          [&](const auto& u)
-          {
-            impl_vtx::vtx_write_mesh_from_space<T>(*this->_io, *this->_engine,
-                                                   *u->function_space());
+          [&](const auto& u) {
+            impl_vtx::vtx_write_mesh_from_space(*_io, *_engine,
+                                                *u->function_space());
           },
-          this->_u[0]);
+          _u[0]);
 
       // Write function data for each function to file
-      for (auto& v : this->_u)
-        std::visit(
-            [&](const auto& u)
-            { impl_vtx::vtx_write_data(*this->_io, *this->_engine, *u); },
-            v);
+      for (auto& v : _u)
+        std::visit([&](const auto& u)
+                   { impl_vtx::vtx_write_data(*_io, *_engine, *u); },
+                   v);
     }
 
-    this->_engine->EndStep();
+    _engine->EndStep();
   }
 
 private:
