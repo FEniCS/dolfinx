@@ -37,7 +37,6 @@ class Function;
 
 namespace dolfinx::io
 {
-
 namespace adios2_writer
 {
 /// @privatesection
@@ -176,46 +175,10 @@ extract_common_mesh(const typename adios2_writer::U<T>& u)
 /// @privatesection
 namespace impl_fides
 {
-/// Convert DOLFINx CellType to Fides CellType
-/// https://gitlab.kitware.com/vtk/vtk-m/-/blob/master/vtkm/CellShape.h#L30-53
-/// @param[in] type The DOLFInx cell
-/// @return The Fides cell string
-std::string to_fides_cell(mesh::CellType type);
-
 /// Initialize mesh related attributes for the ADIOS2 file used in Fides
 /// @param[in] io The ADIOS2 IO
-/// @param[in] mesh The mesh
-template <std::floating_point T>
-void initialize_mesh_attributes(adios2::IO& io, const mesh::Mesh<T>& mesh)
-{
-  const mesh::Geometry<T>& geometry = mesh.geometry();
-  auto topology = mesh.topology();
-  assert(topology);
-
-  // Check that mesh is first order mesh
-  const int num_dofs_g = geometry.cmaps()[0].dim();
-  const int num_vertices_per_cell
-      = mesh::cell_num_entities(topology->cell_types()[0], 0);
-  if (num_dofs_g != num_vertices_per_cell)
-    throw std::runtime_error("Fides only supports lowest-order meshes.");
-
-  // NOTE: If we start using mixed element types, we can change
-  // data-model to "unstructured"
-  impl_adios2::define_attribute<std::string>(io, "Fides_Data_Model",
-                                             "unstructured_single");
-
-  // Define FIDES attributes pointing to ADIOS2 Variables for geometry
-  // and topology
-  impl_adios2::define_attribute<std::string>(io, "Fides_Coordinates_Variable",
-                                             "points");
-  impl_adios2::define_attribute<std::string>(io, "Fides_Connectivity_Variable",
-                                             "connectivity");
-
-  std::string cell_type = to_fides_cell(topology->cell_types()[0]);
-  impl_adios2::define_attribute<std::string>(io, "Fides_Cell_Type", cell_type);
-
-  impl_adios2::define_attribute<std::string>(io, "Fides_Time_Variable", "step");
-}
+/// @param[in] fides_cell_type Fides cell type name
+void initialize_mesh_attributes(adios2::IO& io, mesh::CellType type);
 
 /// Initialize function related attributes for the ADIOS2 file used in
 /// Fides
@@ -482,7 +445,16 @@ public:
   {
     assert(this->_io);
     assert(mesh);
-    impl_fides::initialize_mesh_attributes(*this->_io, *mesh);
+    auto topology = mesh->topology();
+    assert(topology);
+    if (mesh->geometry().cmaps()[0].dim()
+        != mesh::cell_num_entities(topology->cell_types()[0], 0))
+    {
+      throw std::runtime_error("Fides only supports lowest-order meshes.");
+    }
+
+    impl_fides::initialize_mesh_attributes(*this->_io,
+                                           topology->cell_types()[0]);
   }
 
   /// @brief Create Fides writer for list of functions
@@ -567,7 +539,19 @@ public:
           v);
     }
 
-    impl_fides::initialize_mesh_attributes(*this->_io, *mesh);
+    auto topology = mesh->topology();
+    assert(topology);
+    if (mesh->geometry().cmaps()[0].dim()
+        != mesh::cell_num_entities(topology->cell_types()[0], 0))
+    {
+      throw std::runtime_error("Fides only supports lowest-order meshes.");
+    }
+
+    impl_fides::initialize_mesh_attributes(*this->_io,
+                                           topology->cell_types()[0]);
+
+    // impl_fides::initialize_mesh_attributes(*this->_io, *mesh);
+
     impl_fides::initialize_function_attributes<T>(*this->_io, u);
   }
 
