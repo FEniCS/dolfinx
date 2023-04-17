@@ -41,16 +41,16 @@ namespace dolfinx::io
 namespace adios2_writer
 {
 /// @privatesection
-template <typename T>
+template <std::floating_point T>
 using Fd32 = fem::Function<float, T>;
-template <typename T>
+template <std::floating_point T>
 using Fd64 = fem::Function<double, T>;
-template <typename T>
+template <std::floating_point T>
 using Fc64 = fem::Function<std::complex<float>, T>;
-template <typename T>
+template <std::floating_point T>
 using Fc128 = fem::Function<std::complex<double>, T>;
 
-template <typename T>
+template <std::floating_point T>
 using U = std::vector<std::variant<
     std::shared_ptr<const Fd32<T>>, std::shared_ptr<const Fd64<T>>,
     std::shared_ptr<const Fc64<T>>, std::shared_ptr<const Fc128<T>>>>;
@@ -143,7 +143,7 @@ adios2::Variable<T> define_variable(adios2::IO& io, std::string name,
 }
 
 /// Extract common mesh from list of Functions
-template <typename T>
+template <std::floating_point T>
 std::shared_ptr<const mesh::Mesh<T>>
 extract_common_mesh(const typename adios2_writer::U<T>& u)
 {
@@ -185,7 +185,7 @@ std::string to_fides_cell(mesh::CellType type);
 /// Initialize mesh related attributes for the ADIOS2 file used in Fides
 /// @param[in] io The ADIOS2 IO
 /// @param[in] mesh The mesh
-template <typename T>
+template <std::floating_point T>
 void initialize_mesh_attributes(adios2::IO& io, const mesh::Mesh<T>& mesh)
 {
   const mesh::Geometry<T>& geometry = mesh.geometry();
@@ -221,7 +221,7 @@ void initialize_mesh_attributes(adios2::IO& io, const mesh::Mesh<T>& mesh)
 /// Fides
 /// @param[in] io The ADIOS2 IO
 /// @param[in] u List of functions
-template <typename T>
+template <std::floating_point T>
 void initialize_function_attributes(adios2::IO& io,
                                     const typename adios2_writer::U<T>& u)
 {
@@ -415,7 +415,7 @@ void write_data(adios2::IO& io, adios2::Engine& engine,
 /// @param[in] io The ADIOS2 IO
 /// @param[in] engine The ADIOS2 engine
 /// @param[in] mesh The mesh
-template <typename T>
+template <std::floating_point T>
 void write_mesh(adios2::IO& io, adios2::Engine& engine,
                 const mesh::Mesh<T>& mesh)
 {
@@ -652,7 +652,7 @@ std::stringstream create_vtk_schema(const std::vector<std::string>& point_data,
                                     const std::vector<std::string>& cell_data);
 
 /// Extract name of functions and split into real and imaginary component
-template <typename T>
+template <std::floating_point T>
 std::vector<std::string>
 extract_function_names(const typename adios2_writer::U<T>& u)
 {
@@ -695,7 +695,7 @@ extract_function_names(const typename adios2_writer::U<T>& u)
 /// @param[in] io The ADIOS2 io object
 /// @param[in] engine The ADIOS2 engine object
 /// @param[in] u The function
-template <typename T, typename X>
+template <typename T, std::floating_point X>
 void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
                     const fem::Function<T, X>& u)
 {
@@ -754,7 +754,7 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
 /// @param[in] io The ADIOS2 io object
 /// @param[in] engine The ADIOS2 engine object
 /// @param[in] mesh The mesh
-template <typename T>
+template <std::floating_point T>
 void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
                     const mesh::Mesh<T>& mesh)
 {
@@ -831,7 +831,7 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
 /// @param[in] io The ADIOS2 io object
 /// @param[in] engine The ADIOS2 engine object
 /// @param[in] V The function space
-template <typename T>
+template <std::floating_point T>
 void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
                                const fem::FunctionSpace<T>& V)
 {
