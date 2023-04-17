@@ -175,9 +175,10 @@ extract_common_mesh(const typename adios2_writer::U<T>& u)
 /// @privatesection
 namespace impl_fides
 {
-/// Initialize mesh related attributes for the ADIOS2 file used in Fides
-/// @param[in] io The ADIOS2 IO
-/// @param[in] fides_cell_type Fides cell type name
+/// Initialize mesh related attributes for the ADIOS2 file used in
+/// Fides.
+/// @param[in] io ADIOS2 IO object
+/// @param[in] type Cell type
 void initialize_mesh_attributes(adios2::IO& io, mesh::CellType type);
 
 /// Initialize function related attributes for the ADIOS2 file used in
