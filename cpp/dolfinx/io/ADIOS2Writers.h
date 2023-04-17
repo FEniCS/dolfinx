@@ -48,12 +48,10 @@ template <std::floating_point T>
 using Fc64 = fem::Function<std::complex<float>, T>;
 template <std::floating_point T>
 using Fc128 = fem::Function<std::complex<double>, T>;
-
 template <std::floating_point T>
 using U = std::vector<std::variant<
     std::shared_ptr<const Fd32<T>>, std::shared_ptr<const Fd64<T>>,
     std::shared_ptr<const Fc64<T>>, std::shared_ptr<const Fc128<T>>>>;
-
 } // namespace adios2_writer
 
 /// Base class for ADIOS2-based writers
@@ -549,9 +547,6 @@ public:
 
     impl_fides::initialize_mesh_attributes(*this->_io,
                                            topology->cell_types()[0]);
-
-    // impl_fides::initialize_mesh_attributes(*this->_io, *mesh);
-
     impl_fides::initialize_function_attributes<T>(*this->_io, u);
   }
 
