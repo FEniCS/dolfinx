@@ -282,6 +282,7 @@ jobs:
             DOLFINX_CMAKE_BUILD_TYPE=RelWithDebug
             DOLFINX_CMAKE_CXX_FLAGS=-O2
           context: .
+          cache-from: type=registry,ref=docker.io/dolfinx/dev-env:${{ env.TAG_PREFIX }}
           file: dolfinx/${{ env.DOCKERFILE }}
           load: true
           target: intermediate
