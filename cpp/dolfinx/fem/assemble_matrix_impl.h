@@ -414,10 +414,10 @@ void assemble_matrix(
   {
     auto fn = a.kernel(IntegralType::cell, i);
     auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
-    const std::vector<std::int32_t>& cells = a.domain(IntegralType::cell, i);
-    impl::assemble_cells(mat_set, geometry, cells, dof_transform, dofs0, bs0,
-                         dof_transform_to_transpose, dofs1, bs1, bc0, bc1, fn,
-                         coeffs, cstride, constants, cell_info);
+    impl::assemble_cells(mat_set, geometry, a.domain(IntegralType::cell, i),
+                         dof_transform, dofs0, bs0, dof_transform_to_transpose,
+                         dofs1, bs1, bc0, bc1, fn, coeffs, cstride, constants,
+                         cell_info);
   }
 
   for (int i : a.integral_ids(IntegralType::exterior_facet))
@@ -425,12 +425,10 @@ void assemble_matrix(
     auto fn = a.kernel(IntegralType::exterior_facet, i);
     auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
-    const std::vector<std::int32_t>& facets
-        = a.domain(IntegralType::exterior_facet, i);
-    impl::assemble_exterior_facets(mat_set, geometry, facets, dof_transform,
-                                   dofs0, bs0, dof_transform_to_transpose,
-                                   dofs1, bs1, bc0, bc1, fn, coeffs, cstride,
-                                   constants, cell_info);
+    impl::assemble_exterior_facets(
+        mat_set, geometry, a.domain(IntegralType::exterior_facet, i),
+        dof_transform, dofs0, bs0, dof_transform_to_transpose, dofs1, bs1, bc0,
+        bc1, fn, coeffs, cstride, constants, cell_info);
   }
 
   if (a.num_integrals(IntegralType::interior_facet) > 0)
@@ -457,10 +455,9 @@ void assemble_matrix(
       auto fn = a.kernel(IntegralType::interior_facet, i);
       auto& [coeffs, cstride]
           = coefficients.at({IntegralType::interior_facet, i});
-      const std::vector<std::int32_t>& facets
-          = a.domain(IntegralType::interior_facet, i);
       impl::assemble_interior_facets(
-          mat_set, geometry, num_cell_facets, facets, dof_transform, *dofmap0,
+          mat_set, geometry, num_cell_facets,
+          a.domain(IntegralType::interior_facet, i), dof_transform, *dofmap0,
           bs0, dof_transform_to_transpose, *dofmap1, bs1, bc0, bc1, fn, coeffs,
           cstride, c_offsets, constants, cell_info, get_perm);
     }

@@ -177,7 +177,7 @@ T assemble_scalar(
   {
     auto fn = M.kernel(IntegralType::cell, i);
     auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
-    const std::vector<std::int32_t>& cells = M.domain(IntegralType::cell, i);
+    std::span<const std::int32_t> cells = M.domain(IntegralType::cell, i);
     value += impl::assemble_cells(geometry, cells, fn, constants, coeffs,
                                   cstride);
   }
@@ -187,10 +187,9 @@ T assemble_scalar(
     auto fn = M.kernel(IntegralType::exterior_facet, i);
     auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
-    const std::vector<std::int32_t>& facets
-        = M.domain(IntegralType::exterior_facet, i);
-    value += impl::assemble_exterior_facets(geometry, facets, fn, constants,
-                                            coeffs, cstride);
+    value += impl::assemble_exterior_facets(
+        geometry, M.domain(IntegralType::exterior_facet, i), fn, constants,
+        coeffs, cstride);
   }
 
   if (M.num_integrals(IntegralType::interior_facet) > 0)
@@ -209,11 +208,9 @@ T assemble_scalar(
       auto fn = M.kernel(IntegralType::interior_facet, i);
       auto& [coeffs, cstride]
           = coefficients.at({IntegralType::interior_facet, i});
-      const std::vector<std::int32_t>& facets
-          = M.domain(IntegralType::interior_facet, i);
-      value += impl::assemble_interior_facets(geometry, num_cell_facets, facets,
-                                              fn, constants, coeffs, cstride,
-                                              c_offsets, perms);
+      value += impl::assemble_interior_facets(
+          geometry, num_cell_facets, M.domain(IntegralType::interior_facet, i),
+          fn, constants, coeffs, cstride, c_offsets, perms);
     }
   }
 

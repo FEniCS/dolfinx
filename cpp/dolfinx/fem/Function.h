@@ -33,15 +33,19 @@ class Expression;
 /// This class represents a function \f$ u_h \f$ in a finite
 /// element function space \f$ V_h \f$, given by
 ///
-/// \f[     u_h = \sum_{i=1}^{n} U_i \phi_i \f]
+/// \f[ u_h = \sum_{i=1}^{n} U_i \phi_i, \f]
 /// where \f$ \{\phi_i\}_{i=1}^{n} \f$ is a basis for \f$ V_h \f$,
 /// and \f$ U \f$ is a vector of expansion coefficients for \f$ u_h \f$.
+///
+/// @tparam T The function scalar type.
+/// @tparam U The mesh geometry scalar type.
 template <typename T, std::floating_point U = dolfinx::scalar_value_type_t<T>>
 class Function
 {
 
 public:
-  /// Field type for the Function, e.g. double
+  /// Field type for the Function, e.g. `double`, `std::complex<float>`,
+  /// etc.
   using value_type = T;
 
   /// Create function on given function space
@@ -58,7 +62,8 @@ public:
     }
   }
 
-  /// Create function on given function space with a given vector
+  /// @brief Create function on given function space with a given
+  /// vector.
   ///
   /// @warning This constructor is intended for internal library use
   /// only
@@ -93,9 +98,9 @@ public:
   // Assignment
   Function& operator=(const Function& v) = delete;
 
-  /// Extract subfunction (view into the Function)
+  /// @brief Extract sub-function (a view into the Function).
   /// @param[in] i Index of subfunction
-  /// @return The subfunction
+  /// @return The sub-function
   Function sub(int i) const
   {
     auto sub_space = _function_space->sub({i});
@@ -103,9 +108,9 @@ public:
     return Function(sub_space, _x);
   }
 
-  /// Collapse a subfunction (view into a Function) to a stand-alone
-  /// Function
-  /// @return New collapsed Function
+  /// @brief Collapse a subfunction (view into a Function) to a
+  /// stand-alone Function.
+  /// @return New collapsed Function.
   Function collapse() const
   {
     // Create new collapsed FunctionSpace
@@ -128,20 +133,20 @@ public:
     return Function(std::make_shared<FunctionSpace<U>>(std::move(V)), x);
   }
 
-  /// Access the function space
+  /// @brief Access the function space.
   /// @return The function space
   std::shared_ptr<const FunctionSpace<U>> function_space() const
   {
     return _function_space;
   }
 
-  /// Underlying vector
+  /// @brief Underlying vector
   std::shared_ptr<const la::Vector<T>> x() const { return _x; }
 
-  /// Underlying vector
+  /// @brief Underlying vector
   std::shared_ptr<la::Vector<T>> x() { return _x; }
 
-  /// Interpolate a Function
+  /// @brief Interpolate a provided Function.
   /// @param[in] v The function to be interpolated
   /// @param[in] cells The cells to interpolate on
   /// @param[in] nmm_interpolation_data Auxiliary data to interpolate on
@@ -157,7 +162,7 @@ public:
     fem::interpolate(*this, v, cells, nmm_interpolation_data);
   }
 
-  /// Interpolate a Function
+  /// @brief Interpolate a provided Function.
   /// @param[in] v The function to be interpolated
   /// @param[in] nmm_interpolation_data Auxiliary data to interpolate on
   /// nonmatching meshes. This data can be generated with
@@ -240,7 +245,7 @@ public:
                      cells);
   }
 
-  /// Interpolate an expression function on the whole domain
+  /// @brief Interpolate an expression function on the whole domain.
   /// @param[in] f Expression to be interpolated
   void interpolate(
       const std::function<std::pair<std::vector<T>, std::vector<std::size_t>>(
@@ -260,7 +265,7 @@ public:
     interpolate(f, cells);
   }
 
-  /// Interpolate an Expression (based on UFL)
+  /// @brief Interpolate an Expression (based on UFL)
   /// @param[in] e Expression to be interpolated. The Expression
   /// must have been created using the reference coordinates
   /// `FiniteElement::interpolation_points()` for the element associated
