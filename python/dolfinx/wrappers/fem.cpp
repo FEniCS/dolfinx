@@ -478,14 +478,12 @@ void declare_form(py::module& m, const std::string& type)
              dolfinx::fem::IntegralType type,
              int i) -> py::array_t<std::int32_t>
           {
-            const std::vector<std::int32_t>& _d = self.domain(type, i);
+            std::span<const std::int32_t> _d = self.domain(type, i);
             switch (type)
             {
             case dolfinx::fem::IntegralType::cell:
-            {
               return py::array_t<std::int32_t>(_d.size(), _d.data(),
                                                py::cast(self));
-            }
             case dolfinx::fem::IntegralType::exterior_facet:
             {
               std::array<py::ssize_t, 2> shape

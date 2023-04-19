@@ -215,7 +215,7 @@ public:
   /// @param[in] type Integral domain type
   /// @param[in] i Integral ID, i.e. (sub)domain index
   /// @return List of active cell entities for the given integral (kernel)
-  const std::vector<std::int32_t>& domain(IntegralType type, int i) const
+  std::span<const std::int32_t> domain(IntegralType type, int i) const
   {
     auto& integral = _integrals[static_cast<std::size_t>(type)];
     if (auto it = integral.find(i); it != integral.end())
