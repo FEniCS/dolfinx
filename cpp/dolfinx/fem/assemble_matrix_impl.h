@@ -413,6 +413,7 @@ void assemble_matrix(
   for (int i : a.integral_ids(IntegralType::cell))
   {
     auto fn = a.kernel(IntegralType::cell, i);
+    assert(fn);
     auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
     impl::assemble_cells(mat_set, geometry, a.domain(IntegralType::cell, i),
                          dof_transform, dofs0, bs0, dof_transform_to_transpose,
@@ -423,6 +424,7 @@ void assemble_matrix(
   for (int i : a.integral_ids(IntegralType::exterior_facet))
   {
     auto fn = a.kernel(IntegralType::exterior_facet, i);
+    assert(fn);
     auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
     impl::assemble_exterior_facets(
@@ -453,6 +455,7 @@ void assemble_matrix(
     for (int i : a.integral_ids(IntegralType::interior_facet))
     {
       auto fn = a.kernel(IntegralType::interior_facet, i);
+      assert(fn);
       auto& [coeffs, cstride]
           = coefficients.at({IntegralType::interior_facet, i});
       impl::assemble_interior_facets(

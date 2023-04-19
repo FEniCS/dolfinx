@@ -149,9 +149,8 @@ public:
   /// @param[in] type Integral type
   /// @param[in] i Domain index
   /// @return Function to call for tabulate_tensor
-  const std::function<void(T*, const T*, const T*,
-                           const scalar_value_type_t<T>*, const int*,
-                           const std::uint8_t*)>&
+  std::function<void(T*, const T*, const T*, const scalar_value_type_t<T>*,
+                     const int*, const std::uint8_t*)>
   kernel(IntegralType type, int i) const
   {
     auto integrals = _integrals[static_cast<std::size_t>(type)];
