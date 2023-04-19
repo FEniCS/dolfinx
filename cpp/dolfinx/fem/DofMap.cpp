@@ -42,7 +42,10 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   assert(cells);
 
   // Build set of dofs that are in the new dofmap (un-blocked)
-  std::vector<std::int32_t> dofs_view = dofmap_view.list().array();
+  auto dofs_view_md = dofmap_view.new_list();
+  std::vector<std::int32_t> dofs_view(dofs_view_md.data_handle(),
+                                      dofs_view_md.data_handle()
+                                          + dofs_view_md.size());
   dolfinx::radix_sort(std::span(dofs_view));
   dofs_view.erase(std::unique(dofs_view.begin(), dofs_view.end()),
                   dofs_view.end());
@@ -104,7 +107,9 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   }
 
   // Map dofs to new collapsed indices for new dofmap
-  const std::vector<std::int32_t>& dof_array_view = dofmap_view.list().array();
+  auto dof_array_view_md = dofmap_view.new_list();
+  std::span<const std::int32_t> dof_array_view(dof_array_view_md.data_handle(),
+                                               dof_array_view_md.size());
   std::vector<std::int32_t> dofmap;
   dofmap.reserve(dof_array_view.size());
   std::transform(dof_array_view.begin(), dof_array_view.end(),
@@ -281,6 +286,16 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
 const graph::AdjacencyList<std::int32_t>& DofMap::list() const
 {
   return _dofmap;
+}
+//-----------------------------------------------------------------------------
+std::experimental::mdspan<const std::int32_t,
+                          std::experimental::dextents<std::size_t, 2>>
+DofMap::new_list() const
+{
+  int ndofs = _element_dof_layout.num_dofs();
+  return std::experimental::mdspan<const std::int32_t,
+                                   std::experimental::dextents<std::size_t, 2>>(
+      _dofmap.array().data(), _dofmap.array().size() / ndofs, ndofs);
 }
 //-----------------------------------------------------------------------------
 int DofMap::index_map_bs() const { return _index_map_bs; }

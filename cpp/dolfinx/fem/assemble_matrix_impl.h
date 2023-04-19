@@ -25,6 +25,10 @@
 namespace dolfinx::fem::impl
 {
 
+namespace stdex = std::experimental;
+using mdspan2_t
+    = stdex::mdspan<const std::int32_t, stdex::dextents<std::size_t, 2>>;
+
 /// Execute kernel over cells and accumulate result in matrix
 template <typename T>
 void assemble_cells(
@@ -34,14 +38,14 @@ void assemble_cells(
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform,
-    const graph::AdjacencyList<std::int32_t>& dofmap0, int bs0,
+    mdspan2_t dofmap0, int bs0,
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform_to_transpose,
-    const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
-    std::span<const std::int8_t> bc0, std::span<const std::int8_t> bc1,
-    FEkernel<T> auto kernel, std::span<const T> coeffs, int cstride,
-    std::span<const T> constants, std::span<const std::uint32_t> cell_info)
+    mdspan2_t dofmap1, int bs1, std::span<const std::int8_t> bc0,
+    std::span<const std::int8_t> bc1, FEkernel<T> auto kernel,
+    std::span<const T> coeffs, int cstride, std::span<const T> constants,
+    std::span<const std::uint32_t> cell_info)
 {
   if (cells.empty())
     return;
@@ -52,8 +56,8 @@ void assemble_cells(
   auto x = geometry.x();
 
   // Iterate over active cells
-  const int num_dofs0 = dofmap0.links(0).size();
-  const int num_dofs1 = dofmap1.links(0).size();
+  const int num_dofs0 = dofmap0.extent(1);
+  const int num_dofs1 = dofmap1.extent(1);
   const int ndim0 = bs0 * num_dofs0;
   const int ndim1 = bs1 * num_dofs1;
   std::vector<T> Ae(ndim0 * ndim1);
@@ -82,8 +86,8 @@ void assemble_cells(
     dof_transform_to_transpose(_Ae, cell_info, c, ndim0);
 
     // Zero rows/columns for essential bcs
-    auto dofs0 = dofmap0.links(c);
-    auto dofs1 = dofmap1.links(c);
+    auto dofs0 = std::span(dofmap0.data_handle() + c * num_dofs0, num_dofs0);
+    auto dofs1 = std::span(dofmap1.data_handle() + c * num_dofs1, num_dofs1);
     if (!bc0.empty())
     {
       for (int i = 0; i < num_dofs0; ++i)
@@ -130,14 +134,14 @@ void assemble_exterior_facets(
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform,
-    const graph::AdjacencyList<std::int32_t>& dofmap0, int bs0,
+    mdspan2_t dofmap0, int bs0,
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
                              std::int32_t, int)>& dof_transform_to_transpose,
-    const graph::AdjacencyList<std::int32_t>& dofmap1, int bs1,
-    std::span<const std::int8_t> bc0, std::span<const std::int8_t> bc1,
-    FEkernel<T> auto kernel, std::span<const T> coeffs, int cstride,
-    std::span<const T> constants, std::span<const std::uint32_t> cell_info)
+    mdspan2_t dofmap1, int bs1, std::span<const std::int8_t> bc0,
+    std::span<const std::int8_t> bc1, FEkernel<T> auto kernel,
+    std::span<const T> coeffs, int cstride, std::span<const T> constants,
+    std::span<const std::uint32_t> cell_info)
 {
   if (facets.empty())
     return;
@@ -149,8 +153,8 @@ void assemble_exterior_facets(
 
   // Data structures used in assembly
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * num_dofs_g);
-  const int num_dofs0 = dofmap0.links(0).size();
-  const int num_dofs1 = dofmap1.links(0).size();
+  const int num_dofs0 = dofmap0.extent(1);
+  const int num_dofs1 = dofmap1.extent(1);
   const int ndim0 = bs0 * num_dofs0;
   const int ndim1 = bs1 * num_dofs1;
   std::vector<T> Ae(ndim0 * ndim1);
@@ -178,8 +182,8 @@ void assemble_exterior_facets(
     dof_transform_to_transpose(_Ae, cell_info, cell, ndim0);
 
     // Zero rows/columns for essential bcs
-    auto dofs0 = dofmap0.links(cell);
-    auto dofs1 = dofmap1.links(cell);
+    auto dofs0 = std::span(dofmap0.data_handle() + cell * num_dofs0, num_dofs0);
+    auto dofs1 = std::span(dofmap1.data_handle() + cell * num_dofs1, num_dofs1);
     if (!bc0.empty())
     {
       for (int i = 0; i < num_dofs0; ++i)
@@ -381,9 +385,9 @@ void assemble_matrix(
       = a.function_spaces().at(1)->dofmap();
   assert(dofmap0);
   assert(dofmap1);
-  const graph::AdjacencyList<std::int32_t>& dofs0 = dofmap0->list();
+  auto dofs0 = dofmap0->new_list();
   const int bs0 = dofmap0->bs();
-  const graph::AdjacencyList<std::int32_t>& dofs1 = dofmap1->list();
+  auto dofs1 = dofmap1->new_list();
   const int bs1 = dofmap1->bs();
 
   std::shared_ptr<const fem::FiniteElement> element0

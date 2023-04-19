@@ -10,6 +10,7 @@
 #pragma once
 
 #include "ElementDofLayout.h"
+#include <basix/mdspan.hpp>
 #include <concepts>
 #include <cstdlib>
 #include <dolfinx/common/MPI.h>
@@ -118,9 +119,11 @@ public:
   /// @param[in] cell The cell index
   /// @return Local-global dof map for the cell (using process-local
   /// indices)
-  std::span<const std::int32_t> cell_dofs(int cell) const
+  std::span<const std::int32_t> cell_dofs(std::int32_t cell) const
   {
-    return _dofmap.links(cell);
+    int ndofs = _element_dof_layout.num_dofs();
+    return std::span<const std::int32_t>(_dofmap.array().data() + ndofs * cell,
+                                         ndofs);
   }
 
   /// @brief Return the block size for the dofmap
@@ -148,6 +151,12 @@ public:
   /// @brief Get dofmap data
   /// @return The adjacency list with dof indices for each cell
   const graph::AdjacencyList<std::int32_t>& list() const;
+
+  /// @brief Get dofmap data
+  /// @return The adjacency list with dof indices for each cell
+  std::experimental::mdspan<const std::int32_t,
+                            std::experimental::dextents<std::size_t, 2>>
+  new_list() const;
 
   /// Layout of dofs on an element
   const ElementDofLayout& element_dof_layout() const

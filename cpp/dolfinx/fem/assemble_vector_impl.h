@@ -741,13 +741,11 @@ void lift_bc(std::span<T> b, const Form<T, U>& a,
   // Get dofmap for columns and rows of a
   assert(a.function_spaces().at(0));
   assert(a.function_spaces().at(1));
-  const graph::AdjacencyList<std::int32_t>& dofmap0
-      = a.function_spaces()[0]->dofmap()->list();
+  auto dofmap0 = a.function_spaces()[0]->dofmap()->list();
   const int bs0 = a.function_spaces()[0]->dofmap()->bs();
   std::shared_ptr<const fem::FiniteElement> element0
       = a.function_spaces()[0]->element();
-  const graph::AdjacencyList<std::int32_t>& dofmap1
-      = a.function_spaces()[1]->dofmap()->list();
+  auto dofmap1 = a.function_spaces()[1]->dofmap()->list();
   const int bs1 = a.function_spaces()[1]->dofmap()->bs();
   std::shared_ptr<const fem::FiniteElement> element1
       = a.function_spaces()[1]->element();
@@ -954,7 +952,7 @@ void assemble_vector(
   std::shared_ptr<const fem::DofMap> dofmap
       = L.function_spaces().at(0)->dofmap();
   assert(dofmap);
-  const graph::AdjacencyList<std::int32_t>& dofs = dofmap->list();
+  auto dofs = dofmap->list();
   const int bs = dofmap->bs();
 
   const std::function<void(const std::span<T>&,
