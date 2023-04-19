@@ -58,7 +58,6 @@ void assemble_cells(
   // Iterate over active cells
   const int num_dofs0 = dofmap0.extent(1);
   const int num_dofs1 = dofmap1.extent(1);
-  std::cout << "Num dofs: " << num_dofs0 << ", " << num_dofs1 << std::endl;
   const int ndim0 = bs0 * num_dofs0;
   const int ndim1 = bs1 * num_dofs1;
   std::vector<T> Ae(ndim0 * ndim1);
@@ -66,12 +65,9 @@ void assemble_cells(
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * num_dofs_g);
 
   // Iterate over active cells
-  std::cout << "Loop over cells: " << std::endl;
   for (std::size_t index = 0; index < cells.size(); ++index)
   {
     std::int32_t c = cells[index];
-
-    std::cout << "Cell : " << c << std::endl;
 
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(c);
@@ -82,20 +78,16 @@ void assemble_cells(
     }
 
     // Tabulate tensor
-    std::cout << "Tab : " << c << std::endl;
     std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeffs.data() + index * cstride, constants.data(),
            coordinate_dofs.data(), nullptr, nullptr);
-    std::cout << "Post tab : " << c << std::endl;
 
     dof_transform(_Ae, cell_info, c, ndim1);
     dof_transform_to_transpose(_Ae, cell_info, c, ndim0);
 
     // Zero rows/columns for essential bcs
-    std::cout << "Pre view: " << num_dofs0 << ", " << num_dofs1 << std::endl;
     auto dofs0 = std::span(dofmap0.data_handle() + c * num_dofs0, num_dofs0);
     auto dofs1 = std::span(dofmap1.data_handle() + c * num_dofs1, num_dofs1);
-    std::cout << "Post view: " << num_dofs0 << ", " << num_dofs1 << std::endl;
 
     if (!bc0.empty())
     {
@@ -425,7 +417,6 @@ void assemble_matrix(
 
   for (int i : a.integral_ids(IntegralType::cell))
   {
-    std::cout << "Asseemble over cells" << std::endl;
     auto fn = a.kernel(IntegralType::cell, i);
     assert(fn);
     auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
