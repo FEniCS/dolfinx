@@ -470,14 +470,15 @@ FiniteElement::create_interpolation_operator(const FiniteElement& from) const
   {
     // If one of the elements has bs=1, Basix can figure out the size
     // of the matrix
-    return basix::compute_interpolation_operator(*from._element, *_element);
+    return basix::compute_interpolation_operator<double>(*from._element,
+                                                         *_element);
   }
   else if (_bs > 1 and from._bs == _bs)
   {
     // If bs != 1 for at least one element, then bs0 == bs1 for this
     // case
-    const auto [data, dshape]
-        = basix::compute_interpolation_operator(*from._element, *_element);
+    const auto [data, dshape] = basix::compute_interpolation_operator<double>(
+        *from._element, *_element);
     std::array<std::size_t, 2> shape = {dshape[0] * _bs, dshape[1] * _bs};
     std::vector<double> out(shape[0] * shape[1]);
 
