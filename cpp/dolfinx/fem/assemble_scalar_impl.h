@@ -176,6 +176,7 @@ T assemble_scalar(
   for (int i : M.integral_ids(IntegralType::cell))
   {
     auto fn = M.kernel(IntegralType::cell, i);
+    assert(fn);
     auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
     std::span<const std::int32_t> cells = M.domain(IntegralType::cell, i);
     value += impl::assemble_cells(geometry, cells, fn, constants, coeffs,
@@ -185,6 +186,7 @@ T assemble_scalar(
   for (int i : M.integral_ids(IntegralType::exterior_facet))
   {
     auto fn = M.kernel(IntegralType::exterior_facet, i);
+    assert(fn);
     auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
     value += impl::assemble_exterior_facets(
@@ -206,6 +208,7 @@ T assemble_scalar(
     for (int i : M.integral_ids(IntegralType::interior_facet))
     {
       auto fn = M.kernel(IntegralType::interior_facet, i);
+      assert(fn);
       auto& [coeffs, cstride]
           = coefficients.at({IntegralType::interior_facet, i});
       value += impl::assemble_interior_facets(
