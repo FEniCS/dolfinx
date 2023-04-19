@@ -42,10 +42,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   assert(cells);
 
   // Build set of dofs that are in the new dofmap (un-blocked)
-  auto dofs_view_md = dofmap_view.new_list();
-  std::vector<std::int32_t> dofs_view(dofs_view_md.data_handle(),
-                                      dofs_view_md.data_handle()
-                                          + dofs_view_md.size());
+  std::vector<std::int32_t> dofs_view = dofmap_view.list().array();
   dolfinx::radix_sort(std::span(dofs_view));
   dofs_view.erase(std::unique(dofs_view.begin(), dofs_view.end()),
                   dofs_view.end());
@@ -107,9 +104,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   }
 
   // Map dofs to new collapsed indices for new dofmap
-  auto dof_array_view_md = dofmap_view.new_list();
-  std::span<const std::int32_t> dof_array_view(dof_array_view_md.data_handle(),
-                                               dof_array_view_md.size());
+  const std::vector<std::int32_t>& dof_array_view = dofmap_view.list().array();
   std::vector<std::int32_t> dofmap;
   dofmap.reserve(dof_array_view.size());
   std::transform(dof_array_view.begin(), dof_array_view.end(),
@@ -251,8 +246,10 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
     }
   };
 
+  std::cout << "Create new dofmap" << std::endl;
   DofMap dofmap_new = create_subdofmap(
       comm, index_map_bs(), _element_dof_layout, topology, reorder_fn, *this);
+  std::cout << "End create new dofmap" << std::endl;
 
   // Build map from collapsed dof index to original dof index
   auto index_map_new = dofmap_new.index_map;
@@ -267,7 +264,9 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
   const int bs = dofmap_new.bs();
   for (int c = 0; c < cells->num_nodes(); ++c)
   {
+    std::cout << "View" << std::endl;
     std::span<const std::int32_t> cell_dofs_view = this->cell_dofs(c);
+    std::cout << "New" << std::endl;
     std::span<const std::int32_t> cell_dofs = dofmap_new.cell_dofs(c);
     for (std::size_t i = 0; i < cell_dofs.size(); ++i)
     {

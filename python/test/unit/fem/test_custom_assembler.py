@@ -282,7 +282,7 @@ def test_custom_mesh_loop_rank1():
     num_cells = num_owned_cells + mesh.topology.index_map(mesh.topology.dim).num_ghosts
     x_dofs = mesh.geometry.dofmap.array.reshape(num_cells, 3)
     x = mesh.geometry.x
-    dofmap = V.dofmap.list.array.reshape(num_cells, 3)
+    dofmap = V.dofmap.list
 
     # Assemble with pure Numba function (two passes, first will include
     # JIT overhead)
@@ -364,7 +364,7 @@ def test_custom_mesh_loop_ctypes_rank2():
     num_cells = num_owned_cells + mesh.topology.index_map(mesh.topology.dim).num_ghosts
     x_dofs = mesh.geometry.dofmap.array.reshape(num_cells, 3)
     x = mesh.geometry.x
-    dofmap = V.dofmap.list.array.reshape(num_cells, 3).astype(np.dtype(PETSc.IntType))
+    dofmap = V.dofmap.list.astype(np.dtype(PETSc.IntType))
 
     # Generated case with general assembler
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
@@ -422,7 +422,7 @@ def test_custom_mesh_loop_cffi_rank2(set_vals):
     num_cells = num_owned_cells + mesh.topology.index_map(mesh.topology.dim).num_ghosts
     x_dofs = mesh.geometry.dofmap.array.reshape(num_cells, 3)
     x = mesh.geometry.x
-    dofmap = V.dofmap.list.array.reshape(num_cells, 3).astype(np.dtype(PETSc.IntType))
+    dofmap = V.dofmap.list.astype(np.dtype(PETSc.IntType))
 
     A1 = A0.copy()
     for i in range(2):

@@ -23,6 +23,8 @@
 #include <utility>
 #include <vector>
 
+#include <iostream>
+
 namespace dolfinx::common
 {
 class IndexMap;
@@ -119,11 +121,16 @@ public:
   /// @param[in] cell The cell index
   /// @return Local-global dof map for the cell (using process-local
   /// indices)
-  std::span<const std::int32_t> cell_dofs(std::int32_t cell) const
+  std::span<const std::int32_t> cell_dofs(std::int32_t c) const
   {
-    int ndofs = _element_dof_layout.num_dofs();
-    return std::span<const std::int32_t>(_dofmap.array().data() + ndofs * cell,
+    int ndofs = _element_dof_layout.num_dofs() / _bs;
+    std::cout << "Testing (new, old): " << ndofs << ", "
+              << _dofmap.links(c).size() << std::endl;
+    std::cout << "bs, subel_bs: " << _bs << ", "
+              << _element_dof_layout.block_size() << std::endl;
+    return std::span<const std::int32_t>(_dofmap.array().data() + ndofs * c,
                                          ndofs);
+    // return _dofmap.links(c);
   }
 
   /// @brief Return the block size for the dofmap
