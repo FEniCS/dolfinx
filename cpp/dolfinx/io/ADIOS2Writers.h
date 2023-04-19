@@ -918,8 +918,8 @@ void write_mesh(adios2::IO& io, adios2::Engine& engine,
   std::array<std::int64_t, 2> local_range = geometry.index_map()->local_range();
 
   std::span<const T> nodes = geometry.x();
-  int gdim = geometry.dim();
-  int num_nodes = nodes.size() / 3;
+  std::size_t gdim = geometry.dim();
+  std::size_t num_nodes = nodes.size() / 3;
   // Truncate geometry to gdim
   std::vector<T> geometry_trunc;
   geometry_trunc.reserve(num_nodes * gdim);
@@ -962,8 +962,10 @@ void write_mesh(adios2::IO& io, adios2::Engine& engine,
   // Put local topology in global dataset
   adios2::Variable<std::int64_t> local_topology
       = impl_adios2::define_variable<std::int64_t>(
-          io, "connectivity", {num_cells_global, num_dofs_per_cell},
-          {local_range_cell[0], 0}, {num_cells_local, num_dofs_per_cell});
+          io, "connectivity",
+          {(std::size_t)num_cells_global, (std::size_t)num_dofs_per_cell},
+          {(std::size_t)local_range_cell[0], (std::size_t)0},
+          {(std::size_t)num_cells_local, (std::size_t)num_dofs_per_cell});
   engine.Put<std::int64_t>(local_topology, connectivity_out.data());
 
   // Compute mesh permutations
@@ -972,8 +974,8 @@ void write_mesh(adios2::IO& io, adios2::Engine& engine,
       = topology->get_cell_permutation_info();
   adios2::Variable<std::uint32_t> local_cell_perm
       = impl_adios2::define_variable<std::uint32_t>(
-          io, "CellPermutations", {num_cells_global}, {local_range_cell[0]},
-          {num_cells_local});
+          io, "CellPermutations", {(std::size_t)num_cells_global},
+          {(std::size_t)local_range_cell[0]}, {(std::size_t)num_cells_local});
   engine.Put<std::uint32_t>(local_cell_perm, cell_perm.data());
 
   engine.PerformPuts();
@@ -1079,7 +1081,7 @@ public:
 
     // Determine what step to read mesh from
     adios2::Variable<double> var_step
-        = this->_io->InquireVariable<double>("step");
+        = this->_io->template InquireVariable<double>("step");
 
     if (!var_step)
       throw std::runtime_error("Could not find 'step' variable in input file");
@@ -1089,7 +1091,7 @@ public:
     for (std::size_t i = 0; i < num_steps; ++i)
     {
       double time;
-      var_step.SetStepSelection(adios2::Box{i, (std::size_t)1});
+      var_step.SetStepSelection(adios2::Box<std::size_t>{i, (std::size_t)1});
       this->_engine->Get(var_step, time, adios2::Mode::Sync);
       if (std::abs(time - t) < 1e-15)
       {
@@ -1101,11 +1103,11 @@ public:
 
     if (!found_step)
       throw std::runtime_error("Time step not found in input file");
-    adios2::Box read_selection = {read_step, (std::size_t)1};
+    adios2::Box<std::size_t> read_selection = {read_step, (std::size_t)1};
 
     // Get types to reconstruct coordinate map
     adios2::Attribute<int> ct_var
-        = this->_io->InquireAttribute<int>("CellType");
+        = this->_io->template InquireAttribute<int>("CellType");
     if (!ct_var)
     {
       throw std::runtime_error(
@@ -1116,7 +1118,7 @@ public:
         = static_cast<mesh::CellType>(ct_var.Data().front());
 
     adios2::Attribute<int> lv_var
-        = this->_io->InquireAttribute<int>("LagrangeVariant");
+        = this->_io->template InquireAttribute<int>("LagrangeVariant");
     if (!lv_var)
     {
       throw std::runtime_error(
@@ -1125,7 +1127,8 @@ public:
     basix::element::lagrange_variant lagrange_variant
         = static_cast<basix::element::lagrange_variant>(lv_var.Data().front());
 
-    adios2::Attribute<int> deg_var = this->_io->InquireAttribute<int>("Degree");
+    adios2::Attribute<int> deg_var
+        = this->_io->template InquireAttribute<int>("Degree");
     if (!deg_var)
     {
       throw std::runtime_error(
@@ -1136,7 +1139,8 @@ public:
     fem::CoordinateElement cmap
         = fem::CoordinateElement(cell_type, degree, lagrange_variant);
     // Get mesh geometry
-    adios2::Variable<T> var_geom = this->_io->InquireVariable<T>("geometry");
+    adios2::Variable<T> var_geom
+        = this->_io->template InquireVariable<T>("geometry");
     if (!var_geom)
     {
       throw std::runtime_error(
@@ -1146,14 +1150,15 @@ public:
     adios2::Dims x_shape = var_geom.Shape();
     const std::array<std::int64_t, 2> geom_range
         = MPI::local_range(rank, x_shape[0], size);
-    var_geom.SetSelection(
-        {{geom_range[0], 0}, {geom_range[1] - geom_range[0], x_shape[1]}});
+    var_geom.SetSelection({{(std::size_t)geom_range[0], (std::size_t)0},
+                           {std::size_t(geom_range[1] - geom_range[0]),
+                            (std::size_t)x_shape[1]}});
     std::vector<T> nodes((geom_range[1] - geom_range[0]) * x_shape[1]);
     this->_engine->Get(var_geom, nodes);
 
     // Get mesh topology
     adios2::Variable<std::int64_t> var_top
-        = this->_io->InquireVariable<std::int64_t>("connectivity");
+        = this->_io->template InquireVariable<std::int64_t>("connectivity");
     if (!var_top)
     {
       throw std::runtime_error(
@@ -1164,7 +1169,8 @@ public:
     const std::array<std::int64_t, 2> top_range
         = MPI::local_range(rank, t_shape[0], size);
     var_top.SetSelection(
-        {{top_range[0], 0}, {top_range[1] - top_range[0], t_shape[1]}});
+        {{(std::size_t)top_range[0], (std::size_t)0},
+         {std::size_t(top_range[1] - top_range[0]), (std::size_t)t_shape[1]}});
     std::vector<std::int64_t> connectivity((top_range[1] - top_range[0])
                                            * t_shape[1]);
     this->_engine->Get(var_top, connectivity);
