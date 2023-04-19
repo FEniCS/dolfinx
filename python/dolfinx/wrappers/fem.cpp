@@ -775,8 +775,19 @@ void fem(py::module& m)
           },
           py::arg("cell"))
       .def_property_readonly("bs", &dolfinx::fem::DofMap::bs)
-      .def("list", &dolfinx::fem::DofMap::list,
-           py::return_value_policy::reference_internal);
+      .def(
+          "list",
+          [](const dolfinx::fem::DofMap& self)
+          {
+            auto dofs = self.new_list();
+            std::array<py::ssize_t, 2> shape
+                = {py::ssize_t(dofs.extent(0)), py::ssize_t(dofs.extent(1))};
+            return py::array_t<std::int32_t>(shape, dofs.data_handle(),
+                                             py::cast(self));
+          },
+          py::return_value_policy::reference_internal);
+  //  .def("list", &dolfinx::fem::DofMap::list,
+  //        py::return_value_policy::reference_internal);
 
   // dolfinx::fem::CoordinateElement
   py::class_<dolfinx::fem::CoordinateElement,
