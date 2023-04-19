@@ -10,6 +10,7 @@
 
 #include "vtk_utils.h"
 #include <adios2.h>
+#include <basix/mdspan.hpp>
 #include <cassert>
 #include <complex>
 #include <concepts>
@@ -385,8 +386,18 @@ void write_data(adios2::IO& io, adios2::Engine& engine,
   // can work directly with the dof array.
   std::span<const T> data;
   std::vector<T> _data;
-  if (mesh->geometry().dofmap() == dofmap->list() and !need_padding)
+  // if (mesh->geometry().new_dofmap() == dofmap->new_list() and !need_padding)
+  auto equality_check = [](auto x, auto y) -> bool
+  {
+    return x.extents() == y.extents()
+           and std::equal(x.data_handle(), x.data_handle() + x.size(),
+                          y.data_handle());
+  };
+  if (!need_padding
+      and equality_check(mesh->geometry().new_dofmap(), dofmap->new_list()))
+  {
     data = u.x()->array();
+  }
   else
   {
     _data = impl_fides::pack_function_data(u);

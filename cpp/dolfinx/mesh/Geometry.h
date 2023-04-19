@@ -7,6 +7,7 @@
 #pragma once
 
 #include "Topology.h"
+#include <basix/mdspan.hpp>
 #include <concepts>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
@@ -87,6 +88,17 @@ public:
 
   /// Return Euclidean dimension of coordinate system
   int dim() const { return _dim; }
+
+  /// DOF map
+  std::experimental::mdspan<const std::int32_t,
+                            std::experimental::dextents<std::size_t, 2>>
+  new_dofmap() const
+  {
+    int ndofs = _dofmap.num_links(0);
+    return std::experimental::mdspan<
+        const std::int32_t, std::experimental::dextents<std::size_t, 2>>(
+        _dofmap.array().data(), _dofmap.array().size() / ndofs, ndofs);
+  }
 
   /// DOF map
   const graph::AdjacencyList<std::int32_t>& dofmap() const { return _dofmap; }
