@@ -777,6 +777,7 @@ void lift_bc(std::span<T> b, const Form<T, U>& a,
   for (int i : a.integral_ids(IntegralType::cell))
   {
     auto kernel = a.kernel(IntegralType::cell, i);
+    assert(kernel);
     auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
     std::span<const std::int32_t> cells = a.domain(IntegralType::cell, i);
     if (bs0 == 1 and bs1 == 1)
@@ -805,6 +806,7 @@ void lift_bc(std::span<T> b, const Form<T, U>& a,
   for (int i : a.integral_ids(IntegralType::exterior_facet))
   {
     auto kernel = a.kernel(IntegralType::exterior_facet, i);
+    assert(kernel);
     auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
     _lift_bc_exterior_facets(
@@ -835,6 +837,7 @@ void lift_bc(std::span<T> b, const Form<T, U>& a,
     for (int i : a.integral_ids(IntegralType::interior_facet))
     {
       auto kernel = a.kernel(IntegralType::interior_facet, i);
+      assert(kernel);
       auto& [coeffs, cstride]
           = coefficients.at({IntegralType::interior_facet, i});
       _lift_bc_interior_facets(
@@ -971,6 +974,7 @@ void assemble_vector(
   for (int i : L.integral_ids(IntegralType::cell))
   {
     auto fn = L.kernel(IntegralType::cell, i);
+    assert(fn);
     auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
     std::span<const std::int32_t> cells = L.domain(IntegralType::cell, i);
     if (bs == 1)
@@ -993,6 +997,7 @@ void assemble_vector(
   for (int i : L.integral_ids(IntegralType::exterior_facet))
   {
     auto fn = L.kernel(IntegralType::exterior_facet, i);
+    assert(fn);
     auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
     std::span<const std::int32_t> facets
@@ -1038,6 +1043,7 @@ void assemble_vector(
     for (int i : L.integral_ids(IntegralType::interior_facet))
     {
       auto fn = L.kernel(IntegralType::interior_facet, i);
+      assert(fn);
       auto& [coeffs, cstride]
           = coefficients.at({IntegralType::interior_facet, i});
       std::span<const std::int32_t> facets

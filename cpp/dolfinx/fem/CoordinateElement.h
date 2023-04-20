@@ -11,6 +11,7 @@
 #include <array>
 #include <basix/element-families.h>
 #include <basix/mdspan.hpp>
+#include <concepts>
 #include <cstdint>
 #include <dolfinx/common/math.h>
 #include <dolfinx/mesh/cell_types.h>
@@ -19,6 +20,7 @@
 
 namespace basix
 {
+template <std::floating_point F>
 class FiniteElement;
 }
 
@@ -34,7 +36,7 @@ public:
   /// Create a coordinate element from a Basix element
   /// @param[in] element Element from Basix
   explicit CoordinateElement(
-      std::shared_ptr<const basix::FiniteElement> element);
+      std::shared_ptr<const basix::FiniteElement<double>> element);
 
   /// Create a Lagrange coordinate element
   /// @param[in] celltype The cell shape
@@ -245,6 +247,6 @@ private:
   bool _is_affine;
 
   // Basix Element
-  std::shared_ptr<const basix::FiniteElement> _element;
+  std::shared_ptr<const basix::FiniteElement<double>> _element;
 };
 } // namespace dolfinx::fem
