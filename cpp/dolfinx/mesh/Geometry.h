@@ -47,7 +47,7 @@ public:
   /// @param[in] input_global_indices The 'global' input index of each
   /// point, commonly from a mesh input file. The type is
   /// `std:vector<std::int64_t>`.
-  template <std::convertible_to<graph::AdjacencyList<std::int32_t>> U,
+  template <std::convertible_to<std::vector<std::int32_t>> U,
             std::convertible_to<std::vector<T>> V,
             std::convertible_to<std::vector<std::int64_t>> W>
   Geometry(std::shared_ptr<const common::IndexMap> index_map, U&& dofmap,
@@ -97,7 +97,7 @@ public:
     int ndofs = _cmaps[0].dim();
     return std::experimental::mdspan<
         const std::int32_t, std::experimental::dextents<std::size_t, 2>>(
-        _dofmap.array().data(), _dofmap.array().size() / ndofs, ndofs);
+        _dofmap.data(), _dofmap.size() / ndofs, ndofs);
   }
 
   /// Index map
@@ -135,7 +135,8 @@ private:
   int _dim;
 
   // Map per cell for extracting coordinate data
-  graph::AdjacencyList<std::int32_t> _dofmap;
+  // graph::AdjacencyList<std::int32_t> _dofmap;
+  std::vector<std::int32_t> _dofmap;
 
   // IndexMap for geometry 'dofmap'
   std::shared_ptr<const common::IndexMap> _index_map;
@@ -223,8 +224,8 @@ create_geometry(MPI_Comm comm, const Topology& topology,
 
     // Compute local-to-global map from local indices in dofmap to the
     // corresponding global indices in cell_nodes
-    std::vector l2g
-        = graph::build::compute_local_to_global_links(cell_nodes, dofmap);
+    std::vector l2g = graph::build::compute_local_to_global(cell_nodes.array(),
+                                                            dofmap.array());
 
     // Compute local (dof) to local (position in coords) map from (i)
     // local-to-global for dofs and (ii) local-to-global for entries in
@@ -255,7 +256,7 @@ create_geometry(MPI_Comm comm, const Topology& topology,
   }
 
   return Geometry<typename std::remove_reference_t<typename U::value_type>>(
-      dof_index_map, std::move(dofmap), elements, std::move(xg), dim,
+      dof_index_map, std::move(dofmap.array()), elements, std::move(xg), dim,
       std::move(igi));
 }
 
@@ -275,9 +276,7 @@ create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
   namespace stdex = std::experimental;
 
   if (geometry.cmaps().size() > 1)
-  {
     throw std::runtime_error("Mixed topology not supported");
-  }
 
   // Get the geometry dofs in the sub-geometry based on the entities in
   // sub-geometry
@@ -392,7 +391,7 @@ create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
                  [&igi](std::int32_t sub_x_dof) { return igi[sub_x_dof]; });
 
   // Create geometry
-  return {Geometry<T>(sub_x_dof_index_map, std::move(sub_x_dofmap),
+  return {Geometry<T>(sub_x_dof_index_map, std::move(sub_x_dofmap.array()),
                       {sub_coord_ele}, std::move(sub_x), geometry.dim(),
                       std::move(sub_igi)),
           std::move(subx_to_x_dofmap)};

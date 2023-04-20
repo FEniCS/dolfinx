@@ -374,39 +374,23 @@ graph::build::compute_ghost_indices(MPI_Comm comm,
   return ghost_global_indices;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int64_t> graph::build::compute_local_to_global_links(
-    const graph::AdjacencyList<std::int64_t>& global,
-    const graph::AdjacencyList<std::int32_t>& local)
+std::vector<std::int64_t>
+graph::build::compute_local_to_global(std::span<const std::int64_t> global,
+                                      std::span<const std::int32_t> local)
 {
   common::Timer timer(
       "Compute-local-to-global links for global/local adjacency list");
 
-  // Return if global and local are empty
-  if (global.num_nodes() == 0 and local.num_nodes() == 0)
-    return std::vector<std::int64_t>();
-
-  // Build local-to-global for adjacency lists
-  if (global.num_nodes() != local.num_nodes())
-  {
-    throw std::runtime_error("Mismatch in number of nodes between local and "
-                             "global adjacency lists.");
-  }
-
-  const std::vector<std::int64_t>& _global = global.array();
-  const std::vector<std::int32_t>& _local = local.array();
-  if (_global.size() != _local.size())
-  {
-    throw std::runtime_error("Data size mismatch between local and "
-                             "global adjacency lists.");
-  }
+  if (global.size() != local.size())
+    throw std::runtime_error("Data size mismatch.");
 
   const std::int32_t max_local_idx
-      = *std::max_element(_local.begin(), _local.end());
+      = *std::max_element(local.begin(), local.end());
   std::vector<std::int64_t> local_to_global_list(max_local_idx + 1, -1);
-  for (std::size_t i = 0; i < _local.size(); ++i)
+  for (std::size_t i = 0; i < local.size(); ++i)
   {
-    if (local_to_global_list[_local[i]] == -1)
-      local_to_global_list[_local[i]] = _global[i];
+    if (local_to_global_list[local[i]] == -1)
+      local_to_global_list[local[i]] = global[i];
   }
 
   return local_to_global_list;
