@@ -88,14 +88,14 @@ public:
   /// each cell.
   /// @param[in] bs The block size of the `dofmap`.
   template <std::convertible_to<fem::ElementDofLayout> E,
-            std::convertible_to<graph::AdjacencyList<std::int32_t>> U>
+            std::convertible_to<std::vector<std::int32_t>> U>
   DofMap(E&& element, std::shared_ptr<const common::IndexMap> index_map,
          int index_map_bs, U&& dofmap, int bs)
       : index_map(index_map), _index_map_bs(index_map_bs),
-        _element_dof_layout(std::forward<E>(element)), _dofmap(dofmap.array()),
-        // _dofmap(std::forward<U>(dofmap)),
-        _bs(bs), _shape1(_element_dof_layout.num_dofs()
-                         * _element_dof_layout.block_size() / _bs)
+        _element_dof_layout(std::forward<E>(element)),
+        _dofmap(std::forward<U>(dofmap)), _bs(bs),
+        _shape1(_element_dof_layout.num_dofs()
+                * _element_dof_layout.block_size() / _bs)
   {
     // Do nothing
   }

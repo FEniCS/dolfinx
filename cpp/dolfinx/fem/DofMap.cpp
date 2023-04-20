@@ -126,9 +126,8 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   ElementDofLayout element_dof_layout = dofmap_view.element_dof_layout().copy();
 
   // Create new dofmap and return
-  return DofMap(
-      std::move(element_dof_layout), index_map, 1,
-      graph::regular_adjacency_list(std::move(dofmap), cell_dimension), 1);
+  return DofMap(std::move(element_dof_layout), index_map, 1, std::move(dofmap),
+                1);
 }
 
 } // namespace
@@ -216,9 +215,8 @@ DofMap DofMap::extract_sub_dofmap(std::span<const int> component) const
 
   // Set element dof layout and cell dimension
   ElementDofLayout sub_dof_layout = _element_dof_layout.sub_layout(component);
-  return DofMap(
-      std::move(sub_dof_layout), this->index_map, this->index_map_bs(),
-      graph::regular_adjacency_list(std::move(dofmap), dofs_per_cell), 1);
+  return DofMap(std::move(sub_dof_layout), this->index_map,
+                this->index_map_bs(), std::move(dofmap), 1);
 }
 //-----------------------------------------------------------------------------
 std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(

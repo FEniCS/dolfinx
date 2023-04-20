@@ -135,7 +135,6 @@ private:
   int _dim;
 
   // Map per cell for extracting coordinate data
-  // graph::AdjacencyList<std::int32_t> _dofmap;
   std::vector<std::int32_t> _dofmap;
 
   // IndexMap for geometry 'dofmap'
@@ -205,8 +204,12 @@ create_geometry(MPI_Comm comm, const Topology& topology,
     const std::vector<std::uint32_t>& cell_info
         = topology.get_cell_permutation_info();
 
+    int dim = elements[0].dim();
     for (std::int32_t cell = 0; cell < num_cells; ++cell)
-      elements[0].unpermute_dofs(dofmap.links(cell), cell_info[cell]);
+    {
+      std::span<std::int32_t> dofs(dofmap.data() + cell * dim, dim);
+      elements[0].unpermute_dofs(dofs, cell_info[cell]);
+    }
   }
 
   auto remap_data
@@ -224,8 +227,8 @@ create_geometry(MPI_Comm comm, const Topology& topology,
 
     // Compute local-to-global map from local indices in dofmap to the
     // corresponding global indices in cell_nodes
-    std::vector l2g = graph::build::compute_local_to_global(cell_nodes.array(),
-                                                            dofmap.array());
+    std::vector l2g
+        = graph::build::compute_local_to_global(cell_nodes.array(), dofmap);
 
     // Compute local (dof) to local (position in coords) map from (i)
     // local-to-global for dofs and (ii) local-to-global for entries in
@@ -256,7 +259,7 @@ create_geometry(MPI_Comm comm, const Topology& topology,
   }
 
   return Geometry<typename std::remove_reference_t<typename U::value_type>>(
-      dof_index_map, std::move(dofmap.array()), elements, std::move(xg), dim,
+      dof_index_map, std::move(dofmap), elements, std::move(xg), dim,
       std::move(igi));
 }
 
@@ -286,9 +289,6 @@ create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
 
   std::vector<std::int32_t> x_indices;
   x_indices.reserve(num_entity_dofs * subentity_to_entity.size());
-  std::vector<std::int32_t> sub_x_dofmap_offsets;
-  sub_x_dofmap_offsets.reserve(subentity_to_entity.size() + 1);
-  sub_x_dofmap_offsets.push_back(0);
   {
     auto xdofs = geometry.dofmap();
     const int tdim = topology.dim();
@@ -314,7 +314,6 @@ create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
       auto xc = stdex::submdspan(xdofs, cell, stdex::full_extent);
       for (std::int32_t entity_dof : closure_dofs[dim][local_entity])
         x_indices.push_back(xc[entity_dof]);
-      sub_x_dofmap_offsets.push_back(x_indices.size());
     }
   }
 
@@ -361,18 +360,15 @@ create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
     x_to_subx_dof_map[subx_to_x_dofmap[i]] = i;
 
   // Create sub-geometry dofmap
-  std::vector<std::int32_t> sub_x_dofmap_vec;
-  sub_x_dofmap_vec.reserve(x_indices.size());
+  std::vector<std::int32_t> sub_x_dofmap;
+  sub_x_dofmap.reserve(x_indices.size());
   std::transform(x_indices.cbegin(), x_indices.cend(),
-                 std::back_inserter(sub_x_dofmap_vec),
+                 std::back_inserter(sub_x_dofmap),
                  [&x_to_subx_dof_map](auto x_dof)
                  {
                    assert(x_to_subx_dof_map[x_dof] != -1);
                    return x_to_subx_dof_map[x_dof];
                  });
-
-  graph::AdjacencyList sub_x_dofmap(std::move(sub_x_dofmap_vec),
-                                    std::move(sub_x_dofmap_offsets));
 
   // Create sub-geometry coordinate element
   CellType sub_coord_cell
@@ -391,7 +387,7 @@ create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
                  [&igi](std::int32_t sub_x_dof) { return igi[sub_x_dof]; });
 
   // Create geometry
-  return {Geometry<T>(sub_x_dof_index_map, std::move(sub_x_dofmap.array()),
+  return {Geometry<T>(sub_x_dof_index_map, std::move(sub_x_dofmap),
                       {sub_coord_ele}, std::move(sub_x), geometry.dim(),
                       std::move(sub_igi)),
           std::move(subx_to_x_dofmap)};

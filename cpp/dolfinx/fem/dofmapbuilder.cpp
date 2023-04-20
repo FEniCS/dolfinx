@@ -640,7 +640,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::tuple<common::IndexMap, int, graph::AdjacencyList<std::int32_t>>
+std::tuple<common::IndexMap, int, std::vector<std::int32_t>>
 fem::build_dofmap_data(
     MPI_Comm comm, const mesh::Topology& topology,
     const std::vector<ElementDofLayout>& element_dof_layouts,
@@ -699,9 +699,8 @@ fem::build_dofmap_data(
       dofmap[local_dim0 * cell + j] = new_node;
     }
   }
-  graph::AdjacencyList<std::int32_t> dmap(dofmap, node_graph0.offsets());
 
   return {std::move(index_map), element_dof_layouts[0].block_size(),
-          std::move(dmap)};
+          std::move(dofmap)};
 }
 //-----------------------------------------------------------------------------
