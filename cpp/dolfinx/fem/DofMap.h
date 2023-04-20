@@ -93,7 +93,9 @@ public:
          int index_map_bs, U&& dofmap, int bs)
       : index_map(index_map), _index_map_bs(index_map_bs),
         _element_dof_layout(std::forward<E>(element)),
-        _dofmap(std::forward<U>(dofmap)), _bs(bs)
+        _dofmap(std::forward<U>(dofmap)), _bs(bs),
+        _shape1(_element_dof_layout.num_dofs()
+                * _element_dof_layout.block_size() / _bs)
   {
     // Do nothing
   }
@@ -123,14 +125,8 @@ public:
   /// indices)
   std::span<const std::int32_t> cell_dofs(std::int32_t c) const
   {
-    int ndofs = _element_dof_layout.num_dofs() / _bs;
-    std::cout << "Testing (new, old): " << ndofs << ", "
-              << _dofmap.links(c).size() << std::endl;
-    std::cout << "bs, subel_bs: " << _bs << ", "
-              << _element_dof_layout.block_size() << std::endl;
-    return std::span<const std::int32_t>(_dofmap.array().data() + ndofs * c,
-                                         ndofs);
-    // return _dofmap.links(c);
+    return std::span<const std::int32_t>(_dofmap.array().data() + _shape1 * c,
+                                         _shape1);
   }
 
   /// @brief Return the block size for the dofmap
@@ -190,5 +186,7 @@ private:
 
   // Block size for the dofmap
   int _bs = -1;
+
+  int _shape1 = -1;
 };
 } // namespace dolfinx::fem

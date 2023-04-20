@@ -149,15 +149,14 @@ build_basic_dofmap(
     throw std::runtime_error("Mixed topology mismatch: groups");
   }
 
-  // Mixed topology can only manage one dof (e.g. on vertex, or on edge, i.e. P1
-  // or P2) for now.
+  // Mixed topology can only manage one dof (e.g. on vertex, or on edge,
+  // i.e. P1 or P2) for now.
   if (element_dof_layouts.size() > 1)
   {
     for (auto e : element_dof_layouts)
     {
       for (int d = 0; d <= D; ++d)
       {
-
         if (e.num_entity_dofs(d) > 1)
           throw std::runtime_error("Mixed topology: dofmapbuilder does not yet "
                                    "support elements with more than "
@@ -169,13 +168,17 @@ build_basic_dofmap(
     for (int d = 0; d < D; ++d)
       nd[d] = element_dof_layouts[0].num_entity_dofs(d);
     for (int d = 0; d < D; ++d)
+    {
       for (std::size_t i = 1; i < element_dof_layouts.size(); ++i)
       {
         if (element_dof_layouts[i].num_entity_dofs(d) != nd[d])
+        {
           throw std::runtime_error(
               "Mixed topology: dofmapbuilder - incompatible elements "
               "(different number of dofs on shared entity)");
+        }
       }
+    }
   }
 
   // Generate and number required mesh entities

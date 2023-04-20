@@ -200,7 +200,7 @@ DofMap DofMap::extract_sub_dofmap(std::span<const int> component) const
     auto cell_dmap_parent = this->_dofmap.links(c);
     for (std::int32_t i = 0; i < dofs_per_cell; ++i)
     {
-      const std::div_t pos = std::div(sub_element_map_view[i], bs_parent);
+      std::div_t pos = std::div(sub_element_map_view[i], bs_parent);
       dofmap[c * dofs_per_cell + i]
           = bs_parent * cell_dmap_parent[pos.quot] + pos.rem;
     }
@@ -209,10 +209,9 @@ DofMap DofMap::extract_sub_dofmap(std::span<const int> component) const
   // FIXME X
 
   // Set element dof layout and cell dimension
-  ElementDofLayout sub_element_dof_layout
-      = _element_dof_layout.sub_layout(component);
+  ElementDofLayout sub_dof_layout = _element_dof_layout.sub_layout(component);
   return DofMap(
-      std::move(sub_element_dof_layout), this->index_map, this->index_map_bs(),
+      std::move(sub_dof_layout), this->index_map, this->index_map_bs(),
       graph::regular_adjacency_list(std::move(dofmap), dofs_per_cell), 1);
 }
 //-----------------------------------------------------------------------------
@@ -246,10 +245,10 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
     }
   };
 
-  std::cout << "Create new dofmap" << std::endl;
+  // std::cout << "*** Create new dofmap" << std::endl;
   DofMap dofmap_new = create_subdofmap(
       comm, index_map_bs(), _element_dof_layout, topology, reorder_fn, *this);
-  std::cout << "End create new dofmap" << std::endl;
+  // std::cout << "*** End create new dofmap" << std::endl;
 
   // Build map from collapsed dof index to original dof index
   auto index_map_new = dofmap_new.index_map;
@@ -264,9 +263,9 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
   const int bs = dofmap_new.bs();
   for (int c = 0; c < cells->num_nodes(); ++c)
   {
-    std::cout << "View" << std::endl;
+    // std::cout << "-View" << std::endl;
     std::span<const std::int32_t> cell_dofs_view = this->cell_dofs(c);
-    std::cout << "New" << std::endl;
+    // std::cout << "-New" << std::endl;
     std::span<const std::int32_t> cell_dofs = dofmap_new.cell_dofs(c);
     for (std::size_t i = 0; i < cell_dofs.size(); ++i)
     {
@@ -278,6 +277,7 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
       }
     }
   }
+  std::cout << "Post-pack" << std::endl;
 
   return {std::move(dofmap_new), std::move(collapsed_map)};
 }
