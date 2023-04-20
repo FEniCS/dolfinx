@@ -12,7 +12,6 @@
 #include "utils.h"
 #include <algorithm>
 #include <concepts>
-#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/la/utils.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>

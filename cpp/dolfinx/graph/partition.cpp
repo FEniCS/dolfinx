@@ -380,6 +380,8 @@ graph::build::compute_local_to_global(std::span<const std::int64_t> global,
 {
   common::Timer timer(
       "Compute-local-to-global links for global/local adjacency list");
+  if (global.empty() and local.empty())
+    return std::vector<std::int64_t>();
 
   if (global.size() != local.size())
     throw std::runtime_error("Data size mismatch.");

@@ -907,7 +907,6 @@ create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
 
   Geometry geometry
       = create_geometry(comm, topology, elements, cell_nodes, x, xshape[1]);
-
   return Mesh<typename U::value_type>(
       comm, std::make_shared<Topology>(std::move(topology)),
       std::move(geometry));
