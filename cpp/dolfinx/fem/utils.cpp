@@ -100,7 +100,7 @@ fem::create_dofmap(MPI_Comm comm, const ElementDofLayout& layout,
                    mesh::Topology& topology,
                    const std::function<std::vector<int>(
                        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn,
-                   const FiniteElement& element)
+                   const FiniteElement<double>& element)
 {
   // Create required mesh entities
   const int D = topology.dim();

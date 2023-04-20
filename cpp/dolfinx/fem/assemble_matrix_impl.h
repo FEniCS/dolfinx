@@ -386,9 +386,9 @@ void assemble_matrix(
   const graph::AdjacencyList<std::int32_t>& dofs1 = dofmap1->list();
   const int bs1 = dofmap1->bs();
 
-  std::shared_ptr<const fem::FiniteElement> element0
+  std::shared_ptr<const fem::FiniteElement<double>> element0
       = a.function_spaces().at(0)->element();
-  std::shared_ptr<const fem::FiniteElement> element1
+  std::shared_ptr<const fem::FiniteElement<double>> element1
       = a.function_spaces().at(1)->element();
   const std::function<void(const std::span<T>&,
                            const std::span<const std::uint32_t>&, std::int32_t,

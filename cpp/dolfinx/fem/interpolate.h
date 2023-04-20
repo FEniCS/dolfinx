@@ -38,7 +38,7 @@ class Function;
 /// @return The coordinates in the physical space at which to evaluate
 /// an expression. The shape is (3, num_points) and storage is row-major.
 template <std::floating_point T>
-std::vector<T> interpolation_coords(const fem::FiniteElement& element,
+std::vector<T> interpolation_coords(const fem::FiniteElement<double>& element,
                                     const mesh::Geometry<T>& geometry,
                                     std::span<const std::int32_t> cells)
 {
@@ -325,9 +325,9 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
   auto mesh = V0->mesh();
   assert(mesh);
 
-  std::shared_ptr<const FiniteElement> element0 = V0->element();
+  std::shared_ptr<const FiniteElement<double>> element0 = V0->element();
   assert(element0);
-  std::shared_ptr<const FiniteElement> element1 = V1->element();
+  std::shared_ptr<const FiniteElement<double>> element1 = V1->element();
   assert(element1);
 
   const int tdim = mesh->topology()->dim();
@@ -417,9 +417,9 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
   // Get elements
   auto V1 = u1.function_space();
   assert(V1);
-  std::shared_ptr<const FiniteElement> element0 = V0->element();
+  std::shared_ptr<const FiniteElement<double>> element0 = V0->element();
   assert(element0);
-  std::shared_ptr<const FiniteElement> element1 = V1->element();
+  std::shared_ptr<const FiniteElement<double>> element1 = V1->element();
   assert(element1);
 
   std::span<const std::uint32_t> cell_info;
@@ -650,7 +650,7 @@ void interpolate_nonmatching_meshes(
   const int tdim = mesh->topology()->dim();
   const auto cell_map = mesh->topology()->index_map(tdim);
 
-  std::shared_ptr<const FiniteElement> element_u
+  std::shared_ptr<const FiniteElement<double>> element_u
       = u.function_space()->element();
   const std::size_t value_size = element_u->value_size();
 
@@ -725,7 +725,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
   using mdspan2_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
   using mdspan3_t = stdex::mdspan<double, stdex::dextents<std::size_t, 3>>;
 
-  std::shared_ptr<const FiniteElement> element = u.function_space()->element();
+  std::shared_ptr<const FiniteElement<double>> element = u.function_space()->element();
   assert(element);
   const int element_bs = element->block_size();
   if (int num_sub = element->num_sub_elements();
@@ -1004,7 +1004,7 @@ template <std::floating_point T>
 std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>, std::vector<T>,
            std::vector<std::int32_t>>
 create_nonmatching_meshes_interpolation_data(
-    const mesh::Geometry<T>& geometry0, const FiniteElement& element0,
+    const mesh::Geometry<T>& geometry0, const FiniteElement<double>& element0,
     const mesh::Mesh<T>& mesh1, std::span<const std::int32_t> cells)
 {
   // Collect all the points at which values are needed to define the
@@ -1032,7 +1032,7 @@ template <std::floating_point T>
 std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>, std::vector<T>,
            std::vector<std::int32_t>>
 create_nonmatching_meshes_interpolation_data(const mesh::Mesh<T>& mesh0,
-                                             const FiniteElement& element0,
+                                             const FiniteElement<double>& element0,
                                              const mesh::Mesh<T>& mesh1)
 {
   int tdim = mesh0.topology()->dim();

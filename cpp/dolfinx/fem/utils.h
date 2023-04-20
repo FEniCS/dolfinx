@@ -255,7 +255,7 @@ create_dofmap(MPI_Comm comm, const ElementDofLayout& layout,
               mesh::Topology& topology,
               const std::function<std::vector<int>(
                   const graph::AdjacencyList<std::int32_t>&)>& reorder_fn,
-              const FiniteElement& element);
+              const FiniteElement<double>& element);
 
 /// Get the name of each coefficient in a UFC form
 /// @param[in] ufcx_form The UFC form
@@ -660,7 +660,7 @@ create_functionspace(std::shared_ptr<mesh::Mesh<T>> mesh,
                      = nullptr)
 {
   // Create a DOLFINx element
-  auto _e = std::make_shared<FiniteElement>(e, bs);
+  auto _e = std::make_shared<FiniteElement<double>>(e, bs);
 
   // Create UFC subdofmaps and compute offset
   assert(_e);
@@ -732,7 +732,7 @@ create_functionspace(ufcx_function_space* (*fptr)(const char*),
     throw std::runtime_error("UFL mesh and CoordinateElement do not match.");
   }
 
-  auto element = std::make_shared<FiniteElement>(*ufcx_element);
+  auto element = std::make_shared<FiniteElement<double>>(*ufcx_element);
   assert(element);
   ufcx_dofmap* ufcx_map = space->dofmap;
   assert(ufcx_map);
@@ -756,7 +756,7 @@ std::span<const std::uint32_t> get_cell_orientation_info(
   bool needs_dof_transformations = false;
   for (auto coeff : coefficients)
   {
-    std::shared_ptr<const FiniteElement> element
+    std::shared_ptr<const FiniteElement<double>> element
         = coeff->function_space()->element();
     if (element->needs_dof_transformations())
     {
@@ -838,7 +838,7 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
   // Read data from coefficient Function u
   std::span<const T> v = u.x()->array();
   const DofMap& dofmap = *u.function_space()->dofmap();
-  std::shared_ptr<const FiniteElement> element = u.function_space()->element();
+  std::shared_ptr<const FiniteElement<double>> element = u.function_space()->element();
   assert(element);
   int space_dim = element->space_dimension();
   const auto transformation

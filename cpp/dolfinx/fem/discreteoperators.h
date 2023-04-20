@@ -49,17 +49,17 @@ namespace dolfinx::fem
 /// @param[in] mat_set A functor that sets values in a matrix
 template <typename T>
 void discrete_gradient(mesh::Topology& topology,
-                       std::pair<std::reference_wrapper<const FiniteElement>,
+                       std::pair<std::reference_wrapper<const FiniteElement<double>>,
                                  std::reference_wrapper<const DofMap>>
                            V0,
-                       std::pair<std::reference_wrapper<const FiniteElement>,
+                       std::pair<std::reference_wrapper<const FiniteElement<double>>,
                                  std::reference_wrapper<const DofMap>>
                            V1,
                        auto&& mat_set)
 {
-  const FiniteElement& e0 = V0.first.get();
+  const FiniteElement<double>& e0 = V0.first.get();
   const DofMap& dofmap0 = V0.second.get();
-  const FiniteElement& e1 = V1.first.get();
+  const FiniteElement<double>& e1 = V1.first.get();
   const DofMap& dofmap1 = V1.second.get();
 
   namespace stdex = std::experimental;
@@ -161,9 +161,9 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   const int gdim = mesh->geometry().dim();
 
   // Get elements
-  std::shared_ptr<const FiniteElement> e0 = V0.element();
+  std::shared_ptr<const FiniteElement<double>> e0 = V0.element();
   assert(e0);
-  std::shared_ptr<const FiniteElement> e1 = V1.element();
+  std::shared_ptr<const FiniteElement<double>> e1 = V1.element();
   assert(e1);
 
   std::span<const std::uint32_t> cell_info;

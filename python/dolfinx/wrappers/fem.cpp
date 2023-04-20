@@ -586,7 +586,7 @@ void fem(py::module& m)
       "create_dofmap",
       [](const MPICommWrapper comm, std::uintptr_t dofmap,
          dolfinx::mesh::Topology& topology,
-         const dolfinx::fem::FiniteElement& element)
+         const dolfinx::fem::FiniteElement<double>& element)
       {
         ufcx_dofmap* p = reinterpret_cast<ufcx_dofmap*>(dofmap);
         assert(p);
@@ -628,7 +628,7 @@ void fem(py::module& m)
   m.def(
       "create_nonmatching_meshes_interpolation_data",
       [](const dolfinx::mesh::Mesh<double>& mesh0,
-         const dolfinx::fem::FiniteElement& element0,
+         const dolfinx::fem::FiniteElement<double>& element0,
          const dolfinx::mesh::Mesh<double>& mesh1)
       {
         int tdim = mesh0.topology()->dim();
@@ -646,7 +646,7 @@ void fem(py::module& m)
   m.def(
       "create_nonmatching_meshes_interpolation_data",
       [](const dolfinx::mesh::Geometry<double>& geometry0,
-         const dolfinx::fem::FiniteElement& element0,
+         const dolfinx::fem::FiniteElement<double>& element0,
          const dolfinx::mesh::Mesh<double>& mesh1,
          const py::array_t<std::int32_t, py::array::c_style>& cells)
       {
@@ -657,8 +657,8 @@ void fem(py::module& m)
       py::arg("cells"));
 
   // dolfinx::fem::FiniteElement
-  py::class_<dolfinx::fem::FiniteElement,
-             std::shared_ptr<dolfinx::fem::FiniteElement>>(
+  py::class_<dolfinx::fem::FiniteElement<double>,
+             std::shared_ptr<dolfinx::fem::FiniteElement<double>>>(
       m, "FiniteElement", "Finite element object")
       .def(py::init(
                [](std::uintptr_t ufcx_element)
@@ -668,32 +668,32 @@ void fem(py::module& m)
                  return dolfinx::fem::FiniteElement(*p);
                }),
            py::arg("ufcx_element"))
-      .def("__eq__", &dolfinx::fem::FiniteElement::operator==)
+      .def("__eq__", &dolfinx::fem::FiniteElement<double>::operator==)
       .def_property_readonly("basix_element",
-                             &dolfinx::fem::FiniteElement::basix_element,
+                             &dolfinx::fem::FiniteElement<double>::basix_element,
                              py::return_value_policy::reference_internal)
       .def_property_readonly("num_sub_elements",
-                             &dolfinx::fem::FiniteElement::num_sub_elements)
+                             &dolfinx::fem::FiniteElement<double>::num_sub_elements)
       .def("interpolation_points",
-           [](const dolfinx::fem::FiniteElement& self)
+           [](const dolfinx::fem::FiniteElement<double>& self)
            {
              auto [X, shape] = self.interpolation_points();
              return as_pyarray(std::move(X), shape);
            })
       .def_property_readonly("interpolation_ident",
-                             &dolfinx::fem::FiniteElement::interpolation_ident)
+                             &dolfinx::fem::FiniteElement<double>::interpolation_ident)
       .def_property_readonly("space_dimension",
-                             &dolfinx::fem::FiniteElement::space_dimension)
+                             &dolfinx::fem::FiniteElement<double>::space_dimension)
       .def_property_readonly(
           "value_shape",
-          [](const dolfinx::fem::FiniteElement& self)
+          [](const dolfinx::fem::FiniteElement<double>& self)
           {
             std::span<const std::size_t> shape = self.value_shape();
             return py::array_t(shape.size(), shape.data(), py::none());
           })
       .def(
           "apply_dof_transformation",
-          [](const dolfinx::fem::FiniteElement& self,
+          [](const dolfinx::fem::FiniteElement<double>& self,
              py::array_t<double, py::array::c_style> x,
              std::uint32_t cell_permutation, int dim)
           {
@@ -703,7 +703,7 @@ void fem(py::module& m)
           py::arg("x"), py::arg("cell_permutation"), py::arg("dim"))
       .def(
           "apply_transpose_dof_transformation",
-          [](const dolfinx::fem::FiniteElement& self,
+          [](const dolfinx::fem::FiniteElement<double>& self,
              py::array_t<double, py::array::c_style> x,
              std::uint32_t cell_permutation, int dim)
           {
@@ -713,7 +713,7 @@ void fem(py::module& m)
           py::arg("x"), py::arg("cell_permutation"), py::arg("dim"))
       .def(
           "apply_inverse_transpose_dof_transformation",
-          [](const dolfinx::fem::FiniteElement& self,
+          [](const dolfinx::fem::FiniteElement<double>& self,
              py::array_t<double, py::array::c_style> x,
              std::uint32_t cell_permutation, int dim)
           {
@@ -723,8 +723,8 @@ void fem(py::module& m)
           py::arg("x"), py::arg("cell_permutation"), py::arg("dim"))
       .def_property_readonly(
           "needs_dof_transformations",
-          &dolfinx::fem::FiniteElement::needs_dof_transformations)
-      .def("signature", &dolfinx::fem::FiniteElement::signature);
+          &dolfinx::fem::FiniteElement<double>::needs_dof_transformations)
+      .def("signature", &dolfinx::fem::FiniteElement<double>::signature);
 
   // dolfinx::fem::ElementDofLayout
   py::class_<dolfinx::fem::ElementDofLayout,
@@ -964,7 +964,7 @@ void fem(py::module& m)
 
   m.def(
       "interpolation_coords",
-      [](const dolfinx::fem::FiniteElement& e,
+      [](const dolfinx::fem::FiniteElement<double>& e,
          const dolfinx::mesh::Geometry<double>& geometry,
          py::array_t<std::int32_t, py::array::c_style> cells)
       {
@@ -980,7 +980,7 @@ void fem(py::module& m)
              std::shared_ptr<dolfinx::fem::FunctionSpace<double>>>(
       m, "FunctionSpace")
       .def(py::init<std::shared_ptr<dolfinx::mesh::Mesh<double>>,
-                    std::shared_ptr<dolfinx::fem::FiniteElement>,
+                    std::shared_ptr<dolfinx::fem::FiniteElement<double>>,
                     std::shared_ptr<dolfinx::fem::DofMap>>(),
            py::arg("mesh"), py::arg("element"), py::arg("dofmap"))
       .def("collapse", &dolfinx::fem::FunctionSpace<double>::collapse)

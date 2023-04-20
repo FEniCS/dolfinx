@@ -126,7 +126,7 @@ compute_point_values(const fem::Function<T, double>& u)
 //-----------------------------------------------------------------------------
 // Get data width - normally the same as u.value_size(), but expand for
 // 2D vector/tensor because XDMF presents everything as 3D
-std::int64_t get_padded_width(const fem::FiniteElement& e)
+std::int64_t get_padded_width(const fem::FiniteElement<double>& e)
 {
   const int width = e.value_size();
   const int rank = e.value_shape().size();

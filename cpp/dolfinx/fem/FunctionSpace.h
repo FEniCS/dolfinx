@@ -26,6 +26,7 @@
 namespace dolfinx::fem
 {
 class DofMap;
+template <std::floating_point F>
 class FiniteElement;
 
 /// @brief This class represents a finite element function space defined
@@ -40,7 +41,7 @@ public:
   /// @param[in] element The element
   /// @param[in] dofmap The dofmap
   FunctionSpace(std::shared_ptr<const mesh::Mesh<T>> mesh,
-                std::shared_ptr<const FiniteElement> element,
+                std::shared_ptr<const FiniteElement<double>> element,
                 std::shared_ptr<const DofMap> dofmap)
       : _mesh(mesh), _element(element), _dofmap(dofmap),
         _id(boost::uuids::random_generator()()), _root_space_id(_id)
@@ -80,7 +81,7 @@ public:
     }
 
     // Extract sub-element
-    std::shared_ptr<const FiniteElement> element
+    std::shared_ptr<const FiniteElement<double>> element
         = this->_element->extract_sub_element(component);
 
     // Extract sub dofmap
@@ -305,7 +306,10 @@ public:
   std::shared_ptr<const mesh::Mesh<T>> mesh() const { return _mesh; }
 
   /// The finite element
-  std::shared_ptr<const FiniteElement> element() const { return _element; }
+  std::shared_ptr<const FiniteElement<double>> element() const
+  {
+    return _element;
+  }
 
   /// The dofmap
   std::shared_ptr<const DofMap> dofmap() const { return _dofmap; }
@@ -315,7 +319,7 @@ private:
   std::shared_ptr<const mesh::Mesh<T>> _mesh;
 
   // The finite element
-  std::shared_ptr<const FiniteElement> _element;
+  std::shared_ptr<const FiniteElement<double>> _element;
 
   // The dofmap
   std::shared_ptr<const DofMap> _dofmap;
