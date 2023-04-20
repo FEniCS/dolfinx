@@ -42,7 +42,10 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   assert(cells);
 
   // Build set of dofs that are in the new dofmap (un-blocked)
-  std::vector<std::int32_t> dofs_view = dofmap_view.list().array();
+  auto dofs_view_md = dofmap_view.list();
+  std::vector<std::int32_t> dofs_view(dofs_view_md.data_handle(),
+                                      dofs_view_md.data_handle()
+                                          + dofs_view_md.size());
   dolfinx::radix_sort(std::span(dofs_view));
   dofs_view.erase(std::unique(dofs_view.begin(), dofs_view.end()),
                   dofs_view.end());
@@ -104,10 +107,13 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   }
 
   // Map dofs to new collapsed indices for new dofmap
-  const std::vector<std::int32_t>& dof_array_view = dofmap_view.list().array();
+  // const std::vector<std::int32_t>& dof_array_view =
+  // dofmap_view.list().array();
+  auto dof_array_view = dofmap_view.list();
   std::vector<std::int32_t> dofmap;
   dofmap.reserve(dof_array_view.size());
-  std::transform(dof_array_view.begin(), dof_array_view.end(),
+  std::transform(dof_array_view.data_handle(),
+                 dof_array_view.data_handle() + dof_array_view.size(),
                  std::back_inserter(dofmap),
                  [&old_to_new](auto idx_old) { return old_to_new[idx_old]; });
 
@@ -130,20 +136,22 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
 } // namespace
 
 //-----------------------------------------------------------------------------
-graph::AdjacencyList<std::int32_t>
-fem::transpose_dofmap(const graph::AdjacencyList<std::int32_t>& dofmap,
-                      std::int32_t num_cells)
+graph::AdjacencyList<std::int32_t> fem::transpose_dofmap(
+    std::experimental::mdspan<const std::int32_t,
+                              std::experimental::dextents<std::size_t, 2>>
+        dofmap,
+    std::int32_t num_cells)
 {
   // Count number of cell contributions to each global index
   const std::int32_t max_index = *std::max_element(
-      dofmap.array().begin(),
-      std::next(dofmap.array().begin(), dofmap.offsets()[num_cells]));
+      dofmap.data_handle(),
+      std::next(dofmap.data_handle(), num_cells * dofmap.extent(1)));
 
   std::vector<int> num_local_contributions(max_index + 1, 0);
-  for (int c = 0; c < num_cells; ++c)
+  for (std::int32_t c = 0; c < num_cells; ++c)
   {
-    for (auto dof : dofmap.links(c))
-      num_local_contributions[dof]++;
+    for (std::size_t d = 0; d < dofmap.extent(1); ++d)
+      num_local_contributions[dofmap(c, d)]++;
   }
 
   // Compute offset for each global index
@@ -154,10 +162,10 @@ fem::transpose_dofmap(const graph::AdjacencyList<std::int32_t>& dofmap,
   std::vector<std::int32_t> data(index_offsets.back());
   std::vector<int> pos = index_offsets;
   int cell_offset = 0;
-  for (int c = 0; c < num_cells; ++c)
+  for (std::int32_t c = 0; c < num_cells; ++c)
   {
-    for (auto dof : dofmap.links(c))
-      data[pos[dof]++] = cell_offset++;
+    for (std::size_t d = 0; d < dofmap.extent(1); ++d)
+      data[pos[dofmap(c, d)]++] = cell_offset++;
   }
 
   // Sort the source indices for each global index
@@ -172,7 +180,6 @@ fem::transpose_dofmap(const graph::AdjacencyList<std::int32_t>& dofmap,
   return graph::AdjacencyList(std::move(data), std::move(index_offsets));
 }
 //-----------------------------------------------------------------------------
-/// Equality operator
 bool DofMap::operator==(const DofMap& map) const
 {
   return this->_index_map_bs == map._index_map_bs
@@ -190,14 +197,15 @@ DofMap DofMap::extract_sub_dofmap(std::span<const int> component) const
       = this->element_dof_layout().sub_view(component);
 
   // Build dofmap by extracting from parent
-  const int num_cells = this->_dofmap.num_nodes();
+  const std::int32_t num_cells = this->_dofmap.size() / this->_shape1;
+
   // FIXME X: how does sub_element_map_view hand block sizes?
   const std::int32_t dofs_per_cell = sub_element_map_view.size();
   std::vector<std::int32_t> dofmap(num_cells * dofs_per_cell);
   const int bs_parent = this->bs();
-  for (int c = 0; c < num_cells; ++c)
+  for (std::int32_t c = 0; c < num_cells; ++c)
   {
-    auto cell_dmap_parent = this->_dofmap.links(c);
+    auto cell_dmap_parent = this->cell_dofs(c);
     for (std::int32_t i = 0; i < dofs_per_cell; ++i)
     {
       std::div_t pos = std::div(sub_element_map_view[i], bs_parent);
@@ -261,11 +269,9 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
   auto cells = topology.connectivity(tdim, 0);
   assert(cells);
   const int bs = dofmap_new.bs();
-  for (int c = 0; c < cells->num_nodes(); ++c)
+  for (std::int32_t c = 0; c < cells->num_nodes(); ++c)
   {
-    // std::cout << "-View" << std::endl;
     std::span<const std::int32_t> cell_dofs_view = this->cell_dofs(c);
-    // std::cout << "-New" << std::endl;
     std::span<const std::int32_t> cell_dofs = dofmap_new.cell_dofs(c);
     for (std::size_t i = 0; i < cell_dofs.size(); ++i)
     {
@@ -282,19 +288,13 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
   return {std::move(dofmap_new), std::move(collapsed_map)};
 }
 //-----------------------------------------------------------------------------
-const graph::AdjacencyList<std::int32_t>& DofMap::list() const
-{
-  return _dofmap;
-}
-//-----------------------------------------------------------------------------
 std::experimental::mdspan<const std::int32_t,
                           std::experimental::dextents<std::size_t, 2>>
-DofMap::new_list() const
+DofMap::list() const
 {
-  int ndofs = _element_dof_layout.num_dofs();
   return std::experimental::mdspan<const std::int32_t,
                                    std::experimental::dextents<std::size_t, 2>>(
-      _dofmap.array().data(), _dofmap.array().size() / ndofs, ndofs);
+      _dofmap.data(), _dofmap.size() / _shape1, _shape1);
 }
 //-----------------------------------------------------------------------------
 int DofMap::index_map_bs() const { return _index_map_bs; }

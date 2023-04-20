@@ -61,9 +61,11 @@ namespace dolfinx::fem
 /// typically used to exclude ghost cell contributions.
 /// @return Map from global (process-wise) index to positions in an
 /// unaassembled array. The links for each node are sorted.
-graph::AdjacencyList<std::int32_t>
-transpose_dofmap(const graph::AdjacencyList<std::int32_t>& dofmap,
-                 std::int32_t num_cells);
+graph::AdjacencyList<std::int32_t> transpose_dofmap(
+    std::experimental::mdspan<const std::int32_t,
+                              std::experimental::dextents<std::size_t, 2>>
+        dofmap,
+    std::int32_t num_cells);
 
 /// @brief Degree-of-freedom map.
 ///
@@ -92,10 +94,10 @@ public:
   DofMap(E&& element, std::shared_ptr<const common::IndexMap> index_map,
          int index_map_bs, U&& dofmap, int bs)
       : index_map(index_map), _index_map_bs(index_map_bs),
-        _element_dof_layout(std::forward<E>(element)),
-        _dofmap(std::forward<U>(dofmap)), _bs(bs),
-        _shape1(_element_dof_layout.num_dofs()
-                * _element_dof_layout.block_size() / _bs)
+        _element_dof_layout(std::forward<E>(element)), _dofmap(dofmap.array()),
+        // _dofmap(std::forward<U>(dofmap)),
+        _bs(bs), _shape1(_element_dof_layout.num_dofs()
+                         * _element_dof_layout.block_size() / _bs)
   {
     // Do nothing
   }
@@ -125,8 +127,7 @@ public:
   /// indices)
   std::span<const std::int32_t> cell_dofs(std::int32_t c) const
   {
-    return std::span<const std::int32_t>(_dofmap.array().data() + _shape1 * c,
-                                         _shape1);
+    return std::span<const std::int32_t>(_dofmap.data() + _shape1 * c, _shape1);
   }
 
   /// @brief Return the block size for the dofmap
@@ -139,10 +140,9 @@ public:
 
   /// @brief Create a "collapsed" dofmap (collapses a sub-dofmap)
   /// @param[in] comm MPI Communicator
-  /// @param[in] topology The mesh topology that the dofmap is defined
-  /// on
-  /// @param[in] reorder_fn The graph re-ordering function to apply to
-  /// the dof data
+  /// @param[in] topology Mesh topology that the dofmap is defined on
+  /// @param[in] reorder_fn Graph re-ordering function to apply to the
+  /// dof data
   /// @return The collapsed dofmap
   std::pair<DofMap, std::vector<std::int32_t>> collapse(
       MPI_Comm comm, const mesh::Topology& topology,
@@ -153,13 +153,9 @@ public:
 
   /// @brief Get dofmap data
   /// @return The adjacency list with dof indices for each cell
-  const graph::AdjacencyList<std::int32_t>& list() const;
-
-  /// @brief Get dofmap data
-  /// @return The adjacency list with dof indices for each cell
   std::experimental::mdspan<const std::int32_t,
                             std::experimental::dextents<std::size_t, 2>>
-  new_list() const;
+  list() const;
 
   /// Layout of dofs on an element
   const ElementDofLayout& element_dof_layout() const
@@ -182,7 +178,7 @@ private:
   ElementDofLayout _element_dof_layout;
 
   // Cell-local-to-dof map (dofs for cell dofmap[cell])
-  graph::AdjacencyList<std::int32_t> _dofmap;
+  std::vector<std::int32_t> _dofmap;
 
   // Block size for the dofmap
   int _bs = -1;

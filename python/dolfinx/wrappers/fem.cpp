@@ -779,7 +779,7 @@ void fem(py::module& m)
           "list",
           [](const dolfinx::fem::DofMap& self)
           {
-            auto dofs = self.new_list();
+            auto dofs = self.list();
             std::array<py::ssize_t, 2> shape
                 = {py::ssize_t(dofs.extent(0)), py::ssize_t(dofs.extent(1))};
             return py::array_t<std::int32_t>(shape, dofs.data_handle(),

@@ -386,7 +386,6 @@ void write_data(adios2::IO& io, adios2::Engine& engine,
   // can work directly with the dof array.
   std::span<const T> data;
   std::vector<T> _data;
-  // if (mesh->geometry().new_dofmap() == dofmap->new_list() and !need_padding)
   auto equality_check = [](auto x, auto y) -> bool
   {
     return x.extents() == y.extents()
@@ -394,7 +393,7 @@ void write_data(adios2::IO& io, adios2::Engine& engine,
                           y.data_handle());
   };
   if (!need_padding
-      and equality_check(mesh->geometry().new_dofmap(), dofmap->new_list()))
+      and equality_check(mesh->geometry().new_dofmap(), dofmap->list()))
   {
     data = u.x()->array();
   }
