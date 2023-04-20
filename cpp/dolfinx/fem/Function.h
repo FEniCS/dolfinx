@@ -500,7 +500,6 @@ public:
         continue;
 
       // Get cell geometry (coordinate dofs)
-      // auto x_dofs = x_dofmap.links(cell_index);
       auto x_dofs = stdex::submdspan(x_dofmap, cell_index, stdex::full_extent);
       assert(x_dofs.size() == num_dofs_g);
       for (std::size_t i = 0; i < num_dofs_g; ++i)

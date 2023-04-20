@@ -77,7 +77,6 @@ void _lift_bc_cells(
     std::int32_t c = cells[index];
 
     // Get dof maps for cell
-    // auto dmap1 = dofmap1.links(c);
     auto dmap1 = std::span(dofmap1.data_handle() + c * num_dofs1, num_dofs1);
 
     // Check if bc is applied to cell
@@ -234,7 +233,6 @@ void _lift_bc_exterior_facets(
     std::int32_t local_facet = facets[index + 1];
 
     // Get dof maps for cell
-    // auto dmap1 = dofmap1.links(cell);
     auto dmap1 = std::span(dofmap1.data_handle() + cell * num_dofs1, num_dofs1);
 
     // Check if bc is applied to cell
@@ -263,7 +261,6 @@ void _lift_bc_exterior_facets(
     }
 
     // Size data structure for assembly
-    // auto dmap0 = dofmap0.links(cell);
     auto dmap0 = std::span(dofmap0.data_handle() + cell * num_dofs0, num_dofs0);
     const int num_rows = bs0 * dmap0.size();
     const int num_cols = bs1 * dmap1.size();
@@ -368,8 +365,6 @@ void _lift_bc_interior_facets(
     }
 
     // Get dof maps for cells and pack
-    // std::span<const std::int32_t> dmap0_cell0 = dofmap0.links(cells[0]);
-    // std::span<const std::int32_t> dmap0_cell1 = dofmap0.links(cells[1]);
     auto dmap0_cell0
         = std::span(dofmap0.data_handle() + cells[0] * num_dofs0, num_dofs0);
     auto dmap0_cell1
@@ -380,8 +375,6 @@ void _lift_bc_interior_facets(
     std::copy(dmap0_cell1.begin(), dmap0_cell1.end(),
               std::next(dmapjoint0.begin(), dmap0_cell0.size()));
 
-    // std::span<const std::int32_t> dmap1_cell0 = dofmap1.links(cells[0]);
-    // std::span<const std::int32_t> dmap1_cell1 = dofmap1.links(cells[1]);
     auto dmap1_cell0
         = std::span(dofmap1.data_handle() + cells[0] * num_dofs1, num_dofs1);
     auto dmap1_cell1
@@ -623,7 +616,6 @@ void assemble_exterior_facets(
     dof_transform(_be, cell_info, cell, 1);
 
     // Add element vector to global vector
-    // auto dofs = dofmap.links(cell);
     auto dofs = std::span(dofmap.data_handle() + cell * num_dofs, num_dofs);
     if constexpr (_bs > 0)
     {

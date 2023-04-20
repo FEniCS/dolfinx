@@ -144,7 +144,6 @@ void declare_mesh(py::module& m, std::string type)
       m, pyclass_geometry_name.c_str(), "Geometry object")
       .def_property_readonly("dim", &dolfinx::mesh::Geometry<T>::dim,
                              "Geometric dimension")
-      // .def_property_readonly("dofmap", &dolfinx::mesh::Geometry<T>::dofmap)
       .def_property_readonly(
           "dofmap",
           [](dolfinx::mesh::Geometry<T>& self)

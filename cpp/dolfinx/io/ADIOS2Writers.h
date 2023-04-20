@@ -394,6 +394,7 @@ void write_data(adios2::IO& io, adios2::Engine& engine,
            and std::equal(x.data_handle(), x.data_handle() + x.size(),
                           y.data_handle());
   };
+
   if (!need_padding
       and equality_check(mesh->geometry().new_dofmap(), dofmap->list()))
   {

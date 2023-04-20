@@ -619,14 +619,13 @@ void fem(py::module& m)
         if (dofmap.ndim() != 2)
           throw std::runtime_error("Dofmap data has wrong rank");
         namespace stdex = std::experimental;
-        using mdspan2_t = stdex::mdspan<const std::int32_t,
-                                        stdex::dextents<std::size_t, 2>>;
-
-        mdspan2_t _dofmap(dofmap.data(), dofmap.shape(0), dofmap.shape(1));
+        stdex::mdspan<const std::int32_t, stdex::dextents<std::size_t, 2>>
+            _dofmap(dofmap.data(), dofmap.shape(0), dofmap.shape(1));
         return dolfinx::fem::transpose_dofmap(_dofmap, num_cells);
       },
+      py::return_value_policy::reference_internal,
       "Build the index to (cell, local index) map from a dofmap ((cell, local "
-      "index ) -> index).");
+      "index) -> index).");
   m.def(
       "compute_integration_domains",
       [](dolfinx::fem::IntegralType type,
@@ -798,8 +797,6 @@ void fem(py::module& m)
                                              py::cast(self));
           },
           py::return_value_policy::reference_internal);
-  //  .def("list", &dolfinx::fem::DofMap::list,
-  //        py::return_value_policy::reference_internal);
 
   // dolfinx::fem::CoordinateElement
   py::class_<dolfinx::fem::CoordinateElement,

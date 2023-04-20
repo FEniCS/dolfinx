@@ -107,8 +107,6 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   }
 
   // Map dofs to new collapsed indices for new dofmap
-  // const std::vector<std::int32_t>& dof_array_view =
-  // dofmap_view.list().array();
   auto dof_array_view = dofmap_view.list();
   std::vector<std::int32_t> dofmap;
   dofmap.reserve(dof_array_view.size());
@@ -253,10 +251,8 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
     }
   };
 
-  // std::cout << "*** Create new dofmap" << std::endl;
   DofMap dofmap_new = create_subdofmap(
       comm, index_map_bs(), _element_dof_layout, topology, reorder_fn, *this);
-  // std::cout << "*** End create new dofmap" << std::endl;
 
   // Build map from collapsed dof index to original dof index
   auto index_map_new = dofmap_new.index_map;
@@ -283,7 +279,6 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
       }
     }
   }
-  std::cout << "Post-pack" << std::endl;
 
   return {std::move(dofmap_new), std::move(collapsed_map)};
 }

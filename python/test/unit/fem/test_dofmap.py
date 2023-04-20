@@ -12,7 +12,6 @@ import pytest
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx.fem import FunctionSpace, VectorFunctionSpace
-from dolfinx.graph import create_adjacencylist
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_interval, create_unit_square)
 from mpi4py import MPI

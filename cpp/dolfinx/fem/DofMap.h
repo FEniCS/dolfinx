@@ -23,8 +23,6 @@
 #include <utility>
 #include <vector>
 
-#include <iostream>
-
 namespace dolfinx::common
 {
 class IndexMap;
@@ -183,6 +181,7 @@ private:
   // Block size for the dofmap
   int _bs = -1;
 
+  // Number of columns in _dofmap
   int _shape1 = -1;
 };
 } // namespace dolfinx::fem
