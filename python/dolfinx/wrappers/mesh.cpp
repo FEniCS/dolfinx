@@ -108,20 +108,28 @@ void declare_meshtags(py::module& m, std::string type)
       .def_readwrite("name", &dolfinx::mesh::MeshTags<T>::name)
       .def_property_readonly("dim", &dolfinx::mesh::MeshTags<T>::dim)
       .def_property_readonly("topology", &dolfinx::mesh::MeshTags<T>::topology)
-      .def_property_readonly("values",
-                             [](dolfinx::mesh::MeshTags<T>& self)
-                             {
-                               return py::array_t<const T>(self.values().size(),
-                                                           self.values().data(),
-                                                           py::cast(self));
-                             })
-      .def_property_readonly("indices",
-                             [](dolfinx::mesh::MeshTags<T>& self)
-                             {
-                               return py::array_t<const std::int32_t>(
-                                   self.indices().size(), self.indices().data(),
-                                   py::cast(self));
-                             })
+      .def_property_readonly(
+          "values",
+          [](dolfinx::mesh::MeshTags<T>& self)
+          {
+            py::array_t _arr = py::array_t<T>();
+            py::detail::array_proxy(_arr.ptr())->flags
+                &= ~py::detail::npy_api::NPY_ARRAY_WRITEABLE_;
+
+            return py::array_t<const T>(self.values().size(),
+                                        self.values().data(), _arr);
+          })
+      .def_property_readonly(
+          "indices",
+          [](dolfinx::mesh::MeshTags<T>& self)
+          {
+            py::array_t _arr = py::array_t<std::int32_t>();
+            py::detail::array_proxy(_arr.ptr())->flags
+                &= ~py::detail::npy_api::NPY_ARRAY_WRITEABLE_;
+
+            return py::array_t<const std::int32_t>(self.indices().size(),
+                                                   self.indices().data(), _arr);
+          })
       .def("find", [](dolfinx::mesh::MeshTags<T>& self, T value)
            { return as_pyarray(self.find(value)); });
 

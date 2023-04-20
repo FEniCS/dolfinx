@@ -9,7 +9,7 @@ import pytest
 
 from dolfinx.graph import create_adjacencylist
 from dolfinx.mesh import (CellType, create_unit_cube, locate_entities,
-                          meshtags_from_entities)
+                          meshtags_from_entities, meshtags)
 from ufl import Measure
 
 from mpi4py import MPI
@@ -49,3 +49,19 @@ def test_ufl_id():
     ds = Measure("ds", domain=msh, subdomain_data=ft, subdomain_id=(2, 3))
     a = 1 * ds
     assert isinstance(a.subdomain_data(), dict)
+
+
+def test_readonly():
+    """"""
+    mesh = create_unit_cube(MPI.COMM_WORLD, 6, 6, 6)
+    num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
+    cells = np.arange(num_cells, dtype=np.int32)
+    mt = meshtags(mesh, mesh.topology.dim, cells, cells)
+
+    with pytest.raises(ValueError, match="output array is read-only"):
+        mt.indices[:] *= -2
+    assert np.allclose(mt.indices, np.arange(num_cells, dtype=np.int32))
+
+    with pytest.raises(ValueError, match="output array is read-only"):
+        mt.values[:] *= -2
+    assert np.allclose(mt.values, np.arange(num_cells, dtype=np.int32))

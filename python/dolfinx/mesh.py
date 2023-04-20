@@ -310,18 +310,12 @@ class MeshTags:
     @property
     def indices(self) -> npt.NDArray[np.int32]:
         """Indices of tagged mesh entities."""
-        array = self._cpp_object.indices
-        # Pybind defaults arrays to writable even if they are const in C++
-        array.setflags(write=False)
-        return array
+        return self._cpp_object.indices
 
     @property
     def values(self):
         """Values associated with tagged mesh entities."""
-        array = self._cpp_object.values
-        # Pybind defaults arrays to writable even if they are const in C++
-        array.setflags(write=False)
-        return array
+        return self._cpp_object.values
 
     @property
     def name(self) -> str:

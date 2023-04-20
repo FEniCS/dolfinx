@@ -117,22 +117,28 @@ void declare_objects(py::module& m, const std::string& type)
                                return py::array_t<T>(array.size(), array.data(),
                                                      py::cast(self));
                              })
-      .def_property_readonly("indices",
-                             [](dolfinx::la::MatrixCSR<T>& self)
-                             {
-                               std::span<const std::int32_t> array
-                                   = self.cols();
-                               return py::array_t<const std::int32_t>(
-                                   array.size(), array.data(), py::cast(self));
-                             })
-      .def_property_readonly("indptr",
-                             [](dolfinx::la::MatrixCSR<T>& self)
-                             {
-                               std::span<const std::int32_t> array
-                                   = self.row_ptr();
-                               return py::array_t<const std::int32_t>(
-                                   array.size(), array.data(), py::cast(self));
-                             })
+      .def_property_readonly(
+          "indices",
+          [](dolfinx::la::MatrixCSR<T>& self)
+          {
+            std::span<const std::int32_t> array = self.cols();
+            py::array_t _arr = py::array_t<std::int32_t>();
+            py::detail::array_proxy(_arr.ptr())->flags
+                &= ~py::detail::npy_api::NPY_ARRAY_WRITEABLE_;
+            return py::array_t<const std::int32_t>(array.size(), array.data(),
+                                                   _arr);
+          })
+      .def_property_readonly(
+          "indptr",
+          [](dolfinx::la::MatrixCSR<T>& self)
+          {
+            std::span<const std::int32_t> array = self.row_ptr();
+            py::array_t _arr = py::array_t<std::int32_t>();
+            py::detail::array_proxy(_arr.ptr())->flags
+                &= ~py::detail::npy_api::NPY_ARRAY_WRITEABLE_;
+            return py::array_t<const std::int32_t>(array.size(), array.data(),
+                                                   _arr);
+          })
       .def("finalize_begin", &dolfinx::la::MatrixCSR<T>::finalize_begin)
       .def("finalize_end", &dolfinx::la::MatrixCSR<T>::finalize_end);
 }
