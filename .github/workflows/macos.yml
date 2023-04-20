@@ -37,7 +37,7 @@ jobs:
           source fenicsx/bin/activate
           python -m pip install --upgrade setuptools
           python -m pip install --upgrade pip
-          python -m pip install Cython==0.29.32
+          python -m pip install Cython==0.29.33
           echo "VIRTUAL ENV:" $VIRTUAL_ENV
           echo '$(which python):' $(which python)
 
@@ -46,7 +46,7 @@ jobs:
       - name: Install minimal PETSc
         run: |
           source fenicsx/bin/activate
-          git clone -b release https://gitlab.com/petsc/petsc.git petsc
+          git clone -b v3.19.0 https://gitlab.com/petsc/petsc.git petsc
           cd petsc
           python ./configure \
             --with-64-bit-indices=no \
