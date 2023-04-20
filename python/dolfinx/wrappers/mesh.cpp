@@ -111,14 +111,14 @@ void declare_meshtags(py::module& m, std::string type)
       .def_property_readonly("values",
                              [](dolfinx::mesh::MeshTags<T>& self)
                              {
-                               return py::array_t<T>(self.values().size(),
-                                                     self.values().data(),
-                                                     py::cast(self));
+                               return py::array_t<const T>(self.values().size(),
+                                                           self.values().data(),
+                                                           py::cast(self));
                              })
       .def_property_readonly("indices",
                              [](dolfinx::mesh::MeshTags<T>& self)
                              {
-                               return py::array_t<std::int32_t>(
+                               return py::array_t<const std::int32_t>(
                                    self.indices().size(), self.indices().data(),
                                    py::cast(self));
                              })
