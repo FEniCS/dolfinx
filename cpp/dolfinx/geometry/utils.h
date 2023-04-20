@@ -515,7 +515,7 @@ std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
     const mesh::Geometry<T>& geometry = mesh.geometry();
     std::span<const T> geom_dofs = geometry.x();
     auto x_dofmap = geometry.dofmap();
-    const std::size_t num_nodes = geometry.cmaps()[0].dim();
+    const std::size_t num_nodes = x_dofmap.extent(1);
     std::vector<T> coordinate_dofs(num_nodes * 3);
     for (auto cell : cell_candidates)
     {

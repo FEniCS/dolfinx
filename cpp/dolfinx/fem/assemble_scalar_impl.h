@@ -34,7 +34,7 @@ T assemble_cells(const mesh::Geometry<scalar_value_type_t<T>>& geometry,
 
   // Prepare cell geometry
   auto x_dofmap = geometry.dofmap();
-  const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
+  const std::size_t num_dofs_g = x_dofmap.extent(1);
   auto x = geometry.x();
 
   // Create data structures used in assembly
@@ -74,7 +74,7 @@ T assemble_exterior_facets(
 
   // Prepare cell geometry
   auto x_dofmap = geometry.dofmap();
-  const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
+  const std::size_t num_dofs_g = x_dofmap.extent(1);
   auto x = geometry.x();
 
   // Create data structures used in assembly
@@ -117,7 +117,7 @@ T assemble_interior_facets(
 
   // Prepare cell geometry
   auto x_dofmap = geometry.dofmap();
-  const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
+  const std::size_t num_dofs_g = x_dofmap.extent(1);
   auto x = geometry.x();
 
   // Create data structures used in assembly

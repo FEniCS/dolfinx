@@ -714,7 +714,6 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
     auto ev = e_to_v->links(idx);
     assert(ev.size() == num_vertices);
     auto cv = c_to_v->links(cell);
-    // auto xc = stdex::submdspan(xdofs, cell, stdex::full_extent);
     std::span<const std::int32_t> xc(
         xdofs.data_handle() + xdofs.extent(1) * cell, xdofs.extent(1));
     for (std::size_t j = 0; j < num_vertices; ++j)

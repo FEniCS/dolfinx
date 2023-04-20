@@ -52,7 +52,7 @@ void assemble_cells(
 
   // Prepare cell geometry
   auto x_dofmap = geometry.dofmap();
-  const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
+  const std::size_t num_dofs_g = x_dofmap.extent(1);
   auto x = geometry.x();
 
   // Iterate over active cells
@@ -149,7 +149,7 @@ void assemble_exterior_facets(
 
   // Prepare cell geometry
   auto x_dofmap = geometry.dofmap();
-  const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
+  const std::size_t num_dofs_g = x_dofmap.extent(1);
   auto x = geometry.x();
 
   // Data structures used in assembly
@@ -245,7 +245,7 @@ void assemble_interior_facets(
 
   // Prepare cell geometry
   auto x_dofmap = geometry.dofmap();
-  const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
+  const std::size_t num_dofs_g = x_dofmap.extent(1);
   auto x = geometry.x();
 
   // Data structures used in assembly

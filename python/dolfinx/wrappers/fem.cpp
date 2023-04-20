@@ -770,7 +770,8 @@ void fem(py::module& m)
                [](const dolfinx::fem::ElementDofLayout& element,
                   std::shared_ptr<const dolfinx::common::IndexMap> index_map,
                   int index_map_bs,
-                  dolfinx::graph::AdjacencyList<std::int32_t>& dofmap, int bs)
+                  const dolfinx::graph::AdjacencyList<std::int32_t>& dofmap,
+                  int bs)
                {
                  return dolfinx::fem::DofMap(element, index_map, index_map_bs,
                                              dofmap.array(), bs);
