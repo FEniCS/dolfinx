@@ -712,23 +712,33 @@ graph::AdjacencyList<std::int32_t> convert_to_local_indexing(
                    return it->second;
                  });
 
-  return graph::AdjacencyList<std::int32_t>(std::move(data),
-                                            std::move(offsets));
+  return graph::AdjacencyList(std::move(data), std::move(offsets));
 }
 } // namespace
 
 //-----------------------------------------------------------------------------
-Topology::Topology(MPI_Comm comm, CellType type)
-    : _comm(comm), _cell_type(type),
+Topology::Topology(MPI_Comm comm, std::vector<CellType> types)
+    : _comm(comm), _cell_types(types),
       _connectivity(
-          cell_dim(type) + 1,
+          cell_dim(types[0]) + 1,
           std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>(
-              cell_dim(type) + 1))
+              cell_dim(types[0]) + 1))
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 int Topology::dim() const noexcept { return _connectivity.size() - 1; }
+//-----------------------------------------------------------------------------
+void Topology::set_entity_group_offsets(
+    int dim, const std::vector<std::int32_t>& offsets)
+{
+  _entity_group_offsets[dim] = offsets;
+}
+//-----------------------------------------------------------------------------
+const std::vector<std::int32_t>& Topology::entity_group_offsets(int dim) const
+{
+  return _entity_group_offsets[dim];
+}
 //-----------------------------------------------------------------------------
 void Topology::set_index_map(int dim,
                              std::shared_ptr<const common::IndexMap> map)
@@ -874,29 +884,38 @@ const std::vector<std::int32_t>& Topology::interprocess_facets() const
   return _interprocess_facets;
 }
 //-----------------------------------------------------------------------------
-mesh::CellType Topology::cell_type() const noexcept { return _cell_type; }
+std::vector<mesh::CellType> Topology::cell_types() const noexcept
+{
+  return _cell_types;
+}
 //-----------------------------------------------------------------------------
 MPI_Comm Topology::comm() const { return _comm.comm(); }
 //-----------------------------------------------------------------------------
 Topology mesh::create_topology(
     MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
     std::span<const std::int64_t> original_cell_index,
-    std::span<const int> ghost_owners, const CellType& cell_type,
+    std::span<const int> ghost_owners, const std::vector<CellType>& cell_type,
+    const std::vector<std::int32_t>& cell_group_offsets,
     std::span<const std::int64_t> boundary_vertices)
 {
   common::Timer timer("Topology: create");
 
   LOG(INFO) << "Create topology";
-  if (cells.num_nodes() > 0
-      and cells.num_links(0) != num_cell_vertices(cell_type))
+  for (std::size_t i = 0; i < cell_type.size(); i++)
   {
-    throw std::runtime_error(
-        "Inconsistent number of cell vertices. Got "
-        + std::to_string(cells.num_links(0)) + ", expected "
-        + std::to_string(num_cell_vertices(cell_type)) + ".");
+    std::int32_t offset = cell_group_offsets[i];
+    int num_vertices = num_cell_vertices(cell_type[i]);
+    if (cells.num_nodes() > 0 and cells.num_links(offset) != num_vertices)
+      throw std::runtime_error("Inconsistent number of cell vertices. Got "
+                               + std::to_string(cells.num_links(offset))
+                               + ", expected " + std::to_string(num_vertices)
+                               + ".");
   }
 
   const std::int32_t num_local_cells = cells.num_nodes() - ghost_owners.size();
+
+  if (num_local_cells != cell_group_offsets[cell_type.size()])
+    throw std::runtime_error("Inconsistent offset or ghost number.");
 
   // Create sets of owned and unowned vertices from the cell ownership
   // and the list of boundary vertices
@@ -1131,6 +1150,8 @@ Topology mesh::create_topology(
       original_cell_index.begin(),
       std::next(original_cell_index.begin(), num_local_nodes));
 
+  topology.set_entity_group_offsets(tdim, cell_group_offsets);
+
   return topology;
 }
 //-----------------------------------------------------------------------------
@@ -1200,7 +1221,8 @@ mesh::create_subtopology(const Topology& topology, int dim,
       submap0->size_local() + submap0->num_ghosts());
 
   // Sub-topology entity to vertex connectivity
-  const CellType entity_type = cell_entity_type(topology.cell_type(), dim, 0);
+  const CellType entity_type
+      = cell_entity_type(topology.cell_types()[0], dim, 0);
   int num_vertices_per_entity = cell_num_entities(entity_type, 0);
   auto e_to_v = topology.connectivity(dim, 0);
   assert(e_to_v);
@@ -1233,11 +1255,15 @@ mesh::create_subtopology(const Topology& topology, int dim,
       std::move(sub_e_to_v_vec), std::move(sub_e_to_v_offsets));
 
   // Create sub-topology
-  Topology subtopology(topology.comm(), entity_type);
+  Topology subtopology(topology.comm(), {entity_type});
   subtopology.set_index_map(0, submap0);
   subtopology.set_index_map(dim, submap);
   subtopology.set_connectivity(sub_v_to_v, 0, 0);
   subtopology.set_connectivity(sub_e_to_v, dim, 0);
+  // Set groups (only one cell type)
+  subtopology.set_entity_group_offsets(
+      dim,
+      {0, submap->size_local(), submap->size_local() + submap->num_ghosts()});
 
   return {std::move(subtopology), std::move(subentities),
           std::move(subvertices0)};
@@ -1260,8 +1286,12 @@ mesh::entities_to_index(const Topology& topology, int dim,
   auto e_to_v = topology.connectivity(dim, 0);
   assert(e_to_v);
 
+  auto cell_types = topology.cell_types();
+  if (cell_types.size() > 1)
+    throw std::runtime_error("multiple cell types entities_to_index");
+
   const int num_vertices_per_entity
-      = cell_num_entities(cell_entity_type(topology.cell_type(), dim, 0), 0);
+      = cell_num_entities(cell_entity_type(cell_types.back(), dim, 0), 0);
 
   // Build map from ordered local vertex indices (key) to entity index
   // (value)

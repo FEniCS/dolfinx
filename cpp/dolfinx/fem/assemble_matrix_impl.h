@@ -11,6 +11,7 @@
 #include "FunctionSpace.h"
 #include "utils.h"
 #include <algorithm>
+#include <concepts>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/la/utils.h>
 #include <dolfinx/mesh/Geometry.h>
@@ -47,7 +48,7 @@ void assemble_cells(
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-  const std::size_t num_dofs_g = geometry.cmap().dim();
+  const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
   auto x = geometry.x();
 
   // Iterate over active cells
@@ -143,7 +144,7 @@ void assemble_exterior_facets(
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-  const std::size_t num_dofs_g = geometry.cmap().dim();
+  const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
   auto x = geometry.x();
 
   // Data structures used in assembly
@@ -239,7 +240,7 @@ void assemble_interior_facets(
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-  const std::size_t num_dofs_g = geometry.cmap().dim();
+  const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
   auto x = geometry.x();
 
   // Data structures used in assembly
@@ -361,16 +362,16 @@ void assemble_interior_facets(
 /// local indices. Rows (bc0) and columns (bc1) with Dirichlet
 /// conditions are zeroed. Markers (bc0 and bc1) can be empty if not bcs
 /// are applied. Matrix is not finalised.
-template <typename T>
+template <typename T, std::floating_point U>
 void assemble_matrix(
-    la::MatSet<T> auto mat_set, const Form<T>& a,
+    la::MatSet<T> auto mat_set, const Form<T, U>& a,
     const mesh::Geometry<scalar_value_type_t<T>>& geometry,
     std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients,
     std::span<const std::int8_t> bc0, std::span<const std::int8_t> bc1)
 {
-  std::shared_ptr<const mesh::Mesh> mesh = a.mesh();
+  std::shared_ptr<const mesh::Mesh<U>> mesh = a.mesh();
   assert(mesh);
 
   // Get dofmap data
@@ -405,30 +406,31 @@ void assemble_matrix(
   std::span<const std::uint32_t> cell_info;
   if (needs_transformation_data)
   {
-    mesh->topology_mutable().create_entity_permutations();
-    cell_info = std::span(mesh->topology().get_cell_permutation_info());
+    mesh->topology_mutable()->create_entity_permutations();
+    cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
 
   for (int i : a.integral_ids(IntegralType::cell))
   {
-    const auto& fn = a.kernel(IntegralType::cell, i);
-    const auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
-    const std::vector<std::int32_t>& cells = a.cell_domains(i);
-    impl::assemble_cells(mat_set, geometry, cells, dof_transform, dofs0, bs0,
-                         dof_transform_to_transpose, dofs1, bs1, bc0, bc1, fn,
-                         coeffs, cstride, constants, cell_info);
+    auto fn = a.kernel(IntegralType::cell, i);
+    assert(fn);
+    auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
+    impl::assemble_cells(mat_set, geometry, a.domain(IntegralType::cell, i),
+                         dof_transform, dofs0, bs0, dof_transform_to_transpose,
+                         dofs1, bs1, bc0, bc1, fn, coeffs, cstride, constants,
+                         cell_info);
   }
 
   for (int i : a.integral_ids(IntegralType::exterior_facet))
   {
-    const auto& fn = a.kernel(IntegralType::exterior_facet, i);
-    const auto& [coeffs, cstride]
+    auto fn = a.kernel(IntegralType::exterior_facet, i);
+    assert(fn);
+    auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
-    const std::vector<std::int32_t>& facets = a.exterior_facet_domains(i);
-    impl::assemble_exterior_facets(mat_set, geometry, facets, dof_transform,
-                                   dofs0, bs0, dof_transform_to_transpose,
-                                   dofs1, bs1, bc0, bc1, fn, coeffs, cstride,
-                                   constants, cell_info);
+    impl::assemble_exterior_facets(
+        mat_set, geometry, a.domain(IntegralType::exterior_facet, i),
+        dof_transform, dofs0, bs0, dof_transform_to_transpose, dofs1, bs1, bc0,
+        bc1, fn, coeffs, cstride, constants, cell_info);
   }
 
   if (a.num_integrals(IntegralType::interior_facet) > 0)
@@ -436,25 +438,29 @@ void assemble_matrix(
     std::function<std::uint8_t(std::size_t)> get_perm;
     if (a.needs_facet_permutations())
     {
-      mesh->topology_mutable().create_entity_permutations();
+      mesh->topology_mutable()->create_entity_permutations();
       const std::vector<std::uint8_t>& perms
-          = mesh->topology().get_facet_permutations();
+          = mesh->topology()->get_facet_permutations();
       get_perm = [&perms](std::size_t i) { return perms[i]; };
     }
     else
       get_perm = [](std::size_t) { return 0; };
 
-    int num_cell_facets = mesh::cell_num_entities(mesh->topology().cell_type(),
-                                                  mesh->topology().dim() - 1);
+    auto cell_types = mesh->topology()->cell_types();
+    if (cell_types.size() > 1)
+      throw std::runtime_error("Multiple cell types in the assembler.");
+    int num_cell_facets = mesh::cell_num_entities(cell_types.back(),
+                                                  mesh->topology()->dim() - 1);
     const std::vector<int> c_offsets = a.coefficient_offsets();
     for (int i : a.integral_ids(IntegralType::interior_facet))
     {
-      const auto& fn = a.kernel(IntegralType::interior_facet, i);
-      const auto& [coeffs, cstride]
+      auto fn = a.kernel(IntegralType::interior_facet, i);
+      assert(fn);
+      auto& [coeffs, cstride]
           = coefficients.at({IntegralType::interior_facet, i});
-      const std::vector<std::int32_t>& facets = a.interior_facet_domains(i);
       impl::assemble_interior_facets(
-          mat_set, geometry, num_cell_facets, facets, dof_transform, *dofmap0,
+          mat_set, geometry, num_cell_facets,
+          a.domain(IntegralType::interior_facet, i), dof_transform, *dofmap0,
           bs0, dof_transform_to_transpose, *dofmap1, bs1, bc0, bc1, fn, coeffs,
           cstride, c_offsets, constants, cell_info, get_perm);
     }

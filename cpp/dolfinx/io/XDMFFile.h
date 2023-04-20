@@ -7,6 +7,7 @@
 #pragma once
 
 #include "HDF5Interface.h"
+#include <concepts>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <filesystem>
@@ -22,19 +23,16 @@ class xml_document;
 namespace dolfinx::fem
 {
 class CoordinateElement;
-}
-
-namespace dolfinx::fem
-{
-template <typename T>
+template <typename T, std::floating_point U>
 class Function;
-}
+} // namespace dolfinx::fem
 
 namespace dolfinx::mesh
 {
-template <typename T>
+template <std::floating_point T>
 class Geometry;
 enum class GhostMode : int;
+template <std::floating_point T>
 class Mesh;
 template <typename T>
 class MeshTags;
@@ -87,7 +85,8 @@ public:
   /// Save Mesh
   /// @param[in] mesh
   /// @param[in] xpath XPath where Mesh Grid will be written
-  void write_mesh(const mesh::Mesh& mesh, std::string xpath = "/Xdmf/Domain");
+  void write_mesh(const mesh::Mesh<double>& mesh,
+                  std::string xpath = "/Xdmf/Domain");
 
   /// Save Geometry
   /// @param[in] geometry
@@ -104,9 +103,9 @@ public:
   /// @param[in] xpath XPath where Mesh Grid is located
   /// @return A Mesh distributed on the same communicator as the
   ///   XDMFFile
-  mesh::Mesh read_mesh(const fem::CoordinateElement& element,
-                       mesh::GhostMode mode, std::string name,
-                       std::string xpath = "/Xdmf/Domain") const;
+  mesh::Mesh<double> read_mesh(const fem::CoordinateElement& element,
+                               mesh::GhostMode mode, std::string name,
+                               std::string xpath = "/Xdmf/Domain") const;
 
   /// Read Topology data for Mesh
   /// @param[in] name Name of the mesh (Grid)
@@ -135,7 +134,7 @@ public:
   /// @param[in] t The time stamp to associate with the Function
   /// @param[in] mesh_xpath XPath for a Grid under which Function will
   /// be inserted
-  void write_function(const fem::Function<double>& u, double t,
+  void write_function(const fem::Function<double, double>& u, double t,
                       std::string mesh_xpath
                       = "/Xdmf/Domain/Grid[@GridType='Uniform'][1]");
 
@@ -144,16 +143,19 @@ public:
   /// @param[in] t The time stamp to associate with the Function
   /// @param[in] mesh_xpath XPath for a Grid under which Function will
   /// be inserted
-  void write_function(const fem::Function<std::complex<double>>& u, double t,
+  void write_function(const fem::Function<std::complex<double>, double>& u,
+                      double t,
                       std::string mesh_xpath
                       = "/Xdmf/Domain/Grid[@GridType='Uniform'][1]");
 
   /// Write MeshTags
   /// @param[in] meshtags
+  /// @param[in] x Mesh geometry
   /// @param[in] geometry_xpath XPath where Geometry is already stored
-  ///   in file
+  /// in file
   /// @param[in] xpath XPath where MeshTags Grid will be inserted
   void write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
+                      const mesh::Geometry<double>& x,
                       std::string geometry_xpath,
                       std::string xpath = "/Xdmf/Domain");
 
@@ -162,7 +164,7 @@ public:
   /// @param[in] name
   /// @param[in] xpath XPath where MeshTags Grid is stored in file
   mesh::MeshTags<std::int32_t>
-  read_meshtags(std::shared_ptr<const mesh::Mesh> mesh, std::string name,
+  read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
                 std::string xpath = "/Xdmf/Domain");
 
   /// Write Information

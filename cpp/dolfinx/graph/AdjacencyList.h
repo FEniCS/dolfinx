@@ -159,6 +159,10 @@ private:
   std::vector<std::int32_t> _offsets;
 };
 
+/// @private Deduction
+template <typename T, typename U>
+AdjacencyList(T, U) -> AdjacencyList<typename T::value_type>;
+
 /// @brief Construct a constant degree (valency) adjacency list.
 ///
 /// A constant degree graph has the same number of edges for every node.

@@ -11,8 +11,8 @@ import numpy as np
 import pytest
 
 import basix
-import basix.ufl_wrapper
 import ufl
+from basix.ufl import mixed_element, blocked_element, element, enriched_element, custom_element
 from dolfinx.fem import (Expression, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_scalar, form)
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
@@ -57,7 +57,8 @@ def random_point_in_reference(cell_type):
 
 
 def random_point_in_cell(mesh):
-    cell_type = mesh.topology.cell_type
+    assert len(mesh.topology.cell_types) == 1
+    cell_type = mesh.topology.cell_types[0]
     point = random_point_in_reference(cell_type)
 
     if cell_type == CellType.interval:
@@ -102,7 +103,7 @@ def one_cell_mesh(cell_type):
         ordered_points[j] = points[i]
     cells = np.array([order])
 
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
+    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, rank=1))
     return create_mesh(MPI.COMM_WORLD, cells, ordered_points, domain)
 
 
@@ -136,7 +137,7 @@ def two_cell_mesh(cell_type):
                            [1., 0., -1.], [0., 1., -1.], [1., 1., -1.]])
         cells = [[0, 1, 2, 3, 4, 5, 6, 7], [9, 11, 8, 10, 1, 3, 0, 2]]
 
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
+    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, rank=1))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     return mesh
 
@@ -265,9 +266,9 @@ def test_mixed_sub_interpolation():
     def f(x):
         return np.vstack((10 + x[0], -10 - x[1], 25 + x[0]))
 
-    P2 = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)
-    P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
-    for i, P in enumerate((P2 * P1, P1 * P2)):
+    P2 = element("Lagrange", mesh.basix_cell(), 2, rank=1)
+    P1 = element("Lagrange", mesh.basix_cell(), 1)
+    for i, P in enumerate((mixed_element([P2, P1]), mixed_element([P1, P2]))):
         W = FunctionSpace(mesh, P)
         U = Function(W)
         U.sub(i).interpolate(f)
@@ -314,9 +315,9 @@ def test_mixed_sub_interpolation():
 def test_mixed_interpolation():
     """Test that mixed interpolation raised an exception."""
     mesh = one_cell_mesh(CellType.triangle)
-    A = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
-    B = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 1)
-    v = Function(FunctionSpace(mesh, ufl.MixedElement([A, B])))
+    A = element("Lagrange", mesh.basix_cell(), 1)
+    B = element("Lagrange", mesh.basix_cell(), 1, rank=1)
+    v = Function(FunctionSpace(mesh, mixed_element([A, B])))
     with pytest.raises(RuntimeError):
         v.interpolate(lambda x: (x[1], 2 * x[0], 3 * x[1]))
 
@@ -444,8 +445,7 @@ def test_interpolation_non_affine():
                        [0.5, 2, 1.5], [0.5, 1, 3], [0.5, 1, 1.5]], dtype=np.float64)
 
     cells = np.array([range(len(points))], dtype=np.int32)
-    cell_type = CellType.hexahedron
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 2))
+    domain = ufl.Mesh(element("Lagrange", "hexahedron", 2, rank=1))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     W = FunctionSpace(mesh, ("NCE", 1))
     V = FunctionSpace(mesh, ("NCE", 2))
@@ -467,8 +467,7 @@ def test_interpolation_non_affine_nonmatching_maps():
                        [0.5, 2, 1.5], [0.5, 1, 3], [0.5, 1, 1.5]], dtype=np.float64)
 
     cells = np.array([range(len(points))], dtype=np.int32)
-    cell_type = CellType.hexahedron
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 2))
+    domain = ufl.Mesh(element("Lagrange", "hexahedron", 2, rank=1))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     W = VectorFunctionSpace(mesh, ("DG", 1))
     V = FunctionSpace(mesh, ("NCE", 4))
@@ -624,24 +623,22 @@ def test_interpolate_callable():
 
 
 @pytest.mark.parametrize("scalar_element", [
-    ufl.FiniteElement("P", "triangle", 1),
-    ufl.FiniteElement("P", "triangle", 2),
-    ufl.FiniteElement("P", "triangle", 3),
-    ufl.FiniteElement("Q", "quadrilateral", 1),
-    ufl.FiniteElement("Q", "quadrilateral", 2),
-    ufl.FiniteElement("Q", "quadrilateral", 3),
-    ufl.FiniteElement("S", "quadrilateral", 1),
-    ufl.FiniteElement("S", "quadrilateral", 2),
-    ufl.FiniteElement("S", "quadrilateral", 3),
-    ufl.EnrichedElement(ufl.FiniteElement("P", "triangle", 1), ufl.FiniteElement("Bubble", "triangle", 3)),
-    basix.ufl_wrapper._create_enriched_element([
-        basix.ufl_wrapper.create_element("P", "quadrilateral", 1),
-        basix.ufl_wrapper.create_element("Bubble", "quadrilateral", 2)]),
+    element("P", "triangle", 1),
+    element("P", "triangle", 2),
+    element("P", "triangle", 3),
+    element("Q", "quadrilateral", 1),
+    element("Q", "quadrilateral", 2),
+    element("Q", "quadrilateral", 3),
+    element("S", "quadrilateral", 1),
+    element("S", "quadrilateral", 2),
+    element("S", "quadrilateral", 3),
+    enriched_element([element("P", "triangle", 1), element("Bubble", "triangle", 3)]),
+    enriched_element([element("P", "quadrilateral", 1), element("Bubble", "quadrilateral", 2)]),
 ])
 def test_vector_element_interpolation(scalar_element):
     """Test interpolation into a range of vector elements."""
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, getattr(CellType, scalar_element.cell().cellname()))
-    V = FunctionSpace(mesh, ufl.VectorElement(scalar_element))
+    V = FunctionSpace(mesh, blocked_element(scalar_element, shape=(2, )))
     u = Function(V)
     u.interpolate(lambda x: (x[0], x[1]))
     u2 = Function(V)
@@ -671,11 +668,11 @@ def test_custom_vector_element():
         M[1].append(np.zeros((0, 2, 0, 1)))
     M[2].append(np.zeros((0, 2, 0, 1)))
 
-    element = basix.create_custom_element(
+    e = custom_element(
         basix.CellType.triangle, [2], wcoeffs, x, M, 0, basix.MapType.identity,
         basix.SobolevSpace.H1, False, 1, 1)
 
-    V = FunctionSpace(mesh, basix.ufl_wrapper.BasixElement(element))
+    V = FunctionSpace(mesh, e)
     W = VectorFunctionSpace(mesh, ("Lagrange", 1))
 
     v = Function(V)
@@ -699,17 +696,17 @@ def test_mixed_interpolation_permuting(cell_type, order):
     x = ufl.SpatialCoordinate(mesh)
     dgdy = ufl.cos(x[1])
 
-    curl_el = ufl.FiniteElement("N1curl", mesh.ufl_cell(), 1)
-    vlag_el = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 1)
-    lagr_el = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), order)
+    curl_el = element("N1curl", mesh.basix_cell(), 1)
+    vlag_el = element("Lagrange", mesh.basix_cell(), 1, rank=1)
+    lagr_el = element("Lagrange", mesh.basix_cell(), order)
 
-    V = FunctionSpace(mesh, ufl.MixedElement([curl_el, lagr_el]))
+    V = FunctionSpace(mesh, mixed_element([curl_el, lagr_el]))
     Eb_m = Function(V)
     Eb_m.sub(1).interpolate(g)
     diff = Eb_m[2].dx(1) - dgdy
     error = assemble_scalar(form(ufl.dot(diff, diff) * ufl.dx))
 
-    V = FunctionSpace(mesh, ufl.MixedElement([vlag_el, lagr_el]))
+    V = FunctionSpace(mesh, mixed_element([vlag_el, lagr_el]))
     Eb_m = Function(V)
     Eb_m.sub(1).interpolate(g)
     diff = Eb_m[2].dx(1) - dgdy

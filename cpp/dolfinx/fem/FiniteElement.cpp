@@ -232,22 +232,30 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
     cmdspan2_t wcoeffs(wcoeffs_b.data(), ce->wcoeffs_rows, ce->wcoeffs_cols);
     std::copy_n(ce->wcoeffs, wcoeffs_b.size(), wcoeffs_b.begin());
 
-    _element
-        = std::make_unique<basix::FiniteElement>(basix::create_custom_element(
+    _element = std::make_unique<basix::FiniteElement<double>>(
+        basix::create_custom_element(
             cell_type, value_shape, wcoeffs, _x, _M, nderivs,
             static_cast<basix::maps::type>(ce->map_type),
             static_cast<basix::sobolev::space>(ce->sobolev_space),
             ce->discontinuous, ce->highest_complete_degree,
             ce->highest_degree));
+    _needs_dof_transformations
+        = !_element->dof_transformations_are_identity()
+          and !_element->dof_transformations_are_permutations();
+
+    _needs_dof_permutations
+        = !_element->dof_transformations_are_identity()
+          and _element->dof_transformations_are_permutations();
   }
   else if (is_basix_element(e))
   {
-    _element = std::make_unique<basix::FiniteElement>(basix::create_element(
-        static_cast<basix::element::family>(e.basix_family),
-        static_cast<basix::cell::type>(e.basix_cell), e.degree,
-        static_cast<basix::element::lagrange_variant>(e.lagrange_variant),
-        static_cast<basix::element::dpc_variant>(e.dpc_variant),
-        e.discontinuous));
+    _element = std::make_unique<basix::FiniteElement<double>>(
+        basix::create_element<double>(
+            static_cast<basix::element::family>(e.basix_family),
+            static_cast<basix::cell::type>(e.basix_cell), e.degree,
+            static_cast<basix::element::lagrange_variant>(e.lagrange_variant),
+            static_cast<basix::element::dpc_variant>(e.dpc_variant),
+            e.discontinuous));
 
     _needs_dof_transformations
         = !_element->dof_transformations_are_identity()
@@ -259,7 +267,8 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
   }
 }
 //-----------------------------------------------------------------------------
-FiniteElement::FiniteElement(const basix::FiniteElement& element, int bs)
+FiniteElement::FiniteElement(const basix::FiniteElement<double>& element,
+                             int bs)
     : _space_dim(bs * element.dim()), _value_shape(element.value_shape()),
       _bs(bs)
 {
@@ -275,7 +284,7 @@ FiniteElement::FiniteElement(const basix::FiniteElement& element, int bs)
       _sub_elements.push_back(std::make_shared<FiniteElement>(element, 1));
   }
 
-  _element = std::make_unique<basix::FiniteElement>(element);
+  _element = std::make_unique<basix::FiniteElement<double>>(element);
   assert(_element);
   _needs_dof_transformations
       = !_element->dof_transformations_are_identity()
@@ -389,7 +398,7 @@ FiniteElement::extract_sub_element(const std::vector<int>& component) const
   return sub_finite_element;
 }
 //-----------------------------------------------------------------------------
-const basix::FiniteElement& FiniteElement::basix_element() const
+const basix::FiniteElement<double>& FiniteElement::basix_element() const
 {
   if (!_element)
   {
@@ -463,14 +472,15 @@ FiniteElement::create_interpolation_operator(const FiniteElement& from) const
   {
     // If one of the elements has bs=1, Basix can figure out the size
     // of the matrix
-    return basix::compute_interpolation_operator(*from._element, *_element);
+    return basix::compute_interpolation_operator<double>(*from._element,
+                                                         *_element);
   }
   else if (_bs > 1 and from._bs == _bs)
   {
     // If bs != 1 for at least one element, then bs0 == bs1 for this
     // case
-    const auto [data, dshape]
-        = basix::compute_interpolation_operator(*from._element, *_element);
+    const auto [data, dshape] = basix::compute_interpolation_operator<double>(
+        *from._element, *_element);
     std::array<std::size_t, 2> shape = {dshape[0] * _bs, dshape[1] * _bs};
     std::vector<double> out(shape[0] * shape[1]);
 

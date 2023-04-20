@@ -488,7 +488,7 @@ public:
 
     const double norm_sq_local = std::accumulate(
         _data.cbegin(), std::next(_data.cbegin(), _row_ptr[num_owned_rows]),
-        double(0), [](double norm, T y) { return norm + std::norm(y); });
+        double(0), [](auto norm, T y) { return norm + std::norm(y); });
     double norm_sq;
     MPI_Allreduce(&norm_sq_local, &norm_sq, 1, MPI_DOUBLE, MPI_SUM,
                   _comm.comm());

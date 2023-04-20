@@ -34,7 +34,7 @@ T assemble_cells(const mesh::Geometry<scalar_value_type_t<T>>& geometry,
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-  const std::size_t num_dofs_g = geometry.cmap().dim();
+  const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
   auto x = geometry.x();
 
   // Create data structures used in assembly
@@ -74,7 +74,7 @@ T assemble_exterior_facets(
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-  const std::size_t num_dofs_g = geometry.cmap().dim();
+  const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
   auto x = geometry.x();
 
   // Create data structures used in assembly
@@ -117,7 +117,7 @@ T assemble_interior_facets(
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-  const std::size_t num_dofs_g = geometry.cmap().dim();
+  const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
   auto x = geometry.x();
 
   // Create data structures used in assembly
@@ -161,56 +161,59 @@ T assemble_interior_facets(
 }
 
 /// Assemble functional into an scalar with provided mesh geometry.
-template <typename T>
+template <typename T, std::floating_point U>
 T assemble_scalar(
-    const fem::Form<T>& M,
+    const fem::Form<T, U>& M,
     const mesh::Geometry<scalar_value_type_t<T>>& geometry,
     std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {
-  std::shared_ptr<const mesh::Mesh> mesh = M.mesh();
+  std::shared_ptr<const mesh::Mesh<U>> mesh = M.mesh();
   assert(mesh);
 
   T value = 0;
   for (int i : M.integral_ids(IntegralType::cell))
   {
-    const auto& fn = M.kernel(IntegralType::cell, i);
-    const auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
-    const std::vector<std::int32_t>& cells = M.cell_domains(i);
+    auto fn = M.kernel(IntegralType::cell, i);
+    assert(fn);
+    auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
+    std::span<const std::int32_t> cells = M.domain(IntegralType::cell, i);
     value += impl::assemble_cells(geometry, cells, fn, constants, coeffs,
                                   cstride);
   }
 
   for (int i : M.integral_ids(IntegralType::exterior_facet))
   {
-    const auto& fn = M.kernel(IntegralType::exterior_facet, i);
-    const auto& [coeffs, cstride]
+    auto fn = M.kernel(IntegralType::exterior_facet, i);
+    assert(fn);
+    auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
-    const std::vector<std::int32_t>& facets = M.exterior_facet_domains(i);
-    value += impl::assemble_exterior_facets(geometry, facets, fn, constants,
-                                            coeffs, cstride);
+    value += impl::assemble_exterior_facets(
+        geometry, M.domain(IntegralType::exterior_facet, i), fn, constants,
+        coeffs, cstride);
   }
 
   if (M.num_integrals(IntegralType::interior_facet) > 0)
   {
-    mesh->topology_mutable().create_entity_permutations();
-
+    mesh->topology_mutable()->create_entity_permutations();
     const std::vector<std::uint8_t>& perms
-        = mesh->topology().get_facet_permutations();
-
-    int num_cell_facets = mesh::cell_num_entities(mesh->topology().cell_type(),
-                                                  mesh->topology().dim() - 1);
+        = mesh->topology()->get_facet_permutations();
+    auto cell_types = mesh->topology()->cell_types();
+    if (cell_types.size() > 1)
+      throw std::runtime_error("Multiple cell types in the assembler");
+    int num_cell_facets = mesh::cell_num_entities(cell_types.back(),
+                                                  mesh->topology()->dim() - 1);
     const std::vector<int> c_offsets = M.coefficient_offsets();
     for (int i : M.integral_ids(IntegralType::interior_facet))
     {
-      const auto& fn = M.kernel(IntegralType::interior_facet, i);
-      const auto& [coeffs, cstride]
+      auto fn = M.kernel(IntegralType::interior_facet, i);
+      assert(fn);
+      auto& [coeffs, cstride]
           = coefficients.at({IntegralType::interior_facet, i});
-      const std::vector<std::int32_t>& facets = M.interior_facet_domains(i);
-      value += impl::assemble_interior_facets(geometry, num_cell_facets, facets,
-                                              fn, constants, coeffs, cstride,
-                                              c_offsets, perms);
+      value += impl::assemble_interior_facets(
+          geometry, num_cell_facets, M.domain(IntegralType::interior_facet, i),
+          fn, constants, coeffs, cstride, c_offsets, perms);
     }
   }
 

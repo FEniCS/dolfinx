@@ -29,9 +29,10 @@ namespace
 {
 template <typename Scalar>
 void _write_function(dolfinx::MPI::Comm& comm,
-                     const fem::Function<Scalar>& function, const double t,
-                     const std::string& mesh_xpath, pugi::xml_document& xml_doc,
-                     hid_t h5_id, const std::filesystem::path& filename)
+                     const fem::Function<Scalar, double>& function,
+                     const double t, const std::string& mesh_xpath,
+                     pugi::xml_document& xml_doc, hid_t h5_id,
+                     const std::filesystem::path& filename)
 {
   const std::string timegrid_xpath
       = "/Xdmf/Domain/Grid[@GridType='Collection'][@Name='" + function.name
@@ -188,7 +189,7 @@ void XDMFFile::close()
   _h5_id = -1;
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write_mesh(const mesh::Mesh& mesh, std::string xpath)
+void XDMFFile::write_mesh(const mesh::Mesh<double>& mesh, std::string xpath)
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
@@ -224,9 +225,9 @@ void XDMFFile::write_geometry(const mesh::Geometry<double>& geometry,
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh XDMFFile::read_mesh(const fem::CoordinateElement& element,
-                               mesh::GhostMode mode, std::string name,
-                               std::string xpath) const
+mesh::Mesh<double> XDMFFile::read_mesh(const fem::CoordinateElement& element,
+                                       mesh::GhostMode mode, std::string name,
+                                       std::string xpath) const
 {
   // Read mesh data
   auto [cells, cshape] = XDMFFile::read_topology_data(name, xpath);
@@ -239,9 +240,8 @@ mesh::Mesh XDMFFile::read_mesh(const fem::CoordinateElement& element,
 
   graph::AdjacencyList<std::int64_t> cells_adj(std::move(cells),
                                                std::move(offset));
-
-  mesh::Mesh mesh
-      = mesh::create_mesh(_comm.comm(), cells_adj, element, x, xshape, mode);
+  mesh::Mesh<double> mesh
+      = mesh::create_mesh(_comm.comm(), cells_adj, {element}, x, xshape, mode);
   mesh.name = name;
   return mesh;
 }
@@ -278,19 +278,21 @@ XDMFFile::read_geometry_data(std::string name, std::string xpath) const
   return xdmf_mesh::read_geometry_data(_comm.comm(), _h5_id, grid_node);
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write_function(const fem::Function<double>& u, double t,
+void XDMFFile::write_function(const fem::Function<double, double>& u, double t,
                               std::string mesh_xpath)
 {
   _write_function(_comm, u, t, mesh_xpath, *_xml_doc, _h5_id, _filename);
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write_function(const fem::Function<std::complex<double>>& u,
-                              double t, std::string mesh_xpath)
+void XDMFFile::write_function(
+    const fem::Function<std::complex<double>, double>& u, double t,
+    std::string mesh_xpath)
 {
   _write_function(_comm, u, t, mesh_xpath, *_xml_doc, _h5_id, _filename);
 }
 //-----------------------------------------------------------------------------
 void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
+                              const mesh::Geometry<double>& x,
                               std::string geometry_xpath, std::string xpath)
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
@@ -306,7 +308,7 @@ void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
   pugi::xml_node geo_ref_node = grid_node.append_child("xi:include");
   geo_ref_node.append_attribute("xpointer") = geo_ref_path.c_str();
   assert(geo_ref_node);
-  xdmf_meshtags::add_meshtags(_comm.comm(), meshtags, grid_node, _h5_id,
+  xdmf_meshtags::add_meshtags(_comm.comm(), meshtags, x, grid_node, _h5_id,
                               meshtags.name);
 
   // Save XML file (on process 0 only)
@@ -315,8 +317,8 @@ void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
 }
 //-----------------------------------------------------------------------------
 mesh::MeshTags<std::int32_t>
-XDMFFile::read_meshtags(std::shared_ptr<const mesh::Mesh> mesh,
-                        std::string name, std::string xpath)
+XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
+                        std::string xpath)
 {
   LOG(INFO) << "XDMF read meshtags (" << name << ")";
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
@@ -344,18 +346,21 @@ XDMFFile::read_meshtags(std::shared_ptr<const mesh::Mesh> mesh,
 
   std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
       entities_values = xdmf_utils::distribute_entity_data(
-          *mesh, mesh::cell_dim(cell_type), entities1, values);
+          mesh, mesh::cell_dim(cell_type), entities1, values);
+
+  auto cell_types = mesh.topology()->cell_types();
+  if (cell_types.size() > 1)
+    throw std::runtime_error("cell type IO");
 
   LOG(INFO) << "XDMF create meshtags";
-  const std::size_t num_vertices_per_entity = mesh::cell_num_entities(
-      mesh::cell_entity_type(mesh->topology().cell_type(),
-                             mesh::cell_dim(cell_type), 0),
+  std::size_t num_vertices_per_entity = mesh::cell_num_entities(
+      mesh::cell_entity_type(cell_types.back(), mesh::cell_dim(cell_type), 0),
       0);
   const graph::AdjacencyList<std::int32_t> entities_adj
       = graph::regular_adjacency_list(std::move(entities_values.first),
                                       num_vertices_per_entity);
   mesh::MeshTags meshtags = mesh::create_meshtags(
-      mesh, mesh::cell_dim(cell_type), entities_adj,
+      mesh.topology(), mesh::cell_dim(cell_type), entities_adj,
       std::span<const std::int32_t>(entities_values.second));
   meshtags.name = name;
 

@@ -10,19 +10,17 @@ import collections
 import collections.abc
 import typing
 
+import numpy as np
+import ufl
+from dolfinx.fem import IntegralType
 from dolfinx.fem.function import FunctionSpace
 
-if typing.TYPE_CHECKING:
-    from dolfinx.fem import function, IntegralType
-    from dolfinx.mesh import Mesh
-
-import numpy as np
-
-import ufl
 from dolfinx import cpp as _cpp
-from dolfinx import jit
+from dolfinx import default_scalar_type, jit
 
-from petsc4py import PETSc
+if typing.TYPE_CHECKING:
+    from dolfinx.fem import function
+    from dolfinx.mesh import Mesh
 
 
 class FormMetaClass:
@@ -87,13 +85,13 @@ form_types = typing.Union[FormMetaClass, _cpp.fem.Form_float32, _cpp.fem.Form_fl
                           _cpp.fem.Form_complex64, _cpp.fem.Form_complex128]
 
 
-_ufl_to_dolfinx_domain = {"cell": _cpp.fem.IntegralType.cell,
-                          "exterior_facet": _cpp.fem.IntegralType.exterior_facet,
-                          "interior_facet": _cpp.fem.IntegralType.interior_facet,
-                          "vertex": _cpp.fem.IntegralType.vertex}
+_ufl_to_dolfinx_domain = {"cell": IntegralType.cell,
+                          "exterior_facet": IntegralType.exterior_facet,
+                          "interior_facet": IntegralType.interior_facet,
+                          "vertex": IntegralType.vertex}
 
 
-def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtype = PETSc.ScalarType,
+def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtype = default_scalar_type,
          form_compiler_options: dict = {}, jit_options: dict = {}):
     """Create a Form or an array of Forms.
 
@@ -165,6 +163,10 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
                 return []
             else:
                 try:
+                    if integral_type in (IntegralType.exterior_facet, IntegralType.interior_facet):
+                        tdim = subdomain.topology.dim
+                        subdomain._cpp_object.topology.create_connectivity(tdim - 1, tdim)
+                        subdomain._cpp_object.topology.create_connectivity(tdim, tdim - 1)
                     return _cpp.fem.compute_integration_domains(integral_type, subdomain._cpp_object)
                 except AttributeError:
                     return subdomain

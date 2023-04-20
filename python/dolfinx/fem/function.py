@@ -14,20 +14,18 @@ if typing.TYPE_CHECKING:
 
 from functools import singledispatch
 
+import basix
+import basix.ufl
 import numpy as np
 import numpy.typing as npt
-
-import basix
-import basix.ufl_wrapper
 import ufl
 import ufl.algorithms
 import ufl.algorithms.analysis
-from dolfinx import cpp as _cpp
-from dolfinx import jit, la
 from dolfinx.fem import dofmap
 from ufl.domain import extract_unique_domain
 
-from petsc4py import PETSc
+from dolfinx import cpp as _cpp
+from dolfinx import default_scalar_type, jit, la
 
 
 class Constant(ufl.Constant):
@@ -86,7 +84,7 @@ class Constant(ufl.Constant):
 class Expression:
     def __init__(self, ufl_expression: ufl.core.expr.Expr, X: np.ndarray,
                  form_compiler_options: dict = {}, jit_options: dict = {},
-                 dtype=PETSc.ScalarType):
+                 dtype=default_scalar_type):
         """Create DOLFINx Expression.
 
         Represents a mathematical expression evaluated at a pre-defined
@@ -241,7 +239,7 @@ class Function(ufl.Coefficient):
     """
 
     def __init__(self, V: FunctionSpace, x: typing.Optional[la.VectorMetaClass] = None,
-                 name: typing.Optional[str] = None, dtype: np.dtype = PETSc.ScalarType):
+                 name: typing.Optional[str] = None, dtype: np.dtype = default_scalar_type):
         """Initialize a finite element Function.
 
         Args:
@@ -312,8 +310,7 @@ class Function(ufl.Coefficient):
             _x = np.reshape(_x, (shape0, -1))
         num_points = _x.shape[0]
         if _x.shape[1] != 3:
-            raise ValueError(
-                "Coordinate(s) for Function evaluation must have length 3.")
+            raise ValueError("Coordinate(s) for Function evaluation must have length 3.")
 
         # Make sure cells are a NumPy array
         _cells = np.asarray(cells, dtype=np.int32)
@@ -324,7 +321,7 @@ class Function(ufl.Coefficient):
         # Allocate memory for return value if not provided
         if u is None:
             value_size = ufl.product(self.ufl_element().value_shape())
-            if np.issubdtype(PETSc.ScalarType, np.complexfloating):
+            if np.issubdtype(default_scalar_type, np.complexfloating):
                 u = np.empty((num_points, value_size), dtype=np.complex128)
             else:
                 u = np.empty((num_points, value_size))
@@ -376,7 +373,7 @@ class Function(ufl.Coefficient):
         except TypeError:
             # u is callable
             assert callable(u)
-            x = _cpp.fem.interpolation_coords(self._V.element, self._V.mesh._cpp_object, cells)
+            x = _cpp.fem.interpolation_coords(self._V.element, self._V.mesh.geometry, cells)
             self._cpp_object.interpolate(np.asarray(u(x), dtype=self.dtype), cells)
 
     def copy(self) -> Function:
@@ -467,13 +464,15 @@ class FunctionSpace(ufl.FunctionSpace):
 
         if cppV is None:
             # Initialise the ufl.FunctionSpace
-            if isinstance(element, ufl.FiniteElementBase):
+            try:
+                # UFL element
                 super().__init__(mesh.ufl_domain(), element)
-            else:
+            except BaseException:
+                assert len(element) == 2, "Expected sequence of (element_type, degree)"
                 e = ElementMetaData(*element)
-                ufl_element = basix.ufl_wrapper.create_element(
-                    e.family, mesh.ufl_cell().cellname(), e.degree, gdim=mesh.ufl_cell().geometric_dimension())
-                super().__init__(mesh.ufl_domain(), ufl_element)
+                ufl_e = basix.ufl.element(
+                    e.family, mesh.basix_cell(), e.degree, gdim=mesh.ufl_cell().geometric_dimension())
+                super().__init__(mesh.ufl_domain(), ufl_e)
 
             # Compile dofmap and element and create DOLFIN objects
             (self._ufcx_element, self._ufcx_dofmap), module, code = jit.ffcx_jit(
@@ -608,20 +607,47 @@ class FunctionSpace(ufl.FunctionSpace):
         return self._cpp_object.tabulate_dof_coordinates()
 
 
-def VectorFunctionSpace(mesh: Mesh, element: typing.Union[ElementMetaData, typing.Tuple[str, int]],
+def _is_scalar(mesh, element):
+    try:
+        e = basix.ufl.element(element.family(), element.cell_type,         # type: ignore
+                              element.degree(), element.lagrange_variant,  # type: ignore
+                              element.dpc_variant, element.discontinuous,  # type: ignore
+                              gdim=mesh.geometry.dim)
+    except AttributeError:
+        ed = ElementMetaData(*element)
+        e = basix.ufl.element(ed.family, mesh.basix_cell(), ed.degree,
+                              gdim=mesh.geometry.dim)
+    return len(e.value_shape()) == 0
+
+
+def VectorFunctionSpace(mesh: Mesh,
+                        element: typing.Union[basix.ufl._ElementBase,
+                                              ElementMetaData, typing.Tuple[str, int]],
                         dim=None) -> FunctionSpace:
     """Create vector finite element (composition of scalar elements) function space."""
-    e = ElementMetaData(*element)
-    ufl_element = basix.ufl_wrapper.create_vector_element(e.family, mesh.ufl_cell().cellname(), e.degree,
-                                                          dim=dim, gdim=mesh.geometry.dim)
-    return FunctionSpace(mesh, ufl_element)
+    if not _is_scalar(mesh, element):
+        raise ValueError("Cannot create vector element containing a non-scalar.")
+
+    try:
+        ufl_e = basix.ufl.element(element.family(), element.cell_type,         # type: ignore
+                                  element.degree(), element.lagrange_variant,  # type: ignore
+                                  element.dpc_variant, element.discontinuous,  # type: ignore
+                                  shape=None if dim is None else (dim, ), gdim=mesh.geometry.dim, rank=1)
+    except AttributeError:
+        ed = ElementMetaData(*element)
+        ufl_e = basix.ufl.element(ed.family, mesh.basix_cell(), ed.degree,
+                                  shape=None if dim is None else (dim, ), gdim=mesh.geometry.dim, rank=1)
+    return FunctionSpace(mesh, ufl_e)
 
 
 def TensorFunctionSpace(mesh: Mesh, element: typing.Union[ElementMetaData, typing.Tuple[str, int]], shape=None,
                         symmetry: typing.Optional[bool] = None) -> FunctionSpace:
     """Create tensor finite element (composition of scalar elements) function space."""
+    if not _is_scalar(mesh, element):
+        raise ValueError("Cannot create tensor element containing a non-scalar.")
+
     e = ElementMetaData(*element)
-    ufl_element = basix.ufl_wrapper.create_tensor_element(e.family, mesh.ufl_cell().cellname(),
-                                                          e.degree, shape=shape, symmetry=symmetry,
-                                                          gdim=mesh.geometry.dim)
+    ufl_element = basix.ufl.element(e.family, mesh.basix_cell(),
+                                    e.degree, shape=shape, symmetry=symmetry,
+                                    gdim=mesh.geometry.dim, rank=2)
     return FunctionSpace(mesh, ufl_element)

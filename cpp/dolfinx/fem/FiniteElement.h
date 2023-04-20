@@ -31,7 +31,7 @@ public:
   /// Create finite element from a Basix finite element
   /// @param[in] element Basix finite element
   /// @param[in] bs The block size
-  FiniteElement(const basix::FiniteElement& element, int bs);
+  FiniteElement(const basix::FiniteElement<double>& element, int bs);
 
   /// Copy constructor
   FiniteElement(const FiniteElement& element) = delete;
@@ -78,7 +78,7 @@ public:
   int space_dimension() const noexcept;
 
   /// Block size of the finite element function space. For
-  /// VectorElements and TensorElements, this is the number of DOFs
+  /// BlockedElements, this is the number of DOFs
   /// colocated at each DOF point. For other elements, this is always 1.
   /// @return Block size of the finite element space
   int block_size() const noexcept;
@@ -150,7 +150,7 @@ public:
   extract_sub_element(const std::vector<int>& component) const;
 
   /// Return underlying basix element (if it exists)
-  const basix::FiniteElement& basix_element() const;
+  const basix::FiniteElement<double>& basix_element() const;
 
   /// Get the map type used by the element
   basix::maps::type map_type() const;
@@ -168,7 +168,7 @@ public:
   /// @return True if the map is the identity
   bool map_ident() const noexcept;
 
-  /// @brief Points on the reference cell at which an expression need to
+  /// @brief Points on the reference cell at which an expression needs to
   /// be evaluated in order to interpolate the expression in the finite
   /// element space.
   ///
@@ -673,7 +673,7 @@ private:
   // Dimension of each value space
   std::vector<std::size_t> _value_shape;
 
-  // Block size for VectorElements and TensorElements. This gives the
+  // Block size for BlockedElements. This gives the
   // number of DOFs co-located at each dof 'point'.
   int _bs;
 
@@ -682,6 +682,6 @@ private:
   bool _needs_dof_transformations;
 
   // Basix Element (nullptr for mixed elements)
-  std::unique_ptr<basix::FiniteElement> _element;
+  std::unique_ptr<basix::FiniteElement<double>> _element;
 };
 } // namespace dolfinx::fem

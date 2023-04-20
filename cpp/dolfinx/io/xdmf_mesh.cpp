@@ -29,15 +29,23 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
 
   const int tdim = topology.dim();
 
-  if (tdim == 2 and topology.cell_type() == mesh::CellType::prism)
+  // FIXME
+  auto cell_types = topology.cell_types();
+  if (cell_types.size() > 1)
+    throw std::runtime_error("cell type IO");
+
+  if (tdim == 2 and cell_types.back() == mesh::CellType::prism)
     throw std::runtime_error("More work needed for prism cell");
 
   // Get entity 'cell' type
   const mesh::CellType entity_cell_type
-      = mesh::cell_entity_type(topology.cell_type(), dim, 0);
+      = mesh::cell_entity_type(cell_types.back(), dim, 0);
 
+  if (geometry.cmaps().size() > 1)
+    throw std::runtime_error(
+        "XDMF I/O with multiple geometry maps not implemented.");
   const fem::ElementDofLayout cmap_dof_layout
-      = geometry.cmap().create_dof_layout();
+      = geometry.cmaps()[0].create_dof_layout();
 
   // Get number of nodes per entity
   const int num_nodes_per_entity = cmap_dof_layout.num_entity_closure_dofs(dim);
@@ -90,9 +98,13 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
     if (!c_to_e)
       throw std::runtime_error("Mesh is missing cell-entity connectivity.");
 
+    auto cell_types = topology.cell_types();
+    if (cell_types.size() > 1)
+      throw std::runtime_error("cell type IO");
+
     // Tabulate geometry dofs for local entities
     std::vector<std::vector<int>> entity_dofs;
-    for (int e = 0; e < mesh::cell_num_entities(topology.cell_type(), dim); ++e)
+    for (int e = 0; e < mesh::cell_num_entities(cell_types.back(), dim); ++e)
       entity_dofs.push_back(cmap_dof_layout.entity_closure_dofs(dim, e));
 
     for (std::int32_t e : entities)
@@ -201,7 +213,7 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
 }
 //----------------------------------------------------------------------------
 void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
-                         const hid_t h5_id, const mesh::Mesh& mesh,
+                         const hid_t h5_id, const mesh::Mesh<double>& mesh,
                          const std::string name)
 {
   LOG(INFO) << "Adding mesh to node \"" << xml_node.path('/') << "\"";
@@ -214,17 +226,17 @@ void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
 
   // Add topology node and attributes (including writing data)
   const std::string path_prefix = "/Mesh/" + name;
-  const int tdim = mesh.topology().dim();
+  const int tdim = mesh.topology()->dim();
 
   // Prepare an array of active cells
   // Writing whole mesh so each cell is active, excl. ghosts
-  auto map = mesh.topology().index_map(tdim);
+  auto map = mesh.topology()->index_map(tdim);
   assert(map);
   const int num_cells = map->size_local();
   std::vector<std::int32_t> cells(num_cells);
   std::iota(cells.begin(), cells.end(), 0);
 
-  add_topology_data(comm, grid_node, h5_id, path_prefix, mesh.topology(),
+  add_topology_data(comm, grid_node, h5_id, path_prefix, *mesh.topology(),
                     mesh.geometry(), tdim,
                     std::span<std::int32_t>(cells.data(), num_cells));
 

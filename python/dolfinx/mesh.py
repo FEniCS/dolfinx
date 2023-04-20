@@ -13,7 +13,7 @@ import numpy as np
 import numpy.typing as npt
 
 import basix
-import basix.ufl_wrapper
+import basix.ufl
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.mesh import (CellType, DiagonalType, GhostMode,
@@ -75,6 +75,10 @@ class Mesh:
     def ufl_domain(self) -> ufl.Mesh:
         """Return the ufl domain corresponding to the mesh."""
         return self._ufl_domain
+
+    def basix_cell(self) -> ufl.Cell:
+        """Return the Basix cell type."""
+        return getattr(basix.CellType, self.topology.cell_name())
 
     def h(self, dim: int, entities: npt.NDArray[np.int32]) -> npt.NDArray[np.float64]:
         """Size measure for each cell."""
@@ -163,13 +167,13 @@ def transfer_meshtag(meshtag: MeshTags, mesh1: Mesh, parent_cell: npt.NDArray[np
             Mesh tags on the refined mesh.
 
     """
-    if meshtag.dim == meshtag.mesh.topology.dim:
-        mt = _cpp.refinement.transfer_cell_meshtag(meshtag._cpp_object, mesh1._cpp_object, parent_cell)
-        return MeshTags(mt, mesh1)
-    elif meshtag.dim == meshtag.mesh.topology.dim - 1:
+    if meshtag.dim == meshtag.topology.dim:
+        mt = _cpp.refinement.transfer_cell_meshtag(meshtag._cpp_object, mesh1.topology, parent_cell)
+        return MeshTags(mt)
+    elif meshtag.dim == meshtag.topology.dim - 1:
         assert parent_facet is not None
-        mt = _cpp.refinement.transfer_facet_meshtag(meshtag._cpp_object, mesh1._cpp_object, parent_cell, parent_facet)
-        return MeshTags(mt, mesh1)
+        mt = _cpp.refinement.transfer_facet_meshtag(meshtag._cpp_object, mesh1.topology, parent_cell, parent_facet)
+        return MeshTags(mt)
     else:
         raise RuntimeError("MeshTag transfer is supported on on cells or facets.")
 
@@ -251,6 +255,8 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
     except AttributeError:
         variant = basix.LagrangeVariant.unset
     cmap = _cpp.fem.CoordinateElement(_uflcell_to_dolfinxcell[cell_shape], cell_degree, variant)
+
+    x = np.asarray(x, order='C')
     try:
         mesh = _cpp.mesh.create_mesh(comm, cells, cmap, x, partitioner)
     except TypeError:
@@ -261,20 +267,20 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
 
 def create_submesh(msh, dim, entities):
     submsh, entity_map, vertex_map, geom_map = _cpp.mesh.create_submesh(msh._cpp_object, dim, entities)
+    assert len(submsh.geometry.cmaps) == 1
     submsh_ufl_cell = ufl.Cell(submsh.topology.cell_name(), geometric_dimension=submsh.geometry.dim)
-    submsh_domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element(
-        "Lagrange", submsh_ufl_cell.cellname(), submsh.geometry.cmap.degree, submsh.geometry.cmap.variant,
-        dim=submsh.geometry.dim, gdim=submsh.geometry.dim))
+    submsh_domain = ufl.Mesh(basix.ufl.element(
+        "Lagrange", submsh_ufl_cell.cellname(), submsh.geometry.cmaps[0].degree, submsh.geometry.cmaps[0].variant,
+        shape=(submsh.geometry.dim, ), gdim=submsh.geometry.dim))
     return (Mesh(submsh, submsh_domain), entity_map, vertex_map, geom_map)
 
 
 class MeshTags:
-    def __init__(self, meshtags, mesh: Mesh):
+    def __init__(self, meshtags):
         """Mesh tags associate data (markers) with a subset of mesh entities of a given dimension.
 
         Args:
             meshtags: C++ mesh tags object.
-            mesh: Python mesh that tags are defined on.
 
         Note:
             MeshTags objects should not usually be created using this
@@ -286,18 +292,15 @@ class MeshTags:
             passed, `mesh` and `meshtags` must share the same C++ mesh.
 
         """
-        if mesh is not None:
-            assert meshtags.mesh is mesh._cpp_object
         self._cpp_object = meshtags
-        self._mesh = mesh
 
     def ufl_id(self) -> int:
         return id(self)
 
     @property
-    def mesh(self) -> Mesh:
-        """Mesh with which the the tags are associated."""
-        return self._mesh
+    def topology(self) -> _cpp.mesh.Topology:
+        """Mesh topology with which the the tags are associated."""
+        return self._cpp_object.topology
 
     @property
     def dim(self) -> int:
@@ -374,7 +377,7 @@ def meshtags(mesh: Mesh, dim: int, entities: npt.NDArray[np.int32],
     else:
         raise NotImplementedError(f"Type {values.dtype} not supported.")
 
-    return MeshTags(ftype(mesh._cpp_object, dim, np.asarray(entities, dtype=np.int32), values), mesh)
+    return MeshTags(ftype(mesh.topology, dim, np.asarray(entities, dtype=np.int32), values))
 
 
 def meshtags_from_entities(mesh: Mesh, dim: int, entities: _cpp.graph.AdjacencyList_int32,
@@ -405,7 +408,7 @@ def meshtags_from_entities(mesh: Mesh, dim: int, entities: _cpp.graph.AdjacencyL
         values = np.full(entities.num_nodes, values, dtype=np.double)
 
     values = np.asarray(values)
-    return MeshTags(_cpp.mesh.create_meshtags(mesh._cpp_object, dim, entities, values), mesh)
+    return MeshTags(_cpp.mesh.create_meshtags(mesh.topology, dim, entities, values))
 
 
 def create_interval(comm: _MPI.Comm, nx: int, points: npt.ArrayLike,
@@ -427,8 +430,8 @@ def create_interval(comm: _MPI.Comm, nx: int, points: npt.ArrayLike,
     """
     if partitioner is None:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
-    domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element("Lagrange", "interval", 1))
-    mesh = _cpp.mesh.create_interval(comm, nx, points, ghost_mode, partitioner)
+    domain = ufl.Mesh(basix.ufl.element("Lagrange", "interval", 1, rank=1))
+    mesh = _cpp.mesh.create_interval_float64(comm, nx, points, ghost_mode, partitioner)
     return Mesh(mesh, domain)
 
 
@@ -478,8 +481,8 @@ def create_rectangle(comm: _MPI.Comm, points: npt.ArrayLike, n: npt.ArrayLike,
     """
     if partitioner is None:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
-    domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element("Lagrange", cell_type.name, 1))
-    mesh = _cpp.mesh.create_rectangle(comm, points, n, cell_type, partitioner, diagonal)
+    domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_type.name, 1, rank=1))
+    mesh = _cpp.mesh.create_rectangle_float64(comm, points, n, cell_type, partitioner, diagonal)
     return Mesh(mesh, domain)
 
 
@@ -531,8 +534,8 @@ def create_box(comm: _MPI.Comm, points: typing.List[npt.ArrayLike], n: list,
     """
     if partitioner is None:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
-    domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element("Lagrange", cell_type.name, 1))
-    mesh = _cpp.mesh.create_box(comm, points, n, cell_type, partitioner)
+    domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_type.name, 1, rank=1))
+    mesh = _cpp.mesh.create_box_float64(comm, points, n, cell_type, partitioner)
     return Mesh(mesh, domain)
 
 

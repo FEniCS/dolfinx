@@ -10,7 +10,7 @@ import numpy as np
 import numpy.typing as npt
 
 import basix
-import basix.ufl_wrapper
+import basix.ufl
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.graph import AdjacencyList_int32
@@ -44,8 +44,9 @@ def ufl_mesh(gmsh_cell: int, gdim: int) -> ufl.Mesh:
     shape, degree = _gmsh_to_cells[gmsh_cell]
     cell = ufl.Cell(shape, geometric_dimension=gdim)
 
-    element = basix.ufl_wrapper.create_vector_element(
-        basix.ElementFamily.P, cell.cellname(), degree, basix.LagrangeVariant.equispaced, dim=gdim, gdim=gdim)
+    element = basix.ufl.element(
+        basix.ElementFamily.P, cell.cellname(), degree, basix.LagrangeVariant.equispaced, shape=(gdim, ),
+        gdim=gdim)
     return ufl.Mesh(element)
 
 
@@ -260,8 +261,8 @@ if _has_gmsh:
         if has_facet_data:
             # Permute facets from MSH to DOLFINx ordering
             # FIXME: This does not work for prism meshes
-            if topology.cell_type == CellType.prism or topology.cell_type == CellType.pyramid:
-                raise RuntimeError(f"Unsupported cell type {topology.cell_type}")
+            if topology.cell_types[0] == CellType.prism or topology.cell_types[0] == CellType.pyramid:
+                raise RuntimeError(f"Unsupported cell type {topology.cell_types[0]}")
 
             facet_type = _cpp.mesh.cell_entity_type(_cpp.mesh.to_type(str(ufl_domain.ufl_cell())), topology.dim - 1, 0)
             gmsh_facet_perm = cell_perm_array(facet_type, num_facet_nodes)
