@@ -31,7 +31,7 @@ public:
   /// Create finite element from a Basix finite element
   /// @param[in] element Basix finite element
   /// @param[in] bs The block size
-  FiniteElement(const basix::FiniteElement& element, int bs);
+  FiniteElement(const basix::FiniteElement<double>& element, int bs);
 
   /// Copy constructor
   FiniteElement(const FiniteElement& element) = delete;
@@ -150,7 +150,7 @@ public:
   extract_sub_element(const std::vector<int>& component) const;
 
   /// Return underlying basix element (if it exists)
-  const basix::FiniteElement& basix_element() const;
+  const basix::FiniteElement<double>& basix_element() const;
 
   /// Get the map type used by the element
   basix::maps::type map_type() const;
@@ -682,6 +682,6 @@ private:
   bool _needs_dof_transformations;
 
   // Basix Element (nullptr for mixed elements)
-  std::unique_ptr<basix::FiniteElement> _element;
+  std::unique_ptr<basix::FiniteElement<double>> _element;
 };
 } // namespace dolfinx::fem
