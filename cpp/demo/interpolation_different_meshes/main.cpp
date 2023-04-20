@@ -32,13 +32,13 @@ int main(int argc, char* argv[])
         mesh::create_box(comm, {{{0, 0, 0}, {1, 1, 1}}}, {15, 15, 15},
                          mesh::CellType::hexahedron));
 
-    basix::FiniteElement element_tet = basix::element::create_lagranget<double>(
+    basix::FiniteElement element_tet = basix::element::create_lagrange<double>(
         mesh::cell_type_to_basix_type(mesh_tet->topology()->cell_types()[0]), 1,
         basix::element::lagrange_variant::equispaced, false);
     auto V_tet = std::make_shared<fem::FunctionSpace<double>>(
         fem::create_functionspace(mesh_tet, element_tet, 3));
 
-    basix::FiniteElement element_hex = basix::element::create_lagranget<double>(
+    basix::FiniteElement element_hex = basix::element::create_lagrange<double>(
         mesh::cell_type_to_basix_type(mesh_hex->topology()->cell_types()[0]), 2,
         basix::element::lagrange_variant::equispaced, false);
     auto V_hex = std::make_shared<fem::FunctionSpace<double>>(
