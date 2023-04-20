@@ -92,17 +92,13 @@ public:
   /// DOF map
   std::experimental::mdspan<const std::int32_t,
                             std::experimental::dextents<std::size_t, 2>>
-  new_dofmap() const
+  dofmap() const
   {
     int ndofs = _cmaps[0].dim();
     return std::experimental::mdspan<
         const std::int32_t, std::experimental::dextents<std::size_t, 2>>(
         _dofmap.array().data(), _dofmap.array().size() / ndofs, ndofs);
   }
-
-  /// DOF map
-  // const graph::AdjacencyList<std::int32_t>& dofmap() const { return _dofmap;
-  // }
 
   /// Index map
   std::shared_ptr<const common::IndexMap> index_map() const
@@ -295,7 +291,7 @@ create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
   sub_x_dofmap_offsets.reserve(subentity_to_entity.size() + 1);
   sub_x_dofmap_offsets.push_back(0);
   {
-    auto xdofs = geometry.new_dofmap();
+    auto xdofs = geometry.dofmap();
     const int tdim = topology.dim();
 
     // Fetch connectivities required to get entity dofs

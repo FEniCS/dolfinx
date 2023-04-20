@@ -57,7 +57,7 @@ std::pair<std::vector<T>, std::array<std::size_t, 2>> create_new_geometry(
   namespace stdex = std::experimental;
 
   // Build map from vertex -> geometry dof
-  auto x_dofmap = mesh.geometry().new_dofmap();
+  auto x_dofmap = mesh.geometry().dofmap();
   const int tdim = mesh.topology()->dim();
   auto c_to_v = mesh.topology()->connectivity(tdim, 0);
   assert(c_to_v);

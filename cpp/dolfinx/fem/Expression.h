@@ -143,7 +143,7 @@ public:
 
     // Prepare cell geometry
     assert(_mesh);
-    auto x_dofmap = _mesh->geometry().new_dofmap();
+    auto x_dofmap = _mesh->geometry().dofmap();
 
     // Get geometry data
     auto cmaps = _mesh->geometry().cmaps();

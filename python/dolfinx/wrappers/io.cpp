@@ -43,7 +43,7 @@ void io(py::module& m)
       [](const dolfinx::mesh::Geometry<double>& x, dolfinx::mesh::CellType cell)
       {
         auto [cells, shape]
-            = dolfinx::io::extract_vtk_connectivity(x.new_dofmap(), cell);
+            = dolfinx::io::extract_vtk_connectivity(x.dofmap(), cell);
         return as_pyarray(std::move(cells), shape);
       },
       py::arg("x"), py::arg("celltype"),

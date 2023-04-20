@@ -88,7 +88,7 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
   const fem::CoordinateElement& cmap = mesh->geometry().cmaps()[0];
 
   // Prepare cell geometry
-  auto dofmap_x = mesh->geometry().new_dofmap();
+  auto dofmap_x = mesh->geometry().dofmap();
   std::span<const T> x_g = mesh->geometry().x();
   const std::size_t num_dofs_g = cmap.dim();
 

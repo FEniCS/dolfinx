@@ -44,7 +44,7 @@ std::vector<T> interpolation_coords(const fem::FiniteElement& element,
 {
   // Get geometry data and the element coordinate map
   const std::size_t gdim = geometry.dim();
-  auto x_dofmap = geometry.new_dofmap();
+  auto x_dofmap = geometry.dofmap();
   std::span<const T> x_g = geometry.x();
 
   if (geometry.cmaps().size() > 1)
@@ -454,7 +454,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
     throw std::runtime_error("Multiple cmaps");
 
   const CoordinateElement& cmap = mesh->geometry().cmaps()[0];
-  auto x_dofmap = mesh->geometry().new_dofmap();
+  auto x_dofmap = mesh->geometry().dofmap();
   const std::size_t num_dofs_g = cmap.dim();
   std::span<const U> x_g = mesh->geometry().x();
 
@@ -869,7 +869,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
     const CoordinateElement& cmap = mesh->geometry().cmaps()[0];
 
     // Get geometry data
-    auto x_dofmap = mesh->geometry().new_dofmap();
+    auto x_dofmap = mesh->geometry().dofmap();
     const int num_dofs_g = cmap.dim();
     std::span<const U> x_g = mesh->geometry().x();
 

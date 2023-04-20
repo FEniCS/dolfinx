@@ -223,7 +223,7 @@ public:
     const CoordinateElement& cmap = _mesh->geometry().cmaps()[0];
 
     // Prepare cell geometry
-    auto x_dofmap = _mesh->geometry().new_dofmap();
+    auto x_dofmap = _mesh->geometry().dofmap();
     const std::size_t num_dofs_g = cmap.dim();
     std::span<const T> x_g = _mesh->geometry().x();
 

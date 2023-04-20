@@ -135,7 +135,7 @@ compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
   }
 
   // Get geometry data
-  auto x_dofmap = mesh.geometry().new_dofmap();
+  auto x_dofmap = mesh.geometry().dofmap();
   std::span<const T> x_nodes = mesh.geometry().x();
 
   // Get all vertex 'node' indices
@@ -455,7 +455,7 @@ compute_vertex_coords(const mesh::Mesh<T>& mesh)
   mesh.topology_mutable()->create_connectivity(tdim, 0);
 
   // Get all vertex 'node' indices
-  auto x_dofmap = mesh.geometry().new_dofmap();
+  auto x_dofmap = mesh.geometry().dofmap();
   const std::int32_t num_vertices = topology->index_map(0)->size_local()
                                     + topology->index_map(0)->num_ghosts();
   auto c_to_v = topology->connectivity(tdim, 0);
@@ -681,7 +681,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   mesh.topology_mutable()->create_connectivity(dim, 0);
   mesh.topology_mutable()->create_connectivity(tdim, 0);
 
-  auto xdofs = geometry.new_dofmap();
+  auto xdofs = geometry.dofmap();
   auto e_to_c = topology->connectivity(dim, tdim);
   if (!e_to_c)
   {

@@ -200,7 +200,7 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   assert(cmaps.size() == 1);
 
   const CoordinateElement& cmap = cmaps.back();
-  auto x_dofmap = mesh->geometry().new_dofmap();
+  auto x_dofmap = mesh->geometry().dofmap();
   const std::size_t num_dofs_g = cmap.dim();
   std::span<const U> x_g = mesh->geometry().x();
 

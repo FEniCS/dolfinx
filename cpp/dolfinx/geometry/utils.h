@@ -47,7 +47,7 @@ std::vector<T> shortest_vector(const mesh::Mesh<T>& mesh, int dim,
   }
 
   std::span<const T> geom_dofs = geometry.x();
-  auto x_dofmap = geometry.new_dofmap();
+  auto x_dofmap = geometry.dofmap();
   std::vector<T> shortest_vectors(3 * entities.size());
   if (dim == tdim)
   {
@@ -514,7 +514,7 @@ std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
     constexpr T eps2 = 1e-20;
     const mesh::Geometry<T>& geometry = mesh.geometry();
     std::span<const T> geom_dofs = geometry.x();
-    auto x_dofmap = geometry.new_dofmap();
+    auto x_dofmap = geometry.dofmap();
     const std::size_t num_nodes = geometry.cmaps()[0].dim();
     std::vector<T> coordinate_dofs(num_nodes * 3);
     for (auto cell : cell_candidates)

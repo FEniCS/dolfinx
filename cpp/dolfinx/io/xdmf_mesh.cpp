@@ -62,7 +62,7 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   // Pack topology data
   std::vector<std::int64_t> topology_data;
 
-  auto cells_g = geometry.new_dofmap();
+  auto cells_g = geometry.dofmap();
   auto map_g = geometry.index_map();
   assert(map_g);
   const std::int64_t offset_g = map_g->local_range()[0];

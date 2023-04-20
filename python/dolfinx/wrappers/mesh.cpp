@@ -148,7 +148,7 @@ void declare_mesh(py::module& m, std::string type)
           "dofmap",
           [](dolfinx::mesh::Geometry<T>& self)
           {
-            auto dofs = self.new_dofmap();
+            auto dofs = self.dofmap();
             std::array<std::size_t, 2> shape = {dofs.extent(0), dofs.extent(1)};
             return py::array_t<std::int32_t>(shape, dofs.data_handle(),
                                              py::cast(self));

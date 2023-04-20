@@ -51,7 +51,7 @@ void assemble_cells(
     return;
 
   // Prepare cell geometry
-  auto x_dofmap = geometry.new_dofmap();
+  auto x_dofmap = geometry.dofmap();
   const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
   auto x = geometry.x();
 
@@ -148,7 +148,7 @@ void assemble_exterior_facets(
     return;
 
   // Prepare cell geometry
-  auto x_dofmap = geometry.new_dofmap();
+  auto x_dofmap = geometry.dofmap();
   const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
   auto x = geometry.x();
 
@@ -244,7 +244,7 @@ void assemble_interior_facets(
     return;
 
   // Prepare cell geometry
-  auto x_dofmap = geometry.new_dofmap();
+  auto x_dofmap = geometry.dofmap();
   const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
   auto x = geometry.x();
 

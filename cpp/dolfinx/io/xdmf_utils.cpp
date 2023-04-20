@@ -92,7 +92,7 @@ compute_point_values(const fem::Function<T, double>& u)
   std::vector<T> point_values(num_points * value_size_loc);
 
   // Prepare cell geometry
-  auto x_dofmap = mesh->geometry().new_dofmap();
+  auto x_dofmap = mesh->geometry().dofmap();
 
   if (mesh->geometry().cmaps().size() > 1)
   {
@@ -722,7 +722,7 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh<double>& mesh,
     const std::vector<std::int64_t>& nodes_g
         = mesh.geometry().input_global_indices();
 
-    auto x_dofmap = mesh.geometry().new_dofmap();
+    auto x_dofmap = mesh.geometry().dofmap();
     std::map<std::int64_t, std::int32_t> igi_to_vertex;
     for (int c = 0; c < c_to_v->num_nodes(); ++c)
     {
