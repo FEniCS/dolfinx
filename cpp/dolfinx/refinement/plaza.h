@@ -141,6 +141,8 @@ template <typename T>
 std::pair<std::vector<std::int32_t>, std::vector<std::int8_t>>
 face_long_edge(const mesh::Mesh<T>& mesh)
 {
+  namespace stdex = std::experimental;
+
   const int tdim = mesh.topology()->dim();
   // FIXME: cleanup these calls? Some of the happen internally again.
   mesh.topology_mutable()->create_entities(1);
@@ -162,7 +164,7 @@ face_long_edge(const mesh::Mesh<T>& mesh)
   if (tdim == 2)
     edge_ratio_ok.resize(num_faces);
 
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+  auto x_dofmap = mesh.geometry().new_dofmap();
 
   auto c_to_v = mesh.topology()->connectivity(tdim, 0);
   assert(c_to_v);
@@ -193,7 +195,8 @@ face_long_edge(const mesh::Mesh<T>& mesh)
     assert(it1 != cell_vertices.end());
     const std::size_t local1 = std::distance(cell_vertices.begin(), it1);
 
-    auto x_dofs = x_dofmap.links(cells.front());
+    // auto x_dofs = x_dofmap.links(cells.front());
+    auto x_dofs = stdex::submdspan(x_dofmap, cells.front(), stdex::full_extent);
     std::span<const T, 3> x0(mesh.geometry().x().data() + 3 * x_dofs[local0],
                              3);
     std::span<const T, 3> x1(mesh.geometry().x().data() + 3 * x_dofs[local1],

@@ -407,8 +407,7 @@ public:
     const CoordinateElement& cmap = mesh->geometry().cmaps()[0];
 
     // Get geometry data
-    const graph::AdjacencyList<std::int32_t>& x_dofmap
-        = mesh->geometry().dofmap();
+    auto x_dofmap = mesh->geometry().new_dofmap();
     const std::size_t num_dofs_g = cmap.dim();
     std::span<const U> x_g = mesh->geometry().x();
 
@@ -501,7 +500,8 @@ public:
         continue;
 
       // Get cell geometry (coordinate dofs)
-      auto x_dofs = x_dofmap.links(cell_index);
+      // auto x_dofs = x_dofmap.links(cell_index);
+      auto x_dofs = stdex::submdspan(x_dofmap, cell_index, stdex::full_extent);
       assert(x_dofs.size() == num_dofs_g);
       for (std::size_t i = 0; i < num_dofs_g; ++i)
       {

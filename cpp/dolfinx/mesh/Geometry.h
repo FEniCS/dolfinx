@@ -94,14 +94,15 @@ public:
                             std::experimental::dextents<std::size_t, 2>>
   new_dofmap() const
   {
-    int ndofs = _dofmap.num_links(0);
+    int ndofs = _cmaps[0].dim();
     return std::experimental::mdspan<
         const std::int32_t, std::experimental::dextents<std::size_t, 2>>(
         _dofmap.array().data(), _dofmap.array().size() / ndofs, ndofs);
   }
 
   /// DOF map
-  const graph::AdjacencyList<std::int32_t>& dofmap() const { return _dofmap; }
+  // const graph::AdjacencyList<std::int32_t>& dofmap() const { return _dofmap;
+  // }
 
   /// Index map
   std::shared_ptr<const common::IndexMap> index_map() const
@@ -275,6 +276,8 @@ std::pair<mesh::Geometry<T>, std::vector<int32_t>>
 create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
                    int dim, std::span<const std::int32_t> subentity_to_entity)
 {
+  namespace stdex = std::experimental;
+
   if (geometry.cmaps().size() > 1)
   {
     throw std::runtime_error("Mixed topology not supported");
@@ -292,7 +295,7 @@ create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
   sub_x_dofmap_offsets.reserve(subentity_to_entity.size() + 1);
   sub_x_dofmap_offsets.push_back(0);
   {
-    const graph::AdjacencyList<std::int32_t>& xdofs = geometry.dofmap();
+    auto xdofs = geometry.new_dofmap();
     const int tdim = topology.dim();
 
     // Fetch connectivities required to get entity dofs
@@ -313,7 +316,7 @@ create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
       assert(it != cell_entities.end());
       std::size_t local_entity = std::distance(cell_entities.begin(), it);
 
-      auto xc = xdofs.links(cell);
+      auto xc = stdex::submdspan(xdofs, cell, stdex::full_extent);
       for (std::int32_t entity_dof : closure_dofs[dim][local_entity])
         x_indices.push_back(xc[entity_dof]);
       sub_x_dofmap_offsets.push_back(x_indices.size());

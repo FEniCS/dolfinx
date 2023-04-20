@@ -144,7 +144,16 @@ void declare_mesh(py::module& m, std::string type)
       m, pyclass_geometry_name.c_str(), "Geometry object")
       .def_property_readonly("dim", &dolfinx::mesh::Geometry<T>::dim,
                              "Geometric dimension")
-      .def_property_readonly("dofmap", &dolfinx::mesh::Geometry<T>::dofmap)
+      // .def_property_readonly("dofmap", &dolfinx::mesh::Geometry<T>::dofmap)
+      .def_property_readonly(
+          "dofmap",
+          [](dolfinx::mesh::Geometry<T>& self)
+          {
+            auto dofs = self.new_dofmap();
+            std::array<std::size_t, 2> shape = {dofs.extent(0), dofs.extent(1)};
+            return py::array_t<std::int32_t>(shape, dofs.data_handle(),
+                                             py::cast(self));
+          })
       .def("index_map", &dolfinx::mesh::Geometry<T>::index_map)
       .def_property_readonly(
           "x",

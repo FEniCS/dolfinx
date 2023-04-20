@@ -312,6 +312,8 @@ void initialize_function_attributes(adios2::IO& io,
 template <typename T, std::floating_point U>
 std::vector<T> pack_function_data(const fem::Function<T, U>& u)
 {
+  namespace stdex = std::experimental;
+
   auto V = u.function_space();
   assert(V);
   auto dofmap = V->dofmap();
@@ -342,14 +344,14 @@ std::vector<T> pack_function_data(const fem::Function<T, U>& u)
   const std::uint32_t num_components = std::pow(3, rank);
 
   // Get dof array and pack into array (padded where appropriate)
-  const graph::AdjacencyList<std::int32_t>& dofmap_x = geometry.dofmap();
+  auto dofmap_x = geometry.new_dofmap();
   const int bs = dofmap->bs();
   const auto& u_data = u.x()->array();
   std::vector<T> data(num_vertices * num_components, 0);
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     auto dofs = dofmap->cell_dofs(c);
-    auto dofs_x = dofmap_x.links(c);
+    auto dofs_x = stdex::submdspan(dofmap_x, c, stdex::full_extent);
     assert(dofs.size() == dofs_x.size());
     for (std::size_t i = 0; i < dofs.size(); ++i)
       for (int j = 0; j < bs; ++j)
@@ -473,7 +475,7 @@ void write_mesh(adios2::IO& io, adios2::Engine& engine,
   const std::int32_t num_cells = topology->index_map(tdim)->size_local();
   const int num_nodes = geometry.cmaps()[0].dim();
   const auto [cells, shape] = io::extract_vtk_connectivity(
-      mesh.geometry().dofmap(), topology->cell_types()[0]);
+      mesh.geometry().new_dofmap(), topology->cell_types()[0]);
 
   // "Put" topology data in the result in the ADIOS2 file
   adios2::Variable<std::int64_t> local_topology
@@ -786,7 +788,7 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   engine.Put<std::uint32_t>(vertices, num_vertices);
 
   const auto [vtkcells, shape] = io::extract_vtk_connectivity(
-      geometry.dofmap(), topology->cell_types()[0]);
+      geometry.new_dofmap(), topology->cell_types()[0]);
 
   // Add cell metadata
   const int tdim = topology->dim();

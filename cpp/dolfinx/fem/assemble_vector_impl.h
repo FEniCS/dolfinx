@@ -63,7 +63,7 @@ void _lift_bc_cells(
     return;
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
+  auto x_dofmap = geometry.new_dofmap();
   const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
   auto x = geometry.x();
 
@@ -114,7 +114,7 @@ void _lift_bc_cells(
       continue;
 
     // Get cell coordinates/geometry
-    auto x_dofs = x_dofmap.links(c);
+    auto x_dofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
@@ -218,7 +218,7 @@ void _lift_bc_exterior_facets(
     return;
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
+  auto x_dofmap = geometry.new_dofmap();
   const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
   auto x = geometry.x();
 
@@ -255,7 +255,7 @@ void _lift_bc_exterior_facets(
       continue;
 
     // Get cell coordinates/geometry
-    auto x_dofs = x_dofmap.links(cell);
+    auto x_dofs = stdex::submdspan(x_dofmap, cell, stdex::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
@@ -330,7 +330,7 @@ void _lift_bc_interior_facets(
     return;
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
+  auto x_dofmap = geometry.new_dofmap();
   const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
   auto x = geometry.x();
 
@@ -354,13 +354,13 @@ void _lift_bc_interior_facets(
         = {facets[index + 1], facets[index + 3]};
 
     // Get cell geometry
-    auto x_dofs0 = x_dofmap.links(cells[0]);
+    auto x_dofs0 = stdex::submdspan(x_dofmap, cells[0], stdex::full_extent);
     for (std::size_t i = 0; i < x_dofs0.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs0[i]), 3,
                   std::next(cdofs0.begin(), 3 * i));
     }
-    auto x_dofs1 = x_dofmap.links(cells[1]);
+    auto x_dofs1 = stdex::submdspan(x_dofmap, cells[1], stdex::full_extent);
     for (std::size_t i = 0; i < x_dofs1.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs1[i]), 3,
@@ -520,7 +520,7 @@ void assemble_cells(
     return;
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
+  auto x_dofmap = geometry.new_dofmap();
   const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
   auto x = geometry.x();
 
@@ -537,7 +537,7 @@ void assemble_cells(
     std::int32_t c = cells[index];
 
     // Get cell coordinates/geometry
-    auto x_dofs = x_dofmap.links(c);
+    auto x_dofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
@@ -591,7 +591,7 @@ void assemble_exterior_facets(
     return;
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
+  auto x_dofmap = geometry.new_dofmap();
   const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
   auto x = geometry.x();
 
@@ -608,7 +608,7 @@ void assemble_exterior_facets(
     std::int32_t local_facet = facets[index + 1];
 
     // Get cell coordinates/geometry
-    auto x_dofs = x_dofmap.links(cell);
+    auto x_dofs = stdex::submdspan(x_dofmap, cell, stdex::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
@@ -659,7 +659,7 @@ void assemble_interior_facets(
     const std::function<std::uint8_t(std::size_t)>& get_perm)
 {
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
+  auto x_dofmap = geometry.new_dofmap();
   const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
   auto x = geometry.x();
 
@@ -680,13 +680,13 @@ void assemble_interior_facets(
         = {facets[index + 1], facets[index + 3]};
 
     // Get cell geometry
-    auto x_dofs0 = x_dofmap.links(cells[0]);
+    auto x_dofs0 = stdex::submdspan(x_dofmap, cells[0], stdex::full_extent);
     for (std::size_t i = 0; i < x_dofs0.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs0[i]), 3,
                   std::next(cdofs0.begin(), 3 * i));
     }
-    auto x_dofs1 = x_dofmap.links(cells[1]);
+    auto x_dofs1 = stdex::submdspan(x_dofmap, cells[1], stdex::full_extent);
     for (std::size_t i = 0; i < x_dofs1.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs1[i]), 3,

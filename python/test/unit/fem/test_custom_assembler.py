@@ -280,7 +280,7 @@ def test_custom_mesh_loop_rank1():
     # Unpack mesh and dofmap data
     num_owned_cells = mesh.topology.index_map(mesh.topology.dim).size_local
     num_cells = num_owned_cells + mesh.topology.index_map(mesh.topology.dim).num_ghosts
-    x_dofs = mesh.geometry.dofmap.array.reshape(num_cells, 3)
+    x_dofs = mesh.geometry.dofmap
     x = mesh.geometry.x
     dofmap = V.dofmap.list
 
@@ -362,7 +362,7 @@ def test_custom_mesh_loop_ctypes_rank2():
     # Extract mesh and dofmap data
     num_owned_cells = mesh.topology.index_map(mesh.topology.dim).size_local
     num_cells = num_owned_cells + mesh.topology.index_map(mesh.topology.dim).num_ghosts
-    x_dofs = mesh.geometry.dofmap.array.reshape(num_cells, 3)
+    x_dofs = mesh.geometry.dofmap
     x = mesh.geometry.x
     dofmap = V.dofmap.list.astype(np.dtype(PETSc.IntType))
 

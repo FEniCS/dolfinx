@@ -97,6 +97,8 @@ std::tuple<std::vector<std::int32_t>, std::vector<T>, std::vector<std::int32_t>>
 compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
                                std::span<const std::int32_t> facets)
 {
+  namespace stdex = std::experimental;
+
   auto topology = mesh.topology();
   assert(topology);
   const int tdim = topology->dim();
@@ -133,7 +135,7 @@ compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
   }
 
   // Get geometry data
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+  auto x_dofmap = mesh.geometry().new_dofmap();
   std::span<const T> x_nodes = mesh.geometry().x();
 
   // Get all vertex 'node' indices
@@ -156,7 +158,7 @@ compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
     assert(it != cell_vertices.end());
     const int local_pos = std::distance(cell_vertices.begin(), it);
 
-    auto dofs = x_dofmap.links(c);
+    auto dofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
     for (std::size_t j = 0; j < 3; ++j)
       x_vertices[j * vertices.size() + i] = x_nodes[3 * dofs[local_pos] + j];
     vertex_to_pos[v] = i;
@@ -443,6 +445,8 @@ template <typename T>
 std::pair<std::vector<T>, std::array<std::size_t, 2>>
 compute_vertex_coords(const mesh::Mesh<T>& mesh)
 {
+  namespace stdex = std::experimental;
+
   auto topology = mesh.topology();
   assert(topology);
   const int tdim = topology->dim();
@@ -451,7 +455,7 @@ compute_vertex_coords(const mesh::Mesh<T>& mesh)
   mesh.topology_mutable()->create_connectivity(tdim, 0);
 
   // Get all vertex 'node' indices
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+  auto x_dofmap = mesh.geometry().new_dofmap();
   const std::int32_t num_vertices = topology->index_map(0)->size_local()
                                     + topology->index_map(0)->num_ghosts();
   auto c_to_v = topology->connectivity(tdim, 0);
@@ -459,7 +463,7 @@ compute_vertex_coords(const mesh::Mesh<T>& mesh)
   std::vector<std::int32_t> vertex_to_node(num_vertices);
   for (int c = 0; c < c_to_v->num_nodes(); ++c)
   {
-    auto x_dofs = x_dofmap.links(c);
+    auto x_dofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
     auto vertices = c_to_v->links(c);
     for (std::size_t i = 0; i < vertices.size(); ++i)
       vertex_to_node[vertices[i]] = x_dofs[i];
@@ -655,6 +659,8 @@ std::vector<std::int32_t>
 entities_to_geometry(const Mesh<T>& mesh, int dim,
                      std::span<const std::int32_t> entities, bool orient)
 {
+  namespace stdex = std::experimental;
+
   auto topology = mesh.topology();
   assert(topology);
 
@@ -675,7 +681,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   mesh.topology_mutable()->create_connectivity(dim, 0);
   mesh.topology_mutable()->create_connectivity(tdim, 0);
 
-  const graph::AdjacencyList<std::int32_t>& xdofs = geometry.dofmap();
+  auto xdofs = geometry.new_dofmap();
   auto e_to_c = topology->connectivity(dim, tdim);
   if (!e_to_c)
   {
@@ -707,8 +713,10 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
     const std::int32_t cell = e_to_c->links(idx).back();
     auto ev = e_to_v->links(idx);
     assert(ev.size() == num_vertices);
-    const auto cv = c_to_v->links(cell);
-    const auto xc = xdofs.links(cell);
+    auto cv = c_to_v->links(cell);
+    // auto xc = stdex::submdspan(xdofs, cell, stdex::full_extent);
+    std::span<const std::int32_t> xc(
+        xdofs.data_handle() + xdofs.extent(1) * cell, xdofs.extent(1));
     for (std::size_t j = 0; j < num_vertices; ++j)
     {
       int k = std::distance(cv.begin(), std::find(cv.begin(), cv.end(), ev[j]));

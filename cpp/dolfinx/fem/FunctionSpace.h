@@ -223,8 +223,7 @@ public:
     const CoordinateElement& cmap = _mesh->geometry().cmaps()[0];
 
     // Prepare cell geometry
-    const graph::AdjacencyList<std::int32_t>& x_dofmap
-        = _mesh->geometry().dofmap();
+    auto x_dofmap = _mesh->geometry().new_dofmap();
     const std::size_t num_dofs_g = cmap.dim();
     std::span<const T> x_g = _mesh->geometry().x();
 
@@ -270,7 +269,7 @@ public:
     for (int c = 0; c < num_cells; ++c)
     {
       // Extract cell geometry
-      auto x_dofs = x_dofmap.links(c);
+      auto x_dofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
       for (std::size_t i = 0; i < x_dofs.size(); ++i)
         for (std::size_t j = 0; j < gdim; ++j)
           coordinate_dofs(i, j) = x_g[3 * x_dofs[i] + j];

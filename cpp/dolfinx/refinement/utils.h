@@ -54,8 +54,10 @@ std::pair<std::vector<T>, std::array<std::size_t, 2>> create_new_geometry(
     const mesh::Mesh<T>& mesh,
     const std::map<std::int32_t, std::int64_t>& local_edge_to_new_vertex)
 {
+  namespace stdex = std::experimental;
+
   // Build map from vertex -> geometry dof
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+  auto x_dofmap = mesh.geometry().new_dofmap();
   const int tdim = mesh.topology()->dim();
   auto c_to_v = mesh.topology()->connectivity(tdim, 0);
   assert(c_to_v);
@@ -71,7 +73,8 @@ std::pair<std::vector<T>, std::array<std::size_t, 2>> create_new_geometry(
   for (int c = 0; c < map_c->size_local() + map_c->num_ghosts(); ++c)
   {
     auto vertices = c_to_v->links(c);
-    auto dofs = x_dofmap.links(c);
+    // auto dofs = x_dofmap.links(c);
+    auto dofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
     for (std::size_t i = 0; i < vertices.size(); ++i)
     {
       auto vertex_pos = entity_dofs_all[0][i][0];
@@ -246,7 +249,7 @@ create_new_vertices(MPI_Comm comm,
     recv_global_edge.push_back(received_values[i * 2]);
   std::vector<std::int32_t> recv_local_edge(recv_global_edge.size());
   mesh.topology()->index_map(1)->global_to_local(recv_global_edge,
-                                                recv_local_edge);
+                                                 recv_local_edge);
   for (std::size_t i = 0; i < received_values.size() / 2; ++i)
   {
     assert(recv_local_edge[i] != -1);
