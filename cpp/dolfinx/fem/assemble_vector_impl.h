@@ -69,14 +69,12 @@ void _lift_bc_cells(
   // Data structures used in bc application
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * num_dofs_g);
   std::vector<T> Ae, be;
-  const int num_dofs0 = dofmap0.extent(1);
-  const int num_dofs1 = dofmap1.extent(1);
   for (std::size_t index = 0; index < cells.size(); ++index)
   {
     std::int32_t c = cells[index];
 
     // Get dof maps for cell
-    auto dmap1 = std::span(dofmap1.data_handle() + c * num_dofs1, num_dofs1);
+    auto dmap1 = stdex::submdspan(dofmap1, c, stdex::full_extent);
 
     // Check if bc is applied to cell
     bool has_bc = false;
@@ -120,8 +118,7 @@ void _lift_bc_cells(
     }
 
     // Size data structure for assembly
-    // auto dmap0 = dofmap0.links(c);
-    auto dmap0 = std::span(dofmap0.data_handle() + c * num_dofs0, num_dofs0);
+    auto dmap0 = stdex::submdspan(dofmap0, c, stdex::full_extent);
 
     const int num_rows = bs0 * dmap0.size();
     const int num_cols = bs1 * dmap1.size();
@@ -224,15 +221,13 @@ void _lift_bc_exterior_facets(
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * num_dofs_g);
   std::vector<T> Ae, be;
   assert(facets.size() % 2 == 0);
-  const int num_dofs0 = dofmap0.extent(1);
-  const int num_dofs1 = dofmap1.extent(1);
   for (std::size_t index = 0; index < facets.size(); index += 2)
   {
     std::int32_t cell = facets[index];
     std::int32_t local_facet = facets[index + 1];
 
     // Get dof maps for cell
-    auto dmap1 = std::span(dofmap1.data_handle() + cell * num_dofs1, num_dofs1);
+    auto dmap1 = stdex::submdspan(dofmap1, cell, stdex::full_extent);
 
     // Check if bc is applied to cell
     bool has_bc = false;
@@ -260,7 +255,8 @@ void _lift_bc_exterior_facets(
     }
 
     // Size data structure for assembly
-    auto dmap0 = std::span(dofmap0.data_handle() + cell * num_dofs0, num_dofs0);
+    auto dmap0 = stdex::submdspan(dofmap0, cell, stdex::full_extent);
+
     const int num_rows = bs0 * dmap0.size();
     const int num_cols = bs1 * dmap1.size();
 

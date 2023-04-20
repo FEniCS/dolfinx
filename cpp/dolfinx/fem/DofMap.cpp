@@ -19,6 +19,7 @@
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
+namespace stdex = std::experimental;
 
 namespace
 {
@@ -147,8 +148,9 @@ graph::AdjacencyList<std::int32_t> fem::transpose_dofmap(
   std::vector<int> num_local_contributions(max_index + 1, 0);
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
+    auto dofs = stdex::submdspan(dofmap, c, stdex::full_extent);
     for (std::size_t d = 0; d < dofmap.extent(1); ++d)
-      num_local_contributions[dofmap(c, d)]++;
+      num_local_contributions[dofs[d]]++;
   }
 
   // Compute offset for each global index
@@ -161,8 +163,9 @@ graph::AdjacencyList<std::int32_t> fem::transpose_dofmap(
   int cell_offset = 0;
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
+    auto dofs = stdex::submdspan(dofmap, c, stdex::full_extent);
     for (std::size_t d = 0; d < dofmap.extent(1); ++d)
-      data[pos[dofmap(c, d)]++] = cell_offset++;
+      data[pos[dofs[d]]++] = cell_offset++;
   }
 
   // Sort the source indices for each global index

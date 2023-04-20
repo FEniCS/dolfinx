@@ -216,9 +216,7 @@ public:
 
     // Get coordinate map
     if (_mesh->geometry().cmaps().size() > 1)
-    {
       throw std::runtime_error("Mixed topology not supported");
-    }
     const CoordinateElement& cmap = _mesh->geometry().cmaps()[0];
 
     // Prepare cell geometry
