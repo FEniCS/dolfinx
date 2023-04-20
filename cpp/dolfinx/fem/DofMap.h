@@ -122,7 +122,7 @@ public:
   bool operator==(const DofMap& map) const;
 
   /// @brief Local-to-global mapping of dofs on a cell
-  /// @param[in] cell The cell index
+  /// @param[in] c The cell index
   /// @return Local-global dof map for the cell (using process-local
   /// indices)
   std::span<const std::int32_t> cell_dofs(std::int32_t c) const
