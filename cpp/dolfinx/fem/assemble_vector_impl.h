@@ -514,9 +514,8 @@ void assemble_cells(
 
   // FIXME: Add proper interface for num_dofs
   // Create data structures used in assembly
-  const int num_dofs = dofmap.extent(1);
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * num_dofs_g);
-  std::vector<T> be(bs * num_dofs);
+  std::vector<T> be(bs * dofmap.extent(1));
   std::span<T> _be(be);
 
   // Iterate over active cells
@@ -539,16 +538,16 @@ void assemble_cells(
     dof_transform(_be, cell_info, c, 1);
 
     // Scatter cell vector to 'global' vector array
-    auto dofs = std::span(dofmap.data_handle() + c * num_dofs, num_dofs);
+    auto dofs = stdex::submdspan(dofmap, c, stdex::full_extent);
     if constexpr (_bs > 0)
     {
-      for (int i = 0; i < num_dofs; ++i)
+      for (std::size_t i = 0; i < dofs.size(); ++i)
         for (int k = 0; k < _bs; ++k)
           b[_bs * dofs[i] + k] += be[_bs * i + k];
     }
     else
     {
-      for (int i = 0; i < num_dofs; ++i)
+      for (std::size_t i = 0; i < dofs.size(); ++i)
         for (int k = 0; k < bs; ++k)
           b[bs * dofs[i] + k] += be[bs * i + k];
     }
@@ -610,16 +609,16 @@ void assemble_exterior_facets(
     dof_transform(_be, cell_info, cell, 1);
 
     // Add element vector to global vector
-    auto dofs = std::span(dofmap.data_handle() + cell * num_dofs, num_dofs);
+    auto dofs = stdex::submdspan(dofmap, cell, stdex::full_extent);
     if constexpr (_bs > 0)
     {
-      for (int i = 0; i < num_dofs; ++i)
+      for (std::size_t i = 0; i < dofs.size(); ++i)
         for (int k = 0; k < _bs; ++k)
           b[_bs * dofs[i] + k] += be[_bs * i + k];
     }
     else
     {
-      for (int i = 0; i < num_dofs; ++i)
+      for (std::size_t i = 0; i < dofs.size(); ++i)
         for (int k = 0; k < bs; ++k)
           b[bs * dofs[i] + k] += be[bs * i + k];
     }

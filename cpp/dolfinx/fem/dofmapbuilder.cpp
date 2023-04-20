@@ -29,8 +29,8 @@ namespace
 {
 
 namespace stdex = std::experimental;
-using mdspan2_t
-    = stdex::mdspan<const std::int32_t, stdex::dextents<std::size_t, 2>>;
+template <typename T>
+using mdspan2_t = stdex::mdspan<T, stdex::dextents<std::size_t, 2>>;
 
 //-----------------------------------------------------------------------------
 
@@ -44,7 +44,7 @@ using mdspan2_t
 /// @return Map from original_to_contiguous[i] to new index after
 /// reordering
 std::vector<int>
-reorder_owned(mdspan2_t dofmap, std::int32_t owned_size,
+reorder_owned(mdspan2_t<const std::int32_t> dofmap, std::int32_t owned_size,
               const std::vector<int>& original_to_contiguous,
               const std::function<std::vector<int>(
                   const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
@@ -55,7 +55,6 @@ reorder_owned(mdspan2_t dofmap, std::int32_t owned_size,
   std::vector<int> num_edges(owned_size);
   for (std::size_t cell = 0; cell < dofmap.extent(0); ++cell)
   {
-    // auto nodes = dofmap.links(cell);
     std::span<const std::int32_t> nodes(
         dofmap.data_handle() + cell * dofmap.extent(1), dofmap.extent(1));
     for (auto n0 : nodes)
@@ -80,7 +79,6 @@ reorder_owned(mdspan2_t dofmap, std::int32_t owned_size,
   std::vector<std::int32_t> edges(offsets.back());
   for (std::size_t cell = 0; cell < dofmap.extent(0); ++cell)
   {
-    // auto nodes = dofmap.links(cell);
     std::span<const std::int32_t> nodes(
         dofmap.data_handle() + cell * dofmap.extent(1), dofmap.extent(1));
     for (auto n0 : nodes)
@@ -242,20 +240,7 @@ build_basic_dofmap(
   const int num_cells = topology.connectivity(D, 0)->num_nodes();
   const std::vector<int>& group_offsets = topology.entity_group_offsets(D);
 
-  // std::vector<std::int32_t> cell_ptr;
-  // cell_ptr.reserve(num_cells + 1);
-  // cell_ptr.push_back(0);
-
   const std::size_t nelem = element_dof_layouts.size();
-  // // Go through elements twice: regular cells followed by ghost cells.
-  // for (std::size_t i = 0; i < 2 * nelem; ++i)
-  // {
-  //   // Number of dofs per cell for this element layout
-  //   const int local_dim = element_dof_layouts[i % nelem].num_dofs();
-  //   for (int j = group_offsets[i]; j < group_offsets[i + 1]; ++j)
-  //     cell_ptr.push_back(cell_ptr.back() + local_dim);
-  // }
-  // std::vector<std::int32_t> dofs(cell_ptr.back());
   std::vector<std::int32_t> dofs(num_cells * element_dof_layouts[0].num_dofs());
 
   // Allocate entity indices array
@@ -313,6 +298,9 @@ build_basic_dofmap(
         entity_indices_local[D][0] = c;
       }
 
+      std::span<std::int32_t> dofs_c(dofs.data() + c * num_dofs_cell,
+                                     num_dofs_cell);
+
       // Iterate over each topological dimension for this element (twice, once
       // for regular, and later for ghosts).
       const int elem = i % nelem;
@@ -340,11 +328,10 @@ build_basic_dofmap(
           for (auto dof_local = e_dofs->begin(); dof_local != e_dofs->end();
                ++dof_local)
           {
-            const std::int32_t count
-                = std::distance(e_dofs->begin(), dof_local);
-            const std::int32_t dof
+            std::size_t count = std::distance(e_dofs->begin(), dof_local);
+            std::int32_t dof
                 = offset_local + num_entity_dofs * e_index_local + count;
-            dofs[c * num_dofs_cell + *dof_local] = dof;
+            dofs_c[*dof_local] = dof;
           }
         }
         offset_local
@@ -403,7 +390,7 @@ build_basic_dofmap(
 /// @return The pair (old-to-new local index map, M), where M is the
 /// number of dofs owned by this process
 std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
-    mdspan2_t dofmap,
+    mdspan2_t<const std::int32_t> dofmap,
     const std::vector<std::pair<std::int8_t, std::int32_t>>& dof_entity,
     const mesh::Topology& topology,
     const std::function<std::vector<int>(
@@ -681,9 +668,10 @@ fem::build_dofmap_data(
 
   // Build re-ordering map for data locality and get number of owned
   // nodes
-  mdspan2_t _node_graph0(node_graph0.data(),
-                         node_graph0.size() / element_dof_layouts[0].num_dofs(),
-                         element_dof_layouts[0].num_dofs());
+  mdspan2_t<const std::int32_t> _node_graph0(
+      node_graph0.data(),
+      node_graph0.size() / element_dof_layouts[0].num_dofs(),
+      element_dof_layouts[0].num_dofs());
   const auto [old_to_new, num_owned]
       = compute_reordering_map(_node_graph0, dof_entity0, topology, reorder_fn);
 
@@ -702,14 +690,13 @@ fem::build_dofmap_data(
   for (std::size_t cell = 0; cell < _node_graph0.extent(0); ++cell)
   {
     // Get dof order on this cell
-    // auto old_nodes = node_graph0.links(cell);
     auto old_nodes = stdex::submdspan(_node_graph0, cell, stdex::full_extent);
     const std::int32_t local_dim0 = old_nodes.size();
+    std::span<std::int32_t> dofs(dofmap.data() + cell * local_dim0, local_dim0);
     for (std::int32_t j = 0; j < local_dim0; ++j)
     {
-      const std::int32_t old_node = old_nodes[j];
-      const std::int32_t new_node = old_to_new[old_node];
-      dofmap[local_dim0 * cell + j] = new_node;
+      std::int32_t old_node = old_nodes[j];
+      dofs[j] = old_to_new[old_node];
     }
   }
 
