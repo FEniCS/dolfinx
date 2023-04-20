@@ -612,9 +612,21 @@ void fem(py::module& m)
       },
       py::arg("comm"), py::arg("topology"), py::arg("layout"),
       "Build and dofmap on a mesh.");
-  m.def("transpose_dofmap", &dolfinx::fem::transpose_dofmap,
-        "Build the index to (cell, local index) map from a "
-        "dofmap ((cell, local index ) -> index).");
+  m.def(
+      "transpose_dofmap",
+      [](py::array_t<std::int32_t, py::array::c_style> dofmap, int num_cells)
+      {
+        if (dofmap.ndim() != 2)
+          throw std::runtime_error("Dofmap data has wrong rank");
+        namespace stdex = std::experimental;
+        using mdspan2_t = stdex::mdspan<const std::int32_t,
+                                        stdex::dextents<std::size_t, 2>>;
+
+        mdspan2_t _dofmap(dofmap.data(), dofmap.shape(0), dofmap.shape(1));
+        return dolfinx::fem::transpose_dofmap(_dofmap, num_cells);
+      },
+      "Build the index to (cell, local index) map from a dofmap ((cell, local "
+      "index ) -> index).");
   m.def(
       "compute_integration_domains",
       [](dolfinx::fem::IntegralType type,
