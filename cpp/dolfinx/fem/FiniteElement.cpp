@@ -200,8 +200,7 @@ FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
           std::array mshape = {ndofs, value_size, npts, nderivs_dim};
           std::size_t msize
               = std::reduce(mshape.begin(), mshape.end(), 1, std::multiplies{});
-          auto& mat
-              = M[d].emplace_back(std::vector<double>(msize), mshape).first;
+          auto& mat = M[d].emplace_back(std::vector<T>(msize), mshape).first;
           std::copy_n(ce->M + m_e, mat.size(), mat.begin());
           m_e += mat.size();
         }
@@ -374,7 +373,7 @@ std::string FiniteElement<T>::family() const noexcept
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-void FiniteElement<T>::tabulate(std::span<T> values, std::span<const double> X,
+void FiniteElement<T>::tabulate(std::span<T> values, std::span<const T> X,
                                 std::array<std::size_t, 2> shape,
                                 int order) const
 {
@@ -384,7 +383,7 @@ void FiniteElement<T>::tabulate(std::span<T> values, std::span<const double> X,
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
 std::pair<std::vector<T>, std::array<std::size_t, 4>>
-FiniteElement<T>::tabulate(std::span<const double> X,
+FiniteElement<T>::tabulate(std::span<const T> X,
                            std::array<std::size_t, 2> shape, int order) const
 {
   assert(_element);
@@ -512,7 +511,7 @@ FiniteElement<T>::create_interpolation_operator(const FiniteElement& from) const
     const auto [data, dshape]
         = basix::compute_interpolation_operator<T>(*from._element, *_element);
     std::array<std::size_t, 2> shape = {dshape[0] * _bs, dshape[1] * _bs};
-    std::vector<double> out(shape[0] * shape[1]);
+    std::vector<T> out(shape[0] * shape[1]);
 
     // NOTE: Alternatively this operation could be implemented during
     // matvec with the original matrix
@@ -633,6 +632,6 @@ FiniteElement<T>::get_dof_permutation_function(bool inverse,
   }
 }
 //-----------------------------------------------------------------------------
-// template class fem::FiniteElement<float>;
+template class fem::FiniteElement<float>;
 template class fem::FiniteElement<double>;
 //-----------------------------------------------------------------------------

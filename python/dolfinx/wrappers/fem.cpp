@@ -665,25 +665,28 @@ void fem(py::module& m)
                {
                  ufcx_finite_element* p
                      = reinterpret_cast<ufcx_finite_element*>(ufcx_element);
-                 return dolfinx::fem::FiniteElement(*p);
+                 return dolfinx::fem::FiniteElement<double>(*p);
                }),
            py::arg("ufcx_element"))
       .def("__eq__", &dolfinx::fem::FiniteElement<double>::operator==)
-      .def_property_readonly("basix_element",
-                             &dolfinx::fem::FiniteElement<double>::basix_element,
-                             py::return_value_policy::reference_internal)
-      .def_property_readonly("num_sub_elements",
-                             &dolfinx::fem::FiniteElement<double>::num_sub_elements)
+      .def_property_readonly(
+          "basix_element", &dolfinx::fem::FiniteElement<double>::basix_element,
+          py::return_value_policy::reference_internal)
+      .def_property_readonly(
+          "num_sub_elements",
+          &dolfinx::fem::FiniteElement<double>::num_sub_elements)
       .def("interpolation_points",
            [](const dolfinx::fem::FiniteElement<double>& self)
            {
              auto [X, shape] = self.interpolation_points();
              return as_pyarray(std::move(X), shape);
            })
-      .def_property_readonly("interpolation_ident",
-                             &dolfinx::fem::FiniteElement<double>::interpolation_ident)
-      .def_property_readonly("space_dimension",
-                             &dolfinx::fem::FiniteElement<double>::space_dimension)
+      .def_property_readonly(
+          "interpolation_ident",
+          &dolfinx::fem::FiniteElement<double>::interpolation_ident)
+      .def_property_readonly(
+          "space_dimension",
+          &dolfinx::fem::FiniteElement<double>::space_dimension)
       .def_property_readonly(
           "value_shape",
           [](const dolfinx::fem::FiniteElement<double>& self)

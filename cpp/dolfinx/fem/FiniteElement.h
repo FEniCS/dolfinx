@@ -22,7 +22,7 @@ namespace dolfinx::fem
 {
 /// Finite Element, containing the dof layout on a reference element,
 /// and various methods for evaluating and transforming the basis.
-template <std::floating_point T = double>
+template <std::floating_point T>
 class FiniteElement
 {
 public:
@@ -117,7 +117,7 @@ public:
   /// @param[in] shape The shape of `X`
   /// @param[in] order The number of derivatives (up to and including
   /// this order) to tabulate for
-  void tabulate(std::span<T> values, std::span<const double> X,
+  void tabulate(std::span<T> values, std::span<const T> X,
                 std::array<std::size_t, 2> shape, int order) const;
 
   /// Evaluate all derivatives of the basis functions up to given order
@@ -130,7 +130,7 @@ public:
   /// this order) to tabulate for
   /// @return Basis function values and array shape (row-major storage)
   std::pair<std::vector<T>, std::array<std::size_t, 4>>
-  tabulate(std::span<const double> X, std::array<std::size_t, 2> shape,
+  tabulate(std::span<const T> X, std::array<std::size_t, 2> shape,
            int order) const;
 
   /// @brief Number of sub elements (for a mixed or blocked element)
