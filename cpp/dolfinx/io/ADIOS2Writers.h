@@ -532,7 +532,7 @@ public:
     assert(mesh);
 
     // Extract element from first function
-    const fem::FiniteElement<double>* element0 = std::visit(
+    const fem::FiniteElement<T>* element0 = std::visit(
         [](const auto& e) { return e->function_space()->element().get(); },
         u.front());
     assert(element0);
@@ -944,7 +944,7 @@ public:
       throw std::runtime_error("VTXWriter fem::Function list is empty");
 
     // Extract element from first function
-    const fem::FiniteElement<double>* element0 = std::visit(
+    const fem::FiniteElement<T>* element0 = std::visit(
         [](const auto& u) { return u->function_space()->element().get(); },
         u.front());
     assert(element0);

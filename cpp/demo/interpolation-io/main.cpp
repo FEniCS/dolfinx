@@ -55,12 +55,13 @@ void interpolate_scalar(std::shared_ptr<mesh::Mesh<U>> mesh,
         return {f, {f.size()}};
       });
 
-  // #ifdef HAS_ADIOS2
-  //   // Write the function to a VTX file for visualisation, e.g. using
-  //   // ParaView
-  //   io::VTXWriter<U> outfile(mesh->comm(), filename.replace_extension("bp"),
-  //   {u}); outfile.write(0.0); outfile.close();
-  // #endif
+#ifdef HAS_ADIOS2
+  // Write the function to a VTX file for visualisation, e.g. using
+  // ParaView
+  io::VTXWriter<U> outfile(mesh->comm(), filename.replace_extension("bp"), {u});
+  outfile.write(0.0);
+  outfile.close();
+#endif
 }
 
 // This function interpolations a function is a H(curl) finite element
@@ -159,17 +160,17 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
   // space:
   u_l->interpolate(*u);
 
-  // Output the discontinuous Lagrange space in VTX format. When
-  // plotting the x0 component the field will appear discontinuous at x0
-  // = 0.5 (jump in the normal component between cells) and the x1
-  // component will appear continuous (continuous tangent component
-  // between cells).
-  // #ifdef HAS_ADIOS2
-  //   io::VTXWriter<U> outfile(mesh->comm(), filename.replace_extension("bp"),
-  //                            {u_l});
-  //   outfile.write(0.0);
-  //   outfile.close();
-  // #endif
+// Output the discontinuous Lagrange space in VTX format. When
+// plotting the x0 component the field will appear discontinuous at x0
+// = 0.5 (jump in the normal component between cells) and the x1
+// component will appear continuous (continuous tangent component
+// between cells).
+#ifdef HAS_ADIOS2
+  io::VTXWriter<U> outfile(mesh->comm(), filename.replace_extension("bp"),
+                           {u_l});
+  outfile.write(0.0);
+  outfile.close();
+#endif
 }
 
 /// This program shows how to create finite element spaces without FFCx
@@ -204,17 +205,17 @@ int main(int argc, char* argv[])
     // Interpolate a function in a scalar Lagrange space and output the
     // result to file for visualisation using different types
     interpolate_scalar<float>(mesh0, "u32");
-    // interpolate_scalar<double>(mesh1, "u64");
-    // interpolate_scalar<std::complex<float>>(mesh0, "u_complex64");
-    // interpolate_scalar<std::complex<double>>(mesh1, "u_complex128");
+    interpolate_scalar<double>(mesh1, "u64");
+    interpolate_scalar<std::complex<float>>(mesh0, "u_complex64");
+    interpolate_scalar<std::complex<double>>(mesh1, "u_complex128");
 
-    // // Interpolate a function in a H(curl) finite element space, and
-    // // then interpolate the H(curl) function in a discontinuous Lagrange
-    // // space for visualisation using different types
-    // interpolate_nedelec<float>(mesh0, "u_nedelec32");
-    // interpolate_nedelec<double>(mesh1, "u_nedelec64");
-    // interpolate_nedelec<std::complex<float>>(mesh0, "u_nedelec_complex64");
-    // interpolate_nedelec<std::complex<double>>(mesh1, "u_nedelec_complex12");
+    // Interpolate a function in a H(curl) finite element space, and
+    // then interpolate the H(curl) function in a discontinuous Lagrange
+    // space for visualisation using different types
+    interpolate_nedelec<float>(mesh0, "u_nedelec32");
+    interpolate_nedelec<double>(mesh1, "u_nedelec64");
+    interpolate_nedelec<std::complex<float>>(mesh0, "u_nedelec_complex64");
+    interpolate_nedelec<std::complex<double>>(mesh1, "u_nedelec_complex12");
   }
 
   MPI_Finalize();
