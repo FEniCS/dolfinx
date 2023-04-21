@@ -95,12 +95,12 @@ fem::create_element_dof_layout(const ufcx_dofmap& dofmap,
                           parent_map, sub_doflayout);
 }
 //-----------------------------------------------------------------------------
-fem::DofMap
-fem::create_dofmap(MPI_Comm comm, const ElementDofLayout& layout,
-                   mesh::Topology& topology,
-                   const std::function<std::vector<int>(
-                       const graph::AdjacencyList<std::int32_t>&)>& reorder_fn,
-                   const FiniteElement<double>& element)
+fem::DofMap fem::create_dofmap(
+    MPI_Comm comm, const ElementDofLayout& layout, mesh::Topology& topology,
+    std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
+        unpermute_dofs,
+    std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
+        reorder_fn)
 {
   // Create required mesh entities
   const int D = topology.dim();
@@ -116,16 +116,13 @@ fem::create_dofmap(MPI_Comm comm, const ElementDofLayout& layout,
 
   // If the element's DOF transformations are permutations, permute the
   // DOF numbering on each cell
-  if (element.needs_dof_permutations())
+  if (unpermute_dofs)
   {
     const int D = topology.dim();
     const int num_cells = topology.connectivity(D, 0)->num_nodes();
     topology.create_entity_permutations();
     const std::vector<std::uint32_t>& cell_info
         = topology.get_cell_permutation_info();
-
-    const std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
-        unpermute_dofs = element.get_dof_permutation_function(true, true);
     for (std::int32_t cell = 0; cell < num_cells; ++cell)
       unpermute_dofs(dofmap.links(cell), cell_info[cell]);
   }

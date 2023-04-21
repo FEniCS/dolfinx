@@ -23,8 +23,9 @@ using namespace dolfinx::fem;
 namespace
 {
 //-----------------------------------------------------------------------------
-// Check if an element is a Basix element (or a blocked element
-// containing a Basix element)
+
+/// Check if an element is a Basix element (or a blocked element
+/// containing a Basix element)
 bool is_basix_element(const ufcx_finite_element& element)
 {
   if (element.element_type == ufcx_basix_element)
@@ -39,8 +40,9 @@ bool is_basix_element(const ufcx_finite_element& element)
     return false;
 }
 //-----------------------------------------------------------------------------
-// Check if an element is a custom Basix element (or a blocked element
-// containing a custom Basix element)
+
+/// Check if an element is a custom Basix element (or a blocked element
+/// containing a custom Basix element)
 bool is_basix_custom_element(const ufcx_finite_element& element)
 {
   if (element.element_type == ufcx_basix_custom_element)
@@ -55,7 +57,8 @@ bool is_basix_custom_element(const ufcx_finite_element& element)
     return false;
 }
 //-----------------------------------------------------------------------------
-// Recursively extract sub finite element
+
+/// Recursively extract sub finite element
 template <std::floating_point T>
 std::shared_ptr<const FiniteElement<T>>
 _extract_sub_element(const FiniteElement<T>& finite_element,
@@ -251,11 +254,9 @@ FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
             static_cast<basix::element::lagrange_variant>(e.lagrange_variant),
             static_cast<basix::element::dpc_variant>(e.dpc_variant),
             e.discontinuous));
-
     _needs_dof_transformations
         = !_element->dof_transformations_are_identity()
           and !_element->dof_transformations_are_permutations();
-
     _needs_dof_permutations
         = !_element->dof_transformations_are_identity()
           and _element->dof_transformations_are_permutations();
@@ -271,7 +272,6 @@ FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element, int bs)
     _value_shape = {1};
   std::transform(_value_shape.cbegin(), _value_shape.cend(),
                  _value_shape.begin(), [bs](auto s) { return bs * s; });
-
   if (bs > 1)
   {
     // Create all sub-elements
@@ -284,11 +284,9 @@ FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element, int bs)
   _needs_dof_transformations
       = !_element->dof_transformations_are_identity()
         and !_element->dof_transformations_are_permutations();
-
   _needs_dof_permutations
       = !_element->dof_transformations_are_identity()
         and _element->dof_transformations_are_permutations();
-
   switch (_element->family())
   {
   case basix::element::family::P:
@@ -313,6 +311,7 @@ bool FiniteElement<T>::operator==(const FiniteElement& e) const
     throw std::runtime_error(
         "Missing a Basix element. Cannot check for equivalence");
   }
+
   return *_element == *e._element;
 }
 //-----------------------------------------------------------------------------
