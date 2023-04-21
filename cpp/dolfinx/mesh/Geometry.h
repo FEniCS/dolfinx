@@ -80,7 +80,7 @@ public:
   Geometry& operator=(Geometry&&) = default;
 
   /// Copy constructor
-  template <typename U>
+  template <std::floating_point U>
   Geometry<U> astype() const
   {
     return Geometry<U>(_index_map, _dofmap, _cmaps,
@@ -170,10 +170,10 @@ mesh::Geometry<typename std::remove_reference_t<typename U::value_type>>
 create_geometry(
     MPI_Comm comm, const Topology& topology,
     const std::vector<fem::CoordinateElement<
-        typename std::remove_reference_t<typename U::value_type>>>& elements,
+        std::remove_reference_t<typename U::value_type>>>& elements,
     const graph::AdjacencyList<std::int64_t>& cell_nodes, const U& x, int dim,
-    const std::function<
-        std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
+    std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
+        reorder_fn
     = nullptr)
 {
   // TODO: make sure required entities are initialised, or extend

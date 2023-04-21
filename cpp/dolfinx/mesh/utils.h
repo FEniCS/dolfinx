@@ -929,14 +929,16 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>>
 create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
-            const std::vector<fem::CoordinateElement<double>>& elements,
+            const std::vector<fem::CoordinateElement<
+                std::remove_reference_t<typename U::value_type>>>& elements,
             const U& x, std::array<std::size_t, 2> xshape, GhostMode ghost_mode)
 {
   return create_mesh(comm, cells, elements, x, xshape,
                      create_cell_partitioner(ghost_mode));
 }
 
-/// Create a new mesh consisting of a subset of entities in a mesh.
+/// @brief Create a new mesh consisting of a subset of entities in a
+/// mesh.
 /// @param[in] mesh The mesh
 /// @param[in] dim Entity dimension
 /// @param[in] entities List of entity indices in `mesh` to include in
