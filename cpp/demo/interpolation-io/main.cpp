@@ -58,7 +58,8 @@ void interpolate_scalar(std::shared_ptr<mesh::Mesh<U>> mesh,
 #ifdef HAS_ADIOS2
   // Write the function to a VTX file for visualisation, e.g. using
   // ParaView
-  io::VTXWriter<U> outfile(mesh->comm(), filename.replace_extension("bp"), {u});
+  io::VTXWriter<U> outfile(mesh->comm(), filename.replace_extension("bp4"),
+                           {u});
   outfile.write(0.0);
   outfile.close();
 #endif
@@ -201,7 +202,7 @@ int main(int argc, char* argv[])
 
     // Interpolate a function in a scalar Lagrange space and output the
     // result to file for visualisation using different types
-    interpolate_scalar<float>(mesh0, "u32");
+    interpolate_scalar<float>(mesh0, "u32x");
     interpolate_scalar<double>(mesh1, "u64");
     interpolate_scalar<std::complex<float>>(mesh0, "u_complex64");
     interpolate_scalar<std::complex<double>>(mesh1, "u_complex128");
@@ -212,7 +213,7 @@ int main(int argc, char* argv[])
     interpolate_nedelec<float>(mesh0, "u_nedelec32");
     interpolate_nedelec<double>(mesh1, "u_nedelec64");
     interpolate_nedelec<std::complex<float>>(mesh0, "u_nedelec_complex64");
-    interpolate_nedelec<std::complex<double>>(mesh1, "u_nedelec_complex12");
+    interpolate_nedelec<std::complex<double>>(mesh1, "u_nedelec_complex128");
   }
 
   MPI_Finalize();

@@ -62,7 +62,8 @@ protected:
   /// @param[in] comm The MPI communicator
   /// @param[in] filename Name of output file
   /// @param[in] tag The ADIOS2 object name
-  /// @param[in] engine ADIOS2 engine type
+  /// @param[in] engine ADIOS2 engine type. See
+  /// https://adios2.readthedocs.io/en/latest/engines/engines.html.
   ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
                std::string tag, std::string engine);
 
@@ -430,7 +431,8 @@ public:
   /// @param[in] comm The MPI communicator to open the file on
   /// @param[in] filename Name of output file
   /// @param[in] mesh The mesh. The mesh must a degree 1 mesh.
-  /// @param[in] engine ADIOS2 engine type
+  /// @param[in] engine ADIOS2 engine type. See
+  /// https://adios2.readthedocs.io/en/latest/engines/engines.html.
   /// @note The mesh geometry can be updated between write steps but the
   /// topology should not be changed between write steps.
   FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
@@ -455,7 +457,8 @@ public:
   /// @param[in] u List of functions. The functions must (1) share the
   /// same mesh (degree 1) and (2) be degree 1 Lagrange. @note All
   /// functions in `u` must share the same Mesh
-  /// @param[in] engine ADIOS2 engine type
+  /// @param[in] engine ADIOS2 engine type. See
+  /// https://adios2.readthedocs.io/en/latest/engines/engines.html.
   /// @param[in] mesh_policy Controls if the mesh is written to file at
   /// the first time step only or is re-written (updated) at each time
   /// step.
