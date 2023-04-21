@@ -27,8 +27,6 @@ io::extract_vtk_connectivity(
     mesh::CellType cell_type)
 {
   // Get DOLFINx to VTK permutation
-  // FIXME: Use better way to get number of nodes
-  // const std::size_t num_nodes = geometry.cmap().dim();
   const std::size_t num_nodes = dofmap_x.extent(1);
   std::vector vtkmap
       = io::cells::transpose(io::cells::perm_vtk(cell_type, num_nodes));
