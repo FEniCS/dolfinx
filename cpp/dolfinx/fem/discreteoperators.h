@@ -48,14 +48,15 @@ namespace dolfinx::fem
 /// corresponding space to interpolate into
 /// @param[in] mat_set A functor that sets values in a matrix
 template <typename T>
-void discrete_gradient(mesh::Topology& topology,
-                       std::pair<std::reference_wrapper<const FiniteElement<double>>,
-                                 std::reference_wrapper<const DofMap>>
-                           V0,
-                       std::pair<std::reference_wrapper<const FiniteElement<double>>,
-                                 std::reference_wrapper<const DofMap>>
-                           V1,
-                       auto&& mat_set)
+void discrete_gradient(
+    mesh::Topology& topology,
+    std::pair<std::reference_wrapper<const FiniteElement<double>>,
+              std::reference_wrapper<const DofMap>>
+        V0,
+    std::pair<std::reference_wrapper<const FiniteElement<double>>,
+              std::reference_wrapper<const DofMap>>
+        V1,
+    auto&& mat_set)
 {
   const FiniteElement<double>& e0 = V0.first.get();
   const DofMap& dofmap0 = V0.second.get();
@@ -199,21 +200,18 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   auto cmaps = mesh->geometry().cmaps();
   assert(cmaps.size() == 1);
 
-  const CoordinateElement<double>& cmap = cmaps.back();
+  const CoordinateElement<U>& cmap = cmaps.back();
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = mesh->geometry().dofmap();
   const std::size_t num_dofs_g = cmap.dim();
   std::span<const U> x_g = mesh->geometry().x();
 
   namespace stdex = std::experimental;
-  using mdspan2_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
-  using cmdspan2_t
-      = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
-  using cmdspan3_t
-      = stdex::mdspan<const double, stdex::dextents<std::size_t, 3>>;
-  using cmdspan4_t
-      = stdex::mdspan<const double, stdex::dextents<std::size_t, 4>>;
-  using mdspan3_t = stdex::mdspan<double, stdex::dextents<std::size_t, 3>>;
+  using mdspan2_t = stdex::mdspan<U, stdex::dextents<std::size_t, 2>>;
+  using cmdspan2_t = stdex::mdspan<const U, stdex::dextents<std::size_t, 2>>;
+  using cmdspan3_t = stdex::mdspan<const U, stdex::dextents<std::size_t, 3>>;
+  using cmdspan4_t = stdex::mdspan<const U, stdex::dextents<std::size_t, 4>>;
+  using mdspan3_t = stdex::mdspan<U, stdex::dextents<std::size_t, 3>>;
 
   // Evaluate coordinate map basis at reference interpolation points
   const auto [X, Xshape] = e1->interpolation_points();
