@@ -110,8 +110,8 @@ public:
   template <typename U, typename V>
   static void compute_jacobian_inverse(const U& J, V&& K)
   {
-    const int gdim = J.extent(0);
-    const int tdim = K.extent(0);
+    int gdim = J.extent(0);
+    int tdim = K.extent(0);
     if (gdim == tdim)
       math::inv(J, K);
     else
@@ -201,12 +201,9 @@ public:
   }
 
   /// mdspan typedef
+  template <typename X>
   using mdspan2_t
-      = std::experimental::mdspan<T,
-                                  std::experimental::dextents<std::size_t, 2>>;
-  /// mdspan typedef
-  using cmdspan2_t
-      = std::experimental::mdspan<const T,
+      = std::experimental::mdspan<X,
                                   std::experimental::dextents<std::size_t, 2>>;
 
   /// Compute reference coordinates X for physical coordinates x for a
@@ -220,7 +217,8 @@ public:
   /// @param [in] maxit Maximum number of Newton iterations
   /// @note If convergence is not achieved within maxit, the function
   /// throws a runtime error.
-  void pull_back_nonaffine(mdspan2_t X, cmdspan2_t x, cmdspan2_t cell_geometry,
+  void pull_back_nonaffine(mdspan2_t<T> X, mdspan2_t<const T> x,
+                           mdspan2_t<const T> cell_geometry,
                            double tol = 1.0e-8, int maxit = 10) const;
 
   /// Permutes a list of DOF numbers on a cell

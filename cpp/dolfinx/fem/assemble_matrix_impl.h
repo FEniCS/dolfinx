@@ -47,10 +47,6 @@ void assemble_cells(
   if (cells.empty())
     return;
 
-  // Prepare cell geometry
-  // const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-  // const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
-  // auto x = geometry.x();
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
 
   // Iterate over active cells
@@ -145,10 +141,6 @@ void assemble_exterior_facets(
   if (facets.empty())
     return;
 
-  // Prepare cell geometry
-  // const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-  // const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
-  // auto x = geometry.x();
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
 
   // Data structures used in assembly
@@ -243,10 +235,6 @@ void assemble_interior_facets(
   if (facets.empty())
     return;
 
-  // Prepare cell geometry
-  // const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-  // const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
-  // auto x = geometry.x();
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
 
   // Data structures used in assembly

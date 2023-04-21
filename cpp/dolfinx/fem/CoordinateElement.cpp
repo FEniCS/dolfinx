@@ -67,8 +67,9 @@ ElementDofLayout CoordinateElement<T>::create_dof_layout() const
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t X, cmdspan2_t x,
-                                               cmdspan2_t cell_geometry,
+void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
+                                               mdspan2_t<const T> x,
+                                               mdspan2_t<const T> cell_geometry,
                                                double tol, int maxit) const
 {
   // Number of points
@@ -84,20 +85,17 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t X, cmdspan2_t x,
   assert(X.extent(1) == tdim);
 
   std::vector<T> dphi_b(tdim * num_xnodes);
-  mdspan2_t dphi(dphi_b.data(), tdim, num_xnodes);
+  mdspan2_t<T> dphi(dphi_b.data(), tdim, num_xnodes);
 
   std::vector<T> Xk_b(tdim);
-  mdspan2_t Xk(Xk_b.data(), 1, tdim);
+  mdspan2_t<T> Xk(Xk_b.data(), 1, tdim);
 
   std::array<T, 3> xk = {0, 0, 0};
-
   std::vector<T> dX(tdim);
-
   std::vector<T> J_b(gdim * tdim);
-  mdspan2_t J(J_b.data(), gdim, tdim);
-
+  mdspan2_t<T> J(J_b.data(), gdim, tdim);
   std::vector<T> K_b(tdim * gdim);
-  mdspan2_t K(K_b.data(), tdim, gdim);
+  mdspan2_t<T> K(K_b.data(), tdim, gdim);
 
   namespace stdex = std::experimental;
   using mdspan4_t = stdex::mdspan<T, stdex::dextents<std::size_t, 4>>;
@@ -107,7 +105,6 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t X, cmdspan2_t x,
       std::reduce(bsize.begin(), bsize.end(), 1, std::multiplies{}));
   mdspan4_t basis(basis_b.data(), bsize);
   std::vector<T> phi(basis.extent(2));
-
   for (std::size_t p = 0; p < num_points; ++p)
   {
     std::fill(Xk_b.begin(), Xk_b.end(), 0.0);

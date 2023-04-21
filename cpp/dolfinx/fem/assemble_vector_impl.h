@@ -59,10 +59,6 @@ void _lift_bc_cells(
   if (cells.empty())
     return;
 
-  // Prepare cell geometry
-  // const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-  // const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
-  // auto x = geometry.x();
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
 
   // Data structures used in bc application
@@ -212,10 +208,6 @@ void _lift_bc_exterior_facets(
   if (facets.empty())
     return;
 
-  // Prepare cell geometry
-  // const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-  // const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
-  // auto x = geometry.x();
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
 
   // Data structures used in bc application
@@ -321,10 +313,6 @@ void _lift_bc_interior_facets(
   if (facets.empty())
     return;
 
-  // Prepare cell geometry
-  // const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-  // const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
-  // auto x = geometry.x();
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
 
   // Data structures used in assembly
@@ -502,10 +490,6 @@ void assemble_cells(
   if (cells.empty())
     return;
 
-  // Prepare cell geometry
-  // const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-  // const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
-  // auto x = geometry.x();
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
 
   // FIXME: Add proper interface for num_dofs
@@ -575,10 +559,6 @@ void assemble_exterior_facets(
   if (facets.empty())
     return;
 
-  // Prepare cell geometry
-  // const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-  // const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
-  // auto x = geometry.x();
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
 
   // FIXME: Add proper interface for num_dofs
@@ -644,10 +624,6 @@ void assemble_interior_facets(
     std::span<const std::uint32_t> cell_info,
     const std::function<std::uint8_t(std::size_t)>& get_perm)
 {
-  // Prepare cell geometry
-  // const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-  // const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
-  // auto x = geometry.x();
   const std::size_t num_dofs_g = x_dofmap.num_links(0);
 
   // Create data structures used in assembly

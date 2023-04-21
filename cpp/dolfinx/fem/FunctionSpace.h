@@ -26,8 +26,6 @@
 namespace dolfinx::fem
 {
 class DofMap;
-template <std::floating_point F>
-class FiniteElement;
 
 /// @brief This class represents a finite element function space defined
 /// by a mesh, a finite element, and a local-to-global map of the
@@ -198,8 +196,8 @@ public:
     assert(_dofmap);
     std::shared_ptr<const common::IndexMap> index_map = _dofmap->index_map;
     assert(index_map);
-    const int index_map_bs = _dofmap->index_map_bs();
-    const int dofmap_bs = _dofmap->bs();
+    int index_map_bs = _dofmap->index_map_bs();
+    int dofmap_bs = _dofmap->bs();
 
     const int element_block_size = _element->block_size();
     const std::size_t scalar_dofs
