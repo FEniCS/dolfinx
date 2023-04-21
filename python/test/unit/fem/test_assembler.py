@@ -499,7 +499,7 @@ def test_assembly_solve_block(mode):
     create_unit_square(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.shared_facet),
     create_unit_cube(MPI.COMM_WORLD, 3, 7, 3, ghost_mode=GhostMode.none),
     create_unit_cube(MPI.COMM_WORLD, 3, 7, 3, ghost_mode=GhostMode.shared_facet)])
-def xtest_assembly_solve_taylor_hood(mesh):
+def test_assembly_solve_taylor_hood(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
     P2 = VectorFunctionSpace(mesh, ("Lagrange", 2))
     P1 = FunctionSpace(mesh, ("Lagrange", 1))
