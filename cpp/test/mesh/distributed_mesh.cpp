@@ -35,6 +35,7 @@ void create_mesh_file()
   file.write_mesh(*mesh);
 }
 
+template <std::floating_point T>
 void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
 {
   MPI_Comm mpi_comm = MPI_COMM_WORLD;

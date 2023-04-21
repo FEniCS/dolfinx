@@ -733,13 +733,13 @@ void lift_bc(std::span<T> b, const Form<T, U>& a,
   const graph::AdjacencyList<std::int32_t>& dofmap0
       = a.function_spaces()[0]->dofmap()->list();
   const int bs0 = a.function_spaces()[0]->dofmap()->bs();
-  std::shared_ptr<const fem::FiniteElement<double>> element0
-      = a.function_spaces()[0]->element();
+  auto element0 = a.function_spaces()[0]->element();
+  assert(element0);
   const graph::AdjacencyList<std::int32_t>& dofmap1
       = a.function_spaces()[1]->dofmap()->list();
   const int bs1 = a.function_spaces()[1]->dofmap()->bs();
-  std::shared_ptr<const fem::FiniteElement<double>> element1
-      = a.function_spaces()[1]->element();
+  auto element1 = a.function_spaces()[1]->element();
+  assert(element0);
 
   const bool needs_transformation_data
       = element0->needs_dof_transformations()
@@ -756,12 +756,12 @@ void lift_bc(std::span<T> b, const Form<T, U>& a,
   const std::function<void(const std::span<T>&,
                            const std::span<const std::uint32_t>&, std::int32_t,
                            int)>
-      dof_transform = element0->get_dof_transformation_function<T>();
+      dof_transform = element0->template get_dof_transformation_function<T>();
   const std::function<void(const std::span<T>&,
                            const std::span<const std::uint32_t>&, std::int32_t,
                            int)>
       dof_transform_to_transpose
-      = element1->get_dof_transformation_to_transpose_function<T>();
+      = element1->template get_dof_transformation_to_transpose_function<T>();
 
   for (int i : a.integral_ids(IntegralType::cell))
   {
@@ -941,8 +941,8 @@ void assemble_vector(
 
   // Get dofmap data
   assert(L.function_spaces().at(0));
-  std::shared_ptr<const fem::FiniteElement<double>> element
-      = L.function_spaces().at(0)->element();
+  auto element = L.function_spaces().at(0)->element();
+  assert(element);
   std::shared_ptr<const fem::DofMap> dofmap
       = L.function_spaces().at(0)->dofmap();
   assert(dofmap);
@@ -952,7 +952,7 @@ void assemble_vector(
   const std::function<void(const std::span<T>&,
                            const std::span<const std::uint32_t>&, std::int32_t,
                            int)>
-      dof_transform = element->get_dof_transformation_function<T>();
+      dof_transform = element->template get_dof_transformation_function<T>();
 
   const bool needs_transformation_data
       = element->needs_dof_transformations() or L.needs_facet_permutations();
