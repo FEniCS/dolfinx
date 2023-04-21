@@ -254,9 +254,14 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
         variant = ufl_element.lagrange_variant
     except AttributeError:
         variant = basix.LagrangeVariant.unset
-    cmap = _cpp.fem.CoordinateElement(_uflcell_to_dolfinxcell[cell_shape], cell_degree, variant)
+    # cmap = _cpp.fem.CoordinateElement(_uflcell_to_dolfinxcell[cell_shape], cell_degree, variant)
 
     x = np.asarray(x, order='C')
+    if x.dtype == np.float32:
+        cmap = _cpp.fem.CoordinateElement_float32(_uflcell_to_dolfinxcell[cell_shape], cell_degree, variant)
+    elif x.dtype == np.float64:
+        cmap = _cpp.fem.CoordinateElement_float64(_uflcell_to_dolfinxcell[cell_shape], cell_degree, variant)
+
     try:
         mesh = _cpp.mesh.create_mesh(comm, cells, cmap, x, partitioner)
     except TypeError:
