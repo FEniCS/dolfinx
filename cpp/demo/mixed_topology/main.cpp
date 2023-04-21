@@ -102,7 +102,7 @@ int main(int argc, char* argv[])
   std::vector<dolfinx::mesh::CellType> cell_types{
       dolfinx::mesh::CellType::quadrilateral,
       dolfinx::mesh::CellType::triangle};
-  std::vector<dolfinx::fem::CoordinateElement> elements;
+  std::vector<dolfinx::fem::CoordinateElement<double>> elements;
   for (auto ct : cell_types)
     elements.push_back(dolfinx::fem::CoordinateElement(ct, 1));
 

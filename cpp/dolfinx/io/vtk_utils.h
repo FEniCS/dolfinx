@@ -84,7 +84,7 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
   // Get the dof coordinates on the reference element and the  mesh
   // coordinate map
   const auto [X, Xshape] = element->interpolation_points();
-  const fem::CoordinateElement& cmap = mesh->geometry().cmaps()[0];
+  const fem::CoordinateElement<double>& cmap = mesh->geometry().cmaps()[0];
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& dofmap_x

@@ -742,10 +742,15 @@ create_functionspace(ufcx_function_space* (*fptr)(const char*),
   assert(mesh->topology());
   ElementDofLayout layout
       = create_element_dof_layout(*ufcx_map, mesh->topology()->cell_types()[0]);
-  return FunctionSpace(
-      mesh, element,
-      std::make_shared<DofMap>(create_dofmap(
-          mesh->comm(), layout, *mesh->topology(), reorder_fn, *element)));
+
+  std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
+      unpermute_dofs = nullptr;
+  if (element->needs_dof_permutations())
+    unpermute_dofs = element->get_dof_permutation_function(true, true);
+  return FunctionSpace(mesh, element,
+                       std::make_shared<DofMap>(create_dofmap(
+                           mesh->comm(), layout, *mesh->topology(),
+                           unpermute_dofs, reorder_fn)));
 }
 
 /// @private

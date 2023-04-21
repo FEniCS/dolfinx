@@ -50,8 +50,8 @@ public:
             std::convertible_to<std::vector<T>> V,
             std::convertible_to<std::vector<std::int64_t>> W>
   Geometry(std::shared_ptr<const common::IndexMap> index_map, U&& dofmap,
-           const std::vector<fem::CoordinateElement>& elements, V&& x, int dim,
-           W&& input_global_indices)
+           const std::vector<fem::CoordinateElement<double>>& elements, V&& x,
+           int dim, W&& input_global_indices)
       : _dim(dim), _dofmap(std::forward<U>(dofmap)), _index_map(index_map),
         _cmaps(elements), _x(std::forward<V>(x)),
         _input_global_indices(std::forward<W>(input_global_indices))
@@ -113,7 +113,10 @@ public:
   /// @brief The elements that describes the geometry maps.
   ///
   /// @return The coordinate/geometry elements
-  const std::vector<fem::CoordinateElement>& cmaps() const { return _cmaps; }
+  const std::vector<fem::CoordinateElement<double>>& cmaps() const
+  {
+    return _cmaps;
+  }
 
   /// Global user indices
   const std::vector<std::int64_t>& input_global_indices() const
@@ -132,7 +135,7 @@ private:
   std::shared_ptr<const common::IndexMap> _index_map;
 
   // The coordinate elements
-  std::vector<fem::CoordinateElement> _cmaps;
+  std::vector<fem::CoordinateElement<double>> _cmaps;
 
   // Coordinates for all points stored as a contiguous array (row-major,
   // column size = 3)
@@ -165,7 +168,7 @@ private:
 template <typename U>
 mesh::Geometry<typename std::remove_reference_t<typename U::value_type>>
 create_geometry(MPI_Comm comm, const Topology& topology,
-                const std::vector<fem::CoordinateElement>& elements,
+                const std::vector<fem::CoordinateElement<double>>& elements,
                 const graph::AdjacencyList<std::int64_t>& cell_nodes,
                 const U& x, int dim,
                 const std::function<std::vector<int>(
@@ -367,9 +370,9 @@ create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
   // Create sub-geometry coordinate element
   CellType sub_coord_cell
       = cell_entity_type(geometry.cmaps()[0].cell_shape(), dim, 0);
-  fem::CoordinateElement sub_coord_ele(sub_coord_cell,
-                                       geometry.cmaps()[0].degree(),
-                                       geometry.cmaps()[0].variant());
+  fem::CoordinateElement<double> sub_coord_ele(sub_coord_cell,
+                                               geometry.cmaps()[0].degree(),
+                                               geometry.cmaps()[0].variant());
 
   // Sub-geometry input_global_indices
   // TODO: Check this

@@ -60,7 +60,7 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
                                     basix::cell::type::triangle, 1,
                                     basix::element::lagrange_variant::unset,
                                     basix::element::dpc_variant::unset, false));
-  fem::CoordinateElement cmap(e);
+  fem::CoordinateElement<double> cmap(e);
 
   // read mesh data
   std::vector<double> x;

@@ -404,7 +404,7 @@ public:
       throw std::runtime_error(
           "Function with multiple geometry maps not implemented.");
     }
-    const CoordinateElement& cmap = mesh->geometry().cmaps()[0];
+    const CoordinateElement<double>& cmap = mesh->geometry().cmaps()[0];
 
     // Get geometry data
     const graph::AdjacencyList<std::int32_t>& x_dofmap
@@ -524,14 +524,14 @@ public:
       // Compute reference coordinates X, and J, detJ and K
       if (cmap.is_affine())
       {
-        CoordinateElement::compute_jacobian(dphi0, coord_dofs, _J);
-        CoordinateElement::compute_jacobian_inverse(_J, _K);
+        CoordinateElement<double>::compute_jacobian(dphi0, coord_dofs, _J);
+        CoordinateElement<double>::compute_jacobian_inverse(_J, _K);
         std::array<double, 3> x0 = {0, 0, 0};
         for (std::size_t i = 0; i < coord_dofs.extent(1); ++i)
           x0[i] += coord_dofs(0, i);
-        CoordinateElement::pull_back_affine(Xp, _K, x0, xp);
+        CoordinateElement<double>::pull_back_affine(Xp, _K, x0, xp);
         detJ[p]
-            = CoordinateElement::compute_jacobian_determinant(_J, det_scratch);
+            = CoordinateElement<double>::compute_jacobian_determinant(_J, det_scratch);
       }
       else
       {
@@ -539,10 +539,10 @@ public:
         cmap.pull_back_nonaffine(Xp, xp, coord_dofs);
 
         cmap.tabulate(1, std::span(Xpb.data(), tdim), {1, tdim}, phi_b);
-        CoordinateElement::compute_jacobian(dphi, coord_dofs, _J);
-        CoordinateElement::compute_jacobian_inverse(_J, _K);
+        CoordinateElement<double>::compute_jacobian(dphi, coord_dofs, _J);
+        CoordinateElement<double>::compute_jacobian_inverse(_J, _K);
         detJ[p]
-            = CoordinateElement::compute_jacobian_determinant(_J, det_scratch);
+            = CoordinateElement<double>::compute_jacobian_determinant(_J, det_scratch);
       }
 
       for (std::size_t j = 0; j < X.extent(1); ++j)

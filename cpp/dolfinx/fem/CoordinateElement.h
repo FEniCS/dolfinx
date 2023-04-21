@@ -20,7 +20,7 @@
 
 namespace basix
 {
-template <std::floating_point F>
+template <std::floating_point T>
 class FiniteElement;
 }
 
@@ -30,13 +30,14 @@ namespace dolfinx::fem
 /// A CoordinateElement manages coordinate mappings for isoparametric
 /// cells.
 /// @todo A dof layout on a reference cell needs to be defined.
+template <std::floating_point T>
 class CoordinateElement
 {
 public:
   /// Create a coordinate element from a Basix element
   /// @param[in] element Element from Basix
   explicit CoordinateElement(
-      std::shared_ptr<const basix::FiniteElement<double>> element);
+      std::shared_ptr<const basix::FiniteElement<T>> element);
 
   /// Create a Lagrange coordinate element
   /// @param[in] celltype The cell shape
@@ -86,9 +87,8 @@ public:
   /// @param[out] basis The array to fill with the basis function
   /// values. The shape can be computed using
   /// `FiniteElement::tabulate_shape`
-  void tabulate(int nd, std::span<const double> X,
-                std::array<std::size_t, 2> shape,
-                std::span<double> basis) const;
+  void tabulate(int nd, std::span<const T> X, std::array<std::size_t, 2> shape,
+                std::span<T> basis) const;
 
   /// Compute Jacobian for a cell with given geometry using the
   /// basis functions and first order derivatives.
@@ -134,9 +134,9 @@ public:
     {
       assert(w.size() >= 2 * J.extent(0) * J.extent(1));
 
-      using T = typename U::element_type;
+      using X = typename U::element_type;
       namespace stdex = std::experimental;
-      using mdspan2_t = stdex::mdspan<T, stdex::dextents<std::size_t, 2>>;
+      using mdspan2_t = stdex::mdspan<X, stdex::dextents<std::size_t, 2>>;
       mdspan2_t B(w.data(), J.extent(1), J.extent(0));
       mdspan2_t BA(w.data() + J.extent(0) * J.extent(1), B.extent(0),
                    J.extent(1));
@@ -183,8 +183,8 @@ public:
   /// 0).
   /// @param[in] x The physical coordinates (shape=(num_points, gdim))
   template <typename U, typename V, typename W>
-  static void pull_back_affine(U&& X, const V& K,
-                               const std::array<double, 3>& x0, const W& x)
+  static void pull_back_affine(U&& X, const V& K, const std::array<T, 3>& x0,
+                               const W& x)
   {
     assert(X.extent(0) == x.extent(0));
     assert(X.extent(1) == K.extent(0));
@@ -202,11 +202,11 @@ public:
 
   /// mdspan typedef
   using mdspan2_t
-      = std::experimental::mdspan<double,
+      = std::experimental::mdspan<T,
                                   std::experimental::dextents<std::size_t, 2>>;
   /// mdspan typedef
   using cmdspan2_t
-      = std::experimental::mdspan<const double,
+      = std::experimental::mdspan<const T,
                                   std::experimental::dextents<std::size_t, 2>>;
 
   /// Compute reference coordinates X for physical coordinates x for a
@@ -247,6 +247,6 @@ private:
   bool _is_affine;
 
   // Basix Element
-  std::shared_ptr<const basix::FiniteElement<double>> _element;
+  std::shared_ptr<const basix::FiniteElement<T>> _element;
 };
 } // namespace dolfinx::fem

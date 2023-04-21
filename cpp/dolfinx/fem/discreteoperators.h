@@ -199,7 +199,7 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   auto cmaps = mesh->geometry().cmaps();
   assert(cmaps.size() == 1);
 
-  const CoordinateElement& cmap = cmaps.back();
+  const CoordinateElement<double>& cmap = cmaps.back();
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = mesh->geometry().dofmap();
   const std::size_t num_dofs_g = cmap.dim();

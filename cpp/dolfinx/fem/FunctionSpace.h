@@ -221,7 +221,7 @@ public:
     {
       throw std::runtime_error("Mixed topology not supported");
     }
-    const CoordinateElement& cmap = _mesh->geometry().cmaps()[0];
+    const CoordinateElement<double>& cmap = _mesh->geometry().cmaps()[0];
 
     // Prepare cell geometry
     const graph::AdjacencyList<std::int32_t>& x_dofmap

@@ -787,8 +787,8 @@ void fem(py::module& m)
            py::return_value_policy::reference_internal);
 
   // dolfinx::fem::CoordinateElement
-  py::class_<dolfinx::fem::CoordinateElement,
-             std::shared_ptr<dolfinx::fem::CoordinateElement>>(
+  py::class_<dolfinx::fem::CoordinateElement<double>,
+             std::shared_ptr<dolfinx::fem::CoordinateElement<double>>>(
       m, "CoordinateElement", "Coordinate map element")
       .def(py::init<dolfinx::mesh::CellType, int>(), py::arg("celltype"),
            py::arg("degree"))
@@ -796,13 +796,13 @@ void fem(py::module& m)
                     basix::element::lagrange_variant>(),
            py::arg("celltype"), py::arg("degree"), py::arg("variant"))
       .def("create_dof_layout",
-           &dolfinx::fem::CoordinateElement::create_dof_layout)
-      .def_property_readonly("degree", &dolfinx::fem::CoordinateElement::degree)
+           &dolfinx::fem::CoordinateElement<double>::create_dof_layout)
+      .def_property_readonly("degree", &dolfinx::fem::CoordinateElement<double>::degree)
       .def_property_readonly("variant",
-                             &dolfinx::fem::CoordinateElement::variant)
+                             &dolfinx::fem::CoordinateElement<double>::variant)
       .def(
           "push_forward",
-          [](const dolfinx::fem::CoordinateElement& self,
+          [](const dolfinx::fem::CoordinateElement<double>& self,
              const py::array_t<double, py::array::c_style>& X,
              const py::array_t<double, py::array::c_style>& cell)
           {
@@ -838,7 +838,7 @@ void fem(py::module& m)
           py::arg("X"), py::arg("cell_geometry"))
       .def(
           "pull_back",
-          [](const dolfinx::fem::CoordinateElement& self,
+          [](const dolfinx::fem::CoordinateElement<double>& self,
              const py::array_t<double, py::array::c_style>& x,
              const py::array_t<double, py::array::c_style>& cell_geometry)
           {

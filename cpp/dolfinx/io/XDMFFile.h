@@ -22,6 +22,7 @@ class xml_document;
 
 namespace dolfinx::fem
 {
+template <std::floating_point T>
 class CoordinateElement;
 template <typename T, std::floating_point U>
 class Function;
@@ -103,7 +104,7 @@ public:
   /// @param[in] xpath XPath where Mesh Grid is located
   /// @return A Mesh distributed on the same communicator as the
   ///   XDMFFile
-  mesh::Mesh<double> read_mesh(const fem::CoordinateElement& element,
+  mesh::Mesh<double> read_mesh(const fem::CoordinateElement<double>& element,
                                mesh::GhostMode mode, std::string name,
                                std::string xpath = "/Xdmf/Domain") const;
 
