@@ -23,7 +23,8 @@ namespace dolfinx::fem::impl
 
 /// Assemble functional over cells
 template <typename T>
-T assemble_cells(const mesh::Geometry<scalar_value_type_t<T>>& geometry,
+T assemble_cells(const graph::AdjacencyList<std::int32_t>& x_dofmap,
+                 std::span<const scalar_value_type_t<T>> x,
                  std::span<const std::int32_t> cells, FEkernel<T> auto fn,
                  std::span<const T> constants, std::span<const T> coeffs,
                  int cstride)
@@ -33,9 +34,10 @@ T assemble_cells(const mesh::Geometry<scalar_value_type_t<T>>& geometry,
     return value;
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-  const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
-  auto x = geometry.x();
+  // const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
+  // const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
+  // auto x = geometry.x();
+  const std::size_t num_dofs_g = x_dofmap.num_links(0);
 
   // Create data structures used in assembly
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * num_dofs_g);
@@ -63,19 +65,21 @@ T assemble_cells(const mesh::Geometry<scalar_value_type_t<T>>& geometry,
 
 /// Execute kernel over exterior facets and accumulate result
 template <typename T>
-T assemble_exterior_facets(
-    const mesh::Geometry<scalar_value_type_t<T>>& geometry,
-    std::span<const std::int32_t> facets, FEkernel<T> auto fn,
-    std::span<const T> constants, std::span<const T> coeffs, int cstride)
+T assemble_exterior_facets(const graph::AdjacencyList<std::int32_t>& x_dofmap,
+                           std::span<const scalar_value_type_t<T>> x,
+                           std::span<const std::int32_t> facets,
+                           FEkernel<T> auto fn, std::span<const T> constants,
+                           std::span<const T> coeffs, int cstride)
 {
   T value(0);
   if (facets.empty())
     return value;
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-  const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
-  auto x = geometry.x();
+  // const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
+  // const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
+  // auto x = geometry.x();
+  const std::size_t num_dofs_g = x_dofmap.num_links(0);
 
   // Create data structures used in assembly
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * num_dofs_g);
@@ -105,20 +109,24 @@ T assemble_exterior_facets(
 
 /// Assemble functional over interior facets
 template <typename T>
-T assemble_interior_facets(
-    const mesh::Geometry<scalar_value_type_t<T>>& geometry, int num_cell_facets,
-    std::span<const std::int32_t> facets, FEkernel<T> auto fn,
-    std::span<const T> constants, std::span<const T> coeffs, int cstride,
-    std::span<const int> offsets, std::span<const std::uint8_t> perms)
+T assemble_interior_facets(const graph::AdjacencyList<std::int32_t>& x_dofmap,
+                           std::span<const scalar_value_type_t<T>> x,
+                           int num_cell_facets,
+                           std::span<const std::int32_t> facets,
+                           FEkernel<T> auto fn, std::span<const T> constants,
+                           std::span<const T> coeffs, int cstride,
+                           std::span<const int> offsets,
+                           std::span<const std::uint8_t> perms)
 {
   T value(0);
   if (facets.empty())
     return value;
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-  const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
-  auto x = geometry.x();
+  // const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
+  // const std::size_t num_dofs_g = geometry.cmaps()[0].dim();
+  // auto x = geometry.x();
+  const std::size_t num_dofs_g = x_dofmap.num_links(0);
 
   // Create data structures used in assembly
   using X = scalar_value_type_t<T>;
@@ -164,8 +172,8 @@ T assemble_interior_facets(
 template <typename T, std::floating_point U>
 T assemble_scalar(
     const fem::Form<T, U>& M,
-    const mesh::Geometry<scalar_value_type_t<T>>& geometry,
-    std::span<const T> constants,
+    const graph::AdjacencyList<std::int32_t>& x_dofmap,
+    std::span<const scalar_value_type_t<T>> x, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {
@@ -179,7 +187,7 @@ T assemble_scalar(
     assert(fn);
     auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
     std::span<const std::int32_t> cells = M.domain(IntegralType::cell, i);
-    value += impl::assemble_cells(geometry, cells, fn, constants, coeffs,
+    value += impl::assemble_cells(x_dofmap, x, cells, fn, constants, coeffs,
                                   cstride);
   }
 
@@ -190,7 +198,7 @@ T assemble_scalar(
     auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
     value += impl::assemble_exterior_facets(
-        geometry, M.domain(IntegralType::exterior_facet, i), fn, constants,
+        x_dofmap, x, M.domain(IntegralType::exterior_facet, i), fn, constants,
         coeffs, cstride);
   }
 
@@ -212,8 +220,9 @@ T assemble_scalar(
       auto& [coeffs, cstride]
           = coefficients.at({IntegralType::interior_facet, i});
       value += impl::assemble_interior_facets(
-          geometry, num_cell_facets, M.domain(IntegralType::interior_facet, i),
-          fn, constants, coeffs, cstride, c_offsets, perms);
+          x_dofmap, x, num_cell_facets,
+          M.domain(IntegralType::interior_facet, i), fn, constants, coeffs,
+          cstride, c_offsets, perms);
     }
   }
 

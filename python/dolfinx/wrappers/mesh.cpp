@@ -222,7 +222,7 @@ void declare_mesh(py::module& m, std::string type)
       "create_mesh",
       [](const MPICommWrapper comm,
          const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
-         const dolfinx::fem::CoordinateElement<double>& element,
+         const dolfinx::fem::CoordinateElement<T>& element,
          const py::array_t<T, py::array::c_style>& x,
          const PythonPartitioningFunction& p)
       {

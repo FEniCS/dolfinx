@@ -65,12 +65,16 @@ T assemble_scalar(
   std::shared_ptr<const mesh::Mesh<U>> mesh = M.mesh();
   assert(mesh);
   if constexpr (std::is_same_v<U, scalar_value_type_t<T>>)
-    return impl::assemble_scalar(M, mesh->geometry(), constants, coefficients);
+  {
+    return impl::assemble_scalar(M, mesh->geometry().dofmap(),
+                                 mesh->geometry().x(), constants, coefficients);
+  }
   else
   {
-    return impl::assemble_scalar(
-        M, mesh->geometry().template astype<scalar_value_type_t<T>>(),
-        constants, coefficients);
+    auto x = mesh->geometry().x();
+    std::vector<scalar_value_type_t<T>> _x(x.begin(), x.end());
+    return impl::assemble_scalar(M, mesh->geometry().dofmap(), _x, constants,
+                                 coefficients);
   }
 }
 
@@ -166,14 +170,16 @@ void apply_lifting(
 
   if constexpr (std::is_same_v<U, scalar_value_type_t<T>>)
   {
-    impl::apply_lifting<T>(b, a, mesh->geometry(), constants, coeffs, bcs1, x0,
+    impl::apply_lifting<T>(b, a, mesh->geometry().dofmap(),
+                           mesh->geometry().x(), constants, coeffs, bcs1, x0,
                            scale);
   }
   else
   {
-    impl::apply_lifting<T>(
-        b, a, mesh->geometry().template astype<scalar_value_type_t<T>>(),
-        constants, coeffs, bcs1, x0, scale);
+    auto x = mesh->geometry().x();
+    std::vector<scalar_value_type_t<T>> _x(x.begin(), x.end());
+    impl::apply_lifting<T>(b, a, mesh->geometry().dofmap(), _x, constants,
+                           coeffs, bcs1, x0, scale);
   }
 }
 
@@ -255,14 +261,16 @@ void assemble_matrix(
   assert(mesh);
   if constexpr (std::is_same_v<U, scalar_value_type_t<T>>)
   {
-    impl::assemble_matrix(mat_add, a, mesh->geometry(), constants, coefficients,
+    impl::assemble_matrix(mat_add, a, mesh->geometry().dofmap(),
+                          mesh->geometry().x(), constants, coefficients,
                           dof_marker0, dof_marker1);
   }
   else
   {
-    impl::assemble_matrix(
-        mat_add, a, mesh->geometry().template astype<scalar_value_type_t<T>>(),
-        constants, coefficients, dof_marker0, dof_marker1);
+    auto x = mesh->geometry().x();
+    std::vector<scalar_value_type_t<T>> _x(x.begin(), x.end());
+    impl::assemble_matrix(mat_add, a, mesh->geometry().dofmap(), _x, constants,
+                          coefficients, dof_marker0, dof_marker1);
   }
 }
 

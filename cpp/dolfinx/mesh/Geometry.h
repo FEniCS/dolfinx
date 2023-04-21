@@ -79,15 +79,6 @@ public:
   /// Move Assignment
   Geometry& operator=(Geometry&&) = default;
 
-  /// Copy constructor
-  template <std::floating_point U>
-  Geometry<U> astype() const
-  {
-    return Geometry<U>(_index_map, _dofmap, _cmaps,
-                       std::vector<U>(_x.begin(), _x.end()), _dim,
-                       _input_global_indices);
-  }
-
   /// Return Euclidean dimension of coordinate system
   int dim() const { return _dim; }
 
