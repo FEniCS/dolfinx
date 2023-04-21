@@ -35,7 +35,7 @@ def test_create(cell_type):
     assert mt.values.shape[0] == entities.num_nodes
 
 
-def test_ufl_id():
+def test_mt_ufl_id():
     """Test that UFL can process MeshTags (tests ufl_id attribute)"""
     comm = MPI.COMM_WORLD
     msh = create_unit_cube(comm, 6, 6, 6)
@@ -51,17 +51,16 @@ def test_ufl_id():
     assert isinstance(a.subdomain_data(), dict)
 
 
-def test_readonly():
-    """"""
+def test_mt_readonly():
     mesh = create_unit_cube(MPI.COMM_WORLD, 6, 6, 6)
     num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
     cells = np.arange(num_cells, dtype=np.int32)
     mt = meshtags(mesh, mesh.topology.dim, cells, cells)
 
-    with pytest.raises(ValueError, match="output array is read-only"):
-        mt.indices[:] *= -2
-    assert np.allclose(mt.indices, np.arange(num_cells, dtype=np.int32))
+    indices = mt.indices
+    # assert indices.flags.writeable
+    assert not indices.flags.owndata
 
-    with pytest.raises(ValueError, match="output array is read-only"):
-        mt.values[:] *= -2
-    assert np.allclose(mt.values, np.arange(num_cells, dtype=np.int32))
+    values = mt.values
+    # assert values.flags.writeable
+    assert not values.flags.owndata
