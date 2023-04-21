@@ -779,11 +779,12 @@ compute_incident_entities(const Topology& topology,
 
 /// Create a mesh using a provided mesh partitioning function
 template <typename U>
-Mesh<typename std::remove_reference_t<typename U::value_type>>
-create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
-            const std::vector<fem::CoordinateElement<double>>& elements, const U& x,
-            std::array<std::size_t, 2> xshape,
-            const CellPartitionFunction& cell_partitioner)
+Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
+    MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
+    const std::vector<fem::CoordinateElement<
+        typename std::remove_reference_t<typename U::value_type>>>& elements,
+    const U& x, std::array<std::size_t, 2> xshape,
+    const CellPartitionFunction& cell_partitioner)
 {
   const fem::ElementDofLayout dof_layout = elements[0].create_dof_layout();
 
@@ -928,8 +929,8 @@ create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>>
 create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
-            const std::vector<fem::CoordinateElement<double>>& elements, const U& x,
-            std::array<std::size_t, 2> xshape, GhostMode ghost_mode)
+            const std::vector<fem::CoordinateElement<double>>& elements,
+            const U& x, std::array<std::size_t, 2> xshape, GhostMode ghost_mode)
 {
   return create_mesh(comm, cells, elements, x, xshape,
                      create_cell_partitioner(ghost_mode));

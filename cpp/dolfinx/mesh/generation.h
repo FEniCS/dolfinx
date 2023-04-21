@@ -113,7 +113,7 @@ Mesh<T> create_interval(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
                         const CellPartitionFunction& partitioner
                         = create_cell_partitioner())
 {
-  fem::CoordinateElement<double> element(CellType::interval, 1);
+  fem::CoordinateElement<T> element(CellType::interval, 1);
 
   // Receive mesh according to parallel policy
   if (dolfinx::MPI::rank(comm) != 0)
@@ -326,7 +326,7 @@ Mesh<T> build_tet(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
     std::copy(c.begin(), c.end(), std::next(cells.begin(), 4 * offset));
   }
 
-  fem::CoordinateElement<double> element(CellType::tetrahedron, 1);
+  fem::CoordinateElement<T> element(CellType::tetrahedron, 1);
   return create_mesh(comm, graph::regular_adjacency_list(std::move(cells), 4),
                      {element}, geom, {geom.size() / 3, 3}, partitioner);
 }
@@ -370,7 +370,7 @@ mesh::Mesh<T> build_hex(MPI_Comm comm,
               std::next(cells.begin(), (i - range_c[0]) * 8));
   }
 
-  fem::CoordinateElement<double> element(CellType::hexahedron, 1);
+  fem::CoordinateElement<T> element(CellType::hexahedron, 1);
   return create_mesh(comm, graph::regular_adjacency_list(std::move(cells), 8),
                      {element}, geom, {geom.size() / 3, 3}, partitioner);
 }
@@ -418,7 +418,7 @@ Mesh<T> build_prism(MPI_Comm comm,
               std::next(cells.begin(), 6 * ((i - range_c[0]) * 2 + 1)));
   }
 
-  fem::CoordinateElement<double> element(CellType::prism, 1);
+  fem::CoordinateElement<T> element(CellType::prism, 1);
   return create_mesh(comm, graph::regular_adjacency_list(std::move(cells), 6),
                      {element}, geom, {geom.size() / 3, 3}, partitioner);
 }
@@ -429,7 +429,7 @@ Mesh<T> build_tri(MPI_Comm comm, const std::array<std::array<double, 2>, 2>& p,
                   const CellPartitionFunction& partitioner,
                   DiagonalType diagonal)
 {
-  fem::CoordinateElement<double> element(CellType::triangle, 1);
+  fem::CoordinateElement<T> element(CellType::triangle, 1);
 
   // Receive mesh if not rank 0
   if (dolfinx::MPI::rank(comm) != 0)
@@ -614,7 +614,7 @@ Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
                    std::array<std::size_t, 2> n,
                    const CellPartitionFunction& partitioner)
 {
-  fem::CoordinateElement<double> element(CellType::quadrilateral, 1);
+  fem::CoordinateElement<T> element(CellType::quadrilateral, 1);
 
   // Receive mesh if not rank 0
   if (dolfinx::MPI::rank(comm) != 0)

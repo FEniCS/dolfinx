@@ -797,7 +797,8 @@ void fem(py::module& m)
            py::arg("celltype"), py::arg("degree"), py::arg("variant"))
       .def("create_dof_layout",
            &dolfinx::fem::CoordinateElement<double>::create_dof_layout)
-      .def_property_readonly("degree", &dolfinx::fem::CoordinateElement<double>::degree)
+      .def_property_readonly("degree",
+                             &dolfinx::fem::CoordinateElement<double>::degree)
       .def_property_readonly("variant",
                              &dolfinx::fem::CoordinateElement<double>::variant)
       .def(
