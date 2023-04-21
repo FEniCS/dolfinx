@@ -288,8 +288,7 @@ std::experimental::mdspan<const std::int32_t,
                           std::experimental::dextents<std::size_t, 2>>
 DofMap::map() const
 {
-  return std::experimental::mdspan<const std::int32_t,
-                                   std::experimental::dextents<std::size_t, 2>>(
+  return stdex::mdspan<const std::int32_t, stdex::dextents<std::size_t, 2>>(
       _dofmap.data(), _dofmap.size() / _shape1, _shape1);
 }
 //-----------------------------------------------------------------------------
