@@ -41,7 +41,7 @@ public:
   /// @param[in] element The element
   /// @param[in] dofmap The dofmap
   FunctionSpace(std::shared_ptr<const mesh::Mesh<T>> mesh,
-                std::shared_ptr<const FiniteElement<double>> element,
+                std::shared_ptr<const FiniteElement<T>> element,
                 std::shared_ptr<const DofMap> dofmap)
       : _mesh(mesh), _element(element), _dofmap(dofmap),
         _id(boost::uuids::random_generator()()), _root_space_id(_id)
@@ -81,7 +81,7 @@ public:
     }
 
     // Extract sub-element
-    std::shared_ptr<const FiniteElement<double>> element
+    std::shared_ptr<const FiniteElement<T>> element
         = this->_element->extract_sub_element(component);
 
     // Extract sub dofmap
@@ -221,7 +221,7 @@ public:
     {
       throw std::runtime_error("Mixed topology not supported");
     }
-    const CoordinateElement<double>& cmap = _mesh->geometry().cmaps()[0];
+    const CoordinateElement<T>& cmap = _mesh->geometry().cmaps()[0];
 
     // Prepare cell geometry
     const graph::AdjacencyList<std::int32_t>& x_dofmap
@@ -257,11 +257,11 @@ public:
     }
 
     auto apply_dof_transformation
-        = _element->get_dof_transformation_function<double>();
+        = _element->template get_dof_transformation_function<T>();
 
     const std::array<std::size_t, 4> phi_shape
         = cmap.tabulate_shape(0, Xshape[0]);
-    std::vector<double> phi_b(
+    std::vector<T> phi_b(
         std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
     cmdspan4_t phi_full(phi_b.data(), phi_shape);
     cmap.tabulate(0, X, Xshape, phi_b);
@@ -306,10 +306,7 @@ public:
   std::shared_ptr<const mesh::Mesh<T>> mesh() const { return _mesh; }
 
   /// The finite element
-  std::shared_ptr<const FiniteElement<double>> element() const
-  {
-    return _element;
-  }
+  std::shared_ptr<const FiniteElement<T>> element() const { return _element; }
 
   /// The dofmap
   std::shared_ptr<const DofMap> dofmap() const { return _dofmap; }
@@ -319,7 +316,7 @@ private:
   std::shared_ptr<const mesh::Mesh<T>> _mesh;
 
   // The finite element
-  std::shared_ptr<const FiniteElement<double>> _element;
+  std::shared_ptr<const FiniteElement<T>> _element;
 
   // The dofmap
   std::shared_ptr<const DofMap> _dofmap;

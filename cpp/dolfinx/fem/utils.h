@@ -654,13 +654,13 @@ Form<T, U> create_form(
 template <std::floating_point T>
 FunctionSpace<T>
 create_functionspace(std::shared_ptr<mesh::Mesh<T>> mesh,
-                     const basix::FiniteElement<double>& e, int bs,
+                     const basix::FiniteElement<T>& e, int bs,
                      const std::function<std::vector<int>(
                          const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
                      = nullptr)
 {
   // Create a DOLFINx element
-  auto _e = std::make_shared<FiniteElement<double>>(e, bs);
+  auto _e = std::make_shared<FiniteElement<T>>(e, bs);
 
   // Create UFC subdofmaps and compute offset
   assert(_e);
@@ -735,7 +735,7 @@ create_functionspace(ufcx_function_space* (*fptr)(const char*),
     throw std::runtime_error("UFL mesh and CoordinateElement do not match.");
   }
 
-  auto element = std::make_shared<FiniteElement<double>>(*ufcx_element);
+  auto element = std::make_shared<FiniteElement<T>>(*ufcx_element);
   assert(element);
   ufcx_dofmap* ufcx_map = space->dofmap;
   assert(ufcx_map);
@@ -764,8 +764,7 @@ std::span<const std::uint32_t> get_cell_orientation_info(
   bool needs_dof_transformations = false;
   for (auto coeff : coefficients)
   {
-    std::shared_ptr<const FiniteElement<double>> element
-        = coeff->function_space()->element();
+    auto element = coeff->function_space()->element();
     if (element->needs_dof_transformations())
     {
       needs_dof_transformations = true;
@@ -846,12 +845,12 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
   // Read data from coefficient Function u
   std::span<const T> v = u.x()->array();
   const DofMap& dofmap = *u.function_space()->dofmap();
-  std::shared_ptr<const FiniteElement<double>> element
+  std::shared_ptr<const FiniteElement<U>> element
       = u.function_space()->element();
   assert(element);
   int space_dim = element->space_dimension();
   const auto transformation
-      = element->get_dof_transformation_function<T>(false, true);
+      = element->template get_dof_transformation_function<T>(false, true);
   const int bs = dofmap.bs();
   switch (bs)
   {
@@ -1047,7 +1046,7 @@ Expression<T, U> create_expression(
                              "function space was provided.");
   }
 
-  std::span<const double> X(e.points, e.num_points * e.topological_dimension);
+  std::span<const U> X(e.points, e.num_points * e.topological_dimension);
   std::array<std::size_t, 2> Xshape
       = {static_cast<std::size_t>(e.num_points),
          static_cast<std::size_t>(e.topological_dimension)};

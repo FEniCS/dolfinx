@@ -31,7 +31,7 @@ void interpolate_scalar(std::shared_ptr<mesh::Mesh<U>> mesh,
                         [[maybe_unused]] std::filesystem::path filename)
 {
   // Create a Basix continuous Lagrange element of degree 1
-  basix::FiniteElement e = basix::create_element<double>(
+  basix::FiniteElement e = basix::create_element<U>(
       basix::element::family::P,
       mesh::cell_type_to_basix_type(mesh::CellType::triangle), 1,
       basix::element::lagrange_variant::unset,
@@ -55,13 +55,12 @@ void interpolate_scalar(std::shared_ptr<mesh::Mesh<U>> mesh,
         return {f, {f.size()}};
       });
 
-#ifdef HAS_ADIOS2
-  // Write the function to a VTX file for visualisation, e.g. using
-  // ParaView
-  io::VTXWriter<U> outfile(mesh->comm(), filename.replace_extension("bp"), {u});
-  outfile.write(0.0);
-  outfile.close();
-#endif
+  // #ifdef HAS_ADIOS2
+  //   // Write the function to a VTX file for visualisation, e.g. using
+  //   // ParaView
+  //   io::VTXWriter<U> outfile(mesh->comm(), filename.replace_extension("bp"),
+  //   {u}); outfile.write(0.0); outfile.close();
+  // #endif
 }
 
 // This function interpolations a function is a H(curl) finite element
@@ -74,7 +73,7 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
 {
   // Create a Basix Nedelec (first kind) element of degree 2 (dim=6 on
   // triangle)
-  basix::FiniteElement e = basix::create_element<double>(
+  basix::FiniteElement e = basix::create_element<U>(
       basix::element::family::N1E,
       mesh::cell_type_to_basix_type(mesh::CellType::triangle), 2,
       basix::element::lagrange_variant::legendre,
@@ -144,7 +143,7 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
 
   // First create a degree 2 vector-valued discontinuous Lagrange space
   // (which contains the N2 space):
-  basix::FiniteElement e_l = basix::create_element<double>(
+  basix::FiniteElement e_l = basix::create_element<U>(
       basix::element::family::P,
       mesh::cell_type_to_basix_type(mesh::CellType::triangle), 2,
       basix::element::lagrange_variant::unset,
@@ -165,12 +164,12 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
   // = 0.5 (jump in the normal component between cells) and the x1
   // component will appear continuous (continuous tangent component
   // between cells).
-#ifdef HAS_ADIOS2
-  io::VTXWriter<U> outfile(mesh->comm(), filename.replace_extension("bp"),
-                           {u_l});
-  outfile.write(0.0);
-  outfile.close();
-#endif
+  // #ifdef HAS_ADIOS2
+  //   io::VTXWriter<U> outfile(mesh->comm(), filename.replace_extension("bp"),
+  //                            {u_l});
+  //   outfile.write(0.0);
+  //   outfile.close();
+  // #endif
 }
 
 /// This program shows how to create finite element spaces without FFCx
@@ -196,23 +195,26 @@ int main(int argc, char* argv[])
 
     // Create mesh using same topology as mesh0, but with different
     // scalar type for geometry
-    auto mesh1 = std::make_shared<mesh::Mesh<double>>(
-        mesh0->comm(), mesh0->topology(), mesh0->geometry().astype<double>());
+    auto mesh1
+        = std::make_shared<mesh::Mesh<double>>(mesh::create_rectangle<double>(
+            MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {32, 4},
+            mesh::CellType::triangle,
+            mesh::create_cell_partitioner(mesh::GhostMode::none)));
 
     // Interpolate a function in a scalar Lagrange space and output the
     // result to file for visualisation using different types
     interpolate_scalar<float>(mesh0, "u32");
-    interpolate_scalar<double>(mesh1, "u64");
-    interpolate_scalar<std::complex<float>>(mesh0, "u_complex64");
-    interpolate_scalar<std::complex<double>>(mesh1, "u_complex128");
+    // interpolate_scalar<double>(mesh1, "u64");
+    // interpolate_scalar<std::complex<float>>(mesh0, "u_complex64");
+    // interpolate_scalar<std::complex<double>>(mesh1, "u_complex128");
 
-    // Interpolate a function in a H(curl) finite element space, and
-    // then interpolate the H(curl) function in a discontinuous Lagrange
-    // space for visualisation using different types
-    interpolate_nedelec<float>(mesh0, "u_nedelec32");
-    interpolate_nedelec<double>(mesh1, "u_nedelec64");
-    interpolate_nedelec<std::complex<float>>(mesh0, "u_nedelec_complex64");
-    interpolate_nedelec<std::complex<double>>(mesh1, "u_nedelec_complex12");
+    // // Interpolate a function in a H(curl) finite element space, and
+    // // then interpolate the H(curl) function in a discontinuous Lagrange
+    // // space for visualisation using different types
+    // interpolate_nedelec<float>(mesh0, "u_nedelec32");
+    // interpolate_nedelec<double>(mesh1, "u_nedelec64");
+    // interpolate_nedelec<std::complex<float>>(mesh0, "u_nedelec_complex64");
+    // interpolate_nedelec<std::complex<double>>(mesh1, "u_nedelec_complex12");
   }
 
   MPI_Finalize();
