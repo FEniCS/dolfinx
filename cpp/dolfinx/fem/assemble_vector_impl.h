@@ -727,7 +727,8 @@ void assemble_interior_facets(
 ///
 /// @param[in,out] b The vector to be modified
 /// @param[in] a The bilinear form that generates A
-/// @param[in] geometry The mesh geometry
+/// @param[in] x_dofmap Mesh geometry dofmap
+/// @param[in] x Mesh coordinates
 /// @param[in] constants Constants that appear in `a`
 /// @param[in] coefficients Coefficients that appear in `a`
 /// @param[in] bc_values1 The boundary condition 'values'
@@ -873,7 +874,8 @@ void lift_bc(std::span<T> b, const Form<T, U>& a,
 /// @param[in,out] b The vector to be modified
 /// @param[in] a The bilinear forms, where a[j] is the form that
 /// generates A_j
-/// @param[in] geometry The mesh geometry
+/// @param[in] x_dofmap Mesh geometry dofmap
+/// @param[in] x Mesh coordinates
 /// @param[in] constants Constants that appear in `a`
 /// @param[in] coeffs Coefficients that appear in `a`
 /// @param[in] bcs1 List of boundary conditions for each block, i.e.
@@ -946,7 +948,8 @@ void apply_lifting(
 /// @param[in,out] b The vector to be assembled. It will not be zeroed
 /// before assembly.
 /// @param[in] L The linear forms to assemble into b
-/// @param[in] geometry The mesh geometry
+/// @param[in] x_dofmap Mesh geometry dofmap
+/// @param[in] x Mesh coordinates
 /// @param[in] constants Packed constants that appear in `L`
 /// @param[in] coefficients Packed coefficients that appear in `L`
 template <typename T, std::floating_point U>
