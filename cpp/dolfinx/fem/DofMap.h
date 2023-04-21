@@ -153,7 +153,7 @@ public:
   /// @return The adjacency list with dof indices for each cell
   std::experimental::mdspan<const std::int32_t,
                             std::experimental::dextents<std::size_t, 2>>
-  list() const;
+  map() const;
 
   /// Layout of dofs on an element
   const ElementDofLayout& element_dof_layout() const
@@ -175,7 +175,7 @@ private:
   // Layout of dofs on a cell
   ElementDofLayout _element_dof_layout;
 
-  // Cell-local-to-dof map (dofs for cell dofmap[cell])
+  // Cell local-to-dof map
   std::vector<std::int32_t> _dofmap;
 
   // Block size for the dofmap

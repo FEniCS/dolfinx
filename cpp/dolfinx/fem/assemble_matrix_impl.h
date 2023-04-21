@@ -385,9 +385,9 @@ void assemble_matrix(
       = a.function_spaces().at(1)->dofmap();
   assert(dofmap0);
   assert(dofmap1);
-  auto dofs0 = dofmap0->list();
+  auto dofs0 = dofmap0->map();
   const int bs0 = dofmap0->bs();
-  auto dofs1 = dofmap1->list();
+  auto dofs1 = dofmap1->map();
   const int bs1 = dofmap1->bs();
 
   std::shared_ptr<const fem::FiniteElement> element0

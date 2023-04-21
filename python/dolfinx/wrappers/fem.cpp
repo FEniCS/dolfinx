@@ -74,8 +74,7 @@ void declare_objects(py::module& m, const std::string& type)
           py::init(
               [](const py::array_t<T, py::array::c_style>& g,
                  const py::array_t<std::int32_t, py::array::c_style>& dofs,
-                 std::shared_ptr<const dolfinx::fem::FunctionSpace<double>>
-V)
+                 std::shared_ptr<const dolfinx::fem::FunctionSpace<double>> V)
               {
                 if (dofs.ndim() != 1)
                   throw std::runtime_error("Wrong number of dims");
@@ -89,16 +88,14 @@ V)
       .def(py::init(
                [](std::shared_ptr<const dolfinx::fem::Constant<T>> g,
                   const py::array_t<std::int32_t, py::array::c_style>& dofs,
-                  std::shared_ptr<const dolfinx::fem::FunctionSpace<double>>
-V)
+                  std::shared_ptr<const dolfinx::fem::FunctionSpace<double>> V)
                {
                  return dolfinx::fem::DirichletBC<T, double>(
                      g, std::vector(dofs.data(), dofs.data() + dofs.size()), V);
                }),
            py::arg("g").noconvert(), py::arg("dofs").noconvert(), py::arg("V"))
       .def(py::init(
-               [](std::shared_ptr<const dolfinx::fem::Function<T, double>
-> g,
+               [](std::shared_ptr<const dolfinx::fem::Function<T, double>> g,
                   const py::array_t<std::int32_t, py::array::c_style>& dofs)
                {
                  return dolfinx::fem::DirichletBC<T, double>(
@@ -107,12 +104,10 @@ V)
            py::arg("g").noconvert(), py::arg("dofs"))
       .def(
           py::init(
-              [](std::shared_ptr<const dolfinx::fem::Function<T, double>
-> g,
+              [](std::shared_ptr<const dolfinx::fem::Function<T, double>> g,
                  const std::array<py::array_t<std::int32_t, py::array::c_style>,
                                   2>& V_g_dofs,
-                 std::shared_ptr<const dolfinx::fem::FunctionSpace<double>>
-V)
+                 std::shared_ptr<const dolfinx::fem::FunctionSpace<double>>V)
               {
                 std::array dofs
                     = {std::vector(V_g_dofs[0].data(),
@@ -211,7 +206,7 @@ V)
                 *element, self.function_space()->mesh()->geometry(),
                 std::span(cells.data(), cells.size()));
 
-            std::array<std::size_t, 2> shape = {value_size, x.size() / 3};
+            std::array<std::size_t, 2> shape{value_size, x.size() / 3};
             std::vector<T> values(shape[0] * shape[1]);
             std::function<void(T*, int, int, const double*)> f
                 = reinterpret_cast<void (*)(T*, int, int, const double*)>(addr);
@@ -486,15 +481,14 @@ void declare_form(py::module& m, const std::string& type)
                                                py::cast(self));
             case dolfinx::fem::IntegralType::exterior_facet:
             {
-              std::array<py::ssize_t, 2> shape
-                  = {py::ssize_t(_d.size()) / 2, 2};
+              std::array<py::ssize_t, 2> shape{py::ssize_t(_d.size()) / 2, 2};
               return py::array_t<std::int32_t>(shape, _d.data(),
                                                py::cast(self));
             }
             case dolfinx::fem::IntegralType::interior_facet:
             {
-              std::array<py::ssize_t, 3> shape
-                  = {py::ssize_t(_d.size()) / 4, 2, 2};
+              std::array<py::ssize_t, 3> shape{py::ssize_t(_d.size()) / 4, 2,
+                                               2};
               return py::array_t<std::int32_t>(shape, _d.data(),
                                                py::cast(self));
             }
@@ -794,12 +788,11 @@ void fem(py::module& m)
           py::arg("cell"))
       .def_property_readonly("bs", &dolfinx::fem::DofMap::bs)
       .def(
-          "list",
+          "map",
           [](const dolfinx::fem::DofMap& self)
           {
-            auto dofs = self.list();
-            std::array<py::ssize_t, 2> shape
-                = {py::ssize_t(dofs.extent(0)), py::ssize_t(dofs.extent(1))};
+            auto dofs = self.map();
+            std::array shape{dofs.extent(0), dofs.extent(1)};
             return py::array_t<std::int32_t>(shape, dofs.data_handle(),
                                              py::cast(self));
           },
@@ -833,8 +826,7 @@ void fem(py::module& m)
             using cmdspan4_t
                 = stdex::mdspan<const double, stdex::dextents<std::size_t, 4>>;
 
-            std::array<std::size_t, 2> Xshape
-                = {(std::size_t)X.shape(0), (std::size_t)X.shape(1)};
+            std::array Xshape{(std::size_t)X.shape(0), (std::size_t)X.shape(1)};
 
             std::array<std::size_t, 4> phi_shape
                 = self.tabulate_shape(0, X.shape(0));
@@ -845,8 +837,7 @@ void fem(py::module& m)
             auto phi = stdex::submdspan(phi_full, 0, stdex::full_extent,
                                         stdex::full_extent, 0);
 
-            std::array<std::size_t, 2> shape
-                = {(std::size_t)X.shape(0), (std::size_t)cell.shape(1)};
+            std::array shape{X.shape(0), cell.shape(1)};
             std::vector<double> xb(shape[0] * shape[1]);
             self.push_forward(
                 mdspan2_t(xb.data(), shape),
@@ -897,7 +888,7 @@ void fem(py::module& m)
 
               self.compute_jacobian(dphi, g, J);
               self.compute_jacobian_inverse(J, K);
-              std::array<double, 3> x0 = {0, 0, 0};
+              std::array<double, 3> x0{0, 0, 0};
               for (std::size_t i = 0; i < g.extent(1); ++i)
                 x0[i] += g(0, i);
               self.pull_back_affine(X, K, x0, _x);
@@ -957,7 +948,7 @@ void fem(py::module& m)
 
         auto _marker = [&marker](auto x)
         {
-          std::array<std::size_t, 2> shape = {x.extent(0), x.extent(1)};
+          std::array shape{x.extent(0), x.extent(1)};
           py::array_t<double> x_view(shape, x.data_handle(), py::none());
           py::array_t<bool> marked = marker(x_view);
           return std::vector<std::int8_t>(marked.data(),
@@ -978,7 +969,7 @@ void fem(py::module& m)
       {
         auto _marker = [&marker](auto x)
         {
-          std::array<std::size_t, 2> shape = {x.extent(0), x.extent(1)};
+          std::array shape{x.extent(0), x.extent(1)};
           py::array_t<double> x_view(shape, x.data_handle(), py::none());
           py::array_t<bool> marked = marker(x_view);
           return std::vector<std::int8_t>(marked.data(),
@@ -1025,7 +1016,7 @@ void fem(py::module& m)
            [](const dolfinx::fem::FunctionSpace<double>& self)
            {
              std::vector x = self.tabulate_dof_coordinates(false);
-             std::vector<std::size_t> shape = {x.size() / 3, 3};
+             std::vector<std::size_t> shape{x.size() / 3, 3};
              return as_pyarray(std::move(x), shape);
            });
 }

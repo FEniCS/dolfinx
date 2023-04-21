@@ -43,7 +43,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   assert(cells);
 
   // Build set of dofs that are in the new dofmap (un-blocked)
-  auto dofs_view_md = dofmap_view.list();
+  auto dofs_view_md = dofmap_view.map();
   std::vector<std::int32_t> dofs_view(dofs_view_md.data_handle(),
                                       dofs_view_md.data_handle()
                                           + dofs_view_md.size());
@@ -108,7 +108,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   }
 
   // Map dofs to new collapsed indices for new dofmap
-  auto dof_array_view = dofmap_view.list();
+  auto dof_array_view = dofmap_view.map();
   std::vector<std::int32_t> dofmap;
   dofmap.reserve(dof_array_view.size());
   std::transform(dof_array_view.data_handle(),
@@ -286,7 +286,7 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
 //-----------------------------------------------------------------------------
 std::experimental::mdspan<const std::int32_t,
                           std::experimental::dextents<std::size_t, 2>>
-DofMap::list() const
+DofMap::map() const
 {
   return std::experimental::mdspan<const std::int32_t,
                                    std::experimental::dextents<std::size_t, 2>>(

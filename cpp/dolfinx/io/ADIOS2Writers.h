@@ -395,7 +395,7 @@ void write_data(adios2::IO& io, adios2::Engine& engine,
                           y.data_handle());
   };
 
-  if (!need_padding and eq_check(mesh->geometry().dofmap(), dofmap->list()))
+  if (!need_padding and eq_check(mesh->geometry().dofmap(), dofmap->map()))
     data = u.x()->array();
   else
   {
