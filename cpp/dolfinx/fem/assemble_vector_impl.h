@@ -777,8 +777,9 @@ void lift_bc(std::span<T> b, const Form<T, U>& a,
   for (int i : a.integral_ids(IntegralType::cell))
   {
     auto kernel = a.kernel(IntegralType::cell, i);
+    assert(kernel);
     auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
-    const std::vector<std::int32_t>& cells = a.domain(IntegralType::cell, i);
+    std::span<const std::int32_t> cells = a.domain(IntegralType::cell, i);
     if (bs0 == 1 and bs1 == 1)
     {
       _lift_bc_cells<T, 1, 1>(b, geometry, kernel, cells, dof_transform,
@@ -805,14 +806,14 @@ void lift_bc(std::span<T> b, const Form<T, U>& a,
   for (int i : a.integral_ids(IntegralType::exterior_facet))
   {
     auto kernel = a.kernel(IntegralType::exterior_facet, i);
+    assert(kernel);
     auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
-    const std::vector<std::int32_t>& facets
-        = a.domain(IntegralType::exterior_facet, i);
-    _lift_bc_exterior_facets(b, geometry, kernel, facets, dof_transform,
-                             dofmap0, bs0, dof_transform_to_transpose, dofmap1,
-                             bs1, constants, coeffs, cstride, cell_info,
-                             bc_values1, bc_markers1, x0, scale);
+    _lift_bc_exterior_facets(
+        b, geometry, kernel, a.domain(IntegralType::exterior_facet, i),
+        dof_transform, dofmap0, bs0, dof_transform_to_transpose, dofmap1, bs1,
+        constants, coeffs, cstride, cell_info, bc_values1, bc_markers1, x0,
+        scale);
   }
 
   if (a.num_integrals(IntegralType::interior_facet) > 0)
@@ -836,12 +837,12 @@ void lift_bc(std::span<T> b, const Form<T, U>& a,
     for (int i : a.integral_ids(IntegralType::interior_facet))
     {
       auto kernel = a.kernel(IntegralType::interior_facet, i);
+      assert(kernel);
       auto& [coeffs, cstride]
           = coefficients.at({IntegralType::interior_facet, i});
-      const std::vector<std::int32_t>& facets
-          = a.domain(IntegralType::interior_facet, i);
       _lift_bc_interior_facets(
-          b, geometry, num_cell_facets, kernel, facets, dof_transform, dofmap0,
+          b, geometry, num_cell_facets, kernel,
+          a.domain(IntegralType::interior_facet, i), dof_transform, dofmap0,
           bs0, dof_transform_to_transpose, dofmap1, bs1, constants, coeffs,
           cstride, cell_info, get_perm, bc_values1, bc_markers1, x0, scale);
     }
@@ -973,8 +974,9 @@ void assemble_vector(
   for (int i : L.integral_ids(IntegralType::cell))
   {
     auto fn = L.kernel(IntegralType::cell, i);
+    assert(fn);
     auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
-    const std::vector<std::int32_t>& cells = L.domain(IntegralType::cell, i);
+    std::span<const std::int32_t> cells = L.domain(IntegralType::cell, i);
     if (bs == 1)
     {
       impl::assemble_cells<T, 1>(dof_transform, b, geometry, cells, dofs, bs,
@@ -995,9 +997,10 @@ void assemble_vector(
   for (int i : L.integral_ids(IntegralType::exterior_facet))
   {
     auto fn = L.kernel(IntegralType::exterior_facet, i);
+    assert(fn);
     auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
-    const std::vector<std::int32_t>& facets
+    std::span<const std::int32_t> facets
         = L.domain(IntegralType::exterior_facet, i);
     if (bs == 1)
     {
@@ -1040,9 +1043,10 @@ void assemble_vector(
     for (int i : L.integral_ids(IntegralType::interior_facet))
     {
       auto fn = L.kernel(IntegralType::interior_facet, i);
+      assert(fn);
       auto& [coeffs, cstride]
           = coefficients.at({IntegralType::interior_facet, i});
-      const std::vector<std::int32_t>& facets
+      std::span<const std::int32_t> facets
           = L.domain(IntegralType::interior_facet, i);
       if (bs == 1)
       {

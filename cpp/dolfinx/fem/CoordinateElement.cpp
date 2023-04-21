@@ -15,7 +15,7 @@ using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
 CoordinateElement::CoordinateElement(
-    std::shared_ptr<const basix::FiniteElement> element)
+    std::shared_ptr<const basix::FiniteElement<double>> element)
     : _element(element)
 {
   int degree = _element->degree();
@@ -25,10 +25,10 @@ CoordinateElement::CoordinateElement(
 //-----------------------------------------------------------------------------
 CoordinateElement::CoordinateElement(mesh::CellType celltype, int degree,
                                      basix::element::lagrange_variant type)
-    : CoordinateElement(std::make_shared<basix::FiniteElement>(
-        basix::create_element(basix::element::family::P,
-                              mesh::cell_type_to_basix_type(celltype), degree,
-                              type, basix::element::dpc_variant::unset, false)))
+    : CoordinateElement(std::make_shared<basix::FiniteElement<double>>(
+        basix::create_element<double>(
+            basix::element::family::P, mesh::cell_type_to_basix_type(celltype),
+            degree, type, basix::element::dpc_variant::unset, false)))
 {
   // Do nothing
 }

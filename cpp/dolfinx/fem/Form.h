@@ -149,9 +149,8 @@ public:
   /// @param[in] type Integral type
   /// @param[in] i Domain index
   /// @return Function to call for tabulate_tensor
-  const std::function<void(T*, const T*, const T*,
-                           const scalar_value_type_t<T>*, const int*,
-                           const std::uint8_t*)>&
+  std::function<void(T*, const T*, const T*, const scalar_value_type_t<T>*,
+                     const int*, const std::uint8_t*)>
   kernel(IntegralType type, int i) const
   {
     auto integrals = _integrals[static_cast<std::size_t>(type)];
@@ -215,7 +214,7 @@ public:
   /// @param[in] type Integral domain type
   /// @param[in] i Integral ID, i.e. (sub)domain index
   /// @return List of active cell entities for the given integral (kernel)
-  const std::vector<std::int32_t>& domain(IntegralType type, int i) const
+  std::span<const std::int32_t> domain(IntegralType type, int i) const
   {
     auto& integral = _integrals[static_cast<std::size_t>(type)];
     if (auto it = integral.find(i); it != integral.end())
