@@ -562,39 +562,39 @@ def test_empty_rank_mesh(dtype):
         x = np.empty((0, 2), dtype=dtype)
 
     mesh = _mesh.create_mesh(comm, cells, x, domain, partitioner)
-    # assert mesh.geometry.x.dtype == dtype
-    # topology = mesh.topology
+    assert mesh.geometry.x.dtype == dtype
+    topology = mesh.topology
 
-    # # Check number of vertices
-    # vmap = topology.index_map(0)
-    # assert vmap.size_local == x.shape[0]
-    # assert vmap.num_ghosts == 0
+    # Check number of vertices
+    vmap = topology.index_map(0)
+    assert vmap.size_local == x.shape[0]
+    assert vmap.num_ghosts == 0
 
-    # # Check number of cells
-    # cmap = topology.index_map(tdim)
-    # assert cmap.size_local == cells.num_nodes
-    # assert cmap.num_ghosts == 0
+    # Check number of cells
+    cmap = topology.index_map(tdim)
+    assert cmap.size_local == cells.num_nodes
+    assert cmap.num_ghosts == 0
 
-    # # Check number of edges
-    # topology.create_entities(1)
-    # emap = topology.index_map(1)
+    # Check number of edges
+    topology.create_entities(1)
+    emap = topology.index_map(1)
 
-    # e_to_v = topology.connectivity(1, 0)
+    e_to_v = topology.connectivity(1, 0)
 
-    # assert emap.num_ghosts == 0
-    # if comm.rank == 0:
-    #     assert emap.size_local == 5
-    #     assert e_to_v.num_nodes == 5
-    #     assert len(e_to_v.array) == 10
-    # else:
-    #     assert emap.size_local == 0
-    #     assert len(e_to_v.array) == 0
-    #     assert e_to_v.num_nodes == 0
+    assert emap.num_ghosts == 0
+    if comm.rank == 0:
+        assert emap.size_local == 5
+        assert e_to_v.num_nodes == 5
+        assert len(e_to_v.array) == 10
+    else:
+        assert emap.size_local == 0
+        assert len(e_to_v.array) == 0
+        assert e_to_v.num_nodes == 0
 
-    # # Test creating and getting permutations doesn't throw an error
-    # mesh.topology.create_entity_permutations()
-    # mesh.topology.get_cell_permutation_info()
-    # mesh.topology.get_facet_permutations()
+    # Test creating and getting permutations doesn't throw an error
+    mesh.topology.create_entity_permutations()
+    mesh.topology.get_cell_permutation_info()
+    mesh.topology.get_facet_permutations()
 
 
 def test_original_index():
