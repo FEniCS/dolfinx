@@ -62,11 +62,8 @@ void _lift_bc_cells(
   if (cells.empty())
     return;
 
-  // Prepare cell geometry
-  const std::size_t num_dofs_g = x_dofmap.extent(1);
-
   // Data structures used in bc application
-  std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * num_dofs_g);
+  std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * x_dofmap.extent(1));
   std::vector<T> Ae, be;
   for (std::size_t index = 0; index < cells.size(); ++index)
   {
@@ -212,11 +209,8 @@ void _lift_bc_exterior_facets(
   if (facets.empty())
     return;
 
-  // Prepare cell geometry
-  const std::size_t num_dofs_g = x_dofmap.extent(1);
-
   // Data structures used in bc application
-  std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * num_dofs_g);
+  std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * x_dofmap.extent(1));
   std::vector<T> Ae, be;
   assert(facets.size() % 2 == 0);
   for (std::size_t index = 0; index < facets.size(); index += 2)
@@ -319,14 +313,12 @@ void _lift_bc_interior_facets(
   if (facets.empty())
     return;
 
-  // Prepare cell geometry
-  const std::size_t num_dofs_g = x_dofmap.extent(1);
-
   // Data structures used in assembly
   using X = scalar_value_type_t<T>;
-  std::vector<X> coordinate_dofs(2 * num_dofs_g * 3);
-  std::span<X> cdofs0(coordinate_dofs.data(), num_dofs_g * 3);
-  std::span<X> cdofs1(coordinate_dofs.data() + num_dofs_g * 3, num_dofs_g * 3);
+  std::vector<X> coordinate_dofs(2 * x_dofmap.extent(1) * 3);
+  std::span<X> cdofs0(coordinate_dofs.data(), x_dofmap.extent(1) * 3);
+  std::span<X> cdofs1(coordinate_dofs.data() + x_dofmap.extent(1) * 3,
+                      x_dofmap.extent(1) * 3);
   std::vector<T> Ae, be;
 
   // Temporaries for joint dofmaps
@@ -504,12 +496,9 @@ void assemble_cells(
   if (cells.empty())
     return;
 
-  // Prepare cell geometry
-  const std::size_t num_dofs_g = x_dofmap.extent(1);
-
   // FIXME: Add proper interface for num_dofs
   // Create data structures used in assembly
-  std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * num_dofs_g);
+  std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * x_dofmap.extent(1));
   std::vector<T> be(bs * dofmap.extent(1));
   std::span<T> _be(be);
 
@@ -572,13 +561,10 @@ void assemble_exterior_facets(
   if (facets.empty())
     return;
 
-  // Prepare cell geometry
-  const std::size_t num_dofs_g = x_dofmap.extent(1);
-
   // FIXME: Add proper interface for num_dofs
   // Create data structures used in assembly
   const int num_dofs = dofmap.extent(1);
-  std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * num_dofs_g);
+  std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * x_dofmap.extent(1));
   std::vector<T> be(bs * num_dofs);
   std::span<T> _be(be);
   assert(facets.size() % 2 == 0);
@@ -638,14 +624,12 @@ void assemble_interior_facets(
     std::span<const std::uint32_t> cell_info,
     const std::function<std::uint8_t(std::size_t)>& get_perm)
 {
-  // Prepare cell geometry
-  const std::size_t num_dofs_g = x_dofmap.extent(1);
-
   // Create data structures used in assembly
   using X = scalar_value_type_t<T>;
-  std::vector<X> coordinate_dofs(2 * num_dofs_g * 3);
-  std::span<X> cdofs0(coordinate_dofs.data(), num_dofs_g * 3);
-  std::span<X> cdofs1(coordinate_dofs.data() + num_dofs_g * 3, num_dofs_g * 3);
+  std::vector<X> coordinate_dofs(2 * x_dofmap.extent(1) * 3);
+  std::span<X> cdofs0(coordinate_dofs.data(), x_dofmap.extent(1) * 3);
+  std::span<X> cdofs1(coordinate_dofs.data() + x_dofmap.extent(1) * 3,
+                      x_dofmap.extent(1) * 3);
   std::vector<T> be;
 
   const int bs = dofmap.bs();

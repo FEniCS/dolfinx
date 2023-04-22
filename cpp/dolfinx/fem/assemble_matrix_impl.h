@@ -49,9 +49,6 @@ void assemble_cells(
   if (cells.empty())
     return;
 
-  // Prepare cell geometry
-  const std::size_t num_dofs_g = x_dofmap.extent(1);
-
   // Iterate over active cells
   const int num_dofs0 = dofmap0.extent(1);
   const int num_dofs1 = dofmap1.extent(1);
@@ -59,7 +56,7 @@ void assemble_cells(
   const int ndim1 = bs1 * num_dofs1;
   std::vector<T> Ae(ndim0 * ndim1);
   std::span<T> _Ae(Ae);
-  std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * num_dofs_g);
+  std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * x_dofmap.extent(1));
 
   // Iterate over active cells
   for (std::size_t index = 0; index < cells.size(); ++index)
@@ -144,11 +141,8 @@ void assemble_exterior_facets(
   if (facets.empty())
     return;
 
-  // Prepare cell geometry
-  const std::size_t num_dofs_g = x_dofmap.extent(1);
-
   // Data structures used in assembly
-  std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * num_dofs_g);
+  std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * x_dofmap.extent(1));
   const int num_dofs0 = dofmap0.extent(1);
   const int num_dofs1 = dofmap1.extent(1);
   const int ndim0 = bs0 * num_dofs0;
@@ -238,14 +232,12 @@ void assemble_interior_facets(
   if (facets.empty())
     return;
 
-  // Prepare cell geometry
-  const std::size_t num_dofs_g = x_dofmap.extent(1);
-
   // Data structures used in assembly
   using X = scalar_value_type_t<T>;
-  std::vector<X> coordinate_dofs(2 * num_dofs_g * 3);
-  std::span<X> cdofs0(coordinate_dofs.data(), num_dofs_g * 3);
-  std::span<X> cdofs1(coordinate_dofs.data() + num_dofs_g * 3, num_dofs_g * 3);
+  std::vector<X> coordinate_dofs(2 * x_dofmap.extent(1) * 3);
+  std::span<X> cdofs0(coordinate_dofs.data(), x_dofmap.extent(1) * 3);
+  std::span<X> cdofs1(coordinate_dofs.data() + x_dofmap.extent(1) * 3,
+                      x_dofmap.extent(1) * 3);
 
   std::vector<T> Ae, be;
   std::vector<T> coeff_array(2 * offsets.back());
