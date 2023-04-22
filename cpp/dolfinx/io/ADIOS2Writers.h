@@ -370,14 +370,14 @@ void write_data(adios2::IO& io, adios2::Engine& engine,
         io, u.name + impl_adios2::field_ext[0], {}, {},
         {num_vertices, num_components});
     std::transform(data.begin(), data.end(), data_real.begin(),
-                   [](auto& x) -> X { return std::real(x); });
+                   [](auto x) -> X { return std::real(x); });
     engine.Put(local_output_r, data_real.data());
 
     adios2::Variable local_output_c = impl_adios2::define_variable<X>(
         io, u.name + impl_adios2::field_ext[1], {}, {},
         {num_vertices, num_components});
     std::transform(data.begin(), data.end(), data_imag.begin(),
-                   [](auto& x) -> X { return std::imag(x); });
+                   [](auto x) -> X { return std::imag(x); });
     engine.Put(local_output_c, data_imag.data());
     engine.PerformPuts();
   }
