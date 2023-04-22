@@ -246,7 +246,7 @@ create_new_vertices(MPI_Comm comm,
     recv_global_edge.push_back(received_values[i * 2]);
   std::vector<std::int32_t> recv_local_edge(recv_global_edge.size());
   mesh.topology()->index_map(1)->global_to_local(recv_global_edge,
-                                                recv_local_edge);
+                                                 recv_local_edge);
   for (std::size_t i = 0; i < received_values.size() / 2; ++i)
   {
     assert(recv_local_edge[i] != -1);
