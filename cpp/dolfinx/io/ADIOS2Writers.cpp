@@ -52,14 +52,13 @@ std::string to_fides_cell(mesh::CellType type)
 ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
                            std::string tag, std::string engine)
     : _adios(std::make_unique<adios2::ADIOS>(comm)),
-      _io(std::make_unique<adios2::IO>(_adios->DeclareIO(tag))),
-      _engine(std::make_unique<adios2::Engine>(
-          _io->Open(filename, adios2::Mode::Write)))
+      _io(std::make_unique<adios2::IO>(_adios->DeclareIO(tag)))
 {
   _io->SetEngine(engine);
+  _engine = std::make_unique<adios2::Engine>(
+      _io->Open(filename, adios2::Mode::Write));
 }
 //-----------------------------------------------------------------------------
-
 ADIOS2Writer::~ADIOS2Writer() { close(); }
 //-----------------------------------------------------------------------------
 void ADIOS2Writer::close()
