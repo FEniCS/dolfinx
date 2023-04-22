@@ -12,7 +12,6 @@ import pytest
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx.fem import FunctionSpace, VectorFunctionSpace
-from dolfinx.graph import create_adjacencylist
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_interval, create_unit_square)
 from mpi4py import MPI
@@ -259,7 +258,7 @@ def test_higher_order_coordinate_map(points, celltype, order):
 
     i = 0
     for node in range(len(points)):
-        x_coord_new[i] = x_g[coord_dofs.links(0)[node], :mesh.geometry.dim]
+        x_coord_new[i] = x_g[coord_dofs[0, node], :mesh.geometry.dim]
         i += 1
     x = cmap.push_forward(X, x_coord_new)
 
@@ -306,7 +305,7 @@ def test_higher_order_tetra_coordinate_map(order):
 
     i = 0
     for node in range(len(points)):
-        x_coord_new[i] = x_g[coord_dofs.links(0)[node], :mesh.geometry.dim]
+        x_coord_new[i] = x_g[coord_dofs[0, node], :mesh.geometry.dim]
         i += 1
 
     x = cmap.push_forward(X, x_coord_new)
@@ -317,6 +316,6 @@ def test_higher_order_tetra_coordinate_map(order):
 
 @pytest.mark.skip_in_parallel
 def test_transpose_dofmap():
-    dofmap = create_adjacencylist(np.array([[0, 2, 1], [3, 2, 1], [4, 3, 1]], dtype=np.int32))
+    dofmap = np.array([[0, 2, 1], [3, 2, 1], [4, 3, 1]], dtype=np.int32)
     transpose = dolfinx.fem.transpose_dofmap(dofmap, 3)
     assert np.array_equal(transpose.array, [0, 2, 5, 8, 1, 4, 3, 7, 6])

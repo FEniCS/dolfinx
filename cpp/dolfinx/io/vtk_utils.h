@@ -9,6 +9,7 @@
 #include "cells.h"
 #include "vtk_utils.h"
 #include <array>
+#include <basix/mdspan.hpp>
 #include <concepts>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
@@ -87,8 +88,7 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
   const fem::CoordinateElement& cmap = mesh->geometry().cmaps()[0];
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& dofmap_x
-      = mesh->geometry().dofmap();
+  auto dofmap_x = mesh->geometry().dofmap();
   std::span<const T> x_g = mesh->geometry().x();
   const std::size_t num_dofs_g = cmap.dim();
 
@@ -129,10 +129,9 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     // Extract cell geometry
-    auto dofs_x = dofmap_x.links(c);
-    for (std::size_t i = 0; i < dofs_x.size(); ++i)
+    for (std::size_t i = 0; i < dofmap_x.extent(1); ++i)
       for (std::size_t j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g[3 * dofs_x[i] + j];
+        coordinate_dofs(i, j) = x_g[3 * dofmap_x(c, i) + j];
 
     // Tabulate dof coordinates on cell
     cmap.push_forward(x, coordinate_dofs, phi);
@@ -244,7 +243,10 @@ vtk_mesh_from_space(const fem::FunctionSpace<T>& V)
 /// @note Even if the indices are local (int32), both Fides and VTX
 /// require int64 as local input
 std::pair<std::vector<std::int64_t>, std::array<std::size_t, 2>>
-extract_vtk_connectivity(const graph::AdjacencyList<std::int32_t>& dofmap_x,
-                         mesh::CellType cell_type);
+extract_vtk_connectivity(
+    std::experimental::mdspan<const std::int32_t,
+                              std::experimental::dextents<std::size_t, 2>>
+        dofmap_x,
+    mesh::CellType cell_type);
 } // namespace io
 } // namespace dolfinx

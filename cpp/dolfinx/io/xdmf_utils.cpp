@@ -26,6 +26,7 @@
 
 using namespace dolfinx;
 using namespace dolfinx::io;
+namespace stdex = std::experimental;
 
 namespace
 {
@@ -92,15 +93,13 @@ compute_point_values(const fem::Function<T, double>& u)
   std::vector<T> point_values(num_points * value_size_loc);
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& x_dofmap
-      = mesh->geometry().dofmap();
+  auto x_dofmap = mesh->geometry().dofmap();
 
   if (mesh->geometry().cmaps().size() > 1)
   {
     throw std::runtime_error(
         "XDMF I/O with multiple geometry maps not implemented.");
   }
-  const int num_dofs_g = mesh->geometry().cmaps()[0].dim();
 
   // Interpolate point values on each cell (using last computed value if
   // not continuous, e.g. discontinuous Galerkin methods)
@@ -112,9 +111,9 @@ compute_point_values(const fem::Function<T, double>& u)
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     // Get coordinates for all points in cell
-    std::span<const std::int32_t> dofs = x_dofmap.links(c);
-    for (int i = 0; i < num_dofs_g; ++i)
-      cells[dofs[i]] = c;
+    auto xdofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
+    for (std::size_t i = 0; i < xdofs.size(); ++i)
+      cells[xdofs[i]] = c;
   }
 
   u.eval(mesh->geometry().x(), {num_points, 3}, cells, point_values,
@@ -724,15 +723,14 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh<double>& mesh,
     const std::vector<std::int64_t>& nodes_g
         = mesh.geometry().input_global_indices();
 
-    const graph::AdjacencyList<std::int32_t>& x_dofmap
-        = mesh.geometry().dofmap();
+    auto x_dofmap = mesh.geometry().dofmap();
     std::map<std::int64_t, std::int32_t> igi_to_vertex;
     for (int c = 0; c < c_to_v->num_nodes(); ++c)
     {
       auto vertices = c_to_v->links(c);
-      auto x_dofs = x_dofmap.links(c);
+      auto xdofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
       for (std::size_t v = 0; v < vertices.size(); ++v)
-        igi_to_vertex[nodes_g[x_dofs[cell_vertex_dofs[v]]]] = vertices[v];
+        igi_to_vertex[nodes_g[xdofs[cell_vertex_dofs[v]]]] = vertices[v];
     }
 
     std::vector<std::int32_t> entities_new;

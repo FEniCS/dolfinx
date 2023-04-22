@@ -113,7 +113,7 @@ def _(V: fem.FunctionSpace, entities=None):
 
     topology = np.zeros((len(entities), num_dofs_per_cell + 1), dtype=np.int32)
     topology[:, 0] = num_dofs_per_cell
-    dofmap_ = dofmap.list.array.reshape(dofmap.list.num_nodes, num_dofs_per_cell)
+    dofmap_ = dofmap.list
 
     topology[:, 1:] = dofmap_[:len(entities), perm]
     return topology.reshape(1, -1)[0], cell_types, V.tabulate_dof_coordinates()

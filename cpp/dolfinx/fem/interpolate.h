@@ -44,7 +44,7 @@ std::vector<T> interpolation_coords(const fem::FiniteElement& element,
 {
   // Get geometry data and the element coordinate map
   const std::size_t gdim = geometry.dim();
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
+  auto x_dofmap = geometry.dofmap();
   std::span<const T> x_g = geometry.x();
 
   if (geometry.cmaps().size() > 1)
@@ -77,7 +77,7 @@ std::vector<T> interpolation_coords(const fem::FiniteElement& element,
   for (std::size_t c = 0; c < cells.size(); ++c)
   {
     // Get geometry data for current cell
-    auto x_dofs = x_dofmap.links(cells[c]);
+    auto x_dofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       std::copy_n(std::next(x_g.begin(), 3 * x_dofs[i]), gdim,
@@ -454,8 +454,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
     throw std::runtime_error("Multiple cmaps");
 
   const CoordinateElement& cmap = mesh->geometry().cmaps()[0];
-  const graph::AdjacencyList<std::int32_t>& x_dofmap
-      = mesh->geometry().dofmap();
+  auto x_dofmap = mesh->geometry().dofmap();
   const std::size_t num_dofs_g = cmap.dim();
   std::span<const U> x_g = mesh->geometry().x();
 
@@ -531,7 +530,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
   for (auto c : cells)
   {
     // Get cell geometry (coordinate dofs)
-    auto x_dofs = x_dofmap.links(c);
+    auto x_dofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
     for (std::size_t i = 0; i < num_dofs_g; ++i)
     {
       const int pos = 3 * x_dofs[i];
@@ -870,8 +869,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
     const CoordinateElement& cmap = mesh->geometry().cmaps()[0];
 
     // Get geometry data
-    const graph::AdjacencyList<std::int32_t>& x_dofmap
-        = mesh->geometry().dofmap();
+    auto x_dofmap = mesh->geometry().dofmap();
     const int num_dofs_g = cmap.dim();
     std::span<const U> x_g = mesh->geometry().x();
 
@@ -924,7 +922,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
     for (std::size_t c = 0; c < cells.size(); ++c)
     {
       const std::int32_t cell = cells[c];
-      auto x_dofs = x_dofmap.links(cell);
+      auto x_dofs = stdex::submdspan(x_dofmap, cell, stdex::full_extent);
       for (int i = 0; i < num_dofs_g; ++i)
       {
         const int pos = 3 * x_dofs[i];

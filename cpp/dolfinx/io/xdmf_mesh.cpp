@@ -15,6 +15,7 @@
 
 using namespace dolfinx;
 using namespace dolfinx::io;
+namespace stdex = std::experimental;
 
 //-----------------------------------------------------------------------------
 void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
@@ -62,7 +63,7 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   // Pack topology data
   std::vector<std::int64_t> topology_data;
 
-  const graph::AdjacencyList<std::int32_t>& cells_g = geometry.dofmap();
+  auto x_dofmap = geometry.dofmap();
   auto map_g = geometry.index_map();
   assert(map_g);
   const std::int64_t offset_g = map_g->local_range()[0];
@@ -76,11 +77,11 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   {
     for (std::int32_t c : entities)
     {
-      assert(c < cells_g.num_nodes());
-      auto nodes = cells_g.links(c);
-      for (std::size_t i = 0; i < nodes.size(); ++i)
+      assert(c < (std::int32_t)x_dofmap.extent(0));
+      auto xdofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
+      for (std::size_t i = 0; i < x_dofmap.extent(1); ++i)
       {
-        std::int64_t global_index = nodes[vtk_map[i]];
+        std::int64_t global_index = xdofs[vtk_map[i]];
         if (global_index < map_g->size_local())
           global_index += offset_g;
         else
@@ -121,10 +122,10 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
       // Get geometry dofs for the entity
       const std::vector<int>& entity_dofs_e = entity_dofs[local_cell_entity];
 
-      auto nodes = cells_g.links(c);
+      auto xdofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
       for (std::size_t i = 0; i < entity_dofs_e.size(); ++i)
       {
-        std::int64_t global_index = nodes[entity_dofs_e[vtk_map[i]]];
+        std::int64_t global_index = xdofs[entity_dofs_e[vtk_map[i]]];
         if (global_index < map_g->size_local())
           global_index += offset_g;
         else

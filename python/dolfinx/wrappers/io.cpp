@@ -77,9 +77,8 @@ void io(py::module& m)
             dolfinx::mesh::cell_entity_type(
                 mesh.topology()->cell_types().back(), entity_dim, 0),
             0);
-        std::array shape_e
-            = {entities_values.first.size() / num_vert_per_entity,
-               num_vert_per_entity};
+        std::array shape_e{entities_values.first.size() / num_vert_per_entity,
+                           num_vert_per_entity};
         return std::pair(as_pyarray(std::move(entities_values.first), shape_e),
                          as_pyarray(std::move(entities_values.second)));
       },
