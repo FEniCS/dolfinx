@@ -324,9 +324,9 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
   auto mesh = V0->mesh();
   assert(mesh);
 
-  std::shared_ptr<const FiniteElement<U>> element0 = V0->element();
+  auto element0 = V0->element();
   assert(element0);
-  std::shared_ptr<const FiniteElement<U>> element1 = V1->element();
+  auto element1 = V1->element();
   assert(element1);
 
   const int tdim = mesh->topology()->dim();
@@ -418,9 +418,9 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
   // Get elements
   auto V1 = u1.function_space();
   assert(V1);
-  std::shared_ptr<const FiniteElement<U>> element0 = V0->element();
+  auto element0 = V0->element();
   assert(element0);
-  std::shared_ptr<const FiniteElement<U>> element1 = V1->element();
+  auto element1 = V1->element();
   assert(element1);
 
   std::span<const std::uint32_t> cell_info;
@@ -651,8 +651,8 @@ void interpolate_nonmatching_meshes(
   const int tdim = mesh->topology()->dim();
   const auto cell_map = mesh->topology()->index_map(tdim);
 
-  std::shared_ptr<const FiniteElement<U>> element_u
-      = u.function_space()->element();
+  auto element_u = u.function_space()->element();
+  assert(element_u);
   const std::size_t value_size = element_u->value_size();
 
   if (std::get<0>(nmm_interpolation_data).empty())
@@ -723,8 +723,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
   using cmdspan4_t = stdex::mdspan<const U, stdex::dextents<std::size_t, 4>>;
   using mdspan2_t = stdex::mdspan<U, stdex::dextents<std::size_t, 2>>;
   using mdspan3_t = stdex::mdspan<U, stdex::dextents<std::size_t, 3>>;
-  std::shared_ptr<const FiniteElement<U>> element
-      = u.function_space()->element();
+  auto element = u.function_space()->element();
   assert(element);
   const int element_bs = element->block_size();
   if (int num_sub = element->num_sub_elements();

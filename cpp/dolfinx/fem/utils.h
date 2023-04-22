@@ -661,9 +661,9 @@ create_functionspace(std::shared_ptr<mesh::Mesh<T>> mesh,
 {
   // Create a DOLFINx element
   auto _e = std::make_shared<FiniteElement<T>>(e, bs);
+  assert(_e);
 
   // Create UFC subdofmaps and compute offset
-  assert(_e);
   const int num_sub_elements = _e->num_sub_elements();
   std::vector<ElementDofLayout> sub_doflayout;
   sub_doflayout.reserve(num_sub_elements);
@@ -845,8 +845,7 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
   // Read data from coefficient Function u
   std::span<const T> v = u.x()->array();
   const DofMap& dofmap = *u.function_space()->dofmap();
-  std::shared_ptr<const FiniteElement<U>> element
-      = u.function_space()->element();
+  auto element = u.function_space()->element();
   assert(element);
   int space_dim = element->space_dimension();
   const auto transformation

@@ -87,8 +87,7 @@ _extract_sub_element(const FiniteElement<T>& finite_element,
   }
 
   // Get sub system
-  std::shared_ptr<const FiniteElement<T>> sub_element
-      = finite_element.sub_elements()[component[0]];
+  auto sub_element = finite_element.sub_elements()[component[0]];
   assert(sub_element);
 
   // Return sub system if sub sub system should not be extracted
@@ -413,8 +412,7 @@ std::shared_ptr<const FiniteElement<T>>
 FiniteElement<T>::extract_sub_element(const std::vector<int>& component) const
 {
   // Recursively extract sub element
-  std::shared_ptr<const FiniteElement<T>> sub_finite_element
-      = _extract_sub_element(*this, component);
+  auto sub_finite_element = _extract_sub_element(*this, component);
   DLOG(INFO) << "Extracted finite element for sub-system: "
              << sub_finite_element->signature().c_str();
   return sub_finite_element;

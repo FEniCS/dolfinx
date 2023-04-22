@@ -57,9 +57,9 @@ void discrete_gradient(mesh::Topology& topology,
                            V1,
                        auto&& mat_set)
 {
-  const FiniteElement<U>& e0 = V0.first.get();
+  const auto& e0 = V0.first.get();
   const DofMap& dofmap0 = V0.second.get();
-  const FiniteElement<U>& e1 = V1.first.get();
+  const auto& e1 = V1.first.get();
   const DofMap& dofmap1 = V1.second.get();
 
   namespace stdex = std::experimental;

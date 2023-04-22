@@ -77,8 +77,7 @@ public:
     }
 
     // Extract sub-element
-    std::shared_ptr<const FiniteElement<T>> element
-        = this->_element->extract_sub_element(component);
+    auto element = this->_element->extract_sub_element(component);
 
     // Extract sub dofmap
     auto dofmap

@@ -411,8 +411,7 @@ public:
     std::span<const U> x_g = mesh->geometry().x();
 
     // Get element
-    std::shared_ptr<const FiniteElement<U>> element
-        = _function_space->element();
+    auto element = _function_space->element();
     assert(element);
     const int bs_element = element->block_size();
     const std::size_t reference_value_size
