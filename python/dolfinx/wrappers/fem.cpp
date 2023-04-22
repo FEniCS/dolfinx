@@ -88,16 +88,14 @@ void declare_objects(py::module& m, const std::string& type)
       .def(py::init(
                [](std::shared_ptr<const dolfinx::fem::Constant<T>> g,
                   const py::array_t<std::int32_t, py::array::c_style>& dofs,
-                  std::shared_ptr<const dolfinx::fem::FunctionSpace<double>>
-V)
+                  std::shared_ptr<const dolfinx::fem::FunctionSpace<double>> V)
                {
                  return dolfinx::fem::DirichletBC<T, double>(
                      g, std::vector(dofs.data(), dofs.data() + dofs.size()), V);
                }),
            py::arg("g").noconvert(), py::arg("dofs").noconvert(), py::arg("V"))
       .def(py::init(
-               [](std::shared_ptr<const dolfinx::fem::Function<T, double>
-> g,
+               [](std::shared_ptr<const dolfinx::fem::Function<T, double>> g,
                   const py::array_t<std::int32_t, py::array::c_style>& dofs)
                {
                  return dolfinx::fem::DirichletBC<T, double>(
@@ -106,12 +104,10 @@ V)
            py::arg("g").noconvert(), py::arg("dofs"))
       .def(
           py::init(
-              [](std::shared_ptr<const dolfinx::fem::Function<T, double>
-> g,
+              [](std::shared_ptr<const dolfinx::fem::Function<T, double>> g,
                  const std::array<py::array_t<std::int32_t, py::array::c_style>,
                                   2>& V_g_dofs,
-                 std::shared_ptr<const dolfinx::fem::FunctionSpace<double>>
-V)
+                 std::shared_ptr<const dolfinx::fem::FunctionSpace<double>>V)
               {
                 std::array dofs
                     = {std::vector(V_g_dofs[0].data(),
@@ -210,7 +206,7 @@ V)
                 *element, self.function_space()->mesh()->geometry(),
                 std::span(cells.data(), cells.size()));
 
-            std::array<std::size_t, 2> shape = {value_size, x.size() / 3};
+            std::array<std::size_t, 2> shape{value_size, x.size() / 3};
             std::vector<T> values(shape[0] * shape[1]);
             std::function<void(T*, int, int, const double*)> f
                 = reinterpret_cast<void (*)(T*, int, int, const double*)>(addr);
@@ -484,15 +480,14 @@ void declare_form(py::module& m, const std::string& type)
                                                py::cast(self));
             case dolfinx::fem::IntegralType::exterior_facet:
             {
-              std::array<py::ssize_t, 2> shape
-                  = {py::ssize_t(_d.size()) / 2, 2};
+              std::array<py::ssize_t, 2> shape{py::ssize_t(_d.size()) / 2, 2};
               return py::array_t<std::int32_t>(shape, _d.data(),
                                                py::cast(self));
             }
             case dolfinx::fem::IntegralType::interior_facet:
             {
-              std::array<py::ssize_t, 3> shape
-                  = {py::ssize_t(_d.size()) / 4, 2, 2};
+              std::array<py::ssize_t, 3> shape{py::ssize_t(_d.size()) / 4, 2,
+                                               2};
               return py::array_t<std::int32_t>(shape, _d.data(),
                                                py::cast(self));
             }
@@ -728,9 +723,20 @@ void fem(py::module& m)
       },
       py::arg("comm"), py::arg("topology"), py::arg("layout"),
       "Build and dofmap on a mesh.");
-  m.def("transpose_dofmap", &dolfinx::fem::transpose_dofmap,
-        "Build the index to (cell, local index) map from a "
-        "dofmap ((cell, local index ) -> index).");
+  m.def(
+      "transpose_dofmap",
+      [](py::array_t<std::int32_t, py::array::c_style> dofmap, int num_cells)
+      {
+        if (dofmap.ndim() != 2)
+          throw std::runtime_error("Dofmap data has wrong rank");
+        namespace stdex = std::experimental;
+        stdex::mdspan<const std::int32_t, stdex::dextents<std::size_t, 2>>
+            _dofmap(dofmap.data(), dofmap.shape(0), dofmap.shape(1));
+        return dolfinx::fem::transpose_dofmap(_dofmap, num_cells);
+      },
+      py::return_value_policy::reference_internal,
+      "Build the index to (cell, local index) map from a dofmap ((cell, local "
+      "index) -> index).");
   m.def(
       "compute_integration_domains",
       [](dolfinx::fem::IntegralType type,
@@ -874,9 +880,16 @@ void fem(py::module& m)
   // dolfinx::fem::DofMap
   py::class_<dolfinx::fem::DofMap, std::shared_ptr<dolfinx::fem::DofMap>>(
       m, "DofMap", "DofMap object")
-      .def(py::init<const dolfinx::fem::ElementDofLayout&,
-                    std::shared_ptr<const dolfinx::common::IndexMap>, int,
-                    dolfinx::graph::AdjacencyList<std::int32_t>&, int>(),
+      .def(py::init(
+               [](const dolfinx::fem::ElementDofLayout& element,
+                  std::shared_ptr<const dolfinx::common::IndexMap> index_map,
+                  int index_map_bs,
+                  const dolfinx::graph::AdjacencyList<std::int32_t>& dofmap,
+                  int bs)
+               {
+                 return dolfinx::fem::DofMap(element, index_map, index_map_bs,
+                                             dofmap.array(), bs);
+               }),
            py::arg("element_dof_layout"), py::arg("index_map"),
            py::arg("index_map_bs"), py::arg("dofmap"), py::arg("bs"))
       .def_readonly("index_map", &dolfinx::fem::DofMap::index_map)
@@ -894,8 +907,16 @@ void fem(py::module& m)
           },
           py::arg("cell"))
       .def_property_readonly("bs", &dolfinx::fem::DofMap::bs)
-      .def("list", &dolfinx::fem::DofMap::list,
-           py::return_value_policy::reference_internal);
+      .def(
+          "map",
+          [](const dolfinx::fem::DofMap& self)
+          {
+            auto dofs = self.map();
+            std::array shape{dofs.extent(0), dofs.extent(1)};
+            return py::array_t<std::int32_t>(shape, dofs.data_handle(),
+                                             py::cast(self));
+          },
+          py::return_value_policy::reference_internal);
 
   py::enum_<dolfinx::fem::IntegralType>(m, "IntegralType")
       .value("cell", dolfinx::fem::IntegralType::cell)
@@ -945,7 +966,7 @@ void fem(py::module& m)
 
         auto _marker = [&marker](auto x)
         {
-          std::array<std::size_t, 2> shape = {x.extent(0), x.extent(1)};
+          std::array shape{x.extent(0), x.extent(1)};
           py::array_t<double> x_view(shape, x.data_handle(), py::none());
           py::array_t<bool> marked = marker(x_view);
           return std::vector<std::int8_t>(marked.data(),
@@ -967,7 +988,7 @@ void fem(py::module& m)
       {
         auto _marker = [&marker](auto x)
         {
-          std::array<std::size_t, 2> shape = {x.extent(0), x.extent(1)};
+          std::array shape{x.extent(0), x.extent(1)};
           py::array_t<double> x_view(shape, x.data_handle(), py::none());
           py::array_t<bool> marked = marker(x_view);
           return std::vector<std::int8_t>(marked.data(),
@@ -1015,7 +1036,7 @@ void fem(py::module& m)
            [](const dolfinx::fem::FunctionSpace<double>& self)
            {
              std::vector x = self.tabulate_dof_coordinates(false);
-             std::vector<std::size_t> shape = {x.size() / 3, 3};
+             std::vector<std::size_t> shape{x.size() / 3, 3};
              return as_pyarray(std::move(x), shape);
            });
 }

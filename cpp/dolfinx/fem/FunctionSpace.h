@@ -15,7 +15,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
@@ -25,7 +24,6 @@
 
 namespace dolfinx::fem
 {
-class DofMap;
 
 /// @brief This class represents a finite element function space defined
 /// by a mesh, a finite element, and a local-to-global map of the
@@ -196,8 +194,8 @@ public:
     assert(_dofmap);
     std::shared_ptr<const common::IndexMap> index_map = _dofmap->index_map;
     assert(index_map);
-    int index_map_bs = _dofmap->index_map_bs();
-    int dofmap_bs = _dofmap->bs();
+    const int index_map_bs = _dofmap->index_map_bs();
+    const int dofmap_bs = _dofmap->bs();
 
     const int element_block_size = _element->block_size();
     const std::size_t scalar_dofs
@@ -216,14 +214,11 @@ public:
 
     // Get coordinate map
     if (_mesh->geometry().cmaps().size() > 1)
-    {
       throw std::runtime_error("Mixed topology not supported");
-    }
     const CoordinateElement<T>& cmap = _mesh->geometry().cmaps()[0];
 
     // Prepare cell geometry
-    const graph::AdjacencyList<std::int32_t>& x_dofmap
-        = _mesh->geometry().dofmap();
+    auto x_dofmap = _mesh->geometry().dofmap();
     const std::size_t num_dofs_g = cmap.dim();
     std::span<const T> x_g = _mesh->geometry().x();
 
@@ -269,7 +264,7 @@ public:
     for (int c = 0; c < num_cells; ++c)
     {
       // Extract cell geometry
-      auto x_dofs = x_dofmap.links(c);
+      auto x_dofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
       for (std::size_t i = 0; i < x_dofs.size(); ++i)
         for (std::size_t j = 0; j < gdim; ++j)
           coordinate_dofs(i, j) = x_g[3 * x_dofs[i] + j];

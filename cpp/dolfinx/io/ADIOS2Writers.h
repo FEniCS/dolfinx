@@ -10,6 +10,7 @@
 
 #include "vtk_utils.h"
 #include <adios2.h>
+#include <basix/mdspan.hpp>
 #include <cassert>
 #include <complex>
 #include <concepts>
@@ -250,6 +251,8 @@ void initialize_function_attributes(adios2::IO& io,
 template <typename T, std::floating_point U>
 std::vector<T> pack_function_data(const fem::Function<T, U>& u)
 {
+  namespace stdex = std::experimental;
+
   auto V = u.function_space();
   assert(V);
   auto dofmap = V->dofmap();
@@ -279,14 +282,14 @@ std::vector<T> pack_function_data(const fem::Function<T, U>& u)
   std::uint32_t num_components = std::pow(3, rank);
 
   // Get dof array and pack into array (padded where appropriate)
-  const graph::AdjacencyList<std::int32_t>& dofmap_x = geometry.dofmap();
-  int bs = dofmap->bs();
+  auto dofmap_x = geometry.dofmap();
+  const int bs = dofmap->bs();
   const auto& u_data = u.x()->array();
   std::vector<T> data(num_vertices * num_components, 0);
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     auto dofs = dofmap->cell_dofs(c);
-    auto dofs_x = dofmap_x.links(c);
+    auto dofs_x = stdex::submdspan(dofmap_x, c, stdex::full_extent);
     assert(dofs.size() == dofs_x.size());
     for (std::size_t i = 0; i < dofs.size(); ++i)
       for (int j = 0; j < bs; ++j)
@@ -323,7 +326,14 @@ void write_data(adios2::IO& io, adios2::Engine& engine,
   // can work directly with the dof array.
   std::span<const T> data;
   std::vector<T> _data;
-  if (mesh->geometry().dofmap() == dofmap->list() and !need_padding)
+  auto eq_check = [](auto x, auto y) -> bool
+  {
+    return x.extents() == y.extents()
+           and std::equal(x.data_handle(), x.data_handle() + x.size(),
+                          y.data_handle());
+  };
+
+  if (!need_padding and eq_check(mesh->geometry().dofmap(), dofmap->map()))
     data = u.x()->array();
   else
   {

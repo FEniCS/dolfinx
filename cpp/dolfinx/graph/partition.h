@@ -112,8 +112,8 @@ compute_ghost_indices(MPI_Comm comm,
 /// the local adjacency list indices would yield the global adjacency
 /// list
 std::vector<std::int64_t>
-compute_local_to_global_links(const graph::AdjacencyList<std::int64_t>& global,
-                              const graph::AdjacencyList<std::int32_t>& local);
+compute_local_to_global(std::span<const std::int64_t> global,
+                        std::span<const std::int32_t> local);
 
 /// @brief Compute a local0-to-local1 map from two local-to-global maps
 /// with common global indices.

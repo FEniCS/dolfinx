@@ -36,6 +36,8 @@ std::vector<T> shortest_vector(const mesh::Mesh<T>& mesh, int dim,
                                std::span<const std::int32_t> entities,
                                std::span<const T> points)
 {
+  namespace stdex = std::experimental;
+
   const int tdim = mesh.topology()->dim();
   const mesh::Geometry<T>& geometry = mesh.geometry();
 
@@ -45,13 +47,13 @@ std::vector<T> shortest_vector(const mesh::Mesh<T>& mesh, int dim,
   }
 
   std::span<const T> geom_dofs = geometry.x();
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
+  auto x_dofmap = geometry.dofmap();
   std::vector<T> shortest_vectors(3 * entities.size());
   if (dim == tdim)
   {
     for (std::size_t e = 0; e < entities.size(); e++)
     {
-      auto dofs = x_dofmap.links(entities[e]);
+      auto dofs = stdex::submdspan(x_dofmap, entities[e], stdex::full_extent);
       std::vector<T> nodes(3 * dofs.size());
       for (std::size_t i = 0; i < dofs.size(); ++i)
       {
@@ -88,7 +90,7 @@ std::vector<T> shortest_vector(const mesh::Mesh<T>& mesh, int dim,
       const int local_cell_entity = std::distance(cell_entities.begin(), it0);
 
       // Tabulate geometry dofs for the entity
-      auto dofs = x_dofmap.links(c);
+      auto dofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
       const std::vector<int> entity_dofs
           = geometry.cmaps()[0].create_dof_layout().entity_closure_dofs(
               dim, local_cell_entity);
@@ -494,6 +496,8 @@ std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
                                           const BoundingBoxTree<T>& tree,
                                           const std::array<T, 3>& point)
 {
+  namespace stdex = std::experimental;
+
   // Compute colliding bounding boxes(cell candidates)
   std::vector<std::int32_t> cell_candidates;
   impl::_compute_collisions_point<T>(tree, point, cell_candidates);
@@ -510,12 +514,12 @@ std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
     constexpr T eps2 = 1e-20;
     const mesh::Geometry<T>& geometry = mesh.geometry();
     std::span<const T> geom_dofs = geometry.x();
-    const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-    const std::size_t num_nodes = geometry.cmaps()[0].dim();
+    auto x_dofmap = geometry.dofmap();
+    const std::size_t num_nodes = x_dofmap.extent(1);
     std::vector<T> coordinate_dofs(num_nodes * 3);
     for (auto cell : cell_candidates)
     {
-      auto dofs = x_dofmap.links(cell);
+      auto dofs = stdex::submdspan(x_dofmap, cell, stdex::full_extent);
       for (std::size_t i = 0; i < num_nodes; ++i)
       {
         std::copy(std::next(geom_dofs.begin(), 3 * dofs[i]),

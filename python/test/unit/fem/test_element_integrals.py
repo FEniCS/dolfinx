@@ -294,9 +294,9 @@ def test_plus_minus_simple_vector(cell_type, pm):
         # For each cell
         for cell in range(2):
             # For each point in cell 0 in the first mesh
-            for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0.links(cell)):
+            for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0[cell]):
                 # Find the point in the cell 0 in the second mesh
-                for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1.links(cell)):
+                for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1[cell]):
                     if np.allclose(spaces[0].mesh.geometry.x[point0], space.mesh.geometry.x[point1]):
                         break
                 else:
@@ -349,9 +349,9 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
         # For each cell
         for cell in range(2):
             # For each point in cell 0 in the first mesh
-            for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0.links(cell)):
+            for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0[cell]):
                 # Find the point in the cell 0 in the second mesh
-                for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1.links(cell)):
+                for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1[cell]):
                     if np.allclose(spaces[0].mesh.geometry.x[point0], space.mesh.geometry.x[point1]):
                         break
                 else:
@@ -401,9 +401,9 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
         # For each cell
         for cell in range(2):
             # For each point in cell 0 in the first mesh
-            for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0.links(cell)):
+            for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0[cell]):
                 # Find the point in the cell 0 in the second mesh
-                for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1.links(cell)):
+                for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1[cell]):
                     if np.allclose(spaces[0].mesh.geometry.x[point0], space.mesh.geometry.x[point1]):
                         break
                 else:

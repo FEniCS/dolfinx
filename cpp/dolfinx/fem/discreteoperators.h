@@ -198,8 +198,7 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   assert(cmaps.size() == 1);
 
   const CoordinateElement<U>& cmap = cmaps.back();
-  const graph::AdjacencyList<std::int32_t>& x_dofmap
-      = mesh->geometry().dofmap();
+  auto x_dofmap = mesh->geometry().dofmap();
   const std::size_t num_dofs_g = cmap.dim();
   std::span<const U> x_g = mesh->geometry().x();
 
@@ -287,7 +286,7 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     // Get cell geometry (coordinate dofs)
-    auto x_dofs = x_dofmap.links(c);
+    auto x_dofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       for (std::size_t j = 0; j < gdim; ++j)

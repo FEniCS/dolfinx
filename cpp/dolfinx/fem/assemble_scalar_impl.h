@@ -23,8 +23,7 @@ namespace dolfinx::fem::impl
 
 /// Assemble functional over cells
 template <typename T>
-T assemble_cells(const graph::AdjacencyList<std::int32_t>& x_dofmap,
-                 std::span<const scalar_value_type_t<T>> x,
+T assemble_cells(mdspan2_t x_dofmap, std::span<const scalar_value_type_t<T>> x,
                  std::span<const std::int32_t> cells, FEkernel<T> auto fn,
                  std::span<const T> constants, std::span<const T> coeffs,
                  int cstride)
@@ -33,7 +32,8 @@ T assemble_cells(const graph::AdjacencyList<std::int32_t>& x_dofmap,
   if (cells.empty())
     return value;
 
-  const std::size_t num_dofs_g = x_dofmap.num_links(0);
+  // Prepare cell geometry
+  const std::size_t num_dofs_g = x_dofmap.extent(1);
 
   // Create data structures used in assembly
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * num_dofs_g);
@@ -44,7 +44,7 @@ T assemble_cells(const graph::AdjacencyList<std::int32_t>& x_dofmap,
     std::int32_t c = cells[index];
 
     // Get cell coordinates/geometry
-    auto x_dofs = x_dofmap.links(c);
+    auto x_dofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
@@ -61,7 +61,7 @@ T assemble_cells(const graph::AdjacencyList<std::int32_t>& x_dofmap,
 
 /// Execute kernel over exterior facets and accumulate result
 template <typename T>
-T assemble_exterior_facets(const graph::AdjacencyList<std::int32_t>& x_dofmap,
+T assemble_exterior_facets(mdspan2_t x_dofmap,
                            std::span<const scalar_value_type_t<T>> x,
                            std::span<const std::int32_t> facets,
                            FEkernel<T> auto fn, std::span<const T> constants,
@@ -71,7 +71,8 @@ T assemble_exterior_facets(const graph::AdjacencyList<std::int32_t>& x_dofmap,
   if (facets.empty())
     return value;
 
-  const std::size_t num_dofs_g = x_dofmap.num_links(0);
+  // Prepare cell geometry
+  const std::size_t num_dofs_g = x_dofmap.extent(1);
 
   // Create data structures used in assembly
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * num_dofs_g);
@@ -84,7 +85,7 @@ T assemble_exterior_facets(const graph::AdjacencyList<std::int32_t>& x_dofmap,
     std::int32_t local_facet = facets[index + 1];
 
     // Get cell coordinates/geometry
-    auto x_dofs = x_dofmap.links(cell);
+    auto x_dofs = stdex::submdspan(x_dofmap, cell, stdex::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
@@ -101,7 +102,7 @@ T assemble_exterior_facets(const graph::AdjacencyList<std::int32_t>& x_dofmap,
 
 /// Assemble functional over interior facets
 template <typename T>
-T assemble_interior_facets(const graph::AdjacencyList<std::int32_t>& x_dofmap,
+T assemble_interior_facets(mdspan2_t x_dofmap,
                            std::span<const scalar_value_type_t<T>> x,
                            int num_cell_facets,
                            std::span<const std::int32_t> facets,
@@ -114,7 +115,8 @@ T assemble_interior_facets(const graph::AdjacencyList<std::int32_t>& x_dofmap,
   if (facets.empty())
     return value;
 
-  const std::size_t num_dofs_g = x_dofmap.num_links(0);
+  // Prepare cell geometry
+  const std::size_t num_dofs_g = x_dofmap.extent(1);
 
   // Create data structures used in assembly
   using X = scalar_value_type_t<T>;
@@ -134,13 +136,13 @@ T assemble_interior_facets(const graph::AdjacencyList<std::int32_t>& x_dofmap,
         = {facets[index + 1], facets[index + 3]};
 
     // Get cell geometry
-    auto x_dofs0 = x_dofmap.links(cells[0]);
+    auto x_dofs0 = stdex::submdspan(x_dofmap, cells[0], stdex::full_extent);
     for (std::size_t i = 0; i < x_dofs0.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs0[i]), 3,
                   std::next(cdofs0.begin(), 3 * i));
     }
-    auto x_dofs1 = x_dofmap.links(cells[1]);
+    auto x_dofs1 = stdex::submdspan(x_dofmap, cells[1], stdex::full_extent);
     for (std::size_t i = 0; i < x_dofs1.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs1[i]), 3,
@@ -159,8 +161,7 @@ T assemble_interior_facets(const graph::AdjacencyList<std::int32_t>& x_dofmap,
 /// Assemble functional into an scalar with provided mesh geometry.
 template <typename T, std::floating_point U>
 T assemble_scalar(
-    const fem::Form<T, U>& M,
-    const graph::AdjacencyList<std::int32_t>& x_dofmap,
+    const fem::Form<T, U>& M, mdspan2_t x_dofmap,
     std::span<const scalar_value_type_t<T>> x, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)

@@ -123,8 +123,12 @@ fem::DofMap fem::create_dofmap(
     topology.create_entity_permutations();
     const std::vector<std::uint32_t>& cell_info
         = topology.get_cell_permutation_info();
+    int dim = layout.num_dofs();
     for (std::int32_t cell = 0; cell < num_cells; ++cell)
-      unpermute_dofs(dofmap.links(cell), cell_info[cell]);
+    {
+      std::span<std::int32_t> dofs(dofmap.data() + cell * dim, dim);
+      unpermute_dofs(dofs, cell_info[cell]);
+    }
   }
 
   return DofMap(layout, index_map, bs, std::move(dofmap), bs);
