@@ -78,7 +78,7 @@ void impl_fides::initialize_mesh_attributes(adios2::IO& io, mesh::CellType type)
   impl_adios2::define_attribute<std::string>(io, "Fides_Data_Model",
                                              "unstructured_single");
 
-  // Define FIDES attributes pointing to ADIOS2 Variables for geometry
+  // Define Fides attributes pointing to ADIOS2 Variables for geometry
   // and topology
   impl_adios2::define_attribute<std::string>(io, "Fides_Coordinates_Variable",
                                              "points");
