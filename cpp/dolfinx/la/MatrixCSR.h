@@ -309,7 +309,7 @@ public:
       std::int32_t local_col = ghost_index_array[i + 1] - local_range[1][0];
       if (local_col < 0 or local_col >= local_size[1])
       {
-        const auto it = std::lower_bound(
+        auto it = std::lower_bound(
             global_to_local.begin(), global_to_local.end(),
             std::pair(ghost_index_array[i + 1], -1),
             [](auto& a, auto& b) { return a.first < b.first; });

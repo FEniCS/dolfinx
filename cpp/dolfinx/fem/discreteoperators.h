@@ -57,9 +57,9 @@ void discrete_gradient(mesh::Topology& topology,
                            V1,
                        auto&& mat_set)
 {
-  const auto& e0 = V0.first.get();
+  auto& e0 = V0.first.get();
   const DofMap& dofmap0 = V0.second.get();
-  const auto& e1 = V1.first.get();
+  auto& e1 = V1.first.get();
   const DofMap& dofmap1 = V1.second.get();
 
   namespace stdex = std::experimental;
@@ -180,9 +180,9 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   // Get block sizes and dof transformation operators
   const int bs0 = e0->block_size();
   const int bs1 = e1->block_size();
-  const auto apply_dof_transformation0
+  auto apply_dof_transformation0
       = e0->template get_dof_transformation_function<U>(false, false, false);
-  const auto apply_inverse_dof_transform1
+  auto apply_inverse_dof_transform1
       = e1->template get_dof_transformation_function<T>(true, true, false);
 
   // Get sizes of elements

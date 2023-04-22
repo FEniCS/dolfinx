@@ -139,7 +139,7 @@ public:
     // Prepare coefficients and constants
     const auto [coeffs, cstride] = pack_coefficients(*this, cells);
     const std::vector<T> constant_data = pack_constants(*this);
-    const auto& fn = this->get_tabulate_expression();
+    auto fn = this->get_tabulate_expression();
 
     // Prepare cell geometry
     assert(_mesh);

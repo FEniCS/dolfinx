@@ -696,7 +696,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
         "Entity-to-vertex connectivity has not been computed.");
   }
 
-  const auto c_to_v = topology->connectivity(tdim, 0);
+  auto c_to_v = topology->connectivity(tdim, 0);
   if (!e_to_v)
   {
     throw std::runtime_error(

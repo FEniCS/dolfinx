@@ -440,10 +440,10 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
   // Get block sizes and dof transformation operators
   const int bs0 = element0->block_size();
   const int bs1 = element1->block_size();
-  const auto apply_dof_transformation0
+  auto apply_dof_transformation0
       = element0->template get_dof_transformation_function<U>(false, false,
                                                               false);
-  const auto apply_inverse_dof_transform1
+  auto apply_inverse_dof_transform1
       = element1->template get_dof_transformation_function<T>(true, true,
                                                               false);
 
@@ -649,7 +649,7 @@ void interpolate_nonmatching_meshes(
 
   MPI_Comm comm = mesh->comm();
   const int tdim = mesh->topology()->dim();
-  const auto cell_map = mesh->topology()->index_map(tdim);
+  auto cell_map = mesh->topology()->index_map(tdim);
 
   auto element_u = u.function_space()->element();
   assert(element_u);

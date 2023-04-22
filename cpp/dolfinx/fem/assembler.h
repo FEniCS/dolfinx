@@ -413,7 +413,7 @@ void set_diagonal(
     const std::vector<std::shared_ptr<const DirichletBC<T, U>>>& bcs,
     T diagonal = 1.0)
 {
-  for (const auto& bc : bcs)
+  for (auto& bc : bcs)
   {
     assert(bc);
     if (V.contains(*bc->function_space()))
@@ -441,7 +441,7 @@ void set_bc(std::span<T> b,
 {
   if (b.size() > x0.size())
     throw std::runtime_error("Size mismatch between b and x0 vectors.");
-  for (const auto& bc : bcs)
+  for (auto& bc : bcs)
   {
     assert(bc);
     bc->set(b, x0, scale);
@@ -456,7 +456,7 @@ void set_bc(std::span<T> b,
             const std::vector<std::shared_ptr<const DirichletBC<T, U>>>& bcs,
             T scale = 1)
 {
-  for (const auto& bc : bcs)
+  for (auto& bc : bcs)
   {
     assert(bc);
     bc->set(b, scale);

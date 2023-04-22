@@ -284,7 +284,7 @@ std::vector<T> pack_function_data(const fem::Function<T, U>& u)
   // Get dof array and pack into array (padded where appropriate)
   auto dofmap_x = geometry.dofmap();
   const int bs = dofmap->bs();
-  const auto& u_data = u.x()->array();
+  auto& u_data = u.x()->array();
   std::vector<T> data(num_vertices * num_components, 0);
   for (std::int32_t c = 0; c < num_cells; ++c)
   {

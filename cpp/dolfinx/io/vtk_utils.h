@@ -98,7 +98,7 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
     mesh->topology_mutable()->create_entity_permutations();
     cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
-  const auto apply_dof_transformation
+  auto apply_dof_transformation
       = element->template get_dof_transformation_function<T>();
 
   namespace stdex = std::experimental;
