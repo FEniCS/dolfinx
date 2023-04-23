@@ -668,7 +668,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points)
   // cells that could collide with the points
   constexpr T padding = 1.0e-4;
   const int tdim = mesh.topology()->dim();
-  const auto cell_map = mesh.topology()->index_map(tdim);
+  auto cell_map = mesh.topology()->index_map(tdim);
   const std::int32_t num_cells = cell_map->size_local();
   // NOTE: Should we send the cells in as input?
   std::vector<std::int32_t> cells(num_cells, 0);
@@ -705,7 +705,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points)
   // Count the number of points to send per neighbor process
   std::vector<std::int32_t> send_sizes(out_ranks.size());
   for (std::size_t i = 0; i < points.size() / 3; ++i)
-    for (const auto& p : collisions.links(i))
+    for (auto p : collisions.links(i))
       send_sizes[rank_to_neighbor[p]] += 3;
 
   // Compute receive sizes
@@ -728,7 +728,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points)
   std::vector<std::int32_t> unpack_map(send_offsets.back() / 3);
   for (std::size_t i = 0; i < points.size(); i += 3)
   {
-    for (const auto& p : collisions.links(i / 3))
+    for (auto p : collisions.links(i / 3))
     {
       int neighbor = rank_to_neighbor[p];
       int pos = send_offsets[neighbor] + counter[neighbor];
@@ -816,7 +816,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points)
   std::fill(counter.begin(), counter.end(), 0);
   for (std::size_t i = 0; i < points.size() / 3; ++i)
   {
-    for (const auto& p : collisions.links(i))
+    for (auto p : collisions.links(i))
     {
       int neighbor = rank_to_neighbor[p];
       send_owners[send_offsets[neighbor] + counter[neighbor]++]

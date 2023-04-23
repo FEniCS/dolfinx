@@ -24,8 +24,6 @@
 
 namespace dolfinx::fem
 {
-class DofMap;
-class FiniteElement;
 
 /// @brief This class represents a finite element function space defined
 /// by a mesh, a finite element, and a local-to-global map of the
@@ -39,7 +37,7 @@ public:
   /// @param[in] element The element
   /// @param[in] dofmap The dofmap
   FunctionSpace(std::shared_ptr<const mesh::Mesh<T>> mesh,
-                std::shared_ptr<const FiniteElement> element,
+                std::shared_ptr<const FiniteElement<T>> element,
                 std::shared_ptr<const DofMap> dofmap)
       : _mesh(mesh), _element(element), _dofmap(dofmap),
         _id(boost::uuids::random_generator()()), _root_space_id(_id)
@@ -79,8 +77,7 @@ public:
     }
 
     // Extract sub-element
-    std::shared_ptr<const FiniteElement> element
-        = this->_element->extract_sub_element(component);
+    auto element = this->_element->extract_sub_element(component);
 
     // Extract sub dofmap
     auto dofmap
@@ -217,7 +214,7 @@ public:
     // Get coordinate map
     if (_mesh->geometry().cmaps().size() > 1)
       throw std::runtime_error("Mixed topology not supported");
-    const CoordinateElement& cmap = _mesh->geometry().cmaps()[0];
+    const CoordinateElement<T>& cmap = _mesh->geometry().cmaps()[0];
 
     // Prepare cell geometry
     auto x_dofmap = _mesh->geometry().dofmap();
@@ -252,11 +249,11 @@ public:
     }
 
     auto apply_dof_transformation
-        = _element->get_dof_transformation_function<double>();
+        = _element->template get_dof_transformation_function<T>();
 
     const std::array<std::size_t, 4> phi_shape
         = cmap.tabulate_shape(0, Xshape[0]);
-    std::vector<double> phi_b(
+    std::vector<T> phi_b(
         std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
     cmdspan4_t phi_full(phi_b.data(), phi_shape);
     cmap.tabulate(0, X, Xshape, phi_b);
@@ -301,7 +298,7 @@ public:
   std::shared_ptr<const mesh::Mesh<T>> mesh() const { return _mesh; }
 
   /// The finite element
-  std::shared_ptr<const FiniteElement> element() const { return _element; }
+  std::shared_ptr<const FiniteElement<T>> element() const { return _element; }
 
   /// The dofmap
   std::shared_ptr<const DofMap> dofmap() const { return _dofmap; }
@@ -311,7 +308,7 @@ private:
   std::shared_ptr<const mesh::Mesh<T>> _mesh;
 
   // The finite element
-  std::shared_ptr<const FiniteElement> _element;
+  std::shared_ptr<const FiniteElement<T>> _element;
 
   // The dofmap
   std::shared_ptr<const DofMap> _dofmap;

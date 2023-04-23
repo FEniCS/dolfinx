@@ -125,7 +125,7 @@ compute_point_values(const fem::Function<T, double>& u)
 //-----------------------------------------------------------------------------
 // Get data width - normally the same as u.value_size(), but expand for
 // 2D vector/tensor because XDMF presents everything as 3D
-std::int64_t get_padded_width(const fem::FiniteElement& e)
+std::int64_t get_padded_width(const fem::FiniteElement<double>& e)
 {
   const int width = e.value_size();
   const int rank = e.value_shape().size();
@@ -183,7 +183,7 @@ std::vector<Scalar>
 _get_cell_data_values(const fem::Function<Scalar, double>& u)
 {
   assert(u.function_space()->dofmap());
-  const auto mesh = u.function_space()->mesh();
+  auto mesh = u.function_space()->mesh();
   const int value_size = u.function_space()->element()->value_size();
   const int value_rank = u.function_space()->element()->value_shape().size();
 
@@ -196,7 +196,7 @@ _get_cell_data_values(const fem::Function<Scalar, double>& u)
   // Build lists of dofs and create map
   std::vector<std::int32_t> dof_set;
   dof_set.reserve(local_size);
-  const auto dofmap = u.function_space()->dofmap();
+  auto dofmap = u.function_space()->dofmap();
   const int ndofs = dofmap->element_dof_layout().num_dofs();
   const int bs = dofmap->bs();
   assert(ndofs * bs == value_size);

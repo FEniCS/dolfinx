@@ -244,18 +244,18 @@ ElementDofLayout create_element_dof_layout(const ufcx_dofmap& dofmap,
 
 /// @brief Create a dof map on mesh
 /// @param[in] comm MPI communicator
-/// @param[in] layout The dof layout on an element
-/// @param[in] topology The mesh topology
-/// @param[in] element The finite element
-/// @param[in] reorder_fn The graph reordering function called on the
-/// dofmap
+/// @param[in] layout Dof layout on an element
+/// @param[in] topology Mesh topology
+/// @param[in] unpermute_dofs Function to un-permute dofs. `nullptr`
+/// when transformation is not required.
+/// @param[in] reorder_fn Graph reordering function called on the dofmap
 /// @return A new dof map
-DofMap
-create_dofmap(MPI_Comm comm, const ElementDofLayout& layout,
-              mesh::Topology& topology,
-              const std::function<std::vector<int>(
-                  const graph::AdjacencyList<std::int32_t>&)>& reorder_fn,
-              const FiniteElement& element);
+DofMap create_dofmap(
+    MPI_Comm comm, const ElementDofLayout& layout, mesh::Topology& topology,
+    std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
+        unpermute_dofs,
+    std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
+        reorder_fn);
 
 /// Get the name of each coefficient in a UFC form
 /// @param[in] ufcx_form The UFC form
@@ -654,16 +654,16 @@ Form<T, U> create_form(
 template <std::floating_point T>
 FunctionSpace<T>
 create_functionspace(std::shared_ptr<mesh::Mesh<T>> mesh,
-                     const basix::FiniteElement<double>& e, int bs,
+                     const basix::FiniteElement<T>& e, int bs,
                      const std::function<std::vector<int>(
                          const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
                      = nullptr)
 {
   // Create a DOLFINx element
-  auto _e = std::make_shared<FiniteElement>(e, bs);
+  auto _e = std::make_shared<FiniteElement<T>>(e, bs);
+  assert(_e);
 
   // Create UFC subdofmaps and compute offset
-  assert(_e);
   const int num_sub_elements = _e->num_sub_elements();
   std::vector<ElementDofLayout> sub_doflayout;
   sub_doflayout.reserve(num_sub_elements);
@@ -680,11 +680,14 @@ create_functionspace(std::shared_ptr<mesh::Mesh<T>> mesh,
   // Create a dofmap
   ElementDofLayout layout(bs, e.entity_dofs(), e.entity_closure_dofs(), {},
                           sub_doflayout);
+  std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
+      unpermute_dofs = nullptr;
+  if (_e->needs_dof_permutations())
+    unpermute_dofs = _e->get_dof_permutation_function(true, true);
   assert(mesh);
   assert(mesh->topology());
-  auto dofmap = std::make_shared<const DofMap>(
-      create_dofmap(mesh->comm(), layout, *mesh->topology(), reorder_fn, *_e));
-
+  auto dofmap = std::make_shared<const DofMap>(create_dofmap(
+      mesh->comm(), layout, *mesh->topology(), unpermute_dofs, reorder_fn));
   return FunctionSpace(mesh, _e, dofmap);
 }
 
@@ -732,17 +735,22 @@ create_functionspace(ufcx_function_space* (*fptr)(const char*),
     throw std::runtime_error("UFL mesh and CoordinateElement do not match.");
   }
 
-  auto element = std::make_shared<FiniteElement>(*ufcx_element);
+  auto element = std::make_shared<FiniteElement<T>>(*ufcx_element);
   assert(element);
   ufcx_dofmap* ufcx_map = space->dofmap;
   assert(ufcx_map);
   assert(mesh->topology());
   ElementDofLayout layout
       = create_element_dof_layout(*ufcx_map, mesh->topology()->cell_types()[0]);
-  return FunctionSpace(
-      mesh, element,
-      std::make_shared<DofMap>(create_dofmap(
-          mesh->comm(), layout, *mesh->topology(), reorder_fn, *element)));
+
+  std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
+      unpermute_dofs = nullptr;
+  if (element->needs_dof_permutations())
+    unpermute_dofs = element->get_dof_permutation_function(true, true);
+  return FunctionSpace(mesh, element,
+                       std::make_shared<DofMap>(create_dofmap(
+                           mesh->comm(), layout, *mesh->topology(),
+                           unpermute_dofs, reorder_fn)));
 }
 
 /// @private
@@ -756,8 +764,7 @@ std::span<const std::uint32_t> get_cell_orientation_info(
   bool needs_dof_transformations = false;
   for (auto coeff : coefficients)
   {
-    std::shared_ptr<const FiniteElement> element
-        = coeff->function_space()->element();
+    auto element = coeff->function_space()->element();
     if (element->needs_dof_transformations())
     {
       needs_dof_transformations = true;
@@ -838,11 +845,11 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
   // Read data from coefficient Function u
   std::span<const T> v = u.x()->array();
   const DofMap& dofmap = *u.function_space()->dofmap();
-  std::shared_ptr<const FiniteElement> element = u.function_space()->element();
+  auto element = u.function_space()->element();
   assert(element);
   int space_dim = element->space_dimension();
-  const auto transformation
-      = element->get_dof_transformation_function<T>(false, true);
+  auto transformation
+      = element->template get_dof_transformation_function<T>(false, true);
   const int bs = dofmap.bs();
   switch (bs)
   {
@@ -1038,7 +1045,7 @@ Expression<T, U> create_expression(
                              "function space was provided.");
   }
 
-  std::span<const double> X(e.points, e.num_points * e.topological_dimension);
+  std::span<const U> X(e.points, e.num_points * e.topological_dimension);
   std::array<std::size_t, 2> Xshape
       = {static_cast<std::size_t>(e.num_points),
          static_cast<std::size_t>(e.topological_dimension)};

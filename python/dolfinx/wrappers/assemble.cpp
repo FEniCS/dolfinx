@@ -205,7 +205,7 @@ void declare_assembly_functions(py::module& m)
          const std::vector<py::array_t<T, py::array::c_style>>& x0, T scale)
       {
         std::vector<std::span<const T>> _x0;
-        for (const auto& x : x0)
+        for (auto x : x0)
           _x0.emplace_back(x.data(), x.size());
 
         std::vector<std::span<const T>> _constants;

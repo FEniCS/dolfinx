@@ -696,7 +696,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
         "Entity-to-vertex connectivity has not been computed.");
   }
 
-  const auto c_to_v = topology->connectivity(tdim, 0);
+  auto c_to_v = topology->connectivity(tdim, 0);
   if (!e_to_v)
   {
     throw std::runtime_error(
@@ -786,11 +786,12 @@ compute_incident_entities(const Topology& topology,
 
 /// Create a mesh using a provided mesh partitioning function
 template <typename U>
-Mesh<typename std::remove_reference_t<typename U::value_type>>
-create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
-            const std::vector<fem::CoordinateElement>& elements, const U& x,
-            std::array<std::size_t, 2> xshape,
-            const CellPartitionFunction& cell_partitioner)
+Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
+    MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
+    const std::vector<fem::CoordinateElement<
+        typename std::remove_reference_t<typename U::value_type>>>& elements,
+    const U& x, std::array<std::size_t, 2> xshape,
+    const CellPartitionFunction& cell_partitioner)
 {
   const fem::ElementDofLayout dof_layout = elements[0].create_dof_layout();
 
@@ -934,14 +935,16 @@ create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>>
 create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
-            const std::vector<fem::CoordinateElement>& elements, const U& x,
-            std::array<std::size_t, 2> xshape, GhostMode ghost_mode)
+            const std::vector<fem::CoordinateElement<
+                std::remove_reference_t<typename U::value_type>>>& elements,
+            const U& x, std::array<std::size_t, 2> xshape, GhostMode ghost_mode)
 {
   return create_mesh(comm, cells, elements, x, xshape,
                      create_cell_partitioner(ghost_mode));
 }
 
-/// Create a new mesh consisting of a subset of entities in a mesh.
+/// @brief Create a new mesh consisting of a subset of entities in a
+/// mesh.
 /// @param[in] mesh The mesh
 /// @param[in] dim Entity dimension
 /// @param[in] entities List of entity indices in `mesh` to include in

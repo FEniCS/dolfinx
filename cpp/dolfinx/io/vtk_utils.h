@@ -85,7 +85,7 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
   // Get the dof coordinates on the reference element and the  mesh
   // coordinate map
   const auto [X, Xshape] = element->interpolation_points();
-  const fem::CoordinateElement& cmap = mesh->geometry().cmaps()[0];
+  const fem::CoordinateElement<T>& cmap = mesh->geometry().cmaps()[0];
 
   // Prepare cell geometry
   auto dofmap_x = mesh->geometry().dofmap();
@@ -98,17 +98,17 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
     mesh->topology_mutable()->create_entity_permutations();
     cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
-  const auto apply_dof_transformation
+  auto apply_dof_transformation
       = element->template get_dof_transformation_function<T>();
 
   namespace stdex = std::experimental;
   using mdspan2_t = stdex::mdspan<T, stdex::dextents<std::size_t, 2>>;
-  using cmdspan4_t = stdex::mdspan<double, stdex::dextents<std::size_t, 4>>;
+  using cmdspan4_t = stdex::mdspan<T, stdex::dextents<std::size_t, 4>>;
 
   // Tabulate basis functions at node reference coordinates
   const std::array<std::size_t, 4> phi_shape
       = cmap.tabulate_shape(0, Xshape[0]);
-  std::vector<double> phi_b(
+  std::vector<T> phi_b(
       std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
   cmdspan4_t phi_full(phi_b.data(), phi_shape);
   cmap.tabulate(0, X, Xshape, phi_b);

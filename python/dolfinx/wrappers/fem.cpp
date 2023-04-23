@@ -280,8 +280,7 @@ void declare_objects(py::module& m, const std::string& type)
           m, pyclass_name_expr.c_str(), "An Expression")
           .def(py::init(
                    [](const std::vector<std::shared_ptr<
-                          const dolfinx::fem::Function<T, double>
->>& coefficients,
+                          const dolfinx::fem::Function<T, double>>>& coefficients,
                       const std::vector<std::shared_ptr<
                           const dolfinx::fem::Constant<T>>>& constants,
                       const py::array_t<double, py::array::c_style>& X,
@@ -545,6 +544,115 @@ void declare_form(py::module& m, const std::string& type)
         &dolfinx::fem ::create_sparsity_pattern<T, double>, py::arg("a"),
         "Create a sparsity pattern.");
 }
+
+template <typename T>
+void declare_cmap(py::module& m, const std::string& type)
+{
+  std::string pyclass_name = std::string("CoordinateElement_") + type;
+  py::class_<dolfinx::fem::CoordinateElement<T>,
+             std::shared_ptr<dolfinx::fem::CoordinateElement<T>>>(
+      m, pyclass_name.c_str(), "Coordinate map element")
+      .def(py::init<dolfinx::mesh::CellType, int>(), py::arg("celltype"),
+           py::arg("degree"))
+      .def(py::init<dolfinx::mesh::CellType, int,
+                    basix::element::lagrange_variant>(),
+           py::arg("celltype"), py::arg("degree"), py::arg("variant"))
+      .def("create_dof_layout",
+           &dolfinx::fem::CoordinateElement<T>::create_dof_layout)
+      .def_property_readonly("degree",
+                             &dolfinx::fem::CoordinateElement<T>::degree)
+      .def_property_readonly("variant",
+                             &dolfinx::fem::CoordinateElement<T>::variant)
+      .def(
+          "push_forward",
+          [](const dolfinx::fem::CoordinateElement<T>& self,
+             const py::array_t<T, py::array::c_style>& X,
+             const py::array_t<T, py::array::c_style>& cell)
+          {
+            namespace stdex = std::experimental;
+            using mdspan2_t = stdex::mdspan<T, stdex::dextents<std::size_t, 2>>;
+            using cmdspan2_t
+                = stdex::mdspan<const T, stdex::dextents<std::size_t, 2>>;
+            using cmdspan4_t
+                = stdex::mdspan<const T, stdex::dextents<std::size_t, 4>>;
+
+            std::array<std::size_t, 2> Xshape
+                = {(std::size_t)X.shape(0), (std::size_t)X.shape(1)};
+
+            std::array<std::size_t, 4> phi_shape
+                = self.tabulate_shape(0, X.shape(0));
+            std::vector<T> phi_b(std::reduce(phi_shape.begin(), phi_shape.end(),
+                                             1, std::multiplies{}));
+            cmdspan4_t phi_full(phi_b.data(), phi_shape);
+            self.tabulate(0, std::span(X.data(), X.size()), Xshape, phi_b);
+            auto phi = stdex::submdspan(phi_full, 0, stdex::full_extent,
+                                        stdex::full_extent, 0);
+
+            std::array<std::size_t, 2> shape
+                = {(std::size_t)X.shape(0), (std::size_t)cell.shape(1)};
+            std::vector<T> xb(shape[0] * shape[1]);
+            self.push_forward(
+                mdspan2_t(xb.data(), shape),
+                cmdspan2_t(cell.data(), cell.shape(0), cell.shape(1)), phi);
+
+            return dolfinx_wrappers::as_pyarray(std::move(xb), shape);
+          },
+          py::arg("X"), py::arg("cell_geometry"))
+      .def(
+          "pull_back",
+          [](const dolfinx::fem::CoordinateElement<T>& self,
+             const py::array_t<T, py::array::c_style>& x,
+             const py::array_t<T, py::array::c_style>& cell_geometry)
+          {
+            const std::size_t num_points = x.shape(0);
+            const std::size_t gdim = x.shape(1);
+            const std::size_t tdim = dolfinx::mesh::cell_dim(self.cell_shape());
+
+            namespace stdex = std::experimental;
+            using mdspan2_t = stdex::mdspan<T, stdex::dextents<std::size_t, 2>>;
+            using cmdspan2_t
+                = stdex::mdspan<const T, stdex::dextents<std::size_t, 2>>;
+            using cmdspan4_t
+                = stdex::mdspan<const T, stdex::dextents<std::size_t, 4>>;
+
+            std::vector<T> Xb(num_points * tdim);
+            mdspan2_t X(Xb.data(), num_points, tdim);
+            cmdspan2_t _x(x.data(), x.shape(0), x.shape(1));
+            cmdspan2_t g(cell_geometry.data(), cell_geometry.shape(0),
+                         cell_geometry.shape(1));
+
+            if (self.is_affine())
+            {
+              std::vector<T> J_b(gdim * tdim);
+              mdspan2_t J(J_b.data(), gdim, tdim);
+              std::vector<T> K_b(tdim * gdim);
+              mdspan2_t K(K_b.data(), tdim, gdim);
+
+              std::array<std::size_t, 4> phi_shape = self.tabulate_shape(1, 1);
+              std::vector<T> phi_b(std::reduce(
+                  phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
+              cmdspan4_t phi(phi_b.data(), phi_shape);
+
+              self.tabulate(1, std::vector<T>(tdim), {1, tdim}, phi_b);
+              auto dphi = stdex::submdspan(phi, std::pair(1, tdim + 1), 0,
+                                           stdex::full_extent, 0);
+
+              self.compute_jacobian(dphi, g, J);
+              self.compute_jacobian_inverse(J, K);
+              std::array<T, 3> x0 = {0, 0, 0};
+              for (std::size_t i = 0; i < g.extent(1); ++i)
+                x0[i] += g(0, i);
+              self.pull_back_affine(X, K, x0, _x);
+            }
+            else
+              self.pull_back_nonaffine(X, _x, g);
+
+            return dolfinx_wrappers::as_pyarray(std::move(Xb),
+                                                std::array{num_points, tdim});
+          },
+          py::arg("x"), py::arg("cell_geometry"));
+}
+
 } // namespace
 
 namespace dolfinx_wrappers
@@ -565,6 +673,10 @@ void fem(py::module& m)
   declare_form<std::complex<float>>(m, "complex64");
   declare_form<std::complex<double>>(m, "complex128");
 
+  // fem::CoordinateElement
+  declare_cmap<float>(m, "float32");
+  declare_cmap<double>(m, "float64");
+
   m.def(
       "create_element_dof_layout",
       [](std::uintptr_t dofmap, const dolfinx::mesh::CellType cell_type,
@@ -580,15 +692,20 @@ void fem(py::module& m)
       "create_dofmap",
       [](const MPICommWrapper comm, std::uintptr_t dofmap,
          dolfinx::mesh::Topology& topology,
-         const dolfinx::fem::FiniteElement& element)
+         const dolfinx::fem::FiniteElement<double>& element)
       {
         ufcx_dofmap* p = reinterpret_cast<ufcx_dofmap*>(dofmap);
         assert(p);
         dolfinx::fem::ElementDofLayout layout
             = dolfinx::fem::create_element_dof_layout(
                 *p, topology.cell_types().back());
+
+        std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
+            unpermute_dofs = nullptr;
+        if (element.needs_dof_permutations())
+          unpermute_dofs = element.get_dof_permutation_function(true, true);
         return dolfinx::fem::create_dofmap(comm.get(), layout, topology,
-                                           nullptr, element);
+                                           unpermute_dofs, nullptr);
       },
       py::arg("comm"), py::arg("dofmap"), py::arg("topology"),
       py::arg("element"),
@@ -633,7 +750,7 @@ void fem(py::module& m)
   m.def(
       "create_nonmatching_meshes_interpolation_data",
       [](const dolfinx::mesh::Mesh<double>& mesh0,
-         const dolfinx::fem::FiniteElement& element0,
+         const dolfinx::fem::FiniteElement<double>& element0,
          const dolfinx::mesh::Mesh<double>& mesh1)
       {
         int tdim = mesh0.topology()->dim();
@@ -651,7 +768,7 @@ void fem(py::module& m)
   m.def(
       "create_nonmatching_meshes_interpolation_data",
       [](const dolfinx::mesh::Geometry<double>& geometry0,
-         const dolfinx::fem::FiniteElement& element0,
+         const dolfinx::fem::FiniteElement<double>& element0,
          const dolfinx::mesh::Mesh<double>& mesh1,
          const py::array_t<std::int32_t, py::array::c_style>& cells)
       {
@@ -662,43 +779,46 @@ void fem(py::module& m)
       py::arg("cells"));
 
   // dolfinx::fem::FiniteElement
-  py::class_<dolfinx::fem::FiniteElement,
-             std::shared_ptr<dolfinx::fem::FiniteElement>>(
+  py::class_<dolfinx::fem::FiniteElement<double>,
+             std::shared_ptr<dolfinx::fem::FiniteElement<double>>>(
       m, "FiniteElement", "Finite element object")
       .def(py::init(
                [](std::uintptr_t ufcx_element)
                {
                  ufcx_finite_element* p
                      = reinterpret_cast<ufcx_finite_element*>(ufcx_element);
-                 return dolfinx::fem::FiniteElement(*p);
+                 return dolfinx::fem::FiniteElement<double>(*p);
                }),
            py::arg("ufcx_element"))
-      .def("__eq__", &dolfinx::fem::FiniteElement::operator==)
-      .def_property_readonly("basix_element",
-                             &dolfinx::fem::FiniteElement::basix_element,
-                             py::return_value_policy::reference_internal)
-      .def_property_readonly("num_sub_elements",
-                             &dolfinx::fem::FiniteElement::num_sub_elements)
+      .def("__eq__", &dolfinx::fem::FiniteElement<double>::operator==)
+      .def_property_readonly(
+          "basix_element", &dolfinx::fem::FiniteElement<double>::basix_element,
+          py::return_value_policy::reference_internal)
+      .def_property_readonly(
+          "num_sub_elements",
+          &dolfinx::fem::FiniteElement<double>::num_sub_elements)
       .def("interpolation_points",
-           [](const dolfinx::fem::FiniteElement& self)
+           [](const dolfinx::fem::FiniteElement<double>& self)
            {
              auto [X, shape] = self.interpolation_points();
              return as_pyarray(std::move(X), shape);
            })
-      .def_property_readonly("interpolation_ident",
-                             &dolfinx::fem::FiniteElement::interpolation_ident)
-      .def_property_readonly("space_dimension",
-                             &dolfinx::fem::FiniteElement::space_dimension)
+      .def_property_readonly(
+          "interpolation_ident",
+          &dolfinx::fem::FiniteElement<double>::interpolation_ident)
+      .def_property_readonly(
+          "space_dimension",
+          &dolfinx::fem::FiniteElement<double>::space_dimension)
       .def_property_readonly(
           "value_shape",
-          [](const dolfinx::fem::FiniteElement& self)
+          [](const dolfinx::fem::FiniteElement<double>& self)
           {
             std::span<const std::size_t> shape = self.value_shape();
             return py::array_t(shape.size(), shape.data(), py::none());
           })
       .def(
           "apply_dof_transformation",
-          [](const dolfinx::fem::FiniteElement& self,
+          [](const dolfinx::fem::FiniteElement<double>& self,
              py::array_t<double, py::array::c_style> x,
              std::uint32_t cell_permutation, int dim)
           {
@@ -708,7 +828,7 @@ void fem(py::module& m)
           py::arg("x"), py::arg("cell_permutation"), py::arg("dim"))
       .def(
           "apply_transpose_dof_transformation",
-          [](const dolfinx::fem::FiniteElement& self,
+          [](const dolfinx::fem::FiniteElement<double>& self,
              py::array_t<double, py::array::c_style> x,
              std::uint32_t cell_permutation, int dim)
           {
@@ -718,7 +838,7 @@ void fem(py::module& m)
           py::arg("x"), py::arg("cell_permutation"), py::arg("dim"))
       .def(
           "apply_inverse_transpose_dof_transformation",
-          [](const dolfinx::fem::FiniteElement& self,
+          [](const dolfinx::fem::FiniteElement<double>& self,
              py::array_t<double, py::array::c_style> x,
              std::uint32_t cell_permutation, int dim)
           {
@@ -728,8 +848,8 @@ void fem(py::module& m)
           py::arg("x"), py::arg("cell_permutation"), py::arg("dim"))
       .def_property_readonly(
           "needs_dof_transformations",
-          &dolfinx::fem::FiniteElement::needs_dof_transformations)
-      .def("signature", &dolfinx::fem::FiniteElement::signature);
+          &dolfinx::fem::FiniteElement<double>::needs_dof_transformations)
+      .def("signature", &dolfinx::fem::FiniteElement<double>::signature);
 
   // dolfinx::fem::ElementDofLayout
   py::class_<dolfinx::fem::ElementDofLayout,
@@ -798,108 +918,6 @@ void fem(py::module& m)
           },
           py::return_value_policy::reference_internal);
 
-  // dolfinx::fem::CoordinateElement
-  py::class_<dolfinx::fem::CoordinateElement,
-             std::shared_ptr<dolfinx::fem::CoordinateElement>>(
-      m, "CoordinateElement", "Coordinate map element")
-      .def(py::init<dolfinx::mesh::CellType, int>(), py::arg("celltype"),
-           py::arg("degree"))
-      .def(py::init<dolfinx::mesh::CellType, int,
-                    basix::element::lagrange_variant>(),
-           py::arg("celltype"), py::arg("degree"), py::arg("variant"))
-      .def("create_dof_layout",
-           &dolfinx::fem::CoordinateElement::create_dof_layout)
-      .def_property_readonly("degree", &dolfinx::fem::CoordinateElement::degree)
-      .def_property_readonly("variant",
-                             &dolfinx::fem::CoordinateElement::variant)
-      .def(
-          "push_forward",
-          [](const dolfinx::fem::CoordinateElement& self,
-             const py::array_t<double, py::array::c_style>& X,
-             const py::array_t<double, py::array::c_style>& cell)
-          {
-            namespace stdex = std::experimental;
-            using mdspan2_t
-                = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
-            using cmdspan2_t
-                = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
-            using cmdspan4_t
-                = stdex::mdspan<const double, stdex::dextents<std::size_t, 4>>;
-
-            std::array Xshape{(std::size_t)X.shape(0), (std::size_t)X.shape(1)};
-
-            std::array<std::size_t, 4> phi_shape
-                = self.tabulate_shape(0, X.shape(0));
-            std::vector<double> phi_b(std::reduce(
-                phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
-            cmdspan4_t phi_full(phi_b.data(), phi_shape);
-            self.tabulate(0, std::span(X.data(), X.size()), Xshape, phi_b);
-            auto phi = stdex::submdspan(phi_full, 0, stdex::full_extent,
-                                        stdex::full_extent, 0);
-
-            std::array shape{X.shape(0), cell.shape(1)};
-            std::vector<double> xb(shape[0] * shape[1]);
-            self.push_forward(
-                mdspan2_t(xb.data(), shape),
-                cmdspan2_t(cell.data(), cell.shape(0), cell.shape(1)), phi);
-
-            return as_pyarray(std::move(xb), shape);
-          },
-          py::arg("X"), py::arg("cell_geometry"))
-      .def(
-          "pull_back",
-          [](const dolfinx::fem::CoordinateElement& self,
-             const py::array_t<double, py::array::c_style>& x,
-             const py::array_t<double, py::array::c_style>& cell_geometry)
-          {
-            const std::size_t num_points = x.shape(0);
-            const std::size_t gdim = x.shape(1);
-            const std::size_t tdim = dolfinx::mesh::cell_dim(self.cell_shape());
-
-            namespace stdex = std::experimental;
-            using mdspan2_t
-                = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
-            using cmdspan2_t
-                = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
-            using cmdspan4_t
-                = stdex::mdspan<const double, stdex::dextents<std::size_t, 4>>;
-
-            std::vector<double> Xb(num_points * tdim);
-            mdspan2_t X(Xb.data(), num_points, tdim);
-            cmdspan2_t _x(x.data(), x.shape(0), x.shape(1));
-            cmdspan2_t g(cell_geometry.data(), cell_geometry.shape(0),
-                         cell_geometry.shape(1));
-
-            if (self.is_affine())
-            {
-              std::vector<double> J_b(gdim * tdim);
-              mdspan2_t J(J_b.data(), gdim, tdim);
-              std::vector<double> K_b(tdim * gdim);
-              mdspan2_t K(K_b.data(), tdim, gdim);
-
-              std::array<std::size_t, 4> phi_shape = self.tabulate_shape(1, 1);
-              std::vector<double> phi_b(std::reduce(
-                  phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
-              cmdspan4_t phi(phi_b.data(), phi_shape);
-
-              self.tabulate(1, std::vector<double>(tdim), {1, tdim}, phi_b);
-              auto dphi = stdex::submdspan(phi, std::pair(1, tdim + 1), 0,
-                                           stdex::full_extent, 0);
-
-              self.compute_jacobian(dphi, g, J);
-              self.compute_jacobian_inverse(J, K);
-              std::array<double, 3> x0{0, 0, 0};
-              for (std::size_t i = 0; i < g.extent(1); ++i)
-                x0[i] += g(0, i);
-              self.pull_back_affine(X, K, x0, _x);
-            }
-            else
-              self.pull_back_nonaffine(X, _x, g);
-
-            return as_pyarray(std::move(Xb), std::array{num_points, tdim});
-          },
-          py::arg("x"), py::arg("cell_geometry"));
-
   py::enum_<dolfinx::fem::IntegralType>(m, "IntegralType")
       .value("cell", dolfinx::fem::IntegralType::cell)
       .value("exterior_facet", dolfinx::fem::IntegralType::exterior_facet)
@@ -958,7 +976,8 @@ void fem(py::module& m)
         std::array<std::vector<std::int32_t>, 2> dofs
             = dolfinx::fem::locate_dofs_geometrical<double>({V[0], V[1]},
                                                             _marker);
-        return {as_pyarray(std::move(dofs[0])), as_pyarray(std::move(dofs[1]))};
+        return {dolfinx_wrappers::as_pyarray(std::move(dofs[0])),
+                dolfinx_wrappers::as_pyarray(std::move(dofs[1]))};
       },
       py::arg("V"), py::arg("marker"));
   m.def(
@@ -976,13 +995,14 @@ void fem(py::module& m)
                                           marked.data() + marked.size());
         };
 
-        return as_pyarray(dolfinx::fem::locate_dofs_geometrical(V, _marker));
+        return dolfinx_wrappers::as_pyarray(
+            dolfinx::fem::locate_dofs_geometrical(V, _marker));
       },
       py::arg("V"), py::arg("marker"));
 
   m.def(
       "interpolation_coords",
-      [](const dolfinx::fem::FiniteElement& e,
+      [](const dolfinx::fem::FiniteElement<double>& e,
          const dolfinx::mesh::Geometry<double>& geometry,
          py::array_t<std::int32_t, py::array::c_style> cells)
       {
@@ -998,7 +1018,7 @@ void fem(py::module& m)
              std::shared_ptr<dolfinx::fem::FunctionSpace<double>>>(
       m, "FunctionSpace")
       .def(py::init<std::shared_ptr<dolfinx::mesh::Mesh<double>>,
-                    std::shared_ptr<dolfinx::fem::FiniteElement>,
+                    std::shared_ptr<dolfinx::fem::FiniteElement<double>>,
                     std::shared_ptr<dolfinx::fem::DofMap>>(),
            py::arg("mesh"), py::arg("element"), py::arg("dofmap"))
       .def("collapse", &dolfinx::fem::FunctionSpace<double>::collapse)

@@ -38,7 +38,7 @@ class Function;
 /// @return The coordinates in the physical space at which to evaluate
 /// an expression. The shape is (3, num_points) and storage is row-major.
 template <std::floating_point T>
-std::vector<T> interpolation_coords(const fem::FiniteElement& element,
+std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
                                     const mesh::Geometry<T>& geometry,
                                     std::span<const std::int32_t> cells)
 {
@@ -52,7 +52,7 @@ std::vector<T> interpolation_coords(const fem::FiniteElement& element,
     throw std::runtime_error("Mixed topology not supported");
   }
 
-  const CoordinateElement& cmap = geometry.cmaps()[0];
+  const CoordinateElement<T>& cmap = geometry.cmaps()[0];
   const std::size_t num_dofs_g = cmap.dim();
 
   // Get the interpolation points on the reference cells
@@ -60,10 +60,9 @@ std::vector<T> interpolation_coords(const fem::FiniteElement& element,
 
   // Evaluate coordinate element basis at reference points
   namespace stdex = std::experimental;
-  using cmdspan4_t
-      = stdex::mdspan<const double, stdex::dextents<std::size_t, 4>>;
+  using cmdspan4_t = stdex::mdspan<const T, stdex::dextents<std::size_t, 4>>;
   std::array<std::size_t, 4> phi_shape = cmap.tabulate_shape(0, Xshape[0]);
-  std::vector<double> phi_b(
+  std::vector<T> phi_b(
       std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
   cmdspan4_t phi_full(phi_b.data(), phi_shape);
   cmap.tabulate(0, X, Xshape, phi_b);
@@ -325,9 +324,9 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
   auto mesh = V0->mesh();
   assert(mesh);
 
-  std::shared_ptr<const FiniteElement> element0 = V0->element();
+  auto element0 = V0->element();
   assert(element0);
-  std::shared_ptr<const FiniteElement> element1 = V1->element();
+  auto element1 = V1->element();
   assert(element1);
 
   const int tdim = mesh->topology()->dim();
@@ -352,9 +351,11 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
   const int bs1 = dofmap1->bs();
   const int bs0 = dofmap0->bs();
   auto apply_dof_transformation
-      = element0->get_dof_transformation_function<T>(false, true, false);
+      = element0->template get_dof_transformation_function<T>(false, true,
+                                                              false);
   auto apply_inverse_dof_transform
-      = element1->get_dof_transformation_function<T>(true, true, false);
+      = element1->template get_dof_transformation_function<T>(true, true,
+                                                              false);
 
   // Create working array
   std::vector<T> local0(element0->space_dimension());
@@ -417,9 +418,9 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
   // Get elements
   auto V1 = u1.function_space();
   assert(V1);
-  std::shared_ptr<const FiniteElement> element0 = V0->element();
+  auto element0 = V0->element();
   assert(element0);
-  std::shared_ptr<const FiniteElement> element1 = V1->element();
+  auto element1 = V1->element();
   assert(element1);
 
   std::span<const std::uint32_t> cell_info;
@@ -439,10 +440,12 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
   // Get block sizes and dof transformation operators
   const int bs0 = element0->block_size();
   const int bs1 = element1->block_size();
-  const auto apply_dof_transformation0
-      = element0->get_dof_transformation_function<double>(false, false, false);
-  const auto apply_inverse_dof_transform1
-      = element1->get_dof_transformation_function<T>(true, true, false);
+  auto apply_dof_transformation0
+      = element0->template get_dof_transformation_function<U>(false, false,
+                                                              false);
+  auto apply_inverse_dof_transform1
+      = element1->template get_dof_transformation_function<T>(true, true,
+                                                              false);
 
   // Get sizes of elements
   const std::size_t dim0 = element0->space_dimension() / bs0;
@@ -453,24 +456,22 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
   if (mesh->geometry().cmaps().size() > 1)
     throw std::runtime_error("Multiple cmaps");
 
-  const CoordinateElement& cmap = mesh->geometry().cmaps()[0];
+  const CoordinateElement<U>& cmap = mesh->geometry().cmaps()[0];
   auto x_dofmap = mesh->geometry().dofmap();
   const std::size_t num_dofs_g = cmap.dim();
   std::span<const U> x_g = mesh->geometry().x();
 
   namespace stdex = std::experimental;
-  using cmdspan2_t
-      = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
-  using cmdspan4_t
-      = stdex::mdspan<const double, stdex::dextents<std::size_t, 4>>;
-  using mdspan2_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
-  using mdspan3_t = stdex::mdspan<double, stdex::dextents<std::size_t, 3>>;
+  using cmdspan2_t = stdex::mdspan<const U, stdex::dextents<std::size_t, 2>>;
+  using cmdspan4_t = stdex::mdspan<const U, stdex::dextents<std::size_t, 4>>;
+  using mdspan2_t = stdex::mdspan<U, stdex::dextents<std::size_t, 2>>;
+  using mdspan3_t = stdex::mdspan<U, stdex::dextents<std::size_t, 3>>;
   using mdspan3T_t = stdex::mdspan<T, stdex::dextents<std::size_t, 3>>;
 
   // Evaluate coordinate map basis at reference interpolation points
   const std::array<std::size_t, 4> phi_shape
       = cmap.tabulate_shape(1, Xshape[0]);
-  std::vector<double> phi_b(
+  std::vector<U> phi_b(
       std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
   cmdspan4_t phi(phi_b.data(), phi_shape);
   cmap.tabulate(1, X, Xshape, phi_b);
@@ -485,10 +486,10 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
   std::vector<T> local1(element1->space_dimension());
   std::vector<T> coeffs0(element0->space_dimension());
 
-  std::vector<double> basis0_b(Xshape[0] * dim0 * value_size0);
+  std::vector<U> basis0_b(Xshape[0] * dim0 * value_size0);
   mdspan3_t basis0(basis0_b.data(), Xshape[0], dim0, value_size0);
 
-  std::vector<double> basis_reference0_b(Xshape[0] * dim0 * value_size_ref0);
+  std::vector<U> basis_reference0_b(Xshape[0] * dim0 * value_size_ref0);
   mdspan3_t basis_reference0(basis_reference0_b.data(), Xshape[0], dim0,
                              value_size_ref0);
 
@@ -499,30 +500,31 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
   mdspan3T_t mapped_values0(mapped_values_b.data(), Xshape[0], 1,
                             element1->value_size());
 
-  std::vector<double> coord_dofs_b(num_dofs_g * gdim);
+  std::vector<U> coord_dofs_b(num_dofs_g * gdim);
   mdspan2_t coord_dofs(coord_dofs_b.data(), num_dofs_g, gdim);
 
-  std::vector<double> J_b(Xshape[0] * gdim * tdim);
+  std::vector<U> J_b(Xshape[0] * gdim * tdim);
   mdspan3_t J(J_b.data(), Xshape[0], gdim, tdim);
-  std::vector<double> K_b(Xshape[0] * tdim * gdim);
+  std::vector<U> K_b(Xshape[0] * tdim * gdim);
   mdspan3_t K(K_b.data(), Xshape[0], tdim, gdim);
-  std::vector<double> detJ(Xshape[0]);
-  std::vector<double> det_scratch(2 * gdim * tdim);
+  std::vector<U> detJ(Xshape[0]);
+  std::vector<U> det_scratch(2 * gdim * tdim);
 
   // Get interpolation operator
   const auto [_Pi_1, pi_shape] = element1->interpolation_operator();
   cmdspan2_t Pi_1(_Pi_1.data(), pi_shape);
 
-  using u_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
-  using U_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
-  using J_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
-  using K_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
+  using u_t = stdex::mdspan<U, stdex::dextents<std::size_t, 2>>;
+  using U_t = stdex::mdspan<const U, stdex::dextents<std::size_t, 2>>;
+  using J_t = stdex::mdspan<const U, stdex::dextents<std::size_t, 2>>;
+  using K_t = stdex::mdspan<const U, stdex::dextents<std::size_t, 2>>;
   auto push_forward_fn0
-      = element0->basix_element().map_fn<u_t, U_t, J_t, K_t>();
+      = element0->basix_element().template map_fn<u_t, U_t, J_t, K_t>();
 
   using v_t = stdex::mdspan<const T, stdex::dextents<std::size_t, 2>>;
   using V_t = stdex::mdspan<T, stdex::dextents<std::size_t, 2>>;
-  auto pull_back_fn1 = element1->basix_element().map_fn<V_t, v_t, K_t, J_t>();
+  auto pull_back_fn1
+      = element1->basix_element().template map_fn<V_t, v_t, K_t, J_t>();
 
   // Iterate over mesh and interpolate on each cell
   std::span<const T> array0 = u0.x()->array();
@@ -647,10 +649,10 @@ void interpolate_nonmatching_meshes(
 
   MPI_Comm comm = mesh->comm();
   const int tdim = mesh->topology()->dim();
-  const auto cell_map = mesh->topology()->index_map(tdim);
+  auto cell_map = mesh->topology()->index_map(tdim);
 
-  std::shared_ptr<const FiniteElement> element_u
-      = u.function_space()->element();
+  auto element_u = u.function_space()->element();
+  assert(element_u);
   const std::size_t value_size = element_u->value_size();
 
   if (std::get<0>(nmm_interpolation_data).empty())
@@ -717,14 +719,11 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
                  std::span<const std::int32_t> cells)
 {
   namespace stdex = std::experimental;
-  using cmdspan2_t
-      = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
-  using cmdspan4_t
-      = stdex::mdspan<const double, stdex::dextents<std::size_t, 4>>;
-  using mdspan2_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
-  using mdspan3_t = stdex::mdspan<double, stdex::dextents<std::size_t, 3>>;
-
-  std::shared_ptr<const FiniteElement> element = u.function_space()->element();
+  using cmdspan2_t = stdex::mdspan<const U, stdex::dextents<std::size_t, 2>>;
+  using cmdspan4_t = stdex::mdspan<const U, stdex::dextents<std::size_t, 4>>;
+  using mdspan2_t = stdex::mdspan<U, stdex::dextents<std::size_t, 2>>;
+  using mdspan3_t = stdex::mdspan<U, stdex::dextents<std::size_t, 3>>;
+  auto element = u.function_space()->element();
   assert(element);
   const int element_bs = element->block_size();
   if (int num_sub = element->num_sub_elements();
@@ -775,7 +774,8 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
     // e.g. not Piola mapped
 
     auto apply_inv_transpose_dof_transformation
-        = element->get_dof_transformation_function<T>(true, true, true);
+        = element->template get_dof_transformation_function<T>(true, true,
+                                                               true);
 
     // Loop over cells
     for (std::size_t c = 0; c < cells.size(); ++c)
@@ -818,7 +818,8 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
     assert(Pi.extent(0) == num_scalar_dofs);
 
     auto apply_inv_transpose_dof_transformation
-        = element->get_dof_transformation_function<T>(true, true, true);
+        = element->template get_dof_transformation_function<T>(true, true,
+                                                               true);
 
     // Loop over cells
     std::vector<T> ref_data_b(num_interp_points);
@@ -866,7 +867,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
     // Get coordinate map
     if (mesh->geometry().cmaps().size() > 1)
       throw std::runtime_error("Multiple cmaps");
-    const CoordinateElement& cmap = mesh->geometry().cmaps()[0];
+    const CoordinateElement<U>& cmap = mesh->geometry().cmaps()[0];
 
     // Get geometry data
     auto x_dofmap = mesh->geometry().dofmap();
@@ -874,14 +875,14 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
     std::span<const U> x_g = mesh->geometry().x();
 
     // Create data structures for Jacobian info
-    std::vector<double> J_b(Xshape[0] * gdim * tdim);
+    std::vector<U> J_b(Xshape[0] * gdim * tdim);
     mdspan3_t J(J_b.data(), Xshape[0], gdim, tdim);
-    std::vector<double> K_b(Xshape[0] * tdim * gdim);
+    std::vector<U> K_b(Xshape[0] * tdim * gdim);
     mdspan3_t K(K_b.data(), Xshape[0], tdim, gdim);
-    std::vector<double> detJ(Xshape[0]);
-    std::vector<double> det_scratch(2 * gdim * tdim);
+    std::vector<U> detJ(Xshape[0]);
+    std::vector<U> det_scratch(2 * gdim * tdim);
 
-    std::vector<double> coord_dofs_b(num_dofs_g * gdim);
+    std::vector<U> coord_dofs_b(num_dofs_g * gdim);
     mdspan2_t coord_dofs(coord_dofs_b.data(), num_dofs_g, gdim);
 
     std::vector<T> ref_data_b(Xshape[0] * 1 * value_size);
@@ -895,7 +896,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
     // Tabulate 1st derivative of shape functions at interpolation
     // coords
     std::array<std::size_t, 4> phi_shape = cmap.tabulate_shape(1, Xshape[0]);
-    std::vector<double> phi_b(
+    std::vector<U> phi_b(
         std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
     cmdspan4_t phi(phi_b.data(), phi_shape);
     cmap.tabulate(1, X, Xshape, phi_b);
@@ -906,7 +907,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
                              const std::span<const std::uint32_t>&,
                              std::int32_t, int)>
         apply_inverse_transpose_dof_transformation
-        = element->get_dof_transformation_function<T>(true, true);
+        = element->template get_dof_transformation_function<T>(true, true);
 
     // Get interpolation operator
     const auto [_Pi, pi_shape] = element->interpolation_operator();
@@ -915,9 +916,10 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
     namespace stdex = std::experimental;
     using u_t = stdex::mdspan<const T, stdex::dextents<std::size_t, 2>>;
     using U_t = stdex::mdspan<T, stdex::dextents<std::size_t, 2>>;
-    using J_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
-    using K_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
-    auto pull_back_fn = element->basix_element().map_fn<U_t, u_t, J_t, K_t>();
+    using J_t = stdex::mdspan<const U, stdex::dextents<std::size_t, 2>>;
+    using K_t = stdex::mdspan<const U, stdex::dextents<std::size_t, 2>>;
+    auto pull_back_fn
+        = element->basix_element().template map_fn<U_t, u_t, J_t, K_t>();
 
     for (std::size_t c = 0; c < cells.size(); ++c)
     {
@@ -1002,7 +1004,7 @@ template <std::floating_point T>
 std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>, std::vector<T>,
            std::vector<std::int32_t>>
 create_nonmatching_meshes_interpolation_data(
-    const mesh::Geometry<T>& geometry0, const FiniteElement& element0,
+    const mesh::Geometry<T>& geometry0, const FiniteElement<T>& element0,
     const mesh::Mesh<T>& mesh1, std::span<const std::int32_t> cells)
 {
   // Collect all the points at which values are needed to define the
@@ -1011,7 +1013,7 @@ create_nonmatching_meshes_interpolation_data(
       = interpolation_coords(element0, geometry0, cells);
 
   // Transpose interpolation coords
-  std::vector<double> x(coords.size());
+  std::vector<T> x(coords.size());
   std::size_t num_points = coords.size() / 3;
   for (std::size_t i = 0; i < num_points; ++i)
     for (std::size_t j = 0; j < 3; ++j)
@@ -1030,7 +1032,7 @@ template <std::floating_point T>
 std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>, std::vector<T>,
            std::vector<std::int32_t>>
 create_nonmatching_meshes_interpolation_data(const mesh::Mesh<T>& mesh0,
-                                             const FiniteElement& element0,
+                                             const FiniteElement<T>& element0,
                                              const mesh::Mesh<T>& mesh1)
 {
   int tdim = mesh0.topology()->dim();

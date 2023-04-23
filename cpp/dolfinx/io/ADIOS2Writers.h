@@ -148,15 +148,15 @@ extract_common_mesh(const typename adios2_writer::U<T>& u)
 {
   // Extract mesh from first function
   assert(!u.empty());
-  auto mesh = std::visit(
-      [](const auto& u) { return u->function_space()->mesh(); }, u.front());
+  auto mesh = std::visit([](auto& u) { return u->function_space()->mesh(); },
+                         u.front());
   assert(mesh);
 
   // Check that all functions share the same mesh
   for (auto& v : u)
   {
     std::visit(
-        [&mesh](const auto& u)
+        [&mesh](auto& u)
         {
           if (mesh != u->function_space()->mesh())
           {
@@ -284,7 +284,7 @@ std::vector<T> pack_function_data(const fem::Function<T, U>& u)
   // Get dof array and pack into array (padded where appropriate)
   auto dofmap_x = geometry.dofmap();
   const int bs = dofmap->bs();
-  const auto& u_data = u.x()->array();
+  std::span<const T> u_data = u.x()->array();
   std::vector<T> data(num_vertices * num_components, 0);
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
@@ -370,14 +370,14 @@ void write_data(adios2::IO& io, adios2::Engine& engine,
         io, u.name + impl_adios2::field_ext[0], {}, {},
         {num_vertices, num_components});
     std::transform(data.begin(), data.end(), data_real.begin(),
-                   [](auto& x) -> X { return std::real(x); });
+                   [](auto x) -> X { return std::real(x); });
     engine.Put(local_output_r, data_real.data());
 
     adios2::Variable local_output_c = impl_adios2::define_variable<X>(
         io, u.name + impl_adios2::field_ext[1], {}, {},
         {num_vertices, num_components});
     std::transform(data.begin(), data.end(), data_imag.begin(),
-                   [](auto& x) -> X { return std::imag(x); });
+                   [](auto x) -> X { return std::imag(x); });
     engine.Put(local_output_c, data_imag.data());
     engine.PerformPuts();
   }
@@ -483,14 +483,14 @@ public:
       throw std::runtime_error("FidesWriter fem::Function list is empty");
 
     // Extract Mesh from first function
-    auto mesh = std::visit(
-        [](const auto& u) { return u->function_space()->mesh(); }, u.front());
+    auto mesh = std::visit([](auto& u) { return u->function_space()->mesh(); },
+                           u.front());
     assert(mesh);
 
     // Extract element from first function
-    const fem::FiniteElement* element0 = std::visit(
-        [](const auto& e) { return e->function_space()->element().get(); },
-        u.front());
+    auto element0 = std::visit([](auto& e)
+                               { return e->function_space()->element().get(); },
+                               u.front());
     assert(element0);
 
     // Check if function is mixed
@@ -523,7 +523,7 @@ public:
     for (auto& v : _u)
     {
       std::visit(
-          [&](const auto& u)
+          [&](auto& u)
           {
             auto element = u->function_space()->element();
             assert(element);
@@ -607,8 +607,7 @@ public:
 
     for (auto& v : _u)
     {
-      std::visit([&](const auto& u)
-                 { impl_fides::write_data(*_io, *_engine, *u); },
+      std::visit([&](auto& u) { impl_fides::write_data(*_io, *_engine, *u); },
                  v);
     }
 
@@ -919,9 +918,9 @@ public:
       throw std::runtime_error("VTXWriter fem::Function list is empty");
 
     // Extract element from first function
-    const fem::FiniteElement* element0 = std::visit(
-        [](const auto& u) { return u->function_space()->element().get(); },
-        u.front());
+    auto element0 = std::visit([](auto& u)
+                               { return u->function_space()->element().get(); },
+                               u.front());
     assert(element0);
 
     // Check if function is mixed
@@ -951,7 +950,7 @@ public:
     for (auto& v : _u)
     {
       std::visit(
-          [element0](const auto& u)
+          [element0](auto& u)
           {
             auto element = u->function_space()->element();
             assert(element);
@@ -1004,7 +1003,7 @@ public:
     {
       // Write a single mesh for functions as they share finite element
       std::visit(
-          [&](const auto& u) {
+          [&](auto& u) {
             impl_vtx::vtx_write_mesh_from_space(*_io, *_engine,
                                                 *u->function_space());
           },
@@ -1012,9 +1011,8 @@ public:
 
       // Write function data for each function to file
       for (auto& v : _u)
-        std::visit([&](const auto& u)
-                   { impl_vtx::vtx_write_data(*_io, *_engine, *u); },
-                   v);
+        std::visit(
+            [&](auto& u) { impl_vtx::vtx_write_data(*_io, *_engine, *u); }, v);
     }
 
     _engine->EndStep();
