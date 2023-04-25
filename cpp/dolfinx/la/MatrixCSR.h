@@ -530,7 +530,7 @@ public:
   /// from operations on the unowned parts.
   /// @note Includes ghost rows, which should be truncated manually if
   /// not required.
-  const std::vector<std::int32_t>& off_diag_offset() const
+  const std::vector<std::int64_t>& off_diag_offset() const
   {
     return _off_diagonal_offset;
   }
