@@ -76,7 +76,7 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
   for (std::size_t c = 0; c < cells.size(); ++c)
   {
     // Get geometry data for current cell
-    auto x_dofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
+    auto x_dofs = stdex::submdspan(x_dofmap, cells[c], stdex::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       std::copy_n(std::next(x_g.begin(), 3 * x_dofs[i]), gdim,
