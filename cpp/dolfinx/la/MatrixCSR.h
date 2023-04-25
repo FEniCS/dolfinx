@@ -170,8 +170,8 @@ public:
                      std::make_shared<common::IndexMap>(p.column_index_map())}),
         _bs({p.block_size(0), p.block_size(1)}),
         _data(p.num_nonzeros(), 0, alloc),
-        _cols(p.graph().array().begin(), p.graph().array().end()),
-        _row_ptr(p.graph().offsets().begin(), p.graph().offsets().end()),
+        _cols(p.graph_new().first.begin(), p.graph_new().first.end()),
+        _row_ptr(p.graph_new().second.begin(), p.graph_new().second.end()),
         _comm(MPI_COMM_NULL)
   {
     // TODO: handle block sizes

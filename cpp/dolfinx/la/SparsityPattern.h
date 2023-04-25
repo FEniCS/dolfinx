@@ -127,7 +127,12 @@ public:
   /// @note Column global indices can be obtained from
   /// SparsityPattern::column_index_map()
   /// @note Includes ghost rows
-  const graph::AdjacencyList<std::int32_t>& graph() const;
+  // const graph::AdjacencyList<std::int32_t>& graph() const;
+
+  /// @brief  Adj list
+  /// @return data
+  std::pair<std::span<const std::int32_t>, std::span<const std::int32_t>>
+  graph_new() const;
 
   /// @brief Row-wise start of off-diagonal (unowned columns) on each
   /// row.
@@ -158,6 +163,9 @@ private:
 
   // Sparsity pattern data (computed once pattern is finalised)
   std::shared_ptr<graph::AdjacencyList<std::int32_t>> _graph;
+
+  std::vector<std::int32_t> _edges;
+  std::vector<std::int32_t> _offsets;
 
   // Start of off-diagonal (unowned columns) on each row
   std::vector<int> _off_diagonal_offset;

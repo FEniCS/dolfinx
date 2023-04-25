@@ -358,7 +358,6 @@ void SparsityPattern::assemble()
 
   // Sort and remove duplicate column indices in each row
   std::vector<std::int32_t> adj_counts(local_size0 + owners0.size(), 0);
-  std::vector<std::int32_t> adj_data;
   _off_diagonal_offset.resize(local_size0 + owners0.size());
   for (std::size_t i = 0; i < local_size0 + owners0.size(); ++i)
   {
@@ -370,20 +369,19 @@ void SparsityPattern::assemble()
     _off_diagonal_offset[i] = std::distance(
         row.begin(), std::lower_bound(row.begin(), it_end, local_size1));
 
-    adj_data.insert(adj_data.end(), row.begin(), it_end);
+    _edges.insert(_edges.end(), row.begin(), it_end);
     adj_counts[i] += std::distance(row.begin(), it_end);
   }
   // Clear cache
   std::vector<std::vector<std::int32_t>>().swap(_row_cache);
 
   // Compute offsets for adjacency list
-  std::vector<std::int32_t> adj_offsets(local_size0 + owners0.size() + 1);
-  std::partial_sum(adj_counts.begin(), adj_counts.end(),
-                   adj_offsets.begin() + 1);
+  _offsets.resize(local_size0 + owners0.size() + 1, 0);
+  std::partial_sum(adj_counts.begin(), adj_counts.end(), _offsets.begin() + 1);
 
-  adj_data.shrink_to_fit();
-  _graph = std::make_shared<graph::AdjacencyList<std::int32_t>>(
-      std::move(adj_data), std::move(adj_offsets));
+  _edges.shrink_to_fit();
+  _graph
+      = std::make_shared<graph::AdjacencyList<std::int32_t>>(_edges, _offsets);
 
   // Column count increased due to received rows from other processes
   LOG(INFO) << "Column ghost size increased from "
@@ -408,14 +406,21 @@ std::int32_t SparsityPattern::nnz_off_diag(std::int32_t row) const
 {
   if (!_graph)
     throw std::runtime_error("Sparsity pattern has not be assembled.");
-  return _graph->num_links(row) - _off_diagonal_offset[row];
+  return (_offsets[row + 1] - _offsets[row]) - _off_diagonal_offset[row];
+  // return _graph->num_links(row) - _off_diagonal_offset[row];
 }
 //-----------------------------------------------------------------------------
-const graph::AdjacencyList<std::int32_t>& SparsityPattern::graph() const
+// const graph::AdjacencyList<std::int32_t>& SparsityPattern::graph() const
+// {
+//   if (!_graph)
+//     throw std::runtime_error("Sparsity pattern has not been assembled.");
+//   return *_graph;
+// }
+//-----------------------------------------------------------------------------
+std::pair<std::span<const std::int32_t>, std::span<const std::int32_t>>
+SparsityPattern::graph_new() const
 {
-  if (!_graph)
-    throw std::runtime_error("Sparsity pattern has not been assembled.");
-  return *_graph;
+  return {_edges, _offsets};
 }
 //-----------------------------------------------------------------------------
 std::span<const int> SparsityPattern::off_diagonal_offset() const

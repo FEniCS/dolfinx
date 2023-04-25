@@ -266,9 +266,9 @@ void la(py::module& m)
           [](dolfinx::la::SparsityPattern& self,
              const py::array_t<std::int32_t, py::array::c_style>& rows)
           { self.insert_diagonal(std::span(rows.data(), rows.size())); },
-          py::arg("rows"))
-      .def_property_readonly("graph", &dolfinx::la::SparsityPattern::graph,
-                             py::return_value_policy::reference_internal);
+          py::arg("rows"));
+      // .def_property_readonly("graph", &dolfinx::la::SparsityPattern::graph,
+      //                        py::return_value_policy::reference_internal);
 
   // Declare objects that are templated over type
   declare_objects<float>(m, "float32");
