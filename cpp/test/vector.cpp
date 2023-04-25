@@ -36,7 +36,7 @@ void test_vector()
   auto index_map = std::make_shared<common::IndexMap>(
       MPI_COMM_WORLD, size_local, ghosts, global_ghost_owner);
 
-  la::Vector<T> v(index_map, 1);
+  la::Vector<std::vector<T>> v(index_map, 1);
   std::fill(v.mutable_array().begin(), v.mutable_array().end(), 1.0);
 
   double norm2 = la::squared_norm(v);
