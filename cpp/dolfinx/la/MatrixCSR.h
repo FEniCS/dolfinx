@@ -160,7 +160,6 @@ public:
   /// Create a distributed matrix
   /// @param[in] p The sparsty pattern the describes the parallel
   /// distribution and the non-zero structure
-  /// @param[in] alloc The memory allocator for the data storafe
   MatrixCSR(const SparsityPattern& p)
       : _index_maps({p.index_map(0),
                      std::make_shared<common::IndexMap>(p.column_index_map())}),
