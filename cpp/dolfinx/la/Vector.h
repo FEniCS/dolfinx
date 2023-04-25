@@ -29,20 +29,18 @@ class Vector
 {
 
   template <typename T>
-  struct is_complex_t : public std::false_type
+  struct is_scalar_type_t : public std::is_arithmetic<T>
   {
   };
   template <typename T>
-  struct is_complex_t<std::complex<T>> : public std::true_type
+  struct is_scalar_type_t<std::complex<T>> : public std::true_type
   {
   };
 
-  using V_t = typename std::conditional<std::is_arithmetic_v<V>
-                                            || is_complex_t<V>::value,
-                                        std::vector<V>, V>::type;
-  using T = typename std::conditional<std::is_arithmetic_v<V>
-                                          || is_complex_t<V>::value,
-                                      V, typename V_t::value_type>::type;
+  using V_t = typename std::conditional_t<is_scalar_type_t<V>::value,
+                                          std::vector<V>, V>;
+  using T = typename std::conditional_t<is_scalar_type_t<V>::value, V,
+                                        typename V_t::value_type>;
 
 public:
   using value_type = T;
