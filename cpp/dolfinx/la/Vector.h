@@ -20,7 +20,9 @@ namespace dolfinx::la
 {
 
 /// Distributed vector
-
+///
+/// @tparam V data container type
+///
 template <class V>
 class Vector
 {
@@ -28,6 +30,8 @@ class Vector
 
 public:
   /// Create a distributed vector
+  /// @param map IndexMap for parallel distribution of the data
+  /// @param bs Block size
   Vector(std::shared_ptr<const common::IndexMap> map, int bs)
       : _map(map), _scatterer(std::make_shared<common::Scatterer<>>(*_map, bs)),
         _bs(bs), _buffer_local(_scatterer->local_buffer_size()),

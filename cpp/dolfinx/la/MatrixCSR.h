@@ -114,6 +114,7 @@ void add_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
 /// partitioned row-wise across MPI rank.
 ///
 /// @tparam V The data container type for the matrix
+/// @tparam Idx The index container type
 ///
 /// @note Highly "experimental" storage of a matrix in CSR format which
 /// can be assembled into using the usual dolfinx assembly routines
@@ -121,7 +122,7 @@ void add_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
 /// code.
 ///
 /// @todo Handle block sizes
-template <typename V>
+template <class V, class Idx = std::vector<std::int32_t>>
 class MatrixCSR
 {
 public:
@@ -538,10 +539,10 @@ private:
 
   // Matrix data
   V _data;
-  std::vector<std::int32_t> _cols, _row_ptr;
+  Idx _cols, _row_ptr;
 
   // Start of off-diagonal (unowned columns) on each row
-  std::vector<std::int32_t> _off_diagonal_offset;
+  Idx _off_diagonal_offset;
 
   // Neighborhood communicator (ghost->owner communicator for rows)
   dolfinx::MPI::Comm _comm;
