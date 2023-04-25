@@ -415,7 +415,7 @@ SparsityPattern::graph_new() const
   return {_edges, _offsets};
 }
 //-----------------------------------------------------------------------------
-std::span<const int> SparsityPattern::off_diagonal_offset() const
+std::span<const std::int64_t> SparsityPattern::off_diagonal_offset() const
 {
   if (_offsets.empty())
     throw std::runtime_error("Sparsity pattern has not be assembled.");

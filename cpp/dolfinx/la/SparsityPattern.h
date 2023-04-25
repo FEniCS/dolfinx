@@ -137,7 +137,7 @@ public:
   /// @brief Row-wise start of off-diagonal (unowned columns) on each
   /// row.
   /// @note Includes ghost rows
-  std::span<const int> off_diagonal_offset() const;
+  std::span<const std::int64_t> off_diagonal_offset() const;
 
   /// Return MPI communicator
   MPI_Comm comm() const;
@@ -161,11 +161,13 @@ private:
   // Cache for unassembled entries on owned and unowned (ghost) rows
   std::vector<std::vector<std::int32_t>> _row_cache;
 
-  // Sparsity pattern data (computed once pattern is finalised)
+  // Sparsity pattern adjacency data (computed once pattern is
+  // finalised). _edges holds the edges (connected dofs). The edges for
+  // node i are in the range [_edges[i], _edges[i + 1]).
   std::vector<std::int32_t> _edges;
   std::vector<std::int32_t> _offsets;
 
   // Start of off-diagonal (unowned columns) on each row
-  std::vector<int> _off_diagonal_offset;
+  std::vector<std::int64_t> _off_diagonal_offset;
 };
 } // namespace dolfinx::la
