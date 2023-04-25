@@ -45,6 +45,8 @@ class Vector
                                       V, typename V_t::value_type>::type;
 
 public:
+  using value_type = T;
+
   /// Create a distributed vector
   /// @param map IndexMap for parallel distribution of the data
   /// @param bs Block size

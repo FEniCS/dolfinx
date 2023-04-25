@@ -41,9 +41,7 @@ namespace linalg
 /// @param[in] alpha
 /// @param[in] x
 /// @param[in] y
-template <typename U>
-void axpy(la::Vector<U>& r, typename U::value_type alpha,
-          const la::Vector<U>& x, const la::Vector<U>& y)
+void axpy(auto& r, auto alpha, const auto& x, const auto& y)
 {
   std::transform(x.array().begin(), x.array().end(), y.array().begin(),
                  r.mutable_array().begin(),
@@ -61,21 +59,24 @@ void axpy(la::Vector<U>& r, typename U::value_type alpha,
 /// @return The number if iterations
 /// @pre It is required that the ghost values of `x` and `b` have been
 /// updated before this function is called
-template <typename U, typename ApplyFunction>
-int cg(la::Vector<U>& x, const la::Vector<U>& b, ApplyFunction&& action,
-       int kmax = 50, double rtol = 1e-8)
+// template <typename U, typename ApplyFunction>
+// int cg(la::Vector<U>& x, const la::Vector<U>& b, ApplyFunction&& action,
+template <typename ApplyFunction>
+int cg(auto& x, auto& b, ApplyFunction&& action, int kmax = 50,
+       double rtol = 1e-8)
 {
-  using T = typename U::value_type;
+  // using T = typename U::value_type;
+  using T = typename std::decay_t<decltype(x)>::value_type;
 
   // Create working vectors
-  la::Vector<U> r(b), y(b);
+  la::Vector r(b), y(b);
 
   // Compute initial residual r0 = b - Ax0
   action(x, y);
   axpy(r, T(-1), y, b);
 
   // Create p work vector
-  la::Vector<U> p(r);
+  la::Vector p(r);
 
   // Iterations of CG
   auto rnorm0 = la::squared_norm(r);
@@ -185,11 +186,7 @@ int main(int argc, char* argv[])
     const std::vector<T> constants = fem::pack_constants(*M);
 
     // Create function for computing the action of A on x (y = Ax)
-    std::function<void(la::Vector<std::vector<T>>&,
-                       la::Vector<std::vector<T>>&)>
-        action
-        = [&M, &ui, &bc, &coeff, &constants](la::Vector<std::vector<T>>& x,
-                                             la::Vector<std::vector<T>>& y)
+    auto action = [&M, &ui, &bc, &coeff, &constants](auto& x, auto& y)
     {
       // Zero y
       y.set(0.0);
