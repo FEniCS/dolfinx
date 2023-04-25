@@ -148,7 +148,7 @@ void petsc_module(py::module& m)
         py::arg("bs"), "Create a ghosted PETSc Vec for index map.");
   m.def(
       "create_vector_wrap",
-      [](dolfinx::la::Vector<std::vector<PetscScalar>>& x)
+      [](dolfinx::la::Vector<PetscScalar>& x)
       { return dolfinx::la::petsc::create_vector_wrap(x); },
       py::return_value_policy::take_ownership, py::arg("x"),
       "Create a ghosted PETSc Vec that wraps a DOLFINx Vector");

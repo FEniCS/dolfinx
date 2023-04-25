@@ -118,7 +118,6 @@ int main(int argc, char* argv[])
   dolfinx::init_logging(argc, argv);
   PetscInitialize(&argc, &argv, nullptr, nullptr);
 
-  // std::cout << "test 0: " << is_complex_t<double> << std::endl;
   {
     // Create mesh and function space
     auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);

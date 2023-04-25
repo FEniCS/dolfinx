@@ -142,7 +142,7 @@ void declare_objects(py::module& m, const std::string& type)
                std::shared_ptr<const dolfinx::fem::FunctionSpace<double>>>(),
            "Create a function on the given function space")
       .def(py::init<std::shared_ptr<dolfinx::fem::FunctionSpace<double>>,
-                    std::shared_ptr<dolfinx::la::Vector<std::vector<T>>>>())
+                    std::shared_ptr<dolfinx::la::Vector<T>>>())
       .def_readwrite("name", &dolfinx::fem::Function<T, double>::name)
       .def("sub", &dolfinx::fem::Function<T, double>::sub,
            "Return sub-function (view into parent Function")
