@@ -43,6 +43,7 @@ class Vector
                                         typename V_t::value_type>;
 
 public:
+  /// value_type Scalar type of Vector
   using value_type = T;
 
   /// Create a distributed vector
