@@ -100,7 +100,7 @@ public:
 private:
   std::shared_ptr<fem::Form<T>> _l, _j;
   std::vector<std::shared_ptr<const fem::DirichletBC<T>>> _bcs;
-  la::Vector<T> _b;
+  la::Vector<std::vector<T>> _b;
   Vec _b_petsc = nullptr;
   la::petsc::Matrix _matA;
 };

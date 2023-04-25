@@ -42,8 +42,8 @@ namespace linalg
 /// @param[in] x
 /// @param[in] y
 template <typename U>
-void axpy(la::Vector<U>& r, U alpha, const la::Vector<U>& x,
-          const la::Vector<U>& y)
+void axpy(la::Vector<U>& r, typename U::value_type alpha,
+          const la::Vector<U>& x, const la::Vector<U>& y)
 {
   std::transform(x.array().begin(), x.array().end(), y.array().begin(),
                  r.mutable_array().begin(),
@@ -65,12 +65,14 @@ template <typename U, typename ApplyFunction>
 int cg(la::Vector<U>& x, const la::Vector<U>& b, ApplyFunction&& action,
        int kmax = 50, double rtol = 1e-8)
 {
+  using T = typename U::value_type;
+
   // Create working vectors
   la::Vector<U> r(b), y(b);
 
   // Compute initial residual r0 = b - Ax0
   action(x, y);
-  axpy(r, U(-1), y, b);
+  axpy(r, T(-1), y, b);
 
   // Create p work vector
   la::Vector<U> p(r);
@@ -88,7 +90,7 @@ int cg(la::Vector<U>& x, const la::Vector<U>& b, ApplyFunction&& action,
     action(p, y);
 
     // Compute alpha = r.r/p.y
-    const U alpha = rnorm / la::inner_product(p, y);
+    const T alpha = rnorm / la::inner_product(p, y);
 
     // Update x (x <- x + alpha*p)
     axpy(x, alpha, p, x);
@@ -98,7 +100,7 @@ int cg(la::Vector<U>& x, const la::Vector<U>& b, ApplyFunction&& action,
 
     // Update residual norm
     const auto rnorm_new = la::squared_norm(r);
-    const U beta = rnorm_new / rnorm;
+    const T beta = rnorm_new / rnorm;
     rnorm = rnorm_new;
 
     if (rnorm / rnorm0 < rtol2)
@@ -161,7 +163,8 @@ int main(int argc, char* argv[])
     auto bc = std::make_shared<const fem::DirichletBC<T>>(u_D, bdofs);
 
     // Assemble RHS vector
-    la::Vector<T> b(V->dofmap()->index_map, V->dofmap()->index_map_bs());
+    la::Vector<std::vector<T>> b(V->dofmap()->index_map,
+                                 V->dofmap()->index_map_bs());
     fem::assemble_vector(b.mutable_array(), *L);
 
     // Apply lifting to account for Dirichlet boundary condition
@@ -182,8 +185,11 @@ int main(int argc, char* argv[])
     const std::vector<T> constants = fem::pack_constants(*M);
 
     // Create function for computing the action of A on x (y = Ax)
-    std::function<void(la::Vector<T>&, la::Vector<T>&)> action
-        = [&M, &ui, &bc, &coeff, &constants](la::Vector<T>& x, la::Vector<T>& y)
+    std::function<void(la::Vector<std::vector<T>>&,
+                       la::Vector<std::vector<T>>&)>
+        action
+        = [&M, &ui, &bc, &coeff, &constants](la::Vector<std::vector<T>>& x,
+                                             la::Vector<std::vector<T>>& y)
     {
       // Zero y
       y.set(0.0);
