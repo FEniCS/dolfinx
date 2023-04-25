@@ -71,7 +71,7 @@ void spmv_impl(std::span<const T> values,
 /// @param[in] x Input vector
 /// @param[in, out] y Output vector
 template <typename T>
-void spmv(la::MatrixCSR<T>& A, la::Vector<std::vector<T>>& x,
+void spmv(la::MatrixCSR<std::vector<T>>& A, la::Vector<std::vector<T>>& x,
           la::Vector<std::vector<T>>& y)
 
 {
@@ -106,7 +106,7 @@ void spmv(la::MatrixCSR<T>& A, la::Vector<std::vector<T>>& x,
 /// @brief Create a matrix operator
 /// @param comm The communicator to builf the matrix on
 /// @return The assembled matrix
-la::MatrixCSR<double> create_operator(MPI_Comm comm)
+la::MatrixCSR<std::vector<double>> create_operator(MPI_Comm comm)
 {
   auto part = mesh::create_cell_partitioner(mesh::GhostMode::none);
   auto mesh = std::make_shared<mesh::Mesh<double>>(
@@ -123,7 +123,7 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
 
   la::SparsityPattern sp = fem::create_sparsity_pattern(*a);
   sp.assemble();
-  la::MatrixCSR<double> A(sp);
+  la::MatrixCSR<std::vector<double>> A(sp);
   fem::assemble_matrix(A.mat_add_values(), *a, {});
   A.finalize();
 
@@ -132,8 +132,8 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
 
 [[maybe_unused]] void test_matrix_norm()
 {
-  la::MatrixCSR<double> A0 = create_operator(MPI_COMM_SELF);
-  la::MatrixCSR<double> A1 = create_operator(MPI_COMM_WORLD);
+  la::MatrixCSR A0 = create_operator(MPI_COMM_SELF);
+  la::MatrixCSR A1 = create_operator(MPI_COMM_WORLD);
   CHECK(A1.norm_squared() == Approx(A0.norm_squared()).epsilon(1e-8));
 }
 
@@ -162,7 +162,7 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
   sp.assemble();
 
   // Assemble matrix
-  la::MatrixCSR<double> A(sp);
+  la::MatrixCSR<std::vector<double>> A(sp);
   fem::assemble_matrix(A.mat_add_values(), *a, {});
   A.finalize();
   CHECK((V->dofmap()->index_map->size_local() == A.num_owned_rows()));
@@ -197,7 +197,7 @@ void test_matrix()
   p.assemble();
 
   using T = float;
-  la::MatrixCSR<T> A(p);
+  la::MatrixCSR<std::vector<T>> A(p);
   A.add(std::vector<decltype(A)::value_type>{1}, std::vector{0},
         std::vector{0});
   A.add(std::vector<decltype(A)::value_type>{2.3}, std::vector{4},
