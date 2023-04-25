@@ -33,8 +33,8 @@ namespace impl
 /// @param[in] local_size The maximum row index that can be set. Used
 /// when debugging is own to check that rows beyond a permitted range
 /// are not being set.
-template <typename U, typename V, typename W, typename X>
-void set_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
+template <typename U, typename V0, typename V1, typename W, typename X>
+void set_csr(U&& data, const V0& cols, const V1& row_ptr, const W& x,
              const X& xrows, const X& xcols,
              [[maybe_unused]] typename X::value_type local_size)
 {
@@ -75,8 +75,8 @@ void set_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
 /// to the matrix
 /// @param[in] xrows The row indices of `x`
 /// @param[in] xcols The column indices of `x`
-template <typename U, typename V, typename W, typename X>
-void add_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
+template <typename U, typename V0, typename V1, typename W, typename X>
+void add_csr(U&& data, const V0& cols, const V1& row_ptr, const W& x,
              const X& xrows, const X& xcols)
 {
   assert(x.size() == xrows.size() * xcols.size());
@@ -517,7 +517,7 @@ public:
 
   /// Get local row pointers
   /// @note Includes pointers to ghost rows
-  const std::vector<std::int32_t>& row_ptr() const { return _row_ptr; }
+  const std::vector<std::int64_t>& row_ptr() const { return _row_ptr; }
 
   /// Get local column indices
   /// @note Includes columns in ghost rows
@@ -544,10 +544,11 @@ private:
 
   // Matrix data
   std::vector<T, Allocator> _data;
-  std::vector<std::int32_t> _cols, _row_ptr;
+  std::vector<std::int32_t> _cols;
+  std::vector<std::int64_t> _row_ptr;
 
   // Start of off-diagonal (unowned columns) on each row
-  std::vector<std::int32_t> _off_diagonal_offset;
+  std::vector<std::int64_t> _off_diagonal_offset;
 
   // Neighborhood communicator (ghost->owner communicator for rows)
   dolfinx::MPI::Comm _comm;

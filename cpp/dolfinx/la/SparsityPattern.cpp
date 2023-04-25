@@ -91,7 +91,7 @@ SparsityPattern::SparsityPattern(
       if (!p)
         continue;
 
-      if (p->_graph)
+      if (!_offsets.empty())
       {
         throw std::runtime_error("Sub-sparsity pattern has been finalised. "
                                  "Cannot compute stacked pattern.");
@@ -144,7 +144,7 @@ SparsityPattern::SparsityPattern(
 void SparsityPattern::insert(const std::span<const std::int32_t>& rows,
                              const std::span<const std::int32_t>& cols)
 {
-  if (_graph)
+  if (!_offsets.empty())
   {
     throw std::runtime_error(
         "Cannot insert into sparsity pattern. It has already been assembled");
@@ -168,7 +168,7 @@ void SparsityPattern::insert(const std::span<const std::int32_t>& rows,
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_diagonal(std::span<const std::int32_t> rows)
 {
-  if (_graph)
+  if (!_offsets.empty())
   {
     throw std::runtime_error(
         "Cannot insert into sparsity pattern. It has already been assembled");
@@ -198,7 +198,7 @@ SparsityPattern::index_map(int dim) const
 //-----------------------------------------------------------------------------
 std::vector<std::int64_t> SparsityPattern::column_indices() const
 {
-  if (!_graph)
+  if (_offsets.empty())
     throw std::runtime_error("Sparsity pattern has not been finalised.");
 
   std::array range = _index_maps[1]->local_range();
@@ -213,7 +213,7 @@ std::vector<std::int64_t> SparsityPattern::column_indices() const
 //-----------------------------------------------------------------------------
 common::IndexMap SparsityPattern::column_index_map() const
 {
-  if (!_graph)
+  if (_offsets.empty())
     throw std::runtime_error("Sparsity pattern has not been finalised.");
 
   std::array range = _index_maps[1]->local_range();
@@ -226,7 +226,7 @@ int SparsityPattern::block_size(int dim) const { return _bs[dim]; }
 //-----------------------------------------------------------------------------
 void SparsityPattern::assemble()
 {
-  if (_graph)
+  if (!_offsets.empty())
     throw std::runtime_error("Sparsity pattern has already been finalised.");
 
   common::Timer t0("SparsityPattern::assemble");
@@ -380,8 +380,6 @@ void SparsityPattern::assemble()
   std::partial_sum(adj_counts.begin(), adj_counts.end(), _offsets.begin() + 1);
 
   _edges.shrink_to_fit();
-  _graph
-      = std::make_shared<graph::AdjacencyList<std::int32_t>>(_edges, _offsets);
 
   // Column count increased due to received rows from other processes
   LOG(INFO) << "Column ghost size increased from "
@@ -390,41 +388,37 @@ void SparsityPattern::assemble()
 //-----------------------------------------------------------------------------
 std::int64_t SparsityPattern::num_nonzeros() const
 {
-  if (!_graph)
+  if (_offsets.empty())
     throw std::runtime_error("Sparsity pattern has not be assembled.");
-  return _graph->array().size();
+  return _edges.size();
 }
 //-----------------------------------------------------------------------------
 std::int32_t SparsityPattern::nnz_diag(std::int32_t row) const
 {
-  if (!_graph)
+  if (_offsets.empty())
     throw std::runtime_error("Sparsity pattern has not be assembled.");
   return _off_diagonal_offset[row];
 }
 //-----------------------------------------------------------------------------
 std::int32_t SparsityPattern::nnz_off_diag(std::int32_t row) const
 {
-  if (!_graph)
+  if (_offsets.empty())
     throw std::runtime_error("Sparsity pattern has not be assembled.");
   return (_offsets[row + 1] - _offsets[row]) - _off_diagonal_offset[row];
-  // return _graph->num_links(row) - _off_diagonal_offset[row];
 }
-//-----------------------------------------------------------------------------
-// const graph::AdjacencyList<std::int32_t>& SparsityPattern::graph() const
-// {
-//   if (!_graph)
-//     throw std::runtime_error("Sparsity pattern has not been assembled.");
-//   return *_graph;
-// }
 //-----------------------------------------------------------------------------
 std::pair<std::span<const std::int32_t>, std::span<const std::int32_t>>
 SparsityPattern::graph_new() const
 {
+  if (_offsets.empty())
+    throw std::runtime_error("Sparsity pattern has not been assembled.");
   return {_edges, _offsets};
 }
 //-----------------------------------------------------------------------------
 std::span<const int> SparsityPattern::off_diagonal_offset() const
 {
+  if (_offsets.empty())
+    throw std::runtime_error("Sparsity pattern has not be assembled.");
   return _off_diagonal_offset;
 }
 //-----------------------------------------------------------------------------

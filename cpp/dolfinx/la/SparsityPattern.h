@@ -162,8 +162,6 @@ private:
   std::vector<std::vector<std::int32_t>> _row_cache;
 
   // Sparsity pattern data (computed once pattern is finalised)
-  std::shared_ptr<graph::AdjacencyList<std::int32_t>> _graph;
-
   std::vector<std::int32_t> _edges;
   std::vector<std::int32_t> _offsets;
 

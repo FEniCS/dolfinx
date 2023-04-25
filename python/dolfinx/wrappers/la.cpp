@@ -128,9 +128,9 @@ void declare_objects(py::module& m, const std::string& type)
       .def_property_readonly("indptr",
                              [](dolfinx::la::MatrixCSR<T>& self)
                              {
-                               std::span<const std::int32_t> array
+                               std::span<const std::int64_t> array
                                    = self.row_ptr();
-                               return py::array_t<const std::int32_t>(
+                               return py::array_t<const std::int64_t>(
                                    array.size(), array.data(), py::cast(self));
                              })
       .def("finalize_begin", &dolfinx::la::MatrixCSR<T>::finalize_begin)
@@ -267,8 +267,8 @@ void la(py::module& m)
              const py::array_t<std::int32_t, py::array::c_style>& rows)
           { self.insert_diagonal(std::span(rows.data(), rows.size())); },
           py::arg("rows"));
-      // .def_property_readonly("graph", &dolfinx::la::SparsityPattern::graph,
-      //                        py::return_value_policy::reference_internal);
+  // .def_property_readonly("graph", &dolfinx::la::SparsityPattern::graph,
+  //                        py::return_value_policy::reference_internal);
 
   // Declare objects that are templated over type
   declare_objects<float>(m, "float32");
