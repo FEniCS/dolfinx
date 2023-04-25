@@ -119,9 +119,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   // Dimension sanity checks
   assert((int)dofmap.size()
          == (cells->num_nodes() * dofmap_view.element_dof_layout().num_dofs()));
-
-  const int cell_dimension = dofmap_view.element_dof_layout().num_dofs();
-  assert(dofmap.size() % cell_dimension == 0);
+  assert(dofmap.size() % dofmap_view.element_dof_layout().num_dofs() == 0);
 
   // Copy dof layout, discarding parent data
   ElementDofLayout element_dof_layout = dofmap_view.element_dof_layout().copy();
