@@ -113,16 +113,6 @@ using T = PetscScalar;
 //
 // .. code-block:: cpp
 
-// template <typename T>
-// struct is_complex_t : public std::false_type
-// {
-// };
-
-// template <typename T>
-// struct is_complex_t<std::complex<T>> : public std::true_type
-// {
-// };
-
 int main(int argc, char* argv[])
 {
   dolfinx::init_logging(argc, argv);
