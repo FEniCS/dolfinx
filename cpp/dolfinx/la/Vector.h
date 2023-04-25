@@ -14,6 +14,7 @@
 #include <memory>
 #include <numeric>
 #include <span>
+#include <type_traits>
 #include <vector>
 
 namespace dolfinx::la
@@ -26,7 +27,22 @@ namespace dolfinx::la
 template <class V>
 class Vector
 {
-  using T = typename V::value_type;
+
+  template <typename T>
+  struct is_complex_t : public std::false_type
+  {
+  };
+  template <typename T>
+  struct is_complex_t<std::complex<T>> : public std::true_type
+  {
+  };
+
+  using V_t = typename std::conditional<std::is_arithmetic_v<V>
+                                            || is_complex_t<V>::value,
+                                        std::vector<V>, V>::type;
+  using T = typename std::conditional<std::is_arithmetic_v<V>
+                                          || is_complex_t<V>::value,
+                                      V, typename V_t::value_type>::type;
 
 public:
   /// Create a distributed vector
@@ -192,10 +208,10 @@ private:
   std::vector<MPI_Request> _request = {MPI_REQUEST_NULL};
 
   // Buffers for ghost scatters
-  V _buffer_local, _buffer_remote;
+  V_t _buffer_local, _buffer_remote;
 
   // Vector data
-  V _x;
+  V_t _x;
 };
 
 /// Compute the inner product of two vectors. The two vectors must have

@@ -113,11 +113,22 @@ using T = PetscScalar;
 //
 // .. code-block:: cpp
 
+// template <typename T>
+// struct is_complex_t : public std::false_type
+// {
+// };
+
+// template <typename T>
+// struct is_complex_t<std::complex<T>> : public std::true_type
+// {
+// };
+
 int main(int argc, char* argv[])
 {
   dolfinx::init_logging(argc, argv);
   PetscInitialize(&argc, &argv, nullptr, nullptr);
 
+  // std::cout << "test 0: " << is_complex_t<double> << std::endl;
   {
     // Create mesh and function space
     auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
@@ -216,9 +227,8 @@ int main(int argc, char* argv[])
     // Compute solution
     fem::Function<T> u(V);
     auto A = la::petsc::Matrix(fem::petsc::create_matrix(*a), false);
-    la::Vector<std::vector<T>> b(
-        L->function_spaces()[0]->dofmap()->index_map,
-        L->function_spaces()[0]->dofmap()->index_map_bs());
+    la::Vector<T> b(L->function_spaces()[0]->dofmap()->index_map,
+                    L->function_spaces()[0]->dofmap()->index_map_bs());
 
     MatZeroEntries(A.mat());
     fem::assemble_matrix(la::petsc::Matrix::set_block_fn(A.mat(), ADD_VALUES),
