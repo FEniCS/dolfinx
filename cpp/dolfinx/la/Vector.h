@@ -21,23 +21,18 @@ namespace dolfinx::la
 
 /// Distributed vector
 
-template <typename T, class Allocator = std::allocator<T>>
+template <class V>
 class Vector
 {
+  using T = typename V::value_type;
+
 public:
-  /// The value type
-  using value_type = T;
-
-  /// The allocator type
-  using allocator_type = Allocator;
-
   /// Create a distributed vector
-  Vector(std::shared_ptr<const common::IndexMap> map, int bs,
-         const Allocator& alloc = Allocator())
+  Vector(std::shared_ptr<const common::IndexMap> map, int bs)
       : _map(map), _scatterer(std::make_shared<common::Scatterer<>>(*_map, bs)),
-        _bs(bs), _buffer_local(_scatterer->local_buffer_size(), alloc),
-        _buffer_remote(_scatterer->remote_buffer_size(), alloc),
-        _x(bs * (map->size_local() + map->num_ghosts()), alloc)
+        _bs(bs), _buffer_local(_scatterer->local_buffer_size()),
+        _buffer_remote(_scatterer->remote_buffer_size()),
+        _x(bs * (map->size_local() + map->num_ghosts()))
   {
   }
 
@@ -179,9 +174,6 @@ public:
   /// Get local part of the vector
   std::span<T> mutable_array() { return std::span(_x); }
 
-  /// Get the allocator associated with the container
-  constexpr allocator_type allocator() const { return _x.get_allocator(); }
-
 private:
   // Map describing the data layout
   std::shared_ptr<const common::IndexMap> _map;
@@ -196,10 +188,10 @@ private:
   std::vector<MPI_Request> _request = {MPI_REQUEST_NULL};
 
   // Buffers for ghost scatters
-  std::vector<T, Allocator> _buffer_local, _buffer_remote;
+  V _buffer_local, _buffer_remote;
 
   // Vector data
-  std::vector<T, Allocator> _x;
+  V _x;
 };
 
 /// Compute the inner product of two vectors. The two vectors must have
@@ -208,9 +200,10 @@ private:
 /// @param a A vector
 /// @param b A vector
 /// @return Returns `a^{H} b` (`a^{T} b` if `a` and `b` are real)
-template <typename T, class Allocator>
-T inner_product(const Vector<T, Allocator>& a, const Vector<T, Allocator>& b)
+template <class V>
+auto inner_product(const Vector<V>& a, const Vector<V>& b)
 {
+  using T = typename V::value_type;
   const std::int32_t local_size = a.bs() * a.map()->size_local();
   if (local_size != b.bs() * b.map()->size_local())
     throw std::runtime_error("Incompatible vector sizes");
@@ -238,9 +231,10 @@ T inner_product(const Vector<T, Allocator>& a, const Vector<T, Allocator>& b)
 
 /// Compute the squared L2 norm of vector
 /// @note Collective MPI operation
-template <typename T, class Allocator>
-auto squared_norm(const Vector<T, Allocator>& a)
+template <class V>
+auto squared_norm(const Vector<V>& a)
 {
+  using T = typename V::value_type;
   T result = inner_product(a, a);
   return std::real(result);
 }
@@ -249,9 +243,10 @@ auto squared_norm(const Vector<T, Allocator>& a)
 /// @note Collective MPI operation
 /// @param a A vector
 /// @param type Norm type (supported types are \f$L^2\f$ and \f$L^\infty\f$)
-template <typename T, class Allocator>
-auto norm(const Vector<T, Allocator>& a, Norm type = Norm::l2)
+template <class V>
+auto norm(const Vector<V>& a, Norm type = Norm::l2)
 {
+  using T = typename V::value_type;
   switch (type)
   {
   case Norm::l2:
@@ -279,9 +274,10 @@ auto norm(const Vector<T, Allocator>& a, Norm type = Norm::l2)
 /// vectors must have identical parallel layouts. The vectors are
 /// modified in-place.
 /// @param[in] tol The tolerance used to detect a linear dependency
-template <typename T, class Allocator>
-void orthonormalize(std::span<Vector<T, Allocator>> basis, double tol = 1.0e-10)
+template <class V>
+void orthonormalize(std::span<Vector<V>> basis, double tol = 1.0e-10)
 {
+  using T = typename V::value_type;
   // Loop over each vector in basis
   for (std::size_t i = 0; i < basis.size(); ++i)
   {
@@ -313,10 +309,10 @@ void orthonormalize(std::span<Vector<T, Allocator>> basis, double tol = 1.0e-10)
 /// @param[in] basis The set of vectors to check
 /// @param[in] tol The tolerance used to test for orthonormality
 /// @return True is basis is orthonormal, otherwise false
-template <typename T, class Allocator>
-bool is_orthonormal(std::span<const Vector<T, Allocator>> basis,
-                    double tol = 1.0e-10)
+template <class V>
+bool is_orthonormal(std::span<const Vector<V>> basis, double tol = 1.0e-10)
 {
+  using T = typename V::value_type;
   for (std::size_t i = 0; i < basis.size(); i++)
   {
     for (std::size_t j = i; j < basis.size(); j++)

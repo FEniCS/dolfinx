@@ -39,35 +39,38 @@ void declare_objects(py::module& m, const std::string& type)
 {
   // dolfinx::la::Vector
   std::string pyclass_vector_name = std::string("Vector_") + type;
-  py::class_<dolfinx::la::Vector<T>, std::shared_ptr<dolfinx::la::Vector<T>>>(
+  py::class_<dolfinx::la::Vector<std::vector<T>>,
+             std::shared_ptr<dolfinx::la::Vector<std::vector<T>>>>(
       m, pyclass_vector_name.c_str())
-      .def(py::init([](std::shared_ptr<const dolfinx::common::IndexMap> map,
-                       int bs) { return dolfinx::la::Vector<T>(map, bs); }),
+      .def(py::init(
+               [](std::shared_ptr<const dolfinx::common::IndexMap> map, int bs)
+               { return dolfinx::la::Vector<std::vector<T>>(map, bs); }),
            py::arg("map"), py::arg("bs"))
-      .def(py::init([](const dolfinx::la::Vector<T>& vec)
-                    { return dolfinx::la::Vector<T>(vec); }),
+      .def(py::init([](const dolfinx::la::Vector<std::vector<T>>& vec)
+                    { return dolfinx::la::Vector<std::vector<T>>(vec); }),
            py::arg("vec"))
-      .def_property_readonly("dtype", [](const dolfinx::la::Vector<T>& self)
+      .def_property_readonly("dtype",
+                             [](const dolfinx::la::Vector<std::vector<T>>& self)
                              { return py::dtype::of<T>(); })
-      .def("set", &dolfinx::la::Vector<T>::set, py::arg("v"))
+      .def("set", &dolfinx::la::Vector<std::vector<T>>::set, py::arg("v"))
       .def(
           "norm",
-          [](dolfinx::la::Vector<T>& self, dolfinx::la::Norm type)
+          [](dolfinx::la::Vector<std::vector<T>>& self, dolfinx::la::Norm type)
           { return dolfinx::la::norm(self, type); },
           py::arg("type") = dolfinx::la::Norm::l2)
-      .def_property_readonly("map", &dolfinx::la::Vector<T>::map)
-      .def_property_readonly("bs", &dolfinx::la::Vector<T>::bs)
+      .def_property_readonly("map", &dolfinx::la::Vector<std::vector<T>>::map)
+      .def_property_readonly("bs", &dolfinx::la::Vector<std::vector<T>>::bs)
       .def_property_readonly("array",
-                             [](dolfinx::la::Vector<T>& self)
+                             [](dolfinx::la::Vector<std::vector<T>>& self)
                              {
                                std::span<T> array = self.mutable_array();
                                return py::array_t<T>(array.size(), array.data(),
                                                      py::cast(self));
                              })
-      .def("scatter_forward", &dolfinx::la::Vector<T>::scatter_fwd)
+      .def("scatter_forward", &dolfinx::la::Vector<std::vector<T>>::scatter_fwd)
       .def(
           "scatter_reverse",
-          [](dolfinx::la::Vector<T>& self, PyScatterMode mode)
+          [](dolfinx::la::Vector<std::vector<T>>& self, PyScatterMode mode)
           {
             switch (mode)
             {
@@ -146,7 +149,7 @@ void petsc_module(py::module& m)
         py::arg("bs"), "Create a ghosted PETSc Vec for index map.");
   m.def(
       "create_vector_wrap",
-      [](dolfinx::la::Vector<PetscScalar, std::allocator<PetscScalar>>& x)
+      [](dolfinx::la::Vector<std::vector<PetscScalar>>& x)
       { return dolfinx::la::petsc::create_vector_wrap(x); },
       py::return_value_policy::take_ownership, py::arg("x"),
       "Create a ghosted PETSc Vec that wraps a DOLFINx Vector");

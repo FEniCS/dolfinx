@@ -51,8 +51,8 @@ public:
   /// @param[in] V The function space
   explicit Function(std::shared_ptr<const FunctionSpace<U>> V)
       : _function_space(V),
-        _x(std::make_shared<la::Vector<T>>(V->dofmap()->index_map,
-                                           V->dofmap()->index_map_bs()))
+        _x(std::make_shared<la::Vector<std::vector<T>>>(
+            V->dofmap()->index_map, V->dofmap()->index_map_bs()))
   {
     if (!V->component().empty())
     {
@@ -70,7 +70,7 @@ public:
   /// @param[in] V The function space
   /// @param[in] x The vector
   Function(std::shared_ptr<const FunctionSpace<U>> V,
-           std::shared_ptr<la::Vector<T>> x)
+           std::shared_ptr<la::Vector<std::vector<T>>> x)
       : _function_space(V), _x(x)
   {
     // We do not check for a subspace since this constructor is used for
@@ -116,8 +116,8 @@ public:
     auto [V, map] = _function_space->collapse();
 
     // Create new vector
-    auto x = std::make_shared<la::Vector<T>>(V.dofmap()->index_map,
-                                             V.dofmap()->index_map_bs());
+    auto x = std::make_shared<la::Vector<std::vector<T>>>(
+        V.dofmap()->index_map, V.dofmap()->index_map_bs());
 
     // Copy values into new vector
     std::span<const T> x_old = _x->array();
@@ -140,10 +140,10 @@ public:
   }
 
   /// @brief Underlying vector
-  std::shared_ptr<const la::Vector<T>> x() const { return _x; }
+  std::shared_ptr<const la::Vector<std::vector<T>>> x() const { return _x; }
 
   /// @brief Underlying vector
-  std::shared_ptr<la::Vector<T>> x() { return _x; }
+  std::shared_ptr<la::Vector<std::vector<T>>> x() { return _x; }
 
   /// @brief Interpolate a provided Function.
   /// @param[in] v The function to be interpolated
@@ -626,7 +626,7 @@ private:
   std::shared_ptr<const FunctionSpace<U>> _function_space;
 
   // The vector of expansion coefficients (local)
-  std::shared_ptr<la::Vector<T>> _x;
+  std::shared_ptr<la::Vector<std::vector<T>>> _x;
 };
 
 } // namespace dolfinx::fem
