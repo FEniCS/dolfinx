@@ -37,6 +37,7 @@ jobs:
           source fenicsx/bin/activate
           python -m pip install --upgrade setuptools
           python -m pip install --upgrade pip
+          python -m pip install Cython==0.29.32
           echo "VIRTUAL ENV:" $VIRTUAL_ENV
           echo '$(which python):' $(which python)
 
@@ -59,7 +60,7 @@ jobs:
             --download-ptscotch
           make all
           cd src/binding/petsc4py
-          PETSC_DIR=$GITHUB_WORKSPACE/petsc PETSC_ARCH=arch-darwin-c-opt pip3 install --no-cache-dir .
+          PETSC_DIR=$GITHUB_WORKSPACE/petsc PETSC_ARCH=arch-darwin-c-opt pip3 install --no-cache-dir -v .
 
       - name: Install Basix
         run: |

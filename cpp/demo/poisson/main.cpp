@@ -121,11 +121,11 @@ int main(int argc, char* argv[])
   {
     // Create mesh and function space
     auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
-    auto mesh = std::make_shared<mesh::Mesh>(
+    auto mesh = std::make_shared<mesh::Mesh<double>>(
         mesh::create_rectangle(MPI_COMM_WORLD, {{{0.0, 0.0}, {2.0, 1.0}}},
                                {32, 16}, mesh::CellType::triangle, part));
 
-    auto V = std::make_shared<fem::FunctionSpace>(
+    auto V = std::make_shared<fem::FunctionSpace<double>>(
         fem::create_functionspace(functionspace_form_poisson_a, "u", mesh));
 
     // Next, we define the variational formulation by initializing the
@@ -166,17 +166,19 @@ int main(int argc, char* argv[])
         *mesh, 1,
         [](auto x)
         {
-          constexpr double eps = 1.0e-8;
+          using U = typename decltype(x)::value_type;
+          constexpr U eps = 1.0e-8;
           std::vector<std::int8_t> marker(x.extent(1), false);
           for (std::size_t p = 0; p < x.extent(1); ++p)
           {
-            double x0 = x(0, p);
+            auto x0 = x(0, p);
             if (std::abs(x0) < eps or std::abs(x0 - 2) < eps)
               marker[p] = true;
           }
           return marker;
         });
-    const auto bdofs = fem::locate_dofs_topological({*V}, 1, facets);
+    const auto bdofs = fem::locate_dofs_topological(
+        *V->mesh()->topology_mutable(), *V->dofmap(), 1, facets);
     auto bc = std::make_shared<const fem::DirichletBC<T>>(0.0, bdofs, V);
 
     f->interpolate(
@@ -185,8 +187,8 @@ int main(int argc, char* argv[])
           std::vector<T> f;
           for (std::size_t p = 0; p < x.extent(1); ++p)
           {
-            double dx = (x(0, p) - 0.5) * (x(0, p) - 0.5);
-            double dy = (x(1, p) - 0.5) * (x(1, p) - 0.5);
+            auto dx = (x(0, p) - 0.5) * (x(0, p) - 0.5);
+            auto dy = (x(1, p) - 0.5) * (x(1, p) - 0.5);
             f.push_back(10 * std::exp(-(dx + dy) / 0.02));
           }
 
@@ -229,9 +231,9 @@ int main(int argc, char* argv[])
 
     b.set(0.0);
     fem::assemble_vector(b.mutable_array(), *L);
-    fem::apply_lifting(b.mutable_array(), {a}, {{bc}}, {}, T(1));
+    fem::apply_lifting<T, double>(b.mutable_array(), {a}, {{bc}}, {}, T(1));
     b.scatter_rev(std::plus<T>());
-    fem::set_bc(b.mutable_array(), {bc});
+    fem::set_bc<T, double>(b.mutable_array(), {bc});
 
     la::petsc::KrylovSolver lu(MPI_COMM_WORLD);
     la::petsc::options::set("ksp_type", "preonly");

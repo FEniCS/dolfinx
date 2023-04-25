@@ -24,9 +24,7 @@
 
 # +
 import numpy as np
-
 import ufl
-from dolfinx import la
 from dolfinx.fem import (Expression, Function, FunctionSpace,
                          VectorFunctionSpace, dirichletbc, form,
                          locate_dofs_topological)
@@ -35,10 +33,11 @@ from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (CellType, GhostMode, create_box,
                           locate_entities_boundary)
-from ufl import dx, grad, inner
-
 from mpi4py import MPI
 from petsc4py import PETSc
+from ufl import dx, grad, inner
+
+from dolfinx import la
 
 dtype = PETSc.ScalarType
 # -
@@ -63,7 +62,7 @@ def build_nullspace(V):
     basis = [np.zeros(bs * length1, dtype=dtype) for i in range(6)]
 
     # Get dof indices for each subspace (x, y and z dofs)
-    dofs = [V.sub(i).dofmap.list.array for i in range(3)]
+    dofs = [V.sub(i).dofmap.list.flatten() for i in range(3)]
 
     # Set the three translational rigid body modes
     for i in range(3):
@@ -71,7 +70,7 @@ def build_nullspace(V):
 
     # Set the three rotational rigid body modes
     x = V.tabulate_dof_coordinates()
-    dofs_block = V.dofmap.list.array
+    dofs_block = V.dofmap.list.flatten()
     x0, x1, x2 = x[dofs_block, 0], x[dofs_block, 1], x[dofs_block, 2]
     basis[3][dofs[0]] = -x1
     basis[3][dofs[1]] = x0

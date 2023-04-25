@@ -309,7 +309,7 @@ public:
       std::int32_t local_col = ghost_index_array[i + 1] - local_range[1][0];
       if (local_col < 0 or local_col >= local_size[1])
       {
-        const auto it = std::lower_bound(
+        auto it = std::lower_bound(
             global_to_local.begin(), global_to_local.end(),
             std::pair(ghost_index_array[i + 1], -1),
             [](auto& a, auto& b) { return a.first < b.first; });
@@ -488,7 +488,7 @@ public:
 
     const double norm_sq_local = std::accumulate(
         _data.cbegin(), std::next(_data.cbegin(), _row_ptr[num_owned_rows]),
-        double(0), [](double norm, T y) { return norm + std::norm(y); });
+        double(0), [](auto norm, T y) { return norm + std::norm(y); });
     double norm_sq;
     MPI_Allreduce(&norm_sq_local, &norm_sq, 1, MPI_DOUBLE, MPI_SUM,
                   _comm.comm());

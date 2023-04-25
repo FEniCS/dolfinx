@@ -31,11 +31,7 @@ def create_sparsity_pattern(a: FormMetaClass):
         Sparsity pattern for the form ``a``.
 
     """
-    topology = a.mesh.topology
-    dofmap0 = a.function_spaces[0].dofmap
-    dofmap1 = a.function_spaces[1].dofmap
-    types = a.integral_types
-    return _create_sparsity_pattern(topology, [dofmap0, dofmap1], types)
+    return _create_sparsity_pattern(a)
 
 
 __all__ = [

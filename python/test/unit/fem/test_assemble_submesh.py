@@ -8,14 +8,15 @@
 
 import numpy as np
 import pytest
+
 import ufl
+from dolfinx import fem
 from dolfinx.mesh import (GhostMode, create_box, create_rectangle,
                           create_submesh, create_unit_cube, create_unit_square,
                           locate_entities, locate_entities_boundary)
+
 from mpi4py import MPI
 from petsc4py import PETSc
-
-from dolfinx import fem
 
 
 def assemble(mesh, space, k):

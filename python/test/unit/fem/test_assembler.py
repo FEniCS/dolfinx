@@ -11,7 +11,9 @@ import numpy as np
 import pytest
 import scipy.sparse
 
+import basix
 import ufl
+from basix.ufl import mixed_element, element
 from dolfinx import cpp as _cpp
 from dolfinx import fem, graph, la
 from dolfinx.fem import (Constant, Function, FunctionSpace,
@@ -211,8 +213,8 @@ def test_assemble_manifold():
     points = np.array([[0.0, 0.0], [0.2, 0.0], [0.4, 0.0],
                        [0.6, 0.0], [0.8, 0.0], [1.0, 0.0]], dtype=np.float64)
     cells = np.array([[0, 1], [1, 2], [2, 3], [3, 4], [4, 5]], dtype=np.int32)
-    cell = ufl.Cell("interval", geometric_dimension=points.shape[1])
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, 1))
+    domain = ufl.Mesh(element(
+        basix.ElementFamily.P, basix.CellType.interval, 1, gdim=points.shape[1], shape=(points.shape[1], )))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     assert mesh.geometry.dim == 2
     assert mesh.topology.dim == 1
@@ -244,9 +246,9 @@ def test_matrix_assembly_block(mode):
     structures"""
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 8, ghost_mode=mode)
     p0, p1 = 1, 2
-    P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
-    P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p1)
-    P2 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
+    P0 = element("Lagrange", mesh.basix_cell(), p0)
+    P1 = element("Lagrange", mesh.basix_cell(), p1)
+    P2 = element("Lagrange", mesh.basix_cell(), p0)
     V0 = FunctionSpace(mesh, P0)
     V1 = FunctionSpace(mesh, P1)
     V2 = FunctionSpace(mesh, P2)
@@ -322,7 +324,7 @@ def test_matrix_assembly_block(mode):
 
     def monolithic():
         """Monolithic version"""
-        W = FunctionSpace(mesh, ufl.MixedElement([P0, P1, P2]))
+        W = FunctionSpace(mesh, mixed_element([P0, P1, P2]))
         u0, u1, u2 = ufl.TrialFunctions(W)
         v0, v1, v2 = ufl.TestFunctions(W)
         a = inner(u0, v0) * dx + inner(u1, v1) * dx + inner(u0, v1) * dx + inner(
@@ -360,7 +362,7 @@ def test_assembly_solve_block(mode):
     """Solve a two-field mass-matrix like problem with block matrix approaches
     and test that solution is the same"""
     mesh = create_unit_square(MPI.COMM_WORLD, 32, 31, ghost_mode=mode)
-    P = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    P = element("Lagrange", mesh.basix_cell(), 1)
     V0 = FunctionSpace(mesh, P)
     V1 = V0.clone()
 
@@ -445,7 +447,7 @@ def test_assembly_solve_block(mode):
 
     def monolithic():
         """Monolithic version"""
-        E = P * P
+        E = mixed_element([P, P])
         W = FunctionSpace(mesh, E)
         u0, u1 = ufl.TrialFunctions(W)
         v0, v1 = ufl.TestFunctions(W)
@@ -607,9 +609,9 @@ def test_assembly_solve_taylor_hood(mesh):
 
     def monolithic_solve():
         """Monolithic (interleaved) solver"""
-        P2_el = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)
-        P1_el = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
-        TH = P2_el * P1_el
+        P2_el = element("Lagrange", mesh.basix_cell(), 2, rank=1)
+        P1_el = element("Lagrange", mesh.basix_cell(), 1)
+        TH = mixed_element([P2_el, P1_el])
         W = FunctionSpace(mesh, TH)
         (u, p) = ufl.TrialFunctions(W)
         (v, q) = ufl.TestFunctions(W)
@@ -918,7 +920,7 @@ def test_assemble_empty_rank_mesh():
     """Assembly on mesh where some ranks are empty"""
     comm = MPI.COMM_WORLD
     cell_type = CellType.triangle
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", ufl.Cell(cell_type.name), 1))
+    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, rank=1))
 
     def partitioner(comm, nparts, local_graph, num_ghost_nodes):
         """Leave cells on the curent rank"""
@@ -931,7 +933,7 @@ def test_assemble_empty_rank_mesh():
         cells = graph.create_adjacencylist(cells)
         x = np.array([[0., 0.], [1., 0.], [1., 1.], [0., 1.]])
     else:
-        # No cells onm other ranks
+        # No cells on other ranks
         cells = graph.create_adjacencylist(np.empty((0, 3), dtype=np.int64))
         x = np.empty((0, 2), dtype=np.float64)
 

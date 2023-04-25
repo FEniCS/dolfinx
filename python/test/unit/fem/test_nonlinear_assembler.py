@@ -11,6 +11,7 @@ import numpy as np
 import pytest
 
 import ufl
+from basix.ufl import mixed_element, element
 from dolfinx.cpp.la.petsc import scatter_local_vectors
 from dolfinx.fem import (Function, FunctionSpace, VectorFunctionSpace,
                          bcs_by_block, dirichletbc, extract_function_spaces,
@@ -51,8 +52,8 @@ def test_matrix_assembly_block_nl():
     in the nonlinear setting."""
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 8)
     p0, p1 = 1, 2
-    P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
-    P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p1)
+    P0 = element("Lagrange", mesh.basix_cell(), p0)
+    P1 = element("Lagrange", mesh.basix_cell(), p1)
     V0 = FunctionSpace(mesh, P0)
     V1 = FunctionSpace(mesh, P1)
 
@@ -141,7 +142,7 @@ def test_matrix_assembly_block_nl():
 
     def monolithic():
         """Monolithic version"""
-        E = P0 * P1
+        E = mixed_element([P0, P1])
         W = FunctionSpace(mesh, E)
         dU = ufl.TrialFunction(W)
         U = Function(W)
@@ -278,7 +279,7 @@ def test_assembly_solve_block_nl():
     matrix approaches and test that solution is the same."""
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 11)
     p = 1
-    P = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p)
+    P = element("Lagrange", mesh.basix_cell(), p)
     V0 = FunctionSpace(mesh, P)
     V1 = V0.clone()
 
@@ -387,7 +388,7 @@ def test_assembly_solve_block_nl():
 
     def monolithic_solve():
         """Monolithic version"""
-        E = P * P
+        E = mixed_element([P, P])
         W = FunctionSpace(mesh, E)
         U = Function(W)
         dU = ufl.TrialFunction(W)
@@ -573,9 +574,9 @@ def test_assembly_solve_taylor_hood_nl(mesh):
 
     def monolithic():
         """Monolithic"""
-        P2_el = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)
-        P1_el = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
-        TH = P2_el * P1_el
+        P2_el = element("Lagrange", mesh.basix_cell(), 2, rank=1)
+        P1_el = element("Lagrange", mesh.basix_cell(), 1)
+        TH = mixed_element([P2_el, P1_el])
         W = FunctionSpace(mesh, TH)
         U = Function(W)
         dU = ufl.TrialFunction(W)
