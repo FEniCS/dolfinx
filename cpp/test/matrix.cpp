@@ -72,7 +72,6 @@ void spmv_impl(std::span<const T> values,
 /// @param[in, out] y Output vector
 template <typename T>
 void spmv(la::MatrixCSR<T>& A, la::Vector<T>& x, la::Vector<T>& y)
-
 {
   // start communication (update ghosts)
   x.scatter_fwd_begin();
@@ -131,8 +130,8 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
 
 [[maybe_unused]] void test_matrix_norm()
 {
-  la::MatrixCSR<double> A0 = create_operator(MPI_COMM_SELF);
-  la::MatrixCSR<double> A1 = create_operator(MPI_COMM_WORLD);
+  la::MatrixCSR A0 = create_operator(MPI_COMM_SELF);
+  la::MatrixCSR A1 = create_operator(MPI_COMM_WORLD);
   CHECK(A1.norm_squared() == Approx(A0.norm_squared()).epsilon(1e-8));
 }
 
