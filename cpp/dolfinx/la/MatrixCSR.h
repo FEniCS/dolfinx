@@ -361,8 +361,8 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p)
     : _index_maps({p.index_map(0),
                    std::make_shared<common::IndexMap>(p.column_index_map())}),
       _bs({p.block_size(0), p.block_size(1)}), _data(p.num_nonzeros(), 0),
-      _cols(p.graph().array().begin(), p.graph().array().end()),
-      _row_ptr(p.graph().offsets().begin(), p.graph().offsets().end()),
+      _cols(p.graph().first.begin(), p.graph().first.end()),
+      _row_ptr(p.graph().second.begin(), p.graph().second.end()),
       _comm(MPI_COMM_NULL)
 {
   // TODO: handle block sizes
@@ -370,7 +370,7 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p)
     throw std::runtime_error("Block size not yet supported");
 
   // Compute off-diagonal offset for each row
-  std::span<const std::int32_t> num_diag_nnz = p.off_diagonal_offset();
+  std::span<const std::int32_t> num_diag_nnz = p.off_diagonal_offsets();
   _off_diagonal_offset.reserve(num_diag_nnz.size());
   std::transform(num_diag_nnz.begin(), num_diag_nnz.end(), _row_ptr.begin(),
                  std::back_inserter(_off_diagonal_offset), std::plus{});
