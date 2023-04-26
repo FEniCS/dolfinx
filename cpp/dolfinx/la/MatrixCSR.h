@@ -121,9 +121,9 @@ void add_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
 ///
 /// @tparam Scalar Scalar type
 /// @tparam Container Sequence container type to store matrix entries
-/// @tparam Idx Index container type
+/// @tparam IdxContainer Index container type
 template <class Scalar, class Container = std::vector<Scalar>,
-          class Idx = std::vector<std::int32_t>>
+          class IdxContainer = std::vector<std::int32_t>>
 class MatrixCSR
 {
   static_assert(std::is_same_v<typename Container::value_type, Scalar>);
@@ -179,7 +179,7 @@ public:
   /// @brief Set all non-zero local entries to a value including entries
   /// in ghost rows.
   /// @param[in] x The value to set non-zero matrix entries to
-  void set(Scalar x) { std::fill(_data.begin(), _data.end(), x); }
+  void set(value_type x) { std::fill(_data.begin(), _data.end(), x); }
 
   /// @brief Set values in the matrix.
   /// @note Only entries included in the sparsity pattern used to
@@ -276,11 +276,11 @@ public:
 
   /// Get local data values
   /// @note Includes ghost values
-  Container& values() { return _data; }
+  container_type& values() { return _data; }
 
   /// Get local values (const version)
   /// @note Includes ghost values
-  const Container& values() const { return _data; }
+  const container_type& values() const { return _data; }
 
   /// Get local row pointers
   /// @note Includes pointers to ghost rows
@@ -310,11 +310,11 @@ private:
   std::array<int, 2> _bs;
 
   // Matrix data
-  Container _data;
-  Idx _cols, _row_ptr;
+  container_type _data;
+  IdxContainer _cols, _row_ptr;
 
   // Start of off-diagonal (unowned columns) on each row
-  Idx _off_diagonal_offset;
+  IdxContainer _off_diagonal_offset;
 
   // Neighborhood communicator (ghost->owner communicator for rows)
   dolfinx::MPI::Comm _comm;
@@ -336,7 +336,7 @@ private:
   std::vector<int> _ghost_row_to_rank;
 
   // Temporary store for finalize data during non-blocking communication
-  Container _ghost_value_data_in;
+  container_type _ghost_value_data_in;
 };
 
 //-----------------------------------------------------------------------------
