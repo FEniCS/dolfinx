@@ -38,38 +38,39 @@ template <typename V>
 void declare_objects(py::module& m, const std::string& type)
 {
   using T = typename V::value_type;
+  // using V = typename V::value_type;
 
   // dolfinx::la::Vector
   std::string pyclass_vector_name = std::string("Vector_") + type;
-  py::class_<dolfinx::la::Vector<V>, std::shared_ptr<dolfinx::la::Vector<V>>>(
+  py::class_<dolfinx::la::Vector<T>, std::shared_ptr<dolfinx::la::Vector<T>>>(
       m, pyclass_vector_name.c_str())
       .def(py::init([](std::shared_ptr<const dolfinx::common::IndexMap> map,
-                       int bs) { return dolfinx::la::Vector<V>(map, bs); }),
+                       int bs) { return dolfinx::la::Vector<T>(map, bs); }),
            py::arg("map"), py::arg("bs"))
-      .def(py::init([](const dolfinx::la::Vector<V>& vec)
-                    { return dolfinx::la::Vector<V>(vec); }),
+      .def(py::init([](const dolfinx::la::Vector<T>& vec)
+                    { return dolfinx::la::Vector<T>(vec); }),
            py::arg("vec"))
-      .def_property_readonly("dtype", [](const dolfinx::la::Vector<V>& self)
+      .def_property_readonly("dtype", [](const dolfinx::la::Vector<T>& self)
                              { return py::dtype::of<T>(); })
-      .def("set", &dolfinx::la::Vector<V>::set, py::arg("v"))
+      .def("set", &dolfinx::la::Vector<T>::set, py::arg("v"))
       .def(
           "norm",
-          [](dolfinx::la::Vector<V>& self, dolfinx::la::Norm type)
+          [](dolfinx::la::Vector<T>& self, dolfinx::la::Norm type)
           { return dolfinx::la::norm(self, type); },
           py::arg("type") = dolfinx::la::Norm::l2)
-      .def_property_readonly("map", &dolfinx::la::Vector<V>::map)
-      .def_property_readonly("bs", &dolfinx::la::Vector<V>::bs)
+      .def_property_readonly("map", &dolfinx::la::Vector<T>::map)
+      .def_property_readonly("bs", &dolfinx::la::Vector<T>::bs)
       .def_property_readonly("array",
-                             [](dolfinx::la::Vector<V>& self)
+                             [](dolfinx::la::Vector<T>& self)
                              {
                                std::span<T> array = self.mutable_array();
                                return py::array_t<T>(array.size(), array.data(),
                                                      py::cast(self));
                              })
-      .def("scatter_forward", &dolfinx::la::Vector<V>::scatter_fwd)
+      .def("scatter_forward", &dolfinx::la::Vector<T>::scatter_fwd)
       .def(
           "scatter_reverse",
-          [](dolfinx::la::Vector<V>& self, PyScatterMode mode)
+          [](dolfinx::la::Vector<T>& self, PyScatterMode mode)
           {
             switch (mode)
             {

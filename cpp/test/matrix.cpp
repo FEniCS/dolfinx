@@ -71,9 +71,7 @@ void spmv_impl(std::span<const T> values,
 /// @param[in] x Input vector
 /// @param[in, out] y Output vector
 template <typename T>
-void spmv(la::MatrixCSR<std::vector<T>>& A, la::Vector<std::vector<T>>& x,
-          la::Vector<std::vector<T>>& y)
-
+void spmv(la::MatrixCSR<std::vector<T>>& A, la::Vector<T>& x, la::Vector<T>& y)
 {
   // start communication (update ghosts)
   x.scatter_fwd_begin();
@@ -170,8 +168,8 @@ la::MatrixCSR<std::vector<double>> create_operator(MPI_Comm comm)
   // Get compatible vectors
   auto maps = A.index_maps();
 
-  la::Vector<std::vector<double>> x(maps[1], 1);
-  la::Vector<std::vector<double>> y(maps[1], 1);
+  la::Vector<double> x(maps[1], 1);
+  la::Vector<double> y(maps[1], 1);
 
   std::size_t col_size = maps[1]->size_local() + maps[1]->num_ghosts();
   CHECK(x.array().size() == col_size);

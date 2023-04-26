@@ -24,27 +24,29 @@ namespace dolfinx::la
 ///
 /// @tparam V data container type
 ///
-template <class V>
+template <typename Scalar, typename Container = std::vector<Scalar>>
 class Vector
 {
+  // template <typename T>
+  // struct is_scalar_type_t : public std::is_arithmetic<T>
+  // {
+  // };
+  // template <typename T>
+  // struct is_scalar_type_t<std::complex<T>> : public std::true_type
+  // {
+  // };
 
-  template <typename T>
-  struct is_scalar_type_t : public std::is_arithmetic<T>
-  {
-  };
-  template <typename T>
-  struct is_scalar_type_t<std::complex<T>> : public std::true_type
-  {
-  };
-
-  using V_t = typename std::conditional_t<is_scalar_type_t<V>::value,
-                                          std::vector<V>, V>;
-  using T = typename std::conditional_t<is_scalar_type_t<V>::value, V,
-                                        typename V_t::value_type>;
+  // using V_t = typename std::conditional_t<is_scalar_type_t<V>::value,
+  //                                         std::vector<V>, V>;
+  // using T = typename std::conditional_t<is_scalar_type_t<V>::value, V,
+  // typename V_t::value_type > ;
 
 public:
-  /// value_type Scalar type of Vector
-  using value_type = T;
+  /// Scalar type of Vector
+  using value_type = Scalar;
+
+  /// Container type
+  using container_type = Container;
 
   /// Create a distributed vector
   /// @param map IndexMap for parallel distribution of the data
@@ -83,14 +85,14 @@ public:
 
   /// Set all entries (including ghosts)
   /// @param[in] v The value to set all entries to (on calling rank)
-  void set(T v) { std::fill(_x.begin(), _x.end(), v); }
+  void set(Scalar v) { std::fill(_x.begin(), _x.end(), v); }
 
   /// Begin scatter of local data from owner to ghosts on other ranks
   /// @note Collective MPI operation
   void scatter_fwd_begin()
   {
     const std::int32_t local_size = _bs * _map->size_local();
-    std::span<const T> x_local(_x.data(), local_size);
+    std::span<const Scalar> x_local(_x.data(), local_size);
 
     auto pack = [](const auto& in, const auto& idx, auto& out)
     {
@@ -99,8 +101,8 @@ public:
     };
     pack(x_local, _scatterer->local_indices(), _buffer_local);
 
-    _scatterer->scatter_fwd_begin(std::span<const T>(_buffer_local),
-                                  std::span<T>(_buffer_remote),
+    _scatterer->scatter_fwd_begin(std::span<const Scalar>(_buffer_local),
+                                  std::span<Scalar>(_buffer_remote),
                                   std::span<MPI_Request>(_request));
   }
 
@@ -110,7 +112,7 @@ public:
   {
     const std::int32_t local_size = _bs * _map->size_local();
     const std::int32_t num_ghosts = _bs * _map->num_ghosts();
-    std::span<T> x_remote(_x.data() + local_size, num_ghosts);
+    std::span<Scalar> x_remote(_x.data() + local_size, num_ghosts);
     _scatterer->scatter_fwd_end(std::span<MPI_Request>(_request));
 
     auto unpack = [](const auto& in, const auto& idx, auto& out, auto op)
@@ -137,7 +139,7 @@ public:
   {
     const std::int32_t local_size = _bs * _map->size_local();
     const std::int32_t num_ghosts = _bs * _map->num_ghosts();
-    std::span<T> x_remote(_x.data() + local_size, num_ghosts);
+    std::span<Scalar> x_remote(_x.data() + local_size, num_ghosts);
 
     auto pack = [](const auto& in, const auto& idx, auto& out)
     {
@@ -146,8 +148,8 @@ public:
     };
     pack(x_remote, _scatterer->remote_indices(), _buffer_remote);
 
-    _scatterer->scatter_rev_begin(std::span<const T>(_buffer_remote),
-                                  std::span<T>(_buffer_local), _request);
+    _scatterer->scatter_rev_begin(std::span<const Scalar>(_buffer_remote),
+                                  std::span<Scalar>(_buffer_local), _request);
   }
 
   /// End scatter of ghost data to owner. This process may receive data
@@ -160,7 +162,7 @@ public:
   void scatter_rev_end(BinaryOperation op)
   {
     const std::int32_t local_size = _bs * _map->size_local();
-    std::span<T> x_local(_x.data(), local_size);
+    std::span<Scalar> x_local(_x.data(), local_size);
     _scatterer->scatter_rev_end(_request);
 
     auto unpack = [](const auto& in, const auto& idx, auto& out, auto op)
@@ -190,10 +192,10 @@ public:
   constexpr int bs() const { return _bs; }
 
   /// Get local part of the vector (const version)
-  std::span<const T> array() const { return std::span<const T>(_x); }
+  std::span<const Scalar> array() const { return std::span<const Scalar>(_x); }
 
   /// Get local part of the vector
-  std::span<T> mutable_array() { return std::span(_x); }
+  std::span<Scalar> mutable_array() { return std::span(_x); }
 
 private:
   // Map describing the data layout
@@ -209,10 +211,10 @@ private:
   std::vector<MPI_Request> _request = {MPI_REQUEST_NULL};
 
   // Buffers for ghost scatters
-  V_t _buffer_local, _buffer_remote;
+  Container _buffer_local, _buffer_remote;
 
   // Vector data
-  V_t _x;
+  Container _x;
 };
 
 /// Compute the inner product of two vectors. The two vectors must have
@@ -222,7 +224,7 @@ private:
 /// @param b A vector
 /// @return Returns `a^{H} b` (`a^{T} b` if `a` and `b` are real)
 template <class V>
-auto inner_product(const Vector<V>& a, const Vector<V>& b)
+auto inner_product(const V& a, const V& b)
 {
   using T = typename V::value_type;
   const std::int32_t local_size = a.bs() * a.map()->size_local();
@@ -253,7 +255,7 @@ auto inner_product(const Vector<V>& a, const Vector<V>& b)
 /// Compute the squared L2 norm of vector
 /// @note Collective MPI operation
 template <class V>
-auto squared_norm(const Vector<V>& a)
+auto squared_norm(const V& a)
 {
   using T = typename V::value_type;
   T result = inner_product(a, a);
@@ -265,7 +267,7 @@ auto squared_norm(const Vector<V>& a)
 /// @param a A vector
 /// @param type Norm type (supported types are \f$L^2\f$ and \f$L^\infty\f$)
 template <class V>
-auto norm(const Vector<V>& a, Norm type = Norm::l2)
+auto norm(const V& a, Norm type = Norm::l2)
 {
   using T = typename V::value_type;
   switch (type)
@@ -296,7 +298,7 @@ auto norm(const Vector<V>& a, Norm type = Norm::l2)
 /// modified in-place.
 /// @param[in] tol The tolerance used to detect a linear dependency
 template <class V>
-void orthonormalize(std::span<Vector<V>> basis, double tol = 1.0e-10)
+void orthonormalize(std::span<V> basis, double tol = 1.0e-10)
 {
   using T = typename V::value_type;
   // Loop over each vector in basis
@@ -331,7 +333,7 @@ void orthonormalize(std::span<Vector<V>> basis, double tol = 1.0e-10)
 /// @param[in] tol The tolerance used to test for orthonormality
 /// @return True is basis is orthonormal, otherwise false
 template <class V>
-bool is_orthonormal(std::span<const Vector<V>> basis, double tol = 1.0e-10)
+bool is_orthonormal(std::span<const V> basis, double tol = 1.0e-10)
 {
   using T = typename V::value_type;
   for (std::size_t i = 0; i < basis.size(); i++)
