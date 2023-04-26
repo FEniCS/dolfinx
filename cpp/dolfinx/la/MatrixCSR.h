@@ -113,24 +113,28 @@ void add_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
 /// The matrix storage format is compressed sparse row. The matrix is
 /// partitioned row-wise across MPI rank.
 ///
-/// @tparam V The data container type for the matrix
-/// @tparam Idx The index container type
-///
-/// @note Highly "experimental" storage of a matrix in CSR format which
-/// can be assembled into using the usual dolfinx assembly routines
+/// @warning Highly experimental storage of a matrix in CSR format which
+/// can be assembled into using the usual DOLFINx assembly routines
 /// Matrix internal data can be accessed for interfacing with other
 /// code.
-///
 /// @todo Handle block sizes
-template <class V, class Idx = std::vector<std::int32_t>>
+///
+/// @tparam Scalar Scalar type
+/// @tparam Container Sequence container type to store matrix entries
+/// @tparam Idx Index container type
+template <class Scalar, class Container = std::vector<Scalar>,
+          class Idx = std::vector<std::int32_t>>
 class MatrixCSR
 {
 public:
   /// The value type
-  using value_type = typename V::value_type;
+  using value_type = Scalar;
 
-  /// Insertion functor for setting values in matrix. It is typically
-  /// used in finite element assembly functions.
+  /// Container type
+  using container_type = Container;
+
+  /// @brief Insertion functor for setting values in matrix. It is
+  /// typically used in finite element assembly functions.
   /// @return Function for inserting values into `A`
   /// @todo clarify setting on non-owned entries
   auto mat_set_values()
@@ -144,7 +148,7 @@ public:
     };
   }
 
-  /// Insertion functor for accumulating values in matrix. It is
+  /// @brief Insertion functor for accumulating values in matrix. It is
   /// typically used in finite element assembly functions.
   /// @return Function for inserting values into `A`
   auto mat_add_values()
@@ -158,9 +162,9 @@ public:
     };
   }
 
-  /// Create a distributed matrix
-  /// @param[in] p The sparsty pattern the describes the parallel
-  /// distribution and the non-zero structure
+  /// @brief Create a distributed matrix.
+  /// @param[in] p The sparsity pattern the describes the parallel
+  /// distribution and the non-zero structure.
   MatrixCSR(const SparsityPattern& p)
       : _index_maps({p.index_map(0),
                      std::make_shared<common::IndexMap>(p.column_index_map())}),
@@ -328,12 +332,12 @@ public:
   /// @todo Check handling of MPI_Request
   MatrixCSR(MatrixCSR&& A) = default;
 
-  /// Set all non-zero local entries to a value
-  /// including entries in ghost rows
+  /// @brief Set all non-zero local entries to a value including entries
+  /// in ghost rows.
   /// @param[in] x The value to set non-zero matrix entries to
   void set(value_type x) { std::fill(_data.begin(), _data.end(), x); }
 
-  /// Set values in the matrix
+  /// @brief Set values in the matrix.
   /// @note Only entries included in the sparsity pattern used to
   /// initialize the matrix can be set
   /// @note All indices are local to the calling MPI rank and entries
@@ -353,7 +357,7 @@ public:
                   _index_maps[0]->size_local());
   }
 
-  /// Accumulate values in the matrix
+  /// @brief Accumulate values in the matrix
   /// @note Only entries included in the sparsity pattern used to
   /// initialize the matrix can be accumulated in to
   /// @note All indices are local to the calling MPI rank and entries
@@ -398,17 +402,17 @@ public:
     return A;
   }
 
-  /// Transfer ghost row data to the owning ranks
-  /// accumulating received values on the owned rows, and zeroing any existing
-  /// data in ghost rows.
+  /// @brief Transfer ghost row data to the owning ranks accumulating
+  /// received values on the owned rows, and zeroing any existing data
+  /// in ghost rows.
   void finalize()
   {
     finalize_begin();
     finalize_end();
   }
 
-  /// Begin transfer of ghost row data to owning ranks, where it will be
-  /// accumulated into existing owned rows.
+  /// @brief Begin transfer of ghost row data to owning ranks, where it
+  /// will be accumulated into existing owned rows.
   /// @note Calls to this function must be followed by
   /// MatrixCSR::finalize_end(). Between the two calls matrix values
   /// must not be changed.
@@ -455,7 +459,7 @@ public:
     assert(status == MPI_SUCCESS);
   }
 
-  /// End transfer of ghost row data to owning ranks
+  /// @brief End transfer of ghost row data to owning ranks.
   /// @note Must be preceded by MatrixCSR::finalize_begin()
   /// @note Matrix data received from other processes will be
   /// accumulated into locally owned rows, and ghost rows will be
@@ -490,10 +494,11 @@ public:
     return norm_sq;
   }
 
-  /// Index maps for the row and column space. The row IndexMap contains
-  /// ghost entries for rows which may be inserted into and the column
-  /// IndexMap contains all local and ghost columns that may exist in
-  /// the owned rows.
+  /// @brief Index maps for the row and column space.
+  ///
+  /// The row IndexMap contains ghost entries for rows which may be
+  /// inserted into and the column IndexMap contains all local and ghost
+  /// columns that may exist in the owned rows.
   ///
   /// @return Row (0) and column (1) index maps
   const std::array<std::shared_ptr<const common::IndexMap>, 2>&
@@ -504,11 +509,11 @@ public:
 
   /// Get local data values
   /// @note Includes ghost values
-  V& values() { return _data; }
+  container_type& values() { return _data; }
 
   /// Get local values (const version)
   /// @note Includes ghost values
-  const V& values() const { return _data; }
+  const container_type& values() const { return _data; }
 
   /// Get local row pointers
   /// @note Includes pointers to ghost rows
@@ -538,7 +543,7 @@ private:
   std::array<int, 2> _bs;
 
   // Matrix data
-  V _data;
+  Container _data;
   Idx _cols, _row_ptr;
 
   // Start of off-diagonal (unowned columns) on each row
@@ -564,7 +569,7 @@ private:
   std::vector<int> _ghost_row_to_rank;
 
   // Temporary store for finalize data during non-blocking communication
-  V _ghost_value_data_in;
+  container_type _ghost_value_data_in;
 };
 
 } // namespace dolfinx::la

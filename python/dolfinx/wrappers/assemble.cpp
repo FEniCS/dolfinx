@@ -139,8 +139,7 @@ void declare_assembly_functions(py::module& m)
   // MatrixCSR
   m.def(
       "assemble_matrix",
-      [](dolfinx::la::MatrixCSR<std::vector<T>>& A,
-         const dolfinx::fem::Form<T, U>& a,
+      [](dolfinx::la::MatrixCSR<T>& A, const dolfinx::fem::Form<T, U>& a,
          const py::array_t<T, py::array::c_style>& constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                         py::array_t<T, py::array::c_style>>& coefficients,
@@ -162,8 +161,7 @@ void declare_assembly_functions(py::module& m)
       py::arg("bcs"), "Experimental.");
   m.def(
       "insert_diagonal",
-      [](dolfinx::la::MatrixCSR<std::vector<T>>& A,
-         const dolfinx::fem::FunctionSpace<U>& V,
+      [](dolfinx::la::MatrixCSR<T>& A, const dolfinx::fem::FunctionSpace<U>& V,
          const std::vector<
              std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>& bcs,
          T diagonal)
