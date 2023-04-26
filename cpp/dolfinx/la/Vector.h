@@ -48,6 +48,9 @@ public:
   /// Container type
   using container_type = Container;
 
+  static_assert(std::is_same_v<value_type, typename container_type::value_type>,
+                "Scalar type and container value type must be the same.");
+
   /// Create a distributed vector
   /// @param map IndexMap for parallel distribution of the data
   /// @param bs Block size
