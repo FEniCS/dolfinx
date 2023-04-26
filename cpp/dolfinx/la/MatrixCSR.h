@@ -126,8 +126,10 @@ template <class Scalar, class Container = std::vector<Scalar>,
           class Idx = std::vector<std::int32_t>>
 class MatrixCSR
 {
+  static_assert(std::is_same_v<typename Container::value_type, Scalar>);
+
 public:
-  /// The value type
+  /// Scalar type
   using value_type = Scalar;
 
   /// Container type
@@ -141,7 +143,7 @@ public:
   {
     return [&](const std::span<const std::int32_t>& rows,
                const std::span<const std::int32_t>& cols,
-               const std::span<const value_type>& data) -> int
+               const std::span<const Scalar>& data) -> int
     {
       this->set(data, rows, cols);
       return 0;
@@ -155,7 +157,7 @@ public:
   {
     return [&](const std::span<const std::int32_t>& rows,
                const std::span<const std::int32_t>& cols,
-               const std::span<const value_type>& data) -> int
+               const std::span<const Scalar>& data) -> int
     {
       this->add(data, rows, cols);
       return 0;
@@ -335,7 +337,7 @@ public:
   /// @brief Set all non-zero local entries to a value including entries
   /// in ghost rows.
   /// @param[in] x The value to set non-zero matrix entries to
-  void set(value_type x) { std::fill(_data.begin(), _data.end(), x); }
+  void set(Scalar x) { std::fill(_data.begin(), _data.end(), x); }
 
   /// @brief Set values in the matrix.
   /// @note Only entries included in the sparsity pattern used to
@@ -349,7 +351,7 @@ public:
   /// set in the matrix
   /// @param[in] rows The row indices of `x`
   /// @param[in] cols The column indices of `x`
-  void set(const std::span<const value_type>& x,
+  void set(const std::span<const Scalar>& x,
            const std::span<const std::int32_t>& rows,
            const std::span<const std::int32_t>& cols)
   {
@@ -369,7 +371,7 @@ public:
   /// add to the matrix
   /// @param[in] rows The row indices of `x`
   /// @param[in] cols The column indices of `x`
-  void add(const std::span<const value_type>& x,
+  void add(const std::span<const Scalar>& x,
            const std::span<const std::int32_t>& rows,
            const std::span<const std::int32_t>& cols)
   {
@@ -389,12 +391,12 @@ public:
   /// manually by using num_owned_rows() if required.
   /// @return Dense copy of the part of the matrix on the calling rank.
   /// Storage is row-major.
-  std::vector<value_type> to_dense() const
+  std::vector<Scalar> to_dense() const
   {
     const std::size_t nrows = num_all_rows();
     const std::size_t ncols
         = _index_maps[1]->size_local() + _index_maps[1]->num_ghosts();
-    std::vector<value_type> A(nrows * ncols);
+    std::vector<Scalar> A(nrows * ncols);
     for (std::size_t r = 0; r < nrows; ++r)
       for (std::int32_t j = _row_ptr[r]; j < _row_ptr[r + 1]; ++j)
         A[r * ncols + _cols[j]] = _data[j];
@@ -425,7 +427,7 @@ public:
 
     // For each ghost row, pack and send values to send to neighborhood
     std::vector<int> insert_pos = _val_send_disp;
-    std::vector<value_type> ghost_value_data(_val_send_disp.back());
+    std::vector<Scalar> ghost_value_data(_val_send_disp.back());
     for (int i = 0; i < num_ghosts0; ++i)
     {
       const int rank = _ghost_row_to_rank[i];
@@ -453,9 +455,9 @@ public:
 
     int status = MPI_Ineighbor_alltoallv(
         ghost_value_data.data(), val_send_count.data(), _val_send_disp.data(),
-        dolfinx::MPI::mpi_type<value_type>(), _ghost_value_data_in.data(),
+        dolfinx::MPI::mpi_type<Scalar>(), _ghost_value_data_in.data(),
         val_recv_count.data(), _val_recv_disp.data(),
-        dolfinx::MPI::mpi_type<value_type>(), _comm.comm(), &_request);
+        dolfinx::MPI::mpi_type<Scalar>(), _comm.comm(), &_request);
     assert(status == MPI_SUCCESS);
   }
 
@@ -487,7 +489,7 @@ public:
 
     const double norm_sq_local = std::accumulate(
         _data.cbegin(), std::next(_data.cbegin(), _row_ptr[num_owned_rows]),
-        double(0), [](auto norm, value_type y) { return norm + std::norm(y); });
+        double(0), [](auto norm, Scalar y) { return norm + std::norm(y); });
     double norm_sq;
     MPI_Allreduce(&norm_sq_local, &norm_sq, 1, MPI_DOUBLE, MPI_SUM,
                   _comm.comm());
