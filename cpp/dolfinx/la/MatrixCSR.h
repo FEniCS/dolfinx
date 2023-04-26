@@ -61,10 +61,10 @@ void add_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
 /// code.
 /// @todo Handle block sizes
 ///
-/// @tparam Scalar Scalar type
+/// @tparam Scalar Scalar type of matrix entries
 /// @tparam Container Sequence container type to store matrix entries
-/// @tparam ColContainer Index container types
-/// @tparam RowPtrContainer Index container types
+/// @tparam ColContainer Column index container type
+/// @tparam RowPtrContainer Row pointer container type
 template <class Scalar, class Container = std::vector<Scalar>,
           class ColContainer = std::vector<std::int32_t>,
           class RowPtrContainer = std::vector<std::int64_t>>
