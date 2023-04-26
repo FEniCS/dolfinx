@@ -120,18 +120,16 @@ void declare_objects(py::module& m, const std::string& type)
       .def_property_readonly("indices",
                              [](dolfinx::la::MatrixCSR<T>& self)
                              {
-                               std::span<const std::int32_t> array
-                                   = self.cols();
-                               return py::array_t<const std::int32_t>(
-                                   array.size(), array.data(), py::cast(self));
+                               auto& array = self.cols();
+                               return py::array_t(array.size(), array.data(),
+                                                  py::cast(self));
                              })
       .def_property_readonly("indptr",
                              [](dolfinx::la::MatrixCSR<T>& self)
                              {
-                               std::span<const std::int32_t> array
-                                   = self.row_ptr();
-                               return py::array_t<const std::int32_t>(
-                                   array.size(), array.data(), py::cast(self));
+                               auto& array = self.row_ptr();
+                               return py::array_t(array.size(), array.data(),
+                                                  py::cast(self));
                              })
       .def("finalize_begin", &dolfinx::la::MatrixCSR<T>::finalize_begin)
       .def("finalize_end", &dolfinx::la::MatrixCSR<T>::finalize_end);
@@ -146,7 +144,7 @@ void petsc_module(py::module& m)
         py::arg("bs"), "Create a ghosted PETSc Vec for index map.");
   m.def(
       "create_vector_wrap",
-      [](dolfinx::la::Vector<PetscScalar, std::allocator<PetscScalar>>& x)
+      [](dolfinx::la::Vector<PetscScalar>& x)
       { return dolfinx::la::petsc::create_vector_wrap(x); },
       py::return_value_policy::take_ownership, py::arg("x"),
       "Create a ghosted PETSc Vec that wraps a DOLFINx Vector");

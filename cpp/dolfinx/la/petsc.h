@@ -78,8 +78,8 @@ Vec create_vector_wrap(const common::IndexMap& map, int bs,
 /// Create a PETSc Vec that wraps the data in an array
 /// @param[in] x The vector to be wrapped
 /// @return A PETSc Vec object that shares the data in @p x
-template <typename Allocator>
-Vec create_vector_wrap(const la::Vector<PetscScalar, Allocator>& x)
+template <class V>
+Vec create_vector_wrap(const la::Vector<V>& x)
 {
   assert(x.map());
   return create_vector_wrap(*x.map(), x.bs(), x.array());
