@@ -179,7 +179,7 @@ public:
       throw std::runtime_error("Block size not yet supported");
 
     // Compute off-diagonal offset for each row
-    std::span<const std::int64_t> num_diag_nnz = p.off_diagonal_offset();
+    std::span<const std::int32_t> num_diag_nnz = p.off_diagonal_offset() s;
     _off_diagonal_offset.reserve(num_diag_nnz.size());
     std::transform(num_diag_nnz.begin(), num_diag_nnz.end(), _row_ptr.begin(),
                    std::back_inserter(_off_diagonal_offset), std::plus{});

@@ -358,7 +358,7 @@ void SparsityPattern::assemble()
 
   // Sort and remove duplicate column indices in each row
   std::vector<std::int32_t> adj_counts(local_size0 + owners0.size(), 0);
-  _off_diagonal_offset.resize(local_size0 + owners0.size());
+  _off_diagonal_offsets.resize(local_size0 + owners0.size());
   for (std::size_t i = 0; i < local_size0 + owners0.size(); ++i)
   {
     std::vector<std::int32_t>& row = _row_cache[i];
@@ -366,7 +366,7 @@ void SparsityPattern::assemble()
     auto it_end = std::unique(row.begin(), row.end());
 
     // Find position of first "off-diagonal" column
-    _off_diagonal_offset[i] = std::distance(
+    _off_diagonal_offsets[i] = std::distance(
         row.begin(), std::lower_bound(row.begin(), it_end, local_size1));
 
     _edges.insert(_edges.end(), row.begin(), it_end);
@@ -397,14 +397,14 @@ std::int32_t SparsityPattern::nnz_diag(std::int32_t row) const
 {
   if (_offsets.empty())
     throw std::runtime_error("Sparsity pattern has not be assembled.");
-  return _off_diagonal_offset[row];
+  return _off_diagonal_offsets[row];
 }
 //-----------------------------------------------------------------------------
 std::int32_t SparsityPattern::nnz_off_diag(std::int32_t row) const
 {
   if (_offsets.empty())
     throw std::runtime_error("Sparsity pattern has not be assembled.");
-  return (_offsets[row + 1] - _offsets[row]) - _off_diagonal_offset[row];
+  return (_offsets[row + 1] - _offsets[row]) - _off_diagonal_offsets[row];
 }
 //-----------------------------------------------------------------------------
 std::pair<std::span<const std::int32_t>, std::span<const std::int32_t>>
@@ -415,11 +415,11 @@ SparsityPattern::graph_new() const
   return {_edges, _offsets};
 }
 //-----------------------------------------------------------------------------
-std::span<const std::int64_t> SparsityPattern::off_diagonal_offset() const
+std::span<const std::int32_t> SparsityPattern::off_diagonal_offsets() const
 {
   if (_offsets.empty())
     throw std::runtime_error("Sparsity pattern has not be assembled.");
-  return _off_diagonal_offset;
+  return _off_diagonal_offsets;
 }
 //-----------------------------------------------------------------------------
 MPI_Comm SparsityPattern::comm() const { return _comm.comm(); }

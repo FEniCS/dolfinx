@@ -134,10 +134,10 @@ public:
   std::pair<std::span<const std::int32_t>, std::span<const std::int32_t>>
   graph_new() const;
 
-  /// @brief Row-wise start of off-diagonal (unowned columns) on each
+  /// @brief Row-wise start of off-diagonals (unowned columns) for each
   /// row.
   /// @note Includes ghost rows
-  std::span<const std::int64_t> off_diagonal_offset() const;
+  std::span<const std::int32_t> off_diagonal_offsets() const;
 
   /// Return MPI communicator
   MPI_Comm comm() const;
@@ -167,7 +167,7 @@ private:
   std::vector<std::int32_t> _edges;
   std::vector<std::int32_t> _offsets;
 
-  // Start of off-diagonal (unowned columns) on each row
-  std::vector<std::int64_t> _off_diagonal_offset;
+  // Start of off-diagonal (unowned columns) on each row (row-wise)
+  std::vector<std::int32_t> _off_diagonal_offsets;
 };
 } // namespace dolfinx::la
