@@ -121,12 +121,9 @@ public:
   /// @note Column global indices can be obtained from
   /// SparsityPattern::column_index_map()
   /// @note Includes ghost rows
-  // const graph::AdjacencyList<std::int32_t>& graph() const;
-
-  /// @brief  Adj list
-  /// @return data
-  std::pair<std::span<const std::int32_t>, std::span<const std::int32_t>>
-  graph_new() const;
+  /// @return Adjacency list edges and offsets
+  std::pair<std::span<const std::int32_t>, std::span<const std::int64_t>>
+  graph() const;
 
   /// @brief Row-wise start of off-diagonals (unowned columns) for each
   /// row.
@@ -157,9 +154,9 @@ private:
 
   // Sparsity pattern adjacency data (computed once pattern is
   // finalised). _edges holds the edges (connected dofs). The edges for
-  // node i are in the range [_edges[i], _edges[i + 1]).
+  // node i are in the range [_offsets[i], _offsets[i + 1]).
   std::vector<std::int32_t> _edges;
-  std::vector<std::int32_t> _offsets;
+  std::vector<std::int64_t> _offsets;
 
   // Start of off-diagonal (unowned columns) on each row (row-wise)
   std::vector<std::int32_t> _off_diagonal_offsets;

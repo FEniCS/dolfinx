@@ -406,8 +406,8 @@ std::int32_t SparsityPattern::nnz_off_diag(std::int32_t row) const
   return (_offsets[row + 1] - _offsets[row]) - _off_diagonal_offsets[row];
 }
 //-----------------------------------------------------------------------------
-std::pair<std::span<const std::int32_t>, std::span<const std::int32_t>>
-SparsityPattern::graph_new() const
+std::pair<std::span<const std::int32_t>, std::span<const std::int64_t>>
+SparsityPattern::graph() const
 {
   if (_offsets.empty())
     throw std::runtime_error("Sparsity pattern has not been assembled.");
