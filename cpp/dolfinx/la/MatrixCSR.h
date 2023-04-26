@@ -144,9 +144,9 @@ public:
   /// @todo clarify setting on non-owned entries
   auto mat_set_values()
   {
-    return [&](const std::span<const std::int32_t>& rows,
-               const std::span<const std::int32_t>& cols,
-               const std::span<const Scalar>& data) -> int
+    return [&](std::span<const std::int32_t> rows,
+               std::span<const std::int32_t> cols,
+               std::span<const value_type> data) -> int
     {
       this->set(data, rows, cols);
       return 0;
@@ -158,9 +158,9 @@ public:
   /// @return Function for inserting values into `A`
   auto mat_add_values()
   {
-    return [&](const std::span<const std::int32_t>& rows,
-               const std::span<const std::int32_t>& cols,
-               const std::span<const Scalar>& data) -> int
+    return [&](std::span<const std::int32_t> rows,
+               std::span<const std::int32_t> cols,
+               std::span<const value_type> data) -> int
     {
       this->add(data, rows, cols);
       return 0;
@@ -170,168 +170,7 @@ public:
   /// @brief Create a distributed matrix.
   /// @param[in] p The sparsity pattern the describes the parallel
   /// distribution and the non-zero structure.
-  MatrixCSR(const SparsityPattern& p)
-      : _index_maps({p.index_map(0),
-                     std::make_shared<common::IndexMap>(p.column_index_map())}),
-        _bs({p.block_size(0), p.block_size(1)}), _data(p.num_nonzeros(), 0),
-        _cols(p.graph().array().begin(), p.graph().array().end()),
-        _row_ptr(p.graph().offsets().begin(), p.graph().offsets().end()),
-        _comm(MPI_COMM_NULL)
-  {
-    // TODO: handle block sizes
-    if (_bs[0] > 1 or _bs[1] > 1)
-      throw std::runtime_error("Block size not yet supported");
-
-    // Compute off-diagonal offset for each row
-    std::span<const std::int32_t> num_diag_nnz = p.off_diagonal_offset();
-    _off_diagonal_offset.reserve(num_diag_nnz.size());
-    std::transform(num_diag_nnz.begin(), num_diag_nnz.end(), _row_ptr.begin(),
-                   std::back_inserter(_off_diagonal_offset), std::plus{});
-
-    // Some short-hand
-    const std::array local_size
-        = {_index_maps[0]->size_local(), _index_maps[1]->size_local()};
-    const std::array local_range
-        = {_index_maps[0]->local_range(), _index_maps[1]->local_range()};
-    const std::vector<std::int64_t>& ghosts1 = _index_maps[1]->ghosts();
-
-    const std::vector<std::int64_t>& ghosts0 = _index_maps[0]->ghosts();
-    const std::vector<int>& src_ranks = _index_maps[0]->src();
-    const std::vector<int>& dest_ranks = _index_maps[0]->dest();
-
-    // Create neighbourhood communicator (owner <- ghost)
-    MPI_Comm comm;
-    MPI_Dist_graph_create_adjacent(_index_maps[0]->comm(), dest_ranks.size(),
-                                   dest_ranks.data(), MPI_UNWEIGHTED,
-                                   src_ranks.size(), src_ranks.data(),
-                                   MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
-    _comm = dolfinx::MPI::Comm(comm, false);
-
-    // Build map from ghost row index position to owning (neighborhood)
-    // rank
-    _ghost_row_to_rank.reserve(_index_maps[0]->owners().size());
-    for (int r : _index_maps[0]->owners())
-    {
-      auto it = std::lower_bound(src_ranks.begin(), src_ranks.end(), r);
-      assert(it != src_ranks.end() and *it == r);
-      int pos = std::distance(src_ranks.begin(), it);
-      _ghost_row_to_rank.push_back(pos);
-    }
-
-    // Compute size of data to send to each neighbor
-    std::vector<std::int32_t> data_per_proc(src_ranks.size(), 0);
-    for (std::size_t i = 0; i < _ghost_row_to_rank.size(); ++i)
-    {
-      assert(_ghost_row_to_rank[i] < data_per_proc.size());
-      std::size_t pos = local_size[0] + i;
-      data_per_proc[_ghost_row_to_rank[i]] += _row_ptr[pos + 1] - _row_ptr[pos];
-    }
-
-    // Compute send displacements
-    _val_send_disp.resize(src_ranks.size() + 1, 0);
-    std::partial_sum(data_per_proc.begin(), data_per_proc.end(),
-                     std::next(_val_send_disp.begin()));
-
-    // For each ghost row, pack and send indices to neighborhood
-    std::vector<std::int64_t> ghost_index_data(2 * _val_send_disp.back());
-    {
-      std::vector<int> insert_pos = _val_send_disp;
-      for (std::size_t i = 0; i < _ghost_row_to_rank.size(); ++i)
-      {
-        const int rank = _ghost_row_to_rank[i];
-        int row_id = local_size[0] + i;
-        for (int j = _row_ptr[row_id]; j < _row_ptr[row_id + 1]; ++j)
-        {
-          // Get position in send buffer
-          const std::int32_t idx_pos = 2 * insert_pos[rank];
-
-          // Pack send data (row, col) as global indices
-          ghost_index_data[idx_pos] = ghosts0[i];
-          if (std::int32_t col_local = _cols[j]; col_local < local_size[1])
-            ghost_index_data[idx_pos + 1] = col_local + local_range[1][0];
-          else
-            ghost_index_data[idx_pos + 1] = ghosts1[col_local - local_size[1]];
-
-          insert_pos[rank] += 1;
-        }
-      }
-    }
-
-    // Communicate data with neighborhood
-    std::vector<std::int64_t> ghost_index_array;
-    std::vector<int> recv_disp;
-    {
-      std::vector<int> send_sizes;
-      std::transform(data_per_proc.begin(), data_per_proc.end(),
-                     std::back_inserter(send_sizes),
-                     [](auto x) { return 2 * x; });
-
-      std::vector<int> recv_sizes(dest_ranks.size());
-      send_sizes.reserve(1);
-      recv_sizes.reserve(1);
-      MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
-                            MPI_INT, _comm.comm());
-
-      // Build send/recv displacement
-      std::vector<int> send_disp = {0};
-      std::partial_sum(send_sizes.begin(), send_sizes.end(),
-                       std::back_inserter(send_disp));
-      recv_disp = {0};
-      std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
-                       std::back_inserter(recv_disp));
-
-      ghost_index_array.resize(recv_disp.back());
-      MPI_Neighbor_alltoallv(ghost_index_data.data(), send_sizes.data(),
-                             send_disp.data(), MPI_INT64_T,
-                             ghost_index_array.data(), recv_sizes.data(),
-                             recv_disp.data(), MPI_INT64_T, _comm.comm());
-    }
-
-    // Store receive displacements for future use, when transferring
-    // data values
-    _val_recv_disp.resize(recv_disp.size());
-    std::transform(recv_disp.begin(), recv_disp.end(), _val_recv_disp.begin(),
-                   [](int d) { return d / 2; });
-
-    // Global-to-local map for ghost columns
-    std::vector<std::pair<std::int64_t, std::int32_t>> global_to_local;
-    global_to_local.reserve(ghosts1.size());
-    std::int32_t local_i = local_size[1];
-    for (std::int64_t idx : ghosts1)
-      global_to_local.push_back({idx, global_to_local.size() + local_size[1]});
-    std::sort(global_to_local.begin(), global_to_local.end());
-
-    // Compute location in which data for each index should be stored
-    // when received
-    for (std::size_t i = 0; i < ghost_index_array.size(); i += 2)
-    {
-      // Row must be on this process
-      const std::int32_t local_row = ghost_index_array[i] - local_range[0][0];
-      assert(local_row >= 0 and local_row < local_size[0]);
-
-      // Column may be owned or unowned
-      std::int32_t local_col = ghost_index_array[i + 1] - local_range[1][0];
-      if (local_col < 0 or local_col >= local_size[1])
-      {
-        auto it = std::lower_bound(
-            global_to_local.begin(), global_to_local.end(),
-            std::pair(ghost_index_array[i + 1], -1),
-            [](auto& a, auto& b) { return a.first < b.first; });
-        assert(it != global_to_local.end()
-               and it->first == ghost_index_array[i + 1]);
-        local_col = it->second;
-      }
-      auto cit0 = std::next(_cols.begin(), _row_ptr[local_row]);
-      auto cit1 = std::next(_cols.begin(), _row_ptr[local_row + 1]);
-
-      // Find position of column index and insert data
-      auto cit = std::lower_bound(cit0, cit1, local_col);
-      assert(cit != cit1);
-      assert(*cit == local_col);
-      std::size_t d = std::distance(_cols.begin(), cit);
-      _unpack_pos.push_back(d);
-    }
-  }
+  MatrixCSR(const SparsityPattern& p);
 
   /// Move constructor
   /// @todo Check handling of MPI_Request
@@ -354,9 +193,8 @@ public:
   /// set in the matrix
   /// @param[in] rows The row indices of `x`
   /// @param[in] cols The column indices of `x`
-  void set(const std::span<const Scalar>& x,
-           const std::span<const std::int32_t>& rows,
-           const std::span<const std::int32_t>& cols)
+  void set(std::span<const value_type> x, std::span<const std::int32_t> rows,
+           std::span<const std::int32_t> cols)
   {
     impl::set_csr(_data, _cols, _row_ptr, x, rows, cols,
                   _index_maps[0]->size_local());
@@ -374,9 +212,8 @@ public:
   /// add to the matrix
   /// @param[in] rows The row indices of `x`
   /// @param[in] cols The column indices of `x`
-  void add(const std::span<const Scalar>& x,
-           const std::span<const std::int32_t>& rows,
-           const std::span<const std::int32_t>& cols)
+  void add(std::span<const value_type> x, std::span<const std::int32_t> rows,
+           std::span<const std::int32_t> cols)
   {
     impl::add_csr(_data, _cols, _row_ptr, x, rows, cols);
   }
@@ -394,18 +231,7 @@ public:
   /// manually by using num_owned_rows() if required.
   /// @return Dense copy of the part of the matrix on the calling rank.
   /// Storage is row-major.
-  std::vector<Scalar> to_dense() const
-  {
-    const std::size_t nrows = num_all_rows();
-    const std::size_t ncols
-        = _index_maps[1]->size_local() + _index_maps[1]->num_ghosts();
-    std::vector<Scalar> A(nrows * ncols);
-    for (std::size_t r = 0; r < nrows; ++r)
-      for (std::int32_t j = _row_ptr[r]; j < _row_ptr[r + 1]; ++j)
-        A[r * ncols + _cols[j]] = _data[j];
-
-    return A;
-  }
+  std::vector<value_type> to_dense() const;
 
   /// @brief Transfer ghost row data to the owning ranks accumulating
   /// received values on the owned rows, and zeroing any existing data
@@ -423,81 +249,17 @@ public:
   /// must not be changed.
   /// @note This function does not change the matrix data. Data update only
   /// occurs with `finalize_end()`.
-  void finalize_begin()
-  {
-    const std::int32_t local_size0 = _index_maps[0]->size_local();
-    const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
-
-    // For each ghost row, pack and send values to send to neighborhood
-    std::vector<int> insert_pos = _val_send_disp;
-    std::vector<Scalar> ghost_value_data(_val_send_disp.back());
-    for (int i = 0; i < num_ghosts0; ++i)
-    {
-      const int rank = _ghost_row_to_rank[i];
-
-      // Get position in send buffer to place data to send to this
-      // neighbour
-      const std::int32_t val_pos = insert_pos[rank];
-      std::copy(std::next(_data.data(), _row_ptr[local_size0 + i]),
-                std::next(_data.data(), _row_ptr[local_size0 + i + 1]),
-                std::next(ghost_value_data.begin(), val_pos));
-      insert_pos[rank]
-          += _row_ptr[local_size0 + i + 1] - _row_ptr[local_size0 + i];
-    }
-
-    _ghost_value_data_in.resize(_val_recv_disp.back());
-
-    // Compute data sizes for send and receive from displacements
-    std::vector<int> val_send_count(_val_send_disp.size() - 1);
-    std::adjacent_difference(std::next(_val_send_disp.begin()),
-                             _val_send_disp.end(), val_send_count.begin());
-
-    std::vector<int> val_recv_count(_val_recv_disp.size() - 1);
-    std::adjacent_difference(std::next(_val_recv_disp.begin()),
-                             _val_recv_disp.end(), val_recv_count.begin());
-
-    int status = MPI_Ineighbor_alltoallv(
-        ghost_value_data.data(), val_send_count.data(), _val_send_disp.data(),
-        dolfinx::MPI::mpi_type<Scalar>(), _ghost_value_data_in.data(),
-        val_recv_count.data(), _val_recv_disp.data(),
-        dolfinx::MPI::mpi_type<Scalar>(), _comm.comm(), &_request);
-    assert(status == MPI_SUCCESS);
-  }
+  void finalize_begin();
 
   /// @brief End transfer of ghost row data to owning ranks.
   /// @note Must be preceded by MatrixCSR::finalize_begin()
   /// @note Matrix data received from other processes will be
   /// accumulated into locally owned rows, and ghost rows will be
   /// zeroed.
-  void finalize_end()
-  {
-    int status = MPI_Wait(&_request, MPI_STATUS_IGNORE);
-    assert(status == MPI_SUCCESS);
-
-    // Add to local rows
-    assert(_ghost_value_data_in.size() == _unpack_pos.size());
-    for (std::size_t i = 0; i < _ghost_value_data_in.size(); ++i)
-      _data[_unpack_pos[i]] += _ghost_value_data_in[i];
-
-    // Set ghost row data to zero
-    const std::int32_t local_size0 = _index_maps[0]->size_local();
-    std::fill(std::next(_data.begin(), _row_ptr[local_size0]), _data.end(), 0);
-  }
+  void finalize_end();
 
   /// Compute the Frobenius norm squared
-  double norm_squared() const
-  {
-    const std::size_t num_owned_rows = _index_maps[0]->size_local();
-    assert(num_owned_rows < _row_ptr.size());
-
-    const double norm_sq_local = std::accumulate(
-        _data.cbegin(), std::next(_data.cbegin(), _row_ptr[num_owned_rows]),
-        double(0), [](auto norm, Scalar y) { return norm + std::norm(y); });
-    double norm_sq;
-    MPI_Allreduce(&norm_sq_local, &norm_sq, 1, MPI_DOUBLE, MPI_SUM,
-                  _comm.comm());
-    return norm_sq;
-  }
+  double norm_squared() const;
 
   /// @brief Index maps for the row and column space.
   ///
@@ -576,5 +338,257 @@ private:
   // Temporary store for finalize data during non-blocking communication
   Container _ghost_value_data_in;
 };
+
+//-----------------------------------------------------------------------------
+template <class U, class V, class W>
+MatrixCSR<U, V, W>::MatrixCSR(const SparsityPattern& p)
+    : _index_maps({p.index_map(0),
+                   std::make_shared<common::IndexMap>(p.column_index_map())}),
+      _bs({p.block_size(0), p.block_size(1)}), _data(p.num_nonzeros(), 0),
+      _cols(p.graph().array().begin(), p.graph().array().end()),
+      _row_ptr(p.graph().offsets().begin(), p.graph().offsets().end()),
+      _comm(MPI_COMM_NULL)
+{
+  // TODO: handle block sizes
+  if (_bs[0] > 1 or _bs[1] > 1)
+    throw std::runtime_error("Block size not yet supported");
+
+  // Compute off-diagonal offset for each row
+  std::span<const std::int32_t> num_diag_nnz = p.off_diagonal_offset();
+  _off_diagonal_offset.reserve(num_diag_nnz.size());
+  std::transform(num_diag_nnz.begin(), num_diag_nnz.end(), _row_ptr.begin(),
+                 std::back_inserter(_off_diagonal_offset), std::plus{});
+
+  // Some short-hand
+  const std::array local_size
+      = {_index_maps[0]->size_local(), _index_maps[1]->size_local()};
+  const std::array local_range
+      = {_index_maps[0]->local_range(), _index_maps[1]->local_range()};
+  const std::vector<std::int64_t>& ghosts1 = _index_maps[1]->ghosts();
+
+  const std::vector<std::int64_t>& ghosts0 = _index_maps[0]->ghosts();
+  const std::vector<int>& src_ranks = _index_maps[0]->src();
+  const std::vector<int>& dest_ranks = _index_maps[0]->dest();
+
+  // Create neighbourhood communicator (owner <- ghost)
+  MPI_Comm comm;
+  MPI_Dist_graph_create_adjacent(_index_maps[0]->comm(), dest_ranks.size(),
+                                 dest_ranks.data(), MPI_UNWEIGHTED,
+                                 src_ranks.size(), src_ranks.data(),
+                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+  _comm = dolfinx::MPI::Comm(comm, false);
+
+  // Build map from ghost row index position to owning (neighborhood)
+  // rank
+  _ghost_row_to_rank.reserve(_index_maps[0]->owners().size());
+  for (int r : _index_maps[0]->owners())
+  {
+    auto it = std::lower_bound(src_ranks.begin(), src_ranks.end(), r);
+    assert(it != src_ranks.end() and *it == r);
+    int pos = std::distance(src_ranks.begin(), it);
+    _ghost_row_to_rank.push_back(pos);
+  }
+
+  // Compute size of data to send to each neighbor
+  std::vector<std::int32_t> data_per_proc(src_ranks.size(), 0);
+  for (std::size_t i = 0; i < _ghost_row_to_rank.size(); ++i)
+  {
+    assert(_ghost_row_to_rank[i] < data_per_proc.size());
+    std::size_t pos = local_size[0] + i;
+    data_per_proc[_ghost_row_to_rank[i]] += _row_ptr[pos + 1] - _row_ptr[pos];
+  }
+
+  // Compute send displacements
+  _val_send_disp.resize(src_ranks.size() + 1, 0);
+  std::partial_sum(data_per_proc.begin(), data_per_proc.end(),
+                   std::next(_val_send_disp.begin()));
+
+  // For each ghost row, pack and send indices to neighborhood
+  std::vector<std::int64_t> ghost_index_data(2 * _val_send_disp.back());
+  {
+    std::vector<int> insert_pos = _val_send_disp;
+    for (std::size_t i = 0; i < _ghost_row_to_rank.size(); ++i)
+    {
+      const int rank = _ghost_row_to_rank[i];
+      int row_id = local_size[0] + i;
+      for (int j = _row_ptr[row_id]; j < _row_ptr[row_id + 1]; ++j)
+      {
+        // Get position in send buffer
+        const std::int32_t idx_pos = 2 * insert_pos[rank];
+
+        // Pack send data (row, col) as global indices
+        ghost_index_data[idx_pos] = ghosts0[i];
+        if (std::int32_t col_local = _cols[j]; col_local < local_size[1])
+          ghost_index_data[idx_pos + 1] = col_local + local_range[1][0];
+        else
+          ghost_index_data[idx_pos + 1] = ghosts1[col_local - local_size[1]];
+
+        insert_pos[rank] += 1;
+      }
+    }
+  }
+
+  // Communicate data with neighborhood
+  std::vector<std::int64_t> ghost_index_array;
+  std::vector<int> recv_disp;
+  {
+    std::vector<int> send_sizes;
+    std::transform(data_per_proc.begin(), data_per_proc.end(),
+                   std::back_inserter(send_sizes),
+                   [](auto x) { return 2 * x; });
+
+    std::vector<int> recv_sizes(dest_ranks.size());
+    send_sizes.reserve(1);
+    recv_sizes.reserve(1);
+    MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
+                          MPI_INT, _comm.comm());
+
+    // Build send/recv displacement
+    std::vector<int> send_disp = {0};
+    std::partial_sum(send_sizes.begin(), send_sizes.end(),
+                     std::back_inserter(send_disp));
+    recv_disp = {0};
+    std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
+                     std::back_inserter(recv_disp));
+
+    ghost_index_array.resize(recv_disp.back());
+    MPI_Neighbor_alltoallv(ghost_index_data.data(), send_sizes.data(),
+                           send_disp.data(), MPI_INT64_T,
+                           ghost_index_array.data(), recv_sizes.data(),
+                           recv_disp.data(), MPI_INT64_T, _comm.comm());
+  }
+
+  // Store receive displacements for future use, when transferring
+  // data values
+  _val_recv_disp.resize(recv_disp.size());
+  std::transform(recv_disp.begin(), recv_disp.end(), _val_recv_disp.begin(),
+                 [](int d) { return d / 2; });
+
+  // Global-to-local map for ghost columns
+  std::vector<std::pair<std::int64_t, std::int32_t>> global_to_local;
+  global_to_local.reserve(ghosts1.size());
+  std::int32_t local_i = local_size[1];
+  for (std::int64_t idx : ghosts1)
+    global_to_local.push_back({idx, global_to_local.size() + local_size[1]});
+  std::sort(global_to_local.begin(), global_to_local.end());
+
+  // Compute location in which data for each index should be stored
+  // when received
+  for (std::size_t i = 0; i < ghost_index_array.size(); i += 2)
+  {
+    // Row must be on this process
+    const std::int32_t local_row = ghost_index_array[i] - local_range[0][0];
+    assert(local_row >= 0 and local_row < local_size[0]);
+
+    // Column may be owned or unowned
+    std::int32_t local_col = ghost_index_array[i + 1] - local_range[1][0];
+    if (local_col < 0 or local_col >= local_size[1])
+    {
+      auto it = std::lower_bound(global_to_local.begin(), global_to_local.end(),
+                                 std::pair(ghost_index_array[i + 1], -1),
+                                 [](auto& a, auto& b)
+                                 { return a.first < b.first; });
+      assert(it != global_to_local.end()
+             and it->first == ghost_index_array[i + 1]);
+      local_col = it->second;
+    }
+    auto cit0 = std::next(_cols.begin(), _row_ptr[local_row]);
+    auto cit1 = std::next(_cols.begin(), _row_ptr[local_row + 1]);
+
+    // Find position of column index and insert data
+    auto cit = std::lower_bound(cit0, cit1, local_col);
+    assert(cit != cit1);
+    assert(*cit == local_col);
+    std::size_t d = std::distance(_cols.begin(), cit);
+    _unpack_pos.push_back(d);
+  }
+}
+//-----------------------------------------------------------------------------
+template <class U, class V, class W>
+std::vector<typename MatrixCSR<U, V, W>::value_type>
+MatrixCSR<U, V, W>::to_dense() const
+{
+  const std::size_t nrows = num_all_rows();
+  const std::size_t ncols
+      = _index_maps[1]->size_local() + _index_maps[1]->num_ghosts();
+  std::vector<value_type> A(nrows * ncols);
+  for (std::size_t r = 0; r < nrows; ++r)
+    for (std::int32_t j = _row_ptr[r]; j < _row_ptr[r + 1]; ++j)
+      A[r * ncols + _cols[j]] = _data[j];
+
+  return A;
+}
+//-----------------------------------------------------------------------------
+template <class U, class V, class W>
+void MatrixCSR<U, V, W>::finalize_begin()
+{
+  const std::int32_t local_size0 = _index_maps[0]->size_local();
+  const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
+
+  // For each ghost row, pack and send values to send to neighborhood
+  std::vector<int> insert_pos = _val_send_disp;
+  std::vector<value_type> ghost_value_data(_val_send_disp.back());
+  for (int i = 0; i < num_ghosts0; ++i)
+  {
+    const int rank = _ghost_row_to_rank[i];
+
+    // Get position in send buffer to place data to send to this
+    // neighbour
+    const std::int32_t val_pos = insert_pos[rank];
+    std::copy(std::next(_data.data(), _row_ptr[local_size0 + i]),
+              std::next(_data.data(), _row_ptr[local_size0 + i + 1]),
+              std::next(ghost_value_data.begin(), val_pos));
+    insert_pos[rank]
+        += _row_ptr[local_size0 + i + 1] - _row_ptr[local_size0 + i];
+  }
+
+  _ghost_value_data_in.resize(_val_recv_disp.back());
+
+  // Compute data sizes for send and receive from displacements
+  std::vector<int> val_send_count(_val_send_disp.size() - 1);
+  std::adjacent_difference(std::next(_val_send_disp.begin()),
+                           _val_send_disp.end(), val_send_count.begin());
+
+  std::vector<int> val_recv_count(_val_recv_disp.size() - 1);
+  std::adjacent_difference(std::next(_val_recv_disp.begin()),
+                           _val_recv_disp.end(), val_recv_count.begin());
+
+  int status = MPI_Ineighbor_alltoallv(
+      ghost_value_data.data(), val_send_count.data(), _val_send_disp.data(),
+      dolfinx::MPI::mpi_type<value_type>(), _ghost_value_data_in.data(),
+      val_recv_count.data(), _val_recv_disp.data(),
+      dolfinx::MPI::mpi_type<value_type>(), _comm.comm(), &_request);
+  assert(status == MPI_SUCCESS);
+}
+//-----------------------------------------------------------------------------
+template <class U, class V, class W>
+void MatrixCSR<U, V, W>::finalize_end()
+{
+  int status = MPI_Wait(&_request, MPI_STATUS_IGNORE);
+  assert(status == MPI_SUCCESS);
+
+  // Add to local rows
+  assert(_ghost_value_data_in.size() == _unpack_pos.size());
+  for (std::size_t i = 0; i < _ghost_value_data_in.size(); ++i)
+    _data[_unpack_pos[i]] += _ghost_value_data_in[i];
+
+  // Set ghost row data to zero
+  const std::int32_t local_size0 = _index_maps[0]->size_local();
+  std::fill(std::next(_data.begin(), _row_ptr[local_size0]), _data.end(), 0);
+}
+//-----------------------------------------------------------------------------
+template <class Scalar, class Container, class Idx>
+double MatrixCSR<Scalar, Container, Idx>::norm_squared() const
+{
+  const std::size_t num_owned_rows = _index_maps[0]->size_local();
+  assert(num_owned_rows < _row_ptr.size());
+  double norm_sq_local = std::accumulate(
+      _data.cbegin(), std::next(_data.cbegin(), _row_ptr[num_owned_rows]),
+      double(0), [](auto norm, Scalar y) { return norm + std::norm(y); });
+  double norm_sq;
+  MPI_Allreduce(&norm_sq_local, &norm_sq, 1, MPI_DOUBLE, MPI_SUM, _comm.comm());
+  return norm_sq;
+}
+//-----------------------------------------------------------------------------
 
 } // namespace dolfinx::la
