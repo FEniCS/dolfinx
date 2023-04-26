@@ -577,7 +577,8 @@ def test_de_rahm_2D(order):
 @pytest.mark.parametrize("order", [1, 2, 3, 4])
 @pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("affine", [True, False])
-def test_interpolate_subset(order, dim, affine):
+@pytest.mark.parametrize("callable_", [True, False])
+def test_interpolate_subset(order, dim, affine, callable_):
     if dim == 2:
         ct = CellType.triangle if affine else CellType.quadrilateral
         mesh = create_unit_square(MPI.COMM_WORLD, 3, 4, ct)
@@ -594,8 +595,11 @@ def test_interpolate_subset(order, dim, affine):
 
     x = ufl.SpatialCoordinate(mesh)
     f = x[1]**order
-    expr = Expression(f, V.element.interpolation_points())
-    u.interpolate(expr, cells_local)
+    if not callable_:
+        expr = Expression(f, V.element.interpolation_points())
+        u.interpolate(expr, cells_local)
+    else:
+        u.interpolate(lambda x: x[1]**order, cells_local)
     mt = meshtags(mesh, mesh.topology.dim, cells_local, np.ones(cells_local.size, dtype=np.int32))
     dx = ufl.Measure("dx", domain=mesh, subdomain_data=mt)
     assert np.isclose(np.abs(form(assemble_scalar(form(ufl.inner(u - f, u - f) * dx(1))))), 0)
@@ -620,6 +624,25 @@ def test_interpolate_callable():
     assert np.allclose(u0.x.array, u1.x.array)
     with pytest.raises(RuntimeError):
         u0.interpolate(lambda x: np.vstack([x[0], x[1]]))
+
+
+@pytest.mark.parametrize("bound", [1.5, 0.5])
+def test_interpolate_callable_subset(bound):
+    """Test interpolation on subsets with callables"""
+    mesh = create_unit_square(MPI.COMM_WORLD, 3, 4)
+    cells = locate_entities(mesh, mesh.topology.dim, lambda x: x[1] <= bound + 1e-10)
+    num_local_cells = mesh.topology.index_map(mesh.topology.dim).size_local
+    cells_local = cells[cells < num_local_cells]
+
+    V = FunctionSpace(mesh, ("DG", 2))
+    u0, u1 = Function(V), Function(V)
+
+    x = ufl.SpatialCoordinate(mesh)
+    f = x[0]
+    expr = Expression(f, V.element.interpolation_points())
+    u0.interpolate(lambda x: x[0], cells_local)
+    u1.interpolate(expr, cells_local)
+    assert np.allclose(u0.x.array, u1.x.array)
 
 
 @pytest.mark.parametrize("scalar_element", [
