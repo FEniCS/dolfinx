@@ -73,14 +73,14 @@ public:
 
   /// Set all entries (including ghosts)
   /// @param[in] v The value to set all entries to (on calling rank)
-  void set(Scalar v) { std::fill(_x.begin(), _x.end(), v); }
+  void set(value_type v) { std::fill(_x.begin(), _x.end(), v); }
 
   /// Begin scatter of local data from owner to ghosts on other ranks
   /// @note Collective MPI operation
   void scatter_fwd_begin()
   {
     const std::int32_t local_size = _bs * _map->size_local();
-    std::span<const Scalar> x_local(_x.data(), local_size);
+    std::span<const value_type> x_local(_x.data(), local_size);
 
     auto pack = [](const auto& in, const auto& idx, auto& out)
     {
@@ -89,8 +89,8 @@ public:
     };
     pack(x_local, _scatterer->local_indices(), _buffer_local);
 
-    _scatterer->scatter_fwd_begin(std::span<const Scalar>(_buffer_local),
-                                  std::span<Scalar>(_buffer_remote),
+    _scatterer->scatter_fwd_begin(std::span<const value_type>(_buffer_local),
+                                  std::span<value_type>(_buffer_remote),
                                   std::span<MPI_Request>(_request));
   }
 
@@ -100,7 +100,7 @@ public:
   {
     const std::int32_t local_size = _bs * _map->size_local();
     const std::int32_t num_ghosts = _bs * _map->num_ghosts();
-    std::span<Scalar> x_remote(_x.data() + local_size, num_ghosts);
+    std::span<value_type> x_remote(_x.data() + local_size, num_ghosts);
     _scatterer->scatter_fwd_end(std::span<MPI_Request>(_request));
 
     auto unpack = [](const auto& in, const auto& idx, auto& out, auto op)
@@ -127,7 +127,7 @@ public:
   {
     const std::int32_t local_size = _bs * _map->size_local();
     const std::int32_t num_ghosts = _bs * _map->num_ghosts();
-    std::span<Scalar> x_remote(_x.data() + local_size, num_ghosts);
+    std::span<value_type> x_remote(_x.data() + local_size, num_ghosts);
 
     auto pack = [](const auto& in, const auto& idx, auto& out)
     {
@@ -136,8 +136,9 @@ public:
     };
     pack(x_remote, _scatterer->remote_indices(), _buffer_remote);
 
-    _scatterer->scatter_rev_begin(std::span<const Scalar>(_buffer_remote),
-                                  std::span<Scalar>(_buffer_local), _request);
+    _scatterer->scatter_rev_begin(std::span<const value_type>(_buffer_remote),
+                                  std::span<value_type>(_buffer_local),
+                                  _request);
   }
 
   /// End scatter of ghost data to owner. This process may receive data
@@ -150,7 +151,7 @@ public:
   void scatter_rev_end(BinaryOperation op)
   {
     const std::int32_t local_size = _bs * _map->size_local();
-    std::span<Scalar> x_local(_x.data(), local_size);
+    std::span<value_type> x_local(_x.data(), local_size);
     _scatterer->scatter_rev_end(_request);
 
     auto unpack = [](const auto& in, const auto& idx, auto& out, auto op)
@@ -180,10 +181,13 @@ public:
   constexpr int bs() const { return _bs; }
 
   /// Get local part of the vector (const version)
-  std::span<const Scalar> array() const { return std::span<const Scalar>(_x); }
+  std::span<const value_type> array() const
+  {
+    return std::span<const value_type>(_x);
+  }
 
   /// Get local part of the vector
-  std::span<Scalar> mutable_array() { return std::span(_x); }
+  std::span<value_type> mutable_array() { return std::span(_x); }
 
 private:
   // Map describing the data layout
@@ -199,10 +203,10 @@ private:
   std::vector<MPI_Request> _request = {MPI_REQUEST_NULL};
 
   // Buffers for ghost scatters
-  Container _buffer_local, _buffer_remote;
+  container_type _buffer_local, _buffer_remote;
 
   // Vector data
-  Container _x;
+  container_type _x;
 };
 
 /// Compute the inner product of two vectors. The two vectors must have
