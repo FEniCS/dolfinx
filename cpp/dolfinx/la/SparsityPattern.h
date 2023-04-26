@@ -12,12 +12,6 @@
 #include <utility>
 #include <vector>
 
-namespace dolfinx::graph
-{
-template <typename T>
-class AdjacencyList;
-}
-
 namespace dolfinx::common
 {
 class IndexMap;
