@@ -18,10 +18,9 @@
 
 namespace dolfinx::la
 {
-
 namespace impl
 {
-/// @brief Set data in a CSR matrix
+/// @brief Set data in a CSR matrix.
 ///
 /// @param[out] data The CSR matrix data
 /// @param[in] cols The CSR column indices
@@ -33,38 +32,9 @@ namespace impl
 /// @param[in] local_size The maximum row index that can be set. Used
 /// when debugging is own to check that rows beyond a permitted range
 /// are not being set.
-template <typename U, typename V, typename W, typename X>
-void set_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
-             const X& xrows, const X& xcols,
-             [[maybe_unused]] typename X::value_type local_size)
-{
-  assert(x.size() == xrows.size() * xcols.size());
-  for (std::size_t r = 0; r < xrows.size(); ++r)
-  {
-    // Row index and current data row
-    auto row = xrows[r];
-    using T = typename W::value_type;
-    const T* xr = x.data() + r * xcols.size();
-
-#ifndef NDEBUG
-    if (row >= local_size)
-      throw std::runtime_error("Local row out of range");
-#endif
-
-    // Columns indices for row
-    auto cit0 = std::next(cols.begin(), row_ptr[row]);
-    auto cit1 = std::next(cols.begin(), row_ptr[row + 1]);
-    for (std::size_t c = 0; c < xcols.size(); ++c)
-    {
-      // Find position of column index
-      auto it = std::lower_bound(cit0, cit1, xcols[c]);
-      assert(it != cit1);
-      std::size_t d = std::distance(cols.begin(), it);
-      assert(d < data.size());
-      data[d] = xr[c];
-    }
-  }
-}
+template <typename U, typename V, typename W, typename X, typename Y>
+void set_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
+             const Y& xrows, const Y& xcols, typename Y::value_type local_size);
 
 /// @brief Add data to a CSR matrix
 ///
@@ -75,37 +45,9 @@ void set_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
 /// to the matrix
 /// @param[in] xrows The row indices of `x`
 /// @param[in] xcols The column indices of `x`
-template <typename U, typename V, typename W, typename X>
-void add_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
-             const X& xrows, const X& xcols)
-{
-  assert(x.size() == xrows.size() * xcols.size());
-  for (std::size_t r = 0; r < xrows.size(); ++r)
-  {
-    // Row index and current data row
-    auto row = xrows[r];
-    using T = typename W::value_type;
-    const T* xr = x.data() + r * xcols.size();
-
-#ifndef NDEBUG
-    if (row >= (int)row_ptr.size())
-      throw std::runtime_error("Local row out of range");
-#endif
-
-    // Columns indices for row
-    auto cit0 = std::next(cols.begin(), row_ptr[row]);
-    auto cit1 = std::next(cols.begin(), row_ptr[row + 1]);
-    for (std::size_t c = 0; c < xcols.size(); ++c)
-    {
-      // Find position of column index
-      auto it = std::lower_bound(cit0, cit1, xcols[c]);
-      assert(it != cit1);
-      std::size_t d = std::distance(cols.begin(), it);
-      assert(d < data.size());
-      data[d] += xr[c];
-    }
-  }
-}
+template <typename U, typename V, typename W, typename X, typename Y>
+void add_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
+             const Y& xrows, const Y& xcols);
 } // namespace impl
 
 /// Distributed sparse matrix
@@ -121,9 +63,11 @@ void add_csr(U&& data, const V& cols, const V& row_ptr, const W& x,
 ///
 /// @tparam Scalar Scalar type
 /// @tparam Container Sequence container type to store matrix entries
-/// @tparam IdxContainer Index container type
+/// @tparam ColContainer Index container types
+/// @tparam RowPtrContainer Index container types
 template <class Scalar, class Container = std::vector<Scalar>,
-          class IdxContainer = std::vector<std::int32_t>>
+          class ColContainer = std::vector<std::int32_t>,
+          class RowPtrContainer = std::vector<std::int64_t>>
 class MatrixCSR
 {
   static_assert(std::is_same_v<typename Container::value_type, Scalar>);
@@ -132,8 +76,14 @@ public:
   /// Scalar type
   using value_type = Scalar;
 
-  /// Container type
+  /// Matrix entries container type
   using container_type = Container;
+
+  /// Column index container type
+  using column_container_type = ColContainer;
+
+  /// Row pointer container type
+  using rowptr_container_type = RowPtrContainer;
 
   static_assert(std::is_same_v<value_type, typename container_type::value_type>,
                 "Scalar type and container value type must be the same.");
@@ -284,11 +234,11 @@ public:
 
   /// Get local row pointers
   /// @note Includes pointers to ghost rows
-  const std::vector<std::int32_t>& row_ptr() const { return _row_ptr; }
+  const rowptr_container_type& row_ptr() const { return _row_ptr; }
 
   /// Get local column indices
   /// @note Includes columns in ghost rows
-  const std::vector<std::int32_t>& cols() const { return _cols; }
+  const column_container_type& cols() const { return _cols; }
 
   /// Get the start of off-diagonal (unowned columns) on each row,
   /// allowing the matrix to be split (virtually) into two parts.
@@ -297,7 +247,7 @@ public:
   /// from operations on the unowned parts.
   /// @note Includes ghost rows, which should be truncated manually if
   /// not required.
-  const std::vector<std::int32_t>& off_diag_offset() const
+  const rowptr_container_type& off_diag_offset() const
   {
     return _off_diagonal_offset;
   }
@@ -311,10 +261,11 @@ private:
 
   // Matrix data
   container_type _data;
-  IdxContainer _cols, _row_ptr;
+  column_container_type _cols;
+  rowptr_container_type _row_ptr;
 
   // Start of off-diagonal (unowned columns) on each row
-  IdxContainer _off_diagonal_offset;
+  rowptr_container_type _off_diagonal_offset;
 
   // Neighborhood communicator (ghost->owner communicator for rows)
   dolfinx::MPI::Comm _comm;
@@ -340,8 +291,73 @@ private:
 };
 
 //-----------------------------------------------------------------------------
-template <class U, class V, class W>
-MatrixCSR<U, V, W>::MatrixCSR(const SparsityPattern& p)
+template <typename U, typename V, typename W, typename X, typename Y>
+void impl::set_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
+                   const Y& xrows, const Y& xcols,
+                   [[maybe_unused]] typename Y::value_type local_size)
+{
+  assert(x.size() == xrows.size() * xcols.size());
+  for (std::size_t r = 0; r < xrows.size(); ++r)
+  {
+    // Row index and current data row
+    auto row = xrows[r];
+    using T = typename X::value_type;
+    const T* xr = x.data() + r * xcols.size();
+
+#ifndef NDEBUG
+    if (row >= local_size)
+      throw std::runtime_error("Local row out of range");
+#endif
+
+    // Columns indices for row
+    auto cit0 = std::next(cols.begin(), row_ptr[row]);
+    auto cit1 = std::next(cols.begin(), row_ptr[row + 1]);
+    for (std::size_t c = 0; c < xcols.size(); ++c)
+    {
+      // Find position of column index
+      auto it = std::lower_bound(cit0, cit1, xcols[c]);
+      assert(it != cit1);
+      std::size_t d = std::distance(cols.begin(), it);
+      assert(d < data.size());
+      data[d] = xr[c];
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+template <typename U, typename V, typename W, typename X, typename Y>
+void impl::add_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
+                   const Y& xrows, const Y& xcols)
+{
+  assert(x.size() == xrows.size() * xcols.size());
+  for (std::size_t r = 0; r < xrows.size(); ++r)
+  {
+    // Row index and current data row
+    auto row = xrows[r];
+    using T = typename X::value_type;
+    const T* xr = x.data() + r * xcols.size();
+
+#ifndef NDEBUG
+    if (row >= (int)row_ptr.size())
+      throw std::runtime_error("Local row out of range");
+#endif
+
+    // Columns indices for row
+    auto cit0 = std::next(cols.begin(), row_ptr[row]);
+    auto cit1 = std::next(cols.begin(), row_ptr[row + 1]);
+    for (std::size_t c = 0; c < xcols.size(); ++c)
+    {
+      // Find position of column index
+      auto it = std::lower_bound(cit0, cit1, xcols[c]);
+      assert(it != cit1);
+      std::size_t d = std::distance(cols.begin(), it);
+      assert(d < data.size());
+      data[d] += xr[c];
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+template <class U, class V, class W, class X>
+MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p)
     : _index_maps({p.index_map(0),
                    std::make_shared<common::IndexMap>(p.column_index_map())}),
       _bs({p.block_size(0), p.block_size(1)}), _data(p.num_nonzeros(), 0),
@@ -504,9 +520,9 @@ MatrixCSR<U, V, W>::MatrixCSR(const SparsityPattern& p)
   }
 }
 //-----------------------------------------------------------------------------
-template <class U, class V, class W>
-std::vector<typename MatrixCSR<U, V, W>::value_type>
-MatrixCSR<U, V, W>::to_dense() const
+template <typename U, typename V, typename W, typename X>
+std::vector<typename MatrixCSR<U, V, W, X>::value_type>
+MatrixCSR<U, V, W, X>::to_dense() const
 {
   const std::size_t nrows = num_all_rows();
   const std::size_t ncols
@@ -519,8 +535,8 @@ MatrixCSR<U, V, W>::to_dense() const
   return A;
 }
 //-----------------------------------------------------------------------------
-template <class U, class V, class W>
-void MatrixCSR<U, V, W>::finalize_begin()
+template <typename U, typename V, typename W, typename X>
+void MatrixCSR<U, V, W, X>::finalize_begin()
 {
   const std::int32_t local_size0 = _index_maps[0]->size_local();
   const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
@@ -561,8 +577,8 @@ void MatrixCSR<U, V, W>::finalize_begin()
   assert(status == MPI_SUCCESS);
 }
 //-----------------------------------------------------------------------------
-template <class U, class V, class W>
-void MatrixCSR<U, V, W>::finalize_end()
+template <typename U, typename V, typename W, typename X>
+void MatrixCSR<U, V, W, X>::finalize_end()
 {
   int status = MPI_Wait(&_request, MPI_STATUS_IGNORE);
   assert(status == MPI_SUCCESS);
@@ -577,14 +593,14 @@ void MatrixCSR<U, V, W>::finalize_end()
   std::fill(std::next(_data.begin(), _row_ptr[local_size0]), _data.end(), 0);
 }
 //-----------------------------------------------------------------------------
-template <class Scalar, class Container, class Idx>
-double MatrixCSR<Scalar, Container, Idx>::norm_squared() const
+template <typename U, typename V, typename W, typename X>
+double MatrixCSR<U, V, W, X>::norm_squared() const
 {
   const std::size_t num_owned_rows = _index_maps[0]->size_local();
   assert(num_owned_rows < _row_ptr.size());
   double norm_sq_local = std::accumulate(
       _data.cbegin(), std::next(_data.cbegin(), _row_ptr[num_owned_rows]),
-      double(0), [](auto norm, Scalar y) { return norm + std::norm(y); });
+      double(0), [](auto norm, value_type y) { return norm + std::norm(y); });
   double norm_sq;
   MPI_Allreduce(&norm_sq_local, &norm_sq, 1, MPI_DOUBLE, MPI_SUM, _comm.comm());
   return norm_sq;

@@ -29,8 +29,8 @@ namespace
 /// @param[in, out] x Output vector
 template <typename T>
 void spmv_impl(std::span<const T> values,
-               std::span<const std::int32_t> row_begin,
-               std::span<const std::int32_t> row_end,
+               std::span<const std::int64_t> row_begin,
+               std::span<const std::int64_t> row_end,
                std::span<const std::int32_t> indices, std::span<const T> x,
                std::span<T> y)
 {
@@ -77,17 +77,17 @@ void spmv(la::MatrixCSR<T>& A, la::Vector<T>& x, la::Vector<T>& y)
   x.scatter_fwd_begin();
 
   const std::int32_t nrowslocal = A.num_owned_rows();
-  std::span<const std::int32_t> row_ptr(A.row_ptr().data(), nrowslocal + 1);
+  std::span<const std::int64_t> row_ptr(A.row_ptr().data(), nrowslocal + 1);
   std::span<const std::int32_t> cols(A.cols().data(), row_ptr[nrowslocal]);
-  std::span<const std::int32_t> off_diag_offset(A.off_diag_offset().data(),
+  std::span<const std::int64_t> off_diag_offset(A.off_diag_offset().data(),
                                                 nrowslocal);
   std::span<const T> values(A.values().data(), row_ptr[nrowslocal]);
 
   std::span<const T> _x = x.array();
   std::span<T> _y = y.mutable_array();
 
-  std::span<const std::int32_t> row_begin(row_ptr.data(), nrowslocal);
-  std::span<const std::int32_t> row_end(row_ptr.data() + 1, nrowslocal);
+  std::span<const std::int64_t> row_begin(row_ptr.data(), nrowslocal);
+  std::span<const std::int64_t> row_end(row_ptr.data() + 1, nrowslocal);
 
   // First stage:  spmv - diagonal
   // yi[0] += Ai[0] * xi[0]
