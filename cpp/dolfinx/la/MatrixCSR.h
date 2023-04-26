@@ -135,6 +135,9 @@ public:
   /// Container type
   using container_type = Container;
 
+  static_assert(std::is_same_v<value_type, typename container_type::value_type>,
+                "Scalar type and container value type must be the same.");
+
   /// @brief Insertion functor for setting values in matrix. It is
   /// typically used in finite element assembly functions.
   /// @return Function for inserting values into `A`
