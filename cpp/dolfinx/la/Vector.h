@@ -27,22 +27,10 @@ namespace dolfinx::la
 template <typename Scalar, typename Container = std::vector<Scalar>>
 class Vector
 {
-  // template <typename T>
-  // struct is_scalar_type_t : public std::is_arithmetic<T>
-  // {
-  // };
-  // template <typename T>
-  // struct is_scalar_type_t<std::complex<T>> : public std::true_type
-  // {
-  // };
-
-  // using V_t = typename std::conditional_t<is_scalar_type_t<V>::value,
-  //                                         std::vector<V>, V>;
-  // using T = typename std::conditional_t<is_scalar_type_t<V>::value, V,
-  // typename V_t::value_type > ;
+  static_assert(std::is_same_v<typename Container::value_type, Scalar>);
 
 public:
-  /// Scalar type of Vector
+  /// Scalar type
   using value_type = Scalar;
 
   /// Container type
