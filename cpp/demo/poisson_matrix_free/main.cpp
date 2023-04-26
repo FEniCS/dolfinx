@@ -59,13 +59,10 @@ void axpy(auto& r, auto alpha, const auto& x, const auto& y)
 /// @return The number if iterations
 /// @pre It is required that the ghost values of `x` and `b` have been
 /// updated before this function is called
-// template <typename U, typename ApplyFunction>
-// int cg(la::Vector<U>& x, const la::Vector<U>& b, ApplyFunction&& action,
 template <typename ApplyFunction>
 int cg(auto& x, auto& b, ApplyFunction&& action, int kmax = 50,
        double rtol = 1e-8)
 {
-  // using T = typename U::value_type;
   using T = typename std::decay_t<decltype(x)>::value_type;
 
   // Create working vectors

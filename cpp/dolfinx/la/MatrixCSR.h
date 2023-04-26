@@ -511,11 +511,11 @@ public:
 
   /// Get local data values
   /// @note Includes ghost values
-  container_type& values() { return _data; }
+  Container& values() { return _data; }
 
   /// Get local values (const version)
   /// @note Includes ghost values
-  const container_type& values() const { return _data; }
+  const Container& values() const { return _data; }
 
   /// Get local row pointers
   /// @note Includes pointers to ghost rows
@@ -571,7 +571,7 @@ private:
   std::vector<int> _ghost_row_to_rank;
 
   // Temporary store for finalize data during non-blocking communication
-  container_type _ghost_value_data_in;
+  Container _ghost_value_data_in;
 };
 
 } // namespace dolfinx::la
