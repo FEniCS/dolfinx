@@ -410,7 +410,6 @@ def meshtags_from_entities(mesh: Mesh, dim: int, entities: _cpp.graph.AdjacencyL
         values = np.full(entities.num_nodes, values, dtype=np.int32)
     elif isinstance(values, float):
         values = np.full(entities.num_nodes, values, dtype=np.double)
-
     values = np.asarray(values)
     return MeshTags(_cpp.mesh.create_meshtags(mesh.topology, dim, entities, values))
 
@@ -443,11 +442,10 @@ def create_interval(comm: _MPI.Comm, nx: int, points: npt.ArrayLike,
         mesh = _cpp.mesh.create_interval_float64(comm, nx, points, ghost_mode, partitioner)
     else:
         raise RuntimeError("Unsupported float type.")
-
     return Mesh(mesh, domain)
 
 
-def create_unit_interval(comm: _MPI.Comm, nx: int, dtype=np.float64,
+def create_unit_interval(comm: _MPI.Comm, nx: int, dtype: typing.Optional[np.float32, np.float64] = np.float64,
                          ghost_mode=GhostMode.shared_facet, partitioner=None) -> Mesh:
     """Create a mesh on the unit interval.
 
@@ -471,7 +469,7 @@ def create_unit_interval(comm: _MPI.Comm, nx: int, dtype=np.float64,
 
 
 def create_rectangle(comm: _MPI.Comm, points: npt.ArrayLike, n: npt.ArrayLike,
-                     cell_type=CellType.triangle, dtype=np.float64,
+                     cell_type=CellType.triangle, dtype: typing.Optional[np.float32, np.float64] = np.float64,
                      ghost_mode=GhostMode.shared_facet,
                      partitioner=None, diagonal: DiagonalType = DiagonalType.right) -> Mesh:
     """Create a rectangle mesh.
@@ -494,7 +492,6 @@ def create_rectangle(comm: _MPI.Comm, points: npt.ArrayLike, n: npt.ArrayLike,
         A mesh of a rectangle
 
     """
-
     if partitioner is None:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_type.name, 1, rank=1))
@@ -508,7 +505,7 @@ def create_rectangle(comm: _MPI.Comm, points: npt.ArrayLike, n: npt.ArrayLike,
 
 
 def create_unit_square(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.triangle,
-                       dtype=np.float64,
+                       dtype: typing.Optional[np.float32, np.float64] = np.float64,
                        ghost_mode=GhostMode.shared_facet, partitioner=None,
                        diagonal: DiagonalType = DiagonalType.right) -> Mesh:
     """Create a mesh of a unit square.
@@ -537,7 +534,8 @@ def create_unit_square(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.tri
 
 
 def create_box(comm: _MPI.Comm, points: typing.List[npt.ArrayLike], n: list,
-               cell_type=CellType.tetrahedron, dtype=np.float64,
+               cell_type=CellType.tetrahedron,
+               dtype: typing.Optional[np.float32, np.float64] = np.float64,
                ghost_mode=GhostMode.shared_facet, partitioner=None) -> Mesh:
     """Create a box mesh.
 
@@ -556,7 +554,6 @@ def create_box(comm: _MPI.Comm, points: typing.List[npt.ArrayLike], n: list,
         A mesh of a box domain
 
     """
-
     if partitioner is None:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_type.name, 1, rank=1))
@@ -570,7 +567,7 @@ def create_box(comm: _MPI.Comm, points: typing.List[npt.ArrayLike], n: list,
 
 
 def create_unit_cube(comm: _MPI.Comm, nx: int, ny: int, nz: int, cell_type=CellType.tetrahedron,
-                     dtype=np.float64, ghost_mode=GhostMode.shared_facet,
+                     dtype: typing.Optional[np.float32, np.float64] = np.float64, ghost_mode=GhostMode.shared_facet,
                      partitioner=None) -> Mesh:
     """Create a mesh of a unit cube.
 
