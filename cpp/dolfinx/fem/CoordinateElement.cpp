@@ -14,8 +14,9 @@ using namespace dolfinx;
 using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
-CoordinateElement::CoordinateElement(
-    std::shared_ptr<const basix::FiniteElement<double>> element)
+template <std::floating_point T>
+CoordinateElement<T>::CoordinateElement(
+    std::shared_ptr<const basix::FiniteElement<T>> element)
     : _element(element)
 {
   int degree = _element->degree();
@@ -23,45 +24,53 @@ CoordinateElement::CoordinateElement(
   _is_affine = mesh::is_simplex(cell) and degree == 1;
 }
 //-----------------------------------------------------------------------------
-CoordinateElement::CoordinateElement(mesh::CellType celltype, int degree,
-                                     basix::element::lagrange_variant type)
-    : CoordinateElement(std::make_shared<basix::FiniteElement<double>>(
-        basix::create_element<double>(
+template <std::floating_point T>
+CoordinateElement<T>::CoordinateElement(mesh::CellType celltype, int degree,
+                                        basix::element::lagrange_variant type)
+    : CoordinateElement(
+        std::make_shared<basix::FiniteElement<T>>(basix::create_element<T>(
             basix::element::family::P, mesh::cell_type_to_basix_type(celltype),
             degree, type, basix::element::dpc_variant::unset, false)))
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-mesh::CellType CoordinateElement::cell_shape() const
+template <std::floating_point T>
+mesh::CellType CoordinateElement<T>::cell_shape() const
 {
   return mesh::cell_type_from_basix_type(_element->cell_type());
 }
 //-----------------------------------------------------------------------------
+template <std::floating_point T>
 std::array<std::size_t, 4>
-CoordinateElement::tabulate_shape(std::size_t nd, std::size_t num_points) const
+CoordinateElement<T>::tabulate_shape(std::size_t nd,
+                                     std::size_t num_points) const
 {
   return _element->tabulate_shape(nd, num_points);
 }
 //-----------------------------------------------------------------------------
-void CoordinateElement::tabulate(int nd, std::span<const double> X,
-                                 std::array<std::size_t, 2> shape,
-                                 std::span<double> basis) const
+template <std::floating_point T>
+void CoordinateElement<T>::tabulate(int nd, std::span<const T> X,
+                                    std::array<std::size_t, 2> shape,
+                                    std::span<T> basis) const
 {
   assert(_element);
   _element->tabulate(nd, X, shape, basis);
 }
 //--------------------------------------------------------------------------------
-ElementDofLayout CoordinateElement::create_dof_layout() const
+template <std::floating_point T>
+ElementDofLayout CoordinateElement<T>::create_dof_layout() const
 {
   assert(_element);
   return ElementDofLayout(1, _element->entity_dofs(),
                           _element->entity_closure_dofs(), {}, {});
 }
 //-----------------------------------------------------------------------------
-void CoordinateElement::pull_back_nonaffine(mdspan2_t X, cmdspan2_t x,
-                                            cmdspan2_t cell_geometry,
-                                            double tol, int maxit) const
+template <std::floating_point T>
+void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
+                                               mdspan2_t<const T> x,
+                                               mdspan2_t<const T> cell_geometry,
+                                               double tol, int maxit) const
 {
   // Number of points
   std::size_t num_points = x.extent(0);
@@ -75,31 +84,27 @@ void CoordinateElement::pull_back_nonaffine(mdspan2_t X, cmdspan2_t x,
   assert(X.extent(0) == num_points);
   assert(X.extent(1) == tdim);
 
-  std::vector<double> dphi_b(tdim * num_xnodes);
-  mdspan2_t dphi(dphi_b.data(), tdim, num_xnodes);
+  std::vector<T> dphi_b(tdim * num_xnodes);
+  mdspan2_t<T> dphi(dphi_b.data(), tdim, num_xnodes);
 
-  std::vector<double> Xk_b(tdim);
-  mdspan2_t Xk(Xk_b.data(), 1, tdim);
+  std::vector<T> Xk_b(tdim);
+  mdspan2_t<T> Xk(Xk_b.data(), 1, tdim);
 
-  std::array<double, 3> xk = {0, 0, 0};
-
-  std::vector<double> dX(tdim);
-
-  std::vector<double> J_b(gdim * tdim);
-  mdspan2_t J(J_b.data(), gdim, tdim);
-
-  std::vector<double> K_b(tdim * gdim);
-  mdspan2_t K(K_b.data(), tdim, gdim);
+  std::array<T, 3> xk = {0, 0, 0};
+  std::vector<T> dX(tdim);
+  std::vector<T> J_b(gdim * tdim);
+  mdspan2_t<T> J(J_b.data(), gdim, tdim);
+  std::vector<T> K_b(tdim * gdim);
+  mdspan2_t<T> K(K_b.data(), tdim, gdim);
 
   namespace stdex = std::experimental;
-  using mdspan4_t = stdex::mdspan<double, stdex::dextents<std::size_t, 4>>;
+  using mdspan4_t = stdex::mdspan<T, stdex::dextents<std::size_t, 4>>;
 
   const std::array<std::size_t, 4> bsize = _element->tabulate_shape(1, 1);
-  std::vector<double> basis_b(
+  std::vector<T> basis_b(
       std::reduce(bsize.begin(), bsize.end(), 1, std::multiplies{}));
   mdspan4_t basis(basis_b.data(), bsize);
-  std::vector<double> phi(basis.extent(2));
-
+  std::vector<T> phi(basis.extent(2));
   for (std::size_t p = 0; p < num_points; ++p)
   {
     std::fill(Xk_b.begin(), Xk_b.end(), 0.0);
@@ -131,7 +136,7 @@ void CoordinateElement::pull_back_nonaffine(mdspan2_t X, cmdspan2_t x,
 
       // Compute Xk += dX
       std::transform(dX.begin(), dX.end(), Xk_b.begin(), Xk_b.begin(),
-                     [](double a, double b) { return a + b; });
+                     [](auto a, auto b) { return a + b; });
 
       // Compute norm(dX)
       if (auto dX_squared
@@ -153,42 +158,51 @@ void CoordinateElement::pull_back_nonaffine(mdspan2_t X, cmdspan2_t x,
   }
 }
 //-----------------------------------------------------------------------------
-void CoordinateElement::permute_dofs(const std::span<std::int32_t>& dofs,
-                                     std::uint32_t cell_perm) const
+template <std::floating_point T>
+void CoordinateElement<T>::permute_dofs(const std::span<std::int32_t>& dofs,
+                                        std::uint32_t cell_perm) const
 {
   assert(_element);
   _element->permute_dofs(dofs, cell_perm);
 }
 //-----------------------------------------------------------------------------
-void CoordinateElement::unpermute_dofs(const std::span<std::int32_t>& dofs,
-                                       std::uint32_t cell_perm) const
+template <std::floating_point T>
+void CoordinateElement<T>::unpermute_dofs(const std::span<std::int32_t>& dofs,
+                                          std::uint32_t cell_perm) const
 {
   assert(_element);
   _element->unpermute_dofs(dofs, cell_perm);
 }
 //-----------------------------------------------------------------------------
-bool CoordinateElement::needs_dof_permutations() const
+template <std::floating_point T>
+bool CoordinateElement<T>::needs_dof_permutations() const
 {
   assert(_element);
   assert(_element->dof_transformations_are_permutations());
   return !_element->dof_transformations_are_identity();
 }
 //-----------------------------------------------------------------------------
-int CoordinateElement::degree() const
+template <std::floating_point T>
+int CoordinateElement<T>::degree() const
 {
   assert(_element);
   return _element->degree();
 }
 //-----------------------------------------------------------------------------
-int CoordinateElement::dim() const
+template <std::floating_point T>
+int CoordinateElement<T>::dim() const
 {
   assert(_element);
   return _element->dim();
 }
 //-----------------------------------------------------------------------------
-basix::element::lagrange_variant CoordinateElement::variant() const
+template <std::floating_point T>
+basix::element::lagrange_variant CoordinateElement<T>::variant() const
 {
   assert(_element);
   return _element->lagrange_variant();
 }
+//-----------------------------------------------------------------------------
+template class fem::CoordinateElement<float>;
+template class fem::CoordinateElement<double>;
 //-----------------------------------------------------------------------------

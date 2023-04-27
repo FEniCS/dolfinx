@@ -62,7 +62,7 @@ bool has_cell_centred_data(const fem::Function<Scalar, double>& u)
 
 // Get data width - normally the same as u.value_size(), but expand for
 // 2D vector/tensor because XDMF presents everything as 3D
-int get_padded_width(const fem::FiniteElement& e)
+int get_padded_width(const fem::FiniteElement<double>& e)
 {
   const int width = e.value_size();
   const int rank = e.value_shape().size();

@@ -134,15 +134,16 @@ public:
   void eval(std::span<const std::int32_t> cells, std::span<T> values,
             std::array<std::size_t, 2> vshape) const
   {
+    namespace stdex = std::experimental;
+
     // Prepare coefficients and constants
     const auto [coeffs, cstride] = pack_coefficients(*this, cells);
     const std::vector<T> constant_data = pack_constants(*this);
-    const auto& fn = this->get_tabulate_expression();
+    auto fn = this->get_tabulate_expression();
 
     // Prepare cell geometry
     assert(_mesh);
-    const graph::AdjacencyList<std::int32_t>& x_dofmap
-        = _mesh->geometry().dofmap();
+    auto x_dofmap = _mesh->geometry().dofmap();
 
     // Get geometry data
     auto cmaps = _mesh->geometry().cmaps();
@@ -189,7 +190,7 @@ public:
     for (std::size_t c = 0; c < cells.size(); ++c)
     {
       const std::int32_t cell = cells[c];
-      auto x_dofs = x_dofmap.links(cell);
+      auto x_dofs = stdex::submdspan(x_dofmap, cell, stdex::full_extent);
       for (std::size_t i = 0; i < x_dofs.size(); ++i)
       {
         std::copy_n(std::next(x_g.begin(), 3 * x_dofs[i]), 3,

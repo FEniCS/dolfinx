@@ -14,30 +14,39 @@
 #include <memory>
 #include <numeric>
 #include <span>
+#include <type_traits>
 #include <vector>
 
 namespace dolfinx::la
 {
 
 /// Distributed vector
-
-template <typename T, class Allocator = std::allocator<T>>
+///
+/// @tparam V data container type
+///
+template <typename Scalar, typename Container = std::vector<Scalar>>
 class Vector
 {
-public:
-  /// The value type
-  using value_type = T;
+  static_assert(std::is_same_v<typename Container::value_type, Scalar>);
 
-  /// The allocator type
-  using allocator_type = Allocator;
+public:
+  /// Scalar type
+  using value_type = Scalar;
+
+  /// Container type
+  using container_type = Container;
+
+  static_assert(std::is_same_v<value_type, typename container_type::value_type>,
+                "Scalar type and container value type must be the same.");
 
   /// Create a distributed vector
-  Vector(std::shared_ptr<const common::IndexMap> map, int bs,
-         const Allocator& alloc = Allocator())
+  /// @param map IndexMap for parallel distribution of the data
+  /// @param bs Block size
+  Vector(std::shared_ptr<const common::IndexMap> map, int bs)
       : _map(map), _scatterer(std::make_shared<common::Scatterer<>>(*_map, bs)),
-        _bs(bs), _buffer_local(_scatterer->local_buffer_size(), alloc),
-        _buffer_remote(_scatterer->remote_buffer_size(), alloc),
-        _x(bs * (map->size_local() + map->num_ghosts()), alloc)
+        _bs(bs), _buffer_local(_scatterer->local_buffer_size()),
+        _buffer_remote(_scatterer->remote_buffer_size()),
+        _x(bs * (map->size_local() + map->num_ghosts()))
   {
   }
 
@@ -67,14 +76,14 @@ public:
 
   /// Set all entries (including ghosts)
   /// @param[in] v The value to set all entries to (on calling rank)
-  void set(T v) { std::fill(_x.begin(), _x.end(), v); }
+  void set(value_type v) { std::fill(_x.begin(), _x.end(), v); }
 
   /// Begin scatter of local data from owner to ghosts on other ranks
   /// @note Collective MPI operation
   void scatter_fwd_begin()
   {
     const std::int32_t local_size = _bs * _map->size_local();
-    std::span<const T> x_local(_x.data(), local_size);
+    std::span<const value_type> x_local(_x.data(), local_size);
 
     auto pack = [](const auto& in, const auto& idx, auto& out)
     {
@@ -83,8 +92,8 @@ public:
     };
     pack(x_local, _scatterer->local_indices(), _buffer_local);
 
-    _scatterer->scatter_fwd_begin(std::span<const T>(_buffer_local),
-                                  std::span<T>(_buffer_remote),
+    _scatterer->scatter_fwd_begin(std::span<const value_type>(_buffer_local),
+                                  std::span<value_type>(_buffer_remote),
                                   std::span<MPI_Request>(_request));
   }
 
@@ -94,7 +103,7 @@ public:
   {
     const std::int32_t local_size = _bs * _map->size_local();
     const std::int32_t num_ghosts = _bs * _map->num_ghosts();
-    std::span<T> x_remote(_x.data() + local_size, num_ghosts);
+    std::span<value_type> x_remote(_x.data() + local_size, num_ghosts);
     _scatterer->scatter_fwd_end(std::span<MPI_Request>(_request));
 
     auto unpack = [](const auto& in, const auto& idx, auto& out, auto op)
@@ -121,7 +130,7 @@ public:
   {
     const std::int32_t local_size = _bs * _map->size_local();
     const std::int32_t num_ghosts = _bs * _map->num_ghosts();
-    std::span<T> x_remote(_x.data() + local_size, num_ghosts);
+    std::span<value_type> x_remote(_x.data() + local_size, num_ghosts);
 
     auto pack = [](const auto& in, const auto& idx, auto& out)
     {
@@ -130,8 +139,9 @@ public:
     };
     pack(x_remote, _scatterer->remote_indices(), _buffer_remote);
 
-    _scatterer->scatter_rev_begin(std::span<const T>(_buffer_remote),
-                                  std::span<T>(_buffer_local), _request);
+    _scatterer->scatter_rev_begin(std::span<const value_type>(_buffer_remote),
+                                  std::span<value_type>(_buffer_local),
+                                  _request);
   }
 
   /// End scatter of ghost data to owner. This process may receive data
@@ -144,7 +154,7 @@ public:
   void scatter_rev_end(BinaryOperation op)
   {
     const std::int32_t local_size = _bs * _map->size_local();
-    std::span<T> x_local(_x.data(), local_size);
+    std::span<value_type> x_local(_x.data(), local_size);
     _scatterer->scatter_rev_end(_request);
 
     auto unpack = [](const auto& in, const auto& idx, auto& out, auto op)
@@ -174,13 +184,13 @@ public:
   constexpr int bs() const { return _bs; }
 
   /// Get local part of the vector (const version)
-  std::span<const T> array() const { return std::span<const T>(_x); }
+  std::span<const value_type> array() const
+  {
+    return std::span<const value_type>(_x);
+  }
 
   /// Get local part of the vector
-  std::span<T> mutable_array() { return std::span(_x); }
-
-  /// Get the allocator associated with the container
-  constexpr allocator_type allocator() const { return _x.get_allocator(); }
+  std::span<value_type> mutable_array() { return std::span(_x); }
 
 private:
   // Map describing the data layout
@@ -196,10 +206,10 @@ private:
   std::vector<MPI_Request> _request = {MPI_REQUEST_NULL};
 
   // Buffers for ghost scatters
-  std::vector<T, Allocator> _buffer_local, _buffer_remote;
+  container_type _buffer_local, _buffer_remote;
 
   // Vector data
-  std::vector<T, Allocator> _x;
+  container_type _x;
 };
 
 /// Compute the inner product of two vectors. The two vectors must have
@@ -208,9 +218,10 @@ private:
 /// @param a A vector
 /// @param b A vector
 /// @return Returns `a^{H} b` (`a^{T} b` if `a` and `b` are real)
-template <typename T, class Allocator>
-T inner_product(const Vector<T, Allocator>& a, const Vector<T, Allocator>& b)
+template <class V>
+auto inner_product(const V& a, const V& b)
 {
+  using T = typename V::value_type;
   const std::int32_t local_size = a.bs() * a.map()->size_local();
   if (local_size != b.bs() * b.map()->size_local())
     throw std::runtime_error("Incompatible vector sizes");
@@ -238,9 +249,10 @@ T inner_product(const Vector<T, Allocator>& a, const Vector<T, Allocator>& b)
 
 /// Compute the squared L2 norm of vector
 /// @note Collective MPI operation
-template <typename T, class Allocator>
-auto squared_norm(const Vector<T, Allocator>& a)
+template <class V>
+auto squared_norm(const V& a)
 {
+  using T = typename V::value_type;
   T result = inner_product(a, a);
   return std::real(result);
 }
@@ -249,9 +261,10 @@ auto squared_norm(const Vector<T, Allocator>& a)
 /// @note Collective MPI operation
 /// @param a A vector
 /// @param type Norm type (supported types are \f$L^2\f$ and \f$L^\infty\f$)
-template <typename T, class Allocator>
-auto norm(const Vector<T, Allocator>& a, Norm type = Norm::l2)
+template <class V>
+auto norm(const V& a, Norm type = Norm::l2)
 {
+  using T = typename V::value_type;
   switch (type)
   {
   case Norm::l2:
@@ -279,9 +292,10 @@ auto norm(const Vector<T, Allocator>& a, Norm type = Norm::l2)
 /// vectors must have identical parallel layouts. The vectors are
 /// modified in-place.
 /// @param[in] tol The tolerance used to detect a linear dependency
-template <typename T, class Allocator>
-void orthonormalize(std::span<Vector<T, Allocator>> basis, double tol = 1.0e-10)
+template <class V>
+void orthonormalize(std::span<V> basis, double tol = 1.0e-10)
 {
+  using T = typename V::value_type;
   // Loop over each vector in basis
   for (std::size_t i = 0; i < basis.size(); ++i)
   {
@@ -313,10 +327,10 @@ void orthonormalize(std::span<Vector<T, Allocator>> basis, double tol = 1.0e-10)
 /// @param[in] basis The set of vectors to check
 /// @param[in] tol The tolerance used to test for orthonormality
 /// @return True is basis is orthonormal, otherwise false
-template <typename T, class Allocator>
-bool is_orthonormal(std::span<const Vector<T, Allocator>> basis,
-                    double tol = 1.0e-10)
+template <class V>
+bool is_orthonormal(std::span<const V> basis, double tol = 1.0e-10)
 {
+  using T = typename V::value_type;
   for (std::size_t i = 0; i < basis.size(); i++)
   {
     for (std::size_t j = i; j < basis.size(); j++)

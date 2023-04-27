@@ -35,6 +35,7 @@ class Function;
 
 namespace fem
 {
+template <std::floating_point T>
 class CoordinateElement;
 }
 
