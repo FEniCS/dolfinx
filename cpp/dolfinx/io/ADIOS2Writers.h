@@ -881,7 +881,7 @@ void write_mesh(adios2::IO& io, adios2::Engine& engine,
   const mesh::Geometry<T>& geometry = mesh.geometry();
 
   // "Put" geometry
-  std::int32_t num_xdofs_local = geometry.index_map()->size_local();
+  std::size_t num_xdofs_local = geometry.index_map()->size_local();
   std::int64_t num_xdofs_global = geometry.index_map()->size_global();
   std::array<std::int64_t, 2> local_range = geometry.index_map()->local_range();
 
