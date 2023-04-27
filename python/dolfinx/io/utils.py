@@ -179,7 +179,7 @@ class XDMFFile(_cpp.io.XDMFFile):
         x = super().read_geometry_data(name, xpath)
 
         # Build the mesh
-        cmap = _cpp.fem.CoordinateElement(cell_shape, cell_degree)
+        cmap = _cpp.fem.CoordinateElement_float64(cell_shape, cell_degree)
         msh = _cpp.mesh.create_mesh(self.comm(), _cpp.graph.AdjacencyList_int64(cells),
                                     cmap, x, _cpp.mesh.create_cell_partitioner(ghost_mode))
         msh.name = name

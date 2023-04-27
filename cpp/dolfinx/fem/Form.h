@@ -101,7 +101,7 @@ public:
     // Extract _mesh from FunctionSpace, and check they are the same
     if (!_mesh and !V.empty())
       _mesh = V[0]->mesh();
-    for (const auto& space : V)
+    for (auto& space : V)
     {
       if (_mesh != space->mesh())
         throw std::runtime_error("Incompatible mesh");
@@ -240,7 +240,7 @@ public:
   std::vector<int> coefficient_offsets() const
   {
     std::vector<int> n = {0};
-    for (const auto& c : _coefficients)
+    for (auto& c : _coefficients)
     {
       if (!c)
         throw std::runtime_error("Not all form coefficients have been set.");

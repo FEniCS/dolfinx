@@ -29,7 +29,7 @@ from dolfinx import default_scalar_type, jit, la
 
 
 class Constant(ufl.Constant):
-    def __init__(self, domain, c: typing.Union[np.ndarray, typing.Sequence, float]):
+    def __init__(self, domain, c: typing.Union[np.ndarray, typing.Sequence, float, complex]):
         """A constant with respect to a domain.
 
         Args:

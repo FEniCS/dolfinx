@@ -97,6 +97,8 @@ std::tuple<std::vector<std::int32_t>, std::vector<T>, std::vector<std::int32_t>>
 compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
                                std::span<const std::int32_t> facets)
 {
+  namespace stdex = std::experimental;
+
   auto topology = mesh.topology();
   assert(topology);
   const int tdim = topology->dim();
@@ -133,7 +135,7 @@ compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
   }
 
   // Get geometry data
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+  auto x_dofmap = mesh.geometry().dofmap();
   std::span<const T> x_nodes = mesh.geometry().x();
 
   // Get all vertex 'node' indices
@@ -156,7 +158,7 @@ compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
     assert(it != cell_vertices.end());
     const int local_pos = std::distance(cell_vertices.begin(), it);
 
-    auto dofs = x_dofmap.links(c);
+    auto dofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
     for (std::size_t j = 0; j < 3; ++j)
       x_vertices[j * vertices.size() + i] = x_nodes[3 * dofs[local_pos] + j];
     vertex_to_pos[v] = i;
@@ -443,6 +445,8 @@ template <typename T>
 std::pair<std::vector<T>, std::array<std::size_t, 2>>
 compute_vertex_coords(const mesh::Mesh<T>& mesh)
 {
+  namespace stdex = std::experimental;
+
   auto topology = mesh.topology();
   assert(topology);
   const int tdim = topology->dim();
@@ -451,7 +455,7 @@ compute_vertex_coords(const mesh::Mesh<T>& mesh)
   mesh.topology_mutable()->create_connectivity(tdim, 0);
 
   // Get all vertex 'node' indices
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+  auto x_dofmap = mesh.geometry().dofmap();
   const std::int32_t num_vertices = topology->index_map(0)->size_local()
                                     + topology->index_map(0)->num_ghosts();
   auto c_to_v = topology->connectivity(tdim, 0);
@@ -459,7 +463,7 @@ compute_vertex_coords(const mesh::Mesh<T>& mesh)
   std::vector<std::int32_t> vertex_to_node(num_vertices);
   for (int c = 0; c < c_to_v->num_nodes(); ++c)
   {
-    auto x_dofs = x_dofmap.links(c);
+    auto x_dofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
     auto vertices = c_to_v->links(c);
     for (std::size_t i = 0; i < vertices.size(); ++i)
       vertex_to_node[vertices[i]] = x_dofs[i];
@@ -655,6 +659,8 @@ std::vector<std::int32_t>
 entities_to_geometry(const Mesh<T>& mesh, int dim,
                      std::span<const std::int32_t> entities, bool orient)
 {
+  namespace stdex = std::experimental;
+
   auto topology = mesh.topology();
   assert(topology);
 
@@ -675,7 +681,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   mesh.topology_mutable()->create_connectivity(dim, 0);
   mesh.topology_mutable()->create_connectivity(tdim, 0);
 
-  const graph::AdjacencyList<std::int32_t>& xdofs = geometry.dofmap();
+  auto xdofs = geometry.dofmap();
   auto e_to_c = topology->connectivity(dim, tdim);
   if (!e_to_c)
   {
@@ -690,7 +696,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
         "Entity-to-vertex connectivity has not been computed.");
   }
 
-  const auto c_to_v = topology->connectivity(tdim, 0);
+  auto c_to_v = topology->connectivity(tdim, 0);
   if (!e_to_v)
   {
     throw std::runtime_error(
@@ -707,8 +713,9 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
     const std::int32_t cell = e_to_c->links(idx).back();
     auto ev = e_to_v->links(idx);
     assert(ev.size() == num_vertices);
-    const auto cv = c_to_v->links(cell);
-    const auto xc = xdofs.links(cell);
+    auto cv = c_to_v->links(cell);
+    std::span<const std::int32_t> xc(
+        xdofs.data_handle() + xdofs.extent(1) * cell, xdofs.extent(1));
     for (std::size_t j = 0; j < num_vertices; ++j)
     {
       int k = std::distance(cv.begin(), std::find(cv.begin(), cv.end(), ev[j]));
@@ -779,11 +786,12 @@ compute_incident_entities(const Topology& topology,
 
 /// Create a mesh using a provided mesh partitioning function
 template <typename U>
-Mesh<typename std::remove_reference_t<typename U::value_type>>
-create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
-            const std::vector<fem::CoordinateElement>& elements, const U& x,
-            std::array<std::size_t, 2> xshape,
-            const CellPartitionFunction& cell_partitioner)
+Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
+    MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
+    const std::vector<fem::CoordinateElement<
+        typename std::remove_reference_t<typename U::value_type>>>& elements,
+    const U& x, std::array<std::size_t, 2> xshape,
+    const CellPartitionFunction& cell_partitioner)
 {
   const fem::ElementDofLayout dof_layout = elements[0].create_dof_layout();
 
@@ -900,7 +908,6 @@ create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
 
   Geometry geometry
       = create_geometry(comm, topology, elements, cell_nodes, x, xshape[1]);
-
   return Mesh<typename U::value_type>(
       comm, std::make_shared<Topology>(std::move(topology)),
       std::move(geometry));
@@ -928,14 +935,16 @@ create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>>
 create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
-            const std::vector<fem::CoordinateElement>& elements, const U& x,
-            std::array<std::size_t, 2> xshape, GhostMode ghost_mode)
+            const std::vector<fem::CoordinateElement<
+                std::remove_reference_t<typename U::value_type>>>& elements,
+            const U& x, std::array<std::size_t, 2> xshape, GhostMode ghost_mode)
 {
   return create_mesh(comm, cells, elements, x, xshape,
                      create_cell_partitioner(ghost_mode));
 }
 
-/// Create a new mesh consisting of a subset of entities in a mesh.
+/// @brief Create a new mesh consisting of a subset of entities in a
+/// mesh.
 /// @param[in] mesh The mesh
 /// @param[in] dim Entity dimension
 /// @param[in] entities List of entity indices in `mesh` to include in

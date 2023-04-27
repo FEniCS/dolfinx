@@ -15,8 +15,13 @@
 using namespace dolfinx;
 using namespace dolfinx::io;
 
-//-----------------------------------------------------------------------------
-std::string impl_fides::to_fides_cell(mesh::CellType type)
+namespace
+{
+/// Convert DOLFINx CellType to Fides CellType
+/// https://gitlab.kitware.com/vtk/vtk-m/-/blob/master/vtkm/CellShape.h#L30-53
+/// @param[in] type The DOLFInx cell
+/// @return The Fides cell string
+std::string to_fides_cell(mesh::CellType type)
 {
   switch (type)
   {
@@ -39,6 +44,50 @@ std::string impl_fides::to_fides_cell(mesh::CellType type)
   default:
     throw std::runtime_error("Unknown cell type.");
   }
+}
+
+} // namespace
+
+//-----------------------------------------------------------------------------
+ADIOS2Writer::ADIOS2Writer(MPI_Comm comm, const std::filesystem::path& filename,
+                           std::string tag, std::string engine)
+    : _adios(std::make_unique<adios2::ADIOS>(comm)),
+      _io(std::make_unique<adios2::IO>(_adios->DeclareIO(tag)))
+{
+  _io->SetEngine(engine);
+  _engine = std::make_unique<adios2::Engine>(
+      _io->Open(filename, adios2::Mode::Write));
+}
+//-----------------------------------------------------------------------------
+ADIOS2Writer::~ADIOS2Writer() { close(); }
+//-----------------------------------------------------------------------------
+void ADIOS2Writer::close()
+{
+  assert(_engine);
+  // The reason this looks odd is that ADIOS2 uses `operator bool()`
+  // to test if the engine is open
+  if (*_engine)
+    _engine->Close();
+}
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void impl_fides::initialize_mesh_attributes(adios2::IO& io, mesh::CellType type)
+{
+  // NOTE: If we start using mixed element types, we can change
+  // data-model to "unstructured"
+  impl_adios2::define_attribute<std::string>(io, "Fides_Data_Model",
+                                             "unstructured_single");
+
+  // Define Fides attributes pointing to ADIOS2 Variables for geometry
+  // and topology
+  impl_adios2::define_attribute<std::string>(io, "Fides_Coordinates_Variable",
+                                             "points");
+  impl_adios2::define_attribute<std::string>(io, "Fides_Connectivity_Variable",
+                                             "connectivity");
+  impl_adios2::define_attribute<std::string>(io, "Fides_Cell_Type",
+                                             to_fides_cell(type));
+
+  impl_adios2::define_attribute<std::string>(io, "Fides_Time_Variable", "step");
 }
 //-----------------------------------------------------------------------------
 std::stringstream

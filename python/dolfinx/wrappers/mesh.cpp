@@ -144,13 +144,20 @@ void declare_mesh(py::module& m, std::string type)
       m, pyclass_geometry_name.c_str(), "Geometry object")
       .def_property_readonly("dim", &dolfinx::mesh::Geometry<T>::dim,
                              "Geometric dimension")
-      .def_property_readonly("dofmap", &dolfinx::mesh::Geometry<T>::dofmap)
+      .def_property_readonly("dofmap",
+                             [](dolfinx::mesh::Geometry<T>& self)
+                             {
+                               auto dofs = self.dofmap();
+                               std::array shape{dofs.extent(0), dofs.extent(1)};
+                               return py::array_t<std::int32_t>(
+                                   shape, dofs.data_handle(), py::cast(self));
+                             })
       .def("index_map", &dolfinx::mesh::Geometry<T>::index_map)
       .def_property_readonly(
           "x",
           [](const dolfinx::mesh::Geometry<T>& self)
           {
-            std::array<std::size_t, 2> shape = {self.x().size() / 3, 3};
+            std::array<std::size_t, 2> shape{self.x().size() / 3, 3};
             return py::array_t<T>(shape, self.x().data(), py::cast(self));
           },
           "Return coordinates of all geometry points. Each row is the "
@@ -222,7 +229,7 @@ void declare_mesh(py::module& m, std::string type)
       "create_mesh",
       [](const MPICommWrapper comm,
          const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
-         const dolfinx::fem::CoordinateElement& element,
+         const dolfinx::fem::CoordinateElement<T>& element,
          const py::array_t<T, py::array::c_style>& x,
          const PythonPartitioningFunction& p)
       {
@@ -280,7 +287,7 @@ void declare_mesh(py::module& m, std::string type)
       {
         std::vector<T> x = dolfinx::mesh::compute_midpoints(
             mesh, dim, std::span(entities.data(), entities.size()));
-        std::array<std::size_t, 2> shape = {(std::size_t)entities.size(), 3};
+        std::array<std::size_t, 2> shape{(std::size_t)entities.size(), 3};
         return as_pyarray(std::move(x), shape);
       },
       py::arg("mesh"), py::arg("dim"), py::arg("entities"));
@@ -293,7 +300,7 @@ void declare_mesh(py::module& m, std::string type)
       {
         auto cpp_marker = [&marker](auto x)
         {
-          std::array<std::size_t, 2> shape = {x.extent(0), x.extent(1)};
+          std::array shape{x.extent(0), x.extent(1)};
           py::array_t<T> x_view(shape, x.data_handle(), py::none());
           py::array_t<bool> marked = marker(x_view);
           return std::vector<std::int8_t>(marked.data(),
@@ -313,7 +320,7 @@ void declare_mesh(py::module& m, std::string type)
       {
         auto cpp_marker = [&marker](auto x)
         {
-          std::array<std::size_t, 2> shape = {x.extent(0), x.extent(1)};
+          std::array shape{x.extent(0), x.extent(1)};
           py::array_t<T> x_view(shape, x.data_handle(), py::none());
           py::array_t<bool> marked = marker(x_view);
           return std::vector<std::int8_t>(marked.data(),
@@ -339,8 +346,8 @@ void declare_mesh(py::module& m, std::string type)
         dolfinx::mesh::CellType cell_type = topology->cell_types()[0];
         std::size_t num_vertices = dolfinx::mesh::num_cell_vertices(
             cell_entity_type(cell_type, dim, 0));
-        std::array<std::size_t, 2> shape
-            = {(std::size_t)entities.size(), num_vertices};
+        std::array<std::size_t, 2> shape{(std::size_t)entities.size(),
+                                         num_vertices};
         return as_pyarray(std::move(idx), shape);
       },
       py::arg("mesh"), py::arg("dim"), py::arg("entities"), py::arg("orient"));

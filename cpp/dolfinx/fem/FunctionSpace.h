@@ -15,7 +15,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
@@ -25,8 +24,6 @@
 
 namespace dolfinx::fem
 {
-class DofMap;
-class FiniteElement;
 
 /// @brief This class represents a finite element function space defined
 /// by a mesh, a finite element, and a local-to-global map of the
@@ -40,7 +37,7 @@ public:
   /// @param[in] element The element
   /// @param[in] dofmap The dofmap
   FunctionSpace(std::shared_ptr<const mesh::Mesh<T>> mesh,
-                std::shared_ptr<const FiniteElement> element,
+                std::shared_ptr<const FiniteElement<T>> element,
                 std::shared_ptr<const DofMap> dofmap)
       : _mesh(mesh), _element(element), _dofmap(dofmap),
         _id(boost::uuids::random_generator()()), _root_space_id(_id)
@@ -80,8 +77,7 @@ public:
     }
 
     // Extract sub-element
-    std::shared_ptr<const FiniteElement> element
-        = this->_element->extract_sub_element(component);
+    auto element = this->_element->extract_sub_element(component);
 
     // Extract sub dofmap
     auto dofmap
@@ -217,14 +213,11 @@ public:
 
     // Get coordinate map
     if (_mesh->geometry().cmaps().size() > 1)
-    {
       throw std::runtime_error("Mixed topology not supported");
-    }
-    const CoordinateElement& cmap = _mesh->geometry().cmaps()[0];
+    const CoordinateElement<T>& cmap = _mesh->geometry().cmaps()[0];
 
     // Prepare cell geometry
-    const graph::AdjacencyList<std::int32_t>& x_dofmap
-        = _mesh->geometry().dofmap();
+    auto x_dofmap = _mesh->geometry().dofmap();
     const std::size_t num_dofs_g = cmap.dim();
     std::span<const T> x_g = _mesh->geometry().x();
 
@@ -256,11 +249,11 @@ public:
     }
 
     auto apply_dof_transformation
-        = _element->get_dof_transformation_function<double>();
+        = _element->template get_dof_transformation_function<T>();
 
     const std::array<std::size_t, 4> phi_shape
         = cmap.tabulate_shape(0, Xshape[0]);
-    std::vector<double> phi_b(
+    std::vector<T> phi_b(
         std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
     cmdspan4_t phi_full(phi_b.data(), phi_shape);
     cmap.tabulate(0, X, Xshape, phi_b);
@@ -270,7 +263,7 @@ public:
     for (int c = 0; c < num_cells; ++c)
     {
       // Extract cell geometry
-      auto x_dofs = x_dofmap.links(c);
+      auto x_dofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
       for (std::size_t i = 0; i < x_dofs.size(); ++i)
         for (std::size_t j = 0; j < gdim; ++j)
           coordinate_dofs(i, j) = x_g[3 * x_dofs[i] + j];
@@ -305,7 +298,7 @@ public:
   std::shared_ptr<const mesh::Mesh<T>> mesh() const { return _mesh; }
 
   /// The finite element
-  std::shared_ptr<const FiniteElement> element() const { return _element; }
+  std::shared_ptr<const FiniteElement<T>> element() const { return _element; }
 
   /// The dofmap
   std::shared_ptr<const DofMap> dofmap() const { return _dofmap; }
@@ -315,7 +308,7 @@ private:
   std::shared_ptr<const mesh::Mesh<T>> _mesh;
 
   // The finite element
-  std::shared_ptr<const FiniteElement> _element;
+  std::shared_ptr<const FiniteElement<T>> _element;
 
   // The dofmap
   std::shared_ptr<const DofMap> _dofmap;

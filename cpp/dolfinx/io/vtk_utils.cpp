@@ -20,18 +20,19 @@ using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
 std::pair<std::vector<std::int64_t>, std::array<std::size_t, 2>>
-io::extract_vtk_connectivity(const graph::AdjacencyList<std::int32_t>& dofmap_x,
-                             mesh::CellType cell_type)
+io::extract_vtk_connectivity(
+    std::experimental::mdspan<const std::int32_t,
+                              std::experimental::dextents<std::size_t, 2>>
+        dofmap_x,
+    mesh::CellType cell_type)
 {
   // Get DOLFINx to VTK permutation
-  // FIXME: Use better way to get number of nodes
-  // const std::size_t num_nodes = geometry.cmap().dim();
-  const std::size_t num_nodes = dofmap_x.links(0).size();
+  const std::size_t num_nodes = dofmap_x.extent(1);
   std::vector vtkmap
       = io::cells::transpose(io::cells::perm_vtk(cell_type, num_nodes));
 
   // Extract mesh 'nodes'
-  const std::size_t num_cells = dofmap_x.num_nodes();
+  const std::size_t num_cells = dofmap_x.extent(0);
 
   // Build mesh connectivity
 
@@ -41,9 +42,8 @@ io::extract_vtk_connectivity(const graph::AdjacencyList<std::int32_t>& dofmap_x,
   for (std::size_t c = 0; c < num_cells; ++c)
   {
     // For each cell, get the 'nodes' and place in VTK order
-    auto dofs_x = dofmap_x.links(c);
-    for (std::size_t i = 0; i < dofs_x.size(); ++i)
-      topology[c * shape[1] + i] = dofs_x[vtkmap[i]];
+    for (std::size_t i = 0; i < num_nodes; ++i)
+      topology[c * shape[1] + i] = dofmap_x(c, vtkmap[i]);
   }
 
   return {std::move(topology), shape};

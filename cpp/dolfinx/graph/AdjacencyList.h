@@ -59,11 +59,11 @@ public:
     // Initialize offsets and compute total size
     _offsets.reserve(data.size() + 1);
     _offsets.push_back(0);
-    for (const auto& row : data)
+    for (auto& row : data)
       _offsets.push_back(_offsets.back() + row.size());
 
     _array.reserve(_offsets.back());
-    for (const auto& e : data)
+    for (auto& e : data)
       _array.insert(_array.end(), e.begin(), e.end());
   }
 
