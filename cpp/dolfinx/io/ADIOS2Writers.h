@@ -870,7 +870,7 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
 /// @privatesection
 namespace impl_checkpoint
 {
-/// Write mesh to file using VTX format
+/// Write mesh to file using DOLFINx mesh formatting
 /// @param[in] io The ADIOS2 io object
 /// @param[in] engine The ADIOS2 engine object
 /// @param[in] mesh The mesh
@@ -882,24 +882,26 @@ void write_mesh(adios2::IO& io, adios2::Engine& engine,
 
   // "Put" geometry
   std::int32_t num_xdofs_local = geometry.index_map()->size_local();
-  std::int32_t num_xdofs_global = geometry.index_map()->size_global();
+  std::int64_t num_xdofs_global = geometry.index_map()->size_global();
   std::array<std::int64_t, 2> local_range = geometry.index_map()->local_range();
 
-  std::span<const T> nodes = geometry.x();
+  std::span<const T> x = geometry.x();
   std::size_t gdim = geometry.dim();
-  std::size_t num_nodes = nodes.size() / 3;
-  // Truncate geometry to gdim
-  std::vector<T> geometry_trunc;
-  geometry_trunc.reserve(num_nodes * gdim);
-  for (std::size_t i = 0; i < num_nodes; ++i)
+  // Truncate geometry to gdim (only owned indices)
+  namespace stdex = std::experimental;
+  using dextent = stdex::dextents<std::size_t, 2>;
+  std::vector<T> geometry_b(num_xdofs_local * gdim);
+  stdex::mdspan<T, dextent> geometry_md(geometry_b.data(), num_xdofs_local,
+                                        gdim);
+  for (std::size_t i = 0; i < num_xdofs_local; ++i)
     for (std::size_t j = 0; j < gdim; ++j)
-      geometry_trunc.push_back(nodes[3 * i + j]);
+      geometry_md(i, j) = x[3 * i + j];
 
   // Define geometry variable and "put"
   adios2::Variable<T> local_geometry = impl_adios2::define_variable<T>(
       io, "geometry", {num_xdofs_global, gdim}, {local_range[0], 0},
       {num_xdofs_local, gdim});
-  engine.Put<T>(local_geometry, geometry_trunc.data());
+  engine.Put<T>(local_geometry, geometry_b.data());
 
   // Put topology (connectivity)
   auto topology = mesh.topology_mutable();
@@ -917,13 +919,14 @@ void write_mesh(adios2::IO& io, adios2::Engine& engine,
   fem::ElementDofLayout geom_layout = geometry.cmaps()[0].create_dof_layout();
   int num_dofs_per_cell = geom_layout.num_entity_closure_dofs(geometry.dim());
   auto geometry_imap = geometry.index_map();
-  const std::vector<std::int32_t>& geometry_dmap = geometry.dofmap().array();
-
+  std::experimental::mdspan<const std::int32_t,
+                            std::experimental::dextents<std::size_t, 2>>
+      geometry_dmap = geometry.dofmap();
   // Convert local geometry to global geometry
   std::vector<std::int64_t> connectivity_out(num_cells_local
                                              * num_dofs_per_cell);
 
-  std::span<const std::int32_t> local_dmap(geometry_dmap.begin(),
+  std::span<const std::int32_t> local_dmap(geometry_dmap.data_handle(),
                                            num_cells_local * num_dofs_per_cell);
   geometry_imap->local_to_global(local_dmap, connectivity_out);
 
@@ -1104,8 +1107,8 @@ public:
     }
     int degree = deg_var.Data().front();
 
-    fem::CoordinateElement cmap
-        = fem::CoordinateElement(cell_type, degree, lagrange_variant);
+    fem::CoordinateElement<T> cmap(cell_type, degree, lagrange_variant);
+
     // Get mesh geometry
     adios2::Variable<T> var_geom
         = this->_io->template InquireVariable<T>("geometry");
