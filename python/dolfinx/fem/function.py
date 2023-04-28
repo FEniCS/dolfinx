@@ -529,9 +529,11 @@ class FunctionSpace(ufl.FunctionSpace):
 
         """
         try:
-            Vcpp = _cpp.fem.FunctionSpace_float64(self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap)
+            Vcpp = _cpp.fem.FunctionSpace_float64(
+                self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap)
         except TypeError:
-            Vcpp = _cpp.fem.FunctionSpace_float32(self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap)
+            Vcpp = _cpp.fem.FunctionSpace_float32(
+                self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap)
         return FunctionSpace(self._mesh, self.ufl_element(), Vcpp)
 
     @property
