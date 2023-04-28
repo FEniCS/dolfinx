@@ -57,6 +57,36 @@ struct geom_type<T, std::void_t<typename T::value_type>>
   typedef typename T::value_type value_type;
 };
 
+template <typename T>
+void declare_function_space(py::module& m, const std::string& type)
+{
+  std::string pyclass_name = std::string("FunctionSpace_") + type;
+
+  // dolfinx::fem::FunctionSpace
+  py::class_<dolfinx::fem::FunctionSpace<T>,
+             std::shared_ptr<dolfinx::fem::FunctionSpace<T>>>(
+      m, pyclass_name.c_str())
+      .def(py::init<std::shared_ptr<dolfinx::mesh::Mesh<T>>,
+                    std::shared_ptr<dolfinx::fem::FiniteElement<T>>,
+                    std::shared_ptr<dolfinx::fem::DofMap>>(),
+           py::arg("mesh"), py::arg("element"), py::arg("dofmap"))
+      .def("collapse", &dolfinx::fem::FunctionSpace<T>::collapse)
+      .def("component", &dolfinx::fem::FunctionSpace<T>::component)
+      .def("contains", &dolfinx::fem::FunctionSpace<T>::contains, py::arg("V"))
+      .def_property_readonly("element",
+                             &dolfinx::fem::FunctionSpace<T>::element)
+      .def_property_readonly("mesh", &dolfinx::fem::FunctionSpace<T>::mesh)
+      .def_property_readonly("dofmap", &dolfinx::fem::FunctionSpace<T>::dofmap)
+      .def("sub", &dolfinx::fem::FunctionSpace<T>::sub, py::arg("component"))
+      .def("tabulate_dof_coordinates",
+           [](const dolfinx::fem::FunctionSpace<T>& self)
+           {
+             std::vector x = self.tabulate_dof_coordinates(false);
+             std::vector<std::size_t> shape{x.size() / 3, 3};
+             return dolfinx_wrappers::as_pyarray(std::move(x), shape);
+           });
+}
+
 // Declare DirichletBC objects for type T
 template <typename T>
 void declare_objects(py::module& m, const std::string& type)
@@ -1013,31 +1043,34 @@ void fem(py::module& m)
       },
       py::arg("element"), py::arg("V"), py::arg("cells"));
 
-  // dolfinx::fem::FunctionSpace
-  py::class_<dolfinx::fem::FunctionSpace<double>,
-             std::shared_ptr<dolfinx::fem::FunctionSpace<double>>>(
-      m, "FunctionSpace")
-      .def(py::init<std::shared_ptr<dolfinx::mesh::Mesh<double>>,
-                    std::shared_ptr<dolfinx::fem::FiniteElement<double>>,
-                    std::shared_ptr<dolfinx::fem::DofMap>>(),
-           py::arg("mesh"), py::arg("element"), py::arg("dofmap"))
-      .def("collapse", &dolfinx::fem::FunctionSpace<double>::collapse)
-      .def("component", &dolfinx::fem::FunctionSpace<double>::component)
-      .def("contains", &dolfinx::fem::FunctionSpace<double>::contains,
-           py::arg("V"))
-      .def_property_readonly("element",
-                             &dolfinx::fem::FunctionSpace<double>::element)
-      .def_property_readonly("mesh", &dolfinx::fem::FunctionSpace<double>::mesh)
-      .def_property_readonly("dofmap",
-                             &dolfinx::fem::FunctionSpace<double>::dofmap)
-      .def("sub", &dolfinx::fem::FunctionSpace<double>::sub,
-           py::arg("component"))
-      .def("tabulate_dof_coordinates",
-           [](const dolfinx::fem::FunctionSpace<double>& self)
-           {
-             std::vector x = self.tabulate_dof_coordinates(false);
-             std::vector<std::size_t> shape{x.size() / 3, 3};
-             return as_pyarray(std::move(x), shape);
-           });
+  //   // dolfinx::fem::FunctionSpace
+  //   py::class_<dolfinx::fem::FunctionSpace<double>,
+  //              std::shared_ptr<dolfinx::fem::FunctionSpace<double>>>(
+  //       m, "FunctionSpace")
+  //       .def(py::init<std::shared_ptr<dolfinx::mesh::Mesh<double>>,
+  //                     std::shared_ptr<dolfinx::fem::FiniteElement<double>>,
+  //                     std::shared_ptr<dolfinx::fem::DofMap>>(),
+  //            py::arg("mesh"), py::arg("element"), py::arg("dofmap"))
+  //       .def("collapse", &dolfinx::fem::FunctionSpace<double>::collapse)
+  //       .def("component", &dolfinx::fem::FunctionSpace<double>::component)
+  //       .def("contains", &dolfinx::fem::FunctionSpace<double>::contains,
+  //            py::arg("V"))
+  //       .def_property_readonly("element",
+  //                              &dolfinx::fem::FunctionSpace<double>::element)
+  //       .def_property_readonly("mesh",
+  //       &dolfinx::fem::FunctionSpace<double>::mesh)
+  //       .def_property_readonly("dofmap",
+  //                              &dolfinx::fem::FunctionSpace<double>::dofmap)
+  //       .def("sub", &dolfinx::fem::FunctionSpace<double>::sub,
+  //            py::arg("component"))
+  //       .def("tabulate_dof_coordinates",
+  //            [](const dolfinx::fem::FunctionSpace<double>& self)
+  //            {
+  //              std::vector x = self.tabulate_dof_coordinates(false);
+  //              std::vector<std::size_t> shape{x.size() / 3, 3};
+  //              return as_pyarray(std::move(x), shape);
+  //            });
+  declare_function_space<float>(m, "float32");
+  declare_function_space<double>(m, "float64");
 }
 } // namespace dolfinx_wrappers

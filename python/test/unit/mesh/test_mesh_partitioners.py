@@ -43,7 +43,7 @@ except ImportError:
 def test_partition_box_mesh(gpart, Nx, cell_type):
     part = create_cell_partitioner(gpart)
     mesh = create_box(MPI.COMM_WORLD, [np.array([0, 0, 0]), np.array([1, 1, 1])], [Nx, Nx, Nx],
-                      cell_type, GhostMode.shared_facet, part)
+                      cell_type, ghost_mode=GhostMode.shared_facet, partitioner=part)
     tdim = mesh.topology.dim
     c = 6 if cell_type == CellType.tetrahedron else 1
     assert mesh.topology.index_map(tdim).size_global == Nx**3 * c
@@ -57,7 +57,7 @@ def test_custom_partitioner(tempdir, Nx, cell_type):
     mpi_comm = MPI.COMM_WORLD
     Lx = mpi_comm.size
     points = [np.array([0, 0, 0]), np.array([Lx, Lx, Lx])]
-    mesh = create_box(mpi_comm, points, [Nx, Nx, Nx], cell_type, GhostMode.shared_facet)
+    mesh = create_box(mpi_comm, points, [Nx, Nx, Nx], cell_type, ghost_mode=GhostMode.shared_facet)
 
     filename = Path(tempdir, "u1_.xdmf")
     with XDMFFile(mpi_comm, filename, "w") as file:

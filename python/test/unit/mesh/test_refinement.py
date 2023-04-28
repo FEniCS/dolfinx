@@ -123,9 +123,9 @@ def test_refine_from_cells():
 @pytest.mark.parametrize("tdim", [2, 3])
 def test_refine_facet_meshtag(tdim):
     if tdim == 3:
-        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 3, 5, CellType.tetrahedron, GhostMode.none)
+        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 3, 5, CellType.tetrahedron)
     else:
-        mesh = create_unit_square(MPI.COMM_WORLD, 2, 5, CellType.triangle, GhostMode.none)
+        mesh = create_unit_square(MPI.COMM_WORLD, 2, 5, CellType.triangle)
     mesh.topology.create_entities(tdim - 1)
     mesh.topology.create_connectivity(tdim - 1, tdim)
     mesh.topology.create_entities(1)
@@ -159,9 +159,9 @@ def test_refine_facet_meshtag(tdim):
 @pytest.mark.parametrize("tdim", [2, 3])
 def test_refine_cell_meshtag(tdim):
     if tdim == 3:
-        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 3, 5, CellType.tetrahedron, GhostMode.none)
+        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 3, 5, CellType.tetrahedron)
     else:
-        mesh = create_unit_square(MPI.COMM_WORLD, 2, 5, CellType.triangle, GhostMode.none)
+        mesh = create_unit_square(MPI.COMM_WORLD, 2, 5, CellType.triangle)
 
     mesh.topology.create_entities(1)
     cell_indices = numpy.arange(mesh.topology.index_map(tdim).size_local)

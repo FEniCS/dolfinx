@@ -458,7 +458,7 @@ class FunctionSpace(ufl.FunctionSpace):
 
     def __init__(self, mesh: Mesh,
                  element: typing.Union[ufl.FiniteElementBase, ElementMetaData, typing.Tuple[str, int]],
-                 cppV: typing.Optional[_cpp.fem.FunctionSpace] = None,
+                 cppV: typing.Optional[_cpp.fem.FunctionSpace_float64] = None,
                  form_compiler_options: dict[str, typing.Any] = {}, jit_options: dict[str, typing.Any] = {}):
         """Create a finite element function space."""
 
@@ -485,7 +485,7 @@ class FunctionSpace(ufl.FunctionSpace):
                 "uintptr_t", ffi.addressof(self._ufcx_dofmap)), mesh.topology, cpp_element)
 
             # Initialize the cpp.FunctionSpace and store mesh
-            self._cpp_object = _cpp.fem.FunctionSpace(mesh._cpp_object, cpp_element, cpp_dofmap)
+            self._cpp_object = _cpp.fem.FunctionSpace_float64(mesh._cpp_object, cpp_element, cpp_dofmap)
             self._mesh = mesh
         else:
             # Create function space from a UFL element and an existing
@@ -515,7 +515,7 @@ class FunctionSpace(ufl.FunctionSpace):
             A new function space that shares data
 
         """
-        Vcpp = _cpp.fem.FunctionSpace(self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap)
+        Vcpp = _cpp.fem.FunctionSpace_float64(self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap)
         return FunctionSpace(self._mesh, self.ufl_element(), Vcpp)
 
     @property
