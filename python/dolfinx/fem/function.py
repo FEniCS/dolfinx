@@ -458,7 +458,8 @@ class FunctionSpace(ufl.FunctionSpace):
 
     def __init__(self, mesh: Mesh,
                  element: typing.Union[ufl.FiniteElementBase, ElementMetaData, typing.Tuple[str, int]],
-                 cppV: typing.Optional[_cpp.fem.FunctionSpace_float32, _cpp.fem.FunctionSpace_float64] = None,
+                 cppV: typing.Optional[typing.Union[_cpp.fem.FunctionSpace_float32,
+                                                    _cpp.fem.FunctionSpace_float64]] = None,
                  form_compiler_options: dict[str, typing.Any] = {}, jit_options: dict[str, typing.Any] = {}):
         """Create a finite element function space."""
         dtype = mesh.geometry.x.dtype
