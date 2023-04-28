@@ -37,6 +37,8 @@ void create_mesh_file()
 
 void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
 {
+  using T = double;
+
   MPI_Comm mpi_comm = MPI_COMM_WORLD;
   const int mpi_size = dolfinx::MPI::size(mpi_comm);
 
@@ -55,14 +57,14 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   MPI_Comm_create_group(MPI_COMM_WORLD, new_group, 0, &subset_comm);
 
   // Create coordinate map
-  auto e = std::make_shared<basix::FiniteElement>(basix::create_element(
+  auto e = std::make_shared<basix::FiniteElement<T>>(basix::create_element<T>(
       basix::element::family::P, basix::cell::type::triangle, 1,
       basix::element::lagrange_variant::unset,
       basix::element::dpc_variant::unset, false));
-  fem::CoordinateElement cmap(e);
+  fem::CoordinateElement<T> cmap(e);
 
   // read mesh data
-  std::vector<double> x;
+  std::vector<T> x;
   std::array<std::size_t, 2> xshape = {0, 2};
   std::vector<std::int64_t> cells;
   std::array<std::size_t, 2> cshape = {0, 3};
@@ -126,7 +128,7 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   mesh::Geometry geometry = mesh::create_geometry(mpi_comm, topology, {cmap},
                                                   cell_nodes, x, xshape[1]);
 
-  auto mesh = std::make_shared<mesh::Mesh<double>>(
+  auto mesh = std::make_shared<mesh::Mesh<T>>(
       mpi_comm, std::make_shared<mesh::Topology>(std::move(topology)),
       std::move(geometry));
 

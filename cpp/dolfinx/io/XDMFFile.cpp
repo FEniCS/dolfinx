@@ -225,9 +225,10 @@ void XDMFFile::write_geometry(const mesh::Geometry<double>& geometry,
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh<double> XDMFFile::read_mesh(const fem::CoordinateElement& element,
-                                       mesh::GhostMode mode, std::string name,
-                                       std::string xpath) const
+mesh::Mesh<double>
+XDMFFile::read_mesh(const fem::CoordinateElement<double>& element,
+                    mesh::GhostMode mode, std::string name,
+                    std::string xpath) const
 {
   // Read mesh data
   auto [cells, cshape] = XDMFFile::read_topology_data(name, xpath);

@@ -54,7 +54,7 @@ void test_fides_function()
                                 {22, 12}, mesh::CellType::triangle));
 
   // Create a Basix continuous Lagrange element of degree 1
-  basix::FiniteElement e = basix::create_element(
+  basix::FiniteElement e = basix::create_element<T>(
       basix::element::family::P,
       mesh::cell_type_to_basix_type(mesh::CellType::triangle), 1,
       basix::element::lagrange_variant::unset,

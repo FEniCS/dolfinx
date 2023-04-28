@@ -23,8 +23,9 @@ using namespace dolfinx::fem;
 namespace
 {
 //-----------------------------------------------------------------------------
-// Check if an element is a Basix element (or a blocked element
-// containing a Basix element)
+
+/// Check if an element is a Basix element (or a blocked element
+/// containing a Basix element)
 bool is_basix_element(const ufcx_finite_element& element)
 {
   if (element.element_type == ufcx_basix_element)
@@ -39,8 +40,9 @@ bool is_basix_element(const ufcx_finite_element& element)
     return false;
 }
 //-----------------------------------------------------------------------------
-// Check if an element is a custom Basix element (or a blocked element
-// containing a custom Basix element)
+
+/// Check if an element is a custom Basix element (or a blocked element
+/// containing a custom Basix element)
 bool is_basix_custom_element(const ufcx_finite_element& element)
 {
   if (element.element_type == ufcx_basix_custom_element)
@@ -55,9 +57,11 @@ bool is_basix_custom_element(const ufcx_finite_element& element)
     return false;
 }
 //-----------------------------------------------------------------------------
-// Recursively extract sub finite element
-std::shared_ptr<const FiniteElement>
-_extract_sub_element(const FiniteElement& finite_element,
+
+/// Recursively extract sub finite element
+template <std::floating_point T>
+std::shared_ptr<const FiniteElement<T>>
+_extract_sub_element(const FiniteElement<T>& finite_element,
                      const std::vector<int>& component)
 {
   // Check that a sub system has been specified
@@ -83,8 +87,7 @@ _extract_sub_element(const FiniteElement& finite_element,
   }
 
   // Get sub system
-  std::shared_ptr<const FiniteElement> sub_element
-      = finite_element.sub_elements()[component[0]];
+  auto sub_element = finite_element.sub_elements()[component[0]];
   assert(sub_element);
 
   // Return sub system if sub sub system should not be extracted
@@ -101,7 +104,8 @@ _extract_sub_element(const FiniteElement& finite_element,
 } // namespace
 
 //-----------------------------------------------------------------------------
-FiniteElement::FiniteElement(const ufcx_finite_element& e)
+template <std::floating_point T>
+FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
     : _signature(e.signature), _family(e.family), _space_dim(e.space_dimension),
       _value_shape(e.value_shape, e.value_shape + e.value_rank),
       _bs(e.block_size)
@@ -146,15 +150,12 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
   for (int i = 0; i < e.num_sub_elements; ++i)
   {
     ufcx_finite_element* ufcx_sub_element = e.sub_elements[i];
-    _sub_elements.push_back(std::make_shared<FiniteElement>(*ufcx_sub_element));
+    _sub_elements.push_back(
+        std::make_shared<FiniteElement<T>>(*ufcx_sub_element));
     if (_sub_elements[i]->needs_dof_permutations())
-    {
       _needs_dof_permutations = true;
-    }
     if (_sub_elements[i]->needs_dof_transformations())
-    {
       _needs_dof_transformations = true;
-    }
   }
 
   if (is_basix_custom_element(e))
@@ -173,8 +174,8 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
     const int nderivs = ce->interpolation_nderivs;
     const std::size_t nderivs_dim = basix::polyset::nderivs(cell_type, nderivs);
 
-    using array2_t = std::pair<std::vector<double>, std::array<std::size_t, 2>>;
-    using array4_t = std::pair<std::vector<double>, std::array<std::size_t, 4>>;
+    using array2_t = std::pair<std::vector<T>, std::array<std::size_t, 2>>;
+    using array4_t = std::pair<std::vector<T>, std::array<std::size_t, 4>>;
     std::array<std::vector<array2_t>, 4> x;
     std::array<std::vector<array4_t>, 4> M;
     { // scope
@@ -193,8 +194,7 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
 
           std::array pshape = {npts, dim};
           auto& pts
-              = x[d].emplace_back(std::vector<double>(pshape[0] * pshape[1]),
-                                  pshape)
+              = x[d].emplace_back(std::vector<T>(pshape[0] * pshape[1]), pshape)
                     .first;
           std::copy_n(ce->x + p_e, pts.size(), pts.begin());
           p_e += pts.size();
@@ -202,8 +202,7 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
           std::array mshape = {ndofs, value_size, npts, nderivs_dim};
           std::size_t msize
               = std::reduce(mshape.begin(), mshape.end(), 1, std::multiplies{});
-          auto& mat
-              = M[d].emplace_back(std::vector<double>(msize), mshape).first;
+          auto& mat = M[d].emplace_back(std::vector<T>(msize), mshape).first;
           std::copy_n(ce->M + m_e, mat.size(), mat.begin());
           m_e += mat.size();
         }
@@ -213,10 +212,8 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
     }
 
     namespace stdex = std::experimental;
-    using cmdspan2_t
-        = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
-    using cmdspan4_t
-        = stdex::mdspan<const double, stdex::dextents<std::size_t, 4>>;
+    using cmdspan2_t = stdex::mdspan<const T, stdex::dextents<std::size_t, 2>>;
+    using cmdspan4_t = stdex::mdspan<const T, stdex::dextents<std::size_t, 4>>;
 
     std::array<std::vector<cmdspan2_t>, 4> _x;
     for (std::size_t i = 0; i < x.size(); ++i)
@@ -228,12 +225,12 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
       for (auto& [buffer, shape] : M[i])
         _M[i].push_back(cmdspan4_t(buffer.data(), shape));
 
-    std::vector<double> wcoeffs_b(ce->wcoeffs_rows * ce->wcoeffs_cols);
+    std::vector<T> wcoeffs_b(ce->wcoeffs_rows * ce->wcoeffs_cols);
     cmdspan2_t wcoeffs(wcoeffs_b.data(), ce->wcoeffs_rows, ce->wcoeffs_cols);
     std::copy_n(ce->wcoeffs, wcoeffs_b.size(), wcoeffs_b.begin());
 
-    _element
-        = std::make_unique<basix::FiniteElement>(basix::create_custom_element(
+    _element = std::make_unique<basix::FiniteElement<T>>(
+        basix::create_custom_element(
             cell_type, value_shape, wcoeffs, _x, _M, nderivs,
             static_cast<basix::maps::type>(ce->map_type),
             static_cast<basix::sobolev::space>(ce->sobolev_space),
@@ -249,24 +246,24 @@ FiniteElement::FiniteElement(const ufcx_finite_element& e)
   }
   else if (is_basix_element(e))
   {
-    _element = std::make_unique<basix::FiniteElement>(basix::create_element(
-        static_cast<basix::element::family>(e.basix_family),
-        static_cast<basix::cell::type>(e.basix_cell), e.degree,
-        static_cast<basix::element::lagrange_variant>(e.lagrange_variant),
-        static_cast<basix::element::dpc_variant>(e.dpc_variant),
-        e.discontinuous));
-
+    _element
+        = std::make_unique<basix::FiniteElement<T>>(basix::create_element<T>(
+            static_cast<basix::element::family>(e.basix_family),
+            static_cast<basix::cell::type>(e.basix_cell), e.degree,
+            static_cast<basix::element::lagrange_variant>(e.lagrange_variant),
+            static_cast<basix::element::dpc_variant>(e.dpc_variant),
+            e.discontinuous));
     _needs_dof_transformations
         = !_element->dof_transformations_are_identity()
           and !_element->dof_transformations_are_permutations();
-
     _needs_dof_permutations
         = !_element->dof_transformations_are_identity()
           and _element->dof_transformations_are_permutations();
   }
 }
 //-----------------------------------------------------------------------------
-FiniteElement::FiniteElement(const basix::FiniteElement& element, int bs)
+template <std::floating_point T>
+FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element, int bs)
     : _space_dim(bs * element.dim()), _value_shape(element.value_shape()),
       _bs(bs)
 {
@@ -274,24 +271,21 @@ FiniteElement::FiniteElement(const basix::FiniteElement& element, int bs)
     _value_shape = {1};
   std::transform(_value_shape.cbegin(), _value_shape.cend(),
                  _value_shape.begin(), [bs](auto s) { return bs * s; });
-
   if (bs > 1)
   {
     // Create all sub-elements
     for (int i = 0; i < bs; ++i)
-      _sub_elements.push_back(std::make_shared<FiniteElement>(element, 1));
+      _sub_elements.push_back(std::make_shared<FiniteElement<T>>(element, 1));
   }
 
-  _element = std::make_unique<basix::FiniteElement>(element);
+  _element = std::make_unique<basix::FiniteElement<T>>(element);
   assert(_element);
   _needs_dof_transformations
       = !_element->dof_transformations_are_identity()
         and !_element->dof_transformations_are_permutations();
-
   _needs_dof_permutations
       = !_element->dof_transformations_are_identity()
         and _element->dof_transformations_are_permutations();
-
   switch (_element->family())
   {
   case basix::element::family::P:
@@ -308,95 +302,124 @@ FiniteElement::FiniteElement(const basix::FiniteElement& element, int bs)
   _signature = "Basix element " + _family + " " + std::to_string(bs);
 }
 //-----------------------------------------------------------------------------
-bool FiniteElement::operator==(const FiniteElement& e) const
+template <std::floating_point T>
+bool FiniteElement<T>::operator==(const FiniteElement& e) const
 {
   if (!_element or !e._element)
   {
     throw std::runtime_error(
         "Missing a Basix element. Cannot check for equivalence");
   }
+
   return *_element == *e._element;
 }
 //-----------------------------------------------------------------------------
-bool FiniteElement::operator!=(const FiniteElement& e) const
+template <std::floating_point T>
+bool FiniteElement<T>::operator!=(const FiniteElement& e) const
 {
   return !(*this == e);
 }
 //-----------------------------------------------------------------------------
-std::string FiniteElement::signature() const noexcept { return _signature; }
+template <std::floating_point T>
+std::string FiniteElement<T>::signature() const noexcept
+{
+  return _signature;
+}
 //-----------------------------------------------------------------------------
-mesh::CellType FiniteElement::cell_shape() const noexcept
+template <std::floating_point T>
+mesh::CellType FiniteElement<T>::cell_shape() const noexcept
 {
   return _cell_shape;
 }
 //-----------------------------------------------------------------------------
-int FiniteElement::space_dimension() const noexcept { return _space_dim; }
+template <std::floating_point T>
+int FiniteElement<T>::space_dimension() const noexcept
+{
+  return _space_dim;
+}
 //-----------------------------------------------------------------------------
-int FiniteElement::value_size() const
+template <std::floating_point T>
+int FiniteElement<T>::value_size() const
 {
   return std::accumulate(_value_shape.begin(), _value_shape.end(), 1,
                          std::multiplies{});
 }
 //-----------------------------------------------------------------------------
-int FiniteElement::reference_value_size() const
+template <std::floating_point T>
+int FiniteElement<T>::reference_value_size() const
 {
   return std::accumulate(_value_shape.begin(), _value_shape.end(), 1,
                          std::multiplies{});
 }
 //-----------------------------------------------------------------------------
-int FiniteElement::block_size() const noexcept { return _bs; }
+template <std::floating_point T>
+int FiniteElement<T>::block_size() const noexcept
+{
+  return _bs;
+}
 //-----------------------------------------------------------------------------
-std::span<const std::size_t> FiniteElement::value_shape() const noexcept
+template <std::floating_point T>
+std::span<const std::size_t> FiniteElement<T>::value_shape() const noexcept
 {
   return _value_shape;
 }
 //-----------------------------------------------------------------------------
-std::string FiniteElement::family() const noexcept { return _family; }
+template <std::floating_point T>
+std::string FiniteElement<T>::family() const noexcept
+{
+  return _family;
+}
 //-----------------------------------------------------------------------------
-void FiniteElement::tabulate(std::span<double> values,
-                             std::span<const double> X,
-                             std::array<std::size_t, 2> shape, int order) const
+template <std::floating_point T>
+void FiniteElement<T>::tabulate(std::span<T> values, std::span<const T> X,
+                                std::array<std::size_t, 2> shape,
+                                int order) const
 {
   assert(_element);
   _element->tabulate(order, X, shape, values);
 }
 //-----------------------------------------------------------------------------
-std::pair<std::vector<double>, std::array<std::size_t, 4>>
-FiniteElement::tabulate(std::span<const double> X,
-                        std::array<std::size_t, 2> shape, int order) const
+template <std::floating_point T>
+std::pair<std::vector<T>, std::array<std::size_t, 4>>
+FiniteElement<T>::tabulate(std::span<const T> X,
+                           std::array<std::size_t, 2> shape, int order) const
 {
   assert(_element);
   return _element->tabulate(order, X, shape);
 }
 //-----------------------------------------------------------------------------
-int FiniteElement::num_sub_elements() const noexcept
+template <std::floating_point T>
+int FiniteElement<T>::num_sub_elements() const noexcept
 {
   return _sub_elements.size();
 }
 //-----------------------------------------------------------------------------
-bool FiniteElement::is_mixed() const noexcept
+template <std::floating_point T>
+bool FiniteElement<T>::is_mixed() const noexcept
 {
   return !_sub_elements.empty() and _bs == 1;
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::shared_ptr<const FiniteElement>>&
-FiniteElement::sub_elements() const noexcept
+template <std::floating_point T>
+const std::vector<std::shared_ptr<const FiniteElement<T>>>&
+FiniteElement<T>::sub_elements() const noexcept
 {
   return _sub_elements;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const FiniteElement>
-FiniteElement::extract_sub_element(const std::vector<int>& component) const
+template <std::floating_point T>
+std::shared_ptr<const FiniteElement<T>>
+FiniteElement<T>::extract_sub_element(const std::vector<int>& component) const
 {
   // Recursively extract sub element
-  std::shared_ptr<const FiniteElement> sub_finite_element
-      = _extract_sub_element(*this, component);
+  auto sub_finite_element = _extract_sub_element(*this, component);
   DLOG(INFO) << "Extracted finite element for sub-system: "
              << sub_finite_element->signature().c_str();
   return sub_finite_element;
 }
 //-----------------------------------------------------------------------------
-const basix::FiniteElement& FiniteElement::basix_element() const
+template <std::floating_point T>
+const basix::FiniteElement<T>& FiniteElement<T>::basix_element() const
 {
   if (!_element)
   {
@@ -407,7 +430,8 @@ const basix::FiniteElement& FiniteElement::basix_element() const
   return *_element;
 }
 //-----------------------------------------------------------------------------
-basix::maps::type FiniteElement::map_type() const
+template <std::floating_point T>
+basix::maps::type FiniteElement<T>::map_type() const
 {
   if (!_element)
   {
@@ -418,20 +442,23 @@ basix::maps::type FiniteElement::map_type() const
   return _element->map_type();
 }
 //-----------------------------------------------------------------------------
-bool FiniteElement::map_ident() const noexcept
+template <std::floating_point T>
+bool FiniteElement<T>::map_ident() const noexcept
 {
   assert(_element);
   return _element->map_type() == basix::maps::type::identity;
 }
 //-----------------------------------------------------------------------------
-bool FiniteElement::interpolation_ident() const noexcept
+template <std::floating_point T>
+bool FiniteElement<T>::interpolation_ident() const noexcept
 {
   assert(_element);
   return _element->interpolation_is_identity();
 }
 //-----------------------------------------------------------------------------
-std::pair<std::vector<double>, std::array<std::size_t, 2>>
-FiniteElement::interpolation_points() const
+template <std::floating_point T>
+std::pair<std::vector<T>, std::array<std::size_t, 2>>
+FiniteElement<T>::interpolation_points() const
 {
   if (!_element)
   {
@@ -443,8 +470,9 @@ FiniteElement::interpolation_points() const
   return _element->points();
 }
 //-----------------------------------------------------------------------------
-std::pair<std::vector<double>, std::array<std::size_t, 2>>
-FiniteElement::interpolation_operator() const
+template <std::floating_point T>
+std::pair<std::vector<T>, std::array<std::size_t, 2>>
+FiniteElement<T>::interpolation_operator() const
 {
   if (!_element)
   {
@@ -455,8 +483,9 @@ FiniteElement::interpolation_operator() const
   return _element->interpolation_matrix();
 }
 //-----------------------------------------------------------------------------
-std::pair<std::vector<double>, std::array<std::size_t, 2>>
-FiniteElement::create_interpolation_operator(const FiniteElement& from) const
+template <std::floating_point T>
+std::pair<std::vector<T>, std::array<std::size_t, 2>>
+FiniteElement<T>::create_interpolation_operator(const FiniteElement& from) const
 {
   assert(_element);
   assert(from._element);
@@ -470,17 +499,16 @@ FiniteElement::create_interpolation_operator(const FiniteElement& from) const
   {
     // If one of the elements has bs=1, Basix can figure out the size
     // of the matrix
-    return basix::compute_interpolation_operator<double>(*from._element,
-                                                         *_element);
+    return basix::compute_interpolation_operator<T>(*from._element, *_element);
   }
   else if (_bs > 1 and from._bs == _bs)
   {
     // If bs != 1 for at least one element, then bs0 == bs1 for this
     // case
-    const auto [data, dshape] = basix::compute_interpolation_operator<double>(
-        *from._element, *_element);
+    const auto [data, dshape]
+        = basix::compute_interpolation_operator<T>(*from._element, *_element);
     std::array<std::size_t, 2> shape = {dshape[0] * _bs, dshape[1] * _bs};
-    std::vector<double> out(shape[0] * shape[1]);
+    std::vector<T> out(shape[0] * shape[1]);
 
     // NOTE: Alternatively this operation could be implemented during
     // matvec with the original matrix
@@ -499,36 +527,39 @@ FiniteElement::create_interpolation_operator(const FiniteElement& from) const
   }
 }
 //-----------------------------------------------------------------------------
-bool FiniteElement::needs_dof_transformations() const noexcept
+template <std::floating_point T>
+bool FiniteElement<T>::needs_dof_transformations() const noexcept
 {
   return _needs_dof_transformations;
 }
 //-----------------------------------------------------------------------------
-bool FiniteElement::needs_dof_permutations() const noexcept
+template <std::floating_point T>
+bool FiniteElement<T>::needs_dof_permutations() const noexcept
 {
   return _needs_dof_permutations;
 }
 //-----------------------------------------------------------------------------
-void FiniteElement::permute_dofs(const std::span<std::int32_t>& doflist,
-                                 std::uint32_t cell_permutation) const
+template <std::floating_point T>
+void FiniteElement<T>::permute_dofs(const std::span<std::int32_t>& doflist,
+                                    std::uint32_t cell_permutation) const
 {
   _element->permute_dofs(doflist, cell_permutation);
 }
 //-----------------------------------------------------------------------------
-void FiniteElement::unpermute_dofs(const std::span<std::int32_t>& doflist,
-                                   std::uint32_t cell_permutation) const
+template <std::floating_point T>
+void FiniteElement<T>::unpermute_dofs(const std::span<std::int32_t>& doflist,
+                                      std::uint32_t cell_permutation) const
 {
   _element->unpermute_dofs(doflist, cell_permutation);
 }
 //-----------------------------------------------------------------------------
+template <std::floating_point T>
 std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
-FiniteElement::get_dof_permutation_function(bool inverse,
-                                            bool scalar_element) const
+FiniteElement<T>::get_dof_permutation_function(bool inverse,
+                                               bool scalar_element) const
 {
   if (!needs_dof_permutations())
-  {
     return [](const std::span<std::int32_t>&, std::uint32_t) {};
-  }
 
   if (!_sub_elements.empty())
   {
@@ -597,4 +628,7 @@ FiniteElement::get_dof_permutation_function(bool inverse,
     { permute_dofs(doflist, cell_permutation); };
   }
 }
+//-----------------------------------------------------------------------------
+template class fem::FiniteElement<float>;
+template class fem::FiniteElement<double>;
 //-----------------------------------------------------------------------------

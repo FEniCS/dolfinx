@@ -120,18 +120,16 @@ void declare_objects(py::module& m, const std::string& type)
       .def_property_readonly("indices",
                              [](dolfinx::la::MatrixCSR<T>& self)
                              {
-                               std::span<const std::int32_t> array
-                                   = self.cols();
-                               return py::array_t<const std::int32_t>(
-                                   array.size(), array.data(), py::cast(self));
+                               auto& array = self.cols();
+                               return py::array_t(array.size(), array.data(),
+                                                  py::cast(self));
                              })
       .def_property_readonly("indptr",
                              [](dolfinx::la::MatrixCSR<T>& self)
                              {
-                               std::span<const std::int32_t> array
-                                   = self.row_ptr();
-                               return py::array_t<const std::int32_t>(
-                                   array.size(), array.data(), py::cast(self));
+                               auto& array = self.row_ptr();
+                               return py::array_t(array.size(), array.data(),
+                                                  py::cast(self));
                              })
       .def("finalize_begin", &dolfinx::la::MatrixCSR<T>::finalize_begin)
       .def("finalize_end", &dolfinx::la::MatrixCSR<T>::finalize_end);
@@ -146,7 +144,7 @@ void petsc_module(py::module& m)
         py::arg("bs"), "Create a ghosted PETSc Vec for index map.");
   m.def(
       "create_vector_wrap",
-      [](dolfinx::la::Vector<PetscScalar, std::allocator<PetscScalar>>& x)
+      [](dolfinx::la::Vector<PetscScalar>& x)
       { return dolfinx::la::petsc::create_vector_wrap(x); },
       py::return_value_policy::take_ownership, py::arg("x"),
       "Create a ghosted PETSc Vec that wraps a DOLFINx Vector");
@@ -240,7 +238,7 @@ void la(py::module& m)
                                                const dolfinx::common::IndexMap>,
                                            int>>,
                      2>& maps,
-                 const std::array<std::vector<int>, 2>& bs) {
+                 const  std::array<std::vector<int>, 2>& bs) {
                 return dolfinx::la::SparsityPattern(comm.get(), patterns, maps,
                                                     bs);
               }),
@@ -248,7 +246,7 @@ void la(py::module& m)
       .def("index_map", &dolfinx::la::SparsityPattern::index_map,
            py::arg("dim"))
       .def("column_index_map", &dolfinx::la::SparsityPattern::column_index_map)
-      .def("assemble", &dolfinx::la::SparsityPattern::assemble)
+      .def("assemble",   &dolfinx::la::SparsityPattern::assemble)
       .def_property_readonly("num_nonzeros",
                              &dolfinx::la::SparsityPattern::num_nonzeros)
       .def(
@@ -260,15 +258,22 @@ void la(py::module& m)
             self.insert(std::span(rows.data(), rows.size()),
                         std::span(cols.data(), cols.size()));
           },
-          py::arg("rows"), py::arg("cols"))
+          py::arg("rows"),  py::arg("cols"))
       .def(
           "insert_diagonal",
           [](dolfinx::la::SparsityPattern& self,
              const py::array_t<std::int32_t, py::array::c_style>& rows)
           { self.insert_diagonal(std::span(rows.data(), rows.size())); },
           py::arg("rows"))
-      .def_property_readonly("graph", &dolfinx::la::SparsityPattern::graph,
-                             py::return_value_policy::reference_internal);
+      .def_property_readonly(
+          "graph", [](dolfinx::la::SparsityPattern& self)
+          {
+            auto [edges, ptr] = self.graph();
+            return std::pair(py::array_t(
+                          edges.size(), edges.data(), py::cast(self)),
+                             py::array_t(ptr.size(), ptr.data(),
+                                                       py::cast(self)));
+          });
 
   // Declare objects that are templated over type
   declare_objects<float>(m, "float32");

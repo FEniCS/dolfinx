@@ -51,4 +51,4 @@ class DofMap:
     @property
     def list(self):
         """Adjacency list with dof indices for each cell"""
-        return self._cpp_object.list()
+        return self._cpp_object.map()

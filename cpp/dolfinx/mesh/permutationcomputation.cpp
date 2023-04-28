@@ -267,9 +267,9 @@ compute_edge_reflections(const mesh::Topology& topology)
       // from the lowest numbered vertex to the highest numbered vertex.
 
       // Find iterators pointing to cell vertex given a vertex on facet
-      const auto it0
+      auto it0
           = std::find(cell_vertices.begin(), cell_vertices.end(), vertices[0]);
-      const auto it1
+      auto it1
           = std::find(cell_vertices.begin(), cell_vertices.end(), vertices[1]);
 
       // The number of reflections. Comparing iterators directly instead

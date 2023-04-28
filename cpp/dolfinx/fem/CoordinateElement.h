@@ -11,6 +11,7 @@
 #include <array>
 #include <basix/element-families.h>
 #include <basix/mdspan.hpp>
+#include <concepts>
 #include <cstdint>
 #include <dolfinx/common/math.h>
 #include <dolfinx/mesh/cell_types.h>
@@ -19,6 +20,7 @@
 
 namespace basix
 {
+template <std::floating_point T>
 class FiniteElement;
 }
 
@@ -28,13 +30,14 @@ namespace dolfinx::fem
 /// A CoordinateElement manages coordinate mappings for isoparametric
 /// cells.
 /// @todo A dof layout on a reference cell needs to be defined.
+template <std::floating_point T>
 class CoordinateElement
 {
 public:
   /// Create a coordinate element from a Basix element
   /// @param[in] element Element from Basix
   explicit CoordinateElement(
-      std::shared_ptr<const basix::FiniteElement> element);
+      std::shared_ptr<const basix::FiniteElement<T>> element);
 
   /// Create a Lagrange coordinate element
   /// @param[in] celltype The cell shape
@@ -84,9 +87,8 @@ public:
   /// @param[out] basis The array to fill with the basis function
   /// values. The shape can be computed using
   /// `FiniteElement::tabulate_shape`
-  void tabulate(int nd, std::span<const double> X,
-                std::array<std::size_t, 2> shape,
-                std::span<double> basis) const;
+  void tabulate(int nd, std::span<const T> X, std::array<std::size_t, 2> shape,
+                std::span<T> basis) const;
 
   /// Compute Jacobian for a cell with given geometry using the
   /// basis functions and first order derivatives.
@@ -108,8 +110,8 @@ public:
   template <typename U, typename V>
   static void compute_jacobian_inverse(const U& J, V&& K)
   {
-    const int gdim = J.extent(0);
-    const int tdim = K.extent(0);
+    int gdim = J.extent(0);
+    int tdim = K.extent(0);
     if (gdim == tdim)
       math::inv(J, K);
     else
@@ -132,9 +134,9 @@ public:
     {
       assert(w.size() >= 2 * J.extent(0) * J.extent(1));
 
-      using T = typename U::element_type;
+      using X = typename U::element_type;
       namespace stdex = std::experimental;
-      using mdspan2_t = stdex::mdspan<T, stdex::dextents<std::size_t, 2>>;
+      using mdspan2_t = stdex::mdspan<X, stdex::dextents<std::size_t, 2>>;
       mdspan2_t B(w.data(), J.extent(1), J.extent(0));
       mdspan2_t BA(w.data() + J.extent(0) * J.extent(1), B.extent(0),
                    J.extent(1));
@@ -181,8 +183,8 @@ public:
   /// 0).
   /// @param[in] x The physical coordinates (shape=(num_points, gdim))
   template <typename U, typename V, typename W>
-  static void pull_back_affine(U&& X, const V& K,
-                               const std::array<double, 3>& x0, const W& x)
+  static void pull_back_affine(U&& X, const V& K, const std::array<T, 3>& x0,
+                               const W& x)
   {
     assert(X.extent(0) == x.extent(0));
     assert(X.extent(1) == K.extent(0));
@@ -199,12 +201,9 @@ public:
   }
 
   /// mdspan typedef
+  template <typename X>
   using mdspan2_t
-      = std::experimental::mdspan<double,
-                                  std::experimental::dextents<std::size_t, 2>>;
-  /// mdspan typedef
-  using cmdspan2_t
-      = std::experimental::mdspan<const double,
+      = std::experimental::mdspan<X,
                                   std::experimental::dextents<std::size_t, 2>>;
 
   /// Compute reference coordinates X for physical coordinates x for a
@@ -218,7 +217,8 @@ public:
   /// @param [in] maxit Maximum number of Newton iterations
   /// @note If convergence is not achieved within maxit, the function
   /// throws a runtime error.
-  void pull_back_nonaffine(mdspan2_t X, cmdspan2_t x, cmdspan2_t cell_geometry,
+  void pull_back_nonaffine(mdspan2_t<T> X, mdspan2_t<const T> x,
+                           mdspan2_t<const T> cell_geometry,
                            double tol = 1.0e-8, int maxit = 10) const;
 
   /// Permutes a list of DOF numbers on a cell
@@ -245,6 +245,6 @@ private:
   bool _is_affine;
 
   // Basix Element
-  std::shared_ptr<const basix::FiniteElement> _element;
+  std::shared_ptr<const basix::FiniteElement<T>> _element;
 };
 } // namespace dolfinx::fem
