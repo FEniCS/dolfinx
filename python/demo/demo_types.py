@@ -36,38 +36,38 @@ from mpi4py import MPI
 comm = MPI.COMM_SELF
 # -
 
-# Create a mesh and function space.
-
-msh = mesh.create_rectangle(comm=comm, points=((0.0, 0.0), (2.0, 1.0)), n=(32, 16),
-                            cell_type=mesh.CellType.triangle)
-V = fem.FunctionSpace(msh, ("Lagrange", 1))
-
-# Define a variational problem.
-
-u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-x = ufl.SpatialCoordinate(msh)
-fr = 10 * ufl.exp(-((x[0] - 0.5) ** 2 + (x[1] - 0.5) ** 2) / 0.02)
-fc = ufl.sin(2 * np.pi * x[0]) + 10 * ufl.sin(4 * np.pi * x[1]) * 1j
-gr = ufl.sin(5 * x[0])
-gc = ufl.sin(5 * x[0]) * 1j
-a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx
-L = ufl.inner(fr + fc, v) * ufl.dx + ufl.inner(gr + gc, v) * ufl.ds
-
-# In preparation for constructing Dirichlet boundary conditions, locate
-# facets on the constrained boundary and the corresponding
-# degrees-of-freedom.
-
-facets = mesh.locate_entities_boundary(msh, dim=1,
-                                       marker=lambda x: np.logical_or(np.isclose(x[0], 0.0),
-                                                                      np.isclose(x[0], 2.0)))
-dofs = fem.locate_dofs_topological(V=V, entity_dim=1, entities=facets)
-
 
 # The below function computes the solution of the finite problem using a
 # specified scalar type.
 
-def solve(dtype=np.float32):
+def solve(dtype, xdtype):
     """Solve the variational problem"""
+
+    # Create a mesh and function space.
+
+    msh = mesh.create_rectangle(comm=comm, points=((0.0, 0.0), (2.0, 1.0)), n=(32, 16),
+                                cell_type=mesh.CellType.triangle, dtype=xdtype)
+    V = fem.FunctionSpace(msh, ("Lagrange", 1))
+
+    # Define a variational problem.
+
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+    x = ufl.SpatialCoordinate(msh)
+    fr = 10 * ufl.exp(-((x[0] - 0.5) ** 2 + (x[1] - 0.5) ** 2) / 0.02)
+    fc = ufl.sin(2 * np.pi * x[0]) + 10 * ufl.sin(4 * np.pi * x[1]) * 1j
+    gr = ufl.sin(5 * x[0])
+    gc = ufl.sin(5 * x[0]) * 1j
+    a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx
+    L = ufl.inner(fr + fc, v) * ufl.dx + ufl.inner(gr + gc, v) * ufl.ds
+
+    # In preparation for constructing Dirichlet boundary conditions, locate
+    # facets on the constrained boundary and the corresponding
+    # degrees-of-freedom.
+
+    facets = mesh.locate_entities_boundary(msh, dim=1,
+                                           marker=lambda x: np.logical_or(np.isclose(x[0], 0.0),
+                                                                          np.isclose(x[0], 2.0)))
+    dofs = fem.locate_dofs_topological(V=V, entity_dim=1, entities=facets)
 
     # Process forms. This will compile the forms for the requested type.
     a0 = fem.form(a, dtype=dtype)
@@ -102,6 +102,7 @@ def display(u, filter=np.real):
     """Plot the solution using pyvista"""
     try:
         import pyvista
+        V = u.function_space
         cells, types, x = plot.create_vtk_mesh(V)
         grid = pyvista.UnstructuredGrid(cells, types, x)
         grid.point_data["u"] = filter(u.x.array)
@@ -122,10 +123,10 @@ def display(u, filter=np.real):
 
 # Solve the variational problem using different scalar types
 
-uh = solve(dtype=np.float32)
-uh = solve(dtype=np.float64)
-uh = solve(dtype=np.complex64)
-uh = solve(dtype=np.complex128)
+uh = solve(np.float32, np.float32)
+uh = solve(np.float64, np.float64)
+uh = solve(np.complex64, np.float32)
+uh = solve(np.complex128, np.float64)
 
 # Display the last computed solution
 
