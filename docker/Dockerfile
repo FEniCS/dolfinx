@@ -65,7 +65,7 @@ ARG OPENMPI_PATCH=5
 # DOLFINx
 ARG PYTHON_VERSION=3.10
 # Base image for end-user images
-ARG BASEIMAGE=docker.io/dolfinx/dev-env:nightly
+ARG BASEIMAGE=docker.io/dolfinx/dev-env:current
 
 ########################################
 
