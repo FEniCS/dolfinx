@@ -29,6 +29,7 @@ import sys
 from petsc4py import PETSc as _PETSc
 
 default_scalar_type = _PETSc.ScalarType
+default_real_type = _PETSc.RealType
 
 # Initialise logging
 from dolfinx.common import (TimingType, git_commit_hash, has_debug, has_kahip,

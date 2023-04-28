@@ -814,13 +814,12 @@ void pack(std::span<T> coeffs, std::int32_t cell, int bs, std::span<const T> v,
 /// @private
 /// @brief  Concepts for function that returns cell index
 template <typename F>
-concept FetchCells
-    = requires(F&& f, std::span<const std::int32_t> v) {
-        requires std::invocable<F, std::span<const std::int32_t>>;
-        {
-          f(v)
-          } -> std::convertible_to<std::int32_t>;
-      };
+concept FetchCells = requires(F&& f, std::span<const std::int32_t> v) {
+  requires std::invocable<F, std::span<const std::int32_t>>;
+  {
+    f(v)
+  } -> std::convertible_to<std::int32_t>;
+};
 
 /// @brief Pack a single coefficient for a set of active entities.
 ///
@@ -1046,7 +1045,7 @@ Expression<T, U> create_expression(
                              "function space was provided.");
   }
 
-  std::span<const U> X(e.points, e.num_points * e.topological_dimension);
+  std::vector<U> X(e.points, e.points + e.num_points * e.topological_dimension);
   std::array<std::size_t, 2> Xshape
       = {static_cast<std::size_t>(e.num_points),
          static_cast<std::size_t>(e.topological_dimension)};
@@ -1082,8 +1081,9 @@ Expression<T, U> create_expression(
     throw std::runtime_error("Type not supported.");
 
   assert(tabulate_tensor);
-  return Expression(coefficients, constants, X, Xshape, tabulate_tensor,
-                    value_shape, mesh, argument_function_space);
+  return Expression(coefficients, constants, std::span<const U>(X), Xshape,
+                    tabulate_tensor, value_shape, mesh,
+                    argument_function_space);
 }
 
 /// @brief Create Expression from UFC input (with named coefficients and

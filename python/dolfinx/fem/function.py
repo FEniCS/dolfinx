@@ -458,9 +458,11 @@ class FunctionSpace(ufl.FunctionSpace):
 
     def __init__(self, mesh: Mesh,
                  element: typing.Union[ufl.FiniteElementBase, ElementMetaData, typing.Tuple[str, int]],
-                 cppV: typing.Optional[_cpp.fem.FunctionSpace_float64] = None,
+                 cppV: typing.Optional[_cpp.fem.FunctionSpace_float32, _cpp.fem.FunctionSpace_float64] = None,
                  form_compiler_options: dict[str, typing.Any] = {}, jit_options: dict[str, typing.Any] = {}):
         """Create a finite element function space."""
+        dtype = mesh.geometry.x.dtype
+        assert dtype == np.float32 or dtype == np.float64
 
         if cppV is None:
             # Initialise the ufl.FunctionSpace
@@ -475,17 +477,28 @@ class FunctionSpace(ufl.FunctionSpace):
                 super().__init__(mesh.ufl_domain(), ufl_e)
 
             # Compile dofmap and element and create DOLFIN objects
+            if dtype == np.float32:
+                form_compiler_options["scalar_type"] = "float"
+            elif dtype == np.float64:
+                form_compiler_options["scalar_type"] = "double"
+
             (self._ufcx_element, self._ufcx_dofmap), module, code = jit.ffcx_jit(
                 mesh.comm, self.ufl_element(), form_compiler_options=form_compiler_options,
                 jit_options=jit_options)
 
             ffi = module.ffi
-            cpp_element = _cpp.fem.FiniteElement(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_element)))
+            if dtype == np.float32:
+                cpp_element = _cpp.fem.FiniteElement_float32(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_element)))
+            elif dtype == np.float64:
+                cpp_element = _cpp.fem.FiniteElement_float64(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_element)))
             cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, ffi.cast(
                 "uintptr_t", ffi.addressof(self._ufcx_dofmap)), mesh.topology, cpp_element)
 
             # Initialize the cpp.FunctionSpace and store mesh
-            self._cpp_object = _cpp.fem.FunctionSpace_float64(mesh._cpp_object, cpp_element, cpp_dofmap)
+            try:
+                self._cpp_object = _cpp.fem.FunctionSpace_float64(mesh._cpp_object, cpp_element, cpp_dofmap)
+            except TypeError:
+                self._cpp_object = _cpp.fem.FunctionSpace_float32(mesh._cpp_object, cpp_element, cpp_dofmap)
             self._mesh = mesh
         else:
             # Create function space from a UFL element and an existing
@@ -515,7 +528,10 @@ class FunctionSpace(ufl.FunctionSpace):
             A new function space that shares data
 
         """
-        Vcpp = _cpp.fem.FunctionSpace_float64(self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap)
+        try:
+            Vcpp = _cpp.fem.FunctionSpace_float64(self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap)
+        except TypeError:
+            Vcpp = _cpp.fem.FunctionSpace_float32(self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap)
         return FunctionSpace(self._mesh, self.ufl_element(), Vcpp)
 
     @property

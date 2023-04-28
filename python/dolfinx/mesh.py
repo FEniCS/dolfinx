@@ -9,20 +9,20 @@ from __future__ import annotations
 
 import typing
 
-import numpy as np
-import numpy.typing as npt
-
 import basix
 import basix.ufl
+import numpy as np
+import numpy.typing as npt
 import ufl
-from dolfinx import cpp as _cpp
 from dolfinx.cpp.mesh import (CellType, DiagonalType, GhostMode,
                               build_dual_graph, cell_dim,
                               create_cell_partitioner, exterior_facet_indices,
                               to_string, to_type)
 from dolfinx.cpp.refinement import RefinementOption
-
 from mpi4py import MPI as _MPI
+
+from dolfinx import cpp as _cpp
+from dolfinx import default_real_type
 
 __all__ = ["meshtags_from_entities", "locate_entities", "locate_entities_boundary",
            "refine", "create_mesh", "Mesh", "MeshTags", "meshtags", "CellType",
@@ -415,7 +415,7 @@ def meshtags_from_entities(mesh: Mesh, dim: int, entities: _cpp.graph.AdjacencyL
 
 
 def create_interval(comm: _MPI.Comm, nx: int, points: npt.ArrayLike,
-                    dtype: typing.Optional[npt.DTypeLike] = np.float64,
+                    dtype: typing.Optional[npt.DTypeLike] = default_real_type,
                     ghost_mode=GhostMode.shared_facet, partitioner=None) -> Mesh:
     """Create an interval mesh.
 
@@ -446,7 +446,7 @@ def create_interval(comm: _MPI.Comm, nx: int, points: npt.ArrayLike,
     return Mesh(mesh, domain)
 
 
-def create_unit_interval(comm: _MPI.Comm, nx: int, dtype: typing.Optional[npt.DTypeLike] = np.float64,
+def create_unit_interval(comm: _MPI.Comm, nx: int, dtype: typing.Optional[npt.DTypeLike] = default_real_type,
                          ghost_mode=GhostMode.shared_facet, partitioner=None) -> Mesh:
     """Create a mesh on the unit interval.
 
@@ -471,7 +471,7 @@ def create_unit_interval(comm: _MPI.Comm, nx: int, dtype: typing.Optional[npt.DT
 
 
 def create_rectangle(comm: _MPI.Comm, points: npt.ArrayLike, n: npt.ArrayLike,
-                     cell_type=CellType.triangle, dtype: typing.Optional[npt.DTypeLike] = np.float64,
+                     cell_type=CellType.triangle, dtype: typing.Optional[npt.DTypeLike] = default_real_type,
                      ghost_mode=GhostMode.shared_facet,
                      partitioner=None, diagonal: DiagonalType = DiagonalType.right) -> Mesh:
     """Create a rectangle mesh.
@@ -508,7 +508,7 @@ def create_rectangle(comm: _MPI.Comm, points: npt.ArrayLike, n: npt.ArrayLike,
 
 
 def create_unit_square(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.triangle,
-                       dtype: typing.Optional[npt.DTypeLike] = np.float64,
+                       dtype: typing.Optional[npt.DTypeLike] = default_real_type,
                        ghost_mode=GhostMode.shared_facet, partitioner=None,
                        diagonal: DiagonalType = DiagonalType.right) -> Mesh:
     """Create a mesh of a unit square.
@@ -539,7 +539,7 @@ def create_unit_square(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.tri
 
 def create_box(comm: _MPI.Comm, points: typing.List[npt.ArrayLike], n: list,
                cell_type=CellType.tetrahedron,
-               dtype: typing.Optional[npt.DTypeLike] = np.float64,
+               dtype: typing.Optional[npt.DTypeLike] = default_real_type,
                ghost_mode=GhostMode.shared_facet, partitioner=None) -> Mesh:
     """Create a box mesh.
 
@@ -572,7 +572,7 @@ def create_box(comm: _MPI.Comm, points: typing.List[npt.ArrayLike], n: list,
 
 
 def create_unit_cube(comm: _MPI.Comm, nx: int, ny: int, nz: int, cell_type=CellType.tetrahedron,
-                     dtype: typing.Optional[npt.DTypeLike] = np.float64,
+                     dtype: typing.Optional[npt.DTypeLike] = default_real_type,
                      ghost_mode=GhostMode.shared_facet, partitioner=None) -> Mesh:
     """Create a mesh of a unit cube.
 
