@@ -442,7 +442,7 @@ def create_interval(comm: _MPI.Comm, nx: int, points: npt.ArrayLike,
     elif dtype == np.float64:
         mesh = _cpp.mesh.create_interval_float64(comm, nx, points, ghost_mode, partitioner)
     else:
-        raise RuntimeError(f"Unsupported float type: {dtype}")
+        raise RuntimeError(f"Unsupported mesh geometry float type: {dtype}")
     return Mesh(mesh, domain)
 
 
@@ -503,7 +503,7 @@ def create_rectangle(comm: _MPI.Comm, points: npt.ArrayLike, n: npt.ArrayLike,
     elif dtype == np.float64:
         mesh = _cpp.mesh.create_rectangle_float64(comm, points, n, cell_type, partitioner, diagonal)
     else:
-        raise RuntimeError("Unsupported float type.")
+        raise RuntimeError(f"Unsupported mesh geometry float type: {dtype}")
     return Mesh(mesh, domain)
 
 
@@ -567,7 +567,7 @@ def create_box(comm: _MPI.Comm, points: typing.List[npt.ArrayLike], n: list,
     elif dtype == np.float64:
         mesh = _cpp.mesh.create_box_float64(comm, points, n, cell_type, partitioner)
     else:
-        raise RuntimeError("Unsupported float type.")
+        raise RuntimeError(f"Unsupported mesh geometry float type: {dtype}")
     return Mesh(mesh, domain)
 
 

@@ -115,7 +115,6 @@ def test_asymmetric_partitioner():
         k = (i + 1) * (n + 1) + r
         topo += [[j, j + 1, k]]
         topo += [[j + 1, k, k + 1]]
-
     topo = np.array(topo, dtype=int)
 
     # Dummy geometry
