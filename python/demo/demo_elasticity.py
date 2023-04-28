@@ -95,7 +95,7 @@ def build_nullspace(V):
 
 msh = create_box(MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
                                   np.array([2.0, 1.0, 1.0])], [16, 16, 16],
-                 CellType.tetrahedron, GhostMode.shared_facet)
+                 CellType.tetrahedron, ghost_mode=GhostMode.shared_facet)
 
 # Create a centripetal source term $f = \rho \omega^2 [x_0, \, x_1]$:
 
