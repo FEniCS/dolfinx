@@ -97,13 +97,14 @@ void declare_petsc_discrete_operators(py::module& m)
         // Build operator
         Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
         MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE);
-        dolfinx::fem::discrete_gradient<T>(
+        dolfinx::fem::discrete_gradient<T, U>(
             *V0.mesh()->topology_mutable(), {*V0.element(), *V0.dofmap()},
             {*V1.element(), *V1.dofmap()},
             dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES));
         return A;
       },
       py::return_value_policy::take_ownership, py::arg("V0"), py::arg("V1"));
+
   m.def(
       "interpolation_matrix",
       [](const dolfinx::fem::FunctionSpace<U>& V0,
@@ -138,7 +139,7 @@ void declare_petsc_discrete_operators(py::module& m)
         // Build operator
         Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
         MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE);
-        dolfinx::fem::interpolation_matrix<T>(
+        dolfinx::fem::interpolation_matrix<T, U>(
             V0, V1, dolfinx::la::petsc::Matrix::set_block_fn(A, INSERT_VALUES));
         return A;
       },
