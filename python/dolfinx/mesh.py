@@ -415,7 +415,7 @@ def meshtags_from_entities(mesh: Mesh, dim: int, entities: _cpp.graph.AdjacencyL
 
 
 def create_interval(comm: _MPI.Comm, nx: int, points: npt.ArrayLike,
-                    dtype: typing.Optional[np.float32, np.float64] = np.float64,
+                    dtype: typing.Optional[npt.DTypeLike] = np.float64,
                     ghost_mode=GhostMode.shared_facet, partitioner=None) -> Mesh:
     """Create an interval mesh.
 
@@ -423,7 +423,8 @@ def create_interval(comm: _MPI.Comm, nx: int, points: npt.ArrayLike,
         comm: MPI communicator
         nx: Number of cells
         points: Coordinates of the end points
-        dtype: Float type for the mesh geometry
+        dtype: Float type for the mesh geometry (`numpy.float32` or
+            `numpy.float64`)
         ghost_mode: Ghost mode used in the mesh partitioning. Options
             are `GhostMode.none' and `GhostMode.shared_facet`.
         partitioner: Partitioning function to use for determining the
@@ -441,11 +442,11 @@ def create_interval(comm: _MPI.Comm, nx: int, points: npt.ArrayLike,
     elif dtype == np.float64:
         mesh = _cpp.mesh.create_interval_float64(comm, nx, points, ghost_mode, partitioner)
     else:
-        raise RuntimeError("Unsupported float type.")
+        raise RuntimeError(f"Unsupported float type: {dtype}")
     return Mesh(mesh, domain)
 
 
-def create_unit_interval(comm: _MPI.Comm, nx: int, dtype: typing.Optional[np.float32, np.float64] = np.float64,
+def create_unit_interval(comm: _MPI.Comm, nx: int, dtype: typing.Optional[npt.DTypeLike] = np.float64,
                          ghost_mode=GhostMode.shared_facet, partitioner=None) -> Mesh:
     """Create a mesh on the unit interval.
 
@@ -453,7 +454,8 @@ def create_unit_interval(comm: _MPI.Comm, nx: int, dtype: typing.Optional[np.flo
         comm: MPI communicator
         nx: Number of cells
         points: Coordinates of the end points
-        dtype: Float type for the mesh geometry
+        dtype: Float type for the mesh geometry (`numpy.float32` or
+            `numpy.float64`)
         ghost_mode: Ghost mode used in the mesh partitioning. Options
             are `GhostMode.none' and `GhostMode.shared_facet`.
         partitioner: Partitioning function to use for determining the
@@ -465,11 +467,11 @@ def create_unit_interval(comm: _MPI.Comm, nx: int, dtype: typing.Optional[np.flo
     """
     if partitioner is None:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
-    return create_interval(comm, nx, [0.0, 1.0], ghost_mode, partitioner)
+    return create_interval(comm, nx, [0.0, 1.0], dtype, ghost_mode, partitioner)
 
 
 def create_rectangle(comm: _MPI.Comm, points: npt.ArrayLike, n: npt.ArrayLike,
-                     cell_type=CellType.triangle, dtype: typing.Optional[np.float32, np.float64] = np.float64,
+                     cell_type=CellType.triangle, dtype: typing.Optional[npt.DTypeLike] = np.float64,
                      ghost_mode=GhostMode.shared_facet,
                      partitioner=None, diagonal: DiagonalType = DiagonalType.right) -> Mesh:
     """Create a rectangle mesh.
@@ -480,7 +482,8 @@ def create_rectangle(comm: _MPI.Comm, points: npt.ArrayLike, n: npt.ArrayLike,
             rectangle
         n: Number of cells in each direction
         cell_type: Mesh cell type
-        dtype: Float type for the mesh geometry
+        dtype: Float type for the mesh geometry (`numpy.float32` or
+            `numpy.float64`)
         ghost_mode: Ghost mode used in the mesh partitioning
         partitioner: Function that computes the parallel distribution of
             cells across MPI ranks
@@ -505,7 +508,7 @@ def create_rectangle(comm: _MPI.Comm, points: npt.ArrayLike, n: npt.ArrayLike,
 
 
 def create_unit_square(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.triangle,
-                       dtype: typing.Optional[np.float32, np.float64] = np.float64,
+                       dtype: typing.Optional[npt.DTypeLike] = np.float64,
                        ghost_mode=GhostMode.shared_facet, partitioner=None,
                        diagonal: DiagonalType = DiagonalType.right) -> Mesh:
     """Create a mesh of a unit square.
@@ -515,7 +518,8 @@ def create_unit_square(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.tri
         nx: Number of cells in the "x" direction
         ny: Number of cells in the "y" direction
         cell_type: Mesh cell type
-        dtype: Float type for the mesh geometry
+        dtype: Float type for the mesh geometry (`numpy.float32` or
+            `numpy.float64`)
         ghost_mode: Ghost mode used in the mesh partitioning
         partitioner:Function that computes the parallel distribution of cells across
             MPI ranks
@@ -535,7 +539,7 @@ def create_unit_square(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.tri
 
 def create_box(comm: _MPI.Comm, points: typing.List[npt.ArrayLike], n: list,
                cell_type=CellType.tetrahedron,
-               dtype: typing.Optional[np.float32, np.float64] = np.float64,
+               dtype: typing.Optional[npt.DTypeLike] = np.float64,
                ghost_mode=GhostMode.shared_facet, partitioner=None) -> Mesh:
     """Create a box mesh.
 
@@ -545,7 +549,8 @@ def create_box(comm: _MPI.Comm, points: typing.List[npt.ArrayLike], n: list,
             corners of the box
         n: List of cells in each direction
         cell_type: The cell type
-        dtype: Float type for the mesh geometry
+        dtype: Float type for the mesh geometry (`numpy.float32` or
+            `numpy.float64`)
         ghost_mode: The ghost mode used in the mesh partitioning
         partitioner: Function that computes the parallel distribution of
             cells across MPI ranks
@@ -567,8 +572,8 @@ def create_box(comm: _MPI.Comm, points: typing.List[npt.ArrayLike], n: list,
 
 
 def create_unit_cube(comm: _MPI.Comm, nx: int, ny: int, nz: int, cell_type=CellType.tetrahedron,
-                     dtype: typing.Optional[np.float32, np.float64] = np.float64, ghost_mode=GhostMode.shared_facet,
-                     partitioner=None) -> Mesh:
+                     dtype: typing.Optional[npt.DTypeLike] = np.float64,
+                     ghost_mode=GhostMode.shared_facet, partitioner=None) -> Mesh:
     """Create a mesh of a unit cube.
 
     Args:
@@ -577,7 +582,8 @@ def create_unit_cube(comm: _MPI.Comm, nx: int, ny: int, nz: int, cell_type=CellT
         ny: Number of cells in "y" direction
         nz: Number of cells in "z" direction
         cell_type: Mesh cell type
-        dtype: Float type for the mesh geometry
+        dtype: Float type for the mesh geometry (`numpy.float32` or
+            `numpy.float64`)
         ghost_mode: Ghost mode used in the mesh partitioning
         partitioner: Function that computes the parallel distribution of
             cells across MPI ranks
