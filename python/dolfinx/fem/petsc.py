@@ -242,10 +242,7 @@ def _assemble_vector_nest_vec(b: PETSc.Vec, L: typing.List[form_types], constant
     coeffs = [None] * len(L) if coeffs is None else coeffs
     for b_sub, L_sub, const, coeff in zip(b.getNestSubVecs(), L, constants, coeffs):
         with b_sub.localForm() as b_local:
-            print("--------")
-            print(b_local.array_w)
             assemble._assemble_vector_array(b_local.array_w, L_sub, const, coeff)
-            print(b_local.array_w)
     return b
 
 

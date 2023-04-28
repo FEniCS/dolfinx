@@ -17,6 +17,7 @@ from dolfinx.fem import (Expression, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_scalar, form)
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_square, locate_entities, meshtags)
+from dolfinx import default_real_type
 
 from mpi4py import MPI
 
@@ -82,23 +83,23 @@ def random_point_in_cell(mesh):
 
 def one_cell_mesh(cell_type):
     if cell_type == CellType.interval:
-        points = np.array([[-1.], [2.]])
+        points = np.array([[-1.], [2.]], dtype=default_real_type)
     if cell_type == CellType.triangle:
-        points = np.array([[-1., -1.], [2., 0.], [0., 0.5]])
+        points = np.array([[-1., -1.], [2., 0.], [0., 0.5]], dtype=default_real_type)
     elif cell_type == CellType.tetrahedron:
-        points = np.array([[-1., -1., -1.], [2., 0., 0.], [0., 0.5, 0.], [0., 0., 1.]])
+        points = np.array([[-1., -1., -1.], [2., 0., 0.], [0., 0.5, 0.], [0., 0., 1.]], dtype=default_real_type)
     elif cell_type == CellType.quadrilateral:
-        points = np.array([[-1., 0.], [1., 0.], [-1., 1.5], [1., 1.5]])
+        points = np.array([[-1., 0.], [1., 0.], [-1., 1.5], [1., 1.5]], dtype=default_real_type)
     elif cell_type == CellType.hexahedron:
         points = np.array([[-1., -0.5, 0.], [1., -0.5, 0.], [-1., 1.5, 0.],
                            [1., 1.5, 0.], [0., -0.5, 1.], [1., -0.5, 1.],
-                           [-1., 1.5, 1.], [1., 1.5, 1.]])
+                           [-1., 1.5, 1.], [1., 1.5, 1.]], dtype=default_real_type)
     num_points = len(points)
 
     # Randomly number the points and create the mesh
     order = list(range(num_points))
     random.shuffle(order)
-    ordered_points = np.zeros(points.shape)
+    ordered_points = np.zeros(points.shape, dtype=default_real_type)
     for i, j in enumerate(order):
         ordered_points[j] = points[i]
     cells = np.array([order])
@@ -109,13 +110,12 @@ def one_cell_mesh(cell_type):
 
 def two_cell_mesh(cell_type):
     if cell_type == CellType.interval:
-        points = np.array([[0.], [1.], [-1.]])
+        points = np.array([[0.], [1.], [-1.]], dtype=default_real_type)
         cells = [[0, 1], [0, 2]]
     if cell_type == CellType.triangle:
         # Define equilateral triangles with area 1
         root = 3 ** 0.25  # 4th root of 3
-        points = np.array([[0., 0.], [2 / root, 0.],
-                           [1 / root, root], [1 / root, -root]])
+        points = np.array([[0., 0.], [2 / root, 0.], [1 / root, root], [1 / root, -root]], dtype=default_real_type)
         cells = [[0, 1, 2], [1, 0, 3]]
     elif cell_type == CellType.tetrahedron:
         # Define regular tetrahedra with volume 1
@@ -123,18 +123,18 @@ def two_cell_mesh(cell_type):
         points = np.array([[0., 0., 0.], [s, 0., 0.],
                            [s / 2, s * np.sqrt(3) / 2, 0.],
                            [s / 2, s / 2 / np.sqrt(3), s * np.sqrt(2 / 3)],
-                           [s / 2, s / 2 / np.sqrt(3), -s * np.sqrt(2 / 3)]])
+                           [s / 2, s / 2 / np.sqrt(3), -s * np.sqrt(2 / 3)]], dtype=default_real_type)
         cells = [[0, 1, 2, 3], [0, 2, 1, 4]]
     elif cell_type == CellType.quadrilateral:
         # Define unit quadrilaterals (area 1)
-        points = np.array([[0., 0.], [1., 0.], [0., 1.], [1., 1.], [0., -1.], [1., -1.]])
+        points = np.array([[0., 0.], [1., 0.], [0., 1.], [1., 1.], [0., -1.], [1., -1.]], dtype=default_real_type)
         cells = [[0, 1, 2, 3], [5, 1, 4, 0]]
     elif cell_type == CellType.hexahedron:
         # Define unit hexahedra (volume 1)
         points = np.array([[0., 0., 0.], [1., 0., 0.], [0., 1., 0.],
                            [1., 1., 0.], [0., 0., 1.], [1., 0., 1.],
                            [0., 1., 1.], [1., 1., 1.], [0., 0., -1.],
-                           [1., 0., -1.], [0., 1., -1.], [1., 1., -1.]])
+                           [1., 0., -1.], [0., 1., -1.], [1., 1., -1.]], dtype=default_real_type)
         cells = [[0, 1, 2, 3, 4, 5, 6, 7], [9, 11, 8, 10, 1, 3, 0, 2]]
 
     domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, rank=1))
@@ -146,7 +146,6 @@ def run_scalar_test(V, poly_order):
     """Test that interpolation is correct in a scalar valued space."""
     random.seed(13)
     tdim = V.mesh.topology.dim
-
     if tdim == 1:
         def f(x):
             return x[0] ** poly_order
@@ -160,6 +159,7 @@ def run_scalar_test(V, poly_order):
     v = Function(V)
     v.interpolate(f)
     points = [random_point_in_cell(V.mesh) for count in range(5)]
+    points = np.asarray(points, dtype=default_real_type)
     cells = [0 for count in range(5)]
     values = v.eval(points, cells)
     for p, val in zip(points, values):

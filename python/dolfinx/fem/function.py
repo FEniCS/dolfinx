@@ -301,10 +301,10 @@ class Function(ufl.Coefficient):
         point is ignored."""
 
         # Make sure input coordinates are a NumPy array
-        _x = np.asarray(x, dtype=np.float64)
+        _x = np.asarray(x, dtype=self._V.mesh.geometry.x.dtype)
         assert _x.ndim < 3
         if len(_x) == 0:
-            _x = np.zeros((0, 3))
+            _x = np.zeros((0, 3), dtype=self._V.mesh.geometry.x.dtype)
         else:
             shape0 = _x.shape[0] if _x.ndim == 2 else 1
             _x = np.reshape(_x, (shape0, -1))
@@ -321,11 +321,9 @@ class Function(ufl.Coefficient):
         # Allocate memory for return value if not provided
         if u is None:
             value_size = ufl.product(self.ufl_element().value_shape())
-            if np.issubdtype(default_scalar_type, np.complexfloating):
-                u = np.empty((num_points, value_size), dtype=np.complex128)
-            else:
-                u = np.empty((num_points, value_size))
+            u = np.empty((num_points, value_size), self.dtype)
 
+        print("checks: ", _x.dtype, u.dtype)
         self._cpp_object.eval(_x, _cells, u)
         if num_points == 1:
             u = np.reshape(u, (-1, ))
