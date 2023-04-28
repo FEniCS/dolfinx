@@ -23,9 +23,9 @@ from mpi4py import MPI
 @pytest.mark.parametrize("rank, family", [(0, "Lagrange"), (1, "Lagrange"), (1, "N1curl")])
 def test_mixed_element(rank, family, cell, degree):
     if cell == ufl.triangle:
-        mesh = create_unit_square(MPI.COMM_WORLD, 1, 1, CellType.triangle, GhostMode.shared_facet)
+        mesh = create_unit_square(MPI.COMM_WORLD, 1, 1, CellType.triangle, ghost_mode=GhostMode.shared_facet)
     else:
-        mesh = create_unit_cube(MPI.COMM_WORLD, 1, 1, 1, CellType.tetrahedron, GhostMode.shared_facet)
+        mesh = create_unit_cube(MPI.COMM_WORLD, 1, 1, 1, CellType.tetrahedron, ghost_mode=GhostMode.shared_facet)
 
     norms = []
     U_el = element(family, cell.cellname(), degree, rank=rank)
@@ -49,7 +49,8 @@ def test_mixed_element(rank, family, cell, degree):
 @pytest.mark.skip_in_parallel
 def test_vector_element():
     # VectorFunctionSpace containing a scalar should work
-    mesh = create_unit_square(MPI.COMM_WORLD, 1, 1, CellType.triangle, GhostMode.shared_facet)
+    mesh = create_unit_square(MPI.COMM_WORLD, 1, 1, CellType.triangle,
+                              ghost_mode=GhostMode.shared_facet)
     U = VectorFunctionSpace(mesh, ("P", 2))
     u = ufl.TrialFunction(U)
     v = ufl.TestFunction(U)
