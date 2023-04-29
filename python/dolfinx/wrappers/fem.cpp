@@ -652,7 +652,7 @@ void declare_form(py::module& m, std::string type)
 }
 
 template <typename T>
-void declare_cmap(py::module& m, const std::string& type)
+void declare_cmap(py::module& m, std::string type)
 {
   std::string pyclass_name = std::string("CoordinateElement_") + type;
   py::class_<dolfinx::fem::CoordinateElement<T>,

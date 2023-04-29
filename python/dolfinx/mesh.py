@@ -260,6 +260,8 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
         cmap = _cpp.fem.CoordinateElement_float32(_uflcell_to_dolfinxcell[cell_shape], cell_degree, variant)
     elif x.dtype == np.float64:
         cmap = _cpp.fem.CoordinateElement_float64(_uflcell_to_dolfinxcell[cell_shape], cell_degree, variant)
+    else:
+        raise RuntimeError(f"Unsupported mesh dtype: {x.type}")
 
     try:
         mesh = _cpp.mesh.create_mesh(comm, cells, cmap, x, partitioner)

@@ -121,13 +121,12 @@ class Expression:
         # Compile UFL expression with JIT
         if dtype == np.float32:
             form_compiler_options["scalar_type"] = "float"
-        if dtype == np.float64:
+        elif dtype == np.float64:
             form_compiler_options["scalar_type"] = "double"
         elif dtype == np.complex128:
             form_compiler_options["scalar_type"] = "double _Complex"
         else:
-            raise RuntimeError(
-                f"Unsupported scalar type {dtype} for Expression.")
+            raise RuntimeError(f"Unsupported scalar type {dtype} for Expression.")
 
         self._ufcx_expression, module, self._code = jit.ffcx_jit(mesh.comm, (ufl_expression, _X),
                                                                  form_compiler_options=form_compiler_options,
@@ -179,19 +178,16 @@ class Expression:
             argument_space_dimension = 1
         else:
             argument_space_dimension = self.argument_function_space.element.space_dimension
-        values_shape = (_cells.shape[0], self.X(
-        ).shape[0] * self.value_size * argument_space_dimension)
+        values_shape = (_cells.shape[0], self.X().shape[0] * self.value_size * argument_space_dimension)
 
         # Allocate memory for result if u was not provided
         if values is None:
             values = np.zeros(values_shape, dtype=self.dtype)
         else:
             if values.shape != values_shape:
-                raise TypeError(
-                    "Passed array values does not have correct shape.")
+                raise TypeError("Passed array values does not have correct shape.")
             if values.dtype != self.dtype:
-                raise TypeError(
-                    "Passed array values does not have correct dtype.")
+                raise TypeError("Passed array values does not have correct dtype.")
 
         self._cpp_object.eval(cells, values)
 
