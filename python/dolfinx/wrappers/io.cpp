@@ -177,8 +177,8 @@ void io(py::module& m)
 
 #ifdef HAS_ADIOS2
   // dolfinx::io::FidesWriter
-  py::class_<dolfinx::io::FidesWriter<double>,
-             std::shared_ptr<dolfinx::io::FidesWriter<double>>>
+  py::class_<dolfinx::io::FidesWriter<PetscReal>,
+             std::shared_ptr<dolfinx::io::FidesWriter<PetscReal>>>
       fides_writer(m, "FidesWriter", "FidesWriter object");
 
   py::enum_<dolfinx::io::FidesMeshPolicy>(fides_writer, "FidesMeshPolicy")
@@ -188,10 +188,10 @@ void io(py::module& m)
   fides_writer
       .def(py::init(
                [](MPICommWrapper comm, std::filesystem::path filename,
-                  std::shared_ptr<const dolfinx::mesh::Mesh<double>> mesh,
+                  std::shared_ptr<const dolfinx::mesh::Mesh<PetscReal>> mesh,
                   std::string engine)
                {
-                 return std::make_unique<dolfinx::io::FidesWriter<double>>(
+                 return std::make_unique<dolfinx::io::FidesWriter<PetscReal>>(
                      comm.get(), filename, mesh, engine);
                }),
            py::arg("comm"), py::arg("filename"), py::arg("mesh"),
@@ -200,39 +200,39 @@ void io(py::module& m)
                [](MPICommWrapper comm, std::filesystem::path filename,
                   const std::vector<std::variant<
                       std::shared_ptr<
-                          const dolfinx::fem::Function<float, float>>,
+                          const dolfinx::fem::Function<float, PetscReal>>,
                       std::shared_ptr<
-                          const dolfinx::fem::Function<double, double>>,
+                          const dolfinx::fem::Function<double, PetscReal>>,
                       std::shared_ptr<const dolfinx::fem::Function<
-                          std::complex<float>, float>>,
+                          std::complex<float>, PetscReal>>,
                       std::shared_ptr<const dolfinx::fem::Function<
-                          std::complex<double>, double>>>>& u,
+                          std::complex<double>, PetscReal>>>>& u,
                   std::string engine, dolfinx::io::FidesMeshPolicy policy)
                {
-                 return std::make_unique<dolfinx::io::FidesWriter<double>>(
+                 return std::make_unique<dolfinx::io::FidesWriter<PetscReal>>(
                      comm.get(), filename, u, policy);
                }),
            py::arg("comm"), py::arg("filename"), py::arg("u"),
            py::arg("engine") = "BPFile",
            py::arg("policy") = dolfinx::io::FidesMeshPolicy::update)
       .def("close",
-           [](dolfinx::io::FidesWriter<double>& self) { self.close(); })
+           [](dolfinx::io::FidesWriter<PetscReal>& self) { self.close(); })
       .def(
           "write",
-          [](dolfinx::io::FidesWriter<double>& self, double t)
+          [](dolfinx::io::FidesWriter<PetscReal>& self, double t)
           { self.write(t); },
           py::arg("t"));
 
   // dolfinx::io::VTXWriter
-  py::class_<dolfinx::io::VTXWriter<double>,
-             std::shared_ptr<dolfinx::io::VTXWriter<double>>>(
+  py::class_<dolfinx::io::VTXWriter<PetscReal>,
+             std::shared_ptr<dolfinx::io::VTXWriter<PetscReal>>>(
       m, "VTXWriter", "VTXWriter object")
       .def(py::init(
                [](MPICommWrapper comm, std::filesystem::path filename,
-                  std::shared_ptr<const dolfinx::mesh::Mesh<double>> mesh,
+                  std::shared_ptr<const dolfinx::mesh::Mesh<PetscReal>> mesh,
                   std::string engine)
                {
-                 return std::make_unique<dolfinx::io::VTXWriter<double>>(
+                 return std::make_unique<dolfinx::io::VTXWriter<PetscReal>>(
                      comm.get(), filename, mesh, engine);
                }),
            py::arg("comm"), py::arg("filename"), py::arg("mesh"),
@@ -241,24 +241,26 @@ void io(py::module& m)
                [](MPICommWrapper comm, std::filesystem::path filename,
                   const std::vector<std::variant<
                       std::shared_ptr<
-                          const dolfinx::fem::Function<float, float>>,
+                          const dolfinx::fem::Function<float, PetscReal>>,
                       std::shared_ptr<
-                          const dolfinx::fem::Function<double, double>>,
+                          const dolfinx::fem::Function<double, PetscReal>>,
                       std::shared_ptr<const dolfinx::fem::Function<
-                          std::complex<float>, float>>,
+                          std::complex<float>, PetscReal>>,
                       std::shared_ptr<const dolfinx::fem::Function<
-                          std::complex<double>, double>>>>& u,
+                          std::complex<double>, PetscReal>>>>& u,
                   std::string engine)
                {
-                 return std::make_unique<dolfinx::io::VTXWriter<double>>(
+                 return std::make_unique<dolfinx::io::VTXWriter<PetscReal>>(
                      comm.get(), filename, u, engine);
                }),
            py::arg("comm"), py::arg("filename"), py::arg("u"),
            py::arg("engine") = "BPFile")
-      .def("close", [](dolfinx::io::VTXWriter<double>& self) { self.close(); })
+      .def("close",
+           [](dolfinx::io::VTXWriter<PetscReal>& self) { self.close(); })
       .def(
           "write",
-          [](dolfinx::io::VTXWriter<double>& self, double t) { self.write(t); },
+          [](dolfinx::io::VTXWriter<PetscReal>& self, double t)
+          { self.write(t); },
           py::arg("t"));
 
 #endif

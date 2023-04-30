@@ -13,6 +13,7 @@
 
 using namespace dolfinx;
 using T = PetscScalar;
+using U = typename dolfinx::scalar_value_type_t<T>;
 
 class HyperElasticProblem
 {
@@ -127,14 +128,13 @@ int main(int argc, char* argv[])
     // .. code-block:: cpp
 
     // Create mesh and define function space
-    auto mesh = std::make_shared<mesh::Mesh<double>>(
-        mesh::create_box(MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}},
-                         {10, 10, 10}, mesh::CellType::tetrahedron,
-                         mesh::create_cell_partitioner(mesh::GhostMode::none)));
+    auto mesh = std::make_shared<mesh::Mesh<U>>(mesh::create_box<U>(
+        MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {10, 10, 10},
+        mesh::CellType::tetrahedron,
+        mesh::create_cell_partitioner(mesh::GhostMode::none)));
 
-    auto V = std::make_shared<fem::FunctionSpace<double>>(
-        fem::create_functionspace(functionspace_form_hyperelasticity_F_form,
-                                  "u", mesh));
+    auto V = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace(
+        functionspace_form_hyperelasticity_F_form, "u", mesh));
 
     // Define solution function
     auto u = std::make_shared<fem::Function<T>>(V);
@@ -147,25 +147,25 @@ int main(int argc, char* argv[])
     u_rotation->interpolate(
         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
         {
-          constexpr double scale = 0.005;
+          constexpr U scale = 0.005;
 
           // Center of rotation
-          constexpr double x1_c = 0.5;
-          constexpr double x2_c = 0.5;
+          constexpr U x1_c = 0.5;
+          constexpr U x2_c = 0.5;
 
           // Large angle of rotation (60 degrees)
-          constexpr double theta = 1.04719755;
+          constexpr U theta = 1.04719755;
 
           // New coordinates
-          std::vector<double> fdata(3 * x.extent(1), 0.0);
+          std::vector<U> fdata(3 * x.extent(1), 0.0);
           namespace stdex = std::experimental;
-          stdex::mdspan<double,
+          stdex::mdspan<U,
                         stdex::extents<std::size_t, 3, stdex::dynamic_extent>>
               f(fdata.data(), 3, x.extent(1));
           for (std::size_t p = 0; p < x.extent(1); ++p)
           {
-            double x1 = x(1, p);
-            double x2 = x(2, p);
+            U x1 = x(1, p);
+            U x2 = x(2, p);
             f(1, p) = scale
                       * (x1_c + (x1 - x1_c) * std::cos(theta)
                          - (x2 - x2_c) * std::sin(theta) - x1);
@@ -182,7 +182,7 @@ int main(int argc, char* argv[])
         *V,
         [](auto x)
         {
-          constexpr double eps = 1.0e-8;
+          constexpr U eps = 1.0e-8;
           std::vector<std::int8_t> marker(x.extent(1), false);
           for (std::size_t p = 0; p < x.extent(1); ++p)
           {
@@ -195,7 +195,7 @@ int main(int argc, char* argv[])
         *V,
         [](auto x)
         {
-          constexpr double eps = 1.0e-8;
+          constexpr U eps = 1.0e-8;
           std::vector<std::int8_t> marker(x.extent(1), false);
           for (std::size_t p = 0; p < x.extent(1); ++p)
           {
@@ -226,28 +226,27 @@ int main(int argc, char* argv[])
     constexpr int k = 0;
     constexpr bool discontinuous = true;
 
-    basix::FiniteElement S_element = basix::create_element<double>(
+    basix::FiniteElement S_element = basix::create_element<U>(
         family, cell_type, k, basix::element::lagrange_variant::unset,
         basix::element::dpc_variant::unset, discontinuous);
-    auto S = std::make_shared<fem::FunctionSpace<double>>(
-        fem::create_functionspace(mesh, S_element,
-                                  pow(mesh->geometry().dim(), 2)));
+    auto S = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace(
+        mesh, S_element, pow(mesh->geometry().dim(), 2)));
 
-    auto sigma_expression = fem::create_expression<T, double>(
+    auto sigma_expression = fem::create_expression<T, U>(
         *expression_hyperelasticity_sigma, {{"u", u}}, {}, mesh);
 
     auto sigma = fem::Function<T>(S);
     sigma.name = "cauchy_stress";
     sigma.interpolate(sigma_expression);
 
-    // Save solution in VTK format
-    io::VTKFile file_u(mesh->comm(), "u.pvd", "w");
-    file_u.write<T>({*u}, 0.0);
+    // // Save solution in VTK format
+    // io::VTKFile file_u(mesh->comm(), "u.pvd", "w");
+    // file_u.write<T>({*u}, 0.0);
 
-    // Save Cauchy stress in XDMF format
-    io::XDMFFile file_sigma(mesh->comm(), "sigma.xdmf", "w");
-    file_sigma.write_mesh(*mesh);
-    file_sigma.write_function(sigma, 0.0);
+    // // Save Cauchy stress in XDMF format
+    // io::XDMFFile file_sigma(mesh->comm(), "sigma.xdmf", "w");
+    // file_sigma.write_mesh(*mesh);
+    // file_sigma.write_function(sigma, 0.0);
   }
 
   PetscFinalize();
