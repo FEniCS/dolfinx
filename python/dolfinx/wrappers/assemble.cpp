@@ -444,7 +444,7 @@ void petsc_module(py::module& m)
       },
       py::arg("A"), py::arg("V"), py::arg("bcs"), py::arg("diagonal"));
 
-  declare_petsc_discrete_operators<PetscScalar, PetscFloat>(m);
+  declare_petsc_discrete_operators<PetscScalar, PetscReal>(m);
   // declare_petsc_discrete_operators<float, float>(m);
   // declare_petsc_discrete_operators<std::complex<float>, float>(m);
   // declare_petsc_discrete_operators<double, double>(m);
