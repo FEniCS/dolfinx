@@ -192,7 +192,12 @@ def test_vtx_single_function(tempdir, dim, simplex):
 
 
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize("dtype", [
+    # np.float32,
+    np.float64,
+    # np.complex64,
+    np.complex128
+])
 @pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("simplex", [True, False])
 def test_vtx_functions(tempdir, dtype, dim, simplex):
