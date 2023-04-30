@@ -200,11 +200,11 @@ void io(py::module& m)
                [](MPICommWrapper comm, std::filesystem::path filename,
                   const std::vector<std::variant<
                       std::shared_ptr<
-                          const dolfinx::fem::Function<float, double>>,
+                          const dolfinx::fem::Function<float, float>>,
                       std::shared_ptr<
                           const dolfinx::fem::Function<double, double>>,
                       std::shared_ptr<const dolfinx::fem::Function<
-                          std::complex<float>, double>>,
+                          std::complex<float>, float>>,
                       std::shared_ptr<const dolfinx::fem::Function<
                           std::complex<double>, double>>>>& u,
                   std::string engine, dolfinx::io::FidesMeshPolicy policy)
@@ -241,11 +241,11 @@ void io(py::module& m)
                [](MPICommWrapper comm, std::filesystem::path filename,
                   const std::vector<std::variant<
                       std::shared_ptr<
-                          const dolfinx::fem::Function<float, double>>,
+                          const dolfinx::fem::Function<float, float>>,
                       std::shared_ptr<
                           const dolfinx::fem::Function<double, double>>,
                       std::shared_ptr<const dolfinx::fem::Function<
-                          std::complex<float>, double>>,
+                          std::complex<float>, float>>,
                       std::shared_ptr<const dolfinx::fem::Function<
                           std::complex<double>, double>>>>& u,
                   std::string engine)
