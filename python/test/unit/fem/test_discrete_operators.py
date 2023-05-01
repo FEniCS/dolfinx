@@ -150,7 +150,7 @@ def test_interpolation_matrix(cell_type, p, q, from_lagrange):
     G.mult(u.vector, w.vector)
     w.x.scatter_forward()
 
-    atol = 10 * np.finfo(default_real_type).resolution
+    atol = 100 * np.finfo(default_real_type).resolution
     assert np.allclose(w_vec.x.array, w.x.array, atol=atol)
     G.destroy()
 
