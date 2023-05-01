@@ -6,9 +6,8 @@
 
 import numpy as np
 import pytest
-
 import ufl
-from basix.ufl import mixed_element, element
+from basix.ufl import element, mixed_element
 from dolfinx.fem import (Constant, Function, FunctionSpace,
                          TensorFunctionSpace, VectorFunctionSpace, dirichletbc,
                          form, locate_dofs_geometrical,
@@ -17,10 +16,11 @@ from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                create_matrix, create_vector, set_bc)
 from dolfinx.mesh import (CellType, create_unit_cube, create_unit_square,
                           locate_entities_boundary)
-from ufl import dx, inner
-
 from mpi4py import MPI
 from petsc4py import PETSc
+from ufl import dx, inner
+
+from dolfinx import default_real_type
 
 
 def test_locate_dofs_geometrical():
@@ -119,13 +119,14 @@ def test_constant_bc_constructions():
     assert bc0.value.value.shape == tuple()
     assert bc0.value.value == 1.0 + 2.2j
 
-    bc1 = dirichletbc(np.array([1.0 + 2.2j, 3.0 + 2.2j], dtype=np.complex128), boundary_dofs1, V1)
+    bc1 = dirichletbc(np.array([1.0 + 2.2j, 3.0 + 2.2j], dtype=np.complex128
+                               ), boundary_dofs1, V1)
     assert bc1.value.value.dtype == np.complex128
     assert bc1.value.value.shape == (tdim,)
     assert (bc1.value.value == [1.0 + 2.2j, 3.0 + 2.2j]).all()
 
-    bc2 = dirichletbc(np.array([[1.0, 3.0], [3.0, -2.0]], dtype=np.float32), boundary_dofs2, V2)
-    assert bc2.value.value.dtype == np.float32
+    bc2 = dirichletbc(np.array([[1.0, 3.0], [3.0, -2.0]], dtype=default_real_type), boundary_dofs2, V2)
+    assert bc2.value.value.dtype == default_real_type
     assert bc2.value.value.shape == (tdim, tdim)
     assert (bc2.value.value == [[1.0, 3.0], [3.0, -2.0]]).all()
 
