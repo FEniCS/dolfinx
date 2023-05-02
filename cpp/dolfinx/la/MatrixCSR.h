@@ -271,6 +271,8 @@ public:
     return _off_diagonal_offset;
   }
 
+  /// Block size
+  /// @return block sizes for rows and columns
   const std::array<int, 2>& block_size() const { return _bs; }
 
 private:
