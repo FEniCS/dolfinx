@@ -47,8 +47,17 @@ void set_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
 /// @param[in] xcols The column indices of `x`
 template <typename U, typename V, typename W, typename X, typename Y>
 void add_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
-             const Y& xrows, const Y& xcols);
+             const Y& xrows, const Y& xcols, int bs2);
 } // namespace impl
+
+/// @brief Modes for representing block structured matrices
+enum class BlockMode : int
+{
+  compact = 0, /// Each entry in the sparsity pattern refers to a block of data
+               /// (bs[0], bs[1])
+  expanded = 1 /// The sparsity pattern is expanded by (bs[0], bs[1]), and each
+               /// entry refers to one data item.
+};
 
 /// Distributed sparse matrix
 ///
@@ -119,8 +128,9 @@ public:
 
   /// @brief Create a distributed matrix.
   /// @param[in] p The sparsity pattern the describes the parallel
+  /// @param[in] mode Block mode, when block size > 1.
   /// distribution and the non-zero structure.
-  MatrixCSR(const SparsityPattern& p);
+  MatrixCSR(const SparsityPattern& p, BlockMode mode = BlockMode::compact);
 
   /// Move constructor
   /// @todo Check handling of MPI_Request
@@ -165,7 +175,8 @@ public:
   void add(std::span<const value_type> x, std::span<const std::int32_t> rows,
            std::span<const std::int32_t> cols)
   {
-    impl::add_csr(_data, _cols, _row_ptr, x, rows, cols);
+    assert(x.size() == rows.size() * cols.size() * _bs[0] * _bs[1]);
+    impl::add_csr(_data, _cols, _row_ptr, x, rows, cols, _bs[0] * _bs[1]);
   }
 
   /// Number of local rows excluding ghost rows
@@ -256,6 +267,9 @@ private:
   // Maps for the distribution of the ows and columns
   std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;
 
+  // Block mode (compact or expanded)
+  BlockMode _block_mode;
+
   // Block sizes
   std::array<int, 2> _bs;
 
@@ -326,7 +340,7 @@ void impl::set_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
 //-----------------------------------------------------------------------------
 template <typename U, typename V, typename W, typename X, typename Y>
 void impl::add_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
-                   const Y& xrows, const Y& xcols)
+                   const Y& xrows, const Y& xcols, int bs2)
 {
   assert(x.size() == xrows.size() * xcols.size());
   for (std::size_t r = 0; r < xrows.size(); ++r)
@@ -351,16 +365,18 @@ void impl::add_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
       assert(it != cit1);
       std::size_t d = std::distance(cols.begin(), it);
       assert(d < data.size());
-      data[d] += xr[c];
+      for (int j = 0; j < bs2; ++j)
+        data[d * bs2 + j] += xr[c * bs2 + j];
     }
   }
 }
 //-----------------------------------------------------------------------------
 template <class U, class V, class W, class X>
-MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p)
+MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
     : _index_maps({p.index_map(0),
                    std::make_shared<common::IndexMap>(p.column_index_map())}),
-      _bs({p.block_size(0), p.block_size(1)}), _data(p.num_nonzeros(), 0),
+      _block_mode(mode), _bs({p.block_size(0), p.block_size(1)}),
+      _data(p.num_nonzeros() * _bs[0] * _bs[1], 0),
       _cols(p.graph().first.begin(), p.graph().first.end()),
       _row_ptr(p.graph().second.begin(), p.graph().second.end()),
       _comm(MPI_COMM_NULL)
@@ -368,6 +384,9 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p)
   // TODO: handle block sizes
   if (_bs[0] > 1 or _bs[1] > 1)
     throw std::runtime_error("Block size not yet supported");
+
+  if (_block_mode == BlockMode::expanded)
+    throw std::runtime_error("Expanded BlockMode not yet supported");
 
   // Compute off-diagonal offset for each row
   std::span<const std::int32_t> num_diag_nnz = p.off_diagonal_offsets();
