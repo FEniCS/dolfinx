@@ -159,16 +159,16 @@ void declare_assembly_functions(py::module& m)
         }
         else if (bs[0] == 2)
         {
+          auto mat_add = A.template mat_add_values<2, 2>();
           dolfinx::fem::assemble_matrix(
-              A.template mat_add_values<2, 2>(), a,
-              std::span(constants.data(), constants.size()),
+              mat_add, a, std::span(constants.data(), constants.size()),
               py_to_cpp_coeffs(coefficients), bcs);
         }
         else if (bs[0] == 3)
         {
+          auto mat_add = A.template mat_add_values<3, 3>();
           dolfinx::fem::assemble_matrix(
-              A.template mat_add_values<3, 3>(), a,
-              std::span(constants.data(), constants.size()),
+              mat_add, a, std::span(constants.data(), constants.size()),
               py_to_cpp_coeffs(coefficients), bcs);
         }
         else

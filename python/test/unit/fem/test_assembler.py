@@ -169,8 +169,7 @@ def test_basic_assembly_petsc_matrixcsr(mode):
     V = VectorFunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = form(inner(u, v) * dx + inner(u, v) * ds)
-    with pytest.raises(RuntimeError):
-        A0 = fem.assemble_matrix(a)
+    A0 = fem.assemble_matrix(a)
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
