@@ -64,6 +64,8 @@ ARG OPENMPI_PATCH=5
 # Used to set the correct PYTHONPATH for the real and complex install of
 # DOLFINx
 ARG PYTHON_VERSION=3.10
+# Base image for end-user images
+ARG BASEIMAGE=docker.io/dolfinx/dev-env:current
 
 ########################################
 
@@ -364,7 +366,9 @@ WORKDIR /root
 
 ########################################
 
-FROM dev-env as dolfinx-onbuild
+ARG BASEIMAGE
+
+FROM ${BASEIMAGE} as dolfinx-onbuild
 LABEL description="DOLFINx in 32-bit real and complex modes (onbuild)"
 
 ARG PYTHON_VERSION
