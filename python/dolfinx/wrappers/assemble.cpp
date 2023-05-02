@@ -146,16 +146,33 @@ void declare_assembly_functions(py::module& m)
          const std::vector<
              std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>& bcs)
       {
-        if (a.function_spaces()[0]->dofmap()->bs() != 1
-            or a.function_spaces()[0]->dofmap()->bs() != 1)
+        const std::array<int, 2> bs = A.block_size();
+        if (bs[0] != bs[1])
+          throw std::runtime_error("Cannot assemble non-square blocksize");
+
+        if (bs[0] == 1)
         {
-          throw std::runtime_error("Assembly with block size > 1 not yet "
-                                   "supported with la::MatrixCSR.");
+          dolfinx::fem::assemble_matrix(
+              A.mat_add_values(), a,
+              std::span(constants.data(), constants.size()),
+              py_to_cpp_coeffs(coefficients), bcs);
         }
-        dolfinx::fem::assemble_matrix(
-            A.mat_add_values(), a,
-            std::span(constants.data(), constants.size()),
-            py_to_cpp_coeffs(coefficients), bcs);
+        else if (bs[0] == 2)
+        {
+          dolfinx::fem::assemble_matrix(
+              A.template mat_add_values<2, 2>(), a,
+              std::span(constants.data(), constants.size()),
+              py_to_cpp_coeffs(coefficients), bcs);
+        }
+        else if (bs[0] == 3)
+        {
+          dolfinx::fem::assemble_matrix(
+              A.template mat_add_values<3, 3>(), a,
+              std::span(constants.data(), constants.size()),
+              py_to_cpp_coeffs(coefficients), bcs);
+        }
+        else
+          throw std::runtime_error("Block size too big");
       },
       py::arg("A"), py::arg("a"), py::arg("constants"), py::arg("coeffs"),
       py::arg("bcs"), "Experimental.");

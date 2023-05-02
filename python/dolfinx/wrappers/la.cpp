@@ -95,7 +95,10 @@ void declare_objects(py::module& m, const std::string& type)
       .def_property_readonly("dtype", [](const dolfinx::la::MatrixCSR<T>& self)
                              { return py::dtype::of<T>(); })
       .def("norm_squared", &dolfinx::la::MatrixCSR<T>::norm_squared)
-      .def("mat_add_values", &dolfinx::la::MatrixCSR<T>::mat_add_values)
+      .def("mat_add_values",
+           &dolfinx::la::MatrixCSR<T>::template mat_add_values<1, 1>)
+      .def_property_readonly("block_size",
+                             &dolfinx::la::MatrixCSR<T>::block_size)
       .def("set",
            static_cast<void (dolfinx::la::MatrixCSR<T>::*)(T)>(
                &dolfinx::la::MatrixCSR<T>::set),
@@ -104,9 +107,11 @@ void declare_objects(py::module& m, const std::string& type)
       .def("to_dense",
            [](const dolfinx::la::MatrixCSR<T>& self)
            {
-             std::size_t nrows = self.num_all_rows();
+             const std::array<int, 2> bs = self.block_size();
+             std::size_t nrows = self.num_all_rows() * bs[0];
              auto map_col = self.index_maps()[1];
-             std::size_t ncols = map_col->size_local() + map_col->num_ghosts();
+             std::size_t ncols
+                 = (map_col->size_local() + map_col->num_ghosts()) * bs[1];
              return dolfinx_wrappers::as_pyarray(self.to_dense(),
                                                  std::array{nrows, ncols});
            })
