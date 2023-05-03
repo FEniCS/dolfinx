@@ -38,6 +38,8 @@ void set_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
 
 /// @brief Add data to a CSR matrix
 ///
+/// @tparam BS0 Row block size
+/// @tparam BS1 Column block size
 /// @param[out] data The CSR matrix data
 /// @param[in] cols The CSR column indices
 /// @param[in] row_ptr The pointer to the ith row in the CSR data
@@ -45,6 +47,19 @@ void set_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
 /// to the matrix
 /// @param[in] xrows The row indices of `x`
 /// @param[in] xcols The column indices of `x`
+///
+/// @note In the case of block data, where BS0 or BS1 are greater than
+/// one, the layout of the input data is still the same. For example, the
+/// following can be inserted into the top-left corner
+/// with xrows={0,1} and xcols={0,1}, BS0=2, BS1=2 and
+/// x={0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}.
+///
+/// 0  1  | 2  3
+/// 4  5  | 6  7
+/// -------------
+/// 8  9  | 10 11
+/// 12 13 | 14 15
+
 template <int BS0, int BS1, typename U, typename V, typename W, typename X,
           typename Y>
 void add_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
@@ -572,8 +587,11 @@ MatrixCSR<U, V, W, X>::to_dense() const
     for (std::int32_t j = _row_ptr[r]; j < _row_ptr[r + 1]; ++j)
       for (int i0 = 0; i0 < _bs[0]; ++i0)
         for (int i1 = 0; i1 < _bs[1]; ++i1)
+        {
           A[(r * _bs[1] + i0) * ncols * _bs[0] + _cols[j] * _bs[1] + i1]
               = _data[j * _bs[0] * _bs[1] + i0 * _bs[1] + i1];
+        }
+
   return A;
 }
 //-----------------------------------------------------------------------------
