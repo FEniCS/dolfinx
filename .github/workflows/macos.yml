@@ -48,6 +48,7 @@ jobs:
         run: |
           source fenicsx/bin/activate
           export PATH="$(brew --prefix bison)/bin:$PATH"
+          export PETSC_ARCH=arch-darwin-c-opt pip
           git clone -b release https://gitlab.com/petsc/petsc.git petsc
           cd petsc
           python ./configure \
@@ -61,7 +62,8 @@ jobs:
             --download-ptscotch
           make all
           cd src/binding/petsc4py
-          PETSC_DIR=$GITHUB_WORKSPACE/petsc PETSC_ARCH=arch-darwin-c-opt pip3 install --no-cache-dir -v .
+          export PETSC_DIR=$GITHUB_WORKSPACE/petsc
+          pip install --v .
 
       - name: Install Basix
         run: |
