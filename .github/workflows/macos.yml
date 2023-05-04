@@ -63,6 +63,8 @@ jobs:
           make all
           cd src/binding/petsc4py
           export PETSC_DIR=$GITHUB_WORKSPACE/petsc
+          pip list
+          which python
           pip install -v .
 
       - name: Install Basix
