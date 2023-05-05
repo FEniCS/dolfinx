@@ -897,7 +897,7 @@ public:
     impl_adios2::define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
   }
 
-  /// @brief Create a VTX writer for list of functions
+  /// @brief Create a VTX writer for a list of fem::Functions.
   ///
   /// This format supports arbitrary degree meshes.
   ///

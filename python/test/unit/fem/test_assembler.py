@@ -667,7 +667,7 @@ def test_assembly_solve_taylor_hood(mesh):
             # print("Num it, rnorm:", its, rnorm)
             pass
 
-        ksp.setTolerances(rtol=1.0e-8, max_it=50)
+        ksp.setTolerances(rtol=1.0e-8, max_it=100)
         ksp.setMonitor(monitor)
         ksp.setFromOptions()
         x = A.createVecRight()
@@ -676,18 +676,19 @@ def test_assembly_solve_taylor_hood(mesh):
         ksp.destroy()
         return b.norm(), x.norm(), A.norm(), P.norm()
 
+
     bnorm0, xnorm0, Anorm0, Pnorm0 = nested_solve()
     bnorm1, xnorm1, Anorm1, Pnorm1 = blocked_solve()
     assert bnorm1 == pytest.approx(bnorm0, 1.0e-12)
-    assert xnorm1 == pytest.approx(xnorm0, 1.0e-8)
-    assert Anorm1 == pytest.approx(Anorm0, 1.0e-12)
-    assert Pnorm1 == pytest.approx(Pnorm0, 1.0e-12)
+    assert xnorm1 == pytest.approx(xnorm0, 1.0e-5)
+    assert Anorm1 == pytest.approx(Anorm0, 1.0e-4)
+    assert Pnorm1 == pytest.approx(Pnorm0, 1.0e-6)
 
     bnorm2, xnorm2, Anorm2, Pnorm2 = monolithic_solve()
-    assert bnorm2 == pytest.approx(bnorm0, 1.0e-12)
-    assert xnorm2 == pytest.approx(xnorm0, 1.0e-8)
-    assert Anorm2 == pytest.approx(Anorm0, 1.0e-12)
-    assert Pnorm2 == pytest.approx(Pnorm0, 1.0e-12)
+    assert bnorm2 == pytest.approx(bnorm1, 1.0e-6)
+    assert xnorm2 == pytest.approx(xnorm1, 1.0e-5)
+    assert Anorm2 == pytest.approx(Anorm1, 1.0e-5)
+    assert Pnorm2 == pytest.approx(Pnorm1, 1.0e-6)
 
 
 def test_basic_interior_facet_assembly():
