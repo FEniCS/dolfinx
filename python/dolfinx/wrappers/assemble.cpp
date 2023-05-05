@@ -148,7 +148,8 @@ void declare_assembly_functions(py::module& m)
       {
         const std::array<int, 2> bs = A.block_size();
         if (bs[0] != bs[1])
-          throw std::runtime_error("Cannot assemble non-square blocksize");
+          throw std::runtime_error(
+              "Non-square blocksize unsupported in Python");
 
         if (bs[0] == 1)
         {
@@ -172,7 +173,7 @@ void declare_assembly_functions(py::module& m)
               py_to_cpp_coeffs(coefficients), bcs);
         }
         else
-          throw std::runtime_error("Block size too big");
+          throw std::runtime_error("Block size not supported in Python");
       },
       py::arg("A"), py::arg("a"), py::arg("constants"), py::arg("coeffs"),
       py::arg("bcs"), "Experimental.");

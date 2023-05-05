@@ -89,23 +89,29 @@ void declare_objects(py::module& m, const std::string& type)
   py::class_<dolfinx::la::MatrixCSR<T>,
              std::shared_ptr<dolfinx::la::MatrixCSR<T>>>(
       m, pyclass_matrix_name.c_str())
-      .def(py::init([](const dolfinx::la::SparsityPattern& p)
-                    { return dolfinx::la::MatrixCSR<T>(p); }),
-           py::arg("p"))
+      .def(py::init([](const dolfinx::la::SparsityPattern& p,
+                       dolfinx::la::BlockMode bm)
+                    { return dolfinx::la::MatrixCSR<T>(p, bm); }),
+           py::arg("p"),
+           py::arg("block_mode") = dolfinx::la::BlockMode::compact)
       .def_property_readonly("dtype", [](const dolfinx::la::MatrixCSR<T>& self)
                              { return py::dtype::of<T>(); })
       .def("norm_squared", &dolfinx::la::MatrixCSR<T>::norm_squared)
-      .def("mat_add_values",
-           [](dolfinx::la::MatrixCSR<T>& self, std::array<int, 2> bs = {1, 1})
+      .def("index_maps", &dolfinx::la::MatrixCSR<T>::index_maps)
+      .def("add",
+           [](dolfinx::la::MatrixCSR<T>& self, const std::vector<T>& x,
+              const std::vector<std::int32_t>& rows,
+              const std::vector<std::int32_t>& cols, int bs = 1)
            {
-             std::cout << "mat add values, bs = " << bs[0] << "," << bs[1]
-                       << "\n";
-             std::cout << "mat add values, self.bs = " << self.block_size()[0]
-                       << "," << self.block_size()[1] << "\n";
-             if (bs[0] == 1)
-               return self.template mat_add_values<1, 1>();
+             if (bs == 1)
+               self.template add<1, 1>(x, rows, cols);
+             else if (bs == 2)
+               self.template add<2, 2>(x, rows, cols);
+             else if (bs == 3)
+               self.template add<3, 3>(x, rows, cols);
              else
-               return self.template mat_add_values<2, 2>();
+               throw std::runtime_error(
+                   "Block size not supported in this function");
            })
       .def_property_readonly("block_size",
                              &dolfinx::la::MatrixCSR<T>::block_size)
@@ -223,6 +229,10 @@ void la(py::module& m)
   py::enum_<PyScatterMode>(m, "ScatterMode")
       .value("add", PyScatterMode::add)
       .value("insert", PyScatterMode::insert);
+
+  py::enum_<dolfinx::la::BlockMode>(m, "BlockMode")
+      .value("compact", dolfinx::la::BlockMode::compact)
+      .value("expanded", dolfinx::la::BlockMode::expanded);
 
   py::enum_<dolfinx::la::Norm>(m, "Norm")
       .value("l1", dolfinx::la::Norm::l1)

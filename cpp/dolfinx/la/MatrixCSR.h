@@ -544,8 +544,6 @@ void impl::add_blocked_csr(U&& data, const V& cols, const W& row_ptr,
   {
     // Row index and current data row
     auto row = xrows[r] * BS0;
-    using T = typename X::value_type;
-    const T* xr = x.data() + r * nc * BS0 * BS1;
 
 #ifndef NDEBUG
     if (row >= (int)row_ptr.size())
@@ -554,6 +552,8 @@ void impl::add_blocked_csr(U&& data, const V& cols, const W& row_ptr,
 
     for (int i = 0; i < BS0; ++i)
     {
+      using T = typename X::value_type;
+      const T* xr = x.data() + (r * BS0 + i) * nc * BS1;
       // Columns indices for row
       auto cit0 = std::next(cols.begin(), row_ptr[row + i]);
       auto cit1 = std::next(cols.begin(), row_ptr[row + i + 1]);
