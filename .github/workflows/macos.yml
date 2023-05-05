@@ -25,15 +25,16 @@ jobs:
           brew install adios2 boost cmake hdf5-mpi ninja open-mpi pkg-config pugixml python@3.10 # FEniCS
           brew install bison flex # PETSc
 
-      # This 'activates' Python 3.10 from Homebrew
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
+      # # This 'activates' Python 3.10 from Homebrew
+      # - name: Setup Python
+      #   uses: actions/setup-python@v4
+      #   with:
+      #     python-version: "3.10"
 
       - name: Create virtualenv
         run: |
-          python -m venv create fenicsx
+          export PATH="$(brew --prefix python@3.10)/bin:$PATH"
+          python3 -m venv create fenicsx
           source fenicsx/bin/activate
           echo "VIRTUAL ENV:" $VIRTUAL_ENV
           echo '$(which python):' $(which python)
