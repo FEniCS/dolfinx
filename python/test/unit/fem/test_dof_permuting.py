@@ -249,12 +249,11 @@ def test_evaluation(cell_type, space_type, space_order):
             if space_type in ["RT", "BDM", "RTCF", "NCF", "BDMCF", "AAF"]:
                 # Hdiv
                 for i, j in zip(values0, values1):
-                    assert np.isclose(i[0], j[0], rtol=1.0e-6, atol=1.0e-3)
+                    assert np.isclose(i[0], j[0], rtol=1.0e-5, atol=1.0e-3)
             elif space_type in ["N1curl", "N2curl", "RTCE", "NCE", "BDMCE", "AAE"]:
                 # Hcurl
                 for i, j in zip(values0, values1):
-                    print(i[1:] - j[1:])
-                    assert np.allclose(i[1:], j[1:], rtol=1.0e-5, atol=1.0e-4)
+                    assert np.allclose(i[1:], j[1:], rtol=1.0e-4, atol=1.0e-4)
             else:
                 assert np.allclose(values0, values1, rtol=1.0e-6, atol=1.0e-4)
 
@@ -322,4 +321,4 @@ def test_integral(cell_type, space_type, space_order):
                 _form = ufl.jump(v) * ufl.dS
 
             value = assemble_scalar(form(_form))
-            assert np.isclose(value, 0)
+            assert np.isclose(value, 0.0, rtol=1.0e-6, atol=1.0e-6)

@@ -208,16 +208,17 @@ public:
       = std::experimental::mdspan<X,
                                   std::experimental::dextents<std::size_t, 2>>;
 
-  /// Compute reference coordinates X for physical coordinates x for a
-  /// non-affine map.
+  /// @brief Compute reference coordinates X for physical coordinates x
+  /// for a non-affine map.
   /// @param [in,out] X The reference coordinates to compute
   /// (shape=`(num_points, tdim)`)
-  /// @param [in] x The physical coordinates (shape=`(num_points, gdim)`)
+  /// @param [in] x The physical coordinates (shape=`(num_points,
+  /// gdim)`)
   /// @param [in] cell_geometry The cell nodes coordinates (shape=(num
   /// geometry nodes, gdim))
   /// @param [in] tol Tolerance for termination of Newton method.
   /// @param [in] maxit Maximum number of Newton iterations
-  /// @note If convergence is not achieved within maxit, the function
+  /// @note If convergence is not achieved within `maxit`, the function
   /// throws a runtime error.
   void pull_back_nonaffine(mdspan2_t<T> X, mdspan2_t<const T> x,
                            mdspan2_t<const T> cell_geometry,

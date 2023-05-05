@@ -163,7 +163,7 @@ def run_scalar_test(V, poly_order):
     cells = [0 for count in range(5)]
     values = v.eval(points, cells)
     for p, val in zip(points, values):
-        assert np.allclose(val, f(p))
+        assert np.allclose(val, f(p), atol=1.0e-5)
 
 
 def run_vector_test(V, poly_order):
@@ -187,7 +187,7 @@ def run_vector_test(V, poly_order):
     cells = [0 for count in range(5)]
     values = v.eval(points, cells)
     for p, val in zip(points, values):
-        assert np.allclose(val, f(p))
+        assert np.allclose(val, f(p), atol=1.0e-5)
 
 
 @pytest.mark.skip_in_parallel
@@ -292,14 +292,14 @@ def test_mixed_sub_interpolation():
         u, v = Function(V), Function(V)
         u.interpolate(U.sub(i))
         v.interpolate(f)
-        assert np.allclose(u.vector.array, v.vector.array)
+        assert np.allclose(u.vector.array, v.vector.array, atol=1.0e-6)
 
         # Different maps (1)
         V = FunctionSpace(mesh, ("RT", 2))
         u, v = Function(V), Function(V)
         u.interpolate(U.sub(i))
         v.interpolate(f)
-        assert np.allclose(u.vector.array, v.vector.array)
+        assert np.allclose(u.vector.array, v.vector.array, atol=1.0e-6)
 
         # Test with wrong shape
         V0 = FunctionSpace(mesh, P.sub_elements()[0])
@@ -442,7 +442,7 @@ def test_interpolation_non_affine():
                        [1, 0, 1.5], [0.5, 2, 0], [0, 2, 1.5], [1, 2, 1.5],
                        [0.5, 0, 3], [0, 1, 3], [1, 1, 3], [0.5, 2, 3],
                        [0.5, 1, 0], [0.5, 0, 1.5], [0, 1, 1.5], [1, 1, 1.5],
-                       [0.5, 2, 1.5], [0.5, 1, 3], [0.5, 1, 1.5]], dtype=np.float64)
+                       [0.5, 2, 1.5], [0.5, 1, 3], [0.5, 1, 1.5]], dtype=default_real_type)
 
     cells = np.array([range(len(points))], dtype=np.int32)
     domain = ufl.Mesh(element("Lagrange", "hexahedron", 2, rank=1))
@@ -464,7 +464,7 @@ def test_interpolation_non_affine_nonmatching_maps():
                        [1, 0, 1.5], [0.5, 2, 0], [0, 2, 1.5], [1, 2, 1.5],
                        [0.5, 0, 3], [0, 1, 3], [1, 1, 3], [0.5, 2, 3],
                        [0.5, 1, 0], [0.5, -0.1, 1.5], [0, 1, 1.5], [1, 1, 1.5],
-                       [0.5, 2, 1.5], [0.5, 1, 3], [0.5, 1, 1.5]], dtype=np.float64)
+                       [0.5, 2, 1.5], [0.5, 1, 3], [0.5, 1, 1.5]], dtype=default_real_type)
 
     cells = np.array([range(len(points))], dtype=np.int32)
     domain = ufl.Mesh(element("Lagrange", "hexahedron", 2, rank=1))
@@ -571,7 +571,7 @@ def test_de_rahm_2D(order):
 
     v.interpolate(Expression(curl2D(ufl.grad(w)), V.element.interpolation_points()))
     h_ex = ufl.as_vector((1, -1))
-    assert np.isclose(np.abs(assemble_scalar(form(ufl.inner(v - h_ex, v - h_ex) * ufl.dx))), 0)
+    assert np.isclose(np.abs(assemble_scalar(form(ufl.inner(v - h_ex, v - h_ex) * ufl.dx))), 0, atol=1.0e-6)
 
 
 @pytest.mark.parametrize("order", [1, 2, 3, 4])
@@ -604,7 +604,7 @@ def test_interpolate_subset(order, dim, affine, callable_):
     dx = ufl.Measure("dx", domain=mesh, subdomain_data=mt)
     assert np.isclose(np.abs(form(assemble_scalar(form(ufl.inner(u - f, u - f) * dx(1))))), 0)
     integral = mesh.comm.allreduce(assemble_scalar(form(u * dx)), op=MPI.SUM)
-    assert np.isclose(integral, 1 / (order + 1) * 0.5**(order + 1), 0)
+    assert np.isclose(integral, 1 / (order + 1) * 0.5**(order + 1), 0, atol=1.0e-6)
 
 
 def test_interpolate_callable():
