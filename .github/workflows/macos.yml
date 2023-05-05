@@ -51,7 +51,7 @@ jobs:
           export PETSC_ARCH=arch-darwin-c-opt
           which python
           which pip
-          git clone -b release https://gitlab.com/petsc/petsc.git petsc
+          git clone -b main https://gitlab.com/petsc/petsc.git petsc
           cd petsc
           python ./configure \
             --with-64-bit-indices=no \
