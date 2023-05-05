@@ -79,14 +79,28 @@ void add_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
 ///
 /// @tparam BS0 Row block size of Data
 /// @tparam BS1 Column block size of Data
+/// @param[out] data The CSR matrix data
+/// @param[in] cols The CSR column indices
+/// @param[in] row_ptr The pointer to the ith row in the CSR data
+/// @param[in] x The `m` by `n` dense block of values (row-major) to add
+/// to the matrix
+/// @param[in] xrows The row indices of `x`
+/// @param[in] xcols The column indices of `x`
 template <int BS0, int BS1, typename U, typename V, typename W, typename X,
           typename Y>
 void add_blocked_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
                      const Y& xrows, const Y& xcols);
 
 /// Add non-blocked data into a blocked matrix (Data block size = 1)
-/// @param bs0 Row block size of Matrix
-/// @param bs1 Column block size of Matrix
+/// @param[out] data The CSR matrix data
+/// @param[in] cols The CSR column indices
+/// @param[in] row_ptr The pointer to the ith row in the CSR data
+/// @param[in] x The `m` by `n` dense block of values (row-major) to add
+/// to the matrix
+/// @param[in] xrows The row indices of `x`
+/// @param[in] xcols The column indices of `x`
+/// @param[in] bs0 Row block size of Matrix
+/// @param[in] bs1 Column block size of Matrix
 template <typename U, typename V, typename W, typename X, typename Y>
 void add_nonblocked_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
                         const Y& xrows, const Y& xcols, int bs0, int bs1);
