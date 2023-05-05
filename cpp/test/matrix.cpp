@@ -132,7 +132,7 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
 {
   la::MatrixCSR A0 = create_operator(MPI_COMM_SELF);
   la::MatrixCSR A1 = create_operator(MPI_COMM_WORLD);
-  CHECK(A1.norm_squared() == Approx(A0.norm_squared()).epsilon(1e-8));
+  CHECK(A1.squared_norm() == Approx(A0.squared_norm()).epsilon(1e-8));
 }
 
 [[maybe_unused]] void test_matrix_apply()

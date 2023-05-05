@@ -6,7 +6,7 @@ from dolfinx.cpp.la import SparsityPattern, BlockMode
 from dolfinx.common import IndexMap
 
 
-def test_matrix_csr():
+def test_add():
 
     # Regular CSR Matrix 6x6 with bs=1
     n = 6
@@ -61,3 +61,11 @@ def test_matrix_csr():
 
     A3 = mat3.to_dense()
     assert np.allclose(A1, A3)
+
+    mat3.set(0.0)
+    print(mat3.to_dense())
+    mat3.set([2.0, 3.0, 4.0, 5.0], [1], [2], 2)
+    n1 = mat3.squared_norm()
+    mat3.set([2.0, 3.0, 4.0, 5.0], [1], [2], 2)
+    n2 = mat3.squared_norm()
+    assert n1 == n2

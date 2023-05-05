@@ -46,6 +46,13 @@ void set_blocked_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
                      const Y& xrows, const Y& xcols,
                      typename Y::value_type local_size);
 
+/// Set unblocked data into a blocked MatrixCSR (bs0, bs1)
+/// Matrix sparsity must be correct to accept the data
+template <typename U, typename V, typename W, typename X, typename Y>
+void set_nonblocked_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
+                        const Y& xrows, const Y& xcols,
+                        typename Y::value_type local_size, int bs0, int bs1);
+
 /// @brief Add data to a CSR matrix
 ///
 /// @tparam BS0 Row block size (of both matrix and data)
@@ -237,15 +244,25 @@ public:
   void set(std::span<const value_type> x, std::span<const std::int32_t> rows,
            std::span<const std::int32_t> cols)
   {
+    assert(x.size() == rows.size() * cols.size() * BS0 * BS1);
     if (_bs[0] == BS0 and _bs[1] == BS1)
+    {
       impl::set_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols,
                               _index_maps[0]->size_local());
+    }
     else if (_bs[0] == 1 and _bs[1] == 1)
+    {
+      // Add blocked data to a regular CSR matrix (_bs[0]=1, _bs[1]=1)
       impl::set_blocked_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols,
                                       _index_maps[0]->size_local());
+    }
     else
-      throw std::runtime_error(
-          "Insertion with BS=1 into MatrixCSR with bs>1 not yet implemented");
+    {
+      assert(BS0 == 1 and BS1 == 1);
+      // Add non-blocked data to a blocked CSR matrix (BS0=1, BS1=1)
+      impl::set_nonblocked_csr(_data, _cols, _row_ptr, x, rows, cols,
+                               _index_maps[0]->size_local(), _bs[0], _bs[1]);
+    }
   }
 
   /// @brief Accumulate values in the matrix
@@ -327,7 +344,7 @@ public:
   void finalize_end();
 
   /// Compute the Frobenius norm squared
-  double norm_squared() const;
+  double squared_norm() const;
 
   /// @brief Index maps for the row and column space.
   ///
@@ -473,8 +490,6 @@ void impl::set_blocked_csr(U&& data, const V& cols, const W& row_ptr,
   {
     // Row index and current data row
     auto row = xrows[r] * BS0;
-    using T = typename X::value_type;
-    const T* xr = x.data() + r * nc * BS0 * BS1;
 
 #ifndef NDEBUG
     if (row >= local_size)
@@ -483,13 +498,14 @@ void impl::set_blocked_csr(U&& data, const V& cols, const W& row_ptr,
 
     for (int i = 0; i < BS0; ++i)
     {
+      using T = typename X::value_type;
+      const T* xr = x.data() + (r * BS0 + i) * nc * BS1;
       // Columns indices for row
       auto cit0 = std::next(cols.begin(), row_ptr[row + i]);
       auto cit1 = std::next(cols.begin(), row_ptr[row + i + 1]);
       for (std::size_t c = 0; c < nc; ++c)
       {
         // Find position of column index
-        // Assumes the same on all rows of block
         auto it = std::lower_bound(cit0, cit1, xcols[c] * BS1);
         assert(*it == xcols[c] * BS1);
         assert(it != cit1);
@@ -499,6 +515,51 @@ void impl::set_blocked_csr(U&& data, const V& cols, const W& row_ptr,
         for (int j = 0; j < BS1; ++j)
           data[d + j] = xr[xi + j];
       }
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+// Add individual entries in block-CSR storage
+template <typename U, typename V, typename W, typename X, typename Y>
+void impl::set_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
+                              const X& x, const Y& xrows, const Y& xcols,
+                              [[maybe_unused]]
+                              typename Y::value_type local_size,
+                              int bs0, int bs1)
+{
+  const int nc = xcols.size();
+  const int nbs = bs0 * bs1;
+  typename Y::value_type row, ir;
+
+  assert(x.size() == xrows.size() * xcols.size());
+  for (std::size_t r = 0; r < xrows.size(); ++r)
+  {
+    // Row index and current data row
+    row = xrows[r] / bs0;
+    ir = xrows[r] % bs0;
+
+    using T = typename X::value_type;
+    const T* xr = x.data() + r * nc;
+
+#ifndef NDEBUG
+    if (row >= local_size * bs0)
+      throw std::runtime_error("Local row out of range");
+#endif
+    // Columns indices for row
+    auto cit0 = std::next(cols.begin(), row_ptr[row]);
+    auto cit1 = std::next(cols.begin(), row_ptr[row + 1]);
+    for (std::size_t c = 0; c < nc; ++c)
+    {
+      // Find position of column index
+      auto it = std::lower_bound(cit0, cit1, xcols[c] / bs1);
+      auto ic = xcols[c] % bs1;
+      assert(it != cit1);
+      assert(*it == xcols[c] / bs1);
+
+      std::size_t d = std::distance(cols.begin(), it);
+      int di = d * nbs;
+      assert(di < data.size());
+      data[di + ir * bs1 + ic] = xr[c];
     }
   }
 }
@@ -530,6 +591,7 @@ void impl::add_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
       // Find position of column index
       auto it = std::lower_bound(cit0, cit1, xcols[c]);
       assert(it != cit1);
+      assert(*it == xcols[c]);
 
       std::size_t d = std::distance(cols.begin(), it);
       int di = d * BS0 * BS1;
@@ -551,7 +613,6 @@ template <int BS0, int BS1, typename U, typename V, typename W, typename X,
 void impl::add_blocked_csr(U&& data, const V& cols, const W& row_ptr,
                            const X& x, const Y& xrows, const Y& xcols)
 {
-
   const int nc = xcols.size();
   assert(x.size() == xrows.size() * xcols.size() * BS0 * BS1);
   for (std::size_t r = 0; r < xrows.size(); ++r)
@@ -620,6 +681,7 @@ void impl::add_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
       auto it = std::lower_bound(cit0, cit1, xcols[c] / bs1);
       auto ic = xcols[c] % bs1;
       assert(it != cit1);
+      assert(*it == xcols[c] / bs1);
 
       std::size_t d = std::distance(cols.begin(), it);
       int di = d * nbs;
@@ -932,7 +994,7 @@ void MatrixCSR<U, V, W, X>::finalize_end()
 }
 //-----------------------------------------------------------------------------
 template <typename U, typename V, typename W, typename X>
-double MatrixCSR<U, V, W, X>::norm_squared() const
+double MatrixCSR<U, V, W, X>::squared_norm() const
 {
   const std::size_t num_owned_rows = _index_maps[0]->size_local();
   const int bs2 = _bs[0] * _bs[1];

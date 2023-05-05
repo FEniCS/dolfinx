@@ -163,7 +163,7 @@ def test_basic_assembly_petsc_matrixcsr(mode):
     A1 = fem.petsc.assemble_matrix(a)
     A1.assemble()
     assert isinstance(A1, PETSc.Mat)
-    assert np.sqrt(A0.norm_squared()) == pytest.approx(A1.norm())
+    assert np.sqrt(A0.squared_norm()) == pytest.approx(A1.norm())
     A1.destroy()
 
     V = VectorFunctionSpace(mesh, ("Lagrange", 1))

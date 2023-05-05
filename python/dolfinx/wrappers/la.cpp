@@ -96,7 +96,7 @@ void declare_objects(py::module& m, const std::string& type)
            py::arg("block_mode") = dolfinx::la::BlockMode::compact)
       .def_property_readonly("dtype", [](const dolfinx::la::MatrixCSR<T>& self)
                              { return py::dtype::of<T>(); })
-      .def("norm_squared", &dolfinx::la::MatrixCSR<T>::norm_squared)
+      .def("squared_norm", &dolfinx::la::MatrixCSR<T>::squared_norm)
       .def("index_maps", &dolfinx::la::MatrixCSR<T>::index_maps)
       .def("add",
            [](dolfinx::la::MatrixCSR<T>& self, const std::vector<T>& x,
@@ -109,6 +109,21 @@ void declare_objects(py::module& m, const std::string& type)
                self.template add<2, 2>(x, rows, cols);
              else if (bs == 3)
                self.template add<3, 3>(x, rows, cols);
+             else
+               throw std::runtime_error(
+                   "Block size not supported in this function");
+           })
+      .def("set",
+           [](dolfinx::la::MatrixCSR<T>& self, const std::vector<T>& x,
+              const std::vector<std::int32_t>& rows,
+              const std::vector<std::int32_t>& cols, int bs = 1)
+           {
+             if (bs == 1)
+               self.template set<1, 1>(x, rows, cols);
+             else if (bs == 2)
+               self.template set<2, 2>(x, rows, cols);
+             else if (bs == 3)
+               self.template set<3, 3>(x, rows, cols);
              else
                throw std::runtime_error(
                    "Block size not supported in this function");
