@@ -96,7 +96,17 @@ void declare_objects(py::module& m, const std::string& type)
                              { return py::dtype::of<T>(); })
       .def("norm_squared", &dolfinx::la::MatrixCSR<T>::norm_squared)
       .def("mat_add_values",
-           &dolfinx::la::MatrixCSR<T>::template mat_add_values<1, 1>)
+           [](dolfinx::la::MatrixCSR<T>& self, std::array<int, 2> bs = {1, 1})
+           {
+             std::cout << "mat add values, bs = " << bs[0] << "," << bs[1]
+                       << "\n";
+             std::cout << "mat add values, self.bs = " << self.block_size()[0]
+                       << "," << self.block_size()[1] << "\n";
+             if (bs[0] == 1)
+               return self.template mat_add_values<1, 1>();
+             else
+               return self.template mat_add_values<2, 2>();
+           })
       .def_property_readonly("block_size",
                              &dolfinx::la::MatrixCSR<T>::block_size)
       .def("set",

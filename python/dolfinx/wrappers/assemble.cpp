@@ -182,7 +182,19 @@ void declare_assembly_functions(py::module& m)
          const std::vector<
              std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>& bcs,
          T diagonal)
-      { dolfinx::fem::set_diagonal(A.mat_set_values(), V, bcs, diagonal); },
+      {
+        auto bs = A.block_size();
+        if (bs[0] != bs[1])
+          throw std::runtime_error("Cannot set non-square blocksize");
+        if (bs[0] == 1)
+          dolfinx::fem::set_diagonal(A.mat_set_values(), V, bcs, diagonal);
+        else if (bs[0] == 2)
+          dolfinx::fem::set_diagonal(A.template mat_set_values<2, 2>(), V, bcs,
+                                     diagonal);
+        else if (bs[0] == 3)
+          dolfinx::fem::set_diagonal(A.template mat_set_values<3, 3>(), V, bcs,
+                                     diagonal);
+      },
       py::arg("A"), py::arg("V"), py::arg("bcs"), py::arg("diagonal"),
       "Experimental.");
   m.def(

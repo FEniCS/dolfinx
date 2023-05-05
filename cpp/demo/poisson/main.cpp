@@ -91,12 +91,13 @@
 #include <cmath>
 #include <dolfinx.h>
 #include <dolfinx/fem/Constant.h>
-#include <dolfinx/fem/petsc.h>
+#include <dolfinx/la/MatrixCSR.h>
+// #include <dolfinx/fem/petsc.h>
 #include <utility>
 #include <vector>
 
 using namespace dolfinx;
-using T = PetscScalar;
+using T = double;
 
 // Then follows the definition of the coefficient functions (for
 // :math:`f` and :math:`g`), which are derived from the
@@ -122,8 +123,8 @@ int main(int argc, char* argv[])
     // Create mesh and function space
     auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
     auto mesh = std::make_shared<mesh::Mesh<double>>(
-        mesh::create_rectangle(MPI_COMM_WORLD, {{{0.0, 0.0}, {2.0, 1.0}}},
-                               {32, 16}, mesh::CellType::triangle, part));
+        mesh::create_box(MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {2.0, 1.0, 1.0}}},
+                         {160, 32, 32}, mesh::CellType::tetrahedron, part));
 
     auto V = std::make_shared<fem::FunctionSpace<double>>(
         fem::create_functionspace(functionspace_form_poisson_a, "u", mesh));
@@ -179,30 +180,30 @@ int main(int argc, char* argv[])
         });
     const auto bdofs = fem::locate_dofs_topological(
         *V->mesh()->topology_mutable(), *V->dofmap(), 1, facets);
-    auto bc = std::make_shared<const fem::DirichletBC<T>>(0.0, bdofs, V);
+    //    auto bc = std::make_shared<const fem::DirichletBC<T>>(0.0, bdofs, V);
 
-    f->interpolate(
-        [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
-        {
-          std::vector<T> f;
-          for (std::size_t p = 0; p < x.extent(1); ++p)
-          {
-            auto dx = (x(0, p) - 0.5) * (x(0, p) - 0.5);
-            auto dy = (x(1, p) - 0.5) * (x(1, p) - 0.5);
-            f.push_back(10 * std::exp(-(dx + dy) / 0.02));
-          }
+    // f->interpolate(
+    //     [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
+    //     {
+    //       std::vector<T> f;
+    //       for (std::size_t p = 0; p < x.extent(1); ++p)
+    //       {
+    //         auto dx = (x(0, p) - 0.5) * (x(0, p) - 0.5);
+    //         auto dy = (x(1, p) - 0.5) * (x(1, p) - 0.5);
+    //         f.push_back(10 * std::exp(-(dx + dy) / 0.02));
+    //       }
 
-          return {f, {f.size()}};
-        });
+    //       return {f, {f.size()}};
+    //     });
 
-    g->interpolate(
-        [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
-        {
-          std::vector<T> f;
-          for (std::size_t p = 0; p < x.extent(1); ++p)
-            f.push_back(std::sin(5 * x(0, p)));
-          return {f, {f.size()}};
-        });
+    // g->interpolate(
+    //     [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
+    //     {
+    //       std::vector<T> f;
+    //       for (std::size_t p = 0; p < x.extent(1); ++p)
+    //         f.push_back(std::sin(5 * x(0, p)));
+    //       return {f, {f.size()}};
+    //     });
 
     // Now, we have specified the variational forms and can consider the
     // solution of the variational problem. First, we need to define a
@@ -215,35 +216,41 @@ int main(int argc, char* argv[])
 
     // Compute solution
     fem::Function<T> u(V);
-    auto A = la::petsc::Matrix(fem::petsc::create_matrix(*a), false);
+    auto sp = fem::create_sparsity_pattern(*a);
+    sp.assemble();
+
+    auto A = la::MatrixCSR<T>(sp, la::BlockMode::compact);
+    // auto A = la::MatrixCSR<T>(sp, la::BlockMode::expanded);
     la::Vector<T> b(L->function_spaces()[0]->dofmap()->index_map,
                     L->function_spaces()[0]->dofmap()->index_map_bs());
 
-    MatZeroEntries(A.mat());
-    fem::assemble_matrix(la::petsc::Matrix::set_block_fn(A.mat(), ADD_VALUES),
-                         *a, {bc});
-    MatAssemblyBegin(A.mat(), MAT_FLUSH_ASSEMBLY);
-    MatAssemblyEnd(A.mat(), MAT_FLUSH_ASSEMBLY);
-    fem::set_diagonal<T>(la::petsc::Matrix::set_fn(A.mat(), INSERT_VALUES), *V,
-                         {bc});
-    MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
+    dolfinx::common::Timer t1("Assemble Matrix");
+    fem::assemble_matrix(A.mat_add_values<3, 3>(), *a, {});
+    t1.stop();
+    A.finalize();
+
+    //    fem::set_diagonal<T>(A.mat_set_values<3, 3>(), *V, {});
+    //    A.finalize();
+
+    T norm = A.norm_squared();
+
+    std::cout << "norm^2 = " << norm << "\n";
 
     b.set(0.0);
     fem::assemble_vector(b.mutable_array(), *L);
-    fem::apply_lifting<T, double>(b.mutable_array(), {a}, {{bc}}, {}, T(1));
+    fem::apply_lifting<T, double>(b.mutable_array(), {a}, {{}}, {}, T(1));
     b.scatter_rev(std::plus<T>());
-    fem::set_bc<T, double>(b.mutable_array(), {bc});
+    fem::set_bc<T, double>(b.mutable_array(), {});
 
-    la::petsc::KrylovSolver lu(MPI_COMM_WORLD);
-    la::petsc::options::set("ksp_type", "preonly");
-    la::petsc::options::set("pc_type", "lu");
-    lu.set_from_options();
+    // la::petsc::KrylovSolver lu(MPI_COMM_WORLD);
+    // la::petsc::options::set("ksp_type", "preonly");
+    // la::petsc::options::set("pc_type", "lu");
+    // lu.set_from_options();
 
-    lu.set_operator(A.mat());
-    la::petsc::Vector _u(la::petsc::create_vector_wrap(*u.x()), false);
-    la::petsc::Vector _b(la::petsc::create_vector_wrap(b), false);
-    lu.solve(_u.vec(), _b.vec());
+    // lu.set_operator(A.mat());
+    // la::petsc::Vector _u(la::petsc::create_vector_wrap(*u.x()), false);
+    // la::petsc::Vector _b(la::petsc::create_vector_wrap(b), false);
+    // lu.solve(_u.vec(), _b.vec());
 
     // The function ``u`` will be modified during the call to solve. A
     // :cpp:class:`Function` can be saved to a file. Here, we output the
@@ -255,6 +262,8 @@ int main(int argc, char* argv[])
     // Save solution in VTK format
     io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
     file.write<T>({u}, 0.0);
+
+    dolfinx::list_timings(MPI_COMM_WORLD, {dolfinx::TimingType::wall});
   }
 
   PetscFinalize();
