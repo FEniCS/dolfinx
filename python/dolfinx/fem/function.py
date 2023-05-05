@@ -319,7 +319,6 @@ class Function(ufl.Coefficient):
             value_size = ufl.product(self.ufl_element().value_shape())
             u = np.empty((num_points, value_size), self.dtype)
 
-        print("checks: ", _x.dtype, u.dtype)
         self._cpp_object.eval(_x, _cells, u)
         if num_points == 1:
             u = np.reshape(u, (-1, ))

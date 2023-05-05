@@ -11,10 +11,12 @@
 #include <array>
 #include <basix/element-families.h>
 #include <basix/mdspan.hpp>
+#include <cmath>
 #include <concepts>
 #include <cstdint>
 #include <dolfinx/common/math.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <limits>
 #include <memory>
 #include <span>
 
@@ -219,7 +221,8 @@ public:
   /// throws a runtime error.
   void pull_back_nonaffine(mdspan2_t<T> X, mdspan2_t<const T> x,
                            mdspan2_t<const T> cell_geometry,
-                           double tol = 1.0e-8, int maxit = 10) const;
+                           double tol = 1.0e-6,
+                           int maxit = 15) const;
 
   /// Permutes a list of DOF numbers on a cell
   void permute_dofs(const std::span<std::int32_t>& dofs,
