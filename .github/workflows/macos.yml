@@ -22,7 +22,7 @@ jobs:
       # completeness
       - name: Install Homebrew dependencies
         run: |
-          brew install adios2 boost cmake hdf5-mpi ninja open-mpi pkg-config pugixml python@3.10 # FEniCS
+          brew install adios2 boost cmake hdf5-mpi ninja open-mpi pkg-config pugixml python # FEniCS
           brew install bison flex # PETSc
 
       # # This 'activates' Python 3.10 from Homebrew
@@ -33,7 +33,7 @@ jobs:
 
       - name: Create virtualenv
         run: |
-          export PATH="$(brew --prefix python@3.10)/bin:$PATH"
+          export PATH="$(brew --prefix python)/bin:$PATH"
           python3 -m venv create fenicsx
           source fenicsx/bin/activate
           echo "VIRTUAL ENV:" $VIRTUAL_ENV
