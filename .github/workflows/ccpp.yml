@@ -48,6 +48,8 @@ jobs:
         petsc_arch: [real, complex]
         petsc_int_type: [32, 64]
 
+    name: Build and test (scalar type ${{ matrix.petsc_arch }}, int${{ matrix.petsc_int_type }})
+
     steps:
       - uses: actions/checkout@v3
 
