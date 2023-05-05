@@ -128,13 +128,20 @@ public:
 
   /// @brief Insertion functor for setting values in matrix. It is
   /// typically used in finite element assembly functions.
+  ///
+  /// @tparam BS0 Row block size for insertion
+  /// @tparam BS1 Column block size for insertion
+  ///
+  /// @note Block size of matrix may be (1, 1) or (BS0, BS1)
+  ///
   /// @return Function for inserting values into `A`
   /// @todo clarify setting on non-owned entries
   template <int BS0 = 1, int BS1 = 1>
   auto mat_set_values()
   {
-    if (_bs[0] != BS0 or _bs[1] != BS1)
-      throw std::runtime_error("Invalid block size for mat_set_values");
+    if ((BS0 > 1 and _bs[0] > 1) or (BS1 > 1 and _bs[1] > 1))
+      throw std::runtime_error(
+          "Cannot insert blocks of different size into matrix");
 
     return [&](std::span<const std::int32_t> rows,
                std::span<const std::int32_t> cols,
@@ -151,12 +158,16 @@ public:
   /// @tparam BS0 Row block size for insertion
   /// @tparam BS1 Column block size for insertion
   ///
-  /// @note Important to get block size right
+  /// @note Block size of matrix may be (1, 1) or (BS0, BS1)
   ///
   /// @return Function for inserting values into `A`
   template <int BS0 = 1, int BS1 = 1>
   auto mat_add_values()
   {
+    if ((BS0 > 1 and _bs[0] > 1) or (BS1 > 1 and _bs[1] > 1))
+      throw std::runtime_error(
+          "Cannot insert blocks of different size into matrix");
+
     return [&](std::span<const std::int32_t> rows,
                std::span<const std::int32_t> cols,
                std::span<const value_type> data) -> int
@@ -200,9 +211,12 @@ public:
     if (_bs[0] == BS0 and _bs[1] == BS1)
       impl::set_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols,
                               _index_maps[0]->size_local());
-    else
+    else if (_bs[0] == 1 and _bs[1] == 1)
       impl::set_blocked_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols,
                                       _index_maps[0]->size_local());
+    else
+      throw std::runtime_error(
+          "Insertion with BS=1 into MatrixCSR with bs>1 not yet implemented");
   }
 
   /// @brief Accumulate values in the matrix
@@ -229,11 +243,16 @@ public:
     {
       impl::add_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols);
     }
-    else
+    else if (_bs[0] == 1 and _bs[1] == 1)
     {
       // Add blocked data to a regular CSR matrix (_bs[0]=1, _bs[1]=1)
       assert(_bs[0] == 1 and _bs[1] == 1);
       impl::add_blocked_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols);
+    }
+    else
+    {
+      throw std::runtime_error(
+          "Insertion with BS=1 into MatrixCSR with bs>1 not yet implemented");
     }
   }
 
@@ -411,7 +430,7 @@ void impl::set_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
   }
 }
 //-----------------------------------------------------------------------------
-// Set with blocks in a regular CSR
+// Set with block insertion into a regular CSR (block size 1)
 template <int BS0, int BS1, typename U, typename V, typename W, typename X,
           typename Y>
 void impl::set_blocked_csr(U&& data, const V& cols, const W& row_ptr,
@@ -440,6 +459,7 @@ void impl::set_blocked_csr(U&& data, const V& cols, const W& row_ptr,
       for (std::size_t c = 0; c < nc; ++c)
       {
         // Find position of column index
+        // Assumes the same on all rows of block
         auto it = std::lower_bound(cit0, cit1, xcols[c] * BS1);
         assert(*it == xcols[c] * BS1);
         assert(it != cit1);

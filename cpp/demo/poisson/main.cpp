@@ -220,17 +220,17 @@ int main(int argc, char* argv[])
     sp.assemble();
 
     auto A = la::MatrixCSR<T>(sp, la::BlockMode::compact);
-    // auto A = la::MatrixCSR<T>(sp, la::BlockMode::expanded);
+    //    auto A = la::MatrixCSR<T>(sp, la::BlockMode::expanded);
     la::Vector<T> b(L->function_spaces()[0]->dofmap()->index_map,
                     L->function_spaces()[0]->dofmap()->index_map_bs());
 
     dolfinx::common::Timer t1("Assemble Matrix");
-    fem::assemble_matrix(A.mat_add_values<3, 3>(), *a, {});
+    fem::assemble_matrix(A.mat_add_values<1, 1>(), *a, {});
     t1.stop();
     A.finalize();
 
-    //    fem::set_diagonal<T>(A.mat_set_values<3, 3>(), *V, {});
-    //    A.finalize();
+    fem::set_diagonal<T>(A.mat_set_values<3, 3>(), *V, {});
+    A.finalize();
 
     T norm = A.norm_squared();
 
