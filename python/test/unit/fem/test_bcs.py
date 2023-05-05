@@ -103,7 +103,7 @@ def test_overlapping_bcs():
 
 def test_constant_bc_constructions():
     """Test construction from constant values"""
-    msh = create_unit_square(MPI.COMM_WORLD, 4, 4)
+    msh = create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=default_real_type)
     V0 = FunctionSpace(msh, ("Lagrange", 1))
     V1 = VectorFunctionSpace(msh, ("Lagrange", 1))
     V2 = TensorFunctionSpace(msh, ("Lagrange", 1))
