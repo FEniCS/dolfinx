@@ -58,11 +58,15 @@ jobs:
             --download-metis \
             --download-ptscotch
           make all
-          cd src/binding/petsc4py
+
+      - name: Install petsc4py
+        run: |
+          export PETSC_ARCH=arch-darwin-c-opt
           export PETSC_DIR=$GITHUB_WORKSPACE/petsc
+          cd petsc/src/binding/petsc4py
           pip list
           which python
-          pip install -v .
+          pip --debug install -v .
 
       - name: Install Basix
         run: |
