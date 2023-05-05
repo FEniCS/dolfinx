@@ -37,9 +37,8 @@ jobs:
           source fenicsx/bin/activate
           echo "VIRTUAL ENV:" $VIRTUAL_ENV
           echo '$(which python):' $(which python)
-          pip install --upgrade setuptools
-          pip install --upgrade pip
-          pip install cython
+          pip install --upgrade pip setuptools
+          pip install cython==0.29.32
           pip install git+https://github.com/mpi4py/mpi4py.git
 
       # bison > 3 required. Could not get PETSc to find keg-only
