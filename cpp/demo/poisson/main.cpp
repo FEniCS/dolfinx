@@ -225,7 +225,7 @@ int main(int argc, char* argv[])
                     L->function_spaces()[0]->dofmap()->index_map_bs());
 
     dolfinx::common::Timer t1("Assemble Matrix");
-    fem::assemble_matrix(A.mat_add_values<1, 1>(), *a, {});
+    fem::assemble_matrix(A.mat_add_values<3, 3>(), *a, {});
     t1.stop();
     A.finalize();
 

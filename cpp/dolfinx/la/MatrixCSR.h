@@ -38,6 +38,8 @@ template <int BS0, int BS1, typename U, typename V, typename W, typename X,
 void set_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
              const Y& xrows, const Y& xcols, typename Y::value_type local_size);
 
+/// Set blocked data with given block sizes into a non-blocked MatrixCSR (bs=1)
+/// Matrix sparsity must be correct to accept the data
 template <int BS0, int BS1, typename U, typename V, typename W, typename X,
           typename Y>
 void set_blocked_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
@@ -46,8 +48,8 @@ void set_blocked_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
 
 /// @brief Add data to a CSR matrix
 ///
-/// @tparam BS0 Row block size
-/// @tparam BS1 Column block size
+/// @tparam BS0 Row block size (of both matrix and data)
+/// @tparam BS1 Column block size (of both matrix and data)
 /// @param[out] data The CSR matrix data
 /// @param[in] cols The CSR column indices
 /// @param[in] row_ptr The pointer to the ith row in the CSR data
@@ -67,16 +69,27 @@ void set_blocked_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
 /// -------------
 /// 8  9  | 10 11
 /// 12 13 | 14 15
-
 template <int BS0, int BS1, typename U, typename V, typename W, typename X,
           typename Y>
 void add_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
              const Y& xrows, const Y& xcols);
 
+/// Add blocked data into a non-blocked matrix (Matrix block size = 1)
+/// @note see `add_csr` for data layout
+///
+/// @tparam BS0 Row block size of Data
+/// @tparam BS1 Column block size of Data
 template <int BS0, int BS1, typename U, typename V, typename W, typename X,
           typename Y>
 void add_blocked_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
                      const Y& xrows, const Y& xcols);
+
+/// Add non-blocked data into a blocked matrix (Data block size = 1)
+/// @param bs0 Row block size of Matrix
+/// @param bs1 Column block size of Matrix
+template <typename U, typename V, typename W, typename X, typename Y>
+void add_nonblocked_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
+                        const Y& xrows, const Y& xcols, int bs0, int bs1);
 } // namespace impl
 
 /// @brief Modes for representing block structured matrices
@@ -139,9 +152,10 @@ public:
   template <int BS0 = 1, int BS1 = 1>
   auto mat_set_values()
   {
-    if ((BS0 > 1 and _bs[0] > 1) or (BS1 > 1 and _bs[1] > 1))
+    if ((BS0 != _bs[0] and BS0 > 1 and _bs[0] > 1)
+        or (BS1 != _bs[1] and BS1 > 1 and _bs[1] > 1))
       throw std::runtime_error(
-          "Cannot insert blocks of different size into matrix");
+          "Cannot insert blocks of different size than matrix block size");
 
     return [&](std::span<const std::int32_t> rows,
                std::span<const std::int32_t> cols,
@@ -164,9 +178,10 @@ public:
   template <int BS0 = 1, int BS1 = 1>
   auto mat_add_values()
   {
-    if ((BS0 > 1 and _bs[0] > 1) or (BS1 > 1 and _bs[1] > 1))
+    if ((BS0 != _bs[0] and BS0 > 1 and _bs[0] > 1)
+        or (BS1 != _bs[1] and BS1 > 1 and _bs[1] > 1))
       throw std::runtime_error(
-          "Cannot insert blocks of different size into matrix");
+          "Cannot insert blocks of different size than matrix block size");
 
     return [&](std::span<const std::int32_t> rows,
                std::span<const std::int32_t> cols,
@@ -227,9 +242,9 @@ public:
   /// @note Use `finalize` after all entries have been added to send
   /// ghost rows to owners. Adding more entries after `finalize` is
   /// allowed, but another call to `finalize` will then be required.
-  /// @note BS0 and BS1 must match the block size used when creating the matrix.
-  /// @tparam BS0 Row block size
-  /// @tparam BS1 Column block size
+  ///
+  /// @tparam BS0 Row block size of data
+  /// @tparam BS1 Column block size of data
   /// @param[in] x The `m` by `n` dense block of values (row-major) to
   /// add to the matrix
   /// @param[in] rows The row indices of `x`
@@ -246,13 +261,14 @@ public:
     else if (_bs[0] == 1 and _bs[1] == 1)
     {
       // Add blocked data to a regular CSR matrix (_bs[0]=1, _bs[1]=1)
-      assert(_bs[0] == 1 and _bs[1] == 1);
       impl::add_blocked_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols);
     }
     else
     {
-      throw std::runtime_error(
-          "Insertion with BS=1 into MatrixCSR with bs>1 not yet implemented");
+      assert(BS0 == 1 and BS1 == 1);
+      // Add non-blocked data to a blocked CSR matrix (BS0=1, BS1=1)
+      impl::add_nonblocked_csr(_data, _cols, _row_ptr, x, rows, cols, _bs[0],
+                               _bs[1]);
     }
   }
 
@@ -473,46 +489,6 @@ void impl::set_blocked_csr(U&& data, const V& cols, const W& row_ptr,
   }
 }
 //-----------------------------------------------------------------------------
-// // Set individual entries in block-CSR storage
-// template <int BS0, int BS1, typename U, typename V, typename W, typename X,
-//           typename Y>
-// void impl::set_individual_csr(U&& data, const V& cols, const W& row_ptr,
-//                               const X& x, const Y& xrows, const Y& xcols,
-//                               [[maybe_unused]]
-//                               typename Y::value_type local_size)
-// {
-//   const int nc = xcols.size();
-//   assert(x.size() == xrows.size() * xcols.size());
-//   for (std::size_t r = 0; r < xrows.size(); ++r)
-//   {
-//     // Row index and current data row
-//     auto row = xrows[r] / BS0;
-//     auto ir = xrows[r] % BS0;
-//     using T = typename X::value_type;
-//     const T* xr = x.data() + r * nc;
-
-// #ifndef NDEBUG
-//     if (row >= local_size)
-//       throw std::runtime_error("Local row out of range");
-// #endif
-//     // Columns indices for row
-//     auto cit0 = std::next(cols.begin(), row_ptr[row]);
-//     auto cit1 = std::next(cols.begin(), row_ptr[row + 1]);
-//     for (std::size_t c = 0; c < nc; ++c)
-//     {
-//       // Find position of column index
-//       auto it = std::lower_bound(cit0, cit1, xcols[c] / BS1);
-//       auto ic = xcols[c] % BS1;
-//       assert(it != cit1);
-
-//       std::size_t d = std::distance(cols.begin(), it);
-//       int di = d * BS0 * BS1;
-//       assert(di < data.size());
-//       data[di + ir * BS1 + ic] = xr[c];
-//     }
-//   }
-// }
-//-----------------------------------------------------------------------------
 template <int BS0, int BS1, typename U, typename V, typename W, typename X,
           typename Y>
 void impl::add_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
@@ -555,7 +531,7 @@ void impl::add_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
     }
   }
 }
-
+//-----------------------------------------------------------------------------
 template <int BS0, int BS1, typename U, typename V, typename W, typename X,
           typename Y>
 void impl::add_blocked_csr(U&& data, const V& cols, const W& row_ptr,
@@ -593,6 +569,48 @@ void impl::add_blocked_csr(U&& data, const V& cols, const W& row_ptr,
         for (int j = 0; j < BS1; ++j)
           data[d + j] += xr[xi + j];
       }
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+// Add individual entries in block-CSR storage
+template <typename U, typename V, typename W, typename X, typename Y>
+void impl::add_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
+                              const X& x, const Y& xrows, const Y& xcols,
+                              int bs0, int bs1)
+{
+  const int nc = xcols.size();
+  const int nbs = bs0 * bs1;
+  typename Y::value_type row, ir;
+
+  assert(x.size() == xrows.size() * xcols.size());
+  for (std::size_t r = 0; r < xrows.size(); ++r)
+  {
+    // Row index and current data row
+    row = xrows[r] / bs0;
+    ir = xrows[r] % bs0;
+
+    using T = typename X::value_type;
+    const T* xr = x.data() + r * nc;
+
+#ifndef NDEBUG
+    if (row >= (int)row_ptr.size())
+      throw std::runtime_error("Local row out of range");
+#endif
+    // Columns indices for row
+    auto cit0 = std::next(cols.begin(), row_ptr[row]);
+    auto cit1 = std::next(cols.begin(), row_ptr[row + 1]);
+    for (std::size_t c = 0; c < nc; ++c)
+    {
+      // Find position of column index
+      auto it = std::lower_bound(cit0, cit1, xcols[c] / bs1);
+      auto ic = xcols[c] % bs1;
+      assert(it != cit1);
+
+      std::size_t d = std::distance(cols.begin(), it);
+      int di = d * nbs;
+      assert(di < data.size());
+      data[di + ir * bs1 + ic] += xr[c];
     }
   }
 }
