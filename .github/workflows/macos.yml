@@ -33,6 +33,7 @@ jobs:
 
       - name: Create virtualenv
         run: |
+          pip install pip --upgrade
           pip install cython==0.29.32
           pip install git+https://github.com/mpi4py/mpi4py.git
 
@@ -40,6 +41,7 @@ jobs:
       # Homebrew bison. Instead let PETSc build bison.
       - name: Install minimal PETSc
         run: |
+          python -c "import cython; print(cython.__version__)"
           export PATH="$(brew --prefix bison)/bin:$PATH"
           export PETSC_ARCH=arch-darwin-c-opt
           which python
