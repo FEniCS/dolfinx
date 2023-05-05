@@ -31,7 +31,7 @@ from ufl import derivative, ds, dx, inner
 from ufl.geometry import SpatialCoordinate
 
 from dolfinx import cpp as _cpp
-from dolfinx import default_scalar_type, fem, graph, la
+from dolfinx import default_real_type, fem, graph, la
 
 
 def nest_matrix_norm(A):
@@ -210,7 +210,7 @@ def test_assemble_manifold():
     """Test assembly of poisson problem on a mesh with topological
     dimension 1 but embedded in 2D (gdim=2)"""
     points = np.array([[0.0, 0.0], [0.2, 0.0], [0.4, 0.0],
-                       [0.6, 0.0], [0.8, 0.0], [1.0, 0.0]], dtype=default_scalar_type)
+                       [0.6, 0.0], [0.8, 0.0], [1.0, 0.0]], dtype=default_real_type)
     cells = np.array([[0, 1], [1, 2], [2, 3], [3, 4], [4, 5]], dtype=np.int32)
     domain = ufl.Mesh(element(
         basix.ElementFamily.P, basix.CellType.interval, 1, gdim=points.shape[1], shape=(points.shape[1], )))
@@ -222,7 +222,6 @@ def test_assemble_manifold():
     u, v = ufl.TrialFunction(U), ufl.TestFunction(U)
     a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx(mesh)
     L = ufl.inner(1.0, v) * ufl.dx(mesh)
-    # a, L = form(a), form(L)
     a = form(a)
     L = form(L)
 
@@ -941,11 +940,11 @@ def test_assemble_empty_rank_mesh():
         # Put cells on rank 0
         cells = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.int64)
         cells = graph.create_adjacencylist(cells)
-        x = np.array([[0., 0.], [1., 0.], [1., 1.], [0., 1.]], dtype=default_scalar_type)
+        x = np.array([[0., 0.], [1., 0.], [1., 1.], [0., 1.]], dtype=default_real_type)
     else:
         # No cells on other ranks
         cells = graph.create_adjacencylist(np.empty((0, 3), dtype=np.int64))
-        x = np.empty((0, 2), dtype=default_scalar_type)
+        x = np.empty((0, 2), dtype=default_real_type)
 
     mesh = create_mesh(comm, cells, x, domain, partitioner)
 
