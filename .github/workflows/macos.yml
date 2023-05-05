@@ -49,6 +49,8 @@ jobs:
           source fenicsx/bin/activate
           export PATH="$(brew --prefix bison)/bin:$PATH"
           export PETSC_ARCH=arch-darwin-c-opt
+          which python
+          which pip
           git clone -b release https://gitlab.com/petsc/petsc.git petsc
           cd petsc
           python ./configure \
