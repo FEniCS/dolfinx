@@ -17,7 +17,7 @@ on:
         default: "nightly"
         type: string
         required: true
-      
+
       baseimage:
         description: "tag prefix for docker images"
         default: "docker.io/dolfinx/dev-env:current"
@@ -66,8 +66,6 @@ jobs:
           - arch_tag: arm64
             os: buildjet-4vcpu-ubuntu-2204-arm
     runs-on: ${{ matrix.os }}
-    needs:
-      - create_multiarch_build_images
     steps:
       - name: Create tag without image name
         run: |
@@ -90,7 +88,7 @@ jobs:
         run: |
           USER_INPUT=${{ github.event.inputs.dockerfile }}
           echo "DOCKERFILE=${USER_INPUT:-docker/Dockerfile}" >> $GITHUB_ENV
-      
+
       - name: Set baseimage
         run: |
           USER_INPUT=${{ github.event.inputs.baseimage }}
