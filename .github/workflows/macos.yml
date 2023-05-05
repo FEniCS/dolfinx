@@ -22,23 +22,23 @@ jobs:
       # completeness
       - name: Install Homebrew dependencies
         run: |
-          brew install adios2 boost cmake hdf5-mpi ninja open-mpi pkg-config pugixml python # FEniCS
+          brew install adios2 boost cmake hdf5-mpi ninja open-mpi pkg-config pugixml # FEniCS
           brew install bison flex # PETSc
 
-      # # This 'activates' Python 3.10 from Homebrew
-      # - name: Setup Python
-      #   uses: actions/setup-python@v4
-      #   with:
-      #     python-version: "3.10"
+      # This 'activates' Python 3.10 from Homebrew
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
 
       - name: Create virtualenv
         run: |
-          export PATH="$(brew --prefix python)/bin:$PATH"
-          python3 -m venv create fenicsx
-          source fenicsx/bin/activate
-          echo "VIRTUAL ENV:" $VIRTUAL_ENV
-          echo '$(which python):' $(which python)
-          pip install --upgrade pip setuptools
+          # export PATH="$(brew --prefix python)/bin:$PATH"
+          # python3 -m venv create fenicsx
+          # source fenicsx/bin/activate
+          # echo "VIRTUAL ENV:" $VIRTUAL_ENV
+          # echo '$(which python):' $(which python)
+          # pip install --upgrade pip setuptools
           pip install cython==0.29.32
           pip install git+https://github.com/mpi4py/mpi4py.git
 
@@ -46,7 +46,7 @@ jobs:
       # Homebrew bison. Instead let PETSc build bison.
       - name: Install minimal PETSc
         run: |
-          source fenicsx/bin/activate
+          # source fenicsx/bin/activate
           export PATH="$(brew --prefix bison)/bin:$PATH"
           export PETSC_ARCH=arch-darwin-c-opt
           which python
@@ -90,7 +90,7 @@ jobs:
 
       - name: Build and install DOLFINx C++ library
         run: |
-          source fenicsx/bin/activate
+          # source fenicsx/bin/activate
           cd dolfinx
           PETSC_DIR=$GITHUB_WORKSPACE/petsc PETSC_ARCH=arch-darwin-c-opt \
           cmake -G Ninja -DPython3_EXECUTABLE=$(which python) -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/fenicsx -B build -S cpp/
@@ -99,13 +99,13 @@ jobs:
 
       - name: Build and install DOLFINx Python interface
         run: |
-          source fenicsx/bin/activate
+          # source fenicsx/bin/activate
           cd dolfinx
           PETSC_DIR=$GITHUB_WORKSPACE/petsc PETSC_ARCH=arch-darwin-c-opt \
           pip -v install python/
 
       - name: Basic test
         run: |
-          source fenicsx/bin/activate
+          # source fenicsx/bin/activate
           python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
           mpirun -np 2 python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
