@@ -34,7 +34,7 @@ jobs:
       - name: Create virtualenv
         run: |
           pip install pip --upgrade
-          pip install Cython==0.29.32 numpy
+          pip install Cython==0.29.32 numpy setuptools
           pip install git+https://github.com/mpi4py/mpi4py.git
 
       # bison > 3 required. Could not get PETSc to find keg-only
@@ -46,7 +46,7 @@ jobs:
           export PETSC_ARCH=arch-darwin-c-opt
           which python
           which pip
-          git clone -b main https://gitlab.com/petsc/petsc.git petsc
+          git clone -b release https://gitlab.com/petsc/petsc.git petsc
           cd petsc
           ./configure \
             --with-64-bit-indices=no \
@@ -55,12 +55,13 @@ jobs:
             --with-scalar-type=real \
             --with-shared-libraries \
             --with-scalar-type=real \
-            --download-metis \
             --download-ptscotch
           make all
 
       - name: Install petsc4py
         run: |
+          uname -a
+          mpicc -show
           export PETSC_ARCH=arch-darwin-c-opt
           export PETSC_DIR=$GITHUB_WORKSPACE/petsc
           cd petsc/src/binding/petsc4py
