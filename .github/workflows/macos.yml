@@ -55,22 +55,23 @@ jobs:
             --with-scalar-type=real \
             --with-shared-libraries \
             --with-scalar-type=real \
+            --with-petsc4py \
             --download-ptscotch
           make all
 
-      - name: Install petsc4py
-        run: |
-          uname -a
-          echo $ARCHFLAGS
-          mpicc -show
-          export PETSC_ARCH=arch-darwin-c-opt
-          export PETSC_DIR=$GITHUB_WORKSPACE/petsc
-          cd petsc/src/binding/petsc4py
-          pip install wheel
-          pip list
-          which python
-          # pip --debug install --platform --no-cache-dir --no-build-isolation --no-deps -v .
-          pip --debug install --platform --no-cache-dir --no-deps -v .
+      # - name: Install petsc4py
+      #   run: |
+      #     uname -a
+      #     echo $ARCHFLAGS
+      #     mpicc -show
+      #     export PETSC_ARCH=arch-darwin-c-opt
+      #     export PETSC_DIR=$GITHUB_WORKSPACE/petsc
+      #     cd petsc/src/binding/petsc4py
+      #     pip install wheel
+      #     pip list
+      #     which python
+      #     # pip --debug install --platform --no-cache-dir --no-build-isolation --no-deps -v .
+      #     pip --debug install --platform --no-cache-dir --no-deps -v .
 
       - name: Install Basix
         run: |
