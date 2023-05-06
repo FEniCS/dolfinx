@@ -34,7 +34,7 @@ jobs:
       - name: Create virtualenv
         run: |
           pip install pip --upgrade
-          pip install Cython==0.29.32 numpy setuptools
+          pip install Cython==0.29.32 numpy setuptools wheel
           pip install git+https://github.com/mpi4py/mpi4py.git
 
       # bison > 3 required. Could not get PETSc to find keg-only
@@ -108,7 +108,7 @@ jobs:
           export PYTHONPATH=/Users/runner/work/dolfinx/dolfinx/petsc/arch-darwin-c-opt/lib:$PYTHONPATH
           export PETSC_DIR=$GITHUB_WORKSPACE/petsc
           export PETSC_ARCH=arch-darwin-c-opt
-          pip -v install --no-build-isolation .
+          pip -v install --no-build-isolation --no-cache .
 
       - name: Basic test
         run: |
