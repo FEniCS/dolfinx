@@ -35,7 +35,7 @@ jobs:
         run: |
           pip install pip --upgrade
           pip install Cython==0.29.32 numpy setuptools wheel
-          pip -v install --no-cache git+https://github.com/mpi4py/mpi4py.git
+          pip -v install --no-deps --no-cache git+https://github.com/mpi4py/mpi4py.git
           cat /Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/mpi4py/include/mpi4py/mpi4py.MPI.h
 
       # bison > 3 required. Could not get PETSc to find keg-only
