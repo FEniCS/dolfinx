@@ -60,6 +60,8 @@ jobs:
           make all
           export PYTHONPATH=/Users/runner/work/dolfinx/dolfinx/petsc/arch-darwin-c-opt/lib:$PYTHONPATH
           python -c "import petsc4py, os, sys; sys.stdout.write(os.path.dirname(petsc4py.__file__))"
+          cat /Users/runner/work/dolfinx/dolfinx/petsc/arch-darwin-c-opt/lib/petsc4py/PETSc_api.h
+          cat /Users/runner/work/dolfinx/dolfinx/petsc/arch-darwin-c-opt/lib/petsc4py/PETSc.h
 
       # - name: Install petsc4py
       #   run: |
