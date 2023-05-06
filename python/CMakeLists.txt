@@ -38,8 +38,7 @@ find_package(
 
 execute_process(
   COMMAND
-  ${Python3_EXECUTABLE} -c
-  "import basix, os, sys; sys.stdout.write(os.path.dirname(basix.__file__))"
+  ${Python3_EXECUTABLE} -c "import basix, os, sys; sys.stdout.write(os.path.dirname(basix.__file__))"
   OUTPUT_VARIABLE BASIX_PY_DIR
   RESULT_VARIABLE BASIX_PY_COMMAND_RESULT
   ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
