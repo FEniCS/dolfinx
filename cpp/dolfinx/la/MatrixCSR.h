@@ -551,15 +551,15 @@ void impl::set_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
     for (std::size_t c = 0; c < nc; ++c)
     {
       // Find position of column index
-      auto it = std::lower_bound(cit0, cit1, xcols[c] / bs1);
-      auto ic = xcols[c] % bs1;
+      auto cdiv = std::div(xcols[c], bs1);
+      auto it = std::lower_bound(cit0, cit1, cdiv.quot);
       assert(it != cit1);
-      assert(*it == xcols[c] / bs1);
+      assert(*it == cdiv.quot);
 
       std::size_t d = std::distance(cols.begin(), it);
       int di = d * nbs;
       assert(di < data.size());
-      data[di + ir * bs1 + ic] = xr[c];
+      data[di + ir * bs1 + cdiv.rem] = xr[c];
     }
   }
 }

@@ -63,7 +63,8 @@ def test_add():
     assert np.allclose(A1, A3)
 
     mat3.set(0.0)
-    print(mat3.to_dense())
+    assert(mat3.squared_norm() == 0.0)
+
     mat3.set([2.0, 3.0, 4.0, 5.0], [1], [2], 2)
     n1 = mat3.squared_norm()
     mat3.set([2.0, 3.0, 4.0, 5.0], [1], [2], 2)
