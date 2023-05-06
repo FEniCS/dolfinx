@@ -91,16 +91,20 @@ jobs:
 
       - name: Build and install DOLFINx C++ library
         run: |
+          export PYTHONPATH=/Users/runner/work/dolfinx/dolfinx/petsc/arch-darwin-c-opt/lib:$PYTHONPATH
           cd dolfinx
-          PETSC_DIR=$GITHUB_WORKSPACE/petsc PETSC_ARCH=arch-darwin-c-opt \
-          cmake -G Ninja -DPython3_EXECUTABLE=$(which python) -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/fenicsx -B build -S cpp/
+          export PETSC_DIR=$GITHUB_WORKSPACE/petsc
+          export PETSC_ARCH=arch-darwin-c-opt
+          cmake -G Ninja -B build -S cpp/
           cmake --build build
           cmake --install build
 
       - name: Build and install DOLFINx Python interface
         run: |
           cd dolfinx
-          PETSC_DIR=$GITHUB_WORKSPACE/petsc PETSC_ARCH=arch-darwin-c-opt \
+          export PYTHONPATH=/Users/runner/work/dolfinx/dolfinx/petsc/arch-darwin-c-opt/lib:$PYTHONPATH
+          export PETSC_DIR=$GITHUB_WORKSPACE/petsc
+          export PETSC_ARCH=arch-darwin-c-opt
           pip -v install python/
 
       - name: Basic test
