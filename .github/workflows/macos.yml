@@ -39,9 +39,10 @@ jobs:
 
       - name: Install mpi4py
         run: |
-          pip -v install --no-deps --no-cache git+https://github.com/mpi4py/mpi4py.git
+          pip -v install --no-build-isolation --no-deps --no-cache git+https://github.com/mpi4py/mpi4py.git
           python -c "import mpi4py, os, sys; sys.stdout.write(os.path.dirname(mpi4py.__file__))"
           ls /Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/mpi4py/include/mpi4py
+          ls -R /Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/mpi4py/
           cat /Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/mpi4py/include/mpi4py/mpi4py.MPI.h
 
       # bison > 3 required. Could not get PETSc to find keg-only
