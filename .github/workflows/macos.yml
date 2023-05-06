@@ -64,6 +64,7 @@ jobs:
           export PETSC_ARCH=arch-darwin-c-opt
           export PETSC_DIR=$GITHUB_WORKSPACE/petsc
           cd petsc/src/binding/petsc4py
+          pip install wheel
           pip list
           which python
           pip --debug install --no-build-isolation --no-deps -v .
