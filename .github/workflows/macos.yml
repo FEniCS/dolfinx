@@ -101,12 +101,14 @@ jobs:
 
       - name: Build and install DOLFINx Python interface
         run: |
+          echo "----"
           python -c "import basix, os, sys; sys.stdout.write(os.path.dirname(basix.__file__))"
-          cd dolfinx
+          echo "----"
+          cd dolfinx/python
           export PYTHONPATH=/Users/runner/work/dolfinx/dolfinx/petsc/arch-darwin-c-opt/lib:$PYTHONPATH
           export PETSC_DIR=$GITHUB_WORKSPACE/petsc
           export PETSC_ARCH=arch-darwin-c-opt
-          pip -v install python/
+          pip -v install .
 
       - name: Basic test
         run: |
