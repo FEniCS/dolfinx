@@ -61,6 +61,7 @@ jobs:
       - name: Install petsc4py
         run: |
           uname -a
+          echo $ARCHFLAGS
           mpicc -show
           export PETSC_ARCH=arch-darwin-c-opt
           export PETSC_DIR=$GITHUB_WORKSPACE/petsc
