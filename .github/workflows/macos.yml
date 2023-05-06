@@ -32,7 +32,7 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install deps
+      - name: Install Python dependencies
         run: |
           pip install pip --upgrade
           pip install numpy setuptools wheel
@@ -42,7 +42,6 @@ jobs:
         run: |
           pip -v install --no-build-isolation --no-deps --no-cache git+https://github.com/mpi4py/mpi4py.git
           python -c "import mpi4py, os, sys; sys.stdout.write(os.path.dirname(mpi4py.__file__))"
-          ls -R /Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/mpi4py/
           cat /Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/mpi4py/MPI_api.h
 
       # bison > 3 required. Could not get PETSc to find keg-only
@@ -67,9 +66,9 @@ jobs:
             --download-ptscotch
           make all
           export PYTHONPATH=/Users/runner/work/dolfinx/dolfinx/petsc/arch-darwin-c-opt/lib:$PYTHONPATH
-          python -c "import petsc4py, os, sys; sys.stdout.write(os.path.dirname(petsc4py.__file__))"
+          # python -c "import petsc4py, os, sys; sys.stdout.write(os.path.dirname(petsc4py.__file__))"
           cat /Users/runner/work/dolfinx/dolfinx/petsc/arch-darwin-c-opt/lib/petsc4py/PETSc_api.h
-          cat /Users/runner/work/dolfinx/dolfinx/petsc/arch-darwin-c-opt/lib/petsc4py/PETSc.h
+          # cat /Users/runner/work/dolfinx/dolfinx/petsc/arch-darwin-c-opt/lib/petsc4py/PETSc.h
 
       # - name: Install petsc4py
       #   run: |
@@ -85,16 +84,10 @@ jobs:
       #     # pip --debug install --platform --no-cache-dir --no-build-isolation --no-deps -v .
       #     pip --debug install --platform --no-cache-dir --no-deps -v .
 
-      - name: Install Basix
+      - name: Install FEniCSx dependencies
         run: |
           pip install git+https://github.com/FEniCS/basix.git
-
-      - name: Install UFL
-        run: |
           pip install git+https://github.com/FEniCS/ufl.git
-
-      - name: Install FFCx
-        run: |
           pip install git+https://github.com/FEniCS/ffcx.git
 
       - uses: actions/checkout@v3
@@ -104,23 +97,18 @@ jobs:
       - name: Build and install DOLFINx C++ library
         run: |
           export PYTHONPATH=/Users/runner/work/dolfinx/dolfinx/petsc/arch-darwin-c-opt/lib:$PYTHONPATH
-          cd dolfinx
           export PETSC_DIR=$GITHUB_WORKSPACE/petsc
           export PETSC_ARCH=arch-darwin-c-opt
-          cmake -G Ninja -B build -S cpp/
+          cmake -G Ninja -B build -S dolfinx/cpp/
           cmake --build build
           cmake --install build
 
       - name: Build and install DOLFINx Python interface
         run: |
-          echo "----"
-          python -c "import basix, os, sys; sys.stdout.write(os.path.dirname(basix.__file__))"
-          echo "----"
-          cd dolfinx/python
           export PYTHONPATH=/Users/runner/work/dolfinx/dolfinx/petsc/arch-darwin-c-opt/lib:$PYTHONPATH
           export PETSC_DIR=$GITHUB_WORKSPACE/petsc
           export PETSC_ARCH=arch-darwin-c-opt
-          pip -v install --no-build-isolation --no-cache .
+          pip -v install --no-build-isolation --no-cache dolfinx/python/
 
       - name: Basic test
         run: |
