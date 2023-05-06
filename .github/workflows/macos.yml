@@ -43,7 +43,7 @@ jobs:
           pip -v install --no-build-isolation --no-deps --no-cache git+https://github.com/mpi4py/mpi4py.git
           python -c "import mpi4py, os, sys; sys.stdout.write(os.path.dirname(mpi4py.__file__))"
           ls -R /Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/mpi4py/
-          cat /Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/mpi4py/mpi4py.MPI.h
+          cat /Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/mpi4py/MPI_api.h
 
       # bison > 3 required. Could not get PETSc to find keg-only
       # Homebrew bison. Instead let PETSc build bison.
