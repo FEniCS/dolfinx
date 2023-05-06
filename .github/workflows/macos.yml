@@ -22,7 +22,8 @@ jobs:
       # completeness
       - name: Install Homebrew dependencies
         run: |
-          brew install adios2 boost cmake hdf5-mpi ninja open-mpi pkg-config pugixml # FEniCS
+          # brew install adios2 boost cmake hdf5-mpi ninja open-mpi pkg-config pugixml # FEniCS
+          brew install boost cmake hdf5-mpi ninja open-mpi pkg-config pugixml # FEniCS
           brew install bison flex # PETSc
 
       # This 'activates' Python 3.10 from Homebrew
@@ -41,9 +42,8 @@ jobs:
         run: |
           pip -v install --no-build-isolation --no-deps --no-cache git+https://github.com/mpi4py/mpi4py.git
           python -c "import mpi4py, os, sys; sys.stdout.write(os.path.dirname(mpi4py.__file__))"
-          ls /Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/mpi4py/include/mpi4py
           ls -R /Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/mpi4py/
-          cat /Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/mpi4py/include/mpi4py/mpi4py.MPI.h
+          cat /Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/mpi4py/mpi4py.MPI.h
 
       # bison > 3 required. Could not get PETSc to find keg-only
       # Homebrew bison. Instead let PETSc build bison.
