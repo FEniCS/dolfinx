@@ -34,7 +34,8 @@ jobs:
       - name: Install deps
         run: |
           pip install pip --upgrade
-          pip install Cython==0.29.2 numpy setuptools wheel
+          pip install numpy setuptools wheel
+          pip install Cython==0.29.32
 
       - name: Install mpi4py
         run: |
