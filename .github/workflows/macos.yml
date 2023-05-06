@@ -31,10 +31,13 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Create virtualenv
+      - name: Install deps
         run: |
           pip install pip --upgrade
           pip install Cython==0.29.2 numpy setuptools wheel
+
+      - name: Install mpi4py
+        run: |
           pip -v install --no-deps --no-cache git+https://github.com/mpi4py/mpi4py.git
           python -c "import mpi4py, os, sys; sys.stdout.write(os.path.dirname(mpi4py.__file__))"
           # cat /Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/mpi4py/include/mpi4py/mpi4py.MPI.h
