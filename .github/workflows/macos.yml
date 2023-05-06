@@ -62,13 +62,24 @@ jobs:
             --with-scalar-type=real \
             --with-shared-libraries \
             --with-scalar-type=real \
-            --with-petsc4py \
             --download-ptscotch
           make all
-          export PYTHONPATH=/Users/runner/work/dolfinx/dolfinx/petsc/arch-darwin-c-opt/lib:$PYTHONPATH
-          # python -c "import petsc4py, os, sys; sys.stdout.write(os.path.dirname(petsc4py.__file__))"
-          cat /Users/runner/work/dolfinx/dolfinx/petsc/arch-darwin-c-opt/lib/petsc4py/PETSc_api.h
-          # cat /Users/runner/work/dolfinx/dolfinx/petsc/arch-darwin-c-opt/lib/petsc4py/PETSc.h
+            # --with-petsc4py \
+          # export PYTHONPATH=/Users/runner/work/dolfinx/dolfinx/petsc/arch-darwin-c-opt/lib:$PYTHONPATH
+          # # python -c "import petsc4py, os, sys; sys.stdout.write(os.path.dirname(petsc4py.__file__))"
+          # cat /Users/runner/work/dolfinx/dolfinx/petsc/arch-darwin-c-opt/lib/petsc4py/PETSc_api.h
+          # # cat /Users/runner/work/dolfinx/dolfinx/petsc/arch-darwin-c-opt/lib/petsc4py/PETSc.h
+
+      - name: Install petsc4py
+        run: |
+          export PETSC_ARCH=arch-darwin-c-opt
+          export PETSC_DIR=$GITHUB_WORKSPACE/petsc
+          # cd petsc/src/binding/petsc4py
+          # pip install wheel
+          # pip list
+          # which python
+          # pip --debug install --platform --no-cache-dir --no-build-isolation --no-deps -v .
+          pip --debug install --platform --no-cache-dir --no-deps -v petsc/src/binding/petsc4py
 
       # - name: Install petsc4py
       #   run: |
@@ -96,7 +107,7 @@ jobs:
 
       - name: Build and install DOLFINx C++ library
         run: |
-          export PYTHONPATH=/Users/runner/work/dolfinx/dolfinx/petsc/arch-darwin-c-opt/lib:$PYTHONPATH
+          # export PYTHONPATH=/Users/runner/work/dolfinx/dolfinx/petsc/arch-darwin-c-opt/lib:$PYTHONPATH
           export PETSC_DIR=$GITHUB_WORKSPACE/petsc
           export PETSC_ARCH=arch-darwin-c-opt
           cmake -G Ninja -B build -S dolfinx/cpp/
@@ -105,13 +116,13 @@ jobs:
 
       - name: Build and install DOLFINx Python interface
         run: |
-          export PYTHONPATH=/Users/runner/work/dolfinx/dolfinx/petsc/arch-darwin-c-opt/lib:$PYTHONPATH
+          # export PYTHONPATH=/Users/runner/work/dolfinx/dolfinx/petsc/arch-darwin-c-opt/lib:$PYTHONPATH
           export PETSC_DIR=$GITHUB_WORKSPACE/petsc
           export PETSC_ARCH=arch-darwin-c-opt
           pip -v install --no-build-isolation --no-cache dolfinx/python/
 
       - name: Basic test
         run: |
-          export PYTHONPATH=/Users/runner/work/dolfinx/dolfinx/petsc/arch-darwin-c-opt/lib:$PYTHONPATH
+          # export PYTHONPATH=/Users/runner/work/dolfinx/dolfinx/petsc/arch-darwin-c-opt/lib:$PYTHONPATH
           python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
           mpirun -np 2 python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
