@@ -66,7 +66,7 @@ jobs:
           cd petsc/src/binding/petsc4py
           pip list
           which python
-          pip --no-build-isolation --debug install -v .
+          pip --debug install--no-build-isolation --no-deps -v .
 
       - name: Install Basix
         run: |
