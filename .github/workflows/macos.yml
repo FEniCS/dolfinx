@@ -23,7 +23,7 @@ jobs:
       - name: Install Homebrew dependencies
         run: |
           # brew install adios2 boost cmake hdf5-mpi ninja open-mpi pkg-config pugixml # FEniCS
-          brew install boost cmake gmake hdf5-mpi ninja open-mpi pkg-config pugixml # FEniCS
+          brew install boost cmake make hdf5-mpi ninja open-mpi pkg-config pugixml # FEniCS
           brew install bison flex # PETSc
           brew install python
 
