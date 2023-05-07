@@ -40,7 +40,6 @@ jobs:
       - name: Install minimal PETSc
         run: |
           export PATH="$(brew --prefix bison)/bin:$PATH"
-          export PETSC_ARCH=arch-darwin-c-opt
           git clone -b release https://gitlab.com/petsc/petsc.git petsc
           cd petsc
           ./configure \
@@ -54,10 +53,7 @@ jobs:
           make all
 
       - name: Install petsc4py
-        run: |
-          # export PETSC_ARCH=arch-darwin-c-opt
-          # export PETSC_DIR=$GITHUB_WORKSPACE/petsc
-          pip install -v petsc/src/binding/petsc4py
+        run: pip install -v petsc/src/binding/petsc4py
 
       - name: Install FEniCSx dependencies
         run: |
@@ -71,17 +67,12 @@ jobs:
 
       - name: Build and install DOLFINx C++ library
         run: |
-          # export PETSC_DIR=$GITHUB_WORKSPACE/petsc
-          # export PETSC_ARCH=arch-darwin-c-opt
           cmake -G Ninja -B build -S dolfinx/cpp/
           cmake --build build
           cmake --install build
 
       - name: Build and install DOLFINx Python interface
-        run: |
-          # export PETSC_DIR=$GITHUB_WORKSPACE/petsc
-          # export PETSC_ARCH=arch-darwin-c-opt
-          pip -v install --no-build-isolation --no-cache dolfinx/python/
+        run: pip -v install --no-build-isolation --no-cache dolfinx/python/
 
       - name: Basic test
         run: |
