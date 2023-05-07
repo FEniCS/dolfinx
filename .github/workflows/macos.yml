@@ -31,8 +31,8 @@ jobs:
 
       - name: Install mpi4py
         run: |
-        pip -v install mpi4py
-        # pip -v install --no-build-isolation --no-deps --no-cache git+https://github.com/mpi4py/mpi4py.git
+          pip -v install mpi4py
+          # pip -v install --no-build-isolation --no-deps --no-cache git+https://github.com/mpi4py/mpi4py.git
 
       - name: Install minimal PETSc
         run: |
