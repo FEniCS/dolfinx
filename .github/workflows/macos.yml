@@ -10,6 +10,10 @@ on:
 jobs:
   mac-os-build:
     name: macOS Homebrew install and test
+    env:
+      PETSC_ARCH: arch-darwin-c-opt
+      PETSC_DIR: ${{ github.workspace }}/petsc
+
     strategy:
       matrix:
         os: [macos-13]
@@ -51,9 +55,8 @@ jobs:
 
       - name: Install petsc4py
         run: |
-          export PETSC_ARCH=arch-darwin-c-opt
-          export PETSC_DIR=$GITHUB_WORKSPACE/petsc
-          # pip install --no-build-isolation  --no-cache-dir --no-deps -v petsc/src/binding/petsc4py
+          # export PETSC_ARCH=arch-darwin-c-opt
+          # export PETSC_DIR=$GITHUB_WORKSPACE/petsc
           pip install -v petsc/src/binding/petsc4py
 
       - name: Install FEniCSx dependencies
@@ -68,16 +71,16 @@ jobs:
 
       - name: Build and install DOLFINx C++ library
         run: |
-          export PETSC_DIR=$GITHUB_WORKSPACE/petsc
-          export PETSC_ARCH=arch-darwin-c-opt
+          # export PETSC_DIR=$GITHUB_WORKSPACE/petsc
+          # export PETSC_ARCH=arch-darwin-c-opt
           cmake -G Ninja -B build -S dolfinx/cpp/
           cmake --build build
           cmake --install build
 
       - name: Build and install DOLFINx Python interface
         run: |
-          export PETSC_DIR=$GITHUB_WORKSPACE/petsc
-          export PETSC_ARCH=arch-darwin-c-opt
+          # export PETSC_DIR=$GITHUB_WORKSPACE/petsc
+          # export PETSC_ARCH=arch-darwin-c-opt
           pip -v install --no-build-isolation --no-cache dolfinx/python/
 
       - name: Basic test
