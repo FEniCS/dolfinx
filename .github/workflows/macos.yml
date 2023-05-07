@@ -25,12 +25,13 @@ jobs:
           # brew install adios2 boost cmake hdf5-mpi ninja open-mpi pkg-config pugixml # FEniCS
           brew install boost cmake hdf5-mpi ninja open-mpi pkg-config pugixml # FEniCS
           brew install bison flex # PETSc
+          brew install python
 
-      # This 'activates' Python 3.10 from Homebrew
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.11"
+      # # This 'activates' Python 3.10 from Homebrew
+      # - name: Setup Python
+      #   uses: actions/setup-python@v4
+      #   with:
+      #     python-version: "3.11"
 
       - name: Install Python dependencies
         run: |
