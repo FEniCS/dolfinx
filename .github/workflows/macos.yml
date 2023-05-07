@@ -20,7 +20,7 @@ jobs:
       - name: Install Homebrew dependencies
         run: |
           # brew install adios2 boost cmake hdf5-mpi ninja open-mpi pkg-config pugixml python # FEniCS
-          brew install boost cmake make hdf5-mpi ninja open-mpi pkg-config pugixml # FEniCS
+          brew install boost cmake hdf5-mpi make ninja open-mpi pkg-config pugixml # FEniCS
           brew install bison flex # PETSc
 
       - name: Install Python dependencies
@@ -32,7 +32,6 @@ jobs:
       - name: Install mpi4py
         run: |
           pip -v install mpi4py
-          # pip -v install --no-build-isolation --no-deps --no-cache git+https://github.com/mpi4py/mpi4py.git
 
       - name: Install minimal PETSc
         run: |
@@ -54,7 +53,8 @@ jobs:
         run: |
           export PETSC_ARCH=arch-darwin-c-opt
           export PETSC_DIR=$GITHUB_WORKSPACE/petsc
-          pip install --no-build-isolation  --no-cache-dir --no-deps -v petsc/src/binding/petsc4py
+          # pip install --no-build-isolation  --no-cache-dir --no-deps -v petsc/src/binding/petsc4py
+          pip install -v petsc/src/binding/petsc4py
 
       - name: Install FEniCSx dependencies
         run: |
@@ -82,6 +82,5 @@ jobs:
 
       - name: Basic test
         run: |
-          # export PYTHONPATH=/Users/runner/work/dolfinx/dolfinx/petsc/arch-darwin-c-opt/lib:$PYTHONPATH
           python3 -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
           mpirun -np 2 python3 -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
