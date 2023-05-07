@@ -8,6 +8,7 @@
 
 #include <array>
 #include <concepts>
+#include <cstdint>
 #include <hdf5.h>
 #include <mpi.h>
 #include <span>
