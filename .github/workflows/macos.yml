@@ -17,44 +17,27 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      # Some of these dependencies (e.g. python@3.10) are already
-      # installed in the GH action runner but included here for
-      # completeness
       - name: Install Homebrew dependencies
         run: |
-          # brew install adios2 boost cmake hdf5-mpi ninja open-mpi pkg-config pugixml # FEniCS
+          # brew install adios2 boost cmake hdf5-mpi ninja open-mpi pkg-config pugixml python # FEniCS
           brew install boost cmake make hdf5-mpi ninja open-mpi pkg-config pugixml # FEniCS
           brew install bison flex # PETSc
-          brew install python
-
-      # # This 'activates' Python 3.10 from Homebrew
-      # - name: Setup Python
-      #   uses: actions/setup-python@v4
-      #   with:
-      #     python-version: "3.11"
 
       - name: Install Python dependencies
         run: |
           pip3 install pip --upgrade
-          pip3 install numpy setuptools wheel
-          pip3 install Cython==0.29.32
+          pip install numpy setuptools wheel
+          pip install Cython==0.29.32
 
       - name: Install mpi4py
         run: |
-          pip3 -v install --no-build-isolation --no-deps --no-cache git+https://github.com/mpi4py/mpi4py.git
-          python3 -c "import mpi4py, os, sys; sys.stdout.write(os.path.dirname(mpi4py.__file__))"
-          # cat /Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/mpi4py/MPI_api.h
+          pip -v install --no-build-isolation --no-deps --no-cache git+https://github.com/mpi4py/mpi4py.git
 
-      # bison > 3 required. Could not get PETSc to find keg-only
-      # Homebrew bison. Instead let PETSc build bison.
       - name: Install minimal PETSc
         run: |
-          python3 -c "import cython; print(cython.__version__)"
           export PATH="$(brew --prefix bison)/bin:$PATH"
           export PETSC_ARCH=arch-darwin-c-opt
-          which python3
-          which pip3
-          git clone -b main https://gitlab.com/garth-wells/petsc.git petsc
+          git clone -b release https://gitlab.com/petsc/petsc.git petsc
           cd petsc
           ./configure \
             --with-64-bit-indices=no \
@@ -65,36 +48,12 @@ jobs:
             --with-scalar-type=real \
             --download-ptscotch
           make all
-            # --with-petsc4py \
-          # export PYTHONPATH=/Users/runner/work/dolfinx/dolfinx/petsc/arch-darwin-c-opt/lib:$PYTHONPATH
-          # # python -c "import petsc4py, os, sys; sys.stdout.write(os.path.dirname(petsc4py.__file__))"
-          # cat /Users/runner/work/dolfinx/dolfinx/petsc/arch-darwin-c-opt/lib/petsc4py/PETSc_api.h
-          # # cat /Users/runner/work/dolfinx/dolfinx/petsc/arch-darwin-c-opt/lib/petsc4py/PETSc.h
 
       - name: Install petsc4py
         run: |
           export PETSC_ARCH=arch-darwin-c-opt
           export PETSC_DIR=$GITHUB_WORKSPACE/petsc
-          # cd petsc/src/binding/petsc4py
-          # pip install wheel
-          # pip list
-          # which python
-          # pip --debug install --platform --no-cache-dir --no-build-isolation --no-deps -v .
-          pip3 install --no-build-isolation  --no-cache-dir --no-deps -v petsc/src/binding/petsc4py
-
-      # - name: Install petsc4py
-      #   run: |
-      #     uname -a
-      #     echo $ARCHFLAGS
-      #     mpicc -show
-      #     export PETSC_ARCH=arch-darwin-c-opt
-      #     export PETSC_DIR=$GITHUB_WORKSPACE/petsc
-      #     cd petsc/src/binding/petsc4py
-      #     pip install wheel
-      #     pip list
-      #     which python
-      #     # pip --debug install --platform --no-cache-dir --no-build-isolation --no-deps -v .
-      #     pip --debug install --platform --no-cache-dir --no-deps -v .
+          pip install --no-build-isolation  --no-cache-dir --no-deps -v petsc/src/binding/petsc4py
 
       - name: Install FEniCSx dependencies
         run: |
@@ -108,7 +67,6 @@ jobs:
 
       - name: Build and install DOLFINx C++ library
         run: |
-          # export PYTHONPATH=/Users/runner/work/dolfinx/dolfinx/petsc/arch-darwin-c-opt/lib:$PYTHONPATH
           export PETSC_DIR=$GITHUB_WORKSPACE/petsc
           export PETSC_ARCH=arch-darwin-c-opt
           cmake -G Ninja -B build -S dolfinx/cpp/
@@ -117,7 +75,6 @@ jobs:
 
       - name: Build and install DOLFINx Python interface
         run: |
-          # export PYTHONPATH=/Users/runner/work/dolfinx/dolfinx/petsc/arch-darwin-c-opt/lib:$PYTHONPATH
           export PETSC_DIR=$GITHUB_WORKSPACE/petsc
           export PETSC_ARCH=arch-darwin-c-opt
           pip -v install --no-build-isolation --no-cache dolfinx/python/
