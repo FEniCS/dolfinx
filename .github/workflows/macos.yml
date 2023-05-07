@@ -32,10 +32,7 @@ jobs:
           pip3 install pip --upgrade
           pip install numpy setuptools wheel
           pip install Cython==0.29.32
-
-      - name: Install mpi4py
-        run: |
-          pip -v install mpi4py
+          pip install mpi4py
 
       - name: Install minimal PETSc
         run: |
@@ -53,7 +50,7 @@ jobs:
           make all
 
       - name: Install petsc4py
-        run: pip install -v petsc/src/binding/petsc4py
+        run: pip install petsc/src/binding/petsc4py
 
       - name: Install FEniCSx dependencies
         run: |
@@ -72,8 +69,7 @@ jobs:
           cmake --install build
 
       - name: Build and install DOLFINx Python interface
-        run: pip -v install dolfinx/python/
-        # run: pip -v install --no-build-isolation --no-cache dolfinx/python/
+        run: pip install dolfinx/python/
 
       - name: Basic test
         run: |
