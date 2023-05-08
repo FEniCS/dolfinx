@@ -19,7 +19,7 @@ namespace dolfinx
 ///   * ``TimingType::wall`` wall-clock time
 ///   * ``TimingType::user`` user (cpu) time
 ///   * ``TimingType::system`` system (kernel) time
-enum class TimingType : std::int32_t
+enum class TimingType : int
 {
   wall = 0,
   user = 1,
