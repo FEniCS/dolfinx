@@ -441,7 +441,9 @@ FROM dolfinx-onbuild as intermediate
 
 ########################################
 
-FROM intermediate as dolfinx
+ARG BASEIMAGE
+
+FROM ${BASEIMAGE} as dolfinx
 LABEL description="DOLFINx in 32-bit real and complex modes"
 
 ARG PYTHON_VERSION
