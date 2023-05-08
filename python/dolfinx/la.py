@@ -9,11 +9,11 @@
 import numpy as np
 
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.la import Norm, ScatterMode
+from dolfinx.cpp.la import Norm, InsertMode
 from dolfinx.cpp.la.petsc import create_vector as create_petsc_vector
 
 __all__ = ["orthonormalize", "is_orthonormal", "create_petsc_vector", "matrix_csr", "vector",
-           "MatrixCSRMetaClass", "Norm", "ScatterMode", "VectorMetaClass", ]
+           "MatrixCSRMetaClass", "Norm", "InsertMode", "VectorMetaClass", ]
 
 
 class MatrixCSRMetaClass:

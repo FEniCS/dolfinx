@@ -178,7 +178,7 @@ public:
   }
 
   /// Get IndexMap
-  std::shared_ptr<const common::IndexMap> map() const { return _map; }
+  std::shared_ptr<const common::IndexMap> index_map() const { return _map; }
 
   /// Get block size
   constexpr int bs() const { return _bs; }
@@ -222,8 +222,8 @@ template <class V>
 auto inner_product(const V& a, const V& b)
 {
   using T = typename V::value_type;
-  const std::int32_t local_size = a.bs() * a.map()->size_local();
-  if (local_size != b.bs() * b.map()->size_local())
+  const std::int32_t local_size = a.bs() * a.index_map()->size_local();
+  if (local_size != b.bs() * b.index_map()->size_local())
     throw std::runtime_error("Incompatible vector sizes");
   std::span<const T> x_a = a.array().subspan(0, local_size);
   std::span<const T> x_b = b.array().subspan(0, local_size);
@@ -243,7 +243,7 @@ auto inner_product(const V& a, const V& b)
 
   T result;
   MPI_Allreduce(&local, &result, 1, dolfinx::MPI::mpi_type<T>(), MPI_SUM,
-                a.map()->comm());
+                a.index_map()->comm());
   return result;
 }
 
@@ -271,7 +271,7 @@ auto norm(const V& a, Norm type = Norm::l2)
     return std::sqrt(squared_norm(a));
   case Norm::linf:
   {
-    const std::int32_t size_local = a.bs() * a.map()->size_local();
+    const std::int32_t size_local = a.bs() * a.index_map()->size_local();
     std::span<const T> x_a = a.array().subspan(0, size_local);
     auto max_pos = std::max_element(x_a.begin(), x_a.end(),
                                     [](T a, T b)
@@ -279,7 +279,7 @@ auto norm(const V& a, Norm type = Norm::l2)
     auto local_linf = std::abs(*max_pos);
     decltype(local_linf) linf = 0;
     MPI_Allreduce(&local_linf, &linf, 1, MPI::mpi_type<decltype(linf)>(),
-                  MPI_MAX, a.map()->comm());
+                  MPI_MAX, a.index_map()->comm());
     return linf;
   }
   default:

@@ -26,8 +26,8 @@ namespace py = pybind11;
 
 namespace
 {
-// ScatterMode types
-enum class PyScatterMode
+// InsertMode types
+enum class PyInsertMode
 {
   add,
   insert
@@ -55,7 +55,7 @@ void declare_objects(py::module& m, const std::string& type)
           [](dolfinx::la::Vector<T>& self, dolfinx::la::Norm type)
           { return dolfinx::la::norm(self, type); },
           py::arg("type") = dolfinx::la::Norm::l2)
-      .def_property_readonly("map", &dolfinx::la::Vector<T>::map)
+      .def_property_readonly("index_map", &dolfinx::la::Vector<T>::index_map)
       .def_property_readonly("bs", &dolfinx::la::Vector<T>::bs)
       .def_property_readonly("array",
                              [](dolfinx::la::Vector<T>& self)
@@ -67,18 +67,18 @@ void declare_objects(py::module& m, const std::string& type)
       .def("scatter_forward", &dolfinx::la::Vector<T>::scatter_fwd)
       .def(
           "scatter_reverse",
-          [](dolfinx::la::Vector<T>& self, PyScatterMode mode)
+          [](dolfinx::la::Vector<T>& self, PyInsertMode mode)
           {
             switch (mode)
             {
-            case PyScatterMode::add: // Add
+            case PyInsertMode::add: // Add
               self.scatter_rev(std::plus<T>());
               break;
-            case PyScatterMode::insert: // Insert
+            case PyInsertMode::insert: // Insert
               self.scatter_rev([](T /*a*/, T b) { return b; });
               break;
             default:
-              throw std::runtime_error("ScatterMode not recognized.");
+              throw std::runtime_error("InsertMode not recognized.");
               break;
             }
           },
@@ -94,18 +94,18 @@ void declare_objects(py::module& m, const std::string& type)
            py::arg("p"))
       .def_property_readonly("dtype", [](const dolfinx::la::MatrixCSR<T>& self)
                              { return py::dtype::of<T>(); })
-      .def("norm_squared", &dolfinx::la::MatrixCSR<T>::norm_squared)
+      .def("squared_norm", &dolfinx::la::MatrixCSR<T>::squared_norm)
       .def("mat_add_values", &dolfinx::la::MatrixCSR<T>::mat_add_values)
       .def("set",
            static_cast<void (dolfinx::la::MatrixCSR<T>::*)(T)>(
                &dolfinx::la::MatrixCSR<T>::set),
            py::arg("x"))
-      .def("finalize", &dolfinx::la::MatrixCSR<T>::finalize)
+      .def("assemble", &dolfinx::la::MatrixCSR<T>::assemble)
       .def("to_dense",
            [](const dolfinx::la::MatrixCSR<T>& self)
            {
              std::size_t nrows = self.num_all_rows();
-             auto map_col = self.index_maps()[1];
+             auto map_col = self.index_map(1);
              std::size_t ncols = map_col->size_local() + map_col->num_ghosts();
              return dolfinx_wrappers::as_pyarray(self.to_dense(),
                                                  std::array{nrows, ncols});
@@ -131,8 +131,8 @@ void declare_objects(py::module& m, const std::string& type)
                                return py::array_t(array.size(), array.data(),
                                                   py::cast(self));
                              })
-      .def("finalize_begin", &dolfinx::la::MatrixCSR<T>::finalize_begin)
-      .def("finalize_end", &dolfinx::la::MatrixCSR<T>::finalize_end);
+      .def("assemble_begin", &dolfinx::la::MatrixCSR<T>::assemble_begin)
+      .def("assemble_end", &dolfinx::la::MatrixCSR<T>::assemble_end);
 }
 
 void petsc_module(py::module& m)
@@ -205,9 +205,9 @@ void la(py::module& m)
       = m.def_submodule("petsc", "PETSc-specific linear algebra");
   petsc_module(petsc_mod);
 
-  py::enum_<PyScatterMode>(m, "ScatterMode")
-      .value("add", PyScatterMode::add)
-      .value("insert", PyScatterMode::insert);
+  py::enum_<PyInsertMode>(m, "InsertMode")
+      .value("add", PyInsertMode::add)
+      .value("insert", PyInsertMode::insert);
 
   py::enum_<dolfinx::la::Norm>(m, "Norm")
       .value("l1", dolfinx::la::Norm::l1)
