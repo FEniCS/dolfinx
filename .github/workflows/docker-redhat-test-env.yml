@@ -1,5 +1,5 @@
 ---
-name: Docker build environment images
+name: Docker RedHat test image
 
 # Builds RedHat build environment image (amd64 only, no FEniCS components). 
 #

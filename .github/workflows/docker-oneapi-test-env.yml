@@ -1,5 +1,5 @@
 ---
-name: Docker build environment images
+name: Docker Intel OneAPI test image
 
 # Builds Intel OneAPI test environment image (no FEniCS components). 
 #
