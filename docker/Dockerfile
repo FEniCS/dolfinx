@@ -437,32 +437,8 @@ ONBUILD WORKDIR /root
 
 ########################################
 
-FROM dolfinx-onbuild as intermediate
-
-########################################
-
-ARG BASEIMAGE
-
-FROM ${BASEIMAGE} as dolfinx
+FROM dolfinx-onbuild as dolfinx
 LABEL description="DOLFINx in 32-bit real and complex modes"
-
-ARG PYTHON_VERSION
-
-# This layer manually copies the build artifacts from intermediate into
-# dev-env to make the final image. This is a workaround for a well known
-# limitation of Docker that you cannot cleanup after an ADD operation.
-# This reduces the container size by around 80MB as the /src folder no
-# longer exists in the final image.
-COPY --from=intermediate /usr/local /usr/local
-COPY --from=intermediate /root/.config /root/.config
-
-# Real by default.
-# Note that because we inherit from dev-env we do not inherit these ENV from
-# dolfinx-onbuild so this must be repeated here.
-ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
-    PETSC_ARCH=linux-gnu-real-32 \
-    PYTHONPATH=/usr/local/dolfinx-real/lib/python${PYTHON_VERSION}/dist-packages:$PYTHONPATH \
-    LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH
 
 ########################################
 
