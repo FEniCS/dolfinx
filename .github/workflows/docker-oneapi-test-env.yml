@@ -1,7 +1,7 @@
 ---
 name: Docker build environment images
 
-# Builds RedHat build environment image (amd64 only, no FEniCS components). 
+# Builds Intel OneAPI test environment image (no FEniCS components). 
 #
 # Must be triggered manually via GitHub interface.
 
@@ -27,7 +27,7 @@ jobs:
       - name: Create image name and tag
         run: |
           USER_INPUT=${{ github.event.inputs.tag_prefix }}
-          echo "TAG=docker.io/fenicsproject/test-env:${USER_INPUT:-current}-redhat" >> $GITHUB_ENV
+          echo "TAG=docker.io/fenicsproject/test-env:${USER_INPUT:-current}-oneapi" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -43,6 +43,6 @@ jobs:
         with:
           context: docker/
           cache-to: type=inline
-          file: docker/Dockerfile.redhat 
+          file: docker/Dockerfile.oneapi 
           push: true
           tags: ${{ env.TAG }}

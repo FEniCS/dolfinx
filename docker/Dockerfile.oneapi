@@ -1,9 +1,11 @@
 # Dockerfile for testing DOLFINx with oneAPI compilers and libraries.
-# Must be built locally and pushed.
-#
-# docker build -f Dockerfile.oneapi -t docker.io/fenicsproject/test-env:latest-oneapi .
-# docker push docker.io/fenicsproject/test-env:latest-oneapi
+# Should be built using corresponding GitHub action activated through web
+# interface.
+
+# docker run -ti -v docker.io/fenicsproject/test-env:current-oneapi
 FROM ubuntu:22.04
+
+ARG BUILD_NP=2
 
 ARG ADIOS2_VERSION=2.8.3
 ARG HDF5_SERIES=1.12
@@ -100,6 +102,7 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     --with-fortran-bindings=no \
     --with-shared-libraries \
     --download-superlu_dist \
+    --with-make-np=${BUILD_NP} \
     --with-scalar-type=real && \
     make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real-32 ${MAKEFLAGS} all && \
     # Complex, 32-bit int
@@ -109,6 +112,7 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     --with-fortran-bindings=no \
     --with-shared-libraries \
     --download-superlu_dist \
+    --with-make-np=${BUILD_NP} \
     --with-scalar-type=complex && \
     make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex-32 ${MAKEFLAGS} all && \
     # Real, 64-bit int
@@ -118,6 +122,7 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     --with-fortran-bindings=no \
     --with-shared-libraries \
     --download-superlu_dist \
+    --with-make-np=${BUILD_NP} \
     --with-scalar-type=real && \
     make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real-64 ${MAKEFLAGS} all && \
     # Complex, 64-bit int
@@ -127,6 +132,7 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     --with-fortran-bindings=no \
     --with-shared-libraries \
     --download-superlu_dist \
+    --with-make-np=${BUILD_NP} \
     --with-scalar-type=complex && \
     make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex-64 ${MAKEFLAGS} all && \
     # Install petsc4py
@@ -171,4 +177,3 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     PETSC_ARCH=linux-gnu-real-32:linux-gnu-complex-32:linux-gnu-real-64:linux-gnu-complex-64 pip3 install --no-cache-dir . && \
     rm -rf ${SLEPC_DIR}/CTAGS ${SLEPC_DIR}/TAGS ${SLEPC_DIR}/docs ${SLEPC_DIR}/src/ ${SLEPC_DIR}/**/obj/ ${SLEPC_DIR}/**/test/ && \
     rm -rf /tmp/*
-

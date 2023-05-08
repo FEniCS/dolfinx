@@ -33,11 +33,6 @@ jobs:
 
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Set git ref
-        run: |
-          USER_INPUT=${{ github.event.inputs.dolfinx_ref }}
-          echo "DOLFINX_REF=${USER_INPUT:-main}" >> $GITHUB_ENV
-
       - name: Set Dockerfile
         run: |
           USER_INPUT=${{ github.event.inputs.dockerfile }}
@@ -45,8 +40,6 @@ jobs:
 
       - name: Checkout DOLFINx
         uses: actions/checkout@v3
-        with:
-          ref: ${{ env.DOLFINX_REF }}
 
       - name: Set root repository (docker.io/fenicsproject)
         if: ${{ matrix.variant == 'test-env' }}

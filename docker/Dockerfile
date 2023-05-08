@@ -441,7 +441,7 @@ FROM dolfinx-onbuild as intermediate
 
 ########################################
 
-FROM dev-env as dolfinx
+FROM intermediate as dolfinx
 LABEL description="DOLFINx in 32-bit real and complex modes"
 
 ARG PYTHON_VERSION
