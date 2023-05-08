@@ -1,5 +1,5 @@
 ---
-name: End-user Docker images
+name: Docker end-user images
 
 # Builds all end-user images nightly.
 #
