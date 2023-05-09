@@ -429,6 +429,7 @@ private:
   std::vector<int> _ghost_row_to_rank;
 
   // Temporary store for finalize data during non-blocking communication
+  container_type _ghost_value_data;
   container_type _ghost_value_data_in;
 };
 
@@ -940,7 +941,7 @@ void MatrixCSR<U, V, W, X>::finalize_begin()
 
   // For each ghost row, pack and send values to send to neighborhood
   std::vector<int> insert_pos = _val_send_disp;
-  std::vector<value_type> ghost_value_data(_val_send_disp.back());
+  _ghost_value_data.resize(_val_send_disp.back());
   for (int i = 0; i < num_ghosts0; ++i)
   {
     const int rank = _ghost_row_to_rank[i];
@@ -950,7 +951,7 @@ void MatrixCSR<U, V, W, X>::finalize_begin()
     const std::int32_t val_pos = insert_pos[rank];
     std::copy(std::next(_data.data(), _row_ptr[local_size0 + i] * bs2),
               std::next(_data.data(), _row_ptr[local_size0 + i + 1] * bs2),
-              std::next(ghost_value_data.begin(), val_pos));
+              std::next(_ghost_value_data.begin(), val_pos));
     insert_pos[rank]
         += bs2 * (_row_ptr[local_size0 + i + 1] - _row_ptr[local_size0 + i]);
   }
@@ -967,7 +968,7 @@ void MatrixCSR<U, V, W, X>::finalize_begin()
                            _val_recv_disp.end(), val_recv_count.begin());
 
   int status = MPI_Ineighbor_alltoallv(
-      ghost_value_data.data(), val_send_count.data(), _val_send_disp.data(),
+      _ghost_value_data.data(), val_send_count.data(), _val_send_disp.data(),
       dolfinx::MPI::mpi_type<value_type>(), _ghost_value_data_in.data(),
       val_recv_count.data(), _val_recv_disp.data(),
       dolfinx::MPI::mpi_type<value_type>(), _comm.comm(), &_request);
@@ -980,12 +981,18 @@ void MatrixCSR<U, V, W, X>::finalize_end()
   int status = MPI_Wait(&_request, MPI_STATUS_IGNORE);
   assert(status == MPI_SUCCESS);
 
+  _ghost_value_data.clear();
+  _ghost_value_data.shrink_to_fit();
+
   // Add to local rows
   const int bs2 = _bs[0] * _bs[1];
   assert(_ghost_value_data_in.size() == _unpack_pos.size() * bs2);
   for (std::size_t i = 0; i < _unpack_pos.size(); ++i)
     for (int j = 0; j < bs2; ++j)
       _data[_unpack_pos[i] * bs2 + j] += _ghost_value_data_in[i * bs2 + j];
+
+  _ghost_value_data_in.clear();
+  _ghost_value_data_in.shrink_to_fit();
 
   // Set ghost row data to zero
   const std::int32_t local_size0 = _index_maps[0]->size_local();

@@ -547,8 +547,9 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 
       // Number and values to send and receive
       const int num_indices = global[d].size();
-      std::vector<int> size_recv(src.size());
+      std::vector<int> size_recv;
       size_recv.reserve(1);
+      size_recv.resize(src.size());
       MPI_Neighbor_allgather(&num_indices, 1, MPI_INT, size_recv.data(), 1,
                              MPI_INT, comm[d]);
 
