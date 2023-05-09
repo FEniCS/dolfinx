@@ -100,7 +100,7 @@ void declare_objects(py::module& m, const std::string& type)
            static_cast<void (dolfinx::la::MatrixCSR<T>::*)(T)>(
                &dolfinx::la::MatrixCSR<T>::set),
            py::arg("x"))
-      .def("assemble", &dolfinx::la::MatrixCSR<T>::assemble)
+      .def("finalize", &dolfinx::la::MatrixCSR<T>::finalize)
       .def("to_dense",
            [](const dolfinx::la::MatrixCSR<T>& self)
            {
@@ -131,8 +131,8 @@ void declare_objects(py::module& m, const std::string& type)
                                return py::array_t(array.size(), array.data(),
                                                   py::cast(self));
                              })
-      .def("assemble_begin", &dolfinx::la::MatrixCSR<T>::assemble_begin)
-      .def("assemble_end", &dolfinx::la::MatrixCSR<T>::assemble_end);
+      .def("finalize_begin", &dolfinx::la::MatrixCSR<T>::finalize_begin)
+      .def("finalize_end", &dolfinx::la::MatrixCSR<T>::finalize_end);
 }
 
 void petsc_module(py::module& m)
@@ -246,7 +246,7 @@ void la(py::module& m)
       .def("index_map", &dolfinx::la::SparsityPattern::index_map,
            py::arg("dim"))
       .def("column_index_map", &dolfinx::la::SparsityPattern::column_index_map)
-      .def("assemble",   &dolfinx::la::SparsityPattern::assemble)
+      .def("finalize", &dolfinx::la::SparsityPattern::finalize)
       .def_property_readonly("num_nonzeros",
                              &dolfinx::la::SparsityPattern::num_nonzeros)
       .def(

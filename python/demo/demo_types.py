@@ -81,7 +81,7 @@ def solve(dtype=np.float32):
 
     # Assemble forms
     A = fem.assemble_matrix(a0, [bc])
-    A.assemble()
+    A.finalize()
     b = fem.assemble_vector(L0)
     fem.apply_lifting(b.array, [a0], bcs=[[bc]])
     b.scatter_reverse(la.InsertMode.add)

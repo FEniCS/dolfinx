@@ -240,7 +240,7 @@ def test_cffi_assembly():
     L = _cpp.fem.Form_float64([V._cpp_object], integrals, [], [], False)
 
     A = fem.assemble_matrix(a)
-    A.assemble()
+    A.finalize()
     assert np.isclose(np.sqrt(A.squared_norm()), 56.124860801609124)
 
     b = fem.assemble_vector(L)

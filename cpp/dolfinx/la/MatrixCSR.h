@@ -136,9 +136,9 @@ public:
   /// initialize the matrix can be set
   /// @note All indices are local to the calling MPI rank and entries
   /// cannot be set in ghost rows.
-  /// @note This should be called after `assemble`. Using before
-  /// `assemble` will set the values correctly, but incoming values may
-  /// get added to them during a subsequent assemble operation.
+  /// @note This should be called after `finalize`. Using before
+  /// `finalize` will set the values correctly, but incoming values may
+  /// get added to them during a subsequent finalize operation.
   /// @param[in] x The `m` by `n` dense block of values (row-major) to
   /// set in the matrix
   /// @param[in] rows The row indices of `x`
@@ -155,9 +155,9 @@ public:
   /// initialize the matrix can be accumulated in to
   /// @note All indices are local to the calling MPI rank and entries
   /// may go into ghost rows.
-  /// @note Use `assemble` after all entries have been added to send
-  /// ghost rows to owners. Adding more entries after `assemble` is
-  /// allowed, but another call to `assemble` will then be required.
+  /// @note Use `finalize` after all entries have been added to send
+  /// ghost rows to owners. Adding more entries after `finalize` is
+  /// allowed, but another call to `finalize` will then be required.
   /// @param[in] x The `m` by `n` dense block of values (row-major) to
   /// add to the matrix
   /// @param[in] rows The row indices of `x`
@@ -186,27 +186,27 @@ public:
   /// @brief Transfer ghost row data to the owning ranks accumulating
   /// received values on the owned rows, and zeroing any existing data
   /// in ghost rows.
-  void assemble()
+  void finalize()
   {
-    assemble_begin();
-    assemble_end();
+    finalize_begin();
+    finalize_end();
   }
 
   /// @brief Begin transfer of ghost row data to owning ranks, where it
   /// will be accumulated into existing owned rows.
   /// @note Calls to this function must be followed by
-  /// MatrixCSR::assemble_end(). Between the two calls matrix values
+  /// MatrixCSR::finalize_end(). Between the two calls matrix values
   /// must not be changed.
   /// @note This function does not change the matrix data. Data update only
-  /// occurs with `assemble_end()`.
-  void assemble_begin();
+  /// occurs with `finalize_end()`.
+  void finalize_begin();
 
   /// @brief End transfer of ghost row data to owning ranks.
-  /// @note Must be preceded by MatrixCSR::assemble_begin()
+  /// @note Must be preceded by MatrixCSR::finalize_begin()
   /// @note Matrix data received from other processes will be
   /// accumulated into locally owned rows, and ghost rows will be
   /// zeroed.
-  void assemble_end();
+  void finalize_end();
 
   /// Compute the Frobenius norm squared
   double squared_norm() const;
@@ -269,7 +269,7 @@ private:
   // Neighborhood communicator (ghost->owner communicator for rows)
   dolfinx::MPI::Comm _comm;
 
-  // -- Precomputed data for assemble/update
+  // -- Precomputed data for finalize/update
 
   // Request in non-blocking communication
   MPI_Request _request;
@@ -285,7 +285,7 @@ private:
   // on _comm)
   std::vector<int> _ghost_row_to_rank;
 
-  // Temporary stores for assemble data during non-blocking communication
+  // Temporary stores for finalize data during non-blocking communication
   container_type _ghost_value_data;
   container_type _ghost_value_data_in;
 };
@@ -536,7 +536,7 @@ MatrixCSR<U, V, W, X>::to_dense() const
 }
 //-----------------------------------------------------------------------------
 template <typename U, typename V, typename W, typename X>
-void MatrixCSR<U, V, W, X>::assemble_begin()
+void MatrixCSR<U, V, W, X>::finalize_begin()
 {
   const std::int32_t local_size0 = _index_maps[0]->size_local();
   const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
@@ -578,7 +578,7 @@ void MatrixCSR<U, V, W, X>::assemble_begin()
 }
 //-----------------------------------------------------------------------------
 template <typename U, typename V, typename W, typename X>
-void MatrixCSR<U, V, W, X>::assemble_end()
+void MatrixCSR<U, V, W, X>::finalize_end()
 {
   int status = MPI_Wait(&_request, MPI_STATUS_IGNORE);
   assert(status == MPI_SUCCESS);
