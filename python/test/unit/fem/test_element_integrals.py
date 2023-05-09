@@ -124,8 +124,8 @@ def two_unit_cells(cell_type, agree=False, random_order=True, return_order=False
         ordered_points[j] = points[i]
     ordered_cells = np.array([[order[i] for i in c] for c in cells])
 
-    domain=ufl.Mesh(element("Lagrange", cell_type.name, 1, rank=1))
-    mesh=create_mesh(MPI.COMM_WORLD, ordered_cells, ordered_points, domain)
+    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, rank=1))
+    mesh = create_mesh(MPI.COMM_WORLD, ordered_cells, ordered_points, domain)
     if return_order:
         return mesh, order
     return mesh
@@ -136,27 +136,27 @@ def two_unit_cells(cell_type, agree=False, random_order=True, return_order=False
 def test_facet_integral(cell_type):
     """Test that the integral of a function over a facet is correct"""
     for count in range(5):
-        mesh=unit_cell(cell_type)
-        tdim=mesh.topology.dim
+        mesh = unit_cell(cell_type)
+        tdim = mesh.topology.dim
 
-        V=FunctionSpace(mesh, ("Lagrange", 2))
-        v=Function(V)
+        V = FunctionSpace(mesh, ("Lagrange", 2))
+        v = Function(V)
 
         mesh.topology.create_entities(tdim - 1)
-        map_f=mesh.topology.index_map(tdim - 1)
-        num_facets=map_f.size_local + map_f.num_ghosts
-        indices=np.arange(0, num_facets)
-        values=np.arange(0, num_facets, dtype = np.intc)
-        marker=meshtags(mesh, tdim - 1, indices, values)
+        map_f = mesh.topology.index_map(tdim - 1)
+        num_facets = map_f.size_local + map_f.num_ghosts
+        indices = np.arange(0, num_facets)
+        values = np.arange(0, num_facets, dtype=np.intc)
+        marker = meshtags(mesh, tdim - 1, indices, values)
 
         # Functions that will have the same integral over each facet
         if cell_type == CellType.triangle:
-            root=3 ** 0.25  # 4th root of 3
+            root = 3 ** 0.25  # 4th root of 3
             v.interpolate(lambda x: (x[0] - 1 / root) ** 2 + (x[1] - root / 3) ** 2)
         elif cell_type == CellType.quadrilateral:
             v.interpolate(lambda x: x[0] * (1 - x[0]) + x[1] * (1 - x[1]))
         elif cell_type == CellType.tetrahedron:
-            s=2 ** 0.5 * 3 ** (1 / 3)  # side length
+            s = 2 ** 0.5 * 3 ** (1 / 3)  # side length
             v.interpolate(lambda x: (x[0] - s / 2) ** 2 + (x[1] - s / 2 / np.sqrt(3)) ** 2
                           + (x[2] - s * np.sqrt(2 / 3) / 4) ** 2)
         elif cell_type == CellType.hexahedron:
@@ -202,13 +202,13 @@ def test_facet_normals(cell_type):
                 co = mesh.geometry.x[i]
                 v.interpolate(lambda x: x[0] - co[0])
             if cell_type == CellType.triangle:
-                co=mesh.geometry.x[i]
+                co = mesh.geometry.x[i]
                 # Vector function that is zero at `co` and points away
                 # from `co` so that there is no normal component on two
                 # edges and the integral over the other edge is 1
                 v.interpolate(lambda x: ((x[0] - co[0]) / 2, (x[1] - co[1]) / 2))
             elif cell_type == CellType.tetrahedron:
-                co=mesh.geometry.x[i]
+                co = mesh.geometry.x[i]
                 # Vector function that is zero at `co` and points away
                 # from `co` so that there is no normal component on
                 # three faces and the integral over the other edge is 1
@@ -226,10 +226,10 @@ def test_facet_normals(cell_type):
 
             # Check that integrals these functions dotted with the
             # normal over a face is 1 on one face and 0 on the others
-            ones=0
+            ones = 0
             for j in range(num_facets):
-                a=form(ufl.inner(v, normal) * ufl.ds(subdomain_data=marker, subdomain_id=j))
-                result=assemble_scalar(a)
+                a = form(ufl.inner(v, normal) * ufl.ds(subdomain_data=marker, subdomain_id=j))
+                result = assemble_scalar(a)
                 if np.isclose(result, 1):
                     ones += 1
                 else:
@@ -242,16 +242,16 @@ def test_facet_normals(cell_type):
 @ parametrize_cell_types
 def test_plus_minus(cell_type, space_type):
     """Test that ('+') and ('-') give the same value for continuous functions"""
-    results=[]
+    results = []
     for count in range(3):
         for agree in [True, False]:
-            mesh=two_unit_cells(cell_type, agree)
-            V=FunctionSpace(mesh, (space_type, 1))
-            v=Function(V)
+            mesh = two_unit_cells(cell_type, agree)
+            V = FunctionSpace(mesh, (space_type, 1))
+            v = Function(V)
             v.interpolate(lambda x: x[0] - 2 * x[1])
             # Check that these two integrals are equal
             for pm1, pm2 in product(["+", "-"], repeat=2):
-                a=form(v(pm1) * v(pm2) * ufl.dS)
+                a = form(v(pm1) * v(pm2) * ufl.dS)
                 results.append(assemble_scalar(a))
     for i, j in combinations(results, 2):
         assert np.isclose(i, j)
@@ -262,23 +262,23 @@ def test_plus_minus(cell_type, space_type):
 @ parametrize_cell_types
 def test_plus_minus_simple_vector(cell_type, pm):
     """Test that ('+') and ('-') match up with the correct DOFs for DG functions"""
-    results=[]
-    orders=[]
-    spaces=[]
+    results = []
+    orders = []
+    spaces = []
     for count in range(3):
         for agree in [True, False]:
             # Two cell mesh with randomly numbered points
-            mesh, order=two_unit_cells(cell_type, agree, return_order=True)
+            mesh, order = two_unit_cells(cell_type, agree, return_order=True)
             if cell_type in [CellType.interval, CellType.triangle, CellType.tetrahedron]:
-                V=FunctionSpace(mesh, ("DG", 1))
+                V = FunctionSpace(mesh, ("DG", 1))
             else:
-                V=FunctionSpace(mesh, ("DQ", 1))
+                V = FunctionSpace(mesh, ("DQ", 1))
 
             # Assemble vectors v['+'] * dS and v['-'] * dS for a few
             # different numberings
-            v=ufl.TestFunction(V)
-            a=form(ufl.inner(1, v(pm)) * ufl.dS)
-            result=assemble_vector(a)
+            v = ufl.TestFunction(V)
+            a = form(ufl.inner(1, v(pm)) * ufl.dS)
+            result = assemble_vector(a)
             result.assemble()
             spaces.append(V)
             results.append(result)
@@ -286,10 +286,10 @@ def test_plus_minus_simple_vector(cell_type, pm):
 
     # Check that the above vectors all have the same values as the first
     # one, but permuted due to differently ordered dofs
-    dofmap0=spaces[0].mesh.geometry.dofmap
+    dofmap0 = spaces[0].mesh.geometry.dofmap
     for result, space in zip(results[1:], spaces[1:]):
         # Get the data relating to two results
-        dofmap1=space.mesh.geometry.dofmap
+        dofmap1 = space.mesh.geometry.dofmap
 
         # For each cell
         for cell in range(2):
@@ -315,25 +315,25 @@ def test_plus_minus_simple_vector(cell_type, pm):
 @ parametrize_cell_types
 def test_plus_minus_vector(cell_type, pm1, pm2):
     """Test that ('+') and ('-') match up with the correct DOFs for DG functions"""
-    results=[]
-    orders=[]
-    spaces=[]
+    results = []
+    orders = []
+    spaces = []
     for count in range(3):
         for agree in [True, False]:
             # Two cell mesh with randomly numbered points
-            mesh, order=two_unit_cells(cell_type, agree, return_order=True)
+            mesh, order = two_unit_cells(cell_type, agree, return_order=True)
             if cell_type in [CellType.interval, CellType.triangle, CellType.tetrahedron]:
-                V=FunctionSpace(mesh, ("DG", 1))
+                V = FunctionSpace(mesh, ("DG", 1))
             else:
-                V=FunctionSpace(mesh, ("DQ", 1))
+                V = FunctionSpace(mesh, ("DQ", 1))
 
             # Assemble vectors with combinations of + and - for a few
             # different numberings
-            f=Function(V)
+            f = Function(V)
             f.interpolate(lambda x: x[0] - 2 * x[1])
-            v=ufl.TestFunction(V)
-            a=form(ufl.inner(f(pm1), v(pm2)) * ufl.dS)
-            result=assemble_vector(a)
+            v = ufl.TestFunction(V)
+            a = form(ufl.inner(f(pm1), v(pm2)) * ufl.dS)
+            result = assemble_vector(a)
             result.assemble()
             spaces.append(V)
             results.append(result)
@@ -341,10 +341,10 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
 
     # Check that the above vectors all have the same values as the first
     # one, but permuted due to differently ordered dofs
-    dofmap0=spaces[0].mesh.geometry.dofmap
+    dofmap0 = spaces[0].mesh.geometry.dofmap
     for result, space in zip(results[1:], spaces[1:]):
         # Get the data relating to two results
-        dofmap1=space.mesh.geometry.dofmap
+        dofmap1 = space.mesh.geometry.dofmap
 
         # For each cell
         for cell in range(2):
@@ -370,20 +370,20 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
 @ parametrize_cell_types
 def test_plus_minus_matrix(cell_type, pm1, pm2):
     """Test that ('+') and ('-') match up with the correct DOFs for DG functions"""
-    results=[]
-    spaces=[]
-    orders=[]
+    results = []
+    spaces = []
+    orders = []
     for count in range(3):
         for agree in [True, False]:
             # Two cell mesh with randomly numbered points
-            mesh, order=two_unit_cells(cell_type, agree, return_order=True)
-            V=FunctionSpace(mesh, ("DG", 1))
-            u, v=ufl.TrialFunction(V), ufl.TestFunction(V)
+            mesh, order = two_unit_cells(cell_type, agree, return_order=True)
+            V = FunctionSpace(mesh, ("DG", 1))
+            u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
             # Assemble matrices with combinations of + and - for a few
             # different numberings
-            a=form(ufl.inner(u(pm1), v(pm2)) * ufl.dS)
-            result=assemble_matrix(a, [])
+            a = form(ufl.inner(u(pm1), v(pm2)) * ufl.dS)
+            result = assemble_matrix(a, [])
             result.assemble()
             spaces.append(V)
             results.append(result)
@@ -391,12 +391,12 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
 
     # Check that the above matrices all have the same values, but
     # permuted due to differently ordered dofs
-    dofmap0=spaces[0].mesh.geometry.dofmap
+    dofmap0 = spaces[0].mesh.geometry.dofmap
     for result, space in zip(results[1:], spaces[1:]):
         # Get the data relating to two results
-        dofmap1=space.mesh.geometry.dofmap
+        dofmap1 = space.mesh.geometry.dofmap
 
-        dof_order=[]
+        dof_order = []
 
         # For each cell
         for cell in range(2):
@@ -427,30 +427,30 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
 @ pytest.mark.parametrize('space_type', ["N1curl", "N2curl"])
 def test_curl(space_type, order):
     """Test that curl is consistent for different cell permutations of a tetrahedron."""
-    tdim=dolfinx.mesh.cell_dim(CellType.tetrahedron)
-    points=unit_cell_points(CellType.tetrahedron)
+    tdim = dolfinx.mesh.cell_dim(CellType.tetrahedron)
+    points = unit_cell_points(CellType.tetrahedron)
 
-    spaces=[]
-    results=[]
-    cell=list(range(len(points)))
+    spaces = []
+    results = []
+    cell = list(range(len(points)))
     random.seed(2)
 
     # Assemble vector on 5 randomly numbered cells
     for i in range(5):
         random.shuffle(cell)
-        domain=ufl.Mesh(element("Lagrange", "tetrahedron", 1, rank=1))
-        mesh=create_mesh(MPI.COMM_WORLD, [cell], points, domain)
-        V=FunctionSpace(mesh, (space_type, order))
-        v=ufl.TestFunction(V)
-        f=ufl.as_vector(tuple(1 if i == 0 else 0 for i in range(tdim)))
-        L=form(ufl.inner(f, ufl.curl(v)) * ufl.dx)
-        result=assemble_vector(L)
+        domain = ufl.Mesh(element("Lagrange", "tetrahedron", 1, rank=1))
+        mesh = create_mesh(MPI.COMM_WORLD, [cell], points, domain)
+        V = FunctionSpace(mesh, (space_type, order))
+        v = ufl.TestFunction(V)
+        f = ufl.as_vector(tuple(1 if i == 0 else 0 for i in range(tdim)))
+        L = form(ufl.inner(f, ufl.curl(v)) * ufl.dx)
+        result = assemble_vector(L)
         spaces.append(V)
         results.append(result.array)
 
     # Set data for first space
-    V0=spaces[0]
-    c10_0=V.mesh.topology.connectivity(1, 0)
+    V0 = spaces[0]
+    c10_0 = V.mesh.topology.connectivity(1, 0)
 
     # Check that all DOFs on edges agree
 
@@ -458,19 +458,19 @@ def test_curl(space_type, order):
     for i, edge in enumerate(V0.mesh.topology.connectivity(tdim, 1).links(0)):
 
         # Get the edge vertices
-        vertices0=c10_0.links(edge)  # Need to map back
+        vertices0 = c10_0.links(edge)  # Need to map back
 
         # Get assembled values on edge
-        values0=sorted([result[V0.dofmap.cell_dofs(0)[a]] for a in V0.dofmap.dof_layout.entity_dofs(1, i)])
+        values0 = sorted([result[V0.dofmap.cell_dofs(0)[a]] for a in V0.dofmap.dof_layout.entity_dofs(1, i)])
 
         for V, result in zip(spaces[1:], results[1:]):
             # Get edge->vertex connectivity
-            c10=V.mesh.topology.connectivity(1, 0)
+            c10 = V.mesh.topology.connectivity(1, 0)
 
             # Loop over cell edges
             for j, e in enumerate(V.mesh.topology.connectivity(tdim, 1).links(0)):
                 if sorted(c10.links(e)) == sorted(vertices0):  # need to map back c.links(e)
-                    values=sorted([result[V.dofmap.cell_dofs(0)[a]] for a in V.dofmap.dof_layout.entity_dofs(1, j)])
+                    values = sorted([result[V.dofmap.cell_dofs(0)[a]] for a in V.dofmap.dof_layout.entity_dofs(1, j)])
                     assert np.allclose(values0, values)
                     break
             else:
@@ -484,37 +484,37 @@ def test_curl(space_type, order):
 def create_quad_mesh(offset):
     """Creates a mesh of a single square element if offset = 0, or a
     trapezium element if |offset| > 0."""
-    x=np.array([[0, 0],
+    x = np.array([[0, 0],
                   [1, 0],
                   [0, 0.5 + offset],
                   [1, 0.5 - offset]], dtype=default_real_type)
-    cells=np.array([[0, 1, 2, 3]])
-    ufl_mesh=ufl.Mesh(element("Lagrange", "quadrilateral", 1, rank=1))
-    mesh=create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh)
+    cells = np.array([[0, 1, 2, 3]])
+    ufl_mesh = ufl.Mesh(element("Lagrange", "quadrilateral", 1, rank=1))
+    mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh)
     return mesh
 
 
 def assemble_div_matrix(k, offset):
-    mesh=create_quad_mesh(offset)
-    V=FunctionSpace(mesh, ("DQ", k))
-    W=FunctionSpace(mesh, ("RTCF", k + 1))
-    u, w=ufl.TrialFunction(V), ufl.TestFunction(W)
-    a=form(ufl.inner(u, ufl.div(w)) * ufl.dx)
-    A=assemble_matrix(a)
+    mesh = create_quad_mesh(offset)
+    V = FunctionSpace(mesh, ("DQ", k))
+    W = FunctionSpace(mesh, ("RTCF", k + 1))
+    u, w = ufl.TrialFunction(V), ufl.TestFunction(W)
+    a = form(ufl.inner(u, ufl.div(w)) * ufl.dx)
+    A = assemble_matrix(a)
     A.assemble()
-    _A=A[:, :]
+    _A = A[:, :]
     A.destroy()
     return _A
 
 
 def assemble_div_vector(k, offset):
-    mesh=create_quad_mesh(offset)
-    V=FunctionSpace(mesh, ("RTCF", k + 1))
-    v=ufl.TestFunction(V)
-    L=form(ufl.inner(Constant(mesh, PETSc.ScalarType(1)), ufl.div(v)) * ufl.dx)
-    b=assemble_vector(L)
+    mesh = create_quad_mesh(offset)
+    V = FunctionSpace(mesh, ("RTCF", k + 1))
+    v = ufl.TestFunction(V)
+    L = form(ufl.inner(Constant(mesh, PETSc.ScalarType(1)), ufl.div(v)) * ufl.dx)
+    b = assemble_vector(L)
     b.assemble()
-    _b=b[:]
+    _b = b[:]
     b.destroy()
     return _b
 
@@ -528,8 +528,8 @@ def test_div_general_quads_mat(k):
     properties of the Piola transform."""
     # Assemble matrix on a mesh of square elements and on a mesh of
     # trapezium elements
-    A_square=assemble_div_matrix(k, 0)
-    A_trap=assemble_div_matrix(k, 0.25)
+    A_square = assemble_div_matrix(k, 0)
+    A_trap = assemble_div_matrix(k, 0.25)
 
     # Due to the properties of the Piola transform, A_square and A_trap
     # should be equal
@@ -545,8 +545,8 @@ def test_div_general_quads_vec(k):
     transform."""
     # Assemble vector on a mesh of square elements and on a mesh of
     # trapezium elements
-    L_square=assemble_div_vector(k, 0)
-    L_trap=assemble_div_vector(k, 0.25)
+    L_square = assemble_div_vector(k, 0)
+    L_trap = assemble_div_vector(k, 0.25)
 
     # Due to the properties of the Piola transform, L_square and L_trap
     # should be equal

@@ -676,7 +676,6 @@ def test_assembly_solve_taylor_hood(mesh):
         ksp.destroy()
         return b.norm(), x.norm(), A.norm(), P.norm()
 
-
     bnorm0, xnorm0, Anorm0, Pnorm0 = nested_solve()
     bnorm1, xnorm1, Anorm1, Pnorm1 = blocked_solve()
     assert bnorm1 == pytest.approx(bnorm0, 1.0e-12)
