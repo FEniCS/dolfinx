@@ -120,7 +120,7 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
                                        {{"kappa", kappa}}, {}));
 
   la::SparsityPattern sp = fem::create_sparsity_pattern(*a);
-  sp.assemble();
+  sp.finalize();
   la::MatrixCSR<double> A(sp);
   fem::assemble_matrix(A.mat_add_values(), *a, {});
   A.finalize();
@@ -192,7 +192,7 @@ void test_matrix()
   p.insert(std::vector{0}, std::vector{0});
   p.insert(std::vector{4}, std::vector{5});
   p.insert(std::vector{5}, std::vector{4});
-  p.assemble();
+  p.finalize();
 
   using T = float;
   la::MatrixCSR<T> A(p);
