@@ -59,7 +59,7 @@ def test_add():
     assert np.allclose(A1, A3)
 
     mat3.set(0.0)
-    assert(mat3.squared_norm() == 0.0)
+    assert mat3.squared_norm() == 0.0
 
 
 def test_set():
@@ -99,7 +99,6 @@ def test_distributed_csr():
     rank = MPI.COMM_WORLD.rank
     nbr = (rank + 1) % size
     n = int(N / size)
-    local_range = [n * rank, n * (rank + 1)]
     ghosts = np.array(range(n * nbr, n * nbr + nghost), dtype=np.int64)
     owner = np.ones_like(ghosts, dtype=np.int32) * nbr
 
