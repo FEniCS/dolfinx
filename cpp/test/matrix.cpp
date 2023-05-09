@@ -157,7 +157,7 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
 
   // Create sparsity pattern
   la::SparsityPattern sp = fem::create_sparsity_pattern(*a);
-  sp.assemble();
+  sp.finalize();
 
   // Assemble matrix
   la::MatrixCSR<double> A(sp);
