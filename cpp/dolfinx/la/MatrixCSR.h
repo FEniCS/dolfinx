@@ -294,7 +294,7 @@ public:
       impl::set_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols, set_fn,
                               _index_maps[0]->size_local());
     }
-    else if (_block_mode == BlockMode::expanded)
+    else if (_bs[0] == 1 and _bs[1] == 1)
     {
       // Set blocked data in a regular CSR matrix (_bs[0]=1, _bs[1]=1) with
       // correct sparsity
@@ -335,7 +335,7 @@ public:
       impl::set_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols,
                               std::plus<value_type>(), _row_ptr.size());
     }
-    else if (_block_mode == BlockMode::expanded)
+    else if (_bs[0] == 1 and _bs[1] == 1)
     {
       // Add blocked data to a regular CSR matrix (_bs[0]=1, _bs[1]=1)
       impl::set_blocked_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols,
@@ -520,7 +520,7 @@ void impl::set_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
       for (int i = 0; i < BS0; ++i)
       {
         for (int j = 0; j < BS1; ++j)
-          op(data[di + j], xr[xi + j]);
+          data[di + j] = op(data[di + j], xr[xi + j]);
         di += BS1;
         xi += nc * BS1;
       }
@@ -564,7 +564,7 @@ void impl::set_blocked_csr(U&& data, const V& cols, const W& row_ptr,
         assert(d < data.size());
         int xi = c * BS1;
         for (int j = 0; j < BS1; ++j)
-          op(data[d + j], xr[xi + j]);
+          data[d + j] = op(data[d + j], xr[xi + j]);
       }
     }
   }
@@ -606,9 +606,9 @@ void impl::set_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
       assert(*it == cdiv.quot);
 
       std::size_t d = std::distance(cols.begin(), it);
-      int di = d * nbs;
+      const int di = d * nbs + rdiv.rem * bs1 + cdiv.rem;
       assert(di < data.size());
-      op(data[di + rdiv.rem * bs1 + cdiv.rem], xr[c]);
+      data[di] = op(data[di], xr[c]);
     }
   }
 }

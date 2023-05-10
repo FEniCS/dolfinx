@@ -15,7 +15,7 @@ def create_test_sparsity(n, bs):
                 sp.insert(2 + i, 4 + j)
     elif bs == 2:
         sp.insert(1, 2)
-    sp.assemble()
+    sp.finalize()
     return sp
 
 
@@ -110,7 +110,7 @@ def test_distributed_csr():
     for i in range(n, n + nghost):
         for j in range(n, n + nghost):
             sp.insert(i, j)
-    sp.assemble()
+    sp.finalize()
 
     mat = matrix_csr(sp)
     irow = np.array(range(n), dtype=np.int32)
