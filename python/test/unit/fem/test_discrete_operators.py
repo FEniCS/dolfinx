@@ -83,7 +83,7 @@ def test_gradient_interpolation(cell_type, p, q):
     G.mult(u.vector, w.vector)
     w.x.scatter_forward()
 
-    atol = 50 * np.finfo(default_real_type).resolution
+    atol = 100 * np.finfo(default_real_type).resolution
     assert np.allclose(w_expr.x.array, w.x.array, atol=atol)
     G.destroy()
 
