@@ -156,7 +156,7 @@ def test_rank1_hdiv():
 
     a = form(ufl.inner(f, ufl.TestFunction(vdP1)) * ufl.dx)
     sparsity_pattern = create_sparsity_pattern(a)
-    sparsity_pattern.assemble()
+    sparsity_pattern.finalize()
     A = create_matrix(MPI.COMM_WORLD, sparsity_pattern)
 
     dofmap_col = RT1.dofmap.list.astype(np.dtype(PETSc.IntType))

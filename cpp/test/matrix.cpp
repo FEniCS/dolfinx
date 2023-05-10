@@ -120,7 +120,7 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
                                        {{"kappa", kappa}}, {}));
 
   la::SparsityPattern sp = fem::create_sparsity_pattern(*a);
-  sp.assemble();
+  sp.finalize();
   la::MatrixCSR<double> A(sp);
   fem::assemble_matrix(A.mat_add_values(), *a, {});
   A.finalize();
@@ -157,7 +157,7 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
 
   // Create sparsity pattern
   la::SparsityPattern sp = fem::create_sparsity_pattern(*a);
-  sp.assemble();
+  sp.finalize();
 
   // Assemble matrix
   la::MatrixCSR<double> A(sp);
@@ -166,12 +166,12 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
   CHECK((V->dofmap()->index_map->size_local() == A.num_owned_rows()));
 
   // Get compatible vectors
-  auto maps = A.index_maps();
+  auto col_map = A.index_map(1);
 
-  la::Vector<double> x(maps[1], 1);
-  la::Vector<double> y(maps[1], 1);
+  la::Vector<double> x(col_map, 1);
+  la::Vector<double> y(col_map, 1);
 
-  std::size_t col_size = maps[1]->size_local() + maps[1]->num_ghosts();
+  std::size_t col_size = col_map->size_local() + col_map->num_ghosts();
   CHECK(x.array().size() == col_size);
 
   // Fill x vector with 1 (Constant)
@@ -192,7 +192,7 @@ void test_matrix()
   p.insert(std::vector{0}, std::vector{0});
   p.insert(std::vector{4}, std::vector{5});
   p.insert(std::vector{5}, std::vector{4});
-  p.assemble();
+  p.finalize();
 
   using T = float;
   la::MatrixCSR<T> A(p);
@@ -226,6 +226,6 @@ void test_matrix()
 TEST_CASE("Linear Algebra CSR Matrix", "[la_matrix]")
 {
   CHECK_NOTHROW(test_matrix());
-  // CHECK_NOTHROW(test_matrix_apply());
-  // CHECK_NOTHROW(test_matrix_norm());
+  CHECK_NOTHROW(test_matrix_apply());
+  CHECK_NOTHROW(test_matrix_norm());
 }

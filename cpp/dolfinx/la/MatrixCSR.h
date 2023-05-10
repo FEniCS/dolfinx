@@ -403,11 +403,10 @@ public:
   /// inserted into and the column IndexMap contains all local and ghost
   /// columns that may exist in the owned rows.
   ///
-  /// @return Row (0) and column (1) index maps
-  const std::array<std::shared_ptr<const common::IndexMap>, 2>&
-  index_maps() const
+  /// @return Row (0) or column (1) index maps
+  std::shared_ptr<const common::IndexMap> index_map(int dim) const
   {
-    return _index_maps;
+    return _index_maps.at(dim);
   }
 
   /// Get local data values
@@ -479,7 +478,7 @@ private:
   // on _comm)
   std::vector<int> _ghost_row_to_rank;
 
-  // Temporary store for finalize data during non-blocking communication
+  // Temporary stores for finalize data during non-blocking communication
   container_type _ghost_value_data;
   container_type _ghost_value_data_in;
 };
@@ -912,6 +911,9 @@ void MatrixCSR<U, V, W, X>::finalize_end()
   for (std::size_t i = 0; i < _unpack_pos.size(); ++i)
     for (int j = 0; j < bs2; ++j)
       _data[_unpack_pos[i] * bs2 + j] += _ghost_value_data_in[i * bs2 + j];
+
+  _ghost_value_data_in.clear();
+  _ghost_value_data_in.shrink_to_fit();
 
   _ghost_value_data_in.clear();
   _ghost_value_data_in.shrink_to_fit();

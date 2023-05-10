@@ -93,7 +93,7 @@ def create_vector(L: FormMetaClass) -> la.VectorMetaClass:
 def create_matrix(a: FormMetaClass) -> la.MatrixCSRMetaClass:
     """Create a sparse matrix that is compatible with a given bilinear form"""
     sp = dolfinx.fem.create_sparsity_pattern(a)
-    sp.assemble()
+    sp.finalize()
     return la.matrix_csr(sp, dtype=a.dtype)
 
 
