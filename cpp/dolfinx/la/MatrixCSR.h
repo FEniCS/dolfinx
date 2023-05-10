@@ -286,7 +286,7 @@ public:
   void set(std::span<const value_type> x, std::span<const std::int32_t> rows,
            std::span<const std::int32_t> cols)
   {
-    auto set_fn = [](value_type&, const value_type& x) { return x; };
+    auto set_fn = [](value_type& y, const value_type& x) { y = x; };
 
     assert(x.size() == rows.size() * cols.size() * BS0 * BS1);
     if (_bs[0] == BS0 and _bs[1] == BS1)
@@ -329,25 +329,26 @@ public:
   void add(std::span<const value_type> x, std::span<const std::int32_t> rows,
            std::span<const std::int32_t> cols)
   {
+    auto add_fn = [](value_type& y, const value_type& x) { y += x; };
+
     assert(x.size() == rows.size() * cols.size() * BS0 * BS1);
     if (_bs[0] == BS0 and _bs[1] == BS1)
     {
-      impl::set_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols,
-                              std::plus<value_type>(), _row_ptr.size());
+      impl::set_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols, add_fn,
+                              _row_ptr.size());
     }
     else if (_bs[0] == 1 and _bs[1] == 1)
     {
       // Add blocked data to a regular CSR matrix (_bs[0]=1, _bs[1]=1)
       impl::set_blocked_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols,
-                                      std::plus<value_type>(), _row_ptr.size());
+                                      add_fn, _row_ptr.size());
     }
     else
     {
       assert(BS0 == 1 and BS1 == 1);
       // Add non-blocked data to a blocked CSR matrix (BS0=1, BS1=1)
-      impl::set_nonblocked_csr(_data, _cols, _row_ptr, x, rows, cols,
-                               std::plus<value_type>(), _row_ptr.size(), _bs[0],
-                               _bs[1]);
+      impl::set_nonblocked_csr(_data, _cols, _row_ptr, x, rows, cols, add_fn,
+                               _row_ptr.size(), _bs[0], _bs[1]);
     }
   }
 
@@ -520,7 +521,7 @@ void impl::set_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
       for (int i = 0; i < BS0; ++i)
       {
         for (int j = 0; j < BS1; ++j)
-          data[di + j] = op(data[di + j], xr[xi + j]);
+          op(data[di + j], xr[xi + j]);
         di += BS1;
         xi += nc * BS1;
       }
@@ -564,7 +565,7 @@ void impl::set_blocked_csr(U&& data, const V& cols, const W& row_ptr,
         assert(d < data.size());
         int xi = c * BS1;
         for (int j = 0; j < BS1; ++j)
-          data[d + j] = op(data[d + j], xr[xi + j]);
+          op(data[d + j], xr[xi + j]);
       }
     }
   }
@@ -591,7 +592,7 @@ void impl::set_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
     const T* xr = x.data() + r * nc;
 
 #ifndef NDEBUG
-    if (xrows[r] >= local_size)
+    if (rdiv.quot >= local_size)
       throw std::runtime_error("Local row out of range");
 #endif
     // Columns indices for row
@@ -608,7 +609,7 @@ void impl::set_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
       std::size_t d = std::distance(cols.begin(), it);
       const int di = d * nbs + rdiv.rem * bs1 + cdiv.rem;
       assert(di < data.size());
-      data[di] = op(data[di], xr[c]);
+      op(data[di], xr[c]);
     }
   }
 }
