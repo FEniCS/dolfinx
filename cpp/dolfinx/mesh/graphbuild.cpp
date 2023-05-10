@@ -493,8 +493,11 @@ mesh::build_local_dual_graph(std::span<const std::int64_t> cell_vertices,
         cells.push_back(cell0);
       }
 
-      // Update iterator
-      it = it1;
+      // Update iterator, for tdim = 1 identify all connecting cells
+      if (tdim == 1)
+        ++it;
+      else
+        it = it1;
     }
   }
 
