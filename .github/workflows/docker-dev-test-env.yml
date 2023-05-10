@@ -1,7 +1,7 @@
 ---
-name: Docker build environment images
+name: Docker test and development environment images
 
-# Builds build environment images (no FEniCS components). 
+# Builds test and development environment images (no FEniCS components). 
 #
 # Must be triggered manually via GitHub interface, possibly using specific git
 # refs and tag prefix for e.g. releases.
@@ -17,7 +17,7 @@ on:
 
       dockerfile:
         description: "Dockerfile"
-        default: "docker/Dockerfile"
+        default: "docker/Dockerfile.test-env"
         type: string
         required: true
 

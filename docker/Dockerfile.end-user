@@ -1,0 +1,149 @@
+# Dockerfile describing end-user FEniCS environments
+#
+# Authors:
+# Jack S. Hale <jack.hale@uni.lu>
+# Lizao Li <lzlarryli@gmail.com>
+# Garth N. Wells <gnw20@cam.ac.uk>
+# Jan Blechta <blechta@karlin.mff.cuni.cz>
+#
+# To run the latest stable build:
+#
+#    docker run -ti dolfinx/dolfinx:stable
+#
+# To run a nightly build:
+#
+#    docker run -ti dolfinx/dolfinx:nightly
+#
+# To run a Jupyter lab session:
+#
+#    docker run --init -p 8888:8888 dolfinx/lab:stable
+#
+# To run and share the current host directory with the container:
+#
+#    docker run --init -p 8888:8888 -v "$(pwd)":/root/shared dolfinx/lab:stable
+#
+# To build from source, first checkout the DOLFINx, FFCx, Basix and UFL
+# repositories into the working directory, e.g.:
+#
+# $ ls $(pwd)
+# dolfinx  ffcx  basix  ufl
+#
+# Then run the commands:
+#
+#    docker pull dolfinx/dolfinx-onbuild:latest
+#    echo "FROM dolfinx/dolfinx-onbuild:latest" | docker build -f- .
+#
+
+# Used to set the correct PYTHONPATH for the real and complex install of
+# DOLFINx
+ARG PYTHON_VERSION=3.10
+# Base image for end-user images
+ARG BASEIMAGE=docker.io/dolfinx/dev-env:current
+
+FROM ${BASEIMAGE} as dolfinx-onbuild
+LABEL description="DOLFINx in 32-bit real and complex modes (onbuild)"
+
+ARG PYTHON_VERSION
+
+ADD dolfinx/docker/dolfinx-real-mode /usr/local/bin/dolfinx-real-mode
+ADD dolfinx/docker/dolfinx-complex-mode /usr/local/bin/dolfinx-complex-mode
+RUN chmod +x /usr/local/bin/dolfinx-*-mode
+
+ONBUILD WORKDIR /src
+
+# This leaves the sources inside the container. This is a limitation of
+# Docker. There is some trickery in the intermediate and DOLFINx
+# containers that can be used to remove this source if needed, see
+# below.
+ONBUILD ADD basix/ /src/basix/
+ONBUILD ADD ufl/ /src/ufl/
+ONBUILD ADD ffcx/ /src/ffcx/
+ONBUILD ADD dolfinx/ /src/dolfinx/
+
+# These files are empty by default, i.e. they do nothing.
+# The user can set them at build time if they wish.
+ONBUILD ADD dolfinx/docker/dolfinx_jit_options.json /root/.config/dolfinx/dolfinx_jit_options.json
+ONBUILD ADD dolfinx/docker/ffcx_options.json /root/.config/ffcx/ffcx_options.json
+
+# The following ARGS are used in the DOLFINx layer.
+# They are safe defaults.
+# CMake build type for DOLFINx C++ build. See CMake documentation.
+ONBUILD ARG DOLFINX_CMAKE_BUILD_TYPE="RelWithDebInfo"
+# Extra CMake C++ compiler flags for DOLFINx C++ build.
+ONBUILD ARG DOLFINX_CMAKE_CXX_FLAGS
+
+# The dolfinx-onbuild container expects to have folders basix/ ufl/
+# ffcx/ and dolfinx/ mounted/shared at /src.
+ONBUILD RUN cd basix && cmake -G Ninja -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFINX_CMAKE_CXX_FLAGS} -B build-dir -S ./cpp && \
+    cmake --build build-dir && \
+    cmake --install build-dir && \
+    python3 -m pip install ./python && \
+    cd ../ufl && pip3 install --no-cache-dir . && \
+    cd ../ffcx && pip3 install --no-cache-dir . && \
+    cd ../ && pip3 install --no-cache-dir ipython
+
+ONBUILD RUN cd dolfinx && \
+    mkdir -p build-real && \
+    cd build-real && \
+    PETSC_ARCH=linux-gnu-real-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-real -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFINX_CMAKE_CXX_FLAGS} ../cpp && \
+    ninja install && \
+    cd ../python && \
+    CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-real-32 pip3 install -v --target /usr/local/dolfinx-real/lib/python${PYTHON_VERSION}/dist-packages --no-dependencies --no-cache-dir . && \
+    git clean -fdx && \
+    cd ../ && \
+    mkdir -p build-complex && \
+    cd build-complex && \
+    PETSC_ARCH=linux-gnu-complex-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-complex -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFIN_CMAKE_CXX_FLAGS} ../cpp && \
+    ninja install && \
+    . /usr/local/dolfinx-complex/lib/dolfinx/dolfinx.conf && \
+    cd ../python && \
+    CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-complex-32 pip3 install -v --target /usr/local/dolfinx-complex/lib/python${PYTHON_VERSION}/dist-packages --no-dependencies --no-cache-dir .
+
+# Real by default.
+ONBUILD ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
+    PETSC_ARCH=linux-gnu-real-32 \
+    PYTHONPATH=/usr/local/dolfinx-real/lib/python${PYTHON_VERSION}/dist-packages:$PYTHONPATH \
+    LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH
+
+ONBUILD WORKDIR /root
+
+########################################
+
+FROM dolfinx-onbuild as dolfinx
+LABEL description="DOLFINx in 32-bit real and complex modes"
+
+########################################
+
+FROM dolfinx as lab
+LABEL description="DOLFINx Jupyter Lab"
+
+ARG PYVISTA_VERSION
+
+WORKDIR /root
+
+RUN pip3 install --upgrade --no-cache-dir jupyter jupyterlab
+
+# pyvista dependencies from apt
+RUN apt-get -qq update && \
+    apt-get -y install libgl1-mesa-dev xvfb && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Install pyvista from PyPI. pyvisa depends on (py)vtk), but vtk is not
+# available on pypi for linux/arm64.
+# matplotlib improves plotting quality with better color maps and
+# properly rendering colorbars.
+# Trame is preferred backend for pyvista
+RUN dpkgArch="$(dpkg --print-architecture)"; \
+    case "$dpkgArch" in amd64) \
+    python3 -m pip install --no-cache-dir pyvista[trame]==${PYVISTA_VERSION} && \
+    python3 -m pip install --no-cache-dir matplotlib && \
+    python3 -m pip cache purge ;; \
+    esac;
+
+# Jupyter Notebook kernel specification for complex build DOLFINx
+ADD dolfinx/docker/complex-kernel.json /usr/local/share/jupyter/kernels/python3-complex/kernel.json
+
+EXPOSE 8888/tcp
+ENV SHELL /bin/bash
+ENTRYPOINT ["jupyter", "lab", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
