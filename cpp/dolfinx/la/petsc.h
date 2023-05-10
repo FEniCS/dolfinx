@@ -81,8 +81,8 @@ Vec create_vector_wrap(const common::IndexMap& map, int bs,
 template <class V>
 Vec create_vector_wrap(const la::Vector<V>& x)
 {
-  assert(x.map());
-  return create_vector_wrap(*x.map(), x.bs(), x.array());
+  assert(x.index_map());
+  return create_vector_wrap(*x.index_map(), x.bs(), x.array());
 }
 
 /// @todo This function could take just the local sizes
