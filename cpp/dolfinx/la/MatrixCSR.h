@@ -33,6 +33,7 @@ namespace impl
 /// to the matrix
 /// @param[in] xrows The row indices of `x`
 /// @param[in] xcols The column indices of `x`
+/// @param[in] op The operation (set or add)
 /// @param[in] local_size The maximum row index that can be set. Used
 /// when debugging is own to check that rows beyond a permitted range
 /// are not being set.
@@ -71,6 +72,10 @@ void set_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
 /// to the matrix
 /// @param[in] xrows The row indices of `x`
 /// @param[in] xcols The column indices of `x`
+/// @param[in] op The operation (set or add)
+/// @param[in] local_size The maximum row index that can be set. Used
+/// when debugging is own to check that rows beyond a permitted range
+/// are not being set.
 template <int BS0, int BS1, typename OP, typename U, typename V, typename W,
           typename X, typename Y>
 void set_blocked_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
@@ -88,6 +93,10 @@ void set_blocked_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
 /// to the matrix
 /// @param[in] xrows The row indices of `x`
 /// @param[in] xcols The column indices of `x`
+/// @param[in] op The operation (set or add)
+/// @param[in] local_size The maximum row index that can be set. Used
+/// when debugging is own to check that rows beyond a permitted range
+/// are not being set.
 /// @param[in] bs0 Row block size of Matrix
 /// @param[in] bs1 Column block size of Matrix
 template <typename OP, typename U, typename V, typename W, typename X,
@@ -383,8 +392,9 @@ public:
   /// zeroed.
   void finalize_end();
 
-  /// @brief Compute the Frobenius norm squared
+  /// @brief Compute the Frobenius norm squared across all processes
   /// @note This does not include ghost rows.
+  /// @note MPI Collective
   double squared_norm() const;
 
   /// @brief Index maps for the row and column space.
