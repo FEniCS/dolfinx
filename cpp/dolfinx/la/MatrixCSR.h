@@ -592,7 +592,7 @@ void impl::set_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
     const T* xr = x.data() + r * nc;
 
 #ifndef NDEBUG
-    if (row >= local_size * bs0)
+    if (xrows[r] >= local_size)
       throw std::runtime_error("Local row out of range");
 #endif
     // Columns indices for row
