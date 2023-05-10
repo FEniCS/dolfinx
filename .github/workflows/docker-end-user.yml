@@ -139,6 +139,17 @@ jobs:
           target: dolfinx-onbuild
           tags: docker.io/dolfinx/dolfinx-onbuild:${{ env.TAG }}
 
+      - name: Build intermediate
+        uses: docker/build-push-action@v3
+        with:
+          build-args: |
+            DOLFINX_CMAKE_BUILD_TYPE=RelWithDebug
+            DOLFINX_CMAKE_CXX_FLAGS=-O2
+            BASEIMAGE=${{ env.BASEIMAGE }}
+          context: .
+          file: dolfinx/${{ env.DOCKERFILE }}
+          target: intermediate
+
       - name: Build dolfinx
         uses: docker/build-push-action@v3
         with:
