@@ -34,6 +34,8 @@
 #    echo "FROM dolfinx/dolfinx-onbuild:latest" | docker build -f- .
 #
 
+ARG PYVISTA_VERSION=0.38.4
+
 # Used to set the correct PYTHONPATH for the real and complex install of
 # DOLFINx
 ARG PYTHON_VERSION=3.10
