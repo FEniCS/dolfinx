@@ -1,7 +1,7 @@
 ---
-name: Docker test and development environment images
+name: Docker test and development images
 
-# Builds test and development environment images (no FEniCS components). 
+# Builds test and development images (no FEniCS components). 
 #
 # Must be triggered manually via GitHub interface, possibly using specific git
 # refs and tag prefix for e.g. releases.
