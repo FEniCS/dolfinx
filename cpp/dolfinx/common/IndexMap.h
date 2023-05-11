@@ -228,6 +228,20 @@ public:
   /// false.
   bool overlapped() const noexcept;
 
+  /// @brief Returns the imbalance of the current IndexMap.
+  ///
+  /// The imbalance is a measure of load balancing across all processes, defined
+  /// as the maximum number of indices on any process divided by the average
+  /// number of indices per process. This function calculates the imbalance
+  /// separately for owned indices and ghost indices and returns them as a
+  /// std::array<double, 2>.
+  ///
+  /// @note Collective
+  ///
+  /// @return An array containing the imbalance in owned indices
+  /// (first element) and the imbalance in ghost indices (second element).
+  std::array<double, 2> imbalance() const noexcept;
+
 private:
   // Range of indices (global) owned by this process
   std::array<std::int64_t, 2> _local_range;
