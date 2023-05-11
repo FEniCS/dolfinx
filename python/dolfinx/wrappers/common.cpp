@@ -98,6 +98,8 @@ void common(py::module& m)
       .def_property_readonly("local_range",
                              &dolfinx::common::IndexMap::local_range,
                              "Range of indices owned by this map")
+      .def_property_readonly("imbalance", &dolfinx::common::IndexMap::imbalance,
+                             "Imbalance of the current IndexMap.")
       .def_property_readonly(
           "ghosts",
           [](const dolfinx::common::IndexMap& self)

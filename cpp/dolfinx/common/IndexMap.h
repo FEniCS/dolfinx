@@ -240,7 +240,7 @@ public:
   ///
   /// @return An array containing the imbalance in owned indices
   /// (first element) and the imbalance in ghost indices (second element).
-  std::array<double, 2> imbalance() const noexcept;
+  std::array<double, 2> imbalance() const;
 
 private:
   // Range of indices (global) owned by this process

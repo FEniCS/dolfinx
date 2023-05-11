@@ -948,12 +948,12 @@ const std::vector<int>& IndexMap::dest() const noexcept { return _dest; }
 //-----------------------------------------------------------------------------
 bool IndexMap::overlapped() const noexcept { return _overlapping; }
 //-----------------------------------------------------------------------------
-std::array<double, 2> IndexMap::imbalance() const noexcept
+std::array<double, 2> IndexMap::imbalance() const
 {
   std::array<double, 2> imbalance{-1., -1.};
   std::array<std::int32_t, 2> max_count;
   std::array<std::int32_t, 2> local_sizes
-      = {_local_range[1] - _local_range[0],
+      = {static_cast<std::int32_t>(_local_range[1] - _local_range[0]),
          static_cast<std::int32_t>(_ghosts.size())};
 
   // Find the maximum number of owned indices and the maximum number of ghost
