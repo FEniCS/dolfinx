@@ -234,9 +234,11 @@ public:
   /// as the maximum number of indices on any process divided by the average
   /// number of indices per process. This function calculates the imbalance
   /// separately for owned indices and ghost indices and returns them as a
-  /// std::array<double, 2>.
+  /// std::array<double, 2>. If the total number of owned or ghost indices is
+  /// zero, the respective entry in the array is set to -1.
   ///
-  /// @note Collective
+  /// @note This is a collective operation and must be called by all processes
+  /// in the communicator associated with the IndexMap.
   ///
   /// @return An array containing the imbalance in owned indices
   /// (first element) and the imbalance in ghost indices (second element).
