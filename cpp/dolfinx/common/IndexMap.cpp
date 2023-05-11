@@ -952,16 +952,17 @@ std::array<double, 2> IndexMap::imbalance() const noexcept
 {
   std::array<double, 2> imbalance{-1., -1.};
   std::array<std::int32_t, 2> max_count;
-  std::array<std::int32_t, 2> local_data
-      = {_local_range[1] - _local_range[0], _ghosts.size()};
+  std::array<std::int32_t, 2> local_sizes
+      = {_local_range[1] - _local_range[0],
+         static_cast<std::int32_t>(_ghosts.size())};
 
   // Find the maximum number of owned indices and the maximum number of ghost
   // indices across all processes.
-  MPI_Allreduce(local_data.data(), max_count.data(), 2,
+  MPI_Allreduce(local_sizes.data(), max_count.data(), 2,
                 dolfinx::MPI::mpi_type<std::int32_t>(), MPI_MAX, _comm.comm());
 
   std::int32_t total_num_ghosts = 0;
-  MPI_Allreduce(&local_data[1], &total_num_ghosts, 1,
+  MPI_Allreduce(&local_sizes[1], &total_num_ghosts, 1,
                 dolfinx::MPI::mpi_type<std::int32_t>(), MPI_SUM, _comm.comm());
 
   // Compute the average number of owned and ghost indices per process.
