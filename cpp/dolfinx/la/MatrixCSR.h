@@ -10,7 +10,6 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <iostream>
 #include <mpi.h>
 #include <numeric>
 #include <span>
@@ -52,15 +51,15 @@ namespace impl
 ///
 template <int BS0, int BS1, typename OP, typename U, typename V, typename W,
           typename X, typename Y>
-void set_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
-             const Y& xrows, const Y& xcols, OP op,
-             typename Y::value_type local_size);
+void insert_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
+                const Y& xrows, const Y& xcols, OP op,
+                typename Y::value_type local_size);
 
 /// @brief Incorporate blocked data with given block sizes into a non-blocked
 /// MatrixCSR
 /// @note Matrix block size (bs=1). Matrix sparsity must be correct to accept
 /// the data.
-/// @note see `set_csr` for data layout
+/// @note see `insert_csr` for data layout
 ///
 /// @tparam BS0 Row block size of Data
 /// @tparam BS1 Column block size of Data
@@ -78,14 +77,14 @@ void set_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
 /// are not being set.
 template <int BS0, int BS1, typename OP, typename U, typename V, typename W,
           typename X, typename Y>
-void set_blocked_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
-                     const Y& xrows, const Y& xcols, OP op,
-                     typename Y::value_type local_size);
+void insert_blocked_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
+                        const Y& xrows, const Y& xcols, OP op,
+                        typename Y::value_type local_size);
 
 /// @brief Incorporate non-blocked data into a blocked matrix (Data block size =
 /// 1)
 /// @note Matrix sparsity must be correct to accept the data
-/// @note see `set_csr` for data layout
+/// @note see `insert_csr` for data layout
 /// @param[out] data The CSR matrix data
 /// @param[in] cols The CSR column indices
 /// @param[in] row_ptr The pointer to the ith row in the CSR data
@@ -101,9 +100,9 @@ void set_blocked_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
 /// @param[in] bs1 Column block size of Matrix
 template <typename OP, typename U, typename V, typename W, typename X,
           typename Y>
-void set_nonblocked_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
-                        const Y& xrows, const Y& xcols, OP op,
-                        typename Y::value_type local_size, int bs0, int bs1);
+void insert_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
+                           const X& x, const Y& xrows, const Y& xcols, OP op,
+                           typename Y::value_type local_size, int bs0, int bs1);
 
 } // namespace impl
 
@@ -291,22 +290,22 @@ public:
     assert(x.size() == rows.size() * cols.size() * BS0 * BS1);
     if (_bs[0] == BS0 and _bs[1] == BS1)
     {
-      impl::set_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols, set_fn,
-                              _index_maps[0]->size_local());
+      impl::insert_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols, set_fn,
+                                 _index_maps[0]->size_local());
     }
     else if (_bs[0] == 1 and _bs[1] == 1)
     {
       // Set blocked data in a regular CSR matrix (_bs[0]=1, _bs[1]=1) with
       // correct sparsity
-      impl::set_blocked_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols,
-                                      set_fn, _index_maps[0]->size_local());
+      impl::insert_blocked_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols,
+                                         set_fn, _index_maps[0]->size_local());
     }
     else
     {
       assert(BS0 == 1 and BS1 == 1);
       // Set non-blocked data in a blocked CSR matrix (BS0=1, BS1=1)
-      impl::set_nonblocked_csr(_data, _cols, _row_ptr, x, rows, cols, set_fn,
-                               _index_maps[0]->size_local(), _bs[0], _bs[1]);
+      impl::insert_nonblocked_csr(_data, _cols, _row_ptr, x, rows, cols, set_fn,
+                                  _index_maps[0]->size_local(), _bs[0], _bs[1]);
     }
   }
 
@@ -334,21 +333,21 @@ public:
     assert(x.size() == rows.size() * cols.size() * BS0 * BS1);
     if (_bs[0] == BS0 and _bs[1] == BS1)
     {
-      impl::set_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols, add_fn,
-                              _row_ptr.size());
+      impl::insert_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols, add_fn,
+                                 _row_ptr.size());
     }
     else if (_bs[0] == 1 and _bs[1] == 1)
     {
       // Add blocked data to a regular CSR matrix (_bs[0]=1, _bs[1]=1)
-      impl::set_blocked_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols,
-                                      add_fn, _row_ptr.size());
+      impl::insert_blocked_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols,
+                                         add_fn, _row_ptr.size());
     }
     else
     {
       assert(BS0 == 1 and BS1 == 1);
       // Add non-blocked data to a blocked CSR matrix (BS0=1, BS1=1)
-      impl::set_nonblocked_csr(_data, _cols, _row_ptr, x, rows, cols, add_fn,
-                               _row_ptr.size(), _bs[0], _bs[1]);
+      impl::insert_nonblocked_csr(_data, _cols, _row_ptr, x, rows, cols, add_fn,
+                                  _row_ptr.size(), _bs[0], _bs[1]);
     }
   }
 
@@ -487,9 +486,9 @@ private:
 //-----------------------------------------------------------------------------
 template <int BS0, int BS1, typename OP, typename U, typename V, typename W,
           typename X, typename Y>
-void impl::set_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
-                   const Y& xrows, const Y& xcols, OP op,
-                   [[maybe_unused]] typename Y::value_type local_size)
+void impl::insert_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
+                      const Y& xrows, const Y& xcols, OP op,
+                      [[maybe_unused]] typename Y::value_type local_size)
 {
   const int nc = xcols.size();
   assert(x.size() == xrows.size() * xcols.size() * BS0 * BS1);
@@ -529,12 +528,13 @@ void impl::set_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
   }
 }
 //-----------------------------------------------------------------------------
-// Set with block insertion into a regular CSR (block size 1)
+// Insert with block insertion into a regular CSR (block size 1)
 template <int BS0, int BS1, typename OP, typename U, typename V, typename W,
           typename X, typename Y>
-void impl::set_blocked_csr(U&& data, const V& cols, const W& row_ptr,
-                           const X& x, const Y& xrows, const Y& xcols, OP op,
-                           [[maybe_unused]] typename Y::value_type local_size)
+void impl::insert_blocked_csr(U&& data, const V& cols, const W& row_ptr,
+                              const X& x, const Y& xrows, const Y& xcols, OP op,
+                              [[maybe_unused]]
+                              typename Y::value_type local_size)
 {
   const int nc = xcols.size();
   assert(x.size() == xrows.size() * xcols.size() * BS0 * BS1);
@@ -574,11 +574,12 @@ void impl::set_blocked_csr(U&& data, const V& cols, const W& row_ptr,
 // Add individual entries in block-CSR storage
 template <typename OP, typename U, typename V, typename W, typename X,
           typename Y>
-void impl::set_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
-                              const X& x, const Y& xrows, const Y& xcols, OP op,
-                              [[maybe_unused]]
-                              typename Y::value_type local_size,
-                              int bs0, int bs1)
+void impl::insert_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
+                                 const X& x, const Y& xrows, const Y& xcols,
+                                 OP op,
+                                 [[maybe_unused]]
+                                 typename Y::value_type local_size,
+                                 int bs0, int bs1)
 {
   const int nc = xcols.size();
   const int nbs = bs0 * bs1;
@@ -912,9 +913,6 @@ void MatrixCSR<U, V, W, X>::finalize_end()
   for (std::size_t i = 0; i < _unpack_pos.size(); ++i)
     for (int j = 0; j < bs2; ++j)
       _data[_unpack_pos[i] * bs2 + j] += _ghost_value_data_in[i * bs2 + j];
-
-  _ghost_value_data_in.clear();
-  _ghost_value_data_in.shrink_to_fit();
 
   _ghost_value_data_in.clear();
   _ghost_value_data_in.shrink_to_fit();
