@@ -77,9 +77,8 @@ void io(py::module& m)
             dolfinx::mesh::cell_entity_type(
                 mesh.topology()->cell_types().back(), entity_dim, 0),
             0);
-        std::array shape_e
-            = {entities_values.first.size() / num_vert_per_entity,
-               num_vert_per_entity};
+        std::array shape_e{entities_values.first.size() / num_vert_per_entity,
+                           num_vert_per_entity};
         return std::pair(as_pyarray(std::move(entities_values.first), shape_e),
                          as_pyarray(std::move(entities_values.second)));
       },
@@ -189,12 +188,14 @@ void io(py::module& m)
   fides_writer
       .def(py::init(
                [](MPICommWrapper comm, std::filesystem::path filename,
-                  std::shared_ptr<const dolfinx::mesh::Mesh<double>> mesh)
+                  std::shared_ptr<const dolfinx::mesh::Mesh<double>> mesh,
+                  std::string engine)
                {
                  return std::make_unique<dolfinx::io::FidesWriter<double>>(
-                     comm.get(), filename, mesh);
+                     comm.get(), filename, mesh, engine);
                }),
-           py::arg("comm"), py::arg("filename"), py::arg("mesh"))
+           py::arg("comm"), py::arg("filename"), py::arg("mesh"),
+           py::arg("engine") = "BPFile")
       .def(py::init(
                [](MPICommWrapper comm, std::filesystem::path filename,
                   const std::vector<std::variant<
@@ -206,12 +207,13 @@ void io(py::module& m)
                           std::complex<float>, double>>,
                       std::shared_ptr<const dolfinx::fem::Function<
                           std::complex<double>, double>>>>& u,
-                  dolfinx::io::FidesMeshPolicy policy)
+                  std::string engine, dolfinx::io::FidesMeshPolicy policy)
                {
                  return std::make_unique<dolfinx::io::FidesWriter<double>>(
                      comm.get(), filename, u, policy);
                }),
            py::arg("comm"), py::arg("filename"), py::arg("u"),
+           py::arg("engine") = "BPFile",
            py::arg("policy") = dolfinx::io::FidesMeshPolicy::update)
       .def("close",
            [](dolfinx::io::FidesWriter<double>& self) { self.close(); })
@@ -227,12 +229,14 @@ void io(py::module& m)
       m, "VTXWriter", "VTXWriter object")
       .def(py::init(
                [](MPICommWrapper comm, std::filesystem::path filename,
-                  std::shared_ptr<const dolfinx::mesh::Mesh<double>> mesh)
+                  std::shared_ptr<const dolfinx::mesh::Mesh<double>> mesh,
+                  std::string engine)
                {
                  return std::make_unique<dolfinx::io::VTXWriter<double>>(
-                     comm.get(), filename, mesh);
+                     comm.get(), filename, mesh, engine);
                }),
-           py::arg("comm"), py::arg("filename"), py::arg("mesh"))
+           py::arg("comm"), py::arg("filename"), py::arg("mesh"),
+           py::arg("engine") = "BPFile")
       .def(py::init(
                [](MPICommWrapper comm, std::filesystem::path filename,
                   const std::vector<std::variant<
@@ -243,12 +247,14 @@ void io(py::module& m)
                       std::shared_ptr<const dolfinx::fem::Function<
                           std::complex<float>, double>>,
                       std::shared_ptr<const dolfinx::fem::Function<
-                          std::complex<double>, double>>>>& u)
+                          std::complex<double>, double>>>>& u,
+                  std::string engine)
                {
                  return std::make_unique<dolfinx::io::VTXWriter<double>>(
-                     comm.get(), filename, u);
+                     comm.get(), filename, u, engine);
                }),
-           py::arg("comm"), py::arg("filename"), py::arg("u"))
+           py::arg("comm"), py::arg("filename"), py::arg("u"),
+           py::arg("engine") = "BPFile")
       .def("close", [](dolfinx::io::VTXWriter<double>& self) { self.close(); })
       .def(
           "write",

@@ -42,7 +42,6 @@ class Expression;
 template <typename T, std::floating_point U = dolfinx::scalar_value_type_t<T>>
 class Function
 {
-
 public:
   /// Field type for the Function, e.g. `double`, `std::complex<float>`,
   /// etc.
@@ -80,7 +79,7 @@ public:
     // Assertion uses '<=' to deal with sub-functions
     assert(V->dofmap());
     assert(V->dofmap()->index_map->size_global() * V->dofmap()->index_map_bs()
-           <= _x->bs() * _x->map()->size_global());
+           <= _x->bs() * _x->index_map()->size_global());
   }
 
   // Copy constructor
@@ -199,9 +198,9 @@ public:
     assert(_function_space);
     assert(_function_space->element());
     assert(_function_space->mesh());
-    const std::vector<U> x
-        = fem::interpolation_coords(*_function_space->element(),
-                                    _function_space->mesh()->geometry(), cells);
+    const std::vector<U> x = fem::interpolation_coords<U>(
+        *_function_space->element(), _function_space->mesh()->geometry(),
+        cells);
     namespace stdex = std::experimental;
     stdex::mdspan<const U,
                   stdex::extents<std::size_t, 3, stdex::dynamic_extent>>
@@ -404,16 +403,15 @@ public:
       throw std::runtime_error(
           "Function with multiple geometry maps not implemented.");
     }
-    const CoordinateElement& cmap = mesh->geometry().cmaps()[0];
+    const CoordinateElement<U>& cmap = mesh->geometry().cmaps()[0];
 
     // Get geometry data
-    const graph::AdjacencyList<std::int32_t>& x_dofmap
-        = mesh->geometry().dofmap();
+    auto x_dofmap = mesh->geometry().dofmap();
     const std::size_t num_dofs_g = cmap.dim();
     std::span<const U> x_g = mesh->geometry().x();
 
     // Get element
-    std::shared_ptr<const FiniteElement> element = _function_space->element();
+    auto element = _function_space->element();
     assert(element);
     const int bs_element = element->block_size();
     const std::size_t reference_value_size
@@ -446,14 +444,13 @@ public:
     }
 
     namespace stdex = std::experimental;
-    using cmdspan4_t
-        = stdex::mdspan<const double, stdex::dextents<std::size_t, 4>>;
-    using mdspan2_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
-    using mdspan3_t = stdex::mdspan<double, stdex::dextents<std::size_t, 3>>;
+    using cmdspan4_t = stdex::mdspan<const U, stdex::dextents<std::size_t, 4>>;
+    using mdspan2_t = stdex::mdspan<U, stdex::dextents<std::size_t, 2>>;
+    using mdspan3_t = stdex::mdspan<U, stdex::dextents<std::size_t, 3>>;
 
-    std::vector<double> coord_dofs_b(num_dofs_g * gdim);
+    std::vector<U> coord_dofs_b(num_dofs_g * gdim);
     mdspan2_t coord_dofs(coord_dofs_b.data(), num_dofs_g, gdim);
-    std::vector<double> xp_b(1 * gdim);
+    std::vector<U> xp_b(1 * gdim);
     mdspan2_t xp(xp_b.data(), 1, gdim);
 
     // Loop over points
@@ -463,33 +460,33 @@ public:
     // Evaluate geometry basis at point (0, 0, 0) on the reference cell.
     // Used in affine case.
     std::array<std::size_t, 4> phi0_shape = cmap.tabulate_shape(1, 1);
-    std::vector<double> phi0_b(std::reduce(phi0_shape.begin(), phi0_shape.end(),
-                                           1, std::multiplies{}));
+    std::vector<U> phi0_b(std::reduce(phi0_shape.begin(), phi0_shape.end(), 1,
+                                      std::multiplies{}));
     cmdspan4_t phi0(phi0_b.data(), phi0_shape);
-    cmap.tabulate(1, std::vector<double>(tdim), {1, tdim}, phi0_b);
+    cmap.tabulate(1, std::vector<U>(tdim), {1, tdim}, phi0_b);
     auto dphi0 = stdex::submdspan(phi0, std::pair(1, tdim + 1), 0,
                                   stdex::full_extent, 0);
 
     // Data structure for evaluating geometry basis at specific points.
     // Used in non-affine case.
     std::array<std::size_t, 4> phi_shape = cmap.tabulate_shape(1, 1);
-    std::vector<double> phi_b(
+    std::vector<U> phi_b(
         std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
     cmdspan4_t phi(phi_b.data(), phi_shape);
     auto dphi = stdex::submdspan(phi, std::pair(1, tdim + 1), 0,
                                  stdex::full_extent, 0);
 
     // Reference coordinates for each point
-    std::vector<double> Xb(xshape[0] * tdim);
+    std::vector<U> Xb(xshape[0] * tdim);
     mdspan2_t X(Xb.data(), xshape[0], tdim);
 
     // Geometry data at each point
-    std::vector<double> J_b(xshape[0] * gdim * tdim);
+    std::vector<U> J_b(xshape[0] * gdim * tdim);
     mdspan3_t J(J_b.data(), xshape[0], gdim, tdim);
-    std::vector<double> K_b(xshape[0] * tdim * gdim);
+    std::vector<U> K_b(xshape[0] * tdim * gdim);
     mdspan3_t K(K_b.data(), xshape[0], tdim, gdim);
-    std::vector<double> detJ(xshape[0]);
-    std::vector<double> det_scratch(2 * gdim * tdim);
+    std::vector<U> detJ(xshape[0]);
+    std::vector<U> det_scratch(2 * gdim * tdim);
 
     // Prepare geometry data in each cell
     for (std::size_t p = 0; p < cells.size(); ++p)
@@ -501,7 +498,7 @@ public:
         continue;
 
       // Get cell geometry (coordinate dofs)
-      auto x_dofs = x_dofmap.links(cell_index);
+      auto x_dofs = stdex::submdspan(x_dofmap, cell_index, stdex::full_extent);
       assert(x_dofs.size() == num_dofs_g);
       for (std::size_t i = 0; i < num_dofs_g; ++i)
       {
@@ -516,22 +513,21 @@ public:
       auto _J = stdex::submdspan(J, p, stdex::full_extent, stdex::full_extent);
       auto _K = stdex::submdspan(K, p, stdex::full_extent, stdex::full_extent);
 
-      std::array<double, 3> Xpb = {0, 0, 0};
-      stdex::mdspan<double,
-                    stdex::extents<std::size_t, 1, stdex::dynamic_extent>>
+      std::array<U, 3> Xpb = {0, 0, 0};
+      stdex::mdspan<U, stdex::extents<std::size_t, 1, stdex::dynamic_extent>>
           Xp(Xpb.data(), 1, tdim);
 
       // Compute reference coordinates X, and J, detJ and K
       if (cmap.is_affine())
       {
-        CoordinateElement::compute_jacobian(dphi0, coord_dofs, _J);
-        CoordinateElement::compute_jacobian_inverse(_J, _K);
-        std::array<double, 3> x0 = {0, 0, 0};
+        CoordinateElement<U>::compute_jacobian(dphi0, coord_dofs, _J);
+        CoordinateElement<U>::compute_jacobian_inverse(_J, _K);
+        std::array<U, 3> x0 = {0, 0, 0};
         for (std::size_t i = 0; i < coord_dofs.extent(1); ++i)
           x0[i] += coord_dofs(0, i);
-        CoordinateElement::pull_back_affine(Xp, _K, x0, xp);
-        detJ[p]
-            = CoordinateElement::compute_jacobian_determinant(_J, det_scratch);
+        CoordinateElement<U>::pull_back_affine(Xp, _K, x0, xp);
+        detJ[p] = CoordinateElement<U>::compute_jacobian_determinant(
+            _J, det_scratch);
       }
       else
       {
@@ -539,10 +535,10 @@ public:
         cmap.pull_back_nonaffine(Xp, xp, coord_dofs);
 
         cmap.tabulate(1, std::span(Xpb.data(), tdim), {1, tdim}, phi_b);
-        CoordinateElement::compute_jacobian(dphi, coord_dofs, _J);
-        CoordinateElement::compute_jacobian_inverse(_J, _K);
-        detJ[p]
-            = CoordinateElement::compute_jacobian_determinant(_J, det_scratch);
+        CoordinateElement<U>::compute_jacobian(dphi, coord_dofs, _J);
+        CoordinateElement<U>::compute_jacobian_inverse(_J, _K);
+        detJ[p] = CoordinateElement<U>::compute_jacobian_determinant(
+            _J, det_scratch);
       }
 
       for (std::size_t j = 0; j < X.extent(1); ++j)
@@ -550,27 +546,27 @@ public:
     }
 
     // Prepare basis function data structures
-    std::vector<double> basis_derivatives_reference_values_b(
+    std::vector<U> basis_derivatives_reference_values_b(
         1 * xshape[0] * space_dimension * reference_value_size);
     cmdspan4_t basis_derivatives_reference_values(
         basis_derivatives_reference_values_b.data(), 1, xshape[0],
         space_dimension, reference_value_size);
-    std::vector<double> basis_values_b(space_dimension * value_size);
+    std::vector<U> basis_values_b(space_dimension * value_size);
     mdspan2_t basis_values(basis_values_b.data(), space_dimension, value_size);
 
     // Compute basis on reference element
     element->tabulate(basis_derivatives_reference_values_b, Xb,
                       {X.extent(0), X.extent(1)}, 0);
 
-    using xu_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
-    using xU_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
-    using xJ_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
-    using xK_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
+    using xu_t = stdex::mdspan<U, stdex::dextents<std::size_t, 2>>;
+    using xU_t = stdex::mdspan<const U, stdex::dextents<std::size_t, 2>>;
+    using xJ_t = stdex::mdspan<const U, stdex::dextents<std::size_t, 2>>;
+    using xK_t = stdex::mdspan<const U, stdex::dextents<std::size_t, 2>>;
     auto push_forward_fn
-        = element->basix_element().map_fn<xu_t, xU_t, xJ_t, xK_t>();
+        = element->basix_element().template map_fn<xu_t, xU_t, xJ_t, xK_t>();
 
     auto apply_dof_transformation
-        = element->get_dof_transformation_function<double>();
+        = element->template get_dof_transformation_function<U>();
     const std::size_t num_basis_values = space_dimension * reference_value_size;
 
     for (std::size_t p = 0; p < cells.size(); ++p)

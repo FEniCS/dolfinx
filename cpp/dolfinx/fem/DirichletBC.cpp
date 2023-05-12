@@ -11,7 +11,6 @@
 #include <array>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/sort.h>
-#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>

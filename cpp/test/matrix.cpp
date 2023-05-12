@@ -29,8 +29,8 @@ namespace
 /// @param[in, out] x Output vector
 template <typename T>
 void spmv_impl(std::span<const T> values,
-               std::span<const std::int32_t> row_begin,
-               std::span<const std::int32_t> row_end,
+               std::span<const std::int64_t> row_begin,
+               std::span<const std::int64_t> row_end,
                std::span<const std::int32_t> indices, std::span<const T> x,
                std::span<T> y)
 {
@@ -72,23 +72,22 @@ void spmv_impl(std::span<const T> values,
 /// @param[in, out] y Output vector
 template <typename T>
 void spmv(la::MatrixCSR<T>& A, la::Vector<T>& x, la::Vector<T>& y)
-
 {
   // start communication (update ghosts)
   x.scatter_fwd_begin();
 
   const std::int32_t nrowslocal = A.num_owned_rows();
-  std::span<const std::int32_t> row_ptr(A.row_ptr().data(), nrowslocal + 1);
+  std::span<const std::int64_t> row_ptr(A.row_ptr().data(), nrowslocal + 1);
   std::span<const std::int32_t> cols(A.cols().data(), row_ptr[nrowslocal]);
-  std::span<const std::int32_t> off_diag_offset(A.off_diag_offset().data(),
+  std::span<const std::int64_t> off_diag_offset(A.off_diag_offset().data(),
                                                 nrowslocal);
   std::span<const T> values(A.values().data(), row_ptr[nrowslocal]);
 
   std::span<const T> _x = x.array();
   std::span<T> _y = y.mutable_array();
 
-  std::span<const std::int32_t> row_begin(row_ptr.data(), nrowslocal);
-  std::span<const std::int32_t> row_end(row_ptr.data() + 1, nrowslocal);
+  std::span<const std::int64_t> row_begin(row_ptr.data(), nrowslocal);
+  std::span<const std::int64_t> row_end(row_ptr.data() + 1, nrowslocal);
 
   // First stage:  spmv - diagonal
   // yi[0] += Ai[0] * xi[0]
@@ -121,7 +120,7 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
                                        {{"kappa", kappa}}, {}));
 
   la::SparsityPattern sp = fem::create_sparsity_pattern(*a);
-  sp.assemble();
+  sp.finalize();
   la::MatrixCSR<double> A(sp);
   fem::assemble_matrix(A.mat_add_values(), *a, {});
   A.finalize();
@@ -131,9 +130,9 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
 
 [[maybe_unused]] void test_matrix_norm()
 {
-  la::MatrixCSR<double> A0 = create_operator(MPI_COMM_SELF);
-  la::MatrixCSR<double> A1 = create_operator(MPI_COMM_WORLD);
-  CHECK(A1.norm_squared() == Approx(A0.norm_squared()).epsilon(1e-8));
+  la::MatrixCSR A0 = create_operator(MPI_COMM_SELF);
+  la::MatrixCSR A1 = create_operator(MPI_COMM_WORLD);
+  CHECK(A1.squared_norm() == Approx(A0.squared_norm()).epsilon(1e-8));
 }
 
 [[maybe_unused]] void test_matrix_apply()
@@ -158,7 +157,7 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
 
   // Create sparsity pattern
   la::SparsityPattern sp = fem::create_sparsity_pattern(*a);
-  sp.assemble();
+  sp.finalize();
 
   // Assemble matrix
   la::MatrixCSR<double> A(sp);
@@ -167,12 +166,12 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
   CHECK((V->dofmap()->index_map->size_local() == A.num_owned_rows()));
 
   // Get compatible vectors
-  auto maps = A.index_maps();
+  auto col_map = A.index_map(1);
 
-  la::Vector<double> x(maps[1], 1);
-  la::Vector<double> y(maps[1], 1);
+  la::Vector<double> x(col_map, 1);
+  la::Vector<double> y(col_map, 1);
 
-  std::size_t col_size = maps[1]->size_local() + maps[1]->num_ghosts();
+  std::size_t col_size = col_map->size_local() + col_map->num_ghosts();
   CHECK(x.array().size() == col_size);
 
   // Fill x vector with 1 (Constant)
@@ -193,7 +192,7 @@ void test_matrix()
   p.insert(std::vector{0}, std::vector{0});
   p.insert(std::vector{4}, std::vector{5});
   p.insert(std::vector{5}, std::vector{4});
-  p.assemble();
+  p.finalize();
 
   using T = float;
   la::MatrixCSR<T> A(p);
@@ -227,6 +226,6 @@ void test_matrix()
 TEST_CASE("Linear Algebra CSR Matrix", "[la_matrix]")
 {
   CHECK_NOTHROW(test_matrix());
-  // CHECK_NOTHROW(test_matrix_apply());
-  // CHECK_NOTHROW(test_matrix_norm());
+  CHECK_NOTHROW(test_matrix_apply());
+  CHECK_NOTHROW(test_matrix_norm());
 }

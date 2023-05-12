@@ -205,7 +205,7 @@ void declare_assembly_functions(py::module& m)
          const std::vector<py::array_t<T, py::array::c_style>>& x0, T scale)
       {
         std::vector<std::span<const T>> _x0;
-        for (const auto& x : x0)
+        for (auto x : x0)
           _x0.emplace_back(x.data(), x.size());
 
         std::vector<std::span<const T>> _constants;
@@ -385,7 +385,7 @@ void petsc_module(py::module& m)
         std::vector<std::int32_t> c(map->size_local(), 0);
         std::iota(c.begin(), c.end(), 0);
         dolfinx::fem::sparsitybuild::cells(sp, c, {*dofmap1, *dofmap0});
-        sp.assemble();
+        sp.finalize();
 
         // Build operator
         Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
@@ -426,7 +426,7 @@ void petsc_module(py::module& m)
         std::vector<std::int32_t> c(map->size_local(), 0);
         std::iota(c.begin(), c.end(), 0);
         dolfinx::fem::sparsitybuild::cells(sp, c, {*dofmap1, *dofmap0});
-        sp.assemble();
+        sp.finalize();
 
         // Build operator
         Mat A = dolfinx::la::petsc::create_matrix(comm, sp);

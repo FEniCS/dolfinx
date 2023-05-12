@@ -120,7 +120,7 @@ void geometry(py::module& m)
       {
         std::vector coll
             = dolfinx::geometry::compute_collisions<double>(treeA, treeB);
-        std::array<py::ssize_t, 2> shape = {py::ssize_t(coll.size() / 2), 2};
+        std::array<py::ssize_t, 2> shape{py::ssize_t(coll.size() / 2), 2};
         return as_pyarray(std::move(coll), shape);
       },
       py::arg("tree0"), py::arg("tree1"));
@@ -264,7 +264,7 @@ void geometry(py::module& m)
              const std::size_t i)
           {
             std::array<double, 6> bbox = self.get_bbox(i);
-            std::array<std::size_t, 2> shape = {2, 3};
+            std::array<std::size_t, 2> shape{2, 3};
             return py::array_t<double>(shape, bbox.data());
           },
           py::arg("i"))

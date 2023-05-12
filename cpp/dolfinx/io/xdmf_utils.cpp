@@ -26,6 +26,7 @@
 
 using namespace dolfinx;
 using namespace dolfinx::io;
+namespace stdex = std::experimental;
 
 namespace
 {
@@ -92,15 +93,13 @@ compute_point_values(const fem::Function<T, double>& u)
   std::vector<T> point_values(num_points * value_size_loc);
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& x_dofmap
-      = mesh->geometry().dofmap();
+  auto x_dofmap = mesh->geometry().dofmap();
 
   if (mesh->geometry().cmaps().size() > 1)
   {
     throw std::runtime_error(
         "XDMF I/O with multiple geometry maps not implemented.");
   }
-  const int num_dofs_g = mesh->geometry().cmaps()[0].dim();
 
   // Interpolate point values on each cell (using last computed value if
   // not continuous, e.g. discontinuous Galerkin methods)
@@ -112,9 +111,9 @@ compute_point_values(const fem::Function<T, double>& u)
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     // Get coordinates for all points in cell
-    std::span<const std::int32_t> dofs = x_dofmap.links(c);
-    for (int i = 0; i < num_dofs_g; ++i)
-      cells[dofs[i]] = c;
+    auto xdofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
+    for (std::size_t i = 0; i < xdofs.size(); ++i)
+      cells[xdofs[i]] = c;
   }
 
   u.eval(mesh->geometry().x(), {num_points, 3}, cells, point_values,
@@ -126,7 +125,7 @@ compute_point_values(const fem::Function<T, double>& u)
 //-----------------------------------------------------------------------------
 // Get data width - normally the same as u.value_size(), but expand for
 // 2D vector/tensor because XDMF presents everything as 3D
-std::int64_t get_padded_width(const fem::FiniteElement& e)
+std::int64_t get_padded_width(const fem::FiniteElement<double>& e)
 {
   const int width = e.value_size();
   const int rank = e.value_shape().size();
@@ -184,7 +183,7 @@ std::vector<Scalar>
 _get_cell_data_values(const fem::Function<Scalar, double>& u)
 {
   assert(u.function_space()->dofmap());
-  const auto mesh = u.function_space()->mesh();
+  auto mesh = u.function_space()->mesh();
   const int value_size = u.function_space()->element()->value_size();
   const int value_rank = u.function_space()->element()->value_shape().size();
 
@@ -197,7 +196,7 @@ _get_cell_data_values(const fem::Function<Scalar, double>& u)
   // Build lists of dofs and create map
   std::vector<std::int32_t> dof_set;
   dof_set.reserve(local_size);
-  const auto dofmap = u.function_space()->dofmap();
+  auto dofmap = u.function_space()->dofmap();
   const int ndofs = dofmap->element_dof_layout().num_dofs();
   const int bs = dofmap->bs();
   assert(ndofs * bs == value_size);
@@ -724,15 +723,14 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh<double>& mesh,
     const std::vector<std::int64_t>& nodes_g
         = mesh.geometry().input_global_indices();
 
-    const graph::AdjacencyList<std::int32_t>& x_dofmap
-        = mesh.geometry().dofmap();
+    auto x_dofmap = mesh.geometry().dofmap();
     std::map<std::int64_t, std::int32_t> igi_to_vertex;
     for (int c = 0; c < c_to_v->num_nodes(); ++c)
     {
       auto vertices = c_to_v->links(c);
-      auto x_dofs = x_dofmap.links(c);
+      auto xdofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
       for (std::size_t v = 0; v < vertices.size(); ++v)
-        igi_to_vertex[nodes_g[x_dofs[cell_vertex_dofs[v]]]] = vertices[v];
+        igi_to_vertex[nodes_g[xdofs[cell_vertex_dofs[v]]]] = vertices[v];
     }
 
     std::vector<std::int32_t> entities_new;

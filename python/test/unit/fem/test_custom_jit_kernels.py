@@ -241,8 +241,8 @@ def test_cffi_assembly():
 
     A = fem.assemble_matrix(a)
     A.finalize()
-    assert np.isclose(np.sqrt(A.norm_squared()), 56.124860801609124)
+    assert np.isclose(np.sqrt(A.squared_norm()), 56.124860801609124)
 
     b = fem.assemble_vector(L)
-    b.scatter_reverse(la.ScatterMode.add)
+    b.scatter_reverse(la.InsertMode.add)
     assert np.isclose(b.norm(), 0.0739710713711999)

@@ -116,7 +116,7 @@ def test_rank0():
     # Data structure for the result
     b = Function(vdP1)
 
-    dofmap = vdP1.dofmap.list.array
+    dofmap = vdP1.dofmap.list.flatten()
     scatter(b.x.array, array_evaluated, dofmap)
     b.x.scatter_forward()
 
@@ -156,11 +156,11 @@ def test_rank1_hdiv():
 
     a = form(ufl.inner(f, ufl.TestFunction(vdP1)) * ufl.dx)
     sparsity_pattern = create_sparsity_pattern(a)
-    sparsity_pattern.assemble()
+    sparsity_pattern.finalize()
     A = create_matrix(MPI.COMM_WORLD, sparsity_pattern)
 
-    dofmap_col = RT1.dofmap.list.array.reshape(-1, 8).astype(np.dtype(PETSc.IntType))
-    dofmap_row = vdP1.dofmap.list.array
+    dofmap_col = RT1.dofmap.list.astype(np.dtype(PETSc.IntType))
+    dofmap_row = vdP1.dofmap.list.flatten()
 
     dofmap_row_unrolled = (2 * np.repeat(dofmap_row, 2).reshape(-1, 2) + np.arange(2)).flatten()
     dofmap_row = dofmap_row_unrolled.reshape(-1, 12).astype(np.dtype(PETSc.IntType))
@@ -314,7 +314,7 @@ def test_assembly_into_quadrature_function():
     e_Q = Function(Q)
     with e_Q.vector.localForm() as e_Q_local:
         e_Q_local.setBlockSize(e_Q.function_space.dofmap.bs)
-        e_Q_local.setValuesBlocked(Q.dofmap.list.array, e_eval, addv=PETSc.InsertMode.INSERT)
+        e_Q_local.setValuesBlocked(Q.dofmap.list.flatten(), e_eval, addv=PETSc.InsertMode.INSERT)
 
     def e_exact(x):
         T = x[0] + 2.0 * x[1]
@@ -334,7 +334,8 @@ def test_assembly_into_quadrature_function():
     coord_dofs = mesh.geometry.dofmap
     x_g = mesh.geometry.x
     tdim = mesh.topology.dim
-    Q_dofs = Q.dofmap.list.array.reshape(num_cells, quadrature_points.shape[0])
+    Q_dofs = Q.dofmap.list
+
     bs = Q.dofmap.bs
 
     Q_dofs_unrolled = bs * np.repeat(Q_dofs, bs).reshape(-1, bs) + np.arange(bs)
@@ -344,7 +345,7 @@ def test_assembly_into_quadrature_function():
     with e_Q.vector.localForm() as local:
         e_exact_eval = np.zeros_like(local.array)
         for cell in range(num_cells):
-            xg = x_g[coord_dofs.links(cell), :tdim]
+            xg = x_g[coord_dofs[cell], :tdim]
             x = mesh.geometry.cmaps[0].push_forward(quadrature_points, xg)
             e_exact_eval[Q_dofs_unrolled[cell]] = e_exact(x.T).T.flatten()
         assert np.allclose(local.array, e_exact_eval)
