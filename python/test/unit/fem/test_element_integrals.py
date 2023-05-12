@@ -13,6 +13,7 @@ import pytest
 
 import dolfinx
 import ufl
+from basix.ufl import element
 from dolfinx.fem import (Constant, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_scalar, form)
 from dolfinx.fem.petsc import assemble_matrix, assemble_vector
@@ -63,7 +64,7 @@ def unit_cell(cell_type, random_order=True):
         ordered_points[j] = points[i]
     cells = np.array([order])
 
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
+    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, rank=1))
     mesh = create_mesh(MPI.COMM_WORLD, cells, ordered_points, domain)
     return mesh
 
@@ -123,7 +124,7 @@ def two_unit_cells(cell_type, agree=False, random_order=True, return_order=False
         ordered_points[j] = points[i]
     ordered_cells = np.array([[order[i] for i in c] for c in cells])
 
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell_type.name, 1))
+    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, rank=1))
     mesh = create_mesh(MPI.COMM_WORLD, ordered_cells, ordered_points, domain)
     if return_order:
         return mesh, order
@@ -161,8 +162,10 @@ def test_facet_integral(cell_type):
         elif cell_type == CellType.hexahedron:
             v.interpolate(lambda x: x[0] * (1 - x[0]) + x[1] * (1 - x[1]) + x[2] * (1 - x[2]))
 
-        # assert that the integral of these functions over each face are
+        # Check that integral of these functions over each face are
         # equal
+        mesh.topology.create_connectivity(tdim - 1, tdim)
+        mesh.topology.create_connectivity(tdim, tdim - 1)
         out = []
         for j in range(num_facets):
             a = form(v * ufl.ds(subdomain_data=marker, subdomain_id=j))
@@ -221,7 +224,7 @@ def test_facet_normals(cell_type):
                 # faces
                 v.interpolate(lambda x: tuple(x[j] - i % 2 if j == i // 3 else 0 * x[j] for j in range(3)))
 
-            # assert that the integrals these functions dotted with the
+            # Check that integrals these functions dotted with the
             # normal over a face is 1 on one face and 0 on the others
             ones = 0
             for j in range(num_facets):
@@ -291,9 +294,9 @@ def test_plus_minus_simple_vector(cell_type, pm):
         # For each cell
         for cell in range(2):
             # For each point in cell 0 in the first mesh
-            for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0.links(cell)):
+            for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0[cell]):
                 # Find the point in the cell 0 in the second mesh
-                for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1.links(cell)):
+                for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1[cell]):
                     if np.allclose(spaces[0].mesh.geometry.x[point0], space.mesh.geometry.x[point1]):
                         break
                 else:
@@ -346,9 +349,9 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
         # For each cell
         for cell in range(2):
             # For each point in cell 0 in the first mesh
-            for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0.links(cell)):
+            for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0[cell]):
                 # Find the point in the cell 0 in the second mesh
-                for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1.links(cell)):
+                for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1[cell]):
                     if np.allclose(spaces[0].mesh.geometry.x[point0], space.mesh.geometry.x[point1]):
                         break
                 else:
@@ -398,9 +401,9 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
         # For each cell
         for cell in range(2):
             # For each point in cell 0 in the first mesh
-            for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0.links(cell)):
+            for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0[cell]):
                 # Find the point in the cell 0 in the second mesh
-                for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1.links(cell)):
+                for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1[cell]):
                     if np.allclose(spaces[0].mesh.geometry.x[point0], space.mesh.geometry.x[point1]):
                         break
                 else:
@@ -435,7 +438,7 @@ def test_curl(space_type, order):
     # Assemble vector on 5 randomly numbered cells
     for i in range(5):
         random.shuffle(cell)
-        domain = ufl.Mesh(ufl.VectorElement("Lagrange", ufl.tetrahedron, 1))
+        domain = ufl.Mesh(element("Lagrange", "tetrahedron", 1, rank=1))
         mesh = create_mesh(MPI.COMM_WORLD, [cell], points, domain)
         V = FunctionSpace(mesh, (space_type, order))
         v = ufl.TestFunction(V)
@@ -486,7 +489,7 @@ def create_quad_mesh(offset):
                   [0, 0.5 + offset],
                   [1, 0.5 - offset]])
     cells = np.array([[0, 1, 2, 3]])
-    ufl_mesh = ufl.Mesh(ufl.VectorElement("Lagrange", "quadrilateral", 1))
+    ufl_mesh = ufl.Mesh(element("Lagrange", "quadrilateral", 1, rank=1))
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh)
     return mesh
 

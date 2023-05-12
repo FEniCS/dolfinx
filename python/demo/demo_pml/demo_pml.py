@@ -37,6 +37,7 @@ from efficiencies_pml_demo import calculate_analytical_efficiencies
 from mesh_wire_pml import generate_mesh_wire
 
 import ufl
+from basix.ufl import element
 from dolfinx import fem, mesh, plot
 from dolfinx.io import VTXWriter, gmshio
 
@@ -190,7 +191,6 @@ MPI.COMM_WORLD.barrier()
 if have_pyvista:
     topology, cell_types, geometry = plot.create_vtk_mesh(msh, 2)
     grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
-    pyvista.set_jupyter_backend("pythreejs")
     plotter = pyvista.Plotter()
     num_local_cells = msh.topology.index_map(msh.topology.dim).size_local
     grid.cell_data["Marker"] = cell_tags.values[cell_tags.indices < num_local_cells]
@@ -231,7 +231,7 @@ theta = 0  # Angle of incidence of the background field
 # element to represent the electric field:
 
 degree = 3
-curl_el = ufl.FiniteElement("N1curl", msh.ufl_cell(), degree)
+curl_el = element("N1curl", msh.basix_cell(), degree)
 V = fem.FunctionSpace(msh, curl_el)
 
 # Next, we interpolate $\mathbf{E}_b$ into the function space $V$,
@@ -443,7 +443,6 @@ if have_pyvista:
     Esh_values[:, :msh.topology.dim] = Esh_dg.x.array.reshape(V_x.shape[0], msh.topology.dim).real
     V_grid.point_data["u"] = Esh_values
 
-    pyvista.set_jupyter_backend("pythreejs")
     plotter = pyvista.Plotter()
     plotter.add_text("magnitude", font_size=12, color="black")
     plotter.add_mesh(V_grid.copy(), show_edges=True)

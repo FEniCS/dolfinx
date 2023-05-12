@@ -6,10 +6,11 @@
 
 from pathlib import Path
 
+import basix
 import numpy as np
 import pytest
-
 import ufl
+from basix.ufl import element, mixed_element
 from dolfinx.fem import (Function, FunctionSpace, VectorFunctionSpace,
                          assemble_scalar, dirichletbc, form,
                          locate_dofs_topological)
@@ -19,11 +20,10 @@ from dolfinx.io import XDMFFile
 from dolfinx.mesh import (CellType, create_rectangle, create_unit_cube,
                           create_unit_square, exterior_facet_indices,
                           locate_entities_boundary)
-from ufl import (CellDiameter, FacetNormal, SpatialCoordinate, TestFunction,
-                 TrialFunction, avg, div, ds, dS, dx, grad, inner, jump)
-
 from mpi4py import MPI
 from petsc4py import PETSc
+from ufl import (CellDiameter, FacetNormal, SpatialCoordinate, TestFunction,
+                 TrialFunction, avg, div, ds, dS, dx, grad, inner, jump)
 
 
 def run_scalar_test(mesh, V, degree):
@@ -216,8 +216,8 @@ def test_curl_curl_eigenvalue(family, order):
     mesh = create_rectangle(MPI.COMM_WORLD, [np.array([0.0, 0.0]),
                                              np.array([np.pi, np.pi])], [24, 24], CellType.triangle)
 
-    element = ufl.FiniteElement(family, ufl.triangle, order)
-    V = FunctionSpace(mesh, element)
+    e = element(family, basix.CellType.triangle, order)
+    V = FunctionSpace(mesh, e)
 
     u = ufl.TrialFunction(V)
     v = ufl.TestFunction(V)
@@ -279,10 +279,11 @@ def test_biharmonic(family):
     mesh = create_rectangle(MPI.COMM_WORLD, [np.array([0.0, 0.0]),
                                              np.array([1.0, 1.0])], [32, 32], CellType.triangle)
 
-    element = ufl.MixedElement([ufl.FiniteElement(family, ufl.triangle, 1),
-                                ufl.FiniteElement("Lagrange", ufl.triangle, 2)])
+    e = mixed_element([
+        element(family, basix.CellType.triangle, 1),
+        element(basix.ElementFamily.P, basix.CellType.triangle, 2)])
 
-    V = FunctionSpace(mesh, element)
+    V = FunctionSpace(mesh, e)
     sigma, u = ufl.TrialFunctions(V)
     tau, v = ufl.TestFunctions(V)
 

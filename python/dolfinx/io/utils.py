@@ -12,7 +12,7 @@ import numpy as np
 import numpy.typing as npt
 
 import basix
-import basix.ufl_wrapper
+import basix.ufl
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh  # noqa F401
@@ -151,10 +151,11 @@ class XDMFFile(_cpp.io.XDMFFile):
         """Write mesh to file"""
         super().write_mesh(mesh._cpp_object, xpath)
 
-    def write_meshtags(self, tags: MeshTags, geometry_xpath: str = "/Xdmf/Domain/Grid/Geometry",
+    def write_meshtags(self, tags: MeshTags, x: typing.Union[_cpp.mesh.Geometry_float32, _cpp.mesh.Geometry_float64],
+                       geometry_xpath: str = "/Xdmf/Domain/Grid/Geometry",
                        xpath: str = "/Xdmf/Domain") -> None:
         """Write mesh tags to file"""
-        super().write_meshtags(tags._cpp_object, geometry_xpath, xpath)
+        super().write_meshtags(tags._cpp_object, x, geometry_xpath, xpath)
 
     def write_function(self, u: Function, t: float = 0.0, mesh_xpath="/Xdmf/Domain/Grid[@GridType='Uniform'][1]"):
         """Write function to file for a given time.
@@ -178,19 +179,19 @@ class XDMFFile(_cpp.io.XDMFFile):
         x = super().read_geometry_data(name, xpath)
 
         # Build the mesh
-        cmap = _cpp.fem.CoordinateElement(cell_shape, cell_degree)
+        cmap = _cpp.fem.CoordinateElement_float64(cell_shape, cell_degree)
         msh = _cpp.mesh.create_mesh(self.comm(), _cpp.graph.AdjacencyList_int64(cells),
                                     cmap, x, _cpp.mesh.create_cell_partitioner(ghost_mode))
         msh.name = name
 
-        domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element(
-            "Lagrange", cell_shape.name, cell_degree, basix.LagrangeVariant.equispaced, dim=x.shape[1],
+        domain = ufl.Mesh(basix.ufl.element(
+            "Lagrange", cell_shape.name, cell_degree, basix.LagrangeVariant.equispaced, shape=(x.shape[1], ),
             gdim=x.shape[1]))
         return Mesh(msh, domain)
 
     def read_meshtags(self, mesh, name, xpath="/Xdmf/Domain"):
         mt = super().read_meshtags(mesh._cpp_object, name, xpath)
-        return MeshTags(mt, mesh)
+        return MeshTags(mt)
 
 
 def distribute_entity_data(mesh: Mesh, entity_dim: int, entities: npt.NDArray[np.int64],

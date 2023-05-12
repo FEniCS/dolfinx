@@ -6,13 +6,12 @@
 
 #pragma once
 
-#include <cstdint>
-#include <span>
-
-namespace dolfinx::mesh
-{
-class Mesh;
-} // namespace dolfinx::mesh
+#include "plaza.h"
+#include "refine.h"
+#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/log.h>
+#include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/Topology.h>
 
 namespace dolfinx::refinement
 {
@@ -22,7 +21,34 @@ namespace dolfinx::refinement
 /// @param[in] redistribute If `true` refined mesh is re-partitioned
 /// across MPI ranks.
 /// @return Refined mesh
-mesh::Mesh refine(const mesh::Mesh& mesh, bool redistribute = true);
+template <typename T>
+mesh::Mesh<T> refine(const mesh::Mesh<T>& mesh, bool redistribute = true)
+{
+  auto topology = mesh.topology();
+  assert(topology);
+
+  if (topology->cell_types().size() > 1)
+    throw std::runtime_error("Mixed topology not supported");
+
+  if (topology->cell_types()[0] != mesh::CellType::triangle
+      and topology->cell_types()[0] != mesh::CellType::tetrahedron)
+  {
+    throw std::runtime_error("Refinement only defined for simplices");
+  }
+
+  auto [refined_mesh, parent_cell, parent_facet]
+      = plaza::refine(mesh, redistribute, plaza::Option::none);
+
+  // Report the number of refined cells
+  const int D = topology->dim();
+  const std::int64_t n0 = topology->index_map(D)->size_global();
+  const std::int64_t n1 = refined_mesh.topology()->index_map(D)->size_global();
+  LOG(INFO) << "Number of cells increased from " << n0 << " to " << n1 << " ("
+            << 100.0 * (static_cast<double>(n1) / static_cast<double>(n0) - 1.0)
+            << "%% increase).";
+
+  return refined_mesh;
+}
 
 /// @brief Create a locally refined mesh.
 ///
@@ -34,6 +60,34 @@ mesh::Mesh refine(const mesh::Mesh& mesh, bool redistribute = true);
 /// @param[in] redistribute If `true` refined mesh is re-partitioned
 /// across MPI ranks.
 /// @return Refined mesh.
-mesh::Mesh refine(const mesh::Mesh& mesh, std::span<const std::int32_t> edges,
-                  bool redistribute = true);
+template <typename T>
+mesh::Mesh<T> refine(const mesh::Mesh<T>& mesh,
+                     std::span<const std::int32_t> edges,
+                     bool redistribute = true)
+{
+  auto topology = mesh.topology();
+  assert(topology);
+
+  if (topology->cell_types().size() > 1)
+    throw std::runtime_error("Mixed topology not supported");
+  if (topology->cell_types()[0] != mesh::CellType::triangle
+      and topology->cell_types()[0] != mesh::CellType::tetrahedron)
+  {
+    throw std::runtime_error("Refinement only defined for simplices");
+  }
+
+  auto [refined_mesh, parent_cell, parent_facet]
+      = plaza::refine(mesh, edges, redistribute, plaza::Option::none);
+
+  // Report the number of refined cells
+  const int D = topology->dim();
+  const std::int64_t n0 = topology->index_map(D)->size_global();
+  const std::int64_t n1 = refined_mesh.topology()->index_map(D)->size_global();
+  LOG(INFO) << "Number of cells increased from " << n0 << " to " << n1 << " ("
+            << 100.0 * (static_cast<double>(n1) / static_cast<double>(n0) - 1.0)
+            << "%% increase).";
+
+  return refined_mesh;
+}
+
 } // namespace dolfinx::refinement

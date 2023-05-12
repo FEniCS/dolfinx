@@ -51,6 +51,7 @@ from analytical_efficiencies_wire import calculate_analytical_efficiencies
 from mesh_wire import generate_mesh_wire
 
 import ufl
+from basix.ufl import element
 from dolfinx import fem, io, plot
 
 from mpi4py import MPI
@@ -245,7 +246,6 @@ MPI.COMM_WORLD.barrier()
 if have_pyvista:
     topology, cell_types, geometry = plot.create_vtk_mesh(domain, 2)
     grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
-    pyvista.set_jupyter_backend("pythreejs")
     plotter = pyvista.Plotter()
     num_local_cells = domain.topology.index_map(domain.topology.dim).size_local
     grid.cell_data["Marker"] = cell_tags.values[cell_tags.indices < num_local_cells]
@@ -271,7 +271,7 @@ theta = np.pi / 4  # Angle of incidence of the background field
 # represent the electric field
 
 degree = 3
-curl_el = ufl.FiniteElement("N1curl", domain.ufl_cell(), degree)
+curl_el = element("N1curl", domain.basix_cell(), degree)
 V = fem.FunctionSpace(domain, curl_el)
 
 # Next, we can interpolate $\mathbf{E}_b$ into the function space $V$:
@@ -439,7 +439,6 @@ if have_pyvista:
 
     V_grid.point_data["u"] = Esh_values
 
-    pyvista.set_jupyter_backend("pythreejs")
     plotter = pyvista.Plotter()
     plotter.add_text("magnitude", font_size=12, color="black")
     plotter.add_mesh(V_grid.copy(), show_edges=True)

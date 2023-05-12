@@ -26,7 +26,7 @@ void create_mesh_file()
 {
   // Create mesh using all processes and save xdmf
   auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
-  auto mesh = std::make_shared<mesh::Mesh>(
+  auto mesh = std::make_shared<mesh::Mesh<double>>(
       mesh::create_rectangle(MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}}, {N, N},
                              mesh::CellType::triangle, part));
 
@@ -37,6 +37,8 @@ void create_mesh_file()
 
 void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
 {
+  using T = double;
+
   MPI_Comm mpi_comm = MPI_COMM_WORLD;
   const int mpi_size = dolfinx::MPI::size(mpi_comm);
 
@@ -55,14 +57,14 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   MPI_Comm_create_group(MPI_COMM_WORLD, new_group, 0, &subset_comm);
 
   // Create coordinate map
-  auto e = std::make_shared<basix::FiniteElement>(basix::create_element(
+  auto e = std::make_shared<basix::FiniteElement<T>>(basix::create_element<T>(
       basix::element::family::P, basix::cell::type::triangle, 1,
       basix::element::lagrange_variant::unset,
       basix::element::dpc_variant::unset, false));
-  fem::CoordinateElement cmap(e);
+  fem::CoordinateElement<T> cmap(e);
 
   // read mesh data
-  std::vector<double> x;
+  std::vector<T> x;
   std::array<std::size_t, 2> xshape = {0, 2};
   std::vector<std::int64_t> cells;
   std::array<std::size_t, 2> cshape = {0, 3};
@@ -113,26 +115,32 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
                     [](std::int64_t i) { return (i != -1); });
   external_vertices.erase(external_vertices.begin(), it);
 
+  std::vector<int> cell_group_offsets
+      = {0, std::int32_t(cell_nodes.num_nodes() - ghost_owners.size()),
+         cell_nodes.num_nodes()};
+
+  std::vector<mesh::CellType> cell_types = {cmap.cell_shape()};
   mesh::Topology topology = mesh::create_topology(
-      mpi_comm, cell_nodes, original_cell_index, ghost_owners,
-      cmap.cell_shape(), external_vertices);
+      mpi_comm, cell_nodes, original_cell_index, ghost_owners, cell_types,
+      cell_group_offsets, external_vertices);
   int tdim = topology.dim();
 
-  mesh::Geometry geometry = mesh::create_geometry(mpi_comm, topology, cmap,
+  mesh::Geometry geometry = mesh::create_geometry(mpi_comm, topology, {cmap},
                                                   cell_nodes, x, xshape[1]);
 
-  auto mesh = std::make_shared<mesh::Mesh>(mpi_comm, std::move(topology),
-                                           std::move(geometry));
+  auto mesh = std::make_shared<mesh::Mesh<T>>(
+      mpi_comm, std::make_shared<mesh::Topology>(std::move(topology)),
+      std::move(geometry));
 
-  CHECK(mesh->topology().index_map(tdim)->size_global() == 2 * N * N);
-  CHECK(mesh->topology().index_map(tdim)->size_local() > 0);
+  CHECK(mesh->topology()->index_map(tdim)->size_global() == 2 * N * N);
+  CHECK(mesh->topology()->index_map(tdim)->size_local() > 0);
 
-  CHECK(mesh->topology().index_map(0)->size_global() == (N + 1) * (N + 1));
-  CHECK(mesh->topology().index_map(0)->size_local() > 0);
+  CHECK(mesh->topology()->index_map(0)->size_global() == (N + 1) * (N + 1));
+  CHECK(mesh->topology()->index_map(0)->size_local() > 0);
 
   CHECK((int)mesh->geometry().x().size() / 3
-        == mesh->topology().index_map(0)->size_local()
-               + mesh->topology().index_map(0)->num_ghosts());
+        == mesh->topology()->index_map(0)->size_local()
+               + mesh->topology()->index_map(0)->num_ghosts());
 
   MPI_Group_free(&comm_group);
   MPI_Group_free(&new_group);

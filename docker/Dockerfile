@@ -56,7 +56,7 @@ ARG NUMPY_VERSION=1.23.3
 ARG PYBIND11_VERSION=2.10.3
 ARG PETSC_VERSION=3.18.5
 ARG SLEPC_VERSION=3.18.2
-ARG PYVISTA_VERSION=0.38.1
+ARG PYVISTA_VERSION=0.38.4
 
 ARG MPICH_VERSION=4.1.1
 ARG OPENMPI_SERIES=4.1
@@ -64,6 +64,8 @@ ARG OPENMPI_PATCH=5
 # Used to set the correct PYTHONPATH for the real and complex install of
 # DOLFINx
 ARG PYTHON_VERSION=3.10
+# Base image for end-user images
+ARG BASEIMAGE=docker.io/dolfinx/dev-env:current
 
 ########################################
 
@@ -319,7 +321,8 @@ RUN apt-get -qq update && \
     make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex-64 ${MAKEFLAGS} all && \
     # Install petsc4py
     cd src/binding/petsc4py && \
-    PETSC_ARCH=linux-gnu-real-32:linux-gnu-complex-32:linux-gnu-real-64:linux-gnu-complex-64 pip3 install --no-cache-dir . && \
+    pip3 install --no-cache-dir Cython==0.29.32 && \
+    PETSC_ARCH=linux-gnu-real-32:linux-gnu-complex-32:linux-gnu-real-64:linux-gnu-complex-64 pip3 install --no-cache-dir -v . && \
     # Cleanup
     apt-get -y purge bison flex && \
     apt-get -y autoremove && \
@@ -363,7 +366,9 @@ WORKDIR /root
 
 ########################################
 
-FROM dev-env as dolfinx-onbuild
+ARG BASEIMAGE
+
+FROM ${BASEIMAGE} as dolfinx-onbuild
 LABEL description="DOLFINx in 32-bit real and complex modes (onbuild)"
 
 ARG PYTHON_VERSION
@@ -478,16 +483,12 @@ RUN apt-get -qq update && \
 # available on pypi for linux/arm64.
 # matplotlib improves plotting quality with better color maps and
 # properly rendering colorbars.
-# pythreejs and ipygany are two backends of pyvista not requiring a framebuffer,
-# and are therefore preferred in notebooks
-# Pinning ipywidgets due to https://github.com/pyvista/pyvista/issues/3274
+# Trame is preferred backend for pyvista
 RUN dpkgArch="$(dpkg --print-architecture)"; \
     case "$dpkgArch" in amd64) \
-    pip3 install --no-cache-dir pyvista==${PYVISTA_VERSION} ipywidgets==7.7.2 && \
-    pip3 install --no-cache-dir matplotlib && \
-    pip3 install --no-cache-dir pythreejs ipygany && \
-    pip3 cache purge && \
-    jupyter nbextension enable --py --sys-prefix ipygany ;; \
+    python3 -m pip install --no-cache-dir pyvista[trame]==${PYVISTA_VERSION} && \
+    python3 -m pip install --no-cache-dir matplotlib && \
+    python3 -m pip cache purge ;; \
     esac;
 
 # Jupyter Notebook kernel specification for complex build DOLFINx

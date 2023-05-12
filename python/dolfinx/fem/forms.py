@@ -10,19 +10,17 @@ import collections
 import collections.abc
 import typing
 
+import numpy as np
+import ufl
+from dolfinx.fem import IntegralType
 from dolfinx.fem.function import FunctionSpace
 
-if typing.TYPE_CHECKING:
-    from dolfinx.fem import function, IntegralType
-    from dolfinx.mesh import Mesh
-
-import numpy as np
-
-import ufl
 from dolfinx import cpp as _cpp
-from dolfinx import jit
+from dolfinx import default_scalar_type, jit
 
-from petsc4py import PETSc
+if typing.TYPE_CHECKING:
+    from dolfinx.fem import function
+    from dolfinx.mesh import Mesh
 
 
 class FormMetaClass:
@@ -87,13 +85,13 @@ form_types = typing.Union[FormMetaClass, _cpp.fem.Form_float32, _cpp.fem.Form_fl
                           _cpp.fem.Form_complex64, _cpp.fem.Form_complex128]
 
 
-_ufl_to_dolfinx_domain = {"cell": _cpp.fem.IntegralType.cell,
-                          "exterior_facet": _cpp.fem.IntegralType.exterior_facet,
-                          "interior_facet": _cpp.fem.IntegralType.interior_facet,
-                          "vertex": _cpp.fem.IntegralType.vertex}
+_ufl_to_dolfinx_domain = {"cell": IntegralType.cell,
+                          "exterior_facet": IntegralType.exterior_facet,
+                          "interior_facet": IntegralType.interior_facet,
+                          "vertex": IntegralType.vertex}
 
 
-def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtype = PETSc.ScalarType,
+def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtype = default_scalar_type,
          form_compiler_options: dict = {}, jit_options: dict = {}):
     """Create a Form or an array of Forms.
 
@@ -136,17 +134,9 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
         # Extract subdomain data from UFL form
         sd = form.subdomain_data()
         domain, = list(sd.keys())  # Assuming single domain
-
-        def unwrap_mt(t):
-            """Get subdomain data for each integral type."""
-            try:
-                return t._cpp_object
-            except AttributeError:
-                return t
         # Check that subdomain data for each integral type is the same
         for data in sd.get(domain).values():
             assert all([d is data[0] for d in data])
-        subdomains = {_ufl_to_dolfinx_domain[key]: unwrap_mt(mt[0]) for (key, mt) in sd.get(domain).items()}
 
         mesh = domain.ufl_cargo()
         if mesh is None:
@@ -164,6 +154,26 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
         coeffs = [original_coeffs[ufcx_form.original_coefficient_position[i]
                                   ]._cpp_object for i in range(ufcx_form.num_coefficients)]
         constants = [c._cpp_object for c in form.constants()]
+
+        # NOTE Could remove this and let the user convert meshtags by
+        # calling compute_integration_domains themselves
+        def get_integration_domains(integral_type, subdomain):
+            """Get integration domains from subdomain data"""
+            if subdomain is None:
+                return []
+            else:
+                try:
+                    if integral_type in (IntegralType.exterior_facet, IntegralType.interior_facet):
+                        tdim = subdomain.topology.dim
+                        subdomain._cpp_object.topology.create_connectivity(tdim - 1, tdim)
+                        subdomain._cpp_object.topology.create_connectivity(tdim, tdim - 1)
+                    return _cpp.fem.compute_integration_domains(integral_type, subdomain._cpp_object)
+                except AttributeError:
+                    return subdomain
+
+        # Subdomain markers (possibly empty list for some integral types)
+        subdomains = {_ufl_to_dolfinx_domain[key]: get_integration_domains(
+            _ufl_to_dolfinx_domain[key], subdomain_data[0]) for (key, subdomain_data) in sd.get(domain).items()}
 
         return formcls(ufcx_form, V, coeffs, constants, subdomains, mesh, module.ffi, code)
 

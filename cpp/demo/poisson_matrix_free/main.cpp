@@ -29,6 +29,7 @@
 #include "poisson.h"
 #include <cmath>
 #include <dolfinx.h>
+#include <dolfinx/common/types.h>
 #include <dolfinx/fem/Constant.h>
 
 using namespace dolfinx;
@@ -40,9 +41,7 @@ namespace linalg
 /// @param[in] alpha
 /// @param[in] x
 /// @param[in] y
-template <typename U>
-void axpy(la::Vector<U>& r, U alpha, const la::Vector<U>& x,
-          const la::Vector<U>& y)
+void axpy(auto& r, auto alpha, const auto& x, const auto& y)
 {
   std::transform(x.array().begin(), x.array().end(), y.array().begin(),
                  r.mutable_array().begin(),
@@ -60,19 +59,21 @@ void axpy(la::Vector<U>& r, U alpha, const la::Vector<U>& x,
 /// @return The number if iterations
 /// @pre It is required that the ghost values of `x` and `b` have been
 /// updated before this function is called
-template <typename U, typename ApplyFunction>
-int cg(la::Vector<U>& x, const la::Vector<U>& b, ApplyFunction&& action,
-       int kmax = 50, double rtol = 1e-8)
+template <typename ApplyFunction>
+int cg(auto& x, auto& b, ApplyFunction&& action, int kmax = 50,
+       double rtol = 1e-8)
 {
+  using T = typename std::decay_t<decltype(x)>::value_type;
+
   // Create working vectors
-  la::Vector<U> r(b), y(b);
+  la::Vector r(b), y(b);
 
   // Compute initial residual r0 = b - Ax0
   action(x, y);
-  axpy(r, U(-1), y, b);
+  axpy(r, T(-1), y, b);
 
   // Create p work vector
-  la::Vector<U> p(r);
+  la::Vector p(r);
 
   // Iterations of CG
   auto rnorm0 = la::squared_norm(r);
@@ -87,7 +88,7 @@ int cg(la::Vector<U>& x, const la::Vector<U>& b, ApplyFunction&& action,
     action(p, y);
 
     // Compute alpha = r.r/p.y
-    const U alpha = rnorm / la::inner_product(p, y);
+    const T alpha = rnorm / la::inner_product(p, y);
 
     // Update x (x <- x + alpha*p)
     axpy(x, alpha, p, x);
@@ -97,7 +98,7 @@ int cg(la::Vector<U>& x, const la::Vector<U>& b, ApplyFunction&& action,
 
     // Update residual norm
     const auto rnorm_new = la::squared_norm(r);
-    const U beta = rnorm_new / rnorm;
+    const T beta = rnorm_new / rnorm;
     rnorm = rnorm_new;
 
     if (rnorm / rnorm0 < rtol2)
@@ -118,30 +119,31 @@ int main(int argc, char* argv[])
 
   {
     using T = PetscScalar;
+    using U = typename dolfinx::scalar_value_type_t<T>;
 
     MPI_Comm comm = MPI_COMM_WORLD;
 
     // Create mesh and function space
-    auto mesh = std::make_shared<mesh::Mesh>(mesh::create_rectangle(
+    auto mesh = std::make_shared<mesh::Mesh<U>>(mesh::create_rectangle<U>(
         comm, {{{0.0, 0.0}, {1.0, 1.0}}}, {10, 10}, mesh::CellType::triangle,
         mesh::create_cell_partitioner(mesh::GhostMode::none)));
-    auto V = std::make_shared<fem::FunctionSpace>(
+    auto V = std::make_shared<fem::FunctionSpace<U>>(
         fem::create_functionspace(functionspace_form_poisson_M, "ui", mesh));
 
     // Prepare and set Constants for the bilinear form
     auto f = std::make_shared<fem::Constant<T>>(-6.0);
 
     // Define variational forms
-    auto L = std::make_shared<fem::Form<T>>(
+    auto L = std::make_shared<fem::Form<T, U>>(
         fem::create_form<T>(*form_poisson_L, {V}, {}, {{"f", f}}, {}));
 
     // Action of the bilinear form "a" on a function ui
-    auto ui = std::make_shared<fem::Function<T>>(V);
-    auto M = std::make_shared<fem::Form<T>>(
+    auto ui = std::make_shared<fem::Function<T, U>>(V);
+    auto M = std::make_shared<fem::Form<T, U>>(
         fem::create_form<T>(*form_poisson_M, {V}, {{"ui", ui}}, {{}}, {}));
 
     // Define boundary condition
-    auto u_D = std::make_shared<fem::Function<T>>(V);
+    auto u_D = std::make_shared<fem::Function<T, U>>(V);
     u_D->interpolate(
         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
         {
@@ -151,11 +153,11 @@ int main(int argc, char* argv[])
           return {f, {f.size()}};
         });
 
-    mesh->topology_mutable().create_connectivity(1, 2);
+    mesh->topology_mutable()->create_connectivity(1, 2);
     const std::vector<std::int32_t> facets
-        = mesh::exterior_facet_indices(mesh->topology());
-    std::vector<std::int32_t> bdofs
-        = fem::locate_dofs_topological({*V}, 1, facets);
+        = mesh::exterior_facet_indices(*mesh->topology());
+    std::vector<std::int32_t> bdofs = fem::locate_dofs_topological(
+        *V->mesh()->topology_mutable(), *V->dofmap(), 1, facets);
     auto bc = std::make_shared<const fem::DirichletBC<T>>(u_D, bdofs);
 
     // Assemble RHS vector
@@ -164,14 +166,14 @@ int main(int argc, char* argv[])
 
     // Apply lifting to account for Dirichlet boundary condition
     // b <- b - A * x_bc
-    fem::set_bc(ui->x()->mutable_array(), {bc}, T(-1));
+    fem::set_bc<T, U>(ui->x()->mutable_array(), {bc}, T(-1));
     fem::assemble_vector(b.mutable_array(), *M);
 
     // Communicate ghost values
     b.scatter_rev(std::plus<T>());
 
     // Set BC dofs to zero (effectively zeroes columns of A)
-    fem::set_bc(b.mutable_array(), {bc}, T(0));
+    fem::set_bc<T, U>(b.mutable_array(), {bc}, T(0));
 
     b.scatter_fwd();
 
@@ -180,8 +182,7 @@ int main(int argc, char* argv[])
     const std::vector<T> constants = fem::pack_constants(*M);
 
     // Create function for computing the action of A on x (y = Ax)
-    std::function<void(la::Vector<T>&, la::Vector<T>&)> action
-        = [&M, &ui, &bc, &coeff, &constants](la::Vector<T>& x, la::Vector<T>& y)
+    auto action = [&M, &ui, &bc, &coeff, &constants](auto& x, auto& y)
     {
       // Zero y
       y.set(0.0);
@@ -196,9 +197,9 @@ int main(int argc, char* argv[])
                            fem::make_coefficients_span(coeff));
 
       // Set BC dofs to zero (effectively zeroes rows of A)
-      fem::set_bc(y.mutable_array(), {bc}, T(0));
+      fem::set_bc<T, U>(y.mutable_array(), {bc}, T(0));
 
-      // Accumuate ghost values
+      // Accumulate ghost values
       y.scatter_rev(std::plus<T>());
 
       // Update ghost values
@@ -210,14 +211,13 @@ int main(int argc, char* argv[])
     int num_it = linalg::cg(*u->x(), b, action, 200, 1e-6);
 
     // Set BC values in the solution vectors
-    fem::set_bc(u->x()->mutable_array(), {bc}, T(1));
+    fem::set_bc<T, U>(u->x()->mutable_array(), {bc}, T(1));
 
     // Compute L2 error (squared) of the solution vector e = (u - u_d, u
     // - u_d)*dx
-    auto E = std::make_shared<fem::Form<T>>(fem::create_form<T>(
+    auto E = std::make_shared<fem::Form<T>>(fem::create_form<T, U>(
         *form_poisson_E, {}, {{"uexact", u_D}, {"usol", u}}, {}, {}, mesh));
     T error = fem::assemble_scalar(*E);
-
     if (dolfinx::MPI::rank(comm) == 0)
     {
       std::cout << "Number of CG iterations " << num_it << std::endl;

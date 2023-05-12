@@ -22,6 +22,7 @@ from mesh_sphere_axis import generate_mesh_sphere_axis
 from scipy.special import jv, jvp
 
 import ufl
+from basix.ufl import mixed_element, element
 from dolfinx import fem, io, mesh, plot
 
 from mpi4py import MPI
@@ -370,9 +371,9 @@ if have_pyvista:
 # will use Lagrange elements:
 
 degree = 3
-curl_el = ufl.FiniteElement("N1curl", msh.ufl_cell(), degree)
-lagr_el = ufl.FiniteElement("Lagrange", msh.ufl_cell(), degree)
-V = fem.FunctionSpace(msh, ufl.MixedElement([curl_el, lagr_el]))
+curl_el = element("N1curl", msh.basix_cell(), degree)
+lagr_el = element("Lagrange", msh.basix_cell(), degree)
+V = fem.FunctionSpace(msh, mixed_element([curl_el, lagr_el]))
 
 # The integration domains of our problem are the following:
 
@@ -626,7 +627,7 @@ assert err_abs < 0.01
 assert err_ext < 0.01
 
 if has_vtx:
-    v_dg_el = ufl.VectorElement("DG", msh.ufl_cell(), degree, dim=3)
+    v_dg_el = element("DG", msh.basix_cell(), degree, shape=(3, ))
     W = fem.FunctionSpace(msh, v_dg_el)
     Es_dg = fem.Function(W)
     Es_expr = fem.Expression(Esh, W.element.interpolation_points())

@@ -45,6 +45,7 @@ import numpy as np
 from analytical_modes import verify_mode
 
 import ufl
+from basix.ufl import mixed_element, element
 from dolfinx import fem, io, plot
 from dolfinx.mesh import (CellType, create_rectangle, exterior_facet_indices,
                           locate_entities)
@@ -187,12 +188,12 @@ eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=ScalarType)
 # $\mathbf{e}_t$, we can use RTCE elements (the equivalent of Nedelec
 # elements on quadrilateral cells), while for $e_z$ field we can use
 # Lagrange elements. This hybrid formulation is implemented with
-# `MixedElement`:
+# `mixed_element`:
 
 degree = 1
-RTCE = ufl.FiniteElement("RTCE", msh.ufl_cell(), degree)
-Q = ufl.FiniteElement("Lagrange", msh.ufl_cell(), degree)
-V = fem.FunctionSpace(msh, ufl.MixedElement(RTCE, Q))
+RTCE = element("RTCE", msh.basix_cell(), degree)
+Q = element("Lagrange", msh.basix_cell(), degree)
+V = fem.FunctionSpace(msh, mixed_element([RTCE, Q]))
 
 # Now we can define our weak form:
 
@@ -386,7 +387,6 @@ for i, kz in vals:
 
             V_grid.point_data["u"] = Et_values
 
-            pyvista.set_jupyter_backend("ipygany")
             plotter = pyvista.Plotter()
             plotter.add_mesh(V_grid.copy(), show_edges=False)
             plotter.view_xy()
@@ -402,7 +402,6 @@ for i, kz in vals:
             V_cells, V_types, V_x = plot.create_vtk_mesh(V_lagr)
             V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
             V_grid.point_data["u"] = ezh.x.array.real[lagr_dofs]
-            pyvista.set_jupyter_backend("ipygany")
             plotter = pyvista.Plotter()
             plotter.add_mesh(V_grid.copy(), show_edges=False)
             plotter.view_xy()

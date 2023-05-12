@@ -26,7 +26,7 @@ void geometry(py::module& m)
 {
   m.def(
       "create_midpoint_tree",
-      [](const dolfinx::mesh::Mesh& mesh, int tdim,
+      [](const dolfinx::mesh::Mesh<double>& mesh, int tdim,
          const py::array_t<std::int32_t, py::array::c_style>& entities)
       {
         return dolfinx::geometry::create_midpoint_tree(
@@ -37,9 +37,9 @@ void geometry(py::module& m)
 
   m.def(
       "compute_closest_entity",
-      [](const dolfinx::geometry::BoundingBoxTree& tree,
-         const dolfinx::geometry::BoundingBoxTree& midpoint_tree,
-         const dolfinx::mesh::Mesh& mesh,
+      [](const dolfinx::geometry::BoundingBoxTree<double>& tree,
+         const dolfinx::geometry::BoundingBoxTree<double>& midpoint_tree,
+         const dolfinx::mesh::Mesh<double>& mesh,
          const py::array_t<double, py::array::c_style>& points)
       {
         const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
@@ -59,13 +59,14 @@ void geometry(py::module& m)
         else
           throw std::runtime_error("Array has wrong ndim.");
 
-        return as_pyarray(dolfinx::geometry::compute_closest_entity(
+        return as_pyarray(dolfinx::geometry::compute_closest_entity<double>(
             tree, midpoint_tree, mesh, p));
       },
       py::arg("tree"), py::arg("midpoint_tree"), py::arg("mesh"),
       py::arg("points"));
   m.def("determine_point_ownership",
-        [](const dolfinx::mesh::Mesh& mesh, const py::array_t<double>& points)
+        [](const dolfinx::mesh::Mesh<double>& mesh,
+           const py::array_t<double>& points)
         {
           const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
           std::vector<double> _p(3 * p_s0);
@@ -84,12 +85,12 @@ void geometry(py::module& m)
           else
             throw std::runtime_error("Array has wrong ndim.");
 
-          return dolfinx::geometry::determine_point_ownership(mesh, _p);
+          return dolfinx::geometry::determine_point_ownership<double>(mesh, _p);
         });
 
   m.def(
       "compute_collisions",
-      [](const dolfinx::geometry::BoundingBoxTree& tree,
+      [](const dolfinx::geometry::BoundingBoxTree<double>& tree,
          const py::array_t<double>& points)
       {
         const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
@@ -109,16 +110,17 @@ void geometry(py::module& m)
         else
           throw std::runtime_error("Array has wrong ndim.");
 
-        return dolfinx::geometry::compute_collisions(tree, _p);
+        return dolfinx::geometry::compute_collisions<double>(tree, _p);
       },
       py::arg("tree"), py::arg("points"));
   m.def(
       "compute_collisions",
-      [](const dolfinx::geometry::BoundingBoxTree& treeA,
-         const dolfinx::geometry::BoundingBoxTree& treeB)
+      [](const dolfinx::geometry::BoundingBoxTree<double>& treeA,
+         const dolfinx::geometry::BoundingBoxTree<double>& treeB)
       {
-        std::vector coll = dolfinx::geometry::compute_collisions(treeA, treeB);
-        std::array<py::ssize_t, 2> shape = {py::ssize_t(coll.size() / 2), 2};
+        std::vector coll
+            = dolfinx::geometry::compute_collisions<double>(treeA, treeB);
+        std::array<py::ssize_t, 2> shape{py::ssize_t(coll.size() / 2), 2};
         return as_pyarray(std::move(coll), shape);
       },
       py::arg("tree0"), py::arg("tree1"));
@@ -163,14 +165,14 @@ void geometry(py::module& m)
           throw std::runtime_error("Array has wrong ndim.");
 
         const std::array<double, 3> d
-            = dolfinx::geometry::compute_distance_gjk(_p, _q);
+            = dolfinx::geometry::compute_distance_gjk<double>(_p, _q);
         return py::array_t<double>(3, d.data());
       },
       py::arg("p"), py::arg("q"));
 
   m.def(
       "squared_distance",
-      [](const dolfinx::mesh::Mesh& mesh, int dim,
+      [](const dolfinx::mesh::Mesh<double>& mesh, int dim,
          std::vector<std::int32_t> indices, const py::array_t<double>& points)
       {
         const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
@@ -190,13 +192,13 @@ void geometry(py::module& m)
         else
           throw std::runtime_error("Array has wrong ndim.");
 
-        return as_pyarray(
-            dolfinx::geometry::squared_distance(mesh, dim, indices, _p));
+        return as_pyarray(dolfinx::geometry::squared_distance<double>(
+            mesh, dim, indices, _p));
       },
       py::arg("mesh"), py::arg("dim"), py::arg("indices"), py::arg("points"));
   m.def(
       "compute_colliding_cells",
-      [](const dolfinx::mesh::Mesh& mesh,
+      [](const dolfinx::mesh::Mesh<double>& mesh,
          const dolfinx::graph::AdjacencyList<int>& candidate_cells,
          const py::array_t<double>& points)
           -> std::variant<dolfinx::graph::AdjacencyList<std::int32_t>,
@@ -212,7 +214,7 @@ void geometry(py::module& m)
           assert(px.shape(0) <= 3);
           for (py::ssize_t i = 0; i < px.shape(0); i++)
             _p[i] = px(i);
-          auto cells = dolfinx::geometry::compute_colliding_cells(
+          auto cells = dolfinx::geometry::compute_colliding_cells<double>(
               mesh, candidate_cells, _p);
           return py::array_t<std::int32_t>(cells.array().size(),
                                            cells.array().data());
@@ -232,17 +234,17 @@ void geometry(py::module& m)
         else
           throw std::runtime_error("Array has wrong ndim.");
 
-        return dolfinx::geometry::compute_colliding_cells(mesh, candidate_cells,
-                                                          _p);
+        return dolfinx::geometry::compute_colliding_cells<double>(
+            mesh, candidate_cells, _p);
       },
       py::arg("mesh"), py::arg("candidate_cells"), py::arg("points"));
 
   // dolfinx::geometry::BoundingBoxTree
-  py::class_<dolfinx::geometry::BoundingBoxTree,
-             std::shared_ptr<dolfinx::geometry::BoundingBoxTree>>(
+  py::class_<dolfinx::geometry::BoundingBoxTree<double>,
+             std::shared_ptr<dolfinx::geometry::BoundingBoxTree<double>>>(
       m, "BoundingBoxTree")
       .def(py::init(
-               [](const dolfinx::mesh::Mesh& mesh, int dim,
+               [](const dolfinx::mesh::Mesh<double>& mesh, int dim,
                   const py::array_t<std::int32_t, py::array::c_style>& entities,
                   double padding)
                {
@@ -254,22 +256,22 @@ void geometry(py::module& m)
                }),
            py::arg("mesh"), py::arg("dim"), py::arg("entities"),
            py::arg("padding"))
-      .def_property_readonly("num_bboxes",
-                             &dolfinx::geometry::BoundingBoxTree::num_bboxes)
+      .def_property_readonly(
+          "num_bboxes", &dolfinx::geometry::BoundingBoxTree<double>::num_bboxes)
       .def(
           "get_bbox",
-          [](const dolfinx::geometry::BoundingBoxTree& self,
+          [](const dolfinx::geometry::BoundingBoxTree<double>& self,
              const std::size_t i)
           {
             std::array<double, 6> bbox = self.get_bbox(i);
-            std::array<std::size_t, 2> shape = {2, 3};
+            std::array<std::size_t, 2> shape{2, 3};
             return py::array_t<double>(shape, bbox.data());
           },
           py::arg("i"))
-      .def("__repr__", &dolfinx::geometry::BoundingBoxTree::str)
+      .def("__repr__", &dolfinx::geometry::BoundingBoxTree<double>::str)
       .def(
           "create_global_tree",
-          [](const dolfinx::geometry::BoundingBoxTree& self,
+          [](const dolfinx::geometry::BoundingBoxTree<double>& self,
              const MPICommWrapper comm)
           { return self.create_global_tree(comm.get()); },
           py::arg("comm"));
