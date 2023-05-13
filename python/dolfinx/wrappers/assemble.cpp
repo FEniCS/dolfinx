@@ -146,26 +146,30 @@ void declare_assembly_functions(py::module& m)
          const std::vector<
              std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>& bcs)
       {
-        const std::array<int, 2> bs = A.block_size();
-        if (bs[0] != bs[1])
+        //  const std::array<int, 2> bs = A.block_size();
+        const std::array<int, 2> data_bs
+            = {a.function_spaces()[0]->element()->block_size(),
+               a.function_spaces()[1]->element()->block_size()};
+
+        if (data_bs[0] != data_bs[1])
           throw std::runtime_error(
               "Non-square blocksize unsupported in Python");
 
-        if (bs[0] == 1)
+        if (data_bs[0] == 1)
         {
           dolfinx::fem::assemble_matrix(
               A.mat_add_values(), a,
               std::span(constants.data(), constants.size()),
               py_to_cpp_coeffs(coefficients), bcs);
         }
-        else if (bs[0] == 2)
+        else if (data_bs[0] == 2)
         {
           auto mat_add = A.template mat_add_values<2, 2>();
           dolfinx::fem::assemble_matrix(
               mat_add, a, std::span(constants.data(), constants.size()),
               py_to_cpp_coeffs(coefficients), bcs);
         }
-        else if (bs[0] == 3)
+        else if (data_bs[0] == 3)
         {
           auto mat_add = A.template mat_add_values<3, 3>();
           dolfinx::fem::assemble_matrix(
