@@ -1,4 +1,11 @@
+# Copyright (C) 2023 Chris N. Richardson
+#
+# This file is part of DOLFINx (https://www.fenicsproject.org)
+#
+# SPDX-License-Identifier:    LGPL-3.0-or-later
+"""Unit tests for MatrixCSR"""
 
+import pytest
 import numpy as np
 from mpi4py import MPI
 from dolfinx.la import matrix_csr
@@ -18,11 +25,11 @@ def create_test_sparsity(n, bs):
     sp.finalize()
     return sp
 
-
-def test_add():
+@pytest.mark.parametrize('dtype', [np.float32, np.float64, np.complex64, np.complex128])
+def test_add(dtype):
     # Regular CSR Matrix 6x6 with bs=1
     sp = create_test_sparsity(6, 1)
-    mat1 = matrix_csr(sp)
+    mat1 = matrix_csr(sp, dtype=dtype)
 
     # Insert a block using plain indices
     mat1.add([1.0, 2.0, 3.0, 4.0], [2, 3], [4, 5], 1)
@@ -34,7 +41,7 @@ def test_add():
 
     # Block CSR Matrix 3x3 with bs=2
     sp = create_test_sparsity(3, 2)
-    mat2 = matrix_csr(sp)
+    mat2 = matrix_csr(sp, dtype=dtype)
 
     # Insert a block using bs=1 data
     mat2.add([10.0, 20.0, 30.0, 40.0], [2, 3], [4, 5], 1)
@@ -47,7 +54,7 @@ def test_add():
     assert np.allclose(A1, A2)
 
     # Block CSR Matrix 3x3 with bs=2, expanded (should be same as A1)
-    mat3 = matrix_csr(sp, BlockMode.expanded)
+    mat3 = matrix_csr(sp, BlockMode.expanded, dtype=dtype)
 
     # Insert a block using bs=1 data
     mat3.add([10.0, 2.0, 30.0, 4.0], [2, 3], [4, 5], 1)
@@ -62,11 +69,12 @@ def test_add():
     assert mat3.squared_norm() == 0.0
 
 
-def test_set():
+@pytest.mark.parametrize('dtype', [np.float32, np.float64, np.complex64, np.complex128])
+def test_set(dtype):
     mpi_size = MPI.COMM_WORLD.size
     # Regular CSR Matrix 6x6 with bs=1
     sp = create_test_sparsity(6, 1)
-    mat1 = matrix_csr(sp)
+    mat1 = matrix_csr(sp, dtype=dtype)
 
     # Set a block with bs=1
     mat1.set([2.0, 3.0, 4.0, 5.0], [2, 3], [4, 5], 1)
@@ -78,20 +86,20 @@ def test_set():
     n2 = mat1.squared_norm()
     assert n1 == n2
 
-
-def test_set_blocked():
+@pytest.mark.parametrize('dtype', [np.float32, np.float64, np.complex64, np.complex128])
+def test_set_blocked(dtype):
     mpi_size = MPI.COMM_WORLD.size
     # Blocked CSR Matrix 3x3 with bs=2
     sp = create_test_sparsity(3, 2)
-    mat1 = matrix_csr(sp)
+    mat1 = matrix_csr(sp, dtype=dtype)
 
     # Set a block with bs=1
     mat1.set([2.0, 3.0, 4.0, 5.0], [2, 3], [4, 5], 1)
     n1 = mat1.squared_norm()
     assert (n1 == 54.0 * mpi_size)
 
-
-def test_distributed_csr():
+@pytest.mark.parametrize('dtype', [np.float32, np.float64, np.complex64, np.complex128])
+def test_distributed_csr(dtype):
     # global size N
     N = 36
     nghost = 3
@@ -112,15 +120,15 @@ def test_distributed_csr():
             sp.insert(i, j)
     sp.finalize()
 
-    mat = matrix_csr(sp)
+    mat = matrix_csr(sp, dtype=dtype)
     irow = np.array(range(n), dtype=np.int32)
     icol = np.array(range(n + nghost), dtype=np.int32)
-    data = np.ones(len(irow) * len(icol)) * 2.0
+    data = np.ones(len(irow) * len(icol), dtype=dtype) * 2.0
     mat.add(data, irow, icol, 1)
 
     irow = np.array(range(n, n + nghost), dtype=np.int32)
     icol = np.array(range(n, n + nghost), dtype=np.int32)
-    data = np.ones(len(irow) * len(icol))
+    data = np.ones(len(irow) * len(icol), dtype=dtype)
     mat.add(data, irow, icol, 1)
     pre_final_sum = mat.data.sum()
     mat.finalize()
