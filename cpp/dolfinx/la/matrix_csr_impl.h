@@ -48,7 +48,7 @@ namespace impl
 template <int BS0, int BS1, typename OP, typename U, typename V, typename W,
           typename X, typename Y>
 void insert_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
-                const Y& xrows, const Y& xcols, OP op, int gc,
+                const Y& xrows, const Y& xcols, OP op,
                 typename Y::value_type local_size);
 
 /// @brief Incorporate blocked data with given block sizes into a non-blocked
@@ -234,4 +234,4 @@ void impl::insert_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
   }
 }
 //-----------------------------------------------------------------------------
-}
+} // namespace dolfinx::la
