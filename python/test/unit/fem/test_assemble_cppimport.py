@@ -136,8 +136,7 @@ PYBIND11_MODULE(eigen_csr, m)
 @pytest.mark.skip_in_parallel
 @pytest.mark.skipif(not dolfinx.pkgconfig.exists("dolfinx"),
                     reason="This test needs DOLFINx pkg-config.")
-@pytest.mark.parametrize("dtype", ['double'])
-def test_csr_assembly(tempdir, dtype):  # noqa: F811
+def test_csr_assembly(tempdir):  # noqa: F811
 
     def compile_assemble_csr_assembler_module(a_form):
         dolfinx_pc = dolfinx.pkgconfig.parse("dolfinx")
@@ -151,6 +150,8 @@ cfg['libraries'] = {dolfinx_pc["libraries"]}
 cfg['library_dirs'] = {dolfinx_pc["library_dirs"]}
 %>
 """
+        dtype = "double" if dolfinx.default_scalar_type == np.float64 else "std::complex<double>"
+
         bs = [a_form.function_spaces[0].dofmap.index_map_bs,
               a_form.function_spaces[1].dofmap.index_map_bs]
 
