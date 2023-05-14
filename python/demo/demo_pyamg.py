@@ -23,10 +23,10 @@ k = 1.0
 a = form(inner(grad(u), grad(v)) * dx + k * inner(u, v) * dx)
 sp = create_sparsity_pattern(a)
 sp.finalize()
-A = matrix_csr(sp, BlockMode.expanded)
-assemble_matrix(A, a)
+Acsr = matrix_csr(sp, BlockMode.expanded)
+assemble_matrix(Acsr, a)
 
-A = scipy.sparse.csr_matrix((A.data, A.indices, A.indptr))
+A = scipy.sparse.csr_matrix((Acsr.data, Acsr.indices, Acsr.indptr))  # type: ignore
 
 ml = pyamg.smoothed_aggregation_solver(A, strength=('symmetric', {'theta': 0.08}))
 print(ml)                                     # print hierarchy information
