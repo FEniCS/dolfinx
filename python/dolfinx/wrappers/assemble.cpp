@@ -146,10 +146,9 @@ void declare_assembly_functions(py::module& m)
          const std::vector<
              std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>& bcs)
       {
-        //  const std::array<int, 2> bs = A.block_size();
         const std::array<int, 2> data_bs
-            = {a.function_spaces()[0]->element()->block_size(),
-               a.function_spaces()[1]->element()->block_size()};
+            = {a.function_spaces().at(0)->dofmap()->index_map_bs(),
+               a.function_spaces().at(1)->dofmap()->index_map_bs()};
 
         if (data_bs[0] != data_bs[1])
           throw std::runtime_error(

@@ -16,7 +16,7 @@ import scipy.sparse.linalg
 import dolfinx
 import dolfinx.pkgconfig
 import ufl
-from dolfinx.fem import (FunctionSpace, dirichletbc, form,
+from dolfinx.fem import (FunctionSpace, dirichletbc, form, VectorFunctionSpace,
                          locate_dofs_geometrical)
 from dolfinx.fem.petsc import assemble_matrix
 from dolfinx.mesh import create_unit_square
@@ -131,3 +131,70 @@ PYBIND11_MODULE(eigen_csr, m)
     assert np.isclose(A1.norm(), scipy.sparse.linalg.norm(A2))
 
     A1.destroy()
+
+
+@pytest.mark.skip_in_parallel
+@pytest.mark.skipif(not dolfinx.pkgconfig.exists("dolfinx"),
+                    reason="This test needs DOLFINx pkg-config.")
+@pytest.mark.parametrize("dtype", ['double'])
+def test_csr_assembly(tempdir, dtype):  # noqa: F811
+
+    def compile_assemble_csr_assembler_module(a_form):
+        dolfinx_pc = dolfinx.pkgconfig.parse("dolfinx")
+        cpp_code_header = f"""
+<%
+setup_pybind11(cfg)
+cfg['include_dirs'] = {dolfinx_pc["include_dirs"]
+  + [pybind11.get_include()] + [str(pybind_inc())] }
+cfg['compiler_args'] = ["-std=c++20", "-Wno-comment"]
+cfg['libraries'] = {dolfinx_pc["libraries"]}
+cfg['library_dirs'] = {dolfinx_pc["library_dirs"]}
+%>
+"""
+        bs = [a_form.function_spaces[0].dofmap.index_map_bs,
+              a_form.function_spaces[1].dofmap.index_map_bs]
+
+        cpp_code = f"""
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+#include <vector>
+#include <dolfinx/fem/assembler.h>
+#include <dolfinx/fem/DirichletBC.h>
+#include <dolfinx/fem/Form.h>
+#include <dolfinx/la/MatrixCSR.h>
+
+template<typename T>
+dolfinx::la::MatrixCSR<T>
+assemble_csr(const dolfinx::fem::Form<T>& a,
+             const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC<T>>>& bcs)
+{{
+  dolfinx::la::SparsityPattern sp = create_sparsity_pattern(a);
+  sp.finalize();
+  dolfinx::la::MatrixCSR<T> A(sp);
+  auto mat_add = A.template mat_add_values<{bs[0]}, {bs[1]}>();
+  dolfinx::fem::assemble_matrix(mat_add, a, bcs);
+  return A;
+}}
+
+PYBIND11_MODULE(assemble_csr, m)
+{{
+  m.def("assemble_matrix_bs", &assemble_csr<{dtype}>);
+}}
+"""
+        path = pathlib.Path(tempdir)
+        open(pathlib.Path(tempdir, "assemble_csr.cpp"), "w").write(cpp_code + cpp_code_header)
+        rel_path = path.relative_to(pathlib.Path(__file__).parent)
+        p = str(rel_path).replace("/", ".") + ".assemble_csr"
+        return cppimport.imp(p)
+
+    mesh = create_unit_square(MPI.COMM_SELF, 11, 7)
+    Q = VectorFunctionSpace(mesh, ("Lagrange", 1))
+    Q2 = VectorFunctionSpace(mesh, ("Lagrange", 1), dim=3)
+    u = ufl.TrialFunction(Q)
+    v = ufl.TestFunction(Q2)
+
+    a = form(ufl.inner(ufl.grad(u[0]), ufl.grad(v[0])) * ufl.dx)
+
+    module = compile_assemble_csr_assembler_module(a)
+    A = module.assemble_matrix_bs(a, [])
+    assert np.isclose(A.squared_norm(), 1743.3479507505413)

@@ -109,7 +109,7 @@ void impl::insert_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
                       const Y& xrows, const Y& xcols, OP op,
                       [[maybe_unused]] typename Y::value_type local_size)
 {
-  const int nc = xcols.size();
+  const std::size_t nc = xcols.size();
   assert(x.size() == xrows.size() * xcols.size() * BS0 * BS1);
   for (std::size_t r = 0; r < xrows.size(); ++r)
   {
@@ -155,7 +155,7 @@ void impl::insert_blocked_csr(U&& data, const V& cols, const W& row_ptr,
                               [[maybe_unused]]
                               typename Y::value_type local_size)
 {
-  const int nc = xcols.size();
+  const std::size_t nc = xcols.size();
   assert(x.size() == xrows.size() * xcols.size() * BS0 * BS1);
   for (std::size_t r = 0; r < xrows.size(); ++r)
   {
@@ -200,7 +200,7 @@ void impl::insert_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
                                  typename Y::value_type local_size,
                                  int bs0, int bs1)
 {
-  const int nc = xcols.size();
+  const std::size_t nc = xcols.size();
   const int nbs = bs0 * bs1;
 
   assert(x.size() == xrows.size() * xcols.size());

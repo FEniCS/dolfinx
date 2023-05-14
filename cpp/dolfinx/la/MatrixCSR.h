@@ -93,8 +93,10 @@ public:
   {
     if ((BS0 != _bs[0] and BS0 > 1 and _bs[0] > 1)
         or (BS1 != _bs[1] and BS1 > 1 and _bs[1] > 1))
+    {
       throw std::runtime_error(
           "Cannot insert blocks of different size than matrix block size");
+    }
 
     return [&](std::span<const std::int32_t> rows,
                std::span<const std::int32_t> cols,
@@ -132,8 +134,10 @@ public:
   {
     if ((BS0 != _bs[0] and BS0 > 1 and _bs[0] > 1)
         or (BS1 != _bs[1] and BS1 > 1 and _bs[1] > 1))
+    {
       throw std::runtime_error(
           "Cannot insert blocks of different size than matrix block size");
+    }
 
     return [&](std::span<const std::int32_t> rows,
                std::span<const std::int32_t> cols,
@@ -439,7 +443,7 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
     new_row_ptr.reserve(_row_ptr.size() * _bs[0]);
     std::span<const std::int32_t> num_diag_nnz = p.off_diagonal_offsets();
 
-    for (auto i = 0; i < _row_ptr.size() - 1; ++i)
+    for (std::size_t i = 0; i < _row_ptr.size() - 1; ++i)
     {
       // Repeat row _bs[0] times
       for (int q0 = 0; q0 < _bs[0]; ++q0)
@@ -579,7 +583,6 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
   // Global-to-local map for ghost columns
   std::vector<std::pair<std::int64_t, std::int32_t>> global_to_local;
   global_to_local.reserve(ghosts1.size());
-  std::int32_t local_i = local_size[1];
   for (std::int64_t idx : ghosts1)
     global_to_local.push_back({idx, global_to_local.size() + local_size[1]});
   std::sort(global_to_local.begin(), global_to_local.end());

@@ -16,10 +16,10 @@ import numpy as np
 import scipy
 np.set_printoptions(linewidth=200)
 
-mesh = create_unit_cube(MPI.COMM_WORLD, 20, 20, 20)
-Q = FunctionSpace(mesh, ("CG", 2))
+mesh = create_unit_cube(MPI.COMM_WORLD, 12, 12, 12)
+Q = VectorFunctionSpace(mesh, ("CG", 2))
 u, v = TestFunction(Q), TrialFunction(Q)
-k = 10.0
+k = 1.0
 a = form(inner(grad(u), grad(v))*dx + k*inner(u, v)*dx)
 sp = create_sparsity_pattern(a)
 sp.finalize()
@@ -30,7 +30,7 @@ A = scipy.sparse.csr_matrix((A.data, A.indices, A.indptr))
 
 # help(pyamg.smoothed_aggregation_solver)
 
-ml = pyamg.smoothed_aggregation_solver(A, strength=('symmetric',{'theta' : 0.1}))
+ml = pyamg.smoothed_aggregation_solver(A, strength=('symmetric',{'theta' : 0.08}))
 print(ml)                                           # print hierarchy information
 b = np.random.rand(A.shape[0])                      # pick a random right hand side
 M = ml.aspreconditioner(cycle='V')             # preconditioner
