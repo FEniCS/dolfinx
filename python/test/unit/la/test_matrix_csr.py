@@ -25,6 +25,7 @@ def create_test_sparsity(n, bs):
     sp.finalize()
     return sp
 
+
 @pytest.mark.parametrize('dtype', [np.float32, np.float64, np.complex64, np.complex128])
 def test_add(dtype):
     # Regular CSR Matrix 6x6 with bs=1
@@ -86,6 +87,7 @@ def test_set(dtype):
     n2 = mat1.squared_norm()
     assert n1 == n2
 
+
 @pytest.mark.parametrize('dtype', [np.float32, np.float64, np.complex64, np.complex128])
 def test_set_blocked(dtype):
     mpi_size = MPI.COMM_WORLD.size
@@ -97,6 +99,7 @@ def test_set_blocked(dtype):
     mat1.set([2.0, 3.0, 4.0, 5.0], [2, 3], [4, 5], 1)
     n1 = mat1.squared_norm()
     assert (n1 == 54.0 * mpi_size)
+
 
 @pytest.mark.parametrize('dtype', [np.float32, np.float64, np.complex64, np.complex128])
 def test_distributed_csr(dtype):
