@@ -4,16 +4,15 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the FunctionSpace class"""
+import basix
 import numpy as np
 import pytest
-
-import basix
-from basix.ufl import mixed_element, element
-from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
+from basix.ufl import element, mixed_element
+from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
+                         VectorFunctionSpace)
 from dolfinx.mesh import create_mesh, create_unit_cube
-from ufl import Cell, Mesh, TestFunction, TrialFunction, grad
-
 from mpi4py import MPI
+from ufl import Cell, Mesh, TestFunction, TrialFunction, grad
 
 
 @pytest.fixture
@@ -252,3 +251,18 @@ def test_vector_function_space_cell_type():
     # is correct
     V = VectorFunctionSpace(mesh, ('Lagrange', 1))
     assert V.ufl_element().cell() == cell
+
+@pytest.mark.skip_in_parallel
+def test_manifold_spaces():
+    vertices = [(0.0, 0.0, 1.0), (1.0, 1.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0,
+                                                                    0.0)]
+    cells = [(0, 1, 2), (0, 1, 3)]
+    domain = Mesh(element("Lagrange", "triangle", 1, gdim=3, rank=1))
+    mesh = create_mesh(MPI.COMM_WORLD, cells, vertices, domain)
+    QV = VectorFunctionSpace(mesh, ("Lagrange", 1))
+    QT = TensorFunctionSpace(mesh, ("Lagrange", 1))
+    u = Function(QV)
+    v = Function(QT)
+    assert u.ufl_shape == (3,)
+    assert v.ufl_shape == (3, 3)
+    
