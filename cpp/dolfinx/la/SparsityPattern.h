@@ -75,7 +75,7 @@ public:
   void insert_diagonal(std::span<const std::int32_t> rows);
 
   /// @brief Finalize sparsity pattern and communicate off-process entries
-  void assemble();
+  void finalize();
 
   /// @brief Index map for given dimension dimension. Returns the index
   /// map for rows and columns that will be set by the current MPI rank.
@@ -85,7 +85,7 @@ public:
 
   /// @brief Global indices of non-zero columns on owned rows.
   ///
-  /// @note The ghosts are computed only once SparsityPattern::assemble
+  /// @note The ghosts are computed only once SparsityPattern::finalize
   /// has been called.
   /// @return Global index non-zero columns on this process, including
   /// ghosts.

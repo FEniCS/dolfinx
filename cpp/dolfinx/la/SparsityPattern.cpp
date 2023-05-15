@@ -146,7 +146,7 @@ void SparsityPattern::insert(const std::span<const std::int32_t>& rows,
   if (!_offsets.empty())
   {
     throw std::runtime_error(
-        "Cannot insert into sparsity pattern. It has already been assembled");
+        "Cannot insert into sparsity pattern. It has already been finalized");
   }
 
   assert(_index_maps[0]);
@@ -170,7 +170,7 @@ void SparsityPattern::insert_diagonal(std::span<const std::int32_t> rows)
   if (!_offsets.empty())
   {
     throw std::runtime_error(
-        "Cannot insert into sparsity pattern. It has already been assembled");
+        "Cannot insert into sparsity pattern. It has already been finalized");
   }
 
   assert(_index_maps[0]);
@@ -223,12 +223,12 @@ common::IndexMap SparsityPattern::column_index_map() const
 //-----------------------------------------------------------------------------
 int SparsityPattern::block_size(int dim) const { return _bs[dim]; }
 //-----------------------------------------------------------------------------
-void SparsityPattern::assemble()
+void SparsityPattern::finalize()
 {
   if (!_offsets.empty())
     throw std::runtime_error("Sparsity pattern has already been finalised.");
 
-  common::Timer t0("SparsityPattern::assemble");
+  common::Timer t0("SparsityPattern::finalize");
 
   assert(_index_maps[0]);
   const std::int32_t local_size0 = _index_maps[0]->size_local();
@@ -388,21 +388,21 @@ void SparsityPattern::assemble()
 std::int64_t SparsityPattern::num_nonzeros() const
 {
   if (_offsets.empty())
-    throw std::runtime_error("Sparsity pattern has not be assembled.");
+    throw std::runtime_error("Sparsity pattern has not be finalized.");
   return _edges.size();
 }
 //-----------------------------------------------------------------------------
 std::int32_t SparsityPattern::nnz_diag(std::int32_t row) const
 {
   if (_offsets.empty())
-    throw std::runtime_error("Sparsity pattern has not be assembled.");
+    throw std::runtime_error("Sparsity pattern has not be finalized.");
   return _off_diagonal_offsets[row];
 }
 //-----------------------------------------------------------------------------
 std::int32_t SparsityPattern::nnz_off_diag(std::int32_t row) const
 {
   if (_offsets.empty())
-    throw std::runtime_error("Sparsity pattern has not be assembled.");
+    throw std::runtime_error("Sparsity pattern has not be finalized.");
   return (_offsets[row + 1] - _offsets[row]) - _off_diagonal_offsets[row];
 }
 //-----------------------------------------------------------------------------
@@ -410,14 +410,14 @@ std::pair<std::span<const std::int32_t>, std::span<const std::int64_t>>
 SparsityPattern::graph() const
 {
   if (_offsets.empty())
-    throw std::runtime_error("Sparsity pattern has not been assembled.");
+    throw std::runtime_error("Sparsity pattern has not been finalized.");
   return {_edges, _offsets};
 }
 //-----------------------------------------------------------------------------
 std::span<const std::int32_t> SparsityPattern::off_diagonal_offsets() const
 {
   if (_offsets.empty())
-    throw std::runtime_error("Sparsity pattern has not be assembled.");
+    throw std::runtime_error("Sparsity pattern has not be finalized.");
   return _off_diagonal_offsets;
 }
 //-----------------------------------------------------------------------------

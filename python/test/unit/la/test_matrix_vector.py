@@ -27,7 +27,7 @@ def test_create_matrix_csr():
     rows = range(0, bs * map.size_local)
     cols = range(0, bs * map.size_local)
     pattern.insert(rows, cols)
-    pattern.assemble()
+    pattern.finalize()
 
     A = la.matrix_csr(pattern)
     assert A.data.dtype == np.float64
