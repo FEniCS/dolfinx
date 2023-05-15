@@ -632,11 +632,13 @@ def VectorFunctionSpace(mesh: Mesh,
         ufl_e = basix.ufl.element(element.family(), element.cell_type,         # type: ignore
                                   element.degree(), element.lagrange_variant,  # type: ignore
                                   element.dpc_variant, element.discontinuous,  # type: ignore
-                                  shape=(mesh.geometry.dim, ) if dim is None else (dim, ), gdim=mesh.geometry.dim, rank=1)
+                                  shape=(mesh.geometry.dim, ) if dim is None else (dim, ),
+                                  gdim=mesh.geometry.dim, rank=1)
     except AttributeError:
         ed = ElementMetaData(*element)
         ufl_e = basix.ufl.element(ed.family, mesh.basix_cell(), ed.degree,
-                                  shape=(mesh.geometry.dim, ) if dim is None else (dim ), gdim=mesh.geometry.dim, rank=1)
+                                  shape=(mesh.geometry.dim, ) if dim is None else (dim, ),
+                                  gdim=mesh.geometry.dim, rank=1)
     return FunctionSpace(mesh, ufl_e)
 
 
