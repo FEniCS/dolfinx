@@ -252,6 +252,7 @@ def test_vector_function_space_cell_type():
     V = VectorFunctionSpace(mesh, ('Lagrange', 1))
     assert V.ufl_element().cell() == cell
 
+
 @pytest.mark.skip_in_parallel
 def test_manifold_spaces():
     vertices = [(0.0, 0.0, 1.0), (1.0, 1.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0,
@@ -265,4 +266,3 @@ def test_manifold_spaces():
     v = Function(QT)
     assert u.ufl_shape == (3,)
     assert v.ufl_shape == (3, 3)
-    
