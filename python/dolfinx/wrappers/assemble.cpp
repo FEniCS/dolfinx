@@ -40,7 +40,6 @@ namespace py = pybind11;
 
 namespace
 {
-
 template <typename T>
 std::map<std::pair<dolfinx::fem::IntegralType, int>,
          std::pair<std::span<const T>, int>>
@@ -92,7 +91,7 @@ void declare_petsc_discrete_operators(py::module& m)
         std::vector<std::int32_t> c(map->size_local(), 0);
         std::iota(c.begin(), c.end(), 0);
         dolfinx::fem::sparsitybuild::cells(sp, c, {*dofmap1, *dofmap0});
-        sp.assemble();
+        sp.finalize();
 
         // Build operator
         Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
@@ -134,7 +133,7 @@ void declare_petsc_discrete_operators(py::module& m)
         std::vector<std::int32_t> c(map->size_local(), 0);
         std::iota(c.begin(), c.end(), 0);
         dolfinx::fem::sparsitybuild::cells(sp, c, {*dofmap1, *dofmap0});
-        sp.assemble();
+        sp.finalize();
 
         // Build operator
         Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
