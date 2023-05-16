@@ -165,7 +165,7 @@ A development image with all of the dependencies required
 to build the `main` branch of the FEniCSx components:
 
 ```shell
-docker run -ti dolfinx/dev-env:nightly
+docker run -ti dolfinx/dev-env:current
 ```
 
 All Docker images support arm64 and amd64 architectures.
