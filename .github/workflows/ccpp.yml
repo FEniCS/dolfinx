@@ -31,7 +31,7 @@ jobs:
   build:
     if: "!(contains(github.event.head_commit.message, '[ci skip]') || contains(github.event.head_commit.message, '[skip ci]'))"
     runs-on: ubuntu-20.04
-    container: ghcr.io/fenics/test-env:nightly-openmpi
+    container: ghcr.io/fenics/test-env:current-openmpi
 
     env:
       PETSC_ARCH: linux-gnu-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
@@ -47,6 +47,8 @@ jobs:
       matrix:
         petsc_arch: [real, complex]
         petsc_int_type: [32, 64]
+
+    name: Build and test (scalar type ${{ matrix.petsc_arch }}, int${{ matrix.petsc_int_type }})
 
     steps:
       - uses: actions/checkout@v3

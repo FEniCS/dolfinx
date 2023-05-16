@@ -79,7 +79,7 @@ public:
     // Assertion uses '<=' to deal with sub-functions
     assert(V->dofmap());
     assert(V->dofmap()->index_map->size_global() * V->dofmap()->index_map_bs()
-           <= _x->bs() * _x->map()->size_global());
+           <= _x->bs() * _x->index_map()->size_global());
   }
 
   // Copy constructor

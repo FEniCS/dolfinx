@@ -209,7 +209,7 @@ public:
   void finalize_end();
 
   /// Compute the Frobenius norm squared
-  double norm_squared() const;
+  double squared_norm() const;
 
   /// @brief Index maps for the row and column space.
   ///
@@ -217,11 +217,10 @@ public:
   /// inserted into and the column IndexMap contains all local and ghost
   /// columns that may exist in the owned rows.
   ///
-  /// @return Row (0) and column (1) index maps
-  const std::array<std::shared_ptr<const common::IndexMap>, 2>&
-  index_maps() const
+  /// @return Row (0) or column (1) index maps
+  std::shared_ptr<const common::IndexMap> index_map(int dim) const
   {
-    return _index_maps;
+    return _index_maps.at(dim);
   }
 
   /// Get local data values
@@ -286,7 +285,8 @@ private:
   // on _comm)
   std::vector<int> _ghost_row_to_rank;
 
-  // Temporary store for finalize data during non-blocking communication
+  // Temporary stores for finalize data during non-blocking communication
+  container_type _ghost_value_data;
   container_type _ghost_value_data_in;
 };
 
@@ -543,7 +543,7 @@ void MatrixCSR<U, V, W, X>::finalize_begin()
 
   // For each ghost row, pack and send values to send to neighborhood
   std::vector<int> insert_pos = _val_send_disp;
-  std::vector<value_type> ghost_value_data(_val_send_disp.back());
+  _ghost_value_data.resize(_val_send_disp.back());
   for (int i = 0; i < num_ghosts0; ++i)
   {
     const int rank = _ghost_row_to_rank[i];
@@ -553,7 +553,7 @@ void MatrixCSR<U, V, W, X>::finalize_begin()
     const std::int32_t val_pos = insert_pos[rank];
     std::copy(std::next(_data.data(), _row_ptr[local_size0 + i]),
               std::next(_data.data(), _row_ptr[local_size0 + i + 1]),
-              std::next(ghost_value_data.begin(), val_pos));
+              std::next(_ghost_value_data.begin(), val_pos));
     insert_pos[rank]
         += _row_ptr[local_size0 + i + 1] - _row_ptr[local_size0 + i];
   }
@@ -570,7 +570,7 @@ void MatrixCSR<U, V, W, X>::finalize_begin()
                            _val_recv_disp.end(), val_recv_count.begin());
 
   int status = MPI_Ineighbor_alltoallv(
-      ghost_value_data.data(), val_send_count.data(), _val_send_disp.data(),
+      _ghost_value_data.data(), val_send_count.data(), _val_send_disp.data(),
       dolfinx::MPI::mpi_type<value_type>(), _ghost_value_data_in.data(),
       val_recv_count.data(), _val_recv_disp.data(),
       dolfinx::MPI::mpi_type<value_type>(), _comm.comm(), &_request);
@@ -583,10 +583,16 @@ void MatrixCSR<U, V, W, X>::finalize_end()
   int status = MPI_Wait(&_request, MPI_STATUS_IGNORE);
   assert(status == MPI_SUCCESS);
 
+  _ghost_value_data.clear();
+  _ghost_value_data.shrink_to_fit();
+
   // Add to local rows
   assert(_ghost_value_data_in.size() == _unpack_pos.size());
   for (std::size_t i = 0; i < _ghost_value_data_in.size(); ++i)
     _data[_unpack_pos[i]] += _ghost_value_data_in[i];
+
+  _ghost_value_data_in.clear();
+  _ghost_value_data_in.shrink_to_fit();
 
   // Set ghost row data to zero
   const std::int32_t local_size0 = _index_maps[0]->size_local();
@@ -594,7 +600,7 @@ void MatrixCSR<U, V, W, X>::finalize_end()
 }
 //-----------------------------------------------------------------------------
 template <typename U, typename V, typename W, typename X>
-double MatrixCSR<U, V, W, X>::norm_squared() const
+double MatrixCSR<U, V, W, X>::squared_norm() const
 {
   const std::size_t num_owned_rows = _index_maps[0]->size_local();
   assert(num_owned_rows < _row_ptr.size());
