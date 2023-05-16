@@ -1,7 +1,7 @@
 # DOLFINx Docker containers
 
-This document briefly summarises all of the `Dockerfile`s in this directory,
-the images they are built into, and how they are built.
+This document summarises all of the `Dockerfile`s in this directory, the images
+they are built into, and how they are built.
 
 ## `Dockerfile.test-env`
 
@@ -26,7 +26,7 @@ A build must be triggered manually via GitHub Actions to update the `:current-*`
 tags. All images are multi-architecture (x86-64 and ARM64).
 
 These images are not built automatically on a fixed schedule, so they can move
-out-of-sync with what is in the `Dockerfile.
+out-of-sync with what is in `Dockerfile.test-env`.
 
 ## `Dockerfile.end-user`
 
@@ -70,7 +70,7 @@ DOLFINx based on a RedHat-compatible distribution. It does not contain the
 FEniCS components.
 
 A build of this `Dockerfile` produces an image at
-`docker.io/fenicsproject/test-env:current-oneapi` which is used on GitHub
+`docker.io/fenicsproject/test-env:current-redhat` which is used on GitHub
 Actions for testing. 
 
 A build must be triggered manually via GitHub Actions to update the image.
