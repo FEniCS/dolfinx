@@ -7,7 +7,6 @@
 #include "MPICommWrapper.h"
 #include "array.h"
 #include "caster_mpi.h"
-#include "caster_petsc.h"
 #include <complex>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Scatterer.h>
