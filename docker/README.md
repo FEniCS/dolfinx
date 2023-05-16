@@ -59,7 +59,7 @@ does not contain the FEniCS components.
 
 A build of this `Dockerfile` produces an image at
 `docker.io/fenicsproject/test-env:current-oneapi` which is used on GitHub
-Actions for testing.
+Actions for testing. This image is x86-64 only.
 
 A build must be triggered manually via GitHub Actions to update the image.
 
@@ -71,6 +71,6 @@ FEniCS components.
 
 A build of this `Dockerfile` produces an image at
 `docker.io/fenicsproject/test-env:current-redhat` which is used on GitHub
-Actions for testing. 
+Actions for testing. This image is x86-64 only at this time. 
 
 A build must be triggered manually via GitHub Actions to update the image.
