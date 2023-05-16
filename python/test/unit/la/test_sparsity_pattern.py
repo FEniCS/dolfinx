@@ -22,5 +22,5 @@ def test_add_diagonal():
     facets = exterior_facet_indices(mesh.topology)
     blocks = locate_dofs_topological(V, mesh.topology.dim - 1, facets)
     pattern.insert_diagonal(blocks)
-    pattern.assemble()
+    pattern.finalize()
     assert len(blocks) == pattern.num_nonzeros
