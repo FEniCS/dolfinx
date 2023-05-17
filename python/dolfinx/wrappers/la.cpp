@@ -89,13 +89,47 @@ void declare_objects(py::module& m, const std::string& type)
   py::class_<dolfinx::la::MatrixCSR<T>,
              std::shared_ptr<dolfinx::la::MatrixCSR<T>>>(
       m, pyclass_matrix_name.c_str())
-      .def(py::init([](const dolfinx::la::SparsityPattern& p)
-                    { return dolfinx::la::MatrixCSR<T>(p); }),
-           py::arg("p"))
+      .def(py::init([](const dolfinx::la::SparsityPattern& p,
+                       dolfinx::la::BlockMode bm)
+                    { return dolfinx::la::MatrixCSR<T>(p, bm); }),
+           py::arg("p"),
+           py::arg("block_mode") = dolfinx::la::BlockMode::compact)
       .def_property_readonly("dtype", [](const dolfinx::la::MatrixCSR<T>& self)
                              { return py::dtype::of<T>(); })
+      .def_property_readonly("block_size",
+                             &dolfinx::la::MatrixCSR<T>::block_size)
       .def("squared_norm", &dolfinx::la::MatrixCSR<T>::squared_norm)
-      .def("mat_add_values", &dolfinx::la::MatrixCSR<T>::mat_add_values)
+      .def("index_map", &dolfinx::la::MatrixCSR<T>::index_map)
+      .def("add",
+           [](dolfinx::la::MatrixCSR<T>& self, const std::vector<T>& x,
+              const std::vector<std::int32_t>& rows,
+              const std::vector<std::int32_t>& cols, int bs = 1)
+           {
+             if (bs == 1)
+               self.template add<1, 1>(x, rows, cols);
+             else if (bs == 2)
+               self.template add<2, 2>(x, rows, cols);
+             else if (bs == 3)
+               self.template add<3, 3>(x, rows, cols);
+             else
+               throw std::runtime_error(
+                   "Block size not supported in this function");
+           })
+      .def("set",
+           [](dolfinx::la::MatrixCSR<T>& self, const std::vector<T>& x,
+              const std::vector<std::int32_t>& rows,
+              const std::vector<std::int32_t>& cols, int bs = 1)
+           {
+             if (bs == 1)
+               self.template set<1, 1>(x, rows, cols);
+             else if (bs == 2)
+               self.template set<2, 2>(x, rows, cols);
+             else if (bs == 3)
+               self.template set<3, 3>(x, rows, cols);
+             else
+               throw std::runtime_error(
+                   "Block size not supported in this function");
+           })
       .def("set",
            static_cast<void (dolfinx::la::MatrixCSR<T>::*)(T)>(
                &dolfinx::la::MatrixCSR<T>::set),
@@ -104,9 +138,11 @@ void declare_objects(py::module& m, const std::string& type)
       .def("to_dense",
            [](const dolfinx::la::MatrixCSR<T>& self)
            {
-             std::size_t nrows = self.num_all_rows();
+             const std::array<int, 2> bs = self.block_size();
+             std::size_t nrows = self.num_all_rows() * bs[0];
              auto map_col = self.index_map(1);
-             std::size_t ncols = map_col->size_local() + map_col->num_ghosts();
+             std::size_t ncols
+                 = (map_col->size_local() + map_col->num_ghosts()) * bs[1];
              return dolfinx_wrappers::as_pyarray(self.to_dense(),
                                                  std::array{nrows, ncols});
            })
@@ -208,6 +244,10 @@ void la(py::module& m)
   py::enum_<PyInsertMode>(m, "InsertMode")
       .value("add", PyInsertMode::add)
       .value("insert", PyInsertMode::insert);
+
+  py::enum_<dolfinx::la::BlockMode>(m, "BlockMode")
+      .value("compact", dolfinx::la::BlockMode::compact)
+      .value("expanded", dolfinx::la::BlockMode::expanded);
 
   py::enum_<dolfinx::la::Norm>(m, "Norm")
       .value("l1", dolfinx::la::Norm::l1)
