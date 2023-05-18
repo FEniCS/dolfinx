@@ -168,8 +168,14 @@ def test_basic_assembly_petsc_matrixcsr(mode):
     V = VectorFunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = form(inner(u, v) * dx + inner(u, v) * ds)
-    with pytest.raises(RuntimeError):
-        A0 = fem.assemble_matrix(a)
+    A0 = fem.assemble_matrix(a)
+    A0.finalize()
+    assert isinstance(A0, la.MatrixCSRMetaClass)
+    A1 = fem.petsc.assemble_matrix(a)
+    A1.assemble()
+    assert isinstance(A1, PETSc.Mat)
+    assert np.sqrt(A0.squared_norm()) == pytest.approx(A1.norm())
+    A1.destroy()
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])

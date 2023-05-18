@@ -7,7 +7,6 @@
 #include "MPICommWrapper.h"
 #include "array.h"
 #include "caster_mpi.h"
-#include "caster_petsc.h"
 #include <cfloat>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/CoordinateElement.h>

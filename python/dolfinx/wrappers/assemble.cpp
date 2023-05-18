@@ -232,16 +232,37 @@ void declare_assembly_functions(py::module& m)
          const std::vector<
              std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>& bcs)
       {
-        if (a.function_spaces()[0]->dofmap()->bs() != 1
-            or a.function_spaces()[0]->dofmap()->bs() != 1)
+        const std::array<int, 2> data_bs
+            = {a.function_spaces().at(0)->dofmap()->index_map_bs(),
+               a.function_spaces().at(1)->dofmap()->index_map_bs()};
+
+        if (data_bs[0] != data_bs[1])
+          throw std::runtime_error(
+              "Non-square blocksize unsupported in Python");
+
+        if (data_bs[0] == 1)
         {
-          throw std::runtime_error("Assembly with block size > 1 not yet "
-                                   "supported with la::MatrixCSR.");
+          dolfinx::fem::assemble_matrix(
+              A.mat_add_values(), a,
+              std::span(constants.data(), constants.size()),
+              py_to_cpp_coeffs(coefficients), bcs);
         }
-        dolfinx::fem::assemble_matrix(
-            A.mat_add_values(), a,
-            std::span(constants.data(), constants.size()),
-            py_to_cpp_coeffs(coefficients), bcs);
+        else if (data_bs[0] == 2)
+        {
+          auto mat_add = A.template mat_add_values<2, 2>();
+          dolfinx::fem::assemble_matrix(
+              mat_add, a, std::span(constants.data(), constants.size()),
+              py_to_cpp_coeffs(coefficients), bcs);
+        }
+        else if (data_bs[0] == 3)
+        {
+          auto mat_add = A.template mat_add_values<3, 3>();
+          dolfinx::fem::assemble_matrix(
+              mat_add, a, std::span(constants.data(), constants.size()),
+              py_to_cpp_coeffs(coefficients), bcs);
+        }
+        else
+          throw std::runtime_error("Block size not supported in Python");
       },
       py::arg("A"), py::arg("a"), py::arg("constants"), py::arg("coeffs"),
       py::arg("bcs"), "Experimental.");
@@ -251,7 +272,10 @@ void declare_assembly_functions(py::module& m)
          const std::vector<
              std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>& bcs,
          T diagonal)
-      { dolfinx::fem::set_diagonal(A.mat_set_values(), V, bcs, diagonal); },
+      {
+        // NB block size of data ("diagonal") is (1, 1)
+        dolfinx::fem::set_diagonal(A.mat_set_values(), V, bcs, diagonal);
+      },
       py::arg("A"), py::arg("V"), py::arg("bcs"), py::arg("diagonal"),
       "Experimental.");
   m.def(
