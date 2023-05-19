@@ -26,6 +26,8 @@
 #include <string>
 #include <vector>
 
+#include <petscsystypes.h>
+
 namespace py = pybind11;
 
 namespace dolfinx_wrappers
