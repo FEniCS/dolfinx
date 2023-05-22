@@ -44,8 +44,8 @@ def test_dgrsph_2d():
     #   /  0  /  1  /  2       /  3  /  4  /  5   /
     #  /     /     /          /     /     /      /
     # (0)---(1)---(2)--- ... (6)---(7)---(8)--- (*)
-    cells = [[n0, n0 + 1, n0 + 3, n0 + 4], 
-             [n0 + 1, n0 + 2, n0 + 4, n0 + 5], 
+    cells = [[n0, n0 + 1, n0 + 3, n0 + 4],
+             [n0 + 1, n0 + 2, n0 + 4, n0 + 5],
              [n0 + 2, x, n0 + 5, x + 1]]
     w = mesh.build_dual_graph(MPI.COMM_WORLD, to_adj(cells), 1)
     assert w.num_nodes == 3
@@ -66,8 +66,8 @@ def test_dgrsph_1d_spikes():
     #  |3    |4    |5         |9    |10   |11
     #  |     |     |          |     |     |
     # (0)---(1)---(2)--- ... (6)---(7)---(8)--- (*)
-    #     0     1     2      6     7     8    
-    cells = [[n0, n0 + 1], [n0 + 1, n0 + 2], [n0 + 2, x], 
+    #     0     1     2      6     7     8
+    cells = [[n0, n0 + 1], [n0 + 1, n0 + 2], [n0 + 2, x],
              [n0, n0 + 3], [n0 + 1, n0 + 4], [n0 + 2, n0 + 5]]
     w = mesh.build_dual_graph(MPI.COMM_WORLD, to_adj(cells), 1)
     assert w.num_nodes == 6
@@ -77,7 +77,7 @@ def test_dgrsph_1d_spikes():
         assert len(w.links(i)) == 2  # spike cells connect to 2 neigbour cells
 
 
- def test_dgrsph_2d_spikes():
+def test_dgrsph_2d_spikes():
     rank = MPI.COMM_WORLD.Get_rank()
     size = MPI.COMM_WORLD.Get_size()
     n0 = rank * 12
@@ -95,8 +95,8 @@ def test_dgrsph_1d_spikes():
     #  | / 0 | / 1 | /  2       /  (2nd rank not shown)
     #  |/    |/    |/          /
     # (0)---(1)---(2)--- ... (*)
-    cells = [[n0, n0 + 1, n0 + 3, n0 + 4], 
-             [n0 + 1, n0 + 2, n0 + 4, n0 + 5], 
+    cells = [[n0, n0 + 1, n0 + 3, n0 + 4],
+             [n0 + 1, n0 + 2, n0 + 4, n0 + 5],
              [n0 + 2, x, n0 + 5, x + 1],
              [n0, n0 + 3, n0 + 6, n0 + 9],
              [n0 + 1, n0 + 4, n0 + 7, n0 + 10],
