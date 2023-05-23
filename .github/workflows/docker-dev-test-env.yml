@@ -36,7 +36,7 @@ jobs:
       - name: Set Dockerfile
         run: |
           USER_INPUT=${{ github.event.inputs.dockerfile }}
-          echo "DOCKERFILE=${USER_INPUT:-docker/Dockerfile}" >> $GITHUB_ENV
+          echo "DOCKERFILE=${USER_INPUT:-docker/Dockerfile.test-env}" >> $GITHUB_ENV
 
       - name: Checkout DOLFINx
         uses: actions/checkout@v3
