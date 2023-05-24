@@ -161,7 +161,7 @@ bcs = [bc0, bc1]
 (v, q) = ufl.TestFunction(V), ufl.TestFunction(Q)
 f = Constant(msh, (PETSc.ScalarType(0), PETSc.ScalarType(0)))
 
-a = form([[inner(grad(u), grad(v)) * dx, inner(p, div(v)) * dx],
+a = form([[inner(grad(u), grad(v)) * dx, -inner(p, div(v)) * dx],
           [inner(div(u), q) * dx, None]])
 L = form([inner(f, v) * dx, inner(Constant(msh, PETSc.ScalarType(0)), q) * dx])
 # -
@@ -470,7 +470,7 @@ def mixed_direct():
     (u, p) = ufl.TrialFunctions(W)
     (v, q) = ufl.TestFunctions(W)
     f = Function(W0)
-    a = form((inner(grad(u), grad(v)) + inner(p, div(v)) + inner(div(u), q)) * dx)
+    a = form((inner(grad(u), grad(v)) - inner(p, div(v)) + inner(div(u), q)) * dx)
     L = form(inner(f, v) * dx)
 
     # Assemble LHS matrix and RHS vector
