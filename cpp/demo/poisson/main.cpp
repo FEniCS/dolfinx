@@ -254,8 +254,8 @@ int main(int argc, char* argv[])
     // .. code-block:: cpp
 
     // Save solution in VTK format
-    // io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
-    // file.write<T>({u}, 0.0);
+    io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
+    file.write<T>({u}, 0.0);
   }
 
   PetscFinalize();

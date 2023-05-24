@@ -8,6 +8,7 @@
 
 #include <concepts>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/types.h>
 #include <filesystem>
 #include <functional>
 #include <memory>
@@ -61,7 +62,8 @@ public:
   /// isoparametric cells.
   /// @param[in] mesh The Mesh to write to file
   /// @param[in] time Time parameter to associate with @p mesh
-  void write(const mesh::Mesh<double>& mesh, double time = 0.0);
+  template <typename U>
+  void write(const mesh::Mesh<U>& mesh, double time = 0.0);
 
   /// Write finite elements function with an associated timestep
   /// @param[in] u List of functions to write to file
@@ -72,10 +74,10 @@ public:
   /// (discontinuous) Lagrange
   /// @pre Functions in `u` cannot be sub-Functions. Interpolate
   /// sub-Functions before output
-  template <typename T>
-  void write(const std::vector<
-                 std::reference_wrapper<const fem::Function<T, double>>>& u,
-             double t)
+  template <typename T, std::floating_point U = dolfinx::scalar_value_type_t<T>>
+  void
+  write(const std::vector<std::reference_wrapper<const fem::Function<T, U>>>& u,
+        double t)
   {
     write_functions(u, t);
   }
@@ -83,8 +85,18 @@ public:
 private:
   void write_functions(
       const std::vector<
+          std::reference_wrapper<const fem::Function<float, float>>>& u,
+      double t);
+
+  void write_functions(const std::vector<std::reference_wrapper<
+                           const fem::Function<std::complex<float>, float>>>& u,
+                       double t);
+
+  void write_functions(
+      const std::vector<
           std::reference_wrapper<const fem::Function<double, double>>>& u,
       double t);
+
   void
   write_functions(const std::vector<std::reference_wrapper<
                       const fem::Function<std::complex<double>, double>>>& u,
