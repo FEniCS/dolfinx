@@ -166,10 +166,17 @@ void io(py::module& m)
                }),
            py::arg("comm"), py::arg("filename"), py::arg("mode"))
       .def("close", &dolfinx::io::VTKFile::close)
-      .def("write", &dolfinx::io::VTKFile::write<double>, py::arg("u"),
+      .def("write", &dolfinx::io::VTKFile::write<float, float>, py::arg("u"),
            py::arg("t") = 0.0)
-      .def("write", &dolfinx::io::VTKFile::write<std::complex<double>>,
+      .def("write", &dolfinx::io::VTKFile::write<double, double>, py::arg("u"),
+           py::arg("t") = 0.0)
+      .def("write", &dolfinx::io::VTKFile::write<std::complex<double>, double>,
            py::arg("u"), py::arg("t") = 0.0)
+      .def("write",
+           static_cast<void (dolfinx::io::VTKFile::*)(
+               const dolfinx::mesh::Mesh<float>&, double)>(
+               &dolfinx::io::VTKFile::write),
+           py::arg("mesh"), py::arg("t") = 0.0)
       .def("write",
            static_cast<void (dolfinx::io::VTKFile::*)(
                const dolfinx::mesh::Mesh<double>&, double)>(
