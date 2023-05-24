@@ -450,17 +450,17 @@ def mixed_direct():
     W = FunctionSpace(msh, TH)
 
     # No slip boundary condition
-    noslip = Function(V)
+    W0, _ = W.sub(0).collapse()
+    noslip = Function(W0)
     facets = locate_entities_boundary(msh, 1, noslip_boundary)
-    dofs = locate_dofs_topological((W.sub(0), V), 1, facets)
+    dofs = locate_dofs_topological((W.sub(0), W0), 1, facets)
     bc0 = dirichletbc(noslip, dofs, W.sub(0))
 
     # Driving velocity condition u = (1, 0) on top boundary (y = 1)
-    W0, _ = W.sub(0).collapse()
     lid_velocity = Function(W0)
     lid_velocity.interpolate(lid_velocity_expression)
     facets = locate_entities_boundary(msh, 1, lid)
-    dofs = locate_dofs_topological((W.sub(0), V), 1, facets)
+    dofs = locate_dofs_topological((W.sub(0), W0), 1, facets)
     bc1 = dirichletbc(lid_velocity, dofs, W.sub(0))
 
     # Collect Dirichlet boundary conditions
