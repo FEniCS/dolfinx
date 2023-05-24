@@ -888,5 +888,7 @@ void io::VTKFile::write_functions(
 }
 //----------------------------------------------------------------------------
 // Instantiation for float and double
+/// @cond
 template void io::VTKFile::write(const mesh::Mesh<float>&, double);
 template void io::VTKFile::write(const mesh::Mesh<double>&, double);
+/// @endcond
