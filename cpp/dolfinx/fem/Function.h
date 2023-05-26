@@ -46,6 +46,7 @@ public:
   /// Field type for the Function, e.g. `double`, `std::complex<float>`,
   /// etc.
   using value_type = T;
+  using geometry_type = U;
 
   /// Create function on given function space
   /// @param[in] V The function space

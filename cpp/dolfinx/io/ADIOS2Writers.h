@@ -24,6 +24,7 @@
 #include <memory>
 #include <mpi.h>
 #include <string>
+#include <type_traits>
 #include <variant>
 #include <vector>
 
@@ -148,7 +149,7 @@ extract_common_mesh(const typename adios2_writer::U<T>& u)
 {
   // Extract mesh from first function
   assert(!u.empty());
-  auto mesh = std::visit([](auto& u) { return u->function_space()->mesh(); },
+  auto mesh = std::visit([](auto&& u) { return u->function_space()->mesh(); },
                          u.front());
   assert(mesh);
 
@@ -156,7 +157,7 @@ extract_common_mesh(const typename adios2_writer::U<T>& u)
   for (auto& v : u)
   {
     std::visit(
-        [&mesh](auto& u)
+        [&mesh](auto&& u)
         {
           if (mesh != u->function_space()->mesh())
           {
@@ -192,33 +193,19 @@ void initialize_function_attributes(adios2::IO& io,
   // Array of function (name, cell association types) for each function
   // added to the file
   std::vector<std::array<std::string, 2>> u_data;
-  using X = decltype(u_data);
   for (auto& v : u)
   {
-    auto n = std::visit(
-        impl_adios2::overload{
-            [](const std::shared_ptr<const typename adios2_writer::Fd32<T>>& u)
-                -> X {
-              return {{u->name, "points"}};
-            },
-            [](const std::shared_ptr<const typename adios2_writer::Fd64<T>>& u)
-                -> X {
-              return {{u->name, "points"}};
-            },
-            [](const std::shared_ptr<const typename adios2_writer::Fc64<T>>& u)
-                -> X
-            {
-              return {{u->name + impl_adios2::field_ext[0], "points"},
-                      {u->name + impl_adios2::field_ext[1], "points"}};
-            },
-            [](const std::shared_ptr<const typename adios2_writer::Fc128<T>>& u)
-                -> X
-            {
-              return {{u->name + impl_adios2::field_ext[0], "points"},
-                      {u->name + impl_adios2::field_ext[1], "points"}};
-            }},
-        v);
-    u_data.insert(u_data.end(), n.begin(), n.end());
+    [&u_data](auto&& u)
+    {
+      using X = typename decltype(u)::element_type;
+      if (std::is_floating_point_v<typename X::geometry_type>)
+        u_data.push_back({u->name, "points"});
+      else
+      {
+        u_data.push_back({u->name + impl_adios2::field_ext[0], "points"});
+        u_data.push_back({u->name + impl_adios2::field_ext[1], "points"});
+      }
+    };
   }
 
   // Write field associations to file
