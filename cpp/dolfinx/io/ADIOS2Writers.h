@@ -43,17 +43,11 @@ namespace adios2_writer
 {
 /// @privatesection
 template <std::floating_point T>
-using Fd32 = fem::Function<float, T>;
-template <std::floating_point T>
-using Fd64 = fem::Function<double, T>;
-template <std::floating_point T>
-using Fc64 = fem::Function<std::complex<float>, T>;
-template <std::floating_point T>
-using Fc128 = fem::Function<std::complex<double>, T>;
-template <std::floating_point T>
 using U = std::vector<std::variant<
-    std::shared_ptr<const Fd32<T>>, std::shared_ptr<const Fd64<T>>,
-    std::shared_ptr<const Fc64<T>>, std::shared_ptr<const Fc128<T>>>>;
+    std::shared_ptr<const fem::Function<float, T>>,
+    std::shared_ptr<const fem::Function<double, T>>,
+    std::shared_ptr<const fem::Function<std::complex<float>, T>>,
+    std::shared_ptr<const fem::Function<std::complex<double>, T>>>>;
 } // namespace adios2_writer
 
 /// Base class for ADIOS2-based writers
