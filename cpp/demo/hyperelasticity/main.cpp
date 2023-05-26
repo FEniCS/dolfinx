@@ -1,5 +1,6 @@
 #include "hyperelasticity.h"
 #include <basix/finite-element.h>
+#include <climits>
 #include <cmath>
 #include <dolfinx.h>
 #include <dolfinx/common/log.h>
@@ -182,7 +183,7 @@ int main(int argc, char* argv[])
         *V,
         [](auto x)
         {
-          constexpr U eps = 1.0e-8;
+          constexpr U eps = 1.0e-6;
           std::vector<std::int8_t> marker(x.extent(1), false);
           for (std::size_t p = 0; p < x.extent(1); ++p)
           {
@@ -195,7 +196,7 @@ int main(int argc, char* argv[])
         *V,
         [](auto x)
         {
-          constexpr U eps = 1.0e-8;
+          constexpr U eps = 1.0e-6;
           std::vector<std::int8_t> marker(x.extent(1), false);
           for (std::size_t p = 0; p < x.extent(1); ++p)
           {
@@ -214,6 +215,8 @@ int main(int argc, char* argv[])
     newton_solver.setF(problem.F(), problem.vector());
     newton_solver.setJ(problem.J(), problem.matrix());
     newton_solver.set_form(problem.form());
+    newton_solver.rtol = 10 * std::numeric_limits<T>::epsilon();
+    newton_solver.atol = 10 * std::numeric_limits<T>::epsilon();
 
     la::petsc::Vector _u(la::petsc::create_vector_wrap(*u->x()), false);
     newton_solver.solve(_u.vec());
@@ -239,14 +242,14 @@ int main(int argc, char* argv[])
     sigma.name = "cauchy_stress";
     sigma.interpolate(sigma_expression);
 
-    // // Save solution in VTK format
+    // Save solution in VTK format
     io::VTKFile file_u(mesh->comm(), "u.pvd", "w");
     file_u.write<T>({*u}, 0.0);
 
-    // // Save Cauchy stress in XDMF format
-    // io::XDMFFile file_sigma(mesh->comm(), "sigma.xdmf", "w");
-    // file_sigma.write_mesh(*mesh);
-    // file_sigma.write_function(sigma, 0.0);
+    // Save Cauchy stress in XDMF format
+    io::XDMFFile file_sigma(mesh->comm(), "sigma.xdmf", "w");
+    file_sigma.write_mesh(*mesh);
+    file_sigma.write_function(sigma, 0.0);
   }
 
   PetscFinalize();

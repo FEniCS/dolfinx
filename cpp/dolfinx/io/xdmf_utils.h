@@ -69,6 +69,7 @@ std::int64_t get_num_cells(const pugi::xml_node& topology_node);
 /// array
 std::vector<double>
 get_point_data_values(const fem::Function<double, double>& u);
+std::vector<float> get_point_data_values(const fem::Function<float, float>& u);
 std::vector<std::complex<double>>
 get_point_data_values(const fem::Function<std::complex<double>, double>& u);
 
@@ -77,6 +78,7 @@ std::vector<double>
 get_cell_data_values(const fem::Function<double, double>& u);
 std::vector<std::complex<double>>
 get_cell_data_values(const fem::Function<std::complex<double>, double>& u);
+std::vector<float> get_cell_data_values(const fem::Function<float, float>& u);
 
 /// Get the VTK string identifier
 std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);

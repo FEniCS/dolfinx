@@ -76,7 +76,7 @@ graph::AdjacencyList<T> all_to_all(MPI_Comm comm,
 /// instead.
 template <typename T>
 std::pair<std::vector<T>, std::array<std::size_t, 2>>
-compute_point_values(const fem::Function<T, double>& u)
+compute_point_values(const fem::Function<T, dolfinx::scalar_value_type_t<T>>& u)
 {
   auto V = u.function_space();
   assert(V);
@@ -125,7 +125,8 @@ compute_point_values(const fem::Function<T, double>& u)
 //-----------------------------------------------------------------------------
 // Get data width - normally the same as u.value_size(), but expand for
 // 2D vector/tensor because XDMF presents everything as 3D
-std::int64_t get_padded_width(const fem::FiniteElement<double>& e)
+template <std::floating_point U>
+std::int64_t get_padded_width(const fem::FiniteElement<U>& e)
 {
   const int width = e.value_size();
   const int rank = e.value_shape().size();
@@ -138,8 +139,8 @@ std::int64_t get_padded_width(const fem::FiniteElement<double>& e)
 }
 //-----------------------------------------------------------------------------
 template <typename Scalar>
-std::vector<Scalar>
-_get_point_data_values(const fem::Function<Scalar, double>& u)
+std::vector<Scalar> _get_point_data_values(
+    const fem::Function<Scalar, dolfinx::scalar_value_type_t<Scalar>>& u)
 {
   auto mesh = u.function_space()->mesh();
   assert(mesh);
@@ -179,8 +180,8 @@ _get_point_data_values(const fem::Function<Scalar, double>& u)
 }
 //-----------------------------------------------------------------------------
 template <typename Scalar>
-std::vector<Scalar>
-_get_cell_data_values(const fem::Function<Scalar, double>& u)
+std::vector<Scalar> _get_cell_data_values(
+    const fem::Function<Scalar, dolfinx::scalar_value_type_t<Scalar>>& u)
 {
   assert(u.function_space()->dofmap());
   auto mesh = u.function_space()->mesh();
@@ -400,6 +401,12 @@ xdmf_utils::get_point_data_values(const fem::Function<double, double>& u)
   return _get_point_data_values(u);
 }
 //-----------------------------------------------------------------------------
+std::vector<float>
+xdmf_utils::get_point_data_values(const fem::Function<float, float>& u)
+{
+  return _get_point_data_values(u);
+}
+//-----------------------------------------------------------------------------
 std::vector<std::complex<double>> xdmf_utils::get_point_data_values(
     const fem::Function<std::complex<double>, double>& u)
 {
@@ -408,6 +415,12 @@ std::vector<std::complex<double>> xdmf_utils::get_point_data_values(
 //-----------------------------------------------------------------------------
 std::vector<double>
 xdmf_utils::get_cell_data_values(const fem::Function<double, double>& u)
+{
+  return _get_cell_data_values(u);
+}
+//-----------------------------------------------------------------------------
+std::vector<float>
+xdmf_utils::get_cell_data_values(const fem::Function<float, float>& u)
 {
   return _get_cell_data_values(u);
 }

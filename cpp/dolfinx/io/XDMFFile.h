@@ -86,7 +86,8 @@ public:
   /// Save Mesh
   /// @param[in] mesh
   /// @param[in] xpath XPath where Mesh Grid will be written
-  void write_mesh(const mesh::Mesh<double>& mesh,
+  template <std::floating_point U>
+  void write_mesh(const mesh::Mesh<U>& mesh,
                   std::string xpath = "/Xdmf/Domain");
 
   /// Save Geometry
@@ -136,6 +137,15 @@ public:
   /// @param[in] mesh_xpath XPath for a Grid under which Function will
   /// be inserted
   void write_function(const fem::Function<double, double>& u, double t,
+                      std::string mesh_xpath
+                      = "/Xdmf/Domain/Grid[@GridType='Uniform'][1]");
+
+  /// Write Function
+  /// @param[in] u The Function to write to file
+  /// @param[in] t The time stamp to associate with the Function
+  /// @param[in] mesh_xpath XPath for a Grid under which Function will
+  /// be inserted
+  void write_function(const fem::Function<float, float>& u, double t,
                       std::string mesh_xpath
                       = "/Xdmf/Domain/Grid[@GridType='Uniform'][1]");
 

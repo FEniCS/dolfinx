@@ -28,11 +28,11 @@ using namespace dolfinx::io;
 namespace
 {
 template <typename Scalar>
-void _write_function(dolfinx::MPI::Comm& comm,
-                     const fem::Function<Scalar, double>& function,
-                     const double t, const std::string& mesh_xpath,
-                     pugi::xml_document& xml_doc, hid_t h5_id,
-                     const std::filesystem::path& filename)
+void _write_function(
+    dolfinx::MPI::Comm& comm,
+    const fem::Function<Scalar, dolfinx::scalar_value_type_t<Scalar>>& function,
+    const double t, const std::string& mesh_xpath, pugi::xml_document& xml_doc,
+    hid_t h5_id, const std::filesystem::path& filename)
 {
   const std::string timegrid_xpath
       = "/Xdmf/Domain/Grid[@GridType='Collection'][@Name='" + function.name
@@ -189,7 +189,8 @@ void XDMFFile::close()
   _h5_id = -1;
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write_mesh(const mesh::Mesh<double>& mesh, std::string xpath)
+template <std::floating_point U>
+void XDMFFile::write_mesh(const mesh::Mesh<U>& mesh, std::string xpath)
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
@@ -202,6 +203,10 @@ void XDMFFile::write_mesh(const mesh::Mesh<double>& mesh, std::string xpath)
   if (MPI::rank(_comm.comm()) == 0)
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
+/// @cond
+template void XDMFFile::write_mesh(const mesh::Mesh<double>&, std::string);
+template void XDMFFile::write_mesh(const mesh::Mesh<float>&, std::string);
+/// @endcond
 //-----------------------------------------------------------------------------
 void XDMFFile::write_geometry(const mesh::Geometry<double>& geometry,
                               std::string name, std::string xpath)
@@ -280,6 +285,12 @@ XDMFFile::read_geometry_data(std::string name, std::string xpath) const
 }
 //-----------------------------------------------------------------------------
 void XDMFFile::write_function(const fem::Function<double, double>& u, double t,
+                              std::string mesh_xpath)
+{
+  _write_function(_comm, u, t, mesh_xpath, *_xml_doc, _h5_id, _filename);
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::write_function(const fem::Function<float, float>& u, double t,
                               std::string mesh_xpath)
 {
   _write_function(_comm, u, t, mesh_xpath, *_xml_doc, _h5_id, _filename);
