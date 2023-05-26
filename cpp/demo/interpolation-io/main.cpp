@@ -58,10 +58,10 @@ void interpolate_scalar(std::shared_ptr<mesh::Mesh<U>> mesh,
 #ifdef HAS_ADIOS2
   // Write the function to a VTX file for visualisation, e.g. using
   // ParaView
-  // io::VTXWriter<U> outfile(mesh->comm(), filename.replace_extension("bp"), {u},
-  //                          "BP4");
-  // outfile.write(0.0);
-  // outfile.close();
+  io::VTXWriter<U> outfile(mesh->comm(), filename.replace_extension("bp"), {u},
+                           "BP4");
+  outfile.write(0.0);
+  outfile.close();
 #endif
 }
 
@@ -167,10 +167,10 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
   // component will appear continuous (continuous tangent component
   // between cells).
 #ifdef HAS_ADIOS2
-  // io::VTXWriter<U> outfile(mesh->comm(), filename.replace_extension("bp"),
-  //                          {u_l}, "BP4");
-  // outfile.write(0.0);
-  // outfile.close();
+  io::VTXWriter<U> outfile(mesh->comm(), filename.replace_extension("bp"),
+                           {u_l}, "BP4");
+  outfile.write(0.0);
+  outfile.close();
 #endif
 }
 
