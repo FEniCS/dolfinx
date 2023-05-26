@@ -101,16 +101,6 @@ namespace impl_adios2
 /// field
 constexpr std::array field_ext = {"_real", "_imag"};
 
-/// @private
-template <class... Ts>
-struct overload : Ts...
-{
-  using Ts::operator()...;
-};
-/// @private
-template <class... Ts>
-overload(Ts...) -> overload<Ts...>; // line not needed in C++20...
-
 /// Safe definition of an attribute. First check if it has already been
 /// defined and return it. If not defined create new attribute.
 template <class T>
@@ -510,7 +500,7 @@ public:
     for (auto& v : _u)
     {
       std::visit(
-          [&](auto& u)
+          [num_vertices_per_cell](auto&& u)
           {
             auto element = u->function_space()->element();
             assert(element);
@@ -594,8 +584,8 @@ public:
 
     for (auto& v : _u)
     {
-      std::visit([&](auto& u) { impl_fides::write_data(*_io, *_engine, *u); },
-                 v);
+      std::visit(
+          [this](auto&& u) { impl_fides::write_data(*_io, *_engine, *u); }, v);
     }
 
     _engine->EndStep();
@@ -624,30 +614,20 @@ std::vector<std::string>
 extract_function_names(const typename adios2_writer::U<T>& u)
 {
   std::vector<std::string> names;
-  using X = decltype(names);
   for (auto& v : u)
   {
-    auto n = std::visit(
-        impl_adios2::overload{
-            [](const std::shared_ptr<const typename adios2_writer::Fd32<T>>& u)
-                -> X { return {u->name}; },
-            [](const std::shared_ptr<const typename adios2_writer::Fd64<T>>& u)
-                -> X { return {u->name}; },
-            [](const std::shared_ptr<const typename adios2_writer::Fc64<T>>& u)
-                -> X
-            {
-              return {u->name + impl_adios2::field_ext[0],
-                      u->name + impl_adios2::field_ext[1]};
-            },
-            [](const std::shared_ptr<const typename adios2_writer::Fc128<T>>& u)
-                -> X
-            {
-              return {u->name + impl_adios2::field_ext[0],
-                      u->name + impl_adios2::field_ext[1]};
-            }},
-        v);
-    names.insert(names.end(), n.begin(), n.end());
-  };
+    [&names](auto&& u)
+    {
+      using X = typename decltype(u)::element_type;
+      if (std::is_floating_point_v<typename X::geometry_type>)
+        names.push_back(u->name);
+      else
+      {
+        names.push_back(u->name + impl_adios2::field_ext[0]);
+        names.push_back(u->name + impl_adios2::field_ext[1]);
+      }
+    };
+  }
 
   return names;
 }

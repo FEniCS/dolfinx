@@ -46,6 +46,7 @@ public:
   /// Field type for the Function, e.g. `double`, `std::complex<float>`,
   /// etc.
   using value_type = T;
+  /// Geometry type of the Mesh that the Function is defined on.
   using geometry_type = U;
 
   /// Create function on given function space
