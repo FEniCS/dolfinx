@@ -354,7 +354,7 @@ void write_data(adios2::IO& io, adios2::Engine& engine,
   }
 }
 
-/// Write mesh geometry and connectivity (topology) for Fides
+/// @brief  Write mesh geometry and connectivity (topology) for Fides.
 /// @param[in] io The ADIOS2 IO
 /// @param[in] engine The ADIOS2 engine
 /// @param[in] mesh The mesh
@@ -408,7 +408,7 @@ template <std::floating_point T>
 class FidesWriter : public ADIOS2Writer
 {
 public:
-  /// @brief  Create Fides writer for a mesh
+  /// @brief Create Fides writer for a mesh
   /// @param[in] comm The MPI communicator to open the file on
   /// @param[in] filename Name of output file
   /// @param[in] mesh The mesh. The mesh must a degree 1 mesh.
@@ -494,7 +494,7 @@ public:
     for (auto& v : _u)
     {
       std::visit(
-          [num_vertices_per_cell](auto&& u)
+          [num_vertices_per_cell, element0](auto&& u)
           {
             auto element = u->function_space()->element();
             assert(element);
@@ -569,7 +569,6 @@ public:
     adios2::Variable var_step
         = impl_adios2::define_variable<double>(*_io, "step");
     _engine->template Put<double>(var_step, t);
-
     if (auto v = _io->template InquireVariable<std::int64_t>("connectivity");
         !v or _mesh_reuse_policy == FidesMeshPolicy::update)
     {
@@ -654,7 +653,6 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
   std::uint32_t num_dofs = index_map_bs
                            * (index_map->size_local() + index_map->num_ghosts())
                            / dofmap_bs;
-
   if constexpr (std::is_scalar_v<T>)
   {
     // ---- Real
@@ -876,7 +874,7 @@ public:
         _mesh(impl_adios2::extract_common_mesh<T>(u)), _u(u)
   {
     if (u.empty())
-      throw std::runtime_error("VTXWriter fem::Function list is empty");
+      throw std::runtime_error("VTXWriter fem::Function list is empty.");
 
     // Extract element from first function
     auto element0 = std::visit([](auto& u)
@@ -886,8 +884,10 @@ public:
 
     // Check if function is mixed
     if (element0->is_mixed())
+    {
       throw std::runtime_error(
-          "Mixed functions are not supported by VTXWriter");
+          "Mixed functions are not supported by VTXWriter.");
+    }
 
     // Check if function is DG 0
     if (element0->space_dimension() / element0->block_size() == 1)
@@ -917,8 +917,8 @@ public:
             assert(element);
             if (*element != *element0)
             {
-              throw std::runtime_error(
-                  "All functions in VTXWriter must have the same element type");
+              throw std::runtime_error("All functions in VTXWriter must have "
+                                       "the same element type.");
             }
           },
           v);
@@ -953,7 +953,6 @@ public:
     assert(_engine);
     adios2::Variable var_step
         = impl_adios2::define_variable<double>(*_io, "step");
-
     _engine->BeginStep();
     _engine->template Put<double>(var_step, t);
 
