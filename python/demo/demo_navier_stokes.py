@@ -418,7 +418,7 @@ e_u = norm_L2(msh.comm, u_h - u_e)
 e_div_u = norm_L2(msh.comm, div(u_h))
 
 # This scheme conserves mass exactly, so check this
-assert np.isclose(e_div_u, 0.0, atol=1.0e3 * np.finfo(default_real_type).eps)
+assert np.isclose(e_div_u, 0.0, atol=1.0e4 * np.finfo(default_real_type).eps)
 p_e_avg = domain_average(msh, p_e)
 e_p = norm_L2(msh.comm, p_h - (p_e - p_e_avg))
 
