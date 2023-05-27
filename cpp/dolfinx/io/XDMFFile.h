@@ -13,6 +13,7 @@
 #include <filesystem>
 #include <memory>
 #include <string>
+#include <variant>
 
 namespace pugi
 {
@@ -121,7 +122,8 @@ public:
   /// @param[in] name Name of the mesh (Grid)
   /// @param[in] xpath XPath where Mesh Grid data is located
   /// @return points on each process
-  std::pair<std::vector<double>, std::array<std::size_t, 2>>
+  std::pair<std::variant<std::vector<float>, std::vector<double>>,
+            std::array<std::size_t, 2>>
   read_geometry_data(std::string name,
                      std::string xpath = "/Xdmf/Domain") const;
 

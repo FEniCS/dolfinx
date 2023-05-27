@@ -20,8 +20,7 @@ namespace stdex = std::experimental;
 //-----------------------------------------------------------------------------
 template <std::floating_point U>
 void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
-                                  const hid_t h5_id,
-                                  const std::string path_prefix,
+                                  hid_t h5_id, std::string path_prefix,
                                   const mesh::Topology& topology,
                                   const mesh::Geometry<U>& geometry, int dim,
                                   std::span<const std::int32_t> entities)
@@ -162,8 +161,7 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
 //-----------------------------------------------------------------------------
 template <std::floating_point U>
 void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
-                                  const hid_t h5_id,
-                                  const std::string path_prefix,
+                                  hid_t h5_id, std::string path_prefix,
                                   const mesh::Geometry<U>& geometry)
 {
   LOG(INFO) << "Adding geometry data to node \"" << xml_node.path('/') << "\"";
@@ -215,9 +213,8 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
 }
 //----------------------------------------------------------------------------
 template <std::floating_point U>
-void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
-                         const hid_t h5_id, const mesh::Mesh<U>& mesh,
-                         const std::string name)
+void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
+                         const mesh::Mesh<U>& mesh, const std::string name)
 {
   LOG(INFO) << "Adding mesh to node \"" << xml_node.path('/') << "\"";
 
@@ -253,8 +250,9 @@ template void xdmf_mesh::add_mesh(MPI_Comm, pugi::xml_node&, const hid_t,
                                   const mesh::Mesh<double>&, const std::string);
 /// @endcond
 //----------------------------------------------------------------------------
-std::pair<std::vector<double>, std::array<std::size_t, 2>>
-xdmf_mesh::read_geometry_data(MPI_Comm comm, const hid_t h5_id,
+std::pair<std::variant<std::vector<float>, std::vector<double>>,
+          std::array<std::size_t, 2>>
+xdmf_mesh::read_geometry_data(MPI_Comm comm, hid_t h5_id,
                               const pugi::xml_node& node)
 {
   // Get geometry node
@@ -290,12 +288,11 @@ xdmf_mesh::read_geometry_data(MPI_Comm comm, const hid_t h5_id,
       = xdmf_read::get_dataset<double>(comm, geometry_data_node, h5_id);
   const std::size_t num_local_nodes = geometry_data.size() / gdim;
   std::array<std::size_t, 2> shape = {num_local_nodes, gdim};
-
   return {std::move(geometry_data), shape};
 }
 //----------------------------------------------------------------------------
 std::pair<std::vector<std::int64_t>, std::array<std::size_t, 2>>
-xdmf_mesh::read_topology_data(MPI_Comm comm, const hid_t h5_id,
+xdmf_mesh::read_topology_data(MPI_Comm comm, hid_t h5_id,
                               const pugi::xml_node& node)
 {
   // Get topology node
@@ -324,7 +321,6 @@ xdmf_mesh::read_topology_data(MPI_Comm comm, const hid_t h5_id,
   std::array<std::size_t, 2> shape = {num_local_cells, npoint_per_cell};
   std::vector<std::int64_t> cells = io::cells::apply_permutation(
       topology_data, shape, io::cells::perm_vtk(cell_type, shape[1]));
-
   return {std::move(cells), shape};
 }
 //----------------------------------------------------------------------------

@@ -14,6 +14,7 @@
 #include <span>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 namespace pugi
@@ -42,8 +43,8 @@ namespace io::xdmf_mesh
 /// Creates new Grid with Topology and Geometry xml nodes for mesh. In
 /// HDF file data is stored under path prefix.
 template <std::floating_point U>
-void add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, const hid_t h5_id,
-              const mesh::Mesh<U>& mesh, const std::string path_prefix);
+void add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
+              const mesh::Mesh<U>& mesh, std::string path_prefix);
 
 /// Add Topology xml node
 /// @param[in] comm
@@ -56,16 +57,15 @@ void add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, const hid_t h5_id,
 /// @param[in] entities Local-to-process indices of mesh entities
 /// whose topology will be saved. This is used to save subsets of Mesh.
 template <std::floating_point U>
-void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
-                       const hid_t h5_id, const std::string path_prefix,
-                       const mesh::Topology& topology,
+void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
+                       std::string path_prefix, const mesh::Topology& topology,
                        const mesh::Geometry<U>& geometry, int cell_dim,
                        std::span<const std::int32_t> entities);
 
 /// Add Geometry xml node
 template <std::floating_point U>
-void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
-                       const hid_t h5_id, const std::string path_prefix,
+void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
+                       std::string path_prefix,
                        const mesh::Geometry<U>& geometry);
 
 /// @brief Read geometry (coordinate) data.
@@ -74,9 +74,9 @@ void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
 /// array holding the coordinates (row-major storage) and (1) the shape
 /// of the coordinate array. The shape is `(num_nodes, geometric
 /// dimension)`.
-std::pair<std::vector<double>, std::array<std::size_t, 2>>
-read_geometry_data(MPI_Comm comm, const hid_t h5_id,
-                   const pugi::xml_node& node);
+std::pair<std::variant<std::vector<float>, std::vector<double>>,
+          std::array<std::size_t, 2>>
+read_geometry_data(MPI_Comm comm, hid_t h5_id, const pugi::xml_node& node);
 
 /// @brief Read topology (cell connectivity) data.
 ///
@@ -85,8 +85,7 @@ read_geometry_data(MPI_Comm comm, const hid_t h5_id,
 /// the topology data (row-major storage) and (1) the shape of the
 /// topology array. The shape is `(num_cells, num_nodes_per_cell)`
 std::pair<std::vector<std::int64_t>, std::array<std::size_t, 2>>
-read_topology_data(MPI_Comm comm, const hid_t h5_id,
-                   const pugi::xml_node& node);
+read_topology_data(MPI_Comm comm, hid_t h5_id, const pugi::xml_node& node);
 
 } // namespace io::xdmf_mesh
 } // namespace dolfinx

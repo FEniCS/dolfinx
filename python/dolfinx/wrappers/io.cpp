@@ -56,18 +56,6 @@ void io(py::module& m)
       py::arg("dofmap"), py::arg("celltype"),
       "Extract the mesh topology with VTK ordering using "
       "geometry indices");
-  //   m.def(
-  //       "extract_vtk_connectivity",
-  //       [](const dolfinx::mesh::Geometry<double>& x, dolfinx::mesh::CellType
-  //       cell)
-  //       {
-  //         auto [cells, shape]
-  //             = dolfinx::io::extract_vtk_connectivity(x.dofmap(), cell);
-  //         return as_pyarray(std::move(cells), shape);
-  //       },
-  //       py::arg("x"), py::arg("celltype"),
-  //       "Extract the mesh topology with VTK ordering using "
-  //       "geometry indices");
 
   // dolfinx::io::cell permutation functions
   m.def("perm_vtk", &dolfinx::io::cells::perm_vtk, py::arg("type"),
@@ -151,7 +139,8 @@ void io(py::module& m)
           [](dolfinx::io::XDMFFile& self, std::string name, std::string xpath)
           {
             auto [x, shape] = self.read_geometry_data(name, xpath);
-            return as_pyarray(std::move(x), shape);
+            std::vector<double>& _x = std::get<std::vector<double>>(x);
+            return as_pyarray(std::move(_x), shape);
           },
           py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
       .def("read_geometry_data", &dolfinx::io::XDMFFile::read_geometry_data,
