@@ -73,7 +73,9 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   {
     io::XDMFFile infile(subset_comm, "mesh.xdmf", "r");
     std::tie(cells, cshape) = infile.read_topology_data("mesh");
-    std::tie(x, xshape) = infile.read_geometry_data("mesh");
+    // std::tie(x, xshape) = infile.read_geometry_data("mesh");
+    auto [_x, _xshape] = infile.read_geometry_data("mesh");
+    x = std::move(std::get<std::vector<T>>(_x));
 
     int nparts = mpi_size;
     const int tdim = mesh::cell_dim(mesh::CellType::triangle);
