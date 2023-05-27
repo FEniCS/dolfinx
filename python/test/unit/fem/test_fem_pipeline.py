@@ -279,9 +279,8 @@ def test_biharmonic(family):
     mesh = create_rectangle(MPI.COMM_WORLD, [np.array([0.0, 0.0]),
                                              np.array([1.0, 1.0])], [32, 32], CellType.triangle)
 
-    e = mixed_element([
-        element(family, basix.CellType.triangle, 1),
-        element(basix.ElementFamily.P, basix.CellType.triangle, 2)])
+    e = mixed_element([element(family, basix.CellType.triangle, 1),
+                       element(basix.ElementFamily.P, basix.CellType.triangle, 2)])
 
     V = FunctionSpace(mesh, e)
     sigma, u = ufl.TrialFunctions(V)
@@ -325,7 +324,7 @@ def test_biharmonic(family):
 
     V_1 = V.sub(1).collapse()[0]
     zero_u = Function(V_1)
-    zero_u.x.array[:] = 0.0
+    zero_u.x.array[:] = 0
 
     # Strong (Dirichlet) boundary condition
     boundary_facets = locate_entities_boundary(
