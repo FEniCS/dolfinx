@@ -41,15 +41,33 @@ void io(py::module& m)
 
   m.def(
       "extract_vtk_connectivity",
-      [](const dolfinx::mesh::Geometry<double>& x, dolfinx::mesh::CellType cell)
+      [](py::array_t<std::int32_t, py::array::c_style> dofmap,
+         dolfinx::mesh::CellType cell)
       {
+        if (dofmap.ndim() != 2)
+          throw std::runtime_error("Geometry dofmap must be rank 2.");
+        std::experimental::mdspan<const std::int32_t,
+                                  std::experimental::dextents<std::size_t, 2>>
+            _dofmap(dofmap.data(), dofmap.shape(0), dofmap.shape(1));
         auto [cells, shape]
-            = dolfinx::io::extract_vtk_connectivity(x.dofmap(), cell);
+            = dolfinx::io::extract_vtk_connectivity(_dofmap, cell);
         return as_pyarray(std::move(cells), shape);
       },
-      py::arg("x"), py::arg("celltype"),
+      py::arg("dofmap"), py::arg("celltype"),
       "Extract the mesh topology with VTK ordering using "
       "geometry indices");
+  //   m.def(
+  //       "extract_vtk_connectivity",
+  //       [](const dolfinx::mesh::Geometry<double>& x, dolfinx::mesh::CellType
+  //       cell)
+  //       {
+  //         auto [cells, shape]
+  //             = dolfinx::io::extract_vtk_connectivity(x.dofmap(), cell);
+  //         return as_pyarray(std::move(cells), shape);
+  //       },
+  //       py::arg("x"), py::arg("celltype"),
+  //       "Extract the mesh topology with VTK ordering using "
+  //       "geometry indices");
 
   // dolfinx::io::cell permutation functions
   m.def("perm_vtk", &dolfinx::io::cells::perm_vtk, py::arg("type"),
