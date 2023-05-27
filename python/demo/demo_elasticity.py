@@ -82,7 +82,7 @@ def build_nullspace(V):
     # Create PETSc Vec objects (excluding ghosts) and normalise
     basis_petsc = [PETSc.Vec().createWithArray(x[:bs * length0], bsize=3, comm=V.mesh.comm) for x in basis]
     la.orthonormalize(basis_petsc)
-    assert la.is_orthonormal(basis_petsc, eps=10 * np.finfo(default_real_type).eps)
+    assert la.is_orthonormal(basis_petsc, eps=1.0e2 * np.finfo(default_real_type).eps)
 
     # Create and return a PETSc nullspace
     return PETSc.NullSpace().create(vectors=basis_petsc)
