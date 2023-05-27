@@ -65,13 +65,11 @@ public:
                             const std::vector<std::int64_t>& global_size,
                             bool use_mpi_io, bool use_chunking);
 
-  /// Read data from a HDF5 dataset "dataset_path" as defined by range
-  /// blocks on each process.
-  ///
-  /// @param[in] handle HDF5 file handle
-  /// @param[in] dataset_path Path for the dataset in the HDF5 file
-  /// @return Data types
-  static hid_t read_dataset_type(const hid_t handle, std::string dataset_path);
+  /// @brief Read the dataset type.
+  /// @param[in] handle HDF5 file handle.
+  /// @param[in] dataset_path Path for the dataset in the HDF5 file.
+  /// @return Data type.
+  static hid_t read_dataset_type(hid_t handle, std::string dataset_path);
 
   /// Read data from a HDF5 dataset "dataset_path" as defined by range
   /// blocks on each process.
