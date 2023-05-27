@@ -19,6 +19,66 @@
 namespace dolfinx::io::xdmf_read
 {
 
+// /// Get data set type
+// std::string get_dataset_type(MPI_Comm comm, const pugi::xml_node& dataset_node,
+//                              hid_t h5_id)
+// {
+//   assert(dataset_node);
+//   pugi::xml_attribute format_attr = dataset_node.attribute("Format");
+//   assert(format_attr);
+
+//   // Only read ASCII on process 0
+//   const int mpi_rank = dolfinx::MPI::rank(comm);
+//   if (format == "XML")
+//   {
+//     if (mpi_rank == 0)
+//     {
+//       // // Read data and trim any leading/trailing whitespace
+//       // pugi::xml_node data_node = dataset_node.first_child();
+//       // assert(data_node);
+//       // std::string data_str = data_node.value();
+
+//       // // Split data based on spaces and line breaks
+//       // std::vector<boost::iterator_range<std::string::iterator>>
+//       // data_vector_str; boost::split(data_vector_str, data_str,
+//       // boost::is_any_of(" \n"));
+
+//       // // Add data to numerical vector
+//       // data_vector.reserve(data_vector_str.size());
+//       // for (auto& v : data_vector_str)
+//       // {
+//       //   if (v.begin() != v.end())
+//       //     data_vector.push_back(
+//       //         boost::lexical_cast<T>(boost::copy_range<std::string>(v)));
+//       // }
+//     }
+//   }
+//   else if (format == "HDF")
+//   {
+//     // Get file and data path
+//     auto paths = xdmf_utils::get_hdf5_paths(dataset_node);
+
+//     // Get data shape from HDF5 file
+//     const std::vector shape_hdf5
+//         = HDF5Interface::get_dataset_shape(h5_id, paths[1]);
+
+//     // // FIXME: should we support empty data sets?
+//     // // Check that data set is not empty
+//     // assert(!shape_hdf5.empty());
+//     // assert(shape_hdf5[0] != 0);
+
+//     // Determine range of data to read from HDF5 file. This is
+//     // complicated by the XML Dimension attribute and the HDF5 storage
+//     // possibly having different shapes, e.g. the HDF5 storage may be a
+//     // flat array.
+
+//     // Retrieve data
+//     data_vector = HDF5Interface::read_dataset<T>(h5_id, paths[1], range);
+//   }
+//   else
+//     throw std::runtime_error("Storage format \"" + format + "\" is unknown");
+// }
+
 /// Return data associated with a data set node
 template <typename T>
 std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,

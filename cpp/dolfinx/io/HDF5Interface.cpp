@@ -150,6 +150,23 @@ std::filesystem::path HDF5Interface::get_filename(hid_t handle)
   return std::filesystem::path(name.begin(), name.end());
 }
 //-----------------------------------------------------------------------------
+hid_t HDF5Interface::read_dataset_type(hid_t handle, std::string dataset_path)
+{
+  // Open the dataset
+  hid_t dset_id = H5Dopen2(handle, dataset_path.c_str(), H5P_DEFAULT);
+  if (dset_id == HDF5_FAIL)
+    throw std::runtime_error("Failed to open HDF5 global dataset.");
+
+  hid_t dtype = H5Dget_type(dset_id);
+
+  // Close dataset
+  hid_t status = H5Dclose(dset_id);
+  if (status == HDF5_FAIL)
+    throw std::runtime_error("Failed to close HDF5 dataset.");
+
+  return dtype;
+}
+//-----------------------------------------------------------------------------
 bool HDF5Interface::has_dataset(const hid_t handle,
                                 const std::string& dataset_path)
 {

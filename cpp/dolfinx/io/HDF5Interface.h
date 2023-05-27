@@ -70,6 +70,14 @@ public:
   ///
   /// @param[in] handle HDF5 file handle
   /// @param[in] dataset_path Path for the dataset in the HDF5 file
+  /// @return Data types
+  static hid_t read_dataset_type(const hid_t handle, std::string dataset_path);
+
+  /// Read data from a HDF5 dataset "dataset_path" as defined by range
+  /// blocks on each process.
+  ///
+  /// @param[in] handle HDF5 file handle
+  /// @param[in] dataset_path Path for the dataset in the HDF5 file
   /// @param[in] range The local range on this processor
   /// @return Flattened 1D array of values. If range = {-1, -1}, then
   ///   all data is read on this process.
@@ -307,6 +315,10 @@ HDF5Interface::read_dataset(const hid_t file_handle,
       = H5Dopen2(file_handle, dataset_path.c_str(), H5P_DEFAULT);
   if (dset_id == HDF5_FAIL)
     throw std::runtime_error("Failed to open HDF5 global dataset.");
+
+  hid_t dtype = H5Dget_type(dset_id);
+  if (dtype != hdf5_type<T>())
+    throw std::runtime_error("Mis-match in types for HDF5 dataset.");
 
   // Open dataspace
   const hid_t dataspace = H5Dget_space(dset_id);

@@ -250,6 +250,30 @@ template void xdmf_mesh::add_mesh(MPI_Comm, pugi::xml_node&, const hid_t,
                                   const mesh::Mesh<double>&, const std::string);
 /// @endcond
 //----------------------------------------------------------------------------
+// int xdmf_mesh::read_geometry_float_size(MPI_Comm comm, hid_t h5_id,
+//                                         const pugi::xml_node& node)
+// {
+//   // Get geometry node
+//   pugi::xml_node geometry_node = node.child("Geometry");
+//   assert(geometry_node);
+
+//   // Get number of points from Geometry dataitem node
+//   // pugi::xml_node geometry_data_node = geometry_node.child("DataItem");
+//   // assert(geometry_data_node);
+//   // const std::vector gdims = xdmf_utils::get_dataset_shape(geometry_data_node);
+//   // assert(gdims.size() == 2);
+//   // assert(gdims[1] == (int)gdim);
+
+//   // // Read geometry data
+//   // std::vector geometry_data
+//   //     = xdmf_read::get_dataset<double>(comm, geometry_data_node, h5_id);
+//   // const std::size_t num_local_nodes = geometry_data.size() / gdim;
+//   // std::array<std::size_t, 2> shape = {num_local_nodes, gdim};
+//   // return {std::move(geometry_data), shape};
+
+//   return 8;
+// }
+//----------------------------------------------------------------------------
 std::pair<std::variant<std::vector<float>, std::vector<double>>,
           std::array<std::size_t, 2>>
 xdmf_mesh::read_geometry_data(MPI_Comm comm, hid_t h5_id,
