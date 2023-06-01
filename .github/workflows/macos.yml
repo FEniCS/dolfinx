@@ -30,9 +30,9 @@ jobs:
       - name: Install Python dependencies
         run: |
           pip3 install pip --upgrade
-          # pip install numpy setuptools wheel
-          # pip install Cython==0.29.32
-          # pip install mpi4py
+          pip install numpy setuptools wheel
+          pip install cython
+          pip install mpi4py
 
       - name: Install minimal PETSc
         run: |
