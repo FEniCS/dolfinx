@@ -182,6 +182,9 @@ if (Python3_Interpreter_FOUND)
     ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
   )
 
+  message(STATUS "Output var: ${BASIX_PY_DIR}")
+  message(STATUS "Result var: ${BASIX_PY_COMMAND_RESULT}")
+
   if(BASIX_PY_DIR)
     message(STATUS "Adding ${BASIX_PY_DIR} to Basix search hints")
 
