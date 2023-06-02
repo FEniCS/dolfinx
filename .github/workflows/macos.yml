@@ -10,11 +10,10 @@ on:
 jobs:
   mac-os-build:
     name: macOS Homebrew install and test
+    runs-on: macos-13
     env:
       PETSC_ARCH: arch-darwin-c-opt
       PETSC_DIR: ${{ github.workspace }}/petsc
-
-    runs-on: macos-13
 
     steps:
       - name: Set up Python
