@@ -72,12 +72,14 @@ jobs:
           cmake --install build
 
       - name: Build and install DOLFINx Python interface
+        env:
+          PYTHONPATH: ${{ github.workspace }}/petsc/${{ env.PETSC_ARCH }}/lib:${{ env.PYTHONPATH }}
         run: |
-          export PYTHONPATH=${{ github.workspace }}/petsc/${{ env.PETSC_ARCH }}/lib:$PYTHONPATH
           echo "Path: ${PYTHONPATH}"
           pip install dolfinx/python/
-
       - name: Basic test
-        run: |
+      env:
+        PYTHONPATH: ${{ github.workspace }}/petsc/${{ env.PETSC_ARCH }}/lib:${{ env.PYTHONPATH }}
+      run: |
           python3 -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
           mpirun -np 2 python3 -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
