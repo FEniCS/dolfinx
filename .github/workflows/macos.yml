@@ -13,6 +13,7 @@ jobs:
     env:
       PETSC_ARCH: arch-darwin-c-opt
       PETSC_DIR: ${{ github.workspace }}/petsc
+      PYTHONPATH: ${{ github.workspace }}/petsc/${{ env.PETSC_ARCH }}/lib
 
     strategy:
       matrix:
@@ -21,9 +22,6 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v3
-        with:
-          path: dolfinx
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -64,6 +62,10 @@ jobs:
           pip install git+https://github.com/FEniCS/ufl.git
           pip install git+https://github.com/FEniCS/ffcx.git
 
+      - uses: actions/checkout@v3
+        with:
+          path: dolfinx
+
       - name: Build and install DOLFINx C++ library
         run: |
           cmake -G Ninja -B build -S dolfinx/cpp/
@@ -71,7 +73,9 @@ jobs:
           cmake --install build
 
       - name: Build and install DOLFINx Python interface
-        run: pip install dolfinx/python/
+        run: |
+          echo "Path: ${PYTHONPATH}"
+          pip install dolfinx/python/
 
       - name: Basic test
         run: |
