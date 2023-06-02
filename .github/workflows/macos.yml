@@ -14,12 +14,6 @@ jobs:
       PETSC_ARCH: arch-darwin-c-opt
       PETSC_DIR: ${{ github.workspace }}/petsc
 
-    strategy:
-      matrix:
-        os: [macos-13]
-      fail-fast: false
-    runs-on: ${{ matrix.os }}
-
     steps:
       - name: Set up Python
         uses: actions/setup-python@v4
