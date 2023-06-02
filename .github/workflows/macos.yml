@@ -20,11 +20,11 @@ jobs:
         with:
           python-version: "3.11"
 
-      # - name: Install Homebrew dependencies
-      #   run: |
-      #     # brew install adios2 boost cmake hdf5-mpi ninja open-mpi pkg-config pugixml python # FEniCS
-      #     brew install boost cmake hdf5-mpi make ninja open-mpi pkg-config pugixml # FEniCS
-      #     brew install bison flex # PETSc
+      - name: Install Homebrew dependencies
+        run: |
+          # brew install adios2 boost cmake hdf5-mpi ninja open-mpi pkg-config pugixml python # FEniCS
+          brew install boost cmake hdf5-mpi make ninja open-mpi pkg-config pugixml # FEniCS
+          brew install bison flex # PETSc
 
       # - name: Install Python dependencies
       #   run: |
