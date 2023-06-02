@@ -13,7 +13,6 @@ jobs:
     env:
       PETSC_ARCH: arch-darwin-c-opt
       PETSC_DIR: ${{ github.workspace }}/petsc
-      PYTHONPATH: ${{ github.workspace }}/petsc/${{ env.PETSC_ARCH }}/lib
 
     strategy:
       matrix:
@@ -74,6 +73,7 @@ jobs:
 
       - name: Build and install DOLFINx Python interface
         run: |
+          export PYTHONPATH=${{ github.workspace }}/petsc/${{ env.PETSC_ARCH }}/lib:$PYTHONPATH
           echo "Path: ${PYTHONPATH}"
           pip install dolfinx/python/
 
