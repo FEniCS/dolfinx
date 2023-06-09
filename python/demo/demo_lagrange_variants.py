@@ -165,7 +165,7 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
     uh = fem.Function(V)
     uh.interpolate(lambda x: saw_tooth(x[0]))
     if MPI.COMM_WORLD.size == 1:  # Skip this plotting in parallel
-        pts = []
+        pts = []  # type: ignore
         cells = []
         for cell in range(10):
             for i in range(51):
