@@ -65,12 +65,12 @@ jobs:
           cmake --build build
           cmake --install build
 
-      # - name: Build and install DOLFINx Python interface
-      #   env:
-      #     PYTHONPATH: ${{ github.workspace }}/petsc/${{ env.PETSC_ARCH }}/lib:${{ env.PYTHONPATH }}
-      #   run: |
-      #     echo "Path: ${PYTHONPATH}"
-      #     pip install dolfinx/python/
+      - name: Build and install DOLFINx Python interface
+        env:
+          PYTHONPATH: ${{ github.workspace }}/petsc/${{ env.PETSC_ARCH }}/lib:${{ env.PYTHONPATH }}
+        run: |
+          echo "Path: ${PYTHONPATH}"
+          pip install dolfinx/python/
       # - name: Basic test
       #   env:
       #     PYTHONPATH: ${{ github.workspace }}/petsc/${{ env.PETSC_ARCH }}/lib:${{ env.PYTHONPATH }}
