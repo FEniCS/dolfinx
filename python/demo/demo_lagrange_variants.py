@@ -169,7 +169,7 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
         cells = []
         for cell in range(10):
             for i in range(51):
-                pts.append([cell / 10 + i / 50 / 10, 0, 0])
+                pts.append([cell / 10 + i / 50 / 10, 0, 0])  # type: ignore
                 cells.append(cell)
         values = uh.eval(pts, cells)
         plt.plot(pts, [saw_tooth(i[0]) for i in pts], "k--")
