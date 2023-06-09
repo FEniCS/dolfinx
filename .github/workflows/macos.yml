@@ -20,60 +20,60 @@ jobs:
         with:
           python-version: "3.11"
 
-      # - name: Install Homebrew dependencies
-      #   run: |
-      #     # brew install adios2 boost cmake hdf5-mpi ninja open-mpi pkg-config pugixml python # FEniCS
-      #     brew install boost cmake hdf5-mpi make ninja open-mpi pkg-config pugixml # FEniCS
-      #     brew install bison flex # PETSc
+      - name: Install Homebrew dependencies
+        run: |
+          # brew install adios2 boost cmake hdf5-mpi ninja open-mpi pkg-config pugixml python # FEniCS
+          brew install boost cmake hdf5-mpi make ninja open-mpi pkg-config pugixml # FEniCS
+          brew install bison flex # PETSc
 
-      # - name: Install Python dependencies
-      #   run: |
-      #     pip3 install pip --upgrade
-      #     pip install numpy setuptools wheel
-      #     pip install cython
-      #     pip install mpi4py
+      - name: Install Python dependencies
+        run: |
+          pip install pip --upgrade
+          pip install numpy setuptools wheel
+          pip install cython
+          pip install mpi4py
 
-      # - name: Install minimal PETSc and petsc4y
-      #   run: |
-      #     export PATH="$(brew --prefix bison)/bin:$PATH"
-      #     git clone -b release https://gitlab.com/petsc/petsc.git petsc
-      #     cd petsc
-      #     ./configure \
-      #       --with-64-bit-indices=no \
-      #       --with-debugging=no \
-      #       --with-fortran-bindings=no \
-      #       --with-scalar-type=real \
-      #       --with-shared-libraries \
-      #       --with-scalar-type=real \
-      #       -–with-petsc4py=yes \
-      #       --download-ptscotch
-      #     make all
+      - name: Install minimal PETSc and petsc4y
+        run: |
+          export PATH="$(brew --prefix bison)/bin:$PATH"
+          git clone -b release https://gitlab.com/petsc/petsc.git petsc
+          cd petsc
+          ./configure \
+            --with-64-bit-indices=no \
+            --with-debugging=no \
+            --with-fortran-bindings=no \
+            --with-scalar-type=real \
+            --with-shared-libraries \
+            --with-scalar-type=real \
+            -–with-petsc4py=yes \
+            --download-ptscotch
+          make all
 
-      # - name: Install FEniCSx dependencies
-      #   run: |
-      #     pip install git+https://github.com/FEniCS/basix.git
-      #     pip install git+https://github.com/FEniCS/ufl.git
-      #     pip install git+https://github.com/FEniCS/ffcx.git
+      - name: Install FEniCSx dependencies
+        run: |
+          pip install git+https://github.com/FEniCS/basix.git
+          pip install git+https://github.com/FEniCS/ufl.git
+          pip install git+https://github.com/FEniCS/ffcx.git
 
-      # - uses: actions/checkout@v3
-      #   with:
-      #     path: dolfinx
+      - uses: actions/checkout@v3
+        with:
+          path: dolfinx
 
-      # - name: Build and install DOLFINx C++ library
-      #   run: |
-      #     cmake -G Ninja -B build -S dolfinx/cpp/
-      #     cmake --build build
-      #     cmake --install build
+      - name: Build and install DOLFINx C++ library
+        run: |
+          cmake -G Ninja -B build -S dolfinx/cpp/
+          cmake --build build
+          cmake --install build
 
-      # - name: Build and install DOLFINx Python interface
-      #   env:
-      #     PYTHONPATH: ${{ github.workspace }}/petsc/${{ env.PETSC_ARCH }}/lib:${{ env.PYTHONPATH }}
-      #   run: |
-      #     echo "Path: ${PYTHONPATH}"
-      #     pip install dolfinx/python/
-      # - name: Basic test
-      #   env:
-      #     PYTHONPATH: ${{ github.workspace }}/petsc/${{ env.PETSC_ARCH }}/lib:${{ env.PYTHONPATH }}
-      #   run: |
-      #     python3 -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
-      #     mpirun -np 2 python3 -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
+      - name: Build and install DOLFINx Python interface
+        env:
+          PYTHONPATH: ${{ github.workspace }}/petsc/${{ env.PETSC_ARCH }}/lib:${{ env.PYTHONPATH }}
+        run: |
+          echo "Path: ${PYTHONPATH}"
+          pip install dolfinx/python/
+      - name: Basic test
+        env:
+          PYTHONPATH: ${{ github.workspace }}/petsc/${{ env.PETSC_ARCH }}/lib:${{ env.PYTHONPATH }}
+        run: |
+          python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
+          mpirun -np 2 python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
