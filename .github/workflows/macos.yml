@@ -28,7 +28,7 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          pip3 install pip --upgrade
+          pip install pip --upgrade
           pip install numpy setuptools wheel
           pip install cython
           pip install mpi4py
@@ -49,21 +49,21 @@ jobs:
             --download-ptscotch
           make all
 
-      # - name: Install FEniCSx dependencies
-      #   run: |
-      #     pip install git+https://github.com/FEniCS/basix.git
-      #     pip install git+https://github.com/FEniCS/ufl.git
-      #     pip install git+https://github.com/FEniCS/ffcx.git
+      - name: Install FEniCSx dependencies
+        run: |
+          pip install git+https://github.com/FEniCS/basix.git
+          pip install git+https://github.com/FEniCS/ufl.git
+          pip install git+https://github.com/FEniCS/ffcx.git
 
-      # - uses: actions/checkout@v3
-      #   with:
-      #     path: dolfinx
+      - uses: actions/checkout@v3
+        with:
+          path: dolfinx
 
-      # - name: Build and install DOLFINx C++ library
-      #   run: |
-      #     cmake -G Ninja -B build -S dolfinx/cpp/
-      #     cmake --build build
-      #     cmake --install build
+      - name: Build and install DOLFINx C++ library
+        run: |
+          cmake -G Ninja -B build -S dolfinx/cpp/
+          cmake --build build
+          cmake --install build
 
       # - name: Build and install DOLFINx Python interface
       #   env:
