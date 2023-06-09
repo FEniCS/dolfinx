@@ -121,7 +121,7 @@ RUN apt-get -qq update && \
     tar xfz Release_${DOXYGEN_VERSION}.tar.gz && \
     cd doxygen-Release_${DOXYGEN_VERSION} && \
     cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -B build-dir . && \
-    cmake --build build-dir && \
+    cmake --build -j 2 build-dir && \
     cmake --install build-dir && \
     apt-get -y purge bison flex && \
     apt-get -y autoremove && \
