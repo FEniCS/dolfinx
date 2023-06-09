@@ -30,8 +30,8 @@
 #
 # Then run the commands:
 #
-#    docker pull dolfinx/dolfinx-onbuild:latest
-#    echo "FROM dolfinx/dolfinx-onbuild:latest" | docker build -f- .
+#    docker pull dolfinx/dolfinx-onbuild:nightly
+#    echo "FROM dolfinx/dolfinx-onbuild:nightly" | docker build -f- .
 #
 
 ARG PYVISTA_VERSION=0.38.4
