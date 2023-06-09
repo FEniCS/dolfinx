@@ -7,6 +7,7 @@
 #pragma once
 
 #include "SparsityPattern.h"
+#include "matrix_csr_impl.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -18,48 +19,25 @@
 
 namespace dolfinx::la
 {
-namespace impl
+/// @brief Modes for representing block structured matrices
+enum class BlockMode : int
 {
-/// @brief Set data in a CSR matrix.
-///
-/// @param[out] data The CSR matrix data
-/// @param[in] cols The CSR column indices
-/// @param[in] row_ptr The pointer to the ith row in the CSR data
-/// @param[in] x The `m` by `n` dense block of values (row-major) to set
-/// in the matrix
-/// @param[in] xrows The row indices of `x`
-/// @param[in] xcols The column indices of `x`
-/// @param[in] local_size The maximum row index that can be set. Used
-/// when debugging is own to check that rows beyond a permitted range
-/// are not being set.
-template <typename U, typename V, typename W, typename X, typename Y>
-void set_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
-             const Y& xrows, const Y& xcols, typename Y::value_type local_size);
-
-/// @brief Add data to a CSR matrix
-///
-/// @param[out] data The CSR matrix data
-/// @param[in] cols The CSR column indices
-/// @param[in] row_ptr The pointer to the ith row in the CSR data
-/// @param[in] x The `m` by `n` dense block of values (row-major) to add
-/// to the matrix
-/// @param[in] xrows The row indices of `x`
-/// @param[in] xcols The column indices of `x`
-template <typename U, typename V, typename W, typename X, typename Y>
-void add_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
-             const Y& xrows, const Y& xcols);
-} // namespace impl
+  compact = 0, /// Each entry in the sparsity pattern of the matrix refers to a
+               /// block of data of size (bs[0], bs[1]).
+  expanded = 1 /// The sparsity pattern is expanded by (bs[0], bs[1]), and each
+               /// matrix entry refers to one data item, i.e. the resulting
+               /// matrix has a block size of (1, 1).
+};
 
 /// Distributed sparse matrix
 ///
 /// The matrix storage format is compressed sparse row. The matrix is
-/// partitioned row-wise across MPI rank.
+/// partitioned row-wise across MPI ranks.
 ///
-/// @warning Highly experimental storage of a matrix in CSR format which
-/// can be assembled into using the usual DOLFINx assembly routines
+/// @warning Experimental storage of a matrix in CSR format which
+/// can be assembled into using the usual DOLFINx assembly routines.
 /// Matrix internal data can be accessed for interfacing with other
 /// code.
-/// @todo Handle block sizes
 ///
 /// @tparam Scalar Scalar type of matrix entries
 /// @tparam Container Sequence container type to store matrix entries
@@ -88,39 +66,114 @@ public:
   static_assert(std::is_same_v<value_type, typename container_type::value_type>,
                 "Scalar type and container value type must be the same.");
 
-  /// @brief Insertion functor for setting values in matrix. It is
+  /// @brief Insertion functor for setting values in a matrix. It is
   /// typically used in finite element assembly functions.
+  ///
+  /// Create a function to set values in a MatrixCSR. The function signature is
+  /// `int mat_set_fn(std::span<const std::int32_t rows, std::span<const
+  /// std::int32_t cols, std::span<const value_type> data)`. The rows
+  /// and columns use process local indexing, and the given rows and
+  /// columns must pre-exist in the sparsity pattern of the matrix.
+  /// Insertion into "ghost" rows (in the ghost region of the row
+  /// `IndexMap`) is permitted, so long as there are correct entries
+  /// in the sparsity pattern.
+  ///
+  /// @note Using rows or columns which are not in the sparsity will result
+  /// in undefined behaviour (or an assert failure in Debug mode).
+  ///
+  /// @note Matrix block size may be (1, 1) or (BS0, BS1)
+  /// @note Data block size may be (1, 1) or (BS0, BS1)
+  ///
+  /// @tparam BS0 Row block size of data for insertion
+  /// @tparam BS1 Column block size of data for insertion
+  ///
   /// @return Function for inserting values into `A`
-  /// @todo clarify setting on non-owned entries
+  template <int BS0 = 1, int BS1 = 1>
   auto mat_set_values()
   {
+    if ((BS0 != _bs[0] and BS0 > 1 and _bs[0] > 1)
+        or (BS1 != _bs[1] and BS1 > 1 and _bs[1] > 1))
+    {
+      throw std::runtime_error(
+          "Cannot insert blocks of different size than matrix block size");
+    }
+
     return [&](std::span<const std::int32_t> rows,
                std::span<const std::int32_t> cols,
                std::span<const value_type> data) -> int
     {
-      this->set(data, rows, cols);
+      this->set<BS0, BS1>(data, rows, cols);
       return 0;
     };
   }
 
-  /// @brief Insertion functor for accumulating values in matrix. It is
+  /// @brief Insertion functor for adding values to a matrix. It is
   /// typically used in finite element assembly functions.
+  ///
+  /// Create a function to add values to a MatrixCSR. The function signature is
+  /// `int mat_add_fn(std::span<const std::int32_t rows, std::span<const
+  /// std::int32_t cols, std::span<const value_type> data)`. The rows
+  /// and columns use process local indexing, and the given rows and
+  /// columns must pre-exist in the sparsity pattern of the matrix.
+  /// Insertion into "ghost" rows (in the ghost region of the row
+  /// `IndexMap`) is permitted, so long as there are correct entries
+  /// in the sparsity pattern.
+  ///
+  /// @note Using rows or columns which are not in the sparsity will result
+  /// in undefined behaviour (or an assert failure in Debug mode).
+  ///
+  /// @note Matrix block size may be (1, 1) or (BS0, BS1)
+  /// @note Data block size may be (1, 1) or (BS0, BS1)
+  ///
+  /// @tparam BS0 Row block size of data for insertion
+  /// @tparam BS1 Column block size of data for insertion
+  ///
   /// @return Function for inserting values into `A`
+  template <int BS0 = 1, int BS1 = 1>
   auto mat_add_values()
   {
+    if ((BS0 != _bs[0] and BS0 > 1 and _bs[0] > 1)
+        or (BS1 != _bs[1] and BS1 > 1 and _bs[1] > 1))
+    {
+      throw std::runtime_error(
+          "Cannot insert blocks of different size than matrix block size");
+    }
+
     return [&](std::span<const std::int32_t> rows,
                std::span<const std::int32_t> cols,
                std::span<const value_type> data) -> int
     {
-      this->add(data, rows, cols);
+      this->add<BS0, BS1>(data, rows, cols);
       return 0;
     };
   }
 
   /// @brief Create a distributed matrix.
-  /// @param[in] p The sparsity pattern the describes the parallel
+  ///
+  /// The structure of the matrix depends entirely on the input
+  /// `SparsityPattern`, which must be finalized.
+  /// The matrix storage is distributed Compressed Sparse Row:
+  /// the matrix is distributed by row across processes, and on each
+  /// process, there is a list of column indices and matrix entries
+  /// for each row stored. This exactly matches the layout of the
+  /// `SparsityPattern`.
+  /// There is some overlap of matrix rows between processes to allow for
+  /// independent Finite Element assembly, after which, the ghost rows
+  /// should be sent to the row owning processes by calling
+  /// `finalize()`.
+  ///
+  /// @note The block size of the matrix is given by the block size of
+  /// the input `SparsityPattern`.
+  ///
+  /// @param[in] p The sparsity pattern which describes the parallel
   /// distribution and the non-zero structure.
-  MatrixCSR(const SparsityPattern& p);
+  /// @param[in] mode Block mode. When the block size is greater than
+  /// one, the storage can be "compact" where each matrix entry refers
+  /// to a block of data (stored row major), or "expanded" where each
+  /// matrix entry is individual. In the "expanded" case, the sparsity
+  /// is expanded for every entry in the block, and the block size of
+  /// the matrix is set to (1, 1).
+  MatrixCSR(const SparsityPattern& p, BlockMode mode = BlockMode::compact);
 
   /// Move constructor
   /// @todo Check handling of MPI_Request
@@ -133,39 +186,86 @@ public:
 
   /// @brief Set values in the matrix.
   /// @note Only entries included in the sparsity pattern used to
-  /// initialize the matrix can be set
+  /// initialize the matrix can be set.
   /// @note All indices are local to the calling MPI rank and entries
   /// cannot be set in ghost rows.
   /// @note This should be called after `finalize`. Using before
   /// `finalize` will set the values correctly, but incoming values may
   /// get added to them during a subsequent finalize operation.
+  /// @tparam BS0 Data row block size
+  /// @tparam BS1 Data column block size
   /// @param[in] x The `m` by `n` dense block of values (row-major) to
   /// set in the matrix
   /// @param[in] rows The row indices of `x`
   /// @param[in] cols The column indices of `x`
+  template <int BS0, int BS1>
   void set(std::span<const value_type> x, std::span<const std::int32_t> rows,
            std::span<const std::int32_t> cols)
   {
-    impl::set_csr(_data, _cols, _row_ptr, x, rows, cols,
-                  _index_maps[0]->size_local());
+    auto set_fn = [](value_type& y, const value_type& x) { y = x; };
+
+    assert(x.size() == rows.size() * cols.size() * BS0 * BS1);
+    if (_bs[0] == BS0 and _bs[1] == BS1)
+    {
+      impl::insert_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols, set_fn,
+                                 _index_maps[0]->size_local());
+    }
+    else if (_bs[0] == 1 and _bs[1] == 1)
+    {
+      // Set blocked data in a regular CSR matrix (_bs[0]=1, _bs[1]=1) with
+      // correct sparsity
+      impl::insert_blocked_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols,
+                                         set_fn, _index_maps[0]->size_local());
+    }
+    else
+    {
+      assert(BS0 == 1 and BS1 == 1);
+      // Set non-blocked data in a blocked CSR matrix (BS0=1, BS1=1)
+      impl::insert_nonblocked_csr(_data, _cols, _row_ptr, x, rows, cols, set_fn,
+                                  _index_maps[0]->size_local(), _bs[0], _bs[1]);
+    }
   }
 
   /// @brief Accumulate values in the matrix
   /// @note Only entries included in the sparsity pattern used to
-  /// initialize the matrix can be accumulated in to
+  /// initialize the matrix can be accumulated into.
   /// @note All indices are local to the calling MPI rank and entries
   /// may go into ghost rows.
   /// @note Use `finalize` after all entries have been added to send
   /// ghost rows to owners. Adding more entries after `finalize` is
   /// allowed, but another call to `finalize` will then be required.
+  ///
+  /// @tparam BS0 Row block size of data
+  /// @tparam BS1 Column block size of data
   /// @param[in] x The `m` by `n` dense block of values (row-major) to
   /// add to the matrix
   /// @param[in] rows The row indices of `x`
   /// @param[in] cols The column indices of `x`
+  template <int BS0 = 1, int BS1 = 1>
   void add(std::span<const value_type> x, std::span<const std::int32_t> rows,
            std::span<const std::int32_t> cols)
   {
-    impl::add_csr(_data, _cols, _row_ptr, x, rows, cols);
+    auto add_fn = [](value_type& y, const value_type& x) { y += x; };
+
+    assert(x.size() == rows.size() * cols.size() * BS0 * BS1);
+    if (_bs[0] == BS0 and _bs[1] == BS1)
+    {
+      impl::insert_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols, add_fn,
+                                 _row_ptr.size());
+    }
+    else if (_bs[0] == 1 and _bs[1] == 1)
+    {
+      // Add blocked data to a regular CSR matrix (_bs[0]=1, _bs[1]=1)
+      impl::insert_blocked_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols,
+                                         add_fn, _row_ptr.size());
+    }
+    else
+    {
+      assert(BS0 == 1 and BS1 == 1);
+      // Add non-blocked data to a blocked CSR matrix (BS0=1, BS1=1)
+      impl::insert_nonblocked_csr(_data, _cols, _row_ptr, x, rows, cols, add_fn,
+                                  _row_ptr.size(), _bs[0], _bs[1]);
+    }
   }
 
   /// Number of local rows excluding ghost rows
@@ -179,6 +279,7 @@ public:
   /// in production
   /// @note Ghost rows are also returned, and these can be truncated
   /// manually by using num_owned_rows() if required.
+  /// @note If the block size is greater than 1, the entries are expanded.
   /// @return Dense copy of the part of the matrix on the calling rank.
   /// Storage is row-major.
   std::vector<value_type> to_dense() const;
@@ -208,7 +309,9 @@ public:
   /// zeroed.
   void finalize_end();
 
-  /// Compute the Frobenius norm squared
+  /// @brief Compute the Frobenius norm squared across all processes
+  /// @note This does not include ghost rows.
+  /// @note MPI Collective
   double squared_norm() const;
 
   /// @brief Index maps for the row and column space.
@@ -251,9 +354,16 @@ public:
     return _off_diagonal_offset;
   }
 
+  /// Block size
+  /// @return block sizes for rows and columns
+  const std::array<int, 2>& block_size() const { return _bs; }
+
 private:
   // Maps for the distribution of the ows and columns
   std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;
+
+  // Block mode (compact or expanded)
+  BlockMode _block_mode;
 
   // Block sizes
   std::array<int, 2> _bs;
@@ -289,91 +399,78 @@ private:
   container_type _ghost_value_data;
   container_type _ghost_value_data_in;
 };
-
-//-----------------------------------------------------------------------------
-template <typename U, typename V, typename W, typename X, typename Y>
-void impl::set_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
-                   const Y& xrows, const Y& xcols,
-                   [[maybe_unused]] typename Y::value_type local_size)
-{
-  assert(x.size() == xrows.size() * xcols.size());
-  for (std::size_t r = 0; r < xrows.size(); ++r)
-  {
-    // Row index and current data row
-    auto row = xrows[r];
-    using T = typename X::value_type;
-    const T* xr = x.data() + r * xcols.size();
-
-#ifndef NDEBUG
-    if (row >= local_size)
-      throw std::runtime_error("Local row out of range");
-#endif
-
-    // Columns indices for row
-    auto cit0 = std::next(cols.begin(), row_ptr[row]);
-    auto cit1 = std::next(cols.begin(), row_ptr[row + 1]);
-    for (std::size_t c = 0; c < xcols.size(); ++c)
-    {
-      // Find position of column index
-      auto it = std::lower_bound(cit0, cit1, xcols[c]);
-      assert(it != cit1);
-      std::size_t d = std::distance(cols.begin(), it);
-      assert(d < data.size());
-      data[d] = xr[c];
-    }
-  }
-}
-//-----------------------------------------------------------------------------
-template <typename U, typename V, typename W, typename X, typename Y>
-void impl::add_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
-                   const Y& xrows, const Y& xcols)
-{
-  assert(x.size() == xrows.size() * xcols.size());
-  for (std::size_t r = 0; r < xrows.size(); ++r)
-  {
-    // Row index and current data row
-    auto row = xrows[r];
-    using T = typename X::value_type;
-    const T* xr = x.data() + r * xcols.size();
-
-#ifndef NDEBUG
-    if (row >= (int)row_ptr.size())
-      throw std::runtime_error("Local row out of range");
-#endif
-
-    // Columns indices for row
-    auto cit0 = std::next(cols.begin(), row_ptr[row]);
-    auto cit1 = std::next(cols.begin(), row_ptr[row + 1]);
-    for (std::size_t c = 0; c < xcols.size(); ++c)
-    {
-      // Find position of column index
-      auto it = std::lower_bound(cit0, cit1, xcols[c]);
-      assert(it != cit1);
-      std::size_t d = std::distance(cols.begin(), it);
-      assert(d < data.size());
-      data[d] += xr[c];
-    }
-  }
-}
 //-----------------------------------------------------------------------------
 template <class U, class V, class W, class X>
-MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p)
+MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
     : _index_maps({p.index_map(0),
                    std::make_shared<common::IndexMap>(p.column_index_map())}),
-      _bs({p.block_size(0), p.block_size(1)}), _data(p.num_nonzeros(), 0),
+      _block_mode(mode), _bs({p.block_size(0), p.block_size(1)}),
+      _data(p.num_nonzeros() * _bs[0] * _bs[1], 0),
       _cols(p.graph().first.begin(), p.graph().first.end()),
       _row_ptr(p.graph().second.begin(), p.graph().second.end()),
       _comm(MPI_COMM_NULL)
 {
-  // TODO: handle block sizes
-  if (_bs[0] > 1 or _bs[1] > 1)
-    throw std::runtime_error("Block size not yet supported");
+  if (_block_mode == BlockMode::expanded)
+  {
+    // Rebuild IndexMaps
+    for (int i = 0; i < 2; ++i)
+    {
+      const auto im = _index_maps[i];
+      const int size_local = im->size_local() * _bs[i];
+      const std::vector<std::int64_t>& ghost_i = im->ghosts();
+      std::vector<std::int64_t> ghosts;
+      const std::vector<int> ghost_owner_i = im->owners();
+      std::vector<int> src_rank;
+      for (std::size_t j = 0; j < ghost_i.size(); ++j)
+      {
+        for (int k = 0; k < _bs[i]; ++k)
+        {
+          ghosts.push_back(ghost_i[j] * _bs[i] + k);
+          src_rank.push_back(ghost_owner_i[j]);
+        }
+      }
+      const std::array<std::vector<int>, 2> src_dest0
+          = {_index_maps[i]->src(), _index_maps[i]->dest()};
+      _index_maps[i] = std::make_shared<common::IndexMap>(
+          _index_maps[i]->comm(), size_local, src_dest0, ghosts, src_rank);
+    }
 
-  // Compute off-diagonal offset for each row
-  std::span<const std::int32_t> num_diag_nnz = p.off_diagonal_offsets();
-  _off_diagonal_offset.reserve(num_diag_nnz.size());
-  std::transform(num_diag_nnz.begin(), num_diag_nnz.end(), _row_ptr.begin(),
-                 std::back_inserter(_off_diagonal_offset), std::plus{});
+    // Convert sparsity pattern and set _bs to 1
+
+    column_container_type new_cols;
+    new_cols.reserve(_data.size());
+    rowptr_container_type new_row_ptr = {0};
+    new_row_ptr.reserve(_row_ptr.size() * _bs[0]);
+    std::span<const std::int32_t> num_diag_nnz = p.off_diagonal_offsets();
+
+    for (std::size_t i = 0; i < _row_ptr.size() - 1; ++i)
+    {
+      // Repeat row _bs[0] times
+      for (int q0 = 0; q0 < _bs[0]; ++q0)
+      {
+        _off_diagonal_offset.push_back(new_row_ptr.back()
+                                       + num_diag_nnz[i] * _bs[1]);
+        for (auto j = _row_ptr[i]; j < _row_ptr[i + 1]; ++j)
+        {
+          for (int q1 = 0; q1 < _bs[1]; ++q1)
+            new_cols.push_back(_cols[j] * _bs[1] + q1);
+        }
+        new_row_ptr.push_back(new_cols.size());
+      }
+    }
+    _cols = new_cols;
+    _row_ptr = new_row_ptr;
+    _bs[0] = 1;
+    _bs[1] = 1;
+  }
+  else
+  {
+    // Compute off-diagonal offset for each row (compact)
+    std::span<const std::int32_t> num_diag_nnz = p.off_diagonal_offsets();
+    _off_diagonal_offset.reserve(num_diag_nnz.size());
+    std::transform(num_diag_nnz.begin(), num_diag_nnz.end(), _row_ptr.begin(),
+                   std::back_inserter(_off_diagonal_offset), std::plus{});
+  }
 
   // Some short-hand
   const std::array local_size
@@ -477,13 +574,15 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p)
   // Store receive displacements for future use, when transferring
   // data values
   _val_recv_disp.resize(recv_disp.size());
+  const int bs2 = _bs[0] * _bs[1];
   std::transform(recv_disp.begin(), recv_disp.end(), _val_recv_disp.begin(),
-                 [](int d) { return d / 2; });
+                 [&bs2](auto d) { return bs2 * d / 2; });
+  std::transform(_val_send_disp.begin(), _val_send_disp.end(),
+                 _val_send_disp.begin(), [&bs2](auto d) { return d * bs2; });
 
   // Global-to-local map for ghost columns
   std::vector<std::pair<std::int64_t, std::int32_t>> global_to_local;
   global_to_local.reserve(ghosts1.size());
-  std::int32_t local_i = local_size[1];
   for (std::int64_t idx : ghosts1)
     global_to_local.push_back({idx, global_to_local.size() + local_size[1]});
   std::sort(global_to_local.begin(), global_to_local.end());
@@ -527,10 +626,15 @@ MatrixCSR<U, V, W, X>::to_dense() const
   const std::size_t nrows = num_all_rows();
   const std::size_t ncols
       = _index_maps[1]->size_local() + _index_maps[1]->num_ghosts();
-  std::vector<value_type> A(nrows * ncols);
+  std::vector<value_type> A(nrows * ncols * _bs[0] * _bs[1], 0.0);
   for (std::size_t r = 0; r < nrows; ++r)
     for (std::int32_t j = _row_ptr[r]; j < _row_ptr[r + 1]; ++j)
-      A[r * ncols + _cols[j]] = _data[j];
+      for (int i0 = 0; i0 < _bs[0]; ++i0)
+        for (int i1 = 0; i1 < _bs[1]; ++i1)
+        {
+          A[(r * _bs[1] + i0) * ncols * _bs[0] + _cols[j] * _bs[1] + i1]
+              = _data[j * _bs[0] * _bs[1] + i0 * _bs[1] + i1];
+        }
 
   return A;
 }
@@ -540,6 +644,7 @@ void MatrixCSR<U, V, W, X>::finalize_begin()
 {
   const std::int32_t local_size0 = _index_maps[0]->size_local();
   const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
+  const int bs2 = _bs[0] * _bs[1];
 
   // For each ghost row, pack and send values to send to neighborhood
   std::vector<int> insert_pos = _val_send_disp;
@@ -551,11 +656,11 @@ void MatrixCSR<U, V, W, X>::finalize_begin()
     // Get position in send buffer to place data to send to this
     // neighbour
     const std::int32_t val_pos = insert_pos[rank];
-    std::copy(std::next(_data.data(), _row_ptr[local_size0 + i]),
-              std::next(_data.data(), _row_ptr[local_size0 + i + 1]),
+    std::copy(std::next(_data.data(), _row_ptr[local_size0 + i] * bs2),
+              std::next(_data.data(), _row_ptr[local_size0 + i + 1] * bs2),
               std::next(_ghost_value_data.begin(), val_pos));
     insert_pos[rank]
-        += _row_ptr[local_size0 + i + 1] - _row_ptr[local_size0 + i];
+        += bs2 * (_row_ptr[local_size0 + i + 1] - _row_ptr[local_size0 + i]);
   }
 
   _ghost_value_data_in.resize(_val_recv_disp.back());
@@ -587,25 +692,29 @@ void MatrixCSR<U, V, W, X>::finalize_end()
   _ghost_value_data.shrink_to_fit();
 
   // Add to local rows
-  assert(_ghost_value_data_in.size() == _unpack_pos.size());
-  for (std::size_t i = 0; i < _ghost_value_data_in.size(); ++i)
-    _data[_unpack_pos[i]] += _ghost_value_data_in[i];
+  const int bs2 = _bs[0] * _bs[1];
+  assert(_ghost_value_data_in.size() == _unpack_pos.size() * bs2);
+  for (std::size_t i = 0; i < _unpack_pos.size(); ++i)
+    for (int j = 0; j < bs2; ++j)
+      _data[_unpack_pos[i] * bs2 + j] += _ghost_value_data_in[i * bs2 + j];
 
   _ghost_value_data_in.clear();
   _ghost_value_data_in.shrink_to_fit();
 
   // Set ghost row data to zero
   const std::int32_t local_size0 = _index_maps[0]->size_local();
-  std::fill(std::next(_data.begin(), _row_ptr[local_size0]), _data.end(), 0);
+  std::fill(std::next(_data.begin(), _row_ptr[local_size0] * bs2), _data.end(),
+            0);
 }
 //-----------------------------------------------------------------------------
 template <typename U, typename V, typename W, typename X>
 double MatrixCSR<U, V, W, X>::squared_norm() const
 {
   const std::size_t num_owned_rows = _index_maps[0]->size_local();
+  const int bs2 = _bs[0] * _bs[1];
   assert(num_owned_rows < _row_ptr.size());
   double norm_sq_local = std::accumulate(
-      _data.cbegin(), std::next(_data.cbegin(), _row_ptr[num_owned_rows]),
+      _data.cbegin(), std::next(_data.cbegin(), _row_ptr[num_owned_rows] * bs2),
       double(0), [](auto norm, value_type y) { return norm + std::norm(y); });
   double norm_sq;
   MPI_Allreduce(&norm_sq_local, &norm_sq, 1, MPI_DOUBLE, MPI_SUM, _comm.comm());

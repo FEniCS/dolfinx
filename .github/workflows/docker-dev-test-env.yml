@@ -1,7 +1,7 @@
 ---
-name: Docker build environment images
+name: Docker test and development images
 
-# Builds build environment images (no FEniCS components). 
+# Builds test and development images (no FEniCS components). 
 #
 # Must be triggered manually via GitHub interface, possibly using specific git
 # refs and tag prefix for e.g. releases.
@@ -17,7 +17,7 @@ on:
 
       dockerfile:
         description: "Dockerfile"
-        default: "docker/Dockerfile"
+        default: "docker/Dockerfile.test-env"
         type: string
         required: true
 
@@ -33,20 +33,13 @@ jobs:
 
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Set git ref
-        run: |
-          USER_INPUT=${{ github.event.inputs.dolfinx_ref }}
-          echo "DOLFINX_REF=${USER_INPUT:-main}" >> $GITHUB_ENV
-
       - name: Set Dockerfile
         run: |
           USER_INPUT=${{ github.event.inputs.dockerfile }}
-          echo "DOCKERFILE=${USER_INPUT:-docker/Dockerfile}" >> $GITHUB_ENV
+          echo "DOCKERFILE=${USER_INPUT:-docker/Dockerfile.test-env}" >> $GITHUB_ENV
 
       - name: Checkout DOLFINx
         uses: actions/checkout@v3
-        with:
-          ref: ${{ env.DOLFINX_REF }}
 
       - name: Set root repository (docker.io/fenicsproject)
         if: ${{ matrix.variant == 'test-env' }}
@@ -67,7 +60,7 @@ jobs:
       - name: Create image name and tag
         run: |
           USER_INPUT=${{ github.event.inputs.tag_prefix }}
-          echo "TAG=${{ env.DH_PREFIX }}/${{ matrix.variant }}:${USER_INPUT:-nightly}-${{ matrix.mpi }}-${{ env.ARCH_TAG }}" >> $GITHUB_ENV
+          echo "TAG=${{ env.DH_PREFIX }}/${{ matrix.variant }}:${USER_INPUT:-current}-${{ matrix.mpi }}-${{ env.ARCH_TAG }}" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -133,13 +126,13 @@ jobs:
           GH_PREFIX="ghcr.io/fenics"
           DH_PREFIX="docker.io/fenicsproject"
           # openmpi
-          TAG="test-env:${USER_INPUT:-nightly}-openmpi"
+          TAG="test-env:${USER_INPUT:-current}-openmpi"
           docker buildx imagetools create --tag ${DH_PREFIX}/${TAG} \
             --tag ${GH_PREFIX}/${TAG} \
             ${DH_PREFIX}/${TAG}-amd64 \
             ${DH_PREFIX}/${TAG}-arm64
           # mpich
-          TAG="test-env:${USER_INPUT:-nightly}-mpich"
+          TAG="test-env:${USER_INPUT:-current}-mpich"
           docker buildx imagetools create --tag ${DH_PREFIX}/${TAG} \
             --tag ${GH_PREFIX}/${TAG} \
             ${DH_PREFIX}/${TAG}-amd64 \
@@ -148,19 +141,19 @@ jobs:
           GH_PREFIX="ghcr.io/fenics/dolfinx"
           DH_PREFIX="docker.io/dolfinx"
           # openmpi
-          TAG="dev-env:${USER_INPUT:-nightly}-openmpi"
+          TAG="dev-env:${USER_INPUT:-current}-openmpi"
           docker buildx imagetools create --tag ${DH_PREFIX}/${TAG} \
             --tag ${GH_PREFIX}/${TAG} \
             ${DH_PREFIX}/${TAG}-amd64 \
             ${DH_PREFIX}/${TAG}-arm64
           # mpich
-          TAG="dev-env:${USER_INPUT:-nightly}-mpich"
+          TAG="dev-env:${USER_INPUT:-current}-mpich"
           docker buildx imagetools create --tag ${DH_PREFIX}/${TAG} \
             --tag ${GH_PREFIX}/${TAG} \
             ${DH_PREFIX}/${TAG}-amd64 \
             ${DH_PREFIX}/${TAG}-arm64
           # mpich (default)
-          TAG="dev-env:${USER_INPUT:-nightly}"
+          TAG="dev-env:${USER_INPUT:-current}"
           docker buildx imagetools create --tag ${DH_PREFIX}/${TAG} \
             --tag ${GH_PREFIX}/${TAG} \
             ${DH_PREFIX}/${TAG}-mpich-amd64 \

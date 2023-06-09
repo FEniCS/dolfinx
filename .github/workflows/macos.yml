@@ -1,4 +1,3 @@
----
 name: macOS build
 
 on:
@@ -10,17 +9,17 @@ on:
 jobs:
   mac-os-build:
     name: macOS Homebrew install and test
+    runs-on: macos-13
     env:
       PETSC_ARCH: arch-darwin-c-opt
       PETSC_DIR: ${{ github.workspace }}/petsc
 
-    strategy:
-      matrix:
-        os: [macos-13]
-      fail-fast: false
-    runs-on: ${{ matrix.os }}
-
     steps:
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
       - name: Install Homebrew dependencies
         run: |
           # brew install adios2 boost cmake hdf5-mpi ninja open-mpi pkg-config pugixml python # FEniCS
@@ -29,12 +28,12 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          pip3 install pip --upgrade
+          pip install pip --upgrade
           pip install numpy setuptools wheel
-          pip install Cython==0.29.32
+          pip install cython
           pip install mpi4py
 
-      - name: Install minimal PETSc
+      - name: Install minimal PETSc and petsc4y
         run: |
           export PATH="$(brew --prefix bison)/bin:$PATH"
           git clone -b release https://gitlab.com/petsc/petsc.git petsc
@@ -46,11 +45,9 @@ jobs:
             --with-scalar-type=real \
             --with-shared-libraries \
             --with-scalar-type=real \
+            -–with-petsc4py=yes \
             --download-ptscotch
           make all
-
-      - name: Install petsc4py
-        run: pip install petsc/src/binding/petsc4py
 
       - name: Install FEniCSx dependencies
         run: |
@@ -69,9 +66,14 @@ jobs:
           cmake --install build
 
       - name: Build and install DOLFINx Python interface
-        run: pip install dolfinx/python/
-
-      - name: Basic test
+        env:
+          PYTHONPATH: ${{ github.workspace }}/petsc/${{ env.PETSC_ARCH }}/lib:${{ env.PYTHONPATH }}
         run: |
-          python3 -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
-          mpirun -np 2 python3 -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
+          echo "Path: ${PYTHONPATH}"
+          pip install dolfinx/python/
+      - name: Basic test
+        env:
+          PYTHONPATH: ${{ github.workspace }}/petsc/${{ env.PETSC_ARCH }}/lib:${{ env.PYTHONPATH }}
+        run: |
+          python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
+          mpirun -np 2 python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
