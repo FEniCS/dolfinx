@@ -26,28 +26,28 @@ jobs:
           brew install boost cmake hdf5-mpi make ninja open-mpi pkg-config pugixml # FEniCS
           brew install bison flex # PETSc
 
-      # - name: Install Python dependencies
-      #   run: |
-      #     pip3 install pip --upgrade
-      #     pip install numpy setuptools wheel
-      #     pip install cython
-      #     pip install mpi4py
+      - name: Install Python dependencies
+        run: |
+          pip3 install pip --upgrade
+          pip install numpy setuptools wheel
+          pip install cython
+          pip install mpi4py
 
-      # - name: Install minimal PETSc and petsc4y
-      #   run: |
-      #     export PATH="$(brew --prefix bison)/bin:$PATH"
-      #     git clone -b release https://gitlab.com/petsc/petsc.git petsc
-      #     cd petsc
-      #     ./configure \
-      #       --with-64-bit-indices=no \
-      #       --with-debugging=no \
-      #       --with-fortran-bindings=no \
-      #       --with-scalar-type=real \
-      #       --with-shared-libraries \
-      #       --with-scalar-type=real \
-      #       -–with-petsc4py=yes \
-      #       --download-ptscotch
-      #     make all
+      - name: Install minimal PETSc and petsc4y
+        run: |
+          export PATH="$(brew --prefix bison)/bin:$PATH"
+          git clone -b release https://gitlab.com/petsc/petsc.git petsc
+          cd petsc
+          ./configure \
+            --with-64-bit-indices=no \
+            --with-debugging=no \
+            --with-fortran-bindings=no \
+            --with-scalar-type=real \
+            --with-shared-libraries \
+            --with-scalar-type=real \
+            -–with-petsc4py=yes \
+            --download-ptscotch
+          make all
 
       # - name: Install FEniCSx dependencies
       #   run: |
