@@ -95,8 +95,30 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     wget -nc --quiet http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${PETSC_VERSION}.tar.gz -O petsc-${PETSC_VERSION}.tar.gz && \
     mkdir -p ${PETSC_DIR} && tar -xf petsc-${PETSC_VERSION}.tar.gz -C ${PETSC_DIR} --strip-components 1 && \
     cd ${PETSC_DIR} && \
-    # Real, 32-bit int
-    python3 ./configure \
+    # Real32, 32-bit int
+    ./configure \
+    PETSC_ARCH=linux-gnu-real32-32 \
+    --with-64-bit-indices=no \
+    --with-fortran-bindings=no \
+    --with-shared-libraries \
+    --download-superlu_dist \
+    --with-make-np=${BUILD_NP} \
+    --with-scalar-type=real \
+    --with-precision=single && \
+    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real32-32 ${MAKEFLAGS} all && \
+    # Complex64, 32-bit int
+    ./configure \
+    PETSC_ARCH=linux-gnu-complex64-32 \
+    --with-64-bit-indices=no \
+    --with-fortran-bindings=no \
+    --with-shared-libraries \
+    --download-superlu_dist \
+    --with-make-np=${BUILD_NP} \
+    --with-scalar-type=complex \
+    --with-precision=single && \
+    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex64-32 ${MAKEFLAGS} all && \
+    # Real64, 32-bit int
+    ./configure \
     PETSC_ARCH=linux-gnu-real64-32 \
     --with-64-bit-indices=no \
     --with-fortran-bindings=no \
@@ -105,8 +127,8 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     --with-make-np=${BUILD_NP} \
     --with-scalar-type=real && \
     make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real64-32 ${MAKEFLAGS} all && \
-    # Complex, 32-bit int
-    python3 ./configure \
+    # Complex128, 32-bit int
+    ./configure \
     PETSC_ARCH=linux-gnu-complex128-32 \
     --with-64-bit-indices=no \
     --with-fortran-bindings=no \
@@ -115,8 +137,8 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     --with-make-np=${BUILD_NP} \
     --with-scalar-type=complex && \
     make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex128-32 ${MAKEFLAGS} all && \
-    # Real, 64-bit int
-    python3 ./configure \
+    # Real64, 64-bit int
+    ./configure \
     PETSC_ARCH=linux-gnu-real64-64 \
     --with-64-bit-indices=yes \
     --with-fortran-bindings=no \
@@ -125,8 +147,8 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     --with-make-np=${BUILD_NP} \
     --with-scalar-type=real && \
     make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real64-64 ${MAKEFLAGS} all && \
-    # Complex, 64-bit int
-    python3 ./configure \
+    # Complex128, 64-bit int
+    ./configure \
     PETSC_ARCH=linux-gnu-complex128-64 \
     --with-64-bit-indices=yes \
     --with-fortran-bindings=no \
@@ -137,7 +159,7 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex128-64 ${MAKEFLAGS} all && \
     # Install petsc4py
     cd src/binding/petsc4py && \
-    PETSC_ARCH=linux-gnu-real64-32:linux-gnu-complex128-32:linux-gnu-real64-64:linux-gnu-complex128-64 pip3 install --no-cache-dir . && \
+    PETSC_ARCH=linux-gnu-real32-32:linux-gnu-complex64-32:linux-gnu-real64-32:linux-gnu-complex128-32:linux-gnu-real64-64:linux-gnu-complex128-64 pip3 install --no-cache-dir . && \
     # Cleanup
     apt-get -y purge bison flex && \
     apt-get -y autoremove && \
@@ -160,20 +182,24 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     wget -nc --quiet https://gitlab.com/slepc/slepc/-/archive/v${SLEPC_VERSION}/slepc-v${SLEPC_VERSION}.tar.gz && \
     mkdir -p ${SLEPC_DIR} && tar -xf slepc-v${SLEPC_VERSION}.tar.gz -C ${SLEPC_DIR} --strip-components 1 && \
     cd ${SLEPC_DIR} && \
+    export PETSC_ARCH=linux-gnu-real32-32 && \
+    ./configure && \
+    export PETSC_ARCH=linux-gnu-complex64-32 && \
+    ./configure && \
     export PETSC_ARCH=linux-gnu-real64-32 && \
-    python3 ./configure && \
+    ./configure && \
     make && \
     export PETSC_ARCH=linux-gnu-complex128-32 && \
-    python3 ./configure && \
+    ./configure && \
     make && \
     export PETSC_ARCH=linux-gnu-real64-64 && \
-    python3 ./configure && \
+    ./configure && \
     make && \
     export PETSC_ARCH=linux-gnu-complex128-64 && \
-    python3 ./configure && \
+    ./configure && \
     make && \
     # Install slepc4py
     cd src/binding/slepc4py && \
-    PETSC_ARCH=linux-gnu-real64-32:linux-gnu-complex128-32:linux-gnu-real64-64:linux-gnu-complex128-64 pip3 install --no-cache-dir . && \
+    PETSC_ARCH=linux-gnu-real32-32:linux-gnu-complex64-32:linux-gnu-real64-32:linux-gnu-complex128-32:linux-gnu-real64-64:linux-gnu-complex128-64 pip3 install --no-cache-dir . && \
     rm -rf ${SLEPC_DIR}/CTAGS ${SLEPC_DIR}/TAGS ${SLEPC_DIR}/docs ${SLEPC_DIR}/src/ ${SLEPC_DIR}/**/obj/ ${SLEPC_DIR}/**/test/ && \
     rm -rf /tmp/*
