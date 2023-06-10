@@ -235,7 +235,6 @@ RUN apt-get -qq update && \
     --download-mumps \
     --download-ptscotch \
     --download-scalapack \
-    --download-superlu \
     --with-scalar-type=complex \
     --with-precision=single && \
     make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex64-32 ${MAKEFLAGS} all && \
