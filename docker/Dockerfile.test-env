@@ -204,7 +204,7 @@ RUN apt-get -qq update && \
     cd ${PETSC_DIR} && \
     # Real, 32-bit int
     python3 ./configure \
-    PETSC_ARCH=linux-gnu-real-32 \
+    PETSC_ARCH=linux-gnu-real64-32 \
     --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
@@ -222,10 +222,10 @@ RUN apt-get -qq update && \
     --download-superlu \
     --download-superlu_dist \
     --with-scalar-type=real && \
-    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real-32 ${MAKEFLAGS} all && \
+    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real64-32 ${MAKEFLAGS} all && \
     # Complex, 32-bit int
     python3 ./configure \
-    PETSC_ARCH=linux-gnu-complex-32 \
+    PETSC_ARCH=linux-gnu-complex128-32 \
     --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
@@ -242,10 +242,10 @@ RUN apt-get -qq update && \
     --download-superlu \
     --download-superlu_dist \
     --with-scalar-type=complex && \
-    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex-32 ${MAKEFLAGS} all && \
+    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex128-32 ${MAKEFLAGS} all && \
     # Real, 64-bit int
     python3 ./configure \
-    PETSC_ARCH=linux-gnu-real-64 \
+    PETSC_ARCH=linux-gnu-real64-64 \
     --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
@@ -260,10 +260,10 @@ RUN apt-get -qq update && \
     --download-suitesparse \
     --download-superlu_dist \
     --with-scalar-type=real && \
-    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real-64 ${MAKEFLAGS} all && \
+    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real64-64 ${MAKEFLAGS} all && \
     # Complex, 64-bit int
     python3 ./configure \
-    PETSC_ARCH=linux-gnu-complex-64 \
+    PETSC_ARCH=linux-gnu-complex128-64 \
     --COPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --CXXOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
     --FOPTFLAGS="${PETSC_SLEPC_OPTFLAGS}" \
@@ -278,11 +278,11 @@ RUN apt-get -qq update && \
     --download-suitesparse \
     --download-superlu_dist \
     --with-scalar-type=complex && \
-    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex-64 ${MAKEFLAGS} all && \
+    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex128-64 ${MAKEFLAGS} all && \
     # Install petsc4py
     cd src/binding/petsc4py && \
     pip3 install --no-cache-dir Cython==0.29.32 && \
-    PETSC_ARCH=linux-gnu-real-32:linux-gnu-complex-32:linux-gnu-real-64:linux-gnu-complex-64 pip3 install --no-cache-dir -v . && \
+    PETSC_ARCH=linux-gnu-real64-32:linux-gnu-complex128-32:linux-gnu-real64-64:linux-gnu-complex128-64 pip3 install --no-cache-dir -v . && \
     # Cleanup
     apt-get -y purge bison flex && \
     apt-get -y autoremove && \
@@ -304,21 +304,21 @@ RUN apt-get -qq update && \
 RUN wget -nc --quiet https://gitlab.com/slepc/slepc/-/archive/v${SLEPC_VERSION}/slepc-v${SLEPC_VERSION}.tar.gz && \
     mkdir -p ${SLEPC_DIR} && tar -xf slepc-v${SLEPC_VERSION}.tar.gz -C ${SLEPC_DIR} --strip-components 1 && \
     cd ${SLEPC_DIR} && \
-    export PETSC_ARCH=linux-gnu-real-32 && \
+    export PETSC_ARCH=linux-gnu-real64-32 && \
     python3 ./configure && \
     make && \
-    export PETSC_ARCH=linux-gnu-complex-32 && \
+    export PETSC_ARCH=linux-gnu-complex128-32 && \
     python3 ./configure && \
     make && \
-    export PETSC_ARCH=linux-gnu-real-64 && \
+    export PETSC_ARCH=linux-gnu-real64-64 && \
     python3 ./configure && \
     make && \
-    export PETSC_ARCH=linux-gnu-complex-64 && \
+    export PETSC_ARCH=linux-gnu-complex128-64 && \
     python3 ./configure && \
     make && \
     # Install slepc4py
     cd src/binding/slepc4py && \
-    PETSC_ARCH=linux-gnu-real-32:linux-gnu-complex-32:linux-gnu-real-64:linux-gnu-complex-64 pip3 install --no-cache-dir . && \
+    PETSC_ARCH=linux-gnu-real64-32:linux-gnu-complex128-32:linux-gnu-real64-64:linux-gnu-complex128-64 pip3 install --no-cache-dir . && \
     rm -rf ${SLEPC_DIR}/CTAGS ${SLEPC_DIR}/TAGS ${SLEPC_DIR}/docs ${SLEPC_DIR}/src/ ${SLEPC_DIR}/**/obj/ ${SLEPC_DIR}/**/test/ && \
     rm -rf /tmp/*
 
