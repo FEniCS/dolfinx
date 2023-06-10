@@ -17,12 +17,11 @@ jobs:
     container: fenicsproject/test-env:latest-oneapi
 
     env:
-      PETSC_ARCH: linux-gnu-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
+      PETSC_ARCH: ${{ matrix.petsc_arch }}
 
     strategy:
       matrix:
-        petsc_arch: [real, complex]
-        petsc_int_type: [32]
+        petsc_arch: [linux-gnu-real64-32, linux-gnu-complex128-32]
 
     steps:
       - uses: actions/checkout@v3

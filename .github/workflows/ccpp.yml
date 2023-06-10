@@ -34,7 +34,7 @@ jobs:
     container: ghcr.io/fenics/test-env:current-openmpi
 
     env:
-      PETSC_ARCH: linux-gnu-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
+      PETSC_ARCH: ${{ matrix.petsc_arch }}
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
       OMPI_MCA_rmaps_base_oversubscribe: 1
@@ -45,10 +45,9 @@ jobs:
 
     strategy:
       matrix:
-        petsc_arch: [real, complex]
-        petsc_int_type: [32, 64]
+        petsc_arch: [linux-gnu-real64-32, linux-gnu-complex128-32, linux-gnu-real64-64, linux-gnu-complex128-64]
 
-    name: Build and test (scalar type ${{ matrix.petsc_arch }}, int${{ matrix.petsc_int_type }})
+    name: Build and test (${{ matrix.petsc_arch }})
 
     steps:
       - uses: actions/checkout@v3
@@ -166,7 +165,7 @@ jobs:
       - name: Upload C++ documentation artifact
         uses: actions/upload-artifact@v3
         with:
-          name: doc-cpp-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
+          name: doc-cpp-${{ matrix.petsc_arch }}
           path: |
             cpp/doc/html/
             cpp/doc/build/
@@ -176,7 +175,7 @@ jobs:
       - name: Upload Python documentation artifact
         uses: actions/upload-artifact@v3
         with:
-          name: doc-python-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
+          name: doc-python-${{ matrix.petsc_arch }}
           path: |
             python/doc/build/html/
           retention-days: 2
@@ -206,7 +205,7 @@ jobs:
           cp -r ../cpp/doc/html/* dolfinx/${{ env.VERSION_NAME }}/cpp/doxygen
           cp -r ../python/doc/build/html/* dolfinx/${{ env.VERSION_NAME }}/python
       - name: Commit and push documentation to FEniCS/docs
-        if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) && runner.os == 'Linux' && matrix.petsc_arch == 'real' && matrix.petsc_int_type == '32' }}
+        if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) && runner.os == 'Linux' && matrix.petsc_arch == 'linux-gnu-real64-32' }}
         run: |
           cd docs
           git config --global user.email "fenics@github.com"
