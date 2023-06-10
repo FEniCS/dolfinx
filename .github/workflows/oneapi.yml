@@ -14,7 +14,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-20.04
-    container: fenicsproject/test-env:latest-oneapi
+    container: fenicsproject/test-env:current-oneapi
 
     env:
       PETSC_ARCH: ${{ matrix.petsc_arch }}
