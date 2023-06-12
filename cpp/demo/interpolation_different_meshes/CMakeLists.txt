@@ -2,7 +2,7 @@
 #
 # python cmake/scripts/generate-cmakefiles from dolfinx/cpp
 #
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.19)
 
 set(PROJECT_NAME demo_interpolation_different_meshes)
 project(${PROJECT_NAME} LANGUAGES C CXX)
