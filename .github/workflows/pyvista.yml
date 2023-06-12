@@ -20,10 +20,10 @@ jobs:
       # For pyvista/pyvistaqt
       DISPLAY: ":99.0"
       PYVISTA_OFF_SCREEN: true
-      PYVISTA_QT_VERSION: 0.9.1
-      PYVISTA_VERSION: 0.38.4
+      PYVISTA_QT_VERSION: 0.10.0
+      PYVISTA_VERSION: 0.39.0
 
-      PETSC_ARCH: linux-gnu-${{ matrix.petsc_arch }}-32
+      PETSC_ARCH: ${{ matrix.petsc_arch }}
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
       OMPI_MCA_rmaps_base_oversubscribe: 1
@@ -34,7 +34,8 @@ jobs:
 
     strategy:
       matrix:
-        petsc_arch: [real, complex]
+        # petsc_arch: [real, complex]
+        petsc_arch: [linux-gnu-real64-32, linux-gnu-complex128-32]
 
     steps:
       - uses: actions/checkout@v3
