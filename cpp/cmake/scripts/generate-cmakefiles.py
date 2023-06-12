@@ -73,24 +73,29 @@ endif()
 include(CheckSymbolExists)
 set(CMAKE_REQUIRED_INCLUDES ${{PETSC_INCLUDE_DIRS}})
 check_symbol_exists(PETSC_USE_COMPLEX petscsystypes.h PETSC_SCALAR_COMPLEX)
-
 if (PETSC_SCALAR_COMPLEX EQUAL 1)
   message(STATUS "** This demo does not support complex mode")
 else()
+  check_symbol_exists(PETSC_USE_REAL_DOUBLE petscsystypes.h PETSC_REAL_DOUBLE)
+  if(PETSC_REAL_DOUBLE EQUAL 1)
+    set(SCALAR_TYPE "--scalar_type=double")
+  else()
+    set(SCALAR_TYPE "--scalar_type=float")
+  endif()
+
   # Add target to compile UFL files
   add_custom_command(
     OUTPUT {ufl_c_files}
-    COMMAND ffcx ${{CMAKE_CURRENT_SOURCE_DIR}}/{ufl_files}
+    COMMAND ffcx ${{CMAKE_CURRENT_SOURCE_DIR}}/{ufl_files} ${{SCALAR_TYPE}}
     VERBATIM
     DEPENDS {ufl_files}
     COMMENT "Compile {ufl_files} using FFCx"
   )
+  endif()
 
   set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-  add_executable(
-    ${{PROJECT_NAME}} {src_files} ${{CMAKE_CURRENT_BINARY_DIR}}/{ufl_c_files}
-  )
+  add_executable(${{PROJECT_NAME}} {src_files} ${{CMAKE_CURRENT_BINARY_DIR}}/{ufl_c_files})
   target_link_libraries(${{PROJECT_NAME}} dolfinx)
 
   # Do not throw error for 'multi-line comments' (these are typical in rst which
@@ -135,10 +140,21 @@ endif()
 include(CheckSymbolExists)
 set(CMAKE_REQUIRED_INCLUDES ${{PETSC_INCLUDE_DIRS}})
 check_symbol_exists(PETSC_USE_COMPLEX petscsystypes.h PETSC_SCALAR_COMPLEX)
+check_symbol_exists(PETSC_USE_REAL_DOUBLE petscsystypes.h PETSC_REAL_DOUBLE)
 
 # Add target to compile UFL files
 if(PETSC_SCALAR_COMPLEX EQUAL 1)
-  set(SCALAR_TYPE "--scalar_type=double _Complex")
+  if(PETSC_REAL_DOUBLE EQUAL 1)
+    set(SCALAR_TYPE "--scalar_type=double _Complex")
+  else()
+    set(SCALAR_TYPE "--scalar_type=float _Complex")
+  endif()
+else()
+  if(PETSC_REAL_DOUBLE EQUAL 1)
+    set(SCALAR_TYPE "--scalar_type=double")
+  else()
+    set(SCALAR_TYPE "--scalar_type=float")
+  endif()
 endif()
 add_custom_command(
   OUTPUT {ufl_c_files}
@@ -229,7 +245,8 @@ def generate_cmake_files(subdirectory, generated_files):
             continue
 
         if len(ufl_files) > 1:
-            raise RuntimeError("CMake generation supports exactly one UFL file")
+            raise RuntimeError(
+                "CMake generation supports exactly one UFL file")
 
         # Name of demo and cpp source files
         # print("**, ", main_file_name, cpp_files)
