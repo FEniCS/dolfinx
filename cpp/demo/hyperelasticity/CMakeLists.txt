@@ -37,7 +37,6 @@ else()
     DEPENDS hyperelasticity.py
     COMMENT "Compile hyperelasticity.py using FFCx"
   )
-  endif()
 
   set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
