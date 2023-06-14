@@ -612,29 +612,29 @@ Form<T, U> create_form(
 }
 
 /// @brief Create a Form using a factory function that returns a pointer
-/// to a ufcx_form.
-/// @param[in] fptr Pointer to a function returning a pointer to
-/// ufcx_form.
-/// @param[in] spaces Function spaces for the Form arguments.
-/// @param[in] coefficients Coefficient fields in the form (by name),
-/// @param[in] constants Spatial constants in the form (by name),
-/// @param[in] subdomains Subdomain markers.
-/// @pre Each value in `subdomains` must be sorted by domain id.
-/// @param[in] mesh Mesh of the domain. This is required if the form has
-/// no arguments, e.g. a functional.
+/// to a ufcx_form
+/// @param[in] fptr pointer to a function returning a pointer to
+/// ufcx_form
+/// @param[in] spaces The function spaces for the Form arguments
+/// @param[in] coefficients Coefficient fields in the form (by name)
+/// @param[in] constants Spatial constants in the form (by name)
+/// @param[in] subdomains Subdomain markers
+/// @pre Each value in `subdomains` must be sorted by domain id
+/// @param[in] mesh The mesh of the domain. This is required if the form
+/// has no arguments, e.g. a functional.
 /// @return A Form
-template <typename T, typename U = dolfinx::scalar_value_type_t<T>>
-Form<T, U> create_form(
+template <typename T>
+Form<T> create_form(
     ufcx_form* (*fptr)(),
-    const std::vector<std::shared_ptr<const FunctionSpace<U>>>& spaces,
-    const std::map<std::string, std::shared_ptr<const Function<T, U>>>&
+    const std::vector<std::shared_ptr<const FunctionSpace>>& spaces,
+    const std::map<std::string, std::shared_ptr<const Function<T>>>&
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
     const std::map<
         IntegralType,
         std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>&
         subdomains,
-    std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
+    std::shared_ptr<const mesh::Mesh> mesh = nullptr);
 {
   ufcx_form* form = fptr();
   Form<T, U> L = create_form<T, U>(*form, spaces, coefficients, constants,
