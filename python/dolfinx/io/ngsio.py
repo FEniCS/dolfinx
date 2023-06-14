@@ -32,14 +32,9 @@ except ModuleNotFoundError:
 
 # Map from Gmsh cell type identifier (integer) to DOLFINx cell type
 # and degree http://gmsh.info//doc/texinfo/gmsh.html#MSH-file-format
-_ngs_to_cells = {1: ("interval", 1), (2,3): ("triangle", 1),
-                  (2,4): ("quadrilateral", 1), (3,4): ("tetrahedron", 1),
-                  5: ("hexahedron", 1), 8: ("interval", 2),
-                  9: ("triangle", 2), 10: ("quadrilateral", 2),
-                  11: ("tetrahedron", 2), 12: ("hexahedron", 2),
-                  15: ("point", 0), 21: ("triangle", 3),
-                  26: ("interval", 3), 29: ("tetrahedron", 3),
-                  36: ("quadrilateral", 3)}
+_ngs_to_cells = {(2,3): ("triangle", 1),
+                 (2,4): ("quadrilateral", 1),
+                 (3,4): ("tetrahedron", 1)}
 
 def ufl_mesh(ngs_cell: int, gdim: int) -> ufl.Mesh:
     """Create a UFL mesh from a Gmsh cell identifier and the geometric dimension.
@@ -83,7 +78,7 @@ if _has_ngs:
     def model_to_mesh(geo: ng.libngpy._geom2d, comm: _MPI.Comm, hmax: float, gdim: int = 2,
                       partitioner: typing.Callable[
             [_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32] =
-            create_cell_partitioner(GhostMode.none), transform: typing.Any = None) -> typing.Tuple[
+            create_cell_partitioner(GhostMode.none), transform: typing.Any = None, routine: typing.Any = None) -> typing.Tuple[
             Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
         """Given a NetGen model, take all physical entities of the highest
         topological dimension and create the corresponding DOLFINx mesh.
@@ -92,8 +87,8 @@ if _has_ngs:
 
         Args:
             comm: The MPI communicator to use for mesh creation
-            hmax: The rank the Gmsh model is initialized on
-            model: The Gmsh model
+            hmax: The maximum diameter of the elements in the triangulation
+            model: The NetGen model
             gdim: Geometrical dimension of the mesh
             partitioner: Function that computes the parallel
                 distribution of cells across MPI ranks
@@ -105,6 +100,9 @@ if _has_ngs:
         """
         # First we generate a mesh
         ngmesh = geo.GenerateMesh(maxh=hmax)
+        # Apply any ngs routine post meshing
+        if routine is not None:
+            ngmesh, geo = routine(ngmesh, geo)
         # Applying any PETSc Transform
         if transform is not None:
             meshMap = DMPlexMapping(ngmesh)
@@ -130,36 +128,5 @@ if _has_ngs:
         cell_perm = cell_perm_array(_cpp.mesh.to_type(str(ufl_domain.ufl_cell())), T.shape[1])
         T = T[:, cell_perm]
         mesh = create_mesh(comm, T, V, ufl_domain, partitioner)
-
-
-        # Create MeshTags for cells
-        #local_entities, local_values = _cpp.io.distribute_entity_data(
-        #    mesh._cpp_object, mesh.topology.dim, cells, cell_values)
-        #mesh.topology.create_connectivity(mesh.topology.dim, 0)
-        #adj = _cpp.graph.AdjacencyList_int32(local_entities)
-        #ct = meshtags_from_entities(mesh, mesh.topology.dim, adj, local_values.astype(np.int32, copy=False))
-        #ct.name = "Cell tags"
-
-        ## Create MeshTags for facets
-        #topology = mesh.topology
-        #if has_facet_data:
-        #    # Permute facets from MSH to DOLFINx ordering
-        #    # FIXME: This does not work for prism meshes
-        #    if topology.cell_types[0] == CellType.prism or topology.cell_types[0] == CellType.pyramid:
-        #        raise RuntimeError(f"Unsupported cell type {topology.cell_types[0]}")
-
-        #    facet_type = _cpp.mesh.cell_entity_type(_cpp.mesh.to_type(str(ufl_domain.ufl_cell())), topology.dim - 1, 0)
-        #    gmsh_facet_perm = cell_perm_array(facet_type, num_facet_nodes)
-        #    marked_facets = marked_facets[:, gmsh_facet_perm]
-
-        #    local_entities, local_values = _cpp.io.distribute_entity_data(
-        #        mesh._cpp_object, mesh.topology.dim - 1, marked_facets, facet_values)
-        #    mesh.topology.create_connectivity(topology.dim - 1, topology.dim)
-        #    adj = _cpp.graph.AdjacencyList_int32(local_entities)
-        #    ft = meshtags_from_entities(mesh, topology.dim - 1, adj, local_values.astype(np.int32, copy=False))
-        #    ft.name = "Facet tags"
-        #else:
-        #    ft = meshtags(mesh, topology.dim - 1, np.empty(0, dtype=np.int32), np.empty(0, dtype=np.int32))
-
         return mesh
 
