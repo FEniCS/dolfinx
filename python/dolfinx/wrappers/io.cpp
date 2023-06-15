@@ -159,6 +159,11 @@ void io(py::module& m)
            py::arg("function"), py::arg("t"), py::arg("mesh_xpath"))
       .def("write_function",
            py::overload_cast<
+               const dolfinx::fem::Function<std::complex<float>, float>&,
+               double, std::string>(&dolfinx::io::XDMFFile::write_function),
+           py::arg("function"), py::arg("t"), py::arg("mesh_xpath"))
+      .def("write_function",
+           py::overload_cast<
                const dolfinx::fem::Function<std::complex<double>, double>&,
                double, std::string>(&dolfinx::io::XDMFFile::write_function),
            py::arg("function"), py::arg("t"), py::arg("mesh_xpath"))

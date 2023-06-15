@@ -299,6 +299,13 @@ void XDMFFile::write_function(const fem::Function<float, float>& u, double t,
 }
 //-----------------------------------------------------------------------------
 void XDMFFile::write_function(
+    const fem::Function<std::complex<float>, float>& u, double t,
+    std::string mesh_xpath)
+{
+  _write_function(_comm, u, t, mesh_xpath, *_xml_doc, _h5_id, _filename);
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::write_function(
     const fem::Function<std::complex<double>, double>& u, double t,
     std::string mesh_xpath)
 {

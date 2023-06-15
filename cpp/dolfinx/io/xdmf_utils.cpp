@@ -407,6 +407,12 @@ xdmf_utils::get_point_data_values(const fem::Function<float, float>& u)
   return _get_point_data_values(u);
 }
 //-----------------------------------------------------------------------------
+std::vector<std::complex<float>> xdmf_utils::get_point_data_values(
+    const fem::Function<std::complex<float>, float>& u)
+{
+  return _get_point_data_values(u);
+}
+//-----------------------------------------------------------------------------
 std::vector<std::complex<double>> xdmf_utils::get_point_data_values(
     const fem::Function<std::complex<double>, double>& u)
 {
@@ -421,6 +427,12 @@ xdmf_utils::get_cell_data_values(const fem::Function<double, double>& u)
 //-----------------------------------------------------------------------------
 std::vector<float>
 xdmf_utils::get_cell_data_values(const fem::Function<float, float>& u)
+{
+  return _get_cell_data_values(u);
+}
+//-----------------------------------------------------------------------------
+std::vector<std::complex<float>> xdmf_utils::get_cell_data_values(
+    const fem::Function<std::complex<float>, float>& u)
 {
   return _get_cell_data_values(u);
 }
