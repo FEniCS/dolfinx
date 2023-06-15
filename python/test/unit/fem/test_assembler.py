@@ -174,7 +174,7 @@ def test_basic_assembly_petsc_matrixcsr(mode):
     A1 = fem.petsc.assemble_matrix(a)
     A1.assemble()
     assert isinstance(A1, PETSc.Mat)
-    assert np.sqrt(A0.squared_norm()) == pytest.approx(A1.norm())
+    assert np.sqrt(A0.squared_norm()) == pytest.approx(A1.norm(), rel=1.0e-8, abs=1.0e-5)
     A1.destroy()
 
 

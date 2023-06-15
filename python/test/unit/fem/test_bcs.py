@@ -98,7 +98,7 @@ def test_overlapping_bcs():
 
     if len(dof_corner) > 0:
         with b.localForm() as b_loc:
-            assert b_loc[dof_corner[0]] == 123.456
+            assert b_loc[dof_corner[0]] == default_real_type(123.456)
 
 
 def test_constant_bc_constructions():
@@ -114,16 +114,20 @@ def test_constant_bc_constructions():
     boundary_dofs1 = locate_dofs_topological(V1, tdim - 1, boundary_facets)
     boundary_dofs2 = locate_dofs_topological(V2, tdim - 1, boundary_facets)
 
-    bc0 = dirichletbc(1.0 + 2.2j, boundary_dofs0, V0)
-    assert bc0.value.value.dtype == np.complex128
-    assert bc0.value.value.shape == tuple()
-    assert bc0.value.value == 1.0 + 2.2j
+    if default_real_type == np.float64:
+        dtype = np.complex128
+    else:
+        dtype = np.complex64
 
-    bc1 = dirichletbc(np.array([1.0 + 2.2j, 3.0 + 2.2j], dtype=np.complex128
-                               ), boundary_dofs1, V1)
-    assert bc1.value.value.dtype == np.complex128
+    bc0 = dirichletbc(dtype(1.0 + 2.2j), boundary_dofs0, V0)
+    assert bc0.value.value.dtype == dtype
+    assert bc0.value.value.shape == tuple()
+    assert bc0.value.value == dtype(1.0 + 2.2j)
+
+    bc1 = dirichletbc(np.array([1.0 + 2.2j, 3.0 + 2.2j], dtype=dtype), boundary_dofs1, V1)
+    assert bc1.value.value.dtype == dtype
     assert bc1.value.value.shape == (tdim,)
-    assert (bc1.value.value == [1.0 + 2.2j, 3.0 + 2.2j]).all()
+    assert (bc1.value.value == [dtype(1.0 + 2.2j), dtype(3.0 + 2.2j)]).all()
 
     bc2 = dirichletbc(np.array([[1.0, 3.0], [3.0, -2.0]], dtype=default_real_type), boundary_dofs2, V2)
     assert bc2.value.value.dtype == default_real_type
