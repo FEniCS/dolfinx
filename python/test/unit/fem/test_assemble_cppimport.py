@@ -158,6 +158,8 @@ cfg['library_dirs'] = {dolfinx_pc["library_dirs"]}
             dtype = "std::complex<float>"
         elif dolfinx.default_scalar_type == np.complex128:
             dtype = "std::complex<double>"
+        else:
+          raise RuntimeError("Unknown scalar type")
 
         bs = [a_form.function_spaces[0].dofmap.index_map_bs,
               a_form.function_spaces[1].dofmap.index_map_bs]
