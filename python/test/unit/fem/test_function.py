@@ -10,9 +10,8 @@ import importlib
 import cffi
 import numpy as np
 import pytest
-
 import ufl
-from basix.ufl import mixed_element, element
+from basix.ufl import element, mixed_element
 from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
                          VectorFunctionSpace, assemble_scalar,
                          create_nonmatching_meshes_interpolation_data, form)
@@ -21,9 +20,10 @@ from dolfinx.geometry import (BoundingBoxTree, compute_colliding_cells,
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_square, locate_entities_boundary,
                           meshtags)
-
 from mpi4py import MPI
 from petsc4py import PETSc
+
+from dolfinx import default_real_type
 
 
 @pytest.fixture
@@ -63,6 +63,7 @@ def test_copy(V):
     assert not np.allclose(u.x.array, v.x.array)
 
 
+@pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
 def test_eval(V, W, Q, mesh):
     u1 = Function(V)
     u2 = Function(W)
@@ -100,6 +101,7 @@ def test_eval(V, W, Q, mesh):
     assert np.allclose(u3.eval(x0, first_cell)[:3], u2.eval(x0, first_cell), rtol=1e-15, atol=1e-15)
 
 
+@pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
 @pytest.mark.skip_in_parallel
 def test_eval_manifold():
     # Simple two-triangle surface in 3d
@@ -175,6 +177,7 @@ def test_interpolation_rank1(W):
     assert round(w.vector.norm(PETSc.NormType.N1) - 3 * num_vertices, 7) == 0
 
 
+@pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
 @pytest.mark.parametrize("cell_type0", [CellType.hexahedron, CellType.tetrahedron])
 @pytest.mark.parametrize("cell_type1", [CellType.triangle, CellType.quadrilateral])
 def test_nonmatching_interpolation(cell_type0, cell_type1):
@@ -225,6 +228,7 @@ def test_nonmatching_interpolation(cell_type0, cell_type1):
     assert np.isclose(assemble_scalar(form(residual)), 0)
 
 
+@pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
 def test_cffi_expression(V):
     code_h = """
     void eval(double* values, int num_points, int value_size, const double* x);
@@ -254,10 +258,10 @@ def test_cffi_expression(V):
     eval_ptr = ffi.cast("uintptr_t", ffi.addressof(lib, "eval"))
 
     # Handle C func address by hand
-    f1 = Function(V, dtype=np.float64)
+    f1 = Function(V, dtype=default_real_type)
     f1.interpolate(int(eval_ptr))
 
-    f2 = Function(V, dtype=np.float64)
+    f2 = Function(V, dtype=default_real_type)
     f2.interpolate(lambda x: x[0] + x[1])
 
     f1.x.array[:] -= f2.x.array
