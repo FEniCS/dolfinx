@@ -14,6 +14,8 @@ from dolfinx.mesh import create_mesh, create_unit_cube
 from mpi4py import MPI
 from ufl import Cell, Mesh, TestFunction, TrialFunction, grad
 
+from dolfinx import default_real_type
+
 
 @pytest.fixture
 def mesh():
@@ -223,6 +225,7 @@ def test_cell_mismatch(mesh):
         FunctionSpace(mesh, e)
 
 
+@pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
 def test_basix_element(V, W, Q, V2):
     for V_ in (V, W, V2):
         e = V_.element.basix_element
@@ -255,8 +258,10 @@ def test_vector_function_space_cell_type():
 
 @pytest.mark.skip_in_parallel
 def test_manifold_spaces():
-    vertices = [(0.0, 0.0, 1.0), (1.0, 1.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0,
-                                                                    0.0)]
+    vertices = np.array([(0.0, 0.0, 1.0),
+                         (1.0, 1.0, 1.0),
+                         (1.0, 0.0, 0.0),
+                         (0.0, 1.0, 0.0)], dtype=default_real_type)
     cells = [(0, 1, 2), (0, 1, 3)]
     domain = Mesh(element("Lagrange", "triangle", 1, gdim=3, rank=1))
     mesh = create_mesh(MPI.COMM_WORLD, cells, vertices, domain)
