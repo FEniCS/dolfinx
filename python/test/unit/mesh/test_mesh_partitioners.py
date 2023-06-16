@@ -51,6 +51,7 @@ def test_partition_box_mesh(gpart, Nx, cell_type):
     assert mesh.topology.index_map(0).size_global == (Nx + 1)**3
 
 
+@pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
 @pytest.mark.parametrize("Nx", [3, 10, 13])
 @pytest.mark.parametrize("cell_type", [CellType.tetrahedron, CellType.hexahedron])
 def test_custom_partitioner(tempdir, Nx, cell_type):

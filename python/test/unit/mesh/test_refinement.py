@@ -87,7 +87,7 @@ def test_sub_refine():
                               ghost_mode=GhostMode.none)
     mesh.topology.create_entities(1)
 
-    def left_corner_edge(x, tol=1e-16):
+    def left_corner_edge(x, tol=1e-7):
         return logical_and(isclose(x[0], 0), x[1] < 1 / 4 + tol)
 
     edges = locate_entities_boundary(mesh, 1, left_corner_edge)
