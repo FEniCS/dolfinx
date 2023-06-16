@@ -19,6 +19,7 @@
 #include <memory>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
+#include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
 #include <span>
 #include <string>
@@ -140,8 +141,7 @@ void common(nb::module_& m)
           nb::arg("entities"));
 
   // dolfinx::common::Timer
-  nb::class_<dolfinx::common::Timer>(
-      m, "Timer", "Timer class")
+  nb::class_<dolfinx::common::Timer>(m, "Timer", "Timer class")
       .def("__init__",
            [](dolfinx::common::Timer* t) { new (t) dolfinx::common::Timer(); })
       .def(

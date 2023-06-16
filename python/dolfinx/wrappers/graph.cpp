@@ -14,6 +14,7 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/operators.h>
+#include <nanobind/stl/function.h>
 #include <nanobind/stl/vector.h>
 #include <vector>
 
@@ -116,7 +117,7 @@ void declare_adjacency_list(nb::module_& m, std::string type)
 void graph(nb::module_& m)
 {
 
-  //  declare_adjacency_list<std::int32_t>(m, "int32");
+  declare_adjacency_list<std::int32_t>(m, "int32");
   declare_adjacency_list<std::int64_t>(m, "int64");
 
   using partition_fn

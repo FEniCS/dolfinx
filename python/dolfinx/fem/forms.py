@@ -81,8 +81,8 @@ class FormMetaClass:
         return super().integral_types  # type: ignore
 
 
-form_types = typing.Union[FormMetaClass, _cpp.fem.Form_float32, _cpp.fem.Form_float64,
-                          _cpp.fem.Form_complex64, _cpp.fem.Form_complex128]
+form_types = typing.Union[FormMetaClass, _cpp.fem.Form_float32, _cpp.fem.Form_float64]
+#                          _cpp.fem.Form_complex64, _cpp.fem.Form_complex128]
 
 
 _ufl_to_dolfinx_domain = {"cell": IntegralType.cell,

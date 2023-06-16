@@ -295,16 +295,17 @@ void petsc_module(nb::module_& m)
         nb::arg("maps"),
         "Create nested vector for multiple (stacked) linear forms.");
   m.def("create_matrix", dolfinx::fem::petsc::create_matrix<double>,
-        nb::arg("a"), nb::arg("type") = std::string(),
+        nb::arg("a"), nb::arg("type") = "",
         "Create a PETSc Mat for bilinear form.");
   m.def("create_matrix_block",
         &dolfinx::fem::petsc::create_matrix_block<double>, nb::arg("a"),
-        nb::arg("type") = std::string(),
+        nb::arg("type") = "",
         "Create monolithic sparse matrix for stacked bilinear forms.");
-  m.def("create_matrix_nest", &dolfinx::fem::petsc::create_matrix_nest<double>,
-        nb::arg("a"),
-        nb::arg("types") = std::vector<std::vector<std::string>>(),
-        "Create nested sparse matrix for bilinear forms.");
+  // m.def("create_matrix_nest",
+  // &dolfinx::fem::petsc::create_matrix_nest<double>,
+  //       nb::arg("a"),
+  //       nb::arg("types") = std::vector<std::vector<std::string>>({{""}}),
+  //       "Create nested sparse matrix for bilinear forms.");
 
   // PETSc Matrices
   m.def(
@@ -481,7 +482,7 @@ void assemble(nb::module_& m)
 {
   nb::module_ petsc_mod
       = m.def_submodule("petsc", "PETSc-specific finite element module");
- // petsc_module(petsc_mod);
+  petsc_module(petsc_mod);
 
   // dolfinx::fem::assemble
   declare_assembly_functions<float, double>(m);

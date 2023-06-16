@@ -25,6 +25,7 @@
 // #include <nanobind/eval.h>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
+#include <nanobind/stl/array.h>
 #include <nanobind/stl/function.h>
 #include <nanobind/stl/vector.h>
 #include <span>
@@ -365,7 +366,9 @@ void mesh(nb::module_& m)
       .value("tetrahedron", dolfinx::mesh::CellType::tetrahedron)
       .value("pyramid", dolfinx::mesh::CellType::pyramid)
       .value("prism", dolfinx::mesh::CellType::prism)
-      .value("hexahedron", dolfinx::mesh::CellType::hexahedron);
+      .value("hexahedron", dolfinx::mesh::CellType::hexahedron)
+      .def_prop_ro("name",
+                   [](nb::object obj) { return nb::getattr(obj, "__name__"); });
 
   m.def("to_type", &dolfinx::mesh::to_type, nb::arg("cell"));
   m.def("to_string", &dolfinx::mesh::to_string, nb::arg("type"));

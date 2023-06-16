@@ -155,21 +155,23 @@ void declare_objects(nb::module_& m, const std::string& type)
                      std::span<T> array = self.values();
                      const std::size_t size = array.size();
                      return nb::ndarray<const T>(array.data(), 1, &size,
-                                           nb::cast(self));
+                                                 nb::cast(self));
                    })
       .def_prop_ro("indices",
                    [](dolfinx::la::MatrixCSR<T>& self)
                    {
                      auto& array = self.cols();
                      const std::size_t size = array.size();
-                     return nb::ndarray<const std::int64_t>(array.data(), 1, &size, nb::cast(self));
+                     return nb::ndarray<const std::int64_t>(
+                         array.data(), 1, &size, nb::cast(self));
                    })
       .def_prop_ro("indptr",
                    [](dolfinx::la::MatrixCSR<T>& self)
                    {
                      auto& array = self.row_ptr();
                      const std::size_t size = array.size();
-                     return nb::ndarray<const std::int32_t>(array.data(), 1, &size, nb::cast(self));
+                     return nb::ndarray<const std::int32_t>(
+                         array.data(), 1, &size, nb::cast(self));
                    })
       .def("finalize_begin", &dolfinx::la::MatrixCSR<T>::finalize_begin)
       .def("finalize_end", &dolfinx::la::MatrixCSR<T>::finalize_end);
@@ -177,25 +179,27 @@ void declare_objects(nb::module_& m, const std::string& type)
 
 void petsc_module(nb::module_& m)
 {
-  m.def("create_vector",
-        nb::overload_cast<const dolfinx::common::IndexMap&, int>(
-            &dolfinx::la::petsc::create_vector),
-        nb::rv_policy::take_ownership, nb::arg("index_map"), nb::arg("bs"),
-        "Create a ghosted PETSc Vec for index map.");
+  m.def(
+      "create_vector",
+      [](const dolfinx::common::IndexMap& im, int n)
+      { return dolfinx::la::petsc::create_vector(im, n); },
+      nb::rv_policy::take_ownership, nb::arg("index_map"), nb::arg("bs"),
+      "Create a ghosted PETSc Vec for index map.");
+
   m.def(
       "create_vector_wrap",
       [](dolfinx::la::Vector<PetscScalar>& x)
       { return dolfinx::la::petsc::create_vector_wrap(x); },
       nb::rv_policy::take_ownership, nb::arg("x"),
       "Create a ghosted PETSc Vec that wraps a DOLFINx Vector");
+
   m.def(
       "create_matrix",
       [](dolfinx_wrappers::MPICommWrapper comm,
          const dolfinx::la::SparsityPattern& p, const std::string& type)
       { return dolfinx::la::petsc::create_matrix(comm.get(), p, type); },
       nb::rv_policy::take_ownership, nb::arg("comm"), nb::arg("p"),
-      nb::arg("type") = std::string(),
-      "Create a PETSc Mat from sparsity pattern.");
+      nb::arg("type") = "", "Create a PETSc Mat from sparsity pattern.");
 
   // TODO: check reference counting for index sets
   m.def("create_index_sets", &dolfinx::la::petsc::create_index_sets,
@@ -216,6 +220,7 @@ void petsc_module(nb::module_& m)
       nb::arg("x"), nb::arg("x_b"), nb::arg("maps"),
       "Scatter the (ordered) list of sub vectors into a block "
       "vector.");
+
   m.def(
       "get_local_vectors",
       [](const Vec x,
@@ -242,7 +247,7 @@ void la(nb::module_& m)
 {
   nb::module_ petsc_mod
       = m.def_submodule("petsc", "PETSc-specific linear algebra");
-  // petsc_module(petsc_mod);
+  petsc_module(petsc_mod);
 
   nb::enum_<PyInsertMode>(m, "InsertMode")
       .value("add", PyInsertMode::add)
@@ -304,23 +309,23 @@ void la(nb::module_& m)
              const nb::ndarray<std::int32_t, nb::numpy>& rows)
           { self.insert_diagonal(std::span(rows.data(), rows.size())); },
           nb::arg("rows"))
-      .def_prop_ro(
-          "graph",
-          [](dolfinx::la::SparsityPattern& self)
-          {
-            auto [edges, ptr] = self.graph();
-            const std::size_t esize = edges.size();
-            const std::size_t psize = ptr.size();
+      .def_prop_ro("graph",
+                   [](dolfinx::la::SparsityPattern& self)
+                   {
+                     auto [edges, ptr] = self.graph();
+                     const std::size_t esize = edges.size();
+                     const std::size_t psize = ptr.size();
 
-            return std::pair(
-                nb::ndarray<const std::int32_t>(edges.data(), 1, &esize, nb::cast(self)),
-                nb::ndarray<const std::int64_t>(ptr.data(), 1, &psize, nb::cast(self)));
-          });
+                     return std::pair(
+                         nb::ndarray<const std::int32_t>(
+                             edges.data(), 1, &esize, nb::cast(self)),
+                         nb::ndarray<const std::int64_t>(ptr.data(), 1, &psize,
+                                                         nb::cast(self)));
+                   });
 
   // Declare objects that are templated over type
   declare_objects<float>(m, "float32");
   declare_objects<double>(m, "float64");
-
 
   //  declare_objects<std::complex<float>>(m, "complex64");
   //  declare_objects<std::complex<double>>(m, "complex128");
