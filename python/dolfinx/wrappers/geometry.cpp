@@ -172,6 +172,32 @@ void geometry(py::module& m)
 
   m.def(
       "squared_distance",
+      [](const dolfinx::mesh::Mesh<float>& mesh, int dim,
+         std::vector<std::int32_t> indices, const py::array_t<float>& points)
+      {
+        const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
+        std::vector<float> _p(3 * p_s0);
+        auto px = points.unchecked();
+        if (px.ndim() == 1)
+        {
+          for (py::ssize_t i = 0; i < px.shape(0); i++)
+            _p[i] = px(i);
+        }
+        else if (px.ndim() == 2)
+        {
+          for (py::ssize_t i = 0; i < px.shape(0); i++)
+            for (py::ssize_t j = 0; j < px.shape(1); j++)
+              _p[3 * i + j] = px(i, j);
+        }
+        else
+          throw std::runtime_error("Array has wrong ndim.");
+
+        return as_pyarray(
+            dolfinx::geometry::squared_distance<float>(mesh, dim, indices, _p));
+      },
+      py::arg("mesh"), py::arg("dim"), py::arg("indices"), py::arg("points"));
+  m.def(
+      "squared_distance",
       [](const dolfinx::mesh::Mesh<double>& mesh, int dim,
          std::vector<std::int32_t> indices, const py::array_t<double>& points)
       {

@@ -22,6 +22,7 @@ from dolfinx.mesh import CellType, create_mesh, create_submesh
 from ufl import dx
 
 from mpi4py import MPI
+from dolfinx import default_real_type
 
 
 def check_cell_volume(points, cell, domain, volume):
@@ -37,6 +38,7 @@ def check_cell_volume(points, cell, domain, volume):
             ordered_points[j] = points[i]
         ordered_cell = [point_order[i] for i in cell]
 
+        ordered_points = np.array(ordered_points, dtype=default_real_type)
         mesh = create_mesh(MPI.COMM_WORLD, [ordered_cell], ordered_points, domain)
         area = assemble_scalar(form(1 * dx(mesh)))
         assert np.isclose(area, volume)
@@ -94,9 +96,10 @@ def test_submesh(order):
                 for i in range(1, order - j - k):
                     cell.append(coord_to_vertex(i, j, k))
 
-    domain = ufl.Mesh(element(
-        "Lagrange", "tetrahedron", order, gdim=3, lagrange_variant=basix.LagrangeVariant.equispaced, shape=(3, )))
+    domain = ufl.Mesh(element("Lagrange", "tetrahedron", order, gdim=3,
+                      lagrange_variant=basix.LagrangeVariant.equispaced, shape=(3, )))
 
+    points = np.array(points, dtype=default_real_type)
     mesh = create_mesh(MPI.COMM_WORLD, [cell], points, domain)
     for i in range(mesh.topology.dim):
         mesh.topology.create_entities(i)
@@ -234,8 +237,8 @@ def test_quadrilateral_mesh(order):
             for i in range(1, order):
                 cell.append(coord_to_vertex(i, j))
 
-    domain = ufl.Mesh(element(
-        "Q", "quadrilateral", order, gdim=2, lagrange_variant=basix.LagrangeVariant.equispaced, shape=(2, )))
+    domain = ufl.Mesh(element("Q", "quadrilateral", order, gdim=2,
+                      lagrange_variant=basix.LagrangeVariant.equispaced, shape=(2, )))
     check_cell_volume(points, cell, domain, 1)
 
 
@@ -310,8 +313,8 @@ def test_hexahedron_mesh(order):
                 for i in range(1, order):
                     cell.append(coord_to_vertex(i, j, k))
 
-    domain = ufl.Mesh(element(
-        "Q", "hexahedron", order, gdim=3, lagrange_variant=basix.LagrangeVariant.equispaced, shape=(3, )))
+    domain = ufl.Mesh(element("Q", "hexahedron", order, gdim=3,
+                      lagrange_variant=basix.LagrangeVariant.equispaced, shape=(3, )))
     check_cell_volume(points, cell, domain, 1)
 
 
@@ -348,8 +351,8 @@ def test_triangle_mesh_vtk(order):
             raise NotImplementedError
 
     cell = np.array(cell)[perm_vtk(CellType.triangle, len(cell))]
-    domain = ufl.Mesh(element(
-        "Lagrange", "triangle", order, gdim=2, lagrange_variant=basix.LagrangeVariant.equispaced, shape=(2, )))
+    domain = ufl.Mesh(element("Lagrange", "triangle", order, gdim=2,
+                      lagrange_variant=basix.LagrangeVariant.equispaced, shape=(2, )))
     check_cell_volume(points, cell, domain, 0.5)
 
 
@@ -478,8 +481,8 @@ def test_quadrilateral_mesh_vtk(order):
                 cell.append(coord_to_vertex(i, j))
 
     cell = np.array(cell)[perm_vtk(CellType.quadrilateral, len(cell))]
-    domain = ufl.Mesh(element(
-        "Q", "quadrilateral", order, gdim=2, lagrange_variant=basix.LagrangeVariant.equispaced, shape=(2, )))
+    domain = ufl.Mesh(element("Q", "quadrilateral", order, gdim=2,
+                      lagrange_variant=basix.LagrangeVariant.equispaced, shape=(2, )))
     check_cell_volume(points, cell, domain, 1)
 
 
@@ -582,6 +585,7 @@ def test_map_vtk_to_dolfin(vtk, dolfin, cell_type):
     assert (cell_p == vtk).all()
 
 
+@pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
 @pytest.mark.skip_in_parallel
 def test_xdmf_input_tri(datadir):
     with XDMFFile(MPI.COMM_WORLD, Path(datadir, "mesh.xdmf"), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
@@ -632,6 +636,7 @@ def test_gmsh_input_2d(order, cell_type):
     gmsh.finalize()
 
     cells = cells[:, cell_perm_array(cell_type, cells.shape[1])]
+    x = x.astype(default_real_type)
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh(gmsh_cell_id, x.shape[1]))
     surface = assemble_scalar(form(1 * dx(mesh)))
 
@@ -691,6 +696,7 @@ def test_gmsh_input_3d(order, cell_type):
     domain = ufl_mesh(gmsh_cell_id, 3)
     cells = cells[:, cell_perm_array(cell_type, cells.shape[1])]
 
+    x = x.astype(default_real_type)
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
     volume = assemble_scalar(form(1 * dx(mesh)))
     assert mesh.comm.allreduce(volume, op=MPI.SUM) == pytest.approx(np.pi, rel=10 ** (-1 - order))

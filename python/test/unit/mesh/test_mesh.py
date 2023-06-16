@@ -459,7 +459,7 @@ def test_unit_hex_mesh_assemble():
     mesh = create_unit_cube(MPI.COMM_WORLD, 6, 7, 5, CellType.hexahedron)
     vol = assemble_scalar(form(1 * ufl.dx(mesh)))
     vol = mesh.comm.allreduce(vol, MPI.SUM)
-    assert vol == pytest.approx(1, rel=1e-9)
+    assert vol == pytest.approx(1, rel=1e-5, abs=1.0e-4)
 
 
 def boundary_0(x):
