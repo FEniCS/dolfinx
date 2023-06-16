@@ -80,20 +80,22 @@ void declare_assembly_functions(nb::module_& m)
         dolfinx::fem::pack_coefficients(form, coeffs);
 
         // Move into NumPy data structures
-        std::map<Key_t, nb::ndarray<T, nb::numpy>> c;
-        // std::transform(
-        //     coeffs.begin(), coeffs.end(), std::inserter(c, c.end()),
-        //     [](auto& e) -> typename decltype(c)::value_type
-        //     {
-        //       int num_ents = e.second.first.empty()
-        //                          ? 0
-        //                          : e.second.first.size() / e.second.second;
-        //       return {e.first, dolfinx_wrappers::as_nbarray(
-        //                            std::move(e.second.first),
-        //                            std::array<std::size_t, 2>(
-        //                                {(std::size_t)num_ents,
-        //                                 (std::size_t)e.second.second}))};
-        //     });
+        std::map<Key_t, nb::ndarray<T>> c;
+        std::transform(
+            coeffs.begin(), coeffs.end(), std::inserter(c, c.end()),
+            [](auto& e) -> typename decltype(c)::value_type
+            {
+              std::size_t num_ents
+                  = e.second.first.empty()
+                        ? 0
+                        : e.second.first.size() / e.second.second;
+              std::array<std::size_t, 2> shape
+                  = {num_ents, (std::size_t)e.second.second};
+              return std::pair<const std::pair<dolfinx::fem::IntegralType, int>,
+                               nb::ndarray<T>>(
+                  e.first, dolfinx_wrappers::as_nbarray(
+                               std::move(e.second.first), shape));
+            });
 
         return c;
       },
