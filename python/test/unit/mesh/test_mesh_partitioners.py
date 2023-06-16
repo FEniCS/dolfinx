@@ -6,18 +6,18 @@
 
 from pathlib import Path
 
+import dolfinx.graph
 import numpy as np
 import pytest
-
-import dolfinx
-import dolfinx.graph
 import ufl
 from basix.ufl import element
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (CellType, GhostMode, compute_midpoints, create_box,
                           create_cell_partitioner, create_mesh)
-
 from mpi4py import MPI
+
+import dolfinx
+from dolfinx import default_real_type
 
 partitioners = [dolfinx.graph.partitioner()]
 try:
