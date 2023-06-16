@@ -40,7 +40,7 @@ c_signature = numba.types.void(
 @numba.cfunc(c_signature, nopython=True)
 def tabulate_tensor_A(A_, w_, c_, coords_, entity_local_index, cell_orientation):
     A = numba.carray(A_, (3, 3), dtype=PETSc.ScalarType)
-    coordinate_dofs = numba.carray(coords_, (3, 3), dtype=dolfinx.default_scalar_type)
+    coordinate_dofs = numba.carray(coords_, (3, 3), dtype=dolfinx.default_real_type)
 
     # Ke=∫Ωe BTe Be dΩ
     x0, y0 = coordinate_dofs[0, :2]
@@ -56,7 +56,7 @@ def tabulate_tensor_A(A_, w_, c_, coords_, entity_local_index, cell_orientation)
 @numba.cfunc(c_signature, nopython=True)
 def tabulate_tensor_b(b_, w_, c_, coords_, local_index, orientation):
     b = numba.carray(b_, (3), dtype=PETSc.ScalarType)
-    coordinate_dofs = numba.carray(coords_, (3, 3), dtype=dolfinx.default_scalar_type)
+    coordinate_dofs = numba.carray(coords_, (3, 3), dtype=dolfinx.default_real_type)
     x0, y0 = coordinate_dofs[0, :2]
     x1, y1 = coordinate_dofs[1, :2]
     x2, y2 = coordinate_dofs[2, :2]
@@ -70,7 +70,7 @@ def tabulate_tensor_b(b_, w_, c_, coords_, local_index, orientation):
 def tabulate_tensor_b_coeff(b_, w_, c_, coords_, local_index, orientation):
     b = numba.carray(b_, (3), dtype=PETSc.ScalarType)
     w = numba.carray(w_, (1), dtype=PETSc.ScalarType)
-    coordinate_dofs = numba.carray(coords_, (3, 3), dtype=dolfinx.default_scalar_type)
+    coordinate_dofs = numba.carray(coords_, (3, 3), dtype=dolfinx.default_real_type)
     x0, y0 = coordinate_dofs[0, :2]
     x1, y1 = coordinate_dofs[1, :2]
     x2, y2 = coordinate_dofs[2, :2]
