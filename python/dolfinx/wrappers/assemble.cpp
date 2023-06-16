@@ -481,7 +481,7 @@ void assemble(nb::module_& m)
 {
   nb::module_ petsc_mod
       = m.def_submodule("petsc", "PETSc-specific finite element module");
-  petsc_module(petsc_mod);
+ // petsc_module(petsc_mod);
 
   // dolfinx::fem::assemble
   declare_assembly_functions<float, double>(m);

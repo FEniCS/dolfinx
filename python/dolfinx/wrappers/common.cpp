@@ -43,7 +43,7 @@ void common(nb::module_& m)
 #else
   m.attr("has_slepc4py") = false;
 #endif
-  m.attr("git_commit_hash") = dolfinx::git_commit_hash();
+  m.attr("git_commit_hash") = dolfinx::git_commit_hash().c_str();
 
   nb::enum_<dolfinx::Table::Reduction>(m, "Reduction")
       .value("max", dolfinx::Table::Reduction::max)

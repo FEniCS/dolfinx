@@ -32,43 +32,43 @@ NB_MODULE(cpp, m)
   m.attr("__version__") = DOLFINX_VERSION;
 
   // Create common submodule [common]
-  nb::module_ common = m.def_submodule("common", "Common module_");
+  nb::module_ common = m.def_submodule("common", "Common module");
   dolfinx_wrappers::common(common);
 
   // Create common submodule [log]
-  nb::module_ log = m.def_submodule("log", "Logging module_");
+  nb::module_ log = m.def_submodule("log", "Logging module");
   dolfinx_wrappers::log(log);
 
   // Create mesh submodule [mesh]
-  nb::module_ mesh = m.def_submodule("mesh", "Mesh library module_");
+  nb::module_ mesh = m.def_submodule("mesh", "Mesh library module");
   dolfinx_wrappers::mesh(mesh);
 
   // Create graph submodule [graph]
-  nb::module_ graph = m.def_submodule("graph", "Graph module_");
+  nb::module_ graph = m.def_submodule("graph", "Graph module");
   dolfinx_wrappers::graph(graph);
 
   // Create fem submodule [fem]
-  nb::module_ fem = m.def_submodule("fem", "FEM module_");
+  nb::module_ fem = m.def_submodule("fem", "FEM module");
   dolfinx_wrappers::assemble(fem);
   dolfinx_wrappers::fem(fem);
 
   // Create geometry submodule
-  nb::module_ geometry = m.def_submodule("geometry", "Geometry module_");
+  nb::module_ geometry = m.def_submodule("geometry", "Geometry module");
   dolfinx_wrappers::geometry(geometry);
 
   // Create io submodule
-  nb::module_ io = m.def_submodule("io", "I/O module_");
+  nb::module_ io = m.def_submodule("io", "I/O module");
   dolfinx_wrappers::io(io);
 
   // Create la submodule
-  nb::module_ la = m.def_submodule("la", "Linear algebra module_");
+  nb::module_ la = m.def_submodule("la", "Linear algebra module");
   dolfinx_wrappers::la(la);
 
   // Create nls submodule
-  nb::module_ nls = m.def_submodule("nls", "Nonlinear solver module_");
+  nb::module_ nls = m.def_submodule("nls", "Nonlinear solver module");
   dolfinx_wrappers::nls(nls);
 
   // Create refinement submodule
-  nb::module_ refinement = m.def_submodule("refinement", "Refinement module_");
+  nb::module_ refinement = m.def_submodule("refinement", "Refinement module");
   dolfinx_wrappers::refinement(refinement);
 }

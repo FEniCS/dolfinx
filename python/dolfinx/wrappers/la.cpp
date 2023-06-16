@@ -242,7 +242,7 @@ void la(nb::module_& m)
 {
   nb::module_ petsc_mod
       = m.def_submodule("petsc", "PETSc-specific linear algebra");
-  petsc_module(petsc_mod);
+  // petsc_module(petsc_mod);
 
   nb::enum_<PyInsertMode>(m, "InsertMode")
       .value("add", PyInsertMode::add)
