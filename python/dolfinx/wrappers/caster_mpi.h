@@ -8,7 +8,7 @@
 
 #include "MPICommWrapper.h"
 #include <mpi4py/mpi4py.h>
-#include <pybind11/pybind11.h>
+#include <nanobind/nanobind.h>
 
 // Import mpi4py on demand
 #define VERIFY_MPI4PY(func)                                                    \
@@ -21,7 +21,7 @@
     }                                                                          \
   }
 
-namespace pybind11
+namespace nanobind
 {
 namespace detail
 {
@@ -30,10 +30,10 @@ class type_caster<dolfinx_wrappers::MPICommWrapper>
 {
 public:
   // Define this->value of type MPICommWrapper
-  PYBIND11_TYPE_CASTER(dolfinx_wrappers::MPICommWrapper, _("MPICommWrapper"));
+  NB_TYPE_CASTER(dolfinx_wrappers::MPICommWrapper, const_name("MPICommWrapper"));
 
   // Python to C++
-  bool load(handle src, bool)
+  bool from_python(handle src, uint8_t, cleanup_list*)
   {
     // Check whether src is an mpi4py communicator
     VERIFY_MPI4PY(PyMPIComm_Get);
@@ -47,14 +47,15 @@ public:
   }
 
   // C++ to Python
-  static handle cast(dolfinx_wrappers::MPICommWrapper src,
-                     pybind11::return_value_policy policy, handle parent)
+  static handle from_cpp(dolfinx_wrappers::MPICommWrapper src,
+			 nanobind::rv_policy policy, cleanup_list*)
   {
     VERIFY_MPI4PY(PyMPIComm_New);
-    return pybind11::handle(PyMPIComm_New(src.get()));
+    return nanobind::handle(PyMPIComm_New(src.get()));
   }
 
   operator dolfinx_wrappers::MPICommWrapper() { return this->value; }
 };
 } // namespace detail
-} // namespace pybind11
+} // namespace nanobind
+

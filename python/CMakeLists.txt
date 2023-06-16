@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(dolfinx_pybind11)
+project(dolfinx_nanobind)
 
 # Set C++ standard before finding pybind11
 set(CMAKE_CXX_STANDARD 20)
@@ -24,17 +24,16 @@ else()
   )
 endif()
 
-find_package(
-  pybind11
-  2.7.0
-  REQUIRED
-  CONFIG
-  HINTS
-  ${PYBIND11_DIR}
-  ${PYBIND11_ROOT}
-  $ENV{PYBIND11_DIR}
-  $ENV{PYBIND11_ROOT}
-)
+execute_process(
+  COMMAND
+    "${Python3_EXECUTABLE}" -c
+    "import nanobind; print(nanobind.cmake_dir())"
+  OUTPUT_VARIABLE _tmp_dir
+  OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ECHO STDOUT)
+list(APPEND CMAKE_PREFIX_PATH "${_tmp_dir}")
+
+find_package(Python COMPONENTS Interpreter Development REQUIRED)
+find_package(nanobind CONFIG REQUIRED)
 
 execute_process(
   COMMAND
@@ -52,7 +51,7 @@ find_package(DOLFINX REQUIRED CONFIG)
 
 # Create the binding library pybind11 handles its own calls to
 # target_link_libraries
-pybind11_add_module(
+nanobind_add_module(
   cpp
   MODULE
   dolfinx/wrappers/dolfinx.cpp
@@ -74,7 +73,7 @@ include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag("-Wall -Werror -pedantic" HAVE_PEDANTIC)
 
 if(HAVE_PEDANTIC)
-  target_compile_options(cpp PRIVATE -Wall;-Werror;-pedantic)
+#  target_compile_options(cpp PRIVATE -Wall;-Werror;-pedantic)
 endif()
 
 # In Debug mode override pybind11 symbols visibility Symbols must be visible to

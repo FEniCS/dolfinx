@@ -15,14 +15,14 @@
 #include <dolfinx/la/utils.h>
 #include <memory>
 #include <petsc4py/petsc4py.h>
-#include <pybind11/complex.h>
-#include <pybind11/numpy.h>
-#include <pybind11/operators.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
+// #include <nanobind/complex.h>
+#include <nanobind/ndarray.h>
+// #include <nanobind/operators.h>
+#include <nanobind/nanobind.h>
+#include <nanobind/stl/vector.h>
 #include <span>
 
-namespace py = pybind11;
+namespace nb = nanobind;
 
 namespace
 {
@@ -35,35 +35,40 @@ enum class PyInsertMode
 
 // Declare objects that have multiple scalar types
 template <typename T>
-void declare_objects(py::module& m, const std::string& type)
+void declare_objects(nb::module_& m, const std::string& type)
 {
   // dolfinx::la::Vector
   std::string pyclass_vector_name = std::string("Vector_") + type;
-  py::class_<dolfinx::la::Vector<T>, std::shared_ptr<dolfinx::la::Vector<T>>>(
-      m, pyclass_vector_name.c_str())
-      .def(py::init([](std::shared_ptr<const dolfinx::common::IndexMap> map,
-                       int bs) { return dolfinx::la::Vector<T>(map, bs); }),
-           py::arg("map"), py::arg("bs"))
-      .def(py::init([](const dolfinx::la::Vector<T>& vec)
-                    { return dolfinx::la::Vector<T>(vec); }),
-           py::arg("vec"))
-      .def_property_readonly("dtype", [](const dolfinx::la::Vector<T>& self)
-                             { return py::dtype::of<T>(); })
-      .def("set", &dolfinx::la::Vector<T>::set, py::arg("v"))
+  nb::class_<dolfinx::la::Vector<T>>(m, pyclass_vector_name.c_str())
+      .def(
+          "__init__",
+          [](dolfinx::la::Vector<T>* v,
+             std::shared_ptr<const dolfinx::common::IndexMap> map, int bs)
+          { new (v) dolfinx::la::Vector<T>(map, bs); },
+          nb::arg("map"), nb::arg("bs"))
+      .def(
+          "__init__",
+          [](dolfinx::la::Vector<T>* v, const dolfinx::la::Vector<T>& vec)
+          { new (v) dolfinx::la::Vector<T>(vec); },
+          nb::arg("vec"))
+      .def_prop_ro("dtype", [](const dolfinx::la::Vector<T>& self)
+                   { return nb::dtype<T>(); })
+      .def("set", &dolfinx::la::Vector<T>::set, nb::arg("v"))
       .def(
           "norm",
           [](dolfinx::la::Vector<T>& self, dolfinx::la::Norm type)
           { return dolfinx::la::norm(self, type); },
-          py::arg("type") = dolfinx::la::Norm::l2)
-      .def_property_readonly("index_map", &dolfinx::la::Vector<T>::index_map)
-      .def_property_readonly("bs", &dolfinx::la::Vector<T>::bs)
-      .def_property_readonly("array",
-                             [](dolfinx::la::Vector<T>& self)
-                             {
-                               std::span<T> array = self.mutable_array();
-                               return py::array_t<T>(array.size(), array.data(),
-                                                     py::cast(self));
-                             })
+          nb::arg("type") = dolfinx::la::Norm::l2)
+      .def_prop_ro("index_map", &dolfinx::la::Vector<T>::index_map)
+      .def_prop_ro("bs", &dolfinx::la::Vector<T>::bs)
+      .def_prop_ro("array",
+                   [](dolfinx::la::Vector<T>& self)
+                   {
+                     std::span<T> array = self.mutable_array();
+                     const std::size_t size = array.size();
+                     return nb::ndarray<T>(array.data(), 1, &size,
+                                           nb::cast(self));
+                   })
       .def("scatter_forward", &dolfinx::la::Vector<T>::scatter_fwd)
       .def(
           "scatter_reverse",
@@ -82,22 +87,20 @@ void declare_objects(py::module& m, const std::string& type)
               break;
             }
           },
-          py::arg("mode"));
+          nb::arg("mode"));
 
   // dolfinx::la::MatrixCSR
   std::string pyclass_matrix_name = std::string("MatrixCSR_") + type;
-  py::class_<dolfinx::la::MatrixCSR<T>,
-             std::shared_ptr<dolfinx::la::MatrixCSR<T>>>(
-      m, pyclass_matrix_name.c_str())
-      .def(py::init([](const dolfinx::la::SparsityPattern& p,
-                       dolfinx::la::BlockMode bm)
-                    { return dolfinx::la::MatrixCSR<T>(p, bm); }),
-           py::arg("p"),
-           py::arg("block_mode") = dolfinx::la::BlockMode::compact)
-      .def_property_readonly("dtype", [](const dolfinx::la::MatrixCSR<T>& self)
-                             { return py::dtype::of<T>(); })
-      .def_property_readonly("block_size",
-                             &dolfinx::la::MatrixCSR<T>::block_size)
+  nb::class_<dolfinx::la::MatrixCSR<T>>(m, pyclass_matrix_name.c_str())
+      .def(
+          "__init__",
+          [](dolfinx::la::MatrixCSR<T>* mat,
+             const dolfinx::la::SparsityPattern& p, dolfinx::la::BlockMode bm)
+          { new (mat) dolfinx::la::MatrixCSR<T>(p, bm); },
+          nb::arg("p"), nb::arg("block_mode") = dolfinx::la::BlockMode::compact)
+      .def_prop_ro("dtype", [](const dolfinx::la::MatrixCSR<T>& self)
+                   { return nb::dtype<T>(); })
+      .def_prop_ro("block_size", &dolfinx::la::MatrixCSR<T>::block_size)
       .def("squared_norm", &dolfinx::la::MatrixCSR<T>::squared_norm)
       .def("index_map", &dolfinx::la::MatrixCSR<T>::index_map)
       .def("add",
@@ -133,7 +136,7 @@ void declare_objects(py::module& m, const std::string& type)
       .def("set",
            static_cast<void (dolfinx::la::MatrixCSR<T>::*)(T)>(
                &dolfinx::la::MatrixCSR<T>::set),
-           py::arg("x"))
+           nb::arg("x"))
       .def("finalize", &dolfinx::la::MatrixCSR<T>::finalize)
       .def("to_dense",
            [](const dolfinx::la::MatrixCSR<T>& self)
@@ -143,64 +146,64 @@ void declare_objects(py::module& m, const std::string& type)
              auto map_col = self.index_map(1);
              std::size_t ncols
                  = (map_col->size_local() + map_col->num_ghosts()) * bs[1];
-             return dolfinx_wrappers::as_pyarray(self.to_dense(),
+             return dolfinx_wrappers::as_nbarray(self.to_dense(),
                                                  std::array{nrows, ncols});
            })
-      .def_property_readonly("data",
-                             [](dolfinx::la::MatrixCSR<T>& self)
-                             {
-                               std::span<T> array = self.values();
-                               return py::array_t<T>(array.size(), array.data(),
-                                                     py::cast(self));
-                             })
-      .def_property_readonly("indices",
-                             [](dolfinx::la::MatrixCSR<T>& self)
-                             {
-                               auto& array = self.cols();
-                               return py::array_t(array.size(), array.data(),
-                                                  py::cast(self));
-                             })
-      .def_property_readonly("indptr",
-                             [](dolfinx::la::MatrixCSR<T>& self)
-                             {
-                               auto& array = self.row_ptr();
-                               return py::array_t(array.size(), array.data(),
-                                                  py::cast(self));
-                             })
+      .def_prop_ro("data",
+                   [](dolfinx::la::MatrixCSR<T>& self)
+                   {
+                     std::span<T> array = self.values();
+                     const std::size_t size = array.size();
+                     return nb::ndarray<const T>(array.data(), 1, &size,
+                                           nb::cast(self));
+                   })
+      .def_prop_ro("indices",
+                   [](dolfinx::la::MatrixCSR<T>& self)
+                   {
+                     auto& array = self.cols();
+                     const std::size_t size = array.size();
+                     return nb::ndarray<const std::int64_t>(array.data(), 1, &size, nb::cast(self));
+                   })
+      .def_prop_ro("indptr",
+                   [](dolfinx::la::MatrixCSR<T>& self)
+                   {
+                     auto& array = self.row_ptr();
+                     const std::size_t size = array.size();
+                     return nb::ndarray<const std::int32_t>(array.data(), 1, &size, nb::cast(self));
+                   })
       .def("finalize_begin", &dolfinx::la::MatrixCSR<T>::finalize_begin)
       .def("finalize_end", &dolfinx::la::MatrixCSR<T>::finalize_end);
 }
 
-void petsc_module(py::module& m)
+void petsc_module(nb::module_& m)
 {
   m.def("create_vector",
-        py::overload_cast<const dolfinx::common::IndexMap&, int>(
+        nb::overload_cast<const dolfinx::common::IndexMap&, int>(
             &dolfinx::la::petsc::create_vector),
-        py::return_value_policy::take_ownership, py::arg("index_map"),
-        py::arg("bs"), "Create a ghosted PETSc Vec for index map.");
+        nb::rv_policy::take_ownership, nb::arg("index_map"), nb::arg("bs"),
+        "Create a ghosted PETSc Vec for index map.");
   m.def(
       "create_vector_wrap",
       [](dolfinx::la::Vector<PetscScalar>& x)
       { return dolfinx::la::petsc::create_vector_wrap(x); },
-      py::return_value_policy::take_ownership, py::arg("x"),
+      nb::rv_policy::take_ownership, nb::arg("x"),
       "Create a ghosted PETSc Vec that wraps a DOLFINx Vector");
   m.def(
       "create_matrix",
       [](dolfinx_wrappers::MPICommWrapper comm,
          const dolfinx::la::SparsityPattern& p, const std::string& type)
       { return dolfinx::la::petsc::create_matrix(comm.get(), p, type); },
-      py::return_value_policy::take_ownership, py::arg("comm"), py::arg("p"),
-      py::arg("type") = std::string(),
+      nb::rv_policy::take_ownership, nb::arg("comm"), nb::arg("p"),
+      nb::arg("type") = std::string(),
       "Create a PETSc Mat from sparsity pattern.");
 
   // TODO: check reference counting for index sets
   m.def("create_index_sets", &dolfinx::la::petsc::create_index_sets,
-        py::arg("maps"), py::return_value_policy::take_ownership);
+        nb::arg("maps"), nb::rv_policy::take_ownership);
 
   m.def(
       "scatter_local_vectors",
-      [](Vec x,
-         const std::vector<py::array_t<PetscScalar, py::array::c_style>>& x_b,
+      [](Vec x, const std::vector<nb::ndarray<PetscScalar, nb::numpy>>& x_b,
          const std::vector<std::pair<
              std::reference_wrapper<const dolfinx::common::IndexMap>, int>>&
              maps)
@@ -210,7 +213,7 @@ void petsc_module(py::module& m)
           _x_b.emplace_back(array.data(), array.size());
         dolfinx::la::petsc::scatter_local_vectors(x, _x_b, maps);
       },
-      py::arg("x"), py::arg("x_b"), py::arg("maps"),
+      nb::arg("x"), nb::arg("x_b"), nb::arg("maps"),
       "Scatter the (ordered) list of sub vectors into a block "
       "vector.");
   m.def(
@@ -222,12 +225,12 @@ void petsc_module(py::module& m)
       {
         std::vector<std::vector<PetscScalar>> vecs
             = dolfinx::la::petsc::get_local_vectors(x, maps);
-        std::vector<py::array> ret;
+        std::vector<nb::ndarray<PetscScalar>> ret;
         for (std::vector<PetscScalar>& v : vecs)
-          ret.push_back(dolfinx_wrappers::as_pyarray(std::move(v)));
+          ret.push_back(dolfinx_wrappers::as_nbarray(std::move(v)));
         return ret;
       },
-      py::arg("x"), py::arg("maps"),
+      nb::arg("x"), nb::arg("maps"),
       "Gather an (ordered) list of sub vectors from a block vector.");
 }
 
@@ -235,90 +238,91 @@ void petsc_module(py::module& m)
 
 namespace dolfinx_wrappers
 {
-void la(py::module& m)
+void la(nb::module_& m)
 {
-  py::module petsc_mod
+  nb::module_ petsc_mod
       = m.def_submodule("petsc", "PETSc-specific linear algebra");
   petsc_module(petsc_mod);
 
-  py::enum_<PyInsertMode>(m, "InsertMode")
+  nb::enum_<PyInsertMode>(m, "InsertMode")
       .value("add", PyInsertMode::add)
       .value("insert", PyInsertMode::insert);
 
-  py::enum_<dolfinx::la::BlockMode>(m, "BlockMode")
+  nb::enum_<dolfinx::la::BlockMode>(m, "BlockMode")
       .value("compact", dolfinx::la::BlockMode::compact)
       .value("expanded", dolfinx::la::BlockMode::expanded);
 
-  py::enum_<dolfinx::la::Norm>(m, "Norm")
+  nb::enum_<dolfinx::la::Norm>(m, "Norm")
       .value("l1", dolfinx::la::Norm::l1)
       .value("l2", dolfinx::la::Norm::l2)
       .value("linf", dolfinx::la::Norm::linf)
       .value("frobenius", dolfinx::la::Norm::frobenius);
 
   // dolfinx::la::SparsityPattern
-  py::class_<dolfinx::la::SparsityPattern,
-             std::shared_ptr<dolfinx::la::SparsityPattern>>(m,
-                                                            "SparsityPattern")
+  nb::class_<dolfinx::la::SparsityPattern>(m, "SparsityPattern")
       .def(
-          py::init(
-              [](const MPICommWrapper comm,
-                 const std::array<
-                     std::shared_ptr<const dolfinx::common::IndexMap>, 2>& maps,
-                 const std::array<int, 2>& bs)
-              { return dolfinx::la::SparsityPattern(comm.get(), maps, bs); }),
-          py::arg("comm"), py::arg("maps"), py::arg("bs"))
+          "__init__",
+          [](dolfinx::la::SparsityPattern* sp, const MPICommWrapper comm,
+             const std::array<std::shared_ptr<const dolfinx::common::IndexMap>,
+                              2>& maps,
+             const std::array<int, 2>& bs)
+          { new (sp) dolfinx::la::SparsityPattern(comm.get(), maps, bs); },
+          nb::arg("comm"), nb::arg("maps"), nb::arg("bs"))
       .def(
-          py::init(
-              [](const MPICommWrapper comm,
-                 const std::vector<
-                     std::vector<const dolfinx::la::SparsityPattern*>>
-                     patterns,
-                 const std::array<
-                     std::vector<std::pair<std::reference_wrapper<
-                                               const dolfinx::common::IndexMap>,
-                                           int>>,
-                     2>& maps,
-                 const  std::array<std::vector<int>, 2>& bs) {
-                return dolfinx::la::SparsityPattern(comm.get(), patterns, maps,
-                                                    bs);
-              }),
-          py::arg("comm"), py::arg("patterns"), py::arg("maps"), py::arg("bs"))
+          "__init__",
+          [](dolfinx::la::SparsityPattern* sp, const MPICommWrapper comm,
+             const std::vector<std::vector<const dolfinx::la::SparsityPattern*>>
+                 patterns,
+             const std::array<
+                 std::vector<std::pair<
+                     std::reference_wrapper<const dolfinx::common::IndexMap>,
+                     int>>,
+                 2>& maps,
+             const std::array<std::vector<int>, 2>& bs) {
+            new (sp)
+                dolfinx::la::SparsityPattern(comm.get(), patterns, maps, bs);
+          },
+          nb::arg("comm"), nb::arg("patterns"), nb::arg("maps"), nb::arg("bs"))
       .def("index_map", &dolfinx::la::SparsityPattern::index_map,
-           py::arg("dim"))
+           nb::arg("dim"))
       .def("column_index_map", &dolfinx::la::SparsityPattern::column_index_map)
       .def("finalize", &dolfinx::la::SparsityPattern::finalize)
-      .def_property_readonly("num_nonzeros",
-                             &dolfinx::la::SparsityPattern::num_nonzeros)
+      .def_prop_ro("num_nonzeros", &dolfinx::la::SparsityPattern::num_nonzeros)
       .def(
           "insert",
           [](dolfinx::la::SparsityPattern& self,
-             const py::array_t<std::int32_t, py::array::c_style>& rows,
-             const py::array_t<std::int32_t, py::array::c_style>& cols)
+             const nb::ndarray<std::int32_t, nb::numpy>& rows,
+             const nb::ndarray<std::int32_t, nb::numpy>& cols)
           {
             self.insert(std::span(rows.data(), rows.size()),
                         std::span(cols.data(), cols.size()));
           },
-          py::arg("rows"),  py::arg("cols"))
+          nb::arg("rows"), nb::arg("cols"))
       .def(
           "insert_diagonal",
           [](dolfinx::la::SparsityPattern& self,
-             const py::array_t<std::int32_t, py::array::c_style>& rows)
+             const nb::ndarray<std::int32_t, nb::numpy>& rows)
           { self.insert_diagonal(std::span(rows.data(), rows.size())); },
-          py::arg("rows"))
-      .def_property_readonly(
-          "graph", [](dolfinx::la::SparsityPattern& self)
+          nb::arg("rows"))
+      .def_prop_ro(
+          "graph",
+          [](dolfinx::la::SparsityPattern& self)
           {
             auto [edges, ptr] = self.graph();
-            return std::pair(py::array_t(
-                          edges.size(), edges.data(), py::cast(self)),
-                             py::array_t(ptr.size(), ptr.data(),
-                                                       py::cast(self)));
+            const std::size_t esize = edges.size();
+            const std::size_t psize = ptr.size();
+
+            return std::pair(
+                nb::ndarray<const std::int32_t>(edges.data(), 1, &esize, nb::cast(self)),
+                nb::ndarray<const std::int64_t>(ptr.data(), 1, &psize, nb::cast(self)));
           });
 
   // Declare objects that are templated over type
   declare_objects<float>(m, "float32");
   declare_objects<double>(m, "float64");
-  declare_objects<std::complex<float>>(m, "complex64");
-  declare_objects<std::complex<double>>(m, "complex128");
+
+
+  //  declare_objects<std::complex<float>>(m, "complex64");
+  //  declare_objects<std::complex<double>>(m, "complex128");
 }
 } // namespace dolfinx_wrappers
