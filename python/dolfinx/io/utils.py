@@ -38,7 +38,8 @@ if _cpp.common.has_adios2:
     # FidesWriter and VTXWriter require ADIOS2
     __all__ = __all__ + ["FidesWriter", "VTXWriter"]
 
-    class VTXWriter(_cpp.io.VTXWriter):
+    class VTXWriter:
+        # class VTXWriter(_cpp.io.VTXWriter):
         """Interface to VTK files for ADIOS2
 
         VTX supports arbitrary order Lagrange finite elements for the
@@ -65,18 +66,39 @@ if _cpp.common.has_adios2:
                 have the same element type.
 
             """
+
+            # Get geometry type
+            try:
+                dtype = output.geometry.x.dtype
+            except AttributeError:
+                try:
+                    dtype = output.function_space.mesh.geometry.x.dtype
+                except (AttributeError):
+                    dtype = output[0].function_space.mesh.geometry.x.dtype
+
+            if dtype == np.float32:
+                _vtxwriter = _cpp.io.VTXWriter_float32
+            elif dtype == np.float64:
+                _vtxwriter = _cpp.io.VTXWriter_float64
+
             try:
                 # Input is a mesh
-                super().__init__(comm, filename, output._cpp_object)  # type: ignore[union-attr]
+                self._cpp_object = _vtxwriter(comm, filename, output._cpp_object)  # type: ignore[union-attr]
             except (NotImplementedError, TypeError, AttributeError):
                 # Input is a single function or a list of functions
-                super().__init__(comm, filename, _extract_cpp_functions(output))   # type: ignore[arg-type]
+                self._cpp_object = _vtxwriter(comm, filename, _extract_cpp_functions(output))   # type: ignore[arg-type]
 
         def __enter__(self):
             return self
 
         def __exit__(self, exception_type, exception_value, traceback):
             self.close()
+
+        def write(self, t):
+            self._cpp_object.write(t)
+
+        def close(self):
+            self._cpp_object.close()
 
     class FidesWriter(_cpp.io.FidesWriter):
         """Interface to Fides file format.

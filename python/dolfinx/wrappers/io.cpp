@@ -33,6 +33,51 @@ namespace py = pybind11;
 namespace dolfinx_wrappers
 {
 
+namespace
+{
+#ifdef HAS_ADIOS2
+template <typename T>
+void declare_vtx_writer(py::module& m, std::string type)
+{
+  std::string pyclass_name = "VTXWriter_" + type;
+  py::class_<dolfinx::io::VTXWriter<T>,
+             std::shared_ptr<dolfinx::io::VTXWriter<T>>>(
+      m, pyclass_name.c_str(), "VTXWriter object")
+      .def(py::init(
+               [](MPICommWrapper comm, std::filesystem::path filename,
+                  std::shared_ptr<const dolfinx::mesh::Mesh<T>> mesh,
+                  std::string engine)
+               {
+                 return std::make_unique<dolfinx::io::VTXWriter<T>>(
+                     comm.get(), filename, mesh, engine);
+               }),
+           py::arg("comm"), py::arg("filename"), py::arg("mesh"),
+           py::arg("engine") = "BPFile")
+      .def(py::init(
+               [](MPICommWrapper comm, std::filesystem::path filename,
+                  const std::vector<std::variant<
+                      std::shared_ptr<const dolfinx::fem::Function<float, T>>,
+                      std::shared_ptr<const dolfinx::fem::Function<double, T>>,
+                      std::shared_ptr<
+                          const dolfinx::fem::Function<std::complex<float>, T>>,
+                      std::shared_ptr<const dolfinx::fem::Function<
+                          std::complex<double>, T>>>>& u,
+                  std::string engine)
+               {
+                 return std::make_unique<dolfinx::io::VTXWriter<T>>(
+                     comm.get(), filename, u, engine);
+               }),
+           py::arg("comm"), py::arg("filename"), py::arg("u"),
+           py::arg("engine") = "BPFile")
+      .def("close", [](dolfinx::io::VTXWriter<T>& self) { self.close(); })
+      .def(
+          "write",
+          [](dolfinx::io::VTXWriter<T>& self, double t) { self.write(t); },
+          py::arg("t"));
+}
+#endif
+} // namespace
+
 void io(py::module& m)
 {
   // dolfinx::io::cell vtk cell type converter
@@ -256,45 +301,8 @@ void io(py::module& m)
           { self.write(t); },
           py::arg("t"));
 
-  // dolfinx::io::VTXWriter
-  py::class_<dolfinx::io::VTXWriter<PetscReal>,
-             std::shared_ptr<dolfinx::io::VTXWriter<PetscReal>>>(
-      m, "VTXWriter", "VTXWriter object")
-      .def(py::init(
-               [](MPICommWrapper comm, std::filesystem::path filename,
-                  std::shared_ptr<const dolfinx::mesh::Mesh<PetscReal>> mesh,
-                  std::string engine)
-               {
-                 return std::make_unique<dolfinx::io::VTXWriter<PetscReal>>(
-                     comm.get(), filename, mesh, engine);
-               }),
-           py::arg("comm"), py::arg("filename"), py::arg("mesh"),
-           py::arg("engine") = "BPFile")
-      .def(py::init(
-               [](MPICommWrapper comm, std::filesystem::path filename,
-                  const std::vector<std::variant<
-                      std::shared_ptr<
-                          const dolfinx::fem::Function<float, PetscReal>>,
-                      std::shared_ptr<
-                          const dolfinx::fem::Function<double, PetscReal>>,
-                      std::shared_ptr<const dolfinx::fem::Function<
-                          std::complex<float>, PetscReal>>,
-                      std::shared_ptr<const dolfinx::fem::Function<
-                          std::complex<double>, PetscReal>>>>& u,
-                  std::string engine)
-               {
-                 return std::make_unique<dolfinx::io::VTXWriter<PetscReal>>(
-                     comm.get(), filename, u, engine);
-               }),
-           py::arg("comm"), py::arg("filename"), py::arg("u"),
-           py::arg("engine") = "BPFile")
-      .def("close",
-           [](dolfinx::io::VTXWriter<PetscReal>& self) { self.close(); })
-      .def(
-          "write",
-          [](dolfinx::io::VTXWriter<PetscReal>& self, double t)
-          { self.write(t); },
-          py::arg("t"));
+  declare_vtx_writer<float>(m, "float32");
+  declare_vtx_writer<double>(m, "float64");
 
 #endif
 }

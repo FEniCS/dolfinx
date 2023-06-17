@@ -60,7 +60,6 @@ struct geom_type<T, std::void_t<typename T::value_type>>
 template <typename T>
 void declare_function_space(py::module& m, std::string type)
 {
-
   {
     std::string pyclass_name = "FunctionSpace_" + type;
     py::class_<dolfinx::fem::FunctionSpace<T>,
