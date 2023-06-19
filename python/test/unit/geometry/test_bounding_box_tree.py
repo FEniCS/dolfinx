@@ -7,8 +7,6 @@
 
 import numpy as np
 import pytest
-
-from dolfinx import cpp as _cpp
 from dolfinx.geometry import (BoundingBoxTree, compute_closest_entity,
                               compute_colliding_cells, compute_collisions,
                               compute_distance_gjk, create_midpoint_tree)
@@ -16,8 +14,10 @@ from dolfinx.mesh import (CellType, create_box, create_unit_cube,
                           create_unit_interval, create_unit_square,
                           exterior_facet_indices, locate_entities,
                           locate_entities_boundary)
-
 from mpi4py import MPI
+
+from dolfinx import cpp as _cpp
+from dolfinx import default_real_type
 
 
 def extract_geometricial_data(mesh, dim, entities):
@@ -78,13 +78,15 @@ def test_padded_bbox(padding):
     """Test collision between two meshes separated by a distance of
     epsilon, and check if padding the mesh creates a possible
     collision"""
-    eps = 1e-12
-    x0 = np.array([0, 0, 0])
-    x1 = np.array([1, 1, 1 - eps])
-    mesh_0 = create_box(MPI.COMM_WORLD, [x0, x1], [1, 1, 2], CellType.hexahedron)
-    x2 = np.array([0, 0, 1 + eps])
-    x3 = np.array([1, 1, 2])
-    mesh_1 = create_box(MPI.COMM_WORLD, [x2, x3], [1, 1, 2], CellType.hexahedron)
+    dtype = default_real_type
+    eps = 1e-4
+    # eps = 1e-12
+    x0 = np.array([0, 0, 0], dtype=dtype)
+    x1 = np.array([1, 1, 1 - eps], dtype=dtype)
+    mesh_0 = create_box(MPI.COMM_WORLD, [x0, x1], [1, 1, 2], CellType.hexahedron, dtype=dtype)
+    x2 = np.array([0, 0, 1 + eps], dtype=dtype)
+    x3 = np.array([1, 1, 2], dtype=dtype)
+    mesh_1 = create_box(MPI.COMM_WORLD, [x2, x3], [1, 1, 2], CellType.hexahedron, dtype=dtype)
     if padding:
         pad = eps
     else:
@@ -100,7 +102,7 @@ def test_padded_bbox(padding):
         element_0 = extract_geometricial_data(mesh_0, mesh_0.topology.dim, [collisions[0][0]])[0]
         element_1 = extract_geometricial_data(mesh_1, mesh_1.topology.dim, [collisions[0][1]])[0]
         distance = np.linalg.norm(compute_distance_gjk(element_0, element_1))
-        assert np.isclose(distance, 2 * eps)
+        assert np.isclose(distance, 2 * eps, rtol=1.0e-5, atol=1.0e-7)
     else:
         assert len(collisions) == 0
 
@@ -385,7 +387,7 @@ def test_sub_bbtree():
     process_bbtree = bbtree.create_global_tree(mesh.comm)
 
     # Find possible ranks for this point
-    point = np.array([0.2, 0.2, 1.0])
+    point = np.array([0.2, 0.2, 1.0], dtype=default_real_type)
     ranks = compute_collisions(process_bbtree, point)
 
     # Compute local collisions

@@ -19,13 +19,13 @@ if typing.TYPE_CHECKING:
 import numpy
 
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.geometry import compute_collisions, compute_distance_gjk
+from dolfinx.cpp.geometry import compute_distance_gjk
 
 __all__ = ["compute_colliding_cells", "squared_distance", "compute_closest_entity", "compute_collisions",
            "compute_distance_gjk", "create_midpoint_tree"]
 
 
-class BoundingBoxTree(_cpp.geometry.BoundingBoxTree):
+class BoundingBoxTree:
     """Bounding box trees used in collision detection."""
 
     def __init__(self, mesh: Mesh, dim: int, entities=None, padding: float = 0.0):
@@ -39,13 +39,35 @@ class BoundingBoxTree(_cpp.geometry.BoundingBoxTree):
             padding: Padding for each bounding box
 
         """
+        if mesh.geometry.x.dtype == np.float32:
+            _bbtree = _cpp.geometry.BoundingBoxTree_float32
+        elif mesh.geometry.x.dtype == np.float64:
+            _bbtree = _cpp.geometry.BoundingBoxTree_float64
+
         map = mesh.topology.index_map(dim)
         if map is None:
             raise RuntimeError(f"Mesh entities of dimension {dim} have not been created.")
         if entities is None:
             entities = range(0, map.size_local + map.num_ghosts)
 
-        super().__init__(mesh._cpp_object, dim, entities, padding)
+        self._cpp_object = _bbtree(mesh._cpp_object, dim, entities, padding)
+
+    @property
+    def num_bboxes(self):
+        return self._cpp_object.num_bboxes
+
+    def get_bbox(self, i):
+        return self._cpp_object.get_bbox(i)
+
+    def create_global_tree(self, comm):
+        return self._cpp_object.create_global_tree(comm)
+
+
+def compute_collisions(bb0, bb1):
+    try:
+        return _cpp.geometry.compute_collisions(bb0._cpp_object, bb1._cpp_object)
+    except AttributeError:
+        return _cpp.geometry.compute_collisions(bb0._cpp_object, bb1)
 
 
 def compute_closest_entity(tree: BoundingBoxTree, midpoint_tree: BoundingBoxTree, mesh: Mesh,

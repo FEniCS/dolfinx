@@ -25,8 +25,8 @@ namespace impl_bb
 // Compute bounding box of mesh entity. The bounding box is defined by (lower
 // left corner, top right corner). Storage flattened row-major
 template <typename T>
-std::array<double, 6> compute_bbox_of_entity(const mesh::Mesh<T>& mesh, int dim,
-                                             std::int32_t index)
+std::array<T, 6> compute_bbox_of_entity(const mesh::Mesh<T>& mesh, int dim,
+                                        std::int32_t index)
 {
   // Get the geometrical indices for the mesh entity
   std::span<const T> xg = mesh.geometry().x();

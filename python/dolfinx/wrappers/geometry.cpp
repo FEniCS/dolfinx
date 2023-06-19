@@ -20,6 +20,88 @@
 
 namespace py = pybind11;
 
+namespace
+{
+template <typename T>
+void declare_bbtree(py::module& m, std::string type)
+{
+  // dolfinx::geometry::BoundingBoxTree
+  std::string pyclass_name = "BoundingBoxTree_" + type;
+  py::class_<dolfinx::geometry::BoundingBoxTree<T>,
+             std::shared_ptr<dolfinx::geometry::BoundingBoxTree<T>>>(
+      m, pyclass_name.c_str())
+      .def(py::init(
+               [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
+                  const py::array_t<std::int32_t, py::array::c_style>& entities,
+                  double padding)
+               {
+                 return dolfinx::geometry::BoundingBoxTree(
+                     mesh, dim,
+                     std::span<const std::int32_t>(entities.data(),
+                                                   entities.size()),
+                     padding);
+               }),
+           py::arg("mesh"), py::arg("dim"), py::arg("entities"),
+           py::arg("padding"))
+      .def_property_readonly("num_bboxes",
+                             &dolfinx::geometry::BoundingBoxTree<T>::num_bboxes)
+      .def(
+          "get_bbox",
+          [](const dolfinx::geometry::BoundingBoxTree<T>& self,
+             const std::size_t i)
+          {
+            std::array<T, 6> bbox = self.get_bbox(i);
+            std::array<std::size_t, 2> shape{2, 3};
+            return py::array_t<T>(shape, bbox.data());
+          },
+          py::arg("i"))
+      .def("__repr__", &dolfinx::geometry::BoundingBoxTree<T>::str)
+      .def(
+          "create_global_tree",
+          [](const dolfinx::geometry::BoundingBoxTree<T>& self,
+             const dolfinx_wrappers::MPICommWrapper comm)
+          { return self.create_global_tree(comm.get()); },
+          py::arg("comm"));
+
+  m.def(
+      "compute_collisions",
+      [](const dolfinx::geometry::BoundingBoxTree<T>& tree,
+         const py::array_t<T>& points)
+      {
+        const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
+        std::vector<T> _p(3 * p_s0);
+        auto px = points.unchecked();
+        if (px.ndim() == 1)
+        {
+          for (py::ssize_t i = 0; i < px.shape(0); i++)
+            _p[i] = px(i);
+        }
+        else if (px.ndim() == 2)
+        {
+          for (py::ssize_t i = 0; i < px.shape(0); i++)
+            for (py::ssize_t j = 0; j < px.shape(1); j++)
+              _p[3 * i + j] = px(i, j);
+        }
+        else
+          throw std::runtime_error("Array has wrong ndim.");
+
+        return dolfinx::geometry::compute_collisions<T>(tree, _p);
+      },
+      py::arg("tree"), py::arg("points"));
+  m.def(
+      "compute_collisions",
+      [](const dolfinx::geometry::BoundingBoxTree<T>& treeA,
+         const dolfinx::geometry::BoundingBoxTree<T>& treeB)
+      {
+        std::vector coll
+            = dolfinx::geometry::compute_collisions<T>(treeA, treeB);
+        std::array<py::ssize_t, 2> shape{py::ssize_t(coll.size() / 2), 2};
+        return dolfinx_wrappers::as_pyarray(std::move(coll), shape);
+      },
+      py::arg("tree0"), py::arg("tree1"));
+}
+} // namespace
+
 namespace dolfinx_wrappers
 {
 void geometry(py::module& m)
@@ -87,43 +169,6 @@ void geometry(py::module& m)
 
           return dolfinx::geometry::determine_point_ownership<double>(mesh, _p);
         });
-
-  m.def(
-      "compute_collisions",
-      [](const dolfinx::geometry::BoundingBoxTree<double>& tree,
-         const py::array_t<double>& points)
-      {
-        const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
-        std::vector<double> _p(3 * p_s0);
-        auto px = points.unchecked();
-        if (px.ndim() == 1)
-        {
-          for (py::ssize_t i = 0; i < px.shape(0); i++)
-            _p[i] = px(i);
-        }
-        else if (px.ndim() == 2)
-        {
-          for (py::ssize_t i = 0; i < px.shape(0); i++)
-            for (py::ssize_t j = 0; j < px.shape(1); j++)
-              _p[3 * i + j] = px(i, j);
-        }
-        else
-          throw std::runtime_error("Array has wrong ndim.");
-
-        return dolfinx::geometry::compute_collisions<double>(tree, _p);
-      },
-      py::arg("tree"), py::arg("points"));
-  m.def(
-      "compute_collisions",
-      [](const dolfinx::geometry::BoundingBoxTree<double>& treeA,
-         const dolfinx::geometry::BoundingBoxTree<double>& treeB)
-      {
-        std::vector coll
-            = dolfinx::geometry::compute_collisions<double>(treeA, treeB);
-        std::array<py::ssize_t, 2> shape{py::ssize_t(coll.size() / 2), 2};
-        return as_pyarray(std::move(coll), shape);
-      },
-      py::arg("tree0"), py::arg("tree1"));
 
   m.def(
       "compute_distance_gjk",
@@ -265,41 +310,7 @@ void geometry(py::module& m)
       },
       py::arg("mesh"), py::arg("candidate_cells"), py::arg("points"));
 
-  // dolfinx::geometry::BoundingBoxTree
-  py::class_<dolfinx::geometry::BoundingBoxTree<double>,
-             std::shared_ptr<dolfinx::geometry::BoundingBoxTree<double>>>(
-      m, "BoundingBoxTree")
-      .def(py::init(
-               [](const dolfinx::mesh::Mesh<double>& mesh, int dim,
-                  const py::array_t<std::int32_t, py::array::c_style>& entities,
-                  double padding)
-               {
-                 return dolfinx::geometry::BoundingBoxTree(
-                     mesh, dim,
-                     std::span<const std::int32_t>(entities.data(),
-                                                   entities.size()),
-                     padding);
-               }),
-           py::arg("mesh"), py::arg("dim"), py::arg("entities"),
-           py::arg("padding"))
-      .def_property_readonly(
-          "num_bboxes", &dolfinx::geometry::BoundingBoxTree<double>::num_bboxes)
-      .def(
-          "get_bbox",
-          [](const dolfinx::geometry::BoundingBoxTree<double>& self,
-             const std::size_t i)
-          {
-            std::array<double, 6> bbox = self.get_bbox(i);
-            std::array<std::size_t, 2> shape{2, 3};
-            return py::array_t<double>(shape, bbox.data());
-          },
-          py::arg("i"))
-      .def("__repr__", &dolfinx::geometry::BoundingBoxTree<double>::str)
-      .def(
-          "create_global_tree",
-          [](const dolfinx::geometry::BoundingBoxTree<double>& self,
-             const MPICommWrapper comm)
-          { return self.create_global_tree(comm.get()); },
-          py::arg("comm"));
+  declare_bbtree<float>(m, "float32");
+  declare_bbtree<double>(m, "float64");
 }
 } // namespace dolfinx_wrappers
