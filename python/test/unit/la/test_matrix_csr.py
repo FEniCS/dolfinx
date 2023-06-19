@@ -5,12 +5,14 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for MatrixCSR"""
 
-import pytest
 import numpy as np
-from mpi4py import MPI
-from dolfinx.la import matrix_csr
-from dolfinx.cpp.la import SparsityPattern, BlockMode
+import pytest
+
 from dolfinx.common import IndexMap
+from dolfinx.cpp.la import BlockMode, SparsityPattern
+from dolfinx.la import matrix_csr
+
+from mpi4py import MPI
 
 
 def create_test_sparsity(n, bs):

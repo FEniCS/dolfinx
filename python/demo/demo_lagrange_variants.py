@@ -17,16 +17,17 @@
 #
 # We begin this demo by importing the required modules.
 
+import matplotlib.pylab as plt
+import numpy as np
+
 # +
 import basix
 import basix.ufl
-import matplotlib.pylab as plt
-import numpy as np
 import ufl
-from mpi4py import MPI
+from dolfinx import default_scalar_type, fem, mesh
 from ufl import ds, dx, grad, inner
 
-from dolfinx import default_scalar_type, fem, mesh
+from mpi4py import MPI
 
 if np.issubdtype(default_scalar_type, np.complexfloating):
     print("Demo should only be executed with DOLFINx real mode")
