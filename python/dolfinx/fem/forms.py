@@ -11,12 +11,12 @@ import collections.abc
 import typing
 
 import numpy as np
-import ufl
-from dolfinx.fem import IntegralType
-from dolfinx.fem.function import FunctionSpace
 
+import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit
+from dolfinx.fem import IntegralType
+from dolfinx.fem.function import FunctionSpace
 
 if typing.TYPE_CHECKING:
     from dolfinx.fem import function

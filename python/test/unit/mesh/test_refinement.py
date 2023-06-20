@@ -9,8 +9,7 @@ import pytest
 from numpy import isclose, logical_and
 
 import ufl
-from dolfinx.fem import FunctionSpace, form
-from dolfinx.fem import assemble_matrix
+from dolfinx.fem import FunctionSpace, assemble_matrix, form
 from dolfinx.mesh import (CellType, DiagonalType, GhostMode, RefinementOption,
                           compute_incident_entities, create_unit_cube,
                           create_unit_square, locate_entities,

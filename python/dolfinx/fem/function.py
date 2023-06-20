@@ -14,18 +14,18 @@ if typing.TYPE_CHECKING:
 
 from functools import singledispatch
 
-import basix
-import basix.ufl
 import numpy as np
 import numpy.typing as npt
+
+import basix
+import basix.ufl
 import ufl
 import ufl.algorithms
 import ufl.algorithms.analysis
-from dolfinx.fem import dofmap
-from ufl.domain import extract_unique_domain
-
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit, la
+from dolfinx.fem import dofmap
+from ufl.domain import extract_unique_domain
 
 
 class Constant(ufl.Constant):

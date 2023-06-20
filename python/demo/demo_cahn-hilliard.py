@@ -123,6 +123,7 @@ import os
 import numpy as np
 import ufl
 from basix.ufl import element, mixed_element
+from dolfinx import log, plot
 from dolfinx.fem import Function, FunctionSpace
 from dolfinx.fem.petsc import NonlinearProblem
 from dolfinx.io import XDMFFile

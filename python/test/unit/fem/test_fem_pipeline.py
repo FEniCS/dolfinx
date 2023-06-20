@@ -20,8 +20,6 @@ from dolfinx.io import XDMFFile
 from dolfinx.mesh import (CellType, create_rectangle, create_unit_cube,
                           create_unit_square, exterior_facet_indices,
                           locate_entities_boundary)
-from mpi4py import MPI
-from petsc4py import PETSc
 from ufl import (CellDiameter, FacetNormal, SpatialCoordinate, TestFunction,
                  TrialFunction, avg, div, ds, dS, dx, grad, inner, jump)
 
