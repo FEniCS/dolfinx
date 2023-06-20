@@ -567,7 +567,7 @@ Form<T, U> create_form(
 /// @param[in] spaces Function spaces for the Form arguments.
 /// @param[in] coefficients Coefficient fields in the form (by name).
 /// @param[in] constants Spatial constants in the form (by name).
-/// @param[in] subdomains Subdomain makers.
+/// @param[in] subdomains Subdomain markers.
 /// @pre Each value in `subdomains` must be sorted by domain id.
 /// @param[in] mesh Mesh of the domain. This is required if the form has
 /// no arguments, e.g. a functional.
