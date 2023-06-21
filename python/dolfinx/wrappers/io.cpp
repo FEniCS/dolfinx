@@ -194,7 +194,7 @@ void io(py::module& m)
                      comm.get(), filename, mesh, engine);
                }),
            py::arg("comm"), py::arg("filename"), py::arg("mesh"),
-           py::arg("engine") = "BPFile")
+           py::arg("engine") = "BP4")
       .def(py::init(
                [](MPICommWrapper comm, std::filesystem::path filename,
                   const std::vector<std::variant<
@@ -209,10 +209,10 @@ void io(py::module& m)
                   std::string engine, dolfinx::io::FidesMeshPolicy policy)
                {
                  return std::make_unique<dolfinx::io::FidesWriter<double>>(
-                     comm.get(), filename, u, policy);
+                     comm.get(), filename, u, engine, policy);
                }),
            py::arg("comm"), py::arg("filename"), py::arg("u"),
-           py::arg("engine") = "BPFile",
+           py::arg("engine") = "BP4",
            py::arg("policy") = dolfinx::io::FidesMeshPolicy::update)
       .def("close",
            [](dolfinx::io::FidesWriter<double>& self) { self.close(); })
@@ -235,7 +235,7 @@ void io(py::module& m)
                      comm.get(), filename, mesh, engine);
                }),
            py::arg("comm"), py::arg("filename"), py::arg("mesh"),
-           py::arg("engine") = "BPFile")
+           py::arg("engine") = "BP4")
       .def(py::init(
                [](MPICommWrapper comm, std::filesystem::path filename,
                   const std::vector<std::variant<
@@ -253,7 +253,7 @@ void io(py::module& m)
                      comm.get(), filename, u, engine);
                }),
            py::arg("comm"), py::arg("filename"), py::arg("u"),
-           py::arg("engine") = "BPFile")
+           py::arg("engine") = "BP4")
       .def("close", [](dolfinx::io::VTXWriter<double>& self) { self.close(); })
       .def(
           "write",
