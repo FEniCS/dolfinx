@@ -554,25 +554,6 @@ public:
     impl_fides::initialize_function_attributes<T>(*_io, u);
   }
 
-  /// @brief Create Fides writer for list of functions using default
-  /// ADIOS2 engine,
-  /// @param[in] comm The MPI communicator
-  /// @param[in] filename Name of output file
-  /// @param[in] u List of functions. The functions must (1) share the
-  /// same mesh (degree 1) and (2) be degree 1 Lagrange. @note All
-  /// functions in `u` must share the same Mesh
-  /// @param[in] mesh_policy Controls if the mesh is written to file at
-  /// the first time step only or is re-written (updated) at each time
-  /// step.
-  FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
-              const typename adios2_writer::U<T>& u,
-              const FidesMeshPolicy mesh_policy = FidesMeshPolicy::update)
-      : ADIOS2Writer(comm, filename, "Fides function writer", "BPFile"),
-        _mesh_reuse_policy(mesh_policy),
-        _mesh(impl_adios2::extract_common_mesh<T>(u)), _u(u)
-  {
-  }
-
   // Copy constructor
   FidesWriter(const FidesWriter&) = delete;
 
