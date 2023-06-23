@@ -84,7 +84,7 @@ from dolfinx import fem, io, mesh, plot
 # +
 msh = mesh.create_rectangle(comm=MPI.COMM_WORLD,
                             points=((0.0, 0.0), (2.0, 1.0)), n=(32, 16),
-                            cell_type=mesh.CellType.triangle,)
+                            cell_type=mesh.CellType.triangle)
 V = fem.FunctionSpace(msh, ("Lagrange", 1))
 # -
 
@@ -117,10 +117,6 @@ dofs = fem.locate_dofs_topological(V=V, entity_dim=1, entities=facets)
 
 bc = fem.dirichletbc(value=ScalarType(0), dofs=dofs, V=V)
 
-print(type(bc))
-import inspect
-
-print(inspect.getmro(type(bc)))
 # Next, the variational problem is defined:
 
 # +
