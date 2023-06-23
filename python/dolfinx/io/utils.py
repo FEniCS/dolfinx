@@ -69,12 +69,12 @@ if _cpp.common.has_adios2:
 
             # Get geometry type
             try:
-                dtype = output.geometry.x.dtype
+                dtype = output.geometry.x.dtype  # type: ignore
             except AttributeError:
                 try:
-                    dtype = output.function_space.mesh.geometry.x.dtype
-                except (AttributeError):
-                    dtype = output[0].function_space.mesh.geometry.x.dtype
+                    dtype = output.function_space.mesh.geometry.x.dtype  # type: ignore
+                except AttributeError:
+                    dtype = output[0].function_space.mesh.geometry.x.dtype  # type: ignore
 
             if dtype == np.float32:
                 _vtxwriter = _cpp.io.VTXWriter_float32
