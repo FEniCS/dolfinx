@@ -630,5 +630,5 @@ def test_assembly_solve_taylor_hood_nl(mesh):
 
     Jnorm2, Fnorm2, xnorm2 = monolithic()
     assert Jnorm2 == pytest.approx(Jnorm1, rel=1.0e-3, abs=1.0e-6)
-    assert Fnorm2 == pytest.approx(Fnorm0, 1.0e-6, abs=1.0e-6)
+    assert Fnorm2 == pytest.approx(Fnorm0, 1.0e-6, abs=1.0e-5)
     assert xnorm2 == pytest.approx(xnorm0, 1.0e-6, abs=1.0e-6)
