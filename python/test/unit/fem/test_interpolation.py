@@ -643,7 +643,7 @@ def test_interpolate_callable_subset(bound):
     expr = Expression(f, V.element.interpolation_points())
     u0.interpolate(lambda x: x[0], cells_local)
     u1.interpolate(expr, cells_local)
-    assert np.allclose(u0.x.array, u1.x.array)
+    assert np.allclose(u0.x.array, u1.x.array, rtol=1.0e-6, atol=1.0e-6)
 
 
 @pytest.mark.parametrize("scalar_element", [

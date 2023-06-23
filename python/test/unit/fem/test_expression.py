@@ -175,7 +175,7 @@ def test_rank1_hdiv():
     h2 = Function(vdP1)
     h2.vector.axpy(1.0, A * g.vector)
 
-    assert np.isclose((h2.vector - h.vector).norm(), 0.0, rtol=1.0e-6, atol=1.0e-5)
+    assert np.isclose((h2.vector - h.vector).norm(), 0.0, rtol=1.0e-5, atol=1.0e-5)
 
     A.destroy()
 
