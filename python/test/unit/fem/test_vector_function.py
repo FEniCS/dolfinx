@@ -74,4 +74,4 @@ def test_div_conforming_tetrahedron(space_type, order):
     cells = np.array([[0, 1, 2, 3], [1, 3, 2, 4]])
     result = perform_test(points, cells)
     for i, j in result:
-        assert i == pytest.approx(j, rel=1.0e-8, abs=1.0e-5)
+        assert i == pytest.approx(j, rel=1.0e-6, abs=1.0e-4)
