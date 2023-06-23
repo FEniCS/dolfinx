@@ -94,18 +94,19 @@ def test_eval(V, W, Q, mesh):
 
     x0 = (mesh.geometry.x[0] + mesh.geometry.x[1]) / 2.0
     tree = bb_tree(mesh, mesh.geometry.dim)
+    print("test:", tree.num_bboxes)
     cell_candidates = compute_collisions(tree, x0)
+    print("cand:", cell_candidates)
     cell = compute_colliding_cells(mesh, cell_candidates, x0)
+    assert len(cell) > 0
     first_cell = cell[0]
     assert np.allclose(u3.eval(x0, first_cell)[:3], u2.eval(x0, first_cell), rtol=1e-15, atol=1e-15)
 
 
-@pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
 @pytest.mark.skip_in_parallel
 def test_eval_manifold():
     # Simple two-triangle surface in 3d
-    vertices = [(0.0, 0.0, 1.0), (1.0, 1.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0,
-                                                                    0.0)]
+    vertices = np.array([(0.0, 0.0, 1.0), (1.0, 1.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0)], dtype=default_real_type)
     cells = [(0, 1, 2), (0, 1, 3)]
     domain = ufl.Mesh(element("Lagrange", "triangle", 1, gdim=3, rank=1))
     mesh = create_mesh(MPI.COMM_WORLD, cells, vertices, domain)
