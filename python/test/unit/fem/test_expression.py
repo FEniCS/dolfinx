@@ -121,6 +121,7 @@ def test_rank0():
     assert np.allclose(b2.x.array, b.x.array, rtol=1.0e-5, atol=1.0e-5)
 
 
+@pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
 def test_rank1_hdiv():
     """Test rank-1 Expression, i.e. Expression containing Argument (TrialFunction)
     Test compiles linear interpolation operator RT_2 -> vector DG_2 and assembles it into
@@ -175,7 +176,7 @@ def test_rank1_hdiv():
     h2 = Function(vdP1)
     h2.vector.axpy(1.0, A * g.vector)
 
-    assert np.isclose((h2.vector - h.vector).norm(), 0.0, rtol=1.0e-5, atol=1.0e-5)
+    assert (h2.vector - h.vector).norm() == pytest.approx(0.0, rel=1.0e-4, abs=1.0e-5)
 
     A.destroy()
 

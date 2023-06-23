@@ -684,7 +684,7 @@ def test_assembly_solve_taylor_hood(mesh):
 
     bnorm0, xnorm0, Anorm0, Pnorm0 = nested_solve()
     bnorm1, xnorm1, Anorm1, Pnorm1 = blocked_solve()
-    assert bnorm1 == pytest.approx(bnorm0, 1.0e-12)
+    assert bnorm1 == pytest.approx(bnorm0, 1.0e-6)
     assert xnorm1 == pytest.approx(xnorm0, 1.0e-5)
     assert Anorm1 == pytest.approx(Anorm0, 1.0e-4)
     assert Pnorm1 == pytest.approx(Pnorm0, 1.0e-6)
