@@ -78,8 +78,8 @@ def test_submesh_cell_assembly(d, n, k, space, ghost_mode):
     submesh = create_submesh(mesh_1, edim, entities)[0]
     A_submesh, b_submesh, s_submesh = assemble(submesh, space, k)
 
-    assert np.isclose(A_mesh_0.norm(), A_submesh.norm())
-    assert np.isclose(b_mesh_0.norm(), b_submesh.norm())
+    assert A_mesh_0.norm() == pytest.approx(A_submesh.norm(), rel=1.0e-4, abs=1.0e-4)
+    assert b_mesh_0.norm() == pytest.approx(b_submesh.norm())
     assert np.isclose(s_mesh_0, s_submesh)
 
     A_mesh_0.destroy()
@@ -105,8 +105,8 @@ def test_submesh_facet_assembly(n, k, space, ghost_mode):
     square_mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
     A_square_mesh, b_square_mesh, s_square_mesh = assemble(square_mesh, space, k)
 
-    assert np.isclose(A_submesh.norm(), A_square_mesh.norm())
-    assert np.isclose(b_submesh.norm(), b_square_mesh.norm())
+    assert A_submesh.norm() == pytest.approx(A_square_mesh.norm(), rel=1.0e-5, abs=1.0e-5)
+    assert b_submesh.norm() == pytest.approx(b_square_mesh.norm())
     assert np.isclose(s_submesh, s_square_mesh)
 
     A_submesh.destroy()

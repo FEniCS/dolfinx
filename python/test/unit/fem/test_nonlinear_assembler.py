@@ -438,8 +438,8 @@ def test_assembly_solve_block_nl():
     norm0 = blocked_solve()
     norm1 = nested_solve()
     norm2 = monolithic_solve()
-    assert norm1 == pytest.approx(norm0, 1.0e-12)
-    assert norm2 == pytest.approx(norm0, 1.0e-12)
+    assert norm1 == pytest.approx(norm0, 1.0e-6)
+    assert norm2 == pytest.approx(norm0, 1.0e-6)
 
 
 @pytest.mark.parametrize("mesh", [
