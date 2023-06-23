@@ -129,16 +129,9 @@ void declare_bbtree(py::module& m, std::string type)
       },
       py::arg("tree"), py::arg("midpoint_tree"), py::arg("mesh"),
       py::arg("points"));
-}
-} // namespace
-
-namespace dolfinx_wrappers
-{
-void geometry(py::module& m)
-{
   m.def(
       "create_midpoint_tree",
-      [](const dolfinx::mesh::Mesh<double>& mesh, int tdim,
+      [](const dolfinx::mesh::Mesh<T>& mesh, int tdim,
          const py::array_t<std::int32_t, py::array::c_style>& entities)
       {
         return dolfinx::geometry::create_midpoint_tree(
@@ -146,6 +139,55 @@ void geometry(py::module& m)
             std::span<const std::int32_t>(entities.data(), entities.size()));
       },
       py::arg("mesh"), py::arg("tdim"), py::arg("entities"));
+  m.def(
+      "compute_colliding_cells",
+      [](const dolfinx::mesh::Mesh<T>& mesh,
+         const dolfinx::graph::AdjacencyList<int>& candidate_cells,
+         const py::array_t<T>& points)
+          -> std::variant<dolfinx::graph::AdjacencyList<std::int32_t>,
+                          py::array_t<std::int32_t>>
+      {
+        const int gdim = mesh.geometry().dim();
+        std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
+        std::vector<T> _p(3 * p_s0);
+        auto px = points.unchecked();
+        if (gdim > 1 and px.ndim() == 1)
+        {
+          // Single point in 2D/3D
+          assert(px.shape(0) <= 3);
+          for (py::ssize_t i = 0; i < px.shape(0); i++)
+            _p[i] = px(i);
+          auto cells = dolfinx::geometry::compute_colliding_cells<T>(
+              mesh, candidate_cells, _p);
+          return py::array_t<std::int32_t>(cells.array().size(),
+                                           cells.array().data());
+        }
+        else if (gdim == 1 and px.ndim() == 1)
+        {
+          // 1D problem
+          for (py::ssize_t i = 0; i < px.shape(0); i++)
+            _p[3 * i] = px(i);
+        }
+        else if (px.ndim() == 2)
+        {
+          for (py::ssize_t i = 0; i < px.shape(0); i++)
+            for (py::ssize_t j = 0; j < px.shape(1); j++)
+              _p[3 * i + j] = px(i, j);
+        }
+        else
+          throw std::runtime_error("Array has wrong ndim.");
+
+        return dolfinx::geometry::compute_colliding_cells<T>(
+            mesh, candidate_cells, _p);
+      },
+      py::arg("mesh"), py::arg("candidate_cells"), py::arg("points"));
+}
+} // namespace
+
+namespace dolfinx_wrappers
+{
+void geometry(py::module& m)
+{
 
   m.def("determine_point_ownership",
         [](const dolfinx::mesh::Mesh<double>& mesh,
@@ -268,48 +310,6 @@ void geometry(py::module& m)
             mesh, dim, indices, _p));
       },
       py::arg("mesh"), py::arg("dim"), py::arg("indices"), py::arg("points"));
-  m.def(
-      "compute_colliding_cells",
-      [](const dolfinx::mesh::Mesh<double>& mesh,
-         const dolfinx::graph::AdjacencyList<int>& candidate_cells,
-         const py::array_t<double>& points)
-          -> std::variant<dolfinx::graph::AdjacencyList<std::int32_t>,
-                          py::array_t<std::int32_t>>
-      {
-        const int gdim = mesh.geometry().dim();
-        std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
-        std::vector<double> _p(3 * p_s0);
-        auto px = points.unchecked();
-        if (gdim > 1 and px.ndim() == 1)
-        {
-          // Single point in 2D/3D
-          assert(px.shape(0) <= 3);
-          for (py::ssize_t i = 0; i < px.shape(0); i++)
-            _p[i] = px(i);
-          auto cells = dolfinx::geometry::compute_colliding_cells<double>(
-              mesh, candidate_cells, _p);
-          return py::array_t<std::int32_t>(cells.array().size(),
-                                           cells.array().data());
-        }
-        else if (gdim == 1 and px.ndim() == 1)
-        {
-          // 1D problem
-          for (py::ssize_t i = 0; i < px.shape(0); i++)
-            _p[3 * i] = px(i);
-        }
-        else if (px.ndim() == 2)
-        {
-          for (py::ssize_t i = 0; i < px.shape(0); i++)
-            for (py::ssize_t j = 0; j < px.shape(1); j++)
-              _p[3 * i + j] = px(i, j);
-        }
-        else
-          throw std::runtime_error("Array has wrong ndim.");
-
-        return dolfinx::geometry::compute_colliding_cells<double>(
-            mesh, candidate_cells, _p);
-      },
-      py::arg("mesh"), py::arg("candidate_cells"), py::arg("points"));
 
   declare_bbtree<float>(m, "float32");
   declare_bbtree<double>(m, "float64");

@@ -253,13 +253,12 @@ def test_compute_closest_entity_1d(dim):
     closest_entities = compute_closest_entity(tree, midpoint_tree, mesh, points)
 
     # Find which entity is colliding with known closest point on mesh
-    p_c = np.array([[0, 0, 0], [2 / N, 0, 0]])
+    p_c = np.array([[0, 0, 0], [2 / N, 0, 0]], dtype=default_real_type)
     colliding_entity_bboxes = compute_collisions(tree, p_c)
 
     # Refine search by checking for actual collision if the entities are
     # cells
     if dim == mesh.topology.dim:
-
         colliding_cells = compute_colliding_cells(mesh, colliding_entity_bboxes, p_c)
         for i in range(points.shape[0]):
             # If colliding entity is on process
@@ -275,14 +274,13 @@ def test_compute_closest_entity_1d(dim):
 
 @pytest.mark.parametrize("dim", [0, 1, 2])
 def test_compute_closest_entity_2d(dim):
-    points = np.array([-1.0, -0.01, 0.0])
-    mesh = create_unit_square(MPI.COMM_WORLD, 15, 15)
+    points = np.array([-1.0, -0.01, 0.0], dtype=default_real_type)
+    mesh = create_unit_square(MPI.COMM_WORLD, 15, 15, dtype=default_real_type)
     mesh.topology.create_entities(dim)
     tree = bb_tree(mesh, dim)
     num_entities_local = mesh.topology.index_map(dim).size_local + mesh.topology.index_map(dim).num_ghosts
     entities = np.arange(num_entities_local, dtype=np.int32)
     midpoint_tree = create_midpoint_tree(mesh, dim, entities)
-    print(type(midpoint_tree))
 
     # Find which entity is colliding with known closest point on mesh
     closest_entities = compute_closest_entity(tree, midpoint_tree, mesh, points)
@@ -304,7 +302,7 @@ def test_compute_closest_entity_2d(dim):
 
 @pytest.mark.parametrize("dim", [1, 2, 3])
 def test_compute_closest_entity_3d(dim):
-    points = np.array([0.9, 0, 1.135])
+    points = np.array([0.9, 0, 1.135], dtype=default_real_type)
     mesh = create_unit_cube(MPI.COMM_WORLD, 8, 8, 8)
     mesh.topology.create_entities(dim)
 
@@ -335,7 +333,7 @@ def test_compute_closest_sub_entity(dim):
     """Compute distance from subset of cells in a mesh to a point inside the mesh"""
     ref_distance = 0.31
     xc, yc, zc = 0.5, 0.5, 0.5
-    points = np.array([xc + ref_distance, yc, zc])
+    points = np.array([xc + ref_distance, yc, zc], dtype=default_real_type)
     mesh = create_unit_cube(MPI.COMM_WORLD, 8, 8, 8)
     mesh.topology.create_entities(dim)
     left_entities = locate_entities(mesh, dim, lambda x: x[0] <= xc)
