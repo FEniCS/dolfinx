@@ -188,7 +188,6 @@ namespace dolfinx_wrappers
 {
 void geometry(py::module& m)
 {
-
   m.def("determine_point_ownership",
         [](const dolfinx::mesh::Mesh<double>& mesh,
            const py::array_t<double>& points)
