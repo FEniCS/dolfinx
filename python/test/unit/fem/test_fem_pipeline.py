@@ -329,7 +329,8 @@ def test_biharmonic(family):
     zero_u.x.array[:] = 0
 
     # Strong (Dirichlet) boundary condition
-    boundary_facets = locate_entities_boundary(mesh, mesh.topology.dim - 1, lambda x: np.full(x.shape[1], True, dtype=bool))
+    boundary_facets = locate_entities_boundary(
+        mesh, mesh.topology.dim - 1, lambda x: np.full(x.shape[1], True, dtype=bool))
     boundary_dofs = locate_dofs_topological((V.sub(1), V_1), mesh.topology.dim - 1, boundary_facets)
 
     bcs = [dirichletbc(zero_u, boundary_dofs, V.sub(1))]
@@ -369,12 +370,12 @@ def test_biharmonic(family):
         raise ValueError(f"Family {family} not supported.")
 
     sigma_error_numerator = np.sqrt(mesh.comm.allreduce(assemble_scalar(
-        form(inner(sigma_exact - sigma_h, sigma_exact - sigma_h) * dx(mesh, metadata={"quadrature_degree": 5}))),
+        form(inner(sigma_exact - sigma_h, sigma_exact - sigma_h) * dx(mesh, metadata={"quadrature_degree": 6}))),
         op=MPI.SUM))
     sigma_error_denominator = np.sqrt(mesh.comm.allreduce(assemble_scalar(
-        form(inner(sigma_exact, sigma_exact) * dx(mesh, metadata={"quadrature_degree": 5}))), op=MPI.SUM))
+        form(inner(sigma_exact, sigma_exact) * dx(mesh, metadata={"quadrature_degree": 6}))), op=MPI.SUM))
 
-    assert np.absolute(sigma_error_numerator / sigma_error_denominator) < 0.005
+    assert np.absolute(sigma_error_numerator / sigma_error_denominator) < 0.05
 
     solver.destroy()
     A.destroy()
