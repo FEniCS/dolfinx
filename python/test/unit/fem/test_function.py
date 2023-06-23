@@ -15,7 +15,7 @@ from basix.ufl import element, mixed_element
 from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
                          VectorFunctionSpace, assemble_scalar,
                          create_nonmatching_meshes_interpolation_data, form)
-from dolfinx.geometry import (BoundingBoxTree, compute_colliding_cells,
+from dolfinx.geometry import (bb_tree, compute_colliding_cells,
                               compute_collisions)
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_square, locate_entities_boundary,
@@ -63,7 +63,6 @@ def test_copy(V):
     assert not np.allclose(u.x.array, v.x.array)
 
 
-@pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
 def test_eval(V, W, Q, mesh):
     u1 = Function(V)
     u2 = Function(W)
@@ -94,7 +93,7 @@ def test_eval(V, W, Q, mesh):
     u3.interpolate(e3)
 
     x0 = (mesh.geometry.x[0] + mesh.geometry.x[1]) / 2.0
-    tree = BoundingBoxTree(mesh, mesh.geometry.dim)
+    tree = bb_tree(mesh, mesh.geometry.dim)
     cell_candidates = compute_collisions(tree, x0)
     cell = compute_colliding_cells(mesh, cell_candidates, x0)
     first_cell = cell[0]
