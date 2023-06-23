@@ -307,7 +307,7 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p,
   }
 
   if (k == maxk)
-    throw std::runtime_error("GJK error: max iteration limit reached");
+    throw std::runtime_error("GJK error - max iteration limit reached");
 
   return v;
 }
