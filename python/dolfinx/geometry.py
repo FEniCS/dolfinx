@@ -28,29 +28,8 @@ __all__ = ["compute_colliding_cells", "squared_distance", "compute_closest_entit
 class BoundingBoxTree:
     """Bounding box trees used in collision detection."""
 
-    def __init__(self, mesh: Mesh, dim: int, entities=None, padding: float = 0.0):
-        """Create a bounding box tree for entities of a mesh.
-
-        Args:
-            mesh: The mesh
-            dim: The dimension of the mesh entities
-            entities: List of entity indices (local to process). If not supplied,
-                all owned and ghosted entities are used.
-            padding: Padding for each bounding box
-
-        """
-        if mesh.geometry.x.dtype == np.float32:
-            _bbtree = _cpp.geometry.BoundingBoxTree_float32
-        elif mesh.geometry.x.dtype == np.float64:
-            _bbtree = _cpp.geometry.BoundingBoxTree_float64
-
-        map = mesh.topology.index_map(dim)
-        if map is None:
-            raise RuntimeError(f"Mesh entities of dimension {dim} have not been created.")
-        if entities is None:
-            entities = range(0, map.size_local + map.num_ghosts)
-
-        self._cpp_object = _bbtree(mesh._cpp_object, dim, entities, padding)
+    def __init__(self, tree):
+        self._cpp_object = tree
 
     @property
     def num_bboxes(self):
@@ -60,14 +39,31 @@ class BoundingBoxTree:
         return self._cpp_object.get_bbox(i)
 
     def create_global_tree(self, comm):
-        return self._cpp_object.create_global_tree(comm)
+        return BoundingBoxTree(self._cpp_object.create_global_tree(comm))
 
 
-def compute_collisions(bb0, bb1):
+def bb_tree(mesh: Mesh, dim: int, entities=None, padding: float = 0.0) -> BoundingBoxTree:
+
+    map = mesh.topology.index_map(dim)
+    if map is None:
+        raise RuntimeError(f"Mesh entities of dimension {dim} have not been created.")
+    if entities is None:
+        entities = range(0, map.size_local + map.num_ghosts)
+
+    dtype = mesh.geometry.x.dtype
+    if dtype == np.float32:
+        return BoundingBoxTree(_cpp.geometry.BoundingBoxTree_float32(mesh._cpp_object, dim, entities, padding))
+    elif dtype == np.float64:
+        return BoundingBoxTree(_cpp.geometry.BoundingBoxTree_float64(mesh._cpp_object, dim, entities, padding))
+    else:
+        raise NotImplementedError(f"Type {dtype} not supported.")
+
+
+def compute_collisions(bb0, x):
     try:
-        return _cpp.geometry.compute_collisions(bb0._cpp_object, bb1._cpp_object)
+        return _cpp.geometry.compute_collisions(bb0._cpp_object, x._cpp_object)
     except AttributeError:
-        return _cpp.geometry.compute_collisions(bb0._cpp_object, bb1)
+        return _cpp.geometry.compute_collisions(bb0._cpp_object, x)
 
 
 def compute_closest_entity(tree: BoundingBoxTree, midpoint_tree: BoundingBoxTree, mesh: Mesh,
@@ -86,11 +82,11 @@ def compute_closest_entity(tree: BoundingBoxTree, midpoint_tree: BoundingBoxTree
             a point if the bounding box tree is empty.
 
     """
-    return _cpp.geometry.compute_closest_entity(tree, midpoint_tree, mesh._cpp_object, points)
+    return _cpp.geometry.compute_closest_entity(tree._cpp_object, midpoint_tree._cpp_object, mesh._cpp_object, points)
 
 
 def create_midpoint_tree(mesh: Mesh, dim: int, entities: numpy.ndarray):
-    return _cpp.geometry.create_midpoint_tree(mesh._cpp_object, dim, entities)
+    return BoundingBoxTree(_cpp.geometry.create_midpoint_tree(mesh._cpp_object, dim, entities))
 
 
 def compute_colliding_cells(mesh: Mesh, candidates: AdjacencyList_int32, x: numpy.ndarray):

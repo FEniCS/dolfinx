@@ -11,6 +11,7 @@ from basix.ufl import element, mixed_element
 from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
                          VectorFunctionSpace)
 from dolfinx.mesh import create_mesh, create_unit_cube
+from mpi4py import MPI
 from ufl import Cell, Mesh, TestFunction, TrialFunction, grad
 
 from dolfinx import default_real_type

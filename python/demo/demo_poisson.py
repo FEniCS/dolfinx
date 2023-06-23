@@ -67,13 +67,12 @@
 
 # +
 import numpy as np
-
 import ufl
-from dolfinx import fem, io, mesh, plot
-from ufl import ds, dx, grad, inner
-
 from mpi4py import MPI
 from petsc4py.PETSc import ScalarType
+from ufl import ds, dx, grad, inner
+
+from dolfinx import fem, io, mesh, plot
 
 # -
 
@@ -120,6 +119,7 @@ bc = fem.dirichletbc(value=ScalarType(0), dofs=dofs, V=V)
 
 print(type(bc))
 import inspect
+
 print(inspect.getmro(type(bc)))
 # Next, the variational problem is defined:
 
@@ -156,22 +156,22 @@ with io.XDMFFile(msh.comm, "out_poisson/poisson.xdmf", "w") as file:
 # and displayed using [pyvista](https://docs.pyvista.org/).
 
 # +
-# try:
-#     import pyvista
-#     cells, types, x = plot.create_vtk_mesh(V)
-#     grid = pyvista.UnstructuredGrid(cells, types, x)
-#     grid.point_data["u"] = uh.x.array.real
-#     grid.set_active_scalars("u")
-#     plotter = pyvista.Plotter()
-#     plotter.add_mesh(grid, show_edges=True)
-#     warped = grid.warp_by_scalar()
-#     plotter.add_mesh(warped)
-#     if pyvista.OFF_SCREEN:
-#         pyvista.start_xvfb(wait=0.1)
-#         plotter.screenshot("uh_poisson.png")
-#     else:
-#         plotter.show()
-# except ModuleNotFoundError:
-#     print("'pyvista' is required to visualise the solution")
-#     print("Install 'pyvista' with pip: 'python3 -m pip install pyvista'")
+try:
+    import pyvista
+    cells, types, x = plot.create_vtk_mesh(V)
+    grid = pyvista.UnstructuredGrid(cells, types, x)
+    grid.point_data["u"] = uh.x.array.real
+    grid.set_active_scalars("u")
+    plotter = pyvista.Plotter()
+    plotter.add_mesh(grid, show_edges=True)
+    warped = grid.warp_by_scalar()
+    plotter.add_mesh(warped)
+    if pyvista.OFF_SCREEN:
+        pyvista.start_xvfb(wait=0.1)
+        plotter.screenshot("uh_poisson.png")
+    else:
+        plotter.show()
+except ModuleNotFoundError:
+    print("'pyvista' is required to visualise the solution")
+    print("Install 'pyvista' with pip: 'python3 -m pip install pyvista'")
 # -

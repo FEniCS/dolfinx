@@ -99,6 +99,36 @@ void declare_bbtree(py::module& m, std::string type)
         return dolfinx_wrappers::as_pyarray(std::move(coll), shape);
       },
       py::arg("tree0"), py::arg("tree1"));
+  m.def(
+      "compute_closest_entity",
+      [](const dolfinx::geometry::BoundingBoxTree<T>& tree,
+         const dolfinx::geometry::BoundingBoxTree<T>& midpoint_tree,
+         const dolfinx::mesh::Mesh<T>& mesh,
+         const py::array_t<T, py::array::c_style>& points)
+      {
+        const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
+        std::vector<T> p(3 * p_s0);
+        auto px = points.unchecked();
+        if (px.ndim() == 1)
+        {
+          for (py::ssize_t i = 0; i < px.shape(0); i++)
+            p[i] = px(i);
+        }
+        else if (px.ndim() == 2)
+        {
+          for (py::ssize_t i = 0; i < px.shape(0); i++)
+            for (py::ssize_t j = 0; j < px.shape(1); j++)
+              p[3 * i + j] = px(i, j);
+        }
+        else
+          throw std::runtime_error("Array has wrong ndim.");
+
+        return dolfinx_wrappers::as_pyarray(
+            dolfinx::geometry::compute_closest_entity<T>(tree, midpoint_tree,
+                                                         mesh, p));
+      },
+      py::arg("tree"), py::arg("midpoint_tree"), py::arg("mesh"),
+      py::arg("points"));
 }
 } // namespace
 
@@ -117,35 +147,6 @@ void geometry(py::module& m)
       },
       py::arg("mesh"), py::arg("tdim"), py::arg("entities"));
 
-  m.def(
-      "compute_closest_entity",
-      [](const dolfinx::geometry::BoundingBoxTree<double>& tree,
-         const dolfinx::geometry::BoundingBoxTree<double>& midpoint_tree,
-         const dolfinx::mesh::Mesh<double>& mesh,
-         const py::array_t<double, py::array::c_style>& points)
-      {
-        const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
-        std::vector<double> p(3 * p_s0);
-        auto px = points.unchecked();
-        if (px.ndim() == 1)
-        {
-          for (py::ssize_t i = 0; i < px.shape(0); i++)
-            p[i] = px(i);
-        }
-        else if (px.ndim() == 2)
-        {
-          for (py::ssize_t i = 0; i < px.shape(0); i++)
-            for (py::ssize_t j = 0; j < px.shape(1); j++)
-              p[3 * i + j] = px(i, j);
-        }
-        else
-          throw std::runtime_error("Array has wrong ndim.");
-
-        return as_pyarray(dolfinx::geometry::compute_closest_entity<double>(
-            tree, midpoint_tree, mesh, p));
-      },
-      py::arg("tree"), py::arg("midpoint_tree"), py::arg("mesh"),
-      py::arg("points"));
   m.def("determine_point_ownership",
         [](const dolfinx::mesh::Mesh<double>& mesh,
            const py::array_t<double>& points)
