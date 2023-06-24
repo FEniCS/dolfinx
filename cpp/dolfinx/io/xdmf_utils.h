@@ -67,28 +67,12 @@ std::int64_t get_num_cells(const pugi::xml_node& topology_node);
 
 /// Get point data values for linear or quadratic mesh into flattened 2D
 /// array
-std::vector<double>
-get_point_data_values(const fem::Function<double, double>& u);
-
-/// TODO
-std::vector<float> get_point_data_values(const fem::Function<float, float>& u);
-
-/// TODO
-std::vector<std::complex<float>>
-get_point_data_values(const fem::Function<std::complex<float>, float>& u);
-
-/// TODO
-std::vector<std::complex<double>>
-get_point_data_values(const fem::Function<std::complex<double>, double>& u);
+template <typename T, std::floating_point U>
+std::vector<T> get_point_data_values(const fem::Function<T, U>& u);
 
 /// Get cell data values as a flattened 2D array
-std::vector<double>
-get_cell_data_values(const fem::Function<double, double>& u);
-std::vector<float> get_cell_data_values(const fem::Function<float, float>& u);
-std::vector<std::complex<float>>
-get_cell_data_values(const fem::Function<std::complex<float>, float>& u);
-std::vector<std::complex<double>>
-get_cell_data_values(const fem::Function<std::complex<double>, double>& u);
+template <typename T, std::floating_point U>
+std::vector<T> get_cell_data_values(const fem::Function<T, U>& u);
 
 /// Get the VTK string identifier
 std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);

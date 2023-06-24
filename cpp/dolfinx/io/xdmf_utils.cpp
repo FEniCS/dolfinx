@@ -138,117 +138,6 @@ std::int64_t get_padded_width(const fem::FiniteElement<U>& e)
     return width;
 }
 //-----------------------------------------------------------------------------
-template <typename Scalar>
-std::vector<Scalar> _get_point_data_values(
-    const fem::Function<Scalar, dolfinx::scalar_value_type_t<Scalar>>& u)
-{
-  auto mesh = u.function_space()->mesh();
-  assert(mesh);
-  const auto [data_values, dshape] = compute_point_values(u);
-
-  const int width = get_padded_width(*u.function_space()->element());
-  assert(mesh->geometry().index_map());
-  const std::size_t num_local_points
-      = mesh->geometry().index_map()->size_local();
-  assert(dshape[0] >= num_local_points);
-
-  // FIXME: Unpick the below code for the new layout of data from
-  //        GenericFunction::compute_vertex_values
-  std::vector<Scalar> values(width * num_local_points, 0.0);
-  const int value_rank = u.function_space()->element()->value_shape().size();
-  if (value_rank > 0)
-  {
-    // Transpose vector/tensor data arrays
-    const int value_size = u.function_space()->element()->value_size();
-    for (std::size_t i = 0; i < num_local_points; i++)
-    {
-      for (int j = 0; j < value_size; j++)
-      {
-        int tensor2d_off
-            = (j > 1 && value_rank == 2 && value_size == 4) ? 1 : 0;
-        values[i * width + j + tensor2d_off] = data_values[i * dshape[1] + j];
-      }
-    }
-  }
-  else
-  {
-    values.assign(data_values.begin(),
-                  std::next(data_values.begin(), num_local_points * dshape[1]));
-  }
-
-  return values;
-}
-//-----------------------------------------------------------------------------
-template <typename Scalar>
-std::vector<Scalar> _get_cell_data_values(
-    const fem::Function<Scalar, dolfinx::scalar_value_type_t<Scalar>>& u)
-{
-  assert(u.function_space()->dofmap());
-  auto mesh = u.function_space()->mesh();
-  const int value_size = u.function_space()->element()->value_size();
-  const int value_rank = u.function_space()->element()->value_shape().size();
-
-  // Allocate memory for function values at cell centres
-  const int tdim = mesh->topology()->dim();
-  const std::int32_t num_local_cells
-      = mesh->topology()->index_map(tdim)->size_local();
-  const std::int32_t local_size = num_local_cells * value_size;
-
-  // Build lists of dofs and create map
-  std::vector<std::int32_t> dof_set;
-  dof_set.reserve(local_size);
-  auto dofmap = u.function_space()->dofmap();
-  const int ndofs = dofmap->element_dof_layout().num_dofs();
-  const int bs = dofmap->bs();
-  assert(ndofs * bs == value_size);
-
-  for (int cell = 0; cell < num_local_cells; ++cell)
-  {
-    // Tabulate dofs
-    auto dofs = dofmap->cell_dofs(cell);
-    for (int i = 0; i < ndofs; ++i)
-    {
-      for (int j = 0; j < bs; ++j)
-        dof_set.push_back(bs * dofs[i] + j);
-    }
-  }
-
-  // Get values
-  std::vector<Scalar> values(dof_set.size());
-  std::span<const Scalar> _u = u.x()->array();
-  for (std::size_t i = 0; i < dof_set.size(); ++i)
-    values[i] = _u[dof_set[i]];
-
-  // Pad out data for 2D vectors/tensors
-  if (value_rank == 1 and value_size == 2)
-  {
-    values.resize(3 * num_local_cells);
-    for (int j = (num_local_cells - 1); j >= 0; --j)
-    {
-      std::array<Scalar, 3> nd = {values[j * 2], values[j * 2 + 1], 0.0};
-      std::copy(nd.begin(), nd.end(), std::next(values.begin(), 3 * j));
-    }
-  }
-  else if (value_rank == 2 and value_size == 4)
-  {
-    values.resize(9 * num_local_cells);
-    for (int j = (num_local_cells - 1); j >= 0; --j)
-    {
-      std::array<Scalar, 9> nd = {values[j * 4],
-                                  values[j * 4 + 1],
-                                  0.0,
-                                  values[j * 4 + 2],
-                                  values[j * 4 + 3],
-                                  0.0,
-                                  0.0,
-                                  0.0,
-                                  0.0};
-      std::copy(nd.begin(), nd.end(), std::next(values.begin(), 9 * j));
-    }
-  }
-  return values;
-}
-//-----------------------------------------------------------------------------
 
 } // namespace
 
@@ -395,53 +284,141 @@ std::int64_t xdmf_utils::get_num_cells(const pugi::xml_node& topology_node)
   return std::max(num_cells_topology, tdims[0]);
 }
 //----------------------------------------------------------------------------
-std::vector<double>
-xdmf_utils::get_point_data_values(const fem::Function<double, double>& u)
+template <typename T, std::floating_point U>
+std::vector<T> xdmf_utils::get_point_data_values(const fem::Function<T, U>& u)
 {
-  return _get_point_data_values(u);
+  auto mesh = u.function_space()->mesh();
+  assert(mesh);
+  const auto [data_values, dshape] = compute_point_values(u);
+
+  const int width = get_padded_width(*u.function_space()->element());
+  assert(mesh->geometry().index_map());
+  const std::size_t num_local_points
+      = mesh->geometry().index_map()->size_local();
+  assert(dshape[0] >= num_local_points);
+
+  // FIXME: Unpick the below code for the new layout of data from
+  //        GenericFunction::compute_vertex_values
+  std::vector<T> values(width * num_local_points, 0.0);
+  int value_rank = u.function_space()->element()->value_shape().size();
+  if (value_rank > 0)
+  {
+    // Transpose vector/tensor data arrays
+    int value_size = u.function_space()->element()->value_size();
+    for (std::size_t i = 0; i < num_local_points; i++)
+    {
+      for (int j = 0; j < value_size; j++)
+      {
+        int tensor2d_off
+            = (j > 1 && value_rank == 2 && value_size == 4) ? 1 : 0;
+        values[i * width + j + tensor2d_off] = data_values[i * dshape[1] + j];
+      }
+    }
+  }
+  else
+  {
+    values.assign(data_values.begin(),
+                  std::next(data_values.begin(), num_local_points * dshape[1]));
+  }
+
+  return values;
 }
 //-----------------------------------------------------------------------------
-std::vector<float>
-xdmf_utils::get_point_data_values(const fem::Function<float, float>& u)
+// Instantiation for different types
+/// @cond
+template std::vector<float>
+xdmf_utils::get_point_data_values(const fem::Function<float, float>&);
+template std::vector<double>
+xdmf_utils::get_point_data_values(const fem::Function<double, double>&);
+template std::vector<std::complex<float>> xdmf_utils::get_point_data_values(
+    const fem::Function<std::complex<float>, float>&);
+template std::vector<std::complex<double>> xdmf_utils::get_point_data_values(
+    const fem::Function<std::complex<double>, double>&);
+/// @endcond
+//-----------------------------------------------------------------------------
+template <typename T, std::floating_point U>
+std::vector<T> xdmf_utils::get_cell_data_values(const fem::Function<T, U>& u)
 {
-  return _get_point_data_values(u);
+  assert(u.function_space()->dofmap());
+  auto mesh = u.function_space()->mesh();
+  const int value_size = u.function_space()->element()->value_size();
+  const int value_rank = u.function_space()->element()->value_shape().size();
+
+  // Allocate memory for function values at cell centres
+  const int tdim = mesh->topology()->dim();
+  const std::int32_t num_local_cells
+      = mesh->topology()->index_map(tdim)->size_local();
+  const std::int32_t local_size = num_local_cells * value_size;
+
+  // Build lists of dofs and create map
+  std::vector<std::int32_t> dof_set;
+  dof_set.reserve(local_size);
+  auto dofmap = u.function_space()->dofmap();
+  const int ndofs = dofmap->element_dof_layout().num_dofs();
+  const int bs = dofmap->bs();
+  assert(ndofs * bs == value_size);
+
+  for (int cell = 0; cell < num_local_cells; ++cell)
+  {
+    // Tabulate dofs
+    auto dofs = dofmap->cell_dofs(cell);
+    for (int i = 0; i < ndofs; ++i)
+    {
+      for (int j = 0; j < bs; ++j)
+        dof_set.push_back(bs * dofs[i] + j);
+    }
+  }
+
+  // Get values
+  std::vector<T> values(dof_set.size());
+  std::span<const T> _u = u.x()->array();
+  for (std::size_t i = 0; i < dof_set.size(); ++i)
+    values[i] = _u[dof_set[i]];
+
+  // Pad out data for 2D vectors/tensors
+  if (value_rank == 1 and value_size == 2)
+  {
+    values.resize(3 * num_local_cells);
+    for (int j = (num_local_cells - 1); j >= 0; --j)
+    {
+      std::array<T, 3> nd = {values[j * 2], values[j * 2 + 1], 0.0};
+      std::copy(nd.begin(), nd.end(), std::next(values.begin(), 3 * j));
+    }
+  }
+  else if (value_rank == 2 and value_size == 4)
+  {
+    values.resize(9 * num_local_cells);
+    for (int j = (num_local_cells - 1); j >= 0; --j)
+    {
+      std::array<T, 9> nd = {values[j * 4],
+                             values[j * 4 + 1],
+                             0.0,
+                             values[j * 4 + 2],
+                             values[j * 4 + 3],
+                             0.0,
+                             0.0,
+                             0.0,
+                             0.0};
+      std::copy(nd.begin(), nd.end(), std::next(values.begin(), 9 * j));
+    }
+  }
+  return values;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::complex<float>> xdmf_utils::get_point_data_values(
-    const fem::Function<std::complex<float>, float>& u)
-{
-  return _get_point_data_values(u);
-}
-//-----------------------------------------------------------------------------
-std::vector<std::complex<double>> xdmf_utils::get_point_data_values(
-    const fem::Function<std::complex<double>, double>& u)
-{
-  return _get_point_data_values(u);
-}
-//-----------------------------------------------------------------------------
-std::vector<double>
-xdmf_utils::get_cell_data_values(const fem::Function<double, double>& u)
-{
-  return _get_cell_data_values(u);
-}
-//-----------------------------------------------------------------------------
-std::vector<float>
-xdmf_utils::get_cell_data_values(const fem::Function<float, float>& u)
-{
-  return _get_cell_data_values(u);
-}
-//-----------------------------------------------------------------------------
-std::vector<std::complex<float>> xdmf_utils::get_cell_data_values(
-    const fem::Function<std::complex<float>, float>& u)
-{
-  return _get_cell_data_values(u);
-}
-//-----------------------------------------------------------------------------
-std::vector<std::complex<double>> xdmf_utils::get_cell_data_values(
-    const fem::Function<std::complex<double>, double>& u)
-{
-  return _get_cell_data_values(u);
-}
+// Instantiation for different types
+/// @cond
+template std::vector<float>
+xdmf_utils::get_cell_data_values(const fem::Function<float, float>&);
+
+template std::vector<double>
+xdmf_utils::get_cell_data_values(const fem::Function<double, double>&);
+
+template std::vector<std::complex<float>> xdmf_utils::get_cell_data_values(
+    const fem::Function<std::complex<float>, float>&);
+
+template std::vector<std::complex<double>> xdmf_utils::get_cell_data_values(
+    const fem::Function<std::complex<double>, double>&);
+/// @endcond
 //-----------------------------------------------------------------------------
 std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type,
                                           int num_nodes)
