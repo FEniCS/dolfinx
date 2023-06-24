@@ -84,7 +84,7 @@ class Vector:
     def array(self) -> np.ndarray:
         return self._cpp_object.array  # type: ignore
 
-    def set(self, value : np.floating):
+    def set(self, value: np.floating):
         self._cpp_object.set(value)
 
     def scatter_forward(self):
