@@ -231,7 +231,7 @@ def _assemble_matrix_csr(A: la.MatrixCSRMetaClass, a: Form,
         accumulated.
 
     """
-    bcs = [] if bcs is None else bcs
+    bcs = [] if bcs is None else [bc._cpp_object for bc in bcs]
     constants = _pack_constants(a._cpp_object) if constants is None else constants
     coeffs = _pack_coefficients(a._cpp_object) if coeffs is None else coeffs
     _cpp.fem.assemble_matrix(A, a._cpp_object, constants, coeffs, bcs)
