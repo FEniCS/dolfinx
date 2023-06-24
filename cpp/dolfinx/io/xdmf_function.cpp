@@ -75,8 +75,11 @@ int get_padded_width(const fem::FiniteElement<U>& e)
   return width;
 }
 //-----------------------------------------------------------------------------
+} // namespace
+
+//-----------------------------------------------------------------------------
 template <typename Scalar>
-void _add_function(
+void xdmf_function::add_function(
     MPI_Comm comm,
     const fem::Function<Scalar, dolfinx::scalar_value_type_t<Scalar>>& u,
     const double t, pugi::xml_node& xml_node, const hid_t h5_id)
@@ -181,36 +184,23 @@ void _add_function(
   }
 }
 //-----------------------------------------------------------------------------
-} // namespace
+//-----------------------------------------------------------------------------
+// Instantiation for different types
+/// @cond
+template void xdmf_function::add_function(MPI_Comm,
+                                          const fem::Function<float, float>&,
+                                          double, pugi::xml_node&, const hid_t);
+template void xdmf_function::add_function(MPI_Comm,
+                                          const fem::Function<double, double>&,
+                                          double, pugi::xml_node&, const hid_t);
+template void
+xdmf_function::add_function(MPI_Comm,
+                            const fem::Function<std::complex<float>, float>&,
+                            double, pugi::xml_node&, const hid_t);
+template void
+xdmf_function::add_function(MPI_Comm,
+                            const fem::Function<std::complex<double>, double>&,
+                            double, pugi::xml_node&, const hid_t);
 
-//-----------------------------------------------------------------------------
-void xdmf_function::add_function(MPI_Comm comm,
-                                 const fem::Function<double, double>& u,
-                                 const double t, pugi::xml_node& xml_node,
-                                 const hid_t h5_id)
-{
-  _add_function(comm, u, t, xml_node, h5_id);
-}
-//-----------------------------------------------------------------------------
-void xdmf_function::add_function(MPI_Comm comm,
-                                 const fem::Function<float, float>& u,
-                                 const double t, pugi::xml_node& xml_node,
-                                 const hid_t h5_id)
-{
-  _add_function(comm, u, t, xml_node, h5_id);
-}
-//-----------------------------------------------------------------------------
-void xdmf_function::add_function(
-    MPI_Comm comm, const fem::Function<std::complex<float>, float>& u,
-    const double t, pugi::xml_node& xml_node, const hid_t h5_id)
-{
-  _add_function(comm, u, t, xml_node, h5_id);
-}
-//-----------------------------------------------------------------------------
-void xdmf_function::add_function(
-    MPI_Comm comm, const fem::Function<std::complex<double>, double>& u,
-    const double t, pugi::xml_node& xml_node, const hid_t h5_id)
-{
-  _add_function(comm, u, t, xml_node, h5_id);
-}
+/// @endcond
 //-----------------------------------------------------------------------------

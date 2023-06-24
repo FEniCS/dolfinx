@@ -859,7 +859,7 @@ void io::VTKFile::write(
   write_function<T, U>(u, time, _pvd_xml.get(), _filename);
 }
 //-----------------------------------------------------------------------------
-// Instantiation for float and double
+// Instantiation for different types
 /// @cond
 template void io::VTKFile::write(const mesh::Mesh<float>&, double);
 template void io::VTKFile::write(const mesh::Mesh<double>&, double);
@@ -881,3 +881,4 @@ io::VTKFile::write(const std::vector<std::reference_wrapper<
                        const fem::Function<std::complex<double>, double>>>&,
                    double);
 /// @endcond
+//-----------------------------------------------------------------------------
