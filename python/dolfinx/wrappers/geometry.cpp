@@ -181,45 +181,15 @@ void declare_bbtree(py::module& m, std::string type)
             mesh, candidate_cells, _p);
       },
       py::arg("mesh"), py::arg("candidate_cells"), py::arg("points"));
-}
-} // namespace
-
-namespace dolfinx_wrappers
-{
-void geometry(py::module& m)
-{
-  m.def("determine_point_ownership",
-        [](const dolfinx::mesh::Mesh<double>& mesh,
-           const py::array_t<double>& points)
-        {
-          const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
-          std::vector<double> _p(3 * p_s0);
-          auto px = points.unchecked();
-          if (px.ndim() == 1)
-          {
-            for (py::ssize_t i = 0; i < px.shape(0); i++)
-              _p[i] = px(i);
-          }
-          else if (px.ndim() == 2)
-          {
-            for (py::ssize_t i = 0; i < px.shape(0); i++)
-              for (py::ssize_t j = 0; j < px.shape(1); j++)
-                _p[3 * i + j] = px(i, j);
-          }
-          else
-            throw std::runtime_error("Array has wrong ndim.");
-
-          return dolfinx::geometry::determine_point_ownership<double>(mesh, _p);
-        });
 
   m.def(
       "compute_distance_gjk",
-      [](const py::array_t<double>& p, const py::array_t<double>& q)
+      [](const py::array_t<T>& p, const py::array_t<T>& q)
       {
         const std::size_t p_s0 = p.ndim() == 1 ? 1 : p.shape(0);
         const std::size_t q_s0 = q.ndim() == 1 ? 1 : q.shape(0);
-        std::vector<double> _p(3 * p_s0);
-        std::vector<double> _q(3 * q_s0);
+        std::vector<T> _p(3 * p_s0);
+        std::vector<T> _q(3 * q_s0);
 
         auto px = p.unchecked();
         if (px.ndim() == 1)
@@ -251,19 +221,19 @@ void geometry(py::module& m)
         else
           throw std::runtime_error("Array has wrong ndim.");
 
-        const std::array<double, 3> d
-            = dolfinx::geometry::compute_distance_gjk<double>(_p, _q);
-        return py::array_t<double>(3, d.data());
+        const std::array<T, 3> d
+            = dolfinx::geometry::compute_distance_gjk<T>(_p, _q);
+        return py::array_t<T>(3, d.data());
       },
       py::arg("p"), py::arg("q"));
 
   m.def(
       "squared_distance",
-      [](const dolfinx::mesh::Mesh<float>& mesh, int dim,
-         std::vector<std::int32_t> indices, const py::array_t<float>& points)
+      [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
+         std::vector<std::int32_t> indices, const py::array_t<T>& points)
       {
         const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
-        std::vector<float> _p(3 * p_s0);
+        std::vector<T> _p(3 * p_s0);
         auto px = points.unchecked();
         if (px.ndim() == 1)
         {
@@ -279,36 +249,40 @@ void geometry(py::module& m)
         else
           throw std::runtime_error("Array has wrong ndim.");
 
-        return as_pyarray(
-            dolfinx::geometry::squared_distance<float>(mesh, dim, indices, _p));
+        return dolfinx_wrappers::as_pyarray(
+            dolfinx::geometry::squared_distance<T>(mesh, dim, indices, _p));
       },
       py::arg("mesh"), py::arg("dim"), py::arg("indices"), py::arg("points"));
-  m.def(
-      "squared_distance",
-      [](const dolfinx::mesh::Mesh<double>& mesh, int dim,
-         std::vector<std::int32_t> indices, const py::array_t<double>& points)
-      {
-        const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
-        std::vector<double> _p(3 * p_s0);
-        auto px = points.unchecked();
-        if (px.ndim() == 1)
-        {
-          for (py::ssize_t i = 0; i < px.shape(0); i++)
-            _p[i] = px(i);
-        }
-        else if (px.ndim() == 2)
-        {
-          for (py::ssize_t i = 0; i < px.shape(0); i++)
-            for (py::ssize_t j = 0; j < px.shape(1); j++)
-              _p[3 * i + j] = px(i, j);
-        }
-        else
-          throw std::runtime_error("Array has wrong ndim.");
+}
+} // namespace
 
-        return as_pyarray(dolfinx::geometry::squared_distance<double>(
-            mesh, dim, indices, _p));
-      },
-      py::arg("mesh"), py::arg("dim"), py::arg("indices"), py::arg("points"));
+namespace dolfinx_wrappers
+{
+void geometry(py::module& m)
+{
+  m.def("determine_point_ownership",
+        [](const dolfinx::mesh::Mesh<double>& mesh,
+           const py::array_t<double>& points)
+        {
+          const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
+          std::vector<double> _p(3 * p_s0);
+          auto px = points.unchecked();
+          if (px.ndim() == 1)
+          {
+            for (py::ssize_t i = 0; i < px.shape(0); i++)
+              _p[i] = px(i);
+          }
+          else if (px.ndim() == 2)
+          {
+            for (py::ssize_t i = 0; i < px.shape(0); i++)
+              for (py::ssize_t j = 0; j < px.shape(1); j++)
+                _p[3 * i + j] = px(i, j);
+          }
+          else
+            throw std::runtime_error("Array has wrong ndim.");
+
+          return dolfinx::geometry::determine_point_ownership<double>(mesh, _p);
+        });
 
   declare_bbtree<float>(m, "float32");
   declare_bbtree<double>(m, "float64");

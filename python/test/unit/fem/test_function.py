@@ -16,7 +16,7 @@ from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
                          VectorFunctionSpace, assemble_scalar,
                          create_nonmatching_meshes_interpolation_data, form)
 from dolfinx.geometry import (bb_tree, compute_colliding_cells,
-                              compute_collisions)
+                              compute_collisions_points)
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_square, locate_entities_boundary,
                           meshtags)

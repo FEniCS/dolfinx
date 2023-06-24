@@ -16,10 +16,8 @@ if typing.TYPE_CHECKING:
     from dolfinx.mesh import Mesh
     from dolfinx.cpp.graph import AdjacencyList_int32
 
-import numpy
 
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.geometry import compute_distance_gjk
 
 __all__ = ["BoundingBoxTree", "bb_tree", "compute_colliding_cells", "squared_distance",
            "compute_closest_entity", "compute_collisions_trees", "compute_collisions_points",
@@ -124,7 +122,7 @@ def compute_collisions_points(tree: BoundingBoxTree, x: npt.NDArray[np.floating]
 
 
 def compute_closest_entity(tree: BoundingBoxTree, midpoint_tree: BoundingBoxTree, mesh: Mesh,
-                           points: numpy.ndarray) -> npt.NDArray[np.int32]:
+                           points: np.ndarray) -> npt.NDArray[np.int32]:
     """Compute closest mesh entity to a point.
 
     Args:
@@ -157,7 +155,7 @@ def create_midpoint_tree(mesh: Mesh, dim: int, entities: npt.NDArray[np.int32]) 
     return BoundingBoxTree(_cpp.geometry.create_midpoint_tree(mesh._cpp_object, dim, entities))
 
 
-def compute_colliding_cells(mesh: Mesh, candidates: AdjacencyList_int32, x: numpy.ndarray):
+def compute_colliding_cells(mesh: Mesh, candidates: AdjacencyList_int32, x: np.ndarray):
     """From a mesh, find which cells collide with a set of points.
 
     Args:
@@ -173,7 +171,7 @@ def compute_colliding_cells(mesh: Mesh, candidates: AdjacencyList_int32, x: nump
     return _cpp.geometry.compute_colliding_cells(mesh._cpp_object, candidates, x)
 
 
-def squared_distance(mesh: Mesh, dim: int, entities: typing.List[int], points: numpy.ndarray):
+def squared_distance(mesh: Mesh, dim: int, entities: typing.List[int], points: np.ndarray):
     """Compute the squared distance between a point and a mesh entity.
 
     The distance is computed between the ith input points and the ith
@@ -191,3 +189,7 @@ def squared_distance(mesh: Mesh, dim: int, entities: typing.List[int], points: n
 
     """
     return _cpp.geometry.squared_distance(mesh._cpp_object, dim, entities, points)
+
+
+def compute_distance_gjk(p: npt.NDArray[np.floating], q: npt.NDArray[np.floating]):
+    return _cpp.geometry.compute_distance_gjk(p, q)
