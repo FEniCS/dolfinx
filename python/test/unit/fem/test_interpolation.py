@@ -397,7 +397,6 @@ def test_interpolation_p2p(order1, order2):
     V = FunctionSpace(mesh, ("Lagrange", order1))
     V1 = FunctionSpace(mesh, ("Lagrange", order2))
     u, v = Function(V), Function(V1)
-
     u.interpolate(lambda x: x[0])
     v.interpolate(u)
     assert assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx)) == pytest.approx(0.0)
@@ -415,7 +414,6 @@ def test_interpolation_vector_elements(order1, order2):
     V = VectorFunctionSpace(mesh, ("Lagrange", order1))
     V1 = VectorFunctionSpace(mesh, ("Lagrange", order2))
     u, v = Function(V), Function(V1)
-
     u.interpolate(lambda x: x)
     v.interpolate(u)
     assert assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx)) == pytest.approx(0)
@@ -435,7 +433,6 @@ def test_interpolation_non_affine():
                        [0.5, 0, 3], [0, 1, 3], [1, 1, 3], [0.5, 2, 3],
                        [0.5, 1, 0], [0.5, 0, 1.5], [0, 1, 1.5], [1, 1, 1.5],
                        [0.5, 2, 1.5], [0.5, 1, 3], [0.5, 1, 1.5]], dtype=default_real_type)
-
     cells = np.array([range(len(points))], dtype=np.int32)
     domain = ufl.Mesh(element("Lagrange", "hexahedron", 2, rank=1))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
@@ -456,7 +453,6 @@ def test_interpolation_non_affine_nonmatching_maps():
                        [0.5, 0, 3], [0, 1, 3], [1, 1, 3], [0.5, 2, 3],
                        [0.5, 1, 0], [0.5, -0.1, 1.5], [0, 1, 1.5], [1, 1, 1.5],
                        [0.5, 2, 1.5], [0.5, 1, 3], [0.5, 1, 1.5]], dtype=default_real_type)
-
     cells = np.array([range(len(points))], dtype=np.int32)
     domain = ufl.Mesh(element("Lagrange", "hexahedron", 2, rank=1))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
@@ -520,15 +516,11 @@ def test_vector_interpolation_spatial(order, dim, affine):
 @pytest.mark.parametrize("order", [1, 2, 3, 4])
 def test_2D_lagrange_to_curl(order):
     mesh = create_unit_square(MPI.COMM_WORLD, 3, 4)
-    V = FunctionSpace(mesh, ("N1curl", order))
-    u = Function(V)
-
-    W = FunctionSpace(mesh, ("Lagrange", order))
-    u0 = Function(W)
+    V, W = FunctionSpace(mesh, ("N1curl", order)), FunctionSpace(mesh, ("Lagrange", order))
+    u, u0 = Function(V), Function(W)
     u0.interpolate(lambda x: -x[1])
     u1 = Function(W)
     u1.interpolate(lambda x: x[0])
-
     f = ufl.as_vector((u0, u1))
     f_expr = Expression(f, V.element.interpolation_points())
     u.interpolate(f_expr)
@@ -543,12 +535,10 @@ def test_de_rahm_2D(order):
     W = FunctionSpace(mesh, ("Lagrange", order))
     w = Function(W)
     w.interpolate(lambda x: x[0] + x[0] * x[1] + 2 * x[1]**2)
-
     g = ufl.grad(w)
     Q = FunctionSpace(mesh, ("N2curl", order - 1))
     q = Function(Q)
     q.interpolate(Expression(g, Q.element.interpolation_points()))
-
     x = ufl.SpatialCoordinate(mesh)
     g_ex = ufl.as_vector((1 + x[1], 4 * x[1] + x[0]))
     assert np.abs(assemble_scalar(form(ufl.inner(q - g_ex, q - g_ex) * ufl.dx))) == pytest.approx(0, abs=1e-10)
@@ -582,7 +572,6 @@ def test_interpolate_subset(order, dim, affine, callable_):
     cells = locate_entities(mesh, mesh.topology.dim, lambda x: x[1] <= 0.5 + 1e-10)
     num_local_cells = mesh.topology.index_map(mesh.topology.dim).size_local
     cells_local = cells[cells < num_local_cells]
-
     x = ufl.SpatialCoordinate(mesh)
     f = x[1]**order
     if not callable_:
@@ -594,16 +583,15 @@ def test_interpolate_subset(order, dim, affine, callable_):
     dx = ufl.Measure("dx", domain=mesh, subdomain_data=mt)
     assert np.abs(form(assemble_scalar(form(ufl.inner(u - f, u - f) * dx(1))))) == pytest.approx(0)
     integral = mesh.comm.allreduce(assemble_scalar(form(u * dx)), op=MPI.SUM)
-    assert np.isclose(integral, 1 / (order + 1) * 0.5**(order + 1), 0, atol=1.0e-6)
+    assert integral == pytest.approx(1 / (order + 1) * 0.5**(order + 1), abs=1.0e-6)
 
 
 def test_interpolate_callable():
     """Test interpolation with callables"""
+    numba = pytest.importorskip("numba")
     mesh = create_unit_square(MPI.COMM_WORLD, 2, 1)
     V = FunctionSpace(mesh, ("Lagrange", 2))
     u0, u1 = Function(V), Function(V)
-
-    numba = pytest.importorskip("numba")
 
     @numba.njit
     def f(x):
@@ -623,10 +611,8 @@ def test_interpolate_callable_subset(bound):
     cells = locate_entities(mesh, mesh.topology.dim, lambda x: x[1] <= bound + 1e-10)
     num_local_cells = mesh.topology.index_map(mesh.topology.dim).size_local
     cells_local = cells[cells < num_local_cells]
-
     V = FunctionSpace(mesh, ("DG", 2))
     u0, u1 = Function(V), Function(V)
-
     x = ufl.SpatialCoordinate(mesh)
     f = x[0]
     expr = Expression(f, V.element.interpolation_points())
@@ -663,9 +649,7 @@ def test_vector_element_interpolation(scalar_element):
 def test_custom_vector_element():
     """Test interpolation into an element with a value size that uses an identity map."""
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
-
     wcoeffs = np.eye(6)
-
     x = [[], [], [], []]
     x[0].append(np.array([[0., 0.]]))
     x[0].append(np.array([[1., 0.]]))
@@ -673,14 +657,12 @@ def test_custom_vector_element():
     for _ in range(3):
         x[1].append(np.zeros((0, 2)))
     x[2].append(np.zeros((0, 2)))
-
     M = [[], [], [], []]
     for _ in range(3):
         M[0].append(np.array([[[[1.]], [[0.]]], [[[0.]], [[1.]]]]))
     for _ in range(3):
         M[1].append(np.zeros((0, 2, 0, 1)))
     M[2].append(np.zeros((0, 2, 0, 1)))
-
     e = custom_element(
         basix.CellType.triangle, [2], wcoeffs, x, M, 0, basix.MapType.identity,
         basix.SobolevSpace.H1, False, 1, 1)

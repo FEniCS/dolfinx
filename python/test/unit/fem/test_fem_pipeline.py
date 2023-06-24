@@ -345,7 +345,6 @@ def test_biharmonic(family):
     # Solve
     solver = PETSc.KSP().create(MPI.COMM_WORLD)
     solver.setTolerances(rtol=1e-10)
-    solver.setType("bcgs")
     solver.setOperators(A)
 
     x_h = Function(V)
@@ -375,7 +374,7 @@ def test_biharmonic(family):
     sigma_error_denominator = np.sqrt(mesh.comm.allreduce(assemble_scalar(
         form(inner(sigma_exact, sigma_exact) * dx(mesh, metadata={"quadrature_degree": 6}))), op=MPI.SUM))
 
-    assert np.absolute(sigma_error_numerator / sigma_error_denominator) < 0.05
+    assert np.abs(sigma_error_numerator / sigma_error_denominator) < 0.05
 
     solver.destroy()
     A.destroy()
