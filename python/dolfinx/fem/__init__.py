@@ -12,7 +12,7 @@ from dolfinx.cpp.fem import create_sparsity_pattern as _create_sparsity_pattern
 from dolfinx.fem import petsc
 from dolfinx.fem.assemble import (apply_lifting, assemble_matrix,
                                   assemble_scalar, assemble_vector, set_bc)
-from dolfinx.fem.bcs import (DirichletBCMetaClass, bcs_by_block, dirichletbc,
+from dolfinx.fem.bcs import (DirichletBC, bcs_by_block, dirichletbc,
                              locate_dofs_geometrical, locate_dofs_topological)
 from dolfinx.fem.dofmap import DofMap
 from dolfinx.fem.forms import Form, extract_function_spaces, form
@@ -39,7 +39,7 @@ __all__ = [
     "FunctionSpace", "TensorFunctionSpace",
     "VectorFunctionSpace", "create_sparsity_pattern",
     "assemble_scalar", "assemble_matrix", "assemble_vector", "apply_lifting", "set_bc",
-    "DirichletBCMetaClass", "dirichletbc", "bcs_by_block", "DofMap", "Form",
+    "DirichletBC", "dirichletbc", "bcs_by_block", "DofMap", "Form",
     "form", "IntegralType",
     "locate_dofs_geometrical", "locate_dofs_topological",
     "extract_function_spaces", "petsc", "create_nonmatching_meshes_interpolation_data"]

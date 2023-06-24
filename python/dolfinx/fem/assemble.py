@@ -18,7 +18,7 @@ from dolfinx import cpp as _cpp
 from dolfinx import la
 from dolfinx.cpp.fem import pack_coefficients as _pack_coefficients
 from dolfinx.cpp.fem import pack_constants as _pack_constants
-from dolfinx.fem.bcs import DirichletBCMetaClass
+from dolfinx.fem.bcs import DirichletBC
 from dolfinx.fem.forms import Form
 
 
@@ -204,14 +204,14 @@ def _assemble_vector_array(b: np.ndarray, L: Form, constants=None, coeffs=None):
 
 @functools.singledispatch
 def assemble_matrix(a: typing.Any,
-                    bcs: typing.Optional[typing.List[DirichletBCMetaClass]] = None,
+                    bcs: typing.Optional[typing.List[DirichletBC]] = None,
                     diagonal: float = 1.0, constants=None, coeffs=None):
     return _assemble_matrix_form(a, bcs, diagonal, constants, coeffs)
 
 
 @assemble_matrix.register
 def _assemble_matrix_csr(A: la.MatrixCSRMetaClass, a: Form,
-                         bcs: typing.Optional[typing.List[DirichletBCMetaClass]] = None,
+                         bcs: typing.Optional[typing.List[DirichletBC]] = None,
                          diagonal: float = 1.0, constants=None, coeffs=None) -> la.MatrixCSRMetaClass:
     """Assemble bilinear form into a matrix.
 
@@ -244,7 +244,7 @@ def _assemble_matrix_csr(A: la.MatrixCSRMetaClass, a: Form,
 
 
 @assemble_matrix.register(Form)
-def _assemble_matrix_form(a: Form, bcs: typing.Optional[typing.List[DirichletBCMetaClass]] = None,
+def _assemble_matrix_form(a: Form, bcs: typing.Optional[typing.List[DirichletBC]] = None,
                           diagonal: float = 1.0,
                           constants=None, coeffs=None) -> la.MatrixCSRMetaClass:
     """Assemble bilinear form into a matrix.
@@ -278,7 +278,7 @@ def _assemble_matrix_form(a: Form, bcs: typing.Optional[typing.List[DirichletBCM
 
 
 def apply_lifting(b: np.ndarray, a: typing.List[Form],
-                  bcs: typing.List[typing.List[DirichletBCMetaClass]],
+                  bcs: typing.List[typing.List[DirichletBC]],
                   x0: typing.Optional[typing.List[np.ndarray]] = None,
                   scale: float = 1.0, constants=None, coeffs=None) -> None:
     """Modify RHS vector b for lifting of Dirichlet boundary conditions.
@@ -304,10 +304,11 @@ def apply_lifting(b: np.ndarray, a: typing.List[Form],
     constants = [form and _pack_constants(form._cpp_object) for form in a] if constants is None else constants
     coeffs = [{} if form is None else _pack_coefficients(form._cpp_object) for form in a] if coeffs is None else coeffs
     _a = [None if form is None else form._cpp_object for form in a]
-    _cpp.fem.apply_lifting(b, _a, constants, coeffs, bcs, x0, scale)
+    _bcs = [[bc._cpp_object for bc in bcs0] for bcs0 in bcs]
+    _cpp.fem.apply_lifting(b, _a, constants, coeffs, _bcs, x0, scale)
 
 
-def set_bc(b: np.ndarray, bcs: typing.List[DirichletBCMetaClass],
+def set_bc(b: np.ndarray, bcs: typing.List[DirichletBC],
            x0: typing.Optional[np.ndarray] = None, scale: float = 1.0) -> None:
     """Insert boundary condition values into vector. Only local (owned)
     entries are set, hence communication after calling this function is
@@ -315,4 +316,5 @@ def set_bc(b: np.ndarray, bcs: typing.List[DirichletBCMetaClass],
     condition value.
 
     """
-    _cpp.fem.set_bc(b, bcs, x0, scale)
+    _bcs = [bc._cpp_object for bc in bcs]
+    _cpp.fem.set_bc(b, _bcs, x0, scale)
