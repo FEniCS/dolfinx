@@ -514,8 +514,7 @@ void write_function(
 
       // Function to pack data to 3D with 'zero' padding, typically when
       // a Function is 2D
-      auto pad_data
-          = [num_comp](const fem::FunctionSpace<U>& V, std::span<const T> u)
+      auto pad_data = [num_comp](const auto& V, auto u)
       {
         auto dofmap = V.dofmap();
         int bs = dofmap->bs();
@@ -529,7 +528,6 @@ void write_function(
           std::copy_n(std::next(u.begin(), i * map_bs), map_bs,
                       std::next(data.begin(), i * num_comp));
         }
-
         return data;
       };
 
@@ -853,42 +851,33 @@ void io::VTKFile::write(const mesh::Mesh<U>& mesh, double time)
   dataset_node.append_attribute("file") = p_pvtu.filename().c_str();
 }
 //----------------------------------------------------------------------------
-void io::VTKFile::write_functions(
-    const std::vector<
-        std::reference_wrapper<const fem::Function<float, float>>>& u,
+template <typename T, std::floating_point U>
+void io::VTKFile::write(
+    const std::vector<std::reference_wrapper<const fem::Function<T, U>>>& u,
     double time)
 {
-  write_function<float, float>(u, time, _pvd_xml.get(), _filename);
+  write_function<T, U>(u, time, _pvd_xml.get(), _filename);
 }
 //-----------------------------------------------------------------------------
-void io::VTKFile::write_functions(
-    const std::vector<std::reference_wrapper<
-        const fem::Function<std::complex<float>, float>>>& u,
-    double time)
-{
-  write_function<std::complex<float>, float>(u, time, _pvd_xml.get(),
-                                             _filename);
-}
-//-----------------------------------------------------------------------------
-void io::VTKFile::write_functions(
-    const std::vector<
-        std::reference_wrapper<const fem::Function<double, double>>>& u,
-    double time)
-{
-  write_function<double, double>(u, time, _pvd_xml.get(), _filename);
-}
-//----------------------------------------------------------------------------
-void io::VTKFile::write_functions(
-    const std::vector<std::reference_wrapper<
-        const fem::Function<std::complex<double>, double>>>& u,
-    double time)
-{
-  write_function<std::complex<double>, double>(u, time, _pvd_xml.get(),
-                                               _filename);
-}
-//----------------------------------------------------------------------------
 // Instantiation for float and double
 /// @cond
 template void io::VTKFile::write(const mesh::Mesh<float>&, double);
 template void io::VTKFile::write(const mesh::Mesh<double>&, double);
+
+template void io::VTKFile::write(
+    const std::vector<
+        std::reference_wrapper<const fem::Function<float, float>>>&,
+    double);
+template void io::VTKFile::write(
+    const std::vector<
+        std::reference_wrapper<const fem::Function<double, double>>>&,
+    double);
+template void
+io::VTKFile::write(const std::vector<std::reference_wrapper<
+                       const fem::Function<std::complex<float>, float>>>&,
+                   double);
+template void
+io::VTKFile::write(const std::vector<std::reference_wrapper<
+                       const fem::Function<std::complex<double>, double>>>&,
+                   double);
 /// @endcond

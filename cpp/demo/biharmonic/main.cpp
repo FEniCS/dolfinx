@@ -180,7 +180,6 @@ int main(int argc, char* argv[])
             f.push_back(4.0 * std::pow(pi, 4) * std::sin(pi * x(0, p))
                         * std::sin(pi * x(1, p)));
           }
-
           return {f, {f.size()}};
         });
     auto alpha = std::make_shared<fem::Constant<T>>(8.0);

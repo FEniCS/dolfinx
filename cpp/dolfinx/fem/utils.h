@@ -1049,12 +1049,7 @@ Expression<T, U> create_expression(
   std::array<std::size_t, 2> Xshape
       = {static_cast<std::size_t>(e.num_points),
          static_cast<std::size_t>(e.topological_dimension)};
-
-  // std::vector<int> value_shape;
-  // for (int i = 0; i < expression.num_components; ++i)
-  //   value_shape.push_back(expression.value_shape[i]);
   std::vector<int> value_shape(e.value_shape, e.value_shape + e.num_components);
-
   std::function<void(T*, const T*, const T*,
                      const typename scalar_value_type<T>::value_type*,
                      const int*, const std::uint8_t*)>

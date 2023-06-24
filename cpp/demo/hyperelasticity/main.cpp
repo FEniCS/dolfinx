@@ -117,7 +117,6 @@ int main(int argc, char* argv[])
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
   std::string thread_name = "RANK " + std::to_string(mpi_rank);
   loguru::set_thread_name(thread_name.c_str());
-
   {
     // Inside the ``main`` function, we begin by defining a tetrahedral mesh
     // of the domain and the function space on this mesh. Here, we choose to
