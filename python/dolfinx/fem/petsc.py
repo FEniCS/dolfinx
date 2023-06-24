@@ -142,7 +142,8 @@ def create_matrix_block(a: typing.List[typing.List[Form]]) -> PETSc.Mat:
         A PETSc matrix with a blocked layout that is compatible with `a`.
 
     """
-    return _cpp.fem.petsc.create_matrix_block(a._cpp_object)
+    _a = [[None if form is None else form._cpp_object for form in arow] for arow in a]
+    return _cpp.fem.petsc.create_matrix_block(_a)
 
 
 def create_matrix_nest(a: typing.List[typing.List[Form]]) -> PETSc.Mat:
@@ -155,7 +156,8 @@ def create_matrix_nest(a: typing.List[typing.List[Form]]) -> PETSc.Mat:
         A PETSc matrix ('MatNest``) that is compatible with `a`.
 
     """
-    return _cpp.fem.petsc.create_matrix_nest(a._cpp_object)
+    _a = [[None if form is None else form._cpp_object for form in arow] for arow in a]
+    return _cpp.fem.petsc.create_matrix_nest(_a)
 
 
 # -- Vector assembly ---------------------------------------------------------

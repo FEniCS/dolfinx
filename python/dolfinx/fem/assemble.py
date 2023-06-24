@@ -162,8 +162,8 @@ def _assemble_vector_form(L: Form, constants=None, coeffs=None) -> la.VectorMeta
     """
     b = create_vector(L)
     b.array[:] = 0
-    constants = constants or _pack_constants(L)
-    coeffs = coeffs or _pack_coefficients(L)
+    constants = constants or _pack_constants(L._cpp_object)
+    coeffs = coeffs or _pack_coefficients(L._cpp_object)
     _assemble_vector_array(b.array, L, constants, coeffs)
     return b
 

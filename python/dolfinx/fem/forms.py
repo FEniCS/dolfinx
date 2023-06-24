@@ -24,7 +24,7 @@ if typing.TYPE_CHECKING:
 
 
 class Form:
-    def __init__(self, form, ufcx_form, code):
+    def __init__(self, form, ufcx_form=None, code=None):
         """A finite element form
 
         Notes:
