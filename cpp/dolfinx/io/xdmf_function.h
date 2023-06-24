@@ -30,9 +30,8 @@ namespace io::xdmf_function
 {
 
 /// Write a fem::Function to XDMF
-template <typename T>
-void add_function(MPI_Comm comm,
-                  const fem::Function<T, dolfinx::scalar_value_type_t<T>>& u,
-                  const double t, pugi::xml_node& xml_node, const hid_t h5_id);
+template <typename T, typename U = dolfinx::scalar_value_type_t<T>>
+void add_function(MPI_Comm comm, const fem::Function<T, U>& u, double t,
+                  pugi::xml_node& xml_node, const hid_t h5_id);
 } // namespace io::xdmf_function
 } // namespace dolfinx

@@ -286,31 +286,26 @@ XDMFFile::read_geometry_data(std::string name, std::string xpath) const
   return xdmf_mesh::read_geometry_data(_comm.comm(), _h5_id, grid_node);
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write_function(const fem::Function<double, double>& u, double t,
+template <typename T, std::floating_point U>
+void XDMFFile::write_function(const fem::Function<T, U>& u, double t,
                               std::string mesh_xpath)
 {
   _write_function(_comm, u, t, mesh_xpath, *_xml_doc, _h5_id, _filename);
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write_function(const fem::Function<float, float>& u, double t,
-                              std::string mesh_xpath)
-{
-  _write_function(_comm, u, t, mesh_xpath, *_xml_doc, _h5_id, _filename);
-}
-//-----------------------------------------------------------------------------
-void XDMFFile::write_function(
-    const fem::Function<std::complex<float>, float>& u, double t,
-    std::string mesh_xpath)
-{
-  _write_function(_comm, u, t, mesh_xpath, *_xml_doc, _h5_id, _filename);
-}
-//-----------------------------------------------------------------------------
-void XDMFFile::write_function(
-    const fem::Function<std::complex<double>, double>& u, double t,
-    std::string mesh_xpath)
-{
-  _write_function(_comm, u, t, mesh_xpath, *_xml_doc, _h5_id, _filename);
-}
+// Instantiation for different types
+/// @cond
+template void XDMFFile::write_function(const fem::Function<float, float>&,
+                                       double, std::string);
+template void XDMFFile::write_function(const fem::Function<double, double>&,
+                                       double, std::string);
+template void
+XDMFFile::write_function(const fem::Function<std::complex<float>, float>&,
+                         double, std::string);
+template void
+XDMFFile::write_function(const fem::Function<std::complex<double>, double>&,
+                         double, std::string);
+/// @endcond
 //-----------------------------------------------------------------------------
 void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
                               const mesh::Geometry<double>& x,

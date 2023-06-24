@@ -195,22 +195,26 @@ void io(py::module& m)
       .def("write_function",
            py::overload_cast<const dolfinx::fem::Function<float, float>&,
                              double, std::string>(
-               &dolfinx::io::XDMFFile::write_function),
+               &dolfinx::io::XDMFFile::write_function<float, float>),
            py::arg("function"), py::arg("t"), py::arg("mesh_xpath"))
       .def("write_function",
            py::overload_cast<const dolfinx::fem::Function<double, double>&,
                              double, std::string>(
-               &dolfinx::io::XDMFFile::write_function),
+               &dolfinx::io::XDMFFile::write_function<double, double>),
            py::arg("function"), py::arg("t"), py::arg("mesh_xpath"))
       .def("write_function",
            py::overload_cast<
                const dolfinx::fem::Function<std::complex<float>, float>&,
-               double, std::string>(&dolfinx::io::XDMFFile::write_function),
+               double, std::string>(
+               &dolfinx::io::XDMFFile::write_function<std::complex<float>,
+                                                      float>),
            py::arg("function"), py::arg("t"), py::arg("mesh_xpath"))
       .def("write_function",
            py::overload_cast<
                const dolfinx::fem::Function<std::complex<double>, double>&,
-               double, std::string>(&dolfinx::io::XDMFFile::write_function),
+               double, std::string>(
+               &dolfinx::io::XDMFFile::write_function<std::complex<double>,
+                                                      double>),
            py::arg("function"), py::arg("t"), py::arg("mesh_xpath"))
       .def("write_meshtags", &dolfinx::io::XDMFFile::write_meshtags,
            py::arg("meshtags"), py::arg("x"),

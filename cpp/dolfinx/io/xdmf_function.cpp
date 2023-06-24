@@ -78,11 +78,10 @@ int get_padded_width(const fem::FiniteElement<U>& e)
 } // namespace
 
 //-----------------------------------------------------------------------------
-template <typename Scalar>
-void xdmf_function::add_function(
-    MPI_Comm comm,
-    const fem::Function<Scalar, dolfinx::scalar_value_type_t<Scalar>>& u,
-    const double t, pugi::xml_node& xml_node, const hid_t h5_id)
+template <typename T, typename U>
+void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
+                                 double t, pugi::xml_node& xml_node,
+                                 const hid_t h5_id)
 {
   LOG(INFO) << "Adding function to node \"" << xml_node.path('/') << "\"";
 
@@ -91,7 +90,7 @@ void xdmf_function::add_function(
   assert(mesh);
 
   // Get fem::Function data values and shape
-  std::vector<Scalar> data_values;
+  std::vector<T> data_values;
   const bool cell_centred = has_cell_centred_data(u);
   if (cell_centred)
     data_values = xdmf_utils::get_cell_data_values(u);
@@ -113,7 +112,7 @@ void xdmf_function::add_function(
   const int value_rank = u.function_space()->element()->value_shape().size();
 
   std::vector<std::string> components = {""};
-  if constexpr (!std::is_scalar_v<Scalar>)
+  if constexpr (!std::is_scalar_v<T>)
     components = {"real", "imag"};
 
   std::string t_str = boost::lexical_cast<std::string>(t);
@@ -144,7 +143,7 @@ void xdmf_function::add_function(
     attribute_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
 
     const bool use_mpi_io = (dolfinx::MPI::size(comm) > 1);
-    if constexpr (!std::is_scalar_v<Scalar>)
+    if constexpr (!std::is_scalar_v<T>)
     {
       // Complex case
 
@@ -183,7 +182,6 @@ void xdmf_function::add_function(
     }
   }
 }
-//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Instantiation for different types
 /// @cond
