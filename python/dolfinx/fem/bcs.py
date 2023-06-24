@@ -117,10 +117,10 @@ class DirichletBC:
     #     """The boundary condition value(s)"""
     #     return self._cpp_object.dtype  # type: ignore
 
-    # @property
-    # def g(self):
-    #     """The boundary condition value(s)"""
-    #     return self._cpp_object.value  # type: ignore
+    @property
+    def g(self):
+        """The boundary condition value(s)"""
+        return self._cpp_object.value  # type: ignore
 
     @property
     def function_space(self) -> dolfinx.fem.FunctionSpace:
