@@ -21,9 +21,8 @@ import numpy
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.geometry import compute_distance_gjk
 
-__all__ = ["BoundingBoxTree, bb_tree, compute_colliding_cells", "squared_distance",
-           "compute_closest_entity", "compute_collisions_trees",
-           "compute_collisions_points"
+__all__ = ["BoundingBoxTree", "bb_tree", "compute_colliding_cells", "squared_distance",
+           "compute_closest_entity", "compute_collisions_trees", "compute_collisions_points",
            "compute_distance_gjk", "create_midpoint_tree"]
 
 
@@ -33,9 +32,9 @@ class BoundingBoxTree:
     def __init__(self, tree):
         """Wrap a C++ BoundingBoxTree
 
-            Note:
-                This initializer should not be used in user code. Use
-                    `bb_tree`.
+        Note:
+            This initializer should not be used in user code. Use
+                `bb_tree`.
 
         """
         self._cpp_object = tree
@@ -48,12 +47,12 @@ class BoundingBoxTree:
     def get_bbox(self, i) -> npt.NDArray[np.floating]:
         """Get lower and upper corners of the ith bounding box.
 
-            Args:
-                i: Index of the box
+        Args:
+            i: Index of the box
 
-            Returns:
-                The 'lower' and 'upper' points of the bounding box.
-                Shape is `(2, 3)`,
+        Returns:
+            The 'lower' and 'upper' points of the bounding box.
+            Shape is `(2, 3)`,
 
         """
         return self._cpp_object.get_bbox(i)
@@ -65,12 +64,15 @@ class BoundingBoxTree:
 def bb_tree(mesh: Mesh, dim: int, entities=None, padding: float = 0.0) -> BoundingBoxTree:
     """Create a bounding box tree for use in collision detection.
 
-        Args:
-            mesh: The mesh
-            dim: The dimension of the mesh entities
-            entities: List of entity indices (local to process). If not supplied,
-                all owned and ghosted entities are used.
-            padding: Padding for each bounding box
+    Args:
+        mesh: The mesh
+        dim: The dimension of the mesh entities
+        entities: List of entity indices (local to process). If not supplied,
+            all owned and ghosted entities are used.
+        padding: Padding for each bounding box
+
+    Returns:
+        Bounding box tree.
 
     """
     map = mesh.topology.index_map(dim)
@@ -125,16 +127,16 @@ def compute_closest_entity(tree: BoundingBoxTree, midpoint_tree: BoundingBoxTree
                            points: numpy.ndarray) -> npt.NDArray[np.int32]:
     """Compute closest mesh entity to a point.
 
-        Args:
-            tree: bounding box tree for the entities
-            midpoint_tree: A bounding box tree with the midpoints of all
-                the mesh entities. This is used to accelerate the search.
-            mesh: The mesh
-            points: The points to check for collision, shape=(num_points, 3)
+    Args:
+        tree: bounding box tree for the entities
+        midpoint_tree: A bounding box tree with the midpoints of all
+            the mesh entities. This is used to accelerate the search.
+        mesh: The mesh
+        points: The points to check for collision, shape=(num_points, 3)
 
-        Returns:
-            Mesh entity index for each point in `points`. Returns -1 for
-            a point if the bounding box tree is empty.
+    Returns:
+        Mesh entity index for each point in `points`. Returns -1 for a
+        point if the bounding box tree is empty.
 
     """
     return _cpp.geometry.compute_closest_entity(tree._cpp_object, midpoint_tree._cpp_object, mesh._cpp_object, points)
@@ -179,10 +181,10 @@ def squared_distance(mesh: Mesh, dim: int, entities: typing.List[int], points: n
 
     Args:
         mesh: Mesh containing the entities
-        dim: The topological dimension of the mesh entities
+        dim: Topological dimension of the mesh entities
         entities: Indices of the mesh entities (local to process)
-        points: Set points from which to computed the shortest distance
-            (``shape=(num_points, 3)``)
+        points: Points to compute the shortest distance from
+            (`shape=(num_points, 3)`)
 
     Returns:
         Squared shortest distance from points[i] to entities[i]
