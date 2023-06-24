@@ -24,8 +24,8 @@ if typing.TYPE_CHECKING:
 
 
 class FormMetaClass:
-    def __init__(self, form, V: list[_cpp.fem.FunctionSpace_float64], coeffs, constants,
-                 subdomains: dict[IntegralType, typing.Union[None, _cpp.mesh.MeshTags_in32t]],
+    def __init__(self, form, V: list[typing.Union[_cpp.fem.FunctionSpace_float32, _cpp.fem.FunctionSpace_float64]],
+                 coeffs, constants, subdomains: dict[IntegralType, typing.Union[None, _cpp.mesh.MeshTags_in32t]],
                  mesh: _cpp.mesh.Mesh, ffi, code):
         """A finite element form
 
