@@ -229,23 +229,25 @@ def test_nonmatching_interpolation(xtype, cell_type0, cell_type1):
     assert np.isclose(assemble_scalar(form(residual, dtype=xtype)), 0)
 
 
-@pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
-def test_cffi_expression(V):
-    code_h = """
-    void eval(double* values, int num_points, int value_size, const double* x);
-    """
+@pytest.mark.parametrize("types", [(np.float32, "float"), (np.float64, "double")])
+def test_cffi_expression(types, V):
+    vtype, xtype = types
+    mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, dtype=vtype)
+    V = FunctionSpace(mesh, ('Lagrange', 1))
 
+    code_h = f"void eval({xtype}* values, int num_points, int value_size, const {xtype}* x);"
     code_c = """
-    void eval(double* values, int num_points, int value_size, const double* x)
-    {
-      /* x0 + x1 */
-      for (int i = 0; i < num_points; ++i)
-        values[i] = x[i] + x[i + num_points];
-    }
+        void eval(xtype* values, int num_points, int value_size, const xtype* x)
+        {
+        /* x0 + x1 */
+        for (int i = 0; i < num_points; ++i)
+          values[i] = x[i] + x[i + num_points];
+        }
     """
-    module = "_expr_eval" + str(MPI.COMM_WORLD.rank)
+    code_c = code_c.replace("xtype", xtype)
 
     # Build the kernel
+    module = "_expr_eval" + xtype + str(MPI.COMM_WORLD.rank)
     ffi = cffi.FFI()
     ffi.set_source(module, code_c)
     ffi.cdef(code_h)
@@ -259,10 +261,10 @@ def test_cffi_expression(V):
     eval_ptr = ffi.cast("uintptr_t", ffi.addressof(lib, "eval"))
 
     # Handle C func address by hand
-    f1 = Function(V, dtype=default_real_type)
+    f1 = Function(V, dtype=vtype)
     f1.interpolate(int(eval_ptr))
 
-    f2 = Function(V, dtype=default_real_type)
+    f2 = Function(V, dtype=vtype)
     f2.interpolate(lambda x: x[0] + x[1])
 
     f1.x.array[:] -= f2.x.array

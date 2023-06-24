@@ -121,7 +121,6 @@ def test_rank0():
     assert np.allclose(b2.x.array, b.x.array, rtol=1.0e-5, atol=1.0e-5)
 
 
-@pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
 def test_rank1_hdiv():
     """Test rank-1 Expression, i.e. Expression containing Argument (TrialFunction)
     Test compiles linear interpolation operator RT_2 -> vector DG_2 and assembles it into

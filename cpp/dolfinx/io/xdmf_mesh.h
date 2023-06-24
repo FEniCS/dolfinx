@@ -68,15 +68,6 @@ void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
                        std::string path_prefix,
                        const mesh::Geometry<U>& geometry);
 
-// /// @brief Read geometry (coordinate) data float size
-// ///
-// /// @returns The coordinates of each 'node'. The returned data is (0) an
-// /// array holding the coordinates (row-major storage) and (1) the shape
-// /// of the coordinate array. The shape is `(num_nodes, geometric
-// /// dimension)`.
-// int read_geometry_float_size(MPI_Comm comm, hid_t h5_id,
-//                              const pugi::xml_node& node);
-
 /// @brief Read geometry (coordinate) data.
 ///
 /// @returns The coordinates of each 'node'. The returned data is (0) an
