@@ -83,7 +83,7 @@ def pack_coefficients(form: typing.Union[Form, typing.Sequence[Form]]):
 # -- Vector and matrix instantiation -----------------------------------------
 
 
-def create_vector(L: Form) -> la.VectorMetaClass:
+def create_vector(L: Form) -> la.Vector:
     """Create a Vector that is compatible with a given linear form"""
     dofmap = L.function_spaces[0].dofmap
     return la.vector(dofmap.index_map, dofmap.index_map_bs, dtype=L.dtype)
@@ -135,7 +135,7 @@ def assemble_vector(L: typing.Any,
 
 
 @assemble_vector.register(Form)
-def _assemble_vector_form(L: Form, constants=None, coeffs=None) -> la.VectorMetaClass:
+def _assemble_vector_form(L: Form, constants=None, coeffs=None) -> la.Vector:
     """Assemble linear form into a new Vector.
 
     Args:
@@ -156,7 +156,7 @@ def _assemble_vector_form(L: Form, constants=None, coeffs=None) -> la.VectorMeta
     Note:
         The returned vector is not finalised, i.e. ghost values are not
         accumulated on the owning processes. Calling
-        :func:`dolfinx.la.VectorMetaClass.scatter_reverse` on the
+        :func:`dolfinx.la.Vector.scatter_reverse` on the
         return vector can accumulate ghost contributions.
 
     """
@@ -189,7 +189,7 @@ def _assemble_vector_array(b: np.ndarray, L: Form, constants=None, coeffs=None):
     Note:
         The returned vector is not finalised, i.e. ghost values are not
         accumulated on the owning processes. Calling
-        :func:`dolfinx.la.VectorMetaClass.scatter_reverse` on the
+        :func:`dolfinx.la.Vector.scatter_reverse` on the
         return vector can accumulate ghost contributions.
 
     """
@@ -215,14 +215,15 @@ def _assemble_matrix_csr(A: la.MatrixCSRMetaClass, a: Form,
                          diagonal: float = 1.0, constants=None, coeffs=None) -> la.MatrixCSRMetaClass:
     """Assemble bilinear form into a matrix.
 
-        Args:
+    Args:
         a: The bilinear form assemble.
         bcs: Boundary conditions that affect the assembled matrix.
             Degrees-of-freedom constrained by a boundary condition will
-            have their rows/columns zeroed and the value ``diagonal`` set
-            on on the matrix diagonal.
+            have their rows/columns zeroed and the value ``diagonal``
+            set on on
         constants: Constants that appear in the form. If not provided,
             any required constants will be computed.
+            the matrix diagonal.
         coeffs: Coefficients that appear in the form. If not provided,
             any required coefficients will be computed.
 

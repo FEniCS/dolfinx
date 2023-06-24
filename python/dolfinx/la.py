@@ -13,7 +13,7 @@ from dolfinx.cpp.la import BlockMode, InsertMode, Norm
 from dolfinx.cpp.la.petsc import create_vector as create_petsc_vector
 
 __all__ = ["orthonormalize", "is_orthonormal", "create_petsc_vector", "matrix_csr", "vector",
-           "MatrixCSRMetaClass", "Norm", "InsertMode", "VectorMetaClass", ]
+           "MatrixCSRMetaClass", "Norm", "InsertMode", "Vector", ]
 
 
 class MatrixCSRMetaClass:
@@ -64,8 +64,8 @@ def matrix_csr(sp, block_mode=BlockMode.compact, dtype=np.float64) -> MatrixCSRM
     return matrixcls(sp, block_mode)
 
 
-class VectorMetaClass:
-    def __init__(self, map, bs):
+class Vector:
+    def __init__(self, x):
         """A distributed vector object.
 
         Args:
@@ -78,14 +78,26 @@ class VectorMetaClass:
             and not created using the class initialiser.
 
         """
-        super().__init__(map, bs)  # type: ignore
+        self._cpp_object = x
 
     @property
     def array(self) -> np.ndarray:
-        return super().array  # type: ignore
+        return self._cpp_object.array  # type: ignore
+
+    def set(self, value : np.floating):
+        self._cpp_object.set(value)
+
+    def scatter_forward(self):
+        self._cpp_object.scatter_forward()
+
+    def scatter_reverse(self, mode):
+        self._cpp_object.scatter_reverse(mode)
+
+    def norm(self, type=_cpp.la.Norm.l2) -> np.floating:
+        return self._cpp_object.norm(type)
 
 
-def vector(map, bs=1, dtype=np.float64) -> VectorMetaClass:
+def vector(map, bs=1, dtype=np.float64) -> Vector:
     """Create a distributed vector.
 
     Args:
@@ -109,11 +121,10 @@ def vector(map, bs=1, dtype=np.float64) -> VectorMetaClass:
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
 
-    vectorcls = type("Vector", (VectorMetaClass, vtype), {})
-    return vectorcls(map, bs)
+    return Vector(vtype(map, bs))
 
 
-def create_petsc_vector_wrap(x: VectorMetaClass):
+def create_petsc_vector_wrap(x: Vector):
     """Wrap a distributed DOLFINx vector as a PETSc vector.
 
     Args:
@@ -127,7 +138,7 @@ def create_petsc_vector_wrap(x: VectorMetaClass):
         object.
 
     """
-    return _cpp.la.petsc.create_vector_wrap(x)
+    return _cpp.la.petsc.create_vector_wrap(x._cpp_object)
 
 
 def orthonormalize(basis):
