@@ -335,14 +335,14 @@ def test_interpolation_nedelec(order1, order2):
     # space for order > 1
     u.interpolate(lambda x: x)
     v.interpolate(u)
-    assert np.isclose(assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx)), 0)
+    assert assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx)) == pytest.approx(0, abs=1.0e-10)
 
     # The target expression is also contained in N2curl space of any
     # order
     V2 = FunctionSpace(mesh, ("N2curl", 1))
     w = Function(V2)
     w.interpolate(u)
-    assert np.isclose(assemble_scalar(form(ufl.inner(u - w, u - w) * ufl.dx)), 0)
+    assert assemble_scalar(form(ufl.inner(u - w, u - w) * ufl.dx)) == pytest.approx(0, abs=1.0e-10)
 
 
 @pytest.mark.parametrize("tdim", [2, 3])
@@ -357,8 +357,7 @@ def test_interpolation_dg_to_n1curl(tdim, order):
     u, v = Function(V), Function(V1)
     u.interpolate(lambda x: x[:tdim] ** order)
     v.interpolate(u)
-    s = assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx))
-    assert np.isclose(s, 0)
+    assert assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx)) == pytest.approx(0.0, abs=1.0e-8)
 
 
 @pytest.mark.parametrize("tdim", [2, 3])
@@ -373,8 +372,7 @@ def test_interpolation_n1curl_to_dg(tdim, order):
     u, v = Function(V), Function(V1)
     u.interpolate(lambda x: x[:tdim] ** order)
     v.interpolate(u)
-    s = assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx))
-    assert np.isclose(s, 0)
+    assert assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx)) == pytest.approx(0.0, abs=1e-10)
 
 
 @pytest.mark.parametrize("tdim", [2, 3])
@@ -389,8 +387,7 @@ def test_interpolation_n2curl_to_bdm(tdim, order):
     u, v = Function(V), Function(V1)
     u.interpolate(lambda x: x[:tdim] ** order)
     v.interpolate(u)
-    s = assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx))
-    assert s == pytest.approx(0.0)
+    assert assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx)) == pytest.approx(0.0, abs=1.0e-10)
 
 
 @pytest.mark.parametrize("order1", [1, 2, 3, 4, 5])
@@ -403,15 +400,12 @@ def test_interpolation_p2p(order1, order2):
 
     u.interpolate(lambda x: x[0])
     v.interpolate(u)
-
-    s = assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx))
-    assert s == pytest.approx(0.0)
+    assert assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx)) == pytest.approx(0.0)
 
     DG = FunctionSpace(mesh, ("DG", order2))
     w = Function(DG)
     w.interpolate(u)
-    s = assemble_scalar(form(ufl.inner(u - w, u - w) * ufl.dx))
-    assert s == pytest.approx(0.0)
+    assert assemble_scalar(form(ufl.inner(u - w, u - w) * ufl.dx)) == pytest.approx(0.0)
 
 
 @pytest.mark.parametrize("order1", [1, 2, 3])
@@ -424,15 +418,12 @@ def test_interpolation_vector_elements(order1, order2):
 
     u.interpolate(lambda x: x)
     v.interpolate(u)
-
-    s = assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx))
-    assert np.isclose(s, 0)
+    assert assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx)) == pytest.approx(0)
 
     DG = VectorFunctionSpace(mesh, ("DG", order2))
     w = Function(DG)
     w.interpolate(u)
-    s = assemble_scalar(form(ufl.inner(u - w, u - w) * ufl.dx))
-    assert np.isclose(s, 0)
+    assert assemble_scalar(form(ufl.inner(u - w, u - w) * ufl.dx)) == pytest.approx(0)
 
 
 @pytest.mark.skip_in_parallel
@@ -453,8 +444,7 @@ def test_interpolation_non_affine():
     w, v = Function(W), Function(V)
     w.interpolate(lambda x: x)
     v.interpolate(w)
-    s = assemble_scalar(form(ufl.inner(w - v, w - v) * ufl.dx))
-    assert np.isclose(s, 0)
+    assert assemble_scalar(form(ufl.inner(w - v, w - v) * ufl.dx)) == pytest.approx(0)
 
 
 @pytest.mark.skip_in_parallel
@@ -475,8 +465,7 @@ def test_interpolation_non_affine_nonmatching_maps():
     w, v = Function(W), Function(V)
     w.interpolate(lambda x: x)
     v.interpolate(w)
-    s = assemble_scalar(form(ufl.inner(w - v, w - v) * ufl.dx))
-    assert np.isclose(s, 0)
+    assert assemble_scalar(form(ufl.inner(w - v, w - v) * ufl.dx)) == pytest.approx(0, abs=1e-10)
 
 
 @pytest.mark.parametrize("order", [2, 3, 4])
@@ -496,7 +485,7 @@ def test_nedelec_spatial(order, dim):
     f_ex = x
     f = Expression(f_ex, V.element.interpolation_points())
     u.interpolate(f)
-    assert np.isclose(np.abs(assemble_scalar(form(ufl.inner(u - f_ex, u - f_ex) * ufl.dx))), 0)
+    assert np.abs(assemble_scalar(form(ufl.inner(u - f_ex, u - f_ex) * ufl.dx))) == pytest.approx(0, abs=1e-10)
 
     # The target expression is also contained in N2curl space of any
     # order
@@ -504,7 +493,7 @@ def test_nedelec_spatial(order, dim):
     w = Function(V2)
     f2 = Expression(f_ex, V2.element.interpolation_points())
     w.interpolate(f2)
-    assert np.isclose(np.abs(assemble_scalar(form(ufl.inner(w - f_ex, w - f_ex) * ufl.dx))), 0)
+    assert np.abs(assemble_scalar(form(ufl.inner(w - f_ex, w - f_ex) * ufl.dx))) == pytest.approx(0)
 
 
 @pytest.mark.parametrize("order", [1, 2, 3, 4])
@@ -525,7 +514,7 @@ def test_vector_interpolation_spatial(order, dim, affine):
     # The expression (x,y,z)^n is contained in space
     f = ufl.as_vector([x[i]**order for i in range(dim)])
     u.interpolate(Expression(f, V.element.interpolation_points()))
-    assert np.isclose(np.abs(assemble_scalar(form(ufl.inner(u - f, u - f) * ufl.dx))), 0)
+    assert np.abs(assemble_scalar(form(ufl.inner(u - f, u - f) * ufl.dx))) == pytest.approx(0)
 
 
 @pytest.mark.parametrize("order", [1, 2, 3, 4])
@@ -545,7 +534,7 @@ def test_2D_lagrange_to_curl(order):
     u.interpolate(f_expr)
     x = ufl.SpatialCoordinate(mesh)
     f_ex = ufl.as_vector((-x[1], x[0]))
-    assert np.isclose(np.abs(assemble_scalar(form(ufl.inner(u - f_ex, u - f_ex) * ufl.dx))), 0)
+    assert np.abs(assemble_scalar(form(ufl.inner(u - f_ex, u - f_ex) * ufl.dx))) == pytest.approx(0)
 
 
 @pytest.mark.parametrize("order", [2, 3, 4])
@@ -562,7 +551,7 @@ def test_de_rahm_2D(order):
 
     x = ufl.SpatialCoordinate(mesh)
     g_ex = ufl.as_vector((1 + x[1], 4 * x[1] + x[0]))
-    assert np.isclose(np.abs(assemble_scalar(form(ufl.inner(q - g_ex, q - g_ex) * ufl.dx))), 0)
+    assert np.abs(assemble_scalar(form(ufl.inner(q - g_ex, q - g_ex) * ufl.dx))) == pytest.approx(0, abs=1e-10)
 
     V = FunctionSpace(mesh, ("BDM", order - 1))
     v = Function(V)
@@ -572,7 +561,7 @@ def test_de_rahm_2D(order):
 
     v.interpolate(Expression(curl2D(ufl.grad(w)), V.element.interpolation_points()))
     h_ex = ufl.as_vector((1, -1))
-    assert np.isclose(np.abs(assemble_scalar(form(ufl.inner(v - h_ex, v - h_ex) * ufl.dx))), 0, atol=1.0e-6)
+    assert np.abs(assemble_scalar(form(ufl.inner(v - h_ex, v - h_ex) * ufl.dx))) == pytest.approx(0, abs=1.0e-6)
 
 
 @pytest.mark.parametrize("order", [1, 2, 3, 4])
@@ -603,7 +592,7 @@ def test_interpolate_subset(order, dim, affine, callable_):
         u.interpolate(lambda x: x[1]**order, cells_local)
     mt = meshtags(mesh, mesh.topology.dim, cells_local, np.ones(cells_local.size, dtype=np.int32))
     dx = ufl.Measure("dx", domain=mesh, subdomain_data=mt)
-    assert np.isclose(np.abs(form(assemble_scalar(form(ufl.inner(u - f, u - f) * dx(1))))), 0)
+    assert np.abs(form(assemble_scalar(form(ufl.inner(u - f, u - f) * dx(1))))) == pytest.approx(0)
     integral = mesh.comm.allreduce(assemble_scalar(form(u * dx)), op=MPI.SUM)
     assert np.isclose(integral, 1 / (order + 1) * 0.5**(order + 1), 0, atol=1.0e-6)
 
@@ -698,13 +687,11 @@ def test_custom_vector_element():
 
     V = FunctionSpace(mesh, e)
     W = VectorFunctionSpace(mesh, ("Lagrange", 1))
-
     v = Function(V)
     w = Function(W)
     v.interpolate(lambda x: (x[0], x[1]))
     w.interpolate(lambda x: (x[0], x[1]))
-
-    assert np.isclose(np.abs(assemble_scalar(form(ufl.inner(v - w, v - w) * ufl.dx))), 0)
+    assert np.abs(assemble_scalar(form(ufl.inner(v - w, v - w) * ufl.dx))) == pytest.approx(0)
 
 
 @pytest.mark.skip_in_parallel
@@ -734,5 +721,4 @@ def test_mixed_interpolation_permuting(cell_type, order):
     Eb_m = Function(V)
     Eb_m.sub(1).interpolate(g)
     diff = Eb_m[2].dx(1) - dgdy
-    error2 = assemble_scalar(form(ufl.dot(diff, diff) * ufl.dx))
-    assert np.isclose(error, error2)
+    assert assemble_scalar(form(ufl.dot(diff, diff) * ufl.dx)) == pytest.approx(error)
