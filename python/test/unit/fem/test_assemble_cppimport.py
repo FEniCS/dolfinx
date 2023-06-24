@@ -127,7 +127,7 @@ PYBIND11_MODULE(eigen_csr, m)
 
     A1 = assemble_matrix(a, [bc])
     A1.assemble()
-    A2 = assemble_csr_matrix(a, [bc])
+    A2 = assemble_csr_matrix(a._cpp_object, [bc])
     assert np.isclose(A1.norm(), scipy.sparse.linalg.norm(A2))
 
     A1.destroy()
@@ -197,5 +197,5 @@ PYBIND11_MODULE(assemble_csr, m)
     a = form(ufl.inner(ufl.grad(u[0]), ufl.grad(v[0])) * ufl.dx)
 
     module = compile_assemble_csr_assembler_module(a)
-    A = module.assemble_matrix_bs(a, [])
+    A = module.assemble_matrix_bs(a._cpp_object, [])
     assert np.isclose(A.squared_norm(), 1743.3479507505413)

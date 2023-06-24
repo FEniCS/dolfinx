@@ -770,7 +770,7 @@ def test_lambda_assembler():
         cdata.append(np.tile(cols, len(rows)))
         return 0
 
-    _cpp.fem.assemble_matrix(mat_insert, a_form, [])
+    _cpp.fem.assemble_matrix(mat_insert, a_form._cpp_object, [])
     vdata = np.array(vdata).flatten()
     cdata = np.array(cdata).flatten()
     rdata = np.array(rdata).flatten()
@@ -796,8 +796,8 @@ def test_pack_coefficients():
     # -- Test vector
     b0 = assemble_vector(_F)
     b0.assemble()
-    constants = _cpp.fem.pack_constants(_F)
-    coeffs = _cpp.fem.pack_coefficients(_F)
+    constants = _cpp.fem.pack_constants(_F._cpp_object)
+    coeffs = _cpp.fem.pack_coefficients(_F._cpp_object)
     with b0.localForm() as _b0:
         for c in [(None, None), (None, coeffs), (constants, None), (constants, coeffs)]:
             b = assemble_vector(_F, c[0], c[1])
@@ -824,8 +824,8 @@ def test_pack_coefficients():
     A0 = assemble_matrix(J)
     A0.assemble()
 
-    constants = _cpp.fem.pack_constants(J)
-    coeffs = _cpp.fem.pack_coefficients(J)
+    constants = _cpp.fem.pack_constants(J._cpp_object)
+    coeffs = _cpp.fem.pack_coefficients(J._cpp_object)
     for c in [(None, None), (None, coeffs), (constants, None), (constants, coeffs)]:
         A = assemble_matrix(J, constants=c[0], coeffs=c[1])
         A.assemble()
@@ -896,27 +896,27 @@ def test_vector_types():
     L = inner(c, v) * ufl.dx
     x0 = la.vector(V.dofmap.index_map, V.dofmap.index_map_bs, dtype=np.float64)
     L = form(L, dtype=x0.array.dtype)
-    c0 = _cpp.fem.pack_constants(L)
-    c1 = _cpp.fem.pack_coefficients(L)
-    _cpp.fem.assemble_vector(x0.array, L, c0, c1)
+    c0 = _cpp.fem.pack_constants(L._cpp_object)
+    c1 = _cpp.fem.pack_coefficients(L._cpp_object)
+    _cpp.fem.assemble_vector(x0.array, L._cpp_object, c0, c1)
     x0.scatter_reverse(la.InsertMode.add)
 
     c = Constant(mesh, np.complex128(1))
     L = inner(c, v) * ufl.dx
     x1 = la.vector(V.dofmap.index_map, V.dofmap.index_map_bs, dtype=np.complex128)
     L = form(L, dtype=x1.array.dtype)
-    c0 = _cpp.fem.pack_constants(L)
-    c1 = _cpp.fem.pack_coefficients(L)
-    _cpp.fem.assemble_vector(x1.array, L, c0, c1)
+    c0 = _cpp.fem.pack_constants(L._cpp_object)
+    c1 = _cpp.fem.pack_coefficients(L._cpp_object)
+    _cpp.fem.assemble_vector(x1.array, L._cpp_object, c0, c1)
     x1.scatter_reverse(la.InsertMode.add)
 
     c = Constant(mesh, np.float32(1))
     L = inner(c, v) * ufl.dx
     x2 = la.vector(V.dofmap.index_map, V.dofmap.index_map_bs, dtype=np.float32)
     L = form(L, dtype=x2.array.dtype)
-    c0 = _cpp.fem.pack_constants(L)
-    c1 = _cpp.fem.pack_coefficients(L)
-    _cpp.fem.assemble_vector(x2.array, L, c0, c1)
+    c0 = _cpp.fem.pack_constants(L._cpp_object)
+    c1 = _cpp.fem.pack_coefficients(L._cpp_object)
+    _cpp.fem.assemble_vector(x2.array, L._cpp_object, c0, c1)
     x2.scatter_reverse(la.InsertMode.add)
 
     assert np.linalg.norm(x0.array - x1.array) == pytest.approx(0.0)

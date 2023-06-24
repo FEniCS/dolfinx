@@ -15,13 +15,13 @@ from dolfinx.fem.assemble import (apply_lifting, assemble_matrix,
 from dolfinx.fem.bcs import (DirichletBCMetaClass, bcs_by_block, dirichletbc,
                              locate_dofs_geometrical, locate_dofs_topological)
 from dolfinx.fem.dofmap import DofMap
-from dolfinx.fem.forms import FormMetaClass, extract_function_spaces, form
+from dolfinx.fem.forms import Form, extract_function_spaces, form
 from dolfinx.fem.function import (Constant, Expression, Function,
                                   FunctionSpace, TensorFunctionSpace,
                                   VectorFunctionSpace)
 
 
-def create_sparsity_pattern(a: FormMetaClass):
+def create_sparsity_pattern(a: Form):
     """Create a sparsity pattern from a bilinear form.
 
     Args:
@@ -31,7 +31,7 @@ def create_sparsity_pattern(a: FormMetaClass):
         Sparsity pattern for the form ``a``.
 
     """
-    return _create_sparsity_pattern(a)
+    return _create_sparsity_pattern(a._cpp_object)
 
 
 __all__ = [
@@ -39,7 +39,7 @@ __all__ = [
     "FunctionSpace", "TensorFunctionSpace",
     "VectorFunctionSpace", "create_sparsity_pattern",
     "assemble_scalar", "assemble_matrix", "assemble_vector", "apply_lifting", "set_bc",
-    "DirichletBCMetaClass", "dirichletbc", "bcs_by_block", "DofMap", "FormMetaClass",
+    "DirichletBCMetaClass", "dirichletbc", "bcs_by_block", "DofMap", "Form",
     "form", "IntegralType",
     "locate_dofs_geometrical", "locate_dofs_topological",
     "extract_function_spaces", "petsc", "create_nonmatching_meshes_interpolation_data"]

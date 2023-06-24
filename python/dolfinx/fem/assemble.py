@@ -19,12 +19,11 @@ from dolfinx import la
 from dolfinx.cpp.fem import pack_coefficients as _pack_coefficients
 from dolfinx.cpp.fem import pack_constants as _pack_constants
 from dolfinx.fem.bcs import DirichletBCMetaClass
-from dolfinx.fem.forms import FormMetaClass, form_types
+from dolfinx.fem.forms import Form
 
 
-def pack_constants(form: typing.Union[FormMetaClass,
-                                      typing.Sequence[FormMetaClass]]) -> typing.Union[np.ndarray,
-                                                                                       typing.Sequence[np.ndarray]]:
+def pack_constants(form: typing.Union[Form, typing.Sequence[Form]]) -> typing.Union[np.ndarray,
+                                                                                    typing.Sequence[np.ndarray]]:
     """Compute form constants.
 
     Pack the `constants` that appear in forms. The packed constants can
@@ -53,7 +52,7 @@ def pack_constants(form: typing.Union[FormMetaClass,
     return _pack(form)
 
 
-def pack_coefficients(form: typing.Union[FormMetaClass, typing.Sequence[FormMetaClass]]):
+def pack_coefficients(form: typing.Union[Form, typing.Sequence[Form]]):
     """Compute form coefficients.
 
     Pack the `coefficients` that appear in forms. The packed
@@ -84,13 +83,13 @@ def pack_coefficients(form: typing.Union[FormMetaClass, typing.Sequence[FormMeta
 # -- Vector and matrix instantiation -----------------------------------------
 
 
-def create_vector(L: FormMetaClass) -> la.VectorMetaClass:
+def create_vector(L: Form) -> la.VectorMetaClass:
     """Create a Vector that is compatible with a given linear form"""
     dofmap = L.function_spaces[0].dofmap
     return la.vector(dofmap.index_map, dofmap.index_map_bs, dtype=L.dtype)
 
 
-def create_matrix(a: FormMetaClass) -> la.MatrixCSRMetaClass:
+def create_matrix(a: Form) -> la.MatrixCSRMetaClass:
     """Create a sparse matrix that is compatible with a given bilinear form"""
     sp = dolfinx.fem.create_sparsity_pattern(a)
     sp.finalize()
@@ -99,7 +98,7 @@ def create_matrix(a: FormMetaClass) -> la.MatrixCSRMetaClass:
 
 # -- Scalar assembly ---------------------------------------------------------
 
-def assemble_scalar(M: FormMetaClass, constants=None, coeffs=None):
+def assemble_scalar(M: Form, constants=None, coeffs=None):
     """Assemble functional. The returned value is local and not
     accumulated across processes.
 
@@ -122,9 +121,9 @@ def assemble_scalar(M: FormMetaClass, constants=None, coeffs=None):
         of this function is typically summed across all MPI ranks.
 
     """
-    constants = constants or _pack_constants(M)
-    coeffs = coeffs or _pack_coefficients(M)
-    return _cpp.fem.assemble_scalar(M, constants, coeffs)
+    constants = constants or _pack_constants(M._cpp_object)
+    coeffs = coeffs or _pack_coefficients(M._cpp_object)
+    return _cpp.fem.assemble_scalar(M._cpp_object, constants, coeffs)
 
 
 # -- Vector assembly ---------------------------------------------------------
@@ -135,8 +134,8 @@ def assemble_vector(L: typing.Any,
     return _assemble_vector_form(L, constants, coeffs)
 
 
-@assemble_vector.register(FormMetaClass)
-def _assemble_vector_form(L: form_types, constants=None, coeffs=None) -> la.VectorMetaClass:
+@assemble_vector.register(Form)
+def _assemble_vector_form(L: Form, constants=None, coeffs=None) -> la.VectorMetaClass:
     """Assemble linear form into a new Vector.
 
     Args:
@@ -170,7 +169,7 @@ def _assemble_vector_form(L: form_types, constants=None, coeffs=None) -> la.Vect
 
 
 @assemble_vector.register(np.ndarray)
-def _assemble_vector_array(b: np.ndarray, L: FormMetaClass, constants=None, coeffs=None):
+def _assemble_vector_array(b: np.ndarray, L: Form, constants=None, coeffs=None):
     """Assemble linear form into a new Vector.
 
     Args:
@@ -195,9 +194,9 @@ def _assemble_vector_array(b: np.ndarray, L: FormMetaClass, constants=None, coef
 
     """
 
-    constants = _pack_constants(L) if constants is None else constants
-    coeffs = _pack_coefficients(L) if coeffs is None else coeffs
-    _cpp.fem.assemble_vector(b, L, constants, coeffs)
+    constants = _pack_constants(L._cpp_object) if constants is None else constants
+    coeffs = _pack_coefficients(L._cpp_object) if coeffs is None else coeffs
+    _cpp.fem.assemble_vector(b, L._cpp_object, constants, coeffs)
     return b
 
 # -- Matrix assembly ---------------------------------------------------------
@@ -211,7 +210,7 @@ def assemble_matrix(a: typing.Any,
 
 
 @assemble_matrix.register
-def _assemble_matrix_csr(A: la.MatrixCSRMetaClass, a: form_types,
+def _assemble_matrix_csr(A: la.MatrixCSRMetaClass, a: Form,
                          bcs: typing.Optional[typing.List[DirichletBCMetaClass]] = None,
                          diagonal: float = 1.0, constants=None, coeffs=None) -> la.MatrixCSRMetaClass:
     """Assemble bilinear form into a matrix.
@@ -233,9 +232,9 @@ def _assemble_matrix_csr(A: la.MatrixCSRMetaClass, a: form_types,
 
     """
     bcs = [] if bcs is None else bcs
-    constants = _pack_constants(a) if constants is None else constants
-    coeffs = _pack_coefficients(a) if coeffs is None else coeffs
-    _cpp.fem.assemble_matrix(A, a, constants, coeffs, bcs)
+    constants = _pack_constants(a._cpp_object) if constants is None else constants
+    coeffs = _pack_coefficients(a._cpp_object) if coeffs is None else coeffs
+    _cpp.fem.assemble_matrix(A, a._cpp_object, constants, coeffs, bcs)
 
     # If matrix is a 'diagonal'block, set diagonal entry for constrained
     # dofs
@@ -244,8 +243,8 @@ def _assemble_matrix_csr(A: la.MatrixCSRMetaClass, a: form_types,
     return A
 
 
-@assemble_matrix.register(FormMetaClass)
-def _assemble_matrix_form(a: form_types, bcs: typing.Optional[typing.List[DirichletBCMetaClass]] = None,
+@assemble_matrix.register(Form)
+def _assemble_matrix_form(a: Form, bcs: typing.Optional[typing.List[DirichletBCMetaClass]] = None,
                           diagonal: float = 1.0,
                           constants=None, coeffs=None) -> la.MatrixCSRMetaClass:
     """Assemble bilinear form into a matrix.
@@ -278,7 +277,7 @@ def _assemble_matrix_form(a: form_types, bcs: typing.Optional[typing.List[Dirich
 # -- Modifiers for Dirichlet conditions ---------------------------------------
 
 
-def apply_lifting(b: np.ndarray, a: typing.List[FormMetaClass],
+def apply_lifting(b: np.ndarray, a: typing.List[Form],
                   bcs: typing.List[typing.List[DirichletBCMetaClass]],
                   x0: typing.Optional[typing.List[np.ndarray]] = None,
                   scale: float = 1.0, constants=None, coeffs=None) -> None:
@@ -302,9 +301,10 @@ def apply_lifting(b: np.ndarray, a: typing.List[FormMetaClass],
 
     """
     x0 = [] if x0 is None else x0
-    constants = [form and _pack_constants(form) for form in a] if constants is None else constants
-    coeffs = [{} if form is None else _pack_coefficients(form) for form in a] if coeffs is None else coeffs
-    _cpp.fem.apply_lifting(b, a, constants, coeffs, bcs, x0, scale)
+    constants = [form and _pack_constants(form._cpp_object) for form in a] if constants is None else constants
+    coeffs = [{} if form is None else _pack_coefficients(form._cpp_object) for form in a] if coeffs is None else coeffs
+    _a = [None if form is None else form._cpp_object for form in a]
+    _cpp.fem.apply_lifting(b, _a, constants, coeffs, bcs, x0, scale)
 
 
 def set_bc(b: np.ndarray, bcs: typing.List[DirichletBCMetaClass],
