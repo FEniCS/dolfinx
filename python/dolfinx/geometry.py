@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Methods for geometric searches and operations"""
+"""Methods for geometric searches and operations."""
 
 from __future__ import annotations
 
@@ -32,7 +32,7 @@ class BoundingBoxTree:
 
         Note:
             This initializer should not be used in user code. Use
-                `bb_tree`.
+                ``bb_tree``.
 
         """
         self._cpp_object = tree
@@ -50,7 +50,7 @@ class BoundingBoxTree:
 
         Returns:
             The 'lower' and 'upper' points of the bounding box.
-            Shape is `(2, 3)`,
+            Shape is ``(2, 3)``,
 
         """
         return self._cpp_object.get_bbox(i)
@@ -97,7 +97,7 @@ def compute_collisions_trees(tree0: BoundingBoxTree, tree1: BoundingBoxTree) -> 
 
     Returns:
         List of pairs of intersecting box indices from each tree. Shape
-        is `(num_collisions, 2)`.
+        is ``(num_collisions, 2)``.
 
     """
     return _cpp.geometry.compute_collisions_trees(tree0._cpp_object, tree1._cpp_object)
@@ -182,7 +182,7 @@ def squared_distance(mesh: Mesh, dim: int, entities: typing.List[int], points: n
         dim: Topological dimension of the mesh entities
         entities: Indices of the mesh entities (local to process)
         points: Points to compute the shortest distance from
-            (`shape=(num_points, 3)`)
+            (``shape=(num_points, 3)``)
 
     Returns:
         Squared shortest distance from points[i] to entities[i]
@@ -191,5 +191,17 @@ def squared_distance(mesh: Mesh, dim: int, entities: typing.List[int], points: n
     return _cpp.geometry.squared_distance(mesh._cpp_object, dim, entities, points)
 
 
-def compute_distance_gjk(p: npt.NDArray[np.floating], q: npt.NDArray[np.floating]):
+def compute_distance_gjk(p: npt.NDArray[np.floating], q: npt.NDArray[np.floating]) -> npt.NDArray[np.floating]:
+    """Compute the distance between two convex bodies p and q, each defined by a set of points.
+
+    Uses the Gilbert–Johnson–Keerthi (GJK) distance algorithm.
+
+    Args:
+        p: Body 1 list of points (``shape=(num_points, gdim)``)
+        q: Body 2 list of points (``shape=(num_points, gdim)``)
+
+    Returns:
+        Shortest vector between the two bodies.
+
+    """
     return _cpp.geometry.compute_distance_gjk(p, q)

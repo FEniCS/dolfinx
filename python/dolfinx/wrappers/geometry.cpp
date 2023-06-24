@@ -188,8 +188,7 @@ void declare_bbtree(py::module& m, std::string type)
       {
         const std::size_t p_s0 = p.ndim() == 1 ? 1 : p.shape(0);
         const std::size_t q_s0 = q.ndim() == 1 ? 1 : q.shape(0);
-        std::vector<T> _p(3 * p_s0);
-        std::vector<T> _q(3 * q_s0);
+        std::vector<T> _p(3 * p_s0), _q(3 * q_s0);
 
         auto px = p.unchecked();
         if (px.ndim() == 1)
@@ -253,19 +252,11 @@ void declare_bbtree(py::module& m, std::string type)
             dolfinx::geometry::squared_distance<T>(mesh, dim, indices, _p));
       },
       py::arg("mesh"), py::arg("dim"), py::arg("indices"), py::arg("points"));
-}
-} // namespace
-
-namespace dolfinx_wrappers
-{
-void geometry(py::module& m)
-{
   m.def("determine_point_ownership",
-        [](const dolfinx::mesh::Mesh<double>& mesh,
-           const py::array_t<double>& points)
+        [](const dolfinx::mesh::Mesh<T>& mesh, const py::array_t<T>& points)
         {
           const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
-          std::vector<double> _p(3 * p_s0);
+          std::vector<T> _p(3 * p_s0);
           auto px = points.unchecked();
           if (px.ndim() == 1)
           {
@@ -281,9 +272,15 @@ void geometry(py::module& m)
           else
             throw std::runtime_error("Array has wrong ndim.");
 
-          return dolfinx::geometry::determine_point_ownership<double>(mesh, _p);
+          return dolfinx::geometry::determine_point_ownership<T>(mesh, _p);
         });
+}
+} // namespace
 
+namespace dolfinx_wrappers
+{
+void geometry(py::module& m)
+{
   declare_bbtree<float>(m, "float32");
   declare_bbtree<double>(m, "float64");
 }

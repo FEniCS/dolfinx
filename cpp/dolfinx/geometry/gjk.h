@@ -240,9 +240,10 @@ std::array<T, 3> support(std::span<const T> bd, std::array<T, 3> v)
 }
 } // namespace impl_gjk
 
-/// Calculate the distance between two convex bodies p and q, each
-/// defined by a set of points, using the Gilbert–Johnson–Keerthi (GJK)
-/// distance algorithm.
+/// @brief Compute the distance between two convex bodies p and q, each
+/// defined by a set of points.
+///
+/// Uses the Gilbert–Johnson–Keerthi (GJK) distance algorithm.
 ///
 /// @param[in] p Body 1 list of points, shape (num_points, 3). Row-major
 /// storage.
