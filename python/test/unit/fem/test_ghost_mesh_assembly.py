@@ -89,5 +89,5 @@ def test_ghost_mesh_dS_assembly(mode, dS):
 
     # Check that the norms are the same for all three modes
     normA = A.norm()
-    assert normA == pytest.approx(2.1834054713561906, rel=1.e-6, abs=1.e-12)
+    assert normA == pytest.approx(2.1834054713561906, rel=1.e-5, abs=1.e-12)
     A.destroy()

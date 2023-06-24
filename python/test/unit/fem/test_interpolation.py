@@ -390,7 +390,7 @@ def test_interpolation_n2curl_to_bdm(tdim, order):
     u.interpolate(lambda x: x[:tdim] ** order)
     v.interpolate(u)
     s = assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx))
-    assert np.isclose(s, 0)
+    assert s == pytest.approx(0.0)
 
 
 @pytest.mark.parametrize("order1", [1, 2, 3, 4, 5])
@@ -405,13 +405,13 @@ def test_interpolation_p2p(order1, order2):
     v.interpolate(u)
 
     s = assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx))
-    assert np.isclose(s, 0)
+    assert s == pytest.approx(0.0)
 
     DG = FunctionSpace(mesh, ("DG", order2))
     w = Function(DG)
     w.interpolate(u)
     s = assemble_scalar(form(ufl.inner(u - w, u - w) * ufl.dx))
-    assert np.isclose(s, 0)
+    assert s == pytest.approx(0.0)
 
 
 @pytest.mark.parametrize("order1", [1, 2, 3])

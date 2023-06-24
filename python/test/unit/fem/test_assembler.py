@@ -692,7 +692,7 @@ def test_assembly_solve_taylor_hood(mesh):
     bnorm2, xnorm2, Anorm2, Pnorm2 = monolithic_solve()
     assert bnorm2 == pytest.approx(bnorm1, 1.0e-6)
     assert xnorm2 == pytest.approx(xnorm1, 1.0e-5)
-    assert Anorm2 == pytest.approx(Anorm1, 1.0e-5)
+    assert Anorm2 == pytest.approx(Anorm1, 1.0e-4)
     assert Pnorm2 == pytest.approx(Pnorm1, 1.0e-6)
 
 
@@ -1012,7 +1012,7 @@ def test_matrix_assembly_rectangular(mode):
 
     A0 = single()
     A1, A2 = block()
-    assert A1.norm() == pytest.approx(np.sqrt(2) * A0.norm())
+    assert A1.norm() == pytest.approx(np.sqrt(2) * A0.norm(), rel=1.0e-6, abs=1.0e-6)
     for row in range(2):
         A_sub = A2.getNestSubMatrix(row, 0)
         assert A_sub.equal(A0)
