@@ -123,6 +123,8 @@ class Expression:
             form_compiler_options["scalar_type"] = "float"
         elif dtype == np.float64:
             form_compiler_options["scalar_type"] = "double"
+        elif dtype == np.complex64:
+            form_compiler_options["scalar_type"] = "float _Complex"
         elif dtype == np.complex128:
             form_compiler_options["scalar_type"] = "double _Complex"
         else:

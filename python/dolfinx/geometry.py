@@ -21,7 +21,9 @@ import numpy
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.geometry import compute_distance_gjk
 
-__all__ = ["compute_colliding_cells", "squared_distance", "compute_closest_entity", "compute_collisions",
+__all__ = ["BoundingBoxTree, bb_tree, compute_colliding_cells", "squared_distance",
+           "compute_closest_entity", "compute_collisions_trees",
+           "compute_collisions_points"
            "compute_distance_gjk", "create_midpoint_tree"]
 
 
@@ -29,21 +31,48 @@ class BoundingBoxTree:
     """Bounding box trees used in collision detection."""
 
     def __init__(self, tree):
+        """Wrap a C++ BoundingBoxTree
+
+            Note:
+                This initializer should not be used in user code. Use
+                    `bb_tree`.
+
+        """
         self._cpp_object = tree
 
     @property
-    def num_bboxes(self):
+    def num_bboxes(self) -> int:
+        """Number of bounding boxes"""
         return self._cpp_object.num_bboxes
 
-    def get_bbox(self, i):
+    def get_bbox(self, i) -> npt.NDArray[np.floating]:
+        """Get lower and upper corners of the ith bounding box.
+
+            Args:
+                i: Index of the box
+
+            Returns:
+                The 'lower' and 'upper' points of the bounding box.
+                Shape is `(2, 3)`,
+
+        """
         return self._cpp_object.get_bbox(i)
 
-    def create_global_tree(self, comm):
+    def create_global_tree(self, comm) -> BoundingBoxTree:
         return BoundingBoxTree(self._cpp_object.create_global_tree(comm))
 
 
 def bb_tree(mesh: Mesh, dim: int, entities=None, padding: float = 0.0) -> BoundingBoxTree:
+    """Create a bounding box tree for use in collision detection.
 
+        Args:
+            mesh: The mesh
+            dim: The dimension of the mesh entities
+            entities: List of entity indices (local to process). If not supplied,
+                all owned and ghosted entities are used.
+            padding: Padding for each bounding box
+
+    """
     map = mesh.topology.index_map(dim)
     if map is None:
         raise RuntimeError(f"Mesh entities of dimension {dim} have not been created.")
@@ -59,11 +88,37 @@ def bb_tree(mesh: Mesh, dim: int, entities=None, padding: float = 0.0) -> Boundi
         raise NotImplementedError(f"Type {dtype} not supported.")
 
 
-def compute_collisions(bb0, x):
-    try:
-        return _cpp.geometry.compute_collisions(bb0._cpp_object, x._cpp_object)
-    except AttributeError:
-        return _cpp.geometry.compute_collisions(bb0._cpp_object, x)
+def compute_collisions_trees(tree0: BoundingBoxTree, tree1: BoundingBoxTree) -> npt.NDArray[np.int32]:
+    """Compute all collisions between two bounding box trees.
+
+    Args:
+        tree0: First bounding box tree
+        tree1: Second bounding box tree
+
+    Returns:
+        List of pairs of intersecting box indices from each tree. Shape
+        is `(num_collisions, 2)`.
+
+    """
+    return _cpp.geometry.compute_collisions_trees(tree0._cpp_object, tree1._cpp_object)
+
+
+def compute_collisions_points(tree: BoundingBoxTree, x: npt.NDArray[np.floating]) -> _cpp.graph.AdjacencyList_int32:
+    """Compute collisions between points and leaf bounding boxes.
+
+    Bounding boxes can overlap, therefore points can collide with more
+    than one box.
+
+    Args:
+        tree: Bounding box tree
+        x: Points (`shape=(num_points, 3)`)
+
+    Returns:
+       For each point, the bounding box leaves that collide with the
+       point.
+
+    """
+    return _cpp.geometry.compute_collisions_points(tree._cpp_object, x)
 
 
 def compute_closest_entity(tree: BoundingBoxTree, midpoint_tree: BoundingBoxTree, mesh: Mesh,
@@ -85,7 +140,18 @@ def compute_closest_entity(tree: BoundingBoxTree, midpoint_tree: BoundingBoxTree
     return _cpp.geometry.compute_closest_entity(tree._cpp_object, midpoint_tree._cpp_object, mesh._cpp_object, points)
 
 
-def create_midpoint_tree(mesh: Mesh, dim: int, entities: numpy.ndarray):
+def create_midpoint_tree(mesh: Mesh, dim: int, entities: npt.NDArray[np.int32]) -> BoundingBoxTree:
+    """Create a bounding box tree for the midpoints of a subset of entities.
+
+    Args:
+        mesh: The mesh.
+        dim: Topological dimension of the entities.
+        entities: Indices of mesh entities to include.
+
+    Returns:
+        Bounding box tree for midpoints of cell entities.
+
+    """
     return BoundingBoxTree(_cpp.geometry.create_midpoint_tree(mesh._cpp_object, dim, entities))
 
 

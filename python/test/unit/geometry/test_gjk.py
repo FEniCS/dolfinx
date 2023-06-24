@@ -172,7 +172,7 @@ def test_collision_2nd_order_triangle():
 
     # Create boundingboxtree
     tree = geometry.bb_tree(mesh, mesh.geometry.dim)
-    cell_candidates = geometry.compute_collisions(tree, sample_points)
+    cell_candidates = geometry.compute_collisions_points(tree, sample_points)
     colliding_cells = geometry.compute_colliding_cells(mesh, cell_candidates, sample_points)
     # Check for collision
     for i in range(colliding_cells.num_nodes):

@@ -64,7 +64,7 @@ void declare_bbtree(py::module& m, std::string type)
           py::arg("comm"));
 
   m.def(
-      "compute_collisions",
+      "compute_collisions_points",
       [](const dolfinx::geometry::BoundingBoxTree<T>& tree,
          const py::array_t<T>& points)
       {
@@ -89,7 +89,7 @@ void declare_bbtree(py::module& m, std::string type)
       },
       py::arg("tree"), py::arg("points"));
   m.def(
-      "compute_collisions",
+      "compute_collisions_trees",
       [](const dolfinx::geometry::BoundingBoxTree<T>& treeA,
          const dolfinx::geometry::BoundingBoxTree<T>& treeB)
       {

@@ -8,8 +8,10 @@
 import numpy as np
 import pytest
 from dolfinx.geometry import (bb_tree, compute_closest_entity,
-                              compute_colliding_cells, compute_collisions,
-                              compute_distance_gjk, create_midpoint_tree)
+                              compute_colliding_cells,
+                              compute_collisions_points,
+                              compute_collisions_trees, compute_distance_gjk,
+                              create_midpoint_tree)
 from dolfinx.mesh import (CellType, create_box, create_unit_cube,
                           create_unit_interval, create_unit_square,
                           exterior_facet_indices, locate_entities,
@@ -94,7 +96,7 @@ def test_padded_bbox(padding):
 
     bbox_0 = bb_tree(mesh_0, mesh_0.topology.dim, padding=pad)
     bbox_1 = bb_tree(mesh_1, mesh_1.topology.dim, padding=pad)
-    collisions = compute_collisions(bbox_0, bbox_1)
+    collisions = compute_collisions_trees(bbox_0, bbox_1)
     if padding:
         assert len(collisions) == 1
         # Check that the colliding elements are separated by a distance
@@ -144,7 +146,7 @@ def test_compute_collisions_point_1d():
     # Compute collision
     tdim = mesh.topology.dim
     tree = bb_tree(mesh, tdim)
-    entities = compute_collisions(tree, p)
+    entities = compute_collisions_points(tree, p)
     assert len(entities.array) == 1
 
     # Get the vertices of the geometry
@@ -189,7 +191,7 @@ def test_compute_collisions_tree_1d(point):
     # Find colliding entities using bounding box trees
     tree_A = bb_tree(mesh_A, mesh_A.topology.dim)
     tree_B = bb_tree(mesh_B, mesh_B.topology.dim)
-    entities = compute_collisions(tree_A, tree_B)
+    entities = compute_collisions_trees(tree_A, tree_B)
     entities_A = np.sort(np.unique([q[0] for q in entities]))
     entities_B = np.sort(np.unique([q[1] for q in entities]))
     assert np.allclose(entities_A, cells_A)
@@ -206,7 +208,7 @@ def test_compute_collisions_tree_2d(point):
     bgeom += point
     tree_A = bb_tree(mesh_A, mesh_A.topology.dim)
     tree_B = bb_tree(mesh_B, mesh_B.topology.dim)
-    entities = compute_collisions(tree_A, tree_B)
+    entities = compute_collisions_trees(tree_A, tree_B)
 
     entities_A = np.sort(np.unique([q[0] for q in entities]))
     entities_B = np.sort(np.unique([q[1] for q in entities]))
@@ -228,7 +230,7 @@ def test_compute_collisions_tree_3d(point):
 
     tree_A = bb_tree(mesh_A, mesh_A.topology.dim)
     tree_B = bb_tree(mesh_B, mesh_B.topology.dim)
-    entities = compute_collisions(tree_A, tree_B)
+    entities = compute_collisions_trees(tree_A, tree_B)
 
     entities_A = np.sort(np.unique([q[0] for q in entities]))
     entities_B = np.sort(np.unique([q[1] for q in entities]))
@@ -254,7 +256,7 @@ def test_compute_closest_entity_1d(dim):
 
     # Find which entity is colliding with known closest point on mesh
     p_c = np.array([[0, 0, 0], [2 / N, 0, 0]], dtype=default_real_type)
-    colliding_entity_bboxes = compute_collisions(tree, p_c)
+    colliding_entity_bboxes = compute_collisions_points(tree, p_c)
 
     # Refine search by checking for actual collision if the entities are
     # cells
@@ -287,7 +289,7 @@ def test_compute_closest_entity_2d(dim):
 
     # Find which entity is colliding with known closest point on mesh
     p_c = np.array([0, 0, 0])
-    colliding_entity_bboxes = compute_collisions(tree, p_c)
+    colliding_entity_bboxes = compute_collisions_points(tree, p_c)
 
     # Refine search by checking for actual collision if the entities are
     # cells
@@ -315,7 +317,7 @@ def test_compute_closest_entity_3d(dim):
 
     # Find which entity is colliding with known closest point on mesh
     p_c = np.array([0.9, 0, 1])
-    colliding_entity_bboxes = compute_collisions(tree, p_c)
+    colliding_entity_bboxes = compute_collisions_points(tree, p_c)
 
     # Refine search by checking for actual collision if the entities are
     # cells
@@ -343,7 +345,7 @@ def test_compute_closest_sub_entity(dim):
 
     # Find which entity is colliding with known closest point on mesh
     p_c = np.array([xc, yc, zc])
-    colliding_entity_bboxes = compute_collisions(tree, p_c)
+    colliding_entity_bboxes = compute_collisions_points(tree, p_c)
 
     # Refine search by checking for actual collision if the entities are
     # cells
@@ -368,7 +370,7 @@ def test_surface_bbtree():
 
     # test collision (should not collide with any)
     p = np.array([0.5, 0.5, 0.5])
-    assert len(compute_collisions(bbtree, p).array) == 0
+    assert len(compute_collisions_points(bbtree, p).array) == 0
 
 
 def test_sub_bbtree():
@@ -387,10 +389,10 @@ def test_sub_bbtree():
 
     # Find possible ranks for this point
     point = np.array([0.2, 0.2, 1.0], dtype=default_real_type)
-    ranks = compute_collisions(process_bbtree, point)
+    ranks = compute_collisions_points(process_bbtree, point)
 
     # Compute local collisions
-    cells = compute_collisions(bbtree, point)
+    cells = compute_collisions_points(bbtree, point)
     if MPI.COMM_WORLD.rank in ranks.array:
         assert len(cells.links(0)) > 0
     else:
@@ -440,5 +442,5 @@ def test_surface_bbtree_collision():
     cells = list(set([f_to_c.links(f)[0] for f in sf]))
     bbtree2 = bb_tree(mesh2, tdim, cells)
 
-    collisions = compute_collisions(bbtree1, bbtree2)
+    collisions = compute_collisions_trees(bbtree1, bbtree2)
     assert len(collisions) == 1

@@ -399,12 +399,12 @@ def test_interpolation_p2p(order1, order2):
     u, v = Function(V), Function(V1)
     u.interpolate(lambda x: x[0])
     v.interpolate(u)
-    assert assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx)) == pytest.approx(0.0)
+    assert assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx)) == pytest.approx(0.0, abs=1e-10)
 
     DG = FunctionSpace(mesh, ("DG", order2))
     w = Function(DG)
     w.interpolate(u)
-    assert assemble_scalar(form(ufl.inner(u - w, u - w) * ufl.dx)) == pytest.approx(0.0)
+    assert assemble_scalar(form(ufl.inner(u - w, u - w) * ufl.dx)) == pytest.approx(0.0, abs=1e-10)
 
 
 @pytest.mark.parametrize("order1", [1, 2, 3])
@@ -441,7 +441,7 @@ def test_interpolation_non_affine():
     w, v = Function(W), Function(V)
     w.interpolate(lambda x: x)
     v.interpolate(w)
-    assert assemble_scalar(form(ufl.inner(w - v, w - v) * ufl.dx)) == pytest.approx(0)
+    assert assemble_scalar(form(ufl.inner(w - v, w - v) * ufl.dx)) == pytest.approx(0, abs=1e-10)
 
 
 @pytest.mark.skip_in_parallel
