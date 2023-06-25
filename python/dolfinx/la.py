@@ -92,6 +92,7 @@ class MatrixCSR:
 
         Note:
             Typically used for debugging.
+
         """
         return self._cpp_object.to_dense()
 
