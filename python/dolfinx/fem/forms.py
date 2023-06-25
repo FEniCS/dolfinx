@@ -47,16 +47,13 @@ class Form:
         self._ufcx_form = ufcx_form
         self._cpp_object = form
 
-        # super().__init__(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_form)),
-        #                  V, coeffs, constants, subdomains, mesh)  # type: ignore
-
     @property
     def ufcx_form(self):
         """The compiled ufcx_form object"""
         return self._ufcx_form
 
     @property
-    def code(self) -> str:
+    def code(self) -> typing.Union[str, None]:
         """C code strings"""
         return self._code
 
@@ -67,22 +64,22 @@ class Form:
     @property
     def function_spaces(self) -> typing.List[FunctionSpace]:
         """Function spaces on which this form is defined"""
-        return self._cpp_object.function_spaces  # type: ignore
+        return self._cpp_object.function_spaces
 
     @property
     def dtype(self) -> np.dtype:
-        """dtype of this form"""
-        return self._cpp_object.dtype  # type: ignore
+        """Scalar type of this form"""
+        return self._cpp_object.dtype
 
     @property
     def mesh(self) -> Mesh:
         """Mesh on which this form is defined"""
-        return self._cpp_object.mesh  # type: ignore
+        return self._cpp_object.mesh
 
     @property
     def integral_types(self):
         """Integral types in the form"""
-        return self._cpp_object.integral_types  # type: ignore
+        return self._cpp_object.integral_types
 
 
 _ufl_to_dolfinx_domain = {"cell": IntegralType.cell,
@@ -176,9 +173,7 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]],
 
         f = ftype(module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)), V, coeffs,
                   constants, subdomains, mesh)
-
         return Form(f, ufcx_form, code)
-        # return formcls(ufcx_form, V, coeffs, constants, subdomains, mesh, module.ffi, code)
 
     def _create_form(form):
         """Recursively convert ufl.Forms to dolfinx.fem.Form, otherwise

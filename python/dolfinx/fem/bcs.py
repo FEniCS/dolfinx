@@ -108,19 +108,14 @@ class DirichletBC:
         self._cpp_object = bc
 
     @property
-    def value(self):
+    def g(self) -> typing.Union[Function, Constant, np.ndarray]:
         """The boundary condition value(s)"""
-        return self._cpp_object.value  # type: ignore
-
-    @property
-    def g(self):
-        """The boundary condition value(s)"""
-        return self._cpp_object.value  # type: ignore
+        return self._cpp_object.value
 
     @property
     def function_space(self) -> dolfinx.fem.FunctionSpace:
         """The function space on which the boundary condition is defined"""
-        return self._cpp_object.function_space  # type: ignore
+        return self._cpp_object.function_space
 
 
 def dirichletbc(value: typing.Union[Function, Constant, np.ndarray],

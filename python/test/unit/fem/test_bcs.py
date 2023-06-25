@@ -115,19 +115,19 @@ def test_constant_bc_constructions():
     boundary_dofs2 = locate_dofs_topological(V2, tdim - 1, boundary_facets)
 
     bc0 = dirichletbc(1.0 + 2.2j, boundary_dofs0, V0)
-    assert bc0.value.value.dtype == np.complex128
-    assert bc0.value.value.shape == tuple()
-    assert bc0.value.value == 1.0 + 2.2j
+    assert bc0.g.value.dtype == np.complex128
+    assert bc0.g.value.shape == tuple()
+    assert bc0.g.value == 1.0 + 2.2j
 
     bc1 = dirichletbc(np.array([1.0 + 2.2j, 3.0 + 2.2j], dtype=np.complex128), boundary_dofs1, V1)
-    assert bc1.value.value.dtype == np.complex128
-    assert bc1.value.value.shape == (tdim,)
-    assert (bc1.value.value == [1.0 + 2.2j, 3.0 + 2.2j]).all()
+    assert bc1.g.value.dtype == np.complex128
+    assert bc1.g.value.shape == (tdim,)
+    assert (bc1.g.value == [1.0 + 2.2j, 3.0 + 2.2j]).all()
 
     bc2 = dirichletbc(np.array([[1.0, 3.0], [3.0, -2.0]], dtype=np.float32), boundary_dofs2, V2)
-    assert bc2.value.value.dtype == np.float32
-    assert bc2.value.value.shape == (tdim, tdim)
-    assert (bc2.value.value == [[1.0, 3.0], [3.0, -2.0]]).all()
+    assert bc2.g.value.dtype == np.float32
+    assert bc2.g.value.shape == (tdim, tdim)
+    assert (bc2.g.value == [[1.0, 3.0], [3.0, -2.0]]).all()
 
 
 @pytest.mark.parametrize('mesh_factory',
