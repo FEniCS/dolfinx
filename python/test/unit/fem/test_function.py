@@ -56,11 +56,11 @@ def test_name_argument(W):
 
 def test_copy(V):
     u = Function(V)
-    # u.interpolate(lambda x: x[0] + 2 * x[1])
-    # v = u.copy()
-    # assert np.allclose(u.x.array, v.x.array)
-    # u.x.array[:] = 1
-    # assert not np.allclose(u.x.array, v.x.array)
+    u.interpolate(lambda x: x[0] + 2 * x[1])
+    v = u.copy()
+    assert np.allclose(u.x.array, v.x.array)
+    u.x.array[:] = 1
+    assert not np.allclose(u.x.array, v.x.array)
 
 
 def test_eval(V, W, Q, mesh):

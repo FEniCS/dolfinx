@@ -269,9 +269,7 @@ class Function(ufl.Coefficient):
             else:
                 raise NotImplementedError(f"Type {dtype} not supported.")
 
-        print("xtype0:", type(x))
         if x is not None:
-            print("xtype1", type(x._cpp_object))
             self._cpp_object = functiontype(dtype)(V._cpp_object, x._cpp_object)
         else:
             self._cpp_object = functiontype(dtype)(V._cpp_object)
@@ -384,12 +382,7 @@ class Function(ufl.Coefficient):
         degree-of-freedom vector is copied.
 
         """
-        print("try0:", self.x)
-        print("try1:", self.x._cpp_object)
-        tmp = Vector(type(self.x)(self.x._cpp_object))
-        print("try2:", tmp)
-
-        return Function(self.function_space, Vector(type(self.x)(self.x)))
+        return Function(self.function_space, Vector(type(self.x._cpp_object)(self.x._cpp_object)))
 
     @property
     def vector(self):
