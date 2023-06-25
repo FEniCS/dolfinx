@@ -6,6 +6,7 @@
 """Linear algebra functionality"""
 
 
+import numpy.typing as npt
 import numpy as np
 from dolfinx.cpp.common import IndexMap
 from dolfinx.cpp.la import BlockMode, InsertMode, Norm
@@ -14,11 +15,11 @@ from dolfinx.cpp.la.petsc import create_vector as create_petsc_vector
 from dolfinx import cpp as _cpp
 
 __all__ = ["orthonormalize", "is_orthonormal", "create_petsc_vector", "matrix_csr", "vector",
-           "MatrixCSRMetaClass", "Norm", "InsertMode", "Vector", ]
+           "MatrixCSR", "Norm", "InsertMode", "Vector", ]
 
 
-class MatrixCSRMetaClass:
-    def __init__(self, sp, bm):
+class MatrixCSR:
+    def __init__(self, A):
         """A distributed sparse matrix that uses compressed sparse row storage.
 
         Args:
@@ -33,10 +34,61 @@ class MatrixCSRMetaClass:
             initialiser.
 
         """
-        super().__init__(sp, bm)
+        self._cpp_object = A
+
+    def add(self, x, rows, cols, bs=1) -> None:
+        self._cpp_object.add(x, rows, cols, bs)
+
+    def set(self, x, rows, cols, bs=1) -> None:
+        self._cpp_object.set(x, rows, cols, bs)
+
+    def set_value(self, x: np.floating) -> None:
+        """Set all non-zero entries to a value.
+
+        Args:
+            x: The value to set all non-zero entries to.
+
+        """
+
+        self._cpp_object.set(x)
+
+    def finalize(self) -> None:
+        self._cpp_object.finalize()
+
+    def squared_norm(self) -> np.floating:
+        """Compute the squared Frobenius norm.
+
+        Note:
+            This operation is collective and requires communication.
+
+        """
+        return self._cpp_object.squared_norm()
+
+    @property
+    def data(self) -> npt.NDArray[np.floating]:
+        """Underlying matrix entry data."""
+        return self._cpp_object.data
+
+    @property
+    def indices(self) -> npt.NDArray[np.int32]:
+        """Local column indices."""
+        return self._cpp_object.indices
+
+    @property
+    def indptr(self) -> npt.NDArray[np.int64]:
+        """Local row pointers."""
+        return self._cpp_object.indptr
+
+    def to_dense(self) -> npt.NDArray[np.floating]:
+        """Copy to a dense 2D array.
+
+        Note:
+            Typically used for debugging.
+        """
+        return self._cpp_object.to_dense()
 
 
-def matrix_csr(sp, block_mode=BlockMode.compact, dtype=np.float64) -> MatrixCSRMetaClass:
+def matrix_csr(sp, block_mode=BlockMode.compact, dtype=np.float64) -> MatrixCSR:
     """Create a distributed sparse matrix.
 
     The matrix uses compressed sparse row storage.
@@ -61,8 +113,7 @@ def matrix_csr(sp, block_mode=BlockMode.compact, dtype=np.float64) -> MatrixCSRM
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
 
-    matrixcls = type("MatrixCSR", (MatrixCSRMetaClass, ftype), {})
-    return matrixcls(sp, block_mode)
+    return MatrixCSR(ftype(sp, block_mode))
 
 
 class Vector:

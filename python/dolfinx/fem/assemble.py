@@ -89,7 +89,7 @@ def create_vector(L: Form) -> la.Vector:
     return la.vector(dofmap.index_map, dofmap.index_map_bs, dtype=L.dtype)
 
 
-def create_matrix(a: Form) -> la.MatrixCSRMetaClass:
+def create_matrix(a: Form) -> la.MatrixCSR:
     """Create a sparse matrix that is compatible with a given bilinear form"""
     sp = dolfinx.fem.create_sparsity_pattern(a)
     sp.finalize()
@@ -210,9 +210,8 @@ def assemble_matrix(a: typing.Any,
 
 
 @assemble_matrix.register
-def _assemble_matrix_csr(A: la.MatrixCSRMetaClass, a: Form,
-                         bcs: typing.Optional[typing.List[DirichletBC]] = None,
-                         diagonal: float = 1.0, constants=None, coeffs=None) -> la.MatrixCSRMetaClass:
+def _assemble_matrix_csr(A: la.MatrixCSR, a: Form, bcs: typing.Optional[typing.List[DirichletBC]] = None,
+                         diagonal: float = 1.0, constants=None, coeffs=None) -> la.MatrixCSR:
     """Assemble bilinear form into a matrix.
 
     Args:
@@ -235,19 +234,18 @@ def _assemble_matrix_csr(A: la.MatrixCSRMetaClass, a: Form,
     bcs = [] if bcs is None else [bc._cpp_object for bc in bcs]
     constants = _pack_constants(a._cpp_object) if constants is None else constants
     coeffs = _pack_coefficients(a._cpp_object) if coeffs is None else coeffs
-    _cpp.fem.assemble_matrix(A, a._cpp_object, constants, coeffs, bcs)
+    _cpp.fem.assemble_matrix(A._cpp_object, a._cpp_object, constants, coeffs, bcs)
 
     # If matrix is a 'diagonal'block, set diagonal entry for constrained
     # dofs
     if a.function_spaces[0] is a.function_spaces[1]:
-        _cpp.fem.insert_diagonal(A, a.function_spaces[0], bcs, diagonal)
+        _cpp.fem.insert_diagonal(A._cpp_object, a.function_spaces[0], bcs, diagonal)
     return A
 
 
 @assemble_matrix.register(Form)
 def _assemble_matrix_form(a: Form, bcs: typing.Optional[typing.List[DirichletBC]] = None,
-                          diagonal: float = 1.0,
-                          constants=None, coeffs=None) -> la.MatrixCSRMetaClass:
+                          diagonal: float = 1.0, constants=None, coeffs=None) -> la.MatrixCSR:
     """Assemble bilinear form into a matrix.
 
     Args:
@@ -270,7 +268,7 @@ def _assemble_matrix_form(a: Form, bcs: typing.Optional[typing.List[DirichletBC]
 
     """
     bcs = [] if bcs is None else bcs
-    A: la.MatrixCSRMetaClass = create_matrix(a)
+    A: la.MatrixCSR = create_matrix(a)
     _assemble_matrix_csr(A, a, bcs, diagonal, constants, coeffs)
     return A
 

@@ -303,14 +303,13 @@ public:
   void finalize_begin();
 
   /// @brief End transfer of ghost row data to owning ranks.
-  /// @note Must be preceded by MatrixCSR::finalize_begin()
+  /// @note Must be preceded by MatrixCSR::finalize_begin().
   /// @note Matrix data received from other processes will be
   /// accumulated into locally owned rows, and ghost rows will be
   /// zeroed.
   void finalize_end();
 
-  /// @brief Compute the Frobenius norm squared across all processes
-  /// @note This does not include ghost rows.
+  /// @brief Compute the Frobenius norm squared across all processes.
   /// @note MPI Collective
   double squared_norm() const;
 
