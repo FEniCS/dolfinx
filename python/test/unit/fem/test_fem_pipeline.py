@@ -270,7 +270,7 @@ def test_curl_curl_eigenvalue(family, order):
     B.destroy()
 
 
-@pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
+# @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
 @pytest.mark.skipif(np.issubdtype(PETSc.ScalarType, np.complexfloating),
                     reason="This test does not work in complex mode.")
 @pytest.mark.parametrize("family", ["HHJ", "Regge"])
@@ -330,8 +330,8 @@ def test_biharmonic(family):
     zero_u.x.array[:] = 0
 
     # Strong (Dirichlet) boundary condition
-    boundary_facets = locate_entities_boundary(
-        mesh, mesh.topology.dim - 1, lambda x: np.full(x.shape[1], True, dtype=bool))
+    boundary_facets = locate_entities_boundary(mesh, mesh.topology.dim - 1,
+                                               lambda x: np.full(x.shape[1], True, dtype=bool))
     boundary_dofs = locate_dofs_topological((V.sub(1), V_1), mesh.topology.dim - 1, boundary_facets)
 
     bcs = [dirichletbc(zero_u, boundary_dofs, V.sub(1))]
