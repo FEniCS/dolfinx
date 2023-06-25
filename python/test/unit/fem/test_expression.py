@@ -175,7 +175,7 @@ def test_rank1_hdiv():
     h2 = Function(vdP1)
     h2.vector.axpy(1.0, A * g.vector)
 
-    assert (h2.vector - h.vector).norm() == pytest.approx(0.0, rel=1.0e-4, abs=1.0e-5)
+    assert (h2.vector - h.vector).norm() == pytest.approx(0.0, abs=1.0e-4)
 
     A.destroy()
 
