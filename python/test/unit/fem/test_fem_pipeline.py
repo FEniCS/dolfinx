@@ -82,7 +82,7 @@ def run_scalar_test(mesh, V, degree):
     M = (u_exact - uh)**2 * dx
     M = form(M)
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
-    assert np.absolute(error) < 1.0e-12
+    assert np.abs(error) < 1.0e-12
 
     solver.destroy()
     A.destroy()
@@ -123,7 +123,7 @@ def run_vector_test(mesh, V, degree):
     M = form(M)
 
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
-    assert np.absolute(error) < 1.0e-14
+    assert np.abs(error) < 1.0e-14
 
     solver.destroy()
     A.destroy()
@@ -197,7 +197,7 @@ def run_dg_test(mesh, V, degree):
     M = form(M)
 
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
-    assert np.absolute(error) < 1.0e-14
+    assert np.abs(error) < 1.0e-14
 
     solver.destroy()
     A.destroy()
@@ -357,8 +357,7 @@ def test_biharmonic(family):
         form(inner(u_exact - x_h[4], u_exact - x_h[4]) * dx(mesh, metadata={"quadrature_degree": 5}))), op=MPI.SUM))
     u_error_denominator = np.sqrt(mesh.comm.allreduce(assemble_scalar(
         form(inner(u_exact, u_exact) * dx(mesh, metadata={"quadrature_degree": 5}))), op=MPI.SUM))
-
-    assert np.absolute(u_error_numerator / u_error_denominator) < 0.05
+    assert np.ab(u_error_numerator / u_error_denominator) < 0.05
 
     # Reconstruct tensor from flattened indices.
     # Apply inverse transform. In 2D we have S^{-1} = S.
@@ -374,7 +373,6 @@ def test_biharmonic(family):
         op=MPI.SUM))
     sigma_error_denominator = np.sqrt(mesh.comm.allreduce(assemble_scalar(
         form(inner(sigma_exact, sigma_exact) * dx(mesh, metadata={"quadrature_degree": 6}))), op=MPI.SUM))
-
     assert np.abs(sigma_error_numerator / sigma_error_denominator) < 0.05
 
     solver.destroy()
