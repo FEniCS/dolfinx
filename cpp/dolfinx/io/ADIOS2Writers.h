@@ -376,7 +376,7 @@ void write_mesh(adios2::IO& io, adios2::Engine& engine,
   // TODO: The DOLFINx and VTK topology are the same for some cell types
   // - no need to repack via extract_vtk_connectivity in these cases
 
-  // Get topological dimenson, number of cells and number of 'nodes' per
+  // Get topological dimension, number of cells and number of 'nodes' per
   // cell, and compute 'VTK' connectivity
   int tdim = topology->dim();
   std::int32_t num_cells = topology->index_map(tdim)->size_local();
