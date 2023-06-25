@@ -557,7 +557,7 @@ class LinearProblem:
         else:
             self.u = u
 
-        self._x = _cpp.la.petsc.create_vector_wrap(self.u.x)
+        self._x = _cpp.la.petsc.create_vector_wrap(self.u.x._cpp_object)
         self.bcs = bcs
 
         self._solver = PETSc.KSP().create(self.u.function_space.mesh.comm)
