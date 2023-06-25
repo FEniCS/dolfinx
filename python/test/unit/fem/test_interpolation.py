@@ -12,7 +12,8 @@ import pytest
 
 import basix
 import ufl
-from basix.ufl import mixed_element, blocked_element, element, enriched_element, custom_element
+from basix.ufl import (blocked_element, custom_element, element,
+                       enriched_element, mixed_element)
 from dolfinx.fem import (Expression, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_scalar, form)
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
