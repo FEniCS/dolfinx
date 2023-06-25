@@ -49,7 +49,6 @@ class MatrixCSR:
             x: The value to set all non-zero entries to.
 
         """
-
         self._cpp_object.set(x)
 
     def finalize(self) -> None:
@@ -145,7 +144,7 @@ class Vector:
     def scatter_forward(self) -> None:
         self._cpp_object.scatter_forward()
 
-    def scatter_reverse(self, mode: _cpp.la.InsertMode):
+    def scatter_reverse(self, mode: InsertMode):
         self._cpp_object.scatter_reverse(mode)
 
     def norm(self, type=_cpp.la.Norm.l2) -> np.floating:
