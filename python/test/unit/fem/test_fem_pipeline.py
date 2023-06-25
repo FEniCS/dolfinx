@@ -280,7 +280,7 @@ def test_biharmonic(family):
     Solved using rotated Regge or the Hellan-Herrmann-Johnson (HHJ) mixed
     finite element method in two-dimensions."""
     mesh = create_rectangle(MPI.COMM_WORLD, [np.array([0.0, 0.0]),
-                                             np.array([1.0, 1.0])], [32, 32], CellType.triangle)
+                                             np.array([1.0, 1.0])], [16, 16], CellType.triangle)
 
     e = mixed_element([element(family, basix.CellType.triangle, 1),
                        element(basix.ElementFamily.P, basix.CellType.triangle, 2)])
@@ -345,7 +345,7 @@ def test_biharmonic(family):
 
     # Solve
     solver = PETSc.KSP().create(MPI.COMM_WORLD)
-    solver.setTolerances(rtol=1e-10)
+    solver.setTolerances(rtol=1e-12)
     solver.setOperators(A)
 
     x_h = Function(V)
@@ -354,10 +354,10 @@ def test_biharmonic(family):
 
     # Recall that x_h has flattened indices
     u_error_numerator = np.sqrt(mesh.comm.allreduce(assemble_scalar(
-        form(inner(u_exact - x_h[4], u_exact - x_h[4]) * dx(mesh, metadata={"quadrature_degree": 5}))), op=MPI.SUM))
+        form(inner(u_exact - x_h[4], u_exact - x_h[4]) * dx(mesh, metadata={"quadrature_degree": 6}))), op=MPI.SUM))
     u_error_denominator = np.sqrt(mesh.comm.allreduce(assemble_scalar(
-        form(inner(u_exact, u_exact) * dx(mesh, metadata={"quadrature_degree": 5}))), op=MPI.SUM))
-    assert np.ab(u_error_numerator / u_error_denominator) < 0.05
+        form(inner(u_exact, u_exact) * dx(mesh, metadata={"quadrature_degree": 6}))), op=MPI.SUM))
+    assert np.abs(u_error_numerator / u_error_denominator) < 0.05
 
     # Reconstruct tensor from flattened indices.
     # Apply inverse transform. In 2D we have S^{-1} = S.
