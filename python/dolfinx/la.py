@@ -7,10 +7,11 @@
 
 
 import numpy as np
-
-from dolfinx import cpp as _cpp
+from dolfinx.cpp.common import IndexMap
 from dolfinx.cpp.la import BlockMode, InsertMode, Norm
 from dolfinx.cpp.la.petsc import create_vector as create_petsc_vector
+
+from dolfinx import cpp as _cpp
 
 __all__ = ["orthonormalize", "is_orthonormal", "create_petsc_vector", "matrix_csr", "vector",
            "MatrixCSRMetaClass", "Norm", "InsertMode", "Vector", ]
@@ -69,8 +70,7 @@ class Vector:
         """A distributed vector object.
 
         Args:
-            map: Index map the describes the size and distribution of
-                the vector
+            map: Index map the describes the size and distribution of the vector
             bs: Block size
 
         Note:
@@ -81,16 +81,20 @@ class Vector:
         self._cpp_object = x
 
     @property
-    def array(self) -> np.ndarray:
-        return self._cpp_object.array  # type: ignore
+    def index_map(self) -> IndexMap:
+        return self._cpp_object.index_map
 
-    def set(self, value: np.floating):
+    @property
+    def array(self) -> np.ndarray:
+        return self._cpp_object.array
+
+    def set(self, value: np.floating) -> None:
         self._cpp_object.set(value)
 
-    def scatter_forward(self):
+    def scatter_forward(self) -> None:
         self._cpp_object.scatter_forward()
 
-    def scatter_reverse(self, mode):
+    def scatter_reverse(self, mode: _cpp.la.InsertMode):
         self._cpp_object.scatter_reverse(mode)
 
     def norm(self, type=_cpp.la.Norm.l2) -> np.floating:
