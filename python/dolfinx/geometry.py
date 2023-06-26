@@ -156,7 +156,7 @@ def create_midpoint_tree(mesh: Mesh, dim: int, entities: npt.NDArray[np.int32]) 
     return BoundingBoxTree(_cpp.geometry.create_midpoint_tree(mesh._cpp_object, dim, entities))
 
 
-def compute_colliding_cells(mesh: Mesh, candidates: AdjacencyList_int32, x: np.ndarray):
+def compute_colliding_cells(mesh: Mesh, candidates: AdjacencyList_int32, x: npt.NDArray[np.floating]):
     """From a mesh, find which cells collide with a set of points.
 
     Args:
@@ -172,7 +172,7 @@ def compute_colliding_cells(mesh: Mesh, candidates: AdjacencyList_int32, x: np.n
     return _cpp.geometry.compute_colliding_cells(mesh._cpp_object, candidates, x)
 
 
-def squared_distance(mesh: Mesh, dim: int, entities: typing.List[int], points: np.ndarray):
+def squared_distance(mesh: Mesh, dim: int, entities: typing.List[int], points: npt.NDArray[np.floating]):
     """Compute the squared distance between a point and a mesh entity.
 
     The distance is computed between the ith input points and the ith
