@@ -270,7 +270,6 @@ def test_curl_curl_eigenvalue(family, order):
     B.destroy()
 
 
-# @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
 @pytest.mark.skipif(np.issubdtype(PETSc.ScalarType, np.complexfloating),
                     reason="This test does not work in complex mode.")
 @pytest.mark.parametrize("family", ["HHJ", "Regge"])

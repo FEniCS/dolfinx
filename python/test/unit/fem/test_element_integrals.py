@@ -131,7 +131,7 @@ def two_unit_cells(cell_type, agree=False, random_order=True, return_order=False
     return mesh
 
 
-@ pytest.mark.skip_in_parallel
+@pytest.mark.skip_in_parallel
 @ parametrize_cell_types
 def test_facet_integral(cell_type):
     """Test that the integral of a function over a facet is correct"""
@@ -174,7 +174,7 @@ def test_facet_integral(cell_type):
             assert np.isclose(result, out[0])
 
 
-@ pytest.mark.skip_in_parallel
+@pytest.mark.skip_in_parallel
 @ parametrize_cell_types
 def test_facet_normals(cell_type):
     """Test that FacetNormal is outward facing"""
@@ -237,7 +237,7 @@ def test_facet_normals(cell_type):
             assert ones == 1
 
 
-@ pytest.mark.skip_in_parallel
+@pytest.mark.skip_in_parallel
 @ pytest.mark.parametrize('space_type', ["Lagrange", "DG"])
 @ parametrize_cell_types
 def test_plus_minus(cell_type, space_type):
@@ -257,7 +257,7 @@ def test_plus_minus(cell_type, space_type):
         assert np.isclose(i, j)
 
 
-@ pytest.mark.skip_in_parallel
+@pytest.mark.skip_in_parallel
 @ pytest.mark.parametrize('pm', ["+", "-"])
 @ parametrize_cell_types
 def test_plus_minus_simple_vector(cell_type, pm):
@@ -309,7 +309,7 @@ def test_plus_minus_simple_vector(cell_type, pm):
         x.destroy()
 
 
-@ pytest.mark.skip_in_parallel
+@pytest.mark.skip_in_parallel
 @ pytest.mark.parametrize('pm1', ["+", "-"])
 @ pytest.mark.parametrize('pm2', ["+", "-"])
 @ parametrize_cell_types
@@ -364,7 +364,7 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
         x.destroy()
 
 
-@ pytest.mark.skip_in_parallel
+@pytest.mark.skip_in_parallel
 @ pytest.mark.parametrize('pm1', ["+", "-"])
 @ pytest.mark.parametrize('pm2', ["+", "-"])
 @ parametrize_cell_types
@@ -422,7 +422,7 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
 
 
 @ pytest.mark.skip(reason="This test relies on the mesh constructor not re-ordering the mesh points. Needs replacing.")
-@ pytest.mark.skip_in_parallel
+@pytest.mark.skip_in_parallel
 @ pytest.mark.parametrize('order', [1, 2])
 @ pytest.mark.parametrize('space_type', ["N1curl", "N2curl"])
 def test_curl(space_type, order):
@@ -519,7 +519,7 @@ def assemble_div_vector(k, offset):
     return _b
 
 
-@ pytest.mark.skip_in_parallel
+@pytest.mark.skip_in_parallel
 @ pytest.mark.parametrize("k", [0, 1, 2])
 def test_div_general_quads_mat(k):
     """Tests that assembling inner(u, div(w)) * dx, where u is from a
@@ -536,7 +536,7 @@ def test_div_general_quads_mat(k):
     assert np.allclose(A_square, A_trap, atol=1e-8)
 
 
-@ pytest.mark.skip_in_parallel
+@pytest.mark.skip_in_parallel
 @ pytest.mark.parametrize("k", [0, 1, 2])
 def test_div_general_quads_vec(k):
     """Tests that assembling inner(1, div(w)) * dx, where w is from an

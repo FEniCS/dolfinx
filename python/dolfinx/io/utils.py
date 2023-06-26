@@ -39,7 +39,6 @@ if _cpp.common.has_adios2:
     __all__ = __all__ + ["FidesWriter", "VTXWriter"]
 
     class VTXWriter:
-        # class VTXWriter(_cpp.io.VTXWriter):
         """Interface to VTK files for ADIOS2
 
         VTX supports arbitrary order Lagrange finite elements for the

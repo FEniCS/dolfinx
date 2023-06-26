@@ -177,7 +177,6 @@ def test_interpolation_rank1(W):
     assert round(w.vector.norm(PETSc.NormType.N1) - 3 * num_vertices, 7) == 0
 
 
-# @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
 @pytest.mark.parametrize("xtype", [np.float64])
 @pytest.mark.parametrize("cell_type0", [CellType.hexahedron, CellType.tetrahedron])
 @pytest.mark.parametrize("cell_type1", [CellType.triangle, CellType.quadrilateral])

@@ -295,21 +295,21 @@ def test_custom_mesh_loop_rank1():
     b0.vector.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     assert b0.vector.sum() == pytest.approx(1.0)
 
-    # # NOTE: Parallel (threaded) Numba can cause problems with MPI
-    # # Assemble with pure Numba function using parallel loop (two passes,
-    # # first will include JIT overhead)
-    # # from dolfinx.fem import transpose_dofmap
-    # # dofmap_t = transpose_dofmap(V.dofmap.list, num_owned_cells)
-    # # btmp = Function(V)
-    # # for i in range(2):
-    # #     b = btmp.x.array
-    # #     b[:] = 0.0
-    # #     start = time.time()
-    # #     assemble_vector_parallel(b, x_dofs, x, dofmap_t.array, dofmap_t.offsets, num_owned_cells)
-    # #     end = time.time()
-    # #     print("Time (numba parallel, pass {}): {}".format(i, end - start))
-    # # btmp.vector.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    # # assert (btmp.vector - b0.vector).norm() == pytest.approx(0.0)
+    # NOTE: Parallel (threaded) Numba can cause problems with MPI
+    # Assemble with pure Numba function using parallel loop (two passes,
+    # first will include JIT overhead)
+    # from dolfinx.fem import transpose_dofmap
+    # dofmap_t = transpose_dofmap(V.dofmap.list, num_owned_cells)
+    # btmp = Function(V)
+    # for i in range(2):
+    #     b = btmp.x.array
+    #     b[:] = 0.0
+    #     start = time.time()
+    #     assemble_vector_parallel(b, x_dofs, x, dofmap_t.array, dofmap_t.offsets, num_owned_cells)
+    #     end = time.time()
+    #     print("Time (numba parallel, pass {}): {}".format(i, end - start))
+    # btmp.vector.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    # assert (btmp.vector - b0.vector).norm() == pytest.approx(0.0)
 
     # Test against generated code and general assembler
     v = ufl.TestFunction(V)
@@ -330,7 +330,6 @@ def test_custom_mesh_loop_rank1():
     assert (b1 - b0.vector).norm() == pytest.approx(0.0)
 
     # Assemble using generated tabulate_tensor kernel and Numba assembler
-    # ffcxtype = "double _Complex" if np.issubdtype(PETSc.ScalarType, np.complexfloating) else "double"
     if dolfinx.default_scalar_type == np.float32:
         ffcxtype = "float"
     elif dolfinx.default_scalar_type == np.float64:
