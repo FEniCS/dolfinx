@@ -93,19 +93,19 @@ if _cpp.common.has_adios2:
         def __exit__(self, exception_type, exception_value, traceback):
             self.close()
 
-        def write(self, t):
+        def write(self, t: float):
             self._cpp_object.write(t)
 
         def close(self):
             self._cpp_object.close()
 
-    class FidesWriter(_cpp.io.FidesWriter):
+    class FidesWriter:
         """Interface to Fides file format.
 
         Fides supports first order Lagrange finite elements for the
-        geometry descriptionand first order Lagrange finite elements for
-        functions. All functions has to be of the same element family
-        and same order.
+        geometry description and first order Lagrange finite elements
+        for functions. All functions has to be of the same element
+        family and same order.
 
         The files can be displayed by Paraview. The storage backend uses
         ADIOS2.
@@ -125,16 +125,38 @@ if _cpp.common.has_adios2:
                     Lagrange functions.
 
             """
+
+            # Get geometry type
             try:
-                super().__init__(comm, filename, output._cpp_object)  # type: ignore[union-attr]
+                dtype = output.geometry.x.dtype  # type: ignore
+            except AttributeError:
+                try:
+                    dtype = output.function_space.mesh.geometry.x.dtype  # type: ignore
+                except AttributeError:
+                    dtype = output[0].function_space.mesh.geometry.x.dtype  # type: ignore
+
+            if dtype == np.float32:
+                _fides_writer = _cpp.io.FidesWriter_float32
+            elif dtype == np.float64:
+                _fides_writer = _cpp.io.FidesWriter_float64
+
+            try:
+                self._cpp_object = _fides_writer(comm, filename, output._cpp_object)  # type: ignore[union-attr]
             except (NotImplementedError, TypeError, AttributeError):
-                super().__init__(comm, filename, _extract_cpp_functions(output))  # type: ignore[arg-type]
+                self._cpp_object = _fides_writer(
+                    comm, filename, _extract_cpp_functions(output))  # type: ignore[arg-type]
 
         def __enter__(self):
             return self
 
         def __exit__(self, exception_type, exception_value, traceback):
             self.close()
+
+        def write(self, t: float):
+            self._cpp_object.write(t)
+
+        def close(self):
+            self._cpp_object.close()
 
 
 class VTKFile(_cpp.io.VTKFile):
