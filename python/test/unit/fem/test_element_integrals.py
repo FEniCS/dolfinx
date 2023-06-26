@@ -132,7 +132,7 @@ def two_unit_cells(cell_type, agree=False, random_order=True, return_order=False
 
 
 @pytest.mark.skip_in_parallel
-@ parametrize_cell_types
+@parametrize_cell_types
 def test_facet_integral(cell_type):
     """Test that the integral of a function over a facet is correct"""
     for count in range(5):
@@ -175,7 +175,7 @@ def test_facet_integral(cell_type):
 
 
 @pytest.mark.skip_in_parallel
-@ parametrize_cell_types
+@parametrize_cell_types
 def test_facet_normals(cell_type):
     """Test that FacetNormal is outward facing"""
     for count in range(5):
@@ -238,8 +238,8 @@ def test_facet_normals(cell_type):
 
 
 @pytest.mark.skip_in_parallel
-@ pytest.mark.parametrize('space_type', ["Lagrange", "DG"])
-@ parametrize_cell_types
+@pytest.mark.parametrize('space_type', ["Lagrange", "DG"])
+@parametrize_cell_types
 def test_plus_minus(cell_type, space_type):
     """Test that ('+') and ('-') give the same value for continuous functions"""
     results = []
@@ -258,8 +258,8 @@ def test_plus_minus(cell_type, space_type):
 
 
 @pytest.mark.skip_in_parallel
-@ pytest.mark.parametrize('pm', ["+", "-"])
-@ parametrize_cell_types
+@pytest.mark.parametrize('pm', ["+", "-"])
+@parametrize_cell_types
 def test_plus_minus_simple_vector(cell_type, pm):
     """Test that ('+') and ('-') match up with the correct DOFs for DG functions"""
     results = []
@@ -310,9 +310,9 @@ def test_plus_minus_simple_vector(cell_type, pm):
 
 
 @pytest.mark.skip_in_parallel
-@ pytest.mark.parametrize('pm1', ["+", "-"])
-@ pytest.mark.parametrize('pm2', ["+", "-"])
-@ parametrize_cell_types
+@pytest.mark.parametrize('pm1', ["+", "-"])
+@pytest.mark.parametrize('pm2', ["+", "-"])
+@parametrize_cell_types
 def test_plus_minus_vector(cell_type, pm1, pm2):
     """Test that ('+') and ('-') match up with the correct DOFs for DG functions"""
     results = []
@@ -365,9 +365,9 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
 
 
 @pytest.mark.skip_in_parallel
-@ pytest.mark.parametrize('pm1', ["+", "-"])
-@ pytest.mark.parametrize('pm2', ["+", "-"])
-@ parametrize_cell_types
+@pytest.mark.parametrize('pm1', ["+", "-"])
+@pytest.mark.parametrize('pm2', ["+", "-"])
+@parametrize_cell_types
 def test_plus_minus_matrix(cell_type, pm1, pm2):
     """Test that ('+') and ('-') match up with the correct DOFs for DG functions"""
     results = []
@@ -421,10 +421,10 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
         x.destroy()
 
 
-@ pytest.mark.skip(reason="This test relies on the mesh constructor not re-ordering the mesh points. Needs replacing.")
+@pytest.mark.skip(reason="This test relies on the mesh constructor not re-ordering the mesh points. Needs replacing.")
 @pytest.mark.skip_in_parallel
-@ pytest.mark.parametrize('order', [1, 2])
-@ pytest.mark.parametrize('space_type', ["N1curl", "N2curl"])
+@pytest.mark.parametrize('order', [1, 2])
+@pytest.mark.parametrize('space_type', ["N1curl", "N2curl"])
 def test_curl(space_type, order):
     """Test that curl is consistent for different cell permutations of a tetrahedron."""
     tdim = dolfinx.mesh.cell_dim(CellType.tetrahedron)
@@ -520,7 +520,7 @@ def assemble_div_vector(k, offset):
 
 
 @pytest.mark.skip_in_parallel
-@ pytest.mark.parametrize("k", [0, 1, 2])
+@pytest.mark.parametrize("k", [0, 1, 2])
 def test_div_general_quads_mat(k):
     """Tests that assembling inner(u, div(w)) * dx, where u is from a
     "DQ" space and w is from an "RTCF" space, gives the same matrix for
@@ -537,7 +537,7 @@ def test_div_general_quads_mat(k):
 
 
 @pytest.mark.skip_in_parallel
-@ pytest.mark.parametrize("k", [0, 1, 2])
+@pytest.mark.parametrize("k", [0, 1, 2])
 def test_div_general_quads_vec(k):
     """Tests that assembling inner(1, div(w)) * dx, where w is from an
     "RTCF" space, gives the same matrix for square and trapezoidal
