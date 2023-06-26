@@ -59,7 +59,7 @@ class BoundingBoxTree:
         return BoundingBoxTree(self._cpp_object.create_global_tree(comm))
 
 
-def bb_tree(mesh: Mesh, dim: int, entities=typing.Optional[npt.NDArray[np.int32]],
+def bb_tree(mesh: Mesh, dim: int, entities: typing.Optional[npt.NDArray[np.int32]] = None,
             padding: float = 0.0) -> BoundingBoxTree:
     """Create a bounding box tree for use in collision detection.
 
