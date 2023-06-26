@@ -123,7 +123,7 @@ def compute_collisions_points(tree: BoundingBoxTree, x: npt.NDArray[np.floating]
 
 
 def compute_closest_entity(tree: BoundingBoxTree, midpoint_tree: BoundingBoxTree, mesh: Mesh,
-                           points: np.ndarray) -> npt.NDArray[np.int32]:
+                           points: npt.NDArray[np.floating]) -> npt.NDArray[np.int32]:
     """Compute closest mesh entity to a point.
 
     Args:
