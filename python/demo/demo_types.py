@@ -47,6 +47,7 @@ facets = mesh.locate_entities_boundary(msh, dim=1,
 
 
 def poisson():
+    """Poisson problem solver"""
 
     V = fem.FunctionSpace(msh, ("Lagrange", 1))
 
@@ -136,7 +137,7 @@ def poisson():
 
 
 def elasticity():
-    print("EEEEEE")
+    """Linearised elasticity problem solver."""
 
     V = fem.VectorFunctionSpace(msh, ("Lagrange", 1))
 
@@ -146,10 +147,8 @@ def elasticity():
     x = ufl.SpatialCoordinate(msh)
     f = ufl.as_vector((ρ * ω**2 * x[0], ρ * ω**2 * x[1]))
 
-    E = 1.0e9
-    ν = 0.3
-    μ = E / (2.0 * (1.0 + ν))
-    λ = E * ν / ((1.0 + ν) * (1.0 - 2.0 * ν))
+    E, ν = 1.0e6, 0.3
+    μ, λ = E / (2.0 * (1.0 + ν)), E * ν / ((1.0 + ν) * (1.0 - 2.0 * ν))
 
     def σ(v):
         """Return an expression for the stress σ given a displacement field"""
@@ -165,12 +164,10 @@ def elasticity():
         """Solve the variational problem"""
 
         # Process forms. This will compile the forms for the requested type.
-        a0 = fem.form(a, dtype=dtype)
-        L0 = fem.form(L, dtype=dtype)
+        a0, L0 = fem.form(a, dtype=dtype), fem.form(L, dtype=dtype)
 
         # Create a Dirichlet boundary condition
-        bc = fem.dirichletbc(np.zeros(2, dtype=dtype),
-                             fem.locate_dofs_topological(V, entity_dim=1, entities=facets), V=V)
+        bc = fem.dirichletbc(np.zeros(2, dtype=dtype), dofs, V=V)
 
         # Assemble forms
         A = fem.assemble_matrix(a0, [bc])
@@ -181,51 +178,46 @@ def elasticity():
         fem.set_bc(b.array, [bc])
 
         # Create a Scipy sparse matrix that shares data with A
-        As = scipy.sparse.csr_matrix((A.data, A.indices, A.indptr))
-        # As = scipy.sparse.bsr_matrix((A.data, A.indices, A.indptr))
+        data = A.data.reshape(-1, *A.block_size)
+        As = scipy.sparse.bsr_matrix((data, A.indices, A.indptr)).tocsr()
 
-        # print(As)
-
-        # # Solve the variational problem and return the solution
-        # uh = fem.Function(V, dtype=dtype)
-        # uh.x.array[:] = scipy.sparse.linalg.spsolve(As, b.array)
-        # return uh
+        # Solve the variational problem and return the solution
+        uh = fem.Function(V, dtype=dtype)
+        uh.x.array[:] = scipy.sparse.linalg.spsolve(As, b.array)
+        return uh
 
     # This function visualises the solution.
 
-    # def display(u, filter=np.real):
-    #     """Plot the solution using pyvista"""
-    #     try:
-    #         import pyvista
-    #         cells, types, x = plot.create_vtk_mesh(V)
-    #         grid = pyvista.UnstructuredGrid(cells, types, x)
-    #         grid.point_data["u"] = filter(u.x.array)
-    #         grid.set_active_scalars("u")
-
-    #         plotter = pyvista.Plotter()
-    #         plotter.add_mesh(grid, show_edges=True)
-    #         plotter.add_mesh(grid.warp_by_scalar())
-    #         plotter.add_title("real" if filter is np.real else "imag")
-    #         if pyvista.OFF_SCREEN:
-    #             pyvista.start_xvfb(wait=0.1)
-    #             plotter.screenshot(f"u_{'real' if filter is np.real else 'imag'}.png")
-    #         else:
-    #             plotter.show()
-    #     except ModuleNotFoundError:
-    #         print("'pyvista' is required to visualise the solution")
+    def display(u, filter=np.real):
+        """Plot the solution using pyvista"""
+        try:
+            import pyvista
+            cells, types, x = plot.create_vtk_mesh(V)
+            grid = pyvista.UnstructuredGrid(cells, types, x)
+            grid.point_data["u"] = filter(np.insert(u.x.array.reshape(x.shape[0], V.dofmap.index_map_bs), 2, 0, axis=1))
+            plotter = pyvista.Plotter()
+            plotter.add_mesh(grid.warp_by_scalar(), show_edges=True)
+            plotter.add_title("real" if filter is np.real else "imag")
+            if pyvista.OFF_SCREEN:
+                pyvista.start_xvfb(wait=0.1)
+                plotter.screenshot(f"u_{'real' if filter is np.real else 'imag'}.png")
+            else:
+                plotter.show()
+        except ModuleNotFoundError:
+            print("'pyvista' is required to visualise the solution")
 
     # Solve the variational problem using different scalar types
 
-    # uh = solve(dtype=np.float32)
+    uh = solve(dtype=np.float32)
     uh = solve(dtype=np.float64)
-    # uh = solve(dtype=np.complex64)
-    # uh = solve(dtype=np.complex128)
+    uh = solve(dtype=np.complex64)
+    uh = solve(dtype=np.complex128)
 
     # Display the last computed solution
 
-    # display(uh, np.real)
-    # display(uh, np.imag)
+    display(uh, np.real)
+    display(uh, np.imag)
 
 
-# poisson()
+poisson()
 elasticity()
