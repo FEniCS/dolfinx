@@ -486,7 +486,6 @@ void assemble(py::module& m)
   petsc_module(petsc_mod);
 
   // dolfinx::fem::assemble
-  // declare_assembly_functions<PetscScalar, PetscReal>(m);
   declare_assembly_functions<float, float>(m);
   declare_assembly_functions<double, double>(m);
   declare_assembly_functions<std::complex<float>, float>(m);
