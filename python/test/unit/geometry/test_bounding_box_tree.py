@@ -82,7 +82,6 @@ def test_padded_bbox(padding):
     collision"""
     dtype = default_real_type
     eps = 1e-4
-    # eps = 1e-12
     x0 = np.array([0, 0, 0], dtype=dtype)
     x1 = np.array([1, 1, 1 - eps], dtype=dtype)
     mesh_0 = create_box(MPI.COMM_WORLD, [x0, x1], [1, 1, 2], CellType.hexahedron, dtype=dtype)

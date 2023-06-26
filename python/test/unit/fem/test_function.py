@@ -94,9 +94,7 @@ def test_eval(V, W, Q, mesh):
 
     x0 = (mesh.geometry.x[0] + mesh.geometry.x[1]) / 2.0
     tree = bb_tree(mesh, mesh.geometry.dim)
-    print("test:", tree.num_bboxes)
     cell_candidates = compute_collisions_points(tree, x0)
-    print("cand:", cell_candidates)
     cell = compute_colliding_cells(mesh, cell_candidates, x0)
     assert len(cell) > 0
     first_cell = cell[0]
