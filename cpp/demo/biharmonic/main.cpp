@@ -183,6 +183,7 @@ int main(int argc, char* argv[])
           return {f, {f.size()}};
         });
     auto alpha = std::make_shared<fem::Constant<T>>(8.0);
+
     // Define variational forms
     auto a = std::make_shared<fem::Form<T>>(fem::create_form<T>(
         *form_biharmonic_a, {V, V}, {}, {{"alpha", alpha}}, {}));
@@ -207,7 +208,7 @@ int main(int argc, char* argv[])
         *mesh, 1,
         [](auto x)
         {
-          constexpr U eps = 1.0e-8;
+          constexpr U eps = 1.0e-6;
           std::vector<std::int8_t> marker(x.extent(1), false);
           for (std::size_t p = 0; p < x.extent(1); ++p)
           {
