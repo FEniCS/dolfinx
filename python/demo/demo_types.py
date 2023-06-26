@@ -170,8 +170,12 @@ def elasticity():
         bc = fem.dirichletbc(np.zeros(2, dtype=dtype), dofs, V=V)
 
         # Assemble forms
-        A = fem.assemble_matrix(a0, [bc])
+        sp = fem.create_sparsity_pattern(a0)
+        sp.finalize()
+        A = la.matrix_csr(sp, la.BlockMode.expanded)
+        fem.assemble_matrix(A, a0, [bc])
         A.finalize()
+
         b = fem.assemble_vector(L0)
         fem.apply_lifting(b.array, [a0], bcs=[[bc]])
         b.scatter_reverse(la.InsertMode.add)
