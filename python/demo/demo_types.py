@@ -110,7 +110,6 @@ def poisson():
             grid = pyvista.UnstructuredGrid(cells, types, x)
             grid.point_data["u"] = filter(u.x.array)
             grid.set_active_scalars("u")
-
             plotter = pyvista.Plotter()
             plotter.add_mesh(grid, show_edges=True)
             plotter.add_mesh(grid.warp_by_scalar())
@@ -169,11 +168,10 @@ def elasticity():
         # Create a Dirichlet boundary condition
         bc = fem.dirichletbc(np.zeros(2, dtype=dtype), dofs, V=V)
 
-        # Assemble forms
+        # Assemble forms (BSR matrix)
         sp = fem.create_sparsity_pattern(a0)
         sp.finalize()
-        A = la.matrix_csr(sp, la.BlockMode.expanded)
-        fem.assemble_matrix(A, a0, [bc])
+        A = fem.assemble_matrix(a0, [bc])
         A.finalize()
 
         b = fem.assemble_vector(L0)
@@ -182,8 +180,7 @@ def elasticity():
         fem.set_bc(b.array, [bc])
 
         # Create a Scipy sparse matrix that shares data with A
-        data = A.data.reshape(-1, *A.block_size)
-        As = scipy.sparse.bsr_matrix((data, A.indices, A.indptr)).tocsr()
+        As = scipy.sparse.bsr_matrix((A.data.reshape(-1, *A.block_size), A.indices, A.indptr)).tocsr()
 
         # Solve the variational problem and return the solution
         uh = fem.Function(V, dtype=dtype)
