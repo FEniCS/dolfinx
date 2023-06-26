@@ -156,7 +156,7 @@ def create_midpoint_tree(mesh: Mesh, dim: int, entities: npt.NDArray[np.int32]) 
     return BoundingBoxTree(_cpp.geometry.create_midpoint_tree(mesh._cpp_object, dim, entities))
 
 
-def compute_colliding_cells(mesh: Mesh, candidates: AdjacencyList_int32, x: np.ndarray):
+def compute_colliding_cells(mesh: Mesh, candidates: AdjacencyList_int32, x: npt.NDArray[np.floating]):
     """From a mesh, find which cells collide with a set of points.
 
     Args:
