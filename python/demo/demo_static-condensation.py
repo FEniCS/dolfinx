@@ -40,12 +40,7 @@ from dolfinx.mesh import locate_entities_boundary, meshtags
 from mpi4py import MPI
 from petsc4py import PETSc
 
-from dolfinx import default_real_type, geometry
-
-if default_real_type == np.float32:
-    print("float32 not yet supported for this demo.")
-    exit(0)
-
+from dolfinx import geometry
 
 infile = XDMFFile(MPI.COMM_WORLD, Path(Path(__file__).parent, "data",
                   "cooks_tri_mesh.xdmf"), "r", encoding=XDMFFile.Encoding.ASCII)
