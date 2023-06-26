@@ -365,7 +365,7 @@ def test_matrix_assembly_block(mode):
 
 @pytest.mark.parametrize("mode", [
     GhostMode.none,
-    # GhostMode.shared_facet
+    GhostMode.shared_facet
 ])
 def test_assembly_solve_block(mode):
     """Solve a two-field mass-matrix like problem with block matrix approaches
