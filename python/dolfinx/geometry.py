@@ -78,7 +78,7 @@ def bb_tree(mesh: Mesh, dim: int, entities: typing.Optional[npt.NDArray[np.int32
     if map is None:
         raise RuntimeError(f"Mesh entities of dimension {dim} have not been created.")
     if entities is None:
-        entities = range(0, map.size_local + map.num_ghosts)
+        entities = np.arange(map.size_local + map.num_ghosts, dtype=np.int32)
 
     dtype = mesh.geometry.x.dtype
     if dtype == np.float32:
