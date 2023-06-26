@@ -97,6 +97,8 @@ void common(py::module& m)
       .def_property_readonly("local_range",
                              &dolfinx::common::IndexMap::local_range,
                              "Range of indices owned by this map")
+      .def_property_readonly("index_to_dest_ranks",
+                             &dolfinx::common::IndexMap::index_to_dest_ranks)
       .def_property_readonly(
           "ghosts",
           [](const dolfinx::common::IndexMap& self)
