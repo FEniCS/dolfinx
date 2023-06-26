@@ -172,7 +172,7 @@ def compute_colliding_cells(mesh: Mesh, candidates: AdjacencyList_int32, x: npt.
     return _cpp.geometry.compute_colliding_cells(mesh._cpp_object, candidates, x)
 
 
-def squared_distance(mesh: Mesh, dim: int, entities: typing.List[int], points: np.ndarray):
+def squared_distance(mesh: Mesh, dim: int, entities: typing.List[int], points: npt.NDArray[np.floating]):
     """Compute the squared distance between a point and a mesh entity.
 
     The distance is computed between the ith input points and the ith
