@@ -176,7 +176,7 @@ def test_set_diagonal_distributed(dtype):
 
     # set diagonal values
     value = dtype(1.0)
-    _cpp.fem.insert_diagonal(A, dofs, value)
+    _cpp.fem.insert_diagonal(A._cpp_object, dofs, value)
 
     # check diagonal values: they should be 1.0, including ghost dofs
     diag = As.diagonal()
@@ -203,7 +203,7 @@ def test_set_diagonal_distributed(dtype):
     # set diagonal values using dirichlet bc: this will set diagonal values of
     # owned rows only
     bc = fem.dirichletbc(dtype(0.0), dofs, V)
-    _cpp.fem.insert_diagonal(A, a.function_spaces[0], [bc], value)
+    _cpp.fem.insert_diagonal(A._cpp_object, a.function_spaces[0], [bc._cpp_object], value)
 
     # check diagonal values: they should be 1.0, except ghost dofs
     diag = As.diagonal()
