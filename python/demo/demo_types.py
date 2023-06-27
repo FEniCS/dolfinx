@@ -42,7 +42,7 @@ comm = MPI.COMM_SELF
 # solution.
 
 
-def display_scalar(u, filter=np.real):
+def display_scalar(u, name, filter=np.real):
     """Plot the solution using pyvista"""
     try:
         import pyvista
@@ -52,8 +52,8 @@ def display_scalar(u, filter=np.real):
         grid.set_active_scalars("u")
         plotter = pyvista.Plotter()
         plotter.add_mesh(grid, show_edges=True)
-        # plotter.add_mesh(grid.warp_by_scalar())
-        plotter.add_title("real" if filter is np.real else "imag")
+        plotter.add_mesh(grid.warp_by_scalar())
+        plotter.add_title(f"{name}: real" if filter is np.real else f"{name}: imag")
         if pyvista.OFF_SCREEN:
             pyvista.start_xvfb(wait=0.1)
             plotter.screenshot(f"u_{'real' if filter is np.real else 'imag'}.png")
@@ -63,16 +63,17 @@ def display_scalar(u, filter=np.real):
         print("'pyvista' is required to visualise the solution")
 
 
-def display_vector(u, filter=np.real):
+def display_vector(u, name, filter=np.real):
     """Plot the solution using pyvista"""
     try:
         import pyvista
-        cells, types, x = plot.create_vtk_mesh(u.function_space)
+        V = u.function_space
+        cells, types, x = plot.create_vtk_mesh(V)
         grid = pyvista.UnstructuredGrid(cells, types, x)
-        grid.point_data["u"] = filter(np.insert(u.x.array.reshape(x.shape[0], u.function_space.dofmap.index_map_bs), 2, 0, axis=1))
+        grid.point_data["u"] = filter(np.insert(u.x.array.reshape(x.shape[0], V.dofmap.index_map_bs), 2, 0, axis=1))
         plotter = pyvista.Plotter()
         plotter.add_mesh(grid.warp_by_scalar(), show_edges=True)
-        plotter.add_title("real" if filter is np.real else "imag")
+        plotter.add_title(f"{name}: real" if filter is np.real else f"{name}: imag")
         if pyvista.OFF_SCREEN:
             pyvista.start_xvfb(wait=0.1)
             plotter.screenshot(f"u_{'real' if filter is np.real else 'imag'}.png")
@@ -203,12 +204,12 @@ uh = poisson(dtype=np.float32)
 uh = poisson(dtype=np.float64)
 uh = poisson(dtype=np.complex64)
 uh = poisson(dtype=np.complex128)
-display_scalar(uh, np.real)
-display_scalar(uh, np.imag)
+display_scalar(uh, "poisson", np.real)
+display_scalar(uh, "poisson", np.imag)
 
 
-uh = elasticity(dtype=np.float32)
-uh = elasticity(dtype=np.float64)
-uh = elasticity(dtype=np.complex64)
-uh = elasticity(dtype=np.complex128)
-display_vector(uh, np.real)
+# uh = elasticity(dtype=np.float32)
+# uh = elasticity(dtype=np.float64)
+# uh = elasticity(dtype=np.complex64)
+# uh = elasticity(dtype=np.complex128)
+# display_vector(uh, "elasticity", np.real)
