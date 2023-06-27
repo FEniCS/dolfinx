@@ -79,7 +79,7 @@ def test_submesh_cell_assembly(d, n, k, space, ghost_mode):
     A_submesh, b_submesh, s_submesh = assemble(submesh, space, k)
 
     assert A_mesh_0.norm() == pytest.approx(A_submesh.norm(), rel=1.0e-4, abs=1.0e-4)
-    assert b_mesh_0.norm() == pytest.approx(b_submesh.norm(),  rel=1.0e-4)
+    assert b_mesh_0.norm() == pytest.approx(b_submesh.norm(), rel=1.0e-4)
     assert np.isclose(s_mesh_0, s_submesh)
 
     A_mesh_0.destroy()
