@@ -268,10 +268,24 @@ void io(py::module& m)
                &dolfinx::io::XDMFFile::write_function<std::complex<double>,
                                                       double>),
            py::arg("function"), py::arg("t"), py::arg("mesh_xpath"))
-      .def("write_meshtags", &dolfinx::io::XDMFFile::write_meshtags,
-           py::arg("meshtags"), py::arg("x"),
-           py::arg("geometry_xpath") = "/Xdmf/Domain/Grid/Geometry",
-           py::arg("xpath") = "/Xdmf/Domain")
+      .def(
+          "write_meshtags",
+          [](dolfinx::io::XDMFFile& self,
+             const dolfinx::mesh::MeshTags<std::int32_t>& meshtags,
+             const dolfinx::mesh::Geometry<float>& x,
+             std::string geometry_xpath, std::string xpath)
+          { self.write_meshtags(meshtags, x, geometry_xpath, xpath); },
+          py::arg("meshtags"), py::arg("x"), py::arg("geometry_xpath"),
+          py::arg("xpath") = "/Xdmf/Domain")
+      .def(
+          "write_meshtags",
+          [](dolfinx::io::XDMFFile& self,
+             const dolfinx::mesh::MeshTags<std::int32_t>& meshtags,
+             const dolfinx::mesh::Geometry<double>& x,
+             std::string geometry_xpath, std::string xpath)
+          { self.write_meshtags(meshtags, x, geometry_xpath, xpath); },
+          py::arg("meshtags"), py::arg("x"), py::arg("geometry_xpath"),
+          py::arg("xpath") = "/Xdmf/Domain")
       .def("read_meshtags", &dolfinx::io::XDMFFile::read_meshtags,
            py::arg("mesh"), py::arg("name"), py::arg("xpath") = "/Xdmf/Domain")
       .def("write_information", &dolfinx::io::XDMFFile::write_information,

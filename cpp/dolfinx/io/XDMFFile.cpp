@@ -308,6 +308,31 @@ XDMFFile::write_function(const fem::Function<std::complex<double>, double>&,
 /// @endcond
 //-----------------------------------------------------------------------------
 void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
+                              const mesh::Geometry<float>& x,
+                              std::string geometry_xpath, std::string xpath)
+{
+  pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
+  if (!node)
+    throw std::runtime_error("XML node '" + xpath + "' not found.");
+
+  pugi::xml_node grid_node = node.append_child("Grid");
+  assert(grid_node);
+  grid_node.append_attribute("Name") = meshtags.name.c_str();
+  grid_node.append_attribute("GridType") = "Uniform";
+
+  const std::string geo_ref_path = "xpointer(" + geometry_xpath + ")";
+  pugi::xml_node geo_ref_node = grid_node.append_child("xi:include");
+  geo_ref_node.append_attribute("xpointer") = geo_ref_path.c_str();
+  assert(geo_ref_node);
+  xdmf_meshtags::add_meshtags(_comm.comm(), meshtags, x, grid_node, _h5_id,
+                              meshtags.name);
+
+  // Save XML file (on process 0 only)
+  if (MPI::rank(_comm.comm()) == 0)
+    _xml_doc->save_file(_filename.c_str(), "  ");
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
                               const mesh::Geometry<double>& x,
                               std::string geometry_xpath, std::string xpath)
 {
