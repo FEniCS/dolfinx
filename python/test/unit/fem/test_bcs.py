@@ -6,7 +6,6 @@
 
 import numpy as np
 import pytest
-
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx.fem import (Constant, Function, FunctionSpace,
@@ -17,10 +16,11 @@ from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                create_matrix, create_vector, set_bc)
 from dolfinx.mesh import (CellType, create_unit_cube, create_unit_square,
                           locate_entities_boundary)
-from ufl import dx, inner
-
 from mpi4py import MPI
 from petsc4py import PETSc
+from ufl import dx, inner
+
+from dolfinx import default_real_type
 
 
 def test_locate_dofs_geometrical():
@@ -98,12 +98,12 @@ def test_overlapping_bcs():
 
     if len(dof_corner) > 0:
         with b.localForm() as b_loc:
-            assert b_loc[dof_corner[0]] == 123.456
+            assert b_loc[dof_corner[0]] == default_real_type(123.456)
 
 
 def test_constant_bc_constructions():
     """Test construction from constant values"""
-    msh = create_unit_square(MPI.COMM_WORLD, 4, 4)
+    msh = create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=default_real_type)
     V0 = FunctionSpace(msh, ("Lagrange", 1))
     V1 = VectorFunctionSpace(msh, ("Lagrange", 1))
     V2 = TensorFunctionSpace(msh, ("Lagrange", 1))
@@ -114,18 +114,23 @@ def test_constant_bc_constructions():
     boundary_dofs1 = locate_dofs_topological(V1, tdim - 1, boundary_facets)
     boundary_dofs2 = locate_dofs_topological(V2, tdim - 1, boundary_facets)
 
-    bc0 = dirichletbc(1.0 + 2.2j, boundary_dofs0, V0)
-    assert bc0.value.value.dtype == np.complex128
+    if default_real_type == np.float64:
+        dtype = np.complex128
+    else:
+        dtype = np.complex64
+
+    bc0 = dirichletbc(dtype(1.0 + 2.2j), boundary_dofs0, V0)
+    assert bc0.value.value.dtype == dtype
     assert bc0.value.value.shape == tuple()
-    assert bc0.value.value == 1.0 + 2.2j
+    assert bc0.value.value == dtype(1.0 + 2.2j)
 
-    bc1 = dirichletbc(np.array([1.0 + 2.2j, 3.0 + 2.2j], dtype=np.complex128), boundary_dofs1, V1)
-    assert bc1.value.value.dtype == np.complex128
+    bc1 = dirichletbc(np.array([1.0 + 2.2j, 3.0 + 2.2j], dtype=dtype), boundary_dofs1, V1)
+    assert bc1.value.value.dtype == dtype
     assert bc1.value.value.shape == (tdim,)
-    assert (bc1.value.value == [1.0 + 2.2j, 3.0 + 2.2j]).all()
+    assert (bc1.value.value == [dtype(1.0 + 2.2j), dtype(3.0 + 2.2j)]).all()
 
-    bc2 = dirichletbc(np.array([[1.0, 3.0], [3.0, -2.0]], dtype=np.float32), boundary_dofs2, V2)
-    assert bc2.value.value.dtype == np.float32
+    bc2 = dirichletbc(np.array([[1.0, 3.0], [3.0, -2.0]], dtype=default_real_type), boundary_dofs2, V2)
+    assert bc2.value.value.dtype == default_real_type
     assert bc2.value.value.shape == (tdim, tdim)
     assert (bc2.value.value == [[1.0, 3.0], [3.0, -2.0]]).all()
 

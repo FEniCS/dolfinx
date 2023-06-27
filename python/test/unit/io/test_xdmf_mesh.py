@@ -8,15 +8,15 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-
-from dolfinx import cpp as _cpp
 from dolfinx.io import XDMFFile
 from dolfinx.io.gmshio import cell_perm_array, ufl_mesh
 from dolfinx.mesh import (CellType, GhostMode, create_mesh, create_submesh,
                           create_unit_cube, create_unit_interval,
                           create_unit_square, locate_entities)
-
 from mpi4py import MPI
+
+from dolfinx import cpp as _cpp
+from dolfinx import default_real_type
 
 # Supported XDMF file encoding
 if MPI.COMM_WORLD.size > 1:
@@ -37,6 +37,7 @@ def mesh_factory(tdim, n, ghost_mode=GhostMode.shared_facet):
         return create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
 
 
+@pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_and_load_1d_mesh(tempdir, encoding):
     filename = Path(tempdir, "mesh.xdmf")
@@ -50,6 +51,7 @@ def test_save_and_load_1d_mesh(tempdir, encoding):
         mesh.topology.dim).size_global
 
 
+@pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
 @pytest.mark.parametrize("cell_type", celltypes_2D)
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_and_load_2d_mesh(tempdir, encoding, cell_type):
@@ -69,6 +71,7 @@ def test_save_and_load_2d_mesh(tempdir, encoding, cell_type):
     assert topology.index_map(topology.dim).size_global == topology2.index_map(topology.dim).size_global
 
 
+@pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
 @pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_and_load_3d_mesh(tempdir, encoding, cell_type):
@@ -85,6 +88,7 @@ def test_save_and_load_3d_mesh(tempdir, encoding, cell_type):
     assert topology.index_map(topology.dim).size_global == topology2.index_map(topology.dim).size_global
 
 
+@pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
 @pytest.mark.parametrize("encoding", encodings)
 def test_read_write_p2_mesh(tempdir, encoding):
     try:
@@ -139,16 +143,15 @@ def test_read_write_p2_mesh(tempdir, encoding):
 @pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("n", [2, 5])
 @pytest.mark.parametrize("codim", [0, 1])
-@pytest.mark.parametrize("ghost_mode", [GhostMode.none,
-                                        GhostMode.shared_facet])
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 @pytest.mark.parametrize("encoding", encodings)
-def xtest_submesh(tempdir, d, n, codim, ghost_mode, encoding):
+def test_submesh(tempdir, d, n, codim, ghost_mode, encoding):
     mesh = mesh_factory(d, n, ghost_mode)
     edim = d - codim
     entities = locate_entities(mesh, edim, lambda x: x[0] >= 0.5)
     submesh = create_submesh(mesh, edim, entities)[0]
 
-    filename = Path(tempdir, "submesh.xdmf")
     # Check writing the mesh doesn't cause a segmentation fault
+    filename = Path(tempdir, "submesh.xdmf")
     with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as xdmf:
         xdmf.write_mesh(submesh)

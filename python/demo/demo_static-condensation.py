@@ -26,11 +26,10 @@ import cffi
 import numba
 import numba.core.typing.cffi_utils as cffi_support
 import numpy as np
-
 import ufl
 from basix.ufl import element
-from dolfinx import geometry
-from dolfinx.cpp.fem import Form_complex128, Form_float64
+from dolfinx.cpp.fem import (Form_complex64, Form_complex128, Form_float32,
+                             Form_float64)
 from dolfinx.fem import (Function, FunctionSpace, IntegralType, dirichletbc,
                          form, locate_dofs_topological)
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
@@ -38,9 +37,15 @@ from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
 from dolfinx.io import XDMFFile
 from dolfinx.jit import ffcx_jit
 from dolfinx.mesh import locate_entities_boundary, meshtags
-
 from mpi4py import MPI
 from petsc4py import PETSc
+
+from dolfinx import default_real_type, geometry
+
+if default_real_type == np.float32:
+    print("float32 not yet supported for this demo.")
+    exit(0)
+
 
 infile = XDMFFile(MPI.COMM_WORLD, Path(Path(__file__).parent, "data",
                   "cooks_tri_mesh.xdmf"), "r", encoding=XDMFFile.Encoding.ASCII)
@@ -96,8 +101,22 @@ f = ufl.as_vector([0.0, 1.0 / 16])
 b1 = form(- ufl.inner(f, v) * ds(1))
 
 # JIT compile individual blocks tabulation kernels
-nptype = "complex128" if np.issubdtype(PETSc.ScalarType, np.complexfloating) else "float64"
-ffcxtype = "double _Complex" if np.issubdtype(PETSc.ScalarType, np.complexfloating) else "double"
+nptype, ffcxtype = None, None
+if PETSc.ScalarType == np.float32:
+    nptype = "float32"
+    ffcxtype = "float"
+elif PETSc.ScalarType == np.float64:
+    nptype = "float64"
+    ffcxtype = "double"
+elif PETSc.ScalarType == np.complex64:
+    nptype = "complex64"
+    ffcxtype = "float _Complex"
+elif PETSc.ScalarType == np.complex128:
+    nptype = "complex128"
+    ffcxtype = "double _Complex"
+else:
+    raise RuntimeError(f"Unsupported scalar type {PETSc.ScalarType}.")
+
 ufcx_form00, _, _ = ffcx_jit(msh.comm, a00, form_compiler_options={"scalar_type": ffcxtype})
 kernel00 = getattr(ufcx_form00.integrals(0)[0], f"tabulate_tensor_{nptype}")
 ufcx_form01, _, _ = ffcx_jit(msh.comm, a01, form_compiler_options={"scalar_type": ffcxtype})
@@ -111,7 +130,7 @@ c_signature = numba.types.void(
     numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
     numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
     numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
-    numba.types.CPointer(numba.types.double),
+    numba.types.CPointer(numba.typeof(PETSc.RealType())),
     numba.types.CPointer(numba.types.int32),
     numba.types.CPointer(numba.types.uint8))
 
@@ -136,7 +155,17 @@ def tabulate_condensed_tensor_A(A_, w_, c_, coords_, entity_local_index, permuta
 
 
 # Prepare a Form with a condensed tabulation kernel
-Form = Form_float64 if PETSc.ScalarType == np.float64 else Form_complex128
+Form = None
+if PETSc.ScalarType == np.float32:
+    Form = Form_float32
+elif PETSc.ScalarType == np.float64:
+    Form = Form_float64
+elif PETSc.ScalarType == np.complex64:
+    Form = Form_complex64
+elif PETSc.ScalarType == np.complex128:
+    Form = Form_complex128
+else:
+    raise RuntimeError(f"Unsupported PETSc ScalarType '{PETSc.ScalarType }'.")
 
 cells = range(msh.topology.index_map(msh.topology.dim).size_local)
 integrals = {IntegralType.cell: [(-1, tabulate_condensed_tensor_A.address, cells)]}
@@ -161,11 +190,11 @@ A = assemble_matrix(a, bcs=[bc])
 A.assemble()
 
 # Create bounding box for function evaluation
-bb_tree = geometry.BoundingBoxTree(msh, 2)
+bb_tree = geometry.bb_tree(msh, 2)
 
 # Check against standard table value
 p = np.array([48.0, 52.0, 0.0], dtype=np.float64)
-cell_candidates = geometry.compute_collisions(bb_tree, p)
+cell_candidates = geometry.compute_collisions_points(bb_tree, p)
 cells = geometry.compute_colliding_cells(msh, cell_candidates, p)
 
 uc.x.scatter_forward()

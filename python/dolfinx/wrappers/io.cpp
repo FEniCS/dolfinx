@@ -31,6 +31,94 @@ namespace py = pybind11;
 namespace dolfinx_wrappers
 {
 
+namespace
+{
+template <typename T>
+void declare_vtx_writer(py::module& m, std::string type)
+{
+#ifdef HAS_ADIOS2
+  {
+    std::string pyclass_name = "VTXWriter_" + type;
+    py::class_<dolfinx::io::VTXWriter<T>,
+               std::shared_ptr<dolfinx::io::VTXWriter<T>>>(
+        m, pyclass_name.c_str(), "VTXWriter object")
+        .def(py::init(
+                 [](MPICommWrapper comm, std::filesystem::path filename,
+                    std::shared_ptr<const dolfinx::mesh::Mesh<T>> mesh,
+                    std::string engine)
+                 {
+                   return std::make_unique<dolfinx::io::VTXWriter<T>>(
+                       comm.get(), filename, mesh, engine);
+                 }),
+             py::arg("comm"), py::arg("filename"), py::arg("mesh"),
+             py::arg("engine") = "BPFile")
+        .def(
+            py::init(
+                [](MPICommWrapper comm, std::filesystem::path filename,
+                   const std::vector<std::variant<
+                       std::shared_ptr<const dolfinx::fem::Function<float, T>>,
+                       std::shared_ptr<const dolfinx::fem::Function<double, T>>,
+                       std::shared_ptr<const dolfinx::fem::Function<
+                           std::complex<float>, T>>,
+                       std::shared_ptr<const dolfinx::fem::Function<
+                           std::complex<double>, T>>>>& u,
+                   std::string engine)
+                {
+                  return std::make_unique<dolfinx::io::VTXWriter<T>>(
+                      comm.get(), filename, u, engine);
+                }),
+            py::arg("comm"), py::arg("filename"), py::arg("u"),
+            py::arg("engine") = "BPFile")
+        .def("close", [](dolfinx::io::VTXWriter<T>& self) { self.close(); })
+        .def(
+            "write",
+            [](dolfinx::io::VTXWriter<T>& self, double t) { self.write(t); },
+            py::arg("t"));
+  }
+
+  {
+    std::string pyclass_name = "FidesWriter_" + type;
+    py::class_<dolfinx::io::FidesWriter<T>,
+               std::shared_ptr<dolfinx::io::FidesWriter<T>>>(
+        m, pyclass_name.c_str(), "FidesWriter object")
+        .def(py::init(
+                 [](MPICommWrapper comm, std::filesystem::path filename,
+                    std::shared_ptr<const dolfinx::mesh::Mesh<T>> mesh,
+                    std::string engine)
+                 {
+                   return std::make_unique<dolfinx::io::FidesWriter<T>>(
+                       comm.get(), filename, mesh, engine);
+                 }),
+             py::arg("comm"), py::arg("filename"), py::arg("mesh"),
+             py::arg("engine") = "BPFile")
+        .def(
+            py::init(
+                [](MPICommWrapper comm, std::filesystem::path filename,
+                   const std::vector<std::variant<
+                       std::shared_ptr<const dolfinx::fem::Function<float, T>>,
+                       std::shared_ptr<const dolfinx::fem::Function<double, T>>,
+                       std::shared_ptr<const dolfinx::fem::Function<
+                           std::complex<float>, T>>,
+                       std::shared_ptr<const dolfinx::fem::Function<
+                           std::complex<double>, T>>>>& u,
+                   std::string engine, dolfinx::io::FidesMeshPolicy policy)
+                {
+                  return std::make_unique<dolfinx::io::FidesWriter<T>>(
+                      comm.get(), filename, u, policy);
+                }),
+            py::arg("comm"), py::arg("filename"), py::arg("u"),
+            py::arg("engine") = "BPFile",
+            py::arg("policy") = dolfinx::io::FidesMeshPolicy::update)
+        .def("close", [](dolfinx::io::FidesWriter<T>& self) { self.close(); })
+        .def(
+            "write",
+            [](dolfinx::io::FidesWriter<T>& self, double t) { self.write(t); },
+            py::arg("t"));
+  }
+#endif
+}
+} // namespace
+
 void io(py::module& m)
 {
   // dolfinx::io::cell vtk cell type converter
@@ -39,13 +127,19 @@ void io(py::module& m)
 
   m.def(
       "extract_vtk_connectivity",
-      [](const dolfinx::mesh::Geometry<double>& x, dolfinx::mesh::CellType cell)
+      [](py::array_t<std::int32_t, py::array::c_style> dofmap,
+         dolfinx::mesh::CellType cell)
       {
+        if (dofmap.ndim() != 2)
+          throw std::runtime_error("Geometry dofmap must be rank 2.");
+        std::experimental::mdspan<const std::int32_t,
+                                  std::experimental::dextents<std::size_t, 2>>
+            _dofmap(dofmap.data(), dofmap.shape(0), dofmap.shape(1));
         auto [cells, shape]
-            = dolfinx::io::extract_vtk_connectivity(x.dofmap(), cell);
+            = dolfinx::io::extract_vtk_connectivity(_dofmap, cell);
         return as_pyarray(std::move(cells), shape);
       },
-      py::arg("x"), py::arg("celltype"),
+      py::arg("dofmap"), py::arg("celltype"),
       "Extract the mesh topology with VTK ordering using "
       "geometry indices");
 
@@ -105,8 +199,16 @@ void io(py::module& m)
            py::arg("comm"), py::arg("filename"), py::arg("file_mode"),
            py::arg("encoding") = dolfinx::io::XDMFFile::Encoding::HDF5)
       .def("close", &dolfinx::io::XDMFFile::close)
-      .def("write_mesh", &dolfinx::io::XDMFFile::write_mesh, py::arg("mesh"),
-           py::arg("xpath"))
+      .def("write_mesh",
+           static_cast<void (dolfinx::io::XDMFFile::*)(
+               const dolfinx::mesh::Mesh<double>&, std::string)>(
+               &dolfinx::io::XDMFFile::write_mesh),
+           py::arg("mesh"), py::arg("xpath"))
+      .def("write_mesh",
+           static_cast<void (dolfinx::io::XDMFFile::*)(
+               const dolfinx::mesh::Mesh<float>&, std::string)>(
+               &dolfinx::io::XDMFFile::write_mesh),
+           py::arg("mesh"), py::arg("xpath"))
       .def("write_geometry", &dolfinx::io::XDMFFile::write_geometry,
            py::arg("geometry"), py::arg("name") = "geometry",
            py::arg("xpath") = "/Xdmf/Domain")
@@ -123,7 +225,8 @@ void io(py::module& m)
           [](dolfinx::io::XDMFFile& self, std::string name, std::string xpath)
           {
             auto [x, shape] = self.read_geometry_data(name, xpath);
-            return as_pyarray(std::move(x), shape);
+            std::vector<double>& _x = std::get<std::vector<double>>(x);
+            return as_pyarray(std::move(_x), shape);
           },
           py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
       .def("read_geometry_data", &dolfinx::io::XDMFFile::read_geometry_data,
@@ -131,14 +234,28 @@ void io(py::module& m)
       .def("read_cell_type", &dolfinx::io::XDMFFile::read_cell_type,
            py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
       .def("write_function",
+           py::overload_cast<const dolfinx::fem::Function<float, float>&,
+                             double, std::string>(
+               &dolfinx::io::XDMFFile::write_function<float, float>),
+           py::arg("function"), py::arg("t"), py::arg("mesh_xpath"))
+      .def("write_function",
            py::overload_cast<const dolfinx::fem::Function<double, double>&,
                              double, std::string>(
-               &dolfinx::io::XDMFFile::write_function),
+               &dolfinx::io::XDMFFile::write_function<double, double>),
+           py::arg("function"), py::arg("t"), py::arg("mesh_xpath"))
+      .def("write_function",
+           py::overload_cast<
+               const dolfinx::fem::Function<std::complex<float>, float>&,
+               double, std::string>(
+               &dolfinx::io::XDMFFile::write_function<std::complex<float>,
+                                                      float>),
            py::arg("function"), py::arg("t"), py::arg("mesh_xpath"))
       .def("write_function",
            py::overload_cast<
                const dolfinx::fem::Function<std::complex<double>, double>&,
-               double, std::string>(&dolfinx::io::XDMFFile::write_function),
+               double, std::string>(
+               &dolfinx::io::XDMFFile::write_function<std::complex<double>,
+                                                      double>),
            py::arg("function"), py::arg("t"), py::arg("mesh_xpath"))
       .def("write_meshtags", &dolfinx::io::XDMFFile::write_meshtags,
            py::arg("meshtags"), py::arg("x"),
@@ -164,10 +281,17 @@ void io(py::module& m)
                }),
            py::arg("comm"), py::arg("filename"), py::arg("mode"))
       .def("close", &dolfinx::io::VTKFile::close)
-      .def("write", &dolfinx::io::VTKFile::write<double>, py::arg("u"),
+      .def("write", &dolfinx::io::VTKFile::write<float, float>, py::arg("u"),
            py::arg("t") = 0.0)
-      .def("write", &dolfinx::io::VTKFile::write<std::complex<double>>,
+      .def("write", &dolfinx::io::VTKFile::write<double, double>, py::arg("u"),
+           py::arg("t") = 0.0)
+      .def("write", &dolfinx::io::VTKFile::write<std::complex<double>, double>,
            py::arg("u"), py::arg("t") = 0.0)
+      .def("write",
+           static_cast<void (dolfinx::io::VTKFile::*)(
+               const dolfinx::mesh::Mesh<float>&, double)>(
+               &dolfinx::io::VTKFile::write),
+           py::arg("mesh"), py::arg("t") = 0.0)
       .def("write",
            static_cast<void (dolfinx::io::VTKFile::*)(
                const dolfinx::mesh::Mesh<double>&, double)>(
@@ -175,91 +299,12 @@ void io(py::module& m)
            py::arg("mesh"), py::arg("t") = 0.0);
 
 #ifdef HAS_ADIOS2
-  // dolfinx::io::FidesWriter
-  py::class_<dolfinx::io::FidesWriter<double>,
-             std::shared_ptr<dolfinx::io::FidesWriter<double>>>
-      fides_writer(m, "FidesWriter", "FidesWriter object");
-
-  py::enum_<dolfinx::io::FidesMeshPolicy>(fides_writer, "FidesMeshPolicy")
+  py::enum_<dolfinx::io::FidesMeshPolicy>(m, "FidesMeshPolicy")
       .value("update", dolfinx::io::FidesMeshPolicy::update)
       .value("reuse", dolfinx::io::FidesMeshPolicy::reuse);
-
-  fides_writer
-      .def(py::init(
-               [](MPICommWrapper comm, std::filesystem::path filename,
-                  std::shared_ptr<const dolfinx::mesh::Mesh<double>> mesh,
-                  std::string engine)
-               {
-                 return std::make_unique<dolfinx::io::FidesWriter<double>>(
-                     comm.get(), filename, mesh, engine);
-               }),
-           py::arg("comm"), py::arg("filename"), py::arg("mesh"),
-           py::arg("engine") = "BPFile")
-      .def(py::init(
-               [](MPICommWrapper comm, std::filesystem::path filename,
-                  const std::vector<std::variant<
-                      std::shared_ptr<
-                          const dolfinx::fem::Function<float, double>>,
-                      std::shared_ptr<
-                          const dolfinx::fem::Function<double, double>>,
-                      std::shared_ptr<const dolfinx::fem::Function<
-                          std::complex<float>, double>>,
-                      std::shared_ptr<const dolfinx::fem::Function<
-                          std::complex<double>, double>>>>& u,
-                  std::string engine, dolfinx::io::FidesMeshPolicy policy)
-               {
-                 return std::make_unique<dolfinx::io::FidesWriter<double>>(
-                     comm.get(), filename, u, policy);
-               }),
-           py::arg("comm"), py::arg("filename"), py::arg("u"),
-           py::arg("engine") = "BPFile",
-           py::arg("policy") = dolfinx::io::FidesMeshPolicy::update)
-      .def("close",
-           [](dolfinx::io::FidesWriter<double>& self) { self.close(); })
-      .def(
-          "write",
-          [](dolfinx::io::FidesWriter<double>& self, double t)
-          { self.write(t); },
-          py::arg("t"));
-
-  // dolfinx::io::VTXWriter
-  py::class_<dolfinx::io::VTXWriter<double>,
-             std::shared_ptr<dolfinx::io::VTXWriter<double>>>(
-      m, "VTXWriter", "VTXWriter object")
-      .def(py::init(
-               [](MPICommWrapper comm, std::filesystem::path filename,
-                  std::shared_ptr<const dolfinx::mesh::Mesh<double>> mesh,
-                  std::string engine)
-               {
-                 return std::make_unique<dolfinx::io::VTXWriter<double>>(
-                     comm.get(), filename, mesh, engine);
-               }),
-           py::arg("comm"), py::arg("filename"), py::arg("mesh"),
-           py::arg("engine") = "BPFile")
-      .def(py::init(
-               [](MPICommWrapper comm, std::filesystem::path filename,
-                  const std::vector<std::variant<
-                      std::shared_ptr<
-                          const dolfinx::fem::Function<float, double>>,
-                      std::shared_ptr<
-                          const dolfinx::fem::Function<double, double>>,
-                      std::shared_ptr<const dolfinx::fem::Function<
-                          std::complex<float>, double>>,
-                      std::shared_ptr<const dolfinx::fem::Function<
-                          std::complex<double>, double>>>>& u,
-                  std::string engine)
-               {
-                 return std::make_unique<dolfinx::io::VTXWriter<double>>(
-                     comm.get(), filename, u, engine);
-               }),
-           py::arg("comm"), py::arg("filename"), py::arg("u"),
-           py::arg("engine") = "BPFile")
-      .def("close", [](dolfinx::io::VTXWriter<double>& self) { self.close(); })
-      .def(
-          "write",
-          [](dolfinx::io::VTXWriter<double>& self, double t) { self.write(t); },
-          py::arg("t"));
-
 #endif
+
+  declare_vtx_writer<float>(m, "float32");
+  declare_vtx_writer<double>(m, "float64");
 }
 } // namespace dolfinx_wrappers

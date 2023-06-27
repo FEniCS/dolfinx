@@ -24,9 +24,7 @@
 
 # +
 import numpy as np
-
 import ufl
-from dolfinx import la
 from dolfinx.fem import (Expression, Function, FunctionSpace,
                          VectorFunctionSpace, dirichletbc, form,
                          locate_dofs_topological)
@@ -35,10 +33,11 @@ from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (CellType, GhostMode, create_box,
                           locate_entities_boundary)
+from petsc4py import PETSc
 from ufl import dx, grad, inner
 
+from dolfinx import default_real_type, la
 from mpi4py import MPI
-from petsc4py import PETSc
 
 dtype = PETSc.ScalarType
 # -
@@ -83,7 +82,7 @@ def build_nullspace(V):
     # Create PETSc Vec objects (excluding ghosts) and normalise
     basis_petsc = [PETSc.Vec().createWithArray(x[:bs * length0], bsize=3, comm=V.mesh.comm) for x in basis]
     la.orthonormalize(basis_petsc)
-    assert la.is_orthonormal(basis_petsc)
+    assert la.is_orthonormal(basis_petsc, eps=1.0e3 * np.finfo(default_real_type).eps)
 
     # Create and return a PETSc nullspace
     return PETSc.NullSpace().create(vectors=basis_petsc)
@@ -96,7 +95,7 @@ def build_nullspace(V):
 
 msh = create_box(MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
                                   np.array([2.0, 1.0, 1.0])], [16, 16, 16],
-                 CellType.tetrahedron, GhostMode.shared_facet)
+                 CellType.tetrahedron, ghost_mode=GhostMode.shared_facet)
 
 # Create a centripetal source term $f = \rho \omega^2 [x_0, \, x_1]$:
 
