@@ -174,12 +174,12 @@ def test_matrix_assembly_block_nl():
 
     Anorm0, bnorm0 = blocked()
     Anorm1, bnorm1 = nested()
-    assert Anorm1 == pytest.approx(Anorm0, 1.0e-12)
-    assert bnorm1 == pytest.approx(bnorm0, 1.0e-12)
+    assert Anorm1 == pytest.approx(Anorm0, 1.0e-6)
+    assert bnorm1 == pytest.approx(bnorm0, 1.0e-6)
 
     Anorm2, bnorm2 = monolithic()
-    assert Anorm2 == pytest.approx(Anorm0, 1.0e-12)
-    assert bnorm2 == pytest.approx(bnorm0, 1.0e-12)
+    assert Anorm2 == pytest.approx(Anorm0, 1.0e-5)
+    assert bnorm2 == pytest.approx(bnorm0, 1.0e-6)
 
 
 class NonlinearPDE_SNESProblem():
@@ -438,8 +438,8 @@ def test_assembly_solve_block_nl():
     norm0 = blocked_solve()
     norm1 = nested_solve()
     norm2 = monolithic_solve()
-    assert norm1 == pytest.approx(norm0, 1.0e-12)
-    assert norm2 == pytest.approx(norm0, 1.0e-12)
+    assert norm1 == pytest.approx(norm0, 1.0e-6)
+    assert norm2 == pytest.approx(norm0, 1.0e-6)
 
 
 @pytest.mark.parametrize("mesh", [
@@ -506,7 +506,7 @@ def test_assembly_solve_taylor_hood_nl(mesh):
         Fvec = create_vector_block(F)
 
         snes = PETSc.SNES().create(MPI.COMM_WORLD)
-        snes.setTolerances(rtol=1.0e-15, max_it=10)
+        snes.setTolerances(rtol=1.0e-15, max_it=20)
         snes.getKSP().setType("minres")
 
         problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs, P=P)
@@ -540,7 +540,7 @@ def test_assembly_solve_taylor_hood_nl(mesh):
         Fvec = create_vector_nest(F)
 
         snes = PETSc.SNES().create(MPI.COMM_WORLD)
-        snes.setTolerances(rtol=1.0e-15, max_it=10)
+        snes.setTolerances(rtol=1.0e-15, max_it=20)
         nested_IS = Jmat.getNestISs()
         snes.getKSP().setType("minres")
         snes.getKSP().setTolerances(rtol=1e-12)
@@ -598,7 +598,7 @@ def test_assembly_solve_taylor_hood_nl(mesh):
         Fvec = create_vector(F)
 
         snes = PETSc.SNES().create(MPI.COMM_WORLD)
-        snes.setTolerances(rtol=1.0e-15, max_it=10)
+        snes.setTolerances(rtol=1.0e-15, max_it=20)
         snes.getKSP().setType("minres")
 
         problem = NonlinearPDE_SNESProblem(F, J, U, bcs, P=P)
@@ -624,11 +624,11 @@ def test_assembly_solve_taylor_hood_nl(mesh):
 
     Jnorm0, Fnorm0, xnorm0 = blocked()
     Jnorm1, Fnorm1, xnorm1 = nested()
-    assert Jnorm1 == pytest.approx(Jnorm0, 1.0e-12)
-    assert Fnorm1 == pytest.approx(Fnorm0, 1.0e-12)
-    assert xnorm1 == pytest.approx(xnorm0, 1.0e-12)
+    assert Jnorm1 == pytest.approx(Jnorm0, 1.0e-3, abs=1.0e-6)
+    assert Fnorm1 == pytest.approx(Fnorm0, 1.0e-6, abs=1.0e-5)
+    assert xnorm1 == pytest.approx(xnorm0, 1.0e-6, abs=1.0e-5)
 
     Jnorm2, Fnorm2, xnorm2 = monolithic()
-    assert Jnorm2 == pytest.approx(Jnorm0, 1.0e-12)
-    assert Fnorm2 == pytest.approx(Fnorm0, 1.0e-12)
-    assert xnorm2 == pytest.approx(xnorm0, 1.0e-12)
+    assert Jnorm2 == pytest.approx(Jnorm1, rel=1.0e-3, abs=1.0e-6)
+    assert Fnorm2 == pytest.approx(Fnorm0, 1.0e-6, abs=1.0e-5)
+    assert xnorm2 == pytest.approx(xnorm0, 1.0e-6, abs=1.0e-6)

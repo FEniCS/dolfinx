@@ -121,19 +121,18 @@
 import os
 
 import numpy as np
-
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx import log, plot
 from dolfinx.fem import Function, FunctionSpace
 from dolfinx.fem.petsc import NonlinearProblem
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_unit_square
 from dolfinx.nls.petsc import NewtonSolver
-from ufl import dx, grad, inner
-
 from mpi4py import MPI
 from petsc4py import PETSc
+from ufl import dx, grad, inner
+
+from dolfinx import default_real_type, log, plot
 
 try:
     import pyvista as pv
@@ -254,7 +253,7 @@ F = F0 + F1
 problem = NonlinearProblem(F, u)
 solver = NewtonSolver(MPI.COMM_WORLD, problem)
 solver.convergence_criterion = "incremental"
-solver.rtol = 1e-6
+solver.rtol = np.sqrt(np.finfo(default_real_type).eps) * 1e-2
 
 # We can customize the linear solver used inside the NewtonSolver by
 # modifying the PETSc options

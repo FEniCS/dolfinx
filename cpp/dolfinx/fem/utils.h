@@ -1045,16 +1045,11 @@ Expression<T, U> create_expression(
                              "function space was provided.");
   }
 
-  std::span<const U> X(e.points, e.num_points * e.topological_dimension);
+  std::vector<U> X(e.points, e.points + e.num_points * e.topological_dimension);
   std::array<std::size_t, 2> Xshape
       = {static_cast<std::size_t>(e.num_points),
          static_cast<std::size_t>(e.topological_dimension)};
-
-  // std::vector<int> value_shape;
-  // for (int i = 0; i < expression.num_components; ++i)
-  //   value_shape.push_back(expression.value_shape[i]);
   std::vector<int> value_shape(e.value_shape, e.value_shape + e.num_components);
-
   std::function<void(T*, const T*, const T*,
                      const typename scalar_value_type<T>::value_type*,
                      const int*, const std::uint8_t*)>
@@ -1081,8 +1076,9 @@ Expression<T, U> create_expression(
     throw std::runtime_error("Type not supported.");
 
   assert(tabulate_tensor);
-  return Expression(coefficients, constants, X, Xshape, tabulate_tensor,
-                    value_shape, mesh, argument_function_space);
+  return Expression(coefficients, constants, std::span<const U>(X), Xshape,
+                    tabulate_tensor, value_shape, mesh,
+                    argument_function_space);
 }
 
 /// @brief Create Expression from UFC input (with named coefficients and

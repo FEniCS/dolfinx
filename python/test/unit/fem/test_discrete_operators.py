@@ -7,7 +7,6 @@
 
 import numpy as np
 import pytest
-
 import ufl
 from basix.ufl import element
 from dolfinx.cpp.fem.petsc import discrete_gradient, interpolation_matrix
@@ -15,9 +14,10 @@ from dolfinx.fem import (Expression, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_scalar, form)
 from dolfinx.mesh import (CellType, GhostMode, create_mesh, create_unit_cube,
                           create_unit_square)
-
 from mpi4py import MPI
 from petsc4py import PETSc
+
+from dolfinx import default_real_type
 
 
 @pytest.mark.skip_in_parallel
@@ -50,19 +50,19 @@ def test_gradient_interpolation(cell_type, p, q):
     """Test discrete gradient computation with verification using Expression."""
     comm = MPI.COMM_WORLD
     if cell_type == CellType.triangle:
-        mesh = create_unit_square(comm, 11, 6, ghost_mode=GhostMode.none, cell_type=cell_type)
+        mesh = create_unit_square(comm, 11, 6, ghost_mode=GhostMode.none, cell_type=cell_type, dtype=default_real_type)
         family0 = "Lagrange"
         family1 = "Nedelec 1st kind H(curl)"
     elif cell_type == CellType.quadrilateral:
-        mesh = create_unit_square(comm, 11, 6, ghost_mode=GhostMode.none, cell_type=cell_type)
+        mesh = create_unit_square(comm, 11, 6, ghost_mode=GhostMode.none, cell_type=cell_type, dtype=default_real_type)
         family0 = "Q"
         family1 = "RTCE"
     elif cell_type == CellType.hexahedron:
-        mesh = create_unit_cube(comm, 3, 3, 2, ghost_mode=GhostMode.none, cell_type=cell_type)
+        mesh = create_unit_cube(comm, 3, 3, 2, ghost_mode=GhostMode.none, cell_type=cell_type, dtype=default_real_type)
         family0 = "Q"
         family1 = "NCE"
     elif cell_type == CellType.tetrahedron:
-        mesh = create_unit_cube(comm, 3, 2, 2, ghost_mode=GhostMode.none, cell_type=cell_type)
+        mesh = create_unit_cube(comm, 3, 2, 2, ghost_mode=GhostMode.none, cell_type=cell_type, dtype=default_real_type)
         family0 = "Lagrange"
         family1 = "Nedelec 1st kind H(curl)"
 
@@ -83,17 +83,24 @@ def test_gradient_interpolation(cell_type, p, q):
     G.mult(u.vector, w.vector)
     w.x.scatter_forward()
 
-    assert np.allclose(w_expr.x.array, w.x.array)
+    atol = 100 * np.finfo(default_real_type).resolution
+    assert np.allclose(w_expr.x.array, w.x.array, atol=atol)
     G.destroy()
 
 
 @pytest.mark.parametrize("p", range(1, 4))
 @pytest.mark.parametrize("q", range(1, 4))
-@pytest.mark.parametrize("from_lagrange", [True, False])
-@pytest.mark.parametrize("cell_type", [CellType.quadrilateral,
-                                       CellType.triangle,
-                                       CellType.tetrahedron,
-                                       CellType.hexahedron])
+@pytest.mark.parametrize("from_lagrange",
+                         [
+                             True,
+                             False
+                         ])
+@pytest.mark.parametrize("cell_type", [
+    CellType.quadrilateral,
+    CellType.triangle,
+    CellType.tetrahedron,
+    CellType.hexahedron
+])
 def test_interpolation_matrix(cell_type, p, q, from_lagrange):
     """Test that discrete interpolation matrix yields the same result as interpolation."""
     comm = MPI.COMM_WORLD
@@ -143,22 +150,22 @@ def test_interpolation_matrix(cell_type, p, q, from_lagrange):
     G.mult(u.vector, w.vector)
     w.x.scatter_forward()
 
-    assert np.allclose(w_vec.x.array, w.x.array)
+    atol = 100 * np.finfo(default_real_type).resolution
+    assert np.allclose(w_vec.x.array, w.x.array, atol=atol)
     G.destroy()
 
 
 @pytest.mark.skip_in_parallel
 def test_nonaffine_discrete_operator():
-    """Check that discrete operator is consistent with normal interpolation between non-matching
-    maps on non-affine geometries
-    """
+    """Check that discrete operator is consistent with normal
+    interpolation between non-matching maps on non-affine geometries"""
     points = np.array([[0, 0, 0], [1, 0, 0], [0, 2, 0], [1, 2, 0],
                        [0, 0, 3], [1, 0, 3], [0, 2, 3], [1, 2, 3],
                        [0.5, 0, 0], [0, 1, 0], [0, 0, 1.5], [1, 1, 0],
                        [1, 0, 1.5], [0.5, 2, 0], [0, 2, 1.5], [1, 2, 1.5],
                        [0.5, 0, 3], [0, 1, 3], [1, 1, 3], [0.5, 2, 3],
                        [0.5, 1, 0], [0.5, -0.1, 1.5], [0, 1, 1.5], [1, 1, 1.5],
-                       [0.5, 2, 1.5], [0.5, 1, 3], [0.5, 1, 1.5]], dtype=np.float64)
+                       [0.5, 2, 1.5], [0.5, 1, 3], [0.5, 1, 1.5]], dtype=default_real_type)
 
     cells = np.array([range(len(points))], dtype=np.int32)
     cell_type = CellType.hexahedron
@@ -177,9 +184,9 @@ def test_nonaffine_discrete_operator():
     v_vec = Function(V)
     G.mult(w.vector, v_vec.vector)
     v_vec.x.scatter_forward()
-
-    assert np.allclose(v_vec.x.array, v.x.array)
+    atol = 10 * np.finfo(default_real_type).resolution
+    assert np.allclose(v_vec.x.array, v.x.array, atol=atol)
 
     s = assemble_scalar(form(ufl.inner(w - v, w - v) * ufl.dx))
-    assert np.isclose(s, 0)
+    assert np.isclose(s, 0, atol=atol)
     G.destroy()

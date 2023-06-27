@@ -32,7 +32,7 @@ c_signature = numba.types.void(
     numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
     numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
     numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
-    numba.types.CPointer(numba.types.double),
+    numba.types.CPointer(numba.typeof(PETSc.RealType())),
     numba.types.CPointer(numba.types.int32),
     numba.types.CPointer(numba.types.int32))
 
@@ -40,7 +40,7 @@ c_signature = numba.types.void(
 @numba.cfunc(c_signature, nopython=True)
 def tabulate_tensor_A(A_, w_, c_, coords_, entity_local_index, cell_orientation):
     A = numba.carray(A_, (3, 3), dtype=PETSc.ScalarType)
-    coordinate_dofs = numba.carray(coords_, (3, 3), dtype=np.float64)
+    coordinate_dofs = numba.carray(coords_, (3, 3), dtype=dolfinx.default_real_type)
 
     # Ke=∫Ωe BTe Be dΩ
     x0, y0 = coordinate_dofs[0, :2]
@@ -56,7 +56,7 @@ def tabulate_tensor_A(A_, w_, c_, coords_, entity_local_index, cell_orientation)
 @numba.cfunc(c_signature, nopython=True)
 def tabulate_tensor_b(b_, w_, c_, coords_, local_index, orientation):
     b = numba.carray(b_, (3), dtype=PETSc.ScalarType)
-    coordinate_dofs = numba.carray(coords_, (3, 3), dtype=np.float64)
+    coordinate_dofs = numba.carray(coords_, (3, 3), dtype=dolfinx.default_real_type)
     x0, y0 = coordinate_dofs[0, :2]
     x1, y1 = coordinate_dofs[1, :2]
     x2, y2 = coordinate_dofs[2, :2]
@@ -70,7 +70,7 @@ def tabulate_tensor_b(b_, w_, c_, coords_, local_index, orientation):
 def tabulate_tensor_b_coeff(b_, w_, c_, coords_, local_index, orientation):
     b = numba.carray(b_, (3), dtype=PETSc.ScalarType)
     w = numba.carray(w_, (1), dtype=PETSc.ScalarType)
-    coordinate_dofs = numba.carray(coords_, (3, 3), dtype=np.float64)
+    coordinate_dofs = numba.carray(coords_, (3, 3), dtype=dolfinx.default_real_type)
     x0, y0 = coordinate_dofs[0, :2]
     x1, y1 = coordinate_dofs[1, :2]
     x2, y2 = coordinate_dofs[2, :2]
@@ -81,11 +81,21 @@ def tabulate_tensor_b_coeff(b_, w_, c_, coords_, local_index, orientation):
 
 
 def test_numba_assembly():
+    if dolfinx.default_scalar_type == np.float32:
+        Form = _cpp.fem.Form_float32
+    elif dolfinx.default_scalar_type == np.float64:
+        Form = _cpp.fem.Form_float64
+    elif dolfinx.default_scalar_type == np.complex64:
+        Form = _cpp.fem.Form_complex64
+    elif dolfinx.default_scalar_type == np.complex128:
+        Form = _cpp.fem.Form_complex128
+    else:
+        raise RuntimeError("Unknown scalar type")
+
     mesh = create_unit_square(MPI.COMM_WORLD, 13, 13)
     V = FunctionSpace(mesh, ("Lagrange", 1))
-    Form = _cpp.fem.Form_float64 if PETSc.ScalarType == np.float64 else _cpp.fem.Form_complex128
-
     cells = range(mesh.topology.index_map(mesh.topology.dim).size_local)
+
     integrals = {IntegralType.cell: [(-1, tabulate_tensor_A.address, cells),
                                      (12, tabulate_tensor_A.address, range(0)),
                                      (2, tabulate_tensor_A.address, range(0))]}
@@ -96,11 +106,11 @@ def test_numba_assembly():
 
     A = dolfinx.fem.petsc.assemble_matrix(a)
     A.assemble()
-    b = dolfinx.fem.petsc.assemble_vector(L)
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    b = dolfinx.fem.assemble_vector(L)
+    b.scatter_reverse(dolfinx.la.InsertMode.add)
 
     Anorm = A.norm(PETSc.NormType.FROBENIUS)
-    bnorm = b.norm(PETSc.NormType.N2)
+    bnorm = b.norm()
     assert np.isclose(Anorm, 56.124860801609124)
     assert np.isclose(bnorm, 0.0739710713711999)
 
@@ -108,6 +118,17 @@ def test_numba_assembly():
 
 
 def test_coefficient():
+    if dolfinx.default_scalar_type == np.float32:
+        Form = _cpp.fem.Form_float32
+    elif dolfinx.default_scalar_type == np.float64:
+        Form = _cpp.fem.Form_float64
+    elif dolfinx.default_scalar_type == np.complex64:
+        Form = _cpp.fem.Form_complex64
+    elif dolfinx.default_scalar_type == np.complex128:
+        Form = _cpp.fem.Form_complex128
+    else:
+        raise RuntimeError("Unknown scalar type")
+
     mesh = create_unit_square(MPI.COMM_WORLD, 13, 13)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     DG0 = FunctionSpace(mesh, ("DG", 0))
@@ -117,18 +138,17 @@ def test_coefficient():
     tdim = mesh.topology.dim
     num_cells = mesh.topology.index_map(tdim).size_local + mesh.topology.index_map(tdim).num_ghosts
     integrals = {IntegralType.cell: [(1, tabulate_tensor_b_coeff.address, np.arange(num_cells, dtype=np.intc))]}
-    Form = _cpp.fem.Form_float64 if PETSc.ScalarType == np.float64 else _cpp.fem.Form_complex128
     L = Form([V._cpp_object], integrals, [vals._cpp_object], [], False)
 
-    b = dolfinx.fem.petsc.assemble_vector(L)
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    bnorm = b.norm(PETSc.NormType.N2)
+    b = dolfinx.fem.assemble_vector(L)
+    b.scatter_reverse(la.InsertMode.add)
+    bnorm = b.norm()
     assert np.isclose(bnorm, 2.0 * 0.0739710713711999)
 
 
 @pytest.mark.skip_in_parallel
 def test_cffi_assembly():
-    mesh = create_unit_square(MPI.COMM_WORLD, 13, 13)
+    mesh = create_unit_square(MPI.COMM_WORLD, 13, 13, dtype=np.float64)
     V = FunctionSpace(mesh, ("Lagrange", 1))
 
     if mesh.comm.rank == 0:
