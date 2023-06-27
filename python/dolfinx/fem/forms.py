@@ -11,12 +11,13 @@ import collections.abc
 import typing
 
 import numpy as np
-
+import numpy.typing as npt
 import ufl
-from dolfinx import cpp as _cpp
-from dolfinx import default_scalar_type, jit
 from dolfinx.fem import IntegralType
 from dolfinx.fem.function import FunctionSpace
+
+from dolfinx import cpp as _cpp
+from dolfinx import default_scalar_type, jit
 
 if typing.TYPE_CHECKING:
     from dolfinx.fem import function
@@ -89,7 +90,7 @@ _ufl_to_dolfinx_domain = {"cell": IntegralType.cell,
 
 
 def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]],
-         dtype: np.dtype = default_scalar_type,
+         dtype: typing.Optional[npt.DTypeLike] = default_scalar_type,
          form_compiler_options: dict = {}, jit_options: dict = {}):
     """Create a Form or an array of Forms.
 

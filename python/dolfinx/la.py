@@ -104,7 +104,7 @@ def matrix_csr(sp, block_mode=BlockMode.compact, dtype=np.float64) -> MatrixCSR:
 
     Args:
         sp: The sparsity pattern that defines the nonzero structure of
-        the matrix the parallel distribution of the matrix.
+            the matrix the parallel distribution of the matrix.
         dtype: The scalar type.
 
     Returns:
