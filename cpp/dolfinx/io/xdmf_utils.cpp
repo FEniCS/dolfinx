@@ -453,7 +453,7 @@ std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type,
 std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
 xdmf_utils::distribute_entity_data(
     const mesh::Topology& topology, const std::vector<std::int64_t>& nodes_g,
-    std::int64_t num_nodes_g, const fem::ElementDofLayout cmap_dof_layout,
+    std::int64_t num_nodes_g, const fem::ElementDofLayout& cmap_dof_layout,
     std::experimental::mdspan<const std::int32_t,
                               std::experimental::dextents<std::size_t, 2>>
         xdofmap,
@@ -472,14 +472,6 @@ xdmf_utils::distribute_entity_data(
   std::vector<int> cell_vertex_dofs;
   {
     // Get layout of dofs on 0th cell entity of dimension entity_dim
-
-    // if (mesh.geometry().cmaps().size() > 1)
-    // {
-    //   throw std::runtime_error(
-    //       "XDMF I/O with multiple geometry maps not implemented.");
-    // }
-    // const fem::ElementDofLayout cmap_dof_layout
-    //     = mesh.geometry().cmaps()[0].create_dof_layout();
     for (int i = 0; i < mesh::cell_num_entities(cell_types.back(), 0); ++i)
     {
       const std::vector<int>& local_index = cmap_dof_layout.entity_dofs(0, i);
@@ -500,16 +492,10 @@ xdmf_utils::distribute_entity_data(
     const MPI_Comm comm = topology.comm();
     const int comm_size = dolfinx::MPI::size(comm);
 
-    // // Get "input" global node indices (as in the input file before any
-    // // internal re-ordering)
-    // const std::vector<std::int64_t>& nodes_g
-    //     = mesh.geometry().input_global_indices();
-
     // Send input global indices to 'post master' rank, based on input
     // global index value
-    // const std::int64_t num_nodes_g =
-    // mesh.geometry().index_map()->size_global(); NOTE: could make this int32_t
-    // be sending: index <- index - dest_rank_offset
+    // NOTE: could make this int32_t be sending: index <- index -
+    // dest_rank_offset
     std::vector<std::vector<std::int64_t>> nodes_g_send(comm_size);
     for (std::int64_t node : nodes_g)
     {
@@ -548,8 +534,6 @@ xdmf_utils::distribute_entity_data(
   {
     const MPI_Comm comm = topology.comm();
     const int comm_size = dolfinx::MPI::size(comm);
-    // const std::int64_t num_nodes_g =
-    // mesh.geometry().index_map()->size_global();
 
     auto cell_types = topology.cell_types();
     if (cell_types.size() > 1)
@@ -561,8 +545,6 @@ xdmf_utils::distribute_entity_data(
     if (!c_to_v)
       throw std::runtime_error("Missing cell-vertex connectivity.");
 
-    // const fem::ElementDofLayout cmap_dof_layout
-    //     = mesh.geometry().cmaps()[0].create_dof_layout();
     const std::vector<int> entity_layout
         = cmap_dof_layout.entity_closure_dofs(entity_dim, 0);
 
@@ -733,10 +715,6 @@ xdmf_utils::distribute_entity_data(
     if (!c_to_v)
       throw std::runtime_error("Missing cell-vertex connectivity.");
 
-    // const std::vector<std::int64_t>& nodes_g
-    //     = mesh.geometry().input_global_indices();
-
-    // auto x_dofmap = mesh.geometry().dofmap();
     std::map<std::int64_t, std::int32_t> igi_to_vertex;
     for (int c = 0; c < c_to_v->num_nodes(); ++c)
     {
