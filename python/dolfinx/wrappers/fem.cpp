@@ -6,7 +6,6 @@
 
 #include "array.h"
 #include "caster_mpi.h"
-#include "caster_petsc.h"
 #include <array>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
@@ -29,7 +28,6 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
 #include <memory>
-#include <petsc4py/petsc4py.h>
 #include <pybind11/complex.h>
 #include <pybind11/functional.h>
 #include <pybind11/numpy.h>
