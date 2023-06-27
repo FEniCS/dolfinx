@@ -92,8 +92,7 @@ void declare_objects(py::module& m, const std::string& type)
       .def(py::init([](const dolfinx::la::SparsityPattern& p,
                        dolfinx::la::BlockMode bm)
                     { return dolfinx::la::MatrixCSR<T>(p, bm); }),
-           py::arg("p"),
-           py::arg("block_mode") = dolfinx::la::BlockMode::compact)
+           py::arg("p"), py::arg("block_mode"))
       .def_property_readonly("dtype", [](const dolfinx::la::MatrixCSR<T>& self)
                              { return py::dtype::of<T>(); })
       .def_property_readonly("block_size",

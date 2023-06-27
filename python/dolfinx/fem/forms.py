@@ -11,6 +11,7 @@ import collections.abc
 import typing
 
 import numpy as np
+import numpy.typing as npt
 import ufl
 from dolfinx.fem import IntegralType
 from dolfinx.fem.function import FunctionSpace
@@ -91,7 +92,8 @@ _ufl_to_dolfinx_domain = {"cell": IntegralType.cell,
                           "vertex": IntegralType.vertex}
 
 
-def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtype = default_scalar_type,
+def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]],
+         dtype: typing.Optional[npt.DTypeLike] = default_scalar_type,
          form_compiler_options: dict = {}, jit_options: dict = {}):
     """Create a Form or an array of Forms.
 

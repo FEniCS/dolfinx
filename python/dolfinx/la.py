@@ -9,7 +9,7 @@
 import numpy as np
 
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.la import Norm, InsertMode, BlockMode
+from dolfinx.cpp.la import BlockMode, InsertMode, Norm
 from dolfinx.cpp.la.petsc import create_vector as create_petsc_vector
 
 __all__ = ["orthonormalize", "is_orthonormal", "create_petsc_vector", "matrix_csr", "vector",
@@ -42,7 +42,7 @@ def matrix_csr(sp, block_mode=BlockMode.compact, dtype=np.float64) -> MatrixCSRM
 
     Args:
         sp: The sparsity pattern that defines the nonzero structure of
-        the matrix the parallel distribution of the matrix.
+            the matrix the parallel distribution of the matrix.
         dtype: The scalar type.
 
     Returns:
