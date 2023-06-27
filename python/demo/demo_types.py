@@ -72,7 +72,7 @@ def poisson():
 
     # The below function computes the solution of the finite problem using a
     # specified scalar type.
-    def solve(dtype: typing.Union[np.float32, np.float64, np.complex64, np.complex128]) -> fem.Function:
+    def solve(dtype) -> fem.Function:
         """Solve the variational problem.
 
         Args:
@@ -164,7 +164,7 @@ def elasticity():
 
     dofs = fem.locate_dofs_topological(V=V, entity_dim=1, entities=facets)
 
-    def solve(dtype: typing.Union[np.float32, np.float64, np.complex64, np.complex128]) -> fem.Function:
+    def solve(dtype) -> fem.Function:
         """Solve the variational problem.
 
         Args:

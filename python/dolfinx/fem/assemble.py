@@ -221,48 +221,7 @@ def assemble_matrix(a: typing.Any,
                     bcs: typing.Optional[typing.List[DirichletBCMetaClass]] = None,
                     diagonal: float = 1.0, constants=None, coeffs=None,
                     block_mode: typing.Optional[la.BlockMode] = None):
-    return _assemble_matrix_form(a, bcs, diagonal, constants, coeffs, block_mode)
-
-
-@assemble_matrix.register
-def _assemble_matrix_csr(A: la.MatrixCSRMetaClass, a: form_types,
-                         bcs: typing.Optional[typing.List[DirichletBCMetaClass]] = None,
-                         diagonal: float = 1.0, constants=None, coeffs=None) -> la.MatrixCSRMetaClass:
-    """Assemble bilinear form into a matrix.
-
-        Args:
-        a: The bilinear form assemble.
-        bcs: Boundary conditions that affect the assembled matrix.
-            Degrees-of-freedom constrained by a boundary condition will
-            have their rows/columns zeroed and the value ``diagonal`` set
-            on on the matrix diagonal.
-        constants: Constants that appear in the form. If not provided,
-            any required constants will be computed.
-        coeffs: Coefficients that appear in the form. If not provided,
-            any required coefficients will be computed.
-
-    Note:
-        The returned matrix is not finalised, i.e. ghost values are not
-        accumulated.
-
-    """
-    bcs = [] if bcs is None else bcs
-    constants = _pack_constants(a) if constants is None else constants
-    coeffs = _pack_coefficients(a) if coeffs is None else coeffs
-    _cpp.fem.assemble_matrix(A, a, constants, coeffs, bcs)
-
-    # If matrix is a 'diagonal'block, set diagonal entry for constrained
-    # dofs
-    if a.function_spaces[0] is a.function_spaces[1]:
-        _cpp.fem.insert_diagonal(A, a.function_spaces[0], bcs, diagonal)
-    return A
-
-
-@assemble_matrix.register(FormMetaClass)
-def _assemble_matrix_form(a: form_types, bcs: typing.Optional[typing.List[DirichletBCMetaClass]] = None,
-                          diagonal: float = 1.0, constants=None, coeffs=None,
-                          block_mode: typing.Optional[la.BlockMode] = None) -> la.MatrixCSRMetaClass:
-    """Assemble bilinear form into a matrix.
+    """Create matrix representation (assemble) of a bilinear form.
 
     Args:
         a: The bilinear form assemble.
@@ -288,6 +247,42 @@ def _assemble_matrix_form(a: form_types, bcs: typing.Optional[typing.List[Dirich
     bcs = [] if bcs is None else bcs
     A: la.MatrixCSRMetaClass = create_matrix(a, block_mode)
     _assemble_matrix_csr(A, a, bcs, diagonal, constants, coeffs)
+    return A
+
+
+@assemble_matrix.register
+def _assemble_matrix_csr(A: la.MatrixCSRMetaClass, a: form_types,
+                         bcs: typing.Optional[typing.List[DirichletBCMetaClass]] = None,
+                         diagonal: float = 1.0, constants=None, coeffs=None) -> la.MatrixCSRMetaClass:
+    """Assemble a bilinear form into a matrix.
+
+        Args:
+        A: The matrix to assemble into. It must have been initialized
+            with the correct sparsity pattern.
+        a: The bilinear form assemble.
+        bcs: Boundary conditions that affect the assembled matrix.
+            Degrees-of-freedom constrained by a boundary condition will
+            have their rows/columns zeroed and the value ``diagonal``
+            set on on the matrix diagonal.
+        constants: Constants that appear in the form. If not provided,
+            any required constants will be computed.
+        coeffs: Coefficients that appear in the form. If not provided,
+            any required coefficients will be computed.
+
+    Note:
+        The returned matrix is not finalised, i.e. ghost values are not
+        accumulated.
+
+    """
+    bcs = [] if bcs is None else bcs
+    constants = _pack_constants(a) if constants is None else constants
+    coeffs = _pack_coefficients(a) if coeffs is None else coeffs
+    _cpp.fem.assemble_matrix(A, a, constants, coeffs, bcs)
+
+    # If matrix is a 'diagonal'block, set diagonal entry for constrained
+    # dofs
+    if a.function_spaces[0] is a.function_spaces[1]:
+        _cpp.fem.insert_diagonal(A, a.function_spaces[0], bcs, diagonal)
     return A
 
 
