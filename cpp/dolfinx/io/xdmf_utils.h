@@ -82,26 +82,26 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 /// supplied on any rank and this function will manage the
 /// communication.
 ///
-/// @param[in] mesh A mesh
-/// @param[in] entity_dim Topological dimension of entities to extract
-/// @param[in] entities Mesh entities defined using global input indices
-/// ('nodes'), typically from an input mesh file, e.g. [gi0, gi1, gi2]
-/// for a triangle. Let [v0, v1, v2] be the vertex indices of some
-/// triangle (using local indexing). Each vertex has a 'node' (geometry
-/// dof) index, and each node has a persistent input global index, so
-/// the triangle [gi0, gi1, gi2] could be identified with [v0, v1, v2].
-/// The data is flattened and the shape is `(num_entities,
-/// nodes_per_entity)`.
-/// @param[in] data Data associated with each entity in `entities`.
-/// @return (entity-vertex connectivity of owned entities, associated
-/// data (values) with each entity)
-/// @note This function involves parallel distribution and must be
-/// called collectively. Global input indices for entities which are not
-/// owned by current rank could be passed to this function. E.g., rank0
-/// provides an entity with global input indices [gi0, gi1, gi2], but
-/// this identifies a triangle that is owned by rank1. It will be
-/// distributed and rank1 will receive the (local) cell-vertex connectivity
-/// for this triangle.
+// /// @param[in] mesh A mesh
+// /// @param[in] entity_dim Topological dimension of entities to extract
+// /// @param[in] entities Mesh entities defined using global input indices
+// /// ('nodes'), typically from an input mesh file, e.g. [gi0, gi1, gi2]
+// /// for a triangle. Let [v0, v1, v2] be the vertex indices of some
+// /// triangle (using local indexing). Each vertex has a 'node' (geometry
+// /// dof) index, and each node has a persistent input global index, so
+// /// the triangle [gi0, gi1, gi2] could be identified with [v0, v1, v2].
+// /// The data is flattened and the shape is `(num_entities,
+// /// nodes_per_entity)`.
+// /// @param[in] data Data associated with each entity in `entities`.
+// /// @return (entity-vertex connectivity of owned entities, associated
+// /// data (values) with each entity)
+// /// @note This function involves parallel distribution and must be
+// /// called collectively. Global input indices for entities which are not
+// /// owned by current rank could be passed to this function. E.g., rank0
+// /// provides an entity with global input indices [gi0, gi1, gi2], but
+// /// this identifies a triangle that is owned by rank1. It will be
+// /// distributed and rank1 will receive the (local) cell-vertex connectivity
+//  /// for this triangle.
 std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
 distribute_entity_data(const mesh::Mesh<double>& mesh, int entity_dim,
                        std::span<const std::int64_t> entities,
