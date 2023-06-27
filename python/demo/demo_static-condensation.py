@@ -155,15 +155,15 @@ def tabulate_condensed_tensor_A(A_, w_, c_, coords_, entity_local_index, permuta
 
 
 # Prepare a Form with a condensed tabulation kernel
-Form = None
+formtype = None
 if PETSc.ScalarType == np.float32:
-    Form = Form_float32
+    formtype = Form_float32
 elif PETSc.ScalarType == np.float64:
-    Form = Form_float64
+    formtype = Form_float64
 elif PETSc.ScalarType == np.complex64:
-    Form = Form_complex64
+    formtype = Form_complex64
 elif PETSc.ScalarType == np.complex128:
-    Form = Form_complex128
+    formtype = Form_complex128
 else:
     raise RuntimeError(f"Unsupported PETSc ScalarType '{PETSc.ScalarType }'.")
 
