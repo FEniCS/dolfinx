@@ -81,19 +81,18 @@ def tabulate_tensor_b_coeff(b_, w_, c_, coords_, local_index, orientation):
 
 def test_numba_assembly():
     if dolfinx.default_scalar_type == np.float32:
-        Form = _cpp.fem.Form_float32
+        formtype = _cpp.fem.Form_float32
     elif dolfinx.default_scalar_type == np.float64:
-        Form = _cpp.fem.Form_float64
+        formtype = _cpp.fem.Form_float64
     elif dolfinx.default_scalar_type == np.complex64:
-        Form = _cpp.fem.Form_complex64
+        formtype = _cpp.fem.Form_complex64
     elif dolfinx.default_scalar_type == np.complex128:
-        Form = _cpp.fem.Form_complex128
+        formtype = _cpp.fem.Form_complex128
     else:
         raise RuntimeError("Unknown scalar type")
 
     mesh = create_unit_square(MPI.COMM_WORLD, 13, 13)
     V = FunctionSpace(mesh, ("Lagrange", 1))
-    formtype = _cpp.fem.Form_float64 if PETSc.ScalarType == np.float64 else _cpp.fem.Form_complex128
 
     cells = range(mesh.topology.index_map(mesh.topology.dim).size_local)
 
@@ -120,13 +119,13 @@ def test_numba_assembly():
 
 def test_coefficient():
     if dolfinx.default_scalar_type == np.float32:
-        Form = _cpp.fem.Form_float32
+        formtype = _cpp.fem.Form_float32
     elif dolfinx.default_scalar_type == np.float64:
-        Form = _cpp.fem.Form_float64
+        formtype = _cpp.fem.Form_float64
     elif dolfinx.default_scalar_type == np.complex64:
-        Form = _cpp.fem.Form_complex64
+        formtype = _cpp.fem.Form_complex64
     elif dolfinx.default_scalar_type == np.complex128:
-        Form = _cpp.fem.Form_complex128
+        formtype = _cpp.fem.Form_complex128
     else:
         raise RuntimeError("Unknown scalar type")
 
@@ -139,7 +138,6 @@ def test_coefficient():
     tdim = mesh.topology.dim
     num_cells = mesh.topology.index_map(tdim).size_local + mesh.topology.index_map(tdim).num_ghosts
     integrals = {IntegralType.cell: [(1, tabulate_tensor_b_coeff.address, np.arange(num_cells, dtype=np.intc))]}
-    formtype = _cpp.fem.Form_float64 if PETSc.ScalarType == np.float64 else _cpp.fem.Form_complex128
     L = Form(formtype([V._cpp_object], integrals, [vals._cpp_object], [], False))
 
     b = dolfinx.fem.assemble_vector(L)
