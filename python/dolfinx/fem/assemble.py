@@ -142,6 +142,7 @@ def assemble_scalar(M: Form, constants=None, coeffs=None):
 @functools.singledispatch
 def assemble_vector(L: typing.Any,
                     constants=None, coeffs=None):
+    print("CCCCC: _assemble_vector_form")
     return _assemble_vector_form(L, constants, coeffs)
 
 
@@ -204,7 +205,6 @@ def _assemble_vector_array(b: np.ndarray, L: Form, constants=None, coeffs=None):
         return vector can accumulate ghost contributions.
 
     """
-
     constants = _pack_constants(L._cpp_object) if constants is None else constants
     coeffs = _pack_coefficients(L._cpp_object) if coeffs is None else coeffs
     _cpp.fem.assemble_vector(b, L._cpp_object, constants, coeffs)
