@@ -11,7 +11,8 @@ from dolfinx.cpp.fem import (IntegralType,
 from dolfinx.cpp.fem import create_sparsity_pattern as _create_sparsity_pattern
 from dolfinx.fem import petsc
 from dolfinx.fem.assemble import (apply_lifting, assemble_matrix,
-                                  assemble_scalar, assemble_vector, set_bc)
+                                  assemble_scalar, assemble_vector, create_matrix,
+                                  create_vector, set_bc)
 from dolfinx.fem.bcs import (DirichletBCMetaClass, bcs_by_block, dirichletbc,
                              locate_dofs_geometrical, locate_dofs_topological)
 from dolfinx.fem.dofmap import DofMap
