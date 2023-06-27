@@ -142,7 +142,6 @@ def assemble_scalar(M: Form, constants=None, coeffs=None):
 @functools.singledispatch
 def assemble_vector(L: typing.Any,
                     constants=None, coeffs=None):
-    print("CCCCC: _assemble_vector_form")
     return _assemble_vector_form(L, constants, coeffs)
 
 
