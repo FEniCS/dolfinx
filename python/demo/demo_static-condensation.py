@@ -30,8 +30,8 @@ import ufl
 from basix.ufl import element
 from dolfinx.cpp.fem import (Form_complex64, Form_complex128, Form_float32,
                              Form_float64)
-from dolfinx.fem import (Function, FunctionSpace, IntegralType, dirichletbc,
-                         form, locate_dofs_topological)
+from dolfinx.fem import (Form, Function, FunctionSpace, IntegralType,
+                         dirichletbc, form, locate_dofs_topological)
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                set_bc)
 from dolfinx.io import XDMFFile
@@ -155,21 +155,21 @@ def tabulate_condensed_tensor_A(A_, w_, c_, coords_, entity_local_index, permuta
 
 
 # Prepare a Form with a condensed tabulation kernel
-Form = None
+formtype = None
 if PETSc.ScalarType == np.float32:
-    Form = Form_float32
+    formtype = Form_float32
 elif PETSc.ScalarType == np.float64:
-    Form = Form_float64
+    formtype = Form_float64
 elif PETSc.ScalarType == np.complex64:
-    Form = Form_complex64
+    formtype = Form_complex64
 elif PETSc.ScalarType == np.complex128:
-    Form = Form_complex128
+    formtype = Form_complex128
 else:
     raise RuntimeError(f"Unsupported PETSc ScalarType '{PETSc.ScalarType }'.")
 
 cells = range(msh.topology.index_map(msh.topology.dim).size_local)
 integrals = {IntegralType.cell: [(-1, tabulate_condensed_tensor_A.address, cells)]}
-a_cond = Form([U._cpp_object, U._cpp_object], integrals, [], [], False, None)
+a_cond = Form(formtype([U._cpp_object, U._cpp_object], integrals, [], [], False, None))
 
 A_cond = assemble_matrix(a_cond, bcs=[bc])
 A_cond.assemble()

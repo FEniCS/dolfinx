@@ -84,9 +84,8 @@ def locate_dofs_topological(V: typing.Union[dolfinx.fem.FunctionSpace, typing.It
         return _cpp.fem.locate_dofs_topological(_V, entity_dim, _entities, remote)
 
 
-class DirichletBCMetaClass:
-    def __init__(self, value: typing.Union[Function, Constant, numpy.ndarray],
-                 dofs: numpy.typing.ArrayLike, V: typing.Optional[dolfinx.fem.FunctionSpace] = None):
+class DirichletBC:
+    def __init__(self, bc):
         """Representation of Dirichlet boundary condition which is imposed on
         a linear system.
 
@@ -106,37 +105,22 @@ class DirichletBCMetaClass:
                 of function space of boundary values function.
             V: Function space of a problem to which boundary conditions are applied.
         """
-        # Unwrap value object, if required
-        if isinstance(value, np.ndarray):
-            _value = value
-        else:
-            try:
-                _value = value._cpp_object
-            except AttributeError:
-                _value = value
-
-        if V is not None:
-            try:
-                super().__init__(_value, dofs, V)  # type: ignore
-            except TypeError:
-                super().__init__(_value, dofs, V._cpp_object)  # type: ignore
-        else:
-            super().__init__(_value, dofs)  # type: ignore
+        self._cpp_object = bc
 
     @property
-    def g(self):
+    def g(self) -> typing.Union[Function, Constant, np.ndarray]:
         """The boundary condition value(s)"""
-        return self.value  # type: ignore
+        return self._cpp_object.value
 
     @property
     def function_space(self) -> dolfinx.fem.FunctionSpace:
         """The function space on which the boundary condition is defined"""
-        return super().function_space  # type: ignore
+        return self._cpp_object.function_space
 
 
 def dirichletbc(value: typing.Union[Function, Constant, np.ndarray],
                 dofs: numpy.typing.NDArray[np.int32],
-                V: typing.Optional[dolfinx.fem.FunctionSpace] = None) -> DirichletBCMetaClass:
+                V: typing.Optional[dolfinx.fem.FunctionSpace] = None) -> DirichletBC:
     """Create a representation of Dirichlet boundary condition which
     is imposed on a linear system.
 
@@ -174,19 +158,37 @@ def dirichletbc(value: typing.Union[Function, Constant, np.ndarray],
     except AttributeError:
         raise AttributeError("Boundary condition value must have a dtype attribute.")
 
-    formcls = type("DirichletBC", (DirichletBCMetaClass, bctype), {})
-    return formcls(value, dofs, V)
+    # Unwrap value object, if required
+    if isinstance(value, np.ndarray):
+        _value = value
+    else:
+        try:
+            _value = value._cpp_object  # type: ignore
+        except AttributeError:
+            _value = value
+
+    if V is not None:
+        try:
+            bc = bctype(_value, dofs, V)
+        except TypeError:
+            bc = bctype(_value, dofs, V._cpp_object)
+    else:
+        bc = bctype(_value, dofs)
+
+    return DirichletBC(bc)
 
 
 def bcs_by_block(spaces: typing.Iterable[typing.Union[dolfinx.fem.FunctionSpace, None]],
-                 bcs: typing.Iterable[DirichletBCMetaClass]) -> typing.List[typing.List[DirichletBCMetaClass]]:
+                 bcs: typing.Iterable[DirichletBC]) -> typing.List[typing.List[DirichletBC]]:
     """Arrange Dirichlet boundary conditions by the function space that
     they constrain.
 
-    Given a sequence of function spaces `spaces` and a sequence of
-    DirichletBC objects `bcs`, return a list where the ith entry is the
-    list of DirichletBC objects whose space is contained in
-    `space[i]`."""
+    Given a sequence of function spaces ``spaces`` and a sequence of
+    DirichletBC objects ``bcs``, return a list where the ith entry is
+    the list of DirichletBC objects whose space is contained in
+    ``space[i]``.
+
+    """
     def _bc_space(V, bcs):
         "Return list of bcs that have the same space as V"
         return [bc for bc in bcs if V.contains(bc.function_space)]
