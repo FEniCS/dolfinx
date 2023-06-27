@@ -49,7 +49,7 @@ template <int BS0, int BS1, typename OP, typename U, typename V, typename W,
           typename X, typename Y>
 void insert_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
                 const Y& xrows, const Y& xcols, OP op,
-                typename Y::value_type local_size);
+                typename Y::value_type num_rows);
 
 /// @brief Incorporate blocked data with given block sizes into a non-blocked
 /// MatrixCSR
@@ -75,7 +75,7 @@ template <int BS0, int BS1, typename OP, typename U, typename V, typename W,
           typename X, typename Y>
 void insert_blocked_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
                         const Y& xrows, const Y& xcols, OP op,
-                        typename Y::value_type local_size);
+                        typename Y::value_type num_rows);
 
 /// @brief Incorporate non-blocked data into a blocked matrix (Data block size =
 /// 1)
@@ -98,7 +98,7 @@ template <typename OP, typename U, typename V, typename W, typename X,
           typename Y>
 void insert_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
                            const X& x, const Y& xrows, const Y& xcols, OP op,
-                           typename Y::value_type local_size, int bs0, int bs1);
+                           typename Y::value_type num_rows, int bs0, int bs1);
 
 } // namespace impl
 
