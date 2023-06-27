@@ -147,8 +147,10 @@ def test_distributed_csr(dtype):
 
 @pytest.mark.parametrize('dtype', [np.float32, np.float64, np.complex64, np.complex128])
 def test_set_diagonal_distributed(dtype):
+
+    mesh_dtype = np.real(dtype(0)).dtype
     ghost_mode = GhostMode.shared_facet
-    mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, ghost_mode=ghost_mode)
+    mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, ghost_mode=ghost_mode, dtype=mesh_dtype)
     V = fem.FunctionSpace(mesh, ("Lagrange", 1))
 
     tdim = mesh.topology.dim
