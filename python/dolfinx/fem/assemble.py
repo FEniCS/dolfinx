@@ -90,11 +90,24 @@ def create_vector(L: FormMetaClass) -> la.VectorMetaClass:
     return la.vector(dofmap.index_map, dofmap.index_map_bs, dtype=L.dtype)
 
 
-def create_matrix(a: FormMetaClass) -> la.MatrixCSRMetaClass:
-    """Create a sparse matrix that is compatible with a given bilinear form"""
+def create_matrix(a: FormMetaClass, block_mode: typing.Optional[la.BlockMode] = None) -> la.MatrixCSRMetaClass:
+    """Create a sparse matrix that is compatible with a given bilinear form.
+
+    Args:
+        a: Bilinear form to assemble.
+        block_mode: Block mode of the CSR matrix. If ``None``, default
+        is used.
+
+    Returns:
+        Assembled sparse matrix.
+
+    """
     sp = dolfinx.fem.create_sparsity_pattern(a)
     sp.finalize()
-    return la.matrix_csr(sp, dtype=a.dtype)
+    if block_mode is not None:
+        return la.matrix_csr(sp, block_mode=block_mode, dtype=a.dtype)
+    else:
+        return la.matrix_csr(sp, dtype=a.dtype)
 
 
 # -- Scalar assembly ---------------------------------------------------------
@@ -206,8 +219,9 @@ def _assemble_vector_array(b: np.ndarray, L: FormMetaClass, constants=None, coef
 @functools.singledispatch
 def assemble_matrix(a: typing.Any,
                     bcs: typing.Optional[typing.List[DirichletBCMetaClass]] = None,
-                    diagonal: float = 1.0, constants=None, coeffs=None):
-    return _assemble_matrix_form(a, bcs, diagonal, constants, coeffs)
+                    diagonal: float = 1.0, constants=None, coeffs=None,
+                    block_mode: typing.Optional[la.BlockMode] = None):
+    return _assemble_matrix_form(a, bcs, diagonal, constants, coeffs, block_mode)
 
 
 @assemble_matrix.register
@@ -246,8 +260,8 @@ def _assemble_matrix_csr(A: la.MatrixCSRMetaClass, a: form_types,
 
 @assemble_matrix.register(FormMetaClass)
 def _assemble_matrix_form(a: form_types, bcs: typing.Optional[typing.List[DirichletBCMetaClass]] = None,
-                          diagonal: float = 1.0,
-                          constants=None, coeffs=None) -> la.MatrixCSRMetaClass:
+                          diagonal: float = 1.0, constants=None, coeffs=None,
+                          block_mode: typing.Optional[la.BlockMode] = None) -> la.MatrixCSRMetaClass:
     """Assemble bilinear form into a matrix.
 
     Args:
@@ -260,6 +274,8 @@ def _assemble_matrix_form(a: form_types, bcs: typing.Optional[typing.List[Dirich
             any required constants will be computed.
         coeffs: Coefficients that appear in the form. If not provided,
             any required coefficients will be computed.
+        block_mode: Block size mode for the returned space matrix. If
+            ``None``, default is used.
 
     Returns:
         Matrix representation of the bilinear form ``a``.
@@ -270,7 +286,7 @@ def _assemble_matrix_form(a: form_types, bcs: typing.Optional[typing.List[Dirich
 
     """
     bcs = [] if bcs is None else bcs
-    A: la.MatrixCSRMetaClass = create_matrix(a)
+    A: la.MatrixCSRMetaClass = create_matrix(a, block_mode)
     _assemble_matrix_csr(A, a, bcs, diagonal, constants, coeffs)
     return A
 
