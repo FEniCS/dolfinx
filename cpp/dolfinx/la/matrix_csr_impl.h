@@ -118,10 +118,6 @@ void impl::insert_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
     using T = typename X::value_type;
     const T* xr = x.data() + r * nc * BS0 * BS1;
 
-#ifndef NDEBUG
-    if (row >= local_size)
-      throw std::runtime_error("Local row out of range");
-#endif
     // Columns indices for row
     auto cit0 = std::next(cols.begin(), row_ptr[row]);
     auto cit1 = std::next(cols.begin(), row_ptr[row + 1]);
@@ -161,11 +157,6 @@ void impl::insert_blocked_csr(U&& data, const V& cols, const W& row_ptr,
   {
     // Row index and current data row
     auto row = xrows[r] * BS0;
-
-#ifndef NDEBUG
-    if (row >= local_size)
-      throw std::runtime_error("Local row out of range");
-#endif
 
     for (int i = 0; i < BS0; ++i)
     {
@@ -211,10 +202,6 @@ void impl::insert_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
     using T = typename X::value_type;
     const T* xr = x.data() + r * nc;
 
-#ifndef NDEBUG
-    if (rdiv.quot >= local_size)
-      throw std::runtime_error("Local row out of range");
-#endif
     // Columns indices for row
     auto cit0 = std::next(cols.begin(), row_ptr[rdiv.quot]);
     auto cit1 = std::next(cols.begin(), row_ptr[rdiv.quot + 1]);
