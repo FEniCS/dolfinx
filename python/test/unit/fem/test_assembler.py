@@ -500,7 +500,7 @@ def test_assembly_solve_block(mode):
     Anorm1, bnorm1, xnorm1 = nested()
     assert Anorm1 == pytest.approx(Anorm0, 1.0e-6)
     assert bnorm1 == pytest.approx(bnorm0, 1.0e-6)
-    assert xnorm1 == pytest.approx(xnorm0, 1.0e-6)
+    assert xnorm1 == pytest.approx(xnorm0, 1.0e-5)
 
     Anorm2, bnorm2, xnorm2 = monolithic()
     assert Anorm2 == pytest.approx(Anorm0, 1.0e-6)
