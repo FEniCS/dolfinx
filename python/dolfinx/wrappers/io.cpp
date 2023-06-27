@@ -117,6 +117,42 @@ void declare_vtx_writer(py::module& m, std::string type)
   }
 #endif
 }
+
+template <typename T>
+void declare_real_types(py::module& m)
+{
+  // TODO: Remove this template, pass lower level mesh data
+  m.def(
+      "distribute_entity_data",
+      [](const dolfinx::mesh::Mesh<T>& mesh, int entity_dim,
+         const py::array_t<std::int64_t, py::array::c_style>& entities,
+         const py::array_t<std::int32_t, py::array::c_style>& values)
+      {
+        assert(entities.ndim() == 2);
+        assert(values.ndim() == 1);
+        assert(entities.shape(0) == values.shape(0));
+        std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
+            entities_values = dolfinx::io::xdmf_utils::distribute_entity_data(
+                *mesh.topology(), mesh.geometry().input_global_indices(),
+                mesh.geometry().index_map()->size_global(),
+                mesh.geometry().cmaps()[0].create_dof_layout(),
+                mesh.geometry().dofmap(), entity_dim,
+                std::span(entities.data(), entities.size()),
+                std::span(values.data(), values.size()));
+
+        std::size_t num_vert_per_entity = dolfinx::mesh::cell_num_entities(
+            dolfinx::mesh::cell_entity_type(
+                mesh.topology()->cell_types().back(), entity_dim, 0),
+            0);
+        std::array shape_e{entities_values.first.size() / num_vert_per_entity,
+                           num_vert_per_entity};
+        return std::pair(as_pyarray(std::move(entities_values.first), shape_e),
+                         as_pyarray(std::move(entities_values.second)));
+      },
+      py::arg("mesh"), py::arg("entity_dim"), py::arg("entities"),
+      py::arg("values"));
+}
+
 } // namespace
 
 void io(py::module& m)
@@ -152,31 +188,6 @@ void io(py::module& m)
         "Permutation array to map from Gmsh to DOLFINx node ordering");
 
   // TODO: Template for different values dtypes
-  m.def(
-      "distribute_entity_data",
-      [](const dolfinx::mesh::Mesh<double>& mesh, int entity_dim,
-         const py::array_t<std::int64_t, py::array::c_style>& entities,
-         const py::array_t<std::int32_t, py::array::c_style>& values)
-      {
-        assert(entities.ndim() == 2);
-        assert(values.ndim() == 1);
-        assert(entities.shape(0) == values.shape(0));
-        std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
-            entities_values = dolfinx::io::xdmf_utils::distribute_entity_data(
-                mesh, entity_dim, std::span(entities.data(), entities.size()),
-                std::span(values.data(), values.size()));
-
-        std::size_t num_vert_per_entity = dolfinx::mesh::cell_num_entities(
-            dolfinx::mesh::cell_entity_type(
-                mesh.topology()->cell_types().back(), entity_dim, 0),
-            0);
-        std::array shape_e{entities_values.first.size() / num_vert_per_entity,
-                           num_vert_per_entity};
-        return std::pair(as_pyarray(std::move(entities_values.first), shape_e),
-                         as_pyarray(std::move(entities_values.second)));
-      },
-      py::arg("mesh"), py::arg("entity_dim"), py::arg("entities"),
-      py::arg("values"));
 
   // dolfinx::io::XDMFFile
   py::class_<dolfinx::io::XDMFFile, std::shared_ptr<dolfinx::io::XDMFFile>>
@@ -306,5 +317,8 @@ void io(py::module& m)
 
   declare_vtx_writer<float>(m, "float32");
   declare_vtx_writer<double>(m, "float64");
+
+  declare_real_types<float>(m);
+  declare_real_types<double>(m);
 }
 } // namespace dolfinx_wrappers

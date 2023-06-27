@@ -8,6 +8,7 @@
 
 #include "HDF5Interface.h"
 #include <array>
+#include <basix/mdspan.hpp>
 #include <complex>
 #include <concepts>
 #include <dolfinx/mesh/cell_types.h>
@@ -37,13 +38,15 @@ namespace fem
 {
 template <std::floating_point T>
 class CoordinateElement;
-}
+class ElementDofLayout;
+} // namespace fem
 
 namespace mesh
 {
 template <std::floating_point T>
 class Mesh;
-}
+class Topology;
+} // namespace mesh
 
 namespace io::xdmf_utils
 {
@@ -103,9 +106,19 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 /// distributed and rank1 will receive the (local) cell-vertex connectivity
 /// for this triangle.
 std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
-distribute_entity_data(const mesh::Mesh<double>& mesh, int entity_dim,
-                       std::span<const std::int64_t> entities,
-                       std::span<const std::int32_t> data);
+distribute_entity_data(
+    const mesh::Topology& topology, const std::vector<std::int64_t>& nodes_g,
+    std::int64_t num_nodes_g, const fem::ElementDofLayout cmap_dof_layout,
+    std::experimental::mdspan<const std::int32_t,
+                              std::experimental::dextents<std::size_t, 2>>
+        xdofmap,
+    //  const mesh::Mesh<double>& mesh,
+    int entity_dim, std::span<const std::int64_t> entities,
+    std::span<const std::int32_t> data);
+// std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
+// distribute_entity_data(const mesh::Mesh<double>& mesh, int entity_dim,
+//                        std::span<const std::int64_t> entities,
+//                        std::span<const std::int32_t> data);
 
 /// TODO: Document
 template <typename T>

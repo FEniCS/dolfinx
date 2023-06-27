@@ -360,9 +360,16 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
   std::vector<std::int64_t> entities1 = io::cells::apply_permutation(
       entities, eshape, io::cells::perm_vtk(cell_type, eshape[1]));
 
+  // std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
+  //     entities_values = xdmf_utils::distribute_entity_data(
+  //         mesh, mesh::cell_dim(cell_type), entities1, values);
   std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
       entities_values = xdmf_utils::distribute_entity_data(
-          mesh, mesh::cell_dim(cell_type), entities1, values);
+          *mesh.topology(), mesh.geometry().input_global_indices(),
+          mesh.geometry().index_map()->size_global(),
+          mesh.geometry().cmaps()[0].create_dof_layout(),
+          mesh.geometry().dofmap(), mesh::cell_dim(cell_type), entities1,
+          values);
 
   auto cell_types = mesh.topology()->cell_types();
   if (cell_types.size() > 1)
