@@ -49,7 +49,7 @@ index_size = np.dtype(PETSc.IntType).itemsize
 
 if index_size == 8:
     c_int_t = "int64_t"
-    ctypes_index: numpy.typing.DTypeLike = ctypes.c_int64
+    ctypes_index: np.typing.DTypeLike = ctypes.c_int64
 elif index_size == 4:
     c_int_t = "int32_t"
     ctypes_index = ctypes.c_int32

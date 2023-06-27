@@ -237,7 +237,7 @@ class Function(ufl.Coefficient):
     """
 
     def __init__(self, V: FunctionSpace, x: typing.Optional[la.VectorMetaClass] = None,
-                 name: typing.Optional[str] = None, dtype: np.dtype = default_scalar_type):
+                 name: typing.Optional[str] = None, dtype: typing.Optional[npt.DTypeLike] = default_scalar_type):
         """Initialize a finite element Function.
 
         Args:
