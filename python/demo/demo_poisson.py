@@ -112,8 +112,8 @@ facets = mesh.locate_entities_boundary(msh, dim=(msh.topology.dim - 1),
 dofs = fem.locate_dofs_topological(V=V, entity_dim=1, entities=facets)
 
 # and use {py:func}`dirichletbc <dolfinx.fem.dirichletbc>` to create a
-# {py:class}`DirichletBCMetaClass <dolfinx.fem.DirichletBCMetaClass>`
-# class that represents the boundary condition:
+# {py:class}`DirichletBC <dolfinx.fem.DirichletBC>` class that
+# represents the boundary condition:
 
 bc = fem.dirichletbc(value=ScalarType(0), dofs=dofs, V=V)
 

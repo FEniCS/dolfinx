@@ -163,7 +163,7 @@ facets = mesh.locate_entities_boundary(msh, dim=1,
 dofs = fem.locate_dofs_topological(V=V, entity_dim=1, entities=facets)
 
 # and use {py:func}`dirichletbc <dolfinx.fem.dirichletbc>` to create a
-# {py:class}`DirichletBCMetaClass <dolfinx.fem.DirichletBCMetaClass>`
+# {py:class}`DirichletBC <dolfinx.fem.DirichletBC>`
 # class that represents the boundary condition. In this case, we impose
 # Dirichlet boundary conditions with value $0$ on the entire boundary
 # $\partial\Omega$.

@@ -73,7 +73,7 @@ def test_add(dtype):
     A3 = mat3.to_dense()
     assert np.allclose(A1, A3)
 
-    mat3.set(0.0)
+    mat3.set_value(0.0)
     assert mat3.squared_norm() == 0.0
 
 
