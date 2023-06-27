@@ -160,6 +160,8 @@ class Expression:
                 return _cpp.fem.create_expression_float32
             elif dtype is np.float64:
                 return _cpp.fem.create_expression_float64
+            elif dtype is np.complex64:
+                return _cpp.fem.create_expression_complex64
             elif dtype is np.complex128:
                 return _cpp.fem.create_expression_complex128
             else:
