@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2018 Chris N. Richardson and Garth N. Wells
+// Copyright (C) 2012-2023 Chris N. Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -8,6 +8,7 @@
 
 #include <complex>
 #include <concepts>
+#include <dolfinx/common/types.h>
 #include <hdf5.h>
 #include <mpi.h>
 
@@ -24,21 +25,13 @@ template <typename T, std::floating_point U>
 class Function;
 }
 
-namespace io
-{
 /// Low-level methods for reading/writing XDMF files
-namespace xdmf_function
+namespace io::xdmf_function
 {
 
-/// TODO
-void add_function(MPI_Comm comm, const fem::Function<double, double>& u,
-                  const double t, pugi::xml_node& xml_node, const hid_t h5_id);
-
-/// TODO
-void add_function(MPI_Comm comm,
-                  const fem::Function<std::complex<double>, double>& u,
-                  const double t, pugi::xml_node& xml_node, const hid_t h5_id);
-
-} // namespace xdmf_function
-} // namespace io
+/// Write a fem::Function to XDMF
+template <typename T, typename U = dolfinx::scalar_value_type_t<T>>
+void add_function(MPI_Comm comm, const fem::Function<T, U>& u, double t,
+                  pugi::xml_node& xml_node, const hid_t h5_id);
+} // namespace io::xdmf_function
 } // namespace dolfinx

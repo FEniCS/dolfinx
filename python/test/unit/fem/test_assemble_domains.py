@@ -93,11 +93,11 @@ def test_assembly_dx_domains(mode, meshtags_factory):
     L = form(w * (dx(1) + dx(2) + dx(3)))
     s = assemble_scalar(L)
     s = mesh.comm.allreduce(s, op=MPI.SUM)
-    assert s == pytest.approx(0.5, 1.0e-12)
+    assert s == pytest.approx(0.5, rel=1.0e-6)
     L2 = form(w * dx)
     s2 = assemble_scalar(L2)
     s2 = mesh.comm.allreduce(s2, op=MPI.SUM)
-    assert s == pytest.approx(s2, 1.0e-12)
+    assert s == pytest.approx(s2, rel=1.0e-6)
 
     A.destroy()
     b.destroy()
@@ -181,7 +181,7 @@ def test_assembly_ds_domains(mode):
     L2 = form(w * ds)
     s2 = assemble_scalar(L2)
     s2 = mesh.comm.allreduce(s2, op=MPI.SUM)
-    assert (s == pytest.approx(s2, 1.0e-12) and 2.0 == pytest.approx(s, 1.0e-12))
+    assert s == pytest.approx(s2, 1.0e-6) and 2.0 == pytest.approx(s, 1.0e-6)
 
     A.destroy()
     b.destroy()
@@ -196,7 +196,7 @@ def test_assembly_dS_domains(mode):
     one = Constant(mesh, default_scalar_type(1))
     val = assemble_scalar(form(one * ufl.dS))
     val = mesh.comm.allreduce(val, op=MPI.SUM)
-    assert val == pytest.approx(2 * (N - 1) + N * np.sqrt(2), 1.0e-7)
+    assert val == pytest.approx(2 * (N - 1) + N * np.sqrt(2), 1.0e-5)
 
 
 @parametrize_ghost_mode

@@ -158,7 +158,7 @@
 # +
 import numpy as np
 
-from dolfinx import fem, io, mesh
+from dolfinx import fem, io, mesh, default_real_type
 from ufl import (CellDiameter, FacetNormal, TestFunction, TrialFunction, avg,
                  conditional, div, dot, dS, ds, dx, grad, gt, inner, outer)
 
@@ -177,14 +177,12 @@ if np.issubdtype(PETSc.ScalarType, np.complexfloating):
 # +
 def norm_L2(comm, v):
     """Compute the L2(Ω)-norm of v"""
-    return np.sqrt(comm.allreduce(
-        fem.assemble_scalar(fem.form(inner(v, v) * dx)), op=MPI.SUM))
+    return np.sqrt(comm.allreduce(fem.assemble_scalar(fem.form(inner(v, v) * dx)), op=MPI.SUM))
 
 
 def domain_average(msh, v):
     """Compute the average of a function over the domain"""
-    vol = msh.comm.allreduce(
-        fem.assemble_scalar(fem.form(fem.Constant(msh, 1.0) * dx)), op=MPI.SUM)
+    vol = msh.comm.allreduce(fem.assemble_scalar(fem.form(fem.Constant(msh, default_real_type(1.0)) * dx)), op=MPI.SUM)
     return (1 / vol) * msh.comm.allreduce(fem.assemble_scalar(fem.form(v * dx)), op=MPI.SUM)
 
 
@@ -204,8 +202,7 @@ def p_e_expr(x):
 
 def f_expr(x):
     """Expression for the applied force"""
-    return np.vstack((np.zeros_like(x[0]),
-                      np.zeros_like(x[0])))
+    return np.vstack((np.zeros_like(x[0]), np.zeros_like(x[0])))
 
 
 def boundary_marker(x):
@@ -241,8 +238,8 @@ W = fem.VectorFunctionSpace(msh, ("Discontinuous Lagrange", k + 1))
 u, v = TrialFunction(V), TestFunction(V)
 p, q = TrialFunction(Q), TestFunction(Q)
 
-delta_t = fem.Constant(msh, t_end / num_time_steps)
-alpha = fem.Constant(msh, 6.0 * k**2)
+delta_t = fem.Constant(msh, default_real_type(t_end / num_time_steps))
+alpha = fem.Constant(msh, default_real_type(6.0 * k**2))
 
 h = CellDiameter(msh)
 n = FacetNormal(msh)
@@ -257,13 +254,13 @@ def jump(phi, n):
 
 
 # +
-a_00 = (1 / Re) * (inner(grad(u), grad(v)) * dx
-                   - inner(avg(grad(u)), jump(v, n)) * dS
-                   - inner(jump(u, n), avg(grad(v))) * dS
-                   + alpha / avg(h) * inner(jump(u, n), jump(v, n)) * dS
-                   - inner(grad(u), outer(v, n)) * ds
-                   - inner(outer(u, n), grad(v)) * ds
-                   + alpha / h * inner(outer(u, n), outer(v, n)) * ds)
+a_00 = (1.0 / Re) * (inner(grad(u), grad(v)) * dx
+                     - inner(avg(grad(u)), jump(v, n)) * dS
+                     - inner(jump(u, n), avg(grad(v))) * dS
+                     + (alpha / avg(h)) * inner(jump(u, n), jump(v, n)) * dS
+                     - inner(grad(u), outer(v, n)) * ds
+                     - inner(outer(u, n), grad(v)) * ds
+                     + (alpha / h) * inner(outer(u, n), outer(v, n)) * ds)
 a_01 = - inner(p, div(v)) * dx
 a_10 = - inner(div(u), q) * dx
 
@@ -275,7 +272,7 @@ u_D = fem.Function(V)
 u_D.interpolate(u_e_expr)
 L_0 = inner(f, v) * dx + (1 / Re) * (- inner(outer(u_D, n), grad(v)) * ds
                                      + (alpha / h) * inner(outer(u_D, n), outer(v, n)) * ds)
-L_1 = inner(fem.Constant(msh, 0.0), q) * dx
+L_1 = inner(fem.Constant(msh, default_real_type(0.0)), q) * dx
 L = fem.form([L_0, L_1])
 
 # Boundary conditions
@@ -421,7 +418,7 @@ e_u = norm_L2(msh.comm, u_h - u_e)
 e_div_u = norm_L2(msh.comm, div(u_h))
 
 # This scheme conserves mass exactly, so check this
-assert np.isclose(e_div_u, 0.0)
+assert np.isclose(e_div_u, 0.0, atol=float(1.0e5 * np.finfo(default_real_type).eps))
 p_e_avg = domain_average(msh, p_e)
 e_p = norm_L2(msh.comm, p_h - (p_e - p_e_avg))
 

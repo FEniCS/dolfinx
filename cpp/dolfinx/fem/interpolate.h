@@ -88,7 +88,7 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
     {
       for (std::size_t j = 0; j < gdim; ++j)
       {
-        double acc = 0;
+        T acc = 0;
         for (std::size_t k = 0; k < num_dofs_g; ++k)
           acc += phi(p, k) * coordinate_dofs[k * gdim + j];
         x[j * (cells.size() * Xshape[0]) + c * Xshape[0] + p] = acc;

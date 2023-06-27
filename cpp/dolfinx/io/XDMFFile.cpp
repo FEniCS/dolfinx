@@ -28,11 +28,11 @@ using namespace dolfinx::io;
 namespace
 {
 template <typename Scalar>
-void _write_function(dolfinx::MPI::Comm& comm,
-                     const fem::Function<Scalar, double>& function,
-                     const double t, const std::string& mesh_xpath,
-                     pugi::xml_document& xml_doc, hid_t h5_id,
-                     const std::filesystem::path& filename)
+void _write_function(
+    dolfinx::MPI::Comm& comm,
+    const fem::Function<Scalar, dolfinx::scalar_value_type_t<Scalar>>& function,
+    const double t, const std::string& mesh_xpath, pugi::xml_document& xml_doc,
+    hid_t h5_id, const std::filesystem::path& filename)
 {
   const std::string timegrid_xpath
       = "/Xdmf/Domain/Grid[@GridType='Collection'][@Name='" + function.name
@@ -189,7 +189,8 @@ void XDMFFile::close()
   _h5_id = -1;
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write_mesh(const mesh::Mesh<double>& mesh, std::string xpath)
+template <std::floating_point U>
+void XDMFFile::write_mesh(const mesh::Mesh<U>& mesh, std::string xpath)
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
@@ -202,6 +203,10 @@ void XDMFFile::write_mesh(const mesh::Mesh<double>& mesh, std::string xpath)
   if (MPI::rank(_comm.comm()) == 0)
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
+/// @cond
+template void XDMFFile::write_mesh(const mesh::Mesh<double>&, std::string);
+template void XDMFFile::write_mesh(const mesh::Mesh<float>&, std::string);
+/// @endcond
 //-----------------------------------------------------------------------------
 void XDMFFile::write_geometry(const mesh::Geometry<double>& geometry,
                               std::string name, std::string xpath)
@@ -241,8 +246,9 @@ XDMFFile::read_mesh(const fem::CoordinateElement<double>& element,
 
   graph::AdjacencyList<std::int64_t> cells_adj(std::move(cells),
                                                std::move(offset));
+  const std::vector<double>& _x = std::get<std::vector<double>>(x);
   mesh::Mesh<double> mesh
-      = mesh::create_mesh(_comm.comm(), cells_adj, {element}, x, xshape, mode);
+      = mesh::create_mesh(_comm.comm(), cells_adj, {element}, _x, xshape, mode);
   mesh.name = name;
   return mesh;
 }
@@ -263,7 +269,8 @@ XDMFFile::read_topology_data(std::string name, std::string xpath) const
   return xdmf_mesh::read_topology_data(_comm.comm(), _h5_id, grid_node);
 }
 //-----------------------------------------------------------------------------
-std::pair<std::vector<double>, std::array<std::size_t, 2>>
+std::pair<std::variant<std::vector<float>, std::vector<double>>,
+          std::array<std::size_t, 2>>
 XDMFFile::read_geometry_data(std::string name, std::string xpath) const
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
@@ -279,18 +286,26 @@ XDMFFile::read_geometry_data(std::string name, std::string xpath) const
   return xdmf_mesh::read_geometry_data(_comm.comm(), _h5_id, grid_node);
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write_function(const fem::Function<double, double>& u, double t,
+template <typename T, std::floating_point U>
+void XDMFFile::write_function(const fem::Function<T, U>& u, double t,
                               std::string mesh_xpath)
 {
   _write_function(_comm, u, t, mesh_xpath, *_xml_doc, _h5_id, _filename);
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write_function(
-    const fem::Function<std::complex<double>, double>& u, double t,
-    std::string mesh_xpath)
-{
-  _write_function(_comm, u, t, mesh_xpath, *_xml_doc, _h5_id, _filename);
-}
+// Instantiation for different types
+/// @cond
+template void XDMFFile::write_function(const fem::Function<float, float>&,
+                                       double, std::string);
+template void XDMFFile::write_function(const fem::Function<double, double>&,
+                                       double, std::string);
+template void
+XDMFFile::write_function(const fem::Function<std::complex<float>, float>&,
+                         double, std::string);
+template void
+XDMFFile::write_function(const fem::Function<std::complex<double>, double>&,
+                         double, std::string);
+/// @endcond
 //-----------------------------------------------------------------------------
 void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
                               const mesh::Geometry<double>& x,
