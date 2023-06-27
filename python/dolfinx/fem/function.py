@@ -25,6 +25,7 @@ import ufl.algorithms.analysis
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit, la
 from dolfinx.fem import dofmap
+from dolfinx.la import Vector
 from ufl.domain import extract_unique_domain
 
 
@@ -238,7 +239,7 @@ class Function(ufl.Coefficient):
 
     """
 
-    def __init__(self, V: FunctionSpace, x: typing.Optional[la.VectorMetaClass] = None,
+    def __init__(self, V: FunctionSpace, x: typing.Optional[la.Vector] = None,
                  name: typing.Optional[str] = None, dtype: typing.Optional[npt.DTypeLike] = default_scalar_type):
         """Initialize a finite element Function.
 
@@ -269,7 +270,7 @@ class Function(ufl.Coefficient):
                 raise NotImplementedError(f"Type {dtype} not supported.")
 
         if x is not None:
-            self._cpp_object = functiontype(dtype)(V._cpp_object, x)
+            self._cpp_object = functiontype(dtype)(V._cpp_object, x._cpp_object)
         else:
             self._cpp_object = functiontype(dtype)(V._cpp_object)
 
@@ -378,19 +379,19 @@ class Function(ufl.Coefficient):
         degree-of-freedom vector is copied.
 
         """
-        return Function(self.function_space, type(self.x)(self.x))
+        return Function(self.function_space, Vector(type(self.x._cpp_object)(self.x._cpp_object)))
 
     @property
     def vector(self):
         """PETSc vector holding the degrees-of-freedom."""
         if self._petsc_x is None:
-            self._petsc_x = _cpp.la.petsc.create_vector_wrap(self.x)
+            self._petsc_x = _cpp.la.petsc.create_vector_wrap(self._cpp_object.x)
         return self._petsc_x
 
     @property
     def x(self):
         """Vector holding the degrees-of-freedom."""
-        return self._cpp_object.x
+        return Vector(self._cpp_object.x)
 
     @property
     def dtype(self) -> np.dtype:
@@ -441,7 +442,7 @@ class Function(ufl.Coefficient):
     def collapse(self) -> Function:
         u_collapsed = self._cpp_object.collapse()
         V_collapsed = FunctionSpace(self.function_space._mesh, self.ufl_element(), u_collapsed.function_space)
-        return Function(V_collapsed, u_collapsed.x)
+        return Function(V_collapsed, Vector(u_collapsed.x))
 
 
 class ElementMetaData(typing.NamedTuple):
