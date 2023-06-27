@@ -393,8 +393,8 @@ D = fem.FunctionSpace(msh, ("DG", 0))
 eps = fem.Function(D)
 au_cells = cell_tags.find(au_tag)
 bkg_cells = cell_tags.find(bkg_tag)
-eps.x.array[au_cells] = np.full_like(au_cells, eps_au, dtype=np.complex128)
-eps.x.array[bkg_cells] = np.full_like(bkg_cells, eps_bkg, dtype=np.complex128)
+eps.x.array[au_cells] = np.full_like(au_cells, eps_au, dtype=eps.x.array.dtype)
+eps.x.array[bkg_cells] = np.full_like(bkg_cells, eps_bkg, dtype=eps.x.array.dtype)
 eps.x.scatter_forward()
 # -
 
