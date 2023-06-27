@@ -43,11 +43,9 @@ def mesh_factory(tdim, n):
 @pytest.mark.parametrize("encoding", encodings)
 @pytest.mark.parametrize("dtype", [np.double, np.complex128])
 def test_save_1d_scalar(tempdir, encoding, dtype, use_pathlib):
-    filename2 = (
-        Path(tempdir).joinpath("u1_.xdmf")
-        if use_pathlib else Path(tempdir, "u1_.xdmf")
-    )
-    mesh = create_unit_interval(MPI.COMM_WORLD, 32)
+    xtype = np.real(dtype(0)).dtype
+    filename2 = (Path(tempdir).joinpath("u1_.xdmf")if use_pathlib else Path(tempdir, "u1_.xdmf"))
+    mesh = create_unit_interval(MPI.COMM_WORLD, 32, dtype=xtype)
     V = FunctionSpace(mesh, ("Lagrange", 2))
     u = Function(V, dtype=dtype)
     u.x.set(1.0 + (1j if np.issubdtype(dtype, np.complexfloating) else 0))
@@ -60,8 +58,9 @@ def test_save_1d_scalar(tempdir, encoding, dtype, use_pathlib):
 @pytest.mark.parametrize("encoding", encodings)
 @pytest.mark.parametrize("dtype", [np.double, np.complex128])
 def test_save_2d_scalar(tempdir, encoding, dtype, cell_type):
+    xtype = np.real(dtype(0)).dtype
     filename = Path(tempdir, "u2.xdmf")
-    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, cell_type)
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, cell_type, dtype=xtype)
     V = FunctionSpace(mesh, ("Lagrange", 2))
     u = Function(V, dtype=dtype)
     u.x.set(1.0)
@@ -74,8 +73,9 @@ def test_save_2d_scalar(tempdir, encoding, dtype, cell_type):
 @pytest.mark.parametrize("encoding", encodings)
 @pytest.mark.parametrize("dtype", [np.double, np.complex128])
 def test_save_3d_scalar(tempdir, encoding, dtype, cell_type):
+    xtype = np.real(dtype(0)).dtype
     filename = Path(tempdir, "u3.xdmf")
-    mesh = create_unit_cube(MPI.COMM_WORLD, 4, 3, 4, cell_type)
+    mesh = create_unit_cube(MPI.COMM_WORLD, 4, 3, 4, cell_type, dtype=xtype)
     V = FunctionSpace(mesh, ("Lagrange", 2))
     u = Function(V, dtype=dtype)
     u.x.set(1.0)
@@ -88,8 +88,9 @@ def test_save_3d_scalar(tempdir, encoding, dtype, cell_type):
 @pytest.mark.parametrize("encoding", encodings)
 @pytest.mark.parametrize("dtype", [np.double, np.complex128])
 def test_save_2d_vector(tempdir, encoding, dtype, cell_type):
+    xtype = np.real(dtype(0)).dtype
     filename = Path(tempdir, "u_2dv.xdmf")
-    mesh = create_unit_square(MPI.COMM_WORLD, 12, 13, cell_type)
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 13, cell_type, dtype=xtype)
     V = VectorFunctionSpace(mesh, ("Lagrange", 2))
     u = Function(V, dtype=dtype)
     u.x.set(1.0 + (1j if np.issubdtype(dtype, np.complexfloating) else 0))
@@ -102,8 +103,9 @@ def test_save_2d_vector(tempdir, encoding, dtype, cell_type):
 @pytest.mark.parametrize("encoding", encodings)
 @pytest.mark.parametrize("dtype", [np.double, np.complex128])
 def test_save_3d_vector(tempdir, encoding, dtype, cell_type):
+    xtype = np.real(dtype(0)).dtype
     filename = Path(tempdir, "u_3Dv.xdmf")
-    mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type)
+    mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type, dtype=xtype)
     u = Function(VectorFunctionSpace(mesh, ("Lagrange", 1)), dtype=dtype)
     u.x.set(1.0 + (1j if np.issubdtype(dtype, np.complexfloating) else 0))
     with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
@@ -115,8 +117,9 @@ def test_save_3d_vector(tempdir, encoding, dtype, cell_type):
 @pytest.mark.parametrize("encoding", encodings)
 @pytest.mark.parametrize("dtype", [np.double, np.complex128])
 def test_save_2d_tensor(tempdir, encoding, dtype, cell_type):
+    xtype = np.real(dtype(0)).dtype
     filename = Path(tempdir, "tensor.xdmf")
-    mesh = create_unit_square(MPI.COMM_WORLD, 16, 16, cell_type)
+    mesh = create_unit_square(MPI.COMM_WORLD, 16, 16, cell_type, dtype=xtype)
     u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)), dtype=dtype)
     u.x.set(1.0 + (1j if np.issubdtype(dtype, np.complexfloating) else 0))
     with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
@@ -126,10 +129,11 @@ def test_save_2d_tensor(tempdir, encoding, dtype, cell_type):
 
 @pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
-@pytest.mark.parametrize("dtype", [np.double, np.complex128])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 def test_save_3d_tensor(tempdir, encoding, dtype, cell_type):
+    xtype = np.real(dtype(0)).dtype
     filename = Path(tempdir, "u3t.xdmf")
-    mesh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, cell_type)
+    mesh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, cell_type, dtype=xtype)
     u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)), dtype=dtype)
     u.x.set(1.0 + (1j if np.issubdtype(dtype, np.complexfloating) else 0))
     with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
@@ -139,10 +143,11 @@ def test_save_3d_tensor(tempdir, encoding, dtype, cell_type):
 
 @pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
-@pytest.mark.parametrize("dtype", [np.double, np.complex128])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 def test_save_3d_vector_series(tempdir, encoding, dtype, cell_type):
     filename = Path(tempdir, "u_3D.xdmf")
-    mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type)
+    xtype = np.real(dtype(0)).dtype
+    mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type, dtype=xtype)
     u = Function(VectorFunctionSpace(mesh, ("Lagrange", 2)), dtype=dtype)
     with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)

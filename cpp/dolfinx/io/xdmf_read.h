@@ -149,5 +149,4 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
   return data_vector;
 }
 //----------------------------------------------------------------------------
-
 } // namespace dolfinx::io::xdmf_read

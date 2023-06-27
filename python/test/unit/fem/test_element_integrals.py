@@ -10,17 +10,17 @@ from itertools import combinations, product
 
 import numpy as np
 import pytest
-
-import dolfinx
 import ufl
 from basix.ufl import element
 from dolfinx.fem import (Constant, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_scalar, form)
 from dolfinx.fem.petsc import assemble_matrix, assemble_vector
 from dolfinx.mesh import CellType, create_mesh, meshtags
-
 from mpi4py import MPI
 from petsc4py import PETSc
+
+import dolfinx
+from dolfinx import default_real_type
 
 parametrize_cell_types = pytest.mark.parametrize(
     "cell_type",
@@ -29,26 +29,26 @@ parametrize_cell_types = pytest.mark.parametrize(
 
 def unit_cell_points(cell_type):
     if cell_type == CellType.interval:
-        return np.array([[0.], [1.]])
+        return np.array([[0.], [1.]], dtype=default_real_type)
     if cell_type == CellType.triangle:
         # Define equilateral triangle with area 1
         root = 3 ** 0.25  # 4th root of 3
         return np.array([[0., 0.], [2 / root, 0.],
-                         [1 / root, root]])
+                         [1 / root, root]], dtype=default_real_type)
     if cell_type == CellType.tetrahedron:
         # Define regular tetrahedron with volume 1
         s = 2 ** 0.5 * 3 ** (1 / 3)  # side length
         return np.array([[0., 0., 0.], [s, 0., 0.],
                          [s / 2, s * np.sqrt(3) / 2, 0.],
-                         [s / 2, s / 2 / np.sqrt(3), s * np.sqrt(2 / 3)]])
+                         [s / 2, s / 2 / np.sqrt(3), s * np.sqrt(2 / 3)]], dtype=default_real_type)
     elif cell_type == CellType.quadrilateral:
         # Define unit quadrilateral (area 1)
-        return np.array([[0., 0.], [1., 0.], [0., 1.], [1., 1.]])
+        return np.array([[0., 0.], [1., 0.], [0., 1.], [1., 1.]], dtype=default_real_type)
     elif cell_type == CellType.hexahedron:
         # Define unit hexahedron (volume 1)
         return np.array([[0., 0., 0.], [1., 0., 0.], [0., 1., 0.],
                          [1., 1., 0.], [0., 0., 1.], [1., 0., 1.],
-                         [0., 1., 1.], [1., 1., 1.]])
+                         [0., 1., 1.], [1., 1., 1.]], dtype=default_real_type)
 
 
 def unit_cell(cell_type, random_order=True):
@@ -59,7 +59,7 @@ def unit_cell(cell_type, random_order=True):
     order = list(range(num_points))
     if random_order:
         random.shuffle(order)
-    ordered_points = np.zeros(points.shape)
+    ordered_points = np.zeros(points.shape, dtype=default_real_type)
     for i, j in enumerate(order):
         ordered_points[j] = points[i]
     cells = np.array([order])
@@ -71,7 +71,7 @@ def unit_cell(cell_type, random_order=True):
 
 def two_unit_cells(cell_type, agree=False, random_order=True, return_order=False):
     if cell_type == CellType.interval:
-        points = np.array([[0.], [1.], [-1.]])
+        points = np.array([[0.], [1.], [-1.]], dtype=default_real_type)
         if agree:
             cells = [[0, 1], [2, 0]]
         else:
@@ -80,7 +80,7 @@ def two_unit_cells(cell_type, agree=False, random_order=True, return_order=False
         # Define equilateral triangles with area 1
         root = 3 ** 0.25  # 4th root of 3
         points = np.array([[0., 0.], [2 / root, 0.],
-                           [1 / root, root], [1 / root, -root]])
+                           [1 / root, root], [1 / root, -root]], dtype=default_real_type)
         if agree:
             cells = [[0, 1, 2], [0, 3, 1]]
         else:
@@ -91,14 +91,14 @@ def two_unit_cells(cell_type, agree=False, random_order=True, return_order=False
         points = np.array([[0., 0., 0.], [s, 0., 0.],
                            [s / 2, s * np.sqrt(3) / 2, 0.],
                            [s / 2, s / 2 / np.sqrt(3), s * np.sqrt(2 / 3)],
-                           [s / 2, s / 2 / np.sqrt(3), -s * np.sqrt(2 / 3)]])
+                           [s / 2, s / 2 / np.sqrt(3), -s * np.sqrt(2 / 3)]], dtype=default_real_type)
         if agree:
             cells = [[0, 1, 2, 3], [0, 1, 4, 2]]
         else:
             cells = [[0, 1, 2, 3], [0, 2, 1, 4]]
     elif cell_type == CellType.quadrilateral:
         # Define unit quadrilaterals (area 1)
-        points = np.array([[0., 0.], [1., 0.], [0., 1.], [1., 1.], [0., -1.], [1., -1.]])
+        points = np.array([[0., 0.], [1., 0.], [0., 1.], [1., 1.], [0., -1.], [1., -1.]], dtype=default_real_type)
         if agree:
             cells = [[0, 1, 2, 3], [4, 5, 0, 1]]
         else:
@@ -108,7 +108,7 @@ def two_unit_cells(cell_type, agree=False, random_order=True, return_order=False
         points = np.array([[0., 0., 0.], [1., 0., 0.], [0., 1., 0.],
                            [1., 1., 0.], [0., 0., 1.], [1., 0., 1.],
                            [0., 1., 1.], [1., 1., 1.], [0., 0., -1.],
-                           [1., 0., -1.], [0., 1., -1.], [1., 1., -1.]])
+                           [1., 0., -1.], [0., 1., -1.], [1., 1., -1.]], dtype=default_real_type)
         if agree:
             cells = [[0, 1, 2, 3, 4, 5, 6, 7], [8, 9, 10, 11, 0, 1, 2, 3]]
         else:
@@ -119,7 +119,7 @@ def two_unit_cells(cell_type, agree=False, random_order=True, return_order=False
     order = list(range(num_points))
     if random_order:
         random.shuffle(order)
-    ordered_points = np.zeros(points.shape)
+    ordered_points = np.zeros(points.shape, dtype=default_real_type)
     for i, j in enumerate(order):
         ordered_points[j] = points[i]
     ordered_cells = np.array([[order[i] for i in c] for c in cells])
@@ -233,7 +233,7 @@ def test_facet_normals(cell_type):
                 if np.isclose(result, 1):
                     ones += 1
                 else:
-                    assert np.isclose(result, 0)
+                    assert np.isclose(result, 0, atol=1.0e-6)
             assert ones == 1
 
 
@@ -358,7 +358,7 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
                     # If no matching point found, fail
                     assert False
 
-                assert np.isclose(results[0][dof0], result[dof1])
+                assert np.isclose(results[0][dof0], result[dof1], atol=1.0e-6)
 
     for x in results:
         x.destroy()
@@ -487,7 +487,7 @@ def create_quad_mesh(offset):
     x = np.array([[0, 0],
                   [1, 0],
                   [0, 0.5 + offset],
-                  [1, 0.5 - offset]])
+                  [1, 0.5 - offset]], dtype=default_real_type)
     cells = np.array([[0, 1, 2, 3]])
     ufl_mesh = ufl.Mesh(element("Lagrange", "quadrilateral", 1, rank=1))
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh)

@@ -25,8 +25,8 @@ namespace impl_bb
 // Compute bounding box of mesh entity. The bounding box is defined by (lower
 // left corner, top right corner). Storage flattened row-major
 template <typename T>
-std::array<double, 6> compute_bbox_of_entity(const mesh::Mesh<T>& mesh, int dim,
-                                             std::int32_t index)
+std::array<T, 6> compute_bbox_of_entity(const mesh::Mesh<T>& mesh, int dim,
+                                        std::int32_t index)
 {
   // Get the geometrical indices for the mesh entity
   std::span<const T> xg = mesh.geometry().x();
@@ -217,13 +217,13 @@ private:
 
 public:
   /// Constructor
-  /// @param[in] mesh The mesh for building the bounding box tree
-  /// @param[in] tdim The topological dimension of the mesh entities to
-  /// build the bounding box tree for
+  /// @param[in] mesh Mesh for building the bounding box tree.
+  /// @param[in] tdim Topological dimension of the mesh entities to
+  /// build the bounding box tree for.
   /// @param[in] entities List of entity indices (local to process) to
   /// compute the bounding box for (may be empty, if none).
-  /// @param[in] padding A float perscribing how much the bounding box
-  /// of each entity should be padded
+  /// @param[in] padding A float prescribing how much the bounding box
+  /// of each entity should be padded.
   BoundingBoxTree(const mesh::Mesh<T>& mesh, int tdim,
                   std::span<const std::int32_t> entities, double padding = 0)
       : _tdim(tdim)
@@ -367,7 +367,7 @@ public:
     return s.str();
   }
 
-  /// Get bounding box child nodes
+  /// Get bounding box child nodes.
   ///
   /// @param[in] node The bounding box node index
   /// @return The indices of the two child nodes. If @p node is a leaf

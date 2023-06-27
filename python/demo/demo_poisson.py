@@ -67,13 +67,12 @@
 
 # +
 import numpy as np
-
 import ufl
-from dolfinx import fem, io, mesh, plot
-from ufl import ds, dx, grad, inner
-
 from mpi4py import MPI
 from petsc4py.PETSc import ScalarType
+from ufl import ds, dx, grad, inner
+
+from dolfinx import fem, io, mesh, plot
 
 # -
 
@@ -85,7 +84,7 @@ from petsc4py.PETSc import ScalarType
 # +
 msh = mesh.create_rectangle(comm=MPI.COMM_WORLD,
                             points=((0.0, 0.0), (2.0, 1.0)), n=(32, 16),
-                            cell_type=mesh.CellType.triangle,)
+                            cell_type=mesh.CellType.triangle)
 V = fem.FunctionSpace(msh, ("Lagrange", 1))
 # -
 
@@ -168,7 +167,6 @@ try:
         plotter.screenshot("uh_poisson.png")
     else:
         plotter.show()
-
 except ModuleNotFoundError:
     print("'pyvista' is required to visualise the solution")
     print("Install 'pyvista' with pip: 'python3 -m pip install pyvista'")

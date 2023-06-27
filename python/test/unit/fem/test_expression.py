@@ -7,12 +7,10 @@
 import ctypes
 import ctypes.util
 
+import basix
 import cffi
 import numpy as np
 import pytest
-
-import basix
-import dolfinx.cpp
 import ufl
 from basix.ufl import blocked_element
 from dolfinx.cpp.la.petsc import create_matrix
@@ -21,9 +19,11 @@ from dolfinx.fem import (Constant, Expression, Function, FunctionSpace,
 from dolfinx.fem.petsc import load_petsc_lib
 from dolfinx.mesh import create_unit_square
 from ffcx.element_interface import QuadratureElement
-
 from mpi4py import MPI
 from petsc4py import PETSc
+
+import dolfinx.cpp
+from dolfinx import default_real_type
 
 numba = pytest.importorskip("numba")
 cffi_support = pytest.importorskip("numba.core.typing.cffi_utils")
@@ -93,11 +93,7 @@ def test_rank0():
     vdP1 = VectorFunctionSpace(mesh, ("DG", 1))
 
     f = Function(P2)
-
-    def expr1(x):
-        return x[0] ** 2 + 2.0 * x[1] ** 2
-
-    f.interpolate(expr1)
+    f.interpolate(lambda x: x[0] ** 2 + 2.0 * x[1] ** 2)
 
     ufl_expr = ufl.grad(f)
     points = vdP1.element.interpolation_points()
@@ -115,18 +111,14 @@ def test_rank0():
 
     # Data structure for the result
     b = Function(vdP1)
-
     dofmap = vdP1.dofmap.list.flatten()
     scatter(b.x.array, array_evaluated, dofmap)
     b.x.scatter_forward()
 
-    def grad_expr1(x):
-        return np.vstack((2.0 * x[0], 4.0 * x[1]))
-
     b2 = Function(vdP1)
-    b2.interpolate(grad_expr1)
+    b2.interpolate(lambda x: np.vstack((2.0 * x[0], 4.0 * x[1])))
 
-    assert np.allclose(b2.x.array, b.x.array)
+    assert np.allclose(b2.x.array, b.x.array, rtol=1.0e-5, atol=1.0e-5)
 
 
 def test_rank1_hdiv():
@@ -183,7 +175,7 @@ def test_rank1_hdiv():
     h2 = Function(vdP1)
     h2.vector.axpy(1.0, A * g.vector)
 
-    assert np.isclose((h2.vector - h.vector).norm(), 0.0)
+    assert (h2.vector - h.vector).norm() == pytest.approx(0.0, abs=1.0e-4)
 
     A.destroy()
 
@@ -254,8 +246,7 @@ def test_simple_evaluation():
 
     # Evaluate exact gradient using global points
     grad_f_exact = exact_grad_f(x_evaluated)
-
-    assert np.allclose(grad_f_evaluated, grad_f_exact)
+    assert np.allclose(grad_f_evaluated, grad_f_exact, rtol=1.0e-5, atol=1.0e-5)
 
 
 def test_assembly_into_quadrature_function():
@@ -288,7 +279,8 @@ def test_assembly_into_quadrature_function():
     mesh = create_unit_square(MPI.COMM_WORLD, 3, 6)
 
     quadrature_degree = 2
-    quadrature_points, wts = basix.make_quadrature(basix.CellType.triangle, quadrature_degree)
+    quadrature_points, _ = basix.make_quadrature(basix.CellType.triangle, quadrature_degree)
+    quadrature_points = quadrature_points.astype(default_real_type)
     Q_element = blocked_element(
         QuadratureElement("triangle", (), degree=quadrature_degree, scheme="default"), shape=(2, ))
     Q = FunctionSpace(mesh, Q_element)
@@ -356,10 +348,8 @@ def test_expression_eval_cells_subset():
     V = dolfinx.fem.FunctionSpace(mesh, ("DG", 0))
 
     cells_imap = mesh.topology.index_map(mesh.topology.dim)
-    all_cells = np.arange(
-        cells_imap.size_local + cells_imap.num_ghosts, dtype=np.int32)
-    cells_to_dofs = np.fromiter(
-        map(V.dofmap.cell_dofs, all_cells), dtype=np.int32)
+    all_cells = np.arange(cells_imap.size_local + cells_imap.num_ghosts, dtype=np.int32)
+    cells_to_dofs = np.fromiter(map(V.dofmap.cell_dofs, all_cells), dtype=np.int32)
     dofs_to_cells = np.argsort(cells_to_dofs)
 
     u = dolfinx.fem.Function(V)
