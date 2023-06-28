@@ -68,7 +68,7 @@ def test_gradient_interpolation(cell_type, p, q):
     # NB do not 'finalize' G
 
     # Vector for 'u' needs additional ghosts defined in columns of G
-    uvec = dolfinx.la.vector(G.index_map(1))
+    uvec = dolfinx.la.vector(G.index_map(1), dtype=default_real_type)
     u = Function(V, uvec)
     u.interpolate(lambda x: 2 * x[0]**p + 3 * x[1]**p)
 
