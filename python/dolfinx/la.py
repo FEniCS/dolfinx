@@ -43,7 +43,7 @@ class MatrixCSR:
             i: 0 for row map, 1 for column map.
 
         """
-        self._cpp_object.index_map(i)
+        return self._cpp_object.index_map(i)
 
     def add(self, x, rows, cols, bs=1) -> None:
         self._cpp_object.add(x, rows, cols, bs)

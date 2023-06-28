@@ -22,8 +22,7 @@ from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           meshtags)
 from mpi4py import MPI
 
-from dolfinx import cpp as _cpp
-from dolfinx import default_real_type
+from dolfinx import default_real_type, la
 
 
 @pytest.fixture
@@ -150,7 +149,7 @@ def test_interpolation_rank0(V):
     assert (w.x.array[:] == 1.0).all()
 
     num_vertices = V.mesh.topology.index_map(0).size_global
-    assert np.isclose(w.x.norm(_cpp.la.Norm.l1) - num_vertices, 0)
+    assert np.isclose(w.x.norm(la.Norm.l1) - num_vertices, 0)
 
     f.t = 2.0
     w.interpolate(f.eval)
@@ -172,7 +171,7 @@ def test_interpolation_rank1(W):
     assert x.min()[1] == 1.0
 
     num_vertices = W.mesh.topology.index_map(0).size_global
-    assert round(w.x.norm(_cpp.la.Norm.l1) - 3 * num_vertices, 7) == 0
+    assert round(w.x.norm(la.Norm.l1) - 3 * num_vertices, 7) == 0
 
 
 @pytest.mark.parametrize("xtype", [np.float64])
