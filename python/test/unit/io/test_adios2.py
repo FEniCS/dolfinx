@@ -104,7 +104,7 @@ def test_fides_function_at_nodes(tempdir, dim, simplex):
     q = Function(FunctionSpace(mesh, ("Lagrange", 1)))
     q.name = "q"
     filename = Path(tempdir, "v.bp")
-    if np.issubdtype(dtype, np.complexfloating):
+    if np.issubdtype(default_scalar_type, np.complexfloating):
         alpha = 1j
     else:
         alpha = 0
