@@ -262,7 +262,6 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p,
 
   // Tolerance
   constexpr T eps = 1.0e4 * std::numeric_limits<T>::epsilon();
-  // constexpr T eps = 1.0e-12;
 
   // Initialise vector and simplex
   std::array<T, 3> v = {p[0] - q[0], p[1] - q[1], p[2] - q[2]};
