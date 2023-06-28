@@ -11,7 +11,7 @@ import scipy
 import ufl
 from basix.ufl import blocked_element
 from dolfinx.fem import (Constant, Expression, Function, FunctionSpace,
-                         VectorFunctionSpace, create_sparsity_pattern, form)
+                         VectorFunctionSpace, form)
 from dolfinx.mesh import create_unit_square
 from ffcx.element_interface import QuadratureElement
 from mpi4py import MPI
@@ -79,7 +79,6 @@ def test_rank1_hdiv():
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
     vdP1 = VectorFunctionSpace(mesh, ("DG", 2))
     RT1 = FunctionSpace(mesh, ("RT", 2))
-
     f = ufl.TrialFunction(RT1)
 
     points = vdP1.element.interpolation_points()
@@ -101,7 +100,6 @@ def test_rank1_hdiv():
 
     dofmap_col = RT1.dofmap.list
     dofmap_row = vdP1.dofmap.list
-
     dofmap_row_unrolled = (2 * np.repeat(dofmap_row, 2).reshape(-1, 2) + np.arange(2)).flatten()
     dofmap_row = dofmap_row_unrolled.reshape(-1, 12)
 
@@ -110,7 +108,7 @@ def test_rank1_hdiv():
             array_evaluated, dofmap_row, dofmap_col)
     A.finalize()
 
-    gvec = la.vector(A.index_map(1) , dtype=default_scalar_type)
+    gvec = la.vector(A.index_map(1), dtype=default_scalar_type)
     g = Function(RT1, gvec, name="g")
 
     def expr1(x):
@@ -123,18 +121,19 @@ def test_rank1_hdiv():
     h = Function(vdP1)
     h.interpolate(g)
 
+    # Create SciPy sparse matrix for owned rows
     nrlocal = A.index_map(0).size_local
+    nclocal = A.index_map(1).size_local + A.index_map(1).num_ghosts
     nnzlocal = A.indptr[nrlocal]
-    A1 = scipy.sparse.csr_matrix((A.data[:nnzlocal], A.indices[:nnzlocal], A.indptr[:nrlocal + 1]))
+    A1 = scipy.sparse.csr_matrix((A.data[:nnzlocal], A.indices[:nnzlocal], A.indptr[:nrlocal + 1]),
+                                 shape=(nrlocal, nclocal))
 
     # Interpolate RT1 into vdP1 (compiled, mat-vec interpolation)
     h2 = Function(vdP1)
-    print("hshape: ", h2.x.array[:nrlocal].shape)
-    print("Ahshape: ", A1.shape)
-    print("gshape: ", g.x.array.shape)
-    # h2.x.array[:nrlocal] += A1 @ g.x.array
+    h2.x.array[:nrlocal] += A1 @ g.x.array
+    h2.x.scatter_forward()
 
-    # assert np.linalg.norm(h2.x.array - h.x.array) == pytest.approx(0.0, abs=1.0e-4)
+    assert np.linalg.norm(h2.x.array - h.x.array) == pytest.approx(0.0, abs=1.0e-4)
 
 
 def test_simple_evaluation():
