@@ -36,7 +36,7 @@ def extract_geometricial_data(mesh, dim, entities):
     return mesh_nodes
 
 
-def expand_bbox(bbox):
+def expand_bbox(bbox, dtype):
     """Expand min max bbox to convex hull"""
     return np.array([[bbox[0][0], bbox[0][1], bbox[0][2]],
                      [bbox[0][0], bbox[0][1], bbox[1][2]],
@@ -45,10 +45,10 @@ def expand_bbox(bbox):
                      [bbox[1][0], bbox[0][1], bbox[1][2]],
                      [bbox[1][0], bbox[1][1], bbox[0][2]],
                      [bbox[0][0], bbox[1][1], bbox[1][2]],
-                     [bbox[1][0], bbox[1][1], bbox[1][2]]])
+                     [bbox[1][0], bbox[1][1], bbox[1][2]]], dtype=dtype)
 
 
-def find_colliding_cells(mesh, bbox):
+def find_colliding_cells(mesh, bbox, dtype):
     """Given a mesh and a bounding box((xmin, ymin, zmin), (xmax, ymax,
     zmax)) find all colliding cells"""
 
@@ -58,7 +58,7 @@ def find_colliding_cells(mesh, bbox):
     x_indices = _cpp.mesh.entities_to_geometry(mesh._cpp_object, mesh.topology.dim,
                                                np.arange(num_cells, dtype=np.int32), False)
     points = mesh.geometry.x
-    bounding_box = expand_bbox(bbox)
+    bounding_box = expand_bbox(bbox, dtype)
     for cell in range(num_cells):
         vertex_coords = points[x_indices[cell]]
         bbox_cell = np.array([vertex_coords[0], vertex_coords[0]])
@@ -67,7 +67,7 @@ def find_colliding_cells(mesh, bbox):
             for j in range(3):
                 bbox_cell[0, j] = min(bbox_cell[0, j], vertex_coords[i, j])
                 bbox_cell[1, j] = max(bbox_cell[1, j], vertex_coords[i, j])
-        distance = compute_distance_gjk(expand_bbox(bbox_cell), bounding_box)
+        distance = compute_distance_gjk(expand_bbox(bbox_cell, dtype), bounding_box)
         if np.dot(distance, distance) < 1e-16:
             colliding_cells.append(cell)
 
@@ -126,8 +126,9 @@ def rotation_matrix(axis, angle):
     return np.sin(angle) * axis_x + id + outer
 
 
-def test_empty_tree():
-    mesh = create_unit_interval(MPI.COMM_WORLD, 16)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_empty_tree(dtype):
+    mesh = create_unit_interval(MPI.COMM_WORLD, 16, dtype=dtype)
     bbtree = bb_tree(mesh, mesh.topology.dim, [])
     assert bbtree.num_bboxes == 0
 
@@ -214,8 +215,8 @@ def test_compute_collisions_tree_2d(point, dtype):
 
     entities_A = np.sort(np.unique([q[0] for q in entities]))
     entities_B = np.sort(np.unique([q[1] for q in entities]))
-    cells_A = find_colliding_cells(mesh_A, tree_B.get_bbox(tree_B.num_bboxes - 1))
-    cells_B = find_colliding_cells(mesh_B, tree_A.get_bbox(tree_A.num_bboxes - 1))
+    cells_A = find_colliding_cells(mesh_A, tree_B.get_bbox(tree_B.num_bboxes - 1), dtype)
+    cells_B = find_colliding_cells(mesh_B, tree_A.get_bbox(tree_A.num_bboxes - 1), dtype)
     assert np.allclose(entities_A, cells_A)
     assert np.allclose(entities_B, cells_B)
 
@@ -236,8 +237,8 @@ def test_compute_collisions_tree_3d(point, dtype):
     entities = compute_collisions_trees(tree_A, tree_B)
     entities_A = np.sort(np.unique([q[0] for q in entities]))
     entities_B = np.sort(np.unique([q[1] for q in entities]))
-    cells_A = find_colliding_cells(mesh_A, tree_B.get_bbox(tree_B.num_bboxes - 1))
-    cells_B = find_colliding_cells(mesh_B, tree_A.get_bbox(tree_A.num_bboxes - 1))
+    cells_A = find_colliding_cells(mesh_A, tree_B.get_bbox(tree_B.num_bboxes - 1), dtype)
+    cells_B = find_colliding_cells(mesh_B, tree_A.get_bbox(tree_A.num_bboxes - 1), dtype)
     assert np.allclose(entities_A, cells_A)
     assert np.allclose(entities_B, cells_B)
 
