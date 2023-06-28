@@ -1,8 +1,14 @@
+// Copyright (C) 2017-2023 Chris Richardson and Garth N. Wells
+//
+// This file is part of DOLFINx (https://www.fenicsproject.org)
+//
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include<dolfinx/fem/Form.h>
-#include<map>
-#include<span>
-#include<algorithm>
+#include <dolfinx/fem/Form.h>
+
+#include <algorithm>
+#include <map>
+#include <span>
 
 template <typename T>
 std::map<std::pair<dolfinx::fem::IntegralType, int>,
