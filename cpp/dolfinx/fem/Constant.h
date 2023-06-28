@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 Chris Richardson, Michal Habera and Garth N.
+// Copyright (C) 2019-2023 Chris Richardson, Michal Habera and Garth N.
 // Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
@@ -7,16 +7,17 @@
 
 #pragma once
 
+#include "dolfinx/common/types.h"
 #include <span>
 #include <vector>
-
-#include "dolfinx/common/types.h"
 
 namespace dolfinx::fem
 {
 
-/// Constant value which can be attached to a Form. Constants may be
-/// scalar (rank 0), vector (rank 1), or tensor-valued.
+/// @brief Constant value which can be attached to a Form.
+///
+/// Constants may be scalar (rank 0), vector (rank 1), or tensor-valued.
+/// @tparam T Scalar type of the Constant.
 template <dolfinx::scalar T>
 class Constant
 {
