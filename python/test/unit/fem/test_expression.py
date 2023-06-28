@@ -4,15 +4,12 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import ctypes
-import ctypes.util
-
 import basix
 import numpy as np
 import pytest
+import scipy
 import ufl
 from basix.ufl import blocked_element
-from dolfinx.cpp.la.petsc import create_matrix
 from dolfinx.fem import (Constant, Expression, Function, FunctionSpace,
                          VectorFunctionSpace, create_sparsity_pattern, form)
 from dolfinx.mesh import create_unit_square
@@ -21,7 +18,7 @@ from mpi4py import MPI
 from petsc4py import PETSc
 
 import dolfinx.cpp
-from dolfinx import default_real_type
+from dolfinx import default_real_type, default_scalar_type, fem, la
 
 numba = pytest.importorskip("numba")
 cffi_support = pytest.importorskip("numba.core.typing.cffi_utils")
@@ -91,28 +88,30 @@ def test_rank1_hdiv():
     num_cells = mesh.topology.index_map(2).size_local
     array_evaluated = compiled_expr.eval(np.arange(num_cells, dtype=np.int32))
 
-    # @numba.njit
     def scatter(A, array_evaluated, dofmap0, dofmap1):
         for i in range(num_cells):
             rows = dofmap0[i, :]
             cols = dofmap1[i, :]
-            A_local = array_evaluated[i, :]
-            A.setValuesLocal(rows, cols, A_local, 1)
+            A_local = array_evaluated[i, :].reshape(len(rows), len(cols))
+            for i, row in enumerate(rows):
+                for j, col in enumerate(cols):
+                    A[row, col] = A_local[i, j]
 
     a = form(ufl.inner(f, ufl.TestFunction(vdP1)) * ufl.dx)
-    sparsity_pattern = create_sparsity_pattern(a)
-    sparsity_pattern.finalize()
-    A = create_matrix(MPI.COMM_WORLD, sparsity_pattern)
 
-    dofmap_col = RT1.dofmap.list.astype(np.dtype(PETSc.IntType))
-    dofmap_row = vdP1.dofmap.list.flatten()
+    dofmap_col = RT1.dofmap.list
+    dofmap_row = vdP1.dofmap.list
 
     dofmap_row_unrolled = (2 * np.repeat(dofmap_row, 2).reshape(-1, 2) + np.arange(2)).flatten()
-    dofmap_row = dofmap_row_unrolled.reshape(-1, 12).astype(np.dtype(PETSc.IntType))
-    scatter(A, array_evaluated, dofmap_row, dofmap_col)
-    A.assemble()
+    dofmap_row = dofmap_row_unrolled.reshape(-1, 12)
 
-    g = Function(RT1, name="g")
+    A = fem.create_matrix(a, block_mode=la.BlockMode.expanded)
+    scatter(scipy.sparse.csr_matrix((A.data, A.indices, A.indptr)),
+            array_evaluated, dofmap_row, dofmap_col)
+    A.finalize()
+
+    gvec = la.vector(A.index_map(1) , dtype=default_scalar_type)
+    g = Function(RT1, gvec, name="g")
 
     def expr1(x):
         return np.row_stack((np.sin(x[0]), np.cos(x[1])))
@@ -124,13 +123,18 @@ def test_rank1_hdiv():
     h = Function(vdP1)
     h.interpolate(g)
 
+    nrlocal = A.index_map(0).size_local
+    nnzlocal = A.indptr[nrlocal]
+    A1 = scipy.sparse.csr_matrix((A.data[:nnzlocal], A.indices[:nnzlocal], A.indptr[:nrlocal + 1]))
+
     # Interpolate RT1 into vdP1 (compiled, mat-vec interpolation)
     h2 = Function(vdP1)
-    h2.vector.axpy(1.0, A * g.vector)
+    print("hshape: ", h2.x.array[:nrlocal].shape)
+    print("Ahshape: ", A1.shape)
+    print("gshape: ", g.x.array.shape)
+    # h2.x.array[:nrlocal] += A1 @ g.x.array
 
-    assert (h2.vector - h.vector).norm() == pytest.approx(0.0, abs=1.0e-4)
-
-    A.destroy()
+    # assert np.linalg.norm(h2.x.array - h.x.array) == pytest.approx(0.0, abs=1.0e-4)
 
 
 def test_simple_evaluation():

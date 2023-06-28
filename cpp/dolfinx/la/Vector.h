@@ -49,6 +49,8 @@ public:
         _buffer_remote(_scatterer->remote_buffer_size()),
         _x(bs * (map->size_local() + map->num_ghosts()))
   {
+
+    // std
   }
 
   /// Copy constructor
