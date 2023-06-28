@@ -74,13 +74,13 @@ def find_colliding_cells(mesh, bbox):
     return colliding_cells
 
 
-@pytest.mark.parametrize("padding", [True, False])
 @pytest.mark.skip_in_parallel
-def test_padded_bbox(padding):
+@pytest.mark.parametrize("padding", [True, False])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_padded_bbox(padding, dtype):
     """Test collision between two meshes separated by a distance of
     epsilon, and check if padding the mesh creates a possible
     collision"""
-    dtype = default_real_type
     eps = 1e-4
     x0 = np.array([0, 0, 0], dtype=dtype)
     x1 = np.array([1, 1, 1 - eps], dtype=dtype)
@@ -133,14 +133,15 @@ def test_empty_tree():
 
 
 @pytest.mark.skip_in_parallel
-def test_compute_collisions_point_1d():
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_compute_collisions_point_1d(dtype):
     N = 16
-    p = np.array([0.3, 0, 0])
-    mesh = create_unit_interval(MPI.COMM_WORLD, N)
+    p = np.array([0.3, 0, 0], dtype=dtype)
+    mesh = create_unit_interval(MPI.COMM_WORLD, N, dtype=dtype)
     dx = 1 / N
     cell_index = int(p[0] // dx)
     # Vertices of cell we should collide with
-    vertices = np.array([[dx * cell_index, 0, 0], [dx * (cell_index + 1), 0, 0]])
+    vertices = np.array([[dx * cell_index, 0, 0], [dx * (cell_index + 1), 0, 0]], dtype=dtype)
 
     # Compute collision
     tdim = mesh.topology.dim
@@ -159,8 +160,9 @@ def test_compute_collisions_point_1d():
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("point", [np.array([0.52, 0, 0]),
                                    np.array([0.9, 0, 0])])
-def test_compute_collisions_tree_1d(point):
-    mesh_A = create_unit_interval(MPI.COMM_WORLD, 16)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_compute_collisions_tree_1d(point, dtype):
+    mesh_A = create_unit_interval(MPI.COMM_WORLD, 16, dtype=dtype)
 
     def locator_A(x):
         return x[0] >= point[0]
@@ -172,7 +174,7 @@ def test_compute_collisions_tree_1d(point):
     # Find all cells connected to vertex in the collision bounding box
     cells_A = np.sort(np.unique(np.hstack([v_to_c.links(vertex) for vertex in vertices_A])))
 
-    mesh_B = create_unit_interval(MPI.COMM_WORLD, 16)
+    mesh_B = create_unit_interval(MPI.COMM_WORLD, 16, dtype=dtype)
     bgeom = mesh_B.geometry.x
     bgeom += point
 
@@ -200,9 +202,10 @@ def test_compute_collisions_tree_1d(point):
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("point", [np.array([0.52, 0.51, 0.0]),
                                    np.array([0.9, -0.9, 0.0])])
-def test_compute_collisions_tree_2d(point):
-    mesh_A = create_unit_square(MPI.COMM_WORLD, 3, 3)
-    mesh_B = create_unit_square(MPI.COMM_WORLD, 5, 5)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_compute_collisions_tree_2d(point, dtype):
+    mesh_A = create_unit_square(MPI.COMM_WORLD, 3, 3, dtype=dtype)
+    mesh_B = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=dtype)
     bgeom = mesh_B.geometry.x
     bgeom += point
     tree_A = bb_tree(mesh_A, mesh_A.topology.dim)
@@ -220,9 +223,10 @@ def test_compute_collisions_tree_2d(point):
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("point", [np.array([0.52, 0.51, 0.3]),
                                    np.array([0.9, -0.9, 0.3])])
-def test_compute_collisions_tree_3d(point):
-    mesh_A = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
-    mesh_B = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_compute_collisions_tree_3d(point, dtype):
+    mesh_A = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, dtype=dtype)
+    mesh_B = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, dtype=dtype)
 
     bgeom = mesh_B.geometry.x
     bgeom += point
@@ -230,23 +234,21 @@ def test_compute_collisions_tree_3d(point):
     tree_A = bb_tree(mesh_A, mesh_A.topology.dim)
     tree_B = bb_tree(mesh_B, mesh_B.topology.dim)
     entities = compute_collisions_trees(tree_A, tree_B)
-
     entities_A = np.sort(np.unique([q[0] for q in entities]))
     entities_B = np.sort(np.unique([q[1] for q in entities]))
-
     cells_A = find_colliding_cells(mesh_A, tree_B.get_bbox(tree_B.num_bboxes - 1))
     cells_B = find_colliding_cells(mesh_B, tree_A.get_bbox(tree_A.num_bboxes - 1))
-
     assert np.allclose(entities_A, cells_A)
     assert np.allclose(entities_B, cells_B)
 
 
 @pytest.mark.parametrize("dim", [0, 1])
-def test_compute_closest_entity_1d(dim):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_compute_closest_entity_1d(dim, dtype):
     ref_distance = 0.75
     N = 16
-    points = np.array([[-ref_distance, 0, 0], [2 / N, 2 * ref_distance, 0]], dtype=default_real_type)
-    mesh = create_unit_interval(MPI.COMM_WORLD, N)
+    points = np.array([[-ref_distance, 0, 0], [2 / N, 2 * ref_distance, 0]], dtype=dtype)
+    mesh = create_unit_interval(MPI.COMM_WORLD, N, dtype=dtype)
     tree = bb_tree(mesh, dim)
     num_entities_local = mesh.topology.index_map(dim).size_local + mesh.topology.index_map(dim).num_ghosts
     entities = np.arange(num_entities_local, dtype=np.int32)
@@ -254,7 +256,7 @@ def test_compute_closest_entity_1d(dim):
     closest_entities = compute_closest_entity(tree, midpoint_tree, mesh, points)
 
     # Find which entity is colliding with known closest point on mesh
-    p_c = np.array([[0, 0, 0], [2 / N, 0, 0]], dtype=default_real_type)
+    p_c = np.array([[0, 0, 0], [2 / N, 0, 0]], dtype=dtype)
     colliding_entity_bboxes = compute_collisions_points(tree, p_c)
 
     # Refine search by checking for actual collision if the entities are
@@ -274,9 +276,10 @@ def test_compute_closest_entity_1d(dim):
 
 
 @pytest.mark.parametrize("dim", [0, 1, 2])
-def test_compute_closest_entity_2d(dim):
-    points = np.array([-1.0, -0.01, 0.0], dtype=default_real_type)
-    mesh = create_unit_square(MPI.COMM_WORLD, 15, 15, dtype=default_real_type)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_compute_closest_entity_2d(dim, dtype):
+    points = np.array([-1.0, -0.01, 0.0], dtype=dtype)
+    mesh = create_unit_square(MPI.COMM_WORLD, 15, 15, dtype=dtype)
     mesh.topology.create_entities(dim)
     tree = bb_tree(mesh, dim)
     num_entities_local = mesh.topology.index_map(dim).size_local + mesh.topology.index_map(dim).num_ghosts
@@ -287,7 +290,7 @@ def test_compute_closest_entity_2d(dim):
     closest_entities = compute_closest_entity(tree, midpoint_tree, mesh, points)
 
     # Find which entity is colliding with known closest point on mesh
-    p_c = np.array([0, 0, 0])
+    p_c = np.array([0, 0, 0], dtype=dtype)
     colliding_entity_bboxes = compute_collisions_points(tree, p_c)
 
     # Refine search by checking for actual collision if the entities are
@@ -302,9 +305,10 @@ def test_compute_closest_entity_2d(dim):
 
 
 @pytest.mark.parametrize("dim", [1, 2, 3])
-def test_compute_closest_entity_3d(dim):
-    points = np.array([0.9, 0, 1.135], dtype=default_real_type)
-    mesh = create_unit_cube(MPI.COMM_WORLD, 8, 8, 8)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_compute_closest_entity_3d(dim, dtype):
+    points = np.array([0.9, 0, 1.135], dtype=dtype)
+    mesh = create_unit_cube(MPI.COMM_WORLD, 8, 8, 8, dtype=dtype)
     mesh.topology.create_entities(dim)
 
     tree = bb_tree(mesh, dim)
@@ -315,7 +319,7 @@ def test_compute_closest_entity_3d(dim):
     closest_entities = compute_closest_entity(tree, midpoint_tree, mesh, points)
 
     # Find which entity is colliding with known closest point on mesh
-    p_c = np.array([0.9, 0, 1])
+    p_c = np.array([0.9, 0, 1], dtype=dtype)
     colliding_entity_bboxes = compute_collisions_points(tree, p_c)
 
     # Refine search by checking for actual collision if the entities are
@@ -330,12 +334,13 @@ def test_compute_closest_entity_3d(dim):
 
 
 @pytest.mark.parametrize("dim", [1, 2, 3])
-def test_compute_closest_sub_entity(dim):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_compute_closest_sub_entity(dim, dtype):
     """Compute distance from subset of cells in a mesh to a point inside the mesh"""
     ref_distance = 0.31
     xc, yc, zc = 0.5, 0.5, 0.5
-    points = np.array([xc + ref_distance, yc, zc], dtype=default_real_type)
-    mesh = create_unit_cube(MPI.COMM_WORLD, 8, 8, 8)
+    points = np.array([xc + ref_distance, yc, zc], dtype=dtype)
+    mesh = create_unit_cube(MPI.COMM_WORLD, 8, 8, 8, dtype=dtype)
     mesh.topology.create_entities(dim)
     left_entities = locate_entities(mesh, dim, lambda x: x[0] <= xc)
     tree = bb_tree(mesh, dim, left_entities)
@@ -343,7 +348,7 @@ def test_compute_closest_sub_entity(dim):
     closest_entities = compute_closest_entity(tree, midpoint_tree, mesh, points)
 
     # Find which entity is colliding with known closest point on mesh
-    p_c = np.array([xc, yc, zc])
+    p_c = np.array([xc, yc, zc], dtype=dtype)
     colliding_entity_bboxes = compute_collisions_points(tree, p_c)
 
     # Refine search by checking for actual collision if the entities are
@@ -357,9 +362,10 @@ def test_compute_closest_sub_entity(dim):
             assert np.isin(closest_entities[0], colliding_entity_bboxes.links(0))
 
 
-def test_surface_bbtree():
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_surface_bbtree(dtype):
     """Test creation of BBTree on subset of entities(surface cells)"""
-    mesh = create_unit_cube(MPI.COMM_WORLD, 8, 8, 8)
+    mesh = create_unit_cube(MPI.COMM_WORLD, 8, 8, 8, dtype=dtype)
     mesh.topology.create_connectivity(mesh.topology.dim - 1, mesh.topology.dim)
     sf = exterior_facet_indices(mesh.topology)
     tdim = mesh.topology.dim
@@ -372,9 +378,10 @@ def test_surface_bbtree():
     assert len(compute_collisions_points(bbtree, p).array) == 0
 
 
-def test_sub_bbtree():
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_sub_bbtree(dtype):
     """Testing point collision with a BoundingBoxTree of sub entities"""
-    mesh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, cell_type=CellType.hexahedron)
+    mesh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, cell_type=CellType.hexahedron, dtype=dtype)
     tdim = mesh.topology.dim
     fdim = tdim - 1
 
@@ -387,7 +394,7 @@ def test_sub_bbtree():
     process_bbtree = bbtree.create_global_tree(mesh.comm)
 
     # Find possible ranks for this point
-    point = np.array([0.2, 0.2, 1.0], dtype=default_real_type)
+    point = np.array([0.2, 0.2, 1.0], dtype=dtype)
     ranks = compute_collisions_points(process_bbtree, point)
 
     # Compute local collisions
@@ -400,9 +407,10 @@ def test_sub_bbtree():
 
 @pytest.mark.parametrize("ct", [CellType.hexahedron, CellType.tetrahedron])
 @pytest.mark.parametrize("N", [7, 13])
-def test_sub_bbtree_box(ct, N):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_sub_bbtree_box(ct, N, dtype):
     """Test that the bounding box of the stem of the bounding box tree is what we expect"""
-    mesh = create_unit_cube(MPI.COMM_WORLD, N, N, N, cell_type=ct)
+    mesh = create_unit_cube(MPI.COMM_WORLD, N, N, N, cell_type=ct, dtype=dtype)
     tdim = mesh.topology.dim
     fdim = tdim - 1
 
@@ -420,11 +428,12 @@ def test_sub_bbtree_box(ct, N):
 
 
 @pytest.mark.skip_in_parallel
-def test_surface_bbtree_collision():
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_surface_bbtree_collision(dtype):
     """Compute collision between two meshes, where only one cell of each mesh are colliding"""
     tdim = 3
-    mesh1 = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron)
-    mesh2 = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron)
+    mesh1 = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron, dtype=dtype)
+    mesh2 = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron, dtype=dtype)
     mesh2.geometry.x[:, :] += np.array([0.9, 0.9, 0.9])
 
     mesh1.topology.create_connectivity(mesh1.topology.dim - 1, mesh1.topology.dim)
