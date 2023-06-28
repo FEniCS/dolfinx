@@ -355,7 +355,7 @@ def test_assembly_solve_block_nl():
         assert Fvec.getType() == "nest"
 
         snes = PETSc.SNES().create(MPI.COMM_WORLD)
-        snes.setTolerances(rtol=1.0e-15, max_it=20)
+        snes.setTolerances(rtol=1.0e-15, max_it=10)
         nested_IS = Jmat.getNestISs()
         snes.getKSP().setType("gmres")
         snes.getKSP().setTolerances(rtol=1e-12)
