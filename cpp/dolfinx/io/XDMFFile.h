@@ -150,6 +150,17 @@ public:
   /// in file
   /// @param[in] xpath XPath where MeshTags Grid will be inserted
   void write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
+                      const mesh::Geometry<float>& x,
+                      std::string geometry_xpath,
+                      std::string xpath = "/Xdmf/Domain");
+
+  /// Write MeshTags
+  /// @param[in] meshtags
+  /// @param[in] x Mesh geometry
+  /// @param[in] geometry_xpath XPath where Geometry is already stored
+  /// in file
+  /// @param[in] xpath XPath where MeshTags Grid will be inserted
+  void write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
                       const mesh::Geometry<double>& x,
                       std::string geometry_xpath,
                       std::string xpath = "/Xdmf/Domain");

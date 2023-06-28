@@ -8,6 +8,7 @@
 
 #include "HDF5Interface.h"
 #include <array>
+#include <basix/mdspan.hpp>
 #include <complex>
 #include <concepts>
 #include <dolfinx/common/types.h>
@@ -38,13 +39,15 @@ namespace fem
 {
 template <std::floating_point T>
 class CoordinateElement;
-}
+class ElementDofLayout;
+} // namespace fem
 
 namespace mesh
 {
 template <std::floating_point T>
 class Mesh;
-}
+class Topology;
+} // namespace mesh
 
 namespace io::xdmf_utils
 {
@@ -83,7 +86,14 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 /// supplied on any rank and this function will manage the
 /// communication.
 ///
-/// @param[in] mesh A mesh
+/// @param[in] topology A mesh topology.
+/// @param[in] nodes_g Global 'input' indices for the mesh, as returned
+/// by Geometry::input_global_indices.
+/// @param[in] num_nodes_g Glocal number of 'geometry; nodes, as
+/// returned by ``Geometry::index_map()->size_global()`.
+/// @param[in] cmap_dof_layout Coordinate element dof layout, computed
+/// using Geometry::cmaps()[0].create_dof_layout().
+/// @param[in] xdofmap Dofmap for the mesh geometry (Geometry::dofmap).
 /// @param[in] entity_dim Topological dimension of entities to extract
 /// @param[in] entities Mesh entities defined using global input indices
 /// ('nodes'), typically from an input mesh file, e.g. [gi0, gi1, gi2]
@@ -104,9 +114,14 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 /// distributed and rank1 will receive the (local) cell-vertex connectivity
 /// for this triangle.
 std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
-distribute_entity_data(const mesh::Mesh<double>& mesh, int entity_dim,
-                       std::span<const std::int64_t> entities,
-                       std::span<const std::int32_t> data);
+distribute_entity_data(
+    const mesh::Topology& topology, const std::vector<std::int64_t>& nodes_g,
+    std::int64_t num_nodes_g, const fem::ElementDofLayout& cmap_dof_layout,
+    std::experimental::mdspan<const std::int32_t,
+                              std::experimental::dextents<std::size_t, 2>>
+        xdofmap,
+    int entity_dim, std::span<const std::int64_t> entities,
+    std::span<const std::int32_t> data);
 
 /// TODO: Document
 template <typename T>
