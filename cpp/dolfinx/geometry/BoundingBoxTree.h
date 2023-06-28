@@ -24,7 +24,7 @@ namespace impl_bb
 //-----------------------------------------------------------------------------
 // Compute bounding box of mesh entity. The bounding box is defined by (lower
 // left corner, top right corner). Storage flattened row-major
-template <dolfinx::scalar T>
+template <std::floating_point T>
 std::array<T, 6> compute_bbox_of_entity(const mesh::Mesh<T>& mesh, int dim,
                                         std::int32_t index)
 {
@@ -58,7 +58,7 @@ std::array<T, 6> compute_bbox_of_entity(const mesh::Mesh<T>& mesh, int dim,
 // Compute bounding box of bounding boxes. Each bounding box is defined as a
 // tuple (corners, entity_index). The corners of the bounding box is flattened
 // row-major as (lower left corner, top right corner).
-template <dolfinx::scalar T>
+template <std::floating_point T>
 std::array<T, 6> compute_bbox_of_bboxes(
     std::span<const std::pair<std::array<T, 6>, std::int32_t>> leaf_bboxes)
 {
@@ -76,7 +76,7 @@ std::array<T, 6> compute_bbox_of_bboxes(
   return b;
 }
 //------------------------------------------------------------------------------
-template <dolfinx::scalar T>
+template <std::floating_point T>
 std::int32_t _build_from_leaf(
     std::span<std::pair<std::array<T, 6>, std::int32_t>> leaf_bboxes,
     std::vector<int>& bboxes, std::vector<T>& bbox_coordinates)
@@ -131,7 +131,7 @@ std::int32_t _build_from_leaf(
   }
 }
 //-----------------------------------------------------------------------------
-template <dolfinx::scalar T>
+template <std::floating_point T>
 std::pair<std::vector<std::int32_t>, std::vector<T>> build_from_leaf(
     std::vector<std::pair<std::array<T, 6>, std::int32_t>>& leaf_bboxes)
 {
@@ -141,7 +141,7 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> build_from_leaf(
   return {std::move(bboxes), std::move(bbox_coordinates)};
 }
 //-----------------------------------------------------------------------------
-template <dolfinx::scalar T>
+template <std::floating_point T>
 std::int32_t
 _build_from_point(std::span<std::pair<std::array<T, 3>, std::int32_t>> points,
                   std::vector<std::int32_t>& bboxes,
@@ -200,7 +200,7 @@ _build_from_point(std::span<std::pair<std::array<T, 3>, std::int32_t>> points,
 
 /// Axis-Aligned bounding box binary tree. It is used to find entities
 /// in a collection (often a mesh::Mesh).
-template <dolfinx::scalar T>
+template <std::floating_point T>
 class BoundingBoxTree
 {
 private:
