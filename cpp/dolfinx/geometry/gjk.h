@@ -9,6 +9,7 @@
 #include <array>
 #include <concepts>
 #include <dolfinx/common/math.h>
+#include <limits>
 #include <numeric>
 #include <span>
 #include <utility>
@@ -132,7 +133,7 @@ nearest_simplex(std::span<const T> s)
     std::vector smin = {vmin[0], vmin[1], vmin[2]};
 
     // Check if edges are closer
-    constexpr const int f[3][2] = {{0, 1}, {0, 2}, {1, 2}};
+    constexpr int f[3][2] = {{0, 1}, {0, 2}, {1, 2}};
     for (std::size_t i = 0; i < s_rows; ++i)
     {
       auto s0 = s.subspan(3 * f[i][0], 3);
@@ -260,7 +261,7 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p,
   constexpr int maxk = 10; // Maximum number of iterations of the GJK algorithm
 
   // Tolerance
-  constexpr T eps = 1e-12;
+  constexpr T eps = 10 * std::numeric_limits<T>::epsilon();
 
   // Initialise vector and simplex
   std::array<T, 3> v = {p[0] - q[0], p[1] - q[1], p[2] - q[2]};
