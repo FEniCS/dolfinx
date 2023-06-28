@@ -9,13 +9,10 @@ import numpy as np
 import scipy
 import pytest
 import ufl
-from basix.ufl import element
 from dolfinx.cpp.fem import discrete_gradient
-from dolfinx.fem import (Expression, Function, FunctionSpace,
-                         VectorFunctionSpace, assemble_scalar, form)
+from dolfinx.fem import (Expression, Function, FunctionSpace)
 import dolfinx.la
-from dolfinx.mesh import (CellType, GhostMode, create_mesh, create_unit_cube,
-                          create_unit_square)
+from dolfinx.mesh import (CellType, GhostMode, create_unit_cube, create_unit_square)
 from mpi4py import MPI
 
 from dolfinx import default_real_type
