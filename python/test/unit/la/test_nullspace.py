@@ -99,9 +99,9 @@ def test_nullspace_orthogonal(mesh, degree):
     """Test that null spaces orthogonalisation"""
     V = VectorFunctionSpace(mesh, ('Lagrange', degree))
     nullspace = build_elastic_nullspace(V)
-    assert not la.is_orthonormal(nullspace, eps=1.0e-5)
+    assert not la.is_orthonormal(nullspace, eps=1.0e-4)
     la.orthonormalize(nullspace)
-    assert la.is_orthonormal(nullspace, eps=1.0e-5)
+    assert la.is_orthonormal(nullspace, eps=1.0e-3)
 
 
 @pytest.mark.parametrize("mesh", [

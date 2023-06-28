@@ -10,6 +10,7 @@
 #include <complex>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Scatterer.h>
+#include <dolfinx/common/types.h>
 #include <limits>
 #include <memory>
 #include <numeric>
@@ -22,16 +23,16 @@ namespace dolfinx::la
 
 /// Distributed vector
 ///
-/// @tparam V data container type
-///
-template <typename Scalar, typename Container = std::vector<Scalar>>
+/// @tparam T Scalar type
+/// @tparam Container data container type
+template <typename T, typename Container = std::vector<T>>
 class Vector
 {
-  static_assert(std::is_same_v<typename Container::value_type, Scalar>);
+  static_assert(std::is_same_v<typename Container::value_type, T>);
 
 public:
   /// Scalar type
-  using value_type = Scalar;
+  using value_type = T;
 
   /// Container type
   using container_type = Container;
@@ -259,27 +260,40 @@ auto squared_norm(const V& a)
 
 /// Compute the norm of the vector
 /// @note Collective MPI operation
-/// @param a A vector
+/// @param x A vector
 /// @param type Norm type (supported types are \f$L^2\f$ and \f$L^\infty\f$)
 template <class V>
-auto norm(const V& a, Norm type = Norm::l2)
+auto norm(const V& x, Norm type = Norm::l2)
 {
   using T = typename V::value_type;
   switch (type)
   {
+  case Norm::l1:
+  {
+    std::int32_t size_local = x.bs() * x.index_map()->size_local();
+    std::span<const T> data = x.array().subspan(0, size_local);
+    using U = typename dolfinx::scalar_value_type_t<T>;
+    U local_l1
+        = std::accumulate(data.begin(), data.end(), U(0),
+                          [](auto norm, auto x) { return norm + std::abs(x); });
+    U l1(0);
+    MPI_Allreduce(&local_l1, &l1, 1, MPI::mpi_type<U>(), MPI_SUM,
+                  x.index_map()->comm());
+    return l1;
+  }
   case Norm::l2:
-    return std::sqrt(squared_norm(a));
+    return std::sqrt(squared_norm(x));
   case Norm::linf:
   {
-    const std::int32_t size_local = a.bs() * a.index_map()->size_local();
-    std::span<const T> x_a = a.array().subspan(0, size_local);
-    auto max_pos = std::max_element(x_a.begin(), x_a.end(),
+    std::int32_t size_local = x.bs() * x.index_map()->size_local();
+    std::span<const T> data = x.array().subspan(0, size_local);
+    auto max_pos = std::max_element(data.begin(), data.end(),
                                     [](T a, T b)
                                     { return std::norm(a) < std::norm(b); });
     auto local_linf = std::abs(*max_pos);
     decltype(local_linf) linf = 0;
     MPI_Allreduce(&local_linf, &linf, 1, MPI::mpi_type<decltype(linf)>(),
-                  MPI_MAX, a.index_map()->comm());
+                  MPI_MAX, x.index_map()->comm());
     return linf;
   }
   default:

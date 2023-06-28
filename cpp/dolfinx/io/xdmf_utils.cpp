@@ -451,17 +451,18 @@ std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type,
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
-xdmf_utils::distribute_entity_data(const mesh::Mesh<double>& mesh,
-                                   int entity_dim,
-                                   std::span<const std::int64_t> entities,
-                                   std::span<const std::int32_t> data)
+xdmf_utils::distribute_entity_data(
+    const mesh::Topology& topology, const std::vector<std::int64_t>& nodes_g,
+    std::int64_t num_nodes_g, const fem::ElementDofLayout& cmap_dof_layout,
+    std::experimental::mdspan<const std::int32_t,
+                              std::experimental::dextents<std::size_t, 2>>
+        xdofmap,
+    int entity_dim, std::span<const std::int64_t> entities,
+    std::span<const std::int32_t> data)
 {
   LOG(INFO) << "XDMF distribute entity data";
 
-  auto topology = mesh.topology();
-  assert(topology);
-
-  auto cell_types = topology->cell_types();
+  auto cell_types = topology.cell_types();
   if (cell_types.size() > 1)
     throw std::runtime_error("cell type IO");
 
@@ -471,14 +472,6 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh<double>& mesh,
   std::vector<int> cell_vertex_dofs;
   {
     // Get layout of dofs on 0th cell entity of dimension entity_dim
-
-    if (mesh.geometry().cmaps().size() > 1)
-    {
-      throw std::runtime_error(
-          "XDMF I/O with multiple geometry maps not implemented.");
-    }
-    const fem::ElementDofLayout cmap_dof_layout
-        = mesh.geometry().cmaps()[0].create_dof_layout();
     for (int i = 0; i < mesh::cell_num_entities(cell_types.back(), 0); ++i)
     {
       const std::vector<int>& local_index = cmap_dof_layout.entity_dofs(0, i);
@@ -492,19 +485,15 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh<double>& mesh,
   //    'postmaster' rank, and receive global "input" nodes for which
   //    this rank is the postmaster
 
-  auto postmaster_global_nodes_sendrecv = [](const mesh::Mesh<double>& mesh)
+  auto postmaster_global_nodes_sendrecv
+      = [](const mesh::Topology& topology,
+           const std::vector<std::int64_t>& nodes_g, std::int64_t num_nodes_g)
   {
-    const MPI_Comm comm = mesh.comm();
+    const MPI_Comm comm = topology.comm();
     const int comm_size = dolfinx::MPI::size(comm);
-
-    // Get "input" global node indices (as in the input file before any
-    // internal re-ordering)
-    const std::vector<std::int64_t>& nodes_g
-        = mesh.geometry().input_global_indices();
 
     // Send input global indices to 'post master' rank, based on input
     // global index value
-    const std::int64_t num_nodes_g = mesh.geometry().index_map()->size_global();
     // NOTE: could make this int32_t be sending: index <- index -
     // dest_rank_offset
     std::vector<std::vector<std::int64_t>> nodes_g_send(comm_size);
@@ -526,7 +515,7 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh<double>& mesh,
   };
 
   const graph::AdjacencyList<std::int64_t> nodes_g_recv
-      = postmaster_global_nodes_sendrecv(mesh);
+      = postmaster_global_nodes_sendrecv(topology, nodes_g, num_nodes_g);
 
   // -------------------
   // 2. Send the entity key (nodes list) and tag to the postmaster based
@@ -537,26 +526,25 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh<double>& mesh,
   //    communication in Step 1 could be make non-blocking.
 
   auto postmaster_global_ent_sendrecv
-      = [&cell_vertex_dofs](const mesh::Mesh<double>& mesh, int entity_dim,
-                            std::span<const std::int64_t> entities,
-                            std::span<const std::int32_t> data)
+      = [&cell_vertex_dofs](
+            const mesh::Topology& topology, std::int64_t num_nodes_g,
+            const fem::ElementDofLayout& cmap_dof_layout, int entity_dim,
+            std::span<const std::int64_t> entities,
+            std::span<const std::int32_t> data)
   {
-    const MPI_Comm comm = mesh.comm();
+    const MPI_Comm comm = topology.comm();
     const int comm_size = dolfinx::MPI::size(comm);
-    const std::int64_t num_nodes_g = mesh.geometry().index_map()->size_global();
 
-    auto cell_types = mesh.topology()->cell_types();
+    auto cell_types = topology.cell_types();
     if (cell_types.size() > 1)
       throw std::runtime_error("cell type IO");
 
     const std::size_t num_vert_per_entity = mesh::cell_num_entities(
         mesh::cell_entity_type(cell_types.back(), entity_dim, 0), 0);
-    auto c_to_v = mesh.topology()->connectivity(mesh.topology()->dim(), 0);
+    auto c_to_v = topology.connectivity(topology.dim(), 0);
     if (!c_to_v)
       throw std::runtime_error("Missing cell-vertex connectivity.");
 
-    const fem::ElementDofLayout cmap_dof_layout
-        = mesh.geometry().cmaps()[0].create_dof_layout();
     const std::vector<int> entity_layout
         = cmap_dof_layout.entity_closure_dofs(entity_dim, 0);
 
@@ -613,8 +601,8 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh<double>& mesh,
     return std::pair(entities_recv, data_recv);
   };
 
-  const auto [entities_recv, data_recv]
-      = postmaster_global_ent_sendrecv(mesh, entity_dim, entities, data);
+  const auto [entities_recv, data_recv] = postmaster_global_ent_sendrecv(
+      topology, num_nodes_g, cmap_dof_layout, entity_dim, entities, data);
 
   // -------------------
   // 3. As 'postmaster', send back the entity key (vertex list) and tag
@@ -627,15 +615,15 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh<double>& mesh,
   // end.
 
   auto postmaster_send_to_candidates
-      = [](const mesh::Mesh<double>& mesh, int entity_dim,
+      = [](const mesh::Topology& topology, int entity_dim,
            const graph::AdjacencyList<std::int64_t>& nodes_g_recv,
            const graph::AdjacencyList<std::int64_t>& entities_recv,
            const graph::AdjacencyList<std::int32_t>& data_recv)
   {
-    const MPI_Comm comm = mesh.comm();
+    const MPI_Comm comm = topology.comm();
     const int comm_size = dolfinx::MPI::size(comm);
 
-    auto cell_types = mesh.topology()->cell_types();
+    auto cell_types = topology.cell_types();
     if (cell_types.size() > 1)
       throw std::runtime_error("cell type IO");
     const std::size_t num_vert_per_entity = mesh::cell_num_entities(
@@ -688,7 +676,7 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh<double>& mesh,
   };
 
   const auto [recv_ents, recv_vals] = postmaster_send_to_candidates(
-      mesh, entity_dim, nodes_g_recv, entities_recv, data_recv);
+      topology, entity_dim, nodes_g_recv, entities_recv, data_recv);
 
   // -------------------
   // 4. From the received (key, value) data, determine which keys
@@ -704,28 +692,29 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh<double>& mesh,
   //       the std::map for *all* entities and just for candidate
   //       entities.
 
-  auto determine_my_entities
-      = [&cell_vertex_dofs](const mesh::Mesh<double>& mesh, int entity_dim,
-                            const graph::AdjacencyList<std::int64_t>& recv_ents,
-                            const graph::AdjacencyList<std::int32_t>& recv_vals)
+  auto determine_my_entities =
+      [&cell_vertex_dofs](
+          const mesh::Topology& topology,
+          const std::vector<std::int64_t>& nodes_g,
+          std::experimental::mdspan<const std::int32_t,
+                                    std::experimental::dextents<std::size_t, 2>>
+              x_dofmap,
+          int entity_dim, const graph::AdjacencyList<std::int64_t>& recv_ents,
+          const graph::AdjacencyList<std::int32_t>& recv_vals)
   {
     // Build map from input global indices to local vertex numbers
     LOG(INFO) << "XDMF build map";
 
-    auto cell_types = mesh.topology()->cell_types();
+    auto cell_types = topology.cell_types();
     if (cell_types.size() > 1)
       throw std::runtime_error("cell type IO");
 
     const std::size_t num_vert_per_entity = mesh::cell_num_entities(
         mesh::cell_entity_type(cell_types.back(), entity_dim, 0), 0);
-    auto c_to_v = mesh.topology()->connectivity(mesh.topology()->dim(), 0);
+    auto c_to_v = topology.connectivity(topology.dim(), 0);
     if (!c_to_v)
       throw std::runtime_error("Missing cell-vertex connectivity.");
 
-    const std::vector<std::int64_t>& nodes_g
-        = mesh.geometry().input_global_indices();
-
-    auto x_dofmap = mesh.geometry().dofmap();
     std::map<std::int64_t, std::int32_t> igi_to_vertex;
     for (int c = 0; c < c_to_v->num_nodes(); ++c)
     {
@@ -770,8 +759,8 @@ xdmf_utils::distribute_entity_data(const mesh::Mesh<double>& mesh,
     return std::pair(std::move(entities_new), std::move(data_new));
   };
 
-  auto [entities_new, data_new]
-      = determine_my_entities(mesh, entity_dim, recv_ents, recv_vals);
+  auto [entities_new, data_new] = determine_my_entities(
+      topology, nodes_g, xdofmap, entity_dim, recv_ents, recv_vals);
 
   return {std::move(entities_new), std::move(data_new)};
 }

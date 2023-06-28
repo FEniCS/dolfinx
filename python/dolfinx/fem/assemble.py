@@ -204,7 +204,6 @@ def _assemble_vector_array(b: np.ndarray, L: Form, constants=None, coeffs=None):
         return vector can accumulate ghost contributions.
 
     """
-
     constants = _pack_constants(L._cpp_object) if constants is None else constants
     coeffs = _pack_coefficients(L._cpp_object) if coeffs is None else coeffs
     _cpp.fem.assemble_vector(b, L._cpp_object, constants, coeffs)
