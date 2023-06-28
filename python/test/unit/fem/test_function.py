@@ -21,7 +21,6 @@ from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_square, locate_entities_boundary,
                           meshtags)
 from mpi4py import MPI
-from petsc4py import PETSc
 
 from dolfinx import default_real_type
 
@@ -150,7 +149,9 @@ def test_interpolation_rank0(V):
     assert (w.x.array[:] == 1.0).all()
 
     num_vertices = V.mesh.topology.index_map(0).size_global
-    assert np.isclose(w.vector.norm(PETSc.NormType.N1) - num_vertices, 0)
+    nlocal = w.x.index_map.size_local
+    wsum = MPI.COMM_WORLD.allreduce(w.x.array[:nlocal].sum(), MPI.SUM)
+    assert np.isclose(wsum - num_vertices, 0)
 
     f.t = 2.0
     w.interpolate(f.eval)
@@ -161,18 +162,20 @@ def test_interpolation_rank1(W):
     def f(x):
         values = np.empty((3, x.shape[1]))
         values[0] = 1.0
-        values[1] = 1.0
-        values[2] = 1.0
+        values[1] = 2.0
+        values[2] = 3.0
         return values
 
     w = Function(W)
     w.interpolate(f)
     x = w.vector
-    assert x.max()[1] == 1.0
+    assert x.max()[1] == 3.0
     assert x.min()[1] == 1.0
 
     num_vertices = W.mesh.topology.index_map(0).size_global
-    assert round(w.vector.norm(PETSc.NormType.N1) - 3 * num_vertices, 7) == 0
+    nlocal = w.x.index_map.size_local * 3
+    wsum = MPI.COMM_WORLD.allreduce(np.sum(w.x.array[:nlocal]), MPI.SUM)
+    assert round(wsum - 6 * num_vertices, 7) == 0
 
 
 @pytest.mark.parametrize("xtype", [np.float64])
