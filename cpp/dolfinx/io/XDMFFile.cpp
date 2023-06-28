@@ -286,7 +286,7 @@ XDMFFile::read_geometry_data(std::string name, std::string xpath) const
   return xdmf_mesh::read_geometry_data(_comm.comm(), _h5_id, grid_node);
 }
 //-----------------------------------------------------------------------------
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 void XDMFFile::write_function(const fem::Function<T, U>& u, double t,
                               std::string mesh_xpath)
 {

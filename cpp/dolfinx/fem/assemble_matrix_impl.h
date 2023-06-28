@@ -29,7 +29,7 @@ using mdspan2_t
     = stdex::mdspan<const std::int32_t, stdex::dextents<std::size_t, 2>>;
 
 /// Execute kernel over cells and accumulate result in matrix
-template <typename T>
+template <dolfinx::scalar T>
 void assemble_cells(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     std::span<const scalar_value_type_t<T>> x,
@@ -121,7 +121,7 @@ void assemble_cells(
 }
 
 /// Execute kernel over exterior facets and  accumulate result in Mat
-template <typename T>
+template <dolfinx::scalar T>
 void assemble_exterior_facets(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     std::span<const scalar_value_type_t<T>> x,
@@ -211,7 +211,7 @@ void assemble_exterior_facets(
 }
 
 /// Execute kernel over interior facets and  accumulate result in Mat
-template <typename T>
+template <dolfinx::scalar T>
 void assemble_interior_facets(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     std::span<const scalar_value_type_t<T>> x, int num_cell_facets,
@@ -352,7 +352,7 @@ void assemble_interior_facets(
 /// local indices. Rows (bc0) and columns (bc1) with Dirichlet
 /// conditions are zeroed. Markers (bc0 and bc1) can be empty if not bcs
 /// are applied. Matrix is not finalised.
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 void assemble_matrix(
     la::MatSet<T> auto mat_set, const Form<T, U>& a, mdspan2_t x_dofmap,
     std::span<const scalar_value_type_t<T>> x, std::span<const T> constants,

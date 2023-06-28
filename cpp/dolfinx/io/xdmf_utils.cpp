@@ -284,7 +284,7 @@ std::int64_t xdmf_utils::get_num_cells(const pugi::xml_node& topology_node)
   return std::max(num_cells_topology, tdims[0]);
 }
 //----------------------------------------------------------------------------
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 std::vector<T> xdmf_utils::get_point_data_values(const fem::Function<T, U>& u)
 {
   auto mesh = u.function_space()->mesh();
@@ -336,7 +336,7 @@ template std::vector<std::complex<double>> xdmf_utils::get_point_data_values(
     const fem::Function<std::complex<double>, double>&);
 /// @endcond
 //-----------------------------------------------------------------------------
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 std::vector<T> xdmf_utils::get_cell_data_values(const fem::Function<T, U>& u)
 {
   assert(u.function_space()->dofmap());

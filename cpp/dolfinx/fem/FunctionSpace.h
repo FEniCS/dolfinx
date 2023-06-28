@@ -334,7 +334,7 @@ private:
 ///
 /// @param[in] V Vector function spaces for (0) each row block and (1)
 /// each column block
-template <typename T>
+template <dolfinx::scalar T>
 std::array<std::vector<std::shared_ptr<const FunctionSpace<T>>>, 2>
 common_function_spaces(
     const std::vector<

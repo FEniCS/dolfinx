@@ -10,6 +10,7 @@
 #include <array>
 #include <complex>
 #include <concepts>
+#include <dolfinx/common/types.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <filesystem>
 #include <numeric>
@@ -29,7 +30,7 @@ namespace dolfinx
 
 namespace fem
 {
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 class Function;
 } // namespace fem
 
@@ -67,11 +68,11 @@ std::int64_t get_num_cells(const pugi::xml_node& topology_node);
 
 /// Get point data values for linear or quadratic mesh into flattened 2D
 /// array
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 std::vector<T> get_point_data_values(const fem::Function<T, U>& u);
 
 /// Get cell data values as a flattened 2D array
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 std::vector<T> get_cell_data_values(const fem::Function<T, U>& u);
 
 /// Get the VTK string identifier

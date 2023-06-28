@@ -21,7 +21,7 @@ namespace dolfinx::refinement
 /// @param[in] redistribute If `true` refined mesh is re-partitioned
 /// across MPI ranks.
 /// @return Refined mesh
-template <typename T>
+template <dolfinx::scalar T>
 mesh::Mesh<T> refine(const mesh::Mesh<T>& mesh, bool redistribute = true)
 {
   auto topology = mesh.topology();
@@ -60,7 +60,7 @@ mesh::Mesh<T> refine(const mesh::Mesh<T>& mesh, bool redistribute = true)
 /// @param[in] redistribute If `true` refined mesh is re-partitioned
 /// across MPI ranks.
 /// @return Refined mesh.
-template <typename T>
+template <dolfinx::scalar T>
 mesh::Mesh<T> refine(const mesh::Mesh<T>& mesh,
                      std::span<const std::int32_t> edges,
                      bool redistribute = true)

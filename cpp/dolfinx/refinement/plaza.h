@@ -137,7 +137,7 @@ void enforce_rules(MPI_Comm comm, const graph::AdjacencyList<int>& shared_edges,
                    std::span<const std::int32_t> long_edge);
 
 /// Get the longest edge of each face (using local mesh index)
-template <typename T>
+template <dolfinx::scalar T>
 std::pair<std::vector<std::int32_t>, std::vector<std::int8_t>>
 face_long_edge(const mesh::Mesh<T>& mesh)
 {
@@ -255,7 +255,7 @@ face_long_edge(const mesh::Mesh<T>& mesh)
 }
 
 /// Convenient interface for both uniform and marker refinement
-template <typename T>
+template <dolfinx::scalar T>
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<T>,
            std::array<std::size_t, 2>, std::vector<std::int32_t>,
            std::vector<std::int8_t>>
@@ -421,7 +421,7 @@ compute_refinement(MPI_Comm neighbor_comm,
 /// cells. If an option is unselected, an empty list is returned.
 /// @return Refined mesh and optional parent cell index, parent facet
 /// indices
-template <typename T>
+template <dolfinx::scalar T>
 std::tuple<mesh::Mesh<T>, std::vector<std::int32_t>, std::vector<std::int8_t>>
 refine(const mesh::Mesh<T>& mesh, bool redistribute, Option option)
 {
@@ -471,7 +471,7 @@ refine(const mesh::Mesh<T>& mesh, bool redistribute, Option option)
 /// @param[in] option Control the computation of parent facets, parent
 /// cells. If an option is unselected, an empty list is returned.
 /// @return New Mesh and optional parent cell index, parent facet indices
-template <typename T>
+template <dolfinx::scalar T>
 std::tuple<mesh::Mesh<T>, std::vector<std::int32_t>, std::vector<std::int8_t>>
 refine(const mesh::Mesh<T>& mesh, std::span<const std::int32_t> edges,
        bool redistribute, Option option)
@@ -518,7 +518,7 @@ refine(const mesh::Mesh<T>& mesh, std::span<const std::int32_t> edges,
 /// @return New mesh data: cell topology, vertex coordinates, vertex
 /// coordinates shape, and optional parent cell index, and parent facet
 /// indices.
-template <typename T>
+template <dolfinx::scalar T>
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<T>,
            std::array<std::size_t, 2>, std::vector<std::int32_t>,
            std::vector<std::int8_t>>
@@ -587,7 +587,7 @@ compute_refinement_data(const mesh::Mesh<T>& mesh, Option option)
 /// cells. If an option is unselected, an empty list is returned.
 /// @return New mesh data: cell topology, vertex coordinates and parent
 /// cell index, and stored parent facet indices (if requested).
-template <typename T>
+template <dolfinx::scalar T>
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<T>,
            std::array<std::size_t, 2>, std::vector<std::int32_t>,
            std::vector<std::int8_t>>

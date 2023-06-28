@@ -26,7 +26,7 @@ class IndexMap;
 
 namespace dolfinx::fem
 {
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 class DirichletBC;
 
 /// @brief Helper functions for assembly into PETSc data structures

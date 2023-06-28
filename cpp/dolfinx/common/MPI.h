@@ -11,6 +11,7 @@
 #include <cassert>
 #include <complex>
 #include <cstdint>
+#include <dolfinx/common/types.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/graph/AdjacencyList.h>

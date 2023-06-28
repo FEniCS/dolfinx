@@ -12,6 +12,8 @@
 #include <string>
 #include <type_traits>
 
+#include "dolfinx/common/types.h"
+
 namespace dolfinx::math
 {
 

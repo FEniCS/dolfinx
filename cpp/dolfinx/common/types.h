@@ -7,6 +7,7 @@
 #pragma once
 
 #include <concepts>
+#include <complex>
 #include <type_traits>
 
 namespace dolfinx
@@ -19,7 +20,7 @@ template <class T> concept scalar =
 	<double>> || std::is_same_v <T, std::complex <float>>;
 /// @private These structs are used to get the float/value type from a
 /// template argument, including support for complex types.
-template <scalar T, typename = void>
+template <dolfinx::scalar T, typename = void>
 struct scalar_value_type
 {
   /// @internal
@@ -27,9 +28,9 @@ struct scalar_value_type
 };
 /// @private
 template <scalar T>
-struct scalar_value_type<T, std::void_t<dolfinx::scalar::value_type>>
+struct scalar_value_type<T, std::void_t<typename T::value_type>>
 {
-  typedef dolfinx::scalar::value_type value_type;
+  typedef typename T::value_type value_type;
 };
 /// @private Convenience typedef
 template <scalar T>

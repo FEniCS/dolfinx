@@ -10,12 +10,14 @@
 #include <span>
 #include <vector>
 
+#include "dolfinx/common/types.h"
+
 namespace dolfinx::fem
 {
 
 /// Constant value which can be attached to a Form. Constants may be
 /// scalar (rank 0), vector (rank 1), or tensor-valued.
-template <typename T>
+template <dolfinx::scalar T>
 class Constant
 {
 public:

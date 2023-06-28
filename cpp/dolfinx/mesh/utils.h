@@ -92,7 +92,7 @@ namespace impl
 /// in the full mesh to the position (column) in the vertex coordinates
 /// array (set to -1 if vertex in full mesh is not in the coordinate
 /// array).
-template <typename T>
+template <dolfinx::scalar T>
 std::tuple<std::vector<std::int32_t>, std::vector<T>, std::vector<std::int32_t>>
 compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
                                std::span<const std::int32_t> facets)
@@ -225,7 +225,7 @@ extract_topology(const CellType& cell_type, const fem::ElementDofLayout& layout,
 /// @param[in] dim Topological dimension of the entities.
 /// @returns Greatest distance between any two vertices, `h[i]`
 /// corresponds to the entity `entities[i]`.
-template <typename T>
+template <dolfinx::scalar T>
 std::vector<T> h(const Mesh<T>& mesh, std::span<const std::int32_t> entities,
                  int dim)
 {
@@ -279,7 +279,7 @@ std::vector<T> h(const Mesh<T>& mesh, std::span<const std::int32_t> entities,
 /// @brief Compute normal to given cell (viewed as embedded in 3D)
 /// @returns The entity normals. The shape is `(entities.size(), 3)` and
 /// the storage is row-major.
-template <typename T>
+template <dolfinx::scalar T>
 std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
                             std::span<const std::int32_t> entities)
 {
@@ -403,7 +403,7 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
 /// @brief Compute the midpoints for mesh entities of a given dimension.
 /// @returns The entity midpoints. The shape is `(entities.size(), 3)`
 /// and the storage is row-major.
-template <typename T>
+template <dolfinx::scalar T>
 std::vector<T> compute_midpoints(const Mesh<T>& mesh, int dim,
                                  std::span<const std::int32_t> entities)
 {
@@ -441,7 +441,7 @@ namespace impl
 /// @param[in] mesh Mesh to compute the vertex coordinates for
 /// @return The vertex coordinates. The shape is `(3, num_vertices)` and
 /// the jth column hold the coordinates of vertex j.
-template <typename T>
+template <dolfinx::scalar T>
 std::pair<std::vector<T>, std::array<std::size_t, 2>>
 compute_vertex_coords(const mesh::Mesh<T>& mesh)
 {
@@ -654,7 +654,7 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
 /// shape is `(num_entities, num_vertices_per_entity)` and the storage
 /// is row-major. The index `indices[i, j]` is the position in the
 /// geometry array of the `j`-th vertex of the `entity[i]`.
-template <typename T>
+template <dolfinx::scalar T>
 std::vector<std::int32_t>
 entities_to_geometry(const Mesh<T>& mesh, int dim,
                      std::span<const std::int32_t> entities, bool orient)
@@ -951,7 +951,7 @@ create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
 /// the new mesh
 /// @return The new mesh, and maps from the new mesh entities, vertices,
 /// and geometry to the input mesh entities, vertices, and geometry.
-template <typename T>
+template <dolfinx::scalar T>
 std::tuple<Mesh<T>, std::vector<std::int32_t>, std::vector<std::int32_t>,
            std::vector<std::int32_t>>
 create_submesh(const Mesh<T>& mesh, int dim,
