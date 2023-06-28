@@ -14,12 +14,11 @@ import pytest
 from dolfinx.fem import Form, Function, FunctionSpace, IntegralType
 from dolfinx.mesh import create_unit_square
 from mpi4py import MPI
-from petsc4py import PETSc
 
 import dolfinx
 from dolfinx import TimingType
 from dolfinx import cpp as _cpp
-from dolfinx import fem, la, list_timings
+from dolfinx import fem, la, list_timings, default_scalar_type, default_real_type
 
 numba = pytest.importorskip("numba")
 
@@ -28,17 +27,17 @@ numba = pytest.importorskip("numba")
 sys.path.append(os.getcwd())
 
 c_signature = numba.types.void(
-    numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
-    numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
-    numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
-    numba.types.CPointer(numba.typeof(PETSc.RealType())),
+    numba.types.CPointer(numba.typeof(default_scalar_type())),
+    numba.types.CPointer(numba.typeof(default_scalar_type())),
+    numba.types.CPointer(numba.typeof(default_scalar_type())),
+    numba.types.CPointer(numba.typeof(default_real_type())),
     numba.types.CPointer(numba.types.int32),
     numba.types.CPointer(numba.types.int32))
 
 
 @numba.cfunc(c_signature, nopython=True)
 def tabulate_tensor_A(A_, w_, c_, coords_, entity_local_index, cell_orientation):
-    A = numba.carray(A_, (3, 3), dtype=PETSc.ScalarType)
+    A = numba.carray(A_, (3, 3), dtype=default_scalar_type)
     coordinate_dofs = numba.carray(coords_, (3, 3), dtype=dolfinx.default_real_type)
 
     # Ke=∫Ωe BTe Be dΩ
@@ -48,13 +47,13 @@ def tabulate_tensor_A(A_, w_, c_, coords_, entity_local_index, cell_orientation)
 
     # 2x Element area Ae
     Ae = abs((x0 - x1) * (y2 - y1) - (y0 - y1) * (x2 - x1))
-    B = np.array([y1 - y2, y2 - y0, y0 - y1, x2 - x1, x0 - x2, x1 - x0], dtype=PETSc.ScalarType).reshape(2, 3)
+    B = np.array([y1 - y2, y2 - y0, y0 - y1, x2 - x1, x0 - x2, x1 - x0], dtype=default_scalar_type).reshape(2, 3)
     A[:, :] = np.dot(B.T, B) / (2 * Ae)
 
 
 @numba.cfunc(c_signature, nopython=True)
 def tabulate_tensor_b(b_, w_, c_, coords_, local_index, orientation):
-    b = numba.carray(b_, (3), dtype=PETSc.ScalarType)
+    b = numba.carray(b_, (3), dtype=default_scalar_type)
     coordinate_dofs = numba.carray(coords_, (3, 3), dtype=dolfinx.default_real_type)
     x0, y0 = coordinate_dofs[0, :2]
     x1, y1 = coordinate_dofs[1, :2]
@@ -67,8 +66,8 @@ def tabulate_tensor_b(b_, w_, c_, coords_, local_index, orientation):
 
 @numba.cfunc(c_signature, nopython=True)
 def tabulate_tensor_b_coeff(b_, w_, c_, coords_, local_index, orientation):
-    b = numba.carray(b_, (3), dtype=PETSc.ScalarType)
-    w = numba.carray(w_, (1), dtype=PETSc.ScalarType)
+    b = numba.carray(b_, (3), dtype=default_scalar_type)
+    w = numba.carray(w_, (1), dtype=default_scalar_type)
     coordinate_dofs = numba.carray(coords_, (3, 3), dtype=dolfinx.default_real_type)
     x0, y0 = coordinate_dofs[0, :2]
     x1, y1 = coordinate_dofs[1, :2]
@@ -104,12 +103,12 @@ def test_numba_assembly():
     integrals = {IntegralType.cell: [(-1, tabulate_tensor_b.address, cells)]}
     L = Form(formtype([V._cpp_object], integrals, [], [], False))
 
-    A = dolfinx.fem.petsc.assemble_matrix(a)
-    A.assemble()
+    A = dolfinx.fem.assemble_matrix(a)
+    A.finalize()
     b = dolfinx.fem.assemble_vector(L)
     b.scatter_reverse(dolfinx.la.InsertMode.add)
 
-    Anorm = A.norm(PETSc.NormType.FROBENIUS)
+    Anorm = np.sqrt(A.squared_norm())
     bnorm = b.norm()
     assert np.isclose(Anorm, 56.124860801609124)
     assert np.isclose(bnorm, 0.0739710713711999)
