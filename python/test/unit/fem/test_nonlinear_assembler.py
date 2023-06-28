@@ -313,8 +313,8 @@ def test_assembly_solve_block_nl():
     v, q = ufl.TestFunction(V0), ufl.TestFunction(V1)
 
     f, g = 1.0, -3.0
-    F = [inner((u**2 + 1.0) * ufl.grad(u), ufl.grad(v)) * dx - inner(f, v) * dx,
-         inner((p**2 + 1.0) * ufl.grad(p), ufl.grad(q)) * dx - inner(g, q) * dx]
+    F = [inner((u**2 + 1) * ufl.grad(u), ufl.grad(v)) * dx - inner(f, v) * dx,
+         inner((p**2 + 1) * ufl.grad(p), ufl.grad(q)) * dx - inner(g, q) * dx]
     J = [[derivative(F[0], u, du), derivative(F[0], p, dp)],
          [derivative(F[1], u, du), derivative(F[1], p, dp)]]
     F, J = form(F), form(J)
@@ -324,7 +324,7 @@ def test_assembly_solve_block_nl():
         Jmat = create_matrix_block(J)
         Fvec = create_vector_block(F)
         snes = PETSc.SNES().create(MPI.COMM_WORLD)
-        snes.setTolerances(rtol=1.0e-15, max_it=20)
+        snes.setTolerances(rtol=1.0e-15, max_it=10)
         problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs)
         snes.setFunction(problem.F_block, Fvec)
         snes.setJacobian(problem.J_block, J=Jmat, P=None)
@@ -546,7 +546,7 @@ def test_assembly_solve_taylor_hood_nl(mesh):
         snes.setTolerances(rtol=1.0e-15, max_it=20)
         nested_IS = Jmat.getNestISs()
         snes.getKSP().setType("minres")
-        snes.getKSP().setTolerances(rtol=1e-12)
+        snes.getKSP().setTolerances(rtol=1e-8)
         snes.getKSP().getPC().setType("fieldsplit")
         snes.getKSP().getPC().setFieldSplitIS(["u", nested_IS[0][0]], ["p", nested_IS[1][1]])
 
