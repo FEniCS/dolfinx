@@ -261,7 +261,7 @@ std::array<T, 3> compute_distance_gjk(std::span<const T> p,
   constexpr int maxk = 10; // Maximum number of iterations of the GJK algorithm
 
   // Tolerance
-  constexpr T eps = 10 * std::numeric_limits<double>::epsilon();
+  constexpr T eps = 10 * std::numeric_limits<T>::epsilon();
 
   // Initialise vector and simplex
   std::array<T, 3> v = {p[0] - q[0], p[1] - q[1], p[2] - q[2]};
