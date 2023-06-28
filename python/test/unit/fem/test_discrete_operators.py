@@ -18,7 +18,6 @@ from mpi4py import MPI
 from dolfinx import default_real_type
 
 
-@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("mesh", [create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.none),
                                   create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.shared_facet),
                                   create_unit_cube(MPI.COMM_WORLD, 4, 3, 7, ghost_mode=GhostMode.none),
@@ -28,12 +27,12 @@ def test_gradient(mesh):
     V = FunctionSpace(mesh, ("Lagrange", 1))
     W = FunctionSpace(mesh, ("Nedelec 1st kind H(curl)", 1))
     G = discrete_gradient(V._cpp_object, W._cpp_object)
+    # NB do not finalize G
 
     num_edges = mesh.topology.index_map(1).size_global
     m, n = G.index_map(0).size_global, G.index_map(1).size_global
     assert m == num_edges
     assert n == mesh.topology.index_map(0).size_global
-    G.finalize()
     assert np.isclose(G.squared_norm(), 2.0 * num_edges)
 
 
