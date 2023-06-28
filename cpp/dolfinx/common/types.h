@@ -6,21 +6,22 @@
 
 #pragma once
 
-#include <concepts>
 #include <complex>
+#include <concepts>
 #include <type_traits>
 
 namespace dolfinx
 {
-/// @private This concept is used to constrain the template type T to floating
+/// @private This concept is used to constrain the a template type to floating
 /// point real or complex types. Note that this concept is different to
 /// std::floating_point which does not include std::complex.
-template <class T> concept scalar =
-	std::is_floating_point_v<T> || std::is_same_v <T, std::complex
-	<double>> || std::is_same_v <T, std::complex <float>>;
+template <class T>
+concept scalar
+    = std::is_floating_point_v<T> || std::is_same_v<T, std::complex<double>>
+      || std::is_same_v<T, std::complex<float>>;
 /// @private These structs are used to get the float/value type from a
 /// template argument, including support for complex types.
-template <dolfinx::scalar T, typename = void>
+template <scalar T, typename = void>
 struct scalar_value_type
 {
   /// @internal
