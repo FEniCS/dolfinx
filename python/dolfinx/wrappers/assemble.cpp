@@ -171,6 +171,15 @@ void declare_assembly_functions(py::module& m)
       py::arg("A"), py::arg("V"), py::arg("bcs"), py::arg("diagonal"),
       "Experimental.");
   m.def(
+      "insert_diagonal",
+      [](dolfinx::la::MatrixCSR<T>& A, const py::array_t<std::int32_t>& rows,
+         T diagonal)
+      {
+        dolfinx::fem::set_diagonal(
+            A.mat_set_values(), std::span(rows.data(), rows.size()), diagonal);
+      },
+      py::arg("A"), py::arg("rows"), py::arg("diagonal"), "Experimental.");
+  m.def(
       "assemble_matrix",
       [](const std::function<int(const py::array_t<std::int32_t>&,
                                  const py::array_t<std::int32_t>&,

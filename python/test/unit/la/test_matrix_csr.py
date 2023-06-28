@@ -7,10 +7,15 @@
 
 import numpy as np
 import pytest
-
+import scipy.sparse as sps
+import ufl
 from dolfinx.common import IndexMap
 from dolfinx.cpp.la import BlockMode, SparsityPattern
 from dolfinx.la import matrix_csr
+from dolfinx.mesh import GhostMode, create_unit_square
+
+from dolfinx import cpp as _cpp
+from dolfinx import fem
 
 from mpi4py import MPI
 
@@ -68,7 +73,7 @@ def test_add(dtype):
     A3 = mat3.to_dense()
     assert np.allclose(A1, A3)
 
-    mat3.set(0.0)
+    mat3.set_value(0.0)
     assert mat3.squared_norm() == 0.0
 
 
@@ -138,3 +143,76 @@ def test_distributed_csr(dtype):
     pre_final_sum = mat.data.sum()
     mat.finalize()
     assert np.isclose(mat.data.sum(), pre_final_sum)
+
+
+@pytest.mark.parametrize('dtype', [np.float32, np.float64, np.complex64, np.complex128])
+def test_set_diagonal_distributed(dtype):
+    mesh_dtype = np.real(dtype(0)).dtype
+    ghost_mode = GhostMode.shared_facet
+    mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, ghost_mode=ghost_mode, dtype=mesh_dtype)
+    V = fem.FunctionSpace(mesh, ("Lagrange", 1))
+
+    tdim = mesh.topology.dim
+    cellmap = mesh.topology.index_map(tdim)
+    num_cells = cellmap.size_local + cellmap.num_ghosts
+
+    # Integration domain includes ghost cells
+    cells_domains = [(1, np.arange(0, num_cells))]
+    dx = ufl.Measure("dx", subdomain_data=cells_domains, domain=mesh)
+
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+    a = fem.form(ufl.inner(u, v) * dx(1), dtype=dtype)
+
+    # get index map from function space
+    index_map = V.dofmap.index_map
+    num_dofs = index_map.size_local + index_map.num_ghosts
+
+    # list of dofs including ghost dofs
+    dofs = np.arange(0, num_dofs, dtype=np.int32)
+
+    # create matrix
+    A = fem.create_matrix(a)
+    As = sps.csr_matrix((A.data, A.indices, A.indptr))
+
+    # set diagonal values
+    value = dtype(1.0)
+    _cpp.fem.insert_diagonal(A._cpp_object, dofs, value)
+
+    # check diagonal values: they should be 1.0, including ghost dofs
+    diag = As.diagonal()
+    reference = np.full_like(diag, value, dtype=dtype)
+    assert np.allclose(diag, reference)
+
+    # Finalize matrix: this will remove ghost rows and diagonal values of
+    # ghost rows will be added to diagonal of corresponding process
+    A.finalize()
+
+    diag = As.diagonal()
+    nlocal = index_map.size_local
+    assert (diag[nlocal:] == dtype(0.0)).all()
+
+    shared_dofs = index_map.index_to_dest_ranks
+    for dof in range(nlocal):
+        owners = shared_dofs.links(dof)
+        assert diag[dof] == len(owners) + 1
+
+    # create matrix
+    A = fem.create_matrix(a)
+    As = sps.csr_matrix((A.data, A.indices, A.indptr))
+
+    # set diagonal values using dirichlet bc: this will set diagonal values of
+    # owned rows only
+    bc = fem.dirichletbc(dtype(0.0), dofs, V)
+    _cpp.fem.insert_diagonal(A._cpp_object, a.function_spaces[0], [bc._cpp_object], value)
+
+    # check diagonal values: they should be 1.0, except ghost dofs
+    diag = As.diagonal()
+    reference = np.full_like(diag, value, dtype=dtype)
+    assert np.allclose(diag[:nlocal], reference[:nlocal])
+    assert np.allclose(diag[nlocal:], np.zeros_like(diag[nlocal:]))
+
+    # Finalize matrix:
+    # this will zero ghost rows and diagonal values are already zero.
+    A.finalize()
+    assert (As.diagonal()[nlocal:] == dtype(0.)).all()
+    assert (As.diagonal()[:nlocal] == dtype(1.)).all()
