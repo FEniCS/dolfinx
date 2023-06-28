@@ -275,7 +275,7 @@ auto norm(const V& x, Norm type = Norm::l2)
     using U = typename dolfinx::scalar_value_type_t<T>;
     U local_l1
         = std::accumulate(data.begin(), data.end(), U(0),
-                          [](U norm, T x) -> U { return norm + std::abs(x); });
+                          [](auto norm, auto x) { return norm + std::abs(x); });
     U l1(0);
     MPI_Allreduce(&local_l1, &l1, 1, MPI::mpi_type<U>(), MPI_SUM,
                   x.index_map()->comm());
