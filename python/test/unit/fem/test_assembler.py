@@ -49,23 +49,27 @@ def nest_matrix_norm(A):
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
-def test_assemble_functional_dx(mode):
-    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
-    M = form(1.0 * dx(domain=mesh))
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_assemble_functional_dx(mode, dtype):
+    xtype = dtype(0).real.dtype
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode, dtype=xtype)
+    M = form(1.0 * dx(domain=mesh), dtype=dtype)
     value = assemble_scalar(M)
     value = mesh.comm.allreduce(value, op=MPI.SUM)
     assert value == pytest.approx(1.0, 1e-5)
     x = ufl.SpatialCoordinate(mesh)
-    M = form(x[0] * dx(domain=mesh))
+    M = form(x[0] * dx(domain=mesh), dtype=dtype)
     value = assemble_scalar(M)
     value = mesh.comm.allreduce(value, op=MPI.SUM)
     assert value == pytest.approx(0.5, 1e-6)
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
-def test_assemble_functional_ds(mode):
-    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
-    M = form(1.0 * ds(domain=mesh))
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_assemble_functional_ds(mode, dtype):
+    xtype = dtype(0).real.dtype
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode, dtype=xtype)
+    M = form(1.0 * ds(domain=mesh), dtype=dtype)
     value = assemble_scalar(M)
     value = mesh.comm.allreduce(value, op=MPI.SUM)
     assert value == pytest.approx(4.0, 1e-6)
