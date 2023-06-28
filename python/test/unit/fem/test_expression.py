@@ -15,7 +15,6 @@ from dolfinx.fem import (Constant, Expression, Function, FunctionSpace,
 from dolfinx.mesh import create_unit_square
 from ffcx.element_interface import QuadratureElement
 from mpi4py import MPI
-from petsc4py import PETSc
 
 import dolfinx.cpp
 from dolfinx import default_real_type, default_scalar_type, fem, la
@@ -26,8 +25,8 @@ cffi_support = pytest.importorskip("numba.core.typing.cffi_utils")
 
 dolfinx.cpp.common.init_logging(["-v"])
 
-# Get PETSc int and scalar types
-if np.dtype(PETSc.ScalarType).kind == 'c':
+# Get scalar type
+if np.dtype(default_scalar_type).kind == 'c':
     complex = True
 else:
     complex = False
@@ -177,7 +176,7 @@ def test_simple_evaluation():
     expr = Function(P2)
     expr.interpolate(exact_expr)
 
-    ufl_grad_f = Constant(mesh, PETSc.ScalarType(3.0)) * ufl.grad(expr)
+    ufl_grad_f = Constant(mesh, default_scalar_type(3.0)) * ufl.grad(expr)
     points = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
     grad_f_expr = Expression(ufl_grad_f, points)
     assert grad_f_expr.X().shape[0] == points.shape[0]
@@ -211,7 +210,7 @@ def test_assembly_into_quadrature_function():
 
     This test evaluates a UFL Expression into a Quadrature function space by
     evaluating the Expression on all cells of the mesh, and then inserting the
-    evaluated values into a PETSc Vector constructed from a matching Quadrature
+    evaluated values into a Vector constructed from a matching Quadrature
     function space.
 
     Concretely, we consider the evaluation of:
@@ -245,8 +244,8 @@ def test_assembly_into_quadrature_function():
 
     T = Function(P2)
     T.interpolate(lambda x: x[0] + 2.0 * x[1])
-    A = Constant(mesh, PETSc.ScalarType(1.0))
-    B = Constant(mesh, PETSc.ScalarType(2.0))
+    A = Constant(mesh, default_scalar_type(1.0))
+    B = Constant(mesh, default_scalar_type(2.0))
 
     K = 1.0 / (A + B * T)
     e = B * K**2 * ufl.grad(T)
@@ -261,9 +260,12 @@ def test_assembly_into_quadrature_function():
 
     # Assemble into Function
     e_Q = Function(Q)
-    with e_Q.vector.localForm() as e_Q_local:
-        e_Q_local.setBlockSize(e_Q.function_space.dofmap.bs)
-        e_Q_local.setValuesBlocked(Q.dofmap.list.flatten(), e_eval, addv=PETSc.InsertMode.INSERT)
+    e_Q_local = e_Q.x.array
+    bs = e_Q.function_space.dofmap.bs
+    dofs = np.empty((bs * Q.dofmap.list.flatten().size,), dtype=np.int32)
+    for i in range(bs):
+        dofs[i::2] = bs * Q.dofmap.list.flatten() + i
+    e_Q_local[dofs] = e_eval.flatten()
 
     def e_exact(x):
         T = x[0] + 2.0 * x[1]
