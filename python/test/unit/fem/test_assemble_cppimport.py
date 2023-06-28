@@ -17,14 +17,11 @@ import dolfinx
 import dolfinx.pkgconfig
 import ufl
 from dolfinx.fem import (FunctionSpace, VectorFunctionSpace, dirichletbc, form,
-                         locate_dofs_geometrical)
-from dolfinx.fem.petsc import assemble_matrix
+                         locate_dofs_geometrical, assemble_matrix)
 from dolfinx.mesh import create_unit_square
 from dolfinx.wrappers import get_include_path as pybind_inc
 
-import petsc4py
 from mpi4py import MPI
-from petsc4py import PETSc
 
 
 @pytest.mark.skip_in_parallel
@@ -32,15 +29,16 @@ from petsc4py import PETSc
                     reason="This test needs eigen3 pkg-config.")
 @pytest.mark.skipif(not dolfinx.pkgconfig.exists("dolfinx"),
                     reason="This test needs DOLFINx pkg-config.")
-def test_eigen_assembly(tempdir):  # noqa: F811
-    """Compare assembly into scipy.CSR matrix with PETSc assembly"""
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_eigen_assembly(tempdir, dtype):  # noqa: F811
+    """Compare assembly into scipy.CSR matrix with native assembly"""
     def compile_eigen_csr_assembler_module():
         dolfinx_pc = dolfinx.pkgconfig.parse("dolfinx")
         eigen_dir = dolfinx.pkgconfig.parse("eigen3")["include_dirs"]
         cpp_code_header = f"""
 <%
 setup_pybind11(cfg)
-cfg['include_dirs'] = {dolfinx_pc["include_dirs"] + [petsc4py.get_include()]
+cfg['include_dirs'] = {dolfinx_pc["include_dirs"]
   + [pybind11.get_include()] + [str(pybind_inc())] + eigen_dir}
 cfg['compiler_args'] = ["-std=c++20", "-Wno-comment"]
 cfg['libraries'] = {dolfinx_pc["libraries"]}
@@ -48,13 +46,18 @@ cfg['library_dirs'] = {dolfinx_pc["library_dirs"]}
 %>
 """
 
-        cpp_code = """
+        cpp_typemap = {np.float64: "double",
+                       np.float32: "float",
+                       np.complex64: "std::complex<float>",
+                       np.complex128: "std::complex<double>"}
+
+        cpp_code = f"""
 #include <pybind11/pybind11.h>
 #include <pybind11/eigen.h>
 #include <pybind11/stl.h>
 #include <vector>
+#include <complex>
 #include <Eigen/Sparse>
-#include <petscsys.h>
 #include <dolfinx/fem/assembler.h>
 #include <dolfinx/fem/DirichletBC.h>
 #include <dolfinx/fem/Form.h>
@@ -64,18 +67,18 @@ Eigen::SparseMatrix<T, Eigen::RowMajor>
 assemble_csr(const dolfinx::fem::Form<T>
 & a,
              const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC<T>>>& bcs)
-{
+{{
   std::vector<Eigen::Triplet<T>> triplets;
   auto mat_add
       = [&triplets](const std::span<const std::int32_t>& rows,
                     const std::span<const std::int32_t>& cols,
                     const std::span<const T>& v)
-    {
+    {{
       for (std::size_t i = 0; i < rows.size(); ++i)
         for (std::size_t j = 0; j < cols.size(); ++j)
           triplets.emplace_back(rows[i], cols[j], v[i * cols.size() + j]);
       return 0;
-    };
+    }};
 
   dolfinx::fem::assemble_matrix(mat_add, a, bcs);
 
@@ -88,12 +91,12 @@ assemble_csr(const dolfinx::fem::Form<T>
       bs1 * (map1->size_local() + map1->num_ghosts()));
   mat.setFromTriplets(triplets.begin(), triplets.end());
   return mat;
-}
+}}
 
 PYBIND11_MODULE(eigen_csr, m)
-{
-  m.def("assemble_matrix", &assemble_csr<PetscScalar>);
-}
+{{
+  m.def("assemble_matrix", &assemble_csr<{cpp_typemap[dtype]}>);
+}}
 """
 
         path = pathlib.Path(tempdir)
@@ -116,21 +119,21 @@ PYBIND11_MODULE(eigen_csr, m)
                     A[dofs, dofs] = 1.0
         return A
 
-    mesh = create_unit_square(MPI.COMM_SELF, 12, 12)
+    realtype = np.real(dtype(1.0)).dtype
+    mesh = create_unit_square(MPI.COMM_SELF, 12, 12, dtype=realtype)
     Q = FunctionSpace(mesh, ("Lagrange", 1))
     u = ufl.TrialFunction(Q)
     v = ufl.TestFunction(Q)
-    a = form(ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx)
+
+    a = form(ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx, dtype=dtype)
 
     bdofsQ = locate_dofs_geometrical(Q, lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 1.0)))
-    bc = dirichletbc(PETSc.ScalarType(1), bdofsQ, Q)
+    bc = dirichletbc(dtype(1), bdofsQ, Q)
 
     A1 = assemble_matrix(a, [bc])
-    A1.assemble()
+    A1.finalize()
     A2 = assemble_csr_matrix(a._cpp_object, [bc._cpp_object])
-    assert np.isclose(A1.norm(), scipy.sparse.linalg.norm(A2))
-
-    A1.destroy()
+    assert np.isclose(np.sqrt(A1.squared_norm()), scipy.sparse.linalg.norm(A2))
 
 
 @pytest.mark.skip_in_parallel
