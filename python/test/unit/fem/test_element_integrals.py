@@ -14,13 +14,12 @@ import ufl
 from basix.ufl import element
 from dolfinx.fem import (Constant, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_scalar, form)
-from dolfinx.fem.petsc import assemble_matrix, assemble_vector
+from dolfinx.fem import assemble_matrix, assemble_vector
 from dolfinx.mesh import CellType, create_mesh, meshtags
 from mpi4py import MPI
-from petsc4py import PETSc
 
 import dolfinx
-from dolfinx import default_real_type
+from dolfinx import default_real_type, default_scalar_type
 
 parametrize_cell_types = pytest.mark.parametrize(
     "cell_type",
@@ -279,9 +278,8 @@ def test_plus_minus_simple_vector(cell_type, pm):
             v = ufl.TestFunction(V)
             a = form(ufl.inner(1, v(pm)) * ufl.dS)
             result = assemble_vector(a)
-            result.assemble()
             spaces.append(V)
-            results.append(result)
+            results.append(result.array)
             orders.append(order)
 
     # Check that the above vectors all have the same values as the first
@@ -304,9 +302,6 @@ def test_plus_minus_simple_vector(cell_type, pm):
                     assert False
 
                 assert np.isclose(results[0][dof0], result[dof1])
-
-    for x in results:
-        x.destroy()
 
 
 @pytest.mark.skip_in_parallel
@@ -334,9 +329,8 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
             v = ufl.TestFunction(V)
             a = form(ufl.inner(f(pm1), v(pm2)) * ufl.dS)
             result = assemble_vector(a)
-            result.assemble()
             spaces.append(V)
-            results.append(result)
+            results.append(result.array)
             orders.append(order)
 
     # Check that the above vectors all have the same values as the first
@@ -360,9 +354,6 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
 
                 assert np.isclose(results[0][dof0], result[dof1], atol=1.0e-6)
 
-    for x in results:
-        x.destroy()
-
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('pm1', ["+", "-"])
@@ -384,9 +375,9 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
             # different numberings
             a = form(ufl.inner(u(pm1), v(pm2)) * ufl.dS)
             result = assemble_matrix(a, [])
-            result.assemble()
+            result.finalize()
             spaces.append(V)
-            results.append(result)
+            results.append(result.to_dense())
             orders.append(order)
 
     # Check that the above matrices all have the same values, but
@@ -416,9 +407,6 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
         for a, b in dof_order:
             for c, d in dof_order:
                 assert np.isclose(results[0][a, c], result[b, d])
-
-    for x in results:
-        x.destroy()
 
 
 @pytest.mark.skip(reason="This test relies on the mesh constructor not re-ordering the mesh points. Needs replacing.")
@@ -477,9 +465,6 @@ def test_curl(space_type, order):
                 continue
             break
 
-    for x in results:
-        x.destroy()
-
 
 def create_quad_mesh(offset):
     """Creates a mesh of a single square element if offset = 0, or a
@@ -501,9 +486,8 @@ def assemble_div_matrix(k, offset):
     u, w = ufl.TrialFunction(V), ufl.TestFunction(W)
     a = form(ufl.inner(u, ufl.div(w)) * ufl.dx)
     A = assemble_matrix(a)
-    A.assemble()
-    _A = A[:, :]
-    A.destroy()
+    A.finalize()
+    _A = A.to_dense()
     return _A
 
 
@@ -511,11 +495,9 @@ def assemble_div_vector(k, offset):
     mesh = create_quad_mesh(offset)
     V = FunctionSpace(mesh, ("RTCF", k + 1))
     v = ufl.TestFunction(V)
-    L = form(ufl.inner(Constant(mesh, PETSc.ScalarType(1)), ufl.div(v)) * ufl.dx)
+    L = form(ufl.inner(Constant(mesh, default_scalar_type(1)), ufl.div(v)) * ufl.dx)
     b = assemble_vector(L)
-    b.assemble()
-    _b = b[:]
-    b.destroy()
+    _b = b.array[:]
     return _b
 
 
