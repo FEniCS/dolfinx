@@ -14,7 +14,6 @@ from dolfinx.mesh import (GhostMode, Mesh, create_unit_square, locate_entities,
                           locate_entities_boundary, meshtags,
                           meshtags_from_entities)
 from mpi4py import MPI
-from petsc4py import PETSc
 
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, fem, la
@@ -144,12 +143,9 @@ def test_assembly_ds_domains(mode):
     a = form(w * ufl.inner(u, v) * (ds(1) + ds(2) + ds(3) + ds(6)))
     A = fem.assemble_matrix(a)
     A.finalize()
-    norm1 = A.squared_norm()
     a2 = form(w * ufl.inner(u, v) * ds)
     A2 = fem.assemble_matrix(a2)
     A2.finalize()
-    # norm2 = A2.squared_norm()
-    # assert norm1 == pytest.approx(norm2, 1.0e-12)
     assert np.allclose(A.data, A2.data)
 
     # Assemble vector
