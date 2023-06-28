@@ -10,6 +10,7 @@
 #include <complex>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Scatterer.h>
+#include <dolfinx/common/types.h>
 #include <limits>
 #include <memory>
 #include <numeric>
@@ -267,11 +268,24 @@ auto norm(const V& a, Norm type = Norm::l2)
   using T = typename V::value_type;
   switch (type)
   {
+  case Norm::l1:
+  {
+    std::int32_t size_local = a.bs() * a.index_map()->size_local();
+    std::span<const T> x = a.array().subspan(0, size_local);
+    using U = typename dolfinx::scalar_value_type_t<T>;
+    U local_l1 = std::reduce(x.begin(), x.end(), U(0),
+                             [](auto norm, auto x) -> U
+                             { return norm + std::abs(x); });
+    U l1(0);
+    MPI_Allreduce(&local_l1, &l1, 1, MPI::mpi_type<U>(), MPI_SUM,
+                  a.index_map()->comm());
+    return l1;
+  }
   case Norm::l2:
     return std::sqrt(squared_norm(a));
   case Norm::linf:
   {
-    const std::int32_t size_local = a.bs() * a.index_map()->size_local();
+    std::int32_t size_local = a.bs() * a.index_map()->size_local();
     std::span<const T> x_a = a.array().subspan(0, size_local);
     auto max_pos = std::max_element(x_a.begin(), x_a.end(),
                                     [](T a, T b)
