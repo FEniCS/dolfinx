@@ -60,7 +60,8 @@ enum class IntegralType : std::int8_t
 /// (the variable `function_spaces` in the constructors below), the list
 /// of spaces should start with space number 0 (the test space) and then
 /// space number 1 (the trial space).
-template <dolfinx::scalar T, std::floating_point U = dolfinx::scalar_value_type_t<T>>
+template <dolfinx::scalar T,
+          std::floating_point U = dolfinx::scalar_value_type_t<T>>
 class Form
 {
 public:

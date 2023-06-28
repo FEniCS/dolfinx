@@ -47,7 +47,8 @@ namespace dolfinx::fem
 /// @param[in] V1 Nédélec (first kind) element and and dofmap for
 /// corresponding space to interpolate into
 /// @param[in] mat_set A functor that sets values in a matrix
-template <dolfinx::scalar T, std::floating_point U = dolfinx::scalar_value_type_t<T>>
+template <dolfinx::scalar T,
+          std::floating_point U = dolfinx::scalar_value_type_t<T>>
 void discrete_gradient(mesh::Topology& topology,
                        std::pair<std::reference_wrapper<const FiniteElement<U>>,
                                  std::reference_wrapper<const DofMap>>

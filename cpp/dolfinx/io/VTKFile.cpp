@@ -338,7 +338,8 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
   }
 }
 //----------------------------------------------------------------------------
-template <dolfinx::scalar T, std::floating_point U = dolfinx::scalar_value_type_t<T>>
+template <dolfinx::scalar T,
+          std::floating_point U = dolfinx::scalar_value_type_t<T>>
 void write_function(
     const std::vector<std::reference_wrapper<const fem::Function<T, U>>>& u,
     double time, pugi::xml_document* xml_doc,

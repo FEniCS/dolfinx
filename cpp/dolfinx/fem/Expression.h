@@ -34,7 +34,8 @@ class Constant;
 ///
 /// @tparam T The scalar type
 /// @tparam U The mesh geometry scalar type
-template <dolfinx::scalar T, std::floating_point U = dolfinx::scalar_value_type_t<T>>
+template <dolfinx::scalar T,
+          std::floating_point U = dolfinx::scalar_value_type_t<T>>
 class Expression
 {
 public:
