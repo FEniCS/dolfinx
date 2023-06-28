@@ -19,7 +19,6 @@ from dolfinx.mesh import (CellType, create_box, create_unit_cube,
 from mpi4py import MPI
 
 from dolfinx import cpp as _cpp
-from dolfinx import default_real_type
 
 
 def extract_geometricial_data(mesh, dim, entities):
