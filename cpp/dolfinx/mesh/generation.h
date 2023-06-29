@@ -31,33 +31,33 @@ enum class DiagonalType
 
 namespace impl
 {
-template <typename T>
+template <std::floating_point T>
 Mesh<T> build_tri(MPI_Comm comm, const std::array<std::array<double, 2>, 2>& p,
                   std::array<std::size_t, 2> n,
                   const CellPartitionFunction& partitioner,
                   DiagonalType diagonal);
 
-template <typename T>
+template <std::floating_point T>
 Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
                    std::array<std::size_t, 2> n,
                    const CellPartitionFunction& partitioner);
 
-template <typename T>
+template <std::floating_point T>
 std::vector<T> create_geom(MPI_Comm comm,
                            const std::array<std::array<double, 3>, 2>& p,
                            std::array<std::size_t, 3> n);
 
-template <typename T>
+template <std::floating_point T>
 Mesh<T> build_tet(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
                   std::array<std::size_t, 3> n,
                   const CellPartitionFunction& partitioner);
 
-template <typename T>
+template <std::floating_point T>
 Mesh<T> build_hex(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
                   std::array<std::size_t, 3> n,
                   const CellPartitionFunction& partitioner);
 
-template <typename T>
+template <std::floating_point T>
 Mesh<T> build_prism(MPI_Comm comm,
                     const std::array<std::array<double, 3>, 2>& p,
                     std::array<std::size_t, 3> n,
@@ -215,7 +215,7 @@ Mesh<T> create_rectangle(MPI_Comm comm,
 
 namespace impl
 {
-template <typename T>
+template <std::floating_point T>
 std::vector<T> create_geom(MPI_Comm comm,
                            const std::array<std::array<double, 3>, 2>& p,
                            std::array<std::size_t, 3> n)
@@ -283,7 +283,7 @@ std::vector<T> create_geom(MPI_Comm comm,
   return geom;
 }
 
-template <typename T>
+template <std::floating_point T>
 Mesh<T> build_tet(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
                   std::array<std::size_t, 3> n,
                   const CellPartitionFunction& partitioner)
@@ -331,7 +331,7 @@ Mesh<T> build_tet(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
                      {element}, geom, {geom.size() / 3, 3}, partitioner);
 }
 
-template <typename T>
+template <std::floating_point T>
 mesh::Mesh<T> build_hex(MPI_Comm comm,
                         const std::array<std::array<double, 3>, 2>& p,
                         std::array<std::size_t, 3> n,
@@ -375,7 +375,7 @@ mesh::Mesh<T> build_hex(MPI_Comm comm,
                      {element}, geom, {geom.size() / 3, 3}, partitioner);
 }
 
-template <typename T>
+template <std::floating_point T>
 Mesh<T> build_prism(MPI_Comm comm,
                     const std::array<std::array<double, 3>, 2>& p,
                     std::array<std::size_t, 3> n,
@@ -423,7 +423,7 @@ Mesh<T> build_prism(MPI_Comm comm,
                      {element}, geom, {geom.size() / 3, 3}, partitioner);
 }
 
-template <typename T>
+template <std::floating_point T>
 Mesh<T> build_tri(MPI_Comm comm, const std::array<std::array<double, 2>, 2>& p,
                   std::array<std::size_t, 2> n,
                   const CellPartitionFunction& partitioner,
@@ -609,7 +609,7 @@ Mesh<T> build_tri(MPI_Comm comm, const std::array<std::array<double, 2>, 2>& p,
                      {element}, geom, {geom.size() / 2, 2}, partitioner);
 }
 
-template <typename T>
+template <std::floating_point T>
 Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
                    std::array<std::size_t, 2> n,
                    const CellPartitionFunction& partitioner)
