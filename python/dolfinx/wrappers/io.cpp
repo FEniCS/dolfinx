@@ -34,6 +34,59 @@ namespace dolfinx_wrappers
 namespace
 {
 template <typename T>
+void xdmf_real_fn(auto&& m)
+{
+  m.def(
+      "write_mesh",
+      [](dolfinx::io::XDMFFile& self, const dolfinx::mesh::Mesh<T>& mesh,
+         std::string xpath) { self.write_mesh(mesh, xpath); },
+      py::arg("mesh"), py::arg("xpath") = "/Xdmf/Domain");
+  m.def(
+      "write_meshtags",
+      [](dolfinx::io::XDMFFile& self,
+         const dolfinx::mesh::MeshTags<std::int32_t>& meshtags,
+         const dolfinx::mesh::Geometry<T>& x, std::string geometry_xpath,
+         std::string xpath)
+      { self.write_meshtags(meshtags, x, geometry_xpath, xpath); },
+      py::arg("meshtags"), py::arg("x"), py::arg("geometry_xpath"),
+      py::arg("xpath") = "/Xdmf/Domain");
+};
+
+template <typename T, typename U>
+void xdmf_scalar_fn(auto&& m)
+{
+  m.def(
+      "write_function",
+      [](dolfinx::io::XDMFFile& self, const dolfinx::fem::Function<T, U>& u,
+         double t, std::string mesh_xpath)
+      { self.write_function(u, t, mesh_xpath); },
+      py::arg("u"), py::arg("t"),
+      py::arg("mesh_xpath") = "/Xdmf/Domain/Grid[@GridType='Uniform'][1]");
+};
+
+template <typename T>
+void vtk_real_fn(auto&& m)
+{
+  m.def(
+      "write",
+      [](dolfinx::io::VTKFile& self, const dolfinx::mesh::Mesh<T>& mesh,
+         double t) { self.write(mesh, t); },
+      py::arg("mesh"), py::arg("t") = 0.0);
+}
+
+template <typename T, typename U>
+void vtk_scalar_fn(auto&& m)
+{
+  m.def(
+      "write",
+      [](dolfinx::io::VTKFile& self,
+         const std::vector<
+             std::reference_wrapper<const dolfinx::fem::Function<T, U>>>& u,
+         double t) { self.write(u, t); },
+      py::arg("u"), py::arg("t") = 0.0);
+}
+
+template <typename T>
 void declare_vtx_writer(py::module& m, std::string type)
 {
 #ifdef HAS_ADIOS2
@@ -187,8 +240,6 @@ void io(py::module& m)
         py::arg("num_nodes"),
         "Permutation array to map from Gmsh to DOLFINx node ordering");
 
-  // TODO: Template for different values dtypes
-
   // dolfinx::io::XDMFFile
   py::class_<dolfinx::io::XDMFFile, std::shared_ptr<dolfinx::io::XDMFFile>>
       xdmf_file(m, "XDMFFile");
@@ -210,27 +261,6 @@ void io(py::module& m)
            py::arg("comm"), py::arg("filename"), py::arg("file_mode"),
            py::arg("encoding") = dolfinx::io::XDMFFile::Encoding::HDF5)
       .def("close", &dolfinx::io::XDMFFile::close)
-      .def(
-          "write_mesh",
-          [](dolfinx::io::XDMFFile& self,
-             std::variant<const dolfinx::mesh::Mesh<float>*,
-                          const dolfinx::mesh::Mesh<double>*>& mesh,
-             std::string xpath)
-          {
-            try
-            {
-              auto m = std::get<const dolfinx::mesh::Mesh<float>*>(mesh);
-              assert(m);
-              self.write_mesh<float>(*m, xpath);
-            }
-            catch (const std::bad_variant_access& ex)
-            {
-              auto m = std::get<const dolfinx::mesh::Mesh<double>*>(mesh);
-              assert(m);
-              self.write_mesh<double>(*m, xpath);
-            }
-          },
-          py::arg("mesh"), py::arg("xpath"))
       .def("write_geometry", &dolfinx::io::XDMFFile::write_geometry,
            py::arg("geometry"), py::arg("name") = "geometry",
            py::arg("xpath") = "/Xdmf/Domain")
@@ -255,48 +285,6 @@ void io(py::module& m)
            py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
       .def("read_cell_type", &dolfinx::io::XDMFFile::read_cell_type,
            py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
-      .def("write_function",
-           py::overload_cast<const dolfinx::fem::Function<float, float>&,
-                             double, std::string>(
-               &dolfinx::io::XDMFFile::write_function<float, float>),
-           py::arg("function"), py::arg("t"), py::arg("mesh_xpath"))
-      .def("write_function",
-           py::overload_cast<const dolfinx::fem::Function<double, double>&,
-                             double, std::string>(
-               &dolfinx::io::XDMFFile::write_function<double, double>),
-           py::arg("function"), py::arg("t"), py::arg("mesh_xpath"))
-      .def("write_function",
-           py::overload_cast<
-               const dolfinx::fem::Function<std::complex<float>, float>&,
-               double, std::string>(
-               &dolfinx::io::XDMFFile::write_function<std::complex<float>,
-                                                      float>),
-           py::arg("function"), py::arg("t"), py::arg("mesh_xpath"))
-      .def("write_function",
-           py::overload_cast<
-               const dolfinx::fem::Function<std::complex<double>, double>&,
-               double, std::string>(
-               &dolfinx::io::XDMFFile::write_function<std::complex<double>,
-                                                      double>),
-           py::arg("function"), py::arg("t"), py::arg("mesh_xpath"))
-      .def(
-          "write_meshtags",
-          [](dolfinx::io::XDMFFile& self,
-             const dolfinx::mesh::MeshTags<std::int32_t>& meshtags,
-             const dolfinx::mesh::Geometry<float>& x,
-             std::string geometry_xpath, std::string xpath)
-          { self.write_meshtags(meshtags, x, geometry_xpath, xpath); },
-          py::arg("meshtags"), py::arg("x"), py::arg("geometry_xpath"),
-          py::arg("xpath") = "/Xdmf/Domain")
-      .def(
-          "write_meshtags",
-          [](dolfinx::io::XDMFFile& self,
-             const dolfinx::mesh::MeshTags<std::int32_t>& meshtags,
-             const dolfinx::mesh::Geometry<double>& x,
-             std::string geometry_xpath, std::string xpath)
-          { self.write_meshtags(meshtags, x, geometry_xpath, xpath); },
-          py::arg("meshtags"), py::arg("x"), py::arg("geometry_xpath"),
-          py::arg("xpath") = "/Xdmf/Domain")
       .def("read_meshtags", &dolfinx::io::XDMFFile::read_meshtags,
            py::arg("mesh"), py::arg("name"), py::arg("xpath") = "/Xdmf/Domain")
       .def("write_information", &dolfinx::io::XDMFFile::write_information,
@@ -306,9 +294,17 @@ void io(py::module& m)
       .def("comm", [](dolfinx::io::XDMFFile& self)
            { return MPICommWrapper(self.comm()); });
 
+  xdmf_real_fn<float>(xdmf_file);
+  xdmf_real_fn<double>(xdmf_file);
+  xdmf_scalar_fn<float, float>(xdmf_file);
+  xdmf_scalar_fn<double, double>(xdmf_file);
+  xdmf_scalar_fn<std::complex<float>, float>(xdmf_file);
+  xdmf_scalar_fn<std::complex<double>, double>(xdmf_file);
+
   // dolfinx::io::VTKFile
-  py::class_<dolfinx::io::VTKFile, std::shared_ptr<dolfinx::io::VTKFile>>(
-      m, "VTKFile")
+  py::class_<dolfinx::io::VTKFile, std::shared_ptr<dolfinx::io::VTKFile>>
+      vtk_file(m, "VTKFile");
+  vtk_file
       .def(py::init(
                [](MPICommWrapper comm, std::filesystem::path filename,
                   std::string mode) {
@@ -316,25 +312,14 @@ void io(py::module& m)
                                                                filename, mode);
                }),
            py::arg("comm"), py::arg("filename"), py::arg("mode"))
-      .def("close", &dolfinx::io::VTKFile::close)
-      .def("write", &dolfinx::io::VTKFile::write<float, float>, py::arg("u"),
-           py::arg("t") = 0.0)
-      .def("write", &dolfinx::io::VTKFile::write<double, double>, py::arg("u"),
-           py::arg("t") = 0.0)
-      .def("write", &dolfinx::io::VTKFile::write<std::complex<float>, float>,
-           py::arg("u"), py::arg("t") = 0.0)
-      .def("write", &dolfinx::io::VTKFile::write<std::complex<double>, double>,
-           py::arg("u"), py::arg("t") = 0.0)
-      .def("write",
-           static_cast<void (dolfinx::io::VTKFile::*)(
-               const dolfinx::mesh::Mesh<float>&, double)>(
-               &dolfinx::io::VTKFile::write),
-           py::arg("mesh"), py::arg("t") = 0.0)
-      .def("write",
-           static_cast<void (dolfinx::io::VTKFile::*)(
-               const dolfinx::mesh::Mesh<double>&, double)>(
-               &dolfinx::io::VTKFile::write),
-           py::arg("mesh"), py::arg("t") = 0.0);
+      .def("close", &dolfinx::io::VTKFile::close);
+
+  vtk_real_fn<float>(vtk_file);
+  vtk_real_fn<double>(vtk_file);
+  vtk_scalar_fn<float, float>(vtk_file);
+  vtk_scalar_fn<double, double>(vtk_file);
+  vtk_scalar_fn<std::complex<float>, float>(vtk_file);
+  vtk_scalar_fn<std::complex<double>, double>(vtk_file);
 
 #ifdef HAS_ADIOS2
   py::enum_<dolfinx::io::FidesMeshPolicy>(m, "FidesMeshPolicy")
