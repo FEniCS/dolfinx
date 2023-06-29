@@ -103,7 +103,7 @@ class MatrixCSR:
         """
         import scipy
 
-        if self.block_size == [1, 1]:
+        if self._cpp_object.block_size == [1, 1]:
             nrlocal = self.index_map(0).size_local
             nclocal = self.index_map(1).size_local + self.index_map(1).num_ghosts
             nnzlocal = self.indptr[nrlocal]

@@ -97,13 +97,13 @@ def test_rank1_hdiv():
 
     a = form(ufl.inner(f, ufl.TestFunction(vdP1)) * ufl.dx)
 
-    # dofmap_col = RT1.dofmap.list
+    dofmap_col = RT1.dofmap.list
     dofmap_row = vdP1.dofmap.list
     dofmap_row_unrolled = (2 * np.repeat(dofmap_row, 2).reshape(-1, 2) + np.arange(2)).flatten()
     dofmap_row = dofmap_row_unrolled.reshape(-1, 12)
 
     A = fem.create_matrix(a, block_mode=la.BlockMode.expanded)
-    scatter(A.to_scipy())
+    scatter(A.to_scipy(), array_evaluated, dofmap_row, dofmap_col)
     A.finalize()
 
     gvec = la.vector(A.index_map(1), dtype=default_scalar_type)
@@ -124,9 +124,8 @@ def test_rank1_hdiv():
 
     # Interpolate RT1 into vdP1 (compiled, mat-vec interpolation)
     h2 = Function(vdP1)
-    h2.x.array[:nrlocal] += A1 @ g.x.array
+    h2.x.array[:A1.shape[0]] += A1 @ g.x.array
     h2.x.scatter_forward()
-
     assert np.linalg.norm(h2.x.array - h.x.array) == pytest.approx(0.0, abs=1.0e-4)
 
 
