@@ -30,7 +30,7 @@ class Geometry;
 namespace io::xdmf_meshtags
 {
 /// Add mesh tags to XDMF file
-template <typename T, typename U>
+template <typename T, std::floating_point U>
 void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
                   const mesh::Geometry<U>& geometry, pugi::xml_node& xml_node,
                   const hid_t h5_id, const std::string name)
