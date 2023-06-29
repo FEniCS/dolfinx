@@ -76,7 +76,7 @@ public:
   /// (discontinuous) Lagrange.
   /// @pre Functions in `u` cannot be sub-Functions. Interpolate
   /// sub-Functions before output.
-  template <dolfinx::scalar T, std::floating_point U>
+  template <dolfinx::scalar T, std::floating_point U = scalar_value_type_t<T>>
   void
   write(const std::vector<std::reference_wrapper<const fem::Function<T, U>>>& u,
         double t);
