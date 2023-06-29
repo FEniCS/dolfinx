@@ -15,7 +15,7 @@ import dolfinx.la
 from dolfinx.mesh import (CellType, GhostMode, create_unit_cube, create_unit_square)
 from mpi4py import MPI
 
-from dolfinx import default_real_type
+from dolfinx import default_real_type, default_scalar_type
 
 
 @pytest.mark.parametrize("mesh", [create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.none),
@@ -68,7 +68,7 @@ def test_gradient_interpolation(cell_type, p, q):
     # NB do not 'finalize' G
 
     # Vector for 'u' needs additional ghosts defined in columns of G
-    uvec = dolfinx.la.vector(G.index_map(1), dtype=default_real_type)
+    uvec = dolfinx.la.vector(G.index_map(1), dtype=default_scalar_type)
     u = Function(V, uvec)
     u.interpolate(lambda x: 2 * x[0]**p + 3 * x[1]**p)
 
