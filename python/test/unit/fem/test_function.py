@@ -171,7 +171,7 @@ def test_interpolation_rank1(W):
     assert x.min()[1] == 1.0
 
     num_vertices = W.mesh.topology.index_map(0).size_global
-    assert round(w.x.norm(la.Norm.l1) - 3 * num_vertices, 7) == 0
+    assert round(w.x.norm(la.Norm.l1) - 6 * num_vertices, 7) == 0
 
 
 @pytest.mark.parametrize("xtype", [np.float64])
