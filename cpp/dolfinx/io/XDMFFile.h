@@ -138,7 +138,7 @@ public:
   /// @param[in] t Time stamp to associate with the `Function`.
   /// @param[in] mesh_xpath XPath for a Grid under which Function will
   /// be inserted/
-  template <dolfinx::scalar T, std::floating_point U>
+  template <dolfinx::scalar T, std::floating_point U = scalar_value_type_t<T>>
   void write_function(const fem::Function<T, U>& u, double t,
                       std::string mesh_xpath
                       = "/Xdmf/Domain/Grid[@GridType='Uniform'][1]");
