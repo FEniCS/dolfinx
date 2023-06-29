@@ -185,7 +185,7 @@ template <std::floating_point T>
 constexpr bool point_in_bbox(const std::array<T, 6>& b, std::span<const T, 3> x)
 {
   assert(b.size() == 6);
-  constexpr T rtol = 1e-14;
+  constexpr T rtol = 1.0e2 * std::numeric_limits<T>::epsilon();
   bool in = true;
   for (std::size_t i = 0; i < 3; i++)
   {
@@ -203,7 +203,7 @@ constexpr bool point_in_bbox(const std::array<T, 6>& b, std::span<const T, 3> x)
 template <std::floating_point T>
 constexpr bool bbox_in_bbox(std::span<const T, 6> a, std::span<const T, 6> b)
 {
-  constexpr T rtol = 1e-14;
+  constexpr T rtol = 1.0e2 * std::numeric_limits<T>::epsilon();
   auto a0 = a.template subspan<0, 3>();
   auto a1 = a.template subspan<3, 3>();
   auto b0 = b.template subspan<0, 3>();
@@ -511,7 +511,7 @@ std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
     return -1;
   else
   {
-    constexpr T eps2 = 1e-20;
+    constexpr T eps2 = 1.e2 * std::numeric_limits<T>::epsilon();
     const mesh::Geometry<T>& geometry = mesh.geometry();
     std::span<const T> geom_dofs = geometry.x();
     auto x_dofmap = geometry.dofmap();
@@ -618,7 +618,7 @@ graph::AdjacencyList<std::int32_t> compute_colliding_cells(
   std::vector<std::int32_t> offsets = {0};
   offsets.reserve(candidate_cells.num_nodes() + 1);
   std::vector<std::int32_t> colliding_cells;
-  constexpr T eps2 = 1e-12;
+  constexpr T eps2 = 1.e2 * std::numeric_limits<T>::epsilon();
   const int tdim = mesh.topology()->dim();
   for (std::int32_t i = 0; i < candidate_cells.num_nodes(); i++)
   {
