@@ -49,7 +49,7 @@ std::int64_t local_to_global(std::int32_t local_index,
 /// @param mesh
 /// @param local_edge_to_new_vertex
 /// @return array of points
-template <typename T>
+template <std::floating_point T>
 std::pair<std::vector<T>, std::array<std::size_t, 2>> create_new_geometry(
     const mesh::Mesh<T>& mesh,
     const std::map<std::int32_t, std::int64_t>& local_edge_to_new_vertex)
@@ -142,7 +142,7 @@ void update_logical_edgefunction(
 /// @return (0) map from local edge index to new vertex global index,
 /// (1) the coordinates of the new vertices (row-major storage) and (2)
 /// the shape of the new coordinates.
-template <typename T>
+template <std::floating_point T>
 std::tuple<std::map<std::int32_t, std::int64_t>, std::vector<T>,
            std::array<std::size_t, 2>>
 create_new_vertices(MPI_Comm comm,
@@ -270,7 +270,7 @@ create_new_vertices(MPI_Comm comm,
 /// @param[in] redistribute Call graph partitioner if true
 /// @param[in] ghost_mode None or shared_facet
 /// @return New mesh
-template <typename T>
+template <std::floating_point T>
 mesh::Mesh<T> partition(const mesh::Mesh<T>& old_mesh,
                         const graph::AdjacencyList<std::int64_t>& cell_topology,
                         std::span<const T> new_coords,

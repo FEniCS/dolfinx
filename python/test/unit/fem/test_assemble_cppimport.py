@@ -127,7 +127,7 @@ PYBIND11_MODULE(eigen_csr, m)
 
     A1 = assemble_matrix(a, [bc])
     A1.assemble()
-    A2 = assemble_csr_matrix(a, [bc])
+    A2 = assemble_csr_matrix(a._cpp_object, [bc._cpp_object])
     assert np.isclose(A1.norm(), scipy.sparse.linalg.norm(A2))
 
     A1.destroy()
@@ -150,7 +150,16 @@ cfg['libraries'] = {dolfinx_pc["libraries"]}
 cfg['library_dirs'] = {dolfinx_pc["library_dirs"]}
 %>
 """
-        dtype = "double" if dolfinx.default_scalar_type == np.float64 else "std::complex<double>"
+        if dolfinx.default_scalar_type == np.float32:
+            dtype = "float"
+        elif dolfinx.default_scalar_type == np.float64:
+            dtype = "double"
+        elif dolfinx.default_scalar_type == np.complex64:
+            dtype = "std::complex<float>"
+        elif dolfinx.default_scalar_type == np.complex128:
+            dtype = "std::complex<double>"
+        else:
+            raise RuntimeError("Unknown scalar type")
 
         bs = [a_form.function_spaces[0].dofmap.index_map_bs,
               a_form.function_spaces[1].dofmap.index_map_bs]
@@ -197,5 +206,5 @@ PYBIND11_MODULE(assemble_csr, m)
     a = form(ufl.inner(ufl.grad(u[0]), ufl.grad(v[0])) * ufl.dx)
 
     module = compile_assemble_csr_assembler_module(a)
-    A = module.assemble_matrix_bs(a, [])
+    A = module.assemble_matrix_bs(a._cpp_object, [])
     assert np.isclose(A.squared_norm(), 1743.3479507505413)

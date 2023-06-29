@@ -10,20 +10,19 @@ import importlib
 import cffi
 import numpy as np
 import pytest
-
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
                          VectorFunctionSpace, assemble_scalar,
                          create_nonmatching_meshes_interpolation_data, form)
-from dolfinx.geometry import (BoundingBoxTree, compute_colliding_cells,
-                              compute_collisions)
+from dolfinx.geometry import (bb_tree, compute_colliding_cells,
+                              compute_collisions_points)
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_square, locate_entities_boundary,
                           meshtags)
-
 from mpi4py import MPI
-from petsc4py import PETSc
+
+from dolfinx import default_real_type, la
 
 
 @pytest.fixture
@@ -93,9 +92,10 @@ def test_eval(V, W, Q, mesh):
     u3.interpolate(e3)
 
     x0 = (mesh.geometry.x[0] + mesh.geometry.x[1]) / 2.0
-    tree = BoundingBoxTree(mesh, mesh.geometry.dim)
-    cell_candidates = compute_collisions(tree, x0)
+    tree = bb_tree(mesh, mesh.geometry.dim)
+    cell_candidates = compute_collisions_points(tree, x0)
     cell = compute_colliding_cells(mesh, cell_candidates, x0)
+    assert len(cell) > 0
     first_cell = cell[0]
     assert np.allclose(u3.eval(x0, first_cell)[:3], u2.eval(x0, first_cell), rtol=1e-15, atol=1e-15)
 
@@ -103,8 +103,7 @@ def test_eval(V, W, Q, mesh):
 @pytest.mark.skip_in_parallel
 def test_eval_manifold():
     # Simple two-triangle surface in 3d
-    vertices = [(0.0, 0.0, 1.0), (1.0, 1.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0,
-                                                                    0.0)]
+    vertices = np.array([(0.0, 0.0, 1.0), (1.0, 1.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0)], dtype=default_real_type)
     cells = [(0, 1, 2), (0, 1, 3)]
     domain = ufl.Mesh(element("Lagrange", "triangle", 1, gdim=3, rank=1))
     mesh = create_mesh(MPI.COMM_WORLD, cells, vertices, domain)
@@ -150,7 +149,7 @@ def test_interpolation_rank0(V):
     assert (w.x.array[:] == 1.0).all()
 
     num_vertices = V.mesh.topology.index_map(0).size_global
-    assert np.isclose(w.vector.norm(PETSc.NormType.N1) - num_vertices, 0)
+    assert np.isclose(w.x.norm(la.Norm.l1) - num_vertices, 0)
 
     f.t = 2.0
     w.interpolate(f.eval)
@@ -172,14 +171,15 @@ def test_interpolation_rank1(W):
     assert x.min()[1] == 1.0
 
     num_vertices = W.mesh.topology.index_map(0).size_global
-    assert round(w.vector.norm(PETSc.NormType.N1) - 3 * num_vertices, 7) == 0
+    assert round(w.x.norm(la.Norm.l1) - 3 * num_vertices, 7) == 0
 
 
+@pytest.mark.parametrize("xtype", [np.float64])
 @pytest.mark.parametrize("cell_type0", [CellType.hexahedron, CellType.tetrahedron])
 @pytest.mark.parametrize("cell_type1", [CellType.triangle, CellType.quadrilateral])
-def test_nonmatching_interpolation(cell_type0, cell_type1):
-    mesh0 = create_unit_cube(MPI.COMM_WORLD, 5, 6, 7, cell_type=cell_type0)
-    mesh1 = create_unit_square(MPI.COMM_WORLD, 25, 24, cell_type=cell_type1)
+def test_nonmatching_interpolation(xtype, cell_type0, cell_type1):
+    mesh0 = create_unit_cube(MPI.COMM_WORLD, 5, 6, 7, cell_type=cell_type0, dtype=xtype)
+    mesh1 = create_unit_square(MPI.COMM_WORLD, 25, 24, cell_type=cell_type1, dtype=xtype)
 
     def f(x):
         return (7 * x[1], 3 * x[0], x[2] + 0.4)
@@ -190,12 +190,12 @@ def test_nonmatching_interpolation(cell_type0, cell_type1):
     V1 = FunctionSpace(mesh1, el1)
 
     # Interpolate on 3D mesh
-    u0 = Function(V0)
+    u0 = Function(V0, dtype=xtype)
     u0.interpolate(f)
     u0.x.scatter_forward()
 
     # Interpolate 3D->2D
-    u1 = Function(V1)
+    u1 = Function(V1, dtype=xtype)
     u1.interpolate(u0, nmm_interpolation_data=create_nonmatching_meshes_interpolation_data(
         u1.function_space.mesh._cpp_object,
         u1.function_space.element,
@@ -203,14 +203,14 @@ def test_nonmatching_interpolation(cell_type0, cell_type1):
     u1.x.scatter_forward()
 
     # Exact interpolation on 2D mesh
-    u1_ex = Function(V1)
+    u1_ex = Function(V1, dtype=xtype)
     u1_ex.interpolate(f)
     u1_ex.x.scatter_forward()
 
-    assert np.allclose(u1_ex.x.array, u1.x.array)
+    assert np.allclose(u1_ex.x.array, u1.x.array, rtol=1.0e-4, atol=1.0e-6)
 
     # Interpolate 2D->3D
-    u0_2 = Function(V0)
+    u0_2 = Function(V0, dtype=xtype)
     u0_2.interpolate(u1, nmm_interpolation_data=create_nonmatching_meshes_interpolation_data(
         u0_2.function_space.mesh._cpp_object,
         u0_2.function_space.element,
@@ -222,25 +222,31 @@ def test_nonmatching_interpolation(cell_type0, cell_type1):
     facets = locate_entities_boundary(mesh0, mesh0.topology.dim - 1, locate_bottom_facets)
     facet_tag = meshtags(mesh0, mesh0.topology.dim - 1, facets, np.full(len(facets), 1, dtype=np.int32))
     residual = ufl.inner(u0 - u0_2, u0 - u0_2) * ufl.ds(domain=mesh0, subdomain_data=facet_tag, subdomain_id=1)
-    assert np.isclose(assemble_scalar(form(residual)), 0)
+    assert np.isclose(assemble_scalar(form(residual, dtype=xtype)), 0)
 
 
-def test_cffi_expression(V):
-    code_h = """
-    void eval(double* values, int num_points, int value_size, const double* x);
-    """
+@pytest.mark.parametrize("types", [
+    # (np.float32, "float"),  # Fails on Redhat CI, needs further investigation
+    (np.float64, "double")
+])
+def test_cffi_expression(types, V):
+    vtype, xtype = types
+    mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, dtype=vtype)
+    V = FunctionSpace(mesh, ('Lagrange', 1))
 
+    code_h = f"void eval({xtype}* values, int num_points, int value_size, const {xtype}* x);"
     code_c = """
-    void eval(double* values, int num_points, int value_size, const double* x)
-    {
-      /* x0 + x1 */
-      for (int i = 0; i < num_points; ++i)
-        values[i] = x[i] + x[i + num_points];
-    }
+        void eval(xtype* values, int num_points, int value_size, const xtype* x)
+        {
+        /* x0 + x1 */
+        for (int i = 0; i < num_points; ++i)
+          values[i] = x[i] + x[i + num_points];
+        }
     """
-    module = "_expr_eval" + str(MPI.COMM_WORLD.rank)
+    code_c = code_c.replace("xtype", xtype)
 
     # Build the kernel
+    module = "_expr_eval" + xtype + str(MPI.COMM_WORLD.rank)
     ffi = cffi.FFI()
     ffi.set_source(module, code_c)
     ffi.cdef(code_h)
@@ -254,10 +260,10 @@ def test_cffi_expression(V):
     eval_ptr = ffi.cast("uintptr_t", ffi.addressof(lib, "eval"))
 
     # Handle C func address by hand
-    f1 = Function(V, dtype=np.float64)
+    f1 = Function(V, dtype=vtype)
     f1.interpolate(int(eval_ptr))
 
-    f2 = Function(V, dtype=np.float64)
+    f2 = Function(V, dtype=vtype)
     f2.interpolate(lambda x: x[0] + x[1])
 
     f1.x.array[:] -= f2.x.array

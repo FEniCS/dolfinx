@@ -6,15 +6,12 @@
 
 #include "array.h"
 #include "caster_mpi.h"
-#include "caster_petsc.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/la/Vector.h>
-#include <dolfinx/la/petsc.h>
 #include <dolfinx/la/utils.h>
 #include <memory>
-#include <petsc4py/petsc4py.h>
 #include <pybind11/complex.h>
 #include <pybind11/numpy.h>
 #include <pybind11/operators.h>
@@ -92,8 +89,7 @@ void declare_objects(py::module& m, const std::string& type)
       .def(py::init([](const dolfinx::la::SparsityPattern& p,
                        dolfinx::la::BlockMode bm)
                     { return dolfinx::la::MatrixCSR<T>(p, bm); }),
-           py::arg("p"),
-           py::arg("block_mode") = dolfinx::la::BlockMode::compact)
+           py::arg("p"), py::arg("block_mode"))
       .def_property_readonly("dtype", [](const dolfinx::la::MatrixCSR<T>& self)
                              { return py::dtype::of<T>(); })
       .def_property_readonly("block_size",
@@ -171,75 +167,12 @@ void declare_objects(py::module& m, const std::string& type)
       .def("finalize_end", &dolfinx::la::MatrixCSR<T>::finalize_end);
 }
 
-void petsc_module(py::module& m)
-{
-  m.def("create_vector",
-        py::overload_cast<const dolfinx::common::IndexMap&, int>(
-            &dolfinx::la::petsc::create_vector),
-        py::return_value_policy::take_ownership, py::arg("index_map"),
-        py::arg("bs"), "Create a ghosted PETSc Vec for index map.");
-  m.def(
-      "create_vector_wrap",
-      [](dolfinx::la::Vector<PetscScalar>& x)
-      { return dolfinx::la::petsc::create_vector_wrap(x); },
-      py::return_value_policy::take_ownership, py::arg("x"),
-      "Create a ghosted PETSc Vec that wraps a DOLFINx Vector");
-  m.def(
-      "create_matrix",
-      [](dolfinx_wrappers::MPICommWrapper comm,
-         const dolfinx::la::SparsityPattern& p, const std::string& type)
-      { return dolfinx::la::petsc::create_matrix(comm.get(), p, type); },
-      py::return_value_policy::take_ownership, py::arg("comm"), py::arg("p"),
-      py::arg("type") = std::string(),
-      "Create a PETSc Mat from sparsity pattern.");
-
-  // TODO: check reference counting for index sets
-  m.def("create_index_sets", &dolfinx::la::petsc::create_index_sets,
-        py::arg("maps"), py::return_value_policy::take_ownership);
-
-  m.def(
-      "scatter_local_vectors",
-      [](Vec x,
-         const std::vector<py::array_t<PetscScalar, py::array::c_style>>& x_b,
-         const std::vector<std::pair<
-             std::reference_wrapper<const dolfinx::common::IndexMap>, int>>&
-             maps)
-      {
-        std::vector<std::span<const PetscScalar>> _x_b;
-        for (auto& array : x_b)
-          _x_b.emplace_back(array.data(), array.size());
-        dolfinx::la::petsc::scatter_local_vectors(x, _x_b, maps);
-      },
-      py::arg("x"), py::arg("x_b"), py::arg("maps"),
-      "Scatter the (ordered) list of sub vectors into a block "
-      "vector.");
-  m.def(
-      "get_local_vectors",
-      [](const Vec x,
-         const std::vector<std::pair<
-             std::reference_wrapper<const dolfinx::common::IndexMap>, int>>&
-             maps)
-      {
-        std::vector<std::vector<PetscScalar>> vecs
-            = dolfinx::la::petsc::get_local_vectors(x, maps);
-        std::vector<py::array> ret;
-        for (std::vector<PetscScalar>& v : vecs)
-          ret.push_back(dolfinx_wrappers::as_pyarray(std::move(v)));
-        return ret;
-      },
-      py::arg("x"), py::arg("maps"),
-      "Gather an (ordered) list of sub vectors from a block vector.");
-}
-
 } // namespace
 
 namespace dolfinx_wrappers
 {
 void la(py::module& m)
 {
-  py::module petsc_mod
-      = m.def_submodule("petsc", "PETSc-specific linear algebra");
-  petsc_module(petsc_mod);
 
   py::enum_<PyInsertMode>(m, "InsertMode")
       .value("add", PyInsertMode::add)

@@ -13,6 +13,7 @@
 #include <filesystem>
 #include <memory>
 #include <string>
+#include <variant>
 
 namespace pugi
 {
@@ -24,7 +25,7 @@ namespace dolfinx::fem
 {
 template <std::floating_point T>
 class CoordinateElement;
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 class Function;
 } // namespace dolfinx::fem
 
@@ -86,7 +87,8 @@ public:
   /// Save Mesh
   /// @param[in] mesh
   /// @param[in] xpath XPath where Mesh Grid will be written
-  void write_mesh(const mesh::Mesh<double>& mesh,
+  template <std::floating_point U>
+  void write_mesh(const mesh::Mesh<U>& mesh,
                   std::string xpath = "/Xdmf/Domain");
 
   /// Save Geometry
@@ -120,7 +122,8 @@ public:
   /// @param[in] name Name of the mesh (Grid)
   /// @param[in] xpath XPath where Mesh Grid data is located
   /// @return points on each process
-  std::pair<std::vector<double>, std::array<std::size_t, 2>>
+  std::pair<std::variant<std::vector<float>, std::vector<double>>,
+            std::array<std::size_t, 2>>
   read_geometry_data(std::string name,
                      std::string xpath = "/Xdmf/Domain") const;
 
@@ -131,23 +134,25 @@ public:
   read_cell_type(std::string grid_name, std::string xpath = "/Xdmf/Domain");
 
   /// Write Function
-  /// @param[in] u The Function to write to file
-  /// @param[in] t The time stamp to associate with the Function
+  /// @param[in] u Function to write to file.
+  /// @param[in] t Time stamp to associate with the `Function`.
   /// @param[in] mesh_xpath XPath for a Grid under which Function will
-  /// be inserted
-  void write_function(const fem::Function<double, double>& u, double t,
+  /// be inserted/
+  template <dolfinx::scalar T, std::floating_point U>
+  void write_function(const fem::Function<T, U>& u, double t,
                       std::string mesh_xpath
                       = "/Xdmf/Domain/Grid[@GridType='Uniform'][1]");
 
-  /// Write Function
-  /// @param[in] u The Function to write to file
-  /// @param[in] t The time stamp to associate with the Function
-  /// @param[in] mesh_xpath XPath for a Grid under which Function will
-  /// be inserted
-  void write_function(const fem::Function<std::complex<double>, double>& u,
-                      double t,
-                      std::string mesh_xpath
-                      = "/Xdmf/Domain/Grid[@GridType='Uniform'][1]");
+  /// Write MeshTags
+  /// @param[in] meshtags
+  /// @param[in] x Mesh geometry
+  /// @param[in] geometry_xpath XPath where Geometry is already stored
+  /// in file
+  /// @param[in] xpath XPath where MeshTags Grid will be inserted
+  void write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
+                      const mesh::Geometry<float>& x,
+                      std::string geometry_xpath,
+                      std::string xpath = "/Xdmf/Domain");
 
   /// Write MeshTags
   /// @param[in] meshtags

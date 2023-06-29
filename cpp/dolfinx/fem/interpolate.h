@@ -24,7 +24,7 @@
 
 namespace dolfinx::fem
 {
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 class Function;
 
 /// @brief Compute the evaluation points in the physical space at which
@@ -88,7 +88,7 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
     {
       for (std::size_t j = 0; j < gdim; ++j)
       {
-        double acc = 0;
+        T acc = 0;
         for (std::size_t k = 0; k < num_dofs_g; ++k)
           acc += phi(p, k) * coordinate_dofs[k * gdim + j];
         x[j * (cells.size() * Xshape[0]) + c * Xshape[0] + p] = acc;
@@ -113,7 +113,7 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
 /// fem::interpolation_coords.
 /// @tparam T Scalar type
 /// @tparam U Mesh geometry type
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 void interpolate(Function<T, U>& u, std::span<const T> f,
                  std::array<std::size_t, 2> fshape,
                  std::span<const std::int32_t> cells);
@@ -140,7 +140,7 @@ namespace impl
 /// @pre It is required that src_ranks are sorted.
 /// @note dest_ranks can contain repeated entries
 /// @note dest_ranks might contain -1 (no process owns the point)
-template <typename T>
+template <dolfinx::scalar T>
 void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
                     std::span<const std::int32_t> dest_ranks,
                     std::span<const T> send_values,
@@ -264,7 +264,7 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
 /// f1(x0), f0(x1), f1(x1), ...)
 /// @param[out] coeffs The degrees of freedom to compute
 /// @param[in] bs The block size
-template <typename U, typename V, typename T>
+template <typename U, typename V, dolfinx::scalar T>
 void interpolation_apply(const U& Pi, const V& data, std::span<T> coeffs,
                          int bs)
 {
@@ -313,7 +313,7 @@ void interpolation_apply(const U& Pi, const V& data, std::span<T> coeffs,
 /// @pre The functions `u1` and `u0` must share the same mesh and the
 /// elements must share the same basis function map. Neither is checked
 /// by the function.
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
                           std::span<const std::int32_t> cells)
 {
@@ -401,7 +401,7 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
 /// @param[in] cells The cells to interpolate on
 /// @pre The functions `u1` and `u0` must share the same mesh. This is
 /// not checked by the function.
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
                                   std::span<const std::int32_t> cells)
 {
@@ -630,7 +630,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
   }
 }
 
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 void interpolate_nonmatching_meshes(
     Function<T, U>& u, const Function<T, U>& v,
     std::span<const std::int32_t> cells,
@@ -713,7 +713,7 @@ void interpolate_nonmatching_meshes(
 //----------------------------------------------------------------------------
 } // namespace impl
 
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 void interpolate(Function<T, U>& u, std::span<const T> f,
                  std::array<std::size_t, 2> fshape,
                  std::span<const std::int32_t> cells)
@@ -1052,7 +1052,7 @@ create_nonmatching_meshes_interpolation_data(const mesh::Mesh<T>& mesh0,
 /// @param[in] nmm_interpolation_data Auxiliary data to interpolate on
 /// nonmatching meshes. This data can be generated with
 /// create_nonmatching_meshes_interpolation_data (optional).
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 void interpolate(
     Function<T, U>& u, const Function<T, U>& v,
     std::span<const std::int32_t> cells,

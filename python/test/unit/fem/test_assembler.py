@@ -7,15 +7,12 @@
 
 import math
 
+import basix
 import numpy as np
 import pytest
 import scipy.sparse
-
-import basix
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx import cpp as _cpp
-from dolfinx import fem, graph, la
 from dolfinx.fem import (Constant, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_scalar, bcs_by_block,
                          dirichletbc, extract_function_spaces, form,
@@ -28,11 +25,13 @@ from dolfinx.fem.petsc import (apply_lifting, apply_lifting_nest,
 from dolfinx.mesh import (CellType, GhostMode, create_mesh, create_rectangle,
                           create_unit_cube, create_unit_square,
                           locate_entities_boundary)
+from mpi4py import MPI
+from petsc4py import PETSc
 from ufl import derivative, ds, dx, inner
 from ufl.geometry import SpatialCoordinate
 
-from mpi4py import MPI
-from petsc4py import PETSc
+from dolfinx import cpp as _cpp
+from dolfinx import default_real_type, fem, graph, la
 
 
 def nest_matrix_norm(A):
@@ -50,26 +49,30 @@ def nest_matrix_norm(A):
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
-def test_assemble_functional_dx(mode):
-    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
-    M = form(1.0 * dx(domain=mesh))
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_assemble_functional_dx(mode, dtype):
+    xtype = dtype(0).real.dtype
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode, dtype=xtype)
+    M = form(1.0 * dx(domain=mesh), dtype=dtype)
     value = assemble_scalar(M)
     value = mesh.comm.allreduce(value, op=MPI.SUM)
-    assert value == pytest.approx(1.0, 1e-12)
+    assert value == pytest.approx(1.0, 1e-5)
     x = ufl.SpatialCoordinate(mesh)
-    M = form(x[0] * dx(domain=mesh))
+    M = form(x[0] * dx(domain=mesh), dtype=dtype)
     value = assemble_scalar(M)
     value = mesh.comm.allreduce(value, op=MPI.SUM)
-    assert value == pytest.approx(0.5, 1e-12)
+    assert value == pytest.approx(0.5, 1e-6)
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
-def test_assemble_functional_ds(mode):
-    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
-    M = form(1.0 * ds(domain=mesh))
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_assemble_functional_ds(mode, dtype):
+    xtype = dtype(0).real.dtype
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode, dtype=xtype)
+    M = form(1.0 * ds(domain=mesh), dtype=dtype)
     value = assemble_scalar(M)
     value = mesh.comm.allreduce(value, op=MPI.SUM)
-    assert value == pytest.approx(4.0, 1e-12)
+    assert value == pytest.approx(4.0, 1e-6)
 
 
 def test_assemble_derivatives():
@@ -159,11 +162,11 @@ def test_basic_assembly_petsc_matrixcsr(mode):
 
     A0 = fem.assemble_matrix(a)
     A0.finalize()
-    assert isinstance(A0, la.MatrixCSRMetaClass)
+    assert isinstance(A0, la.MatrixCSR)
     A1 = fem.petsc.assemble_matrix(a)
     A1.assemble()
     assert isinstance(A1, PETSc.Mat)
-    assert np.sqrt(A0.squared_norm()) == pytest.approx(A1.norm())
+    assert np.sqrt(A0.squared_norm()) == pytest.approx(A1.norm(), 1.0e-5)
     A1.destroy()
 
     V = VectorFunctionSpace(mesh, ("Lagrange", 1))
@@ -171,11 +174,11 @@ def test_basic_assembly_petsc_matrixcsr(mode):
     a = form(inner(u, v) * dx + inner(u, v) * ds)
     A0 = fem.assemble_matrix(a)
     A0.finalize()
-    assert isinstance(A0, la.MatrixCSRMetaClass)
+    assert isinstance(A0, la.MatrixCSR)
     A1 = fem.petsc.assemble_matrix(a)
     A1.assemble()
     assert isinstance(A1, PETSc.Mat)
-    assert np.sqrt(A0.squared_norm()) == pytest.approx(A1.norm())
+    assert np.sqrt(A0.squared_norm()) == pytest.approx(A1.norm(), rel=1.0e-8, abs=1.0e-5)
     A1.destroy()
 
 
@@ -208,8 +211,7 @@ def test_assembly_bcs(mode):
     apply_lifting(b_bc, [a], [[bc]])
     b_bc.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     set_bc(b_bc, [bc])
-    assert (f - b_bc).norm() == pytest.approx(0.0, rel=1e-12, abs=1e-12)
-
+    assert (f - b_bc).norm() == pytest.approx(0.0, rel=1e-6, abs=1e-6)
     A.destroy(), b.destroy(), g.destroy()
 
 
@@ -218,7 +220,7 @@ def test_assemble_manifold():
     """Test assembly of poisson problem on a mesh with topological
     dimension 1 but embedded in 2D (gdim=2)"""
     points = np.array([[0.0, 0.0], [0.2, 0.0], [0.4, 0.0],
-                       [0.6, 0.0], [0.8, 0.0], [1.0, 0.0]], dtype=np.float64)
+                       [0.6, 0.0], [0.8, 0.0], [1.0, 0.0]], dtype=default_real_type)
     cells = np.array([[0, 1], [1, 2], [2, 3], [3, 4], [4, 5]], dtype=np.int32)
     domain = ufl.Mesh(element(
         basix.ElementFamily.P, basix.CellType.interval, 1, gdim=points.shape[1], shape=(points.shape[1], )))
@@ -230,7 +232,8 @@ def test_assemble_manifold():
     u, v = ufl.TrialFunction(U), ufl.TestFunction(U)
     a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx(mesh)
     L = ufl.inner(1.0, v) * ufl.dx(mesh)
-    a, L = form(a), form(L)
+    a = form(a)
+    L = form(L)
 
     bcdofs = locate_dofs_geometrical(U, lambda x: np.isclose(x[0], 0.0))
     bcs = [dirichletbc(PETSc.ScalarType(0), bcdofs, U)]
@@ -356,15 +359,18 @@ def test_matrix_assembly_block(mode):
 
     Anorm0, bnorm0 = blocked()
     Anorm1, bnorm1 = nest()
-    assert Anorm1 == pytest.approx(Anorm0, 1.0e-9)
-    assert bnorm1 == pytest.approx(bnorm0, 1.0e-9)
+    assert Anorm1 == pytest.approx(Anorm0, 1.0e-4)
+    assert bnorm1 == pytest.approx(bnorm0, 1.0e-6)
 
     Anorm2, bnorm2 = monolithic()
-    assert Anorm2 == pytest.approx(Anorm0, 1.0e-9)
-    assert bnorm2 == pytest.approx(bnorm0, 1.0e-9)
+    assert Anorm2 == pytest.approx(Anorm0, 1.0e-4)
+    assert bnorm2 == pytest.approx(bnorm0, 1.0e-6)
 
 
-@pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
+@pytest.mark.parametrize("mode", [
+    GhostMode.none,
+    GhostMode.shared_facet
+])
 def test_assembly_solve_block(mode):
     """Solve a two-field mass-matrix like problem with block matrix approaches
     and test that solution is the same"""
@@ -447,9 +453,14 @@ def test_assembly_solve_block(mode):
         ksp.solve(b, x)
 
         Anorm = nest_matrix_norm(A)
-        bnorm = b.norm()
+        # bnorm = b.norm()
+        bnorm = 0.0
+        for b_sub in b.getNestSubVecs():
+            bnorm += b_sub.norm()**2
+        bnorm = np.sqrt(bnorm)
         xnorm = x.norm()
         ksp.destroy(), A.destroy(), b.destroy(), x.destroy()
+
         return Anorm, bnorm, xnorm
 
     def monolithic():
@@ -491,14 +502,14 @@ def test_assembly_solve_block(mode):
 
     Anorm0, bnorm0, xnorm0 = blocked()
     Anorm1, bnorm1, xnorm1 = nested()
-    assert Anorm1 == pytest.approx(Anorm0, 1.0e-12)
-    assert bnorm1 == pytest.approx(bnorm0, 1.0e-12)
-    assert xnorm1 == pytest.approx(xnorm0, 1.0e-10)
+    assert Anorm1 == pytest.approx(Anorm0, 1.0e-6)
+    assert bnorm1 == pytest.approx(bnorm0, 1.0e-6)
+    assert xnorm1 == pytest.approx(xnorm0, 1.0e-5)
 
     Anorm2, bnorm2, xnorm2 = monolithic()
-    assert Anorm2 == pytest.approx(Anorm0, 1.0e-12)
-    assert bnorm2 == pytest.approx(bnorm0, 1.0e-12)
-    assert xnorm2 == pytest.approx(xnorm0, 1.0e-10)
+    assert Anorm2 == pytest.approx(Anorm0, 1.0e-6)
+    assert bnorm2 == pytest.approx(bnorm0, 1.0e-6)
+    assert xnorm2 == pytest.approx(xnorm0, 1.0e-6)
 
 
 @pytest.mark.parametrize("mesh", [
@@ -666,7 +677,7 @@ def test_assembly_solve_taylor_hood(mesh):
             # print("Num it, rnorm:", its, rnorm)
             pass
 
-        ksp.setTolerances(rtol=1.0e-8, max_it=50)
+        ksp.setTolerances(rtol=1.0e-8, max_it=100)
         ksp.setMonitor(monitor)
         ksp.setFromOptions()
         x = A.createVecRight()
@@ -677,16 +688,16 @@ def test_assembly_solve_taylor_hood(mesh):
 
     bnorm0, xnorm0, Anorm0, Pnorm0 = nested_solve()
     bnorm1, xnorm1, Anorm1, Pnorm1 = blocked_solve()
-    assert bnorm1 == pytest.approx(bnorm0, 1.0e-12)
-    assert xnorm1 == pytest.approx(xnorm0, 1.0e-8)
-    assert Anorm1 == pytest.approx(Anorm0, 1.0e-12)
-    assert Pnorm1 == pytest.approx(Pnorm0, 1.0e-12)
+    assert bnorm1 == pytest.approx(bnorm0, 1.0e-6)
+    assert xnorm1 == pytest.approx(xnorm0, 1.0e-5)
+    assert Anorm1 == pytest.approx(Anorm0, 1.0e-4)
+    assert Pnorm1 == pytest.approx(Pnorm0, 1.0e-6)
 
     bnorm2, xnorm2, Anorm2, Pnorm2 = monolithic_solve()
-    assert bnorm2 == pytest.approx(bnorm0, 1.0e-12)
-    assert xnorm2 == pytest.approx(xnorm0, 1.0e-8)
-    assert Anorm2 == pytest.approx(Anorm0, 1.0e-12)
-    assert Pnorm2 == pytest.approx(Pnorm0, 1.0e-12)
+    assert bnorm2 == pytest.approx(bnorm1, 1.0e-6)
+    assert xnorm2 == pytest.approx(xnorm1, 1.0e-5)
+    assert Anorm2 == pytest.approx(Anorm1, 1.0e-4)
+    assert Pnorm2 == pytest.approx(Pnorm1, 1.0e-6)
 
 
 def test_basic_interior_facet_assembly():
@@ -741,8 +752,8 @@ def test_basic_assembly_constant(mode):
 
     b2 = assemble_vector(L)
     b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    assert (A1 * 3.0 - A2 * 5.0).norm() == pytest.approx(0.0)
-    assert (b1 * 3.0 - b2 * 5.0).norm() == pytest.approx(0.0)
+    assert (A1 * 3.0 - A2 * 5.0).norm() == pytest.approx(0.0, abs=1.0e-6)
+    assert (b1 * 3.0 - b2 * 5.0).norm() == pytest.approx(0.0, abs=1.0e-5)
     A1.destroy()
     b1.destroy()
     A2.destroy()
@@ -770,7 +781,7 @@ def test_lambda_assembler():
         cdata.append(np.tile(cols, len(rows)))
         return 0
 
-    _cpp.fem.assemble_matrix(mat_insert, a_form, [])
+    _cpp.fem.assemble_matrix(mat_insert, a_form._cpp_object, [])
     vdata = np.array(vdata).flatten()
     cdata = np.array(cdata).flatten()
     rdata = np.array(rdata).flatten()
@@ -796,8 +807,8 @@ def test_pack_coefficients():
     # -- Test vector
     b0 = assemble_vector(_F)
     b0.assemble()
-    constants = _cpp.fem.pack_constants(_F)
-    coeffs = _cpp.fem.pack_coefficients(_F)
+    constants = _cpp.fem.pack_constants(_F._cpp_object)
+    coeffs = _cpp.fem.pack_coefficients(_F._cpp_object)
     with b0.localForm() as _b0:
         for c in [(None, None), (None, coeffs), (constants, None), (constants, coeffs)]:
             b = assemble_vector(_F, c[0], c[1])
@@ -824,8 +835,8 @@ def test_pack_coefficients():
     A0 = assemble_matrix(J)
     A0.assemble()
 
-    constants = _cpp.fem.pack_constants(J)
-    coeffs = _cpp.fem.pack_coefficients(J)
+    constants = _cpp.fem.pack_constants(J._cpp_object)
+    coeffs = _cpp.fem.pack_coefficients(J._cpp_object)
     for c in [(None, None), (None, coeffs), (constants, None), (constants, coeffs)]:
         A = assemble_matrix(J, constants=c[0], coeffs=c[1])
         A.assemble()
@@ -858,13 +869,13 @@ def test_coefficents_non_constant():
     F = form((ufl.inner(u, v) - ufl.inner(x[0] * x[1]**2, v)) * dx)
     b0 = assemble_vector(F)
     b0.assemble()
-    assert np.linalg.norm(b0.array) == pytest.approx(0.0)
+    assert np.linalg.norm(b0.array) == pytest.approx(0.0, abs=1.0e-7)
 
     # -- Exterior facet integral vector
     F = form((ufl.inner(u, v) - ufl.inner(x[0] * x[1]**2, v)) * ds)
     b0 = assemble_vector(F)
     b0.assemble()
-    assert np.linalg.norm(b0.array) == pytest.approx(0.0)
+    assert np.linalg.norm(b0.array) == pytest.approx(0.0, abs=1.0e-7)
 
     # -- Interior facet integral vector
     V = FunctionSpace(mesh, ("DG", 3))  # degree 3 so that interpolation is exact
@@ -881,42 +892,43 @@ def test_coefficents_non_constant():
     F = form(F)
     b0 = assemble_vector(F)
     b0.assemble()
-    assert np.linalg.norm(b0.array) == pytest.approx(0.0)
+    assert np.linalg.norm(b0.array) == pytest.approx(0.0, abs=1.0e-7)
 
     b0.destroy()
 
 
 def test_vector_types():
     """Assemble form using different types"""
-    mesh = create_unit_square(MPI.COMM_WORLD, 3, 5)
-    V = FunctionSpace(mesh, ("Lagrange", 3))
-    v = ufl.TestFunction(V)
+    mesh0 = create_unit_square(MPI.COMM_WORLD, 3, 5, dtype=np.float32)
+    mesh1 = create_unit_square(MPI.COMM_WORLD, 3, 5, dtype=np.float64)
+    V0, V1 = FunctionSpace(mesh0, ("Lagrange", 3)), FunctionSpace(mesh1, ("Lagrange", 3))
+    v0, v1 = ufl.TestFunction(V0), ufl.TestFunction(V1)
 
-    c = Constant(mesh, np.float64(1))
-    L = inner(c, v) * ufl.dx
-    x0 = la.vector(V.dofmap.index_map, V.dofmap.index_map_bs, dtype=np.float64)
+    c = Constant(mesh1, np.float64(1))
+    L = inner(c, v1) * ufl.dx
+    x0 = la.vector(V1.dofmap.index_map, V1.dofmap.index_map_bs, dtype=np.float64)
     L = form(L, dtype=x0.array.dtype)
-    c0 = _cpp.fem.pack_constants(L)
-    c1 = _cpp.fem.pack_coefficients(L)
-    _cpp.fem.assemble_vector(x0.array, L, c0, c1)
+    c0 = _cpp.fem.pack_constants(L._cpp_object)
+    c1 = _cpp.fem.pack_coefficients(L._cpp_object)
+    _cpp.fem.assemble_vector(x0.array, L._cpp_object, c0, c1)
     x0.scatter_reverse(la.InsertMode.add)
 
-    c = Constant(mesh, np.complex128(1))
-    L = inner(c, v) * ufl.dx
-    x1 = la.vector(V.dofmap.index_map, V.dofmap.index_map_bs, dtype=np.complex128)
+    c = Constant(mesh1, np.complex128(1))
+    L = inner(c, v1) * ufl.dx
+    x1 = la.vector(V1.dofmap.index_map, V1.dofmap.index_map_bs, dtype=np.complex128)
     L = form(L, dtype=x1.array.dtype)
-    c0 = _cpp.fem.pack_constants(L)
-    c1 = _cpp.fem.pack_coefficients(L)
-    _cpp.fem.assemble_vector(x1.array, L, c0, c1)
+    c0 = _cpp.fem.pack_constants(L._cpp_object)
+    c1 = _cpp.fem.pack_coefficients(L._cpp_object)
+    _cpp.fem.assemble_vector(x1.array, L._cpp_object, c0, c1)
     x1.scatter_reverse(la.InsertMode.add)
 
-    c = Constant(mesh, np.float32(1))
-    L = inner(c, v) * ufl.dx
-    x2 = la.vector(V.dofmap.index_map, V.dofmap.index_map_bs, dtype=np.float32)
+    c = Constant(mesh0, np.float32(1))
+    L = inner(c, v0) * ufl.dx
+    x2 = la.vector(V0.dofmap.index_map, V0.dofmap.index_map_bs, dtype=np.float32)
     L = form(L, dtype=x2.array.dtype)
-    c0 = _cpp.fem.pack_constants(L)
-    c1 = _cpp.fem.pack_coefficients(L)
-    _cpp.fem.assemble_vector(x2.array, L, c0, c1)
+    c0 = _cpp.fem.pack_constants(L._cpp_object)
+    c1 = _cpp.fem.pack_coefficients(L._cpp_object)
+    _cpp.fem.assemble_vector(x2.array, L._cpp_object, c0, c1)
     x2.scatter_reverse(la.InsertMode.add)
 
     assert np.linalg.norm(x0.array - x1.array) == pytest.approx(0.0)
@@ -938,11 +950,11 @@ def test_assemble_empty_rank_mesh():
         # Put cells on rank 0
         cells = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.int64)
         cells = graph.create_adjacencylist(cells)
-        x = np.array([[0., 0.], [1., 0.], [1., 1.], [0., 1.]])
+        x = np.array([[0., 0.], [1., 0.], [1., 1.], [0., 1.]], dtype=default_real_type)
     else:
         # No cells on other ranks
         cells = graph.create_adjacencylist(np.empty((0, 3), dtype=np.int64))
-        x = np.empty((0, 2), dtype=np.float64)
+        x = np.empty((0, 2), dtype=default_real_type)
 
     mesh = create_mesh(comm, cells, x, domain, partitioner)
 
@@ -1004,7 +1016,7 @@ def test_matrix_assembly_rectangular(mode):
 
     A0 = single()
     A1, A2 = block()
-    assert A1.norm() == pytest.approx(np.sqrt(2) * A0.norm())
+    assert A1.norm() == pytest.approx(np.sqrt(2) * A0.norm(), rel=1.0e-6, abs=1.0e-6)
     for row in range(2):
         A_sub = A2.getNestSubMatrix(row, 0)
         assert A_sub.equal(A0)

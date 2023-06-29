@@ -8,6 +8,7 @@
 
 #include <concepts>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/types.h>
 #include <filesystem>
 #include <functional>
 #include <memory>
@@ -20,7 +21,7 @@ class xml_document;
 
 namespace dolfinx::fem
 {
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 class Function;
 }
 
@@ -33,14 +34,15 @@ class Mesh;
 namespace dolfinx::io
 {
 
-/// Output of meshes and functions in VTK/ParaView format. Isoparametric
-/// meshes of arbitrary degree are supported. For finite element
-/// functions, cell-based (DG0) and Lagrange (point-based) functions can
-/// be saved. For vertex-based functions the output must be
-/// isoparametic, i.e. the geometry and the finite element functions
+/// @brief Output of meshes and functions in VTK/ParaView format.
+///
+/// Isoparametric meshes of arbitrary degree are supported. For finite
+/// element functions, cell-based (DG0) and Lagrange (point-based)
+/// functions can be saved. For vertex-based functions the output must
+/// be isoparametic, i.e. the geometry and the finite element functions
 /// must be defined using the same basis.
 ///
-/// @warning This format is not suitable to checkpointing
+/// @warning This format is not suitable for checkpointing.
 class VTKFile
 {
 public:
@@ -61,35 +63,26 @@ public:
   /// isoparametric cells.
   /// @param[in] mesh The Mesh to write to file
   /// @param[in] time Time parameter to associate with @p mesh
-  void write(const mesh::Mesh<double>& mesh, double time = 0.0);
+  template <typename U>
+  void write(const mesh::Mesh<U>& mesh, double time = 0.0);
 
-  /// Write finite elements function with an associated timestep
+  /// @brief Write finite elements function with an associated time
+  /// step.
   /// @param[in] u List of functions to write to file
   /// @param[in] t Time parameter to associate with @p u
   /// @pre All Functions in `u` must share the same mesh
   /// @pre All Functions in `u` with point-wise data must use the same
   /// element type (up to the block size) and the element must be
-  /// (discontinuous) Lagrange
+  /// (discontinuous) Lagrange.
   /// @pre Functions in `u` cannot be sub-Functions. Interpolate
-  /// sub-Functions before output
-  template <typename T>
-  void write(const std::vector<
-                 std::reference_wrapper<const fem::Function<T, double>>>& u,
-             double t)
-  {
-    write_functions(u, t);
-  }
+  /// sub-Functions before output.
+  template <dolfinx::scalar T,
+            std::floating_point U = dolfinx::scalar_value_type_t<T>>
+  void
+  write(const std::vector<std::reference_wrapper<const fem::Function<T, U>>>& u,
+        double t);
 
 private:
-  void write_functions(
-      const std::vector<
-          std::reference_wrapper<const fem::Function<double, double>>>& u,
-      double t);
-  void
-  write_functions(const std::vector<std::reference_wrapper<
-                      const fem::Function<std::complex<double>, double>>>& u,
-                  double t);
-
   std::unique_ptr<pugi::xml_document> _pvd_xml;
 
   std::filesystem::path _filename;

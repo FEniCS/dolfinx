@@ -19,7 +19,7 @@
 
 namespace dolfinx::fem
 {
-template <typename T>
+template <dolfinx::scalar T>
 class Constant;
 
 /// @brief Represents a mathematical expression evaluated at a
@@ -34,7 +34,8 @@ class Constant;
 ///
 /// @tparam T The scalar type
 /// @tparam U The mesh geometry scalar type
-template <typename T, std::floating_point U = dolfinx::scalar_value_type_t<T>>
+template <dolfinx::scalar T,
+          std::floating_point U = dolfinx::scalar_value_type_t<T>>
 class Expression
 {
 public:

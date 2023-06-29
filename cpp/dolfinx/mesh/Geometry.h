@@ -40,13 +40,13 @@ public:
   /// @param[in] index_map Index map associated with the geometry dofmap
   /// @param[in] dofmap The geometry (point) dofmap. For a cell, it
   /// gives the position in the point array of each local geometry node
-  /// @param[in] elements The elements that describes the cell geometry maps
+  /// @param[in] elements The elements that describes the cell geometry
+  /// maps
   /// @param[in] x The point coordinates. The shape is `(num_points, 3)`
   /// and the storage is row-major.
   /// @param[in] dim The geometric dimension (`0 < dim <= 3`).
   /// @param[in] input_global_indices The 'global' input index of each
-  /// point, commonly from a mesh input file. The type is
-  /// `std:vector<std::int64_t>`.
+  /// point, commonly from a mesh input file.
   template <std::convertible_to<std::vector<std::int32_t>> U,
             std::convertible_to<std::vector<T>> V,
             std::convertible_to<std::vector<std::int64_t>> W>
@@ -104,19 +104,22 @@ public:
   ///
   /// @return The flattened row-major geometry data, where the shape is
   /// (num_points, 3)
-  std::span<const T> x() const { return _x; }
+  std::span<const value_type> x() const { return _x; }
 
   /// @brief Access geometry degrees-of-freedom data (non-const
   /// version).
   ///
   /// @return The flattened row-major geometry data, where the shape is
   /// (num_points, 3)
-  std::span<T> x() { return _x; }
+  std::span<value_type> x() { return _x; }
 
   /// @brief The elements that describes the geometry maps.
   ///
   /// @return The coordinate/geometry elements
-  const std::vector<fem::CoordinateElement<T>>& cmaps() const { return _cmaps; }
+  const std::vector<fem::CoordinateElement<value_type>>& cmaps() const
+  {
+    return _cmaps;
+  }
 
   /// Global user indices
   const std::vector<std::int64_t>& input_global_indices() const
@@ -135,11 +138,11 @@ private:
   std::shared_ptr<const common::IndexMap> _index_map;
 
   // The coordinate elements
-  std::vector<fem::CoordinateElement<T>> _cmaps;
+  std::vector<fem::CoordinateElement<value_type>> _cmaps;
 
   // Coordinates for all points stored as a contiguous array (row-major,
   // column size = 3)
-  std::vector<T> _x;
+  std::vector<value_type> _x;
 
   // Global indices as provided on Geometry creation
   std::vector<std::int64_t> _input_global_indices;
@@ -266,7 +269,7 @@ create_geometry(
 /// entity in the parent topology
 /// @return A sub-geometry and a map from sub-geometry coordinate
 /// degree-of-freedom to the coordinate degree-of-freedom in `geometry`.
-template <typename T>
+template <std::floating_point T>
 std::pair<mesh::Geometry<T>, std::vector<int32_t>>
 create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
                    int dim, std::span<const std::int32_t> subentity_to_entity)
