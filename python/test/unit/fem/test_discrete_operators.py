@@ -15,13 +15,15 @@ import dolfinx.la
 from dolfinx.mesh import (CellType, GhostMode, create_unit_cube, create_unit_square)
 from mpi4py import MPI
 
-from dolfinx import default_real_type, default_scalar_type
 
-
-@pytest.mark.parametrize("mesh", [create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.none, dtype=np.float32),
-                                  create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.shared_facet, dtype=np.float64),
-                                  create_unit_cube(MPI.COMM_WORLD, 4, 3, 7, ghost_mode=GhostMode.none, dtype=np.float64),
-                                  create_unit_cube(MPI.COMM_WORLD, 4, 3, 7, ghost_mode=GhostMode.shared_facet, dtype=np.float32)])
+@pytest.mark.parametrize("mesh", [create_unit_square(MPI.COMM_WORLD, 11, 6,
+                                                     ghost_mode=GhostMode.none, dtype=np.float32),
+                                  create_unit_square(MPI.COMM_WORLD, 11, 6,
+                                                     ghost_mode=GhostMode.shared_facet, dtype=np.float64),
+                                  create_unit_cube(MPI.COMM_WORLD, 4, 3, 7,
+                                                   ghost_mode=GhostMode.none, dtype=np.float64),
+                                  create_unit_cube(MPI.COMM_WORLD, 4, 3, 7,
+                                                   ghost_mode=GhostMode.shared_facet, dtype=np.float32)])
 def test_gradient(mesh):
     """Test discrete gradient computation for lowest order elements."""
     V = FunctionSpace(mesh, ("Lagrange", 1))
