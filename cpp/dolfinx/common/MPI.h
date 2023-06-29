@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/common/types.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <numeric>
 #include <set>

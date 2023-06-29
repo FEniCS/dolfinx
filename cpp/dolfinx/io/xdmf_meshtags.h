@@ -20,6 +20,13 @@
 
 namespace dolfinx
 {
+
+namespace mesh
+{
+template <std::floating_point T>
+class Geometry;
+}
+
 namespace io::xdmf_meshtags
 {
 /// Add mesh tags to XDMF file

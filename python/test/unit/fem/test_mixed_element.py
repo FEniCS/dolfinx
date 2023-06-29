@@ -37,7 +37,7 @@ def test_mixed_element(rank, family, cell, degree):
 
         A = dolfinx.fem.assemble_matrix(a)
         A.finalize()
-        norms.append(np.sqrt(A.squared_norm()))
+        norms.append(A.squared_norm())
 
         U_el = mixed_element([U_el])
 

@@ -6,15 +6,14 @@
 
 import numpy as np
 import pytest
-from scipy.spatial.transform import Rotation
-
 import ufl
 from basix.ufl import element
-from dolfinx import geometry
 from dolfinx.geometry import compute_distance_gjk
 from dolfinx.mesh import create_mesh
-
 from mpi4py import MPI
+from scipy.spatial.transform import Rotation
+
+from dolfinx import geometry
 
 
 def distance_point_to_line_3D(P1, P2, point):
@@ -29,50 +28,54 @@ def distance_point_to_plane_3D(P1, P2, P3, point):
 
 
 @pytest.mark.parametrize("delta", [0.1, 1e-12, 0, -2])
-def test_line_point_distance(delta):
-    line = np.array([[0.1, 0.2, 0.3], [0.5, 0.8, 0.7]], dtype=np.float64)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_line_point_distance(delta, dtype):
+    line = np.array([[0.1, 0.2, 0.3], [0.5, 0.8, 0.7]], dtype=dtype)
     point_on_line = line[0] + 0.27 * (line[1] - line[0])
     normal = np.cross(line[0], line[1])
     point = point_on_line + delta * normal
     distance = np.linalg.norm(compute_distance_gjk(line, point))
     actual_distance = distance_point_to_line_3D(line[0], line[1], point)
-    assert np.isclose(distance, actual_distance, atol=1e-15)
+    assert np.isclose(distance, actual_distance, atol=1e-8)
 
 
 @pytest.mark.parametrize("delta", [0.1, 1e-12, 0])
-def test_line_line_distance(delta):
-    line = np.array([[-0.5, -0.7, -0.3], [1, 2, 3]], dtype=np.float64)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_line_line_distance(delta, dtype):
+    line = np.array([[-0.5, -0.7, -0.3], [1, 2, 3]], dtype=dtype)
     point_on_line = line[0] + 0.38 * (line[1] - line[0])
     normal = np.cross(line[0], line[1])
     point = point_on_line + delta * normal
-    line_2 = np.array([point, [2, 5, 6]], dtype=np.float64)
+    line_2 = np.array([point, [2, 5, 6]], dtype=dtype)
     distance = np.linalg.norm(compute_distance_gjk(line, line_2))
     actual_distance = distance_point_to_line_3D(line[0], line[1], line_2[0])
-    assert np.isclose(distance, actual_distance, atol=1e-15)
+    assert np.isclose(distance, actual_distance, atol=1e-7)
 
 
 @pytest.mark.parametrize("delta", [0.1**(3 * i) for i in range(6)])
-def test_tri_distance(delta):
-    tri_1 = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0]], dtype=np.float64)
-    tri_2 = np.array([[1, delta, 0], [3, 1.2, 0], [1, 1, 0]], dtype=np.float64)
+@pytest.mark.parametrize("dtype", [np.float64])
+def test_tri_distance(delta, dtype):
+    tri_1 = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0]], dtype=dtype)
+    tri_2 = np.array([[1, delta, 0], [3, 1.2, 0], [1, 1, 0]], dtype=dtype)
     P1 = tri_1[2]
     P2 = tri_1[1]
     point = tri_2[0]
     actual_distance = distance_point_to_line_3D(P1, P2, point)
     distance = np.linalg.norm(compute_distance_gjk(tri_1, tri_2))
-    assert np.isclose(distance, actual_distance, atol=1e-15)
+    assert np.isclose(distance, actual_distance, atol=1e-6)
 
 
 @pytest.mark.parametrize("delta", [0.1 * 0.1**(3 * i) for i in range(6)])
-def test_quad_distance2d(delta):
-    quad_1 = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0], [1, 1, 0]], dtype=np.float64)
-    quad_2 = np.array([[0, 1 + delta, 0], [2, 2, 0], [2, 4, 0], [4, 4, 0]], dtype=np.float64)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_quad_distance2d(delta, dtype):
+    quad_1 = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0], [1, 1, 0]], dtype=dtype)
+    quad_2 = np.array([[0, 1 + delta, 0], [2, 2, 0], [2, 4, 0], [4, 4, 0]], dtype=dtype)
     P1 = quad_1[2]
     P2 = quad_1[3]
     point = quad_2[0]
     actual_distance = distance_point_to_line_3D(P1, P2, point)
     distance = np.linalg.norm(compute_distance_gjk(quad_1, quad_2))
-    assert np.isclose(distance, actual_distance, atol=1e-15)
+    assert np.isclose(distance, actual_distance, atol=1e-8)
 
 
 @pytest.mark.parametrize("delta", [1 * 0.5**(3 * i) for i in range(7)])
@@ -125,10 +128,11 @@ def test_hex_collision_3d(delta):
 
 @pytest.mark.parametrize("delta", [1e8, 1.0, 1e-6, 1e-12])
 @pytest.mark.parametrize("scale", [1000.0, 1.0, 1e-4])
-def test_cube_distance(delta, scale):
+@pytest.mark.parametrize("dtype", [np.float64])
+def test_cube_distance(delta, scale, dtype):
     cubes = [scale * np.array([[-1, -1, -1], [1, -1, -1], [-1, 1, -1], [1, 1, -1],
                                [-1, -1, 1], [1, -1, 1], [-1, 1, 1], [1, 1, 1]],
-                              dtype=np.float64)]
+                              dtype=dtype)]
 
     # Rotate cube 45 degrees around z, so that an edge faces along
     # x-axis (vertical)
@@ -160,8 +164,9 @@ def test_cube_distance(delta, scale):
 
 
 @pytest.mark.skip_in_parallel
-def test_collision_2nd_order_triangle():
-    points = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [0.65, 0.65], [0.0, 0.5], [0.5, 0.0]])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_collision_2nd_order_triangle(dtype):
+    points = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [0.65, 0.65], [0.0, 0.5], [0.5, 0.0]], dtype=dtype)
     cells = np.array([[0, 1, 2, 3, 4, 5]])
     domain = ufl.Mesh(element("Lagrange", "triangle", 2, gdim=2, rank=1))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)

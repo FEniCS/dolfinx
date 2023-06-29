@@ -6,18 +6,17 @@
 """Unit tests for assembly over domains"""
 
 import numpy as np
-import numpy.linalg as linalg
 import pytest
 import ufl
 from dolfinx.fem import (Constant, Function, FunctionSpace, assemble_scalar,
-                         dirichletbc, form, assemble_matrix, assemble_vector, apply_lifting, set_bc)
-from dolfinx.la import InsertMode
+                         dirichletbc, form)
 from dolfinx.mesh import (GhostMode, Mesh, create_unit_square, locate_entities,
                           locate_entities_boundary, meshtags,
                           meshtags_from_entities)
 from mpi4py import MPI
+
 from dolfinx import cpp as _cpp
-from dolfinx import default_scalar_type
+from dolfinx import default_scalar_type, fem, la
 
 
 @pytest.fixture
@@ -62,29 +61,29 @@ def test_assembly_dx_domains(mode, meshtags_factory):
 
     # Assemble matrix
     a = form(w * ufl.inner(u, v) * (dx(1) + dx(2) + dx(3)))
-    A = assemble_matrix(a)
+    A = fem.assemble_matrix(a)
     A.finalize()
     a2 = form(w * ufl.inner(u, v) * dx)
-    A2 = assemble_matrix(a2)
+    A2 = fem.assemble_matrix(a2)
     A2.finalize()
-    assert linalg.norm(A.to_dense() - A2.to_dense()) < 1.0e-12
+    assert np.allclose(A.data, A2.data)
 
     bc = dirichletbc(Function(V), range(30))
 
     # Assemble vector
     L = form(ufl.inner(w, v) * (dx(1) + dx(2) + dx(3)))
-    b = assemble_vector(L)
+    b = fem.assemble_vector(L)
 
-    apply_lifting(b.array, [a], [[bc]])
-    b.scatter_reverse(InsertMode.add)
-    set_bc(b.array, [bc])
+    fem.apply_lifting(b.array, [a], [[bc]])
+    b.scatter_reverse(la.InsertMode.add)
+    fem.set_bc(b.array, [bc])
 
     L2 = form(ufl.inner(w, v) * dx)
-    b2 = assemble_vector(L2)
-    apply_lifting(b2.array, [a], [[bc]])
-    b2.scatter_reverse(InsertMode.add)
-    set_bc(b2.array, [bc])
-    assert linalg.norm(b.array - b2.array) < 1.0e-12
+    b2 = fem.assemble_vector(L2)
+    fem.apply_lifting(b2.array, [a], [[bc]])
+    b2.scatter_reverse(la.InsertMode.add)
+    fem.set_bc(b2.array, [bc])
+    assert np.allclose(b.array, b2.array)
 
     # Assemble scalar
     L = form(w * (dx(1) + dx(2) + dx(3)))
@@ -142,29 +141,27 @@ def test_assembly_ds_domains(mode):
 
     # Assemble matrix
     a = form(w * ufl.inner(u, v) * (ds(1) + ds(2) + ds(3) + ds(6)))
-    A = assemble_matrix(a)
+    A = fem.assemble_matrix(a)
     A.finalize()
-    norm1 = A.squared_norm()
     a2 = form(w * ufl.inner(u, v) * ds)
-    A2 = assemble_matrix(a2)
+    A2 = fem.assemble_matrix(a2)
     A2.finalize()
-    norm2 = A2.squared_norm()
-    assert norm1 == pytest.approx(norm2, 1.0e-12)
+    assert np.allclose(A.data, A2.data)
 
     # Assemble vector
     L = form(ufl.inner(w, v) * (ds(1) + ds(2) + ds(3) + ds(6)))
-    b = assemble_vector(L)
+    b = fem.assemble_vector(L)
 
-    apply_lifting(b.array, [a], [[bc]])
-    b.scatter_reverse(InsertMode.add)
-    set_bc(b.array, [bc])
+    fem.apply_lifting(b.array, [a], [[bc]])
+    b.scatter_reverse(la.InsertMode.add)
+    fem.set_bc(b.array, [bc])
 
     L2 = form(ufl.inner(w, v) * ds)
-    b2 = assemble_vector(L2)
-    apply_lifting(b2.array, [a2], [[bc]])
-    b2.scatter_reverse(InsertMode.add)
-    set_bc(b2.array, [bc])
-    assert linalg.norm(b.array) == pytest.approx(linalg.norm(b2.array), 1.0e-6)
+    b2 = fem.assemble_vector(L2)
+    fem.apply_lifting(b2.array, [a2], [[bc]])
+    b2.scatter_reverse(la.InsertMode.add)
+    fem.set_bc(b2.array, [bc])
+    assert np.allclose(b.array, b2.array)
 
     # Assemble scalar
     L = form(w * (ds(1) + ds(2) + ds(3) + ds(6)))
@@ -269,9 +266,9 @@ def test_manual_integration_domains():
 
     # Create forms and assemble
     a, L = create_forms(dx_mt, ds_mt, dS_mt)
-    A_mt = assemble_matrix(a)
+    A_mt = fem.assemble_matrix(a)
     A_mt.finalize()
-    b_mt = assemble_vector(L)
+    b_mt = fem.assemble_vector(L)
 
     # Manually specify cells to integrate over (removing ghosts
     # to give same result as above)
@@ -315,9 +312,9 @@ def test_manual_integration_domains():
 
     # Assemble forms and check
     a, L = create_forms(dx_manual, ds_manual, dS_manual)
-    A = assemble_matrix(a)
+    A = fem.assemble_matrix(a)
     A.finalize()
-    b = assemble_vector(L)
+    b = fem.assemble_vector(L)
 
-    assert np.isclose(linalg.norm(A.to_dense() - A_mt.to_dense()), 0.0)
-    assert np.isclose(linalg.norm(b.array - b_mt.array), 0.0)
+    assert np.allclose(A.data, A_mt.data)
+    assert np.allclose(b.array, b_mt.array)

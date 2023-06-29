@@ -286,7 +286,7 @@ XDMFFile::read_geometry_data(std::string name, std::string xpath) const
   return xdmf_mesh::read_geometry_data(_comm.comm(), _h5_id, grid_node);
 }
 //-----------------------------------------------------------------------------
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 void XDMFFile::write_function(const fem::Function<T, U>& u, double t,
                               std::string mesh_xpath)
 {
@@ -306,6 +306,31 @@ template void
 XDMFFile::write_function(const fem::Function<std::complex<double>, double>&,
                          double, std::string);
 /// @endcond
+//-----------------------------------------------------------------------------
+void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
+                              const mesh::Geometry<float>& x,
+                              std::string geometry_xpath, std::string xpath)
+{
+  pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
+  if (!node)
+    throw std::runtime_error("XML node '" + xpath + "' not found.");
+
+  pugi::xml_node grid_node = node.append_child("Grid");
+  assert(grid_node);
+  grid_node.append_attribute("Name") = meshtags.name.c_str();
+  grid_node.append_attribute("GridType") = "Uniform";
+
+  const std::string geo_ref_path = "xpointer(" + geometry_xpath + ")";
+  pugi::xml_node geo_ref_node = grid_node.append_child("xi:include");
+  geo_ref_node.append_attribute("xpointer") = geo_ref_path.c_str();
+  assert(geo_ref_node);
+  xdmf_meshtags::add_meshtags(_comm.comm(), meshtags, x, grid_node, _h5_id,
+                              meshtags.name);
+
+  // Save XML file (on process 0 only)
+  if (MPI::rank(_comm.comm()) == 0)
+    _xml_doc->save_file(_filename.c_str(), "  ");
+}
 //-----------------------------------------------------------------------------
 void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
                               const mesh::Geometry<double>& x,
@@ -362,7 +387,11 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
 
   std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
       entities_values = xdmf_utils::distribute_entity_data(
-          mesh, mesh::cell_dim(cell_type), entities1, values);
+          *mesh.topology(), mesh.geometry().input_global_indices(),
+          mesh.geometry().index_map()->size_global(),
+          mesh.geometry().cmaps()[0].create_dof_layout(),
+          mesh.geometry().dofmap(), mesh::cell_dim(cell_type), entities1,
+          values);
 
   auto cell_types = mesh.topology()->cell_types();
   if (cell_types.size() > 1)

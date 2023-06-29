@@ -130,7 +130,7 @@ concept FEkernel = std::is_invocable_v<U, T*, const T*, const T*,
 /// @return Rectangular array of the same shape as `a` with a pair of
 /// function spaces in each array entry. If a form is null, then the
 /// returned function space pair is (null, null).
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 std::vector<std::vector<std::array<std::shared_ptr<const FunctionSpace<U>>, 2>>>
 extract_function_spaces(const std::vector<std::vector<const Form<T, U>*>>& a)
 {
@@ -156,7 +156,7 @@ extract_function_spaces(const std::vector<std::vector<const Form<T, U>*>>& a)
 /// for calling SparsityPattern::assemble.
 /// @param[in] a A bilinear form
 /// @return The corresponding sparsity pattern
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
 {
   if (a.rank() != 2)
@@ -275,7 +275,7 @@ std::vector<std::string> get_constant_names(const ufcx_form& ufcx_form);
 /// @param[in] subdomains Subdomain markers
 /// @pre Each value in `subdomains` must be sorted by domain id
 /// @param[in] mesh The mesh of the domain
-template <typename T, typename U = dolfinx::scalar_value_type_t<T>>
+template <dolfinx::scalar T, typename U = dolfinx::scalar_value_type_t<T>>
 Form<T, U> create_form(
     const ufcx_form& ufcx_form,
     const std::vector<std::shared_ptr<const FunctionSpace<U>>>& spaces,
@@ -572,7 +572,7 @@ Form<T, U> create_form(
 /// @param[in] mesh Mesh of the domain. This is required if the form has
 /// no arguments, e.g. a functional.
 /// @return A Form
-template <typename T, typename U = dolfinx::scalar_value_type_t<T>>
+template <dolfinx::scalar T, typename U = dolfinx::scalar_value_type_t<T>>
 Form<T, U> create_form(
     const ufcx_form& ufcx_form,
     const std::vector<std::shared_ptr<const FunctionSpace<U>>>& spaces,
@@ -623,7 +623,7 @@ Form<T, U> create_form(
 /// @param[in] mesh Mesh of the domain. This is required if the form has
 /// no arguments, e.g. a functional.
 /// @return A Form
-template <typename T, typename U = dolfinx::scalar_value_type_t<T>>
+template <dolfinx::scalar T, typename U = dolfinx::scalar_value_type_t<T>>
 Form<T, U> create_form(
     ufcx_form* (*fptr)(),
     const std::vector<std::shared_ptr<const FunctionSpace<U>>>& spaces,
@@ -757,7 +757,7 @@ create_functionspace(ufcx_function_space* (*fptr)(const char*),
 namespace impl
 {
 /// @private
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 std::span<const std::uint32_t> get_cell_orientation_info(
     const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients)
 {
@@ -784,7 +784,7 @@ std::span<const std::uint32_t> get_cell_orientation_info(
 }
 
 /// Pack a single coefficient for a single cell
-template <typename T, int _bs>
+template <dolfinx::scalar T, int _bs>
 void pack(std::span<T> coeffs, std::int32_t cell, int bs, std::span<const T> v,
           std::span<const std::uint32_t> cell_info, const DofMap& dofmap,
           auto transform)
@@ -834,7 +834,7 @@ concept FetchCells = requires(F&& f, std::span<const std::int32_t> v) {
 /// @param[in] fetch_cells Function that fetches the cell index for an
 /// entity in active_entities.
 /// @param[in] offset The offset for c
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 void pack_coefficient_entity(std::span<T> c, int cstride,
                              const Function<T, U>& u,
                              std::span<const std::uint32_t> cell_info,
@@ -900,7 +900,7 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
 /// @param[in] integral_type Type of integral
 /// @param[in] id The id of the integration domain
 /// @return A storage container and the column stride
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 std::pair<std::vector<T>, int>
 allocate_coefficient_storage(const Form<T, U>& form, IntegralType integral_type,
                              int id)
@@ -930,7 +930,7 @@ allocate_coefficient_storage(const Form<T, U>& form, IntegralType integral_type,
 /// @param[in] form The Form
 /// @return Map from a form `(integral_type, domain_id)` pair to a
 /// `(coeffs, cstride)` pair
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 std::map<std::pair<IntegralType, int>, std::pair<std::vector<T>, int>>
 allocate_coefficient_storage(const Form<T, U>& form)
 {
@@ -955,7 +955,7 @@ allocate_coefficient_storage(const Form<T, U>& form)
 /// @param[in] id The id of the integration domain
 /// @param[in] c The coefficient array
 /// @param[in] cstride The coefficient stride
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
                        int id, std::span<T> c, int cstride)
 {
@@ -1031,7 +1031,7 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
 }
 
 /// @brief Create Expression from UFC
-template <typename T, typename U = dolfinx::scalar_value_type_t<T>>
+template <dolfinx::scalar T, typename U = dolfinx::scalar_value_type_t<T>>
 Expression<T, U> create_expression(
     const ufcx_expression& e,
     const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients,
@@ -1083,7 +1083,7 @@ Expression<T, U> create_expression(
 
 /// @brief Create Expression from UFC input (with named coefficients and
 /// constants).
-template <typename T, typename U = dolfinx::scalar_value_type_t<T>>
+template <dolfinx::scalar T, typename U = dolfinx::scalar_value_type_t<T>>
 Expression<T, U> create_expression(
     const ufcx_expression& e,
     const std::map<std::string, std::shared_ptr<const Function<T, U>>>&
@@ -1135,7 +1135,7 @@ Expression<T, U> create_expression(
 /// @param[in] form The Form
 /// @param[in] coeffs A map from a (integral_type, domain_id) pair to a
 /// (coeffs, cstride) pair
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 void pack_coefficients(const Form<T, U>& form,
                        std::map<std::pair<IntegralType, int>,
                                 std::pair<std::vector<T>, int>>& coeffs)
@@ -1150,7 +1150,7 @@ void pack_coefficients(const Form<T, U>& form,
 /// @param[in] e The Expression
 /// @param[in] cells A list of active cells
 /// @return A pair of the form (coeffs, cstride)
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 std::pair<std::vector<T>, int>
 pack_coefficients(const Expression<T, U>& e,
                   std::span<const std::int32_t> cells)

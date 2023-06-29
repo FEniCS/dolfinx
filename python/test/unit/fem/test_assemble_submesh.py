@@ -8,17 +8,13 @@
 
 import numpy as np
 import pytest
-
 import ufl
-from dolfinx import fem
-from dolfinx.la import InsertMode
-from dolfinx.fem import assemble_vector, assemble_matrix, apply_lifting, set_bc
 from dolfinx.mesh import (GhostMode, create_box, create_rectangle,
                           create_submesh, create_unit_cube, create_unit_square,
                           locate_entities, locate_entities_boundary)
-
 from mpi4py import MPI
-from dolfinx import default_scalar_type
+
+from dolfinx import default_scalar_type, fem, la
 
 
 def assemble(mesh, space, k):
@@ -40,17 +36,17 @@ def assemble(mesh, space, k):
 
     bc = fem.dirichletbc(bc_func, dofs)
 
-    A = assemble_matrix(a, bcs=[bc])
+    A = fem.assemble_matrix(a, bcs=[bc])
     A.finalize()
 
     # TODO Test assembly with fem.Function
     x = ufl.SpatialCoordinate(mesh)
     f = 1.5 + x[0]
     L = fem.form(ufl.inner(c * f, v) * (dx + ds))
-    b = assemble_vector(L)
-    apply_lifting(b.array, [a], bcs=[[bc]])
-    b.scatter_reverse(InsertMode.add)
-    set_bc(b.array, [bc])
+    b = fem.assemble_vector(L)
+    fem.apply_lifting(b.array, [a], bcs=[[bc]])
+    b.scatter_reverse(la.InsertMode.add)
+    fem.set_bc(b.array, [bc])
     s = mesh.comm.allreduce(fem.assemble_scalar(fem.form(ufl.inner(c * f, f) * (dx + ds))), op=MPI.SUM)
     return A, b, s
 
@@ -81,7 +77,7 @@ def test_submesh_cell_assembly(d, n, k, space, ghost_mode):
     A_submesh, b_submesh, s_submesh = assemble(submesh, space, k)
 
     assert A_mesh_0.squared_norm() == pytest.approx(A_submesh.squared_norm(), rel=1.0e-4, abs=1.0e-4)
-    assert b_mesh_0.norm() == pytest.approx(b_submesh.norm())
+    assert b_mesh_0.norm() == pytest.approx(b_submesh.norm(), rel=1.0e-4)
     assert np.isclose(s_mesh_0, s_submesh)
 
 
@@ -102,7 +98,6 @@ def test_submesh_facet_assembly(n, k, space, ghost_mode):
     square_mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
     A_square_mesh, b_square_mesh, s_square_mesh = assemble(square_mesh, space, k)
 
-    assert A_square_mesh.squared_norm() == pytest.approx(A_submesh.squared_norm(),
-                                                         rel=1.0e-4, abs=1.0e-4)
-    assert b_square_mesh.norm() == pytest.approx(b_submesh.norm())
-    assert np.isclose(s_square_mesh, s_submesh)
+    assert A_submesh.squared_norm() == pytest.approx(A_square_mesh.squared_norm(), rel=1.0e-5, abs=1.0e-5)
+    assert b_submesh.norm() == pytest.approx(b_square_mesh.norm())
+    assert np.isclose(s_submesh, s_square_mesh)

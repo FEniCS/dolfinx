@@ -78,7 +78,7 @@ int get_padded_width(const fem::FiniteElement<U>& e)
 } // namespace
 
 //-----------------------------------------------------------------------------
-template <typename T, typename U>
+template <dolfinx::scalar T, typename U>
 void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
                                  double t, pugi::xml_node& xml_node,
                                  const hid_t h5_id)

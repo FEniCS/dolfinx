@@ -269,7 +269,7 @@ create_geometry(
 /// entity in the parent topology
 /// @return A sub-geometry and a map from sub-geometry coordinate
 /// degree-of-freedom to the coordinate degree-of-freedom in `geometry`.
-template <typename T>
+template <std::floating_point T>
 std::pair<mesh::Geometry<T>, std::vector<int32_t>>
 create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
                    int dim, std::span<const std::int32_t> subentity_to_entity)

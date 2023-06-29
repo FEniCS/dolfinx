@@ -18,7 +18,8 @@ from mpi4py import MPI
 import dolfinx
 from dolfinx import TimingType
 from dolfinx import cpp as _cpp
-from dolfinx import fem, la, list_timings, default_scalar_type, default_real_type
+from dolfinx import (default_real_type, default_scalar_type, fem, la,
+                     list_timings)
 
 numba = pytest.importorskip("numba")
 
@@ -68,7 +69,7 @@ def tabulate_tensor_b(b_, w_, c_, coords_, local_index, orientation):
 def tabulate_tensor_b_coeff(b_, w_, c_, coords_, local_index, orientation):
     b = numba.carray(b_, (3), dtype=default_scalar_type)
     w = numba.carray(w_, (1), dtype=default_scalar_type)
-    coordinate_dofs = numba.carray(coords_, (3, 3), dtype=dolfinx.default_real_type)
+    coordinate_dofs = numba.carray(coords_, (3, 3), dtype=default_real_type)
     x0, y0 = coordinate_dofs[0, :2]
     x1, y1 = coordinate_dofs[1, :2]
     x2, y2 = coordinate_dofs[2, :2]
@@ -79,13 +80,13 @@ def tabulate_tensor_b_coeff(b_, w_, c_, coords_, local_index, orientation):
 
 
 def test_numba_assembly():
-    if dolfinx.default_scalar_type == np.float32:
+    if default_scalar_type == np.float32:
         formtype = _cpp.fem.Form_float32
-    elif dolfinx.default_scalar_type == np.float64:
+    elif default_scalar_type == np.float64:
         formtype = _cpp.fem.Form_float64
-    elif dolfinx.default_scalar_type == np.complex64:
+    elif default_scalar_type == np.complex64:
         formtype = _cpp.fem.Form_complex64
-    elif dolfinx.default_scalar_type == np.complex128:
+    elif default_scalar_type == np.complex128:
         formtype = _cpp.fem.Form_complex128
     else:
         raise RuntimeError("Unknown scalar type")
@@ -117,13 +118,13 @@ def test_numba_assembly():
 
 
 def test_coefficient():
-    if dolfinx.default_scalar_type == np.float32:
+    if default_scalar_type == np.float32:
         formtype = _cpp.fem.Form_float32
-    elif dolfinx.default_scalar_type == np.float64:
+    elif default_scalar_type == np.float64:
         formtype = _cpp.fem.Form_float64
-    elif dolfinx.default_scalar_type == np.complex64:
+    elif default_scalar_type == np.complex64:
         formtype = _cpp.fem.Form_complex64
-    elif dolfinx.default_scalar_type == np.complex128:
+    elif default_scalar_type == np.complex128:
         formtype = _cpp.fem.Form_complex128
     else:
         raise RuntimeError("Unknown scalar type")

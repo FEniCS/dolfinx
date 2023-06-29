@@ -6,20 +6,21 @@
 
 import numpy as np
 import pytest
+import scipy.sparse as sps
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx.fem import (Constant, Function, FunctionSpace,
-                         TensorFunctionSpace, VectorFunctionSpace, dirichletbc,
-                         form, locate_dofs_geometrical,
-                         locate_dofs_topological)
-from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_vector, set_bc)
-from dolfinx.la import InsertMode
+                         TensorFunctionSpace, VectorFunctionSpace,
+                         apply_lifting, assemble_matrix, assemble_vector,
+                         create_matrix, create_vector, dirichletbc, form,
+                         locate_dofs_geometrical, locate_dofs_topological,
+                         set_bc)
 from dolfinx.mesh import (CellType, create_unit_cube, create_unit_square,
                           locate_entities_boundary)
 from mpi4py import MPI
 from ufl import dx, inner
 
-from dolfinx import default_real_type, default_scalar_type
+from dolfinx import default_real_type, default_scalar_type, la
 
 
 def test_locate_dofs_geometrical():
@@ -78,17 +79,20 @@ def test_overlapping_bcs():
     bcs = [dirichletbc(default_scalar_type(0), dofs_left, V),
            dirichletbc(default_scalar_type(123.456), dofs_top, V)]
 
-    A = assemble_matrix(a, bcs=bcs)
+    A, b = create_matrix(a), create_vector(L)
+    assemble_matrix(A, a, bcs=bcs)
     A.finalize()
 
     # Check the diagonal (only on the rank that owns the row)
-    d = A.to_dense().diagonal()
+    As = sps.csr_matrix((A.data, A.indices, A.indptr))
+    d = As.diagonal()
     if len(dof_corner) > 0 and dof_corner[0] < V.dofmap.index_map.size_local:
-        assert np.isclose(d[dof_corner[0]], 1.0)
+        assert d[dof_corner[0]] == 1.0
 
-    b = assemble_vector(L)
+    b.array[:] = 0
+    assemble_vector(b.array, L)
     apply_lifting(b.array, [a], [bcs])
-    b.scatter_reverse(InsertMode.add)
+    b.scatter_reverse(la.InsertMode.add)
     set_bc(b.array, bcs)
     b.scatter_forward()
 

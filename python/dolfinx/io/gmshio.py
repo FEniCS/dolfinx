@@ -16,6 +16,7 @@ from dolfinx import cpp as _cpp
 from dolfinx.cpp.graph import AdjacencyList_int32
 from dolfinx.mesh import (CellType, GhostMode, Mesh, create_cell_partitioner,
                           create_mesh, meshtags, meshtags_from_entities)
+from dolfinx import default_real_type
 
 from mpi4py import MPI as _MPI
 
@@ -168,7 +169,7 @@ if _has_gmsh:
     def model_to_mesh(model: gmsh.model, comm: _MPI.Comm, rank: int, gdim: int = 3,
                       partitioner: typing.Callable[
             [_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32] =
-            create_cell_partitioner(GhostMode.none)) -> typing.Tuple[
+            create_cell_partitioner(GhostMode.none), dtype=default_real_type) -> typing.Tuple[
             Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
         """Given a Gmsh model, take all physical entities of the highest
         topological dimension and create the corresponding DOLFINx mesh.
@@ -234,7 +235,7 @@ if _has_gmsh:
             cell_values = np.asarray(topologies[cell_id]["cell_data"], dtype=np.int32)
         else:
             cell_id, num_nodes = comm.bcast([None, None], root=rank)
-            cells, x = np.empty([0, num_nodes], dtype=np.int32), np.empty([0, gdim])
+            cells, x = np.empty([0, num_nodes], dtype=np.int32), np.empty([0, gdim], dtype=dtype)
             cell_values = np.empty((0,), dtype=np.int32)
             has_facet_data = comm.bcast(None, root=rank)
             if has_facet_data:
@@ -246,7 +247,7 @@ if _has_gmsh:
         ufl_domain = ufl_mesh(cell_id, gdim)
         gmsh_cell_perm = cell_perm_array(_cpp.mesh.to_type(str(ufl_domain.ufl_cell())), num_nodes)
         cells = cells[:, gmsh_cell_perm]
-        mesh = create_mesh(comm, cells, x[:, :gdim], ufl_domain, partitioner)
+        mesh = create_mesh(comm, cells, x[:, :gdim].astype(dtype, copy=False), ufl_domain, partitioner)
 
         # Create MeshTags for cells
         local_entities, local_values = _cpp.io.distribute_entity_data(

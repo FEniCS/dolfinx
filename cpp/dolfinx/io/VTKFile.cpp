@@ -34,7 +34,7 @@ constexpr std::array field_ext = {"_real", "_imag"};
 
 //----------------------------------------------------------------------------
 /// Return true if Function is a cell-wise constant, otherwise false
-template <typename T>
+template <dolfinx::scalar T>
 bool is_cellwise(const fem::FunctionSpace<T>& V)
 {
   assert(V.element());
@@ -338,7 +338,8 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
   }
 }
 //----------------------------------------------------------------------------
-template <typename T, std::floating_point U = dolfinx::scalar_value_type_t<T>>
+template <dolfinx::scalar T,
+          std::floating_point U = dolfinx::scalar_value_type_t<T>>
 void write_function(
     const std::vector<std::reference_wrapper<const fem::Function<T, U>>>& u,
     double time, pugi::xml_document* xml_doc,
@@ -851,7 +852,7 @@ void io::VTKFile::write(const mesh::Mesh<U>& mesh, double time)
   dataset_node.append_attribute("file") = p_pvtu.filename().c_str();
 }
 //----------------------------------------------------------------------------
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 void io::VTKFile::write(
     const std::vector<std::reference_wrapper<const fem::Function<T, U>>>& u,
     double time)
