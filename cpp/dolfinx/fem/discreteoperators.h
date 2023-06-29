@@ -226,7 +226,7 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   e0->tabulate(basis_derivatives_reference0_b, X, Xshape, 0);
 
   // Clamp values
-  constexpr U atol = 10. * std::numeric_limits<U>::epsilon();
+  constexpr U atol = 1.0e2 * std::numeric_limits<U>::epsilon();
   std::transform(basis_derivatives_reference0_b.begin(),
                  basis_derivatives_reference0_b.end(),
                  basis_derivatives_reference0_b.begin(),

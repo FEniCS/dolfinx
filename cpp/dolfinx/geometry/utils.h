@@ -511,7 +511,7 @@ std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
     return -1;
   else
   {
-    constexpr T eps2 = 1.e2 * std::numeric_limits<T>::epsilon();
+    constexpr T eps2 = 1.0e2 * std::numeric_limits<T>::epsilon();
     const mesh::Geometry<T>& geometry = mesh.geometry();
     std::span<const T> geom_dofs = geometry.x();
     auto x_dofmap = geometry.dofmap();
@@ -618,7 +618,7 @@ graph::AdjacencyList<std::int32_t> compute_colliding_cells(
   std::vector<std::int32_t> offsets = {0};
   offsets.reserve(candidate_cells.num_nodes() + 1);
   std::vector<std::int32_t> colliding_cells;
-  constexpr T eps2 = 1.e2 * std::numeric_limits<T>::epsilon();
+  constexpr T eps2 = 1.0e2 * std::numeric_limits<T>::epsilon();
   const int tdim = mesh.topology()->dim();
   for (std::int32_t i = 0; i < candidate_cells.num_nodes(); i++)
   {
