@@ -96,6 +96,22 @@ class MatrixCSR:
         """
         return self._cpp_object.to_dense()
 
+    def to_scipy(self) -> npt.NDArray[np.floating]:
+        """Convert to a SciPy CSR matrix. Data is shared.
+
+
+        """
+        import scipy
+
+        if self.block_size == [1, 1]:
+            nrlocal = self.index_map(0).size_local
+            nclocal = self.index_map(1).size_local + self.index_map(1).num_ghosts
+            nnzlocal = self.indptr[nrlocal]
+            return scipy.sparse.csr_matrix((self.data[:nnzlocal], self.indices[:nnzlocal], self.indptr[:nrlocal + 1]),
+                                           shape=(nrlocal, nclocal))
+        else:
+            raise RuntimeError("Block CSR not yet supported")
+
 
 def matrix_csr(sp, block_mode=BlockMode.compact, dtype=np.float64) -> MatrixCSR:
     """Create a distributed sparse matrix.

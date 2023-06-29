@@ -97,14 +97,13 @@ def test_rank1_hdiv():
 
     a = form(ufl.inner(f, ufl.TestFunction(vdP1)) * ufl.dx)
 
-    dofmap_col = RT1.dofmap.list
+    # dofmap_col = RT1.dofmap.list
     dofmap_row = vdP1.dofmap.list
     dofmap_row_unrolled = (2 * np.repeat(dofmap_row, 2).reshape(-1, 2) + np.arange(2)).flatten()
     dofmap_row = dofmap_row_unrolled.reshape(-1, 12)
 
     A = fem.create_matrix(a, block_mode=la.BlockMode.expanded)
-    scatter(scipy.sparse.csr_matrix((A.data, A.indices, A.indptr)),
-            array_evaluated, dofmap_row, dofmap_col)
+    scatter(A.to_scipy())
     A.finalize()
 
     gvec = la.vector(A.index_map(1), dtype=default_scalar_type)
@@ -121,11 +120,7 @@ def test_rank1_hdiv():
     h.interpolate(g)
 
     # Create SciPy sparse matrix for owned rows
-    nrlocal = A.index_map(0).size_local
-    nclocal = A.index_map(1).size_local + A.index_map(1).num_ghosts
-    nnzlocal = A.indptr[nrlocal]
-    A1 = scipy.sparse.csr_matrix((A.data[:nnzlocal], A.indices[:nnzlocal], A.indptr[:nrlocal + 1]),
-                                 shape=(nrlocal, nclocal))
+    A1 = A.to_scipy()
 
     # Interpolate RT1 into vdP1 (compiled, mat-vec interpolation)
     h2 = Function(vdP1)
