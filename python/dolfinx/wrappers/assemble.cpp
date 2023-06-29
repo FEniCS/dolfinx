@@ -80,7 +80,7 @@ void declare_discrete_operators(py::module& m)
             {*V1.element(), *V1.dofmap()}, A.mat_set_values());
         return A;
       },
-      py::return_value_policy::take_ownership, py::arg("V0"), py::arg("V1"));
+      py::arg("V0"), py::arg("V1"));
 }
 
 // Declare assembler function that have multiple scalar types

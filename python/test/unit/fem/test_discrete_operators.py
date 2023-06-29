@@ -18,16 +18,17 @@ from mpi4py import MPI
 from dolfinx import default_real_type, default_scalar_type
 
 
-@pytest.mark.parametrize("mesh", [create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.none),
-                                  create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.shared_facet),
-                                  create_unit_cube(MPI.COMM_WORLD, 4, 3, 7, ghost_mode=GhostMode.none),
-                                  create_unit_cube(MPI.COMM_WORLD, 4, 3, 7, ghost_mode=GhostMode.shared_facet)])
+@pytest.mark.parametrize("mesh", [create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.none, dtype=np.float32),
+                                  create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.shared_facet, dtype=np.float64),
+                                  create_unit_cube(MPI.COMM_WORLD, 4, 3, 7, ghost_mode=GhostMode.none, dtype=np.float64),
+                                  create_unit_cube(MPI.COMM_WORLD, 4, 3, 7, ghost_mode=GhostMode.shared_facet, dtype=np.float32)])
 def test_gradient(mesh):
     """Test discrete gradient computation for lowest order elements."""
     V = FunctionSpace(mesh, ("Lagrange", 1))
     W = FunctionSpace(mesh, ("Nedelec 1st kind H(curl)", 1))
     G = discrete_gradient(V._cpp_object, W._cpp_object)
-    # NB do not finalize G
+    # N.B. do not finalize G - doing so would transfer rows to other processes
+    # where they will be summed to give an incorrect matrix
 
     num_edges = mesh.topology.index_map(1).size_global
     m, n = G.index_map(0).size_global, G.index_map(1).size_global
@@ -42,42 +43,44 @@ def test_gradient(mesh):
                                        CellType.triangle,
                                        CellType.tetrahedron,
                                        CellType.hexahedron])
-def test_gradient_interpolation(cell_type, p, q):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_gradient_interpolation(cell_type, p, q, dtype):
     """Test discrete gradient computation with verification using Expression."""
     comm = MPI.COMM_WORLD
     if cell_type == CellType.triangle:
-        mesh = create_unit_square(comm, 11, 6, ghost_mode=GhostMode.none, cell_type=cell_type, dtype=default_real_type)
+        mesh = create_unit_square(comm, 11, 6, ghost_mode=GhostMode.none, cell_type=cell_type, dtype=dtype)
         family0 = "Lagrange"
         family1 = "Nedelec 1st kind H(curl)"
     elif cell_type == CellType.quadrilateral:
-        mesh = create_unit_square(comm, 11, 6, ghost_mode=GhostMode.none, cell_type=cell_type, dtype=default_real_type)
+        mesh = create_unit_square(comm, 11, 6, ghost_mode=GhostMode.none, cell_type=cell_type, dtype=dtype)
         family0 = "Q"
         family1 = "RTCE"
     elif cell_type == CellType.hexahedron:
-        mesh = create_unit_cube(comm, 3, 3, 2, ghost_mode=GhostMode.none, cell_type=cell_type, dtype=default_real_type)
+        mesh = create_unit_cube(comm, 3, 3, 2, ghost_mode=GhostMode.none, cell_type=cell_type, dtype=dtype)
         family0 = "Q"
         family1 = "NCE"
     elif cell_type == CellType.tetrahedron:
-        mesh = create_unit_cube(comm, 3, 2, 2, ghost_mode=GhostMode.none, cell_type=cell_type, dtype=default_real_type)
+        mesh = create_unit_cube(comm, 3, 2, 2, ghost_mode=GhostMode.none, cell_type=cell_type, dtype=dtype)
         family0 = "Lagrange"
         family1 = "Nedelec 1st kind H(curl)"
 
     V = FunctionSpace(mesh, (family0, p))
     W = FunctionSpace(mesh, (family1, q))
     G = discrete_gradient(V._cpp_object, W._cpp_object)
-    # NB do not 'finalize' G
+    # N.B. do not finalize G - doing so would transfer rows to other processes
+    # where they will be summed to give an incorrect matrix
 
     # Vector for 'u' needs additional ghosts defined in columns of G
-    uvec = dolfinx.la.vector(G.index_map(1), dtype=default_scalar_type)
-    u = Function(V, uvec)
+    uvec = dolfinx.la.vector(G.index_map(1), dtype=dtype)
+    u = Function(V, uvec, dtype=dtype)
     u.interpolate(lambda x: 2 * x[0]**p + 3 * x[1]**p)
 
-    grad_u = Expression(ufl.grad(u), W.element.interpolation_points())
-    w_expr = Function(W)
+    grad_u = Expression(ufl.grad(u), W.element.interpolation_points(), dtype=dtype)
+    w_expr = Function(W, dtype=dtype)
     w_expr.interpolate(grad_u)
 
     # Compute global matrix vector product
-    w = Function(W)
+    w = Function(W, dtype=dtype)
 
     # Get the local part of G (no ghost rows)
     nrlocal = G.index_map(0).size_local
@@ -88,5 +91,5 @@ def test_gradient_interpolation(cell_type, p, q):
     w.x.array[:nrlocal] = Glocal @ u.x.array
     w.x.scatter_forward()
 
-    atol = 100 * np.finfo(default_real_type).resolution
+    atol = 100 * np.finfo(dtype).resolution
     assert np.allclose(w_expr.x.array, w.x.array, atol=atol)
