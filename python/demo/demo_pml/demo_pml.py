@@ -35,6 +35,7 @@ from typing import Tuple, Union
 
 import ufl
 from basix.ufl import element
+from dolfinx.fem.petsc import LinearProblem
 from dolfinx.io import VTXWriter, gmshio
 from efficiencies_pml_demo import calculate_analytical_efficiencies
 from mesh_wire_pml import generate_mesh_wire
@@ -410,7 +411,7 @@ F = - ufl.inner(curl_2d(Es), curl_2d(v)) * dDom \
 
 a, L = ufl.lhs(F), ufl.rhs(F)
 
-problem = fem.petsc.LinearProblem(a, L, bcs=[], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+problem = LinearProblem(a, L, bcs=[], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 Esh = problem.solve()
 # -
 
