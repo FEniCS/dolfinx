@@ -318,7 +318,7 @@ public:
   /// @brief Prune entries from the matrix which are less than a
   /// certain magnitude.
   /// @param tol Tolerance
-  void eliminate_zeros(Scalar tol);
+  void eliminate_zeros(double tol);
 
   /// @brief Index maps for the row and column space.
   ///
@@ -728,22 +728,31 @@ double MatrixCSR<U, V, W, X>::squared_norm() const
 }
 //-----------------------------------------------------------------------------
 template <typename Scalar, typename V, typename W, typename X>
-double MatrixCSR<Scalar, V, W, X>::eliminate_zeros(Scalar tol) const
+void MatrixCSR<Scalar, V, W, X>::eliminate_zeros(double tol)
 {
-  iptr = 0;
+  const int bs2 = _bs[0] * _bs[1];
+  int iptr = 0;
   for (int i = 1; i < _row_ptr.size(); ++i)
   {
     for (int j = _row_ptr[i - 1]; j < _row_ptr[i]; ++j)
     {
-      if (std::abs(_data[j]) >= tol)
+      const double abs_sum
+          = std::accumulate(std::next(_data.begin(), j * bs2),
+                            std::next(_data.begin(), (j + 1) * bs2), 0.0,
+                            [](double a, Scalar b) { return a + std::abs(b); });
+      if (abs_sum >= tol)
       {
-        _data[iptr] = _data[j];
+        for (int k = 0; k < bs2; ++k)
+          _data[iptr * bs2 + k] = _data[j * bs2 + k];
+
         _cols[iptr] = _cols[j];
         ++iptr;
       }
-      _row_ptr[i] = iptr;
     }
+    _row_ptr[i] = iptr;
   }
+  _cols.resize(iptr);
+  _data.resize(iptr * bs2);
 }
 
 } // namespace dolfinx::la

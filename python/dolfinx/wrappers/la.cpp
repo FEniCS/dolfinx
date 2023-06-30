@@ -95,6 +95,7 @@ void declare_objects(py::module& m, const std::string& type)
       .def_property_readonly("block_size",
                              &dolfinx::la::MatrixCSR<T>::block_size)
       .def("squared_norm", &dolfinx::la::MatrixCSR<T>::squared_norm)
+      .def("eliminate_zeros", &dolfinx::la::MatrixCSR<T>::eliminate_zeros)
       .def("index_map", &dolfinx::la::MatrixCSR<T>::index_map)
       .def("add",
            [](dolfinx::la::MatrixCSR<T>& self, const std::vector<T>& x,
