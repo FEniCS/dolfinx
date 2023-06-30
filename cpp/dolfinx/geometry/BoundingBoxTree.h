@@ -222,8 +222,8 @@ public:
   /// build the bounding box tree for.
   /// @param[in] entities List of entity indices (local to process) to
   /// compute the bounding box for (may be empty, if none).
-  /// @param[in] padding A float prescribing how much the bounding box
-  /// of each entity should be padded.
+  /// @param[in] padding Value to pad (extend) the the bounding box of
+  /// each entity by.
   BoundingBoxTree(const mesh::Mesh<T>& mesh, int tdim,
                   std::span<const std::int32_t> entities, double padding = 0)
       : _tdim(tdim)
@@ -265,8 +265,8 @@ public:
   /// @param[in] mesh The mesh for building the bounding box tree
   /// @param[in] tdim The topological dimension of the mesh entities to
   /// build the bounding box tree for
-  /// @param[in] padding A float perscribing how much the bounding box
-  /// of each entity should be padded
+  /// @param[in] padding Value to pad (extend) the the bounding box of
+  /// each entity by.
   BoundingBoxTree(const mesh::Mesh<T>& mesh, int tdim, T padding = 0)
       : BoundingBoxTree::BoundingBoxTree(
           mesh, tdim, range(mesh.topology_mutable(), tdim), padding)

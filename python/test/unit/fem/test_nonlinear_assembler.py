@@ -437,9 +437,9 @@ def test_assembly_solve_block_nl():
 
     norm0 = blocked_solve()
     norm2 = monolithic_solve()
-    # FIXME: PETSc nested solver mis-behaves in parallel with complex64
-    # scalars. Investigate further.
-    if not (PETSc.ScalarType == np.complex64 and mesh.comm.size > 1):
+    # FIXME: PETSc nested solver mis-behaves in parallel an single
+    # precision. Investigate further.
+    if not ((PETSc.ScalarType == np.float32 or PETSc.ScalarType == np.complex64) and mesh.comm.size > 1):
         norm1 = nested_solve()
         assert norm1 == pytest.approx(norm0, 1.0e-6)
     assert norm2 == pytest.approx(norm0, 1.0e-6)
