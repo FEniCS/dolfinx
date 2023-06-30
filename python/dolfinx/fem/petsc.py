@@ -19,6 +19,7 @@ import typing
 
 import ufl
 from dolfinx import cpp as _cpp
+from dolfinx import la
 from dolfinx.cpp.fem import pack_coefficients as _pack_coefficients
 from dolfinx.cpp.fem import pack_constants as _pack_constants
 from dolfinx.cpp.la.petsc import create_vector as _create_petsc_vector
