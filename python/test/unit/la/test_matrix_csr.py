@@ -218,9 +218,27 @@ def test_set_diagonal_distributed(dtype):
 
 
 @pytest.mark.parametrize('dtype', [np.float32, np.float64, np.complex64, np.complex128])
+def test_bad_entry(dtype):
+    sp = create_test_sparsity(6, 1)
+    mat1 = matrix_csr(sp, dtype=dtype)
+
+    # Set block in bs=1 matrix
+    with pytest.raises(RuntimeError):
+        mat1.set([1.0, 2.0, 3.0, 4.0], [0], [0], 2)
+    # Normal
+    with pytest.raises(RuntimeError):
+        mat1.add([1.0], [0], [0], 1)
+
+    sp = create_test_sparsity(3, 2)
+    mat2 = matrix_csr(sp, BlockMode.compact, dtype=dtype)
+    # set unblocked in bs=2 matrix
+    with pytest.raises(RuntimeError):
+        mat2.add([2.0, 3.0, 4.0, 5.0], [0, 1], [0, 1], 1)
+
+
+@pytest.mark.parametrize('dtype', [np.float32, np.float64, np.complex64, np.complex128])
 def test_pruning(dtype):
     sp = create_test_sparsity(6, 1)
-
     mat1 = matrix_csr(sp, dtype=dtype)
 
     # Insert a single entry
