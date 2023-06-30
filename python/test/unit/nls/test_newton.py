@@ -9,7 +9,7 @@ import numpy as np
 
 import ufl
 from dolfinx import cpp as _cpp
-from dolfinx import default_real_type, la
+from dolfinx import default_real_type
 from dolfinx.cpp.la.petsc import create_vector as _create_petsc_vector
 from dolfinx.fem import (Function, FunctionSpace, dirichletbc, form,
                          locate_dofs_geometrical)
@@ -154,7 +154,6 @@ def test_nonlinear_pde():
     n, converged = solver.solve(u.vector)
     assert converged
     assert n > 0 and n < 6
-
 
 
 def test_nonlinear_pde_snes():
