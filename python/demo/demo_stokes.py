@@ -91,6 +91,7 @@ from dolfinx import fem, la
 from dolfinx.fem import (Constant, Function, FunctionSpace, dirichletbc,
                          extract_function_spaces, form,
                          locate_dofs_topological)
+from dolfinx.fem.petsc import assemble_matrix_block, assemble_vector_block
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_rectangle, locate_entities_boundary
 from ufl import div, dx, grad, inner
@@ -297,11 +298,11 @@ def block_operators():
 
     # Assembler matrix operator, preconditioner and RHS vector into
     # single objects but preserving block structure
-    A = fem.petsc.assemble_matrix_block(a, bcs=bcs)
+    A = assemble_matrix_block(a, bcs=bcs)
     A.assemble()
-    P = fem.petsc.assemble_matrix_block(a_p, bcs=bcs)
+    P = assemble_matrix_block(a_p, bcs=bcs)
     P.assemble()
-    b = fem.petsc.assemble_vector_block(L, a, bcs=bcs)
+    b = assemble_vector_block(L, a, bcs=bcs)
 
     # Set the nullspace for pressure (since pressure is determined only
     # up to a constant)
