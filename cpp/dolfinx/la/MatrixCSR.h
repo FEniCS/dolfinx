@@ -315,6 +315,11 @@ public:
   /// @note MPI Collective
   double squared_norm() const;
 
+  /// @brief Prune entries from the matrix which are less than a
+  /// certain magnitude.
+  /// @param tol Tolerance
+  void eliminate_zeros(Scalar tol);
+
   /// @brief Index maps for the row and column space.
   ///
   /// The row IndexMap contains ghost entries for rows which may be
@@ -722,5 +727,23 @@ double MatrixCSR<U, V, W, X>::squared_norm() const
   return norm_sq;
 }
 //-----------------------------------------------------------------------------
+template <typename Scalar, typename V, typename W, typename X>
+double MatrixCSR<Scalar, V, W, X>::eliminate_zeros(Scalar tol) const
+{
+  iptr = 0;
+  for (int i = 1; i < _row_ptr.size(); ++i)
+  {
+    for (int j = _row_ptr[i - 1]; j < _row_ptr[i]; ++j)
+    {
+      if (std::abs(_data[j]) >= tol)
+      {
+        _data[iptr] = _data[j];
+        _cols[iptr] = _cols[j];
+        ++iptr;
+      }
+      _row_ptr[i] = iptr;
+    }
+  }
+}
 
 } // namespace dolfinx::la
