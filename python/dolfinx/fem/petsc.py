@@ -19,9 +19,9 @@ import typing
 
 import ufl
 from dolfinx import cpp as _cpp
-from dolfinx import la
 from dolfinx.cpp.fem import pack_coefficients as _pack_coefficients
 from dolfinx.cpp.fem import pack_constants as _pack_constants
+from dolfinx.cpp.la.petsc import create_vector as _create_petsc_vector
 from dolfinx.fem import assemble
 from dolfinx.fem.bcs import DirichletBC
 from dolfinx.fem.bcs import bcs_by_block as _bcs_by_block
@@ -79,7 +79,7 @@ def create_vector(L: Form) -> PETSc.Vec:
 
     """
     dofmap = L.function_spaces[0].dofmap
-    return la.create_petsc_vector(dofmap.index_map, dofmap.index_map_bs)
+    return _create_petsc_vector(dofmap.index_map, dofmap.index_map_bs)
 
 
 def create_vector_block(L: typing.List[Form]) -> PETSc.Vec:
@@ -182,8 +182,8 @@ def _assemble_vector_form(L: Form, constants=None, coeffs=None) -> PETSc.Vec:
         An assembled vector.
 
     """
-    b = la.create_petsc_vector(L.function_spaces[0].dofmap.index_map,
-                               L.function_spaces[0].dofmap.index_map_bs)
+    b = _create_petsc_vector(L.function_spaces[0].dofmap.index_map,
+                             L.function_spaces[0].dofmap.index_map_bs)
     with b.localForm() as b_local:
         assemble._assemble_vector_array(b_local.array_w, L, constants, coeffs)
     return b
