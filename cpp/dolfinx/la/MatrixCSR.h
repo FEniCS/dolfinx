@@ -752,6 +752,20 @@ void MatrixCSR<Scalar, V, W, X>::eliminate_zeros(double tol)
   }
   _cols.resize(iptr);
   _data.resize(iptr * bs2);
+
+  // Update _off_diagonal_offset
+  const int ghost_col = _index_maps[1]->size_local();
+  _off_diagonal_offset.clear();
+  for (int i = 1; i < _row_ptr.size(); ++i)
+  {
+    auto row_start = std::next(_cols.begin(), _row_ptr[i - 1]);
+    auto it = std::lower_bound(row_start, std::next(_cols.begin(), _row_ptr[i]),
+                               ghost_col);
+    _off_diagonal_offset.push_back(std::distance(row_start, it));
+  }
+
+  // TODO: update _unpack_pos, _val_send_disp,
+  // _val_recv_disp
 }
 
 } // namespace dolfinx::la
