@@ -285,7 +285,6 @@ def test_plus_minus_simple_vector(cell_type, pm, dtype):
             v = ufl.TestFunction(V)
             a = form(ufl.inner(1, v(pm)) * ufl.dS, dtype=dtype)
             result = assemble_vector(a)
-            # result.assemble()
             spaces.append(V)
             results.append(result.array)
             orders.append(order)
@@ -387,6 +386,7 @@ def test_plus_minus_matrix(cell_type, pm1, pm2, dtype):
             # different numberings
             a = form(ufl.inner(u(pm1), v(pm2)) * ufl.dS, dtype=dtype)
             result = assemble_matrix(a, [])
+            result.finalize()
             spaces.append(V)
             results.append(result.to_dense())
             orders.append(order)
