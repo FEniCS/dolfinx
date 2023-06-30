@@ -71,17 +71,26 @@ def test_rank0():
     assert np.allclose(b2.x.array, b.x.array, rtol=1.0e-5, atol=1.0e-5)
 
 
-def test_rank1_hdiv():
+# @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize("dtype", [
+    np.float32,
+    np.float64,
+    np.complex64,
+    np.complex128
+])
+def test_rank1_hdiv(dtype):
     """Test rank-1 Expression, i.e. Expression containing Argument (TrialFunction)
     Test compiles linear interpolation operator RT_2 -> vector DG_2 and assembles it into
     global matrix A. Input space RT_2 is chosen because it requires dof permutations."""
-    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
+
+    xtype = dtype(0).real.dtype
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, dtype=xtype)
     vdP1 = VectorFunctionSpace(mesh, ("DG", 2))
     RT1 = FunctionSpace(mesh, ("RT", 2))
     f = ufl.TrialFunction(RT1)
 
     points = vdP1.element.interpolation_points()
-    compiled_expr = Expression(f, points)
+    compiled_expr = Expression(f, points, dtype=dtype)
 
     num_cells = mesh.topology.index_map(2).size_local
     array_evaluated = compiled_expr.eval(np.arange(num_cells, dtype=np.int32))
@@ -95,35 +104,32 @@ def test_rank1_hdiv():
                 for j, col in enumerate(cols):
                     A[row, col] = A_local[i, j]
 
-    a = form(ufl.inner(f, ufl.TestFunction(vdP1)) * ufl.dx)
-
     dofmap_col = RT1.dofmap.list
     dofmap_row = vdP1.dofmap.list
     dofmap_row_unrolled = (2 * np.repeat(dofmap_row, 2).reshape(-1, 2) + np.arange(2)).flatten()
     dofmap_row = dofmap_row_unrolled.reshape(-1, 12)
 
+    a = form(ufl.inner(f, ufl.TestFunction(vdP1)) * ufl.dx, dtype=dtype)
     A = fem.create_matrix(a, block_mode=la.BlockMode.expanded)
-    scatter(A.to_scipy(), array_evaluated, dofmap_row, dofmap_col)
+    As = A.to_scipy(ghosted=True)
+    scatter(As, array_evaluated, dofmap_row, dofmap_col)
     A.finalize()
 
-    gvec = la.vector(A.index_map(1), dtype=default_scalar_type)
-    g = Function(RT1, gvec, name="g")
-
-    def expr1(x):
-        return np.row_stack((np.sin(x[0]), np.cos(x[1])))
+    gvec = la.vector(A.index_map(1), bs=A.block_size[1], dtype=dtype)
+    g = Function(RT1, gvec, name="g", dtype=dtype)
 
     # Interpolate a numpy expression into RT1
-    g.interpolate(expr1)
+    g.interpolate(lambda x: np.row_stack((np.sin(x[0]), np.cos(x[1]))))
 
     # Interpolate RT1 into vdP1 (non-compiled interpolation)
-    h = Function(vdP1)
+    h = Function(vdP1, dtype=dtype)
     h.interpolate(g)
 
-    # Create SciPy sparse matrix for owned rows
-    A1 = A.to_scipy()
+    # Wrap A as SciPy sparse matrix, owned rows only
+    A1 = A.to_scipy(ghosted=False)
 
     # Interpolate RT1 into vdP1 (compiled, mat-vec interpolation)
-    h2 = Function(vdP1)
+    h2 = Function(vdP1, dtype=dtype)
     h2.x.array[:A1.shape[0]] += A1 @ g.x.array
     h2.x.scatter_forward()
     assert np.linalg.norm(h2.x.array - h.x.array) == pytest.approx(0.0, abs=1.0e-4)
