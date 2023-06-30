@@ -317,8 +317,8 @@ public:
 
   /// @brief Prune entries from the matrix which are less than a
   /// certain magnitude.
-  /// @param tol Tolerance
-  void eliminate_zeros(double tol);
+  /// @param tol Tolerance, default to zero.
+  void eliminate_zeros(double tol = 0.0);
 
   /// @brief Index maps for the row and column space.
   ///
@@ -740,11 +740,10 @@ void MatrixCSR<Scalar, V, W, X>::eliminate_zeros(double tol)
           = std::accumulate(std::next(_data.begin(), j * bs2),
                             std::next(_data.begin(), (j + 1) * bs2), 0.0,
                             [](double a, Scalar b) { return a + std::abs(b); });
-      if (abs_sum >= tol)
+      if (abs_sum > tol)
       {
         for (int k = 0; k < bs2; ++k)
           _data[iptr * bs2 + k] = _data[j * bs2 + k];
-
         _cols[iptr] = _cols[j];
         ++iptr;
       }

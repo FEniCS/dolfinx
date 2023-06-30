@@ -216,3 +216,19 @@ def test_set_diagonal_distributed(dtype):
     A.finalize()
     assert (As.diagonal()[nlocal:] == dtype(0.)).all()
     assert (As.diagonal()[:nlocal] == dtype(1.)).all()
+
+
+@pytest.mark.parametrize('dtype', [np.float32, np.float64, np.complex64, np.complex128])
+def test_pruning(dtype):
+    sp = create_test_sparsity(6, 1)
+
+    mat1 = matrix_csr(sp, dtype=dtype)
+
+    # Insert a single entry
+    mat1.add([1.0], [2], [4], 1)
+
+    mat1._cpp_object.eliminate_zeros(0.0)
+
+    assert len(mat1.data) == 1
+    assert len(mat1.indices) == 1
+    assert len(mat1.indptr) == 7
