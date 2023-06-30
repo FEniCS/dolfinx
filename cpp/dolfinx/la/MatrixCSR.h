@@ -365,6 +365,8 @@ public:
   const std::array<int, 2>& block_size() const { return _bs; }
 
 private:
+  void _precompute_send_recv();
+
   // Maps for the distribution of the ows and columns
   std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;
 
@@ -478,6 +480,14 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
                    std::back_inserter(_off_diagonal_offset), std::plus{});
   }
 
+  // Precompute send and recv displacements and offsets to scatter
+  // received data
+  _precompute_send_recv();
+}
+//-----------------------------------------------------------------------------
+template <typename U, typename V, typename W, typename X>
+void MatrixCSR<U, V, W, X>::_precompute_send_recv()
+{
   // Some short-hand
   const std::array local_size
       = {_index_maps[0]->size_local(), _index_maps[1]->size_local()};
@@ -499,6 +509,7 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
 
   // Build map from ghost row index position to owning (neighborhood)
   // rank
+  _ghost_row_to_rank.clear();
   _ghost_row_to_rank.reserve(_index_maps[0]->owners().size());
   for (int r : _index_maps[0]->owners())
   {
@@ -595,6 +606,7 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
 
   // Compute location in which data for each index should be stored
   // when received
+  _unpack_pos.clear();
   for (std::size_t i = 0; i < ghost_index_array.size(); i += 2)
   {
     // Row must be on this process
@@ -764,8 +776,8 @@ void MatrixCSR<Scalar, V, W, X>::eliminate_zeros(double tol)
     _off_diagonal_offset.push_back(std::distance(row_start, it));
   }
 
-  // TODO: update _unpack_pos, _val_send_disp,
-  // _val_recv_disp
+  // Recompute send and recv offsets and unpack_pos
+  _precompute_send_recv();
 }
 
 } // namespace dolfinx::la
