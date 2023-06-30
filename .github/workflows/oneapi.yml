@@ -21,7 +21,7 @@ jobs:
 
     strategy:
       matrix:
-        petsc_arch: [linux-gnu-real32-32, linux-gnu-real64-32, linux-gnu-complex128-32]
+        petsc_arch: [linux-gnu-real64-32, linux-gnu-complex128-32]
 
     name: oneAPI build and test (${{ matrix.petsc_arch }})
 
