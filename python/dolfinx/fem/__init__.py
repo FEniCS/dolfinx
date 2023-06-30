@@ -9,7 +9,6 @@ from dolfinx.cpp.fem import transpose_dofmap  # noqa
 from dolfinx.cpp.fem import (IntegralType,
                              create_nonmatching_meshes_interpolation_data)
 from dolfinx.cpp.fem import create_sparsity_pattern as _create_sparsity_pattern
-from dolfinx.fem import petsc
 from dolfinx.fem.assemble import (apply_lifting, assemble_matrix,
                                   assemble_scalar, assemble_vector,
                                   create_matrix, set_bc, create_vector)
@@ -43,4 +42,4 @@ __all__ = [
     "DirichletBC", "dirichletbc", "bcs_by_block", "DofMap", "Form",
     "form", "IntegralType", "create_vector",
     "locate_dofs_geometrical", "locate_dofs_topological",
-    "extract_function_spaces", "petsc", "create_nonmatching_meshes_interpolation_data"]
+    "extract_function_spaces", "create_nonmatching_meshes_interpolation_data"]
