@@ -7,7 +7,6 @@
 import basix
 import numpy as np
 import pytest
-import scipy
 import ufl
 from basix.ufl import blocked_element
 from dolfinx.fem import (Constant, Expression, Function, FunctionSpace,
