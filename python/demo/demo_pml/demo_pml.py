@@ -35,7 +35,6 @@ from typing import Tuple, Union
 
 import ufl
 from basix.ufl import element
-from dolfinx.fem.petsc import LinearProblem
 from dolfinx.io import VTXWriter, gmshio
 from efficiencies_pml_demo import calculate_analytical_efficiencies
 from mesh_wire_pml import generate_mesh_wire
