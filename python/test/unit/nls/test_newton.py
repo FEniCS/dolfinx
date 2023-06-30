@@ -6,18 +6,20 @@
 """Unit tests for Newton solver assembly"""
 
 import numpy as np
+
 import ufl
+from dolfinx import cpp as _cpp
+from dolfinx import default_real_type, la
+from dolfinx.cpp.la.petsc import create_vector as _create_petsc_vector
 from dolfinx.fem import (Function, FunctionSpace, dirichletbc, form,
                          locate_dofs_geometrical)
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                create_matrix, create_vector, set_bc)
 from dolfinx.mesh import create_unit_square
-from mpi4py import MPI
-from petsc4py import PETSc
 from ufl import TestFunction, TrialFunction, derivative, dx, grad, inner
 
-from dolfinx import cpp as _cpp
-from dolfinx import default_real_type, la
+from mpi4py import MPI
+from petsc4py import PETSc
 
 
 class NonlinearPDEProblem:
@@ -154,6 +156,7 @@ def test_nonlinear_pde():
     assert n > 0 and n < 6
 
 
+
 def test_nonlinear_pde_snes():
     """Test Newton solver for a simple nonlinear PDE"""
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 15)
@@ -171,7 +174,7 @@ def test_nonlinear_pde_snes():
     problem = NonlinearPDE_SNESProblem(F, u, bc)
 
     u.x.array[:] = 0.9
-    b = la.create_petsc_vector(V.dofmap.index_map, V.dofmap.index_map_bs)
+    b = _create_petsc_vector(V.dofmap.index_map, V.dofmap.index_map_bs)
     J = create_matrix(problem.a)
 
     # Create Newton solver and solve
