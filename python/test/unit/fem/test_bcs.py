@@ -6,7 +6,6 @@
 
 import numpy as np
 import pytest
-import scipy.sparse as sps
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx.fem import (Constant, Function, FunctionSpace,
@@ -84,7 +83,7 @@ def test_overlapping_bcs():
     A.finalize()
 
     # Check the diagonal (only on the rank that owns the row)
-    As = sps.csr_matrix((A.data, A.indices, A.indptr))
+    As = A.to_scipy(ghosted=True)
     d = As.diagonal()
     if len(dof_corner) > 0 and dof_corner[0] < V.dofmap.index_map.size_local:
         assert d[dof_corner[0]] == 1.0
