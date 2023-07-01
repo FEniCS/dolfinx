@@ -33,12 +33,12 @@ from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (CellType, GhostMode, create_box,
                           locate_entities_boundary)
+from mpi4py import MPI
 from petsc4py import PETSc
 from ufl import dx, grad, inner
 
-from dolfinx import default_real_type, la
-from mpi4py import MPI
 import dolfinx
+from dolfinx import la
 
 dtype = PETSc.ScalarType
 # -
