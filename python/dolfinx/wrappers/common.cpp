@@ -88,6 +88,8 @@ void common(py::module& m)
                }),
            py::arg("comm"), py::arg("local_size"), py::arg("dest_src"),
            py::arg("ghosts"), py::arg("ghost_owners"))
+      .def_property_readonly("comm", [](const dolfinx::common::IndexMap& self)
+                             { return MPICommWrapper(self.comm()); })
       .def_property_readonly("size_local",
                              &dolfinx::common::IndexMap::size_local)
       .def_property_readonly("size_global",

@@ -144,6 +144,10 @@ class Vector:
         return self._cpp_object.index_map
 
     @property
+    def block_size(self) -> int:
+        return self._cpp_object.bs
+
+    @property
     def array(self) -> np.ndarray:
         return self._cpp_object.array
 
@@ -201,7 +205,15 @@ def create_petsc_vector_wrap(x: Vector):
         object.
 
     """
-    return _cpp.la.petsc.create_vector_wrap(x._cpp_object)
+    from petsc4py import PETSc
+
+    map = x.index_map
+    ghosts = map.ghosts
+    data = x.array
+    bs = x.block_size
+    print(ghosts)
+    return PETSc.Vec().createGhostWithArray(ghosts, data, size=None, bsize=bs, comm=map.comm)
+    # return _cpp.la.petsc.create_vector_wrap(x._cpp_object)
 
 
 def orthonormalize(basis):
