@@ -130,10 +130,9 @@ void impl::insert_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
       // Find position of column index
       auto it = std::lower_bound(cit0, cit1, xcols[c]);
 #ifndef NDEBUG
-      if (*it != xcols[c])
+      if (*it != xcols[c] or it == cit1)
         throw std::runtime_error("Entry not in sparsity");
 #endif
-      assert(it != cit1);
 
       std::size_t d = std::distance(cols.begin(), it);
       int di = d * BS0 * BS1;
@@ -181,10 +180,9 @@ void impl::insert_blocked_csr(U&& data, const V& cols, const W& row_ptr,
         // Find position of column index
         auto it = std::lower_bound(cit0, cit1, xcols[c] * BS1);
 #ifndef NDEBUG
-        if (*it != xcols[c] * BS1)
+        if (*it != xcols[c] * BS1 or it == cit1)
           throw std::runtime_error("Entry not in sparsity BLK");
 #endif
-        assert(it != cit1);
         std::size_t d = std::distance(cols.begin(), it);
         assert(d < data.size());
         int xi = c * BS1;
@@ -228,9 +226,8 @@ void impl::insert_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
       // Find position of column index
       auto cdiv = std::div(xcols[c], bs1);
       auto it = std::lower_bound(cit0, cit1, cdiv.quot);
-      assert(it != cit1);
 #ifndef NDEBUG
-      if (*it != cdiv.quot)
+      if (*it != cdiv.quot or it == cit1)
         throw std::runtime_error("Entry not in sparsity NBLK");
 #endif
 
