@@ -167,13 +167,33 @@ void declare_objects(py::module& m, const std::string& type)
       .def("finalize_end", &dolfinx::la::MatrixCSR<T>::finalize_end);
 }
 
+// Declare objects that have multiple scalar types
+template <typename T>
+void declare_functions(py::module& m)
+{
+  m.def(
+      "inner_product",
+      [](const dolfinx::la::Vector<T>& x, const dolfinx::la::Vector<T>& y)
+      { return dolfinx::la::inner_product(x, y); },
+      py::arg("x"), py::arg("y"));
+  m.def(
+      "orthonormalize",
+      [](std::vector<std::reference_wrapper<dolfinx::la::Vector<T>>> basis)
+      { dolfinx::la::orthonormalize(basis); },
+      py::arg("basis"));
+  m.def(
+      "is_orthonormal",
+      [](std::vector<std::reference_wrapper<const dolfinx::la::Vector<T>>>
+             basis) { return dolfinx::la::is_orthonormal(basis); },
+      py::arg("basis"));
+}
+
 } // namespace
 
 namespace dolfinx_wrappers
 {
 void la(py::module& m)
 {
-
   py::enum_<PyInsertMode>(m, "InsertMode")
       .value("add", PyInsertMode::add)
       .value("insert", PyInsertMode::insert);
@@ -253,5 +273,10 @@ void la(py::module& m)
   declare_objects<double>(m, "float64");
   declare_objects<std::complex<float>>(m, "complex64");
   declare_objects<std::complex<double>>(m, "complex128");
+
+  declare_functions<float>(m);
+  declare_functions<double>(m);
+  declare_functions<std::complex<float>>(m);
+  declare_functions<std::complex<double>>(m);
 }
 } // namespace dolfinx_wrappers

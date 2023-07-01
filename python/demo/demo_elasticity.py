@@ -38,6 +38,7 @@ from ufl import dx, grad, inner
 
 from dolfinx import default_real_type, la
 from mpi4py import MPI
+import dolfinx
 
 dtype = PETSc.ScalarType
 # -
@@ -60,6 +61,7 @@ def build_nullspace(V):
     length0 = V.dofmap.index_map.size_local
     length1 = length0 + V.dofmap.index_map.num_ghosts
     basis = [np.zeros(bs * length1, dtype=dtype) for i in range(6)]
+    basis0 = [la.vector(V.dofmap.index_map, bs=bs, dtype=dtype) for i in range(6)]
 
     # Get dof indices for each subspace (x, y and z dofs)
     dofs = [V.sub(i).dofmap.list.flatten() for i in range(3)]
@@ -67,6 +69,7 @@ def build_nullspace(V):
     # Set the three translational rigid body modes
     for i in range(3):
         basis[i][dofs[i]] = 1.0
+        basis0[i].array[dofs[i]] = 1.0
 
     # Set the three rotational rigid body modes
     x = V.tabulate_dof_coordinates()
@@ -79,9 +82,21 @@ def build_nullspace(V):
     basis[5][dofs[2]] = x1
     basis[5][dofs[1]] = -x2
 
+    basis0[3].array[dofs[0]] = -x1
+    basis0[3].array[dofs[1]] = x0
+    basis0[4].array[dofs[0]] = x2
+    basis0[4].array[dofs[2]] = -x0
+    basis0[5].array[dofs[2]] = x1
+    basis0[5].array[dofs[1]] = -x2
+
     # Create PETSc Vec objects (excluding ghosts) and normalise
     basis_petsc = [PETSc.Vec().createWithArray(x[:bs * length0], bsize=3, comm=V.mesh.comm) for x in basis]
     la.orthonormalize(basis_petsc)
+
+    _basis0 = [x._cpp_object for x in basis0]
+    dolfinx.cpp.la.orthonormalize(_basis0)
+    assert dolfinx.cpp.la.is_orthonormal(_basis0)
+
     assert la.is_orthonormal(basis_petsc, eps=1.0e3 * np.finfo(default_real_type).eps)
 
     # Create and return a PETSc nullspace
@@ -167,6 +182,7 @@ set_bc(b, [bc])
 
 ns = build_nullspace(V)
 A.setNearNullSpace(ns)
+A.setOption(PETSc.Mat.Option.SPD, True)
 
 # Set PETSc solver options, create a PETSc Krylov solver, and attach the
 # matrix `A` to the solver:
@@ -183,8 +199,8 @@ opts["mg_levels_ksp_type"] = "chebyshev"
 opts["mg_levels_pc_type"] = "jacobi"
 
 # Improve estimate of eigenvalues for Chebyshev smoothing
-opts["mg_levels_esteig_ksp_type"] = "cg"
-opts["mg_levels_ksp_chebyshev_esteig_steps"] = 20
+# opts["mg_levels_ksp_chebyshev_esteig_steps"] = 40
+opts["pc_gamg_esteig_ksp_max_it"] = 40
 
 # Create PETSc Krylov solver and turn convergence monitoring on
 solver = PETSc.KSP().create(msh.comm)
@@ -202,9 +218,9 @@ uh = Function(V)
 
 # Set a monitor, solve linear system, and display the solver
 # configuration
-solver.setMonitor(lambda _, its, rnorm: print(f"Iteration: {its}, rel. residual: {rnorm}"))
+# solver.setMonitor(lambda _, its, rnorm: print(f"Iteration: {its}, rel. residual: {rnorm}"))
 solver.solve(b, uh.vector)
-solver.view()
+# solver.view()
 
 # Scatter forward the solution vector to update ghost values
 uh.x.scatter_forward()

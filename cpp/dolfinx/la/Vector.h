@@ -7,6 +7,7 @@
 #pragma once
 
 #include "utils.h"
+#include <cmath>
 #include <complex>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Scatterer.h>
@@ -306,52 +307,61 @@ auto norm(const V& x, Norm type = Norm::l2)
 /// vectors must have identical parallel layouts. The vectors are
 /// modified in-place.
 /// @param[in] tol The tolerance used to detect a linear dependency
+/// @tparam V dolfinx::la::Vector
 template <class V>
-void orthonormalize(std::span<V> basis, double tol = 1.0e-10)
+void orthonormalize(std::vector<std::reference_wrapper<V>> basis)
 {
   using T = typename V::value_type;
+  using U = typename dolfinx::scalar_value_type_t<T>;
+
   // Loop over each vector in basis
   for (std::size_t i = 0; i < basis.size(); ++i)
   {
     // Orthogonalize vector i with respect to previously orthonormalized
     // vectors
+    V& bi = basis[i].get();
     for (std::size_t j = 0; j < i; ++j)
     {
+      const V& bj = basis[j].get();
+
       // basis_i <- basis_i - dot_ij  basis_j
-      T dot_ij = inner_product(basis[i], basis[j]);
-      std::transform(basis[j].array().begin(), basis[j].array().end(),
-                     basis[i].array().begin(), basis[i].mutable_array().begin(),
+      auto dot_ij = inner_product(bi, bj);
+      std::transform(bj.array().begin(), bj.array().end(), bi.array().begin(),
+                     bi.mutable_array().begin(),
                      [dot_ij](auto xj, auto xi) { return xi - dot_ij * xj; });
     }
 
     // Normalise basis function
-    double norm = la::norm(basis[i], la::Norm::l2);
-    if (norm < tol)
+    auto norm = la::norm(bi, la::Norm::l2);
+    if (norm * norm < std::numeric_limits<U>::epsilon())
     {
       throw std::runtime_error(
           "Linear dependency detected. Cannot orthogonalize.");
     }
-    std::transform(basis[i].array().begin(), basis[i].array().end(),
-                   basis[i].mutable_array().begin(),
+    std::transform(bi.array().begin(), bi.array().end(),
+                   bi.mutable_array().begin(),
                    [norm](auto x) { return x / norm; });
   }
 }
 
-/// Test if basis is orthonormal
-/// @param[in] basis The set of vectors to check
-/// @param[in] tol The tolerance used to test for orthonormality
-/// @return True is basis is orthonormal, otherwise false
+/// @brief Test if basis is orthonormal.
+/// @param[in] basis The set of vectors to check.
+/// @param[in] tol The tolerance used to test for orthonormality.
+/// @return True is basis is orthonormal, otherwise false.
 template <class V>
-bool is_orthonormal(std::span<const V> basis, double tol = 1.0e-10)
+bool is_orthonormal(std::vector<std::reference_wrapper<const V>> basis)
 {
   using T = typename V::value_type;
+  using U = typename dolfinx::scalar_value_type_t<T>;
+
+  // auto tol = std::sqrt(T(std::numeric_limits<U>::epsilon()));
   for (std::size_t i = 0; i < basis.size(); i++)
   {
     for (std::size_t j = i; j < basis.size(); j++)
     {
-      const double delta_ij = (i == j) ? 1.0 : 0.0;
-      T dot_ij = inner_product(basis[i], basis[j]);
-      if (std::abs(delta_ij - dot_ij) > tol)
+      T delta_ij = (i == j) ? T(1) : T(0);
+      auto dot_ij = inner_product(basis[i].get(), basis[j].get());
+      if (std::norm(delta_ij - dot_ij) > std::numeric_limits<U>::epsilon())
         return false;
     }
   }
