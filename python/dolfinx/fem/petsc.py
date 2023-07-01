@@ -17,11 +17,11 @@ import functools
 import os
 import typing
 
+import petsc4py
+import petsc4py.lib
 import ufl
-from dolfinx import cpp as _cpp
 from dolfinx.cpp.fem import pack_coefficients as _pack_coefficients
 from dolfinx.cpp.fem import pack_constants as _pack_constants
-from dolfinx.la import create_petsc_vector
 from dolfinx.fem import assemble
 from dolfinx.fem.bcs import DirichletBC
 from dolfinx.fem.bcs import bcs_by_block as _bcs_by_block
@@ -29,10 +29,11 @@ from dolfinx.fem.forms import Form
 from dolfinx.fem.forms import extract_function_spaces as _extract_spaces
 from dolfinx.fem.forms import form as _create_form
 from dolfinx.fem.function import Function as _Function
-
-import petsc4py
-import petsc4py.lib
+from dolfinx.la import create_petsc_vector
 from petsc4py import PETSc
+
+from dolfinx import cpp as _cpp
+from dolfinx import la
 
 
 def _extract_function_spaces(a: typing.List[typing.List[Form]]):
@@ -557,7 +558,7 @@ class LinearProblem:
         else:
             self.u = u
 
-        self._x = _cpp.la.petsc.create_vector_wrap(self.u.x._cpp_object)
+        self._x = la.create_petsc_vector_wrap(self.u.x)
         self.bcs = bcs
 
         self._solver = PETSc.KSP().create(self.u.function_space.mesh.comm)
