@@ -49,7 +49,7 @@ class CMakeBuild(build_ext):
                        f'-DPython3_INCLUDE_DIRS={sysconfig.get_config_var("INCLUDEPY")}']
 
         cfg = 'Debug' if self.debug else 'Release'
-        print('****** cfg = ", cfg, " ******")
+        print("****** cfg = ", cfg, " ******")
         build_args = ['--config', cfg]
         cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
 
