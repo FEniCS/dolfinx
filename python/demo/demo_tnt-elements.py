@@ -20,9 +20,9 @@
 #
 # We begin this demo by importing the required modules.
 
+# +
 import basix
 import basix.ufl
-# +
 import matplotlib
 import matplotlib.pylab as plt
 import numpy as np
@@ -34,7 +34,6 @@ from ufl import (SpatialCoordinate, TestFunction, TrialFunction, cos, div, dx,
 from dolfinx import fem, mesh
 
 matplotlib.use('agg')
-
 # -
 
 # ## Defining a degree 1 TNT element

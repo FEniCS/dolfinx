@@ -184,7 +184,7 @@ opts["mg_levels_ksp_type"] = "chebyshev"
 opts["mg_levels_pc_type"] = "jacobi"
 
 # Improve estimate of eigenvalues for Chebyshev smoothing
-opts["pc_gamg_esteig_ksp_max_it"] = 10
+opts["mg_levels_ksp_chebyshev_esteig_steps"] = 10
 
 # Create PETSc Krylov solver and turn convergence monitoring on
 solver = PETSc.KSP().create(msh.comm)
