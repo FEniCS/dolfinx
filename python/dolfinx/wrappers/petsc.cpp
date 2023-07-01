@@ -33,7 +33,6 @@
 
 namespace
 {
-
 // Declare assembler function that have multiple scalar types
 template <typename T, typename U>
 void declare_petsc_discrete_operators(py::module& m)
@@ -333,7 +332,6 @@ void petsc_nls_module(py::module& m)
 
 namespace dolfinx_wrappers
 {
-
 void petsc(py::module& m_fem, py::module& m_la, py::module& m_nls)
 {
   py::module petsc_fem_mod

@@ -215,8 +215,7 @@ L = inner(f, v) * dx
 # case we use a direct (LU) solver. The {py:func}`solve
 # <dolfinx.fem.petsc.LinearProblem.solve>` will compute a solution.
 
-problem = LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_type": "preonly",
-                                                       "pc_type": "lu"})
+problem = LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 uh = problem.solve()
 
 # The solution can be written to a  {py:class}`XDMFFile
