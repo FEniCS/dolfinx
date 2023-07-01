@@ -213,6 +213,14 @@ def create_petsc_vector_wrap(x: Vector):
     return PETSc.Vec().createGhostWithArray(ghosts, x.array, size=size, bsize=bs, comm=map.comm)
 
 
+def create_petsc_vector(map, bs: int):
+    """Creat a distributed PETSc vector."""
+    from petsc4py import PETSc
+    ghosts = map.ghosts.astype(PETSc.IntType)
+    size = (map.size_local * bs, map.size_global * bs)
+    return PETSc.Vec().createGhost(ghosts, size=size, bsize=bs, comm=map.comm)
+
+
 def orthonormalize(basis):
     """Orthogoalise set of PETSc vectors in-place"""
     for i, x in enumerate(basis):

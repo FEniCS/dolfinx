@@ -10,7 +10,7 @@ from contextlib import ExitStack
 import numpy as np
 import pytest
 import ufl
-from dolfinx.cpp.la.petsc import create_vector as create_petsc_vector
+from dolfinx.la import create_petsc_vector
 from dolfinx.fem import VectorFunctionSpace, form
 from dolfinx.fem.petsc import assemble_matrix
 from dolfinx.mesh import (CellType, GhostMode, create_box, create_unit_cube,
@@ -33,7 +33,7 @@ def build_elastic_nullspace(V):
     dim = 3 if gdim == 2 else 6
 
     # Create list of vectors for null space
-    ns = [create_petsc_vector(V.dofmap.index_map, V.dofmap.index_map_bs) for i in range(dim)]
+    ns = [la.create_petsc_vector(V.dofmap.index_map, V.dofmap.index_map_bs) for i in range(dim)]
 
     with ExitStack() as stack:
         vec_local = [stack.enter_context(x.localForm()) for x in ns]
