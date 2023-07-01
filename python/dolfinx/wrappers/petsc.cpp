@@ -23,7 +23,6 @@
 #include <dolfinx/la/petsc.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/nls/NewtonSolver.h>
-
 #include <petsc4py/petsc4py.h>
 #include <pybind11/complex.h>
 #include <pybind11/functional.h>
