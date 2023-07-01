@@ -240,7 +240,7 @@ class Function(ufl.Coefficient):
     """
 
     def __init__(self, V: FunctionSpace, x: typing.Optional[la.Vector] = None,
-                 name: typing.Optional[str] = None, dtype: typing.Optional[npt.DTypeLike] = default_scalar_type):
+                 name: typing.Optional[str] = None, dtype: typing.Optional[npt.DTypeLike] = None):
         """Initialize a finite element Function.
 
         Args:
@@ -248,9 +248,18 @@ class Function(ufl.Coefficient):
             x: Function degree-of-freedom vector. Typically required
                 only when reading a saved Function from file.
             name: Function name.
-            dtype: Scalar type.
+            dtype: Scalar type. Is not set, the DOLFINx default scalar
+                type is used.
 
         """
+        if x is not None:
+            if dtype is None:
+                dtype = x.array.dtype
+            else:
+                assert x.array.dtype == dtype, "Incompatible Vector and dtype."
+        else:
+            if dtype is None:
+                dtype = default_scalar_type
 
         # PETSc Vec wrapper around the C++ function data (constructed
         # when first requested)
