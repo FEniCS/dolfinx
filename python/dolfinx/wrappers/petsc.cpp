@@ -123,17 +123,6 @@ void declare_petsc_discrete_operators(py::module& m)
 
 void petsc_la_module(py::module& m)
 {
-  m.def("create_vector",
-        py::overload_cast<const dolfinx::common::IndexMap&, int>(
-            &dolfinx::la::petsc::create_vector),
-        py::return_value_policy::take_ownership, py::arg("index_map"),
-        py::arg("bs"), "Create a ghosted PETSc Vec for index map.");
-  m.def(
-      "create_vector_wrap",
-      [](dolfinx::la::Vector<PetscScalar>& x)
-      { return dolfinx::la::petsc::create_vector_wrap(x); },
-      py::return_value_policy::take_ownership, py::arg("x"),
-      "Create a ghosted PETSc Vec that wraps a DOLFINx Vector");
   m.def(
       "create_matrix",
       [](dolfinx_wrappers::MPICommWrapper comm,

@@ -385,7 +385,9 @@ class Function(ufl.Coefficient):
     def vector(self):
         """PETSc vector holding the degrees-of-freedom."""
         if self._petsc_x is None:
-            self._petsc_x = _cpp.la.petsc.create_vector_wrap(self._cpp_object.x)
+            from dolfinx.la import create_petsc_vector_wrap
+            self._petsc_x = create_petsc_vector_wrap(self)
+            # self._petsc_x = _cpp.la.petsc.create_vector_wrap(self._cpp_object.x)
         return self._petsc_x
 
     @property

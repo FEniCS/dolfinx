@@ -198,22 +198,19 @@ def create_petsc_vector_wrap(x: Vector):
         x: The vector to wrap as a PETSc vector.
 
     Returns:
-        A PETSc vector that shares data with `x`.
+        A PETSc vector that shares data with ``x``.
 
     Note:
-        The vector `x` must not be destroyed before the returned PETSc
+        The vector ``x`` must not be destroyed before the returned PETSc
         object.
 
     """
     from petsc4py import PETSc
-
     map = x.index_map
-    ghosts = map.ghosts
-    data = x.array
+    ghosts = map.ghosts.astype(PETSc.IntType)
     bs = x.block_size
-    print(ghosts)
-    return PETSc.Vec().createGhostWithArray(ghosts, data, size=None, bsize=bs, comm=map.comm)
-    # return _cpp.la.petsc.create_vector_wrap(x._cpp_object)
+    size = (map.size_local * bs, map.size_global * bs)
+    return PETSc.Vec().createGhostWithArray(ghosts, x.array, size=size, bsize=bs, comm=map.comm)
 
 
 def orthonormalize(basis):
