@@ -306,7 +306,6 @@ auto norm(const V& x, Norm type = Norm::l2)
 /// @param[in,out] basis The set of vectors to orthonormalise. The
 /// vectors must have identical parallel layouts. The vectors are
 /// modified in-place.
-/// @param[in] tol The tolerance used to detect a linear dependency
 /// @tparam V dolfinx::la::Vector
 template <class V>
 void orthonormalize(std::vector<std::reference_wrapper<V>> basis)
@@ -346,7 +345,6 @@ void orthonormalize(std::vector<std::reference_wrapper<V>> basis)
 
 /// @brief Test if basis is orthonormal.
 /// @param[in] basis The set of vectors to check.
-/// @param[in] tol The tolerance used to test for orthonormality.
 /// @return True is basis is orthonormal, otherwise false.
 template <class V>
 bool is_orthonormal(std::vector<std::reference_wrapper<const V>> basis)
