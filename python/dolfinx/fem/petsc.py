@@ -347,7 +347,7 @@ def assemble_matrix(a: typing.Any, bcs: typing.List[DirichletBC] = [],
 
     """
     A = _cpp.fem.petsc.create_matrix(a._cpp_object)
-    assemble_matrix(A, a, bcs, diagonal, constants, coeffs)
+    assemble_matrix_mat(A, a, bcs, diagonal, constants, coeffs)
     return A
 
 
@@ -426,7 +426,7 @@ def _assemble_matrix_nest_mat(A: PETSc.Mat, a: typing.List[typing.List[Form]],
         for j, (a_block, const, coeff) in enumerate(zip(a_row, const_row, coeff_row)):
             if a_block is not None:
                 Asub = A.getNestSubMatrix(i, j)
-                assemble_matrix(Asub, a_block, bcs, diagonal, const, coeff)
+                assemble_matrix_mat(Asub, a_block, bcs, diagonal, const, coeff)
             elif i == j:
                 for bc in bcs:
                     row_forms = [row_form for row_form in a_row if row_form is not None]
@@ -629,7 +629,7 @@ class LinearProblem:
 
         # Assemble lhs
         self._A.zeroEntries()
-        assemble_matrix(self._A, self._a, bcs=self.bcs)
+        assemble_matrix_mat(self._A, self._a, bcs=self.bcs)
         self._A.assemble()
 
         # Assemble rhs
@@ -762,7 +762,7 @@ class NonlinearProblem:
 
         """
         A.zeroEntries()
-        assemble_matrix(A, self._a, self.bcs)
+        assemble_matrix_mat(A, self._a, self.bcs)
         A.assemble()
 
 

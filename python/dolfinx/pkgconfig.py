@@ -29,7 +29,7 @@ def exists(package) -> bool:
     return _pkgconfig_query("--exists " + package)[0] == 0
 
 
-def parse(package) -> dict:
+def parse(package):
     """Return a dict containing compile-time definitions."""
     parse_map = {
         '-D': 'define_macros',
