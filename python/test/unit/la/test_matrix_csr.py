@@ -13,9 +13,9 @@ from dolfinx.cpp.la import BlockMode, SparsityPattern
 from dolfinx.la import matrix_csr
 from dolfinx.mesh import GhostMode, create_unit_square
 
+from dolfinx import cpp as _cpp
 from dolfinx import fem
 from ufl import dx, inner, grad, TestFunction, TrialFunction
-from scipy.sparse import csr_matrix
 from mpi4py import MPI
 
 
