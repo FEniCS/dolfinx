@@ -46,7 +46,6 @@ void declare_objects(py::module& m, const std::string& type)
            py::arg("vec"))
       .def_property_readonly("dtype", [](const dolfinx::la::Vector<T>& self)
                              { return py::dtype::of<T>(); })
-      .def("set", &dolfinx::la::Vector<T>::set, py::arg("v"))
       .def(
           "norm",
           [](dolfinx::la::Vector<T>& self, dolfinx::la::Norm type)
@@ -92,8 +91,7 @@ void declare_objects(py::module& m, const std::string& type)
            py::arg("p"), py::arg("block_mode"))
       .def_property_readonly("dtype", [](const dolfinx::la::MatrixCSR<T>& self)
                              { return py::dtype::of<T>(); })
-      .def_property_readonly("block_size",
-                             &dolfinx::la::MatrixCSR<T>::block_size)
+      .def_property_readonly("bs", &dolfinx::la::MatrixCSR<T>::block_size)
       .def("squared_norm", &dolfinx::la::MatrixCSR<T>::squared_norm)
       .def("index_map", &dolfinx::la::MatrixCSR<T>::index_map)
       .def("add",

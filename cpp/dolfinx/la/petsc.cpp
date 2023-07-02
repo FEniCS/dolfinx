@@ -711,18 +711,6 @@ int petsc::KrylovSolver::solve(Vec x, const Vec b, bool transpose) const
       petsc::error(ierr, __FILE__, "KSPSolve");
   }
 
-  // FIXME: Remove ghost updating?
-  // Update ghost values in solution vector
-  Vec xg;
-  VecGhostGetLocalForm(x, &xg);
-  const bool is_ghosted = xg ? true : false;
-  VecGhostRestoreLocalForm(x, &xg);
-  if (is_ghosted)
-  {
-    VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
-    VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
-  }
-
   // Get the number of iterations
   PetscInt num_iterations = 0;
   ierr = KSPGetIterationNumber(_ksp, &num_iterations);

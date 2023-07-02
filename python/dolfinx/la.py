@@ -14,7 +14,7 @@ from dolfinx.cpp.la import BlockMode, InsertMode, Norm
 from dolfinx import cpp as _cpp
 
 __all__ = ["orthonormalize", "is_orthonormal", "matrix_csr", "vector",
-           "MatrixCSR", "Norm", "InsertMode", "Vector", ]
+           "MatrixCSR", "Norm", "InsertMode", "Vector", "create_petsc_vector"]
 
 
 class MatrixCSR:
@@ -22,11 +22,7 @@ class MatrixCSR:
         """A distributed sparse matrix that uses compressed sparse row storage.
 
         Args:
-            sp: The sparsity pattern that defines the nonzero structure
-            of the matrix the parallel distribution of the matrix
-            bm: The block mode (compact or expanded). Relevant only if
-            block size is greater than one.
-
+            A: The C++/pybind11 matrix object.
         Note:
             Objects of this type should be created using
             :func:`matrix_csr` and not created using the class
@@ -38,7 +34,7 @@ class MatrixCSR:
     def index_map(self, i: int) -> IndexMap:
         """Index map for row/column.
 
-        Arg:
+        Args:
             i: 0 for row map, 1 for column map.
 
         """
@@ -47,12 +43,14 @@ class MatrixCSR:
     @property
     def block_size(self):
         """Block sizes for the matrix."""
-        return self._cpp_object.block_size
+        return self._cpp_object.bs
 
     def add(self, x, rows, cols, bs=1) -> None:
+        """Add a block of values in the matrix."""
         self._cpp_object.add(x, rows, cols, bs)
 
     def set(self, x, rows, cols, bs=1) -> None:
+        """Set a block of values in the matrix."""
         self._cpp_object.set(x, rows, cols, bs)
 
     def set_value(self, x: np.floating) -> None:
@@ -65,6 +63,7 @@ class MatrixCSR:
         self._cpp_object.set(x)
 
     def finalize(self) -> None:
+        """Scatter and accumulate ghost values."""
         self._cpp_object.finalize()
 
     def squared_norm(self) -> np.floating:
@@ -117,7 +116,7 @@ class MatrixCSR:
         """
         from scipy.sparse import csr_matrix as _csr, bsr_matrix as _bsr
 
-        bs0, bs1 = self._cpp_object.block_size
+        bs0, bs1 = self._cpp_object.bs
         ncols = self.index_map(1).size_local + self.index_map(1).num_ghosts
         if ghosted:
             nrows = self.index_map(0).size_local + self.index_map(0).num_ghosts
@@ -178,26 +177,42 @@ class Vector:
 
     @property
     def index_map(self) -> IndexMap:
+        """Index map that describes size and parallel distribution."""
         return self._cpp_object.index_map
 
     @property
     def block_size(self) -> int:
+        """Block size for the vector."""
         return self._cpp_object.bs
 
     @property
     def array(self) -> np.ndarray:
+        """Local representation of the vector."""
         return self._cpp_object.array
 
-    def set(self, value: np.floating) -> None:
-        self._cpp_object.set(value)
-
     def scatter_forward(self) -> None:
+        """Update ghost entries."""
         self._cpp_object.scatter_forward()
 
-    def scatter_reverse(self, mode: InsertMode):
+    def scatter_reverse(self, mode: InsertMode) -> None:
+        """Scatter ghost entries to owner.
+
+        Args:
+            mode: Control how scattered values are set/accumulated by owner.
+
+        """
         self._cpp_object.scatter_reverse(mode)
 
     def norm(self, type=_cpp.la.Norm.l2) -> np.floating:
+        """Compute a norm of the vector.
+
+        Args:
+            type: Norm type to computed.
+
+        Returns:
+            Computed norm.
+
+        """
         return self._cpp_object.norm(type)
 
 

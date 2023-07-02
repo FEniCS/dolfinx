@@ -28,10 +28,6 @@ from mpi4py import MPI
 from ufl import ds, dx, grad, inner
 
 from dolfinx import default_scalar_type, fem, mesh
-
-if np.issubdtype(default_scalar_type, np.complexfloating):
-    print("Demo should only be executed with DOLFINx real mode")
-    exit(0)
 # -
 
 # Note that Basix and the Basix UFL wrapper are imported directly. Basix
