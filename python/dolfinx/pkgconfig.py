@@ -24,13 +24,13 @@ def _pkgconfig_query(s):
     return (rc, out.rstrip().decode('utf-8'))
 
 
-def exists(package):
-    "Test for the existence of a pkg-config file for a named package"
-    return (_pkgconfig_query("--exists " + package)[0] == 0)
+def exists(package) -> bool:
+    """Test for the existence of a pkg-config file for a named package."""
+    return _pkgconfig_query("--exists " + package)[0] == 0
 
 
-def parse(package):
-    "Return a dict containing compile-time definitions"
+def parse(package) -> dict:
+    """Return a dict containing compile-time definitions."""
     parse_map = {
         '-D': 'define_macros',
         '-I': 'include_dirs',
@@ -40,11 +40,11 @@ def parse(package):
 
     result = {x: [] for x in parse_map.values()}
 
-    # Execute the query to pkg-config and clean the result.
+    # Execute the query to pkg-config and clean the result
     out = _pkgconfig_query(package + ' --cflags --libs')[1]
     out = out.replace('\\"', '')
 
-    # Iterate through each token in the output.
+    # Iterate through each token in the output
     for token in out.split():
         key = parse_map.get(token[:2])
         if key:

@@ -28,7 +28,7 @@ class BoundingBoxTree:
     """Bounding box trees used in collision detection."""
 
     def __init__(self, tree):
-        """Wrap a C++ BoundingBoxTree
+        """Wrap a C++ BoundingBoxTree.
 
         Note:
             This initializer should not be used in user code. Use
@@ -39,14 +39,14 @@ class BoundingBoxTree:
 
     @property
     def num_bboxes(self) -> int:
-        """Number of bounding boxes"""
+        """Number of bounding boxes."""
         return self._cpp_object.num_bboxes
 
     def get_bbox(self, i) -> npt.NDArray[np.floating]:
         """Get lower and upper corners of the ith bounding box.
 
         Args:
-            i: Index of the box
+            i: Index of the box.
 
         Returns:
             The 'lower' and 'upper' points of the bounding box.
@@ -64,11 +64,11 @@ def bb_tree(mesh: Mesh, dim: int, entities: typing.Optional[npt.NDArray[np.int32
     """Create a bounding box tree for use in collision detection.
 
     Args:
-        mesh: The mesh
-        dim: The dimension of the mesh entities
-        entities: List of entity indices (local to process). If not supplied,
-            all owned and ghosted entities are used.
-        padding: Padding for each bounding box
+        mesh: The mesh.
+        dim: Dimension of the mesh entities to build bounding box for.
+        entities: List of entity indices (local to process). If not
+            supplied, all owned and ghosted entities are used.
+        padding: Padding for each bounding box.
 
     Returns:
         Bounding box tree.
@@ -93,8 +93,8 @@ def compute_collisions_trees(tree0: BoundingBoxTree, tree1: BoundingBoxTree) -> 
     """Compute all collisions between two bounding box trees.
 
     Args:
-        tree0: First bounding box tree
-        tree1: Second bounding box tree
+        tree0: First bounding box tree.
+        tree1: Second bounding box tree.
 
     Returns:
         List of pairs of intersecting box indices from each tree. Shape
@@ -111,8 +111,8 @@ def compute_collisions_points(tree: BoundingBoxTree, x: npt.NDArray[np.floating]
     than one box.
 
     Args:
-        tree: Bounding box tree
-        x: Points (`shape=(num_points, 3)`)
+        tree: Bounding box tree.
+        x: Points (``shape=(num_points, 3)``).
 
     Returns:
        For each point, the bounding box leaves that collide with the
@@ -127,14 +127,15 @@ def compute_closest_entity(tree: BoundingBoxTree, midpoint_tree: BoundingBoxTree
     """Compute closest mesh entity to a point.
 
     Args:
-        tree: bounding box tree for the entities
+        tree: bounding box tree for the entities.
         midpoint_tree: A bounding box tree with the midpoints of all
             the mesh entities. This is used to accelerate the search.
-        mesh: The mesh
-        points: The points to check for collision, shape=(num_points, 3)
+        mesh: The mesh.
+        points: The points to check for collision, ``shape=(num_points,
+        3)``.
 
     Returns:
-        Mesh entity index for each point in `points`. Returns -1 for a
+        Mesh entity index for each point in ``points``. Returns -1 for a
         point if the bounding box tree is empty.
 
     """
@@ -160,14 +161,16 @@ def compute_colliding_cells(mesh: Mesh, candidates: AdjacencyList_int32, x: npt.
     """From a mesh, find which cells collide with a set of points.
 
     Args:
-        mesh: The mesh
+        mesh: The mesh.
         candidate_cells: Adjacency list of candidate colliding cells for
-            the ith point in `x`
-        points: The points to check for collision shape=(num_points, 3)
+            the ith point in ``x``.
+        points: The points to check for collision ``shape=(num_points,
+        3)``,
 
     Returns:
         Adjacency list where the ith node is the list of entities that
-        collide with the ith point
+        collide with the ith point.
+
     """
     return _cpp.geometry.compute_colliding_cells(mesh._cpp_object, candidates, x)
 
@@ -179,14 +182,14 @@ def squared_distance(mesh: Mesh, dim: int, entities: typing.List[int], points: n
     input entity.
 
     Args:
-        mesh: Mesh containing the entities
-        dim: Topological dimension of the mesh entities
-        entities: Indices of the mesh entities (local to process)
+        mesh: Mesh containing the entities.
+        dim: Topological dimension of the mesh entities.
+        entities: Indices of the mesh entities (local to process).
         points: Points to compute the shortest distance from
-            (``shape=(num_points, 3)``)
+            (``shape=(num_points, 3)``).
 
     Returns:
-        Squared shortest distance from points[i] to entities[i]
+        Squared shortest distance from ``points[i]`` to ``entities[i]``.
 
     """
     return _cpp.geometry.squared_distance(mesh._cpp_object, dim, entities, points)
@@ -198,8 +201,8 @@ def compute_distance_gjk(p: npt.NDArray[np.floating], q: npt.NDArray[np.floating
     Uses the Gilbert–Johnson–Keerthi (GJK) distance algorithm.
 
     Args:
-        p: Body 1 list of points (``shape=(num_points, gdim)``)
-        q: Body 2 list of points (``shape=(num_points, gdim)``)
+        p: Body 1 list of points (``shape=(num_points, gdim)``).
+        q: Body 2 list of points (``shape=(num_points, gdim)``).
 
     Returns:
         Shortest vector between the two bodies.

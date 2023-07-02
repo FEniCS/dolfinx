@@ -121,7 +121,7 @@ def test_save_2d_tensor(tempdir, encoding, dtype, cell_type):
     filename = Path(tempdir, "tensor.xdmf")
     mesh = create_unit_square(MPI.COMM_WORLD, 16, 16, cell_type, dtype=xtype)
     u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)), dtype=dtype)
-    u.x.array[:] = 1.0 + (1j if np.issubdtype(dtype, np.complexfloating) else 0)s
+    u.x.array[:] = 1.0 + (1j if np.issubdtype(dtype, np.complexfloating) else 0)
     with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
         file.write_function(u)

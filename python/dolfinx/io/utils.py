@@ -4,7 +4,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""IO module for input data and post-processing file output"""
+"""IO module for input data and post-processing file output."""
 
 import typing
 
@@ -39,14 +39,13 @@ if _cpp.common.has_adios2:
     __all__ = __all__ + ["FidesWriter", "VTXWriter"]
 
     class VTXWriter:
-        """Interface to VTK files for ADIOS2
+        """Writer to to VTK files, using ADIOS2 to create the files.
 
         VTX supports arbitrary order Lagrange finite elements for the
         geometry description and arbitrary order (discontinuous)
         Lagrange finite elements for Functions.
 
-        The files can be displayed by Paraview. The storage backend uses
-        ADIOS2.
+        The files can be displayed by Paraview.
 
         """
 
@@ -100,15 +99,14 @@ if _cpp.common.has_adios2:
             self._cpp_object.close()
 
     class FidesWriter:
-        """Interface to Fides file format.
+        """Writer to to Fides files, using ADIOS2 to create the files.
 
-        Fides supports first order Lagrange finite elements for the
-        geometry description and first order Lagrange finite elements
-        for functions. All functions has to be of the same element
-        family and same order.
+        Fides (https://fides.readthedocs.io/) supports first order
+        Lagrange finite elements for the geometry description and first
+        order Lagrange finite elements for functions. All functions has
+        to be of the same element family and same order.
 
-        The files can be displayed by Paraview. The storage backend uses
-        ADIOS2.
+        The files can be displayed by Paraview.
 
         """
 
@@ -118,9 +116,9 @@ if _cpp.common.has_adios2:
             element family and degree
 
             Args:
-                comm: The MPI communicator
-                filename: The output filename
-                output: The data to output. Either a mesh, a single
+                comm: MPI communicator.
+                filename: Output filename.
+                output: Data to output. Either a mesh, a single
                     first order Lagrange function or list of first order
                     Lagrange functions.
 
@@ -204,14 +202,17 @@ class XDMFFile(_cpp.io.XDMFFile):
         """Write function to file for a given time.
 
         Note:
-            Function is interpolated onto the mesh nodes, as a Nth order Lagrange function,
-            where N is the order of the coordinate map.
-            If the Function is a cell-wise constant, it is saved as a cell-wise constant.
+            Function is interpolated onto the mesh nodes, as a Nth order
+            Lagrange function, where N is the order of the coordinate
+            map. If the Function is a cell-wise constant, it is saved as
+            a cell-wise constant.
 
         Args:
-            u: The Function to write to file.
+            u: Function to write to file.
             t: Time associated with Function output .
-            mesh_xpath: Path to mesh associated with the Function in the XDMFFile.
+            mesh_xpath: Path to mesh associated with the Function in the
+                XDMFFile.
+
         """
         super().write_function(getattr(u, "_cpp_object", u), t, mesh_xpath)
 
