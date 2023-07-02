@@ -252,7 +252,7 @@ def test_pruning(dtype):
 
 
 def test_prune_assembled():
-    mesh = create_unit_square(MPI.COMM_WORLD, 2, 2)
+    mesh = create_unit_square(MPI.COMM_WORLD, 2, 1)
     V = fem.FunctionSpace(mesh, ("CG", 1))
 
     u = TrialFunction(V)
@@ -262,6 +262,7 @@ def test_prune_assembled():
 
     A = fem.assemble_matrix(a)
     A.finalize()
+    print(A.to_dense())
     norm_final = A.squared_norm()
 
     A = fem.assemble_matrix(a)
