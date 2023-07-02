@@ -60,7 +60,7 @@ class MatrixCSR:
             x: The value to set all non-zero entries to.
 
         """
-        self._cpp_object.set(x)
+        self._cpp_object.set_value(x)
 
     def finalize(self) -> None:
         """Scatter and accumulate ghost values."""

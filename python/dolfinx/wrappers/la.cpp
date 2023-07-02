@@ -124,7 +124,7 @@ void declare_objects(py::module& m, const std::string& type)
                throw std::runtime_error(
                    "Block size not supported in this function");
            })
-      .def("set",
+      .def("set_value",
            static_cast<void (dolfinx::la::MatrixCSR<T>::*)(T)>(
                &dolfinx::la::MatrixCSR<T>::set),
            py::arg("x"))
