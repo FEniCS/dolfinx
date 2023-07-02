@@ -251,7 +251,14 @@ def create_petsc_vector_wrap(x: Vector):
 
 
 def create_petsc_vector(map, bs: int):
-    """Creat a distributed PETSc vector."""
+    """Create a distributed PETSc vector.
+
+    Args:
+        map: Index map that describes the size and parallel layout of
+            the vector to create.
+        bs: Block size of the vector.
+
+    """
     from petsc4py import PETSc
     ghosts = map.ghosts.astype(PETSc.IntType)
     size = (map.size_local * bs, map.size_global * bs)
