@@ -77,6 +77,9 @@ class MatrixCSR:
         """
         return self._cpp_object.squared_norm()
 
+    def eliminate_zeros(self, tol=0.0) -> None:
+        self._cpp_object.eliminate_zeros(tol)
+
     @property
     def data(self) -> npt.NDArray[np.floating]:
         """Underlying matrix entry data."""

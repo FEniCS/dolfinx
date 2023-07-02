@@ -746,7 +746,9 @@ void MatrixCSR<Scalar, V, W, X>::eliminate_zeros(double tol)
   int iptr = 0;
   for (int i = 1; i < _row_ptr.size(); ++i)
   {
-    for (int j = _row_ptr[i - 1]; j < _row_ptr[i]; ++j)
+    int row_start = _row_ptr[i - 1];
+    _row_ptr[i - 1] = iptr;
+    for (int j = row_start; j < _row_ptr[i]; ++j)
     {
       const double abs_sum
           = std::accumulate(std::next(_data.begin(), j * bs2),
@@ -760,7 +762,6 @@ void MatrixCSR<Scalar, V, W, X>::eliminate_zeros(double tol)
         ++iptr;
       }
     }
-    _row_ptr[i] = iptr;
   }
   _cols.resize(iptr);
   _data.resize(iptr * bs2);
