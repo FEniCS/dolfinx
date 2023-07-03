@@ -250,15 +250,15 @@ def test_pruning(dtype):
     assert len(mat1.indices) == 1
     assert len(mat1.indptr) == 7
 
-
-def test_prune_assembled():
-    mesh = create_unit_square(MPI.COMM_WORLD, 2, 2, ghost_mode=GhostMode.none)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_prune_assembled(dtype):
+    mesh = create_unit_square(MPI.COMM_WORLD, 2, 2, ghost_mode=GhostMode.none, dtype=dtype)
     V = fem.FunctionSpace(mesh, ("CG", 1))
 
     u = TrialFunction(V)
     v = TestFunction(V)
     a = inner(grad(u), grad(v)) * dx
-    a = fem.form(a)
+    a = fem.form(a, dtype=dtype)
 
     # Set bcs on half of the dofs
     im = V.dofmap.index_map
@@ -266,7 +266,7 @@ def test_prune_assembled():
     nd = im.size_global // 2
     dofs = np.array([i for i, d in enumerate(global_dofs) if d < nd],
                     dtype=np.int32)
-    bc = fem.dirichletbc(0.0, dofs, V)
+    bc = fem.dirichletbc(dtype(0.0), dofs, V)
 
     A = fem.assemble_matrix(a, [bc])
     A.finalize()
