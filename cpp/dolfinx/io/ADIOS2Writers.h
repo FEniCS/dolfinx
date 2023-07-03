@@ -418,7 +418,7 @@ public:
   /// topology should not be changed between write steps.
   FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
               std::shared_ptr<const mesh::Mesh<T>> mesh,
-              std::string engine = "BP4")
+              std::string engine = "BPFile")
       : ADIOS2Writer(comm, filename, "Fides mesh writer", engine),
         _mesh_reuse_policy(FidesMeshPolicy::update), _mesh(mesh)
   {
@@ -444,7 +444,7 @@ public:
   /// the first time step only or is re-written (updated) at each time
   /// step.
   FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
-              const typename adios2_writer::U<T>& u, std::string engine = "BP4",
+              const typename adios2_writer::U<T>& u, std::string engine = "BPFile",
               const FidesMeshPolicy mesh_policy = FidesMeshPolicy::update)
       : ADIOS2Writer(comm, filename, "Fides function writer", engine),
         _mesh_reuse_policy(mesh_policy),
@@ -829,7 +829,7 @@ public:
   /// topology should not be changed between write steps
   VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
             std::shared_ptr<const mesh::Mesh<T>> mesh,
-            std::string engine = "BP4")
+            std::string engine = "BPFile")
       : ADIOS2Writer(comm, filename, "VTX mesh writer", engine), _mesh(mesh)
   {
     // Define VTK scheme attribute for mesh
@@ -850,7 +850,7 @@ public:
   /// @note This format supports arbitrary degree meshes
   VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
             const typename adios2_writer::U<T>& u,
-            std::string engine = "BP4")
+            std::string engine = "BPFile")
       : ADIOS2Writer(comm, filename, "VTX function writer", engine),
         _mesh(impl_adios2::extract_common_mesh<T>(u)), _u(u)
   {
