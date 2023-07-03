@@ -250,6 +250,7 @@ def test_pruning(dtype):
     assert len(mat1.indices) == 1
     assert len(mat1.indptr) == 7
 
+
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_prune_assembled(dtype):
     mesh = create_unit_square(MPI.COMM_WORLD, 2, 2, ghost_mode=GhostMode.none, dtype=dtype)
