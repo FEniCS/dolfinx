@@ -202,7 +202,6 @@ public:
   void set(std::span<const value_type> x, std::span<const std::int32_t> rows,
            std::span<const std::int32_t> cols)
   {
-    _safe_to_finalize = false;
     auto set_fn = [](value_type& y, const value_type& x) { y = x; };
 
     std::int32_t num_rows
@@ -388,10 +387,6 @@ private:
   // Neighborhood communicator (ghost->owner communicator for rows)
   dolfinx::MPI::Comm _comm;
 
-  // Flag indicating if it is "safe" to finalize. Using 'set' or
-  // 'eliminate_zeros' will make finalization unsafe
-  bool _safe_to_finalize;
-
   // -- Precomputed data for finalize/update
 
   // Request in non-blocking communication
@@ -421,7 +416,7 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
       _data(p.num_nonzeros() * _bs[0] * _bs[1], 0),
       _cols(p.graph().first.begin(), p.graph().first.end()),
       _row_ptr(p.graph().second.begin(), p.graph().second.end()),
-      _comm(MPI_COMM_NULL), _safe_to_finalize(true)
+      _comm(MPI_COMM_NULL)
 {
   if (_block_mode == BlockMode::expanded)
   {
@@ -665,9 +660,6 @@ MatrixCSR<U, V, W, X>::to_dense() const
 template <typename U, typename V, typename W, typename X>
 void MatrixCSR<U, V, W, X>::finalize_begin()
 {
-  if (!_safe_to_finalize)
-    throw std::runtime_error("Finalization is not safe.");
-
   const std::int32_t local_size0 = _index_maps[0]->size_local();
   const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
   const int bs2 = _bs[0] * _bs[1];
@@ -750,8 +742,6 @@ double MatrixCSR<U, V, W, X>::squared_norm() const
 template <typename Scalar, typename V, typename W, typename X>
 void MatrixCSR<Scalar, V, W, X>::eliminate_zeros(double tol)
 {
-  _safe_to_finalize = false;
-
   const int bs2 = _bs[0] * _bs[1];
   int iptr = 0;
   for (int i = 1; i < _row_ptr.size(); ++i)

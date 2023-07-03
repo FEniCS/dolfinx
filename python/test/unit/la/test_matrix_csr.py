@@ -252,38 +252,29 @@ def test_pruning(dtype):
 
 
 def test_prune_assembled():
-    mesh = create_unit_square(MPI.COMM_WORLD, 2, 1)
+    mesh = create_unit_square(MPI.COMM_WORLD, 2, 2, ghost_mode=GhostMode.none)
     V = fem.FunctionSpace(mesh, ("CG", 1))
 
     u = TrialFunction(V)
     v = TestFunction(V)
     a = inner(grad(u), grad(v)) * dx
     a = fem.form(a)
+    im = V.dofmap.index_map
+    dofs = np.arange(im.size_local + im.num_ghosts, dtype=np.int32)
+    bc = fem.dirichletbc(0.0, dofs, V)
 
-    A = fem.assemble_matrix(a)
+    A = fem.assemble_matrix(a, [bc])
     A.finalize()
-    print(A.to_dense())
-    norm_final = A.squared_norm()
 
-    A = fem.assemble_matrix(a)
     data_pre1 = len(A.data)
     norm_pre1 = A.squared_norm()
     A.eliminate_zeros()
+
+    # Check that finalize does not crash
+    A.finalize()
+
     data_post1 = len(A.data)
     norm_post1 = A.squared_norm()
 
     assert norm_pre1 == norm_post1
     assert data_pre1 > data_post1
-
-    A.finalize()
-
-    data_pre2 = len(A.data)
-    norm_pre2 = A.squared_norm()
-    assert norm_pre2 == norm_final
-
-    A.eliminate_zeros()
-    data_post2 = len(A.data)
-    norm_post2 = A.squared_norm()
-
-    assert norm_pre2 == norm_post2
-    assert data_pre2 > data_post2
