@@ -1,0 +1,27 @@
+[project]
+name = "fenics-dolfinx"
+version = "0.7.0.dev0"
+description = "Dolfinx Python interface"
+readme = "../README.md"
+requires-python = ">=3.8.0"
+license = {file = "../COPYING"}
+authors = [{email="fenics-dev@googlegroups.com"}, {name="FEniCS Project"}]
+packages = ["dolfinx"]
+dependencies = ["numpy>=1.21", "cffi", "petsc4py", "mpi4py",
+	        "fenics-ffcx>0.6.0,<0.8.0",
+    		"fenics-ufl>2023.1.0,<2023.3.0"]
+
+[project.optional-dependencies]
+docs = ["markdown", "pylit3", "pyyaml", "sphinx==5.0.2", "sphinx_rtd_theme"]
+lint = ["flake8", "pydocstyle"]
+optional = ["numba"]
+test = ["pytest", "sympy", "scipy", "matplotlib", "fenics-dolfinx[optional]"]
+ci = ["mypy", "pytest-xdist", "fenics-dolfinx[docs]", "fenics-dolfinx[lint]",
+      "fenics-dolfinx[optional]", "fenics-dolfinx[test]"]
+
+[build-system]
+requires = ["pybind11>=2.9.1", "cmake>=3.19", "scikit-build-core"]
+build-backend = "scikit_build_core.build"
+
+[tool.scikit-build]
+wheel.packages = ["dolfinx"]
