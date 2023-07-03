@@ -259,8 +259,13 @@ def test_prune_assembled():
     v = TestFunction(V)
     a = inner(grad(u), grad(v)) * dx
     a = fem.form(a)
+
+    # Set bcs on half of the dofs
     im = V.dofmap.index_map
-    dofs = np.arange(im.size_local + im.num_ghosts, dtype=np.int32)
+    global_dofs = list(range(*im.local_range)) + list(im.ghosts)
+    nd = im.size_global // 2
+    dofs = np.array([i for i,d in enumerate(global_dofs) if d < nd],
+                    dtype=np.int32)
     bc = fem.dirichletbc(0.0, dofs, V)
 
     A = fem.assemble_matrix(a, [bc])
@@ -270,11 +275,21 @@ def test_prune_assembled():
     norm_pre1 = A.squared_norm()
     A.eliminate_zeros()
 
-    # Check that finalize does not crash
-    A.finalize()
-
     data_post1 = len(A.data)
     norm_post1 = A.squared_norm()
 
     assert norm_pre1 == norm_post1
     assert data_pre1 > data_post1
+
+    # Repeat but now finalize after eliminate
+    A = fem.assemble_matrix(a, [bc])
+
+    data_pre2 = len(A.data)
+    A.eliminate_zeros()
+    A.finalize()
+
+    data_post2 = len(A.data)
+    norm_post2 = A.squared_norm()
+
+    assert norm_post2 == norm_post1
+    assert data_pre2 > data_post2
