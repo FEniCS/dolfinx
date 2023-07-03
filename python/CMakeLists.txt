@@ -29,9 +29,12 @@ find_package(
   $ENV{PYBIND11_ROOT}
 )
 
+# Why is this needed...
+set(ENV{PYTHONPATH} "/usr/local/lib/python3.10")
+
 execute_process(
   COMMAND
-  ${Python3_EXECUTABLE} -c "import basix, os, sys; sys.stdout.write(os.path.dirname(basix.__file__))"
+  ${Python3_EXECUTABLE} -c "import os, sys, basix; sys.stdout.write(os.path.dirname(basix.__file__))"
   OUTPUT_VARIABLE BASIX_PY_DIR
   RESULT_VARIABLE BASIX_PY_COMMAND_RESULT
   ERROR_VARIABLE BASIX_ERROR_OUT OUTPUT_STRIP_TRAILING_WHITESPACE
