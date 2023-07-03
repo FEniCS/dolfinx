@@ -98,6 +98,7 @@ def test_findes_single_function(tempdir, dim, simplex):
 @pytest.mark.parametrize("simplex", [True, False])
 def test_fides_function_at_nodes(tempdir, dim, simplex):
     """Test saving P1 functions with Fides (with changing geometry)"""
+
     mesh = generate_mesh(dim, simplex)
     v = Function(VectorFunctionSpace(mesh, ("Lagrange", 1)), dtype=default_scalar_type)
     v.name = "v"

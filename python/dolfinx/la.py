@@ -45,6 +45,11 @@ class MatrixCSR:
         """
         return self._cpp_object.index_map(i)
 
+    @property
+    def block_size(self):
+        """Block sizes for the matrix."""
+        return self._cpp_object.block_size
+
     def add(self, x, rows, cols, bs=1) -> None:
         self._cpp_object.add(x, rows, cols, bs)
 
@@ -95,6 +100,38 @@ class MatrixCSR:
 
         """
         return self._cpp_object.to_dense()
+
+    def to_scipy(self, ghosted=False):
+        """Convert to a SciPy CSR/BSR matrix. Data is shared.
+
+        SciPy must be available.
+
+        Args:
+            ghosted: If ``True`` rows that are ghosted in parallel are
+                included in the return SciPy matrix, otherwise ghost
+                rows are not included.
+
+        Returns:
+            SciPy compressed sparse row (both block sizes equal to one)
+            or a SciPy block compressed sparse row matrix.
+
+        """
+        from scipy.sparse import csr_matrix as _csr, bsr_matrix as _bsr
+
+        bs0, bs1 = self._cpp_object.block_size
+        ncols = self.index_map(1).size_local + self.index_map(1).num_ghosts
+        if ghosted:
+            nrows = self.index_map(0).size_local + self.index_map(0).num_ghosts
+            data, indices, indptr = self.data, self.indices, self.indptr
+        else:
+            nrows = self.index_map(0).size_local
+            nnzlocal = self.indptr[nrows]
+            data, indices, indptr = self.data[:(bs0 * bs1) * nnzlocal], self.indices[:nnzlocal], self.indptr[:nrows + 1]
+
+        if bs0 == 1 and bs1 == 1:
+            return _csr((data, indices, indptr), shape=(nrows, ncols))
+        else:
+            return _bsr((data.reshape(-1, bs0, bs1), indices, indptr), shape=(bs0 * nrows, bs1 * ncols))
 
 
 def matrix_csr(sp, block_mode=BlockMode.compact, dtype=np.float64) -> MatrixCSR:
