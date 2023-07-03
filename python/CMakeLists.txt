@@ -11,13 +11,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Development.Embed is not required for building a Python module.  Correct
 # COMPONENT specification Development.Module added only in CMake 3.18 and above.
 
-if(NOT SKBUILD)
 find_package(
   Python3
   COMPONENTS Interpreter Development.Module
   REQUIRED
 )
-endif()
 
 find_package(
   pybind11
