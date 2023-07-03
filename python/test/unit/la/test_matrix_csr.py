@@ -264,7 +264,7 @@ def test_prune_assembled():
     im = V.dofmap.index_map
     global_dofs = list(range(*im.local_range)) + list(im.ghosts)
     nd = im.size_global // 2
-    dofs = np.array([i for i,d in enumerate(global_dofs) if d < nd],
+    dofs = np.array([i for i, d in enumerate(global_dofs) if d < nd],
                     dtype=np.int32)
     bc = fem.dirichletbc(0.0, dofs, V)
 
