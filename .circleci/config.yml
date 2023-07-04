@@ -57,7 +57,7 @@ build-python-interface: &build-python-interface
   command: |
     export CMAKE_BUILD_PARALLEL_LEVEL=2
     cd python
-    pip3 -v install --global-option build --global-option --debug . --user
+    pip3 -v install --config-setting cmake.build-type=Debug --no-build-isolation --user .
 
 demos-python: &demos-python
   name: Run demos (Python, serial)
