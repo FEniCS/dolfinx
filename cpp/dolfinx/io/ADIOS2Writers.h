@@ -614,7 +614,6 @@ extract_function_names(const typename adios2_writer::U<T>& u)
         {
           using U = std::decay_t<decltype(u)>;
           using X = typename U::element_type;
-
           if constexpr (std::is_floating_point_v<typename X::geometry_type>)
             names.push_back(u->name);
           else
