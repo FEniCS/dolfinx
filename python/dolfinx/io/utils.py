@@ -86,8 +86,7 @@ if _cpp.common.has_adios2:
 
             try:
                 # Input is a mesh
-                self._cpp_object = _vtxwriter(
-                    comm, filename, output._cpp_object, engine)  # type: ignore[union-attr]
+                self._cpp_object = _vtxwriter(comm, filename, output._cpp_object, engine)  # type: ignore[union-attr]
             except (NotImplementedError, TypeError, AttributeError):
                 # Input is a single function or a list of functions
                 self._cpp_object = _vtxwriter(comm, filename, _extract_cpp_functions(
@@ -151,10 +150,10 @@ if _cpp.common.has_adios2:
                 _fides_writer = _cpp.io.FidesWriter_float64
 
             try:
-                self._cpp_object = _fides_writer(
-                    comm, filename, output._cpp_object, engine)  # type: ignore[union-attr]
+                self._cpp_object = _fides_writer(comm, filename, output._cpp_object, engine)  # type: ignore[union-attr]
             except (NotImplementedError, TypeError, AttributeError):
-                self._cpp_object = _fides_writer(comm, filename, _extract_cpp_functions(output), engine)  # type: ignore[arg-type]
+                self._cpp_object = _fides_writer(comm, filename, _extract_cpp_functions(
+                    output), engine)  # type: ignore[arg-type]
 
         def __enter__(self):
             return self
@@ -237,9 +236,9 @@ class XDMFFile(_cpp.io.XDMFFile):
                                     cmap, x, _cpp.mesh.create_cell_partitioner(ghost_mode))
         msh.name = name
 
-        domain = ufl.Mesh(basix.ufl.element(
-            "Lagrange", cell_shape.name, cell_degree, basix.LagrangeVariant.equispaced, shape=(x.shape[1], ),
-            gdim=x.shape[1]))
+        domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_shape.name, cell_degree,
+                                            basix.LagrangeVariant.equispaced, shape=(x.shape[1], ),
+                                            gdim=x.shape[1]))
         return Mesh(msh, domain)
 
     def read_meshtags(self, mesh, name, xpath="/Xdmf/Domain"):
