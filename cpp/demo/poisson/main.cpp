@@ -124,7 +124,7 @@ int main(int argc, char* argv[])
     auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
     auto mesh = std::make_shared<mesh::Mesh<U>>(
         mesh::create_rectangle<U>(MPI_COMM_WORLD, {{{0.0, 0.0}, {2.0, 1.0}}},
-                                  {32, 16}, mesh::CellType::triangle, part));
+                                  {2, 1}, mesh::CellType::triangle, part));
 
     auto V = std::make_shared<fem::FunctionSpace<U>>(
         fem::create_functionspace(functionspace_form_poisson_a, "u", mesh));
@@ -215,7 +215,7 @@ int main(int argc, char* argv[])
     // .. code-block:: cpp
 
     // Compute solution
-    fem::Function<T> u(V);
+    auto u = std::make_shared<fem::Function<T>>(V);
     auto A = la::petsc::Matrix(fem::petsc::create_matrix(*a), false);
     la::Vector<T> b(L->function_spaces()[0]->dofmap()->index_map,
                     L->function_spaces()[0]->dofmap()->index_map_bs());
@@ -242,7 +242,7 @@ int main(int argc, char* argv[])
     lu.set_from_options();
 
     lu.set_operator(A.mat());
-    la::petsc::Vector _u(la::petsc::create_vector_wrap(*u.x()), false);
+    la::petsc::Vector _u(la::petsc::create_vector_wrap(*u->x()), false);
     la::petsc::Vector _b(la::petsc::create_vector_wrap(b), false);
     lu.solve(_u.vec(), _b.vec());
 
@@ -255,7 +255,13 @@ int main(int argc, char* argv[])
 
     // Save solution in VTK format
     io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
-    file.write<T>({u}, 0.0);
+    file.write<T>({*u}, 0.0);
+
+#ifdef HAS_ADIOS2
+    // Save solution in VTX format
+    io::VTXWriter<U> vtx(MPI_COMM_WORLD, "u.bp", {u}, "bp4");
+    // vtx.write(0);
+#endif
   }
 
   PetscFinalize();

@@ -468,14 +468,14 @@ public:
     if (element0->is_mixed())
     {
       throw std::runtime_error(
-          "Mixed functions are not supported by VTXWriter");
+          "Mixed functions are not supported by FidesWriter");
     }
 
     // Check if function is DG 0
     if (element0->space_dimension() / element0->block_size() == 1)
     {
       throw std::runtime_error(
-          "Piecewise constants are not (yet) supported by VTXWriter");
+          "Piecewise constants are not (yet) supported by FidesWriter");
     }
 
     // FIXME: is the below check adequate for detecting a
@@ -927,6 +927,7 @@ public:
     // Define VTK scheme attribute for set of functions
     std::vector<std::string> names = impl_vtx::extract_function_names<T>(u);
     std::string vtk_scheme = impl_vtx::create_vtk_schema(names, {}).str();
+    std::cout << "Add attr" << vtk_scheme << std::endl;
     impl_adios2::define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
   }
 
