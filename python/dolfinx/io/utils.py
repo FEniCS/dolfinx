@@ -8,19 +8,18 @@
 
 import typing
 
-import numpy as np
-import numpy.typing as npt
-
 import basix
 import basix.ufl
+import numpy as np
+import numpy.typing as npt
 import ufl
-from dolfinx import cpp as _cpp
 from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh  # noqa F401
 from dolfinx.cpp.io import perm_vtk as cell_perm_vtk  # noqa F401
 from dolfinx.fem import Function
 from dolfinx.mesh import GhostMode, Mesh, MeshTags
-
 from mpi4py import MPI as _MPI
+
+from dolfinx import cpp as _cpp
 
 __all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk",
            "distribute_entity_data"]
@@ -39,7 +38,7 @@ if _cpp.common.has_adios2:
     __all__ = __all__ + ["FidesWriter", "VTXWriter"]
 
     class VTXWriter:
-        """Writer for VTK files, using ADIOS2 to create the files.
+        """Writer for VTX files, using ADIOS2 to create the files.
 
         VTX supports arbitrary order Lagrange finite elements for the
         geometry description and arbitrary order (discontinuous)
@@ -158,7 +157,7 @@ if _cpp.common.has_adios2:
 
 
 class VTKFile(_cpp.io.VTKFile):
-    """Interface to VTK files
+    """Interface to VTK files.
 
     VTK supports arbitrary order Lagrange finite elements for the
     geometry description. XDMF is the preferred format for geometry
