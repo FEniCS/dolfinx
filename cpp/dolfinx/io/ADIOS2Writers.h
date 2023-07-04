@@ -179,17 +179,20 @@ void initialize_function_attributes(adios2::IO& io,
   std::vector<std::array<std::string, 2>> u_data;
   for (auto& v : u)
   {
-    [&u_data](auto&& u)
-    {
-      using X = typename decltype(u)::element_type;
-      if (std::is_floating_point_v<typename X::geometry_type>)
-        u_data.push_back({u->name, "points"});
-      else
-      {
-        u_data.push_back({u->name + impl_adios2::field_ext[0], "points"});
-        u_data.push_back({u->name + impl_adios2::field_ext[1], "points"});
-      }
-    };
+    std::visit(
+        [&u_data](auto&& u)
+        {
+          using U = std::decay_t<decltype(u)>;
+          using X = typename U::element_type;
+          if constexpr (std::is_floating_point_v<typename X::geometry_type>)
+            u_data.push_back({u->name, "points"});
+          else
+          {
+            u_data.push_back({u->name + impl_adios2::field_ext[0], "points"});
+            u_data.push_back({u->name + impl_adios2::field_ext[1], "points"});
+          }
+        },
+        v);
   }
 
   // Write field associations to file
