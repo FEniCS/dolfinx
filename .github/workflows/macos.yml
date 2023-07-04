@@ -33,7 +33,7 @@ jobs:
           pip install cython
           pip install mpi4py
 
-      - name: Install minimal PETSc and petsc4y
+      - name: Install minimal PETSc and petsc4py
         run: |
           export PATH="$(brew --prefix bison)/bin:$PATH"
           git clone -b release https://gitlab.com/petsc/petsc.git petsc
