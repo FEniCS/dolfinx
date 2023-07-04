@@ -26,7 +26,7 @@ class IndexMap;
 
 namespace dolfinx::fem
 {
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 class DirichletBC;
 
 /// @brief Helper functions for assembly into PETSc data structures
@@ -43,7 +43,7 @@ Mat create_matrix(const Form<PetscScalar, T>& a,
                   const std::string& type = std::string())
 {
   la::SparsityPattern pattern = fem::create_sparsity_pattern(a);
-  pattern.assemble();
+  pattern.finalize();
   return la::petsc::create_matrix(a.mesh()->comm(), pattern, type);
 }
 
@@ -114,7 +114,7 @@ Mat create_matrix_block(
       p[row].push_back(patterns[row][col].get());
 
   la::SparsityPattern pattern(mesh->comm(), p, maps, bs_dofs);
-  pattern.assemble();
+  pattern.finalize();
 
   // FIXME: Add option to pass customised local-to-global map to PETSc
   // Mat constructor

@@ -112,14 +112,15 @@
 
 # +
 import numpy as np
+
 import ufl
+from dolfinx import fem, io, mesh, plot
 from dolfinx.mesh import CellType, GhostMode
-from mpi4py import MPI
-from petsc4py.PETSc import ScalarType
 from ufl import (CellDiameter, FacetNormal, avg, div, dS, dx, grad, inner,
                  jump, pi, sin)
 
-from dolfinx import fem, io, mesh, plot
+from mpi4py import MPI
+from petsc4py.PETSc import ScalarType
 
 # -
 
@@ -162,7 +163,7 @@ facets = mesh.locate_entities_boundary(msh, dim=1,
 dofs = fem.locate_dofs_topological(V=V, entity_dim=1, entities=facets)
 
 # and use {py:func}`dirichletbc <dolfinx.fem.dirichletbc>` to create a
-# {py:class}`DirichletBCMetaClass <dolfinx.fem.DirichletBCMetaClass>`
+# {py:class}`DirichletBC <dolfinx.fem.DirichletBC>`
 # class that represents the boundary condition. In this case, we impose
 # Dirichlet boundary conditions with value $0$ on the entire boundary
 # $\partial\Omega$.

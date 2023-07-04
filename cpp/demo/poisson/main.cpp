@@ -97,6 +97,7 @@
 
 using namespace dolfinx;
 using T = PetscScalar;
+using U = typename dolfinx::scalar_value_type_t<T>;
 
 // Then follows the definition of the coefficient functions (for
 // :math:`f` and :math:`g`), which are derived from the
@@ -121,11 +122,11 @@ int main(int argc, char* argv[])
   {
     // Create mesh and function space
     auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
-    auto mesh = std::make_shared<mesh::Mesh<double>>(
-        mesh::create_rectangle(MPI_COMM_WORLD, {{{0.0, 0.0}, {2.0, 1.0}}},
-                               {32, 16}, mesh::CellType::triangle, part));
+    auto mesh = std::make_shared<mesh::Mesh<U>>(
+        mesh::create_rectangle<U>(MPI_COMM_WORLD, {{{0.0, 0.0}, {2.0, 1.0}}},
+                                  {32, 16}, mesh::CellType::triangle, part));
 
-    auto V = std::make_shared<fem::FunctionSpace<double>>(
+    auto V = std::make_shared<fem::FunctionSpace<U>>(
         fem::create_functionspace(functionspace_form_poisson_a, "u", mesh));
 
     // Next, we define the variational formulation by initializing the
@@ -214,7 +215,7 @@ int main(int argc, char* argv[])
     // .. code-block:: cpp
 
     // Compute solution
-    fem::Function<T> u(V);
+    auto u = std::make_shared<fem::Function<T>>(V);
     auto A = la::petsc::Matrix(fem::petsc::create_matrix(*a), false);
     la::Vector<T> b(L->function_spaces()[0]->dofmap()->index_map,
                     L->function_spaces()[0]->dofmap()->index_map_bs());
@@ -231,9 +232,9 @@ int main(int argc, char* argv[])
 
     b.set(0.0);
     fem::assemble_vector(b.mutable_array(), *L);
-    fem::apply_lifting<T, double>(b.mutable_array(), {a}, {{bc}}, {}, T(1));
+    fem::apply_lifting<T, U>(b.mutable_array(), {a}, {{bc}}, {}, T(1));
     b.scatter_rev(std::plus<T>());
-    fem::set_bc<T, double>(b.mutable_array(), {bc});
+    fem::set_bc<T, U>(b.mutable_array(), {bc});
 
     la::petsc::KrylovSolver lu(MPI_COMM_WORLD);
     la::petsc::options::set("ksp_type", "preonly");
@@ -241,7 +242,7 @@ int main(int argc, char* argv[])
     lu.set_from_options();
 
     lu.set_operator(A.mat());
-    la::petsc::Vector _u(la::petsc::create_vector_wrap(*u.x()), false);
+    la::petsc::Vector _u(la::petsc::create_vector_wrap(*u->x()), false);
     la::petsc::Vector _b(la::petsc::create_vector_wrap(b), false);
     lu.solve(_u.vec(), _b.vec());
 
@@ -254,7 +255,13 @@ int main(int argc, char* argv[])
 
     // Save solution in VTK format
     io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
-    file.write<T>({u}, 0.0);
+    file.write<T>({*u}, 0.0);
+
+#ifdef HAS_ADIOS2
+    // Save solution in VTX format
+    io::VTXWriter<U> vtx(MPI_COMM_WORLD, "u.bp", {u}, "bp4");
+    vtx.write(0);
+#endif
   }
 
   PetscFinalize();

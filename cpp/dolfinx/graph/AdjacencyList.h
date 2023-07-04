@@ -8,6 +8,7 @@
 
 #include <cassert>
 #include <concepts>
+#include <cstdint>
 #include <numeric>
 #include <span>
 #include <sstream>

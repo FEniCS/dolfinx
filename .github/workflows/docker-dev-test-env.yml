@@ -1,0 +1,160 @@
+---
+name: Docker test and development images
+
+# Builds test and development images (no FEniCS components). 
+#
+# Must be triggered manually via GitHub interface, possibly using specific git
+# refs and tag prefix for e.g. releases.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_prefix:
+        description: "tag prefix for docker images"
+        default: "current"
+        type: string
+        required: true
+
+      dockerfile:
+        description: "Dockerfile"
+        default: "docker/Dockerfile.test-env"
+        type: string
+        required: true
+
+jobs:
+  create_build_images:
+    name: Create build env images
+    if: ${{ github.repository == 'FEniCS/dolfinx' }}
+    strategy:
+      matrix:
+        variant: ["test-env", "dev-env"]
+        mpi: ["openmpi", "mpich"]
+        os: ["ubuntu-latest", "buildjet-4vcpu-ubuntu-2204-arm"]
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Set Dockerfile
+        run: |
+          USER_INPUT=${{ github.event.inputs.dockerfile }}
+          echo "DOCKERFILE=${USER_INPUT:-docker/Dockerfile.test-env}" >> $GITHUB_ENV
+
+      - name: Checkout DOLFINx
+        uses: actions/checkout@v3
+
+      - name: Set root repository (docker.io/fenicsproject)
+        if: ${{ matrix.variant == 'test-env' }}
+        run: echo "DH_PREFIX=docker.io/fenicsproject" >> $GITHUB_ENV
+
+      - name: Set root repository (docker.io/dolfinx)
+        if: ${{ matrix.variant == 'dev-env' }}
+        run: echo "DH_PREFIX=docker.io/dolfinx" >> $GITHUB_ENV
+
+      - name: Set architecture tag (amd64)
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: echo "ARCH_TAG=amd64" >> $GITHUB_ENV
+
+      - name: Set architecture tag (arm64)
+        if: ${{ contains(matrix.os, 'arm') }}
+        run: echo "ARCH_TAG=arm64" >> $GITHUB_ENV
+
+      - name: Create image name and tag
+        run: |
+          USER_INPUT=${{ github.event.inputs.tag_prefix }}
+          echo "TAG=${{ env.DH_PREFIX }}/${{ matrix.variant }}:${USER_INPUT:-current}-${{ matrix.mpi }}-${{ env.ARCH_TAG }}" >> $GITHUB_ENV
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set PETSc build options (-O2 -g + debug)
+        if: ${{ matrix.variant == 'test-env' }}
+        run: |
+          echo "PETSC_SLEPC_OPTFLAGS=-O2 -g" >> $GITHUB_ENV
+          echo "PETSC_SLEPC_DEBUGGING=yes" >> $GITHUB_ENV
+
+      - name: Set PETSc build options (-O2 + no debug)
+        if: ${{ matrix.variant == 'dev-env' }}
+        run: |
+          echo "PETSC_SLEPC_OPTFLAGS=-O2" >> $GITHUB_ENV
+          echo "PETSC_SLEPC_DEBUGGING=no" >> $GITHUB_ENV
+
+      - name: Build and push
+        uses: docker/build-push-action@v3
+        with:
+          build-args: |
+            MPI=${{ matrix.mpi }}
+            PETSC_SLEPC_OPTFLAGS=${{ env.PETSC_SLEPC_OPTFLAGS }}
+            PETSC_SLEPC_DEBUGGING=${{ env.PETSC_SLEPC_DEBUGGING }}
+          context: docker/
+          cache-from: type=registry,ref=${{ env.TAG }}
+          cache-to: type=inline
+          file: ${{ env.DOCKERFILE }}
+          push: true
+          target: dev-env
+          tags: ${{ env.TAG }}
+
+  create_multiarch_build_images:
+    name: Create multiarch build env images
+    if: ${{ github.repository == 'FEniCS/dolfinx' }}
+    runs-on: ubuntu-latest
+    needs:
+      - create_build_images
+
+    steps:
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push multiarch images to ghcr.io and docker.io
+        run: |
+          USER_INPUT=${{ github.event.inputs.tag_prefix }}
+          # test-env images
+          GH_PREFIX="ghcr.io/fenics"
+          DH_PREFIX="docker.io/fenicsproject"
+          # openmpi
+          TAG="test-env:${USER_INPUT:-current}-openmpi"
+          docker buildx imagetools create --tag ${DH_PREFIX}/${TAG} \
+            --tag ${GH_PREFIX}/${TAG} \
+            ${DH_PREFIX}/${TAG}-amd64 \
+            ${DH_PREFIX}/${TAG}-arm64
+          # mpich
+          TAG="test-env:${USER_INPUT:-current}-mpich"
+          docker buildx imagetools create --tag ${DH_PREFIX}/${TAG} \
+            --tag ${GH_PREFIX}/${TAG} \
+            ${DH_PREFIX}/${TAG}-amd64 \
+            ${DH_PREFIX}/${TAG}-arm64
+          # dev-env images
+          GH_PREFIX="ghcr.io/fenics/dolfinx"
+          DH_PREFIX="docker.io/dolfinx"
+          # openmpi
+          TAG="dev-env:${USER_INPUT:-current}-openmpi"
+          docker buildx imagetools create --tag ${DH_PREFIX}/${TAG} \
+            --tag ${GH_PREFIX}/${TAG} \
+            ${DH_PREFIX}/${TAG}-amd64 \
+            ${DH_PREFIX}/${TAG}-arm64
+          # mpich
+          TAG="dev-env:${USER_INPUT:-current}-mpich"
+          docker buildx imagetools create --tag ${DH_PREFIX}/${TAG} \
+            --tag ${GH_PREFIX}/${TAG} \
+            ${DH_PREFIX}/${TAG}-amd64 \
+            ${DH_PREFIX}/${TAG}-arm64
+          # mpich (default)
+          TAG="dev-env:${USER_INPUT:-current}"
+          docker buildx imagetools create --tag ${DH_PREFIX}/${TAG} \
+            --tag ${GH_PREFIX}/${TAG} \
+            ${DH_PREFIX}/${TAG}-mpich-amd64 \
+            ${DH_PREFIX}/${TAG}-mpich-arm64

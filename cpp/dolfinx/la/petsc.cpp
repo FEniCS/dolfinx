@@ -551,7 +551,7 @@ double petsc::Matrix::norm(Norm norm_type) const
 {
   assert(_matA);
   PetscErrorCode ierr;
-  double value = 0.0;
+  PetscReal value = 0.0;
   switch (norm_type)
   {
   case Norm::l1:

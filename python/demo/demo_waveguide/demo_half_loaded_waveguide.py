@@ -42,16 +42,15 @@
 import sys
 
 import numpy as np
-from analytical_modes import verify_mode
-
 import ufl
-from basix.ufl import mixed_element, element
-from dolfinx import fem, io, plot
+from analytical_modes import verify_mode
+from basix.ufl import element, mixed_element
 from dolfinx.mesh import (CellType, create_rectangle, exterior_facet_indices,
                           locate_entities)
-
 from mpi4py import MPI
 from petsc4py.PETSc import ScalarType
+
+from dolfinx import fem, io, plot
 
 try:
     import pyvista
@@ -63,7 +62,7 @@ except ModuleNotFoundError:
 try:
     from slepc4py import SLEPc
 except ModuleNotFoundError:
-    print("slepc4py is required to solve the problem")
+    print("slepc4py is required for this demo")
     sys.exit(0)
 # -
 

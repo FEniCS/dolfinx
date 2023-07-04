@@ -27,7 +27,7 @@
 
 namespace dolfinx::fem
 {
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 class Expression;
 
 /// This class represents a function \f$ u_h \f$ in a finite
@@ -39,13 +39,16 @@ class Expression;
 ///
 /// @tparam T The function scalar type.
 /// @tparam U The mesh geometry scalar type.
-template <typename T, std::floating_point U = dolfinx::scalar_value_type_t<T>>
+template <dolfinx::scalar T,
+          std::floating_point U = dolfinx::scalar_value_type_t<T>>
 class Function
 {
 public:
   /// Field type for the Function, e.g. `double`, `std::complex<float>`,
   /// etc.
   using value_type = T;
+  /// Geometry type of the Mesh that the Function is defined on.
+  using geometry_type = U;
 
   /// Create function on given function space
   /// @param[in] V The function space
@@ -79,7 +82,7 @@ public:
     // Assertion uses '<=' to deal with sub-functions
     assert(V->dofmap());
     assert(V->dofmap()->index_map->size_global() * V->dofmap()->index_map_bs()
-           <= _x->bs() * _x->map()->size_global());
+           <= _x->bs() * _x->index_map()->size_global());
   }
 
   // Copy constructor

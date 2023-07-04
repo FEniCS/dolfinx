@@ -13,6 +13,8 @@ namespace dolfinx_wrappers
 void common(py::module& m);
 void mpi(py::module& m);
 
+void petsc(py::module& m_fem, py::module& m_la, py::module& m_nls);
+
 void log(py::module& m);
 void assemble(py::module& m);
 void fem(py::module& m);
@@ -64,11 +66,11 @@ PYBIND11_MODULE(cpp, m)
   py::module la = m.def_submodule("la", "Linear algebra module");
   dolfinx_wrappers::la(la);
 
-  // Create nls submodule
-  py::module nls = m.def_submodule("nls", "Nonlinear solver module");
-  dolfinx_wrappers::nls(nls);
-
   // Create refinement submodule
   py::module refinement = m.def_submodule("refinement", "Refinement module");
   dolfinx_wrappers::refinement(refinement);
+
+  // PETSc-specific wrappers
+  py::module nls = m.def_submodule("nls", "Nonlinear solver module");
+  dolfinx_wrappers::petsc(fem, la, nls);
 }
