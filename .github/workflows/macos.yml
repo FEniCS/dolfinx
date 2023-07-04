@@ -70,7 +70,7 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}/petsc/${{ env.PETSC_ARCH }}/lib:${{ env.PYTHONPATH }}
         run: |
           echo "Path: ${PYTHONPATH}"
-          pip install dolfinx/python/
+          pip install --no-build-isolation dolfinx/python/
       - name: Basic test
         env:
           PYTHONPATH: ${{ github.workspace }}/petsc/${{ env.PETSC_ARCH }}/lib:${{ env.PYTHONPATH }}
