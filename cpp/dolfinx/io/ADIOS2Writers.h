@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Jørgen S. Dokken and Garth N. Wells
+// Copyright (C) 2021-2023 Jørgen S. Dokken and Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -609,17 +609,21 @@ extract_function_names(const typename adios2_writer::U<T>& u)
   std::vector<std::string> names;
   for (auto& v : u)
   {
-    [&names](auto&& u)
-    {
-      using X = typename decltype(u)::element_type;
-      if (std::is_floating_point_v<typename X::geometry_type>)
-        names.push_back(u->name);
-      else
-      {
-        names.push_back(u->name + impl_adios2::field_ext[0]);
-        names.push_back(u->name + impl_adios2::field_ext[1]);
-      }
-    };
+    std::visit(
+        [&names](auto&& u)
+        {
+          using U = std::decay_t<decltype(u)>;
+          using X = typename U::element_type;
+
+          if constexpr (std::is_floating_point_v<typename X::geometry_type>)
+            names.push_back(u->name);
+          else
+          {
+            names.push_back(u->name + impl_adios2::field_ext[0]);
+            names.push_back(u->name + impl_adios2::field_ext[1]);
+          }
+        },
+        v);
   }
 
   return names;
@@ -927,7 +931,6 @@ public:
     // Define VTK scheme attribute for set of functions
     std::vector<std::string> names = impl_vtx::extract_function_names<T>(u);
     std::string vtk_scheme = impl_vtx::create_vtk_schema(names, {}).str();
-    std::cout << "Add attr" << vtk_scheme << std::endl;
     impl_adios2::define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
   }
 
