@@ -29,6 +29,7 @@ import sys
 from petsc4py import PETSc as _PETSc
 
 default_scalar_type = _PETSc.ScalarType
+default_real_type = _PETSc.RealType
 
 from dolfinx import common
 from dolfinx import cpp as _cpp

@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Jørgen S. Dokken and Garth N. Wells
+// Copyright (C) 2021-2023 Jørgen S. Dokken and Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -24,6 +24,7 @@
 #include <memory>
 #include <mpi.h>
 #include <string>
+#include <type_traits>
 #include <variant>
 #include <vector>
 
@@ -32,7 +33,7 @@
 
 namespace dolfinx::fem
 {
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 class Function;
 }
 
@@ -42,17 +43,11 @@ namespace adios2_writer
 {
 /// @privatesection
 template <std::floating_point T>
-using Fd32 = fem::Function<float, T>;
-template <std::floating_point T>
-using Fd64 = fem::Function<double, T>;
-template <std::floating_point T>
-using Fc64 = fem::Function<std::complex<float>, T>;
-template <std::floating_point T>
-using Fc128 = fem::Function<std::complex<double>, T>;
-template <std::floating_point T>
 using U = std::vector<std::variant<
-    std::shared_ptr<const Fd32<T>>, std::shared_ptr<const Fd64<T>>,
-    std::shared_ptr<const Fc64<T>>, std::shared_ptr<const Fc128<T>>>>;
+    std::shared_ptr<const fem::Function<float, T>>,
+    std::shared_ptr<const fem::Function<double, T>>,
+    std::shared_ptr<const fem::Function<std::complex<float>, T>>,
+    std::shared_ptr<const fem::Function<std::complex<double>, T>>>>;
 } // namespace adios2_writer
 
 /// Base class for ADIOS2-based writers
@@ -100,16 +95,6 @@ namespace impl_adios2
 /// field
 constexpr std::array field_ext = {"_real", "_imag"};
 
-/// @private
-template <class... Ts>
-struct overload : Ts...
-{
-  using Ts::operator()...;
-};
-/// @private
-template <class... Ts>
-overload(Ts...) -> overload<Ts...>; // line not needed in C++20...
-
 /// Safe definition of an attribute. First check if it has already been
 /// defined and return it. If not defined create new attribute.
 template <class T>
@@ -148,7 +133,7 @@ extract_common_mesh(const typename adios2_writer::U<T>& u)
 {
   // Extract mesh from first function
   assert(!u.empty());
-  auto mesh = std::visit([](auto& u) { return u->function_space()->mesh(); },
+  auto mesh = std::visit([](auto&& u) { return u->function_space()->mesh(); },
                          u.front());
   assert(mesh);
 
@@ -156,7 +141,7 @@ extract_common_mesh(const typename adios2_writer::U<T>& u)
   for (auto& v : u)
   {
     std::visit(
-        [&mesh](auto& u)
+        [&mesh](auto&& u)
         {
           if (mesh != u->function_space()->mesh())
           {
@@ -192,33 +177,22 @@ void initialize_function_attributes(adios2::IO& io,
   // Array of function (name, cell association types) for each function
   // added to the file
   std::vector<std::array<std::string, 2>> u_data;
-  using X = decltype(u_data);
   for (auto& v : u)
   {
-    auto n = std::visit(
-        impl_adios2::overload{
-            [](const std::shared_ptr<const typename adios2_writer::Fd32<T>>& u)
-                -> X {
-              return {{u->name, "points"}};
-            },
-            [](const std::shared_ptr<const typename adios2_writer::Fd64<T>>& u)
-                -> X {
-              return {{u->name, "points"}};
-            },
-            [](const std::shared_ptr<const typename adios2_writer::Fc64<T>>& u)
-                -> X
-            {
-              return {{u->name + impl_adios2::field_ext[0], "points"},
-                      {u->name + impl_adios2::field_ext[1], "points"}};
-            },
-            [](const std::shared_ptr<const typename adios2_writer::Fc128<T>>& u)
-                -> X
-            {
-              return {{u->name + impl_adios2::field_ext[0], "points"},
-                      {u->name + impl_adios2::field_ext[1], "points"}};
-            }},
+    std::visit(
+        [&u_data](auto&& u)
+        {
+          using U = std::decay_t<decltype(u)>;
+          using X = typename U::element_type;
+          if constexpr (std::is_floating_point_v<typename X::geometry_type>)
+            u_data.push_back({u->name, "points"});
+          else
+          {
+            u_data.push_back({u->name + impl_adios2::field_ext[0], "points"});
+            u_data.push_back({u->name + impl_adios2::field_ext[1], "points"});
+          }
+        },
         v);
-    u_data.insert(u_data.end(), n.begin(), n.end());
   }
 
   // Write field associations to file
@@ -383,7 +357,7 @@ void write_data(adios2::IO& io, adios2::Engine& engine,
   }
 }
 
-/// Write mesh geometry and connectivity (topology) for Fides
+/// @brief  Write mesh geometry and connectivity (topology) for Fides.
 /// @param[in] io The ADIOS2 IO
 /// @param[in] engine The ADIOS2 engine
 /// @param[in] mesh The mesh
@@ -437,7 +411,7 @@ template <std::floating_point T>
 class FidesWriter : public ADIOS2Writer
 {
 public:
-  /// @brief  Create Fides writer for a mesh
+  /// @brief Create Fides writer for a mesh
   /// @param[in] comm The MPI communicator to open the file on
   /// @param[in] filename Name of output file
   /// @param[in] mesh The mesh. The mesh must a degree 1 mesh.
@@ -497,14 +471,14 @@ public:
     if (element0->is_mixed())
     {
       throw std::runtime_error(
-          "Mixed functions are not supported by VTXWriter");
+          "Mixed functions are not supported by FidesWriter");
     }
 
     // Check if function is DG 0
     if (element0->space_dimension() / element0->block_size() == 1)
     {
       throw std::runtime_error(
-          "Piecewise constants are not (yet) supported by VTXWriter");
+          "Piecewise constants are not (yet) supported by FidesWriter");
     }
 
     // FIXME: is the below check adequate for detecting a
@@ -523,7 +497,7 @@ public:
     for (auto& v : _u)
     {
       std::visit(
-          [&](auto& u)
+          [num_vertices_per_cell, element0](auto&& u)
           {
             auto element = u->function_space()->element();
             assert(element);
@@ -598,7 +572,6 @@ public:
     adios2::Variable var_step
         = impl_adios2::define_variable<double>(*_io, "step");
     _engine->template Put<double>(var_step, t);
-
     if (auto v = _io->template InquireVariable<std::int64_t>("connectivity");
         !v or _mesh_reuse_policy == FidesMeshPolicy::update)
     {
@@ -607,8 +580,8 @@ public:
 
     for (auto& v : _u)
     {
-      std::visit([&](auto& u) { impl_fides::write_data(*_io, *_engine, *u); },
-                 v);
+      std::visit(
+          [this](auto&& u) { impl_fides::write_data(*_io, *_engine, *u); }, v);
     }
 
     _engine->EndStep();
@@ -637,30 +610,23 @@ std::vector<std::string>
 extract_function_names(const typename adios2_writer::U<T>& u)
 {
   std::vector<std::string> names;
-  using X = decltype(names);
   for (auto& v : u)
   {
-    auto n = std::visit(
-        impl_adios2::overload{
-            [](const std::shared_ptr<const typename adios2_writer::Fd32<T>>& u)
-                -> X { return {u->name}; },
-            [](const std::shared_ptr<const typename adios2_writer::Fd64<T>>& u)
-                -> X { return {u->name}; },
-            [](const std::shared_ptr<const typename adios2_writer::Fc64<T>>& u)
-                -> X
-            {
-              return {u->name + impl_adios2::field_ext[0],
-                      u->name + impl_adios2::field_ext[1]};
-            },
-            [](const std::shared_ptr<const typename adios2_writer::Fc128<T>>& u)
-                -> X
-            {
-              return {u->name + impl_adios2::field_ext[0],
-                      u->name + impl_adios2::field_ext[1]};
-            }},
+    std::visit(
+        [&names](auto&& u)
+        {
+          using U = std::decay_t<decltype(u)>;
+          using X = typename U::element_type;
+          if constexpr (std::is_floating_point_v<typename X::geometry_type>)
+            names.push_back(u->name);
+          else
+          {
+            names.push_back(u->name + impl_adios2::field_ext[0]);
+            names.push_back(u->name + impl_adios2::field_ext[1]);
+          }
+        },
         v);
-    names.insert(names.end(), n.begin(), n.end());
-  };
+  }
 
   return names;
 }
@@ -693,7 +659,6 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
   std::uint32_t num_dofs = index_map_bs
                            * (index_map->size_local() + index_map->num_ghosts())
                            / dofmap_bs;
-
   if constexpr (std::is_scalar_v<T>)
   {
     // ---- Real
@@ -897,7 +862,7 @@ public:
     impl_adios2::define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
   }
 
-  /// @brief Create a VTX writer for list of functions
+  /// @brief Create a VTX writer for a list of fem::Functions.
   ///
   /// This format supports arbitrary degree meshes.
   ///
@@ -915,7 +880,7 @@ public:
         _mesh(impl_adios2::extract_common_mesh<T>(u)), _u(u)
   {
     if (u.empty())
-      throw std::runtime_error("VTXWriter fem::Function list is empty");
+      throw std::runtime_error("VTXWriter fem::Function list is empty.");
 
     // Extract element from first function
     auto element0 = std::visit([](auto& u)
@@ -925,8 +890,10 @@ public:
 
     // Check if function is mixed
     if (element0->is_mixed())
+    {
       throw std::runtime_error(
-          "Mixed functions are not supported by VTXWriter");
+          "Mixed functions are not supported by VTXWriter.");
+    }
 
     // Check if function is DG 0
     if (element0->space_dimension() / element0->block_size() == 1)
@@ -956,8 +923,8 @@ public:
             assert(element);
             if (*element != *element0)
             {
-              throw std::runtime_error(
-                  "All functions in VTXWriter must have the same element type");
+              throw std::runtime_error("All functions in VTXWriter must have "
+                                       "the same element type.");
             }
           },
           v);
@@ -992,7 +959,6 @@ public:
     assert(_engine);
     adios2::Variable var_step
         = impl_adios2::define_variable<double>(*_io, "step");
-
     _engine->BeginStep();
     _engine->template Put<double>(var_step, t);
 

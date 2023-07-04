@@ -6,18 +6,20 @@
 """Linear algebra functionality"""
 
 
+import numpy.typing as npt
 import numpy as np
-
-from dolfinx import cpp as _cpp
+from dolfinx.cpp.common import IndexMap
 from dolfinx.cpp.la import BlockMode, InsertMode, Norm
 from dolfinx.cpp.la.petsc import create_vector as create_petsc_vector
 
+from dolfinx import cpp as _cpp
+
 __all__ = ["orthonormalize", "is_orthonormal", "create_petsc_vector", "matrix_csr", "vector",
-           "MatrixCSRMetaClass", "Norm", "InsertMode", "VectorMetaClass", ]
+           "MatrixCSR", "Norm", "InsertMode", "Vector", ]
 
 
-class MatrixCSRMetaClass:
-    def __init__(self, sp, bm):
+class MatrixCSR:
+    def __init__(self, A):
         """A distributed sparse matrix that uses compressed sparse row storage.
 
         Args:
@@ -32,17 +34,114 @@ class MatrixCSRMetaClass:
             initialiser.
 
         """
-        super().__init__(sp, bm)
+        self._cpp_object = A
+
+    def index_map(self, i: int) -> IndexMap:
+        """Index map for row/column.
+
+        Arg:
+            i: 0 for row map, 1 for column map.
+
+        """
+        return self._cpp_object.index_map(i)
+
+    @property
+    def block_size(self):
+        """Block sizes for the matrix."""
+        return self._cpp_object.block_size
+
+    def add(self, x, rows, cols, bs=1) -> None:
+        self._cpp_object.add(x, rows, cols, bs)
+
+    def set(self, x, rows, cols, bs=1) -> None:
+        self._cpp_object.set(x, rows, cols, bs)
+
+    def set_value(self, x: np.floating) -> None:
+        """Set all non-zero entries to a value.
+
+        Args:
+            x: The value to set all non-zero entries to.
+
+        """
+        self._cpp_object.set(x)
+
+    def finalize(self) -> None:
+        self._cpp_object.finalize()
+
+    def squared_norm(self) -> np.floating:
+        """Compute the squared Frobenius norm.
+
+        Note:
+            This operation is collective and requires communication.
+
+        """
+        return self._cpp_object.squared_norm()
+
+    @property
+    def data(self) -> npt.NDArray[np.floating]:
+        """Underlying matrix entry data."""
+        return self._cpp_object.data
+
+    @property
+    def indices(self) -> npt.NDArray[np.int32]:
+        """Local column indices."""
+        return self._cpp_object.indices
+
+    @property
+    def indptr(self) -> npt.NDArray[np.int64]:
+        """Local row pointers."""
+        return self._cpp_object.indptr
+
+    def to_dense(self) -> npt.NDArray[np.floating]:
+        """Copy to a dense 2D array.
+
+        Note:
+            Typically used for debugging.
+
+        """
+        return self._cpp_object.to_dense()
+
+    def to_scipy(self, ghosted=False):
+        """Convert to a SciPy CSR/BSR matrix. Data is shared.
+
+        SciPy must be available.
+
+        Args:
+            ghosted: If ``True`` rows that are ghosted in parallel are
+                included in the return SciPy matrix, otherwise ghost
+                rows are not included.
+
+        Returns:
+            SciPy compressed sparse row (both block sizes equal to one)
+            or a SciPy block compressed sparse row matrix.
+
+        """
+        from scipy.sparse import csr_matrix as _csr, bsr_matrix as _bsr
+
+        bs0, bs1 = self._cpp_object.block_size
+        ncols = self.index_map(1).size_local + self.index_map(1).num_ghosts
+        if ghosted:
+            nrows = self.index_map(0).size_local + self.index_map(0).num_ghosts
+            data, indices, indptr = self.data, self.indices, self.indptr
+        else:
+            nrows = self.index_map(0).size_local
+            nnzlocal = self.indptr[nrows]
+            data, indices, indptr = self.data[:(bs0 * bs1) * nnzlocal], self.indices[:nnzlocal], self.indptr[:nrows + 1]
+
+        if bs0 == 1 and bs1 == 1:
+            return _csr((data, indices, indptr), shape=(nrows, ncols))
+        else:
+            return _bsr((data.reshape(-1, bs0, bs1), indices, indptr), shape=(bs0 * nrows, bs1 * ncols))
 
 
-def matrix_csr(sp, block_mode=BlockMode.compact, dtype=np.float64) -> MatrixCSRMetaClass:
+def matrix_csr(sp, block_mode=BlockMode.compact, dtype=np.float64) -> MatrixCSR:
     """Create a distributed sparse matrix.
 
     The matrix uses compressed sparse row storage.
 
     Args:
         sp: The sparsity pattern that defines the nonzero structure of
-        the matrix the parallel distribution of the matrix.
+            the matrix the parallel distribution of the matrix.
         dtype: The scalar type.
 
     Returns:
@@ -60,17 +159,15 @@ def matrix_csr(sp, block_mode=BlockMode.compact, dtype=np.float64) -> MatrixCSRM
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
 
-    matrixcls = type("MatrixCSR", (MatrixCSRMetaClass, ftype), {})
-    return matrixcls(sp, block_mode)
+    return MatrixCSR(ftype(sp, block_mode))
 
 
-class VectorMetaClass:
-    def __init__(self, map, bs):
+class Vector:
+    def __init__(self, x):
         """A distributed vector object.
 
         Args:
-            map: Index map the describes the size and distribution of
-                the vector
+            map: Index map the describes the size and distribution of the vector
             bs: Block size
 
         Note:
@@ -78,14 +175,30 @@ class VectorMetaClass:
             and not created using the class initialiser.
 
         """
-        super().__init__(map, bs)  # type: ignore
+        self._cpp_object = x
+
+    @property
+    def index_map(self) -> IndexMap:
+        return self._cpp_object.index_map
 
     @property
     def array(self) -> np.ndarray:
-        return super().array  # type: ignore
+        return self._cpp_object.array
+
+    def set(self, value: np.floating) -> None:
+        self._cpp_object.set(value)
+
+    def scatter_forward(self) -> None:
+        self._cpp_object.scatter_forward()
+
+    def scatter_reverse(self, mode: InsertMode):
+        self._cpp_object.scatter_reverse(mode)
+
+    def norm(self, type=_cpp.la.Norm.l2) -> np.floating:
+        return self._cpp_object.norm(type)
 
 
-def vector(map, bs=1, dtype=np.float64) -> VectorMetaClass:
+def vector(map, bs=1, dtype=np.float64) -> Vector:
     """Create a distributed vector.
 
     Args:
@@ -109,11 +222,10 @@ def vector(map, bs=1, dtype=np.float64) -> VectorMetaClass:
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
 
-    vectorcls = type("Vector", (VectorMetaClass, vtype), {})
-    return vectorcls(map, bs)
+    return Vector(vtype(map, bs))
 
 
-def create_petsc_vector_wrap(x: VectorMetaClass):
+def create_petsc_vector_wrap(x: Vector):
     """Wrap a distributed DOLFINx vector as a PETSc vector.
 
     Args:
@@ -127,7 +239,7 @@ def create_petsc_vector_wrap(x: VectorMetaClass):
         object.
 
     """
-    return _cpp.la.petsc.create_vector_wrap(x)
+    return _cpp.la.petsc.create_vector_wrap(x._cpp_object)
 
 
 def orthonormalize(basis):

@@ -169,7 +169,7 @@ def plot_higher_order():
     # between cells with different mesh tag values) into a degree 2
     # discontinuous Lagrange space.
     V = FunctionSpace(msh, ("Discontinuous Lagrange", 2))
-    u = Function(V, dtype=np.float64)
+    u = Function(V, dtype=msh.geometry.x.dtype)
     u.interpolate(lambda x: x[0], cell_tags.find(0))
     u.interpolate(lambda x: x[1] + 1, cell_tags.find(1))
     u.x.scatter_forward()
@@ -298,8 +298,8 @@ def plot_streamlines():
         plotter.show()
 
 
-# plot_scalar()
-# plot_meshtags()
+plot_scalar()
+plot_meshtags()
 plot_higher_order()
-# plot_nedelec()
-# plot_streamlines()
+plot_nedelec()
+plot_streamlines()

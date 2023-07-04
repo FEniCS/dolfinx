@@ -204,25 +204,27 @@ public:
   {
     auto set_fn = [](value_type& y, const value_type& x) { y = x; };
 
+    std::int32_t num_rows
+        = _index_maps[0]->size_local() + _index_maps[0]->num_ghosts();
     assert(x.size() == rows.size() * cols.size() * BS0 * BS1);
     if (_bs[0] == BS0 and _bs[1] == BS1)
     {
       impl::insert_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols, set_fn,
-                                 _index_maps[0]->size_local());
+                                 num_rows);
     }
     else if (_bs[0] == 1 and _bs[1] == 1)
     {
       // Set blocked data in a regular CSR matrix (_bs[0]=1, _bs[1]=1) with
       // correct sparsity
       impl::insert_blocked_csr<BS0, BS1>(_data, _cols, _row_ptr, x, rows, cols,
-                                         set_fn, _index_maps[0]->size_local());
+                                         set_fn, num_rows);
     }
     else
     {
       assert(BS0 == 1 and BS1 == 1);
       // Set non-blocked data in a blocked CSR matrix (BS0=1, BS1=1)
       impl::insert_nonblocked_csr(_data, _cols, _row_ptr, x, rows, cols, set_fn,
-                                  _index_maps[0]->size_local(), _bs[0], _bs[1]);
+                                  num_rows, _bs[0], _bs[1]);
     }
   }
 
@@ -303,14 +305,13 @@ public:
   void finalize_begin();
 
   /// @brief End transfer of ghost row data to owning ranks.
-  /// @note Must be preceded by MatrixCSR::finalize_begin()
+  /// @note Must be preceded by MatrixCSR::finalize_begin().
   /// @note Matrix data received from other processes will be
   /// accumulated into locally owned rows, and ghost rows will be
   /// zeroed.
   void finalize_end();
 
-  /// @brief Compute the Frobenius norm squared across all processes
-  /// @note This does not include ghost rows.
+  /// @brief Compute the Frobenius norm squared across all processes.
   /// @note MPI Collective
   double squared_norm() const;
 
