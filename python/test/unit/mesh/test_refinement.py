@@ -9,13 +9,12 @@ import pytest
 from numpy import isclose, logical_and
 
 import ufl
-from dolfinx import cpp as _cpp
-from dolfinx.fem import FunctionSpace, form
-from dolfinx.fem.petsc import assemble_matrix
-from dolfinx.mesh import (CellType, DiagonalType, GhostMode,
+from dolfinx.fem import FunctionSpace, assemble_matrix, form
+from dolfinx.mesh import (CellType, DiagonalType, GhostMode, RefinementOption,
                           compute_incident_entities, create_unit_cube,
                           create_unit_square, locate_entities,
-                          locate_entities_boundary, meshtags, refine)
+                          locate_entities_boundary, meshtags, refine,
+                          refine_plaza, transfer_meshtag)
 
 from mpi4py import MPI
 
@@ -87,7 +86,7 @@ def test_sub_refine():
                               ghost_mode=GhostMode.none)
     mesh.topology.create_entities(1)
 
-    def left_corner_edge(x, tol=1e-16):
+    def left_corner_edge(x, tol=1e-7):
         return logical_and(isclose(x[0], 0), x[1] < 1 / 4 + tol)
 
     edges = locate_entities_boundary(mesh, 1, left_corner_edge)
@@ -100,21 +99,20 @@ def test_sub_refine():
 
 def test_refine_from_cells():
     """Check user interface for using local cells to define edges"""
-    Nx = 8
-    Ny = 3
+    Nx, Ny = 8, 3
     assert Nx % 2 == 0
-    mesh = create_unit_square(MPI.COMM_WORLD, Nx, Ny, diagonal=DiagonalType.left, ghost_mode=GhostMode.none)
-    mesh.topology.create_entities(1)
+    msh = create_unit_square(MPI.COMM_WORLD, Nx, Ny, diagonal=DiagonalType.left, ghost_mode=GhostMode.none)
+    msh.topology.create_entities(1)
 
     def left_side(x, tol=1e-16):
         return x[0] <= 0.5 + tol
-    cells = locate_entities(mesh, mesh.topology.dim, left_side)
+    cells = locate_entities(msh, msh.topology.dim, left_side)
     if MPI.COMM_WORLD.size == 0:
         assert cells.__len__() == Nx * Ny
-    edges = compute_incident_entities(mesh, cells, 2, 1)
+    edges = compute_incident_entities(msh.topology, cells, 2, 1)
     if MPI.COMM_WORLD.size == 0:
         assert edges.__len__() == Nx // 2 * (2 * Ny + 1) + (Nx // 2 + 1) * Ny
-    mesh2 = refine(mesh, edges, redistribute=True)
+    mesh2 = refine(msh, edges, redistribute=True)
 
     num_cells_global = mesh2.topology.index_map(2).size_global
     actual_cells = 3 * (Nx * Ny) + 3 * Ny + 2 * Nx * Ny
@@ -124,9 +122,9 @@ def test_refine_from_cells():
 @pytest.mark.parametrize("tdim", [2, 3])
 def test_refine_facet_meshtag(tdim):
     if tdim == 3:
-        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 3, 5, CellType.tetrahedron, GhostMode.none)
+        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 3, 5, CellType.tetrahedron, ghost_mode=GhostMode.none)
     else:
-        mesh = create_unit_square(MPI.COMM_WORLD, 2, 5, CellType.triangle, GhostMode.none)
+        mesh = create_unit_square(MPI.COMM_WORLD, 2, 5, CellType.triangle, ghost_mode=GhostMode.none)
     mesh.topology.create_entities(tdim - 1)
     mesh.topology.create_connectivity(tdim - 1, tdim)
     mesh.topology.create_entities(1)
@@ -138,12 +136,9 @@ def test_refine_facet_meshtag(tdim):
     meshtag = meshtags(mesh, tdim - 1, numpy.array(facet_indices, dtype=numpy.int32),
                        numpy.arange(len(facet_indices), dtype=numpy.int32))
 
-    fine_mesh, parent_cell, parent_facet = _cpp.refinement.plaza_refine_data(
-        mesh, False, _cpp.refinement.RefinementOptions.parent_cell_and_facet)
+    fine_mesh, parent_cell, parent_facet = refine_plaza(mesh, False, RefinementOption.parent_cell_and_facet)
     fine_mesh.topology.create_entities(tdim - 1)
-
-    new_meshtag = _cpp.refinement.transfer_facet_meshtag(meshtag, fine_mesh, parent_cell, parent_facet)
-
+    new_meshtag = transfer_meshtag(meshtag, fine_mesh, parent_cell, parent_facet)
     assert len(new_meshtag.indices) == (tdim * 2 - 2) * len(meshtag.indices)
 
     # New tags should be on facets with one cell (i.e. exterior)
@@ -156,30 +151,23 @@ def test_refine_facet_meshtag(tdim):
     facet_indices = numpy.arange(mesh.topology.index_map(tdim - 1).size_local)
     meshtag = meshtags(mesh, tdim - 1, numpy.array(facet_indices, dtype=numpy.int32),
                        numpy.arange(len(facet_indices), dtype=numpy.int32))
-
-    new_meshtag = _cpp.refinement.transfer_facet_meshtag(meshtag, fine_mesh, parent_cell, parent_facet)
-
+    new_meshtag = transfer_meshtag(meshtag, fine_mesh, parent_cell, parent_facet)
     assert len(new_meshtag.indices) == (tdim * 2 - 2) * len(meshtag.indices)
 
 
 @pytest.mark.parametrize("tdim", [2, 3])
 def test_refine_cell_meshtag(tdim):
-
     if tdim == 3:
-        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 3, 5, CellType.tetrahedron, GhostMode.none)
+        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 3, 5, CellType.tetrahedron, ghost_mode=GhostMode.none)
     else:
-        mesh = create_unit_square(MPI.COMM_WORLD, 2, 5, CellType.triangle, GhostMode.none)
+        mesh = create_unit_square(MPI.COMM_WORLD, 2, 5, CellType.triangle, ghost_mode=GhostMode.none)
 
     mesh.topology.create_entities(1)
-
     cell_indices = numpy.arange(mesh.topology.index_map(tdim).size_local)
     meshtag = meshtags(mesh, tdim, numpy.array(cell_indices, dtype=numpy.int32),
                        numpy.arange(len(cell_indices), dtype=numpy.int32))
 
-    fine_mesh, parent_cell, parent_facet = _cpp.refinement.plaza_refine_data(
-        mesh, False, _cpp.refinement.RefinementOptions.parent_cell_and_facet)
-
-    new_meshtag = _cpp.refinement.transfer_cell_meshtag(meshtag, fine_mesh, parent_cell)
-
+    fine_mesh, parent_cell, _ = refine_plaza(mesh, False, RefinementOption.parent_cell_and_facet)
+    new_meshtag = transfer_meshtag(meshtag, fine_mesh, parent_cell)
     assert sum(new_meshtag.values) == (tdim * 4 - 4) * sum(meshtag.values)
     assert len(new_meshtag.indices) == (tdim * 4 - 4) * len(meshtag.indices)

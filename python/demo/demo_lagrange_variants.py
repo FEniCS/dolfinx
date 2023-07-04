@@ -17,20 +17,19 @@
 #
 # We begin this demo by importing the required modules.
 
-# +
 import matplotlib.pylab as plt
 import numpy as np
 
+# +
 import basix
-import basix.ufl_wrapper
+import basix.ufl
 import ufl
-from dolfinx import fem, mesh
+from dolfinx import default_scalar_type, fem, mesh
 from ufl import ds, dx, grad, inner
 
 from mpi4py import MPI
-from petsc4py.PETSc import ScalarType
 
-if np.issubdtype(ScalarType, np.complexfloating):
+if np.issubdtype(default_scalar_type, np.complexfloating):
     print("Demo should only be executed with DOLFINx real mode")
     exit(0)
 # -
@@ -60,7 +59,7 @@ element = basix.create_element(basix.ElementFamily.P, basix.CellType.interval, 1
                                basix.LagrangeVariant.equispaced)
 pts = basix.create_lattice(basix.CellType.interval, 200, basix.LatticeType.equispaced, True)
 values = element.tabulate(0, pts)[0, :, :, 0]
-if MPI.COMM_WORLD.size == 1:  # Skip this plotting in parallel
+if MPI.COMM_WORLD.size == 1:
     for i in range(values.shape[1]):
         plt.plot(pts, values[:, i])
     plt.plot(element.points, [0 for _ in element.points], "ko")
@@ -107,9 +106,8 @@ if MPI.COMM_WORLD.size == 1:  # Skip this plotting in parallel
 # Elements created using Basix can be used directly with UFL via Basix's
 # UFL wrapper.
 
-element = basix.create_element(basix.ElementFamily.P, basix.CellType.triangle, 3,
-                               basix.LagrangeVariant.gll_warped)
-ufl_element = basix.ufl_wrapper.BasixElement(element)
+ufl_element = basix.ufl.element(basix.ElementFamily.P, basix.CellType.triangle, 3,
+                                basix.LagrangeVariant.gll_warped)
 
 # The UFL element `ufl_element` can be used in the same way as an
 # element created directly in UFL. For example, we could [solve a
@@ -124,7 +122,7 @@ facets = mesh.locate_entities_boundary(msh, dim=1,
                                        marker=lambda x: np.logical_or(np.isclose(x[0], 0.0),
                                                                       np.isclose(x[0], 2.0)))
 dofs = fem.locate_dofs_topological(V=V, entity_dim=1, entities=facets)
-bc = fem.dirichletbc(value=ScalarType(0), dofs=dofs, V=V)
+bc = fem.dirichletbc(value=default_scalar_type(0), dofs=dofs, V=V)
 
 u = ufl.TrialFunction(V)
 v = ufl.TestFunction(V)
@@ -157,23 +155,22 @@ def saw_tooth(x):
 # elements, and plot the finite element interpolation.
 
 # +
-mesh = mesh.create_unit_interval(MPI.COMM_WORLD, 10)
+msh = mesh.create_unit_interval(MPI.COMM_WORLD, 10)
 
-x = ufl.SpatialCoordinate(mesh)
+x = ufl.SpatialCoordinate(msh)
 u_exact = saw_tooth(x[0])
 
 for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warped]:
-    element = basix.create_element(basix.ElementFamily.P, basix.CellType.interval, 10, variant)
-    ufl_element = basix.ufl_wrapper.BasixElement(element)
-    V = fem.FunctionSpace(mesh, ufl_element)
+    ufl_element = basix.ufl.element(basix.ElementFamily.P, basix.CellType.interval, 10, variant)
+    V = fem.FunctionSpace(msh, ufl_element)
     uh = fem.Function(V)
     uh.interpolate(lambda x: saw_tooth(x[0]))
     if MPI.COMM_WORLD.size == 1:  # Skip this plotting in parallel
-        pts = []
+        pts = []  # type: ignore
         cells = []
         for cell in range(10):
             for i in range(51):
-                pts.append([cell / 10 + i / 50 / 10, 0, 0])
+                pts.append([cell / 10 + i / 50 / 10, 0, 0])  # type: ignore
                 cells.append(cell)
         values = uh.eval(pts, cells)
         plt.plot(pts, [saw_tooth(i[0]) for i in pts], "k--")
@@ -203,13 +200,12 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
 
 # +
 for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warped]:
-    element = basix.create_element(basix.ElementFamily.P, basix.CellType.interval, 10, variant)
-    ufl_element = basix.ufl_wrapper.BasixElement(element)
-    V = fem.FunctionSpace(mesh, ufl_element)
+    ufl_element = basix.ufl.element(basix.ElementFamily.P, basix.CellType.interval, 10, variant)
+    V = fem.FunctionSpace(msh, ufl_element)
     uh = fem.Function(V)
     uh.interpolate(lambda x: saw_tooth(x[0]))
     M = fem.form((u_exact - uh)**2 * dx)
-    error = mesh.comm.allreduce(fem.assemble_scalar(M), op=MPI.SUM)
+    error = msh.comm.allreduce(fem.assemble_scalar(M), op=MPI.SUM)
     print(f"Computed L2 interpolation error ({variant.name}):", error ** 0.5)
 # -
 

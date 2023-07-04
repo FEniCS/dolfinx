@@ -9,11 +9,12 @@ on:
       - "main"
     tags:
       - "v*"
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: fenicsproject/test-env:latest-redhat
+    container: fenicsproject/test-env:current-redhat
 
     steps:
       - uses: actions/checkout@v3

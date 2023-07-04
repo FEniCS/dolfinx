@@ -1,4 +1,4 @@
-# Copyright (C) 2017-2021 Chris N. Richardson, Garth N. Wells and Michal Habera
+# Copyright (C) 2017-2023 Chris N. Richardson, Garth N. Wells and Michal Habera
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -10,25 +10,22 @@ import collections
 import collections.abc
 import typing
 
+import numpy as np
+import numpy.typing as npt
+import ufl
+from dolfinx.fem import IntegralType
 from dolfinx.fem.function import FunctionSpace
+
+from dolfinx import cpp as _cpp
+from dolfinx import default_scalar_type, jit
 
 if typing.TYPE_CHECKING:
     from dolfinx.fem import function
     from dolfinx.mesh import Mesh
 
-import numpy as np
 
-import ufl
-from dolfinx import cpp as _cpp
-from dolfinx import jit
-
-from petsc4py import PETSc
-
-
-class FormMetaClass:
-    def __init__(self, form, V: list[_cpp.fem.FunctionSpace], coeffs, constants,
-                 subdomains: dict[_cpp.mesh.MeshTags_int32, typing.Union[None, typing.Any]], mesh: _cpp.mesh.Mesh,
-                 ffi, code):
+class Form:
+    def __init__(self, form, ufcx_form=None, code=None):
         """A finite element form
 
         Notes:
@@ -46,10 +43,10 @@ class FormMetaClass:
             mesh: The mesh that the form is defined on
 
         """
+
         self._code = code
-        self._ufcx_form = form
-        super().__init__(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_form)),
-                         V, coeffs, constants, subdomains, mesh)  # type: ignore
+        self._ufcx_form = ufcx_form
+        self._cpp_object = form
 
     @property
     def ufcx_form(self):
@@ -57,38 +54,45 @@ class FormMetaClass:
         return self._ufcx_form
 
     @property
-    def code(self) -> str:
+    def code(self) -> typing.Union[str, None]:
         """C code strings"""
         return self._code
 
     @property
+    def rank(self) -> int:
+        return self._cpp_object.rank
+
+    @property
     def function_spaces(self) -> typing.List[FunctionSpace]:
         """Function spaces on which this form is defined"""
-        return super().function_spaces  # type: ignore
+        return self._cpp_object.function_spaces
 
     @property
     def dtype(self) -> np.dtype:
-        """dtype of this form"""
-        return super().dtype  # type: ignore
+        """Scalar type of this form"""
+        return self._cpp_object.dtype
 
     @property
     def mesh(self) -> Mesh:
         """Mesh on which this form is defined"""
-        return super().mesh  # type: ignore
+        return self._cpp_object.mesh
 
     @property
     def integral_types(self):
         """Integral types in the form"""
-        return super().integral_types  # type: ignore
+        return self._cpp_object.integral_types
 
 
-form_types = typing.Union[FormMetaClass, _cpp.fem.Form_float32, _cpp.fem.Form_float64,
-                          _cpp.fem.Form_complex64, _cpp.fem.Form_complex128]
+_ufl_to_dolfinx_domain = {"cell": IntegralType.cell,
+                          "exterior_facet": IntegralType.exterior_facet,
+                          "interior_facet": IntegralType.interior_facet,
+                          "vertex": IntegralType.vertex}
 
 
-def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtype = PETSc.ScalarType,
+def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]],
+         dtype: typing.Optional[npt.DTypeLike] = default_scalar_type,
          form_compiler_options: dict = {}, jit_options: dict = {}):
-    """Create a DOLFINx Form or an array of Forms
+    """Create a Form or an array of Forms.
 
     Args:
         form: A UFL form or list(s) of UFL forms
@@ -106,7 +110,6 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
         :class:`Form` instance with an appropriate base class for the
         scalar type, e.g. `_cpp.fem.Form_float64`.
 
-
     """
     if dtype == np.float32:
         ftype = _cpp.fem.Form_float32
@@ -123,25 +126,18 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
 
-    formcls = type("Form", (FormMetaClass, ftype), {})
-
     def _form(form):
         """"Compile a single UFL form"""
         # Extract subdomain data from UFL form
         sd = form.subdomain_data()
         domain, = list(sd.keys())  # Assuming single domain
-        # Get subdomain data for each integral type
-        subdomains = {}
-        for integral_type, data in sd.get(domain).items():
-            # Check that the subdomain data for each integral of this type is
-            # the same
-            assert all([id(d) == id(data[0]) for d in data])
-            subdomains[integral_type] = data[0]
+        # Check that subdomain data for each integral type is the same
+        for data in sd.get(domain).values():
+            assert all([d is data[0] for d in data])
 
         mesh = domain.ufl_cargo()
         if mesh is None:
             raise RuntimeError("Expecting to find a Mesh in the form.")
-
         ufcx_form, module, code = jit.ffcx_jit(mesh.comm, form,
                                                form_compiler_options=form_compiler_options,
                                                jit_options=jit_options)
@@ -149,20 +145,36 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
         # For each argument in form extract its function space
         V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
 
-        # Prepare coefficients data. For every coefficient in form take its
-        # C++ object.
-        original_coefficients = form.coefficients()
-        coeffs = [original_coefficients[ufcx_form.original_coefficient_position[i]
-                                        ]._cpp_object for i in range(ufcx_form.num_coefficients)]
+        # Prepare coefficients data. For every coefficient in form take
+        # its C++ object.
+        original_coeffs = form.coefficients()
+        coeffs = [original_coeffs[ufcx_form.original_coefficient_position[i]
+                                  ]._cpp_object for i in range(ufcx_form.num_coefficients)]
         constants = [c._cpp_object for c in form.constants()]
 
-        # Subdomain markers (possibly None for some dimensions)
-        subdomains = {_cpp.fem.IntegralType.cell: subdomains.get("cell"),
-                      _cpp.fem.IntegralType.exterior_facet: subdomains.get("exterior_facet"),
-                      _cpp.fem.IntegralType.interior_facet: subdomains.get("interior_facet"),
-                      _cpp.fem.IntegralType.vertex: subdomains.get("vertex")}
+        # NOTE Could remove this and let the user convert meshtags by
+        # calling compute_integration_domains themselves
+        def get_integration_domains(integral_type, subdomain):
+            """Get integration domains from subdomain data"""
+            if subdomain is None:
+                return []
+            else:
+                try:
+                    if integral_type in (IntegralType.exterior_facet, IntegralType.interior_facet):
+                        tdim = subdomain.topology.dim
+                        subdomain._cpp_object.topology.create_connectivity(tdim - 1, tdim)
+                        subdomain._cpp_object.topology.create_connectivity(tdim, tdim - 1)
+                    return _cpp.fem.compute_integration_domains(integral_type, subdomain._cpp_object)
+                except AttributeError:
+                    return subdomain
 
-        return formcls(ufcx_form, V, coeffs, constants, subdomains, mesh, module.ffi, code)
+        # Subdomain markers (possibly empty list for some integral types)
+        subdomains = {_ufl_to_dolfinx_domain[key]: get_integration_domains(
+            _ufl_to_dolfinx_domain[key], subdomain_data[0]) for (key, subdomain_data) in sd.get(domain).items()}
+
+        f = ftype(module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)), V, coeffs,
+                  constants, subdomains, mesh)
+        return Form(f, ufcx_form, code)
 
     def _create_form(form):
         """Recursively convert ufl.Forms to dolfinx.fem.Form, otherwise
@@ -176,8 +188,8 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]], dtype: np.dtyp
     return _create_form(form)
 
 
-def extract_function_spaces(forms: typing.Union[typing.Iterable[FormMetaClass],  # type: ignore [return]
-                                                typing.Iterable[typing.Iterable[FormMetaClass]]],
+def extract_function_spaces(forms: typing.Union[typing.Iterable[Form],  # type: ignore [return]
+                                                typing.Iterable[typing.Iterable[Form]]],
                             index: int = 0) -> typing.Iterable[typing.Union[None, function.FunctionSpace]]:
     """Extract common function spaces from an array of forms. If `forms`
     is a list of linear form, this function returns of list of the

@@ -5,38 +5,44 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Test that matrices are symmetric."""
 
+import basix
+import numpy as np
 import pytest
-
-import dolfinx
 import ufl
+from basix.ufl import element, mixed_element
 from dolfinx.fem import FunctionSpace, form
 from dolfinx.mesh import CellType, create_unit_cube, create_unit_square
-from ufl import FiniteElement, MixedElement, VectorElement, grad, inner
-
 from mpi4py import MPI
+from ufl import grad, inner
+
+import dolfinx
 
 
-def check_symmetry(A):
-    assert A.isSymmetric(1e-8)
+def check_symmetry(A, tol):
+    Ad = A.to_dense()
+    assert np.allclose(Ad, Ad.T, atol=tol)
 
 
-def run_symmetry_test(cell_type, element, form_f):
+def run_symmetry_test(cell_type, e, form_f):
+    dtype = np.float64
+
     if cell_type == CellType.triangle or cell_type == CellType.quadrilateral:
-        mesh = create_unit_square(MPI.COMM_WORLD, 2, 2, cell_type)
+        mesh = create_unit_square(MPI.COMM_WORLD, 2, 2, cell_type, dtype=dtype)
     else:
-        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type)
+        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type, dtype=dtype)
 
-    space = FunctionSpace(mesh, element)
+    space = FunctionSpace(mesh, e)
     u = ufl.TrialFunction(space)
     v = ufl.TestFunction(space)
-    f = form(form_f(u, v))
+    f = form(form_f(u, v), dtype=dtype)
 
-    A = dolfinx.fem.petsc.assemble_matrix(f)
-    A.assemble()
-    check_symmetry(A)
+    A = dolfinx.fem.assemble_matrix(f)
+    A.finalize()
+    tol = np.sqrt(np.finfo(dtype).eps)
+    check_symmetry(A, tol)
 
 
-parametrize_elements = pytest.mark.parametrize("cell_type, element", [
+parametrize_elements = pytest.mark.parametrize("cell_type, family", [
     (CellType.triangle, "Lagrange"), (CellType.triangle, "N1curl"), (CellType.triangle, "RT"),
     (CellType.triangle, "Regge"),
     (CellType.quadrilateral, "Lagrange"), (CellType.quadrilateral, "RTCE"), (CellType.quadrilateral, "RTCF"),
@@ -44,7 +50,7 @@ parametrize_elements = pytest.mark.parametrize("cell_type, element", [
     (CellType.tetrahedron, "Regge"),
     (CellType.hexahedron, "Lagrange"), (CellType.hexahedron, "NCE"), (CellType.hexahedron, "NCF")
 ])
-parametrize_lagrange_elements = pytest.mark.parametrize("cell_type, element", [
+parametrize_lagrange_elements = pytest.mark.parametrize("cell_type, family", [
     (CellType.triangle, "Lagrange"), (CellType.quadrilateral, "Lagrange"),
     (CellType.tetrahedron, "Lagrange"), (CellType.hexahedron, "Lagrange")
 ])
@@ -53,51 +59,45 @@ parametrize_lagrange_elements = pytest.mark.parametrize("cell_type, element", [
 @pytest.mark.skip_in_parallel
 @parametrize_elements
 @pytest.mark.parametrize("order", range(1, 2))
-def test_mass_matrix_dx(cell_type, element, order):
-    run_symmetry_test(cell_type, (element, order),
-                      lambda u, v: inner(u, v) * ufl.dx)
+def test_mass_matrix_dx(cell_type, family, order):
+    run_symmetry_test(cell_type, (family, order), lambda u, v: inner(u, v) * ufl.dx)
 
 
 @pytest.mark.skip_in_parallel
 @parametrize_lagrange_elements
 @pytest.mark.parametrize("order", range(1, 2))
-def test_stiffness_matrix_dx(cell_type, element, order):
-    run_symmetry_test(cell_type, (element, order),
-                      lambda u, v: inner(grad(u), grad(v)) * ufl.dx)
+def test_stiffness_matrix_dx(cell_type, family, order):
+    run_symmetry_test(cell_type, (family, order), lambda u, v: inner(grad(u), grad(v)) * ufl.dx)
 
 
 @pytest.mark.skip_in_parallel
 @parametrize_elements
 @pytest.mark.parametrize("order", range(1, 2))
-def test_mass_matrix_ds(cell_type, element, order):
-    run_symmetry_test(cell_type, (element, order),
-                      lambda u, v: inner(u, v) * ufl.ds)
+def test_mass_matrix_ds(cell_type, family, order):
+    run_symmetry_test(cell_type, (family, order), lambda u, v: inner(u, v) * ufl.ds)
 
 
 @pytest.mark.skip_in_parallel
 @parametrize_lagrange_elements
 @pytest.mark.parametrize("order", range(1, 2))
-def test_stiffness_matrix_ds(cell_type, element, order):
-    run_symmetry_test(cell_type, (element, order),
-                      lambda u, v: inner(grad(u), grad(v)) * ufl.ds)
+def test_stiffness_matrix_ds(cell_type, family, order):
+    run_symmetry_test(cell_type, (family, order), lambda u, v: inner(grad(u), grad(v)) * ufl.ds)
 
 
 @pytest.mark.skip_in_parallel
 @parametrize_elements
 @pytest.mark.parametrize("order", range(1, 2))
 @pytest.mark.parametrize("sign", ["+", "-"])
-def test_mass_matrix_dS(cell_type, element, order, sign):
-    run_symmetry_test(cell_type, (element, order),
-                      lambda u, v: inner(u, v)(sign) * ufl.dS)
+def test_mass_matrix_dS(cell_type, family, order, sign):
+    run_symmetry_test(cell_type, (family, order), lambda u, v: inner(u, v)(sign) * ufl.dS)
 
 
 @pytest.mark.skip_in_parallel
 @parametrize_lagrange_elements
 @pytest.mark.parametrize("order", range(1, 2))
 @pytest.mark.parametrize("sign", ["+", "-"])
-def test_stiffness_matrix_dS(cell_type, element, order, sign):
-    run_symmetry_test(cell_type, (element, order),
-                      lambda u, v: inner(grad(u), grad(v))(sign) * ufl.dS)
+def test_stiffness_matrix_dS(cell_type, family, order, sign):
+    run_symmetry_test(cell_type, (family, order), lambda u, v: inner(grad(u), grad(v))(sign) * ufl.dS)
 
 
 @pytest.mark.skip_in_parallel
@@ -105,64 +105,49 @@ def test_stiffness_matrix_dS(cell_type, element, order, sign):
                                        CellType.tetrahedron, CellType.hexahedron])
 @pytest.mark.parametrize("sign", ["+", "-"])
 @pytest.mark.parametrize("order", range(1, 2))
-def test_mixed_element_form(cell_type, sign, order):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_mixed_element_form(cell_type, sign, order, dtype):
     if cell_type == CellType.triangle or cell_type == CellType.quadrilateral:
-        mesh = create_unit_square(MPI.COMM_WORLD, 2, 2, cell_type)
+        mesh = create_unit_square(MPI.COMM_WORLD, 2, 2, cell_type, dtype=dtype)
     else:
-        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type)
+        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type, dtype=dtype)
 
-    if cell_type == CellType.triangle:
-        U_el = MixedElement([FiniteElement("Lagrange", ufl.triangle, order),
-                             FiniteElement("N1curl", ufl.triangle, order)])
-    elif cell_type == CellType.quadrilateral:
-        U_el = MixedElement([FiniteElement("Lagrange", ufl.quadrilateral, order),
-                             FiniteElement("RTCE", ufl.quadrilateral, order)])
-    elif cell_type == CellType.tetrahedron:
-        U_el = MixedElement([FiniteElement("Lagrange", ufl.tetrahedron, order),
-                             FiniteElement("N1curl", ufl.tetrahedron, order)])
-    elif cell_type == CellType.hexahedron:
-        U_el = MixedElement([FiniteElement("Lagrange", ufl.hexahedron, order),
-                             FiniteElement("NCE", ufl.hexahedron, order)])
+    U_el = mixed_element([element(basix.ElementFamily.P, cell_type.name, order),
+                          element(basix.ElementFamily.N1E, cell_type.name, order)])
 
     U = FunctionSpace(mesh, U_el)
     u, p = ufl.TrialFunctions(U)
     v, q = ufl.TestFunctions(U)
-    f = form(inner(u, v) * ufl.dx + inner(p, q)(sign) * ufl.dS)
+    f = form(inner(u, v) * ufl.dx + inner(p, q)(sign) * ufl.dS, dtype=dtype)
 
-    A = dolfinx.fem.petsc.assemble_matrix(f)
-    A.assemble()
-    check_symmetry(A)
+    A = dolfinx.fem.assemble_matrix(f)
+    A.finalize()
+    tol = np.sqrt(np.finfo(dtype).eps)
+    check_symmetry(A, tol)
 
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.quadrilateral])
 @pytest.mark.parametrize("sign", ["+", "-"])
 @pytest.mark.parametrize("order", range(1, 2))
-def test_mixed_element_vector_element_form(cell_type, sign, order):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_mixed_element_vector_element_form(cell_type, sign, order, dtype):
     if cell_type == CellType.triangle or cell_type == CellType.quadrilateral:
-        mesh = create_unit_square(MPI.COMM_WORLD, 2, 2, cell_type)
+        mesh = create_unit_square(MPI.COMM_WORLD, 2, 2, cell_type, dtype=dtype)
     else:
-        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type)
+        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type, dtype=dtype)
 
-    if cell_type == CellType.triangle:
-        U_el = MixedElement([VectorElement("Lagrange", ufl.triangle, order),
-                             FiniteElement("N1curl", ufl.triangle, order)])
-    elif cell_type == CellType.quadrilateral:
-        U_el = MixedElement([VectorElement("Lagrange", ufl.quadrilateral, order),
-                             FiniteElement("RTCE", ufl.quadrilateral, order)])
-    elif cell_type == CellType.tetrahedron:
-        U_el = MixedElement([VectorElement("Lagrange", ufl.tetrahedron, order),
-                             FiniteElement("N1curl", ufl.tetrahedron, order)])
-    elif cell_type == CellType.hexahedron:
-        U_el = MixedElement([VectorElement("Lagrange", ufl.hexahedron, order),
-                             FiniteElement("NCE", ufl.hexahedron, order)])
+    U_el = mixed_element([
+        element(basix.ElementFamily.P, cell_type.name, order, rank=1),
+        element(basix.ElementFamily.N1E, cell_type.name, order)])
 
     U = FunctionSpace(mesh, U_el)
     u, p = ufl.TrialFunctions(U)
     v, q = ufl.TestFunctions(U)
-    f = form(inner(u, v) * ufl.dx + inner(p, q)(sign) * ufl.dS)
+    f = form(inner(u, v) * ufl.dx + inner(p, q)(sign) * ufl.dS, dtype=dtype)
 
-    A = dolfinx.fem.petsc.assemble_matrix(f)
-    A.assemble()
+    A = dolfinx.fem.assemble_matrix(f)
+    A.finalize()
 
-    check_symmetry(A)
+    tol = np.sqrt(np.finfo(dtype).eps)
+    check_symmetry(A, tol)

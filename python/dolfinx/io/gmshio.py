@@ -6,17 +6,19 @@
 """Tools to extract data from Gmsh models"""
 import typing
 
-import basix
-import basix.ufl_wrapper
 import numpy as np
 import numpy.typing as npt
+
+import basix
+import basix.ufl
 import ufl
+from dolfinx import cpp as _cpp
 from dolfinx.cpp.graph import AdjacencyList_int32
 from dolfinx.mesh import (CellType, GhostMode, Mesh, create_cell_partitioner,
                           create_mesh, meshtags, meshtags_from_entities)
-from mpi4py import MPI as _MPI
+from dolfinx import default_real_type
 
-from dolfinx import cpp as _cpp
+from mpi4py import MPI as _MPI
 
 __all__ = ["cell_perm_array", "ufl_mesh"]
 
@@ -43,8 +45,9 @@ def ufl_mesh(gmsh_cell: int, gdim: int) -> ufl.Mesh:
     shape, degree = _gmsh_to_cells[gmsh_cell]
     cell = ufl.Cell(shape, geometric_dimension=gdim)
 
-    element = basix.ufl_wrapper.create_vector_element(
-        basix.ElementFamily.P, cell.cellname(), degree, basix.LagrangeVariant.equispaced, dim=gdim, gdim=gdim)
+    element = basix.ufl.element(
+        basix.ElementFamily.P, cell.cellname(), degree, basix.LagrangeVariant.equispaced, shape=(gdim, ),
+        gdim=gdim)
     return ufl.Mesh(element)
 
 
@@ -166,7 +169,7 @@ if _has_gmsh:
     def model_to_mesh(model: gmsh.model, comm: _MPI.Comm, rank: int, gdim: int = 3,
                       partitioner: typing.Callable[
             [_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32] =
-            create_cell_partitioner(GhostMode.none)) -> typing.Tuple[
+            create_cell_partitioner(GhostMode.none), dtype=default_real_type) -> typing.Tuple[
             Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
         """Given a Gmsh model, take all physical entities of the highest
         topological dimension and create the corresponding DOLFINx mesh.
@@ -230,10 +233,9 @@ if _has_gmsh:
 
             cells = np.asarray(topologies[cell_id]["topology"], dtype=np.int64)
             cell_values = np.asarray(topologies[cell_id]["cell_data"], dtype=np.int32)
-
         else:
             cell_id, num_nodes = comm.bcast([None, None], root=rank)
-            cells, x = np.empty([0, num_nodes], dtype=np.int32), np.empty([0, gdim])
+            cells, x = np.empty([0, num_nodes], dtype=np.int32), np.empty([0, gdim], dtype=dtype)
             cell_values = np.empty((0,), dtype=np.int32)
             has_facet_data = comm.bcast(None, root=rank)
             if has_facet_data:
@@ -245,10 +247,11 @@ if _has_gmsh:
         ufl_domain = ufl_mesh(cell_id, gdim)
         gmsh_cell_perm = cell_perm_array(_cpp.mesh.to_type(str(ufl_domain.ufl_cell())), num_nodes)
         cells = cells[:, gmsh_cell_perm]
-        mesh = create_mesh(comm, cells, x[:, :gdim], ufl_domain, partitioner)
+        mesh = create_mesh(comm, cells, x[:, :gdim].astype(dtype, copy=False), ufl_domain, partitioner)
 
         # Create MeshTags for cells
-        local_entities, local_values = _cpp.io.distribute_entity_data(mesh, mesh.topology.dim, cells, cell_values)
+        local_entities, local_values = _cpp.io.distribute_entity_data(
+            mesh._cpp_object, mesh.topology.dim, cells, cell_values)
         mesh.topology.create_connectivity(mesh.topology.dim, 0)
         adj = _cpp.graph.AdjacencyList_int32(local_entities)
         ct = meshtags_from_entities(mesh, mesh.topology.dim, adj, local_values.astype(np.int32, copy=False))
@@ -257,17 +260,17 @@ if _has_gmsh:
         # Create MeshTags for facets
         topology = mesh.topology
         if has_facet_data:
-            # Permute facets from MSH to Dolfin-X ordering
+            # Permute facets from MSH to DOLFINx ordering
             # FIXME: This does not work for prism meshes
-            if topology.cell_type == CellType.prism or topology.cell_type == CellType.pyramid:
-                raise RuntimeError(f"Unsupported cell type {topology.cell_type}")
+            if topology.cell_types[0] == CellType.prism or topology.cell_types[0] == CellType.pyramid:
+                raise RuntimeError(f"Unsupported cell type {topology.cell_types[0]}")
 
             facet_type = _cpp.mesh.cell_entity_type(_cpp.mesh.to_type(str(ufl_domain.ufl_cell())), topology.dim - 1, 0)
             gmsh_facet_perm = cell_perm_array(facet_type, num_facet_nodes)
             marked_facets = marked_facets[:, gmsh_facet_perm]
 
             local_entities, local_values = _cpp.io.distribute_entity_data(
-                mesh, mesh.topology.dim - 1, marked_facets, facet_values)
+                mesh._cpp_object, mesh.topology.dim - 1, marked_facets, facet_values)
             mesh.topology.create_connectivity(topology.dim - 1, topology.dim)
             adj = _cpp.graph.AdjacencyList_int32(local_entities)
             ft = meshtags_from_entities(mesh, topology.dim - 1, adj, local_values.astype(np.int32, copy=False))
@@ -301,11 +304,11 @@ if _has_gmsh:
             gmsh.initialize()
             gmsh.model.add("Mesh from file")
             gmsh.merge(filename)
-
-        output = model_to_mesh(gmsh.model, comm, rank, gdim=gdim, partitioner=partitioner)
-        if comm.rank == rank:
+            msh = model_to_mesh(gmsh.model, comm, rank, gdim=gdim, partitioner=partitioner)
             gmsh.finalize()
-        return output
+            return msh
+        else:
+            return model_to_mesh(gmsh.model, comm, rank, gdim=gdim, partitioner=partitioner)
 
     # Map from Gmsh cell type identifier (integer) to DOLFINx cell type
     # and degree http://gmsh.info//doc/texinfo/gmsh.html#MSH-file-format

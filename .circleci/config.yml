@@ -55,6 +55,7 @@ regression-tests-cpp-mpi: &regression-tests-cpp-mpi
 build-python-interface: &build-python-interface
   name: Build Python/pybind11 interface
   command: |
+    export CMAKE_BUILD_PARALLEL_LEVEL=2
     cd python
     pip3 -v install --global-option build --global-option --debug . --user
 
@@ -93,10 +94,11 @@ unit-tests-python-mpi: &unit-tests-python-mpi
 jobs:
   build-real:
     docker:
-      - image: ghcr.io/fenics/test-env:nightly-mpich
+      - image: ghcr.io/fenics/test-env:current-mpich
     environment:
       DEBIAN_FRONTEND: "noninteractive"
-      PETSC_ARCH: "linux-gnu-real-32"
+      PETSC_ARCH: "linux-gnu-real64-32"
+      CMAKE_BUILD_PARALLEL_LEVEL: "3"
     steps:
       - checkout
       - run: *install-python-components
@@ -122,10 +124,11 @@ jobs:
 
   build-complex:
     docker:
-      - image: ghcr.io/fenics/test-env:nightly-mpich
+      - image: ghcr.io/fenics/test-env:current-mpich
     environment:
       DEBIAN_FRONTEND: "noninteractive"
-      PETSC_ARCH: "linux-gnu-complex-32"
+      PETSC_ARCH: "linux-gnu-complex128-32"
+      CMAKE_BUILD_PARALLEL_LEVEL: "3"
     steps:
       - checkout
       - run: *install-python-components

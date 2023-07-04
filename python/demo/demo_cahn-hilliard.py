@@ -122,6 +122,7 @@ import os
 
 import numpy as np
 import ufl
+from basix.ufl import element, mixed_element
 from dolfinx.fem import Function, FunctionSpace
 from dolfinx.fem.petsc import NonlinearProblem
 from dolfinx.io import XDMFFile
@@ -131,7 +132,7 @@ from mpi4py import MPI
 from petsc4py import PETSc
 from ufl import dx, grad, inner
 
-from dolfinx import log, plot
+from dolfinx import default_real_type, log, plot
 
 try:
     import pyvista as pv
@@ -159,8 +160,8 @@ theta = 0.5  # time stepping family, e.g. theta=1 -> backward Euler, theta=0.5 -
 # using a pair of linear Lagrange elements.
 
 msh = create_unit_square(MPI.COMM_WORLD, 96, 96, CellType.triangle)
-P1 = ufl.FiniteElement("Lagrange", msh.ufl_cell(), 1)
-ME = FunctionSpace(msh, P1 * P1)
+P1 = element("Lagrange", msh.basix_cell(), 1)
+ME = FunctionSpace(msh, mixed_element([P1, P1]))
 
 # Trial and test functions of the space `ME` are now defined:
 
@@ -252,7 +253,7 @@ F = F0 + F1
 problem = NonlinearProblem(F, u)
 solver = NewtonSolver(MPI.COMM_WORLD, problem)
 solver.convergence_criterion = "incremental"
-solver.rtol = 1e-6
+solver.rtol = np.sqrt(np.finfo(default_real_type).eps) * 1e-2
 
 # We can customize the linear solver used inside the NewtonSolver by
 # modifying the PETSc options

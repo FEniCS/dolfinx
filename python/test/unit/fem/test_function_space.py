@@ -4,16 +4,17 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the FunctionSpace class"""
+import basix
 import numpy as np
 import pytest
-
-import basix.finite_element
-from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
+from basix.ufl import element, mixed_element
+from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
+                         VectorFunctionSpace)
 from dolfinx.mesh import create_mesh, create_unit_cube
-from ufl import (Cell, FiniteElement, Mesh, TestFunction, TrialFunction,
-                 VectorElement, grad, triangle)
-
 from mpi4py import MPI
+from ufl import Cell, Mesh, TestFunction, TrialFunction, grad
+
+from dolfinx import default_real_type
 
 
 @pytest.fixture
@@ -33,9 +34,9 @@ def W(mesh):
 
 @pytest.fixture
 def Q(mesh):
-    W = VectorElement('Lagrange', mesh.ufl_cell(), 1)
-    V = FiniteElement('Lagrange', mesh.ufl_cell(), 1)
-    return FunctionSpace(mesh, W * V)
+    W = element('Lagrange', mesh.basix_cell(), 1, rank=1)
+    V = element('Lagrange', mesh.basix_cell(), 1)
+    return FunctionSpace(mesh, mixed_element([W, V]))
 
 
 @pytest.fixture
@@ -65,8 +66,8 @@ def test_python_interface(V, V2, W, W2, Q):
     assert isinstance(V2, FunctionSpace)
     assert isinstance(W2, FunctionSpace)
 
-    assert V.ufl_cell() == V2.ufl_cell()
-    assert W.ufl_cell() == W2.ufl_cell()
+    assert V.mesh.ufl_cell() == V2.mesh.ufl_cell()
+    assert W.mesh.ufl_cell() == W2.mesh.ufl_cell()
     assert V.element == V2.element
     assert W.element == W2.element
     assert V.ufl_element() == V2.ufl_element()
@@ -219,11 +220,12 @@ def test_argument_equality(mesh, V, V2, W, W2):
 
 def test_cell_mismatch(mesh):
     """Test that cell mismatch raises early enough from UFL"""
-    element = FiniteElement("P", triangle, 1)
+    e = element("P", "triangle", 1)
     with pytest.raises(BaseException):
-        FunctionSpace(mesh, element)
+        FunctionSpace(mesh, e)
 
 
+@pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
 def test_basix_element(V, W, Q, V2):
     for V_ in (V, W, V2):
         e = V_.element.basix_element
@@ -243,7 +245,7 @@ def test_vector_function_space_cell_type():
 
     # Create a mesh containing a single interval living in 2D
     cell = Cell("interval", geometric_dimension=gdim)
-    domain = Mesh(VectorElement("Lagrange", cell, 1))
+    domain = Mesh(element("Lagrange", "interval", 1, gdim=gdim, rank=1))
     cells = np.array([[0, 1]], dtype=np.int64)
     x = np.array([[0., 0.], [1., 1.]])
     mesh = create_mesh(comm, cells, x, domain)
@@ -252,3 +254,20 @@ def test_vector_function_space_cell_type():
     # is correct
     V = VectorFunctionSpace(mesh, ('Lagrange', 1))
     assert V.ufl_element().cell() == cell
+
+
+@pytest.mark.skip_in_parallel
+def test_manifold_spaces():
+    vertices = np.array([(0.0, 0.0, 1.0),
+                         (1.0, 1.0, 1.0),
+                         (1.0, 0.0, 0.0),
+                         (0.0, 1.0, 0.0)], dtype=default_real_type)
+    cells = [(0, 1, 2), (0, 1, 3)]
+    domain = Mesh(element("Lagrange", "triangle", 1, gdim=3, rank=1))
+    mesh = create_mesh(MPI.COMM_WORLD, cells, vertices, domain)
+    QV = VectorFunctionSpace(mesh, ("Lagrange", 1))
+    QT = TensorFunctionSpace(mesh, ("Lagrange", 1))
+    u = Function(QV)
+    v = Function(QT)
+    assert u.ufl_shape == (3,)
+    assert v.ufl_shape == (3, 3)

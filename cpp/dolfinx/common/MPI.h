@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/common/types.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <numeric>
 #include <set>
@@ -25,7 +26,7 @@
 #define MPICH_IGNORE_CXX_SEEK 1
 #include <mpi.h>
 
-/// MPI support functionality
+/// @brief MPI support functionality
 namespace dolfinx::MPI
 {
 
@@ -36,8 +37,8 @@ enum class tag : int
   consensus_pex
 };
 
-/// A duplicate MPI communicator and manage lifetime of the
-/// communicator
+/// @brief A duplicate MPI communicator and manage lifetime of the
+/// communicator.
 class Comm
 {
 public:
@@ -203,9 +204,10 @@ std::vector<int> compute_graph_edges_nbx(MPI_Comm comm,
 /// @returns (0) local indices of my post office data and (1) the data
 /// (row-major). It **does not** include rows that are in `x`, i.e. rows
 /// for which the calling process is the post office
-template <typename T>
-std::pair<std::vector<std::int32_t>, std::vector<T>>
-distribute_to_postoffice(MPI_Comm comm, std::span<const T> x,
+template <typename U>
+std::pair<std::vector<std::int32_t>,
+          std::vector<typename std::remove_reference_t<typename U::value_type>>>
+distribute_to_postoffice(MPI_Comm comm, const U& x,
                          std::array<std::int64_t, 2> shape,
                          std::int64_t rank_offset);
 
@@ -230,12 +232,11 @@ distribute_to_postoffice(MPI_Comm comm, std::span<const T> x,
 /// using `MPI_Exscan`.
 /// @return The data for each index in `indices` (row-major storage)
 /// @pre `shape1 > 0`
-template <typename T>
-std::vector<T> distribute_from_postoffice(MPI_Comm comm,
-                                          std::span<const std::int64_t> indices,
-                                          std::span<const T> x,
-                                          std::array<std::int64_t, 2> shape,
-                                          std::int64_t rank_offset);
+template <typename U>
+std::vector<typename std::remove_reference_t<typename U::value_type>>
+distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
+                           const U& x, std::array<std::int64_t, 2> shape,
+                           std::int64_t rank_offset);
 
 /// @brief Distribute rows of a rectangular data array to ranks where
 /// they are required (scalable version).
@@ -260,10 +261,10 @@ std::vector<T> distribute_from_postoffice(MPI_Comm comm,
 /// @param[in] shape1 The number of columns of the data array `x`.
 /// @return The data for each index in `indices` (row-major storage)
 /// @pre `shape1 > 0`
-template <typename T>
-std::vector<T> distribute_data(MPI_Comm comm,
-                               std::span<const std::int64_t> indices,
-                               std::span<const T> x, int shape1);
+template <typename U>
+std::vector<typename std::remove_reference_t<typename U::value_type>>
+distribute_data(MPI_Comm comm, std::span<const std::int64_t> indices,
+                const U& x, int shape1);
 
 template <typename T>
 struct dependent_false : std::false_type
@@ -306,12 +307,15 @@ constexpr MPI_Datatype mpi_type()
 }
 
 //---------------------------------------------------------------------------
-template <typename T>
-std::pair<std::vector<std::int32_t>, std::vector<T>>
-distribute_to_postoffice(MPI_Comm comm, std::span<const T> x,
+template <typename U>
+std::pair<std::vector<std::int32_t>,
+          std::vector<typename std::remove_reference_t<typename U::value_type>>>
+distribute_to_postoffice(MPI_Comm comm, const U& x,
                          std::array<std::int64_t, 2> shape,
                          std::int64_t rank_offset)
 {
+  using T = typename std::remove_reference_t<typename U::value_type>;
+
   const int size = dolfinx::MPI::size(comm);
   const int rank = dolfinx::MPI::rank(comm);
   assert(x.size() % shape[1] == 0);
@@ -454,13 +458,14 @@ distribute_to_postoffice(MPI_Comm comm, std::span<const T> x,
   return {index_local, recv_buffer_data};
 }
 //---------------------------------------------------------------------------
-template <typename T>
-std::vector<T> distribute_from_postoffice(MPI_Comm comm,
-                                          std::span<const std::int64_t> indices,
-                                          std::span<const T> x,
-                                          std::array<std::int64_t, 2> shape,
-                                          std::int64_t rank_offset)
+template <typename U>
+std::vector<typename std::remove_reference_t<typename U::value_type>>
+distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
+                           const U& x, std::array<std::int64_t, 2> shape,
+                           std::int64_t rank_offset)
 {
+  using T = typename std::remove_reference_t<typename U::value_type>;
+
   common::Timer timer("Distribute row-wise data (scalable)");
   assert(shape[1] > 0);
 
@@ -666,10 +671,10 @@ std::vector<T> distribute_from_postoffice(MPI_Comm comm,
   return x_new;
 }
 //---------------------------------------------------------------------------
-template <typename T>
-std::vector<T> distribute_data(MPI_Comm comm,
-                               std::span<const std::int64_t> indices,
-                               std::span<const T> x, int shape1)
+template <typename U>
+std::vector<typename std::remove_reference_t<typename U::value_type>>
+distribute_data(MPI_Comm comm, std::span<const std::int64_t> indices,
+                const U& x, int shape1)
 {
   assert(shape1 > 0);
   assert(x.size() % shape1 == 0);

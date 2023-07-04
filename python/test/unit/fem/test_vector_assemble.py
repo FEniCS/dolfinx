@@ -7,8 +7,7 @@
 
 
 import ufl
-from dolfinx.fem import VectorFunctionSpace, form
-from dolfinx.fem.petsc import assemble_matrix
+from dolfinx.fem import VectorFunctionSpace, assemble_matrix, form
 from dolfinx.mesh import create_unit_square
 
 from mpi4py import MPI
@@ -20,7 +19,7 @@ def test_vector_assemble_matrix_exterior():
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = form(ufl.inner(u, v) * ufl.ds)
     A = assemble_matrix(a)
-    A.assemble()
+    A.finalize()
 
 
 def test_vector_assemble_matrix_interior():
@@ -29,4 +28,4 @@ def test_vector_assemble_matrix_interior():
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = form(ufl.inner(ufl.jump(u), ufl.jump(v)) * ufl.dS)
     A = assemble_matrix(a)
-    A.assemble()
+    A.finalize()

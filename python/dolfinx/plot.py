@@ -41,8 +41,12 @@ def create_vtk_mesh(msh: mesh.Mesh, dim: typing.Optional[int] = None, entities=N
 
     tdim = msh.topology.dim
 
-    cell_type = _cpp.mesh.cell_entity_type(msh.topology.cell_type, dim, 0)
-    degree = msh.geometry.cmap.degree
+    if len(msh.topology.cell_types) != 1:
+        raise RuntimeError("Multiple cell types")
+    cell_type = _cpp.mesh.cell_entity_type(msh.topology.cell_types[0], dim, 0)
+    assert len(msh.geometry.cmaps) == 1
+    cmap = msh.geometry.cmaps[0]
+    degree = cmap.degree
     if cell_type == mesh.CellType.prism:
         raise RuntimeError("Plotting of prism meshes not supported")
 
@@ -51,11 +55,11 @@ def create_vtk_mesh(msh: mesh.Mesh, dim: typing.Optional[int] = None, entities=N
         entities = range(msh.topology.index_map(dim).size_local)
 
     if dim == tdim:
-        vtk_topology = _cpp.io.extract_vtk_connectivity(msh)[entities]
+        vtk_topology = _cpp.io.extract_vtk_connectivity(msh.geometry.dofmap, cell_type)[entities]
         num_nodes_per_cell = vtk_topology.shape[1]
     else:
         # NOTE: This linearizes higher order geometries
-        geometry_entities = _cpp.mesh.entities_to_geometry(msh, dim, entities, False)
+        geometry_entities = _cpp.mesh.entities_to_geometry(msh._cpp_object, dim, entities, False)
         if degree > 1:
             warnings.warn("Linearizing topology for higher order sub entities.")
 
@@ -99,7 +103,9 @@ def _(V: fem.FunctionSpace, entities=None):
 
     dofmap = V.dofmap
     num_dofs_per_cell = V.dofmap.dof_layout.num_dofs
-    cell_type = msh.topology.cell_type
+    if len(msh.topology.cell_types) != 1:
+        raise RuntimeError("Multiple cell types")
+    cell_type = msh.topology.cell_types[0]
     perm = np.argsort(_cpp.io.perm_vtk(cell_type, num_dofs_per_cell))
 
     vtk_type = _first_order_vtk[cell_type] if degree == 1 else _cpp.io.get_vtk_cell_type(cell_type, tdim)
@@ -107,7 +113,7 @@ def _(V: fem.FunctionSpace, entities=None):
 
     topology = np.zeros((len(entities), num_dofs_per_cell + 1), dtype=np.int32)
     topology[:, 0] = num_dofs_per_cell
-    dofmap_ = dofmap.list.array.reshape(dofmap.list.num_nodes, num_dofs_per_cell)
+    dofmap_ = dofmap.list
 
     topology[:, 1:] = dofmap_[:len(entities), perm]
     return topology.reshape(1, -1)[0], cell_types, V.tabulate_dof_coordinates()

@@ -7,7 +7,6 @@
 #include "MPICommWrapper.h"
 #include "array.h"
 #include "caster_mpi.h"
-#include "caster_petsc.h"
 #include <complex>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Scatterer.h>
@@ -98,6 +97,8 @@ void common(py::module& m)
       .def_property_readonly("local_range",
                              &dolfinx::common::IndexMap::local_range,
                              "Range of indices owned by this map")
+      .def_property_readonly("index_to_dest_ranks",
+                             &dolfinx::common::IndexMap::index_to_dest_ranks)
       .def_property_readonly(
           "ghosts",
           [](const dolfinx::common::IndexMap& self)

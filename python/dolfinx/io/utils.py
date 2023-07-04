@@ -12,13 +12,13 @@ import numpy as np
 import numpy.typing as npt
 
 import basix
-import basix.ufl_wrapper
+import basix.ufl
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh  # noqa F401
 from dolfinx.cpp.io import perm_vtk as cell_perm_vtk  # noqa F401
 from dolfinx.fem import Function
-from dolfinx.mesh import GhostMode, Mesh
+from dolfinx.mesh import GhostMode, Mesh, MeshTags
 
 from mpi4py import MPI as _MPI
 
@@ -38,7 +38,7 @@ if _cpp.common.has_adios2:
     # FidesWriter and VTXWriter require ADIOS2
     __all__ = __all__ + ["FidesWriter", "VTXWriter"]
 
-    class VTXWriter(_cpp.io.VTXWriter):
+    class VTXWriter:
         """Interface to VTK files for ADIOS2
 
         VTX supports arbitrary order Lagrange finite elements for the
@@ -50,7 +50,8 @@ if _cpp.common.has_adios2:
 
         """
 
-        def __init__(self, comm: _MPI.Comm, filename: str, output: typing.Union[Mesh, typing.List[Function], Function]):
+        def __init__(self, comm: _MPI.Comm, filename: str, output: typing.Union[Mesh, Function, typing.List[Function]],
+                     engine: typing.Optional[str] = "BPFile"):
             """Initialize a writer for outputting data in the VTX format.
 
             Args:
@@ -59,18 +60,37 @@ if _cpp.common.has_adios2:
                 output: The data to output. Either a mesh, a single
                     (discontinuous) Lagrange Function or list of
                     (discontinuous Lagrange Functions.
+                engine: ADIOS2 engine to use for output. See
+                    ADIOS2 documentation for options.
 
             Note:
                 All Functions for output must share the same mesh and
                 have the same element type.
 
             """
+
+            # Get geometry type
+            try:
+                dtype = output.geometry.x.dtype  # type: ignore
+            except AttributeError:
+                try:
+                    dtype = output.function_space.mesh.geometry.x.dtype  # type: ignore
+                except AttributeError:
+                    # type: ignore
+                    dtype = output[0].function_space.mesh.geometry.x.dtype  # type: ignore
+
+            if dtype == np.float32:
+                _vtxwriter = _cpp.io.VTXWriter_float32
+            elif dtype == np.float64:
+                _vtxwriter = _cpp.io.VTXWriter_float64
+
             try:
                 # Input is a mesh
-                super().__init__(comm, filename, output)
-            except (NotImplementedError, TypeError):
+                self._cpp_object = _vtxwriter(comm, filename, output._cpp_object, engine)  # type: ignore[union-attr]
+            except (NotImplementedError, TypeError, AttributeError):
                 # Input is a single function or a list of functions
-                super().__init__(comm, filename, _extract_cpp_functions(output))
+                self._cpp_object = _vtxwriter(comm, filename, _extract_cpp_functions(
+                    output), engine)   # type: ignore[arg-type]
 
         def __enter__(self):
             return self
@@ -78,20 +98,27 @@ if _cpp.common.has_adios2:
         def __exit__(self, exception_type, exception_value, traceback):
             self.close()
 
-    class FidesWriter(_cpp.io.FidesWriter):
+        def write(self, t: float):
+            self._cpp_object.write(t)
+
+        def close(self):
+            self._cpp_object.close()
+
+    class FidesWriter:
         """Interface to Fides file format.
 
         Fides supports first order Lagrange finite elements for the
-        geometry descriptionand first order Lagrange finite elements for
-        functions. All functions has to be of the same element family
-        and same order.
+        geometry description and first order Lagrange finite elements
+        for functions. All functions has to be of the same element
+        family and same order.
 
         The files can be displayed by Paraview. The storage backend uses
         ADIOS2.
 
         """
 
-        def __init__(self, comm: _MPI.Comm, filename: str, output: typing.Union[Mesh, typing.List[Function], Function]):
+        def __init__(self, comm: _MPI.Comm, filename: str, output: typing.Union[Mesh, typing.List[Function], Function],
+                     engine: typing.Optional[str] = "BPFile"):
             """Initialize a writer for outputting a mesh, a single Lagrange
             function or list of Lagrange functions sharing the same
             element family and degree
@@ -102,18 +129,42 @@ if _cpp.common.has_adios2:
                 output: The data to output. Either a mesh, a single
                     first order Lagrange function or list of first order
                     Lagrange functions.
+                engine: ADIOS2 engine to use for output. See
+                    ADIOS2 documentation for options.
 
             """
+
+            # Get geometry type
             try:
-                super().__init__(comm, filename, output)
-            except (NotImplementedError, TypeError):
-                super().__init__(comm, filename, _extract_cpp_functions(output))
+                dtype = output.geometry.x.dtype  # type: ignore
+            except AttributeError:
+                try:
+                    dtype = output.function_space.mesh.geometry.x.dtype  # type: ignore
+                except AttributeError:
+                    dtype = output[0].function_space.mesh.geometry.x.dtype  # type: ignore
+
+            if dtype == np.float32:
+                _fides_writer = _cpp.io.FidesWriter_float32
+            elif dtype == np.float64:
+                _fides_writer = _cpp.io.FidesWriter_float64
+
+            try:
+                self._cpp_object = _fides_writer(comm, filename, output._cpp_object, engine)  # type: ignore[union-attr]
+            except (NotImplementedError, TypeError, AttributeError):
+                self._cpp_object = _fides_writer(comm, filename, _extract_cpp_functions(
+                    output), engine)  # type: ignore[arg-type]
 
         def __enter__(self):
             return self
 
         def __exit__(self, exception_type, exception_value, traceback):
             self.close()
+
+        def write(self, t: float):
+            self._cpp_object.write(t)
+
+        def close(self):
+            self._cpp_object.close()
 
 
 class VTKFile(_cpp.io.VTKFile):
@@ -133,7 +184,7 @@ class VTKFile(_cpp.io.VTKFile):
 
     def write_mesh(self, mesh: Mesh, t: float = 0.0) -> None:
         """Write mesh to file for a given time (default 0.0)"""
-        self.write(mesh, t)
+        self.write(mesh._cpp_object, t)
 
     def write_function(self, u: typing.Union[typing.List[Function], Function], t: float = 0.0) -> None:
         """Write a single function or a list of functions to file for a given time (default 0.0)"""
@@ -147,11 +198,29 @@ class XDMFFile(_cpp.io.XDMFFile):
     def __exit__(self, exception_type, exception_value, traceback):
         self.close()
 
-    def write_mesh(self, mesh: Mesh) -> None:
-        """Write mesh to file for a given time (default 0.0)"""
-        super().write_mesh(mesh)
+    def write_mesh(self, mesh: Mesh, xpath: str = "/Xdmf/Domain") -> None:
+        """Write mesh to file"""
+        super().write_mesh(mesh._cpp_object, xpath)
 
-    def write_function(self, u, t: float = 0.0, mesh_xpath="/Xdmf/Domain/Grid[@GridType='Uniform'][1]"):
+    def write_meshtags(self, tags: MeshTags, x: typing.Union[_cpp.mesh.Geometry_float32, _cpp.mesh.Geometry_float64],
+                       geometry_xpath: str = "/Xdmf/Domain/Grid/Geometry",
+                       xpath: str = "/Xdmf/Domain") -> None:
+        """Write mesh tags to file"""
+        super().write_meshtags(tags._cpp_object, x, geometry_xpath, xpath)
+
+    def write_function(self, u: Function, t: float = 0.0, mesh_xpath="/Xdmf/Domain/Grid[@GridType='Uniform'][1]"):
+        """Write function to file for a given time.
+
+        Note:
+            Function is interpolated onto the mesh nodes, as a Nth order Lagrange function,
+            where N is the order of the coordinate map.
+            If the Function is a cell-wise constant, it is saved as a cell-wise constant.
+
+        Args:
+            u: The Function to write to file.
+            t: Time associated with Function output .
+            mesh_xpath: Path to mesh associated with the Function in the XDMFFile.
+        """
         super().write_function(getattr(u, "_cpp_object", u), t, mesh_xpath)
 
     def read_mesh(self, ghost_mode=GhostMode.shared_facet, name="mesh", xpath="/Xdmf/Domain") -> Mesh:
@@ -161,20 +230,21 @@ class XDMFFile(_cpp.io.XDMFFile):
         x = super().read_geometry_data(name, xpath)
 
         # Build the mesh
-        cmap = _cpp.fem.CoordinateElement(cell_shape, cell_degree)
-        mesh = _cpp.mesh.create_mesh(self.comm(), _cpp.graph.AdjacencyList_int64(cells),
-                                     cmap, x, _cpp.mesh.create_cell_partitioner(ghost_mode))
-        mesh.name = name
+        cmap = _cpp.fem.CoordinateElement_float64(cell_shape, cell_degree)
+        msh = _cpp.mesh.create_mesh(self.comm(), _cpp.graph.AdjacencyList_int64(cells),
+                                    cmap, x, _cpp.mesh.create_cell_partitioner(ghost_mode))
+        msh.name = name
 
-        domain = ufl.Mesh(basix.ufl_wrapper.create_vector_element(
-            "Lagrange", cell_shape.name, cell_degree, basix.LagrangeVariant.equispaced, dim=x.shape[1],
-            gdim=x.shape[1]))
-        return Mesh.from_cpp(mesh, domain)
+        domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_shape.name, cell_degree,
+                                            basix.LagrangeVariant.equispaced, shape=(x.shape[1], ),
+                                            gdim=x.shape[1]))
+        return Mesh(msh, domain)
 
     def read_meshtags(self, mesh, name, xpath="/Xdmf/Domain"):
-        return super().read_meshtags(mesh, name, xpath)
+        mt = super().read_meshtags(mesh._cpp_object, name, xpath)
+        return MeshTags(mt)
 
 
 def distribute_entity_data(mesh: Mesh, entity_dim: int, entities: npt.NDArray[np.int64],
                            values: npt.NDArray[np.int32]) -> typing.Tuple[npt.NDArray[np.int64], npt.NDArray[np.int32]]:
-    return _cpp.io.distribute_entity_data(mesh, entity_dim, entities, values)
+    return _cpp.io.distribute_entity_data(mesh._cpp_object, entity_dim, entities, values)

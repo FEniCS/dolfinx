@@ -84,17 +84,19 @@
 
 
 import numpy as np
+
 import ufl
+from basix.ufl import element, mixed_element
+from dolfinx import fem, la
 from dolfinx.fem import (Constant, Function, FunctionSpace, dirichletbc,
                          extract_function_spaces, form,
                          locate_dofs_topological)
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_rectangle, locate_entities_boundary
-from mpi4py import MPI
-from petsc4py import PETSc
 from ufl import div, dx, grad, inner
 
-from dolfinx import fem, la
+from mpi4py import MPI
+from petsc4py import PETSc
 
 # We create a {py:class}`Mesh <dolfinx.mesh.Mesh>`, define functions for
 # locating geometrically subsets of the boundary, and define a function
@@ -128,8 +130,8 @@ def lid_velocity_expression(x):
 # linear basis (scalar).
 
 
-P2 = ufl.VectorElement("Lagrange", msh.ufl_cell(), 2)
-P1 = ufl.FiniteElement("Lagrange", msh.ufl_cell(), 1)
+P2 = element("Lagrange", msh.basix_cell(), 2, rank=1)
+P1 = element("Lagrange", msh.basix_cell(), 1)
 V, Q = FunctionSpace(msh, P2), FunctionSpace(msh, P1)
 
 # Boundary conditions for the velocity field are defined:
@@ -444,21 +446,21 @@ def block_direct_solver():
 def mixed_direct():
 
     # Create the Taylot-Hood function space
-    TH = P2 * P1
+    TH = mixed_element([P2, P1])
     W = FunctionSpace(msh, TH)
 
     # No slip boundary condition
-    noslip = Function(V)
+    W0, _ = W.sub(0).collapse()
+    noslip = Function(W0)
     facets = locate_entities_boundary(msh, 1, noslip_boundary)
-    dofs = locate_dofs_topological((W.sub(0), V), 1, facets)
+    dofs = locate_dofs_topological((W.sub(0), W0), 1, facets)
     bc0 = dirichletbc(noslip, dofs, W.sub(0))
 
     # Driving velocity condition u = (1, 0) on top boundary (y = 1)
-    W0, _ = W.sub(0).collapse()
     lid_velocity = Function(W0)
     lid_velocity.interpolate(lid_velocity_expression)
     facets = locate_entities_boundary(msh, 1, lid)
-    dofs = locate_dofs_topological((W.sub(0), V), 1, facets)
+    dofs = locate_dofs_topological((W.sub(0), W0), 1, facets)
     bc1 = dirichletbc(lid_velocity, dofs, W.sub(0))
 
     # Collect Dirichlet boundary conditions

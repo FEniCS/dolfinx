@@ -6,19 +6,18 @@
 """Unit tests for Newton solver assembly"""
 
 import numpy as np
-
 import ufl
-from dolfinx import cpp as _cpp
-from dolfinx import la
 from dolfinx.fem import (Function, FunctionSpace, dirichletbc, form,
                          locate_dofs_geometrical)
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                create_matrix, create_vector, set_bc)
 from dolfinx.mesh import create_unit_square
-from ufl import TestFunction, TrialFunction, derivative, dx, grad, inner
-
 from mpi4py import MPI
 from petsc4py import PETSc
+from ufl import TestFunction, TrialFunction, derivative, dx, grad, inner
+
+from dolfinx import cpp as _cpp
+from dolfinx import default_real_type, la
 
 
 class NonlinearPDEProblem:
@@ -107,6 +106,8 @@ def test_linear_pde():
     solver.setF(problem.F, problem.vector())
     solver.setJ(problem.J, problem.matrix())
     solver.set_form(problem.form)
+    solver.atol = 1.0e-8
+    solver.rtol = 1.0e2 * np.finfo(default_real_type).eps
     n, converged = solver.solve(u.vector)
     assert converged
     assert n == 1
@@ -120,7 +121,6 @@ def test_linear_pde():
 
 def test_nonlinear_pde():
     """Test Newton solver for a simple nonlinear PDE"""
-    # Create mesh and function space
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 5)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u = Function(V)
@@ -141,6 +141,8 @@ def test_nonlinear_pde():
     solver.setF(problem.F, problem.vector())
     solver.setJ(problem.J, problem.matrix())
     solver.set_form(problem.form)
+    solver.atol = 1.0e-8
+    solver.rtol = 1.0e2 * np.finfo(default_real_type).eps
     n, converged = solver.solve(u.vector)
     assert converged
     assert n < 6
@@ -154,13 +156,11 @@ def test_nonlinear_pde():
 
 def test_nonlinear_pde_snes():
     """Test Newton solver for a simple nonlinear PDE"""
-    # Create mesh and function space
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 15)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u = Function(V)
     v = TestFunction(V)
-    F = inner(5.0, v) * dx - ufl.sqrt(u * u) * inner(
-        grad(u), grad(v)) * dx - inner(u, v) * dx
+    F = inner(5.0, v) * dx - ufl.sqrt(u * u) * inner(grad(u), grad(v)) * dx - inner(u, v) * dx
 
     u_bc = Function(V)
     u_bc.x.array[:] = 1.0
@@ -195,3 +195,7 @@ def test_nonlinear_pde_snes():
     assert snes.getIterationNumber() < 6
     # print(snes.getIterationNumber())
     # print(snes.getFunctionNorm())
+
+    snes.destroy()
+    b.destroy()
+    J.destroy()

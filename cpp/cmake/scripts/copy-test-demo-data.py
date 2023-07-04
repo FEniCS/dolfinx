@@ -29,7 +29,7 @@ sub_directories = ["demo", "test"]
 # Copy all files with the following suffixes
 suffix_patterns = ["txt", "h", "hpp", "c", "cpp", "py", "xdmf", "h5"]
 
-suffix_pattern = re.compile("(%s)," % ("|".join("[\w-]+\.%s" % pattern
+suffix_pattern = re.compile("(%s)," % ("|".join("[\\w-]+\\.%s" % pattern
                                                 for pattern in suffix_patterns)))
 
 script_rel_path = os.sep.join(__file__.split(os.sep)[:-1])
@@ -57,7 +57,7 @@ def copy_data(top_destdir, complex_mode):
     for subdir in sub_directories:
         top_dir = os.path.join(dolfinx_dir, subdir)
         for dirpath, dirnames, filenames in os.walk(top_dir):
-            if not dirpath in skip:
+            if dirpath not in skip:
                 destdir = dirpath.replace(dolfinx_dir, abs_destdir)
                 if not os.path.isdir(destdir):
                     os.makedirs(destdir)

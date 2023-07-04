@@ -1,17 +1,19 @@
 # Dockerfile for testing DOLFINx with oneAPI compilers and libraries.
-# Must be built locally and pushed.
-#
-# docker build -f Dockerfile.oneapi -t docker.io/fenicsproject/test-env:latest-oneapi .
-# docker push docker.io/fenicsproject/test-env:latest-oneapi
+# Should be built using corresponding GitHub action activated through web
+# interface.
+
+# docker run -ti -v docker.io/fenicsproject/test-env:current-oneapi
 FROM ubuntu:22.04
 
-ARG ADIOS2_VERSION=2.8.3
+ARG BUILD_NP=2
+
+ARG ADIOS2_VERSION=2.9.0
 ARG HDF5_SERIES=1.12
 ARG HDF5_PATCH=2
-ARG PETSC_VERSION=3.17.5
-ARG SLEPC_VERSION=3.17.2
-ARG PYBIND11_VERSION=2.10.2
-ARG KAHIP_VERSION=3.14
+ARG PETSC_VERSION=3.19.2
+ARG SLEPC_VERSION=3.19.1
+ARG PYBIND11_VERSION=2.10.4
+ARG KAHIP_VERSION=3.15
 
 WORKDIR /tmp
 
@@ -93,45 +95,71 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     wget -nc --quiet http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${PETSC_VERSION}.tar.gz -O petsc-${PETSC_VERSION}.tar.gz && \
     mkdir -p ${PETSC_DIR} && tar -xf petsc-${PETSC_VERSION}.tar.gz -C ${PETSC_DIR} --strip-components 1 && \
     cd ${PETSC_DIR} && \
-    # Real, 32-bit int
-    python3 ./configure \
-    PETSC_ARCH=linux-gnu-real-32 \
+    # Real32, 32-bit int
+    ./configure \
+    PETSC_ARCH=linux-gnu-real32-32 \
     --with-64-bit-indices=no \
     --with-fortran-bindings=no \
     --with-shared-libraries \
     --download-superlu_dist \
-    --with-scalar-type=real && \
-    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real-32 ${MAKEFLAGS} all && \
-    # Complex, 32-bit int
-    python3 ./configure \
-    PETSC_ARCH=linux-gnu-complex-32 \
+    --with-make-np=${BUILD_NP} \
+    --with-scalar-type=real \
+    --with-precision=single && \
+    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real32-32 ${MAKEFLAGS} all && \
+    # Complex64, 32-bit int
+    ./configure \
+    PETSC_ARCH=linux-gnu-complex64-32 \
     --with-64-bit-indices=no \
     --with-fortran-bindings=no \
     --with-shared-libraries \
     --download-superlu_dist \
-    --with-scalar-type=complex && \
-    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex-32 ${MAKEFLAGS} all && \
-    # Real, 64-bit int
-    python3 ./configure \
-    PETSC_ARCH=linux-gnu-real-64 \
-    --with-64-bit-indices=yes \
+    --with-make-np=${BUILD_NP} \
+    --with-scalar-type=complex \
+    --with-precision=single && \
+    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex64-32 ${MAKEFLAGS} all && \
+    # Real64, 32-bit int
+    ./configure \
+    PETSC_ARCH=linux-gnu-real64-32 \
+    --with-64-bit-indices=no \
     --with-fortran-bindings=no \
     --with-shared-libraries \
     --download-superlu_dist \
+    --with-make-np=${BUILD_NP} \
     --with-scalar-type=real && \
-    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real-64 ${MAKEFLAGS} all && \
-    # Complex, 64-bit int
-    python3 ./configure \
-    PETSC_ARCH=linux-gnu-complex-64 \
+    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real64-32 ${MAKEFLAGS} all && \
+    # Complex128, 32-bit int
+    ./configure \
+    PETSC_ARCH=linux-gnu-complex128-32 \
+    --with-64-bit-indices=no \
+    --with-fortran-bindings=no \
+    --with-shared-libraries \
+    --download-superlu_dist \
+    --with-make-np=${BUILD_NP} \
+    --with-scalar-type=complex && \
+    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex128-32 ${MAKEFLAGS} all && \
+    # Real64, 64-bit int
+    ./configure \
+    PETSC_ARCH=linux-gnu-real64-64 \
     --with-64-bit-indices=yes \
     --with-fortran-bindings=no \
     --with-shared-libraries \
     --download-superlu_dist \
+    --with-make-np=${BUILD_NP} \
+    --with-scalar-type=real && \
+    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real64-64 ${MAKEFLAGS} all && \
+    # Complex128, 64-bit int
+    ./configure \
+    PETSC_ARCH=linux-gnu-complex128-64 \
+    --with-64-bit-indices=yes \
+    --with-fortran-bindings=no \
+    --with-shared-libraries \
+    --download-superlu_dist \
+    --with-make-np=${BUILD_NP} \
     --with-scalar-type=complex && \
-    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex-64 ${MAKEFLAGS} all && \
+    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex128-64 ${MAKEFLAGS} all && \
     # Install petsc4py
     cd src/binding/petsc4py && \
-    PETSC_ARCH=linux-gnu-real-32:linux-gnu-complex-32:linux-gnu-real-64:linux-gnu-complex-64 pip3 install --no-cache-dir . && \
+    PETSC_ARCH=linux-gnu-real32-32:linux-gnu-complex64-32:linux-gnu-real64-32:linux-gnu-complex128-32:linux-gnu-real64-64:linux-gnu-complex128-64 pip3 install --no-cache-dir . && \
     # Cleanup
     apt-get -y purge bison flex && \
     apt-get -y autoremove && \
@@ -154,21 +182,26 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     wget -nc --quiet https://gitlab.com/slepc/slepc/-/archive/v${SLEPC_VERSION}/slepc-v${SLEPC_VERSION}.tar.gz && \
     mkdir -p ${SLEPC_DIR} && tar -xf slepc-v${SLEPC_VERSION}.tar.gz -C ${SLEPC_DIR} --strip-components 1 && \
     cd ${SLEPC_DIR} && \
-    export PETSC_ARCH=linux-gnu-real-32 && \
-    python3 ./configure && \
+    export PETSC_ARCH=linux-gnu-real32-32 && \
+    ./configure && \
     make && \
-    export PETSC_ARCH=linux-gnu-complex-32 && \
-    python3 ./configure && \
+    export PETSC_ARCH=linux-gnu-complex64-32 && \
+    ./configure && \
     make && \
-    export PETSC_ARCH=linux-gnu-real-64 && \
-    python3 ./configure && \
+    export PETSC_ARCH=linux-gnu-real64-32 && \
+    ./configure && \
     make && \
-    export PETSC_ARCH=linux-gnu-complex-64 && \
-    python3 ./configure && \
+    export PETSC_ARCH=linux-gnu-complex128-32 && \
+    ./configure && \
+    make && \
+    export PETSC_ARCH=linux-gnu-real64-64 && \
+    ./configure && \
+    make && \
+    export PETSC_ARCH=linux-gnu-complex128-64 && \
+    ./configure && \
     make && \
     # Install slepc4py
     cd src/binding/slepc4py && \
-    PETSC_ARCH=linux-gnu-real-32:linux-gnu-complex-32:linux-gnu-real-64:linux-gnu-complex-64 pip3 install --no-cache-dir . && \
+    PETSC_ARCH=linux-gnu-real32-32:linux-gnu-complex64-32:linux-gnu-real64-32:linux-gnu-complex128-32:linux-gnu-real64-64:linux-gnu-complex128-64 pip3 install --no-cache-dir . && \
     rm -rf ${SLEPC_DIR}/CTAGS ${SLEPC_DIR}/TAGS ${SLEPC_DIR}/docs ${SLEPC_DIR}/src/ ${SLEPC_DIR}/**/obj/ ${SLEPC_DIR}/**/test/ && \
     rm -rf /tmp/*
-

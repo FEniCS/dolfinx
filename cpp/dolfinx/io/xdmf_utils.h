@@ -8,7 +8,10 @@
 
 #include "HDF5Interface.h"
 #include <array>
+#include <basix/mdspan.hpp>
 #include <complex>
+#include <concepts>
+#include <dolfinx/common/types.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <filesystem>
 #include <numeric>
@@ -28,19 +31,23 @@ namespace dolfinx
 
 namespace fem
 {
-template <typename T>
+template <dolfinx::scalar T, std::floating_point U>
 class Function;
 } // namespace fem
 
 namespace fem
 {
+template <std::floating_point T>
 class CoordinateElement;
-}
+class ElementDofLayout;
+} // namespace fem
 
 namespace mesh
 {
+template <std::floating_point T>
 class Mesh;
-}
+class Topology;
+} // namespace mesh
 
 namespace io::xdmf_utils
 {
@@ -64,14 +71,12 @@ std::int64_t get_num_cells(const pugi::xml_node& topology_node);
 
 /// Get point data values for linear or quadratic mesh into flattened 2D
 /// array
-std::vector<double> get_point_data_values(const fem::Function<double>& u);
-std::vector<std::complex<double>>
-get_point_data_values(const fem::Function<std::complex<double>>& u);
+template <dolfinx::scalar T, std::floating_point U>
+std::vector<T> get_point_data_values(const fem::Function<T, U>& u);
 
 /// Get cell data values as a flattened 2D array
-std::vector<double> get_cell_data_values(const fem::Function<double>& u);
-std::vector<std::complex<double>>
-get_cell_data_values(const fem::Function<std::complex<double>>& u);
+template <dolfinx::scalar T, std::floating_point U>
+std::vector<T> get_cell_data_values(const fem::Function<T, U>& u);
 
 /// Get the VTK string identifier
 std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
@@ -81,7 +86,14 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 /// supplied on any rank and this function will manage the
 /// communication.
 ///
-/// @param[in] mesh A mesh
+/// @param[in] topology A mesh topology.
+/// @param[in] nodes_g Global 'input' indices for the mesh, as returned
+/// by Geometry::input_global_indices.
+/// @param[in] num_nodes_g Glocal number of 'geometry; nodes, as
+/// returned by ``Geometry::index_map()->size_global()`.
+/// @param[in] cmap_dof_layout Coordinate element dof layout, computed
+/// using Geometry::cmaps()[0].create_dof_layout().
+/// @param[in] xdofmap Dofmap for the mesh geometry (Geometry::dofmap).
 /// @param[in] entity_dim Topological dimension of entities to extract
 /// @param[in] entities Mesh entities defined using global input indices
 /// ('nodes'), typically from an input mesh file, e.g. [gi0, gi1, gi2]
@@ -96,15 +108,20 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 /// data (values) with each entity)
 /// @note This function involves parallel distribution and must be
 /// called collectively. Global input indices for entities which are not
-/// owned by current rank could passed to this function. E.g., rank0
+/// owned by current rank could be passed to this function. E.g., rank0
 /// provides an entity with global input indices [gi0, gi1, gi2], but
 /// this identifies a triangle that is owned by rank1. It will be
-/// distributed and rank1 will receive (local) cell-vertex connectivity
+/// distributed and rank1 will receive the (local) cell-vertex connectivity
 /// for this triangle.
 std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
-distribute_entity_data(const mesh::Mesh& mesh, int entity_dim,
-                       std::span<const std::int64_t> entities,
-                       std::span<const std::int32_t> data);
+distribute_entity_data(
+    const mesh::Topology& topology, const std::vector<std::int64_t>& nodes_g,
+    std::int64_t num_nodes_g, const fem::ElementDofLayout& cmap_dof_layout,
+    std::experimental::mdspan<const std::int32_t,
+                              std::experimental::dextents<std::size_t, 2>>
+        xdofmap,
+    int entity_dim, std::span<const std::int64_t> entities,
+    std::span<const std::int32_t> data);
 
 /// TODO: Document
 template <typename T>

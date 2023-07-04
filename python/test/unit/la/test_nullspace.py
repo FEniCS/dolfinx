@@ -39,7 +39,7 @@ def build_elastic_nullspace(V):
         vec_local = [stack.enter_context(x.localForm()) for x in ns]
         basis = [np.asarray(x) for x in vec_local]
 
-        dofs = [V.sub(i).dofmap.list.array for i in range(gdim)]
+        dofs = [V.sub(i).dofmap.list.flatten() for i in range(gdim)]
 
         # Build translational null space basis
         for i in range(gdim):
@@ -47,7 +47,7 @@ def build_elastic_nullspace(V):
 
         # Build rotational null space basis
         x = V.tabulate_dof_coordinates()
-        dofs_block = V.dofmap.list.array
+        dofs_block = V.dofmap.list.flatten()
         x0, x1, x2 = x[dofs_block, 0], x[dofs_block, 1], x[dofs_block, 2]
         if gdim == 2:
             basis[2][dofs[0]] = -x1
@@ -73,13 +73,13 @@ def build_broken_elastic_nullspace(V):
         vec_local = [stack.enter_context(x.localForm()) for x in ns]
         basis = [np.asarray(x) for x in vec_local]
 
-        dofs = [V.sub(i).dofmap.list.array for i in range(2)]
+        dofs = [V.sub(i).dofmap.list.flatten() for i in range(2)]
         basis[0][dofs[0]] = 1.0
         basis[1][dofs[1]] = 1.0
 
         # Build rotational null space basis
         x = V.tabulate_dof_coordinates()
-        dofs_block = V.dofmap.list.array
+        dofs_block = V.dofmap.list.flatten()
         x0, x1 = x[dofs_block, 0], x[dofs_block, 1]
         basis[2][dofs[0]] = -x1
         basis[2][dofs[1]] = x0
@@ -99,9 +99,9 @@ def test_nullspace_orthogonal(mesh, degree):
     """Test that null spaces orthogonalisation"""
     V = VectorFunctionSpace(mesh, ('Lagrange', degree))
     nullspace = build_elastic_nullspace(V)
-    assert not la.is_orthonormal(nullspace)
+    assert not la.is_orthonormal(nullspace, eps=1.0e-4)
     la.orthonormalize(nullspace)
-    assert la.is_orthonormal(nullspace)
+    assert la.is_orthonormal(nullspace, eps=1.0e-3)
 
 
 @pytest.mark.parametrize("mesh", [
