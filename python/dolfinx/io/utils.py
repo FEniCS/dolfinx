@@ -50,7 +50,8 @@ if _cpp.common.has_adios2:
 
         """
 
-        def __init__(self, comm: _MPI.Comm, filename: str, output: typing.Union[Mesh, Function, typing.List[Function]]):
+        def __init__(self, comm: _MPI.Comm, filename: str, output: typing.Union[Mesh, Function, typing.List[Function]],
+                     engine: typing.Optional[str] = "BPFile"):
             """Initialize a writer for outputting data in the VTX format.
 
             Args:
@@ -59,6 +60,8 @@ if _cpp.common.has_adios2:
                 output: The data to output. Either a mesh, a single
                     (discontinuous) Lagrange Function or list of
                     (discontinuous Lagrange Functions.
+                engine: ADIOS2 engine to use for output. See
+                    ADIOS2 documentation for options.
 
             Note:
                 All Functions for output must share the same mesh and
@@ -73,7 +76,8 @@ if _cpp.common.has_adios2:
                 try:
                     dtype = output.function_space.mesh.geometry.x.dtype  # type: ignore
                 except AttributeError:
-                    dtype = output[0].function_space.mesh.geometry.x.dtype  # type: ignore
+                    # type: ignore
+                    dtype = output[0].function_space.mesh.geometry.x.dtype
 
             if dtype == np.float32:
                 _vtxwriter = _cpp.io.VTXWriter_float32
@@ -82,10 +86,12 @@ if _cpp.common.has_adios2:
 
             try:
                 # Input is a mesh
-                self._cpp_object = _vtxwriter(comm, filename, output._cpp_object)  # type: ignore[union-attr]
+                self._cpp_object = _vtxwriter(
+                    comm, filename, output._cpp_object, engine)  # type: ignore[union-attr]
             except (NotImplementedError, TypeError, AttributeError):
                 # Input is a single function or a list of functions
-                self._cpp_object = _vtxwriter(comm, filename, _extract_cpp_functions(output))   # type: ignore[arg-type]
+                self._cpp_object = _vtxwriter(comm, filename, _extract_cpp_functions(
+                    output), engine)   # type: ignore[arg-type]
 
         def __enter__(self):
             return self
@@ -112,7 +118,8 @@ if _cpp.common.has_adios2:
 
         """
 
-        def __init__(self, comm: _MPI.Comm, filename: str, output: typing.Union[Mesh, typing.List[Function], Function]):
+        def __init__(self, comm: _MPI.Comm, filename: str, output: typing.Union[Mesh, typing.List[Function], Function],
+                     engine: typing.Optional[str] = "BPFile"):
             """Initialize a writer for outputting a mesh, a single Lagrange
             function or list of Lagrange functions sharing the same
             element family and degree
@@ -123,6 +130,8 @@ if _cpp.common.has_adios2:
                 output: The data to output. Either a mesh, a single
                     first order Lagrange function or list of first order
                     Lagrange functions.
+                engine: ADIOS2 engine to use for output. See
+                    ADIOS2 documentation for options.
 
             """
 
@@ -133,7 +142,8 @@ if _cpp.common.has_adios2:
                 try:
                     dtype = output.function_space.mesh.geometry.x.dtype  # type: ignore
                 except AttributeError:
-                    dtype = output[0].function_space.mesh.geometry.x.dtype  # type: ignore
+                    # type: ignore
+                    dtype = output[0].function_space.mesh.geometry.x.dtype
 
             if dtype == np.float32:
                 _fides_writer = _cpp.io.FidesWriter_float32
@@ -141,10 +151,10 @@ if _cpp.common.has_adios2:
                 _fides_writer = _cpp.io.FidesWriter_float64
 
             try:
-                self._cpp_object = _fides_writer(comm, filename, output._cpp_object)  # type: ignore[union-attr]
-            except (NotImplementedError, TypeError, AttributeError):
                 self._cpp_object = _fides_writer(
-                    comm, filename, _extract_cpp_functions(output))  # type: ignore[arg-type]
+                    comm, filename, output._cpp_object, engine)  # type: ignore[union-attr]
+            except (NotImplementedError, TypeError, AttributeError):
+                self._cpp_object = _fides_writer(comm, filename, _extract_cpp_functions(output), engine)  # type: ignore[arg-type]
 
         def __enter__(self):
             return self
