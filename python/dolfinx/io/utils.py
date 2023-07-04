@@ -77,7 +77,7 @@ if _cpp.common.has_adios2:
                     dtype = output.function_space.mesh.geometry.x.dtype  # type: ignore
                 except AttributeError:
                     # type: ignore
-                    dtype = output[0].function_space.mesh.geometry.x.dtype
+                    dtype = output[0].function_space.mesh.geometry.x.dtype  # type: ignore
 
             if dtype == np.float32:
                 _vtxwriter = _cpp.io.VTXWriter_float32
@@ -141,8 +141,7 @@ if _cpp.common.has_adios2:
                 try:
                     dtype = output.function_space.mesh.geometry.x.dtype  # type: ignore
                 except AttributeError:
-                    # type: ignore
-                    dtype = output[0].function_space.mesh.geometry.x.dtype
+                    dtype = output[0].function_space.mesh.geometry.x.dtype  # type: ignore
 
             if dtype == np.float32:
                 _fides_writer = _cpp.io.FidesWriter_float32
