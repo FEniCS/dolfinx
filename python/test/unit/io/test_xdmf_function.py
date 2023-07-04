@@ -48,7 +48,7 @@ def test_save_1d_scalar(tempdir, encoding, dtype, use_pathlib):
     mesh = create_unit_interval(MPI.COMM_WORLD, 32, dtype=xtype)
     V = FunctionSpace(mesh, ("Lagrange", 2))
     u = Function(V, dtype=dtype)
-    u.x.set(1.0 + (1j if np.issubdtype(dtype, np.complexfloating) else 0))
+    u.x.array[:] = 1.0 + (1j if np.issubdtype(dtype, np.complexfloating) else 0)
     with XDMFFile(mesh.comm, filename2, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
         file.write_function(u)
@@ -63,7 +63,7 @@ def test_save_2d_scalar(tempdir, encoding, dtype, cell_type):
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, cell_type, dtype=xtype)
     V = FunctionSpace(mesh, ("Lagrange", 2))
     u = Function(V, dtype=dtype)
-    u.x.set(1.0)
+    u.x.array[:] = 1.0
     with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
         file.write_function(u)
@@ -78,7 +78,7 @@ def test_save_3d_scalar(tempdir, encoding, dtype, cell_type):
     mesh = create_unit_cube(MPI.COMM_WORLD, 4, 3, 4, cell_type, dtype=xtype)
     V = FunctionSpace(mesh, ("Lagrange", 2))
     u = Function(V, dtype=dtype)
-    u.x.set(1.0)
+    u.x.array[:] = 1.0
     with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
         file.write_function(u)
@@ -93,7 +93,7 @@ def test_save_2d_vector(tempdir, encoding, dtype, cell_type):
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 13, cell_type, dtype=xtype)
     V = VectorFunctionSpace(mesh, ("Lagrange", 2))
     u = Function(V, dtype=dtype)
-    u.x.set(1.0 + (1j if np.issubdtype(dtype, np.complexfloating) else 0))
+    u.x.array[:] = 1.0 + (1j if np.issubdtype(dtype, np.complexfloating) else 0)
     with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
         file.write_function(u)
@@ -107,7 +107,7 @@ def test_save_3d_vector(tempdir, encoding, dtype, cell_type):
     filename = Path(tempdir, "u_3Dv.xdmf")
     mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type, dtype=xtype)
     u = Function(VectorFunctionSpace(mesh, ("Lagrange", 1)), dtype=dtype)
-    u.x.set(1.0 + (1j if np.issubdtype(dtype, np.complexfloating) else 0))
+    u.x.array[:] = 1.0 + (1j if np.issubdtype(dtype, np.complexfloating) else 0)
     with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
         file.write_function(u)
@@ -121,7 +121,7 @@ def test_save_2d_tensor(tempdir, encoding, dtype, cell_type):
     filename = Path(tempdir, "tensor.xdmf")
     mesh = create_unit_square(MPI.COMM_WORLD, 16, 16, cell_type, dtype=xtype)
     u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)), dtype=dtype)
-    u.x.set(1.0 + (1j if np.issubdtype(dtype, np.complexfloating) else 0))
+    u.x.array[:] = 1.0 + (1j if np.issubdtype(dtype, np.complexfloating) else 0)
     with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
         file.write_function(u)
@@ -135,7 +135,7 @@ def test_save_3d_tensor(tempdir, encoding, dtype, cell_type):
     filename = Path(tempdir, "u3t.xdmf")
     mesh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, cell_type, dtype=xtype)
     u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)), dtype=dtype)
-    u.x.set(1.0 + (1j if np.issubdtype(dtype, np.complexfloating) else 0))
+    u.x.array[:] = 1.0 + (1j if np.issubdtype(dtype, np.complexfloating) else 0)
     with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
         file.write_function(u)
@@ -151,11 +151,11 @@ def test_save_3d_vector_series(tempdir, encoding, dtype, cell_type):
     u = Function(VectorFunctionSpace(mesh, ("Lagrange", 2)), dtype=dtype)
     with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
-        u.x.set(1.0 + (1j if np.issubdtype(dtype, np.complexfloating) else 0))
+        u.x.array[:] = 1.0 + (1j if np.issubdtype(dtype, np.complexfloating) else 0)
         file.write_function(u, 0.1)
-        u.x.set(2.0 + (2j if np.issubdtype(dtype, np.complexfloating) else 0))
+        u.x.array[:] = 2.0 + (2j if np.issubdtype(dtype, np.complexfloating) else 0)
         file.write_function(u, 0.2)
 
     with XDMFFile(mesh.comm, filename, "a", encoding=encoding) as file:
-        u.x.set(3.0 + (3j if np.issubdtype(dtype, np.complexfloating) else 0))
+        u.x.array[:] = 3.0 + (3j if np.issubdtype(dtype, np.complexfloating) else 0)
         file.write_function(u, 0.3)
