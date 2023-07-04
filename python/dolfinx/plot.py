@@ -93,7 +93,7 @@ def _(V: fem.FunctionSpace, entities=None):
     """Creates a VTK mesh topology (topology array and array of cell
     types) that is based on the degree-of-freedom coordinates.
 
-    This function support visualisation when the degree of the finite
+    This function supports visualisation when the degree of the finite
     element space is different from the geometric degree of the mesh.
 
     Note:

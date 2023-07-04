@@ -39,7 +39,7 @@ if _cpp.common.has_adios2:
     __all__ = __all__ + ["FidesWriter", "VTXWriter"]
 
     class VTXWriter:
-        """Writer to to VTK files, using ADIOS2 to create the files.
+        """Writer for VTK files, using ADIOS2 to create the files.
 
         VTX supports arbitrary order Lagrange finite elements for the
         geometry description and arbitrary order (discontinuous)
@@ -99,11 +99,11 @@ if _cpp.common.has_adios2:
             self._cpp_object.close()
 
     class FidesWriter:
-        """Writer to to Fides files, using ADIOS2 to create the files.
+        """Writer for Fides files, using ADIOS2 to create the files.
 
         Fides (https://fides.readthedocs.io/) supports first order
         Lagrange finite elements for the geometry description and first
-        order Lagrange finite elements for functions. All functions has
+        order Lagrange finite elements for functions. All functions have
         to be of the same element family and same order.
 
         The files can be displayed by Paraview.
