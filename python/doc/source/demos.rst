@@ -80,7 +80,7 @@ User-defined and advanced finite elements
 .. toctree::
    :maxdepth: 1
 
-   demos/demo_lagrange-variants.md
+   demos/demo_lagrange_variants.md
    demos/demo_tnt-elements.md
 
 
