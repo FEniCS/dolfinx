@@ -230,8 +230,7 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   std::transform(basis_derivatives_reference0_b.begin(),
                  basis_derivatives_reference0_b.end(),
                  basis_derivatives_reference0_b.begin(),
-                 [atol = atol](auto x)
-                 { return std::abs(x) < atol ? 0.0 : x; });
+                 [atol](auto x) { return std::abs(x) < atol ? 0 : x; });
 
   // Create working arrays
   std::vector<U> basis_reference0_b(Xshape[0] * dim0 * value_size_ref0);
