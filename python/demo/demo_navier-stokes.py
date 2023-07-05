@@ -10,7 +10,7 @@
 
 # # Divergence conforming discontinuous Galerkin method for the Navier--Stokes equations
 #
-# This demo ({download}`demo_navier_stokes.py`) illustrates how to
+# This demo ({download}`demo_navier-stokes.py`) illustrates how to
 # implement a divergence conforming discontinuous Galerkin method for
 # the Navier-Stokes equations in FEniCSx. The method conserves mass
 # exactly and uses upwinding. The formulation is based on a combination
