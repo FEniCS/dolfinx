@@ -1,7 +1,6 @@
 pybind11>=2.9.1
 cmake>=3.19
-scikit-build-core
-pyproject-metadata
+scikit-build-core[pyproject]
 mpi4py
 petsc4py
 numpy
