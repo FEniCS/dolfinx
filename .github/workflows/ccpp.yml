@@ -141,7 +141,8 @@ jobs:
 
       - name: Build Python interface
         run: |
-          python3 -m pip -v --no-build-isolation install python/
+          python3 -m pip install -r python/build-requirements.txt
+          python3 -m pip -v install --no-build-isolation python/
       - name: Build Python interface documentation
         run: |
           python3 -m pip install sphinx==5.0.2
