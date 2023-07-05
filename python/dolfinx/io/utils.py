@@ -118,7 +118,7 @@ if _cpp.common.has_adios2:
         def __init__(self, comm: _MPI.Comm, filename: str,
                      output: typing.Union[Mesh, typing.List[Function], Function],
                      engine: typing.Optional[str] = "BPFile",
-                     mesh_policy: typing.Optional[_cpp.io.FidesMeshPolicy] = _cpp.io.FidesMeshPolicy.update):
+                     mesh_policy: typing.Optional[FidesMeshPolicy] = FidesMeshPolicy.update):
             """Initialize a writer for outputting a mesh, a single Lagrange
             function or list of Lagrange functions sharing the same
             element family and degree
