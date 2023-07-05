@@ -126,9 +126,8 @@ if _cpp.common.has_adios2:
             Args:
                 comm: MPI communicator.
                 filename: Output filename.
-                output: Data to output. Either a mesh, a single
-                    first order Lagrange function or list of first order
-                    Lagrange functions.
+                output: Data to output. Either a mesh, a single degree one
+                    Lagrange function or list of degree one Lagrange functions.
                 engine: ADIOS2 engine to use for output. See
                     ADIOS2 documentation for options.
                 mesh_policy: Controls if the mesh is written to file at
@@ -245,9 +244,7 @@ class XDMFFile(_cpp.io.XDMFFile):
         msh.name = name
 
         domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_shape.name, cell_degree,
-                                            basix.LagrangeVariant.equispaced, shape=(
-                                                x.shape[1], ),
-                                            gdim=x.shape[1]))
+                                            basix.LagrangeVariant.equispaced, shape=(x.shape[1], ), gdim=x.shape[1]))
         return Mesh(msh, domain)
 
     def read_meshtags(self, mesh, name, xpath="/Xdmf/Domain"):
