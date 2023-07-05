@@ -114,8 +114,10 @@ if _cpp.common.has_adios2:
 
         """
 
-        def __init__(self, comm: _MPI.Comm, filename: str, output: typing.Union[Mesh, typing.List[Function], Function],
-                     engine: typing.Optional[str] = "BPFile"):
+        def __init__(self, comm: _MPI.Comm, filename: str,
+                     output: typing.Union[Mesh, typing.List[Function], Function],
+                     engine: typing.Optional[str] = "BPFile",
+                     mesh_policy: typing.Optional[_cpp.io.FidesMeshPolicy] = _cpp.io.FidesMeshPolicy.update):
             """Initialize a writer for outputting a mesh, a single Lagrange
             function or list of Lagrange functions sharing the same
             element family and degree
@@ -128,6 +130,11 @@ if _cpp.common.has_adios2:
                     Lagrange functions.
                 engine: ADIOS2 engine to use for output. See
                     ADIOS2 documentation for options.
+                mesh_policy: Controls if the mesh is written to file at
+                    the first time step only when a ``Function`` is
+                    written to file, or is re-written (updated) at each
+                    time step. Has an effect only for ``Function``
+                    output.
 
             """
 
@@ -146,10 +153,11 @@ if _cpp.common.has_adios2:
                 _fides_writer = _cpp.io.FidesWriter_float64
 
             try:
-                self._cpp_object = _fides_writer(comm, filename, output._cpp_object, engine)  # type: ignore[union-attr]
+                self._cpp_object = _fides_writer(comm, filename, output._cpp_object,
+                                                 engine)  # type: ignore[union-attr]
             except (NotImplementedError, TypeError, AttributeError):
                 self._cpp_object = _fides_writer(comm, filename, _extract_cpp_functions(
-                    output), engine)  # type: ignore[arg-type]
+                    output), engine, mesh_policy)  # type: ignore[arg-type]
 
         def __enter__(self):
             return self
