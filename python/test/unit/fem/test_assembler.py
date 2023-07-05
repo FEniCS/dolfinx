@@ -17,11 +17,20 @@ from dolfinx.fem import (Constant, Function, FunctionSpace,
                          VectorFunctionSpace, assemble_scalar, bcs_by_block,
                          dirichletbc, extract_function_spaces, form,
                          locate_dofs_geometrical, locate_dofs_topological)
-from dolfinx.fem.petsc import (apply_lifting, apply_lifting_nest,
-                               assemble_matrix, assemble_matrix_block,
-                               assemble_matrix_nest, assemble_vector,
-                               assemble_vector_block, assemble_vector_nest,
-                               set_bc, set_bc_nest)
+from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
+from dolfinx.fem.petsc import apply_lifting_nest as petsc_apply_lifting_nest
+from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
+from dolfinx.fem.petsc import \
+    assemble_matrix_block as petsc_assemble_matrix_block
+from dolfinx.fem.petsc import \
+    assemble_matrix_nest as petsc_assemble_matrix_nest
+from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
+from dolfinx.fem.petsc import \
+    assemble_vector_block as petsc_assemble_vector_block
+from dolfinx.fem.petsc import \
+    assemble_vector_nest as petsc_assemble_vector_nest
+from dolfinx.fem.petsc import set_bc as petsc_set_bc
+from dolfinx.fem.petsc import set_bc_nest as petsc_set_bc_nest
 from dolfinx.mesh import (CellType, GhostMode, create_mesh, create_rectangle,
                           create_unit_cube, create_unit_square,
                           locate_entities_boundary)
@@ -75,81 +84,78 @@ def test_assemble_functional_ds(mode, dtype):
     assert value == pytest.approx(4.0, 1e-6)
 
 
-def test_assemble_derivatives():
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_assemble_derivatives(dtype):
     """This test checks the original_coefficient_positions, which may change
     under differentiation (some coefficients and constants are
     eliminated)"""
-    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12)
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, dtype=dtype(0).real.dtype)
     Q = FunctionSpace(mesh, ("Lagrange", 1))
-    u = Function(Q)
+    u = Function(Q, dtype=dtype)
     v = ufl.TestFunction(Q)
     du = ufl.TrialFunction(Q)
-    b = Function(Q)
-    c1 = Constant(mesh, np.array([[1.0, 0.0], [3.0, 4.0]], PETSc.ScalarType))
-    c2 = Constant(mesh, PETSc.ScalarType(2.0))
+    b = Function(Q, dtype=dtype)
+    c1 = Constant(mesh, np.array([[1.0, 0.0], [3.0, 4.0]], dtype=dtype))
+    c2 = Constant(mesh, dtype(2.0))
 
     b.x.array[:] = 2.0
 
     # derivative eliminates 'u' and 'c1'
     L = ufl.inner(c1, c1) * v * dx + c2 * b * inner(u, v) * dx
-    a = form(derivative(L, u, du))
+    a = form(derivative(L, u, du), dtype=dtype)
 
-    A1 = assemble_matrix(a)
-    A1.assemble()
-    a = form(c2 * b * inner(du, v) * dx)
-    A2 = assemble_matrix(a)
-    A2.assemble()
-    assert (A1 - A2).norm() == pytest.approx(0.0, rel=1e-12, abs=1e-12)
-    A1.destroy(), A2.destroy()
+    A1 = fem.assemble_matrix(a)
+    A1.finalize()
+    a = form(c2 * b * inner(du, v) * dx, dtype=dtype)
+    A2 = fem.assemble_matrix(a)
+    A2.finalize()
+    assert np.allclose(A1.data, A2.data)
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
-def test_basic_assembly(mode):
-    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_basic_assembly(mode, dtype):
+    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode, dtype=dtype(0).real.dtype)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
-    f = Function(V)
+    f = Function(V, dtype=dtype)
     f.x.array[:] = 10.0
     a = inner(f * u, v) * dx + inner(u, v) * ds
     L = inner(f, v) * dx + inner(2.0, v) * ds
-    a, L = form(a), form(L)
+    a, L = form(a, dtype=dtype), form(L, dtype=dtype)
 
     # Initial assembly
-    A = assemble_matrix(a)
-    A.assemble()
-    assert isinstance(A, PETSc.Mat)
-    b = assemble_vector(L)
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    assert isinstance(b, PETSc.Vec)
+    A = fem.assemble_matrix(a)
+    A.finalize()
+    assert isinstance(A, la.MatrixCSR)
+    b = fem.assemble_vector(L)
+    b.scatter_reverse(la.InsertMode.add)
+    assert isinstance(b, la.Vector)
 
     # Second assembly
-    normA = A.norm()
-    A.zeroEntries()
-    A = assemble_matrix(A, a)
-    A.assemble()
-    assert isinstance(A, PETSc.Mat)
-    assert normA == pytest.approx(A.norm())
+    normA = A.squared_norm()
+    A.set_value(0)
+    A = fem.assemble_matrix(A, a)
+    A.finalize()
+    assert isinstance(A, la.MatrixCSR)
+    assert normA == pytest.approx(A.squared_norm())
     normb = b.norm()
-    with b.localForm() as b_local:
-        b_local.set(0.0)
-    b = assemble_vector(b, L)
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    assert isinstance(b, PETSc.Vec)
+    b.array[:] = 0
+    fem.assemble_vector(b.array, L)
+    b.scatter_reverse(la.InsertMode.add)
     assert normb == pytest.approx(b.norm())
 
     # Vector re-assembly - no zeroing (but need to zero ghost entries)
-    with b.localForm() as b_local:
-        b_local.array[b.local_size:] = 0.0
-    assemble_vector(b, L)
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    b.array[b.index_map.size_local * b.block_size:] = 0
+    fem.assemble_vector(b.array, L)
+    b.scatter_reverse(la.InsertMode.add)
     assert 2.0 * normb == pytest.approx(b.norm())
 
     # Matrix re-assembly (no zeroing)
-    assemble_matrix(A, a)
-    A.assemble()
-    assert 2.0 * normA == pytest.approx(A.norm())
-    A.destroy(), b.destroy()
+    fem.assemble_matrix(A, a)
+    A.finalize()
+    assert 4 * normA == pytest.approx(A.squared_norm())
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
@@ -157,13 +163,12 @@ def test_basic_assembly_petsc_matrixcsr(mode):
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-    a = inner(u, v) * dx + inner(u, v) * ds
-    a = form(a)
+    a = form(inner(u, v) * dx + inner(u, v) * ds)
 
     A0 = fem.assemble_matrix(a)
     A0.finalize()
     assert isinstance(A0, la.MatrixCSR)
-    A1 = fem.petsc.assemble_matrix(a)
+    A1 = petsc_assemble_matrix(a)
     A1.assemble()
     assert isinstance(A1, PETSc.Mat)
     assert np.sqrt(A0.squared_norm()) == pytest.approx(A1.norm(), 1.0e-5)
@@ -175,7 +180,7 @@ def test_basic_assembly_petsc_matrixcsr(mode):
     A0 = fem.assemble_matrix(a)
     A0.finalize()
     assert isinstance(A0, la.MatrixCSR)
-    A1 = fem.petsc.assemble_matrix(a)
+    A1 = petsc_assemble_matrix(a)
     A1.assemble()
     assert isinstance(A1, PETSc.Mat)
     assert np.sqrt(A0.squared_norm()) == pytest.approx(A1.norm(), rel=1.0e-8, abs=1.0e-5)
@@ -187,36 +192,35 @@ def test_assembly_bcs(mode):
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-    a = inner(u, v) * dx + inner(u, v) * ds
-    L = inner(1.0, v) * dx
-    a, L = form(a), form(L)
+    a = form(inner(u, v) * dx + inner(u, v) * ds)
+    L = form(inner(1.0, v) * dx)
 
     bdofsV = locate_dofs_geometrical(V, lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 1.0)))
     bc = dirichletbc(PETSc.ScalarType(1), bdofsV, V)
 
     # Assemble and apply 'global' lifting of bcs
-    A = assemble_matrix(a)
+    A = petsc_assemble_matrix(a)
     A.assemble()
-    b = assemble_vector(L)
+    b = petsc_assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     g = b.duplicate()
     with g.localForm() as g_local:
         g_local.set(0.0)
-    set_bc(g, [bc])
+    petsc_set_bc(g, [bc])
     f = b - A * g
-    set_bc(f, [bc])
+    petsc_set_bc(f, [bc])
 
     # Assemble vector and apply lifting of bcs during assembly
-    b_bc = assemble_vector(L)
-    apply_lifting(b_bc, [a], [[bc]])
+    b_bc = petsc_assemble_vector(L)
+    petsc_apply_lifting(b_bc, [a], [[bc]])
     b_bc.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    set_bc(b_bc, [bc])
+    petsc_set_bc(b_bc, [bc])
     assert (f - b_bc).norm() == pytest.approx(0.0, rel=1e-6, abs=1e-6)
     A.destroy(), b.destroy(), g.destroy()
 
 
 @pytest.mark.skip_in_parallel
-def test_assemble_manifold():
+def test_petsc_assemble_manifold():
     """Test assembly of poisson problem on a mesh with topological
     dimension 1 but embedded in 2D (gdim=2)"""
     points = np.array([[0.0, 0.0], [0.2, 0.0], [0.4, 0.0],
@@ -237,12 +241,12 @@ def test_assemble_manifold():
 
     bcdofs = locate_dofs_geometrical(U, lambda x: np.isclose(x[0], 0.0))
     bcs = [dirichletbc(PETSc.ScalarType(0), bcdofs, U)]
-    A = assemble_matrix(a, bcs=bcs)
+    A = petsc_assemble_matrix(a, bcs=bcs)
     A.assemble()
 
-    b = assemble_vector(L)
-    apply_lifting(b, [a], bcs=[bcs])
-    set_bc(b, bcs)
+    b = petsc_assemble_vector(L)
+    petsc_apply_lifting(b, [a], bcs=[bcs])
+    petsc_set_bc(b, bcs)
 
     assert np.isclose(b.norm(), 0.41231)
     assert np.isclose(A.norm(), 25.0199)
@@ -300,32 +304,32 @@ def test_matrix_assembly_block(mode):
 
     def blocked():
         """Monolithic blocked"""
-        A = assemble_matrix_block(a_block, bcs=[bc])
+        A = petsc_assemble_matrix_block(a_block, bcs=[bc])
         A.assemble()
-        b = assemble_vector_block(L_block, a_block, bcs=[bc])
+        b = petsc_assemble_vector_block(L_block, a_block, bcs=[bc])
         assert A.getType() != "nest"
         Anorm = A.norm()
         bnorm = b.norm()
         A.destroy(), b.destroy()
         with pytest.raises(RuntimeError):
-            assemble_matrix_block(a_block_none, bcs=[bc])
+            petsc_assemble_matrix_block(a_block_none, bcs=[bc])
         return Anorm, bnorm
 
     def nest():
         """Nested (MatNest)"""
-        A = assemble_matrix_nest(a_block, bcs=[bc], mat_types=[["baij", "aij", "aij"],
-                                                               ["aij", "", "aij"],
-                                                               ["aij", "aij", "aij"]])
+        A = petsc_assemble_matrix_nest(a_block, bcs=[bc], mat_types=[["baij", "aij", "aij"],
+                                                                     ["aij", "", "aij"],
+                                                                     ["aij", "aij", "aij"]])
         A.assemble()
         with pytest.raises(RuntimeError):
-            assemble_matrix_nest(a_block_none, bcs=[bc])
+            petsc_assemble_matrix_nest(a_block_none, bcs=[bc])
 
-        b = assemble_vector_nest(L_block)
-        apply_lifting_nest(b, a_block, bcs=[bc])
+        b = petsc_assemble_vector_nest(L_block)
+        petsc_apply_lifting_nest(b, a_block, bcs=[bc])
         for b_sub in b.getNestSubVecs():
             b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         bcs0 = bcs_by_block([L.function_spaces[0] for L in L_block], [bc])
-        set_bc_nest(b, bcs0)
+        petsc_set_bc_nest(b, bcs0)
         b.assemble()
         bnorm = math.sqrt(sum([x.norm()**2 for x in b.getNestSubVecs()]))
         Anorm = nest_matrix_norm(A)
@@ -345,12 +349,12 @@ def test_matrix_assembly_block(mode):
 
         bdofsW_V1 = locate_dofs_topological(W.sub(1), mesh.topology.dim - 1, bndry_facets)
         bc = dirichletbc(u_bc, bdofsW_V1, W.sub(1))
-        A = assemble_matrix(a, bcs=[bc])
+        A = petsc_assemble_matrix(a, bcs=[bc])
         A.assemble()
-        b = assemble_vector(L)
-        apply_lifting(b, [a], bcs=[[bc]])
+        b = petsc_assemble_vector(L)
+        petsc_apply_lifting(b, [a], bcs=[[bc]])
         b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-        set_bc(b, [bc])
+        petsc_set_bc(b, [bc])
         assert A.getType() != "nest"
         Anorm = A.norm()
         bnorm = b.norm()
@@ -411,8 +415,8 @@ def test_assembly_solve_block(mode):
 
     def blocked():
         """Blocked"""
-        A = assemble_matrix_block([[a00, a01], [a10, a11]], bcs=bcs)
-        b = assemble_vector_block([L0, L1], [[a00, a01], [a10, a11]], bcs=bcs)
+        A = petsc_assemble_matrix_block([[a00, a01], [a10, a11]], bcs=bcs)
+        b = petsc_assemble_vector_block([L0, L1], [[a00, a01], [a10, a11]], bcs=bcs)
         A.assemble()
         x = A.createVecLeft()
         ksp = PETSc.KSP()
@@ -432,14 +436,14 @@ def test_assembly_solve_block(mode):
 
     def nested():
         """Nested (MatNest)"""
-        A = assemble_matrix_nest([[a00, a01], [a10, a11]], bcs=bcs, diagonal=1.0)
+        A = petsc_assemble_matrix_nest([[a00, a01], [a10, a11]], bcs=bcs, diagonal=1.0)
         A.assemble()
-        b = assemble_vector_nest([L0, L1])
-        apply_lifting_nest(b, [[a00, a01], [a10, a11]], bcs=bcs)
+        b = petsc_assemble_vector_nest([L0, L1])
+        petsc_apply_lifting_nest(b, [[a00, a01], [a10, a11]], bcs=bcs)
         for b_sub in b.getNestSubVecs():
             b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         bcs0 = bcs_by_block([L0.function_spaces[0], L1.function_spaces[0]], bcs)
-        set_bc_nest(b, bcs0)
+        petsc_set_bc_nest(b, bcs0)
         b.assemble()
 
         x = b.copy()
@@ -477,12 +481,12 @@ def test_assembly_solve_block(mode):
         bdofsW1_V1 = locate_dofs_topological(W.sub(1), facetdim, bndry_facets)
         bcs = [dirichletbc(u0_bc, bdofsW0_V0, W.sub(0)), dirichletbc(u1_bc, bdofsW1_V1, W.sub(1))]
 
-        A = assemble_matrix(a, bcs=bcs)
+        A = petsc_assemble_matrix(a, bcs=bcs)
         A.assemble()
-        b = assemble_vector(L)
-        apply_lifting(b, [a], [bcs])
+        b = petsc_assemble_vector(L)
+        petsc_apply_lifting(b, [a], [bcs])
         b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-        set_bc(b, bcs)
+        petsc_set_bc(b, bcs)
 
         x = b.copy()
         ksp = PETSc.KSP()
@@ -563,18 +567,18 @@ def test_assembly_solve_taylor_hood(mesh):
 
     def nested_solve():
         """Nested solver"""
-        A = assemble_matrix_nest(form([[a00, a01], [a10, a11]]), bcs=[bc0, bc1],
-                                 mat_types=[["baij", "aij"], ["aij", ""]])
+        A = petsc_assemble_matrix_nest(form([[a00, a01], [a10, a11]]), bcs=[bc0, bc1],
+                                       mat_types=[["baij", "aij"], ["aij", ""]])
         A.assemble()
-        P = assemble_matrix_nest(form([[p00, p01], [p10, p11]]), bcs=[bc0, bc1],
-                                 mat_types=[["aij", "aij"], ["aij", ""]])
+        P = petsc_assemble_matrix_nest(form([[p00, p01], [p10, p11]]), bcs=[bc0, bc1],
+                                       mat_types=[["aij", "aij"], ["aij", ""]])
         P.assemble()
-        b = assemble_vector_nest(form([L0, L1]))
-        apply_lifting_nest(b, form([[a00, a01], [a10, a11]]), [bc0, bc1])
+        b = petsc_assemble_vector_nest(form([L0, L1]))
+        petsc_apply_lifting_nest(b, form([[a00, a01], [a10, a11]]), [bc0, bc1])
         for b_sub in b.getNestSubVecs():
             b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         bcs = bcs_by_block(extract_function_spaces(form([L0, L1])), [bc0, bc1])
-        set_bc_nest(b, bcs)
+        petsc_set_bc_nest(b, bcs)
         b.assemble()
 
         ksp = PETSc.KSP()
@@ -605,11 +609,11 @@ def test_assembly_solve_taylor_hood(mesh):
 
     def blocked_solve():
         """Blocked (monolithic) solver"""
-        A = assemble_matrix_block(form([[a00, a01], [a10, a11]]), bcs=[bc0, bc1])
+        A = petsc_assemble_matrix_block(form([[a00, a01], [a10, a11]]), bcs=[bc0, bc1])
         A.assemble()
-        P = assemble_matrix_block(form([[p00, p01], [p10, p11]]), bcs=[bc0, bc1])
+        P = petsc_assemble_matrix_block(form([[p00, p01], [p10, p11]]), bcs=[bc0, bc1])
         P.assemble()
-        b = assemble_vector_block(form([L0, L1]), form([[a00, a01], [a10, a11]]), bcs=[bc0, bc1])
+        b = petsc_assemble_vector_block(form([L0, L1]), form([[a00, a01], [a10, a11]]), bcs=[bc0, bc1])
 
         ksp = PETSc.KSP()
         ksp.create(mesh.comm)
@@ -656,15 +660,15 @@ def test_assembly_solve_taylor_hood(mesh):
         bc0 = dirichletbc(u0, bdofsW0_P2_0, W.sub(0))
         bc1 = dirichletbc(u0, bdofsW0_P2_1, W.sub(0))
 
-        A = assemble_matrix(a, bcs=[bc0, bc1])
+        A = petsc_assemble_matrix(a, bcs=[bc0, bc1])
         A.assemble()
-        P = assemble_matrix(p_form, bcs=[bc0, bc1])
+        P = petsc_assemble_matrix(p_form, bcs=[bc0, bc1])
         P.assemble()
 
-        b = assemble_vector(L)
-        apply_lifting(b, [a], bcs=[[bc0, bc1]])
+        b = petsc_assemble_vector(L)
+        petsc_apply_lifting(b, [a], bcs=[[bc0, bc1]])
         b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-        set_bc(b, [bc0, bc1])
+        petsc_set_bc(b, [bc0, bc1])
 
         ksp = PETSc.KSP()
         ksp.create(mesh.comm)
@@ -708,12 +712,12 @@ def test_basic_interior_facet_assembly():
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = ufl.inner(ufl.avg(u), ufl.avg(v)) * ufl.dS
     a = form(a)
-    A = assemble_matrix(a)
+    A = petsc_assemble_matrix(a)
     A.assemble()
     assert isinstance(A, PETSc.Mat)
     L = ufl.conj(ufl.avg(v)) * ufl.dS
     L = form(L)
-    b = assemble_vector(L)
+    b = petsc_assemble_vector(L)
     b.assemble()
     assert isinstance(b, PETSc.Vec)
     A.destroy()
@@ -739,18 +743,18 @@ def test_basic_assembly_constant(mode):
     a, L = form(a), form(L)
 
     # Initial assembly
-    A1 = assemble_matrix(a)
+    A1 = petsc_assemble_matrix(a)
     A1.assemble()
 
-    b1 = assemble_vector(L)
+    b1 = petsc_assemble_vector(L)
     b1.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     c.value = [[1.0, 2.0], [3.0, 4.0]]
 
-    A2 = assemble_matrix(a)
+    A2 = petsc_assemble_matrix(a)
     A2.assemble()
 
-    b2 = assemble_vector(L)
+    b2 = petsc_assemble_vector(L)
     b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     assert (A1 * 3.0 - A2 * 5.0).norm() == pytest.approx(0.0, abs=1.0e-6)
     assert (b1 * 3.0 - b2 * 5.0).norm() == pytest.approx(0.0, abs=1.0e-5)
@@ -805,13 +809,13 @@ def test_pack_coefficients():
     _F = form(F)
 
     # -- Test vector
-    b0 = assemble_vector(_F)
+    b0 = petsc_assemble_vector(_F)
     b0.assemble()
     constants = _cpp.fem.pack_constants(_F._cpp_object)
     coeffs = _cpp.fem.pack_coefficients(_F._cpp_object)
     with b0.localForm() as _b0:
         for c in [(None, None), (None, coeffs), (constants, None), (constants, coeffs)]:
-            b = assemble_vector(_F, c[0], c[1])
+            b = petsc_assemble_vector(_F, c[0], c[1])
             b.assemble()
             with b.localForm() as _b:
                 assert (_b0.array_r == _b.array_r).all()
@@ -822,7 +826,7 @@ def test_pack_coefficients():
         coeff *= 5.0
     with b0.localForm() as _b0:
         for c in [(None, coeffs), (constants, None), (constants, coeffs)]:
-            b = assemble_vector(_F, c[0], c[1])
+            b = petsc_assemble_vector(_F, c[0], c[1])
             b.assemble()
             with b.localForm() as _b:
                 assert (_b0 - _b).norm() > 1.0e-5
@@ -832,13 +836,13 @@ def test_pack_coefficients():
     J = ufl.derivative(F, u, du)
     J = form(J)
 
-    A0 = assemble_matrix(J)
+    A0 = petsc_assemble_matrix(J)
     A0.assemble()
 
     constants = _cpp.fem.pack_constants(J._cpp_object)
     coeffs = _cpp.fem.pack_coefficients(J._cpp_object)
     for c in [(None, None), (None, coeffs), (constants, None), (constants, coeffs)]:
-        A = assemble_matrix(J, constants=c[0], coeffs=c[1])
+        A = petsc_assemble_matrix(J, constants=c[0], coeffs=c[1])
         A.assemble()
         assert pytest.approx((A - A0).norm(), 1.0e-12) == 0.0
 
@@ -847,7 +851,7 @@ def test_pack_coefficients():
     for coeff in coeffs.values():
         coeff *= 5.0
     for c in [(None, coeffs), (constants, None), (constants, coeffs)]:
-        A = assemble_matrix(J, constants=c[0], coeffs=c[1])
+        A = petsc_assemble_matrix(J, constants=c[0], coeffs=c[1])
         A.assemble()
         assert (A - A0).norm() > 1.0e-5
 
@@ -867,13 +871,13 @@ def test_coefficents_non_constant():
 
     # -- Volume integral vector
     F = form((ufl.inner(u, v) - ufl.inner(x[0] * x[1]**2, v)) * dx)
-    b0 = assemble_vector(F)
+    b0 = petsc_assemble_vector(F)
     b0.assemble()
     assert np.linalg.norm(b0.array) == pytest.approx(0.0, abs=1.0e-7)
 
     # -- Exterior facet integral vector
     F = form((ufl.inner(u, v) - ufl.inner(x[0] * x[1]**2, v)) * ds)
-    b0 = assemble_vector(F)
+    b0 = petsc_assemble_vector(F)
     b0.assemble()
     assert np.linalg.norm(b0.array) == pytest.approx(0.0, abs=1.0e-7)
 
@@ -890,7 +894,7 @@ def test_coefficents_non_constant():
 
     F = (ufl.inner(u1('+') * u0('-'), ufl.avg(v)) - ufl.inner(x[0] * x[1]**2, ufl.avg(v))) * ufl.dS
     F = form(F)
-    b0 = assemble_vector(F)
+    b0 = petsc_assemble_vector(F)
     b0.assemble()
     assert np.linalg.norm(b0.array) == pytest.approx(0.0, abs=1.0e-7)
 
@@ -973,9 +977,9 @@ def test_assemble_empty_rank_mesh():
     assert sum == pytest.approx(6.0)
 
     # Assemble
-    A = assemble_matrix(a)
+    A = petsc_assemble_matrix(a)
     A.assemble()
-    b = assemble_vector(L)
+    b = petsc_assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     # Solve
@@ -1001,16 +1005,16 @@ def test_matrix_assembly_rectangular(mode):
 
     def single():
         a = form(ufl.inner(u, v0) * ufl.dx)
-        A = assemble_matrix(a, bcs=[])
+        A = petsc_assemble_matrix(a, bcs=[])
         A.assemble()
         return A
 
     def block():
         a = form([[ufl.inner(u, v0) * ufl.dx],
                   [ufl.inner(u, v1) * ufl.dx]])
-        A0 = assemble_matrix_block(a, bcs=[])
+        A0 = petsc_assemble_matrix_block(a, bcs=[])
         A0.assemble()
-        A1 = assemble_matrix_nest(a, bcs=[])
+        A1 = petsc_assemble_matrix_nest(a, bcs=[])
         A1.assemble()
         return A0, A1
 

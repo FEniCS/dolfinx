@@ -7,7 +7,6 @@
 
 import numpy as np
 import pytest
-import scipy.sparse as sps
 import ufl
 from dolfinx.common import IndexMap
 from dolfinx.cpp.la import BlockMode, SparsityPattern
@@ -172,7 +171,7 @@ def test_set_diagonal_distributed(dtype):
 
     # create matrix
     A = fem.create_matrix(a)
-    As = sps.csr_matrix((A.data, A.indices, A.indptr))
+    As = A.to_scipy(ghosted=True)
 
     # set diagonal values
     value = dtype(1.0)
@@ -198,7 +197,7 @@ def test_set_diagonal_distributed(dtype):
 
     # create matrix
     A = fem.create_matrix(a)
-    As = sps.csr_matrix((A.data, A.indices, A.indptr))
+    As = A.to_scipy(ghosted=True)
 
     # set diagonal values using dirichlet bc: this will set diagonal values of
     # owned rows only

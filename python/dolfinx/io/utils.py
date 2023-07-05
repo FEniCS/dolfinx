@@ -4,23 +4,22 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""IO module for input data and post-processing file output"""
+"""IO module for input data and post-processing file output."""
 
 import typing
 
-import numpy as np
-import numpy.typing as npt
-
 import basix
 import basix.ufl
+import numpy as np
+import numpy.typing as npt
 import ufl
-from dolfinx import cpp as _cpp
 from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh  # noqa F401
 from dolfinx.cpp.io import perm_vtk as cell_perm_vtk  # noqa F401
 from dolfinx.fem import Function
 from dolfinx.mesh import GhostMode, Mesh, MeshTags
-
 from mpi4py import MPI as _MPI
+
+from dolfinx import cpp as _cpp
 
 __all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk",
            "distribute_entity_data"]
@@ -39,18 +38,18 @@ if _cpp.common.has_adios2:
     __all__ = __all__ + ["FidesWriter", "VTXWriter"]
 
     class VTXWriter:
-        """Interface to VTK files for ADIOS2
+        """Writer for VTX files, using ADIOS2 to create the files.
 
         VTX supports arbitrary order Lagrange finite elements for the
         geometry description and arbitrary order (discontinuous)
         Lagrange finite elements for Functions.
 
-        The files can be displayed by Paraview. The storage backend uses
-        ADIOS2.
+        The files can be displayed by Paraview.
 
         """
 
-        def __init__(self, comm: _MPI.Comm, filename: str, output: typing.Union[Mesh, Function, typing.List[Function]]):
+        def __init__(self, comm: _MPI.Comm, filename: str, output: typing.Union[Mesh, Function, typing.List[Function]],
+                     engine: typing.Optional[str] = "BPFile"):
             """Initialize a writer for outputting data in the VTX format.
 
             Args:
@@ -59,6 +58,8 @@ if _cpp.common.has_adios2:
                 output: The data to output. Either a mesh, a single
                     (discontinuous) Lagrange Function or list of
                     (discontinuous Lagrange Functions.
+                engine: ADIOS2 engine to use for output. See
+                    ADIOS2 documentation for options.
 
             Note:
                 All Functions for output must share the same mesh and
@@ -73,6 +74,7 @@ if _cpp.common.has_adios2:
                 try:
                     dtype = output.function_space.mesh.geometry.x.dtype  # type: ignore
                 except AttributeError:
+                    # type: ignore
                     dtype = output[0].function_space.mesh.geometry.x.dtype  # type: ignore
 
             if dtype == np.float32:
@@ -82,10 +84,11 @@ if _cpp.common.has_adios2:
 
             try:
                 # Input is a mesh
-                self._cpp_object = _vtxwriter(comm, filename, output._cpp_object)  # type: ignore[union-attr]
+                self._cpp_object = _vtxwriter(comm, filename, output._cpp_object, engine)  # type: ignore[union-attr]
             except (NotImplementedError, TypeError, AttributeError):
                 # Input is a single function or a list of functions
-                self._cpp_object = _vtxwriter(comm, filename, _extract_cpp_functions(output))   # type: ignore[arg-type]
+                self._cpp_object = _vtxwriter(comm, filename, _extract_cpp_functions(
+                    output), engine)   # type: ignore[arg-type]
 
         def __enter__(self):
             return self
@@ -100,29 +103,31 @@ if _cpp.common.has_adios2:
             self._cpp_object.close()
 
     class FidesWriter:
-        """Interface to Fides file format.
+        """Writer for Fides files, using ADIOS2 to create the files.
 
-        Fides supports first order Lagrange finite elements for the
-        geometry description and first order Lagrange finite elements
-        for functions. All functions has to be of the same element
-        family and same order.
+        Fides (https://fides.readthedocs.io/) supports first order
+        Lagrange finite elements for the geometry description and first
+        order Lagrange finite elements for functions. All functions have
+        to be of the same element family and same order.
 
-        The files can be displayed by Paraview. The storage backend uses
-        ADIOS2.
+        The files can be displayed by Paraview.
 
         """
 
-        def __init__(self, comm: _MPI.Comm, filename: str, output: typing.Union[Mesh, typing.List[Function], Function]):
+        def __init__(self, comm: _MPI.Comm, filename: str, output: typing.Union[Mesh, typing.List[Function], Function],
+                     engine: typing.Optional[str] = "BPFile"):
             """Initialize a writer for outputting a mesh, a single Lagrange
             function or list of Lagrange functions sharing the same
             element family and degree
 
             Args:
-                comm: The MPI communicator
-                filename: The output filename
-                output: The data to output. Either a mesh, a single
+                comm: MPI communicator.
+                filename: Output filename.
+                output: Data to output. Either a mesh, a single
                     first order Lagrange function or list of first order
                     Lagrange functions.
+                engine: ADIOS2 engine to use for output. See
+                    ADIOS2 documentation for options.
 
             """
 
@@ -141,10 +146,10 @@ if _cpp.common.has_adios2:
                 _fides_writer = _cpp.io.FidesWriter_float64
 
             try:
-                self._cpp_object = _fides_writer(comm, filename, output._cpp_object)  # type: ignore[union-attr]
+                self._cpp_object = _fides_writer(comm, filename, output._cpp_object, engine)  # type: ignore[union-attr]
             except (NotImplementedError, TypeError, AttributeError):
-                self._cpp_object = _fides_writer(
-                    comm, filename, _extract_cpp_functions(output))  # type: ignore[arg-type]
+                self._cpp_object = _fides_writer(comm, filename, _extract_cpp_functions(
+                    output), engine)  # type: ignore[arg-type]
 
         def __enter__(self):
             return self
@@ -160,7 +165,7 @@ if _cpp.common.has_adios2:
 
 
 class VTKFile(_cpp.io.VTKFile):
-    """Interface to VTK files
+    """Interface to VTK files.
 
     VTK supports arbitrary order Lagrange finite elements for the
     geometry description. XDMF is the preferred format for geometry
@@ -204,14 +209,17 @@ class XDMFFile(_cpp.io.XDMFFile):
         """Write function to file for a given time.
 
         Note:
-            Function is interpolated onto the mesh nodes, as a Nth order Lagrange function,
-            where N is the order of the coordinate map.
-            If the Function is a cell-wise constant, it is saved as a cell-wise constant.
+            Function is interpolated onto the mesh nodes, as a Nth order
+            Lagrange function, where N is the order of the coordinate
+            map. If the Function is a cell-wise constant, it is saved as
+            a cell-wise constant.
 
         Args:
-            u: The Function to write to file.
+            u: Function to write to file.
             t: Time associated with Function output .
-            mesh_xpath: Path to mesh associated with the Function in the XDMFFile.
+            mesh_xpath: Path to mesh associated with the Function in the
+                XDMFFile.
+
         """
         super().write_function(getattr(u, "_cpp_object", u), t, mesh_xpath)
 
@@ -227,9 +235,9 @@ class XDMFFile(_cpp.io.XDMFFile):
                                     cmap, x, _cpp.mesh.create_cell_partitioner(ghost_mode))
         msh.name = name
 
-        domain = ufl.Mesh(basix.ufl.element(
-            "Lagrange", cell_shape.name, cell_degree, basix.LagrangeVariant.equispaced, shape=(x.shape[1], ),
-            gdim=x.shape[1]))
+        domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_shape.name, cell_degree,
+                                            basix.LagrangeVariant.equispaced, shape=(x.shape[1], ),
+                                            gdim=x.shape[1]))
         return Mesh(msh, domain)
 
     def read_meshtags(self, mesh, name, xpath="/Xdmf/Domain"):

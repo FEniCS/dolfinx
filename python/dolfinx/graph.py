@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Graph representations and operations on graphs"""
+"""Graph representations and operations on graphs."""
 
 from __future__ import annotations
 
@@ -39,12 +39,12 @@ def create_adjacencylist(data: np.ndarray, offsets=None):
 
     Args:
         data: The adjacency array. If the array is one-dimensional,
-            offsets should be supplied. If the array is two-dimensional the
-            number of edges per node is the second dimension.
+            offsets should be supplied. If the array is two-dimensional
+            the number of edges per node is the second dimension.
         offsets: The offsets array with the number of edges per node.
 
     Returns:
-        An adjacency list
+        An adjacency list.
 
     """
     if offsets is None:

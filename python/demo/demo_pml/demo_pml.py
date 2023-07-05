@@ -33,23 +33,22 @@ except ModuleNotFoundError:
 from functools import partial
 from typing import Tuple, Union
 
-from efficiencies_pml_demo import calculate_analytical_efficiencies
-from mesh_wire_pml import generate_mesh_wire
-
 import ufl
 from basix.ufl import element
-from dolfinx import fem, mesh, plot
+from dolfinx.fem.petsc import LinearProblem
 from dolfinx.io import VTXWriter, gmshio
-
+from efficiencies_pml_demo import calculate_analytical_efficiencies
+from mesh_wire_pml import generate_mesh_wire
 from mpi4py import MPI
-from petsc4py import PETSc
+
+from dolfinx import default_scalar_type, fem, mesh, plot
 
 # -
 
 # Since we want to solve time-harmonic Maxwell's equation, we require
 # that the demo is executed with DOLFINx (PETSc) complex mode.
 
-if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
+if not np.issubdtype(default_scalar_type, np.complexfloating):
     print("Demo should only be executed with DOLFINx complex mode")
     exit(0)
 
@@ -412,7 +411,7 @@ F = - ufl.inner(curl_2d(Es), curl_2d(v)) * dDom \
 
 a, L = ufl.lhs(F), ufl.rhs(F)
 
-problem = fem.petsc.LinearProblem(a, L, bcs=[], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+problem = LinearProblem(a, L, bcs=[], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 Esh = problem.solve()
 # -
 

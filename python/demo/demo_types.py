@@ -208,8 +208,8 @@ display_scalar(uh, "poisson", np.real)
 display_scalar(uh, "poisson", np.imag)
 
 
-# uh = elasticity(dtype=np.float32)
-# uh = elasticity(dtype=np.float64)
-# uh = elasticity(dtype=np.complex64)
-# uh = elasticity(dtype=np.complex128)
-# display_vector(uh, "elasticity", np.real)
+uh = elasticity(dtype=np.float32)
+uh = elasticity(dtype=np.float64)
+uh = elasticity(dtype=np.complex64)
+uh = elasticity(dtype=np.complex128)
+display_vector(uh, "elasticity", np.real)

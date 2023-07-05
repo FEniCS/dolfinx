@@ -18,6 +18,7 @@ import types
 
 from dolfinx import cpp as _cpp
 from dolfinx import fem
+from dolfinx.fem.petsc import create_matrix, create_vector
 
 __all__ = ["NewtonSolver"]
 
@@ -29,9 +30,9 @@ class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
 
         # Create matrix and vector to be used for assembly
         # of the non-linear problem
-        self._A = fem.petsc.create_matrix(problem.a)
+        self._A = create_matrix(problem.a)
         self.setJ(problem.J, self._A)
-        self._b = fem.petsc.create_vector(problem.L)
+        self._b = create_vector(problem.L)
         self.setF(problem.F, self._b)
         self.set_form(problem.form)
 

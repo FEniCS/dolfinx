@@ -10,12 +10,11 @@ import numpy.typing as npt
 import numpy as np
 from dolfinx.cpp.common import IndexMap
 from dolfinx.cpp.la import BlockMode, InsertMode, Norm
-from dolfinx.cpp.la.petsc import create_vector as create_petsc_vector
 
 from dolfinx import cpp as _cpp
 
-__all__ = ["orthonormalize", "is_orthonormal", "create_petsc_vector", "matrix_csr", "vector",
-           "MatrixCSR", "Norm", "InsertMode", "Vector", ]
+__all__ = ["orthonormalize", "is_orthonormal", "matrix_csr", "vector",
+           "MatrixCSR", "Norm", "InsertMode", "Vector", "create_petsc_vector"]
 
 
 class MatrixCSR:
@@ -23,11 +22,7 @@ class MatrixCSR:
         """A distributed sparse matrix that uses compressed sparse row storage.
 
         Args:
-            sp: The sparsity pattern that defines the nonzero structure
-            of the matrix the parallel distribution of the matrix
-            bm: The block mode (compact or expanded). Relevant only if
-            block size is greater than one.
-
+            A: The C++/pybind11 matrix object.
         Note:
             Objects of this type should be created using
             :func:`matrix_csr` and not created using the class
@@ -39,16 +34,23 @@ class MatrixCSR:
     def index_map(self, i: int) -> IndexMap:
         """Index map for row/column.
 
-        Arg:
+        Args:
             i: 0 for row map, 1 for column map.
 
         """
         return self._cpp_object.index_map(i)
 
+    @property
+    def block_size(self):
+        """Block sizes for the matrix."""
+        return self._cpp_object.bs
+
     def add(self, x, rows, cols, bs=1) -> None:
+        """Add a block of values in the matrix."""
         self._cpp_object.add(x, rows, cols, bs)
 
     def set(self, x, rows, cols, bs=1) -> None:
+        """Set a block of values in the matrix."""
         self._cpp_object.set(x, rows, cols, bs)
 
     def set_value(self, x: np.floating) -> None:
@@ -58,9 +60,10 @@ class MatrixCSR:
             x: The value to set all non-zero entries to.
 
         """
-        self._cpp_object.set(x)
+        self._cpp_object.set_value(x)
 
     def finalize(self) -> None:
+        """Scatter and accumulate ghost values."""
         self._cpp_object.finalize()
 
     def squared_norm(self) -> np.floating:
@@ -95,6 +98,38 @@ class MatrixCSR:
 
         """
         return self._cpp_object.to_dense()
+
+    def to_scipy(self, ghosted=False):
+        """Convert to a SciPy CSR/BSR matrix. Data is shared.
+
+        SciPy must be available.
+
+        Args:
+            ghosted: If ``True`` rows that are ghosted in parallel are
+                included in the return SciPy matrix, otherwise ghost
+                rows are not included.
+
+        Returns:
+            SciPy compressed sparse row (both block sizes equal to one)
+            or a SciPy block compressed sparse row matrix.
+
+        """
+        from scipy.sparse import csr_matrix as _csr, bsr_matrix as _bsr
+
+        bs0, bs1 = self._cpp_object.bs
+        ncols = self.index_map(1).size_local + self.index_map(1).num_ghosts
+        if ghosted:
+            nrows = self.index_map(0).size_local + self.index_map(0).num_ghosts
+            data, indices, indptr = self.data, self.indices, self.indptr
+        else:
+            nrows = self.index_map(0).size_local
+            nnzlocal = self.indptr[nrows]
+            data, indices, indptr = self.data[:(bs0 * bs1) * nnzlocal], self.indices[:nnzlocal], self.indptr[:nrows + 1]
+
+        if bs0 == 1 and bs1 == 1:
+            return _csr((data, indices, indptr), shape=(nrows, ncols))
+        else:
+            return _bsr((data.reshape(-1, bs0, bs1), indices, indptr), shape=(bs0 * nrows, bs1 * ncols))
 
 
 def matrix_csr(sp, block_mode=BlockMode.compact, dtype=np.float64) -> MatrixCSR:
@@ -142,22 +177,42 @@ class Vector:
 
     @property
     def index_map(self) -> IndexMap:
+        """Index map that describes size and parallel distribution."""
         return self._cpp_object.index_map
 
     @property
+    def block_size(self) -> int:
+        """Block size for the vector."""
+        return self._cpp_object.bs
+
+    @property
     def array(self) -> np.ndarray:
+        """Local representation of the vector."""
         return self._cpp_object.array
 
-    def set(self, value: np.floating) -> None:
-        self._cpp_object.set(value)
-
     def scatter_forward(self) -> None:
+        """Update ghost entries."""
         self._cpp_object.scatter_forward()
 
-    def scatter_reverse(self, mode: InsertMode):
+    def scatter_reverse(self, mode: InsertMode) -> None:
+        """Scatter ghost entries to owner.
+
+        Args:
+            mode: Control how scattered values are set/accumulated by owner.
+
+        """
         self._cpp_object.scatter_reverse(mode)
 
     def norm(self, type=_cpp.la.Norm.l2) -> np.floating:
+        """Compute a norm of the vector.
+
+        Args:
+            type: Norm type to computed.
+
+        Returns:
+            Computed norm.
+
+        """
         return self._cpp_object.norm(type)
 
 
@@ -195,14 +250,34 @@ def create_petsc_vector_wrap(x: Vector):
         x: The vector to wrap as a PETSc vector.
 
     Returns:
-        A PETSc vector that shares data with `x`.
+        A PETSc vector that shares data with ``x``.
 
     Note:
-        The vector `x` must not be destroyed before the returned PETSc
+        The vector ``x`` must not be destroyed before the returned PETSc
         object.
 
     """
-    return _cpp.la.petsc.create_vector_wrap(x._cpp_object)
+    from petsc4py import PETSc
+    map = x.index_map
+    ghosts = map.ghosts.astype(PETSc.IntType)
+    bs = x.block_size
+    size = (map.size_local * bs, map.size_global * bs)
+    return PETSc.Vec().createGhostWithArray(ghosts, x.array, size=size, bsize=bs, comm=map.comm)
+
+
+def create_petsc_vector(map, bs: int):
+    """Create a distributed PETSc vector.
+
+    Args:
+        map: Index map that describes the size and parallel layout of
+            the vector to create.
+        bs: Block size of the vector.
+
+    """
+    from petsc4py import PETSc
+    ghosts = map.ghosts.astype(PETSc.IntType)
+    size = (map.size_local * bs, map.size_global * bs)
+    return PETSc.Vec().createGhost(ghosts, size=size, bsize=bs, comm=map.comm)
 
 
 def orthonormalize(basis):

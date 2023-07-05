@@ -33,11 +33,12 @@ from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (CellType, GhostMode, create_box,
                           locate_entities_boundary)
+from mpi4py import MPI
 from petsc4py import PETSc
 from ufl import dx, grad, inner
 
-from dolfinx import default_real_type, la
-from mpi4py import MPI
+import dolfinx
+from dolfinx import la
 
 dtype = PETSc.ScalarType
 # -
@@ -58,33 +59,32 @@ def build_nullspace(V):
     # Create vectors that will span the nullspace
     bs = V.dofmap.index_map_bs
     length0 = V.dofmap.index_map.size_local
-    length1 = length0 + V.dofmap.index_map.num_ghosts
-    basis = [np.zeros(bs * length1, dtype=dtype) for i in range(6)]
+    basis = [la.vector(V.dofmap.index_map, bs=bs, dtype=dtype) for i in range(6)]
+    b = [b.array for b in basis]
 
     # Get dof indices for each subspace (x, y and z dofs)
     dofs = [V.sub(i).dofmap.list.flatten() for i in range(3)]
 
     # Set the three translational rigid body modes
     for i in range(3):
-        basis[i][dofs[i]] = 1.0
+        b[i][dofs[i]] = 1.0
 
     # Set the three rotational rigid body modes
     x = V.tabulate_dof_coordinates()
     dofs_block = V.dofmap.list.flatten()
     x0, x1, x2 = x[dofs_block, 0], x[dofs_block, 1], x[dofs_block, 2]
-    basis[3][dofs[0]] = -x1
-    basis[3][dofs[1]] = x0
-    basis[4][dofs[0]] = x2
-    basis[4][dofs[2]] = -x0
-    basis[5][dofs[2]] = x1
-    basis[5][dofs[1]] = -x2
+    b[3][dofs[0]] = -x1
+    b[3][dofs[1]] = x0
+    b[4][dofs[0]] = x2
+    b[4][dofs[2]] = -x0
+    b[5][dofs[2]] = x1
+    b[5][dofs[1]] = -x2
 
-    # Create PETSc Vec objects (excluding ghosts) and normalise
-    basis_petsc = [PETSc.Vec().createWithArray(x[:bs * length0], bsize=3, comm=V.mesh.comm) for x in basis]
-    la.orthonormalize(basis_petsc)
-    assert la.is_orthonormal(basis_petsc, eps=1.0e3 * np.finfo(default_real_type).eps)
+    _basis = [x._cpp_object for x in basis]
+    dolfinx.cpp.la.orthonormalize(_basis)
+    assert dolfinx.cpp.la.is_orthonormal(_basis)
 
-    # Create and return a PETSc nullspace
+    basis_petsc = [PETSc.Vec().createWithArray(x[:bs * length0], bsize=3, comm=V.mesh.comm) for x in b]
     return PETSc.NullSpace().create(vectors=basis_petsc)
 
 
@@ -167,6 +167,7 @@ set_bc(b, [bc])
 
 ns = build_nullspace(V)
 A.setNearNullSpace(ns)
+A.setOption(PETSc.Mat.Option.SPD, True)
 
 # Set PETSc solver options, create a PETSc Krylov solver, and attach the
 # matrix `A` to the solver:
@@ -175,7 +176,7 @@ A.setNearNullSpace(ns)
 # Set solver options
 opts = PETSc.Options()
 opts["ksp_type"] = "cg"
-opts["ksp_rtol"] = 1.0e-10
+opts["ksp_rtol"] = 1.0e-8
 opts["pc_type"] = "gamg"
 
 # Use Chebyshev smoothing for multigrid
@@ -183,8 +184,7 @@ opts["mg_levels_ksp_type"] = "chebyshev"
 opts["mg_levels_pc_type"] = "jacobi"
 
 # Improve estimate of eigenvalues for Chebyshev smoothing
-opts["mg_levels_esteig_ksp_type"] = "cg"
-opts["mg_levels_ksp_chebyshev_esteig_steps"] = 20
+opts["mg_levels_ksp_chebyshev_esteig_steps"] = 10
 
 # Create PETSc Krylov solver and turn convergence monitoring on
 solver = PETSc.KSP().create(msh.comm)
