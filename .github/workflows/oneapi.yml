@@ -84,6 +84,7 @@ jobs:
       - name: Build DOLFINx Python interface
         run: |
           . /opt/intel/oneapi/setvars.sh
+          pip -v install -r python/build-requirements.txt
           pip -v install --no-build-isolation python/
       - name: Set default DOLFINx JIT options
         run: |

@@ -54,7 +54,9 @@ jobs:
           ctest -V -R demo -R mpi_2
 
       - name: Build Python interface
-        run: python3 -m pip -v --config-setting cmake.build-type=Debug install --no-build-isolation python/
+        run:
+          python3 -m pip -v install -r python/build-requirements.txt
+          python3 -m pip -v install --no-build-isolation -C skikit.cmake.build-type=Debug python/
 
       - name: Set default DOLFINx JIT options
         run: |
