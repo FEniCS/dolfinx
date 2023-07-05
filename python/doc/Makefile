@@ -4,7 +4,7 @@
 # You can set these variables from the command line.
 # Sphinx warnings as errors disabled due to
 # https://github.com/sphinx-doc/sphinx/issues/4961
-# SPHINXOPTS    = -W
+SPHINXOPTS    = -W
 SPHINXBUILD   = sphinx-build
 SPHINXPROJ    = FEniCSProject
 SOURCEDIR     = source

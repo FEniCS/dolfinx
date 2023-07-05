@@ -131,8 +131,7 @@ def compute_closest_entity(tree: BoundingBoxTree, midpoint_tree: BoundingBoxTree
         midpoint_tree: A bounding box tree with the midpoints of all
             the mesh entities. This is used to accelerate the search.
         mesh: The mesh.
-        points: The points to check for collision, ``shape=(num_points,
-        3)``.
+        points: The points to check for collision, ``shape=(num_points,3)``.
 
     Returns:
         Mesh entity index for each point in ``points``. Returns -1 for a
@@ -164,8 +163,7 @@ def compute_colliding_cells(mesh: Mesh, candidates: AdjacencyList_int32, x: npt.
         mesh: The mesh.
         candidate_cells: Adjacency list of candidate colliding cells for
             the ith point in ``x``.
-        points: The points to check for collision ``shape=(num_points,
-        3)``,
+        points: The points to check for collision ``shape=(num_points, 3)``,
 
     Returns:
         Adjacency list where the ith node is the list of entities that
