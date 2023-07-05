@@ -13,7 +13,6 @@ import basix.ufl
 import numpy as np
 import numpy.typing as npt
 import ufl
-from dolfinx.cpp.io import FidesMeshPolicy  # noqa F401
 from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh  # noqa F401
 from dolfinx.cpp.io import perm_vtk as cell_perm_vtk  # noqa F401
 from dolfinx.fem import Function
@@ -34,9 +33,10 @@ def _extract_cpp_functions(functions: typing.Union[typing.List[Function], Functi
         return [getattr(functions, "_cpp_object", functions)]
 
 
+# FidesWriter and VTXWriter require ADIOS2
 if _cpp.common.has_adios2:
-    # FidesWriter and VTXWriter require ADIOS2
-    __all__ = __all__ + ["FidesWriter", "VTXWriter"]
+    from dolfinx.cpp.io import FidesMeshPolicy  # noqa F401
+    __all__ = __all__ + ["FidesWriter", "VTXWriter", "FidesMeshPolicy"]
 
     class VTXWriter:
         """Writer for VTX files, using ADIOS2 to create the files.
@@ -76,7 +76,8 @@ if _cpp.common.has_adios2:
                     dtype = output.function_space.mesh.geometry.x.dtype  # type: ignore
                 except AttributeError:
                     # type: ignore
-                    dtype = output[0].function_space.mesh.geometry.x.dtype  # type: ignore
+                    # type: ignore
+                    dtype = output[0].function_space.mesh.geometry.x.dtype
 
             if dtype == np.float32:
                 _vtxwriter = _cpp.io.VTXWriter_float32
@@ -85,7 +86,8 @@ if _cpp.common.has_adios2:
 
             try:
                 # Input is a mesh
-                self._cpp_object = _vtxwriter(comm, filename, output._cpp_object, engine)  # type: ignore[union-attr]
+                self._cpp_object = _vtxwriter(
+                    comm, filename, output._cpp_object, engine)  # type: ignore[union-attr]
             except (NotImplementedError, TypeError, AttributeError):
                 # Input is a single function or a list of functions
                 self._cpp_object = _vtxwriter(comm, filename, _extract_cpp_functions(
@@ -146,7 +148,8 @@ if _cpp.common.has_adios2:
                 try:
                     dtype = output.function_space.mesh.geometry.x.dtype  # type: ignore
                 except AttributeError:
-                    dtype = output[0].function_space.mesh.geometry.x.dtype  # type: ignore
+                    # type: ignore
+                    dtype = output[0].function_space.mesh.geometry.x.dtype
 
             if dtype == np.float32:
                 _fides_writer = _cpp.io.FidesWriter_float32
@@ -154,7 +157,8 @@ if _cpp.common.has_adios2:
                 _fides_writer = _cpp.io.FidesWriter_float64
 
             try:
-                self._cpp_object = _fides_writer(comm, filename, output._cpp_object, engine)  # type: ignore
+                self._cpp_object = _fides_writer(
+                    comm, filename, output._cpp_object, engine)  # type: ignore
             except (NotImplementedError, TypeError, AttributeError):
                 self._cpp_object = _fides_writer(comm, filename, _extract_cpp_functions(
                     output), engine, mesh_policy)  # type: ignore[arg-type]
@@ -244,7 +248,8 @@ class XDMFFile(_cpp.io.XDMFFile):
         msh.name = name
 
         domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_shape.name, cell_degree,
-                                            basix.LagrangeVariant.equispaced, shape=(x.shape[1], ),
+                                            basix.LagrangeVariant.equispaced, shape=(
+                                                x.shape[1], ),
                                             gdim=x.shape[1]))
         return Mesh(msh, domain)
 
