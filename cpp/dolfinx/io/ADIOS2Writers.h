@@ -569,9 +569,9 @@ public:
     assert(_io);
     assert(_engine);
     _engine->BeginStep();
-    adios2::Variable var_step
+    adios2::Variable step_variable
         = impl_adios2::define_variable<double>(*_io, "step");
-    _engine->template Put<double>(var_step, t);
+    _engine->template Put<double>(step_variable, t);
     if (auto v = _io->template InquireVariable<std::int64_t>("connectivity");
         !v or _mesh_reuse_policy == FidesMeshPolicy::update)
     {
@@ -868,15 +868,13 @@ void write_mesh(adios2::IO& io, adios2::Engine& engine,
       {num_xdofs_local, gdim});
   engine.Put<T>(local_geometry, geometry_b.data());
 
-  // Put topology (connectivity)
-  auto topology = mesh.topology_mutable();
+  // Extract topology (cell) information
+  auto topology = mesh.topology();
   assert(topology);
-
-  // Extract cell information
   auto cell_imap = topology->index_map(topology->dim());
-  std::int32_t num_cells_local = cell_imap->size_local();
-  std::int64_t num_cells_global = cell_imap->size_global();
-  std::array<std::int64_t, 2> local_range_cell = cell_imap->local_range();
+  const std::size_t num_cells_local = cell_imap->size_local();
+  const std::size_t num_cells_global = cell_imap->size_global();
+  const std::size_t local_range_cell = cell_imap->local_range()[0];
 
   // Extract geometry information
   if (geometry.cmaps().size() > 1)
@@ -887,6 +885,7 @@ void write_mesh(adios2::IO& io, adios2::Engine& engine,
   std::experimental::mdspan<const std::int32_t,
                             std::experimental::dextents<std::size_t, 2>>
       geometry_dmap = geometry.dofmap();
+
   // Convert local geometry to global geometry
   std::vector<std::int64_t> connectivity_out(num_cells_local
                                              * num_dofs_per_cell);
@@ -898,20 +897,19 @@ void write_mesh(adios2::IO& io, adios2::Engine& engine,
   // Put local topology in global dataset
   adios2::Variable<std::int64_t> local_topology
       = impl_adios2::define_variable<std::int64_t>(
-          io, "connectivity",
-          {(std::size_t)num_cells_global, (std::size_t)num_dofs_per_cell},
-          {(std::size_t)local_range_cell[0], (std::size_t)0},
-          {(std::size_t)num_cells_local, (std::size_t)num_dofs_per_cell});
+          io, "connectivity", {num_cells_global, num_dofs_per_cell},
+          {local_range_cell, 0}, {num_cells_local, num_dofs_per_cell});
   engine.Put<std::int64_t>(local_topology, connectivity_out.data());
 
-  // Compute mesh permutations
-  topology->create_entity_permutations();
+  // Compute mesh permutations and store them to file
+  // These are only needed for when we want to checkpoint functions
+  mesh.topology_mutable()->create_entity_permutations();
   const std::vector<std::uint32_t>& cell_perm
       = topology->get_cell_permutation_info();
   adios2::Variable<std::uint32_t> local_cell_perm
       = impl_adios2::define_variable<std::uint32_t>(
-          io, "CellPermutations", {(std::size_t)num_cells_global},
-          {(std::size_t)local_range_cell[0]}, {(std::size_t)num_cells_local});
+          io, "CellPermutations", {num_cells_global}, {local_range_cell},
+          {num_cells_local});
   engine.Put<std::uint32_t>(local_cell_perm, cell_perm.data());
 
   engine.PerformPuts();
@@ -920,7 +918,7 @@ void write_mesh(adios2::IO& io, adios2::Engine& engine,
 } // namespace impl_checkpoint
 
 template <std::floating_point T>
-class ADIOS2Checkpointer
+class Checkpointer
 {
 public:
   /// @privatesection
@@ -940,8 +938,8 @@ public:
   /// @param[in] filename Name of output file
   /// @param[in] mesh The mesh
   /// @note This format support arbitrary degree meshes
-  ADIOS2Checkpointer(MPI_Comm comm, const std::filesystem::path& filename,
-                     std::shared_ptr<const mesh::Mesh<T>> mesh)
+  Checkpointer(MPI_Comm comm, const std::filesystem::path& filename,
+               std::shared_ptr<const mesh::Mesh<T>> mesh)
       : _adios(std::make_unique<adios2::ADIOS>(comm)),
         _io(std::make_unique<adios2::IO>(
             _adios->DeclareIO("ADIOS2 checkpoint writer"))),
@@ -949,7 +947,7 @@ public:
             _io->Open(filename, adios2::Mode::Write))),
         _mesh(mesh), _u({}), _comm(comm)
   {
-    // Define time independent attributes
+    // Define time-independent topology attributes (cell type)
     auto topology = mesh->topology();
     assert(topology);
     if (topology->cell_types().size() > 1)
@@ -957,6 +955,8 @@ public:
     impl_adios2::define_attribute<int>(*this->_io, "CellType",
                                        int(topology->cell_types()[0]));
 
+    // Extract time-independent coordinate-element attributes (Lagrange variant
+    // and degree)
     const mesh::Geometry<T>& geometry = mesh->geometry();
     if (geometry.cmaps().size() > 1)
       throw std::runtime_error("Multiple coordinate maps not supported");
@@ -973,7 +973,7 @@ public:
   /// @param[in] comm The MPI communicator to open the file on
   /// @param[in] filename Name of input file
   /// @note This format support arbitrary degree meshes
-  ADIOS2Checkpointer(MPI_Comm comm, const std::filesystem::path& filename)
+  Checkpointer(MPI_Comm comm, const std::filesystem::path& filename)
       : _adios(std::make_unique<adios2::ADIOS>(comm)),
         _io(std::make_unique<adios2::IO>(
             _adios->DeclareIO("ADIOS2 checkpoint reader"))),
@@ -990,11 +990,11 @@ public:
   {
     assert(this->_io);
     assert(this->_engine);
-    adios2::Variable<double> var_step
+    adios2::Variable<double> step_variable
         = impl_adios2::define_variable<double>(*this->_io, "step");
 
     this->_engine->BeginStep();
-    this->_engine->template Put<double>(var_step, t);
+    this->_engine->template Put<double>(step_variable, t);
 
     impl_checkpoint::write_mesh(*this->_io, *this->_engine, *this->_mesh);
     // If we have no functions write the mesh to file
@@ -1012,14 +1012,14 @@ public:
 
     assert(this->_engine);
 
-    const int size = MPI::size(this->_comm.comm());
-    const int rank = MPI::rank(this->_comm.comm());
+    const int size = dolfinx::MPI::size(this->_comm.comm());
+    const int rank = dolfinx::MPI::rank(this->_comm.comm());
 
     // Determine what step to read mesh from
-    adios2::Variable<double> var_step
+    adios2::Variable<double> step_variable
         = this->_io->template InquireVariable<double>("step");
 
-    if (!var_step)
+    if (!step_variable)
       throw std::runtime_error("Could not find 'step' variable in input file");
     bool found_step = false;
     const std::size_t num_steps = this->_engine->Steps();
@@ -1027,8 +1027,9 @@ public:
     for (std::size_t i = 0; i < num_steps; ++i)
     {
       double time;
-      var_step.SetStepSelection(adios2::Box<std::size_t>{i, (std::size_t)1});
-      this->_engine->Get(var_step, time, adios2::Mode::Sync);
+      step_variable.SetStepSelection(
+          adios2::Box<std::size_t>{i, (std::size_t)1});
+      this->_engine->Get(step_variable, time, adios2::Mode::Sync);
       if (std::abs(time - t) < 1e-15)
       {
         read_step = i;
@@ -1075,41 +1076,42 @@ public:
     fem::CoordinateElement<T> cmap(cell_type, degree, lagrange_variant);
 
     // Get mesh geometry
-    adios2::Variable<T> var_geom
+    adios2::Variable<T> geometry_variable
         = this->_io->template InquireVariable<T>("geometry");
-    if (!var_geom)
+    if (!geometry_variable)
     {
       throw std::runtime_error(
           "Could not find 'geometry' variable in input file");
     }
-    var_geom.SetStepSelection(read_selection);
-    adios2::Dims x_shape = var_geom.Shape();
+    geometry_variable.SetStepSelection(read_selection);
+    adios2::Dims x_shape = geometry_variable.Shape();
     const std::array<std::int64_t, 2> geom_range
-        = MPI::local_range(rank, x_shape[0], size);
-    var_geom.SetSelection({{(std::size_t)geom_range[0], (std::size_t)0},
-                           {std::size_t(geom_range[1] - geom_range[0]),
-                            (std::size_t)x_shape[1]}});
+        = dolfinx::MPI::local_range(rank, x_shape[0], size);
+    geometry_variable.SetSelection(
+        {{(std::size_t)geom_range[0], (std::size_t)0},
+         {std::size_t(geom_range[1] - geom_range[0]),
+          (std::size_t)x_shape[1]}});
     std::vector<T> nodes((geom_range[1] - geom_range[0]) * x_shape[1]);
-    this->_engine->Get(var_geom, nodes);
+    this->_engine->Get(geometry_variable, nodes);
 
     // Get mesh topology
-    adios2::Variable<std::int64_t> var_top
+    adios2::Variable<std::int64_t> topology_variable
         = this->_io->template InquireVariable<std::int64_t>("connectivity");
-    if (!var_top)
+    if (!topology_variable)
     {
       throw std::runtime_error(
           "Could not find 'connectivity' variable in input file");
     }
-    var_top.SetStepSelection(read_selection);
-    adios2::Dims t_shape = var_top.Shape();
+    topology_variable.SetStepSelection(read_selection);
+    adios2::Dims t_shape = topology_variable.Shape();
     const std::array<std::int64_t, 2> top_range
-        = MPI::local_range(rank, t_shape[0], size);
-    var_top.SetSelection(
+        = dolfinx::MPI::local_range(rank, t_shape[0], size);
+    topology_variable.SetSelection(
         {{(std::size_t)top_range[0], (std::size_t)0},
          {std::size_t(top_range[1] - top_range[0]), (std::size_t)t_shape[1]}});
     std::vector<std::int64_t> connectivity((top_range[1] - top_range[0])
                                            * t_shape[1]);
-    this->_engine->Get(var_top, connectivity);
+    this->_engine->Get(topology_variable, connectivity);
     this->_engine->PerformGets();
 
     std::vector<std::int32_t> offset(top_range[1] - top_range[0] + 1, 0);
@@ -1126,19 +1128,19 @@ public:
   }
 
   /// @brief Move constructor
-  ADIOS2Checkpointer(ADIOS2Checkpointer&& writer) = default;
+  Checkpointer(Checkpointer&& writer) = default;
 
   /// @brief Copy constructor
-  ADIOS2Checkpointer(const ADIOS2Checkpointer&) = delete;
+  Checkpointer(const Checkpointer&) = delete;
 
   /// @brief Destructor
-  ~ADIOS2Checkpointer() { close(); }
+  ~Checkpointer() { close(); }
 
   /// @brief Move assignment
-  ADIOS2Checkpointer& operator=(ADIOS2Checkpointer&& writer) = default;
+  Checkpointer& operator=(Checkpointer&& writer) = default;
 
   // Copy assignment
-  ADIOS2Checkpointer& operator=(const ADIOS2Checkpointer&) = delete;
+  Checkpointer& operator=(const Checkpointer&) = delete;
 
   /// @brief  Close the file
   void close()
@@ -1284,10 +1286,10 @@ public:
   {
     assert(_io);
     assert(_engine);
-    adios2::Variable var_step
+    adios2::Variable step_variable
         = impl_adios2::define_variable<double>(*_io, "step");
     _engine->BeginStep();
-    _engine->template Put<double>(var_step, t);
+    _engine->template Put<double>(step_variable, t);
 
     // If we have no functions write the mesh to file
     if (_u.empty())
