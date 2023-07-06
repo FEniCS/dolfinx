@@ -618,7 +618,7 @@ graph::AdjacencyList<std::int32_t> compute_colliding_cells(
   std::vector<std::int32_t> offsets = {0};
   offsets.reserve(candidate_cells.num_nodes() + 1);
   std::vector<std::int32_t> colliding_cells;
-  constexpr T eps2 = 1.0e2 * std::numeric_limits<T>::epsilon();
+  constexpr T eps2 = 1e-12;
   const int tdim = mesh.topology()->dim();
   for (std::int32_t i = 0; i < candidate_cells.num_nodes(); i++)
   {
