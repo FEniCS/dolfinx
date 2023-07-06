@@ -47,7 +47,8 @@ namespace dolfinx::fem
 /// @param[in] V1 Nédélec (first kind) element and and dofmap for
 /// corresponding space to interpolate into
 /// @param[in] mat_set A functor that sets values in a matrix
-template <typename T, std::floating_point U = dolfinx::scalar_value_type_t<T>>
+template <dolfinx::scalar T,
+          std::floating_point U = dolfinx::scalar_value_type_t<T>>
 void discrete_gradient(mesh::Topology& topology,
                        std::pair<std::reference_wrapper<const FiniteElement<U>>,
                                  std::reference_wrapper<const DofMap>>
@@ -146,7 +147,7 @@ void discrete_gradient(mesh::Topology& topology,
 /// @param[in] V0 The space to interpolate from
 /// @param[in] V1 The space to interpolate to
 /// @param[in] mat_set A functor that sets values in a matrix
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 void interpolation_matrix(const FunctionSpace<U>& V0,
                           const FunctionSpace<U>& V1, auto&& mat_set)
 {
@@ -225,11 +226,11 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   e0->tabulate(basis_derivatives_reference0_b, X, Xshape, 0);
 
   // Clamp values
+  constexpr U atol = 1.0e2 * std::numeric_limits<U>::epsilon();
   std::transform(basis_derivatives_reference0_b.begin(),
                  basis_derivatives_reference0_b.end(),
                  basis_derivatives_reference0_b.begin(),
-                 [atol = 1e-14](auto x)
-                 { return std::abs(x) < atol ? 0.0 : x; });
+                 [atol](auto x) { return std::abs(x) < atol ? 0 : x; });
 
   // Create working arrays
   std::vector<U> basis_reference0_b(Xshape[0] * dim0 * value_size_ref0);

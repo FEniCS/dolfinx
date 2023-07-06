@@ -14,18 +14,19 @@ if typing.TYPE_CHECKING:
 
 from functools import singledispatch
 
-import basix
-import basix.ufl
 import numpy as np
 import numpy.typing as npt
+
+import basix
+import basix.ufl
 import ufl
 import ufl.algorithms
 import ufl.algorithms.analysis
-from dolfinx.fem import dofmap
-from ufl.domain import extract_unique_domain
-
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit, la
+from dolfinx.fem import dofmap
+from dolfinx.la import Vector
+from ufl.domain import extract_unique_domain
 
 
 class Constant(ufl.Constant):
@@ -121,13 +122,14 @@ class Expression:
         # Compile UFL expression with JIT
         if dtype == np.float32:
             form_compiler_options["scalar_type"] = "float"
-        if dtype == np.float64:
+        elif dtype == np.float64:
             form_compiler_options["scalar_type"] = "double"
+        elif dtype == np.complex64:
+            form_compiler_options["scalar_type"] = "float _Complex"
         elif dtype == np.complex128:
             form_compiler_options["scalar_type"] = "double _Complex"
         else:
-            raise RuntimeError(
-                f"Unsupported scalar type {dtype} for Expression.")
+            raise RuntimeError(f"Unsupported scalar type {dtype} for Expression.")
 
         self._ufcx_expression, module, self._code = jit.ffcx_jit(mesh.comm, (ufl_expression, _X),
                                                                  form_compiler_options=form_compiler_options,
@@ -159,6 +161,8 @@ class Expression:
                 return _cpp.fem.create_expression_float32
             elif dtype is np.float64:
                 return _cpp.fem.create_expression_float64
+            elif dtype is np.complex64:
+                return _cpp.fem.create_expression_complex64
             elif dtype is np.complex128:
                 return _cpp.fem.create_expression_complex128
             else:
@@ -179,19 +183,16 @@ class Expression:
             argument_space_dimension = 1
         else:
             argument_space_dimension = self.argument_function_space.element.space_dimension
-        values_shape = (_cells.shape[0], self.X(
-        ).shape[0] * self.value_size * argument_space_dimension)
+        values_shape = (_cells.shape[0], self.X().shape[0] * self.value_size * argument_space_dimension)
 
         # Allocate memory for result if u was not provided
         if values is None:
             values = np.zeros(values_shape, dtype=self.dtype)
         else:
             if values.shape != values_shape:
-                raise TypeError(
-                    "Passed array values does not have correct shape.")
+                raise TypeError("Passed array values does not have correct shape.")
             if values.dtype != self.dtype:
-                raise TypeError(
-                    "Passed array values does not have correct dtype.")
+                raise TypeError("Passed array values does not have correct dtype.")
 
         self._cpp_object.eval(cells, values)
 
@@ -238,8 +239,8 @@ class Function(ufl.Coefficient):
 
     """
 
-    def __init__(self, V: FunctionSpace, x: typing.Optional[la.VectorMetaClass] = None,
-                 name: typing.Optional[str] = None, dtype: np.dtype = default_scalar_type):
+    def __init__(self, V: FunctionSpace, x: typing.Optional[la.Vector] = None,
+                 name: typing.Optional[str] = None, dtype: typing.Optional[npt.DTypeLike] = None):
         """Initialize a finite element Function.
 
         Args:
@@ -247,9 +248,18 @@ class Function(ufl.Coefficient):
             x: Function degree-of-freedom vector. Typically required
                 only when reading a saved Function from file.
             name: Function name.
-            dtype: Scalar type.
+            dtype: Scalar type. Is not set, the DOLFINx default scalar
+                type is used.
 
         """
+        if x is not None:
+            if dtype is None:
+                dtype = x.array.dtype
+            else:
+                assert x.array.dtype == dtype, "Incompatible Vector and dtype."
+        else:
+            if dtype is None:
+                dtype = default_scalar_type
 
         # PETSc Vec wrapper around the C++ function data (constructed
         # when first requested)
@@ -269,7 +279,7 @@ class Function(ufl.Coefficient):
                 raise NotImplementedError(f"Type {dtype} not supported.")
 
         if x is not None:
-            self._cpp_object = functiontype(dtype)(V._cpp_object, x)
+            self._cpp_object = functiontype(dtype)(V._cpp_object, x._cpp_object)
         else:
             self._cpp_object = functiontype(dtype)(V._cpp_object)
 
@@ -301,10 +311,10 @@ class Function(ufl.Coefficient):
         point is ignored."""
 
         # Make sure input coordinates are a NumPy array
-        _x = np.asarray(x, dtype=np.float64)
+        _x = np.asarray(x, dtype=self._V.mesh.geometry.x.dtype)
         assert _x.ndim < 3
         if len(_x) == 0:
-            _x = np.zeros((0, 3))
+            _x = np.zeros((0, 3), dtype=self._V.mesh.geometry.x.dtype)
         else:
             shape0 = _x.shape[0] if _x.ndim == 2 else 1
             _x = np.reshape(_x, (shape0, -1))
@@ -321,10 +331,7 @@ class Function(ufl.Coefficient):
         # Allocate memory for return value if not provided
         if u is None:
             value_size = ufl.product(self.ufl_element().value_shape())
-            if np.issubdtype(default_scalar_type, np.complexfloating):
-                u = np.empty((num_points, value_size), dtype=np.complex128)
-            else:
-                u = np.empty((num_points, value_size))
+            u = np.empty((num_points, value_size), self.dtype)
 
         self._cpp_object.eval(_x, _cells, u)
         if num_points == 1:
@@ -381,19 +388,20 @@ class Function(ufl.Coefficient):
         degree-of-freedom vector is copied.
 
         """
-        return Function(self.function_space, type(self.x)(self.x))
+        return Function(self.function_space, Vector(type(self.x._cpp_object)(self.x._cpp_object)))
 
     @property
     def vector(self):
         """PETSc vector holding the degrees-of-freedom."""
         if self._petsc_x is None:
-            self._petsc_x = _cpp.la.petsc.create_vector_wrap(self.x)
+            from dolfinx.la import create_petsc_vector_wrap
+            self._petsc_x = create_petsc_vector_wrap(self.x)
         return self._petsc_x
 
     @property
     def x(self):
         """Vector holding the degrees-of-freedom."""
-        return self._cpp_object.x
+        return Vector(self._cpp_object.x)
 
     @property
     def dtype(self) -> np.dtype:
@@ -444,7 +452,7 @@ class Function(ufl.Coefficient):
     def collapse(self) -> Function:
         u_collapsed = self._cpp_object.collapse()
         V_collapsed = FunctionSpace(self.function_space._mesh, self.ufl_element(), u_collapsed.function_space)
-        return Function(V_collapsed, u_collapsed.x)
+        return Function(V_collapsed, Vector(u_collapsed.x))
 
 
 class ElementMetaData(typing.NamedTuple):
@@ -458,9 +466,12 @@ class FunctionSpace(ufl.FunctionSpace):
 
     def __init__(self, mesh: Mesh,
                  element: typing.Union[ufl.FiniteElementBase, ElementMetaData, typing.Tuple[str, int]],
-                 cppV: typing.Optional[_cpp.fem.FunctionSpace] = None,
+                 cppV: typing.Optional[typing.Union[_cpp.fem.FunctionSpace_float32,
+                                                    _cpp.fem.FunctionSpace_float64]] = None,
                  form_compiler_options: dict[str, typing.Any] = {}, jit_options: dict[str, typing.Any] = {}):
         """Create a finite element function space."""
+        dtype = mesh.geometry.x.dtype
+        assert dtype == np.float32 or dtype == np.float64
 
         if cppV is None:
             # Initialise the ufl.FunctionSpace
@@ -475,17 +486,28 @@ class FunctionSpace(ufl.FunctionSpace):
                 super().__init__(mesh.ufl_domain(), ufl_e)
 
             # Compile dofmap and element and create DOLFIN objects
+            if dtype == np.float32:
+                form_compiler_options["scalar_type"] = "float"
+            elif dtype == np.float64:
+                form_compiler_options["scalar_type"] = "double"
+
             (self._ufcx_element, self._ufcx_dofmap), module, code = jit.ffcx_jit(
                 mesh.comm, self.ufl_element(), form_compiler_options=form_compiler_options,
                 jit_options=jit_options)
 
             ffi = module.ffi
-            cpp_element = _cpp.fem.FiniteElement(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_element)))
+            if dtype == np.float32:
+                cpp_element = _cpp.fem.FiniteElement_float32(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_element)))
+            elif dtype == np.float64:
+                cpp_element = _cpp.fem.FiniteElement_float64(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_element)))
             cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, ffi.cast(
                 "uintptr_t", ffi.addressof(self._ufcx_dofmap)), mesh.topology, cpp_element)
 
             # Initialize the cpp.FunctionSpace and store mesh
-            self._cpp_object = _cpp.fem.FunctionSpace(mesh._cpp_object, cpp_element, cpp_dofmap)
+            try:
+                self._cpp_object = _cpp.fem.FunctionSpace_float64(mesh._cpp_object, cpp_element, cpp_dofmap)
+            except TypeError:
+                self._cpp_object = _cpp.fem.FunctionSpace_float32(mesh._cpp_object, cpp_element, cpp_dofmap)
             self._mesh = mesh
         else:
             # Create function space from a UFL element and an existing
@@ -515,7 +537,12 @@ class FunctionSpace(ufl.FunctionSpace):
             A new function space that shares data
 
         """
-        Vcpp = _cpp.fem.FunctionSpace(self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap)
+        try:
+            Vcpp = _cpp.fem.FunctionSpace_float64(
+                self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap)
+        except TypeError:
+            Vcpp = _cpp.fem.FunctionSpace_float32(
+                self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap)
         return FunctionSpace(self._mesh, self.ufl_element(), Vcpp)
 
     @property

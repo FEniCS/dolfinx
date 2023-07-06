@@ -39,7 +39,7 @@ using mdspan2_t
 /// positive the block size is used as a compile-time constant, which
 /// has performance benefits.
 /// @tparam _bs1 The block size of the trial function dof map.
-template <typename T, int _bs0 = -1, int _bs1 = -1>
+template <dolfinx::scalar T, int _bs0 = -1, int _bs1 = -1>
 void _lift_bc_cells(
     std::span<T> b, mdspan2_t x_dofmap,
     std::span<const scalar_value_type_t<T>> x, FEkernel<T> auto kernel,
@@ -189,7 +189,7 @@ void _lift_bc_cells(
 /// positive the block size is used as a compile-time constant, which
 /// has performance benefits.
 /// @tparam _bs1 The block size of the trial function dof map.
-template <typename T, int _bs = -1>
+template <dolfinx::scalar T, int _bs = -1>
 void _lift_bc_exterior_facets(
     std::span<T> b, mdspan2_t x_dofmap,
     std::span<const scalar_value_type_t<T>> x, FEkernel<T> auto kernel,
@@ -291,7 +291,7 @@ void _lift_bc_exterior_facets(
 /// positive the block size is used as a compile-time constant, which
 /// has performance benefits.
 /// @tparam _bs1 The block size of the trial function dof map.
-template <typename T, int _bs = -1>
+template <dolfinx::scalar T, int _bs = -1>
 void _lift_bc_interior_facets(
     std::span<T> b, mdspan2_t x_dofmap,
     std::span<const scalar_value_type_t<T>> x, int num_cell_facets,
@@ -479,7 +479,7 @@ void _lift_bc_interior_facets(
 /// less than zero the block size is determined at runtime. If `_bs` is
 /// positive the block size is used as a compile-time constant, which
 /// has performance benefits.
-template <typename T, int _bs = -1>
+template <dolfinx::scalar T, int _bs = -1>
 void assemble_cells(
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
@@ -544,7 +544,7 @@ void assemble_cells(
 /// less than zero the block size is determined at runtime. If `_bs` is
 /// positive the block size is used as a compile-time constant, which
 /// has performance benefits.
-template <typename T, int _bs = -1>
+template <dolfinx::scalar T, int _bs = -1>
 void assemble_exterior_facets(
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
@@ -611,7 +611,7 @@ void assemble_exterior_facets(
 /// less than zero the block size is determined at runtime. If `_bs` is
 /// positive the block size is used as a compile-time constant, which
 /// has performance benefits.
-template <typename T, int _bs = -1>
+template <dolfinx::scalar T, int _bs = -1>
 void assemble_interior_facets(
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
@@ -712,7 +712,7 @@ void assemble_interior_facets(
 /// @param[in] x0 The array used in the lifting, typically a 'current
 /// solution' in a Newton method
 /// @param[in] scale Scaling to apply
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
              std::span<const scalar_value_type_t<T>> x,
              std::span<const T> constants,
@@ -854,7 +854,7 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
 /// x0[2] block
 /// @param[in] x0 The vectors used in the lifting
 /// @param[in] scale Scaling to apply
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 void apply_lifting(
     std::span<T> b, const std::vector<std::shared_ptr<const Form<T, U>>> a,
     mdspan2_t x_dofmap, std::span<const scalar_value_type_t<T>> x,
@@ -922,7 +922,7 @@ void apply_lifting(
 /// @param[in] x Mesh coordinates
 /// @param[in] constants Packed constants that appear in `L`
 /// @param[in] coefficients Packed coefficients that appear in `L`
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 void assemble_vector(
     std::span<T> b, const Form<T, U>& L, mdspan2_t x_dofmap,
     std::span<const scalar_value_type_t<T>> x, std::span<const T> constants,
@@ -1061,7 +1061,7 @@ void assemble_vector(
 /// @param[in] L The linear forms to assemble into b
 /// @param[in] constants Packed constants that appear in `L`
 /// @param[in] coefficients Packed coefficients that appear in `L`
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 void assemble_vector(
     std::span<T> b, const Form<T, U>& L, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,

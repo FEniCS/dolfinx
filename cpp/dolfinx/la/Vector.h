@@ -7,9 +7,11 @@
 #pragma once
 
 #include "utils.h"
+#include <cmath>
 #include <complex>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Scatterer.h>
+#include <dolfinx/common/types.h>
 #include <limits>
 #include <memory>
 #include <numeric>
@@ -22,16 +24,16 @@ namespace dolfinx::la
 
 /// Distributed vector
 ///
-/// @tparam V data container type
-///
-template <typename Scalar, typename Container = std::vector<Scalar>>
+/// @tparam T Scalar type
+/// @tparam Container data container type
+template <typename T, typename Container = std::vector<T>>
 class Vector
 {
-  static_assert(std::is_same_v<typename Container::value_type, Scalar>);
+  static_assert(std::is_same_v<typename Container::value_type, T>);
 
 public:
   /// Scalar type
-  using value_type = Scalar;
+  using value_type = T;
 
   /// Container type
   using container_type = Container;
@@ -259,27 +261,40 @@ auto squared_norm(const V& a)
 
 /// Compute the norm of the vector
 /// @note Collective MPI operation
-/// @param a A vector
+/// @param x A vector
 /// @param type Norm type (supported types are \f$L^2\f$ and \f$L^\infty\f$)
 template <class V>
-auto norm(const V& a, Norm type = Norm::l2)
+auto norm(const V& x, Norm type = Norm::l2)
 {
   using T = typename V::value_type;
   switch (type)
   {
+  case Norm::l1:
+  {
+    std::int32_t size_local = x.bs() * x.index_map()->size_local();
+    std::span<const T> data = x.array().subspan(0, size_local);
+    using U = typename dolfinx::scalar_value_type_t<T>;
+    U local_l1
+        = std::accumulate(data.begin(), data.end(), U(0),
+                          [](auto norm, auto x) { return norm + std::abs(x); });
+    U l1(0);
+    MPI_Allreduce(&local_l1, &l1, 1, MPI::mpi_type<U>(), MPI_SUM,
+                  x.index_map()->comm());
+    return l1;
+  }
   case Norm::l2:
-    return std::sqrt(squared_norm(a));
+    return std::sqrt(squared_norm(x));
   case Norm::linf:
   {
-    const std::int32_t size_local = a.bs() * a.index_map()->size_local();
-    std::span<const T> x_a = a.array().subspan(0, size_local);
-    auto max_pos = std::max_element(x_a.begin(), x_a.end(),
+    std::int32_t size_local = x.bs() * x.index_map()->size_local();
+    std::span<const T> data = x.array().subspan(0, size_local);
+    auto max_pos = std::max_element(data.begin(), data.end(),
                                     [](T a, T b)
                                     { return std::norm(a) < std::norm(b); });
     auto local_linf = std::abs(*max_pos);
     decltype(local_linf) linf = 0;
     MPI_Allreduce(&local_linf, &linf, 1, MPI::mpi_type<decltype(linf)>(),
-                  MPI_MAX, a.index_map()->comm());
+                  MPI_MAX, x.index_map()->comm());
     return linf;
   }
   default:
@@ -291,53 +306,60 @@ auto norm(const V& a, Norm type = Norm::l2)
 /// @param[in,out] basis The set of vectors to orthonormalise. The
 /// vectors must have identical parallel layouts. The vectors are
 /// modified in-place.
-/// @param[in] tol The tolerance used to detect a linear dependency
+/// @tparam V dolfinx::la::Vector
 template <class V>
-void orthonormalize(std::span<V> basis, double tol = 1.0e-10)
+void orthonormalize(std::vector<std::reference_wrapper<V>> basis)
 {
   using T = typename V::value_type;
+  using U = typename dolfinx::scalar_value_type_t<T>;
+
   // Loop over each vector in basis
   for (std::size_t i = 0; i < basis.size(); ++i)
   {
     // Orthogonalize vector i with respect to previously orthonormalized
     // vectors
+    V& bi = basis[i].get();
     for (std::size_t j = 0; j < i; ++j)
     {
+      const V& bj = basis[j].get();
+
       // basis_i <- basis_i - dot_ij  basis_j
-      T dot_ij = inner_product(basis[i], basis[j]);
-      std::transform(basis[j].array().begin(), basis[j].array().end(),
-                     basis[i].array().begin(), basis[i].mutable_array().begin(),
+      auto dot_ij = inner_product(bi, bj);
+      std::transform(bj.array().begin(), bj.array().end(), bi.array().begin(),
+                     bi.mutable_array().begin(),
                      [dot_ij](auto xj, auto xi) { return xi - dot_ij * xj; });
     }
 
     // Normalise basis function
-    double norm = la::norm(basis[i], la::Norm::l2);
-    if (norm < tol)
+    auto norm = la::norm(bi, la::Norm::l2);
+    if (norm * norm < std::numeric_limits<U>::epsilon())
     {
       throw std::runtime_error(
           "Linear dependency detected. Cannot orthogonalize.");
     }
-    std::transform(basis[i].array().begin(), basis[i].array().end(),
-                   basis[i].mutable_array().begin(),
+    std::transform(bi.array().begin(), bi.array().end(),
+                   bi.mutable_array().begin(),
                    [norm](auto x) { return x / norm; });
   }
 }
 
-/// Test if basis is orthonormal
-/// @param[in] basis The set of vectors to check
-/// @param[in] tol The tolerance used to test for orthonormality
-/// @return True is basis is orthonormal, otherwise false
+/// @brief Test if basis is orthonormal.
+/// @param[in] basis The set of vectors to check.
+/// @return True is basis is orthonormal, otherwise false.
 template <class V>
-bool is_orthonormal(std::span<const V> basis, double tol = 1.0e-10)
+bool is_orthonormal(std::vector<std::reference_wrapper<const V>> basis)
 {
   using T = typename V::value_type;
+  using U = typename dolfinx::scalar_value_type_t<T>;
+
+  // auto tol = std::sqrt(T(std::numeric_limits<U>::epsilon()));
   for (std::size_t i = 0; i < basis.size(); i++)
   {
     for (std::size_t j = i; j < basis.size(); j++)
     {
-      const double delta_ij = (i == j) ? 1.0 : 0.0;
-      T dot_ij = inner_product(basis[i], basis[j]);
-      if (std::abs(delta_ij - dot_ij) > tol)
+      T delta_ij = (i == j) ? T(1) : T(0);
+      auto dot_ij = inner_product(basis[i].get(), basis[j].get());
+      if (std::norm(delta_ij - dot_ij) > std::numeric_limits<U>::epsilon())
         return false;
     }
   }

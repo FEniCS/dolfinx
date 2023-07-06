@@ -19,10 +19,21 @@ endif()
 include(CheckSymbolExists)
 set(CMAKE_REQUIRED_INCLUDES ${PETSC_INCLUDE_DIRS})
 check_symbol_exists(PETSC_USE_COMPLEX petscsystypes.h PETSC_SCALAR_COMPLEX)
+check_symbol_exists(PETSC_USE_REAL_DOUBLE petscsystypes.h PETSC_REAL_DOUBLE)
 
 # Add target to compile UFL files
 if(PETSC_SCALAR_COMPLEX EQUAL 1)
-  set(SCALAR_TYPE "--scalar_type=double _Complex")
+  if(PETSC_REAL_DOUBLE EQUAL 1)
+    set(SCALAR_TYPE "--scalar_type=double _Complex")
+  else()
+    set(SCALAR_TYPE "--scalar_type=float _Complex")
+  endif()
+else()
+  if(PETSC_REAL_DOUBLE EQUAL 1)
+    set(SCALAR_TYPE "--scalar_type=double")
+  else()
+    set(SCALAR_TYPE "--scalar_type=float")
+  endif()
 endif()
 add_custom_command(
   OUTPUT biharmonic.c

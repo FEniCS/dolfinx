@@ -4,81 +4,22 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import ctypes
-import ctypes.util
-
-import cffi
+import basix
 import numpy as np
 import pytest
-
-import basix
-import dolfinx.cpp
 import ufl
 from basix.ufl import blocked_element
-from dolfinx.cpp.la.petsc import create_matrix
 from dolfinx.fem import (Constant, Expression, Function, FunctionSpace,
-                         VectorFunctionSpace, create_sparsity_pattern, form)
-from dolfinx.fem.petsc import load_petsc_lib
+                         VectorFunctionSpace, form)
 from dolfinx.mesh import create_unit_square
 from ffcx.element_interface import QuadratureElement
-
 from mpi4py import MPI
-from petsc4py import PETSc
 
-numba = pytest.importorskip("numba")
-cffi_support = pytest.importorskip("numba.core.typing.cffi_utils")
+import dolfinx.cpp
+from dolfinx import default_real_type, default_scalar_type, fem, la
 
 
 dolfinx.cpp.common.init_logging(["-v"])
-
-# Get PETSc int and scalar types
-if np.dtype(PETSc.ScalarType).kind == 'c':
-    complex = True
-else:
-    complex = False
-
-scalar_size = np.dtype(PETSc.ScalarType).itemsize
-index_size = np.dtype(PETSc.IntType).itemsize
-
-if index_size == 8:
-    c_int_t = "int64_t"
-    ctypes_index: np.typing.DTypeLike = ctypes.c_int64
-elif index_size == 4:
-    c_int_t = "int32_t"
-    ctypes_index = ctypes.c_int32
-else:
-    raise RuntimeError("Cannot translate PETSc index size into a C type, index_size: {}.".format(index_size))
-
-if complex and scalar_size == 16:
-    c_scalar_t = "double _Complex"
-    numba_scalar_t = numba.types.complex128
-elif complex and scalar_size == 8:
-    c_scalar_t = "float _Complex"
-    numba_scalar_t = numba.types.complex64
-elif not complex and scalar_size == 8:
-    c_scalar_t = "double"
-    numba_scalar_t = numba.types.float64
-elif not complex and scalar_size == 4:
-    c_scalar_t = "float"
-    numba_scalar_t = numba.types.float32
-else:
-    raise RuntimeError(
-        "Cannot translate PETSc scalar type to a C type, complex: {} size: {}.".format(complex, scalar_size))
-
-
-# CFFI - register complex types
-ffi = cffi.FFI()
-cffi_support.register_type(ffi.typeof('double _Complex'), numba.types.complex128)
-cffi_support.register_type(ffi.typeof('float _Complex'), numba.types.complex64)
-
-# Get MatSetValuesLocal from PETSc available via cffi in ABI mode
-ffi.cdef("""int MatSetValuesLocal(void* mat, {0} nrow, const {0}* irow,
-                                  {0} ncol, const {0}* icol, const {1}* y, int addv);
-""".format(c_int_t, c_scalar_t))
-
-
-petsc_lib_cffi = load_petsc_lib(ffi.dlopen)
-MatSetValues = petsc_lib_cffi.MatSetValuesLocal
 
 
 def test_rank0():
@@ -86,18 +27,13 @@ def test_rank0():
     This test evaluates gradient of P2 function at interpolation points
     of vector dP1 element.
     For a donor function f(x, y) = x^2 + 2*y^2 result is compared with the
-    exact gradient grad f(x, y) = [2*x, 4*y].
-    """
+    exact gradient grad f(x, y) = [2*x, 4*y]."""
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
     P2 = FunctionSpace(mesh, ("P", 2))
     vdP1 = VectorFunctionSpace(mesh, ("DG", 1))
 
     f = Function(P2)
-
-    def expr1(x):
-        return x[0] ** 2 + 2.0 * x[1] ** 2
-
-    f.interpolate(expr1)
+    f.interpolate(lambda x: x[0] ** 2 + 2.0 * x[1] ** 2)
 
     ufl_expr = ufl.grad(f)
     points = vdP1.element.interpolation_points()
@@ -106,7 +42,6 @@ def test_rank0():
     num_cells = mesh.topology.index_map(2).size_local
     array_evaluated = compiled_expr.eval(np.arange(num_cells, dtype=np.int32))
 
-    @numba.njit
     def scatter(vec, array_evaluated, dofmap):
         for i in range(num_cells):
             for j in range(3):
@@ -115,95 +50,90 @@ def test_rank0():
 
     # Data structure for the result
     b = Function(vdP1)
-
     dofmap = vdP1.dofmap.list.flatten()
     scatter(b.x.array, array_evaluated, dofmap)
     b.x.scatter_forward()
 
-    def grad_expr1(x):
-        return np.vstack((2.0 * x[0], 4.0 * x[1]))
-
     b2 = Function(vdP1)
-    b2.interpolate(grad_expr1)
+    b2.interpolate(lambda x: np.vstack((2.0 * x[0], 4.0 * x[1])))
 
-    assert np.allclose(b2.x.array, b.x.array)
+    assert np.allclose(b2.x.array, b.x.array, rtol=1.0e-5, atol=1.0e-5)
 
 
-def test_rank1_hdiv():
-    """Test rank-1 Expression, i.e. Expression containing Argument (TrialFunction)
-    Test compiles linear interpolation operator RT_2 -> vector DG_2 and assembles it into
-    global matrix A. Input space RT_2 is chosen because it requires dof permutations.
-    """
-    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_rank1_hdiv(dtype):
+    """Test rank-1 Expression, i.e. Expression containing Argument
+    (TrialFunction). Test compiles linear interpolation operator RT_2 ->
+    vector DG_2 and assembles it into global matrix A. Input space RT_2
+    is chosen because it requires dof permutations."""
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, dtype=dtype(0).real.dtype)
     vdP1 = VectorFunctionSpace(mesh, ("DG", 2))
     RT1 = FunctionSpace(mesh, ("RT", 2))
-
     f = ufl.TrialFunction(RT1)
 
     points = vdP1.element.interpolation_points()
-    compiled_expr = Expression(f, points)
-
+    compiled_expr = Expression(f, points, dtype=dtype)
     num_cells = mesh.topology.index_map(2).size_local
     array_evaluated = compiled_expr.eval(np.arange(num_cells, dtype=np.int32))
 
-    @numba.njit
     def scatter(A, array_evaluated, dofmap0, dofmap1):
         for i in range(num_cells):
             rows = dofmap0[i, :]
             cols = dofmap1[i, :]
-            A_local = array_evaluated[i, :]
-            MatSetValues(A, 12, rows.ctypes, 8, cols.ctypes, A_local.ctypes, 1)
+            A_local = array_evaluated[i, :].reshape(len(rows), len(cols))
+            for i, row in enumerate(rows):
+                for j, col in enumerate(cols):
+                    A[row, col] = A_local[i, j]
 
-    a = form(ufl.inner(f, ufl.TestFunction(vdP1)) * ufl.dx)
-    sparsity_pattern = create_sparsity_pattern(a)
-    sparsity_pattern.finalize()
-    A = create_matrix(MPI.COMM_WORLD, sparsity_pattern)
-
-    dofmap_col = RT1.dofmap.list.astype(np.dtype(PETSc.IntType))
-    dofmap_row = vdP1.dofmap.list.flatten()
-
+    dofmap_col = RT1.dofmap.list
+    dofmap_row = vdP1.dofmap.list
     dofmap_row_unrolled = (2 * np.repeat(dofmap_row, 2).reshape(-1, 2) + np.arange(2)).flatten()
-    dofmap_row = dofmap_row_unrolled.reshape(-1, 12).astype(np.dtype(PETSc.IntType))
-    scatter(A.handle, array_evaluated, dofmap_row, dofmap_col)
-    A.assemble()
+    dofmap_row = dofmap_row_unrolled.reshape(-1, 12)
 
-    g = Function(RT1, name="g")
+    a = form(ufl.inner(f, ufl.TestFunction(vdP1)) * ufl.dx, dtype=dtype)
+    A = fem.create_matrix(a, block_mode=la.BlockMode.expanded)
+    As = A.to_scipy(ghosted=True)
+    scatter(As, array_evaluated, dofmap_row, dofmap_col)
+    A.finalize()
 
-    def expr1(x):
-        return np.row_stack((np.sin(x[0]), np.cos(x[1])))
+    gvec = la.vector(A.index_map(1), bs=A.block_size[1], dtype=dtype)
+    g = Function(RT1, gvec, name="g", dtype=dtype)
 
     # Interpolate a numpy expression into RT1
-    g.interpolate(expr1)
+    g.interpolate(lambda x: np.row_stack((np.sin(x[0]), np.cos(x[1]))))
 
     # Interpolate RT1 into vdP1 (non-compiled interpolation)
-    h = Function(vdP1)
+    h = Function(vdP1, dtype=dtype)
     h.interpolate(g)
 
+    # Wrap A as SciPy sparse matrix, owned rows only
+    A1 = A.to_scipy(ghosted=False)
+
     # Interpolate RT1 into vdP1 (compiled, mat-vec interpolation)
-    h2 = Function(vdP1)
-    h2.vector.axpy(1.0, A * g.vector)
-
-    assert np.isclose((h2.vector - h.vector).norm(), 0.0)
-
-    A.destroy()
+    h2 = Function(vdP1, dtype=dtype)
+    h2.x.array[:A1.shape[0]] += A1 @ g.x.array
+    h2.x.scatter_forward()
+    assert np.linalg.norm(h2.x.array - h.x.array) == pytest.approx(0.0, abs=1.0e-4)
 
 
 def test_simple_evaluation():
     """Test evaluation of UFL Expression.
 
-    This test evaluates a UFL Expression on cells of the mesh and compares the
-    result with an analytical expression.
+    This test evaluates a UFL Expression on cells of the mesh and
+    compares the result with an analytical expression.
 
-    For a function f(x, y) = 3*(x^2 + 2*y^2) the result is compared with the
-    exact gradient:
+    For a function f(x, y) = 3*(x^2 + 2*y^2) the result is compared with
+    the exact gradient:
 
         grad f(x, y) = 3*[2*x, 4*y].
 
-    (x^2 + 2*y^2) is first interpolated into a P2 finite element space. The
-    scaling by a constant factor of 3 and the gradient is calculated using code
-    generated by FFCx. The analytical solution is found by evaluating the
-    spatial coordinates as an Expression using UFL/FFCx and passing the result
-    to a numpy function that calculates the exact gradient.
+    (x^2 + 2*y^2) is first interpolated into a P2 finite element space.
+    The scaling by a constant factor of 3 and the gradient is calculated
+    using code generated by FFCx. The analytical solution is found by
+    evaluating the spatial coordinates as an Expression using UFL/FFCx
+    and passing the result to a numpy function that calculates the exact
+    gradient.
+
     """
     mesh = create_unit_square(MPI.COMM_WORLD, 3, 3)
     P2 = FunctionSpace(mesh, ("P", 2))
@@ -228,7 +158,7 @@ def test_simple_evaluation():
     expr = Function(P2)
     expr.interpolate(exact_expr)
 
-    ufl_grad_f = Constant(mesh, PETSc.ScalarType(3.0)) * ufl.grad(expr)
+    ufl_grad_f = Constant(mesh, default_scalar_type(3.0)) * ufl.grad(expr)
     points = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
     grad_f_expr = Expression(ufl_grad_f, points)
     assert grad_f_expr.X().shape[0] == points.shape[0]
@@ -254,17 +184,16 @@ def test_simple_evaluation():
 
     # Evaluate exact gradient using global points
     grad_f_exact = exact_grad_f(x_evaluated)
-
-    assert np.allclose(grad_f_evaluated, grad_f_exact)
+    assert np.allclose(grad_f_evaluated, grad_f_exact, rtol=1.0e-5, atol=1.0e-5)
 
 
 def test_assembly_into_quadrature_function():
     """Test assembly into a Quadrature function.
 
-    This test evaluates a UFL Expression into a Quadrature function space by
-    evaluating the Expression on all cells of the mesh, and then inserting the
-    evaluated values into a PETSc Vector constructed from a matching Quadrature
-    function space.
+    This test evaluates a UFL Expression into a Quadrature function
+    space by evaluating the Expression on all cells of the mesh, and
+    then inserting the evaluated values into a Vector constructed from a
+    matching Quadrature function space.
 
     Concretely, we consider the evaluation of:
 
@@ -274,30 +203,31 @@ def test_assembly_into_quadrature_function():
 
         K = 1/(A + B*T)
 
-    where A and B are Constants and T is a Coefficient on a P2 finite element
-    space with T = x + 2*y.
+    where A and B are Constants and T is a Coefficient on a P2 finite
+    element space with T = x + 2*y.
 
-    The result is compared with interpolating the analytical expression of e
-    directly into the Quadrature space.
+    The result is compared with interpolating the analytical expression
+    of e directly into the Quadrature space.
 
-    In parallel, each process evaluates the Expression on both local cells and
-    ghost cells so that no parallel communication is required after insertion
-    into the vector.
+    In parallel, each process evaluates the Expression on both local
+    cells and ghost cells so that no parallel communication is required
+    after insertion into the vector.
 
     """
     mesh = create_unit_square(MPI.COMM_WORLD, 3, 6)
 
     quadrature_degree = 2
-    quadrature_points, wts = basix.make_quadrature(basix.CellType.triangle, quadrature_degree)
-    Q_element = blocked_element(
-        QuadratureElement("triangle", (), degree=quadrature_degree, scheme="default"), shape=(2, ))
+    quadrature_points, _ = basix.make_quadrature(basix.CellType.triangle, quadrature_degree)
+    quadrature_points = quadrature_points.astype(default_real_type)
+    Q_element = blocked_element(QuadratureElement(
+        "triangle", (), degree=quadrature_degree, scheme="default"), shape=(2, ))
     Q = FunctionSpace(mesh, Q_element)
     P2 = FunctionSpace(mesh, ("P", 2))
 
     T = Function(P2)
     T.interpolate(lambda x: x[0] + 2.0 * x[1])
-    A = Constant(mesh, PETSc.ScalarType(1.0))
-    B = Constant(mesh, PETSc.ScalarType(2.0))
+    A = Constant(mesh, default_scalar_type(1.0))
+    B = Constant(mesh, default_scalar_type(2.0))
 
     K = 1.0 / (A + B * T)
     e = B * K**2 * ufl.grad(T)
@@ -312,9 +242,12 @@ def test_assembly_into_quadrature_function():
 
     # Assemble into Function
     e_Q = Function(Q)
-    with e_Q.vector.localForm() as e_Q_local:
-        e_Q_local.setBlockSize(e_Q.function_space.dofmap.bs)
-        e_Q_local.setValuesBlocked(Q.dofmap.list.flatten(), e_eval, addv=PETSc.InsertMode.INSERT)
+    e_Q_local = e_Q.x.array
+    bs = e_Q.function_space.dofmap.bs
+    dofs = np.empty((bs * Q.dofmap.list.flatten().size,), dtype=np.int32)
+    for i in range(bs):
+        dofs[i::2] = bs * Q.dofmap.list.flatten() + i
+    e_Q_local[dofs] = e_eval.flatten()
 
     def e_exact(x):
         T = x[0] + 2.0 * x[1]
@@ -356,10 +289,8 @@ def test_expression_eval_cells_subset():
     V = dolfinx.fem.FunctionSpace(mesh, ("DG", 0))
 
     cells_imap = mesh.topology.index_map(mesh.topology.dim)
-    all_cells = np.arange(
-        cells_imap.size_local + cells_imap.num_ghosts, dtype=np.int32)
-    cells_to_dofs = np.fromiter(
-        map(V.dofmap.cell_dofs, all_cells), dtype=np.int32)
+    all_cells = np.arange(cells_imap.size_local + cells_imap.num_ghosts, dtype=np.int32)
+    cells_to_dofs = np.fromiter(map(V.dofmap.cell_dofs, all_cells), dtype=np.int32)
     dofs_to_cells = np.argsort(cells_to_dofs)
 
     u = dolfinx.fem.Function(V)
