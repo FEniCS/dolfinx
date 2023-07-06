@@ -57,6 +57,180 @@ constexpr mesh::CellType get_cell_type(int num_vertices, int tdim)
   }
 }
 
+void compute_shared_vertices(const MPI_Comm comm,
+                             std::span<const std::int64_t> vertex_indices)
+{
+  // Get unique set of sorted indices
+  std::vector<std::int64_t> indices(vertex_indices.begin(),
+                                    vertex_indices.end());
+  std::sort(indices.begin(), indices.end());
+  indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
+
+  // Find max index
+  std::int64_t local_max = indices.back();
+  std::int64_t global_max;
+  std::int64_t local_size = indices.size();
+  std::int64_t global_size;
+  MPI_Allreduce(&local_max, &global_max, 3, MPI_INT64_T, MPI_MAX, comm);
+  MPI_Allreduce(&local_size, &global_size, 3, MPI_INT64_T, MPI_SUM, comm);
+
+  // Compute 'fill ratio' - number of vertices to compute, as fraction of
+  // total.
+  double fill_ratio = (double)global_size / (double)global_max;
+  LOG(INFO) << "Fill ratio = " << fill_ratio << "\n";
+
+  // Number of PO - this should probably be fewer than mpi size?
+  int npo;
+  MPI_Comm_size(comm, &npo);
+
+  // Get post-office destination for each index
+  std::vector<int> index_dest(indices.size());
+  std::transform(indices.begin(), indices.end(), index_dest.begin(),
+                 [&](std::int64_t i)
+                 { return dolfinx::MPI::index_owner(npo, i, global_max); });
+
+  std::stringstream s;
+  int rank;
+  MPI_Comm_rank(comm, &rank);
+
+  s << "[";
+  for (auto q : index_dest)
+    s << q << " ";
+  s << "]";
+
+  LOG(WARNING) << rank << " - " << s.str();
+
+  s.str("");
+
+  // Get count for each destination
+  std::vector<int> send_count(npo, 0);
+  for (int d : index_dest)
+    ++send_count[d];
+
+  LOG(WARNING) << rank << " - " << s.str();
+
+  // Offset for each destination
+  std::vector<int> send_offsets(send_count.size() + 1, 0);
+  for (std::size_t i = 0; i < send_count.size(); ++i)
+    send_offsets[i + 1] = send_offsets[i] + send_count[i];
+  assert(send_offsets.back() == indices.size());
+
+  // Fill index_to_send with indices to send to each dest
+  std::vector<int> index_to_send(indices.size());
+  for (std::size_t i = 0; i < indices.size(); ++i)
+  {
+    index_to_send[send_offsets[index_dest[i]]] = indices[i];
+    ++send_offsets[index_dest[i]];
+  }
+
+  // Get actual neighbourhood destinations and
+  // recompute send_count and send_offsets based on neighbourhood
+  std::vector<int> dest;
+  int i = 0;
+  for (int j = 0; j < send_count.size(); ++j)
+  {
+    if (send_count[j] > 0)
+    {
+      dest.push_back(j);
+      send_count[i] = send_count[j];
+      ++i;
+    }
+  }
+  send_count.resize(dest.size());
+  send_offsets.resize(dest.size() + 1);
+  for (std::size_t i = 0; i < send_count.size(); ++i)
+    send_offsets[i + 1] = send_offsets[i] + send_count[i];
+  assert(send_offsets.back() == indices.size());
+
+  // Compute source
+  const std::vector<int> src
+      = dolfinx::MPI::compute_graph_edges_nbx(comm, dest);
+
+  // Create neighbourhood communicator for sending data to
+  // post offices
+  MPI_Comm ncomm;
+  MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(), MPI_UNWEIGHTED,
+                                 dest.size(), dest.data(), MPI_UNWEIGHTED,
+                                 MPI_INFO_NULL, false, &ncomm);
+
+  // Communicate the amount of data to receive and offsets
+  std::vector<int> recv_count(src.size());
+  std::vector<int> recv_offsets(src.size() + 1, 0);
+  send_count.reserve(1);
+  recv_count.reserve(1);
+  MPI_Neighbor_alltoall(send_count.data(), 1, MPI_INT, recv_count.data(), 1,
+                        MPI_INT, ncomm);
+  for (std::size_t i = 0; i < recv_count.size(); ++i)
+    recv_offsets[i + 1] = recv_offsets[i] + recv_count[i];
+
+  // Receive actual data from originating processes
+  std::vector<std::int64_t> index_to_recv(recv_offsets.back());
+  MPI_Neighbor_alltoallv(index_to_send.data(), send_count.data(),
+                         send_offsets.data(), MPI_INT64_T, index_to_recv.data(),
+                         recv_count.data(), recv_offsets.data(), MPI_INT64_T,
+                         ncomm);
+
+  // Compute permutation into order
+  std::vector<int> perm(index_to_recv.size());
+  std::iota(perm.begin(), perm.end(), 0);
+  std::sort(perm.begin(), perm.end(),
+            [&](int a, int b)
+            { return (index_to_recv[a] < index_to_recv[b]); });
+
+  // Traverse indices, looking for groups of repeated indices
+  std::vector<int> nbcount;
+  int count = 0;
+  for (std::size_t i = 1; i < perm.size(); ++i)
+  {
+    ++count;
+    if (index_to_recv[perm[i]] != index_to_recv[perm[i - 1]])
+    {
+      for (std::size_t j = i - count; j < i; ++j)
+        nbcount[perm[j]] = count + 1;
+      count = 0;
+    }
+  }
+  for (std::size_t j = perm.size() - count; j < perm.size(); ++j)
+    nbcount[perm[j]] = count + 1;
+
+  std::vector<int> nboffset(nbcount.size() + 1, 0);
+  for (std::size_t i = 0; i < nbcount.size(); ++i)
+    nboffset[i + 1] = nboffset[i] + nbcount[i];
+
+  // Convenience array with originating process
+  std::vector<int> originator(perm.size());
+  for (std::size_t i = 0; i < src.size(); ++i)
+  {
+    for (int j = recv_offsets[i]; j < recv_offsets[i + 1]; ++j)
+      originator[j] = src[i];
+  }
+
+  std::vector<int> send_back_reply(nboffset.back());
+  std::size_t i = 0;
+  while (i < perm.size())
+  {
+    int ngroup = nbcount[perm[i]];
+    for (int j = 0; j < ngroup; ++j)
+    {
+      int pos = nboffset[perm[i + j]];
+      send_back_reply[pos] = ngroup;
+      for (int k = 0; k < ngroup; ++k)
+      {
+        send_back_reply[pos + 1 + k] = originator[perm[i + k]];
+      }
+    }
+
+    i += ngroup;
+  }
+
+  // Get data ready to send back to originating processes
+
+  // We send back data for each index to the originator:
+  // If not shared, then just send back a zero.
+  // e.g. [0] means not shared, [1, 2] means shared with proc 2, [2,
+  // 3, 7] means shared with procs 3 and 7.
+}
+
 //-----------------------------------------------------------------------------
 
 /// @brief Build nonlocal part of dual graph for mesh and return number
@@ -86,6 +260,8 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
     std::size_t shape1, std::span<const std::int32_t> cells,
     const graph::AdjacencyList<std::int32_t>& local_graph)
 {
+  compute_shared_vertices(comm, facets);
+
   LOG(INFO) << "Build nonlocal part of mesh dual graph";
   common::Timer timer("Compute non-local part of mesh dual graph");
 
