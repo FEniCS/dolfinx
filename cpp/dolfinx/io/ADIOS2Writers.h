@@ -880,7 +880,8 @@ void write_mesh(adios2::IO& io, adios2::Engine& engine,
   if (geometry.cmaps().size() > 1)
     throw std::runtime_error("Multiple coordinate maps not supported");
   fem::ElementDofLayout geom_layout = geometry.cmaps()[0].create_dof_layout();
-  int num_dofs_per_cell = geom_layout.num_entity_closure_dofs(geometry.dim());
+  std::size_t num_dofs_per_cell
+      = geom_layout.num_entity_closure_dofs(geometry.dim());
   auto geometry_imap = geometry.index_map();
   std::experimental::mdspan<const std::int32_t,
                             std::experimental::dextents<std::size_t, 2>>
