@@ -56,7 +56,7 @@ jobs:
       - name: Build Python interface
         run: |
           python3 -m pip -v install -r python/build-requirements.txt
-          python3 -m pip -v install --no-build-isolation -C skikit.cmake.build-type=Debug python/
+          python3 -m pip -v install python/ --no-build-isolation --config-settings=cmake.build-type=Debug 
 
       - name: Set default DOLFINx JIT options
         run: |
