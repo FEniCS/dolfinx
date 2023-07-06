@@ -918,6 +918,7 @@ void write_mesh(adios2::IO& io, adios2::Engine& engine,
 
 } // namespace impl_checkpoint
 
+/// Read and write mesh::Mesh objects with ADIOS2
 template <std::floating_point T>
 class Checkpointer
 {
