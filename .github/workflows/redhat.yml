@@ -19,6 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     container: fenicsproject/test-env:current-redhat
 
+    name: Rocky build and test
+
     steps:
       - uses: actions/checkout@v3
 
