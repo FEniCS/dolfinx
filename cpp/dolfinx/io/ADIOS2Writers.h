@@ -978,7 +978,7 @@ public:
         _io(std::make_unique<adios2::IO>(
             _adios->DeclareIO("ADIOS2 checkpoint reader"))),
         _engine(std::make_unique<adios2::Engine>(
-            _io->Open(filename, adios2::Mode::Read))),
+            _io->Open(filename, adios2::Mode::ReadRandomAccess))),
         _comm(comm)
   {
     // Do  nothing
