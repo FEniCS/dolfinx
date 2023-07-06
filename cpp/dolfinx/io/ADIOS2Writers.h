@@ -1106,16 +1106,16 @@ public:
     adios2::Dims t_shape = topology_variable.Shape();
     const std::array<std::int64_t, 2> top_range
         = dolfinx::MPI::local_range(rank, t_shape[0], size);
+    const std::size_t num_cells_local = top_range[1] - top_range[0];
     topology_variable.SetSelection(
         {{(std::size_t)top_range[0], (std::size_t)0},
-         {std::size_t(top_range[1] - top_range[0]), (std::size_t)t_shape[1]}});
-    std::vector<std::int64_t> connectivity((top_range[1] - top_range[0])
-                                           * t_shape[1]);
+         {num_cells_local, (std::size_t)t_shape[1]}});
+    std::vector<std::int64_t> connectivity(num_cells_local * t_shape[1]);
     this->_engine->Get(topology_variable, connectivity);
     this->_engine->PerformGets();
 
-    std::vector<std::int32_t> offset(top_range[1] - top_range[0] + 1, 0);
-    for (std::size_t i = 0; i < top_range[1] - top_range[0]; ++i)
+    std::vector<std::int32_t> offset(num_cells_local + 1, 0);
+    for (std::size_t i = 0; i < num_cells_local; ++i)
       offset[i + 1] = offset[i] + t_shape[1];
 
     graph::AdjacencyList<std::int64_t> cells_adj(std::move(connectivity),
