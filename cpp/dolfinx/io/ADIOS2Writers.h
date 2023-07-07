@@ -719,25 +719,31 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   engine.Put(local_geometry, geometry.x().data());
 
   // Write global number of mesh nodes
-  adios2::Variable num_xdofs
-      = impl_adios2::define_variable<std::uint64_t>(io, "NumberOfNodes");
-  engine.Put<std::uint64_t>(num_xdofs, num_xdofs_global);
-
+  if (dolfinx::MPI::rank(mesh.comm()) == 0)
+  {
+    adios2::Variable num_xdofs
+        = impl_adios2::define_variable<std::uint64_t>(io, "NumberOfNodes");
+    engine.Put<std::uint64_t>(num_xdofs, num_xdofs_global);
+  }
   auto [vtkcells, shape] = io::extract_vtk_connectivity(
       geometry.dofmap(), topology->cell_types()[0]);
 
   // Add global number of cells and cell type (single type)
   int tdim = topology->dim();
   std::uint64_t num_cells_global = topology->index_map(tdim)->size_global();
-  adios2::Variable num_cells
-      = impl_adios2::define_variable<std::uint64_t>(io, "NumberOfCells");
-  engine.Put<std::uint64_t>(num_cells, num_cells_global);
 
-  adios2::Variable celltype_var
-      = impl_adios2::define_variable<std::uint32_t>(io, "types");
-  engine.Put<std::uint32_t>(
-      celltype_var, cells::get_vtk_cell_type(topology->cell_types()[0], tdim));
+  if (dolfinx::MPI::rank(mesh.comm()) == 0)
+  {
+    adios2::Variable num_cells
+        = impl_adios2::define_variable<std::uint64_t>(io, "NumberOfCells");
+    engine.Put<std::uint64_t>(num_cells, num_cells_global);
 
+    adios2::Variable celltype_var
+        = impl_adios2::define_variable<std::uint32_t>(io, "types");
+    engine.Put<std::uint32_t>(
+        celltype_var,
+        cells::get_vtk_cell_type(topology->cell_types()[0], tdim));
+  }
   // Convert geometry dofmap from local to global indices
   std::vector<std::int64_t> global_nodes(vtkcells.size());
   geometry.index_map()->local_to_global(vtkcells, global_nodes);

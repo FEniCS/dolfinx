@@ -231,8 +231,7 @@ def test_vtx_functions(tempdir, dtype, dim, simplex):
 
     # Set two cells to 0
     for c in [0, 1]:
-        dofs = np.asarray([V.dofmap.cell_dofs(c) * bs +
-                          b for b in range(bs)], dtype=np.int32)
+        dofs = np.asarray([V.dofmap.cell_dofs(c) * bs + b for b in range(bs)], dtype=np.int32)
         v.x.array[dofs] = 0
         w.x.array[W.dofmap.cell_dofs(c)] = 1
     v.x.scatter_forward()
