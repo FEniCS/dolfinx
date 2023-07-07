@@ -711,7 +711,7 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   // "Put" geometry
   std::shared_ptr<const common::IndexMap> x_map = geometry.index_map();
   std::uint32_t num_xdofs_local = x_map->size_local();
-  std::int64_t num_xdofs_global = geometry.index_map()->size_global();
+  std::size_t num_xdofs_global = geometry.index_map()->size_global();
   std::size_t local_x_offset = geometry.index_map()->local_range()[0];
   adios2::Variable local_geometry = impl_adios2::define_variable<T>(
       io, "geometry", {num_xdofs_global, 3}, {local_x_offset, 0},
