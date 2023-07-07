@@ -386,11 +386,12 @@ void write_mesh(adios2::IO& io, adios2::Engine& engine,
   int num_nodes = geometry.cmaps()[0].dim();
   auto [cells, shape] = io::extract_vtk_connectivity(mesh.geometry().dofmap(),
                                                      topology->cell_types()[0]);
+  std::vector<std::int64_t> global_cells(cells.begin(), cells.end());
 
   // "Put" topology data in the result in the ADIOS2 file
   adios2::Variable local_topology = impl_adios2::define_variable<std::int64_t>(
       io, "connectivity", {}, {}, {std::size_t(num_cells * num_nodes)});
-  engine.Put(local_topology, cells.data());
+  engine.Put(local_topology, global_cells.data());
   engine.PerformPuts();
 }
 
@@ -709,29 +710,37 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
 
   // "Put" geometry
   std::shared_ptr<const common::IndexMap> x_map = geometry.index_map();
-  std::uint32_t num_vertices = x_map->size_local() + x_map->num_ghosts();
+  std::uint32_t num_xdofs_local = x_map->size_local();
+  std::int64_t num_xdofs_global = geometry.index_map()->size_global();
+  std::size_t local_x_offset = geometry.index_map()->local_range()[0];
   adios2::Variable local_geometry = impl_adios2::define_variable<T>(
-      io, "geometry", {}, {}, {num_vertices, 3});
+      io, "geometry", {num_xdofs_global, 3}, {local_x_offset, 0},
+      {num_xdofs_local, 3});
   engine.Put(local_geometry, geometry.x().data());
 
-  // Put number of nodes. The mesh data is written with local indices,
-  // therefore we need the ghost vertices.
-  adios2::Variable vertices = impl_adios2::define_variable<std::uint32_t>(
-      io, "NumberOfNodes", {adios2::LocalValueDim});
-  engine.Put<std::uint32_t>(vertices, num_vertices);
+  // Write global number of mesh nodes
+  adios2::Variable num_xdofs
+      = impl_adios2::define_variable<std::uint64_t>(io, "NumberOfNodes");
+  engine.Put<std::uint64_t>(num_xdofs, num_xdofs_global);
 
   auto [vtkcells, shape] = io::extract_vtk_connectivity(
       geometry.dofmap(), topology->cell_types()[0]);
 
-  // Add cell metadata
+  // Add global number of cells and cell type (single type)
   int tdim = topology->dim();
-  adios2::Variable cell_var = impl_adios2::define_variable<std::uint32_t>(
-      io, "NumberOfCells", {adios2::LocalValueDim});
-  engine.Put<std::uint32_t>(cell_var, shape[0]);
+  std::uint64_t num_cells_global = topology->index_map(tdim)->size_global();
+  adios2::Variable num_cells
+      = impl_adios2::define_variable<std::uint64_t>(io, "NumberOfCells");
+  engine.Put<std::uint64_t>(num_cells, num_cells_global);
+
   adios2::Variable celltype_var
       = impl_adios2::define_variable<std::uint32_t>(io, "types");
   engine.Put<std::uint32_t>(
       celltype_var, cells::get_vtk_cell_type(topology->cell_types()[0], tdim));
+
+  // Convert geometry dofmap from local to global indices
+  std::vector<std::int64_t> global_nodes(vtkcells.size());
+  geometry.index_map()->local_to_global(vtkcells, global_nodes);
 
   // Pack mesh 'nodes'. Output is written as [N0, v0_0,...., v0_N0, N1,
   // v1_0,...., v1_N1,....], where N is the number of cell nodes and v0,
@@ -739,25 +748,29 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   std::vector<std::int64_t> cells(shape[0] * (shape[1] + 1), shape[1]);
   for (std::size_t c = 0; c < shape[0]; ++c)
   {
-    std::span vtkcell(vtkcells.data() + c * shape[1], shape[1]);
+    std::span vtkcell(global_nodes.data() + c * shape[1], shape[1]);
     std::span cell(cells.data() + c * (shape[1] + 1), shape[1] + 1);
     std::copy(vtkcell.begin(), vtkcell.end(), std::next(cell.begin()));
   }
 
   // Put topology (nodes)
+  std::size_t local_offset = topology->index_map(tdim)->local_range()[0];
   adios2::Variable local_topology = impl_adios2::define_variable<std::int64_t>(
-      io, "connectivity", {}, {}, {shape[0], shape[1] + 1});
+      io, "connectivity", {num_cells_global, shape[1] + 1}, {local_offset, 0},
+      {shape[0], shape[1] + 1});
   engine.Put(local_topology, cells.data());
 
   // Vertex global ids and ghost markers
   adios2::Variable orig_id = impl_adios2::define_variable<std::int64_t>(
-      io, "vtkOriginalPointIds", {}, {}, {num_vertices});
+      io, "vtkOriginalPointIds", {num_xdofs_global}, {local_x_offset},
+      {num_xdofs_local});
   engine.Put(orig_id, geometry.input_global_indices().data());
 
-  std::vector<std::uint8_t> x_ghost(num_vertices, 0);
+  std::vector<std::uint8_t> x_ghost(num_xdofs_local, 0);
   std::fill(std::next(x_ghost.begin(), x_map->size_local()), x_ghost.end(), 1);
   adios2::Variable ghost = impl_adios2::define_variable<std::uint8_t>(
-      io, "vtkGhostType", {}, {}, {x_ghost.size()});
+      io, "vtkGhostType", {num_xdofs_global}, {local_x_offset},
+      {x_ghost.size()});
   engine.Put(ghost, x_ghost.data());
   engine.PerformPuts();
 }
