@@ -274,6 +274,7 @@ def test_prune_assembled(dtype):
 
     data_pre1 = len(A.data)
     norm_pre1 = A.squared_norm()
+
     A.eliminate_zeros()
 
     data_post1 = len(A.data)
@@ -282,15 +283,6 @@ def test_prune_assembled(dtype):
     assert norm_pre1 == norm_post1
     assert data_pre1 > data_post1
 
-    # Repeat but now finalize after eliminate
-    A = fem.assemble_matrix(a, [bc])
-
-    data_pre2 = len(A.data)
-    A.eliminate_zeros()
-    A.finalize()
-
-    data_post2 = len(A.data)
-    norm_post2 = A.squared_norm()
-
-    assert norm_post2 == norm_post1
-    assert data_pre2 > data_post2
+    # Finalize after eliminate_zeros is not allowed
+    with pytest.raises(RuntimeError):
+        A.finalize()
