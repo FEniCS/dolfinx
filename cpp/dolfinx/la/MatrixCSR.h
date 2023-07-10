@@ -362,7 +362,7 @@ public:
 
   /// Block size
   /// @return block sizes for rows and columns
-  const std::array<int, 2>& block_size() const { return _bs; }
+  std::array<int, 2> block_size() const { return _bs; }
 
 private:
   void _precompute_send_recv();

@@ -23,7 +23,6 @@
 #include <dolfinx/la/petsc.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/nls/NewtonSolver.h>
-
 #include <petsc4py/petsc4py.h>
 #include <pybind11/complex.h>
 #include <pybind11/functional.h>
@@ -33,7 +32,6 @@
 
 namespace
 {
-
 // Declare assembler function that have multiple scalar types
 template <typename T, typename U>
 void declare_petsc_discrete_operators(py::module& m)
@@ -79,7 +77,6 @@ void declare_petsc_discrete_operators(py::module& m)
         return A;
       },
       py::return_value_policy::take_ownership, py::arg("V0"), py::arg("V1"));
-
   m.def(
       "interpolation_matrix",
       [](const dolfinx::fem::FunctionSpace<U>& V0,
@@ -123,17 +120,6 @@ void declare_petsc_discrete_operators(py::module& m)
 
 void petsc_la_module(py::module& m)
 {
-  m.def("create_vector",
-        py::overload_cast<const dolfinx::common::IndexMap&, int>(
-            &dolfinx::la::petsc::create_vector),
-        py::return_value_policy::take_ownership, py::arg("index_map"),
-        py::arg("bs"), "Create a ghosted PETSc Vec for index map.");
-  m.def(
-      "create_vector_wrap",
-      [](dolfinx::la::Vector<PetscScalar>& x)
-      { return dolfinx::la::petsc::create_vector_wrap(x); },
-      py::return_value_policy::take_ownership, py::arg("x"),
-      "Create a ghosted PETSc Vec that wraps a DOLFINx Vector");
   m.def(
       "create_matrix",
       [](dolfinx_wrappers::MPICommWrapper comm,
@@ -142,11 +128,9 @@ void petsc_la_module(py::module& m)
       py::return_value_policy::take_ownership, py::arg("comm"), py::arg("p"),
       py::arg("type") = std::string(),
       "Create a PETSc Mat from sparsity pattern.");
-
   // TODO: check reference counting for index sets
   m.def("create_index_sets", &dolfinx::la::petsc::create_index_sets,
         py::arg("maps"), py::return_value_policy::take_ownership);
-
   m.def(
       "scatter_local_vectors",
       [](Vec x,
@@ -163,6 +147,7 @@ void petsc_la_module(py::module& m)
       py::arg("x"), py::arg("x_b"), py::arg("maps"),
       "Scatter the (ordered) list of sub vectors into a block "
       "vector.");
+
   m.def(
       "get_local_vectors",
       [](const Vec x,
@@ -344,7 +329,6 @@ void petsc_nls_module(py::module& m)
 
 namespace dolfinx_wrappers
 {
-
 void petsc(py::module& m_fem, py::module& m_la, py::module& m_nls)
 {
   py::module petsc_fem_mod
@@ -356,7 +340,7 @@ void petsc(py::module& m_fem, py::module& m_la, py::module& m_nls)
   petsc_la_module(petsc_la_mod);
 
   py::module petsc_nls_mod
-      = m_nls.def_submodule("petsc", "PETSc-specific non-linear solvers");
+      = m_nls.def_submodule("petsc", "PETSc-specific nonlinear solvers");
   petsc_nls_module(petsc_nls_mod);
 }
 } // namespace dolfinx_wrappers
