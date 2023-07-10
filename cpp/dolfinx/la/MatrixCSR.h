@@ -365,8 +365,6 @@ public:
   std::array<int, 2> block_size() const { return _bs; }
 
 private:
-  void _precompute_send_recv();
-
   // Maps for the distribution of the ows and columns
   std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;
 
@@ -386,6 +384,8 @@ private:
 
   // Neighborhood communicator (ghost->owner communicator for rows)
   dolfinx::MPI::Comm _comm;
+
+  bool _can_finalize;
 
   // -- Precomputed data for finalize/update
 
@@ -416,7 +416,7 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
       _data(p.num_nonzeros() * _bs[0] * _bs[1], 0),
       _cols(p.graph().first.begin(), p.graph().first.end()),
       _row_ptr(p.graph().second.begin(), p.graph().second.end()),
-      _comm(MPI_COMM_NULL)
+      _comm(MPI_COMM_NULL), _can_finalize(true)
 {
   if (_block_mode == BlockMode::expanded)
   {
@@ -480,14 +480,6 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
                    std::back_inserter(_off_diagonal_offset), std::plus{});
   }
 
-  // Precompute send and recv displacements and offsets to scatter
-  // received data
-  _precompute_send_recv();
-}
-//-----------------------------------------------------------------------------
-template <typename U, typename V, typename W, typename X>
-void MatrixCSR<U, V, W, X>::_precompute_send_recv()
-{
   // Some short-hand
   const std::array local_size
       = {_index_maps[0]->size_local(), _index_maps[1]->size_local()};
@@ -509,7 +501,6 @@ void MatrixCSR<U, V, W, X>::_precompute_send_recv()
 
   // Build map from ghost row index position to owning (neighborhood)
   // rank
-  _ghost_row_to_rank.clear();
   _ghost_row_to_rank.reserve(_index_maps[0]->owners().size());
   for (int r : _index_maps[0]->owners())
   {
@@ -606,7 +597,6 @@ void MatrixCSR<U, V, W, X>::_precompute_send_recv()
 
   // Compute location in which data for each index should be stored
   // when received
-  _unpack_pos.clear();
   for (std::size_t i = 0; i < ghost_index_array.size(); i += 2)
   {
     // Row must be on this process
@@ -660,6 +650,11 @@ MatrixCSR<U, V, W, X>::to_dense() const
 template <typename U, typename V, typename W, typename X>
 void MatrixCSR<U, V, W, X>::finalize_begin()
 {
+  if (!_can_finalize)
+  {
+    throw std::runtime_error("Finalize cannot be called on this MatrixCSR");
+  }
+
   const std::int32_t local_size0 = _index_maps[0]->size_local();
   const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
   const int bs2 = _bs[0] * _bs[1];
@@ -742,6 +737,8 @@ double MatrixCSR<U, V, W, X>::squared_norm() const
 template <typename Scalar, typename V, typename W, typename X>
 void MatrixCSR<Scalar, V, W, X>::eliminate_zeros(double tol)
 {
+  _can_finalize = false;
+
   const int bs2 = _bs[0] * _bs[1];
   int iptr = 0;
   for (int i = 1; i < _row_ptr.size(); ++i)
@@ -777,10 +774,6 @@ void MatrixCSR<Scalar, V, W, X>::eliminate_zeros(double tol)
                                ghost_col);
     _off_diagonal_offset.push_back(std::distance(row_start, it));
   }
-
-  // Recompute send and recv offsets and unpack_pos
-  // FIXME: maybe not worthwhile
-  _precompute_send_recv();
 }
 
 } // namespace dolfinx::la
