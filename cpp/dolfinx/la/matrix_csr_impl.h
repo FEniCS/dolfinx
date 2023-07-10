@@ -29,8 +29,8 @@ namespace impl
 /// @param[in] xrows The row indices of `x`
 /// @param[in] xcols The column indices of `x`
 /// @param[in] op The operation (set or add)
-/// @param[in] local_size The maximum row index that can be set. Used
-/// when debugging is own to check that rows beyond a permitted range
+/// @param[in] num_rows The maximum row index that can be set. Used
+/// when debugging to check that rows beyond a permitted range
 /// are not being set.
 ///
 /// @note In the case of block data, where BS0 or BS1 are greater than
@@ -49,7 +49,7 @@ template <int BS0, int BS1, typename OP, typename U, typename V, typename W,
           typename X, typename Y>
 void insert_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
                 const Y& xrows, const Y& xcols, OP op,
-                typename Y::value_type local_size);
+                typename Y::value_type num_rows);
 
 /// @brief Incorporate blocked data with given block sizes into a non-blocked
 /// MatrixCSR
@@ -68,14 +68,14 @@ void insert_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
 /// @param[in] xrows The row indices of `x`
 /// @param[in] xcols The column indices of `x`
 /// @param[in] op The operation (set or add)
-/// @param[in] local_size The maximum row index that can be set. Used
-/// when debugging is own to check that rows beyond a permitted range
+/// @param[in] num_rows The maximum row index that can be set. Used
+/// when debugging to check that rows beyond a permitted range
 /// are not being set.
 template <int BS0, int BS1, typename OP, typename U, typename V, typename W,
           typename X, typename Y>
 void insert_blocked_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
                         const Y& xrows, const Y& xcols, OP op,
-                        typename Y::value_type local_size);
+                        typename Y::value_type num_rows);
 
 /// @brief Incorporate non-blocked data into a blocked matrix (Data block size =
 /// 1)
@@ -89,8 +89,8 @@ void insert_blocked_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
 /// @param[in] xrows The row indices of `x`
 /// @param[in] xcols The column indices of `x`
 /// @param[in] op The operation (set or add)
-/// @param[in] local_size The maximum row index that can be set. Used
-/// when debugging is own to check that rows beyond a permitted range
+/// @param[in] num_rows The maximum row index that can be set. Used
+/// when debugging to check that rows beyond a permitted range
 /// are not being set.
 /// @param[in] bs0 Row block size of Matrix
 /// @param[in] bs1 Column block size of Matrix
@@ -98,7 +98,7 @@ template <typename OP, typename U, typename V, typename W, typename X,
           typename Y>
 void insert_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
                            const X& x, const Y& xrows, const Y& xcols, OP op,
-                           typename Y::value_type local_size, int bs0, int bs1);
+                           typename Y::value_type num_rows, int bs0, int bs1);
 
 } // namespace impl
 
@@ -107,7 +107,7 @@ template <int BS0, int BS1, typename OP, typename U, typename V, typename W,
           typename X, typename Y>
 void impl::insert_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
                       const Y& xrows, const Y& xcols, OP op,
-                      [[maybe_unused]] typename Y::value_type local_size)
+                      [[maybe_unused]] typename Y::value_type num_rows)
 {
   const std::size_t nc = xcols.size();
   assert(x.size() == xrows.size() * xcols.size() * BS0 * BS1);
@@ -119,7 +119,7 @@ void impl::insert_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
     const T* xr = x.data() + r * nc * BS0 * BS1;
 
 #ifndef NDEBUG
-    if (row >= local_size)
+    if (row >= num_rows)
       throw std::runtime_error("Local row out of range");
 #endif
     // Columns indices for row
@@ -152,8 +152,7 @@ template <int BS0, int BS1, typename OP, typename U, typename V, typename W,
           typename X, typename Y>
 void impl::insert_blocked_csr(U&& data, const V& cols, const W& row_ptr,
                               const X& x, const Y& xrows, const Y& xcols, OP op,
-                              [[maybe_unused]]
-                              typename Y::value_type local_size)
+                              [[maybe_unused]] typename Y::value_type num_rows)
 {
   const std::size_t nc = xcols.size();
   assert(x.size() == xrows.size() * xcols.size() * BS0 * BS1);
@@ -163,7 +162,7 @@ void impl::insert_blocked_csr(U&& data, const V& cols, const W& row_ptr,
     auto row = xrows[r] * BS0;
 
 #ifndef NDEBUG
-    if (row >= local_size)
+    if (row >= num_rows)
       throw std::runtime_error("Local row out of range");
 #endif
 
@@ -197,7 +196,7 @@ void impl::insert_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
                                  const X& x, const Y& xrows, const Y& xcols,
                                  OP op,
                                  [[maybe_unused]]
-                                 typename Y::value_type local_size,
+                                 typename Y::value_type num_rows,
                                  int bs0, int bs1)
 {
   const std::size_t nc = xcols.size();
@@ -212,7 +211,7 @@ void impl::insert_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
     const T* xr = x.data() + r * nc;
 
 #ifndef NDEBUG
-    if (rdiv.quot >= local_size)
+    if (rdiv.quot >= num_rows)
       throw std::runtime_error("Local row out of range");
 #endif
     // Columns indices for row

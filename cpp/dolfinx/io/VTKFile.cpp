@@ -34,7 +34,7 @@ constexpr std::array field_ext = {"_real", "_imag"};
 
 //----------------------------------------------------------------------------
 /// Return true if Function is a cell-wise constant, otherwise false
-template <typename T>
+template <dolfinx::scalar T>
 bool is_cellwise(const fem::FunctionSpace<T>& V)
 {
   assert(V.element());
@@ -193,7 +193,8 @@ void add_data(const std::string& name, int rank, std::span<const T> values,
 /// @param[in] celltype The cell type
 /// @param[in] tdim Topological dimension of the cells
 /// @param[in,out] piece_node The XML node to add data to
-void add_mesh(std::span<const double> x, std::array<std::size_t, 2> /*xshape*/,
+template <typename U>
+void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
               std::span<const std::int64_t> x_id,
               std::span<const std::uint8_t> x_ghost,
               std::span<const std::int64_t> cells,
@@ -337,10 +338,9 @@ void add_mesh(std::span<const double> x, std::array<std::size_t, 2> /*xshape*/,
   }
 }
 //----------------------------------------------------------------------------
-template <typename T>
+template <dolfinx::scalar T, std::floating_point U>
 void write_function(
-    const std::vector<std::reference_wrapper<const fem::Function<T, double>>>&
-        u,
+    const std::vector<std::reference_wrapper<const fem::Function<T, U>>>& u,
     double time, pugi::xml_document* xml_doc,
     const std::filesystem::path& filename)
 {
@@ -415,7 +415,7 @@ void write_function(
   assert(topology0);
 
   // Build mesh data using first FunctionSpace
-  std::vector<double> x;
+  std::vector<U> x;
   std::array<std::size_t, 2> xshape;
   std::vector<std::int64_t> x_id;
   std::vector<std::uint8_t> x_ghost;
@@ -427,7 +427,7 @@ void write_function(
     std::tie(tmp, cshape) = io::extract_vtk_connectivity(
         mesh0->geometry().dofmap(), topology0->cell_types()[0]);
     cells.assign(tmp.begin(), tmp.end());
-    const mesh::Geometry<double>& geometry = mesh0->geometry();
+    const mesh::Geometry<U>& geometry = mesh0->geometry();
     x.assign(geometry.x().begin(), geometry.x().end());
     xshape = {geometry.x().size() / 3, 3};
     x_id = geometry.input_global_indices();
@@ -454,8 +454,9 @@ void write_function(
 
   // Add mesh data to "Piece" node
   int tdim = topology0->dim();
-  add_mesh(x, xshape, x_id, x_ghost, cells, cshape, *topology0->index_map(tdim),
-           cell_types.back(), topology0->dim(), piece_node);
+  add_mesh<U>(x, xshape, x_id, x_ghost, cells, cshape,
+              *topology0->index_map(tdim), cell_types.back(), topology0->dim(),
+              piece_node);
 
   // FIXME: is this actually setting the first?
   // Set last scalar/vector/tensor Functions in u to be the 'active'
@@ -513,8 +514,7 @@ void write_function(
 
       // Function to pack data to 3D with 'zero' padding, typically when
       // a Function is 2D
-      auto pad_data =
-          [num_comp](const fem::FunctionSpace<double>& V, std::span<const T> u)
+      auto pad_data = [num_comp](const auto& V, auto u)
       {
         auto dofmap = V.dofmap();
         int bs = dofmap->bs();
@@ -528,7 +528,6 @@ void write_function(
           std::copy_n(std::next(u.begin(), i * map_bs), map_bs,
                       std::next(data.begin(), i * num_comp));
         }
-
         return data;
       };
 
@@ -746,7 +745,8 @@ void io::VTKFile::flush()
   }
 }
 //----------------------------------------------------------------------------
-void io::VTKFile::write(const mesh::Mesh<double>& mesh, double time)
+template <std::floating_point U>
+void io::VTKFile::write(const mesh::Mesh<U>& mesh, double time)
 {
   if (!_pvd_xml)
     throw std::runtime_error("VTKFile has already been closed");
@@ -762,7 +762,7 @@ void io::VTKFile::write(const mesh::Mesh<double>& mesh, double time)
   // Get mesh data for this rank
   auto topology = mesh.topology();
   assert(topology);
-  const mesh::Geometry<double>& geometry = mesh.geometry();
+  const mesh::Geometry<U>& geometry = mesh.geometry();
   auto xmap = geometry.index_map();
   assert(xmap);
   const int tdim = topology->dim();
@@ -851,19 +851,34 @@ void io::VTKFile::write(const mesh::Mesh<double>& mesh, double time)
   dataset_node.append_attribute("file") = p_pvtu.filename().c_str();
 }
 //----------------------------------------------------------------------------
-void io::VTKFile::write_functions(
+template <dolfinx::scalar T, std::floating_point U>
+void io::VTKFile::write(
+    const std::vector<std::reference_wrapper<const fem::Function<T, U>>>& u,
+    double time)
+{
+  write_function<T, U>(u, time, _pvd_xml.get(), _filename);
+}
+//-----------------------------------------------------------------------------
+// Instantiation for different types
+/// @cond
+template void io::VTKFile::write(const mesh::Mesh<float>&, double);
+template void io::VTKFile::write(const mesh::Mesh<double>&, double);
+
+template void io::VTKFile::write(
     const std::vector<
-        std::reference_wrapper<const fem::Function<double, double>>>& u,
-    double time)
-{
-  write_function(u, time, _pvd_xml.get(), _filename);
-}
-//----------------------------------------------------------------------------
-void io::VTKFile::write_functions(
-    const std::vector<std::reference_wrapper<
-        const fem::Function<std::complex<double>, double>>>& u,
-    double time)
-{
-  write_function(u, time, _pvd_xml.get(), _filename);
-}
-//----------------------------------------------------------------------------
+        std::reference_wrapper<const fem::Function<float, float>>>&,
+    double);
+template void io::VTKFile::write(
+    const std::vector<
+        std::reference_wrapper<const fem::Function<double, double>>>&,
+    double);
+template void
+io::VTKFile::write(const std::vector<std::reference_wrapper<
+                       const fem::Function<std::complex<float>, float>>>&,
+                   double);
+template void
+io::VTKFile::write(const std::vector<std::reference_wrapper<
+                       const fem::Function<std::complex<double>, double>>>&,
+                   double);
+/// @endcond
+//-----------------------------------------------------------------------------

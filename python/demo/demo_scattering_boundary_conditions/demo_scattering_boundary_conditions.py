@@ -47,15 +47,14 @@ except ModuleNotFoundError:
     have_pyvista = False
 from typing import Tuple
 
-from analytical_efficiencies_wire import calculate_analytical_efficiencies
-from mesh_wire import generate_mesh_wire
-
 import ufl
+from analytical_efficiencies_wire import calculate_analytical_efficiencies
 from basix.ufl import element
-from dolfinx import fem, io, plot
-
+from dolfinx.fem.petsc import LinearProblem
+from mesh_wire import generate_mesh_wire
 from mpi4py import MPI
-from petsc4py import PETSc
+
+from dolfinx import default_scalar_type, fem, io, plot
 
 # -
 
@@ -63,7 +62,7 @@ from petsc4py import PETSc
 # solve a complex-valued PDE, and therefore need to use PETSc compiled
 # with complex numbers.
 
-if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
+if not np.issubdtype(default_scalar_type, np.complexfloating):
     print("Demo should only be executed with DOLFINx complex mode")
     exit(0)
 
@@ -320,8 +319,8 @@ D = fem.FunctionSpace(domain, ("DG", 0))
 eps = fem.Function(D)
 au_cells = cell_tags.find(au_tag)
 bkg_cells = cell_tags.find(bkg_tag)
-eps.x.array[au_cells] = np.full_like(au_cells, eps_au, dtype=np.complex128)
-eps.x.array[bkg_cells] = np.full_like(bkg_cells, eps_bkg, dtype=np.complex128)
+eps.x.array[au_cells] = np.full_like(au_cells, eps_au, dtype=eps.x.array.dtype)
+eps.x.array[bkg_cells] = np.full_like(bkg_cells, eps_bkg, dtype=eps.x.array.dtype)
 eps.x.scatter_forward()
 
 # Next we derive the weak formulation of the Maxwell's equation plus
@@ -407,7 +406,7 @@ F = - ufl.inner(ufl.curl(Es), ufl.curl(v)) * dDom \
 # `Esh`:
 
 a, L = ufl.lhs(F), ufl.rhs(F)
-problem = fem.petsc.LinearProblem(a, L, bcs=[], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+problem = LinearProblem(a, L, bcs=[], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 Esh = problem.solve()
 
 # We save the solution as an [ADIOS2

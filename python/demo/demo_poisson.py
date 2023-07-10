@@ -70,6 +70,7 @@ import numpy as np
 
 import ufl
 from dolfinx import fem, io, mesh, plot
+from dolfinx.fem.petsc import LinearProblem
 from ufl import ds, dx, grad, inner
 
 from mpi4py import MPI
@@ -85,7 +86,7 @@ from petsc4py.PETSc import ScalarType
 # +
 msh = mesh.create_rectangle(comm=MPI.COMM_WORLD,
                             points=((0.0, 0.0), (2.0, 1.0)), n=(32, 16),
-                            cell_type=mesh.CellType.triangle,)
+                            cell_type=mesh.CellType.triangle)
 V = fem.FunctionSpace(msh, ("Lagrange", 1))
 # -
 
@@ -113,8 +114,8 @@ facets = mesh.locate_entities_boundary(msh, dim=(msh.topology.dim - 1),
 dofs = fem.locate_dofs_topological(V=V, entity_dim=1, entities=facets)
 
 # and use {py:func}`dirichletbc <dolfinx.fem.dirichletbc>` to create a
-# {py:class}`DirichletBCMetaClass <dolfinx.fem.DirichletBCMetaClass>`
-# class that represents the boundary condition:
+# {py:class}`DirichletBC <dolfinx.fem.DirichletBC>` class that
+# represents the boundary condition:
 
 bc = fem.dirichletbc(value=ScalarType(0), dofs=dofs, V=V)
 
@@ -130,14 +131,14 @@ a = inner(grad(u), grad(v)) * dx
 L = inner(f, v) * dx + inner(g, v) * ds
 # -
 
-# A {py:class}`LinearProblem <dolfinx.fem.LinearProblem>` object is
+# A {py:class}`LinearProblem <dolfinx.fem.petsc.LinearProblem>` object is
 # created that brings together the variational problem, the Dirichlet
 # boundary condition, and which specifies the linear solver. In this
 # case an LU solver us sued. The {py:func}`solve
-# <dolfinx.fem.LinearProblem.solve>` computes the solution.
+# <dolfinx.fem.petsc.LinearProblem.solve>` computes the solution.
 
 # +
-problem = fem.petsc.LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+problem = LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 uh = problem.solve()
 # -
 
@@ -168,7 +169,6 @@ try:
         plotter.screenshot("uh_poisson.png")
     else:
         plotter.show()
-
 except ModuleNotFoundError:
     print("'pyvista' is required to visualise the solution")
     print("Install 'pyvista' with pip: 'python3 -m pip install pyvista'")

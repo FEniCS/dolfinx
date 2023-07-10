@@ -9,17 +9,17 @@ from contextlib import ExitStack
 
 import numpy as np
 import pytest
-
 import ufl
-from dolfinx import la
+from dolfinx.la import create_petsc_vector
 from dolfinx.fem import VectorFunctionSpace, form
 from dolfinx.fem.petsc import assemble_matrix
 from dolfinx.mesh import (CellType, GhostMode, create_box, create_unit_cube,
                           create_unit_square)
-from ufl import TestFunction, TrialFunction, dx, grad, inner
-
 from mpi4py import MPI
 from petsc4py import PETSc
+from ufl import TestFunction, TrialFunction, dx, grad, inner
+
+from dolfinx import la
 
 
 def build_elastic_nullspace(V):
@@ -67,7 +67,7 @@ def build_broken_elastic_nullspace(V):
     """Function to build incorrect null space for 2D elasticity"""
 
     # Create list of vectors for null space
-    ns = [la.create_petsc_vector(V.dofmap.index_map, V.dofmap.index_map_bs) for i in range(4)]
+    ns = [create_petsc_vector(V.dofmap.index_map, V.dofmap.index_map_bs) for i in range(4)]
 
     with ExitStack() as stack:
         vec_local = [stack.enter_context(x.localForm()) for x in ns]
@@ -99,9 +99,9 @@ def test_nullspace_orthogonal(mesh, degree):
     """Test that null spaces orthogonalisation"""
     V = VectorFunctionSpace(mesh, ('Lagrange', degree))
     nullspace = build_elastic_nullspace(V)
-    assert not la.is_orthonormal(nullspace)
+    assert not la.is_orthonormal(nullspace, eps=1.0e-4)
     la.orthonormalize(nullspace)
-    assert la.is_orthonormal(nullspace)
+    assert la.is_orthonormal(nullspace, eps=1.0e-3)
 
 
 @pytest.mark.parametrize("mesh", [

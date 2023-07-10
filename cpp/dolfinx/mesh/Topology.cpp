@@ -769,7 +769,7 @@ std::int32_t Topology::create_entities(int dim)
   if (cell_entity)
     set_connectivity(cell_entity, this->dim(), dim);
 
-  // TODO: is this check necessary? Seems redundant after to the "skip check"
+  // TODO: is this check necessary? Seems redundant after the "skip check"
   if (entity_vertex)
     set_connectivity(entity_vertex, dim, 0);
 
