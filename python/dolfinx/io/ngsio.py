@@ -6,25 +6,21 @@
 """Tools to extract data from Gmsh models"""
 import typing
 
-import numpy as np
-import numpy.typing as npt
-
 import basix
 import basix.ufl
+import numpy as np
 import ufl
-from dolfinx import cpp as _cpp
 from dolfinx.cpp.graph import AdjacencyList_int32
-from dolfinx.mesh import (CellType, GhostMode, Mesh, create_cell_partitioner,
-                          create_mesh, meshtags, meshtags_from_entities)
-
+from dolfinx.mesh import GhostMode, Mesh, create_cell_partitioner, create_mesh
 from mpi4py import MPI as _MPI
 
-__all__ = ["cell_perm_array", "ufl_mesh"]
+from dolfinx import cpp as _cpp
+
+__all__ = ["ufl_mesh"]
 
 try:
-    import ngsolve as ngs
-    from ngsPETSc.plex import DMPlexMapping
     import netgen as ng
+    from ngsPETSc.plex import DMPlexMapping
     _has_ngs = True
 except ModuleNotFoundError:
     _has_ngs = False
@@ -32,11 +28,12 @@ except ModuleNotFoundError:
 
 # Map from Gmsh cell type identifier (integer) to DOLFINx cell type
 # and degree http://gmsh.info//doc/texinfo/gmsh.html#MSH-file-format
-_ngs_to_cells = {(2,3): ("triangle", 1),
-                 (2,4): ("quadrilateral", 1),
-                 (3,4): ("tetrahedron", 1)}
+_ngs_to_cells = {(2, 3): ("triangle", 1),
+                 (2, 4): ("quadrilateral", 1),
+                 (3, 4): ("tetrahedron", 1)}
 
-def ufl_mesh(ngs_cell: int, gdim: int) -> ufl.Mesh:
+
+def ufl_mesh(ngs_cell: typing.Tuple[int, int], gdim: int) -> ufl.Mesh:
     """Create a UFL mesh from a Gmsh cell identifier and the geometric dimension.
 
     See: http://gmsh.info//doc/texinfo/gmsh.html#MSH-file-format.
@@ -50,7 +47,6 @@ def ufl_mesh(ngs_cell: int, gdim: int) -> ufl.Mesh:
         corresponding DOLFINx cell
     """
     shape, degree = _ngs_to_cells[ngs_cell]
-    print("Shape: {}, Degree: {}".format(shape,degree))
     cell = ufl.Cell(shape, geometric_dimension=gdim)
 
     element = basix.ufl.element(
@@ -59,30 +55,17 @@ def ufl_mesh(ngs_cell: int, gdim: int) -> ufl.Mesh:
     return ufl.Mesh(element)
 
 
-def cell_perm_array(cell_type: CellType, num_nodes: int) -> typing.List[int]:
-    """The permutation array for permuting Gmsh ordering to DOLFINx ordering.
-
-    Args:
-        cell_type: The DOLFINx cell type
-        num_nodes: The number of nodes in the cell
-
-    Returns:
-        An array `p` such that `a_dolfinx[i] = a_gmsh[p[i]]`.
-    """
-    return _cpp.io.perm_gmsh(cell_type, num_nodes)
-
-
 if _has_ngs:
     __all__ += ["model_to_mesh"]
 
     def model_to_mesh(geo: ng.libngpy._geom2d, comm: _MPI.Comm, hmax: float, gdim: int = 2,
                       partitioner: typing.Callable[
             [_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32] =
-            create_cell_partitioner(GhostMode.none), transform: typing.Any = None, routine: typing.Any = None) -> typing.Tuple[
-            Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
+            create_cell_partitioner(GhostMode.none),
+            transform: typing.Any = None, routine: typing.Any = None) -> Mesh:
         """Given a NetGen model, take all physical entities of the highest
         topological dimension and create the corresponding DOLFINx mesh.
-        
+
         This function only works in serial, at the moment.
 
         Args:
@@ -118,15 +101,14 @@ if _has_ngs:
         if ngmesh.dim == 2:
             V = ngmesh.Coordinates()
             T = ngmesh.Elements2D().NumPy()["nodes"]
-            T = np.array([list(np.trim_zeros(a, 'b')) for a in list(T)])-1
+            T = np.array([list(np.trim_zeros(a, 'b')) for a in list(T)]) - 1
         elif ngmesh.dim == 3:
             V = ngmesh.Coordinates()
             T = ngmesh.Elements3D().NumPy()["nodes"]
-            T = np.array([list(np.trim_zeros(a, 'b')) for a in list(T)])-1
-        print("Dimension: {} Points: {}, Num: {}".format(gdim,len(T[0]),T.shape[0]))
-        ufl_domain = ufl_mesh((gdim,T.shape[1]),gdim)
-        cell_perm = cell_perm_array(_cpp.mesh.to_type(str(ufl_domain.ufl_cell())), T.shape[1])
+            T = np.array([list(np.trim_zeros(a, 'b')) for a in list(T)]) - 1
+        ufl_domain = ufl_mesh((gdim, T.shape[1]), gdim)
+        cell_perm = _cpp.io.perm_gmsh(_cpp.mesh.to_type(
+            str(ufl_domain.ufl_cell())), T.shape[1])
         T = T[:, cell_perm]
         mesh = create_mesh(comm, T, V, ufl_domain, partitioner)
         return mesh
-
