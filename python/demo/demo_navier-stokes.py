@@ -10,7 +10,7 @@
 
 # # Divergence conforming discontinuous Galerkin method for the Navier--Stokes equations
 #
-# This demo ({download}`demo_navier_stokes.py`) illustrates how to
+# This demo ({download}`demo_navier-stokes.py`) illustrates how to
 # implement a divergence conforming discontinuous Galerkin method for
 # the Navier-Stokes equations in FEniCSx. The method conserves mass
 # exactly and uses upwinding. The formulation is based on a combination
@@ -158,7 +158,8 @@
 # +
 import numpy as np
 
-from dolfinx import fem, io, mesh, default_real_type
+from dolfinx import default_real_type, fem, io, mesh
+from dolfinx.fem.petsc import assemble_matrix_block, assemble_vector_block
 from ufl import (CellDiameter, FacetNormal, TestFunction, TrialFunction, avg,
                  conditional, div, dot, dS, ds, dx, grad, gt, inner, outer)
 
@@ -282,9 +283,9 @@ bc_u = fem.dirichletbc(u_D, boundary_vel_dofs)
 bcs = [bc_u]
 
 # Assemble Stokes problem
-A = fem.petsc.assemble_matrix_block(a, bcs=bcs)
+A = assemble_matrix_block(a, bcs=bcs)
 A.assemble()
-b = fem.petsc.assemble_vector_block(L, a, bcs=bcs)
+b = assemble_vector_block(L, a, bcs=bcs)
 
 # Create and configure solver
 ksp = PETSc.KSP().create(msh.comm)

@@ -298,8 +298,8 @@ def plot_streamlines():
         plotter.show()
 
 
-# plot_scalar()
-# plot_meshtags()
+plot_scalar()
+plot_meshtags()
 plot_higher_order()
-# plot_nedelec()
-# plot_streamlines()
+plot_nedelec()
+plot_streamlines()

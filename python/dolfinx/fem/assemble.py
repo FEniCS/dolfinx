@@ -12,14 +12,14 @@ import functools
 import typing
 
 import numpy as np
-
-import dolfinx
-from dolfinx import cpp as _cpp
-from dolfinx import la
 from dolfinx.cpp.fem import pack_coefficients as _pack_coefficients
 from dolfinx.cpp.fem import pack_constants as _pack_constants
 from dolfinx.fem.bcs import DirichletBC
 from dolfinx.fem.forms import Form
+
+import dolfinx
+from dolfinx import cpp as _cpp
+from dolfinx import la
 
 
 def pack_constants(form: typing.Union[Form, typing.Sequence[Form]]) -> typing.Union[np.ndarray,

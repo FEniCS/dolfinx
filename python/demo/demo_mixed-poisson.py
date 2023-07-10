@@ -85,14 +85,14 @@
 # +
 
 import numpy as np
-
 from basix.ufl import element, mixed_element
-from dolfinx import fem, io, mesh
+from dolfinx.fem.petsc import LinearProblem
+from mpi4py import MPI
+from petsc4py import PETSc
 from ufl import (Measure, SpatialCoordinate, TestFunctions, TrialFunctions,
                  div, exp, inner)
 
-from mpi4py import MPI
-from petsc4py import PETSc
+from dolfinx import fem, io, mesh
 
 domain = mesh.create_unit_square(
     MPI.COMM_WORLD,
@@ -159,8 +159,8 @@ bc_bottom = fem.dirichletbc(f_h2, dofs_bottom, V.sub(0))
 
 bcs = [bc_top, bc_bottom]
 
-problem = fem.petsc.LinearProblem(a, L, bcs=bcs, petsc_options={
-                                  "ksp_type": "preonly", "pc_type": "lu", "pc_factor_mat_solver_type": "mumps"})
+problem = LinearProblem(a, L, bcs=bcs, petsc_options={"ksp_type": "preonly", "pc_type": "lu",
+                                                      "pc_factor_mat_solver_type": "mumps"})
 try:
     w_h = problem.solve()
 except PETSc.Error as e:
