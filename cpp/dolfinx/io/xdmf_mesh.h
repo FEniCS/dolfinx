@@ -44,7 +44,7 @@ namespace io::xdmf_mesh
 /// HDF file data is stored under path prefix.
 template <std::floating_point U>
 void add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
-              const mesh::Mesh<U>& mesh, std::string path_prefix);
+              const mesh::Mesh<U>& mesh, const std::string& path_prefix);
 
 /// Add Topology xml node
 /// @param[in] comm

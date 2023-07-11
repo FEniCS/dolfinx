@@ -57,7 +57,7 @@ hid_t hdf5_type()
 /// @param[in] mode Mode in which to open the file (w, r, a)
 /// @param[in] use_mpi_io True if MPI-IO should be used
 hid_t open_file(MPI_Comm comm, const std::filesystem::path& filename,
-                const std::string& mode, const bool use_mpi_io);
+                const std::string& mode, bool use_mpi_io);
 
 /// Close HDF5 file
 /// @param[in] handle HDF5 file handle
@@ -97,7 +97,7 @@ std::vector<std::int64_t> get_dataset_shape(hid_t handle,
 /// https://www.open-mpi.org/doc/v2.0/man3/MPI_File_set_atomicity.3.php
 /// Writes must be followed by an MPI_Barrier on the communicator before
 /// any subsequent reads are guaranteed to return the same data.
-void set_mpi_atomicity(hid_t handle, const bool atomic);
+void set_mpi_atomicity(hid_t handle, bool atomic);
 
 /// Get MPI atomicity. See
 /// https://support.hdfgroup.org/HDF5/doc/RM/RM_H5F.html#File-GetMpiAtomicity

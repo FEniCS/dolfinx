@@ -33,7 +33,7 @@ namespace io::xdmf_meshtags
 template <typename T, std::floating_point U>
 void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
                   const mesh::Geometry<U>& geometry, pugi::xml_node& xml_node,
-                  const hid_t h5_id, const std::string name)
+                  hid_t h5_id, const std::string& name)
 {
   LOG(INFO) << "XDMF: add meshtags (" << name << ")";
   // Get mesh

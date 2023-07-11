@@ -128,7 +128,7 @@ distribute_entity_data(
 
 /// TODO: Document
 template <typename T>
-void add_data_item(pugi::xml_node& xml_node, const hid_t h5_id,
+void add_data_item(pugi::xml_node& xml_node, hid_t h5_id,
                    const std::string& h5_path, const T& x, std::int64_t offset,
                    const std::vector<std::int64_t>& shape,
                    const std::string& number_type, bool use_mpi_io)
