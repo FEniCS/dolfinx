@@ -266,6 +266,9 @@ int main(int argc, char* argv[])
     la::petsc::Vector _b(la::petsc::create_vector_wrap(b), false);
     lu.solve(_u.vec(), _b.vec());
 
+    // Update ghost values before output
+    u->x()->scatter_fwd();
+
     // The function ``u`` will be modified during the call to solve. A
     // :cpp:class:`Function` can be saved to a file. Here, we output the
     // solution to a ``VTK`` file (specified using the suffix ``.pvd``)
