@@ -267,7 +267,7 @@ int main(int argc, char* argv[])
     lu.solve(_u.vec(), _b.vec());
 
     // Update ghost values before output
-    u->x()->scatter_fwd();
+    u.x()->scatter_fwd();
 
     // The function ``u`` will be modified during the call to solve. A
     // :cpp:class:`Function` can be saved to a file. Here, we output the
