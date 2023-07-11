@@ -20,10 +20,7 @@
 
 #include <H5LTpublic.h>
 
-namespace dolfinx::io
-{
-
-namespace hdf5
+namespace dolfinx::io::hdf5
 {
 /// C++ type to HDF5 data type
 template <typename T>
@@ -115,7 +112,7 @@ void add_group(hid_t handle, const std::string& dataset_path);
 
 /// Write data to existing HDF file as defined by range blocks on each
 /// process
-/// @param[in] handle HDF5 file handle
+/// @param[in] file_handle HDF5 file handle
 /// @param[in] dataset_path Path for the dataset in the HDF5 file
 /// @param[in] data Data to be written, flattened into 1D vector
 ///   (row-major storage)
@@ -124,8 +121,8 @@ void add_group(hid_t handle, const std::string& dataset_path);
 /// @param[in] use_mpi_io True if MPI-IO should be used
 /// @param[in] use_chunking True if chunking should be used
 template <typename T>
-void write_dataset(hid_t handle, const std::string& dataset_path, const T* data,
-                   std::array<std::int64_t, 2> range,
+void write_dataset(hid_t file_handle, const std::string& dataset_path,
+                   const T* data, std::array<std::int64_t, 2> range,
                    const std::vector<int64_t>& global_size, bool use_mpi_io,
                    bool use_chunking)
 {
@@ -252,8 +249,8 @@ void write_dataset(hid_t handle, const std::string& dataset_path, const T* data,
 /// @param[in] dset_id HDF5 file handle.
 /// @param[in] range The local range on this processor.
 /// @param[in] allow_cast If true, allow casting from HDF5 type to type `T`.
-/// @return Flattened 1D array of values. If range = {-1, -1}, then all data is
-/// read on this process.
+/// @return Flattened 1D array of values. If range = {-1, -1}, then all data
+/// is read on this process.
 template <typename T>
 std::vector<T> read_dataset(hid_t dset_id, std::array<std::int64_t, 2> range,
                             bool allow_cast)
@@ -360,5 +357,4 @@ std::vector<T> read_dataset(hid_t dset_id, std::array<std::int64_t, 2> range,
 
   return data;
 }
-} // namespace hdf5
-} // namespace dolfinx::io
+} // namespace dolfinx::io::hdf5

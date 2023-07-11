@@ -19,9 +19,10 @@
 namespace dolfinx::io::xdmf_read
 {
 
-/// Get data associated with a data set node
+/// @brief Get data associated with a data set node.
 /// @tparam T Data type to read into
-/// @warning Data will be silently cast to type `T`
+/// @warning Data will be silently cast to type `T` if requested type and
+/// storage type differ.
 template <typename T>
 std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
                            hid_t h5_id,
