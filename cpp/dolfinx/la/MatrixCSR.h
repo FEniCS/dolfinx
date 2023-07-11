@@ -318,6 +318,8 @@ public:
   /// @brief Prune entries from the matrix which are less than a
   /// certain magnitude.
   /// @param tol Tolerance, default to zero.
+  /// @note After calling ``eliminate_zeros`` it is no longer possible to use
+  /// finalize.
   void eliminate_zeros(double tol = 0.0);
 
   /// @brief Index maps for the row and column space.
