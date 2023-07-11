@@ -19,11 +19,13 @@
 namespace dolfinx::io::xdmf_read
 {
 
-/// Return data associated with a data set node
+/// Get data associated with a data set node
+/// @tparam T Data type to read into
+/// @warning Data will be silently cast to type `T`
 template <typename T>
 std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
-                           const hid_t h5_id,
-                           std::array<std::int64_t, 2> range = {{0, 0}})
+                           hid_t h5_id,
+                           std::array<std::int64_t, 2> range = {0, 0})
 {
   // FIXME: Need to sort out datasset dimensions - can't depend on HDF5
   // shape, and a Topology data item is not required to have a
@@ -74,8 +76,7 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
     auto paths = xdmf_utils::get_hdf5_paths(dataset_node);
 
     // Get data shape from HDF5 file
-    const std::vector shape_hdf5
-        = io::hdf5::get_dataset_shape(h5_id, paths[1]);
+    const std::vector shape_hdf5 = io::hdf5::get_dataset_shape(h5_id, paths[1]);
 
     // FIXME: should we support empty data sets?
     // Check that data set is not empty
@@ -124,7 +125,15 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
     }
 
     // Retrieve data
-    data_vector = io::hdf5::read_dataset<T>(h5_id, paths[1], range);
+    if (hid_t dset_id = io::hdf5::open_dataset(h5_id, paths[1]);
+        dset_id == H5I_INVALID_HID)
+      throw std::runtime_error("Failed to open HDF5 global dataset.");
+    else
+    {
+      data_vector = io::hdf5::read_dataset<T>(dset_id, range, true);
+      if (herr_t err = H5Dclose(dset_id); err < 0)
+        throw std::runtime_error("Failed to close HDF5 global dataset.");
+    }
   }
   else
     throw std::runtime_error("Storage format \"" + format + "\" is unknown");
