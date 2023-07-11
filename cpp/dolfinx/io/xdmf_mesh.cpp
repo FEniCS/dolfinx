@@ -6,10 +6,12 @@
 
 #include "xdmf_mesh.h"
 #include "cells.h"
-#include "xdmf_read.h"
 #include "xdmf_utils.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/ElementDofLayout.h>
+#include <dolfinx/mesh/Geometry.h>
+#include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/Topology.h>
 #include <pugixml.hpp>
 #include <vector>
 
@@ -214,7 +216,7 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
 //----------------------------------------------------------------------------
 template <std::floating_point U>
 void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
-                         const mesh::Mesh<U>& mesh, const std::string name)
+                         const mesh::Mesh<U>& mesh, const std::string& name)
 {
   LOG(INFO) << "Adding mesh to node \"" << xml_node.path('/') << "\"";
 
@@ -244,10 +246,11 @@ void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
   add_geometry_data(comm, grid_node, h5_id, path_prefix, mesh.geometry());
 }
 /// @cond
-template void xdmf_mesh::add_mesh(MPI_Comm, pugi::xml_node&, const hid_t,
-                                  const mesh::Mesh<float>&, const std::string);
-template void xdmf_mesh::add_mesh(MPI_Comm, pugi::xml_node&, const hid_t,
-                                  const mesh::Mesh<double>&, const std::string);
+template void xdmf_mesh::add_mesh(MPI_Comm, pugi::xml_node&, hid_t,
+                                  const mesh::Mesh<float>&, const std::string&);
+template void xdmf_mesh::add_mesh(MPI_Comm, pugi::xml_node&, hid_t,
+                                  const mesh::Mesh<double>&,
+                                  const std::string&);
 /// @endcond
 //----------------------------------------------------------------------------
 std::pair<std::variant<std::vector<float>, std::vector<double>>,
@@ -285,7 +288,7 @@ xdmf_mesh::read_geometry_data(MPI_Comm comm, hid_t h5_id,
 
   // Read geometry data
   std::vector geometry_data
-      = xdmf_read::get_dataset<double>(comm, geometry_data_node, h5_id);
+      = xdmf_utils::get_dataset<double>(comm, geometry_data_node, h5_id);
   const std::size_t num_local_nodes = geometry_data.size() / gdim;
   std::array<std::size_t, 2> shape = {num_local_nodes, gdim};
   return {std::move(geometry_data), shape};
@@ -314,7 +317,7 @@ xdmf_mesh::read_topology_data(MPI_Comm comm, hid_t h5_id,
 
   // Read topology data
   std::vector<std::int64_t> topology_data
-      = xdmf_read::get_dataset<std::int64_t>(comm, topology_data_node, h5_id);
+      = xdmf_utils::get_dataset<std::int64_t>(comm, topology_data_node, h5_id);
   const std::size_t num_local_cells = topology_data.size() / npoint_per_cell;
 
   //  Permute cells from VTK to DOLFINx ordering

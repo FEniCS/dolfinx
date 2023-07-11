@@ -81,7 +81,7 @@ int get_padded_width(const fem::FiniteElement<U>& e)
 template <dolfinx::scalar T, std::floating_point U>
 void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
                                  double t, pugi::xml_node& xml_node,
-                                 const hid_t h5_id)
+                                 hid_t h5_id)
 {
   LOG(INFO) << "Adding function to node \"" << xml_node.path('/') << "\"";
 
@@ -187,18 +187,18 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
 /// @cond
 template void xdmf_function::add_function(MPI_Comm,
                                           const fem::Function<float, float>&,
-                                          double, pugi::xml_node&, const hid_t);
+                                          double, pugi::xml_node&, hid_t);
 template void xdmf_function::add_function(MPI_Comm,
                                           const fem::Function<double, double>&,
-                                          double, pugi::xml_node&, const hid_t);
+                                          double, pugi::xml_node&, hid_t);
 template void
 xdmf_function::add_function(MPI_Comm,
                             const fem::Function<std::complex<float>, float>&,
-                            double, pugi::xml_node&, const hid_t);
+                            double, pugi::xml_node&, hid_t);
 template void
 xdmf_function::add_function(MPI_Comm,
                             const fem::Function<std::complex<double>, double>&,
-                            double, pugi::xml_node&, const hid_t);
+                            double, pugi::xml_node&, hid_t);
 
 /// @endcond
 //-----------------------------------------------------------------------------
