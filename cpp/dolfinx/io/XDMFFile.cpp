@@ -9,7 +9,6 @@
 #include "xdmf_function.h"
 #include "xdmf_mesh.h"
 #include "xdmf_meshtags.h"
-#include "xdmf_read.h"
 #include "xdmf_utils.h"
 #include <boost/lexical_cast.hpp>
 #include <dolfinx/common/log.h>
@@ -44,8 +43,8 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
     const std::filesystem::path hdf5_filename
         = xdmf_utils::get_hdf5_filename(_filename);
     const bool mpi_io = dolfinx::MPI::size(_comm.comm()) > 1 ? true : false;
-    _h5_id = io::hdf5::open_file(_comm.comm(), hdf5_filename, file_mode,
-                                      mpi_io);
+    _h5_id
+        = io::hdf5::open_file(_comm.comm(), hdf5_filename, file_mode, mpi_io);
     assert(_h5_id > 0);
     LOG(INFO) << "Opened HDF5 file with id \"" << _h5_id << "\"";
   }
@@ -346,7 +345,7 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
 
   pugi::xml_node values_data_node
       = grid_node.child("Attribute").child("DataItem");
-  const std::vector values = xdmf_read::get_dataset<std::int32_t>(
+  const std::vector values = xdmf_utils::get_dataset<std::int32_t>(
       _comm.comm(), values_data_node, _h5_id);
 
   const std::pair<std::string, int> cell_type_str

@@ -6,10 +6,12 @@
 
 #include "xdmf_mesh.h"
 #include "cells.h"
-#include "xdmf_read.h"
 #include "xdmf_utils.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/ElementDofLayout.h>
+#include <dolfinx/mesh/Geometry.h>
+#include <dolfinx/mesh/Topology.h>
+#include <dolfinx/mesh/Mesh.h>
 #include <pugixml.hpp>
 #include <vector>
 
@@ -285,7 +287,7 @@ xdmf_mesh::read_geometry_data(MPI_Comm comm, hid_t h5_id,
 
   // Read geometry data
   std::vector geometry_data
-      = xdmf_read::get_dataset<double>(comm, geometry_data_node, h5_id);
+      = xdmf_utils::get_dataset<double>(comm, geometry_data_node, h5_id);
   const std::size_t num_local_nodes = geometry_data.size() / gdim;
   std::array<std::size_t, 2> shape = {num_local_nodes, gdim};
   return {std::move(geometry_data), shape};
@@ -314,7 +316,7 @@ xdmf_mesh::read_topology_data(MPI_Comm comm, hid_t h5_id,
 
   // Read topology data
   std::vector<std::int64_t> topology_data
-      = xdmf_read::get_dataset<std::int64_t>(comm, topology_data_node, h5_id);
+      = xdmf_utils::get_dataset<std::int64_t>(comm, topology_data_node, h5_id);
   const std::size_t num_local_cells = topology_data.size() / npoint_per_cell;
 
   //  Permute cells from VTK to DOLFINx ordering
