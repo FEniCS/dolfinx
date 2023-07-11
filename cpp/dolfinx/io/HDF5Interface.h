@@ -18,12 +18,15 @@
 #include <string>
 #include <vector>
 
+#include <H5LTpublic.h>
+#include <iostream>
+
 namespace dolfinx::io
 {
 
 namespace hdf5
 {
-// Return HDF5 data type
+/// C++ type to HDF5 data type
 template <typename T>
 hid_t hdf5_type()
 {
@@ -31,129 +34,97 @@ hid_t hdf5_type()
     return H5T_NATIVE_FLOAT;
   else if constexpr (std::is_same_v<T, double>)
     return H5T_NATIVE_DOUBLE;
-  else if constexpr (std::is_same_v<T, int>)
-    return H5T_NATIVE_INT;
+  else if constexpr (std::is_same_v<T, std::int32_t>)
+    return H5T_NATIVE_INT32;
+  else if constexpr (std::is_same_v<T, std::uint32_t>)
+    return H5T_NATIVE_UINT32;
   else if constexpr (std::is_same_v<T, std::int64_t>)
     return H5T_NATIVE_INT64;
+  else if constexpr (std::is_same_v<T, std::uint64_t>)
+    return H5T_NATIVE_UINT64;
   else if constexpr (std::is_same_v<T, std::size_t>)
   {
-    if constexpr (sizeof(std::size_t) == sizeof(unsigned long))
-      return H5T_NATIVE_ULONG;
-    else if constexpr (sizeof(std::size_t) == sizeof(unsigned int))
-      return H5T_NATIVE_UINT;
-    else
-    {
-      throw std::runtime_error(
-          "Cannot determine size of std::size_t. "
-          "std::size_t is not the same size as long or int");
-    }
+    throw std::runtime_error(
+        "Cannot determine size of std::size_t. std::size_t is not the same "
+        "size as long or int.");
   }
   else
   {
-    throw std::runtime_error("Cannot get HDF5 primitive data type. "
-                             "No specialised function for this data type");
+    throw std::runtime_error("Cannot get HDF5 primitive data type. No "
+                             "specialised function for this data type.");
   }
 }
 
-} // namespace hdf5
-
-/// This class provides an interface to some HDF5 functionality
-class HDF5Interface
-{
 #define HDF5_FAIL -1
-public:
-  /// Open HDF5 and return file descriptor
-  /// @param[in] comm MPI communicator
-  /// @param[in] filename Name of the HDF5 file to open
-  /// @param[in] mode Mode in which to open the file (w, r, a)
-  /// @param[in] use_mpi_io True if MPI-IO should be used
-  static hid_t open_file(MPI_Comm comm, const std::filesystem::path& filename,
-                         const std::string& mode, const bool use_mpi_io);
+/// Open HDF5 and return file descriptor
+/// @param[in] comm MPI communicator
+/// @param[in] filename Name of the HDF5 file to open
+/// @param[in] mode Mode in which to open the file (w, r, a)
+/// @param[in] use_mpi_io True if MPI-IO should be used
+hid_t open_file(MPI_Comm comm, const std::filesystem::path& filename,
+                const std::string& mode, const bool use_mpi_io);
 
-  /// Close HDF5 file
-  /// @param[in] handle HDF5 file handle
-  static void close_file(const hid_t handle);
+/// Close HDF5 file
+/// @param[in] handle HDF5 file handle
+void close_file(const hid_t handle);
 
-  /// Flush data to file to improve data integrity after interruption
-  /// @param[in] handle HDF5 file handle
-  static void flush_file(const hid_t handle);
+/// Flush data to file to improve data integrity after interruption
+/// @param[in] handle HDF5 file handle
+void flush_file(const hid_t handle);
 
-  /// Get filename
-  /// @param[in] handle HDF5 file handle
-  /// return The filename
-  static std::filesystem::path get_filename(hid_t handle);
+/// Get filename
+/// @param[in] handle HDF5 file handle
+/// return The filename
+std::filesystem::path get_filename(hid_t handle);
 
-  /// Write data to existing HDF file as defined by range blocks on each
-  /// process
-  /// @param[in] handle HDF5 file handle
-  /// @param[in] dataset_path Path for the dataset in the HDF5 file
-  /// @param[in] data Data to be written, flattened into 1D vector
-  ///   (row-major storage)
-  /// @param[in] range The local range on this processor
-  /// @param[in] global_size The global shape shape of the array
-  /// @param[in] use_mpi_io True if MPI-IO should be used
-  /// @param[in] use_chunking True if chunking should be used
-  template <typename T>
-  static void write_dataset(const hid_t handle, const std::string& dataset_path,
-                            const T* data,
-                            const std::array<std::int64_t, 2>& range,
-                            const std::vector<std::int64_t>& global_size,
-                            bool use_mpi_io, bool use_chunking);
+/// Check for existence of dataset in HDF5 file
+/// @param[in] handle HDF5 file handle
+/// @param[in] dataset_path Data set path
+/// @return True if @p dataset_path is in the file
+bool has_dataset(const hid_t handle, const std::string& dataset_path);
 
-  /// Read data from a HDF5 dataset "dataset_path" as defined by range
-  /// blocks on each process.
-  ///
-  /// @param[in] handle HDF5 file handle
-  /// @param[in] dataset_path Path for the dataset in the HDF5 file
-  /// @param[in] range The local range on this processor
-  /// @return Flattened 1D array of values. If range = {-1, -1}, then
-  ///   all data is read on this process.
-  template <typename T>
-  static std::vector<T> read_dataset(const hid_t handle,
-                                     const std::string& dataset_path,
-                                     const std::array<std::int64_t, 2>& range);
+/// Get dataset shape (size of each dimension)
+/// @param[in] handle HDF5 file handle
+/// @param[in] dataset_path Dataset path
+/// @return The shape of the dataset (row-major)
+std::vector<std::int64_t> get_dataset_shape(const hid_t handle,
+                                            const std::string& dataset_path);
 
-  /// Check for existence of dataset in HDF5 file
-  /// @param[in] handle HDF5 file handle
-  /// @param[in] dataset_path Data set path
-  /// @return True if @p dataset_path is in the file
-  static bool has_dataset(const hid_t handle, const std::string& dataset_path);
+/// Set MPI atomicity. See
+/// https://support.hdfgroup.org/HDF5/doc/RM/RM_H5F.html#File-SetMpiAtomicity
+/// and
+/// https://www.open-mpi.org/doc/v2.0/man3/MPI_File_set_atomicity.3.php
+/// Writes must be followed by an MPI_Barrier on the communicator before
+/// any subsequent reads are guaranteed to return the same data.
+void set_mpi_atomicity(const hid_t handle, const bool atomic);
 
-  /// Get dataset shape (size of each dimension)
-  /// @param[in] handle HDF5 file handle
-  /// @param[in] dataset_path Dataset path
-  /// @return The shape of the dataset (row-major)
-  static std::vector<std::int64_t>
-  get_dataset_shape(const hid_t handle, const std::string& dataset_path);
+/// Get MPI atomicity. See
+/// https://support.hdfgroup.org/HDF5/doc/RM/RM_H5F.html#File-GetMpiAtomicity
+/// and
+/// https://www.open-mpi.org/doc/v2.0/man3/MPI_File_get_atomicity.3.php
+bool get_mpi_atomicity(const hid_t handle);
 
-  /// Set MPI atomicity. See
-  /// https://support.hdfgroup.org/HDF5/doc/RM/RM_H5F.html#File-SetMpiAtomicity
-  /// and
-  /// https://www.open-mpi.org/doc/v2.0/man3/MPI_File_set_atomicity.3.php
-  /// Writes must be followed by an MPI_Barrier on the communicator before
-  /// any subsequent reads are guaranteed to return the same data.
-  static void set_mpi_atomicity(const hid_t handle, const bool atomic);
+/// Add group to HDF5 file
+/// @param[in] handle HDF5 file handle
+/// @param[in] dataset_path Data set path to add
+void add_group(const hid_t handle, const std::string& dataset_path);
 
-  /// Get MPI atomicity. See
-  /// https://support.hdfgroup.org/HDF5/doc/RM/RM_H5F.html#File-GetMpiAtomicity
-  /// and
-  /// https://www.open-mpi.org/doc/v2.0/man3/MPI_File_get_atomicity.3.php
-  static bool get_mpi_atomicity(const hid_t handle);
-
-private:
-  /// Add group to HDF5 file
-  /// @param[in] handle HDF5 file handle
-  /// @param[in] dataset_path Data set path to add
-  static void add_group(const hid_t handle, const std::string& dataset_path);
-};
-/// @cond
-//---------------------------------------------------------------------------
-//---------------------------------------------------------------------------
+/// Write data to existing HDF file as defined by range blocks on each
+/// process
+/// @param[in] handle HDF5 file handle
+/// @param[in] dataset_path Path for the dataset in the HDF5 file
+/// @param[in] data Data to be written, flattened into 1D vector
+///   (row-major storage)
+/// @param[in] range The local range on this processor
+/// @param[in] global_size The global shape shape of the array
+/// @param[in] use_mpi_io True if MPI-IO should be used
+/// @param[in] use_chunking True if chunking should be used
 template <typename T>
-inline void HDF5Interface::write_dataset(
-    const hid_t file_handle, const std::string& dataset_path, const T* data,
-    const std::array<std::int64_t, 2>& range,
-    const std::vector<int64_t>& global_size, bool use_mpi_io, bool use_chunking)
+inline void write_dataset(const hid_t file_handle,
+                          const std::string& dataset_path, const T* data,
+                          const std::array<std::int64_t, 2>& range,
+                          const std::vector<int64_t>& global_size,
+                          bool use_mpi_io, bool use_chunking)
 {
   // Data rank
   const int rank = global_size.size();
@@ -277,10 +248,17 @@ inline void HDF5Interface::write_dataset(
   if (herr_t status = H5Pclose(plist_id); status == HDF5_FAIL)
     throw std::runtime_error("Failed to release HDF5 file-access template.");
 }
-//---------------------------------------------------------------------------
+
+/// Read data from a HDF5 dataset "dataset_path" as defined by range
+/// blocks on each process.
+///
+/// @param[in] handle HDF5 file handle
+/// @param[in] dataset_path Path for the dataset in the HDF5 file
+/// @param[in] range The local range on this processor
+/// @return Flattened 1D array of values. If range = {-1, -1}, then
+///   all data is read on this process.
 template <typename T>
-inline std::vector<T>
-HDF5Interface::read_dataset(const hid_t file_handle,
+std::vector<T> read_dataset(const hid_t file_handle,
                             const std::string& dataset_path,
                             const std::array<std::int64_t, 2>& range)
 {
@@ -299,7 +277,19 @@ HDF5Interface::read_dataset(const hid_t file_handle,
     if (htri_t eq = H5Tequal(dtype, hdf5::hdf5_type<T>()); eq < 0)
       throw std::runtime_error("HDF5 datatype equality test failed.");
     else if (!eq)
-      throw std::runtime_error("Wrong type for reading from HDF5.");
+    {
+      hid_t native_type = H5Tget_native_type(dtype, H5T_DIR_DEFAULT);
+      std::size_t str_len;
+      H5LTdtype_to_text(dtype, NULL, H5LT_DDL, &str_len);
+      std::string name("*", str_len);
+
+      H5LTdtype_to_text(dtype, name.data(), H5LT_DDL, &str_len);
+      std::cout << "Native type: " << name << std::endl;
+      H5Tclose(native_type);
+      throw std::runtime_error(
+          "Wrong type for reading from HDF5. HDF5 type in file is \"" + name
+          + "\".");
+    }
     H5Tclose(dtype);
   }
 
@@ -312,7 +302,7 @@ HDF5Interface::read_dataset(const hid_t file_handle,
   int rank = H5Sget_simple_extent_ndims(dataspace);
   assert(rank >= 0);
   if (rank > 2)
-    LOG(WARNING) << "HDF5Interface::read_dataset untested for rank > 2.";
+    LOG(WARNING) << "io::hdf5::read_dataset untested for rank > 2.";
 
   // Allocate data for shape
   std::vector<hsize_t> shape(rank);
@@ -378,11 +368,9 @@ HDF5Interface::read_dataset(const hid_t file_handle,
   auto timer_end = std::chrono::system_clock::now();
   std::chrono::duration<double> dt = (timer_end - timer_start);
   double data_rate = data.size() * sizeof(T) / (1e6 * dt.count());
-
   LOG(INFO) << "HDF5 Read data rate: " << data_rate << "MB/s";
 
   return data;
 }
-//---------------------------------------------------------------------------
-/// @endcond
+} // namespace hdf5
 } // namespace dolfinx::io

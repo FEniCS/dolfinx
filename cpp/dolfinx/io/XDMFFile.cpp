@@ -44,7 +44,7 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
     const std::filesystem::path hdf5_filename
         = xdmf_utils::get_hdf5_filename(_filename);
     const bool mpi_io = dolfinx::MPI::size(_comm.comm()) > 1 ? true : false;
-    _h5_id = HDF5Interface::open_file(_comm.comm(), hdf5_filename, file_mode,
+    _h5_id = io::hdf5::open_file(_comm.comm(), hdf5_filename, file_mode,
                                       mpi_io);
     assert(_h5_id > 0);
     LOG(INFO) << "Opened HDF5 file with id \"" << _h5_id << "\"";
@@ -124,7 +124,7 @@ XDMFFile::~XDMFFile() { close(); }
 void XDMFFile::close()
 {
   if (_h5_id > 0)
-    HDF5Interface::close_file(_h5_id);
+    io::hdf5::close_file(_h5_id);
   _h5_id = -1;
 }
 //-----------------------------------------------------------------------------

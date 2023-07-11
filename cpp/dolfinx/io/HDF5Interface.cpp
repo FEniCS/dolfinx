@@ -10,7 +10,6 @@
 #define HDF5_MAXSTRLEN 80
 
 using namespace dolfinx;
-using namespace dolfinx::io;
 
 namespace
 {
@@ -55,9 +54,8 @@ bool has_group(const hid_t handle, const std::string& group_name)
 } // namespace
 
 //-----------------------------------------------------------------------------
-hid_t HDF5Interface::open_file(MPI_Comm comm,
-                               const std::filesystem::path& filename,
-                               const std::string& mode, const bool use_mpi_io)
+hid_t io::hdf5::open_file(MPI_Comm comm, const std::filesystem::path& filename,
+                          const std::string& mode, const bool use_mpi_io)
 {
   // Set parallel access with communicator
   const hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
@@ -121,19 +119,19 @@ hid_t HDF5Interface::open_file(MPI_Comm comm,
   return file_id;
 }
 //-----------------------------------------------------------------------------
-void HDF5Interface::close_file(const hid_t handle)
+void io::hdf5::close_file(const hid_t handle)
 {
   if (H5Fclose(handle) < 0)
     throw std::runtime_error("Failed to close HDF5 file.");
 }
 //-----------------------------------------------------------------------------
-void HDF5Interface::flush_file(const hid_t handle)
+void io::hdf5::flush_file(const hid_t handle)
 {
   if (H5Fflush(handle, H5F_SCOPE_GLOBAL) < 0)
     throw std::runtime_error("Failed to flush HDF5 file.");
 }
 //-----------------------------------------------------------------------------
-std::filesystem::path HDF5Interface::get_filename(hid_t handle)
+std::filesystem::path io::hdf5::get_filename(hid_t handle)
 {
   // Get length of filename
   const ssize_t length = H5Fget_name(handle, nullptr, 0);
@@ -150,8 +148,7 @@ std::filesystem::path HDF5Interface::get_filename(hid_t handle)
   return std::filesystem::path(name.begin(), name.end());
 }
 //-----------------------------------------------------------------------------
-bool HDF5Interface::has_dataset(const hid_t handle,
-                                const std::string& dataset_path)
+bool io::hdf5::has_dataset(const hid_t handle, const std::string& dataset_path)
 {
   const hid_t lapl_id = H5Pcreate(H5P_LINK_ACCESS);
   if (lapl_id < 0)
@@ -167,7 +164,7 @@ bool HDF5Interface::has_dataset(const hid_t handle,
   return link_status;
 }
 //-----------------------------------------------------------------------------
-void HDF5Interface::add_group(const hid_t handle, const std::string& group_name)
+void io::hdf5::add_group(const hid_t handle, const std::string& group_name)
 {
   std::string _group_name(group_name);
 
@@ -200,8 +197,7 @@ void HDF5Interface::add_group(const hid_t handle, const std::string& group_name)
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int64_t>
-HDF5Interface::get_dataset_shape(const hid_t handle,
-                                 const std::string& dataset_path)
+io::hdf5::get_dataset_shape(const hid_t handle, const std::string& dataset_path)
 {
   // Open named dataset
   const hid_t dset_id = H5Dopen2(handle, dataset_path.c_str(), H5P_DEFAULT);
@@ -233,7 +229,7 @@ HDF5Interface::get_dataset_shape(const hid_t handle,
   return std::vector<std::int64_t>(size.begin(), size.end());
 }
 //-----------------------------------------------------------------------------
-void HDF5Interface::set_mpi_atomicity(const hid_t handle, const bool atomic)
+void io::hdf5::set_mpi_atomicity(const hid_t handle, const bool atomic)
 {
 #ifdef H5_HAVE_PARALLEL
   if (H5Fset_mpi_atomicity(handle, atomic) < 0)
@@ -241,7 +237,7 @@ void HDF5Interface::set_mpi_atomicity(const hid_t handle, const bool atomic)
 #endif
 }
 //-----------------------------------------------------------------------------
-bool HDF5Interface::get_mpi_atomicity(const hid_t handle)
+bool io::hdf5::get_mpi_atomicity(const hid_t handle)
 {
   hbool_t atomic = false;
 #ifdef H5_HAVE_PARALLEL

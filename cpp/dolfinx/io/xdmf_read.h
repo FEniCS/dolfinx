@@ -75,7 +75,7 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
 
     // Get data shape from HDF5 file
     const std::vector shape_hdf5
-        = HDF5Interface::get_dataset_shape(h5_id, paths[1]);
+        = io::hdf5::get_dataset_shape(h5_id, paths[1]);
 
     // FIXME: should we support empty data sets?
     // Check that data set is not empty
@@ -124,7 +124,7 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
     }
 
     // Retrieve data
-    data_vector = HDF5Interface::read_dataset<T>(h5_id, paths[1], range);
+    data_vector = io::hdf5::read_dataset<T>(h5_id, paths[1], range);
   }
   else
     throw std::runtime_error("Storage format \"" + format + "\" is unknown");

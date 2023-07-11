@@ -169,7 +169,7 @@ void add_data_item(pugi::xml_node& xml_node, const hid_t h5_id,
     data_item_node.append_attribute("Format") = "HDF";
 
     // Get name of HDF5 file, including path
-    const std::filesystem::path p = HDF5Interface::get_filename(h5_id);
+    const std::filesystem::path p = io::hdf5::get_filename(h5_id);
     const std::filesystem::path filename = p.filename().c_str();
 
     // Add HDF5 filename and HDF5 internal path to XML file
@@ -182,7 +182,7 @@ void add_data_item(pugi::xml_node& xml_node, const hid_t h5_id,
         std::next(shape.begin()), shape.end(), x.size(), std::divides{});
 
     const std::array local_range{offset, offset + local_shape0};
-    HDF5Interface::write_dataset(h5_id, h5_path, x.data(), local_range, shape,
+    io::hdf5::write_dataset(h5_id, h5_path, x.data(), local_range, shape,
                                  use_mpi_io, false);
 
     // Add partitioning attribute to dataset
@@ -190,7 +190,7 @@ void add_data_item(pugi::xml_node& xml_node, const hid_t h5_id,
     // std::vector<std::size_t> offset_tmp(1, offset);
     // dolfinx::MPI::gather(comm, offset_tmp, partitions);
     // dolfinx::MPI::broadcast(comm, partitions);
-    // HDF5Interface::add_attribute(h5_id, h5_path, "partition", partitions);
+    // io::hdf5::add_attribute(h5_id, h5_path, "partition", partitions);
   }
 }
 
