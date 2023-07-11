@@ -98,6 +98,7 @@ target_link_libraries(dolfinx PUBLIC PkgConfig::PETSC)
 # HDF5
 if(TARGET hdf5::hdf5)
   target_link_libraries(dolfinx PUBLIC hdf5::hdf5)
+  target_link_libraries(dolfinx PRIVATE hdf5::hdf5_hl)
 else()
   # This is the old-style CMake (3.18 and earlier), remove when no longer
   # supporting older CMake

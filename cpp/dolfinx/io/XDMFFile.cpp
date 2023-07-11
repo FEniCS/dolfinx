@@ -8,8 +8,6 @@
 #include "cells.h"
 #include "xdmf_function.h"
 #include "xdmf_mesh.h"
-#include "xdmf_meshtags.h"
-#include "xdmf_read.h"
 #include "xdmf_utils.h"
 #include <boost/lexical_cast.hpp>
 #include <dolfinx/common/log.h>
@@ -44,8 +42,8 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
     const std::filesystem::path hdf5_filename
         = xdmf_utils::get_hdf5_filename(_filename);
     const bool mpi_io = dolfinx::MPI::size(_comm.comm()) > 1 ? true : false;
-    _h5_id = HDF5Interface::open_file(_comm.comm(), hdf5_filename, file_mode,
-                                      mpi_io);
+    _h5_id
+        = io::hdf5::open_file(_comm.comm(), hdf5_filename, file_mode, mpi_io);
     assert(_h5_id > 0);
     LOG(INFO) << "Opened HDF5 file with id \"" << _h5_id << "\"";
   }
@@ -124,7 +122,7 @@ XDMFFile::~XDMFFile() { close(); }
 void XDMFFile::close()
 {
   if (_h5_id > 0)
-    HDF5Interface::close_file(_h5_id);
+    io::hdf5::close_file(_h5_id);
   _h5_id = -1;
 }
 //-----------------------------------------------------------------------------
@@ -311,8 +309,8 @@ void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
   pugi::xml_node geo_ref_node = grid_node.append_child("xi:include");
   geo_ref_node.append_attribute("xpointer") = geo_ref_path.c_str();
   assert(geo_ref_node);
-  xdmf_meshtags::add_meshtags(_comm.comm(), meshtags, x, grid_node, _h5_id,
-                              meshtags.name);
+  xdmf_mesh::add_meshtags(_comm.comm(), meshtags, x, grid_node, _h5_id,
+                          meshtags.name);
 
   // Save XML file (on process 0 only)
   if (MPI::rank(_comm.comm()) == 0)
@@ -346,7 +344,7 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
 
   pugi::xml_node values_data_node
       = grid_node.child("Attribute").child("DataItem");
-  const std::vector values = xdmf_read::get_dataset<std::int32_t>(
+  const std::vector values = xdmf_utils::get_dataset<std::int32_t>(
       _comm.comm(), values_data_node, _h5_id);
 
   const std::pair<std::string, int> cell_type_str
