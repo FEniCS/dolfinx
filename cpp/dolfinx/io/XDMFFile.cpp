@@ -8,7 +8,6 @@
 #include "cells.h"
 #include "xdmf_function.h"
 #include "xdmf_mesh.h"
-#include "xdmf_meshtags.h"
 #include "xdmf_utils.h"
 #include <boost/lexical_cast.hpp>
 #include <dolfinx/common/log.h>
@@ -310,8 +309,8 @@ void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
   pugi::xml_node geo_ref_node = grid_node.append_child("xi:include");
   geo_ref_node.append_attribute("xpointer") = geo_ref_path.c_str();
   assert(geo_ref_node);
-  xdmf_meshtags::add_meshtags(_comm.comm(), meshtags, x, grid_node, _h5_id,
-                              meshtags.name);
+  xdmf_mesh::add_meshtags(_comm.comm(), meshtags, x, grid_node, _h5_id,
+                          meshtags.name);
 
   // Save XML file (on process 0 only)
   if (MPI::rank(_comm.comm()) == 0)
