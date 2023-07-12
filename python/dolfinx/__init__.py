@@ -26,10 +26,14 @@ del sys
 
 import sys
 
-from petsc4py import PETSc as _PETSc
-
-default_scalar_type = _PETSc.ScalarType
-default_real_type = _PETSc.RealType
+try:
+    from petsc4py import PETSc as _PETSc
+    default_scalar_type = _PETSc.ScalarType
+    default_real_type = _PETSc.RealType
+except ImportError:
+    import numpy as _np
+    default_scalar_type = _np.float64
+    default_real_type = _np.float64
 
 from dolfinx import common
 from dolfinx import cpp as _cpp

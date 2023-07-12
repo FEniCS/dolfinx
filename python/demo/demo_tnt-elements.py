@@ -21,20 +21,19 @@
 # We begin this demo by importing the required modules.
 
 # +
+import basix
+import basix.ufl
 import matplotlib
 import matplotlib.pylab as plt
 import numpy as np
-
-import basix
-import basix.ufl
-from dolfinx import fem, mesh
+from dolfinx.fem.petsc import LinearProblem
+from mpi4py import MPI
 from ufl import (SpatialCoordinate, TestFunction, TrialFunction, cos, div, dx,
                  grad, inner, sin)
 
-from mpi4py import MPI
+from dolfinx import fem, mesh
 
 matplotlib.use('agg')
-
 # -
 
 # ## Defining a degree 1 TNT element
@@ -209,7 +208,7 @@ def poisson_error(V):
     bc = fem.dirichletbc(u_bc, bdofs)
 
     # Solve
-    problem = fem.petsc.LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_rtol": 1e-12})
+    problem = LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_rtol": 1e-12})
     uh = problem.solve()
 
     M = (u_exact - uh)**2 * dx

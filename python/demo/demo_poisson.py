@@ -67,12 +67,14 @@
 
 # +
 import numpy as np
+
 import ufl
-from mpi4py import MPI
-from petsc4py.PETSc import ScalarType
+from dolfinx import fem, io, mesh, plot
+from dolfinx.fem.petsc import LinearProblem
 from ufl import ds, dx, grad, inner
 
-from dolfinx import fem, io, mesh, plot
+from mpi4py import MPI
+from petsc4py.PETSc import ScalarType
 
 # -
 
@@ -129,14 +131,14 @@ a = inner(grad(u), grad(v)) * dx
 L = inner(f, v) * dx + inner(g, v) * ds
 # -
 
-# A {py:class}`LinearProblem <dolfinx.fem.LinearProblem>` object is
+# A {py:class}`LinearProblem <dolfinx.fem.petsc.LinearProblem>` object is
 # created that brings together the variational problem, the Dirichlet
 # boundary condition, and which specifies the linear solver. In this
 # case an LU solver us sued. The {py:func}`solve
-# <dolfinx.fem.LinearProblem.solve>` computes the solution.
+# <dolfinx.fem.petsc.LinearProblem.solve>` computes the solution.
 
 # +
-problem = fem.petsc.LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+problem = LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 uh = problem.solve()
 # -
 

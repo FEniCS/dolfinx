@@ -18,15 +18,14 @@ import sys
 from functools import partial
 
 import numpy as np
-from mesh_sphere_axis import generate_mesh_sphere_axis
-from scipy.special import jv, jvp
-
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx import fem, io, mesh, plot
-
+from dolfinx.fem.petsc import LinearProblem
+from mesh_sphere_axis import generate_mesh_sphere_axis
 from mpi4py import MPI
-from petsc4py import PETSc
+from scipy.special import jv, jvp
+
+from dolfinx import default_scalar_type, fem, io, mesh, plot
 
 try:
     from dolfinx.io import VTXWriter
@@ -52,7 +51,7 @@ except ModuleNotFoundError:
 # The time-harmonic Maxwell equation is complex-valued PDE. PETSc must
 # therefore have compiled with complex scalars.
 
-if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
+if not np.issubdtype(default_scalar_type, np.complexfloating):
     print("Demo should only be executed with DOLFINx complex mode")
     exit(0)
 
@@ -491,7 +490,7 @@ dS = ufl.Measure("dS", msh, subdomain_data=facet_tags)
 phi = np.pi / 4
 
 # Initialize phase term
-phase = fem.Constant(msh, PETSc.ScalarType(np.exp(1j * 0 * phi)))
+phase = fem.Constant(msh, default_scalar_type(np.exp(1j * 0 * phi)))
 # -
 
 # We now solve the problem:
@@ -518,7 +517,7 @@ for m in m_list:
         + k0 ** 2 * ufl.inner(eps_pml * Es_m, v_m) * rho * dPml
     a, L = ufl.lhs(F), ufl.rhs(F)
 
-    problem = fem.petsc.LinearProblem(a, L, bcs=[], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+    problem = LinearProblem(a, L, bcs=[], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
     Esh_m = problem.solve()
 
     # Scattered magnetic field

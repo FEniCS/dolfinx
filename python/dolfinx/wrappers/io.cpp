@@ -157,7 +157,7 @@ void declare_vtx_writer(py::module& m, std::string type)
                    std::string engine, dolfinx::io::FidesMeshPolicy policy)
                 {
                   return std::make_unique<dolfinx::io::FidesWriter<T>>(
-                      comm.get(), filename, u, policy);
+                      comm.get(), filename, u, engine, policy);
                 }),
             py::arg("comm"), py::arg("filename"), py::arg("u"),
             py::arg("engine") = "BPFile",
