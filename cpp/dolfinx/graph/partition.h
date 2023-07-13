@@ -35,15 +35,16 @@ namespace dolfinx::graph
 using partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
     MPI_Comm, int, const AdjacencyList<std::int64_t>&, bool)>;
 
-/// Partition graph across processes using the default graph partitioner
+/// @brief Partition graph across processes using the default graph
+/// partitioner.
 ///
-/// @param[in] comm MPI Communicator that the graph is distributed
-/// across
-/// @param[in] nparts Number of partitions to divide graph nodes into
-/// @param[in] local_graph Node connectivity graph
+/// @param[in] comm MPI communicator that the graph is distributed
+/// across.
+/// @param[in] nparts Number of partitions to divide graph nodes into.
+/// @param[in] local_graph Node connectivity graph.
 /// @param[in] ghosting Flag to enable ghosting of the output node
-/// distribution
-/// @return Destination rank for each input node
+/// distribution.
+/// @return Destination rank for each input node.
 AdjacencyList<std::int32_t>
 partition_graph(MPI_Comm comm, int nparts,
                 const AdjacencyList<std::int64_t>& local_graph, bool ghosting);

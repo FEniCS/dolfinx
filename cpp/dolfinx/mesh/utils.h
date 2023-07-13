@@ -791,13 +791,13 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     const std::vector<fem::CoordinateElement<
         typename std::remove_reference_t<typename U::value_type>>>& elements,
     const U& x, std::array<std::size_t, 2> xshape,
-    CellPartitionFunction cell_partitioner)
+    CellPartitionFunction partitioner)
 {
   const fem::ElementDofLayout dof_layout = elements[0].create_dof_layout();
 
   // Function top build geometry. Used to scope memory operations.
   auto build_topology = [](auto comm, auto& elements, auto& dof_layout,
-                           auto& cells, auto& cell_partitioner)
+                           auto& cells, auto& partitioner)
   {
     // -- Partition topology
 
@@ -806,7 +806,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     // vertices. For P1 geometry this should just be the identity
     // operator. For other elements the filtered lists may have 'gaps',
     // i.e. the indices might not be contiguous. We don't create an
-    // object before calling cell_partitioner to ensure that memory is
+    // object before calling partitioner to ensure that memory is
     // freed immediately.
     //
     // Note: extract_topology could be skipped for 'P1' elements since
@@ -817,28 +817,32 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     const int tdim = cell_dim(elements[0].cell_shape());
 
     graph::AdjacencyList<std::int32_t> dest(0);
-    if (cell_partitioner)
+    graph::AdjacencyList<std::int64_t> cell_nodes(0);
+    std::vector<std::int64_t> original_cell_index0;
+    std::vector<int> ghost_owners;
+    if (partitioner)
     {
       const int size = dolfinx::MPI::size(comm);
-      dest = cell_partitioner(
+      dest = partitioner(
           comm, size, tdim,
           extract_topology(elements[0].cell_shape(), dof_layout, cells));
+
+      // -- Distribute cells (topology, includes higher-order 'nodes')
+
+      // Distribute cells to destination rank
+      std::vector<int> src;
+      std::tie(cell_nodes, src, original_cell_index0, ghost_owners)
+          = graph::build::distribute(comm, cells, dest);
     }
     else
     {
       int rank = dolfinx::MPI::rank(comm);
       dest = graph::regular_adjacency_list(
           std::vector<std::int32_t>(cells.num_nodes(), rank), 1);
+      cell_nodes = cells;
+      original_cell_index0.resize(cell_nodes.num_nodes());
+      std::iota(original_cell_index0.begin(), original_cell_index0.end(), 0);
     }
-
-    // -- Distribute cells (topology, includes higher-order 'nodes')
-
-    // Distribute cells to destination rank
-    auto [cell_nodes, src, original_cell_index0, ghost_owners]
-        = graph::build::distribute(comm, cells, dest);
-
-    // Release memory (src is not used)
-    decltype(src)().swap(src);
 
     // -- Extra cell topology
 
@@ -903,7 +907,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   };
 
   auto [topology, cell_nodes]
-      = build_topology(comm, elements, dof_layout, cells, cell_partitioner);
+      = build_topology(comm, elements, dof_layout, cells, partitioner);
 
   // Create connectivity required to compute the Geometry (extra
   // connectivities for higher-order geometries)
@@ -929,17 +933,17 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// This function takes mesh input data that is distributed across
 /// processes and creates a mesh::Mesh, with the mesh cell distribution
 /// determined by the default cell partitioner. The default partitioner
-/// is based a graph partitioning.
+/// is based on graph partitioning.
 ///
-/// @param[in] comm The MPI communicator to build the mesh on
+/// @param[in] comm The MPI communicator to build the mesh on.
 /// @param[in] cells The cells on the this MPI rank. Each cell (node in
 /// the `AdjacencyList`) is defined by its 'nodes' (using global
 /// indices). For lowest order cells this will be just the cell
 /// vertices. For higher-order cells, other cells 'nodes' will be
 /// included.
 /// @param[in] elements The coordinate elements that describe the
-/// geometric mapping for cells
-/// @param[in] x The coordinates of mesh nodes
+/// geometric mapping for cells.
+/// @param[in] x The coordinates of mesh nodes.
 /// @param[in] xshape The shape of `x`. It should be `(num_points, gdim)`.
 /// @param[in] ghost_mode The requested type of cell ghosting/overlap
 /// @return A distributed Mesh.
