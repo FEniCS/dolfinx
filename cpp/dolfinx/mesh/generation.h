@@ -72,19 +72,21 @@ Mesh<T> build_prism(MPI_Comm comm,
 /// there will be  will be `6*n[0]*n[1]*n[2]` cells. For hexahedra the
 /// number of cells will be `n[0]*n[1]*n[2]`.
 ///
-/// @param[in] comm MPI communicator to build mesh on
-/// @param[in] p Points of box
-/// @param[in] n Number of cells in each direction
-/// @param[in] celltype Cell shape
-/// @param[in] partitioner Partitioning function to use for
-/// determining the parallel distribution of cells across MPI ranks
+/// @param[in] comm MPI communicator to build mesh on.
+/// @param[in] p Points of box.
+/// @param[in] n Number of cells in each direction.
+/// @param[in] celltype Cell shape.
+/// @param[in] partitioner Partitioning function to use for determining
+/// the parallel distribution of cells across MPI ranks.
 /// @return Mesh
 template <std::floating_point T = double>
 Mesh<T> create_box(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
                    std::array<std::size_t, 3> n, CellType celltype,
-                   const mesh::CellPartitionFunction& partitioner
-                   = create_cell_partitioner())
+                   mesh::CellPartitionFunction partitioner = nullptr)
 {
+  if (!partitioner and dolfinx::MPI::size(comm) > 1)
+    partitioner = create_cell_partitioner();
+
   switch (celltype)
   {
   case CellType::tetrahedron:
@@ -96,65 +98,6 @@ Mesh<T> create_box(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
   default:
     throw std::runtime_error("Generate box mesh. Wrong cell type");
   }
-}
-
-/// Interval mesh of the 1D line `[a, b]`.  Given @p n cells in the
-/// axial direction, the total number of intervals will be `n` and the
-/// total number of vertices will be `n + 1`.
-///
-/// @param[in] comm MPI communicator to build the mesh on
-/// @param[in] nx The number of cells
-/// @param[in] x The end points of the interval
-/// @param[in] partitioner Partitioning function to use for determining
-/// the parallel distribution of cells across MPI ranks
-/// @return A mesh
-template <std::floating_point T = double>
-Mesh<T> create_interval(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
-                        const CellPartitionFunction& partitioner
-                        = create_cell_partitioner())
-{
-  fem::CoordinateElement<T> element(CellType::interval, 1);
-
-  // Receive mesh according to parallel policy
-  if (dolfinx::MPI::rank(comm) != 0)
-  {
-    return create_mesh(
-        comm, graph::regular_adjacency_list(std::vector<std::int64_t>(), 2),
-        {element}, std::vector<T>(), {0, 1}, partitioner);
-  }
-
-  const T a = x[0];
-  const T b = x[1];
-  const T ab = (b - a) / static_cast<T>(nx);
-
-  if (std::abs(a - b) < DBL_EPSILON)
-  {
-    throw std::runtime_error(
-        "Length of interval is zero. Check your dimensions.");
-  }
-
-  if (b < a)
-  {
-    throw std::runtime_error(
-        "Interval length is negative. Check order of arguments.");
-  }
-
-  if (nx < 1)
-    throw std::runtime_error("Number of points on interval must be at least 1");
-
-  // Create vertices
-  std::vector<T> geom(nx + 1);
-  for (std::size_t ix = 0; ix <= nx; ix++)
-    geom[ix] = a + ab * static_cast<T>(ix);
-
-  // Create intervals
-  std::vector<std::int64_t> cells(nx * 2);
-  for (std::size_t ix = 0; ix < nx; ++ix)
-    for (std::size_t j = 0; j < 2; ++j)
-      cells[2 * ix + j] = ix + j;
-
-  return create_mesh(comm, graph::regular_adjacency_list(std::move(cells), 2),
-                     {element}, geom, {geom.size(), 1}, partitioner);
 }
 
 /// Create a uniform mesh::Mesh over the rectangle spanned by the two
@@ -209,8 +152,70 @@ Mesh<T> create_rectangle(MPI_Comm comm,
                          std::array<std::size_t, 2> n, CellType celltype,
                          DiagonalType diagonal = DiagonalType::right)
 {
-  return create_rectangle<T>(comm, p, n, celltype, create_cell_partitioner(),
-                             diagonal);
+  return create_rectangle<T>(comm, p, n, celltype, nullptr, diagonal);
+}
+
+/// Interval mesh of the 1D line `[a, b]`.  Given @p n cells in the
+/// axial direction, the total number of intervals will be `n` and the
+/// total number of vertices will be `n + 1`.
+///
+/// @param[in] comm MPI communicator to build the mesh on
+/// @param[in] nx The number of cells
+/// @param[in] x The end points of the interval
+/// @param[in] partitioner Partitioning function to use for determining
+/// the parallel distribution of cells across MPI ranks
+/// @return A mesh
+template <std::floating_point T = double>
+Mesh<T> create_interval(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
+                        CellPartitionFunction partitioner = nullptr)
+{
+  if (!partitioner and dolfinx::MPI::size(comm) > 1)
+    partitioner = create_cell_partitioner();
+
+  fem::CoordinateElement<T> element(CellType::interval, 1);
+
+  if (dolfinx::MPI::rank(comm) == 0)
+  {
+    const T a = x[0];
+    const T b = x[1];
+    const T ab = (b - a) / static_cast<T>(nx);
+
+    if (std::abs(a - b) < DBL_EPSILON)
+    {
+      throw std::runtime_error(
+          "Length of interval is zero. Check your dimensions.");
+    }
+
+    if (b < a)
+    {
+      throw std::runtime_error(
+          "Interval length is negative. Check order of arguments.");
+    }
+
+    if (nx < 1)
+      throw std::runtime_error(
+          "Number of points on interval must be at least 1");
+
+    // Create vertices
+    std::vector<T> geom(nx + 1);
+    for (std::size_t ix = 0; ix <= nx; ix++)
+      geom[ix] = a + ab * static_cast<T>(ix);
+
+    // Create intervals
+    std::vector<std::int64_t> cells(nx * 2);
+    for (std::size_t ix = 0; ix < nx; ++ix)
+      for (std::size_t j = 0; j < 2; ++j)
+        cells[2 * ix + j] = ix + j;
+
+    return create_mesh(comm, graph::regular_adjacency_list(std::move(cells), 2),
+                       {element}, geom, {geom.size(), 1}, partitioner);
+  }
+  else
+  {
+    return create_mesh(
+        comm, graph::regular_adjacency_list(std::vector<std::int64_t>(), 2),
+        {element}, std::vector<T>(), {0, 1}, partitioner);
+  }
 }
 
 namespace impl

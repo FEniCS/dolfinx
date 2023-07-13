@@ -784,7 +784,10 @@ compute_incident_entities(const Topology& topology,
                           std::span<const std::int32_t> entities, int d0,
                           int d1);
 
-/// Create a mesh using a provided mesh partitioning function
+/// Create a mesh using a provided mesh partitioning function.
+///
+/// If the partitioning function is not callable, i.e. it does not store
+/// a callable function, no re-distribution of cells is done.
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
