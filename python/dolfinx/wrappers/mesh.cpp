@@ -192,8 +192,16 @@ void declare_mesh(py::module& m, std::string type)
          dolfinx::mesh::GhostMode ghost_mode,
          const PythonCellPartitionFunction& partitioner)
       {
-        return dolfinx::mesh::create_interval<T>(
-            comm.get(), n, p, create_cell_partitioner_cpp(partitioner));
+        if (partitioner)
+        {
+          return dolfinx::mesh::create_interval<T>(
+              comm.get(), n, p, create_cell_partitioner_cpp(partitioner));
+        }
+        else
+        {
+          return dolfinx::mesh::create_interval<T>(comm.get(), n, p,
+                                                   partitioner);
+        }
       },
       py::arg("comm"), py::arg("n"), py::arg("p"), py::arg("ghost_mode"),
       py::arg("partitioner"));
@@ -205,9 +213,17 @@ void declare_mesh(py::module& m, std::string type)
          const PythonCellPartitionFunction& partitioner,
          dolfinx::mesh::DiagonalType diagonal)
       {
-        return dolfinx::mesh::create_rectangle<T>(
-            comm.get(), p, n, celltype,
-            create_cell_partitioner_cpp(partitioner), diagonal);
+        if (partitioner)
+        {
+          return dolfinx::mesh::create_rectangle<T>(
+              comm.get(), p, n, celltype,
+              create_cell_partitioner_cpp(partitioner), diagonal);
+        }
+        else
+        {
+          return dolfinx::mesh::create_rectangle<T>(comm.get(), p, n, celltype,
+                                                    partitioner, diagonal);
+        }
       },
       py::arg("comm"), py::arg("p"), py::arg("n"), py::arg("celltype"),
       py::arg("partitioner"), py::arg("diagonal"));
@@ -218,9 +234,17 @@ void declare_mesh(py::module& m, std::string type)
          std::array<std::size_t, 3> n, dolfinx::mesh::CellType celltype,
          const PythonCellPartitionFunction& partitioner)
       {
-        return dolfinx::mesh::create_box<T>(
-            comm.get(), p, n, celltype,
-            create_cell_partitioner_cpp(partitioner));
+        if (partitioner)
+        {
+          return dolfinx::mesh::create_box<T>(
+              comm.get(), p, n, celltype,
+              create_cell_partitioner_cpp(partitioner));
+        }
+        else
+        {
+          return dolfinx::mesh::create_box<T>(comm.get(), p, n, celltype,
+                                              partitioner);
+        }
       },
       py::arg("comm"), py::arg("p"), py::arg("n"), py::arg("celltype"),
       py::arg("partitioner"));
@@ -232,18 +256,28 @@ void declare_mesh(py::module& m, std::string type)
          const py::array_t<T, py::array::c_style>& x,
          const PythonPartitioningFunction& p)
       {
-        auto p_wrap
-            = [p](MPI_Comm comm, int n, int tdim,
-                  const dolfinx::graph::AdjacencyList<std::int64_t>& cells)
-        { return p(MPICommWrapper(comm), n, tdim, cells); };
-
         std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape()[1];
         std::vector shape{std::size_t(x.shape(0)), shape1};
-        return dolfinx::mesh::create_mesh(
-            comm.get(), cells, {element}, std::span(x.data(), x.size()),
-            {static_cast<std::size_t>(x.shape(0)),
-             static_cast<std::size_t>(x.shape(1))},
-            p_wrap);
+        if (p)
+        {
+          auto p_wrap
+              = [p](MPI_Comm comm, int n, int tdim,
+                    const dolfinx::graph::AdjacencyList<std::int64_t>& cells)
+          { return p(MPICommWrapper(comm), n, tdim, cells); };
+          return dolfinx::mesh::create_mesh(
+              comm.get(), cells, {element}, std::span(x.data(), x.size()),
+              {static_cast<std::size_t>(x.shape(0)),
+               static_cast<std::size_t>(x.shape(1))},
+              p_wrap);
+        }
+        else
+        {
+          return dolfinx::mesh::create_mesh(
+              comm.get(), cells, {element}, std::span(x.data(), x.size()),
+              {static_cast<std::size_t>(x.shape(0)),
+               static_cast<std::size_t>(x.shape(1))},
+              p);
+        }
       },
       py::arg("comm"), py::arg("cells"), py::arg("element"),
       py::arg("x").noconvert(), py::arg("partitioner"),

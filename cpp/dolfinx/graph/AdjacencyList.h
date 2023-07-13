@@ -97,9 +97,9 @@ public:
   /// Number of connections for given node
   /// @param [in] node Node index
   /// @return The number of outgoing links (edges) from the node
-  int num_links(int node) const
+  int num_links(std::size_t node) const
   {
-    assert((node + 1) < (int)_offsets.size());
+    assert((node + 1) < _offsets.size());
     return _offsets[node + 1] - _offsets[node];
   }
 
@@ -107,7 +107,7 @@ public:
   /// @param [in] node Node index
   /// @return Array of outgoing links for the node. The length will be
   /// AdjacencyList::num_links(node).
-  std::span<T> links(int node)
+  std::span<T> links(std::size_t node)
   {
     return std::span<T>(_array.data() + _offsets[node],
                         _offsets[node + 1] - _offsets[node]);
@@ -117,7 +117,7 @@ public:
   /// @param [in] node Node index
   /// @return Array of outgoing links for the node. The length will be
   /// AdjacencyList:num_links(node).
-  std::span<const T> links(int node) const
+  std::span<const T> links(std::size_t node) const
   {
     return std::span<const T>(_array.data() + _offsets[node],
                               _offsets[node + 1] - _offsets[node]);

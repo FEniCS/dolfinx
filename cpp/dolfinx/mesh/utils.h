@@ -791,7 +791,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     const std::vector<fem::CoordinateElement<
         typename std::remove_reference_t<typename U::value_type>>>& elements,
     const U& x, std::array<std::size_t, 2> xshape,
-    const CellPartitionFunction& cell_partitioner)
+    CellPartitionFunction cell_partitioner)
 {
   const fem::ElementDofLayout dof_layout = elements[0].create_dof_layout();
 
@@ -814,11 +814,22 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 
     // Compute the destination rank for cells on this process via graph
     // partitioning.
-    const int size = dolfinx::MPI::size(comm);
     const int tdim = cell_dim(elements[0].cell_shape());
-    const graph::AdjacencyList<std::int32_t> dest = cell_partitioner(
-        comm, size, tdim,
-        extract_topology(elements[0].cell_shape(), dof_layout, cells));
+
+    graph::AdjacencyList<std::int32_t> dest(0);
+    if (cell_partitioner)
+    {
+      const int size = dolfinx::MPI::size(comm);
+      dest = cell_partitioner(
+          comm, size, tdim,
+          extract_topology(elements[0].cell_shape(), dof_layout, cells));
+    }
+    else
+    {
+      int rank = dolfinx::MPI::rank(comm);
+      dest = graph::regular_adjacency_list(
+          std::vector<std::int32_t>(cells.num_nodes(), rank), 1);
+    }
 
     // -- Distribute cells (topology, includes higher-order 'nodes')
 
@@ -939,8 +950,13 @@ create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
                 std::remove_reference_t<typename U::value_type>>>& elements,
             const U& x, std::array<std::size_t, 2> xshape, GhostMode ghost_mode)
 {
-  return create_mesh(comm, cells, elements, x, xshape,
-                     create_cell_partitioner(ghost_mode));
+  if (dolfinx::MPI::size(comm) == 1)
+    return create_mesh(comm, cells, elements, x, xshape, nullptr);
+  else
+  {
+    return create_mesh(comm, cells, elements, x, xshape,
+                       create_cell_partitioner(ghost_mode));
+  }
 }
 
 /// @brief Create a new mesh consisting of a subset of entities in a
