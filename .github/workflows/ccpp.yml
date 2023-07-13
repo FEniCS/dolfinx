@@ -103,7 +103,7 @@ jobs:
           find . -type f \( -name "*.cmake" -o -name "*.cmake.in" \) | xargs cmake-format --check
 
       - name: Configure C++
-        run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
+        run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -DDOLFINX_ENABLE_KAHIP=ON -B build -S cpp/
 
       - name: Build and install C++ library
         run: |
