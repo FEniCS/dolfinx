@@ -232,7 +232,7 @@ set_package_properties(
 # Check for HDF5
 set(HDF5_PREFER_PARALLEL TRUE)
 set(HDF5_FIND_DEBUG TRUE)
-find_package(HDF5 REQUIRED COMPONENTS C HL)
+find_package(HDF5 REQUIRED COMPONENTS C)
 if(NOT HDF5_IS_PARALLEL)
   message(
     FATAL_ERROR
