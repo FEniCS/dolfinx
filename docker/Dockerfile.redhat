@@ -8,7 +8,8 @@ FROM rockylinux/rockylinux:9
 ARG BUILD_NP=2
 
 ARG HDF5_SERIES=1.14
-ARG HDF5_PATCH=1-2
+ARG HDF5_PATCH=1
+ARG HDF5_FIX=-2
 ARG PETSC_VERSION=3.19.3
 ARG NUMPY_VERSION=1.23.3
 ARG MPICH_VERSION=4.1.2
@@ -86,9 +87,10 @@ RUN curl -L -O http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${P
 ENV PETSC_DIR=/usr/local
 
 # Build HDF5
-RUN curl -L -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES}/hdf5-${HDF5_SERIES}.${HDF5_PATCH}/src/hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
-    tar -xf hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
-    cd hdf5-${HDF5_SERIES}.${HDF5_PATCH} && \
+RUN echo
+RUN curl -L -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES}/hdf5-${HDF5_SERIES}.${HDF5_PATCH}/src/hdf5-${HDF5_SERIES}.${HDF5_PATCH}${HDF5_FIX}.tar.gz && \
+    tar -xf hdf5-${HDF5_SERIES}.${HDF5_PATCH}${HDF5_FIX}.tar.gz && \
+    cd hdf5-${HDF5_SERIES}.${HDF5_PATCH}${HDF5_FIX} && \
     ./configure --prefix=/usr/local --enable-parallel --enable-shared --enable-static=no && \
     make -j${BUILD_NP} install && \
     rm -rf /tmp/*

@@ -16,7 +16,8 @@ ARG ADIOS2_VERSION=2.9.0
 ARG DOXYGEN_VERSION=1_9_7
 ARG GMSH_VERSION=4_11_1
 ARG HDF5_SERIES=1.14
-ARG HDF5_PATCH=1-2
+ARG HDF5_PATCH=1
+ARG HDF5_FIX=-2
 ARG KAHIP_VERSION=3.15
 ARG NUMPY_VERSION=1.23.2
 ARG PYBIND11_VERSION=2.10.4
@@ -37,6 +38,7 @@ ARG DOXYGEN_VERSION
 ARG GMSH_VERSION
 ARG HDF5_SERIES
 ARG HDF5_PATCH
+ARG HDF5_FIX
 ARG PYBIND11_VERSION
 ARG PETSC_VERSION
 ARG SLEPC_VERSION
@@ -169,9 +171,9 @@ RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.ta
 # HDF5 overrides CMAKE_INSTALL_PREFIX by default, hence it is set
 # below to ensure that HDF5 is installed into a path where it can be
 # found.
-RUN wget -nc --quiet https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES}/hdf5-${HDF5_SERIES}.${HDF5_PATCH}/src/hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
-    tar xfz hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
-    cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release -DHDF5_ENABLE_PARALLEL=on -DHDF5_ENABLE_Z_LIB_SUPPORT=on -B build-dir -S hdf5-${HDF5_SERIES}.${HDF5_PATCH} && \
+RUN wget -nc --quiet https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES}/hdf5-${HDF5_SERIES}.${HDF5_PATCH}/src/hdf5-${HDF5_SERIES}.${HDF5_PATCH}${HDF5_FIX}.tar.gz && \
+    tar xfz hdf5-${HDF5_SERIES}.${HDF5_PATCH}${HDF5_FIX}.tar.gz && \
+    cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release -DHDF5_ENABLE_PARALLEL=on -DHDF5_ENABLE_Z_LIB_SUPPORT=on -B build-dir -S hdf5-${HDF5_SERIES}.${HDF5_PATCH}${HDF5_FIX} && \
     cmake --build build-dir && \
     cmake --install build-dir && \
     rm -rf /tmp/*
