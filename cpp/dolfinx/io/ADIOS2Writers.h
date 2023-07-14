@@ -382,14 +382,14 @@ void write_mesh(adios2::IO& io, adios2::Engine& engine,
   // Get topological dimension, number of cells and number of 'nodes' per
   // cell, and compute 'VTK' connectivity
   int tdim = topology->dim();
-  std::int32_t num_cells = topology->index_map(tdim)->size_local();
-  int num_nodes = geometry.cmaps()[0].dim();
+  std::size_t num_cells = topology->index_map(tdim)->size_local();
+  std::size_t num_nodes = geometry.cmaps()[0].dim();
   auto [cells, shape] = io::extract_vtk_connectivity(mesh.geometry().dofmap(),
                                                      topology->cell_types()[0]);
 
   // "Put" topology data in the result in the ADIOS2 file
   adios2::Variable local_topology = impl_adios2::define_variable<std::int64_t>(
-      io, "connectivity", {}, {}, {std::size_t(num_cells * num_nodes)});
+      io, "connectivity", {}, {}, {num_cells * num_nodes});
   engine.Put(local_topology, cells.data());
   engine.PerformPuts();
 }
@@ -952,8 +952,8 @@ public:
     assert(topology);
     if (topology->cell_types().size() > 1)
       throw std::runtime_error("Multiple cell types not supported");
-    impl_adios2::define_attribute<int>(*this->_io, "CellType",
-                                       int(topology->cell_types()[0]));
+    impl_adios2::define_attribute<int>(
+        *this->_io, "CellType", static_cast<int>(topology->cell_types()[0]));
 
     // Extract time-independent coordinate-element attributes (Lagrange variant
     // and degree)
@@ -962,8 +962,9 @@ public:
       throw std::runtime_error("Multiple coordinate maps not supported");
     impl_adios2::define_attribute<int>(*this->_io, "Degree",
                                        geometry.cmaps()[0].degree());
-    impl_adios2::define_attribute<int>(*this->_io, "LagrangeVariant",
-                                       int(geometry.cmaps()[0].variant()));
+    impl_adios2::define_attribute<int>(
+        *this->_io, "LagrangeVariant",
+        static_cast<int>(geometry.cmaps()[0].variant()));
   }
 
   /// @brief Create a ADIOS2 checkpointer for reading a mesh from file
@@ -1088,9 +1089,9 @@ public:
     const std::array<std::int64_t, 2> geom_range
         = dolfinx::MPI::local_range(rank, x_shape[0], size);
     geometry_variable.SetSelection(
-        {{(std::size_t)geom_range[0], (std::size_t)0},
-         {std::size_t(geom_range[1] - geom_range[0]),
-          (std::size_t)x_shape[1]}});
+        {{static_cast<std::size_t>(geom_range[0]), static_cast<std::size_t>(0)},
+         {static_cast<std::size_t>(geom_range[1] - geom_range[0]),
+          x_shape[1]}});
     std::vector<T> nodes((geom_range[1] - geom_range[0]) * x_shape[1]);
     this->_engine->Get(geometry_variable, nodes);
 
