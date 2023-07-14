@@ -1052,8 +1052,7 @@ public:
           "Could not find 'CellType' attribute in input file");
     }
 
-    mesh::CellType cell_type
-        = static_cast<mesh::CellType>(ct_var.Data().front());
+    auto cell_type = static_cast<mesh::CellType>(ct_var.Data().front());
 
     adios2::Attribute<int> lv_var
         = this->_io->template InquireAttribute<int>("LagrangeVariant");
