@@ -1062,7 +1062,7 @@ public:
       throw std::runtime_error(
           "Could not find 'LagrangeVariant' attribute in input file");
     }
-    basix::element::lagrange_variant lagrange_variant
+    auto lagrange_variant
         = static_cast<basix::element::lagrange_variant>(lv_var.Data().front());
 
     adios2::Attribute<int> deg_var
