@@ -1108,8 +1108,8 @@ public:
         = dolfinx::MPI::local_range(rank, t_shape[0], size);
     const std::size_t num_cells_local = top_range[1] - top_range[0];
     topology_variable.SetSelection(
-        {{(std::size_t)top_range[0], (std::size_t)0},
-         {num_cells_local, (std::size_t)t_shape[1]}});
+        {{static_cast<std::size_t>(top_range[0]), (std::size_t)0},
+         {num_cells_local, t_shape[1]}});
     std::vector<std::int64_t> connectivity(num_cells_local * t_shape[1]);
     this->_engine->Get(topology_variable, connectivity);
     this->_engine->PerformGets();
