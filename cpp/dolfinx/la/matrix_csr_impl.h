@@ -129,8 +129,9 @@ void impl::insert_csr(U&& data, const V& cols, const W& row_ptr, const X& x,
     {
       // Find position of column index
       auto it = std::lower_bound(cit0, cit1, xcols[c]);
-      assert(*it == xcols[c]);
-      assert(it != cit1);
+
+      if (*it != xcols[c] or it == cit1)
+        throw std::runtime_error("Entry not in sparsity");
 
       std::size_t d = std::distance(cols.begin(), it);
       int di = d * BS0 * BS1;
@@ -177,8 +178,10 @@ void impl::insert_blocked_csr(U&& data, const V& cols, const W& row_ptr,
       {
         // Find position of column index
         auto it = std::lower_bound(cit0, cit1, xcols[c] * BS1);
-        assert(*it == xcols[c] * BS1);
-        assert(it != cit1);
+
+        if (*it != xcols[c] * BS1 or it == cit1)
+          throw std::runtime_error("Entry not in sparsity");
+
         std::size_t d = std::distance(cols.begin(), it);
         assert(d < data.size());
         int xi = c * BS1;
@@ -222,8 +225,9 @@ void impl::insert_nonblocked_csr(U&& data, const V& cols, const W& row_ptr,
       // Find position of column index
       auto cdiv = std::div(xcols[c], bs1);
       auto it = std::lower_bound(cit0, cit1, cdiv.quot);
-      assert(it != cit1);
-      assert(*it == cdiv.quot);
+
+      if (*it != cdiv.quot or it == cit1)
+        throw std::runtime_error("Entry not in sparsity");
 
       std::size_t d = std::distance(cols.begin(), it);
       const int di = d * nbs + rdiv.rem * bs1 + cdiv.rem;
