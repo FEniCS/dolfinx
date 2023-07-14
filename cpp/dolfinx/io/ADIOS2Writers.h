@@ -541,9 +541,7 @@ public:
   FidesWriter(MPI_Comm comm, const std::filesystem::path& filename,
               const typename adios2_writer::U<T>& u,
               const FidesMeshPolicy mesh_policy = FidesMeshPolicy::update)
-      : ADIOS2Writer(comm, filename, "Fides function writer", "BPFile"),
-        _mesh_reuse_policy(mesh_policy),
-        _mesh(impl_adios2::extract_common_mesh<T>(u)), _u(u)
+      : FidesWriter(comm, filename, u, "BPFile", mesh_policy)
   {
   }
 
