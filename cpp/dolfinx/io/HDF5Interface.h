@@ -18,10 +18,9 @@
 #include <string>
 #include <vector>
 
-#include <H5LTpublic.h>
-
 namespace dolfinx::io::hdf5
 {
+
 /// C++ type to HDF5 data type
 template <typename T>
 hid_t hdf5_type()
@@ -268,17 +267,10 @@ std::vector<T> read_dataset(hid_t dset_id, std::array<std::int64_t, 2> range,
       throw std::runtime_error("HDF5 datatype equality test failed.");
     else if (!eq)
     {
-      hid_t native_type = H5Tget_native_type(dtype, H5T_DIR_DEFAULT);
-      std::size_t str_len;
-      H5LTdtype_to_text(dtype, NULL, H5LT_DDL, &str_len);
-      std::string name("*", str_len);
-      H5LTdtype_to_text(dtype, name.data(), H5LT_DDL, &str_len);
-      H5Tclose(native_type);
-      throw std::runtime_error(
-          "Wrong type for reading from HDF5. HDF5 type in file is \"" + name
-          + "\".");
+      H5Tclose(dtype);
+      throw std::runtime_error("Wrong type for reading from HDF5. Use \"h5ls "
+                               "-v\" to inspect the types in the HDF5 file.");
     }
-    H5Tclose(dtype);
   }
 
   // Open dataspace
