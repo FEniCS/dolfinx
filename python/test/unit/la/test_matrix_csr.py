@@ -222,15 +222,16 @@ def test_bad_entry(dtype):
     sp = create_test_sparsity(6, 1)
     mat1 = matrix_csr(sp, dtype=dtype)
 
-    # Set block in bs=1 matrix
+    # Set block in bs=1 matrix (tests insert_blocked_csr)
     with pytest.raises(RuntimeError):
         mat1.set([1.0, 2.0, 3.0, 4.0], [0], [0], 2)
-    # Normal
+
+    # Set an single entry in bs=1 matrix (tests insert_csr)
     with pytest.raises(RuntimeError):
         mat1.add([1.0], [0], [0], 1)
 
     sp = create_test_sparsity(3, 2)
     mat2 = matrix_csr(sp, BlockMode.compact, dtype=dtype)
-    # set unblocked in bs=2 matrix
+    # set unblocked in bs=2 matrix (tests insert_nonblocked_csr)
     with pytest.raises(RuntimeError):
         mat2.add([2.0, 3.0, 4.0, 5.0], [0, 1], [0, 1], 1)
