@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2022 Anders Logg and Garth N. Wells
+// Copyright (C) 2008-2023 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -27,15 +27,17 @@ namespace dolfinx::fem
 
 /// @brief This class represents a finite element function space defined
 /// by a mesh, a finite element, and a local-to-global map of the
-/// degrees of freedom (dofmap).
+/// degrees-of-freedom.
+/// @tparam T The floating point (real) type of the mesh geometry and the
+/// finite element basis.
 template <std::floating_point T>
 class FunctionSpace
 {
 public:
   /// @brief Create function space for given mesh, element and dofmap.
-  /// @param[in] mesh The mesh
-  /// @param[in] element The element
-  /// @param[in] dofmap The dofmap
+  /// @param[in] mesh Mesh that the space is defined on.
+  /// @param[in] element Finite element for the space.
+  /// @param[in] dofmap Degree-of-freedom map for the space.
   FunctionSpace(std::shared_ptr<const mesh::Mesh<T>> mesh,
                 std::shared_ptr<const FiniteElement<T>> element,
                 std::shared_ptr<const DofMap> dofmap)
@@ -147,7 +149,6 @@ public:
     auto collapsed_dofmap
         = std::make_shared<DofMap>(std::move(_collapsed_dofmap));
 
-    // Create new FunctionSpace and return
     return {FunctionSpace(_mesh, _element, collapsed_dofmap),
             std::move(collapsed_dofs)};
   }
@@ -333,7 +334,7 @@ private:
 ///
 /// @param[in] V Vector function spaces for (0) each row block and (1)
 /// each column block
-template <typename T>
+template <dolfinx::scalar T>
 std::array<std::vector<std::shared_ptr<const FunctionSpace<T>>>, 2>
 common_function_spaces(
     const std::vector<
@@ -374,7 +375,7 @@ common_function_spaces(
     }
   }
 
-  // Check there are no null entries
+  // Check that there are no null entries
   if (std::find(spaces0.begin(), spaces0.end(), nullptr) != spaces0.end())
     throw std::runtime_error("Could not deduce all block test spaces.");
   if (std::find(spaces1.begin(), spaces1.end(), nullptr) != spaces1.end())

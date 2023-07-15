@@ -20,11 +20,12 @@
 
 # +
 import numpy as np
-from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
-from dolfinx.mesh import CellType, create_rectangle, locate_entities
-from mpi4py import MPI
 
 from dolfinx import default_scalar_type, plot
+from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
+from dolfinx.mesh import CellType, create_rectangle, locate_entities
+
+from mpi4py import MPI
 
 # -
 

@@ -75,15 +75,24 @@ Vec la::petsc::create_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
 
   // Get local size
   assert(range[1] >= range[0]);
-  const std::int32_t local_size = range[1] - range[0];
+  std::int32_t local_size = range[1] - range[0];
 
   Vec x;
-  const std::vector<PetscInt> _ghosts(ghosts.begin(), ghosts.end());
-  ierr = VecCreateGhostBlock(comm, bs, bs * local_size, PETSC_DETERMINE,
-                             _ghosts.size(), _ghosts.data(), &x);
-  CHECK_ERROR("VecCreateGhostBlock");
-  assert(x);
+  std::vector<PetscInt> _ghosts(ghosts.begin(), ghosts.end());
+  if (bs == 1)
+  {
+    ierr = VecCreateGhost(comm, local_size, PETSC_DETERMINE, _ghosts.size(),
+                          _ghosts.data(), &x);
+    CHECK_ERROR("VecCreateGhost");
+  }
+  else
+  {
+    ierr = VecCreateGhostBlock(comm, bs, bs * local_size, PETSC_DETERMINE,
+                               _ghosts.size(), _ghosts.data(), &x);
+    CHECK_ERROR("VecCreateGhostBlock");
+  }
 
+  assert(x);
   return x;
 }
 //-----------------------------------------------------------------------------
@@ -94,8 +103,23 @@ Vec la::petsc::create_vector_wrap(const common::IndexMap& map, int bs,
   const std::int64_t size_global = bs * map.size_global();
   const std::vector<PetscInt> ghosts(map.ghosts().begin(), map.ghosts().end());
   Vec vec;
-  VecCreateGhostBlockWithArray(map.comm(), bs, size_local, size_global,
-                               ghosts.size(), ghosts.data(), x.data(), &vec);
+  PetscErrorCode ierr;
+  if (bs == 1)
+  {
+    ierr
+        = VecCreateGhostWithArray(map.comm(), size_local, size_global,
+                                  ghosts.size(), ghosts.data(), x.data(), &vec);
+    CHECK_ERROR("VecCreateGhostWithArray");
+  }
+  else
+  {
+    ierr = VecCreateGhostBlockWithArray(map.comm(), bs, size_local, size_global,
+                                        ghosts.size(), ghosts.data(), x.data(),
+                                        &vec);
+    CHECK_ERROR("VecCreateGhostBlockWithArray");
+  }
+
+  assert(vec);
   return vec;
 }
 //-----------------------------------------------------------------------------
@@ -368,7 +392,6 @@ void petsc::options::clear()
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 petsc::Vector::Vector(const common::IndexMap& map, int bs)
     : _x(la::petsc::create_vector(map, bs))
 {
@@ -551,7 +574,7 @@ double petsc::Matrix::norm(Norm norm_type) const
 {
   assert(_matA);
   PetscErrorCode ierr;
-  double value = 0.0;
+  PetscReal value = 0.0;
   switch (norm_type)
   {
   case Norm::l1:
@@ -686,18 +709,6 @@ int petsc::KrylovSolver::solve(Vec x, const Vec b, bool transpose) const
     ierr = KSPSolveTranspose(_ksp, b, x);
     if (ierr != 0)
       petsc::error(ierr, __FILE__, "KSPSolve");
-  }
-
-  // FIXME: Remove ghost updating?
-  // Update ghost values in solution vector
-  Vec xg;
-  VecGhostGetLocalForm(x, &xg);
-  const bool is_ghosted = xg ? true : false;
-  VecGhostRestoreLocalForm(x, &xg);
-  if (is_ghosted)
-  {
-    VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
-    VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
   }
 
   // Get the number of iterations

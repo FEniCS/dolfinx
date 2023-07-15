@@ -8,10 +8,8 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from numpy.testing import assert_array_equal
-
 import ufl
-from basix.ufl import mixed_element, element
+from basix.ufl import element, mixed_element
 from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
                          VectorFunctionSpace)
 from dolfinx.io import VTKFile
@@ -19,8 +17,10 @@ from dolfinx.io.utils import cell_perm_vtk  # noqa F401
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_interval, create_unit_square)
 from dolfinx.plot import create_vtk_mesh
-
 from mpi4py import MPI
+from numpy.testing import assert_array_equal
+
+from dolfinx import default_real_type
 
 cell_types_2D = [CellType.triangle, CellType.quadrilateral]
 cell_types_3D = [CellType.tetrahedron, CellType.hexahedron]
@@ -124,9 +124,9 @@ def test_save_2d_vector(tempdir, cell_type):
 def test_save_2d_vector_CG2(tempdir):
     points = np.array([[0, 0], [1, 0], [1, 2], [0, 2],
                        [1 / 2, 0], [1, 1], [1 / 2, 2],
-                       [0, 1], [1 / 2, 1]])
+                       [0, 1], [1 / 2, 1]], dtype=default_real_type)
     points = np.array([[0, 0], [1, 0], [0, 2], [0.5, 1], [0, 1], [0.5, 0],
-                       [1, 2], [0.5, 2], [1, 1]])
+                       [1, 2], [0.5, 2], [1, 1]], dtype=default_real_type)
     cells = np.array([[0, 1, 2, 3, 4, 5],
                       [1, 6, 2, 7, 3, 8]])
     domain = ufl.Mesh(element("Lagrange", "triangle", 2, rank=1))

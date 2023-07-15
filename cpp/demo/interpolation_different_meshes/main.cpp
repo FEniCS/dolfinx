@@ -75,7 +75,6 @@ int main(int argc, char* argv[])
 #ifdef HAS_ADIOS2
     io::VTXWriter<double> write_tet(mesh_tet->comm(), "u_tet.bp", {u_tet});
     write_tet.write(0.0);
-
     io::VTXWriter<double> write_hex(mesh_hex->comm(), "u_hex.bp", {u_hex});
     write_hex.write(0.0);
 #endif

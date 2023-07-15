@@ -80,7 +80,7 @@ User-defined and advanced finite elements
 .. toctree::
    :maxdepth: 1
 
-   demos/demo_lagrange-variants.md
+   demos/demo_lagrange_variants.md
    demos/demo_tnt-elements.md
 
 
@@ -101,7 +101,7 @@ List of all demos
    demos/demo_pyvista.md
    demos/demo_interpolation-io.md
    demos/demo_types.md
-   demos/demo_lagrange-variants.md
+   demos/demo_lagrange_variants.md
    demos/demo_tnt-elements.md
    demos/demo_scattering_boundary_conditions.md
    demos/demo_pml.md

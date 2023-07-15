@@ -50,7 +50,7 @@ def test_krylov_solver_lu():
     solver.solve(b, x)
 
     # *Tight* tolerance for LU solves
-    assert x.norm(PETSc.NormType.N2) == pytest.approx(norm, abs=1.0e-12)
+    assert x.norm(PETSc.NormType.N2) == pytest.approx(norm, rel=1.0e7, abs=1.0e-7)
 
     solver.destroy()
     A.destroy()

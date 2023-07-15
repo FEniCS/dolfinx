@@ -9,20 +9,24 @@ on:
       - "main"
     tags:
       - "v*"
+  merge_group:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-20.04
-    container: fenicsproject/test-env:latest-oneapi
+    container: fenicsproject/test-env:current-oneapi
 
     env:
-      PETSC_ARCH: linux-gnu-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
+      PETSC_ARCH: ${{ matrix.petsc_arch }}
 
     strategy:
       matrix:
-        petsc_arch: [real, complex]
-        petsc_int_type: [32]
+        petsc_arch: [linux-gnu-real32-32, linux-gnu-real64-32, linux-gnu-complex128-32]
+
+    name: oneAPI build and test (${{ matrix.petsc_arch }})
 
     steps:
       - uses: actions/checkout@v3

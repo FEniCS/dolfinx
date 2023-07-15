@@ -22,7 +22,7 @@ namespace dolfinx::fem::impl
 {
 
 /// Assemble functional over cells
-template <typename T>
+template <dolfinx::scalar T>
 T assemble_cells(mdspan2_t x_dofmap, std::span<const scalar_value_type_t<T>> x,
                  std::span<const std::int32_t> cells, FEkernel<T> auto fn,
                  std::span<const T> constants, std::span<const T> coeffs,
@@ -57,7 +57,7 @@ T assemble_cells(mdspan2_t x_dofmap, std::span<const scalar_value_type_t<T>> x,
 }
 
 /// Execute kernel over exterior facets and accumulate result
-template <typename T>
+template <dolfinx::scalar T>
 T assemble_exterior_facets(mdspan2_t x_dofmap,
                            std::span<const scalar_value_type_t<T>> x,
                            std::span<const std::int32_t> facets,
@@ -95,7 +95,7 @@ T assemble_exterior_facets(mdspan2_t x_dofmap,
 }
 
 /// Assemble functional over interior facets
-template <typename T>
+template <dolfinx::scalar T>
 T assemble_interior_facets(mdspan2_t x_dofmap,
                            std::span<const scalar_value_type_t<T>> x,
                            int num_cell_facets,
@@ -151,7 +151,7 @@ T assemble_interior_facets(mdspan2_t x_dofmap,
 }
 
 /// Assemble functional into an scalar with provided mesh geometry.
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 T assemble_scalar(
     const fem::Form<T, U>& M, mdspan2_t x_dofmap,
     std::span<const scalar_value_type_t<T>> x, std::span<const T> constants,

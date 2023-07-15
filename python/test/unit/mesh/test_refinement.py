@@ -9,8 +9,7 @@ import pytest
 from numpy import isclose, logical_and
 
 import ufl
-from dolfinx.fem import FunctionSpace, form
-from dolfinx.fem import assemble_matrix
+from dolfinx.fem import FunctionSpace, assemble_matrix, form
 from dolfinx.mesh import (CellType, DiagonalType, GhostMode, RefinementOption,
                           compute_incident_entities, create_unit_cube,
                           create_unit_square, locate_entities,
@@ -87,7 +86,7 @@ def test_sub_refine():
                               ghost_mode=GhostMode.none)
     mesh.topology.create_entities(1)
 
-    def left_corner_edge(x, tol=1e-16):
+    def left_corner_edge(x, tol=1e-7):
         return logical_and(isclose(x[0], 0), x[1] < 1 / 4 + tol)
 
     edges = locate_entities_boundary(mesh, 1, left_corner_edge)
@@ -123,9 +122,9 @@ def test_refine_from_cells():
 @pytest.mark.parametrize("tdim", [2, 3])
 def test_refine_facet_meshtag(tdim):
     if tdim == 3:
-        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 3, 5, CellType.tetrahedron, GhostMode.none)
+        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 3, 5, CellType.tetrahedron, ghost_mode=GhostMode.none)
     else:
-        mesh = create_unit_square(MPI.COMM_WORLD, 2, 5, CellType.triangle, GhostMode.none)
+        mesh = create_unit_square(MPI.COMM_WORLD, 2, 5, CellType.triangle, ghost_mode=GhostMode.none)
     mesh.topology.create_entities(tdim - 1)
     mesh.topology.create_connectivity(tdim - 1, tdim)
     mesh.topology.create_entities(1)
@@ -159,9 +158,9 @@ def test_refine_facet_meshtag(tdim):
 @pytest.mark.parametrize("tdim", [2, 3])
 def test_refine_cell_meshtag(tdim):
     if tdim == 3:
-        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 3, 5, CellType.tetrahedron, GhostMode.none)
+        mesh = create_unit_cube(MPI.COMM_WORLD, 2, 3, 5, CellType.tetrahedron, ghost_mode=GhostMode.none)
     else:
-        mesh = create_unit_square(MPI.COMM_WORLD, 2, 5, CellType.triangle, GhostMode.none)
+        mesh = create_unit_square(MPI.COMM_WORLD, 2, 5, CellType.triangle, ghost_mode=GhostMode.none)
 
     mesh.topology.create_entities(1)
     cell_indices = numpy.arange(mesh.topology.index_map(tdim).size_local)
