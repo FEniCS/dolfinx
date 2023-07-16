@@ -7,11 +7,12 @@ FROM rockylinux/rockylinux:9
 
 ARG BUILD_NP=2
 
-ARG HDF5_SERIES=1.12
-ARG HDF5_PATCH=2
-ARG PETSC_VERSION=3.19.2
+ARG HDF5_SERIES=1.14
+ARG HDF5_PATCH=1
+ARG HDF5_FIX=-2
+ARG PETSC_VERSION=3.19.3
 ARG NUMPY_VERSION=1.23.3
-ARG MPICH_VERSION=4.1.1
+ARG MPICH_VERSION=4.1.2
 
 WORKDIR /tmp
 
@@ -53,6 +54,15 @@ RUN curl -L -O http://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${MP
     make -j${BUILD_NP} install && \
     rm -rf /tmp/*
 
+# Build HDF5
+RUN echo
+RUN curl -L -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES}/hdf5-${HDF5_SERIES}.${HDF5_PATCH}/src/hdf5-${HDF5_SERIES}.${HDF5_PATCH}${HDF5_FIX}.tar.gz && \
+    tar -xf hdf5-${HDF5_SERIES}.${HDF5_PATCH}${HDF5_FIX}.tar.gz && \
+    cd hdf5-${HDF5_SERIES}.${HDF5_PATCH}${HDF5_FIX} && \
+    ./configure --prefix=/usr/local --enable-parallel --enable-shared --enable-static=no && \
+    make -j${BUILD_NP} install && \
+    rm -rf /tmp/*
+
 # First set of dependencies for building and running Python DOLFINx
 # Second set of dependencies for running DOLFINx tests
 RUN python3 -m pip install --no-binary="numpy" --no-cache-dir cffi numba mpi4py pybind11 wheel && \
@@ -84,14 +94,6 @@ RUN curl -L -O http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${P
     rm -rf /tmp/*
 
 ENV PETSC_DIR=/usr/local
-
-# Build HDF5
-RUN curl -L -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES}/hdf5-${HDF5_SERIES}.${HDF5_PATCH}/src/hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
-    tar -xf hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
-    cd hdf5-${HDF5_SERIES}.${HDF5_PATCH} && \
-    ./configure --prefix=/usr/local --enable-parallel --enable-shared --enable-static=no && \
-    make -j${BUILD_NP} install && \
-    rm -rf /tmp/*
 
 # RHEL pkgconfig does not look here by default. Setting this probably
 # better than forcing install into 'system path' or hacking in DOLFINx
