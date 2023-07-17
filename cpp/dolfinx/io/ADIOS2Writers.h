@@ -833,38 +833,38 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
 /// @privatesection
 namespace impl_checkpoint
 {
-/// Write mesh to file using DOLFINx mesh formatting
-/// @param[in] io The ADIOS2 io object
-/// @param[in] engine The ADIOS2 engine object
-/// @param[in] mesh The mesh
+/// Write mesh to file using DOLFINx mesh layout.
+/// @param[in] io ADIOS2 io object
+/// @param[in] engine ADIOS2 engine
+/// @param[in] mesh Mesh to write.
 template <typename T>
 void write_mesh(adios2::IO& io, adios2::Engine& engine,
                 const mesh::Mesh<T>& mesh)
 {
   const mesh::Geometry<T>& geometry = mesh.geometry();
 
-  // "Put" geometry
-  std::size_t num_xdofs_local = geometry.index_map()->size_local();
-  std::int64_t num_xdofs_global = geometry.index_map()->size_global();
-  std::array<std::int64_t, 2> local_range = geometry.index_map()->local_range();
+  {
+    // "Put" geometry
+    std::size_t num_xdofs_local = geometry.index_map()->size_local();
+    std::int64_t num_xdofs_global = geometry.index_map()->size_global();
+    std::array<std::int64_t, 2> local_range
+        = geometry.index_map()->local_range();
 
-  std::span<const T> x = geometry.x();
-  std::size_t gdim = geometry.dim();
-  // Truncate geometry to gdim (only owned indices)
-  namespace stdex = std::experimental;
-  using dextent = stdex::dextents<std::size_t, 2>;
-  std::vector<T> geometry_b(num_xdofs_local * gdim);
-  stdex::mdspan<T, dextent> geometry_md(geometry_b.data(), num_xdofs_local,
-                                        gdim);
-  for (std::size_t i = 0; i < num_xdofs_local; ++i)
-    for (std::size_t j = 0; j < gdim; ++j)
-      geometry_md(i, j) = x[3 * i + j];
+    std::span<const T> x = geometry.x();
+    std::size_t gdim = geometry.dim();
 
-  // Define geometry variable and "put"
-  adios2::Variable<T> local_geometry = impl_adios2::define_variable<T>(
-      io, "geometry", {num_xdofs_global, gdim}, {local_range[0], 0},
-      {num_xdofs_local, gdim});
-  engine.Put<T>(local_geometry, geometry_b.data());
+    // Trim geometry to gdim and trunctate for owned entities only
+    std::vector<T> buffer(num_xdofs_local * gdim);
+    for (std::size_t i = 0; i < num_xdofs_local; ++i)
+      for (std::size_t j = 0; j < gdim; ++j)
+        buffer[i * gdim + j] = x[3 * i + j];
+
+    // Define geometry variable and "put"
+    adios2::Variable<T> local_geometry = impl_adios2::define_variable<T>(
+        io, "geometry", {num_xdofs_global, gdim}, {local_range[0], 0},
+        {num_xdofs_local, gdim});
+    engine.Put<T>(local_geometry, buffer.data());
+  }
 
   // Extract topology (cell) information
   auto topology = mesh.topology();
@@ -881,14 +881,11 @@ void write_mesh(adios2::IO& io, adios2::Engine& engine,
   std::size_t num_dofs_per_cell
       = geom_layout.num_entity_closure_dofs(geometry.dim());
   auto geometry_imap = geometry.index_map();
-  std::experimental::mdspan<const std::int32_t,
-                            std::experimental::dextents<std::size_t, 2>>
-      geometry_dmap = geometry.dofmap();
+  auto geometry_dmap = geometry.dofmap();
 
   // Convert local geometry to global geometry
   std::vector<std::int64_t> connectivity_out(num_cells_local
                                              * num_dofs_per_cell);
-
   std::span<const std::int32_t> local_dmap(geometry_dmap.data_handle(),
                                            num_cells_local * num_dofs_per_cell);
   geometry_imap->local_to_global(local_dmap, connectivity_out);
@@ -900,8 +897,8 @@ void write_mesh(adios2::IO& io, adios2::Engine& engine,
           {local_range_cell, 0}, {num_cells_local, num_dofs_per_cell});
   engine.Put<std::int64_t>(local_topology, connectivity_out.data());
 
-  // Compute mesh permutations and store them to file
-  // These are only needed for when we want to checkpoint functions
+  // Compute mesh permutations and store them to file. These are only
+  // needed for when we want to checkpoint functions.
   mesh.topology_mutable()->create_entity_permutations();
   const std::vector<std::uint32_t>& cell_perm
       = topology->get_cell_permutation_info();
@@ -930,14 +927,14 @@ public:
       std::variant<std::shared_ptr<const Fd32>, std::shared_ptr<const Fd64>,
                    std::shared_ptr<const Fc64>, std::shared_ptr<const Fc128>>>;
 
-  /// @brief Create a ADIOS2 checkpointer for writing a mesh to file
+  /// @brief Create a ADIOS2 checkpointer for writing a mesh to file.
   ///
   /// This format supports arbitrary degree meshes.
   ///
-  /// @param[in] comm The MPI communicator to open the file on
-  /// @param[in] filename Name of output file
-  /// @param[in] mesh The mesh
-  /// @note This format support arbitrary degree meshes
+  /// @param[in] comm The MPI communicator to open the file on.
+  /// @param[in] filename Name of output file.
+  /// @param[in] mesh The mesh.
+  /// @note This format supports arbitrary degree meshes.
   Checkpointer(MPI_Comm comm, const std::filesystem::path& filename,
                std::shared_ptr<const mesh::Mesh<T>> mesh)
       : _adios(std::make_unique<adios2::ADIOS>(comm)),
@@ -967,7 +964,7 @@ public:
         static_cast<int>(geometry.cmaps()[0].variant()));
   }
 
-  /// @brief Create a ADIOS2 checkpointer for reading a mesh from file
+  /// @brief Create a ADIOS2 checkpointer for reading a mesh from file.
   ///
   /// This format supports arbitrary degree meshes.
   ///
@@ -1010,7 +1007,6 @@ public:
   mesh::Mesh<T> read_mesh(double t, mesh::GhostMode mode)
   {
     assert(this->_io);
-
     assert(this->_engine);
 
     const int size = dolfinx::MPI::size(this->_comm.comm());
