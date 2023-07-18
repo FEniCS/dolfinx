@@ -86,7 +86,7 @@ class Constant(ufl.Constant):
 class Expression:
     def __init__(self, ufl_expression: ufl.core.expr.Expr, X: np.ndarray,
                  comm: typing.Optional[_MPI.Comm] = None, form_compiler_options: dict = {},
-                 jit_options: dict = {}, dtype=default_scalar_type):
+                 jit_options: dict = {}, dtype=None):
         """Create DOLFINx Expression.
 
         Represents a mathematical expression evaluated at a pre-defined
@@ -127,6 +127,13 @@ class Expression:
                 print("Could not extract MPI communicator for Expression. Maybe you need to pass a communicator?")
                 raise
 
+        # Attempt to deduce dtype
+        if dtype is None:
+            try:
+                dtype = ufl_expression.dtype
+            except AttributeError:
+                dtype = default_scalar_type
+
         # Compile UFL expression with JIT
         if dtype == np.float32:
             form_compiler_options["scalar_type"] = "float"
@@ -161,13 +168,13 @@ class Expression:
             raise RuntimeError("Expressions with more that one Argument not allowed.")
 
         def create_expression(dtype):
-            if dtype is np.float32:
+            if dtype == np.float32:
                 return _cpp.fem.create_expression_float32
-            elif dtype is np.float64:
+            elif dtype == np.float64:
                 return _cpp.fem.create_expression_float64
-            elif dtype is np.complex64:
+            elif dtype == np.complex64:
                 return _cpp.fem.create_expression_complex64
-            elif dtype is np.complex128:
+            elif dtype == np.complex128:
                 return _cpp.fem.create_expression_complex128
             else:
                 raise NotImplementedError(f"Type {dtype} not supported.")
