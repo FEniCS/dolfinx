@@ -84,7 +84,7 @@ class Constant(ufl.Constant):
 
 
 class Expression:
-    def __init__(self, ufl_expression: ufl.core.expr.Expr, X: np.ndarray,
+    def __init__(self, e: ufl.core.expr.Expr, X: np.ndarray,
                  comm: typing.Optional[_MPI.Comm] = None, form_compiler_options: dict = {},
                  jit_options: dict = {}, dtype=None):
         """Create DOLFINx Expression.
@@ -99,7 +99,7 @@ class Expression:
         calculates a material constitutive model.
 
         Args:
-            ufl_expression: UFL expression.
+            e: UFL expression.
             X: Array of points of shape ``(num_points, tdim)`` on the
                 reference element.
             comm: Communicator that the Expression is defined on.
@@ -121,7 +121,7 @@ class Expression:
         # Get MPI communicator
         if comm is None:
             try:
-                mesh = extract_unique_domain(ufl_expression).ufl_cargo()
+                mesh = extract_unique_domain(e).ufl_cargo()
                 comm = mesh.comm
             except AttributeError:
                 print("Could not extract MPI communicator for Expression. Maybe you need to pass a communicator?")
@@ -130,7 +130,7 @@ class Expression:
         # Attempt to deduce dtype
         if dtype is None:
             try:
-                dtype = ufl_expression.dtype
+                dtype = e.dtype
             except AttributeError:
                 dtype = default_scalar_type
 
@@ -146,20 +146,19 @@ class Expression:
         else:
             raise RuntimeError(f"Unsupported scalar type {dtype} for Expression.")
 
-        self._ufcx_expression, module, self._code = jit.ffcx_jit(comm, (ufl_expression, _X),
+        self._ufcx_expression, module, self._code = jit.ffcx_jit(comm, (e, _X),
                                                                  form_compiler_options=form_compiler_options,
                                                                  jit_options=jit_options)
-        self._ufl_expression = ufl_expression
+        self._ufl_expression = e
 
-        # Prepare coefficients data. For every coefficient in form take
-        # its C++ object.
-        original_coefficients = ufl.algorithms.extract_coefficients(ufl_expression)
+        # Prepare coefficients data. For every coefficient in expression
+        # take its C++ object.
+        original_coefficients = ufl.algorithms.extract_coefficients(e)
         coeffs = [original_coefficients[self._ufcx_expression.original_coefficient_positions[i]]._cpp_object
                   for i in range(self._ufcx_expression.num_coefficients)]
-
-        ufl_constants = ufl.algorithms.analysis.extract_constants(ufl_expression)
+        ufl_constants = ufl.algorithms.analysis.extract_constants(e)
         constants = [constant._cpp_object for constant in ufl_constants]
-        arguments = ufl.algorithms.extract_arguments(ufl_expression)
+        arguments = ufl.algorithms.extract_arguments(e)
         if len(arguments) == 0:
             self._argument_function_space = None
         elif len(arguments) == 1:
@@ -215,7 +214,6 @@ class Expression:
                 raise TypeError("Passed array values does not have correct dtype.")
 
         self._cpp_object.eval(mesh._cpp_object, cells, values)
-
         return values
 
     def X(self) -> np.ndarray:
