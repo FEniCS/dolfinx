@@ -173,7 +173,7 @@ public:
   void interpolate(
       const Function<value_type, geometry_type>& v,
       const std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
-                       std::vector<value_type>, std::vector<std::int32_t>>&
+                       std::vector<geometry_type>, std::vector<std::int32_t>>&
           nmm_interpolation_data
       = {})
   {
@@ -195,7 +195,7 @@ public:
       const std::function<
           std::pair<std::vector<value_type>, std::vector<std::size_t>>(
               std::experimental::mdspan<
-                  const value_type,
+                  const geometry_type,
                   std::experimental::extents<
                       std::size_t, 3, std::experimental::dynamic_extent>>)>& f,
       std::span<const std::int32_t> cells)
@@ -255,7 +255,7 @@ public:
       const std::function<
           std::pair<std::vector<value_type>, std::vector<std::size_t>>(
               std::experimental::mdspan<
-                  const value_type,
+                  const geometry_type,
                   std::experimental::extents<
                       std::size_t, 3, std::experimental::dynamic_extent>>)>& f)
   {
