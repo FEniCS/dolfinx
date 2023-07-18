@@ -11,23 +11,23 @@ import typing
 
 if typing.TYPE_CHECKING:
     from dolfinx.mesh import Mesh
+    from mpi4py import MPI as _MPI
 
 from functools import singledispatch
 
-import numpy as np
-import numpy.typing as npt
-
 import basix
 import basix.ufl
+import numpy as np
+import numpy.typing as npt
 import ufl
 import ufl.algorithms
 import ufl.algorithms.analysis
-from dolfinx import cpp as _cpp
-from dolfinx import default_scalar_type, jit, la
 from dolfinx.fem import dofmap
 from dolfinx.la import Vector
 from ufl.domain import extract_unique_domain
-from mpi4py import MPI as _MPI
+
+from dolfinx import cpp as _cpp
+from dolfinx import default_scalar_type, jit, la
 
 
 class Constant(ufl.Constant):
@@ -119,9 +119,9 @@ class Expression:
         _X = np.reshape(X, (num_points, -1))
 
         # Get MPI communicator
-        mesh = extract_unique_domain(ufl_expression).ufl_cargo()
         if comm is None:
             try:
+                mesh = extract_unique_domain(ufl_expression).ufl_cargo()
                 comm = mesh.comm
             except AttributeError:
                 print("Could not extract MPI communicator for Expression. Maybe you need to pass a communicator?")
@@ -146,8 +146,7 @@ class Expression:
 
         # Prepare coefficients data. For every coefficient in form take
         # its C++ object.
-        original_coefficients = ufl.algorithms.extract_coefficients(
-            ufl_expression)
+        original_coefficients = ufl.algorithms.extract_coefficients(ufl_expression)
         coeffs = [original_coefficients[self._ufcx_expression.original_coefficient_positions[i]]._cpp_object
                   for i in range(self._ufcx_expression.num_coefficients)]
 
@@ -159,8 +158,7 @@ class Expression:
         elif len(arguments) == 1:
             self._argument_function_space = arguments[0].ufl_function_space()._cpp_object
         else:
-            raise RuntimeError(
-                "Expressions with more that one Argument not allowed.")
+            raise RuntimeError("Expressions with more that one Argument not allowed.")
 
         def create_expression(dtype):
             if dtype is np.float32:
@@ -178,10 +176,19 @@ class Expression:
         self._cpp_object = create_expression(dtype)(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_expression)),
                                                     coeffs, constants, self.argument_function_space)
 
-    def eval(self, mesh, cells: np.ndarray, values: typing.Optional[np.ndarray] = None) -> np.ndarray:
-        """Evaluate Expression in cells. Values should have shape
-        (cells.shape[0], num_points * value_size * num_all_argument_dofs).
-        If values is not passed then a new array will be allocated.
+    def eval(self, mesh: Mesh, cells: np.ndarray, values: typing.Optional[np.ndarray] = None) -> np.ndarray:
+        """Evaluate Expression in cells.
+
+        Args:
+            mesh: Mesh to evaluate Expression on.
+            cells: Cells of `mesh`` to evaluate Expression on.
+            values: Array to fill with evaluated values. If ``None``,
+                storage will be allocated. Otherwise must have shape
+                ``(len(cells), num_points * value_size *
+                num_all_argument_dofs)``
+
+        Returns:
+            Expression evaluated at points for `cells``.
 
         """
         _cells = np.asarray(cells, dtype=np.int32)
