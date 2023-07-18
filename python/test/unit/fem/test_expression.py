@@ -16,8 +16,7 @@ from ffcx.element_interface import QuadratureElement
 from mpi4py import MPI
 
 import dolfinx.cpp
-from dolfinx import default_real_type, default_scalar_type, fem, la
-
+from dolfinx import fem, la
 
 dolfinx.cpp.common.init_logging(["-v"])
 
@@ -25,10 +24,14 @@ dolfinx.cpp.common.init_logging(["-v"])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 def test_rank0(dtype):
     """Test evaluation of UFL expression.
+
     This test evaluates gradient of P2 function at interpolation points
     of vector dP1 element.
+
     For a donor function f(x, y) = x^2 + 2*y^2 result is compared with the
-    exact gradient grad f(x, y) = [2*x, 4*y]."""
+    exact gradient grad f(x, y) = [2*x, 4*y].
+
+    """
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=dtype(0).real.dtype)
     P2 = FunctionSpace(mesh, ("P", 2))
     vdP1 = VectorFunctionSpace(mesh, ("DG", 1))
@@ -64,9 +67,13 @@ def test_rank0(dtype):
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 def test_rank1_hdiv(dtype):
     """Test rank-1 Expression, i.e. Expression containing Argument
-    (TrialFunction). Test compiles linear interpolation operator RT_2 ->
+    (TrialFunction).
+
+    Test compiles linear interpolation operator RT_2 ->
     vector DG_2 and assembles it into global matrix A. Input space RT_2
-    is chosen because it requires dof permutations."""
+    is chosen because it requires dof permutations.
+
+    """
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, dtype=dtype(0).real.dtype)
     vdP1 = VectorFunctionSpace(mesh, ("DG", 2))
     RT1 = FunctionSpace(mesh, ("RT", 2))
@@ -274,11 +281,9 @@ def test_assembly_into_quadrature_function(dtype):
     Q_dofs = Q.dofmap.list
 
     bs = Q.dofmap.bs
-
     Q_dofs_unrolled = bs * np.repeat(Q_dofs, bs).reshape(-1, bs) + np.arange(bs)
     Q_dofs_unrolled = Q_dofs_unrolled.reshape(-1, bs * quadrature_points.shape[0]).astype(Q_dofs.dtype)
     assert len(mesh.geometry.cmaps) == 1
-
     local = e_Q.x.array
     e_exact_eval = np.zeros_like(local)
     for cell in range(num_cells):
