@@ -370,8 +370,7 @@ class Function(ufl.Coefficient):
         @_interpolate.register(Function)
         def _(u: Function, cells: typing.Optional[np.ndarray] = None):
             """Interpolate a fem.Function"""
-            self._cpp_object.interpolate(
-                u._cpp_object, cells, nmm_interpolation_data)
+            self._cpp_object.interpolate(u._cpp_object, cells, nmm_interpolation_data)
 
         @_interpolate.register(int)
         def _(u_ptr: int, cells: typing.Optional[np.ndarray] = None):
@@ -394,10 +393,8 @@ class Function(ufl.Coefficient):
         except TypeError:
             # u is callable
             assert callable(u)
-            x = _cpp.fem.interpolation_coords(
-                self._V.element, self._V.mesh.geometry, cells)
-            self._cpp_object.interpolate(
-                np.asarray(u(x), dtype=self.dtype), cells)
+            x = _cpp.fem.interpolation_coords(self._V.element, self._V.mesh.geometry, cells)
+            self._cpp_object.interpolate(np.asarray(u(x), dtype=self.dtype), cells)
 
     def copy(self) -> Function:
         """Create a copy of the Function. The FunctionSpace is shared and the
@@ -496,11 +493,10 @@ class FunctionSpace(ufl.FunctionSpace):
                 # UFL element
                 super().__init__(mesh.ufl_domain(), element)
             except BaseException:
-                assert len(
-                    element) == 2, "Expected sequence of (element_type, degree)"
+                assert len(element) == 2, "Expected sequence of (element_type, degree)"
                 e = ElementMetaData(*element)
-                ufl_e = basix.ufl.element(
-                    e.family, mesh.basix_cell(), e.degree, gdim=mesh.ufl_cell().geometric_dimension())
+                ufl_e = basix.ufl.element(e.family, mesh.basix_cell(), e.degree,
+                                          gdim=mesh.ufl_cell().geometric_dimension())
                 super().__init__(mesh.ufl_domain(), ufl_e)
 
             # Compile dofmap and element and create DOLFIN objects
@@ -515,11 +511,9 @@ class FunctionSpace(ufl.FunctionSpace):
 
             ffi = module.ffi
             if dtype == np.float32:
-                cpp_element = _cpp.fem.FiniteElement_float32(
-                    ffi.cast("uintptr_t", ffi.addressof(self._ufcx_element)))
+                cpp_element = _cpp.fem.FiniteElement_float32(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_element)))
             elif dtype == np.float64:
-                cpp_element = _cpp.fem.FiniteElement_float64(
-                    ffi.cast("uintptr_t", ffi.addressof(self._ufcx_element)))
+                cpp_element = _cpp.fem.FiniteElement_float64(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_element)))
             cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, ffi.cast(
                 "uintptr_t", ffi.addressof(self._ufcx_dofmap)), mesh.topology, cpp_element)
 
@@ -533,8 +527,7 @@ class FunctionSpace(ufl.FunctionSpace):
             # Create function space from a UFL element and an existing
             # C++ FunctionSpace
             if mesh._cpp_object is not cppV.mesh:
-                raise RecursionError(
-                    "Meshes do not match in FunctionSpace initialisation.")
+                raise RecursionError("Meshes do not match in FunctionSpace initialisation.")
             ufl_domain = mesh.ufl_domain()
             super().__init__(ufl_domain, element)
             self._cpp_object = cppV
@@ -700,7 +693,6 @@ def TensorFunctionSpace(mesh: Mesh, element: typing.Union[ElementMetaData, typin
     e = ElementMetaData(*element)
     gdim = mesh.geometry.dim
     shape_ = (gdim, gdim) if shape is None else shape
-    ufl_element = basix.ufl.element(e.family, mesh.basix_cell(),
-                                    e.degree, shape=shape_, symmetry=symmetry,
+    ufl_element = basix.ufl.element(e.family, mesh.basix_cell(), e.degree, shape=shape_, symmetry=symmetry,
                                     gdim=mesh.geometry.dim, rank=2)
     return FunctionSpace(mesh, ufl_element)
