@@ -464,8 +464,7 @@ class Function(ufl.Coefficient):
 
     def collapse(self) -> Function:
         u_collapsed = self._cpp_object.collapse()
-        V_collapsed = FunctionSpace(
-            self.function_space._mesh, self.ufl_element(), u_collapsed.function_space)
+        V_collapsed = FunctionSpace(self.function_space._mesh, self.ufl_element(), u_collapsed.function_space)
         return Function(V_collapsed, Vector(u_collapsed.x))
 
 
@@ -666,8 +665,7 @@ def VectorFunctionSpace(mesh: Mesh,
                         dim=None) -> FunctionSpace:
     """Create vector finite element (composition of scalar elements) function space."""
     if not _is_scalar(mesh, element):
-        raise ValueError(
-            "Cannot create vector element containing a non-scalar.")
+        raise ValueError("Cannot create vector element containing a non-scalar.")
 
     try:
         ufl_e = basix.ufl.element(element.family(), element.cell_type,         # type: ignore
@@ -687,8 +685,7 @@ def TensorFunctionSpace(mesh: Mesh, element: typing.Union[ElementMetaData, typin
                         symmetry: typing.Optional[bool] = None) -> FunctionSpace:
     """Create tensor finite element (composition of scalar elements) function space."""
     if not _is_scalar(mesh, element):
-        raise ValueError(
-            "Cannot create tensor element containing a non-scalar.")
+        raise ValueError("Cannot create tensor element containing a non-scalar.")
 
     e = ElementMetaData(*element)
     gdim = mesh.geometry.dim

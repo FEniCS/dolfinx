@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "Constant.h"
 #include "Function.h"
 #include <algorithm>
 #include <array>
@@ -39,13 +40,7 @@ template <dolfinx::scalar T,
 class Expression
 {
 public:
-  /// @brief Scalar type (T)
-  ///
-  /// Field type for the Expression, e.g. `double`,
-  /// `std::complex<float>`, etc.
-  using value_type = T;
-
-  /// @brief Scalar type (T)
+  /// @brief Scalar type
   ///
   /// Field type for the Expression, e.g. `double`,
   /// `std::complex<float>`, etc.
@@ -68,10 +63,11 @@ public:
   /// @param[in] argument_function_space Function space for Argument
   Expression(
       const std::vector<std::shared_ptr<
-          const Function<value_type, geometry_type>>>& coefficients,
-      const std::vector<std::shared_ptr<const Constant<value_type>>>& constants,
+          const Function<scalar_type, geometry_type>>>& coefficients,
+      const std::vector<std::shared_ptr<const Constant<scalar_type>>>&
+          constants,
       std::span<const geometry_type> X, std::array<std::size_t, 2> Xshape,
-      std::function<void(value_type*, const value_type*, const value_type*,
+      std::function<void(scalar_type*, const scalar_type*, const scalar_type*,
                          const geometry_type*, const int*, const uint8_t*)>
           fn,
       const std::vector<int>& value_shape,
@@ -92,16 +88,18 @@ public:
   virtual ~Expression() = default;
 
   /// @brief Get argument function space.
-  /// @return The argument function space, nullptr if there is no argument.
+  /// @return The argument function space, nullptr if there is no
+  /// argument.
   std::shared_ptr<const FunctionSpace<geometry_type>>
   argument_function_space() const
   {
     return _argument_function_space;
   };
 
-  /// @brief Get coefficients,
+  /// @brief Get coefficients.
   /// @return Vector of attached coefficients.
-  const std::vector<std::shared_ptr<const Function<value_type, geometry_type>>>&
+  const std::vector<
+      std::shared_ptr<const Function<scalar_type, geometry_type>>>&
   coefficients() const
   {
     return _coefficients;
@@ -111,7 +109,7 @@ public:
   /// @return Vector of attached constants with their names. Names are
   /// used to set constants in user's c++ code. Index in the vector is
   /// the position of the constant in the original (nonsimplified) form.
-  const std::vector<std::shared_ptr<const Constant<value_type>>>&
+  const std::vector<std::shared_ptr<const Constant<scalar_type>>>&
   constants() const
   {
     return _constants;
@@ -142,14 +140,14 @@ public:
   /// num_points * value_size * num_all_argument_dofs columns)`.
   /// @param[in] vshape The shape of @p values (row-major storage).
   void eval(const mesh::Mesh<geometry_type>& mesh,
-            std::span<const std::int32_t> cells, std::span<value_type> values,
+            std::span<const std::int32_t> cells, std::span<scalar_type> values,
             std::array<std::size_t, 2> vshape) const
   {
     namespace stdex = std::experimental;
 
     // Prepare coefficients and constants
     const auto [coeffs, cstride] = pack_coefficients(*this, cells);
-    const std::vector<value_type> constant_data = pack_constants(*this);
+    const std::vector<scalar_type> constant_data = pack_constants(*this);
     auto fn = this->get_tabulate_expression();
 
     // Prepare cell geometry
@@ -167,11 +165,11 @@ public:
 
     int num_argument_dofs = 1;
     std::span<const std::uint32_t> cell_info;
-    std::function<void(const std::span<value_type>&,
+    std::function<void(const std::span<scalar_type>&,
                        const std::span<const std::uint32_t>&, std::int32_t,
                        int)>
         dof_transform_to_transpose
-        = [](const std::span<value_type>&,
+        = [](const std::span<scalar_type>&,
              const std::span<const std::uint32_t>&, std::int32_t, int)
     {
       // Do nothing
@@ -190,13 +188,13 @@ public:
         cell_info = std::span(mesh.topology()->get_cell_permutation_info());
         dof_transform_to_transpose
             = element->template get_dof_transformation_to_transpose_function<
-                value_type>();
+                scalar_type>();
       }
     }
 
     // Iterate over cells and 'assemble' into values
     const int size0 = _x_ref.second[0] * value_size();
-    std::vector<value_type> values_local(size0 * num_argument_dofs, 0);
+    std::vector<scalar_type> values_local(size0 * num_argument_dofs, 0);
     for (std::size_t c = 0; c < cells.size(); ++c)
     {
       const std::int32_t cell = cells[c];
@@ -207,7 +205,7 @@ public:
                     std::next(coord_dofs.begin(), 3 * i));
       }
 
-      const value_type* coeff_cell = coeffs.data() + c * cstride;
+      const scalar_type* coeff_cell = coeffs.data() + c * cstride;
       std::fill(values_local.begin(), values_local.end(), 0);
       _fn(values_local.data(), coeff_cell, constant_data.data(),
           coord_dofs.data(), nullptr, nullptr);
@@ -220,7 +218,7 @@ public:
 
   /// @brief Get function for tabulate_expression.
   /// @return fn Function to tabulate expression.
-  const std::function<void(value_type*, const value_type*, const value_type*,
+  const std::function<void(scalar_type*, const scalar_type*, const scalar_type*,
                            const geometry_type*, const int*, const uint8_t*)>&
   get_tabulate_expression() const
   {
@@ -251,16 +249,15 @@ private:
   std::shared_ptr<const FunctionSpace<geometry_type>> _argument_function_space;
 
   // Coefficients associated with the Expression
-  std::vector<std::shared_ptr<const Function<value_type, geometry_type>>>
+  std::vector<std::shared_ptr<const Function<scalar_type, geometry_type>>>
       _coefficients;
 
   // Constants associated with the Expression
-  std::vector<std::shared_ptr<const Constant<value_type>>> _constants;
+  std::vector<std::shared_ptr<const Constant<scalar_type>>> _constants;
 
   // Function to evaluate the Expression
-  std::function<void(value_type*, const value_type*, const value_type*,
-                     const dolfinx::scalar_value_type_t<value_type>*,
-                     const int*, const uint8_t*)>
+  std::function<void(scalar_type*, const scalar_type*, const scalar_type*,
+                     const geometry_type*, const int*, const uint8_t*)>
       _fn;
 
   // Shape of the evaluated expression

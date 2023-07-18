@@ -318,7 +318,6 @@ def test_expression_comm():
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 4)
     v = Constant(mesh.ufl_cell(), 1.0)
     u = Function(FunctionSpace(mesh, ("Lagrange", 1)))
-
     with pytest.raises(AttributeError):
         Expression(v, u.function_space.element.interpolation_points())
     Expression(v, u.function_space.element.interpolation_points(), comm=MPI.COMM_WORLD)
