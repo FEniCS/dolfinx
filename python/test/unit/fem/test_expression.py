@@ -40,7 +40,7 @@ def test_rank0():
 
     compiled_expr = Expression(ufl_expr, points)
     num_cells = mesh.topology.index_map(2).size_local
-    array_evaluated = compiled_expr.eval(np.arange(num_cells, dtype=np.int32))
+    array_evaluated = compiled_expr.eval(mesh, np.arange(num_cells, dtype=np.int32))
 
     def scatter(vec, array_evaluated, dofmap):
         for i in range(num_cells):
@@ -74,7 +74,7 @@ def test_rank1_hdiv(dtype):
     points = vdP1.element.interpolation_points()
     compiled_expr = Expression(f, points, dtype=dtype)
     num_cells = mesh.topology.index_map(2).size_local
-    array_evaluated = compiled_expr.eval(np.arange(num_cells, dtype=np.int32))
+    array_evaluated = compiled_expr.eval(mesh, np.arange(num_cells, dtype=np.int32))
 
     def scatter(A, array_evaluated, dofmap0, dofmap1):
         for i in range(num_cells):
@@ -169,7 +169,7 @@ def test_simple_evaluation():
     num_cells = map_c.size_local + map_c.num_ghosts
     cells = np.arange(0, num_cells, dtype=np.int32)
 
-    grad_f_evaluated = grad_f_expr.eval(cells)
+    grad_f_evaluated = grad_f_expr.eval(mesh, cells)
     assert grad_f_evaluated.shape[0] == cells.shape[0]
     assert grad_f_evaluated.shape[1] == grad_f_expr.value_size * grad_f_expr.X().shape[0]
 
@@ -178,7 +178,7 @@ def test_simple_evaluation():
     x_expr = Expression(ufl_x, points)
     assert x_expr.X().shape[0] == points.shape[0]
     assert x_expr.value_size == 2
-    x_evaluated = x_expr.eval(cells)
+    x_evaluated = x_expr.eval(mesh, cells)
     assert x_evaluated.shape[0] == cells.shape[0]
     assert x_evaluated.shape[1] == x_expr.X().shape[0] * x_expr.value_size
 
@@ -238,7 +238,7 @@ def test_assembly_into_quadrature_function():
     num_cells = map_c.size_local + map_c.num_ghosts
     cells = np.arange(0, num_cells, dtype=np.int32)
 
-    e_eval = e_expr.eval(cells)
+    e_eval = e_expr.eval(mesh, cells)
 
     # Assemble into Function
     e_Q = Function(Q)
@@ -300,17 +300,17 @@ def test_expression_eval_cells_subset():
 
     # Test eval on single cell
     for c in range(cells_imap.size_local):
-        u_ = e.eval(np.array([c], dtype=np.int32))
+        u_ = e.eval(mesh, np.array([c], dtype=np.int32))
         assert np.allclose(u_, float(c))
 
     # Test eval on unordered cells
     cells = np.arange(cells_imap.size_local, dtype=np.int32)[::-1]
-    u_ = e.eval(cells).flatten()
+    u_ = e.eval(mesh, cells).flatten()
     assert np.allclose(u_, cells)
 
     # Test eval on unordered and non sequential cells
     cells = np.arange(cells_imap.size_local, dtype=np.int32)[::-2]
-    u_ = e.eval(cells)
+    u_ = e.eval(mesh, cells)
     assert np.allclose(u_.ravel(), cells)
 
 
@@ -320,5 +320,6 @@ def test_expression_comm():
     u = Function(FunctionSpace(mesh, ("Lagrange", 1)))
 
     with pytest.raises(AttributeError):
-        expr = Expression(v, u.function_space.element.interpolation_points())
-    expr = Expression(v, u.function_space.element.interpolation_points(), comm=MPI.COMM_WORLD)
+        Expression(v, u.function_space.element.interpolation_points())
+    Expression(v, u.function_space.element.interpolation_points(), comm=MPI.COMM_WORLD)
+    Expression(v, u.function_space.element.interpolation_points(), comm=MPI.COMM_SELF)

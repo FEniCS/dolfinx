@@ -120,7 +120,6 @@ class Expression:
 
         # Get MPI communicator
         mesh = extract_unique_domain(ufl_expression).ufl_cargo()
-        print("MMMMM:", mesh)
         if comm is None:
             try:
                 comm = mesh.comm
@@ -177,9 +176,9 @@ class Expression:
 
         ffi = module.ffi
         self._cpp_object = create_expression(dtype)(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_expression)),
-                                                    coeffs, constants, mesh, self.argument_function_space)
+                                                    coeffs, constants, self.argument_function_space)
 
-    def eval(self, cells: np.ndarray, values: typing.Optional[np.ndarray] = None) -> np.ndarray:
+    def eval(self, mesh, cells: np.ndarray, values: typing.Optional[np.ndarray] = None) -> np.ndarray:
         """Evaluate Expression in cells. Values should have shape
         (cells.shape[0], num_points * value_size * num_all_argument_dofs).
         If values is not passed then a new array will be allocated.
@@ -190,8 +189,7 @@ class Expression:
             argument_space_dimension = 1
         else:
             argument_space_dimension = self.argument_function_space.element.space_dimension
-        values_shape = (_cells.shape[0], self.X(
-        ).shape[0] * self.value_size * argument_space_dimension)
+        values_shape = (_cells.shape[0], self.X().shape[0] * self.value_size * argument_space_dimension)
 
         # Allocate memory for result if u was not provided
         if values is None:
@@ -202,7 +200,7 @@ class Expression:
             if values.dtype != self.dtype:
                 raise TypeError("Passed array values does not have correct dtype.")
 
-        self._cpp_object.eval(cells, values)
+        self._cpp_object.eval(mesh._cpp_object, cells, values)
 
         return values
 
