@@ -27,6 +27,7 @@ from dolfinx import default_scalar_type, jit, la
 from dolfinx.fem import dofmap
 from dolfinx.la import Vector
 from ufl.domain import extract_unique_domain
+from mpi4py import MPI as _MPI
 
 
 class Constant(ufl.Constant):
@@ -84,8 +85,8 @@ class Constant(ufl.Constant):
 
 class Expression:
     def __init__(self, ufl_expression: ufl.core.expr.Expr, X: np.ndarray,
-                 form_compiler_options: dict = {}, jit_options: dict = {},
-                 dtype=default_scalar_type):
+                 comm: typing.Optional[_MPI.comm] = None, form_compiler_options: dict = {},
+                 jit_options: dict = {}, dtype=default_scalar_type):
         """Create DOLFINx Expression.
 
         Represents a mathematical expression evaluated at a pre-defined
@@ -98,9 +99,10 @@ class Expression:
         calculates a material constitutive model.
 
         Args:
-            ufl_expression: Pure UFL expression
-            X: Array of points of shape `(num_points, tdim)` on the
+            ufl_expression: UFL expression.
+            X: Array of points of shape ``(num_points, tdim)`` on the
                 reference element.
+            comm: Communicator that the Expression is defined on.
             form_compiler_options: Options used in FFCx compilation of
                 this Expression. Run ``ffcx --help`` in the commandline
                 to see all available options.
@@ -112,12 +114,19 @@ class Expression:
             C++ Expression.
 
         """
-
         assert X.ndim < 3
         num_points = X.shape[0] if X.ndim == 2 else 1
         _X = np.reshape(X, (num_points, -1))
 
+        # Get MPI communicator
         mesh = extract_unique_domain(ufl_expression).ufl_cargo()
+        print("MMMMM:", mesh)
+        if comm is None:
+            try:
+                comm = mesh.comm
+            except AttributeError:
+                print("Could not extract MPI communicator for Expression. Maybe you need to pass a communicator?")
+                raise
 
         # Compile UFL expression with JIT
         if dtype == np.float32:
@@ -131,7 +140,7 @@ class Expression:
         else:
             raise RuntimeError(f"Unsupported scalar type {dtype} for Expression.")
 
-        self._ufcx_expression, module, self._code = jit.ffcx_jit(mesh.comm, (ufl_expression, _X),
+        self._ufcx_expression, module, self._code = jit.ffcx_jit(comm, (ufl_expression, _X),
                                                                  form_compiler_options=form_compiler_options,
                                                                  jit_options=jit_options)
         self._ufl_expression = ufl_expression
@@ -143,15 +152,13 @@ class Expression:
         coeffs = [original_coefficients[self._ufcx_expression.original_coefficient_positions[i]]._cpp_object
                   for i in range(self._ufcx_expression.num_coefficients)]
 
-        ufl_constants = ufl.algorithms.analysis.extract_constants(
-            ufl_expression)
+        ufl_constants = ufl.algorithms.analysis.extract_constants(ufl_expression)
         constants = [constant._cpp_object for constant in ufl_constants]
         arguments = ufl.algorithms.extract_arguments(ufl_expression)
         if len(arguments) == 0:
             self._argument_function_space = None
         elif len(arguments) == 1:
-            self._argument_function_space = arguments[0].ufl_function_space(
-            )._cpp_object
+            self._argument_function_space = arguments[0].ufl_function_space()._cpp_object
         else:
             raise RuntimeError(
                 "Expressions with more that one Argument not allowed.")
@@ -183,7 +190,8 @@ class Expression:
             argument_space_dimension = 1
         else:
             argument_space_dimension = self.argument_function_space.element.space_dimension
-        values_shape = (_cells.shape[0], self.X().shape[0] * self.value_size * argument_space_dimension)
+        values_shape = (_cells.shape[0], self.X(
+        ).shape[0] * self.value_size * argument_space_dimension)
 
         # Allocate memory for result if u was not provided
         if values is None:
@@ -357,7 +365,8 @@ class Function(ufl.Coefficient):
         @_interpolate.register(Function)
         def _(u: Function, cells: typing.Optional[np.ndarray] = None):
             """Interpolate a fem.Function"""
-            self._cpp_object.interpolate(u._cpp_object, cells, nmm_interpolation_data)
+            self._cpp_object.interpolate(
+                u._cpp_object, cells, nmm_interpolation_data)
 
         @_interpolate.register(int)
         def _(u_ptr: int, cells: typing.Optional[np.ndarray] = None):
@@ -380,8 +389,10 @@ class Function(ufl.Coefficient):
         except TypeError:
             # u is callable
             assert callable(u)
-            x = _cpp.fem.interpolation_coords(self._V.element, self._V.mesh.geometry, cells)
-            self._cpp_object.interpolate(np.asarray(u(x), dtype=self.dtype), cells)
+            x = _cpp.fem.interpolation_coords(
+                self._V.element, self._V.mesh.geometry, cells)
+            self._cpp_object.interpolate(
+                np.asarray(u(x), dtype=self.dtype), cells)
 
     def copy(self) -> Function:
         """Create a copy of the Function. The FunctionSpace is shared and the
@@ -451,7 +462,8 @@ class Function(ufl.Coefficient):
 
     def collapse(self) -> Function:
         u_collapsed = self._cpp_object.collapse()
-        V_collapsed = FunctionSpace(self.function_space._mesh, self.ufl_element(), u_collapsed.function_space)
+        V_collapsed = FunctionSpace(
+            self.function_space._mesh, self.ufl_element(), u_collapsed.function_space)
         return Function(V_collapsed, Vector(u_collapsed.x))
 
 
@@ -479,7 +491,8 @@ class FunctionSpace(ufl.FunctionSpace):
                 # UFL element
                 super().__init__(mesh.ufl_domain(), element)
             except BaseException:
-                assert len(element) == 2, "Expected sequence of (element_type, degree)"
+                assert len(
+                    element) == 2, "Expected sequence of (element_type, degree)"
                 e = ElementMetaData(*element)
                 ufl_e = basix.ufl.element(
                     e.family, mesh.basix_cell(), e.degree, gdim=mesh.ufl_cell().geometric_dimension())
@@ -497,9 +510,11 @@ class FunctionSpace(ufl.FunctionSpace):
 
             ffi = module.ffi
             if dtype == np.float32:
-                cpp_element = _cpp.fem.FiniteElement_float32(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_element)))
+                cpp_element = _cpp.fem.FiniteElement_float32(
+                    ffi.cast("uintptr_t", ffi.addressof(self._ufcx_element)))
             elif dtype == np.float64:
-                cpp_element = _cpp.fem.FiniteElement_float64(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_element)))
+                cpp_element = _cpp.fem.FiniteElement_float64(
+                    ffi.cast("uintptr_t", ffi.addressof(self._ufcx_element)))
             cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, ffi.cast(
                 "uintptr_t", ffi.addressof(self._ufcx_dofmap)), mesh.topology, cpp_element)
 
@@ -513,7 +528,8 @@ class FunctionSpace(ufl.FunctionSpace):
             # Create function space from a UFL element and an existing
             # C++ FunctionSpace
             if mesh._cpp_object is not cppV.mesh:
-                raise RecursionError("Meshes do not match in FunctionSpace initialisation.")
+                raise RecursionError(
+                    "Meshes do not match in FunctionSpace initialisation.")
             ufl_domain = mesh.ufl_domain()
             super().__init__(ufl_domain, element)
             self._cpp_object = cppV
@@ -642,8 +658,7 @@ def _is_scalar(mesh, element):
                               gdim=mesh.geometry.dim)
     except AttributeError:
         ed = ElementMetaData(*element)
-        e = basix.ufl.element(ed.family, mesh.basix_cell(), ed.degree,
-                              gdim=mesh.geometry.dim)
+        e = basix.ufl.element(ed.family, mesh.basix_cell(), ed.degree, gdim=mesh.geometry.dim)
     return len(e.value_shape()) == 0
 
 
@@ -653,18 +668,19 @@ def VectorFunctionSpace(mesh: Mesh,
                         dim=None) -> FunctionSpace:
     """Create vector finite element (composition of scalar elements) function space."""
     if not _is_scalar(mesh, element):
-        raise ValueError("Cannot create vector element containing a non-scalar.")
+        raise ValueError(
+            "Cannot create vector element containing a non-scalar.")
 
     try:
         ufl_e = basix.ufl.element(element.family(), element.cell_type,         # type: ignore
                                   element.degree(), element.lagrange_variant,  # type: ignore
                                   element.dpc_variant, element.discontinuous,  # type: ignore
-                                  shape=(mesh.geometry.dim, ) if dim is None else (dim, ),
+                                  shape=(mesh.geometry.dim,) if dim is None else (dim, ),
                                   gdim=mesh.geometry.dim, rank=1)
     except AttributeError:
         ed = ElementMetaData(*element)
         ufl_e = basix.ufl.element(ed.family, mesh.basix_cell(), ed.degree,
-                                  shape=(mesh.geometry.dim, ) if dim is None else (dim, ),
+                                  shape=(mesh.geometry.dim,) if dim is None else (dim, ),
                                   gdim=mesh.geometry.dim, rank=1)
     return FunctionSpace(mesh, ufl_e)
 
@@ -673,7 +689,8 @@ def TensorFunctionSpace(mesh: Mesh, element: typing.Union[ElementMetaData, typin
                         symmetry: typing.Optional[bool] = None) -> FunctionSpace:
     """Create tensor finite element (composition of scalar elements) function space."""
     if not _is_scalar(mesh, element):
-        raise ValueError("Cannot create tensor element containing a non-scalar.")
+        raise ValueError(
+            "Cannot create tensor element containing a non-scalar.")
 
     e = ElementMetaData(*element)
     gdim = mesh.geometry.dim

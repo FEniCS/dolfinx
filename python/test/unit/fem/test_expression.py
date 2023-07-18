@@ -312,3 +312,13 @@ def test_expression_eval_cells_subset():
     cells = np.arange(cells_imap.size_local, dtype=np.int32)[::-2]
     u_ = e.eval(cells)
     assert np.allclose(u_.ravel(), cells)
+
+
+def test_expression_comm():
+    mesh = create_unit_square(MPI.COMM_WORLD, 4, 4)
+    v = Constant(mesh.ufl_cell(), 1.0)
+    u = Function(FunctionSpace(mesh, ("Lagrange", 1)))
+
+    with pytest.raises(AttributeError):
+        expr = Expression(v, u.function_space.element.interpolation_points())
+    expr = Expression(v, u.function_space.element.interpolation_points(), comm=MPI.COMM_WORLD)
