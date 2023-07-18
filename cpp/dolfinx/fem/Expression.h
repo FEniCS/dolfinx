@@ -79,10 +79,19 @@ public:
         _value_shape(value_shape),
         _argument_function_space(argument_function_space)
   {
+    for (auto& c : _coefficients)
+    {
+      assert(c);
+      if (c->function_space()->mesh()
+          != _coefficients.front()->function_space()->mesh())
+      {
+        throw std::runtime_error("Coefficients not all defined on same mesh.");
+      }
+    }
   }
 
   /// Move constructor
-  Expression(Expression&& form) = default;
+  Expression(Expression&& e) = default;
 
   /// Destructor
   virtual ~Expression() = default;
