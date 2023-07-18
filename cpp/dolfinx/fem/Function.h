@@ -207,7 +207,7 @@ public:
         *_function_space->element(), _function_space->mesh()->geometry(),
         cells);
     namespace stdex = std::experimental;
-    stdex::mdspan<const value_type,
+    stdex::mdspan<const geometry_type,
                   stdex::extents<std::size_t, 3, stdex::dynamic_extent>>
         _x(x.data(), 3, x.size() / 3);
 
