@@ -35,6 +35,14 @@ def create_vtk_mesh(msh: mesh.Mesh, dim: typing.Optional[int] = None, entities=N
     dimension. The vertex indices in the returned topology array are the
     indices for the associated entry in the mesh geometry.
 
+    Args:
+        mesh: Mesh to extract data from.
+        dim: Topological dimension of entities to extract.
+        entities: Entities to extract. Extract all if ``None``.
+
+    Returns:
+        Topology, type for each cell, and geometry in VTK-ready format.
+
     """
     if dim is None:
         dim = msh.topology.dim
@@ -44,7 +52,9 @@ def create_vtk_mesh(msh: mesh.Mesh, dim: typing.Optional[int] = None, entities=N
     if len(msh.topology.cell_types) != 1:
         raise RuntimeError("Multiple cell types")
     cell_type = _cpp.mesh.cell_entity_type(msh.topology.cell_types[0], dim, 0)
-    degree = msh.geometry.cmap.degree
+    assert len(msh.geometry.cmaps) == 1
+    cmap = msh.geometry.cmaps[0]
+    degree = cmap.degree
     if cell_type == mesh.CellType.prism:
         raise RuntimeError("Plotting of prism meshes not supported")
 
@@ -53,7 +63,7 @@ def create_vtk_mesh(msh: mesh.Mesh, dim: typing.Optional[int] = None, entities=N
         entities = range(msh.topology.index_map(dim).size_local)
 
     if dim == tdim:
-        vtk_topology = _cpp.io.extract_vtk_connectivity(msh.geometry, msh.topology.cell_type)[entities]
+        vtk_topology = _cpp.io.extract_vtk_connectivity(msh.geometry.dofmap, cell_type)[entities]
         num_nodes_per_cell = vtk_topology.shape[1]
     else:
         # NOTE: This linearizes higher order geometries
@@ -81,9 +91,21 @@ def create_vtk_mesh(msh: mesh.Mesh, dim: typing.Optional[int] = None, entities=N
 @create_vtk_mesh.register(fem.FunctionSpace)
 def _(V: fem.FunctionSpace, entities=None):
     """Creates a VTK mesh topology (topology array and array of cell
-    types) that is based on the degree-of-freedom coordinates. Note that
-    this function supports Lagrange elements (continuous and
-    discontinuous) only.
+    types) that is based on the degree-of-freedom coordinates.
+
+    This function supports visualisation when the degree of the finite
+    element space is different from the geometric degree of the mesh.
+
+    Note:
+        This function supports Lagrange elements (continuous and
+        discontinuous) only.
+
+    Args:
+        V: Mesh to extract data from.
+        entities: Entities to extract. Extract all if ``None``.
+
+    Returns:
+        Topology, type for each cell, and geometry in VTK-ready format.
 
     """
     if not (V.ufl_element().family() in ['Discontinuous Lagrange', "Lagrange", "DQ", "Q", "DP", "P"]):
@@ -111,7 +133,7 @@ def _(V: fem.FunctionSpace, entities=None):
 
     topology = np.zeros((len(entities), num_dofs_per_cell + 1), dtype=np.int32)
     topology[:, 0] = num_dofs_per_cell
-    dofmap_ = dofmap.list.array.reshape(dofmap.list.num_nodes, num_dofs_per_cell)
+    dofmap_ = dofmap.list
 
     topology[:, 1:] = dofmap_[:len(entities), perm]
     return topology.reshape(1, -1)[0], cell_types, V.tabulate_dof_coordinates()

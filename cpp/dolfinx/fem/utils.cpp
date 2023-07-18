@@ -28,48 +28,6 @@
 using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
-la::SparsityPattern fem::create_sparsity_pattern(
-    const mesh::Topology& topology,
-    const std::array<std::reference_wrapper<const DofMap>, 2>& dofmaps,
-    const std::set<IntegralType>& integrals)
-{
-  common::Timer t0("Build sparsity");
-
-  // Get common::IndexMaps for each dimension
-  const std::array index_maps{dofmaps[0].get().index_map,
-                              dofmaps[1].get().index_map};
-  const std::array bs
-      = {dofmaps[0].get().index_map_bs(), dofmaps[1].get().index_map_bs()};
-
-  // Create and build sparsity pattern
-  assert(dofmaps[0].get().index_map);
-  la::SparsityPattern pattern(dofmaps[0].get().index_map->comm(), index_maps,
-                              bs);
-  for (auto type : integrals)
-  {
-    switch (type)
-    {
-    case IntegralType::cell:
-      sparsitybuild::cells(pattern, topology, {{dofmaps[0], dofmaps[1]}});
-      break;
-    case IntegralType::interior_facet:
-      sparsitybuild::interior_facets(pattern, topology,
-                                     {{dofmaps[0], dofmaps[1]}});
-      break;
-    case IntegralType::exterior_facet:
-      sparsitybuild::exterior_facets(pattern, topology,
-                                     {{dofmaps[0], dofmaps[1]}});
-      break;
-    default:
-      throw std::runtime_error("Unsupported integral type");
-    }
-  }
-
-  t0.stop();
-
-  return pattern;
-}
-//-----------------------------------------------------------------------------
 fem::ElementDofLayout
 fem::create_element_dof_layout(const ufcx_dofmap& dofmap,
                                const mesh::CellType cell_type,
@@ -137,12 +95,12 @@ fem::create_element_dof_layout(const ufcx_dofmap& dofmap,
                           parent_map, sub_doflayout);
 }
 //-----------------------------------------------------------------------------
-fem::DofMap
-fem::create_dofmap(MPI_Comm comm, const ElementDofLayout& layout,
-                   mesh::Topology& topology,
-                   const std::function<std::vector<int>(
-                       const graph::AdjacencyList<std::int32_t>&)>& reorder_fn,
-                   const FiniteElement& element)
+fem::DofMap fem::create_dofmap(
+    MPI_Comm comm, const ElementDofLayout& layout, mesh::Topology& topology,
+    std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
+        unpermute_dofs,
+    std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
+        reorder_fn)
 {
   // Create required mesh entities
   const int D = topology.dim();
@@ -158,18 +116,19 @@ fem::create_dofmap(MPI_Comm comm, const ElementDofLayout& layout,
 
   // If the element's DOF transformations are permutations, permute the
   // DOF numbering on each cell
-  if (element.needs_dof_permutations())
+  if (unpermute_dofs)
   {
     const int D = topology.dim();
     const int num_cells = topology.connectivity(D, 0)->num_nodes();
     topology.create_entity_permutations();
     const std::vector<std::uint32_t>& cell_info
         = topology.get_cell_permutation_info();
-
-    const std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
-        unpermute_dofs = element.get_dof_permutation_function(true, true);
+    int dim = layout.num_dofs();
     for (std::int32_t cell = 0; cell < num_cells; ++cell)
-      unpermute_dofs(dofmap.links(cell), cell_info[cell]);
+    {
+      std::span<std::int32_t> dofs(dofmap.data() + cell * dim, dim);
+      unpermute_dofs(dofs, cell_info[cell]);
+    }
   }
 
   return DofMap(layout, index_map, bs, std::move(dofmap), bs);
@@ -195,7 +154,7 @@ std::vector<std::string> fem::get_constant_names(const ufcx_form& ufcx_form)
 //-----------------------------------------------------------------------------
 std::vector<std::pair<int, std::vector<std::int32_t>>>
 fem::compute_integration_domains(fem::IntegralType integral_type,
-                                 mesh::Topology& topology,
+                                 const mesh::Topology& topology,
                                  std::span<const std::int32_t> entities,
                                  int dim, std::span<const int> values)
 {
@@ -224,12 +183,19 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
     values1.insert(values1.begin(), values.begin(), values.end());
     break;
   default:
-    topology.create_connectivity(dim, tdim);
-    topology.create_connectivity(tdim, dim);
     auto f_to_c = topology.connectivity(tdim - 1, tdim);
-    assert(f_to_c);
+    if (!f_to_c)
+    {
+      throw std::runtime_error(
+          "Topology facet-to-cell connectivity has not been computed.");
+    }
     auto c_to_f = topology.connectivity(tdim, tdim - 1);
-    assert(c_to_f);
+    if (!c_to_f)
+    {
+      throw std::runtime_error(
+          "Topology cell-to-facet connectivity has not been computed.");
+    }
+
     switch (integral_type)
     {
     case IntegralType::exterior_facet:

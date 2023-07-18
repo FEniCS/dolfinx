@@ -24,9 +24,9 @@ namespace impl_bb
 //-----------------------------------------------------------------------------
 // Compute bounding box of mesh entity. The bounding box is defined by (lower
 // left corner, top right corner). Storage flattened row-major
-template <typename T>
-std::array<double, 6> compute_bbox_of_entity(const mesh::Mesh<T>& mesh, int dim,
-                                             std::int32_t index)
+template <std::floating_point T>
+std::array<T, 6> compute_bbox_of_entity(const mesh::Mesh<T>& mesh, int dim,
+                                        std::int32_t index)
 {
   // Get the geometrical indices for the mesh entity
   std::span<const T> xg = mesh.geometry().x();
@@ -58,7 +58,7 @@ std::array<double, 6> compute_bbox_of_entity(const mesh::Mesh<T>& mesh, int dim,
 // Compute bounding box of bounding boxes. Each bounding box is defined as a
 // tuple (corners, entity_index). The corners of the bounding box is flattened
 // row-major as (lower left corner, top right corner).
-template <typename T>
+template <std::floating_point T>
 std::array<T, 6> compute_bbox_of_bboxes(
     std::span<const std::pair<std::array<T, 6>, std::int32_t>> leaf_bboxes)
 {
@@ -76,7 +76,7 @@ std::array<T, 6> compute_bbox_of_bboxes(
   return b;
 }
 //------------------------------------------------------------------------------
-template <typename T>
+template <std::floating_point T>
 std::int32_t _build_from_leaf(
     std::span<std::pair<std::array<T, 6>, std::int32_t>> leaf_bboxes,
     std::vector<int>& bboxes, std::vector<T>& bbox_coordinates)
@@ -131,7 +131,7 @@ std::int32_t _build_from_leaf(
   }
 }
 //-----------------------------------------------------------------------------
-template <typename T>
+template <std::floating_point T>
 std::pair<std::vector<std::int32_t>, std::vector<T>> build_from_leaf(
     std::vector<std::pair<std::array<T, 6>, std::int32_t>>& leaf_bboxes)
 {
@@ -141,7 +141,7 @@ std::pair<std::vector<std::int32_t>, std::vector<T>> build_from_leaf(
   return {std::move(bboxes), std::move(bbox_coordinates)};
 }
 //-----------------------------------------------------------------------------
-template <typename T>
+template <std::floating_point T>
 std::int32_t
 _build_from_point(std::span<std::pair<std::array<T, 3>, std::int32_t>> points,
                   std::vector<std::int32_t>& bboxes,
@@ -200,7 +200,7 @@ _build_from_point(std::span<std::pair<std::array<T, 3>, std::int32_t>> points,
 
 /// Axis-Aligned bounding box binary tree. It is used to find entities
 /// in a collection (often a mesh::Mesh).
-template <typename T>
+template <std::floating_point T>
 class BoundingBoxTree
 {
 private:
@@ -217,18 +217,18 @@ private:
 
 public:
   /// Constructor
-  /// @param[in] mesh The mesh for building the bounding box tree
-  /// @param[in] tdim The topological dimension of the mesh entities to
-  /// build the bounding box tree for
+  /// @param[in] mesh Mesh for building the bounding box tree.
+  /// @param[in] tdim Topological dimension of the mesh entities to
+  /// build the bounding box tree for.
   /// @param[in] entities List of entity indices (local to process) to
   /// compute the bounding box for (may be empty, if none).
-  /// @param[in] padding A float perscribing how much the bounding box
-  /// of each entity should be padded
+  /// @param[in] padding Value to pad (extend) the the bounding box of
+  /// each entity by.
   BoundingBoxTree(const mesh::Mesh<T>& mesh, int tdim,
                   std::span<const std::int32_t> entities, double padding = 0)
       : _tdim(tdim)
   {
-    if (tdim < 0 or tdim > mesh.topology().dim())
+    if (tdim < 0 or tdim > mesh.topology()->dim())
     {
       throw std::runtime_error(
           "Dimension must be non-negative and less than or "
@@ -236,8 +236,8 @@ public:
     }
 
     // Initialize entities of given dimension if they don't exist
-    mesh.topology_mutable().create_entities(tdim);
-    mesh.topology_mutable().create_connectivity(tdim, mesh.topology().dim());
+    mesh.topology_mutable()->create_entities(tdim);
+    mesh.topology_mutable()->create_connectivity(tdim, mesh.topology()->dim());
 
     // Create bounding boxes for all mesh entities (leaves)
     std::vector<std::pair<std::array<T, 6>, std::int32_t>> leaf_bboxes;
@@ -265,8 +265,8 @@ public:
   /// @param[in] mesh The mesh for building the bounding box tree
   /// @param[in] tdim The topological dimension of the mesh entities to
   /// build the bounding box tree for
-  /// @param[in] padding A float perscribing how much the bounding box
-  /// of each entity should be padded
+  /// @param[in] padding Value to pad (extend) the the bounding box of
+  /// each entity by.
   BoundingBoxTree(const mesh::Mesh<T>& mesh, int tdim, T padding = 0)
       : BoundingBoxTree::BoundingBoxTree(
           mesh, tdim, range(mesh.topology_mutable(), tdim), padding)
@@ -367,7 +367,7 @@ public:
     return s.str();
   }
 
-  /// Get bounding box child nodes
+  /// Get bounding box child nodes.
   ///
   /// @param[in] node The bounding box node index
   /// @return The indices of the two child nodes. If @p node is a leaf

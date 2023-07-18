@@ -37,6 +37,8 @@ void create_mesh_file()
 
 void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
 {
+  using T = double;
+
   MPI_Comm mpi_comm = MPI_COMM_WORLD;
   const int mpi_size = dolfinx::MPI::size(mpi_comm);
 
@@ -55,14 +57,14 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   MPI_Comm_create_group(MPI_COMM_WORLD, new_group, 0, &subset_comm);
 
   // Create coordinate map
-  auto e = std::make_shared<basix::FiniteElement>(basix::create_element(
+  auto e = std::make_shared<basix::FiniteElement<T>>(basix::create_element<T>(
       basix::element::family::P, basix::cell::type::triangle, 1,
       basix::element::lagrange_variant::unset,
       basix::element::dpc_variant::unset, false));
-  fem::CoordinateElement cmap(e);
+  fem::CoordinateElement<T> cmap(e);
 
   // read mesh data
-  std::vector<double> x;
+  std::vector<T> x;
   std::array<std::size_t, 2> xshape = {0, 2};
   std::vector<std::int64_t> cells;
   std::array<std::size_t, 2> cshape = {0, 3};
@@ -71,7 +73,8 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   {
     io::XDMFFile infile(subset_comm, "mesh.xdmf", "r");
     std::tie(cells, cshape) = infile.read_topology_data("mesh");
-    std::tie(x, xshape) = infile.read_geometry_data("mesh");
+    auto [_x, _xshape] = infile.read_geometry_data("mesh");
+    x = std::move(std::get<std::vector<T>>(_x));
 
     int nparts = mpi_size;
     const int tdim = mesh::cell_dim(mesh::CellType::triangle);
@@ -126,18 +129,19 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   mesh::Geometry geometry = mesh::create_geometry(mpi_comm, topology, {cmap},
                                                   cell_nodes, x, xshape[1]);
 
-  auto mesh = std::make_shared<mesh::Mesh<double>>(
-      mpi_comm, std::move(topology), std::move(geometry));
+  auto mesh = std::make_shared<mesh::Mesh<T>>(
+      mpi_comm, std::make_shared<mesh::Topology>(std::move(topology)),
+      std::move(geometry));
 
-  CHECK(mesh->topology().index_map(tdim)->size_global() == 2 * N * N);
-  CHECK(mesh->topology().index_map(tdim)->size_local() > 0);
+  CHECK(mesh->topology()->index_map(tdim)->size_global() == 2 * N * N);
+  CHECK(mesh->topology()->index_map(tdim)->size_local() > 0);
 
-  CHECK(mesh->topology().index_map(0)->size_global() == (N + 1) * (N + 1));
-  CHECK(mesh->topology().index_map(0)->size_local() > 0);
+  CHECK(mesh->topology()->index_map(0)->size_global() == (N + 1) * (N + 1));
+  CHECK(mesh->topology()->index_map(0)->size_local() > 0);
 
   CHECK((int)mesh->geometry().x().size() / 3
-        == mesh->topology().index_map(0)->size_local()
-               + mesh->topology().index_map(0)->num_ghosts());
+        == mesh->topology()->index_map(0)->size_local()
+               + mesh->topology()->index_map(0)->num_ghosts());
 
   MPI_Group_free(&comm_group);
   MPI_Group_free(&new_group);

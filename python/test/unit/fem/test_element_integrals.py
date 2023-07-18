@@ -10,56 +10,54 @@ from itertools import combinations, product
 
 import numpy as np
 import pytest
-
-import dolfinx
 import ufl
 from basix.ufl import element
 from dolfinx.fem import (Constant, Function, FunctionSpace,
-                         VectorFunctionSpace, assemble_scalar, form)
-from dolfinx.fem.petsc import assemble_matrix, assemble_vector
+                         VectorFunctionSpace, assemble_matrix, assemble_scalar,
+                         assemble_vector, form)
 from dolfinx.mesh import CellType, create_mesh, meshtags
-
 from mpi4py import MPI
-from petsc4py import PETSc
+
+import dolfinx
 
 parametrize_cell_types = pytest.mark.parametrize(
     "cell_type",
     [CellType.interval, CellType.triangle, CellType.tetrahedron, CellType.quadrilateral, CellType.hexahedron])
 
 
-def unit_cell_points(cell_type):
+def unit_cell_points(cell_type, dtype):
     if cell_type == CellType.interval:
-        return np.array([[0.], [1.]])
+        return np.array([[0.], [1.]], dtype=dtype)
     if cell_type == CellType.triangle:
         # Define equilateral triangle with area 1
         root = 3 ** 0.25  # 4th root of 3
         return np.array([[0., 0.], [2 / root, 0.],
-                         [1 / root, root]])
+                         [1 / root, root]], dtype=dtype)
     if cell_type == CellType.tetrahedron:
         # Define regular tetrahedron with volume 1
         s = 2 ** 0.5 * 3 ** (1 / 3)  # side length
         return np.array([[0., 0., 0.], [s, 0., 0.],
                          [s / 2, s * np.sqrt(3) / 2, 0.],
-                         [s / 2, s / 2 / np.sqrt(3), s * np.sqrt(2 / 3)]])
+                         [s / 2, s / 2 / np.sqrt(3), s * np.sqrt(2 / 3)]], dtype=dtype)
     elif cell_type == CellType.quadrilateral:
         # Define unit quadrilateral (area 1)
-        return np.array([[0., 0.], [1., 0.], [0., 1.], [1., 1.]])
+        return np.array([[0., 0.], [1., 0.], [0., 1.], [1., 1.]], dtype=dtype)
     elif cell_type == CellType.hexahedron:
         # Define unit hexahedron (volume 1)
         return np.array([[0., 0., 0.], [1., 0., 0.], [0., 1., 0.],
                          [1., 1., 0.], [0., 0., 1.], [1., 0., 1.],
-                         [0., 1., 1.], [1., 1., 1.]])
+                         [0., 1., 1.], [1., 1., 1.]], dtype=dtype)
 
 
-def unit_cell(cell_type, random_order=True):
-    points = unit_cell_points(cell_type)
+def unit_cell(cell_type, dtype, random_order=True):
+    points = unit_cell_points(cell_type, dtype)
     num_points = len(points)
 
     # Randomly number the points and create the mesh
     order = list(range(num_points))
     if random_order:
         random.shuffle(order)
-    ordered_points = np.zeros(points.shape)
+    ordered_points = np.zeros(points.shape, dtype=dtype)
     for i, j in enumerate(order):
         ordered_points[j] = points[i]
     cells = np.array([order])
@@ -69,9 +67,9 @@ def unit_cell(cell_type, random_order=True):
     return mesh
 
 
-def two_unit_cells(cell_type, agree=False, random_order=True, return_order=False):
+def two_unit_cells(cell_type, dtype, agree=False, random_order=True, return_order=False):
     if cell_type == CellType.interval:
-        points = np.array([[0.], [1.], [-1.]])
+        points = np.array([[0.], [1.], [-1.]], dtype=dtype)
         if agree:
             cells = [[0, 1], [2, 0]]
         else:
@@ -80,7 +78,7 @@ def two_unit_cells(cell_type, agree=False, random_order=True, return_order=False
         # Define equilateral triangles with area 1
         root = 3 ** 0.25  # 4th root of 3
         points = np.array([[0., 0.], [2 / root, 0.],
-                           [1 / root, root], [1 / root, -root]])
+                           [1 / root, root], [1 / root, -root]], dtype=dtype)
         if agree:
             cells = [[0, 1, 2], [0, 3, 1]]
         else:
@@ -91,14 +89,14 @@ def two_unit_cells(cell_type, agree=False, random_order=True, return_order=False
         points = np.array([[0., 0., 0.], [s, 0., 0.],
                            [s / 2, s * np.sqrt(3) / 2, 0.],
                            [s / 2, s / 2 / np.sqrt(3), s * np.sqrt(2 / 3)],
-                           [s / 2, s / 2 / np.sqrt(3), -s * np.sqrt(2 / 3)]])
+                           [s / 2, s / 2 / np.sqrt(3), -s * np.sqrt(2 / 3)]], dtype=dtype)
         if agree:
             cells = [[0, 1, 2, 3], [0, 1, 4, 2]]
         else:
             cells = [[0, 1, 2, 3], [0, 2, 1, 4]]
     elif cell_type == CellType.quadrilateral:
         # Define unit quadrilaterals (area 1)
-        points = np.array([[0., 0.], [1., 0.], [0., 1.], [1., 1.], [0., -1.], [1., -1.]])
+        points = np.array([[0., 0.], [1., 0.], [0., 1.], [1., 1.], [0., -1.], [1., -1.]], dtype=dtype)
         if agree:
             cells = [[0, 1, 2, 3], [4, 5, 0, 1]]
         else:
@@ -108,7 +106,7 @@ def two_unit_cells(cell_type, agree=False, random_order=True, return_order=False
         points = np.array([[0., 0., 0.], [1., 0., 0.], [0., 1., 0.],
                            [1., 1., 0.], [0., 0., 1.], [1., 0., 1.],
                            [0., 1., 1.], [1., 1., 1.], [0., 0., -1.],
-                           [1., 0., -1.], [0., 1., -1.], [1., 1., -1.]])
+                           [1., 0., -1.], [0., 1., -1.], [1., 1., -1.]], dtype=dtype)
         if agree:
             cells = [[0, 1, 2, 3, 4, 5, 6, 7], [8, 9, 10, 11, 0, 1, 2, 3]]
         else:
@@ -119,7 +117,7 @@ def two_unit_cells(cell_type, agree=False, random_order=True, return_order=False
     order = list(range(num_points))
     if random_order:
         random.shuffle(order)
-    ordered_points = np.zeros(points.shape)
+    ordered_points = np.zeros(points.shape, dtype=dtype)
     for i, j in enumerate(order):
         ordered_points[j] = points[i]
     ordered_cells = np.array([[order[i] for i in c] for c in cells])
@@ -133,14 +131,16 @@ def two_unit_cells(cell_type, agree=False, random_order=True, return_order=False
 
 @pytest.mark.skip_in_parallel
 @parametrize_cell_types
-def test_facet_integral(cell_type):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_facet_integral(cell_type, dtype):
     """Test that the integral of a function over a facet is correct"""
+    xtype = np.real(dtype(0)).dtype
     for count in range(5):
-        mesh = unit_cell(cell_type)
+        mesh = unit_cell(cell_type, xtype)
         tdim = mesh.topology.dim
 
         V = FunctionSpace(mesh, ("Lagrange", 2))
-        v = Function(V)
+        v = Function(V, dtype=dtype)
 
         mesh.topology.create_entities(tdim - 1)
         map_f = mesh.topology.index_map(tdim - 1)
@@ -162,11 +162,13 @@ def test_facet_integral(cell_type):
         elif cell_type == CellType.hexahedron:
             v.interpolate(lambda x: x[0] * (1 - x[0]) + x[1] * (1 - x[1]) + x[2] * (1 - x[2]))
 
-        # assert that the integral of these functions over each face are
+        # Check that integral of these functions over each face are
         # equal
+        mesh.topology.create_connectivity(tdim - 1, tdim)
+        mesh.topology.create_connectivity(tdim, tdim - 1)
         out = []
         for j in range(num_facets):
-            a = form(v * ufl.ds(subdomain_data=marker, subdomain_id=j))
+            a = form(v * ufl.ds(subdomain_data=marker, subdomain_id=j), dtype=dtype)
             result = assemble_scalar(a)
             out.append(result)
             assert np.isclose(result, out[0])
@@ -174,16 +176,18 @@ def test_facet_integral(cell_type):
 
 @pytest.mark.skip_in_parallel
 @parametrize_cell_types
-def test_facet_normals(cell_type):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_facet_normals(cell_type, dtype):
     """Test that FacetNormal is outward facing"""
+    xtype = np.real(dtype(0)).dtype
     for count in range(5):
-        mesh = unit_cell(cell_type)
+        mesh = unit_cell(cell_type, xtype)
         tdim = mesh.topology.dim
         mesh.topology.create_entities(tdim - 1)
 
         V = VectorFunctionSpace(mesh, ("Lagrange", 1))
         normal = ufl.FacetNormal(mesh)
-        v = Function(V)
+        v = Function(V, dtype=dtype)
 
         mesh.topology.create_entities(tdim - 1)
         map_f = mesh.topology.index_map(tdim - 1)
@@ -222,34 +226,36 @@ def test_facet_normals(cell_type):
                 # faces
                 v.interpolate(lambda x: tuple(x[j] - i % 2 if j == i // 3 else 0 * x[j] for j in range(3)))
 
-            # assert that the integrals these functions dotted with the
+            # Check that integrals these functions dotted with the
             # normal over a face is 1 on one face and 0 on the others
             ones = 0
             for j in range(num_facets):
-                a = form(ufl.inner(v, normal) * ufl.ds(subdomain_data=marker, subdomain_id=j))
+                a = form(ufl.inner(v, normal) * ufl.ds(subdomain_data=marker, subdomain_id=j), dtype=dtype)
                 result = assemble_scalar(a)
                 if np.isclose(result, 1):
                     ones += 1
                 else:
-                    assert np.isclose(result, 0)
+                    assert np.isclose(result, 0, atol=1.0e-6)
             assert ones == 1
 
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('space_type', ["Lagrange", "DG"])
 @parametrize_cell_types
-def test_plus_minus(cell_type, space_type):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_plus_minus(cell_type, space_type, dtype):
     """Test that ('+') and ('-') give the same value for continuous functions"""
+    xtype = np.real(dtype(0)).dtype
     results = []
     for count in range(3):
         for agree in [True, False]:
-            mesh = two_unit_cells(cell_type, agree)
+            mesh = two_unit_cells(cell_type, xtype, agree)
             V = FunctionSpace(mesh, (space_type, 1))
-            v = Function(V)
+            v = Function(V, dtype=dtype)
             v.interpolate(lambda x: x[0] - 2 * x[1])
             # Check that these two integrals are equal
             for pm1, pm2 in product(["+", "-"], repeat=2):
-                a = form(v(pm1) * v(pm2) * ufl.dS)
+                a = form(v(pm1) * v(pm2) * ufl.dS, dtype=dtype)
                 results.append(assemble_scalar(a))
     for i, j in combinations(results, 2):
         assert np.isclose(i, j)
@@ -258,15 +264,17 @@ def test_plus_minus(cell_type, space_type):
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('pm', ["+", "-"])
 @parametrize_cell_types
-def test_plus_minus_simple_vector(cell_type, pm):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_plus_minus_simple_vector(cell_type, pm, dtype):
     """Test that ('+') and ('-') match up with the correct DOFs for DG functions"""
+    xtype = np.real(dtype(0)).dtype
     results = []
     orders = []
     spaces = []
     for count in range(3):
         for agree in [True, False]:
             # Two cell mesh with randomly numbered points
-            mesh, order = two_unit_cells(cell_type, agree, return_order=True)
+            mesh, order = two_unit_cells(cell_type, xtype, agree, return_order=True)
             if cell_type in [CellType.interval, CellType.triangle, CellType.tetrahedron]:
                 V = FunctionSpace(mesh, ("DG", 1))
             else:
@@ -275,11 +283,10 @@ def test_plus_minus_simple_vector(cell_type, pm):
             # Assemble vectors v['+'] * dS and v['-'] * dS for a few
             # different numberings
             v = ufl.TestFunction(V)
-            a = form(ufl.inner(1, v(pm)) * ufl.dS)
+            a = form(ufl.inner(1, v(pm)) * ufl.dS, dtype=dtype)
             result = assemble_vector(a)
-            result.assemble()
             spaces.append(V)
-            results.append(result)
+            results.append(result.array)
             orders.append(order)
 
     # Check that the above vectors all have the same values as the first
@@ -292,9 +299,9 @@ def test_plus_minus_simple_vector(cell_type, pm):
         # For each cell
         for cell in range(2):
             # For each point in cell 0 in the first mesh
-            for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0.links(cell)):
+            for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0[cell]):
                 # Find the point in the cell 0 in the second mesh
-                for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1.links(cell)):
+                for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1[cell]):
                     if np.allclose(spaces[0].mesh.geometry.x[point0], space.mesh.geometry.x[point1]):
                         break
                 else:
@@ -303,23 +310,22 @@ def test_plus_minus_simple_vector(cell_type, pm):
 
                 assert np.isclose(results[0][dof0], result[dof1])
 
-    for x in results:
-        x.destroy()
-
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('pm1', ["+", "-"])
 @pytest.mark.parametrize('pm2', ["+", "-"])
 @parametrize_cell_types
-def test_plus_minus_vector(cell_type, pm1, pm2):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_plus_minus_vector(cell_type, pm1, pm2, dtype):
     """Test that ('+') and ('-') match up with the correct DOFs for DG functions"""
+    xtype = np.real(dtype(0)).dtype
     results = []
     orders = []
     spaces = []
     for count in range(3):
         for agree in [True, False]:
             # Two cell mesh with randomly numbered points
-            mesh, order = two_unit_cells(cell_type, agree, return_order=True)
+            mesh, order = two_unit_cells(cell_type, xtype, agree, return_order=True)
             if cell_type in [CellType.interval, CellType.triangle, CellType.tetrahedron]:
                 V = FunctionSpace(mesh, ("DG", 1))
             else:
@@ -327,14 +333,13 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
 
             # Assemble vectors with combinations of + and - for a few
             # different numberings
-            f = Function(V)
+            f = Function(V, dtype=dtype)
             f.interpolate(lambda x: x[0] - 2 * x[1])
             v = ufl.TestFunction(V)
-            a = form(ufl.inner(f(pm1), v(pm2)) * ufl.dS)
+            a = form(ufl.inner(f(pm1), v(pm2)) * ufl.dS, dtype=dtype)
             result = assemble_vector(a)
-            result.assemble()
             spaces.append(V)
-            results.append(result)
+            results.append(result.array)
             orders.append(order)
 
     # Check that the above vectors all have the same values as the first
@@ -347,44 +352,43 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
         # For each cell
         for cell in range(2):
             # For each point in cell 0 in the first mesh
-            for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0.links(cell)):
+            for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0[cell]):
                 # Find the point in the cell 0 in the second mesh
-                for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1.links(cell)):
+                for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1[cell]):
                     if np.allclose(spaces[0].mesh.geometry.x[point0], space.mesh.geometry.x[point1]):
                         break
                 else:
                     # If no matching point found, fail
                     assert False
 
-                assert np.isclose(results[0][dof0], result[dof1])
-
-    for x in results:
-        x.destroy()
+                assert np.isclose(results[0][dof0], result[dof1], atol=1.0e-6)
 
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('pm1', ["+", "-"])
 @pytest.mark.parametrize('pm2', ["+", "-"])
 @parametrize_cell_types
-def test_plus_minus_matrix(cell_type, pm1, pm2):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_plus_minus_matrix(cell_type, pm1, pm2, dtype):
     """Test that ('+') and ('-') match up with the correct DOFs for DG functions"""
+    xtype = np.real(dtype(0)).dtype
     results = []
     spaces = []
     orders = []
     for count in range(3):
         for agree in [True, False]:
             # Two cell mesh with randomly numbered points
-            mesh, order = two_unit_cells(cell_type, agree, return_order=True)
+            mesh, order = two_unit_cells(cell_type, xtype, agree, return_order=True)
             V = FunctionSpace(mesh, ("DG", 1))
             u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
             # Assemble matrices with combinations of + and - for a few
             # different numberings
-            a = form(ufl.inner(u(pm1), v(pm2)) * ufl.dS)
+            a = form(ufl.inner(u(pm1), v(pm2)) * ufl.dS, dtype=dtype)
             result = assemble_matrix(a, [])
-            result.assemble()
+            result.finalize()
             spaces.append(V)
-            results.append(result)
+            results.append(result.to_dense())
             orders.append(order)
 
     # Check that the above matrices all have the same values, but
@@ -393,15 +397,14 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
     for result, space in zip(results[1:], spaces[1:]):
         # Get the data relating to two results
         dofmap1 = space.mesh.geometry.dofmap
-
         dof_order = []
 
         # For each cell
         for cell in range(2):
             # For each point in cell 0 in the first mesh
-            for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0.links(cell)):
+            for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0[cell]):
                 # Find the point in the cell 0 in the second mesh
-                for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1.links(cell)):
+                for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1[cell]):
                     if np.allclose(spaces[0].mesh.geometry.x[point0], space.mesh.geometry.x[point1]):
                         break
                 else:
@@ -415,18 +418,17 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
             for c, d in dof_order:
                 assert np.isclose(results[0][a, c], result[b, d])
 
-    for x in results:
-        x.destroy()
-
 
 @pytest.mark.skip(reason="This test relies on the mesh constructor not re-ordering the mesh points. Needs replacing.")
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('order', [1, 2])
 @pytest.mark.parametrize('space_type', ["N1curl", "N2curl"])
-def test_curl(space_type, order):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_curl(space_type, order, dtype):
     """Test that curl is consistent for different cell permutations of a tetrahedron."""
+    xtype = np.real(dtype(0)).dtype
     tdim = dolfinx.mesh.cell_dim(CellType.tetrahedron)
-    points = unit_cell_points(CellType.tetrahedron)
+    points = unit_cell_points(CellType.tetrahedron, xtype)
 
     spaces = []
     results = []
@@ -475,77 +477,72 @@ def test_curl(space_type, order):
                 continue
             break
 
-    for x in results:
-        x.destroy()
 
-
-def create_quad_mesh(offset):
+def create_quad_mesh(offset, dtype):
     """Creates a mesh of a single square element if offset = 0, or a
     trapezium element if |offset| > 0."""
     x = np.array([[0, 0],
                   [1, 0],
                   [0, 0.5 + offset],
-                  [1, 0.5 - offset]])
+                  [1, 0.5 - offset]], dtype=dtype)
     cells = np.array([[0, 1, 2, 3]])
     ufl_mesh = ufl.Mesh(element("Lagrange", "quadrilateral", 1, rank=1))
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh)
     return mesh
 
 
-def assemble_div_matrix(k, offset):
-    mesh = create_quad_mesh(offset)
-    V = FunctionSpace(mesh, ("DQ", k))
-    W = FunctionSpace(mesh, ("RTCF", k + 1))
-    u, w = ufl.TrialFunction(V), ufl.TestFunction(W)
-    a = form(ufl.inner(u, ufl.div(w)) * ufl.dx)
-    A = assemble_matrix(a)
-    A.assemble()
-    _A = A[:, :]
-    A.destroy()
-    return _A
-
-
-def assemble_div_vector(k, offset):
-    mesh = create_quad_mesh(offset)
-    V = FunctionSpace(mesh, ("RTCF", k + 1))
-    v = ufl.TestFunction(V)
-    L = form(ufl.inner(Constant(mesh, PETSc.ScalarType(1)), ufl.div(v)) * ufl.dx)
-    b = assemble_vector(L)
-    b.assemble()
-    _b = b[:]
-    b.destroy()
-    return _b
-
-
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("k", [0, 1, 2])
-def test_div_general_quads_mat(k):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_div_general_quads_mat(k, dtype):
     """Tests that assembling inner(u, div(w)) * dx, where u is from a
     "DQ" space and w is from an "RTCF" space, gives the same matrix for
     square and trapezoidal elements. This should be the case due to the
     properties of the Piola transform."""
     # Assemble matrix on a mesh of square elements and on a mesh of
     # trapezium elements
+    xtype = np.real(dtype(0)).dtype
+
+    def assemble_div_matrix(k, offset):
+        mesh = create_quad_mesh(offset, dtype=xtype)
+        V = FunctionSpace(mesh, ("DQ", k))
+        W = FunctionSpace(mesh, ("RTCF", k + 1))
+        u, w = ufl.TrialFunction(V), ufl.TestFunction(W)
+        a = form(ufl.inner(u, ufl.div(w)) * ufl.dx, dtype=dtype)
+        A = assemble_matrix(a)
+        return A.to_dense()
+
     A_square = assemble_div_matrix(k, 0)
     A_trap = assemble_div_matrix(k, 0.25)
 
     # Due to the properties of the Piola transform, A_square and A_trap
     # should be equal
-    assert np.allclose(A_square, A_trap, atol=1e-8)
+    assert np.allclose(A_square, A_trap, atol=1e-6)
 
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("k", [0, 1, 2])
-def test_div_general_quads_vec(k):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_div_general_quads_vec(k, dtype):
     """Tests that assembling inner(1, div(w)) * dx, where w is from an
     "RTCF" space, gives the same matrix for square and trapezoidal
     elements. This should be the case due to the properties of the Piola
     transform."""
     # Assemble vector on a mesh of square elements and on a mesh of
     # trapezium elements
+    xtype = np.real(dtype(0)).dtype
+
+    def assemble_div_vector(k, offset):
+        mesh = create_quad_mesh(offset, dtype=xtype)
+        V = FunctionSpace(mesh, ("RTCF", k + 1))
+        v = ufl.TestFunction(V)
+        L = form(ufl.inner(Constant(mesh, dtype(1)), ufl.div(v)) * ufl.dx, dtype=dtype)
+        b = assemble_vector(L)
+        return b.array
+
     L_square = assemble_div_vector(k, 0)
     L_trap = assemble_div_vector(k, 0.25)
 
     # Due to the properties of the Piola transform, L_square and L_trap
     # should be equal
-    assert np.allclose(L_square, L_trap, atol=1e-8)
+    assert np.allclose(L_square, L_trap, atol=1e-5)

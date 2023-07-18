@@ -39,7 +39,7 @@ class ElementDofLayout;
 /// @param[in] reorder_fn Graph reordering function that is applied to
 /// the dofmap
 /// @return The index map and local to global DOF data for the DOF map
-std::tuple<common::IndexMap, int, graph::AdjacencyList<std::int32_t>>
+std::tuple<common::IndexMap, int, std::vector<std::int32_t>>
 build_dofmap_data(MPI_Comm comm, const mesh::Topology& topology,
                   const std::vector<ElementDofLayout>& element_dof_layouts,
                   const std::function<std::vector<int>(

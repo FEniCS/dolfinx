@@ -115,6 +115,7 @@ import numpy as np
 
 import ufl
 from dolfinx import fem, io, mesh, plot
+from dolfinx.fem.petsc import LinearProblem
 from dolfinx.mesh import CellType, GhostMode
 from ufl import (CellDiameter, FacetNormal, avg, div, dS, dx, grad, inner,
                  jump, pi, sin)
@@ -149,15 +150,12 @@ V = fem.FunctionSpace(msh, ("Lagrange", 2))
 # function that returns `True` for points `x` on the boundary and
 # `False` otherwise.
 
-facets = mesh.locate_entities_boundary(
-    msh, dim=1,
-    marker=lambda x: np.logical_or.reduce((
-        np.isclose(x[0], 0.0),
-        np.isclose(x[0], 1.0),
-        np.isclose(x[1], 0.0),
-        np.isclose(x[1], 1.0)
-    ))
-)
+facets = mesh.locate_entities_boundary(msh, dim=1,
+                                       marker=lambda x: np.logical_or.reduce((
+                                           np.isclose(x[0], 0.0),
+                                           np.isclose(x[0], 1.0),
+                                           np.isclose(x[1], 0.0),
+                                           np.isclose(x[1], 1.0))))
 
 # We now find the degrees-of-freedom that are associated with the
 # boundary facets using {py:func}`locate_dofs_topological
@@ -166,7 +164,7 @@ facets = mesh.locate_entities_boundary(
 dofs = fem.locate_dofs_topological(V=V, entity_dim=1, entities=facets)
 
 # and use {py:func}`dirichletbc <dolfinx.fem.dirichletbc>` to create a
-# {py:class}`DirichletBCMetaClass <dolfinx.fem.DirichletBCMetaClass>`
+# {py:class}`DirichletBC <dolfinx.fem.DirichletBC>`
 # class that represents the boundary condition. In this case, we impose
 # Dirichlet boundary conditions with value $0$ on the entire boundary
 # $\partial\Omega$.
@@ -211,15 +209,13 @@ a = inner(div(grad(u)), div(grad(v))) * dx \
 L = inner(f, v) * dx
 # -
 
-# We create a {py:class}`LinearProblem <dolfinx.fem.LinearProblem>`
+# We create a {py:class}`LinearProblem <dolfinx.fem.petsc.LinearProblem>`
 # object that brings together the variational problem, the Dirichlet
 # boundary condition, and which specifies the linear solver. In this
 # case we use a direct (LU) solver. The {py:func}`solve
-# <dolfinx.fem.LinearProblem.solve>` will compute a solution.
+# <dolfinx.fem.petsc.LinearProblem.solve>` will compute a solution.
 
-problem = fem.petsc.LinearProblem(a, L, bcs=[bc],
-                                  petsc_options={"ksp_type": "preonly",
-                                                 "pc_type": "lu"})
+problem = LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 uh = problem.solve()
 
 # The solution can be written to a  {py:class}`XDMFFile
@@ -247,7 +243,6 @@ try:
         plotter.screenshot("uh_biharmonic.png")
     else:
         plotter.show()
-
 except ModuleNotFoundError:
     print("'pyvista' is required to visualise the solution")
     print("Install 'pyvista' with pip: 'python3 -m pip install pyvista'")

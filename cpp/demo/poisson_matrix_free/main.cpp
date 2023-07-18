@@ -41,9 +41,7 @@ namespace linalg
 /// @param[in] alpha
 /// @param[in] x
 /// @param[in] y
-template <typename U>
-void axpy(la::Vector<U>& r, U alpha, const la::Vector<U>& x,
-          const la::Vector<U>& y)
+void axpy(auto& r, auto alpha, const auto& x, const auto& y)
 {
   std::transform(x.array().begin(), x.array().end(), y.array().begin(),
                  r.mutable_array().begin(),
@@ -61,19 +59,21 @@ void axpy(la::Vector<U>& r, U alpha, const la::Vector<U>& x,
 /// @return The number if iterations
 /// @pre It is required that the ghost values of `x` and `b` have been
 /// updated before this function is called
-template <typename U, typename ApplyFunction>
-int cg(la::Vector<U>& x, const la::Vector<U>& b, ApplyFunction&& action,
-       int kmax = 50, double rtol = 1e-8)
+template <typename ApplyFunction>
+int cg(auto& x, auto& b, ApplyFunction&& action, int kmax = 50,
+       double rtol = 1e-8)
 {
+  using T = typename std::decay_t<decltype(x)>::value_type;
+
   // Create working vectors
-  la::Vector<U> r(b), y(b);
+  la::Vector r(b), y(b);
 
   // Compute initial residual r0 = b - Ax0
   action(x, y);
-  axpy(r, U(-1), y, b);
+  axpy(r, T(-1), y, b);
 
   // Create p work vector
-  la::Vector<U> p(r);
+  la::Vector p(r);
 
   // Iterations of CG
   auto rnorm0 = la::squared_norm(r);
@@ -88,7 +88,7 @@ int cg(la::Vector<U>& x, const la::Vector<U>& b, ApplyFunction&& action,
     action(p, y);
 
     // Compute alpha = r.r/p.y
-    const U alpha = rnorm / la::inner_product(p, y);
+    const T alpha = rnorm / la::inner_product(p, y);
 
     // Update x (x <- x + alpha*p)
     axpy(x, alpha, p, x);
@@ -98,7 +98,7 @@ int cg(la::Vector<U>& x, const la::Vector<U>& b, ApplyFunction&& action,
 
     // Update residual norm
     const auto rnorm_new = la::squared_norm(r);
-    const U beta = rnorm_new / rnorm;
+    const T beta = rnorm_new / rnorm;
     rnorm = rnorm_new;
 
     if (rnorm / rnorm0 < rtol2)
@@ -153,11 +153,11 @@ int main(int argc, char* argv[])
           return {f, {f.size()}};
         });
 
-    mesh->topology_mutable().create_connectivity(1, 2);
+    mesh->topology_mutable()->create_connectivity(1, 2);
     const std::vector<std::int32_t> facets
-        = mesh::exterior_facet_indices(mesh->topology());
+        = mesh::exterior_facet_indices(*mesh->topology());
     std::vector<std::int32_t> bdofs = fem::locate_dofs_topological(
-        V->mesh()->topology_mutable(), *V->dofmap(), 1, facets);
+        *V->mesh()->topology_mutable(), *V->dofmap(), 1, facets);
     auto bc = std::make_shared<const fem::DirichletBC<T>>(u_D, bdofs);
 
     // Assemble RHS vector
@@ -182,8 +182,7 @@ int main(int argc, char* argv[])
     const std::vector<T> constants = fem::pack_constants(*M);
 
     // Create function for computing the action of A on x (y = Ax)
-    std::function<void(la::Vector<T>&, la::Vector<T>&)> action
-        = [&M, &ui, &bc, &coeff, &constants](la::Vector<T>& x, la::Vector<T>& y)
+    auto action = [&M, &ui, &bc, &coeff, &constants](auto& x, auto& y)
     {
       // Zero y
       y.set(0.0);

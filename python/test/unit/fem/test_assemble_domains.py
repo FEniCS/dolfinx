@@ -7,19 +7,16 @@
 
 import numpy as np
 import pytest
-
 import ufl
-from dolfinx import cpp as _cpp
 from dolfinx.fem import (Constant, Function, FunctionSpace, assemble_scalar,
                          dirichletbc, form)
-from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
-                               set_bc)
 from dolfinx.mesh import (GhostMode, Mesh, create_unit_square, locate_entities,
                           locate_entities_boundary, meshtags,
                           meshtags_from_entities)
-
 from mpi4py import MPI
-from petsc4py import PETSc
+
+from dolfinx import cpp as _cpp
+from dolfinx import default_scalar_type, fem, la
 
 
 @pytest.fixture
@@ -64,44 +61,39 @@ def test_assembly_dx_domains(mode, meshtags_factory):
 
     # Assemble matrix
     a = form(w * ufl.inner(u, v) * (dx(1) + dx(2) + dx(3)))
-    A = assemble_matrix(a)
-    A.assemble()
+    A = fem.assemble_matrix(a)
+    A.finalize()
     a2 = form(w * ufl.inner(u, v) * dx)
-    A2 = assemble_matrix(a2)
-    A2.assemble()
-    assert (A - A2).norm() < 1.0e-12
+    A2 = fem.assemble_matrix(a2)
+    A2.finalize()
+    assert np.allclose(A.data, A2.data)
 
     bc = dirichletbc(Function(V), range(30))
 
     # Assemble vector
     L = form(ufl.inner(w, v) * (dx(1) + dx(2) + dx(3)))
-    b = assemble_vector(L)
+    b = fem.assemble_vector(L)
 
-    apply_lifting(b, [a], [[bc]])
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD_VALUES, mode=PETSc.ScatterMode.REVERSE)
-    set_bc(b, [bc])
+    fem.apply_lifting(b.array, [a], [[bc]])
+    b.scatter_reverse(la.InsertMode.add)
+    fem.set_bc(b.array, [bc])
 
     L2 = form(ufl.inner(w, v) * dx)
-    b2 = assemble_vector(L2)
-    apply_lifting(b2, [a], [[bc]])
-    b2.ghostUpdate(addv=PETSc.InsertMode.ADD_VALUES, mode=PETSc.ScatterMode.REVERSE)
-    set_bc(b2, [bc])
-    assert (b - b2).norm() < 1.0e-12
+    b2 = fem.assemble_vector(L2)
+    fem.apply_lifting(b2.array, [a], [[bc]])
+    b2.scatter_reverse(la.InsertMode.add)
+    fem.set_bc(b2.array, [bc])
+    assert np.allclose(b.array, b2.array)
 
     # Assemble scalar
     L = form(w * (dx(1) + dx(2) + dx(3)))
     s = assemble_scalar(L)
     s = mesh.comm.allreduce(s, op=MPI.SUM)
-    assert s == pytest.approx(0.5, 1.0e-12)
+    assert s == pytest.approx(0.5, rel=1.0e-6)
     L2 = form(w * dx)
     s2 = assemble_scalar(L2)
     s2 = mesh.comm.allreduce(s2, op=MPI.SUM)
-    assert s == pytest.approx(s2, 1.0e-12)
-
-    A.destroy()
-    b.destroy()
-    A2.destroy()
-    b2.destroy()
+    assert s == pytest.approx(s2, rel=1.0e-6)
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
@@ -149,29 +141,27 @@ def test_assembly_ds_domains(mode):
 
     # Assemble matrix
     a = form(w * ufl.inner(u, v) * (ds(1) + ds(2) + ds(3) + ds(6)))
-    A = assemble_matrix(a)
-    A.assemble()
-    norm1 = A.norm()
+    A = fem.assemble_matrix(a)
+    A.finalize()
     a2 = form(w * ufl.inner(u, v) * ds)
-    A2 = assemble_matrix(a2)
-    A2.assemble()
-    norm2 = A2.norm()
-    assert norm1 == pytest.approx(norm2, 1.0e-12)
+    A2 = fem.assemble_matrix(a2)
+    A2.finalize()
+    assert np.allclose(A.data, A2.data)
 
     # Assemble vector
     L = form(ufl.inner(w, v) * (ds(1) + ds(2) + ds(3) + ds(6)))
-    b = assemble_vector(L)
+    b = fem.assemble_vector(L)
 
-    apply_lifting(b, [a], [[bc]])
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD_VALUES, mode=PETSc.ScatterMode.REVERSE)
-    set_bc(b, [bc])
+    fem.apply_lifting(b.array, [a], [[bc]])
+    b.scatter_reverse(la.InsertMode.add)
+    fem.set_bc(b.array, [bc])
 
     L2 = form(ufl.inner(w, v) * ds)
-    b2 = assemble_vector(L2)
-    apply_lifting(b2, [a2], [[bc]])
-    b2.ghostUpdate(addv=PETSc.InsertMode.ADD_VALUES, mode=PETSc.ScatterMode.REVERSE)
-    set_bc(b2, [bc])
-    assert b.norm() == pytest.approx(b2.norm(), 1.0e-12)
+    b2 = fem.assemble_vector(L2)
+    fem.apply_lifting(b2.array, [a2], [[bc]])
+    b2.scatter_reverse(la.InsertMode.add)
+    fem.set_bc(b2.array, [bc])
+    assert np.allclose(b.array, b2.array)
 
     # Assemble scalar
     L = form(w * (ds(1) + ds(2) + ds(3) + ds(6)))
@@ -180,22 +170,17 @@ def test_assembly_ds_domains(mode):
     L2 = form(w * ds)
     s2 = assemble_scalar(L2)
     s2 = mesh.comm.allreduce(s2, op=MPI.SUM)
-    assert (s == pytest.approx(s2, 1.0e-12) and 2.0 == pytest.approx(s, 1.0e-12))
-
-    A.destroy()
-    b.destroy()
-    A2.destroy()
-    b2.destroy()
+    assert s == pytest.approx(s2, 1.0e-6) and 2.0 == pytest.approx(s, 1.0e-6)
 
 
 @parametrize_ghost_mode
 def test_assembly_dS_domains(mode):
     N = 10
     mesh = create_unit_square(MPI.COMM_WORLD, N, N, ghost_mode=mode)
-    one = Constant(mesh, PETSc.ScalarType(1))
+    one = Constant(mesh, default_scalar_type(1))
     val = assemble_scalar(form(one * ufl.dS))
     val = mesh.comm.allreduce(val, op=MPI.SUM)
-    assert val == pytest.approx(2 * (N - 1) + N * np.sqrt(2), 1.0e-7)
+    assert val == pytest.approx(2 * (N - 1) + N * np.sqrt(2), 1.0e-5)
 
 
 @parametrize_ghost_mode
@@ -281,9 +266,9 @@ def test_manual_integration_domains():
 
     # Create forms and assemble
     a, L = create_forms(dx_mt, ds_mt, dS_mt)
-    A_mt = assemble_matrix(a)
-    A_mt.assemble()
-    b_mt = assemble_vector(L)
+    A_mt = fem.assemble_matrix(a)
+    A_mt.finalize()
+    b_mt = fem.assemble_vector(L)
 
     # Manually specify cells to integrate over (removing ghosts
     # to give same result as above)
@@ -327,9 +312,9 @@ def test_manual_integration_domains():
 
     # Assemble forms and check
     a, L = create_forms(dx_manual, ds_manual, dS_manual)
-    A = assemble_matrix(a)
-    A.assemble()
-    b = assemble_vector(L)
+    A = fem.assemble_matrix(a)
+    A.finalize()
+    b = fem.assemble_vector(L)
 
-    assert np.isclose((A - A_mt).norm(), 0.0)
-    assert np.isclose((b - b_mt).norm(), 0.0)
+    assert np.allclose(A.data, A_mt.data)
+    assert np.allclose(b.array, b_mt.array)

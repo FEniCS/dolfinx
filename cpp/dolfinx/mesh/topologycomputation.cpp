@@ -699,22 +699,21 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
   std::vector<std::int32_t> offsets(c_d0_0.offsets());
 
   // Search for edges of facet in map, and recover index
-  const auto tri_vertices_ref
+  const graph::AdjacencyList<int> tri_vertices_ref
       = get_entity_vertices(mesh::CellType::triangle, 1);
-  const auto quad_vertices_ref
+  const graph::AdjacencyList<int> quad_vertices_ref
       = get_entity_vertices(mesh::CellType::quadrilateral, 1);
-
   for (int e = 0; e < c_d0_0.num_nodes(); ++e)
   {
     auto e0 = c_d0_0.links(e);
     auto vref = (e0.size() == 3) ? &tri_vertices_ref : &quad_vertices_ref;
     for (std::size_t i = 0; i < e0.size(); ++i)
     {
-      const auto& v = vref->links(i);
+      auto v = vref->links(i);
       for (int j = 0; j < 2; ++j)
         key[j] = e0[v[j]];
       std::sort(key.begin(), key.end());
-      const auto it = edge_to_index.find(key);
+      auto it = edge_to_index.find(key);
       assert(it != edge_to_index.end());
       connections.push_back(it->second);
     }

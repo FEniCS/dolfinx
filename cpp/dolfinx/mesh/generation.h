@@ -31,33 +31,33 @@ enum class DiagonalType
 
 namespace impl
 {
-template <typename T>
+template <std::floating_point T>
 Mesh<T> build_tri(MPI_Comm comm, const std::array<std::array<double, 2>, 2>& p,
                   std::array<std::size_t, 2> n,
                   const CellPartitionFunction& partitioner,
                   DiagonalType diagonal);
 
-template <typename T>
+template <std::floating_point T>
 Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
                    std::array<std::size_t, 2> n,
                    const CellPartitionFunction& partitioner);
 
-template <typename T>
+template <std::floating_point T>
 std::vector<T> create_geom(MPI_Comm comm,
                            const std::array<std::array<double, 3>, 2>& p,
                            std::array<std::size_t, 3> n);
 
-template <typename T>
+template <std::floating_point T>
 Mesh<T> build_tet(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
                   std::array<std::size_t, 3> n,
                   const CellPartitionFunction& partitioner);
 
-template <typename T>
+template <std::floating_point T>
 Mesh<T> build_hex(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
                   std::array<std::size_t, 3> n,
                   const CellPartitionFunction& partitioner);
 
-template <typename T>
+template <std::floating_point T>
 Mesh<T> build_prism(MPI_Comm comm,
                     const std::array<std::array<double, 3>, 2>& p,
                     std::array<std::size_t, 3> n,
@@ -113,7 +113,7 @@ Mesh<T> create_interval(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
                         const CellPartitionFunction& partitioner
                         = create_cell_partitioner())
 {
-  fem::CoordinateElement element(CellType::interval, 1);
+  fem::CoordinateElement<T> element(CellType::interval, 1);
 
   // Receive mesh according to parallel policy
   if (dolfinx::MPI::rank(comm) != 0)
@@ -215,7 +215,7 @@ Mesh<T> create_rectangle(MPI_Comm comm,
 
 namespace impl
 {
-template <typename T>
+template <std::floating_point T>
 std::vector<T> create_geom(MPI_Comm comm,
                            const std::array<std::array<double, 3>, 2>& p,
                            std::array<std::size_t, 3> n)
@@ -283,7 +283,7 @@ std::vector<T> create_geom(MPI_Comm comm,
   return geom;
 }
 
-template <typename T>
+template <std::floating_point T>
 Mesh<T> build_tet(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
                   std::array<std::size_t, 3> n,
                   const CellPartitionFunction& partitioner)
@@ -326,12 +326,12 @@ Mesh<T> build_tet(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
     std::copy(c.begin(), c.end(), std::next(cells.begin(), 4 * offset));
   }
 
-  fem::CoordinateElement element(CellType::tetrahedron, 1);
+  fem::CoordinateElement<T> element(CellType::tetrahedron, 1);
   return create_mesh(comm, graph::regular_adjacency_list(std::move(cells), 4),
                      {element}, geom, {geom.size() / 3, 3}, partitioner);
 }
 
-template <typename T>
+template <std::floating_point T>
 mesh::Mesh<T> build_hex(MPI_Comm comm,
                         const std::array<std::array<double, 3>, 2>& p,
                         std::array<std::size_t, 3> n,
@@ -370,12 +370,12 @@ mesh::Mesh<T> build_hex(MPI_Comm comm,
               std::next(cells.begin(), (i - range_c[0]) * 8));
   }
 
-  fem::CoordinateElement element(CellType::hexahedron, 1);
+  fem::CoordinateElement<T> element(CellType::hexahedron, 1);
   return create_mesh(comm, graph::regular_adjacency_list(std::move(cells), 8),
                      {element}, geom, {geom.size() / 3, 3}, partitioner);
 }
 
-template <typename T>
+template <std::floating_point T>
 Mesh<T> build_prism(MPI_Comm comm,
                     const std::array<std::array<double, 3>, 2>& p,
                     std::array<std::size_t, 3> n,
@@ -418,18 +418,18 @@ Mesh<T> build_prism(MPI_Comm comm,
               std::next(cells.begin(), 6 * ((i - range_c[0]) * 2 + 1)));
   }
 
-  fem::CoordinateElement element(CellType::prism, 1);
+  fem::CoordinateElement<T> element(CellType::prism, 1);
   return create_mesh(comm, graph::regular_adjacency_list(std::move(cells), 6),
                      {element}, geom, {geom.size() / 3, 3}, partitioner);
 }
 
-template <typename T>
+template <std::floating_point T>
 Mesh<T> build_tri(MPI_Comm comm, const std::array<std::array<double, 2>, 2>& p,
                   std::array<std::size_t, 2> n,
                   const CellPartitionFunction& partitioner,
                   DiagonalType diagonal)
 {
-  fem::CoordinateElement element(CellType::triangle, 1);
+  fem::CoordinateElement<T> element(CellType::triangle, 1);
 
   // Receive mesh if not rank 0
   if (dolfinx::MPI::rank(comm) != 0)
@@ -609,12 +609,12 @@ Mesh<T> build_tri(MPI_Comm comm, const std::array<std::array<double, 2>, 2>& p,
                      {element}, geom, {geom.size() / 2, 2}, partitioner);
 }
 
-template <typename T>
+template <std::floating_point T>
 Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
                    std::array<std::size_t, 2> n,
                    const CellPartitionFunction& partitioner)
 {
-  fem::CoordinateElement element(CellType::quadrilateral, 1);
+  fem::CoordinateElement<T> element(CellType::quadrilateral, 1);
 
   // Receive mesh if not rank 0
   if (dolfinx::MPI::rank(comm) != 0)

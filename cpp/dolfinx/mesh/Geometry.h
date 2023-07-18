@@ -7,6 +7,7 @@
 #pragma once
 
 #include "Topology.h"
+#include <basix/mdspan.hpp>
 #include <concepts>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
@@ -39,19 +40,22 @@ public:
   /// @param[in] index_map Index map associated with the geometry dofmap
   /// @param[in] dofmap The geometry (point) dofmap. For a cell, it
   /// gives the position in the point array of each local geometry node
-  /// @param[in] elements The elements that describes the cell geometry maps
+  /// @param[in] elements The elements that describes the cell geometry
+  /// maps
   /// @param[in] x The point coordinates. The shape is `(num_points, 3)`
   /// and the storage is row-major.
   /// @param[in] dim The geometric dimension (`0 < dim <= 3`).
   /// @param[in] input_global_indices The 'global' input index of each
-  /// point, commonly from a mesh input file. The type is
-  /// `std:vector<std::int64_t>`.
-  template <std::convertible_to<graph::AdjacencyList<std::int32_t>> U,
+  /// point, commonly from a mesh input file.
+  template <std::convertible_to<std::vector<std::int32_t>> U,
             std::convertible_to<std::vector<T>> V,
             std::convertible_to<std::vector<std::int64_t>> W>
   Geometry(std::shared_ptr<const common::IndexMap> index_map, U&& dofmap,
-           const std::vector<fem::CoordinateElement>& elements, V&& x, int dim,
-           W&& input_global_indices)
+           const std::vector<fem::CoordinateElement<
+               typename
+
+               std::remove_reference_t<typename V::value_type>>>& elements,
+           V&& x, int dim, W&& input_global_indices)
       : _dim(dim), _dofmap(std::forward<U>(dofmap)), _index_map(index_map),
         _cmaps(elements), _x(std::forward<V>(x)),
         _input_global_indices(std::forward<W>(input_global_indices))
@@ -76,20 +80,19 @@ public:
   /// Move Assignment
   Geometry& operator=(Geometry&&) = default;
 
-  /// Copy constructor
-  template <typename U>
-  Geometry<U> astype() const
-  {
-    return Geometry<U>(_index_map, _dofmap, _cmaps,
-                       std::vector<U>(_x.begin(), _x.end()), _dim,
-                       _input_global_indices);
-  }
-
   /// Return Euclidean dimension of coordinate system
   int dim() const { return _dim; }
 
   /// DOF map
-  const graph::AdjacencyList<std::int32_t>& dofmap() const { return _dofmap; }
+  std::experimental::mdspan<const std::int32_t,
+                            std::experimental::dextents<std::size_t, 2>>
+  dofmap() const
+  {
+    int ndofs = _cmaps[0].dim();
+    return std::experimental::mdspan<
+        const std::int32_t, std::experimental::dextents<std::size_t, 2>>(
+        _dofmap.data(), _dofmap.size() / ndofs, ndofs);
+  }
 
   /// Index map
   std::shared_ptr<const common::IndexMap> index_map() const
@@ -101,19 +104,22 @@ public:
   ///
   /// @return The flattened row-major geometry data, where the shape is
   /// (num_points, 3)
-  std::span<const T> x() const { return _x; }
+  std::span<const value_type> x() const { return _x; }
 
   /// @brief Access geometry degrees-of-freedom data (non-const
   /// version).
   ///
   /// @return The flattened row-major geometry data, where the shape is
   /// (num_points, 3)
-  std::span<T> x() { return _x; }
+  std::span<value_type> x() { return _x; }
 
   /// @brief The elements that describes the geometry maps.
   ///
   /// @return The coordinate/geometry elements
-  const std::vector<fem::CoordinateElement>& cmaps() const { return _cmaps; }
+  const std::vector<fem::CoordinateElement<value_type>>& cmaps() const
+  {
+    return _cmaps;
+  }
 
   /// Global user indices
   const std::vector<std::int64_t>& input_global_indices() const
@@ -126,17 +132,17 @@ private:
   int _dim;
 
   // Map per cell for extracting coordinate data
-  graph::AdjacencyList<std::int32_t> _dofmap;
+  std::vector<std::int32_t> _dofmap;
 
   // IndexMap for geometry 'dofmap'
   std::shared_ptr<const common::IndexMap> _index_map;
 
   // The coordinate elements
-  std::vector<fem::CoordinateElement> _cmaps;
+  std::vector<fem::CoordinateElement<value_type>> _cmaps;
 
   // Coordinates for all points stored as a contiguous array (row-major,
   // column size = 3)
-  std::vector<T> _x;
+  std::vector<value_type> _x;
 
   // Global indices as provided on Geometry creation
   std::vector<std::int64_t> _input_global_indices;
@@ -164,13 +170,14 @@ private:
 /// map associated with the geometry data
 template <typename U>
 mesh::Geometry<typename std::remove_reference_t<typename U::value_type>>
-create_geometry(MPI_Comm comm, const Topology& topology,
-                const std::vector<fem::CoordinateElement>& elements,
-                const graph::AdjacencyList<std::int64_t>& cell_nodes,
-                const U& x, int dim,
-                const std::function<std::vector<int>(
-                    const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
-                = nullptr)
+create_geometry(
+    MPI_Comm comm, const Topology& topology,
+    const std::vector<fem::CoordinateElement<
+        std::remove_reference_t<typename U::value_type>>>& elements,
+    const graph::AdjacencyList<std::int64_t>& cell_nodes, const U& x, int dim,
+    std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
+        reorder_fn
+    = nullptr)
 {
   // TODO: make sure required entities are initialised, or extend
   // fem::build_dofmap_data
@@ -195,8 +202,12 @@ create_geometry(MPI_Comm comm, const Topology& topology,
     const std::vector<std::uint32_t>& cell_info
         = topology.get_cell_permutation_info();
 
+    int dim = elements[0].dim();
     for (std::int32_t cell = 0; cell < num_cells; ++cell)
-      elements[0].unpermute_dofs(dofmap.links(cell), cell_info[cell]);
+    {
+      std::span<std::int32_t> dofs(dofmap.data() + cell * dim, dim);
+      elements[0].unpermute_dofs(dofs, cell_info[cell]);
+    }
   }
 
   auto remap_data
@@ -215,7 +226,7 @@ create_geometry(MPI_Comm comm, const Topology& topology,
     // Compute local-to-global map from local indices in dofmap to the
     // corresponding global indices in cell_nodes
     std::vector l2g
-        = graph::build::compute_local_to_global_links(cell_nodes, dofmap);
+        = graph::build::compute_local_to_global(cell_nodes.array(), dofmap);
 
     // Compute local (dof) to local (position in coords) map from (i)
     // local-to-global for dofs and (ii) local-to-global for entries in
@@ -258,15 +269,15 @@ create_geometry(MPI_Comm comm, const Topology& topology,
 /// entity in the parent topology
 /// @return A sub-geometry and a map from sub-geometry coordinate
 /// degree-of-freedom to the coordinate degree-of-freedom in `geometry`.
-template <typename T>
+template <std::floating_point T>
 std::pair<mesh::Geometry<T>, std::vector<int32_t>>
 create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
                    int dim, std::span<const std::int32_t> subentity_to_entity)
 {
+  namespace stdex = std::experimental;
+
   if (geometry.cmaps().size() > 1)
-  {
     throw std::runtime_error("Mixed topology not supported");
-  }
 
   // Get the geometry dofs in the sub-geometry based on the entities in
   // sub-geometry
@@ -276,11 +287,8 @@ create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
 
   std::vector<std::int32_t> x_indices;
   x_indices.reserve(num_entity_dofs * subentity_to_entity.size());
-  std::vector<std::int32_t> sub_x_dofmap_offsets;
-  sub_x_dofmap_offsets.reserve(subentity_to_entity.size() + 1);
-  sub_x_dofmap_offsets.push_back(0);
   {
-    const graph::AdjacencyList<std::int32_t>& xdofs = geometry.dofmap();
+    auto xdofs = geometry.dofmap();
     const int tdim = topology.dim();
 
     // Fetch connectivities required to get entity dofs
@@ -301,10 +309,9 @@ create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
       assert(it != cell_entities.end());
       std::size_t local_entity = std::distance(cell_entities.begin(), it);
 
-      auto xc = xdofs.links(cell);
+      auto xc = stdex::submdspan(xdofs, cell, stdex::full_extent);
       for (std::int32_t entity_dof : closure_dofs[dim][local_entity])
         x_indices.push_back(xc[entity_dof]);
-      sub_x_dofmap_offsets.push_back(x_indices.size());
     }
   }
 
@@ -351,25 +358,22 @@ create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
     x_to_subx_dof_map[subx_to_x_dofmap[i]] = i;
 
   // Create sub-geometry dofmap
-  std::vector<std::int32_t> sub_x_dofmap_vec;
-  sub_x_dofmap_vec.reserve(x_indices.size());
+  std::vector<std::int32_t> sub_x_dofmap;
+  sub_x_dofmap.reserve(x_indices.size());
   std::transform(x_indices.cbegin(), x_indices.cend(),
-                 std::back_inserter(sub_x_dofmap_vec),
+                 std::back_inserter(sub_x_dofmap),
                  [&x_to_subx_dof_map](auto x_dof)
                  {
                    assert(x_to_subx_dof_map[x_dof] != -1);
                    return x_to_subx_dof_map[x_dof];
                  });
 
-  graph::AdjacencyList sub_x_dofmap(std::move(sub_x_dofmap_vec),
-                                    std::move(sub_x_dofmap_offsets));
-
   // Create sub-geometry coordinate element
   CellType sub_coord_cell
       = cell_entity_type(geometry.cmaps()[0].cell_shape(), dim, 0);
-  fem::CoordinateElement sub_coord_ele(sub_coord_cell,
-                                       geometry.cmaps()[0].degree(),
-                                       geometry.cmaps()[0].variant());
+  fem::CoordinateElement<T> sub_coord_ele(sub_coord_cell,
+                                          geometry.cmaps()[0].degree(),
+                                          geometry.cmaps()[0].variant());
 
   // Sub-geometry input_global_indices
   // TODO: Check this

@@ -12,7 +12,6 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/mesh/utils.h>
 #include <map>
 #include <memory>
@@ -23,7 +22,7 @@
 
 namespace dolfinx::mesh
 {
-template <typename T, std::floating_point U>
+template <typename T>
 class MeshTags;
 class Topology;
 enum class GhostMode;
@@ -50,21 +49,23 @@ std::int64_t local_to_global(std::int32_t local_index,
 /// @param mesh
 /// @param local_edge_to_new_vertex
 /// @return array of points
-template <typename T>
+template <std::floating_point T>
 std::pair<std::vector<T>, std::array<std::size_t, 2>> create_new_geometry(
     const mesh::Mesh<T>& mesh,
     const std::map<std::int32_t, std::int64_t>& local_edge_to_new_vertex)
 {
+  namespace stdex = std::experimental;
+
   // Build map from vertex -> geometry dof
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
-  const int tdim = mesh.topology().dim();
-  auto c_to_v = mesh.topology().connectivity(tdim, 0);
+  auto x_dofmap = mesh.geometry().dofmap();
+  const int tdim = mesh.topology()->dim();
+  auto c_to_v = mesh.topology()->connectivity(tdim, 0);
   assert(c_to_v);
-  auto map_v = mesh.topology().index_map(0);
+  auto map_v = mesh.topology()->index_map(0);
   assert(map_v);
   std::vector<std::int32_t> vertex_to_x(map_v->size_local()
                                         + map_v->num_ghosts());
-  auto map_c = mesh.topology().index_map(tdim);
+  auto map_c = mesh.topology()->index_map(tdim);
 
   assert(map_c);
   auto dof_layout = mesh.geometry().cmaps()[0].create_dof_layout();
@@ -72,7 +73,7 @@ std::pair<std::vector<T>, std::array<std::size_t, 2>> create_new_geometry(
   for (int c = 0; c < map_c->size_local() + map_c->num_ghosts(); ++c)
   {
     auto vertices = c_to_v->links(c);
-    auto dofs = x_dofmap.links(c);
+    auto dofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
     for (std::size_t i = 0; i < vertices.size(); ++i)
     {
       auto vertex_pos = entity_dofs_all[0][i][0];
@@ -141,7 +142,7 @@ void update_logical_edgefunction(
 /// @return (0) map from local edge index to new vertex global index,
 /// (1) the coordinates of the new vertices (row-major storage) and (2)
 /// the shape of the new coordinates.
-template <typename T>
+template <std::floating_point T>
 std::tuple<std::map<std::int32_t, std::int64_t>, std::vector<T>,
            std::array<std::size_t, 2>>
 create_new_vertices(MPI_Comm comm,
@@ -151,7 +152,7 @@ create_new_vertices(MPI_Comm comm,
 {
   // Take marked_edges and use to create new vertices
   std::shared_ptr<const common::IndexMap> edge_index_map
-      = mesh.topology().index_map(1);
+      = mesh.topology()->index_map(1);
 
   // Add new edge midpoints to list of vertices
   int n = 0;
@@ -169,7 +170,7 @@ create_new_vertices(MPI_Comm comm,
   const std::int64_t num_local = n;
   std::int64_t global_offset = 0;
   MPI_Exscan(&num_local, &global_offset, 1, MPI_INT64_T, MPI_SUM, mesh.comm());
-  global_offset += mesh.topology().index_map(0)->local_range()[1];
+  global_offset += mesh.topology()->index_map(0)->local_range()[1];
   std::for_each(local_edge_to_new_vertex.begin(),
                 local_edge_to_new_vertex.end(),
                 [global_offset](auto& e) { e.second += global_offset; });
@@ -246,8 +247,8 @@ create_new_vertices(MPI_Comm comm,
   for (std::size_t i = 0; i < received_values.size() / 2; ++i)
     recv_global_edge.push_back(received_values[i * 2]);
   std::vector<std::int32_t> recv_local_edge(recv_global_edge.size());
-  mesh.topology().index_map(1)->global_to_local(recv_global_edge,
-                                                recv_local_edge);
+  mesh.topology()->index_map(1)->global_to_local(recv_global_edge,
+                                                 recv_local_edge);
   for (std::size_t i = 0; i < received_values.size() / 2; ++i)
   {
     assert(recv_local_edge[i] != -1);
@@ -269,7 +270,7 @@ create_new_vertices(MPI_Comm comm,
 /// @param[in] redistribute Call graph partitioner if true
 /// @param[in] ghost_mode None or shared_facet
 /// @return New mesh
-template <typename T>
+template <std::floating_point T>
 mesh::Mesh<T> partition(const mesh::Mesh<T>& old_mesh,
                         const graph::AdjacencyList<std::int64_t>& cell_topology,
                         std::span<const T> new_coords,
@@ -322,16 +323,13 @@ std::vector<std::int64_t> adjust_indices(const common::IndexMap& map,
 /// @note The refined mesh must not have been redistributed during
 /// refinement
 /// @note GhostMode must be GhostMode.none
-/// @param[in] topology Topology of the parent mesh
-/// @param[in] indices Tagged facets of the parent mesh
-/// @param[in] values Values for tagged entities
+/// @param[in] tags0 Tags on the parent mesh
 /// @param[in] topology1 Refined mesh topology
 /// @param[in] cell Parent cell of each cell in refined mesh
 /// @param[in] facet Local facets of parent in each cell in refined mesh
 /// @return (0) entities and (1) values on the refined topology
 std::array<std::vector<std::int32_t>, 2> transfer_facet_meshtag(
-    const mesh::Topology& topology, std::span<const std::int32_t> indices,
-    std::span<const std::int32_t> values, const mesh::Topology& topology1,
+    const mesh::MeshTags<std::int32_t>& tags0, const mesh::Topology& topology1,
     std::span<const std::int32_t> cell, std::span<const std::int8_t> facet);
 
 /// @brief Transfer cell MeshTags from coarse mesh to refined mesh.
@@ -340,15 +338,13 @@ std::array<std::vector<std::int32_t>, 2> transfer_facet_meshtag(
 /// refinement.
 /// @note GhostMode must be GhostMode.none
 ///
-/// @param[in] topology0 Topology of the parent mesh
-/// @param[in] indices0 Tagged facets of the parent mesh
-/// @param[in] values0 Values for tagged entities
+/// @param[in] tags0 Tags on the parent mesh
 /// @param[in] topology1 Refined mesh topology
 /// @param[in] parent_cell Parent cell of each cell in refined mesh
 /// @return (0) entities and (1) values on the refined topology
-std::array<std::vector<std::int32_t>, 2> transfer_cell_meshtag(
-    const mesh::Topology& topology0, std::span<const std::int32_t> indices0,
-    std::span<const std::int32_t> values0, const mesh::Topology& topology1,
-    std::span<const std::int32_t> parent_cell);
+std::array<std::vector<std::int32_t>, 2>
+transfer_cell_meshtag(const mesh::MeshTags<std::int32_t>& tags0,
+                      const mesh::Topology& topology1,
+                      std::span<const std::int32_t> parent_cell);
 
 } // namespace dolfinx::refinement

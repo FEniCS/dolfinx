@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2022 Anders Logg and Garth N. Wells
+// Copyright (C) 2008-2023 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -15,7 +15,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
@@ -25,22 +24,22 @@
 
 namespace dolfinx::fem
 {
-class DofMap;
-class FiniteElement;
 
 /// @brief This class represents a finite element function space defined
 /// by a mesh, a finite element, and a local-to-global map of the
-/// degrees of freedom (dofmap).
+/// degrees-of-freedom.
+/// @tparam T The floating point (real) type of the mesh geometry and the
+/// finite element basis.
 template <std::floating_point T>
 class FunctionSpace
 {
 public:
   /// @brief Create function space for given mesh, element and dofmap.
-  /// @param[in] mesh The mesh
-  /// @param[in] element The element
-  /// @param[in] dofmap The dofmap
+  /// @param[in] mesh Mesh that the space is defined on.
+  /// @param[in] element Finite element for the space.
+  /// @param[in] dofmap Degree-of-freedom map for the space.
   FunctionSpace(std::shared_ptr<const mesh::Mesh<T>> mesh,
-                std::shared_ptr<const FiniteElement> element,
+                std::shared_ptr<const FiniteElement<T>> element,
                 std::shared_ptr<const DofMap> dofmap)
       : _mesh(mesh), _element(element), _dofmap(dofmap),
         _id(boost::uuids::random_generator()()), _root_space_id(_id)
@@ -80,8 +79,7 @@ public:
     }
 
     // Extract sub-element
-    std::shared_ptr<const FiniteElement> element
-        = this->_element->extract_sub_element(component);
+    auto element = this->_element->extract_sub_element(component);
 
     // Extract sub dofmap
     auto dofmap
@@ -147,11 +145,10 @@ public:
 
     // Create collapsed DofMap
     auto [_collapsed_dofmap, collapsed_dofs]
-        = _dofmap->collapse(_mesh->comm(), _mesh->topology());
+        = _dofmap->collapse(_mesh->comm(), *_mesh->topology());
     auto collapsed_dofmap
         = std::make_shared<DofMap>(std::move(_collapsed_dofmap));
 
-    // Create new FunctionSpace and return
     return {FunctionSpace(_mesh, _element, collapsed_dofmap),
             std::move(collapsed_dofs)};
   }
@@ -191,7 +188,7 @@ public:
     assert(_mesh);
     assert(_element);
     const std::size_t gdim = _mesh->geometry().dim();
-    const int tdim = _mesh->topology().dim();
+    const int tdim = _mesh->topology()->dim();
 
     // Get dofmap local size
     assert(_dofmap);
@@ -217,14 +214,11 @@ public:
 
     // Get coordinate map
     if (_mesh->geometry().cmaps().size() > 1)
-    {
       throw std::runtime_error("Mixed topology not supported");
-    }
-    const CoordinateElement& cmap = _mesh->geometry().cmaps()[0];
+    const CoordinateElement<T>& cmap = _mesh->geometry().cmaps()[0];
 
     // Prepare cell geometry
-    const graph::AdjacencyList<std::int32_t>& x_dofmap
-        = _mesh->geometry().dofmap();
+    auto x_dofmap = _mesh->geometry().dofmap();
     const std::size_t num_dofs_g = cmap.dim();
     std::span<const T> x_g = _mesh->geometry().x();
 
@@ -244,23 +238,23 @@ public:
     std::vector<T> coordinate_dofs_b(num_dofs_g * gdim);
     mdspan2_t coordinate_dofs(coordinate_dofs_b.data(), num_dofs_g, gdim);
 
-    auto map = _mesh->topology().index_map(tdim);
+    auto map = _mesh->topology()->index_map(tdim);
     assert(map);
     const int num_cells = map->size_local() + map->num_ghosts();
 
     std::span<const std::uint32_t> cell_info;
     if (_element->needs_dof_transformations())
     {
-      _mesh->topology_mutable().create_entity_permutations();
-      cell_info = std::span(_mesh->topology().get_cell_permutation_info());
+      _mesh->topology_mutable()->create_entity_permutations();
+      cell_info = std::span(_mesh->topology()->get_cell_permutation_info());
     }
 
     auto apply_dof_transformation
-        = _element->get_dof_transformation_function<double>();
+        = _element->template get_dof_transformation_function<T>();
 
     const std::array<std::size_t, 4> phi_shape
         = cmap.tabulate_shape(0, Xshape[0]);
-    std::vector<double> phi_b(
+    std::vector<T> phi_b(
         std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
     cmdspan4_t phi_full(phi_b.data(), phi_shape);
     cmap.tabulate(0, X, Xshape, phi_b);
@@ -270,7 +264,7 @@ public:
     for (int c = 0; c < num_cells; ++c)
     {
       // Extract cell geometry
-      auto x_dofs = x_dofmap.links(c);
+      auto x_dofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
       for (std::size_t i = 0; i < x_dofs.size(); ++i)
         for (std::size_t j = 0; j < gdim; ++j)
           coordinate_dofs(i, j) = x_g[3 * x_dofs[i] + j];
@@ -305,7 +299,7 @@ public:
   std::shared_ptr<const mesh::Mesh<T>> mesh() const { return _mesh; }
 
   /// The finite element
-  std::shared_ptr<const FiniteElement> element() const { return _element; }
+  std::shared_ptr<const FiniteElement<T>> element() const { return _element; }
 
   /// The dofmap
   std::shared_ptr<const DofMap> dofmap() const { return _dofmap; }
@@ -315,7 +309,7 @@ private:
   std::shared_ptr<const mesh::Mesh<T>> _mesh;
 
   // The finite element
-  std::shared_ptr<const FiniteElement> _element;
+  std::shared_ptr<const FiniteElement<T>> _element;
 
   // The dofmap
   std::shared_ptr<const DofMap> _dofmap;
@@ -340,7 +334,7 @@ private:
 ///
 /// @param[in] V Vector function spaces for (0) each row block and (1)
 /// each column block
-template <typename T>
+template <dolfinx::scalar T>
 std::array<std::vector<std::shared_ptr<const FunctionSpace<T>>>, 2>
 common_function_spaces(
     const std::vector<
@@ -381,7 +375,7 @@ common_function_spaces(
     }
   }
 
-  // Check there are no null entries
+  // Check that there are no null entries
   if (std::find(spaces0.begin(), spaces0.end(), nullptr) != spaces0.end())
     throw std::runtime_error("Could not deduce all block test spaces.");
   if (std::find(spaces1.begin(), spaces1.end(), nullptr) != spaces1.end())
