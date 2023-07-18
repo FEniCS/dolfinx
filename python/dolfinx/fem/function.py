@@ -85,7 +85,7 @@ class Constant(ufl.Constant):
 
 class Expression:
     def __init__(self, ufl_expression: ufl.core.expr.Expr, X: np.ndarray,
-                 comm: typing.Optional[_MPI.comm] = None, form_compiler_options: dict = {},
+                 comm: typing.Optional[_MPI.Comm] = None, form_compiler_options: dict = {},
                  jit_options: dict = {}, dtype=default_scalar_type):
         """Create DOLFINx Expression.
 
