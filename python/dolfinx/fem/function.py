@@ -85,8 +85,10 @@ class Constant(ufl.Constant):
 
 class Expression:
     def __init__(self, e: ufl.core.expr.Expr, X: np.ndarray,
-                 comm: typing.Optional[_MPI.Comm] = None, form_compiler_options: dict = {},
-                 jit_options: dict = {}, dtype=None):
+                 comm: typing.Optional[_MPI.Comm] = None,
+                 form_compiler_options: typing.Optional[dict] = None,
+                 jit_options: typing.Optional[dict] = None,
+                 dtype: typing.Optional[npt.DTypeLike] = None):
         """Create DOLFINx Expression.
 
         Represents a mathematical expression evaluated at a pre-defined
@@ -135,6 +137,8 @@ class Expression:
                 dtype = default_scalar_type
 
         # Compile UFL expression with JIT
+        if form_compiler_options is None:
+            form_compiler_options = dict()
         if dtype == np.float32:
             form_compiler_options["scalar_type"] = "float"
         elif dtype == np.float64:

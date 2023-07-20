@@ -553,7 +553,8 @@ class LinearProblem:
     """
 
     def __init__(self, a: ufl.Form, L: ufl.Form, bcs: typing.List[DirichletBC] = [],
-                 u: typing.Optional[_Function] = None, petsc_options={}, form_compiler_options={}, jit_options={}):
+                 u: typing.Optional[_Function] = None, petsc_options=None,
+                 form_compiler_options=None, jit_options=None):
         """Initialize solver for a linear variational problem.
 
         Args:
@@ -682,7 +683,7 @@ class NonlinearProblem:
     """
 
     def __init__(self, F: ufl.form.Form, u: _Function, bcs: typing.List[DirichletBC] = [],
-                 J: ufl.form.Form = None, form_compiler_options={}, jit_options={}):
+                 J: ufl.form.Form = None, form_compiler_options=None, jit_options=None):
         """Initialize solver for solving a non-linear problem using Newton's method, :math:`(dF/du)(u) du = -F(u)`.
 
         Args:
