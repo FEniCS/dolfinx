@@ -70,17 +70,10 @@ graph::AdjacencyList<T> reorder_list(const graph::AdjacencyList<T>& list,
 }
 } // namespace
 
-// See https://github.com/doxygen/doxygen/issues/9552
-/// Signature for the cell partitioning function. The function should
-/// compute the destination rank for cells currently on this rank.
-using CellPartitionFunction = std::function<graph::AdjacencyList<std::int32_t>(
-    MPI_Comm comm, int nparts, int tdim,
-    const graph::AdjacencyList<std::int64_t>& cells)>;
-
 namespace impl
 {
-/// The coordinates of 'vertices' for for entities of a give dimension
-/// that are attached to specified facets.
+/// @brief The coordinates of 'vertices' for for entities of a give
+/// dimension that are attached to specified facets.
 ///
 /// @pre The provided facets must be on the boundary of the mesh.
 ///
@@ -182,10 +175,8 @@ compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
 /// of the mesh.
 std::vector<std::int32_t> exterior_facet_indices(const Topology& topology);
 
-// See https://github.com/doxygen/doxygen/issues/9552
 /// Signature for the cell partitioning function. The function should
 /// compute the destination rank for cells currently on this rank.
-/*
 ///
 /// @param[in] comm MPI Communicator
 /// @param[in] nparts Number of partitions
@@ -199,10 +190,11 @@ std::vector<std::int32_t> exterior_facet_indices(const Topology& topology);
 /// @param[in] ghost_mode How to overlap the cell partitioning: none,
 /// shared_facet or shared_vertex
 /// @return Destination ranks for each cell on this process
-*/
 using CellPartitionFunction = std::function<graph::AdjacencyList<std::int32_t>(
     MPI_Comm comm, int nparts, int tdim,
     const graph::AdjacencyList<std::int64_t>& cells)>;
+
+
 
 /// Extract topology from cell data, i.e. extract cell vertices
 /// @param[in] cell_type The cell shape

@@ -65,19 +65,21 @@ Mesh<T> build_prism(MPI_Comm comm,
 
 } // namespace impl
 
-/// Create a uniform mesh::Mesh over the rectangular prism spanned by
-/// the two points @p p. The order of the two points is not important in
-/// terms of minimum and maximum coordinates. The total number of
-/// vertices will be `(n[0] + 1)*(n[1] + 1)*(n[2] + 1)`. For tetrahedra
-/// there will be  will be `6*n[0]*n[1]*n[2]` cells. For hexahedra the
-/// number of cells will be `n[0]*n[1]*n[2]`.
+/// @brief Create a uniform mesh::Mesh over rectangular prism spanned by
+/// the two points @p p.
+///
+/// The order of the two points is not important in terms of minimum and
+/// maximum coordinates. The total number of vertices will be `(n[0] +
+/// 1)*(n[1] + 1)*(n[2] + 1)`. For tetrahedra there will be  will be
+/// `6*n[0]*n[1]*n[2]` cells. For hexahedra the number of cells will be
+/// `n[0]*n[1]*n[2]`.
 ///
 /// @param[in] comm MPI communicator to build mesh on.
-/// @param[in] p Points of box.
+/// @param[in] p Corner of the box.
 /// @param[in] n Number of cells in each direction.
 /// @param[in] celltype Cell shape.
-/// @param[in] partitioner Partitioning function to use for determining
-/// the parallel distribution of cells across MPI ranks.
+/// @param[in] partitioner Partitioning function for distributing cells
+/// across MPI ranks.
 /// @return Mesh
 template <std::floating_point T = double>
 Mesh<T> create_box(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
@@ -100,19 +102,20 @@ Mesh<T> create_box(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
   }
 }
 
-/// Create a uniform mesh::Mesh over the rectangle spanned by the two
-/// points @p p. The order of the two points is not important in terms
-/// of minimum and maximum coordinates. The total number of vertices
-/// will be `(n[0] + 1)*(n[1] + 1)`. For triangles there will be  will
-/// be `2*n[0]*n[1]` cells. For quadrilaterals the number of cells will
-/// be `n[0]*n[1]`.
+/// @brief Create a uniform mesh::Mesh over the rectangle spanned by the
+/// two points @p p.
 ///
-/// @param[in] comm MPI communicator to build the mesh on
-/// @param[in] p Two corner points
-/// @param[in] n Number of cells in each direction
-/// @param[in] celltype Cell shape
-/// @param[in] partitioner Partitioning function to use for determining
-/// the parallel distribution of cells across MPI ranks
+/// The order of the two points is not important in terms of minimum and
+/// maximum coordinates. The total number of vertices will be `(n[0] +
+/// 1)*(n[1] + 1)`. For triangles there will be  will be `2*n[0]*n[1]`
+/// cells. For quadrilaterals the number of cells will be `n[0]*n[1]`.
+///
+/// @param[in] comm MPI communicator to build the mesh on.
+/// @param[in] p Bottom-left and top-right corners of the rectangle.
+/// @param[in] n Number of cells in each direction.
+/// @param[in] celltype Cell shape.
+/// @param[in] partitioner Partitioning function for distributing cells
+/// across MPI ranks.
 /// @param[in] diagonal Direction of diagonals
 /// @return Mesh
 template <std::floating_point T = double>
@@ -133,12 +136,13 @@ Mesh<T> create_rectangle(MPI_Comm comm,
   }
 }
 
-/// Create a uniform mesh::Mesh over the rectangle spanned by the two
-/// points `p`. The order of the two points is not important in terms of
-/// minimum and maximum coordinates. The total number of vertices will
-/// be `(n[0] + 1)*(n[1] + 1)`. For triangles there will be  will be
-/// `2*n[0]*n[1]` cells. For quadrilaterals the number of cells will be
-/// `n[0]*n[1]`.
+/// @brief Create a uniform mesh::Mesh over the rectangle spanned by the
+/// two points `p`.
+///
+/// The order of the two points is not important in terms of minimum and
+/// maximum coordinates. The total number of vertices will be `(n[0] +
+/// 1)*(n[1] + 1)`. For triangles there will be  will be `2*n[0]*n[1]`
+/// cells. For quadrilaterals the number of cells will be `n[0]*n[1]`.
 ///
 /// @param[in] comm MPI communicator to build the mesh on
 /// @param[in] p Two corner points
@@ -155,15 +159,17 @@ Mesh<T> create_rectangle(MPI_Comm comm,
   return create_rectangle<T>(comm, p, n, celltype, nullptr, diagonal);
 }
 
-/// Interval mesh of the 1D line `[a, b]`.  Given @p n cells in the
-/// axial direction, the total number of intervals will be `n` and the
-/// total number of vertices will be `n + 1`.
+/// @brief Interval mesh of the 1D line `[a, b]`.
+///
+/// Given @p n cells in the axial direction, the total number of
+/// intervals will be `n` and the total number of vertices will be `n +
+/// 1`.
 ///
 /// @param[in] comm MPI communicator to build the mesh on
 /// @param[in] nx The number of cells
 /// @param[in] x The end points of the interval
-/// @param[in] partitioner Partitioning function to use for determining
-/// the parallel distribution of cells across MPI ranks
+/// @param[in] partitioner Partitioning function for distributing cells
+/// across MPI ranks.
 /// @return A mesh
 template <std::floating_point T = double>
 Mesh<T> create_interval(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
