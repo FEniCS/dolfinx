@@ -37,7 +37,7 @@ def assemble(mesh, space, k):
     bc = fem.dirichletbc(bc_func, dofs)
 
     A = fem.assemble_matrix(a, bcs=[bc])
-    A.scatter_rev()
+    A.scatter_reverse()
 
     # TODO Test assembly with fem.Function
     x = ufl.SpatialCoordinate(mesh)

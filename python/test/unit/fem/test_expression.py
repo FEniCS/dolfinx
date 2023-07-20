@@ -94,7 +94,7 @@ def test_rank1_hdiv(dtype):
     A = fem.create_matrix(a, block_mode=la.BlockMode.expanded)
     As = A.to_scipy(ghosted=True)
     scatter(As, array_evaluated, dofmap_row, dofmap_col)
-    A.scatter_rev()
+    A.scatter_reverse()
 
     gvec = la.vector(A.index_map(1), bs=A.block_size[1], dtype=dtype)
     g = Function(RT1, gvec, name="g", dtype=dtype)

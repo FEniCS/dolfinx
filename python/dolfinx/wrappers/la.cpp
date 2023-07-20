@@ -128,7 +128,7 @@ void declare_objects(py::module& m, const std::string& type)
            static_cast<void (dolfinx::la::MatrixCSR<T>::*)(T)>(
                &dolfinx::la::MatrixCSR<T>::set),
            py::arg("x"))
-      .def("scatter_rev", &dolfinx::la::MatrixCSR<T>::scatter_rev)
+      .def("scatter_reverse", &dolfinx::la::MatrixCSR<T>::scatter_rev)
       .def("to_dense",
            [](const dolfinx::la::MatrixCSR<T>& self)
            {

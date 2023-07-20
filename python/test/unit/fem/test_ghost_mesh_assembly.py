@@ -47,7 +47,7 @@ def test_ghost_mesh_assembly(mode, dx, ds):
 
     # Initial assembly
     A = fem.assemble_matrix(a)
-    A.scatter_rev()
+    A.scatter_reverse()
     assert isinstance(A, la.MatrixCSR)
     b = fem.assemble_vector(L)
     b.scatter_reverse(la.InsertMode.add)
@@ -78,7 +78,7 @@ def test_ghost_mesh_dS_assembly(mode, dS):
 
     # Initial assembly
     A = fem.assemble_matrix(a)
-    A.scatter_rev()
+    A.scatter_reverse()
     assert isinstance(A, la.MatrixCSR)
 
     # Check that the norms are the same for all three modes

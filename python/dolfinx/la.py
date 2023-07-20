@@ -62,9 +62,9 @@ class MatrixCSR:
         """
         self._cpp_object.set_value(x)
 
-    def scatter_rev(self) -> None:
+    def scatter_reverse(self) -> None:
         """Scatter and accumulate ghost values."""
-        self._cpp_object.scatter_rev()
+        self._cpp_object.scatter_reverse()
 
     def squared_norm(self) -> np.floating:
         """Compute the squared Frobenius norm.
