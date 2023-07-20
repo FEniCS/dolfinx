@@ -42,6 +42,10 @@ except ModuleNotFoundError:
 # otherwise create interactive plot
 if pyvista.OFF_SCREEN:
     pyvista.start_xvfb(wait=0.1)
+
+# Set some global options for all plots
+transparent = False
+figsize = 800
 # -
 
 # ## Plotting a finite element Function using warp by scalar
