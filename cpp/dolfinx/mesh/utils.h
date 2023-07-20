@@ -175,8 +175,9 @@ compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
 /// of the mesh.
 std::vector<std::int32_t> exterior_facet_indices(const Topology& topology);
 
-/// Signature for the cell partitioning function. The function should
-/// compute the destination rank for cells currently on this rank.
+/// @brief Signature for the cell partitioning function. The function
+/// should compute the destination rank for cells currently on this
+/// rank.
 ///
 /// @param[in] comm MPI Communicator
 /// @param[in] nparts Number of partitions
@@ -196,7 +197,7 @@ using CellPartitionFunction = std::function<graph::AdjacencyList<std::int32_t>(
 
 
 
-/// Extract topology from cell data, i.e. extract cell vertices
+/// @brief Extract topology from cell data, i.e. extract cell vertices.
 /// @param[in] cell_type The cell shape
 /// @param[in] layout The layout of geometry 'degrees-of-freedom' on the
 /// reference cell
