@@ -128,7 +128,7 @@ void declare_objects(py::module& m, const std::string& type)
            static_cast<void (dolfinx::la::MatrixCSR<T>::*)(T)>(
                &dolfinx::la::MatrixCSR<T>::set),
            py::arg("x"))
-      .def("finalize", &dolfinx::la::MatrixCSR<T>::finalize)
+      .def("scatter_rev", &dolfinx::la::MatrixCSR<T>::scatter_rev)
       .def("to_dense",
            [](const dolfinx::la::MatrixCSR<T>& self)
            {
@@ -161,8 +161,8 @@ void declare_objects(py::module& m, const std::string& type)
                                return py::array_t(array.size(), array.data(),
                                                   py::cast(self));
                              })
-      .def("finalize_begin", &dolfinx::la::MatrixCSR<T>::finalize_begin)
-      .def("finalize_end", &dolfinx::la::MatrixCSR<T>::finalize_end);
+      .def("scatter_rev_begin", &dolfinx::la::MatrixCSR<T>::scatter_rev_begin)
+      .def("scatter_rev_end", &dolfinx::la::MatrixCSR<T>::scatter_rev_end);
 }
 
 // Declare objects that have multiple scalar types

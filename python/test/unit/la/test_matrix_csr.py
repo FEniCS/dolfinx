@@ -140,7 +140,7 @@ def test_distributed_csr(dtype):
     data = np.ones(len(irow) * len(icol), dtype=dtype)
     mat.add(data, irow, icol, 1)
     pre_final_sum = mat.data.sum()
-    mat.finalize()
+    mat.scatter_rev()
     assert np.isclose(mat.data.sum(), pre_final_sum)
 
 
@@ -182,9 +182,9 @@ def test_set_diagonal_distributed(dtype):
     reference = np.full_like(diag, value, dtype=dtype)
     assert np.allclose(diag, reference)
 
-    # Finalize matrix: this will remove ghost rows and diagonal values of
+    # Update matrix: this will remove ghost rows and diagonal values of
     # ghost rows will be added to diagonal of corresponding process
-    A.finalize()
+    A.scatter_rev()
 
     diag = As.diagonal()
     nlocal = index_map.size_local
@@ -210,9 +210,9 @@ def test_set_diagonal_distributed(dtype):
     assert np.allclose(diag[:nlocal], reference[:nlocal])
     assert np.allclose(diag[nlocal:], np.zeros_like(diag[nlocal:]))
 
-    # Finalize matrix:
+    # Update matrix:
     # this will zero ghost rows and diagonal values are already zero.
-    A.finalize()
+    A.scatter_rev()
     assert (As.diagonal()[nlocal:] == dtype(0.)).all()
     assert (As.diagonal()[:nlocal] == dtype(1.)).all()
 

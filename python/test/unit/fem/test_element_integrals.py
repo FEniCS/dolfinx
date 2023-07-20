@@ -386,7 +386,7 @@ def test_plus_minus_matrix(cell_type, pm1, pm2, dtype):
             # different numberings
             a = form(ufl.inner(u(pm1), v(pm2)) * ufl.dS, dtype=dtype)
             result = assemble_matrix(a, [])
-            result.finalize()
+            result.scatter_rev()
             spaces.append(V)
             results.append(result.to_dense())
             orders.append(order)

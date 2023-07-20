@@ -62,10 +62,10 @@ def test_assembly_dx_domains(mode, meshtags_factory):
     # Assemble matrix
     a = form(w * ufl.inner(u, v) * (dx(1) + dx(2) + dx(3)))
     A = fem.assemble_matrix(a)
-    A.finalize()
+    A.scatter_rev()
     a2 = form(w * ufl.inner(u, v) * dx)
     A2 = fem.assemble_matrix(a2)
-    A2.finalize()
+    A2.scatter_rev()
     assert np.allclose(A.data, A2.data)
 
     bc = dirichletbc(Function(V), range(30))
@@ -142,10 +142,10 @@ def test_assembly_ds_domains(mode):
     # Assemble matrix
     a = form(w * ufl.inner(u, v) * (ds(1) + ds(2) + ds(3) + ds(6)))
     A = fem.assemble_matrix(a)
-    A.finalize()
+    A.scatter_rev()
     a2 = form(w * ufl.inner(u, v) * ds)
     A2 = fem.assemble_matrix(a2)
-    A2.finalize()
+    A2.scatter_rev()
     assert np.allclose(A.data, A2.data)
 
     # Assemble vector
@@ -267,7 +267,7 @@ def test_manual_integration_domains():
     # Create forms and assemble
     a, L = create_forms(dx_mt, ds_mt, dS_mt)
     A_mt = fem.assemble_matrix(a)
-    A_mt.finalize()
+    A_mt.scatter_rev()
     b_mt = fem.assemble_vector(L)
 
     # Manually specify cells to integrate over (removing ghosts
@@ -313,7 +313,7 @@ def test_manual_integration_domains():
     # Assemble forms and check
     a, L = create_forms(dx_manual, ds_manual, dS_manual)
     A = fem.assemble_matrix(a)
-    A.finalize()
+    A.scatter_rev()
     b = fem.assemble_vector(L)
 
     assert np.allclose(A.data, A_mt.data)

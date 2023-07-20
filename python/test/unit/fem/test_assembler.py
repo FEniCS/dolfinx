@@ -105,10 +105,10 @@ def test_assemble_derivatives(dtype):
     a = form(derivative(L, u, du), dtype=dtype)
 
     A1 = fem.assemble_matrix(a)
-    A1.finalize()
+    A1.scatter_rev()
     a = form(c2 * b * inner(du, v) * dx, dtype=dtype)
     A2 = fem.assemble_matrix(a)
-    A2.finalize()
+    A2.scatter_rev()
     assert np.allclose(A1.data, A2.data)
 
 
@@ -127,7 +127,7 @@ def test_basic_assembly(mode, dtype):
 
     # Initial assembly
     A = fem.assemble_matrix(a)
-    A.finalize()
+    A.scatter_rev()
     assert isinstance(A, la.MatrixCSR)
     b = fem.assemble_vector(L)
     b.scatter_reverse(la.InsertMode.add)
@@ -137,7 +137,7 @@ def test_basic_assembly(mode, dtype):
     normA = A.squared_norm()
     A.set_value(0)
     A = fem.assemble_matrix(A, a)
-    A.finalize()
+    A.scatter_rev()
     assert isinstance(A, la.MatrixCSR)
     assert normA == pytest.approx(A.squared_norm())
     normb = b.norm()
@@ -154,7 +154,7 @@ def test_basic_assembly(mode, dtype):
 
     # Matrix re-assembly (no zeroing)
     fem.assemble_matrix(A, a)
-    A.finalize()
+    A.scatter_rev()
     assert 4 * normA == pytest.approx(A.squared_norm())
 
 
@@ -166,7 +166,7 @@ def test_basic_assembly_petsc_matrixcsr(mode):
     a = form(inner(u, v) * dx + inner(u, v) * ds)
 
     A0 = fem.assemble_matrix(a)
-    A0.finalize()
+    A0.scatter_rev()
     assert isinstance(A0, la.MatrixCSR)
     A1 = petsc_assemble_matrix(a)
     A1.assemble()
@@ -178,7 +178,7 @@ def test_basic_assembly_petsc_matrixcsr(mode):
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = form(inner(u, v) * dx + inner(u, v) * ds)
     A0 = fem.assemble_matrix(a)
-    A0.finalize()
+    A0.scatter_rev()
     assert isinstance(A0, la.MatrixCSR)
     A1 = petsc_assemble_matrix(a)
     A1.assemble()

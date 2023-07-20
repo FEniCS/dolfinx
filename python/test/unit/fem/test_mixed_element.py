@@ -36,7 +36,7 @@ def test_mixed_element(rank, family, cell, degree):
         a = form(ufl.inner(u, v) * ufl.dx)
 
         A = dolfinx.fem.assemble_matrix(a)
-        A.finalize()
+        A.scatter_rev()
         norms.append(A.squared_norm())
 
         U_el = mixed_element([U_el])
@@ -55,7 +55,7 @@ def test_vector_element():
     v = ufl.TestFunction(U)
     a = form(ufl.inner(u, v) * ufl.dx)
     A = dolfinx.fem.assemble_matrix(a)
-    A.finalize()
+    A.scatter_rev()
 
     with pytest.raises(ValueError):
         # VectorFunctionSpace containing a vector should throw an error
@@ -65,7 +65,7 @@ def test_vector_element():
         v = ufl.TestFunction(U)
         a = form(ufl.inner(u, v) * ufl.dx)
         A = dolfinx.fem.assemble_matrix(a)
-        A.finalize()
+        A.scatter_rev()
 
 
 @pytest.mark.skip_in_parallel
@@ -82,13 +82,13 @@ def test_element_product(d1, d2):
     v = ufl.TestFunction(W)
     a = form(ufl.inner(u[0], v[0]) * ufl.dx)
     A = dolfinx.fem.assemble_matrix(a)
-    A.finalize()
+    A.scatter_rev()
 
     W = FunctionSpace(mesh, P3)
     u = ufl.TrialFunction(W)
     v = ufl.TestFunction(W)
     a = form(ufl.inner(u[0], v[0]) * ufl.dx)
     B = dolfinx.fem.assemble_matrix(a)
-    B.finalize()
+    B.scatter_rev()
 
     assert np.isclose(A.squared_norm(), B.squared_norm())

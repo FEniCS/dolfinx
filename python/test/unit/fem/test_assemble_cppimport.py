@@ -131,7 +131,7 @@ PYBIND11_MODULE(eigen_csr, m)
     bc = dirichletbc(dtype(1), bdofsQ, Q)
 
     A1 = assemble_matrix(a, [bc])
-    A1.finalize()
+    A1.scatter_rev()
     A2 = assemble_csr_matrix(a._cpp_object, [bc._cpp_object])
     assert np.isclose(np.sqrt(A1.squared_norm()), scipy.sparse.linalg.norm(A2))
 
