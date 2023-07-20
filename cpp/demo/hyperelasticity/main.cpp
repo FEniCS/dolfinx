@@ -235,7 +235,7 @@ int main(int argc, char* argv[])
         mesh, S_element, pow(mesh->geometry().dim(), 2)));
 
     auto sigma_expression = fem::create_expression<T, U>(
-        *expression_hyperelasticity_sigma, {{"u", u}}, {}, mesh);
+        *expression_hyperelasticity_sigma, {{"u", u}}, {});
 
     auto sigma = fem::Function<T>(S);
     sigma.name = "cauchy_stress";

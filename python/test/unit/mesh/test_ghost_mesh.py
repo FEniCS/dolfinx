@@ -76,7 +76,7 @@ def test_ghost_connectivities(mode):
     map_f = topology.index_map(tdim - 1)
     num_facets = map_f.size_local + map_f.num_ghosts
 
-    reference = {}
+    reference = dict()
     facet_mp = compute_midpoints(meshR, tdim - 1, range(num_facets))
     cell_mp = compute_midpoints(meshR, tdim, range(num_cells))
     reference = dict.fromkeys([tuple(row) for row in facet_mp], [])

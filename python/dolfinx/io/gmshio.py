@@ -203,7 +203,7 @@ if _has_gmsh:
             # Extract Gmsh cell id, dimension of cell and number of
             # nodes to cell for each
             num_cell_types = len(topologies.keys())
-            cell_information = {}
+            cell_information = dict()
             cell_dimensions = np.zeros(num_cell_types, dtype=np.int32)
             for i, element in enumerate(topologies.keys()):
                 _, dim, _, num_nodes, _, _ = model.mesh.getElementProperties(element)

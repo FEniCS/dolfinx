@@ -46,7 +46,6 @@ if pyvista.OFF_SCREEN:
 # Set some global options for all plots
 transparent = False
 figsize = 800
-pyvista.rcParams["background"] = [0.5, 0.5, 0.5]
 # -
 
 # ## Plotting a finite element Function using warp by scalar

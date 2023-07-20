@@ -1036,7 +1036,6 @@ Expression<T, U> create_expression(
     const ufcx_expression& e,
     const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients,
     const std::vector<std::shared_ptr<const Constant<T>>>& constants,
-    std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr,
     std::shared_ptr<const FunctionSpace<U>> argument_function_space = nullptr)
 {
   if (e.rank > 0 and !argument_function_space)
@@ -1077,8 +1076,7 @@ Expression<T, U> create_expression(
 
   assert(tabulate_tensor);
   return Expression(coefficients, constants, std::span<const U>(X), Xshape,
-                    tabulate_tensor, value_shape, mesh,
-                    argument_function_space);
+                    tabulate_tensor, value_shape, argument_function_space);
 }
 
 /// @brief Create Expression from UFC input (with named coefficients and
@@ -1089,7 +1087,6 @@ Expression<T, U> create_expression(
     const std::map<std::string, std::shared_ptr<const Function<T, U>>>&
         coefficients,
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
-    std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr,
     std::shared_ptr<const FunctionSpace<U>> argument_function_space = nullptr)
 {
   // Place coefficients in appropriate order
@@ -1126,8 +1123,7 @@ Expression<T, U> create_expression(
     }
   }
 
-  return create_expression(e, coeff_map, const_map, mesh,
-                           argument_function_space);
+  return create_expression(e, coeff_map, const_map, argument_function_space);
 }
 
 /// @warning This is subject to change
