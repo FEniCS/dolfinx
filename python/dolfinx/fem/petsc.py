@@ -553,8 +553,10 @@ class LinearProblem:
     """
 
     def __init__(self, a: ufl.Form, L: ufl.Form, bcs: typing.List[DirichletBC] = [],
-                 u: typing.Optional[_Function] = None, petsc_options=None,
-                 form_compiler_options=None, jit_options=None):
+                 u: typing.Optional[_Function] = None,
+                 petsc_options: typing.Optional[dict] = None,
+                 form_compiler_options: typing.Optional[dict] = None,
+                 jit_options: typing.Optional[dict] = None):
         """Initialize solver for a linear variational problem.
 
         Args:
@@ -608,8 +610,9 @@ class LinearProblem:
         # Set PETSc options
         opts = PETSc.Options()
         opts.prefixPush(problem_prefix)
-        for k, v in petsc_options.items():
-            opts[k] = v
+        if petsc_options is not None:
+            for k, v in petsc_options.items():
+                opts[k] = v
         opts.prefixPop()
         self._solver.setFromOptions()
 
@@ -683,7 +686,8 @@ class NonlinearProblem:
     """
 
     def __init__(self, F: ufl.form.Form, u: _Function, bcs: typing.List[DirichletBC] = [],
-                 J: ufl.form.Form = None, form_compiler_options=None, jit_options=None):
+                 J: ufl.form.Form = None, form_compiler_options: typing.Optional[dict] = None,
+                 jit_options: typing.Optional[dict] = None):
         """Initialize solver for solving a non-linear problem using Newton's method, :math:`(dF/du)(u) du = -F(u)`.
 
         Args:

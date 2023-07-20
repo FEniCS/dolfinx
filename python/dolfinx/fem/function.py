@@ -490,7 +490,8 @@ class FunctionSpace(ufl.FunctionSpace):
                  element: typing.Union[ufl.FiniteElementBase, ElementMetaData, typing.Tuple[str, int]],
                  cppV: typing.Optional[typing.Union[_cpp.fem.FunctionSpace_float32,
                                                     _cpp.fem.FunctionSpace_float64]] = None,
-                 form_compiler_options: dict[str, typing.Any] = {}, jit_options: dict[str, typing.Any] = {}):
+                 form_compiler_options: typing.Optional[dict[str, typing.Any]] = None,
+                 jit_options: typing.Optional[dict[str, typing.Any]] = None):
         """Create a finite element function space."""
         dtype = mesh.geometry.x.dtype
         assert dtype == np.float32 or dtype == np.float64
@@ -508,6 +509,8 @@ class FunctionSpace(ufl.FunctionSpace):
                 super().__init__(mesh.ufl_domain(), ufl_e)
 
             # Compile dofmap and element and create DOLFIN objects
+            if form_compiler_options is None:
+                form_compiler_options = dict()
             if dtype == np.float32:
                 form_compiler_options["scalar_type"] = "float"
             elif dtype == np.float64:
