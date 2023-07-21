@@ -123,7 +123,7 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
   sp.finalize();
   la::MatrixCSR<double> A(sp);
   fem::assemble_matrix(A.mat_add_values(), *a, {});
-  A.finalize();
+  A.scatter_rev();
 
   return A;
 }
@@ -162,7 +162,7 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
   // Assemble matrix
   la::MatrixCSR<double> A(sp);
   fem::assemble_matrix(A.mat_add_values(), *a, {});
-  A.finalize();
+  A.scatter_rev();
   CHECK((V->dofmap()->index_map->size_local() == A.num_owned_rows()));
 
   // Get compatible vectors

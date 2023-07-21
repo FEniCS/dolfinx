@@ -19,7 +19,7 @@ def test_vector_assemble_matrix_exterior():
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = form(ufl.inner(u, v) * ufl.ds)
     A = assemble_matrix(a)
-    A.finalize()
+    A.scatter_reverse()
 
 
 def test_vector_assemble_matrix_interior():
@@ -28,4 +28,4 @@ def test_vector_assemble_matrix_interior():
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = form(ufl.inner(ufl.jump(u), ufl.jump(v)) * ufl.dS)
     A = assemble_matrix(a)
-    A.finalize()
+    A.scatter_reverse()
