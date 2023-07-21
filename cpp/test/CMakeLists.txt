@@ -32,8 +32,7 @@ set(TEST_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/common/CIFailure.cpp
 )
 
-find_package(Catch2 3 REQUIRED)
-
+find_package(Catch2 3)
 if(NOT Catch2_FOUND)
   message(STATUS "Catch2 not found. Downloading.")
   include(FetchContent)
