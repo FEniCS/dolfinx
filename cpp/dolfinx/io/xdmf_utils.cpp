@@ -287,6 +287,28 @@ std::int64_t xdmf_utils::get_num_cells(const pugi::xml_node& topology_node)
 template <dolfinx::scalar T, std::floating_point U>
 std::vector<T> xdmf_utils::get_point_data_values(const fem::Function<T, U>& u)
 {
+  // auto dofmap = u.function_space()->dofmap();
+  // assert(dofmap);
+  // auto index_map = dofmap->index_map;
+  // assert(index_map);
+  // int index_map_bs = dofmap->index_map_bs();
+  // int dofmap_bs = dofmap->bs();
+
+  // int rank = u.function_space()->element()->value_shape().size();
+  // std::uint32_t num_comp = std::pow(3, rank);
+
+  // std::uint32_t num_dofs = index_map_bs * (index_map->size_local()) /
+  // dofmap_bs;
+  // // std::uint32_t num_dofs = index_map_bs
+  // //                          * (index_map->size_local() +
+  // //                          index_map->num_ghosts()) / dofmap_bs;
+
+  // std::span<const T> u_vector = u.x()->array();
+  // std::vector<T> _values(num_dofs * num_comp, 0);
+  // for (std::size_t i = 0; i < num_dofs; ++i)
+  //   for (int j = 0; j < index_map_bs; ++j)
+  //     _values[i * num_comp + j] = u_vector[i * index_map_bs + j];
+
   auto mesh = u.function_space()->mesh();
   assert(mesh);
   const auto [data_values, dshape] = compute_point_values(u);

@@ -45,7 +45,7 @@ namespace dolfinx::io
 
 /// Read and write mesh::Mesh, fem::Function and other objects in
 /// XDMF.
-
+///
 /// This class supports the output of meshes and functions in XDMF
 /// (http://www.xdmf.org) format. It creates an XML file that describes
 /// the data and points to a HDF5 file that stores the actual problem
@@ -53,7 +53,6 @@ namespace dolfinx::io
 ///
 /// XDMF is not suitable for higher order geometries, as their currently
 /// only supports 1st and 2nd order geometries.
-
 class XDMFFile
 {
 public:

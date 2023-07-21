@@ -88,6 +88,16 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
   assert(u.function_space());
   auto mesh = u.function_space()->mesh();
   assert(mesh);
+  auto element = u.function_space()->element();
+  assert(element);
+
+  // FIXME: is the below check adequate for detecting a
+  // Lagrange element? Check that element is Lagrange
+  if (!element->interpolation_ident())
+  {
+    throw std::runtime_error("Only Lagrange functions are supported. "
+                             "Interpolate Functions before output.");
+  }
 
   // Get fem::Function data values and shape
   std::vector<T> data_values;
@@ -95,7 +105,39 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
   if (cell_centred)
     data_values = xdmf_utils::get_cell_data_values(u);
   else
+  {
+    auto cell_types = mesh->topology()->cell_types();
+    int num_vertices_per_cell = mesh::cell_num_entities(cell_types.back(), 0);
+    assert(u.function_space()->dofmap());
+    auto dof_layout = u.function_space()->dofmap()->element_dof_layout();
+    int num_vertex_dofs = dof_layout.num_entity_dofs(0);
+    int num_dofs = element->space_dimension() / element->block_size();
+    if (num_dofs != num_vertices_per_cell or num_vertex_dofs != 1)
+    {
+      throw std::runtime_error(
+          "Only first order Lagrange spaces are supported with XDMF.");
+    }
+
+    // bool need_padding = rank > 0 and gdim != 3 ? true : false;
+    // auto eq_check = [](auto& x, auto& y) -> bool
+    // {
+    //   return x.extents() == y.extents()
+    //          and std::equal(x.data_handle(), x.data_handle() + x.size(),
+    //                         y.data_handle());
+    // };
+    // if (!need_padding
+    //     and eq_check(mesh->geometry().dofmap(),
+    //                  u.function_space()->dofmap->map()))
+    // {
+    //   data_values.assign(u.x()->array().begin(), u.x()->array().end());
+    // }
+    // else
+    // {
+
+    // }
+
     data_values = xdmf_utils::get_point_data_values(u);
+  }
 
   auto map_c = mesh->topology()->index_map(mesh->topology()->dim());
   assert(map_c);
@@ -106,7 +148,7 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
   // Add attribute DataItem node and write data
   const int width = get_padded_width(*u.function_space()->element());
   assert(data_values.size() % width == 0);
-  const int num_values
+  const std::int64_t num_values
       = cell_centred ? map_c->size_global() : map_v->size_global();
 
   const int value_rank = u.function_space()->element()->value_shape().size();
@@ -142,7 +184,7 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
         = rank_to_string(value_rank).c_str();
     attribute_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
 
-    const bool use_mpi_io = (dolfinx::MPI::size(comm) > 1);
+    const bool use_mpi_io = dolfinx::MPI::size(comm) > 1;
     if constexpr (!std::is_scalar_v<T>)
     {
       // Complex case

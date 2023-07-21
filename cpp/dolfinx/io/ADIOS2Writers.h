@@ -629,16 +629,15 @@ extract_function_names(const typename adios2_writer::U<T>& u)
   return names;
 }
 
-/// Given a Function, write the coefficient to file using ADIOS2
+/// Given a Function, write the coefficient to file using ADIOS2.
 /// @note Only supports (discontinuous) Lagrange functions.
 /// @note For a complex function, the coefficient is split into a real
-/// and imaginary function
+/// and imaginary function.
 /// @note Data is padded to be three dimensional if vector and 9
-/// dimensional if tensor
-/// @note Only supports (discontinuous) Lagrange functions
-/// @param[in] io The ADIOS2 io object
-/// @param[in] engine The ADIOS2 engine object
-/// @param[in] u The function
+/// dimensional if tensor.
+/// @param[in] io ADIOS2 io object.
+/// @param[in] engine ADIOS2 engine object.
+/// @param[in] u Function to write.
 template <typename T, std::floating_point X>
 void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
                     const fem::Function<T, X>& u)
