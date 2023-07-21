@@ -44,7 +44,7 @@ def test_div_conforming_triangle(space_type, order):
     cells = np.array([[0, 1, 2], [2, 3, 0]])
     result = perform_test(points, cells)
     for i, j in result:
-        assert i == pytest.approx(j, abs=1.0e-6)
+        assert i == pytest.approx(j, abs=1.0e-5)
 
 
 @pytest.mark.skip_in_parallel

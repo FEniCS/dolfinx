@@ -234,18 +234,15 @@ def refine_plaza(mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistri
 
 
 def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.AdjacencyList_int64],
-                x: np.ndarray, domain: ufl.Mesh,
-                partitioner=_cpp.mesh.create_cell_partitioner(GhostMode.none)) -> Mesh:
+                x: np.ndarray, domain: ufl.Mesh, partitioner=None) -> Mesh:
     """Create a mesh from topology and geometry arrays.
 
     Args:
         comm: MPI communicator to define the mesh on.
         cells: Cells of the mesh. ``cells[i]`` is the 'nodes' of cell
             ``i``.
-        x: Mesh geometry ('node' coordinates), with shape ``(num_nodes,
-            gdim)``
+        x: Mesh geometry ('node' coordinates), with shape ``(num_nodes, gdim)``.
         domain: UFL mesh.
-        ghost_mode: The ghost mode used in the mesh partitioning.
         partitioner: Function that computes the parallel distribution of
             cells across MPI ranks.
 
@@ -253,6 +250,9 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
         A mesh.
 
     """
+    if partitioner is None and comm.size > 1:
+        partitioner = _cpp.mesh.create_cell_partitioner(GhostMode.none)
+
     ufl_element = domain.ufl_coordinate_element()
     cell_shape = ufl_element.cell().cellname()
     cell_degree = ufl_element.degree()
@@ -429,21 +429,21 @@ def create_interval(comm: _MPI.Comm, nx: int, points: npt.ArrayLike,
     """Create an interval mesh.
 
     Args:
-        comm: MPI communicator
-        nx: Number of cells
-        points: Coordinates of the end points
+        comm: MPI communicator.
+        nx: Number of cells.
+        points: Coordinates of the end points.
         dtype: Float type for the mesh geometry (``numpy.float32`` or
-            ``numpy.float64``)
+            ``numpy.float64``).
         ghost_mode: Ghost mode used in the mesh partitioning. Options
             are ``GhostMode.none`` and ``GhostMode.shared_facet``.
         partitioner: Partitioning function to use for determining the
-            parallel distribution of cells across MPI ranks
+            parallel distribution of cells across MPI ranks.
 
     Returns:
         An interval mesh.
 
     """
-    if partitioner is None:
+    if partitioner is None and comm.size > 1:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     domain = ufl.Mesh(basix.ufl.element("Lagrange", "interval", 1, rank=1))
     if dtype == np.float32:
@@ -474,8 +474,6 @@ def create_unit_interval(comm: _MPI.Comm, nx: int, dtype: typing.Optional[npt.DT
         A unit interval mesh with end points at 0 and 1.
 
     """
-    if partitioner is None:
-        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     return create_interval(comm, nx, [0.0, 1.0], dtype, ghost_mode, partitioner)
 
 
@@ -504,7 +502,7 @@ def create_rectangle(comm: _MPI.Comm, points: npt.ArrayLike, n: npt.ArrayLike,
         A mesh of a rectangle.
 
     """
-    if partitioner is None:
+    if partitioner is None and comm.size > 1:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_type.name, 1, rank=1))
     if dtype == np.float32:
@@ -539,8 +537,6 @@ def create_unit_square(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.tri
         A mesh of a square with corners at (0, 0) and (1, 1).
 
     """
-    if partitioner is None:
-        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     return create_rectangle(comm, [np.array([0.0, 0.0]), np.array([1.0, 1.0])],
                             [nx, ny], cell_type, dtype, ghost_mode,
                             partitioner, diagonal)
@@ -568,7 +564,7 @@ def create_box(comm: _MPI.Comm, points: typing.List[npt.ArrayLike], n: list,
         A mesh of a box domain.
 
     """
-    if partitioner is None:
+    if partitioner is None and comm.size > 1:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_type.name, 1, rank=1))
     if dtype == np.float32:
@@ -602,7 +598,5 @@ def create_unit_cube(comm: _MPI.Comm, nx: int, ny: int, nz: int, cell_type=CellT
         and (1, 1, 1).
 
     """
-    if partitioner is None:
-        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     return create_box(comm, [np.array([0.0, 0.0, 0.0]), np.array([1.0, 1.0, 1.0])],
                       [nx, ny, nz], cell_type, dtype, ghost_mode, partitioner)
