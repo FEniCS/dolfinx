@@ -70,57 +70,58 @@ graph::AdjacencyList<T> all_to_all(MPI_Comm comm,
                                  std::move(recv_offset));
 }
 
-/// Compute values at all mesh 'nodes'
-/// @return The values at all geometric points
-/// @warning This function will be removed soon. Use interpolation
-/// instead.
-template <typename T>
-std::pair<std::vector<T>, std::array<std::size_t, 2>>
-compute_point_values(const fem::Function<T, dolfinx::scalar_value_type_t<T>>& u)
-{
-  auto V = u.function_space();
-  assert(V);
-  auto mesh = V->mesh();
-  assert(mesh);
-  const int tdim = mesh->topology()->dim();
+// /// Compute values at all mesh 'nodes'
+// /// @return The values at all geometric points
+// /// @warning This function will be removed soon. Use interpolation
+// /// instead.
+// template <typename T>
+// std::pair<std::vector<T>, std::array<std::size_t, 2>>
+// compute_point_values(const fem::Function<T, dolfinx::scalar_value_type_t<T>>&
+// u)
+// {
+//   auto V = u.function_space();
+//   assert(V);
+//   auto mesh = V->mesh();
+//   assert(mesh);
+//   const int tdim = mesh->topology()->dim();
 
-  // Compute in tensor (one for scalar function, . . .)
-  const std::size_t value_size_loc = V->element()->value_size();
+//   // Compute in tensor (one for scalar function, . . .)
+//   const std::size_t value_size_loc = V->element()->value_size();
 
-  const std::size_t num_points = mesh->geometry().x().size() / 3;
+//   const std::size_t num_points = mesh->geometry().x().size() / 3;
 
-  // Resize Array for holding point values
-  std::vector<T> point_values(num_points * value_size_loc);
+//   // Resize Array for holding point values
+//   std::vector<T> point_values(num_points * value_size_loc);
 
-  // Prepare cell geometry
-  auto x_dofmap = mesh->geometry().dofmap();
+//   // Prepare cell geometry
+//   auto x_dofmap = mesh->geometry().dofmap();
 
-  if (mesh->geometry().cmaps().size() > 1)
-  {
-    throw std::runtime_error(
-        "XDMF I/O with multiple geometry maps not implemented.");
-  }
+//   if (mesh->geometry().cmaps().size() > 1)
+//   {
+//     throw std::runtime_error(
+//         "XDMF I/O with multiple geometry maps not implemented.");
+//   }
 
-  // Interpolate point values on each cell (using last computed value if
-  // not continuous, e.g. discontinuous Galerkin methods)
-  auto map = mesh->topology()->index_map(tdim);
-  assert(map);
-  const std::int32_t num_cells = map->size_local() + map->num_ghosts();
+//   // Interpolate point values on each cell (using last computed value if
+//   // not continuous, e.g. discontinuous Galerkin methods)
+//   auto map = mesh->topology()->index_map(tdim);
+//   assert(map);
+//   const std::int32_t num_cells = map->size_local() + map->num_ghosts();
 
-  std::vector<std::int32_t> cells(num_points, -1);
-  for (std::int32_t c = 0; c < num_cells; ++c)
-  {
-    // Get coordinates for all points in cell
-    auto xdofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
-    for (std::size_t i = 0; i < xdofs.size(); ++i)
-      cells[xdofs[i]] = c;
-  }
+//   std::vector<std::int32_t> cells(num_points, -1);
+//   for (std::int32_t c = 0; c < num_cells; ++c)
+//   {
+//     // Get coordinates for all points in cell
+//     auto xdofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
+//     for (std::size_t i = 0; i < xdofs.size(); ++i)
+//       cells[xdofs[i]] = c;
+//   }
 
-  u.eval(mesh->geometry().x(), {num_points, 3}, cells, point_values,
-         {num_points, value_size_loc});
+//   u.eval(mesh->geometry().x(), {num_points, 3}, cells, point_values,
+//          {num_points, value_size_loc});
 
-  return {std::move(point_values), {num_points, value_size_loc}};
-}
+//   return {std::move(point_values), {num_points, value_size_loc}};
+// }
 
 //-----------------------------------------------------------------------------
 // Get data width - normally the same as u.value_size(), but expand for
@@ -287,28 +288,23 @@ std::int64_t xdmf_utils::get_num_cells(const pugi::xml_node& topology_node)
 template <dolfinx::scalar T, std::floating_point U>
 std::vector<T> xdmf_utils::get_point_data_values(const fem::Function<T, U>& u)
 {
-  // auto dofmap = u.function_space()->dofmap();
-  // assert(dofmap);
-  // auto index_map = dofmap->index_map;
-  // assert(index_map);
-  // int index_map_bs = dofmap->index_map_bs();
-  // int dofmap_bs = dofmap->bs();
+  auto dofmap = u.function_space()->dofmap();
+  assert(dofmap);
+  auto index_map = dofmap->index_map;
+  assert(index_map);
+  int index_map_bs = dofmap->index_map_bs();
+  int dofmap_bs = dofmap->bs();
 
-  // int rank = u.function_space()->element()->value_shape().size();
-  // std::uint32_t num_comp = std::pow(3, rank);
+  int rank = u.function_space()->element()->value_shape().size();
+  std::uint32_t num_comp = std::pow(3, rank);
+  std::uint32_t num_dofs = index_map_bs * (index_map->size_local()) / dofmap_bs;
+  std::span<const T> u_vector = u.x()->array();
+  std::vector<T> values(num_dofs * num_comp, 0);
+  for (std::size_t i = 0; i < num_dofs; ++i)
+    for (int j = 0; j < index_map_bs; ++j)
+      values[i * num_comp + j] = u_vector[i * index_map_bs + j];
 
-  // std::uint32_t num_dofs = index_map_bs * (index_map->size_local()) /
-  // dofmap_bs;
-  // // std::uint32_t num_dofs = index_map_bs
-  // //                          * (index_map->size_local() +
-  // //                          index_map->num_ghosts()) / dofmap_bs;
-
-  // std::span<const T> u_vector = u.x()->array();
-  // std::vector<T> _values(num_dofs * num_comp, 0);
-  // for (std::size_t i = 0; i < num_dofs; ++i)
-  //   for (int j = 0; j < index_map_bs; ++j)
-  //     _values[i * num_comp + j] = u_vector[i * index_map_bs + j];
-
+  /*
   auto mesh = u.function_space()->mesh();
   assert(mesh);
   const auto [data_values, dshape] = compute_point_values(u);
@@ -342,6 +338,7 @@ std::vector<T> xdmf_utils::get_point_data_values(const fem::Function<T, U>& u)
     values.assign(data_values.begin(),
                   std::next(data_values.begin(), num_local_points * dshape[1]));
   }
+  */
 
   return values;
 }
@@ -386,8 +383,9 @@ std::vector<T> xdmf_utils::get_cell_data_values(const fem::Function<T, U>& u)
     auto dofs = dofmap->cell_dofs(cell);
     for (int i = 0; i < ndofs; ++i)
     {
+      auto dof = dofs[i];
       for (int j = 0; j < bs; ++j)
-        dof_set.push_back(bs * dofs[i] + j);
+        dof_set.push_back(bs * dof + j);
     }
   }
 
@@ -424,6 +422,7 @@ std::vector<T> xdmf_utils::get_cell_data_values(const fem::Function<T, U>& u)
       std::copy(nd.begin(), nd.end(), std::next(values.begin(), 9 * j));
     }
   }
+
   return values;
 }
 //-----------------------------------------------------------------------------

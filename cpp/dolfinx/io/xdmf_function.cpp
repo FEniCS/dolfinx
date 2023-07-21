@@ -18,6 +18,8 @@
 #include <pugixml.hpp>
 #include <string>
 
+#include <basix/mdspan.hpp>
+
 using namespace dolfinx;
 using namespace dolfinx::io;
 
@@ -91,8 +93,9 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
   auto element = u.function_space()->element();
   assert(element);
 
-  // FIXME: is the below check adequate for detecting a
-  // Lagrange element? Check that element is Lagrange
+  // FIXME: is the below check adequate for detecting a Lagrange
+  // element?
+  // Check that element is Lagrange
   if (!element->interpolation_ident())
   {
     throw std::runtime_error("Only Lagrange functions are supported. "
@@ -106,37 +109,54 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
     data_values = xdmf_utils::get_cell_data_values(u);
   else
   {
-    auto cell_types = mesh->topology()->cell_types();
-    int num_vertices_per_cell = mesh::cell_num_entities(cell_types.back(), 0);
-    assert(u.function_space()->dofmap());
-    auto dof_layout = u.function_space()->dofmap()->element_dof_layout();
-    int num_vertex_dofs = dof_layout.num_entity_dofs(0);
-    int num_dofs = element->space_dimension() / element->block_size();
-    if (num_dofs != num_vertices_per_cell or num_vertex_dofs != 1)
+    const auto& geometry = mesh->geometry();
+
+    // Get number of geometry nodes per cell
+    int cmap_dim = geometry.cmaps()[0].dim();
+    int cell_dim = element->space_dimension() / element->block_size();
+    if (cmap_dim != cell_dim)
     {
       throw std::runtime_error(
-          "Only first order Lagrange spaces are supported with XDMF.");
+          "Degree of output Function must be same as mesh degree. Maybe the "
+          "Functions needs to be interpolated?");
     }
 
-    // bool need_padding = rank > 0 and gdim != 3 ? true : false;
-    // auto eq_check = [](auto& x, auto& y) -> bool
-    // {
-    //   return x.extents() == y.extents()
-    //          and std::equal(x.data_handle(), x.data_handle() + x.size(),
-    //                         y.data_handle());
-    // };
-    // if (!need_padding
-    //     and eq_check(mesh->geometry().dofmap(),
-    //                  u.function_space()->dofmap->map()))
-    // {
-    //   data_values.assign(u.x()->array().begin(), u.x()->array().end());
-    // }
-    // else
-    // {
+    auto dofmap = u.function_space()->dofmap();
+    assert(dofmap);
 
-    // }
+    int rank = element->value_shape().size();
+    int num_components = std::pow(3, rank);
 
-    data_values = xdmf_utils::get_point_data_values(u);
+    int tdim = mesh->topology()->dim();
+    auto cell_map = mesh->topology()->index_map(tdim);
+    assert(cell_map);
+    std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
+    std::int32_t num_local_points = geometry.index_map()->size_local();
+
+    namespace stdex = std::experimental;
+
+    // Get dof array and pack into array (padded where appropriate)
+    auto dofmap_x = geometry.dofmap();
+    const int bs = dofmap->bs();
+    std::span<const T> u_data = u.x()->array();
+    data_values.resize(num_local_points * num_components, 0);
+    for (std::int32_t c = 0; c < num_cells; ++c)
+    {
+      auto dofs = dofmap->cell_dofs(c);
+      auto dofs_x = stdex::submdspan(dofmap_x, c, stdex::full_extent);
+      assert(dofs.size() == dofs_x.size());
+      for (std::size_t i = 0; i < dofs.size(); ++i)
+      {
+        if (dofs_x[i] < num_local_points)
+        {
+          for (int j = 0; j < bs; ++j)
+          {
+            data_values[num_components * dofs_x[i] + j]
+                = u_data[bs * dofs[i] + j];
+          }
+        }
+      }
+    }
   }
 
   auto map_c = mesh->topology()->index_map(mesh->topology()->dim());

@@ -8,13 +8,11 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-
 from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
                          VectorFunctionSpace)
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (CellType, create_unit_cube, create_unit_interval,
                           create_unit_square)
-
 from mpi4py import MPI
 
 # Supported XDMF file encoding
@@ -49,9 +47,18 @@ def test_save_1d_scalar(tempdir, encoding, dtype, use_pathlib):
     V = FunctionSpace(mesh, ("Lagrange", 2))
     u = Function(V, dtype=dtype)
     u.x.array[:] = 1.0 + (1j if np.issubdtype(dtype, np.complexfloating) else 0)
+
+    with pytest.raises(RuntimeError):
+        with XDMFFile(mesh.comm, filename2, "w", encoding=encoding) as file:
+            file.write_mesh(mesh)
+            file.write_function(u)
+
+    V1 = FunctionSpace(mesh, ("Lagrange", 1))
+    u1 = Function(V1, dtype=dtype)
+    u1.interpolate(u)
     with XDMFFile(mesh.comm, filename2, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
-        file.write_function(u)
+        file.write_function(u1)
 
 
 @pytest.mark.parametrize("cell_type", celltypes_2D)
@@ -64,9 +71,13 @@ def test_save_2d_scalar(tempdir, encoding, dtype, cell_type):
     V = FunctionSpace(mesh, ("Lagrange", 2))
     u = Function(V, dtype=dtype)
     u.x.array[:] = 1.0
+
+    V1 = FunctionSpace(mesh, ("Lagrange", 1))
+    u1 = Function(V1, dtype=dtype)
+    u1.interpolate(u)
     with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
-        file.write_function(u)
+        file.write_function(u1)
 
 
 @pytest.mark.parametrize("cell_type", celltypes_3D)
@@ -79,9 +90,13 @@ def test_save_3d_scalar(tempdir, encoding, dtype, cell_type):
     V = FunctionSpace(mesh, ("Lagrange", 2))
     u = Function(V, dtype=dtype)
     u.x.array[:] = 1.0
+
+    V1 = FunctionSpace(mesh, ("Lagrange", 1))
+    u1 = Function(V1, dtype=dtype)
+    u1.interpolate(u)
     with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
-        file.write_function(u)
+        file.write_function(u1)
 
 
 @pytest.mark.parametrize("cell_type", celltypes_2D)
@@ -94,9 +109,13 @@ def test_save_2d_vector(tempdir, encoding, dtype, cell_type):
     V = VectorFunctionSpace(mesh, ("Lagrange", 2))
     u = Function(V, dtype=dtype)
     u.x.array[:] = 1.0 + (1j if np.issubdtype(dtype, np.complexfloating) else 0)
+
+    V1 = VectorFunctionSpace(mesh, ("Lagrange", 1))
+    u1 = Function(V1, dtype=dtype)
+    u1.interpolate(u)
     with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
-        file.write_function(u)
+        file.write_function(u1)
 
 
 @pytest.mark.parametrize("cell_type", celltypes_3D)
@@ -108,9 +127,13 @@ def test_save_3d_vector(tempdir, encoding, dtype, cell_type):
     mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type, dtype=xtype)
     u = Function(VectorFunctionSpace(mesh, ("Lagrange", 1)), dtype=dtype)
     u.x.array[:] = 1.0 + (1j if np.issubdtype(dtype, np.complexfloating) else 0)
+
+    V1 = VectorFunctionSpace(mesh, ("Lagrange", 1))
+    u1 = Function(V1, dtype=dtype)
+    u1.interpolate(u)
     with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
-        file.write_function(u)
+        file.write_function(u1)
 
 
 @pytest.mark.parametrize("cell_type", celltypes_2D)
@@ -122,9 +145,12 @@ def test_save_2d_tensor(tempdir, encoding, dtype, cell_type):
     mesh = create_unit_square(MPI.COMM_WORLD, 16, 16, cell_type, dtype=xtype)
     u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)), dtype=dtype)
     u.x.array[:] = 1.0 + (1j if np.issubdtype(dtype, np.complexfloating) else 0)
+
+    u1 = Function(TensorFunctionSpace(mesh, ("Lagrange", 1)), dtype=dtype)
+    u1.interpolate(u)
     with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
-        file.write_function(u)
+        file.write_function(u1)
 
 
 @pytest.mark.parametrize("cell_type", celltypes_3D)
@@ -136,9 +162,12 @@ def test_save_3d_tensor(tempdir, encoding, dtype, cell_type):
     mesh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, cell_type, dtype=xtype)
     u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)), dtype=dtype)
     u.x.array[:] = 1.0 + (1j if np.issubdtype(dtype, np.complexfloating) else 0)
+
+    u1 = Function(TensorFunctionSpace(mesh, ("Lagrange", 1)), dtype=dtype)
+    u1.interpolate(u)
     with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
-        file.write_function(u)
+        file.write_function(u1)
 
 
 @pytest.mark.parametrize("cell_type", celltypes_3D)
@@ -148,7 +177,8 @@ def test_save_3d_vector_series(tempdir, encoding, dtype, cell_type):
     filename = Path(tempdir, "u_3D.xdmf")
     xtype = np.real(dtype(0)).dtype
     mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type, dtype=xtype)
-    u = Function(VectorFunctionSpace(mesh, ("Lagrange", 2)), dtype=dtype)
+    u = Function(VectorFunctionSpace(mesh, ("Lagrange", 1)), dtype=dtype)
+
     with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
         u.x.array[:] = 1.0 + (1j if np.issubdtype(dtype, np.complexfloating) else 0)
@@ -159,3 +189,62 @@ def test_save_3d_vector_series(tempdir, encoding, dtype, cell_type):
     with XDMFFile(mesh.comm, filename, "a", encoding=encoding) as file:
         u.x.array[:] = 3.0 + (3j if np.issubdtype(dtype, np.complexfloating) else 0)
         file.write_function(u, 0.3)
+
+
+def test_higher_order_function(tempdir):
+    gmsh= pytest.importorskip('gmsh')
+    # import gmsh
+    from dolfinx.io import gmshio
+
+    gmsh.initialize()
+
+    # Choose if Gmsh output is verbose
+    gmsh.option.setNumber("General.Terminal", 0)
+    model = gmsh.model()
+
+    mesh_comm = MPI.COMM_WORLD
+    model_rank = 0
+    if mesh_comm.rank == model_rank:
+        # Using model.setCurrent(name) lets you change between models
+        model.add("Sphere minus box")
+        model.setCurrent("Sphere minus box")
+
+        sphere_dim_tags = model.occ.addSphere(0, 0, 0, 1)
+        box_dim_tags = model.occ.addBox(0, 0, 0, 1, 1, 1)
+        model_dim_tags = model.occ.cut([(3, sphere_dim_tags)], [(3, box_dim_tags)])
+        model.occ.synchronize()
+
+        # Add physical tag 1 for exterior surfaces
+        boundary = model.getBoundary(model_dim_tags[0], oriented=False)
+        boundary_ids = [b[1] for b in boundary]
+        model.addPhysicalGroup(2, boundary_ids, tag=1)
+        model.setPhysicalName(2, 1, "Sphere surface")
+
+        # Add physical tag 2 for the volume
+        volume_entities = [model[1] for model in model.getEntities(3)]
+        model.addPhysicalGroup(3, volume_entities, tag=2)
+        model.setPhysicalName(3, 2, "Sphere volume")
+
+        # Generate second order mesh and output gmsh messages to terminal
+        model.mesh.generate(3)
+        gmsh.option.setNumber("General.Terminal", 1)
+        model.mesh.setOrder(2)
+        gmsh.option.setNumber("General.Terminal", 0)
+
+    msh, ct, ft = gmshio.model_to_mesh(model, mesh_comm, model_rank)
+    msh.name = "ball_d2"
+    ct.name = f"{msh.name}_cells"
+    ft.name = f"{msh.name}_surface"
+
+    u = Function(VectorFunctionSpace(msh, ("Lagrange", 1)))
+    with pytest.raises(RuntimeError):
+        filename = Path(tempdir, "u3D_P1.xdmf")
+        with XDMFFile(msh.comm, filename, "w") as file:
+            file.write_mesh(msh)
+            file.write_function(u)
+
+    u = Function(VectorFunctionSpace(msh, ("Lagrange", 2)))
+    filename = Path(tempdir, "u3D_P2.xdmf")
+    with XDMFFile(msh.comm, filename, "w") as file:
+        file.write_mesh(msh)
+        file.write_function(u)

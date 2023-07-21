@@ -269,6 +269,7 @@ std::vector<T> pack_function_data(const fem::Function<T, U>& u)
       for (int j = 0; j < bs; ++j)
         data[num_components * dofs_x[i] + j] = u_data[bs * dofs[i] + j];
   }
+
   return data;
 }
 
@@ -759,10 +760,10 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   engine.PerformPuts();
 }
 
-/// Given a FunctionSpace, create a topology and geometry based on the
-/// dof coordinates. Writes the topology and geometry using ADIOS2 in
-/// VTX format.
-/// @note Only supports (discontinuous) Lagrange functions
+/// @brief Given a FunctionSpace, create a topology and geometry based
+/// on the function space dof coordinates. Writes the topology and
+/// geometry using ADIOS2 in VTX format.
+/// @note Only supports (discontinuous) Lagrange functions.
 /// @param[in] io The ADIOS2 io object
 /// @param[in] engine The ADIOS2 engine object
 /// @param[in] V The function space
@@ -842,13 +843,13 @@ public:
   ///
   /// This format supports arbitrary degree meshes.
   ///
-  /// @param[in] comm The MPI communicator to open the file on
-  /// @param[in] filename Name of output file
-  /// @param[in] mesh The mesh to write
-  /// @param[in] engine ADIOS2 engine type
-  /// @note This format support arbitrary degree meshes
+  /// @param[in] comm MPI communicator to open the file on.
+  /// @param[in] filename Name of output file,
+  /// @param[in] mesh Mesh to write,
+  /// @param[in] engine ADIOS2 engine type,
+  /// @note This format supports arbitrary degree meshes.
   /// @note The mesh geometry can be updated between write steps but the
-  /// topology should not be changed between write steps
+  /// topology should not be changed between write steps.
   VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
             std::shared_ptr<const mesh::Mesh<T>> mesh,
             std::string engine = "BPFile")
@@ -869,7 +870,7 @@ public:
   /// same mesh and (2) be (discontinuous) Lagrange functions. The
   /// element family and degree must be the same for all functions.
   /// @param[in] engine ADIOS2 engine type.
-  /// @note This format supports arbitrary degree meshes
+  /// @note This format supports arbitrary degree meshes.
   VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
             const typename adios2_writer::U<T>& u,
             std::string engine = "BPFile")
