@@ -1,7 +1,7 @@
 ---
-name: Docker Intel OneAPI test image
+name: Docker Intel oneAPI test image
 
-# Builds Intel OneAPI test environment image (no FEniCS components). 
+# Builds Intel OneAPI test environment image (no FEniCS components).
 #
 # Must be triggered manually via GitHub interface.
 
@@ -43,6 +43,6 @@ jobs:
         with:
           context: docker/
           cache-to: type=inline
-          file: docker/Dockerfile.oneapi 
+          file: docker/Dockerfile.oneapi
           push: true
           tags: ${{ env.TAG }}
