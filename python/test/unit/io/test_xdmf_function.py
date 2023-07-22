@@ -364,3 +364,5 @@ def test_higher_order_function(tempdir):
     # with XDMFFile(msh.comm, filename, "w") as file:
     #     file.write_mesh(msh)
     #     file.write_function(u)
+
+    gmsh.finalize()

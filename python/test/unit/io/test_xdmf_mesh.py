@@ -97,28 +97,31 @@ def test_read_write_p2_mesh(tempdir, encoding):
         pytest.skip()
     if MPI.COMM_WORLD.rank == 0:
         gmsh.initialize()
-        gmsh.model.occ.addSphere(0, 0, 0, 1, tag=1)
+        model = gmsh.model()
+        model.add("test_read_write_p2_mesh")
+        model.setCurrent("test_read_write_p2_mesh")
+
+        model.occ.addSphere(0, 0, 0, 1, tag=1)
         gmsh.option.setNumber("Mesh.CharacteristicLengthMin", 0.3)
         gmsh.option.setNumber("Mesh.CharacteristicLengthMax", 0.4)
-        gmsh.model.occ.synchronize()
-        gmsh.model.mesh.generate(3)
-        gmsh.model.mesh.setOrder(2)
+        model.occ.synchronize()
+        model.mesh.generate(3)
+        model.mesh.setOrder(2)
 
-        idx, points, _ = gmsh.model.mesh.getNodes()
+        idx, points, _ = model.mesh.getNodes()
         points = points.reshape(-1, 3)
         idx -= 1
         srt = np.argsort(idx)
         assert np.all(idx[srt] == np.arange(len(idx)))
         x = points[srt]
 
-        element_types, element_tags, node_tags = gmsh.model.mesh.getElements(dim=3)
-        name, dim, order, num_nodes, local_coords, num_first_order_nodes = gmsh.model.mesh.getElementProperties(
+        element_types, element_tags, node_tags = model.mesh.getElements(dim=3)
+        name, dim, order, num_nodes, local_coords, num_first_order_nodes = model.mesh.getElementProperties(
             element_types[0])
         cells = node_tags[0].reshape(-1, num_nodes) - 1
         num_nodes, gmsh_cell_id = MPI.COMM_WORLD.bcast(
-            [cells.shape[1], gmsh.model.mesh.getElementType("tetrahedron", 2)], root=0)
+            [cells.shape[1], model.mesh.getElementType("tetrahedron", 2)], root=0)
         gmsh.finalize()
-
     else:
         num_nodes, gmsh_cell_id = MPI.COMM_WORLD.bcast([None, None], root=0)
         cells, x = np.empty([0, num_nodes]), np.empty([0, 3])
