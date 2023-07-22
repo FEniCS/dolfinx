@@ -126,7 +126,6 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
     int rank = element->value_shape().size();
     int num_components = std::pow(3, rank);
 
-    int tdim = mesh->topology()->dim();
     std::int32_t num_cells = map_c->size_local() + map_c->num_ghosts();
     std::int32_t num_local_points = geometry.index_map()->size_local();
 
