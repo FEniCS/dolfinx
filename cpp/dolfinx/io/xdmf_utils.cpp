@@ -232,76 +232,6 @@ std::int64_t xdmf_utils::get_num_cells(const pugi::xml_node& topology_node)
 }
 //----------------------------------------------------------------------------
 template <dolfinx::scalar T, std::floating_point U>
-std::vector<T> xdmf_utils::get_point_data_values(const fem::Function<T, U>& u)
-{
-  auto dofmap = u.function_space()->dofmap();
-  assert(dofmap);
-  auto index_map = dofmap->index_map;
-  assert(index_map);
-  int index_map_bs = dofmap->index_map_bs();
-  int dofmap_bs = dofmap->bs();
-
-  int rank = u.function_space()->element()->value_shape().size();
-  std::uint32_t num_comp = std::pow(3, rank);
-  std::uint32_t num_dofs = index_map_bs * (index_map->size_local()) / dofmap_bs;
-  std::span<const T> u_vector = u.x()->array();
-  std::vector<T> values(num_dofs * num_comp, 0);
-  for (std::size_t i = 0; i < num_dofs; ++i)
-    for (int j = 0; j < index_map_bs; ++j)
-      values[i * num_comp + j] = u_vector[i * index_map_bs + j];
-
-  /*
-  auto mesh = u.function_space()->mesh();
-  assert(mesh);
-  const auto [data_values, dshape] = compute_point_values(u);
-
-  const int width = get_padded_width(*u.function_space()->element());
-  assert(mesh->geometry().index_map());
-  const std::size_t num_local_points
-      = mesh->geometry().index_map()->size_local();
-  assert(dshape[0] >= num_local_points);
-
-  // FIXME: Unpick the below code for the new layout of data from
-  //        GenericFunction::compute_vertex_values
-  std::vector<T> values(width * num_local_points, 0.0);
-  int value_rank = u.function_space()->element()->value_shape().size();
-  if (value_rank > 0)
-  {
-    // Transpose vector/tensor data arrays
-    int value_size = u.function_space()->element()->value_size();
-    for (std::size_t i = 0; i < num_local_points; i++)
-    {
-      for (int j = 0; j < value_size; j++)
-      {
-        int tensor2d_off
-            = (j > 1 && value_rank == 2 && value_size == 4) ? 1 : 0;
-        values[i * width + j + tensor2d_off] = data_values[i * dshape[1] + j];
-      }
-    }
-  }
-  else
-  {
-    values.assign(data_values.begin(),
-                  std::next(data_values.begin(), num_local_points * dshape[1]));
-  }
-  */
-
-  return values;
-}
-//-----------------------------------------------------------------------------
-// Instantiation for different types
-/// @cond
-template std::vector<float>
-xdmf_utils::get_point_data_values(const fem::Function<float, float>&);
-template std::vector<double>
-xdmf_utils::get_point_data_values(const fem::Function<double, double>&);
-template std::vector<std::complex<float>> xdmf_utils::get_point_data_values(
-    const fem::Function<std::complex<float>, float>&);
-template std::vector<std::complex<double>> xdmf_utils::get_point_data_values(
-    const fem::Function<std::complex<double>, double>&);
-/// @endcond
-//-----------------------------------------------------------------------------
-template <dolfinx::scalar T, std::floating_point U>
 std::vector<T> xdmf_utils::get_cell_data_values(const fem::Function<T, U>& u)
 {
   assert(u.function_space()->dofmap());
@@ -322,7 +252,6 @@ std::vector<T> xdmf_utils::get_cell_data_values(const fem::Function<T, U>& u)
   const int ndofs = dofmap->element_dof_layout().num_dofs();
   const int bs = dofmap->bs();
   assert(ndofs * bs == value_size);
-
   for (int cell = 0; cell < num_local_cells; ++cell)
   {
     // Tabulate dofs
