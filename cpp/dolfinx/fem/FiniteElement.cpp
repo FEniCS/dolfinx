@@ -17,6 +17,8 @@
 #include <utility>
 #include <vector>
 
+#include <iostream>
+
 using namespace dolfinx;
 using namespace dolfinx::fem;
 
@@ -263,19 +265,37 @@ FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element, int bs)
-    : _space_dim(bs * element.dim()), _value_shape(element.value_shape()),
-      _bs(bs)
+FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
+                                const std::vector<std::size_t>& value_shape)
+    : _value_shape(element.value_shape())
 {
-  if (_value_shape.empty() and bs > 1)
-    _value_shape = {1};
-  std::transform(_value_shape.cbegin(), _value_shape.cend(),
-                 _value_shape.begin(), [bs](auto s) { return bs * s; });
-  if (bs > 1)
+  if (!_value_shape.empty() and !value_shape.empty())
+  {
+    throw std::runtime_error(
+        "Cannot specify value shape for non-scalar base element.");
+  }
+
+  // Set block size
+  if (!value_shape.empty())
+    _value_shape = value_shape;
+
+  // Set block size
+  if (!value_shape.empty())
+  {
+    _bs = std::accumulate(value_shape.begin(), value_shape.end(), 1,
+                          std::multiplies{});
+  }
+  else
+    _bs = 1;
+
+  _space_dim = _bs * element.dim();
+
+  if (_bs > 1)
   {
     // Create all sub-elements
-    for (int i = 0; i < bs; ++i)
-      _sub_elements.push_back(std::make_shared<FiniteElement<T>>(element, 1));
+    for (int i = 0; i < _bs; ++i)
+      _sub_elements.push_back(std::make_shared<FiniteElement<T>>(
+          element, std::vector<std::size_t>{}));
   }
 
   _element = std::make_unique<basix::FiniteElement<T>>(element);
@@ -299,7 +319,7 @@ FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element, int bs)
     break;
   }
 
-  _signature = "Basix element " + _family + " " + std::to_string(bs);
+  _signature = "Basix element " + _family + " " + std::to_string(_bs);
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>

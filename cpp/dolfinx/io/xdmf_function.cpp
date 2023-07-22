@@ -7,6 +7,7 @@
 #include "xdmf_function.h"
 #include "xdmf_mesh.h"
 #include "xdmf_utils.h"
+#include <basix/mdspan.hpp>
 #include <boost/lexical_cast.hpp>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/DofMap.h>
@@ -17,8 +18,6 @@
 #include <dolfinx/mesh/Topology.h>
 #include <pugixml.hpp>
 #include <string>
-
-#include <basix/mdspan.hpp>
 
 using namespace dolfinx;
 using namespace dolfinx::io;
@@ -87,12 +86,33 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
   auto map_c = mesh->topology()->index_map(mesh->topology()->dim());
   assert(map_c);
 
+  auto dofmap = u.function_space()->dofmap();
+  assert(dofmap);
+  const int bs = dofmap->bs();
+
+  int rank = element->value_shape().size();
+  int num_components = std::pow(3, rank);
+
   // Get fem::Function data values and shape
   std::vector<T> data_values;
+  std::span<const T> x = u.x()->array();
+
   const bool cell_centred
       = element->space_dimension() / element->block_size() == 1;
   if (cell_centred)
-    data_values = xdmf_utils::get_cell_data_values(u);
+  {
+    // Get dof array and pack into array (padded where appropriate)
+    const std::int32_t num_local_cells = map_c->size_local();
+    data_values.resize(num_local_cells * num_components, 0);
+    for (std::int32_t c = 0; c < num_local_cells; ++c)
+    {
+      auto dofs = dofmap->cell_dofs(c);
+      assert(dofs.size() == 1);
+      for (std::size_t i = 0; i < dofs.size(); ++i)
+        for (int j = 0; j < bs; ++j)
+          data_values[num_components * c + j] = x[bs * dofs[i] + j];
+    }
+  }
   else
   {
     // Get number of geometry nodes per cell
@@ -107,9 +127,6 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
           "Function needs to be interpolated?");
     }
 
-    auto dofmap = u.function_space()->dofmap();
-    assert(dofmap);
-
     // Check that dofmap layouts are equal and check Lagrange variants
     if (dofmap->element_dof_layout() != cmap.create_dof_layout())
     {
@@ -123,17 +140,12 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
                                "Function needs to be interpolated?");
     }
 
-    int rank = element->value_shape().size();
-    int num_components = std::pow(3, rank);
-
     std::int32_t num_cells = map_c->size_local() + map_c->num_ghosts();
     std::int32_t num_local_points = geometry.index_map()->size_local();
 
     // Get dof array and pack into array (padded where appropriate)
     namespace stdex = std::experimental;
     auto dofmap_x = geometry.dofmap();
-    const int bs = dofmap->bs();
-    std::span<const T> x = u.x()->array();
     data_values.resize(num_local_points * num_components, 0);
     for (std::int32_t c = 0; c < num_cells; ++c)
     {

@@ -72,10 +72,6 @@ std::vector<std::int64_t> get_dataset_shape(const pugi::xml_node& dataset_node);
 /// Get number of cells from an XML Topology node
 std::int64_t get_num_cells(const pugi::xml_node& topology_node);
 
-/// Get cell data values as a flattened 2D array
-template <dolfinx::scalar T, std::floating_point U>
-std::vector<T> get_cell_data_values(const fem::Function<T, U>& u);
-
 /// Get the VTK string identifier
 std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 

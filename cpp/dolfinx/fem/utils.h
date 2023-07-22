@@ -646,21 +646,22 @@ Form<T, U> create_form(
 /// @brief Create a function space from a Basix element.
 /// @param[in] mesh Mesh
 /// @param[in] e Basix finite element.
-/// @param[in] bs The block size, e.g. 3 for a 'vector' Lagrange element
-/// in 3D.
+/// @param[in] value_shape Value shape, e.g. {3, 3} for a 'tensor'
+/// Lagrange element in 3D.
 /// @param[in] reorder_fn The graph reordering function to call on the
 /// dofmap. If `nullptr`, the default re-ordering is used.
 /// @return The created function space
 template <std::floating_point T>
 FunctionSpace<T>
 create_functionspace(std::shared_ptr<mesh::Mesh<T>> mesh,
-                     const basix::FiniteElement<T>& e, int bs,
+                     const basix::FiniteElement<T>& e,
+                     const std::vector<std::size_t>& value_shape,
                      const std::function<std::vector<int>(
                          const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
                      = nullptr)
 {
   // Create a DOLFINx element
-  auto _e = std::make_shared<FiniteElement<T>>(e, bs);
+  auto _e = std::make_shared<FiniteElement<T>>(e, value_shape);
   assert(_e);
 
   // Create UFC subdofmaps and compute offset
@@ -672,14 +673,14 @@ create_functionspace(std::shared_ptr<mesh::Mesh<T>> mesh,
     auto sub_element = _e->extract_sub_element({i});
     std::vector<int> parent_map_sub(sub_element->space_dimension());
     for (std::size_t j = 0; j < parent_map_sub.size(); ++j)
-      parent_map_sub[j] = i + bs * j;
+      parent_map_sub[j] = i + _e->block_size() * j;
     sub_doflayout.emplace_back(1, e.entity_dofs(), e.entity_closure_dofs(),
                                parent_map_sub, std::vector<ElementDofLayout>());
   }
 
   // Create a dofmap
-  ElementDofLayout layout(bs, e.entity_dofs(), e.entity_closure_dofs(), {},
-                          sub_doflayout);
+  ElementDofLayout layout(_e->block_size(), e.entity_dofs(),
+                          e.entity_closure_dofs(), {}, sub_doflayout);
   std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
       unpermute_dofs = nullptr;
   if (_e->needs_dof_permutations())

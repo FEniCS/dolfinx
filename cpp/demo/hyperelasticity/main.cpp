@@ -232,7 +232,7 @@ int main(int argc, char* argv[])
         family, cell_type, k, basix::element::lagrange_variant::unset,
         basix::element::dpc_variant::unset, discontinuous);
     auto S = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace(
-        mesh, S_element, pow(mesh->geometry().dim(), 2)));
+        mesh, S_element, std::vector<std::size_t>{3, 3}));
 
     auto sigma_expression = fem::create_expression<T, U>(
         *expression_hyperelasticity_sigma, {{"u", u}}, {});

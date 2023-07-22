@@ -32,8 +32,9 @@ public:
 
   /// Create finite element from a Basix finite element
   /// @param[in] element Basix finite element
-  /// @param[in] bs The block size
-  FiniteElement(const basix::FiniteElement<T>& element, int bs);
+  /// @param[in] value_shape Value shape for the element.
+  FiniteElement(const basix::FiniteElement<T>& element,
+                const std::vector<std::size_t>& value_shape);
 
   /// Copy constructor
   FiniteElement(const FiniteElement& element) = delete;
