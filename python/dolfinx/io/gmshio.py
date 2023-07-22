@@ -42,7 +42,11 @@ def ufl_mesh(gmsh_cell: int, gdim: int) -> ufl.Mesh:
         A ufl Mesh using Lagrange elements (equispaced) of the
         corresponding DOLFINx cell
     """
-    shape, degree = _gmsh_to_cells[gmsh_cell]
+    try:
+        shape, degree = _gmsh_to_cells[gmsh_cell]
+    except KeyError as e:
+        print(f"Unknown cell type {gmsh_cell}.")
+        raise e
     cell = ufl.Cell(shape, geometric_dimension=gdim)
 
     element = basix.ufl.element(
@@ -60,6 +64,7 @@ def cell_perm_array(cell_type: CellType, num_nodes: int) -> typing.List[int]:
 
     Returns:
         An array `p` such that `a_dolfinx[i] = a_gmsh[p[i]]`.
+
     """
     return _cpp.io.perm_gmsh(cell_type, num_nodes)
 
@@ -77,8 +82,8 @@ if _has_gmsh:
         markers.
 
         Args:
-            model: The Gmsh model
-            name: The name of the gmsh model. If not set the current
+            model: Gmsh model.
+            name: Name of the gmsh model. If not set the current
                 model will be used.
 
         Returns:
@@ -141,7 +146,8 @@ if _has_gmsh:
 
         Args:
             model: The Gmsh model
-            name: The name of the gmsh model. If not set the current model will be used.
+            name: The name of the gmsh model. If not set the current
+                model will be used.
 
         Returns:
             The mesh geometry as an array of shape (num_nodes, 3).
@@ -150,8 +156,7 @@ if _has_gmsh:
         if name is not None:
             model.setCurrent(name)
 
-        # Get the unique tag and coordinates for nodes
-        # in mesh
+        # Get the unique tag and coordinates for nodes in mesh
         indices, points, _ = model.mesh.getNodes()
         points = points.reshape(-1, 3)
 
@@ -209,6 +214,7 @@ if _has_gmsh:
                 _, dim, _, num_nodes, _, _ = model.mesh.getElementProperties(element)
                 cell_information[i] = {"id": element, "dim": dim, "num_nodes": num_nodes}
                 cell_dimensions[i] = dim
+                print(cell_information[i])
 
             # Sort elements by ascending dimension
             perm_sort = np.argsort(cell_dimensions)
@@ -319,4 +325,5 @@ if _has_gmsh:
                       11: ("tetrahedron", 2), 12: ("hexahedron", 2),
                       15: ("point", 0), 21: ("triangle", 3),
                       26: ("interval", 3), 29: ("tetrahedron", 3),
-                      36: ("quadrilateral", 3)}
+                      36: ("quadrilateral", 3),
+                      92: ("hexahedron", 3)}

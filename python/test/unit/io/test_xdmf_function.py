@@ -135,6 +135,14 @@ def test_save_3d_vector(tempdir, encoding, dtype, cell_type):
         file.write_mesh(mesh)
         file.write_function(u1)
 
+    V2 = FunctionSpace(mesh, ("RT", 1))
+    u2 = Function(V2, dtype=dtype)
+    u2.interpolate(u)
+    with pytest.raises(RuntimeError):
+        with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
+            file.write_mesh(mesh)
+            file.write_function(u2)
+
 
 @pytest.mark.parametrize("cell_type", celltypes_2D)
 @pytest.mark.parametrize("encoding", encodings)
@@ -178,73 +186,153 @@ def test_save_3d_vector_series(tempdir, encoding, dtype, cell_type):
     xtype = np.real(dtype(0)).dtype
     mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type, dtype=xtype)
     u = Function(VectorFunctionSpace(mesh, ("Lagrange", 1)), dtype=dtype)
-
     with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
         u.x.array[:] = 1.0 + (1j if np.issubdtype(dtype, np.complexfloating) else 0)
         file.write_function(u, 0.1)
         u.x.array[:] = 2.0 + (2j if np.issubdtype(dtype, np.complexfloating) else 0)
         file.write_function(u, 0.2)
-
     with XDMFFile(mesh.comm, filename, "a", encoding=encoding) as file:
         u.x.array[:] = 3.0 + (3j if np.issubdtype(dtype, np.complexfloating) else 0)
         file.write_function(u, 0.3)
 
 
 def test_higher_order_function(tempdir):
+    """Test Function output for higher-order meshes."""
     gmsh = pytest.importorskip('gmsh')
-    # import gmsh
     from dolfinx.io import gmshio
 
     gmsh.initialize()
 
-    # Choose if Gmsh output is verbose
-    gmsh.option.setNumber("General.Terminal", 0)
-    model = gmsh.model()
-
-    mesh_comm = MPI.COMM_WORLD
-    model_rank = 0
-    if mesh_comm.rank == model_rank:
-        # Using model.setCurrent(name) lets you change between models
-        model.add("Sphere minus box")
-        model.setCurrent("Sphere minus box")
-
-        sphere_dim_tags = model.occ.addSphere(0, 0, 0, 1)
-        box_dim_tags = model.occ.addBox(0, 0, 0, 1, 1, 1)
-        model_dim_tags = model.occ.cut([(3, sphere_dim_tags)], [(3, box_dim_tags)])
-        model.occ.synchronize()
-
-        # Add physical tag 1 for exterior surfaces
-        boundary = model.getBoundary(model_dim_tags[0], oriented=False)
-        boundary_ids = [b[1] for b in boundary]
-        model.addPhysicalGroup(2, boundary_ids, tag=1)
-        model.setPhysicalName(2, 1, "Sphere surface")
-
-        # Add physical tag 2 for the volume
-        volume_entities = [model[1] for model in model.getEntities(3)]
-        model.addPhysicalGroup(3, volume_entities, tag=2)
-        model.setPhysicalName(3, 2, "Sphere volume")
-
-        # Generate second order mesh and output gmsh messages to terminal
-        model.mesh.generate(3)
-        gmsh.option.setNumber("General.Terminal", 1)
-        model.mesh.setOrder(2)
+    def gmsh_tet_model(order):
         gmsh.option.setNumber("General.Terminal", 0)
+        model = gmsh.model()
+        comm = MPI.COMM_WORLD
+        if comm.rank == 0:
+            model.add("Sphere minus box")
+            model.setCurrent("Sphere minus box")
+            model.occ.addSphere(0, 0, 0, 1)
+            model.occ.synchronize()
+            volume_entities = [model[1] for model in model.getEntities(3)]
+            model.addPhysicalGroup(3, volume_entities, tag=2)
+            model.mesh.generate(3)
+            gmsh.option.setNumber("General.Terminal", 1)
+            model.mesh.setOrder(order)
+            gmsh.option.setNumber("General.Terminal", 0)
 
-    msh, ct, ft = gmshio.model_to_mesh(model, mesh_comm, model_rank)
-    msh.name = "ball_d2"
-    ct.name = f"{msh.name}_cells"
-    ft.name = f"{msh.name}_surface"
+        msh, _, _ = gmshio.model_to_mesh(model, comm, 0)
+        return msh
 
+    def gmsh_hex_model(order):
+        model = gmsh.model()
+        gmsh.option.setNumber("General.Terminal", 0)
+        model.add("Hexahedral mesh")
+        model.setCurrent("Hexahedral mesh")
+        comm = MPI.COMM_WORLD
+        if comm.rank == 0:
+            gmsh.option.setNumber("Mesh.RecombinationAlgorithm", 2)
+            gmsh.option.setNumber("Mesh.RecombineAll", 2)
+            gmsh.option.setNumber("Mesh.CharacteristicLengthFactor", 1)
+            circle = model.occ.addDisk(0, 0, 0, 1, 1)
+            circle_inner = model.occ.addDisk(0, 0, 0, 0.5, 0.5)
+            cut = model.occ.cut([(2, circle)], [(2, circle_inner)])[0]
+            extruded_geometry = model.occ.extrude(cut, 0, 0, 0.5, numElements=[5], recombine=True)
+            model.occ.synchronize()
+            model.addPhysicalGroup(2, [cut[0][1]], tag=1)
+            model.setPhysicalName(2, 1, "2D cylinder")
+            boundary_entities = model.getEntities(2)
+            other_boundary_entities = []
+            for entity in boundary_entities:
+                if entity != cut[0][1]:
+                    other_boundary_entities.append(entity[1])
+            model.addPhysicalGroup(2, other_boundary_entities, tag=3)
+            model.setPhysicalName(2, 3, "Remaining boundaries")
+            model.mesh.generate(3)
+            model.mesh.setOrder(order)
+            volume_entities = []
+            for entity in extruded_geometry:
+                if entity[0] == 3:
+                    volume_entities.append(entity[1])
+            model.addPhysicalGroup(3, volume_entities, tag=1)
+            model.setPhysicalName(3, 1, "Mesh volume")
+
+        msh, _, _ = gmshio.model_to_mesh(gmsh.model, comm, 0)
+        return msh
+
+    # Degree 1 mesh (tet)
+    msh = gmsh_tet_model(1)
+    assert msh.geometry.cmaps[0].degree == 1
+    u = Function(VectorFunctionSpace(msh, ("Lagrange", 1)))
+    filename = Path(tempdir, "u3D_P1.xdmf")
+    with XDMFFile(msh.comm, filename, "w") as file:
+        file.write_mesh(msh)
+        file.write_function(u)
+    u = Function(VectorFunctionSpace(msh, ("Lagrange", 2)))
+    filename = Path(tempdir, "u3D_P2.xdmf")
+    with pytest.raises(RuntimeError):
+        with XDMFFile(msh.comm, filename, "w") as file:
+            file.write_mesh(msh)
+            file.write_function(u)
+
+    # Degree 2 mesh (tet)
+    msh = gmsh_tet_model(2)
+    assert msh.geometry.cmaps[0].degree == 2
     u = Function(VectorFunctionSpace(msh, ("Lagrange", 1)))
     with pytest.raises(RuntimeError):
         filename = Path(tempdir, "u3D_P1.xdmf")
         with XDMFFile(msh.comm, filename, "w") as file:
             file.write_mesh(msh)
             file.write_function(u)
-
     u = Function(VectorFunctionSpace(msh, ("Lagrange", 2)))
     filename = Path(tempdir, "u3D_P2.xdmf")
     with XDMFFile(msh.comm, filename, "w") as file:
         file.write_mesh(msh)
         file.write_function(u)
+
+    # Degree 3 mesh (tet)
+    # NOTE: XDMF/ParaView does not support TETRAHEDRON_20
+    msh = gmsh_tet_model(3)
+    assert msh.geometry.cmaps[0].degree == 3
+    u = Function(VectorFunctionSpace(msh, ("Lagrange", 2)))
+    with pytest.raises(RuntimeError):
+        filename = Path(tempdir, "u3D_P3.xdmf")
+        with XDMFFile(msh.comm, filename, "w") as file:
+            file.write_mesh(msh)
+            file.write_function(u)
+    u = Function(VectorFunctionSpace(msh, ("Lagrange", 3)))
+    filename = Path(tempdir, "u3D_P3.xdmf")
+    with XDMFFile(msh.comm, filename, "w") as file:
+        file.write_mesh(msh)
+        file.write_function(u)
+
+    # Degree 2 mesh (hex)
+    msh = gmsh_hex_model(2)
+    assert msh.geometry.cmaps[0].degree == 2
+    u = Function(VectorFunctionSpace(msh, ("Lagrange", 1)))
+    with pytest.raises(RuntimeError):
+        filename = Path(tempdir, "u3D_Q1.xdmf")
+        with XDMFFile(msh.comm, filename, "w") as file:
+            file.write_mesh(msh)
+            file.write_function(u)
+    u = Function(VectorFunctionSpace(msh, ("Lagrange", 2)))
+    filename = Path(tempdir, "u3D_Q2.xdmf")
+    with XDMFFile(msh.comm, filename, "w") as file:
+        file.write_mesh(msh)
+        file.write_function(u)
+
+    # TODO: Higher-order gmsh hex meshes not yet supported by DOLFINx
+    #
+    # # Degree 3 mesh (hex)
+    # msh = gmsh_hex_model(3)
+    # assert msh.geometry.cmaps[0].degree == 3
+    # u = Function(VectorFunctionSpace(msh, ("Lagrange", 1)))
+    # with pytest.raises(RuntimeError):
+    #     filename = Path(tempdir, "u3D_Q1.xdmf")
+    #     with XDMFFile(msh.comm, filename, "w") as file:
+    #         file.write_mesh(msh)
+    #         file.write_function(u)
+    # u = Function(VectorFunctionSpace(msh, ("Lagrange", 2)))
+    # filename = Path(tempdir, "u3D_Q2.xdmf")
+    # with XDMFFile(msh.comm, filename, "w") as file:
+    #     file.write_mesh(msh)
+    #     file.write_function(u)
