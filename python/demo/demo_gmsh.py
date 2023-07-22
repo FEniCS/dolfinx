@@ -193,4 +193,5 @@ with XDMFFile(msh.comm, "out_gmsh/mesh.xdmf", "a") as file:
     file.write_mesh(msh)
     file.write_meshtags(mt, msh.geometry, geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{msh.name}']/Geometry")
     file.write_meshtags(ft, msh.geometry, geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{msh.name}']/Geometry")
+
 # -
