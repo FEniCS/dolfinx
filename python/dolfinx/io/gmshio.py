@@ -198,8 +198,8 @@ if _has_gmsh:
             A triplet (mesh, cell_tags, facet_tags) where cell_tags hold
             markers for the cells and facet tags holds markers for
             facets (if tags are found in Gmsh model).
-        """
 
+        """
         if comm.rank == rank:
             # Get mesh geometry and mesh topology for each element
             x = extract_geometry(model)
@@ -214,7 +214,6 @@ if _has_gmsh:
                 _, dim, _, num_nodes, _, _ = model.mesh.getElementProperties(element)
                 cell_information[i] = {"id": element, "dim": dim, "num_nodes": num_nodes}
                 cell_dimensions[i] = dim
-                print(cell_information[i])
 
             # Sort elements by ascending dimension
             perm_sort = np.argsort(cell_dimensions)
@@ -265,32 +264,32 @@ if _has_gmsh:
 
         # Create MeshTags for facets
         topology = mesh.topology
+        tdim = topology.dim
         if has_facet_data:
             # Permute facets from MSH to DOLFINx ordering
             # FIXME: This does not work for prism meshes
             if topology.cell_types[0] == CellType.prism or topology.cell_types[0] == CellType.pyramid:
                 raise RuntimeError(f"Unsupported cell type {topology.cell_types[0]}")
 
-            facet_type = _cpp.mesh.cell_entity_type(_cpp.mesh.to_type(str(ufl_domain.ufl_cell())), topology.dim - 1, 0)
+            facet_type = _cpp.mesh.cell_entity_type(_cpp.mesh.to_type(str(ufl_domain.ufl_cell())), tdim - 1, 0)
             gmsh_facet_perm = cell_perm_array(facet_type, num_facet_nodes)
             marked_facets = marked_facets[:, gmsh_facet_perm]
 
             local_entities, local_values = _cpp.io.distribute_entity_data(
-                mesh._cpp_object, mesh.topology.dim - 1, marked_facets, facet_values)
-            mesh.topology.create_connectivity(topology.dim - 1, topology.dim)
+                mesh._cpp_object, tdim - 1, marked_facets, facet_values)
+            mesh.topology.create_connectivity(topology.dim - 1, tdim)
             adj = _cpp.graph.AdjacencyList_int32(local_entities)
-            ft = meshtags_from_entities(mesh, topology.dim - 1, adj, local_values.astype(np.int32, copy=False))
+            ft = meshtags_from_entities(mesh, tdim - 1, adj, local_values.astype(np.int32, copy=False))
             ft.name = "Facet tags"
         else:
-            ft = meshtags(mesh, topology.dim - 1, np.empty(0, dtype=np.int32), np.empty(0, dtype=np.int32))
+            ft = meshtags(mesh, tdim - 1, np.empty(0, dtype=np.int32), np.empty(0, dtype=np.int32))
 
         return (mesh, ct, ft)
 
     def read_from_msh(filename: str, comm: _MPI.Comm, rank: int = 0, gdim: int = 3,
-                      partitioner: typing.Callable[
-            [_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32] =
-            create_cell_partitioner(GhostMode.none)) -> typing.Tuple[
-                Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
+                      partitioner: typing.Optional[typing.Callable[
+                          [_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32]] = None) -> typing.Tuple[
+            Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
         """Read a mesh from a msh-file and return a distributed DOLFINx
         mesh and cell and facet markers associated with physical groups
         in the msh file.
