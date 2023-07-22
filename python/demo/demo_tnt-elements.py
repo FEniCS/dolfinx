@@ -116,7 +116,7 @@ tnt_degree1 = basix.ufl.custom_element(
 # arbitrary degree TNT elements.
 
 
-def create_tnt_quad(degree):
+def create_tnt_quad(degree: int):
     assert degree > 1
     # Polyset
     ndofs = (degree + 1) ** 2 + 4
@@ -187,7 +187,7 @@ def create_tnt_quad(degree):
 # the solution.
 
 
-def poisson_error(V):
+def poisson_error(V: fem.FunctionSpace):
     msh = V.mesh
     u, v = TrialFunction(V), TestFunction(V)
 
