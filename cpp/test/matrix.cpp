@@ -8,7 +8,8 @@
 
 #include "poisson.h"
 #include <basix/mdspan.hpp>
-#include <catch2/catch.hpp>
+#include <catch2/catch_approx.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include <dolfinx.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/la/MatrixCSR.h>
@@ -132,7 +133,7 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
 {
   la::MatrixCSR A0 = create_operator(MPI_COMM_SELF);
   la::MatrixCSR A1 = create_operator(MPI_COMM_WORLD);
-  CHECK(A1.squared_norm() == Approx(A0.squared_norm()).epsilon(1e-8));
+  CHECK(A1.squared_norm() == Catch::Approx(A0.squared_norm()).epsilon(1e-8));
 }
 
 [[maybe_unused]] void test_matrix_apply()
