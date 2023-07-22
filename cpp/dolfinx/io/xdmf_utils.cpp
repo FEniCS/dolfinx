@@ -69,60 +69,6 @@ graph::AdjacencyList<T> all_to_all(MPI_Comm comm,
   return graph::AdjacencyList<T>(std::move(recv_values),
                                  std::move(recv_offset));
 }
-
-// /// Compute values at all mesh 'nodes'
-// /// @return The values at all geometric points
-// /// @warning This function will be removed soon. Use interpolation
-// /// instead.
-// template <typename T>
-// std::pair<std::vector<T>, std::array<std::size_t, 2>>
-// compute_point_values(const fem::Function<T, dolfinx::scalar_value_type_t<T>>&
-// u)
-// {
-//   auto V = u.function_space();
-//   assert(V);
-//   auto mesh = V->mesh();
-//   assert(mesh);
-//   const int tdim = mesh->topology()->dim();
-
-//   // Compute in tensor (one for scalar function, . . .)
-//   const std::size_t value_size_loc = V->element()->value_size();
-
-//   const std::size_t num_points = mesh->geometry().x().size() / 3;
-
-//   // Resize Array for holding point values
-//   std::vector<T> point_values(num_points * value_size_loc);
-
-//   // Prepare cell geometry
-//   auto x_dofmap = mesh->geometry().dofmap();
-
-//   if (mesh->geometry().cmaps().size() > 1)
-//   {
-//     throw std::runtime_error(
-//         "XDMF I/O with multiple geometry maps not implemented.");
-//   }
-
-//   // Interpolate point values on each cell (using last computed value if
-//   // not continuous, e.g. discontinuous Galerkin methods)
-//   auto map = mesh->topology()->index_map(tdim);
-//   assert(map);
-//   const std::int32_t num_cells = map->size_local() + map->num_ghosts();
-
-//   std::vector<std::int32_t> cells(num_points, -1);
-//   for (std::int32_t c = 0; c < num_cells; ++c)
-//   {
-//     // Get coordinates for all points in cell
-//     auto xdofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
-//     for (std::size_t i = 0; i < xdofs.size(); ++i)
-//       cells[xdofs[i]] = c;
-//   }
-
-//   u.eval(mesh->geometry().x(), {num_points, 3}, cells, point_values,
-//          {num_points, value_size_loc});
-
-//   return {std::move(point_values), {num_points, value_size_loc}};
-// }
-
 //-----------------------------------------------------------------------------
 // Get data width - normally the same as u.value_size(), but expand for
 // 2D vector/tensor because XDMF presents everything as 3D
