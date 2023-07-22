@@ -116,7 +116,7 @@ tnt_degree1 = basix.ufl.custom_element(
 # arbitrary degree TNT elements.
 
 
-def create_tnt_quad(degree: int):
+def create_tnt_quad(degree):
     assert degree > 1
     # Polyset
     ndofs = (degree + 1) ** 2 + 4
