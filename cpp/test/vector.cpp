@@ -6,6 +6,7 @@
 //
 // Unit tests for Distributed la::Vector
 
+#include <catch2/catch_template_test_macros.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <complex>
 #include <dolfinx/common/IndexMap.h>
@@ -55,8 +56,8 @@ void test_vector()
 
 } // namespace
 
-// TEMPLATE_TEST_CASE("Linear Algebra Vector", "[la_vector]", double,
-//                    std::complex<double>)
-// {
-//   CHECK_NOTHROW(test_vector<TestType>());
-// }
+TEMPLATE_TEST_CASE("Linear Algebra Vector", "[la_vector]", double,
+                   std::complex<double>)
+{
+  CHECK_NOTHROW(test_vector<TestType>());
+}

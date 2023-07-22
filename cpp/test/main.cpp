@@ -1,5 +1,3 @@
-#define CATCH_CONFIG_RUNNER
-// #include <catch2/catch.hpp>
 #include <catch2/catch_session.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <dolfinx/common/log.h>
@@ -14,6 +12,5 @@ int main(int argc, char* argv[])
   MPI_Init(&argc, &argv);
   int result = Catch::Session().run(argc, argv);
   MPI_Finalize();
-
   return result;
 }
