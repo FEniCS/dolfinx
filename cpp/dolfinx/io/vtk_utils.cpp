@@ -19,7 +19,7 @@
 using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
-std::pair<std::vector<std::int64_t>, std::array<std::size_t, 2>>
+std::pair<std::vector<std::int32_t>, std::array<std::size_t, 2>>
 io::extract_vtk_connectivity(
     std::experimental::mdspan<const std::int32_t,
                               std::experimental::dextents<std::size_t, 2>>
@@ -38,7 +38,7 @@ io::extract_vtk_connectivity(
 
   // Loop over cells
   std::array<std::size_t, 2> shape = {num_cells, num_nodes};
-  std::vector<std::int64_t> topology(shape[0] * shape[1]);
+  std::vector<std::int32_t> topology(shape[0] * shape[1]);
   for (std::size_t c = 0; c < num_cells; ++c)
   {
     // For each cell, get the 'nodes' and place in VTK order

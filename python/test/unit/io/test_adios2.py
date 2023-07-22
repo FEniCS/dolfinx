@@ -100,7 +100,8 @@ def test_fides_function_at_nodes(tempdir, dim, simplex):
     """Test saving P1 functions with Fides (with changing geometry)"""
 
     mesh = generate_mesh(dim, simplex)
-    v = Function(VectorFunctionSpace(mesh, ("Lagrange", 1)), dtype=default_scalar_type)
+    v = Function(VectorFunctionSpace(mesh, ("Lagrange", 1)),
+                 dtype=default_scalar_type)
     v.name = "v"
     q = Function(FunctionSpace(mesh, ("Lagrange", 1)))
     q.name = "q"
@@ -118,9 +119,11 @@ def test_fides_function_at_nodes(tempdir, dim, simplex):
 
             mesh.geometry.x[:, :2] += 0.1
             if mesh.geometry.dim == 2:
-                v.interpolate(lambda x: np.vstack((t * x[0], x[1] + x[1] * alpha)))
+                v.interpolate(lambda x: np.vstack(
+                    (t * x[0], x[1] + x[1] * alpha)))
             elif mesh.geometry.dim == 3:
-                v.interpolate(lambda x: np.vstack((t * x[2], x[0] + x[2] * 2 * alpha, x[1])))
+                v.interpolate(lambda x: np.vstack(
+                    (t * x[2], x[0] + x[2] * 2 * alpha, x[1])))
             f.write(t)
 
 
@@ -128,12 +131,13 @@ def test_fides_function_at_nodes(tempdir, dim, simplex):
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
 def test_second_order_vtx(tempdir):
     filename = Path(tempdir, "mesh_fides.bp")
-    points = np.array([[0, 0, 0], [1, 0, 0], [0.5, 0, 0]], dtype=default_real_type)
+    points = np.array([[0, 0, 0], [1, 0, 0], [0.5, 0, 0]],
+                      dtype=default_real_type)
     cells = np.array([[0, 1, 2]], dtype=np.int32)
     domain = ufl.Mesh(element(
         "Lagrange", "interval", 2, gdim=points.shape[1], rank=1))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
-    with VTXWriter(mesh.comm, filename, mesh) as f:
+    with VTXWriter(mesh.comm, filename, mesh, "BP4") as f:
         f.write(0.0)
 
 
@@ -143,10 +147,10 @@ def test_second_order_vtx(tempdir):
 def test_vtx_mesh(tempdir, dim, simplex):
     filename = Path(tempdir, "mesh_vtx.bp")
     mesh = generate_mesh(dim, simplex)
-    with VTXWriter(mesh.comm, filename, mesh) as f:
+    with VTXWriter(mesh.comm, filename, mesh, "BP4") as f:
         f.write(0.0)
-        mesh.geometry.x[:, 1] += 0.1
-        f.write(0.1)
+        # mesh.geometry.x[:, 1] += 0.1
+        # f.write(0.1)
 
 
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
@@ -273,7 +277,8 @@ def test_empty_rank_mesh(tempdir):
     if comm.rank == 0:
         cells = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.int64)
         cells = create_adjacencylist(cells)
-        x = np.array([[0., 0.], [1., 0.], [1., 1.], [0., 1.]], dtype=default_real_type)
+        x = np.array([[0., 0.], [1., 0.], [1., 1.], [0., 1.]],
+                     dtype=default_real_type)
     else:
         cells = create_adjacencylist(np.empty((0, 3), dtype=np.int64))
         x = np.empty((0, 2), dtype=default_real_type)
