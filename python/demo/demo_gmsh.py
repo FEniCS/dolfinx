@@ -35,6 +35,8 @@ from mpi4py import MPI
 # The following functions add Gmsh meshes to a 'model'.
 
 # +
+
+
 def gmsh_sphere(model: gmsh.model, name: str) -> gmsh.model:
     """Create a Gmsh model of a sphere.
 
@@ -150,6 +152,8 @@ def gmsh_ring(model: gmsh.model, name: str) -> gmsh.model:
 # for visualisation, e.g. using ParaView.
 
 # +
+
+
 def create_mesh(comm: MPI.Comm, model: gmsh.model, name: str, filename: str, mode: str):
     """Create a DOLFINx from a Gmsh model and output to file.
 
