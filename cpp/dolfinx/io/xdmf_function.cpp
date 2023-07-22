@@ -45,24 +45,6 @@ std::string rank_to_string(int value_rank)
 }
 //-----------------------------------------------------------------------------
 
-/// Returns true for DG0 fem::Functions
-template <typename Scalar>
-bool has_cell_centred_data(
-    const fem::Function<Scalar, dolfinx::scalar_value_type_t<Scalar>>& u)
-{
-  int cell_based_dim = 1;
-  const int rank = u.function_space()->element()->value_shape().size();
-  for (int i = 0; i < rank; i++)
-    cell_based_dim *= u.function_space()->mesh()->topology()->dim();
-
-  assert(u.function_space());
-  assert(u.function_space()->dofmap());
-  return (u.function_space()->dofmap()->element_dof_layout().num_dofs()
-              * u.function_space()->dofmap()->bs()
-          == cell_based_dim);
-}
-//-----------------------------------------------------------------------------
-
 /// Get data width - normally the same as u.value_size(), but expand for
 /// 2D vector/tensor because XDMF presents everything as 3D
 template <std::floating_point U>
@@ -107,7 +89,8 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
 
   // Get fem::Function data values and shape
   std::vector<T> data_values;
-  const bool cell_centred = has_cell_centred_data(u);
+  const bool cell_centred
+      = element->space_dimension() / element->block_size() == 1;
   if (cell_centred)
     data_values = xdmf_utils::get_cell_data_values(u);
   else

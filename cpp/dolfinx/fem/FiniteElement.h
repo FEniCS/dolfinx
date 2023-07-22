@@ -165,18 +165,19 @@ public:
   /// @return True if interpolation is an identity operation
   bool interpolation_ident() const noexcept;
 
-  /// Check if the push forward/pull back map from the values on reference to
-  /// the values on a physical cell for this element is the identity map.
+  /// Check if the push forward/pull back map from the values on
+  /// reference to the values on a physical cell for this element is the
+  /// identity map.
   /// @return True if the map is the identity
   bool map_ident() const noexcept;
 
-  /// @brief Points on the reference cell at which an expression needs to
-  /// be evaluated in order to interpolate the expression in the finite
-  /// element space.
+  /// @brief Points on the reference cell at which an expression needs
+  /// to be evaluated in order to interpolate the expression in the
+  /// finite element space.
   ///
-  /// For Lagrange elements the points will just be the
-  /// nodal positions. For other elements the points will typically be
-  /// the quadrature points used to evaluate moment degrees of freedom.
+  /// For Lagrange elements the points will just be the nodal positions.
+  /// For other elements the points will typically be the quadrature
+  /// points used to evaluate moment degrees of freedom.
   /// @return Interpolation point coordinates on the reference cell,
   /// returning the (0) coordinates data (row-major) storage and (1) the
   /// shape `(num_points, tdim)`.

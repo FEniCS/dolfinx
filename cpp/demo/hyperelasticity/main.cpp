@@ -220,8 +220,8 @@ int main(int argc, char* argv[])
     la::petsc::Vector _u(la::petsc::create_vector_wrap(*u->x()), false);
     newton_solver.solve(_u.vec());
 
-    // Compute Cauchy stress
-    // Construct appropriate Basix element for stress
+    // Compute Cauchy stress. Construct appropriate Basix element for
+    // stress.
     constexpr auto family = basix::element::family::P;
     const auto cell_type
         = mesh::cell_type_to_basix_type(mesh->topology()->cell_types()[0]);
