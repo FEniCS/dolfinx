@@ -239,8 +239,7 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
 
     Args:
         comm: MPI communicator to define the mesh on.
-        cells: Cells of the mesh. ``cells[i]`` is the 'nodes' of cell
-            ``i``.
+        cells: Cells of the mesh. ``cells[i]`` is the 'nodes' of cell ``i``.
         x: Mesh geometry ('node' coordinates), with shape ``(num_nodes, gdim)``.
         domain: UFL mesh.
         partitioner: Function that computes the parallel distribution of

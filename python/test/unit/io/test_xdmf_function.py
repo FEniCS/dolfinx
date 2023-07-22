@@ -6,6 +6,7 @@
 
 from pathlib import Path
 
+import basix
 import numpy as np
 import pytest
 from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
@@ -259,14 +260,18 @@ def test_higher_order_function(tempdir):
         msh, _, _ = gmshio.model_to_mesh(gmsh.model, comm, 0)
         return msh
 
-    # Degree 1 mesh (tet)
+    # -- Degree 1 mesh (tet)
     msh = gmsh_tet_model(1)
     assert msh.geometry.cmaps[0].degree == 1
+
+    # Write P1 Function
     u = Function(VectorFunctionSpace(msh, ("Lagrange", 1)))
     filename = Path(tempdir, "u3D_P1.xdmf")
     with XDMFFile(msh.comm, filename, "w") as file:
         file.write_mesh(msh)
         file.write_function(u)
+
+    # Write P2 Function (exception expected)
     u = Function(VectorFunctionSpace(msh, ("Lagrange", 2)))
     filename = Path(tempdir, "u3D_P2.xdmf")
     with pytest.raises(RuntimeError):
@@ -274,46 +279,69 @@ def test_higher_order_function(tempdir):
             file.write_mesh(msh)
             file.write_function(u)
 
-    # Degree 2 mesh (tet)
+    # -- Degree 2 mesh (tet)
     msh = gmsh_tet_model(2)
     assert msh.geometry.cmaps[0].degree == 2
+
+    # Write P1 Function (exception expected)
     u = Function(VectorFunctionSpace(msh, ("Lagrange", 1)))
     with pytest.raises(RuntimeError):
         filename = Path(tempdir, "u3D_P1.xdmf")
         with XDMFFile(msh.comm, filename, "w") as file:
             file.write_mesh(msh)
             file.write_function(u)
+
+    # Write P2 Function
     u = Function(VectorFunctionSpace(msh, ("Lagrange", 2)))
     filename = Path(tempdir, "u3D_P2.xdmf")
     with XDMFFile(msh.comm, filename, "w") as file:
         file.write_mesh(msh)
         file.write_function(u)
 
-    # Degree 3 mesh (tet)
+    # -- Degree 3 mesh (tet)
     # NOTE: XDMF/ParaView does not support TETRAHEDRON_20
     msh = gmsh_tet_model(3)
     assert msh.geometry.cmaps[0].degree == 3
+
+    # Write P2 Function (exception expected)
     u = Function(VectorFunctionSpace(msh, ("Lagrange", 2)))
     with pytest.raises(RuntimeError):
         filename = Path(tempdir, "u3D_P3.xdmf")
         with XDMFFile(msh.comm, filename, "w") as file:
             file.write_mesh(msh)
             file.write_function(u)
-    u = Function(VectorFunctionSpace(msh, ("Lagrange", 3)))
+
+    # Write P3 GLL Function (exception expected)
+    ufl_e = basix.ufl.element(basix.ElementFamily.P, basix.CellType.tetrahedron, 3, basix.LagrangeVariant.gll_warped)
+    u = Function(FunctionSpace(msh, ufl_e))
+    with pytest.raises(RuntimeError):
+        filename = Path(tempdir, "u3D_P3.xdmf")
+        with XDMFFile(msh.comm, filename, "w") as file:
+            file.write_mesh(msh)
+            file.write_function(u)
+
+    # Write P3 equispaced Function
+    ufl_e = basix.ufl.element(basix.ElementFamily.P, basix.CellType.tetrahedron, 3, basix.LagrangeVariant.equispaced)
+    u1 = Function(FunctionSpace(msh, ufl_e))
+    u1.interpolate(u)
     filename = Path(tempdir, "u3D_P3.xdmf")
     with XDMFFile(msh.comm, filename, "w") as file:
         file.write_mesh(msh)
-        file.write_function(u)
+        file.write_function(u1)
 
-    # Degree 2 mesh (hex)
+    # --  Degree 2 mesh (hex)
     msh = gmsh_hex_model(2)
     assert msh.geometry.cmaps[0].degree == 2
+
+    # Write Q1 Function (exception expected)
     u = Function(VectorFunctionSpace(msh, ("Lagrange", 1)))
     with pytest.raises(RuntimeError):
         filename = Path(tempdir, "u3D_Q1.xdmf")
         with XDMFFile(msh.comm, filename, "w") as file:
             file.write_mesh(msh)
             file.write_function(u)
+
+    # Write Q2 Function
     u = Function(VectorFunctionSpace(msh, ("Lagrange", 2)))
     filename = Path(tempdir, "u3D_Q2.xdmf")
     with XDMFFile(msh.comm, filename, "w") as file:

@@ -27,8 +27,8 @@ namespace
 {
 //-----------------------------------------------------------------------------
 
-// Convert a value_rank to the XDMF string description (Scalar, Vector,
-// Tensor)
+/// Convert a value_rank to the XDMF string description (Scalar, Vector,
+/// Tensor).
 std::string rank_to_string(int value_rank)
 {
   switch (value_rank)
@@ -63,8 +63,8 @@ bool has_cell_centred_data(
 }
 //-----------------------------------------------------------------------------
 
-// Get data width - normally the same as u.value_size(), but expand for
-// 2D vector/tensor because XDMF presents everything as 3D
+/// Get data width - normally the same as u.value_size(), but expand for
+/// 2D vector/tensor because XDMF presents everything as 3D
 template <std::floating_point U>
 int get_padded_width(const fem::FiniteElement<U>& e)
 {
@@ -102,6 +102,9 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
                              "Interpolate Functions before output.");
   }
 
+  auto map_c = mesh->topology()->index_map(mesh->topology()->dim());
+  assert(map_c);
+
   // Get fem::Function data values and shape
   std::vector<T> data_values;
   const bool cell_centred = has_cell_centred_data(u);
@@ -109,36 +112,46 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
     data_values = xdmf_utils::get_cell_data_values(u);
   else
   {
-    const auto& geometry = mesh->geometry();
-
     // Get number of geometry nodes per cell
-    int cmap_dim = geometry.cmaps()[0].dim();
+    const auto& geometry = mesh->geometry();
+    auto& cmap = geometry.cmaps()[0];
+    int cmap_dim = cmap.dim();
     int cell_dim = element->space_dimension() / element->block_size();
     if (cmap_dim != cell_dim)
     {
       throw std::runtime_error(
           "Degree of output Function must be same as mesh degree. Maybe the "
-          "Functions needs to be interpolated?");
+          "Function needs to be interpolated?");
     }
 
     auto dofmap = u.function_space()->dofmap();
     assert(dofmap);
 
+    // Check that dofmap layouts are equal and check Lagrange variants
+    if (dofmap->element_dof_layout() != cmap.create_dof_layout())
+    {
+      throw std::runtime_error("Function and Mesh dof layouts do not match. "
+                               "Maybe the Function needs to be interpolated?");
+    }
+    if (cmap.degree() > 2
+        and element->basix_element().lagrange_variant() != cmap.variant())
+    {
+      throw std::runtime_error("Mis-match in Lagrange family. Maybe the "
+                               "Function needs to be interpolated?");
+    }
+
     int rank = element->value_shape().size();
     int num_components = std::pow(3, rank);
 
     int tdim = mesh->topology()->dim();
-    auto cell_map = mesh->topology()->index_map(tdim);
-    assert(cell_map);
-    std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
+    std::int32_t num_cells = map_c->size_local() + map_c->num_ghosts();
     std::int32_t num_local_points = geometry.index_map()->size_local();
 
-    namespace stdex = std::experimental;
-
     // Get dof array and pack into array (padded where appropriate)
+    namespace stdex = std::experimental;
     auto dofmap_x = geometry.dofmap();
     const int bs = dofmap->bs();
-    std::span<const T> u_data = u.x()->array();
+    std::span<const T> x = u.x()->array();
     data_values.resize(num_local_points * num_components, 0);
     for (std::int32_t c = 0; c < num_cells; ++c)
     {
@@ -150,17 +163,11 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
         if (dofs_x[i] < num_local_points)
         {
           for (int j = 0; j < bs; ++j)
-          {
-            data_values[num_components * dofs_x[i] + j]
-                = u_data[bs * dofs[i] + j];
-          }
+            data_values[num_components * dofs_x[i] + j] = x[bs * dofs[i] + j];
         }
       }
     }
   }
-
-  auto map_c = mesh->topology()->index_map(mesh->topology()->dim());
-  assert(map_c);
 
   auto map_v = mesh->geometry().index_map();
   assert(map_v);
@@ -176,10 +183,8 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
   std::vector<std::string> components = {""};
   if constexpr (!std::is_scalar_v<T>)
     components = {"real", "imag"};
-
   std::string t_str = boost::lexical_cast<std::string>(t);
   std::replace(t_str.begin(), t_str.end(), '.', '_');
-
   for (const auto& component : components)
   {
     std::string attr_name;
