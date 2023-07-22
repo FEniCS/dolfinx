@@ -192,7 +192,7 @@ def test_save_3d_vector_series(tempdir, encoding, dtype, cell_type):
 
 
 def test_higher_order_function(tempdir):
-    gmsh= pytest.importorskip('gmsh')
+    gmsh = pytest.importorskip('gmsh')
     # import gmsh
     from dolfinx.io import gmshio
 
