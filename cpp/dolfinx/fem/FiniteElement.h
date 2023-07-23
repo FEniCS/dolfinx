@@ -26,13 +26,17 @@ template <std::floating_point T>
 class FiniteElement
 {
 public:
-  /// Create finite element from UFC finite element
-  /// @param[in] e UFC finite element
+  /// @brief Create finite element from UFC finite element.
+  /// @param[in] e UFC finite element.
   explicit FiniteElement(const ufcx_finite_element& e);
 
-  /// Create finite element from a Basix finite element
+  /// @brief Create finite element from a Basix finite element.
   /// @param[in] element Basix finite element
-  /// @param[in] value_shape Value shape for the element.
+  /// @param[in] value_shape Value shape for 'blocked' elements, e.g.
+  /// vector-valued Lagrange elements where each component for the
+  /// vector field is a Lagrange element. For example, a vector-valued
+  /// element in 3D will have `value_shape` equal to `{3}`, and for a
+  /// second-order tensor element in 2D `value_shape` equal to `{2, 2}`.
   FiniteElement(const basix::FiniteElement<T>& element,
                 const std::vector<std::size_t>& value_shape);
 
