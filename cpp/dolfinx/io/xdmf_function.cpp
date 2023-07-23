@@ -178,10 +178,13 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
     attr_node.append_attribute("Name") = attr_name.c_str();
     attr_node.append_attribute("AttributeType") = rank_to_string(rank).c_str();
     attr_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
+
+    std::span<const scalar_value_type_t<T>> u;
+    std::vector<scalar_value_type_t<T>> _data;
     if constexpr (!std::is_scalar_v<T>)
     {
-      // -- Complex case
-      std::vector<scalar_value_type_t<T>> _data(data_values.size());
+      // Complex-valued case
+      _data.resize(data_values.size());
       if (component == "real_")
       {
         std::transform(data_values.begin(), data_values.end(), _data.begin(),
@@ -192,20 +195,14 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
         std::transform(data_values.begin(), data_values.end(), _data.begin(),
                        [](auto x) { return x.imag(); });
       }
-
-      // Add data item of component
-      xdmf_utils::add_data_item(attr_node, h5_id, dataset_name,
-                                std::span<const scalar_value_type_t<T>>(_data),
-                                offset, {num_values, num_components}, "",
-                                use_mpi_io);
+      u = std::span<const scalar_value_type_t<T>>(_data);
     }
     else
-    {
-      // -- Real case, add data item
-      xdmf_utils::add_data_item(attr_node, h5_id, dataset_name,
-                                std::span<const T>(data_values), offset,
-                                {num_values, num_components}, "", use_mpi_io);
-    }
+      u = std::span<const T>(data_values);
+
+    // -- Real case, add data item
+    xdmf_utils::add_data_item(attr_node, h5_id, dataset_name, u, offset,
+                              {num_values, num_components}, "", use_mpi_io);
   }
 }
 //-----------------------------------------------------------------------------
