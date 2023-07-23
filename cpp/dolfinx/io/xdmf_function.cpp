@@ -168,6 +168,9 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
 
   // Add attribute DataItem node and write data
   const int width = get_padded_width(*u.function_space()->element());
+  if (width != num_components)
+    throw std::runtime_error("Width mis-match");
+
   assert(data_values.size() % width == 0);
   const std::int64_t num_values
       = cell_centred ? map_c->size_global() : map_v->size_global();

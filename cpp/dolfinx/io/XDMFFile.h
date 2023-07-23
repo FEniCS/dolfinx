@@ -132,11 +132,21 @@ public:
   std::pair<mesh::CellType, int>
   read_cell_type(std::string grid_name, std::string xpath = "/Xdmf/Domain");
 
-  /// Write Function
+  /// @brief Write a fem::Function to file.
+  ///
+  /// @pre The fem::Function `u` must be (i) a lowest-order (P0)
+  /// discontinuous Lagrange element or (ii) a continuous Lagrange
+  /// element and the element 'nodes' must be the same as the nodes of
+  /// its mesh::Mesh.
+  ///
+  /// @note For an arbitrary finite element function, user interpolation
+  /// to a suitable Lagrange space may be required to satisfy the
+  /// precondition on `u`.
+  ///
   /// @param[in] u Function to write to file.
-  /// @param[in] t Time stamp to associate with the `Function`.
-  /// @param[in] mesh_xpath XPath for a Grid under which Function will
-  /// be inserted/
+  /// @param[in] t Time stamp to associate with `u`.
+  /// @param[in] mesh_xpath XPath for a Grid under which `u` will be
+  /// inserted.
   template <dolfinx::scalar T, std::floating_point U = scalar_value_type_t<T>>
   void write_function(const fem::Function<T, U>& u, double t,
                       std::string mesh_xpath

@@ -80,6 +80,21 @@ def test_save_2d_scalar(tempdir, encoding, dtype, cell_type):
         file.write_mesh(mesh)
         file.write_function(u1)
 
+    # Discontinuous (degree == 0)
+    V = FunctionSpace(mesh, ("Discontinuous Lagrange", 0))
+    u = Function(V, dtype=dtype)
+    with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
+        file.write_mesh(mesh)
+        file.write_function(u)
+
+    # Discontinuous (degree > 0) should raise exception
+    V = FunctionSpace(mesh, ("Discontinuous Lagrange", 1))
+    u = Function(V, dtype=dtype)
+    with pytest.raises(RuntimeError):
+        with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
+            file.write_mesh(mesh)
+            file.write_function(u)
+
 
 @pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
