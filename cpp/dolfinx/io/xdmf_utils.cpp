@@ -120,6 +120,7 @@ xdmf_utils::get_cell_type(const pugi::xml_node& topology_node)
     throw std::runtime_error("Cannot recognise cell type. Unknown value: "
                              + cell_type);
   }
+
   return it->second;
 }
 //----------------------------------------------------------------------------
@@ -220,8 +221,8 @@ std::int64_t xdmf_utils::get_num_cells(const pugi::xml_node& topology_node)
   if (tdims.size() != 2 and num_cells_topology == -1)
     throw std::runtime_error("Cannot determine number of cells in XDMF mesh");
 
-  // Check for consistency if number of cells appears in both the topology
-  // and DataItem nodes
+  // Check for consistency if number of cells appears in both the
+  // topology and DataItem nodes
   if (num_cells_topology != -1 and tdims.size() == 2)
   {
     if (num_cells_topology != tdims[0])

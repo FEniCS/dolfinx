@@ -43,7 +43,6 @@ std::string rank_to_string(int value_rank)
   }
 }
 //-----------------------------------------------------------------------------
-
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -72,6 +71,9 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
   auto map_c = mesh->topology()->index_map(mesh->topology()->dim());
   assert(map_c);
 
+  auto map_x = mesh->geometry().index_map();
+  assert(map_x);
+
   auto dofmap = u.function_space()->dofmap();
   assert(dofmap);
   const int bs = dofmap->bs();
@@ -87,8 +89,6 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
       = element->space_dimension() / element->block_size() == 1;
   if (cell_centred)
   {
-    // -- Cell-wise data
-
     // Get dof array and pack into array (padded where appropriate)
     const std::int32_t num_local_cells = map_c->size_local();
     data_values.resize(num_local_cells * num_components, 0);
@@ -103,8 +103,6 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
   }
   else
   {
-    // -- Node-wise data
-
     // Get number of geometry nodes per cell
     const auto& geometry = mesh->geometry();
     auto& cmap = geometry.cmaps()[0];
@@ -116,6 +114,8 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
           "Degree of output Function must be same as mesh degree. Maybe the "
           "Function needs to be interpolated?");
     }
+
+    // Check that dofmap layouts are equal and check Lagrange variants
     if (dofmap->element_dof_layout() != cmap.create_dof_layout())
     {
       throw std::runtime_error("Function and Mesh dof layouts do not match. "
@@ -129,7 +129,7 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
     }
 
     std::int32_t num_cells = map_c->size_local() + map_c->num_ghosts();
-    std::int32_t num_local_points = geometry.index_map()->size_local();
+    std::int32_t num_local_points = map_x->size_local();
 
     // Get dof array and pack into array (padded where appropriate)
     namespace stdex = std::experimental;
@@ -151,9 +151,10 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
     }
   }
 
-  // FIXME: could get this from relevant index map to avoid
-  // communication
-  // Compute data offset for this rank
+  // Global size
+  const std::int64_t num_values
+      = cell_centred ? map_c->size_global() : map_x->size_global();
+
   const std::int64_t num_local = data_values.size() / num_components;
   std::int64_t offset = 0;
   MPI_Exscan(&num_local, &offset, 1, MPI_INT64_T, MPI_SUM, comm);
@@ -182,16 +183,14 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
     }
 
     // Add attribute node
-    pugi::xml_node attribute_node = xml_node.append_child("Attribute");
-    assert(attribute_node);
-    attribute_node.append_attribute("Name") = attr_name.c_str();
-    attribute_node.append_attribute("AttributeType")
-        = rank_to_string(rank).c_str();
-    attribute_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
+    pugi::xml_node attr_node = xml_node.append_child("Attribute");
+    assert(attr_node);
+    attr_node.append_attribute("Name") = attr_name.c_str();
+    attr_node.append_attribute("AttributeType") = rank_to_string(rank).c_str();
+    attr_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
     if constexpr (!std::is_scalar_v<T>)
     {
-      // Complex case
-      // FIXME: Avoid copies by writing directly a compound data
+      // -- Complex case
       std::vector<scalar_value_type_t<T>> component_data_values(
           data_values.size());
       if (component == "real")
@@ -208,16 +207,17 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
       }
 
       // Add data item of component
-      xdmf_utils::add_data_item(attribute_node, h5_id, dataset_name,
-                                component_data_values, offset,
-                                {num_local, num_components}, "", use_mpi_io);
+      xdmf_utils::add_data_item(
+          attr_node, h5_id, dataset_name,
+          std::span<const scalar_value_type_t<T>>(component_data_values),
+          offset, {num_values, num_components}, "", use_mpi_io);
     }
     else
     {
-      // Real case - add data item
-      xdmf_utils::add_data_item(attribute_node, h5_id, dataset_name,
-                                data_values, offset,
-                                {num_local, num_components}, "", use_mpi_io);
+      // -- Real case, add data item
+      xdmf_utils::add_data_item(attr_node, h5_id, dataset_name,
+                                std::span<const T>(data_values), offset,
+                                {num_values, num_components}, "", use_mpi_io);
     }
   }
 }

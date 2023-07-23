@@ -24,11 +24,6 @@
 #include <utility>
 #include <vector>
 
-namespace pugi
-{
-class xml_node;
-} // namespace pugi
-
 namespace dolfinx
 {
 
@@ -55,12 +50,12 @@ class Topology;
 namespace io::xdmf_utils
 {
 
-// Get DOLFINx cell type string from XML topology node
-// @return DOLFINx cell type and polynomial degree
+/// Get DOLFINx cell type string from XML topology node
+/// @return DOLFINx cell type and polynomial degree
 std::pair<std::string, int> get_cell_type(const pugi::xml_node& topology_node);
 
-// Return (0) HDF5 filename and (1) path in HDF5 file from a DataItem
-// node
+/// Return (0) HDF5 filename and (1) path in HDF5 file from a DataItem
+/// node.
 std::array<std::string, 2> get_hdf5_paths(const pugi::xml_node& dataitem_node);
 
 std::filesystem::path
@@ -75,10 +70,11 @@ std::int64_t get_num_cells(const pugi::xml_node& topology_node);
 /// Get the VTK string identifier
 std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 
-/// Get owned entities and associated data from input entities defined
-/// by global 'node' indices. The input entities and data can be
-/// supplied on any rank and this function will manage the
-/// communication.
+/// @brief Get owned entities and associated data from input entities
+/// defined by global 'node' indices.
+///
+/// The input entities and data can be supplied on any rank and this
+/// function will manage the communication.
 ///
 /// @param[in] topology A mesh topology.
 /// @param[in] nodes_g Global 'input' indices for the mesh, as returned
@@ -99,14 +95,14 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 /// nodes_per_entity)`.
 /// @param[in] data Data associated with each entity in `entities`.
 /// @return (entity-vertex connectivity of owned entities, associated
-/// data (values) with each entity)
+/// data (values) with each entity).
 /// @note This function involves parallel distribution and must be
 /// called collectively. Global input indices for entities which are not
 /// owned by current rank could be passed to this function. E.g., rank0
 /// provides an entity with global input indices [gi0, gi1, gi2], but
 /// this identifies a triangle that is owned by rank1. It will be
-/// distributed and rank1 will receive the (local) cell-vertex connectivity
-/// for this triangle.
+/// distributed and rank1 will receive the (local) cell-vertex
+/// connectivity for this triangle.
 std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
 distribute_entity_data(
     const mesh::Topology& topology, const std::vector<std::int64_t>& nodes_g,
@@ -120,8 +116,8 @@ distribute_entity_data(
 /// TODO: Document
 template <typename T>
 void add_data_item(pugi::xml_node& xml_node, hid_t h5_id,
-                   const std::string& h5_path, const T& x, std::int64_t offset,
-                   const std::vector<std::int64_t>& shape,
+                   const std::string& h5_path, std::span<const T> x,
+                   std::int64_t offset, const std::vector<std::int64_t>& shape,
                    const std::string& number_type, bool use_mpi_io)
 {
   // Add DataItem node
@@ -148,7 +144,7 @@ void add_data_item(pugi::xml_node& xml_node, hid_t h5_id,
     assert(shape.size() == 2);
     std::ostringstream s;
     s.precision(16);
-    for (std::size_t i = 0; i < (std::size_t)x.size(); ++i)
+    for (std::size_t i = 0; i < x.size(); ++i)
     {
       if ((i + 1) % shape[1] == 0 and shape[1] != 0)
         s << x.data()[i] << std::endl;
@@ -189,9 +185,9 @@ void add_data_item(pugi::xml_node& xml_node, hid_t h5_id,
 }
 
 /// @brief Get data associated with a data set node.
-/// @tparam T Data type to read into
-/// @warning Data will be silently cast to type `T` if requested type and
-/// storage type differ.
+/// @tparam T Data type to read into.
+/// @warning Data will be silently cast to type `T` if requested type
+/// and storage type differ.
 template <typename T>
 std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
                            hid_t h5_id,
@@ -288,9 +284,8 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
       }
       else
       {
-        throw std::runtime_error(
-            "This combination of array shapes in XDMF and HDF5 "
-            "is not supported");
+        throw std::runtime_error("This combination of array shapes in XDMF and "
+                                 "HDF5 is not supported");
       }
     }
 
