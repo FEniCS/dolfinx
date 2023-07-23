@@ -17,8 +17,6 @@
 #include <utility>
 #include <vector>
 
-#include <iostream>
-
 using namespace dolfinx;
 using namespace dolfinx::fem;
 
@@ -531,7 +529,7 @@ FiniteElement<T>::create_interpolation_operator(const FiniteElement& from) const
     std::vector<T> out(shape[0] * shape[1]);
 
     // NOTE: Alternatively this operation could be implemented during
-    // matvec with the original matrix
+    // matvec with the original matrix.
     for (std::size_t i = 0; i < dshape[0]; ++i)
       for (std::size_t j = 0; j < dshape[1]; ++j)
         for (int k = 0; k < _bs; ++k)

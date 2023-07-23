@@ -285,8 +285,6 @@ public:
 
     if (value_size != _function_space->element()->value_size())
     {
-      std::cout << "SSSSS: " << value_size << ", "
-                << _function_space->element()->value_size() << std::endl;
       throw std::runtime_error(
           "Function value size not equal to Expression value size");
     }
