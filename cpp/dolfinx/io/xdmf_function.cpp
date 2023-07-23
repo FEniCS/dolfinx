@@ -163,24 +163,14 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
 
   std::vector<std::string> components = {""};
   if constexpr (!std::is_scalar_v<T>)
-    components = {"real", "imag"};
+    components = {"real_", "imag_"};
   std::string t_str = boost::lexical_cast<std::string>(t);
   std::replace(t_str.begin(), t_str.end(), '.', '_');
   for (auto component : components)
   {
-    std::string attr_name, dataset_name;
-    if (component.empty())
-    {
-      attr_name = u.name;
-      dataset_name
-          = std::string("/Function/") + attr_name + std::string("/") + t_str;
-    }
-    else
-    {
-      attr_name = component + std::string("_") + u.name;
-      dataset_name
-          = std::string("/Function/") + attr_name + std::string("/") + t_str;
-    }
+    std::string attr_name = component + u.name;
+    std::string dataset_name
+        = std::string("/Function/") + attr_name + std::string("/") + t_str;
 
     // Add attribute node
     pugi::xml_node attr_node = xml_node.append_child("Attribute");
@@ -191,26 +181,23 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
     if constexpr (!std::is_scalar_v<T>)
     {
       // -- Complex case
-      std::vector<scalar_value_type_t<T>> component_data_values(
-          data_values.size());
-      if (component == "real")
+      std::vector<scalar_value_type_t<T>> _data(data_values.size());
+      if (component == "real_")
       {
-        std::transform(data_values.begin(), data_values.end(),
-                       component_data_values.begin(),
+        std::transform(data_values.begin(), data_values.end(), _data.begin(),
                        [](auto x) { return x.real(); });
       }
-      else if (component == "imag")
+      else if (component == "imag_")
       {
-        std::transform(data_values.begin(), data_values.end(),
-                       component_data_values.begin(),
+        std::transform(data_values.begin(), data_values.end(), _data.begin(),
                        [](auto x) { return x.imag(); });
       }
 
       // Add data item of component
-      xdmf_utils::add_data_item(
-          attr_node, h5_id, dataset_name,
-          std::span<const scalar_value_type_t<T>>(component_data_values),
-          offset, {num_values, num_components}, "", use_mpi_io);
+      xdmf_utils::add_data_item(attr_node, h5_id, dataset_name,
+                                std::span<const scalar_value_type_t<T>>(_data),
+                                offset, {num_values, num_components}, "",
+                                use_mpi_io);
     }
     else
     {
