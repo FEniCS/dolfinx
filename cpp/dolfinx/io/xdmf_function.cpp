@@ -44,20 +44,6 @@ std::string rank_to_string(int value_rank)
 }
 //-----------------------------------------------------------------------------
 
-/// Get data width - normally the same as u.value_size(), but expand for
-/// 2D vector/tensor because XDMF presents everything as 3D
-template <std::floating_point U>
-int get_padded_width(const fem::FiniteElement<U>& e)
-{
-  const int width = e.value_size();
-  const int rank = e.value_shape().size();
-  if (rank == 1 and width == 2)
-    return 3;
-  else if (rank == 2 and width == 4)
-    return 9;
-  return width;
-}
-//-----------------------------------------------------------------------------
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -101,6 +87,8 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
       = element->space_dimension() / element->block_size() == 1;
   if (cell_centred)
   {
+    // -- Cell-wise data
+
     // Get dof array and pack into array (padded where appropriate)
     const std::int32_t num_local_cells = map_c->size_local();
     data_values.resize(num_local_cells * num_components, 0);
@@ -115,6 +103,8 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
   }
   else
   {
+    // -- Node-wise data
+
     // Get number of geometry nodes per cell
     const auto& geometry = mesh->geometry();
     auto& cmap = geometry.cmaps()[0];
@@ -126,8 +116,6 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
           "Degree of output Function must be same as mesh degree. Maybe the "
           "Function needs to be interpolated?");
     }
-
-    // Check that dofmap layouts are equal and check Lagrange variants
     if (dofmap->element_dof_layout() != cmap.create_dof_layout())
     {
       throw std::runtime_error("Function and Mesh dof layouts do not match. "
@@ -163,29 +151,23 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
     }
   }
 
-  auto map_v = mesh->geometry().index_map();
-  assert(map_v);
+  // FIXME: could get this from relevant index map to avoid
+  // communication
+  // Compute data offset for this rank
+  const std::int64_t num_local = data_values.size() / num_components;
+  std::int64_t offset = 0;
+  MPI_Exscan(&num_local, &offset, 1, MPI_INT64_T, MPI_SUM, comm);
 
-  // Add attribute DataItem node and write data
-  const int width = get_padded_width(*u.function_space()->element());
-  if (width != num_components)
-    throw std::runtime_error("Width mis-match");
-
-  assert(data_values.size() % width == 0);
-  const std::int64_t num_values
-      = cell_centred ? map_c->size_global() : map_v->size_global();
-
-  const int value_rank = u.function_space()->element()->value_shape().size();
+  const bool use_mpi_io = dolfinx::MPI::size(comm) > 1;
 
   std::vector<std::string> components = {""};
   if constexpr (!std::is_scalar_v<T>)
     components = {"real", "imag"};
   std::string t_str = boost::lexical_cast<std::string>(t);
   std::replace(t_str.begin(), t_str.end(), '.', '_');
-  for (const auto& component : components)
+  for (auto component : components)
   {
-    std::string attr_name;
-    std::string dataset_name;
+    std::string attr_name, dataset_name;
     if (component.empty())
     {
       attr_name = u.name;
@@ -198,51 +180,44 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
       dataset_name
           = std::string("/Function/") + attr_name + std::string("/") + t_str;
     }
+
     // Add attribute node
     pugi::xml_node attribute_node = xml_node.append_child("Attribute");
     assert(attribute_node);
     attribute_node.append_attribute("Name") = attr_name.c_str();
     attribute_node.append_attribute("AttributeType")
-        = rank_to_string(value_rank).c_str();
+        = rank_to_string(rank).c_str();
     attribute_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
-
-    const bool use_mpi_io = dolfinx::MPI::size(comm) > 1;
     if constexpr (!std::is_scalar_v<T>)
     {
       // Complex case
-
       // FIXME: Avoid copies by writing directly a compound data
-      std::vector<double> component_data_values(data_values.size());
+      std::vector<scalar_value_type_t<T>> component_data_values(
+          data_values.size());
       if (component == "real")
       {
-        for (std::size_t i = 0; i < data_values.size(); i++)
-          component_data_values[i] = data_values[i].real();
+        std::transform(data_values.begin(), data_values.end(),
+                       component_data_values.begin(),
+                       [](auto x) { return x.real(); });
       }
       else if (component == "imag")
       {
-        for (std::size_t i = 0; i < data_values.size(); i++)
-          component_data_values[i] = data_values[i].imag();
+        std::transform(data_values.begin(), data_values.end(),
+                       component_data_values.begin(),
+                       [](auto x) { return x.imag(); });
       }
 
       // Add data item of component
-      const std::int64_t num_local = component_data_values.size() / width;
-      std::int64_t offset = 0;
-      MPI_Exscan(&num_local, &offset, 1, MPI_INT64_T, MPI_SUM, comm);
       xdmf_utils::add_data_item(attribute_node, h5_id, dataset_name,
                                 component_data_values, offset,
-                                {num_values, width}, "", use_mpi_io);
+                                {num_local, num_components}, "", use_mpi_io);
     }
     else
     {
-      // Real case
-
-      // Add data item
-      const std::int64_t num_local = data_values.size() / width;
-      std::int64_t offset = 0;
-      MPI_Exscan(&num_local, &offset, 1, MPI_INT64_T, MPI_SUM, comm);
+      // Real case - add data item
       xdmf_utils::add_data_item(attribute_node, h5_id, dataset_name,
-                                data_values, offset, {num_values, width}, "",
-                                use_mpi_io);
+                                data_values, offset,
+                                {num_local, num_components}, "", use_mpi_io);
     }
   }
 }
