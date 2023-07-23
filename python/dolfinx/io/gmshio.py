@@ -6,19 +6,18 @@
 """Tools to extract data from Gmsh models"""
 import typing
 
-import numpy as np
-import numpy.typing as npt
-
 import basix
 import basix.ufl
+import numpy as np
+import numpy.typing as npt
 import ufl
-from dolfinx import cpp as _cpp
 from dolfinx.cpp.graph import AdjacencyList_int32
-from dolfinx.mesh import (CellType, GhostMode, Mesh, create_cell_partitioner,
-                          create_mesh, meshtags, meshtags_from_entities)
-from dolfinx import default_real_type
-
+from dolfinx.mesh import (CellType, Mesh, create_mesh, meshtags,
+                          meshtags_from_entities)
 from mpi4py import MPI as _MPI
+
+from dolfinx import cpp as _cpp
+from dolfinx import default_real_type
 
 __all__ = ["cell_perm_array", "ufl_mesh"]
 
