@@ -81,9 +81,8 @@ _extract_sub_element(const FiniteElement<T>& finite_element,
   // Check the number of available sub systems
   if (component[0] >= finite_element.num_sub_elements())
   {
-    throw std::runtime_error(
-        "Cannot extract subsystem of finite element. Requested "
-        "subsystem out of range.");
+    throw std::runtime_error("Cannot extract subsystem of finite element. "
+                             "Requested subsystem out of range.");
   }
 
   // Get sub system
@@ -95,7 +94,7 @@ _extract_sub_element(const FiniteElement<T>& finite_element,
     return sub_element;
 
   // Otherwise, recursively extract the sub sub system
-  const std::vector<int> sub_component(component.begin() + 1, component.end());
+  std::vector<int> sub_component(component.begin() + 1, component.end());
 
   return _extract_sub_element(*sub_element, sub_component);
 }
@@ -288,12 +287,14 @@ FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
 
   _space_dim = _bs * element.dim();
 
+  // Create all sub-elements
   if (_bs > 1)
   {
-    // Create all sub-elements
     for (int i = 0; i < _bs; ++i)
+    {
       _sub_elements.push_back(std::make_shared<FiniteElement<T>>(
           element, std::vector<std::size_t>{}));
+    }
   }
 
   _element = std::make_unique<basix::FiniteElement<T>>(element);
