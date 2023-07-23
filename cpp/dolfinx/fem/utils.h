@@ -655,7 +655,7 @@ template <std::floating_point T>
 FunctionSpace<T>
 create_functionspace(std::shared_ptr<mesh::Mesh<T>> mesh,
                      const basix::FiniteElement<T>& e,
-                     const std::vector<std::size_t>& value_shape,
+                     const std::vector<std::size_t>& value_shape = {},
                      const std::function<std::vector<int>(
                          const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
                      = nullptr)
