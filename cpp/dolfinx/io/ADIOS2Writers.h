@@ -475,19 +475,19 @@ public:
           "Mixed functions are not supported by FidesWriter");
     }
 
-    // Check if function is DG 0
-    if (element0->space_dimension() / element0->block_size() == 1)
-    {
-      throw std::runtime_error(
-          "Piecewise constants are not (yet) supported by FidesWriter");
-    }
-
     // FIXME: is the below check adequate for detecting a
     // Lagrange element? Check that element is Lagrange
     if (!element0->interpolation_ident())
     {
       throw std::runtime_error("Only Lagrange functions are supported. "
                                "Interpolate Functions before output.");
+    }
+
+    // Check if function is DG 0
+    if (element0->space_dimension() / element0->block_size() == 1)
+    {
+      throw std::runtime_error(
+          "Piecewise constants are not (yet) supported by FidesWriter");
     }
 
     // Check that all functions are first order Lagrange
@@ -893,14 +893,6 @@ public:
           "Mixed functions are not supported by VTXWriter.");
     }
 
-    // Check if function is DG 0
-    if (element0->space_dimension() / element0->block_size() == 1)
-    {
-      throw std::runtime_error(
-          "VTK does not support cell-wise fields. See "
-          "https://gitlab.kitware.com/vtk/vtk/-/issues/18458.");
-    }
-
     // FIXME: is the below check adequate for detecting a Lagrange
     // element?
     // Check that element is Lagrange
@@ -909,6 +901,14 @@ public:
       throw std::runtime_error(
           "Only (discontinuous) Lagrange functions are "
           "supported. Interpolate Functions before output.");
+    }
+
+    // Check if function is DG 0
+    if (element0->space_dimension() / element0->block_size() == 1)
+    {
+      throw std::runtime_error(
+          "VTK does not support cell-wise fields. See "
+          "https://gitlab.kitware.com/vtk/vtk/-/issues/18458.");
     }
 
     // Check that all functions come from same element type

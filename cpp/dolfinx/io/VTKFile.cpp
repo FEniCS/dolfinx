@@ -8,6 +8,7 @@
 #include "cells.h"
 #include "vtk_utils.h"
 #include "xdmf_utils.h"
+#include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/fem/DofMap.h>
@@ -32,27 +33,13 @@ namespace
 /// field
 constexpr std::array field_ext = {"_real", "_imag"};
 
-//----------------------------------------------------------------------------
-/// Return true if Function is a cell-wise constant, otherwise false
-template <dolfinx::scalar T>
-bool is_cellwise(const fem::FunctionSpace<T>& V)
+/// Return true if element is a cell-wise constant, otherwise false
+template <std::floating_point T>
+bool is_cellwise(const fem::FiniteElement<T>& e)
 {
-  assert(V.element());
-  const int rank = V.element()->value_shape().size();
-  assert(V.mesh());
-  const int tdim = V.mesh()->topology()->dim();
-
-  // cell_based_dim = tdim^rank
-  int cell_based_dim = 1;
-  for (int i = 0; i < rank; ++i)
-    cell_based_dim *= tdim;
-
-  assert(V.dofmap());
-  if (V.dofmap()->element_dof_layout().num_dofs() == cell_based_dim)
-    return true;
-  else
-    return false;
+  return e.space_dimension() / e.block_size() == 1;
 }
+
 //----------------------------------------------------------------------------
 
 /// Get counter string to include in filename
@@ -355,7 +342,7 @@ void write_function(
   {
     auto V = v.get().function_space();
     assert(V);
-    if (!is_cellwise(*V))
+    if (!is_cellwise(*V->element()))
     {
       V0 = V;
       break;
@@ -383,20 +370,20 @@ void write_function(
     if (!V->component().empty())
       throw std::runtime_error("Cannot write sub-Functions to VTK file.");
 
-    auto element = V->element();
-    assert(element);
+    auto e = V->element();
+    assert(e);
 
     // Check that element uses point evaluations
-    if (!element->interpolation_ident())
+    if (!e->interpolation_ident())
     {
       throw std::runtime_error("Only Lagrange functions are supported. "
                                "Interpolate Functions before output.");
     }
 
     // Check that pointwise elements are the same (up to the block size)
-    if (!is_cellwise(*V))
+    if (!is_cellwise(*e))
     {
-      if (*element != *element0)
+      if (*e != *element0)
       {
         throw std::runtime_error("All point-wise Functions written to VTK file "
                                  "must have same element.");
@@ -429,7 +416,7 @@ void write_function(
   std::vector<std::uint8_t> x_ghost;
   std::vector<std::int64_t> cells;
   std::array<std::size_t, 2> cshape;
-  if (is_cellwise(*V0))
+  if (is_cellwise(*V0->element()))
   {
     std::vector<std::int64_t> tmp;
     std::tie(tmp, cshape) = io::extract_vtk_connectivity(
@@ -470,13 +457,14 @@ void write_function(
   constexpr std::array tensor_str = {"Scalars", "Vectors", "Tensors"};
   for (auto _u : u)
   {
-    auto V = _u.get().function_space();
-    assert(V);
-    auto data_type = is_cellwise(*V) ? "CellData" : "PointData";
+    assert(_u.get().function_space());
+    auto e = _u.get().function_space()->element();
+    assert(e);
+    auto data_type = is_cellwise(*e) ? "CellData" : "PointData";
     if (piece_node.child(data_type).empty())
       piece_node.append_child(data_type);
 
-    const int rank = V->element()->value_shape().size();
+    const int rank = e->value_shape().size();
     pugi::xml_node data_node = piece_node.child(data_type);
     if (data_node.attribute(tensor_str[rank]).empty())
       data_node.append_attribute(tensor_str[rank]);
@@ -488,10 +476,11 @@ void write_function(
   for (auto _u : u)
   {
     auto V = _u.get().function_space();
-    auto element = V->element();
-    int rank = element->value_shape().size();
+    auto e = V->element();
+    assert(e);
+    int rank = e->value_shape().size();
     std::int32_t num_comp = std::pow(3, rank);
-    if (is_cellwise(*V))
+    if (is_cellwise(*e))
     {
       // -- Cell-wise data
 
@@ -628,7 +617,7 @@ void write_function(
     grid_node.append_attribute("GhostLevel") = 1;
     for (auto _u : u)
     {
-      if (is_cellwise(*_u.get().function_space()))
+      if (auto e = _u.get().function_space()->element(); is_cellwise(*e))
       {
         if (grid_node.child("PCellData").empty())
           grid_node.append_child("PCellData");
@@ -647,9 +636,12 @@ void write_function(
     for (auto _u : u)
     {
       auto V = _u.get().function_space();
-      std::string d_type = is_cellwise(*V) ? "PCellData" : "PPointData";
+      assert(V);
+      auto e = V->element();
+      assert(e);
+      std::string d_type = is_cellwise(*e) ? "PCellData" : "PPointData";
       pugi::xml_node data_pnode = grid_node.child(d_type.c_str());
-      const int rank = V->element()->value_shape().size();
+      const int rank = e->value_shape().size();
       constexpr std::array ncomps = {0, 3, 9};
 
       auto add_field = [&](const std::string& name, int size)
