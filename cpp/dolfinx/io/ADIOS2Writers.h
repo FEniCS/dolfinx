@@ -844,9 +844,9 @@ public:
   /// This format supports arbitrary degree meshes.
   ///
   /// @param[in] comm MPI communicator to open the file on.
-  /// @param[in] filename Name of output file,
-  /// @param[in] mesh Mesh to write,
-  /// @param[in] engine ADIOS2 engine type,
+  /// @param[in] filename Name of output file.
+  /// @param[in] mesh Mesh to write.
+  /// @param[in] engine ADIOS2 engine type.
   /// @note This format supports arbitrary degree meshes.
   /// @note The mesh geometry can be updated between write steps but the
   /// topology should not be changed between write steps.
