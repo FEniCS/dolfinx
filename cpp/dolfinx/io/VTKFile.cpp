@@ -169,11 +169,9 @@ void add_data(const std::string& name, int rank, std::span<const T> values,
   {
     using U = typename T::value_type;
     std::vector<U> v(values.size());
-
     std::transform(values.begin(), values.end(), v.begin(),
                    [](auto x) { return x.real(); });
     add_data_float(name + field_ext[0], rank, std::span<const U>(v), node);
-
     std::transform(values.begin(), values.end(), v.begin(),
                    [](auto x) { return x.imag(); });
     add_data_float(name + field_ext[1], rank, std::span<const U>(v), node);
@@ -350,7 +348,7 @@ void write_function(
     return;
 
   // Extract the first function space with pointwise data. If no
-  // pointwise functions, take first FunctionSpace
+  // pointwise functions, take first FunctionSpace.
   auto V0 = u.front().get().function_space();
   assert(V0);
   for (auto& v : u)
@@ -385,10 +383,20 @@ void write_function(
     if (!V->component().empty())
       throw std::runtime_error("Cannot write sub-Functions to VTK file.");
 
+    auto element = V->element();
+    assert(element);
+
+    // Check that element uses point evaluations
+    if (!element->interpolation_ident())
+    {
+      throw std::runtime_error("Only Lagrange functions are supported. "
+                               "Interpolate Functions before output.");
+    }
+
     // Check that pointwise elements are the same (up to the block size)
     if (!is_cellwise(*V))
     {
-      if (*(V->element()) != *element0)
+      if (*element != *element0)
       {
         throw std::runtime_error("All point-wise Functions written to VTK file "
                                  "must have same element.");
@@ -448,9 +456,7 @@ void write_function(
   // FIXME
   auto cell_types = topology0->cell_types();
   if (cell_types.size() > 1)
-  {
     throw std::runtime_error("Multiple cell types in IO");
-  }
 
   // Add mesh data to "Piece" node
   int tdim = topology0->dim();

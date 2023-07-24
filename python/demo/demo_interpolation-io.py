@@ -65,7 +65,7 @@ u0.interpolate(u)
 
 try:
     from dolfinx.io import VTXWriter
-    with VTXWriter(msh.comm, "output_nedelec.bp", u0) as f:
+    with VTXWriter(msh.comm, "output_nedelec.bp", u0, "bp4") as f:
         f.write(0.0)
 except ImportError:
     print("ADIOS2 required for VTX output")
