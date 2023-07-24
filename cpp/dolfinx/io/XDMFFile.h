@@ -136,12 +136,13 @@ public:
   ///
   /// @pre The fem::Function `u` must be (i) a lowest-order (P0)
   /// discontinuous Lagrange element or (ii) a continuous Lagrange
-  /// element and the element 'nodes' must be the same as the nodes of
-  /// its mesh::Mesh.
+  /// element where the element 'nodes' are the same as the nodes of its
+  /// mesh::Mesh. Otherwise an exception is raised.
   ///
-  /// @note For an arbitrary finite element function, user interpolation
-  /// to a suitable Lagrange space may be required to satisfy the
-  /// precondition on `u`.
+  /// @note User interpolation to a suitable Lagrange space may be
+  /// required to satisfy the precondition on `u`. The VTX output
+  /// (io::VTXWriter) format is recommended over XDMF for discontinuous
+  /// and/or high-order spaces.
   ///
   /// @param[in] u Function to write to file.
   /// @param[in] t Time stamp to associate with `u`.
