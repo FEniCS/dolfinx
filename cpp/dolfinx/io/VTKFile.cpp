@@ -432,8 +432,10 @@ void write_function(
     std::fill(std::next(x_ghost.begin(), xmap->size_local()), x_ghost.end(), 1);
   }
   else
+  {
     std::tie(x, xshape, x_id, x_ghost, cells, cshape)
         = io::vtk_mesh_from_space(*V0);
+  }
 
   // Add "Piece" node and required metadata
   pugi::xml_node piece_node = grid_node_vtu.append_child("Piece");
@@ -492,7 +494,7 @@ void write_function(
       auto u_vector = _u.get().x()->array();
       for (std::size_t c = 0; c < cshape[0]; ++c)
       {
-        std::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
+        auto dofs = dofmap->cell_dofs(c);
         for (std::size_t i = 0; i < dofs.size(); ++i)
           for (int k = 0; k < bs; ++k)
             data[num_comp * c + k] = u_vector[bs * dofs[i] + k];
@@ -549,7 +551,7 @@ void write_function(
         assert(dofmap);
         int bs = dofmap->bs();
 
-        // Interpolate on each cell
+        // Get data on each cell
         auto u_vector = _u.get().x()->array();
         std::vector<T> u(u_vector.size());
         for (std::size_t c = 0; c < cshape[0]; ++c)
@@ -732,10 +734,11 @@ void io::VTKFile::close()
 //----------------------------------------------------------------------------
 void io::VTKFile::flush()
 {
-  if (!_pvd_xml and dolfinx::MPI::rank(_comm.comm()) == 0)
+  int mpi_rank = dolfinx::MPI::rank(_comm.comm());
+  if (!_pvd_xml and mpi_rank == 0)
     throw std::runtime_error("VTKFile has already been closed");
 
-  if (MPI::rank(_comm.comm()) == 0)
+  if (mpi_rank == 0)
   {
     if (_filename.has_parent_path())
       std::filesystem::create_directories(_filename.parent_path());
