@@ -220,8 +220,8 @@ int main(int argc, char* argv[])
     la::petsc::Vector _u(la::petsc::create_vector_wrap(*u->x()), false);
     newton_solver.solve(_u.vec());
 
-    // Compute Cauchy stress
-    // Construct appropriate Basix element for stress
+    // Compute Cauchy stress. Construct appropriate Basix element for
+    // stress.
     constexpr auto family = basix::element::family::P;
     const auto cell_type
         = mesh::cell_type_to_basix_type(mesh->topology()->cell_types()[0]);
@@ -232,7 +232,7 @@ int main(int argc, char* argv[])
         family, cell_type, k, basix::element::lagrange_variant::unset,
         basix::element::dpc_variant::unset, discontinuous);
     auto S = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace(
-        mesh, S_element, pow(mesh->geometry().dim(), 2)));
+        mesh, S_element, std::vector<std::size_t>{3, 3}));
 
     auto sigma_expression = fem::create_expression<T, U>(
         *expression_hyperelasticity_sigma, {{"u", u}}, {});

@@ -222,8 +222,11 @@ uh = problem.solve()
 # <dolfinx.io.XDMFFile>` file visualization with ParaView or VisIt
 
 with io.XDMFFile(msh.comm, "out_biharmonic/biharmonic.xdmf", "w") as file:
+    V1 = fem.FunctionSpace(msh, ("Lagrange", 1))
+    u1 = fem.Function(V1)
+    u1.interpolate(uh)
     file.write_mesh(msh)
-    file.write_function(uh)
+    file.write_function(u1)
 
 # and displayed using [pyvista](https://docs.pyvista.org/).
 

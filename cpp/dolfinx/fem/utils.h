@@ -646,21 +646,24 @@ Form<T, U> create_form(
 /// @brief Create a function space from a Basix element.
 /// @param[in] mesh Mesh
 /// @param[in] e Basix finite element.
-/// @param[in] bs The block size, e.g. 3 for a 'vector' Lagrange element
-/// in 3D.
+/// @param[in] value_shape Value shape for 'blocked' elements, e.g.
+/// vector-valued Lagrange elements where each component for the vector
+/// field is a Lagrange element. For example, a vector-valued element in
+/// 3D will have `value_shape` equal to `{3}`, and for a second-order
+/// tensor element in 2D `value_shape` equal to `{2, 2}`.
 /// @param[in] reorder_fn The graph reordering function to call on the
 /// dofmap. If `nullptr`, the default re-ordering is used.
 /// @return The created function space
 template <std::floating_point T>
-FunctionSpace<T>
-create_functionspace(std::shared_ptr<mesh::Mesh<T>> mesh,
-                     const basix::FiniteElement<T>& e, int bs,
-                     const std::function<std::vector<int>(
-                         const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
-                     = nullptr)
+FunctionSpace<T> create_functionspace(
+    std::shared_ptr<mesh::Mesh<T>> mesh, const basix::FiniteElement<T>& e,
+    const std::vector<std::size_t>& value_shape = {},
+    std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
+        reorder_fn
+    = nullptr)
 {
   // Create a DOLFINx element
-  auto _e = std::make_shared<FiniteElement<T>>(e, bs);
+  auto _e = std::make_shared<FiniteElement<T>>(e, value_shape);
   assert(_e);
 
   // Create UFC subdofmaps and compute offset
@@ -672,14 +675,14 @@ create_functionspace(std::shared_ptr<mesh::Mesh<T>> mesh,
     auto sub_element = _e->extract_sub_element({i});
     std::vector<int> parent_map_sub(sub_element->space_dimension());
     for (std::size_t j = 0; j < parent_map_sub.size(); ++j)
-      parent_map_sub[j] = i + bs * j;
+      parent_map_sub[j] = i + _e->block_size() * j;
     sub_doflayout.emplace_back(1, e.entity_dofs(), e.entity_closure_dofs(),
                                parent_map_sub, std::vector<ElementDofLayout>());
   }
 
   // Create a dofmap
-  ElementDofLayout layout(bs, e.entity_dofs(), e.entity_closure_dofs(), {},
-                          sub_doflayout);
+  ElementDofLayout layout(_e->block_size(), e.entity_dofs(),
+                          e.entity_closure_dofs(), {}, sub_doflayout);
   std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
       unpermute_dofs = nullptr;
   if (_e->needs_dof_permutations())
@@ -702,13 +705,12 @@ create_functionspace(std::shared_ptr<mesh::Mesh<T>> mesh,
 /// dofmap. If `nullptr`, the default re-ordering is used.
 /// @return The created function space.
 template <std::floating_point T>
-FunctionSpace<T>
-create_functionspace(ufcx_function_space* (*fptr)(const char*),
-                     const std::string& function_name,
-                     std::shared_ptr<mesh::Mesh<T>> mesh,
-                     const std::function<std::vector<int>(
-                         const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
-                     = nullptr)
+FunctionSpace<T> create_functionspace(
+    ufcx_function_space* (*fptr)(const char*), const std::string& function_name,
+    std::shared_ptr<mesh::Mesh<T>> mesh,
+    std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
+        reorder_fn
+    = nullptr)
 {
   ufcx_function_space* space = fptr(function_name.c_str());
   if (!space)
@@ -721,16 +723,17 @@ create_functionspace(ufcx_function_space* (*fptr)(const char*),
   ufcx_finite_element* ufcx_element = space->finite_element;
   assert(ufcx_element);
 
-  if (mesh->geometry().cmaps().size() > 1)
+  const auto& geometry = mesh->geometry();
+  if (geometry.cmaps().size() > 1)
     throw std::runtime_error("Not supported for Mixed Topology");
 
-  if (space->geometry_degree != mesh->geometry().cmaps()[0].degree()
+  const auto& cmap = geometry.cmaps()[0];
+  if (space->geometry_degree != cmap.degree()
       or static_cast<basix::cell::type>(space->geometry_basix_cell)
-             != mesh::cell_type_to_basix_type(
-                 mesh->geometry().cmaps()[0].cell_shape())
+             != mesh::cell_type_to_basix_type(cmap.cell_shape())
       or static_cast<basix::element::lagrange_variant>(
              space->geometry_basix_variant)
-             != mesh->geometry().cmaps()[0].variant())
+             != cmap.variant())
   {
     throw std::runtime_error("UFL mesh and CoordinateElement do not match.");
   }
@@ -739,18 +742,19 @@ create_functionspace(ufcx_function_space* (*fptr)(const char*),
   assert(element);
   ufcx_dofmap* ufcx_map = space->dofmap;
   assert(ufcx_map);
-  assert(mesh->topology());
+  const auto topology = mesh->topology();
+  assert(topology);
   ElementDofLayout layout
-      = create_element_dof_layout(*ufcx_map, mesh->topology()->cell_types()[0]);
+      = create_element_dof_layout(*ufcx_map, topology->cell_types()[0]);
 
   std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
-      unpermute_dofs = nullptr;
+      unpermute_dofs;
   if (element->needs_dof_permutations())
     unpermute_dofs = element->get_dof_permutation_function(true, true);
-  return FunctionSpace(mesh, element,
-                       std::make_shared<DofMap>(create_dofmap(
-                           mesh->comm(), layout, *mesh->topology(),
-                           unpermute_dofs, reorder_fn)));
+  return FunctionSpace(
+      mesh, element,
+      std::make_shared<DofMap>(create_dofmap(mesh->comm(), layout, *topology,
+                                             unpermute_dofs, reorder_fn)));
 }
 
 /// @private
@@ -823,17 +827,17 @@ concept FetchCells = requires(F&& f, std::span<const std::int32_t> v) {
 
 /// @brief Pack a single coefficient for a set of active entities.
 ///
-/// @param[out] c Coefficient to be packed
+/// @param[out] c Coefficient to be packed.
 /// @param[in] cstride Total number of coefficient values to pack for
 /// each entity.
 /// @param[in] u Function to extract coefficient data from.
 /// @param[in] cell_info Array of bytes describing which transformation
 /// has to be applied on the cell to map it to the reference element.
-/// @param[in] entities Set of active entities
+/// @param[in] entities Set of active entities.
 /// @param[in] estride Stride for each entity in active entities.
 /// @param[in] fetch_cells Function that fetches the cell index for an
 /// entity in active_entities.
-/// @param[in] offset The offset for c
+/// @param[in] offset The offset for c.
 template <dolfinx::scalar T, std::floating_point U>
 void pack_coefficient_entity(std::span<T> c, int cstride,
                              const Function<T, U>& u,
