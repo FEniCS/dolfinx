@@ -53,7 +53,7 @@ dtype = PETSc.ScalarType
 # modes.
 
 
-def build_nullspace(V):
+def build_nullspace(V: FunctionSpace):
     """Build PETSc nullspace for 3D elasticity"""
 
     # Create vectors that will span the nullspace
