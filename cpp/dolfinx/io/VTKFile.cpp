@@ -538,7 +538,7 @@ void write_function(
           add_data(_u.get().name, rank, std::span<const T>(data), data_node);
         }
       }
-      else if (*element == *element0)
+      else if (*e == *element0)
       {
         // -- Same element, possibly different dofmaps
 
