@@ -178,17 +178,16 @@ if _has_gmsh:
         """Given a Gmsh model, take all physical entities of the highest
         topological dimension and create the corresponding DOLFINx mesh.
 
-        It is assumed that the gmsh model is on a single rank, and is
-        then read into DOLFINx on a single process to be distributed.
-        This means that this function should only be called once for
-        large problems. It is recommended to save the mesh and
-        corresponding tags to XDMFFile after creation for efficient
-        access.
+        In parallel, the gmsh model is processed on one MPI rank, and
+        the resulting mesh is distributed by DOLFINx. For performance,
+        this function should only be called once for large problems. For
+        re-use, it is recommended to save the mesh and corresponding
+        tags using XDMFFile after creation for efficient access.
 
         Args:
-            comm: The MPI communicator to use for mesh creation
-            rank: The rank the Gmsh model is initialized on
-            model: The Gmsh model
+            model: Gmsh model.
+            comm: MPI communicator to use for mesh creation.
+            rank: MPI rank that the Gmsh model is initialized on.
             gdim: Geometrical dimension of the mesh
             partitioner: Function that computes the parallel
                 distribution of cells across MPI ranks
@@ -200,6 +199,7 @@ if _has_gmsh:
 
         """
         if comm.rank == rank:
+            assert model is not None, "Gmsh model is None on rank responsible for mesh creation."
             # Get mesh geometry and mesh topology for each element
             x = extract_geometry(model)
             topologies = extract_topology_and_markers(model)
