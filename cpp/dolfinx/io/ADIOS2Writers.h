@@ -768,8 +768,9 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
 /// @param[in] engine The ADIOS2 engine object
 /// @param[in] V The function space
 template <std::floating_point T>
-void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
-                               const fem::FunctionSpace<T>& V)
+std::pair<std::vector<std::int64_t>, std::vector<std::uint8_t>>
+vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
+                          const fem::FunctionSpace<T>& V)
 {
   auto mesh = V.mesh();
   assert(mesh);
@@ -827,8 +828,18 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   engine.Put(ghost, x_ghost.data());
 
   engine.PerformPuts();
+
+  return std::make_pair(x_id, x_ghost);
 }
 } // namespace impl_vtx
+
+/// Mesh reuse policy
+enum class VTXMeshPolicy
+{
+  update, ///< Re-write the mesh to file upon every write of a fem::Function
+  reuse   ///< Write the mesh to file only the first time a fem::Function is
+          ///< written to file
+};
 
 /// @brief Writer for meshes and functions using the ADIOS2 VTX format,
 /// see
@@ -853,7 +864,8 @@ public:
   VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
             std::shared_ptr<const mesh::Mesh<T>> mesh,
             std::string engine = "BPFile")
-      : ADIOS2Writer(comm, filename, "VTX mesh writer", engine), _mesh(mesh)
+      : ADIOS2Writer(comm, filename, "VTX mesh writer", engine), _mesh(mesh),
+        _mesh_reuse_policy(VTXMeshPolicy::update)
   {
     // Define VTK scheme attribute for mesh
     std::string vtk_scheme = impl_vtx::create_vtk_schema({}, {}).str();
@@ -870,12 +882,16 @@ public:
   /// same mesh and (2) be (discontinuous) Lagrange functions. The
   /// element family and degree must be the same for all functions.
   /// @param[in] engine ADIOS2 engine type.
+  /// @param[in] mesh_policy Controls if the mesh is written to file at
+  /// the first time step only or is re-written (updated) at each time
+  /// step.
   /// @note This format supports arbitrary degree meshes.
   VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
-            const typename adios2_writer::U<T>& u,
-            std::string engine = "BPFile")
+            const typename adios2_writer::U<T>& u, std::string engine,
+            const VTXMeshPolicy mesh_policy = VTXMeshPolicy::update)
       : ADIOS2Writer(comm, filename, "VTX function writer", engine),
-        _mesh(impl_adios2::extract_common_mesh<T>(u)), _u(u)
+        _mesh(impl_adios2::extract_common_mesh<T>(u)),
+        _mesh_reuse_policy(mesh_policy), _u(u)
   {
     if (u.empty())
       throw std::runtime_error("VTXWriter fem::Function list is empty.");
@@ -934,6 +950,27 @@ public:
     impl_adios2::define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
   }
 
+  /// @brief Create a VTX writer for a list of fem::Functions using
+  /// the default ADIOS2 engine.
+  ///
+  /// This format supports arbitrary degree meshes.
+  ///
+  /// @param[in] comm The MPI communicator to open the file on
+  /// @param[in] filename Name of output file
+  /// @param[in] u List of functions. The functions must (1) share the
+  /// same mesh and (2) be (discontinuous) Lagrange functions. The
+  /// element family and degree must be the same for all functions.
+  /// @param[in] mesh_policy Controls if the mesh is written to file at
+  /// the first time step only or is re-written (updated) at each time
+  /// step.
+  /// @note This format supports arbitrary degree meshes.
+  VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
+            const typename adios2_writer::U<T>& u,
+            const VTXMeshPolicy mesh_policy = VTXMeshPolicy::update)
+      : VTXWriter(comm, filename, u, "BPFile", mesh_policy)
+  {
+  }
+
   // Copy constructor
   VTXWriter(const VTXWriter&) = delete;
 
@@ -965,13 +1002,28 @@ public:
       impl_vtx::vtx_write_mesh(*_io, *_engine, *_mesh);
     else
     {
-      // Write a single mesh for functions as they share finite element
-      std::visit(
-          [&](auto& u) {
-            impl_vtx::vtx_write_mesh_from_space(*_io, *_engine,
-                                                *u->function_space());
-          },
-          _u[0]);
+      if (auto v = _io->template InquireVariable<std::int64_t>("connectivity");
+          !v or _mesh_reuse_policy == VTXMeshPolicy::update)
+      {
+        // Write a single mesh for functions as they share finite element
+        std::tie(x_id_cache, x_ghost_cache) = std::visit(
+            [&](auto& u) {
+              return impl_vtx::vtx_write_mesh_from_space(*_io, *_engine,
+                                                  *u->function_space());
+            },
+            _u[0]);
+      }
+      else
+      {
+        // Node global ids
+        adios2::Variable orig_id = impl_adios2::define_variable<std::int64_t>(
+            *_io, "vtkOriginalPointIds", {}, {}, {x_id_cache.size()});
+        _engine->Put(orig_id, x_id_cache.data());
+        adios2::Variable ghost = impl_adios2::define_variable<std::uint8_t>(
+            *_io, "vtkGhostType", {}, {}, {x_ghost_cache.size()});
+        _engine->Put(ghost, x_ghost_cache.data());
+        _engine->PerformPuts();
+      }
 
       // Write function data for each function to file
       for (auto& v : _u)
@@ -985,6 +1037,12 @@ public:
 private:
   std::shared_ptr<const mesh::Mesh<T>> _mesh;
   adios2_writer::U<T> _u;
+
+  // Control whether the mesh is written to file once or at every time
+  // step
+  VTXMeshPolicy _mesh_reuse_policy;
+  std::vector<std::int64_t> x_id_cache;
+  std::vector<std::uint8_t> x_ghost_cache;
 };
 
 /// Type deduction
