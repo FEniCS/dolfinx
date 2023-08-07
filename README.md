@@ -209,4 +209,3 @@ or use the FEniCS Slack channel:
 For bug reports visit:
 
 <https://github.com/FEniCS/dolfinx>
-
