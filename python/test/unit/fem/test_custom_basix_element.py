@@ -118,7 +118,7 @@ def test_custom_element_triangle_degree4():
 
 
 def test_custom_element_triangle_degree4_integral():
-    pts, wts = basix.make_quadrature(basix.CellType.interval, 10)
+    pts, wts = basix.quadrature.make_quadrature(basix.CellType.interval, 10)
     tab = basix.create_element(basix.ElementFamily.P, basix.CellType.interval, 2).tabulate(0, pts)[0, :, :, 0]
     wcoeffs = np.eye(15)
     x = [[np.array([[0., 0.]]), np.array([[1., 0.]]), np.array([[0., 1.]])],
