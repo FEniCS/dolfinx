@@ -34,14 +34,14 @@ jobs:
       - name: Install Basix
         run: |
           . /opt/intel/oneapi/setvars.sh
-          pip install git+https://github.com/FEniCS/basix.git
+          pip install git+https://github.com/FEniCS/basix.git@mscroggs/iso
 
       - name: Clone FFCx
         uses: actions/checkout@v3
         with:
           path: ./ffcx
           repository: FEniCS/ffcx
-          ref: main
+          ref: mscroggs/make_quadrature
       - name: Install FFCx C interface
         run: |
           . /opt/intel/oneapi/setvars.sh

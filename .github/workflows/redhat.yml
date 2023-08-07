@@ -27,8 +27,8 @@ jobs:
       - name: Install FEniCS Python components
         run: |
           python3 -m pip install git+https://github.com/FEniCS/ufl.git
-          python3 -m pip install git+https://github.com/FEniCS/basix.git
-          python3 -m pip install git+https://github.com/FEniCS/ffcx.git
+          python3 -m pip install git+https://github.com/FEniCS/basix.git@mscroggs/iso
+          python3 -m pip install git+https://github.com/FEniCS/ffcx.git@mscroggs/make_quadrature
 
       - name: Configure C++
         run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
