@@ -229,7 +229,7 @@ def test_assembly_into_quadrature_function(dtype):
     mesh = create_unit_square(MPI.COMM_WORLD, 3, 6, dtype=xtype)
 
     quadrature_degree = 2
-    quadrature_points, _ = basix.quadrature.make_quadrature(basix.CellType.triangle, quadrature_degree)
+    quadrature_points, _ = basix.make_quadrature(basix.CellType.triangle, quadrature_degree)
     quadrature_points = quadrature_points.astype(xtype)
     Q_element = blocked_element(QuadratureElement(
         "triangle", (), degree=quadrature_degree, scheme="default"), shape=(2, ))
