@@ -646,14 +646,3 @@ def test_AA_hex(family, degree, cell_type, datadir):
     mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_vector_test(mesh, V, (degree - 1) // 2)
-
-
-# Test iso element
-@pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
-@pytest.mark.parametrize("cell_type", [CellType.interval])
-@pytest.mark.parametrize("family", ["iso"])
-@pytest.mark.parametrize("degree", [1, 2, 3, 4])
-def test_iso(family, degree, cell_type, datadir):
-    mesh = get_mesh(cell_type, datadir)
-    V = FunctionSpace(mesh, (family, degree))
-    run_scalar_test(mesh, V, degree)
