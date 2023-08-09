@@ -35,16 +35,17 @@ fem::create_element_dof_layout(const ufcx_dofmap& dofmap,
 {
   const int element_block_size = dofmap.block_size;
 
-  // Copy over number of dofs per entity type
-  std::array<int, 4> num_entity_dofs, num_entity_closure_dofs;
-  std::copy_n(dofmap.num_entity_dofs, 4, num_entity_dofs.begin());
-  std::copy_n(dofmap.num_entity_closure_dofs, 4,
-              num_entity_closure_dofs.begin());
-
   // Fill entity dof indices
   const int tdim = mesh::cell_dim(cell_type);
   std::vector<std::vector<std::vector<int>>> entity_dofs(tdim + 1);
   std::vector<std::vector<std::vector<int>>> entity_closure_dofs(tdim + 1);
+
+  const int* dm_entity_dofs = dofmap.entity_dofs;
+  const int* dm_entity_dof_offsets = dofmap.entity_dof_offsets;
+  const int* dm_entity_closure_dofs = dofmap.entity_closure_dofs;
+  const int* dm_entity_closure_dof_offsets = dofmap.entity_closure_dof_offsets;
+
+  int p = 0;
   for (int dim = 0; dim <= tdim; ++dim)
   {
     const int num_entities = mesh::cell_num_entities(cell_type, dim);
@@ -52,12 +53,16 @@ fem::create_element_dof_layout(const ufcx_dofmap& dofmap,
     entity_closure_dofs[dim].resize(num_entities);
     for (int i = 0; i < num_entities; ++i)
     {
-      entity_dofs[dim][i].resize(num_entity_dofs[dim]);
-      dofmap.tabulate_entity_dofs(entity_dofs[dim][i].data(), dim, i);
-
-      entity_closure_dofs[dim][i].resize(num_entity_closure_dofs[dim]);
-      dofmap.tabulate_entity_closure_dofs(entity_closure_dofs[dim][i].data(),
-                                          dim, i);
+      int ndofs = dm_entity_dof_offsets[p + 1] - dm_entity_dof_offsets[p];
+      entity_dofs[dim][i].resize(ndofs);
+      std::copy_n(dm_entity_dofs + dm_entity_dof_offsets[p], ndofs,
+                  entity_dofs[dim][i].begin());
+      ndofs = dm_entity_closure_dof_offsets[p + 1]
+              - dm_entity_closure_dof_offsets[p];
+      entity_closure_dofs[dim][i].resize(ndofs);
+      std::copy_n(dm_entity_closure_dofs + dm_entity_closure_dof_offsets[p],
+                  ndofs, entity_closure_dofs[dim][i].begin());
+      ++p;
     }
   }
 
