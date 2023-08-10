@@ -331,9 +331,14 @@ Form<T, U> create_form(
   assert(topology);
   const int tdim = topology->dim();
 
+  const int* integral_offsets = ufcx_form.form_integral_offsets;
+  std::vector<int> num_integrals_type(3);
+  std::adjacent_difference(integral_offsets, integral_offsets + 4,
+                           num_integrals_type.begin());
+
   // Create facets, if required
-  if (ufcx_form.num_integrals(exterior_facet) > 0
-      or ufcx_form.num_integrals(interior_facet) > 0)
+  if (num_integrals_type[exterior_facet] > 0
+      or num_integrals_type[interior_facet] > 0)
   {
     mesh->topology_mutable()->create_entities(tdim - 1);
     mesh->topology_mutable()->create_connectivity(tdim - 1, tdim);
@@ -353,14 +358,16 @@ Form<T, U> create_form(
 
   // Attach cell kernels
   {
-    std::span<const int> ids(ufcx_form.integral_ids(cell),
-                             ufcx_form.num_integrals(cell));
+    std::span<const int> ids(ufcx_form.form_integral_ids
+                                 + integral_offsets[cell],
+                             num_integrals_type[cell]);
     auto itg = integral_data.insert({IntegralType::cell, {}});
     auto sd = subdomains.find(IntegralType::cell);
-    for (int i = 0; i < ufcx_form.num_integrals(cell); ++i)
+    for (int i = 0; i < num_integrals_type[cell]; ++i)
     {
       const int id = ids[i];
-      ufcx_integral* integral = ufcx_form.integrals(cell)[i];
+      ufcx_integral* integral
+          = ufcx_form.form_integrals[integral_offsets[cell] + i];
       assert(integral);
 
       kern k = nullptr;
@@ -411,14 +418,16 @@ Form<T, U> create_form(
 
   // Attach exterior facet kernels
   {
-    std::span<const int> ids(ufcx_form.integral_ids(exterior_facet),
-                             ufcx_form.num_integrals(exterior_facet));
+    std::span<const int> ids(ufcx_form.form_integral_ids
+                                 + integral_offsets[exterior_facet],
+                             num_integrals_type[exterior_facet]);
     auto itg = integral_data.insert({IntegralType::exterior_facet, {}});
     auto sd = subdomains.find(IntegralType::exterior_facet);
-    for (int i = 0; i < ufcx_form.num_integrals(exterior_facet); ++i)
+    for (int i = 0; i < num_integrals_type[exterior_facet]; ++i)
     {
       const int id = ids[i];
-      ufcx_integral* integral = ufcx_form.integrals(exterior_facet)[i];
+      ufcx_integral* integral
+          = ufcx_form.form_integrals[integral_offsets[exterior_facet] + i];
       assert(integral);
 
       kern k = nullptr;
@@ -479,14 +488,16 @@ Form<T, U> create_form(
 
   // Attach interior facet kernels
   {
-    std::span<const int> ids(ufcx_form.integral_ids(interior_facet),
-                             ufcx_form.num_integrals(interior_facet));
+    std::span<const int> ids(ufcx_form.form_integral_ids
+                                 + integral_offsets[interior_facet],
+                             num_integrals_type[interior_facet]);
     auto itg = integral_data.insert({IntegralType::interior_facet, {}});
     auto sd = subdomains.find(IntegralType::interior_facet);
-    for (int i = 0; i < ufcx_form.num_integrals(interior_facet); ++i)
+    for (int i = 0; i < num_integrals_type[interior_facet]; ++i)
     {
       const int id = ids[i];
-      ufcx_integral* integral = ufcx_form.integrals(interior_facet)[i];
+      ufcx_integral* integral
+          = ufcx_form.form_integrals[integral_offsets[interior_facet] + i];
       assert(integral);
 
       kern k = nullptr;
