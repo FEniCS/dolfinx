@@ -57,6 +57,7 @@ fem::create_element_dof_layout(const ufcx_dofmap& dofmap,
       entity_dofs[dim][i].resize(ndofs);
       std::copy_n(dm_entity_dofs + dm_entity_dof_offsets[p], ndofs,
                   entity_dofs[dim][i].begin());
+
       ndofs = dm_entity_closure_dof_offsets[p + 1]
               - dm_entity_closure_dof_offsets[p];
       entity_closure_dofs[dim][i].resize(ndofs);
