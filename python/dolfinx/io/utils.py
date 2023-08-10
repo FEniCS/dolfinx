@@ -7,19 +7,20 @@
 """IO module for input data and post-processing file output."""
 
 import typing
+from pathlib import Path
 
 import basix
 import basix.ufl
 import numpy as np
 import numpy.typing as npt
 import ufl
+from mpi4py import MPI as _MPI
+
+from dolfinx import cpp as _cpp
 from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh  # noqa F401
 from dolfinx.cpp.io import perm_vtk as cell_perm_vtk  # noqa F401
 from dolfinx.fem import Function
 from dolfinx.mesh import GhostMode, Mesh, MeshTags
-from mpi4py import MPI as _MPI
-
-from dolfinx import cpp as _cpp
 
 __all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk",
            "distribute_entity_data"]
@@ -49,7 +50,8 @@ if _cpp.common.has_adios2:
 
         """
 
-        def __init__(self, comm: _MPI.Comm, filename: str, output: typing.Union[Mesh, Function, typing.List[Function]],
+        def __init__(self, comm: _MPI.Comm, filename: typing.Union[str, Path],
+                     output: typing.Union[Mesh, Function, typing.List[Function]],
                      engine: typing.Optional[str] = "BPFile"):
             """Initialize a writer for outputting data in the VTX format.
 
@@ -115,7 +117,7 @@ if _cpp.common.has_adios2:
 
         """
 
-        def __init__(self, comm: _MPI.Comm, filename: str,
+        def __init__(self, comm: _MPI.Comm, filename: typing.Union[str, Path],
                      output: typing.Union[Mesh, typing.List[Function], Function],
                      engine: typing.Optional[str] = "BPFile",
                      mesh_policy: typing.Optional[FidesMeshPolicy] = FidesMeshPolicy.update):
