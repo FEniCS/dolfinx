@@ -39,31 +39,21 @@ fem::create_element_dof_layout(const ufcx_dofmap& dofmap,
   const int tdim = mesh::cell_dim(cell_type);
   std::vector<std::vector<std::vector<int>>> entity_dofs(tdim + 1);
   std::vector<std::vector<std::vector<int>>> entity_closure_dofs(tdim + 1);
-
-  const int* dm_entity_dofs = dofmap.entity_dofs;
-  const int* dm_entity_dof_offsets = dofmap.entity_dof_offsets;
-  const int* dm_entity_closure_dofs = dofmap.entity_closure_dofs;
-  const int* dm_entity_closure_dof_offsets = dofmap.entity_closure_dof_offsets;
-
-  int p = 0;
-  for (int dim = 0; dim <= tdim; ++dim)
+  for (int d = 0; d <= tdim; ++d)
   {
-    const int num_entities = mesh::cell_num_entities(cell_type, dim);
-    entity_dofs[dim].resize(num_entities);
-    entity_closure_dofs[dim].resize(num_entities);
+    int num_entities = mesh::cell_num_entities(cell_type, d);
+    entity_dofs[d].resize(num_entities);
+    entity_closure_dofs[d].resize(num_entities);
     for (int i = 0; i < num_entities; ++i)
     {
-      int ndofs = dm_entity_dof_offsets[p + 1] - dm_entity_dof_offsets[p];
-      entity_dofs[dim][i].resize(ndofs);
-      std::copy_n(dm_entity_dofs + dm_entity_dof_offsets[p], ndofs,
-                  entity_dofs[dim][i].begin());
-
-      ndofs = dm_entity_closure_dof_offsets[p + 1]
-              - dm_entity_closure_dof_offsets[p];
-      entity_closure_dofs[dim][i].resize(ndofs);
-      std::copy_n(dm_entity_closure_dofs + dm_entity_closure_dof_offsets[p],
-                  ndofs, entity_closure_dofs[dim][i].begin());
-      ++p;
+      int p = d * num_entities + i;
+      std::copy(dofmap.entity_dofs + dofmap.entity_dof_offsets[p],
+                dofmap.entity_dofs + dofmap.entity_dof_offsets[p + 1],
+                std::back_inserter(entity_dofs[d][i]));
+      std::copy(
+          dofmap.entity_closure_dofs + dofmap.entity_closure_dof_offsets[p],
+          dofmap.entity_closure_dofs + dofmap.entity_closure_dof_offsets[p + 1],
+          std::back_inserter(entity_closure_dofs[d][i]));
     }
   }
 
@@ -96,7 +86,7 @@ fem::create_element_dof_layout(const ufcx_dofmap& dofmap,
   }
 
   // Check for "block structure". This should ultimately be replaced,
-  // but keep for now to mimic existing code
+  // but keep for now to mimic existing code.
   return ElementDofLayout(element_block_size, entity_dofs, entity_closure_dofs,
                           parent_map, sub_doflayout);
 }
