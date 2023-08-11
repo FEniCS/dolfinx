@@ -40,7 +40,8 @@ fem::create_element_dof_layout(const ufcx_dofmap& dofmap,
   std::vector<std::vector<std::vector<int>>> entity_dofs(tdim + 1);
   std::vector<std::vector<std::vector<int>>> entity_closure_dofs(tdim + 1);
   {
-    int p = 0;
+    int* offset0 = dofmap.entity_dof_offsets;
+    int* offset1 = dofmap.entity_closure_dof_offsets;
     for (int d = 0; d <= tdim; ++d)
     {
       int num_entities = mesh::cell_num_entities(cell_type, d);
@@ -48,16 +49,14 @@ fem::create_element_dof_layout(const ufcx_dofmap& dofmap,
       entity_closure_dofs[d].resize(num_entities);
       for (int i = 0; i < num_entities; ++i)
       {
-        // int p = d * num_entities + i;
-        std::copy(dofmap.entity_dofs + dofmap.entity_dof_offsets[p],
-                  dofmap.entity_dofs + dofmap.entity_dof_offsets[p + 1],
+        std::copy(dofmap.entity_dofs + *offset0,
+                  dofmap.entity_dofs + *(offset0 + 1),
                   std::back_inserter(entity_dofs[d][i]));
-        std::copy(dofmap.entity_closure_dofs
-                      + dofmap.entity_closure_dof_offsets[p],
-                  dofmap.entity_closure_dofs
-                      + dofmap.entity_closure_dof_offsets[p + 1],
+        std::copy(dofmap.entity_closure_dofs + *offset1,
+                  dofmap.entity_closure_dofs + *(offset1 + 1),
                   std::back_inserter(entity_closure_dofs[d][i]));
-        ++p;
+        ++offset0;
+        ++offset1;
       }
     }
   }
