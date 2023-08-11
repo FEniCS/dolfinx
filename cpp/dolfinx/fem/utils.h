@@ -333,8 +333,8 @@ Form<T, U> create_form(
 
   const int* integral_offsets = ufcx_form.form_integral_offsets;
   std::vector<int> num_integrals_type(3);
-  std::adjacent_difference(integral_offsets, integral_offsets + 4,
-                           num_integrals_type.begin());
+  for (int i = 0; i < 3; ++i)
+    num_integrals_type[i] = integral_offsets[i + 1] - integral_offsets[i];
 
   // Create facets, if required
   if (num_integrals_type[exterior_facet] > 0
