@@ -118,11 +118,11 @@ else:
     raise RuntimeError(f"Unsupported scalar type {PETSc.ScalarType}.")
 
 ufcx_form00, _, _ = ffcx_jit(msh.comm, a00, form_compiler_options={"scalar_type": ffcxtype})
-kernel00 = getattr(ufcx_form00.integrals(0)[0], f"tabulate_tensor_{nptype}")
+kernel00 = getattr(ufcx_form00.form_integrals[0], f"tabulate_tensor_{nptype}")
 ufcx_form01, _, _ = ffcx_jit(msh.comm, a01, form_compiler_options={"scalar_type": ffcxtype})
-kernel01 = getattr(ufcx_form01.integrals(0)[0], f"tabulate_tensor_{nptype}")
+kernel01 = getattr(ufcx_form01.form_integrals[0], f"tabulate_tensor_{nptype}")
 ufcx_form10, _, _ = ffcx_jit(msh.comm, a10, form_compiler_options={"scalar_type": ffcxtype})
-kernel10 = getattr(ufcx_form10.integrals(0)[0], f"tabulate_tensor_{nptype}")
+kernel10 = getattr(ufcx_form10.form_integrals[0], f"tabulate_tensor_{nptype}")
 
 ffi = cffi.FFI()
 cffi_support.register_type(ffi.typeof('double _Complex'), numba.types.complex128)
