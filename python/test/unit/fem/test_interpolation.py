@@ -768,20 +768,20 @@ def test_nonmatching_mesh_single_cell_overlap_interpolation(xtype):
     # Test interpolation from mesh1 to mesh2
     n_mesh1 = 2
     mesh1 = create_rectangle(
-      MPI.COMM_WORLD, [[0.0, 0.0], [1.0, 1.0]], [n_mesh1, n_mesh1],
-      cell_type=CellType.quadrilateral, dtype=xtype)
+        MPI.COMM_WORLD, [[0.0, 0.0], [1.0, 1.0]], [n_mesh1, n_mesh1],
+        cell_type=CellType.quadrilateral, dtype=xtype)
 
     n_mesh2 = 2
     p0_mesh2 = 1.0 / n_mesh1
     mesh2 = create_rectangle(
-      MPI.COMM_WORLD, [[0.0, 0.0], [p0_mesh2, p0_mesh2]], [n_mesh2, n_mesh2],
-      cell_type=CellType.triangle, dtype=xtype)
+        MPI.COMM_WORLD, [[0.0, 0.0], [p0_mesh2, p0_mesh2]], [n_mesh2, n_mesh2],
+        cell_type=CellType.triangle, dtype=xtype)
 
     u1 = Function(FunctionSpace(mesh1, ("CG", 1)), name="u1", dtype=xtype)
     u2 = Function(FunctionSpace(mesh2, ("CG", 1)), name="u2", dtype=xtype)
 
     def f_test1(x):
-      return 1.0 - x[0] * x[1]
+        return 1.0 - x[0] * x[1]
 
     u1.interpolate(f_test1)
     u1.x.scatter_forward()
@@ -801,15 +801,14 @@ def test_nonmatching_mesh_single_cell_overlap_interpolation(xtype):
     u2_exact.x.scatter_forward()
 
     l2_error = assemble_scalar(
-      form((u2 - u2_exact)**2 * ufl.dx, dtype=xtype))
+        form((u2 - u2_exact)**2 * ufl.dx, dtype=xtype))
     assert np.isclose(l2_error, 0.0,
                       rtol=np.finfo(xtype).eps,
                       atol=np.finfo(xtype).eps)
 
-
     # Test interpolation from mesh2 to mesh1
     def f_test2(x):
-      return x[0] * x[1]
+        return x[0] * x[1]
 
     u1.x.array[:] = 0.0
     u1.x.scatter_forward()
@@ -833,7 +832,7 @@ def test_nonmatching_mesh_single_cell_overlap_interpolation(xtype):
     # Find the single cell in mesh1 which is overlapped by mesh2
     tree1 = bb_tree(mesh1, mesh1.topology.dim)
     cells_overlapped1 = compute_collisions_points(
-          tree1, [p0_mesh2/2.0, p0_mesh2/2.0, 0.0]).array
+        tree1, [p0_mesh2 / 2.0, p0_mesh2 / 2.0, 0.0]).array
     assert cells_overlapped1.shape[0] <= 1
 
     # Construct the error measure on the overlapped cell
@@ -844,7 +843,7 @@ def test_nonmatching_mesh_single_cell_overlap_interpolation(xtype):
     dx_cell = ufl.Measure("dx", subdomain_data=cts)
 
     l2_error = assemble_scalar(
-      form((u1 - u1_exact)**2 * dx_cell(cell_label), dtype=xtype))
+        form((u1 - u1_exact)**2 * dx_cell(cell_label), dtype=xtype))
     assert np.isclose(l2_error, 0.0,
                       rtol=np.finfo(xtype).eps,
                       atol=np.finfo(xtype).eps)
