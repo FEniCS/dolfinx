@@ -655,14 +655,6 @@ void interpolate_nonmatching_meshes(
   assert(element_u);
   const std::size_t value_size = element_u->value_size();
 
-  if (std::get<0>(nmm_interpolation_data).empty())
-  {
-    throw std::runtime_error(
-        "In order to interpolate on nonmatching meshes, the user needs to "
-        "provide the necessary interpolation data. This can be computed "
-        "with fem::create_nonmatching_meshes_interpolation_data.");
-  }
-
   const std::tuple_element_t<
       0, std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
                     std::vector<U>, std::vector<std::int32_t>>>& dest_ranks
