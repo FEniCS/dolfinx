@@ -1001,10 +1001,14 @@ public:
       impl_vtx::vtx_write_mesh(*_io, *_engine, *_mesh);
     else
     {
-      if (auto v = _io->template InquireVariable<std::int64_t>("connectivity");
-          !v or _mesh_reuse_policy == VTXMeshPolicy::update)
+      // if (auto v = _io->template
+      // InquireVariable<std::int64_t>("connectivity");
+      //     !v or _mesh_reuse_policy == VTXMeshPolicy::update)
+      if (_mesh_reuse_policy == VTXMeshPolicy::update
+          or !(_io->template InquireVariable<std::int64_t>("connectivity")))
       {
-        // Write a single mesh for functions as they share finite element
+        // Write a single mesh for functions as they share finite
+        // element
         std::tie(_x_id, _x_ghost) = std::visit(
             [&](auto& u)
             {
@@ -1027,8 +1031,10 @@ public:
 
       // Write function data for each function to file
       for (auto& v : _u)
+      {
         std::visit(
             [&](auto& u) { impl_vtx::vtx_write_data(*_io, *_engine, *u); }, v);
+      }
     }
 
     _engine->EndStep();
