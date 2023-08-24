@@ -13,13 +13,10 @@ import pytest
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
-                         VectorFunctionSpace, assemble_scalar,
-                         create_nonmatching_meshes_interpolation_data, form)
+                         VectorFunctionSpace)
 from dolfinx.geometry import (bb_tree, compute_colliding_cells,
                               compute_collisions_points)
-from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
-                          create_unit_square, locate_entities_boundary,
-                          meshtags)
+from dolfinx.mesh import create_mesh, create_unit_cube
 from mpi4py import MPI
 
 from dolfinx import default_real_type, la
@@ -172,57 +169,6 @@ def test_interpolation_rank1(W):
 
     num_vertices = W.mesh.topology.index_map(0).size_global
     assert round(w.x.norm(la.Norm.l1) - 6 * num_vertices, 7) == 0
-
-
-@pytest.mark.parametrize("xtype", [np.float64])
-@pytest.mark.parametrize("cell_type0", [CellType.hexahedron, CellType.tetrahedron])
-@pytest.mark.parametrize("cell_type1", [CellType.triangle, CellType.quadrilateral])
-def test_nonmatching_interpolation(xtype, cell_type0, cell_type1):
-    mesh0 = create_unit_cube(MPI.COMM_WORLD, 5, 6, 7, cell_type=cell_type0, dtype=xtype)
-    mesh1 = create_unit_square(MPI.COMM_WORLD, 25, 24, cell_type=cell_type1, dtype=xtype)
-
-    def f(x):
-        return (7 * x[1], 3 * x[0], x[2] + 0.4)
-
-    el0 = element("Lagrange", mesh0.basix_cell(), 1, shape=(3, ))
-    V0 = FunctionSpace(mesh0, el0)
-    el1 = element("Lagrange", mesh1.basix_cell(), 1, shape=(3, ))
-    V1 = FunctionSpace(mesh1, el1)
-
-    # Interpolate on 3D mesh
-    u0 = Function(V0, dtype=xtype)
-    u0.interpolate(f)
-    u0.x.scatter_forward()
-
-    # Interpolate 3D->2D
-    u1 = Function(V1, dtype=xtype)
-    u1.interpolate(u0, nmm_interpolation_data=create_nonmatching_meshes_interpolation_data(
-        u1.function_space.mesh._cpp_object,
-        u1.function_space.element,
-        u0.function_space.mesh._cpp_object))
-    u1.x.scatter_forward()
-
-    # Exact interpolation on 2D mesh
-    u1_ex = Function(V1, dtype=xtype)
-    u1_ex.interpolate(f)
-    u1_ex.x.scatter_forward()
-
-    assert np.allclose(u1_ex.x.array, u1.x.array, rtol=1.0e-4, atol=1.0e-6)
-
-    # Interpolate 2D->3D
-    u0_2 = Function(V0, dtype=xtype)
-    u0_2.interpolate(u1, nmm_interpolation_data=create_nonmatching_meshes_interpolation_data(
-        u0_2.function_space.mesh._cpp_object,
-        u0_2.function_space.element,
-        u1.function_space.mesh._cpp_object))
-
-    # Check that function values over facets of 3D mesh of the twice interpolated property is preserved
-    def locate_bottom_facets(x):
-        return np.isclose(x[2], 0)
-    facets = locate_entities_boundary(mesh0, mesh0.topology.dim - 1, locate_bottom_facets)
-    facet_tag = meshtags(mesh0, mesh0.topology.dim - 1, facets, np.full(len(facets), 1, dtype=np.int32))
-    residual = ufl.inner(u0 - u0_2, u0 - u0_2) * ufl.ds(domain=mesh0, subdomain_data=facet_tag, subdomain_id=1)
-    assert np.isclose(assemble_scalar(form(residual, dtype=xtype)), 0)
 
 
 @pytest.mark.parametrize("types", [
