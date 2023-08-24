@@ -1001,9 +1001,6 @@ public:
       impl_vtx::vtx_write_mesh(*_io, *_engine, *_mesh);
     else
     {
-      // if (auto v = _io->template
-      // InquireVariable<std::int64_t>("connectivity");
-      //     !v or _mesh_reuse_policy == VTXMeshPolicy::update)
       if (_mesh_reuse_policy == VTXMeshPolicy::update
           or !(_io->template InquireVariable<std::int64_t>("connectivity")))
       {
