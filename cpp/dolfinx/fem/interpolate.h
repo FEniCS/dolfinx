@@ -120,6 +120,8 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 
 namespace impl
 {
+namespace stdex = std::experimental;
+
 /// @brief Scatter data into non-contiguous memory.
 ///
 /// Scatter blocked data `send_values` to its corresponding src_rank and
@@ -135,19 +137,20 @@ namespace impl
 /// @param[in] send_values The values to send back to owner. Shape
 /// (src_ranks.size(), block_size). Storage is row-major.
 /// @param[in] s_shape Shape of send_values
-/// @param[in,out] recv_values Array to fill with values  Shape
+/// @param[in,out] recv_values Array to fill with values.  Shape
 /// (dest_ranks.size(), block_size). Storage is row-major.
 /// @pre It is required that src_ranks are sorted.
 /// @note dest_ranks can contain repeated entries
 /// @note dest_ranks might contain -1 (no process owns the point)
 template <dolfinx::scalar T>
-void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
-                    std::span<const std::int32_t> dest_ranks,
-                    std::span<const T> send_values,
-                    std::array<std::size_t, 2> s_shape,
-                    std::span<T> recv_values)
+void scatter_values(
+    MPI_Comm comm, std::span<const std::int32_t> src_ranks,
+    std::span<const std::int32_t> dest_ranks,
+    stdex::mdspan<const T, stdex::dextents<std::size_t, 2>> send_values,
+    // std::span<const T> send_values, std::array<std::size_t, 2> s_shape,
+    std::span<T> recv_values)
 {
-  const std::size_t block_size = s_shape[1];
+  const std::size_t block_size = send_values.extent(1);
   assert(src_ranks.size() * block_size == send_values.size());
   assert(recv_values.size() == dest_ranks.size() * block_size);
 
@@ -236,11 +239,10 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
   std::partial_sum(send_sizes.begin(), send_sizes.end(),
                    std::next(send_offsets.begin(), 1));
 
-  std::stringstream cc;
   // Send values to dest ranks
   std::vector<T> values(recv_offsets.back());
   values.reserve(1);
-  MPI_Neighbor_alltoallv(send_values.data(), send_sizes.data(),
+  MPI_Neighbor_alltoallv(send_values.data_handle(), send_sizes.data(),
                          send_offsets.data(), dolfinx::MPI::mpi_type<T>(),
                          values.data(), recv_sizes.data(), recv_offsets.data(),
                          dolfinx::MPI::mpi_type<T>(), reverse_comm);
@@ -257,13 +259,13 @@ void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
 };
 
 /// @brief Apply interpolation operator Pi to data to evaluate the dof
-/// coefficients
+/// coefficients.
 /// @param[in] Pi The interpolation matrix (shape = (num dofs,
-/// num_points * value_size))
+/// num_points * value_size)).
 /// @param[in] data Function evaluations, by point, e.g. (f0(x0),
-/// f1(x0), f0(x1), f1(x1), ...)
-/// @param[out] coeffs The degrees of freedom to compute
-/// @param[in] bs The block size
+/// f1(x0), f0(x1), f1(x1), ...).
+/// @param[out] coeffs The degrees of freedom to compute.
+/// @param[in] bs The block size.
 template <typename U, typename V, dolfinx::scalar T>
 void interpolation_apply(const U& Pi, const V& data, std::span<T> coeffs,
                          int bs)
@@ -638,59 +640,52 @@ void interpolate_nonmatching_meshes(
                      std::vector<U>, std::vector<std::int32_t>>&
         nmm_interpolation_data)
 {
-  int result;
+  namespace stdex = std::experimental;
+
   auto mesh = u.function_space()->mesh();
-  auto mesh_v = v.function_space()->mesh();
-  MPI_Comm_compare(mesh->comm(), mesh_v->comm(), &result);
-
-  if (result == MPI_UNEQUAL)
-    throw std::runtime_error("Interpolation on different meshes is only "
-                             "supported with the same communicator.");
-
+  assert(mesh);
   MPI_Comm comm = mesh->comm();
-  const int tdim = mesh->topology()->dim();
-  auto cell_map = mesh->topology()->index_map(tdim);
+
+  {
+    auto mesh_v = v.function_space()->mesh();
+    assert(mesh_v);
+    int result;
+    MPI_Comm_compare(comm, mesh_v->comm(), &result);
+    if (result == MPI_UNEQUAL)
+    {
+      throw std::runtime_error("Interpolation on different meshes is only "
+                               "supported with the same communicator.");
+    }
+  }
+
+  assert(mesh->topology());
+  auto cell_map = mesh->topology()->index_map(mesh->topology()->dim());
+  assert(cell_map);
 
   auto element_u = u.function_space()->element();
   assert(element_u);
   const std::size_t value_size = element_u->value_size();
 
-  const std::tuple_element_t<
-      0, std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
-                    std::vector<U>, std::vector<std::int32_t>>>& dest_ranks
-      = std::get<0>(nmm_interpolation_data);
-  const std::tuple_element_t<
-      1, std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
-                    std::vector<U>, std::vector<std::int32_t>>>& src_ranks
-      = std::get<1>(nmm_interpolation_data);
-  const std::tuple_element_t<
-      2, std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
-                    std::vector<U>, std::vector<std::int32_t>>>& received_points
-      = std::get<2>(nmm_interpolation_data);
-  const std::tuple_element_t<
-      3, std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
-                    std::vector<U>, std::vector<std::int32_t>>>&
-      evaluation_cells
-      = std::get<3>(nmm_interpolation_data);
+  auto& dest_ranks = std::get<0>(nmm_interpolation_data);
+  auto& src_ranks = std::get<1>(nmm_interpolation_data);
+  auto& recv_points = std::get<2>(nmm_interpolation_data);
+  auto& evaluation_cells = std::get<3>(nmm_interpolation_data);
 
   // Evaluate the interpolating function where possible
-  std::vector<T> send_values(received_points.size() / 3 * value_size);
-  v.eval(received_points, {received_points.size() / 3, (std::size_t)3},
-         evaluation_cells, send_values,
-         {received_points.size() / 3, (std::size_t)value_size});
+  std::vector<T> send_values(recv_points.size() / 3 * value_size);
+  v.eval(recv_points, {recv_points.size() / 3, (std::size_t)3},
+         evaluation_cells, send_values, {recv_points.size() / 3, value_size});
 
   // Send values back to owning process
-  std::array<std::size_t, 2> v_shape = {src_ranks.size(), value_size};
   std::vector<T> values_b(dest_ranks.size() * value_size);
-  impl::scatter_values(comm, src_ranks, dest_ranks,
-                       std::span<const T>(send_values), v_shape,
-                       std::span<T>(values_b));
+  stdex::mdspan<const T, stdex::dextents<std::size_t, 2>> _send_values(
+      send_values.data(), src_ranks.size(), value_size);
+  impl::scatter_values(comm, src_ranks, dest_ranks, _send_values,
+                       std::span(values_b));
 
   // Transpose received data
-  namespace stdex = std::experimental;
   stdex::mdspan<const T, stdex::dextents<std::size_t, 2>> values(
       values_b.data(), dest_ranks.size(), value_size);
-
   std::vector<T> valuesT_b(value_size * dest_ranks.size());
   stdex::mdspan<T, stdex::dextents<std::size_t, 2>> valuesT(
       valuesT_b.data(), value_size, dest_ranks.size());

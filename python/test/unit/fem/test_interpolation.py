@@ -7,23 +7,22 @@
 
 import random
 
+import basix
 import numpy as np
 import pytest
-
-import basix
 import ufl
 from basix.ufl import (blocked_element, custom_element, element,
                        enriched_element, mixed_element)
 from dolfinx.fem import (Expression, Function, FunctionSpace,
-                         VectorFunctionSpace, assemble_scalar, form,
-                         create_nonmatching_meshes_interpolation_data)
-from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
-                          create_unit_square, locate_entities, meshtags,
-                          locate_entities_boundary, create_rectangle)
-from dolfinx.geometry import (bb_tree, compute_collisions_points)
-from dolfinx import default_real_type
-
+                         VectorFunctionSpace, assemble_scalar,
+                         create_nonmatching_meshes_interpolation_data, form)
+from dolfinx.geometry import bb_tree, compute_collisions_points
+from dolfinx.mesh import (CellType, create_mesh, create_rectangle,
+                          create_unit_cube, create_unit_square,
+                          locate_entities, locate_entities_boundary, meshtags)
 from mpi4py import MPI
+
+from dolfinx import default_real_type
 
 parametrize_cell_types = pytest.mark.parametrize(
     "cell_type", [
@@ -666,9 +665,8 @@ def test_custom_vector_element():
     for _ in range(3):
         M[1].append(np.zeros((0, 2, 0, 1)))
     M[2].append(np.zeros((0, 2, 0, 1)))
-    e = custom_element(
-        basix.CellType.triangle, [2], wcoeffs, x, M, 0, basix.MapType.identity,
-        basix.SobolevSpace.H1, False, 1, 1)
+    e = custom_element(basix.CellType.triangle, [2], wcoeffs, x, M, 0, basix.MapType.identity,
+                       basix.SobolevSpace.H1, False, 1, 1)
 
     V = FunctionSpace(mesh, e)
     W = VectorFunctionSpace(mesh, ("Lagrange", 1))
@@ -767,15 +765,13 @@ def test_nonmatching_mesh_single_cell_overlap_interpolation(xtype):
 
     # Test interpolation from mesh1 to mesh2
     n_mesh1 = 2
-    mesh1 = create_rectangle(
-        MPI.COMM_WORLD, [[0.0, 0.0], [1.0, 1.0]], [n_mesh1, n_mesh1],
-        cell_type=CellType.quadrilateral, dtype=xtype)
+    mesh1 = create_rectangle(MPI.COMM_WORLD, [[0.0, 0.0], [1.0, 1.0]], [n_mesh1, n_mesh1],
+                             cell_type=CellType.quadrilateral, dtype=xtype)
 
     n_mesh2 = 2
     p0_mesh2 = 1.0 / n_mesh1
-    mesh2 = create_rectangle(
-        MPI.COMM_WORLD, [[0.0, 0.0], [p0_mesh2, p0_mesh2]], [n_mesh2, n_mesh2],
-        cell_type=CellType.triangle, dtype=xtype)
+    mesh2 = create_rectangle(MPI.COMM_WORLD, [[0.0, 0.0], [p0_mesh2, p0_mesh2]], [n_mesh2, n_mesh2],
+                             cell_type=CellType.triangle, dtype=xtype)
 
     u1 = Function(FunctionSpace(mesh1, ("CG", 1)), name="u1", dtype=xtype)
     u2 = Function(FunctionSpace(mesh2, ("CG", 1)), name="u2", dtype=xtype)
@@ -800,11 +796,8 @@ def test_nonmatching_mesh_single_cell_overlap_interpolation(xtype):
     u2_exact.interpolate(f_test1)
     u2_exact.x.scatter_forward()
 
-    l2_error = assemble_scalar(
-        form((u2 - u2_exact)**2 * ufl.dx, dtype=xtype))
-    assert np.isclose(l2_error, 0.0,
-                      rtol=np.finfo(xtype).eps,
-                      atol=np.finfo(xtype).eps)
+    l2_error = assemble_scalar(form((u2 - u2_exact)**2 * ufl.dx, dtype=xtype))
+    assert np.isclose(l2_error, 0.0, rtol=np.finfo(xtype).eps, atol=np.finfo(xtype).eps)
 
     # Test interpolation from mesh2 to mesh1
     def f_test2(x):
@@ -831,19 +824,14 @@ def test_nonmatching_mesh_single_cell_overlap_interpolation(xtype):
 
     # Find the single cell in mesh1 which is overlapped by mesh2
     tree1 = bb_tree(mesh1, mesh1.topology.dim)
-    cells_overlapped1 = compute_collisions_points(
-        tree1, [p0_mesh2 / 2.0, p0_mesh2 / 2.0, 0.0]).array
+    cells_overlapped1 = compute_collisions_points(tree1, [p0_mesh2 / 2.0, p0_mesh2 / 2.0, 0.0]).array
     assert cells_overlapped1.shape[0] <= 1
 
     # Construct the error measure on the overlapped cell
     cell_label = 1
-    cts = meshtags(
-        mesh1, mesh1.topology.dim, cells_overlapped1,
-        np.full_like(cells_overlapped1, cell_label))
+    cts = meshtags(mesh1, mesh1.topology.dim, cells_overlapped1,
+                   np.full_like(cells_overlapped1, cell_label))
     dx_cell = ufl.Measure("dx", subdomain_data=cts)
 
-    l2_error = assemble_scalar(
-        form((u1 - u1_exact)**2 * dx_cell(cell_label), dtype=xtype))
-    assert np.isclose(l2_error, 0.0,
-                      rtol=np.finfo(xtype).eps,
-                      atol=np.finfo(xtype).eps)
+    l2_error = assemble_scalar(form((u1 - u1_exact)**2 * dx_cell(cell_label), dtype=xtype))
+    assert np.isclose(l2_error, 0.0, rtol=np.finfo(xtype).eps, atol=np.finfo(xtype).eps)
