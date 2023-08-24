@@ -101,7 +101,7 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
 
 /// @brief Interpolate an expression f(x) in a finite element space.
 ///
-/// @param[out] u The function to interpolate into
+/// @param[out] u The Function object to interpolate into
 /// @param[in] f Evaluation of the function `f(x)` at the physical
 /// points `x` given by fem::interpolation_coords. The element used in
 /// fem::interpolation_coords should be the same element as associated
@@ -124,16 +124,16 @@ namespace stdex = std::experimental;
 
 /// @brief Scatter data into non-contiguous memory.
 ///
-/// Scatter blocked data `send_values` to its corresponding src_rank and
+/// Scatter blocked data `send_values` to its corresponding `src_rank` and
 /// insert the data into `recv_values`. The insert location in
 /// `recv_values` is determined by `dest_ranks`. If the j-th dest rank
-/// is -1, then `recv_values[j*block_size:(j+1)*block_size]) = 0.
+/// is -1, then `recv_values[j*block_size:(j+1)*block_size]) = 0`.
 ///
 /// @param[in] comm The mpi communicator
 /// @param[in] src_ranks The rank owning the values of each row in
 /// send_values
 /// @param[in] dest_ranks List of ranks receiving data. Size of array is
-/// how many values we are receiving (not unrolled for blcok_size).
+/// how many values we are receiving (not unrolled for block_size).
 /// @param[in] send_values The values to send back to owner. Shape
 /// (src_ranks.size(), block_size). Storage is row-major.
 /// @param[in] s_shape Shape of send_values
@@ -147,7 +147,6 @@ void scatter_values(
     MPI_Comm comm, std::span<const std::int32_t> src_ranks,
     std::span<const std::int32_t> dest_ranks,
     stdex::mdspan<const T, stdex::dextents<std::size_t, 2>> send_values,
-    // std::span<const T> send_values, std::array<std::size_t, 2> s_shape,
     std::span<T> recv_values)
 {
   const std::size_t block_size = send_values.extent(1);
@@ -267,8 +266,8 @@ void scatter_values(
 /// @param[out] coeffs The degrees of freedom to compute.
 /// @param[in] bs The block size.
 template <typename U, typename V, dolfinx::scalar T>
-void interpolation_apply(const U& Pi, const V& data, std::span<T> coeffs,
-                         int bs)
+void interpolation_apply(
+    const U& Pi, const V& data, std::span<T> coeffs, int bs)
 {
   using X = typename dolfinx::scalar_value_type_t<T>;
   static_assert(U::rank() == 2, "Must be rank 2");
@@ -353,11 +352,11 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
   const int bs1 = dofmap1->bs();
   const int bs0 = dofmap0->bs();
   auto apply_dof_transformation
-      = element0->template get_dof_transformation_function<T>(false, true,
-                                                              false);
+      = element0->template get_dof_transformation_function<T>(
+        false, true, false);
   auto apply_inverse_dof_transform
-      = element1->template get_dof_transformation_function<T>(true, true,
-                                                              false);
+      = element1->template get_dof_transformation_function<T>(
+        true, true, false);
 
   // Create working array
   std::vector<T> local0(element0->space_dimension());
@@ -394,18 +393,20 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
   }
 }
 
-/// Interpolate from one finite element Function to another on the same
-/// mesh. The function is for cases where the finite element basis
-/// functions for the two elements are mapped differently, e.g. one may
-/// be Piola mapped and the other with a standard isoparametric map.
+/// Interpolate from one finite element Function to another on the same mesh.
+/// This interpolation function is for cases where the finite element basis
+/// functions for the two elements are mapped differently, e.g. one may be
+/// subject to a Piola mapping and the other to a standard isoparametric
+/// mapping.
 /// @param[out] u1 The function to interpolate to
 /// @param[in] u0 The function to interpolate from
 /// @param[in] cells The cells to interpolate on
 /// @pre The functions `u1` and `u0` must share the same mesh. This is
 /// not checked by the function.
 template <dolfinx::scalar T, std::floating_point U>
-void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
-                                  std::span<const std::int32_t> cells)
+void interpolate_nonmatching_maps(
+    Function<T, U>& u1, const Function<T, U>& u0, 
+    std::span<const std::int32_t> cells)
 {
   // Get mesh
   auto V0 = u0.function_space();
@@ -443,11 +444,11 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
   const int bs0 = element0->block_size();
   const int bs1 = element1->block_size();
   auto apply_dof_transformation0
-      = element0->template get_dof_transformation_function<U>(false, false,
-                                                              false);
+      = element0->template get_dof_transformation_function<U>(
+        false, false, false);
   auto apply_inverse_dof_transform1
-      = element1->template get_dof_transformation_function<T>(true, true,
-                                                              false);
+      = element1->template get_dof_transformation_function<T>(
+        true, true, false);
 
   // Get sizes of elements
   const std::size_t dim0 = element0->space_dimension() / bs0;
@@ -481,8 +482,8 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
   // Evaluate v basis functions at reference interpolation points
   const auto [_basis_derivatives_reference0, b0shape]
       = element0->tabulate(X, Xshape, 0);
-  cmdspan4_t basis_derivatives_reference0(_basis_derivatives_reference0.data(),
-                                          b0shape);
+  cmdspan4_t basis_derivatives_reference0(
+      _basis_derivatives_reference0.data(), b0shape);
 
   // Create working arrays
   std::vector<T> local1(element1->space_dimension());
@@ -666,10 +667,8 @@ void interpolate_nonmatching_meshes(
   assert(element_u);
   const std::size_t value_size = element_u->value_size();
 
-  auto& dest_ranks = std::get<0>(nmm_interpolation_data);
-  auto& src_ranks = std::get<1>(nmm_interpolation_data);
-  auto& recv_points = std::get<2>(nmm_interpolation_data);
-  auto& evaluation_cells = std::get<3>(nmm_interpolation_data);
+  const auto& [dest_ranks, src_ranks, recv_points, evaluation_cells]
+    = nmm_interpolation_data;
 
   // Evaluate the interpolating function where possible
   std::vector<T> send_values(recv_points.size() / 3 * value_size);
