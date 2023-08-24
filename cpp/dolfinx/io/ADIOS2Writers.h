@@ -888,7 +888,7 @@ public:
   /// @note This format supports arbitrary degree meshes.
   VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
             const typename adios2_writer::U<T>& u, std::string engine,
-            const VTXMeshPolicy mesh_policy = VTXMeshPolicy::update)
+            VTXMeshPolicy mesh_policy = VTXMeshPolicy::update)
       : ADIOS2Writer(comm, filename, "VTX function writer", engine),
         _mesh(impl_adios2::extract_common_mesh<T>(u)),
         _mesh_reuse_policy(mesh_policy), _u(u)
@@ -966,7 +966,7 @@ public:
   /// @note This format supports arbitrary degree meshes.
   VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
             const typename adios2_writer::U<T>& u,
-            const VTXMeshPolicy mesh_policy = VTXMeshPolicy::update)
+            VTXMeshPolicy mesh_policy = VTXMeshPolicy::update)
       : VTXWriter(comm, filename, u, "BPFile", mesh_policy)
   {
   }
@@ -1006,10 +1006,11 @@ public:
           !v or _mesh_reuse_policy == VTXMeshPolicy::update)
       {
         // Write a single mesh for functions as they share finite element
-        std::tie(x_id_cache, x_ghost_cache) = std::visit(
-            [&](auto& u) {
+        std::tie(_x_id, _x_ghost) = std::visit(
+            [&](auto& u)
+            {
               return impl_vtx::vtx_write_mesh_from_space(*_io, *_engine,
-                                                  *u->function_space());
+                                                         *u->function_space());
             },
             _u[0]);
       }
@@ -1017,11 +1018,11 @@ public:
       {
         // Node global ids
         adios2::Variable orig_id = impl_adios2::define_variable<std::int64_t>(
-            *_io, "vtkOriginalPointIds", {}, {}, {x_id_cache.size()});
-        _engine->Put(orig_id, x_id_cache.data());
+            *_io, "vtkOriginalPointIds", {}, {}, {_x_id.size()});
+        _engine->Put(orig_id, _x_id.data());
         adios2::Variable ghost = impl_adios2::define_variable<std::uint8_t>(
-            *_io, "vtkGhostType", {}, {}, {x_ghost_cache.size()});
-        _engine->Put(ghost, x_ghost_cache.data());
+            *_io, "vtkGhostType", {}, {}, {_x_ghost.size()});
+        _engine->Put(ghost, _x_ghost.data());
         _engine->PerformPuts();
       }
 
@@ -1041,8 +1042,8 @@ private:
   // Control whether the mesh is written to file once or at every time
   // step
   VTXMeshPolicy _mesh_reuse_policy;
-  std::vector<std::int64_t> x_id_cache;
-  std::vector<std::uint8_t> x_ghost_cache;
+  std::vector<std::int64_t> _x_id;
+  std::vector<std::uint8_t> _x_ghost;
 };
 
 /// Type deduction
