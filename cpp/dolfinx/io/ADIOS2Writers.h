@@ -985,14 +985,15 @@ public:
   // Copy assignment
   VTXWriter& operator=(const VTXWriter&) = delete;
 
-  /// @brief  Write data with a given time
-  /// @param[in] t The time step
+  /// @brief Write data with a given time stamp.
+  /// @param[in] t Time stamp to associate with output.
   void write(double t)
   {
     assert(_io);
-    assert(_engine);
     adios2::Variable var_step
         = impl_adios2::define_variable<double>(*_io, "step");
+
+    assert(_engine);
     _engine->BeginStep();
     _engine->template Put<double>(var_step, t);
 
