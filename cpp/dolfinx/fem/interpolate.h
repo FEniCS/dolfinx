@@ -60,11 +60,11 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
 
   // Evaluate coordinate element basis at reference points
   namespace stdex = std::experimental;
-  using cmdspan4_t = stdex::mdspan<const T, stdex::dextents<std::size_t, 4>>;
   std::array<std::size_t, 4> phi_shape = cmap.tabulate_shape(0, Xshape[0]);
   std::vector<T> phi_b(
       std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
-  cmdspan4_t phi_full(phi_b.data(), phi_shape);
+  stdex::mdspan<const T, stdex::dextents<std::size_t, 4>> phi_full(phi_b.data(),
+                                                                   phi_shape);
   cmap.tabulate(0, X, Xshape, phi_b);
   auto phi = stdex::submdspan(phi_full, 0, stdex::full_extent,
                               stdex::full_extent, 0);
@@ -122,6 +122,10 @@ namespace impl
 {
 namespace stdex = std::experimental;
 
+/// @brief Convenience typdef
+template <typename T, std::size_t D>
+using mdspan_t = stdex::mdspan<T, stdex::dextents<std::size_t, D>>;
+
 /// @brief Scatter data into non-contiguous memory.
 ///
 /// Scatter blocked data `send_values` to its corresponding src_rank and
@@ -135,8 +139,7 @@ namespace stdex = std::experimental;
 /// @param[in] dest_ranks List of ranks receiving data. Size of array is
 /// how many values we are receiving (not unrolled for blcok_size).
 /// @param[in] send_values The values to send back to owner. Shape
-/// (src_ranks.size(), block_size). Storage is row-major.
-/// @param[in] s_shape Shape of send_values
+/// (src_ranks.size(), block_size).
 /// @param[in,out] recv_values Array to fill with values.  Shape
 /// (dest_ranks.size(), block_size). Storage is row-major.
 /// @pre It is required that src_ranks are sorted.
@@ -147,7 +150,6 @@ void scatter_values(
     MPI_Comm comm, std::span<const std::int32_t> src_ranks,
     std::span<const std::int32_t> dest_ranks,
     stdex::mdspan<const T, stdex::dextents<std::size_t, 2>> send_values,
-    // std::span<const T> send_values, std::array<std::size_t, 2> s_shape,
     std::span<T> recv_values)
 {
   const std::size_t block_size = send_values.extent(1);
@@ -267,12 +269,19 @@ void scatter_values(
 /// @param[out] coeffs The degrees of freedom to compute.
 /// @param[in] bs The block size.
 template <typename U, typename V, dolfinx::scalar T>
-void interpolation_apply(const U& Pi, const V& data, std::span<T> coeffs,
-                         int bs)
+  requires requires {
+    requires std::convertible_to<
+        U,
+        std::experimental::mdspan<const typename std::decay_t<U>::value_type,
+                                  std::experimental::dextents<std::size_t, 2>>>;
+    requires std::convertible_to<
+        V,
+        std::experimental::mdspan<const typename std::decay_t<V>::value_type,
+                                  std::experimental::dextents<std::size_t, 2>>>;
+  }
+void interpolation_apply(U&& Pi, V&& data, std::span<T> coeffs, int bs)
 {
   using X = typename dolfinx::scalar_value_type_t<T>;
-  static_assert(U::rank() == 2, "Must be rank 2");
-  static_assert(V::rank() == 2, "Must be rank 2");
 
   // Compute coefficients = Pi * x (matrix-vector multiply)
   if (bs == 1)
@@ -463,60 +472,54 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
   const std::size_t num_dofs_g = cmap.dim();
   std::span<const U> x_g = mesh->geometry().x();
 
-  namespace stdex = std::experimental;
-  using cmdspan2_t = stdex::mdspan<const U, stdex::dextents<std::size_t, 2>>;
-  using cmdspan4_t = stdex::mdspan<const U, stdex::dextents<std::size_t, 4>>;
-  using mdspan2_t = stdex::mdspan<U, stdex::dextents<std::size_t, 2>>;
-  using mdspan3_t = stdex::mdspan<U, stdex::dextents<std::size_t, 3>>;
-  using mdspan3T_t = stdex::mdspan<T, stdex::dextents<std::size_t, 3>>;
-
   // Evaluate coordinate map basis at reference interpolation points
   const std::array<std::size_t, 4> phi_shape
       = cmap.tabulate_shape(1, Xshape[0]);
   std::vector<U> phi_b(
       std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
-  cmdspan4_t phi(phi_b.data(), phi_shape);
+  mdspan_t<const U, 4> phi(phi_b.data(), phi_shape);
   cmap.tabulate(1, X, Xshape, phi_b);
 
   // Evaluate v basis functions at reference interpolation points
   const auto [_basis_derivatives_reference0, b0shape]
       = element0->tabulate(X, Xshape, 0);
-  cmdspan4_t basis_derivatives_reference0(_basis_derivatives_reference0.data(),
-                                          b0shape);
+  mdspan_t<const U, 4> basis_derivatives_reference0(
+      _basis_derivatives_reference0.data(), b0shape);
 
   // Create working arrays
   std::vector<T> local1(element1->space_dimension());
   std::vector<T> coeffs0(element0->space_dimension());
 
   std::vector<U> basis0_b(Xshape[0] * dim0 * value_size0);
-  mdspan3_t basis0(basis0_b.data(), Xshape[0], dim0, value_size0);
+  impl::mdspan_t<U, 3> basis0(basis0_b.data(), Xshape[0], dim0, value_size0);
 
   std::vector<U> basis_reference0_b(Xshape[0] * dim0 * value_size_ref0);
-  mdspan3_t basis_reference0(basis_reference0_b.data(), Xshape[0], dim0,
-                             value_size_ref0);
+  impl::mdspan_t<U, 3> basis_reference0(basis_reference0_b.data(), Xshape[0],
+                                        dim0, value_size_ref0);
 
   std::vector<T> values0_b(Xshape[0] * 1 * element1->value_size());
-  mdspan3T_t values0(values0_b.data(), Xshape[0], 1, element1->value_size());
+  impl::mdspan_t<T, 3> values0(values0_b.data(), Xshape[0], 1,
+                               element1->value_size());
 
   std::vector<T> mapped_values_b(Xshape[0] * 1 * element1->value_size());
-  mdspan3T_t mapped_values0(mapped_values_b.data(), Xshape[0], 1,
-                            element1->value_size());
+  impl::mdspan_t<T, 3> mapped_values0(mapped_values_b.data(), Xshape[0], 1,
+                                      element1->value_size());
 
   std::vector<U> coord_dofs_b(num_dofs_g * gdim);
-  mdspan2_t coord_dofs(coord_dofs_b.data(), num_dofs_g, gdim);
+  impl::mdspan_t<U, 2> coord_dofs(coord_dofs_b.data(), num_dofs_g, gdim);
 
   std::vector<U> J_b(Xshape[0] * gdim * tdim);
-  mdspan3_t J(J_b.data(), Xshape[0], gdim, tdim);
+  impl::mdspan_t<U, 3> J(J_b.data(), Xshape[0], gdim, tdim);
   std::vector<U> K_b(Xshape[0] * tdim * gdim);
-  mdspan3_t K(K_b.data(), Xshape[0], tdim, gdim);
+  impl::mdspan_t<U, 3> K(K_b.data(), Xshape[0], tdim, gdim);
   std::vector<U> detJ(Xshape[0]);
   std::vector<U> det_scratch(2 * gdim * tdim);
 
   // Get interpolation operator
   const auto [_Pi_1, pi_shape] = element1->interpolation_operator();
-  cmdspan2_t Pi_1(_Pi_1.data(), pi_shape);
+  impl::mdspan_t<const U, 2> Pi_1(_Pi_1.data(), pi_shape);
 
-  using u_t = stdex::mdspan<U, stdex::dextents<std::size_t, 2>>;
+  using u_t = impl::mdspan_t<U, 2>;
   using U_t = stdex::mdspan<const U, stdex::dextents<std::size_t, 2>>;
   using J_t = stdex::mdspan<const U, stdex::dextents<std::size_t, 2>>;
   using K_t = stdex::mdspan<const U, stdex::dextents<std::size_t, 2>>;
