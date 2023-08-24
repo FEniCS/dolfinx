@@ -101,7 +101,7 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
 
 /// @brief Interpolate an expression f(x) in a finite element space.
 ///
-/// @param[out] u The function to interpolate into
+/// @param[out] u The Function object to interpolate into
 /// @param[in] f Evaluation of the function `f(x)` at the physical
 /// points `x` given by fem::interpolation_coords. The element used in
 /// fem::interpolation_coords should be the same element as associated
@@ -128,16 +128,16 @@ using mdspan_t = stdex::mdspan<T, stdex::dextents<std::size_t, D>>;
 
 /// @brief Scatter data into non-contiguous memory.
 ///
-/// Scatter blocked data `send_values` to its corresponding src_rank and
+/// Scatter blocked data `send_values` to its corresponding `src_rank` and
 /// insert the data into `recv_values`. The insert location in
 /// `recv_values` is determined by `dest_ranks`. If the j-th dest rank
-/// is -1, then `recv_values[j*block_size:(j+1)*block_size]) = 0.
+/// is -1, then `recv_values[j*block_size:(j+1)*block_size]) = 0`.
 ///
 /// @param[in] comm The mpi communicator
 /// @param[in] src_ranks The rank owning the values of each row in
 /// send_values
 /// @param[in] dest_ranks List of ranks receiving data. Size of array is
-/// how many values we are receiving (not unrolled for blcok_size).
+/// how many values we are receiving (not unrolled for block_size).
 /// @param[in] send_values The values to send back to owner. Shape
 /// (src_ranks.size(), block_size).
 /// @param[in,out] recv_values Array to fill with values.  Shape
@@ -403,10 +403,11 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
   }
 }
 
-/// Interpolate from one finite element Function to another on the same
-/// mesh. The function is for cases where the finite element basis
-/// functions for the two elements are mapped differently, e.g. one may
-/// be Piola mapped and the other with a standard isoparametric map.
+/// Interpolate from one finite element Function to another on the same mesh.
+/// This interpolation function is for cases where the finite element basis
+/// functions for the two elements are mapped differently, e.g. one may be
+/// subject to a Piola mapping and the other to a standard isoparametric
+/// mapping.
 /// @param[out] u1 The function to interpolate to
 /// @param[in] u0 The function to interpolate from
 /// @param[in] cells The cells to interpolate on
@@ -669,10 +670,8 @@ void interpolate_nonmatching_meshes(
   assert(element_u);
   const std::size_t value_size = element_u->value_size();
 
-  auto& dest_ranks = std::get<0>(nmm_interpolation_data);
-  auto& src_ranks = std::get<1>(nmm_interpolation_data);
-  auto& recv_points = std::get<2>(nmm_interpolation_data);
-  auto& evaluation_cells = std::get<3>(nmm_interpolation_data);
+  const auto& [dest_ranks, src_ranks, recv_points, evaluation_cells]
+      = nmm_interpolation_data;
 
   // Evaluate the interpolating function where possible
   std::vector<T> send_values(recv_points.size() / 3 * value_size);
