@@ -828,8 +828,7 @@ vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   engine.Put(ghost, x_ghost.data());
 
   engine.PerformPuts();
-
-  return std::make_pair(x_id, x_ghost);
+  return {std::move(x_id), std::move(x_ghost)};
 }
 } // namespace impl_vtx
 
