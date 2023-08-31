@@ -65,10 +65,8 @@
 # and considering the boundary conditions
 #
 # $$
-# \begin{align}
 # u &= 0 \quad {\rm on} \ \partial\Omega, \\
 # \nabla^{2} u &= 0 \quad {\rm on} \ \partial\Omega,
-# \end{align}
 # $$
 #
 # a weak formulation of the biharmonic problem reads: find $u \in V$ such that

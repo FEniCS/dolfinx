@@ -57,13 +57,11 @@
 # efficiencies as:
 #
 # $$
-# \begin{align}
 # & q_{\mathrm{sca}}=(2 / \alpha)\left[\left|a_0\right|^{2}
 # +2 \sum_{\nu=1}^{\infty}\left|a_\nu\right|^{2}\right] \\
 # & q_{\mathrm{ext}}=(2 / \alpha) \operatorname{Re}\left[ a_0
 # +2 \sum_{\nu=1}^{\infty} a_\nu\right] \\
 # & q_{\mathrm{abs}} = q_{\mathrm{ext}} - q_{\mathrm{sca}}
-# \end{align}
 # $$
 
 from typing import Tuple
