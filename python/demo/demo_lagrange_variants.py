@@ -23,14 +23,11 @@ import basix.ufl
 import matplotlib.pylab as plt
 import numpy as np
 import ufl
+from dolfinx.fem.petsc import LinearProblem
 from mpi4py import MPI
 from ufl import ds, dx, grad, inner
 
 from dolfinx import default_scalar_type, fem, mesh
-
-if np.issubdtype(default_scalar_type, np.complexfloating):
-    print("Demo should only be executed with DOLFINx real mode")
-    exit(0)
 # -
 
 # Note that Basix and the Basix UFL wrapper are imported directly. Basix
@@ -131,7 +128,7 @@ g = ufl.sin(5 * x[0])
 a = inner(grad(u), grad(v)) * dx
 L = inner(f, v) * dx + inner(g, v) * ds
 
-problem = fem.petsc.LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+problem = LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 uh = problem.solve()
 # -
 
@@ -165,11 +162,11 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
     uh = fem.Function(V)
     uh.interpolate(lambda x: saw_tooth(x[0]))
     if MPI.COMM_WORLD.size == 1:  # Skip this plotting in parallel
-        pts = []
+        pts = []  # type: ignore
         cells = []
         for cell in range(10):
             for i in range(51):
-                pts.append([cell / 10 + i / 50 / 10, 0, 0])
+                pts.append([cell / 10 + i / 50 / 10, 0, 0])  # type: ignore
                 cells.append(cell)
         values = uh.eval(pts, cells)
         plt.plot(pts, [saw_tooth(i[0]) for i in pts], "k--")

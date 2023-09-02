@@ -86,11 +86,12 @@
 import numpy as np
 
 import ufl
-from basix.ufl import mixed_element, element
+from basix.ufl import element, mixed_element
 from dolfinx import fem, la
 from dolfinx.fem import (Constant, Function, FunctionSpace, dirichletbc,
                          extract_function_spaces, form,
                          locate_dofs_topological)
+from dolfinx.fem.petsc import assemble_matrix_block, assemble_vector_block
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_rectangle, locate_entities_boundary
 from ufl import div, dx, grad, inner
@@ -196,6 +197,13 @@ def nested_iterative_solver():
     P = PETSc.Mat().createNest([[A.getNestSubMatrix(0, 0), None], [None, P11]])
     P.assemble()
 
+    A00 = A.getNestSubMatrix(0, 0)
+    A00.setOption(PETSc.Mat.Option.SPD, True)
+
+    P00, P11 = P.getNestSubMatrix(0, 0), P.getNestSubMatrix(1, 1)
+    P00.setOption(PETSc.Mat.Option.SPD, True)
+    P11.setOption(PETSc.Mat.Option.SPD, True)
+
     # Assemble right-hand side vector
     b = fem.petsc.assemble_vector_nest(L)
 
@@ -267,8 +275,11 @@ def nested_iterative_solver():
     # `scatter_forward`.
     with XDMFFile(MPI.COMM_WORLD, "out_stokes/velocity.xdmf", "w") as ufile_xdmf:
         u.x.scatter_forward()
+        P1 = element("Lagrange", msh.basix_cell(), 1, rank=1)
+        u1 = Function(FunctionSpace(msh, P1))
+        u1.interpolate(u)
         ufile_xdmf.write_mesh(msh)
-        ufile_xdmf.write_function(u)
+        ufile_xdmf.write_function(u1)
 
     with XDMFFile(MPI.COMM_WORLD, "out_stokes/pressure.xdmf", "w") as pfile_xdmf:
         p.x.scatter_forward()
@@ -279,8 +290,8 @@ def nested_iterative_solver():
     norm_u = u.x.norm()
     norm_p = p.x.norm()
     if MPI.COMM_WORLD.rank == 0:
-        print(f"(A) Norm of velocity coefficient vector (blocked, iterative): {norm_u}")
-        print(f"(A) Norm of pressure coefficient vector (blocked, iterative): {norm_p}")
+        print(f"(A) Norm of velocity coefficient vector (nested, iterative): {norm_u}")
+        print(f"(A) Norm of pressure coefficient vector (nested, iterative): {norm_p}")
 
     return norm_u, norm_p
 
@@ -297,11 +308,11 @@ def block_operators():
 
     # Assembler matrix operator, preconditioner and RHS vector into
     # single objects but preserving block structure
-    A = fem.petsc.assemble_matrix_block(a, bcs=bcs)
+    A = assemble_matrix_block(a, bcs=bcs)
     A.assemble()
-    P = fem.petsc.assemble_matrix_block(a_p, bcs=bcs)
+    P = assemble_matrix_block(a_p, bcs=bcs)
     P.assemble()
-    b = fem.petsc.assemble_vector_block(L, a, bcs=bcs)
+    b = assemble_vector_block(L, a, bcs=bcs)
 
     # Set the nullspace for pressure (since pressure is determined only
     # up to a constant)
@@ -429,8 +440,8 @@ def block_direct_solver():
     # Compute the $L^2$ norms of the u and p vectors
     norm_u, norm_p = u.x.norm(), p.x.norm()
     if MPI.COMM_WORLD.rank == 0:
-        print(f"(C) Norm of velocity coefficient vector (blocked, iterative): {norm_u}")
-        print(f"(C) Norm of pressure coefficient vector (blocked, iterative): {norm_p}")
+        print(f"(C) Norm of velocity coefficient vector (blocked, direct): {norm_u}")
+        print(f"(C) Norm of pressure coefficient vector (blocked, direct): {norm_p}")
 
     return norm_u, norm_p
 
@@ -450,17 +461,17 @@ def mixed_direct():
     W = FunctionSpace(msh, TH)
 
     # No slip boundary condition
-    noslip = Function(V)
+    W0, _ = W.sub(0).collapse()
+    noslip = Function(W0)
     facets = locate_entities_boundary(msh, 1, noslip_boundary)
-    dofs = locate_dofs_topological((W.sub(0), V), 1, facets)
+    dofs = locate_dofs_topological((W.sub(0), W0), 1, facets)
     bc0 = dirichletbc(noslip, dofs, W.sub(0))
 
     # Driving velocity condition u = (1, 0) on top boundary (y = 1)
-    W0, _ = W.sub(0).collapse()
     lid_velocity = Function(W0)
     lid_velocity.interpolate(lid_velocity_expression)
     facets = locate_entities_boundary(msh, 1, lid)
-    dofs = locate_dofs_topological((W.sub(0), V), 1, facets)
+    dofs = locate_dofs_topological((W.sub(0), W0), 1, facets)
     bc1 = dirichletbc(lid_velocity, dofs, W.sub(0))
 
     # Collect Dirichlet boundary conditions
@@ -515,8 +526,8 @@ def mixed_direct():
     # Compute norms
     norm_u, norm_p = u.x.norm(), p.x.norm()
     if MPI.COMM_WORLD.rank == 0:
-        print(f"(D) Norm of velocity coefficient vector (blocked, iterative): {norm_u}")
-        print(f"(D) Norm of pressure coefficient vector (blocked, iterative): {norm_p}")
+        print(f"(D) Norm of velocity coefficient vector (monolithic, direct): {norm_u}")
+        print(f"(D) Norm of pressure coefficient vector (monolithic, direct): {norm_p}")
 
     return norm_u, norm_u
 

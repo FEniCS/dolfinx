@@ -1,5 +1,5 @@
 ---
-name: End-user Docker images
+name: Docker end-user images
 
 # Builds all end-user images nightly.
 #
@@ -26,7 +26,7 @@ on:
 
       dockerfile:
         description: "Dockerfile"
-        default: "docker/Dockerfile"
+        default: "docker/Dockerfile.end-user"
         type: string
         required: true
 
@@ -87,7 +87,7 @@ jobs:
       - name: Set Dockerfile
         run: |
           USER_INPUT=${{ github.event.inputs.dockerfile }}
-          echo "DOCKERFILE=${USER_INPUT:-docker/Dockerfile}" >> $GITHUB_ENV
+          echo "DOCKERFILE=${USER_INPUT:-docker/Dockerfile.end-user}" >> $GITHUB_ENV
 
       - name: Set baseimage
         run: |
@@ -148,9 +148,7 @@ jobs:
             BASEIMAGE=${{ env.BASEIMAGE }}
           context: .
           file: dolfinx/${{ env.DOCKERFILE }}
-          load: true
           target: intermediate
-          tags: intermediate
 
       - name: Build dolfinx
         uses: docker/build-push-action@v3
@@ -201,7 +199,6 @@ jobs:
         run: |
           docker rmi docker.io/dolfinx/lab:${{ env.TAG }}
           docker rmi docker.io/dolfinx/dolfinx:${{ env.TAG }}
-          docker rmi intermediate
           docker rmi docker.io/dolfinx/dolfinx-onbuild:${{ env.TAG }}
 
   create_multiarch_end_user_images:

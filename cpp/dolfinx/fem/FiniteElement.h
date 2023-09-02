@@ -26,14 +26,19 @@ template <std::floating_point T>
 class FiniteElement
 {
 public:
-  /// Create finite element from UFC finite element
-  /// @param[in] e UFC finite element
+  /// @brief Create finite element from UFC finite element.
+  /// @param[in] e UFC finite element.
   explicit FiniteElement(const ufcx_finite_element& e);
 
-  /// Create finite element from a Basix finite element
+  /// @brief Create finite element from a Basix finite element.
   /// @param[in] element Basix finite element
-  /// @param[in] bs The block size
-  FiniteElement(const basix::FiniteElement<T>& element, int bs);
+  /// @param[in] value_shape Value shape for 'blocked' elements, e.g.
+  /// vector-valued Lagrange elements where each component for the
+  /// vector field is a Lagrange element. For example, a vector-valued
+  /// element in 3D will have `value_shape` equal to `{3}`, and for a
+  /// second-order tensor element in 2D `value_shape` equal to `{2, 2}`.
+  FiniteElement(const basix::FiniteElement<T>& element,
+                const std::vector<std::size_t>& value_shape);
 
   /// Copy constructor
   FiniteElement(const FiniteElement& element) = delete;
@@ -165,18 +170,19 @@ public:
   /// @return True if interpolation is an identity operation
   bool interpolation_ident() const noexcept;
 
-  /// Check if the push forward/pull back map from the values on reference to
-  /// the values on a physical cell for this element is the identity map.
+  /// Check if the push forward/pull back map from the values on
+  /// reference to the values on a physical cell for this element is the
+  /// identity map.
   /// @return True if the map is the identity
   bool map_ident() const noexcept;
 
-  /// @brief Points on the reference cell at which an expression needs to
-  /// be evaluated in order to interpolate the expression in the finite
-  /// element space.
+  /// @brief Points on the reference cell at which an expression needs
+  /// to be evaluated in order to interpolate the expression in the
+  /// finite element space.
   ///
-  /// For Lagrange elements the points will just be the
-  /// nodal positions. For other elements the points will typically be
-  /// the quadrature points used to evaluate moment degrees of freedom.
+  /// For Lagrange elements the points will just be the nodal positions.
+  /// For other elements the points will typically be the quadrature
+  /// points used to evaluate moment degrees of freedom.
   /// @return Interpolation point coordinates on the reference cell,
   /// returning the (0) coordinates data (row-major) storage and (1) the
   /// shape `(num_points, tdim)`.

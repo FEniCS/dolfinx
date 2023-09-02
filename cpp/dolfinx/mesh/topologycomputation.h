@@ -28,9 +28,9 @@ namespace dolfinx::mesh
 {
 class Topology;
 
-/// Compute mesh entities of given topological dimension by computing
-/// entity-to-vertex connectivity (dim, 0), and cell-to-entity
-/// connectivity (tdim, dim)
+/// @brief Compute mesh entities of given topological dimension by
+/// computing entity-to-vertex connectivity (dim, 0), and cell-to-entity
+/// connectivity (tdim, dim).
 /// @param[in] comm MPI Communicator
 /// @param[in] topology Mesh topology
 /// @param[in] dim The dimension of the entities to create
@@ -44,8 +44,8 @@ std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<common::IndexMap>, std::vector<std::int32_t>>
 compute_entities(MPI_Comm comm, const Topology& topology, int dim);
 
-/// Compute connectivity (d0 -> d1) for given pair of topological
-/// dimensions
+/// @brief Compute connectivity (d0 -> d1) for given pair of topological
+/// dimensions.
 /// @param[in] topology The topology
 /// @param[in] d0 The dimension of the nodes in the adjacency list
 /// @param[in] d1 The dimension of the edges in the adjacency list

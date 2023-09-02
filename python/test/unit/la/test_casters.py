@@ -82,7 +82,7 @@ PYBIND11_MODULE(petsc_casters_cppimport, m)
     x1.create(MPI.COMM_WORLD)
     x1.setSizes((local_range[1] - local_range[0], None))
     x1.setFromOptions()
-    x1.setArray(np.arange(local_range[0], local_range[1]))
+    x1.setArray(np.arange(local_range[0], local_range[1], dtype=PETSc.ScalarType))
     x2 = x1.copy()
 
     # Replace each component by its exponential

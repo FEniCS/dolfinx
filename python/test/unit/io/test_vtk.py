@@ -8,10 +8,8 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from numpy.testing import assert_array_equal
-
 import ufl
-from basix.ufl import mixed_element, element
+from basix.ufl import element, mixed_element
 from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
                          VectorFunctionSpace)
 from dolfinx.io import VTKFile
@@ -19,8 +17,10 @@ from dolfinx.io.utils import cell_perm_vtk  # noqa F401
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_interval, create_unit_square)
 from dolfinx.plot import create_vtk_mesh
-
 from mpi4py import MPI
+from numpy.testing import assert_array_equal
+
+from dolfinx import default_real_type
 
 cell_types_2D = [CellType.triangle, CellType.quadrilateral]
 cell_types_3D = [CellType.tetrahedron, CellType.hexahedron]
@@ -124,9 +124,9 @@ def test_save_2d_vector(tempdir, cell_type):
 def test_save_2d_vector_CG2(tempdir):
     points = np.array([[0, 0], [1, 0], [1, 2], [0, 2],
                        [1 / 2, 0], [1, 1], [1 / 2, 2],
-                       [0, 1], [1 / 2, 1]])
+                       [0, 1], [1 / 2, 1]], dtype=default_real_type)
     points = np.array([[0, 0], [1, 0], [0, 2], [0.5, 1], [0, 1], [0.5, 0],
-                       [1, 2], [0.5, 2], [1, 1]])
+                       [1, 2], [0.5, 2], [1, 1]], dtype=default_real_type)
     cells = np.array([[0, 1, 2, 3, 4, 5],
                       [1, 6, 2, 7, 3, 8]])
     domain = ufl.Mesh(element("Lagrange", "triangle", 2, rank=1))
@@ -172,6 +172,25 @@ def test_save_vtk_mixed(tempdir):
             vtk.write_function([U.sub(i) for i in range(W.num_sub_spaces)], 0)
 
 
+@pytest.mark.parametrize("cell_type", cell_types_2D)
+def test_save_vector_element(tempdir, cell_type):
+    mesh = create_unit_square(MPI.COMM_WORLD, 16, 16, cell_type=cell_type)
+    u = Function(FunctionSpace(mesh, ("RT", 1)))
+
+    def f(x):
+        vals = np.zeros((2, x.shape[1]))
+        vals[0] = x[0]
+        vals[1] = 2 * x[0] * x[1]
+        return vals
+
+    u.interpolate(f)
+    filename = Path(tempdir, "u.pvd")
+    with pytest.raises(RuntimeError):
+        with VTKFile(MPI.COMM_WORLD, filename, "w") as vtk:
+            vtk.write_function(u, 0.)
+            vtk.write_function(u, 1.)
+
+
 def test_save_vtk_cell_point(tempdir):
     """Test writing cell-wise and point-wise data"""
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
@@ -194,8 +213,7 @@ def test_save_vtk_cell_point(tempdir):
 
 def test_save_1d_tensor(tempdir):
     mesh = create_unit_interval(MPI.COMM_WORLD, 32)
-    e = element(
-        "Lagrange", mesh.basix_cell(), 2, shape=(2, 2))
+    e = element("Lagrange", mesh.basix_cell(), 2, shape=(2, 2))
     u = Function(FunctionSpace(mesh, e))
     u.x.array[:] = 1.0
     filename = Path(tempdir, "u.pvd")

@@ -112,14 +112,16 @@
 
 # +
 import numpy as np
+
 import ufl
+from dolfinx import fem, io, mesh, plot
+from dolfinx.fem.petsc import LinearProblem
 from dolfinx.mesh import CellType, GhostMode
-from mpi4py import MPI
-from petsc4py.PETSc import ScalarType
 from ufl import (CellDiameter, FacetNormal, avg, div, dS, dx, grad, inner,
                  jump, pi, sin)
 
-from dolfinx import fem, io, mesh, plot
+from mpi4py import MPI
+from petsc4py.PETSc import ScalarType
 
 # -
 
@@ -162,7 +164,7 @@ facets = mesh.locate_entities_boundary(msh, dim=1,
 dofs = fem.locate_dofs_topological(V=V, entity_dim=1, entities=facets)
 
 # and use {py:func}`dirichletbc <dolfinx.fem.dirichletbc>` to create a
-# {py:class}`DirichletBCMetaClass <dolfinx.fem.DirichletBCMetaClass>`
+# {py:class}`DirichletBC <dolfinx.fem.DirichletBC>`
 # class that represents the boundary condition. In this case, we impose
 # Dirichlet boundary conditions with value $0$ on the entire boundary
 # $\partial\Omega$.
@@ -207,22 +209,24 @@ a = inner(div(grad(u)), div(grad(v))) * dx \
 L = inner(f, v) * dx
 # -
 
-# We create a {py:class}`LinearProblem <dolfinx.fem.LinearProblem>`
+# We create a {py:class}`LinearProblem <dolfinx.fem.petsc.LinearProblem>`
 # object that brings together the variational problem, the Dirichlet
 # boundary condition, and which specifies the linear solver. In this
 # case we use a direct (LU) solver. The {py:func}`solve
-# <dolfinx.fem.LinearProblem.solve>` will compute a solution.
+# <dolfinx.fem.petsc.LinearProblem.solve>` will compute a solution.
 
-problem = fem.petsc.LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_type": "preonly",
-                                                                 "pc_type": "lu"})
+problem = LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 uh = problem.solve()
 
 # The solution can be written to a  {py:class}`XDMFFile
 # <dolfinx.io.XDMFFile>` file visualization with ParaView or VisIt
 
 with io.XDMFFile(msh.comm, "out_biharmonic/biharmonic.xdmf", "w") as file:
+    V1 = fem.FunctionSpace(msh, ("Lagrange", 1))
+    u1 = fem.Function(V1)
+    u1.interpolate(uh)
     file.write_mesh(msh)
-    file.write_function(uh)
+    file.write_function(u1)
 
 # and displayed using [pyvista](https://docs.pyvista.org/).
 

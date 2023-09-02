@@ -6,21 +6,20 @@
 
 import numpy as np
 import pytest
-
 import ufl
-from basix.ufl import mixed_element, element
+from basix.ufl import element, mixed_element
 from dolfinx.fem import (Constant, Function, FunctionSpace,
-                         TensorFunctionSpace, VectorFunctionSpace, dirichletbc,
-                         form, locate_dofs_geometrical,
-                         locate_dofs_topological)
-from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
-                               create_matrix, create_vector, set_bc)
+                         TensorFunctionSpace, VectorFunctionSpace,
+                         apply_lifting, assemble_matrix, assemble_vector,
+                         create_matrix, create_vector, dirichletbc, form,
+                         locate_dofs_geometrical, locate_dofs_topological,
+                         set_bc)
 from dolfinx.mesh import (CellType, create_unit_cube, create_unit_square,
                           locate_entities_boundary)
+from mpi4py import MPI
 from ufl import dx, inner
 
-from mpi4py import MPI
-from petsc4py import PETSc
+from dolfinx import default_real_type, default_scalar_type, la
 
 
 def test_locate_dofs_geometrical():
@@ -76,34 +75,33 @@ def test_overlapping_bcs():
     # Check only one dof pair is found globally
     assert len(set(np.concatenate(MPI.COMM_WORLD.allgather(dof_corner)))) == 1
 
-    bcs = [dirichletbc(PETSc.ScalarType(0), dofs_left, V),
-           dirichletbc(PETSc.ScalarType(123.456), dofs_top, V)]
+    bcs = [dirichletbc(default_scalar_type(0), dofs_left, V),
+           dirichletbc(default_scalar_type(123.456), dofs_top, V)]
 
     A, b = create_matrix(a), create_vector(L)
     assemble_matrix(A, a, bcs=bcs)
-    A.assemble()
+    A.scatter_reverse()
 
     # Check the diagonal (only on the rank that owns the row)
-    d = A.getDiagonal()
+    As = A.to_scipy(ghosted=True)
+    d = As.diagonal()
     if len(dof_corner) > 0 and dof_corner[0] < V.dofmap.index_map.size_local:
-        assert np.isclose(d.array_r[dof_corner[0]], 1.0)
+        assert d[dof_corner[0]] == 1.0
 
-    with b.localForm() as b_loc:
-        b_loc.set(0)
-    assemble_vector(b, L)
-    apply_lifting(b, [a], [bcs])
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    set_bc(b, bcs)
-    b.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    b.array[:] = 0
+    assemble_vector(b.array, L)
+    apply_lifting(b.array, [a], [bcs])
+    b.scatter_reverse(la.InsertMode.add)
+    set_bc(b.array, bcs)
+    b.scatter_forward()
 
     if len(dof_corner) > 0:
-        with b.localForm() as b_loc:
-            assert b_loc[dof_corner[0]] == 123.456
+        assert b.array[dof_corner[0]] == default_real_type(123.456)
 
 
 def test_constant_bc_constructions():
     """Test construction from constant values"""
-    msh = create_unit_square(MPI.COMM_WORLD, 4, 4)
+    msh = create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=default_real_type)
     V0 = FunctionSpace(msh, ("Lagrange", 1))
     V1 = VectorFunctionSpace(msh, ("Lagrange", 1))
     V2 = TensorFunctionSpace(msh, ("Lagrange", 1))
@@ -114,20 +112,25 @@ def test_constant_bc_constructions():
     boundary_dofs1 = locate_dofs_topological(V1, tdim - 1, boundary_facets)
     boundary_dofs2 = locate_dofs_topological(V2, tdim - 1, boundary_facets)
 
-    bc0 = dirichletbc(1.0 + 2.2j, boundary_dofs0, V0)
-    assert bc0.value.value.dtype == np.complex128
-    assert bc0.value.value.shape == tuple()
-    assert bc0.value.value == 1.0 + 2.2j
+    if default_real_type == np.float64:
+        dtype = np.complex128
+    else:
+        dtype = np.complex64
 
-    bc1 = dirichletbc(np.array([1.0 + 2.2j, 3.0 + 2.2j], dtype=np.complex128), boundary_dofs1, V1)
-    assert bc1.value.value.dtype == np.complex128
-    assert bc1.value.value.shape == (tdim,)
-    assert (bc1.value.value == [1.0 + 2.2j, 3.0 + 2.2j]).all()
+    bc0 = dirichletbc(dtype(1.0 + 2.2j), boundary_dofs0, V0)
+    assert bc0.g.value.dtype == dtype
+    assert bc0.g.value.shape == tuple()
+    assert bc0.g.value == dtype(1.0 + 2.2j)
 
-    bc2 = dirichletbc(np.array([[1.0, 3.0], [3.0, -2.0]], dtype=np.float32), boundary_dofs2, V2)
-    assert bc2.value.value.dtype == np.float32
-    assert bc2.value.value.shape == (tdim, tdim)
-    assert (bc2.value.value == [[1.0, 3.0], [3.0, -2.0]]).all()
+    bc1 = dirichletbc(np.array([1.0 + 2.2j, 3.0 + 2.2j], dtype=dtype), boundary_dofs1, V1)
+    assert bc1.g.value.dtype == dtype
+    assert bc1.g.value.shape == (tdim,)
+    assert (bc1.g.value == [dtype(1.0 + 2.2j), dtype(3.0 + 2.2j)]).all()
+
+    bc2 = dirichletbc(np.array([[1.0, 3.0], [3.0, -2.0]], dtype=default_real_type), boundary_dofs2, V2)
+    assert bc2.g.value.dtype == default_real_type
+    assert bc2.g.value.shape == (tdim, tdim)
+    assert (bc2.g.value == [[1.0, 3.0], [3.0, -2.0]]).all()
 
 
 @pytest.mark.parametrize('mesh_factory',
@@ -142,7 +145,7 @@ def test_constant_bc(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
     V = FunctionSpace(mesh, ("Lagrange", 1))
-    c = PETSc.ScalarType(2)
+    c = default_scalar_type(2)
     tdim = mesh.topology.dim
     boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
 
@@ -176,7 +179,7 @@ def test_vector_constant_bc(mesh_factory):
     tdim = mesh.topology.dim
     V = VectorFunctionSpace(mesh, ("Lagrange", 1))
     assert V.num_sub_spaces == mesh.geometry.dim
-    c = np.arange(1, mesh.geometry.dim + 1, dtype=PETSc.ScalarType)
+    c = np.arange(1, mesh.geometry.dim + 1, dtype=default_scalar_type)
     boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
 
     # Set using sub-functions
@@ -214,13 +217,13 @@ def test_sub_constant_bc(mesh_factory):
     mesh = func(*args)
     tdim = mesh.topology.dim
     V = VectorFunctionSpace(mesh, ("Lagrange", 1))
-    c = Constant(mesh, PETSc.ScalarType(3.14))
+    c = Constant(mesh, default_scalar_type(3.14))
     boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
 
     for i in range(V.num_sub_spaces):
         Vi = V.sub(i).collapse()[0]
         u_bci = Function(Vi)
-        u_bci.x.array[:] = PETSc.ScalarType(c.value)
+        u_bci.x.array[:] = default_scalar_type(c.value)
 
         boundary_dofsi = locate_dofs_topological((V.sub(i), Vi), tdim - 1, boundary_facets)
         bc_fi = dirichletbc(u_bci, boundary_dofsi, V.sub(i))
@@ -252,7 +255,7 @@ def test_mixed_constant_bc(mesh_factory):
     W = FunctionSpace(mesh, TH)
     u = Function(W)
 
-    bc_val = PETSc.ScalarType(3)
+    bc_val = default_scalar_type(3)
     c = Constant(mesh, bc_val)
     u_func = Function(W)
     for i in range(2):
@@ -287,7 +290,7 @@ def test_mixed_blocked_constant():
         element("Lagrange", mesh.basix_cell(), 2, rank=1)])
     W = FunctionSpace(mesh, TH)
     u = Function(W)
-    c0 = PETSc.ScalarType(3)
+    c0 = default_scalar_type(3)
     dofs0 = locate_dofs_topological(W.sub(0), tdim - 1, boundary_facets)
     bc0 = dirichletbc(c0, dofs0, W.sub(0))
     set_bc(u.vector, [bc0])
@@ -302,7 +305,7 @@ def test_mixed_blocked_constant():
     assert np.allclose(u.x.array, u_func.x.array)
 
     # Check that vector space throws error
-    c1 = PETSc.ScalarType((5, 7))
+    c1 = default_scalar_type((5, 7))
     with pytest.raises(RuntimeError):
         dofs1 = locate_dofs_topological(W.sub(1), tdim - 1, boundary_facets)
         dirichletbc(c1, dofs1, W.sub(1))
