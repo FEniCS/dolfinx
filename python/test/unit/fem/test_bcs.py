@@ -80,7 +80,7 @@ def test_overlapping_bcs():
 
     A, b = create_matrix(a), create_vector(L)
     assemble_matrix(A, a, bcs=bcs)
-    A.finalize()
+    A.scatter_reverse()
 
     # Check the diagonal (only on the rank that owns the row)
     As = A.to_scipy(ghosted=True)

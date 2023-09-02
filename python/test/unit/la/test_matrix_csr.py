@@ -140,7 +140,7 @@ def test_distributed_csr(dtype):
     data = np.ones(len(irow) * len(icol), dtype=dtype)
     mat.add(data, irow, icol, 1)
     pre_final_sum = mat.data.sum()
-    mat.finalize()
+    mat.scatter_reverse()
     assert np.isclose(mat.data.sum(), pre_final_sum)
 
 
@@ -182,9 +182,9 @@ def test_set_diagonal_distributed(dtype):
     reference = np.full_like(diag, value, dtype=dtype)
     assert np.allclose(diag, reference)
 
-    # Finalize matrix: this will remove ghost rows and diagonal values of
+    # Update matrix: this will remove ghost rows and diagonal values of
     # ghost rows will be added to diagonal of corresponding process
-    A.finalize()
+    A.scatter_reverse()
 
     diag = As.diagonal()
     nlocal = index_map.size_local
@@ -210,8 +210,28 @@ def test_set_diagonal_distributed(dtype):
     assert np.allclose(diag[:nlocal], reference[:nlocal])
     assert np.allclose(diag[nlocal:], np.zeros_like(diag[nlocal:]))
 
-    # Finalize matrix:
+    # Update matrix:
     # this will zero ghost rows and diagonal values are already zero.
-    A.finalize()
+    A.scatter_reverse()
     assert (As.diagonal()[nlocal:] == dtype(0.)).all()
     assert (As.diagonal()[:nlocal] == dtype(1.)).all()
+
+
+@pytest.mark.parametrize('dtype', [np.float32, np.float64, np.complex64, np.complex128])
+def test_bad_entry(dtype):
+    sp = create_test_sparsity(6, 1)
+    mat1 = matrix_csr(sp, dtype=dtype)
+
+    # Set block in bs=1 matrix (tests insert_blocked_csr)
+    with pytest.raises(RuntimeError):
+        mat1.set([1.0, 2.0, 3.0, 4.0], [0], [0], 2)
+
+    # Set an single entry in bs=1 matrix (tests insert_csr)
+    with pytest.raises(RuntimeError):
+        mat1.add([1.0], [0], [0], 1)
+
+    sp = create_test_sparsity(3, 2)
+    mat2 = matrix_csr(sp, BlockMode.compact, dtype=dtype)
+    # set unblocked in bs=2 matrix (tests insert_nonblocked_csr)
+    with pytest.raises(RuntimeError):
+        mat2.add([2.0, 3.0, 4.0, 5.0], [0, 1], [0, 1], 1)

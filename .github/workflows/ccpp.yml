@@ -140,7 +140,7 @@ jobs:
           ctest -V -R demo -R mpi_2
 
       - name: Build Python interface
-        run: python3 -m pip -v install --global-option build --global-option --debug python/
+        run: CMAKE_BUILD_TYPE=Debug python3 -m pip -v install python/
       - name: Build Python interface documentation
         run: |
           python3 -m pip install sphinx==5.0.2

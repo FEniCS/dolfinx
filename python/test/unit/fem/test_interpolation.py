@@ -7,20 +7,22 @@
 
 import random
 
+import basix
 import numpy as np
 import pytest
-
-import basix
 import ufl
 from basix.ufl import (blocked_element, custom_element, element,
                        enriched_element, mixed_element)
 from dolfinx.fem import (Expression, Function, FunctionSpace,
-                         VectorFunctionSpace, assemble_scalar, form)
-from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
-                          create_unit_square, locate_entities, meshtags)
-from dolfinx import default_real_type
-
+                         VectorFunctionSpace, assemble_scalar,
+                         create_nonmatching_meshes_interpolation_data, form)
+from dolfinx.geometry import bb_tree, compute_collisions_points
+from dolfinx.mesh import (CellType, create_mesh, create_rectangle,
+                          create_unit_cube, create_unit_square,
+                          locate_entities, locate_entities_boundary, meshtags)
 from mpi4py import MPI
+
+from dolfinx import default_real_type
 
 parametrize_cell_types = pytest.mark.parametrize(
     "cell_type", [
@@ -663,9 +665,8 @@ def test_custom_vector_element():
     for _ in range(3):
         M[1].append(np.zeros((0, 2, 0, 1)))
     M[2].append(np.zeros((0, 2, 0, 1)))
-    e = custom_element(
-        basix.CellType.triangle, [2], wcoeffs, x, M, 0, basix.MapType.identity,
-        basix.SobolevSpace.H1, False, 1, 1)
+    e = custom_element(basix.CellType.triangle, [2], wcoeffs, x, M, 0, basix.MapType.identity,
+                       basix.SobolevSpace.H1, False, 1, 1)
 
     V = FunctionSpace(mesh, e)
     W = VectorFunctionSpace(mesh, ("Lagrange", 1))
@@ -704,3 +705,133 @@ def test_mixed_interpolation_permuting(cell_type, order):
     Eb_m.sub(1).interpolate(g)
     diff = Eb_m[2].dx(1) - dgdy
     assert assemble_scalar(form(ufl.dot(diff, diff) * ufl.dx)) == pytest.approx(error)
+
+
+@pytest.mark.parametrize("xtype", [np.float64])
+@pytest.mark.parametrize("cell_type0", [CellType.hexahedron, CellType.tetrahedron])
+@pytest.mark.parametrize("cell_type1", [CellType.triangle, CellType.quadrilateral])
+def test_nonmatching_mesh_interpolation(xtype, cell_type0, cell_type1):
+    mesh0 = create_unit_cube(MPI.COMM_WORLD, 5, 6, 7, cell_type=cell_type0, dtype=xtype)
+    mesh1 = create_unit_square(MPI.COMM_WORLD, 5, 4, cell_type=cell_type1, dtype=xtype)
+
+    def f(x):
+        return (7 * x[1], 3 * x[0], x[2] + 0.4)
+
+    el0 = element("Lagrange", mesh0.basix_cell(), 1, shape=(3, ))
+    V0 = FunctionSpace(mesh0, el0)
+    el1 = element("Lagrange", mesh1.basix_cell(), 1, shape=(3, ))
+    V1 = FunctionSpace(mesh1, el1)
+
+    # Interpolate on 3D mesh
+    u0 = Function(V0, dtype=xtype)
+    u0.interpolate(f)
+    u0.x.scatter_forward()
+
+    # Interpolate 3D->2D
+    u1 = Function(V1, dtype=xtype)
+    u1.interpolate(u0, nmm_interpolation_data=create_nonmatching_meshes_interpolation_data(
+        u1.function_space.mesh._cpp_object,
+        u1.function_space.element,
+        u0.function_space.mesh._cpp_object))
+    u1.x.scatter_forward()
+
+    # Exact interpolation on 2D mesh
+    u1_ex = Function(V1, dtype=xtype)
+    u1_ex.interpolate(f)
+    u1_ex.x.scatter_forward()
+
+    assert np.allclose(u1_ex.x.array, u1.x.array, rtol=1.0e-4, atol=1.0e-6)
+
+    # Interpolate 2D->3D
+    u0_2 = Function(V0, dtype=xtype)
+    u0_2.interpolate(u1, nmm_interpolation_data=create_nonmatching_meshes_interpolation_data(
+        u0_2.function_space.mesh._cpp_object,
+        u0_2.function_space.element,
+        u1.function_space.mesh._cpp_object))
+
+    # Check that function values over facets of 3D mesh of the twice interpolated property is preserved
+    def locate_bottom_facets(x):
+        return np.isclose(x[2], 0)
+    facets = locate_entities_boundary(mesh0, mesh0.topology.dim - 1, locate_bottom_facets)
+    facet_tag = meshtags(mesh0, mesh0.topology.dim - 1, facets, np.full(len(facets), 1, dtype=np.int32))
+    residual = ufl.inner(u0 - u0_2, u0 - u0_2) * ufl.ds(domain=mesh0, subdomain_data=facet_tag, subdomain_id=1)
+    assert np.isclose(assemble_scalar(form(residual, dtype=xtype)), 0)
+
+
+@pytest.mark.parametrize("xtype", [np.float64])
+def test_nonmatching_mesh_single_cell_overlap_interpolation(xtype):
+    # mesh2 is contained by a single cell of mesh1. Here we test
+    # interpolation when *not* every process has data to communicate
+
+    # Test interpolation from mesh1 to mesh2
+    n_mesh1 = 2
+    mesh1 = create_rectangle(MPI.COMM_WORLD, [[0.0, 0.0], [1.0, 1.0]], [n_mesh1, n_mesh1],
+                             cell_type=CellType.quadrilateral, dtype=xtype)
+
+    n_mesh2 = 2
+    p0_mesh2 = 1.0 / n_mesh1
+    mesh2 = create_rectangle(MPI.COMM_WORLD, [[0.0, 0.0], [p0_mesh2, p0_mesh2]], [n_mesh2, n_mesh2],
+                             cell_type=CellType.triangle, dtype=xtype)
+
+    u1 = Function(FunctionSpace(mesh1, ("CG", 1)), name="u1", dtype=xtype)
+    u2 = Function(FunctionSpace(mesh2, ("CG", 1)), name="u2", dtype=xtype)
+
+    def f_test1(x):
+        return 1.0 - x[0] * x[1]
+
+    u1.interpolate(f_test1)
+    u1.x.scatter_forward()
+
+    u1_2_u2_nmm_data = \
+        create_nonmatching_meshes_interpolation_data(
+            u2.function_space.mesh._cpp_object,
+            u2.function_space.element,
+            u1.function_space.mesh._cpp_object)
+
+    u2.interpolate(u1, nmm_interpolation_data=u1_2_u2_nmm_data)
+    u2.x.scatter_forward()
+
+    # interpolate f which is exactly represented on the element
+    u2_exact = Function(u2.function_space, dtype=xtype)
+    u2_exact.interpolate(f_test1)
+    u2_exact.x.scatter_forward()
+
+    l2_error = assemble_scalar(form((u2 - u2_exact)**2 * ufl.dx, dtype=xtype))
+    assert np.isclose(l2_error, 0.0, rtol=np.finfo(xtype).eps, atol=np.finfo(xtype).eps)
+
+    # Test interpolation from mesh2 to mesh1
+    def f_test2(x):
+        return x[0] * x[1]
+
+    u1.x.array[:] = 0.0
+    u1.x.scatter_forward()
+
+    u2.interpolate(f_test2)
+    u2.x.scatter_forward()
+
+    u2_2_u1_nmm_data = \
+        create_nonmatching_meshes_interpolation_data(
+            u1.function_space.mesh._cpp_object,
+            u1.function_space.element,
+            u2.function_space.mesh._cpp_object)
+
+    u1.interpolate(u2, nmm_interpolation_data=u2_2_u1_nmm_data)
+    u1.x.scatter_forward()
+
+    u1_exact = Function(u1.function_space, dtype=xtype)
+    u1_exact.interpolate(f_test2)
+    u1_exact.x.scatter_forward()
+
+    # Find the single cell in mesh1 which is overlapped by mesh2
+    tree1 = bb_tree(mesh1, mesh1.topology.dim)
+    cells_overlapped1 = compute_collisions_points(tree1, [p0_mesh2 / 2.0, p0_mesh2 / 2.0, 0.0]).array
+    assert cells_overlapped1.shape[0] <= 1
+
+    # Construct the error measure on the overlapped cell
+    cell_label = 1
+    cts = meshtags(mesh1, mesh1.topology.dim, cells_overlapped1,
+                   np.full_like(cells_overlapped1, cell_label))
+    dx_cell = ufl.Measure("dx", subdomain_data=cts)
+
+    l2_error = assemble_scalar(form((u1 - u1_exact)**2 * dx_cell(cell_label), dtype=xtype))
+    assert np.isclose(l2_error, 0.0, rtol=np.finfo(xtype).eps, atol=np.finfo(xtype).eps)

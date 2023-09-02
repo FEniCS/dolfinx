@@ -7,7 +7,7 @@
 // Unit tests for Distributed Meshes
 
 #include <basix/finite-element.h>
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include <dolfinx.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/partitioners.h>

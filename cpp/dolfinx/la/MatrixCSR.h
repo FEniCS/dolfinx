@@ -160,7 +160,7 @@ public:
   /// There is some overlap of matrix rows between processes to allow for
   /// independent Finite Element assembly, after which, the ghost rows
   /// should be sent to the row owning processes by calling
-  /// `finalize()`.
+  /// `scatter_rev()`.
   ///
   /// @note The block size of the matrix is given by the block size of
   /// the input `SparsityPattern`.
@@ -189,9 +189,9 @@ public:
   /// initialize the matrix can be set.
   /// @note All indices are local to the calling MPI rank and entries
   /// cannot be set in ghost rows.
-  /// @note This should be called after `finalize`. Using before
-  /// `finalize` will set the values correctly, but incoming values may
-  /// get added to them during a subsequent finalize operation.
+  /// @note This should be called after `scatter_rev`. Using before
+  /// `scatter_rev` will set the values correctly, but incoming values may
+  /// get added to them during a subsequent reverse scatter operation.
   /// @tparam BS0 Data row block size
   /// @tparam BS1 Data column block size
   /// @param[in] x The `m` by `n` dense block of values (row-major) to
@@ -233,9 +233,9 @@ public:
   /// initialize the matrix can be accumulated into.
   /// @note All indices are local to the calling MPI rank and entries
   /// may go into ghost rows.
-  /// @note Use `finalize` after all entries have been added to send
-  /// ghost rows to owners. Adding more entries after `finalize` is
-  /// allowed, but another call to `finalize` will then be required.
+  /// @note Use `scatter_rev` after all entries have been added to send
+  /// ghost rows to owners. Adding more entries after `scatter_rev` is
+  /// allowed, but another call to `scatter_rev` will then be required.
   ///
   /// @tparam BS0 Row block size of data
   /// @tparam BS1 Column block size of data
@@ -288,28 +288,29 @@ public:
 
   /// @brief Transfer ghost row data to the owning ranks accumulating
   /// received values on the owned rows, and zeroing any existing data
-  /// in ghost rows.
-  void finalize()
+  /// in ghost rows. This process is analogous to `scatter_rev` for `Vector`
+  /// except that the values are always accumulated on the owning process.
+  void scatter_rev()
   {
-    finalize_begin();
-    finalize_end();
+    scatter_rev_begin();
+    scatter_rev_end();
   }
 
   /// @brief Begin transfer of ghost row data to owning ranks, where it
   /// will be accumulated into existing owned rows.
   /// @note Calls to this function must be followed by
-  /// MatrixCSR::finalize_end(). Between the two calls matrix values
+  /// MatrixCSR::scatter_rev_end(). Between the two calls matrix values
   /// must not be changed.
   /// @note This function does not change the matrix data. Data update only
-  /// occurs with `finalize_end()`.
-  void finalize_begin();
+  /// occurs with `scatter_rev_end()`.
+  void scatter_rev_begin();
 
   /// @brief End transfer of ghost row data to owning ranks.
-  /// @note Must be preceded by MatrixCSR::finalize_begin().
+  /// @note Must be preceded by MatrixCSR::scatter_rev_begin().
   /// @note Matrix data received from other processes will be
   /// accumulated into locally owned rows, and ghost rows will be
   /// zeroed.
-  void finalize_end();
+  void scatter_rev_end();
 
   /// @brief Compute the Frobenius norm squared across all processes.
   /// @note MPI Collective
@@ -357,7 +358,7 @@ public:
 
   /// Block size
   /// @return block sizes for rows and columns
-  const std::array<int, 2>& block_size() const { return _bs; }
+  std::array<int, 2> block_size() const { return _bs; }
 
 private:
   // Maps for the distribution of the ows and columns
@@ -380,7 +381,7 @@ private:
   // Neighborhood communicator (ghost->owner communicator for rows)
   dolfinx::MPI::Comm _comm;
 
-  // -- Precomputed data for finalize/update
+  // -- Precomputed data for scatter_rev/update
 
   // Request in non-blocking communication
   MPI_Request _request;
@@ -396,7 +397,7 @@ private:
   // on _comm)
   std::vector<int> _ghost_row_to_rank;
 
-  // Temporary stores for finalize data during non-blocking communication
+  // Temporary stores for data during non-blocking communication
   container_type _ghost_value_data;
   container_type _ghost_value_data_in;
 };
@@ -641,7 +642,7 @@ MatrixCSR<U, V, W, X>::to_dense() const
 }
 //-----------------------------------------------------------------------------
 template <typename U, typename V, typename W, typename X>
-void MatrixCSR<U, V, W, X>::finalize_begin()
+void MatrixCSR<U, V, W, X>::scatter_rev_begin()
 {
   const std::int32_t local_size0 = _index_maps[0]->size_local();
   const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
@@ -684,7 +685,7 @@ void MatrixCSR<U, V, W, X>::finalize_begin()
 }
 //-----------------------------------------------------------------------------
 template <typename U, typename V, typename W, typename X>
-void MatrixCSR<U, V, W, X>::finalize_end()
+void MatrixCSR<U, V, W, X>::scatter_rev_end()
 {
   int status = MPI_Wait(&_request, MPI_STATUS_IGNORE);
   assert(status == MPI_SUCCESS);

@@ -48,11 +48,13 @@ class CMakeBuild(build_ext):
                        f'-DPython3_LIBRARIES={sysconfig.get_config_var("LIBDEST")}',
                        f'-DPython3_INCLUDE_DIRS={sysconfig.get_config_var("INCLUDEPY")}']
 
-        cfg = 'Debug' if self.debug else 'Release'
-        build_args = ['--config', cfg]
-        cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
-
         env = os.environ.copy()
+        build_args = []
+        if "CMAKE_BUILD_TYPE" not in env:
+            cfg = 'Debug' if self.debug else 'Release'
+            build_args += ['--config', cfg]
+            cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
+
         # default to 3 build threads
         if "CMAKE_BUILD_PARALLEL_LEVEL" not in env:
             env["CMAKE_BUILD_PARALLEL_LEVEL"] = "3"

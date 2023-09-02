@@ -148,7 +148,7 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
     }
   }
 
-  // Origina points IDs
+  // Original point IDs
   std::vector<std::int64_t> x_id(num_nodes);
   std::array<std::int64_t, 2> range = map_dofs->local_range();
   std::int32_t size_local = range[1] - range[0];
@@ -234,14 +234,14 @@ vtk_mesh_from_space(const fem::FunctionSpace<T>& V)
 /// The index of a 'node' corresponds to the index of DOLFINx geometry
 /// 'nodes'.
 ///
-/// @param[in] dofmap_x Geometry dofmap
-/// @param[in] cell_type Cell type
+/// @param[in] dofmap_x Geometry dofmap.
+/// @param[in] cell_type Cell type.
 /// @return Cell topology in VTK ordering and in term of the DOLFINx
-/// geometry 'nodes'
+/// geometry 'nodes'.
 /// @note The indices in the return array correspond to the point
-/// indices in the mesh geometry array
+/// indices in the mesh geometry array.
 /// @note Even if the indices are local (int32), both Fides and VTX
-/// require int64 as local input
+/// require int64 as local input.
 std::pair<std::vector<std::int64_t>, std::array<std::size_t, 2>>
 extract_vtk_connectivity(
     std::experimental::mdspan<const std::int32_t,

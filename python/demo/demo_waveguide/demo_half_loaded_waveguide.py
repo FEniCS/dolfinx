@@ -45,12 +45,12 @@ import numpy as np
 import ufl
 from analytical_modes import verify_mode
 from basix.ufl import element, mixed_element
+from dolfinx.fem.petsc import assemble_matrix
 from dolfinx.mesh import (CellType, create_rectangle, exterior_facet_indices,
                           locate_entities)
 from mpi4py import MPI
-from petsc4py.PETSc import ScalarType
 
-from dolfinx import fem, io, plot
+from dolfinx import default_scalar_type, fem, io, plot
 
 try:
     import pyvista
@@ -104,8 +104,8 @@ eps = fem.Function(D)
 cells_v = locate_entities(msh, msh.topology.dim, Omega_v)
 cells_d = locate_entities(msh, msh.topology.dim, Omega_d)
 
-eps.x.array[cells_d] = np.full_like(cells_d, eps_d, dtype=ScalarType)
-eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=ScalarType)
+eps.x.array[cells_d] = np.full_like(cells_d, eps_d, dtype=default_scalar_type)
+eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=default_scalar_type)
 # -
 
 # In order to find the weak form of our problem, the starting point are
@@ -230,9 +230,9 @@ bc = fem.dirichletbc(u_bc, bc_dofs)
 # Now we can solve the problem with SLEPc. First of all, we need to
 # assemble our $A$ and $B$ matrices with PETSc in this way:
 
-A = fem.petsc.assemble_matrix(a, bcs=[bc])
+A = assemble_matrix(a, bcs=[bc])
 A.assemble()
-B = fem.petsc.assemble_matrix(b, bcs=[bc])
+B = assemble_matrix(b, bcs=[bc])
 B.assemble()
 
 # Now, we need to create the eigenvalue problem in SLEPc. Our problem is

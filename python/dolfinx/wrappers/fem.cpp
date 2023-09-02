@@ -389,7 +389,6 @@ void declare_objects(py::module& m, const std::string& type)
                       const py::array_t<U, py::array::c_style>& X,
                       std::uintptr_t fn_addr,
                       const std::vector<int>& value_shape,
-                      std::shared_ptr<const dolfinx::mesh::Mesh<U>> mesh,
                       std::shared_ptr<const dolfinx::fem::FunctionSpace<U>>
                           argument_function_space)
                    {
@@ -401,24 +400,25 @@ void declare_objects(py::module& m, const std::string& type)
                          coefficients, constants, std::span(X.data(), X.size()),
                          {static_cast<std::size_t>(X.shape(0)),
                           static_cast<std::size_t>(X.shape(1))},
-                         tabulate_expression_ptr, value_shape, mesh,
+                         tabulate_expression_ptr, value_shape,
                          argument_function_space);
                    }),
                py::arg("coefficients"), py::arg("constants"), py::arg("X"),
-               py::arg("fn"), py::arg("value_shape"), py::arg("mesh"),
+               py::arg("fn"), py::arg("value_shape"),
                py::arg("argument_function_space"))
           .def(
               "eval",
               [](const dolfinx::fem::Expression<T, U>& self,
+                 const dolfinx::mesh::Mesh<U>& mesh,
                  const py::array_t<std::int32_t,
                                    py::array::c_style>& active_cells,
                  py::array_t<T, py::array::c_style>& values)
               {
-                self.eval(std::span(active_cells.data(), active_cells.size()),
+                self.eval(mesh, std::span(active_cells.data(), active_cells.size()),
                           std::span(values.mutable_data(), values.size()),
                           {(std::size_t)values.shape(0), (std::size_t)values.shape(1)});
               },
-              py::arg("active_cells"), py::arg("values"))
+              py::arg("mesh"), py::arg("active_cells"), py::arg("values"))
           .def("X",
                [](const dolfinx::fem::Expression<T, U>& self)
                {
@@ -428,7 +428,6 @@ void declare_objects(py::module& m, const std::string& type)
           .def_property_readonly("dtype",
                                  [](const dolfinx::fem::Expression<T, U>& self)
                                  { return py::dtype::of<T>(); })
-          .def_property_readonly("mesh", &dolfinx::fem::Expression<T, U>::mesh)
           .def_property_readonly("value_size",
                                  &dolfinx::fem::Expression<T, U>::value_size)
           .def_property_readonly("value_shape",
@@ -443,17 +442,16 @@ void declare_objects(py::module& m, const std::string& type)
              coefficients,
          const std::vector<std::shared_ptr<const dolfinx::fem::Constant<T>>>&
              constants,
-         std::shared_ptr<const dolfinx::mesh::Mesh<U>> mesh,
          std::shared_ptr<const dolfinx::fem::FunctionSpace<U>>
              argument_function_space)
       {
         const ufcx_expression* p
             = reinterpret_cast<const ufcx_expression*>(expression);
         return dolfinx::fem::create_expression<T, U>(
-            *p, coefficients, constants, mesh, argument_function_space);
+            *p, coefficients, constants, argument_function_space);
       },
       py::arg("expression"), py::arg("coefficients"), py::arg("constants"),
-      py::arg("mesh"), py::arg("argument_function_space"),
+      py::arg("argument_function_space"),
       "Create Form from a pointer to ufc_form.");
 }
 
