@@ -114,10 +114,10 @@ def curl_2d(a: fem.Function):
 # waves impinging them. Mathematically, we can use a complex coordinate
 # transformation of this kind to obtain this absorption:
 #
-# \begin{align}
-# & x^\prime= x\left\{1+j\frac{\alpha}{k_0}\left[\frac{|x|-l_{dom}/2}
-# {(l_{pml}/2 - l_{dom}/2)^2}\right] \right\}\\
-# \end{align}
+# $$
+# x^\prime= x\left\{1+j\frac{\alpha}{k_0}\left[\frac{|x|-l_{dom}/2}
+# {(l_{pml}/2 - l_{dom}/2)^2}\right] \right\}
+# $$
 #
 # with $l_{dom}$ and $l_{pml}$ being the lengths of the domain without
 # and with PML, respectively, and with $\alpha$ being a parameter that
@@ -207,13 +207,13 @@ if have_pyvista:
 # different PML regions have different coordinate transformation, as
 # specified here below:
 #
-# \begin{align}
+# $$
 # \text{PML}_\text{corners} \rightarrow \mathbf{r}^\prime & = (x^\prime, y^\prime) \\
 # \text{PML}_\text{rectangles along x} \rightarrow
 #                                       \mathbf{r}^\prime & = (x^\prime, y) \\
 # \text{PML}_\text{rectangles along y} \rightarrow
 #                                       \mathbf{r}^\prime & = (x, y^\prime).
-# \end{align}
+# $$
 #
 # Now we define some other problem specific parameters:
 
