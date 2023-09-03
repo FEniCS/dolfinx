@@ -10,8 +10,8 @@
 # trial and test functions on this space::
 from basix.ufl import element
 from ufl import (Coefficient, FunctionSpace, Identity, Mesh, TestFunction,
-                 TrialFunction, derivative, det, diff, dx, grad, ln, tr,
-                 variable)
+                 TrialFunction, derivative, det, diff, dx, ds, grad, ln, tr,
+                 variable, inner)
 
 # Function spaces
 e = element("Lagrange", "tetrahedron", 1, shape=(3,))
@@ -30,8 +30,8 @@ v = TestFunction(V)      # Test function
 
 # Functions
 u = Coefficient(V)        # Displacement from previous iteration
-# B = Coefficient(element)        # Body force per unit volume
-# T = Coefficient(element)        # Traction force on the boundary
+B = Coefficient(V)        # Body force per unit volume
+T = Coefficient(V)        # Traction force on the boundary
 
 # Now, we can define the kinematic quantities involved in the model::
 
@@ -63,7 +63,7 @@ lmbda = E*nu/((1 + nu)*(1 - 2*nu))
 psi = (mu/2)*(Ic - 3) - mu*ln(J) + (lmbda/2)*(ln(J))**2
 
 # Total potential energy
-Pi = psi*dx  # - inner(B, u)*dx - inner(T, u)*ds
+Pi = psi*dx - inner(B, u)*dx - inner(T, u)*ds
 
 # First variation of Pi (directional derivative about u in the direction of v)
 F_form = derivative(Pi, u, v)
