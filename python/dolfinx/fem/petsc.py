@@ -623,6 +623,7 @@ class LinearProblem:
         self._b.setFromOptions()
 
     def __del__(self):
+        return
         self._solver.destroy()
         self._A.destroy()
         self._b.destroy()
