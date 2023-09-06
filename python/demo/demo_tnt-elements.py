@@ -81,7 +81,7 @@ evals = basix.tabulate_polynomials(basix.PolynomialType.legendre, basix.CellType
 for j, v in enumerate(evals):
     wcoeffs2[0, j] = sum(v * wts)  # 1
     wcoeffs2[1, j] = sum(v * pts[:, 1] * wts)  # y
-    wcoeffs2[2, j] = sum(v * pts[:, 1]**2 * wts) # y^2
+    wcoeffs2[2, j] = sum(v * pts[:, 1]**2 * wts)  # y^2
     wcoeffs2[3, j] = sum(v * pts[:, 0] * pts[:, 1] * wts)  # xy
     wcoeffs2[4, j] = sum(v * pts[:, 0] * pts[:, 1] ** 2 * wts)  # xy^2
     wcoeffs2[5, j] = sum(v * pts[:, 0]**2 * pts[:, 1] * wts)  # x^2y
