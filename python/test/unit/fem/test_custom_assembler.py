@@ -366,7 +366,10 @@ def test_custom_mesh_loop_rank1():
         end = time.time()
         print("Time (numba/cffi, pass {}): {}".format(i, end - start))
     b3.vector.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    assert (b3.vector - b0.vector).norm() == pytest.approx(0.0)
+    if dolfin.default_scalar_type in (np.float32, np.complex64):
+        assert (b3.vector - b0.vector).norm() == pytest.approx(0.0, 1e-8)
+    else:
+        assert (b3.vector - b0.vector).norm() == pytest.approx(0.0)
 
 
 def test_custom_mesh_loop_ctypes_rank2():
@@ -407,7 +410,10 @@ def test_custom_mesh_loop_ctypes_rank2():
         print("Time (numba, pass {}): {}".format(i, end - start))
         A1.assemble()
 
-    assert (A0 - A1).norm() == pytest.approx(0.0, abs=1.0e-9)
+    if dolfin.default_scalar_type in (np.float32, np.complex64):
+        assert (A0 - A1).norm() == pytest.approx(0.0, abs=1.0e-7)
+    else:
+        assert (A0 - A1).norm() == pytest.approx(0.0, abs=1.0e-9)
 
     A0.destroy()
     A1.destroy()
@@ -448,7 +454,10 @@ def test_custom_mesh_loop_cffi_rank2(set_vals):
         print("Time (Numba, pass {}): {}".format(i, end - start))
         A1.assemble()
 
-    assert (A1 - A0).norm() == pytest.approx(0.0, abs=1.0e-9)
+    if dolfin.default_scalar_type in (np.float32, np.complex64):
+        assert (A1 - A0).norm() == pytest.approx(0.0, abs=1.0e-7)
+    else:
+        assert (A1 - A0).norm() == pytest.approx(0.0, abs=1.0e-9)
 
     A0.destroy()
     A1.destroy()

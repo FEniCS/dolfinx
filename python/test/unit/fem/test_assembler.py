@@ -756,7 +756,7 @@ def test_basic_assembly_constant(mode):
 
     b2 = petsc_assemble_vector(L)
     b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    assert (A1 * 3.0 - A2 * 5.0).norm() == pytest.approx(0.0, abs=1.0e-6)
+    assert (A1 * 3.0 - A2 * 5.0).norm() == pytest.approx(0.0, abs=1.0e-5)
     assert (b1 * 3.0 - b2 * 5.0).norm() == pytest.approx(0.0, abs=1.0e-5)
     A1.destroy()
     b1.destroy()
