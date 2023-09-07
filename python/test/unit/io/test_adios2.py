@@ -12,7 +12,7 @@ import ufl
 from basix.ufl import element
 from dolfinx.common import has_adios2
 from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
-from dolfinx.graph import create_adjacencylist
+from dolfinx.graph import adjacencylist
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_square)
 from mpi4py import MPI
@@ -268,14 +268,14 @@ def test_empty_rank_mesh(tempdir):
     def partitioner(comm, nparts, local_graph, num_ghost_nodes):
         """Leave cells on the current rank"""
         dest = np.full(len(cells), comm.rank, dtype=np.int32)
-        return create_adjacencylist(dest)
+        return adjacencylist(dest)
 
     if comm.rank == 0:
         cells = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.int64)
-        cells = create_adjacencylist(cells)
+        cells = adjacencylist(cells)
         x = np.array([[0., 0.], [1., 0.], [1., 1.], [0., 1.]], dtype=default_real_type)
     else:
-        cells = create_adjacencylist(np.empty((0, 3), dtype=np.int64))
+        cells = adjacencylist(np.empty((0, 3), dtype=np.int64))
         x = np.empty((0, 2), dtype=default_real_type)
 
     mesh = create_mesh(comm, cells, x, domain, partitioner)

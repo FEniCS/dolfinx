@@ -170,7 +170,7 @@ class Expression:
         else:
             raise RuntimeError("Expressions with more that one Argument not allowed.")
 
-        def create_expression(dtype):
+        def _create_expression(dtype):
             if dtype == np.float32:
                 return _cpp.fem.create_expression_float32
             elif dtype == np.float64:
@@ -183,8 +183,8 @@ class Expression:
                 raise NotImplementedError(f"Type {dtype} not supported.")
 
         ffi = module.ffi
-        self._cpp_object = create_expression(dtype)(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_expression)),
-                                                    coeffs, constants, self.argument_function_space)
+        self._cpp_object = _create_expression(dtype)(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_expression)),
+                                                     coeffs, constants, self.argument_function_space)
 
     def eval(self, mesh: Mesh, cells: np.ndarray, values: typing.Optional[np.ndarray] = None) -> np.ndarray:
         """Evaluate Expression in cells.

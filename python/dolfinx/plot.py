@@ -30,7 +30,7 @@ _first_order_vtk = {mesh.CellType.interval: 3,
 
 
 @functools.singledispatch
-def create_vtk_mesh(msh: mesh.Mesh, dim: typing.Optional[int] = None, entities=None):
+def vtk_mesh(msh: mesh.Mesh, dim: typing.Optional[int] = None, entities=None):
     """Create vtk mesh topology data for mesh entities of a given
     dimension. The vertex indices in the returned topology array are the
     indices for the associated entry in the mesh geometry.
@@ -88,7 +88,7 @@ def create_vtk_mesh(msh: mesh.Mesh, dim: typing.Optional[int] = None, entities=N
     return topology.reshape(-1), cell_types, msh.geometry.x
 
 
-@create_vtk_mesh.register(fem.FunctionSpace)
+@vtk_mesh.register(fem.FunctionSpace)
 def _(V: fem.FunctionSpace, entities=None):
     """Creates a VTK mesh topology (topology array and array of cell
     types) that is based on the degree-of-freedom coordinates.
