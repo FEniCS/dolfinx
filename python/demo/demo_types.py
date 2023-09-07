@@ -46,7 +46,7 @@ def display_scalar(u, name, filter=np.real):
     """Plot the solution using pyvista"""
     try:
         import pyvista
-        cells, types, x = plot.create_vtk_mesh(u.function_space)
+        cells, types, x = plot.vtk_mesh(u.function_space)
         grid = pyvista.UnstructuredGrid(cells, types, x)
         grid.point_data["u"] = filter(u.x.array)
         grid.set_active_scalars("u")
@@ -68,7 +68,7 @@ def display_vector(u, name, filter=np.real):
     try:
         import pyvista
         V = u.function_space
-        cells, types, x = plot.create_vtk_mesh(V)
+        cells, types, x = plot.vtk_mesh(V)
         grid = pyvista.UnstructuredGrid(cells, types, x)
         grid.point_data["u"] = filter(np.insert(u.x.array.reshape(x.shape[0], V.dofmap.index_map_bs), 2, 0, axis=1))
         plotter = pyvista.Plotter()

@@ -265,4 +265,4 @@ def test_vtk_mesh():
     comm = MPI.COMM_WORLD
     mesh = create_unit_square(comm, 2 * comm.size, 2 * comm.size)
     V = FunctionSpace(mesh, ("Lagrange", 1))
-    create_vtk_mesh(V)
+    vtk_mesh(V)
