@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.13.6
+#       jupytext_version: 1.15.1
 # ---
 
 # # Cahn-Hilliard equation
@@ -22,7 +22,8 @@
 #   ({py:class}`NewtonSolver<dolfinx.nls.petsc.NewtonSolver>`)
 # - Form compiler options
 # - Interpolation of functions
-# - Visualisation of a running simulation with pyvista
+# - Visualisation of a running simulation with
+#   [PyVista](https://pyvista.org/)
 #
 # This demo is implemented in {download}`demo_cahn-hilliard.py`.
 #
@@ -34,7 +35,6 @@
 # derivatives.  The equation reads:
 #
 # $$
-# \begin{align}
 # \frac{\partial c}{\partial t} -
 #   \nabla \cdot M \left(\nabla\left(\frac{d f}{dc}
 #   - \lambda \nabla^{2}c\right)\right) &= 0 \quad {\rm in} \ \Omega, \\
@@ -42,7 +42,6 @@
 #   \lambda \nabla^{2}c\right)\right) \cdot n
 #   &= 0 \quad {\rm on} \ \partial\Omega, \\
 # M \lambda \nabla c \cdot n &= 0 \quad {\rm on} \ \partial\Omega.
-# \end{align}
 # $$
 #
 # where $c$ is the unknown field, the function $f$ is usually non-convex
@@ -58,25 +57,21 @@
 # as two coupled second-order equations:
 #
 # $$
-# \begin{align}
 # \frac{\partial c}{\partial t} - \nabla \cdot M \nabla\mu
 #     &= 0 \quad {\rm in} \ \Omega, \\
 # \mu -  \frac{d f}{d c} + \lambda \nabla^{2}c &= 0 \quad {\rm in} \ \Omega.
-# \end{align}
 # $$
 #
 # The unknown fields are now $c$ and $\mu$. The weak (variational) form
 # of the problem reads: find $(c, \mu) \in V \times V$ such that
 #
 # $$
-# \begin{align}
 # \int_{\Omega} \frac{\partial c}{\partial t} q \, {\rm d} x +
 #     \int_{\Omega} M \nabla\mu \cdot \nabla q \, {\rm d} x
 #     &= 0 \quad \forall \ q \in V,  \\
 # \int_{\Omega} \mu v \, {\rm d} x - \int_{\Omega} \frac{d f}{d c} v \, {\rm d} x
 #   - \int_{\Omega} \lambda \nabla c \cdot \nabla v \, {\rm d} x
 #    &= 0 \quad \forall \ v \in V.
-# \end{align}
 # $$
 #
 # ### Time discretisation
@@ -86,19 +81,17 @@
 # equation:
 #
 # $$
-# \begin{align}
 # \int_{\Omega} \frac{c_{n+1} - c_{n}}{dt} q \, {\rm d} x
 # + \int_{\Omega} M \nabla \mu_{n+\theta} \cdot \nabla q \, {\rm d} x
 #        &= 0 \quad \forall \ q \in V  \\
 # \int_{\Omega} \mu_{n+1} v  \, {\rm d} x - \int_{\Omega} \frac{d f_{n+1}}{d c} v  \, {\rm d} x
 # - \int_{\Omega} \lambda \nabla c_{n+1} \cdot \nabla v \, {\rm d} x
 #        &= 0 \quad \forall \ v \in V
-# \end{align}
 # $$
 #
-# where $dt = t_{n+1} - t_{n}$ and $\mu_{n+\theta} = (1-\theta) \mu_{n}
-# + \theta \mu_{n+1}$.  The task is: given $c_{n}$ and $\mu_{n}$, solve
-# the above equation to find $c_{n+1}$ and $\mu_{n+1}$.
+# where $dt = t_{n+1} - t_{n}$ and $\mu_{n+\theta} = (1-\theta) \mu_{n} + \theta \mu_{n+1}$.
+# The task is: given $c_{n}$ and $\mu_{n}$, solve the above equation to
+# find $c_{n+1}$ and $\mu_{n+1}$.
 #
 # ### Demo parameters
 #

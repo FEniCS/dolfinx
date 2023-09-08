@@ -29,7 +29,7 @@ def test_gradient(mesh):
     V = FunctionSpace(mesh, ("Lagrange", 1))
     W = FunctionSpace(mesh, ("Nedelec 1st kind H(curl)", 1))
     G = discrete_gradient(V._cpp_object, W._cpp_object)
-    # N.B. do not finalize G - doing so would transfer rows to other processes
+    # N.B. do not scatter_rev G - doing so would transfer rows to other processes
     # where they will be summed to give an incorrect matrix
 
     num_edges = mesh.topology.index_map(1).size_global
@@ -69,7 +69,7 @@ def test_gradient_interpolation(cell_type, p, q, dtype):
     V = FunctionSpace(mesh, (family0, p))
     W = FunctionSpace(mesh, (family1, q))
     G = discrete_gradient(V._cpp_object, W._cpp_object)
-    # N.B. do not finalize G - doing so would transfer rows to other processes
+    # N.B. do not scatter_rev G - doing so would transfer rows to other processes
     # where they will be summed to give an incorrect matrix
 
     # Vector for 'u' needs additional ghosts defined in columns of G

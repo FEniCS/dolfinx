@@ -81,9 +81,8 @@ _extract_sub_element(const FiniteElement<T>& finite_element,
   // Check the number of available sub systems
   if (component[0] >= finite_element.num_sub_elements())
   {
-    throw std::runtime_error(
-        "Cannot extract subsystem of finite element. Requested "
-        "subsystem out of range.");
+    throw std::runtime_error("Cannot extract subsystem of finite element. "
+                             "Requested subsystem out of range.");
   }
 
   // Get sub system
@@ -95,7 +94,7 @@ _extract_sub_element(const FiniteElement<T>& finite_element,
     return sub_element;
 
   // Otherwise, recursively extract the sub sub system
-  const std::vector<int> sub_component(component.begin() + 1, component.end());
+  std::vector<int> sub_component(component.begin() + 1, component.end());
 
   return _extract_sub_element(*sub_element, sub_component);
 }
@@ -235,7 +234,7 @@ FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
             static_cast<basix::maps::type>(ce->map_type),
             static_cast<basix::sobolev::space>(ce->sobolev_space),
             ce->discontinuous, ce->highest_complete_degree,
-            ce->highest_degree));
+            ce->highest_degree, static_cast<basix::polyset::type>(ce->polyset_type)));
     _needs_dof_transformations
         = !_element->dof_transformations_are_identity()
           and !_element->dof_transformations_are_permutations();
@@ -263,19 +262,39 @@ FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element, int bs)
-    : _space_dim(bs * element.dim()), _value_shape(element.value_shape()),
-      _bs(bs)
+FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
+                                const std::vector<std::size_t>& value_shape)
+    : _value_shape(element.value_shape())
 {
-  if (_value_shape.empty() and bs > 1)
-    _value_shape = {1};
-  std::transform(_value_shape.cbegin(), _value_shape.cend(),
-                 _value_shape.begin(), [bs](auto s) { return bs * s; });
-  if (bs > 1)
+  if (!_value_shape.empty() and !value_shape.empty())
   {
-    // Create all sub-elements
-    for (int i = 0; i < bs; ++i)
-      _sub_elements.push_back(std::make_shared<FiniteElement<T>>(element, 1));
+    throw std::runtime_error(
+        "Cannot specify value shape for non-scalar base element.");
+  }
+
+  // Set block size
+  if (!value_shape.empty())
+    _value_shape = value_shape;
+
+  // Set block size
+  if (!value_shape.empty())
+  {
+    _bs = std::accumulate(value_shape.begin(), value_shape.end(), 1,
+                          std::multiplies{});
+  }
+  else
+    _bs = 1;
+
+  _space_dim = _bs * element.dim();
+
+  // Create all sub-elements
+  if (_bs > 1)
+  {
+    for (int i = 0; i < _bs; ++i)
+    {
+      _sub_elements.push_back(std::make_shared<FiniteElement<T>>(
+          element, std::vector<std::size_t>{}));
+    }
   }
 
   _element = std::make_unique<basix::FiniteElement<T>>(element);
@@ -299,7 +318,7 @@ FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element, int bs)
     break;
   }
 
-  _signature = "Basix element " + _family + " " + std::to_string(bs);
+  _signature = "Basix element " + _family + " " + std::to_string(_bs);
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -511,7 +530,7 @@ FiniteElement<T>::create_interpolation_operator(const FiniteElement& from) const
     std::vector<T> out(shape[0] * shape[1]);
 
     // NOTE: Alternatively this operation could be implemented during
-    // matvec with the original matrix
+    // matvec with the original matrix.
     for (std::size_t i = 0; i < dshape[0]; ++i)
       for (std::size_t j = 0; j < dshape[1]; ++j)
         for (int k = 0; k < _bs; ++k)

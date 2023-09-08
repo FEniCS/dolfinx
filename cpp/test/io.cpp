@@ -7,7 +7,7 @@
 #ifdef HAS_ADIOS2
 
 #include <algorithm>
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include <concepts>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
@@ -62,7 +62,7 @@ void test_fides_function()
 
   // Create a scalar function space
   auto V = std::make_shared<fem::FunctionSpace<T>>(
-      fem::create_functionspace(mesh, e, 1));
+      fem::create_functionspace(mesh, e));
 
   // Create a finite element Function
   auto u = std::make_shared<fem::Function<T>>(V);

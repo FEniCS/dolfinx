@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include <petscvec.h>
 
 namespace

@@ -59,23 +59,27 @@ public:
   /// Flushes XML files to disk
   void flush();
 
-  /// Write a mesh to file. Supports arbitrary order Lagrange
+  /// @brief Write a mesh to file. Supports arbitrary order Lagrange
   /// isoparametric cells.
-  /// @param[in] mesh The Mesh to write to file
-  /// @param[in] time Time parameter to associate with @p mesh
+  /// @param[in] mesh Mesh to write to file.
+  /// @param[in] time Time parameter to associate with `mesh`.
   template <std::floating_point U>
   void write(const mesh::Mesh<U>& mesh, double time = 0.0);
 
   /// @brief Write finite elements function with an associated time
   /// step.
+  ///
+  /// @pre Functions in `u` cannot be sub-Functions. Extract
+  /// sub-Functions before output.
+  ///
+  /// @pre All Functions in `u` with point-wise data must use the same
+  /// element type (up to the block size) and the element must be
+  /// (discontinuous) Lagrange. Interpolate fem::Function before output
+  /// if required.
+  ///
   /// @param[in] u List of functions to write to file
   /// @param[in] t Time parameter to associate with @p u
   /// @pre All Functions in `u` must share the same mesh
-  /// @pre All Functions in `u` with point-wise data must use the same
-  /// element type (up to the block size) and the element must be
-  /// (discontinuous) Lagrange.
-  /// @pre Functions in `u` cannot be sub-Functions. Interpolate
-  /// sub-Functions before output.
   template <dolfinx::scalar T, std::floating_point U = scalar_value_type_t<T>>
   void
   write(const std::vector<std::reference_wrapper<const fem::Function<T, U>>>& u,
