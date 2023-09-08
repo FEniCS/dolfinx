@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import typing
+import warnings
 
 if typing.TYPE_CHECKING:
     from dolfinx.mesh import Mesh
@@ -688,6 +689,9 @@ def VectorFunctionSpace(mesh: Mesh,
                                               ElementMetaData, typing.Tuple[str, int]],
                         dim=None) -> FunctionSpace:
     """Create vector finite element (composition of scalar elements) function space."""
+    warnings.warn('This method is deprecated. Use FunctionSpace with an element shape argument instead',
+                  DeprecationWarning, stacklevel=2)
+
     if not _is_scalar(mesh, element):
         raise ValueError("Cannot create vector element containing a non-scalar.")
 
@@ -703,16 +707,3 @@ def VectorFunctionSpace(mesh: Mesh,
                                   shape=(mesh.geometry.dim,) if dim is None else (dim, ),
                                   gdim=mesh.geometry.dim, rank=1)
     return FunctionSpace(mesh, ufl_e)
-
-
-def TensorFunctionSpace(mesh: Mesh, element: typing.Union[ElementMetaData, typing.Tuple[str, int]], shape=None,
-                        symmetry: typing.Optional[bool] = None) -> FunctionSpace:
-    """Create tensor finite element (composition of scalar elements) function space."""
-    if not _is_scalar(mesh, element):
-        raise ValueError("Cannot create tensor element containing a non-scalar.")
-    e = ElementMetaData(*element)
-    gdim = mesh.geometry.dim
-    ufl_element = basix.ufl.element(e.family, mesh.basix_cell(), e.degree,
-                                    shape=(gdim, gdim) if shape is None else shape,
-                                    symmetry=symmetry, gdim=mesh.geometry.dim, rank=2)
-    return FunctionSpace(mesh, ufl_element)

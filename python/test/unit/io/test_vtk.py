@@ -10,8 +10,7 @@ import numpy as np
 import pytest
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
-                         VectorFunctionSpace)
+from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
 from dolfinx.io import VTKFile
 from dolfinx.io.utils import cell_perm_vtk  # noqa F401
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
@@ -223,7 +222,8 @@ def test_save_1d_tensor(tempdir):
 
 def test_save_2d_tensor(tempdir):
     mesh = create_unit_square(MPI.COMM_WORLD, 16, 16)
-    u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)))
+    gdim = mesh.geometry.dim
+    u = Function(FunctionSpace(mesh, ("Lagrange", 2, (gdim, gdim))))
     u.x.array[:] = 1.0
     filename = Path(tempdir, "u.pvd")
     with VTKFile(mesh.comm, filename, "w") as vtk:
@@ -234,7 +234,8 @@ def test_save_2d_tensor(tempdir):
 
 def test_save_3d_tensor(tempdir):
     mesh = create_unit_cube(MPI.COMM_WORLD, 8, 8, 8)
-    u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)))
+    gdim = mesh.geometry.dim
+    u = Function(FunctionSpace(mesh, ("Lagrange", 2, (gdim, gdim))))
     u.x.array[:] = 1.0
     filename = Path(tempdir, "u.pvd")
     with VTKFile(mesh.comm, filename, "w") as vtk:

@@ -8,8 +8,7 @@ import basix
 import numpy as np
 import pytest
 from basix.ufl import element, mixed_element
-from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
-                         VectorFunctionSpace)
+from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
 from dolfinx.mesh import create_mesh, create_unit_cube
 from mpi4py import MPI
 from ufl import Cell, Mesh, TestFunction, TrialFunction, grad
@@ -265,8 +264,9 @@ def test_manifold_spaces():
     cells = [(0, 1, 2), (0, 1, 3)]
     domain = Mesh(element("Lagrange", "triangle", 1, gdim=3, rank=1))
     mesh = create_mesh(MPI.COMM_WORLD, cells, vertices, domain)
-    QV = VectorFunctionSpace(mesh, ("Lagrange", 1))
-    QT = TensorFunctionSpace(mesh, ("Lagrange", 1))
+    gdim = mesh.geometry.dim
+    QV = FunctionSpace(mesh, ("Lagrange", 1, (gdim,)))
+    QT = FunctionSpace(mesh, ("Lagrange", 1, (gdim, gdim)))
     u = Function(QV)
     v = Function(QT)
     assert u.ufl_shape == (3,)

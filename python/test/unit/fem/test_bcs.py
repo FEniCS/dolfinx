@@ -9,7 +9,7 @@ import pytest
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx.fem import (Constant, Function, FunctionSpace,
-                         TensorFunctionSpace, VectorFunctionSpace,
+                         VectorFunctionSpace,
                          apply_lifting, assemble_matrix, assemble_vector,
                          create_matrix, create_vector, dirichletbc, form,
                          locate_dofs_geometrical, locate_dofs_topological,
@@ -102,9 +102,10 @@ def test_overlapping_bcs():
 def test_constant_bc_constructions():
     """Test construction from constant values"""
     msh = create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=default_real_type)
+    gdim = msh.geometry.dim
     V0 = FunctionSpace(msh, ("Lagrange", 1))
-    V1 = VectorFunctionSpace(msh, ("Lagrange", 1))
-    V2 = TensorFunctionSpace(msh, ("Lagrange", 1))
+    V1 = FunctionSpace(msh, ("Lagrange", 1, (gdim,)))
+    V2 = FunctionSpace(msh, ("Lagrange", 1, (gdim, gdim)))
 
     tdim = msh.topology.dim
     boundary_facets = locate_entities_boundary(msh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))

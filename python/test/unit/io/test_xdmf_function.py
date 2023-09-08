@@ -9,8 +9,7 @@ from pathlib import Path
 import basix
 import numpy as np
 import pytest
-from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
-                         VectorFunctionSpace)
+from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (CellType, create_unit_cube, create_unit_interval,
                           create_unit_square)
@@ -167,10 +166,11 @@ def test_save_2d_tensor(tempdir, encoding, dtype, cell_type):
     xtype = np.real(dtype(0)).dtype
     filename = Path(tempdir, "tensor.xdmf")
     mesh = create_unit_square(MPI.COMM_WORLD, 16, 16, cell_type, dtype=xtype)
-    u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)), dtype=dtype)
+    gdim = mesh.geometry.dim
+    u = Function(FunctionSpace(mesh, ("Lagrange", 2, (gdim, gdim))), dtype=dtype)
     u.x.array[:] = 1.0 + (1j if np.issubdtype(dtype, np.complexfloating) else 0)
 
-    u1 = Function(TensorFunctionSpace(mesh, ("Lagrange", 1)), dtype=dtype)
+    u1 = Function(FunctionSpace(mesh, ("Lagrange", 1, (gdim, gdim))), dtype=dtype)
     u1.interpolate(u)
     with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
@@ -184,10 +184,12 @@ def test_save_3d_tensor(tempdir, encoding, dtype, cell_type):
     xtype = np.real(dtype(0)).dtype
     filename = Path(tempdir, "u3t.xdmf")
     mesh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, cell_type, dtype=xtype)
-    u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)), dtype=dtype)
+
+    gdim = mesh.geometry.dim
+    u = Function(FunctionSpace(mesh, ("Lagrange", 2, (gdim, gdim))), dtype=dtype)
     u.x.array[:] = 1.0 + (1j if np.issubdtype(dtype, np.complexfloating) else 0)
 
-    u1 = Function(TensorFunctionSpace(mesh, ("Lagrange", 1)), dtype=dtype)
+    u1 = Function(FunctionSpace(mesh, ("Lagrange", 1, (gdim, gdim))), dtype=dtype)
     u1.interpolate(u)
     with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)

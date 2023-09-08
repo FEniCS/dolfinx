@@ -17,8 +17,7 @@ from dolfinx.fem.bcs import (DirichletBC, bcs_by_block, dirichletbc,
 from dolfinx.fem.dofmap import DofMap
 from dolfinx.fem.forms import Form, extract_function_spaces, form
 from dolfinx.fem.function import (Constant, Expression, Function,
-                                  FunctionSpace, TensorFunctionSpace,
-                                  VectorFunctionSpace)
+                                  FunctionSpace, VectorFunctionSpace)
 
 
 def create_sparsity_pattern(a: Form):
@@ -35,8 +34,7 @@ def create_sparsity_pattern(a: Form):
 
 
 __all__ = [
-    "Constant", "Expression", "Function", "create_matrix",
-    "FunctionSpace", "TensorFunctionSpace",
+    "Constant", "Expression", "Function", "create_matrix", "FunctionSpace",
     "VectorFunctionSpace", "create_sparsity_pattern",
     "assemble_scalar", "assemble_matrix", "assemble_vector", "apply_lifting", "set_bc",
     "DirichletBC", "dirichletbc", "bcs_by_block", "DofMap", "Form",
