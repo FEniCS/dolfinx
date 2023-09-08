@@ -481,30 +481,34 @@ class ElementMetaData(typing.NamedTuple):
     """Data for representing a finite element"""
     family: str
     degree: int
+    shape: typing.Optional[typing.Tuple[int, ...]] = None
+    symmetry: typing.Optional[bool] = None
 
 
 class FunctionSpace(ufl.FunctionSpace):
     """A space on which Functions (fields) can be defined."""
 
     def __init__(self, mesh: Mesh,
-                 element: typing.Union[ufl.FiniteElementBase, ElementMetaData, typing.Tuple[str, int]],
+                 element: typing.Union[ufl.FiniteElementBase, ElementMetaData, typing.Tuple[str, int, ...]],
                  cppV: typing.Optional[typing.Union[_cpp.fem.FunctionSpace_float32,
                                                     _cpp.fem.FunctionSpace_float64]] = None,
                  form_compiler_options: typing.Optional[dict[str, typing.Any]] = None,
                  jit_options: typing.Optional[dict[str, typing.Any]] = None):
         """Create a finite element function space."""
+        print(element)
         dtype = mesh.geometry.x.dtype
         assert dtype == np.float32 or dtype == np.float64
 
         if cppV is None:
             # Initialise the ufl.FunctionSpace
             try:
-                # UFL element
-                super().__init__(mesh.ufl_domain(), element)
+                super().__init__(mesh.ufl_domain(), element)  # UFL element
             except BaseException:
-                assert len(element) == 2, "Expected sequence of (element_type, degree)"
+                # assert len(element) == 2, "Expected sequence of (element_type, degree)"
                 e = ElementMetaData(*element)
+                print(e)
                 ufl_e = basix.ufl.element(e.family, mesh.basix_cell(), e.degree,
+                                          shape=e.shape,
                                           gdim=mesh.ufl_cell().geometric_dimension())
                 super().__init__(mesh.ufl_domain(), ufl_e)
 
@@ -687,6 +691,7 @@ def VectorFunctionSpace(mesh: Mesh,
                                   gdim=mesh.geometry.dim, rank=1)
     except AttributeError:
         ed = ElementMetaData(*element)
+        print("ffffff", ed)
         ufl_e = basix.ufl.element(ed.family, mesh.basix_cell(), ed.degree,
                                   shape=(mesh.geometry.dim,) if dim is None else (dim, ),
                                   gdim=mesh.geometry.dim, rank=1)

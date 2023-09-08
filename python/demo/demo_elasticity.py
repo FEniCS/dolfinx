@@ -25,9 +25,8 @@
 # +
 import numpy as np
 import ufl
-from dolfinx.fem import (Expression, Function, FunctionSpace,
-                         VectorFunctionSpace, dirichletbc, form,
-                         locate_dofs_topological)
+from dolfinx.fem import (Expression, Function, FunctionSpace, dirichletbc,
+                         form, locate_dofs_topological)
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                set_bc)
 from dolfinx.io import XDMFFile
@@ -122,7 +121,7 @@ def σ(v):
 # problem defined:
 
 
-V = VectorFunctionSpace(msh, ("Lagrange", 1))
+V = FunctionSpace(msh, ("Lagrange", 1, (msh.geometry.dim,)))
 u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 a = form(inner(σ(u), grad(v)) * dx)
 L = form(inner(f, v) * dx)
