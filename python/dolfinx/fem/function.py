@@ -462,7 +462,7 @@ class Function(ufl.Coefficient):
         is in a mixed, vector, or tensor FunctionSpace. The sub
         function resides in the subspace of the mixed space.
 
-        Args:
+        Returns:
             Function space subspaces.
 
         """
@@ -489,12 +489,21 @@ class FunctionSpace(ufl.FunctionSpace):
     """A space on which Functions (fields) can be defined."""
 
     def __init__(self, mesh: Mesh,
-                 element: typing.Union[ufl.FiniteElementBase, ElementMetaData, typing.Tuple[str, int, ...]],
+                 element: typing.Union[ufl.FiniteElementBase, ElementMetaData, typing.Tuple[str, int, typing.Tuple, bool]],
                  cppV: typing.Optional[typing.Union[_cpp.fem.FunctionSpace_float32,
                                                     _cpp.fem.FunctionSpace_float64]] = None,
                  form_compiler_options: typing.Optional[dict[str, typing.Any]] = None,
                  jit_options: typing.Optional[dict[str, typing.Any]] = None):
-        """Create a finite element function space."""
+        """Create a finite element function space.
+
+        Args:
+            mesh: Mesh that space is defined on
+            element: Finite element description
+            cppV: Compiled C++ function space. Not generally required in user code
+            form_compiler_options: Options passed to the form compiler
+            jit_options: Options controlling just-in-time compilation
+
+        """
         dtype = mesh.geometry.x.dtype
         assert dtype == np.float32 or dtype == np.float64
 
@@ -503,7 +512,7 @@ class FunctionSpace(ufl.FunctionSpace):
             try:
                 super().__init__(mesh.ufl_domain(), element)  # UFL element
             except BaseException:
-                # assert len(element) == 2, "Expected sequence of (element_type, degree)"
+                assert len(element) < 4, "Expected sequence of (element_type, degree [shape], [symmetry])"
                 e = ElementMetaData(*element)
                 ufl_e = basix.ufl.element(e.family, mesh.basix_cell(), e.degree,
                                           shape=e.shape,
