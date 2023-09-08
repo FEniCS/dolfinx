@@ -495,7 +495,6 @@ class FunctionSpace(ufl.FunctionSpace):
                  form_compiler_options: typing.Optional[dict[str, typing.Any]] = None,
                  jit_options: typing.Optional[dict[str, typing.Any]] = None):
         """Create a finite element function space."""
-        print(element)
         dtype = mesh.geometry.x.dtype
         assert dtype == np.float32 or dtype == np.float64
 
@@ -506,7 +505,6 @@ class FunctionSpace(ufl.FunctionSpace):
             except BaseException:
                 # assert len(element) == 2, "Expected sequence of (element_type, degree)"
                 e = ElementMetaData(*element)
-                print(e)
                 ufl_e = basix.ufl.element(e.family, mesh.basix_cell(), e.degree,
                                           shape=e.shape,
                                           gdim=mesh.ufl_cell().geometric_dimension())
@@ -691,7 +689,6 @@ def VectorFunctionSpace(mesh: Mesh,
                                   gdim=mesh.geometry.dim, rank=1)
     except AttributeError:
         ed = ElementMetaData(*element)
-        print("ffffff", ed)
         ufl_e = basix.ufl.element(ed.family, mesh.basix_cell(), ed.degree,
                                   shape=(mesh.geometry.dim,) if dim is None else (dim, ),
                                   gdim=mesh.geometry.dim, rank=1)
@@ -703,10 +700,8 @@ def TensorFunctionSpace(mesh: Mesh, element: typing.Union[ElementMetaData, typin
     """Create tensor finite element (composition of scalar elements) function space."""
     if not _is_scalar(mesh, element):
         raise ValueError("Cannot create tensor element containing a non-scalar.")
-
     e = ElementMetaData(*element)
     gdim = mesh.geometry.dim
-    shape_ = (gdim, gdim) if shape is None else shape
-    ufl_element = basix.ufl.element(e.family, mesh.basix_cell(), e.degree, shape=shape_, symmetry=symmetry,
-                                    gdim=mesh.geometry.dim, rank=2)
+    ufl_element = basix.ufl.element(e.family, mesh.basix_cell(), e.degree, shape=(gdim, gdim) if shape is None else shape,
+                                    symmetry=symmetry, gdim=mesh.geometry.dim, rank=2)
     return FunctionSpace(mesh, ufl_element)
