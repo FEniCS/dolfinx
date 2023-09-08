@@ -489,7 +489,8 @@ class FunctionSpace(ufl.FunctionSpace):
     """A space on which Functions (fields) can be defined."""
 
     def __init__(self, mesh: Mesh,
-                 element: typing.Union[ufl.FiniteElementBase, ElementMetaData, typing.Tuple[str, int, typing.Tuple, bool]],
+                 element: typing.Union[ufl.FiniteElementBase, ElementMetaData,
+                                       typing.Tuple[str, int, typing.Tuple, bool]],
                  cppV: typing.Optional[typing.Union[_cpp.fem.FunctionSpace_float32,
                                                     _cpp.fem.FunctionSpace_float64]] = None,
                  form_compiler_options: typing.Optional[dict[str, typing.Any]] = None,
@@ -711,6 +712,7 @@ def TensorFunctionSpace(mesh: Mesh, element: typing.Union[ElementMetaData, typin
         raise ValueError("Cannot create tensor element containing a non-scalar.")
     e = ElementMetaData(*element)
     gdim = mesh.geometry.dim
-    ufl_element = basix.ufl.element(e.family, mesh.basix_cell(), e.degree, shape=(gdim, gdim) if shape is None else shape,
+    ufl_element = basix.ufl.element(e.family, mesh.basix_cell(), e.degree,
+                                    shape=(gdim, gdim) if shape is None else shape,
                                     symmetry=symmetry, gdim=mesh.geometry.dim, rank=2)
     return FunctionSpace(mesh, ufl_element)
