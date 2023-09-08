@@ -294,7 +294,7 @@ def test_custom_mesh_loop_rank1(dtype):
         print("Time (numba, pass {}): {}".format(i, end - start))
     b0.x.scatter_reverse(dolfinx.la.InsertMode.add)
     b0sum = np.sum(b0.x.array[:b0.x.index_map.size_local * b0.x.block_size])
-    assert b0sum == pytest.approx(1.0)
+    assert mesh.comm.allreduce(b0sum, op=MPI.SUM) == pytest.approx(1.0)
 
     # NOTE: Parallel (threaded) Numba can cause problems with MPI
     # Assemble with pure Numba function using parallel loop (two passes,
@@ -442,7 +442,7 @@ def test_custom_mesh_loop_petsc_cffi_rank2(set_vals):
         end = time.time()
         print("Time (Numba, pass {}): {}".format(i, end - start))
         A1.assemble()
-        assert (A1 - A0).norm() == pytest.approx(0.0, abs=1.0e-9)
+    assert (A1 - A0).norm() == pytest.approx(0.0, abs=1.0e-9)
 
     A0.destroy()
     A1.destroy()
