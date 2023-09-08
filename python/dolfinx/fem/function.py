@@ -684,11 +684,11 @@ def _is_scalar(mesh, element):
     return len(e.value_shape()) == 0
 
 
-def VectorFunctionSpace(mesh: Mesh,
-                        element: typing.Union[basix.ufl._ElementBase,
-                                              ElementMetaData, typing.Tuple[str, int]],
-                        dim=None) -> FunctionSpace:
-    """Create vector finite element (composition of scalar elements) function space."""
+def VectorFunctionSpace(mesh: Mesh, element: typing.Union[ElementMetaData, typing.Tuple[str, int]],
+                        dim: typing.Optional[int] = None) -> FunctionSpace:
+    """Create vector finite element (composition of scalar elements) function space.
+
+    """
     warnings.warn('This method is deprecated. Use FunctionSpace with an element shape argument instead',
                   DeprecationWarning, stacklevel=2)
 
@@ -704,6 +704,6 @@ def VectorFunctionSpace(mesh: Mesh,
     # except AttributeError:
     ed = ElementMetaData(*element)
     ufl_e = basix.ufl.element(ed.family, mesh.basix_cell(), ed.degree,
-                                shape=(mesh.geometry.dim,) if dim is None else (dim, ),
-                                gdim=mesh.geometry.dim, rank=1)
+                              shape=(mesh.geometry.dim,) if dim is None else (dim, ),
+                              gdim=mesh.geometry.dim, rank=1)
     return FunctionSpace(mesh, ufl_e)
