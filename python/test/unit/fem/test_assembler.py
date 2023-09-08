@@ -738,7 +738,8 @@ def test_basic_assembly_constant(mode, dtype):
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
-    c = Constant(mesh, np.array([[1.0, 2.0], [5.0, 3.0]],  dtype=dtype))
+    c = Constant(mesh, np.array([[1.0, 2.0], [5.0, 3.0]], dtype=dtype))
+
     a = inner(c[1, 0] * u, v) * dx + inner(c[1, 0] * u, v) * ds
     L = inner(c[1, 0], v) * dx + inner(c[1, 0], v) * ds
     a, L = form(a, dtype=dtype), form(L, dtype=dtype)
