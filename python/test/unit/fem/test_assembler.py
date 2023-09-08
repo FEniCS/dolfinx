@@ -725,43 +725,40 @@ def test_basic_interior_facet_assembly():
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
-def test_basic_assembly_constant(mode):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_basic_assembly_constant(mode, dtype):
     """Tests assembly with Constant
 
     The following test should be sensitive to order of flattening the
     matrix-valued constant.
 
     """
-    mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, ghost_mode=mode)
+    xtype = dtype(0).real.dtype
+    mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, ghost_mode=mode, dtype=xtype)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
-    c = Constant(mesh, np.array([[1.0, 2.0], [5.0, 3.0]], PETSc.ScalarType))
-
+    c = Constant(mesh, np.array([[1.0, 2.0], [5.0, 3.0]],  dtype=dtype))
     a = inner(c[1, 0] * u, v) * dx + inner(c[1, 0] * u, v) * ds
     L = inner(c[1, 0], v) * dx + inner(c[1, 0], v) * ds
-    a, L = form(a), form(L)
+    a, L = form(a, dtype=dtype), form(L, dtype=dtype)
 
     # Initial assembly
-    A1 = petsc_assemble_matrix(a)
-    A1.assemble()
+    A1 = fem.assemble_matrix(a)
+    A1.scatter_reverse()
 
-    b1 = petsc_assemble_vector(L)
-    b1.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    b1 = fem.assemble_vector(L)
+    b1.scatter_reverse(la.InsertMode.add)
 
     c.value = [[1.0, 2.0], [3.0, 4.0]]
 
-    A2 = petsc_assemble_matrix(a)
-    A2.assemble()
+    A2 = fem.assemble_matrix(a)
+    A2.scatter_reverse()
+    assert np.linalg.norm(A1.data * 3.0 - A2.data * 5.0) == pytest.approx(0.0, abs=1.0e-5)
 
-    b2 = petsc_assemble_vector(L)
-    b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    assert (A1 * 3.0 - A2 * 5.0).norm() == pytest.approx(0.0, abs=1.0e-5)
-    assert (b1 * 3.0 - b2 * 5.0).norm() == pytest.approx(0.0, abs=1.0e-5)
-    A1.destroy()
-    b1.destroy()
-    A2.destroy()
-    b2.destroy()
+    b2 = fem.assemble_vector(L)
+    b2.scatter_reverse(la.InsertMode.add)
+    assert np.linalg.norm(b1.array * 3.0 - b2.array * 5.0) == pytest.approx(0.0, abs=1.0e-5)
 
 
 def test_lambda_assembler():
