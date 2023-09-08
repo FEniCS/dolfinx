@@ -215,7 +215,7 @@ def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells, dtype):
 
 
 @numba.njit(fastmath=True)
-def assemble_matrix_cffi(A, mesh, dofmap, num_cells, set_vals, mode):
+def assemble_petsc_matrix_cffi(A, mesh, dofmap, num_cells, set_vals, mode):
     """Assemble P1 mass matrix over a mesh into the PETSc matrix A"""
 
     # Mesh data
@@ -246,7 +246,7 @@ def assemble_matrix_cffi(A, mesh, dofmap, num_cells, set_vals, mode):
 
 
 @numba.njit
-def assemble_matrix_ctypes(A, mesh, dofmap, num_cells, set_vals, mode):
+def assemble_petsc_matrix_ctypes(A, mesh, dofmap, num_cells, set_vals, mode):
     """Assemble P1 mass matrix over a mesh into the PETSc matrix A"""
     v, x = mesh
     q = np.array([[0.5, 0.0], [0.5, 0.5], [0.0, 0.5]], dtype=np.double)
@@ -364,7 +364,7 @@ def test_custom_mesh_loop_rank1(dtype):
     assert np.linalg.norm(b3.x.array - b0.x.array) == pytest.approx(0.0, abs=1e-8)
 
 
-def test_custom_mesh_loop_ctypes_rank2():
+def test_custom_mesh_loop_petsc_ctypes_rank2():
     """Test numba assembler for bilinear form"""
 
     # Create mesh and function space
@@ -396,12 +396,11 @@ def test_custom_mesh_loop_ctypes_rank2():
         A1.zeroEntries()
         mat = A1.handle
         start = time.time()
-        assemble_matrix_ctypes(mat, (x_dofs, x), dofmap, num_owned_cells,
-                               MatSetValues_ctypes, PETSc.InsertMode.ADD_VALUES)
+        assemble_petsc_matrix_ctypes(mat, (x_dofs, x), dofmap, num_owned_cells,
+                                     MatSetValues_ctypes, PETSc.InsertMode.ADD_VALUES)
         end = time.time()
         print("Time (numba, pass {}): {}".format(i, end - start))
         A1.assemble()
-
         assert (A0 - A1).norm() == pytest.approx(0.0, abs=1.0e-9)
 
     A0.destroy()
@@ -409,7 +408,7 @@ def test_custom_mesh_loop_ctypes_rank2():
 
 
 @pytest.mark.parametrize("set_vals", [MatSetValues_abi, get_matsetvalues_api()])
-def test_custom_mesh_loop_cffi_rank2(set_vals):
+def test_custom_mesh_loop_petsc_cffi_rank2(set_vals):
     """Test numba assembler for bilinear form"""
 
     mesh = create_unit_square(MPI.COMM_WORLD, 64, 64)
@@ -438,7 +437,8 @@ def test_custom_mesh_loop_cffi_rank2(set_vals):
     for i in range(2):
         A1.zeroEntries()
         start = time.time()
-        assemble_matrix_cffi(A1.handle, (x_dofs, x), dofmap, num_owned_cells, set_vals, PETSc.InsertMode.ADD_VALUES)
+        assemble_petsc_matrix_cffi(A1.handle, (x_dofs, x), dofmap, num_owned_cells,
+                                   set_vals, PETSc.InsertMode.ADD_VALUES)
         end = time.time()
         print("Time (Numba, pass {}): {}".format(i, end - start))
         A1.assemble()
