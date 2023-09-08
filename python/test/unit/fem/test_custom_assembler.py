@@ -191,16 +191,16 @@ def assemble_vector_parallel(b, v, x, dofmap_t_data, dofmap_t_offsets, num_cells
 
 
 @numba.njit(fastmath=True)
-def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells):
+def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells, dtype):
     """Assemble provided FFCx/UFC kernel over a mesh into the array b"""
     v, x = mesh
     entity_local_index = np.array([0], dtype=np.intc)
     perm = np.array([0], dtype=np.uint8)
-    geometry = np.zeros((3, 3), dtype=dolfinx.default_real_type)
-    coeffs = np.zeros(1, dtype=PETSc.ScalarType)
-    constants = np.zeros(1, dtype=PETSc.ScalarType)
+    geometry = np.zeros((3, 3), dtype=x.dtype)
+    coeffs = np.zeros(1, dtype=dtype)
+    constants = np.zeros(1, dtype=dtype)
 
-    b_local = np.zeros(3, dtype=PETSc.ScalarType)
+    b_local = np.zeros(3, dtype=dtype)
     for cell in range(num_cells):
         # FIXME: This assumes a particular geometry dof layout
         for j in range(3):
@@ -271,9 +271,9 @@ def assemble_matrix_ctypes(A, mesh, dofmap, num_cells, set_vals, mode):
         set_vals(A, 3, rows.ctypes, 3, cols.ctypes, A_local.ctypes, mode)
 
 
-def test_custom_mesh_loop_rank1():
-    # Create mesh and function space
-    mesh = create_unit_square(MPI.COMM_WORLD, 64, 64)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_custom_mesh_loop_rank1(dtype):
+    mesh = create_unit_square(MPI.COMM_WORLD, 64, 64, dtype=dtype(0).real.dtype)
     V = FunctionSpace(mesh, ("Lagrange", 1))
 
     # Unpack mesh and dofmap data
@@ -284,7 +284,7 @@ def test_custom_mesh_loop_rank1():
 
     # Assemble with pure Numba function (two passes, first will include
     # JIT overhead)
-    b0 = Function(V)
+    b0 = Function(V, dtype=dtype)
     for i in range(2):
         b = b0.x.array
         b[:] = 0.0
@@ -292,8 +292,9 @@ def test_custom_mesh_loop_rank1():
         assemble_vector(b, (x_dofs, x), dofmap, num_owned_cells)
         end = time.time()
         print("Time (numba, pass {}): {}".format(i, end - start))
-    b0.vector.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    assert b0.vector.sum() == pytest.approx(1.0)
+    b0.x.scatter_reverse(dolfinx.la.InsertMode.add)
+    b0sum = np.sum(b0.x.array[:b0.x.index_map.size_local * b0.x.block_size])
+    assert b0sum == pytest.approx(1.0)
 
     # NOTE: Parallel (threaded) Numba can cause problems with MPI
     # Assemble with pure Numba function using parallel loop (two passes,
@@ -314,47 +315,41 @@ def test_custom_mesh_loop_rank1():
     # Test against generated code and general assembler
     v = ufl.TestFunction(V)
     L = inner(1.0, v) * dx
-    Lf = form(L)
+    Lf = form(L, dtype=dtype)
     start = time.time()
-    b1 = dolfinx.fem.petsc.assemble_vector(Lf)
+    b1 = dolfinx.fem.assemble_vector(Lf)
     end = time.time()
     print("Time (C++, pass 0):", end - start)
 
-    with b1.localForm() as b_local:
-        b_local.set(0.0)
+    b1.array[:] = 0
     start = time.time()
-    dolfinx.fem.petsc.assemble_vector(b1, Lf)
+    dolfinx.fem.assemble_vector(b1.array, Lf)
     end = time.time()
     print("Time (C++, pass 1):", end - start)
-    b1.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    assert (b1 - b0.vector).norm() == pytest.approx(0.0)
+    b1.scatter_reverse(dolfinx.la.InsertMode.add)
+    assert np.linalg.norm(b1.array - b0.x.array) == pytest.approx(0.0, abs=1.0e-8)
 
-    # Assemble using generated tabulate_tensor kernel and Numba assembler
-    if dolfinx.default_scalar_type == np.float32:
+    # Assemble using generated tabulate_tensor kernel and Numba
+    # assembler
+    if dtype == np.float32:
         ffcxtype = "float"
-    elif dolfinx.default_scalar_type == np.float64:
-        ffcxtype = "double"
-    elif dolfinx.default_scalar_type == np.complex64:
-        ffcxtype = "float _Complex"
-    elif dolfinx.default_scalar_type == np.complex128:
-        ffcxtype = "double _Complex"
-    else:
-        raise RuntimeError("Unknown scalar type")
-
-    b3 = Function(V)
-    ufcx_form, module, code = dolfinx.jit.ffcx_jit(
-        mesh.comm, L, form_compiler_options={"scalar_type": ffcxtype})
-
-    if dolfinx.default_scalar_type == np.float32:
         nptype = "float32"
-    elif dolfinx.default_scalar_type == np.float64:
+    elif dtype == np.float64:
+        ffcxtype = "double"
         nptype = "float64"
-    elif dolfinx.default_scalar_type == np.complex64:
+    elif dtype == np.complex64:
+        ffcxtype = "float _Complex"
         nptype = "complex64"
-    elif dolfinx.default_scalar_type == np.complex128:
+    elif dtype == np.complex128:
+        ffcxtype = "double _Complex"
         nptype = "complex128"
     else:
         raise RuntimeError("Unknown scalar type")
+
+    b3 = Function(V, dtype=dtype)
+    ufcx_form, module, code = dolfinx.jit.ffcx_jit(
+        mesh.comm, L, form_compiler_options={"scalar_type": ffcxtype})
+
     # Get the one and only kernel
     kernel = getattr(ufcx_form.form_integrals[0], f"tabulate_tensor_{nptype}")
 
@@ -362,14 +357,11 @@ def test_custom_mesh_loop_rank1():
         b = b3.x.array
         b[:] = 0.0
         start = time.time()
-        assemble_vector_ufc(b, kernel, (x_dofs, x), dofmap, num_owned_cells)
+        assemble_vector_ufc(b, kernel, (x_dofs, x), dofmap, num_owned_cells, dtype)
         end = time.time()
         print("Time (numba/cffi, pass {}): {}".format(i, end - start))
-    b3.vector.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    if dolfin.default_scalar_type in (np.float32, np.complex64):
-        assert (b3.vector - b0.vector).norm() == pytest.approx(0.0, 1e-8)
-    else:
-        assert (b3.vector - b0.vector).norm() == pytest.approx(0.0)
+    b3.x.scatter_reverse(dolfinx.la.InsertMode.add)
+    assert np.linalg.norm(b3.x.array - b0.x.array) == pytest.approx(0.0, abs=1e-8)
 
 
 def test_custom_mesh_loop_ctypes_rank2():
