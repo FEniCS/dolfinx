@@ -105,7 +105,7 @@ def test_numba_assembly():
     L = Form(formtype([V._cpp_object], integrals, [], [], False))
 
     A = dolfinx.fem.assemble_matrix(a)
-    A.finalize()
+    A.scatter_reverse()
     b = dolfinx.fem.assemble_vector(L)
     b.scatter_reverse(dolfinx.la.InsertMode.add)
 
@@ -260,7 +260,7 @@ def test_cffi_assembly():
     L = Form(_cpp.fem.Form_float64([V._cpp_object], integrals, [], [], False))
 
     A = fem.assemble_matrix(a)
-    A.finalize()
+    A.scatter_reverse()
     assert np.isclose(np.sqrt(A.squared_norm()), 56.124860801609124)
 
     b = fem.assemble_vector(L)

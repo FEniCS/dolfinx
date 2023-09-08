@@ -45,7 +45,7 @@ namespace dolfinx::io
 
 /// Read and write mesh::Mesh, fem::Function and other objects in
 /// XDMF.
-
+///
 /// This class supports the output of meshes and functions in XDMF
 /// (http://www.xdmf.org) format. It creates an XML file that describes
 /// the data and points to a HDF5 file that stores the actual problem
@@ -53,7 +53,6 @@ namespace dolfinx::io
 ///
 /// XDMF is not suitable for higher order geometries, as their currently
 /// only supports 1st and 2nd order geometries.
-
 class XDMFFile
 {
 public:
@@ -133,11 +132,22 @@ public:
   std::pair<mesh::CellType, int>
   read_cell_type(std::string grid_name, std::string xpath = "/Xdmf/Domain");
 
-  /// Write Function
+  /// @brief Write a fem::Function to file.
+  ///
+  /// @pre The fem::Function `u` must be (i) a lowest-order (P0)
+  /// discontinuous Lagrange element or (ii) a continuous Lagrange
+  /// element where the element 'nodes' are the same as the nodes of its
+  /// mesh::Mesh. Otherwise an exception is raised.
+  ///
+  /// @note User interpolation to a suitable Lagrange space may be
+  /// required to satisfy the precondition on `u`. The VTX output
+  /// (io::VTXWriter) format is recommended over XDMF for discontinuous
+  /// and/or high-order spaces.
+  ///
   /// @param[in] u Function to write to file.
-  /// @param[in] t Time stamp to associate with the `Function`.
-  /// @param[in] mesh_xpath XPath for a Grid under which Function will
-  /// be inserted/
+  /// @param[in] t Time stamp to associate with `u`.
+  /// @param[in] mesh_xpath XPath for a Grid under which `u` will be
+  /// inserted.
   template <dolfinx::scalar T, std::floating_point U = scalar_value_type_t<T>>
   void write_function(const fem::Function<T, U>& u, double t,
                       std::string mesh_xpath

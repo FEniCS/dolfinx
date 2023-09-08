@@ -4,8 +4,11 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_template_test_macros.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
 #include <dolfinx/common/sort.h>
+#include <random>
 
 TEMPLATE_TEST_CASE("Test radix sort", "[vector][template]", std::int32_t,
                    std::int64_t)

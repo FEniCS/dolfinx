@@ -275,8 +275,11 @@ def nested_iterative_solver():
     # `scatter_forward`.
     with XDMFFile(MPI.COMM_WORLD, "out_stokes/velocity.xdmf", "w") as ufile_xdmf:
         u.x.scatter_forward()
+        P1 = element("Lagrange", msh.basix_cell(), 1, rank=1)
+        u1 = Function(FunctionSpace(msh, P1))
+        u1.interpolate(u)
         ufile_xdmf.write_mesh(msh)
-        ufile_xdmf.write_function(u)
+        ufile_xdmf.write_function(u1)
 
     with XDMFFile(MPI.COMM_WORLD, "out_stokes/pressure.xdmf", "w") as pfile_xdmf:
         p.x.scatter_forward()

@@ -37,7 +37,7 @@ def run_symmetry_test(cell_type, e, form_f):
     f = form(form_f(u, v), dtype=dtype)
 
     A = dolfinx.fem.assemble_matrix(f)
-    A.finalize()
+    A.scatter_reverse()
     tol = np.sqrt(np.finfo(dtype).eps)
     check_symmetry(A, tol)
 
@@ -121,7 +121,7 @@ def test_mixed_element_form(cell_type, sign, order, dtype):
     f = form(inner(u, v) * ufl.dx + inner(p, q)(sign) * ufl.dS, dtype=dtype)
 
     A = dolfinx.fem.assemble_matrix(f)
-    A.finalize()
+    A.scatter_reverse()
     tol = np.sqrt(np.finfo(dtype).eps)
     check_symmetry(A, tol)
 
@@ -147,7 +147,7 @@ def test_mixed_element_vector_element_form(cell_type, sign, order, dtype):
     f = form(inner(u, v) * ufl.dx + inner(p, q)(sign) * ufl.dS, dtype=dtype)
 
     A = dolfinx.fem.assemble_matrix(f)
-    A.finalize()
+    A.scatter_reverse()
 
     tol = np.sqrt(np.finfo(dtype).eps)
     check_symmetry(A, tol)

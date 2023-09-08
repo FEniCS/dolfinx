@@ -355,8 +355,8 @@ def test_custom_mesh_loop_rank1():
         nptype = "complex128"
     else:
         raise RuntimeError("Unknown scalar type")
-    # First 0 for "cell" integrals, second 0 for the first one, i.e. default domain
-    kernel = getattr(ufcx_form.integrals(0)[0], f"tabulate_tensor_{nptype}")
+    # Get the one and only kernel
+    kernel = getattr(ufcx_form.form_integrals[0], f"tabulate_tensor_{nptype}")
 
     for i in range(2):
         b = b3.x.array

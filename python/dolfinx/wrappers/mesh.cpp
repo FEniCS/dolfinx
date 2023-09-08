@@ -35,24 +35,24 @@ namespace
 {
 /// Wrap a Python graph partitioning function as a C++ function
 template <typename Functor>
-auto create_cell_partitioner_cpp(Functor p_py)
+auto create_partitioner_cpp(Functor p)
 {
-  return [p_py](MPI_Comm comm, int nparts,
-                const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
-                bool ghosting)
+  return [p](MPI_Comm comm, int nparts,
+             const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
+             bool ghosting)
   {
-    return p_py(dolfinx_wrappers::MPICommWrapper(comm), nparts, local_graph,
-                ghosting);
+    return p(dolfinx_wrappers::MPICommWrapper(comm), nparts, local_graph,
+             ghosting);
   };
 }
 
 /// Wrap a C++ cell partitioning function as a Python function
 template <typename Functor>
-auto create_cell_partitioner_py(Functor p_cpp)
+auto create_cell_partitioner_py(Functor p)
 {
-  return [p_cpp](dolfinx_wrappers::MPICommWrapper comm, int n, int tdim,
-                 const dolfinx::graph::AdjacencyList<std::int64_t>& cells)
-  { return p_cpp(comm.get(), n, tdim, cells); };
+  return [p](dolfinx_wrappers::MPICommWrapper comm, int n, int tdim,
+             const dolfinx::graph::AdjacencyList<std::int64_t>& cells)
+  { return p(comm.get(), n, tdim, cells); };
 }
 
 using PythonPartitioningFunction
@@ -70,14 +70,18 @@ using CppCellPartitionFunction
         MPI_Comm, int, int,
         const dolfinx::graph::AdjacencyList<std::int64_t>&)>;
 
+/// Wrap a Python cell graph partitioning function as a C++ function
 CppCellPartitionFunction
-create_cell_partitioner_cpp(const PythonCellPartitionFunction& partitioner)
+create_cell_partitioner_cpp(const PythonCellPartitionFunction& p)
 {
-  return [partitioner](MPI_Comm comm, int n, int tdim,
-                       const dolfinx::graph::AdjacencyList<std::int64_t>& cells)
+  if (p)
   {
-    return partitioner(dolfinx_wrappers::MPICommWrapper(comm), n, tdim, cells);
-  };
+    return [p](MPI_Comm comm, int n, int tdim,
+               const dolfinx::graph::AdjacencyList<std::int64_t>& cells)
+    { return p(dolfinx_wrappers::MPICommWrapper(comm), n, tdim, cells); };
+  }
+  else
+    return nullptr;
 }
 } // namespace
 
@@ -190,10 +194,10 @@ void declare_mesh(py::module& m, std::string type)
       std::string("create_interval_" + type).c_str(),
       [](const MPICommWrapper comm, std::size_t n, std::array<double, 2> p,
          dolfinx::mesh::GhostMode ghost_mode,
-         const PythonCellPartitionFunction& partitioner)
+         const PythonCellPartitionFunction& part)
       {
         return dolfinx::mesh::create_interval<T>(
-            comm.get(), n, p, create_cell_partitioner_cpp(partitioner));
+            comm.get(), n, p, create_cell_partitioner_cpp(part));
       },
       py::arg("comm"), py::arg("n"), py::arg("p"), py::arg("ghost_mode"),
       py::arg("partitioner"));
@@ -202,12 +206,12 @@ void declare_mesh(py::module& m, std::string type)
       [](const MPICommWrapper comm,
          const std::array<std::array<double, 2>, 2>& p,
          std::array<std::size_t, 2> n, dolfinx::mesh::CellType celltype,
-         const PythonCellPartitionFunction& partitioner,
+         const PythonCellPartitionFunction& part,
          dolfinx::mesh::DiagonalType diagonal)
       {
         return dolfinx::mesh::create_rectangle<T>(
-            comm.get(), p, n, celltype,
-            create_cell_partitioner_cpp(partitioner), diagonal);
+            comm.get(), p, n, celltype, create_cell_partitioner_cpp(part),
+            diagonal);
       },
       py::arg("comm"), py::arg("p"), py::arg("n"), py::arg("celltype"),
       py::arg("partitioner"), py::arg("diagonal"));
@@ -216,11 +220,10 @@ void declare_mesh(py::module& m, std::string type)
       [](const MPICommWrapper comm,
          const std::array<std::array<double, 3>, 2>& p,
          std::array<std::size_t, 3> n, dolfinx::mesh::CellType celltype,
-         const PythonCellPartitionFunction& partitioner)
+         const PythonCellPartitionFunction& part)
       {
-        return dolfinx::mesh::create_box<T>(
-            comm.get(), p, n, celltype,
-            create_cell_partitioner_cpp(partitioner));
+        return dolfinx::mesh::create_box<T>(comm.get(), p, n, celltype,
+                                            create_cell_partitioner_cpp(part));
       },
       py::arg("comm"), py::arg("p"), py::arg("n"), py::arg("celltype"),
       py::arg("partitioner"));
@@ -232,18 +235,28 @@ void declare_mesh(py::module& m, std::string type)
          const py::array_t<T, py::array::c_style>& x,
          const PythonPartitioningFunction& p)
       {
-        auto p_wrap
-            = [p](MPI_Comm comm, int n, int tdim,
-                  const dolfinx::graph::AdjacencyList<std::int64_t>& cells)
-        { return p(MPICommWrapper(comm), n, tdim, cells); };
-
         std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape()[1];
         std::vector shape{std::size_t(x.shape(0)), shape1};
-        return dolfinx::mesh::create_mesh(
-            comm.get(), cells, {element}, std::span(x.data(), x.size()),
-            {static_cast<std::size_t>(x.shape(0)),
-             static_cast<std::size_t>(x.shape(1))},
-            p_wrap);
+        if (p)
+        {
+          auto p_wrap
+              = [p](MPI_Comm comm, int n, int tdim,
+                    const dolfinx::graph::AdjacencyList<std::int64_t>& cells)
+          { return p(MPICommWrapper(comm), n, tdim, cells); };
+          return dolfinx::mesh::create_mesh(
+              comm.get(), cells, {element}, std::span(x.data(), x.size()),
+              {static_cast<std::size_t>(x.shape(0)),
+               static_cast<std::size_t>(x.shape(1))},
+              p_wrap);
+        }
+        else
+        {
+          return dolfinx::mesh::create_mesh(
+              comm.get(), cells, {element}, std::span(x.data(), x.size()),
+              {static_cast<std::size_t>(x.shape(0)),
+               static_cast<std::size_t>(x.shape(1))},
+              p);
+        }
       },
       py::arg("comm"), py::arg("cells"), py::arg("element"),
       py::arg("x").noconvert(), py::arg("partitioner"),
@@ -475,12 +488,14 @@ void mesh(py::module& m)
   declare_mesh<float>(m, "float32");
   declare_mesh<double>(m, "float64");
 
-  m.def("create_cell_partitioner",
-        [](dolfinx::mesh::GhostMode gm) -> PythonCellPartitionFunction
-        {
-          return create_cell_partitioner_py(
-              dolfinx::mesh::create_cell_partitioner(gm));
-        });
+  m.def(
+      "create_cell_partitioner",
+      [](dolfinx::mesh::GhostMode gm) -> PythonCellPartitionFunction
+      {
+        return create_cell_partitioner_py(
+            dolfinx::mesh::create_cell_partitioner(gm));
+      },
+      "Create default cell partitioner.");
   m.def(
       "create_cell_partitioner",
       [](const std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
@@ -491,9 +506,10 @@ void mesh(py::module& m)
       {
         return create_cell_partitioner_py(
             dolfinx::mesh::create_cell_partitioner(
-                ghost_mode, create_cell_partitioner_cpp(part)));
+                ghost_mode, create_partitioner_cpp(part)));
       },
-      py::arg("part"), py::arg("ghost_mode") = dolfinx::mesh::GhostMode::none);
+      py::arg("part"), py::arg("ghost_mode") = dolfinx::mesh::GhostMode::none,
+      "Create a cell partitioner from a graph partitioning function.");
 
   m.def(
       "exterior_facet_indices",

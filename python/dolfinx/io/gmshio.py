@@ -6,19 +6,18 @@
 """Tools to extract data from Gmsh models"""
 import typing
 
-import numpy as np
-import numpy.typing as npt
-
 import basix
 import basix.ufl
+import numpy as np
+import numpy.typing as npt
 import ufl
-from dolfinx import cpp as _cpp
 from dolfinx.cpp.graph import AdjacencyList_int32
-from dolfinx.mesh import (CellType, GhostMode, Mesh, create_cell_partitioner,
-                          create_mesh, meshtags, meshtags_from_entities)
-from dolfinx import default_real_type
-
+from dolfinx.mesh import (CellType, Mesh, create_mesh, meshtags,
+                          meshtags_from_entities)
 from mpi4py import MPI as _MPI
+
+from dolfinx import cpp as _cpp
+from dolfinx import default_real_type
 
 __all__ = ["cell_perm_array", "ufl_mesh"]
 
@@ -42,7 +41,11 @@ def ufl_mesh(gmsh_cell: int, gdim: int) -> ufl.Mesh:
         A ufl Mesh using Lagrange elements (equispaced) of the
         corresponding DOLFINx cell
     """
-    shape, degree = _gmsh_to_cells[gmsh_cell]
+    try:
+        shape, degree = _gmsh_to_cells[gmsh_cell]
+    except KeyError as e:
+        print(f"Unknown cell type {gmsh_cell}.")
+        raise e
     cell = ufl.Cell(shape, geometric_dimension=gdim)
 
     element = basix.ufl.element(
@@ -60,6 +63,7 @@ def cell_perm_array(cell_type: CellType, num_nodes: int) -> typing.List[int]:
 
     Returns:
         An array `p` such that `a_dolfinx[i] = a_gmsh[p[i]]`.
+
     """
     return _cpp.io.perm_gmsh(cell_type, num_nodes)
 
@@ -77,8 +81,8 @@ if _has_gmsh:
         markers.
 
         Args:
-            model: The Gmsh model
-            name: The name of the gmsh model. If not set the current
+            model: Gmsh model.
+            name: Name of the gmsh model. If not set the current
                 model will be used.
 
         Returns:
@@ -141,7 +145,8 @@ if _has_gmsh:
 
         Args:
             model: The Gmsh model
-            name: The name of the gmsh model. If not set the current model will be used.
+            name: The name of the gmsh model. If not set the current
+                model will be used.
 
         Returns:
             The mesh geometry as an array of shape (num_nodes, 3).
@@ -150,8 +155,7 @@ if _has_gmsh:
         if name is not None:
             model.setCurrent(name)
 
-        # Get the unique tag and coordinates for nodes
-        # in mesh
+        # Get the unique tag and coordinates for nodes in mesh
         indices, points, _ = model.mesh.getNodes()
         points = points.reshape(-1, 3)
 
@@ -167,24 +171,23 @@ if _has_gmsh:
         return points[perm_sort]
 
     def model_to_mesh(model: gmsh.model, comm: _MPI.Comm, rank: int, gdim: int = 3,
-                      partitioner: typing.Callable[
-            [_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32] =
-            create_cell_partitioner(GhostMode.none), dtype=default_real_type) -> typing.Tuple[
+                      partitioner: typing.Optional[typing.Callable[
+                          [_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32]] = None,
+                      dtype=default_real_type) -> typing.Tuple[
             Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
         """Given a Gmsh model, take all physical entities of the highest
         topological dimension and create the corresponding DOLFINx mesh.
 
-        It is assumed that the gmsh model is on a single rank, and is
-        then read into DOLFINx on a single process to be distributed.
-        This means that this function should only be called once for
-        large problems. It is recommended to save the mesh and
-        corresponding tags to XDMFFile after creation for efficient
-        access.
+        In parallel, the gmsh model is processed on one MPI rank, and
+        the resulting mesh is distributed by DOLFINx. For performance,
+        this function should only be called once for large problems. For
+        re-use, it is recommended to save the mesh and corresponding
+        tags using XDMFFile after creation for efficient access.
 
         Args:
-            comm: The MPI communicator to use for mesh creation
-            rank: The rank the Gmsh model is initialized on
-            model: The Gmsh model
+            model: Gmsh model.
+            comm: MPI communicator to use for mesh creation.
+            rank: MPI rank that the Gmsh model is initialized on.
             gdim: Geometrical dimension of the mesh
             partitioner: Function that computes the parallel
                 distribution of cells across MPI ranks
@@ -193,9 +196,10 @@ if _has_gmsh:
             A triplet (mesh, cell_tags, facet_tags) where cell_tags hold
             markers for the cells and facet tags holds markers for
             facets (if tags are found in Gmsh model).
-        """
 
+        """
         if comm.rank == rank:
+            assert model is not None, "Gmsh model is None on rank responsible for mesh creation."
             # Get mesh geometry and mesh topology for each element
             x = extract_geometry(model)
             topologies = extract_topology_and_markers(model)
@@ -203,7 +207,7 @@ if _has_gmsh:
             # Extract Gmsh cell id, dimension of cell and number of
             # nodes to cell for each
             num_cell_types = len(topologies.keys())
-            cell_information = {}
+            cell_information = dict()
             cell_dimensions = np.zeros(num_cell_types, dtype=np.int32)
             for i, element in enumerate(topologies.keys()):
                 _, dim, _, num_nodes, _, _ = model.mesh.getElementProperties(element)
@@ -259,32 +263,32 @@ if _has_gmsh:
 
         # Create MeshTags for facets
         topology = mesh.topology
+        tdim = topology.dim
         if has_facet_data:
             # Permute facets from MSH to DOLFINx ordering
             # FIXME: This does not work for prism meshes
             if topology.cell_types[0] == CellType.prism or topology.cell_types[0] == CellType.pyramid:
                 raise RuntimeError(f"Unsupported cell type {topology.cell_types[0]}")
 
-            facet_type = _cpp.mesh.cell_entity_type(_cpp.mesh.to_type(str(ufl_domain.ufl_cell())), topology.dim - 1, 0)
+            facet_type = _cpp.mesh.cell_entity_type(_cpp.mesh.to_type(str(ufl_domain.ufl_cell())), tdim - 1, 0)
             gmsh_facet_perm = cell_perm_array(facet_type, num_facet_nodes)
             marked_facets = marked_facets[:, gmsh_facet_perm]
 
             local_entities, local_values = _cpp.io.distribute_entity_data(
-                mesh._cpp_object, mesh.topology.dim - 1, marked_facets, facet_values)
-            mesh.topology.create_connectivity(topology.dim - 1, topology.dim)
+                mesh._cpp_object, tdim - 1, marked_facets, facet_values)
+            mesh.topology.create_connectivity(topology.dim - 1, tdim)
             adj = _cpp.graph.AdjacencyList_int32(local_entities)
-            ft = meshtags_from_entities(mesh, topology.dim - 1, adj, local_values.astype(np.int32, copy=False))
+            ft = meshtags_from_entities(mesh, tdim - 1, adj, local_values.astype(np.int32, copy=False))
             ft.name = "Facet tags"
         else:
-            ft = meshtags(mesh, topology.dim - 1, np.empty(0, dtype=np.int32), np.empty(0, dtype=np.int32))
+            ft = meshtags(mesh, tdim - 1, np.empty(0, dtype=np.int32), np.empty(0, dtype=np.int32))
 
         return (mesh, ct, ft)
 
     def read_from_msh(filename: str, comm: _MPI.Comm, rank: int = 0, gdim: int = 3,
-                      partitioner: typing.Callable[
-            [_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32] =
-            create_cell_partitioner(GhostMode.none)) -> typing.Tuple[
-                Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
+                      partitioner: typing.Optional[typing.Callable[
+                          [_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32]] = None) -> typing.Tuple[
+            Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
         """Read a mesh from a msh-file and return a distributed DOLFINx
         mesh and cell and facet markers associated with physical groups
         in the msh file.
@@ -319,4 +323,5 @@ if _has_gmsh:
                       11: ("tetrahedron", 2), 12: ("hexahedron", 2),
                       15: ("point", 0), 21: ("triangle", 3),
                       26: ("interval", 3), 29: ("tetrahedron", 3),
-                      36: ("quadrilateral", 3)}
+                      36: ("quadrilateral", 3),
+                      92: ("hexahedron", 3)}

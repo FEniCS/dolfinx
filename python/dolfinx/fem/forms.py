@@ -91,17 +91,18 @@ _ufl_to_dolfinx_domain = {"cell": IntegralType.cell,
 
 def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]],
          dtype: typing.Optional[npt.DTypeLike] = default_scalar_type,
-         form_compiler_options: dict = {}, jit_options: dict = {}):
+         form_compiler_options: typing.Optional[dict] = None,
+         jit_options: typing.Optional[dict] = None):
     """Create a Form or an array of Forms.
 
     Args:
-        form: A UFL form or list(s) of UFL forms
-        dtype: Scalar type to use for the compiled form
+        form: A UFL form or list(s) of UFL forms.
+        dtype: Scalar type to use for the compiled form.
         form_compiler_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
-        jit_options:See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
+        jit_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`.
 
     Returns:
-        Compiled finite element Form
+        Compiled finite element Form.
 
     Notes:
         This function is responsible for the compilation of a UFL form
@@ -111,6 +112,9 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]],
         scalar type, e.g. `_cpp.fem.Form_float64`.
 
     """
+    if form_compiler_options is None:
+        form_compiler_options = dict()
+
     if dtype == np.float32:
         ftype = _cpp.fem.Form_float32
         form_compiler_options["scalar_type"] = "float"

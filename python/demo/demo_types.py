@@ -127,7 +127,7 @@ def poisson(dtype):
 
     # Assemble forms
     A = fem.assemble_matrix(a0, [bc])
-    A.finalize()
+    A.scatter_reverse()
     b = fem.assemble_vector(L0)
     fem.apply_lifting(b.array, [a0], bcs=[[bc]])
     b.scatter_reverse(la.InsertMode.add)
@@ -182,7 +182,7 @@ def elasticity(dtype) -> fem.Function:
 
     # Assemble forms (CSR matrix)
     A = fem.assemble_matrix(a0, [bc], block_mode=la.BlockMode.expanded)
-    A.finalize()
+    A.scatter_reverse()
     assert A.block_size == [1, 1]
 
     b = fem.assemble_vector(L0)

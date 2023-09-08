@@ -319,7 +319,9 @@ public:
         fdata.data(), num_cells, num_points, value_size);
 
     // Evaluate Expression at points
-    e.eval(cells, fdata, {num_cells, num_points * value_size});
+    assert(_function_space->mesh());
+    e.eval(*_function_space->mesh(), cells, fdata,
+           {num_cells, num_points * value_size});
 
     // Reshape evaluated data to fit interpolate
     // Expression returns matrix of shape (num_cells, num_points *

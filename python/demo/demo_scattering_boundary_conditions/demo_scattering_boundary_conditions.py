@@ -329,7 +329,6 @@ eps.x.scatter_forward()
 # integrate the terms over the corresponding domains:
 #
 # $$
-# \begin{align}
 # & \int_{\Omega}-\nabla \times( \nabla \times \mathbf{E}_s) \cdot
 # \bar{\mathbf{v}}+\varepsilon_{r} k_{0}^{2} \mathbf{E}_s \cdot
 # \bar{\mathbf{v}}+k_{0}^{2}\left(\varepsilon_{r}-\varepsilon_b\right)
@@ -337,7 +336,6 @@ eps.x.scatter_forward()
 # (\mathbf{n} \times \nabla \times \mathbf{E}_s) \cdot \bar{\mathbf{v}}
 # +\left(j n_bk_{0}+\frac{1}{2r}\right) (\mathbf{n} \times \mathbf{E}_s
 # \times \mathbf{n}) \cdot \bar{\mathbf{v}}~\mathrm{d}s=0
-# \end{align}.
 # $$
 #
 # By using $(\nabla \times \mathbf{A}) \cdot \mathbf{B}=\mathbf{A}
@@ -345,7 +343,6 @@ eps.x.scatter_forward()
 # \mathbf{B}),$ we can change the first term into:
 #
 # $$
-# \begin{align}
 # & \int_{\Omega}-\nabla \cdot(\nabla\times\mathbf{E}_s \times
 # \bar{\mathbf{v}})-\nabla \times \mathbf{E}_s \cdot \nabla
 # \times\bar{\mathbf{v}}+\varepsilon_{r} k_{0}^{2} \mathbf{E}_s
@@ -354,7 +351,6 @@ eps.x.scatter_forward()
 # (\mathbf{n} \times \nabla \times \mathbf{E}_s) \cdot \bar{\mathbf{v}}
 # +\left(j n_bk_{0}+\frac{1}{2r}\right) (\mathbf{n} \times \mathbf{E}_s
 # \times \mathbf{n}) \cdot \bar{\mathbf{v}}~\mathrm{d}s=0,
-# \end{align}
 # $$
 #
 # using the divergence theorem
@@ -362,7 +358,6 @@ eps.x.scatter_forward()
 # \mathbf{F}\cdot\mathbf{n}~\mathrm{d}s$, we can write:
 #
 # $$
-# \begin{align}
 # & \int_{\Omega}-(\nabla \times \mathbf{E}_s) \cdot (\nabla \times
 # \bar{\mathbf{v}})+\varepsilon_{r} k_{0}^{2} \mathbf{E}_s \cdot
 # \bar{\mathbf{v}}+k_{0}^{2}\left(\varepsilon_{r}-\varepsilon_b\right)
@@ -371,7 +366,6 @@ eps.x.scatter_forward()
 # + (\mathbf{n} \times \nabla \times \mathbf{E}_s) \cdot \bar{\mathbf{v}}
 # +\left(j n_bk_{0}+\frac{1}{2r}\right) (\mathbf{n} \times \mathbf{E}_s
 # \times \mathbf{n}) \cdot \bar{\mathbf{v}}~\mathrm{d}s=0.
-# \end{align}
 # $$
 #
 # Cancelling $-(\nabla\times\mathbf{E}_s \times \bar{\mathbf{V}})
@@ -381,14 +375,12 @@ eps.x.scatter_forward()
 # \mathbf{A})=\mathbf{C} \cdot(\mathbf{A} \times \mathbf{B})$, we get:
 #
 # $$
-# \begin{align}
 # & \int_{\Omega}-(\nabla \times \mathbf{E}_s) \cdot (\nabla \times
 # \bar{\mathbf{v}})+\varepsilon_{r} k_{0}^{2} \mathbf{E}_s \cdot
 # \bar{\mathbf{v}}+k_{0}^{2}\left(\varepsilon_{r}-\varepsilon_b\right)
 # \mathbf{E}_b \cdot \bar{\mathbf{v}}~\mathrm{d}x \\ +&\int_{\partial \Omega}
 # \left(j n_bk_{0}+\frac{1}{2r}\right)( \mathbf{n} \times \mathbf{E}_s \times
 # \mathbf{n}) \cdot \bar{\mathbf{v}} ~\mathrm{d} s = 0.
-# \end{align}
 # $$
 #
 # We use the [UFL](https://github.com/FEniCS/ufl/) to implement the
