@@ -572,7 +572,7 @@ class FunctionSpace(ufl.FunctionSpace):
         conditions.
 
         Returns:
-            A new function space that shares data
+            A new function space that shares data.
 
         """
         try:
@@ -585,7 +585,7 @@ class FunctionSpace(ufl.FunctionSpace):
 
     @property
     def num_sub_spaces(self) -> int:
-        """Number of sub spaces"""
+        """Number of sub spaces."""
         return self.element.num_sub_elements
 
     def sub(self, i: int) -> FunctionSpace:
@@ -661,11 +661,11 @@ class FunctionSpace(ufl.FunctionSpace):
     def tabulate_dof_coordinates(self) -> npt.NDArray[np.float64]:
         """Tabulate the coordinates of the degrees-of-freedom in the function space.
 
-            Returns:
-                Coordinates of the degrees-of-freedom.
+        Returns:
+            Coordinates of the degrees-of-freedom.
 
-            Notes:
-                This method should be used only for elements with point
+        Notes:
+            This method should be used only for elements with point
                 evaluation degrees-of-freedom.
 
          """
@@ -704,6 +704,6 @@ def VectorFunctionSpace(mesh: Mesh, element: typing.Union[ElementMetaData, typin
     # except AttributeError:
     ed = ElementMetaData(*element)
     ufl_e = basix.ufl.element(ed.family, mesh.basix_cell(), ed.degree,
-                              shape=(mesh.geometry.dim,) if dim is None else (dim, ),
+                              shape=(mesh.geometry.dim,) if dim is None else (dim,),
                               gdim=mesh.geometry.dim, rank=1)
     return FunctionSpace(mesh, ufl_e)
