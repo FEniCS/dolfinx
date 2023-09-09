@@ -27,10 +27,12 @@ def process():
         # Process each demo using jupytext/myst
         for demo in subdir.glob('**/demo*.py'):
             # If demo saves matplotlib images, run the demo
-            if "savefig" in demo.read_text():
+            code = demo.read_text()
+            if "savefig" in code:
                 here = os.getcwd()
-                os.chdir(demo.parent)
-                os.system(f"python3 {demo.name}")
+                with open(demo, 'r') as f:
+                    os.chdir(demo.parent)
+                    exec(code, locals())
                 os.chdir(here)
 
             python_demo = jupytext.read(demo)
