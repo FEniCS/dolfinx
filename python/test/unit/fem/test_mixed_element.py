@@ -51,19 +51,17 @@ def test_vector_element():
                               ghost_mode=GhostMode.shared_facet)
     gdim = mesh.geometry.dim
     U = FunctionSpace(mesh, ("P", 2, (gdim,)))
-    u = ufl.TrialFunction(U)
-    v = ufl.TestFunction(U)
+    u, v = ufl.TrialFunction(U), ufl.TestFunction(U)
     a = form(ufl.inner(u, v) * ufl.dx)
     A = dolfinx.fem.assemble_matrix(a)
     A.scatter_reverse()
 
     with pytest.raises(ValueError):
-        # FunctionSpace containing a vector should throw an error
-        # rather than segfaulting
+        # FunctionSpace containing a vector should throw an error rather
+        # than segfaulting
         gdim = mesh.geometry.dim
-        U = FunctionSpace(mesh, ("RT", 2, (gdim,)))
-        u = ufl.TrialFunction(U)
-        v = ufl.TestFunction(U)
+        U = FunctionSpace(mesh, ("RT", 2, (gdim + 1, )))
+        u, v = ufl.TrialFunction(U), ufl.TestFunction(U)
         a = form(ufl.inner(u, v) * ufl.dx)
         A = dolfinx.fem.assemble_matrix(a)
         A.scatter_reverse()
