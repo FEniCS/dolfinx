@@ -13,7 +13,7 @@ import pytest
 import dolfinx
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx.fem import FunctionSpace, VectorFunctionSpace
+from dolfinx.fem import FunctionSpace
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_interval, create_unit_square)
 
@@ -59,12 +59,14 @@ def test_tabulate_dofs(mesh_factory):
 
 def test_entity_dofs(mesh):
     """Test that num entity dofs is correctly wrapped to dolfinx::DofMap"""
+    gdim = mesh.geometry.dim
+
     V = FunctionSpace(mesh, ("Lagrange", 1))
     assert V.dofmap.dof_layout.num_entity_dofs(0) == 1
     assert V.dofmap.dof_layout.num_entity_dofs(1) == 0
     assert V.dofmap.dof_layout.num_entity_dofs(2) == 0
 
-    V = VectorFunctionSpace(mesh, ("Lagrange", 1))
+    V = FunctionSpace(mesh, ("Lagrange", 1, (gdim,)))
     bs = V.dofmap.dof_layout.block_size
     assert V.dofmap.dof_layout.num_entity_dofs(0) * bs == 2
     assert V.dofmap.dof_layout.num_entity_dofs(1) * bs == 0
@@ -90,7 +92,7 @@ def test_entity_dofs(mesh):
     assert V.dofmap.dof_layout.num_entity_dofs(1) == 0
     assert V.dofmap.dof_layout.num_entity_dofs(2) == 3
 
-    V = VectorFunctionSpace(mesh, ("Lagrange", 1))
+    V = FunctionSpace(mesh, ("Lagrange", 1, (gdim,)))
     bs = V.dofmap.dof_layout.block_size
     for i, cdofs in enumerate([[0, 1], [2, 3], [4, 5]]):
         dofs = [bs * d + b for d in V.dofmap.dof_layout.entity_dofs(0, i)
@@ -158,7 +160,8 @@ def test_block_size(mesh):
             W = FunctionSpace(mesh, mixed_element(i * [P2]))
             assert W.dofmap.index_map_bs == 1
 
-        V = VectorFunctionSpace(mesh, ("Lagrange", 2))
+        gdim = mesh.geometry.dim
+        V = FunctionSpace(mesh, ("Lagrange", 2, (gdim,)))
         assert V.dofmap.index_map_bs == mesh.geometry.dim
 
 

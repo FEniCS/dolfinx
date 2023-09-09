@@ -362,7 +362,8 @@ for i, kz in vals:
         eth.x.array[:] = eth.x.array[:] / kz
         ezh.x.array[:] = ezh.x.array[:] * 1j
 
-        V_dg = fem.VectorFunctionSpace(msh, ("DQ", degree))
+        gdim = msh.geometry.dim
+        V_dg = fem.FunctionSpace(msh, ("DQ", degree, (gdim,)))
         Et_dg = fem.Function(V_dg)
         Et_dg.interpolate(eth)
 

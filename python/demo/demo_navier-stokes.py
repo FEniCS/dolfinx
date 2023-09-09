@@ -232,7 +232,8 @@ V = fem.FunctionSpace(msh, ("Raviart-Thomas", k + 1))
 Q = fem.FunctionSpace(msh, ("Discontinuous Lagrange", k))
 
 # Funcion space for visualising the velocity field
-W = fem.VectorFunctionSpace(msh, ("Discontinuous Lagrange", k + 1))
+gdim = msh.geometry.dim
+W = fem.FunctionSpace(msh, ("Discontinuous Lagrange", k + 1, (gdim,)))
 
 # Define trial and test functions
 
@@ -405,7 +406,7 @@ except NameError:
 
 # +
 # Function spaces for exact velocity and pressure
-V_e = fem.VectorFunctionSpace(msh, ("Lagrange", k + 3))
+V_e = fem.FunctionSpace(msh, ("Lagrange", k + 3, (gdim,)))
 Q_e = fem.FunctionSpace(msh, ("Lagrange", k + 2))
 
 u_e = fem.Function(V_e)

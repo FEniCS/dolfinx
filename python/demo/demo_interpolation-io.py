@@ -22,7 +22,7 @@
 import numpy as np
 
 from dolfinx import default_scalar_type, plot
-from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
+from dolfinx.fem import Function, FunctionSpace
 from dolfinx.mesh import CellType, create_rectangle, locate_entities
 
 from mpi4py import MPI
@@ -55,7 +55,8 @@ u.interpolate(lambda x: np.vstack((x[0] + 1, x[1])), cells1)
 # Create a vector-valued discontinuous Lagrange space and function, and
 # interpolate the $H({\rm curl})$ function `u`
 
-V0 = VectorFunctionSpace(msh, ("Discontinuous Lagrange", 1))
+gdim = msh.geometry.dim
+V0 = FunctionSpace(msh, ("Discontinuous Lagrange", 1, (gdim,)))
 u0 = Function(V0, dtype=default_scalar_type)
 u0.interpolate(u)
 

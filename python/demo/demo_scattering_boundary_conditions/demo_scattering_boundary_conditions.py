@@ -408,7 +408,8 @@ Esh = problem.solve()
 # Lagrange space.
 
 # +
-V_dg = fem.VectorFunctionSpace(domain, ("Discontinuous Lagrange", degree))
+gdim = domain.geometry.dim
+V_dg = fem.FunctionSpace(domain, ("Discontinuous Lagrange", degree, (gdim,)))
 Esh_dg = fem.Function(V_dg)
 Esh_dg.interpolate(Esh)
 

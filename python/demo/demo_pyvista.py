@@ -26,7 +26,7 @@
 import numpy as np
 
 import dolfinx.plot as plot
-from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
+from dolfinx.fem import Function, FunctionSpace
 from dolfinx.mesh import (CellType, compute_midpoints, create_unit_cube,
                           create_unit_square, meshtags)
 
@@ -236,7 +236,8 @@ def plot_nedelec():
     # discontinuous Lagrange finite element functions. Therefore, we
     # interpolate the Nédélec function into a first-order discontinuous
     # Lagrange space.
-    V0 = VectorFunctionSpace(msh, ("Discontinuous Lagrange", 2))
+    gdim = msh.geometry.dim
+    V0 = FunctionSpace(msh, ("Discontinuous Lagrange", 2, (gdim,)))
     u0 = Function(V0, dtype=np.float64)
     u0.interpolate(u)
 
@@ -267,7 +268,8 @@ def plot_nedelec():
 def plot_streamlines():
 
     msh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, CellType.hexahedron)
-    V = VectorFunctionSpace(msh, ("Discontinuous Lagrange", 2))
+    gdim = msh.geometry.dim
+    V = FunctionSpace(msh, ("Discontinuous Lagrange", 2, (gdim,)))
     u = Function(V, dtype=np.float64)
     u.interpolate(lambda x: np.vstack((-(x[1] - 0.5), x[0] - 0.5, np.zeros(x.shape[1]))))
 

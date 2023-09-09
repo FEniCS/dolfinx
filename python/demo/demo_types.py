@@ -156,7 +156,8 @@ def elasticity(dtype) -> fem.Function:
                                                                           np.isclose(x[0], 2.0)))
 
     # Define the variational problem.
-    V = fem.VectorFunctionSpace(msh, ("Lagrange", 1))
+    gdim = msh.geometry.dim
+    V = fem.FunctionSpace(msh, ("Lagrange", 1, (gdim,)))
     ω, ρ = 300.0, 10.0
     x = ufl.SpatialCoordinate(msh)
     f = ufl.as_vector((ρ * ω**2 * x[0], ρ * ω**2 * x[1]))

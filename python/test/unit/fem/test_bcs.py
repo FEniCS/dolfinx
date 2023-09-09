@@ -8,10 +8,9 @@ import numpy as np
 import pytest
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx.fem import (Constant, Function, FunctionSpace,
-                         VectorFunctionSpace,
-                         apply_lifting, assemble_matrix, assemble_vector,
-                         create_matrix, create_vector, dirichletbc, form,
+from dolfinx.fem import (Constant, Function, FunctionSpace, apply_lifting,
+                         assemble_matrix, assemble_vector, create_matrix,
+                         create_vector, dirichletbc, form,
                          locate_dofs_geometrical, locate_dofs_topological,
                          set_bc)
 from dolfinx.mesh import (CellType, create_unit_cube, create_unit_square,
@@ -178,8 +177,9 @@ def test_vector_constant_bc(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
     tdim = mesh.topology.dim
-    V = VectorFunctionSpace(mesh, ("Lagrange", 1))
-    assert V.num_sub_spaces == mesh.geometry.dim
+    gdim = mesh.geometry.dim
+    V = FunctionSpace(mesh, ("Lagrange", 1, (gdim,)))
+    assert V.num_sub_spaces == gdim
     c = np.arange(1, mesh.geometry.dim + 1, dtype=default_scalar_type)
     boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
 
@@ -216,9 +216,10 @@ def test_sub_constant_bc(mesh_factory):
     function"""
     func, args = mesh_factory
     mesh = func(*args)
-    tdim = mesh.topology.dim
-    V = VectorFunctionSpace(mesh, ("Lagrange", 1))
+    gdim = mesh.geometry.dim
+    V = FunctionSpace(mesh, ("Lagrange", 1, (gdim,)))
     c = Constant(mesh, default_scalar_type(3.14))
+    tdim = mesh.topology.dim
     boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
 
     for i in range(V.num_sub_spaces):
