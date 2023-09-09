@@ -479,7 +479,15 @@ class Function(ufl.Coefficient):
 
 
 class ElementMetaData(typing.NamedTuple):
-    """Data for representing a finite element"""
+    """Data for representing a finite element.
+
+    :param family: Element type.
+    :param degree: Polynomial degree of the element.
+    :param shape: Shape for vector/tensor valued elements that are
+        constructed from blocked scalar elements (e.g., Lagrange).
+    :param symmetry: Symmetry option for blocked tensor elements.
+
+    """
     family: str
     degree: int
     shape: typing.Optional[typing.Tuple[int, ...]] = None
@@ -552,7 +560,18 @@ class FunctionSpaceBase(ufl.FunctionSpace):
 
     def __init__(self, mesh: Mesh, element: ufl.FiniteElementBase,
                  cppV: typing.Union[_cpp.fem.FunctionSpace_float32, _cpp.fem.FunctionSpace_float64]):
-        """Create a finite element function space."""
+        """Create a finite element function space.
+
+        Note:
+            This initialiser is for internal use and not normally called
+            in user code. Use :func:`FunctionSpace` to create a function space.
+
+        Args:
+            mesh: Mesh that space is defined on
+            element: UFL finite element
+            cppV: Compiled C++ function space.
+
+        """
         if mesh._cpp_object is not cppV.mesh:
             raise RuntimeError("Meshes do not match in FunctionSpace initialisation.")
         ufl_domain = mesh.ufl_domain()
