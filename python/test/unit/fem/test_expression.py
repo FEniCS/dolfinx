@@ -9,8 +9,7 @@ import numpy as np
 import pytest
 import ufl
 from basix.ufl import blocked_element
-from dolfinx.fem import (Constant, Expression, Function, FunctionSpace,
-                         VectorFunctionSpace, form)
+from dolfinx.fem import Constant, Expression, Function, FunctionSpace, form
 from dolfinx.mesh import create_unit_square
 from ffcx.element_interface import QuadratureElement
 from mpi4py import MPI
@@ -34,7 +33,7 @@ def test_rank0(dtype):
     """
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=dtype(0).real.dtype)
     P2 = FunctionSpace(mesh, ("P", 2))
-    vdP1 = VectorFunctionSpace(mesh, ("DG", 1))
+    vdP1 = FunctionSpace(mesh, ("DG", 1))
 
     f = Function(P2, dtype=dtype)
     f.interpolate(lambda x: x[0] ** 2 + 2.0 * x[1] ** 2)
@@ -75,7 +74,8 @@ def test_rank1_hdiv(dtype):
 
     """
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, dtype=dtype(0).real.dtype)
-    vdP1 = VectorFunctionSpace(mesh, ("DG", 2))
+    gdim = mesh.geometry.gdim
+    vdP1 = FunctionSpace(mesh, ("DG", 2, (gdim,)))
     RT1 = FunctionSpace(mesh, ("RT", 2))
     f = ufl.TrialFunction(RT1)
 

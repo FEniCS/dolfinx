@@ -10,7 +10,7 @@ import numpy as np
 import pytest
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
+from dolfinx.fem import Function, FunctionSpace
 from dolfinx.io import VTKFile
 from dolfinx.io.utils import cell_perm_vtk  # noqa F401
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
@@ -104,7 +104,8 @@ def test_save_1d_vector(tempdir):
 @pytest.mark.parametrize("cell_type", cell_types_2D)
 def test_save_2d_vector(tempdir, cell_type):
     mesh = create_unit_square(MPI.COMM_WORLD, 16, 16, cell_type=cell_type)
-    u = Function(VectorFunctionSpace(mesh, ("Lagrange", 1)))
+    gdim = mesh.geometry.gdim
+    u = Function(FunctionSpace(mesh, ("Lagrange", 1, (gdim,))))
 
     def f(x):
         vals = np.zeros((2, x.shape[1]))
@@ -130,7 +131,8 @@ def test_save_2d_vector_CG2(tempdir):
                       [1, 6, 2, 7, 3, 8]])
     domain = ufl.Mesh(element("Lagrange", "triangle", 2, rank=1))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
-    u = Function(VectorFunctionSpace(mesh, ("Lagrange", 2)))
+    gdim = mesh.geometry.gdim
+    u = Function(FunctionSpace(mesh, ("Lagrange", 2, (gdim,))))
     u.interpolate(lambda x: np.vstack((x[0], x[1])))
     filename = Path(tempdir, "u.pvd")
     with VTKFile(mesh.comm, filename, "w") as vtk:
