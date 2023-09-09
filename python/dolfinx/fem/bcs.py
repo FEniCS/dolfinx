@@ -91,7 +91,7 @@ class DirichletBC:
         """Representation of Dirichlet boundary condition which is imposed on
         a linear system.
 
-        Notes:
+        Note:
             Dirichlet boundary conditions  should normally be
             constructed using :func:`fem.dirichletbc` and not using this
             class initialiser. This class is combined with different
@@ -106,6 +106,7 @@ class DirichletBC:
                 Otherwise assumes function space of the problem is the same
                 of function space of boundary values function.
             V: Function space of a problem to which boundary conditions are applied.
+
         """
         self._cpp_object = bc
 

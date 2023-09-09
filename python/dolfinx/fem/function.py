@@ -111,7 +111,7 @@ class Expression:
                 to see all available options.
             jit_options: Options controlling JIT compilation of C code.
 
-        Notes:
+        Note:
             This wrapper is responsible for the FFCx compilation of the
             UFL Expr and attaching the correct data to the underlying
             C++ Expression.
@@ -573,7 +573,7 @@ class FunctionSpaceBase(ufl.FunctionSpace):
 
         """
         if mesh._cpp_object is not cppV.mesh:
-            raise RuntimeError("Meshes do not match in FunctionSpace initialisation.")
+            raise RuntimeError("Meshes do not match in function space initialisation.")
         ufl_domain = mesh.ufl_domain()
         self._cpp_object = cppV
         self._mesh = mesh
@@ -668,11 +668,12 @@ class FunctionSpaceBase(ufl.FunctionSpace):
         return self._mesh
 
     def collapse(self) -> tuple[FunctionSpaceBase, np.ndarray]:
-        """Collapse a subspace and return a new function space and a map from
-        new to old dofs.
+        """Collapse a subspace and return a new function space and a map
+        from new to old dofs.
 
         Returns:
-            The new function space and the map from new to old degrees-of-freedom.
+            The new function space and the map from new to old
+            degrees-of-freedom.
 
         """
         cpp_space, dofs = self._cpp_object.collapse()
@@ -682,41 +683,43 @@ class FunctionSpaceBase(ufl.FunctionSpace):
     def tabulate_dof_coordinates(self) -> npt.NDArray[np.float64]:
         """Tabulate the coordinates of the degrees-of-freedom in the function space.
 
-            Returns:
-                Coordinates of the degrees-of-freedom.
+        Returns:
+            Coordinates of the degrees-of-freedom.
 
-            Notes:
-                This method should be used only for elements with point
-                evaluation degrees-of-freedom.
+        Note:
+            This method should be used only for elements with point
+            evaluation degrees-of-freedom.
 
          """
         return self._cpp_object.tabulate_dof_coordinates()
 
 
-def _is_scalar(mesh, element):
-    try:
-        e = basix.ufl.element(element.family(), element.cell_type,         # type: ignore
-                              element.degree(), element.lagrange_variant,  # type: ignore
-                              element.dpc_variant, element.discontinuous,  # type: ignore
-                              gdim=mesh.geometry.dim)
-    except AttributeError:
-        ed = ElementMetaData(*element)
-        e = basix.ufl.element(ed.family, mesh.basix_cell(), ed.degree, gdim=mesh.geometry.dim)
-    return len(e.value_shape()) == 0
-
-
 def VectorFunctionSpace(mesh: Mesh,
-                        element: typing.Union[basix.ufl._ElementBase,
-                                              ElementMetaData, typing.Tuple[str, int]],
-                        dim=None) -> FunctionSpaceBase:
-    """Create vector finite element (composition of scalar elements) function space."""
+                        element: typing.Union[ElementMetaData, typing.Tuple[str, int]],
+                        dim: typing.Optional[int] = None) -> FunctionSpaceBase:
+    """Create a vector finite element (composition of scalar elements) function space.
+
+    Note:
+        This function is deprecated. Use :func:`FunctionSpace` with a
+        shape argument instead.
+
+    Args:
+        mesh: Mesh that space is defined on
+        element: Finite element description. Must be a scalar element,
+           e.g. Lagrange,
+        dim: Dimension of the vector, e.g. number of vector components.
+            It defaults to the geometric dimension of the mesh.
+
+    Returns:
+        A blocked vector function space.
+
+    """
     warnings.warn('This method is deprecated. Use FunctionSpace with an element shape argument instead',
                   DeprecationWarning, stacklevel=2)
-
-    if not _is_scalar(mesh, element):
-        raise ValueError("Cannot create vector element containing a non-scalar.")
-
     ed = ElementMetaData(*element)
+    e = basix.ufl.element(ed.family, mesh.basix_cell(), ed.degree, gdim=mesh.geometry.dim)
+    if len(e.value_shape()) != 0:
+        raise ValueError("Cannot create vector element containing a non-scalar.")
     ufl_e = basix.ufl.element(ed.family, mesh.basix_cell(), ed.degree,
                               shape=(mesh.geometry.dim,) if dim is None else (dim,),
                               gdim=mesh.geometry.dim, rank=1)
