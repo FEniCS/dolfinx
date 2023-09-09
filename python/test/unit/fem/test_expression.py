@@ -74,7 +74,7 @@ def test_rank1_hdiv(dtype):
 
     """
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, dtype=dtype(0).real.dtype)
-    gdim = mesh.geometry.gdim
+    gdim = mesh.geometry.dim
     vdP1 = FunctionSpace(mesh, ("DG", 2, (gdim,)))
     RT1 = FunctionSpace(mesh, ("RT", 2))
     f = ufl.TrialFunction(RT1)

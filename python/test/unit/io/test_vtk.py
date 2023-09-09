@@ -104,7 +104,7 @@ def test_save_1d_vector(tempdir):
 @pytest.mark.parametrize("cell_type", cell_types_2D)
 def test_save_2d_vector(tempdir, cell_type):
     mesh = create_unit_square(MPI.COMM_WORLD, 16, 16, cell_type=cell_type)
-    gdim = mesh.geometry.gdim
+    gdim = mesh.geometry.dim
     u = Function(FunctionSpace(mesh, ("Lagrange", 1, (gdim,))))
 
     def f(x):
@@ -131,7 +131,7 @@ def test_save_2d_vector_CG2(tempdir):
                       [1, 6, 2, 7, 3, 8]])
     domain = ufl.Mesh(element("Lagrange", "triangle", 2, rank=1))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
-    gdim = mesh.geometry.gdim
+    gdim = mesh.geometry.dim
     u = Function(FunctionSpace(mesh, ("Lagrange", 2, (gdim,))))
     u.interpolate(lambda x: np.vstack((x[0], x[1])))
     filename = Path(tempdir, "u.pvd")
