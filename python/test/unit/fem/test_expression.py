@@ -32,8 +32,9 @@ def test_rank0(dtype):
 
     """
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=dtype(0).real.dtype)
+    gdim = mesh.geometry.dim
     P2 = FunctionSpace(mesh, ("P", 2))
-    vdP1 = FunctionSpace(mesh, ("DG", 1))
+    vdP1 = FunctionSpace(mesh, ("DG", 1, (gdim,)))
 
     f = Function(P2, dtype=dtype)
     f.interpolate(lambda x: x[0] ** 2 + 2.0 * x[1] ** 2)
