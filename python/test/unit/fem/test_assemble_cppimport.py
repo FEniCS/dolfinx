@@ -202,7 +202,7 @@ PYBIND11_MODULE(assemble_csr, m)
     mesh = create_unit_square(MPI.COMM_SELF, 11, 7)
     gdim = mesh.geometry.dim
     Q = FunctionSpace(mesh, ("Lagrange", 1, (gdim,)))
-    Q2 = FunctionSpace(mesh, ("Lagrange", 1), (3,))
+    Q2 = FunctionSpace(mesh, ("Lagrange", 1, (3,)))
     u = ufl.TrialFunction(Q)
     v = ufl.TestFunction(Q2)
 
