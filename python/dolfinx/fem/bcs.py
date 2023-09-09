@@ -113,7 +113,7 @@ class DirichletBC:
         return self._cpp_object.value
 
     @property
-    def function_space(self) -> dolfinx.fem.FunctionSpace:
+    def function_space(self) -> dolfinx.fem.FunctionSpaceBase:
         """The function space on which the boundary condition is defined"""
         return self._cpp_object.function_space
 

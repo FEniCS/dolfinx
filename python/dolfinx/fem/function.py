@@ -322,7 +322,7 @@ class Function(ufl.Coefficient):
             self._petsc_x.destroy()
 
     @property
-    def function_space(self) -> FunctionSpace:
+    def function_space(self) -> FunctionSpaceBase:
         """The FunctionSpace that the Function is defined on"""
         return self._V
 
@@ -473,7 +473,7 @@ class Function(ufl.Coefficient):
 
     def collapse(self) -> Function:
         u_collapsed = self._cpp_object.collapse()
-        V_collapsed = FunctionSpace(self.function_space._mesh, self.ufl_element(), u_collapsed.function_space)
+        V_collapsed = FunctionSpaceBase(self.function_space._mesh, self.ufl_element(), u_collapsed.function_space)
         return Function(V_collapsed, Vector(u_collapsed.x))
 
 
@@ -483,69 +483,75 @@ class ElementMetaData(typing.NamedTuple):
     degree: int
 
 
-class FunctionSpace(ufl.FunctionSpace):
+def FunctionSpace(mesh: Mesh,
+                  element: typing.Union[ufl.FiniteElementBase, ElementMetaData, typing.Tuple[str, int]],
+                  form_compiler_options: typing.Optional[dict[str, typing.Any]] = None,
+                  jit_options: typing.Optional[dict[str, typing.Any]] = None) -> FunctionSpaceBase:
+
+    # Create UFL element
+    try:
+        e = ElementMetaData(*element)
+        ufl_e = basix.ufl.element(e.family, mesh.basix_cell(), e.degree,
+                                  gdim=mesh.ufl_cell().geometric_dimension())
+    except:
+        ufl_e = element
+
+    # Check that element and mesh cell types match
+    if ufl_e.cell() != mesh.ufl_domain().ufl_cell():
+        raise ValueError("Non-matching UFL cell and mesh cell shapes.")
+
+    # Compile dofmap and element and create DOLFIN objects
+    dtype = mesh.geometry.x.dtype
+    if form_compiler_options is None:
+        form_compiler_options = dict()
+    if dtype == np.float32:
+        form_compiler_options["scalar_type"] = "float"
+    elif dtype == np.float64:
+        form_compiler_options["scalar_type"] = "double"
+    else:
+        raise RuntimeError("Unsupported geometry type. Must be float32 or float64.")
+
+    print("Foo 5")
+    (ufcx_element, ufcx_dofmap), module, code = jit.ffcx_jit(mesh.comm, ufl_e,
+                                                             form_compiler_options=form_compiler_options,
+                                                             jit_options=jit_options)
+    print("Foo 6")
+
+    ffi = module.ffi
+    if dtype == np.float32:
+        cpp_element = _cpp.fem.FiniteElement_float32(ffi.cast("uintptr_t", ffi.addressof(ufcx_element)))
+    elif dtype == np.float64:
+        print("Foo 7")
+        cpp_element = _cpp.fem.FiniteElement_float64(ffi.cast("uintptr_t", ffi.addressof(ufcx_element)))
+        print("Foo 8")
+    print("Foo 9")
+    cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, ffi.cast(
+        "uintptr_t", ffi.addressof(ufcx_dofmap)), mesh.topology, cpp_element)
+    print("Foo 10")
+
+    # Initialize the cpp.FunctionSpace and store mesh
+    try:
+        cppV = _cpp.fem.FunctionSpace_float64(mesh._cpp_object, cpp_element, cpp_dofmap)
+    except TypeError:
+        cppV = _cpp.fem.FunctionSpace_float32(mesh._cpp_object, cpp_element, cpp_dofmap)
+
+    return FunctionSpaceBase(mesh, ufl_e, cppV)
+
+
+class FunctionSpaceBase(ufl.FunctionSpace):
     """A space on which Functions (fields) can be defined."""
 
-    def __init__(self, mesh: Mesh,
-                 element: typing.Union[ufl.FiniteElementBase, ElementMetaData, typing.Tuple[str, int]],
-                 cppV: typing.Optional[typing.Union[_cpp.fem.FunctionSpace_float32,
-                                                    _cpp.fem.FunctionSpace_float64]] = None,
-                 form_compiler_options: typing.Optional[dict[str, typing.Any]] = None,
-                 jit_options: typing.Optional[dict[str, typing.Any]] = None):
+    def __init__(self, mesh: Mesh, element: ufl.FiniteElementBase,
+                 cppV: typing.Union[_cpp.fem.FunctionSpace_float32, _cpp.fem.FunctionSpace_float64]):
         """Create a finite element function space."""
-        dtype = mesh.geometry.x.dtype
-        assert dtype == np.float32 or dtype == np.float64
+        if mesh._cpp_object is not cppV.mesh:
+            raise RuntimeError("Meshes do not match in FunctionSpace initialisation.")
+        ufl_domain = mesh.ufl_domain()
+        self._cpp_object = cppV
+        self._mesh = mesh
+        super().__init__(ufl_domain, element)
 
-        if cppV is None:
-            # Initialise the ufl.FunctionSpace
-            try:
-                # UFL element
-                super().__init__(mesh.ufl_domain(), element)
-            except BaseException:
-                assert len(element) == 2, "Expected sequence of (element_type, degree)"
-                e = ElementMetaData(*element)
-                ufl_e = basix.ufl.element(e.family, mesh.basix_cell(), e.degree,
-                                          gdim=mesh.ufl_cell().geometric_dimension())
-                super().__init__(mesh.ufl_domain(), ufl_e)
-
-            # Compile dofmap and element and create DOLFIN objects
-            if form_compiler_options is None:
-                form_compiler_options = dict()
-            if dtype == np.float32:
-                form_compiler_options["scalar_type"] = "float"
-            elif dtype == np.float64:
-                form_compiler_options["scalar_type"] = "double"
-
-            (self._ufcx_element, self._ufcx_dofmap), module, code = jit.ffcx_jit(
-                mesh.comm, self.ufl_element(), form_compiler_options=form_compiler_options,
-                jit_options=jit_options)
-
-            ffi = module.ffi
-            if dtype == np.float32:
-                cpp_element = _cpp.fem.FiniteElement_float32(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_element)))
-            elif dtype == np.float64:
-                cpp_element = _cpp.fem.FiniteElement_float64(ffi.cast("uintptr_t", ffi.addressof(self._ufcx_element)))
-            cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, ffi.cast(
-                "uintptr_t", ffi.addressof(self._ufcx_dofmap)), mesh.topology, cpp_element)
-
-            # Initialize the cpp.FunctionSpace and store mesh
-            try:
-                self._cpp_object = _cpp.fem.FunctionSpace_float64(mesh._cpp_object, cpp_element, cpp_dofmap)
-            except TypeError:
-                self._cpp_object = _cpp.fem.FunctionSpace_float32(mesh._cpp_object, cpp_element, cpp_dofmap)
-            self._mesh = mesh
-        else:
-            # Create function space from a UFL element and an existing
-            # C++ FunctionSpace
-            if mesh._cpp_object is not cppV.mesh:
-                raise RecursionError("Meshes do not match in FunctionSpace initialisation.")
-            ufl_domain = mesh.ufl_domain()
-            super().__init__(ufl_domain, element)
-            self._cpp_object = cppV
-            self._mesh = mesh
-            return
-
-    def clone(self) -> FunctionSpace:
+    def clone(self) -> FunctionSpaceBase:
         """Create a new FunctionSpace :math:`W` which shares data with this
         FunctionSpace :math:`V`, but with a different unique integer ID.
 
@@ -568,14 +574,14 @@ class FunctionSpace(ufl.FunctionSpace):
         except TypeError:
             Vcpp = _cpp.fem.FunctionSpace_float32(
                 self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap)
-        return FunctionSpace(self._mesh, self.ufl_element(), Vcpp)
+        return FunctionSpaceBase(self._mesh, self.ufl_element(), Vcpp)
 
     @property
     def num_sub_spaces(self) -> int:
         """Number of sub spaces"""
         return self.element.num_sub_elements
 
-    def sub(self, i: int) -> FunctionSpace:
+    def sub(self, i: int) -> FunctionSpaceBase:
         """Return the i-th sub space.
 
         Args:
@@ -588,7 +594,7 @@ class FunctionSpace(ufl.FunctionSpace):
         assert self.ufl_element().num_sub_elements() > i
         sub_element = self.ufl_element().sub_elements()[i]
         cppV_sub = self._cpp_object.sub([i])
-        return FunctionSpace(self._mesh, sub_element, cppV_sub)
+        return FunctionSpaceBase(self._mesh, sub_element, cppV_sub)
 
     def component(self):
         """Return the component relative to the parent space."""
@@ -633,7 +639,7 @@ class FunctionSpace(ufl.FunctionSpace):
         """Mesh on which the function space is defined."""
         return self._mesh
 
-    def collapse(self) -> tuple[FunctionSpace, np.ndarray]:
+    def collapse(self) -> tuple[FunctionSpaceBase, np.ndarray]:
         """Collapse a subspace and return a new function space and a map from
         new to old dofs.
 
@@ -642,7 +648,7 @@ class FunctionSpace(ufl.FunctionSpace):
 
         """
         cpp_space, dofs = self._cpp_object.collapse()
-        V = FunctionSpace(self._mesh, self.ufl_element(), cpp_space)
+        V = FunctionSpaceBase(self._mesh, self.ufl_element(), cpp_space)
         return V, dofs
 
     def tabulate_dof_coordinates(self) -> npt.NDArray[np.float64]:
@@ -674,7 +680,7 @@ def _is_scalar(mesh, element):
 def VectorFunctionSpace(mesh: Mesh,
                         element: typing.Union[basix.ufl._ElementBase,
                                               ElementMetaData, typing.Tuple[str, int]],
-                        dim=None) -> FunctionSpace:
+                        dim=None) -> FunctionSpaceBase:
     """Create vector finite element (composition of scalar elements) function space."""
     if not _is_scalar(mesh, element):
         raise ValueError("Cannot create vector element containing a non-scalar.")
@@ -694,7 +700,7 @@ def VectorFunctionSpace(mesh: Mesh,
 
 
 def TensorFunctionSpace(mesh: Mesh, element: typing.Union[ElementMetaData, typing.Tuple[str, int]], shape=None,
-                        symmetry: typing.Optional[bool] = None) -> FunctionSpace:
+                        symmetry: typing.Optional[bool] = None) -> FunctionSpaceBase:
     """Create tensor finite element (composition of scalar elements) function space."""
     if not _is_scalar(mesh, element):
         raise ValueError("Cannot create tensor element containing a non-scalar.")

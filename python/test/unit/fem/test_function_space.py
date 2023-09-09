@@ -8,8 +8,8 @@ import basix
 import numpy as np
 import pytest
 from basix.ufl import element, mixed_element
-from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
-                         VectorFunctionSpace)
+from dolfinx.fem import (Function, FunctionSpace, FunctionSpaceBase,
+                         TensorFunctionSpace, VectorFunctionSpace)
 from dolfinx.mesh import create_mesh, create_unit_cube
 from mpi4py import MPI
 from ufl import Cell, Mesh, TestFunction, TrialFunction, grad
@@ -61,10 +61,10 @@ def W2(g):
 
 def test_python_interface(V, V2, W, W2, Q):
     # Test Python interface of cpp generated FunctionSpace
-    assert isinstance(V, FunctionSpace)
-    assert isinstance(W, FunctionSpace)
-    assert isinstance(V2, FunctionSpace)
-    assert isinstance(W2, FunctionSpace)
+    assert isinstance(V, FunctionSpaceBase)
+    assert isinstance(W, FunctionSpaceBase)
+    assert isinstance(V2, FunctionSpaceBase)
+    assert isinstance(W2, FunctionSpaceBase)
 
     assert V.mesh.ufl_cell() == V2.mesh.ufl_cell()
     assert W.mesh.ufl_cell() == W2.mesh.ufl_cell()
