@@ -8,7 +8,8 @@ import basix
 import numpy as np
 import pytest
 from basix.ufl import element, mixed_element
-from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
+from dolfinx.fem import (Function, FunctionSpace, FunctionSpaceBase,
+                         VectorFunctionSpace)
 from dolfinx.mesh import create_mesh, create_unit_cube
 from mpi4py import MPI
 from ufl import Cell, Mesh, TestFunction, TrialFunction, grad
@@ -60,10 +61,10 @@ def W2(g):
 
 def test_python_interface(V, V2, W, W2, Q):
     # Test Python interface of cpp generated FunctionSpace
-    assert isinstance(V, FunctionSpace)
-    assert isinstance(W, FunctionSpace)
-    assert isinstance(V2, FunctionSpace)
-    assert isinstance(W2, FunctionSpace)
+    assert isinstance(V, FunctionSpaceBase)
+    assert isinstance(W, FunctionSpaceBase)
+    assert isinstance(V2, FunctionSpaceBase)
+    assert isinstance(W2, FunctionSpaceBase)
 
     assert V.mesh.ufl_cell() == V2.mesh.ufl_cell()
     assert W.mesh.ufl_cell() == W2.mesh.ufl_cell()
@@ -267,7 +268,6 @@ def test_manifold_spaces():
     gdim = mesh.geometry.dim
     QV = FunctionSpace(mesh, ("Lagrange", 1, (gdim,)))
     QT = FunctionSpace(mesh, ("Lagrange", 1, (gdim, gdim)))
-    u = Function(QV)
-    v = Function(QT)
+    u, v = Function(QV), Function(QT)
     assert u.ufl_shape == (3,)
     assert v.ufl_shape == (3, 3)
