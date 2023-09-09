@@ -25,8 +25,9 @@
 # +
 import numpy as np
 import ufl
-from dolfinx.fem import (Expression, Function, FunctionSpace, dirichletbc,
-                         form, locate_dofs_topological)
+from dolfinx.fem import (Expression, Function, FunctionSpace,
+                         FunctionSpaceBase, dirichletbc, form,
+                         locate_dofs_topological)
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                set_bc)
 from dolfinx.io import XDMFFile
@@ -52,7 +53,7 @@ dtype = PETSc.ScalarType
 # modes.
 
 
-def build_nullspace(V: FunctionSpace):
+def build_nullspace(V: FunctionSpaceBase):
     """Build PETSc nullspace for 3D elasticity"""
 
     # Create vectors that will span the nullspace
