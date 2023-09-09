@@ -6,6 +6,7 @@
 
 import os
 import pathlib
+import runpy
 import shutil
 
 import jupytext
@@ -27,12 +28,16 @@ def process():
         # Process each demo using jupytext/myst
         for demo in subdir.glob('**/demo*.py'):
             # If demo saves matplotlib images, run the demo
+            demo = demo.resolve()
             code = demo.read_text()
             if "savefig" in code:
+                # result = code.split('"')[1::2]
+                # foo = [x for x in result if ".png" in x]
+                # print(foo)
+                # print("------")
                 here = os.getcwd()
-                with open(demo, 'r') as f:
-                    os.chdir(demo.parent)
-                    exec(code, locals())
+                os.chdir(demo.parent)
+                runpy.run_path(demo)
                 os.chdir(here)
 
             python_demo = jupytext.read(demo)
