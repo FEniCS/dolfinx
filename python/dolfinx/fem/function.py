@@ -479,7 +479,7 @@ class Function(ufl.Coefficient):
 
 
 class ElementMetaData(typing.NamedTuple):
-    """Data for representing a finite element.
+    """Data for representing a finite element
 
     :param family: Element type.
     :param degree: Polynomial degree of the element.
@@ -518,7 +518,7 @@ def FunctionSpace(mesh: Mesh,
         ufl_e = basix.ufl.element(e.family, mesh.basix_cell(), e.degree, shape=e.shape,
                                   gdim=mesh.ufl_cell().geometric_dimension())
     except TypeError:
-        ufl_e = element
+        ufl_e = element  # type: ignore
 
     # Check that element and mesh cell types match
     if ufl_e.cell() != mesh.ufl_domain().ufl_cell():
