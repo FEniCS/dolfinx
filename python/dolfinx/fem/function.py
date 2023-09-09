@@ -235,7 +235,7 @@ class Expression:
         return self._cpp_object.value_size
 
     @property
-    def argument_function_space(self) -> typing.Optional[FunctionSpace]:
+    def argument_function_space(self) -> typing.Optional[FunctionSpaceBase]:
         """The argument function space if expression has argument"""
         return self._argument_function_space
 
@@ -261,7 +261,7 @@ class Function(ufl.Coefficient):
 
     """
 
-    def __init__(self, V: FunctionSpace, x: typing.Optional[la.Vector] = None,
+    def __init__(self, V: FunctionSpaceBase, x: typing.Optional[la.Vector] = None,
                  name: typing.Optional[str] = None, dtype: typing.Optional[npt.DTypeLike] = None):
         """Initialize a finite element Function.
 
@@ -406,7 +406,7 @@ class Function(ufl.Coefficient):
             self._cpp_object.interpolate(np.asarray(u(x), dtype=self.dtype), cells)
 
     def copy(self) -> Function:
-        """Create a copy of the Function. The FunctionSpace is shared and the
+        """Create a copy of the Function. The function space is shared and the
         degree-of-freedom vector is copied.
 
         """
@@ -493,7 +493,7 @@ def FunctionSpace(mesh: Mesh,
         e = ElementMetaData(*element)
         ufl_e = basix.ufl.element(e.family, mesh.basix_cell(), e.degree,
                                   gdim=mesh.ufl_cell().geometric_dimension())
-    except:
+    except TypeError:
         ufl_e = element
 
     # Check that element and mesh cell types match
@@ -511,23 +511,16 @@ def FunctionSpace(mesh: Mesh,
     else:
         raise RuntimeError("Unsupported geometry type. Must be float32 or float64.")
 
-    print("Foo 5")
     (ufcx_element, ufcx_dofmap), module, code = jit.ffcx_jit(mesh.comm, ufl_e,
                                                              form_compiler_options=form_compiler_options,
                                                              jit_options=jit_options)
-    print("Foo 6")
-
     ffi = module.ffi
     if dtype == np.float32:
         cpp_element = _cpp.fem.FiniteElement_float32(ffi.cast("uintptr_t", ffi.addressof(ufcx_element)))
     elif dtype == np.float64:
-        print("Foo 7")
         cpp_element = _cpp.fem.FiniteElement_float64(ffi.cast("uintptr_t", ffi.addressof(ufcx_element)))
-        print("Foo 8")
-    print("Foo 9")
     cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, ffi.cast(
         "uintptr_t", ffi.addressof(ufcx_dofmap)), mesh.topology, cpp_element)
-    print("Foo 10")
 
     # Initialize the cpp.FunctionSpace and store mesh
     try:

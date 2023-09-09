@@ -14,7 +14,7 @@ import numpy as np
 import numpy.typing as npt
 import ufl
 from dolfinx.fem import IntegralType
-from dolfinx.fem.function import FunctionSpace
+from dolfinx.fem.function import FunctionSpaceBase
 
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit
@@ -63,7 +63,7 @@ class Form:
         return self._cpp_object.rank
 
     @property
-    def function_spaces(self) -> typing.List[FunctionSpace]:
+    def function_spaces(self) -> typing.List[FunctionSpaceBase]:
         """Function spaces on which this form is defined"""
         return self._cpp_object.function_spaces
 
@@ -194,7 +194,7 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]],
 
 def extract_function_spaces(forms: typing.Union[typing.Iterable[Form],  # type: ignore [return]
                                                 typing.Iterable[typing.Iterable[Form]]],
-                            index: int = 0) -> typing.Iterable[typing.Union[None, function.FunctionSpace]]:
+                            index: int = 0) -> typing.Iterable[typing.Union[None, function.FunctionSpaceBase]]:
     """Extract common function spaces from an array of forms. If `forms`
     is a list of linear form, this function returns of list of the
     corresponding test functions. If `forms` is a 2D array of bilinear
