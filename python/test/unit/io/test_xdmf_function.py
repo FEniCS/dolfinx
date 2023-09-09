@@ -147,7 +147,7 @@ def test_save_3d_vector(tempdir, encoding, dtype, cell_type):
     u = Function(FunctionSpace(mesh, ("Lagrange", 1, (gdim,))), dtype=dtype)
     u.x.array[:] = 1.0 + (1j if np.issubdtype(dtype, np.complexfloating) else 0)
 
-    V1 = FunctionSpace(mesh, ("Lagrange", 1, (gdim, s)))
+    V1 = FunctionSpace(mesh, ("Lagrange", 1, (gdim,)))
     u1 = Function(V1, dtype=dtype)
     u1.interpolate(u)
     with XDMFFile(mesh.comm, filename, "w", encoding=encoding) as file:
