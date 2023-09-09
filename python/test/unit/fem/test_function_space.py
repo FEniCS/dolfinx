@@ -8,8 +8,7 @@ import basix
 import numpy as np
 import pytest
 from basix.ufl import element, mixed_element
-from dolfinx.fem import (Function, FunctionSpace, FunctionSpaceBase,
-                         VectorFunctionSpace)
+from dolfinx.fem import (Function, FunctionSpace, FunctionSpaceBase)
 from dolfinx.mesh import create_mesh, create_unit_cube
 from mpi4py import MPI
 from ufl import Cell, Mesh, TestFunction, TrialFunction, grad
@@ -29,7 +28,8 @@ def V(mesh):
 
 @pytest.fixture
 def W(mesh):
-    return VectorFunctionSpace(mesh, ('Lagrange', 1))
+    gdim = mesh.geometry.dim
+    return FunctionSpace(mesh, ('Lagrange', 1, (gdim,)))
 
 
 @pytest.fixture
@@ -173,8 +173,9 @@ def test_argument_equality(mesh, V, V2, W, W2):
     """Placed this test here because it's mainly about detecting differing
     function spaces"""
     mesh2 = create_unit_cube(MPI.COMM_WORLD, 8, 8, 8)
+    gdim = mesh2.geometry.dim
     V3 = FunctionSpace(mesh2, ("Lagrange", 1))
-    W3 = VectorFunctionSpace(mesh2, ("Lagrange", 1))
+    W3 = FunctionSpace(mesh2, ("Lagrange", 1, (gdim,)))
 
     for TF in (TestFunction, TrialFunction):
         v = TF(V)
@@ -252,7 +253,7 @@ def test_vector_function_space_cell_type():
 
     # Create functions space over mesh, and check element cell
     # is correct
-    V = VectorFunctionSpace(mesh, ('Lagrange', 1))
+    V = FunctionSpace(mesh, ('Lagrange', 1, (gdim,)))
     assert V.ufl_element().cell() == cell
 
 
