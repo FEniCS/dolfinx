@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Finite element function spaces and functions"""
+"""Finite element function spaces and functions."""
 
 from __future__ import annotations
 
@@ -20,11 +20,7 @@ import basix
 import numpy as np
 import numpy.typing as npt
 import ufl
-# import ufl.algorithms
-# import ufl.algorithms.analysis
 from dolfinx.fem import dofmap
-from dolfinx.la import Vector
-# from ufl.domain import extract_unique_domain
 
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit, la
@@ -410,12 +406,12 @@ class Function(ufl.Coefficient):
         degree-of-freedom vector is copied.
 
         """
-        return Function(self.function_space, Vector(type(self.x._cpp_object)(self.x._cpp_object)))
+        return Function(self.function_space, la.Vector(type(self.x._cpp_object)(self.x._cpp_object)))
 
     @property
-    def x(self) -> Vector:
+    def x(self) -> la.Vector:
         """Vector holding the degrees-of-freedom."""
-        return Vector(self._cpp_object.x)
+        return la.Vector(self._cpp_object.x)
 
     @property
     def vector(self):
@@ -483,7 +479,7 @@ class Function(ufl.Coefficient):
     def collapse(self) -> Function:
         u_collapsed = self._cpp_object.collapse()
         V_collapsed = FunctionSpaceBase(self.function_space._mesh, self.ufl_element(), u_collapsed.function_space)
-        return Function(V_collapsed, Vector(u_collapsed.x))
+        return Function(V_collapsed, la.Vector(u_collapsed.x))
 
 
 class ElementMetaData(typing.NamedTuple):
