@@ -17,15 +17,14 @@ import warnings
 from functools import singledispatch
 
 import basix
-import basix.ufl
 import numpy as np
 import numpy.typing as npt
 import ufl
-import ufl.algorithms
-import ufl.algorithms.analysis
+# import ufl.algorithms
+# import ufl.algorithms.analysis
 from dolfinx.fem import dofmap
 from dolfinx.la import Vector
-from ufl.domain import extract_unique_domain
+# from ufl.domain import extract_unique_domain
 
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit, la
@@ -124,7 +123,7 @@ class Expression:
         # Get MPI communicator
         if comm is None:
             try:
-                mesh = extract_unique_domain(e).ufl_cargo()
+                mesh = ufl.domain.extract_unique_domain(e).ufl_cargo()
                 comm = mesh.comm
             except AttributeError:
                 print("Could not extract MPI communicator for Expression. Maybe you need to pass a communicator?")
@@ -414,17 +413,27 @@ class Function(ufl.Coefficient):
         return Function(self.function_space, Vector(type(self.x._cpp_object)(self.x._cpp_object)))
 
     @property
+    def x(self) -> Vector:
+        """Vector holding the degrees-of-freedom."""
+        return Vector(self._cpp_object.x)
+
+    @property
     def vector(self):
-        """PETSc vector holding the degrees-of-freedom."""
+        """PETSc vector holding the degrees-of-freedom.
+
+        Upon first call, this function creates a PETSc ``Vec`` object
+        that wraps the degree-of-freedom data. The ``Vec`` object is
+        cached and the cached ``Vec`` is returned upon subsequent calls.
+
+        Note:
+            Prefer :func`x` where possible.
+
+        """
         if self._petsc_x is None:
             from dolfinx.la import create_petsc_vector_wrap
             self._petsc_x = create_petsc_vector_wrap(self.x)
         return self._petsc_x
 
-    @property
-    def x(self):
-        """Vector holding the degrees-of-freedom."""
-        return Vector(self._cpp_object.x)
 
     @property
     def dtype(self) -> np.dtype:
@@ -440,31 +449,31 @@ class Function(ufl.Coefficient):
         self._cpp_object.name = name
 
     def __str__(self):
-        """Pretty print representation of it self."""
+        """Pretty print representation."""
         return self.name
 
     def sub(self, i: int) -> Function:
-        """Return a sub function.
+        """Return a sub-function.
 
         Args:
-            i: The index of the sub-function to extract.
+            i: Index of the sub-function to extract.
 
         Note:
-            The sub functions are numbered i = 0..N-1, where N is the
-            total number of sub spaces.
+            The sub-functions are numbered i = 0, ..., N-1, where N is
+            the number of sub-spaces.
 
         """
         return Function(self._V.sub(i), self.x, name=f"{str(self)}_{i}")
 
     def split(self) -> tuple[Function, ...]:
-        """Extract any sub functions.
+        """Extract (any) sub-functions.
 
-        A sub function can be extracted from a discrete function that
-        is in a mixed, vector, or tensor FunctionSpace. The sub
-        function resides in the subspace of the mixed space.
+        A sub-function can be extracted from a discrete function that is
+        in a mixed, vector, or tensor FunctionSpace. The sub-function
+        resides in the subspace of the mixed space.
 
         Returns:
-            Function space subspaces.
+            First level of subspaces of the function space.
 
         """
         num_sub_spaces = self.function_space.num_sub_spaces
@@ -546,7 +555,7 @@ def FunctionSpace(mesh: Mesh,
     cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, ffi.cast(
         "uintptr_t", ffi.addressof(ufcx_dofmap)), mesh.topology, cpp_element)
 
-    # Initialize the cpp.FunctionSpace and store mesh
+    # Initialize the cpp.FunctionSpace
     try:
         cppV = _cpp.fem.FunctionSpace_float64(mesh._cpp_object, cpp_element, cpp_dofmap)
     except TypeError:
@@ -606,7 +615,7 @@ class FunctionSpaceBase(ufl.FunctionSpace):
 
     @property
     def num_sub_spaces(self) -> int:
-        """Number of sub spaces"""
+        """Number of sub spaces."""
         return self.element.num_sub_elements
 
     def sub(self, i: int) -> FunctionSpaceBase:
@@ -629,13 +638,14 @@ class FunctionSpaceBase(ufl.FunctionSpace):
         return self._cpp_object.component()
 
     def contains(self, V) -> bool:
-        """Check if a space is contained in, or is the same as (identity), this space.
+        """Check if a space is contained in, or is the same as
+        (identity), this space.
 
         Args:
             V: The space to check to for inclusion.
 
         Returns:
-            True is ``V`` is contained in, or is the same as, this space
+            True if ``V`` is contained in, or is the same as, this space
 
         """
         return self._cpp_object.contains(V._cpp_object)
@@ -649,7 +659,7 @@ class FunctionSpaceBase(ufl.FunctionSpace):
         return super().__ne__(other) or self._cpp_object != other._cpp_object
 
     def ufl_function_space(self) -> ufl.FunctionSpace:
-        """UFL function space"""
+        """UFL function space."""
         return self
 
     @property
@@ -672,7 +682,7 @@ class FunctionSpaceBase(ufl.FunctionSpace):
         from new to old dofs.
 
         Returns:
-            The new function space and the map from new to old
+            A new function space and the map from new to old
             degrees-of-freedom.
 
         """
@@ -687,8 +697,8 @@ class FunctionSpaceBase(ufl.FunctionSpace):
             Coordinates of the degrees-of-freedom.
 
         Note:
-            This method should be used only for elements with point
-            evaluation degrees-of-freedom.
+            This method is only for elements with point evaluation
+            degrees-of-freedom.
 
          """
         return self._cpp_object.tabulate_dof_coordinates()
@@ -699,14 +709,13 @@ def VectorFunctionSpace(mesh: Mesh,
                         dim: typing.Optional[int] = None) -> FunctionSpaceBase:
     """Create a vector finite element (composition of scalar elements) function space.
 
-    Note:
-        This function is deprecated. Use :func:`FunctionSpace` with a
-        shape argument instead.
+    .. deprecated:: 0.7
+        Use :func:`FunctionSpace` with a shape argument instead.
 
     Args:
         mesh: Mesh that space is defined on
         element: Finite element description. Must be a scalar element,
-           e.g. Lagrange,
+           e.g. Lagrange.
         dim: Dimension of the vector, e.g. number of vector components.
             It defaults to the geometric dimension of the mesh.
 
