@@ -24,10 +24,14 @@ def create_sparsity_pattern(a: Form):
     """Create a sparsity pattern from a bilinear form.
 
     Args:
-        a: The bilinear form to build a sparsity pattern for.
+        a: Bilinear form to build a sparsity pattern for.
 
     Returns:
         Sparsity pattern for the form ``a``.
+
+    Note:
+        The pattern is not finalised, i.e. the caller is responsible for
+        calling ``assemble`` on the sparsity pattern.
 
     """
     return _create_sparsity_pattern(a._cpp_object)
