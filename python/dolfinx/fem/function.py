@@ -434,7 +434,6 @@ class Function(ufl.Coefficient):
             self._petsc_x = create_petsc_vector_wrap(self.x)
         return self._petsc_x
 
-
     @property
     def dtype(self) -> np.dtype:
         return self._cpp_object.x.array.dtype
