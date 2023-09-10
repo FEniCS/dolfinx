@@ -1,4 +1,4 @@
-# Copyright (C) 2017-2022 Garth N. Wells, Jack S. Hale
+# Copyright (C) 2017-2023 Garth N. Wells, Jack S. Hale
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -13,9 +13,11 @@ import jupytext
 
 
 def process():
-    """Convert light format demo Python files into MyST flavoured markdown and
-    ipynb using Jupytext. These files can then be included in Sphinx
-    documentation"""
+    """Convert Python demos in the Jupytext 'light' format into MyST
+    flavoured markdown and ipynb using Jupytext. These files can then be
+    included in Sphinx documentation.
+
+    """
     # Directories to scan
     subdirs = [pathlib.Path("../../demo")]
 
@@ -27,19 +29,6 @@ def process():
 
         # Process each demo using jupytext/myst
         for demo in subdir.glob('**/demo*.py'):
-            # If demo saves matplotlib images, run the demo
-            demo = demo.resolve()
-            code = demo.read_text()
-            if "savefig" in code:
-                # result = code.split('"')[1::2]
-                # foo = [x for x in result if ".png" in x]
-                # print(foo)
-                # print("------")
-                here = os.getcwd()
-                os.chdir(demo.parent)
-                runpy.run_path(demo)
-                os.chdir(here)
-
             python_demo = jupytext.read(demo)
             myst_text = jupytext.writes(python_demo, fmt="myst")
 
@@ -54,6 +43,16 @@ def process():
 
             # Copy python demo files into documentation demo directory
             shutil.copy(demo, demo_dir)
+
+            # If demo saves matplotlib images, run the demo to create
+            # images
+            code = demo.read_text()
+            if "savefig" in code:
+                demo = demo.resolve()
+                here = os.getcwd()
+                os.chdir(demo_dir)
+                runpy.run_path(demo)
+                os.chdir(here)
 
         # Copy images used in demos
         for file in subdir.glob("**/*.png"):
