@@ -498,7 +498,7 @@ class ElementMetaData(typing.NamedTuple):
     symmetry: typing.Optional[bool] = None
 
 
-def FunctionSpace(mesh: Mesh,
+def functionspace(mesh: Mesh,
                   element: typing.Union[ufl.FiniteElementBase, ElementMetaData,
                                         typing.Tuple[str, int, typing.Tuple, bool]],
                   form_compiler_options: typing.Optional[dict[str, typing.Any]] = None,
@@ -515,7 +515,6 @@ def FunctionSpace(mesh: Mesh,
         A function space.
 
     """
-
     # Create UFL element
     try:
         e = ElementMetaData(*element)
@@ -557,6 +556,29 @@ def FunctionSpace(mesh: Mesh,
         cppV = _cpp.fem.FunctionSpace_float32(mesh._cpp_object, cpp_element, cpp_dofmap)
 
     return FunctionSpaceBase(mesh, ufl_e, cppV)
+
+
+def FunctionSpace(mesh: Mesh,
+                  element: typing.Union[ufl.FiniteElementBase, ElementMetaData,
+                                        typing.Tuple[str, int, typing.Tuple, bool]],
+                  form_compiler_options: typing.Optional[dict[str, typing.Any]] = None,
+                  jit_options: typing.Optional[dict[str, typing.Any]] = None) -> FunctionSpaceBase:
+    """Create a finite element function space.
+
+    .. deprecated:: 0.7
+        Use :func:`functionspace` (no caps) instead.
+
+    Args:
+        mesh: Mesh that space is defined on
+        element: Finite element description
+        form_compiler_options: Options passed to the form compiler
+        jit_options: Options controlling just-in-time compilation
+
+    Returns:
+        A function space.
+
+    """
+    return functionspace(mesh, element, form_compiler_options, jit_options)
 
 
 class FunctionSpaceBase(ufl.FunctionSpace):
