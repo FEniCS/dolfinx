@@ -25,9 +25,8 @@
 # +
 import numpy as np
 import ufl
-from dolfinx.fem import (Expression, Function, FunctionSpace,
-                         VectorFunctionSpace, dirichletbc, form,
-                         locate_dofs_topological)
+from dolfinx.fem import (Expression, Function, FunctionSpaceBase, dirichletbc,
+                         form, functionspace, locate_dofs_topological)
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                set_bc)
 from dolfinx.io import XDMFFile
@@ -53,7 +52,7 @@ dtype = PETSc.ScalarType
 # modes.
 
 
-def build_nullspace(V: FunctionSpace):
+def build_nullspace(V: FunctionSpaceBase):
     """Build PETSc nullspace for 3D elasticity"""
 
     # Create vectors that will span the nullspace
@@ -122,7 +121,7 @@ def σ(v):
 # problem defined:
 
 
-V = VectorFunctionSpace(msh, ("Lagrange", 1))
+V = functionspace(msh, ("Lagrange", 1, (msh.geometry.dim,)))
 u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 a = form(inner(σ(u), grad(v)) * dx)
 L = form(inner(f, v) * dx)
@@ -226,7 +225,7 @@ sigma_vm = ufl.sqrt((3 / 2) * inner(sigma_dev, sigma_dev))
 # {py:class}`Function<dolfinx.fem.Function>` `sigma_vm_h`.
 
 # +
-W = FunctionSpace(msh, ("Discontinuous Lagrange", 0))
+W = functionspace(msh, ("Discontinuous Lagrange", 0))
 sigma_vm_expr = Expression(sigma_vm, W.element.interpolation_points())
 sigma_vm_h = Function(W)
 sigma_vm_h.interpolate(sigma_vm_expr)

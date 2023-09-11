@@ -9,13 +9,12 @@ import math
 
 import numpy as np
 import pytest
-
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx.cpp.la.petsc import scatter_local_vectors
-from dolfinx.fem import (Function, FunctionSpace, VectorFunctionSpace,
-                         bcs_by_block, dirichletbc, extract_function_spaces,
-                         form, locate_dofs_topological)
+from dolfinx.fem import (Function, FunctionSpace, bcs_by_block, dirichletbc,
+                         extract_function_spaces, form,
+                         locate_dofs_topological)
 from dolfinx.fem.petsc import (apply_lifting, apply_lifting_nest,
                                assemble_matrix, assemble_matrix_block,
                                assemble_matrix_nest, assemble_vector,
@@ -26,10 +25,9 @@ from dolfinx.fem.petsc import (apply_lifting, apply_lifting_nest,
                                set_bc_nest)
 from dolfinx.mesh import (GhostMode, create_unit_cube, create_unit_square,
                           locate_entities_boundary)
-from ufl import derivative, dx, inner
-
 from mpi4py import MPI
 from petsc4py import PETSc
+from ufl import derivative, dx, inner
 
 
 def nest_matrix_norm(A):
@@ -454,7 +452,7 @@ def test_assembly_solve_block_nl():
 def test_assembly_solve_taylor_hood_nl(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
     gdim = mesh.geometry.dim
-    P2 = VectorFunctionSpace(mesh, ("Lagrange", 2))
+    P2 = FunctionSpace(mesh, ("Lagrange", 2, (gdim,)))
     P1 = FunctionSpace(mesh, ("Lagrange", 1))
 
     def boundary0(x):

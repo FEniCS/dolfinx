@@ -10,8 +10,8 @@ import pytest
 import ufl
 from basix.ufl import element
 from dolfinx.cpp.fem.petsc import discrete_gradient, interpolation_matrix
-from dolfinx.fem import (Expression, Function, FunctionSpace,
-                         VectorFunctionSpace, assemble_scalar, form)
+from dolfinx.fem import (Expression, Function, FunctionSpace, assemble_scalar,
+                         form)
 from dolfinx.mesh import (CellType, GhostMode, create_mesh, create_unit_cube,
                           create_unit_square)
 from mpi4py import MPI
@@ -171,7 +171,8 @@ def test_nonaffine_discrete_operator():
     cell_type = CellType.hexahedron
     domain = ufl.Mesh(element("Lagrange", cell_type.name, 2, rank=1))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
-    W = VectorFunctionSpace(mesh, ("DG", 1))
+    gdim = mesh.geometry.dim
+    W = FunctionSpace(mesh, ("DG", 1, (gdim,)))
     V = FunctionSpace(mesh, ("NCE", 4))
     w, v = Function(W), Function(V)
     w.interpolate(lambda x: x)

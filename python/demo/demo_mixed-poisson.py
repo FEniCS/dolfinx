@@ -104,7 +104,7 @@ k = 1
 Q_el = element("BDMCF", domain.basix_cell(), k)
 P_el = element("DG", domain.basix_cell(), k - 1)
 V_el = mixed_element([Q_el, P_el])
-V = fem.FunctionSpace(domain, V_el)
+V = fem.functionspace(domain, V_el)
 
 (sigma, u) = TrialFunctions(V)
 (tau, v) = TestFunctions(V)

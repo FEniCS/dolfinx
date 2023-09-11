@@ -12,9 +12,8 @@ import numpy as np
 import pytest
 import ufl
 from basix.ufl import element
-from dolfinx.fem import (Constant, Function, FunctionSpace,
-                         VectorFunctionSpace, assemble_matrix, assemble_scalar,
-                         assemble_vector, form)
+from dolfinx.fem import (Constant, Function, FunctionSpace, assemble_matrix,
+                         assemble_scalar, assemble_vector, form)
 from dolfinx.mesh import CellType, create_mesh, meshtags
 from mpi4py import MPI
 
@@ -185,7 +184,8 @@ def test_facet_normals(cell_type, dtype):
         tdim = mesh.topology.dim
         mesh.topology.create_entities(tdim - 1)
 
-        V = VectorFunctionSpace(mesh, ("Lagrange", 1))
+        gdim = mesh.geometry.dim
+        V = FunctionSpace(mesh, ("Lagrange", 1, (gdim,)))
         normal = ufl.FacetNormal(mesh)
         v = Function(V, dtype=dtype)
 

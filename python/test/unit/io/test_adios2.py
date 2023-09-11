@@ -11,7 +11,7 @@ import pytest
 import ufl
 from basix.ufl import element
 from dolfinx.common import has_adios2
-from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
+from dolfinx.fem import Function, FunctionSpace
 from dolfinx.graph import create_adjacencylist
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_square)
@@ -64,7 +64,8 @@ def test_fides_mesh(tempdir, dim, simplex):
 def test_two_fides_functions(tempdir, dim, simplex):
     """Test saving two functions with Fides"""
     mesh = generate_mesh(dim, simplex)
-    v = Function(VectorFunctionSpace(mesh, ("Lagrange", 1)))
+    gdim = mesh.geometry.dim
+    v = Function(FunctionSpace(mesh, ("Lagrange", 1, (gdim,))))
     q = Function(FunctionSpace(mesh, ("Lagrange", 1)))
     filename = Path(tempdir, "v.bp")
     with FidesWriter(mesh.comm, filename, [v._cpp_object, q]) as f:
@@ -98,9 +99,9 @@ def test_findes_single_function(tempdir, dim, simplex):
 @pytest.mark.parametrize("simplex", [True, False])
 def test_fides_function_at_nodes(tempdir, dim, simplex):
     """Test saving P1 functions with Fides (with changing geometry)"""
-
     mesh = generate_mesh(dim, simplex)
-    v = Function(VectorFunctionSpace(mesh, ("Lagrange", 1)), dtype=default_scalar_type)
+    gdim = mesh.geometry.dim
+    v = Function(FunctionSpace(mesh, ("Lagrange", 1, (gdim,))), dtype=default_scalar_type)
     v.name = "v"
     q = Function(FunctionSpace(mesh, ("Lagrange", 1)))
     q.name = "q"
@@ -155,7 +156,8 @@ def test_vtx_mesh(tempdir, dim, simplex):
 def test_vtx_functions_fail(tempdir, dim, simplex):
     "Test for error when elements differ"
     mesh = generate_mesh(dim, simplex)
-    v = Function(VectorFunctionSpace(mesh, ("Lagrange", 2)))
+    gdim = mesh.geometry.dim
+    v = Function(FunctionSpace(mesh, ("Lagrange", 2, (gdim,))))
     w = Function(FunctionSpace(mesh, ("Lagrange", 1)))
     filename = Path(tempdir, "v.bp")
     with pytest.raises(RuntimeError):
@@ -207,7 +209,8 @@ def test_vtx_functions(tempdir, dtype, dim, simplex):
     "Test saving high order Lagrange functions"
     xtype = np.real(dtype(0)).dtype
     mesh = generate_mesh(dim, simplex, dtype=xtype)
-    V = VectorFunctionSpace(mesh, ("DG", 2))
+    gdim = mesh.geometry.dim
+    V = FunctionSpace(mesh, ("DG", 2, (gdim,)))
     v = Function(V, dtype=dtype)
     bs = V.dofmap.index_map_bs
 

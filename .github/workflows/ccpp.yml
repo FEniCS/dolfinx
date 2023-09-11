@@ -80,7 +80,7 @@ jobs:
           python3 -m isort --check .
       - name: mypy checks
         run: |
-          python3 -m pip install types-setuptools
+          python3 -m pip install types-setuptools mypy --upgrade
           cd python/
           mypy dolfinx
           mypy demo

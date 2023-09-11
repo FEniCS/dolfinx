@@ -98,7 +98,7 @@ def Omega_v(x):
     return x[1] >= d
 
 
-D = fem.FunctionSpace(msh, ("DQ", 0))
+D = fem.functionspace(msh, ("DQ", 0))
 eps = fem.Function(D)
 
 cells_v = locate_entities(msh, msh.topology.dim, Omega_v)
@@ -188,7 +188,7 @@ eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=default_scalar_type)
 degree = 1
 RTCE = element("RTCE", msh.basix_cell(), degree)
 Q = element("Lagrange", msh.basix_cell(), degree)
-V = fem.FunctionSpace(msh, mixed_element([RTCE, Q]))
+V = fem.functionspace(msh, mixed_element([RTCE, Q]))
 
 # Now we can define our weak form:
 
@@ -362,7 +362,8 @@ for i, kz in vals:
         eth.x.array[:] = eth.x.array[:] / kz
         ezh.x.array[:] = ezh.x.array[:] * 1j
 
-        V_dg = fem.VectorFunctionSpace(msh, ("DQ", degree))
+        gdim = msh.geometry.dim
+        V_dg = fem.functionspace(msh, ("DQ", degree, (gdim,)))
         Et_dg = fem.Function(V_dg)
         Et_dg.interpolate(eth)
 
