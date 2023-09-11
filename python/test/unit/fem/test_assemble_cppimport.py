@@ -8,7 +8,6 @@
 import pathlib
 
 import cppimport
-import dolfinx.pkgconfig
 import numpy as np
 import pybind11
 import pytest
