@@ -31,7 +31,6 @@ int main(int argc, char* argv[])
     {
       x.push_back(i);
       x.push_back(j);
-      x.push_back(0);
     }
   }
 
