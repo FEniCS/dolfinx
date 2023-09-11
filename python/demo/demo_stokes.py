@@ -88,7 +88,7 @@ import numpy as np
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import fem, la
-from dolfinx.fem import (Constant, Function, FunctionSpace, dirichletbc,
+from dolfinx.fem import (Constant, Function, functionspace, dirichletbc,
                          extract_function_spaces, form,
                          locate_dofs_topological)
 from dolfinx.fem.petsc import assemble_matrix_block, assemble_vector_block
@@ -125,15 +125,15 @@ def lid_velocity_expression(x):
     return np.stack((np.ones(x.shape[1]), np.zeros(x.shape[1])))
 # -
 
-# Two {py:class}`FunctionSpace <dolfinx.fem.FunctionSpace>`s are defined
-# using different finite elements. `P2` corresponds to a continuous
-# piecewise quadratic basis (vector) and `P1` to a continuous piecewise
-# linear basis (scalar).
+# Two {py:class}`function spaces <dolfinx.fem.FunctionSpaceBase>` are
+# defined using different finite elements. `P2` corresponds to a
+# continuous piecewise quadratic basis (vector) and `P1` to a continuous
+# piecewise linear basis (scalar).
 
 
 P2 = element("Lagrange", msh.basix_cell(), 2, rank=1)
 P1 = element("Lagrange", msh.basix_cell(), 1)
-V, Q = FunctionSpace(msh, P2), FunctionSpace(msh, P1)
+V, Q = functionspace(msh, P2), functionspace(msh, P1)
 
 # Boundary conditions for the velocity field are defined:
 
@@ -276,7 +276,7 @@ def nested_iterative_solver():
     with XDMFFile(MPI.COMM_WORLD, "out_stokes/velocity.xdmf", "w") as ufile_xdmf:
         u.x.scatter_forward()
         P1 = element("Lagrange", msh.basix_cell(), 1, rank=1)
-        u1 = Function(FunctionSpace(msh, P1))
+        u1 = Function(functionspace(msh, P1))
         u1.interpolate(u)
         ufile_xdmf.write_mesh(msh)
         ufile_xdmf.write_function(u1)
@@ -458,7 +458,7 @@ def mixed_direct():
 
     # Create the Taylot-Hood function space
     TH = mixed_element([P2, P1])
-    W = FunctionSpace(msh, TH)
+    W = functionspace(msh, TH)
 
     # No slip boundary condition
     W0, _ = W.sub(0).collapse()

@@ -88,7 +88,7 @@ def vtk_mesh(msh: mesh.Mesh, dim: typing.Optional[int] = None, entities=None):
     return topology.reshape(-1), cell_types, msh.geometry.x
 
 
-@vtk_mesh.register(fem.FunctionSpace)
+@vtk_mesh.register(fem.FunctionSpaceBase)
 def _(V: fem.FunctionSpace, entities=None):
     """Creates a VTK mesh topology (topology array and array of cell
     types) that is based on the degree-of-freedom coordinates.

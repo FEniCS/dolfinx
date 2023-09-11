@@ -21,11 +21,10 @@
 import numpy as np
 import scipy.sparse
 import scipy.sparse.linalg
-
 import ufl
-from dolfinx import fem, la, mesh, plot
-
 from mpi4py import MPI
+
+from dolfinx import fem, la, mesh, plot
 
 # -
 
@@ -100,7 +99,7 @@ def poisson(dtype):
                                                                           np.isclose(x[0], 2.0)))
 
     # Define a variational problem.
-    V = fem.FunctionSpace(msh, ("Lagrange", 1))
+    V = fem.functionspace(msh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     x = ufl.SpatialCoordinate(msh)
     fr = 10 * ufl.exp(-((x[0] - 0.5) ** 2 + (x[1] - 0.5) ** 2) / 0.02)
@@ -156,7 +155,8 @@ def elasticity(dtype) -> fem.Function:
                                                                           np.isclose(x[0], 2.0)))
 
     # Define the variational problem.
-    V = fem.VectorFunctionSpace(msh, ("Lagrange", 1))
+    gdim = msh.geometry.dim
+    V = fem.functionspace(msh, ("Lagrange", 1, (gdim,)))
     ω, ρ = 300.0, 10.0
     x = ufl.SpatialCoordinate(msh)
     f = ufl.as_vector((ρ * ω**2 * x[0], ρ * ω**2 * x[1]))

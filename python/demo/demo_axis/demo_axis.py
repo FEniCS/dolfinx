@@ -370,7 +370,7 @@ if have_pyvista:
 degree = 3
 curl_el = element("N1curl", msh.basix_cell(), degree)
 lagr_el = element("Lagrange", msh.basix_cell(), degree)
-V = fem.FunctionSpace(msh, mixed_element([curl_el, lagr_el]))
+V = fem.functionspace(msh, mixed_element([curl_el, lagr_el]))
 
 # The integration domains of our problem are the following:
 
@@ -388,7 +388,7 @@ n_bkg = 1  # Background refractive index
 eps_bkg = n_bkg**2  # Background relative permittivity
 eps_au = -1.0782 + 1j * 5.8089
 
-D = fem.FunctionSpace(msh, ("DG", 0))
+D = fem.functionspace(msh, ("DG", 0))
 eps = fem.Function(D)
 au_cells = cell_tags.find(au_tag)
 bkg_cells = cell_tags.find(bkg_tag)
@@ -625,7 +625,7 @@ assert eps_au == -1.0782 + 1j * 5.8089
 
 if has_vtx:
     v_dg_el = element("DG", msh.basix_cell(), degree, shape=(3, ))
-    W = fem.FunctionSpace(msh, v_dg_el)
+    W = fem.functionspace(msh, v_dg_el)
     Es_dg = fem.Function(W)
     Es_expr = fem.Expression(Esh, W.element.interpolation_points())
     Es_dg.interpolate(Es_expr)

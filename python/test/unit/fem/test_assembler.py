@@ -13,10 +13,10 @@ import pytest
 import scipy.sparse
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx.fem import (Constant, Function, FunctionSpace,
-                         VectorFunctionSpace, assemble_scalar, bcs_by_block,
-                         dirichletbc, extract_function_spaces, form,
-                         locate_dofs_geometrical, locate_dofs_topological)
+from dolfinx.fem import (Constant, Function, FunctionSpace, assemble_scalar,
+                         bcs_by_block, dirichletbc, extract_function_spaces,
+                         form, locate_dofs_geometrical,
+                         locate_dofs_topological)
 from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
 from dolfinx.fem.petsc import apply_lifting_nest as petsc_apply_lifting_nest
 from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
@@ -174,7 +174,8 @@ def test_basic_assembly_petsc_matrixcsr(mode):
     assert np.sqrt(A0.squared_norm()) == pytest.approx(A1.norm(), 1.0e-5)
     A1.destroy()
 
-    V = VectorFunctionSpace(mesh, ("Lagrange", 1))
+    gdim = mesh.geometry.dim
+    V = FunctionSpace(mesh, ("Lagrange", 1, (gdim,)))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = form(inner(u, v) * dx + inner(u, v) * ds)
     A0 = fem.assemble_matrix(a)
@@ -523,7 +524,8 @@ def test_assembly_solve_block(mode):
     create_unit_cube(MPI.COMM_WORLD, 3, 7, 3, ghost_mode=GhostMode.shared_facet)])
 def test_assembly_solve_taylor_hood(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
-    P2 = VectorFunctionSpace(mesh, ("Lagrange", 2))
+    gdim = mesh.geometry.dim
+    P2 = FunctionSpace(mesh, ("Lagrange", 2, (gdim,)))
     P1 = FunctionSpace(mesh, ("Lagrange", 1))
 
     def boundary0(x):

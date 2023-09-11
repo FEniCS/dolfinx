@@ -229,7 +229,7 @@ theta = 0  # Angle of incidence of the background field
 
 degree = 3
 curl_el = element("N1curl", msh.basix_cell(), degree)
-V = fem.FunctionSpace(msh, curl_el)
+V = fem.functionspace(msh, curl_el)
 
 # Next, we interpolate $\mathbf{E}_b$ into the function space $V$,
 # define our trial and test function, and the integration domains:
@@ -270,7 +270,7 @@ eps_au = -1.0782 + 1j * 5.8089
 # it takes the value of the background permittivity $\varepsilon_b$ in
 # the background region:
 
-D = fem.FunctionSpace(msh, ("DG", 0))
+D = fem.functionspace(msh, ("DG", 0))
 eps = fem.Function(D)
 au_cells = cell_tags.find(au_tag)
 bkg_cells = cell_tags.find(bkg_tag)
@@ -420,7 +420,8 @@ Esh = problem.solve()
 # compatible discontinuous Lagrange space.
 
 # +
-V_dg = fem.VectorFunctionSpace(msh, ("DG", degree))
+gdim = msh.geometry.dim
+V_dg = fem.functionspace(msh, ("DG", degree, (gdim,)))
 Esh_dg = fem.Function(V_dg)
 Esh_dg.interpolate(Esh)
 

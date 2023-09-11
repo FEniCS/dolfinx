@@ -30,8 +30,8 @@ import ufl
 from basix.ufl import element
 from dolfinx.cpp.fem import (Form_complex64, Form_complex128, Form_float32,
                              Form_float64)
-from dolfinx.fem import (Form, Function, FunctionSpace, IntegralType,
-                         dirichletbc, form, locate_dofs_topological)
+from dolfinx.fem import (Form, Function, IntegralType, dirichletbc, form,
+                         functionspace, locate_dofs_topological)
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                set_bc)
 from dolfinx.io import XDMFFile
@@ -56,8 +56,8 @@ infile.close()
 Se = element("DG", msh.basix_cell(), 1, rank=2, symmetry=True)
 Ue = element("Lagrange", msh.basix_cell(), 2, rank=1)
 
-S = FunctionSpace(msh, Se)
-U = FunctionSpace(msh, Ue)
+S = functionspace(msh, Se)
+U = functionspace(msh, Ue)
 
 # Get local dofmap sizes for later local tensor tabulations
 Ssize = S.element.space_dimension

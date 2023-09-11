@@ -13,8 +13,7 @@ import pytest
 import ufl
 from basix.ufl import (blocked_element, custom_element, element,
                        enriched_element, mixed_element)
-from dolfinx.fem import (Expression, Function, FunctionSpace,
-                         VectorFunctionSpace, assemble_scalar,
+from dolfinx.fem import (Expression, Function, FunctionSpace, assemble_scalar,
                          create_nonmatching_meshes_interpolation_data, form)
 from dolfinx.geometry import bb_tree, compute_collisions_points
 from dolfinx.mesh import (CellType, create_mesh, create_rectangle,
@@ -217,9 +216,10 @@ def test_serendipity_interpolation(cell_type, order):
 @parametrize_cell_types
 @pytest.mark.parametrize('order', range(1, 5))
 def test_vector_interpolation(cell_type, order):
-    """Test that interpolation is correct in a VectorFunctionSpace."""
+    """Test that interpolation is correct in a blocked (vector) FunctionSpace."""
     mesh = one_cell_mesh(cell_type)
-    V = VectorFunctionSpace(mesh, ("Lagrange", order))
+    gdim = mesh.geometry.dim
+    V = FunctionSpace(mesh, ("Lagrange", order, (gdim,)))
     run_vector_test(V, order)
 
 
@@ -284,7 +284,8 @@ def test_mixed_sub_interpolation():
         assert np.allclose(u.vector.array, v.vector.array)
 
         # Same map, different elements
-        V = VectorFunctionSpace(mesh, ("Lagrange", 1))
+        gdim = mesh.geometry.dim
+        V = FunctionSpace(mesh, ("Lagrange", 1, (gdim,)))
         u, v = Function(V), Function(V)
         u.interpolate(U.sub(i))
         v.interpolate(f)
@@ -354,7 +355,7 @@ def test_interpolation_dg_to_n1curl(tdim, order):
         mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
     else:
         mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
-    V = VectorFunctionSpace(mesh, ("DG", order))
+    V = FunctionSpace(mesh, ("DG", order, (tdim,)))
     V1 = FunctionSpace(mesh, ("N1curl", order + 1))
     u, v = Function(V), Function(V1)
     u.interpolate(lambda x: x[:tdim] ** order)
@@ -370,7 +371,7 @@ def test_interpolation_n1curl_to_dg(tdim, order):
     else:
         mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
     V = FunctionSpace(mesh, ("N1curl", order + 1))
-    V1 = VectorFunctionSpace(mesh, ("DG", order))
+    V1 = FunctionSpace(mesh, ("DG", order, (tdim,)))
     u, v = Function(V), Function(V1)
     u.interpolate(lambda x: x[:tdim] ** order)
     v.interpolate(u)
@@ -413,14 +414,15 @@ def test_interpolation_p2p(order1, order2):
 @pytest.mark.parametrize("order2", [1, 2])
 def test_interpolation_vector_elements(order1, order2):
     mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
-    V = VectorFunctionSpace(mesh, ("Lagrange", order1))
-    V1 = VectorFunctionSpace(mesh, ("Lagrange", order2))
+    gdim = mesh.geometry.dim
+    V = FunctionSpace(mesh, ("Lagrange", order1, (gdim,)))
+    V1 = FunctionSpace(mesh, ("Lagrange", order2, (gdim,)))
     u, v = Function(V), Function(V1)
     u.interpolate(lambda x: x)
     v.interpolate(u)
     assert assemble_scalar(form(ufl.inner(u - v, u - v) * ufl.dx)) == pytest.approx(0)
 
-    DG = VectorFunctionSpace(mesh, ("DG", order2))
+    DG = FunctionSpace(mesh, ("DG", order2, (gdim,)))
     w = Function(DG)
     w.interpolate(u)
     assert assemble_scalar(form(ufl.inner(u - w, u - w) * ufl.dx)) == pytest.approx(0)
@@ -458,7 +460,8 @@ def test_interpolation_non_affine_nonmatching_maps():
     cells = np.array([range(len(points))], dtype=np.int32)
     domain = ufl.Mesh(element("Lagrange", "hexahedron", 2, rank=1))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
-    W = VectorFunctionSpace(mesh, ("DG", 1))
+    gdim = mesh.geometry.dim
+    W = FunctionSpace(mesh, ("DG", 1, (gdim,)))
     V = FunctionSpace(mesh, ("NCE", 4))
     w, v = Function(W), Function(V)
     w.interpolate(lambda x: x)
@@ -505,7 +508,7 @@ def test_vector_interpolation_spatial(order, dim, affine):
         ct = CellType.tetrahedron if affine else CellType.hexahedron
         mesh = create_unit_cube(MPI.COMM_WORLD, 3, 2, 2, ct)
 
-    V = VectorFunctionSpace(mesh, ("Lagrange", order))
+    V = FunctionSpace(mesh, ("Lagrange", order, (dim,)))
     u = Function(V)
     x = ufl.SpatialCoordinate(mesh)
 
@@ -669,7 +672,8 @@ def test_custom_vector_element():
                        basix.SobolevSpace.H1, False, 1, 1)
 
     V = FunctionSpace(mesh, e)
-    W = VectorFunctionSpace(mesh, ("Lagrange", 1))
+    gdim = mesh.geometry.dim
+    W = FunctionSpace(mesh, ("Lagrange", 1, (gdim,)))
     v = Function(V)
     w = Function(W)
     v.interpolate(lambda x: (x[0], x[1]))
