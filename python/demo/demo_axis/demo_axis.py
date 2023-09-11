@@ -349,7 +349,7 @@ MPI.COMM_WORLD.barrier()
 # Visually check of the mesh and of the subdomains using PyVista:
 
 if have_pyvista:
-    topology, cell_types, geometry = plot.create_vtk_mesh(msh, 2)
+    topology, cell_types, geometry = plot.vtk_mesh(msh, 2)
     grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
     plotter = pyvista.Plotter()
     num_local_cells = msh.topology.index_map(msh.topology.dim).size_local

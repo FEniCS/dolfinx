@@ -186,7 +186,7 @@ MPI.COMM_WORLD.barrier()
 # [PyVista](https://docs.pyvista.org/)
 
 if have_pyvista:
-    topology, cell_types, geometry = plot.create_vtk_mesh(msh, 2)
+    topology, cell_types, geometry = plot.vtk_mesh(msh, 2)
     grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
     plotter = pyvista.Plotter()
     num_local_cells = msh.topology.index_map(msh.topology.dim).size_local
@@ -435,7 +435,7 @@ with VTXWriter(msh.comm, "Esh.bp", Esh_dg) as vtx:
 # DOLFINx demo.
 
 if have_pyvista:
-    V_cells, V_types, V_x = plot.create_vtk_mesh(V_dg)
+    V_cells, V_types, V_x = plot.vtk_mesh(V_dg)
     V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
     Esh_values = np.zeros((V_x.shape[0], 3), dtype=np.float64)
     Esh_values[:, :msh.topology.dim] = Esh_dg.x.array.reshape(V_x.shape[0], msh.topology.dim).real

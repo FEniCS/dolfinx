@@ -59,7 +59,7 @@ def plot_scalar():
 
     # To visualize the function u, we create a VTK-compatible grid to
     # values of u to
-    cells, types, x = plot.create_vtk_mesh(V)
+    cells, types, x = plot.vtk_mesh(V)
     grid = pyvista.UnstructuredGrid(cells, types, x)
     grid.point_data["u"] = u.x.array
 
@@ -110,7 +110,7 @@ def plot_meshtags():
     cell_tags = meshtags(msh, msh.topology.dim, np.arange(num_cells), in_circle(midpoints))
 
     # Create VTK mesh
-    cells, types, x = plot.create_vtk_mesh(msh)
+    cells, types, x = plot.vtk_mesh(msh)
     grid = pyvista.UnstructuredGrid(cells, types, x)
 
     # Attach the cells tag data to the pyvita grid
@@ -128,7 +128,7 @@ def plot_meshtags():
     # We can visualize subsets of data, by creating a smaller topology
     # (set of cells). Here we create VTK mesh data for only cells with
     # that tag '1'.
-    cells, types, x = plot.create_vtk_mesh(msh, entities=cell_tags.find(1))
+    cells, types, x = plot.vtk_mesh(msh, entities=cell_tags.find(1))
 
     # Add this grid to the second plotter window
     sub_grid = pyvista.UnstructuredGrid(cells, types, x)
@@ -173,7 +173,7 @@ def plot_higher_order():
 
     # Create a topology that has a 1-1 correspondence with the
     # degrees-of-freedom in the function space V
-    cells, types, x = plot.create_vtk_mesh(V)
+    cells, types, x = plot.vtk_mesh(V)
 
     # Create a pyvista mesh and attach the values of u
     grid = pyvista.UnstructuredGrid(cells, types, x)
@@ -184,7 +184,7 @@ def plot_higher_order():
     # that as we have done previously
     num_cells = msh.topology.index_map(msh.topology.dim).size_local
     cell_entities = np.arange(num_cells, dtype=np.int32)
-    cells, types, x = plot.create_vtk_mesh(msh, entities=cell_entities)
+    cells, types, x = plot.vtk_mesh(msh, entities=cell_entities)
     org_grid = pyvista.UnstructuredGrid(cells, types, x)
 
     # We visualize the data
@@ -218,7 +218,7 @@ def plot_nedelec():
                      position="upper_edge", font_size=14, color="black")
 
     # Next, we create a pyvista.UnstructuredGrid based on the mesh
-    pyvista_cells, cell_types, x = plot.create_vtk_mesh(msh)
+    pyvista_cells, cell_types, x = plot.vtk_mesh(msh)
     grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, x)
 
     # Add this grid (as a wireframe) to the plotter
@@ -241,7 +241,7 @@ def plot_nedelec():
 
     # Create a second grid, whose geometry and topology is based on the
     # output function space
-    cells, cell_types, x = plot.create_vtk_mesh(V0)
+    cells, cell_types, x = plot.vtk_mesh(V0)
     grid = pyvista.UnstructuredGrid(cells, cell_types, x)
 
     # Create point cloud of vertices, and add the vertex values to the cloud
@@ -271,7 +271,7 @@ def plot_streamlines():
     u = Function(V, dtype=np.float64)
     u.interpolate(lambda x: np.vstack((-(x[1] - 0.5), x[0] - 0.5, np.zeros(x.shape[1]))))
 
-    cells, types, x = plot.create_vtk_mesh(V)
+    cells, types, x = plot.vtk_mesh(V)
     num_dofs = x.shape[0]
     values = np.zeros((num_dofs, 3), dtype=np.float64)
     values[:, :msh.geometry.dim] = u.x.array.reshape(num_dofs, V.dofmap.index_map_bs)

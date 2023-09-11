@@ -376,7 +376,7 @@ for i, kz in vals:
 
         # Visualize solutions with Pyvista
         if have_pyvista:
-            V_cells, V_types, V_x = plot.create_vtk_mesh(V_dg)
+            V_cells, V_types, V_x = plot.vtk_mesh(V_dg)
             V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
             Et_values = np.zeros((V_x.shape[0], 3), dtype=np.float64)
             Et_values[:, : msh.topology.dim] = Et_dg.x.array.reshape(V_x.shape[0], msh.topology.dim).real
@@ -395,7 +395,7 @@ for i, kz in vals:
 
         if have_pyvista:
             V_lagr, lagr_dofs = V.sub(1).collapse()
-            V_cells, V_types, V_x = plot.create_vtk_mesh(V_lagr)
+            V_cells, V_types, V_x = plot.vtk_mesh(V_lagr)
             V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
             V_grid.point_data["u"] = ezh.x.array.real[lagr_dofs]
             plotter = pyvista.Plotter()

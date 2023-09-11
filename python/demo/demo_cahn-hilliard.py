@@ -289,7 +289,7 @@ V0, dofs = ME.sub(0).collapse()
 # Prepare viewer for plotting the solution during the computation
 if have_pyvista:
     # Create a VTK 'mesh' with 'nodes' at the function dofs
-    topology, cell_types, x = plot.create_vtk_mesh(V0)
+    topology, cell_types, x = plot.vtk_mesh(V0)
     grid = pv.UnstructuredGrid(topology, cell_types, x)
 
     # Set output data
