@@ -22,14 +22,12 @@
 # To start, the required modules are imported and some PyVista
 # parameters set.
 
+import dolfinx.plot as plot
 # +
 import numpy as np
-
-import dolfinx.plot as plot
-from dolfinx.fem import Function, FunctionSpace
+from dolfinx.fem import Function, functionspace
 from dolfinx.mesh import (CellType, compute_midpoints, create_unit_cube,
                           create_unit_square, meshtags)
-
 from mpi4py import MPI
 
 try:
@@ -55,7 +53,7 @@ def plot_scalar():
     # We start by creating a unit square mesh and interpolating a
     # function into a degree 1 Lagrange space
     msh = create_unit_square(MPI.COMM_WORLD, 12, 12, cell_type=CellType.quadrilateral)
-    V = FunctionSpace(msh, ("Lagrange", 1))
+    V = functionspace(msh, ("Lagrange", 1))
     u = Function(V, dtype=np.float64)
     u.interpolate(lambda x: np.sin(np.pi * x[0]) * np.sin(2 * x[1] * np.pi))
 
@@ -167,7 +165,7 @@ def plot_higher_order():
     # We start by interpolating a discontinuous function (discontinuous
     # between cells with different mesh tag values) into a degree 2
     # discontinuous Lagrange space.
-    V = FunctionSpace(msh, ("Discontinuous Lagrange", 2))
+    V = functionspace(msh, ("Discontinuous Lagrange", 2))
     u = Function(V, dtype=msh.geometry.x.dtype)
     u.interpolate(lambda x: x[0], cell_tags.find(0))
     u.interpolate(lambda x: x[1] + 1, cell_tags.find(1))
@@ -228,7 +226,7 @@ def plot_nedelec():
 
     # Create a function space consisting of first order Nédélec (first kind)
     # elements and interpolate a vector-valued expression
-    V = FunctionSpace(msh, ("N1curl", 2))
+    V = functionspace(msh, ("N1curl", 2))
     u = Function(V, dtype=np.float64)
     u.interpolate(lambda x: (x[2]**2, np.zeros(x.shape[1]), -x[0] * x[2]))
 
@@ -237,7 +235,7 @@ def plot_nedelec():
     # interpolate the Nédélec function into a first-order discontinuous
     # Lagrange space.
     gdim = msh.geometry.dim
-    V0 = FunctionSpace(msh, ("Discontinuous Lagrange", 2, (gdim,)))
+    V0 = functionspace(msh, ("Discontinuous Lagrange", 2, (gdim,)))
     u0 = Function(V0, dtype=np.float64)
     u0.interpolate(u)
 
@@ -269,7 +267,7 @@ def plot_streamlines():
 
     msh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, CellType.hexahedron)
     gdim = msh.geometry.dim
-    V = FunctionSpace(msh, ("Discontinuous Lagrange", 2, (gdim,)))
+    V = functionspace(msh, ("Discontinuous Lagrange", 2, (gdim,)))
     u = Function(V, dtype=np.float64)
     u.interpolate(lambda x: np.vstack((-(x[1] - 0.5), x[0] - 0.5, np.zeros(x.shape[1]))))
 

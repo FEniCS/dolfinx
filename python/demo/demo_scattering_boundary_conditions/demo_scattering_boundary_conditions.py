@@ -271,7 +271,7 @@ theta = np.pi / 4  # Angle of incidence of the background field
 
 degree = 3
 curl_el = element("N1curl", domain.basix_cell(), degree)
-V = fem.FunctionSpace(domain, curl_el)
+V = fem.functionspace(domain, curl_el)
 
 # Next, we can interpolate $\mathbf{E}_b$ into the function space $V$:
 
@@ -315,7 +315,7 @@ eps_au = -1.0782 + 1j * 5.8089
 # of the gold permittivity $\varepsilon_m$ for cells inside the wire,
 # while it takes the value of the background permittivity otherwise:
 
-D = fem.FunctionSpace(domain, ("DG", 0))
+D = fem.functionspace(domain, ("DG", 0))
 eps = fem.Function(D)
 au_cells = cell_tags.find(au_tag)
 bkg_cells = cell_tags.find(bkg_tag)
@@ -409,7 +409,7 @@ Esh = problem.solve()
 
 # +
 gdim = domain.geometry.dim
-V_dg = fem.FunctionSpace(domain, ("Discontinuous Lagrange", degree, (gdim,)))
+V_dg = fem.functionspace(domain, ("Discontinuous Lagrange", degree, (gdim,)))
 Esh_dg = fem.Function(V_dg)
 Esh_dg.interpolate(Esh)
 

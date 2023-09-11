@@ -113,7 +113,7 @@ ufl_element = basix.ufl.element(basix.ElementFamily.P, basix.CellType.triangle, 
 msh = mesh.create_rectangle(comm=MPI.COMM_WORLD,
                             points=((0.0, 0.0), (2.0, 1.0)), n=(32, 16),
                             cell_type=mesh.CellType.triangle,)
-V = fem.FunctionSpace(msh, ufl_element)
+V = fem.functionspace(msh, ufl_element)
 facets = mesh.locate_entities_boundary(msh, dim=1,
                                        marker=lambda x: np.logical_or(np.isclose(x[0], 0.0),
                                                                       np.isclose(x[0], 2.0)))
@@ -158,7 +158,7 @@ u_exact = saw_tooth(x[0])
 
 for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warped]:
     ufl_element = basix.ufl.element(basix.ElementFamily.P, basix.CellType.interval, 10, variant)
-    V = fem.FunctionSpace(msh, ufl_element)
+    V = fem.functionspace(msh, ufl_element)
     uh = fem.Function(V)
     uh.interpolate(lambda x: saw_tooth(x[0]))
     if MPI.COMM_WORLD.size == 1:  # Skip this plotting in parallel
@@ -197,7 +197,7 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
 # +
 for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warped]:
     ufl_element = basix.ufl.element(basix.ElementFamily.P, basix.CellType.interval, 10, variant)
-    V = fem.FunctionSpace(msh, ufl_element)
+    V = fem.functionspace(msh, ufl_element)
     uh = fem.Function(V)
     uh.interpolate(lambda x: saw_tooth(x[0]))
     M = fem.form((u_exact - uh)**2 * dx)

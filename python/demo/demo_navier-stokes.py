@@ -228,12 +228,12 @@ k = 1  # Polynomial degree
 msh = mesh.create_unit_square(MPI.COMM_WORLD, n, n)
 
 # Function spaces for the velocity and for the pressure
-V = fem.FunctionSpace(msh, ("Raviart-Thomas", k + 1))
-Q = fem.FunctionSpace(msh, ("Discontinuous Lagrange", k))
+V = fem.functionspace(msh, ("Raviart-Thomas", k + 1))
+Q = fem.functionspace(msh, ("Discontinuous Lagrange", k))
 
 # Funcion space for visualising the velocity field
 gdim = msh.geometry.dim
-W = fem.FunctionSpace(msh, ("Discontinuous Lagrange", k + 1, (gdim,)))
+W = fem.functionspace(msh, ("Discontinuous Lagrange", k + 1, (gdim,)))
 
 # Define trial and test functions
 
@@ -406,8 +406,8 @@ except NameError:
 
 # +
 # Function spaces for exact velocity and pressure
-V_e = fem.FunctionSpace(msh, ("Lagrange", k + 3, (gdim,)))
-Q_e = fem.FunctionSpace(msh, ("Lagrange", k + 2))
+V_e = fem.functionspace(msh, ("Lagrange", k + 3, (gdim,)))
+Q_e = fem.functionspace(msh, ("Lagrange", k + 2))
 
 u_e = fem.Function(V_e)
 u_e.interpolate(u_e_expr)

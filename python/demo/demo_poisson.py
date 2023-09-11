@@ -13,8 +13,7 @@
 # This demo is implemented in {download}`demo_poisson.py`. It
 # illustrates how to:
 #
-# - Define a {py:class}`FunctionSpace <dolfinx.fem.FunctionSpace>`
-# - Define a {py:class}`FunctionSpace <dolfinx.fem.FunctionSpace>`
+# - Create a {py:class}`function space <dolfinx.fem.FunctionSpaceBase>`
 # - Solve a linear partial differential equation
 #
 # ## Equation and problem definition
@@ -76,18 +75,18 @@ from petsc4py.PETSc import ScalarType
 
 # We create a rectangular {py:class}`Mesh <dolfinx.mesh.Mesh>` using
 # {py:func}`create_rectangle <dolfinx.mesh.create_rectangle>`, and
-# create a finite element {py:class}`FunctionSpace
-# <dolfinx.fem.FunctionSpace>` $V$ on the mesh.
+# create a finite element {py:class}`function space
+# <dolfinx.fem.FunctionSpaceBase>` $V$ on the mesh.
 
 # +
 msh = mesh.create_rectangle(comm=MPI.COMM_WORLD,
                             points=((0.0, 0.0), (2.0, 1.0)), n=(32, 16),
                             cell_type=mesh.CellType.triangle)
-V = fem.FunctionSpace(msh, ("Lagrange", 1))
+V = fem.functionspace(msh, ("Lagrange", 1))
 # -
 
-# The second argument to {py:class}`FunctionSpace
-# <dolfinx.fem.FunctionSpace>` is a tuple `(family, degree)`, where
+# The second argument to {py:func}`functionspace
+# <dolfinx.fem.functionspace>` is a tuple `(family, degree)`, where
 # `family` is the finite element family, and `degree` specifies the
 # polynomial degree. In this case `V` is a space of continuous Lagrange
 # finite elements of degree 1.
