@@ -17,9 +17,9 @@ int main(int argc, char* argv[])
   dolfinx::init_logging(argc, argv);
   MPI_Init(&argc, &argv);
 
-  const int nx_s = 2;
-  const int nx_t = 2;
-  const int ny = 4;
+  const int nx_s = 1;
+  const int nx_t = 1;
+  const int ny = 2;
 
   const int num_s = nx_s * ny;
   const int num_t = 2 * nx_t * ny;
