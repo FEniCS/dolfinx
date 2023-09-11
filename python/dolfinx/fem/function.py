@@ -519,7 +519,7 @@ def functionspace(mesh: Mesh,
     try:
         e = ElementMetaData(*element)
         ufl_e = basix.ufl.element(e.family, mesh.basix_cell(), e.degree, shape=e.shape,
-                                  gdim=mesh.ufl_cell().geometric_dimension())
+                                  symmetry=e.symmetry, gdim=mesh.ufl_cell().geometric_dimension())
     except TypeError:
         ufl_e = element  # type: ignore
 
