@@ -104,14 +104,14 @@ int main(int argc, char* argv[])
       dolfinx::mesh::CellType::triangle};
   std::vector<dolfinx::fem::CoordinateElement<double>> elements;
   for (auto ct : cell_types)
-    elements.push_back(dolfinx::fem::CoordinateElement(ct, 1));
+    elements.push_back(dolfinx::fem::CoordinateElement<double>(ct, 1));
 
   {
-    auto topo = dolfinx::mesh::create_topology(
+    auto topo = std::make_shared<dolfinx::mesh::Topology>(dolfinx::mesh::create_topology(
         MPI_COMM_WORLD, cells_list, original_global_index, ghost_owners,
-        cell_types, cell_group_offsets, boundary_vertices);
+        cell_types, cell_group_offsets, boundary_vertices));
 
-    auto topo_cells = topo.connectivity(2, 0);
+    auto topo_cells = topo->connectivity(2, 0);
 
     for (int i = 0; i < topo_cells->num_nodes(); ++i)
     {
@@ -121,9 +121,9 @@ int main(int argc, char* argv[])
       std::cout << "]\n";
     }
 
-    topo.create_connectivity(1, 0);
+    topo->create_connectivity(1, 0);
 
-    auto topo_facets = topo.connectivity(1, 0);
+    auto topo_facets = topo->connectivity(1, 0);
     for (int i = 0; i < topo_facets->num_nodes(); ++i)
     {
       std::cout << i << " [";
@@ -132,13 +132,13 @@ int main(int argc, char* argv[])
       std::cout << "]\n";
     }
 
-    auto geom = dolfinx::mesh::create_geometry(MPI_COMM_WORLD, topo, elements,
+    auto geom = dolfinx::mesh::create_geometry(MPI_COMM_WORLD, *topo, elements,
                                                cells_list, x, 2);
 
-    dolfinx::mesh::Mesh mesh(MPI_COMM_WORLD, topo, geom);
-    std::cout << "num cells = " << mesh.topology().index_map(2)->size_local()
+    dolfinx::mesh::Mesh<double> mesh(MPI_COMM_WORLD, topo, geom);
+    std::cout << "num cells = " << mesh.topology()->index_map(2)->size_local()
               << "\n";
-    for (auto q : mesh.topology().entity_group_offsets(2))
+    for (auto q : mesh.topology()->entity_group_offsets(2))
       std::cout << q << " ";
     std::cout << "\n";
   }
