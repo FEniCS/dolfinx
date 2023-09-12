@@ -1,3 +1,4 @@
+#include <dolfinx.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -142,6 +143,25 @@ int main(int argc, char* argv[])
     for (auto q : mesh.topology()->entity_group_offsets(2))
       std::cout << q << " ";
     std::cout << "\n";
+
+    std::cout << "geom_dofmap:\n";
+    auto geom_dofmap = mesh.geometry().dofmap();
+    for (std::size_t i = 0; i < geom_dofmap.extent(0); ++i)
+    {
+      auto dofs = std::experimental::submdspan(
+        geom_dofmap, i, std::experimental::full_extent);
+
+      for(std::size_t j = 0; j < dofs.size(); ++j)
+      {
+        std::cout << dofs[j] << " ";
+      }
+
+      std::cout << "\n";
+    }
+
+    // // Save solution in VTK format
+    // io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
+    // file.write<double>(mesh, 0.0);
   }
 
   MPI_Finalize();

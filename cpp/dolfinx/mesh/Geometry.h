@@ -51,12 +51,14 @@ public:
             std::convertible_to<std::vector<T>> V,
             std::convertible_to<std::vector<std::int64_t>> W>
   Geometry(std::shared_ptr<const common::IndexMap> index_map, U&& dofmap,
+           std::vector<std::int32_t> cell_group_offsets,
            const std::vector<fem::CoordinateElement<
                typename
 
                std::remove_reference_t<typename V::value_type>>>& elements,
            V&& x, int dim, W&& input_global_indices)
-      : _dim(dim), _dofmap(std::forward<U>(dofmap)), _index_map(index_map),
+      : _dim(dim), _dofmap(std::forward<U>(dofmap)),
+        _cell_group_offsets(cell_group_offsets), _index_map(index_map),
         _cmaps(elements), _x(std::forward<V>(x)),
         _input_global_indices(std::forward<W>(input_global_indices))
   {
@@ -134,6 +136,8 @@ private:
   // Map per cell for extracting coordinate data
   std::vector<std::int32_t> _dofmap;
 
+  std::vector<std::int32_t> _cell_group_offsets;
+
   // IndexMap for geometry 'dofmap'
   std::shared_ptr<const common::IndexMap> _index_map;
 
@@ -192,12 +196,12 @@ create_geometry(
   auto dof_index_map
       = std::make_shared<common::IndexMap>(std::move(_dof_index_map));
 
+  const int D = topology.dim();
   // If the mesh has higher order geometry, permute the dofmap
   if (elements[0].needs_dof_permutations())
   {
     if (elements.size() > 1)
       throw std::runtime_error("Unsupported for Mixed Topology");
-    const int D = topology.dim();
     const int num_cells = topology.connectivity(D, 0)->num_nodes();
     const std::vector<std::uint32_t>& cell_info
         = topology.get_cell_permutation_info();
@@ -257,8 +261,8 @@ create_geometry(
   }
 
   return Geometry<typename std::remove_reference_t<typename U::value_type>>(
-      dof_index_map, std::move(dofmap), elements, std::move(xg), dim,
-      std::move(igi));
+      dof_index_map, std::move(dofmap), topology.entity_group_offsets(D), elements,
+      std::move(xg), dim, std::move(igi));
 }
 
 /// @brief Create a sub-geometry for a subset of entities.
