@@ -194,6 +194,11 @@ create_geometry(
   auto dof_index_map
       = std::make_shared<common::IndexMap>(std::move(_dof_index_map));
 
+  std::cout << "dofmap = ";
+  for (auto q : dofmap)
+    std::cout << q << " ";
+  std::cout << "\n";
+
   std::cout << "dof perms\n";
   // If the mesh has higher order geometry, permute the dofmap
   if (elements[0].needs_dof_permutations())
