@@ -251,7 +251,7 @@ build_basic_dofmap(
     const int local_dim = element_dof_layouts[i % nelem].num_dofs();
     num_dofs += (group_offsets[i + 1] - group_offsets[i]) * local_dim;
   }
-  std::cout << "Num dofs = " << num_dofs << "\n";
+  std::cout << "num_dofs = " << num_dofs << "\n";
   std::vector<std::int32_t> dofs(num_dofs);
 
   // Allocate entity indices array
