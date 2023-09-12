@@ -23,8 +23,6 @@
 #include <utility>
 #include <vector>
 
-#include <iostream>
-
 using namespace dolfinx;
 
 namespace
@@ -255,7 +253,6 @@ build_basic_dofmap(
       doffsets.push_back(doffsets.back() + local_dim);
   }
   std::vector<std::int32_t> dofs(doffsets.back());
-  std::cout << "dofs.size() = " << dofs.size() << "\n";
 
   // Allocate entity indices array
   std::vector<std::vector<int32_t>> entity_indices_local(D + 1);
