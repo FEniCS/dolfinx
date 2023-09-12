@@ -11,7 +11,7 @@ import numpy as np
 import pytest
 import ufl
 from dolfinx.la import create_petsc_vector
-from dolfinx.fem import VectorFunctionSpace, form
+from dolfinx.fem import FunctionSpace, form
 from dolfinx.fem.petsc import assemble_matrix
 from dolfinx.mesh import (CellType, GhostMode, create_box, create_unit_cube,
                           create_unit_square)
@@ -97,7 +97,8 @@ def build_broken_elastic_nullspace(V):
 @pytest.mark.parametrize("degree", [1, 2])
 def test_nullspace_orthogonal(mesh, degree):
     """Test that null spaces orthogonalisation"""
-    V = VectorFunctionSpace(mesh, ('Lagrange', degree))
+    gdim = mesh.geometry.dim
+    V = FunctionSpace(mesh, ('Lagrange', degree, (gdim,)))
     nullspace = build_elastic_nullspace(V)
     assert not la.is_orthonormal(nullspace, eps=1.0e-4)
     la.orthonormalize(nullspace)
@@ -114,7 +115,8 @@ def test_nullspace_orthogonal(mesh, degree):
 ])
 @pytest.mark.parametrize("degree", [1, 2])
 def test_nullspace_check(mesh, degree):
-    V = VectorFunctionSpace(mesh, ('Lagrange', degree))
+    gdim = mesh.geometry.dim
+    V = FunctionSpace(mesh, ('Lagrange', degree, (gdim,)))
     u, v = TrialFunction(V), TestFunction(V)
 
     E, nu = 2.0e2, 0.3

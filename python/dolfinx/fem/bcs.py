@@ -22,7 +22,8 @@ import dolfinx
 from dolfinx import cpp as _cpp
 
 
-def locate_dofs_geometrical(V: typing.Union[dolfinx.fem.FunctionSpace, typing.Iterable[dolfinx.fem.FunctionSpace]],
+def locate_dofs_geometrical(V: typing.Union[dolfinx.fem.FunctionSpaceBase,
+                                            typing.Iterable[dolfinx.fem.FunctionSpaceBase]],
                             marker: typing.Callable) -> np.ndarray:
     """Locate degrees-of-freedom geometrically using a marker function.
 
@@ -53,7 +54,8 @@ def locate_dofs_geometrical(V: typing.Union[dolfinx.fem.FunctionSpace, typing.It
         return _cpp.fem.locate_dofs_geometrical(_V, marker)
 
 
-def locate_dofs_topological(V: typing.Union[dolfinx.fem.FunctionSpace, typing.Iterable[dolfinx.fem.FunctionSpace]],
+def locate_dofs_topological(V: typing.Union[dolfinx.fem.FunctionSpaceBase,
+                                            typing.Iterable[dolfinx.fem.FunctionSpaceBase]],
                             entity_dim: int, entities: numpy.typing.NDArray[np.int32],
                             remote: bool = True) -> np.ndarray:
     """Locate degrees-of-freedom belonging to mesh entities topologically.
@@ -89,7 +91,7 @@ class DirichletBC:
         """Representation of Dirichlet boundary condition which is imposed on
         a linear system.
 
-        Notes:
+        Note:
             Dirichlet boundary conditions  should normally be
             constructed using :func:`fem.dirichletbc` and not using this
             class initialiser. This class is combined with different
@@ -104,6 +106,7 @@ class DirichletBC:
                 Otherwise assumes function space of the problem is the same
                 of function space of boundary values function.
             V: Function space of a problem to which boundary conditions are applied.
+
         """
         self._cpp_object = bc
 
@@ -113,14 +116,14 @@ class DirichletBC:
         return self._cpp_object.value
 
     @property
-    def function_space(self) -> dolfinx.fem.FunctionSpace:
+    def function_space(self) -> dolfinx.fem.FunctionSpaceBase:
         """The function space on which the boundary condition is defined"""
         return self._cpp_object.function_space
 
 
 def dirichletbc(value: typing.Union[Function, Constant, np.ndarray],
                 dofs: numpy.typing.NDArray[np.int32],
-                V: typing.Optional[dolfinx.fem.FunctionSpace] = None) -> DirichletBC:
+                V: typing.Optional[dolfinx.fem.FunctionSpaceBase] = None) -> DirichletBC:
     """Create a representation of Dirichlet boundary condition which
     is imposed on a linear system.
 
@@ -178,7 +181,7 @@ def dirichletbc(value: typing.Union[Function, Constant, np.ndarray],
     return DirichletBC(bc)
 
 
-def bcs_by_block(spaces: typing.Iterable[typing.Union[dolfinx.fem.FunctionSpace, None]],
+def bcs_by_block(spaces: typing.Iterable[typing.Union[dolfinx.fem.FunctionSpaceBase, None]],
                  bcs: typing.Iterable[DirichletBC]) -> typing.List[typing.List[DirichletBC]]:
     """Arrange Dirichlet boundary conditions by the function space that
     they constrain.

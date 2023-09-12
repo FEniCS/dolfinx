@@ -11,9 +11,8 @@ import numpy as np
 import pytest
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx.fem import (Function, FunctionSpace, VectorFunctionSpace,
-                         assemble_scalar, dirichletbc, form,
-                         locate_dofs_topological)
+from dolfinx.fem import (Function, FunctionSpace, assemble_scalar, dirichletbc,
+                         form, locate_dofs_topological)
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                set_bc)
 from dolfinx.io import XDMFFile
@@ -434,7 +433,8 @@ def test_vector_P_simplex(family, degree, cell_type, datadir):
     if cell_type == CellType.tetrahedron and degree == 4:
         pytest.skip("Skip expensive test on tetrahedron")
     mesh = get_mesh(cell_type, datadir)
-    V = VectorFunctionSpace(mesh, (family, degree))
+    gdim = mesh.geometry.dim
+    V = FunctionSpace(mesh, (family, degree, (gdim,)))
     run_vector_test(mesh, V, degree)
 
 
@@ -528,7 +528,8 @@ def test_vector_P_tp(family, degree, cell_type, datadir):
     if cell_type == CellType.hexahedron and degree == 4:
         pytest.skip("Skip expensive test on hexahedron")
     mesh = get_mesh(cell_type, datadir)
-    V = VectorFunctionSpace(mesh, (family, degree))
+    gdim = mesh.geometry.dim
+    V = FunctionSpace(mesh, (family, degree, (gdim,)))
     run_vector_test(mesh, V, degree)
 
 
@@ -584,7 +585,8 @@ def test_vector_S_tp(family, degree, cell_type, datadir):
     if cell_type == CellType.hexahedron and degree == 4:
         pytest.skip("Skip expensive test on hexahedron")
     mesh = get_mesh(cell_type, datadir)
-    V = VectorFunctionSpace(mesh, (family, degree))
+    gdim = mesh.geometry.dim
+    V = FunctionSpace(mesh, (family, degree, (gdim,)))
     run_vector_test(mesh, V, degree // 2)
 
 

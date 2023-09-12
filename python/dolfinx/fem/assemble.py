@@ -120,7 +120,7 @@ def assemble_scalar(M: Form, constants=None, coeffs=None):
         coeffs: Coefficients that appear in the form. If not provided,
             any required coefficients will be computed.
 
-    Return:
+    Returns:
         The computed scalar on the calling rank.
 
     Note:
@@ -156,7 +156,7 @@ def _assemble_vector_form(L: Form, constants=None, coeffs=None) -> la.Vector:
         coeffs: Coefficients that appear in the form. If not provided,
             any required coefficients will be computed.
 
-    Return:
+    Returns:
         The assembled vector for the calling rank.
 
     Note:
@@ -317,10 +317,11 @@ def apply_lifting(b: np.ndarray, a: typing.List[Form],
 
 def set_bc(b: np.ndarray, bcs: typing.List[DirichletBC],
            x0: typing.Optional[np.ndarray] = None, scale: float = 1.0) -> None:
-    """Insert boundary condition values into vector. Only local (owned)
-    entries are set, hence communication after calling this function is
-    not required unless ghost entries need to be updated to the boundary
-    condition value.
+    """Insert boundary condition values into vector.
+
+    Only local (owned) entries are set, hence communication after
+    calling this function is not required unless ghost entries need to
+    be updated to the boundary condition value.
 
     """
     _bcs = [bc._cpp_object for bc in bcs]

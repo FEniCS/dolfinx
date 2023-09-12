@@ -116,7 +116,7 @@ import os
 import numpy as np
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx.fem import Function, FunctionSpace
+from dolfinx.fem import Function, functionspace
 from dolfinx.fem.petsc import NonlinearProblem
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_unit_square
@@ -149,12 +149,12 @@ theta = 0.5  # time stepping family, e.g. theta=1 -> backward Euler, theta=0.5 -
 
 # A unit square mesh with 96 cells edges in each direction is created,
 # and on this mesh a
-# {py:class}`FunctionSpace<dolfinx.fem.FunctionSpace>` `ME` is built
+# {py:class}`FunctionSpaceBase <dolfinx.fem.FunctionSpaceBase>` `ME` is built
 # using a pair of linear Lagrange elements.
 
 msh = create_unit_square(MPI.COMM_WORLD, 96, 96, CellType.triangle)
 P1 = element("Lagrange", msh.basix_cell(), 1)
-ME = FunctionSpace(msh, mixed_element([P1, P1]))
+ME = functionspace(msh, mixed_element([P1, P1]))
 
 # Trial and test functions of the space `ME` are now defined:
 
@@ -289,7 +289,7 @@ V0, dofs = ME.sub(0).collapse()
 # Prepare viewer for plotting the solution during the computation
 if have_pyvista:
     # Create a VTK 'mesh' with 'nodes' at the function dofs
-    topology, cell_types, x = plot.create_vtk_mesh(V0)
+    topology, cell_types, x = plot.vtk_mesh(V0)
     grid = pv.UnstructuredGrid(topology, cell_types, x)
 
     # Set output data
