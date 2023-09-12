@@ -112,6 +112,7 @@ int main(int argc, char* argv[])
 
     auto topo_cells = topo->connectivity(2, 0);
 
+    std::cout << "cells\n------\n";
     for (int i = 0; i < topo_cells->num_nodes(); ++i)
     {
       std::cout << i << " [";
@@ -122,6 +123,7 @@ int main(int argc, char* argv[])
 
     topo->create_connectivity(1, 0);
 
+    std::cout << "facets\n------\n";
     auto topo_facets = topo->connectivity(1, 0);
     for (int i = 0; i < topo_facets->num_nodes(); ++i)
     {

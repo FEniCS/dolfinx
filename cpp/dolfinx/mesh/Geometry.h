@@ -183,15 +183,18 @@ create_geometry(
   // fem::build_dofmap_data
 
   std::vector<fem::ElementDofLayout> dof_layouts;
+  std::cout << "dof_layouts (" << dof_layouts.size() << ")\n";
   for (auto e : elements)
     dof_layouts.push_back(e.create_dof_layout());
 
   //  Build 'geometry' dofmap on the topology
+  std::cout << "build_dofmap_data\n";
   auto [_dof_index_map, bs, dofmap]
       = fem::build_dofmap_data(comm, topology, dof_layouts, reorder_fn);
   auto dof_index_map
       = std::make_shared<common::IndexMap>(std::move(_dof_index_map));
 
+  std::cout << "dof perms\n";
   // If the mesh has higher order geometry, permute the dofmap
   if (elements[0].needs_dof_permutations())
   {
@@ -209,6 +212,8 @@ create_geometry(
       elements[0].unpermute_dofs(dofs, cell_info[cell]);
     }
   }
+
+  std::cout << "remap\n";
 
   auto remap_data
       = [](auto comm, auto& cell_nodes, auto& x, int dim, auto& dofmap)
