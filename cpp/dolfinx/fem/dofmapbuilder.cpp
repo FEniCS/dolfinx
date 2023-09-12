@@ -286,7 +286,6 @@ build_basic_dofmap(
 
   // Loop over cells, group by group, and build dofmaps from respective
   // ElementDofmap
-  const int num_dofs_cell = element_dof_layouts[0].num_dofs();
   for (std::size_t i = 0; i < 2 * nelem; ++i)
   {
     for (int c = group_offsets[i]; c < group_offsets[i + 1]; ++c)
@@ -312,8 +311,8 @@ build_basic_dofmap(
         entity_indices_local[D][0] = c;
       }
 
-      std::span<std::int32_t> dofs_c(dofs.data() + c * num_dofs_cell,
-                                     num_dofs_cell);
+      std::span<std::int32_t> dofs_c(dofs.data() + doffsets[c],
+                                     doffsets[c + 1] - doffsets[c]);
 
       // Iterate over each topological dimension for this element (twice, once
       // for regular, and later for ghosts).
