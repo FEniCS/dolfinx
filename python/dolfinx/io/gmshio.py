@@ -3,7 +3,11 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Tools to extract data from Gmsh models"""
+"""Tools to extract data from Gmsh models
+
+If gmsh is not installed, importing this module will throw a
+ModuleNotFoundError.
+"""
 import typing
 
 import basix
@@ -19,13 +23,17 @@ from mpi4py import MPI as _MPI
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
 
-__all__ = ["cell_perm_array", "ufl_mesh"]
-
 try:
     import gmsh
     _has_gmsh = True
-except ModuleNotFoundError:
+except ModuleNotFoundError as e:
     _has_gmsh = False
+    print("gmsh must be installed to import from dolfinx.io.gmshio")
+    raise e
+
+
+# The following functions do not require gmsh type hints
+__all__ = ["cell_perm_array", "ufl_mesh"]
 
 
 def ufl_mesh(gmsh_cell: int, gdim: int) -> ufl.Mesh:
