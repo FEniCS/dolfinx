@@ -160,7 +160,7 @@ public:
     auto fn = this->get_tabulate_expression();
 
     // Prepare cell geometry
-    auto x_dofmap = mesh.geometry().dofmap();
+    auto x_dofmap = mesh.geometry().dofmap()[0];
 
     // Get geometry data
     auto cmaps = mesh.geometry().cmaps();

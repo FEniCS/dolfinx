@@ -411,7 +411,7 @@ public:
     const CoordinateElement<U>& cmap = mesh->geometry().cmaps()[0];
 
     // Get geometry data
-    auto x_dofmap = mesh->geometry().dofmap();
+    auto x_dofmap = mesh->geometry().dofmap()[0];
     const std::size_t num_dofs_g = cmap.dim();
     std::span<const U> x_g = mesh->geometry().x();
 

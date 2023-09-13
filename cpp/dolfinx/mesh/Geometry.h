@@ -86,8 +86,9 @@ public:
   int dim() const { return _dim; }
 
   /// DOF map
-  std::experimental::mdspan<const std::int32_t,
-                            std::experimental::dextents<std::size_t, 2>>
+  // TODO Add index rather than returning a vector
+  std::vector<std::experimental::mdspan<
+      const std::int32_t, std::experimental::dextents<std::size_t, 2>>>
   dofmap() const
   {
     int num_celes = _cmaps.size();
@@ -110,11 +111,7 @@ public:
               _dofmap.data() + bloffset, num_cells_in_group, ndofs));
       bloffset += num_cells_in_group * ndofs;
     }
-
-    int ndofs = _cmaps[0].dim();
-    return std::experimental::mdspan<
-        const std::int32_t, std::experimental::dextents<std::size_t, 2>>(
-        _dofmap.data(), _dofmap.size() / ndofs, ndofs);
+    return std::move(dofmaps);
   }
 
   /// Index map
@@ -313,7 +310,7 @@ create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
   std::vector<std::int32_t> x_indices;
   x_indices.reserve(num_entity_dofs * subentity_to_entity.size());
   {
-    auto xdofs = geometry.dofmap();
+    auto xdofs = geometry.dofmap()[0];
     const int tdim = topology.dim();
 
     // Fetch connectivities required to get entity dofs

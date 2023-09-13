@@ -1070,13 +1070,13 @@ void assemble_vector(
   std::shared_ptr<const mesh::Mesh<U>> mesh = L.mesh();
   assert(mesh);
   if constexpr (std::is_same_v<U, scalar_value_type_t<T>>)
-    assemble_vector(b, L, mesh->geometry().dofmap(), mesh->geometry().x(),
+    assemble_vector(b, L, mesh->geometry().dofmap()[0], mesh->geometry().x(),
                     constants, coefficients);
   else
   {
     auto x = mesh->geometry().x();
     std::vector<scalar_value_type_t<T>> _x(x.begin(), x.end());
-    assemble_vector(b, L, mesh->geometry().dofmap(), _x, constants,
+    assemble_vector(b, L, mesh->geometry().dofmap()[0], _x, constants,
                     coefficients);
   }
 }

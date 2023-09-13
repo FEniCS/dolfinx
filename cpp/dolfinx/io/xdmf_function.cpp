@@ -133,7 +133,7 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
 
     // Get dof array and pack into array (padded where appropriate)
     namespace stdex = std::experimental;
-    auto dofmap_x = geometry.dofmap();
+    auto dofmap_x = geometry.dofmap()[0];
     data_values.resize(num_local_points * num_components, 0);
     for (std::int32_t c = 0; c < num_cells; ++c)
     {

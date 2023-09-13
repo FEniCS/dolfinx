@@ -66,14 +66,14 @@ T assemble_scalar(
   assert(mesh);
   if constexpr (std::is_same_v<U, scalar_value_type_t<T>>)
   {
-    return impl::assemble_scalar(M, mesh->geometry().dofmap(),
+    return impl::assemble_scalar(M, mesh->geometry().dofmap()[0],
                                  mesh->geometry().x(), constants, coefficients);
   }
   else
   {
     auto x = mesh->geometry().x();
     std::vector<scalar_value_type_t<T>> _x(x.begin(), x.end());
-    return impl::assemble_scalar(M, mesh->geometry().dofmap(), _x, constants,
+    return impl::assemble_scalar(M, mesh->geometry().dofmap()[0], _x, constants,
                                  coefficients);
   }
 }
@@ -170,7 +170,7 @@ void apply_lifting(
 
   if constexpr (std::is_same_v<U, scalar_value_type_t<T>>)
   {
-    impl::apply_lifting<T>(b, a, mesh->geometry().dofmap(),
+    impl::apply_lifting<T>(b, a, mesh->geometry().dofmap()[0],
                            mesh->geometry().x(), constants, coeffs, bcs1, x0,
                            scale);
   }
@@ -178,7 +178,7 @@ void apply_lifting(
   {
     auto x = mesh->geometry().x();
     std::vector<scalar_value_type_t<T>> _x(x.begin(), x.end());
-    impl::apply_lifting<T>(b, a, mesh->geometry().dofmap(), _x, constants,
+    impl::apply_lifting<T>(b, a, mesh->geometry().dofmap()[0], _x, constants,
                            coeffs, bcs1, x0, scale);
   }
 }
@@ -261,7 +261,7 @@ void assemble_matrix(
   assert(mesh);
   if constexpr (std::is_same_v<U, scalar_value_type_t<T>>)
   {
-    impl::assemble_matrix(mat_add, a, mesh->geometry().dofmap(),
+    impl::assemble_matrix(mat_add, a, mesh->geometry().dofmap()[0],
                           mesh->geometry().x(), constants, coefficients,
                           dof_marker0, dof_marker1);
   }
@@ -269,7 +269,7 @@ void assemble_matrix(
   {
     auto x = mesh->geometry().x();
     std::vector<scalar_value_type_t<T>> _x(x.begin(), x.end());
-    impl::assemble_matrix(mat_add, a, mesh->geometry().dofmap(), _x, constants,
+    impl::assemble_matrix(mat_add, a, mesh->geometry().dofmap()[0], _x, constants,
                           coefficients, dof_marker0, dof_marker1);
   }
 }

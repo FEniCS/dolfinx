@@ -360,7 +360,7 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
           *mesh.topology(), mesh.geometry().input_global_indices(),
           mesh.geometry().index_map()->size_global(),
           mesh.geometry().cmaps()[0].create_dof_layout(),
-          mesh.geometry().dofmap(), mesh::cell_dim(cell_type), entities1,
+          mesh.geometry().dofmap()[0], mesh::cell_dim(cell_type), entities1,
           values);
 
   auto cell_types = mesh.topology()->cell_types();

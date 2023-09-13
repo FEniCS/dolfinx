@@ -189,7 +189,7 @@ void declare_real_types(py::module& m)
                 *mesh.topology(), mesh.geometry().input_global_indices(),
                 mesh.geometry().index_map()->size_global(),
                 mesh.geometry().cmaps()[0].create_dof_layout(),
-                mesh.geometry().dofmap(), entity_dim,
+                mesh.geometry().dofmap()[0], entity_dim,
                 std::span(entities.data(), entities.size()),
                 std::span(values.data(), values.size()));
 

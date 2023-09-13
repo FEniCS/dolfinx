@@ -107,9 +107,10 @@ int main(int argc, char* argv[])
     elements.push_back(dolfinx::fem::CoordinateElement<double>(ct, 1));
 
   {
-    auto topo = std::make_shared<dolfinx::mesh::Topology>(dolfinx::mesh::create_topology(
-        MPI_COMM_WORLD, cells_list, original_global_index, ghost_owners,
-        cell_types, cell_group_offsets, boundary_vertices));
+    auto topo = std::make_shared<dolfinx::mesh::Topology>(
+        dolfinx::mesh::create_topology(
+            MPI_COMM_WORLD, cells_list, original_global_index, ghost_owners,
+            cell_types, cell_group_offsets, boundary_vertices));
 
     auto topo_cells = topo->connectivity(2, 0);
 
@@ -145,18 +146,22 @@ int main(int argc, char* argv[])
     std::cout << "\n";
 
     std::cout << "geom_dofmap:\n";
-    auto geom_dofmap = mesh.geometry().dofmap();
-    for (std::size_t i = 0; i < geom_dofmap.extent(0); ++i)
+    auto geom_dofmaps = mesh.geometry().dofmap();
+    for (auto geom_dofmap : geom_dofmaps)
     {
-      auto dofs = std::experimental::submdspan(
-        geom_dofmap, i, std::experimental::full_extent);
-
-      for(std::size_t j = 0; j < dofs.size(); ++j)
+      std::cout << "new cell:\n";
+      for (std::size_t i = 0; i < geom_dofmap.extent(0); ++i)
       {
-        std::cout << dofs[j] << " ";
-      }
+        auto dofs = std::experimental::submdspan(
+            geom_dofmap, i, std::experimental::full_extent);
 
-      std::cout << "\n";
+        for (std::size_t j = 0; j < dofs.size(); ++j)
+        {
+          std::cout << dofs[j] << " ";
+        }
+
+        std::cout << "\n";
+      }
     }
 
     // // Save solution in VTK format
