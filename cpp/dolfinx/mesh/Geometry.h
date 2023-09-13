@@ -91,6 +91,12 @@ public:
       const std::int32_t, std::experimental::dextents<std::size_t, 2>>>
   dofmap() const
   {
+    // FIXME Returning as a vector with owned and ghost cells separate is
+    // inconvenient in the assemblers. Since the assemblers may, in general,
+    // contain ghost cells, we'd need to check ownership to get the cell
+    // geometry. It is difficult to change this without also changing topology
+    // ordering. Maybe change topology ordering and have an index map for each
+    // cell type?
     int num_celes = _cmaps.size();
     // DOF offset for each block
     int bloffset = 0;
