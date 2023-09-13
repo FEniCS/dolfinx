@@ -307,6 +307,7 @@ class MeshTags:
         self._cpp_object = meshtags
 
     def ufl_id(self) -> int:
+        """Identiftying integer used by UFL."""
         return id(self)
 
     @property
@@ -331,6 +332,7 @@ class MeshTags:
 
     @property
     def name(self) -> str:
+        "Name of the mesh tags object."
         return self._cpp_object.name
 
     @name.setter
@@ -343,7 +345,7 @@ class MeshTags:
         Args:
             value: Mesh tag value to search for.
 
-        Return:
+        Returns:
             Indices of entities with tag ``value``.
 
         """

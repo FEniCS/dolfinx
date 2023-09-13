@@ -8,8 +8,7 @@ import basix
 import numpy as np
 import pytest
 from basix.ufl import element, mixed_element
-from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
-                         VectorFunctionSpace)
+from dolfinx.fem import (Function, FunctionSpace, FunctionSpaceBase)
 from dolfinx.mesh import create_mesh, create_unit_cube
 from mpi4py import MPI
 from ufl import Cell, Mesh, TestFunction, TrialFunction, grad
@@ -29,7 +28,8 @@ def V(mesh):
 
 @pytest.fixture
 def W(mesh):
-    return VectorFunctionSpace(mesh, ('Lagrange', 1))
+    gdim = mesh.geometry.dim
+    return FunctionSpace(mesh, ('Lagrange', 1, (gdim,)))
 
 
 @pytest.fixture
@@ -61,10 +61,10 @@ def W2(g):
 
 def test_python_interface(V, V2, W, W2, Q):
     # Test Python interface of cpp generated FunctionSpace
-    assert isinstance(V, FunctionSpace)
-    assert isinstance(W, FunctionSpace)
-    assert isinstance(V2, FunctionSpace)
-    assert isinstance(W2, FunctionSpace)
+    assert isinstance(V, FunctionSpaceBase)
+    assert isinstance(W, FunctionSpaceBase)
+    assert isinstance(V2, FunctionSpaceBase)
+    assert isinstance(W2, FunctionSpaceBase)
 
     assert V.mesh.ufl_cell() == V2.mesh.ufl_cell()
     assert W.mesh.ufl_cell() == W2.mesh.ufl_cell()
@@ -173,8 +173,9 @@ def test_argument_equality(mesh, V, V2, W, W2):
     """Placed this test here because it's mainly about detecting differing
     function spaces"""
     mesh2 = create_unit_cube(MPI.COMM_WORLD, 8, 8, 8)
+    gdim = mesh2.geometry.dim
     V3 = FunctionSpace(mesh2, ("Lagrange", 1))
-    W3 = VectorFunctionSpace(mesh2, ("Lagrange", 1))
+    W3 = FunctionSpace(mesh2, ("Lagrange", 1, (gdim,)))
 
     for TF in (TestFunction, TrialFunction):
         v = TF(V)
@@ -252,7 +253,7 @@ def test_vector_function_space_cell_type():
 
     # Create functions space over mesh, and check element cell
     # is correct
-    V = VectorFunctionSpace(mesh, ('Lagrange', 1))
+    V = FunctionSpace(mesh, ('Lagrange', 1, (gdim,)))
     assert V.ufl_element().cell() == cell
 
 
@@ -265,9 +266,9 @@ def test_manifold_spaces():
     cells = [(0, 1, 2), (0, 1, 3)]
     domain = Mesh(element("Lagrange", "triangle", 1, gdim=3, rank=1))
     mesh = create_mesh(MPI.COMM_WORLD, cells, vertices, domain)
-    QV = VectorFunctionSpace(mesh, ("Lagrange", 1))
-    QT = TensorFunctionSpace(mesh, ("Lagrange", 1))
-    u = Function(QV)
-    v = Function(QT)
+    gdim = mesh.geometry.dim
+    QV = FunctionSpace(mesh, ("Lagrange", 1, (gdim,)))
+    QT = FunctionSpace(mesh, ("Lagrange", 1, (gdim, gdim)))
+    u, v = Function(QV), Function(QT)
     assert u.ufl_shape == (3,)
     assert v.ufl_shape == (3, 3)

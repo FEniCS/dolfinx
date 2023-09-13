@@ -126,17 +126,17 @@ from petsc4py.PETSc import ScalarType
 # We begin by using {py:func}`create_rectangle
 # <dolfinx.mesh.create_rectangle>` to create a rectangular
 # {py:class}`Mesh <dolfinx.mesh.Mesh>` of the domain, and creating a
-# finite element {py:class}`FunctionSpace <dolfinx.fem.FunctionSpace>`
+# finite element {py:class}`FunctionSpaceBase <dolfinx.fem.FunctionSpaceBase>`
 # $V$ on the mesh.
 
 msh = mesh.create_rectangle(comm=MPI.COMM_WORLD,
                             points=((0.0, 0.0), (1.0, 1.0)), n=(32, 32),
                             cell_type=CellType.triangle,
                             ghost_mode=GhostMode.shared_facet)
-V = fem.FunctionSpace(msh, ("Lagrange", 2))
+V = fem.functionspace(msh, ("Lagrange", 2))
 
-# The second argument to {py:class}`FunctionSpace
-# <dolfinx.fem.FunctionSpace>` is a tuple consisting of `(family,
+# The second argument to {py:func}`functionspace
+# <dolfinx.fem.functionspace>` is a tuple consisting of `(family,
 # degree)`, where `family` is the finite element family, and `degree`
 # specifies the polynomial degree. in this case `V` consists of
 # second-order, continuous Lagrange finite element functions.
@@ -220,7 +220,7 @@ uh = problem.solve()
 # <dolfinx.io.XDMFFile>` file visualization with ParaView or VisIt
 
 with io.XDMFFile(msh.comm, "out_biharmonic/biharmonic.xdmf", "w") as file:
-    V1 = fem.FunctionSpace(msh, ("Lagrange", 1))
+    V1 = fem.functionspace(msh, ("Lagrange", 1))
     u1 = fem.Function(V1)
     u1.interpolate(uh)
     file.write_mesh(msh)
@@ -231,7 +231,7 @@ with io.XDMFFile(msh.comm, "out_biharmonic/biharmonic.xdmf", "w") as file:
 # +
 try:
     import pyvista
-    cells, types, x = plot.create_vtk_mesh(V)
+    cells, types, x = plot.vtk_mesh(V)
     grid = pyvista.UnstructuredGrid(cells, types, x)
     grid.point_data["u"] = uh.x.array.real
     grid.set_active_scalars("u")

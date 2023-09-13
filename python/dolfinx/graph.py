@@ -31,10 +31,10 @@ except ImportError:
     pass
 
 
-__all__ = ["create_adjacencylist", "partitioner"]
+__all__ = ["adjacencylist", "partitioner"]
 
 
-def create_adjacencylist(data: np.ndarray, offsets=None):
+def adjacencylist(data: np.ndarray, offsets=None):
     """Create an AdjacencyList for int32 or int64 datasets.
 
     Args:
