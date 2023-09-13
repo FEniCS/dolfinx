@@ -17,12 +17,15 @@ int main(int argc, char* argv[])
   dolfinx::init_logging(argc, argv);
   MPI_Init(&argc, &argv);
 
-  const int nx_s = 1;
-  const int nx_t = 1;
-  const int ny = 2;
+  // Number of square cell in x-direction
+  constexpr int nx_s = 2;
+  // Number of triangle cells in x-direction
+  constexpr int nx_t = 2;
+  // Number of cells in y-direction
+  constexpr int ny = 4;
 
-  const int num_s = nx_s * ny;
-  const int num_t = 2 * nx_t * ny;
+  constexpr int num_s = nx_s * ny;
+  constexpr int num_t = 2 * nx_t * ny;
 
   std::vector<double> x;
   for (int i = 0; i < nx_s + nx_t + 1; ++i)
