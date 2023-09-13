@@ -91,22 +91,23 @@ public:
   dofmap() const
   {
     int num_celes = _cmaps.size();
+    // DOF offset for each block
     int bloffset = 0;
     std::vector<std::experimental::mdspan<
         const std::int32_t, std::experimental::dextents<std::size_t, 2>>>
         dofmaps;
+    // Loop twice (owned then ghost)
     for (int i = 0; i < 2 * num_celes; ++i)
     {
       int ndofs = _cmaps[i % num_celes].dim();
       int num_cells_in_group
           = _cell_group_offsets[i + 1] - _cell_group_offsets[i];
-      int num_dofs_in_group = num_cells_in_group * ndofs;
       std::cout << "bloffset = " << bloffset << "\n";
 
       dofmaps.push_back(
           std::experimental::mdspan<
               const std::int32_t, std::experimental::dextents<std::size_t, 2>>(
-              _dofmap.data() + bloffset, num_dofs_in_group / ndofs, ndofs));
+              _dofmap.data() + bloffset, num_cells_in_group, ndofs));
       bloffset += num_cells_in_group * ndofs;
     }
 
