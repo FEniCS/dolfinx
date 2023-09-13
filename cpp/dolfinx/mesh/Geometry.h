@@ -90,6 +90,26 @@ public:
                             std::experimental::dextents<std::size_t, 2>>
   dofmap() const
   {
+    int num_celes = _cmaps.size();
+    int bloffset = 0;
+    std::vector<std::experimental::mdspan<
+        const std::int32_t, std::experimental::dextents<std::size_t, 2>>>
+        dofmaps;
+    for (int i = 0; i < 2 * num_celes; ++i)
+    {
+      int ndofs = _cmaps[i % num_celes].dim();
+      int num_cells_in_group
+          = _cell_group_offsets[i + 1] - _cell_group_offsets[i];
+      int num_dofs_in_group = num_cells_in_group * ndofs;
+      std::cout << "bloffset = " << bloffset << "\n";
+
+      dofmaps.push_back(
+          std::experimental::mdspan<
+              const std::int32_t, std::experimental::dextents<std::size_t, 2>>(
+              _dofmap.data() + bloffset, num_dofs_in_group / ndofs, ndofs));
+      bloffset += num_cells_in_group * ndofs;
+    }
+
     int ndofs = _cmaps[0].dim();
     return std::experimental::mdspan<
         const std::int32_t, std::experimental::dextents<std::size_t, 2>>(
@@ -261,8 +281,8 @@ create_geometry(
   }
 
   return Geometry<typename std::remove_reference_t<typename U::value_type>>(
-      dof_index_map, std::move(dofmap), topology.entity_group_offsets(D), elements,
-      std::move(xg), dim, std::move(igi));
+      dof_index_map, std::move(dofmap), topology.entity_group_offsets(D),
+      elements, std::move(xg), dim, std::move(igi));
 }
 
 /// @brief Create a sub-geometry for a subset of entities.
