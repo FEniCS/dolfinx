@@ -18,9 +18,6 @@
 # The Gmsh module is required for this demo.
 
 # +
-
-from dolfinx.io import XDMFFile, gmshio
-
 try:
     import gmsh  # type: ignore
 except ImportError:
