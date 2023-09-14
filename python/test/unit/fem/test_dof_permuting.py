@@ -11,8 +11,7 @@ import numpy as np
 import pytest
 import ufl
 from basix.ufl import element
-from dolfinx.fem import (Function, FunctionSpace, VectorFunctionSpace,
-                         assemble_scalar, form)
+from dolfinx.fem import Function, FunctionSpace, assemble_scalar, form
 from dolfinx.mesh import create_mesh
 from mpi4py import MPI
 
@@ -280,11 +279,12 @@ def test_integral(cell_type, space_type, space_order):
     random.seed(4)
     for repeat in range(10):
         mesh = random_evaluation_mesh(cell_type)
-        tdim = mesh.topology.dim
         V = FunctionSpace(mesh, (space_type, space_order))
-        Vvec = VectorFunctionSpace(mesh, ("P", 1))
+        gdim = mesh.geometry.dim
+        Vvec = FunctionSpace(mesh, ("P", 1, (gdim,)))
         dofs = [i for i in V.dofmap.cell_dofs(0) if i in V.dofmap.cell_dofs(1)]
 
+        tdim = mesh.topology.dim
         for d in dofs:
             v = Function(V)
             v.vector[:] = [1 if i == d else 0 for i, _ in enumerate(v.vector[:])]

@@ -98,7 +98,7 @@ def Omega_v(x):
     return x[1] >= d
 
 
-D = fem.FunctionSpace(msh, ("DQ", 0))
+D = fem.functionspace(msh, ("DQ", 0))
 eps = fem.Function(D)
 
 cells_v = locate_entities(msh, msh.topology.dim, Omega_v)
@@ -113,11 +113,9 @@ eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=default_scalar_type)
 # waveguide wall:
 #
 # $$
-# \begin{align}
 # &\nabla \times \frac{1}{\mu_{r}} \nabla \times \mathbf{E}-k_{o}^{2}
 # \epsilon_{r} \mathbf{E}=0 \quad &\text { in } \Omega\\
 # &\hat{n}\times\mathbf{E} = 0 &\text { on } \Gamma
-# \end{align}
 # $$
 #
 # with $k_0$ and $\lambda_0 = 2\pi/k_0$ being the wavevector and the
@@ -140,10 +138,8 @@ eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=default_scalar_type)
 # the following substitution:
 #
 # $$
-# \begin{align}
 # & \mathbf{e}_t = k_z\mathbf{E}_t\\
 # & e_z = -jE_z
-# \end{align}
 # $$
 #
 # The final weak form can be written as:
@@ -192,7 +188,7 @@ eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=default_scalar_type)
 degree = 1
 RTCE = element("RTCE", msh.basix_cell(), degree)
 Q = element("Lagrange", msh.basix_cell(), degree)
-V = fem.FunctionSpace(msh, mixed_element([RTCE, Q]))
+V = fem.functionspace(msh, mixed_element([RTCE, Q]))
 
 # Now we can define our weak form:
 
@@ -366,7 +362,8 @@ for i, kz in vals:
         eth.x.array[:] = eth.x.array[:] / kz
         ezh.x.array[:] = ezh.x.array[:] * 1j
 
-        V_dg = fem.VectorFunctionSpace(msh, ("DQ", degree))
+        gdim = msh.geometry.dim
+        V_dg = fem.functionspace(msh, ("DQ", degree, (gdim,)))
         Et_dg = fem.Function(V_dg)
         Et_dg.interpolate(eth)
 
@@ -379,7 +376,7 @@ for i, kz in vals:
 
         # Visualize solutions with Pyvista
         if have_pyvista:
-            V_cells, V_types, V_x = plot.create_vtk_mesh(V_dg)
+            V_cells, V_types, V_x = plot.vtk_mesh(V_dg)
             V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
             Et_values = np.zeros((V_x.shape[0], 3), dtype=np.float64)
             Et_values[:, : msh.topology.dim] = Et_dg.x.array.reshape(V_x.shape[0], msh.topology.dim).real
@@ -398,7 +395,7 @@ for i, kz in vals:
 
         if have_pyvista:
             V_lagr, lagr_dofs = V.sub(1).collapse()
-            V_cells, V_types, V_x = plot.create_vtk_mesh(V_lagr)
+            V_cells, V_types, V_x = plot.vtk_mesh(V_lagr)
             V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
             V_grid.point_data["u"] = ezh.x.array.real[lagr_dofs]
             plotter = pyvista.Plotter()

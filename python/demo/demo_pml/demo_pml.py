@@ -114,10 +114,10 @@ def curl_2d(a: fem.Function):
 # waves impinging them. Mathematically, we can use a complex coordinate
 # transformation of this kind to obtain this absorption:
 #
-# \begin{align}
-# & x^\prime= x\left\{1+j\frac{\alpha}{k_0}\left[\frac{|x|-l_{dom}/2}
-# {(l_{pml}/2 - l_{dom}/2)^2}\right] \right\}\\
-# \end{align}
+# $$
+# x^\prime= x\left\{1+j\frac{\alpha}{k_0}\left[\frac{|x|-l_{dom}/2}
+# {(l_{pml}/2 - l_{dom}/2)^2}\right] \right\}
+# $$
 #
 # with $l_{dom}$ and $l_{pml}$ being the lengths of the domain without
 # and with PML, respectively, and with $\alpha$ being a parameter that
@@ -186,7 +186,7 @@ MPI.COMM_WORLD.barrier()
 # [PyVista](https://docs.pyvista.org/)
 
 if have_pyvista:
-    topology, cell_types, geometry = plot.create_vtk_mesh(msh, 2)
+    topology, cell_types, geometry = plot.vtk_mesh(msh, 2)
     grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
     plotter = pyvista.Plotter()
     num_local_cells = msh.topology.index_map(msh.topology.dim).size_local
@@ -207,13 +207,13 @@ if have_pyvista:
 # different PML regions have different coordinate transformation, as
 # specified here below:
 #
-# \begin{align}
+# $$
 # \text{PML}_\text{corners} \rightarrow \mathbf{r}^\prime & = (x^\prime, y^\prime) \\
 # \text{PML}_\text{rectangles along x} \rightarrow
 #                                       \mathbf{r}^\prime & = (x^\prime, y) \\
 # \text{PML}_\text{rectangles along y} \rightarrow
 #                                       \mathbf{r}^\prime & = (x, y^\prime).
-# \end{align}
+# $$
 #
 # Now we define some other problem specific parameters:
 
@@ -229,7 +229,7 @@ theta = 0  # Angle of incidence of the background field
 
 degree = 3
 curl_el = element("N1curl", msh.basix_cell(), degree)
-V = fem.FunctionSpace(msh, curl_el)
+V = fem.functionspace(msh, curl_el)
 
 # Next, we interpolate $\mathbf{E}_b$ into the function space $V$,
 # define our trial and test function, and the integration domains:
@@ -270,7 +270,7 @@ eps_au = -1.0782 + 1j * 5.8089
 # it takes the value of the background permittivity $\varepsilon_b$ in
 # the background region:
 
-D = fem.FunctionSpace(msh, ("DG", 0))
+D = fem.functionspace(msh, ("DG", 0))
 eps = fem.Function(D)
 au_cells = cell_tags.find(au_tag)
 bkg_cells = cell_tags.find(bkg_tag)
@@ -420,7 +420,8 @@ Esh = problem.solve()
 # compatible discontinuous Lagrange space.
 
 # +
-V_dg = fem.VectorFunctionSpace(msh, ("DG", degree))
+gdim = msh.geometry.dim
+V_dg = fem.functionspace(msh, ("DG", degree, (gdim,)))
 Esh_dg = fem.Function(V_dg)
 Esh_dg.interpolate(Esh)
 
@@ -434,7 +435,7 @@ with VTXWriter(msh.comm, "Esh.bp", Esh_dg) as vtx:
 # DOLFINx demo.
 
 if have_pyvista:
-    V_cells, V_types, V_x = plot.create_vtk_mesh(V_dg)
+    V_cells, V_types, V_x = plot.vtk_mesh(V_dg)
     V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
     Esh_values = np.zeros((V_x.shape[0], 3), dtype=np.float64)
     Esh_values[:, :msh.topology.dim] = Esh_dg.x.array.reshape(V_x.shape[0], msh.topology.dim).real

@@ -21,16 +21,14 @@
 
 # +
 import numpy as np
-
 import ufl
-from dolfinx.fem import Function, FunctionSpace, assemble_scalar, form
+from dolfinx.fem import Function, assemble_scalar, form, functionspace
 from dolfinx.fem.petsc import LinearProblem
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import create_unit_square
-from ufl import dx, grad, inner
-
 from mpi4py import MPI
 from petsc4py import PETSc
+from ufl import dx, grad, inner
 
 # Wavenumber
 k0 = 4 * np.pi
@@ -51,7 +49,7 @@ else:
     A = 1
 
 # Test and trial function space
-V = FunctionSpace(msh, ("Lagrange", deg))
+V = functionspace(msh, ("Lagrange", deg))
 
 # Define variational problem
 u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
@@ -78,7 +76,7 @@ with XDMFFile(MPI.COMM_WORLD, "out_helmholtz/plane_wave.xdmf", "w", encoding=XDM
 
 # +
 # Function space for exact solution - need it to be higher than deg
-V_exact = FunctionSpace(msh, ("Lagrange", deg + 3))
+V_exact = functionspace(msh, ("Lagrange", deg + 3))
 u_exact = Function(V_exact)
 u_exact.interpolate(lambda x: A * np.cos(k0 * x[0]) * np.cos(k0 * x[1]))
 

@@ -12,8 +12,7 @@ import numpy as np
 import pytest
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
-                         VectorFunctionSpace)
+from dolfinx.fem import Function, FunctionSpace
 from dolfinx.geometry import (bb_tree, compute_colliding_cells,
                               compute_collisions_points)
 from dolfinx.mesh import create_mesh, create_unit_cube
@@ -34,12 +33,14 @@ def V(mesh):
 
 @pytest.fixture
 def W(mesh):
-    return VectorFunctionSpace(mesh, ('Lagrange', 1))
+    gdim = mesh.geometry.dim
+    return FunctionSpace(mesh, ('Lagrange', 1, (gdim,)))
 
 
 @pytest.fixture
 def Q(mesh):
-    return TensorFunctionSpace(mesh, ('Lagrange', 1))
+    gdim = mesh.geometry.dim
+    return FunctionSpace(mesh, ('Lagrange', 1, (gdim, gdim)))
 
 
 def test_name_argument(W):

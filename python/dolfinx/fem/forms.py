@@ -7,14 +7,13 @@
 from __future__ import annotations
 
 import collections
-import collections.abc
 import typing
 
 import numpy as np
 import numpy.typing as npt
 import ufl
 from dolfinx.fem import IntegralType
-from dolfinx.fem.function import FunctionSpace
+from dolfinx.fem.function import FunctionSpaceBase
 
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit
@@ -25,22 +24,19 @@ if typing.TYPE_CHECKING:
 
 
 class Form:
-    def __init__(self, form, ufcx_form=None, code=None):
+    def __init__(self, form, ufcx_form=None, code: typing.Optional[str] = None):
         """A finite element form
 
-        Notes:
-            Forms should normally be constructed using
-            :func:`forms.form` and not using this class initialiser.
-            This class is combined with different base classes that
-            depend on the scalar type used in the Form.
+        Note:
+            Forms should normally be constructed using :func:`form` and
+            not using this class initialiser. This class is combined
+            with different base classes that depend on the scalar type
+            used in the Form.
 
         Args:
-            form: Compiled UFC form
-            V: The argument function spaces
-            coeffs: Finite element coefficients that appear in the form
-            constants: Constants appearing in the form
-            subdomains: Subdomains for integrals
-            mesh: The mesh that the form is defined on
+            form: Compiled form object.
+            ufcx_form: UFCx form
+            code: Form C++ code
 
         """
 
@@ -63,7 +59,7 @@ class Form:
         return self._cpp_object.rank
 
     @property
-    def function_spaces(self) -> typing.List[FunctionSpace]:
+    def function_spaces(self) -> typing.List[FunctionSpaceBase]:
         """Function spaces on which this form is defined"""
         return self._cpp_object.function_spaces
 
@@ -104,12 +100,12 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]],
     Returns:
         Compiled finite element Form.
 
-    Notes:
+    Note:
         This function is responsible for the compilation of a UFL form
         (using FFCx) and attaching coefficients and domains specific
         data to the underlying C++ form. It dynamically create a
         :class:`Form` instance with an appropriate base class for the
-        scalar type, e.g. `_cpp.fem.Form_float64`.
+        scalar type, e.g. :func:`_cpp.fem.Form_float64`.
 
     """
     if form_compiler_options is None:
@@ -194,7 +190,7 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]],
 
 def extract_function_spaces(forms: typing.Union[typing.Iterable[Form],  # type: ignore [return]
                                                 typing.Iterable[typing.Iterable[Form]]],
-                            index: int = 0) -> typing.Iterable[typing.Union[None, function.FunctionSpace]]:
+                            index: int = 0) -> typing.Iterable[typing.Union[None, function.FunctionSpaceBase]]:
     """Extract common function spaces from an array of forms. If `forms`
     is a list of linear form, this function returns of list of the
     corresponding test functions. If `forms` is a 2D array of bilinear

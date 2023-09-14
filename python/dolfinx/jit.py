@@ -126,7 +126,7 @@ def get_options(priority_options: Optional[dict] = None) -> dict:
     Returns:
         dict: Merged option values.
 
-    Notes:
+    Note:
         See :func:`ffcx_jit` for user facing documentation.
 
     """
@@ -166,7 +166,7 @@ def ffcx_jit(ufl_object, form_compiler_options: Optional[dict] = None,
     Returns:
         (compiled object, module, (header code, implementation code))
 
-    Notes:
+    Note:
         Priority ordering of options controlling DOLFINx JIT
         compilation from highest to lowest is:
 

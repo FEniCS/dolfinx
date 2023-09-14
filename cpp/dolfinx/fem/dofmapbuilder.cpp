@@ -240,8 +240,19 @@ build_basic_dofmap(
   const int num_cells = topology.connectivity(D, 0)->num_nodes();
   const std::vector<int>& group_offsets = topology.entity_group_offsets(D);
 
+  std::vector<std::int32_t> doffsets;
+  doffsets.reserve(num_cells + 1);
+  doffsets.push_back(0);
   const std::size_t nelem = element_dof_layouts.size();
-  std::vector<std::int32_t> dofs(num_cells * element_dof_layouts[0].num_dofs());
+  // Go through elements twice: regular cells followed by ghost cells.
+  for (std::size_t i = 0; i < 2 * nelem; ++i)
+  {
+    // Number of dofs per cell for this element layout
+    const int local_dim = element_dof_layouts[i % nelem].num_dofs();
+    for (int j = group_offsets[i]; j < group_offsets[i + 1]; ++j)
+      doffsets.push_back(doffsets.back() + local_dim);
+  }
+  std::vector<std::int32_t> dofs(doffsets.back());
 
   // Allocate entity indices array
   std::vector<std::vector<int32_t>> entity_indices_local(D + 1);
@@ -272,7 +283,6 @@ build_basic_dofmap(
 
   // Loop over cells, group by group, and build dofmaps from respective
   // ElementDofmap
-  const int num_dofs_cell = element_dof_layouts[0].num_dofs();
   for (std::size_t i = 0; i < 2 * nelem; ++i)
   {
     for (int c = group_offsets[i]; c < group_offsets[i + 1]; ++c)
@@ -298,8 +308,8 @@ build_basic_dofmap(
         entity_indices_local[D][0] = c;
       }
 
-      std::span<std::int32_t> dofs_c(dofs.data() + c * num_dofs_cell,
-                                     num_dofs_cell);
+      std::span<std::int32_t> dofs_c(dofs.data() + doffsets[c],
+                                     doffsets[c + 1] - doffsets[c]);
 
       // Iterate over each topological dimension for this element (twice, once
       // for regular, and later for ghosts).

@@ -12,16 +12,14 @@ import numpy as np
 import pybind11
 import pytest
 import scipy.sparse.linalg
-
-import dolfinx
-import dolfinx.pkgconfig
 import ufl
-from dolfinx.fem import (FunctionSpace, VectorFunctionSpace, dirichletbc, form,
-                         locate_dofs_geometrical, assemble_matrix)
+from dolfinx.fem import (FunctionSpace, assemble_matrix, dirichletbc, form,
+                         locate_dofs_geometrical)
 from dolfinx.mesh import create_unit_square
 from dolfinx.wrappers import get_include_path as pybind_inc
-
 from mpi4py import MPI
+
+import dolfinx
 
 
 @pytest.mark.skip_in_parallel
@@ -201,8 +199,9 @@ PYBIND11_MODULE(assemble_csr, m)
         return cppimport.imp(p)
 
     mesh = create_unit_square(MPI.COMM_SELF, 11, 7)
-    Q = VectorFunctionSpace(mesh, ("Lagrange", 1))
-    Q2 = VectorFunctionSpace(mesh, ("Lagrange", 1), dim=3)
+    gdim = mesh.geometry.dim
+    Q = FunctionSpace(mesh, ("Lagrange", 1, (gdim,)))
+    Q2 = FunctionSpace(mesh, ("Lagrange", 1, (3,)))
     u = ufl.TrialFunction(Q)
     v = ufl.TestFunction(Q2)
 
