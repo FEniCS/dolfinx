@@ -5,7 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Tools to extract data from Gmsh models
 
-If gmsh is not installed, importing this module will throw a
+If Gmsh is not installed, importing this module will throw a
 ModuleNotFoundError.
 """
 import typing
@@ -28,7 +28,7 @@ try:
     _has_gmsh = True
 except ModuleNotFoundError:
     _has_gmsh = False
-    raise ModuleNotFoundError("No module named 'gmsh': gmsh must be installed to import dolfinx.io.gmshio")
+    raise ModuleNotFoundError("No module named 'gmsh': Gmsh must be installed to import dolfinx.io.gmshio")
 
 
 # The following functions do not require gmsh type hints
