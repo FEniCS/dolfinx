@@ -138,8 +138,8 @@ public:
     {
       assert(w.size() >= 2 * J.extent(0) * J.extent(1));
       using X = typename U::element_type;
-      namespace stdex = std::experimental;
-      using mdspan2_t = stdex::mdspan<X, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+      using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+          X, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
       mdspan2_t B(w.data(), J.extent(1), J.extent(0));
       mdspan2_t BA(w.data() + J.extent(0) * J.extent(1), B.extent(0),
                    J.extent(1));
@@ -205,9 +205,8 @@ public:
 
   /// mdspan typedef
   template <typename X>
-  using mdspan2_t
-      = std::experimental::mdspan<X,
-                                  MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+  using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      X, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
 
   /// @brief Compute reference coordinates `X` for physical coordinates
   /// `x` for a non-affine map.
