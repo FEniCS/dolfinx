@@ -222,7 +222,7 @@ void io(py::module& m)
         if (dofmap.ndim() != 2)
           throw std::runtime_error("Geometry dofmap must be rank 2.");
         std::experimental::mdspan<const std::int32_t,
-                                  std::experimental::dextents<std::size_t, 2>>
+                                  MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
             _dofmap(dofmap.data(), dofmap.shape(0), dofmap.shape(1));
         auto [cells, shape]
             = dolfinx::io::extract_vtk_connectivity(_dofmap, cell);
