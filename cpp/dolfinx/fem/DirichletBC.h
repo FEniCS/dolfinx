@@ -110,7 +110,7 @@ std::vector<std::int32_t> locate_dofs_geometrical(const FunctionSpace<T>& V,
   namespace stdex = std::experimental;
   using cmdspan3x_t
       = stdex::mdspan<const T,
-                      stdex::extents<std::size_t, 3, stdex::dynamic_extent>>;
+                      stdex::extents<std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>;
 
   // Compute marker for each dof coordinate
   cmdspan3x_t x(dof_coordinates.data(), 3, dof_coordinates.size() / 3);
@@ -172,7 +172,7 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
   namespace stdex = std::experimental;
   using cmdspan3x_t
       = stdex::mdspan<const T,
-                      stdex::extents<std::size_t, 3, stdex::dynamic_extent>>;
+                      stdex::extents<std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>;
 
   // Evaluate marker for each dof coordinate
   cmdspan3x_t x(dof_coordinates.data(), 3, dof_coordinates.size() / 3);

@@ -151,7 +151,7 @@ compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
     assert(it != cell_vertices.end());
     const int local_pos = std::distance(cell_vertices.begin(), it);
 
-    auto dofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
+    auto dofs = stdex::submdspan(x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     for (std::size_t j = 0; j < 3; ++j)
       x_vertices[j * vertices.size() + i] = x_nodes[3 * dofs[local_pos] + j];
     vertex_to_pos[v] = i;
@@ -456,7 +456,7 @@ compute_vertex_coords(const mesh::Mesh<T>& mesh)
   std::vector<std::int32_t> vertex_to_node(num_vertices);
   for (int c = 0; c < c_to_v->num_nodes(); ++c)
   {
-    auto x_dofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
+    auto x_dofs = stdex::submdspan(x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     auto vertices = c_to_v->links(c);
     for (std::size_t i = 0; i < vertices.size(); ++i)
       vertex_to_node[vertices[i]] = x_dofs[i];
@@ -484,7 +484,7 @@ concept MarkerFn = std::is_invocable_r<
     std::experimental::mdspan<
         const T,
         std::experimental::extents<std::size_t, 3,
-                                   std::experimental::dynamic_extent>>>::value;
+                                   MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>>::value;
 
 /// @brief Compute indices of all mesh entities that evaluate to true
 /// for the provided geometric marking function.
@@ -506,7 +506,7 @@ std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
   namespace stdex = std::experimental;
   using cmdspan3x_t
       = stdex::mdspan<const T,
-                      stdex::extents<std::size_t, 3, stdex::dynamic_extent>>;
+                      stdex::extents<std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>;
 
   // Run marker function on vertex coordinates
   const auto [xdata, xshape] = impl::compute_vertex_coords(mesh);
@@ -594,7 +594,7 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
   namespace stdex = std::experimental;
   using cmdspan3x_t
       = stdex::mdspan<const T,
-                      stdex::extents<std::size_t, 3, stdex::dynamic_extent>>;
+                      stdex::extents<std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>;
 
   // Run marker function on the vertex coordinates
   const auto [facet_entities, xdata, vertex_to_pos]

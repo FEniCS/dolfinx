@@ -61,7 +61,7 @@ namespace dolfinx::fem
 /// unaassembled array. The links for each node are sorted.
 graph::AdjacencyList<std::int32_t> transpose_dofmap(
     std::experimental::mdspan<const std::int32_t,
-                              std::experimental::dextents<std::size_t, 2>>
+                              MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
         dofmap,
     std::int32_t num_cells);
 
@@ -152,7 +152,7 @@ public:
   /// @brief Get dofmap data
   /// @return The adjacency list with dof indices for each cell
   std::experimental::mdspan<const std::int32_t,
-                            std::experimental::dextents<std::size_t, 2>>
+                            MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
   map() const;
 
   /// Layout of dofs on an element

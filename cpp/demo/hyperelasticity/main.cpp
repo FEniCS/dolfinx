@@ -160,7 +160,7 @@ int main(int argc, char* argv[])
           std::vector<U> fdata(3 * x.extent(1), 0.0);
           namespace stdex = std::experimental;
           stdex::mdspan<U,
-                        stdex::extents<std::size_t, 3, stdex::dynamic_extent>>
+                        stdex::extents<std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>
               f(fdata.data(), 3, x.extent(1));
           for (std::size_t p = 0; p < x.extent(1); ++p)
           {

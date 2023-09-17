@@ -53,7 +53,7 @@ std::vector<T> shortest_vector(const mesh::Mesh<T>& mesh, int dim,
   {
     for (std::size_t e = 0; e < entities.size(); e++)
     {
-      auto dofs = stdex::submdspan(x_dofmap, entities[e], stdex::full_extent);
+      auto dofs = stdex::submdspan(x_dofmap, entities[e], MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
       std::vector<T> nodes(3 * dofs.size());
       for (std::size_t i = 0; i < dofs.size(); ++i)
       {
@@ -90,7 +90,7 @@ std::vector<T> shortest_vector(const mesh::Mesh<T>& mesh, int dim,
       const int local_cell_entity = std::distance(cell_entities.begin(), it0);
 
       // Tabulate geometry dofs for the entity
-      auto dofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
+      auto dofs = stdex::submdspan(x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
       const std::vector<int> entity_dofs
           = geometry.cmaps()[0].create_dof_layout().entity_closure_dofs(
               dim, local_cell_entity);
@@ -519,7 +519,7 @@ std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
     std::vector<T> coordinate_dofs(num_nodes * 3);
     for (auto cell : cell_candidates)
     {
-      auto dofs = stdex::submdspan(x_dofmap, cell, stdex::full_extent);
+      auto dofs = stdex::submdspan(x_dofmap, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
       for (std::size_t i = 0; i < num_nodes; ++i)
       {
         std::copy(std::next(geom_dofs.begin(), 3 * dofs[i]),
