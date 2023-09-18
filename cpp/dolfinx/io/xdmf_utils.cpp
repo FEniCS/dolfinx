@@ -267,7 +267,7 @@ xdmf_utils::distribute_entity_data(
     const mesh::Topology& topology, const std::vector<std::int64_t>& nodes_g,
     std::int64_t num_nodes_g, const fem::ElementDofLayout& cmap_dof_layout,
     std::experimental::mdspan<const std::int32_t,
-                              std::experimental::dextents<std::size_t, 2>>
+                              MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
         xdofmap,
     int entity_dim, std::span<const std::int64_t> entities,
     std::span<const std::int32_t> data)
@@ -509,7 +509,7 @@ xdmf_utils::distribute_entity_data(
           const mesh::Topology& topology,
           const std::vector<std::int64_t>& nodes_g,
           std::experimental::mdspan<const std::int32_t,
-                                    std::experimental::dextents<std::size_t, 2>>
+                                    MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
               x_dofmap,
           int entity_dim, const graph::AdjacencyList<std::int64_t>& recv_ents,
           const graph::AdjacencyList<std::int32_t>& recv_vals)
@@ -531,7 +531,7 @@ xdmf_utils::distribute_entity_data(
     for (int c = 0; c < c_to_v->num_nodes(); ++c)
     {
       auto vertices = c_to_v->links(c);
-      auto xdofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
+      auto xdofs = stdex::submdspan(x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
       for (std::size_t v = 0; v < vertices.size(); ++v)
         igi_to_vertex[nodes_g[xdofs[cell_vertex_dofs[v]]]] = vertices[v];
     }

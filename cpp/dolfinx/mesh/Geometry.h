@@ -85,12 +85,12 @@ public:
 
   /// DOF map
   std::experimental::mdspan<const std::int32_t,
-                            std::experimental::dextents<std::size_t, 2>>
+                            MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
   dofmap() const
   {
     int ndofs = _cmaps[0].dim();
     return std::experimental::mdspan<
-        const std::int32_t, std::experimental::dextents<std::size_t, 2>>(
+        const std::int32_t, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>(
         _dofmap.data(), _dofmap.size() / ndofs, ndofs);
   }
 
@@ -309,7 +309,7 @@ create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
       assert(it != cell_entities.end());
       std::size_t local_entity = std::distance(cell_entities.begin(), it);
 
-      auto xc = stdex::submdspan(xdofs, cell, stdex::full_extent);
+      auto xc = stdex::submdspan(xdofs, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
       for (std::int32_t entity_dof : closure_dofs[dim][local_entity])
         x_indices.push_back(xc[entity_dof]);
     }

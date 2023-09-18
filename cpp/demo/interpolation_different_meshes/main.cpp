@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
     auto fun = [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
     {
       std::vector<T> fdata(3 * x.extent(1), 0.0);
-      using dextent = stdex::dextents<std::size_t, 2>;
+      using dextent = MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>;
       stdex::mdspan<double, dextent> f(fdata.data(), 3, x.extent(1));
       for (std::size_t i = 0; i < x.extent(1); ++i)
       {

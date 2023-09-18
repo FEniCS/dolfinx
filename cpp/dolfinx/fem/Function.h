@@ -195,7 +195,7 @@ public:
           std::experimental::mdspan<
               const U,
               std::experimental::extents<
-                  std::size_t, 3, std::experimental::dynamic_extent>>)>& f,
+                  std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>)>& f,
       std::span<const std::int32_t> cells)
   {
     assert(_function_space);
@@ -206,7 +206,7 @@ public:
         cells);
     namespace stdex = std::experimental;
     stdex::mdspan<const U,
-                  stdex::extents<std::size_t, 3, stdex::dynamic_extent>>
+                  stdex::extents<std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>
         _x(x.data(), 3, x.size() / 3);
 
     const auto [fx, fshape] = f(_x);
@@ -254,7 +254,7 @@ public:
           std::experimental::mdspan<
               const U,
               std::experimental::extents<
-                  std::size_t, 3, std::experimental::dynamic_extent>>)>& f)
+                  std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>)>& f)
   {
     assert(_function_space);
     assert(_function_space->mesh());
@@ -315,7 +315,7 @@ public:
     std::size_t num_cells = cells.size();
     std::size_t num_points = e.X().second[0];
     std::vector<T> fdata(num_cells * num_points * value_size);
-    stdex::mdspan<const T, stdex::dextents<std::size_t, 3>> f(
+    stdex::mdspan<const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 3>> f(
         fdata.data(), num_cells, num_points, value_size);
 
     // Evaluate Expression at points
@@ -329,7 +329,7 @@ public:
     // point. The interpolation uses xxyyzz input, ordered for all
     // points of each cell, i.e. (value_size, num_cells*num_points)
     std::vector<T> fdata1(num_cells * num_points * value_size);
-    stdex::mdspan<T, stdex::dextents<std::size_t, 3>> f1(
+    stdex::mdspan<T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 3>> f1(
         fdata1.data(), value_size, num_cells, num_points);
     for (std::size_t i = 0; i < f.extent(0); ++i)
       for (std::size_t j = 0; j < f.extent(1); ++j)
@@ -449,9 +449,9 @@ public:
     }
 
     namespace stdex = std::experimental;
-    using cmdspan4_t = stdex::mdspan<const U, stdex::dextents<std::size_t, 4>>;
-    using mdspan2_t = stdex::mdspan<U, stdex::dextents<std::size_t, 2>>;
-    using mdspan3_t = stdex::mdspan<U, stdex::dextents<std::size_t, 3>>;
+    using cmdspan4_t = stdex::mdspan<const U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
+    using mdspan2_t = stdex::mdspan<U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+    using mdspan3_t = stdex::mdspan<U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 3>>;
 
     std::vector<U> coord_dofs_b(num_dofs_g * gdim);
     mdspan2_t coord_dofs(coord_dofs_b.data(), num_dofs_g, gdim);
@@ -470,7 +470,7 @@ public:
     cmdspan4_t phi0(phi0_b.data(), phi0_shape);
     cmap.tabulate(1, std::vector<U>(tdim), {1, tdim}, phi0_b);
     auto dphi0 = stdex::submdspan(phi0, std::pair(1, tdim + 1), 0,
-                                  stdex::full_extent, 0);
+                                  MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
 
     // Data structure for evaluating geometry basis at specific points.
     // Used in non-affine case.
@@ -479,7 +479,7 @@ public:
         std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
     cmdspan4_t phi(phi_b.data(), phi_shape);
     auto dphi = stdex::submdspan(phi, std::pair(1, tdim + 1), 0,
-                                 stdex::full_extent, 0);
+                                 MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
 
     // Reference coordinates for each point
     std::vector<U> Xb(xshape[0] * tdim);
@@ -503,7 +503,7 @@ public:
         continue;
 
       // Get cell geometry (coordinate dofs)
-      auto x_dofs = stdex::submdspan(x_dofmap, cell_index, stdex::full_extent);
+      auto x_dofs = stdex::submdspan(x_dofmap, cell_index, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
       assert(x_dofs.size() == num_dofs_g);
       for (std::size_t i = 0; i < num_dofs_g; ++i)
       {
@@ -515,11 +515,11 @@ public:
       for (std::size_t j = 0; j < gdim; ++j)
         xp(0, j) = x[p * xshape[1] + j];
 
-      auto _J = stdex::submdspan(J, p, stdex::full_extent, stdex::full_extent);
-      auto _K = stdex::submdspan(K, p, stdex::full_extent, stdex::full_extent);
+      auto _J = stdex::submdspan(J, p, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto _K = stdex::submdspan(K, p, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
 
       std::array<U, 3> Xpb = {0, 0, 0};
-      stdex::mdspan<U, stdex::extents<std::size_t, 1, stdex::dynamic_extent>>
+      stdex::mdspan<U, stdex::extents<std::size_t, 1, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>
           Xp(Xpb.data(), 1, tdim);
 
       // Compute reference coordinates X, and J, detJ and K
@@ -563,10 +563,10 @@ public:
     element->tabulate(basis_derivatives_reference_values_b, Xb,
                       {X.extent(0), X.extent(1)}, 0);
 
-    using xu_t = stdex::mdspan<U, stdex::dextents<std::size_t, 2>>;
-    using xU_t = stdex::mdspan<const U, stdex::dextents<std::size_t, 2>>;
-    using xJ_t = stdex::mdspan<const U, stdex::dextents<std::size_t, 2>>;
-    using xK_t = stdex::mdspan<const U, stdex::dextents<std::size_t, 2>>;
+    using xu_t = stdex::mdspan<U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+    using xU_t = stdex::mdspan<const U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+    using xJ_t = stdex::mdspan<const U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+    using xK_t = stdex::mdspan<const U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
     auto push_forward_fn
         = element->basix_element().template map_fn<xu_t, xU_t, xJ_t, xK_t>();
 
@@ -592,11 +592,11 @@ public:
 
       {
         auto _U = stdex::submdspan(basis_derivatives_reference_values, 0, p,
-                                   stdex::full_extent, stdex::full_extent);
+                                   MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
         auto _J
-            = stdex::submdspan(J, p, stdex::full_extent, stdex::full_extent);
+            = stdex::submdspan(J, p, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
         auto _K
-            = stdex::submdspan(K, p, stdex::full_extent, stdex::full_extent);
+            = stdex::submdspan(K, p, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
         push_forward_fn(basis_values, _U, _J, detJ[p], _K);
       }
 
