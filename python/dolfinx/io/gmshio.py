@@ -131,7 +131,10 @@ def extract_topology_and_markers(model, name: typing.Optional[str] = None):
 
 
 def extract_geometry(model, name: typing.Optional[str] = None) -> npt.NDArray[np.float64]:
-    """Extract the mesh geometry from a gmsh model as an array of shape ``(num_nodes, 3)``, where the i-th row corresponds to the i-th node in the mesh.
+    """Extract the mesh geometry from a Gmsh model.
+
+    Returns an array of shape ``(num_nodes, 3)``, where the i-th row
+    corresponds to the i-th node in the mesh.
 
     Args:
         model: Gmsh model
