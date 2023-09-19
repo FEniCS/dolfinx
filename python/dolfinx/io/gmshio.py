@@ -34,8 +34,9 @@ def ufl_mesh(gmsh_cell: int, gdim: int) -> ufl.Mesh:
         gdim: The geometric dimension of the mesh
 
     Returns:
-        A ufl Mesh using Lagrange elements (equispaced) of the
-        corresponding DOLFINx cell
+        A UFL Mesh using Lagrange elements (equispaced) of the
+        corresponding DOLFINx cell.
+
     """
     try:
         shape, degree = _gmsh_to_cells[gmsh_cell]
@@ -53,17 +54,17 @@ def cell_perm_array(cell_type: CellType, num_nodes: int) -> typing.List[int]:
     """The permutation array for permuting Gmsh ordering to DOLFINx ordering.
 
     Args:
-        cell_type: The DOLFINx cell type
-        num_nodes: The number of nodes in the cell
+        cell_type: DOLFINx cell type
+        num_nodes: Number of nodes in the cell
 
     Returns:
-        An array `p` such that `a_dolfinx[i] = a_gmsh[p[i]]`.
+        An array ``p`` such that ``a_dolfinx[i] = a_gmsh[p[i]]``.
 
     """
     return _cpp.io.perm_gmsh(cell_type, num_nodes)
 
 
-def extract_topology_and_markers(model: "gmsh.model", name: typing.Optional[str] = None):
+def extract_topology_and_markers(model, name: typing.Optional[str] = None):
     """Extract all entities tagged with a physical marker in the gmsh
     model, and collect the data per cell type.
 
@@ -129,14 +130,12 @@ def extract_topology_and_markers(model: "gmsh.model", name: typing.Optional[str]
     return topologies
 
 
-def extract_geometry(model: "gmsh.model", name: typing.Optional[str] = None) -> npt.NDArray[np.float64]:
-    """Extract the mesh geometry from a gmsh model as an array of shape
-    ``(num_nodes, 3)`, where the i-th row corresponds to the i-th node
-    in the mesh.
+def extract_geometry(model, name: typing.Optional[str] = None) -> npt.NDArray[np.float64]:
+    """Extract the mesh geometry from a gmsh model as an array of shape ``(num_nodes, 3)``, where the i-th row corresponds to the i-th node in the mesh.
 
     Args:
-        model: The Gmsh model
-        name: The name of the gmsh model. If not set the current
+        model: Gmsh model
+        name: Name of the Gmsh model. If not set the current
             model will be used.
 
     Returns:
@@ -162,7 +161,7 @@ def extract_geometry(model: "gmsh.model", name: typing.Optional[str] = None) -> 
     return points[perm_sort]
 
 
-def model_to_mesh(model: "gmsh.model", comm: _MPI.Comm, rank: int, gdim: int = 3,
+def model_to_mesh(model, comm: _MPI.Comm, rank: int, gdim: int = 3,
                   partitioner: typing.Optional[typing.Callable[
                       [_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32]] = None,
                   dtype=default_real_type) -> typing.Tuple[
