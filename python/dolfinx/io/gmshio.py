@@ -305,15 +305,15 @@ def read_from_msh(filename: str, comm: _MPI.Comm, rank: int = 0, gdim: int = 3,
     if comm.rank == rank:
         try:
             import gmsh
+            gmsh.initialize()
+            gmsh.model.add("Mesh from file")
+            gmsh.merge(filename)
+            msh = model_to_mesh(gmsh.model, comm, rank, gdim=gdim, partitioner=partitioner)
+            gmsh.finalize()
+            return msh
         except ModuleNotFoundError:
             print("The Gmsh Python module could not be imported.")
             raise
-        gmsh.initialize()
-        gmsh.model.add("Mesh from file")
-        gmsh.merge(filename)
-        msh = model_to_mesh(gmsh.model, comm, rank, gdim=gdim, partitioner=partitioner)
-        gmsh.finalize()
-        return msh
     else:
         return model_to_mesh(gmsh.model, comm, rank, gdim=gdim, partitioner=partitioner)
 
