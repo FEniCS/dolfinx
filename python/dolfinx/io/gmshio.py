@@ -26,9 +26,12 @@ from dolfinx import default_real_type
 try:
     import gmsh
     _has_gmsh = True
-except ModuleNotFoundError:
+except ModuleNotFoundError as e:
     _has_gmsh = False
-    raise ModuleNotFoundError("No module named 'gmsh': Gmsh must be installed to import dolfinx.io.gmshio")
+    # Python 3.11+ adds the add_note method to exceptions
+    # e.add_note("Gmsh must be installed to import dolfinx.io.gmshio")
+    # raise e
+    raise ModuleNotFoundError("No module named 'gmsh': Gmsh must be installed to import dolfinx.io.gmshio", name="gmsh")
 
 
 # The following functions do not require gmsh type hints

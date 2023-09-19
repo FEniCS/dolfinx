@@ -6,6 +6,8 @@
 
 import importlib
 import pkgutil
+import pytest
+from typing import Optional
 
 
 def collect_pkg_modules_recursive(name):
@@ -26,9 +28,15 @@ def test_all_implemented():
     check.
 
     """
+    optional_modules = ["gmsh"]
     module_names = collect_pkg_modules_recursive("dolfinx")
     for module_name in module_names:
-        module = importlib.import_module(module_name)
+        try:
+            module = importlib.import_module(module_name)
+        except ModuleNotFoundError as e:
+            if e.name in optional_modules:
+                pass
+
         if hasattr(module, "__all__"):
             for member in module.__all__:
                 assert hasattr(module, member)
