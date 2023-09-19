@@ -102,8 +102,8 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
       = element->template get_dof_transformation_function<T>();
 
   namespace stdex = std::experimental;
-  using mdspan2_t = stdex::mdspan<T, stdex::dextents<std::size_t, 2>>;
-  using cmdspan4_t = stdex::mdspan<T, stdex::dextents<std::size_t, 4>>;
+  using mdspan2_t = stdex::mdspan<T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+  using cmdspan4_t = stdex::mdspan<T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
 
   // Tabulate basis functions at node reference coordinates
   const std::array<std::size_t, 4> phi_shape
@@ -112,8 +112,8 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
       std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
   cmdspan4_t phi_full(phi_b.data(), phi_shape);
   cmap.tabulate(0, X, Xshape, phi_b);
-  auto phi = stdex::submdspan(phi_full, 0, stdex::full_extent,
-                              stdex::full_extent, 0);
+  auto phi = stdex::submdspan(phi_full, 0, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
+                              MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
 
   // Loop over cells and tabulate dofs
   auto map = topology->index_map(tdim);
@@ -245,7 +245,7 @@ vtk_mesh_from_space(const fem::FunctionSpace<T>& V)
 std::pair<std::vector<std::int64_t>, std::array<std::size_t, 2>>
 extract_vtk_connectivity(
     std::experimental::mdspan<const std::int32_t,
-                              std::experimental::dextents<std::size_t, 2>>
+                              MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
         dofmap_x,
     mesh::CellType cell_type);
 } // namespace io

@@ -211,8 +211,8 @@ FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
     }
 
     namespace stdex = std::experimental;
-    using cmdspan2_t = stdex::mdspan<const T, stdex::dextents<std::size_t, 2>>;
-    using cmdspan4_t = stdex::mdspan<const T, stdex::dextents<std::size_t, 4>>;
+    using cmdspan2_t = stdex::mdspan<const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+    using cmdspan4_t = stdex::mdspan<const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
 
     std::array<std::vector<cmdspan2_t>, 4> _x;
     for (std::size_t i = 0; i < x.size(); ++i)

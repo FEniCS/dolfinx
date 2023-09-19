@@ -671,11 +671,11 @@ void declare_cmap(py::module& m, std::string type)
              const py::array_t<T, py::array::c_style>& cell)
           {
             namespace stdex = std::experimental;
-            using mdspan2_t = stdex::mdspan<T, stdex::dextents<std::size_t, 2>>;
+            using mdspan2_t = stdex::mdspan<T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
             using cmdspan2_t
-                = stdex::mdspan<const T, stdex::dextents<std::size_t, 2>>;
+                = stdex::mdspan<const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
             using cmdspan4_t
-                = stdex::mdspan<const T, stdex::dextents<std::size_t, 4>>;
+                = stdex::mdspan<const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
 
             std::array<std::size_t, 2> Xshape
                 = {(std::size_t)X.shape(0), (std::size_t)X.shape(1)};
@@ -686,8 +686,8 @@ void declare_cmap(py::module& m, std::string type)
                                              1, std::multiplies{}));
             cmdspan4_t phi_full(phi_b.data(), phi_shape);
             self.tabulate(0, std::span(X.data(), X.size()), Xshape, phi_b);
-            auto phi = stdex::submdspan(phi_full, 0, stdex::full_extent,
-                                        stdex::full_extent, 0);
+            auto phi = stdex::submdspan(phi_full, 0, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
+                                        MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
 
             std::array<std::size_t, 2> shape
                 = {(std::size_t)X.shape(0), (std::size_t)cell.shape(1)};
@@ -710,11 +710,11 @@ void declare_cmap(py::module& m, std::string type)
             const std::size_t tdim = dolfinx::mesh::cell_dim(self.cell_shape());
 
             namespace stdex = std::experimental;
-            using mdspan2_t = stdex::mdspan<T, stdex::dextents<std::size_t, 2>>;
+            using mdspan2_t = stdex::mdspan<T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
             using cmdspan2_t
-                = stdex::mdspan<const T, stdex::dextents<std::size_t, 2>>;
+                = stdex::mdspan<const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
             using cmdspan4_t
-                = stdex::mdspan<const T, stdex::dextents<std::size_t, 4>>;
+                = stdex::mdspan<const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
 
             std::vector<T> Xb(num_points * tdim);
             mdspan2_t X(Xb.data(), num_points, tdim);
@@ -736,7 +736,7 @@ void declare_cmap(py::module& m, std::string type)
 
               self.tabulate(1, std::vector<T>(tdim), {1, tdim}, phi_b);
               auto dphi = stdex::submdspan(phi, std::pair(1, tdim + 1), 0,
-                                           stdex::full_extent, 0);
+                                           MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
 
               self.compute_jacobian(dphi, g, J);
               self.compute_jacobian_inverse(J, K);
@@ -956,7 +956,7 @@ void fem(py::module& m)
         if (dofmap.ndim() != 2)
           throw std::runtime_error("Dofmap data has wrong rank");
         namespace stdex = std::experimental;
-        stdex::mdspan<const std::int32_t, stdex::dextents<std::size_t, 2>>
+        stdex::mdspan<const std::int32_t, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
             _dofmap(dofmap.data(), dofmap.shape(0), dofmap.shape(1));
         return dolfinx::fem::transpose_dofmap(_dofmap, num_cells);
       },
