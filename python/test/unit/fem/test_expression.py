@@ -330,9 +330,7 @@ def test_expression_eval_cells_subset(dtype):
 def test_expression_comm(dtype):
     xtype = dtype(0).real.dtype
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=xtype)
-    v = Constant(mesh.ufl_cell(), dtype(1))
+    v = Constant(mesh, dtype(1))
     u = Function(FunctionSpace(mesh, ("Lagrange", 1)), dtype=dtype)
-    with pytest.raises(AttributeError):
-        Expression(v, u.function_space.element.interpolation_points())
     Expression(v, u.function_space.element.interpolation_points(), comm=MPI.COMM_WORLD)
     Expression(v, u.function_space.element.interpolation_points(), comm=MPI.COMM_SELF)
