@@ -22,7 +22,7 @@ jobs:
     name: Rocky build and test
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install FEniCS Python components
         run: |
