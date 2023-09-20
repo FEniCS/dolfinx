@@ -181,9 +181,9 @@ def model_to_mesh(model, comm: _MPI.Comm, rank: int, gdim: int = 3,
                       [_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32]] = None,
                   dtype=default_real_type) -> typing.Tuple[
         Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
-    """Create a  from a Gmsh model.
+    """Create a mesh from a Gmsh model.
 
-    Creates a DOLFINx mesh from the physical entities of the highest
+    Creates a :class:`dolfinx.mesh.Mesh` from the physical entities of the highest
     topological dimension in the Gmsh model.
 
     In parallel, the gmsh model is processed on one MPI rank, and the
@@ -196,9 +196,9 @@ def model_to_mesh(model, comm: _MPI.Comm, rank: int, gdim: int = 3,
         model: Gmsh model.
         comm: MPI communicator to use for mesh creation.
         rank: MPI rank that the Gmsh model is initialized on.
-        gdim: Geometrical dimension of the mesh
+        gdim: Geometrical dimension of the mesh.
         partitioner: Function that computes the parallel
-            distribution of cells across MPI ranks
+            distribution of cells across MPI ranks.
 
     Returns:
         A triplet (mesh, cell_tags, facet_tags) where cell_tags hold
