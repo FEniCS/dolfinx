@@ -42,9 +42,8 @@ add_executable(unittests
   common/CIFailure.cpp
   ${CMAKE_CURRENT_BINARY_DIR}/poisson.c)
 target_link_libraries(unittests PRIVATE Catch2::Catch2WithMain dolfinx)
+target_include_directories(unittests PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
 target_compile_options(unittests PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-Wall -Werror -Wextra -pedantic>)
-
-target_include_directories(unittests PRIVATE$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
 
 # Enable testing
 enable_testing()
