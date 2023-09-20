@@ -147,7 +147,7 @@ void declare_function_space(py::module& m, std::string type)
         .def(
             "apply_inverse_transpose_dof_transformation",
             [](const dolfinx::fem::FiniteElement<T>& self,
-               py::array_t<double, py::array::c_style> x,
+               py::array_t<T, py::array::c_style> x,
                std::uint32_t cell_permutation, int dim)
             {
               self.apply_inverse_transpose_dof_transformation(
