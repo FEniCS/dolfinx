@@ -35,6 +35,8 @@ except ImportError:
 # The following functions add Gmsh meshes to a 'model'.
 
 # +
+
+
 def gmsh_sphere(model: gmsh.model, name: str) -> gmsh.model:
     """Create a Gmsh model of a sphere.
 
