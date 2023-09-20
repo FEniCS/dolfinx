@@ -254,7 +254,7 @@ def test_vector_function_space_cell_type():
     # Create functions space over mesh, and check element cell
     # is correct
     V = FunctionSpace(mesh, ('Lagrange', 1, (gdim,)))
-    assert V.ufl_element().cell() == cell
+    assert V.ufl_element().cell == cell
 
 
 @pytest.mark.skip_in_parallel

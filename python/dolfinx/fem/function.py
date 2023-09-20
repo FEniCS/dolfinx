@@ -348,7 +348,7 @@ class Function(ufl.Coefficient):
 
         # Allocate memory for return value if not provided
         if u is None:
-            value_size = ufl.product(self.ufl_element().value_shape())
+            value_size = ufl.product(self.ufl_element().value_shape)
             u = np.empty((num_points, value_size), self.dtype)
 
         self._cpp_object.eval(_x, _cells, u)
@@ -524,7 +524,7 @@ def functionspace(mesh: Mesh,
         ufl_e = element  # type: ignore
 
     # Check that element and mesh cell types match
-    if ufl_e.cell() != mesh.ufl_domain().ufl_cell():
+    if ufl_e.cell != mesh.ufl_domain().ufl_cell():
         raise ValueError("Non-matching UFL cell and mesh cell shapes.")
 
     # Compile dofmap and element and create DOLFIN objects
@@ -645,8 +645,8 @@ class FunctionSpaceBase(ufl.FunctionSpace):
             A subspace
 
         """
-        assert self.ufl_element().num_sub_elements() > i
-        sub_element = self.ufl_element().sub_elements()[i]
+        assert self.ufl_element().num_sub_elements > i
+        sub_element = self.ufl_element().sub_elements[i]
         cppV_sub = self._cpp_object.sub([i])
         return FunctionSpaceBase(self._mesh, sub_element, cppV_sub)
 
@@ -744,7 +744,7 @@ def VectorFunctionSpace(mesh: Mesh,
                   DeprecationWarning, stacklevel=2)
     ed = ElementMetaData(*element)
     e = basix.ufl.element(ed.family, mesh.basix_cell(), ed.degree, gdim=mesh.geometry.dim)
-    if len(e.value_shape()) != 0:
+    if len(e.value_shape) != 0:
         raise ValueError("Cannot create vector element containing a non-scalar.")
     ufl_e = basix.ufl.element(ed.family, mesh.basix_cell(), ed.degree,
                               shape=(mesh.geometry.dim,) if dim is None else (dim,),

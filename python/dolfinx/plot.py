@@ -108,10 +108,10 @@ def _(V: fem.FunctionSpaceBase, entities=None):
         Topology, type for each cell, and geometry in VTK-ready format.
 
     """
-    if not (V.ufl_element().family() in ['Discontinuous Lagrange', "Lagrange", "DQ", "Q", "DP", "P"]):
+    if not (V.ufl_element().family_name in ['Discontinuous Lagrange', "Lagrange", "DQ", "Q", "DP", "P"]):
         raise RuntimeError("Can only create meshes from continuous or discontinuous Lagrange spaces")
 
-    degree = V.ufl_element().degree()
+    degree = V.ufl_element().degree
     if degree == 0:
         raise RuntimeError("Cannot create topology from cellwise constants.")
 

@@ -343,7 +343,7 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
         partitioner = _cpp.mesh.create_cell_partitioner(GhostMode.none)
 
     ufl_element = domain.ufl_coordinate_element()
-    cell_shape = ufl_element.cell().cellname()
+    cell_shape = ufl_element.cell.cellname()
     cell_degree = ufl_element.degree()
     try:
         variant = ufl_element.lagrange_variant

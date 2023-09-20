@@ -105,7 +105,7 @@ _extract_sub_element(const FiniteElement<T>& finite_element,
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
 FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
-    : _signature(e.signature), _family(e.family), _space_dim(e.space_dimension),
+    : _signature(e.signature), _space_dim(e.space_dimension),
       _value_shape(e.value_shape, e.value_shape + e.value_rank),
       _bs(e.block_size)
 {
@@ -305,20 +305,22 @@ FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
   _needs_dof_permutations
       = !_element->dof_transformations_are_identity()
         and _element->dof_transformations_are_permutations();
+  std::string family;
   switch (_element->family())
   {
   case basix::element::family::P:
-    _family = "Lagrange";
+    family = "Lagrange";
     break;
   case basix::element::family::DPC:
-    _family = "Discontinuous Lagrange";
+    family = "Discontinuous Lagrange";
     break;
   default:
-    _family = "unknown";
+    family = "unknown";
+    family = std::to_string(_element->family());
     break;
   }
 
-  _signature = "Basix element " + _family + " " + std::to_string(_bs);
+  _signature = "Basix element " + family + " " + std::to_string(_bs);
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -381,12 +383,6 @@ template <std::floating_point T>
 std::span<const std::size_t> FiniteElement<T>::value_shape() const noexcept
 {
   return _value_shape;
-}
-//-----------------------------------------------------------------------------
-template <std::floating_point T>
-std::string FiniteElement<T>::family() const noexcept
-{
-  return _family;
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>

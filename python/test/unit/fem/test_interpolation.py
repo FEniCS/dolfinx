@@ -306,8 +306,8 @@ def test_mixed_sub_interpolation():
         assert np.allclose(u.vector.array, v.vector.array, atol=1.0e-6)
 
         # Test with wrong shape
-        V0 = FunctionSpace(mesh, P.sub_elements()[0])
-        V1 = FunctionSpace(mesh, P.sub_elements()[1])
+        V0 = FunctionSpace(mesh, P.sub_elements[0])
+        V1 = FunctionSpace(mesh, P.sub_elements[1])
         v0, v1 = Function(V0), Function(V1)
         with pytest.raises(RuntimeError):
             v0.interpolate(U.sub(1))
@@ -641,7 +641,7 @@ def test_interpolate_callable_subset(bound):
 ])
 def test_vector_element_interpolation(scalar_element):
     """Test interpolation into a range of vector elements."""
-    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, getattr(CellType, scalar_element.cell().cellname()))
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, getattr(CellType, scalar_element.cell.cellname()))
     V = FunctionSpace(mesh, blocked_element(scalar_element, shape=(2, )))
     u = Function(V)
     u.interpolate(lambda x: (x[0], x[1]))
