@@ -32,14 +32,6 @@ __all__ = ["meshtags_from_entities", "locate_entities", "locate_entities_boundar
            "transfer_meshtag"]
 
 
-def compute_incident_entities(topology, entities: npt.NDArray[np.int32], d0: int, d1: int):
-    return _cpp.mesh.compute_incident_entities(topology, entities, d0, d1)
-
-
-def compute_midpoints(mesh: Mesh, dim: int, entities: npt.NDArray[np.int32]):
-    return _cpp.mesh.compute_midpoints(mesh._cpp_object, dim, entities)
-
-
 class Mesh:
     """A class for representing meshes."""
 
@@ -115,6 +107,82 @@ class Mesh:
     def geometry(self):
         "Mesh geometry."
         return self._cpp_object.geometry
+
+
+class MeshTags:
+    """Mesh tags associate data (markers) with a subset of mesh entities of a given dimension."""
+
+    def __init__(self, meshtags):
+        """Initialize tags from a C++ MeshTags object.
+
+        Args:
+            meshtags: C++ mesh tags object.
+
+        Note:
+            MeshTags objects should not usually be created using this
+            initializer directly.
+
+            A Python mesh is passed to the initializer as it may have
+            UFL data attached that is not attached the C + + Mesh that is
+            associated with the C + + ``meshtags`` object. If `mesh` is
+            passed, ``mesh`` and ``meshtags`` must share the same C + +
+            mesh.
+
+        """
+        self._cpp_object = meshtags
+
+    def ufl_id(self) -> int:
+        """Identiftying integer used by UFL."""
+        return id(self)
+
+    @property
+    def topology(self) -> _cpp.mesh.Topology:
+        """Mesh topology with which the the tags are associated."""
+        return self._cpp_object.topology
+
+    @property
+    def dim(self) -> int:
+        """Topological dimension of the tagged entities."""
+        return self._cpp_object.dim
+
+    @property
+    def indices(self) -> npt.NDArray[np.int32]:
+        """Indices of tagged mesh entities."""
+        return self._cpp_object.indices
+
+    @property
+    def values(self):
+        """Values associated with tagged mesh entities."""
+        return self._cpp_object.values
+
+    @property
+    def name(self) -> str:
+        "Name of the mesh tags object."
+        return self._cpp_object.name
+
+    @name.setter
+    def name(self, value):
+        self._cpp_object.name = value
+
+    def find(self, value) -> npt.NDArray[np.int32]:
+        """Get a list of all entity indices with a given value.
+
+        Args:
+            value: Tag value to search for.
+
+        Returns:
+            Indices of entities with tag ``value``.
+
+        """
+        return self._cpp_object.find(value)
+
+
+def compute_incident_entities(topology, entities: npt.NDArray[np.int32], d0: int, d1: int):
+    return _cpp.mesh.compute_incident_entities(topology, entities, d0, d1)
+
+
+def compute_midpoints(mesh: Mesh, dim: int, entities: npt.NDArray[np.int32]):
+    return _cpp.mesh.compute_midpoints(mesh._cpp_object, dim, entities)
 
 
 def locate_entities(mesh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray:
@@ -306,74 +374,6 @@ def create_submesh(msh, dim, entities):
         "Lagrange", submsh_ufl_cell.cellname(), submsh.geometry.cmaps[0].degree, submsh.geometry.cmaps[0].variant,
         shape=(submsh.geometry.dim, ), gdim=submsh.geometry.dim))
     return (Mesh(submsh, submsh_domain), entity_map, vertex_map, geom_map)
-
-
-class MeshTags:
-    """Mesh tags associate data (markers) with a subset of mesh entities of a given dimension."""
-
-    def __init__(self, meshtags):
-        """Initialize tags from a C++ MeshTags object.
-
-        Args:
-            meshtags: C++ mesh tags object.
-
-        Note:
-            MeshTags objects should not usually be created using this
-            initializer directly.
-
-            A Python mesh is passed to the initializer as it may have
-            UFL data attached that is not attached the C + + Mesh that is
-            associated with the C + + ``meshtags`` object. If `mesh` is
-            passed, ``mesh`` and ``meshtags`` must share the same C + +
-            mesh.
-
-        """
-        self._cpp_object = meshtags
-
-    def ufl_id(self) -> int:
-        """Identiftying integer used by UFL."""
-        return id(self)
-
-    @property
-    def topology(self) -> _cpp.mesh.Topology:
-        """Mesh topology with which the the tags are associated."""
-        return self._cpp_object.topology
-
-    @property
-    def dim(self) -> int:
-        """Topological dimension of the tagged entities."""
-        return self._cpp_object.dim
-
-    @property
-    def indices(self) -> npt.NDArray[np.int32]:
-        """Indices of tagged mesh entities."""
-        return self._cpp_object.indices
-
-    @property
-    def values(self):
-        """Values associated with tagged mesh entities."""
-        return self._cpp_object.values
-
-    @property
-    def name(self) -> str:
-        "Name of the mesh tags object."
-        return self._cpp_object.name
-
-    @name.setter
-    def name(self, value):
-        self._cpp_object.name = value
-
-    def find(self, value) -> npt.NDArray[np.int32]:
-        """Get a list of all entity indices with a given value.
-
-        Args:
-            value: Tag value to search for.
-
-        Returns:
-            Indices of entities with tag ``value``.
-
-        """
-        return self._cpp_object.find(value)
 
 
 def meshtags(mesh: Mesh, dim: int, entities: npt.NDArray[np.int32],
