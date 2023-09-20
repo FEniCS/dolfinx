@@ -84,12 +84,12 @@ public:
   int dim() const { return _dim; }
 
   /// DOF map
-  std::experimental::mdspan<const std::int32_t,
+  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<const std::int32_t,
                             MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
   dofmap() const
   {
     int ndofs = _cmaps[0].dim();
-    return std::experimental::mdspan<
+    return MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
         const std::int32_t, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>(
         _dofmap.data(), _dofmap.size() / ndofs, ndofs);
   }
@@ -274,8 +274,6 @@ std::pair<mesh::Geometry<T>, std::vector<int32_t>>
 create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
                    int dim, std::span<const std::int32_t> subentity_to_entity)
 {
-  namespace stdex = std::experimental;
-
   if (geometry.cmaps().size() > 1)
     throw std::runtime_error("Mixed topology not supported");
 
@@ -309,7 +307,7 @@ create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
       assert(it != cell_entities.end());
       std::size_t local_entity = std::distance(cell_entities.begin(), it);
 
-      auto xc = stdex::submdspan(xdofs, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto xc = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(xdofs, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
       for (std::int32_t entity_dof : closure_dofs[dim][local_entity])
         x_indices.push_back(xc[entity_dof]);
     }

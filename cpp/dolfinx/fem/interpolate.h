@@ -60,7 +60,6 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
   const auto [X, Xshape] = element.interpolation_points();
 
   // Evaluate coordinate element basis at reference points
-  namespace stdex = std::experimental;
   std::array<std::size_t, 4> phi_shape = cmap.tabulate_shape(0, Xshape[0]);
   std::vector<T> phi_b(
       std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
@@ -277,11 +276,11 @@ void scatter_values(
 template <typename U, typename V, dolfinx::scalar T>
   requires requires {
     requires std::convertible_to<
-        U, std::experimental::mdspan<
+        U, MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
                const typename std::decay_t<U>::value_type,
                MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>>;
     requires std::convertible_to<
-        V, std::experimental::mdspan<
+        V, MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
                const typename std::decay_t<V>::value_type,
                MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>>;
   }

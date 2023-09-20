@@ -19,7 +19,6 @@
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
-namespace stdex = std::experimental;
 
 namespace
 {
@@ -133,7 +132,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
 
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t> fem::transpose_dofmap(
-    std::experimental::mdspan<
+    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
         const std::int32_t,
         MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
         dofmap,
@@ -285,7 +284,7 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
   return {std::move(dofmap_new), std::move(collapsed_map)};
 }
 //-----------------------------------------------------------------------------
-std::experimental::mdspan<
+MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
     const std::int32_t,
     MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
 DofMap::map() const

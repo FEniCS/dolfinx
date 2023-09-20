@@ -41,7 +41,7 @@ T assemble_cells(mdspan2_t x_dofmap, std::span<const scalar_value_type_t<T>> x,
     std::int32_t c = cells[index];
 
     // Get cell coordinates/geometry
-    auto x_dofs = stdex::submdspan(x_dofmap, c,
+    auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(x_dofmap, c,
                                    MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
@@ -80,7 +80,7 @@ T assemble_exterior_facets(mdspan2_t x_dofmap,
     std::int32_t local_facet = facets[index + 1];
 
     // Get cell coordinates/geometry
-    auto x_dofs = stdex::submdspan(x_dofmap, cell,
+    auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(x_dofmap, cell,
                                    MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
@@ -130,14 +130,14 @@ T assemble_interior_facets(mdspan2_t x_dofmap,
         = {facets[index + 1], facets[index + 3]};
 
     // Get cell geometry
-    auto x_dofs0 = stdex::submdspan(
+    auto x_dofs0 = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
         x_dofmap, cells[0], MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     for (std::size_t i = 0; i < x_dofs0.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs0[i]), 3,
                   std::next(cdofs0.begin(), 3 * i));
     }
-    auto x_dofs1 = stdex::submdspan(
+    auto x_dofs1 = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
         x_dofmap, cells[1], MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     for (std::size_t i = 0; i < x_dofs1.size(); ++i)
     {

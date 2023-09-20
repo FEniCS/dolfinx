@@ -152,7 +152,7 @@ public:
 
   /// @brief Get dofmap data
   /// @return The adjacency list with dof indices for each cell
-  std::experimental::mdspan<
+  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
       const std::int32_t,
       MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
   map() const;
