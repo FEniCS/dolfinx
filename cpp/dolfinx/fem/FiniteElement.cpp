@@ -316,7 +316,6 @@ FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
     break;
   default:
     family = "unknown";
-    family = std::to_string(_element->family());
     break;
   }
 
