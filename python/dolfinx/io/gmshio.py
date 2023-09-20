@@ -305,8 +305,10 @@ def read_from_msh(filename: str, comm: _MPI.Comm, rank: int = 0, gdim: int = 3,
     try:
         import gmsh
     except ModuleNotFoundError:
-        print("The Gmsh Python module could not be imported.")
-        raise
+        # Python 3.11+ adds the add_note method to exceptions
+        # e.add_note("Gmsh must be installed to import dolfinx.io.gmshio")
+        raise ModuleNotFoundError("No module named 'gmsh': dolfinx.io.gmshio.read_from_msh requires Gmsh.", name="gmsh")
+
     if comm.rank == rank:
         gmsh.initialize()
         gmsh.model.add("Mesh from file")
