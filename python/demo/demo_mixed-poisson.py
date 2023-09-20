@@ -94,11 +94,7 @@ from ufl import (Measure, SpatialCoordinate, TestFunctions, TrialFunctions,
 
 from dolfinx import fem, io, mesh
 
-domain = mesh.create_unit_square(
-    MPI.COMM_WORLD,
-    32, 32,
-    mesh.CellType.quadrilateral
-)
+domain = mesh.create_unit_square(MPI.COMM_WORLD, 32, 32, mesh.CellType.quadrilateral)
 
 k = 1
 Q_el = element("BDMCF", domain.basix_cell(), k)
@@ -117,12 +113,8 @@ a = inner(sigma, tau) * dx + inner(u, div(tau)) * dx + inner(div(sigma), v) * dx
 L = -inner(f, v) * dx
 
 
-def boundary_top(x):
-    return np.isclose(x[1], 1.0)
-
-
 fdim = domain.topology.dim - 1
-facets_top = mesh.locate_entities_boundary(domain, fdim, boundary_top)
+facets_top = mesh.locate_entities_boundary(domain, fdim, lambda x: np.isclose(x[1], 1.0))
 Q, _ = V.sub(0).collapse()
 dofs_top = fem.locate_dofs_topological((V.sub(0), Q), fdim, facets_top)
 
@@ -138,11 +130,7 @@ f_h1.interpolate(f1)
 bc_top = fem.dirichletbc(f_h1, dofs_top, V.sub(0))
 
 
-def boundary_bottom(x):
-    return np.isclose(x[1], 0.0)
-
-
-facets_bottom = mesh.locate_entities_boundary(domain, fdim, boundary_bottom)
+facets_bottom = mesh.locate_entities_boundary(domain, fdim, lambda x: np.isclose(x[1], 0.0))
 dofs_bottom = fem.locate_dofs_topological((V.sub(0), Q), fdim, facets_bottom)
 
 
