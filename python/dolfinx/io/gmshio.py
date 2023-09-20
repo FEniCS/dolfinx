@@ -24,17 +24,30 @@ __all__ = ["cell_perm_array", "ufl_mesh", "extract_topology_and_markers",
            "extract_geometry", "model_to_mesh", "read_from_msh"]
 
 
-def ufl_mesh(gmsh_cell: int, gdim: int) -> ufl.Mesh:
-    """Create a UFL mesh from a Gmsh cell identifier and the geometric dimension.
+# Map from Gmsh cell type identifier (integer) to DOLFINx cell type and
+# degree http://gmsh.info//doc/texinfo/gmsh.html#MSH-file-format
+_gmsh_to_cells = {1: ("interval", 1), 2: ("triangle", 1),
+                  3: ("quadrilateral", 1), 4: ("tetrahedron", 1),
+                  5: ("hexahedron", 1), 8: ("interval", 2),
+                  9: ("triangle", 2), 10: ("quadrilateral", 2),
+                  11: ("tetrahedron", 2), 12: ("hexahedron", 2),
+                  15: ("point", 0), 21: ("triangle", 3),
+                  26: ("interval", 3), 29: ("tetrahedron", 3),
+                  36: ("quadrilateral", 3),
+                  92: ("hexahedron", 3)}
 
-    See: http://gmsh.info//doc/texinfo/gmsh.html#MSH-file-format.
+
+def ufl_mesh(gmsh_cell: int, gdim: int) -> ufl.Mesh:
+    """Create a UFL mesh from a Gmsh cell identifier and geometric dimension.
+
+    See http://gmsh.info//doc/texinfo/gmsh.html#MSH-file-format.
 
     Args:
-        gmsh_cell: The Gmsh cell identifier
-        gdim: The geometric dimension of the mesh
+        gmsh_cell: Gmsh cell identifier.
+        gdim: Geometric dimension of the mesh.
 
     Returns:
-        A UFL Mesh using Lagrange elements (equispaced) of the
+        UFL Mesh using Lagrange elements (equispaced) of the
         corresponding DOLFINx cell.
 
     """
@@ -54,8 +67,8 @@ def cell_perm_array(cell_type: CellType, num_nodes: int) -> typing.List[int]:
     """The permutation array for permuting Gmsh ordering to DOLFINx ordering.
 
     Args:
-        cell_type: DOLFINx cell type
-        num_nodes: Number of nodes in the cell
+        cell_type: DOLFINx cell type.
+        num_nodes: Number of nodes in the cell.
 
     Returns:
         An array ``p`` such that ``a_dolfinx[i] = a_gmsh[p[i]]``.
@@ -65,8 +78,7 @@ def cell_perm_array(cell_type: CellType, num_nodes: int) -> typing.List[int]:
 
 
 def extract_topology_and_markers(model, name: typing.Optional[str] = None):
-    """Extract all entities tagged with a physical marker in the gmsh
-    model, and collect the data per cell type.
+    """Extract all entities tagged with a physical marker in the gmsh model.
 
     Returns a nested dictionary where the first key is the gmsh MSH
     element type integer. Each element type present in the model
@@ -142,7 +154,7 @@ def extract_geometry(model, name: typing.Optional[str] = None) -> npt.NDArray[np
             model will be used.
 
     Returns:
-        The mesh geometry as an array of shape (num_nodes, 3).
+        The mesh geometry as an array of shape ``(num_nodes, 3)``.
 
     """
     if name is not None:
@@ -169,8 +181,10 @@ def model_to_mesh(model, comm: _MPI.Comm, rank: int, gdim: int = 3,
                       [_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32]] = None,
                   dtype=default_real_type) -> typing.Tuple[
         Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
-    """Given a Gmsh model, take all physical entities of the highest
-    topological dimension and create the corresponding DOLFINx mesh.
+    """Create a  from a Gmsh model.
+
+    Creates a DOLFINx mesh from the physical entities of the highest
+    topological dimension in the Gmsh model.
 
     In parallel, the gmsh model is processed on one MPI rank, and the
     resulting mesh is distributed by DOLFINx. For performance, this
@@ -284,21 +298,20 @@ def read_from_msh(filename: str, comm: _MPI.Comm, rank: int = 0, gdim: int = 3,
                   partitioner: typing.Optional[typing.Callable[
                       [_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32]] = None) -> typing.Tuple[
         Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
-    """Read a mesh from a msh-file and return a distributed DOLFINx
-    mesh and cell and facet markers associated with physical groups in
-    the msh file.
+    """Read a Gmsh .msh file and return a distributed DOLFINx mesh and and cell facet markers.
 
     Notes:
         This function requires the Gmsh Python module.
 
     Args:
-        filename: Name of msh file
-        comm: The MPI communicator to initialize the mesh with
-        rank: Rank for `comm` responsible for reading the msh file
-        gdim: Geometrical dimension of the mesh
+        filename: Name of ``.msh`` file.
+        comm: MPI communicator to create the mesh on.
+        rank: Rank of ``comm`` responsible for reading the ``.msh``
+            file.
+        gdim: Geometric dimension of the mesh
 
     Returns:
-        A triplet (mesh, cell_tags, facet_tags) with meshtags for
+        A triplet ``(mesh, cell_tags, facet_tags)`` with meshtags for
         associated physical groups for cells and facets.
 
     """
@@ -318,16 +331,3 @@ def read_from_msh(filename: str, comm: _MPI.Comm, rank: int = 0, gdim: int = 3,
         return msh
     else:
         return model_to_mesh(gmsh.model, comm, rank, gdim=gdim, partitioner=partitioner)
-
-
-# Map from Gmsh cell type identifier (integer) to DOLFINx cell type
-# and degree http://gmsh.info//doc/texinfo/gmsh.html#MSH-file-format
-_gmsh_to_cells = {1: ("interval", 1), 2: ("triangle", 1),
-                  3: ("quadrilateral", 1), 4: ("tetrahedron", 1),
-                  5: ("hexahedron", 1), 8: ("interval", 2),
-                  9: ("triangle", 2), 10: ("quadrilateral", 2),
-                  11: ("tetrahedron", 2), 12: ("hexahedron", 2),
-                  15: ("point", 0), 21: ("triangle", 3),
-                  26: ("interval", 3), 29: ("tetrahedron", 3),
-                  36: ("quadrilateral", 3),
-                  92: ("hexahedron", 3)}
