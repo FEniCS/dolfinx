@@ -35,7 +35,7 @@ __all__ = ["meshtags_from_entities", "locate_entities", "locate_entities_boundar
 class Mesh:
     """A class for representing meshes."""
 
-    def __init__(self, mesh: _cpp.mesh.Mesh, domain: ufl.Mesh):
+    def __init__(self, mesh, domain: ufl.Mesh):
         """Initialize mesh from a C++ mesh.
 
         Args:
