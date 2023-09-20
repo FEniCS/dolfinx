@@ -31,13 +31,13 @@ jobs:
     steps:
       - name: Get Spack
         if: github.event_name != 'workflow_dispatch'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: ./spack
           repository: spack/spack
       - name: Get Spack
         if: github.event_name == 'workflow_dispatch'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: ./spack
           repository: ${{ github.event.inputs.spack_repo }}
@@ -65,7 +65,7 @@ jobs:
           spack install
 
       - name: Get DOLFINx release code (to access test files)
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: v0.6.0
           # ref: v${{ github.event.inputs.spack_branch }}
@@ -85,7 +85,7 @@ jobs:
           mpirun -np 2 ./demo_poisson
 
       - name: Get DOLFINx code (to access test files)
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: ./dolfinx-main
       - name: Run a C++ test (development version)
