@@ -181,16 +181,12 @@ def model_to_mesh(model, comm: _MPI.Comm, rank: int, gdim: int = 3,
                       [_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32]] = None,
                   dtype=default_real_type) -> typing.Tuple[
         Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
-    """Create a mesh from a Gmsh model.
+    """Create a Mesh from a Gmsh model.
 
-    Creates a :class:`dolfinx.mesh.Mesh` from the physical entities of the highest
-    topological dimension in the Gmsh model.
-
-    In parallel, the gmsh model is processed on one MPI rank, and the
-    resulting mesh is distributed by DOLFINx. For performance, this
-    function should only be called once for large problems. For re-use,
-    it is recommended to save the mesh and corresponding tags using
-    XDMFFile after creation for efficient access.
+    Creates a :class:`dolfinx.mesh.Mesh` from the physical entities of
+    the highest topological dimension in the Gmsh model. In parallel,
+    the gmsh model is processed on one MPI rank, and the
+    :class:`dolfinx.mesh.Mesh` is distributed across ranks.
 
     Args:
         model: Gmsh model.
@@ -201,9 +197,15 @@ def model_to_mesh(model, comm: _MPI.Comm, rank: int, gdim: int = 3,
             distribution of cells across MPI ranks.
 
     Returns:
-        A triplet (mesh, cell_tags, facet_tags) where cell_tags hold
-        markers for the cells and facet tags holds markers for facets
-        (if tags are found in Gmsh model).
+        A triplet ``(mesh, cell_tags, facet_tags)``, where cell_tags
+        hold markers for the cells and facet tags holds markers for
+        facets (if tags are found in Gmsh model).
+
+    Note:
+        For performance, this function should only be called once for
+        large problems. For re-use, it is recommended to save the mesh
+        and corresponding tags using :class:`dolfinxio.XDMFFile` after
+        creation for efficient access.
 
     """
     if comm.rank == rank:
@@ -298,9 +300,9 @@ def read_from_msh(filename: str, comm: _MPI.Comm, rank: int = 0, gdim: int = 3,
                   partitioner: typing.Optional[typing.Callable[
                       [_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32]] = None) -> typing.Tuple[
         Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
-    """Read a Gmsh .msh file and return a distributed DOLFINx mesh and and cell facet markers.
+    """Read a Gmsh .msh file and return a distributed :class:`dolfinx.mesh.Mesh` and and cell facet markers.
 
-    Notes:
+    Note:
         This function requires the Gmsh Python module.
 
     Args:
