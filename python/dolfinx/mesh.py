@@ -560,7 +560,7 @@ def create_unit_square(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.tri
             Direction of diagonal.
 
     Returns:
-        A mesh of a square with corners at(0, 0) and (1, 1).
+        A mesh of a square with corners at (0, 0) and (1, 1).
 
     """
     return create_rectangle(comm, [np.array([0.0, 0.0]), np.array([1.0, 1.0])],
