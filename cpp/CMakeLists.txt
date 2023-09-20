@@ -407,25 +407,25 @@ if(Python3_Interpreter_FOUND
   set(GENERATE_DEMO_TEST_DATA TRUE)
 endif()
 
-if(GENERATE_DEMO_TEST_DATA)
-  message(STATUS "")
-  message(STATUS "Copying demo and test data to build directory.")
-  message(STATUS "----------------------------------------------")
-  execute_process(
-    COMMAND
-      ${Python3_EXECUTABLE} "-B" "-u"
-      ${DOLFINX_SOURCE_DIR}/cmake/scripts/copy-test-demo-data.py
-      ${CMAKE_CURRENT_BINARY_DIR} ${PETSC_SCALAR_COMPLEX}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    RESULT_VARIABLE COPY_DEMO_DATA_RESULT
-    OUTPUT_VARIABLE COPY_DEMO_DATA_OUTPUT
-    ERROR_VARIABLE COPY_DEMO_DATA_OUTPUT
-  )
+# if(GENERATE_DEMO_TEST_DATA)
+#   message(STATUS "")
+#   message(STATUS "Copying demo and test data to build directory.")
+#   message(STATUS "----------------------------------------------")
+#   execute_process(
+#     COMMAND
+#       ${Python3_EXECUTABLE} "-B" "-u"
+#       ${DOLFINX_SOURCE_DIR}/cmake/scripts/copy-test-demo-data.py
+#       ${CMAKE_CURRENT_BINARY_DIR} ${PETSC_SCALAR_COMPLEX}
+#     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+#     RESULT_VARIABLE COPY_DEMO_DATA_RESULT
+#     OUTPUT_VARIABLE COPY_DEMO_DATA_OUTPUT
+#     ERROR_VARIABLE COPY_DEMO_DATA_OUTPUT
+#   )
 
-  if(COPY_DEMO_DATA_RESULT)
-    message(FATAL_ERROR "Copy demo data failed: \n${COPY_DEMO_DATA_OUTPUT}")
-  endif()
-endif()
+#   if(COPY_DEMO_DATA_RESULT)
+#     message(FATAL_ERROR "Copy demo data failed: \n${COPY_DEMO_DATA_OUTPUT}")
+#   endif()
+# endif()
 
 # ------------------------------------------------------------------------------
 # Install the demo source files
