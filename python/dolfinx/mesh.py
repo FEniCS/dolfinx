@@ -620,8 +620,8 @@ def create_unit_cube(comm: _MPI.Comm, nx: int, ny: int, nz: int, cell_type=CellT
             cells across MPI ranks.
 
     Returns:
-        A mesh of an axis - aligned unit cube with corners at ``(0, 0, 0)``
-        and ``(1, 1, 1)``.
+        A mesh of an axis-aligned unit cube with corners at ``(0, 0, 0)``
+            and ``(1, 1, 1)``.
 
     """
     return create_box(comm, [np.array([0.0, 0.0, 0.0]), np.array([1.0, 1.0, 1.0])],
