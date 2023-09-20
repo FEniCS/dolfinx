@@ -5,7 +5,6 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Creation, refining and marking of meshes"""
 
-from __future__ import annotations
 
 import typing
 
@@ -33,21 +32,15 @@ __all__ = ["meshtags_from_entities", "locate_entities", "locate_entities_boundar
            "transfer_meshtag"]
 
 
-def compute_incident_entities(topology, entities: npt.NDArray[np.int32], d0: int, d1: int):
-    return _cpp.mesh.compute_incident_entities(topology, entities, d0, d1)
-
-
-def compute_midpoints(mesh: Mesh, dim: int, entities: npt.NDArray[np.int32]):
-    return _cpp.mesh.compute_midpoints(mesh._cpp_object, dim, entities)
-
-
 class Mesh:
-    def __init__(self, mesh: _cpp.mesh.Mesh, domain: ufl.Mesh):
-        """A class for representing meshes
+    """A class for representing meshes."""
+
+    def __init__(self, mesh, domain: ufl.Mesh):
+        """Initialize mesh from a C++ mesh.
 
         Args:
-            mesh: The C++ mesh object
-            domain: The UFL domain
+            mesh: The C++ mesh object.
+            domain: The UFL domain.
 
         Note:
             Mesh objects should not usually be created using this class
@@ -71,11 +64,19 @@ class Mesh:
         self._cpp_object.name = value
 
     def ufl_cell(self) -> ufl.Cell:
-        """Return the UFL cell type."""
+        """Return the UFL cell type.
+
+        Note: This method is required for UFL compatibility.
+
+        """
         return ufl.Cell(self.topology.cell_name(), geometric_dimension=self.geometry.dim)
 
     def ufl_domain(self) -> ufl.Mesh:
-        """Return the ufl domain corresponding to the mesh."""
+        """Return the ufl domain corresponding to the mesh.
+
+        Note: This method is required for UFL compatibility.
+
+        """
         return self._ufl_domain
 
     def basix_cell(self) -> ufl.Cell:
@@ -83,16 +84,105 @@ class Mesh:
         return getattr(basix.CellType, self.topology.cell_name())
 
     def h(self, dim: int, entities: npt.NDArray[np.int32]) -> npt.NDArray[np.float64]:
-        """Size measure for each cell."""
+        """Geometric size measure of cell entities.
+
+        Args:
+            dim: Topological dimension of the entities to compute the
+                size measure of.
+            entities: Indices of entities of dimension ``dim`` to
+                compute size measure of.
+
+        Returns:
+            Size measure for each requested entity.
+
+        """
         return _cpp.mesh.h(self._cpp_object, dim, entities)
 
     @property
     def topology(self):
+        "Mesh topology."
         return self._cpp_object.topology
 
     @property
     def geometry(self):
+        "Mesh geometry."
         return self._cpp_object.geometry
+
+
+class MeshTags:
+    """Mesh tags associate data (markers) with a subset of mesh entities of a given dimension."""
+
+    def __init__(self, meshtags):
+        """Initialize tags from a C++ MeshTags object.
+
+        Args:
+            meshtags: C++ mesh tags object.
+
+        Note:
+            MeshTags objects should not usually be created using this
+            initializer directly.
+
+            A Python mesh is passed to the initializer as it may have
+            UFL data attached that is not attached the C + + Mesh that is
+            associated with the C + + ``meshtags`` object. If `mesh` is
+            passed, ``mesh`` and ``meshtags`` must share the same C + +
+            mesh.
+
+        """
+        self._cpp_object = meshtags
+
+    def ufl_id(self) -> int:
+        """Identiftying integer used by UFL."""
+        return id(self)
+
+    @property
+    def topology(self) -> _cpp.mesh.Topology:
+        """Mesh topology with which the the tags are associated."""
+        return self._cpp_object.topology
+
+    @property
+    def dim(self) -> int:
+        """Topological dimension of the tagged entities."""
+        return self._cpp_object.dim
+
+    @property
+    def indices(self) -> npt.NDArray[np.int32]:
+        """Indices of tagged mesh entities."""
+        return self._cpp_object.indices
+
+    @property
+    def values(self):
+        """Values associated with tagged mesh entities."""
+        return self._cpp_object.values
+
+    @property
+    def name(self) -> str:
+        "Name of the mesh tags object."
+        return self._cpp_object.name
+
+    @name.setter
+    def name(self, value):
+        self._cpp_object.name = value
+
+    def find(self, value) -> npt.NDArray[np.int32]:
+        """Get a list of all entity indices with a given value.
+
+        Args:
+            value: Tag value to search for.
+
+        Returns:
+            Indices of entities with tag ``value``.
+
+        """
+        return self._cpp_object.find(value)
+
+
+def compute_incident_entities(topology, entities: npt.NDArray[np.int32], d0: int, d1: int):
+    return _cpp.mesh.compute_incident_entities(topology, entities, d0, d1)
+
+
+def compute_midpoints(mesh: Mesh, dim: int, entities: npt.NDArray[np.int32]):
+    return _cpp.mesh.compute_midpoints(mesh._cpp_object, dim, entities)
 
 
 def locate_entities(mesh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray:
@@ -122,7 +212,7 @@ def locate_entities_boundary(mesh: Mesh, dim: int, marker: typing.Callable) -> n
     example, it is possible for a process to have a vertex that lies on
     the boundary without any of the attached facets being a boundary
     facet. When used to find degrees-of-freedom, e.g. using
-    fem.locate_dofs_topological, the function that uses the data
+    :func:`dolfinx.fem.locate_dofs_topological`, the function that uses the data
     returned by this function must typically perform some parallel
     communication.
 
@@ -188,7 +278,7 @@ def refine(mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistribute: 
     Args:
         mesh: Mesh from which to create the refined mesh.
         edges: Indices of edges to split during refinement. If ``None``,
-            uniform refinement is uses.
+            mesh refinement is uniform.
         redistribute:
             Refined mesh is re-partitioned if ``True``.
 
@@ -213,7 +303,7 @@ def refine_plaza(mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistri
     Args:
         mesh: Mesh from which to create the refined mesh.
         edges: Indices of edges to split during refinement. If ``None``,
-            uniform refinement is uses.
+            mesh refinement is uniform.
         redistribute:
             Refined mesh is re-partitioned if ``True``.
         option:
@@ -286,72 +376,6 @@ def create_submesh(msh, dim, entities):
     return (Mesh(submsh, submsh_domain), entity_map, vertex_map, geom_map)
 
 
-class MeshTags:
-    def __init__(self, meshtags):
-        """Mesh tags associate data (markers) with a subset of mesh entities of a given dimension.
-
-        Args:
-            meshtags: C++ mesh tags object.
-
-        Note:
-            MeshTags objects should not usually be created using this
-            initializer directly.
-
-            A Python mesh is passed to the initializer as it may have
-            UFL data attached that is not attached the C++ Mesh that is
-            associated with the C++ ``meshtags`` object. If `mesh` is
-            passed, ``mesh`` and ``meshtags`` must share the same C++
-            mesh.
-
-        """
-        self._cpp_object = meshtags
-
-    def ufl_id(self) -> int:
-        """Identiftying integer used by UFL."""
-        return id(self)
-
-    @property
-    def topology(self) -> _cpp.mesh.Topology:
-        """Mesh topology with which the the tags are associated."""
-        return self._cpp_object.topology
-
-    @property
-    def dim(self) -> int:
-        """Topological dimension of the tagged entities."""
-        return self._cpp_object.dim
-
-    @property
-    def indices(self) -> npt.NDArray[np.int32]:
-        """Indices of tagged mesh entities."""
-        return self._cpp_object.indices
-
-    @property
-    def values(self):
-        """Values associated with tagged mesh entities."""
-        return self._cpp_object.values
-
-    @property
-    def name(self) -> str:
-        "Name of the mesh tags object."
-        return self._cpp_object.name
-
-    @name.setter
-    def name(self, value):
-        self._cpp_object.name = value
-
-    def find(self, value) -> npt.NDArray[np.int32]:
-        """Get a list of all entity indices with a given value.
-
-        Args:
-            value: Mesh tag value to search for.
-
-        Returns:
-            Indices of entities with tag ``value``.
-
-        """
-        return self._cpp_object.find(value)
-
-
 def meshtags(mesh: Mesh, dim: int, entities: npt.NDArray[np.int32],
              values: typing.Union[np.ndarray, int, float]) -> MeshTags:
     """Create a MeshTags object that associates data with a subset of mesh entities.
@@ -359,8 +383,8 @@ def meshtags(mesh: Mesh, dim: int, entities: npt.NDArray[np.int32],
     Args:
         mesh: The mesh.
         dim: Topological dimension of the mesh entity.
-        entities: Indices (local to process) of entities to associate
-            values with. The array must be sorted and must not contain
+        entities: Indices(local to process) of entities to associate
+            values with . The array must be sorted and must not contain
             duplicates.
         values: The corresponding value for each entity.
 
@@ -396,8 +420,9 @@ def meshtags(mesh: Mesh, dim: int, entities: npt.NDArray[np.int32],
 
 def meshtags_from_entities(mesh: Mesh, dim: int, entities: _cpp.graph.AdjacencyList_int32,
                            values: npt.NDArray[typing.Any]):
-    """Create a MeshTags object that associates data with a subset of
-    mesh entities, where the entities are defined by their vertices.
+    """Create a :class:dolfinx.mesh.MeshTags` object that associates
+    data with a subset of mesh entities, where the entities are defined
+    by their vertices.
 
     Args:
         mesh: The mesh.
@@ -433,8 +458,8 @@ def create_interval(comm: _MPI.Comm, nx: int, points: npt.ArrayLike,
         comm: MPI communicator.
         nx: Number of cells.
         points: Coordinates of the end points.
-        dtype: Float type for the mesh geometry (``numpy.float32`` or
-            ``numpy.float64``).
+        dtype: Float type for the mesh geometry(``numpy.float32``
+            or ``numpy.float64``).
         ghost_mode: Ghost mode used in the mesh partitioning. Options
             are ``GhostMode.none`` and ``GhostMode.shared_facet``.
         partitioner: Partitioning function to use for determining the
@@ -464,8 +489,8 @@ def create_unit_interval(comm: _MPI.Comm, nx: int, dtype: typing.Optional[npt.DT
         comm: MPI communicator.
         nx: Number of cells.
         points: Coordinates of the end points.
-        dtype: Float type for the mesh geometry (``numpy.float32`` or
-            ``numpy.float64``).
+        dtype: Float type for the mesh geometry(``numpy.float32``
+            or ``numpy.float64``).
         ghost_mode: Ghost mode used in the mesh partitioning. Options
             are ``GhostMode.none`` and ``GhostMode.shared_facet``.
         partitioner: Partitioning function to use for determining the
@@ -486,18 +511,18 @@ def create_rectangle(comm: _MPI.Comm, points: npt.ArrayLike, n: npt.ArrayLike,
 
     Args:
         comm: MPI communicator.
-        points: Coordinates of the lower-left and upper-right corners of
+        points: Coordinates of the lower - left and upper - right corners of
             the rectangle.
         n: Number of cells in each direction.
         cell_type: Mesh cell type.
-        dtype: Float type for the mesh geometry (``numpy.float32`` or
-            ``numpy.float64``)
+        dtype: Float type for the mesh geometry(``numpy.float32``
+            or ``numpy.float64``)
         ghost_mode: Ghost mode used in the mesh partitioning.
         partitioner: Function that computes the parallel distribution of
             cells across MPI ranks.
         diagonal: Direction of diagonal of triangular meshes. The
-            options are ``left``, ``right``, ``crossed``, ``left/right``,
-            ``right/left``.
+            options are ``left``, ``right``, ``crossed``, ``left / right``,
+            ``right / left``.
 
     Returns:
         A mesh of a rectangle.
@@ -526,10 +551,10 @@ def create_unit_square(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.tri
         nx: Number of cells in the "x" direction.
         ny: Number of cells in the "y" direction.
         cell_type: Mesh cell type.
-        dtype: Float type for the mesh geometry (``numpy.float32`` or
-            ``numpy.float64``).
+        dtype: Float type for the mesh geometry(``numpy.float32``
+            or ``numpy.float64``).
         ghost_mode: Ghost mode used in the mesh partitioning.
-        partitioner:Function that computes the parallel distribution of
+        partitioner: Function that computes the parallel distribution of
             cells across MPI ranks.
         diagonal:
             Direction of diagonal.
@@ -555,8 +580,8 @@ def create_box(comm: _MPI.Comm, points: typing.List[npt.ArrayLike], n: list,
             corners of the box.
         n: List of cells in each direction
         cell_type: The cell type.
-        dtype: Float type for the mesh geometry (``numpy.float32`` or
-            ``numpy.float64``).
+        dtype: Float type for the mesh geometry(``numpy.float32``
+            or ``numpy.float64``).
         ghost_mode: The ghost mode used in the mesh partitioning.
         partitioner: Function that computes the parallel distribution of
             cells across MPI ranks.
@@ -588,15 +613,15 @@ def create_unit_cube(comm: _MPI.Comm, nx: int, ny: int, nz: int, cell_type=CellT
         ny: Number of cells in "y" direction.
         nz: Number of cells in "z" direction.
         cell_type: Mesh cell type
-        dtype: Float type for the mesh geometry (``numpy.float32`` or
-            ``numpy.float64``).
+        dtype: Float type for the mesh geometry(``numpy.float32``
+            or ``numpy.float64``).
         ghost_mode: Ghost mode used in the mesh partitioning.
         partitioner: Function that computes the parallel distribution of
             cells across MPI ranks.
 
     Returns:
-        A mesh of an axis-aligned unit cube with corners at (0, 0, 0)
-        and (1, 1, 1).
+        A mesh of an axis-aligned unit cube with corners at ``(0, 0, 0)``
+            and ``(1, 1, 1)``.
 
     """
     return create_box(comm, [np.array([0.0, 0.0, 0.0]), np.array([1.0, 1.0, 1.0])],
