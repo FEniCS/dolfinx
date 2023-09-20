@@ -7,18 +7,19 @@
 
 import typing
 
-import basix
-import basix.ufl
 import numpy as np
 import numpy.typing as npt
+
+import basix
+import basix.ufl
 import ufl
+from dolfinx import cpp as _cpp
+from dolfinx import default_real_type
 from dolfinx.cpp.graph import AdjacencyList_int32
 from dolfinx.mesh import (CellType, Mesh, create_mesh, meshtags,
                           meshtags_from_entities)
-from mpi4py import MPI as _MPI
 
-from dolfinx import cpp as _cpp
-from dolfinx import default_real_type
+from mpi4py import MPI as _MPI
 
 __all__ = ["cell_perm_array", "ufl_mesh", "extract_topology_and_markers",
            "extract_geometry", "model_to_mesh", "read_from_msh"]

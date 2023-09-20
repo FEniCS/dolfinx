@@ -114,18 +114,19 @@
 import os
 
 import numpy as np
+
 import ufl
 from basix.ufl import element, mixed_element
+from dolfinx import default_real_type, log, plot
 from dolfinx.fem import Function, functionspace
 from dolfinx.fem.petsc import NonlinearProblem
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_unit_square
 from dolfinx.nls.petsc import NewtonSolver
-from mpi4py import MPI
-from petsc4py import PETSc
 from ufl import dx, grad, inner
 
-from dolfinx import default_real_type, log, plot
+from mpi4py import MPI
+from petsc4py import PETSc
 
 try:
     import pyvista as pv

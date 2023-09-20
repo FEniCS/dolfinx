@@ -85,14 +85,15 @@
 # +
 
 import numpy as np
+
 from basix.ufl import element, mixed_element
+from dolfinx import fem, io, mesh
 from dolfinx.fem.petsc import LinearProblem
-from mpi4py import MPI
-from petsc4py import PETSc
 from ufl import (Measure, SpatialCoordinate, TestFunctions, TrialFunctions,
                  div, exp, inner)
 
-from dolfinx import fem, io, mesh
+from mpi4py import MPI
+from petsc4py import PETSc
 
 domain = mesh.create_unit_square(MPI.COMM_WORLD, 32, 32, mesh.CellType.quadrilateral)
 

@@ -18,16 +18,17 @@
 # We begin this demo by importing the required modules.
 
 # +
-import basix
-import basix.ufl
 import matplotlib.pylab as plt
 import numpy as np
+
+import basix
+import basix.ufl
 import ufl
+from dolfinx import default_scalar_type, fem, mesh
 from dolfinx.fem.petsc import LinearProblem
-from mpi4py import MPI
 from ufl import ds, dx, grad, inner
 
-from dolfinx import default_scalar_type, fem, mesh
+from mpi4py import MPI
 # -
 
 # Note that Basix and the Basix UFL wrapper are imported directly. Basix
