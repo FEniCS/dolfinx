@@ -122,7 +122,7 @@ jobs:
       - name: Build C++ unit tests
         run: |
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
-          cmake --build build/test
+          cmake --build build/test --parallel 3
       - name: Run C++ unit tests (serial)
         run: |
           cd build/test
@@ -134,7 +134,7 @@ jobs:
       - name: Build and run C++ regression tests (serial and MPI (np=2))
         run: |
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S cpp/demo/
-          cmake --build build/demo
+          cmake --build build/demo --parallel 3
           cd build/demo
           ctest -V -R demo -R serial
           ctest -V -R demo -R mpi_2
