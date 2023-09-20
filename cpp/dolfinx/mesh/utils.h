@@ -479,7 +479,7 @@ template <typename Fn, typename T>
 concept MarkerFn = std::is_invocable_r<
     std::vector<std::int8_t>, Fn,
     MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const T, std::experimental::extents<
+        const T, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
                      std::size_t, 3,
                      MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>>::value;
 

@@ -193,7 +193,7 @@ public:
   void interpolate(
       const std::function<std::pair<std::vector<T>, std::vector<std::size_t>>(
           MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-              const U, std::experimental::extents<
+              const U, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
                            std::size_t, 3,
                            MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>)>&
           f,
@@ -254,7 +254,7 @@ public:
   void interpolate(
       const std::function<std::pair<std::vector<T>, std::vector<std::size_t>>(
           MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-              const U, std::experimental::extents<
+              const U, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
                            std::size_t, 3,
                            MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>)>&
           f)
