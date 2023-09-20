@@ -8,9 +8,11 @@
 #include <iostream>
 #include <vector>
 
-// Note: this demo is not currently intended to provide a fully functional
-// example of using a mixed-topology mesh, but shows only the
-// basic constrution. Experimental.
+using namespace dolfinx;
+
+// Note: this demo is not currently intended to provide a fully
+// functional example of using a mixed-topology mesh, but shows only the
+// basic construction. Experimental.
 
 int main(int argc, char* argv[])
 {
@@ -47,14 +49,12 @@ int main(int argc, char* argv[])
       const int v_1 = v_0 + 1;
       const int v_2 = v_0 + ny + 1;
       const int v_3 = v_0 + ny + 2;
-
       if (i < nx_s)
       {
         cells.push_back(v_0);
         cells.push_back(v_1);
         cells.push_back(v_3);
         cells.push_back(v_2);
-
         offsets.push_back(cells.size());
       }
       else
@@ -62,28 +62,22 @@ int main(int argc, char* argv[])
         cells.push_back(v_0);
         cells.push_back(v_1);
         cells.push_back(v_2);
-
         offsets.push_back(cells.size());
 
         cells.push_back(v_1);
         cells.push_back(v_2);
         cells.push_back(v_3);
-
         offsets.push_back(cells.size());
       }
     }
   }
 
-  dolfinx::graph::AdjacencyList<std::int64_t> cells_list(cells, offsets);
-
+  graph::AdjacencyList<std::int64_t> cells_list(cells, offsets);
   std::vector<std::int64_t> original_global_index(num_s + num_t);
   std::iota(original_global_index.begin(), original_global_index.end(), 0);
-
   std::vector<int> ghost_owners;
-
   std::vector<std::int32_t> cell_group_offsets{0, num_s, num_s + num_t,
                                                num_s + num_t, num_s + num_t};
-
   std::vector<std::int64_t> boundary_vertices;
   for (int j = 0; j < ny + 1; ++j)
   {
@@ -101,15 +95,14 @@ int main(int argc, char* argv[])
       std::unique(boundary_vertices.begin(), boundary_vertices.end()),
       boundary_vertices.end());
 
-  std::vector<dolfinx::mesh::CellType> cell_types{
-      dolfinx::mesh::CellType::quadrilateral,
-      dolfinx::mesh::CellType::triangle};
-  std::vector<dolfinx::fem::CoordinateElement<double>> elements;
+  std::vector<mesh::CellType> cell_types{mesh::CellType::quadrilateral,
+                                         mesh::CellType::triangle};
+  std::vector<fem::CoordinateElement<double>> elements;
   for (auto ct : cell_types)
-    elements.push_back(dolfinx::fem::CoordinateElement<double>(ct, 1));
+    elements.push_back(fem::CoordinateElement<double>(ct, 1));
 
   {
-    auto topo = std::make_shared<dolfinx::mesh::Topology>(dolfinx::mesh::create_topology(
+    auto topo = std::make_shared<mesh::Topology>(mesh::create_topology(
         MPI_COMM_WORLD, cells_list, original_global_index, ghost_owners,
         cell_types, cell_group_offsets, boundary_vertices));
 
@@ -136,10 +129,10 @@ int main(int argc, char* argv[])
       std::cout << "]\n";
     }
 
-    auto geom = dolfinx::mesh::create_geometry(MPI_COMM_WORLD, *topo, elements,
-                                               cells_list, x, 2);
+    auto geom = mesh::create_geometry(MPI_COMM_WORLD, *topo, elements,
+                                      cells_list, x, 2);
 
-    dolfinx::mesh::Mesh<double> mesh(MPI_COMM_WORLD, topo, geom);
+    mesh::Mesh<double> mesh(MPI_COMM_WORLD, topo, geom);
     std::cout << "num cells = " << mesh.topology()->index_map(2)->size_local()
               << "\n";
     for (auto q : mesh.topology()->entity_group_offsets(2))

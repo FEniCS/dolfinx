@@ -24,8 +24,6 @@ using namespace dolfinx::io;
 
 namespace
 {
-//-----------------------------------------------------------------------------
-
 /// Convert a value_rank to the XDMF string description (Scalar, Vector,
 /// Tensor).
 std::string rank_to_string(int value_rank)
@@ -42,7 +40,6 @@ std::string rank_to_string(int value_rank)
     throw std::runtime_error("Range Error");
   }
 }
-//-----------------------------------------------------------------------------
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -132,13 +129,14 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
     std::int32_t num_local_points = map_x->size_local();
 
     // Get dof array and pack into array (padded where appropriate)
-    namespace stdex = std::experimental;
     auto dofmap_x = geometry.dofmap();
     data_values.resize(num_local_points * num_components, 0);
     for (std::int32_t c = 0; c < num_cells; ++c)
     {
       auto dofs = dofmap->cell_dofs(c);
-      auto dofs_x = stdex::submdspan(dofmap_x, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto dofs_x = MDSPAN_IMPL_STANDARD_NAMESPACE::
+          MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
+              dofmap_x, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
       assert(dofs.size() == dofs_x.size());
       for (std::size_t i = 0; i < dofs.size(); ++i)
       {

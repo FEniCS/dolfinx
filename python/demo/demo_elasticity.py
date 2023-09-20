@@ -24,7 +24,10 @@
 
 # +
 import numpy as np
+
+import dolfinx
 import ufl
+from dolfinx import la
 from dolfinx.fem import (Expression, Function, FunctionSpaceBase, dirichletbc,
                          form, functionspace, locate_dofs_topological)
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
@@ -32,12 +35,10 @@ from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (CellType, GhostMode, create_box,
                           locate_entities_boundary)
-from mpi4py import MPI
-from petsc4py import PETSc
 from ufl import dx, grad, inner
 
-import dolfinx
-from dolfinx import la
+from mpi4py import MPI
+from petsc4py import PETSc
 
 dtype = PETSc.ScalarType
 # -

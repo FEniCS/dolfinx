@@ -69,7 +69,7 @@ jobs:
       - name: Build and run DOLFINx C++ unit tests (serial and MPI)
         run: |
           . /opt/intel/oneapi/setvars.sh
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S build/test/
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
           cmake --build build/test
           cd build/test
           ctest --output-on-failure -R unittests
@@ -78,7 +78,7 @@ jobs:
       - name: Build and run DOLFINx C++ regression tests (serial and MPI (np=2))
         run: |
           . /opt/intel/oneapi/setvars.sh
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S build/demo/
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S cpp/demo/
           cmake --build build/demo
           cd build/demo
           ctest -R demo -R serial

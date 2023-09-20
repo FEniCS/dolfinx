@@ -21,17 +21,18 @@
 # We begin this demo by importing the required modules.
 
 # +
-import basix
-import basix.ufl
 import matplotlib
 import matplotlib.pylab as plt
 import numpy as np
+
+import basix
+import basix.ufl
+from dolfinx import fem, mesh
 from dolfinx.fem.petsc import LinearProblem
-from mpi4py import MPI
 from ufl import (SpatialCoordinate, TestFunction, TrialFunction, cos, div, dx,
                  grad, inner, sin)
 
-from dolfinx import fem, mesh
+from mpi4py import MPI
 
 matplotlib.use('agg')
 # -

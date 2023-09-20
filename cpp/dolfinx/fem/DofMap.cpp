@@ -19,7 +19,6 @@
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
-namespace stdex = std::experimental;
 
 namespace
 {
@@ -133,8 +132,9 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
 
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t> fem::transpose_dofmap(
-    std::experimental::mdspan<const std::int32_t,
-                              MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        const std::int32_t,
+        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
         dofmap,
     std::int32_t num_cells)
 {
@@ -146,7 +146,8 @@ graph::AdjacencyList<std::int32_t> fem::transpose_dofmap(
   std::vector<int> num_local_contributions(max_index + 1, 0);
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
-    auto dofs = stdex::submdspan(dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+        submdspan(dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     for (std::size_t d = 0; d < dofmap.extent(1); ++d)
       num_local_contributions[dofs[d]]++;
   }
@@ -161,7 +162,8 @@ graph::AdjacencyList<std::int32_t> fem::transpose_dofmap(
   int cell_offset = 0;
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
-    auto dofs = stdex::submdspan(dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+        submdspan(dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     for (std::size_t d = 0; d < dofmap.extent(1); ++d)
       data[pos[dofs[d]]++] = cell_offset++;
   }
@@ -282,11 +284,14 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
   return {std::move(dofmap_new), std::move(collapsed_map)};
 }
 //-----------------------------------------------------------------------------
-std::experimental::mdspan<const std::int32_t,
-                          MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+    const std::int32_t,
+    MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
 DofMap::map() const
 {
-  return stdex::mdspan<const std::int32_t, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>(
+  return MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      const std::int32_t,
+      MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>(
       _dofmap.data(), _dofmap.size() / _shape1, _shape1);
 }
 //-----------------------------------------------------------------------------

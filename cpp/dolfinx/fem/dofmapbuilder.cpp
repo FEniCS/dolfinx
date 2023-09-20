@@ -27,10 +27,9 @@ using namespace dolfinx;
 
 namespace
 {
-
-namespace stdex = std::experimental;
 template <typename T>
-using mdspan2_t = stdex::mdspan<T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+    T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
 
 //-----------------------------------------------------------------------------
 
@@ -432,7 +431,8 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
   std::int32_t counter_owned(0), counter_unowned(owned_size);
   for (std::size_t cell = 0; cell < dofmap.extent(0); ++cell)
   {
-    auto dofs = stdex::submdspan(dofmap, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+        submdspan(dofmap, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     for (std::size_t i = 0; i < dofs.size(); ++i)
     {
       if (original_to_contiguous[dofs[i]] == -1)
@@ -701,7 +701,9 @@ fem::build_dofmap_data(
   for (std::size_t cell = 0; cell < _node_graph0.extent(0); ++cell)
   {
     // Get dof order on this cell
-    auto old_nodes = stdex::submdspan(_node_graph0, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto old_nodes = MDSPAN_IMPL_STANDARD_NAMESPACE::
+        MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
+            _node_graph0, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     const std::int32_t local_dim0 = old_nodes.size();
     std::span<std::int32_t> dofs(dofmap.data() + cell * local_dim0, local_dim0);
     for (std::int32_t j = 0; j < local_dim0; ++j)

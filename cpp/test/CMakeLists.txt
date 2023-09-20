@@ -11,28 +11,14 @@ find_package(DOLFINX REQUIRED)
 
 add_custom_command(
   OUTPUT poisson.c
-  COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/poisson.py -o
-  ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/poisson.py
   VERBATIM
   DEPENDS poisson.py
   COMMENT "Compile poisson.py using FFCx"
 )
 
-# Make test executable
-set(TEST_SOURCES
-  ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/poisson.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/vector.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/matrix.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/io.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/common/sub_systems_manager.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/common/index_map.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/common/sort.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/mesh/distributed_mesh.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/common/CIFailure.cpp
-)
-
 find_package(Catch2 3)
+
 if(NOT Catch2_FOUND)
   message(STATUS "Catch2 not found. Downloading.")
   include(FetchContent)
@@ -44,8 +30,19 @@ if(NOT Catch2_FOUND)
   FetchContent_MakeAvailable(Catch2)
 endif()
 
-add_executable(unittests ${TEST_SOURCES})
+add_executable(unittests
+  main.cpp
+  vector.cpp
+  matrix.cpp
+  io.cpp
+  common/sub_systems_manager.cpp
+  common/index_map.cpp
+  common/sort.cpp
+  mesh/distributed_mesh.cpp
+  common/CIFailure.cpp
+  ${CMAKE_CURRENT_BINARY_DIR}/poisson.c)
 target_link_libraries(unittests PRIVATE Catch2::Catch2WithMain dolfinx)
+target_include_directories(unittests PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
 target_compile_options(unittests PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-Wall -Werror -Wextra -pedantic>)
 
 # Enable testing

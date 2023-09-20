@@ -31,6 +31,17 @@
 
 # +
 import sys
+from typing import Tuple
+
+from analytical_efficiencies_wire import calculate_analytical_efficiencies
+from mesh_wire import generate_mesh_wire
+
+import ufl
+from basix.ufl import element
+from dolfinx import default_scalar_type, fem, io, plot
+from dolfinx.fem.petsc import LinearProblem
+
+from mpi4py import MPI
 
 try:
     import gmsh
@@ -45,16 +56,6 @@ try:
 except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
-from typing import Tuple
-
-import ufl
-from analytical_efficiencies_wire import calculate_analytical_efficiencies
-from basix.ufl import element
-from dolfinx.fem.petsc import LinearProblem
-from mesh_wire import generate_mesh_wire
-from mpi4py import MPI
-
-from dolfinx import default_scalar_type, fem, io, plot
 
 # -
 
