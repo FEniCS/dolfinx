@@ -127,7 +127,7 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]],
         raise NotImplementedError(f"Type {dtype} not supported.")
 
     def _form(form):
-        """"Compile a single UFL form"""
+        """Compile a single UFL form"""
         # Extract subdomain data from UFL form
         sd = form.subdomain_data()
         domain, = list(sd.keys())  # Assuming single domain
