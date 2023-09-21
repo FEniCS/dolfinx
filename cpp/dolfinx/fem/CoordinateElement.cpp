@@ -97,8 +97,8 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
   std::vector<T> K_b(tdim * gdim);
   mdspan2_t<T> K(K_b.data(), tdim, gdim);
 
-  namespace stdex = std::experimental;
-  using mdspan4_t = stdex::mdspan<T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
+  using mdspan4_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
 
   const std::array<std::size_t, 4> bsize = _element->tabulate_shape(1, 1);
   std::vector<T> basis_b(

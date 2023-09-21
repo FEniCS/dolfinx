@@ -8,20 +8,21 @@
 
 import typing
 
-import basix
-import basix.ufl
 import numpy as np
 import numpy.typing as npt
+
+import basix
+import basix.ufl
 import ufl
+from dolfinx import cpp as _cpp
+from dolfinx import default_real_type
 from dolfinx.cpp.mesh import (CellType, DiagonalType, GhostMode,
                               build_dual_graph, cell_dim,
                               create_cell_partitioner, exterior_facet_indices,
                               to_string, to_type)
 from dolfinx.cpp.refinement import RefinementOption
-from mpi4py import MPI as _MPI
 
-from dolfinx import cpp as _cpp
-from dolfinx import default_real_type
+from mpi4py import MPI as _MPI
 
 __all__ = ["meshtags_from_entities", "locate_entities", "locate_entities_boundary",
            "refine", "create_mesh", "Mesh", "MeshTags", "meshtags", "CellType",

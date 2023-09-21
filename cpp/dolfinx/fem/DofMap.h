@@ -59,11 +59,12 @@ namespace dolfinx::fem
 /// typically used to exclude ghost cell contributions.
 /// @return Map from global (process-wise) index to positions in an
 /// unaassembled array. The links for each node are sorted.
-graph::AdjacencyList<std::int32_t> transpose_dofmap(
-    std::experimental::mdspan<const std::int32_t,
-                              MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
-        dofmap,
-    std::int32_t num_cells);
+graph::AdjacencyList<std::int32_t>
+transpose_dofmap(MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+                     const std::int32_t,
+                     MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+                     dofmap,
+                 std::int32_t num_cells);
 
 /// @brief Degree-of-freedom map.
 ///
@@ -151,8 +152,9 @@ public:
 
   /// @brief Get dofmap data
   /// @return The adjacency list with dof indices for each cell
-  std::experimental::mdspan<const std::int32_t,
-                            MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      const std::int32_t,
+      MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
   map() const;
 
   /// Layout of dofs on an element

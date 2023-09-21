@@ -210,9 +210,10 @@ FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
       }
     }
 
-    namespace stdex = std::experimental;
-    using cmdspan2_t = stdex::mdspan<const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-    using cmdspan4_t = stdex::mdspan<const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
+    using cmdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+    using cmdspan4_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
 
     std::array<std::vector<cmdspan2_t>, 4> _x;
     for (std::size_t i = 0; i < x.size(); ++i)
@@ -233,8 +234,8 @@ FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
             cell_type, value_shape, wcoeffs, _x, _M, nderivs,
             static_cast<basix::maps::type>(ce->map_type),
             static_cast<basix::sobolev::space>(ce->sobolev_space),
-            ce->discontinuous, ce->highest_complete_degree,
-            ce->highest_degree, static_cast<basix::polyset::type>(ce->polyset_type)));
+            ce->discontinuous, ce->highest_complete_degree, ce->highest_degree,
+            static_cast<basix::polyset::type>(ce->polyset_type)));
     _needs_dof_transformations
         = !_element->dof_transformations_are_identity()
           and !_element->dof_transformations_are_permutations();

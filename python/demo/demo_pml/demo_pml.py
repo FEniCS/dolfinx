@@ -16,6 +16,19 @@
 
 # +
 import sys
+from functools import partial
+from typing import Tuple, Union
+
+from efficiencies_pml_demo import calculate_analytical_efficiencies
+from mesh_wire_pml import generate_mesh_wire
+
+import ufl
+from basix.ufl import element
+from dolfinx import default_scalar_type, fem, mesh, plot
+from dolfinx.fem.petsc import LinearProblem
+from dolfinx.io import VTXWriter, gmshio
+
+from mpi4py import MPI
 
 try:
     import gmsh
@@ -30,19 +43,6 @@ try:
 except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
-from functools import partial
-from typing import Tuple, Union
-
-import ufl
-from basix.ufl import element
-from dolfinx.fem.petsc import LinearProblem
-from dolfinx.io import VTXWriter, gmshio
-from efficiencies_pml_demo import calculate_analytical_efficiencies
-from mesh_wire_pml import generate_mesh_wire
-from mpi4py import MPI
-
-from dolfinx import default_scalar_type, fem, mesh, plot
-
 # -
 
 # Since we want to solve time-harmonic Maxwell's equation, we require

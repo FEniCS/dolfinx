@@ -42,15 +42,16 @@
 import sys
 
 import numpy as np
-import ufl
 from analytical_modes import verify_mode
+
+import ufl
 from basix.ufl import element, mixed_element
+from dolfinx import default_scalar_type, fem, io, plot
 from dolfinx.fem.petsc import assemble_matrix
 from dolfinx.mesh import (CellType, create_rectangle, exterior_facet_indices,
                           locate_entities)
-from mpi4py import MPI
 
-from dolfinx import default_scalar_type, fem, io, plot
+from mpi4py import MPI
 
 try:
     import pyvista

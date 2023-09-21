@@ -30,26 +30,24 @@ build-install-cpp: &build-install-cpp
 unit-tests-cpp: &unit-tests-cpp
   name: Build and run C++ unit tests (serial and MPI)
   command: |
-    cd build/test/
-    cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer .
-    ninja -j3
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
+    cmake --build build/test
+    cd build/test
     ctest --output-on-failure -R unittests
     mpirun -np 3 ctest --output-on-failure -R unittests
 
 regression-tests-cpp: &regression-tests-cpp
   name: Build and run C++ regressions tests (serial)
   command: |
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S cpp/demo/
+    cmake --build build/demo
     cd build/demo
-    cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer .
-    ninja -j3
     ctest -j3 -R demo -R serial
 
 regression-tests-cpp-mpi: &regression-tests-cpp-mpi
   name: Run C++ regression tests (MPI)
   command: |
     cd build/demo
-    cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer .
-    ninja -j3
     ctest --verbose -R demo -R mpi_3
 
 build-python-interface: &build-python-interface
