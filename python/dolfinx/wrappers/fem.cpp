@@ -154,6 +154,36 @@ void declare_function_space(py::module& m, std::string type)
                   std::span(x.mutable_data(), x.size()), cell_permutation, dim);
             },
             py::arg("x"), py::arg("cell_permutation"), py::arg("dim"))
+        .def(
+            "apply_dof_transformation",
+            [](const dolfinx::fem::FiniteElement<T>& self,
+               py::array_t<std::complex<T>, py::array::c_style> x,
+               std::uint32_t cell_permutation, int dim)
+            {
+              self.apply_dof_transformation(
+                  std::span(x.mutable_data(), x.size()), cell_permutation, dim);
+            },
+            py::arg("x"), py::arg("cell_permutation"), py::arg("dim"))
+        .def(
+            "apply_transpose_dof_transformation",
+            [](const dolfinx::fem::FiniteElement<T>& self,
+               py::array_t<std::complex<T>, py::array::c_style> x,
+               std::uint32_t cell_permutation, int dim)
+            {
+              self.apply_transpose_dof_transformation(
+                  std::span(x.mutable_data(), x.size()), cell_permutation, dim);
+            },
+            py::arg("x"), py::arg("cell_permutation"), py::arg("dim"))
+        .def(
+            "apply_inverse_transpose_dof_transformation",
+            [](const dolfinx::fem::FiniteElement<T>& self,
+               py::array_t<std::complex<T>, py::array::c_style> x,
+               std::uint32_t cell_permutation, int dim)
+            {
+              self.apply_inverse_transpose_dof_transformation(
+                  std::span(x.mutable_data(), x.size()), cell_permutation, dim);
+            },
+            py::arg("x"), py::arg("cell_permutation"), py::arg("dim"))
         .def_property_readonly(
             "needs_dof_transformations",
             &dolfinx::fem::FiniteElement<T>::needs_dof_transformations)
