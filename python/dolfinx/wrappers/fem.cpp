@@ -1086,6 +1086,13 @@ void fem(py::module& m)
       .value("interior_facet", dolfinx::fem::IntegralType::interior_facet)
       .value("vertex", dolfinx::fem::IntegralType::vertex);
 
+  py::enum_<basix::element::lagrange_variant>(m, "BasixLagrangeVariant")
+      .value("unset", basix::element::lagrange_variant::unset)
+      .value("equispaced", basix::element::lagrange_variant::equispaced)
+      .value("gll_warped", basix::element::lagrange_variant::gll_warped)
+      .value("gll_isaac", basix::element::lagrange_variant::gll_isaac)
+      .value("gll_centroid", basix::element::lagrange_variant::gll_centroid);
+
   declare_function_space<float>(m, "float32");
   declare_function_space<double>(m, "float64");
 
