@@ -5,7 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the FunctionSpace class"""
 
-import basix
+# import basix
 import numpy as np
 import pytest
 from basix.ufl import element, mixed_element
