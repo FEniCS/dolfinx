@@ -693,9 +693,6 @@ void declare_cmap(py::module& m, std::string type)
                      static_cast<basix::element::lagrange_variant>(variant));
                }),
            py::arg("celltype"), py::arg("degree"), py::arg("variant"))
-      //   .def(py::init<dolfinx::mesh::CellType, int,
-      //                 basix::element::lagrange_variant>(),
-      //        py::arg("celltype"), py::arg("degree"), py::arg("variant"))
       .def("create_dof_layout",
            &dolfinx::fem::CoordinateElement<T>::create_dof_layout)
       .def_property_readonly("degree",
@@ -956,7 +953,7 @@ namespace dolfinx_wrappers
 void fem(py::module& m)
 {
   // Load basix and dolfinx to use Pybindings
-  py::module_::import("basix");
+//   py::module_::import("basix");
 
   declare_objects<float>(m, "float32");
   declare_objects<double>(m, "float64");
@@ -1094,31 +1091,6 @@ void fem(py::module& m)
       .value("exterior_facet", dolfinx::fem::IntegralType::exterior_facet)
       .value("interior_facet", dolfinx::fem::IntegralType::interior_facet)
       .value("vertex", dolfinx::fem::IntegralType::vertex);
-
-  //   enum class basix_lagrange_variant
-  //   {
-  //     unset = -1,
-  //     equispaced = 0,
-  //     gll_warped = 1,
-  //     gll_isaac = 2,
-  //     gll_centroid = 3,
-  //     chebyshev_warped = 4,
-  //     chebyshev_isaac = 5,
-  //     chebyshev_centroid = 6,
-  //     gl_warped = 7,
-  //     gl_isaac = 8,
-  //     gl_centroid = 9,
-  //     legendre = 10,
-  //     bernstein = 11,
-  //     vtk = 20,
-  //   };
-
-  //   py::enum_<basix_lagrange_variant>(m, "BasixLagrangeVariant")
-  //       .value("unset", basix_lagrange_variant::unset)
-  //       .value("equispaced", basix_lagrange_variant::equispaced)
-  //       .value("gll_warped", basix_lagrange_variant::gll_warped)
-  //       .value("gll_isaac", basix_lagrange_variant::gll_isaac)
-  //       .value("gll_centroid", basix_lagrange_variant::gll_centroid);
 
   declare_function_space<float>(m, "float32");
   declare_function_space<double>(m, "float64");
