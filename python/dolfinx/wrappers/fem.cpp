@@ -952,9 +952,6 @@ namespace dolfinx_wrappers
 
 void fem(py::module& m)
 {
-  // Load basix and dolfinx to use Pybindings
-//   py::module_::import("basix");
-
   declare_objects<float>(m, "float32");
   declare_objects<double>(m, "float64");
   declare_objects<std::complex<float>>(m, "complex64");
