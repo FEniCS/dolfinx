@@ -685,15 +685,24 @@ void declare_cmap(py::module& m, std::string type)
       m, pyclass_name.c_str(), "Coordinate map element")
       .def(py::init<dolfinx::mesh::CellType, int>(), py::arg("celltype"),
            py::arg("degree"))
-      .def(py::init<dolfinx::mesh::CellType, int,
-                    basix::element::lagrange_variant>(),
+      .def(py::init(
+               [](dolfinx::mesh::CellType celltype, int degree, int variant)
+               {
+                 return dolfinx::fem::CoordinateElement<T>(
+                     celltype, degree,
+                     static_cast<basix::element::lagrange_variant>(variant));
+               }),
            py::arg("celltype"), py::arg("degree"), py::arg("variant"))
+      //   .def(py::init<dolfinx::mesh::CellType, int,
+      //                 basix::element::lagrange_variant>(),
+      //        py::arg("celltype"), py::arg("degree"), py::arg("variant"))
       .def("create_dof_layout",
            &dolfinx::fem::CoordinateElement<T>::create_dof_layout)
       .def_property_readonly("degree",
                              &dolfinx::fem::CoordinateElement<T>::degree)
       .def_property_readonly("variant",
-                             &dolfinx::fem::CoordinateElement<T>::variant)
+                             [](const dolfinx::fem::CoordinateElement<T>& self)
+                             { return static_cast<int>(self.variant()); })
       .def(
           "push_forward",
           [](const dolfinx::fem::CoordinateElement<T>& self,
@@ -1086,12 +1095,30 @@ void fem(py::module& m)
       .value("interior_facet", dolfinx::fem::IntegralType::interior_facet)
       .value("vertex", dolfinx::fem::IntegralType::vertex);
 
-  py::enum_<basix::element::lagrange_variant>(m, "BasixLagrangeVariant")
-      .value("unset", basix::element::lagrange_variant::unset)
-      .value("equispaced", basix::element::lagrange_variant::equispaced)
-      .value("gll_warped", basix::element::lagrange_variant::gll_warped)
-      .value("gll_isaac", basix::element::lagrange_variant::gll_isaac)
-      .value("gll_centroid", basix::element::lagrange_variant::gll_centroid);
+  //   enum class basix_lagrange_variant
+  //   {
+  //     unset = -1,
+  //     equispaced = 0,
+  //     gll_warped = 1,
+  //     gll_isaac = 2,
+  //     gll_centroid = 3,
+  //     chebyshev_warped = 4,
+  //     chebyshev_isaac = 5,
+  //     chebyshev_centroid = 6,
+  //     gl_warped = 7,
+  //     gl_isaac = 8,
+  //     gl_centroid = 9,
+  //     legendre = 10,
+  //     bernstein = 11,
+  //     vtk = 20,
+  //   };
+
+  //   py::enum_<basix_lagrange_variant>(m, "BasixLagrangeVariant")
+  //       .value("unset", basix_lagrange_variant::unset)
+  //       .value("equispaced", basix_lagrange_variant::equispaced)
+  //       .value("gll_warped", basix_lagrange_variant::gll_warped)
+  //       .value("gll_isaac", basix_lagrange_variant::gll_isaac)
+  //       .value("gll_centroid", basix_lagrange_variant::gll_centroid);
 
   declare_function_space<float>(m, "float32");
   declare_function_space<double>(m, "float64");
