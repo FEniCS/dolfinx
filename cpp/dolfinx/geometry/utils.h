@@ -798,7 +798,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points)
   std::stringstream qq;
   for (std::size_t i = 0; i < out_ranks.size(); i++)
   {
-    for (std::size_t j = recv_offsets[i]; j < recv_offsets[i + 1]; j++)
+    for (std::int32_t j = recv_offsets[i]; j < recv_offsets[i + 1]; j++)
     {
       const std::int32_t pos = unpack_map[j];
       // If point has not been found yet distance is negative
