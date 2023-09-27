@@ -754,10 +754,10 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points)
 
   // Each process checks which points collides with a cell on the process
   const int rank = dolfinx::MPI::rank(comm);
-  std::vector<std::int32_t> closest_cells = compute_closest_entity(
+  const std::vector<std::int32_t> closest_cells = compute_closest_entity(
       bb, midpoint_tree, mesh,
       std::span<const T>(received_points.data(), received_points.size()));
-  std::vector<T> squared_distances = squared_distance(
+  const std::vector<T> squared_distances = squared_distance(
       mesh, tdim, closest_cells,
       std::span<const T>(received_points.data(), received_points.size()));
 
@@ -802,8 +802,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points)
       const std::int32_t pos = unpack_map[j];
       // If point has not been found yet distance is negative
       // If new received distance smaller than current distance choose owner
-      if ((closest_distance[pos] < 0)
-          || (closest_distance[pos] > recv_distances[j]))
+      if (auto d = closest_distance[pos]; d < 0 or d > recv_distances[j])
       {
         point_owners[pos] = out_ranks[i];
         closest_distance[pos] = recv_distances[j];
