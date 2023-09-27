@@ -795,7 +795,6 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points)
 
   std::vector<std::int32_t> point_owners(points.size() / 3, -1);
   std::vector<T> closest_distance(points.size() / 3, -1);
-  std::stringstream qq;
   for (std::size_t i = 0; i < out_ranks.size(); i++)
   {
     for (std::int32_t j = recv_offsets[i]; j < recv_offsets[i + 1]; j++)
