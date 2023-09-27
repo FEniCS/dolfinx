@@ -685,15 +685,21 @@ void declare_cmap(py::module& m, std::string type)
       m, pyclass_name.c_str(), "Coordinate map element")
       .def(py::init<dolfinx::mesh::CellType, int>(), py::arg("celltype"),
            py::arg("degree"))
-      .def(py::init<dolfinx::mesh::CellType, int,
-                    basix::element::lagrange_variant>(),
+      .def(py::init(
+               [](dolfinx::mesh::CellType celltype, int degree, int variant)
+               {
+                 return dolfinx::fem::CoordinateElement<T>(
+                     celltype, degree,
+                     static_cast<basix::element::lagrange_variant>(variant));
+               }),
            py::arg("celltype"), py::arg("degree"), py::arg("variant"))
       .def("create_dof_layout",
            &dolfinx::fem::CoordinateElement<T>::create_dof_layout)
       .def_property_readonly("degree",
                              &dolfinx::fem::CoordinateElement<T>::degree)
       .def_property_readonly("variant",
-                             &dolfinx::fem::CoordinateElement<T>::variant)
+                             [](const dolfinx::fem::CoordinateElement<T>& self)
+                             { return static_cast<int>(self.variant()); })
       .def(
           "push_forward",
           [](const dolfinx::fem::CoordinateElement<T>& self,
@@ -946,9 +952,6 @@ namespace dolfinx_wrappers
 
 void fem(py::module& m)
 {
-  // Load basix and dolfinx to use Pybindings
-  py::module_::import("basix");
-
   declare_objects<float>(m, "float32");
   declare_objects<double>(m, "float64");
   declare_objects<std::complex<float>>(m, "complex64");
