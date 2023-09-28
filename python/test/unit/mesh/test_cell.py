@@ -83,8 +83,8 @@ def test_volume_quadrilateralR3(x):
     assert _cpp.mesh.volume_entities(mesh, [0], mesh.topology.dim) == 1.0
 
 
-@ pytest.mark.skip("volume_entities needs fixing")
-@ pytest.mark.parametrize(
+@pytest.mark.skip("volume_entities needs fixing")
+@pytest.mark.parametrize(
     'scaling',
     [1e0, 1e-5, 1e-10, 1e-15, 1e-20, 1e-30, 1e5, 1e10, 1e15, 1e20, 1e30])
 def test_volume_quadrilateral_coplanarity_check_1(scaling):
@@ -106,8 +106,8 @@ def test_volume_quadrilateral_coplanarity_check_1(scaling):
 # Test when |p0-p3| is ~ 1 but |p1-p2| is small
 # The cell is degenerate when scale is below 1e-17, it is expected to
 # fail the test.
-@ pytest.mark.skip("volume_entities needs fixing")
-@ pytest.mark.parametrize('scaling', [1e0, 1e-5, 1e-10, 1e-15])
+@pytest.mark.skip("volume_entities needs fixing")
+@pytest.mark.parametrize('scaling', [1e0, 1e-5, 1e-10, 1e-15])
 def test_volume_quadrilateral_coplanarity_check_2(scaling):
     with pytest.raises(RuntimeError) as error:
         # Unit square cell scaled down by 'scaling' and the first vertex
