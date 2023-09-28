@@ -248,7 +248,7 @@ def test_readonly_view_local_to_global_unwoned(mesh):
 def test_higher_order_coordinate_map(points, celltype, order):
     """Computes physical coordinates of a cell, based on the coordinate map."""
     cells = np.array([range(len(points))])
-    domain = ufl.Mesh(element("Lagrange", celltype.name, order, shape=(points.shape(1),)))
+    domain = ufl.Mesh(element("Lagrange", celltype.name, order, shape=(points.shape[1],)))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
 
     V = FunctionSpace(mesh, ("Lagrange", 2))

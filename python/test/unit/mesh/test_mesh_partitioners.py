@@ -83,7 +83,7 @@ def test_custom_partitioner(tempdir, Nx, cell_type):
     rank = mpi_comm.rank
     assert np.all(x_global[all_ranges[rank]:all_ranges[rank + 1]] == x)
 
-    domain = ufl.Mesh(element("Lagrange", cell_shape.name, cell_degree, rank=1))
+    domain = ufl.Mesh(element("Lagrange", cell_shape.name, cell_degree, shape=(3, )))
 
     # Partition mesh in layers, capture geometrical data and topological
     # data from outer scope
