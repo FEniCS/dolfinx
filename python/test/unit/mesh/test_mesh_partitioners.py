@@ -107,7 +107,7 @@ def test_asymmetric_partitioner():
     mpi_comm = MPI.COMM_WORLD
     n = mpi_comm.Get_size()
     r = mpi_comm.Get_rank()
-    domain = ufl.Mesh(element("Lagrange", "triangle", 1, rank=1))
+    domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(2,)))
 
     # Create a simple triangle mesh with a strip on each process
     topo = []

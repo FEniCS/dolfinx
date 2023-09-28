@@ -121,7 +121,7 @@ def test_interpolation_matrix(cell_type, p, q, from_lagrange):
         mesh = create_unit_cube(comm, 3, 2, 2, ghost_mode=GhostMode.none, cell_type=cell_type)
         lagrange = "Lagrange" if from_lagrange else "DG"
         nedelec = "Nedelec 1st kind H(curl)"
-    v_el = element(lagrange, mesh.basix_cell(), p, rank=1)
+    v_el = element(lagrange, mesh.basix_cell(), p, shape=(mesh.geometry.dim,))
     s_el = element(nedelec, mesh.basix_cell(), q)
     if from_lagrange:
         el0 = v_el
@@ -170,7 +170,7 @@ def test_nonaffine_discrete_operator():
 
     cells = np.array([range(len(points))], dtype=np.int32)
     cell_type = CellType.hexahedron
-    domain = ufl.Mesh(element("Lagrange", cell_type.name, 2, rank=1))
+    domain = ufl.Mesh(element("Lagrange", cell_type.name, 2, shape=(3,)))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     gdim = mesh.geometry.dim
     W = FunctionSpace(mesh, ("DG", 1, (gdim,)))
