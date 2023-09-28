@@ -54,8 +54,8 @@ msh = infile.read_mesh(name="Grid")
 infile.close()
 
 # Stress (Se) and displacement (Ue) elements
-Se = element("DG", msh.basix_cell(), 1, rank=2, symmetry=True)
-Ue = element("Lagrange", msh.basix_cell(), 2, rank=1)
+Se = element("DG", msh.basix_cell(), 1, shape=(2, 2), symmetry=True)
+Ue = element("Lagrange", msh.basix_cell(), 2, shape=(2,))
 
 S = functionspace(msh, Se)
 U = functionspace(msh, Ue)
