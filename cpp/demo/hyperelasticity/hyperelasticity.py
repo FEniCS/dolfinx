@@ -23,9 +23,7 @@ du = TrialFunction(V)     # Incremental displacement
 v = TestFunction(V)      # Test function
 
 # Note that ``element`` with `shape=(3,)` creates a finite element space
-# of vector fields. The dimension of the vector field (the number of
-# components) is assumed to be the same as the spatial dimension (in
-# this case 3), unless otherwise specified.
+# of vector fields.
 #
 # Next, we will be needing functions for the boundary source ``B``, the
 # traction ``T`` and the displacement solution itself ``u``::
