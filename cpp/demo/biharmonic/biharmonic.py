@@ -21,7 +21,7 @@ e = element("Lagrange", "triangle", 2)
 # Next, we use this element to initialize the trial and test functions
 # (:math:`u` and :math:`v`) and the coefficient function :math:`f`::
 
-coord_element = element("Lagrange", "triangle", 1, rank=1)
+coord_element = element("Lagrange", "triangle", 1, shape=(2,))
 mesh = Mesh(coord_element)
 
 V = FunctionSpace(mesh, e)

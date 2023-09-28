@@ -22,7 +22,12 @@ def randomly_ordered_mesh(cell_type):
     """Create a randomly ordered mesh to use in the test."""
     random.seed(6)
 
-    domain = ufl.Mesh(element("Lagrange", cell_type, 1, rank=1))
+    if cell_type == "triangle" or cell_type == "quadrilateral":
+        gdim = 2
+    elif cell_type == "tetrahedron" or cell_type == "hexahedron":
+        gdim = 3
+
+    domain = ufl.Mesh(element("Lagrange", cell_type, 1, shape=(gdim,)))
     # Create a mesh
     if MPI.COMM_WORLD.rank == 0:
         N = 6
@@ -148,7 +153,12 @@ def test_dof_positions(cell_type, space_type):
 def random_evaluation_mesh(cell_type):
     random.seed(6)
 
-    domain = ufl.Mesh(element("Lagrange", cell_type, 1, rank=1))
+    if cell_type == "triangle" or cell_type == "quadrilateral":
+        gdim = 2
+    elif cell_type == "tetrahedron" or cell_type == "hexahedron":
+        gdim = 3
+
+    domain = ufl.Mesh(element("Lagrange", cell_type, 1, shape=(gdim,)))
     if cell_type == "triangle":
         temp_points = np.array([[-1., -1.], [0., 0.], [1., 0.], [0., 1.]], dtype=default_real_type)
         temp_cells = [[0, 1, 3], [1, 2, 3]]

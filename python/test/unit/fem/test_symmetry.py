@@ -138,9 +138,8 @@ def test_mixed_element_vector_element_form(cell_type, sign, order, dtype):
     else:
         mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type, dtype=dtype)
 
-    U_el = mixed_element([
-        element(basix.ElementFamily.P, cell_type.name, order, rank=1),
-        element(basix.ElementFamily.N1E, cell_type.name, order)])
+    U_el = mixed_element([element(basix.ElementFamily.P, cell_type.name, order, shape=(mesh.geometry.dim,)),
+                          element(basix.ElementFamily.N1E, cell_type.name, order)])
 
     U = FunctionSpace(mesh, U_el)
     u, p = ufl.TrialFunctions(U)
