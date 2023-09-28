@@ -48,7 +48,7 @@ def test_scatter_forward(e):
 
 @pytest.mark.parametrize("e", [
     element("Lagrange", "triangle", 1),
-    element("Lagrange", "triangle", 1, shape=(2))])
+    element("Lagrange", "triangle", 1, shape=(2, ))])
 def test_scatter_reverse(e):
 
     comm = MPI.COMM_WORLD

@@ -786,8 +786,7 @@ def test_nonmatching_mesh_single_cell_overlap_interpolation(xtype):
     u1.interpolate(f_test1)
     u1.x.scatter_forward()
 
-    u1_2_u2_nmm_data =
-    create_nonmatching_meshes_interpolation_data(
+    u1_2_u2_nmm_data = create_nonmatching_meshes_interpolation_data(
         u2.function_space.mesh._cpp_object,
         u2.function_space.element,
         u1.function_space.mesh._cpp_object)
