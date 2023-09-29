@@ -752,7 +752,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points)
       dolfinx::MPI::mpi_type<T>(), received_points.data(), recv_sizes.data(),
       recv_offsets.data(), dolfinx::MPI::mpi_type<T>(), forward_comm);
 
-  // Each process checks which points collides with a cell on the process
+  // Each process checks which local cell is closest and computes the squared distance to the cell
   const int rank = dolfinx::MPI::rank(comm);
   const std::vector<std::int32_t> closest_cells = compute_closest_entity(
       bb, midpoint_tree, mesh,
