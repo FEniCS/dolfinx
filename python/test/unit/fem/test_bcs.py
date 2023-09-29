@@ -287,9 +287,8 @@ def test_mixed_blocked_constant():
     tdim = mesh.topology.dim
     boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
 
-    TH = mixed_element([
-        element("Lagrange", mesh.basix_cell(), 1),
-        element("Lagrange", mesh.basix_cell(), 2, rank=1)])
+    TH = mixed_element([element("Lagrange", mesh.basix_cell(), 1),
+                        element("Lagrange", mesh.basix_cell(), 2, shape=(mesh.geometry.dim,))])
     W = FunctionSpace(mesh, TH)
     u = Function(W)
     c0 = default_scalar_type(3)

@@ -21,7 +21,7 @@ e = element("Lagrange", "triangle", 1)
 # (:math:`u` and :math:`v`) and the coefficient functions (:math:`f` and
 # :math:`g`)::
 
-coord_element = element("Lagrange", "triangle", 1, rank=1)
+coord_element = element("Lagrange", "triangle", 1, shape=(2,))
 mesh = Mesh(coord_element)
 
 V = FunctionSpace(mesh, e)
