@@ -11,6 +11,8 @@ ARG ADIOS2_VERSION=2.9.1
 ARG HDF5_SERIES=1.14
 ARG HDF5_PATCH=2
 ARG HDF5_FIX=
+ARG PETSC_VERSION=3.19.6
+ARG SLEPC_VERSION=3.19.2
 ARG PYBIND11_VERSION=2.11.1
 ARG KAHIP_VERSION=3.15
 
@@ -91,7 +93,7 @@ ENV PETSC_DIR=/usr/local/petsc SLEPC_DIR=/usr/local/slepc
 RUN . /opt/intel/oneapi/setvars.sh && \
     apt-get -qq update && \
     apt-get -y install bison flex && \
-    git clone -b release https://gitlab.com/petsc/petsc.git ${PETSC_DIR} && \
+    git clone -b v${PETSC_VERSION}  https://gitlab.com/petsc/petsc.git ${PETSC_DIR} && \
     cd ${PETSC_DIR} && \
     # Real32, 32-bit int
     ./configure \
@@ -177,7 +179,7 @@ RUN . /opt/intel/oneapi/setvars.sh && \
 
 # Install SLEPc
 RUN . /opt/intel/oneapi/setvars.sh && \
-    git clone -b release https://gitlab.com/slepc/slepc.git ${SLEPC_DIR} && \
+    git clone -b v${SLEPC_VERSION} https://gitlab.com/slepc/slepc.git ${SLEPC_DIR} && \
     cd ${SLEPC_DIR} && \
     export PETSC_ARCH=linux-gnu-real32-32 && \
     ./configure && \
