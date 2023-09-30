@@ -89,7 +89,7 @@ def test_component(V, W, Q):
 def test_equality(V, V2, W, W2):
     assert V == V  # /NOSONAR
     assert V == V2
-    assert W == W
+    assert W == W  # /NOSONAR
     assert W == W2
 
 

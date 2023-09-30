@@ -26,7 +26,7 @@ __all__ = ["cell_perm_array", "ufl_mesh", "extract_topology_and_markers",
 
 
 # Map from Gmsh cell type identifier (integer) to DOLFINx cell type and
-# degree http://gmsh.info//doc/texinfo/gmsh.html#MSH-file-format
+# degree https://gmsh.info//doc/texinfo/gmsh.html#MSH-file-format
 _gmsh_to_cells = {1: ("interval", 1), 2: ("triangle", 1),
                   3: ("quadrilateral", 1), 4: ("tetrahedron", 1),
                   5: ("hexahedron", 1), 8: ("interval", 2),
@@ -41,7 +41,7 @@ _gmsh_to_cells = {1: ("interval", 1), 2: ("triangle", 1),
 def ufl_mesh(gmsh_cell: int, gdim: int) -> ufl.Mesh:
     """Create a UFL mesh from a Gmsh cell identifier and geometric dimension.
 
-    See http://gmsh.info//doc/texinfo/gmsh.html#MSH-file-format.
+    See https://gmsh.info//doc/texinfo/gmsh.html#MSH-file-format.
 
     Args:
         gmsh_cell: Gmsh cell identifier.

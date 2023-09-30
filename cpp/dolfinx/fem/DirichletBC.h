@@ -291,10 +291,12 @@ public:
   /// @note The size of of `g` must be equal to the block size if `V`.
   /// Use the Function version if this is not the case, e.g. for some
   /// mixed spaces.
-  template <typename S, std::convertible_to<std::vector<std::int32_t>> X,
+  template <typename S, typename X,
             typename
             = std::enable_if_t<std::is_convertible_v<S, T>
                                or std::is_convertible_v<S, std::span<const T>>>>
+    requires std::is_convertible_v<std::remove_cvref_t<X>,
+                                   std::vector<std::int32_t>>
   DirichletBC(const S& g, X&& dofs, std::shared_ptr<const FunctionSpace<U>> V)
       : DirichletBC(std::make_shared<Constant<T>>(g), dofs, V)
   {
@@ -315,7 +317,9 @@ public:
   /// @note The size of of `g` must be equal to the block size if `V`.
   /// Use the Function version if this is not the case, e.g. for some
   /// mixed spaces.
-  template <std::convertible_to<std::vector<std::int32_t>> X>
+  template <typename X>
+    requires std::is_convertible_v<std::remove_cvref_t<X>,
+                                   std::vector<std::int32_t>>
   DirichletBC(std::shared_ptr<const Constant<T>> g, X&& dofs,
               std::shared_ptr<const FunctionSpace<U>> V)
       : _function_space(V), _g(g), _dofs0(std::forward<X>(dofs)),
@@ -363,7 +367,9 @@ public:
   /// @note The indices in `dofs` are for *blocks*, e.g. a block index
   /// corresponds to 3 degrees-of-freedom if the dofmap associated with
   /// `g` has block size 3.
-  template <std::convertible_to<std::vector<std::int32_t>> X>
+  template <typename X>
+    requires std::is_convertible_v<std::remove_cvref_t<X>,
+                                   std::vector<std::int32_t>>
   DirichletBC(std::shared_ptr<const Function<T, U>> g, X&& dofs)
       : _function_space(g->function_space()), _g(g),
         _dofs0(std::forward<X>(dofs)),
