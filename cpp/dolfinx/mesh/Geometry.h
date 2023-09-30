@@ -47,9 +47,13 @@ public:
   /// @param[in] dim The geometric dimension (`0 < dim <= 3`).
   /// @param[in] input_global_indices The 'global' input index of each
   /// point, commonly from a mesh input file.
-  template <std::convertible_to<std::vector<std::int32_t>> U,
-            std::convertible_to<std::vector<T>> V,
-            std::convertible_to<std::vector<std::int64_t>> W>
+  template <typename U, typename V, typename W>
+    requires std::is_convertible_v<std::remove_cvref_t<U>,
+                                   std::vector<std::int32_t>>
+                 and std::is_convertible_v<std::remove_cvref_t<V>,
+                                           std::vector<T>>
+                 and std::is_convertible_v<std::remove_cvref_t<W>,
+                                           std::vector<std::int64_t>>
   Geometry(std::shared_ptr<const common::IndexMap> index_map, U&& dofmap,
            const std::vector<fem::CoordinateElement<
                typename

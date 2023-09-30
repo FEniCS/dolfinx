@@ -144,14 +144,14 @@ def test_interpolation_rank0(V):
     f.t = 1.0
     w = Function(V)
     w.interpolate(f.eval)
-    assert (w.x.array[:] == 1.0).all()
+    assert (w.x.array[:] == 1.0).all()  # /NOSONAR
 
     num_vertices = V.mesh.topology.index_map(0).size_global
     assert np.isclose(w.x.norm(la.Norm.l1) - num_vertices, 0)
 
     f.t = 2.0
     w.interpolate(f.eval)
-    assert (w.x.array[:] == 2.0).all()
+    assert (w.x.array[:] == 2.0).all()  # /NOSONAR
 
 
 def test_interpolation_rank1(W):
@@ -165,8 +165,8 @@ def test_interpolation_rank1(W):
     w = Function(W)
     w.interpolate(f)
     x = w.vector
-    assert x.max()[1] == 3.0
-    assert x.min()[1] == 1.0
+    assert x.max()[1] == 3.0  # /NOSONAR
+    assert x.min()[1] == 1.0  # /NOSONAR
 
     num_vertices = W.mesh.topology.index_map(0).size_global
     assert round(w.x.norm(la.Norm.l1) - 6 * num_vertices, 7) == 0

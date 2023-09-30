@@ -85,7 +85,7 @@ def test_overlapping_bcs():
     As = A.to_scipy(ghosted=True)
     d = As.diagonal()
     if len(dof_corner) > 0 and dof_corner[0] < V.dofmap.index_map.size_local:
-        assert d[dof_corner[0]] == 1.0
+        assert d[dof_corner[0]] == 1.0  # /NOSONAR
 
     b.array[:] = 0
     assemble_vector(b.array, L)

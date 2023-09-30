@@ -170,7 +170,8 @@ def test_assembly_ds_domains(mode):
     L2 = form(w * ds)
     s2 = assemble_scalar(L2)
     s2 = mesh.comm.allreduce(s2, op=MPI.SUM)
-    assert s == pytest.approx(s2, 1.0e-6) and 2.0 == pytest.approx(s, 1.0e-6)
+    assert s == pytest.approx(s2, 1.0e-6)
+    assert 2.0 == pytest.approx(s, 1.0e-6)  # /NOSONAR
 
 
 @parametrize_ghost_mode
