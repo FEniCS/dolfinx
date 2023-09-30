@@ -90,6 +90,8 @@ RUN git clone -b v${PETSC_VERSION}  https://gitlab.com/petsc/petsc.git && \
     PETSC_DIR=/usr/local python3 -m pip install --no-cache-dir . && \
     rm -rf /tmp/*
 
+ENV PETSC_DIR=/usr/local
+
 # RHEL pkgconfig does not look here by default. Setting this probably
 # better than forcing install into 'system path' or hacking in DOLFINx
 # pkgconfig.py code.
