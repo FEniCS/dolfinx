@@ -19,7 +19,6 @@ WORKDIR /tmp
 RUN dnf -y update && \
     dnf install -y dnf-plugins-core && \
     dnf config-manager --set-enabled crb && \
-    dnf install -y epel-release && \
     dnf -y install \
     bison \
     boost-devel \
@@ -69,9 +68,7 @@ RUN python3 -m pip install --no-binary="numpy" --no-cache-dir cffi numba mpi4py 
     python3 -m pip install --no-cache-dir cppimport pytest pytest-xdist scipy matplotlib
 
 # Build PETSc
-RUN git clone -b v${PETSC_VERSION}  https://gitlab.com/petsc/petsc.git ${PETSC_DIR} && \
-    mkdir petsc && \
-    tar -xf petsc-lite-${PETSC_VERSION}.tar.gz -C petsc --strip-components=1 && \
+RUN git clone -b v${PETSC_VERSION} https://gitlab.com/petsc/petsc.git petsc && \
     cd petsc && \
     python3 ./configure \
     --with-shared-libraries \
