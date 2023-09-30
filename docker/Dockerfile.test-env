@@ -322,7 +322,6 @@ RUN apt-get -qq update && \
     make PETSC_ARCH=linux-gnu-complex128-64 ${MAKEFLAGS} all && \
     # Install petsc4py
     cd src/binding/petsc4py && \
-    pip3 install --no-cache-dir Cython==0.29.32 && \
     PETSC_ARCH=linux-gnu-real32-32:linux-gnu-complex64-32:linux-gnu-real64-32:linux-gnu-complex128-32:linux-gnu-real64-64:linux-gnu-complex128-64 pip3 install --no-cache-dir -v . && \
     # Cleanup
     apt-get -y purge bison flex && \
