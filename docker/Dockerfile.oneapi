@@ -5,14 +5,14 @@
 # docker run -ti -v docker.io/fenicsproject/test-env:current-oneapi
 FROM ubuntu:22.04
 
-ARG BUILD_NP=2
+ARG BUILD_NP=3
 
 ARG ADIOS2_VERSION=2.9.1
 ARG HDF5_SERIES=1.14
 ARG HDF5_PATCH=2
 ARG HDF5_FIX=
-ARG PETSC_VERSION=3.19.6
-ARG SLEPC_VERSION=3.19.2
+ARG PETSC_VERSION=3.20.0
+ARG SLEPC_VERSION=3.20.0
 ARG PYBIND11_VERSION=2.11.1
 ARG KAHIP_VERSION=3.15
 
@@ -39,13 +39,17 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Install oneAPI libraries
+# Install oneAPI libraries (see https://oneapi-src.github.io/oneapi-ci/)
 RUN wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null && \
-    echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | tee /etc/apt/sources.list.d/oneAPI.list && \
+    # echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | tee /etc/apt/sources.list.d/oneAPI.list && \
+    echo "deb [trusted=yes] https://apt.repos.intel.com/oneapi all main" | tee /etc/apt/sources.list.d/oneAPI.list && \
     apt-get update && \
     apt-get install -y libstdc++-11-dev intel-oneapi-compiler-dpcpp-cpp intel-oneapi-mkl-devel intel-oneapi-mpi-devel intel-oneapi-python && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
+    rm -rf /opt/intel/oneapi/debugger /opt/intel/oneapi/compiler/2023.2.0 /opt/intel/oneapi/mkl/latest/lib/intel64/*.a && \
+    . /opt/intel/oneapi/setvars.sh && \
+    conda clean -ay
 
 ENV CC=icx \
     CXX=icpx \
@@ -137,29 +141,30 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     --with-make-np=${BUILD_NP} \
     --with-scalar-type=complex && \
     make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex128-32 ${MAKEFLAGS} all && \
-    # Real64, 64-bit int
-    ./configure \
-    PETSC_ARCH=linux-gnu-real64-64 \
-    --with-64-bit-indices=yes \
-    --with-fortran-bindings=no \
-    --with-shared-libraries \
-    --download-superlu_dist \
-    --with-make-np=${BUILD_NP} \
-    --with-scalar-type=real && \
-    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real64-64 ${MAKEFLAGS} all && \
-    # Complex128, 64-bit int
-    ./configure \
-    PETSC_ARCH=linux-gnu-complex128-64 \
-    --with-64-bit-indices=yes \
-    --with-fortran-bindings=no \
-    --with-shared-libraries \
-    --download-superlu_dist \
-    --with-make-np=${BUILD_NP} \
-    --with-scalar-type=complex && \
-    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex128-64 ${MAKEFLAGS} all && \
+    # # Real64, 64-bit int
+    # ./configure \
+    # PETSC_ARCH=linux-gnu-real64-64 \
+    # --with-64-bit-indices=yes \
+    # --with-fortran-bindings=no \
+    # --with-shared-libraries \
+    # --download-superlu_dist \
+    # --with-make-np=${BUILD_NP} \
+    # --with-scalar-type=real && \
+    # make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real64-64 ${MAKEFLAGS} all && \
+    # # Complex128, 64-bit int
+    # ./configure \
+    # PETSC_ARCH=linux-gnu-complex128-64 \
+    # --with-64-bit-indices=yes \
+    # --with-fortran-bindings=no \
+    # --with-shared-libraries \
+    # --download-superlu_dist \
+    # --with-make-np=${BUILD_NP} \
+    # --with-scalar-type=complex && \
+    # make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex128-64 ${MAKEFLAGS} all && \
     # Install petsc4py
     cd src/binding/petsc4py && \
-    PETSC_ARCH=linux-gnu-real32-32:linux-gnu-complex64-32:linux-gnu-real64-32:linux-gnu-complex128-32:linux-gnu-real64-64:linux-gnu-complex128-64 pip install --no-cache-dir . && \
+    # PETSC_ARCH=linux-gnu-real32-32:linux-gnu-complex64-32:linux-gnu-real64-32:linux-gnu-complex128-32:linux-gnu-real64-64:linux-gnu-complex128-64 pip install --no-cache-dir . && \
+    PETSC_ARCH=linux-gnu-real32-32:linux-gnu-complex64-32:linux-gnu-real64-32:linux-gnu-complex128-32 pip install --no-cache-dir . && \
     # Cleanup
     apt-get -y purge bison flex && \
     apt-get -y autoremove && \
@@ -193,14 +198,15 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     export PETSC_ARCH=linux-gnu-complex128-32 && \
     ./configure && \
     make && \
-    export PETSC_ARCH=linux-gnu-real64-64 && \
-    ./configure && \
-    make && \
-    export PETSC_ARCH=linux-gnu-complex128-64 && \
-    ./configure && \
-    make && \
+    # export PETSC_ARCH=linux-gnu-real64-64 && \
+    # ./configure && \
+    # make && \
+    # export PETSC_ARCH=linux-gnu-complex128-64 && \
+    # ./configure && \
+    # make && \
     # Install slepc4py
     cd src/binding/slepc4py && \
-    PETSC_ARCH=linux-gnu-real32-32:linux-gnu-complex64-32:linux-gnu-real64-32:linux-gnu-complex128-32:linux-gnu-real64-64:linux-gnu-complex128-64 pip install --no-cache-dir . && \
+    # PETSC_ARCH=linux-gnu-real32-32:linux-gnu-complex64-32:linux-gnu-real64-32:linux-gnu-complex128-32:linux-gnu-real64-64:linux-gnu-complex128-64 pip install --no-cache-dir . && \
+    PETSC_ARCH=linux-gnu-real32-32:linux-gnu-complex64-32:linux-gnu-real64-32:linux-gnu-complex128-32 pip install --no-cache-dir . && \
     rm -rf ${SLEPC_DIR}/CTAGS ${SLEPC_DIR}/TAGS ${SLEPC_DIR}/docs ${SLEPC_DIR}/src/ ${SLEPC_DIR}/**/obj/ ${SLEPC_DIR}/**/test/ && \
     rm -rf /tmp/*
