@@ -142,7 +142,7 @@ def test_entity_closure_dofs(mesh_factory):
         assert set(V.dofmap.entity_closure_dofs(mesh, d, all_cells)) == set(range(V.dim))
 
 
-def test_block_size(mesh):
+def test_block_size():
     meshes = [create_unit_square(MPI.COMM_WORLD, 8, 8),
               create_unit_cube(MPI.COMM_WORLD, 4, 4, 4),
               create_unit_square(MPI.COMM_WORLD, 8, 8, CellType.quadrilateral),
