@@ -150,7 +150,7 @@ def test_basic_assembly(mode, dtype):
     b.array[b.index_map.size_local * b.block_size:] = 0
     fem.assemble_vector(b.array, L)
     b.scatter_reverse(la.InsertMode.add)
-    assert 2.0 * normb == pytest.approx(b.norm())
+    assert 2 * normb == pytest.approx(b.norm())
 
     # Matrix re-assembly (no zeroing)
     fem.assemble_matrix(A, a)
@@ -844,7 +844,7 @@ def test_pack_coefficients():
     for c in [(None, None), (None, coeffs), (constants, None), (constants, coeffs)]:
         A = petsc_assemble_matrix(J, constants=c[0], coeffs=c[1])
         A.assemble()
-        assert pytest.approx((A - A0).norm(), 1.0e-12) == 0.0
+    assert 0.0 == pytest.approx((A - A0).norm(), abs=1.0e-12)  # /NOSONAR
 
     # Change coefficients
     constants *= 5.0
