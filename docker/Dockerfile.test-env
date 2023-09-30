@@ -132,7 +132,7 @@ RUN apt-get -qq update && \
 
 # Install MPI
 RUN if [ "$MPI" = "mpich" ]; then \
-    wget http://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${MPICH_VERSION}.tar.gz && \
+    wget https://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${MPICH_VERSION}.tar.gz && \
     tar xfz mpich-${MPICH_VERSION}.tar.gz  && \
     cd mpich-${MPICH_VERSION}  && \
     ./configure ${MPICH_CONFIGURE_OPTIONS} && \
@@ -201,7 +201,7 @@ ENV PYTHONPATH=/usr/local/lib:$PYTHONPATH
 ENV PETSC_DIR=/usr/local/petsc SLEPC_DIR=/usr/local/slepc
 RUN apt-get -qq update && \
     apt-get -y install bison flex && \
-    wget -nc --quiet http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${PETSC_VERSION}.tar.gz -O petsc-${PETSC_VERSION}.tar.gz && \
+    wget -nc --quiet https://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${PETSC_VERSION}.tar.gz -O petsc-${PETSC_VERSION}.tar.gz && \
     mkdir -p ${PETSC_DIR} && tar -xf petsc-${PETSC_VERSION}.tar.gz -C ${PETSC_DIR} --strip-components 1 && \
     cd ${PETSC_DIR} && \
     # Real32, 32-bit int
