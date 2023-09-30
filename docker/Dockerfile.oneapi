@@ -141,29 +141,8 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     --with-make-np=${BUILD_NP} \
     --with-scalar-type=complex && \
     make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex128-32 ${MAKEFLAGS} all && \
-    # # Real64, 64-bit int
-    # ./configure \
-    # PETSC_ARCH=linux-gnu-real64-64 \
-    # --with-64-bit-indices=yes \
-    # --with-fortran-bindings=no \
-    # --with-shared-libraries \
-    # --download-superlu_dist \
-    # --with-make-np=${BUILD_NP} \
-    # --with-scalar-type=real && \
-    # make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real64-64 ${MAKEFLAGS} all && \
-    # # Complex128, 64-bit int
-    # ./configure \
-    # PETSC_ARCH=linux-gnu-complex128-64 \
-    # --with-64-bit-indices=yes \
-    # --with-fortran-bindings=no \
-    # --with-shared-libraries \
-    # --download-superlu_dist \
-    # --with-make-np=${BUILD_NP} \
-    # --with-scalar-type=complex && \
-    # make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex128-64 ${MAKEFLAGS} all && \
     # Install petsc4py
     cd src/binding/petsc4py && \
-    # PETSC_ARCH=linux-gnu-real32-32:linux-gnu-complex64-32:linux-gnu-real64-32:linux-gnu-complex128-32:linux-gnu-real64-64:linux-gnu-complex128-64 pip install --no-cache-dir . && \
     PETSC_ARCH=linux-gnu-real32-32:linux-gnu-complex64-32:linux-gnu-real64-32:linux-gnu-complex128-32 pip install --no-cache-dir . && \
     # Cleanup
     apt-get -y purge bison flex && \
@@ -198,15 +177,8 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     export PETSC_ARCH=linux-gnu-complex128-32 && \
     ./configure && \
     make && \
-    # export PETSC_ARCH=linux-gnu-real64-64 && \
-    # ./configure && \
-    # make && \
-    # export PETSC_ARCH=linux-gnu-complex128-64 && \
-    # ./configure && \
-    # make && \
     # Install slepc4py
     cd src/binding/slepc4py && \
-    # PETSC_ARCH=linux-gnu-real32-32:linux-gnu-complex64-32:linux-gnu-real64-32:linux-gnu-complex128-32:linux-gnu-real64-64:linux-gnu-complex128-64 pip install --no-cache-dir . && \
     PETSC_ARCH=linux-gnu-real32-32:linux-gnu-complex64-32:linux-gnu-real64-32:linux-gnu-complex128-32 pip install --no-cache-dir . && \
     rm -rf ${SLEPC_DIR}/CTAGS ${SLEPC_DIR}/TAGS ${SLEPC_DIR}/docs ${SLEPC_DIR}/src/ ${SLEPC_DIR}/**/obj/ ${SLEPC_DIR}/**/test/ && \
     rm -rf /tmp/*

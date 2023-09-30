@@ -27,7 +27,7 @@ jobs:
       - name: Reduce disk usage
         run: |
           # Workaround to provide additional free space for builds.
-          #   https://github.com/actions/virtual-environments/issues/2840
+          # https://github.com/actions/virtual-environments/issues/2840
           sudo apt-get remove -y '^dotnet-.*'
           sudo apt-get remove -y 'php.*'
           sudo apt-get remove -y azure-cli google-chrome-stable firefox powershell mono-devel
