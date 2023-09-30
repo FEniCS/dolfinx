@@ -291,10 +291,17 @@ public:
   /// @note The size of of `g` must be equal to the block size if `V`.
   /// Use the Function version if this is not the case, e.g. for some
   /// mixed spaces.
-  template <typename S, std::convertible_to<std::vector<std::int32_t>> X,
+  // template <typename S, std::convertible_to<std::vector<std::int32_t>> X,
+  //           typename
+  //           = std::enable_if_t<std::is_convertible_v<S, T>
+  //                              or std::is_convertible_v<S, std::span<const
+  //                              T>>>>
+  template <typename S, typename X,
             typename
             = std::enable_if_t<std::is_convertible_v<S, T>
                                or std::is_convertible_v<S, std::span<const T>>>>
+    requires std::is_convertible_v<std::remove_cvref_t<X>,
+                                   std::vector<std::int32_t>>
   DirichletBC(const S& g, X&& dofs, std::shared_ptr<const FunctionSpace<U>> V)
       : DirichletBC(std::make_shared<Constant<T>>(g), dofs, V)
   {

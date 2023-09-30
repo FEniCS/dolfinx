@@ -176,7 +176,7 @@ def test_interpolation_rank1(W):
     # (np.float32, "float"),  # Fails on Redhat CI, needs further investigation
     (np.float64, "double")
 ])
-def test_cffi_expression(types, V):
+def test_cffi_expression(types):
     vtype, xtype = types
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, dtype=vtype)
     V = FunctionSpace(mesh, ('Lagrange', 1))
