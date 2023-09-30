@@ -87,7 +87,7 @@ RUN git clone -b v${PETSC_VERSION}  https://gitlab.com/petsc/petsc.git && \
     make all && \
     make install && \
     cd src/binding/petsc4py && \
-    python3 -m pip install --no-cache-dir . && \
+    PETSC_DIR=/usr/local python3 -m pip install --no-cache-dir . && \
     rm -rf /tmp/*
 
 # RHEL pkgconfig does not look here by default. Setting this probably
