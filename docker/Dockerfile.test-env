@@ -201,7 +201,7 @@ ENV PYTHONPATH=/usr/local/lib:$PYTHONPATH
 ENV PETSC_DIR=/usr/local/petsc SLEPC_DIR=/usr/local/slepc
 RUN apt-get -qq update && \
     apt-get -y install bison flex && \
-    wget -nc --quiet https://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${PETSC_VERSION}.tar.gz -O petsc-${PETSC_VERSION}.tar.gz && \
+    git clone -b v${PETSC_VERSION}  https://gitlab.com/petsc/petsc.git ${PETSC_DIR} && \
     mkdir -p ${PETSC_DIR} && tar -xf petsc-${PETSC_VERSION}.tar.gz -C ${PETSC_DIR} --strip-components 1 && \
     cd ${PETSC_DIR} && \
     # Real32, 32-bit int
@@ -343,7 +343,7 @@ RUN apt-get -qq update && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install SLEPc
-RUN wget -nc --quiet https://gitlab.com/slepc/slepc/-/archive/v${SLEPC_VERSION}/slepc-v${SLEPC_VERSION}.tar.gz && \
+RUN git clone -b v${SLEPC_VERSION} https://gitlab.com/slepc/slepc.git ${SLEPC_DIR} && \
     mkdir -p ${SLEPC_DIR} && tar -xf slepc-v${SLEPC_VERSION}.tar.gz -C ${SLEPC_DIR} --strip-components 1 && \
     cd ${SLEPC_DIR} && \
     export PETSC_ARCH=linux-gnu-real32-32 && \
