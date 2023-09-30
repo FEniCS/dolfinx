@@ -163,10 +163,9 @@ common::stack_index_maps(
 
   // Build list of src ranks (ranks that own ghosts)
   std::vector<int> src;
-  for (auto& map : maps)
+  for (auto& [map, _] : maps)
   {
-    src.insert(src.end(), map.first.get().owners().begin(),
-               map.first.get().owners().end());
+    src.insert(src.end(), map.get().owners().begin(), map.get().owners().end());
     std::sort(src.begin(), src.end());
     src.erase(std::unique(src.begin(), src.end()), src.end());
   }
