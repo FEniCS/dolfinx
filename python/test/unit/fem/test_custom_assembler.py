@@ -39,13 +39,13 @@ petsc_dir = PETSc_get_config()['PETSC_DIR']
 petsc_arch = petsc4py.lib.getPathArchPETSc()[1]
 
 # Get PETSc int and scalar types
-if np.dtype(PETSc.ScalarType).kind == 'c':
+if np.dtype(PETSc.ScalarType).kind == 'c':  # type: ignore
     complex = True
 else:
     complex = False
 
-scalar_size = np.dtype(PETSc.ScalarType).itemsize
-index_size = np.dtype(PETSc.IntType).itemsize
+scalar_size = np.dtype(PETSc.ScalarType).itemsize  # type: ignore
+index_size = np.dtype(PETSc.IntType).itemsize  # type: ignore
 
 if index_size == 8:
     c_int_t = "int64_t"
