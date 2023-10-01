@@ -312,7 +312,7 @@ common::stack_index_maps(
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size)
-    : _comm(comm), _overlapping(false)
+    : _comm(comm, true), _overlapping(false)
 {
   // Get global offset (index), using partial exclusive reduction
   std::int64_t offset = 0;
@@ -349,7 +349,7 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
                    const std::array<std::vector<int>, 2>& src_dest,
                    std::span<const std::int64_t> ghosts,
                    std::span<const int> owners)
-    : _comm(comm), _ghosts(ghosts.begin(), ghosts.end()),
+    : _comm(comm, true), _ghosts(ghosts.begin(), ghosts.end()),
       _owners(owners.begin(), owners.end()), _src(src_dest[0]),
       _dest(src_dest[1]), _overlapping(true)
 {
