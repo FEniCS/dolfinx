@@ -109,7 +109,7 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     --with-make-np=${BUILD_NP} \
     --with-scalar-type=real \
     --with-precision=single && \
-    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real32-32 ${MAKEFLAGS} all && \
+    make PETSC_ARCH=linux-gnu-real32-32 ${MAKEFLAGS} all && \
     # Complex64, 32-bit int
     ./configure \
     PETSC_ARCH=linux-gnu-complex64-32 \
@@ -120,7 +120,7 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     --with-make-np=${BUILD_NP} \
     --with-scalar-type=complex \
     --with-precision=single && \
-    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex64-32 ${MAKEFLAGS} all && \
+    make PETSC_ARCH=linux-gnu-complex64-32 ${MAKEFLAGS} all && \
     # Real64, 32-bit int
     ./configure \
     PETSC_ARCH=linux-gnu-real64-32 \
@@ -130,7 +130,7 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     --download-superlu_dist \
     --with-make-np=${BUILD_NP} \
     --with-scalar-type=real && \
-    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real64-32 ${MAKEFLAGS} all && \
+    make PETSC_ARCH=linux-gnu-real64-32 ${MAKEFLAGS} all && \
     # Complex128, 32-bit int
     ./configure \
     PETSC_ARCH=linux-gnu-complex128-32 \
@@ -140,7 +140,7 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     --download-superlu_dist \
     --with-make-np=${BUILD_NP} \
     --with-scalar-type=complex && \
-    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex128-32 ${MAKEFLAGS} all && \
+    make PETSC_ARCH=linux-gnu-complex128-32 ${MAKEFLAGS} all && \
     # Install petsc4py
     cd src/binding/petsc4py && \
     PETSC_ARCH=linux-gnu-real32-32:linux-gnu-complex64-32:linux-gnu-real64-32:linux-gnu-complex128-32 pip install --no-cache-dir . && \
