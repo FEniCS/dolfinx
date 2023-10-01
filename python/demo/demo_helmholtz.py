@@ -45,8 +45,8 @@ msh = create_unit_square(MPI.COMM_WORLD, n_elem, n_elem)
 n = ufl.FacetNormal(msh)
 
 # Source amplitude
-if np.issubdtype(PETSc.ScalarType, np.complexfloating):
-    A = PETSc.ScalarType(1 + 1j)
+if np.issubdtype(PETSc.ScalarType, np.complexfloating):  # type: ignore
+    A = PETSc.ScalarType(1 + 1j)  # type: ignore
 else:
     A = 1
 

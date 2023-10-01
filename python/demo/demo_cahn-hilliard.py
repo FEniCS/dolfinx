@@ -252,7 +252,7 @@ solver.rtol = np.sqrt(np.finfo(default_real_type).eps) * 1e-2
 # We can customize the linear solver used inside the NewtonSolver by
 # modifying the PETSc options
 ksp = solver.krylov_solver
-opts = PETSc.Options()
+opts = PETSc.Options()  # type: ignore
 option_prefix = ksp.getOptionsPrefix()
 opts[f"{option_prefix}ksp_type"] = "preonly"
 opts[f"{option_prefix}pc_type"] = "lu"

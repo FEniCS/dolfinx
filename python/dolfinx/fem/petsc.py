@@ -9,6 +9,7 @@ Functions in this module generally apply functions in :mod:`dolfinx.fem`
 to PETSc linear algebra objects and handle any PETSc-specific
 preparation."""
 
+# mypy: ignore-errors
 
 from __future__ import annotations
 

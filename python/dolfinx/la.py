@@ -260,10 +260,10 @@ def create_petsc_vector_wrap(x: Vector):
     """
     from petsc4py import PETSc
     map = x.index_map
-    ghosts = map.ghosts.astype(PETSc.IntType)
+    ghosts = map.ghosts.astype(PETSc.IntType)  # type: ignore
     bs = x.block_size
     size = (map.size_local * bs, map.size_global * bs)
-    return PETSc.Vec().createGhostWithArray(ghosts, x.array, size=size, bsize=bs, comm=map.comm)
+    return PETSc.Vec().createGhostWithArray(ghosts, x.array, size=size, bsize=bs, comm=map.comm)  # type: ignore
 
 
 def create_petsc_vector(map, bs: int):
@@ -276,9 +276,9 @@ def create_petsc_vector(map, bs: int):
 
     """
     from petsc4py import PETSc
-    ghosts = map.ghosts.astype(PETSc.IntType)
+    ghosts = map.ghosts.astype(PETSc.IntType)  # type: ignore
     size = (map.size_local * bs, map.size_global * bs)
-    return PETSc.Vec().createGhost(ghosts, size=size, bsize=bs, comm=map.comm)
+    return PETSc.Vec().createGhost(ghosts, size=size, bsize=bs, comm=map.comm)  # type: ignore
 
 
 def orthonormalize(basis):

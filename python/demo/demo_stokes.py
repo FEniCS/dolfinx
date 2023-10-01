@@ -138,7 +138,7 @@ V, Q = functionspace(msh, P2), functionspace(msh, P1)
 
 # +
 # No-slip condition on boundaries where x = 0, x = 1, and y = 0
-noslip = np.zeros(msh.geometry.dim, dtype=PETSc.ScalarType)
+noslip = np.zeros(msh.geometry.dim, dtype=PETSc.ScalarType)   # type: ignore
 facets = locate_entities_boundary(msh, 1, noslip_boundary)
 bc0 = dirichletbc(noslip, locate_dofs_topological(V, 1, facets), V)
 
@@ -159,11 +159,11 @@ bcs = [bc0, bc1]
 # Define variational problem
 (u, p) = ufl.TrialFunction(V), ufl.TrialFunction(Q)
 (v, q) = ufl.TestFunction(V), ufl.TestFunction(Q)
-f = Constant(msh, (PETSc.ScalarType(0), PETSc.ScalarType(0)))
+f = Constant(msh, (PETSc.ScalarType(0), PETSc.ScalarType(0)))  # type: ignore
 
 a = form([[inner(grad(u), grad(v)) * dx, inner(p, div(v)) * dx],
           [inner(div(u), q) * dx, None]])
-L = form([inner(f, v) * dx, inner(Constant(msh, PETSc.ScalarType(0)), q) * dx])
+L = form([inner(f, v) * dx, inner(Constant(msh, PETSc.ScalarType(0)), q) * dx])  # type: ignore
 # -
 
 # A block-diagonal preconditioner will be used with the iterative
