@@ -119,7 +119,7 @@ from ufl import (CellDiameter, FacetNormal, avg, div, dS, dx, grad, inner,
                  jump, pi, sin)
 
 from mpi4py import MPI
-from petsc4py.PETSc import ScalarType
+from petsc4py.PETSc import ScalarType  # type: ignore
 
 # -
 

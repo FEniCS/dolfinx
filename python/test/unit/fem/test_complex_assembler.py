@@ -19,7 +19,7 @@ from mpi4py import MPI
 from petsc4py import PETSc
 
 pytestmark = pytest.mark.skipif(
-    not np.issubdtype(PETSc.ScalarType, np.complexfloating), reason="Only works in complex mode.")
+    not np.issubdtype(PETSc.ScalarType, np.complexfloating), reason="Only works in complex mode.")  # type: ignore
 
 
 def test_complex_assembly():

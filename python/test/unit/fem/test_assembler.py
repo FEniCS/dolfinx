@@ -208,7 +208,9 @@ def test_assembly_bcs(mode):
     with g.localForm() as g_local:
         g_local.set(0.0)
     petsc_set_bc(g, [bc])
-    f = b - A * g
+    # f = b - A * g
+    f = b.duplicate()
+    A.multAdd(-g, b, f)
     petsc_set_bc(f, [bc])
 
     # Assemble vector and apply lifting of bcs during assembly

@@ -269,7 +269,7 @@ def test_curl_curl_eigenvalue(family, order):
     B.destroy()
 
 
-@pytest.mark.skipif(np.issubdtype(PETSc.ScalarType, np.complexfloating),
+@pytest.mark.skipif(np.issubdtype(PETSc.ScalarType, np.complexfloating),  # type: ignore
                     reason="This test does not work in complex mode.")
 @pytest.mark.parametrize("family", ["HHJ", "Regge"])
 def test_biharmonic(family):
