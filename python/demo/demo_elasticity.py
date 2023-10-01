@@ -40,7 +40,7 @@ from ufl import dx, grad, inner
 from mpi4py import MPI
 from petsc4py import PETSc
 
-dtype = PETSc.ScalarType
+dtype = PETSc.ScalarType  # type: ignore
 # -
 
 # ## Create the operator near-nullspace
@@ -84,8 +84,8 @@ def build_nullspace(V: FunctionSpaceBase):
     dolfinx.cpp.la.orthonormalize(_basis)
     assert dolfinx.cpp.la.is_orthonormal(_basis)
 
-    basis_petsc = [PETSc.Vec().createWithArray(x[:bs * length0], bsize=3, comm=V.mesh.comm) for x in b]
-    return PETSc.NullSpace().create(vectors=basis_petsc)
+    basis_petsc = [PETSc.Vec().createWithArray(x[:bs * length0], bsize=3, comm=V.mesh.comm) for x in b]  # type: ignore
+    return PETSc.NullSpace().create(vectors=basis_petsc)  # type: ignore
 
 
 # ## Problem definition
@@ -159,7 +159,7 @@ A.assemble()
 # +
 b = assemble_vector(L)
 apply_lifting(b, [a], bcs=[[bc]])
-b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore
 set_bc(b, [bc])
 # -
 
@@ -167,14 +167,14 @@ set_bc(b, [bc])
 
 ns = build_nullspace(V)
 A.setNearNullSpace(ns)
-A.setOption(PETSc.Mat.Option.SPD, True)
+A.setOption(PETSc.Mat.Option.SPD, True)  # type: ignore
 
 # Set PETSc solver options, create a PETSc Krylov solver, and attach the
 # matrix `A` to the solver:
 
 # +
 # Set solver options
-opts = PETSc.Options()
+opts = PETSc.Options()  # type: ignore
 opts["ksp_type"] = "cg"
 opts["ksp_rtol"] = 1.0e-8
 opts["pc_type"] = "gamg"
@@ -187,7 +187,7 @@ opts["mg_levels_pc_type"] = "jacobi"
 opts["mg_levels_ksp_chebyshev_esteig_steps"] = 10
 
 # Create PETSc Krylov solver and turn convergence monitoring on
-solver = PETSc.KSP().create(msh.comm)
+solver = PETSc.KSP().create(msh.comm)  # type: ignore
 solver.setFromOptions()
 
 # Set matrix operator

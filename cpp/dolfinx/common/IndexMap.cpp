@@ -163,10 +163,9 @@ common::stack_index_maps(
 
   // Build list of src ranks (ranks that own ghosts)
   std::vector<int> src;
-  for (auto& map : maps)
+  for (auto& [map, _] : maps)
   {
-    src.insert(src.end(), map.first.get().owners().begin(),
-               map.first.get().owners().end());
+    src.insert(src.end(), map.get().owners().begin(), map.get().owners().end());
     std::sort(src.begin(), src.end());
     src.erase(std::unique(src.begin(), src.end()), src.end());
   }
@@ -360,7 +359,7 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
 
   // Get global offset (index), using partial exclusive reduction
   std::int64_t offset = 0;
-  const std::int64_t local_size_tmp = (std::int64_t)local_size;
+  const std::int64_t local_size_tmp = local_size;
   MPI_Request request_scan;
   int ierr = MPI_Iexscan(&local_size_tmp, &offset, 1, MPI_INT64_T, MPI_SUM,
                          comm, &request_scan);
