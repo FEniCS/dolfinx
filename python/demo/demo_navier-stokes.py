@@ -166,7 +166,7 @@ from ufl import (CellDiameter, FacetNormal, TestFunction, TrialFunction, avg,
 from mpi4py import MPI
 from petsc4py import PETSc
 
-if np.issubdtype(PETSc.ScalarType, np.complexfloating):
+if np.issubdtype(PETSc.ScalarType, np.complexfloating):  # type: ignore
     print("Demo should only be executed with DOLFINx real mode")
     exit(0)
 # -
@@ -289,12 +289,12 @@ A.assemble()
 b = assemble_vector_block(L, a, bcs=bcs)
 
 # Create and configure solver
-ksp = PETSc.KSP().create(msh.comm)
+ksp = PETSc.KSP().create(msh.comm)  # type: ignore
 ksp.setOperators(A)
 ksp.setType("preonly")
 ksp.getPC().setType("lu")
 ksp.getPC().setFactorSolverType("mumps")
-opts = PETSc.Options()
+opts = PETSc.Options()  # type: ignore
 opts["mat_mumps_icntl_14"] = 80  # Increase MUMPS working memory
 opts["mat_mumps_icntl_24"] = 1  # Option to support solving a singular matrix (pressure nullspace)
 opts["mat_mumps_icntl_25"] = 0  # Option to support solving a singular matrix (pressure nullspace)
@@ -305,7 +305,7 @@ ksp.setFromOptions()
 x = A.createVecRight()
 try:
     ksp.solve(b, x)
-except PETSc.Error as e:
+except PETSc.Error as e:  # type: ignore
     if e.ierr == 92:
         print("The required PETSc solver/preconditioner is not available. Exiting.")
         print(e)

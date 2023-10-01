@@ -69,7 +69,7 @@ from dolfinx.fem.petsc import LinearProblem
 from ufl import ds, dx, grad, inner
 
 from mpi4py import MPI
-from petsc4py.PETSc import ScalarType
+from petsc4py.PETSc import ScalarType  # type: ignore
 
 # -
 

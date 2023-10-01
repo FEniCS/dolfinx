@@ -103,20 +103,20 @@ b1 = form(- ufl.inner(f, v) * ds(1))
 
 # JIT compile individual blocks tabulation kernels
 nptype, ffcxtype = None, None
-if PETSc.ScalarType == np.float32:
+if PETSc.ScalarType == np.float32:  # type: ignore
     nptype = "float32"
     ffcxtype = "float"
-elif PETSc.ScalarType == np.float64:
+elif PETSc.ScalarType == np.float64:  # type: ignore
     nptype = "float64"
     ffcxtype = "double"
-elif PETSc.ScalarType == np.complex64:
+elif PETSc.ScalarType == np.complex64:  # type: ignore
     nptype = "complex64"
     ffcxtype = "float _Complex"
-elif PETSc.ScalarType == np.complex128:
+elif PETSc.ScalarType == np.complex128:  # type: ignore
     nptype = "complex128"
     ffcxtype = "double _Complex"
 else:
-    raise RuntimeError(f"Unsupported scalar type {PETSc.ScalarType}.")
+    raise RuntimeError(f"Unsupported scalar type {PETSc.ScalarType}.")  # type: ignore
 
 ufcx_form00, _, _ = ffcx_jit(msh.comm, a00, form_compiler_options={"scalar_type": ffcxtype})
 kernel00 = getattr(ufcx_form00.form_integrals[0], f"tabulate_tensor_{nptype}")
@@ -128,10 +128,10 @@ kernel10 = getattr(ufcx_form10.form_integrals[0], f"tabulate_tensor_{nptype}")
 ffi = cffi.FFI()
 cffi_support.register_type(ffi.typeof('double _Complex'), numba.types.complex128)
 c_signature = numba.types.void(
-    numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
-    numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
-    numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
-    numba.types.CPointer(numba.typeof(PETSc.RealType())),
+    numba.types.CPointer(numba.typeof(PETSc.ScalarType())),  # type: ignore
+    numba.types.CPointer(numba.typeof(PETSc.ScalarType())),  # type: ignore
+    numba.types.CPointer(numba.typeof(PETSc.ScalarType())),  # type: ignore
+    numba.types.CPointer(numba.typeof(PETSc.RealType())),  # type: ignore
     numba.types.CPointer(numba.types.int32),
     numba.types.CPointer(numba.types.uint8))
 
@@ -157,16 +157,16 @@ def tabulate_condensed_tensor_A(A_, w_, c_, coords_, entity_local_index, permuta
 
 # Prepare a Form with a condensed tabulation kernel
 formtype = None
-if PETSc.ScalarType == np.float32:
+if PETSc.ScalarType == np.float32:  # type: ignore
     formtype = Form_float32
-elif PETSc.ScalarType == np.float64:
+elif PETSc.ScalarType == np.float64:  # type: ignore
     formtype = Form_float64
-elif PETSc.ScalarType == np.complex64:
+elif PETSc.ScalarType == np.complex64:  # type: ignore
     formtype = Form_complex64
-elif PETSc.ScalarType == np.complex128:
+elif PETSc.ScalarType == np.complex128:  # type: ignore
     formtype = Form_complex128
 else:
-    raise RuntimeError(f"Unsupported PETSc ScalarType '{PETSc.ScalarType }'.")
+    raise RuntimeError(f"Unsupported PETSc ScalarType '{PETSc.ScalarType }'.")  # type: ignore
 
 cells = range(msh.topology.index_map(msh.topology.dim).size_local)
 integrals = {IntegralType.cell: [(-1, tabulate_condensed_tensor_A.address, cells)]}
@@ -177,11 +177,11 @@ A_cond.assemble()
 
 b = assemble_vector(b1)
 apply_lifting(b, [a_cond], bcs=[[bc]])
-b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore
 set_bc(b, [bc])
 
 uc = Function(U)
-solver = PETSc.KSP().create(A_cond.getComm())
+solver = PETSc.KSP().create(A_cond.getComm())  # type: ignore
 solver.setOperators(A_cond)
 solver.solve(b, uc.vector)
 
