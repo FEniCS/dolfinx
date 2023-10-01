@@ -626,7 +626,7 @@ def test_assembly_solve_taylor_hood_nl(mesh):
         x.destroy()
         return Jnorm, Fnorm, xnorm
 
-    # Jnorm0, Fnorm0, xnorm0 = blocked()
+    Jnorm0, Fnorm0, xnorm0 = blocked()
     Jnorm1, Fnorm1, xnorm1 = nested()
     # assert Jnorm1 == pytest.approx(Jnorm0, 1.0e-3, abs=1.0e-6)
     # assert Fnorm1 == pytest.approx(Fnorm0, 1.0e-6, abs=1.0e-5)
