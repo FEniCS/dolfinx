@@ -43,9 +43,6 @@ execute_process(
   RESULT_VARIABLE BASIX_PY_COMMAND_RESULT
   ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
 )
-message("Ex0: ${Python3_EXECUTABLE}")
-message("Ex1: ${Python_EXECUTABLE}")
-message("Testing: ${BASIX_PY_DIR}")
 find_package(Basix REQUIRED CONFIG HINTS ${BASIX_PY_DIR})
 
 find_package(DOLFINX REQUIRED CONFIG)
