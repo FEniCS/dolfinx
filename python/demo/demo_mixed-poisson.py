@@ -152,7 +152,7 @@ problem = LinearProblem(a, L, bcs=bcs, petsc_options={"ksp_type": "preonly", "pc
                                                       "pc_factor_mat_solver_type": "mumps"})
 try:
     w_h = problem.solve()
-except PETSc.Error as e:
+except PETSc.Error as e:  # type: ignore
     if e.ierr == 92:
         print("The required PETSc solver/preconditioner is not available. Exiting.")
         print(e)

@@ -748,5 +748,5 @@ def VectorFunctionSpace(mesh: Mesh,
         raise ValueError("Cannot create vector element containing a non-scalar.")
     ufl_e = basix.ufl.element(ed.family, mesh.basix_cell(), ed.degree,
                               shape=(mesh.geometry.dim,) if dim is None else (dim,),
-                              gdim=mesh.geometry.dim, rank=1)
+                              gdim=mesh.geometry.dim)
     return FunctionSpace(mesh, ufl_e)

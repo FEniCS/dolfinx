@@ -130,7 +130,7 @@ def lid_velocity_expression(x):
 # piecewise linear basis (scalar).
 
 
-P2 = element("Lagrange", msh.basix_cell(), 2, rank=1)
+P2 = element("Lagrange", msh.basix_cell(), 2, shape=(msh.geometry.dim,))
 P1 = element("Lagrange", msh.basix_cell(), 1)
 V, Q = functionspace(msh, P2), functionspace(msh, P1)
 
@@ -138,7 +138,7 @@ V, Q = functionspace(msh, P2), functionspace(msh, P1)
 
 # +
 # No-slip condition on boundaries where x = 0, x = 1, and y = 0
-noslip = np.zeros(msh.geometry.dim, dtype=PETSc.ScalarType)
+noslip = np.zeros(msh.geometry.dim, dtype=PETSc.ScalarType)   # type: ignore
 facets = locate_entities_boundary(msh, 1, noslip_boundary)
 bc0 = dirichletbc(noslip, locate_dofs_topological(V, 1, facets), V)
 
@@ -159,11 +159,11 @@ bcs = [bc0, bc1]
 # Define variational problem
 (u, p) = ufl.TrialFunction(V), ufl.TrialFunction(Q)
 (v, q) = ufl.TestFunction(V), ufl.TestFunction(Q)
-f = Constant(msh, (PETSc.ScalarType(0), PETSc.ScalarType(0)))
+f = Constant(msh, (PETSc.ScalarType(0), PETSc.ScalarType(0)))  # type: ignore
 
 a = form([[inner(grad(u), grad(v)) * dx, inner(p, div(v)) * dx],
           [inner(div(u), q) * dx, None]])
-L = form([inner(f, v) * dx, inner(Constant(msh, PETSc.ScalarType(0)), q) * dx])
+L = form([inner(f, v) * dx, inner(Constant(msh, PETSc.ScalarType(0)), q) * dx])  # type: ignore
 # -
 
 # A block-diagonal preconditioner will be used with the iterative
@@ -274,7 +274,7 @@ def nested_iterative_solver():
     # `scatter_forward`.
     with XDMFFile(MPI.COMM_WORLD, "out_stokes/velocity.xdmf", "w") as ufile_xdmf:
         u.x.scatter_forward()
-        P1 = element("Lagrange", msh.basix_cell(), 1, rank=1)
+        P1 = element("Lagrange", msh.basix_cell(), 1, shape=(msh.geometry.dim,))
         u1 = Function(functionspace(msh, P1))
         u1.interpolate(u)
         ufile_xdmf.write_mesh(msh)

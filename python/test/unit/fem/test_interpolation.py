@@ -106,7 +106,7 @@ def one_cell_mesh(cell_type):
         ordered_points[j] = points[i]
     cells = np.array([order])
 
-    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, rank=1))
+    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, shape=(ordered_points.shape[1],)))
     return create_mesh(MPI.COMM_WORLD, cells, ordered_points, domain)
 
 
@@ -139,7 +139,7 @@ def two_cell_mesh(cell_type):
                            [1., 0., -1.], [0., 1., -1.], [1., 1., -1.]], dtype=default_real_type)
         cells = [[0, 1, 2, 3, 4, 5, 6, 7], [9, 11, 8, 10, 1, 3, 0, 2]]
 
-    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, rank=1))
+    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, shape=(points.shape[1],)))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     return mesh
 
@@ -269,7 +269,7 @@ def test_mixed_sub_interpolation():
     def f(x):
         return np.vstack((10 + x[0], -10 - x[1], 25 + x[0]))
 
-    P2 = element("Lagrange", mesh.basix_cell(), 2, rank=1)
+    P2 = element("Lagrange", mesh.basix_cell(), 2, shape=(mesh.geometry.dim,))
     P1 = element("Lagrange", mesh.basix_cell(), 1)
     for i, P in enumerate((mixed_element([P2, P1]), mixed_element([P1, P2]))):
         W = FunctionSpace(mesh, P)
@@ -320,7 +320,7 @@ def test_mixed_interpolation():
     """Test that mixed interpolation raised an exception."""
     mesh = one_cell_mesh(CellType.triangle)
     A = element("Lagrange", mesh.basix_cell(), 1)
-    B = element("Lagrange", mesh.basix_cell(), 1, rank=1)
+    B = element("Lagrange", mesh.basix_cell(), 1, shape=(mesh.geometry.dim,))
     v = Function(FunctionSpace(mesh, mixed_element([A, B])))
     with pytest.raises(RuntimeError):
         v.interpolate(lambda x: (x[1], 2 * x[0], 3 * x[1]))
@@ -438,7 +438,7 @@ def test_interpolation_non_affine():
                        [0.5, 1, 0], [0.5, 0, 1.5], [0, 1, 1.5], [1, 1, 1.5],
                        [0.5, 2, 1.5], [0.5, 1, 3], [0.5, 1, 1.5]], dtype=default_real_type)
     cells = np.array([range(len(points))], dtype=np.int32)
-    domain = ufl.Mesh(element("Lagrange", "hexahedron", 2, rank=1))
+    domain = ufl.Mesh(element("Lagrange", "hexahedron", 2, shape=(3,)))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     W = FunctionSpace(mesh, ("NCE", 1))
     V = FunctionSpace(mesh, ("NCE", 2))
@@ -458,7 +458,7 @@ def test_interpolation_non_affine_nonmatching_maps():
                        [0.5, 1, 0], [0.5, -0.1, 1.5], [0, 1, 1.5], [1, 1, 1.5],
                        [0.5, 2, 1.5], [0.5, 1, 3], [0.5, 1, 1.5]], dtype=default_real_type)
     cells = np.array([range(len(points))], dtype=np.int32)
-    domain = ufl.Mesh(element("Lagrange", "hexahedron", 2, rank=1))
+    domain = ufl.Mesh(element("Lagrange", "hexahedron", 2, shape=(3,)))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     gdim = mesh.geometry.dim
     W = FunctionSpace(mesh, ("DG", 1, (gdim,)))
@@ -598,7 +598,7 @@ def test_interpolate_callable():
     V = FunctionSpace(mesh, ("Lagrange", 2))
     u0, u1 = Function(V), Function(V)
 
-    @numba.njit
+    @ numba.njit
     def f(x):
         return x[0]
 
@@ -695,7 +695,7 @@ def test_mixed_interpolation_permuting(cell_type, order):
     dgdy = ufl.cos(x[1])
 
     curl_el = element("N1curl", mesh.basix_cell(), 1)
-    vlag_el = element("Lagrange", mesh.basix_cell(), 1, rank=1)
+    vlag_el = element("Lagrange", mesh.basix_cell(), 1, shape=(mesh.geometry.dim,))
     lagr_el = element("Lagrange", mesh.basix_cell(), order)
 
     V = FunctionSpace(mesh, mixed_element([curl_el, lagr_el]))
@@ -786,11 +786,10 @@ def test_nonmatching_mesh_single_cell_overlap_interpolation(xtype):
     u1.interpolate(f_test1)
     u1.x.scatter_forward()
 
-    u1_2_u2_nmm_data = \
-        create_nonmatching_meshes_interpolation_data(
-            u2.function_space.mesh._cpp_object,
-            u2.function_space.element,
-            u1.function_space.mesh._cpp_object)
+    u1_2_u2_nmm_data = create_nonmatching_meshes_interpolation_data(
+        u2.function_space.mesh._cpp_object,
+        u2.function_space.element,
+        u1.function_space.mesh._cpp_object)
 
     u2.interpolate(u1, nmm_interpolation_data=u1_2_u2_nmm_data)
     u2.x.scatter_forward()

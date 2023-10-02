@@ -129,7 +129,7 @@ def test_save_2d_vector_CG2(tempdir):
                        [1, 2], [0.5, 2], [1, 1]], dtype=default_real_type)
     cells = np.array([[0, 1, 2, 3, 4, 5],
                       [1, 6, 2, 7, 3, 8]])
-    domain = ufl.Mesh(element("Lagrange", "triangle", 2, rank=1))
+    domain = ufl.Mesh(element("Lagrange", "triangle", 2, shape=(2,)))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     gdim = mesh.geometry.dim
     u = Function(FunctionSpace(mesh, ("Lagrange", 2, (gdim,))))
@@ -141,7 +141,7 @@ def test_save_2d_vector_CG2(tempdir):
 
 def test_save_vtk_mixed(tempdir):
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
-    P2 = element("Lagrange", mesh.basix_cell(), 1, rank=1)
+    P2 = element("Lagrange", mesh.basix_cell(), 1, shape=(mesh.geometry.dim,))
     P1 = element("Lagrange", mesh.basix_cell(), 1)
     W = FunctionSpace(mesh, mixed_element([P2, P1]))
     V1 = FunctionSpace(mesh, P1)
@@ -195,7 +195,7 @@ def test_save_vector_element(tempdir, cell_type):
 def test_save_vtk_cell_point(tempdir):
     """Test writing cell-wise and point-wise data"""
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
-    P2 = element("Lagrange", mesh.basix_cell(), 1, rank=1)
+    P2 = element("Lagrange", mesh.basix_cell(), 1, shape=(3, ))
     P1 = element("Discontinuous Lagrange", mesh.basix_cell(), 0)
 
     V2, V1 = FunctionSpace(mesh, P2), FunctionSpace(mesh, P1)

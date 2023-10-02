@@ -85,7 +85,7 @@ def test_overlapping_bcs():
     As = A.to_scipy(ghosted=True)
     d = As.diagonal()
     if len(dof_corner) > 0 and dof_corner[0] < V.dofmap.index_map.size_local:
-        assert d[dof_corner[0]] == 1.0
+        assert d[dof_corner[0]] == 1.0  # /NOSONAR
 
     b.array[:] = 0
     assemble_vector(b.array, L)
@@ -287,9 +287,8 @@ def test_mixed_blocked_constant():
     tdim = mesh.topology.dim
     boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
 
-    TH = mixed_element([
-        element("Lagrange", mesh.basix_cell(), 1),
-        element("Lagrange", mesh.basix_cell(), 2, rank=1)])
+    TH = mixed_element([element("Lagrange", mesh.basix_cell(), 1),
+                        element("Lagrange", mesh.basix_cell(), 2, shape=(mesh.geometry.dim,))])
     W = FunctionSpace(mesh, TH)
     u = Function(W)
     c0 = default_scalar_type(3)

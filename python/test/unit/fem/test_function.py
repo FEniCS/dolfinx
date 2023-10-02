@@ -103,7 +103,7 @@ def test_eval_manifold():
     # Simple two-triangle surface in 3d
     vertices = np.array([(0.0, 0.0, 1.0), (1.0, 1.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0)], dtype=default_real_type)
     cells = [(0, 1, 2), (0, 1, 3)]
-    domain = ufl.Mesh(element("Lagrange", "triangle", 1, gdim=3, rank=1))
+    domain = ufl.Mesh(element("Lagrange", "triangle", 1, gdim=3, shape=(2,)))
     mesh = create_mesh(MPI.COMM_WORLD, cells, vertices, domain)
     Q = FunctionSpace(mesh, ("Lagrange", 1))
     u = Function(Q)
@@ -144,14 +144,14 @@ def test_interpolation_rank0(V):
     f.t = 1.0
     w = Function(V)
     w.interpolate(f.eval)
-    assert (w.x.array[:] == 1.0).all()
+    assert (w.x.array[:] == 1.0).all()  # /NOSONAR
 
     num_vertices = V.mesh.topology.index_map(0).size_global
     assert np.isclose(w.x.norm(la.Norm.l1) - num_vertices, 0)
 
     f.t = 2.0
     w.interpolate(f.eval)
-    assert (w.x.array[:] == 2.0).all()
+    assert (w.x.array[:] == 2.0).all()  # /NOSONAR
 
 
 def test_interpolation_rank1(W):
@@ -165,8 +165,8 @@ def test_interpolation_rank1(W):
     w = Function(W)
     w.interpolate(f)
     x = w.vector
-    assert x.max()[1] == 3.0
-    assert x.min()[1] == 1.0
+    assert x.max()[1] == 3.0  # /NOSONAR
+    assert x.min()[1] == 1.0  # /NOSONAR
 
     num_vertices = W.mesh.topology.index_map(0).size_global
     assert round(w.x.norm(la.Norm.l1) - 6 * num_vertices, 7) == 0
@@ -176,7 +176,7 @@ def test_interpolation_rank1(W):
     # (np.float32, "float"),  # Fails on Redhat CI, needs further investigation
     (np.float64, "double")
 ])
-def test_cffi_expression(types, V):
+def test_cffi_expression(types):
     vtype, xtype = types
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, dtype=vtype)
     V = FunctionSpace(mesh, ('Lagrange', 1))

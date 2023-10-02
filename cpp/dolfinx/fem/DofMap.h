@@ -88,8 +88,11 @@ public:
   /// @param[in] dofmap Adjacency list with the degrees-of-freedom for
   /// each cell.
   /// @param[in] bs The block size of the `dofmap`.
-  template <std::convertible_to<fem::ElementDofLayout> E,
-            std::convertible_to<std::vector<std::int32_t>> U>
+  template <typename E, typename U>
+    requires std::is_convertible_v<std::remove_cvref_t<E>,
+                                   fem::ElementDofLayout>
+                 and std::is_convertible_v<std::remove_cvref_t<U>,
+                                           std::vector<std::int32_t>>
   DofMap(E&& element, std::shared_ptr<const common::IndexMap> index_map,
          int index_map_bs, U&& dofmap, int bs)
       : index_map(index_map), _index_map_bs(index_map_bs),

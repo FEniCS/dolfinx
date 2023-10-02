@@ -19,7 +19,7 @@ from dolfinx.mesh import create_unit_square
 from dolfinx.wrappers import get_include_path as pybind_inc
 from mpi4py import MPI
 
-import dolfinx
+import dolfinx.pkgconfig
 
 
 @pytest.mark.skip_in_parallel

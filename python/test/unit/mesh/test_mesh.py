@@ -501,7 +501,7 @@ def test_empty_rank_mesh(dtype):
     comm = MPI.COMM_WORLD
     cell_type = CellType.triangle
     tdim = 2
-    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, rank=1))
+    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, shape=(2,)))
 
     def partitioner(comm, nparts, local_graph, num_ghost_nodes):
         """Leave cells on the curent rank"""
