@@ -48,6 +48,9 @@ std::vector<T> shortest_vector(const mesh::Mesh<T>& mesh, int dim,
   {
     for (std::size_t e = 0; e < entities.size(); e++)
     {
+      // Check that we have sent in valid entities, i.e. that they exist in the
+      // local dofmap. One gets a cryptical memory segfault if entities is -1
+      assert(entities[e] > 0);
       auto dofs
           = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
               submdspan(x_dofmap, entities[e],
@@ -752,7 +755,8 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points)
       dolfinx::MPI::mpi_type<T>(), received_points.data(), recv_sizes.data(),
       recv_offsets.data(), dolfinx::MPI::mpi_type<T>(), forward_comm);
 
-  // Each process checks which local cell is closest and computes the squared distance to the cell
+  // Each process checks which local cell is closest and computes the squared
+  // distance to the cell
   const int rank = dolfinx::MPI::rank(comm);
   const std::vector<std::int32_t> closest_cells = compute_closest_entity(
       bb, midpoint_tree, mesh,
