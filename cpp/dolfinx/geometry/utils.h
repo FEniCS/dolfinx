@@ -50,7 +50,7 @@ std::vector<T> shortest_vector(const mesh::Mesh<T>& mesh, int dim,
     {
       // Check that we have sent in valid entities, i.e. that they exist in the
       // local dofmap. One gets a cryptical memory segfault if entities is -1
-      assert(entities[e] > 0);
+      assert(entities[e] >= 0);
       auto dofs
           = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
               submdspan(x_dofmap, entities[e],
