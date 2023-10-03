@@ -296,7 +296,7 @@ def test_mixed_sub_interpolation():
         u, v = Function(V), Function(V)
         u.interpolate(U.sub(i))
         v.interpolate(f)
-        atol = 5*np.finfo(u.x.array.dtype).resolution
+        atol = 5 * np.finfo(u.x.array.dtype).resolution
         assert np.allclose(u.x.array, v.x.array, atol=atol)
 
         # Different maps (1)
@@ -304,7 +304,7 @@ def test_mixed_sub_interpolation():
         u, v = Function(V), Function(V)
         u.interpolate(U.sub(i))
         v.interpolate(f)
-        atol = 5*np.finfo(u.x.array.dtype).resolution
+        atol = 5 * np.finfo(u.x.array.dtype).resolution
         assert np.allclose(u.x.array, v.x.array, atol=atol)
 
         # Test with wrong shape
