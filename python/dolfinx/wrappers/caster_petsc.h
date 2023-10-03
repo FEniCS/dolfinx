@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <nanobind/nanobind.h>
 #include <petsc4py/petsc4py.h>
 #include <petscdm.h>
 #include <petscis.h>
@@ -14,10 +13,11 @@
 #include <petscmat.h>
 #include <petscsnes.h>
 #include <petscvec.h>
+#include <pybind11/pybind11.h>
 
-// nanobind casters for PETSc/petsc4py objects
+// pybind11 casters for PETSc/petsc4py objects
 
-namespace nb = nanobind;
+namespace py = pybind11;
 
 // Import petsc4py on demand
 #define VERIFY_PETSC4PY(func)                                                  \
@@ -33,8 +33,8 @@ namespace nb = nanobind;
   class type_caster<_p_##TYPE>                                                 \
   {                                                                            \
   public:                                                                      \
-    NB_TYPE_CASTER(TYPE, const_name(#NAME));                                   \
-    bool from_python(handle src, uint8_t, cleanup_list*)                       \
+    PYBIND11_TYPE_CASTER(TYPE, _(#NAME));                                      \
+    bool load(handle src, bool)                                                \
     {                                                                          \
       VERIFY_PETSC4PY(PyPetsc##P4PYTYPE##_Get);                                \
       if (PyObject_TypeCheck(src.ptr(), &PyPetsc##P4PYTYPE##_Type) != 0)       \
@@ -46,24 +46,22 @@ namespace nb = nanobind;
       return false;                                                            \
     }                                                                          \
                                                                                \
-    static handle from_cpp(TYPE src, rv_policy policy, cleanup_list* cleanup)  \
+    static handle cast(TYPE src, py::return_value_policy policy,               \
+                       handle parent)                                          \
     {                                                                          \
       VERIFY_PETSC4PY(PyPetsc##P4PYTYPE##_New);                                \
       auto obj = PyPetsc##P4PYTYPE##_New(src);                                 \
-      if (policy == nb::rv_policy::take_ownership)                             \
+      if (policy == py::return_value_policy::take_ownership)                   \
         PetscObjectDereference((PetscObject)src);                              \
-      else if (policy == nb::rv_policy::reference_internal)                    \
-        nb::keep_alive<0, 1>(obj);                                             \
-      return nb::handle(obj);                                                  \
+      else if (policy == py::return_value_policy::reference_internal)          \
+        keep_alive_impl(obj, parent);                                          \
+      return py::handle(obj);                                                  \
     }                                                                          \
                                                                                \
-    operator TYPE()                                                            \
-    {                                                                          \
-      return value;                                                            \
-    }                                                                          \
+    operator TYPE() { return value; }                                          \
   }
 
-namespace nanobind::detail
+namespace pybind11::detail
 {
 PETSC_CASTER_MACRO(DM, DM, dm);
 PETSC_CASTER_MACRO(IS, IS, is);
@@ -71,6 +69,6 @@ PETSC_CASTER_MACRO(KSP, KSP, ksp);
 PETSC_CASTER_MACRO(Mat, Mat, mat);
 PETSC_CASTER_MACRO(SNES, SNES, snes);
 PETSC_CASTER_MACRO(Vec, Vec, vec);
-} // namespace nanobind::detail
+} // namespace pybind11::detail
 
 #undef PETSC_CASTER_MACRO

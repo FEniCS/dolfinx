@@ -6,7 +6,6 @@
 
 #include "array.h"
 #include "caster_mpi.h"
-#include "caster_petsc.h"
 #include <array>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
@@ -28,15 +27,9 @@
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
-#include <map>
 #include <memory>
-#include <petsc4py/petsc4py.h>
-// #include <nanobind/complex.h>
-// #include <nanobind/functional.h>
-#include <nanobind/ndarray.h>
-// #include <nanobind/operators.h>
 #include <nanobind/nanobind.h>
-// #include <nanobind/pytypes.h>
+#include <nanobind/ndarray.h>
 #include <nanobind/stl/vector.h>
 #include <span>
 #include <string>
@@ -58,13 +51,153 @@ struct geom_type<T, std::void_t<typename T::value_type>>
   typedef typename T::value_type value_type;
 };
 
+template <typename T>
+void declare_function_space(nb::module_& m, std::string type)
+{
+  {
+    std::string pyclass_name = "FunctionSpace_" + type;
+    nb::class_<dolfinx::fem::FunctionSpace<T>>(m, pyclass_name.c_str(),
+                                               "Finite element function space")
+        .def(
+            "__init__",
+            [](dolfinx::fem::FunctionSpace<T>& self,
+               std::shared_ptr<dolfinx::mesh::Mesh<T>> mesh,
+               std::shared_ptr<dolfinx::fem::FiniteElement<T>> element,
+               std::shared_ptr<dolfinx::fem::DofMap> dofmap) {},
+            nb::arg("mesh"), nb::arg("element"), nb::arg("dofmap"))
+        .def("collapse", &dolfinx::fem::FunctionSpace<T>::collapse)
+        .def("component", &dolfinx::fem::FunctionSpace<T>::component)
+        .def("contains", &dolfinx::fem::FunctionSpace<T>::contains,
+             nb::arg("V"))
+        .def_prop_ro("element", &dolfinx::fem::FunctionSpace<T>::element)
+        .def_prop_ro("mesh", &dolfinx::fem::FunctionSpace<T>::mesh)
+        .def_prop_ro("dofmap", &dolfinx::fem::FunctionSpace<T>::dofmap)
+        .def("sub", &dolfinx::fem::FunctionSpace<T>::sub, nb::arg("component"))
+        .def("tabulate_dof_coordinates",
+             [](const dolfinx::fem::FunctionSpace<T>& self)
+             {
+               std::vector x = self.tabulate_dof_coordinates(false);
+               std::vector<std::size_t> shape{x.size() / 3, 3};
+               return dolfinx_wrappers::as_nbarray(std::move(x), shape);
+             });
+  }
+
+  {
+    std::string pyclass_name = "FiniteElement_" + type;
+    nb::class_<dolfinx::fem::FiniteElement<T>>(m, pyclass_name.c_str(),
+                                               "Finite element object")
+        .def(
+            "__init__",
+            [](dolfinx::fem::FiniteElement<T>& self,
+               std::uintptr_t ufcx_element)
+            {
+              ufcx_finite_element* p
+                  = reinterpret_cast<ufcx_finite_element*>(ufcx_element);
+              return dolfinx::fem::FiniteElement<T>(*p);
+            },
+            nb::arg("ufcx_element"))
+        .def("__eq__", &dolfinx::fem::FiniteElement<T>::operator==)
+        .def_prop_ro("basix_element",
+                     &dolfinx::fem::FiniteElement<T>::basix_element,
+                     nb::rv_policy::reference_internal)
+        .def_prop_ro("num_sub_elements",
+                     &dolfinx::fem::FiniteElement<T>::num_sub_elements)
+        .def("interpolation_points",
+             [](const dolfinx::fem::FiniteElement<T>& self)
+             {
+               auto [X, shape] = self.interpolation_points();
+               return dolfinx_wrappers::as_nbarray(std::move(X), shape);
+             })
+        .def_prop_ro("interpolation_ident",
+                     &dolfinx::fem::FiniteElement<T>::interpolation_ident)
+        .def_prop_ro("space_dimension",
+                     &dolfinx::fem::FiniteElement<T>::space_dimension)
+        .def_prop_ro("value_shape",
+                     [](const dolfinx::fem::FiniteElement<T>& self)
+                     {
+                       std::span<const std::size_t> vshape = self.value_shape();
+                       const std::size_t size = vshape.size();
+                       return nb::ndarray<const std::size_t>(vshape.data(), 1,
+                                                             &size);
+                     })
+        .def(
+            "apply_dof_transformation",
+            [](const dolfinx::fem::FiniteElement<T>& self,
+               nb::ndarray<T, nb::numpy> x, std::uint32_t cell_permutation,
+               int dim)
+            {
+              self.apply_dof_transformation(std::span(x.data(), x.size()),
+                                            cell_permutation, dim);
+            },
+            nb::arg("x"), nb::arg("cell_permutation"), nb::arg("dim"))
+        .def(
+            "apply_transpose_dof_transformation",
+            [](const dolfinx::fem::FiniteElement<T>& self,
+               nb::ndarray<T, nb::numpy> x, std::uint32_t cell_permutation,
+               int dim)
+            {
+              self.apply_transpose_dof_transformation(
+                  std::span(x.data(), x.size()), cell_permutation, dim);
+            },
+            nb::arg("x"), nb::arg("cell_permutation"), nb::arg("dim"))
+        .def(
+            "apply_inverse_transpose_dof_transformation",
+            [](const dolfinx::fem::FiniteElement<T>& self,
+               nb::ndarray<T, nb::numpy> x, std::uint32_t cell_permutation,
+               int dim)
+            {
+              self.apply_inverse_transpose_dof_transformation(
+                  std::span(x.data(), x.size()), cell_permutation, dim);
+            },
+            nb::arg("x"), nb::arg("cell_permutation"), nb::arg("dim"))
+        .def(
+            "apply_dof_transformation",
+            [](const dolfinx::fem::FiniteElement<T>& self,
+               nb::ndarray<std::complex<T>, nb::numpy> x,
+               std::uint32_t cell_permutation, int dim)
+            {
+              self.apply_dof_transformation(
+                  std::span((std::complex<T>*)x.data(), x.size()),
+                  cell_permutation, dim);
+            },
+            nb::arg("x"), nb::arg("cell_permutation"), nb::arg("dim"))
+        .def(
+            "apply_transpose_dof_transformation",
+            [](const dolfinx::fem::FiniteElement<T>& self,
+               nb::ndarray<std::complex<T>, nb::numpy> x,
+               std::uint32_t cell_permutation, int dim)
+            {
+              self.apply_transpose_dof_transformation(
+                  std::span((std::complex<T>*)x.data(), x.size()),
+                  cell_permutation, dim);
+            },
+            nb::arg("x"), nb::arg("cell_permutation"), nb::arg("dim"))
+        .def(
+            "apply_inverse_transpose_dof_transformation",
+            [](const dolfinx::fem::FiniteElement<T>& self,
+               nb::ndarray<std::complex<T>, nb::numpy> x,
+               std::uint32_t cell_permutation, int dim)
+            {
+              self.apply_inverse_transpose_dof_transformation(
+                  std::span((std::complex<T>*)x.data(), x.size()),
+                  cell_permutation, dim);
+            },
+            nb::arg("x"), nb::arg("cell_permutation"), nb::arg("dim"))
+        .def_prop_ro("needs_dof_transformations",
+                     &dolfinx::fem::FiniteElement<T>::needs_dof_transformations)
+        .def("signature", &dolfinx::fem::FiniteElement<T>::signature);
+  }
+}
+
 // Declare DirichletBC objects for type T
 template <typename T>
 void declare_objects(nb::module_& m, const std::string& type)
 {
+  using U = typename dolfinx::scalar_value_type_t<T>;
+
   // dolfinx::fem::DirichletBC
   std::string pyclass_name = std::string("DirichletBC_") + type;
-  nb::class_<dolfinx::fem::DirichletBC<T, double>> dirichletbc(
+  nb::class_<dolfinx::fem::DirichletBC<T, U>> dirichletbc(
       m, pyclass_name.c_str(),
       "Object for representing Dirichlet (essential) boundary "
       "conditions");
@@ -72,49 +205,49 @@ void declare_objects(nb::module_& m, const std::string& type)
   dirichletbc
       .def(
           "__init__",
-          [](dolfinx::fem::DirichletBC<T, double>* bc,
+          [](dolfinx::fem::DirichletBC<T, U>* bc,
              const nb::ndarray<T, nb::numpy>& g,
              const nb::ndarray<std::int32_t, nb::numpy>& dofs,
-             std::shared_ptr<const dolfinx::fem::FunctionSpace<double>> V)
+             std::shared_ptr<const dolfinx::fem::FunctionSpace<U>> V)
           {
             if (dofs.ndim() != 1)
               throw std::runtime_error("Wrong number of dims");
             std::vector<std::size_t> shape(g.shape_ptr(),
                                            g.shape_ptr() + g.ndim());
             auto _g = std::make_shared<dolfinx::fem::Constant<T>>(
-                std::span(g.data(), g.size()), shape);
-            new (bc) dolfinx::fem::DirichletBC<T, double>(
+                std::span<const T>(g.data(), g.size()), shape);
+            new (bc) dolfinx::fem::DirichletBC<T, U>(
                 _g, std::vector(dofs.data(), dofs.data() + dofs.size()), V);
           },
           nb::arg("g").noconvert(), nb::arg("dofs").noconvert(), nb::arg("V"))
       .def(
           "__init__",
-          [](dolfinx::fem::DirichletBC<T, double>* bc,
+          [](dolfinx::fem::DirichletBC<T, U>* bc,
              std::shared_ptr<const dolfinx::fem::Constant<T>> g,
              const nb::ndarray<std::int32_t, nb::numpy>& dofs,
-             std::shared_ptr<const dolfinx::fem::FunctionSpace<double>> V)
+             std::shared_ptr<const dolfinx::fem::FunctionSpace<U>> V)
           {
-            new (bc) dolfinx::fem::DirichletBC<T, double>(
+            new (bc) dolfinx::fem::DirichletBC<T, U>(
                 g, std::vector(dofs.data(), dofs.data() + dofs.size()), V);
           },
           nb::arg("g").noconvert(), nb::arg("dofs").noconvert(), nb::arg("V"))
       .def(
           "__init__",
-          [](dolfinx::fem::DirichletBC<T, double>* bc,
-             std::shared_ptr<const dolfinx::fem::Function<T, double>> g,
+          [](dolfinx::fem::DirichletBC<T, U>* bc,
+             std::shared_ptr<const dolfinx::fem::Function<T, U>> g,
              const nb::ndarray<std::int32_t, nb::numpy>& dofs)
           {
-            new (bc) dolfinx::fem::DirichletBC<T, double>(
+            new (bc) dolfinx::fem::DirichletBC<T, U>(
                 g, std::vector(dofs.data(), dofs.data() + dofs.size()));
           },
           nb::arg("g").noconvert(), nb::arg("dofs"))
       .def(
           "__init__",
-          [](dolfinx::fem::DirichletBC<T, double>* bc,
-             std::shared_ptr<const dolfinx::fem::Function<T, double>> g,
+          [](dolfinx::fem::DirichletBC<T, U>* bc,
+             std::shared_ptr<const dolfinx::fem::Function<T, U>> g,
              const std::array<nb::ndarray<std::int32_t, nb::numpy>, 2>&
                  V_g_dofs,
-             std::shared_ptr<const dolfinx::fem::FunctionSpace<double>> V)
+             std::shared_ptr<const dolfinx::fem::FunctionSpace<U>> V)
           {
             std::array dofs
                 = {std::vector(V_g_dofs[0].data(),
@@ -125,10 +258,10 @@ void declare_objects(nb::module_& m, const std::string& type)
           },
           nb::arg("g").noconvert(), nb::arg("dofs").noconvert(),
           nb::arg("V").noconvert())
-      .def_prop_ro("dtype", [](const dolfinx::fem::Form<T, double>& self)
+      .def_prop_ro("dtype", [](const dolfinx::fem::Form<T, U>& self)
                    { return nb::dtype<T>(); })
       .def("dof_indices",
-           [](const dolfinx::fem::DirichletBC<T, double>& self)
+           [](const dolfinx::fem::DirichletBC<T, U>& self)
            {
              auto [dofs, owned] = self.dof_indices();
              std::size_t size = dofs.size();
@@ -137,26 +270,25 @@ void declare_objects(nb::module_& m, const std::string& type)
                               owned);
            })
       .def_prop_ro("function_space",
-                   &dolfinx::fem::DirichletBC<T, double>::function_space)
-      .def_prop_ro("value", &dolfinx::fem::DirichletBC<T, double>::value);
+                   &dolfinx::fem::DirichletBC<T, U>::function_space)
+      .def_prop_ro("value", &dolfinx::fem::DirichletBC<T, U>::value);
 
   // dolfinx::fem::Function
   std::string pyclass_name_function = std::string("Function_") + type;
-  nb::class_<dolfinx::fem::Function<T, double>>(
-      m, pyclass_name_function.c_str(), "A finite element function")
-      .def(nb::init<
-               std::shared_ptr<const dolfinx::fem::FunctionSpace<double>>>(),
+  nb::class_<dolfinx::fem::Function<T, U>>(m, pyclass_name_function.c_str(),
+                                           "A finite element function")
+      .def(nb::init<std::shared_ptr<const dolfinx::fem::FunctionSpace<U>>>(),
            "Create a function on the given function space")
-      .def(nb::init<std::shared_ptr<dolfinx::fem::FunctionSpace<double>>,
+      .def(nb::init<std::shared_ptr<dolfinx::fem::FunctionSpace<U>>,
                     std::shared_ptr<dolfinx::la::Vector<T>>>())
-      .def_rw("name", &dolfinx::fem::Function<T, double>::name)
-      .def("sub", &dolfinx::fem::Function<T, double>::sub,
+      .def_rw("name", &dolfinx::fem::Function<T, U>::name)
+      .def("sub", &dolfinx::fem::Function<T, U>::sub,
            "Return sub-function (view into parent Function")
-      .def("collapse", &dolfinx::fem::Function<T, double>::collapse,
+      .def("collapse", &dolfinx::fem::Function<T, U>::collapse,
            "Collapse sub-function view")
       .def(
           "interpolate",
-          [](dolfinx::fem::Function<T, double>& self,
+          [](dolfinx::fem::Function<T, U>& self,
              const nb::ndarray<T, nb::numpy>& f,
              const nb::ndarray<std::int32_t, nb::numpy>& cells)
           {
@@ -181,11 +313,11 @@ void declare_objects(nb::module_& m, const std::string& type)
           nb::arg("f"), nb::arg("cells"), "Interpolate an expression function")
       .def(
           "interpolate",
-          [](dolfinx::fem::Function<T, double>& self,
-             dolfinx::fem::Function<T, double>& u,
+          [](dolfinx::fem::Function<T, U>& self,
+             dolfinx::fem::Function<T, U>& u,
              const nb::ndarray<std::int32_t, nb::numpy>& cells,
              const std::tuple<std::vector<std::int32_t>,
-                              std::vector<std::int32_t>, std::vector<double>,
+                              std::vector<std::int32_t>, std::vector<U>,
                               std::vector<std::int32_t>>& interpolation_data)
           {
             self.interpolate(u, std::span(cells.data(), cells.size()),
@@ -195,7 +327,7 @@ void declare_objects(nb::module_& m, const std::string& type)
           "Interpolate a finite element function")
       .def(
           "interpolate_ptr",
-          [](dolfinx::fem::Function<T, double>& self, std::uintptr_t addr,
+          [](dolfinx::fem::Function<T, U>& self, std::uintptr_t addr,
              const nb::ndarray<std::int32_t, nb::numpy>& cells)
           {
             assert(self.function_space());
@@ -208,16 +340,15 @@ void declare_objects(nb::module_& m, const std::string& type)
                                                  1, std::multiplies{});
 
             assert(self.function_space()->mesh());
-            const std::vector<double> x = dolfinx::fem::interpolation_coords(
+            const std::vector<U> x = dolfinx::fem::interpolation_coords(
                 *element, self.function_space()->mesh()->geometry(),
                 std::span(cells.data(), cells.size()));
 
             std::array<std::size_t, 2> shape{value_size, x.size() / 3};
             std::vector<T> values(shape[0] * shape[1]);
-            std::function<void(T*, int, int, const double*)> f
-                = reinterpret_cast<void (*)(T*, int, int, const double*)>(addr);
+            std::function<void(T*, int, int, const U*)> f
+                = reinterpret_cast<void (*)(T*, int, int, const U*)>(addr);
             f(values.data(), shape[1], shape[0], x.data());
-
             dolfinx::fem::interpolate(self, std::span<const T>(values), shape,
                                       std::span(cells.data(), cells.size()));
           },
@@ -225,19 +356,19 @@ void declare_objects(nb::module_& m, const std::string& type)
           "Interpolate using a pointer to an expression with a C signature")
       .def(
           "interpolate",
-          [](dolfinx::fem::Function<T, double>& self,
-             const dolfinx::fem::Expression<T, double>& expr,
+          [](dolfinx::fem::Function<T, U>& self,
+             const dolfinx::fem::Expression<T, U>& expr,
              const nb::ndarray<std::int32_t, nb::numpy>& cells)
           { self.interpolate(expr, std::span(cells.data(), cells.size())); },
           nb::arg("expr"), nb::arg("cells"),
           "Interpolate an Expression on a set of cells")
       .def_prop_ro(
-          "x", nb::overload_cast<>(&dolfinx::fem::Function<T, double>::x),
+          "x", nb::overload_cast<>(&dolfinx::fem::Function<T, U>::x),
           "Return the vector associated with the finite element Function")
       .def(
           "eval",
-          [](const dolfinx::fem::Function<T, double>& self,
-             const nb::ndarray<double, nb::numpy>& x,
+          [](const dolfinx::fem::Function<T, U>& self,
+             const nb::ndarray<U, nb::numpy>& x,
              const nb::ndarray<std::int32_t, nb::numpy>& cells,
              nb::ndarray<T, nb::numpy>& u)
           {
@@ -253,7 +384,7 @@ void declare_objects(nb::module_& m, const std::string& type)
           nb::arg("x"), nb::arg("cells"), nb::arg("values"),
           "Evaluate Function")
       .def_prop_ro("function_space",
-                   &dolfinx::fem::Function<T, double>::function_space);
+                   &dolfinx::fem::Function<T, U>::function_space);
 
   // dolfinx::fem::Constant
   std::string pyclass_name_constant = std::string("Constant_") + type;
@@ -277,112 +408,109 @@ void declare_objects(nb::module_& m, const std::string& type)
           [](dolfinx::fem::Constant<T>& self)
           {
             return nb::ndarray<T>(self.value.data(), self.shape.size(),
-                               self.shape.data());
+                                  self.shape.data());
           },
           nb::rv_policy::reference_internal);
 
   // dolfinx::fem::Expression
   std::string pyclass_name_expr = std::string("Expression_") + type;
-  nb::class_<dolfinx::fem::Expression<T, double>>(m, pyclass_name_expr.c_str(),
-                                                  "An Expression")
+  nb::class_<dolfinx::fem::Expression<T, U>>(m, pyclass_name_expr.c_str(),
+                                             "An Expression")
       .def(
           "__init__",
-          [](dolfinx::fem::Expression<T, double>* ex,
+          [](dolfinx::fem::Expression<T, U>* ex,
              const std::vector<std::shared_ptr<
-                 const dolfinx::fem::Function<T, double>>>& coefficients,
+                 const dolfinx::fem::Function<T, U>>>& coefficients,
              const std::vector<
                  std::shared_ptr<const dolfinx::fem::Constant<T>>>& constants,
-             const nb::ndarray<double, nb::numpy>& X, std::uintptr_t fn_addr,
+             const nb::ndarray<U, nb::numpy>& X, std::uintptr_t fn_addr,
              const std::vector<int>& value_shape,
-             std::shared_ptr<const dolfinx::mesh::Mesh<double>> mesh,
-             std::shared_ptr<const dolfinx::fem::FunctionSpace<double>>
+             std::shared_ptr<const dolfinx::fem::FunctionSpace<U>>
                  argument_function_space)
           {
             auto tabulate_expression_ptr
                 = (void (*)(T*, const T*, const T*,
                             const typename geom_type<T>::value_type*,
                             const int*, const std::uint8_t*))fn_addr;
-            new (ex) dolfinx::fem::Expression<T, double>(
+            new (ex) dolfinx::fem::Expression<T, U>(
                 coefficients, constants, std::span(X.data(), X.size()),
                 {static_cast<std::size_t>(X.shape(0)),
                  static_cast<std::size_t>(X.shape(1))},
-                tabulate_expression_ptr, value_shape, mesh,
-                argument_function_space);
+                tabulate_expression_ptr, value_shape, argument_function_space);
           },
           nb::arg("coefficients"), nb::arg("constants"), nb::arg("X"),
-          nb::arg("fn"), nb::arg("value_shape"), nb::arg("mesh"),
+          nb::arg("fn"), nb::arg("value_shape"),
           nb::arg("argument_function_space"))
       .def(
           "eval",
-          [](const dolfinx::fem::Expression<T, double>& self,
+          [](const dolfinx::fem::Expression<T, U>& self,
+             const dolfinx::mesh::Mesh<U>& mesh,
              const nb::ndarray<std::int32_t, nb::numpy>& active_cells,
              nb::ndarray<T, nb::numpy>& values)
           {
             self.eval(
-                std::span(active_cells.data(), active_cells.size()),
+                mesh, std::span(active_cells.data(), active_cells.size()),
                 std::span(values.data(), values.size()),
                 {(std::size_t)values.shape(0), (std::size_t)values.shape(1)});
           },
-          nb::arg("active_cells"), nb::arg("values"))
+          nb::arg("mesh"), nb::arg("active_cells"), nb::arg("values"))
       .def("X",
-           [](const dolfinx::fem::Expression<T, double>& self)
+           [](const dolfinx::fem::Expression<T, U>& self)
            {
              auto [X, shape] = self.X();
              return dolfinx_wrappers::as_nbarray(std::move(X), shape);
            })
-      .def_prop_ro("dtype", [](const dolfinx::fem::Expression<T, double>& self)
+      .def_prop_ro("dtype", [](const dolfinx::fem::Expression<T, U>& self)
                    { return nb::dtype<T>(); })
-      .def_prop_ro("mesh", &dolfinx::fem::Expression<T, double>::mesh)
-      .def_prop_ro("value_size",
-                   &dolfinx::fem::Expression<T, double>::value_size)
-      .def_prop_ro("value_shape",
-                   &dolfinx::fem::Expression<T, double>::value_shape);
+      .def_prop_ro("value_size", &dolfinx::fem::Expression<T, U>::value_size)
+      .def_prop_ro("value_shape", &dolfinx::fem::Expression<T, U>::value_shape);
 
   std::string pymethod_create_expression
       = std::string("create_expression_") + type;
   m.def(
       pymethod_create_expression.c_str(),
       [](const std::uintptr_t expression,
-         const std::vector<std::shared_ptr<
-             const dolfinx::fem::Function<T, double>>>& coefficients,
+         const std::vector<std::shared_ptr<const dolfinx::fem::Function<T, U>>>&
+             coefficients,
          const std::vector<std::shared_ptr<const dolfinx::fem::Constant<T>>>&
              constants,
-         std::shared_ptr<const dolfinx::mesh::Mesh<double>> mesh,
-         std::shared_ptr<const dolfinx::fem::FunctionSpace<double>>
+         std::shared_ptr<const dolfinx::fem::FunctionSpace<U>>
              argument_function_space)
       {
         const ufcx_expression* p
             = reinterpret_cast<const ufcx_expression*>(expression);
-        return dolfinx::fem::create_expression<T, double>(
-            *p, coefficients, constants, mesh, argument_function_space);
+        return dolfinx::fem::create_expression<T, U>(
+            *p, coefficients, constants, argument_function_space);
       },
       nb::arg("expression"), nb::arg("coefficients"), nb::arg("constants"),
-      nb::arg("mesh"), nb::arg("argument_function_space"),
+      nb::arg("argument_function_space"),
       "Create Form from a pointer to ufc_form.");
 }
 
 template <typename T>
-void declare_form(nb::module_& m, const std::string& type)
+void declare_form(nb::module_& m, std::string type)
 {
+  using U = typename dolfinx::scalar_value_type_t<T>;
+
   // dolfinx::fem::Form
   std::string pyclass_name_form = std::string("Form_") + type;
-  nb::class_<dolfinx::fem::Form<T, double>>(m, pyclass_name_form.c_str(),
-                                            "Variational form object")
+  nb::class_<dolfinx::fem::Form<T, U>>(m, pyclass_name_form.c_str(),
+                                       "Variational form object")
       .def(
           "__init__",
-          [](dolfinx::fem::Form<T, double>* fp,
-             const std::vector<std::shared_ptr<
-                 const dolfinx::fem::FunctionSpace<double>>>& spaces,
+          [](dolfinx::fem::Form<T, U>* fp,
+             const std::vector<
+                 std::shared_ptr<const dolfinx::fem::FunctionSpace<U>>>& spaces,
              const std::map<dolfinx::fem::IntegralType,
                             std::vector<std::tuple<int, nb::object,
                                                    nb::ndarray<std::int32_t>>>>&
                  integrals,
              const std::vector<std::shared_ptr<
-                 const dolfinx::fem::Function<T, double>>>& coefficients,
+                 const dolfinx::fem::Function<T, U>>>& coefficients,
              const std::vector<
                  std::shared_ptr<const dolfinx::fem::Constant<T>>>& constants,
              bool needs_permutation_data,
-             std::shared_ptr<const dolfinx::mesh::Mesh<double>> mesh)
+             std::shared_ptr<const dolfinx::mesh::Mesh<U>> mesh)
           {
             using kern
                 = std::function<void(T*, const T*, const T*,
@@ -409,20 +537,20 @@ void declare_form(nb::module_& m, const std::string& type)
               }
             }
 
-            new (fp) dolfinx::fem::Form<T, double>(
-                spaces, _integrals, coefficients, constants,
-                needs_permutation_data, mesh);
+            new (fp) dolfinx::fem::Form<T, U>(spaces, _integrals, coefficients,
+                                              constants, needs_permutation_data,
+                                              mesh);
           },
           nb::arg("spaces"), nb::arg("integrals"), nb::arg("coefficients"),
           nb::arg("constants"), nb::arg("need_permutation_data"),
           nb::arg("mesh") = nb::none())
       .def(
           "__init__",
-          [](dolfinx::fem::Form<T, double>* fp, std::uintptr_t form,
+          [](dolfinx::fem::Form<T, U>* fp, std::uintptr_t form,
+             const std::vector<
+                 std::shared_ptr<const dolfinx::fem::FunctionSpace<U>>>& spaces,
              const std::vector<std::shared_ptr<
-                 const dolfinx::fem::FunctionSpace<double>>>& spaces,
-             const std::vector<std::shared_ptr<
-                 const dolfinx::fem::Function<T, double>>>& coefficients,
+                 const dolfinx::fem::Function<T, U>>>& coefficients,
              const std::vector<
                  std::shared_ptr<const dolfinx::fem::Constant<T>>>& constants,
              const std::map<
@@ -430,7 +558,7 @@ void declare_form(nb::module_& m, const std::string& type)
                  std::vector<std::pair<std::int32_t,
                                        nb::ndarray<std::int32_t, nb::numpy>>>>&
                  subdomains,
-             std::shared_ptr<const dolfinx::mesh::Mesh<double>> mesh)
+             std::shared_ptr<const dolfinx::mesh::Mesh<U>> mesh)
           {
             std::map<
                 dolfinx::fem::IntegralType,
@@ -447,27 +575,26 @@ void declare_form(nb::module_& m, const std::string& type)
             }
 
             ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
-            new (fp) dolfinx::fem::Form<T, double>(dolfinx::fem::create_form<T>(
+            new (fp) dolfinx::fem::Form<T, U>(dolfinx::fem::create_form<T>(
                 *p, spaces, coefficients, constants, sd, mesh));
           },
           nb::arg("form"), nb::arg("spaces"), nb::arg("coefficients"),
           nb::arg("constants"), nb::arg("subdomains"), nb::arg("mesh"),
           "Create a Form from a pointer to a ufcx_form")
-      .def_prop_ro("dtype", [](const dolfinx::fem::Form<T, double>& self)
+      .def_prop_ro("dtype", [](const dolfinx::fem::Form<T, U>& self)
                    { return nb::dtype<T>(); })
-      .def_prop_ro("coefficients", &dolfinx::fem::Form<T, double>::coefficients)
-      .def_prop_ro("rank", &dolfinx::fem::Form<T, double>::rank)
-      .def_prop_ro("mesh", &dolfinx::fem::Form<T, double>::mesh)
+      .def_prop_ro("coefficients", &dolfinx::fem::Form<T, U>::coefficients)
+      .def_prop_ro("rank", &dolfinx::fem::Form<T, U>::rank)
+      .def_prop_ro("mesh", &dolfinx::fem::Form<T, U>::mesh)
       .def_prop_ro("function_spaces",
-                   &dolfinx::fem::Form<T, double>::function_spaces)
-      .def("integral_ids", &dolfinx::fem::Form<T, double>::integral_ids)
-      .def_prop_ro("integral_types",
-                   &dolfinx::fem::Form<T, double>::integral_types)
+                   &dolfinx::fem::Form<T, U>::function_spaces)
+      .def("integral_ids", &dolfinx::fem::Form<T, U>::integral_ids)
+      .def_prop_ro("integral_types", &dolfinx::fem::Form<T, U>::integral_types)
       .def_prop_ro("needs_facet_permutations",
-                   &dolfinx::fem::Form<T, double>::needs_facet_permutations)
+                   &dolfinx::fem::Form<T, U>::needs_facet_permutations)
       .def(
           "domains",
-          [](const dolfinx::fem::Form<T, double>& self,
+          [](const dolfinx::fem::Form<T, U>& self,
              dolfinx::fem::IntegralType type,
              int i) -> nb::ndarray<const std::int32_t>
           {
@@ -503,10 +630,10 @@ void declare_form(nb::module_& m, const std::string& type)
   m.def(
       pymethod_create_form.c_str(),
       [](std::uintptr_t form,
-         const std::vector<std::shared_ptr<
-             const dolfinx::fem::FunctionSpace<double>>>& spaces,
-         const std::vector<std::shared_ptr<
-             const dolfinx::fem::Function<T, double>>>& coefficients,
+         const std::vector<
+             std::shared_ptr<const dolfinx::fem::FunctionSpace<U>>>& spaces,
+         const std::vector<std::shared_ptr<const dolfinx::fem::Function<T, U>>>&
+             coefficients,
          const std::vector<std::shared_ptr<const dolfinx::fem::Constant<T>>>&
              constants,
          const std::map<
@@ -514,7 +641,7 @@ void declare_form(nb::module_& m, const std::string& type)
              std::vector<std::pair<std::int32_t,
                                    nb::ndarray<std::int32_t, nb::numpy>>>>&
              subdomains,
-         std::shared_ptr<const dolfinx::mesh::Mesh<double>> mesh)
+         std::shared_ptr<const dolfinx::mesh::Mesh<U>> mesh)
       {
         std::map<
             dolfinx::fem::IntegralType,
@@ -540,12 +667,12 @@ void declare_form(nb::module_& m, const std::string& type)
       "Create Form from a pointer to ufcx_form.");
 
   m.def("create_sparsity_pattern",
-        &dolfinx::fem ::create_sparsity_pattern<T, double>, nb::arg("a"),
+        &dolfinx::fem ::create_sparsity_pattern<T, U>, nb::arg("a"),
         "Create a sparsity pattern.");
 }
 
 template <typename T>
-void declare_cmap(nb::module_& m, const std::string& type)
+void declare_cmap(nb::module_& m, std::string type)
 {
   std::string pyclass_name = std::string("CoordinateElement_") + type;
   nb::class_<dolfinx::fem::CoordinateElement<T>>(m, pyclass_name.c_str(),
@@ -564,19 +691,22 @@ void declare_cmap(nb::module_& m, const std::string& type)
       .def("create_dof_layout",
            &dolfinx::fem::CoordinateElement<T>::create_dof_layout)
       .def_prop_ro("degree", &dolfinx::fem::CoordinateElement<T>::degree)
-      .def_prop_ro("variant", &dolfinx::fem::CoordinateElement<T>::variant)
+      .def_prop_ro("variant", [](const dolfinx::fem::CoordinateElement<T>& self)
+                   { return static_cast<int>(self.variant()); })
       .def(
           "push_forward",
           [](const dolfinx::fem::CoordinateElement<T>& self,
              const nb::ndarray<T, nb::numpy>& X,
              const nb::ndarray<T, nb::numpy>& cell)
           {
-            namespace stdex = std::experimental;
-            using mdspan2_t = stdex::mdspan<T, stdex::dextents<std::size_t, 2>>;
-            using cmdspan2_t
-                = stdex::mdspan<const T, stdex::dextents<std::size_t, 2>>;
-            using cmdspan4_t
-                = stdex::mdspan<const T, stdex::dextents<std::size_t, 4>>;
+            using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+                T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+            using cmdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+                const T,
+                MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+            using cmdspan4_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+                const T,
+                MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
 
             std::array<std::size_t, 2> Xshape
                 = {(std::size_t)X.shape(0), (std::size_t)X.shape(1)};
@@ -587,8 +717,10 @@ void declare_cmap(nb::module_& m, const std::string& type)
                                              1, std::multiplies{}));
             cmdspan4_t phi_full(phi_b.data(), phi_shape);
             self.tabulate(0, std::span(X.data(), X.size()), Xshape, phi_b);
-            auto phi = stdex::submdspan(phi_full, 0, stdex::full_extent,
-                                        stdex::full_extent, 0);
+            auto phi = MDSPAN_IMPL_STANDARD_NAMESPACE::
+                MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
+                    phi_full, 0, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
+                    MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
 
             std::array<std::size_t, 2> shape
                 = {(std::size_t)X.shape(0), (std::size_t)cell.shape(1)};
@@ -610,12 +742,14 @@ void declare_cmap(nb::module_& m, const std::string& type)
             const std::size_t gdim = x.shape(1);
             const std::size_t tdim = dolfinx::mesh::cell_dim(self.cell_shape());
 
-            namespace stdex = std::experimental;
-            using mdspan2_t = stdex::mdspan<T, stdex::dextents<std::size_t, 2>>;
-            using cmdspan2_t
-                = stdex::mdspan<const T, stdex::dextents<std::size_t, 2>>;
-            using cmdspan4_t
-                = stdex::mdspan<const T, stdex::dextents<std::size_t, 4>>;
+            using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+                T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+            using cmdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+                const T,
+                MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+            using cmdspan4_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+                const T,
+                MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
 
             std::vector<T> Xb(num_points * tdim);
             mdspan2_t X(Xb.data(), num_points, tdim);
@@ -636,8 +770,10 @@ void declare_cmap(nb::module_& m, const std::string& type)
               cmdspan4_t phi(phi_b.data(), phi_shape);
 
               self.tabulate(1, std::vector<T>(tdim), {1, tdim}, phi_b);
-              auto dphi = stdex::submdspan(phi, std::pair(1, tdim + 1), 0,
-                                           stdex::full_extent, 0);
+              auto dphi = MDSPAN_IMPL_STANDARD_NAMESPACE::
+                  MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
+                      phi, std::pair(1, tdim + 1), 0,
+                      MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
 
               self.compute_jacobian(dphi, g, J);
               self.compute_jacobian_inverse(J, K);
@@ -655,6 +791,158 @@ void declare_cmap(nb::module_& m, const std::string& type)
           nb::arg("x"), nb::arg("cell_geometry"));
 }
 
+template <typename T>
+void declare_real_functions(nb::module_& m)
+{
+  m.def(
+      "create_dofmap",
+      [](const dolfinx_wrappers::MPICommWrapper comm, std::uintptr_t dofmap,
+         dolfinx::mesh::Topology& topology,
+         const dolfinx::fem::FiniteElement<T>& element)
+      {
+        ufcx_dofmap* p = reinterpret_cast<ufcx_dofmap*>(dofmap);
+        assert(p);
+        dolfinx::fem::ElementDofLayout layout
+            = dolfinx::fem::create_element_dof_layout(
+                *p, topology.cell_types().back());
+
+        std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
+            unpermute_dofs = nullptr;
+        if (element.needs_dof_permutations())
+          unpermute_dofs = element.get_dof_permutation_function(true, true);
+        return dolfinx::fem::create_dofmap(comm.get(), layout, topology,
+                                           unpermute_dofs, nullptr);
+      },
+      nb::arg("comm"), nb::arg("dofmap"), nb::arg("topology"),
+      nb::arg("element"),
+      "Create DofMap object from a pointer to ufcx_dofmap.");
+
+  m.def(
+      "locate_dofs_topological",
+      [](const std::vector<
+             std::reference_wrapper<const dolfinx::fem::FunctionSpace<T>>>& V,
+         int dim, const nb::ndarray<std::int32_t, nb::numpy>& entities,
+         bool remote)
+      {
+        if (V.size() != 2)
+          throw std::runtime_error("Expected two function spaces.");
+        std::array<std::vector<std::int32_t>, 2> dofs
+            = dolfinx::fem::locate_dofs_topological(
+                *V[0].get().mesh()->topology_mutable(),
+                {*V[0].get().dofmap(), *V[1].get().dofmap()}, dim,
+                std::span(entities.data(), entities.size()), remote);
+        return std::array<nb::ndarray<std::int32_t>, 2>(
+            {dolfinx_wrappers::as_nbarray(std::move(dofs[0])),
+             dolfinx_wrappers::as_nbarray(std::move(dofs[1]))});
+      },
+      nb::arg("V"), nb::arg("dim"), nb::arg("entities"),
+      nb::arg("remote") = true);
+  m.def(
+      "locate_dofs_topological",
+      [](const dolfinx::fem::FunctionSpace<T>& V, int dim,
+         const nb::ndarray<std::int32_t, nb::numpy>& entities, bool remote)
+      {
+        return dolfinx_wrappers::as_nbarray(
+            dolfinx::fem::locate_dofs_topological(
+                *V.mesh()->topology_mutable(), *V.dofmap(), dim,
+                std::span(entities.data(), entities.size()), remote));
+      },
+      nb::arg("V"), nb::arg("dim"), nb::arg("entities"),
+      nb::arg("remote") = true);
+  m.def(
+      "locate_dofs_geometrical",
+      [](const std::vector<
+             std::reference_wrapper<const dolfinx::fem::FunctionSpace<T>>>& V,
+         const std::function<nb::ndarray<bool>(const nb::ndarray<const T>&)>&
+             marker)
+
+      {
+        if (V.size() != 2)
+          throw std::runtime_error("Expected two function spaces.");
+
+        auto _marker = [&marker](auto x)
+        {
+          std::array shape{x.extent(0), x.extent(1)};
+          nb::ndarray<const T> x_view(x.data_handle(), 2, shape.data(),
+                                      nb::none());
+          nb::ndarray<bool> marked = marker(x_view);
+          return std::vector<std::int8_t>(marked.data(),
+                                          marked.data() + marked.size());
+        };
+
+        std::array<std::vector<std::int32_t>, 2> dofs
+            = dolfinx::fem::locate_dofs_geometrical<T>({V[0], V[1]}, _marker);
+        return std::array<nb::ndarray<std::int32_t>, 2>(
+            {dolfinx_wrappers::as_nbarray(std::move(dofs[0])),
+             dolfinx_wrappers::as_nbarray(std::move(dofs[1]))});
+      },
+      nb::arg("V"), nb::arg("marker"));
+  m.def(
+      "locate_dofs_geometrical",
+      [](const dolfinx::fem::FunctionSpace<T>& V,
+         const std::function<nb::ndarray<bool>(const nb::ndarray<const T>&)>&
+             marker)
+      {
+        auto _marker = [&marker](auto x)
+        {
+          std::array shape{x.extent(0), x.extent(1)};
+          nb::ndarray<const T> x_view(x.data_handle(), 2, shape.data(),
+                                      nb::none());
+          nb::ndarray<bool> marked = marker(x_view);
+          return std::vector<std::int8_t>(marked.data(),
+                                          marked.data() + marked.size());
+        };
+
+        return dolfinx_wrappers::as_nbarray(
+            dolfinx::fem::locate_dofs_geometrical(V, _marker));
+      },
+      nb::arg("V"), nb::arg("marker"));
+
+  m.def(
+      "interpolation_coords",
+      [](const dolfinx::fem::FiniteElement<T>& e,
+         const dolfinx::mesh::Geometry<T>& geometry,
+         nb::ndarray<std::int32_t, nb::numpy> cells)
+      {
+        std::vector<T> x = dolfinx::fem::interpolation_coords(
+            e, geometry, std::span(cells.data(), cells.size()));
+        return dolfinx_wrappers::as_nbarray(
+            std::move(x), std::array<std::size_t, 2>{3, x.size() / 3});
+      },
+      nb::arg("element"), nb::arg("V"), nb::arg("cells"));
+
+  m.def(
+      "create_nonmatching_meshes_interpolation_data",
+      [](const dolfinx::mesh::Mesh<T>& mesh0,
+         const dolfinx::fem::FiniteElement<T>& element0,
+         const dolfinx::mesh::Mesh<T>& mesh1)
+      {
+        int tdim = mesh0.topology()->dim();
+        auto cell_map = mesh0.topology()->index_map(tdim);
+        assert(cell_map);
+        std::int32_t num_cells
+            = cell_map->size_local() + cell_map->num_ghosts();
+        std::vector<std::int32_t> cells(num_cells, 0);
+        std::iota(cells.begin(), cells.end(), 0);
+        return dolfinx::fem::create_nonmatching_meshes_interpolation_data(
+            mesh0.geometry(), element0, mesh1,
+            std::span(cells.data(), cells.size()));
+      },
+      nb::arg("mesh0"), nb::arg("element0"), nb::arg("mesh1"));
+  m.def(
+      "create_nonmatching_meshes_interpolation_data",
+      [](const dolfinx::mesh::Geometry<T>& geometry0,
+         const dolfinx::fem::FiniteElement<T>& element0,
+         const dolfinx::mesh::Mesh<T>& mesh1,
+         const nb::ndarray<std::int32_t, nb::numpy>& cells)
+      {
+        return dolfinx::fem::create_nonmatching_meshes_interpolation_data(
+            geometry0, element0, mesh1, std::span(cells.data(), cells.size()));
+      },
+      nb::arg("geometry0"), nb::arg("element0"), nb::arg("mesh1"),
+      nb::arg("cells"));
+}
+
 } // namespace
 
 namespace dolfinx_wrappers
@@ -662,9 +950,6 @@ namespace dolfinx_wrappers
 
 void fem(nb::module_& m)
 {
-  // Load basix and dolfinx to use Pybindings
-  nb::module_::import_("basix");
-
   declare_objects<float>(m, "float32");
   declare_objects<double>(m, "float64");
   // declare_objects<std::complex<float>>(m, "complex64");
@@ -691,28 +976,6 @@ void fem(nb::module_& m)
       nb::arg("dofmap"), nb::arg("cell_type"), nb::arg("parent_map"),
       "Create ElementDofLayout object from a ufc dofmap.");
   m.def(
-      "create_dofmap",
-      [](const MPICommWrapper comm, std::uintptr_t dofmap,
-         dolfinx::mesh::Topology& topology,
-         const dolfinx::fem::FiniteElement<double>& element)
-      {
-        ufcx_dofmap* p = reinterpret_cast<ufcx_dofmap*>(dofmap);
-        assert(p);
-        dolfinx::fem::ElementDofLayout layout
-            = dolfinx::fem::create_element_dof_layout(
-                *p, topology.cell_types().back());
-
-        std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
-            unpermute_dofs = nullptr;
-        if (element.needs_dof_permutations())
-          unpermute_dofs = element.get_dof_permutation_function(true, true);
-        return dolfinx::fem::create_dofmap(comm.get(), layout, topology,
-                                           unpermute_dofs, nullptr);
-      },
-      nb::arg("comm"), nb::arg("dofmap"), nb::arg("topology"),
-      nb::arg("element"),
-      "Create DofMap object from a pointer to ufcx_dofmap.");
-  m.def(
       "build_dofmap",
       [](const MPICommWrapper comm, const dolfinx::mesh::Topology& topology,
          const dolfinx::fem::ElementDofLayout& layout)
@@ -731,8 +994,9 @@ void fem(nb::module_& m)
       {
         if (dofmap.ndim() != 2)
           throw std::runtime_error("Dofmap data has wrong rank");
-        namespace stdex = std::experimental;
-        stdex::mdspan<const std::int32_t, stdex::dextents<std::size_t, 2>>
+        MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+            const std::int32_t,
+            MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
             _dofmap(dofmap.data(), dofmap.shape(0), dofmap.shape(1));
         return dolfinx::fem::transpose_dofmap(_dofmap, num_cells);
       },
@@ -749,108 +1013,6 @@ void fem(nb::module_& m)
             meshtags.values());
       },
       nb::arg("integral_type"), nb::arg("meshtags"));
-  m.def(
-      "create_nonmatching_meshes_interpolation_data",
-      [](const dolfinx::mesh::Mesh<double>& mesh0,
-         const dolfinx::fem::FiniteElement<double>& element0,
-         const dolfinx::mesh::Mesh<double>& mesh1)
-      {
-        int tdim = mesh0.topology()->dim();
-        auto cell_map = mesh0.topology()->index_map(tdim);
-        assert(cell_map);
-        std::int32_t num_cells
-            = cell_map->size_local() + cell_map->num_ghosts();
-        std::vector<std::int32_t> cells(num_cells, 0);
-        std::iota(cells.begin(), cells.end(), 0);
-        return dolfinx::fem::create_nonmatching_meshes_interpolation_data(
-            mesh0.geometry(), element0, mesh1,
-            std::span(cells.data(), cells.size()));
-      },
-      nb::arg("mesh0"), nb::arg("element0"), nb::arg("mesh1"));
-  m.def(
-      "create_nonmatching_meshes_interpolation_data",
-      [](const dolfinx::mesh::Geometry<double>& geometry0,
-         const dolfinx::fem::FiniteElement<double>& element0,
-         const dolfinx::mesh::Mesh<double>& mesh1,
-         const nb::ndarray<std::int32_t, nb::numpy>& cells)
-      {
-        return dolfinx::fem::create_nonmatching_meshes_interpolation_data(
-            geometry0, element0, mesh1, std::span(cells.data(), cells.size()));
-      },
-      nb::arg("geometry0"), nb::arg("element0"), nb::arg("mesh1"),
-      nb::arg("cells"));
-
-  // dolfinx::fem::FiniteElement
-  nb::class_<dolfinx::fem::FiniteElement<double>>(m, "FiniteElement",
-                                                  "Finite element object")
-      .def(
-          "__init__",
-          [](dolfinx::fem::FiniteElement<double>* fe,
-             std::uintptr_t ufcx_element)
-          {
-            ufcx_finite_element* p
-                = reinterpret_cast<ufcx_finite_element*>(ufcx_element);
-            new (fe) dolfinx::fem::FiniteElement<double>(*p);
-          },
-          nb::arg("ufcx_element"))
-      .def("__eq__", &dolfinx::fem::FiniteElement<double>::operator==)
-      .def_prop_ro("basix_element",
-                   &dolfinx::fem::FiniteElement<double>::basix_element,
-                   nb::rv_policy::reference_internal)
-      .def_prop_ro("num_sub_elements",
-                   &dolfinx::fem::FiniteElement<double>::num_sub_elements)
-      .def("interpolation_points",
-           [](const dolfinx::fem::FiniteElement<double>& self)
-           {
-             auto [X, shape] = self.interpolation_points();
-             return as_nbarray(std::move(X), shape);
-           })
-      .def_prop_ro("interpolation_ident",
-                   &dolfinx::fem::FiniteElement<double>::interpolation_ident)
-      .def_prop_ro("space_dimension",
-                   &dolfinx::fem::FiniteElement<double>::space_dimension)
-      .def_prop_ro("value_shape",
-                   [](const dolfinx::fem::FiniteElement<double>& self)
-                   {
-                     std::span<const std::size_t> vshape = self.value_shape();
-                     const std::size_t size = vshape.size();
-                     return nb::ndarray<const std::size_t>(vshape.data(), 1,
-                                                           &size);
-                   })
-      .def(
-          "apply_dof_transformation",
-          [](const dolfinx::fem::FiniteElement<double>& self,
-             nb::ndarray<double, nb::numpy> x, std::uint32_t cell_permutation,
-             int dim)
-          {
-            self.apply_dof_transformation(std::span(x.data(), x.size()),
-                                          cell_permutation, dim);
-          },
-          nb::arg("x"), nb::arg("cell_permutation"), nb::arg("dim"))
-      .def(
-          "apply_transpose_dof_transformation",
-          [](const dolfinx::fem::FiniteElement<double>& self,
-             nb::ndarray<double, nb::numpy> x, std::uint32_t cell_permutation,
-             int dim)
-          {
-            self.apply_transpose_dof_transformation(
-                std::span(x.data(), x.size()), cell_permutation, dim);
-          },
-          nb::arg("x"), nb::arg("cell_permutation"), nb::arg("dim"))
-      .def(
-          "apply_inverse_transpose_dof_transformation",
-          [](const dolfinx::fem::FiniteElement<double>& self,
-             nb::ndarray<double, nb::numpy> x, std::uint32_t cell_permutation,
-             int dim)
-          {
-            self.apply_inverse_transpose_dof_transformation(
-                std::span(x.data(), x.size()), cell_permutation, dim);
-          },
-          nb::arg("x"), nb::arg("cell_permutation"), nb::arg("dim"))
-      .def_prop_ro(
-          "needs_dof_transformations",
-          &dolfinx::fem::FiniteElement<double>::needs_dof_transformations)
-      .def("signature", &dolfinx::fem::FiniteElement<double>::signature);
 
   // dolfinx::fem::ElementDofLayout
   nb::class_<dolfinx::fem::ElementDofLayout>(
@@ -887,14 +1049,14 @@ void fem(nb::module_& m)
   nb::class_<dolfinx::fem::DofMap>(m, "DofMap", "DofMap object")
       .def(
           "__init__",
-          [](dolfinx::fem::DofMap* dm,
+          [](dolfinx::fem::DofMap& self,
              const dolfinx::fem::ElementDofLayout& element,
              std::shared_ptr<const dolfinx::common::IndexMap> index_map,
              int index_map_bs,
              const dolfinx::graph::AdjacencyList<std::int32_t>& dofmap, int bs)
           {
-            new (dm) dolfinx::fem::DofMap(element, index_map, index_map_bs,
-                                          dofmap.array(), bs);
+            return dolfinx::fem::DofMap(element, index_map, index_map_bs,
+                                        dofmap.array(), bs);
           },
           nb::arg("element_dof_layout"), nb::arg("index_map"),
           nb::arg("index_map_bs"), nb::arg("dofmap"), nb::arg("bs"))
@@ -906,7 +1068,7 @@ void fem(nb::module_& m)
           [](const dolfinx::fem::DofMap& self, int cell)
           {
             std::span<const std::int32_t> dofs = self.cell_dofs(cell);
-            const std::size_t size = dofs.size();
+            std::size_t size = dofs.size();
             return nb::ndarray<const std::int32_t>(dofs.data(), 1, &size,
                                                    nb::cast(self));
           },
@@ -929,123 +1091,10 @@ void fem(nb::module_& m)
       .value("interior_facet", dolfinx::fem::IntegralType::interior_facet)
       .value("vertex", dolfinx::fem::IntegralType::vertex);
 
-  m.def(
-      "locate_dofs_topological",
-      [](const std::vector<std::reference_wrapper<
-             const dolfinx::fem::FunctionSpace<double>>>& V,
-         int dim, const nb::ndarray<std::int32_t, nb::numpy>& entities,
-         bool remote)
-      {
-        if (V.size() != 2)
-          throw std::runtime_error("Expected two function spaces.");
-        std::array<std::vector<std::int32_t>, 2> dofs
-            = dolfinx::fem::locate_dofs_topological(
-                *V[0].get().mesh()->topology_mutable(),
-                {*V[0].get().dofmap(), *V[1].get().dofmap()}, dim,
-                std::span(entities.data(), entities.size()), remote);
-        return std::array<nb::ndarray<std::int32_t>, 2>(
-            {as_nbarray(std::move(dofs[0])), as_nbarray(std::move(dofs[1]))});
-      },
-      nb::arg("V"), nb::arg("dim"), nb::arg("entities"),
-      nb::arg("remote") = true);
-  m.def(
-      "locate_dofs_topological",
-      [](const dolfinx::fem::FunctionSpace<double>& V, int dim,
-         const nb::ndarray<std::int32_t, nb::numpy>& entities, bool remote)
-      {
-        return as_nbarray(dolfinx::fem::locate_dofs_topological(
-            *V.mesh()->topology_mutable(), *V.dofmap(), dim,
-            std::span(entities.data(), entities.size()), remote));
-      },
-      nb::arg("V"), nb::arg("dim"), nb::arg("entities"),
-      nb::arg("remote") = true);
-  m.def(
-      "locate_dofs_geometrical",
-      [](const std::vector<std::reference_wrapper<
-             const dolfinx::fem::FunctionSpace<double>>>& V,
-         const std::function<nb::ndarray<bool>(const nb::ndarray<const double>&)>&
-             marker)
-      {
-        if (V.size() != 2)
-          throw std::runtime_error("Expected two function spaces.");
+  declare_function_space<float>(m, "float32");
+  declare_function_space<double>(m, "float64");
 
-        auto _marker = [&marker](auto x)
-        {
-          std::array shape{x.extent(0), x.extent(1)};
-          nb::ndarray<const double> x_view(x.data_handle(), 2, shape.data(),
-                                           nb::none());
-          nb::ndarray<bool> marked = marker(x_view);
-          return std::vector<std::int8_t>(marked.data(),
-                                          marked.data() + marked.size());
-        };
-
-        std::array<std::vector<std::int32_t>, 2> dofs
-            = dolfinx::fem::locate_dofs_geometrical<double>({V[0], V[1]},
-                                                            _marker);
-        return std::array<nb::ndarray<std::int32_t>, 2>(
-            {dolfinx_wrappers::as_nbarray(std::move(dofs[0])),
-             dolfinx_wrappers::as_nbarray(std::move(dofs[1]))});
-      },
-      nb::arg("V"), nb::arg("marker"));
-  m.def(
-      "locate_dofs_geometrical",
-      [](const dolfinx::fem::FunctionSpace<double>& V,
-         const std::function<nb::ndarray<bool>(const nb::ndarray<const double>&)>&
-             marker)
-      {
-        auto _marker = [&marker](auto x)
-        {
-          std::array shape{x.extent(0), x.extent(1)};
-          nb::ndarray<const double> x_view(x.data_handle(), 2, shape.data(), nb::none());
-          nb::ndarray<bool> marked = marker(x_view);
-          return std::vector<std::int8_t>(marked.data(),
-                                          marked.data() + marked.size());
-        };
-
-        return dolfinx_wrappers::as_nbarray(
-            dolfinx::fem::locate_dofs_geometrical(V, _marker));
-      },
-      nb::arg("V"), nb::arg("marker"));
-
-  m.def(
-      "interpolation_coords",
-      [](const dolfinx::fem::FiniteElement<double>& e,
-         const dolfinx::mesh::Geometry<double>& geometry,
-         nb::ndarray<std::int32_t, nb::numpy> cells)
-      {
-        std::vector<double> x = dolfinx::fem::interpolation_coords(
-            e, geometry, std::span(cells.data(), cells.size()));
-        return as_nbarray(std::move(x),
-                          std::array<std::size_t, 2>{3, x.size() / 3});
-      },
-      nb::arg("element"), nb::arg("V"), nb::arg("cells"));
-
-  // dolfinx::fem::FunctionSpace
-  nb::class_<dolfinx::fem::FunctionSpace<double>>(m, "FunctionSpace")
-      .def(
-          "__init__",
-          [](dolfinx::fem::FunctionSpace<double>* fs,
-             std::shared_ptr<dolfinx::mesh::Mesh<double>> mesh,
-             std::shared_ptr<dolfinx::fem::FiniteElement<double>> element,
-             std::shared_ptr<dolfinx::fem::DofMap> dofmap) {
-            new (fs) dolfinx::fem::FunctionSpace<double>(mesh, element, dofmap);
-          },
-          nb::arg("mesh"), nb::arg("element"), nb::arg("dofmap"))
-      .def("collapse", &dolfinx::fem::FunctionSpace<double>::collapse)
-      .def("component", &dolfinx::fem::FunctionSpace<double>::component)
-      .def("contains", &dolfinx::fem::FunctionSpace<double>::contains,
-           nb::arg("V"))
-      .def_prop_ro("element", &dolfinx::fem::FunctionSpace<double>::element)
-      .def_prop_ro("mesh", &dolfinx::fem::FunctionSpace<double>::mesh)
-      .def_prop_ro("dofmap", &dolfinx::fem::FunctionSpace<double>::dofmap)
-      .def("sub", &dolfinx::fem::FunctionSpace<double>::sub,
-           nb::arg("component"))
-      .def("tabulate_dof_coordinates",
-           [](const dolfinx::fem::FunctionSpace<double>& self)
-           {
-             std::vector x = self.tabulate_dof_coordinates(false);
-             std::vector<std::size_t> shape{x.size() / 3, 3};
-             return as_nbarray(std::move(x), shape);
-           });
+  declare_real_functions<float>(m);
+  declare_real_functions<double>(m);
 }
 } // namespace dolfinx_wrappers

@@ -25,10 +25,9 @@
 
 namespace dolfinx::fem::impl
 {
-
-namespace stdex = std::experimental;
-using mdspan2_t
-    = stdex::mdspan<const std::int32_t, stdex::dextents<std::size_t, 2>>;
+using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+    const std::int32_t,
+    MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
 
 /// Implementation of vector assembly
 
@@ -39,7 +38,7 @@ using mdspan2_t
 /// positive the block size is used as a compile-time constant, which
 /// has performance benefits.
 /// @tparam _bs1 The block size of the trial function dof map.
-template <typename T, int _bs0 = -1, int _bs1 = -1>
+template <dolfinx::scalar T, int _bs0 = -1, int _bs1 = -1>
 void _lift_bc_cells(
     std::span<T> b, mdspan2_t x_dofmap,
     std::span<const scalar_value_type_t<T>> x, FEkernel<T> auto kernel,
@@ -70,7 +69,9 @@ void _lift_bc_cells(
     std::int32_t c = cells[index];
 
     // Get dof maps for cell
-    auto dmap1 = stdex::submdspan(dofmap1, c, stdex::full_extent);
+    auto dmap1
+        = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+            submdspan(dofmap1, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
 
     // Check if bc is applied to cell
     bool has_bc = false;
@@ -106,7 +107,9 @@ void _lift_bc_cells(
       continue;
 
     // Get cell coordinates/geometry
-    auto x_dofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
+    auto x_dofs
+        = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+            submdspan(x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
@@ -114,7 +117,9 @@ void _lift_bc_cells(
     }
 
     // Size data structure for assembly
-    auto dmap0 = stdex::submdspan(dofmap0, c, stdex::full_extent);
+    auto dmap0
+        = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+            submdspan(dofmap0, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
 
     const int num_rows = bs0 * dmap0.size();
     const int num_cols = bs1 * dmap1.size();
@@ -189,7 +194,7 @@ void _lift_bc_cells(
 /// positive the block size is used as a compile-time constant, which
 /// has performance benefits.
 /// @tparam _bs1 The block size of the trial function dof map.
-template <typename T, int _bs = -1>
+template <dolfinx::scalar T, int _bs = -1>
 void _lift_bc_exterior_facets(
     std::span<T> b, mdspan2_t x_dofmap,
     std::span<const scalar_value_type_t<T>> x, FEkernel<T> auto kernel,
@@ -219,7 +224,9 @@ void _lift_bc_exterior_facets(
     std::int32_t local_facet = facets[index + 1];
 
     // Get dof maps for cell
-    auto dmap1 = stdex::submdspan(dofmap1, cell, stdex::full_extent);
+    auto dmap1 = MDSPAN_IMPL_STANDARD_NAMESPACE::
+        MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
+            dofmap1, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
 
     // Check if bc is applied to cell
     bool has_bc = false;
@@ -239,7 +246,9 @@ void _lift_bc_exterior_facets(
       continue;
 
     // Get cell coordinates/geometry
-    auto x_dofs = stdex::submdspan(x_dofmap, cell, stdex::full_extent);
+    auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::
+        MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
+            x_dofmap, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
@@ -247,7 +256,9 @@ void _lift_bc_exterior_facets(
     }
 
     // Size data structure for assembly
-    auto dmap0 = stdex::submdspan(dofmap0, cell, stdex::full_extent);
+    auto dmap0 = MDSPAN_IMPL_STANDARD_NAMESPACE::
+        MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
+            dofmap0, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
 
     const int num_rows = bs0 * dmap0.size();
     const int num_cols = bs1 * dmap1.size();
@@ -291,7 +302,7 @@ void _lift_bc_exterior_facets(
 /// positive the block size is used as a compile-time constant, which
 /// has performance benefits.
 /// @tparam _bs1 The block size of the trial function dof map.
-template <typename T, int _bs = -1>
+template <dolfinx::scalar T, int _bs = -1>
 void _lift_bc_interior_facets(
     std::span<T> b, mdspan2_t x_dofmap,
     std::span<const scalar_value_type_t<T>> x, int num_cell_facets,
@@ -334,13 +345,17 @@ void _lift_bc_interior_facets(
         = {facets[index + 1], facets[index + 3]};
 
     // Get cell geometry
-    auto x_dofs0 = stdex::submdspan(x_dofmap, cells[0], stdex::full_extent);
+    auto x_dofs0 = MDSPAN_IMPL_STANDARD_NAMESPACE::
+        MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
+            x_dofmap, cells[0], MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     for (std::size_t i = 0; i < x_dofs0.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs0[i]), 3,
                   std::next(cdofs0.begin(), 3 * i));
     }
-    auto x_dofs1 = stdex::submdspan(x_dofmap, cells[1], stdex::full_extent);
+    auto x_dofs1 = MDSPAN_IMPL_STANDARD_NAMESPACE::
+        MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
+            x_dofmap, cells[1], MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     for (std::size_t i = 0; i < x_dofs1.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs1[i]), 3,
@@ -479,7 +494,7 @@ void _lift_bc_interior_facets(
 /// less than zero the block size is determined at runtime. If `_bs` is
 /// positive the block size is used as a compile-time constant, which
 /// has performance benefits.
-template <typename T, int _bs = -1>
+template <dolfinx::scalar T, int _bs = -1>
 void assemble_cells(
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
@@ -508,7 +523,9 @@ void assemble_cells(
     std::int32_t c = cells[index];
 
     // Get cell coordinates/geometry
-    auto x_dofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
+    auto x_dofs
+        = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+            submdspan(x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
@@ -522,7 +539,8 @@ void assemble_cells(
     dof_transform(_be, cell_info, c, 1);
 
     // Scatter cell vector to 'global' vector array
-    auto dofs = stdex::submdspan(dofmap, c, stdex::full_extent);
+    auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+        submdspan(dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     if constexpr (_bs > 0)
     {
       for (std::size_t i = 0; i < dofs.size(); ++i)
@@ -544,7 +562,7 @@ void assemble_cells(
 /// less than zero the block size is determined at runtime. If `_bs` is
 /// positive the block size is used as a compile-time constant, which
 /// has performance benefits.
-template <typename T, int _bs = -1>
+template <dolfinx::scalar T, int _bs = -1>
 void assemble_exterior_facets(
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
@@ -574,7 +592,9 @@ void assemble_exterior_facets(
     std::int32_t local_facet = facets[index + 1];
 
     // Get cell coordinates/geometry
-    auto x_dofs = stdex::submdspan(x_dofmap, cell, stdex::full_extent);
+    auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::
+        MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
+            x_dofmap, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
@@ -589,7 +609,8 @@ void assemble_exterior_facets(
     dof_transform(_be, cell_info, cell, 1);
 
     // Add element vector to global vector
-    auto dofs = stdex::submdspan(dofmap, cell, stdex::full_extent);
+    auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+        submdspan(dofmap, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     if constexpr (_bs > 0)
     {
       for (std::size_t i = 0; i < dofs.size(); ++i)
@@ -611,7 +632,7 @@ void assemble_exterior_facets(
 /// less than zero the block size is determined at runtime. If `_bs` is
 /// positive the block size is used as a compile-time constant, which
 /// has performance benefits.
-template <typename T, int _bs = -1>
+template <dolfinx::scalar T, int _bs = -1>
 void assemble_interior_facets(
     const std::function<void(const std::span<T>&,
                              const std::span<const std::uint32_t>&,
@@ -642,13 +663,17 @@ void assemble_interior_facets(
         = {facets[index + 1], facets[index + 3]};
 
     // Get cell geometry
-    auto x_dofs0 = stdex::submdspan(x_dofmap, cells[0], stdex::full_extent);
+    auto x_dofs0 = MDSPAN_IMPL_STANDARD_NAMESPACE::
+        MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
+            x_dofmap, cells[0], MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     for (std::size_t i = 0; i < x_dofs0.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs0[i]), 3,
                   std::next(cdofs0.begin(), 3 * i));
     }
-    auto x_dofs1 = stdex::submdspan(x_dofmap, cells[1], stdex::full_extent);
+    auto x_dofs1 = MDSPAN_IMPL_STANDARD_NAMESPACE::
+        MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
+            x_dofmap, cells[1], MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     for (std::size_t i = 0; i < x_dofs1.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs1[i]), 3,
@@ -712,7 +737,7 @@ void assemble_interior_facets(
 /// @param[in] x0 The array used in the lifting, typically a 'current
 /// solution' in a Newton method
 /// @param[in] scale Scaling to apply
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
              std::span<const scalar_value_type_t<T>> x,
              std::span<const T> constants,
@@ -854,7 +879,7 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
 /// x0[2] block
 /// @param[in] x0 The vectors used in the lifting
 /// @param[in] scale Scaling to apply
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 void apply_lifting(
     std::span<T> b, const std::vector<std::shared_ptr<const Form<T, U>>> a,
     mdspan2_t x_dofmap, std::span<const scalar_value_type_t<T>> x,
@@ -922,7 +947,7 @@ void apply_lifting(
 /// @param[in] x Mesh coordinates
 /// @param[in] constants Packed constants that appear in `L`
 /// @param[in] coefficients Packed coefficients that appear in `L`
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 void assemble_vector(
     std::span<T> b, const Form<T, U>& L, mdspan2_t x_dofmap,
     std::span<const scalar_value_type_t<T>> x, std::span<const T> constants,
@@ -1061,7 +1086,7 @@ void assemble_vector(
 /// @param[in] L The linear forms to assemble into b
 /// @param[in] constants Packed constants that appear in `L`
 /// @param[in] coefficients Packed coefficients that appear in `L`
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 void assemble_vector(
     std::span<T> b, const Form<T, U>& L, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,

@@ -4,7 +4,7 @@ from basix.ufl import element
 from ufl import (Coefficient, Constant, FunctionSpace, Mesh, TestFunction,
                  TrialFunction, action, dx, grad, inner)
 
-coord_element = element("Lagrange", "triangle", 1, rank=1)
+coord_element = element("Lagrange", "triangle", 1,  shape=(2,))
 mesh = Mesh(coord_element)
 
 # Function Space

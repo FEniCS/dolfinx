@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2022 Anders Logg and Garth N. Wells
+// Copyright (C) 2008-2023 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -27,15 +27,17 @@ namespace dolfinx::fem
 
 /// @brief This class represents a finite element function space defined
 /// by a mesh, a finite element, and a local-to-global map of the
-/// degrees of freedom (dofmap).
+/// degrees-of-freedom.
+/// @tparam T The floating point (real) type of the mesh geometry and the
+/// finite element basis.
 template <std::floating_point T>
 class FunctionSpace
 {
 public:
   /// @brief Create function space for given mesh, element and dofmap.
-  /// @param[in] mesh The mesh
-  /// @param[in] element The element
-  /// @param[in] dofmap The dofmap
+  /// @param[in] mesh Mesh that the space is defined on.
+  /// @param[in] element Finite element for the space.
+  /// @param[in] dofmap Degree-of-freedom map for the space.
   FunctionSpace(std::shared_ptr<const mesh::Mesh<T>> mesh,
                 std::shared_ptr<const FiniteElement<T>> element,
                 std::shared_ptr<const DofMap> dofmap)
@@ -147,7 +149,6 @@ public:
     auto collapsed_dofmap
         = std::make_shared<DofMap>(std::move(_collapsed_dofmap));
 
-    // Create new FunctionSpace and return
     return {FunctionSpace(_mesh, _element, collapsed_dofmap),
             std::move(collapsed_dofs)};
   }
@@ -226,9 +227,10 @@ public:
     const std::size_t shape_c1 = transpose ? num_dofs : 3;
     std::vector<T> coords(shape_c0 * shape_c1, 0);
 
-    namespace stdex = std::experimental;
-    using mdspan2_t = stdex::mdspan<T, stdex::dextents<std::size_t, 2>>;
-    using cmdspan4_t = stdex::mdspan<const T, stdex::dextents<std::size_t, 4>>;
+    using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+    using cmdspan4_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
 
     // Loop over cells and tabulate dofs
     std::vector<T> x_b(scalar_dofs * gdim);
@@ -257,13 +259,16 @@ public:
         std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
     cmdspan4_t phi_full(phi_b.data(), phi_shape);
     cmap.tabulate(0, X, Xshape, phi_b);
-    auto phi = stdex::submdspan(phi_full, 0, stdex::full_extent,
-                                stdex::full_extent, 0);
+    auto phi = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+        submdspan(phi_full, 0, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
+                  MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
 
     for (int c = 0; c < num_cells; ++c)
     {
       // Extract cell geometry
-      auto x_dofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
+      auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::
+          MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
+              x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
       for (std::size_t i = 0; i < x_dofs.size(); ++i)
         for (std::size_t j = 0; j < gdim; ++j)
           coordinate_dofs(i, j) = x_g[3 * x_dofs[i] + j];
@@ -333,7 +338,7 @@ private:
 ///
 /// @param[in] V Vector function spaces for (0) each row block and (1)
 /// each column block
-template <typename T>
+template <dolfinx::scalar T>
 std::array<std::vector<std::shared_ptr<const FunctionSpace<T>>>, 2>
 common_function_spaces(
     const std::vector<
@@ -374,7 +379,7 @@ common_function_spaces(
     }
   }
 
-  // Check there are no null entries
+  // Check that there are no null entries
   if (std::find(spaces0.begin(), spaces0.end(), nullptr) != spaces0.end())
     throw std::runtime_error("Could not deduce all block test spaces.");
   if (std::find(spaces1.begin(), spaces1.end(), nullptr) != spaces1.end())

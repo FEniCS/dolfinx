@@ -8,16 +8,16 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-
 import ufl
 from basix.ufl import element
 from dolfinx.common import has_adios2
-from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
-from dolfinx.graph import create_adjacencylist
+from dolfinx.fem import Function, FunctionSpace
+from dolfinx.graph import adjacencylist
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_square)
-
 from mpi4py import MPI
+
+from dolfinx import default_real_type, default_scalar_type
 
 try:
     from dolfinx.io import FidesWriter, VTXWriter
@@ -25,18 +25,22 @@ except ImportError:
     pytest.skip("Test require ADIOS2", allow_module_level=True)
 
 
-def generate_mesh(dim: int, simplex: bool, N: int = 5):
+def generate_mesh(dim: int, simplex: bool, N: int = 5, dtype=None):
     """Helper function for parametrizing over meshes"""
+    if dtype is None:
+        dtype = default_real_type
+
     if dim == 2:
         if simplex:
-            return create_unit_square(MPI.COMM_WORLD, N, N)
+            return create_unit_square(MPI.COMM_WORLD, N, N, dtype=dtype)
         else:
-            return create_unit_square(MPI.COMM_WORLD, 2 * N, N, CellType.quadrilateral)
+            return create_unit_square(MPI.COMM_WORLD, 2 * N, N, CellType.quadrilateral,
+                                      dtype=dtype)
     elif dim == 3:
         if simplex:
-            return create_unit_cube(MPI.COMM_WORLD, N, N, N)
+            return create_unit_cube(MPI.COMM_WORLD, N, N, N, dtype=dtype)
         else:
-            return create_unit_cube(MPI.COMM_WORLD, N, N, N, CellType.hexahedron)
+            return create_unit_cube(MPI.COMM_WORLD, N, N, N, CellType.hexahedron, dtype=dtype)
     else:
         raise RuntimeError("Unsupported dimension")
 
@@ -60,7 +64,8 @@ def test_fides_mesh(tempdir, dim, simplex):
 def test_two_fides_functions(tempdir, dim, simplex):
     """Test saving two functions with Fides"""
     mesh = generate_mesh(dim, simplex)
-    v = Function(VectorFunctionSpace(mesh, ("Lagrange", 1)))
+    gdim = mesh.geometry.dim
+    v = Function(FunctionSpace(mesh, ("Lagrange", 1, (gdim,))))
     q = Function(FunctionSpace(mesh, ("Lagrange", 1)))
     filename = Path(tempdir, "v.bp")
     with FidesWriter(mesh.comm, filename, [v._cpp_object, q]) as f:
@@ -94,15 +99,14 @@ def test_findes_single_function(tempdir, dim, simplex):
 @pytest.mark.parametrize("simplex", [True, False])
 def test_fides_function_at_nodes(tempdir, dim, simplex):
     """Test saving P1 functions with Fides (with changing geometry)"""
-    from petsc4py import PETSc
-    dtype = PETSc.ScalarType
     mesh = generate_mesh(dim, simplex)
-    v = Function(VectorFunctionSpace(mesh, ("Lagrange", 1)), dtype=dtype)
+    gdim = mesh.geometry.dim
+    v = Function(FunctionSpace(mesh, ("Lagrange", 1, (gdim,))), dtype=default_scalar_type)
     v.name = "v"
     q = Function(FunctionSpace(mesh, ("Lagrange", 1)))
     q.name = "q"
     filename = Path(tempdir, "v.bp")
-    if np.issubdtype(dtype, np.complexfloating):
+    if np.issubdtype(default_scalar_type, np.complexfloating):
         alpha = 1j
     else:
         alpha = 0
@@ -125,10 +129,9 @@ def test_fides_function_at_nodes(tempdir, dim, simplex):
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
 def test_second_order_vtx(tempdir):
     filename = Path(tempdir, "mesh_fides.bp")
-    points = np.array([[0, 0, 0], [1, 0, 0], [0.5, 0, 0]], dtype=np.float64)
+    points = np.array([[0, 0, 0], [1, 0, 0], [0.5, 0, 0]], dtype=default_real_type)
     cells = np.array([[0, 1, 2]], dtype=np.int32)
-    domain = ufl.Mesh(element(
-        "Lagrange", "interval", 2, gdim=points.shape[1], rank=1))
+    domain = ufl.Mesh(element("Lagrange", "interval", 2, gdim=points.shape[1], shape=(1,)))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     with VTXWriter(mesh.comm, filename, mesh) as f:
         f.write(0.0)
@@ -152,7 +155,8 @@ def test_vtx_mesh(tempdir, dim, simplex):
 def test_vtx_functions_fail(tempdir, dim, simplex):
     "Test for error when elements differ"
     mesh = generate_mesh(dim, simplex)
-    v = Function(VectorFunctionSpace(mesh, ("Lagrange", 2)))
+    gdim = mesh.geometry.dim
+    v = Function(FunctionSpace(mesh, ("Lagrange", 2, (gdim,))))
     w = Function(FunctionSpace(mesh, ("Lagrange", 1)))
     filename = Path(tempdir, "v.bp")
     with pytest.raises(RuntimeError):
@@ -192,13 +196,20 @@ def test_vtx_single_function(tempdir, dim, simplex):
 
 
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize("dtype", [
+    np.float32,
+    np.float64,
+    np.complex64,
+    np.complex128
+])
 @pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("simplex", [True, False])
 def test_vtx_functions(tempdir, dtype, dim, simplex):
     "Test saving high order Lagrange functions"
-    mesh = generate_mesh(dim, simplex)
-    V = VectorFunctionSpace(mesh, ("DG", 2))
+    xtype = np.real(dtype(0)).dtype
+    mesh = generate_mesh(dim, simplex, dtype=xtype)
+    gdim = mesh.geometry.dim
+    V = FunctionSpace(mesh, ("DG", 2, (gdim,)))
     v = Function(V, dtype=dtype)
     bs = V.dofmap.index_map_bs
 
@@ -254,21 +265,20 @@ def test_empty_rank_mesh(tempdir):
     """Test VTXWriter on mesh where some ranks have no cells"""
     comm = MPI.COMM_WORLD
     cell_type = CellType.triangle
-    domain = ufl.Mesh(
-        element("Lagrange", cell_type.name, 1, rank=1))
+    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, shape=(2,)))
 
     def partitioner(comm, nparts, local_graph, num_ghost_nodes):
         """Leave cells on the current rank"""
         dest = np.full(len(cells), comm.rank, dtype=np.int32)
-        return create_adjacencylist(dest)
+        return adjacencylist(dest)
 
     if comm.rank == 0:
         cells = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.int64)
-        cells = create_adjacencylist(cells)
-        x = np.array([[0., 0.], [1., 0.], [1., 1.], [0., 1.]])
+        cells = adjacencylist(cells)
+        x = np.array([[0., 0.], [1., 0.], [1., 1.], [0., 1.]], dtype=default_real_type)
     else:
-        cells = create_adjacencylist(np.empty((0, 3), dtype=np.int64))
-        x = np.empty((0, 2), dtype=np.float64)
+        cells = adjacencylist(np.empty((0, 3), dtype=np.int64))
+        x = np.empty((0, 2), dtype=default_real_type)
 
     mesh = create_mesh(comm, cells, x, domain, partitioner)
 

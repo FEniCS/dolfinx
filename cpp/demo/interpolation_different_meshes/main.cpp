@@ -11,7 +11,6 @@
 #include <memory>
 
 using namespace dolfinx;
-namespace stdex = std::experimental;
 
 using T = double;
 
@@ -36,13 +35,15 @@ int main(int argc, char* argv[])
         mesh::cell_type_to_basix_type(mesh_tet->topology()->cell_types()[0]), 1,
         basix::element::lagrange_variant::equispaced, false);
     auto V_tet = std::make_shared<fem::FunctionSpace<double>>(
-        fem::create_functionspace(mesh_tet, element_tet, 3));
+        fem::create_functionspace(mesh_tet, element_tet,
+                                  std::vector<std::size_t>{3}));
 
     basix::FiniteElement element_hex = basix::element::create_lagrange<double>(
         mesh::cell_type_to_basix_type(mesh_hex->topology()->cell_types()[0]), 2,
         basix::element::lagrange_variant::equispaced, false);
     auto V_hex = std::make_shared<fem::FunctionSpace<double>>(
-        fem::create_functionspace(mesh_hex, element_hex, 3));
+        fem::create_functionspace(mesh_hex, element_hex,
+                                  std::vector<std::size_t>{3}));
 
     auto u_tet = std::make_shared<fem::Function<T>>(V_tet);
     auto u_hex = std::make_shared<fem::Function<T>>(V_hex);
@@ -50,8 +51,9 @@ int main(int argc, char* argv[])
     auto fun = [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
     {
       std::vector<T> fdata(3 * x.extent(1), 0.0);
-      using dextent = stdex::dextents<std::size_t, 2>;
-      stdex::mdspan<double, dextent> f(fdata.data(), 3, x.extent(1));
+      using dextent = MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>;
+      MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<double, dextent> f(fdata.data(), 3,
+                                                                x.extent(1));
       for (std::size_t i = 0; i < x.extent(1); ++i)
       {
         f(0, i) = std::cos(10 * x(0, i)) * std::sin(10 * x(2, i));
@@ -75,7 +77,6 @@ int main(int argc, char* argv[])
 #ifdef HAS_ADIOS2
     io::VTXWriter<double> write_tet(mesh_tet->comm(), "u_tet.bp", {u_tet});
     write_tet.write(0.0);
-
     io::VTXWriter<double> write_hex(mesh_hex->comm(), "u_hex.bp", {u_hex});
     write_hex.write(0.0);
 #endif

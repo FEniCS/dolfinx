@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "array.h"
-#include "caster_petsc.h"
+#include "pycoeff.h"
 #include <array>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
@@ -16,21 +16,15 @@
 #include <dolfinx/fem/FunctionSpace.h>
 #include <dolfinx/fem/assembler.h>
 #include <dolfinx/fem/discreteoperators.h>
-#include <dolfinx/fem/petsc.h>
 #include <dolfinx/fem/sparsitybuild.h>
 #include <dolfinx/fem/utils.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
-#include <dolfinx/la/petsc.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <memory>
-#include <petsc4py/petsc4py.h>
-// #include <nanobind/complex.h>
-// #include <nanobind/functional.h>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/operators.h>
-// #include <nanobind/pytypes.h>
 #include <nanobind/stl/array.h>
 #include <nanobind/stl/vector.h>
 #include <span>
@@ -39,28 +33,52 @@
 
 namespace nb = nanobind;
 
-using namespace dolfinx_wrappers;
-
 namespace
 {
 
-template <typename T>
-std::map<std::pair<dolfinx::fem::IntegralType, int>,
-         std::pair<std::span<const T>, int>>
-py_to_cpp_coeffs(const std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                                nb::ndarray<T, nb::numpy>>& coeffs)
+// Declare assembler function that have multiple scalar types
+template <typename T, typename U>
+void declare_discrete_operators(nb::module_& m)
 {
-  using Key_t = typename std::remove_reference_t<decltype(coeffs)>::key_type;
-  std::map<Key_t, std::pair<std::span<const T>, int>> c;
-  std::transform(coeffs.begin(), coeffs.end(), std::inserter(c, c.end()),
-                 [](auto& e) -> typename decltype(c)::value_type
-                 {
-                   assert(e.second.ndim() == 1);
-                   return {e.first,
-                           {std::span(e.second.data(), e.second.shape(0)),
-                            e.second.shape(1)}};
-                 });
-  return c;
+  m.def(
+      "discrete_gradient",
+      [](const dolfinx::fem::FunctionSpace<U>& V0,
+         const dolfinx::fem::FunctionSpace<U>& V1)
+      {
+        assert(V0.mesh());
+        auto mesh = V0.mesh();
+        assert(V1.mesh());
+        assert(mesh == V1.mesh());
+        MPI_Comm comm = mesh->comm();
+
+        auto dofmap0 = V0.dofmap();
+        assert(dofmap0);
+        auto dofmap1 = V1.dofmap();
+        assert(dofmap1);
+
+        // Create and build  sparsity pattern
+        assert(dofmap0->index_map);
+        assert(dofmap1->index_map);
+        dolfinx::la::SparsityPattern sp(
+            comm, {dofmap1->index_map, dofmap0->index_map},
+            {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
+
+        int tdim = mesh->topology()->dim();
+        auto map = mesh->topology()->index_map(tdim);
+        assert(map);
+        std::vector<std::int32_t> c(map->size_local(), 0);
+        std::iota(c.begin(), c.end(), 0);
+        dolfinx::fem::sparsitybuild::cells(sp, c, {*dofmap1, *dofmap0});
+        sp.finalize();
+
+        // Build operator
+        dolfinx::la::MatrixCSR<T> A(sp);
+        dolfinx::fem::discrete_gradient<T, U>(
+            *V0.mesh()->topology_mutable(), {*V0.element(), *V0.dofmap()},
+            {*V1.element(), *V1.dofmap()}, A.mat_set_values());
+        return A;
+      },
+      nb::arg("V0"), nb::arg("V1"));
 }
 
 // Declare assembler function that have multiple scalar types
@@ -121,7 +139,7 @@ void declare_assembly_functions(nb::module_& m)
                         nb::ndarray<T, nb::numpy>>& coefficients)
       {
         return dolfinx::fem::assemble_scalar<T>(
-            M, std::span<const T>(constants.data(), constants.size()),
+            M, std::span(constants.data(), constants.size()),
             py_to_cpp_coeffs(coefficients));
       },
       nb::arg("M"), nb::arg("constants"), nb::arg("coefficients"),
@@ -135,11 +153,9 @@ void declare_assembly_functions(nb::module_& m)
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                         nb::ndarray<T, nb::numpy>>& coefficients)
       {
-        assert(b.ndim() == 1);
-        assert(constants.ndim() == 1);
         dolfinx::fem::assemble_vector<T>(
             std::span(b.data(), b.shape(0)), L,
-            std::span<const T>(constants.data(), constants.shape(0)),
+            std::span(constants.data(), constants.shape(0)),
             py_to_cpp_coeffs(coefficients));
       },
       nb::arg("b"), nb::arg("L"), nb::arg("constants"), nb::arg("coeffs"),
@@ -163,7 +179,6 @@ void declare_assembly_functions(nb::module_& m)
           throw std::runtime_error(
               "Non-square blocksize unsupported in Python");
 
-        assert(constants.ndim() == 1);
         if (data_bs[0] == 1)
         {
           dolfinx::fem::assemble_matrix(
@@ -202,6 +217,16 @@ void declare_assembly_functions(nb::module_& m)
       },
       nb::arg("A"), nb::arg("V"), nb::arg("bcs"), nb::arg("diagonal"),
       "Experimental.");
+  m.def(
+      "insert_diagonal",
+      [](dolfinx::la::MatrixCSR<T>& A, const nb::ndarray<std::int32_t>& rows,
+         T diagonal)
+      {
+        dolfinx::fem::set_diagonal(A.mat_set_values(),
+                                   std::span(rows.data(), rows.shape(0)),
+                                   diagonal);
+      },
+      nb::arg("A"), nb::arg("rows"), nb::arg("diagonal"), "Experimental.");
   m.def(
       "assemble_matrix",
       [](const std::function<int(const nb::ndarray<const std::int32_t>&,
@@ -285,194 +310,6 @@ void declare_assembly_functions(nb::module_& m)
       nb::arg("scale") = T(1));
 }
 
-void petsc_module(nb::module_& m)
-{
-  // Create PETSc vectors and matrices
-  m.def("create_vector_block", &dolfinx::fem::petsc::create_vector_block,
-        nb::arg("maps"),
-        "Create a monolithic vector for multiple (stacked) linear forms.");
-  m.def("create_vector_nest", &dolfinx::fem::petsc::create_vector_nest,
-        nb::arg("maps"),
-        "Create nested vector for multiple (stacked) linear forms.");
-  m.def("create_matrix", dolfinx::fem::petsc::create_matrix<double>,
-        nb::arg("a"), nb::arg("type") = "",
-        "Create a PETSc Mat for bilinear form.");
-  m.def("create_matrix_block",
-        &dolfinx::fem::petsc::create_matrix_block<double>, nb::arg("a"),
-        nb::arg("type") = "",
-        "Create monolithic sparse matrix for stacked bilinear forms.");
-  // m.def("create_matrix_nest",
-  // &dolfinx::fem::petsc::create_matrix_nest<double>,
-  //       nb::arg("a"),
-  //       nb::arg("types") = std::vector<std::vector<std::string>>({{""}}),
-  //       "Create nested sparse matrix for bilinear forms.");
-
-  // PETSc Matrices
-  m.def(
-      "assemble_matrix",
-      [](Mat A, const dolfinx::fem::Form<PetscScalar, double>& a,
-         const nb::ndarray<PetscScalar, nb::numpy>& constants,
-         const std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                        nb::ndarray<PetscScalar, nb::numpy>>& coefficients,
-         const std::vector<std::shared_ptr<
-             const dolfinx::fem::DirichletBC<PetscScalar, double>>>& bcs,
-         bool unrolled)
-      {
-        assert(constants.ndim() == 1);
-        if (unrolled)
-        {
-          auto set_fn = dolfinx::la::petsc::Matrix::set_block_expand_fn(
-              A, a.function_spaces()[0]->dofmap()->bs(),
-              a.function_spaces()[1]->dofmap()->bs(), ADD_VALUES);
-          dolfinx::fem::assemble_matrix(
-              set_fn, a, std::span(constants.data(), constants.shape(0)),
-              py_to_cpp_coeffs(coefficients), bcs);
-        }
-        else
-        {
-          dolfinx::fem::assemble_matrix(
-              dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES), a,
-              std::span(constants.data(), constants.shape(0)),
-              py_to_cpp_coeffs(coefficients), bcs);
-        }
-      },
-      nb::arg("A"), nb::arg("a"), nb::arg("constants"), nb::arg("coeffs"),
-      nb::arg("bcs"), nb::arg("unrolled") = false,
-      "Assemble bilinear form into an existing PETSc matrix");
-  m.def(
-      "assemble_matrix",
-      [](Mat A, const dolfinx::fem::Form<PetscScalar, double>& a,
-         const nb::ndarray<PetscScalar, nb::numpy>& constants,
-         const std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                        nb::ndarray<PetscScalar, nb::numpy>>& coefficients,
-         const nb::ndarray<std::int8_t, nb::numpy>& rows0,
-         const nb::ndarray<std::int8_t, nb::numpy>& rows1, bool unrolled)
-      {
-        assert(constants.ndim() == 1);
-        if (rows0.ndim() != 1 or rows1.ndim())
-        {
-          throw std::runtime_error(
-              "Expected 1D arrays for boundary condition rows/columns");
-        }
-
-        std::function<int(const std::span<const std::int32_t>&,
-                          const std::span<const std::int32_t>&,
-                          const std::span<const PetscScalar>&)>
-            set_fn;
-        if (unrolled)
-        {
-          set_fn = dolfinx::la::petsc::Matrix::set_block_expand_fn(
-              A, a.function_spaces()[0]->dofmap()->bs(),
-              a.function_spaces()[1]->dofmap()->bs(), ADD_VALUES);
-        }
-        else
-          set_fn = dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES);
-        assert(rows0.ndim() == 1);
-        assert(rows1.ndim() == 1);
-
-        dolfinx::fem::assemble_matrix(
-            set_fn, a, std::span(constants.data(), constants.shape(0)),
-            py_to_cpp_coeffs(coefficients),
-            std::span(rows0.data(), rows0.shape(0)),
-            std::span(rows1.data(), rows1.shape(0)));
-      },
-      nb::arg("A"), nb::arg("a"), nb::arg("constants"), nb::arg("coeffs"),
-      nb::arg("rows0"), nb::arg("rows1"), nb::arg("unrolled") = false);
-  m.def(
-      "insert_diagonal",
-      [](Mat A, const dolfinx::fem::FunctionSpace<double>& V,
-         const std::vector<std::shared_ptr<
-             const dolfinx::fem::DirichletBC<PetscScalar, double>>>& bcs,
-         PetscScalar diagonal)
-      {
-        dolfinx::fem::set_diagonal(
-            dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES), V, bcs,
-            diagonal);
-      },
-      nb::arg("A"), nb::arg("V"), nb::arg("bcs"), nb::arg("diagonal"));
-
-  m.def(
-      "discrete_gradient",
-      [](const dolfinx::fem::FunctionSpace<double>& V0,
-         const dolfinx::fem::FunctionSpace<double>& V1)
-      {
-        assert(V0.mesh());
-        auto mesh = V0.mesh();
-        assert(V1.mesh());
-        assert(mesh == V1.mesh());
-        MPI_Comm comm = mesh->comm();
-
-        std::shared_ptr<const dolfinx::fem::DofMap> dofmap0 = V0.dofmap();
-        assert(dofmap0);
-        std::shared_ptr<const dolfinx::fem::DofMap> dofmap1 = V1.dofmap();
-        assert(dofmap1);
-
-        // Create and build  sparsity pattern
-        assert(dofmap0->index_map);
-        assert(dofmap1->index_map);
-        dolfinx::la::SparsityPattern sp(
-            comm, {dofmap1->index_map, dofmap0->index_map},
-            {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
-
-        int tdim = mesh->topology()->dim();
-        auto map = mesh->topology()->index_map(tdim);
-        assert(map);
-        std::vector<std::int32_t> c(map->size_local(), 0);
-        std::iota(c.begin(), c.end(), 0);
-        dolfinx::fem::sparsitybuild::cells(sp, c, {*dofmap1, *dofmap0});
-        sp.finalize();
-
-        // Build operator
-        Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
-        MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE);
-        dolfinx::fem::discrete_gradient<PetscScalar>(
-            *V0.mesh()->topology_mutable(), {*V0.element(), *V0.dofmap()},
-            {*V1.element(), *V1.dofmap()},
-            dolfinx::la::petsc::Matrix::set_fn(A, INSERT_VALUES));
-        return A;
-      },
-      nb::arg("V0"), nb::arg("V1"));
-  m.def(
-      "interpolation_matrix",
-      [](const dolfinx::fem::FunctionSpace<double>& V0,
-         const dolfinx::fem::FunctionSpace<double>& V1)
-      {
-        assert(V0.mesh());
-        auto mesh = V0.mesh();
-        assert(V1.mesh());
-        assert(mesh == V1.mesh());
-        MPI_Comm comm = mesh->comm();
-
-        std::shared_ptr<const dolfinx::fem::DofMap> dofmap0 = V0.dofmap();
-        assert(dofmap0);
-        std::shared_ptr<const dolfinx::fem::DofMap> dofmap1 = V1.dofmap();
-        assert(dofmap1);
-
-        // Create and build  sparsity pattern
-        assert(dofmap0->index_map);
-        assert(dofmap1->index_map);
-        dolfinx::la::SparsityPattern sp(
-            comm, {dofmap1->index_map, dofmap0->index_map},
-            {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
-
-        int tdim = mesh->topology()->dim();
-        auto map = mesh->topology()->index_map(tdim);
-        assert(map);
-        std::vector<std::int32_t> c(map->size_local(), 0);
-        std::iota(c.begin(), c.end(), 0);
-        dolfinx::fem::sparsitybuild::cells(sp, c, {*dofmap1, *dofmap0});
-        sp.finalize();
-
-        // Build operator
-        Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
-        MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE);
-        dolfinx::fem::interpolation_matrix<PetscScalar>(
-            V0, V1, dolfinx::la::petsc::Matrix::set_block_fn(A, INSERT_VALUES));
-        return A;
-      },
-      nb::arg("V0"), nb::arg("V1"));
-}
-
 } // namespace
 
 namespace dolfinx_wrappers
@@ -480,14 +317,15 @@ namespace dolfinx_wrappers
 
 void assemble(nb::module_& m)
 {
-  nb::module_ petsc_mod
-      = m.def_submodule("petsc", "PETSc-specific finite element module");
-  petsc_module(petsc_mod);
-
   // dolfinx::fem::assemble
-  declare_assembly_functions<float, double>(m);
+  declare_assembly_functions<float, float>(m);
   declare_assembly_functions<double, double>(m);
-  // declare_assembly_functions<std::complex<float>, double>(m);
+  // declare_assembly_functions<std::complex<float>, float>(m);
   // declare_assembly_functions<std::complex<double>, double>(m);
+
+  declare_discrete_operators<float, float>(m);
+  declare_discrete_operators<double, double>(m);
+  // declare_discrete_operators<std::complex<float>, float>(m);
+  // declare_discrete_operators<std::complex<double>, double>(m);
 }
 } // namespace dolfinx_wrappers

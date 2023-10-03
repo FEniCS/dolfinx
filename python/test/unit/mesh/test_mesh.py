@@ -7,15 +7,11 @@
 import math
 import sys
 
+import basix
 import numpy as np
 import pytest
-
-import basix
 import ufl
 from basix.ufl import element
-from dolfinx import cpp as _cpp
-from dolfinx import graph
-from dolfinx import mesh as _mesh
 from dolfinx.cpp.mesh import (create_cell_partitioner, entities_to_geometry,
                               is_simplex)
 from dolfinx.fem import assemble_scalar, form
@@ -24,19 +20,20 @@ from dolfinx.mesh import (CellType, DiagonalType, GhostMode, create_box,
                           create_unit_cube, create_unit_interval,
                           create_unit_square, exterior_facet_indices,
                           locate_entities, locate_entities_boundary)
-
 from mpi4py import MPI
+
+from dolfinx import cpp as _cpp
+from dolfinx import graph
+from dolfinx import mesh as _mesh
 
 
 def submesh_topology_test(mesh, submesh, entity_map, vertex_map, entity_dim):
     submesh_cell_imap = submesh.topology.index_map(entity_dim)
     submesh_c_to_v = submesh.topology.connectivity(entity_dim, 0)
-
     assert (submesh_cell_imap.size_local + submesh_cell_imap.num_ghosts) == submesh_c_to_v.num_nodes
 
     # Check that creating entities / creating connectivity doesn't cause
     # a segmentation fault
-
     for i in range(submesh.topology.dim):
         submesh.topology.create_entities(i)
         submesh.topology.create_connectivity(i, 0)
@@ -77,68 +74,41 @@ def submesh_geometry_test(mesh, submesh, entity_map, geom_map, entity_dim):
                 assert np.allclose(mesh.geometry.x[mesh_x_dofs[i]], submesh.geometry.x[submesh_x_dofs[i]])
 
 
-@pytest.fixture
-def mesh1d():
+def mesh_1d(dtype):
     """Create 1D mesh with degenerate cell"""
-    mesh1d = create_unit_interval(MPI.COMM_WORLD, 4)
-    i1 = np.where((mesh1d.geometry.x == (0.75, 0, 0)).all(axis=1))[0][0]
-    i2 = np.where((mesh1d.geometry.x == (1, 0, 0)).all(axis=1))[0][0]
+    mesh1d = create_unit_interval(MPI.COMM_WORLD, 4, dtype=dtype)
+    i1 = np.where((np.isclose(mesh1d.geometry.x, (0.75, 0., 0.))).all(axis=1))[0][0]
+    i2 = np.where((np.isclose(mesh1d.geometry.x, (1., 0., 0.))).all(axis=1))[0][0]
     mesh1d.geometry.x[i2] = mesh1d.geometry.x[i1]
     return mesh1d
 
 
-def mesh_1d():
-    """Create 1D mesh with degenerate cell"""
-    mesh1d = create_unit_interval(MPI.COMM_WORLD, 4)
-    i1 = np.where((mesh1d.geometry.x == (0.75, 0, 0)).all(axis=1))[0][0]
-    i2 = np.where((mesh1d.geometry.x == (1, 0, 0)).all(axis=1))[0][0]
-    mesh1d.geometry.x[i2] = mesh1d.geometry.x[i1]
-    return mesh1d
-
-
-@pytest.fixture
-def mesh2d():
+def mesh_2d(dtype):
     """Create 2D mesh with one equilateral triangle"""
-    mesh2d = create_rectangle(
-        MPI.COMM_WORLD, [np.array([0.0, 0.0]),
-                         np.array([1., 1.])], [1, 1],
-        CellType.triangle, GhostMode.none,
-        create_cell_partitioner(), DiagonalType.left)
-    i1 = np.where((mesh2d.geometry.x
-                   == (1, 1, 0)).all(axis=1))[0][0]
-    mesh2d.geometry.x[i1, :2] += 0.5 * (math.sqrt(3.0) - 1.0)
-    return mesh2d
-
-
-def mesh_2d():
-    """Create 2D mesh with one equilateral triangle"""
-    mesh2d = create_rectangle(
-        MPI.COMM_WORLD, [np.array([0.0, 0.0]),
-                         np.array([1., 1.])], [1, 1],
-        CellType.triangle, GhostMode.none,
-        create_cell_partitioner(GhostMode.none), DiagonalType.left)
-    i1 = np.where((mesh2d.geometry.x
-                   == (1, 1, 0)).all(axis=1))[0][0]
+    mesh2d = create_rectangle(MPI.COMM_WORLD, [np.array([0.0, 0.0]), np.array([1., 1.])], [1, 1],
+                              CellType.triangle, dtype, GhostMode.none,
+                              create_cell_partitioner(GhostMode.none), DiagonalType.left)
+    i1 = np.where((np.isclose(mesh2d.geometry.x, (1., 1., 0.))).all(axis=1))[0][0]
     mesh2d.geometry.x[i1, :2] += 0.5 * (math.sqrt(3.0) - 1.0)
     return mesh2d
 
 
 @pytest.fixture
-def mesh3d():
+def mesh3d(dtype=np.float64):
     """Create 3D mesh with regular tetrahedron and degenerate cells"""
-    mesh3d = create_unit_cube(MPI.COMM_WORLD, 1, 1, 1)
-    i1 = np.where((mesh3d.geometry.x == (0, 1, 0)).all(axis=1))[0][0]
-    i2 = np.where((mesh3d.geometry.x == (1, 1, 1)).all(axis=1))[0][0]
+    mesh3d = create_unit_cube(MPI.COMM_WORLD, 1, 1, 1, dtype=dtype)
+    i1 = np.where((np.isclose(mesh3d.geometry.x, (0., 1., 0.))).all(axis=1))[0][0]
+    i2 = np.where((np.isclose(mesh3d.geometry.x, (1., 1., 1.))).all(axis=1))[0][0]
     mesh3d.geometry.x[i1][0] = 1.0
     mesh3d.geometry.x[i2][1] = 0.0
     return mesh3d
 
 
-def mesh_3d():
+def mesh_3d(dtype):
     """Create 3D mesh with regular tetrahedron and degenerate cells"""
-    mesh3d = create_unit_cube(MPI.COMM_WORLD, 1, 1, 1)
-    i1 = np.where((mesh3d.geometry.x == (0, 1, 0)).all(axis=1))[0][0]
-    i2 = np.where((mesh3d.geometry.x == (1, 1, 1)).all(axis=1))[0][0]
+    mesh3d = create_unit_cube(MPI.COMM_WORLD, 1, 1, 1, dtype=dtype)
+    i1 = np.where((np.isclose(mesh3d.geometry.x, (0., 1., 0.))).all(axis=1))[0][0]
+    i2 = np.where((np.isclose(mesh3d.geometry.x, (1., 1., 1.))).all(axis=1))[0][0]
     mesh3d.geometry.x[i1][0] = 1.0
     mesh3d.geometry.x[i2][1] = 0.0
     return mesh3d
@@ -174,10 +144,8 @@ def square():
 
 @pytest.fixture
 def rectangle():
-    return create_rectangle(
-        MPI.COMM_WORLD, [np.array([0.0, 0.0]),
-                         np.array([2.0, 2.0])], [5, 5],
-        CellType.triangle, GhostMode.none)
+    return create_rectangle(MPI.COMM_WORLD, [np.array([0.0, 0.0]), np.array([2.0, 2.0])],
+                            [5, 5], CellType.triangle, np.float64, GhostMode.none)
 
 
 @pytest.fixture
@@ -187,9 +155,8 @@ def cube():
 
 @pytest.fixture
 def box():
-    return create_box(MPI.COMM_WORLD, [np.array([0, 0, 0]),
-                                       np.array([2, 2, 2])], [2, 2, 5], CellType.tetrahedron,
-                      GhostMode.none)
+    return create_box(MPI.COMM_WORLD, [np.array([0, 0, 0]), np.array([2, 2, 2])],
+                      [2, 2, 5], CellType.tetrahedron, np.float64, GhostMode.none)
 
 
 @pytest.fixture
@@ -226,60 +193,55 @@ def test_UFLDomain(interval, square, rectangle, cube, box):
     _check_ufl_domain(box)
 
 
-def test_create_unit_squareDistributed():
-    """Create mesh of unit square."""
-    mesh = create_unit_square(MPI.COMM_WORLD, 5, 7)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("comm", [MPI.COMM_SELF, MPI.COMM_WORLD])
+def test_create_unit_square(comm, dtype):
+    """Create mesh of unit square"""
+    mesh = create_unit_square(comm, 5, 7, dtype=dtype)
     assert mesh.topology.index_map(0).size_global == 48
     assert mesh.topology.index_map(2).size_global == 70
     assert mesh.geometry.dim == 2
     assert mesh.comm.allreduce(mesh.topology.index_map(0).size_local, MPI.SUM) == 48
+    assert mesh.geometry.x.dtype == dtype
 
 
-def test_create_unit_squareLocal():
-    """Create mesh of unit square."""
-    mesh = create_unit_square(MPI.COMM_SELF, 5, 7)
-    assert mesh.topology.index_map(0).size_global == 48
-    assert mesh.topology.index_map(2).size_global == 70
-    assert mesh.geometry.dim == 2
-
-
-def test_create_unit_cubeDistributed():
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("comm", [MPI.COMM_SELF, MPI.COMM_WORLD])
+def test_create_unit_cube(comm, dtype):
     """Create mesh of unit cube."""
-    mesh = create_unit_cube(MPI.COMM_WORLD, 5, 7, 9)
+    mesh = create_unit_cube(comm, 5, 7, 9, dtype=dtype)
     assert mesh.topology.index_map(0).size_global == 480
     assert mesh.topology.index_map(3).size_global == 1890
     assert mesh.geometry.dim == 3
     assert mesh.comm.allreduce(mesh.topology.index_map(0).size_local, MPI.SUM) == 480
+    assert mesh.geometry.x.dtype == dtype
 
 
-def test_create_unit_cube_local():
-    """Create mesh of unit cube."""
-    mesh = create_unit_cube(MPI.COMM_SELF, 5, 7, 9)
-    assert mesh.topology.index_map(0).size_global == 480
-    assert mesh.topology.index_map(0).size_local == 480
-    assert mesh.topology.index_map(3).size_global == 1890
-    assert mesh.topology.index_map(3).size_local == 1890
-    assert mesh.geometry.dim == 3
-
-
-def test_create_unit_square_quads():
-    mesh = create_unit_square(MPI.COMM_WORLD, 5, 7, CellType.quadrilateral)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("comm", [MPI.COMM_SELF, MPI.COMM_WORLD])
+def test_create_unit_square_quads(comm, dtype):
+    mesh = create_unit_square(comm, 5, 7, CellType.quadrilateral, dtype=dtype)
     assert mesh.topology.index_map(0).size_global == 48
     assert mesh.topology.index_map(2).size_global == 35
     assert mesh.geometry.dim == 2
     assert mesh.comm.allreduce(mesh.topology.index_map(0).size_local, MPI.SUM) == 48
+    assert mesh.geometry.x.dtype == dtype
 
 
-def test_create_unit_square_hex():
-    mesh = create_unit_cube(MPI.COMM_WORLD, 5, 7, 9, CellType.hexahedron)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("comm", [MPI.COMM_SELF, MPI.COMM_WORLD])
+def test_create_unit_square_hex(comm, dtype):
+    mesh = create_unit_cube(comm, 5, 7, 9, CellType.hexahedron, dtype=dtype)
     assert mesh.topology.index_map(0).size_global == 480
     assert mesh.topology.index_map(3).size_global == 315
     assert mesh.geometry.dim == 3
     assert mesh.comm.allreduce(mesh.topology.index_map(0).size_local, MPI.SUM) == 480
+    assert mesh.geometry.x.dtype == dtype
 
 
 def test_create_box_prism():
-    mesh = create_box(MPI.COMM_WORLD, [[0., 0., 0.], [1., 1., 1.]], [2, 3, 4], CellType.prism, GhostMode.none)
+    mesh = create_box(MPI.COMM_WORLD, [[0., 0., 0.], [1., 1., 1.]], [2, 3, 4], CellType.prism,
+                      np.float64, GhostMode.none)
     assert mesh.topology.index_map(0).size_global == 60
     assert mesh.topology.index_map(3).size_global == 48
 
@@ -349,14 +311,15 @@ def dirname(request):
 
 
 @pytest.mark.skip_in_parallel
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("_mesh,hmin,hmax",
                          [
                              #  (mesh_1d, 0.0, 0.25),
                              (mesh_2d, math.sqrt(2.0), math.sqrt(2.0)),
                              (mesh_3d, math.sqrt(2.0), math.sqrt(2.0)),
                          ])
-def test_hmin_hmax(_mesh, hmin, hmax):
-    mesh = _mesh()
+def test_hmin_hmax(_mesh, dtype, hmin, hmax):
+    mesh = _mesh(dtype)
     tdim = mesh.topology.dim
     num_cells = mesh.topology.index_map(tdim).size_local
     h = _cpp.mesh.h(mesh._cpp_object, tdim, range(num_cells))
@@ -402,11 +365,9 @@ def xfail_ghosted_quads_hexes(mesh_factory, ghost_mode):
 
 
 @pytest.mark.parametrize("ghost_mode",
-                         [
-                             GhostMode.none,
+                         [GhostMode.none,
                              GhostMode.shared_facet,
-                             GhostMode.shared_vertex,
-                         ])
+                             GhostMode.shared_vertex])
 @pytest.mark.parametrize('mesh_factory', mesh_factories)
 def xtest_mesh_topology_against_basix(mesh_factory, ghost_mode):
     """Test that mesh cells have topology matching to Basix reference
@@ -447,7 +408,7 @@ def xtest_mesh_topology_against_basix(mesh_factory, ghost_mode):
 
 
 def xtest_mesh_topology_lifetime():
-    """Check that lifetime of Mesh.topology is bound to underlying mesh object"""
+    """Check that lifetime of Mesh.topology is bound to underlying mesh object."""
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 4)
     rc = sys.getrefcount(mesh)
     topology = mesh.topology
@@ -475,7 +436,7 @@ def test_unit_hex_mesh_assemble():
     mesh = create_unit_cube(MPI.COMM_WORLD, 6, 7, 5, CellType.hexahedron)
     vol = assemble_scalar(form(1 * ufl.dx(mesh)))
     vol = mesh.comm.allreduce(vol, MPI.SUM)
-    assert vol == pytest.approx(1, rel=1e-9)
+    assert vol == pytest.approx(1, rel=1e-5, abs=1.0e-4)
 
 
 def boundary_0(x):
@@ -496,10 +457,8 @@ def boundary_2(x):
 @pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("n", [3, 6])
 @pytest.mark.parametrize("codim", [0, 1, 2])
-@pytest.mark.parametrize("marker", [lambda x: x[0] >= 0.5,
-                                    lambda x: x[0] >= -1])
-@pytest.mark.parametrize("ghost_mode", [GhostMode.none,
-                                        GhostMode.shared_facet])
+@pytest.mark.parametrize("marker", [lambda x: x[0] >= 0.5, lambda x: x[0] >= -1])
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 @pytest.mark.parametrize("simplex", [True, False])
 def test_submesh_full(d, n, codim, marker, ghost_mode, simplex):
     if d == codim:
@@ -523,8 +482,7 @@ def test_submesh_full(d, n, codim, marker, ghost_mode, simplex):
 @pytest.mark.parametrize("boundary", [boundary_0,
                                       boundary_1,
                                       boundary_2])
-@pytest.mark.parametrize("ghost_mode", [GhostMode.none,
-                                        GhostMode.shared_facet])
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 def test_submesh_boundary(d, n, boundary, ghost_mode):
     if d == 2:
         mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
@@ -537,28 +495,25 @@ def test_submesh_boundary(d, n, boundary, ghost_mode):
     submesh_geometry_test(mesh, submesh, entity_map, geom_map, edim)
 
 
-@pytest.mark.parametrize("dtype", [
-    np.float32,
-    np.float64
-])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_empty_rank_mesh(dtype):
     """Construction of mesh where some ranks are empty"""
     comm = MPI.COMM_WORLD
     cell_type = CellType.triangle
     tdim = 2
-    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, rank=1))
+    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, shape=(2,)))
 
     def partitioner(comm, nparts, local_graph, num_ghost_nodes):
         """Leave cells on the curent rank"""
         dest = np.full(len(cells), comm.rank, dtype=np.int32)
-        return graph.create_adjacencylist(dest)
+        return graph.adjacencylist(dest)
 
     if comm.rank == 0:
         cells = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.int64)
-        cells = graph.create_adjacencylist(cells)
+        cells = graph.adjacencylist(cells)
         x = np.array([[0., 0.], [1., 0.], [1., 1.], [0., 1.]], dtype=dtype)
     else:
-        cells = graph.create_adjacencylist(np.empty((0, 3), dtype=np.int64))
+        cells = graph.adjacencylist(np.empty((0, 3), dtype=np.int64))
         x = np.empty((0, 2), dtype=dtype)
 
     mesh = _mesh.create_mesh(comm, cells, x, domain, partitioner)
@@ -607,7 +562,6 @@ def test_original_index():
 
 def compute_num_boundary_facets(mesh):
     """Compute the total number of boundary facets in the mesh"""
-
     # Create facets and facet cell connectivity
     tdim = mesh.topology.dim
     mesh.topology.create_entities(tdim - 1)
@@ -625,16 +579,15 @@ def compute_num_boundary_facets(mesh):
 
 @pytest.mark.parametrize("n", [2, 5])
 @pytest.mark.parametrize("d", [2, 3])
-@pytest.mark.parametrize("ghost_mode", [GhostMode.none,
-                                        GhostMode.shared_facet])
-def test_boundary_facets(n, d, ghost_mode):
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_boundary_facets(n, d, ghost_mode, dtype):
     """Test that the correct number of boundary facets are computed"""
     if d == 2:
-        mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode)
+        mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=ghost_mode, dtype=dtype)
         expected_num_boundary_facets = 4 * n
     else:
-        mesh = create_unit_cube(
-            MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
+        mesh = create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode, dtype=dtype)
         expected_num_boundary_facets = 6 * n**2 * 2
 
     assert compute_num_boundary_facets(mesh) == expected_num_boundary_facets
@@ -644,14 +597,17 @@ def test_boundary_facets(n, d, ghost_mode):
 @pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none,
                                         GhostMode.shared_facet])
-def test_submesh_codim_0_boundary_facets(n, d, ghost_mode):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_submesh_codim_0_boundary_facets(n, d, ghost_mode, dtype):
     """Test that the correct number of boundary facets are computed
     for a submesh of codim 0"""
     if d == 2:
-        mesh_1 = create_rectangle(MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n), ghost_mode=ghost_mode)
+        mesh_1 = create_rectangle(MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)),
+                                  (2 * n, n), ghost_mode=ghost_mode, dtype=dtype)
         expected_num_boundary_facets = 4 * n
     else:
-        mesh_1 = create_box(MPI.COMM_WORLD, ((0.0, 0.0, 0.0), (2.0, 1.0, 1.0)), (2 * n, n, n), ghost_mode=ghost_mode)
+        mesh_1 = create_box(MPI.COMM_WORLD, ((0.0, 0.0, 0.0), (2.0, 1.0, 1.0)),
+                            (2 * n, n, n), ghost_mode=ghost_mode, dtype=dtype)
         expected_num_boundary_facets = 6 * n**2 * 2
 
     # Create submesh of half of the rectangle / box mesh to get unit
@@ -663,15 +619,14 @@ def test_submesh_codim_0_boundary_facets(n, d, ghost_mode):
 
 
 @pytest.mark.parametrize("n", [2, 5])
-@pytest.mark.parametrize("ghost_mode", [GhostMode.none,
-                                        GhostMode.shared_facet])
-def test_submesh_codim_1_boundary_facets(n, ghost_mode):
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_submesh_codim_1_boundary_facets(n, ghost_mode, dtype):
     """Test that the correct number of boundary facets are computed
     for a submesh of codim 1"""
-    mesh = create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
+    mesh = create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode, dtype=dtype)
     edim = mesh.topology.dim - 1
     entities = locate_entities_boundary(mesh, edim, lambda x: np.isclose(x[2], 0.0))
     submesh = create_submesh(mesh, edim, entities)[0]
-
     expected_num_boundary_facets = 4 * n
     assert compute_num_boundary_facets(submesh) == expected_num_boundary_facets

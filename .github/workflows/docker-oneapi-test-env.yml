@@ -1,7 +1,7 @@
 ---
-name: Docker Intel OneAPI test image
+name: Docker Intel oneAPI test image
 
-# Builds Intel OneAPI test environment image (no FEniCS components). 
+# Builds Intel OneAPI test environment image (no FEniCS components).
 #
 # Must be triggered manually via GitHub interface.
 
@@ -22,7 +22,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout DOLFINx
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
+      - name: Reduce disk usage
+        run: |
+          # Workaround to provide additional free space for builds.
+          # https://github.com/actions/virtual-environments/issues/2840
+          sudo apt-get remove -y '^dotnet-.*'
+          sudo apt-get remove -y 'php.*'
+          sudo apt-get remove -y azure-cli google-chrome-stable firefox powershell mono-devel
+          sudo apt-get autoremove -y
+          sudo apt-get clean
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
 
       - name: Create image name and tag
         run: |
@@ -43,6 +56,6 @@ jobs:
         with:
           context: docker/
           cache-to: type=inline
-          file: docker/Dockerfile.oneapi 
+          file: docker/Dockerfile.oneapi
           push: true
           tags: ${{ env.TAG }}

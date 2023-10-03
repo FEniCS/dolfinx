@@ -10,7 +10,7 @@
 
 # # Divergence conforming discontinuous Galerkin method for the Navier--Stokes equations
 #
-# This demo ({download}`demo_navier_stokes.py`) illustrates how to
+# This demo ({download}`demo_navier-stokes.py`) illustrates how to
 # implement a divergence conforming discontinuous Galerkin method for
 # the Navier-Stokes equations in FEniCSx. The method conserves mass
 # exactly and uses upwinding. The formulation is based on a combination
@@ -158,14 +158,15 @@
 # +
 import numpy as np
 
-from dolfinx import fem, io, mesh
+from dolfinx import default_real_type, fem, io, mesh
+from dolfinx.fem.petsc import assemble_matrix_block, assemble_vector_block
 from ufl import (CellDiameter, FacetNormal, TestFunction, TrialFunction, avg,
                  conditional, div, dot, dS, ds, dx, grad, gt, inner, outer)
 
 from mpi4py import MPI
 from petsc4py import PETSc
 
-if np.issubdtype(PETSc.ScalarType, np.complexfloating):
+if np.issubdtype(PETSc.ScalarType, np.complexfloating):  # type: ignore
     print("Demo should only be executed with DOLFINx real mode")
     exit(0)
 # -
@@ -177,14 +178,12 @@ if np.issubdtype(PETSc.ScalarType, np.complexfloating):
 # +
 def norm_L2(comm, v):
     """Compute the L2(Ω)-norm of v"""
-    return np.sqrt(comm.allreduce(
-        fem.assemble_scalar(fem.form(inner(v, v) * dx)), op=MPI.SUM))
+    return np.sqrt(comm.allreduce(fem.assemble_scalar(fem.form(inner(v, v) * dx)), op=MPI.SUM))
 
 
 def domain_average(msh, v):
     """Compute the average of a function over the domain"""
-    vol = msh.comm.allreduce(
-        fem.assemble_scalar(fem.form(fem.Constant(msh, 1.0) * dx)), op=MPI.SUM)
+    vol = msh.comm.allreduce(fem.assemble_scalar(fem.form(fem.Constant(msh, default_real_type(1.0)) * dx)), op=MPI.SUM)
     return (1 / vol) * msh.comm.allreduce(fem.assemble_scalar(fem.form(v * dx)), op=MPI.SUM)
 
 
@@ -204,8 +203,7 @@ def p_e_expr(x):
 
 def f_expr(x):
     """Expression for the applied force"""
-    return np.vstack((np.zeros_like(x[0]),
-                      np.zeros_like(x[0])))
+    return np.vstack((np.zeros_like(x[0]), np.zeros_like(x[0])))
 
 
 def boundary_marker(x):
@@ -230,19 +228,20 @@ k = 1  # Polynomial degree
 msh = mesh.create_unit_square(MPI.COMM_WORLD, n, n)
 
 # Function spaces for the velocity and for the pressure
-V = fem.FunctionSpace(msh, ("Raviart-Thomas", k + 1))
-Q = fem.FunctionSpace(msh, ("Discontinuous Lagrange", k))
+V = fem.functionspace(msh, ("Raviart-Thomas", k + 1))
+Q = fem.functionspace(msh, ("Discontinuous Lagrange", k))
 
 # Funcion space for visualising the velocity field
-W = fem.VectorFunctionSpace(msh, ("Discontinuous Lagrange", k + 1))
+gdim = msh.geometry.dim
+W = fem.functionspace(msh, ("Discontinuous Lagrange", k + 1, (gdim,)))
 
 # Define trial and test functions
 
 u, v = TrialFunction(V), TestFunction(V)
 p, q = TrialFunction(Q), TestFunction(Q)
 
-delta_t = fem.Constant(msh, t_end / num_time_steps)
-alpha = fem.Constant(msh, 6.0 * k**2)
+delta_t = fem.Constant(msh, default_real_type(t_end / num_time_steps))
+alpha = fem.Constant(msh, default_real_type(6.0 * k**2))
 
 h = CellDiameter(msh)
 n = FacetNormal(msh)
@@ -257,13 +256,13 @@ def jump(phi, n):
 
 
 # +
-a_00 = (1 / Re) * (inner(grad(u), grad(v)) * dx
-                   - inner(avg(grad(u)), jump(v, n)) * dS
-                   - inner(jump(u, n), avg(grad(v))) * dS
-                   + alpha / avg(h) * inner(jump(u, n), jump(v, n)) * dS
-                   - inner(grad(u), outer(v, n)) * ds
-                   - inner(outer(u, n), grad(v)) * ds
-                   + alpha / h * inner(outer(u, n), outer(v, n)) * ds)
+a_00 = (1.0 / Re) * (inner(grad(u), grad(v)) * dx
+                     - inner(avg(grad(u)), jump(v, n)) * dS
+                     - inner(jump(u, n), avg(grad(v))) * dS
+                     + (alpha / avg(h)) * inner(jump(u, n), jump(v, n)) * dS
+                     - inner(grad(u), outer(v, n)) * ds
+                     - inner(outer(u, n), grad(v)) * ds
+                     + (alpha / h) * inner(outer(u, n), outer(v, n)) * ds)
 a_01 = - inner(p, div(v)) * dx
 a_10 = - inner(div(u), q) * dx
 
@@ -275,7 +274,7 @@ u_D = fem.Function(V)
 u_D.interpolate(u_e_expr)
 L_0 = inner(f, v) * dx + (1 / Re) * (- inner(outer(u_D, n), grad(v)) * ds
                                      + (alpha / h) * inner(outer(u_D, n), outer(v, n)) * ds)
-L_1 = inner(fem.Constant(msh, 0.0), q) * dx
+L_1 = inner(fem.Constant(msh, default_real_type(0.0)), q) * dx
 L = fem.form([L_0, L_1])
 
 # Boundary conditions
@@ -285,17 +284,17 @@ bc_u = fem.dirichletbc(u_D, boundary_vel_dofs)
 bcs = [bc_u]
 
 # Assemble Stokes problem
-A = fem.petsc.assemble_matrix_block(a, bcs=bcs)
+A = assemble_matrix_block(a, bcs=bcs)
 A.assemble()
-b = fem.petsc.assemble_vector_block(L, a, bcs=bcs)
+b = assemble_vector_block(L, a, bcs=bcs)
 
 # Create and configure solver
-ksp = PETSc.KSP().create(msh.comm)
+ksp = PETSc.KSP().create(msh.comm)  # type: ignore
 ksp.setOperators(A)
 ksp.setType("preonly")
 ksp.getPC().setType("lu")
 ksp.getPC().setFactorSolverType("mumps")
-opts = PETSc.Options()
+opts = PETSc.Options()  # type: ignore
 opts["mat_mumps_icntl_14"] = 80  # Increase MUMPS working memory
 opts["mat_mumps_icntl_24"] = 1  # Option to support solving a singular matrix (pressure nullspace)
 opts["mat_mumps_icntl_25"] = 0  # Option to support solving a singular matrix (pressure nullspace)
@@ -306,7 +305,7 @@ ksp.setFromOptions()
 x = A.createVecRight()
 try:
     ksp.solve(b, x)
-except PETSc.Error as e:
+except PETSc.Error as e:  # type: ignore
     if e.ierr == 92:
         print("The required PETSc solver/preconditioner is not available. Exiting.")
         print(e)
@@ -407,8 +406,8 @@ except NameError:
 
 # +
 # Function spaces for exact velocity and pressure
-V_e = fem.VectorFunctionSpace(msh, ("Lagrange", k + 3))
-Q_e = fem.FunctionSpace(msh, ("Lagrange", k + 2))
+V_e = fem.functionspace(msh, ("Lagrange", k + 3, (gdim,)))
+Q_e = fem.functionspace(msh, ("Lagrange", k + 2))
 
 u_e = fem.Function(V_e)
 u_e.interpolate(u_e_expr)
@@ -421,7 +420,7 @@ e_u = norm_L2(msh.comm, u_h - u_e)
 e_div_u = norm_L2(msh.comm, div(u_h))
 
 # This scheme conserves mass exactly, so check this
-assert np.isclose(e_div_u, 0.0)
+assert np.isclose(e_div_u, 0.0, atol=float(1.0e5 * np.finfo(default_real_type).eps))
 p_e_avg = domain_average(msh, p_e)
 e_p = norm_L2(msh.comm, p_h - (p_e - p_e_avg))
 

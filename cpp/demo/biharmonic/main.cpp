@@ -132,6 +132,7 @@
 
 using namespace dolfinx;
 using T = PetscScalar;
+using U = typename dolfinx::scalar_value_type_t<T>;
 
 // Inside the ``main`` function, we begin by defining a mesh of the
 // domain. As the unit square is a very standard domain, we can use a
@@ -150,9 +151,9 @@ int main(int argc, char* argv[])
   {
     // Create mesh
     auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
-    auto mesh = std::make_shared<mesh::Mesh<double>>(
-        mesh::create_rectangle(MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}},
-                               {32, 32}, mesh::CellType::triangle, part));
+    auto mesh = std::make_shared<mesh::Mesh<U>>(
+        mesh::create_rectangle<U>(MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}},
+                                  {32, 32}, mesh::CellType::triangle, part));
 
     // A function space object, which is defined in the generated code,
     // is created:
@@ -160,7 +161,7 @@ int main(int argc, char* argv[])
     // .. code-block:: cpp
 
     // Create function space
-    auto V = std::make_shared<fem::FunctionSpace<double>>(
+    auto V = std::make_shared<fem::FunctionSpace<U>>(
         fem::create_functionspace(functionspace_form_biharmonic_a, "u", mesh));
 
     // The source function ::math:`f` and the penalty term
@@ -179,10 +180,10 @@ int main(int argc, char* argv[])
             f.push_back(4.0 * std::pow(pi, 4) * std::sin(pi * x(0, p))
                         * std::sin(pi * x(1, p)));
           }
-
           return {f, {f.size()}};
         });
     auto alpha = std::make_shared<fem::Constant<T>>(8.0);
+
     // Define variational forms
     auto a = std::make_shared<fem::Form<T>>(fem::create_form<T>(
         *form_biharmonic_a, {V, V}, {}, {{"alpha", alpha}}, {}));
@@ -207,12 +208,12 @@ int main(int argc, char* argv[])
         *mesh, 1,
         [](auto x)
         {
-          constexpr double eps = 1.0e-8;
+          constexpr U eps = 1.0e-6;
           std::vector<std::int8_t> marker(x.extent(1), false);
           for (std::size_t p = 0; p < x.extent(1); ++p)
           {
-            double x0 = x(0, p);
-            double x1 = x(1, p);
+            U x0 = x(0, p);
+            U x1 = x(1, p);
             if (std::abs(x0) < eps or std::abs(x0 - 1) < eps)
               marker[p] = true;
             if (std::abs(x1) < eps or std::abs(x1 - 1) < eps)
@@ -251,9 +252,9 @@ int main(int argc, char* argv[])
 
     b.set(0.0);
     fem::assemble_vector(b.mutable_array(), *L);
-    fem::apply_lifting<T, double>(b.mutable_array(), {a}, {{bc}}, {}, T(1.0));
+    fem::apply_lifting<T, U>(b.mutable_array(), {a}, {{bc}}, {}, T(1.0));
     b.scatter_rev(std::plus<T>());
-    fem::set_bc<T, double>(b.mutable_array(), {bc});
+    fem::set_bc<T, U>(b.mutable_array(), {bc});
 
     la::petsc::KrylovSolver lu(MPI_COMM_WORLD);
     la::petsc::options::set("ksp_type", "preonly");
@@ -264,6 +265,9 @@ int main(int argc, char* argv[])
     la::petsc::Vector _u(la::petsc::create_vector_wrap(*u.x()), false);
     la::petsc::Vector _b(la::petsc::create_vector_wrap(b), false);
     lu.solve(_u.vec(), _b.vec());
+
+    // Update ghost values before output
+    u.x()->scatter_fwd();
 
     // The function ``u`` will be modified during the call to solve. A
     // :cpp:class:`Function` can be saved to a file. Here, we output the

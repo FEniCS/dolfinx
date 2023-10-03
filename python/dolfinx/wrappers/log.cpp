@@ -7,17 +7,18 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <memory>
-#include <nanobind/nanobind.h>
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 #include <string>
 
-namespace nb = nanobind;
+namespace py = pybind11;
 
 namespace dolfinx_wrappers
 {
-void log(nb::module_& m)
+void log(py::module& m)
 {
   // log level enums
-  nb::enum_<loguru::NamedVerbosity>(m, "LogLevel", nb::is_arithmetic())
+  py::enum_<loguru::NamedVerbosity>(m, "LogLevel", py::arithmetic())
       .value("OFF", loguru::Verbosity_OFF)
       .value("INFO", loguru::Verbosity_INFO)
       .value("WARNING", loguru::Verbosity_WARNING)
@@ -30,18 +31,18 @@ void log(nb::module_& m)
         loguru::add_file(filename.c_str(), loguru::Truncate,
                          loguru::Verbosity_INFO);
       },
-      nb::arg("filename"));
+      py::arg("filename"));
 
   m.def(
       "set_thread_name",
       [](std::string thread_name)
       { loguru::set_thread_name(thread_name.c_str()); },
-      nb::arg("thread_name"));
+      py::arg("thread_name"));
 
   m.def(
       "set_log_level",
       [](loguru::NamedVerbosity level) { loguru::g_stderr_verbosity = level; },
-      nb::arg("level"));
+      py::arg("level"));
   m.def("get_log_level",
         []() { return loguru::NamedVerbosity(loguru::g_stderr_verbosity); });
   m.def(
@@ -64,6 +65,6 @@ void log(nb::module_& m)
           break;
         }
       },
-      nb::arg("level"), nb::arg("s"));
+      py::arg("level"), py::arg("s"));
 }
 } // namespace dolfinx_wrappers

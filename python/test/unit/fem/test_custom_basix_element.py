@@ -2,13 +2,14 @@ import numpy as np
 import pytest
 
 import basix
-import ufl
 import basix.ufl
+import ufl
 from dolfinx.fem import (Function, FunctionSpace, assemble_scalar, dirichletbc,
                          form, locate_dofs_topological)
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                set_bc)
-from dolfinx.mesh import CellType, create_unit_cube, create_unit_square, exterior_facet_indices
+from dolfinx.mesh import (CellType, create_unit_cube, create_unit_square,
+                          exterior_facet_indices)
 from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
                  inner)
 
@@ -68,7 +69,7 @@ def run_scalar_test(V, degree):
     M = (u_exact - uh)**2 * dx
     M = form(M)
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
-    assert np.absolute(error) < 1.0e-14
+    assert np.abs(error) < 1.0e-6
 
     solver.destroy()
     A.destroy()

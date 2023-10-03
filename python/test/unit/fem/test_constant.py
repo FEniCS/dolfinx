@@ -18,11 +18,11 @@ def test_scalar_constant():
     mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
     c = Constant(mesh, 1.0)
     assert c.value.shape == ()
-    assert c.value == 1.0
+    assert c.value == 1.0  # /NOSONAR
     c.value += 1.0
-    assert c.value == 2.0
+    assert c.value == 2.0  # /NOSONAR
     c.value = 3.0
-    assert c.value == 3.0
+    assert c.value == 3.0  # /NOSONAR
 
 
 def test_reshape():
@@ -65,7 +65,7 @@ def test_float_method():
     mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2)
     a = 1.0
     c0 = Constant(mesh, a)
-    assert a == float(c0)
+    assert a == float(c0)  # /NOSONAR
 
 
 def test_complex_method():

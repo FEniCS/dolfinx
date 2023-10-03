@@ -19,9 +19,9 @@
 
 namespace dolfinx::fem
 {
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 class DirichletBC;
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 class Form;
 template <std::floating_point T>
 class FunctionSpace;
@@ -29,7 +29,7 @@ class FunctionSpace;
 // -- Helper functions -----------------------------------------------------
 
 /// @brief Create a map of `std::span`s from a map of `std::vector`s
-template <typename T>
+template <dolfinx::scalar T>
 std::map<std::pair<IntegralType, int>, std::pair<std::span<const T>, int>>
 make_coefficients_span(const std::map<std::pair<IntegralType, int>,
                                       std::pair<std::vector<T>, int>>& coeffs)
@@ -56,7 +56,7 @@ make_coefficients_span(const std::map<std::pair<IntegralType, int>,
 /// @param[in] coefficients The coefficients that appear in `M`
 /// @return The contribution to the form (functional) from the local
 /// process
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 T assemble_scalar(
     const Form<T, U>& M, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
@@ -83,7 +83,7 @@ T assemble_scalar(
 /// @param[in] M The form (functional) to assemble
 /// @return The contribution to the form (functional) from the local
 ///   process
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 T assemble_scalar(const Form<T, U>& M)
 {
   const std::vector<T> constants = pack_constants(M);
@@ -105,7 +105,7 @@ T assemble_scalar(const Form<T, U>& M)
 /// @param[in] L The linear forms to assemble into b
 /// @param[in] constants The constants that appear in `L`
 /// @param[in] coefficients The coefficients that appear in `L`
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 void assemble_vector(
     std::span<T> b, const Form<T, U>& L, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
@@ -118,7 +118,7 @@ void assemble_vector(
 /// @param[in,out] b The vector to be assembled. It will not be zeroed
 /// before assembly.
 /// @param[in] L The linear forms to assemble into b
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 void assemble_vector(std::span<T> b, const Form<T, U>& L)
 {
   auto coefficients = allocate_coefficient_storage(L);
@@ -146,7 +146,7 @@ void assemble_vector(std::span<T> b, const Form<T, U>& L)
 ///
 /// Ghost contributions are not accumulated (not sent to owner). Caller
 /// is responsible for calling VecGhostUpdateBegin/End.
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 void apply_lifting(
     std::span<T> b, const std::vector<std::shared_ptr<const Form<T, U>>>& a,
     const std::vector<std::span<const T>>& constants,
@@ -195,7 +195,7 @@ void apply_lifting(
 ///
 /// Ghost contributions are not accumulated (not sent to owner). Caller
 /// is responsible for calling VecGhostUpdateBegin/End.
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 void apply_lifting(
     std::span<T> b, const std::vector<std::shared_ptr<const Form<T, U>>>& a,
     const std::vector<std::vector<std::shared_ptr<const DirichletBC<T, U>>>>&
@@ -247,7 +247,7 @@ void apply_lifting(
 /// @param[in] dof_marker1 Boundary condition markers for the columns.
 /// If bc[i] is true then rows i in A will be zeroed. The index i is a
 /// local index.
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 void assemble_matrix(
     la::MatSet<T> auto mat_add, const Form<T, U>& a,
     std::span<const T> constants,
@@ -281,7 +281,7 @@ void assemble_matrix(
 /// @param[in] coefficients Coefficients that appear in `a`
 /// @param[in] bcs Boundary conditions to apply. For boundary condition
 ///  dofs the row and column are zeroed. The diagonal  entry is not set.
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 void assemble_matrix(
     auto mat_add, const Form<T, U>& a, std::span<const T> constants,
     const std::map<std::pair<IntegralType, int>,
@@ -327,7 +327,7 @@ void assemble_matrix(
 /// @param[in] a The bilinear from to assemble
 /// @param[in] bcs Boundary conditions to apply. For boundary condition
 ///  dofs the row and column are zeroed. The diagonal  entry is not set.
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 void assemble_matrix(
     auto mat_add, const Form<T, U>& a,
     const std::vector<std::shared_ptr<const DirichletBC<T, U>>>& bcs)
@@ -352,7 +352,7 @@ void assemble_matrix(
 /// @param[in] dof_marker1 Boundary condition markers for the columns.
 /// If bc[i] is true then rows i in A will be zeroed. The index i is a
 /// local index.
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 void assemble_matrix(auto mat_add, const Form<T, U>& a,
                      std::span<const std::int8_t> dof_marker0,
                      std::span<const std::int8_t> dof_marker1)
@@ -380,7 +380,7 @@ void assemble_matrix(auto mat_add, const Form<T, U>& a,
 /// value to the diagonal
 /// @param[in] diagonal The value to add to the diagonal for the
 /// specified rows
-template <typename T>
+template <dolfinx::scalar T>
 void set_diagonal(auto set_fn, std::span<const std::int32_t> rows,
                   T diagonal = 1.0)
 {
@@ -407,7 +407,7 @@ void set_diagonal(auto set_fn, std::span<const std::int32_t> rows,
 /// @param[in] bcs The Dirichlet boundary conditions
 /// @param[in] diagonal The value to add to the diagonal for rows with a
 /// boundary condition applied
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 void set_diagonal(
     auto set_fn, const FunctionSpace<U>& V,
     const std::vector<std::shared_ptr<const DirichletBC<T, U>>>& bcs,
@@ -434,7 +434,7 @@ void set_diagonal(
 /// Set bc values in owned (local) part of the vector, multiplied by
 /// 'scale'. The vectors b and x0 must have the same local size. The bcs
 /// should be on (sub-)spaces of the form L that b represents.
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 void set_bc(std::span<T> b,
             const std::vector<std::shared_ptr<const DirichletBC<T, U>>>& bcs,
             std::span<const T> x0, T scale = 1)
@@ -451,7 +451,7 @@ void set_bc(std::span<T> b,
 /// Set bc values in owned (local) part of the vector, multiplied by
 /// 'scale'. The bcs should be on (sub-)spaces of the form L that b
 /// represents.
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 void set_bc(std::span<T> b,
             const std::vector<std::shared_ptr<const DirichletBC<T, U>>>& bcs,
             T scale = 1)

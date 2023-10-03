@@ -1,4 +1,4 @@
-// Copyright (C) 2017 Chris N. Richardson and Garth N. Wells
+// Copyright (C) 2017-2023 Chris N. Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -12,6 +12,8 @@ namespace dolfinx_wrappers
 {
 void common(nb::module_& m);
 void mpi(nb::module_& m);
+
+void petsc(nb::module_& m_fem, nb::module_& m_la, nb::module_& m_nls);
 
 void log(nb::module_& m);
 void assemble(nb::module_& m);
@@ -27,7 +29,7 @@ void refinement(nb::module_& m);
 
 NB_MODULE(cpp, m)
 {
-  // Create module_ for C++ wrappers
+  // Create module for C++ wrappers
   m.doc() = "DOLFINx Python interface";
   m.attr("__version__") = DOLFINX_VERSION;
 
@@ -64,11 +66,11 @@ NB_MODULE(cpp, m)
   nb::module_ la = m.def_submodule("la", "Linear algebra module");
   dolfinx_wrappers::la(la);
 
-  // Create nls submodule
-  nb::module_ nls = m.def_submodule("nls", "Nonlinear solver module");
-  dolfinx_wrappers::nls(nls);
-
   // Create refinement submodule
   nb::module_ refinement = m.def_submodule("refinement", "Refinement module");
   dolfinx_wrappers::refinement(refinement);
+
+  // PETSc-specific wrappers
+  nb::module_ nls = m.def_submodule("nls", "Nonlinear solver module");
+  dolfinx_wrappers::petsc(fem, la, nls);
 }

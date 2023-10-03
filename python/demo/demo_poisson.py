@@ -13,8 +13,7 @@
 # This demo is implemented in {download}`demo_poisson.py`. It
 # illustrates how to:
 #
-# - Define a {py:class}`FunctionSpace <dolfinx.fem.FunctionSpace>`
-# - Define a {py:class}`FunctionSpace <dolfinx.fem.FunctionSpace>`
+# - Create a {py:class}`function space <dolfinx.fem.FunctionSpaceBase>`
 # - Solve a linear partial differential equation
 #
 # ## Equation and problem definition
@@ -24,11 +23,9 @@
 # particular boundary conditions reads:
 #
 # $$
-# \begin{align}
 # - \nabla^{2} u &= f \quad {\rm in} \ \Omega, \\
 # u &= 0 \quad {\rm on} \ \Gamma_{D}, \\
 # \nabla u \cdot n &= g \quad {\rm on} \ \Gamma_{N}. \\
-# \end{align}
 # $$
 #
 # where $f$ and $g$ are input data and $n$ denotes the outward directed
@@ -42,10 +39,8 @@
 # where $V$ is a suitable function space and
 #
 # $$
-# \begin{align}
 # a(u, v) &:= \int_{\Omega} \nabla u \cdot \nabla v \, {\rm d} x, \\
 # L(v)    &:= \int_{\Omega} f v \, {\rm d} x + \int_{\Gamma_{N}} g v \, {\rm d} s.
-# \end{align}
 # $$
 #
 # The expression $a(u, v)$ is the bilinear form and $L(v)$
@@ -70,27 +65,28 @@ import numpy as np
 
 import ufl
 from dolfinx import fem, io, mesh, plot
+from dolfinx.fem.petsc import LinearProblem
 from ufl import ds, dx, grad, inner
 
 from mpi4py import MPI
-from petsc4py.PETSc import ScalarType
+from petsc4py.PETSc import ScalarType  # type: ignore
 
 # -
 
 # We create a rectangular {py:class}`Mesh <dolfinx.mesh.Mesh>` using
 # {py:func}`create_rectangle <dolfinx.mesh.create_rectangle>`, and
-# create a finite element {py:class}`FunctionSpace
-# <dolfinx.fem.FunctionSpace>` $V$ on the mesh.
+# create a finite element {py:class}`function space
+# <dolfinx.fem.FunctionSpaceBase>` $V$ on the mesh.
 
 # +
 msh = mesh.create_rectangle(comm=MPI.COMM_WORLD,
                             points=((0.0, 0.0), (2.0, 1.0)), n=(32, 16),
-                            cell_type=mesh.CellType.triangle,)
-V = fem.FunctionSpace(msh, ("Lagrange", 1))
+                            cell_type=mesh.CellType.triangle)
+V = fem.functionspace(msh, ("Lagrange", 1))
 # -
 
-# The second argument to {py:class}`FunctionSpace
-# <dolfinx.fem.FunctionSpace>` is a tuple `(family, degree)`, where
+# The second argument to {py:func}`functionspace
+# <dolfinx.fem.functionspace>` is a tuple `(family, degree)`, where
 # `family` is the finite element family, and `degree` specifies the
 # polynomial degree. In this case `V` is a space of continuous Lagrange
 # finite elements of degree 1.
@@ -113,8 +109,8 @@ facets = mesh.locate_entities_boundary(msh, dim=(msh.topology.dim - 1),
 dofs = fem.locate_dofs_topological(V=V, entity_dim=1, entities=facets)
 
 # and use {py:func}`dirichletbc <dolfinx.fem.dirichletbc>` to create a
-# {py:class}`DirichletBCMetaClass <dolfinx.fem.DirichletBCMetaClass>`
-# class that represents the boundary condition:
+# {py:class}`DirichletBC <dolfinx.fem.DirichletBC>` class that
+# represents the boundary condition:
 
 bc = fem.dirichletbc(value=ScalarType(0), dofs=dofs, V=V)
 
@@ -130,14 +126,14 @@ a = inner(grad(u), grad(v)) * dx
 L = inner(f, v) * dx + inner(g, v) * ds
 # -
 
-# A {py:class}`LinearProblem <dolfinx.fem.LinearProblem>` object is
+# A {py:class}`LinearProblem <dolfinx.fem.petsc.LinearProblem>` object is
 # created that brings together the variational problem, the Dirichlet
 # boundary condition, and which specifies the linear solver. In this
 # case an LU solver us sued. The {py:func}`solve
-# <dolfinx.fem.LinearProblem.solve>` computes the solution.
+# <dolfinx.fem.petsc.LinearProblem.solve>` computes the solution.
 
 # +
-problem = fem.petsc.LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+problem = LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 uh = problem.solve()
 # -
 
@@ -155,7 +151,7 @@ with io.XDMFFile(msh.comm, "out_poisson/poisson.xdmf", "w") as file:
 # +
 try:
     import pyvista
-    cells, types, x = plot.create_vtk_mesh(V)
+    cells, types, x = plot.vtk_mesh(V)
     grid = pyvista.UnstructuredGrid(cells, types, x)
     grid.point_data["u"] = uh.x.array.real
     grid.set_active_scalars("u")
@@ -168,7 +164,6 @@ try:
         plotter.screenshot("uh_poisson.png")
     else:
         plotter.show()
-
 except ModuleNotFoundError:
     print("'pyvista' is required to visualise the solution")
     print("Install 'pyvista' with pip: 'python3 -m pip install pyvista'")

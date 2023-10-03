@@ -39,12 +39,12 @@ void common(nb::module_& m)
   m.attr("has_slepc") = dolfinx::has_slepc();
   m.attr("has_adios2") = dolfinx::has_adios2();
 
-#ifdef HAS_NANOBIND_SLEPC4PY
+#ifdef HAS_PYBIND11_SLEPC4PY
   m.attr("has_slepc4py") = true;
 #else
   m.attr("has_slepc4py") = false;
 #endif
-  m.attr("git_commit_hash") = dolfinx::git_commit_hash().c_str();
+  m.attr("git_commit_hash") = dolfinx::git_commit_hash();
 
   nb::enum_<dolfinx::Table::Reduction>(m, "Reduction")
       .value("max", dolfinx::Table::Reduction::max)
@@ -55,50 +55,52 @@ void common(nb::module_& m)
   nb::class_<dolfinx::common::IndexMap>(m, "IndexMap")
       .def(
           "__init__",
-          [](dolfinx::common::IndexMap* im, const MPICommWrapper comm,
+          [](const dolfinx::common::IndexMap& self, const MPICommWrapper comm,
              std::int32_t local_size)
-          { new (im) dolfinx::common::IndexMap(comm.get(), local_size); },
+          { return dolfinx::common::IndexMap(comm.get(), local_size); },
           nb::arg("comm"), nb::arg("local_size"))
       .def(
           "__init__",
-          [](dolfinx::common::IndexMap* im, const MPICommWrapper comm,
-             std::int32_t local_size, const nb::ndarray<std::int64_t>& ghosts,
-             const nb::ndarray<int>& ghost_owners)
+          [](const dolfinx::common::IndexMap& self, const MPICommWrapper comm,
+             std::int32_t local_size,
+             const nb::ndarray<std::int64_t, nb::numpy>& ghosts,
+             const nb::ndarray<int, nb::numpy>& ghost_owners)
           {
-            assert(ghosts.ndim() == 1);
-            assert(ghost_owners.ndim() == 1);
-            new (im) dolfinx::common::IndexMap(
-                comm.get(), local_size,
-                std::span(ghosts.data(), ghosts.shape(0)),
-                std::span(ghost_owners.data(), ghost_owners.shape(0)));
+            return dolfinx::common::IndexMap(
+                comm.get(), local_size, std::span(ghosts.data(), ghosts.size()),
+                std::span(ghost_owners.data(), ghost_owners.size()));
           },
           nb::arg("comm"), nb::arg("local_size"), nb::arg("ghosts"),
           nb::arg("ghost_owners"))
       .def(
           "__init__",
-          [](dolfinx::common::IndexMap* im, const MPICommWrapper comm,
+          [](const dolfinx::common::IndexMap& self, const MPICommWrapper comm,
              std::int32_t local_size,
-             const std::array<nb::ndarray<int>, 2>& dest_src,
-             const nb::ndarray<std::int64_t>& ghosts,
-             const nb::ndarray<int>& ghost_owners)
+             const std::array<nb::ndarray<int, nb::numpy>, 2>& dest_src,
+             const nb::ndarray<std::int64_t, nb::numpy>& ghosts,
+             const nb::ndarray<int, nb::numpy>& ghost_owners)
           {
             std::array<std::vector<int>, 2> ranks;
             ranks[0].assign(dest_src[0].data(),
                             dest_src[0].data() + dest_src[0].size());
             ranks[1].assign(dest_src[1].data(),
                             dest_src[1].data() + dest_src[1].size());
-            new (im) dolfinx::common::IndexMap(
+            return dolfinx::common::IndexMap(
                 comm.get(), local_size, ranks,
                 std::span(ghosts.data(), ghosts.size()),
                 std::span(ghost_owners.data(), ghost_owners.size()));
           },
           nb::arg("comm"), nb::arg("local_size"), nb::arg("dest_src"),
           nb::arg("ghosts"), nb::arg("ghost_owners"))
+      .def_prop_ro("comm", [](const dolfinx::common::IndexMap& self)
+                   { return MPICommWrapper(self.comm()); })
       .def_prop_ro("size_local", &dolfinx::common::IndexMap::size_local)
       .def_prop_ro("size_global", &dolfinx::common::IndexMap::size_global)
       .def_prop_ro("num_ghosts", &dolfinx::common::IndexMap::num_ghosts)
       .def_prop_ro("local_range", &dolfinx::common::IndexMap::local_range,
                    "Range of indices owned by this map")
+      .def_prop_ro("index_to_dest_ranks",
+                   &dolfinx::common::IndexMap::index_to_dest_ranks)
       .def_prop_ro(
           "ghosts",
           [](const dolfinx::common::IndexMap& self)
@@ -118,7 +120,7 @@ void common(nb::module_& m)
       .def(
           "local_to_global",
           [](const dolfinx::common::IndexMap& self,
-             const nb::ndarray<std::int32_t>& local)
+             const nb::ndarray<std::int32_t, nb::numpy>& local)
           {
             if (local.ndim() != 1)
               throw std::runtime_error("Array of local indices must be 1D.");
@@ -132,7 +134,7 @@ void common(nb::module_& m)
       .def(
           "create_submap",
           [](const dolfinx::common::IndexMap& self,
-             const nb::ndarray<std::int32_t>& entities)
+             const nb::ndarray<std::int32_t, nb::numpy>& entities)
           {
             auto [map, ghosts] = self.create_submap(
                 std::span(entities.data(), entities.size()));

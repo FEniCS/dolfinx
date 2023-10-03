@@ -9,21 +9,25 @@ import random
 
 import numpy as np
 import pytest
-
 import ufl
 from basix.ufl import element
-from dolfinx.fem import (Function, FunctionSpace, VectorFunctionSpace,
-                         assemble_scalar, form)
+from dolfinx.fem import Function, FunctionSpace, assemble_scalar, form
 from dolfinx.mesh import create_mesh
-
 from mpi4py import MPI
+
+from dolfinx import default_real_type
 
 
 def randomly_ordered_mesh(cell_type):
     """Create a randomly ordered mesh to use in the test."""
     random.seed(6)
 
-    domain = ufl.Mesh(element("Lagrange", cell_type, 1, rank=1))
+    if cell_type == "triangle" or cell_type == "quadrilateral":
+        gdim = 2
+    elif cell_type == "tetrahedron" or cell_type == "hexahedron":
+        gdim = 3
+
+    domain = ufl.Mesh(element("Lagrange", cell_type, 1, shape=(gdim,)))
     # Create a mesh
     if MPI.COMM_WORLD.rank == 0:
         N = 6
@@ -149,28 +153,33 @@ def test_dof_positions(cell_type, space_type):
 def random_evaluation_mesh(cell_type):
     random.seed(6)
 
-    domain = ufl.Mesh(element("Lagrange", cell_type, 1, rank=1))
+    if cell_type == "triangle" or cell_type == "quadrilateral":
+        gdim = 2
+    elif cell_type == "tetrahedron" or cell_type == "hexahedron":
+        gdim = 3
+
+    domain = ufl.Mesh(element("Lagrange", cell_type, 1, shape=(gdim,)))
     if cell_type == "triangle":
-        temp_points = np.array([[-1., -1.], [0., 0.], [1., 0.], [0., 1.]])
+        temp_points = np.array([[-1., -1.], [0., 0.], [1., 0.], [0., 1.]], dtype=default_real_type)
         temp_cells = [[0, 1, 3], [1, 2, 3]]
     elif cell_type == "quadrilateral":
         temp_points = np.array([[-1., -1.], [0., 0.], [1., 0.],
-                                [-1., 1.], [0., 1.], [2., 2.]])
+                                [-1., 1.], [0., 1.], [2., 2.]], dtype=default_real_type)
         temp_cells = [[0, 1, 3, 4], [1, 2, 4, 5]]
     elif cell_type == "tetrahedron":
         temp_points = np.array([[-1., 0., -1.], [0., 0., 0.], [1., 0., 1.],
-                                [0., 1., 0.], [0., 0., 1.]])
+                                [0., 1., 0.], [0., 0., 1.]], dtype=default_real_type)
         temp_cells = [[0, 1, 3, 4], [1, 2, 3, 4]]
     elif cell_type == "hexahedron":
         temp_points = np.array([[-1., 0., -1.], [0., 0., 0.], [1., 0., 1.],
                                 [-1., 1., 1.], [0., 1., 0.], [1., 1., 1.],
                                 [-1., 0., 0.], [0., 0., 1.], [1., 0., 2.],
-                                [-1., 1., 2.], [0., 1., 1.], [1., 1., 2.]])
+                                [-1., 1., 2.], [0., 1., 1.], [1., 1., 2.]], dtype=default_real_type)
         temp_cells = [[0, 1, 3, 4, 6, 7, 9, 10], [1, 2, 4, 5, 7, 8, 10, 11]]
 
     order = [i for i, j in enumerate(temp_points)]
     random.shuffle(order)
-    points = np.zeros(temp_points.shape)
+    points = np.zeros(temp_points.shape, dtype=default_real_type)
     for i, j in enumerate(order):
         points[j] = temp_points[i]
 
@@ -230,11 +239,13 @@ def test_evaluation(cell_type, space_type, space_order):
 
         N = 5
         if cell_type == "tetrahedron":
-            eval_points = np.array([[0., i / N, j / N] for i in range(N + 1) for j in range(N + 1 - i)])
+            eval_points = np.array([[0., i / N, j / N] for i in range(N + 1)
+                                   for j in range(N + 1 - i)], dtype=default_real_type)
         elif cell_type == "hexahedron":
-            eval_points = np.array([[0., i / N, j / N] for i in range(N + 1) for j in range(N + 1)])
+            eval_points = np.array([[0., i / N, j / N] for i in range(N + 1)
+                                   for j in range(N + 1)], dtype=default_real_type)
         else:
-            eval_points = np.array([[0., i / N, 0.] for i in range(N + 1)])
+            eval_points = np.array([[0., i / N, 0.] for i in range(N + 1)], dtype=default_real_type)
 
         for d in dofs:
             v = Function(V)
@@ -247,13 +258,13 @@ def test_evaluation(cell_type, space_type, space_order):
             if space_type in ["RT", "BDM", "RTCF", "NCF", "BDMCF", "AAF"]:
                 # Hdiv
                 for i, j in zip(values0, values1):
-                    assert np.isclose(i[0], j[0])
+                    assert np.isclose(i[0], j[0], rtol=1.0e-5, atol=1.0e-3)
             elif space_type in ["N1curl", "N2curl", "RTCE", "NCE", "BDMCE", "AAE"]:
                 # Hcurl
                 for i, j in zip(values0, values1):
-                    assert np.allclose(i[1:], j[1:])
+                    assert np.allclose(i[1:], j[1:], rtol=1.0e-4, atol=1.0e-2)
             else:
-                assert np.allclose(values0, values1)
+                assert np.allclose(values0, values1, rtol=1.0e-6, atol=1.0e-4)
 
 
 @pytest.mark.skip_in_parallel
@@ -278,11 +289,12 @@ def test_integral(cell_type, space_type, space_order):
     random.seed(4)
     for repeat in range(10):
         mesh = random_evaluation_mesh(cell_type)
-        tdim = mesh.topology.dim
         V = FunctionSpace(mesh, (space_type, space_order))
-        Vvec = VectorFunctionSpace(mesh, ("P", 1))
+        gdim = mesh.geometry.dim
+        Vvec = FunctionSpace(mesh, ("P", 1, (gdim,)))
         dofs = [i for i in V.dofmap.cell_dofs(0) if i in V.dofmap.cell_dofs(1)]
 
+        tdim = mesh.topology.dim
         for d in dofs:
             v = Function(V)
             v.vector[:] = [1 if i == d else 0 for i, _ in enumerate(v.vector[:])]
@@ -319,4 +331,4 @@ def test_integral(cell_type, space_type, space_order):
                 _form = ufl.jump(v) * ufl.dS
 
             value = assemble_scalar(form(_form))
-            assert np.isclose(value, 0)
+            assert np.isclose(value, 0.0, rtol=1.0e-6, atol=1.0e-6)

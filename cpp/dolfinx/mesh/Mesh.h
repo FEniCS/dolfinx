@@ -17,7 +17,7 @@ class Topology;
 
 /// @brief A Mesh consists of a set of connected and numbered mesh
 /// topological entities, and geometry data.
-/// @tparam The float type for representing the geometry,
+/// @tparam The floating point type for representing the geometry.
 template <std::floating_point T>
 class Mesh
 {
@@ -29,7 +29,8 @@ public:
   /// @param[in] comm MPI Communicator
   /// @param[in] topology Mesh topology
   /// @param[in] geometry Mesh geometry
-  template <std::convertible_to<Geometry<T>> V>
+  template <typename V>
+    requires std::is_convertible_v<std::remove_cvref_t<V>, Geometry<T>>
   Mesh(MPI_Comm comm, std::shared_ptr<Topology> topology, V&& geometry)
       : _topology(topology), _geometry(std::forward<V>(geometry)), _comm(comm)
   {

@@ -13,15 +13,15 @@ on:
 jobs:
   pyvista:
     if: "!(contains(github.event.head_commit.message, '[ci skip]') || contains(github.event.head_commit.message, '[skip ci]'))"
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     container: fenicsproject/test-env:current-openmpi
 
     env:
       # For pyvista/pyvistaqt
       DISPLAY: ":99.0"
       PYVISTA_OFF_SCREEN: true
-      PYVISTA_QT_VERSION: 0.10.0
-      PYVISTA_VERSION: 0.39.0
+      PYVISTA_QT_VERSION: 0.11.0
+      PYVISTA_VERSION: 0.40.0
 
       PETSC_ARCH: ${{ matrix.petsc_arch }}
       OMPI_ALLOW_RUN_AS_ROOT: 1
@@ -38,7 +38,7 @@ jobs:
         petsc_arch: [linux-gnu-real64-32, linux-gnu-complex128-32]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install FEniCS Python components
         run: |

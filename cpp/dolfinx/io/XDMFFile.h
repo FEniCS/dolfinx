@@ -13,6 +13,7 @@
 #include <filesystem>
 #include <memory>
 #include <string>
+#include <variant>
 
 namespace pugi
 {
@@ -24,7 +25,7 @@ namespace dolfinx::fem
 {
 template <std::floating_point T>
 class CoordinateElement;
-template <typename T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U>
 class Function;
 } // namespace dolfinx::fem
 
@@ -44,7 +45,7 @@ namespace dolfinx::io
 
 /// Read and write mesh::Mesh, fem::Function and other objects in
 /// XDMF.
-
+///
 /// This class supports the output of meshes and functions in XDMF
 /// (http://www.xdmf.org) format. It creates an XML file that describes
 /// the data and points to a HDF5 file that stores the actual problem
@@ -52,7 +53,6 @@ namespace dolfinx::io
 ///
 /// XDMF is not suitable for higher order geometries, as their currently
 /// only supports 1st and 2nd order geometries.
-
 class XDMFFile
 {
 public:
@@ -86,7 +86,8 @@ public:
   /// Save Mesh
   /// @param[in] mesh
   /// @param[in] xpath XPath where Mesh Grid will be written
-  void write_mesh(const mesh::Mesh<double>& mesh,
+  template <std::floating_point U>
+  void write_mesh(const mesh::Mesh<U>& mesh,
                   std::string xpath = "/Xdmf/Domain");
 
   /// Save Geometry
@@ -120,7 +121,8 @@ public:
   /// @param[in] name Name of the mesh (Grid)
   /// @param[in] xpath XPath where Mesh Grid data is located
   /// @return points on each process
-  std::pair<std::vector<double>, std::array<std::size_t, 2>>
+  std::pair<std::variant<std::vector<float>, std::vector<double>>,
+            std::array<std::size_t, 2>>
   read_geometry_data(std::string name,
                      std::string xpath = "/Xdmf/Domain") const;
 
@@ -130,22 +132,24 @@ public:
   std::pair<mesh::CellType, int>
   read_cell_type(std::string grid_name, std::string xpath = "/Xdmf/Domain");
 
-  /// Write Function
-  /// @param[in] u The Function to write to file
-  /// @param[in] t The time stamp to associate with the Function
-  /// @param[in] mesh_xpath XPath for a Grid under which Function will
-  /// be inserted
-  void write_function(const fem::Function<double, double>& u, double t,
-                      std::string mesh_xpath
-                      = "/Xdmf/Domain/Grid[@GridType='Uniform'][1]");
-
-  /// Write Function
-  /// @param[in] u The Function to write to file
-  /// @param[in] t The time stamp to associate with the Function
-  /// @param[in] mesh_xpath XPath for a Grid under which Function will
-  /// be inserted
-  void write_function(const fem::Function<std::complex<double>, double>& u,
-                      double t,
+  /// @brief Write a fem::Function to file.
+  ///
+  /// @pre The fem::Function `u` must be (i) a lowest-order (P0)
+  /// discontinuous Lagrange element or (ii) a continuous Lagrange
+  /// element where the element 'nodes' are the same as the nodes of its
+  /// mesh::Mesh. Otherwise an exception is raised.
+  ///
+  /// @note User interpolation to a suitable Lagrange space may be
+  /// required to satisfy the precondition on `u`. The VTX output
+  /// (io::VTXWriter) format is recommended over XDMF for discontinuous
+  /// and/or high-order spaces.
+  ///
+  /// @param[in] u Function to write to file.
+  /// @param[in] t Time stamp to associate with `u`.
+  /// @param[in] mesh_xpath XPath for a Grid under which `u` will be
+  /// inserted.
+  template <dolfinx::scalar T, std::floating_point U = scalar_value_type_t<T>>
+  void write_function(const fem::Function<T, U>& u, double t,
                       std::string mesh_xpath
                       = "/Xdmf/Domain/Grid[@GridType='Uniform'][1]");
 
@@ -155,9 +159,9 @@ public:
   /// @param[in] geometry_xpath XPath where Geometry is already stored
   /// in file
   /// @param[in] xpath XPath where MeshTags Grid will be inserted
+  template <std::floating_point T>
   void write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
-                      const mesh::Geometry<double>& x,
-                      std::string geometry_xpath,
+                      const mesh::Geometry<T>& x, std::string geometry_xpath,
                       std::string xpath = "/Xdmf/Domain");
 
   /// Read MeshTags

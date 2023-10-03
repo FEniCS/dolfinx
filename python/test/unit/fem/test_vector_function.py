@@ -7,11 +7,14 @@
 
 import numpy as np
 import pytest
+
 import ufl
 from basix.ufl import element
 from dolfinx.fem import Function, FunctionSpace
 from dolfinx.mesh import create_mesh
+
 from mpi4py import MPI
+from dolfinx import default_real_type
 
 
 @pytest.mark.skip_in_parallel
@@ -21,7 +24,7 @@ def test_div_conforming_triangle(space_type, order):
     """Checks that the vectors in div conforming spaces on a triangle are correctly oriented"""
     # Create simple triangle mesh
     def perform_test(points, cells):
-        domain = ufl.Mesh(element("Lagrange", "triangle", 1, rank=1))
+        domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(2,)))
         mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
         V = FunctionSpace(mesh, (space_type, order))
         f = Function(V)
@@ -37,11 +40,11 @@ def test_div_conforming_triangle(space_type, order):
             output.append(result.dot(normal))
         return output
 
-    points = np.array([[0, 0], [1, 0], [1, 1], [0, 1]], dtype=np.float64)
+    points = np.array([[0, 0], [1, 0], [1, 1], [0, 1]], dtype=default_real_type)
     cells = np.array([[0, 1, 2], [2, 3, 0]])
     result = perform_test(points, cells)
     for i, j in result:
-        assert np.allclose(i, j)
+        assert i == pytest.approx(j, abs=1.0e-5)
 
 
 @pytest.mark.skip_in_parallel
@@ -51,7 +54,7 @@ def test_div_conforming_tetrahedron(space_type, order):
     """Checks that the vectors in div conforming spaces on a tetrahedron are correctly oriented"""
     # Create simple tetrahedron cell mesh
     def perform_test(points, cells):
-        domain = ufl.Mesh(element("Lagrange", "tetrahedron", 1, rank=1))
+        domain = ufl.Mesh(element("Lagrange", "tetrahedron", 1, shape=(3,)))
         mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
         V = FunctionSpace(mesh, (space_type, order))
         f = Function(V)
@@ -67,8 +70,8 @@ def test_div_conforming_tetrahedron(space_type, order):
             output.append(result.dot(normal))
         return output
 
-    points = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1]], dtype=np.float64)
+    points = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1]], dtype=default_real_type)
     cells = np.array([[0, 1, 2, 3], [1, 3, 2, 4]])
     result = perform_test(points, cells)
     for i, j in result:
-        assert np.allclose(i, j)
+        assert i == pytest.approx(j, rel=1.0e-6, abs=1.0e-4)

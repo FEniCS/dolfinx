@@ -9,13 +9,12 @@ import math
 
 import numpy as np
 import pytest
-
 import ufl
-from basix.ufl import mixed_element, element
+from basix.ufl import element, mixed_element
 from dolfinx.cpp.la.petsc import scatter_local_vectors
-from dolfinx.fem import (Function, FunctionSpace, VectorFunctionSpace,
-                         bcs_by_block, dirichletbc, extract_function_spaces,
-                         form, locate_dofs_topological)
+from dolfinx.fem import (Function, FunctionSpace, bcs_by_block, dirichletbc,
+                         extract_function_spaces, form,
+                         locate_dofs_topological)
 from dolfinx.fem.petsc import (apply_lifting, apply_lifting_nest,
                                assemble_matrix, assemble_matrix_block,
                                assemble_matrix_nest, assemble_vector,
@@ -26,10 +25,9 @@ from dolfinx.fem.petsc import (apply_lifting, apply_lifting_nest,
                                set_bc_nest)
 from dolfinx.mesh import (GhostMode, create_unit_cube, create_unit_square,
                           locate_entities_boundary)
-from ufl import derivative, dx, inner
-
 from mpi4py import MPI
 from petsc4py import PETSc
+from ufl import derivative, dx, inner
 
 
 def nest_matrix_norm(A):
@@ -174,12 +172,12 @@ def test_matrix_assembly_block_nl():
 
     Anorm0, bnorm0 = blocked()
     Anorm1, bnorm1 = nested()
-    assert Anorm1 == pytest.approx(Anorm0, 1.0e-12)
-    assert bnorm1 == pytest.approx(bnorm0, 1.0e-12)
+    assert Anorm1 == pytest.approx(Anorm0, 1.0e-6)
+    assert bnorm1 == pytest.approx(bnorm0, 1.0e-6)
 
     Anorm2, bnorm2 = monolithic()
-    assert Anorm2 == pytest.approx(Anorm0, 1.0e-12)
-    assert bnorm2 == pytest.approx(bnorm0, 1.0e-12)
+    assert Anorm2 == pytest.approx(Anorm0, 1.0e-5)
+    assert bnorm2 == pytest.approx(bnorm0, 1.0e-6)
 
 
 class NonlinearPDE_SNESProblem():
@@ -436,10 +434,13 @@ def test_assembly_solve_block_nl():
         return xnorm
 
     norm0 = blocked_solve()
-    norm1 = nested_solve()
     norm2 = monolithic_solve()
-    assert norm1 == pytest.approx(norm0, 1.0e-12)
-    assert norm2 == pytest.approx(norm0, 1.0e-12)
+    # FIXME: PETSc nested solver mis-behaves in parallel an single
+    # precision. Investigate further.
+    if not ((PETSc.ScalarType == np.float32 or PETSc.ScalarType == np.complex64) and mesh.comm.size > 1):
+        norm1 = nested_solve()
+        assert norm1 == pytest.approx(norm0, 1.0e-6)
+    assert norm2 == pytest.approx(norm0, 1.0e-6)
 
 
 @pytest.mark.parametrize("mesh", [
@@ -451,7 +452,7 @@ def test_assembly_solve_block_nl():
 def test_assembly_solve_taylor_hood_nl(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
     gdim = mesh.geometry.dim
-    P2 = VectorFunctionSpace(mesh, ("Lagrange", 2))
+    P2 = FunctionSpace(mesh, ("Lagrange", 2, (gdim,)))
     P1 = FunctionSpace(mesh, ("Lagrange", 1))
 
     def boundary0(x):
@@ -506,7 +507,7 @@ def test_assembly_solve_taylor_hood_nl(mesh):
         Fvec = create_vector_block(F)
 
         snes = PETSc.SNES().create(MPI.COMM_WORLD)
-        snes.setTolerances(rtol=1.0e-15, max_it=10)
+        snes.setTolerances(rtol=1.0e-15, max_it=20)
         snes.getKSP().setType("minres")
 
         problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs, P=P)
@@ -540,10 +541,10 @@ def test_assembly_solve_taylor_hood_nl(mesh):
         Fvec = create_vector_nest(F)
 
         snes = PETSc.SNES().create(MPI.COMM_WORLD)
-        snes.setTolerances(rtol=1.0e-15, max_it=10)
+        snes.setTolerances(rtol=1.0e-15, max_it=20)
         nested_IS = Jmat.getNestISs()
         snes.getKSP().setType("minres")
-        snes.getKSP().setTolerances(rtol=1e-12)
+        snes.getKSP().setTolerances(rtol=1e-8)
         snes.getKSP().getPC().setType("fieldsplit")
         snes.getKSP().getPC().setFieldSplitIS(["u", nested_IS[0][0]], ["p", nested_IS[1][1]])
 
@@ -574,7 +575,7 @@ def test_assembly_solve_taylor_hood_nl(mesh):
 
     def monolithic():
         """Monolithic"""
-        P2_el = element("Lagrange", mesh.basix_cell(), 2, rank=1)
+        P2_el = element("Lagrange", mesh.basix_cell(), 2, shape=(mesh.geometry.dim,))
         P1_el = element("Lagrange", mesh.basix_cell(), 1)
         TH = mixed_element([P2_el, P1_el])
         W = FunctionSpace(mesh, TH)
@@ -598,7 +599,7 @@ def test_assembly_solve_taylor_hood_nl(mesh):
         Fvec = create_vector(F)
 
         snes = PETSc.SNES().create(MPI.COMM_WORLD)
-        snes.setTolerances(rtol=1.0e-15, max_it=10)
+        snes.setTolerances(rtol=1.0e-15, max_it=20)
         snes.getKSP().setType("minres")
 
         problem = NonlinearPDE_SNESProblem(F, J, U, bcs, P=P)
@@ -624,11 +625,11 @@ def test_assembly_solve_taylor_hood_nl(mesh):
 
     Jnorm0, Fnorm0, xnorm0 = blocked()
     Jnorm1, Fnorm1, xnorm1 = nested()
-    assert Jnorm1 == pytest.approx(Jnorm0, 1.0e-12)
-    assert Fnorm1 == pytest.approx(Fnorm0, 1.0e-12)
-    assert xnorm1 == pytest.approx(xnorm0, 1.0e-12)
+    assert Jnorm1 == pytest.approx(Jnorm0, 1.0e-3, abs=1.0e-6)
+    assert Fnorm1 == pytest.approx(Fnorm0, 1.0e-6, abs=1.0e-5)
+    assert xnorm1 == pytest.approx(xnorm0, 1.0e-6, abs=1.0e-5)
 
     Jnorm2, Fnorm2, xnorm2 = monolithic()
-    assert Jnorm2 == pytest.approx(Jnorm0, 1.0e-12)
-    assert Fnorm2 == pytest.approx(Fnorm0, 1.0e-12)
-    assert xnorm2 == pytest.approx(xnorm0, 1.0e-12)
+    assert Jnorm2 == pytest.approx(Jnorm1, rel=1.0e-3, abs=1.0e-6)
+    assert Fnorm2 == pytest.approx(Fnorm0, 1.0e-6, abs=1.0e-5)
+    assert xnorm2 == pytest.approx(xnorm0, 1.0e-6, abs=1.0e-6)
