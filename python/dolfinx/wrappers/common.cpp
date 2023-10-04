@@ -104,6 +104,8 @@ void common(nb::module_& m)
                    "Range of indices owned by this map")
       .def_prop_ro("index_to_dest_ranks",
                    &dolfinx::common::IndexMap::index_to_dest_ranks)
+      .def_prop_ro("imbalance", &dolfinx::common::IndexMap::imbalance,
+                   "Imbalance of the current IndexMap.")
       .def_prop_ro(
           "ghosts",
           [](const dolfinx::common::IndexMap& self)

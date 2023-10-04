@@ -947,3 +947,35 @@ const std::vector<int>& IndexMap::dest() const noexcept { return _dest; }
 //-----------------------------------------------------------------------------
 bool IndexMap::overlapped() const noexcept { return _overlapping; }
 //-----------------------------------------------------------------------------
+std::array<double, 2> IndexMap::imbalance() const
+{
+  std::array<double, 2> imbalance{-1., -1.};
+  std::array<std::int32_t, 2> max_count;
+  std::array<std::int32_t, 2> local_sizes
+      = {static_cast<std::int32_t>(_local_range[1] - _local_range[0]),
+         static_cast<std::int32_t>(_ghosts.size())};
+
+  // Find the maximum number of owned indices and the maximum number of ghost
+  // indices across all processes.
+  MPI_Allreduce(local_sizes.data(), max_count.data(), 2,
+                dolfinx::MPI::mpi_type<std::int32_t>(), MPI_MAX, _comm.comm());
+
+  std::int32_t total_num_ghosts = 0;
+  MPI_Allreduce(&local_sizes[1], &total_num_ghosts, 1,
+                dolfinx::MPI::mpi_type<std::int32_t>(), MPI_SUM, _comm.comm());
+
+  // Compute the average number of owned and ghost indices per process.
+  int comm_size = dolfinx::MPI::size(_comm.comm());
+  double avg_owned = static_cast<double>(_size_global) / comm_size;
+  double avg_ghosts = static_cast<double>(total_num_ghosts) / comm_size;
+
+  // Compute the imbalance by dividing the maximum number of indices by the
+  // corresponding average.
+  if (avg_owned > 0)
+    imbalance[0] = max_count[0] / avg_owned;
+  if (avg_ghosts > 0)
+    imbalance[1] = max_count[1] / avg_ghosts;
+
+  return imbalance;
+}
+//-----------------------------------------------------------------------------

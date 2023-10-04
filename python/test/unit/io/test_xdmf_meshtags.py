@@ -9,11 +9,12 @@ from xml.etree import ElementTree
 
 import numpy as np
 import pytest
-from dolfinx.io import XDMFFile
-from dolfinx.mesh import CellType, create_unit_cube, locate_entities, meshtags
-from mpi4py import MPI
 
 from dolfinx import default_real_type
+from dolfinx.io import XDMFFile
+from dolfinx.mesh import CellType, create_unit_cube, locate_entities, meshtags
+
+from mpi4py import MPI
 
 # Supported XDMF file encoding
 if MPI.COMM_WORLD.size > 1:

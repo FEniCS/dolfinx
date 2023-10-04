@@ -29,6 +29,7 @@ from dolfinx.fem.petsc import LinearProblem
 from ufl import ds, dx, grad, inner
 
 from mpi4py import MPI
+
 # -
 
 # Note that Basix and the Basix UFL wrapper are imported directly. Basix

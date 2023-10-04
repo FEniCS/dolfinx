@@ -7,15 +7,16 @@
 
 import numpy as np
 import pytest
+
 import ufl
+from dolfinx import cpp as _cpp
+from dolfinx import fem
 from dolfinx.common import IndexMap
 from dolfinx.cpp.la import BlockMode, SparsityPattern
 from dolfinx.la import matrix_csr
 from dolfinx.mesh import GhostMode, create_unit_square
-from mpi4py import MPI
 
-from dolfinx import cpp as _cpp
-from dolfinx import fem
+from mpi4py import MPI
 
 
 def create_test_sparsity(n, bs):

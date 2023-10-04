@@ -5,10 +5,12 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import pytest
+
 import ufl
 from basix.ufl import element
 from dolfinx.geometry import squared_distance
 from dolfinx.mesh import create_mesh, create_unit_interval
+
 from mpi4py import MPI
 import numpy as np
 

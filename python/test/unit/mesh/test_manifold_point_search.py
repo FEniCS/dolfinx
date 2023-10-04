@@ -1,13 +1,14 @@
 import numpy as np
 import pytest
+
 import ufl
 from basix.ufl import element
+from dolfinx import cpp as _cpp
+from dolfinx import default_real_type, geometry
 from dolfinx.geometry import bb_tree
 from dolfinx.mesh import create_mesh
-from mpi4py import MPI
 
-from dolfinx import cpp as _cpp
-from dolfinx import geometry, default_real_type
+from mpi4py import MPI
 
 
 @pytest.mark.skip_in_parallel
