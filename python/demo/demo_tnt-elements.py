@@ -10,61 +10,89 @@
 
 # # Creating TNT elements using Basix's custom element interface
 #
-# This demo ({download}`demo_tnt-elements.py`) illustrates how to:
+# Basix provides numerous finite elements, but there are many other
+# possible elements a user may want to use. This demo
+# ({download}`demo_tnt-elements.py`) shows how the Basix custom element
+# interface can be used to define elements. More detailed information
+# about the inputs needed to create a custom element can be found in
+# [the Basix
+# documentation](https://docs.fenicsproject.org/basix/main/python/demo/demo_custom_element.py.html).
 #
-# - Define custom finite elements using Basix
-#
-# We begin this demo by importing everything we require.
+# We begin this demo by importing the required modules.
 
 # +
+import matplotlib
 import matplotlib.pylab as plt
 import numpy as np
 
 import basix
-import basix.ufl_wrapper
+import basix.ufl
 from dolfinx import fem, mesh
+from dolfinx.fem.petsc import LinearProblem
 from ufl import (SpatialCoordinate, TestFunction, TrialFunction, cos, div, dx,
                  grad, inner, sin)
 
 from mpi4py import MPI
 
+matplotlib.use('agg')
 # -
 
 # ## Defining a degree 1 TNT element
 #
-# Basix supports a range of finite elements, but there are many other
-# possible elements a user may want to use. This demo shows how the Basix
-# custom element interface can be used to define elements. More detailed
-# information about the inputs needed to create a custom element can be
-# found in [the Basix
-# documentation](https://docs.fenicsproject.org/basix/main/python/demo/demo_custom_element.py.html).
-#
-# As an example, we will define [tiniest tensor
+# We will define [tiniest tensor
 # (TNT)](https://defelement.com/elements/tnt.html) elements on a
-# quadrilateral, as defined in [Commuting diagrams for the TNT elements
-# on cubes (Cockburn, Qiu,
-# 2014)](https://doi.org/10.1090/S0025-5718-2013-02729-9).
+# quadrilateral ([Commuting diagrams for the TNT elements on cubes
+# (Cockburn, Qiu,
+# 2014)](https://doi.org/10.1090/S0025-5718-2013-02729-9)).
 #
 # ### The polynomial set
 #
-# We begin by defining a basis of the polynomial space that this element
-# spans. This is defined in terms of the orthogonal Legendre polynomials
-# on the cell. For a degree 1 TNT element, the polynomial set contains
-# the polynomials $1$, $y$, $y^2$, $x$, $xy$, $xy^2$, $x^2$, and $x^2y$.
-# These are the first 8 polynomials in the degree 2 set of polynomials
-# on a quadrilateral, so we create an 8 by 9 (number of dofs by number
-# of polynomials in the degree 2 set) matrix with an 8 by 8 identity in
-# the first 8 columns. The order in which polynomials appear in the
-# polynomial sets for each cell can be found in the [Basix
+# We begin by defining a basis of the polynomial space spanned by the
+# TNT element, which is defined in terms of the orthogonal Legendre
+# polynomials on the cell. For a degree 1 element, the polynomial set
+# contains $1$, $y$, $y^2$, $x$, $xy$, $xy^2$, $x^2$, and $x^2y$, which
+# are the first 8 polynomials in the degree 2 set of polynomials on a
+# quadrilateral. We create an $8 \times 9$  matrix (number of dofs by
+# number of polynomials in the degree 2 set) with an $8 \times 8$
+# identity in the first 8 columns. The order in which polynomials appear
+# in the polynomial sets for each cell can be found in the [Basix
 # documentation](https://docs.fenicsproject.org/basix/main/polyset-order.html).
 
 wcoeffs = np.eye(8, 9)
 
-# ### The interpolation operators
+# For elements where the coefficients matrix is not an identity, we can
+# use the properties of orthonormal polynomials to compute `wcoeffs`.
+# Let $\{q_0, q_1,\dots\}$ be the orthonormal polynomials of a given
+# degree for a given cell, and suppose that we're trying to represent a function
+# $f_i\in\operatorname{span}\{q_1, q_2,\dots\}$ (as $\{f_0, f_1,\dots\}$ is a
+# basis of the polynomial space for our element). Using the properties of
+# orthonormal polynomials, we see that
+# \[f_i = \sum_j\left(\int_R f_iq_j\,\mathrm{d}\mathbf{x}\right)q_j,\]
+# and so the coefficients are given by
+# \[
+#   a_{ij}=\int_R f_iq_j\,\mathrm{d}\mathbf{x}.
+# \]
+# Hence we could compute `wcoeffs` as follows:
+
+# +
+wcoeffs2 = np.empty((8, 9))
+pts, wts = basix.make_quadrature(basix.CellType.quadrilateral, 4)
+evals = basix.tabulate_polynomials(basix.PolynomialType.legendre, basix.CellType.quadrilateral, 2, pts)
+
+for j, v in enumerate(evals):
+    wcoeffs2[0, j] = sum(v * wts)  # 1
+    wcoeffs2[1, j] = sum(v * pts[:, 1] * wts)  # y
+    wcoeffs2[2, j] = sum(v * pts[:, 1]**2 * wts)  # y^2
+    wcoeffs2[3, j] = sum(v * pts[:, 0] * pts[:, 1] * wts)  # xy
+    wcoeffs2[4, j] = sum(v * pts[:, 0] * pts[:, 1] ** 2 * wts)  # xy^2
+    wcoeffs2[5, j] = sum(v * pts[:, 0]**2 * pts[:, 1] * wts)  # x^2y
+# -
+
+# ### Interpolation operators
 #
-# Next, we provide the information that defines the DOFs associated with
-# each sub-entity of the cell. We first associate a point evaluation
-# with each vertex of the cell.
+# We provide the information that defines the DOFs associated with each
+# sub-entity of the cell. First, we associate a point evaluation with
+# each vertex.
 
 # +
 geometry = basix.geometry(basix.CellType.quadrilateral)
@@ -77,10 +105,10 @@ for v in topology[0]:
     M[0].append(np.array([[[[1.]]]]))
 # -
 
-# For each edge of the cell, we define points and a matrix that
-# represent the integral of the function along that edge. We do this by
-# mapping quadrature points to the edge and putting quadrature points in
-# the matrix.
+# For each edge, we define points and a matrix that represent the
+# integral of the function along that edge. We do this by mapping
+# quadrature points to the edge and putting quadrature points in the
+# matrix.
 
 # +
 pts, wts = basix.make_quadrature(basix.CellType.interval, 2)
@@ -107,10 +135,9 @@ M[2].append(np.zeros([0, 1, 0, 1]))
 # We now create the element. Using the Basix UFL interface, we can wrap
 # this element so that it can be used with FFCx/DOLFINx.
 
-e = basix.create_custom_element(
+tnt_degree1 = basix.ufl.custom_element(
     basix.CellType.quadrilateral, [], wcoeffs, x, M, 0, basix.MapType.identity,
     basix.SobolevSpace.H1, False, 1, 2)
-tnt_degree1 = basix.ufl_wrapper.BasixElement(e)
 
 # ## Creating higher degree TNT elements
 #
@@ -118,7 +145,6 @@ tnt_degree1 = basix.ufl_wrapper.BasixElement(e)
 # arbitrary degree TNT elements.
 
 
-# +
 def create_tnt_quad(degree):
     assert degree > 1
     # Polyset
@@ -177,25 +203,20 @@ def create_tnt_quad(degree):
             mat[i, 0, :, 0] = wts[:] * poly[i, :]
         M[2].append(mat)
 
-    e = basix.create_custom_element(
-        basix.CellType.quadrilateral, [], wcoeffs, x, M, 0, basix.MapType.identity,
-        basix.SobolevSpace.H1, False, degree, degree + 1)
-    return basix.ufl_wrapper.BasixElement(e)
-# -
+    return basix.ufl.custom_element(basix.CellType.quadrilateral, [], wcoeffs, x, M, 0,
+                                    basix.MapType.identity, basix.SobolevSpace.H1, False, degree, degree + 1)
 
 
 # ## Comparing TNT elements and Q elements
 #
 # We now use the code above to compare TNT elements and
 # [Q](https://defelement.com/elements/lagrange.html) elements on
-# quadrilaterals.
-#
-# The following function takes a DOLFINx function space as input, and
-# solves a Poisson problem and returns the $L_2$ error of the solution.
+# quadrilaterals. The following function takes a DOLFINx function space
+# as input, and solves a Poisson problem and returns the $L_2$ error of
+# the solution.
 
 
-# +
-def poisson_error(V):
+def poisson_error(V: fem.FunctionSpaceBase):
     msh = V.mesh
     u, v = TrialFunction(V), TestFunction(V)
 
@@ -216,14 +237,13 @@ def poisson_error(V):
     bc = fem.dirichletbc(u_bc, bdofs)
 
     # Solve
-    problem = fem.petsc.LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_rtol": 1e-12})
+    problem = LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_rtol": 1e-12})
     uh = problem.solve()
 
     M = (u_exact - uh)**2 * dx
     M = fem.form(M)
     error = msh.comm.allreduce(fem.assemble_scalar(M), op=MPI.SUM)
     return error**0.5
-# -
 
 
 # We create a mesh, then solve the Poisson problem using our TNT
@@ -238,15 +258,13 @@ tnt_ndofs = []
 tnt_degrees = []
 tnt_errors = []
 
-V = fem.FunctionSpace(msh, tnt_degree1)
+V = fem.functionspace(msh, tnt_degree1)
 tnt_degrees.append(2)
 tnt_ndofs.append(V.dofmap.index_map.size_global)
 tnt_errors.append(poisson_error(V))
 print(f"TNT degree 2 error: {tnt_errors[-1]}")
-
 for degree in range(2, 9):
-    V = fem.FunctionSpace(msh, create_tnt_quad(degree))
-
+    V = fem.functionspace(msh, create_tnt_quad(degree))
     tnt_degrees.append(degree + 1)
     tnt_ndofs.append(V.dofmap.index_map.size_global)
     tnt_errors.append(poisson_error(V))
@@ -256,7 +274,7 @@ q_ndofs = []
 q_degrees = []
 q_errors = []
 for degree in range(1, 9):
-    V = fem.FunctionSpace(msh, ("Q", degree))
+    V = fem.functionspace(msh, ("Q", degree))
     q_degrees.append(degree)
     q_ndofs.append(V.dofmap.index_map.size_global)
     q_errors.append(poisson_error(V))
@@ -267,39 +285,31 @@ for degree in range(1, 9):
 # against the polynomial degree for the two elements. The two elements
 # appear to perform equally well.
 
-# +
 if MPI.COMM_WORLD.rank == 0:  # Only plot on one rank
     plt.plot(q_degrees, q_errors, "bo-")
     plt.plot(tnt_degrees, tnt_errors, "gs-")
-
     plt.yscale("log")
     plt.xlabel("Polynomial degree")
     plt.ylabel("Error")
     plt.legend(["Q", "TNT"])
-
     plt.savefig("demo_tnt-elements_degrees_vs_error.png")
     plt.clf()
-# -
 
 # ![](demo_tnt-elements_degrees_vs_error.png)
 #
 # A key advantage of TNT elements is that for a given degree, they span
 # a smaller polynomial space than Q elements. This can be observed in
-# the following diagram, where we plot the
-# error against the number of DOFs.
+# the following diagram, where we plot the error against the square root
+# of the number of DOFs (providing a measure of cell size in 2D)
 
-# +
 if MPI.COMM_WORLD.rank == 0:  # Only plot on one rank
-    plt.plot(q_ndofs, q_errors, "bo-")
-    plt.plot(tnt_ndofs, tnt_errors, "gs-")
-
+    plt.plot(np.sqrt(q_ndofs), q_errors, "bo-")
+    plt.plot(np.sqrt(tnt_ndofs), tnt_errors, "gs-")
     plt.yscale("log")
-    plt.xlabel("Number of DOFs")
+    plt.xlabel("Square root of number of DOFs")
     plt.ylabel("Error")
     plt.legend(["Q", "TNT"])
-
     plt.savefig("demo_tnt-elements_ndofs_vs_error.png")
     plt.clf()
-# -
 
 # ![](demo_tnt-elements_ndofs_vs_error.png)

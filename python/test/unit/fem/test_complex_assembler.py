@@ -9,6 +9,7 @@ import numpy as np
 import pytest
 
 import ufl
+from basix.ufl import element
 from dolfinx.fem import Function, FunctionSpace, form
 from dolfinx.fem.petsc import assemble_matrix, assemble_vector
 from dolfinx.mesh import create_unit_square
@@ -18,14 +19,14 @@ from mpi4py import MPI
 from petsc4py import PETSc
 
 pytestmark = pytest.mark.skipif(
-    not np.issubdtype(PETSc.ScalarType, np.complexfloating), reason="Only works in complex mode.")
+    not np.issubdtype(PETSc.ScalarType, np.complexfloating), reason="Only works in complex mode.")  # type: ignore
 
 
 def test_complex_assembly():
     """Test assembly of complex matrices and vectors"""
 
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
-    P2 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 2)
+    P2 = element("Lagrange", mesh.basix_cell(), 2)
     V = FunctionSpace(mesh, P2)
     u = ufl.TrialFunction(V)
     v = ufl.TestFunction(V)
@@ -39,7 +40,7 @@ def test_complex_assembly():
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     bnorm = b.norm(PETSc.NormType.N1)
     b_norm_ref = abs(-2 + 3.0j)
-    assert bnorm == pytest.approx(b_norm_ref)
+    assert bnorm == pytest.approx(b_norm_ref, rel=1e-5)
 
     A = assemble_matrix(a_real)
     A.assemble()
@@ -78,7 +79,7 @@ def test_complex_assembly_solve():
 
     degree = 3
     mesh = create_unit_square(MPI.COMM_WORLD, 20, 20)
-    P = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), degree)
+    P = element("Lagrange", mesh.basix_cell(), degree)
     V = FunctionSpace(mesh, P)
 
     x = ufl.SpatialCoordinate(mesh)
@@ -101,11 +102,6 @@ def test_complex_assembly_solve():
 
     # Create solver
     solver = PETSc.KSP().create(mesh.comm)
-    solver.setOptionsPrefix("test_lu_")
-    opts = PETSc.Options("test_lu_")
-    opts["ksp_type"] = "preonly"
-    opts["pc_type"] = "lu"
-    solver.setFromOptions()
     x = A.createVecRight()
     solver.setOperators(A)
     solver.solve(b, x)

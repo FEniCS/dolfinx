@@ -14,13 +14,19 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 #
-# # Visualization with pyvista
+# # Visualization with PyVista
+#
+# [PyVista](https://pyvista.org/) can be used with DOLFINx for
+# interactive visualisation.
+#
+# To start, the required modules are imported and some PyVista
+# parameters set.
 
 # +
 import numpy as np
 
 import dolfinx.plot as plot
-from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
+from dolfinx.fem import Function, functionspace
 from dolfinx.mesh import (CellType, compute_midpoints, create_unit_cube,
                           create_unit_square, meshtags)
 
@@ -40,35 +46,33 @@ if pyvista.OFF_SCREEN:
 # Set some global options for all plots
 transparent = False
 figsize = 800
-pyvista.rcParams["background"] = [0.5, 0.5, 0.5]
 # -
 
-# ## Plotting a Function using warp by scalar
+# ## Plotting a finite element Function using warp by scalar
 
 
 def plot_scalar():
-
-    # We start by creating a unit square mesh and interpolating a function
-    # into a first order Lagrange space
+    # We start by creating a unit square mesh and interpolating a
+    # function into a degree 1 Lagrange space
     msh = create_unit_square(MPI.COMM_WORLD, 12, 12, cell_type=CellType.quadrilateral)
-    V = FunctionSpace(msh, ("Lagrange", 1))
+    V = functionspace(msh, ("Lagrange", 1))
     u = Function(V, dtype=np.float64)
     u.interpolate(lambda x: np.sin(np.pi * x[0]) * np.sin(2 * x[1] * np.pi))
 
-    # As we want to visualize the function u, we have to create a grid to
-    # attached the DoF values to We do this by creating a topology and
-    # geometry based on the function space V
-    cells, types, x = plot.create_vtk_mesh(V)
+    # To visualize the function u, we create a VTK-compatible grid to
+    # values of u to
+    cells, types, x = plot.vtk_mesh(V)
     grid = pyvista.UnstructuredGrid(cells, types, x)
     grid.point_data["u"] = u.x.array
 
-    # We set the function "u" as the active scalar for the mesh, and warp
-    # the mesh in z-direction by its values
+    # The function "u" is set as the active scalar for the mesh, and
+    # warp in z-direction is set
     grid.set_active_scalars("u")
     warped = grid.warp_by_scalar()
 
-    # We create a plotting window consisting of to plots, one of the scalar
-    # values, and one where the mesh is warped by these values
+    # A plotting window is created with two sub-plots, one of the scalar
+    # values and the other of the mesh is warped by the scalar values in
+    # z-direction
     subplotter = pyvista.Plotter(shape=(1, 2))
     subplotter.subplot(0, 0)
     subplotter.add_text("Scalar contour field", font_size=14, color="black", position="upper_edge")
@@ -94,43 +98,41 @@ def plot_scalar():
 
 def plot_meshtags():
 
+    # Create a mesh
     msh = create_unit_square(MPI.COMM_WORLD, 25, 25, cell_type=CellType.quadrilateral)
 
-    # We continue using the mesh from the previous section, and find all
-    # cells satisfying the condition below
-
+    # Create a geometric indicator function
     def in_circle(x):
-        """True for points inside circle with radius 2"""
         return np.array((x.T[0] - 0.5)**2 + (x.T[1] - 0.5)**2 < 0.2**2, dtype=np.int32)
 
-    # Create mesh tags for all cells. If midpoint is inside the
-    # circle, it gets value 1, otherwise 0.
+    # Create cell tags - if midpoint is inside circle, it gets value 1,
+    # otherwise 0
     num_cells = msh.topology.index_map(msh.topology.dim).size_local
     midpoints = compute_midpoints(msh, msh.topology.dim, list(np.arange(num_cells, dtype=np.int32)))
     cell_tags = meshtags(msh, msh.topology.dim, np.arange(num_cells), in_circle(midpoints))
 
-    cells, types, x = plot.create_vtk_mesh(msh)
+    # Create VTK mesh
+    cells, types, x = plot.vtk_mesh(msh)
     grid = pyvista.UnstructuredGrid(cells, types, x)
 
-    # As the mesh tags contain a value for every cell in the
-    # geometry, we can attach it directly to the grid
+    # Attach the cells tag data to the pyvita grid
     grid.cell_data["Marker"] = cell_tags.values
     grid.set_active_scalars("Marker")
 
-    # We create a plotter consisting of two windows, and add a plot of the
-    # mesh tags to the first window.
+    # Create a plotter with two subplots, and add mesh tag plot to the
+    # first sub-window
     subplotter = pyvista.Plotter(shape=(1, 2))
     subplotter.subplot(0, 0)
     subplotter.add_text("Mesh with markers", font_size=14, color="black", position="upper_edge")
     subplotter.add_mesh(grid, show_edges=True, show_scalar_bar=False)
     subplotter.view_xy()
 
-    # We can also visualize subsets of data, by creating a smaller topology,
-    # only consisting of those entities that has value one in the
-    # mesh tags
-    cells, types, x = plot.create_vtk_mesh(msh, entities=cell_tags.find(1))
+    # We can visualize subsets of data, by creating a smaller topology
+    # (set of cells). Here we create VTK mesh data for only cells with
+    # that tag '1'.
+    cells, types, x = plot.vtk_mesh(msh, entities=cell_tags.find(1))
 
-    # We add this grid to the second plotter
+    # Add this grid to the second plotter window
     sub_grid = pyvista.UnstructuredGrid(cells, types, x)
     subplotter.subplot(0, 1)
     subplotter.add_text("Subset of mesh", font_size=14, color="black", position="upper_edge")
@@ -145,42 +147,37 @@ def plot_meshtags():
 
 # ## Higher-order Functions
 #
-# In the previous sections we have considered degree 1 Lagrange spaces.
-# We can also plot higher degree functions.
+# Higher-order finite element function can also be plotted.
 
 def plot_higher_order():
 
+    # Create a mesh
     msh = create_unit_square(MPI.COMM_WORLD, 12, 12, cell_type=CellType.quadrilateral)
 
-    # We continue using the mesh from the previous section, and find all
-    # cells satisfying the condition below
-
+    # Define a geometric indicator function
     def in_circle(x):
-        """Mark sphere with radius < sqrt(2)"""
         return np.array((x.T[0] - 0.5)**2 + (x.T[1] - 0.5)**2 < 0.2**2, dtype=np.int32)
 
-    # Create mesh tags for all cells. If midpoint is inside the
-    # circle, it gets value 1, otherwise 0.
+    # Create mesh tags for all cells. If midpoint is inside the circle,
+    # it gets value 1, otherwise 0.
     num_cells = msh.topology.index_map(msh.topology.dim).size_local
     midpoints = compute_midpoints(msh, msh.topology.dim, list(np.arange(num_cells, dtype=np.int32)))
     cell_tags = meshtags(msh, msh.topology.dim, np.arange(num_cells), in_circle(midpoints))
 
-    # We start by interpolating a discontinuous function into a second order
-    # discontinuous Lagrange space. Note that we use the `cell_tags` from
-    # the previous section to get the cells for each of the regions
-    V = FunctionSpace(msh, ("Discontinuous Lagrange", 2))
-    u = Function(V, dtype=np.float64)
+    # We start by interpolating a discontinuous function (discontinuous
+    # between cells with different mesh tag values) into a degree 2
+    # discontinuous Lagrange space.
+    V = functionspace(msh, ("Discontinuous Lagrange", 2))
+    u = Function(V, dtype=msh.geometry.x.dtype)
     u.interpolate(lambda x: x[0], cell_tags.find(0))
     u.interpolate(lambda x: x[1] + 1, cell_tags.find(1))
     u.x.scatter_forward()
 
-    # To get a topology that has a 1-1 correspondence with the
-    # degrees-of-freedom in the function space, we call
-    # `dolfinx.plot.create_vtk_mesh`.
-    cells, types, x = plot.create_vtk_mesh(V)
+    # Create a topology that has a 1-1 correspondence with the
+    # degrees-of-freedom in the function space V
+    cells, types, x = plot.vtk_mesh(V)
 
-    # Create a pyvista mesh from the topology and geometry, and attach
-    # the coefficients of the degrees of freedom
+    # Create a pyvista mesh and attach the values of u
     grid = pyvista.UnstructuredGrid(cells, types, x)
     grid.point_data["u"] = u.x.array
     grid.set_active_scalars("u")
@@ -189,7 +186,7 @@ def plot_higher_order():
     # that as we have done previously
     num_cells = msh.topology.index_map(msh.topology.dim).size_local
     cell_entities = np.arange(num_cells, dtype=np.int32)
-    cells, types, x = plot.create_vtk_mesh(msh, entities=cell_entities)
+    cells, types, x = plot.vtk_mesh(msh, entities=cell_entities)
     org_grid = pyvista.UnstructuredGrid(cells, types, x)
 
     # We visualize the data
@@ -223,7 +220,7 @@ def plot_nedelec():
                      position="upper_edge", font_size=14, color="black")
 
     # Next, we create a pyvista.UnstructuredGrid based on the mesh
-    pyvista_cells, cell_types, x = plot.create_vtk_mesh(msh)
+    pyvista_cells, cell_types, x = plot.vtk_mesh(msh)
     grid = pyvista.UnstructuredGrid(pyvista_cells, cell_types, x)
 
     # Add this grid (as a wireframe) to the plotter
@@ -231,7 +228,7 @@ def plot_nedelec():
 
     # Create a function space consisting of first order Nédélec (first kind)
     # elements and interpolate a vector-valued expression
-    V = FunctionSpace(msh, ("N1curl", 2))
+    V = functionspace(msh, ("N1curl", 2))
     u = Function(V, dtype=np.float64)
     u.interpolate(lambda x: (x[2]**2, np.zeros(x.shape[1]), -x[0] * x[2]))
 
@@ -239,13 +236,14 @@ def plot_nedelec():
     # discontinuous Lagrange finite element functions. Therefore, we
     # interpolate the Nédélec function into a first-order discontinuous
     # Lagrange space.
-    V0 = VectorFunctionSpace(msh, ("Discontinuous Lagrange", 2))
+    gdim = msh.geometry.dim
+    V0 = functionspace(msh, ("Discontinuous Lagrange", 2, (gdim,)))
     u0 = Function(V0, dtype=np.float64)
     u0.interpolate(u)
 
     # Create a second grid, whose geometry and topology is based on the
     # output function space
-    cells, cell_types, x = plot.create_vtk_mesh(V0)
+    cells, cell_types, x = plot.vtk_mesh(V0)
     grid = pyvista.UnstructuredGrid(cells, cell_types, x)
 
     # Create point cloud of vertices, and add the vertex values to the cloud
@@ -270,11 +268,12 @@ def plot_nedelec():
 def plot_streamlines():
 
     msh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, CellType.hexahedron)
-    V = VectorFunctionSpace(msh, ("Discontinuous Lagrange", 2))
+    gdim = msh.geometry.dim
+    V = functionspace(msh, ("Discontinuous Lagrange", 2, (gdim,)))
     u = Function(V, dtype=np.float64)
     u.interpolate(lambda x: np.vstack((-(x[1] - 0.5), x[0] - 0.5, np.zeros(x.shape[1]))))
 
-    cells, types, x = plot.create_vtk_mesh(V)
+    cells, types, x = plot.vtk_mesh(V)
     num_dofs = x.shape[0]
     values = np.zeros((num_dofs, 3), dtype=np.float64)
     values[:, :msh.geometry.dim] = u.x.array.reshape(num_dofs, V.dofmap.index_map_bs)

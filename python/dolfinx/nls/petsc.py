@@ -18,6 +18,7 @@ import types
 
 from dolfinx import cpp as _cpp
 from dolfinx import fem
+from dolfinx.fem.petsc import create_matrix, create_vector
 
 __all__ = ["NewtonSolver"]
 
@@ -29,11 +30,15 @@ class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
 
         # Create matrix and vector to be used for assembly
         # of the non-linear problem
-        self._A = fem.petsc.create_matrix(problem.a)
+        self._A = create_matrix(problem.a)
         self.setJ(problem.J, self._A)
-        self._b = fem.petsc.create_vector(problem.L)
+        self._b = create_vector(problem.L)
         self.setF(problem.F, self._b)
         self.set_form(problem.form)
+
+    def __del__(self):
+        self._A.destroy()
+        self._b.destroy()
 
     def solve(self, u: fem.Function):
         """Solve non-linear problem into function u. Returns the number
@@ -43,21 +48,22 @@ class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
         return n, converged
 
     @property
-    def A(self) -> PETSc.Mat:
+    def A(self) -> PETSc.Mat:  # type: ignore
         """Jacobian matrix"""
         return self._A
 
     @property
-    def b(self) -> PETSc.Vec:
+    def b(self) -> PETSc.Vec:  # type: ignore
         """Residual vector"""
         return self._b
 
-    def setP(self, P: types.FunctionType, Pmat: PETSc.Mat):
+    def setP(self, P: types.FunctionType, Pmat: PETSc.Mat):  # type: ignore
         """
         Set the function for computing the preconditioner matrix
 
         Args:
             P: Function to compute the preconditioner matrix
             Pmat: Matrix to assemble the preconditioner into
+
         """
         super().setP(P, Pmat)

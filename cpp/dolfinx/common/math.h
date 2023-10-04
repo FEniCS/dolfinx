@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "types.h"
 #include <array>
 #include <basix/mdspan.hpp>
 #include <cmath>
@@ -16,8 +17,8 @@ namespace dolfinx::math
 {
 
 /// Compute the cross product u x v
-/// @param u The first vector. It must has size 3.
-/// @param v The second vector. It must has size 3.
+/// @param u The first vector. It must have size 3.
+/// @param v The second vector. It must have size 3.
 /// @return The cross product `u x v`. The type will be the same as `u`.
 template <typename U, typename V>
 std::array<typename U::value_type, 3> cross(const U& u, const V& v)
@@ -218,12 +219,17 @@ void pinv(U A, V P)
   using T = typename U::value_type;
   if (A.extent(1) == 2)
   {
-    namespace stdex = std::experimental;
     std::array<T, 6> ATb;
     std::array<T, 4> ATAb, Invb;
-    stdex::mdspan<T, stdex::extents<std::size_t, 2, 3>> AT(ATb.data(), 2, 3);
-    stdex::mdspan<T, stdex::extents<std::size_t, 2, 2>> ATA(ATAb.data(), 2, 2);
-    stdex::mdspan<T, stdex::extents<std::size_t, 2, 2>> Inv(Invb.data(), 2, 2);
+    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        T, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<std::size_t, 2, 3>>
+        AT(ATb.data(), 2, 3);
+    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        T, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<std::size_t, 2, 2>>
+        ATA(ATAb.data(), 2, 2);
+    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        T, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<std::size_t, 2, 2>>
+        Inv(Invb.data(), 2, 2);
 
     for (std::size_t i = 0; i < AT.extent(0); ++i)
       for (std::size_t j = 0; j < AT.extent(1); ++j)

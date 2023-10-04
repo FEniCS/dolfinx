@@ -1,5 +1,6 @@
 #include "hyperelasticity.h"
 #include <basix/finite-element.h>
+#include <climits>
 #include <cmath>
 #include <dolfinx.h>
 #include <dolfinx/common/log.h>
@@ -13,6 +14,7 @@
 
 using namespace dolfinx;
 using T = PetscScalar;
+using U = typename dolfinx::scalar_value_type_t<T>;
 
 class HyperElasticProblem
 {
@@ -115,7 +117,6 @@ int main(int argc, char* argv[])
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
   std::string thread_name = "RANK " + std::to_string(mpi_rank);
   loguru::set_thread_name(thread_name.c_str());
-
   {
     // Inside the ``main`` function, we begin by defining a tetrahedral mesh
     // of the domain and the function space on this mesh. Here, we choose to
@@ -127,12 +128,12 @@ int main(int argc, char* argv[])
     // .. code-block:: cpp
 
     // Create mesh and define function space
-    auto mesh = std::make_shared<mesh::Mesh>(
-        mesh::create_box(MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}},
-                         {10, 10, 10}, mesh::CellType::tetrahedron,
-                         mesh::create_cell_partitioner(mesh::GhostMode::none)));
+    auto mesh = std::make_shared<mesh::Mesh<U>>(mesh::create_box<U>(
+        MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {10, 10, 10},
+        mesh::CellType::tetrahedron,
+        mesh::create_cell_partitioner(mesh::GhostMode::none)));
 
-    auto V = std::make_shared<fem::FunctionSpace>(fem::create_functionspace(
+    auto V = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace(
         functionspace_form_hyperelasticity_F_form, "u", mesh));
 
     // Define solution function
@@ -146,25 +147,26 @@ int main(int argc, char* argv[])
     u_rotation->interpolate(
         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
         {
-          constexpr double scale = 0.005;
+          constexpr U scale = 0.005;
 
           // Center of rotation
-          constexpr double x1_c = 0.5;
-          constexpr double x2_c = 0.5;
+          constexpr U x1_c = 0.5;
+          constexpr U x2_c = 0.5;
 
           // Large angle of rotation (60 degrees)
-          constexpr double theta = 1.04719755;
+          constexpr U theta = 1.04719755;
 
           // New coordinates
-          std::vector<double> fdata(3 * x.extent(1), 0.0);
-          namespace stdex = std::experimental;
-          stdex::mdspan<double,
-                        stdex::extents<std::size_t, 3, stdex::dynamic_extent>>
+          std::vector<U> fdata(3 * x.extent(1), 0.0);
+          MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+              U, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+                     std::size_t, 3,
+                     MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>
               f(fdata.data(), 3, x.extent(1));
           for (std::size_t p = 0; p < x.extent(1); ++p)
           {
-            double x1 = x(1, p);
-            double x2 = x(2, p);
+            U x1 = x(1, p);
+            U x2 = x(2, p);
             f(1, p) = scale
                       * (x1_c + (x1 - x1_c) * std::cos(theta)
                          - (x2 - x2_c) * std::sin(theta) - x1);
@@ -178,10 +180,10 @@ int main(int argc, char* argv[])
 
     // Create Dirichlet boundary conditions
     auto bdofs_left = fem::locate_dofs_geometrical(
-        {*V},
+        *V,
         [](auto x)
         {
-          constexpr double eps = 1.0e-8;
+          constexpr U eps = 1.0e-6;
           std::vector<std::int8_t> marker(x.extent(1), false);
           for (std::size_t p = 0; p < x.extent(1); ++p)
           {
@@ -191,10 +193,10 @@ int main(int argc, char* argv[])
           return marker;
         });
     auto bdofs_right = fem::locate_dofs_geometrical(
-        {*V},
+        *V,
         [](auto x)
         {
-          constexpr double eps = 1.0e-8;
+          constexpr U eps = 1.0e-6;
           std::vector<std::int8_t> marker(x.extent(1), false);
           for (std::size_t p = 0; p < x.extent(1); ++p)
           {
@@ -213,25 +215,28 @@ int main(int argc, char* argv[])
     newton_solver.setF(problem.F(), problem.vector());
     newton_solver.setJ(problem.J(), problem.matrix());
     newton_solver.set_form(problem.form());
+    newton_solver.rtol = 10 * std::numeric_limits<T>::epsilon();
+    newton_solver.atol = 10 * std::numeric_limits<T>::epsilon();
 
     la::petsc::Vector _u(la::petsc::create_vector_wrap(*u->x()), false);
     newton_solver.solve(_u.vec());
 
-    // Compute Cauchy stress
-    // Construct appropriate Basix element for stress
+    // Compute Cauchy stress. Construct appropriate Basix element for
+    // stress.
     constexpr auto family = basix::element::family::P;
     const auto cell_type
-        = mesh::cell_type_to_basix_type(mesh->topology().cell_type());
+        = mesh::cell_type_to_basix_type(mesh->topology()->cell_types()[0]);
     constexpr int k = 0;
     constexpr bool discontinuous = true;
 
-    const basix::FiniteElement S_element
-        = basix::create_element(family, cell_type, k, discontinuous);
-    auto S = std::make_shared<fem::FunctionSpace>(fem::create_functionspace(
-        mesh, S_element, pow(mesh->geometry().dim(), 2)));
+    basix::FiniteElement S_element = basix::create_element<U>(
+        family, cell_type, k, basix::element::lagrange_variant::unset,
+        basix::element::dpc_variant::unset, discontinuous);
+    auto S = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace(
+        mesh, S_element, std::vector<std::size_t>{3, 3}));
 
-    const auto sigma_expression = fem::create_expression<T>(
-        *expression_hyperelasticity_sigma, {{"u", u}}, {}, mesh);
+    auto sigma_expression = fem::create_expression<T, U>(
+        *expression_hyperelasticity_sigma, {{"u", u}}, {});
 
     auto sigma = fem::Function<T>(S);
     sigma.name = "cauchy_stress";

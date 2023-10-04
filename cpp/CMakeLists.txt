@@ -4,11 +4,11 @@ cmake_minimum_required(VERSION 3.19)
 
 # ------------------------------------------------------------------------------
 # Set project name and version number
-project(DOLFINX VERSION "0.6.0")
+project(DOLFINX VERSION "0.7.0")
 
 set(DOXYGEN_DOLFINX_VERSION
-    ${DOLFINX_VERSION}
-    CACHE STRING "Version for Doxygen" FORCE
+  ${DOLFINX_VERSION}
+  CACHE STRING "Version for Doxygen" FORCE
 )
 
 # ------------------------------------------------------------------------------
@@ -56,7 +56,7 @@ add_feature_info(
 )
 
 option(DOLFINX_SKIP_BUILD_TESTS
-       "Skip build tests for testing usability of dependency packages." OFF
+  "Skip build tests for testing usability of dependency packages." OFF
 )
 add_feature_info(
   DOLFINX_SKIP_BUILD_TESTS DOLFINX_SKIP_BUILD_TESTS
@@ -65,7 +65,7 @@ add_feature_info(
 
 # Add shared library paths so shared libs in non-system paths are found
 option(CMAKE_INSTALL_RPATH_USE_LINK_PATH
-       "Add paths to linker search and installed rpath." ON
+  "Add paths to linker search and installed rpath." ON
 )
 add_feature_info(
   CMAKE_INSTALL_RPATH_USE_LINK_PATH CMAKE_INSTALL_RPATH_USE_LINK_PATH
@@ -104,11 +104,11 @@ find_package(MPI 3 REQUIRED)
 # Default build type (can be overridden by user)
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE
-      "RelWithDebInfo"
-      CACHE
-        STRING
-        "Choose the type of build, options are: Debug Developer MinSizeRel Release RelWithDebInfo."
-        FORCE
+    "RelWithDebInfo"
+    CACHE
+    STRING
+    "Choose the type of build, options are: Debug Developer MinSizeRel Release RelWithDebInfo."
+    FORCE
   )
 endif()
 
@@ -166,30 +166,33 @@ set_package_properties(
 find_package(
   Python3
   COMPONENTS Interpreter
-  REQUIRED
+  QUIET
 )
 
 # Check for Basix Note: Basix may be installed as a standalone C++ library, or
 # in the Basix Python module tree
-execute_process(
-  COMMAND
+if(Python3_Interpreter_FOUND)
+  MESSAGE(STATUS "Checking for basix hints with ${Python3_EXECUTABLE}")
+  execute_process(
+    COMMAND
     ${Python3_EXECUTABLE} -c
     "import basix, os, sys; sys.stdout.write(os.path.dirname(basix.__file__))"
-  OUTPUT_VARIABLE BASIX_PY_DIR
-  RESULT_VARIABLE BASIX_PY_COMMAND_RESULT
-  ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
-)
+    OUTPUT_VARIABLE BASIX_PY_DIR
+    RESULT_VARIABLE BASIX_PY_COMMAND_RESULT
+    ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
 
-if(BASIX_PY_DIR)
-  message(STATUS "Adding ${BASIX_PY_DIR} to Basix search hints")
+  if(BASIX_PY_DIR)
+    message(STATUS "Adding ${BASIX_PY_DIR} to Basix search hints")
 
-  # Basix installed from manylinux wheel
-  if(IS_DIRECTORY ${BASIX_PY_DIR}/../fenics_basix.libs)
-    set(CMAKE_INSTALL_RPATH ${BASIX_PY_DIR}/../fenics_basix.libs)
+    # Basix installed from manylinux wheel
+    if(IS_DIRECTORY ${BASIX_PY_DIR}/../fenics_basix.libs)
+      set(CMAKE_INSTALL_RPATH ${BASIX_PY_DIR}/../fenics_basix.libs)
+    endif()
   endif()
 endif()
 
-find_package(Basix 0.6 REQUIRED CONFIG HINTS ${BASIX_PY_DIR})
+find_package(Basix 0.7 REQUIRED CONFIG HINTS ${BASIX_PY_DIR})
 set_package_properties(
   basix PROPERTIES
   TYPE REQUIRED
@@ -200,7 +203,7 @@ set_package_properties(
 # Check for PETSc
 find_package(PkgConfig REQUIRED)
 set(ENV{PKG_CONFIG_PATH}
-    "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}"
+  "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}"
 )
 pkg_search_module(PETSC REQUIRED IMPORTED_TARGET PETSc>=3.15 petsc>=3.15)
 
@@ -234,7 +237,7 @@ find_package(HDF5 REQUIRED COMPONENTS C)
 if(NOT HDF5_IS_PARALLEL)
   message(
     FATAL_ERROR
-      "Found serial HDF5 build, MPI HDF5 build required, try setting HDF5_DIR or HDF5_ROOT"
+    "Found serial HDF5 build, MPI HDF5 build required, try setting HDF5_DIR or HDF5_ROOT"
   )
 endif()
 
@@ -249,7 +252,7 @@ set_package_properties(
 # which method UFCx was found
 if(NOT DOLFINX_UFCX_PYTHON)
   # Check in CONFIG mode, i.e. look for installed ufcxConfig.cmake
-  find_package(ufcx 0.6 REQUIRED CONFIG)
+  find_package(ufcx 0.7 REQUIRED CONFIG)
 else()
   # Check in MODULE mode (using FindUFCX.cmake)
   find_package(
@@ -257,7 +260,7 @@ else()
     COMPONENTS Interpreter
     REQUIRED
   )
-  find_package(UFCx 0.6 REQUIRED MODULE)
+  find_package(UFCx 0.7 REQUIRED MODULE)
 endif()
 
 set_package_properties(
@@ -284,13 +287,13 @@ set_package_properties(
 if(DOLFINX_ENABLE_SLEPC)
   find_package(PkgConfig REQUIRED)
   set(ENV{PKG_CONFIG_PATH}
-      "$ENV{SLEPC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{SLEPC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}"
+    "$ENV{SLEPC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{SLEPC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}"
   )
   set(ENV{PKG_CONFIG_PATH}
-      "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}"
+    "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}"
   )
   set(ENV{PKG_CONFIG_PATH}
-      "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}:$ENV{PETSC_DIR}:$ENV{PKG_CONFIG_PATH}"
+    "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}:$ENV{PETSC_DIR}:$ENV{PKG_CONFIG_PATH}"
   )
   pkg_search_module(SLEPC IMPORTED_TARGET slepc>=3.15)
 
@@ -319,7 +322,7 @@ set_package_properties(
   SCOTCH PROPERTIES
   TYPE OPTIONAL
   DESCRIPTION
-    "Programs and libraries for graph, mesh and hypergraph partitioning"
+  "Programs and libraries for graph, mesh and hypergraph partitioning"
   URL "https://www.labri.fr/perso/pelegrin/scotch"
   PURPOSE "Parallel graph partitioning"
 )
@@ -350,12 +353,12 @@ set_package_properties(
 
 # Check that at least one graph partitioner has been found
 if(NOT SCOTCH_FOUND
-   AND NOT PARMETIS_FOUND
-   AND NOT KAHIP_FOUND
+  AND NOT PARMETIS_FOUND
+  AND NOT KAHIP_FOUND
 )
   message(
     FATAL_ERROR
-      "No graph partitioner found. SCOTCH, ParMETIS or KaHIP is required."
+    "No graph partitioner found. SCOTCH, ParMETIS or KaHIP is required."
   )
 endif()
 
@@ -389,43 +392,6 @@ install(
 )
 
 # ------------------------------------------------------------------------------
-# Copy data in demo/test directories to the build directories
-set(GENERATE_DEMO_TEST_DATA FALSE)
-
-if(Python3_Interpreter_FOUND
-   AND (${DOLFINX_SOURCE_DIR}/demo IS_NEWER_THAN
-        ${CMAKE_CURRENT_BINARY_DIR}/demo
-        OR ${DOLFINX_SOURCE_DIR}/test IS_NEWER_THAN
-           ${CMAKE_CURRENT_BINARY_DIR}/test
-       )
-)
-  file(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/demo
-       ${CMAKE_CURRENT_BINARY_DIR}/test
-  )
-  set(GENERATE_DEMO_TEST_DATA TRUE)
-endif()
-
-if(GENERATE_DEMO_TEST_DATA)
-  message(STATUS "")
-  message(STATUS "Copying demo and test data to build directory.")
-  message(STATUS "----------------------------------------------")
-  execute_process(
-    COMMAND
-      ${Python3_EXECUTABLE} "-B" "-u"
-      ${DOLFINX_SOURCE_DIR}/cmake/scripts/copy-test-demo-data.py
-      ${CMAKE_CURRENT_BINARY_DIR} ${PETSC_SCALAR_COMPLEX}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    RESULT_VARIABLE COPY_DEMO_DATA_RESULT
-    OUTPUT_VARIABLE COPY_DEMO_DATA_OUTPUT
-    ERROR_VARIABLE COPY_DEMO_DATA_OUTPUT
-  )
-
-  if(COPY_DEMO_DATA_RESULT)
-    message(FATAL_ERROR "Copy demo data failed: \n${COPY_DEMO_DATA_OUTPUT}")
-  endif()
-endif()
-
-# ------------------------------------------------------------------------------
 # Install the demo source files
 install(
   DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/demo
@@ -451,7 +417,7 @@ configure_file(
 
 add_custom_target(
   uninstall "${CMAKE_COMMAND}" -P
-            "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+  "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
 )
 
 # ------------------------------------------------------------------------------

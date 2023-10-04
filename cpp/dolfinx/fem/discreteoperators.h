@@ -10,6 +10,7 @@
 #include "FiniteElement.h"
 #include "FunctionSpace.h"
 #include <array>
+#include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/math.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -40,51 +41,58 @@ namespace dolfinx::fem
 /// @warning This function relies on the user supplying appropriate
 /// input and output spaces. See parameter descriptions.
 ///
-/// @param[in] V0 A Lagrange space to interpolate the gradient from
-/// @param[in] V1 A Nédélec (first kind) space to interpolate into
+/// @param[in] topology Mesh topology
+/// @param[in] V0 Lagrange element and dofmap for corresponding space to
+/// interpolate the gradient from
+/// @param[in] V1 Nédélec (first kind) element and and dofmap for
+/// corresponding space to interpolate into
 /// @param[in] mat_set A functor that sets values in a matrix
-template <typename T>
-void discrete_gradient(const FunctionSpace& V0, const FunctionSpace& V1,
+template <dolfinx::scalar T,
+          std::floating_point U = dolfinx::scalar_value_type_t<T>>
+void discrete_gradient(mesh::Topology& topology,
+                       std::pair<std::reference_wrapper<const FiniteElement<U>>,
+                                 std::reference_wrapper<const DofMap>>
+                           V0,
+                       std::pair<std::reference_wrapper<const FiniteElement<U>>,
+                                 std::reference_wrapper<const DofMap>>
+                           V1,
                        auto&& mat_set)
 {
-  namespace stdex = std::experimental;
-  using cmdspan2_t
-      = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
-  using mdspan2_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
-  using cmdspan4_t
-      = stdex::mdspan<const double, stdex::dextents<std::size_t, 4>>;
+  auto& e0 = V0.first.get();
+  const DofMap& dofmap0 = V0.second.get();
+  auto& e1 = V1.first.get();
+  const DofMap& dofmap1 = V1.second.get();
 
-  // Get mesh
-  std::shared_ptr<const mesh::Mesh> mesh = V1.mesh();
-  assert(mesh);
+  using cmdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      const U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+  using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+  using cmdspan4_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      const U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
 
-  // Check spaces
-  std::shared_ptr<const FiniteElement> e0 = V0.element();
-  assert(e0);
-  if (e0->map_type() != basix::maps::type::identity)
+  // Check elements
+  if (e0.map_type() != basix::maps::type::identity)
     throw std::runtime_error("Wrong finite element space for V0.");
-  if (e0->block_size() != 1)
+  if (e0.block_size() != 1)
     throw std::runtime_error("Block size is greater than 1 for V0.");
-  if (e0->reference_value_size() != 1)
+  if (e0.reference_value_size() != 1)
     throw std::runtime_error("Wrong value size for V0.");
 
-  std::shared_ptr<const FiniteElement> e1 = V1.element();
-  assert(e1);
-  if (e1->map_type() != basix::maps::type::covariantPiola)
+  if (e1.map_type() != basix::maps::type::covariantPiola)
     throw std::runtime_error("Wrong finite element space for V1.");
-  if (e1->block_size() != 1)
+  if (e1.block_size() != 1)
     throw std::runtime_error("Block size is greater than 1 for V1.");
 
   // Get V0 (H(curl)) space interpolation points
-  const auto [X, Xshape] = e1->interpolation_points();
+  const auto [X, Xshape] = e1.interpolation_points();
 
   // Tabulate first order derivatives of Lagrange space at H(curl)
   // interpolation points
-  const int ndofs0 = e0->space_dimension();
-  const int tdim = mesh->topology().dim();
-  std::vector<double> phi0_b((tdim + 1) * Xshape[0] * ndofs0 * 1);
+  const int ndofs0 = e0.space_dimension();
+  const int tdim = topology.dim();
+  std::vector<U> phi0_b((tdim + 1) * Xshape[0] * ndofs0 * 1);
   cmdspan4_t phi0(phi0_b.data(), tdim + 1, Xshape[0], ndofs0, 1);
-  e0->tabulate(phi0_b, X, Xshape, 1);
+  e0.tabulate(phi0_b, X, Xshape, 1);
 
   // Reshape lagrange basis derivatives as a matrix of shape (tdim *
   // num_points, num_dofs_per_cell)
@@ -94,31 +102,28 @@ void discrete_gradient(const FunctionSpace& V0, const FunctionSpace& V1,
 
   // Get inverse DOF transform function
   auto apply_inverse_dof_transform
-      = e1->get_dof_transformation_function<T>(true, true, false);
+      = e1.template get_dof_transformation_function<T>(true, true, false);
 
   // Generate cell permutations
-  mesh->topology_mutable().create_entity_permutations();
+  topology.create_entity_permutations();
   const std::vector<std::uint32_t>& cell_info
-      = mesh->topology().get_cell_permutation_info();
+      = topology.get_cell_permutation_info();
 
   // Create element kernel function
-  std::shared_ptr<const DofMap> dofmap0 = V0.dofmap();
-  assert(dofmap0);
-  std::shared_ptr<const DofMap> dofmap1 = V1.dofmap();
-  assert(dofmap1);
 
   // Build the element interpolation matrix
-  std::vector<T> Ab(e1->space_dimension() * ndofs0);
+  std::vector<T> Ab(e1.space_dimension() * ndofs0);
   {
-    stdex::mdspan<T, stdex::dextents<std::size_t, 2>> A(
-        Ab.data(), e1->space_dimension(), ndofs0);
-    const auto [Pi, shape] = e1->interpolation_operator();
+    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+        A(Ab.data(), e1.space_dimension(), ndofs0);
+    const auto [Pi, shape] = e1.interpolation_operator();
     cmdspan2_t _Pi(Pi.data(), shape);
     math::dot(_Pi, dphi_reshaped, A);
   }
 
   // Insert local interpolation matrix for each cell
-  auto cell_map = mesh->topology().index_map(tdim);
+  auto cell_map = topology.index_map(tdim);
   assert(cell_map);
   std::int32_t num_cells = cell_map->size_local();
   std::vector<T> Ae(Ab.size());
@@ -126,7 +131,7 @@ void discrete_gradient(const FunctionSpace& V0, const FunctionSpace& V1,
   {
     std::copy(Ab.cbegin(), Ab.cend(), Ae.begin());
     apply_inverse_dof_transform(Ae, cell_info, c, ndofs0);
-    mat_set(dofmap1->cell_dofs(c), dofmap0->cell_dofs(c), Ae);
+    mat_set(dofmap1.cell_dofs(c), dofmap0.cell_dofs(c), Ae);
   }
 }
 
@@ -145,29 +150,29 @@ void discrete_gradient(const FunctionSpace& V0, const FunctionSpace& V1,
 /// @param[in] V0 The space to interpolate from
 /// @param[in] V1 The space to interpolate to
 /// @param[in] mat_set A functor that sets values in a matrix
-template <typename T>
-void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
-                          auto&& mat_set)
+template <dolfinx::scalar T, std::floating_point U>
+void interpolation_matrix(const FunctionSpace<U>& V0,
+                          const FunctionSpace<U>& V1, auto&& mat_set)
 {
   // Get mesh
   auto mesh = V0.mesh();
   assert(mesh);
 
   // Mesh dims
-  const int tdim = mesh->topology().dim();
+  const int tdim = mesh->topology()->dim();
   const int gdim = mesh->geometry().dim();
 
   // Get elements
-  std::shared_ptr<const FiniteElement> e0 = V0.element();
+  std::shared_ptr<const FiniteElement<U>> e0 = V0.element();
   assert(e0);
-  std::shared_ptr<const FiniteElement> e1 = V1.element();
+  std::shared_ptr<const FiniteElement<U>> e1 = V1.element();
   assert(e1);
 
   std::span<const std::uint32_t> cell_info;
   if (e1->needs_dof_transformations() or e0->needs_dof_transformations())
   {
-    mesh->topology_mutable().create_entity_permutations();
-    cell_info = std::span(mesh->topology().get_cell_permutation_info());
+    mesh->topology_mutable()->create_entity_permutations();
+    cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
 
   // Get dofmaps
@@ -179,10 +184,10 @@ void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
   // Get block sizes and dof transformation operators
   const int bs0 = e0->block_size();
   const int bs1 = e1->block_size();
-  const auto apply_dof_transformation0
-      = e0->get_dof_transformation_function<double>(false, false, false);
-  const auto apply_inverse_dof_transform1
-      = e1->get_dof_transformation_function<T>(true, true, false);
+  auto apply_dof_transformation0
+      = e0->template get_dof_transformation_function<U>(false, false, false);
+  auto apply_inverse_dof_transform1
+      = e1->template get_dof_transformation_function<T>(true, true, false);
 
   // Get sizes of elements
   const std::size_t space_dim0 = e0->space_dimension();
@@ -193,33 +198,36 @@ void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
   const std::size_t value_size1 = e1->value_size() / bs1;
 
   // Get geometry data
-  const CoordinateElement& cmap = mesh->geometry().cmap();
-  const graph::AdjacencyList<std::int32_t>& x_dofmap
-      = mesh->geometry().dofmap();
-  const std::size_t num_dofs_g = cmap.dim();
-  std::span<const double> x_g = mesh->geometry().x();
+  auto cmaps = mesh->geometry().cmaps();
+  assert(cmaps.size() == 1);
 
-  namespace stdex = std::experimental;
-  using mdspan2_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
-  using cmdspan2_t
-      = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
-  using cmdspan3_t
-      = stdex::mdspan<const double, stdex::dextents<std::size_t, 3>>;
-  using cmdspan4_t
-      = stdex::mdspan<const double, stdex::dextents<std::size_t, 4>>;
-  using mdspan3_t = stdex::mdspan<double, stdex::dextents<std::size_t, 3>>;
+  const CoordinateElement<U>& cmap = cmaps.back();
+  auto x_dofmap = mesh->geometry().dofmap();
+  const std::size_t num_dofs_g = cmap.dim();
+  std::span<const U> x_g = mesh->geometry().x();
+
+  using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+  using cmdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      const U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+  using cmdspan3_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      const U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 3>>;
+  using cmdspan4_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      const U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
+  using mdspan3_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 3>>;
 
   // Evaluate coordinate map basis at reference interpolation points
   const auto [X, Xshape] = e1->interpolation_points();
   std::array<std::size_t, 4> phi_shape = cmap.tabulate_shape(1, Xshape[0]);
-  std::vector<double> phi_b(
+  std::vector<U> phi_b(
       std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
   cmdspan4_t phi(phi_b.data(), phi_shape);
   cmap.tabulate(1, X, Xshape, phi_b);
 
   // Evaluate V0 basis functions at reference interpolation points for V1
-  std::vector<double> basis_derivatives_reference0_b(Xshape[0] * dim0
-                                                     * value_size_ref0);
+  std::vector<U> basis_derivatives_reference0_b(Xshape[0] * dim0
+                                                * value_size_ref0);
   cmdspan4_t basis_derivatives_reference0(basis_derivatives_reference0_b.data(),
                                           1, Xshape[0], dim0, value_size_ref0);
   e0->tabulate(basis_derivatives_reference0_b, X, Xshape, 0);
@@ -232,15 +240,15 @@ void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
                  { return std::abs(x) < atol ? 0.0 : x; });
 
   // Create working arrays
-  std::vector<double> basis_reference0_b(Xshape[0] * dim0 * value_size_ref0);
+  std::vector<U> basis_reference0_b(Xshape[0] * dim0 * value_size_ref0);
   mdspan3_t basis_reference0(basis_reference0_b.data(), Xshape[0], dim0,
                              value_size_ref0);
-  std::vector<double> J_b(Xshape[0] * gdim * tdim);
+  std::vector<U> J_b(Xshape[0] * gdim * tdim);
   mdspan3_t J(J_b.data(), Xshape[0], gdim, tdim);
-  std::vector<double> K_b(Xshape[0] * tdim * gdim);
+  std::vector<U> K_b(Xshape[0] * tdim * gdim);
   mdspan3_t K(K_b.data(), Xshape[0], tdim, gdim);
-  std::vector<double> detJ(Xshape[0]);
-  std::vector<double> det_scratch(2 * tdim * gdim);
+  std::vector<U> detJ(Xshape[0]);
+  std::vector<U> det_scratch(2 * tdim * gdim);
 
   // Get the interpolation operator (matrix) `Pi` that maps a function
   // evaluated at the interpolation points to the element degrees of
@@ -250,28 +258,32 @@ void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
 
   bool interpolation_ident = e1->interpolation_ident();
 
-  namespace stdex = std::experimental;
-  using u_t = stdex::mdspan<double, stdex::dextents<std::size_t, 2>>;
-  using U_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
-  using J_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
-  using K_t = stdex::mdspan<const double, stdex::dextents<std::size_t, 2>>;
-  auto push_forward_fn0 = e0->basix_element().map_fn<u_t, U_t, J_t, K_t>();
+  using u_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+  using U_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      const U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+  using J_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      const U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+  using K_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      const U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+  auto push_forward_fn0
+      = e0->basix_element().template map_fn<u_t, U_t, J_t, K_t>();
 
   // Basis values of Lagrange space unrolled for block size
   // (num_quadrature_points, Lagrange dof, value_size)
-  std::vector<double> basis_values_b(Xshape[0] * bs0 * dim0 * e1->value_size());
+  std::vector<U> basis_values_b(Xshape[0] * bs0 * dim0 * e1->value_size());
   mdspan3_t basis_values(basis_values_b.data(), Xshape[0], bs0 * dim0,
                          e1->value_size());
-  std::vector<double> mapped_values_b(Xshape[0] * bs0 * dim0
-                                      * e1->value_size());
+  std::vector<U> mapped_values_b(Xshape[0] * bs0 * dim0 * e1->value_size());
   mdspan3_t mapped_values(mapped_values_b.data(), Xshape[0], bs0 * dim0,
                           e1->value_size());
 
-  auto pull_back_fn1 = e1->basix_element().map_fn<u_t, U_t, K_t, J_t>();
+  auto pull_back_fn1
+      = e1->basix_element().template map_fn<u_t, U_t, K_t, J_t>();
 
-  std::vector<double> coord_dofs_b(num_dofs_g * gdim);
+  std::vector<U> coord_dofs_b(num_dofs_g * gdim);
   mdspan2_t coord_dofs(coord_dofs_b.data(), num_dofs_g, gdim);
-  std::vector<double> basis0_b(Xshape[0] * dim0 * value_size0);
+  std::vector<U> basis0_b(Xshape[0] * dim0 * value_size0);
   mdspan3_t basis0(basis0_b.data(), Xshape[0], dim0, value_size0);
 
   // Buffers
@@ -279,13 +291,15 @@ void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
   std::vector<T> local1(space_dim1);
 
   // Iterate over mesh and interpolate on each cell
-  auto cell_map = mesh->topology().index_map(tdim);
+  auto cell_map = mesh->topology()->index_map(tdim);
   assert(cell_map);
   std::int32_t num_cells = cell_map->size_local();
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     // Get cell geometry (coordinate dofs)
-    auto x_dofs = x_dofmap.links(c);
+    auto x_dofs
+        = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+            submdspan(x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       for (std::size_t j = 0; j < gdim; ++j)
@@ -296,11 +310,17 @@ void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
     std::fill(J_b.begin(), J_b.end(), 0);
     for (std::size_t p = 0; p < Xshape[0]; ++p)
     {
-      auto dphi = stdex::submdspan(phi, std::pair(1, tdim + 1), p,
-                                   stdex::full_extent, 0);
-      auto _J = stdex::submdspan(J, p, stdex::full_extent, stdex::full_extent);
+      auto dphi
+          = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+              submdspan(phi, std::pair(1, tdim + 1), p,
+                        MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
+      auto _J = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+          submdspan(J, p, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
+                    MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
       cmap.compute_jacobian(dphi, coord_dofs, _J);
-      auto _K = stdex::submdspan(K, p, stdex::full_extent, stdex::full_extent);
+      auto _K = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+          submdspan(K, p, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
+                    MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
       cmap.compute_jacobian_inverse(_J, _K);
       detJ[p] = cmap.compute_jacobian_determinant(_J, det_scratch);
     }
@@ -322,12 +342,19 @@ void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
 
     for (std::size_t p = 0; p < basis0.extent(0); ++p)
     {
-      auto _u
-          = stdex::submdspan(basis0, p, stdex::full_extent, stdex::full_extent);
-      auto _U = stdex::submdspan(basis_reference0, p, stdex::full_extent,
-                                 stdex::full_extent);
-      auto _K = stdex::submdspan(K, p, stdex::full_extent, stdex::full_extent);
-      auto _J = stdex::submdspan(J, p, stdex::full_extent, stdex::full_extent);
+      auto _u = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+          submdspan(basis0, p, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
+                    MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto _U = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+          submdspan(basis_reference0, p,
+                    MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
+                    MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto _K = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+          submdspan(K, p, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
+                    MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto _J = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+          submdspan(J, p, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
+                    MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
       push_forward_fn0(_u, _U, _J, detJ[p], _K);
     }
 
@@ -341,12 +368,20 @@ void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
     // Pull back the physical values to the reference of output space
     for (std::size_t p = 0; p < basis_values.extent(0); ++p)
     {
-      auto _u = stdex::submdspan(basis_values, p, stdex::full_extent,
-                                 stdex::full_extent);
-      auto _U = stdex::submdspan(mapped_values, p, stdex::full_extent,
-                                 stdex::full_extent);
-      auto _K = stdex::submdspan(K, p, stdex::full_extent, stdex::full_extent);
-      auto _J = stdex::submdspan(J, p, stdex::full_extent, stdex::full_extent);
+      auto _u = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+          submdspan(basis_values, p,
+                    MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
+                    MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto _U = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+          submdspan(mapped_values, p,
+                    MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
+                    MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto _K = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+          submdspan(K, p, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
+                    MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto _J = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+          submdspan(J, p, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
+                    MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
       pull_back_fn1(_U, _u, _K, 1.0 / detJ[p], _J);
     }
 
@@ -354,8 +389,9 @@ void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
     // interpolation points of V1
     if (interpolation_ident)
     {
-      stdex::mdspan<T, stdex::dextents<std::size_t, 3>> A(
-          Ab.data(), Xshape[0], e1->value_size(), space_dim0);
+      MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+          T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 3>>
+          A(Ab.data(), Xshape[0], e1->value_size(), space_dim0);
       for (std::size_t i = 0; i < mapped_values.extent(0); ++i)
         for (std::size_t j = 0; j < mapped_values.extent(1); ++j)
           for (std::size_t k = 0; k < mapped_values.extent(2); ++k)
@@ -365,8 +401,11 @@ void interpolation_matrix(const FunctionSpace& V0, const FunctionSpace& V1,
     {
       for (std::size_t i = 0; i < mapped_values.extent(1); ++i)
       {
-        auto values = stdex::submdspan(mapped_values, stdex::full_extent, i,
-                                       stdex::full_extent);
+        auto values
+            = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+                submdspan(mapped_values,
+                          MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, i,
+                          MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
         impl::interpolation_apply(Pi_1, values, std::span(local1), bs1);
         for (std::size_t j = 0; j < local1.size(); j++)
           Ab[space_dim0 * j + i] = local1[j];

@@ -6,17 +6,18 @@
 
 from pathlib import Path
 
+import dolfinx.graph
 import numpy as np
 import pytest
-
-import dolfinx
-import dolfinx.graph
 import ufl
+from basix.ufl import element
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (CellType, GhostMode, compute_midpoints, create_box,
                           create_cell_partitioner, create_mesh)
-
 from mpi4py import MPI
+
+import dolfinx
+from dolfinx import default_real_type
 
 partitioners = [dolfinx.graph.partitioner()]
 try:
@@ -42,7 +43,7 @@ except ImportError:
 def test_partition_box_mesh(gpart, Nx, cell_type):
     part = create_cell_partitioner(gpart)
     mesh = create_box(MPI.COMM_WORLD, [np.array([0, 0, 0]), np.array([1, 1, 1])], [Nx, Nx, Nx],
-                      cell_type, GhostMode.shared_facet, part)
+                      cell_type, ghost_mode=GhostMode.shared_facet, partitioner=part)
     tdim = mesh.topology.dim
     c = 6 if cell_type == CellType.tetrahedron else 1
     assert mesh.topology.index_map(tdim).size_global == Nx**3 * c
@@ -50,13 +51,14 @@ def test_partition_box_mesh(gpart, Nx, cell_type):
     assert mesh.topology.index_map(0).size_global == (Nx + 1)**3
 
 
+@pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
 @pytest.mark.parametrize("Nx", [3, 10, 13])
 @pytest.mark.parametrize("cell_type", [CellType.tetrahedron, CellType.hexahedron])
 def test_custom_partitioner(tempdir, Nx, cell_type):
     mpi_comm = MPI.COMM_WORLD
     Lx = mpi_comm.size
     points = [np.array([0, 0, 0]), np.array([Lx, Lx, Lx])]
-    mesh = create_box(mpi_comm, points, [Nx, Nx, Nx], cell_type, GhostMode.shared_facet)
+    mesh = create_box(mpi_comm, points, [Nx, Nx, Nx], cell_type, ghost_mode=GhostMode.shared_facet)
 
     filename = Path(tempdir, "u1_.xdmf")
     with XDMFFile(mpi_comm, filename, "w") as file:
@@ -79,10 +81,9 @@ def test_custom_partitioner(tempdir, Nx, cell_type):
 
     # Testing the premise: coordinates are read contiguously in chunks
     rank = mpi_comm.rank
-    assert (np.all(x_global[all_ranges[rank]:all_ranges[rank + 1]] == x))
+    assert np.all(x_global[all_ranges[rank]:all_ranges[rank + 1]] == x)
 
-    cell = ufl.Cell(cell_shape.name)
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, cell_degree))
+    domain = ufl.Mesh(element("Lagrange", cell_shape.name, cell_degree, shape=(3, )))
 
     # Partition mesh in layers, capture geometrical data and topological
     # data from outer scope
@@ -106,8 +107,7 @@ def test_asymmetric_partitioner():
     mpi_comm = MPI.COMM_WORLD
     n = mpi_comm.Get_size()
     r = mpi_comm.Get_rank()
-    cell = ufl.Cell("triangle")
-    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, 1))
+    domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(2,)))
 
     # Create a simple triangle mesh with a strip on each process
     topo = []
@@ -116,7 +116,6 @@ def test_asymmetric_partitioner():
         k = (i + 1) * (n + 1) + r
         topo += [[j, j + 1, k]]
         topo += [[j + 1, k, k + 1]]
-
     topo = np.array(topo, dtype=int)
 
     # Dummy geometry

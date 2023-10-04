@@ -6,7 +6,7 @@
 //
 // Unit tests for Distributed Meshes
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include <dolfinx.h>
 
 using namespace dolfinx;
@@ -15,10 +15,8 @@ namespace
 {
 void test_ci_failure()
 {
-
   auto mpi_comm = dolfinx::MPI::Comm(MPI_COMM_WORLD);
   int mpi_rank = dolfinx::MPI::rank(mpi_comm.comm());
-
   REQUIRE_FALSE(mpi_rank == -1);
 }
 } // namespace

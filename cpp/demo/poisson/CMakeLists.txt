@@ -2,7 +2,7 @@
 #
 # python cmake/scripts/generate-cmakefiles from dolfinx/cpp
 #
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.19)
 
 set(PROJECT_NAME demo_poisson)
 project(${PROJECT_NAME} LANGUAGES C CXX)
@@ -19,10 +19,21 @@ endif()
 include(CheckSymbolExists)
 set(CMAKE_REQUIRED_INCLUDES ${PETSC_INCLUDE_DIRS})
 check_symbol_exists(PETSC_USE_COMPLEX petscsystypes.h PETSC_SCALAR_COMPLEX)
+check_symbol_exists(PETSC_USE_REAL_DOUBLE petscsystypes.h PETSC_REAL_DOUBLE)
 
 # Add target to compile UFL files
 if(PETSC_SCALAR_COMPLEX EQUAL 1)
-  set(SCALAR_TYPE "--scalar_type=double _Complex")
+  if(PETSC_REAL_DOUBLE EQUAL 1)
+    set(SCALAR_TYPE "--scalar_type=double _Complex")
+  else()
+    set(SCALAR_TYPE "--scalar_type=float _Complex")
+  endif()
+else()
+  if(PETSC_REAL_DOUBLE EQUAL 1)
+    set(SCALAR_TYPE "--scalar_type=double")
+  else()
+    set(SCALAR_TYPE "--scalar_type=float")
+  endif()
 endif()
 add_custom_command(
   OUTPUT poisson.c
@@ -34,7 +45,9 @@ add_custom_command(
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-add_executable(${PROJECT_NAME} main.cpp ${CMAKE_CURRENT_BINARY_DIR}/poisson.c)
+add_executable(
+  ${PROJECT_NAME} main.cpp ${CMAKE_CURRENT_BINARY_DIR}/poisson.c
+)
 target_link_libraries(${PROJECT_NAME} dolfinx)
 
 # Do not throw error for 'multi-line comments' (these are typical in rst which

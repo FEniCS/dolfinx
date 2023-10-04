@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.13.6
+#       jupytext_version: 1.15.1
 # ---
 
 # # Cahn-Hilliard equation
@@ -22,19 +22,19 @@
 #   ({py:class}`NewtonSolver<dolfinx.nls.petsc.NewtonSolver>`)
 # - Form compiler options
 # - Interpolation of functions
-# - Visualisation of a running simulation with pyvista
+# - Visualisation of a running simulation with
+#   [PyVista](https://pyvista.org/)
 #
 # This demo is implemented in {download}`demo_cahn-hilliard.py`.
 #
 # ## Equation and problem definition
 #
-# The Cahn-Hilliard equation is a parabolic equation and is typically used
-# to model phase separation in binary mixtures.  It involves first-order
-# time derivatives, and second- and fourth-order spatial derivatives.  The
-# equation reads:
+# The Cahn-Hilliard equation is a parabolic equation and is typically
+# used to model phase separation in binary mixtures.  It involves
+# first-order time derivatives, and second- and fourth-order spatial
+# derivatives.  The equation reads:
 #
 # $$
-# \begin{align}
 # \frac{\partial c}{\partial t} -
 #   \nabla \cdot M \left(\nabla\left(\frac{d f}{dc}
 #   - \lambda \nabla^{2}c\right)\right) &= 0 \quad {\rm in} \ \Omega, \\
@@ -42,66 +42,56 @@
 #   \lambda \nabla^{2}c\right)\right) \cdot n
 #   &= 0 \quad {\rm on} \ \partial\Omega, \\
 # M \lambda \nabla c \cdot n &= 0 \quad {\rm on} \ \partial\Omega.
-# \end{align}
 # $$
 #
-# where $c$ is the unknown field, the function $f$ is usually
-# non-convex in $c$ (a fourth-order polynomial is commonly used),
-# $n$ is the outward directed boundary normal, and $M$ is a
-# scalar parameter.
+# where $c$ is the unknown field, the function $f$ is usually non-convex
+# in $c$ (a fourth-order polynomial is commonly used), $n$ is the
+# outward directed boundary normal, and $M$ is a scalar parameter.
 #
 # ### Operator split form
 #
-# The Cahn-Hilliard equation is a fourth-order equation, so casting it in
-# a weak form would result in the presence of second-order spatial
+# The Cahn-Hilliard equation is a fourth-order equation, so casting it
+# in a weak form would result in the presence of second-order spatial
 # derivatives, and the problem could not be solved using a standard
-# Lagrange finite element basis.  A solution is to rephrase the problem as
-# two coupled second-order equations:
+# Lagrange finite element basis.  A solution is to rephrase the problem
+# as two coupled second-order equations:
 #
 # $$
-# \begin{align}
 # \frac{\partial c}{\partial t} - \nabla \cdot M \nabla\mu
 #     &= 0 \quad {\rm in} \ \Omega, \\
 # \mu -  \frac{d f}{d c} + \lambda \nabla^{2}c &= 0 \quad {\rm in} \ \Omega.
-# \end{align}
 # $$
 #
-# The unknown fields are now $c$ and $\mu$. The weak
-# (variational) form of the problem reads: find $(c, \mu) \in V
-# \times V$ such that
+# The unknown fields are now $c$ and $\mu$. The weak (variational) form
+# of the problem reads: find $(c, \mu) \in V \times V$ such that
 #
 # $$
-# \begin{align}
 # \int_{\Omega} \frac{\partial c}{\partial t} q \, {\rm d} x +
 #     \int_{\Omega} M \nabla\mu \cdot \nabla q \, {\rm d} x
 #     &= 0 \quad \forall \ q \in V,  \\
 # \int_{\Omega} \mu v \, {\rm d} x - \int_{\Omega} \frac{d f}{d c} v \, {\rm d} x
 #   - \int_{\Omega} \lambda \nabla c \cdot \nabla v \, {\rm d} x
 #    &= 0 \quad \forall \ v \in V.
-# \end{align}
 # $$
 #
 # ### Time discretisation
 #
 # Before being able to solve this problem, the time derivative must be
-# dealt with. Apply the $\theta$-method to the mixed weak form of
-# the equation:
+# dealt with. Apply the $\theta$-method to the mixed weak form of the
+# equation:
 #
 # $$
-# \begin{align}
 # \int_{\Omega} \frac{c_{n+1} - c_{n}}{dt} q \, {\rm d} x
 # + \int_{\Omega} M \nabla \mu_{n+\theta} \cdot \nabla q \, {\rm d} x
 #        &= 0 \quad \forall \ q \in V  \\
 # \int_{\Omega} \mu_{n+1} v  \, {\rm d} x - \int_{\Omega} \frac{d f_{n+1}}{d c} v  \, {\rm d} x
 # - \int_{\Omega} \lambda \nabla c_{n+1} \cdot \nabla v \, {\rm d} x
 #        &= 0 \quad \forall \ v \in V
-# \end{align}
 # $$
 #
-# where $dt = t_{n+1} - t_{n}$ and $\mu_{n+\theta} =
-# (1-\theta) \mu_{n} + \theta \mu_{n+1}$.  The task is: given
-# $c_{n}$ and $\mu_{n}$, solve the above equation to find
-# $c_{n+1}$ and $\mu_{n+1}$.
+# where $dt = t_{n+1} - t_{n}$ and $\mu_{n+\theta} = (1-\theta) \mu_{n} + \theta \mu_{n+1}$.
+# The task is: given $c_{n}$ and $\mu_{n}$, solve the above equation to
+# find $c_{n+1}$ and $\mu_{n+1}$.
 #
 # ### Demo parameters
 #
@@ -126,8 +116,9 @@ import os
 import numpy as np
 
 import ufl
-from dolfinx import log, plot
-from dolfinx.fem import Function, FunctionSpace
+from basix.ufl import element, mixed_element
+from dolfinx import default_real_type, log, plot
+from dolfinx.fem import Function, functionspace
 from dolfinx.fem.petsc import NonlinearProblem
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_unit_square
@@ -159,12 +150,12 @@ theta = 0.5  # time stepping family, e.g. theta=1 -> backward Euler, theta=0.5 -
 
 # A unit square mesh with 96 cells edges in each direction is created,
 # and on this mesh a
-# {py:class}`FunctionSpace<dolfinx.fem.FunctionSpace>` `ME` is built
+# {py:class}`FunctionSpaceBase <dolfinx.fem.FunctionSpaceBase>` `ME` is built
 # using a pair of linear Lagrange elements.
 
 msh = create_unit_square(MPI.COMM_WORLD, 96, 96, CellType.triangle)
-P1 = ufl.FiniteElement("Lagrange", msh.ufl_cell(), 1)
-ME = FunctionSpace(msh, P1 * P1)
+P1 = element("Lagrange", msh.basix_cell(), 1)
+ME = functionspace(msh, mixed_element([P1, P1]))
 
 # Trial and test functions of the space `ME` are now defined:
 
@@ -175,11 +166,10 @@ q, v = ufl.TestFunctions(ME)
 #
 # For the test functions, {py:func}`TestFunctions<function
 # ufl.argument.TestFunctions>` (note the 's' at the end) is used to
-# define the scalar test functions `q` and `v`. Some mixed objects
-# of the {py:class}`Function<dolfinx.fem.function.Function>` class on
-# `ME` are defined to represent $u = (c_{n+1}, \mu_{n+1})$ and
-# $u0 = (c_{n}, \mu_{n})$, and these are then split into
-# sub-functions:
+# define the scalar test functions `q` and `v`. Some mixed objects of
+# the {py:class}`Function<dolfinx.fem.function.Function>` class on `ME`
+# are defined to represent $u = (c_{n+1}, \mu_{n+1})$ and $u0 = (c_{n},
+# \mu_{n})$, and these are then split into sub-functions:
 
 # +
 u = Function(ME)  # current solution
@@ -209,9 +199,9 @@ u.x.scatter_forward()
 # -
 
 # The first line creates an object of type `InitialConditions`.  The
-# following two lines make `u` and `u0` interpolants of `u_init`
-# (since `u` and `u0` are finite element functions, they may not be
-# able to represent a given function exactly, but the function can be
+# following two lines make `u` and `u0` interpolants of `u_init` (since
+# `u` and `u0` are finite element functions, they may not be able to
+# represent a given function exactly, but the function can be
 # approximated by interpolating it in a finite element space).
 #
 # ```{index} automatic differentiation
@@ -226,9 +216,9 @@ f = 100 * c**2 * (1 - c)**2
 dfdc = ufl.diff(f, c)
 
 # The first line declares that `c` is a variable that some function can
-# be differentiated with respect to. The next line is the function
-# $f$ defined in the problem statement, and the third line performs
-# the differentiation of `f` with respect to the variable `c`.
+# be differentiated with respect to. The next line is the function $f$
+# defined in the problem statement, and the third line performs the
+# differentiation of `f` with respect to the variable `c`.
 #
 # It is convenient to introduce an expression for $\mu_{n+\theta}$:
 
@@ -242,8 +232,8 @@ F0 = inner(c, q) * dx - inner(c0, q) * dx + dt * inner(grad(mu_mid), grad(q)) * 
 F1 = inner(mu, v) * dx - inner(dfdc, v) * dx - lmbda * inner(grad(c), grad(v)) * dx
 F = F0 + F1
 
-# This is a statement of the time-discrete equations presented as part of
-# the problem statement, using UFL syntax.
+# This is a statement of the time-discrete equations presented as part
+# of the problem statement, using UFL syntax.
 #
 # ```{index} single: Newton solver; (in Cahn-Hilliard demo)
 # ```
@@ -257,12 +247,12 @@ F = F0 + F1
 problem = NonlinearProblem(F, u)
 solver = NewtonSolver(MPI.COMM_WORLD, problem)
 solver.convergence_criterion = "incremental"
-solver.rtol = 1e-6
+solver.rtol = np.sqrt(np.finfo(default_real_type).eps) * 1e-2
 
 # We can customize the linear solver used inside the NewtonSolver by
 # modifying the PETSc options
 ksp = solver.krylov_solver
-opts = PETSc.Options()
+opts = PETSc.Options()  # type: ignore
 option_prefix = ksp.getOptionsPrefix()
 opts[f"{option_prefix}ksp_type"] = "preonly"
 opts[f"{option_prefix}pc_type"] = "lu"
@@ -300,7 +290,7 @@ V0, dofs = ME.sub(0).collapse()
 # Prepare viewer for plotting the solution during the computation
 if have_pyvista:
     # Create a VTK 'mesh' with 'nodes' at the function dofs
-    topology, cell_types, x = plot.create_vtk_mesh(V0)
+    topology, cell_types, x = plot.vtk_mesh(V0)
     grid = pv.UnstructuredGrid(topology, cell_types, x)
 
     # Set output data

@@ -13,17 +13,17 @@ on:
 jobs:
   pyvista:
     if: "!(contains(github.event.head_commit.message, '[ci skip]') || contains(github.event.head_commit.message, '[skip ci]'))"
-    runs-on: ubuntu-22.04
-    container: fenicsproject/test-env:nightly-openmpi
+    runs-on: ubuntu-latest
+    container: fenicsproject/test-env:current-openmpi
 
     env:
       # For pyvista/pyvistaqt
       DISPLAY: ":99.0"
       PYVISTA_OFF_SCREEN: true
-      PYVISTA_QT_VERSION: 0.9.0
-      PYVISTA_VERSION: 0.37.0
+      PYVISTA_QT_VERSION: 0.11.0
+      PYVISTA_VERSION: 0.40.0
 
-      PETSC_ARCH: linux-gnu-${{ matrix.petsc_arch }}-32
+      PETSC_ARCH: ${{ matrix.petsc_arch }}
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
       OMPI_MCA_rmaps_base_oversubscribe: 1
@@ -34,10 +34,11 @@ jobs:
 
     strategy:
       matrix:
-        petsc_arch: [real, complex]
+        # petsc_arch: [real, complex]
+        petsc_arch: [linux-gnu-real64-32, linux-gnu-complex128-32]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install FEniCS Python components
         run: |
@@ -47,9 +48,9 @@ jobs:
           apt-get update
           apt-get install -y --no-install-recommends libgl1-mesa-dev xvfb  # pyvista
           apt-get install -y --no-install-recommends python3-pyqt5 libgl1-mesa-glx  # pyvistaqt
-          pip3 install pyvista==${PYVISTA_VERSION}
-          pip3 install pyvistaqt==${PYVISTA_QT_VERSION}
-          pip3 install matplotlib
+          python3 -m pip install pyvista==${PYVISTA_VERSION}
+          python3 -m pip install pyvistaqt==${PYVISTA_QT_VERSION}
+          python3 -m pip install matplotlib ipython
 
       - name: Configure C++
         run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
@@ -64,5 +65,5 @@ jobs:
       - name: Run pyvista demos (Python, serial)
         run: python3 -m pytest -v -n=2 -m serial --durations=10 python/demo/test.py
 
-      - name: Run pyivsta demos (Python, MPI (np=2))
+      - name: Run pyvista demos (Python, MPI (np=2))
         run: python3 -m pytest -v -m mpi --num-proc=2 python/demo/test.py

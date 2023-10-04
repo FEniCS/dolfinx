@@ -1,14 +1,12 @@
-from ufl import (Coefficient, Constant, FiniteElement, FunctionSpace, Mesh,
-                 TestFunction, TrialFunction, VectorElement, dx, grad, inner,
-                 tetrahedron)
-import basix
-from basix.ufl_wrapper import create_vector_element
+from ufl import (Coefficient, Constant, FunctionSpace, Mesh,
+                 TestFunction, TrialFunction, dx, grad, inner)
+from basix.ufl import element
 
-element = FiniteElement("Lagrange", tetrahedron, 2)
-coord_element = create_vector_element("Lagrange", "tetrahedron", 1)
+e = element("Lagrange", "tetrahedron", 2)
+coord_element = element("Lagrange", "tetrahedron", 1,  shape=(3,))
 mesh = Mesh(coord_element)
 
-V = FunctionSpace(mesh, element)
+V = FunctionSpace(mesh, e)
 
 u = TrialFunction(V)
 v = TestFunction(V)

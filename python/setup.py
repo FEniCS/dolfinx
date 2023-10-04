@@ -11,15 +11,15 @@ if sys.version_info < (3, 8):
     print("Python 3.8 or higher required, please upgrade.")
     sys.exit(1)
 
-VERSION = "0.6.0"
+VERSION = "0.7.0"
 
 REQUIREMENTS = [
     "cffi",
     "numpy>=1.21",
     "mpi4py",
     "petsc4py",
-    "fenics-ffcx>=0.6.0,<0.7.0",
-    "fenics-ufl>=2023.1.0,<2023.2.0"
+    "fenics-ffcx>=0.7.0,<0.8.0",
+    "fenics-ufl>=2023.2.0,<2023.3.0"
 ]
 
 
@@ -48,11 +48,13 @@ class CMakeBuild(build_ext):
                        f'-DPython3_LIBRARIES={sysconfig.get_config_var("LIBDEST")}',
                        f'-DPython3_INCLUDE_DIRS={sysconfig.get_config_var("INCLUDEPY")}']
 
-        cfg = 'Debug' if self.debug else 'Release'
-        build_args = ['--config', cfg]
-        cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
-
         env = os.environ.copy()
+        build_args = []
+        if "CMAKE_BUILD_TYPE" not in env:
+            cfg = 'Debug' if self.debug else 'Release'
+            build_args += ['--config', cfg]
+            cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
+
         # default to 3 build threads
         if "CMAKE_BUILD_PARALLEL_LEVEL" not in env:
             env["CMAKE_BUILD_PARALLEL_LEVEL"] = "3"

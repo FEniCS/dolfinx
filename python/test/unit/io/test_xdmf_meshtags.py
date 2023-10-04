@@ -9,11 +9,11 @@ from xml.etree import ElementTree
 
 import numpy as np
 import pytest
-
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_unit_cube, locate_entities, meshtags
-
 from mpi4py import MPI
+
+from dolfinx import default_real_type
 
 # Supported XDMF file encoding
 if MPI.COMM_WORLD.size > 1:
@@ -24,6 +24,7 @@ else:
 celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
 
 
+@pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
 @pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
 def test_3d(tempdir, cell_type, encoding):
@@ -55,8 +56,8 @@ def test_3d(tempdir, cell_type, encoding):
 
     with XDMFFile(comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
-        file.write_meshtags(mt)
-        file.write_meshtags(mt_lines)
+        file.write_meshtags(mt, mesh.geometry)
+        file.write_meshtags(mt_lines, mesh.geometry)
         file.write_information("units", "mm")
 
     with XDMFFile(comm, filename, "r", encoding=encoding) as file:
@@ -74,8 +75,8 @@ def test_3d(tempdir, cell_type, encoding):
 
     with XDMFFile(comm, Path(tempdir, "meshtags_3d_out.xdmf"), "w", encoding=encoding) as file:
         file.write_mesh(mesh_in)
-        file.write_meshtags(mt_lines_in)
-        file.write_meshtags(mt_in)
+        file.write_meshtags(mt_lines_in, mesh_in.geometry)
+        file.write_meshtags(mt_in, mesh_in.geometry)
 
     # Check number of owned and marked entities
     lines_local = comm.allreduce((mt_lines.indices < mesh.topology.index_map(1).size_local).sum(), op=MPI.SUM)

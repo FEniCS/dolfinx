@@ -163,10 +163,9 @@ common::stack_index_maps(
 
   // Build list of src ranks (ranks that own ghosts)
   std::vector<int> src;
-  for (auto& map : maps)
+  for (auto& [map, _] : maps)
   {
-    src.insert(src.end(), map.first.get().owners().begin(),
-               map.first.get().owners().end());
+    src.insert(src.end(), map.get().owners().begin(), map.get().owners().end());
     std::sort(src.begin(), src.end());
     src.erase(std::unique(src.begin(), src.end()), src.end());
   }
@@ -313,7 +312,7 @@ common::stack_index_maps(
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size)
-    : _comm(comm), _overlapping(false)
+    : _comm(comm, true), _overlapping(false)
 {
   // Get global offset (index), using partial exclusive reduction
   std::int64_t offset = 0;
@@ -350,7 +349,7 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
                    const std::array<std::vector<int>, 2>& src_dest,
                    std::span<const std::int64_t> ghosts,
                    std::span<const int> owners)
-    : _comm(comm), _ghosts(ghosts.begin(), ghosts.end()),
+    : _comm(comm, true), _ghosts(ghosts.begin(), ghosts.end()),
       _owners(owners.begin(), owners.end()), _src(src_dest[0]),
       _dest(src_dest[1]), _overlapping(true)
 {
@@ -360,7 +359,7 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
 
   // Get global offset (index), using partial exclusive reduction
   std::int64_t offset = 0;
-  const std::int64_t local_size_tmp = (std::int64_t)local_size;
+  const std::int64_t local_size_tmp = local_size;
   MPI_Request request_scan;
   int ierr = MPI_Iexscan(&local_size_tmp, &offset, 1, MPI_INT64_T, MPI_SUM,
                          comm, &request_scan);
@@ -481,15 +480,10 @@ IndexMap::create_submap(std::span<const std::int32_t> indices) const
 
   // --- Step 2: Send ghost indices to owning rank
 
-  // Build list of src ranks (ranks that own ghosts)
-  std::vector<int> src = this->owners();
-  std::sort(src.begin(), src.end());
-  src.erase(std::unique(src.begin(), src.end()), src.end());
-
-  // Determine destination ranks (ranks that ghost my indices), and sort
-  std::vector<int> dest
-      = dolfinx::MPI::compute_graph_edges_nbx(this->comm(), src);
-  std::sort(dest.begin(), dest.end());
+  // Get source ranks (ranks that own ghosts) and destination ranks
+  // (ranks that ghost my indices)
+  const std::vector<int>& src = this->src();
+  const std::vector<int>& dest = this->dest();
 
   std::vector<std::int64_t> recv_indices;
   std::vector<std::size_t> ghost_buffer_pos;

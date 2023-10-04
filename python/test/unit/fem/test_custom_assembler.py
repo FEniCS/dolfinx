@@ -14,8 +14,6 @@ import pathlib
 import time
 
 import cffi
-import numba
-import numba.core.typing.cffi_utils as cffi_support
 import numpy as np
 import numpy.typing
 import pytest
@@ -33,22 +31,25 @@ from mpi4py import MPI
 from petsc4py import PETSc
 from petsc4py import get_config as PETSc_get_config
 
+numba = pytest.importorskip("numba")
+cffi_support = pytest.importorskip("numba.core.typing.cffi_utils")
+
 # Get details of PETSc install
 petsc_dir = PETSc_get_config()['PETSC_DIR']
 petsc_arch = petsc4py.lib.getPathArchPETSc()[1]
 
 # Get PETSc int and scalar types
-if np.dtype(PETSc.ScalarType).kind == 'c':
+if np.dtype(PETSc.ScalarType).kind == 'c':  # type: ignore
     complex = True
 else:
     complex = False
 
-scalar_size = np.dtype(PETSc.ScalarType).itemsize
-index_size = np.dtype(PETSc.IntType).itemsize
+scalar_size = np.dtype(PETSc.ScalarType).itemsize  # type: ignore
+index_size = np.dtype(PETSc.IntType).itemsize  # type: ignore
 
 if index_size == 8:
     c_int_t = "int64_t"
-    ctypes_index: numpy.typing.DTypeLike = ctypes.c_int64
+    ctypes_index: np.typing.DTypeLike = ctypes.c_int64
 elif index_size == 4:
     c_int_t = "int32_t"
     ctypes_index = ctypes.c_int32
@@ -190,16 +191,16 @@ def assemble_vector_parallel(b, v, x, dofmap_t_data, dofmap_t_offsets, num_cells
 
 
 @numba.njit(fastmath=True)
-def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells):
+def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells, dtype):
     """Assemble provided FFCx/UFC kernel over a mesh into the array b"""
     v, x = mesh
     entity_local_index = np.array([0], dtype=np.intc)
     perm = np.array([0], dtype=np.uint8)
-    geometry = np.zeros((3, 3))
-    coeffs = np.zeros(1, dtype=PETSc.ScalarType)
-    constants = np.zeros(1, dtype=PETSc.ScalarType)
+    geometry = np.zeros((3, 3), dtype=x.dtype)
+    coeffs = np.zeros(1, dtype=dtype)
+    constants = np.zeros(1, dtype=dtype)
 
-    b_local = np.zeros(3, dtype=PETSc.ScalarType)
+    b_local = np.zeros(3, dtype=dtype)
     for cell in range(num_cells):
         # FIXME: This assumes a particular geometry dof layout
         for j in range(3):
@@ -214,7 +215,7 @@ def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells):
 
 
 @numba.njit(fastmath=True)
-def assemble_matrix_cffi(A, mesh, dofmap, num_cells, set_vals, mode):
+def assemble_petsc_matrix_cffi(A, mesh, dofmap, num_cells, set_vals, mode):
     """Assemble P1 mass matrix over a mesh into the PETSc matrix A"""
 
     # Mesh data
@@ -245,7 +246,7 @@ def assemble_matrix_cffi(A, mesh, dofmap, num_cells, set_vals, mode):
 
 
 @numba.njit
-def assemble_matrix_ctypes(A, mesh, dofmap, num_cells, set_vals, mode):
+def assemble_petsc_matrix_ctypes(A, mesh, dofmap, num_cells, set_vals, mode):
     """Assemble P1 mass matrix over a mesh into the PETSc matrix A"""
     v, x = mesh
     q = np.array([[0.5, 0.0], [0.5, 0.5], [0.0, 0.5]], dtype=np.double)
@@ -270,22 +271,20 @@ def assemble_matrix_ctypes(A, mesh, dofmap, num_cells, set_vals, mode):
         set_vals(A, 3, rows.ctypes, 3, cols.ctypes, A_local.ctypes, mode)
 
 
-def test_custom_mesh_loop_rank1():
-
-    # Create mesh and function space
-    mesh = create_unit_square(MPI.COMM_WORLD, 64, 64)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_custom_mesh_loop_rank1(dtype):
+    mesh = create_unit_square(MPI.COMM_WORLD, 64, 64, dtype=dtype(0).real.dtype)
     V = FunctionSpace(mesh, ("Lagrange", 1))
 
     # Unpack mesh and dofmap data
     num_owned_cells = mesh.topology.index_map(mesh.topology.dim).size_local
-    num_cells = num_owned_cells + mesh.topology.index_map(mesh.topology.dim).num_ghosts
-    x_dofs = mesh.geometry.dofmap.array.reshape(num_cells, 3)
+    x_dofs = mesh.geometry.dofmap
     x = mesh.geometry.x
-    dofmap = V.dofmap.list.array.reshape(num_cells, 3)
+    dofmap = V.dofmap.list
 
     # Assemble with pure Numba function (two passes, first will include
     # JIT overhead)
-    b0 = Function(V)
+    b0 = Function(V, dtype=dtype)
     for i in range(2):
         b = b0.x.array
         b[:] = 0.0
@@ -293,8 +292,9 @@ def test_custom_mesh_loop_rank1():
         assemble_vector(b, (x_dofs, x), dofmap, num_owned_cells)
         end = time.time()
         print("Time (numba, pass {}): {}".format(i, end - start))
-    b0.vector.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    assert b0.vector.sum() == pytest.approx(1.0)
+    b0.x.scatter_reverse(dolfinx.la.InsertMode.add)
+    b0sum = np.sum(b0.x.array[:b0.x.index_map.size_local * b0.x.block_size])
+    assert mesh.comm.allreduce(b0sum, op=MPI.SUM) == pytest.approx(1.0)
 
     # NOTE: Parallel (threaded) Numba can cause problems with MPI
     # Assemble with pure Numba function using parallel loop (two passes,
@@ -315,43 +315,56 @@ def test_custom_mesh_loop_rank1():
     # Test against generated code and general assembler
     v = ufl.TestFunction(V)
     L = inner(1.0, v) * dx
-    Lf = form(L)
+    Lf = form(L, dtype=dtype)
     start = time.time()
-    b1 = dolfinx.fem.petsc.assemble_vector(Lf)
+    b1 = dolfinx.fem.assemble_vector(Lf)
     end = time.time()
     print("Time (C++, pass 0):", end - start)
 
-    with b1.localForm() as b_local:
-        b_local.set(0.0)
+    b1.array[:] = 0
     start = time.time()
-    dolfinx.fem.petsc.assemble_vector(b1, Lf)
+    dolfinx.fem.assemble_vector(b1.array, Lf)
     end = time.time()
     print("Time (C++, pass 1):", end - start)
-    b1.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    assert (b1 - b0.vector).norm() == pytest.approx(0.0)
+    b1.scatter_reverse(dolfinx.la.InsertMode.add)
+    assert np.linalg.norm(b1.array - b0.x.array) == pytest.approx(0.0, abs=1.0e-8)
 
-    # Assemble using generated tabulate_tensor kernel and Numba assembler
-    ffcxtype = "double _Complex" if np.issubdtype(PETSc.ScalarType, np.complexfloating) else "double"
-    b3 = Function(V)
+    # Assemble using generated tabulate_tensor kernel and Numba
+    # assembler
+    if dtype == np.float32:
+        ffcxtype = "float"
+        nptype = "float32"
+    elif dtype == np.float64:
+        ffcxtype = "double"
+        nptype = "float64"
+    elif dtype == np.complex64:
+        ffcxtype = "float _Complex"
+        nptype = "complex64"
+    elif dtype == np.complex128:
+        ffcxtype = "double _Complex"
+        nptype = "complex128"
+    else:
+        raise RuntimeError("Unknown scalar type")
+
+    b3 = Function(V, dtype=dtype)
     ufcx_form, module, code = dolfinx.jit.ffcx_jit(
         mesh.comm, L, form_compiler_options={"scalar_type": ffcxtype})
 
-    nptype = "complex128" if np.issubdtype(PETSc.ScalarType, np.complexfloating) else "float64"
-    # First 0 for "cell" integrals, second 0 for the first one, i.e. default domain
-    kernel = getattr(ufcx_form.integrals(0)[0], f"tabulate_tensor_{nptype}")
+    # Get the one and only kernel
+    kernel = getattr(ufcx_form.form_integrals[0], f"tabulate_tensor_{nptype}")
 
     for i in range(2):
         b = b3.x.array
         b[:] = 0.0
         start = time.time()
-        assemble_vector_ufc(b, kernel, (x_dofs, x), dofmap, num_owned_cells)
+        assemble_vector_ufc(b, kernel, (x_dofs, x), dofmap, num_owned_cells, dtype)
         end = time.time()
         print("Time (numba/cffi, pass {}): {}".format(i, end - start))
-    b3.vector.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    assert (b3.vector - b0.vector).norm() == pytest.approx(0.0)
+    b3.x.scatter_reverse(dolfinx.la.InsertMode.add)
+    assert np.linalg.norm(b3.x.array - b0.x.array) == pytest.approx(0.0, abs=1e-8)
 
 
-def test_custom_mesh_loop_ctypes_rank2():
+def test_custom_mesh_loop_petsc_ctypes_rank2():
     """Test numba assembler for bilinear form"""
 
     # Create mesh and function space
@@ -360,10 +373,9 @@ def test_custom_mesh_loop_ctypes_rank2():
 
     # Extract mesh and dofmap data
     num_owned_cells = mesh.topology.index_map(mesh.topology.dim).size_local
-    num_cells = num_owned_cells + mesh.topology.index_map(mesh.topology.dim).num_ghosts
-    x_dofs = mesh.geometry.dofmap.array.reshape(num_cells, 3)
+    x_dofs = mesh.geometry.dofmap
     x = mesh.geometry.x
-    dofmap = V.dofmap.list.array.reshape(num_cells, 3).astype(np.dtype(PETSc.IntType))
+    dofmap = V.dofmap.list.astype(np.dtype(PETSc.IntType))
 
     # Generated case with general assembler
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
@@ -384,17 +396,19 @@ def test_custom_mesh_loop_ctypes_rank2():
         A1.zeroEntries()
         mat = A1.handle
         start = time.time()
-        assemble_matrix_ctypes(mat, (x_dofs, x), dofmap, num_owned_cells,
-                               MatSetValues_ctypes, PETSc.InsertMode.ADD_VALUES)
+        assemble_petsc_matrix_ctypes(mat, (x_dofs, x), dofmap, num_owned_cells,
+                                     MatSetValues_ctypes, PETSc.InsertMode.ADD_VALUES)
         end = time.time()
         print("Time (numba, pass {}): {}".format(i, end - start))
         A1.assemble()
+        assert (A0 - A1).norm() == pytest.approx(0.0, abs=1.0e-9)
 
-    assert (A0 - A1).norm() == pytest.approx(0.0, abs=1.0e-9)
+    A0.destroy()
+    A1.destroy()
 
 
 @pytest.mark.parametrize("set_vals", [MatSetValues_abi, get_matsetvalues_api()])
-def test_custom_mesh_loop_cffi_rank2(set_vals):
+def test_custom_mesh_loop_petsc_cffi_rank2(set_vals):
     """Test numba assembler for bilinear form"""
 
     mesh = create_unit_square(MPI.COMM_WORLD, 64, 64)
@@ -415,18 +429,20 @@ def test_custom_mesh_loop_cffi_rank2(set_vals):
 
     # Unpack mesh and dofmap data
     num_owned_cells = mesh.topology.index_map(mesh.topology.dim).size_local
-    num_cells = num_owned_cells + mesh.topology.index_map(mesh.topology.dim).num_ghosts
-    x_dofs = mesh.geometry.dofmap.array.reshape(num_cells, 3)
+    x_dofs = mesh.geometry.dofmap
     x = mesh.geometry.x
-    dofmap = V.dofmap.list.array.reshape(num_cells, 3).astype(np.dtype(PETSc.IntType))
+    dofmap = V.dofmap.list.astype(np.dtype(PETSc.IntType))
 
     A1 = A0.copy()
     for i in range(2):
         A1.zeroEntries()
         start = time.time()
-        assemble_matrix_cffi(A1.handle, (x_dofs, x), dofmap, num_owned_cells, set_vals, PETSc.InsertMode.ADD_VALUES)
+        assemble_petsc_matrix_cffi(A1.handle, (x_dofs, x), dofmap, num_owned_cells,
+                                   set_vals, PETSc.InsertMode.ADD_VALUES)
         end = time.time()
         print("Time (Numba, pass {}): {}".format(i, end - start))
         A1.assemble()
+    assert (A1 - A0).norm() == pytest.approx(0.0, abs=1.0e-9)
 
-    assert (A1 - A0).norm() == pytest.approx(0.0)
+    A0.destroy()
+    A1.destroy()

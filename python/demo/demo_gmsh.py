@@ -8,79 +8,76 @@
 #       jupytext_version: 1.13.6
 # ---
 
-# (demo-gmsh)=
-#
 # # Mesh generation with Gmsh
 #
-# Copyright (C) 2020-2022 Garth N. Wells and Jørgen S. Dokken
+# Copyright (C) 2020-2023 Garth N. Wells and Jørgen S. Dokken
+#
+# This demo shows how to create meshes using the Gmsh Python interface.
+# It is implemented in {download}`demo_gmsh.py`.
+#
+# The Gmsh module is required for this demo.
 
 # +
-import sys
-
-try:
-    import gmsh
-except ImportError:
-    print("This demo requires gmsh to be installed")
-    sys.exit(0)
-
-
 from dolfinx.io import XDMFFile, gmshio
 
 from mpi4py import MPI
 
+try:
+    import gmsh  # type: ignore
+except ImportError:
+    import sys
+    print("This demo requires gmsh to be installed")
+    sys.exit(0)
 # -
 
-# Generate a mesh on each rank with the Gmsh API, and create a DOLFINx
-# mesh on each rank with corresponding mesh tags for the cells of the
-# mesh.
-
-# +
-gmsh.initialize()
-
-# Choose if Gmsh output is verbose
-gmsh.option.setNumber("General.Terminal", 0)
-model = gmsh.model()
-model.add("Sphere")
-model.setCurrent("Sphere")
-sphere = model.occ.addSphere(0, 0, 0, 1, tag=1)
-
-# Synchronize OpenCascade representation with gmsh model
-model.occ.synchronize()
-
-# Add physical marker for cells. It is important to call this function
-# after OpenCascade synchronization
-model.add_physical_group(3, [sphere])
-
-
-# Generate the mesh
-model.mesh.generate(3)
-
-msh, cell_markers, facet_markers = gmshio.model_to_mesh(model, MPI.COMM_SELF, 0)
-msh.name = "Sphere"
-cell_markers.name = f"{msh.name}_cells"
-facet_markers.name = f"{msh.name}_facets"
-
-with XDMFFile(msh.comm, f"out_gmsh/mesh_rank_{MPI.COMM_WORLD.rank}.xdmf", "w") as file:
-    file.write_mesh(msh)
-    file.write_meshtags(cell_markers)
-    msh.topology.create_connectivity(msh.topology.dim - 1, msh.topology.dim)
-    file.write_meshtags(facet_markers)
-
-# -
-
-# Create a distributed (parallel) mesh with affine geometry. Generate
-# mesh on rank 0, then build a distributed mesh. Create mesh tags on
-# exterior facets.
+# ##  Gmsh model builders
+#
+# The following functions add Gmsh meshes to a 'model'.
 
 # +
 
-mesh_comm = MPI.COMM_WORLD
-model_rank = 0
-if mesh_comm.rank == model_rank:
-    # Generate a mesh
 
-    model.add("Sphere minus box")
-    model.setCurrent("Sphere minus box")
+def gmsh_sphere(model: gmsh.model, name: str) -> gmsh.model:
+    """Create a Gmsh model of a sphere.
+
+    Args:
+        model: Gmsh model to add the mesh to.
+        name: Name (identifier) of the mesh to add.
+
+    Returns:
+        Gmsh model with a sphere mesh added.
+
+    """
+    model.add(name)
+    model.setCurrent(name)
+    sphere = model.occ.addSphere(0, 0, 0, 1, tag=1)
+
+    # Synchronize OpenCascade representation with gmsh model
+    model.occ.synchronize()
+
+    # Add physical marker for cells. It is important to call this
+    # function after OpenCascade synchronization
+    model.add_physical_group(dim=3, tags=[sphere])
+
+    # Generate the mesh
+    model.mesh.generate(dim=3)
+    return model
+
+
+def gmsh_sphere_minus_box(model: gmsh.model, name: str) -> gmsh.model:
+    """Create a Gmsh model of a sphere with a box from the sphere removed.
+
+    Args:
+        model: Gmsh model to add the mesh to.
+        name: Name (identifier) of the mesh to add.
+
+    Returns:
+        Gmsh model with a sphere mesh added.
+
+    """
+
+    model.add(name)
+    model.setCurrent(name)
 
     sphere_dim_tags = model.occ.addSphere(0, 0, 0, 1)
     box_dim_tags = model.occ.addBox(0, 0, 0, 1, 1, 1)
@@ -98,63 +95,25 @@ if mesh_comm.rank == model_rank:
     model.addPhysicalGroup(3, volume_entities, tag=2)
     model.setPhysicalName(3, 2, "Sphere volume")
 
-    model.mesh.generate(3)
-
-msh, mt, ft = gmshio.model_to_mesh(model, mesh_comm, model_rank)
-msh.name = "ball_d1"
-mt.name = f"{msh.name}_cells"
-ft.name = f"{msh.name}_facets"
-
-with XDMFFile(msh.comm, "out_gmsh/mesh.xdmf", "w") as file:
-    file.write_mesh(msh)
-    msh.topology.create_connectivity(2, 3)
-    file.write_meshtags(mt, geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{msh.name}']/Geometry")
-    file.write_meshtags(ft, geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{msh.name}']/Geometry")
-# -
-
-# Create a distributed (parallel) mesh with quadratic geometry. Generate
-# mesh on rank 0, then build a distributed mesh.
-
-# +
-
-mesh_comm = MPI.COMM_WORLD
-model_rank = 0
-if mesh_comm.rank == model_rank:
-    # Using model.setCurrent(name) lets you change between models
-    model.setCurrent("Sphere minus box")
-
-    # Generate second order mesh and output gmsh messages to terminal
-    model.mesh.generate(3)
-    gmsh.option.setNumber("General.Terminal", 1)
-    model.mesh.setOrder(2)
-    gmsh.option.setNumber("General.Terminal", 0)
-
-msh, ct, ft = gmshio.model_to_mesh(model, mesh_comm, model_rank)
-msh.name = "ball_d2"
-ct.name = f"{msh.name}_cells"
-ft.name = f"{msh.name}_surface"
+    model.mesh.generate(dim=3)
+    return model
 
 
-with XDMFFile(msh.comm, "out_gmsh/mesh.xdmf", "a") as file:
-    file.write_mesh(msh)
-    file.write_meshtags(ct, geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{msh.name}']/Geometry")
-    file.write_meshtags(ft, geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{msh.name}']/Geometry")
+def gmsh_ring(model: gmsh.model, name: str) -> gmsh.model:
+    """Create a Gmsh model of a ring-type geometry using hexahedral cells.
 
-# -
+    Args:
+        model: Gmsh model to add the mesh to.
+        name: Name (identifier) of the mesh to add.
 
-# Create a distributed (parallel) 2nd order hexahedral mesh. Generate
-# mesh on rank 0, then build a distributed mesh.
+    Returns:
+        Gmsh model with a sphere mesh added.
 
-# +
+    """
+    model.add(name)
+    model.setCurrent(name)
 
-model_rank = 0
-mesh_comm = MPI.COMM_WORLD
-if mesh_comm.rank == model_rank:
-    # Generate
-    model.add("Hexahedral mesh")
-    model.setCurrent("Hexahedral mesh")
-
-    # Recombine tetrahedrons to hexahedrons
+    # Recombine tetrahedra to hexahedra
     gmsh.option.setNumber("Mesh.RecombinationAlgorithm", 2)
     gmsh.option.setNumber("Mesh.RecombineAll", 2)
     gmsh.option.setNumber("Mesh.CharacteristicLengthFactor", 1)
@@ -183,14 +142,96 @@ if mesh_comm.rank == model_rank:
             volume_entities.append(entity[1])
     model.addPhysicalGroup(3, volume_entities, tag=1)
     model.setPhysicalName(3, 1, "Mesh volume")
+    return model
+# -
 
-msh, mt, ft = gmshio.model_to_mesh(gmsh.model, mesh_comm, model_rank)
-msh.name = "hex_d2"
-mt.name = f"{msh.name}_cells"
-ft.name = f"{msh.name}_surface"
+# ## DOLFINx mesh creation and file output
+#
+# The following function creates a DOLFINx mesh from a Gmsh model, and
+# cell and facets tags. The mesh and the tags are written to an XDMF file
+# for visualisation, e.g. using ParaView.
+
+# +
 
 
-with XDMFFile(msh.comm, "out_gmsh/mesh.xdmf", "a") as file:
-    file.write_mesh(msh)
-    file.write_meshtags(mt, geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{msh.name}']/Geometry")
-    file.write_meshtags(ft, geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{msh.name}']/Geometry")
+def create_mesh(comm: MPI.Comm, model: gmsh.model, name: str, filename: str, mode: str):
+    """Create a DOLFINx from a Gmsh model and output to file.
+
+    Args:
+        comm: MPI communicator top create the mesh on.
+        model: Gmsh model.
+        name: Name (identifier) of the mesh to add.
+        filename: XDMF filename.
+        mode: XDMF file mode. "w" (write) or "a" (append).
+
+    """
+    msh, ct, ft = gmshio.model_to_mesh(model, comm, rank=0)
+    msh.name = name
+    ct.name = f"{msh.name}_cells"
+    ft.name = f"{msh.name}_facets"
+    with XDMFFile(msh.comm, filename, mode) as file:
+        msh.topology.create_connectivity(2, 3)
+        file.write_mesh(msh)
+        file.write_meshtags(ct, msh.geometry, geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{msh.name}']/Geometry")
+        file.write_meshtags(ft, msh.geometry, geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{msh.name}']/Geometry")
+# -
+
+# ## Generate meshes
+
+# Create a Gmsh model and set the verbosity level.
+
+
+# +
+gmsh.initialize()
+gmsh.option.setNumber("General.Terminal", 0)
+
+# Create model
+model = gmsh.model()
+# -
+
+# First, we create a Gmsh model of a sphere using tetrahedral cells
+# (linear geometry), then create independent meshes on each MPI rank and
+# write each mesh to an XDMF file. The MPI rank is appended to the
+# filename since the meshes are not distributed.
+
+# +
+model = gmsh_sphere(model, "Sphere")
+model.setCurrent("Sphere")
+create_mesh(MPI.COMM_SELF, model, "sphere", f"out_gmsh/mesh_rank_{MPI.COMM_WORLD.rank}.xdmf", "w")
+# -
+
+# Next, we create a Gmsh model of a sphere with a box removed and using
+# tetrahedral cells (linear geometry), then create a distributed mesh.
+# The distributed mesh is written to file. The write option ``"w"`` is
+# passed to create a new XDMF file.
+
+# +
+model = gmsh_sphere_minus_box(model, "Sphere minus box")
+model.setCurrent("Sphere minus box")
+create_mesh(MPI.COMM_WORLD, model, "ball_d1", "out_gmsh/mesh.xdmf", "w")
+# -
+
+# For the mesh of the sphere with a box remove, we can increase the
+# degree of the geometry representation to 2 (quadratic geometry
+# representation). The higher-order distributed mesh is appended to the
+# XDMF file.
+
+# +
+model.mesh.generate(3)
+gmsh.option.setNumber("General.Terminal", 1)
+model.mesh.setOrder(2)
+gmsh.option.setNumber("General.Terminal", 0)
+create_mesh(MPI.COMM_WORLD, model, "ball_d2", "out_gmsh/mesh.xdmf", "a")
+# -
+
+# Finally, we create a distributed mesh using hexahedral cells of
+# geometric degree 2, and append the mesh to the XDMF file.
+
+# +
+model = gmsh_ring(model, "Hexahedral mesh")
+model.setCurrent("Hexahedral mesh")
+create_mesh(MPI.COMM_WORLD, model, "hex_d2", "out_gmsh/mesh.xdmf", "a")
+# -
+
+# The generated meshes can be visualised using
+# [ParaView](https://www.paraview.org/).

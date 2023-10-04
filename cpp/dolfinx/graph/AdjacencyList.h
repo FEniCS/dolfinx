@@ -8,6 +8,7 @@
 
 #include <cassert>
 #include <concepts>
+#include <cstdint>
 #include <numeric>
 #include <span>
 #include <sstream>
@@ -39,8 +40,10 @@ public:
   /// @param [in] data Adjacency array
   /// @param [in] offsets The index to the adjacency list in the data
   /// array for node i
-  template <std::convertible_to<std::vector<T>> U,
-            std::convertible_to<std::vector<std::int32_t>> V>
+  template <typename U, typename V>
+    requires std::is_convertible_v<std::remove_cvref_t<U>, std::vector<T>>
+                 and std::is_convertible_v<std::remove_cvref_t<V>,
+                                           std::vector<std::int32_t>>
   AdjacencyList(U&& data, V&& offsets)
       : _array(std::forward<U>(data)), _offsets(std::forward<V>(offsets))
   {
@@ -59,11 +62,11 @@ public:
     // Initialize offsets and compute total size
     _offsets.reserve(data.size() + 1);
     _offsets.push_back(0);
-    for (const auto& row : data)
+    for (auto& row : data)
       _offsets.push_back(_offsets.back() + row.size());
 
     _array.reserve(_offsets.back());
-    for (const auto& e : data)
+    for (auto& e : data)
       _array.insert(_array.end(), e.begin(), e.end());
   }
 
@@ -96,9 +99,9 @@ public:
   /// Number of connections for given node
   /// @param [in] node Node index
   /// @return The number of outgoing links (edges) from the node
-  int num_links(int node) const
+  int num_links(std::size_t node) const
   {
-    assert((node + 1) < (int)_offsets.size());
+    assert((node + 1) < _offsets.size());
     return _offsets[node + 1] - _offsets[node];
   }
 
@@ -106,7 +109,7 @@ public:
   /// @param [in] node Node index
   /// @return Array of outgoing links for the node. The length will be
   /// AdjacencyList::num_links(node).
-  std::span<T> links(int node)
+  std::span<T> links(std::size_t node)
   {
     return std::span<T>(_array.data() + _offsets[node],
                         _offsets[node + 1] - _offsets[node]);
@@ -116,7 +119,7 @@ public:
   /// @param [in] node Node index
   /// @return Array of outgoing links for the node. The length will be
   /// AdjacencyList:num_links(node).
-  std::span<const T> links(int node) const
+  std::span<const T> links(std::size_t node) const
   {
     return std::span<const T>(_array.data() + _offsets[node],
                               _offsets[node + 1] - _offsets[node]);
@@ -159,6 +162,10 @@ private:
   std::vector<std::int32_t> _offsets;
 };
 
+/// @private Deduction
+template <typename T, typename U>
+AdjacencyList(T, U) -> AdjacencyList<typename T::value_type>;
+
 /// @brief Construct a constant degree (valency) adjacency list.
 ///
 /// A constant degree graph has the same number of edges for every node.
@@ -168,10 +175,10 @@ private:
 /// @return An adjacency list
 template <typename U>
   requires requires {
-             typename std::decay_t<U>::value_type;
-             std::convertible_to<
-                 U, std::vector<typename std::decay_t<U>::value_type>>;
-           }
+    typename std::decay_t<U>::value_type;
+    requires std::convertible_to<
+        U, std::vector<typename std::decay_t<U>::value_type>>;
+  }
 AdjacencyList<typename std::decay_t<U>::value_type>
 regular_adjacency_list(U&& data, int degree)
 {

@@ -4,7 +4,6 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <iostream>
 #include <pybind11/pybind11.h>
 
 namespace py = pybind11;
@@ -14,7 +13,10 @@ namespace dolfinx_wrappers
 void common(py::module& m);
 void mpi(py::module& m);
 
+void petsc(py::module& m_fem, py::module& m_la, py::module& m_nls);
+
 void log(py::module& m);
+void assemble(py::module& m);
 void fem(py::module& m);
 void geometry(py::module& m);
 void graph(py::module& m);
@@ -49,6 +51,7 @@ PYBIND11_MODULE(cpp, m)
 
   // Create fem submodule [fem]
   py::module fem = m.def_submodule("fem", "FEM module");
+  dolfinx_wrappers::assemble(fem);
   dolfinx_wrappers::fem(fem);
 
   // Create geometry submodule
@@ -63,11 +66,11 @@ PYBIND11_MODULE(cpp, m)
   py::module la = m.def_submodule("la", "Linear algebra module");
   dolfinx_wrappers::la(la);
 
-  // Create nls submodule
-  py::module nls = m.def_submodule("nls", "Nonlinear solver module");
-  dolfinx_wrappers::nls(nls);
-
   // Create refinement submodule
   py::module refinement = m.def_submodule("refinement", "Refinement module");
   dolfinx_wrappers::refinement(refinement);
+
+  // PETSc-specific wrappers
+  py::module nls = m.def_submodule("nls", "Nonlinear solver module");
+  dolfinx_wrappers::petsc(fem, la, nls);
 }

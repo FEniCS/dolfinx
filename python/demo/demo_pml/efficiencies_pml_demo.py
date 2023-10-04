@@ -57,19 +57,17 @@
 # efficiencies as:
 #
 # $$
-# \begin{align}
 # & q_{\mathrm{sca}}=(2 / \alpha)\left[\left|a_0\right|^{2}
 # +2 \sum_{\nu=1}^{\infty}\left|a_\nu\right|^{2}\right] \\
 # & q_{\mathrm{ext}}=(2 / \alpha) \operatorname{Re}\left[ a_0
 # +2 \sum_{\nu=1}^{\infty} a_\nu\right] \\
 # & q_{\mathrm{abs}} = q_{\mathrm{ext}} - q_{\mathrm{sca}}
-# \end{align}
 # $$
+
+from typing import Tuple
 
 import numpy as np
 from scipy.special import h2vp, hankel2, jv, jvp
-from typing import Tuple
-
 
 # The functions that we import from `scipy.special` correspond to:
 #
@@ -91,6 +89,8 @@ from typing import Tuple
 # orders of the Bessel functions is truncated at $\nu=50$.
 
 # +
+
+
 def compute_a(nu: int, m: complex, alpha: float) -> float:
     J_nu_alpha = jv(nu, alpha)
     J_nu_malpha = jv(nu, m * alpha)
