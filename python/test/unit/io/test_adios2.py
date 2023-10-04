@@ -8,16 +8,17 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+
 import ufl
 from basix.ufl import element
+from dolfinx import default_real_type, default_scalar_type
 from dolfinx.common import has_adios2
 from dolfinx.fem import Function, FunctionSpace
 from dolfinx.graph import adjacencylist
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_square)
-from mpi4py import MPI
 
-from dolfinx import default_real_type, default_scalar_type
+from mpi4py import MPI
 
 try:
     from dolfinx.io import FidesWriter, VTXWriter
@@ -131,8 +132,7 @@ def test_second_order_vtx(tempdir):
     filename = Path(tempdir, "mesh_fides.bp")
     points = np.array([[0, 0, 0], [1, 0, 0], [0.5, 0, 0]], dtype=default_real_type)
     cells = np.array([[0, 1, 2]], dtype=np.int32)
-    domain = ufl.Mesh(element(
-        "Lagrange", "interval", 2, gdim=points.shape[1], rank=1))
+    domain = ufl.Mesh(element("Lagrange", "interval", 2, gdim=points.shape[1], shape=(1,)))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     with VTXWriter(mesh.comm, filename, mesh) as f:
         f.write(0.0)
@@ -266,7 +266,7 @@ def test_empty_rank_mesh(tempdir):
     """Test VTXWriter on mesh where some ranks have no cells"""
     comm = MPI.COMM_WORLD
     cell_type = CellType.triangle
-    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, rank=1))
+    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, shape=(2,)))
 
     def partitioner(comm, nparts, local_graph, num_ghost_nodes):
         """Leave cells on the current rank"""

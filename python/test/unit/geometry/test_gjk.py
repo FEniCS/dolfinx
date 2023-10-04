@@ -6,14 +6,15 @@
 
 import numpy as np
 import pytest
-import ufl
-from basix.ufl import element
-from dolfinx.geometry import compute_distance_gjk
-from dolfinx.mesh import create_mesh
-from mpi4py import MPI
 from scipy.spatial.transform import Rotation
 
+import ufl
+from basix.ufl import element
 from dolfinx import geometry
+from dolfinx.geometry import compute_distance_gjk
+from dolfinx.mesh import create_mesh
+
+from mpi4py import MPI
 
 
 def distance_point_to_line_3D(P1, P2, point):
@@ -168,7 +169,7 @@ def test_cube_distance(delta, scale, dtype):
 def test_collision_2nd_order_triangle(dtype):
     points = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [0.65, 0.65], [0.0, 0.5], [0.5, 0.0]], dtype=dtype)
     cells = np.array([[0, 1, 2, 3, 4, 5]])
-    domain = ufl.Mesh(element("Lagrange", "triangle", 2, gdim=2, rank=1))
+    domain = ufl.Mesh(element("Lagrange", "triangle", 2, gdim=2, shape=(2,)))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
 
     # Sample points along an interior line of the domain. The last point

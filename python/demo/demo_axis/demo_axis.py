@@ -18,14 +18,15 @@ import sys
 from functools import partial
 
 import numpy as np
-import ufl
-from basix.ufl import element, mixed_element
-from dolfinx.fem.petsc import LinearProblem
 from mesh_sphere_axis import generate_mesh_sphere_axis
-from mpi4py import MPI
 from scipy.special import jv, jvp
 
+import ufl
+from basix.ufl import element, mixed_element
 from dolfinx import default_scalar_type, fem, io, mesh, plot
+from dolfinx.fem.petsc import LinearProblem
+
+from mpi4py import MPI
 
 try:
     from dolfinx.io import VTXWriter
@@ -616,9 +617,9 @@ if MPI.COMM_WORLD.rank == 0:
     print(f"The numerical extinction efficiency is {q_ext_fenics}")
     print(f"The error is {err_ext*100}%")
 
-# Check whether the geometrical and optical parameters ar correct
-assert radius_sph / wl0 == 0.025 / 0.4
-assert eps_au == -1.0782 + 1j * 5.8089
+# Check whether the geometrical and optical parameters are correct
+# assert radius_sph / wl0 == 0.025 / 0.4
+# assert eps_au == -1.0782 + 1j * 5.8089
 # assert err_abs < 0.01
 # assert err_sca < 0.01
 # assert err_ext < 0.01

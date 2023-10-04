@@ -7,21 +7,22 @@
 
 import random
 
-import basix
 import numpy as np
 import pytest
+
+import basix
 import ufl
 from basix.ufl import (blocked_element, custom_element, element,
                        enriched_element, mixed_element)
+from dolfinx import default_real_type
 from dolfinx.fem import (Expression, Function, FunctionSpace, assemble_scalar,
                          create_nonmatching_meshes_interpolation_data, form)
 from dolfinx.geometry import bb_tree, compute_collisions_points
 from dolfinx.mesh import (CellType, create_mesh, create_rectangle,
                           create_unit_cube, create_unit_square,
                           locate_entities, locate_entities_boundary, meshtags)
-from mpi4py import MPI
 
-from dolfinx import default_real_type
+from mpi4py import MPI
 
 parametrize_cell_types = pytest.mark.parametrize(
     "cell_type", [
@@ -106,7 +107,7 @@ def one_cell_mesh(cell_type):
         ordered_points[j] = points[i]
     cells = np.array([order])
 
-    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, rank=1))
+    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, shape=(ordered_points.shape[1],)))
     return create_mesh(MPI.COMM_WORLD, cells, ordered_points, domain)
 
 
@@ -139,7 +140,7 @@ def two_cell_mesh(cell_type):
                            [1., 0., -1.], [0., 1., -1.], [1., 1., -1.]], dtype=default_real_type)
         cells = [[0, 1, 2, 3, 4, 5, 6, 7], [9, 11, 8, 10, 1, 3, 0, 2]]
 
-    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, rank=1))
+    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, shape=(points.shape[1],)))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     return mesh
 
@@ -269,7 +270,7 @@ def test_mixed_sub_interpolation():
     def f(x):
         return np.vstack((10 + x[0], -10 - x[1], 25 + x[0]))
 
-    P2 = element("Lagrange", mesh.basix_cell(), 2, rank=1)
+    P2 = element("Lagrange", mesh.basix_cell(), 2, shape=(mesh.geometry.dim,))
     P1 = element("Lagrange", mesh.basix_cell(), 1)
     for i, P in enumerate((mixed_element([P2, P1]), mixed_element([P1, P2]))):
         W = FunctionSpace(mesh, P)
@@ -281,7 +282,7 @@ def test_mixed_sub_interpolation():
         u, v = Function(V), Function(V)
         u.interpolate(U.sub(i))
         v.interpolate(f)
-        assert np.allclose(u.vector.array, v.vector.array)
+        assert np.allclose(u.x.array, v.x.array)
 
         # Same map, different elements
         gdim = mesh.geometry.dim
@@ -289,21 +290,23 @@ def test_mixed_sub_interpolation():
         u, v = Function(V), Function(V)
         u.interpolate(U.sub(i))
         v.interpolate(f)
-        assert np.allclose(u.vector.array, v.vector.array)
+        assert np.allclose(u.x.array, v.x.array)
 
         # Different maps (0)
         V = FunctionSpace(mesh, ("N1curl", 1))
         u, v = Function(V), Function(V)
         u.interpolate(U.sub(i))
         v.interpolate(f)
-        assert np.allclose(u.vector.array, v.vector.array, atol=1.0e-6)
+        atol = 5 * np.finfo(u.x.array.dtype).resolution
+        assert np.allclose(u.x.array, v.x.array, atol=atol)
 
         # Different maps (1)
         V = FunctionSpace(mesh, ("RT", 2))
         u, v = Function(V), Function(V)
         u.interpolate(U.sub(i))
         v.interpolate(f)
-        assert np.allclose(u.vector.array, v.vector.array, atol=1.0e-6)
+        atol = 5 * np.finfo(u.x.array.dtype).resolution
+        assert np.allclose(u.x.array, v.x.array, atol=atol)
 
         # Test with wrong shape
         V0 = FunctionSpace(mesh, P.sub_elements()[0])
@@ -320,7 +323,7 @@ def test_mixed_interpolation():
     """Test that mixed interpolation raised an exception."""
     mesh = one_cell_mesh(CellType.triangle)
     A = element("Lagrange", mesh.basix_cell(), 1)
-    B = element("Lagrange", mesh.basix_cell(), 1, rank=1)
+    B = element("Lagrange", mesh.basix_cell(), 1, shape=(mesh.geometry.dim,))
     v = Function(FunctionSpace(mesh, mixed_element([A, B])))
     with pytest.raises(RuntimeError):
         v.interpolate(lambda x: (x[1], 2 * x[0], 3 * x[1]))
@@ -438,7 +441,7 @@ def test_interpolation_non_affine():
                        [0.5, 1, 0], [0.5, 0, 1.5], [0, 1, 1.5], [1, 1, 1.5],
                        [0.5, 2, 1.5], [0.5, 1, 3], [0.5, 1, 1.5]], dtype=default_real_type)
     cells = np.array([range(len(points))], dtype=np.int32)
-    domain = ufl.Mesh(element("Lagrange", "hexahedron", 2, rank=1))
+    domain = ufl.Mesh(element("Lagrange", "hexahedron", 2, shape=(3,)))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     W = FunctionSpace(mesh, ("NCE", 1))
     V = FunctionSpace(mesh, ("NCE", 2))
@@ -458,7 +461,7 @@ def test_interpolation_non_affine_nonmatching_maps():
                        [0.5, 1, 0], [0.5, -0.1, 1.5], [0, 1, 1.5], [1, 1, 1.5],
                        [0.5, 2, 1.5], [0.5, 1, 3], [0.5, 1, 1.5]], dtype=default_real_type)
     cells = np.array([range(len(points))], dtype=np.int32)
-    domain = ufl.Mesh(element("Lagrange", "hexahedron", 2, rank=1))
+    domain = ufl.Mesh(element("Lagrange", "hexahedron", 2, shape=(3,)))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     gdim = mesh.geometry.dim
     W = FunctionSpace(mesh, ("DG", 1, (gdim,)))
@@ -598,7 +601,7 @@ def test_interpolate_callable():
     V = FunctionSpace(mesh, ("Lagrange", 2))
     u0, u1 = Function(V), Function(V)
 
-    @numba.njit
+    @ numba.njit
     def f(x):
         return x[0]
 
@@ -695,7 +698,7 @@ def test_mixed_interpolation_permuting(cell_type, order):
     dgdy = ufl.cos(x[1])
 
     curl_el = element("N1curl", mesh.basix_cell(), 1)
-    vlag_el = element("Lagrange", mesh.basix_cell(), 1, rank=1)
+    vlag_el = element("Lagrange", mesh.basix_cell(), 1, shape=(mesh.geometry.dim,))
     lagr_el = element("Lagrange", mesh.basix_cell(), order)
 
     V = FunctionSpace(mesh, mixed_element([curl_el, lagr_el]))
@@ -777,8 +780,8 @@ def test_nonmatching_mesh_single_cell_overlap_interpolation(xtype):
     mesh2 = create_rectangle(MPI.COMM_WORLD, [[0.0, 0.0], [p0_mesh2, p0_mesh2]], [n_mesh2, n_mesh2],
                              cell_type=CellType.triangle, dtype=xtype)
 
-    u1 = Function(FunctionSpace(mesh1, ("CG", 1)), name="u1", dtype=xtype)
-    u2 = Function(FunctionSpace(mesh2, ("CG", 1)), name="u2", dtype=xtype)
+    u1 = Function(FunctionSpace(mesh1, ("Lagrange", 1)), name="u1", dtype=xtype)
+    u2 = Function(FunctionSpace(mesh2, ("Lagrange", 1)), name="u2", dtype=xtype)
 
     def f_test1(x):
         return 1.0 - x[0] * x[1]
@@ -786,11 +789,10 @@ def test_nonmatching_mesh_single_cell_overlap_interpolation(xtype):
     u1.interpolate(f_test1)
     u1.x.scatter_forward()
 
-    u1_2_u2_nmm_data = \
-        create_nonmatching_meshes_interpolation_data(
-            u2.function_space.mesh._cpp_object,
-            u2.function_space.element,
-            u1.function_space.mesh._cpp_object)
+    u1_2_u2_nmm_data = create_nonmatching_meshes_interpolation_data(
+        u2.function_space.mesh._cpp_object,
+        u2.function_space.element,
+        u1.function_space.mesh._cpp_object)
 
     u2.interpolate(u1, nmm_interpolation_data=u1_2_u2_nmm_data)
     u2.x.scatter_forward()

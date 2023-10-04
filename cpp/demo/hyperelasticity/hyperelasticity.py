@@ -14,19 +14,16 @@ from ufl import (Coefficient, FunctionSpace, Identity, Mesh, TestFunction,
                  variable)
 
 # Function spaces
-coord_element = element("Lagrange", "tetrahedron", 1, rank=1)
-mesh = Mesh(coord_element)
-e = element("Lagrange", "tetrahedron", 1, rank=1)
+e = element("Lagrange", "tetrahedron", 1, shape=(3,))
+mesh = Mesh(e)
 V = FunctionSpace(mesh, e)
 
 # Trial and test functions
 du = TrialFunction(V)     # Incremental displacement
 v = TestFunction(V)      # Test function
 
-# Note that ``element`` with `rank=1` creates a finite element space of vector
-# fields. The dimension of the vector field (the number of components)
-# is assumed to be the same as the spatial dimension (in this case 3),
-# unless otherwise specified.
+# Note that ``element`` with `shape=(3,)` creates a finite element space
+# of vector fields.
 #
 # Next, we will be needing functions for the boundary source ``B``, the
 # traction ``T`` and the displacement solution itself ``u``::

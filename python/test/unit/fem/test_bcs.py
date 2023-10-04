@@ -6,8 +6,10 @@
 
 import numpy as np
 import pytest
+
 import ufl
 from basix.ufl import element, mixed_element
+from dolfinx import default_real_type, default_scalar_type, la
 from dolfinx.fem import (Constant, Function, FunctionSpace, apply_lifting,
                          assemble_matrix, assemble_vector, create_matrix,
                          create_vector, dirichletbc, form,
@@ -15,10 +17,9 @@ from dolfinx.fem import (Constant, Function, FunctionSpace, apply_lifting,
                          set_bc)
 from dolfinx.mesh import (CellType, create_unit_cube, create_unit_square,
                           locate_entities_boundary)
-from mpi4py import MPI
 from ufl import dx, inner
 
-from dolfinx import default_real_type, default_scalar_type, la
+from mpi4py import MPI
 
 
 def test_locate_dofs_geometrical():
@@ -85,7 +86,7 @@ def test_overlapping_bcs():
     As = A.to_scipy(ghosted=True)
     d = As.diagonal()
     if len(dof_corner) > 0 and dof_corner[0] < V.dofmap.index_map.size_local:
-        assert d[dof_corner[0]] == 1.0
+        assert d[dof_corner[0]] == 1.0  # /NOSONAR
 
     b.array[:] = 0
     assemble_vector(b.array, L)
@@ -287,9 +288,8 @@ def test_mixed_blocked_constant():
     tdim = mesh.topology.dim
     boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
 
-    TH = mixed_element([
-        element("Lagrange", mesh.basix_cell(), 1),
-        element("Lagrange", mesh.basix_cell(), 2, rank=1)])
+    TH = mixed_element([element("Lagrange", mesh.basix_cell(), 1),
+                        element("Lagrange", mesh.basix_cell(), 2, shape=(mesh.geometry.dim,))])
     W = FunctionSpace(mesh, TH)
     u = Function(W)
     c0 = default_scalar_type(3)

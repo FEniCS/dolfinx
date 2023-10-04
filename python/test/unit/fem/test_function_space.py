@@ -4,16 +4,18 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the FunctionSpace class"""
-import basix
+
+# import basix
 import numpy as np
 import pytest
+
 from basix.ufl import element, mixed_element
-from dolfinx.fem import (Function, FunctionSpace, FunctionSpaceBase)
+from dolfinx import default_real_type
+from dolfinx.fem import Function, FunctionSpace, FunctionSpaceBase
 from dolfinx.mesh import create_mesh, create_unit_cube
-from mpi4py import MPI
 from ufl import Cell, Mesh, TestFunction, TrialFunction, grad
 
-from dolfinx import default_real_type
+from mpi4py import MPI
 
 
 @pytest.fixture
@@ -34,7 +36,7 @@ def W(mesh):
 
 @pytest.fixture
 def Q(mesh):
-    W = element('Lagrange', mesh.basix_cell(), 1, rank=1)
+    W = element('Lagrange', mesh.basix_cell(), 1, shape=(mesh.geometry.dim,))
     V = element('Lagrange', mesh.basix_cell(), 1)
     return FunctionSpace(mesh, mixed_element([W, V]))
 
@@ -88,7 +90,7 @@ def test_component(V, W, Q):
 def test_equality(V, V2, W, W2):
     assert V == V  # /NOSONAR
     assert V == V2
-    assert W == W
+    assert W == W  # /NOSONAR
     assert W == W2
 
 
@@ -226,15 +228,16 @@ def test_cell_mismatch(mesh):
         FunctionSpace(mesh, e)
 
 
-@pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
-def test_basix_element(V, W, Q, V2):
-    for V_ in (V, W, V2):
-        e = V_.element.basix_element
-        assert isinstance(e, basix.finite_element.FiniteElement)
+# NOTE: Test relies on Basix and DOLFINx both using pybind11
+# @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
+# def test_basix_element(V, W, Q, V2):
+#     for V_ in (V, W, V2):
+#         e = V_.element.basix_element
+#         assert isinstance(e, basix.finite_element.FiniteElement)
 
-    # Mixed spaces do not yet return a basix element
-    with pytest.raises(RuntimeError):
-        e = Q.element.basix_element
+#     # Mixed spaces do not yet return a basix element
+#     with pytest.raises(RuntimeError):
+#         e = Q.element.basix_element
 
 
 @pytest.mark.skip_in_parallel
@@ -246,7 +249,7 @@ def test_vector_function_space_cell_type():
 
     # Create a mesh containing a single interval living in 2D
     cell = Cell("interval", geometric_dimension=gdim)
-    domain = Mesh(element("Lagrange", "interval", 1, gdim=gdim, rank=1))
+    domain = Mesh(element("Lagrange", "interval", 1, gdim=gdim, shape=(1,)))
     cells = np.array([[0, 1]], dtype=np.int64)
     x = np.array([[0., 0.], [1., 1.]])
     mesh = create_mesh(comm, cells, x, domain)
@@ -259,12 +262,11 @@ def test_vector_function_space_cell_type():
 
 @pytest.mark.skip_in_parallel
 def test_manifold_spaces():
-    vertices = np.array([(0.0, 0.0, 1.0),
-                         (1.0, 1.0, 1.0),
-                         (1.0, 0.0, 0.0),
-                         (0.0, 1.0, 0.0)], dtype=default_real_type)
+    vertices = np.array([
+        (0.0, 0.0, 1.0), (1.0, 1.0, 1.0),
+        (1.0, 0.0, 0.0), (0.0, 1.0, 0.0)], dtype=default_real_type)
     cells = [(0, 1, 2), (0, 1, 3)]
-    domain = Mesh(element("Lagrange", "triangle", 1, gdim=3, rank=1))
+    domain = Mesh(element("Lagrange", "triangle", 1, gdim=3, shape=(2,)))
     mesh = create_mesh(MPI.COMM_WORLD, cells, vertices, domain)
     gdim = mesh.geometry.dim
     QV = FunctionSpace(mesh, ("Lagrange", 1, (gdim,)))

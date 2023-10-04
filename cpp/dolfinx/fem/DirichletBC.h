@@ -107,10 +107,10 @@ std::vector<std::int32_t> locate_dofs_geometrical(const FunctionSpace<T>& V,
   // Compute dof coordinates
   const std::vector<T> dof_coordinates = V.tabulate_dof_coordinates(true);
 
-  namespace stdex = std::experimental;
-  using cmdspan3x_t
-      = stdex::mdspan<const T,
-                      stdex::extents<std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>;
+  using cmdspan3x_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      const T,
+      MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+          std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>;
 
   // Compute marker for each dof coordinate
   cmdspan3x_t x(dof_coordinates.data(), 3, dof_coordinates.size() / 3);
@@ -169,10 +169,10 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
   // Compute dof coordinates
   const std::vector<T> dof_coordinates = V1.tabulate_dof_coordinates(true);
 
-  namespace stdex = std::experimental;
-  using cmdspan3x_t
-      = stdex::mdspan<const T,
-                      stdex::extents<std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>;
+  using cmdspan3x_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      const T,
+      MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+          std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>;
 
   // Evaluate marker for each dof coordinate
   cmdspan3x_t x(dof_coordinates.data(), 3, dof_coordinates.size() / 3);
@@ -291,10 +291,12 @@ public:
   /// @note The size of of `g` must be equal to the block size if `V`.
   /// Use the Function version if this is not the case, e.g. for some
   /// mixed spaces.
-  template <typename S, std::convertible_to<std::vector<std::int32_t>> X,
+  template <typename S, typename X,
             typename
             = std::enable_if_t<std::is_convertible_v<S, T>
                                or std::is_convertible_v<S, std::span<const T>>>>
+    requires std::is_convertible_v<std::remove_cvref_t<X>,
+                                   std::vector<std::int32_t>>
   DirichletBC(const S& g, X&& dofs, std::shared_ptr<const FunctionSpace<U>> V)
       : DirichletBC(std::make_shared<Constant<T>>(g), dofs, V)
   {
@@ -315,7 +317,9 @@ public:
   /// @note The size of of `g` must be equal to the block size if `V`.
   /// Use the Function version if this is not the case, e.g. for some
   /// mixed spaces.
-  template <std::convertible_to<std::vector<std::int32_t>> X>
+  template <typename X>
+    requires std::is_convertible_v<std::remove_cvref_t<X>,
+                                   std::vector<std::int32_t>>
   DirichletBC(std::shared_ptr<const Constant<T>> g, X&& dofs,
               std::shared_ptr<const FunctionSpace<U>> V)
       : _function_space(V), _g(g), _dofs0(std::forward<X>(dofs)),
@@ -363,7 +367,9 @@ public:
   /// @note The indices in `dofs` are for *blocks*, e.g. a block index
   /// corresponds to 3 degrees-of-freedom if the dofmap associated with
   /// `g` has block size 3.
-  template <std::convertible_to<std::vector<std::int32_t>> X>
+  template <typename X>
+    requires std::is_convertible_v<std::remove_cvref_t<X>,
+                                   std::vector<std::int32_t>>
   DirichletBC(std::shared_ptr<const Function<T, U>> g, X&& dofs)
       : _function_space(g->function_space()), _g(g),
         _dofs0(std::forward<X>(dofs)),

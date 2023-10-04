@@ -7,14 +7,14 @@
 
 import numpy as np
 import pytest
+
 import ufl
+from dolfinx import cpp as _cpp
+from dolfinx import fem
 from dolfinx.common import IndexMap
 from dolfinx.cpp.la import BlockMode, SparsityPattern
 from dolfinx.la import matrix_csr
 from dolfinx.mesh import GhostMode, create_unit_square
-
-from dolfinx import cpp as _cpp
-from dolfinx import fem
 
 from mpi4py import MPI
 
@@ -73,7 +73,7 @@ def test_add(dtype):
     assert np.allclose(A1, A3)
 
     mat3.set_value(0.0)
-    assert mat3.squared_norm() == 0.0
+    assert mat3.squared_norm() == 0.0  # /NOSONAR
 
 
 @pytest.mark.parametrize('dtype', [np.float32, np.float64, np.complex64, np.complex128])
@@ -86,7 +86,7 @@ def test_set(dtype):
     # Set a block with bs=1
     mat1.set([2.0, 3.0, 4.0, 5.0], [2, 3], [4, 5], 1)
     n1 = mat1.squared_norm()
-    assert (n1 == 54.0 * mpi_size)
+    assert (n1 == 54.0 * mpi_size)  # /NOSONAR
 
     # Set same block with bs=2
     mat1.set([2.0, 3.0, 4.0, 5.0], [1], [2], 2)
@@ -104,7 +104,7 @@ def test_set_blocked(dtype):
     # Set a block with bs=1
     mat1.set([2.0, 3.0, 4.0, 5.0], [2, 3], [4, 5], 1)
     n1 = mat1.squared_norm()
-    assert (n1 == 54.0 * mpi_size)
+    assert (n1 == 54.0 * mpi_size)  # /NOSONAR
 
 
 @pytest.mark.parametrize('dtype', [np.float32, np.float64, np.complex64, np.complex128])

@@ -10,11 +10,11 @@ import pytest
 
 import ufl
 from basix.ufl import element
+from dolfinx import default_real_type
 from dolfinx.fem import Function, FunctionSpace
 from dolfinx.mesh import create_mesh
 
 from mpi4py import MPI
-from dolfinx import default_real_type
 
 
 @pytest.mark.skip_in_parallel
@@ -24,7 +24,7 @@ def test_div_conforming_triangle(space_type, order):
     """Checks that the vectors in div conforming spaces on a triangle are correctly oriented"""
     # Create simple triangle mesh
     def perform_test(points, cells):
-        domain = ufl.Mesh(element("Lagrange", "triangle", 1, rank=1))
+        domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(2,)))
         mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
         V = FunctionSpace(mesh, (space_type, order))
         f = Function(V)
@@ -54,7 +54,7 @@ def test_div_conforming_tetrahedron(space_type, order):
     """Checks that the vectors in div conforming spaces on a tetrahedron are correctly oriented"""
     # Create simple tetrahedron cell mesh
     def perform_test(points, cells):
-        domain = ufl.Mesh(element("Lagrange", "tetrahedron", 1, rank=1))
+        domain = ufl.Mesh(element("Lagrange", "tetrahedron", 1, shape=(3,)))
         mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
         V = FunctionSpace(mesh, (space_type, order))
         f = Function(V)

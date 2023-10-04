@@ -14,6 +14,7 @@ import pytest
 import basix
 import ufl
 from basix.ufl import element
+from dolfinx import default_real_type
 from dolfinx.cpp.io import perm_vtk
 from dolfinx.fem import assemble_scalar, form
 from dolfinx.io import XDMFFile
@@ -22,7 +23,6 @@ from dolfinx.mesh import CellType, create_mesh, create_submesh
 from ufl import dx
 
 from mpi4py import MPI
-from dolfinx import default_real_type
 
 
 def check_cell_volume(points, cell, domain, volume):

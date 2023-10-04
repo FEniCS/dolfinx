@@ -8,20 +8,21 @@
 
 import typing
 
-import basix
-import basix.ufl
 import numpy as np
 import numpy.typing as npt
+
+import basix
+import basix.ufl
 import ufl
+from dolfinx import cpp as _cpp
+from dolfinx import default_real_type
 from dolfinx.cpp.mesh import (CellType, DiagonalType, GhostMode,
                               build_dual_graph, cell_dim,
                               create_cell_partitioner, exterior_facet_indices,
                               to_string, to_type)
 from dolfinx.cpp.refinement import RefinementOption
-from mpi4py import MPI as _MPI
 
-from dolfinx import cpp as _cpp
-from dolfinx import default_real_type
+from mpi4py import MPI as _MPI
 
 __all__ = ["meshtags_from_entities", "locate_entities", "locate_entities_boundary",
            "refine", "create_mesh", "Mesh", "MeshTags", "meshtags", "CellType",
@@ -346,9 +347,9 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
     cell_shape = ufl_element.cell().cellname()
     cell_degree = ufl_element.degree()
     try:
-        variant = ufl_element.lagrange_variant
+        variant = int(ufl_element.lagrange_variant)
     except AttributeError:
-        variant = basix.LagrangeVariant.unset
+        variant = int(basix.LagrangeVariant.unset)
 
     x = np.asarray(x, order='C')
     if x.dtype == np.float32:
@@ -370,9 +371,11 @@ def create_submesh(msh, dim, entities):
     submsh, entity_map, vertex_map, geom_map = _cpp.mesh.create_submesh(msh._cpp_object, dim, entities)
     assert len(submsh.geometry.cmaps) == 1
     submsh_ufl_cell = ufl.Cell(submsh.topology.cell_name(), geometric_dimension=submsh.geometry.dim)
-    submsh_domain = ufl.Mesh(basix.ufl.element(
-        "Lagrange", submsh_ufl_cell.cellname(), submsh.geometry.cmaps[0].degree, submsh.geometry.cmaps[0].variant,
-        shape=(submsh.geometry.dim, ), gdim=submsh.geometry.dim))
+    submsh_domain = ufl.Mesh(basix.ufl.element("Lagrange", submsh_ufl_cell.cellname(),
+                                               submsh.geometry.cmaps[0].degree,
+                                               basix.LagrangeVariant(submsh.geometry.cmaps[0].variant),
+                                               shape=(submsh.geometry.dim,),
+                                               gdim=submsh.geometry.dim))
     return (Mesh(submsh, submsh_domain), entity_map, vertex_map, geom_map)
 
 
@@ -471,7 +474,7 @@ def create_interval(comm: _MPI.Comm, nx: int, points: npt.ArrayLike,
     """
     if partitioner is None and comm.size > 1:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
-    domain = ufl.Mesh(basix.ufl.element("Lagrange", "interval", 1, rank=1))
+    domain = ufl.Mesh(basix.ufl.element("Lagrange", "interval", 1, shape=(1,)))
     if dtype == np.float32:
         mesh = _cpp.mesh.create_interval_float32(comm, nx, points, ghost_mode, partitioner)
     elif dtype == np.float64:
@@ -530,7 +533,7 @@ def create_rectangle(comm: _MPI.Comm, points: npt.ArrayLike, n: npt.ArrayLike,
     """
     if partitioner is None and comm.size > 1:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
-    domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_type.name, 1, rank=1))
+    domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_type.name, 1, shape=(2,)))
     if dtype == np.float32:
         mesh = _cpp.mesh.create_rectangle_float32(comm, points, n, cell_type, partitioner, diagonal)
     elif dtype == np.float64:
@@ -592,7 +595,7 @@ def create_box(comm: _MPI.Comm, points: typing.List[npt.ArrayLike], n: list,
     """
     if partitioner is None and comm.size > 1:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
-    domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_type.name, 1, rank=1))
+    domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_type.name, 1, shape=(3,)))
     if dtype == np.float32:
         mesh = _cpp.mesh.create_box_float32(comm, points, n, cell_type, partitioner)
     elif dtype == np.float64:

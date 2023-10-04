@@ -8,22 +8,22 @@
 from __future__ import annotations
 
 import typing
-
-if typing.TYPE_CHECKING:
-    from dolfinx.mesh import Mesh
-    from mpi4py import MPI as _MPI
-
 import warnings
 from functools import singledispatch
 
-import basix
 import numpy as np
 import numpy.typing as npt
-import ufl
-from dolfinx.fem import dofmap
 
+import basix
+import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit, la
+from dolfinx.fem import dofmap
+
+if typing.TYPE_CHECKING:
+    from dolfinx.mesh import Mesh
+
+    from mpi4py import MPI as _MPI
 
 
 class Constant(ufl.Constant):
@@ -748,5 +748,5 @@ def VectorFunctionSpace(mesh: Mesh,
         raise ValueError("Cannot create vector element containing a non-scalar.")
     ufl_e = basix.ufl.element(ed.family, mesh.basix_cell(), ed.degree,
                               shape=(mesh.geometry.dim,) if dim is None else (dim,),
-                              gdim=mesh.geometry.dim, rank=1)
+                              gdim=mesh.geometry.dim)
     return FunctionSpace(mesh, ufl_e)

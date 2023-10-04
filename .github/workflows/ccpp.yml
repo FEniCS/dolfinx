@@ -30,7 +30,7 @@ on:
 jobs:
   build:
     if: "!(contains(github.event.head_commit.message, '[ci skip]') || contains(github.event.head_commit.message, '[skip ci]'))"
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     container: ghcr.io/fenics/test-env:current-openmpi
 
     env:
@@ -56,6 +56,7 @@ jobs:
         if: github.event_name != 'workflow_dispatch'
         run: |
           python3 -m pip install git+https://github.com/FEniCS/ufl.git
+          # python3 -m pip install git+https://github.com/FEniCS/basix.git@garth/nanobind
           python3 -m pip install git+https://github.com/FEniCS/basix.git
           python3 -m pip install git+https://github.com/FEniCS/ffcx.git
       - name: Install FEniCS Python components
@@ -121,8 +122,8 @@ jobs:
 
       - name: Build C++ unit tests
         run: |
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S build/test/
-          cmake --build build/test
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
+          cmake --build build/test --parallel 3
       - name: Run C++ unit tests (serial)
         run: |
           cd build/test
@@ -133,8 +134,8 @@ jobs:
           mpiexec -np 2 ctest -V --output-on-failure -R unittests
       - name: Build and run C++ regression tests (serial and MPI (np=2))
         run: |
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S build/demo/
-          cmake --build build/demo
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S cpp/demo/
+          cmake --build build/demo --parallel 3
           cd build/demo
           ctest -V -R demo -R serial
           ctest -V -R demo -R mpi_2

@@ -107,8 +107,9 @@ std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
 distribute_entity_data(
     const mesh::Topology& topology, const std::vector<std::int64_t>& nodes_g,
     std::int64_t num_nodes_g, const fem::ElementDofLayout& cmap_dof_layout,
-    std::experimental::mdspan<const std::int32_t,
-                              MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        const std::int32_t,
+        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
         xdofmap,
     int entity_dim, std::span<const std::int64_t> entities,
     std::span<const std::int32_t> data);

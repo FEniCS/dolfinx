@@ -6,14 +6,15 @@
 
 import numpy as np
 import pytest
+
+import dolfinx
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx.fem import FunctionSpace, form
 from dolfinx.mesh import (CellType, GhostMode, create_unit_cube,
                           create_unit_square)
-from mpi4py import MPI
 
-import dolfinx
+from mpi4py import MPI
 
 
 @pytest.mark.skip_in_parallel
@@ -26,8 +27,9 @@ def test_mixed_element(rank, family, cell, degree):
     else:
         mesh = create_unit_cube(MPI.COMM_WORLD, 1, 1, 1, CellType.tetrahedron, ghost_mode=GhostMode.shared_facet)
 
+    shape = (mesh.geometry.dim,) * rank
     norms = []
-    U_el = element(family, cell.cellname(), degree, rank=rank)
+    U_el = element(family, cell.cellname(), degree, shape=shape)
     for i in range(3):
         U = FunctionSpace(mesh, U_el)
         u = ufl.TrialFunction(U)
@@ -72,7 +74,7 @@ def test_vector_element():
 @pytest.mark.parametrize("d2", range(1, 4))
 def test_element_product(d1, d2):
     mesh = create_unit_square(MPI.COMM_WORLD, 2, 2)
-    P3 = element("Lagrange", mesh.basix_cell(), d1, rank=1)
+    P3 = element("Lagrange", mesh.basix_cell(), d1, shape=(mesh.geometry.dim,))
     P1 = element("Lagrange", mesh.basix_cell(), d2)
     TH = mixed_element([P3, P1])
     W = FunctionSpace(mesh, TH)

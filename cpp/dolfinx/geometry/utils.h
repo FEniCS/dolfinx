@@ -36,15 +36,10 @@ std::vector<T> shortest_vector(const mesh::Mesh<T>& mesh, int dim,
                                std::span<const std::int32_t> entities,
                                std::span<const T> points)
 {
-  namespace stdex = std::experimental;
-
   const int tdim = mesh.topology()->dim();
   const mesh::Geometry<T>& geometry = mesh.geometry();
-
   if (geometry.cmaps().size() > 1)
-  {
     throw std::runtime_error("Mixed topology not supported");
-  }
 
   std::span<const T> geom_dofs = geometry.x();
   auto x_dofmap = geometry.dofmap();
@@ -53,7 +48,13 @@ std::vector<T> shortest_vector(const mesh::Mesh<T>& mesh, int dim,
   {
     for (std::size_t e = 0; e < entities.size(); e++)
     {
-      auto dofs = stdex::submdspan(x_dofmap, entities[e], MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      // Check that we have sent in valid entities, i.e. that they exist in the
+      // local dofmap. One gets a cryptical memory segfault if entities is -1
+      assert(entities[e] >= 0);
+      auto dofs
+          = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+              submdspan(x_dofmap, entities[e],
+                        MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
       std::vector<T> nodes(3 * dofs.size());
       for (std::size_t i = 0; i < dofs.size(); ++i)
       {
@@ -90,7 +91,9 @@ std::vector<T> shortest_vector(const mesh::Mesh<T>& mesh, int dim,
       const int local_cell_entity = std::distance(cell_entities.begin(), it0);
 
       // Tabulate geometry dofs for the entity
-      auto dofs = stdex::submdspan(x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::
+          MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
+              x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
       const std::vector<int> entity_dofs
           = geometry.cmaps()[0].create_dof_layout().entity_closure_dofs(
               dim, local_cell_entity);
@@ -496,8 +499,6 @@ std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
                                           const BoundingBoxTree<T>& tree,
                                           const std::array<T, 3>& point)
 {
-  namespace stdex = std::experimental;
-
   // Compute colliding bounding boxes(cell candidates)
   std::vector<std::int32_t> cell_candidates;
   impl::_compute_collisions_point<T>(tree, point, cell_candidates);
@@ -519,7 +520,9 @@ std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
     std::vector<T> coordinate_dofs(num_nodes * 3);
     for (auto cell : cell_candidates)
     {
-      auto dofs = stdex::submdspan(x_dofmap, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::
+          MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
+              x_dofmap, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
       for (std::size_t i = 0; i < num_nodes; ++i)
       {
         std::copy(std::next(geom_dofs.begin(), 3 * dofs[i]),
@@ -674,6 +677,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points)
   std::vector<std::int32_t> cells(num_cells, 0);
   std::iota(cells.begin(), cells.end(), 0);
   BoundingBoxTree bb(mesh, tdim, cells, padding);
+  BoundingBoxTree midpoint_tree = create_midpoint_tree(mesh, tdim, cells);
   BoundingBoxTree global_bbtree = bb.create_global_tree(comm);
 
   // Compute collisions:
@@ -751,20 +755,15 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points)
       dolfinx::MPI::mpi_type<T>(), received_points.data(), recv_sizes.data(),
       recv_offsets.data(), dolfinx::MPI::mpi_type<T>(), forward_comm);
 
-  // Each process checks which points collides with a cell on the process
+  // Each process checks which local cell is closest and computes the squared
+  // distance to the cell
   const int rank = dolfinx::MPI::rank(comm);
-  std::vector<std::int32_t> cell_indicator(received_points.size() / 3);
-  std::vector<std::int32_t> colliding_cells(received_points.size() / 3);
-  for (std::size_t p = 0; p < received_points.size(); p += 3)
-  {
-    std::array<T, 3> point;
-    std::copy(std::next(received_points.begin(), p),
-              std::next(received_points.begin(), p + 3), point.begin());
-    const int colliding_cell
-        = geometry::compute_first_colliding_cell(mesh, bb, point);
-    cell_indicator[p / 3] = (colliding_cell >= 0) ? rank : -1;
-    colliding_cells[p / 3] = colliding_cell;
-  }
+  const std::vector<std::int32_t> closest_cells = compute_closest_entity(
+      bb, midpoint_tree, mesh,
+      std::span<const T>(received_points.data(), received_points.size()));
+  const std::vector<T> squared_distances = squared_distance(
+      mesh, tdim, closest_cells,
+      std::span<const T>(received_points.data(), received_points.size()));
 
   // Create neighborhood communicator in the reverse direction: send
   // back col to requesting processes
@@ -791,20 +790,28 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points)
     std::swap(recv_offsets, send_offsets);
   }
 
-  std::vector<std::int32_t> recv_ranks(recv_offsets.back());
+  // Get distances from closest entity of points that were on the other process
+  std::vector<T> recv_distances(recv_offsets.back());
   MPI_Neighbor_alltoallv(
-      cell_indicator.data(), send_sizes.data(), send_offsets.data(),
-      dolfinx::MPI::mpi_type<std::int32_t>(), recv_ranks.data(),
-      recv_sizes.data(), recv_offsets.data(),
-      dolfinx::MPI::mpi_type<std::int32_t>(), reverse_comm);
+      squared_distances.data(), send_sizes.data(), send_offsets.data(),
+      dolfinx::MPI::mpi_type<T>(), recv_distances.data(), recv_sizes.data(),
+      recv_offsets.data(), dolfinx::MPI::mpi_type<T>(), reverse_comm);
 
   std::vector<std::int32_t> point_owners(points.size() / 3, -1);
-  for (std::size_t i = 0; i < unpack_map.size(); i++)
+  std::vector<T> closest_distance(points.size() / 3, -1);
+  for (std::size_t i = 0; i < out_ranks.size(); i++)
   {
-    const std::int32_t pos = unpack_map[i];
-    // Only insert new owner if no owner has previously been found
-    if ((recv_ranks[i] >= 0) && (point_owners[pos] == -1))
-      point_owners[pos] = recv_ranks[i];
+    for (std::int32_t j = recv_offsets[i]; j < recv_offsets[i + 1]; j++)
+    {
+      const std::int32_t pos = unpack_map[j];
+      // If point has not been found yet distance is negative
+      // If new received distance smaller than current distance choose owner
+      if (auto d = closest_distance[pos]; d < 0 or d > recv_distances[j])
+      {
+        point_owners[pos] = out_ranks[i];
+        closest_distance[pos] = recv_distances[j];
+      }
+    }
   }
 
   // Communication is reversed again to send dest ranks to all processes
@@ -847,7 +854,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points)
         owned_recv_points.insert(
             owned_recv_points.end(), std::next(received_points.cbegin(), 3 * j),
             std::next(received_points.cbegin(), 3 * (j + 1)));
-        owned_recv_cells.push_back(colliding_cells[j]);
+        owned_recv_cells.push_back(closest_cells[j]);
       }
     }
   }

@@ -12,14 +12,15 @@ import numpy as np
 import pybind11
 import pytest
 import scipy.sparse.linalg
+
+import dolfinx.pkgconfig
 import ufl
 from dolfinx.fem import (FunctionSpace, assemble_matrix, dirichletbc, form,
                          locate_dofs_geometrical)
 from dolfinx.mesh import create_unit_square
 from dolfinx.wrappers import get_include_path as pybind_inc
-from mpi4py import MPI
 
-import dolfinx
+from mpi4py import MPI
 
 
 @pytest.mark.skip_in_parallel

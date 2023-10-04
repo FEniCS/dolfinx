@@ -6,12 +6,12 @@
 """Linear algebra functionality"""
 
 
-import numpy.typing as npt
 import numpy as np
-from dolfinx.cpp.common import IndexMap
-from dolfinx.cpp.la import BlockMode, InsertMode, Norm
+import numpy.typing as npt
 
 from dolfinx import cpp as _cpp
+from dolfinx.cpp.common import IndexMap
+from dolfinx.cpp.la import BlockMode, InsertMode, Norm
 
 __all__ = ["orthonormalize", "is_orthonormal", "matrix_csr", "vector",
            "MatrixCSR", "Norm", "InsertMode", "Vector", "create_petsc_vector"]
@@ -114,7 +114,8 @@ class MatrixCSR:
             or a SciPy block compressed sparse row matrix.
 
         """
-        from scipy.sparse import csr_matrix as _csr, bsr_matrix as _bsr
+        from scipy.sparse import bsr_matrix as _bsr
+        from scipy.sparse import csr_matrix as _csr
 
         bs0, bs1 = self._cpp_object.bs
         ncols = self.index_map(1).size_local + self.index_map(1).num_ghosts
@@ -259,10 +260,10 @@ def create_petsc_vector_wrap(x: Vector):
     """
     from petsc4py import PETSc
     map = x.index_map
-    ghosts = map.ghosts.astype(PETSc.IntType)
+    ghosts = map.ghosts.astype(PETSc.IntType)  # type: ignore
     bs = x.block_size
     size = (map.size_local * bs, map.size_global * bs)
-    return PETSc.Vec().createGhostWithArray(ghosts, x.array, size=size, bsize=bs, comm=map.comm)
+    return PETSc.Vec().createGhostWithArray(ghosts, x.array, size=size, bsize=bs, comm=map.comm)  # type: ignore
 
 
 def create_petsc_vector(map, bs: int):
@@ -275,9 +276,9 @@ def create_petsc_vector(map, bs: int):
 
     """
     from petsc4py import PETSc
-    ghosts = map.ghosts.astype(PETSc.IntType)
+    ghosts = map.ghosts.astype(PETSc.IntType)  # type: ignore
     size = (map.size_local * bs, map.size_global * bs)
-    return PETSc.Vec().createGhost(ghosts, size=size, bsize=bs, comm=map.comm)
+    return PETSc.Vec().createGhost(ghosts, size=size, bsize=bs, comm=map.comm)  # type: ignore
 
 
 def orthonormalize(basis):

@@ -7,12 +7,15 @@
 
 import math
 
-import basix
 import numpy as np
 import pytest
 import scipy.sparse
+
+import basix
 import ufl
 from basix.ufl import element, mixed_element
+from dolfinx import cpp as _cpp
+from dolfinx import default_real_type, fem, graph, la
 from dolfinx.fem import (Constant, Function, FunctionSpace, assemble_scalar,
                          bcs_by_block, dirichletbc, extract_function_spaces,
                          form, locate_dofs_geometrical,
@@ -34,13 +37,11 @@ from dolfinx.fem.petsc import set_bc_nest as petsc_set_bc_nest
 from dolfinx.mesh import (CellType, GhostMode, create_mesh, create_rectangle,
                           create_unit_cube, create_unit_square,
                           locate_entities_boundary)
-from mpi4py import MPI
-from petsc4py import PETSc
 from ufl import derivative, ds, dx, inner
 from ufl.geometry import SpatialCoordinate
 
-from dolfinx import cpp as _cpp
-from dolfinx import default_real_type, fem, graph, la
+from mpi4py import MPI
+from petsc4py import PETSc
 
 
 def nest_matrix_norm(A):
@@ -150,7 +151,7 @@ def test_basic_assembly(mode, dtype):
     b.array[b.index_map.size_local * b.block_size:] = 0
     fem.assemble_vector(b.array, L)
     b.scatter_reverse(la.InsertMode.add)
-    assert 2.0 * normb == pytest.approx(b.norm())
+    assert 2 * normb == pytest.approx(b.norm())
 
     # Matrix re-assembly (no zeroing)
     fem.assemble_matrix(A, a)
@@ -208,7 +209,9 @@ def test_assembly_bcs(mode):
     with g.localForm() as g_local:
         g_local.set(0.0)
     petsc_set_bc(g, [bc])
-    f = b - A * g
+    # f = b - A * g
+    f = b.duplicate()
+    A.multAdd(-g, b, f)
     petsc_set_bc(f, [bc])
 
     # Assemble vector and apply lifting of bcs during assembly
@@ -633,7 +636,7 @@ def test_assembly_solve_taylor_hood(mesh):
 
     def monolithic_solve():
         """Monolithic (interleaved) solver"""
-        P2_el = element("Lagrange", mesh.basix_cell(), 2, rank=1)
+        P2_el = element("Lagrange", mesh.basix_cell(), 2, shape=(mesh.geometry.dim,))
         P1_el = element("Lagrange", mesh.basix_cell(), 1)
         TH = mixed_element([P2_el, P1_el])
         W = FunctionSpace(mesh, TH)
@@ -844,7 +847,7 @@ def test_pack_coefficients():
     for c in [(None, None), (None, coeffs), (constants, None), (constants, coeffs)]:
         A = petsc_assemble_matrix(J, constants=c[0], coeffs=c[1])
         A.assemble()
-        assert pytest.approx((A - A0).norm(), 1.0e-12) == 0.0
+    assert 0.0 == pytest.approx((A - A0).norm(), abs=1.0e-12)  # /NOSONAR
 
     # Change coefficients
     constants *= 5.0
@@ -943,7 +946,7 @@ def test_assemble_empty_rank_mesh():
     """Assembly on mesh where some ranks are empty"""
     comm = MPI.COMM_WORLD
     cell_type = CellType.triangle
-    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, rank=1))
+    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, shape=(2,)))
 
     def partitioner(comm, nparts, local_graph, num_ghost_nodes):
         """Leave cells on the curent rank"""

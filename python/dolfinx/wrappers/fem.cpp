@@ -154,6 +154,36 @@ void declare_function_space(py::module& m, std::string type)
                   std::span(x.mutable_data(), x.size()), cell_permutation, dim);
             },
             py::arg("x"), py::arg("cell_permutation"), py::arg("dim"))
+        .def(
+            "apply_dof_transformation",
+            [](const dolfinx::fem::FiniteElement<T>& self,
+               py::array_t<std::complex<T>, py::array::c_style> x,
+               std::uint32_t cell_permutation, int dim)
+            {
+              self.apply_dof_transformation(
+                  std::span(x.mutable_data(), x.size()), cell_permutation, dim);
+            },
+            py::arg("x"), py::arg("cell_permutation"), py::arg("dim"))
+        .def(
+            "apply_transpose_dof_transformation",
+            [](const dolfinx::fem::FiniteElement<T>& self,
+               py::array_t<std::complex<T>, py::array::c_style> x,
+               std::uint32_t cell_permutation, int dim)
+            {
+              self.apply_transpose_dof_transformation(
+                  std::span(x.mutable_data(), x.size()), cell_permutation, dim);
+            },
+            py::arg("x"), py::arg("cell_permutation"), py::arg("dim"))
+        .def(
+            "apply_inverse_transpose_dof_transformation",
+            [](const dolfinx::fem::FiniteElement<T>& self,
+               py::array_t<std::complex<T>, py::array::c_style> x,
+               std::uint32_t cell_permutation, int dim)
+            {
+              self.apply_inverse_transpose_dof_transformation(
+                  std::span(x.mutable_data(), x.size()), cell_permutation, dim);
+            },
+            py::arg("x"), py::arg("cell_permutation"), py::arg("dim"))
         .def_property_readonly(
             "needs_dof_transformations",
             &dolfinx::fem::FiniteElement<T>::needs_dof_transformations)
@@ -655,27 +685,35 @@ void declare_cmap(py::module& m, std::string type)
       m, pyclass_name.c_str(), "Coordinate map element")
       .def(py::init<dolfinx::mesh::CellType, int>(), py::arg("celltype"),
            py::arg("degree"))
-      .def(py::init<dolfinx::mesh::CellType, int,
-                    basix::element::lagrange_variant>(),
+      .def(py::init(
+               [](dolfinx::mesh::CellType celltype, int degree, int variant)
+               {
+                 return dolfinx::fem::CoordinateElement<T>(
+                     celltype, degree,
+                     static_cast<basix::element::lagrange_variant>(variant));
+               }),
            py::arg("celltype"), py::arg("degree"), py::arg("variant"))
       .def("create_dof_layout",
            &dolfinx::fem::CoordinateElement<T>::create_dof_layout)
       .def_property_readonly("degree",
                              &dolfinx::fem::CoordinateElement<T>::degree)
       .def_property_readonly("variant",
-                             &dolfinx::fem::CoordinateElement<T>::variant)
+                             [](const dolfinx::fem::CoordinateElement<T>& self)
+                             { return static_cast<int>(self.variant()); })
       .def(
           "push_forward",
           [](const dolfinx::fem::CoordinateElement<T>& self,
              const py::array_t<T, py::array::c_style>& X,
              const py::array_t<T, py::array::c_style>& cell)
           {
-            namespace stdex = std::experimental;
-            using mdspan2_t = stdex::mdspan<T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-            using cmdspan2_t
-                = stdex::mdspan<const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-            using cmdspan4_t
-                = stdex::mdspan<const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
+            using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+                T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+            using cmdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+                const T,
+                MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+            using cmdspan4_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+                const T,
+                MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
 
             std::array<std::size_t, 2> Xshape
                 = {(std::size_t)X.shape(0), (std::size_t)X.shape(1)};
@@ -686,8 +724,10 @@ void declare_cmap(py::module& m, std::string type)
                                              1, std::multiplies{}));
             cmdspan4_t phi_full(phi_b.data(), phi_shape);
             self.tabulate(0, std::span(X.data(), X.size()), Xshape, phi_b);
-            auto phi = stdex::submdspan(phi_full, 0, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
-                                        MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
+            auto phi = MDSPAN_IMPL_STANDARD_NAMESPACE::
+                MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
+                    phi_full, 0, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
+                    MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
 
             std::array<std::size_t, 2> shape
                 = {(std::size_t)X.shape(0), (std::size_t)cell.shape(1)};
@@ -709,12 +749,14 @@ void declare_cmap(py::module& m, std::string type)
             const std::size_t gdim = x.shape(1);
             const std::size_t tdim = dolfinx::mesh::cell_dim(self.cell_shape());
 
-            namespace stdex = std::experimental;
-            using mdspan2_t = stdex::mdspan<T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-            using cmdspan2_t
-                = stdex::mdspan<const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-            using cmdspan4_t
-                = stdex::mdspan<const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
+            using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+                T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+            using cmdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+                const T,
+                MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+            using cmdspan4_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+                const T,
+                MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
 
             std::vector<T> Xb(num_points * tdim);
             mdspan2_t X(Xb.data(), num_points, tdim);
@@ -735,8 +777,10 @@ void declare_cmap(py::module& m, std::string type)
               cmdspan4_t phi(phi_b.data(), phi_shape);
 
               self.tabulate(1, std::vector<T>(tdim), {1, tdim}, phi_b);
-              auto dphi = stdex::submdspan(phi, std::pair(1, tdim + 1), 0,
-                                           MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
+              auto dphi = MDSPAN_IMPL_STANDARD_NAMESPACE::
+                  MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
+                      phi, std::pair(1, tdim + 1), 0,
+                      MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
 
               self.compute_jacobian(dphi, g, J);
               self.compute_jacobian_inverse(J, K);
@@ -908,9 +952,6 @@ namespace dolfinx_wrappers
 
 void fem(py::module& m)
 {
-  // Load basix and dolfinx to use Pybindings
-  py::module_::import("basix");
-
   declare_objects<float>(m, "float32");
   declare_objects<double>(m, "float64");
   declare_objects<std::complex<float>>(m, "complex64");
@@ -955,8 +996,9 @@ void fem(py::module& m)
       {
         if (dofmap.ndim() != 2)
           throw std::runtime_error("Dofmap data has wrong rank");
-        namespace stdex = std::experimental;
-        stdex::mdspan<const std::int32_t, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+        MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+            const std::int32_t,
+            MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
             _dofmap(dofmap.data(), dofmap.shape(0), dofmap.shape(1));
         return dolfinx::fem::transpose_dofmap(_dofmap, num_cells);
       },

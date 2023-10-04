@@ -36,7 +36,7 @@ def test_tabulate_dofs(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
     W0 = element("Lagrange", mesh.basix_cell(), 1)
-    W1 = element("Lagrange", mesh.basix_cell(), 1, rank=1)
+    W1 = element("Lagrange", mesh.basix_cell(), 1, shape=(mesh.geometry.dim,))
     W = FunctionSpace(mesh, W0 * W1)
 
     L0 = W.sub(0)
@@ -142,7 +142,7 @@ def test_entity_closure_dofs(mesh_factory):
         assert set(V.dofmap.entity_closure_dofs(mesh, d, all_cells)) == set(range(V.dim))
 
 
-def test_block_size(mesh):
+def test_block_size():
     meshes = [create_unit_square(MPI.COMM_WORLD, 8, 8),
               create_unit_cube(MPI.COMM_WORLD, 4, 4, 4),
               create_unit_square(MPI.COMM_WORLD, 8, 8, CellType.quadrilateral),
@@ -183,7 +183,7 @@ def test_local_dimension(mesh_factory):
     mesh = func(*args)
 
     v = element("Lagrange", mesh.basix_cell(), 1)
-    q = element("Lagrange", mesh.basix_cell(), 1, rank=1)
+    q = element("Lagrange", mesh.basix_cell(), 1, shape=(mesh.geometry.dim,))
     w = v * q
 
     V = FunctionSpace(mesh, v)
@@ -248,7 +248,7 @@ def test_readonly_view_local_to_global_unwoned(mesh):
 def test_higher_order_coordinate_map(points, celltype, order):
     """Computes physical coordinates of a cell, based on the coordinate map."""
     cells = np.array([range(len(points))])
-    domain = ufl.Mesh(element("Lagrange", celltype.name, order, rank=1))
+    domain = ufl.Mesh(element("Lagrange", celltype.name, order, shape=(points.shape[1],)))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
 
     V = FunctionSpace(mesh, ("Lagrange", 2))
@@ -296,7 +296,7 @@ def test_higher_order_tetra_coordinate_map(order):
                            [0, 1, 3 / 2], [1 / 2, 0, 3 / 2], [1 / 2, 1, 0], [0, 0, 3 / 2],
                            [0, 1, 0], [1 / 2, 0, 0]])
     cells = np.array([range(len(points))])
-    domain = ufl.Mesh(element("Lagrange", celltype.name, order, rank=1))
+    domain = ufl.Mesh(element("Lagrange", celltype.name, order, shape=(3,)))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     V = FunctionSpace(mesh, ("Lagrange", order))
     X = V.element.interpolation_points()

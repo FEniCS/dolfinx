@@ -21,14 +21,16 @@
 
 # +
 import numpy as np
+
 import ufl
 from dolfinx.fem import Function, assemble_scalar, form, functionspace
 from dolfinx.fem.petsc import LinearProblem
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import create_unit_square
+from ufl import dx, grad, inner
+
 from mpi4py import MPI
 from petsc4py import PETSc
-from ufl import dx, grad, inner
 
 # Wavenumber
 k0 = 4 * np.pi
@@ -43,8 +45,8 @@ msh = create_unit_square(MPI.COMM_WORLD, n_elem, n_elem)
 n = ufl.FacetNormal(msh)
 
 # Source amplitude
-if np.issubdtype(PETSc.ScalarType, np.complexfloating):
-    A = PETSc.ScalarType(1 + 1j)
+if np.issubdtype(PETSc.ScalarType, np.complexfloating):  # type: ignore
+    A = PETSc.ScalarType(1 + 1j)  # type: ignore
 else:
     A = 1
 
