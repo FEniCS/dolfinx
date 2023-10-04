@@ -30,7 +30,11 @@
 #include <memory>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
+#include <nanobind/stl/map.h>
+#include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>
+#include <nanobind/stl/string.h>
+#include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
 #include <span>
 #include <string>
@@ -834,7 +838,7 @@ void declare_real_functions(nb::module_& m)
                 *V[0].get().mesh()->topology_mutable(),
                 {*V[0].get().dofmap(), *V[1].get().dofmap()}, dim,
                 std::span(entities.data(), entities.size()), remote);
-        return std::array<nb::ndarray<std::int32_t>, 2>(
+        return std::array<nb::ndarray<std::int32_t, nb::numpy>, 2>(
             {dolfinx_wrappers::as_nbarray(std::move(dofs[0])),
              dolfinx_wrappers::as_nbarray(std::move(dofs[1]))});
       },
@@ -875,7 +879,7 @@ void declare_real_functions(nb::module_& m)
 
         std::array<std::vector<std::int32_t>, 2> dofs
             = dolfinx::fem::locate_dofs_geometrical<T>({V[0], V[1]}, _marker);
-        return std::array<nb::ndarray<std::int32_t>, 2>(
+        return std::array<nb::ndarray<std::int32_t, nb::numpy>, 2>(
             {dolfinx_wrappers::as_nbarray(std::move(dofs[0])),
              dolfinx_wrappers::as_nbarray(std::move(dofs[1]))});
       },

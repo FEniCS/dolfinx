@@ -117,17 +117,19 @@ void declare_petsc_discrete_operators(nb::module_& m)
 
 void petsc_la_module(nb::module_& m)
 {
-  m.def(
-      "create_matrix",
-      [](dolfinx_wrappers::MPICommWrapper comm,
-         const dolfinx::la::SparsityPattern& p, const std::string& type)
-      { return dolfinx::la::petsc::create_matrix(comm.get(), p, type); },
-      nb::rv_policy::take_ownership, nb::arg("comm"), nb::arg("p"),
-      nb::arg("type") = std::string(),
-      "Create a PETSc Mat from sparsity pattern.");
-  // TODO: check reference counting for index sets
+  // m.def(
+  //     "create_matrix",
+  //     [](dolfinx_wrappers::MPICommWrapper comm,
+  //        const dolfinx::la::SparsityPattern& p, const std::string& type)
+  //     { return dolfinx::la::petsc::create_matrix(comm.get(), p, type); },
+  //     nb::rv_policy::take_ownership, nb::arg("comm"), nb::arg("p"),
+  //     nb::arg("type") = std::string(),
+  //     "Create a PETSc Mat from sparsity pattern.");
+  // // TODO: check reference counting for index sets
+
   m.def("create_index_sets", &dolfinx::la::petsc::create_index_sets,
         nb::arg("maps"), nb::rv_policy::take_ownership);
+
   m.def(
       "scatter_local_vectors",
       [](Vec x, const std::vector<nb::ndarray<PetscScalar, nb::numpy>>& x_b,
@@ -153,7 +155,7 @@ void petsc_la_module(nb::module_& m)
       {
         std::vector<std::vector<PetscScalar>> vecs
             = dolfinx::la::petsc::get_local_vectors(x, maps);
-        std::vector<nb::ndarray<PetscScalar>> ret;
+        std::vector<nb::ndarray<PetscScalar, nb::numpy>> ret;
         for (std::vector<PetscScalar>& v : vecs)
           ret.push_back(dolfinx_wrappers::as_nbarray(std::move(v)));
         return ret;
@@ -165,26 +167,26 @@ void petsc_la_module(nb::module_& m)
 void petsc_fem_module(nb::module_& m)
 {
   // Create PETSc vectors and matrices
-  m.def("create_vector_block", &dolfinx::fem::petsc::create_vector_block,
-        nb::rv_policy::take_ownership, nb::arg("maps"),
-        "Create a monolithic vector for multiple (stacked) linear forms.");
-  m.def("create_vector_nest", &dolfinx::fem::petsc::create_vector_nest,
-        nb::rv_policy::take_ownership, nb::arg("maps"),
-        "Create nested vector for multiple (stacked) linear forms.");
-  m.def("create_matrix", dolfinx::fem::petsc::create_matrix<PetscReal>,
-        nb::rv_policy::take_ownership, nb::arg("a"),
-        nb::arg("type") = std::string(),
-        "Create a PETSc Mat for bilinear form.");
-  m.def("create_matrix_block",
-        &dolfinx::fem::petsc::create_matrix_block<PetscReal>,
-        nb::rv_policy::take_ownership, nb::arg("a"),
-        nb::arg("type") = std::string(),
-        "Create monolithic sparse matrix for stacked bilinear forms.");
-  m.def("create_matrix_nest",
-        &dolfinx::fem::petsc::create_matrix_nest<PetscReal>,
-        nb::rv_policy::take_ownership, nb::arg("a"),
-        nb::arg("types") = std::vector<std::vector<std::string>>(),
-        "Create nested sparse matrix for bilinear forms.");
+  // m.def("create_vector_block", &dolfinx::fem::petsc::create_vector_block,
+  //       nb::rv_policy::take_ownership, nb::arg("maps"),
+  //       "Create a monolithic vector for multiple (stacked) linear forms.");
+  // m.def("create_vector_nest", &dolfinx::fem::petsc::create_vector_nest,
+  //       nb::rv_policy::take_ownership, nb::arg("maps"),
+  //       "Create nested vector for multiple (stacked) linear forms.");
+  // m.def("create_matrix", dolfinx::fem::petsc::create_matrix<PetscReal>,
+  //       nb::rv_policy::take_ownership, nb::arg("a"),
+  //       nb::arg("type") = std::string(),
+  //       "Create a PETSc Mat for bilinear form.");
+  // m.def("create_matrix_block",
+  //       &dolfinx::fem::petsc::create_matrix_block<PetscReal>,
+  //       nb::rv_policy::take_ownership, nb::arg("a"),
+  //       nb::arg("type") = std::string(),
+  //       "Create monolithic sparse matrix for stacked bilinear forms.");
+  // m.def("create_matrix_nest",
+  //       &dolfinx::fem::petsc::create_matrix_nest<PetscReal>,
+  //       nb::rv_policy::take_ownership, nb::arg("a"),
+  //       nb::arg("types") = std::vector<std::vector<std::string>>(),
+  //       "Create nested sparse matrix for bilinear forms.");
 
   // PETSc Matrices
   m.def(

@@ -27,6 +27,7 @@
 #include <nanobind/stl/array.h>
 #include <nanobind/stl/function.h>
 #include <nanobind/stl/shared_ptr.h>
+#include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
 #include <span>
 
@@ -161,8 +162,8 @@ void declare_mesh(nb::module_& m, std::string type)
           [](const dolfinx::mesh::Geometry<T>& self)
           {
             std::array<std::size_t, 2> shape{self.x().size() / 3, 3};
-            return nb::ndarray<const T>(self.x().data(), 2, shape.data(),
-                                        nb::cast(self));
+            return nb::ndarray<const T, nb::numpy>(self.x().data(), 2,
+                                                   shape.data());
           },
           "Return coordinates of all geometry points. Each row is the "
           "coordinate of a point.")
@@ -192,8 +193,9 @@ void declare_mesh(nb::module_& m, std::string type)
                    { return MPICommWrapper(self.comm()); })
       .def_rw("name", &dolfinx::mesh::Mesh<T>::name);
 
+  std::string create_interval("create_interval_" + type);
   m.def(
-      std::string("create_interval_" + type).c_str(),
+      create_interval.c_str(),
       [](const MPICommWrapper comm, std::size_t n, std::array<double, 2> p,
          dolfinx::mesh::GhostMode ghost_mode,
          const PythonCellPartitionFunction& part)
@@ -203,8 +205,10 @@ void declare_mesh(nb::module_& m, std::string type)
       },
       nb::arg("comm"), nb::arg("n"), nb::arg("p"), nb::arg("ghost_mode"),
       nb::arg("partitioner"));
+
+  std::string create_rectangle("create_rectangle_" + type);
   m.def(
-      std::string("create_rectangle_" + type).c_str(),
+      create_rectangle.c_str(),
       [](const MPICommWrapper comm,
          const std::array<std::array<double, 2>, 2>& p,
          std::array<std::size_t, 2> n, dolfinx::mesh::CellType celltype,
@@ -217,8 +221,10 @@ void declare_mesh(nb::module_& m, std::string type)
       },
       nb::arg("comm"), nb::arg("p"), nb::arg("n"), nb::arg("celltype"),
       nb::arg("partitioner"), nb::arg("diagonal"));
+
+  std::string create_box("create_box_" + type);
   m.def(
-      std::string("create_box_" + type).c_str(),
+      create_box.c_str(),
       [](const MPICommWrapper comm,
          const std::array<std::array<double, 3>, 2>& p,
          std::array<std::size_t, 3> n, dolfinx::mesh::CellType celltype,
@@ -379,7 +385,9 @@ void mesh(nb::module_& m)
       .value("tetrahedron", dolfinx::mesh::CellType::tetrahedron)
       .value("pyramid", dolfinx::mesh::CellType::pyramid)
       .value("prism", dolfinx::mesh::CellType::prism)
-      .value("hexahedron", dolfinx::mesh::CellType::hexahedron);
+      .value("hexahedron", dolfinx::mesh::CellType::hexahedron)
+      .def_prop_ro("name",
+                   [](nb::object obj) { return nb::getattr(obj, "__name__"); });
 
   m.def("to_type", &dolfinx::mesh::to_type, nb::arg("cell"));
   m.def("to_string", &dolfinx::mesh::to_string, nb::arg("type"));

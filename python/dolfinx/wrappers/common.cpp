@@ -19,7 +19,10 @@
 #include <memory>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
+#include <nanobind/stl/array.h>
+#include <nanobind/stl/pair.h>
 #include <nanobind/stl/string.h>
+#include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
 #include <span>
 #include <string>
@@ -107,7 +110,8 @@ void common(nb::module_& m)
           {
             const std::vector<std::int64_t>& ghosts = self.ghosts();
             std::size_t size = ghosts.size();
-            return nb::ndarray<const std::int64_t>(ghosts.data(), 1, &size);
+            return nb::ndarray<const std::int64_t, nb::numpy>(ghosts.data(), 1,
+                                                              &size);
           },
           "Return list of ghost indices")
       .def_prop_ro("owners",
@@ -115,7 +119,9 @@ void common(nb::module_& m)
                    {
                      const std::vector<int>& owners = self.owners();
                      std::size_t size = owners.size();
-                     return nb::ndarray<const int>(owners.data(), 1, &size);
+                     return nb::ndarray<nb::numpy, const int,
+                                        nb::shape<nb::any>>(owners.data(), 1,
+                                                            &size);
                    })
       .def(
           "local_to_global",

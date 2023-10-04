@@ -58,6 +58,7 @@ def test_sub_index_map():
     assert (dest_ranks == owners).all()
 
     subowners = submap.owners
+    print(ghosts_pos_sub)
     assert (owners[ghosts_pos_sub] == subowners).all()
 
     # Check that ghost indices are correct in submap
@@ -79,5 +80,5 @@ def test_sub_index_map_ghost_mode_none():
     mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=GhostMode.none)
     tdim = mesh.topology.dim
     map = mesh.topology.index_map(tdim)
-    submap_indices = range(0, min(2, map.size_local))
+    submap_indices = np.arange(0, min(2, map.size_local), dtype=np.int32)
     map.create_submap(submap_indices)

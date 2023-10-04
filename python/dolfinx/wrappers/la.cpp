@@ -61,8 +61,7 @@ void declare_objects(nb::module_& m, const std::string& type)
                    {
                      std::span<T> array = self.mutable_array();
                      const std::size_t size = array.size();
-                     return nb::ndarray<T>(array.data(), 1, &size,
-                                           nb::cast(self));
+                     return nb::ndarray<T, nb::numpy>(array.data(), 1, &size);
                    })
       .def("scatter_forward", &dolfinx::la::Vector<T>::scatter_fwd)
       .def(
