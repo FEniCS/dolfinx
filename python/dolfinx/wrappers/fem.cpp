@@ -30,6 +30,7 @@
 #include <memory>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
+#include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/vector.h>
 #include <span>
 #include <string>
@@ -60,10 +61,12 @@ void declare_function_space(nb::module_& m, std::string type)
                                                "Finite element function space")
         .def(
             "__init__",
-            [](dolfinx::fem::FunctionSpace<T>& self,
+            [](dolfinx::fem::FunctionSpace<T>* self,
                std::shared_ptr<dolfinx::mesh::Mesh<T>> mesh,
                std::shared_ptr<dolfinx::fem::FiniteElement<T>> element,
-               std::shared_ptr<dolfinx::fem::DofMap> dofmap) {},
+               std::shared_ptr<dolfinx::fem::DofMap> dofmap) {
+              new (self) dolfinx::fem::FunctionSpace<T>(mesh, element, dofmap);
+            },
             nb::arg("mesh"), nb::arg("element"), nb::arg("dofmap"))
         .def("collapse", &dolfinx::fem::FunctionSpace<T>::collapse)
         .def("component", &dolfinx::fem::FunctionSpace<T>::component)
@@ -88,12 +91,12 @@ void declare_function_space(nb::module_& m, std::string type)
                                                "Finite element object")
         .def(
             "__init__",
-            [](dolfinx::fem::FiniteElement<T>& self,
+            [](dolfinx::fem::FiniteElement<T>* self,
                std::uintptr_t ufcx_element)
             {
               ufcx_finite_element* p
                   = reinterpret_cast<ufcx_finite_element*>(ufcx_element);
-              return dolfinx::fem::FiniteElement<T>(*p);
+              new (self) dolfinx::fem::FiniteElement<T>(*p);
             },
             nb::arg("ufcx_element"))
         .def("__eq__", &dolfinx::fem::FiniteElement<T>::operator==)
@@ -1049,14 +1052,14 @@ void fem(nb::module_& m)
   nb::class_<dolfinx::fem::DofMap>(m, "DofMap", "DofMap object")
       .def(
           "__init__",
-          [](dolfinx::fem::DofMap& self,
+          [](dolfinx::fem::DofMap* self,
              const dolfinx::fem::ElementDofLayout& element,
              std::shared_ptr<const dolfinx::common::IndexMap> index_map,
              int index_map_bs,
              const dolfinx::graph::AdjacencyList<std::int32_t>& dofmap, int bs)
           {
-            return dolfinx::fem::DofMap(element, index_map, index_map_bs,
-                                        dofmap.array(), bs);
+            new (self) dolfinx::fem::DofMap(element, index_map, index_map_bs,
+                                            dofmap.array(), bs);
           },
           nb::arg("element_dof_layout"), nb::arg("index_map"),
           nb::arg("index_map_bs"), nb::arg("dofmap"), nb::arg("bs"))

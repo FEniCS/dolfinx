@@ -55,18 +55,18 @@ void common(nb::module_& m)
   nb::class_<dolfinx::common::IndexMap>(m, "IndexMap")
       .def(
           "__init__",
-          [](const dolfinx::common::IndexMap& self, const MPICommWrapper comm,
+          [](dolfinx::common::IndexMap* self, const MPICommWrapper comm,
              std::int32_t local_size)
-          { return dolfinx::common::IndexMap(comm.get(), local_size); },
+          { new (self) dolfinx::common::IndexMap(comm.get(), local_size); },
           nb::arg("comm"), nb::arg("local_size"))
       .def(
           "__init__",
-          [](const dolfinx::common::IndexMap& self, const MPICommWrapper comm,
+          [](dolfinx::common::IndexMap* self, const MPICommWrapper comm,
              std::int32_t local_size,
              const nb::ndarray<std::int64_t, nb::numpy>& ghosts,
              const nb::ndarray<int, nb::numpy>& ghost_owners)
           {
-            return dolfinx::common::IndexMap(
+            new (self) dolfinx::common::IndexMap(
                 comm.get(), local_size, std::span(ghosts.data(), ghosts.size()),
                 std::span(ghost_owners.data(), ghost_owners.size()));
           },
@@ -74,7 +74,7 @@ void common(nb::module_& m)
           nb::arg("ghost_owners"))
       .def(
           "__init__",
-          [](const dolfinx::common::IndexMap& self, const MPICommWrapper comm,
+          [](dolfinx::common::IndexMap* self, const MPICommWrapper comm,
              std::int32_t local_size,
              const std::array<nb::ndarray<int, nb::numpy>, 2>& dest_src,
              const nb::ndarray<std::int64_t, nb::numpy>& ghosts,
@@ -85,7 +85,7 @@ void common(nb::module_& m)
                             dest_src[0].data() + dest_src[0].size());
             ranks[1].assign(dest_src[1].data(),
                             dest_src[1].data() + dest_src[1].size());
-            return dolfinx::common::IndexMap(
+            new (self) dolfinx::common::IndexMap(
                 comm.get(), local_size, ranks,
                 std::span(ghosts.data(), ghosts.size()),
                 std::span(ghost_owners.data(), ghost_owners.size()));

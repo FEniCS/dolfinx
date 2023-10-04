@@ -26,6 +26,8 @@
 #include <nanobind/ndarray.h>
 #include <nanobind/operators.h>
 #include <nanobind/stl/array.h>
+#include <nanobind/stl/complex.h>
+#include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/vector.h>
 #include <span>
 #include <string>
@@ -281,7 +283,7 @@ void declare_assembly_functions(nb::module_& m)
                        std::back_inserter(_coeffs),
                        [](auto& c) { return py_to_cpp_coeffs(c); });
 
-        dolfinx::fem::apply_lifting<T>(std::span(b.data(), b.size()), a,
+        dolfinx::fem::apply_lifting<T>(std::span<T>(b.data(), b.size()), a,
                                        _constants, _coeffs, bcs1, _x0, scale);
       },
       nb::arg("b"), nb::arg("a"), nb::arg("constants"), nb::arg("coeffs"),
