@@ -6,8 +6,10 @@
 
 import numpy as np
 import pytest
+
 import ufl
 from basix.ufl import element, mixed_element
+from dolfinx import default_real_type, default_scalar_type, la
 from dolfinx.fem import (Constant, Function, FunctionSpace, apply_lifting,
                          assemble_matrix, assemble_vector, create_matrix,
                          create_vector, dirichletbc, form,
@@ -15,10 +17,9 @@ from dolfinx.fem import (Constant, Function, FunctionSpace, apply_lifting,
                          set_bc)
 from dolfinx.mesh import (CellType, create_unit_cube, create_unit_square,
                           locate_entities_boundary)
-from mpi4py import MPI
 from ufl import dx, inner
 
-from dolfinx import default_real_type, default_scalar_type, la
+from mpi4py import MPI
 
 
 def test_locate_dofs_geometrical():
