@@ -282,7 +282,7 @@ def test_mixed_sub_interpolation():
         u, v = Function(V), Function(V)
         u.interpolate(U.sub(i))
         v.interpolate(f)
-        assert np.allclose(u.vector.array, v.vector.array)
+        assert np.allclose(u.x.array, v.x.array)
 
         # Same map, different elements
         gdim = mesh.geometry.dim
@@ -290,21 +290,23 @@ def test_mixed_sub_interpolation():
         u, v = Function(V), Function(V)
         u.interpolate(U.sub(i))
         v.interpolate(f)
-        assert np.allclose(u.vector.array, v.vector.array)
+        assert np.allclose(u.x.array, v.x.array)
 
         # Different maps (0)
         V = FunctionSpace(mesh, ("N1curl", 1))
         u, v = Function(V), Function(V)
         u.interpolate(U.sub(i))
         v.interpolate(f)
-        assert np.allclose(u.vector.array, v.vector.array, atol=1.0e-6)
+        atol = 5 * np.finfo(u.x.array.dtype).resolution
+        assert np.allclose(u.x.array, v.x.array, atol=atol)
 
         # Different maps (1)
         V = FunctionSpace(mesh, ("RT", 2))
         u, v = Function(V), Function(V)
         u.interpolate(U.sub(i))
         v.interpolate(f)
-        assert np.allclose(u.vector.array, v.vector.array, atol=1.0e-6)
+        atol = 5 * np.finfo(u.x.array.dtype).resolution
+        assert np.allclose(u.x.array, v.x.array, atol=atol)
 
         # Test with wrong shape
         V0 = FunctionSpace(mesh, P.sub_elements()[0])
@@ -778,8 +780,8 @@ def test_nonmatching_mesh_single_cell_overlap_interpolation(xtype):
     mesh2 = create_rectangle(MPI.COMM_WORLD, [[0.0, 0.0], [p0_mesh2, p0_mesh2]], [n_mesh2, n_mesh2],
                              cell_type=CellType.triangle, dtype=xtype)
 
-    u1 = Function(FunctionSpace(mesh1, ("CG", 1)), name="u1", dtype=xtype)
-    u2 = Function(FunctionSpace(mesh2, ("CG", 1)), name="u2", dtype=xtype)
+    u1 = Function(FunctionSpace(mesh1, ("Lagrange", 1)), name="u1", dtype=xtype)
+    u2 = Function(FunctionSpace(mesh2, ("Lagrange", 1)), name="u2", dtype=xtype)
 
     def f_test1(x):
         return 1.0 - x[0] * x[1]

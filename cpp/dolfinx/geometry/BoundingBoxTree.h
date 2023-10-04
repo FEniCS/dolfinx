@@ -328,7 +328,11 @@ public:
     const int mpi_size = dolfinx::MPI::size(comm);
 
     // Send root node coordinates to all processes
-    std::array<T, 6> send_bbox = {0, 0, 0, 0, 0, 0};
+    // This is to counteract the fact that a process might have 0 bounding box
+    // causing false positives on process collisions around (0,0,0)
+    constexpr T max_val = std::numeric_limits<T>::max();
+    std::array<T, 6> send_bbox
+        = {max_val, max_val, max_val, max_val, max_val, max_val};
     if (num_bboxes() > 0)
       std::copy_n(std::prev(_bbox_coordinates.end(), 6), 6, send_bbox.begin());
     std::vector<T> recv_bbox(mpi_size * 6);
