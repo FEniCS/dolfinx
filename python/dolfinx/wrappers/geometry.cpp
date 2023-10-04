@@ -14,6 +14,7 @@
 #include <memory>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
+#include <nanobind/stl/variant.h>
 #include <nanobind/stl/vector.h>
 #include <span>
 
@@ -144,7 +145,8 @@ void declare_bbtree(nb::module_& m, std::string type)
   m.def(
       "squared_distance",
       [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
-         std::vector<std::int32_t> indices, const nb::ndarray<T>& points)
+         std::vector<std::int32_t> indices,
+         const nb::ndarray<T, nb::numpy>& points)
       {
         const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
         std::span<const T> _p(points.data(), 3 * p_s0);

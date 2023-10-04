@@ -414,8 +414,8 @@ void declare_objects(nb::module_& m, const std::string& type)
           "value",
           [](dolfinx::fem::Constant<T>& self)
           {
-            return nb::ndarray<T>(self.value.data(), self.shape.size(),
-                                  self.shape.data());
+            return nb::ndarray<T, nb::numpy>(
+                self.value.data(), self.shape.size(), self.shape.data());
           },
           nb::rv_policy::reference_internal);
 
@@ -692,8 +692,11 @@ void declare_cmap(nb::module_& m, std::string type)
       .def(
           "__init__",
           [](dolfinx::fem::CoordinateElement<T>* cm, dolfinx::mesh::CellType ct,
-             int d, basix::element::lagrange_variant var)
-          { new (cm) dolfinx::fem::CoordinateElement<T>(ct, d, var); },
+             int d, int var)
+          {
+            new (cm) dolfinx::fem::CoordinateElement<T>(
+                ct, d, static_cast<basix::element::lagrange_variant>(var));
+          },
           nb::arg("celltype"), nb::arg("degree"), nb::arg("variant"))
       .def("create_dof_layout",
            &dolfinx::fem::CoordinateElement<T>::create_dof_layout)
@@ -1007,7 +1010,6 @@ void fem(nb::module_& m)
             _dofmap(dofmap.data(), dofmap.shape(0), dofmap.shape(1));
         return dolfinx::fem::transpose_dofmap(_dofmap, num_cells);
       },
-      nb::rv_policy::reference_internal,
       "Build the index to (cell, local index) map from a dofmap ((cell, local "
       "index) -> index).");
   m.def(

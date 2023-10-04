@@ -28,6 +28,7 @@
 #include <nanobind/stl/function.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/string.h>
+#include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
 #include <span>
 
@@ -117,14 +118,14 @@ void declare_meshtags(nb::module_& m, std::string type)
                    [](dolfinx::mesh::MeshTags<T>& self)
                    {
                      const std::size_t size = self.values().size();
-                     return nb::ndarray<const T>(self.values().data(), 1,
-                                                 &size);
+                     return nb::ndarray<const T, nb::numpy>(
+                         self.values().data(), 1, &size);
                    })
       .def_prop_ro("indices",
                    [](dolfinx::mesh::MeshTags<T>& self)
                    {
                      const std::size_t size = self.indices().size();
-                     return nb::ndarray<const std::int32_t>(
+                     return nb::ndarray<const std::int32_t, nb::numpy>(
                          self.indices().data(), 1, &size);
                    })
       .def("find", [](dolfinx::mesh::MeshTags<T>& self, T value)
@@ -153,8 +154,8 @@ void declare_mesh(nb::module_& m, std::string type)
                    {
                      auto dofs = self.dofmap();
                      std::array shape{dofs.extent(0), dofs.extent(1)};
-                     return nb::ndarray<const std::int32_t>(
-                         dofs.data_handle(), 2, shape.data(), nb::cast(self));
+                     return nb::ndarray<const std::int32_t, nb::numpy>(
+                         dofs.data_handle(), 2, shape.data());
                    })
       .def("index_map", &dolfinx::mesh::Geometry<T>::index_map)
       .def_prop_ro(
@@ -455,7 +456,8 @@ void mesh(nb::module_& m)
            {
              const std::vector<std::uint8_t>& p = self.get_facet_permutations();
              const std::size_t size = p.size();
-             return nb::ndarray<const std::uint8_t>(p.data(), 1, &size);
+             return nb::ndarray<const std::uint8_t, nb::numpy>(p.data(), 1,
+                                                               &size);
            })
       .def("get_cell_permutation_info",
            [](const dolfinx::mesh::Topology& self)
@@ -463,7 +465,8 @@ void mesh(nb::module_& m)
              const std::vector<std::uint32_t>& p
                  = self.get_cell_permutation_info();
              const std::size_t size = p.size();
-             return nb::ndarray<const std::uint32_t>(p.data(), 1, &size);
+             return nb::ndarray<const std::uint32_t, nb::numpy>(p.data(), 1,
+                                                                &size);
            })
       .def_prop_ro("dim", &dolfinx::mesh::Topology::dim,
                    "Topological dimension")
@@ -471,7 +474,7 @@ void mesh(nb::module_& m)
                    [](const dolfinx::mesh::Topology& self)
                    {
                      const std::size_t size = self.original_cell_index.size();
-                     return nb::ndarray<const std::int64_t>(
+                     return nb::ndarray<const std::int64_t, nb::numpy>(
                          self.original_cell_index.data(), 1, &size);
                    })
       .def("connectivity",
