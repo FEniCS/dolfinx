@@ -7,11 +7,15 @@
 import math
 import sys
 
-import basix
 import numpy as np
 import pytest
+
+import basix
 import ufl
 from basix.ufl import element
+from dolfinx import cpp as _cpp
+from dolfinx import graph
+from dolfinx import mesh as _mesh
 from dolfinx.cpp.mesh import (create_cell_partitioner, entities_to_geometry,
                               is_simplex)
 from dolfinx.fem import assemble_scalar, form
@@ -20,11 +24,8 @@ from dolfinx.mesh import (CellType, DiagonalType, GhostMode, create_box,
                           create_unit_cube, create_unit_interval,
                           create_unit_square, exterior_facet_indices,
                           locate_entities, locate_entities_boundary)
-from mpi4py import MPI
 
-from dolfinx import cpp as _cpp
-from dolfinx import graph
-from dolfinx import mesh as _mesh
+from mpi4py import MPI
 
 
 def submesh_topology_test(mesh, submesh, entity_map, vertex_map, entity_dim):

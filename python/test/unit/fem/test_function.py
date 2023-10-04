@@ -10,15 +10,16 @@ import importlib
 import cffi
 import numpy as np
 import pytest
+
 import ufl
 from basix.ufl import element, mixed_element
+from dolfinx import default_real_type, la
 from dolfinx.fem import Function, FunctionSpace
 from dolfinx.geometry import (bb_tree, compute_colliding_cells,
                               compute_collisions_points)
 from dolfinx.mesh import create_mesh, create_unit_cube
-from mpi4py import MPI
 
-from dolfinx import default_real_type, la
+from mpi4py import MPI
 
 
 @pytest.fixture

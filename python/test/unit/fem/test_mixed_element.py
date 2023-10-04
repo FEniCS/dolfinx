@@ -6,14 +6,15 @@
 
 import numpy as np
 import pytest
+
+import dolfinx
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx.fem import FunctionSpace, form
 from dolfinx.mesh import (CellType, GhostMode, create_unit_cube,
                           create_unit_square)
-from mpi4py import MPI
 
-import dolfinx
+from mpi4py import MPI
 
 
 @pytest.mark.skip_in_parallel

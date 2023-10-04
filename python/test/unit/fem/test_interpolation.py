@@ -7,21 +7,22 @@
 
 import random
 
-import basix
 import numpy as np
 import pytest
+
+import basix
 import ufl
 from basix.ufl import (blocked_element, custom_element, element,
                        enriched_element, mixed_element)
+from dolfinx import default_real_type
 from dolfinx.fem import (Expression, Function, FunctionSpace, assemble_scalar,
                          create_nonmatching_meshes_interpolation_data, form)
 from dolfinx.geometry import bb_tree, compute_collisions_points
 from dolfinx.mesh import (CellType, create_mesh, create_rectangle,
                           create_unit_cube, create_unit_square,
                           locate_entities, locate_entities_boundary, meshtags)
-from mpi4py import MPI
 
-from dolfinx import default_real_type
+from mpi4py import MPI
 
 parametrize_cell_types = pytest.mark.parametrize(
     "cell_type", [

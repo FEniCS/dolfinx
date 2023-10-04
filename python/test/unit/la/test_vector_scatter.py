@@ -8,12 +8,13 @@
 
 import numpy as np
 import pytest
+
 from basix.ufl import element
+from dolfinx import la
 from dolfinx.fem import Function, FunctionSpace
 from dolfinx.mesh import create_unit_square
-from mpi4py import MPI
 
-from dolfinx import la
+from mpi4py import MPI
 
 
 @pytest.mark.parametrize("e", [

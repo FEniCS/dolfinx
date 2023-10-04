@@ -8,13 +8,14 @@
 # import basix
 import numpy as np
 import pytest
+
 from basix.ufl import element, mixed_element
+from dolfinx import default_real_type
 from dolfinx.fem import Function, FunctionSpace, FunctionSpaceBase
 from dolfinx.mesh import create_mesh, create_unit_cube
-from mpi4py import MPI
 from ufl import Cell, Mesh, TestFunction, TrialFunction, grad
 
-from dolfinx import default_real_type
+from mpi4py import MPI
 
 
 @pytest.fixture
