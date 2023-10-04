@@ -6,13 +6,16 @@
 """Unit tests for the DiscreteOperator class"""
 
 import numpy as np
-import scipy
 import pytest
+import scipy
+
+import dolfinx.la
 import ufl
 from dolfinx.cpp.fem import discrete_gradient
-from dolfinx.fem import (Expression, Function, FunctionSpace)
-import dolfinx.la
-from dolfinx.mesh import (CellType, GhostMode, create_unit_cube, create_unit_square)
+from dolfinx.fem import Expression, Function, FunctionSpace
+from dolfinx.mesh import (CellType, GhostMode, create_unit_cube,
+                          create_unit_square)
+
 from mpi4py import MPI
 
 

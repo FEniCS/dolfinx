@@ -7,12 +7,15 @@
 
 import math
 
-import basix
 import numpy as np
 import pytest
 import scipy.sparse
+
+import basix
 import ufl
 from basix.ufl import element, mixed_element
+from dolfinx import cpp as _cpp
+from dolfinx import default_real_type, fem, graph, la
 from dolfinx.fem import (Constant, Function, FunctionSpace, assemble_scalar,
                          bcs_by_block, dirichletbc, extract_function_spaces,
                          form, locate_dofs_geometrical,
@@ -34,13 +37,11 @@ from dolfinx.fem.petsc import set_bc_nest as petsc_set_bc_nest
 from dolfinx.mesh import (CellType, GhostMode, create_mesh, create_rectangle,
                           create_unit_cube, create_unit_square,
                           locate_entities_boundary)
-from mpi4py import MPI
-from petsc4py import PETSc
 from ufl import derivative, ds, dx, inner
 from ufl.geometry import SpatialCoordinate
 
-from dolfinx import cpp as _cpp
-from dolfinx import default_real_type, fem, graph, la
+from mpi4py import MPI
+from petsc4py import PETSc
 
 
 def nest_matrix_norm(A):
