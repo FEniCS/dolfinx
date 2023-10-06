@@ -11,15 +11,16 @@ import sys
 
 import numpy as np
 import pytest
-from dolfinx.fem import Form, Function, FunctionSpace, IntegralType
-from dolfinx.mesh import create_unit_square
-from mpi4py import MPI
 
 import dolfinx
 from dolfinx import TimingType
 from dolfinx import cpp as _cpp
 from dolfinx import (default_real_type, default_scalar_type, fem, la,
                      list_timings)
+from dolfinx.fem import Form, Function, FunctionSpace, IntegralType
+from dolfinx.mesh import create_unit_square
+
+from mpi4py import MPI
 
 numba = pytest.importorskip("numba")
 

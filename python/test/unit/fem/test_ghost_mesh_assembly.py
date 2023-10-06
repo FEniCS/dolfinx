@@ -5,15 +5,16 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for assembly"""
 
-import pytest
-import ufl
 import numpy as np
+import pytest
+
+import ufl
+from dolfinx import fem, la
 from dolfinx.fem import Function, FunctionSpace, form
 from dolfinx.mesh import GhostMode, create_unit_square
-from mpi4py import MPI
 from ufl import avg, inner
 
-from dolfinx import fem, la
+from mpi4py import MPI
 
 
 def dx_from_ufl(mesh):

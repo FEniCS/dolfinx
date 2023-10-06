@@ -92,7 +92,7 @@ jobs:
       - name: Set baseimage
         run: |
           USER_INPUT=${{ github.event.inputs.baseimage }}
-          echo "BASEIMAGE=${USER_INPUT:-docker.io/dolfinx/dev-env:current}" >> $GITHUB_ENV
+          echo "BASEIMAGE=${USER_INPUT:-ghcr.io/fenics/dolfinx/dev-env:current}" >> $GITHUB_ENV
 
       - name: Checkout basix
         uses: actions/checkout@v4

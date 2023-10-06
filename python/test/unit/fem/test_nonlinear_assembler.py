@@ -9,6 +9,7 @@ import math
 
 import numpy as np
 import pytest
+
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx.cpp.la.petsc import scatter_local_vectors
@@ -25,9 +26,10 @@ from dolfinx.fem.petsc import (apply_lifting, apply_lifting_nest,
                                set_bc_nest)
 from dolfinx.mesh import (GhostMode, create_unit_cube, create_unit_square,
                           locate_entities_boundary)
+from ufl import derivative, dx, inner
+
 from mpi4py import MPI
 from petsc4py import PETSc
-from ufl import derivative, dx, inner
 
 
 def nest_matrix_norm(A):
