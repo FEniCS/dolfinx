@@ -499,6 +499,14 @@ void declare_form(nb::module_& m, std::string type)
 {
   using U = typename dolfinx::scalar_value_type_t<T>;
 
+  auto np = nb::module_::import_("numpy");
+  nb::object dtype;
+
+  if constexpr (std::is_same_v<T, double>)
+    dtype = np.attr("float64");
+  else if constexpr (std::is_same_v<T, float>)
+    dtype = np.attr("float32");
+
   // dolfinx::fem::Form
   std::string pyclass_name_form = std::string("Form_") + type;
   nb::class_<dolfinx::fem::Form<T, U>>(m, pyclass_name_form.c_str(),
@@ -588,8 +596,8 @@ void declare_form(nb::module_& m, std::string type)
           nb::arg("form"), nb::arg("spaces"), nb::arg("coefficients"),
           nb::arg("constants"), nb::arg("subdomains"), nb::arg("mesh"),
           "Create a Form from a pointer to a ufcx_form")
-      .def_prop_ro("dtype", [](const dolfinx::fem::Form<T, U>& self)
-                   { return nb::dtype<T>(); })
+      .def_prop_ro("dtype", [dtype](const dolfinx::fem::Form<T, U>& self)
+                   { return dtype; })
       .def_prop_ro("coefficients", &dolfinx::fem::Form<T, U>::coefficients)
       .def_prop_ro("rank", &dolfinx::fem::Form<T, U>::rank)
       .def_prop_ro("mesh", &dolfinx::fem::Form<T, U>::mesh)
