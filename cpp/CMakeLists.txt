@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.19)
 
 # ------------------------------------------------------------------------------
 # Set project name and version number
-project(DOLFINX VERSION "0.7.0.0")
+project(DOLFINX VERSION "0.8.0.0")
 
 set(DOXYGEN_DOLFINX_VERSION
   ${DOLFINX_VERSION}
@@ -192,7 +192,7 @@ if(Python3_Interpreter_FOUND)
   endif()
 endif()
 
-find_package(Basix 0.7 REQUIRED CONFIG HINTS ${BASIX_PY_DIR})
+find_package(Basix 0.8 REQUIRED CONFIG HINTS ${BASIX_PY_DIR})
 set_package_properties(
   basix PROPERTIES
   TYPE REQUIRED
