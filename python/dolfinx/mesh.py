@@ -5,6 +5,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Creation, refining and marking of meshes"""
 
+from __future__ import annotations
+
 
 import typing
 

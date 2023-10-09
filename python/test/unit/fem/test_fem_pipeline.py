@@ -6,11 +6,13 @@
 
 from pathlib import Path
 
-import basix
 import numpy as np
 import pytest
+
+import basix
 import ufl
 from basix.ufl import element, mixed_element
+from dolfinx import default_real_type
 from dolfinx.fem import (Function, FunctionSpace, assemble_scalar, dirichletbc,
                          form, locate_dofs_topological)
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
@@ -19,12 +21,11 @@ from dolfinx.io import XDMFFile
 from dolfinx.mesh import (CellType, create_rectangle, create_unit_cube,
                           create_unit_square, exterior_facet_indices,
                           locate_entities_boundary)
-from mpi4py import MPI
-from petsc4py import PETSc
 from ufl import (CellDiameter, FacetNormal, SpatialCoordinate, TestFunction,
                  TrialFunction, avg, div, ds, dS, dx, grad, inner, jump)
 
-from dolfinx import default_real_type
+from mpi4py import MPI
+from petsc4py import PETSc
 
 
 def run_scalar_test(mesh, V, degree):

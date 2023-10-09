@@ -4,18 +4,19 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import basix
 import numpy as np
 import pytest
+
+import basix
+import dolfinx.cpp
 import ufl
 from basix.ufl import blocked_element
+from dolfinx import fem, la
 from dolfinx.fem import Constant, Expression, Function, FunctionSpace, form
 from dolfinx.mesh import create_unit_square
 from ffcx.element_interface import QuadratureElement
-from mpi4py import MPI
 
-import dolfinx.cpp
-from dolfinx import fem, la
+from mpi4py import MPI
 
 dolfinx.cpp.common.init_logging(["-v"])
 

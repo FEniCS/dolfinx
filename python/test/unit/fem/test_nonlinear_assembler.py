@@ -9,6 +9,7 @@ import math
 
 import numpy as np
 import pytest
+
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx.cpp.la.petsc import scatter_local_vectors
@@ -25,9 +26,10 @@ from dolfinx.fem.petsc import (apply_lifting, apply_lifting_nest,
                                set_bc_nest)
 from dolfinx.mesh import (GhostMode, create_unit_cube, create_unit_square,
                           locate_entities_boundary)
+from ufl import derivative, dx, inner
+
 from mpi4py import MPI
 from petsc4py import PETSc
-from ufl import derivative, dx, inner
 
 
 def nest_matrix_norm(A):
@@ -523,9 +525,6 @@ def test_assembly_solve_taylor_hood_nl(mesh):
                                    (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
-        # This causes a failure
-        # foo = x.duplicate()
-
         snes.solve(None, x)
         assert snes.getConvergedReason() > 0
         snes.destroy()
@@ -626,13 +625,13 @@ def test_assembly_solve_taylor_hood_nl(mesh):
         x.destroy()
         return Jnorm, Fnorm, xnorm
 
-    # Jnorm0, Fnorm0, xnorm0 = blocked()
+    Jnorm0, Fnorm0, xnorm0 = blocked()
     Jnorm1, Fnorm1, xnorm1 = nested()
-    # assert Jnorm1 == pytest.approx(Jnorm0, 1.0e-3, abs=1.0e-6)
-    # assert Fnorm1 == pytest.approx(Fnorm0, 1.0e-6, abs=1.0e-5)
-    # assert xnorm1 == pytest.approx(xnorm0, 1.0e-6, abs=1.0e-5)
+    assert Jnorm1 == pytest.approx(Jnorm0, 1.0e-3, abs=1.0e-6)
+    assert Fnorm1 == pytest.approx(Fnorm0, 1.0e-6, abs=1.0e-5)
+    assert xnorm1 == pytest.approx(xnorm0, 1.0e-6, abs=1.0e-5)
 
     Jnorm2, Fnorm2, xnorm2 = monolithic()
     assert Jnorm2 == pytest.approx(Jnorm1, rel=1.0e-3, abs=1.0e-6)
-    # assert Fnorm2 == pytest.approx(Fnorm0, 1.0e-6, abs=1.0e-5)
-    # assert xnorm2 == pytest.approx(xnorm0, 1.0e-6, abs=1.0e-6)
+    assert Fnorm2 == pytest.approx(Fnorm0, 1.0e-6, abs=1.0e-5)
+    assert xnorm2 == pytest.approx(xnorm0, 1.0e-6, abs=1.0e-6)

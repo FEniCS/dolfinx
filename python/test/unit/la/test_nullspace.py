@@ -9,17 +9,18 @@ from contextlib import ExitStack
 
 import numpy as np
 import pytest
+
 import ufl
-from dolfinx.la import create_petsc_vector
+from dolfinx import la
 from dolfinx.fem import FunctionSpace, form
 from dolfinx.fem.petsc import assemble_matrix
+from dolfinx.la import create_petsc_vector
 from dolfinx.mesh import (CellType, GhostMode, create_box, create_unit_cube,
                           create_unit_square)
-from mpi4py import MPI
-from petsc4py import PETSc
 from ufl import TestFunction, TrialFunction, dx, grad, inner
 
-from dolfinx import la
+from mpi4py import MPI
+from petsc4py import PETSc
 
 
 def build_elastic_nullspace(V):

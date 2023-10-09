@@ -77,7 +77,7 @@ Vec la::petsc::create_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
   assert(range[1] >= range[0]);
   std::int32_t local_size = range[1] - range[0];
 
-  Vec x;
+  Vec x = nullptr;
   std::vector<PetscInt> _ghosts(ghosts.begin(), ghosts.end());
   if (bs == 1)
   {
