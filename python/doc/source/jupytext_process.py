@@ -51,7 +51,7 @@ def process():
                 demo = demo.resolve()
                 here = os.getcwd()
                 os.chdir(demo_dir)
-                runpy.run_path(demo)
+                runpy.run_path(str(demo))
                 os.chdir(here)
 
         # Copy images used in demos
