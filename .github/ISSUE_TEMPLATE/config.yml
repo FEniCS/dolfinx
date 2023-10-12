@@ -1,0 +1,7 @@
+contact_links:
+  - name: Installation support
+    url: https://fenicsproject.discourse.group/c/installation/5
+    about: Please ask questions related to installation on the FEniCS discourse
+  - name: General questions
+    url: https://fenicsproject.discourse.group/
+    about: Please ask questions about general usage of the library on the FEniCS discourse
