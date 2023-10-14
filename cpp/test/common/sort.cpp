@@ -8,6 +8,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
 #include <dolfinx/common/sort.h>
+#include <functional>
 #include <random>
 
 TEMPLATE_TEST_CASE("Test radix sort", "[vector][template]", std::int32_t,

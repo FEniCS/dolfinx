@@ -52,7 +52,7 @@ void xdmf_real_fn(auto&& m)
       { self.write_meshtags(meshtags, x, geometry_xpath, xpath); },
       nb::arg("meshtags"), nb::arg("x"), nb::arg("geometry_xpath"),
       nb::arg("xpath") = "/Xdmf/Domain");
-};
+}
 
 template <typename T, typename U>
 void xdmf_scalar_fn(auto&& m)
@@ -64,7 +64,7 @@ void xdmf_scalar_fn(auto&& m)
       { self.write_function(u, t, mesh_xpath); },
       nb::arg("u"), nb::arg("t"),
       nb::arg("mesh_xpath") = "/Xdmf/Domain/Grid[@GridType='Uniform'][1]");
-};
+}
 
 template <typename T>
 void vtk_real_fn(auto&& m)
