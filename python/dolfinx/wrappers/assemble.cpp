@@ -7,6 +7,7 @@
 #include "array.h"
 #include "pycoeff.h"
 #include <array>
+#include <complex>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/DirichletBC.h>
@@ -311,6 +312,14 @@ void declare_assembly_functions(nb::module_& m)
         else
           throw std::runtime_error("Wrong array dimension.");
       },
+      nb::arg("b"), nb::arg("bcs"), nb::arg("x0"), nb::arg("scale") = T(1));
+  m.def(
+      "set_bc",
+      [](nb::ndarray<T, nb::numpy> b,
+         const std::vector<
+             std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>& bcs,
+         nb::object x0, T scale)
+      { dolfinx::fem::set_bc<T>(std::span(b.data(), b.size()), bcs, scale); },
       nb::arg("b"), nb::arg("bcs"), nb::arg("x0") = nb::none(),
       nb::arg("scale") = T(1));
 }
@@ -325,12 +334,12 @@ void assemble(nb::module_& m)
   // dolfinx::fem::assemble
   declare_assembly_functions<float, float>(m);
   declare_assembly_functions<double, double>(m);
-  // declare_assembly_functions<std::complex<float>, float>(m);
-  // declare_assembly_functions<std::complex<double>, double>(m);
+  declare_assembly_functions<std::complex<float>, float>(m);
+  declare_assembly_functions<std::complex<double>, double>(m);
 
   declare_discrete_operators<float, float>(m);
   declare_discrete_operators<double, double>(m);
-  // declare_discrete_operators<std::complex<float>, float>(m);
-  // declare_discrete_operators<std::complex<double>, double>(m);
+  declare_discrete_operators<std::complex<float>, float>(m);
+  declare_discrete_operators<std::complex<double>, double>(m);
 }
 } // namespace dolfinx_wrappers

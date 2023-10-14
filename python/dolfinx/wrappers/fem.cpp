@@ -30,6 +30,8 @@
 #include <memory>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
+#include <nanobind/stl/array.h>
+#include <nanobind/stl/function.h>
 #include <nanobind/stl/map.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>
@@ -970,13 +972,13 @@ void fem(nb::module_& m)
 {
   declare_objects<float>(m, "float32");
   declare_objects<double>(m, "float64");
-  // declare_objects<std::complex<float>>(m, "complex64");
-  // declare_objects<std::complex<double>>(m, "complex128");
+  declare_objects<std::complex<float>>(m, "complex64");
+  declare_objects<std::complex<double>>(m, "complex128");
 
   declare_form<float>(m, "float32");
   declare_form<double>(m, "float64");
-  // declare_form<std::complex<float>>(m, "complex64");
-  // declare_form<std::complex<double>>(m, "complex128");
+  declare_form<std::complex<float>>(m, "complex64");
+  declare_form<std::complex<double>>(m, "complex128");
 
   // fem::CoordinateElement
   declare_cmap<float>(m, "float32");
