@@ -10,7 +10,7 @@ import numpy as np
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
-from dolfinx.fem import (Function, functionspace, dirichletbc, form,
+from dolfinx.fem import (Function, dirichletbc, form, functionspace,
                          locate_dofs_geometrical)
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                create_matrix, create_vector, set_bc)

@@ -10,9 +10,9 @@ import pytest
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type, default_scalar_type, la
-from dolfinx.fem import (Constant, Function, apply_lifting,
-                         assemble_matrix, assemble_vector, create_matrix,
-                         create_vector, dirichletbc, form, functionspace,
+from dolfinx.fem import (Constant, Function, apply_lifting, assemble_matrix,
+                         assemble_vector, create_matrix, create_vector,
+                         dirichletbc, form, functionspace,
                          locate_dofs_geometrical, locate_dofs_topological,
                          set_bc)
 from dolfinx.mesh import (CellType, create_unit_cube, create_unit_square,

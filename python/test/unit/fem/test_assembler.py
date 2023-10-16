@@ -16,9 +16,9 @@ import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type, fem, graph, la
-from dolfinx.fem import (Constant, Function, assemble_scalar,
-                         bcs_by_block, dirichletbc, extract_function_spaces,
-                         form, functionspace, locate_dofs_geometrical,
+from dolfinx.fem import (Constant, Function, assemble_scalar, bcs_by_block,
+                         dirichletbc, extract_function_spaces, form,
+                         functionspace, locate_dofs_geometrical,
                          locate_dofs_topological)
 from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
 from dolfinx.fem.petsc import apply_lifting_nest as petsc_apply_lifting_nest

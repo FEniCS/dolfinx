@@ -13,8 +13,8 @@ import basix
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type
-from dolfinx.fem import (Function, assemble_scalar, dirichletbc,
-                         form, functionspace, locate_dofs_topological)
+from dolfinx.fem import (Function, assemble_scalar, dirichletbc, form,
+                         functionspace, locate_dofs_topological)
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                set_bc)
 from dolfinx.io import XDMFFile
