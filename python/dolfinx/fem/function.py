@@ -8,7 +8,6 @@
 from __future__ import annotations
 
 import typing
-import warnings
 from functools import singledispatch
 
 import numpy as np
@@ -558,29 +557,6 @@ def functionspace(mesh: Mesh,
     return FunctionSpaceBase(mesh, ufl_e, cppV)
 
 
-def FunctionSpace(mesh: Mesh,
-                  element: typing.Union[ufl.FiniteElementBase, ElementMetaData,
-                                        typing.Tuple[str, int, typing.Tuple, bool]],
-                  form_compiler_options: typing.Optional[dict[str, typing.Any]] = None,
-                  jit_options: typing.Optional[dict[str, typing.Any]] = None) -> FunctionSpaceBase:
-    """Create a finite element function space.
-
-    .. deprecated:: 0.7
-        Use :func:`functionspace` (no caps) instead.
-
-    Args:
-        mesh: Mesh that space is defined on
-        element: Finite element description
-        form_compiler_options: Options passed to the form compiler
-        jit_options: Options controlling just-in-time compilation
-
-    Returns:
-        A function space.
-
-    """
-    return functionspace(mesh, element, form_compiler_options, jit_options)
-
-
 class FunctionSpaceBase(ufl.FunctionSpace):
     """A space on which Functions (fields) can be defined."""
 
@@ -719,34 +695,3 @@ class FunctionSpaceBase(ufl.FunctionSpace):
 
          """
         return self._cpp_object.tabulate_dof_coordinates()
-
-
-def VectorFunctionSpace(mesh: Mesh,
-                        element: typing.Union[ElementMetaData, typing.Tuple[str, int]],
-                        dim: typing.Optional[int] = None) -> FunctionSpaceBase:
-    """Create a vector finite element (composition of scalar elements) function space.
-
-    .. deprecated:: 0.7
-        Use :func:`FunctionSpace` with a shape argument instead.
-
-    Args:
-        mesh: Mesh that space is defined on
-        element: Finite element description. Must be a scalar element,
-           e.g. Lagrange.
-        dim: Dimension of the vector, e.g. number of vector components.
-            It defaults to the geometric dimension of the mesh.
-
-    Returns:
-        A blocked vector function space.
-
-    """
-    warnings.warn('This method is deprecated. Use FunctionSpace with an element shape argument instead',
-                  DeprecationWarning, stacklevel=2)
-    ed = ElementMetaData(*element)
-    e = basix.ufl.element(ed.family, mesh.basix_cell(), ed.degree, gdim=mesh.geometry.dim)
-    if len(e.value_shape) != 0:
-        raise ValueError("Cannot create vector element containing a non-scalar.")
-    ufl_e = basix.ufl.element(ed.family, mesh.basix_cell(), ed.degree,
-                              shape=(mesh.geometry.dim,) if dim is None else (dim,),
-                              gdim=mesh.geometry.dim)
-    return FunctionSpace(mesh, ufl_e)

@@ -19,7 +19,7 @@ from mpi4py import MPI
 
 
 def assemble(mesh, space, k):
-    V = fem.FunctionSpace(mesh, (space, k))
+    V = fem.functionspace(mesh, (space, k))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     dx = ufl.Measure("dx", domain=mesh)
     ds = ufl.Measure("ds", domain=mesh)

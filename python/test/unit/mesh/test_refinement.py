@@ -9,7 +9,7 @@ import pytest
 from numpy import isclose, logical_and
 
 import ufl
-from dolfinx.fem import FunctionSpace, assemble_matrix, form
+from dolfinx.fem import assemble_matrix, form, functionspace
 from dolfinx.mesh import (CellType, DiagonalType, GhostMode, RefinementOption,
                           compute_incident_entities, create_unit_cube,
                           create_unit_square, locate_entities,
@@ -42,7 +42,7 @@ def test_Refinecreate_unit_cube_repartition():
     assert mesh.topology.index_map(0).size_global == 3135
     assert mesh.topology.index_map(3).size_global == 15120
 
-    Q = FunctionSpace(mesh, ("Lagrange", 1))
+    Q = functionspace(mesh, ("Lagrange", 1))
     assert Q
 
 
@@ -53,7 +53,7 @@ def test_Refinecreate_unit_cube_keep_partition():
     mesh = refine(mesh, redistribute=False)
     assert mesh.topology.index_map(0).size_global == 3135
     assert mesh.topology.index_map(3).size_global == 15120
-    Q = FunctionSpace(mesh, ("Lagrange", 1))
+    Q = functionspace(mesh, ("Lagrange", 1))
     assert Q
 
 
@@ -63,7 +63,7 @@ def test_refine_create_form():
     mesh.topology.create_entities(1)
     mesh = refine(mesh, redistribute=True)
 
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
 
     # Define variational problem
     u = ufl.TrialFunction(V)
