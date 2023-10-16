@@ -12,7 +12,7 @@ import pytest
 
 import ufl
 from dolfinx import la
-from dolfinx.fem import (Function, FunctionSpace, dirichletbc, form,
+from dolfinx.fem import (Function, dirichletbc, form, functionspace,
                          locate_dofs_topological)
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                set_bc)
@@ -27,7 +27,7 @@ from petsc4py import PETSc
 def test_krylov_solver_lu():
 
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
     u, v = TrialFunction(V), TestFunction(V)
 
     a = form(inner(u, v) * dx)
@@ -98,7 +98,7 @@ def test_krylov_samg_solver_elasticity():
         # Define problem
         mesh = create_unit_square(MPI.COMM_WORLD, N, N)
         gdim = mesh.geometry.dim
-        V = FunctionSpace(mesh, ('Lagrange', 1, (gdim,)))
+        V = functionspace(mesh, ('Lagrange', 1, (gdim,)))
         u = TrialFunction(V)
         v = TestFunction(V)
 

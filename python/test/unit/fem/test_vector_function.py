@@ -11,7 +11,7 @@ import pytest
 import ufl
 from basix.ufl import element
 from dolfinx import default_real_type
-from dolfinx.fem import Function, FunctionSpace
+from dolfinx.fem import Function, functionspace
 from dolfinx.mesh import create_mesh
 
 from mpi4py import MPI
@@ -26,7 +26,7 @@ def test_div_conforming_triangle(space_type, order):
     def perform_test(points, cells):
         domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(2,)))
         mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
-        V = FunctionSpace(mesh, (space_type, order))
+        V = functionspace(mesh, (space_type, order))
         f = Function(V)
         x = f.x.array
         output = []
@@ -56,7 +56,7 @@ def test_div_conforming_tetrahedron(space_type, order):
     def perform_test(points, cells):
         domain = ufl.Mesh(element("Lagrange", "tetrahedron", 1, shape=(3,)))
         mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
-        V = FunctionSpace(mesh, (space_type, order))
+        V = functionspace(mesh, (space_type, order))
         f = Function(V)
         output = []
         x = f.x.array

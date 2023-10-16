@@ -10,9 +10,9 @@ import pytest
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type, default_scalar_type, la
-from dolfinx.fem import (Constant, Function, FunctionSpace, apply_lifting,
-                         assemble_matrix, assemble_vector, create_matrix,
-                         create_vector, dirichletbc, form,
+from dolfinx.fem import (Constant, Function, apply_lifting, assemble_matrix,
+                         assemble_vector, create_matrix, create_vector,
+                         dirichletbc, form, functionspace,
                          locate_dofs_geometrical, locate_dofs_topological,
                          set_bc)
 from dolfinx.mesh import (CellType, create_unit_cube, create_unit_square,
@@ -30,7 +30,7 @@ def test_locate_dofs_geometrical():
     P0 = element("Lagrange", mesh.basix_cell(), p0)
     P1 = element("Lagrange", mesh.basix_cell(), p1)
 
-    W = FunctionSpace(mesh, mixed_element([P0, P1]))
+    W = functionspace(mesh, mixed_element([P0, P1]))
     V = W.sub(0).collapse()[0]
 
     with pytest.raises(RuntimeError):
@@ -63,7 +63,7 @@ def test_overlapping_bcs():
     boundary condition is applied"""
     n = 23
     mesh = create_unit_square(MPI.COMM_WORLD, n, n)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = form(inner(u, v) * dx)
     L = form(inner(1, v) * dx)
@@ -103,9 +103,9 @@ def test_constant_bc_constructions():
     """Test construction from constant values"""
     msh = create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=default_real_type)
     gdim = msh.geometry.dim
-    V0 = FunctionSpace(msh, ("Lagrange", 1))
-    V1 = FunctionSpace(msh, ("Lagrange", 1, (gdim,)))
-    V2 = FunctionSpace(msh, ("Lagrange", 1, (gdim, gdim)))
+    V0 = functionspace(msh, ("Lagrange", 1))
+    V1 = functionspace(msh, ("Lagrange", 1, (gdim,)))
+    V2 = functionspace(msh, ("Lagrange", 1, (gdim, gdim)))
 
     tdim = msh.topology.dim
     boundary_facets = locate_entities_boundary(msh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
@@ -145,7 +145,7 @@ def test_constant_bc(mesh_factory):
     result as setting it with a function"""
     func, args = mesh_factory
     mesh = func(*args)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
     c = default_scalar_type(2)
     tdim = mesh.topology.dim
     boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
@@ -179,7 +179,7 @@ def test_vector_constant_bc(mesh_factory):
     mesh = func(*args)
     tdim = mesh.topology.dim
     gdim = mesh.geometry.dim
-    V = FunctionSpace(mesh, ("Lagrange", 1, (gdim,)))
+    V = functionspace(mesh, ("Lagrange", 1, (gdim,)))
     assert V.num_sub_spaces == gdim
     c = np.arange(1, mesh.geometry.dim + 1, dtype=default_scalar_type)
     boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
@@ -218,7 +218,7 @@ def test_sub_constant_bc(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
     gdim = mesh.geometry.dim
-    V = FunctionSpace(mesh, ("Lagrange", 1, (gdim,)))
+    V = functionspace(mesh, ("Lagrange", 1, (gdim,)))
     c = Constant(mesh, default_scalar_type(3.14))
     tdim = mesh.topology.dim
     boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
@@ -255,7 +255,7 @@ def test_mixed_constant_bc(mesh_factory):
     TH = mixed_element([
         element("Lagrange", mesh.basix_cell(), 1),
         element("Lagrange", mesh.basix_cell(), 2)])
-    W = FunctionSpace(mesh, TH)
+    W = functionspace(mesh, TH)
     u = Function(W)
 
     bc_val = default_scalar_type(3)
@@ -290,7 +290,7 @@ def test_mixed_blocked_constant():
 
     TH = mixed_element([element("Lagrange", mesh.basix_cell(), 1),
                         element("Lagrange", mesh.basix_cell(), 2, shape=(mesh.geometry.dim,))])
-    W = FunctionSpace(mesh, TH)
+    W = functionspace(mesh, TH)
     u = Function(W)
     c0 = default_scalar_type(3)
     dofs0 = locate_dofs_topological(W.sub(0), tdim - 1, boundary_facets)

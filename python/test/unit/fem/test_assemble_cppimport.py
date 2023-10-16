@@ -15,7 +15,7 @@ import scipy.sparse.linalg
 
 import dolfinx.pkgconfig
 import ufl
-from dolfinx.fem import (FunctionSpace, assemble_matrix, dirichletbc, form,
+from dolfinx.fem import (assemble_matrix, dirichletbc, form, functionspace,
                          locate_dofs_geometrical)
 from dolfinx.mesh import create_unit_square
 from dolfinx.wrappers import get_include_path as pybind_inc
@@ -120,7 +120,7 @@ PYBIND11_MODULE(eigen_csr, m)
 
     realtype = np.real(dtype(1.0)).dtype
     mesh = create_unit_square(MPI.COMM_SELF, 12, 12, dtype=realtype)
-    Q = FunctionSpace(mesh, ("Lagrange", 1))
+    Q = functionspace(mesh, ("Lagrange", 1))
     u = ufl.TrialFunction(Q)
     v = ufl.TestFunction(Q)
 
@@ -201,8 +201,8 @@ PYBIND11_MODULE(assemble_csr, m)
 
     mesh = create_unit_square(MPI.COMM_SELF, 11, 7)
     gdim = mesh.geometry.dim
-    Q = FunctionSpace(mesh, ("Lagrange", 1, (gdim,)))
-    Q2 = FunctionSpace(mesh, ("Lagrange", 1, (3,)))
+    Q = functionspace(mesh, ("Lagrange", 1, (gdim,)))
+    Q2 = functionspace(mesh, ("Lagrange", 1, (3,)))
     u = ufl.TrialFunction(Q)
     v = ufl.TestFunction(Q2)
 

@@ -216,7 +216,7 @@ def create_tnt_quad(degree):
 # the solution.
 
 
-def poisson_error(V: fem.FunctionSpaceBase):
+def poisson_error(V: fem.FunctionSpace):
     msh = V.mesh
     u, v = TrialFunction(V), TestFunction(V)
 
