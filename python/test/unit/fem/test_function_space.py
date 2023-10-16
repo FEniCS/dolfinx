@@ -11,7 +11,7 @@ import pytest
 
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type
-from dolfinx.fem import Function, FunctionSpaceBase, functionspace
+from dolfinx.fem import Function, FunctionSpace, functionspace
 from dolfinx.mesh import create_mesh, create_unit_cube
 from ufl import Cell, Mesh, TestFunction, TrialFunction, grad
 
@@ -63,10 +63,10 @@ def W2(g):
 
 def test_python_interface(V, V2, W, W2, Q):
     # Test Python interface of cpp generated functionspace
-    assert isinstance(V, FunctionSpaceBase)
-    assert isinstance(W, FunctionSpaceBase)
-    assert isinstance(V2, FunctionSpaceBase)
-    assert isinstance(W2, FunctionSpaceBase)
+    assert isinstance(V, FunctionSpace)
+    assert isinstance(W, FunctionSpace)
+    assert isinstance(V2, FunctionSpace)
+    assert isinstance(W2, FunctionSpace)
 
     assert V.mesh.ufl_cell() == V2.mesh.ufl_cell()
     assert W.mesh.ufl_cell() == W2.mesh.ufl_cell()
