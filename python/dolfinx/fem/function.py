@@ -8,7 +8,6 @@
 from __future__ import annotations
 
 import typing
-import warnings
 from functools import singledispatch
 
 import numpy as np
@@ -231,7 +230,7 @@ class Expression:
         return self._cpp_object.value_size
 
     @property
-    def argument_function_space(self) -> typing.Optional[FunctionSpaceBase]:
+    def argument_function_space(self) -> typing.Optional[FunctionSpace]:
         """The argument function space if expression has argument"""
         return self._argument_function_space
 
@@ -257,7 +256,7 @@ class Function(ufl.Coefficient):
 
     """
 
-    def __init__(self, V: FunctionSpaceBase, x: typing.Optional[la.Vector] = None,
+    def __init__(self, V: FunctionSpace, x: typing.Optional[la.Vector] = None,
                  name: typing.Optional[str] = None, dtype: typing.Optional[npt.DTypeLike] = None):
         """Initialize a finite element Function.
 
@@ -318,7 +317,7 @@ class Function(ufl.Coefficient):
             self._petsc_x.destroy()
 
     @property
-    def function_space(self) -> FunctionSpaceBase:
+    def function_space(self) -> FunctionSpace:
         """The FunctionSpace that the Function is defined on"""
         return self._V
 
@@ -348,7 +347,7 @@ class Function(ufl.Coefficient):
 
         # Allocate memory for return value if not provided
         if u is None:
-            value_size = ufl.product(self.ufl_element().value_shape())
+            value_size = ufl.product(self.ufl_element().value_shape)
             u = np.empty((num_points, value_size), self.dtype)
 
         self._cpp_object.eval(_x, _cells, u)
@@ -478,7 +477,7 @@ class Function(ufl.Coefficient):
 
     def collapse(self) -> Function:
         u_collapsed = self._cpp_object.collapse()
-        V_collapsed = FunctionSpaceBase(self.function_space._mesh, self.ufl_element(), u_collapsed.function_space)
+        V_collapsed = FunctionSpace(self.function_space._mesh, self.ufl_element(), u_collapsed.function_space)
         return Function(V_collapsed, la.Vector(u_collapsed.x))
 
 
@@ -502,7 +501,7 @@ def functionspace(mesh: Mesh,
                   element: typing.Union[ufl.FiniteElementBase, ElementMetaData,
                                         typing.Tuple[str, int, typing.Tuple, bool]],
                   form_compiler_options: typing.Optional[dict[str, typing.Any]] = None,
-                  jit_options: typing.Optional[dict[str, typing.Any]] = None) -> FunctionSpaceBase:
+                  jit_options: typing.Optional[dict[str, typing.Any]] = None) -> FunctionSpace:
     """Create a finite element function space.
 
     Args:
@@ -524,7 +523,7 @@ def functionspace(mesh: Mesh,
         ufl_e = element  # type: ignore
 
     # Check that element and mesh cell types match
-    if ufl_e.cell() != mesh.ufl_domain().ufl_cell():
+    if ufl_e.cell != mesh.ufl_domain().ufl_cell():
         raise ValueError("Non-matching UFL cell and mesh cell shapes.")
 
     # Compile dofmap and element and create DOLFIN objects
@@ -555,33 +554,10 @@ def functionspace(mesh: Mesh,
     except TypeError:
         cppV = _cpp.fem.FunctionSpace_float32(mesh._cpp_object, cpp_element, cpp_dofmap)
 
-    return FunctionSpaceBase(mesh, ufl_e, cppV)
+    return FunctionSpace(mesh, ufl_e, cppV)
 
 
-def FunctionSpace(mesh: Mesh,
-                  element: typing.Union[ufl.FiniteElementBase, ElementMetaData,
-                                        typing.Tuple[str, int, typing.Tuple, bool]],
-                  form_compiler_options: typing.Optional[dict[str, typing.Any]] = None,
-                  jit_options: typing.Optional[dict[str, typing.Any]] = None) -> FunctionSpaceBase:
-    """Create a finite element function space.
-
-    .. deprecated:: 0.7
-        Use :func:`functionspace` (no caps) instead.
-
-    Args:
-        mesh: Mesh that space is defined on
-        element: Finite element description
-        form_compiler_options: Options passed to the form compiler
-        jit_options: Options controlling just-in-time compilation
-
-    Returns:
-        A function space.
-
-    """
-    return functionspace(mesh, element, form_compiler_options, jit_options)
-
-
-class FunctionSpaceBase(ufl.FunctionSpace):
+class FunctionSpace(ufl.FunctionSpace):
     """A space on which Functions (fields) can be defined."""
 
     def __init__(self, mesh: Mesh, element: ufl.FiniteElementBase,
@@ -605,7 +581,7 @@ class FunctionSpaceBase(ufl.FunctionSpace):
         self._mesh = mesh
         super().__init__(ufl_domain, element)
 
-    def clone(self) -> FunctionSpaceBase:
+    def clone(self) -> FunctionSpace:
         """Create a new FunctionSpace :math:`W` which shares data with this
         FunctionSpace :math:`V`, but with a different unique integer ID.
 
@@ -628,14 +604,14 @@ class FunctionSpaceBase(ufl.FunctionSpace):
         except TypeError:
             Vcpp = _cpp.fem.FunctionSpace_float32(
                 self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap)
-        return FunctionSpaceBase(self._mesh, self.ufl_element(), Vcpp)
+        return FunctionSpace(self._mesh, self.ufl_element(), Vcpp)
 
     @property
     def num_sub_spaces(self) -> int:
         """Number of sub spaces."""
         return self.element.num_sub_elements
 
-    def sub(self, i: int) -> FunctionSpaceBase:
+    def sub(self, i: int) -> FunctionSpace:
         """Return the i-th sub space.
 
         Args:
@@ -645,10 +621,10 @@ class FunctionSpaceBase(ufl.FunctionSpace):
             A subspace
 
         """
-        assert self.ufl_element().num_sub_elements() > i
-        sub_element = self.ufl_element().sub_elements()[i]
+        assert self.ufl_element().num_sub_elements > i
+        sub_element = self.ufl_element().sub_elements[i]
         cppV_sub = self._cpp_object.sub([i])
-        return FunctionSpaceBase(self._mesh, sub_element, cppV_sub)
+        return FunctionSpace(self._mesh, sub_element, cppV_sub)
 
     def component(self):
         """Return the component relative to the parent space."""
@@ -694,7 +670,7 @@ class FunctionSpaceBase(ufl.FunctionSpace):
         """Mesh on which the function space is defined."""
         return self._mesh
 
-    def collapse(self) -> tuple[FunctionSpaceBase, np.ndarray]:
+    def collapse(self) -> tuple[FunctionSpace, np.ndarray]:
         """Collapse a subspace and return a new function space and a map
         from new to old dofs.
 
@@ -704,7 +680,7 @@ class FunctionSpaceBase(ufl.FunctionSpace):
 
         """
         cpp_space, dofs = self._cpp_object.collapse()
-        V = FunctionSpaceBase(self._mesh, self.ufl_element(), cpp_space)
+        V = FunctionSpace(self._mesh, self.ufl_element(), cpp_space)
         return V, dofs
 
     def tabulate_dof_coordinates(self) -> npt.NDArray[np.float64]:
@@ -719,34 +695,3 @@ class FunctionSpaceBase(ufl.FunctionSpace):
 
          """
         return self._cpp_object.tabulate_dof_coordinates()
-
-
-def VectorFunctionSpace(mesh: Mesh,
-                        element: typing.Union[ElementMetaData, typing.Tuple[str, int]],
-                        dim: typing.Optional[int] = None) -> FunctionSpaceBase:
-    """Create a vector finite element (composition of scalar elements) function space.
-
-    .. deprecated:: 0.7
-        Use :func:`FunctionSpace` with a shape argument instead.
-
-    Args:
-        mesh: Mesh that space is defined on
-        element: Finite element description. Must be a scalar element,
-           e.g. Lagrange.
-        dim: Dimension of the vector, e.g. number of vector components.
-            It defaults to the geometric dimension of the mesh.
-
-    Returns:
-        A blocked vector function space.
-
-    """
-    warnings.warn('This method is deprecated. Use FunctionSpace with an element shape argument instead',
-                  DeprecationWarning, stacklevel=2)
-    ed = ElementMetaData(*element)
-    e = basix.ufl.element(ed.family, mesh.basix_cell(), ed.degree, gdim=mesh.geometry.dim)
-    if len(e.value_shape()) != 0:
-        raise ValueError("Cannot create vector element containing a non-scalar.")
-    ufl_e = basix.ufl.element(ed.family, mesh.basix_cell(), ed.degree,
-                              shape=(mesh.geometry.dim,) if dim is None else (dim,),
-                              gdim=mesh.geometry.dim)
-    return FunctionSpace(mesh, ufl_e)

@@ -13,7 +13,7 @@ import ufl
 from basix.ufl import element
 from dolfinx import default_real_type, default_scalar_type
 from dolfinx.common import has_adios2
-from dolfinx.fem import Function, FunctionSpace
+from dolfinx.fem import Function, functionspace
 from dolfinx.graph import adjacencylist
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_square)
@@ -66,8 +66,8 @@ def test_two_fides_functions(tempdir, dim, simplex):
     """Test saving two functions with Fides"""
     mesh = generate_mesh(dim, simplex)
     gdim = mesh.geometry.dim
-    v = Function(FunctionSpace(mesh, ("Lagrange", 1, (gdim,))))
-    q = Function(FunctionSpace(mesh, ("Lagrange", 1)))
+    v = Function(functionspace(mesh, ("Lagrange", 1, (gdim,))))
+    q = Function(functionspace(mesh, ("Lagrange", 1)))
     filename = Path(tempdir, "v.bp")
     with FidesWriter(mesh.comm, filename, [v._cpp_object, q]) as f:
         f.write(0)
@@ -88,7 +88,7 @@ def test_two_fides_functions(tempdir, dim, simplex):
 def test_findes_single_function(tempdir, dim, simplex):
     "Test saving a single first order Lagrange functions"
     mesh = generate_mesh(dim, simplex)
-    v = Function(FunctionSpace(mesh, ("Lagrange", 1)))
+    v = Function(functionspace(mesh, ("Lagrange", 1)))
     filename = Path(tempdir, "v.bp")
     writer = FidesWriter(mesh.comm, filename, v)
     writer.write(0)
@@ -102,9 +102,9 @@ def test_fides_function_at_nodes(tempdir, dim, simplex):
     """Test saving P1 functions with Fides (with changing geometry)"""
     mesh = generate_mesh(dim, simplex)
     gdim = mesh.geometry.dim
-    v = Function(FunctionSpace(mesh, ("Lagrange", 1, (gdim,))), dtype=default_scalar_type)
+    v = Function(functionspace(mesh, ("Lagrange", 1, (gdim,))), dtype=default_scalar_type)
     v.name = "v"
-    q = Function(FunctionSpace(mesh, ("Lagrange", 1)))
+    q = Function(functionspace(mesh, ("Lagrange", 1)))
     q.name = "q"
     filename = Path(tempdir, "v.bp")
     if np.issubdtype(default_scalar_type, np.complexfloating):
@@ -157,8 +157,8 @@ def test_vtx_functions_fail(tempdir, dim, simplex):
     "Test for error when elements differ"
     mesh = generate_mesh(dim, simplex)
     gdim = mesh.geometry.dim
-    v = Function(FunctionSpace(mesh, ("Lagrange", 2, (gdim,))))
-    w = Function(FunctionSpace(mesh, ("Lagrange", 1)))
+    v = Function(functionspace(mesh, ("Lagrange", 2, (gdim,))))
+    w = Function(functionspace(mesh, ("Lagrange", 1)))
     filename = Path(tempdir, "v.bp")
     with pytest.raises(RuntimeError):
         VTXWriter(mesh.comm, filename, [v, w])
@@ -169,9 +169,9 @@ def test_vtx_functions_fail(tempdir, dim, simplex):
 def test_vtx_different_meshes_function(tempdir, simplex):
     "Test for error when functions do not share a mesh"
     mesh = generate_mesh(2, simplex)
-    v = Function(FunctionSpace(mesh, ("Lagrange", 1)))
+    v = Function(functionspace(mesh, ("Lagrange", 1)))
     mesh2 = generate_mesh(2, simplex)
-    w = Function(FunctionSpace(mesh2, ("Lagrange", 1)))
+    w = Function(functionspace(mesh2, ("Lagrange", 1)))
     filename = Path(tempdir, "v.bp")
     with pytest.raises(RuntimeError):
         VTXWriter(mesh.comm, filename, [v, w])
@@ -183,7 +183,7 @@ def test_vtx_different_meshes_function(tempdir, simplex):
 def test_vtx_single_function(tempdir, dim, simplex):
     "Test saving a single first order Lagrange functions"
     mesh = generate_mesh(dim, simplex)
-    v = Function(FunctionSpace(mesh, ("Lagrange", 1)))
+    v = Function(functionspace(mesh, ("Lagrange", 1)))
 
     filename = Path(tempdir, "v.bp")
     writer = VTXWriter(mesh.comm, filename, v)
@@ -210,7 +210,7 @@ def test_vtx_functions(tempdir, dtype, dim, simplex):
     xtype = np.real(dtype(0)).dtype
     mesh = generate_mesh(dim, simplex, dtype=xtype)
     gdim = mesh.geometry.dim
-    V = FunctionSpace(mesh, ("DG", 2, (gdim,)))
+    V = functionspace(mesh, ("DG", 2, (gdim,)))
     v = Function(V, dtype=dtype)
     bs = V.dofmap.index_map_bs
 
@@ -221,7 +221,7 @@ def test_vtx_functions(tempdir, dtype, dim, simplex):
         return values
     v.interpolate(vel)
 
-    W = FunctionSpace(mesh, ("DG", 2))
+    W = functionspace(mesh, ("DG", 2))
     w = Function(W, dtype=v.dtype)
     w.interpolate(lambda x: x[0] + x[1])
 
@@ -250,7 +250,7 @@ def test_save_vtkx_cell_point(tempdir):
     mesh = create_unit_square(MPI.COMM_WORLD, 8, 5)
     P = element("Discontinuous Lagrange", mesh.basix_cell(), 0)
 
-    V = FunctionSpace(mesh, P)
+    V = functionspace(mesh, P)
     u = Function(V)
     u.interpolate(lambda x: 0.5 * x[0])
     u.name = "A"
@@ -283,7 +283,7 @@ def test_empty_rank_mesh(tempdir):
 
     mesh = create_mesh(comm, cells, x, domain, partitioner)
 
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
     u = Function(V)
 
     filename = Path(tempdir, "empty_rank_mesh.bp")

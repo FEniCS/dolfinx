@@ -124,7 +124,7 @@ def lid_velocity_expression(x):
     return np.stack((np.ones(x.shape[1]), np.zeros(x.shape[1])))
 # -
 
-# Two {py:class}`function spaces <dolfinx.fem.FunctionSpaceBase>` are
+# Two {py:class}`function spaces <dolfinx.fem.FunctionSpace>` are
 # defined using different finite elements. `P2` corresponds to a
 # continuous piecewise quadratic basis (vector) and `P1` to a continuous
 # piecewise linear basis (scalar).

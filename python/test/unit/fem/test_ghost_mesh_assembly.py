@@ -10,7 +10,7 @@ import pytest
 
 import ufl
 from dolfinx import fem, la
-from dolfinx.fem import Function, FunctionSpace, form
+from dolfinx.fem import Function, form, functionspace
 from dolfinx.mesh import GhostMode, create_unit_square
 from ufl import avg, inner
 
@@ -37,7 +37,7 @@ def dS_from_ufl(mesh):
 @pytest.mark.parametrize("ds", [ds_from_ufl])
 def test_ghost_mesh_assembly(mode, dx, ds):
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     dx, ds = dx(mesh), ds(mesh)
 
@@ -72,7 +72,7 @@ def test_ghost_mesh_assembly(mode, dx, ds):
 @pytest.mark.parametrize("dS", [dS_from_ufl])
 def test_ghost_mesh_dS_assembly(mode, dS):
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     dS = dS(mesh)
     a = form(inner(avg(u), avg(v)) * dS)
