@@ -6,6 +6,7 @@
 
 #include "array.h"
 #include "caster_mpi.h"
+#include "numpy_dtype.h"
 #include <array>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
@@ -204,6 +205,8 @@ void declare_objects(nb::module_& m, const std::string& type)
 {
   using U = typename dolfinx::scalar_value_type_t<T>;
 
+  auto dtype = numpy_dtype<T>();
+
   // dolfinx::fem::DirichletBC
   std::string pyclass_name = std::string("DirichletBC_") + type;
   nb::class_<dolfinx::fem::DirichletBC<T, U>> dirichletbc(
@@ -267,8 +270,8 @@ void declare_objects(nb::module_& m, const std::string& type)
           },
           nb::arg("g").noconvert(), nb::arg("dofs").noconvert(),
           nb::arg("V").noconvert())
-      .def_prop_ro("dtype", [](const dolfinx::fem::Form<T, U>& self)
-                   { return nb::dtype<T>(); })
+      .def_prop_ro("dtype", [dtype](const dolfinx::fem::Form<T, U>& self)
+                   { return dtype; })
       .def("dof_indices",
            [](const dolfinx::fem::DirichletBC<T, U>& self)
            {
@@ -410,8 +413,8 @@ void declare_objects(nb::module_& m, const std::string& type)
                 dolfinx::fem::Constant<T>(std::span(c.data(), c.size()), shape);
           },
           nb::arg("c").noconvert(), "Create a constant from a value array")
-      .def_prop_ro("dtype", [](const dolfinx::fem::Constant<T>& self)
-                   { return nb::dtype<T>(); })
+      .def_prop_ro("dtype", [dtype](const dolfinx::fem::Constant<T>& self)
+                   { return dtype; })
       .def_prop_ro(
           "value",
           [](dolfinx::fem::Constant<T>& self)
@@ -469,8 +472,8 @@ void declare_objects(nb::module_& m, const std::string& type)
              auto [X, shape] = self.X();
              return dolfinx_wrappers::as_nbarray(std::move(X), shape);
            })
-      .def_prop_ro("dtype", [](const dolfinx::fem::Expression<T, U>& self)
-                   { return nb::dtype<T>(); })
+      .def_prop_ro("dtype", [dtype](const dolfinx::fem::Expression<T, U>& self)
+                   { return dtype; })
       .def_prop_ro("value_size", &dolfinx::fem::Expression<T, U>::value_size)
       .def_prop_ro("value_shape", &dolfinx::fem::Expression<T, U>::value_shape);
 
@@ -501,13 +504,7 @@ void declare_form(nb::module_& m, std::string type)
 {
   using U = typename dolfinx::scalar_value_type_t<T>;
 
-  auto np = nb::module_::import_("numpy");
-  nb::object dtype;
-
-  if constexpr (std::is_same_v<T, double>)
-    dtype = np.attr("float64");
-  else if constexpr (std::is_same_v<T, float>)
-    dtype = np.attr("float32");
+  auto dtype = numpy_dtype<T>();
 
   // dolfinx::fem::Form
   std::string pyclass_name_form = std::string("Form_") + type;
@@ -840,7 +837,7 @@ void declare_real_functions(nb::module_& m)
   m.def(
       "locate_dofs_topological",
       [](const std::vector<
-             std::reference_wrapper<const dolfinx::fem::FunctionSpace<T>>>& V,
+             std::shared_ptr<const dolfinx::fem::FunctionSpace<T>>>& V,
          int dim, const nb::ndarray<std::int32_t, nb::numpy>& entities,
          bool remote)
       {
@@ -848,8 +845,8 @@ void declare_real_functions(nb::module_& m)
           throw std::runtime_error("Expected two function spaces.");
         std::array<std::vector<std::int32_t>, 2> dofs
             = dolfinx::fem::locate_dofs_topological(
-                *V[0].get().mesh()->topology_mutable(),
-                {*V[0].get().dofmap(), *V[1].get().dofmap()}, dim,
+                *V[0].get()->mesh()->topology_mutable(),
+                {*V[0].get()->dofmap(), *V[1].get()->dofmap()}, dim,
                 std::span(entities.data(), entities.size()), remote);
         return std::array<nb::ndarray<std::int32_t, nb::numpy>, 2>(
             {dolfinx_wrappers::as_nbarray(std::move(dofs[0])),
@@ -872,7 +869,7 @@ void declare_real_functions(nb::module_& m)
   m.def(
       "locate_dofs_geometrical",
       [](const std::vector<
-             std::reference_wrapper<const dolfinx::fem::FunctionSpace<T>>>& V,
+             std::shared_ptr<const dolfinx::fem::FunctionSpace<T>>>& V,
          const std::function<nb::ndarray<bool>(const nb::ndarray<const T>&)>&
              marker)
 
@@ -891,7 +888,7 @@ void declare_real_functions(nb::module_& m)
         };
 
         std::array<std::vector<std::int32_t>, 2> dofs
-            = dolfinx::fem::locate_dofs_geometrical<T>({V[0], V[1]}, _marker);
+            = dolfinx::fem::locate_dofs_geometrical<T>({*V[0], *V[1]}, _marker);
         return std::array<nb::ndarray<std::int32_t, nb::numpy>, 2>(
             {dolfinx_wrappers::as_nbarray(std::move(dofs[0])),
              dolfinx_wrappers::as_nbarray(std::move(dofs[1]))});
