@@ -150,7 +150,7 @@ theta = 0.5  # time stepping family, e.g. theta=1 -> backward Euler, theta=0.5 -
 
 # A unit square mesh with 96 cells edges in each direction is created,
 # and on this mesh a
-# {py:class}`FunctionSpaceBase <dolfinx.fem.FunctionSpaceBase>` `ME` is built
+# {py:class}`FunctionSpace <dolfinx.fem.FunctionSpace>` `ME` is built
 # using a pair of linear Lagrange elements.
 
 msh = create_unit_square(MPI.COMM_WORLD, 96, 96, CellType.triangle)

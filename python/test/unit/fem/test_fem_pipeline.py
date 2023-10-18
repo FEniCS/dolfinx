@@ -13,8 +13,8 @@ import basix
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type
-from dolfinx.fem import (Function, FunctionSpace, assemble_scalar, dirichletbc,
-                         form, locate_dofs_topological)
+from dolfinx.fem import (Function, assemble_scalar, dirichletbc, form,
+                         functionspace, locate_dofs_topological)
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                set_bc)
 from dolfinx.io import XDMFFile
@@ -219,7 +219,7 @@ def test_curl_curl_eigenvalue(family, order):
                                              np.array([np.pi, np.pi])], [24, 24], CellType.triangle)
 
     e = element(family, basix.CellType.triangle, order)
-    V = FunctionSpace(mesh, e)
+    V = functionspace(mesh, e)
 
     u = ufl.TrialFunction(V)
     v = ufl.TestFunction(V)
@@ -284,7 +284,7 @@ def test_biharmonic(family):
     e = mixed_element([element(family, basix.CellType.triangle, 1),
                        element(basix.ElementFamily.P, basix.CellType.triangle, 2)])
 
-    V = FunctionSpace(mesh, e)
+    V = functionspace(mesh, e)
     sigma, u = ufl.TrialFunctions(V)
     tau, v = ufl.TestFunctions(V)
 
@@ -410,7 +410,7 @@ def test_P_simplex(family, degree, cell_type, datadir):
     if cell_type == CellType.tetrahedron and degree == 4:
         pytest.skip("Skip expensive test on tetrahedron")
     mesh = get_mesh(cell_type, datadir)
-    V = FunctionSpace(mesh, (family, degree))
+    V = functionspace(mesh, (family, degree))
     run_scalar_test(mesh, V, degree)
 
 
@@ -422,7 +422,7 @@ def test_P_simplex_built_in(family, degree, cell_type, datadir):
         mesh = create_unit_cube(MPI.COMM_WORLD, 5, 5, 5)
     elif cell_type == CellType.triangle:
         mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
-    V = FunctionSpace(mesh, (family, degree))
+    V = functionspace(mesh, (family, degree))
     run_scalar_test(mesh, V, degree)
 
 
@@ -435,7 +435,7 @@ def test_vector_P_simplex(family, degree, cell_type, datadir):
         pytest.skip("Skip expensive test on tetrahedron")
     mesh = get_mesh(cell_type, datadir)
     gdim = mesh.geometry.dim
-    V = FunctionSpace(mesh, (family, degree, (gdim,)))
+    V = functionspace(mesh, (family, degree, (gdim,)))
     run_vector_test(mesh, V, degree)
 
 
@@ -445,7 +445,7 @@ def test_vector_P_simplex(family, degree, cell_type, datadir):
 @pytest.mark.parametrize("degree", [2, 3])
 def test_dP_simplex(family, degree, cell_type, datadir):
     mesh = get_mesh(cell_type, datadir)
-    V = FunctionSpace(mesh, (family, degree))
+    V = functionspace(mesh, (family, degree))
     run_dg_test(mesh, V, degree)
 
 
@@ -457,7 +457,7 @@ def test_RT_N1curl_simplex(family, degree, cell_type, datadir):
     if cell_type == CellType.tetrahedron and degree == 4:
         pytest.skip("Skip expensive test on tetrahedron")
     mesh = get_mesh(cell_type, datadir)
-    V = FunctionSpace(mesh, (family, degree))
+    V = functionspace(mesh, (family, degree))
     run_vector_test(mesh, V, degree - 1)
 
 
@@ -469,7 +469,7 @@ def test_discontinuous_RT(family, degree, cell_type, datadir):
     if cell_type == CellType.tetrahedron and degree == 4:
         pytest.skip("Skip expensive test on tetrahedron")
     mesh = get_mesh(cell_type, datadir)
-    V = FunctionSpace(mesh, (family, degree))
+    V = functionspace(mesh, (family, degree))
     run_vector_test(mesh, V, degree - 1)
 
 
@@ -479,7 +479,7 @@ def test_discontinuous_RT(family, degree, cell_type, datadir):
 @pytest.mark.parametrize("degree", [1, 2])
 def test_BDM_N2curl_simplex(family, degree, cell_type, datadir):
     mesh = get_mesh(cell_type, datadir)
-    V = FunctionSpace(mesh, (family, degree))
+    V = functionspace(mesh, (family, degree))
     run_vector_test(mesh, V, degree)
 
 
@@ -491,7 +491,7 @@ def test_BDM_N2curl_simplex(family, degree, cell_type, datadir):
 @pytest.mark.parametrize("degree", [3])
 def test_BDM_N2curl_simplex_highest_order(family, degree, cell_type, datadir):
     mesh = get_mesh(cell_type, datadir)
-    V = FunctionSpace(mesh, (family, degree))
+    V = functionspace(mesh, (family, degree))
     run_vector_test(mesh, V, degree)
 
 
@@ -503,7 +503,7 @@ def test_BDM_N2curl_simplex_highest_order(family, degree, cell_type, datadir):
 @pytest.mark.parametrize("degree", [2, 3, 4])
 def test_P_tp(family, degree, cell_type, datadir):
     mesh = get_mesh(cell_type, datadir)
-    V = FunctionSpace(mesh, (family, degree))
+    V = functionspace(mesh, (family, degree))
     run_scalar_test(mesh, V, degree)
 
 
@@ -517,7 +517,7 @@ def test_P_tp_built_in_mesh(family, degree, cell_type, datadir):
     elif cell_type == CellType.quadrilateral:
         mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, cell_type)
     mesh = get_mesh(cell_type, datadir)
-    V = FunctionSpace(mesh, (family, degree))
+    V = functionspace(mesh, (family, degree))
     run_scalar_test(mesh, V, degree)
 
 
@@ -530,7 +530,7 @@ def test_vector_P_tp(family, degree, cell_type, datadir):
         pytest.skip("Skip expensive test on hexahedron")
     mesh = get_mesh(cell_type, datadir)
     gdim = mesh.geometry.dim
-    V = FunctionSpace(mesh, (family, degree, (gdim,)))
+    V = functionspace(mesh, (family, degree, (gdim,)))
     run_vector_test(mesh, V, degree)
 
 
@@ -540,7 +540,7 @@ def test_vector_P_tp(family, degree, cell_type, datadir):
 @pytest.mark.parametrize("degree", [1, 2, 3])
 def test_dP_quad(family, degree, cell_type, datadir):
     mesh = get_mesh(cell_type, datadir)
-    V = FunctionSpace(mesh, (family, degree))
+    V = functionspace(mesh, (family, degree))
     run_dg_test(mesh, V, degree)
 
 
@@ -550,7 +550,7 @@ def test_dP_quad(family, degree, cell_type, datadir):
 @pytest.mark.parametrize("degree", [1, 2])
 def test_dP_hex(family, degree, cell_type, datadir):
     mesh = get_mesh(cell_type, datadir)
-    V = FunctionSpace(mesh, (family, degree))
+    V = functionspace(mesh, (family, degree))
     run_dg_test(mesh, V, degree)
 
 
@@ -560,7 +560,7 @@ def test_dP_hex(family, degree, cell_type, datadir):
 @pytest.mark.parametrize("degree", [2, 3, 4])
 def test_S_tp(family, degree, cell_type, datadir):
     mesh = get_mesh(cell_type, datadir)
-    V = FunctionSpace(mesh, (family, degree))
+    V = functionspace(mesh, (family, degree))
     run_scalar_test(mesh, V, degree // 2)
 
 
@@ -574,7 +574,7 @@ def test_S_tp_built_in_mesh(family, degree, cell_type, datadir):
     elif cell_type == CellType.quadrilateral:
         mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, cell_type)
     mesh = get_mesh(cell_type, datadir)
-    V = FunctionSpace(mesh, (family, degree))
+    V = functionspace(mesh, (family, degree))
     run_scalar_test(mesh, V, degree // 2)
 
 
@@ -587,7 +587,7 @@ def test_vector_S_tp(family, degree, cell_type, datadir):
         pytest.skip("Skip expensive test on hexahedron")
     mesh = get_mesh(cell_type, datadir)
     gdim = mesh.geometry.dim
-    V = FunctionSpace(mesh, (family, degree, (gdim,)))
+    V = functionspace(mesh, (family, degree, (gdim,)))
     run_vector_test(mesh, V, degree // 2)
 
 
@@ -597,7 +597,7 @@ def test_vector_S_tp(family, degree, cell_type, datadir):
 @pytest.mark.parametrize("degree", [2, 3, 4])
 def test_DPC_quad(family, degree, cell_type, datadir):
     mesh = get_mesh(cell_type, datadir)
-    V = FunctionSpace(mesh, (family, degree))
+    V = functionspace(mesh, (family, degree))
     run_dg_test(mesh, V, degree // 2)
 
 
@@ -607,7 +607,7 @@ def test_DPC_quad(family, degree, cell_type, datadir):
 @pytest.mark.parametrize("degree", [2])
 def test_DPC_hex(family, degree, cell_type, datadir):
     mesh = get_mesh(cell_type, datadir)
-    V = FunctionSpace(mesh, (family, degree))
+    V = functionspace(mesh, (family, degree))
     run_dg_test(mesh, V, degree // 2)
 
 
@@ -617,7 +617,7 @@ def test_DPC_hex(family, degree, cell_type, datadir):
 @pytest.mark.parametrize("degree", [1, 2, 3])
 def test_RTC_quad(family, degree, cell_type, datadir):
     mesh = get_mesh(cell_type, datadir)
-    V = FunctionSpace(mesh, (family, degree))
+    V = functionspace(mesh, (family, degree))
     run_vector_test(mesh, V, degree - 1)
 
 
@@ -627,7 +627,7 @@ def test_RTC_quad(family, degree, cell_type, datadir):
 @pytest.mark.parametrize("degree", [1, 2, 3])
 def test_NC_hex(family, degree, cell_type, datadir):
     mesh = get_mesh(cell_type, datadir)
-    V = FunctionSpace(mesh, (family, degree))
+    V = functionspace(mesh, (family, degree))
     run_vector_test(mesh, V, degree - 1)
 
 
@@ -637,7 +637,7 @@ def test_NC_hex(family, degree, cell_type, datadir):
 @pytest.mark.parametrize("degree", [1, 2, 3, 4])
 def test_BDM_quad(family, degree, cell_type, datadir):
     mesh = get_mesh(cell_type, datadir)
-    V = FunctionSpace(mesh, (family, degree))
+    V = functionspace(mesh, (family, degree))
     run_vector_test(mesh, V, (degree - 1) // 2)
 
 
@@ -647,5 +647,5 @@ def test_BDM_quad(family, degree, cell_type, datadir):
 @pytest.mark.parametrize("degree", [1, 2, 3])
 def test_AA_hex(family, degree, cell_type, datadir):
     mesh = get_mesh(cell_type, datadir)
-    V = FunctionSpace(mesh, (family, degree))
+    V = functionspace(mesh, (family, degree))
     run_vector_test(mesh, V, (degree - 1) // 2)

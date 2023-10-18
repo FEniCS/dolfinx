@@ -107,10 +107,6 @@ public:
   /// `value_shape`.
   std::span<const std::size_t> value_shape() const noexcept;
 
-  /// The finite element family
-  /// @return The string of the finite element family
-  std::string family() const noexcept;
-
   /// @brief Evaluate derivatives of the basis functions up to given order
   /// at points in the reference cell.
   /// @param[in,out] values Array that will be filled with the tabulated
@@ -672,7 +668,7 @@ public:
                                bool scalar_element = false) const;
 
 private:
-  std::string _signature, _family;
+  std::string _signature;
 
   mesh::CellType _cell_shape;
 

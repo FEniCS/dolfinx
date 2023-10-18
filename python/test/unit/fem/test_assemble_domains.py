@@ -11,8 +11,8 @@ import pytest
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, fem, la
-from dolfinx.fem import (Constant, Function, FunctionSpace, assemble_scalar,
-                         dirichletbc, form)
+from dolfinx.fem import (Constant, Function, assemble_scalar, dirichletbc,
+                         form, functionspace)
 from dolfinx.mesh import (GhostMode, Mesh, create_unit_square, locate_entities,
                           locate_entities_boundary, meshtags,
                           meshtags_from_entities)
@@ -43,7 +43,7 @@ parametrize_ghost_mode = pytest.mark.parametrize("mode", [
 @pytest.mark.parametrize("meshtags_factory", [meshtags, create_cell_meshtags_from_entities])
 def test_assembly_dx_domains(mode, meshtags_factory):
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, ghost_mode=mode)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
     # Prepare a marking structures
@@ -100,7 +100,7 @@ def test_assembly_dx_domains(mode, meshtags_factory):
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_assembly_ds_domains(mode):
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, ghost_mode=mode)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
     def bottom(x):
@@ -188,7 +188,7 @@ def test_assembly_dS_domains(mode):
 @parametrize_ghost_mode
 def test_additivity(mode):
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
 
     f1 = Function(V)
     f2 = Function(V)
@@ -225,7 +225,7 @@ def test_manual_integration_domains():
     n = 4
     msh = create_unit_square(MPI.COMM_WORLD, n, n)
 
-    V = FunctionSpace(msh, ("Lagrange", 1))
+    V = functionspace(msh, ("Lagrange", 1))
     u = ufl.TrialFunction(V)
     v = ufl.TestFunction(V)
 

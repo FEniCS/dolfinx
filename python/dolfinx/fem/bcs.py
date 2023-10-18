@@ -22,8 +22,8 @@ import dolfinx
 from dolfinx import cpp as _cpp
 
 
-def locate_dofs_geometrical(V: typing.Union[dolfinx.fem.FunctionSpaceBase,
-                                            typing.Iterable[dolfinx.fem.FunctionSpaceBase]],
+def locate_dofs_geometrical(V: typing.Union[dolfinx.fem.FunctionSpace,
+                                            typing.Iterable[dolfinx.fem.FunctionSpace]],
                             marker: typing.Callable) -> np.ndarray:
     """Locate degrees-of-freedom geometrically using a marker function.
 
@@ -54,8 +54,8 @@ def locate_dofs_geometrical(V: typing.Union[dolfinx.fem.FunctionSpaceBase,
         return _cpp.fem.locate_dofs_geometrical(_V, marker)
 
 
-def locate_dofs_topological(V: typing.Union[dolfinx.fem.FunctionSpaceBase,
-                                            typing.Iterable[dolfinx.fem.FunctionSpaceBase]],
+def locate_dofs_topological(V: typing.Union[dolfinx.fem.FunctionSpace,
+                                            typing.Iterable[dolfinx.fem.FunctionSpace]],
                             entity_dim: int, entities: numpy.typing.NDArray[np.int32],
                             remote: bool = True) -> np.ndarray:
     """Locate degrees-of-freedom belonging to mesh entities topologically.
@@ -116,14 +116,14 @@ class DirichletBC:
         return self._cpp_object.value
 
     @property
-    def function_space(self) -> dolfinx.fem.FunctionSpaceBase:
+    def function_space(self) -> dolfinx.fem.FunctionSpace:
         """The function space on which the boundary condition is defined"""
         return self._cpp_object.function_space
 
 
 def dirichletbc(value: typing.Union[Function, Constant, np.ndarray],
                 dofs: numpy.typing.NDArray[np.int32],
-                V: typing.Optional[dolfinx.fem.FunctionSpaceBase] = None) -> DirichletBC:
+                V: typing.Optional[dolfinx.fem.FunctionSpace] = None) -> DirichletBC:
     """Create a representation of Dirichlet boundary condition which
     is imposed on a linear system.
 
@@ -181,7 +181,7 @@ def dirichletbc(value: typing.Union[Function, Constant, np.ndarray],
     return DirichletBC(bc)
 
 
-def bcs_by_block(spaces: typing.Iterable[typing.Union[dolfinx.fem.FunctionSpaceBase, None]],
+def bcs_by_block(spaces: typing.Iterable[typing.Union[dolfinx.fem.FunctionSpace, None]],
                  bcs: typing.Iterable[DirichletBC]) -> typing.List[typing.List[DirichletBC]]:
     """Arrange Dirichlet boundary conditions by the function space that
     they constrain.

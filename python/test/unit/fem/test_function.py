@@ -14,7 +14,7 @@ import pytest
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type, la
-from dolfinx.fem import Function, FunctionSpace
+from dolfinx.fem import Function, functionspace
 from dolfinx.geometry import (bb_tree, compute_colliding_cells,
                               compute_collisions_points)
 from dolfinx.mesh import create_mesh, create_unit_cube
@@ -29,19 +29,19 @@ def mesh():
 
 @pytest.fixture
 def V(mesh):
-    return FunctionSpace(mesh, ('Lagrange', 1))
+    return functionspace(mesh, ('Lagrange', 1))
 
 
 @pytest.fixture
 def W(mesh):
     gdim = mesh.geometry.dim
-    return FunctionSpace(mesh, ('Lagrange', 1, (gdim,)))
+    return functionspace(mesh, ('Lagrange', 1, (gdim,)))
 
 
 @pytest.fixture
 def Q(mesh):
     gdim = mesh.geometry.dim
-    return FunctionSpace(mesh, ('Lagrange', 1, (gdim, gdim)))
+    return functionspace(mesh, ('Lagrange', 1, (gdim, gdim)))
 
 
 def test_name_argument(W):
@@ -106,7 +106,7 @@ def test_eval_manifold():
     cells = [(0, 1, 2), (0, 1, 3)]
     domain = ufl.Mesh(element("Lagrange", "triangle", 1, gdim=3, shape=(2,)))
     mesh = create_mesh(MPI.COMM_WORLD, cells, vertices, domain)
-    Q = FunctionSpace(mesh, ("Lagrange", 1))
+    Q = functionspace(mesh, ("Lagrange", 1))
     u = Function(Q)
     u.interpolate(lambda x: x[0] + x[1])
     assert np.isclose(u.eval([0.75, 0.25, 0.5], 0)[0], 1.0)
@@ -127,7 +127,7 @@ def test_interpolation_mismatch_rank1(W):
 def test_mixed_element_interpolation():
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
     el = element("Lagrange", mesh.basix_cell(), 1)
-    V = FunctionSpace(mesh, mixed_element([el, el]))
+    V = functionspace(mesh, mixed_element([el, el]))
     u = Function(V)
     with pytest.raises(RuntimeError):
         u.interpolate(lambda x: np.ones(2, x.shape[1]))
@@ -180,7 +180,7 @@ def test_interpolation_rank1(W):
 def test_cffi_expression(types):
     vtype, xtype = types
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, dtype=vtype)
-    V = FunctionSpace(mesh, ('Lagrange', 1))
+    V = functionspace(mesh, ('Lagrange', 1))
 
     code_h = f"void eval({xtype}* values, int num_points, int value_size, const {xtype}* x);"
     code_c = """
@@ -219,10 +219,10 @@ def test_cffi_expression(types):
 
 
 def test_interpolation_function(mesh):
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
     u = Function(V)
     u.x.array[:] = 1
-    Vh = FunctionSpace(mesh, ("Lagrange", 1))
+    Vh = functionspace(mesh, ("Lagrange", 1))
     uh = Function(Vh)
     uh.interpolate(u)
     assert np.allclose(uh.x.array, 1)
