@@ -140,10 +140,12 @@ jobs:
           ctest -V -R demo -R mpi_2
 
       - name: Build Python interface
-        run: CMAKE_BUILD_TYPE=Debug python3 -m pip -v install python/
+        run: |
+          python3 -m pip install git+https://git@github.com/wjakob/nanobind.git
+          CMAKE_BUILD_TYPE=Debug python3 -m pip -v install python/
       - name: Build Python interface documentation
         run: |
-          python3 -m pip install git+https://git@github.com/wjakob/nanobind.git sphinx==5.0.2
+          python3 -m pip sphinx==5.0.2
           cd python/doc
           make html
 
