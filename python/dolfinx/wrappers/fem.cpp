@@ -870,8 +870,8 @@ void declare_real_functions(nb::module_& m)
       "locate_dofs_geometrical",
       [](const std::vector<
              std::shared_ptr<const dolfinx::fem::FunctionSpace<T>>>& V,
-         const std::function<nb::ndarray<bool>(const nb::ndarray<const T>&)>&
-             marker)
+         const std::function<nb::ndarray<bool, nb::numpy>(
+             const nb::ndarray<const T, nb::numpy>&)>& marker)
 
       {
         if (V.size() != 2)
@@ -880,9 +880,9 @@ void declare_real_functions(nb::module_& m)
         auto _marker = [&marker](auto x)
         {
           std::array shape{x.extent(0), x.extent(1)};
-          nb::ndarray<const T> x_view(x.data_handle(), 2, shape.data(),
-                                      nb::none());
-          nb::ndarray<bool> marked = marker(x_view);
+          nb::ndarray<const T, nb::numpy> x_view(x.data_handle(), 2,
+                                                 shape.data());
+          nb::ndarray<bool, nb::numpy> marked = marker(x_view);
           return std::vector<std::int8_t>(marked.data(),
                                           marked.data() + marked.size());
         };
@@ -897,15 +897,15 @@ void declare_real_functions(nb::module_& m)
   m.def(
       "locate_dofs_geometrical",
       [](const dolfinx::fem::FunctionSpace<T>& V,
-         const std::function<nb::ndarray<bool>(const nb::ndarray<const T>&)>&
-             marker)
+         const std::function<nb::ndarray<bool, nb::numpy>(
+             const nb::ndarray<const T, nb::numpy>&)>& marker)
       {
         auto _marker = [&marker](auto x)
         {
           std::array shape{x.extent(0), x.extent(1)};
-          nb::ndarray<const T> x_view(x.data_handle(), 2, shape.data(),
-                                      nb::none());
-          nb::ndarray<bool> marked = marker(x_view);
+          nb::ndarray<const T, nb::numpy> x_view(x.data_handle(), 2,
+                                                 shape.data());
+          nb::ndarray<bool, nb::numpy> marked = marker(x_view);
           return std::vector<std::int8_t>(marked.data(),
                                           marked.data() + marked.size());
         };

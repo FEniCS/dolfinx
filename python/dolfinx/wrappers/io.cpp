@@ -82,9 +82,17 @@ void vtk_scalar_fn(auto&& m)
   m.def(
       "write",
       [](dolfinx::io::VTKFile& self,
-         const std::vector<
-             std::reference_wrapper<const dolfinx::fem::Function<T, U>>>& u,
-         double t) { self.write(u, t); },
+         const std::vector<std::shared_ptr<const dolfinx::fem::Function<T, U>>>
+             u_ptr,
+         double t)
+      {
+        std::vector<std::reference_wrapper<const dolfinx::fem::Function<T, U>>>
+            u;
+        for (auto q : u_ptr)
+          u.push_back(*q);
+
+        self.write(u, t);
+      },
       nb::arg("u"), nb::arg("t") = 0.0);
 }
 

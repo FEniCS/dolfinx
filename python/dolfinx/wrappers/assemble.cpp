@@ -269,7 +269,7 @@ void declare_assembly_functions(nb::module_& m)
                                     nb::ndarray<T, nb::numpy>>>& coeffs,
          const std::vector<std::vector<
              std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>>& bcs1,
-         const std::vector<nb::ndarray<T, nb::numpy>>& x0, T scale)
+         const std::vector<const nb::ndarray<const T, nb::numpy>>& x0, T scale)
       {
         std::vector<std::span<const T>> _x0;
         for (auto x : x0)

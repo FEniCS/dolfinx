@@ -25,6 +25,12 @@
 #include <dolfinx/nls/NewtonSolver.h>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
+#include <nanobind/stl/function.h>
+#include <nanobind/stl/map.h>
+#include <nanobind/stl/pair.h>
+#include <nanobind/stl/shared_ptr.h>
+#include <nanobind/stl/string.h>
+#include <nanobind/stl/vector.h>
 #include <petsc4py/petsc4py.h>
 
 namespace
@@ -117,15 +123,15 @@ void declare_petsc_discrete_operators(nb::module_& m)
 
 void petsc_la_module(nb::module_& m)
 {
-  // m.def(
-  //     "create_matrix",
-  //     [](dolfinx_wrappers::MPICommWrapper comm,
-  //        const dolfinx::la::SparsityPattern& p, const std::string& type)
-  //     { return dolfinx::la::petsc::create_matrix(comm.get(), p, type); },
-  //     nb::rv_policy::take_ownership, nb::arg("comm"), nb::arg("p"),
-  //     nb::arg("type") = std::string(),
-  //     "Create a PETSc Mat from sparsity pattern.");
-  // // TODO: check reference counting for index sets
+  m.def(
+      "create_matrix",
+      [](dolfinx_wrappers::MPICommWrapper comm,
+         const dolfinx::la::SparsityPattern& p, const std::string& type)
+      { return dolfinx::la::petsc::create_matrix(comm.get(), p, type); },
+      nb::rv_policy::take_ownership, nb::arg("comm"), nb::arg("p"),
+      nb::arg("type") = std::string(),
+      "Create a PETSc Mat from sparsity pattern.");
+  // TODO: check reference counting for index sets
 
   m.def("create_index_sets", &dolfinx::la::petsc::create_index_sets,
         nb::arg("maps"), nb::rv_policy::take_ownership);
@@ -173,10 +179,10 @@ void petsc_fem_module(nb::module_& m)
   // m.def("create_vector_nest", &dolfinx::fem::petsc::create_vector_nest,
   //       nb::rv_policy::take_ownership, nb::arg("maps"),
   //       "Create nested vector for multiple (stacked) linear forms.");
-  // m.def("create_matrix", dolfinx::fem::petsc::create_matrix<PetscReal>,
-  //       nb::rv_policy::take_ownership, nb::arg("a"),
-  //       nb::arg("type") = std::string(),
-  //       "Create a PETSc Mat for bilinear form.");
+  m.def("create_matrix", dolfinx::fem::petsc::create_matrix<PetscReal>,
+        nb::rv_policy::take_ownership, nb::arg("a"),
+        nb::arg("type") = std::string(),
+        "Create a PETSc Mat for bilinear form.");
   // m.def("create_matrix_block",
   //       &dolfinx::fem::petsc::create_matrix_block<PetscReal>,
   //       nb::rv_policy::take_ownership, nb::arg("a"),
