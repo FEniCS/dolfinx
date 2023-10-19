@@ -104,7 +104,7 @@ void declare_assembly_functions(nb::module_& m)
         dolfinx::fem::pack_coefficients(form, coeffs);
 
         // Move into NumPy data structures
-        std::map<Key_t, nb::ndarray<T>> c;
+        std::map<Key_t, nb::ndarray<T, nb::numpy>> c;
         std::transform(
             coeffs.begin(), coeffs.end(), std::inserter(c, c.end()),
             [](auto& e) -> typename decltype(c)::value_type
@@ -116,7 +116,7 @@ void declare_assembly_functions(nb::module_& m)
               std::array<std::size_t, 2> shape
                   = {num_ents, (std::size_t)e.second.second};
               return std::pair<const std::pair<dolfinx::fem::IntegralType, int>,
-                               nb::ndarray<T>>(
+                               nb::ndarray<T, nb::numpy>>(
                   e.first, dolfinx_wrappers::as_nbarray(
                                std::move(e.second.first), shape));
             });

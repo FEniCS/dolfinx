@@ -7,6 +7,7 @@
 #include <dolfinx/fem/Form.h>
 
 #include <algorithm>
+#include <iostream>
 #include <map>
 #include <span>
 
@@ -21,7 +22,14 @@ py_to_cpp_coeffs(const std::map<std::pair<dolfinx::fem::IntegralType, int>,
   std::transform(coeffs.begin(), coeffs.end(), std::inserter(c, c.end()),
                  [](auto& e) -> typename decltype(c)::value_type
                  {
-                   assert(e.second.ndim() == 1);
+                   if (e.second.ndim() != 1)
+                   {
+                     std::cout << e.second.ndim() << " ";
+                     for (int i = 0; i < e.second.ndim(); ++i)
+                       std::cout << e.second.shape(i) << " ";
+                     std::cout << std::endl;
+                   }
+                   assert(e.second.ndim() == 2);
                    return {e.first,
                            {std::span(e.second.data(), e.second.shape(0)),
                             e.second.shape(1)}};

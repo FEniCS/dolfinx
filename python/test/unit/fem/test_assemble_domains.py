@@ -28,7 +28,7 @@ def mesh():
 def create_cell_meshtags_from_entities(mesh: Mesh, dim: int, cells: np.ndarray, values: np.ndarray):
     mesh.topology.create_connectivity(mesh.topology.dim, 0)
     cell_to_vertices = mesh.topology.connectivity(mesh.topology.dim, 0)
-    entities = _cpp.graph.AdjacencyList_int32([cell_to_vertices.links(cell) for cell in cells])
+    entities = _cpp.graph.AdjacencyList_int32(np.array([cell_to_vertices.links(cell) for cell in cells]))
     return meshtags_from_entities(mesh, dim, entities, values)
 
 
@@ -69,7 +69,7 @@ def test_assembly_dx_domains(mode, meshtags_factory):
     A2.scatter_reverse()
     assert np.allclose(A.data, A2.data)
 
-    bc = dirichletbc(Function(V), range(30))
+    bc = dirichletbc(Function(V), np.arange(30))
 
     # Assemble vector
     L = form(ufl.inner(w, v) * (dx(1) + dx(2) + dx(3)))

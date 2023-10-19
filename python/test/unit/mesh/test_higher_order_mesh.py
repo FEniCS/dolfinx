@@ -98,7 +98,6 @@ def test_submesh(order):
 
     domain = ufl.Mesh(element("Lagrange", "tetrahedron", order, gdim=3,
                       lagrange_variant=basix.LagrangeVariant.equispaced, shape=(3, )))
-
     points = np.array(points, dtype=default_real_type)
     mesh = create_mesh(MPI.COMM_WORLD, [cell], points, domain)
     for i in range(mesh.topology.dim):
