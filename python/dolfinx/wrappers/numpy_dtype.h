@@ -15,8 +15,8 @@ nb::object numpy_dtype()
   else if constexpr (std::is_same_v<T, float>)
     dtype = np.attr("float32");
   else if constexpr (std::is_same_v<T, std::complex<double>>)
-    dtype = np.attr("complex64");
-  else if constexpr (std::is_same_v<T, std::complex<float>>)
     dtype = np.attr("complex128");
+  else if constexpr (std::is_same_v<T, std::complex<float>>)
+    dtype = np.attr("complex64");
   return dtype;
 }

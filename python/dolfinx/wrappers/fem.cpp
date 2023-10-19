@@ -277,8 +277,8 @@ void declare_objects(nb::module_& m, const std::string& type)
            {
              auto [dofs, owned] = self.dof_indices();
              std::size_t size = dofs.size();
-             return std::pair(nb::ndarray<const std::int32_t>(
-                                  dofs.data(), 1, &size, nb::cast(self)),
+             return std::pair(nb::ndarray<const std::int32_t, nb::numpy>(
+                                  dofs.data(), 1, &size),
                               owned);
            })
       .def_prop_ro("function_space",
@@ -1085,8 +1085,8 @@ void fem(nb::module_& m)
           {
             std::span<const std::int32_t> dofs = self.cell_dofs(cell);
             std::size_t size = dofs.size();
-            return nb::ndarray<const std::int32_t>(dofs.data(), 1, &size,
-                                                   nb::cast(self));
+            return nb::ndarray<const std::int32_t, nb::numpy>(dofs.data(), 1,
+                                                              &size);
           },
           nb::arg("cell"))
       .def_prop_ro("bs", &dolfinx::fem::DofMap::bs)
@@ -1096,8 +1096,8 @@ void fem(nb::module_& m)
           {
             auto dofs = self.map();
             std::array shape{dofs.extent(0), dofs.extent(1)};
-            return nb::ndarray<const std::int32_t>(
-                dofs.data_handle(), shape.size(), shape.data(), nb::cast(self));
+            return nb::ndarray<const std::int32_t, nb::numpy>(
+                dofs.data_handle(), shape.size(), shape.data());
           },
           nb::rv_policy::reference_internal);
 

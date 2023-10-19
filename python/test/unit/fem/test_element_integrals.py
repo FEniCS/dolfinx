@@ -284,7 +284,7 @@ def test_plus_minus_simple_vector(cell_type, pm, dtype):
             # Assemble vectors v['+'] * dS and v['-'] * dS for a few
             # different numberings
             v = ufl.TestFunction(V)
-            a = form(ufl.inner(1, v(pm)) * ufl.dS, dtype=dtype)
+            a = form(ufl.inner(1.0, v(pm)) * ufl.dS, dtype=dtype)
             result = assemble_vector(a)
             spaces.append(V)
             results.append(result.array)

@@ -272,10 +272,10 @@ void la(nb::module_& m)
             auto [edges, ptr] = self.graph();
             std::size_t esize = edges.size();
             std::size_t psize = ptr.size();
-            return std::pair(nb::ndarray<const std::int32_t>(
-                                 edges.data(), 1, &esize, nb::cast(self)),
-                             nb::ndarray<const std::int64_t>(
-                                 ptr.data(), 1, &psize, nb::cast(self)));
+            return std::pair(nb::ndarray<const std::int32_t, nb::numpy>(
+                                 edges.data(), 1, &esize),
+                             nb::ndarray<const std::int64_t, nb::numpy>(
+                                 ptr.data(), 1, &psize));
           });
 
   // Declare objects that are templated over type
