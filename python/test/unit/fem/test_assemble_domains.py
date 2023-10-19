@@ -138,7 +138,7 @@ def test_assembly_ds_domains(mode):
     w = Function(V)
     w.x.array[:] = 0.5
 
-    bc = dirichletbc(Function(V), range(30))
+    bc = dirichletbc(Function(V), np.arange(30))
 
     # Assemble matrix
     a = form(w * ufl.inner(u, v) * (ds(1) + ds(2) + ds(3) + ds(6)))
