@@ -17,6 +17,7 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
+#include <nanobind/stl/complex.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/vector.h>
 

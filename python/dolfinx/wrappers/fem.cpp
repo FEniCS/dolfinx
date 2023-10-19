@@ -495,7 +495,7 @@ void declare_objects(nb::module_& m, const std::string& type)
             *p, coefficients, constants, argument_function_space);
       },
       nb::arg("expression"), nb::arg("coefficients"), nb::arg("constants"),
-      nb::arg("argument_function_space"),
+      nb::arg("argument_function_space").none(),
       "Create Form from a pointer to ufc_form.");
 }
 
