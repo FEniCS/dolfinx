@@ -225,8 +225,8 @@ void declare_assembly_functions(nb::module_& m)
       "Experimental.");
   m.def(
       "insert_diagonal",
-      [](dolfinx::la::MatrixCSR<T>& A, const nb::ndarray<std::int32_t>& rows,
-         T diagonal)
+      [](dolfinx::la::MatrixCSR<T>& A,
+         const nb::ndarray<std::int32_t, nb::numpy>& rows, T diagonal)
       {
         dolfinx::fem::set_diagonal(A.mat_set_values(),
                                    std::span(rows.data(), rows.shape(0)),
@@ -235,9 +235,10 @@ void declare_assembly_functions(nb::module_& m)
       nb::arg("A"), nb::arg("rows"), nb::arg("diagonal"), "Experimental.");
   m.def(
       "assemble_matrix",
-      [](const std::function<int(const nb::ndarray<const std::int32_t>&,
-                                 const nb::ndarray<const std::int32_t>&,
-                                 const nb::ndarray<const T>&)>& fin,
+      [](const std::function<int(
+             const nb::ndarray<const std::int32_t, nb::numpy>&,
+             const nb::ndarray<const std::int32_t, nb::numpy>&,
+             const nb::ndarray<const T, nb::numpy>&)>& fin,
          const dolfinx::fem::Form<T, U>& form,
          const std::vector<
              std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>& bcs)
@@ -249,9 +250,11 @@ void declare_assembly_functions(nb::module_& m)
           std::size_t rsize = rows.size();
           std::size_t csize = cols.size();
           std::size_t dsize = data.size();
-          return fin(nb::ndarray<const std::int32_t>(rows.data(), 1, &rsize),
-                     nb::ndarray<const std::int32_t>(cols.data(), 1, &csize),
-                     nb::ndarray<const T>(data.data(), 1, &dsize));
+          return fin(nb::ndarray<const std::int32_t, nb::numpy>(rows.data(), 1,
+                                                                &rsize),
+                     nb::ndarray<const std::int32_t, nb::numpy>(cols.data(), 1,
+                                                                &csize),
+                     nb::ndarray<const T, nb::numpy>(data.data(), 1, &dsize));
         };
         dolfinx::fem::assemble_matrix(f, form, bcs);
       },

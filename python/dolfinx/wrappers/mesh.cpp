@@ -163,11 +163,10 @@ void declare_mesh(nb::module_& m, std::string type)
       .def("index_map", &dolfinx::mesh::Geometry<T>::index_map)
       .def_prop_ro(
           "x",
-          [](const dolfinx::mesh::Geometry<T>& self)
+          [](dolfinx::mesh::Geometry<T>& self)
           {
             std::array<std::size_t, 2> shape{self.x().size() / 3, 3};
-            return nb::ndarray<const T, nb::numpy>(self.x().data(), 2,
-                                                   shape.data());
+            return nb::ndarray<T, nb::numpy>(self.x().data(), 2, shape.data());
           },
           "Return coordinates of all geometry points. Each row is the "
           "coordinate of a point.")
@@ -360,7 +359,7 @@ void declare_mesh(nb::module_& m, std::string type)
   m.def(
       "entities_to_geometry",
       [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
-         nb::ndarray<std::int32_t, nb::numpy> entities, bool orient)
+         nb::ndarray<const std::int32_t, nb::numpy> entities, bool orient)
       {
         std::vector<std::int32_t> idx = dolfinx::mesh::entities_to_geometry(
             mesh, dim, std::span(entities.data(), entities.size()), orient);

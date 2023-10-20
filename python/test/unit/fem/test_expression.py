@@ -317,12 +317,12 @@ def test_expression_eval_cells_subset(dtype):
         assert np.allclose(u_, float(c))
 
     # Test eval on unordered cells
-    cells = np.arange(cells_imap.size_local, dtype=np.int32)[::-1]
+    cells = np.arange(cells_imap.size_local - 1, -1, -1, dtype=np.int32)
     u_ = e.eval(mesh, cells).flatten()
     assert np.allclose(u_, cells)
 
     # Test eval on unordered and non sequential cells
-    cells = np.arange(cells_imap.size_local, dtype=np.int32)[::-2]
+    cells = np.arange(cells_imap.size_local - 1, -1, -2, dtype=np.int32)
     u_ = e.eval(mesh, cells)
     assert np.allclose(u_.ravel(), cells)
 

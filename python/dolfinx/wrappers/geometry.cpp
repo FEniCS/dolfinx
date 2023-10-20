@@ -14,6 +14,7 @@
 #include <memory>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
+#include <nanobind/stl/array.h>
 #include <nanobind/stl/variant.h>
 #include <nanobind/stl/vector.h>
 #include <span>
@@ -30,12 +31,12 @@ void declare_bbtree(nb::module_& m, std::string type)
   nb::class_<dolfinx::geometry::BoundingBoxTree<T>>(m, pyclass_name.c_str())
       .def(
           "__init__",
-          [](dolfinx::geometry::BoundingBoxTree<double>* bbt,
-             const dolfinx::mesh::Mesh<double>& mesh, int dim,
+          [](dolfinx::geometry::BoundingBoxTree<T>* bbt,
+             const dolfinx::mesh::Mesh<T>& mesh, int dim,
              const nb::ndarray<std::int32_t, nb::numpy>& entities,
-             double padding)
+             double padding = 0.0)
           {
-            new (bbt) dolfinx::geometry::BoundingBoxTree(
+            new (bbt) dolfinx::geometry::BoundingBoxTree<T>(
                 mesh, dim,
                 std::span<const std::int32_t>(entities.data(), entities.size()),
                 padding);
@@ -51,7 +52,7 @@ void declare_bbtree(nb::module_& m, std::string type)
           {
             std::array<T, 6> bbox = self.get_bbox(i);
             std::array<std::size_t, 2> shape{2, 3};
-            return nb::ndarray<T>(bbox.data(), 2, shape.data());
+            return nb::ndarray<T, nb::numpy>(bbox.data(), 2, shape.data());
           },
           nb::arg("i"))
       .def("__repr__", &dolfinx::geometry::BoundingBoxTree<T>::str)
@@ -129,7 +130,7 @@ void declare_bbtree(nb::module_& m, std::string type)
 
   m.def(
       "compute_distance_gjk",
-      [](const nb::ndarray<T>& p, const nb::ndarray<T>& q)
+      [](const nb::ndarray<T, nb::numpy>& p, const nb::ndarray<T, nb::numpy>& q)
       {
         const std::size_t p_s0 = p.ndim() == 1 ? 1 : p.shape(0);
         const std::size_t q_s0 = q.ndim() == 1 ? 1 : q.shape(0);
@@ -137,8 +138,10 @@ void declare_bbtree(nb::module_& m, std::string type)
 
         const std::array<T, 3> d
             = dolfinx::geometry::compute_distance_gjk<T>(_p, _q);
-        std::size_t size = 3;
-        return nb::ndarray<const T>(d.data(), 1, &size);
+
+        std::vector<T> _d(d.begin(), d.end());
+
+        return dolfinx_wrappers::as_nbarray(std::move(_d));
       },
       nb::arg("p"), nb::arg("q"));
 

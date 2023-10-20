@@ -29,13 +29,15 @@ def distance_point_to_plane_3D(P1, P2, P3, point):
 
 
 @pytest.mark.parametrize("delta", [0.1, 1e-12, 0, -2])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("dtype", [np.float64, np.float32])
 def test_line_point_distance(delta, dtype):
     line = np.array([[0.1, 0.2, 0.3], [0.5, 0.8, 0.7]], dtype=dtype)
     point_on_line = line[0] + 0.27 * (line[1] - line[0])
     normal = np.cross(line[0], line[1])
     point = point_on_line + delta * normal
-    distance = np.linalg.norm(compute_distance_gjk(line, point))
+    d = compute_distance_gjk(line, point)
+    print(d)
+    distance = np.linalg.norm(d)
     actual_distance = distance_point_to_line_3D(line[0], line[1], point)
     assert np.isclose(distance, actual_distance, atol=1e-8)
 

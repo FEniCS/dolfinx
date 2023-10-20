@@ -461,8 +461,10 @@ void declare_objects(nb::module_& m, const std::string& type)
              nb::ndarray<T, nb::numpy>& values)
           {
             self.eval(
-                mesh, std::span(active_cells.data(), active_cells.size()),
-                std::span(values.data(), values.size()),
+                mesh,
+                std::span<const std::int32_t>(active_cells.data(),
+                                              active_cells.size()),
+                std::span<T>(values.data(), values.size()),
                 {(std::size_t)values.shape(0), (std::size_t)values.shape(1)});
           },
           nb::arg("mesh"), nb::arg("active_cells"), nb::arg("values"))

@@ -129,7 +129,7 @@ def rotation_matrix(axis, angle):
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_empty_tree(dtype):
     mesh = create_unit_interval(MPI.COMM_WORLD, 16, dtype=dtype)
-    bbtree = bb_tree(mesh, mesh.topology.dim, [])
+    bbtree = bb_tree(mesh, mesh.topology.dim, np.array([], dtype=dtype))
     assert bbtree.num_bboxes == 0
 
 
