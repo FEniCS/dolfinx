@@ -141,7 +141,7 @@ jobs:
 
       - name: Build Python interface
         run: |
-          python3 -m pip install git+https://git@github.com/wjakob/nanobind.git
+          python3 -m pip install nanobind
           CMAKE_BUILD_TYPE=Debug python3 -m pip -v install python/
       - name: Build Python interface documentation
         run: |
