@@ -189,14 +189,35 @@ void declare_functions(nb::module_& m)
       nb::arg("x"), nb::arg("y"));
   m.def(
       "orthonormalize",
-      [](std::vector<std::reference_wrapper<dolfinx::la::Vector<T>>> basis)
-      { dolfinx::la::orthonormalize(basis); },
+      [](std::vector<dolfinx::la::Vector<T>*> basis)
+      {
+        std::vector<std::reference_wrapper<dolfinx::la::Vector<T>>> _basis;
+        for (std::size_t i = 0; i < basis.size(); ++i)
+          _basis.push_back(*basis[i]);
+        dolfinx::la::orthonormalize(_basis);
+      },
       nb::arg("basis"));
   m.def(
       "is_orthonormal",
-      [](std::vector<std::reference_wrapper<const dolfinx::la::Vector<T>>>
-             basis) { return dolfinx::la::is_orthonormal(basis); },
+      [](std::vector<const dolfinx::la::Vector<T>*> basis)
+      {
+        std::vector<std::reference_wrapper<const dolfinx::la::Vector<T>>>
+            _basis;
+        for (std::size_t i = 0; i < basis.size(); ++i)
+          _basis.push_back(*basis[i]);
+        return dolfinx::la::is_orthonormal(_basis);
+      },
       nb::arg("basis"));
+  // m.def(
+  //     "orthonormalize",
+  //     [](std::vector<std::reference_wrapper<dolfinx::la::Vector<T>>> basis)
+  //     { dolfinx::la::orthonormalize(basis); },
+  //     nb::arg("basis"));
+  // m.def(
+  //     "is_orthonormal",
+  //     [](std::vector<std::reference_wrapper<const dolfinx::la::Vector<T>>>
+  //            basis) { return dolfinx::la::is_orthonormal(basis); },
+  //     nb::arg("basis"));
 }
 
 } // namespace
@@ -265,18 +286,18 @@ void la(nb::module_& m)
              const nb::ndarray<std::int32_t, nb::numpy>& rows)
           { self.insert_diagonal(std::span(rows.data(), rows.size())); },
           nb::arg("rows"))
-      .def_prop_ro(
-          "graph",
-          [](dolfinx::la::SparsityPattern& self)
-          {
-            auto [edges, ptr] = self.graph();
-            std::size_t esize = edges.size();
-            std::size_t psize = ptr.size();
-            return std::pair(nb::ndarray<const std::int32_t, nb::numpy>(
-                                 edges.data(), 1, &esize),
-                             nb::ndarray<const std::int64_t, nb::numpy>(
-                                 ptr.data(), 1, &psize));
-          });
+      .def_prop_ro("graph",
+                   [](dolfinx::la::SparsityPattern& self)
+                   {
+                     auto [edges, ptr] = self.graph();
+                     std::size_t esize = edges.size();
+                     std::size_t psize = ptr.size();
+                     return std::pair(
+                         nb::ndarray<const std::int32_t, nb::numpy>(
+                             edges.data(), 1, &esize),
+                         nb::ndarray<const std::int64_t, nb::numpy>(ptr.data(),
+                                                                    1, &psize));
+                   });
 
   // Declare objects that are templated over type
   declare_objects<float>(m, "float32");
