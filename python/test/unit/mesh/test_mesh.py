@@ -276,7 +276,7 @@ def test_cell_circumradius(c0, c1, c5):
 @pytest.mark.skip_in_parallel
 def test_cell_h(c0, c1, c5):
     for c in [c0, c1, c5]:
-        assert c[0].h(c[1], [c[2]])
+        assert c[0].h(c[1], np.array([c[2]]))
 
 
 def test_cell_h_prism():
@@ -323,7 +323,7 @@ def test_hmin_hmax(_mesh, dtype, hmin, hmax):
     mesh = _mesh(dtype)
     tdim = mesh.topology.dim
     num_cells = mesh.topology.index_map(tdim).size_local
-    h = _cpp.mesh.h(mesh._cpp_object, tdim, range(num_cells))
+    h = _cpp.mesh.h(mesh._cpp_object, tdim, np.arange(num_cells))
     assert h.min() == pytest.approx(hmin)
     assert h.max() == pytest.approx(hmax)
 

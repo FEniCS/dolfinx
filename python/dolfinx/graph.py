@@ -7,10 +7,7 @@
 
 from __future__ import annotations
 
-import typing
-
-if typing.TYPE_CHECKING:
-    import numpy as np
+import numpy as np
 
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.graph import partitioner
@@ -47,13 +44,18 @@ def adjacencylist(data: np.ndarray, offsets=None):
         An adjacency list.
 
     """
+
     if offsets is None:
-        try:
+        if data.dtype == np.int32:
             return _cpp.graph.AdjacencyList_int32(data)
-        except TypeError:
+        elif data.dtype == np.int64:
             return _cpp.graph.AdjacencyList_int64(data)
+        else:
+            raise TypeError("Wrong data type")
     else:
-        try:
+        if data.dtype == np.int32:
             return _cpp.graph.AdjacencyList_int32(data, offsets)
-        except TypeError:
+        elif data.dtype == np.int64:
             return _cpp.graph.AdjacencyList_int64(data, offsets)
+        else:
+            raise TypeError("Wrong data type")

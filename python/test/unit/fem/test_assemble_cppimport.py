@@ -51,7 +51,7 @@ cfg['library_dirs'] = {dolfinx_pc["library_dirs"]}
 
         cpp_code = f"""
 #include <nanobind/nanobind.h>
-#include <nanobind/eigen.h>
+#include <nanobind/eigen/sparse.h>
 #include <nanobind/stl/vector.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <vector>

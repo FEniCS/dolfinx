@@ -261,7 +261,7 @@ def model_to_mesh(model, comm: _MPI.Comm, rank: int, gdim: int = 3,
     # Create distributed mesh
     ufl_domain = ufl_mesh(cell_id, gdim)
     gmsh_cell_perm = cell_perm_array(_cpp.mesh.to_type(str(ufl_domain.ufl_cell())), num_nodes)
-    cells = cells[:, gmsh_cell_perm]
+    cells = cells[:, gmsh_cell_perm].copy()
     mesh = create_mesh(comm, cells, x[:, :gdim].astype(dtype, copy=False), ufl_domain, partitioner)
 
     # Create MeshTags for cells

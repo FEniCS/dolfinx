@@ -129,7 +129,7 @@ def test_read_write_p2_mesh(tempdir, encoding):
 
     domain = ufl_mesh(gmsh_cell_id, 3)
     cell_type = _cpp.mesh.to_type(str(domain.ufl_cell()))
-    cells = cells[:, cell_perm_array(cell_type, cells.shape[1])]
+    cells = cells[:, cell_perm_array(cell_type, cells.shape[1])].copy()
 
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
 
