@@ -30,6 +30,7 @@
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/string.h>
+#include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
 #include <petsc4py/petsc4py.h>
 
@@ -140,13 +141,18 @@ void petsc_la_module(nb::module_& m)
       "scatter_local_vectors",
       [](Vec x, const std::vector<nb::ndarray<PetscScalar, nb::numpy>>& x_b,
          const std::vector<std::pair<
-             std::reference_wrapper<const dolfinx::common::IndexMap>, int>>&
-             maps)
+             std::shared_ptr<const dolfinx::common::IndexMap>, int>>& maps)
       {
         std::vector<std::span<const PetscScalar>> _x_b;
+        std::vector<std::pair<
+            std::reference_wrapper<const dolfinx::common::IndexMap>, int>>
+            _maps;
         for (auto& array : x_b)
           _x_b.emplace_back(array.data(), array.size());
-        dolfinx::la::petsc::scatter_local_vectors(x, _x_b, maps);
+        for (auto q : maps)
+          _maps.push_back({*q.first, q.second});
+
+        dolfinx::la::petsc::scatter_local_vectors(x, _x_b, _maps);
       },
       nb::arg("x"), nb::arg("x_b"), nb::arg("maps"),
       "Scatter the (ordered) list of sub vectors into a block "
@@ -173,26 +179,38 @@ void petsc_la_module(nb::module_& m)
 void petsc_fem_module(nb::module_& m)
 {
   // Create PETSc vectors and matrices
-  // m.def("create_vector_block", &dolfinx::fem::petsc::create_vector_block,
-  //       nb::rv_policy::take_ownership, nb::arg("maps"),
-  //       "Create a monolithic vector for multiple (stacked) linear forms.");
-  // m.def("create_vector_nest", &dolfinx::fem::petsc::create_vector_nest,
-  //       nb::rv_policy::take_ownership, nb::arg("maps"),
-  //       "Create nested vector for multiple (stacked) linear forms.");
+  m.def(
+      "create_vector_block",
+      [](const std::vector<
+          std::pair<std::shared_ptr<const common::IndexMap>, int>>& maps)
+      {
+        std::vector<
+            std::pair<std::reference_wrapper<const common::IndexMap>, int>>
+            _maps;
+        for (auto q : maps)
+          _maps.push_back({*q.first, q.second});
+
+        return dolfinx::fem::petsc::create_vector_block(_maps);
+      },
+      nb::rv_policy::take_ownership, nb::arg("maps"),
+      "Create a monolithic vector for multiple (stacked) linear forms.");
+  m.def("create_vector_nest", &dolfinx::fem::petsc::create_vector_nest,
+        nb::rv_policy::take_ownership, nb::arg("maps"),
+        "Create nested vector for multiple (stacked) linear forms.");
   m.def("create_matrix", dolfinx::fem::petsc::create_matrix<PetscReal>,
         nb::rv_policy::take_ownership, nb::arg("a"),
         nb::arg("type") = std::string(),
         "Create a PETSc Mat for bilinear form.");
-  // m.def("create_matrix_block",
-  //       &dolfinx::fem::petsc::create_matrix_block<PetscReal>,
-  //       nb::rv_policy::take_ownership, nb::arg("a"),
-  //       nb::arg("type") = std::string(),
-  //       "Create monolithic sparse matrix for stacked bilinear forms.");
-  // m.def("create_matrix_nest",
-  //       &dolfinx::fem::petsc::create_matrix_nest<PetscReal>,
-  //       nb::rv_policy::take_ownership, nb::arg("a"),
-  //       nb::arg("types") = std::vector<std::vector<std::string>>(),
-  //       "Create nested sparse matrix for bilinear forms.");
+  m.def("create_matrix_block",
+        &dolfinx::fem::petsc::create_matrix_block<PetscReal>,
+        nb::rv_policy::take_ownership, nb::arg("a"),
+        nb::arg("type") = std::string(),
+        "Create monolithic sparse matrix for stacked bilinear forms.");
+  m.def("create_matrix_nest",
+        &dolfinx::fem::petsc::create_matrix_nest<PetscReal>,
+        nb::rv_policy::take_ownership, nb::arg("a"),
+        nb::arg("types") = std::vector<std::vector<std::string>>(),
+        "Create nested sparse matrix for bilinear forms.");
 
   // PETSc Matrices
   m.def(

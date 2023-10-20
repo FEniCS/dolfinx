@@ -9,7 +9,7 @@ import pathlib
 
 import cppimport
 import numpy as np
-import pybind11
+import nanobind
 import pytest
 import scipy.sparse.linalg
 
@@ -18,7 +18,6 @@ import ufl
 from dolfinx.fem import (assemble_matrix, dirichletbc, form, functionspace,
                          locate_dofs_geometrical)
 from dolfinx.mesh import create_unit_square
-from dolfinx.wrappers import get_include_path as pybind_inc
 
 from mpi4py import MPI
 
@@ -36,9 +35,9 @@ def test_eigen_assembly(tempdir, dtype):  # noqa: F811
         eigen_dir = dolfinx.pkgconfig.parse("eigen3")["include_dirs"]
         cpp_code_header = f"""
 <%
-setup_pybind11(cfg)
+import nanobind
 cfg['include_dirs'] = {dolfinx_pc["include_dirs"]
-  + [pybind11.get_include()] + [str(pybind_inc())] + eigen_dir}
+  + [nanobind.include_dir()] + eigen_dir}
 cfg['compiler_args'] = ["-std=c++20", "-Wno-comment"]
 cfg['libraries'] = {dolfinx_pc["libraries"]}
 cfg['library_dirs'] = {dolfinx_pc["library_dirs"]}
@@ -51,9 +50,10 @@ cfg['library_dirs'] = {dolfinx_pc["library_dirs"]}
                        np.complex128: "std::complex<double>"}
 
         cpp_code = f"""
-#include <pybind11/pybind11.h>
-#include <pybind11/eigen.h>
-#include <pybind11/stl.h>
+#include <nanobind/nanobind.h>
+#include <nanobind/eigen.h>
+#include <nanobind/stl/vector.h>
+#include <nanobind/stl/shared_ptr.h>
 #include <vector>
 #include <complex>
 #include <Eigen/Sparse>
@@ -92,7 +92,7 @@ assemble_csr(const dolfinx::fem::Form<T>
   return mat;
 }}
 
-PYBIND11_MODULE(eigen_csr, m)
+NB_MODULE(eigen_csr, m)
 {{
   m.def("assemble_matrix", &assemble_csr<{cpp_typemap[dtype]}>);
 }}
@@ -144,9 +144,8 @@ def test_csr_assembly(tempdir):  # noqa: F811
         dolfinx_pc = dolfinx.pkgconfig.parse("dolfinx")
         cpp_code_header = f"""
 <%
-setup_pybind11(cfg)
-cfg['include_dirs'] = {dolfinx_pc["include_dirs"]
-  + [pybind11.get_include()] + [str(pybind_inc())] }
+import nanobind
+cfg['include_dirs'] = {dolfinx_pc["include_dirs"] + [nanobind.include_dir()] }
 cfg['compiler_args'] = ["-std=c++20", "-Wno-comment"]
 cfg['libraries'] = {dolfinx_pc["libraries"]}
 cfg['library_dirs'] = {dolfinx_pc["library_dirs"]}
@@ -167,8 +166,9 @@ cfg['library_dirs'] = {dolfinx_pc["library_dirs"]}
               a_form.function_spaces[1].dofmap.index_map_bs]
 
         cpp_code = f"""
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
+#include <nanobind/nanobind.h>
+#include <nanobind/stl/vector.h>
+#include <nanobind/stl/shared_ptr.h>
 #include <vector>
 #include <dolfinx/fem/assembler.h>
 #include <dolfinx/fem/DirichletBC.h>
@@ -188,7 +188,7 @@ assemble_csr(const dolfinx::fem::Form<T>& a,
   return A;
 }}
 
-PYBIND11_MODULE(assemble_csr, m)
+NB_MODULE(assemble_csr, m)
 {{
   m.def("assemble_matrix_bs", &assemble_csr<{dtype}>);
 }}
