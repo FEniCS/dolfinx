@@ -256,7 +256,7 @@ void petsc_fem_module(nb::module_& m)
               a.function_spaces()[1]->dofmap()->bs(), ADD_VALUES);
           dolfinx::fem::assemble_matrix(
               set_fn, a,
-              std::span(static_cast<const PetscScalar>(constants.data()),
+              std::span(static_cast<const PetscScalar*>(constants.data()),
                         constants.size()),
               py_to_cpp_coeffs(coefficients), bcs);
         }
