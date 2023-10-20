@@ -59,7 +59,9 @@ jobs:
           ctest -V -R demo -R mpi_2
 
       - name: Build Python interface
-        run: python3 -m pip -v install --global-option build --global-option --debug python/
+        run: |
+          python3 -m pip install nanobind
+          python3 -m pip -v install --global-option build --global-option --debug python/
 
       - name: Set default DOLFINx JIT options
         run: |

@@ -70,6 +70,7 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}/petsc/${{ env.PETSC_ARCH }}/lib:${{ env.PYTHONPATH }}
         run: |
           echo "Path: ${PYTHONPATH}"
+          pip install nanobind
           pip install dolfinx/python/
       - name: Basic test
         env:

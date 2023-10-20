@@ -87,6 +87,7 @@ jobs:
       - name: Build DOLFINx Python interface
         run: |
           . /opt/intel/oneapi/setvars.sh
+          pip install nanobind
           pip -v install python/
       - name: Set default DOLFINx JIT options
         run: |
