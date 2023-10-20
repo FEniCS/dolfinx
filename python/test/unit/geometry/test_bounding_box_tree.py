@@ -442,13 +442,13 @@ def test_surface_bbtree_collision(dtype):
     f_to_c = mesh1.topology.connectivity(tdim - 1, tdim)
 
     # Compute unique set of cells (some will be counted multiple times)
-    cells = list(set([f_to_c.links(f)[0] for f in sf]))
+    cells = np.array(list(set([f_to_c.links(f)[0] for f in sf])), dtype=np.int32)
     bbtree1 = bb_tree(mesh1, tdim, cells)
 
     mesh2.topology.create_connectivity(mesh2.topology.dim - 1, mesh2.topology.dim)
     sf = exterior_facet_indices(mesh2.topology)
     f_to_c = mesh2.topology.connectivity(tdim - 1, tdim)
-    cells = list(set([f_to_c.links(f)[0] for f in sf]))
+    cells = np.array(list(set([f_to_c.links(f)[0] for f in sf])), dtype=np.int32)
     bbtree2 = bb_tree(mesh2, tdim, cells)
 
     collisions = compute_collisions_trees(bbtree1, bbtree2)

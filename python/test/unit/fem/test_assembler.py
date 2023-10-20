@@ -783,9 +783,9 @@ def test_lambda_assembler():
     vdata = []
 
     def mat_insert(rows, cols, vals):
-        vdata.append(vals)
-        rdata.append(np.repeat(rows, len(cols)))
-        cdata.append(np.tile(cols, len(rows)))
+        vdata.append(list(vals))
+        rdata.append(list(np.repeat(rows, len(cols))))
+        cdata.append(list(np.tile(cols, len(rows))))
         return 0
 
     _cpp.fem.assemble_matrix(mat_insert, a_form._cpp_object, [])

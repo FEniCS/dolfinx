@@ -134,8 +134,19 @@ void petsc_la_module(nb::module_& m)
       "Create a PETSc Mat from sparsity pattern.");
   // TODO: check reference counting for index sets
 
-  m.def("create_index_sets", &dolfinx::la::petsc::create_index_sets,
-        nb::arg("maps"), nb::rv_policy::take_ownership);
+  m.def(
+      "create_index_sets",
+      [](const std::vector<
+          std::pair<std::shared_ptr<const common::IndexMap>, int>>& maps)
+      {
+        std::vector<
+            std::pair<std::reference_wrapper<const common::IndexMap>, int>>
+            _maps;
+        for (auto m : maps)
+          _maps.push_back({*m.first, m.second});
+        return dolfinx::la::petsc::create_index_sets(_maps);
+      },
+      nb::arg("maps"), nb::rv_policy::take_ownership);
 
   m.def(
       "scatter_local_vectors",
@@ -162,11 +173,15 @@ void petsc_la_module(nb::module_& m)
       "get_local_vectors",
       [](const Vec x,
          const std::vector<std::pair<
-             std::reference_wrapper<const dolfinx::common::IndexMap>, int>>&
-             maps)
+             std::shared_ptr<const dolfinx::common::IndexMap>, int>>& maps)
       {
+        std::vector<std::pair<
+            std::reference_wrapper<const dolfinx::common::IndexMap>, int>>
+            _maps;
+        for (auto m : maps)
+          _maps.push_back({*m.first, m.second});
         std::vector<std::vector<PetscScalar>> vecs
-            = dolfinx::la::petsc::get_local_vectors(x, maps);
+            = dolfinx::la::petsc::get_local_vectors(x, _maps);
         std::vector<nb::ndarray<PetscScalar, nb::numpy>> ret;
         for (std::vector<PetscScalar>& v : vecs)
           ret.push_back(dolfinx_wrappers::as_nbarray(std::move(v)));
@@ -194,9 +209,20 @@ void petsc_fem_module(nb::module_& m)
       },
       nb::rv_policy::take_ownership, nb::arg("maps"),
       "Create a monolithic vector for multiple (stacked) linear forms.");
-  m.def("create_vector_nest", &dolfinx::fem::petsc::create_vector_nest,
-        nb::rv_policy::take_ownership, nb::arg("maps"),
-        "Create nested vector for multiple (stacked) linear forms.");
+  m.def(
+      "create_vector_nest",
+      [](const std::vector<
+          std::pair<std::shared_ptr<const common::IndexMap>, int>>& maps)
+      {
+        std::vector<
+            std::pair<std::reference_wrapper<const common::IndexMap>, int>>
+            _maps;
+        for (auto m : maps)
+          _maps.push_back({*m.first, m.second});
+        return dolfinx::fem::petsc::create_vector_nest(_maps);
+      },
+      nb::rv_policy::take_ownership, nb::arg("maps"),
+      "Create nested vector for multiple (stacked) linear forms.");
   m.def("create_matrix", dolfinx::fem::petsc::create_matrix<PetscReal>,
         nb::rv_policy::take_ownership, nb::arg("a"),
         nb::arg("type") = std::string(),
