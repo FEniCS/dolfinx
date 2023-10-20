@@ -242,7 +242,7 @@ void petsc_fem_module(nb::module_& m)
   m.def(
       "assemble_matrix",
       [](Mat A, const dolfinx::fem::Form<PetscScalar, PetscReal>& a,
-         const nb::ndarray<PetscScalar, nb::numpy>& constants,
+         nb::ndarray<const PetscScalar, nb::numpy> constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                         nb::ndarray<PetscScalar, nb::numpy>>& coefficients,
          const std::vector<std::shared_ptr<
@@ -255,7 +255,9 @@ void petsc_fem_module(nb::module_& m)
               A, a.function_spaces()[0]->dofmap()->bs(),
               a.function_spaces()[1]->dofmap()->bs(), ADD_VALUES);
           dolfinx::fem::assemble_matrix(
-              set_fn, a, std::span(constants.data(), constants.size()),
+              set_fn, a,
+              std::span(static_cast<const PetscScalar>(constants.data()),
+                        constants.size()),
               py_to_cpp_coeffs(coefficients), bcs);
         }
         else
