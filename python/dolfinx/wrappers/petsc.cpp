@@ -173,26 +173,34 @@ void petsc_la_module(nb::module_& m)
       "Scatter the (ordered) list of sub vectors into a block "
       "vector.");
 
-//   m.def(
-//       "get_local_vectors",
-//       [](const Vec x,
-//          const std::vector<std::pair<
-//              std::shared_ptr<const dolfinx::common::IndexMap>, int>>& maps)
-//       {
-//         std::vector<std::pair<
-//             std::reference_wrapper<const dolfinx::common::IndexMap>, int>>
-//             _maps;
-//         for (auto m : maps)
-//           _maps.push_back({*m.first, m.second});
-//         std::vector<std::vector<PetscScalar>> vecs
-//             = dolfinx::la::petsc::get_local_vectors(x, _maps);
-//         std::vector<nb::ndarray<PetscScalar, nb::numpy>> ret;
-//         for (std::vector<PetscScalar>& v : vecs)
-//           ret.push_back(dolfinx_wrappers::as_nbarray(std::move(v)));
-//         return ret;
-//       },
-//       nb::arg("x"), nb::arg("maps"),
-//       "Gather an (ordered) list of sub vectors from a block vector.");
+  // FIXME: build with nanobind fails in complex mode
+  // m.def(
+  //     "get_local_vectors",
+  //     [](const Vec x,
+  //        const std::vector<std::pair<
+  //            std::shared_ptr<const dolfinx::common::IndexMap>, int>>& maps)
+  //     {
+  //       std::vector<std::pair<
+  //           std::reference_wrapper<const dolfinx::common::IndexMap>, int>>
+  //           _maps;
+  //       for (auto m : maps)
+  //         _maps.push_back({*m.first, m.second});
+  //       std::vector<std::vector<PetscScalar>> vecs
+  //           = dolfinx::la::petsc::get_local_vectors(x, _maps);
+  //       std::vector<nb::ndarray<nb::numpy, PetscScalar>> ret;
+  //       for (std::vector<PetscScalar>& v : vecs)
+  //       {
+  //         auto tmp = dolfinx_wrappers::as_nbndarray_new(std::move(v),
+  //                                                       std::array{v.size()});
+  //         ret.push_back(tmp);
+  //         // ret.push_back(
+  //         //     dolfinx_wrappers::as_nbarray(std::move(v),
+  //         //     std::array{v.size()}));
+  //       }
+  //       return ret;
+  //     },
+  //     nb::arg("x"), nb::arg("maps"),
+  //     "Gather an (ordered) list of sub vectors from a block vector.");
 }
 
 void petsc_fem_module(nb::module_& m)
