@@ -53,6 +53,7 @@ cfg['library_dirs'] = {dolfinx_pc["library_dirs"]}
 #include <nanobind/nanobind.h>
 #include <nanobind/eigen/sparse.h>
 #include <nanobind/stl/vector.h>
+#include <nanobind/stl/complex.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <vector>
 #include <complex>

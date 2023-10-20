@@ -16,6 +16,7 @@ import dolfinx.pkgconfig
 from dolfinx import wrappers
 from dolfinx.jit import mpi_jit_decorator
 from dolfinx.mesh import create_unit_square
+import nanobind
 
 import mpi4py
 from mpi4py import MPI
@@ -42,17 +43,18 @@ def test_mpi_comm_wrapper_cppimport(tempdir):  # noqa: F811
         cpp_code_header = f"""
 /*
 <%
-setup_pybind11(cfg)
+import nanobind
 cfg['compiler_args'] = ['-std=c++20']
 cfg['include_dirs'] += {dolfinx_pc["include_dirs"]
                         + [mpi4py.get_include()]
+                        + [nanobind.include_dir()]
                         + [str(wrappers.get_include_path())]}
 %>
 */
 """
 
         cpp_code = """
-#include <pybind11/pybind11.h>
+#include <nanobind/nanobind.h>
 #include <caster_mpi.h>
 
 dolfinx_wrappers::MPICommWrapper
@@ -62,7 +64,7 @@ test_comm_passing(const dolfinx_wrappers::MPICommWrapper comm)
     return dolfinx_wrappers::MPICommWrapper(c);
 }
 
-PYBIND11_MODULE(mpi_comm_wrapper, m)
+NB_MODULE(mpi_comm_wrapper, m)
 {
     m.def("test_comm_passing", &test_comm_passing);
 }

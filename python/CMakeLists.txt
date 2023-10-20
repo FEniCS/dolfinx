@@ -51,7 +51,7 @@ find_package(DOLFINX REQUIRED CONFIG)
 # target_link_libraries
 nanobind_add_module(
   cpp
-  MODULE
+  MODULE NB_SHARED
   dolfinx/wrappers/dolfinx.cpp
   dolfinx/wrappers/assemble.cpp
   dolfinx/wrappers/common.cpp
