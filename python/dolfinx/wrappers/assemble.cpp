@@ -267,7 +267,7 @@ void declare_assembly_functions(nb::module_& m)
       "apply_lifting",
       [](nb::ndarray<T, nb::numpy> b,
          const std::vector<std::shared_ptr<const dolfinx::fem::Form<T, U>>>& a,
-         const std::vector<nb::ndarray<T, nb::numpy>>& constants,
+         const std::vector<nb::ndarray<const T, nb::numpy>>& constants,
          const std::vector<std::map<std::pair<dolfinx::fem::IntegralType, int>,
                                     nb::ndarray<T, nb::numpy>>>& coeffs,
          const std::vector<std::vector<
@@ -276,7 +276,7 @@ void declare_assembly_functions(nb::module_& m)
       {
         std::vector<std::span<const T>> _x0;
         for (auto x : x0)
-          _x0.emplace_back(x.data(), x.size());
+          _x0.emplace_back(x.data(), x.shape(0));
 
         std::vector<std::span<const T>> _constants;
         std::transform(
