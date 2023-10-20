@@ -150,7 +150,8 @@ void petsc_la_module(nb::module_& m)
 
   m.def(
       "scatter_local_vectors",
-      [](Vec x, const std::vector<nb::ndarray<PetscScalar, nb::numpy>>& x_b,
+      [](Vec x,
+         const std::vector<nb::ndarray<const PetscScalar, nb::numpy>>& x_b,
          const std::vector<std::pair<
              std::shared_ptr<const dolfinx::common::IndexMap>, int>>& maps)
       {
@@ -159,7 +160,10 @@ void petsc_la_module(nb::module_& m)
             std::reference_wrapper<const dolfinx::common::IndexMap>, int>>
             _maps;
         for (auto& array : x_b)
-          _x_b.emplace_back(array.data(), array.size());
+        {
+          _x_b.emplace_back(static_cast<const PetscScalar*>(array.data()),
+                            array.size());
+        }
         for (auto q : maps)
           _maps.push_back({*q.first, q.second});
 
@@ -169,26 +173,26 @@ void petsc_la_module(nb::module_& m)
       "Scatter the (ordered) list of sub vectors into a block "
       "vector.");
 
-  m.def(
-      "get_local_vectors",
-      [](const Vec x,
-         const std::vector<std::pair<
-             std::shared_ptr<const dolfinx::common::IndexMap>, int>>& maps)
-      {
-        std::vector<std::pair<
-            std::reference_wrapper<const dolfinx::common::IndexMap>, int>>
-            _maps;
-        for (auto m : maps)
-          _maps.push_back({*m.first, m.second});
-        std::vector<std::vector<PetscScalar>> vecs
-            = dolfinx::la::petsc::get_local_vectors(x, _maps);
-        std::vector<nb::ndarray<PetscScalar, nb::numpy>> ret;
-        for (std::vector<PetscScalar>& v : vecs)
-          ret.push_back(dolfinx_wrappers::as_nbarray(std::move(v)));
-        return ret;
-      },
-      nb::arg("x"), nb::arg("maps"),
-      "Gather an (ordered) list of sub vectors from a block vector.");
+//   m.def(
+//       "get_local_vectors",
+//       [](const Vec x,
+//          const std::vector<std::pair<
+//              std::shared_ptr<const dolfinx::common::IndexMap>, int>>& maps)
+//       {
+//         std::vector<std::pair<
+//             std::reference_wrapper<const dolfinx::common::IndexMap>, int>>
+//             _maps;
+//         for (auto m : maps)
+//           _maps.push_back({*m.first, m.second});
+//         std::vector<std::vector<PetscScalar>> vecs
+//             = dolfinx::la::petsc::get_local_vectors(x, _maps);
+//         std::vector<nb::ndarray<PetscScalar, nb::numpy>> ret;
+//         for (std::vector<PetscScalar>& v : vecs)
+//           ret.push_back(dolfinx_wrappers::as_nbarray(std::move(v)));
+//         return ret;
+//       },
+//       nb::arg("x"), nb::arg("maps"),
+//       "Gather an (ordered) list of sub vectors from a block vector.");
 }
 
 void petsc_fem_module(nb::module_& m)
@@ -244,7 +248,8 @@ void petsc_fem_module(nb::module_& m)
       [](Mat A, const dolfinx::fem::Form<PetscScalar, PetscReal>& a,
          nb::ndarray<const PetscScalar, nb::numpy> constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                        nb::ndarray<PetscScalar, nb::numpy>>& coefficients,
+                        nb::ndarray<const PetscScalar, nb::numpy>>&
+             coefficients,
          const std::vector<std::shared_ptr<
              const dolfinx::fem::DirichletBC<PetscScalar, PetscReal>>>& bcs,
          bool unrolled)
@@ -264,7 +269,8 @@ void petsc_fem_module(nb::module_& m)
         {
           dolfinx::fem::assemble_matrix(
               dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES), a,
-              std::span(constants.data(), constants.size()),
+              std::span(static_cast<const PetscScalar*>(constants.data()),
+                        constants.size()),
               py_to_cpp_coeffs(coefficients), bcs);
         }
       },
@@ -274,7 +280,7 @@ void petsc_fem_module(nb::module_& m)
   m.def(
       "assemble_matrix",
       [](Mat A, const dolfinx::fem::Form<PetscScalar, PetscReal>& a,
-         const nb::ndarray<PetscScalar, nb::numpy>& constants,
+         nb::ndarray<const PetscScalar, nb::numpy> constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                         nb::ndarray<PetscScalar, nb::numpy>>& coefficients,
          const nb::ndarray<std::int8_t, nb::numpy>& rows0,
@@ -300,7 +306,9 @@ void petsc_fem_module(nb::module_& m)
           set_fn = dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES);
 
         dolfinx::fem::assemble_matrix(
-            set_fn, a, std::span(constants.data(), constants.size()),
+            set_fn, a,
+            std::span(static_cast<const PetscScalar*>(constants.data()),
+                      constants.size()),
             py_to_cpp_coeffs(coefficients),
             std::span(rows0.data(), rows0.size()),
             std::span(rows1.data(), rows1.size()));

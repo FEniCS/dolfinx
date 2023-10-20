@@ -116,15 +116,15 @@ void common(nb::module_& m)
                                                               &size);
           },
           "Return list of ghost indices")
-      .def_prop_ro("owners",
-                   [](const dolfinx::common::IndexMap& self)
-                   {
-                     const std::vector<int>& owners = self.owners();
-                     std::size_t size = owners.size();
-                     return nb::ndarray<nb::numpy, const int,
-                                        nb::shape<nb::any>>(owners.data(), 1,
-                                                            &size);
-                   })
+      .def_prop_ro(
+          "owners",
+          [](const dolfinx::common::IndexMap& self)
+          {
+            const std::vector<int>& owners = self.owners();
+            std::size_t size = owners.size();
+            return nb::ndarray<nb::numpy, const int, nb::shape<nb::any>>(
+                owners.data(), 1, &size);
+          })
       .def(
           "local_to_global",
           [](const dolfinx::common::IndexMap& self,
@@ -142,7 +142,7 @@ void common(nb::module_& m)
       .def(
           "create_submap",
           [](const dolfinx::common::IndexMap& self,
-             const nb::ndarray<std::int32_t, nb::numpy>& entities)
+             nb::ndarray<const std::int32_t, nb::numpy> entities)
           {
             auto [map, ghosts] = self.create_submap(
                 std::span(entities.data(), entities.size()));

@@ -4,9 +4,8 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <dolfinx/fem/Form.h>
-
 #include <algorithm>
+#include <dolfinx/fem/Form.h>
 #include <iostream>
 #include <map>
 #include <span>
@@ -24,7 +23,8 @@ py_to_cpp_coeffs(const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                  {
                    assert(e.second.ndim() == 2);
                    return {e.first,
-                           {std::span(e.second.data(), e.second.shape(0)),
+                           {std::span(static_cast<const T*>(e.second.data()),
+                                      e.second.shape(0)),
                             e.second.shape(1)}};
                  });
   return c;

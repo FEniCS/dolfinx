@@ -21,12 +21,27 @@ namespace dolfinx_wrappers
 /// object keeps the std::vector alive.
 /// From https://github.com/pybind/pybind11/issues/1042
 
+// template <typename V, typename U>
+// auto as_nbndarray(V&& array, U&& shape)
+// {
+//   std::size_t dim = shape.size();
+//   auto data = array.data();
+//   using _V = std::decay_t<V>;
+//   std::unique_ptr<_V> x_ptr = std::make_unique<_V>(std::move(array));
+//   auto capsule
+//       = nb::capsule(x_ptr.get(), [](void* p) noexcept
+//                     { std::unique_ptr<_V>(reinterpret_cast<_V*>(p)); });
+//   x_ptr.release();
+//   return nb::ndarray<nb::numpy, typename _V::value_type>(data, dim,
+//                                                          shape.data(),
+//                                                          capsule);
+// }
+
 template <typename Sequence, typename U>
-nb::ndarray<typename Sequence::value_type, nb::numpy> as_nbarray(Sequence&& seq,
-                                                                 U&& shape)
+auto as_nbarray(Sequence&& seq, U&& shape)
 {
   std::size_t dim = shape.size();
-  auto data = seq.data();
+  auto data = static_cast<typename Sequence::value_type*>(seq.data());
   std::unique_ptr<Sequence> seq_ptr
       = std::make_unique<Sequence>(std::move(seq));
   auto capsule = nb::capsule(
