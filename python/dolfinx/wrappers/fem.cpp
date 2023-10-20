@@ -147,7 +147,7 @@ void declare_function_space(nb::module_& m, std::string type)
                int dim)
             {
               self.apply_transpose_dof_transformation(
-                  std::span(x.data(), x.size()), cell_permutation, dim);
+                  std::span(x.data(), x.shape(0)), cell_permutation, dim);
             },
             nb::arg("x"), nb::arg("cell_permutation"), nb::arg("dim"))
         .def(
@@ -189,7 +189,8 @@ void declare_function_space(nb::module_& m, std::string type)
                std::uint32_t cell_permutation, int dim)
             {
               self.apply_inverse_transpose_dof_transformation(
-                  std::span((std::complex<T>*)x.data(), x.size()),
+                  std::span((std::complex<T>*)x.data(),
+                            x.shape(0) * x.shape(1)),
                   cell_permutation, dim);
             },
             nb::arg("x"), nb::arg("cell_permutation"), nb::arg("dim"))
@@ -226,8 +227,11 @@ void declare_objects(nb::module_& m, const std::string& type)
               throw std::runtime_error("Wrong number of dims");
             std::vector<std::size_t> shape(g.shape_ptr(),
                                            g.shape_ptr() + g.ndim());
+
+            std::size_t size = std::accumulate(shape.begin(), shape.end(), 1,
+                                               std::multiplies{});
             auto _g = std::make_shared<dolfinx::fem::Constant<T>>(
-                std::span<const T>(g.data(), g.size()), shape);
+                std::span<const T>(g.data(), size), shape);
             new (bc) dolfinx::fem::DirichletBC<T, U>(
                 _g, std::vector(dofs.data(), dofs.data() + dofs.size()), V);
           },
@@ -464,8 +468,8 @@ void declare_objects(nb::module_& m, const std::string& type)
                 mesh,
                 std::span<const std::int32_t>(active_cells.data(),
                                               active_cells.size()),
-                std::span<T>(values.data(), values.size()),
-                {(std::size_t)values.shape(0), (std::size_t)values.shape(1)});
+                std::span<T>(values.data(), values.shape(0) * values.shape(1)),
+                {values.shape(0), values.shape(1)});
           },
           nb::arg("mesh"), nb::arg("active_cells"), nb::arg("values"))
       .def("X",

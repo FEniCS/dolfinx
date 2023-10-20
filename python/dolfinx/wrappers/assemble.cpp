@@ -189,7 +189,7 @@ void declare_assembly_functions(nb::module_& m)
         {
           dolfinx::fem::assemble_matrix(
               A.mat_add_values(), a,
-              std::span(constants.data(), constants.shape(0)),
+              std::span<const T>(constants.data(), constants.shape(0)),
               py_to_cpp_coeffs(coefficients), bcs);
         }
         else if (data_bs[0] == 2)
@@ -279,9 +279,9 @@ void declare_assembly_functions(nb::module_& m)
           _x0.emplace_back(x.data(), x.size());
 
         std::vector<std::span<const T>> _constants;
-        std::transform(constants.begin(), constants.end(),
-                       std::back_inserter(_constants),
-                       [](auto& c) { return std::span(c.data(), c.size()); });
+        std::transform(
+            constants.begin(), constants.end(), std::back_inserter(_constants),
+            [](auto& c) { return std::span<const T>(c.data(), c.shape(0)); });
 
         std::vector<std::map<std::pair<dolfinx::fem::IntegralType, int>,
                              std::pair<std::span<const T>, int>>>
