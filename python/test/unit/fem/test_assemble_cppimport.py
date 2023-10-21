@@ -5,21 +5,21 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for assembly using cppimport"""
 
-import pathlib
+# import pathlib
 
-import cppimport
-import numpy as np
-import nanobind
-import pytest
-import scipy.sparse.linalg
+# import cppimport
+# import numpy as np
+# import nanobind
+# import pytest
+# import scipy.sparse.linalg
 
-import dolfinx.pkgconfig
-import ufl
-from dolfinx.fem import (assemble_matrix, dirichletbc, form, functionspace,
-                         locate_dofs_geometrical)
-from dolfinx.mesh import create_unit_square
+# import dolfinx.pkgconfig
+# import ufl
+# from dolfinx.fem import (assemble_matrix, dirichletbc, form, functionspace,
+#                          locate_dofs_geometrical)
+# from dolfinx.mesh import create_unit_square
 
-from mpi4py import MPI
+# from mpi4py import MPI
 
 
 # @pytest.mark.skip_in_parallel
