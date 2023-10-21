@@ -24,9 +24,9 @@ namespace dolfinx_wrappers
 template <typename V, typename U>
 auto as_nbndarray_new(V&& array, U&& shape)
 {
-  std::size_t dim = shape.size();
-  auto data = array.data();
   using _V = std::decay_t<V>;
+  std::size_t dim = shape.size();
+  typename _V::value_type* data = array.data();
   std::unique_ptr<_V> x_ptr = std::make_unique<_V>(std::move(array));
   auto capsule
       = nb::capsule(x_ptr.get(), [](void* p) noexcept

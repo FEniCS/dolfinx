@@ -15,6 +15,7 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
+#include <nanobind/stl/unique_ptr.h>
 #include <nanobind/stl/variant.h>
 #include <nanobind/stl/vector.h>
 #include <span>
@@ -51,10 +52,11 @@ void declare_bbtree(nb::module_& m, std::string type)
              const std::size_t i)
           {
             std::array<T, 6> bbox = self.get_bbox(i);
-            std::array<std::size_t, 2> shape{2, 3};
-            return nb::ndarray<T, nb::numpy>(bbox.data(), 2, shape.data());
+            std::vector _bbox(bbox.begin(), bbox.end());
+            return dolfinx_wrappers::as_nbndarray_new(
+                _bbox, std::array<std::size_t, 2>{2, 3});
           },
-          nb::arg("i"))
+          nb::arg("i)"))
       .def("__repr__", &dolfinx::geometry::BoundingBoxTree<T>::str)
       .def(
           "create_global_tree",
@@ -90,10 +92,10 @@ void declare_bbtree(nb::module_& m, std::string type)
       [](const dolfinx::geometry::BoundingBoxTree<T>& tree,
          const dolfinx::geometry::BoundingBoxTree<T>& midpoint_tree,
          const dolfinx::mesh::Mesh<T>& mesh,
-         nb::ndarray<const T, nb::c_contig> points)
+         nb::ndarray<const T, nb::shape<nb::any, 3>, nb::c_contig> points)
       {
-        const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
-        std::span<const T> _p(points.data(), 3 * p_s0);
+        // const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
+        std::span<const T> _p(points.data(), 3 * points.shape(0));
         return dolfinx_wrappers::as_nbarray(
             dolfinx::geometry::compute_closest_entity<T>(tree, midpoint_tree,
                                                          mesh, _p));
