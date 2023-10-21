@@ -114,11 +114,9 @@ void declare_bbtree(nb::module_& m, std::string type)
       "compute_colliding_cells",
       [](const dolfinx::mesh::Mesh<T>& mesh,
          const dolfinx::graph::AdjacencyList<int>& candidate_cells,
-         nb::ndarray<const T> points)
+         nb::ndarray<const T, nb::shape<nb::any, 3>, nb::c_contig> points)
       {
-        const int gdim = mesh.geometry().dim();
-        std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
-        std::span<const T> _p(points.data(), 3 * p_s0);
+        std::span<const T> _p(points.data(), 3 * points.shape(0));
         return dolfinx::geometry::compute_colliding_cells<T>(
             mesh, candidate_cells, _p);
       },
