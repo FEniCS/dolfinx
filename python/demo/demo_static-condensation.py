@@ -196,11 +196,11 @@ bb_tree = geometry.bb_tree(msh, 2)
 # Check against standard table value
 p = np.array([[48.0, 52.0, 0.0]], dtype=np.float64)
 cell_candidates = geometry.compute_collisions_points(bb_tree, p)
-cells = geometry.compute_colliding_cells(msh, cell_candidates, p)
+cells = geometry.compute_colliding_cells(msh, cell_candidates, p).array
 
 uc.x.scatter_forward()
 if len(cells) > 0:
-    value = uc.eval(p, cells.array[0])  # type: ignore
+    value = uc.eval(p, cells[0])  # type: ignore
     print(value[1])
     assert np.isclose(value[1], 23.95, rtol=1.e-2)
 
