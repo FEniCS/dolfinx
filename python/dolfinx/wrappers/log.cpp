@@ -8,6 +8,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <memory>
 #include <nanobind/nanobind.h>
+#include <nanobind/stl/string.h>
 #include <string>
 
 namespace nb = nanobind;
