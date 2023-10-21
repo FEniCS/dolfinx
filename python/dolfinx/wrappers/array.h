@@ -33,9 +33,7 @@ auto as_nbndarray_new(V&& array, U&& shape)
                     { std::unique_ptr<_V>(reinterpret_cast<_V*>(p)); });
   x_ptr.release();
   return nb::ndarray<nb::numpy, typename _V::value_type>(
-      static_cast<typename _V::value_type*
-
-      >(data), dim, shape.data(), capsule);
+      static_cast<typename _V::value_type*>(data), dim, shape.data(), capsule);
 }
 
 template <typename Sequence, typename U>
