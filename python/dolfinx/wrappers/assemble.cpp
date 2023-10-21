@@ -270,7 +270,7 @@ void declare_assembly_functions(nb::module_& m)
          const std::vector<std::shared_ptr<const dolfinx::fem::Form<T, U>>>& a,
          const std::vector<nb::ndarray<const T, nb::numpy>>& constants,
          const std::vector<std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                                    nb::ndarray<T, nb::numpy>>>& coeffs,
+                                    nb::ndarray<const T, nb::numpy>>>& coeffs,
          const std::vector<std::vector<
              std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>>& bcs1,
          const std::vector<nb::ndarray<const T, nb::numpy>>& x0, T scale)

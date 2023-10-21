@@ -18,6 +18,8 @@ import functools
 import os
 import typing
 
+import numpy as np
+
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import la
@@ -295,8 +297,12 @@ def _assemble_vector_block_vec(b: PETSc.Vec,
     constants_L = [form and _pack_constants(form._cpp_object) for form in L] if constants_L is None else constants_L
     coeffs_L = [{} if form is None else _pack_coefficients(
         form._cpp_object) for form in L] if coeffs_L is None else coeffs_L
-    constants_a = [[form and _pack_constants(form._cpp_object) for form in forms]
-                   for forms in a] if constants_a is None else constants_a
+
+    # constants_a = [[form and _pack_constants(form._cpp_object) for form in forms]
+    #                for forms in a] if constants_a is None else constants_a
+    constants_a = [[_pack_constants(form._cpp_object) if form is not None else np.array(
+        [], dtype=PETSc.ScalarType) for form in forms] for forms in a] if constants_a is None else constants_a
+
     coeffs_a = [[{} if form is None else _pack_coefficients(
         form._cpp_object) for form in forms] for forms in a] if coeffs_a is None else coeffs_a
 
@@ -456,9 +462,8 @@ def _assemble_matrix_block_mat(A: PETSc.Mat, a: typing.List[typing.List[Form]],
                                bcs: typing.List[DirichletBC] = [], diagonal: float = 1.0,
                                constants=None, coeffs=None) -> PETSc.Mat:
     """Assemble bilinear forms into a blocked matrix."""
-
-    constants = [[form and _pack_constants(form._cpp_object) for form in forms]
-                 for forms in a] if constants is None else constants
+    constants = [[_pack_constants(form._cpp_object) if form is not None else np.array(
+        [], dtype=PETSc.ScalarType) for form in forms] for forms in a] if constants is None else constants
     coeffs = [[{} if form is None else _pack_coefficients(
         form._cpp_object) for form in forms] for forms in a] if coeffs is None else coeffs
 
@@ -520,9 +525,8 @@ def apply_lifting_nest(b: PETSc.Vec, a: typing.List[typing.List[Form]],
 
     x0 = [] if x0 is None else x0.getNestSubVecs()
     bcs1 = _bcs_by_block(_extract_spaces(a, 1), bcs)
-
-    constants = [[form and _pack_constants(form._cpp_object) for form in forms]
-                 for forms in a] if constants is None else constants
+    constants = [[_pack_constants(form._cpp_object) if form is not None else np.array(
+        [], dtype=PETSc.ScalarType) for form in forms] for forms in a] if constants is None else constants
     coeffs = [[{} if form is None else _pack_coefficients(
         form._cpp_object) for form in forms] for forms in a] if coeffs is None else coeffs
     for b_sub, a_sub, const, coeff in zip(b.getNestSubVecs(), a, constants, coeffs):
