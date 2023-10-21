@@ -189,8 +189,8 @@ void declare_real_types(nb::module_& m)
   m.def(
       "distribute_entity_data",
       [](const dolfinx::mesh::Mesh<T>& mesh, int entity_dim,
-         const nb::ndarray<std::int64_t, nb::numpy>& entities,
-         const nb::ndarray<std::int32_t, nb::numpy>& values)
+         nb::ndarray<const std::int64_t, nb::numpy> entities,
+         nb::ndarray<const std::int32_t, nb::numpy> values)
       {
         assert(entities.ndim() == 2);
         assert(values.ndim() == 1);
@@ -227,7 +227,7 @@ void io(nb::module_& m)
 
   m.def(
       "extract_vtk_connectivity",
-      [](nb::ndarray<std::int32_t, nb::numpy> dofmap,
+      [](nb::ndarray<const std::int32_t, nb::numpy> dofmap,
          dolfinx::mesh::CellType cell)
       {
         if (dofmap.ndim() != 2)

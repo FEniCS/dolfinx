@@ -45,7 +45,7 @@ void declare_adjacency_list(nb::module_& m, std::string type)
       .def(
           "__init__",
           [](dolfinx::graph::AdjacencyList<T>* a,
-             const nb::ndarray<T, nb::numpy>& adj)
+             nb::ndarray<const T, nb::numpy> adj)
           {
             if (adj.ndim() > 2)
               throw std::runtime_error("Incorrect array dimension.");
@@ -59,8 +59,8 @@ void declare_adjacency_list(nb::module_& m, std::string type)
       .def(
           "__init__",
           [](dolfinx::graph::AdjacencyList<T>* a,
-             const nb::ndarray<T, nb::numpy>& array,
-             const nb::ndarray<std::int32_t, nb::numpy>& displ)
+             nb::ndarray<const T, nb::numpy> array,
+             nb::ndarray<const std::int32_t, nb::numpy> displ)
           {
             assert(array.ndim() == 1);
             std::vector<T> data(array.data(), array.data() + array.shape(0));

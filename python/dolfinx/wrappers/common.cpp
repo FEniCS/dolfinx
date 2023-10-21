@@ -66,8 +66,8 @@ void common(nb::module_& m)
           "__init__",
           [](dolfinx::common::IndexMap* self, const MPICommWrapper comm,
              std::int32_t local_size,
-             const nb::ndarray<std::int64_t, nb::numpy>& ghosts,
-             const nb::ndarray<int, nb::numpy>& ghost_owners)
+             nb::ndarray<const std::int64_t, nb::numpy> ghosts,
+             nb::ndarray<const int, nb::numpy> ghost_owners)
           {
             new (self) dolfinx::common::IndexMap(
                 comm.get(), local_size, std::span(ghosts.data(), ghosts.size()),
@@ -79,9 +79,9 @@ void common(nb::module_& m)
           "__init__",
           [](dolfinx::common::IndexMap* self, const MPICommWrapper comm,
              std::int32_t local_size,
-             const std::array<nb::ndarray<int, nb::numpy>, 2>& dest_src,
-             const nb::ndarray<std::int64_t, nb::numpy>& ghosts,
-             const nb::ndarray<int, nb::numpy>& ghost_owners)
+             std::array<nb::ndarray<const int, nb::numpy>, 2> dest_src,
+             nb::ndarray<const std::int64_t, nb::numpy> ghosts,
+             nb::ndarray<const int, nb::numpy> ghost_owners)
           {
             std::array<std::vector<int>, 2> ranks;
             ranks[0].assign(dest_src[0].data(),
