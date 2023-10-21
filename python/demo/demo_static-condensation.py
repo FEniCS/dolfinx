@@ -200,7 +200,7 @@ cells = geometry.compute_colliding_cells(msh, cell_candidates, p)
 
 uc.x.scatter_forward()
 if len(cells) > 0:
-    value = uc.eval(p, cells[0])
+    value = uc.eval(p, cells.links[0])
     print(value[1])
     assert np.isclose(value[1], 23.95, rtol=1.e-2)
 

@@ -121,7 +121,6 @@ void declare_bbtree(nb::module_& m, std::string type)
         const int gdim = mesh.geometry().dim();
         std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
         std::span<const T> _p(points.data(), 3 * p_s0);
-
         return dolfinx::geometry::compute_colliding_cells<T>(
             mesh, candidate_cells, _p);
       },
