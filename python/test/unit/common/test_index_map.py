@@ -4,6 +4,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import math
 import numpy as np
 
 import dolfinx
@@ -19,7 +20,7 @@ def test_sub_index_map():
     # Create index map with one ghost from each other process
     n = 7
     assert comm.size < n + 1
-    map_local_size = np.math.factorial(n)
+    map_local_size = math.factorial(n)
 
     # The ghosts added are the ith ghost from the ith process relative
     # to the current rank, i.e. rank 0 contains the first index of rank
