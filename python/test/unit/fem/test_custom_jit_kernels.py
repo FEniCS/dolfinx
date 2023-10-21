@@ -94,11 +94,10 @@ def test_numba_assembly():
 
     mesh = create_unit_square(MPI.COMM_WORLD, 13, 13)
     V = functionspace(mesh, ("Lagrange", 1))
-
-    cells = np.arange(mesh.topology.index_map(mesh.topology.dim).size_local)
+    cells = np.arange(mesh.topology.index_map(mesh.topology.dim).size_local, dtype=np.int32)
     integrals = {IntegralType.cell: [(-1, tabulate_tensor_A.address, cells),
-                                     (12, tabulate_tensor_A.address, range(0)),
-                                     (2, tabulate_tensor_A.address, range(0))]}
+                                     (12, tabulate_tensor_A.address, np.arange(0)),
+                                     (2, tabulate_tensor_A.address, np.arange(0))]}
     a = Form(formtype([V._cpp_object, V._cpp_object], integrals, [], [], False))
 
     integrals = {IntegralType.cell: [(-1, tabulate_tensor_b.address, cells)]}
