@@ -308,8 +308,8 @@ def apply_lifting(b: np.ndarray, a: typing.List[Form],
 
     """
     x0 = [] if x0 is None else x0
-    constants = [[_pack_constants(form._cpp_object) if form is not None else np.array(
-        [], dtype=b.dtype) for form in forms] for forms in a] if constants is None else constants
+    constants = [_pack_constants(form._cpp_object) if form is not None else np.array(
+        [], dtype=b.dtype) for form in a] if constants is None else constants
     coeffs = [{} if form is None else _pack_coefficients(form._cpp_object) for form in a] if coeffs is None else coeffs
     _a = [None if form is None else form._cpp_object for form in a]
     _bcs = [[bc._cpp_object for bc in bcs0] for bcs0 in bcs]
