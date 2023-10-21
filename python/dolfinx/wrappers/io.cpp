@@ -25,8 +25,8 @@
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/string.h>
+#include <nanobind/stl/variant.h>
 #include <nanobind/stl/vector.h>
-
 #include <vector>
 
 namespace nb = nanobind;
@@ -103,34 +103,34 @@ void declare_vtx_writer(nb::module_& m, std::string type)
   {
     std::string pyclass_name = "VTXWriter_" + type;
     nb::class_<dolfinx::io::VTXWriter<T>>(m, pyclass_name.c_str())
-        .def("__init__",
-             [](MPICommWrapper comm, std::filesystem::path filename,
-                std::shared_ptr<const dolfinx::mesh::Mesh<T>> mesh,
-                std::string engine)
-             {
-               return std::make_unique<dolfinx::io::VTXWriter<T>>(
-                   comm.get(), filename, mesh, engine);
-             })
-        // nb::arg("comm"), nb::arg("filename"), nb::arg("mesh"),
-        // nb::arg("engine"));
-        .def("__init__",
-             [](MPICommWrapper comm, std::filesystem::path filename,
-                const std::vector<std::variant<
-                    std::shared_ptr<const dolfinx::fem::Function<float, T>>,
-                    std::shared_ptr<const dolfinx::fem::Function<double, T>>,
-                    std::shared_ptr<
-                        const dolfinx::fem::Function<std::complex<float>, T>>,
-                    std::shared_ptr<const dolfinx::fem::Function<
-                        std::complex<double>, T>>>>& u,
-                std::string engine)
-             {
-               return std::make_unique<dolfinx::io::VTXWriter<T>>(
-                   comm.get(), filename, u, engine);
-             }
-             // ,
-             // nb::arg("comm"), nb::arg("filename"), nb::arg("u"),
-             // nb::arg("engine") = "BPFile"
-             )
+        .def(
+            "__init__",
+            [](dolfinx::io::VTXWriter<T>* self, MPICommWrapper comm,
+               std::filesystem::path filename,
+               std::shared_ptr<const dolfinx::mesh::Mesh<T>> mesh,
+               std::string engine) {
+              new (self)
+                  dolfinx::io::VTXWriter<T>(comm.get(), filename, mesh, engine);
+            },
+            nb::arg("comm"), nb::arg("filename"), nb::arg("mesh"),
+            nb::arg("engine"))
+        .def(
+            "__init__",
+            [](dolfinx::io::VTXWriter<T>* self, MPICommWrapper comm,
+               std::filesystem::path filename,
+               const std::vector<std::variant<
+                   std::shared_ptr<const dolfinx::fem::Function<float, T>>,
+                   std::shared_ptr<const dolfinx::fem::Function<double, T>>,
+                   std::shared_ptr<
+                       const dolfinx::fem::Function<std::complex<float>, T>>,
+                   std::shared_ptr<const dolfinx::fem::Function<
+                       std::complex<double>, T>>>>& u,
+               std::string engine) {
+              new (self)
+                  dolfinx::io::VTXWriter<T>(comm.get(), filename, u, engine);
+            },
+            nb::arg("comm"), nb::arg("filename"), nb::arg("u"),
+            nb::arg("engine"))
         .def("close", [](dolfinx::io::VTXWriter<T>& self) { self.close(); })
         .def(
             "write",
@@ -142,19 +142,18 @@ void declare_vtx_writer(nb::module_& m, std::string type)
     std::string pyclass_name = "FidesWriter_" + type;
     nb::class_<dolfinx::io::FidesWriter<T>>(m, pyclass_name.c_str(),
                                             "FidesWriter object")
-        .def(
-            "__init__",
-            [](MPICommWrapper comm, std::filesystem::path filename,
-               std::shared_ptr<const dolfinx::mesh::Mesh<T>> mesh,
-               std::string engine)
-            {
-              return std::make_unique<dolfinx::io::FidesWriter<T>>(
-                  comm.get(), filename, mesh, engine);
-            }
-            // ,
-            // nb::arg("comm"), nb::arg("filename"), nb::arg("mesh"),
-            // nb::arg("engine") = "BPFile"
-            )
+        .def("__init__",
+             [](MPICommWrapper comm, std::filesystem::path filename,
+                std::shared_ptr<const dolfinx::mesh::Mesh<T>> mesh,
+                std::string engine)
+             {
+               return std::make_unique<dolfinx::io::FidesWriter<T>>(
+                   comm.get(), filename, mesh, engine);
+             }
+             // ,
+             // nb::arg("comm"), nb::arg("filename"), nb::arg("mesh"),
+             // nb::arg("engine") = "BPFile"
+             )
         .def("__init__",
              [](MPICommWrapper comm, std::filesystem::path filename,
                 const std::vector<std::variant<
