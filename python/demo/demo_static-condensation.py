@@ -194,16 +194,16 @@ A.assemble()
 bb_tree = geometry.bb_tree(msh, 2)
 
 # Check against standard table value
-# p = np.array([48.0, 52.0, 0.0], dtype=np.float64)
-# cell_candidates = geometry.compute_collisions_points(bb_tree, p)
-# cells = geometry.compute_colliding_cells(msh, cell_candidates, p)
+p = np.array([[48.0, 52.0, 0.0]], dtype=np.float64)
+cell_candidates = geometry.compute_collisions_points(bb_tree, p)
+cells = geometry.compute_colliding_cells(msh, cell_candidates, p)
 
-# uc.x.scatter_forward()
-# if len(cells) > 0:
-#     value = uc.eval(p, cells.links[0])
-#     print(value[1])
-#     assert np.isclose(value[1], 23.95, rtol=1.e-2)
+uc.x.scatter_forward()
+if len(cells) > 0:
+    value = uc.eval(p, cells.array[0])
+    print(value[1])
+    assert np.isclose(value[1], 23.95, rtol=1.e-2)
 
-# # Check the equality of displacement based and mixed condensed global
-# # matrices, i.e. check that condensation is exact
-# assert np.isclose((A - A_cond).norm(), 0.0)
+# Check the equality of displacement based and mixed condensed global
+# matrices, i.e. check that condensation is exact
+assert np.isclose((A - A_cond).norm(), 0.0)
