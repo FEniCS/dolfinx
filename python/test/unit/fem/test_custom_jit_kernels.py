@@ -95,8 +95,7 @@ def test_numba_assembly():
     mesh = create_unit_square(MPI.COMM_WORLD, 13, 13)
     V = functionspace(mesh, ("Lagrange", 1))
 
-    cells = range(mesh.topology.index_map(mesh.topology.dim).size_local)
-
+    cells = np.arange(mesh.topology.index_map(mesh.topology.dim).size_local)
     integrals = {IntegralType.cell: [(-1, tabulate_tensor_A.address, cells),
                                      (12, tabulate_tensor_A.address, range(0)),
                                      (2, tabulate_tensor_A.address, range(0))]}
