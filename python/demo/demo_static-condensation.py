@@ -168,7 +168,7 @@ elif PETSc.ScalarType == np.complex128:  # type: ignore
 else:
     raise RuntimeError(f"Unsupported PETSc ScalarType '{PETSc.ScalarType }'.")  # type: ignore
 
-cells = range(msh.topology.index_map(msh.topology.dim).size_local)
+cells = np.arange(msh.topology.index_map(msh.topology.dim).size_local)
 integrals = {IntegralType.cell: [(-1, tabulate_condensed_tensor_A.address, cells)]}
 a_cond = Form(formtype([U._cpp_object, U._cpp_object], integrals, [], [], False, None))
 
