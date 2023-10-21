@@ -351,7 +351,7 @@ for i, kz in vals:
 
         print(f"eigenvalue: {-kz**2}")
         print(f"kz: {kz}")
-        print(f"kz/k0: {kz/k0}")
+        print(f"kz/k0: {kz / k0}")
 
         eh.x.scatter_forward()
 

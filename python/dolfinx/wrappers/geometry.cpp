@@ -115,8 +115,6 @@ void declare_bbtree(nb::module_& m, std::string type)
       [](const dolfinx::mesh::Mesh<T>& mesh,
          const dolfinx::graph::AdjacencyList<int>& candidate_cells,
          nb::ndarray<const T> points)
-          -> std::variant<dolfinx::graph::AdjacencyList<std::int32_t>,
-                          nb::ndarray<std::int32_t>>
       {
         const int gdim = mesh.geometry().dim();
         std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
