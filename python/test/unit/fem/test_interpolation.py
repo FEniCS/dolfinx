@@ -831,7 +831,7 @@ def test_nonmatching_mesh_single_cell_overlap_interpolation(xtype):
 
     # Find the single cell in mesh1 which is overlapped by mesh2
     tree1 = bb_tree(mesh1, mesh1.topology.dim)
-    cells_overlapped1 = compute_collisions_points(tree1, [p0_mesh2 / 2.0, p0_mesh2 / 2.0, 0.0]).array
+    cells_overlapped1 = compute_collisions_points(tree1, np.array([p0_mesh2 / 2.0, p0_mesh2 / 2.0, 0.0])).array
     assert cells_overlapped1.shape[0] <= 1
 
     # Construct the error measure on the overlapped cell
