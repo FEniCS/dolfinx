@@ -129,13 +129,13 @@ void declare_function_space(nb::module_& m, std::string type)
                      {
                        std::span<const std::size_t> vshape = self.value_shape();
                        const std::size_t size = vshape.size();
-                       return nb::ndarray<const std::size_t>(vshape.data(), 1,
-                                                             &size);
+                       return nb::ndarray<nb::numpy, const std::size_t>(
+                           vshape.data(), 1, &size);
                      })
         .def(
             "apply_dof_transformation",
             [](const dolfinx::fem::FiniteElement<T>& self,
-               nb::ndarray<T, nb::numpy> x, std::uint32_t cell_permutation,
+               nb::ndarray<nb::numpy, T> x, std::uint32_t cell_permutation,
                int dim)
             {
               self.apply_dof_transformation(std::span(x.data(), x.size()),
