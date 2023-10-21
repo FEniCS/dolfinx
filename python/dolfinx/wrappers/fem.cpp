@@ -32,6 +32,7 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
+#include <nanobind/stl/complex.h>
 #include <nanobind/stl/function.h>
 #include <nanobind/stl/map.h>
 #include <nanobind/stl/pair.h>
@@ -421,15 +422,15 @@ void declare_objects(nb::module_& m, const std::string& type)
           },
           nb::arg("c").noconvert(), "Create a constant from a value array")
       .def_prop_ro("dtype", [dtype](const dolfinx::fem::Constant<T>& self)
-                   { return dtype; });
-    //   .def_prop_ro(
-    //       "value",
-    //       [](dolfinx::fem::Constant<T>& self)
-    //       {
-    //         return nb::ndarray<const T, nb::numpy>(
-    //             self.value.data(), self.shape.size(), self.shape.data());
-    //       },
-    //       nb::rv_policy::reference_internal);
+                   { return dtype; })
+      .def_prop_ro(
+          "value",
+          [](dolfinx::fem::Constant<T>& self)
+          {
+            return nb::ndarray<T, nb::numpy>(
+                self.value.data(), self.shape.size(), self.shape.data());
+          },
+          nb::rv_policy::reference_internal);
 
   // dolfinx::fem::Expression
   std::string pyclass_name_expr = std::string("Expression_") + type;
@@ -507,7 +508,7 @@ void declare_objects(nb::module_& m, const std::string& type)
       },
       nb::arg("expression"), nb::arg("coefficients"), nb::arg("constants"),
       nb::arg("argument_function_space").none(),
-      "Create Form from a pointer to ufc_form.");
+      "Create Expression from a pointer to ufc_form.");
 }
 
 template <typename T>
