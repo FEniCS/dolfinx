@@ -249,7 +249,7 @@ def test_cffi_assembly():
     mesh.comm.Barrier()
     from _cffi_kernelA import ffi, lib
 
-    cells = range(mesh.topology.index_map(mesh.topology.dim).size_local)
+    cells = np.arange(mesh.topology.index_map(mesh.topology.dim).size_local)
 
     ptrA = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonA"))
     integrals = {IntegralType.cell: [(-1, ptrA, cells)]}
