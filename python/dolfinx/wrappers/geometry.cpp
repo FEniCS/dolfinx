@@ -33,7 +33,7 @@ void declare_bbtree(nb::module_& m, std::string type)
           "__init__",
           [](dolfinx::geometry::BoundingBoxTree<T>* bbt,
              const dolfinx::mesh::Mesh<T>& mesh, int dim,
-             nb::ndarray<const std::int32_t, nb::numpy> entities,
+             nb::ndarray<const std::int32_t, nb::c_contig> entities,
              double padding = 0.0)
           {
             new (bbt) dolfinx::geometry::BoundingBoxTree<T>(
@@ -66,7 +66,7 @@ void declare_bbtree(nb::module_& m, std::string type)
   m.def(
       "compute_collisions_points",
       [](const dolfinx::geometry::BoundingBoxTree<T>& tree,
-         nb::ndarray<const T> points)
+         nb::ndarray<const T, nb::c_contig> points)
       {
         const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
         std::span<const T> _p(points.data(), 3 * p_s0);
@@ -90,7 +90,7 @@ void declare_bbtree(nb::module_& m, std::string type)
       [](const dolfinx::geometry::BoundingBoxTree<T>& tree,
          const dolfinx::geometry::BoundingBoxTree<T>& midpoint_tree,
          const dolfinx::mesh::Mesh<T>& mesh,
-         nb::ndarray<const T, nb::numpy> points)
+         nb::ndarray<const T, nb::c_contig> points)
       {
         const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
         std::span<const T> _p(points.data(), 3 * p_s0);
@@ -103,7 +103,7 @@ void declare_bbtree(nb::module_& m, std::string type)
   m.def(
       "create_midpoint_tree",
       [](const dolfinx::mesh::Mesh<T>& mesh, int tdim,
-         nb::ndarray<const std::int32_t, nb::numpy> entities)
+         nb::ndarray<const std::int32_t, nb::c_contig> entities)
       {
         return dolfinx::geometry::create_midpoint_tree(
             mesh, tdim,
@@ -124,7 +124,8 @@ void declare_bbtree(nb::module_& m, std::string type)
 
   m.def(
       "compute_distance_gjk",
-      [](nb::ndarray<const T, nb::numpy> p, nb::ndarray<const T, nb::numpy> q)
+      [](nb::ndarray<const T, nb::c_contig> p,
+         nb::ndarray<const T, nb::c_contig> q)
       {
         const std::size_t p_s0 = p.ndim() == 1 ? 1 : p.shape(0);
         const std::size_t q_s0 = q.ndim() == 1 ? 1 : q.shape(0);
@@ -140,7 +141,7 @@ void declare_bbtree(nb::module_& m, std::string type)
       "squared_distance",
       [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
          const std::vector<std::int32_t>& indices,
-         nb::ndarray<const T, nb::numpy> points)
+         nb::ndarray<const T, nb::c_contig> points)
       {
         const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
         std::span<const T> _p(points.data(), 3 * p_s0);
@@ -149,7 +150,8 @@ void declare_bbtree(nb::module_& m, std::string type)
       },
       nb::arg("mesh"), nb::arg("dim"), nb::arg("indices"), nb::arg("points"));
   m.def("determine_point_ownership",
-        [](const dolfinx::mesh::Mesh<T>& mesh, nb::ndarray<const T> points)
+        [](const dolfinx::mesh::Mesh<T>& mesh,
+           nb::ndarray<const T, nb::c_contig> points)
         {
           const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
           std::span<const T> _p(points.data(), 3 * p_s0);

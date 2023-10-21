@@ -151,7 +151,7 @@ void petsc_la_module(nb::module_& m)
   m.def(
       "scatter_local_vectors",
       [](Vec x,
-         const std::vector<nb::ndarray<const PetscScalar, nb::numpy>>& x_b,
+         const std::vector<nb::ndarray<const PetscScalar, nb::c_contig>>& x_b,
          const std::vector<std::pair<
              std::shared_ptr<const dolfinx::common::IndexMap>, int>>& maps)
       {
@@ -256,9 +256,9 @@ void petsc_fem_module(nb::module_& m)
   m.def(
       "assemble_matrix",
       [](Mat A, const dolfinx::fem::Form<PetscScalar, PetscReal>& a,
-         nb::ndarray<const PetscScalar, nb::numpy> constants,
+         nb::ndarray<const PetscScalar, nb::c_contig> constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                        nb::ndarray<const PetscScalar, nb::numpy>>&
+                        nb::ndarray<const PetscScalar, nb::c_contig>>&
              coefficients,
          const std::vector<std::shared_ptr<
              const dolfinx::fem::DirichletBC<PetscScalar, PetscReal>>>& bcs,
@@ -292,9 +292,9 @@ void petsc_fem_module(nb::module_& m)
       [](Mat A, const dolfinx::fem::Form<PetscScalar, PetscReal>& a,
          nb::ndarray<const PetscScalar, nb::numpy> constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                        nb::ndarray<PetscScalar, nb::numpy>>& coefficients,
-         const nb::ndarray<std::int8_t, nb::numpy>& rows0,
-         const nb::ndarray<std::int8_t, nb::numpy>& rows1, bool unrolled)
+                        nb::ndarray<PetscScalar, nb::c_contig>>& coefficients,
+         const nb::ndarray<std::int8_t, nb::c_contig>& rows0,
+         const nb::ndarray<std::int8_t, nb::c_contig>& rows1, bool unrolled)
       {
         if (rows0.ndim() != 1 or rows1.ndim())
         {

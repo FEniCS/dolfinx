@@ -141,9 +141,9 @@ void declare_assembly_functions(nb::module_& m)
   m.def(
       "assemble_scalar",
       [](const dolfinx::fem::Form<T, U>& M,
-         nb::ndarray<const T, nb::numpy> constants,
+         nb::ndarray<const T, nb::c_contig> constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                        nb::ndarray<const T, nb::numpy>>& coefficients)
+                        nb::ndarray<const T, nb::c_contig>>& coefficients)
       {
         return dolfinx::fem::assemble_scalar<T>(
             M, std::span(constants.data(), constants.size()),
@@ -155,10 +155,11 @@ void declare_assembly_functions(nb::module_& m)
   // Vector
   m.def(
       "assemble_vector",
-      [](nb::ndarray<T, nb::numpy> b, const dolfinx::fem::Form<T, U>& L,
-         nb::ndarray<const T, nb::numpy> constants,
+      [](nb::ndarray<T, nb::ndim<1>, nb::c_contig> b,
+         const dolfinx::fem::Form<T, U>& L,
+         nb::ndarray<const T, nb::c_contig> constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                        nb::ndarray<const T, nb::numpy>>& coefficients)
+                        nb::ndarray<const T, nb::c_contig>>& coefficients)
       {
         dolfinx::fem::assemble_vector<T>(
             std::span(b.data(), b.shape(0)), L,
@@ -174,7 +175,7 @@ void declare_assembly_functions(nb::module_& m)
       [](dolfinx::la::MatrixCSR<T>& A, const dolfinx::fem::Form<T, U>& a,
          nb::ndarray<const T, nb::numpy> constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                        nb::ndarray<const T, nb::numpy>>& coefficients,
+                        nb::ndarray<const T, nb::c_contig>>& coefficients,
          const std::vector<
              std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>& bcs)
       {
@@ -237,9 +238,9 @@ void declare_assembly_functions(nb::module_& m)
   m.def(
       "assemble_matrix",
       [](const std::function<int(
-             const nb::ndarray<const std::int32_t, nb::numpy>&,
-             const nb::ndarray<const std::int32_t, nb::numpy>&,
-             const nb::ndarray<const T, nb::numpy>&)>& fin,
+             const nb::ndarray<const std::int32_t, nb::numpy, nb::c_contig>&,
+             const nb::ndarray<const std::int32_t, nb::numpy, nb::c_contig>&,
+             const nb::ndarray<const T, nb::numpy, nb::c_contig>&)>& fin,
          const dolfinx::fem::Form<T, U>& form,
          const std::vector<
              std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>& bcs)
@@ -251,11 +252,12 @@ void declare_assembly_functions(nb::module_& m)
           std::size_t rsize = rows.size();
           std::size_t csize = cols.size();
           std::size_t dsize = data.size();
-          return fin(nb::ndarray<const std::int32_t, nb::numpy>(rows.data(), 1,
-                                                                &rsize),
-                     nb::ndarray<const std::int32_t, nb::numpy>(cols.data(), 1,
-                                                                &csize),
-                     nb::ndarray<const T, nb::numpy>(data.data(), 1, &dsize));
+          return fin(nb::ndarray<const std::int32_t, nb::numpy, nb::c_contig>(
+                         rows.data(), 1, &rsize),
+                     nb::ndarray<const std::int32_t, nb::numpy, nb::c_contig>(
+                         cols.data(), 1, &csize),
+                     nb::ndarray<const T, nb::numpy, nb::c_contig>(data.data(),
+                                                                   1, &dsize));
         };
         dolfinx::fem::assemble_matrix(f, form, bcs);
       },
@@ -266,14 +268,16 @@ void declare_assembly_functions(nb::module_& m)
   // BC modifiers
   m.def(
       "apply_lifting",
-      [](nb::ndarray<T, nb::numpy> b,
+      [](nb::ndarray<T, nb::ndim<1>, nb::c_contig> b,
          const std::vector<std::shared_ptr<const dolfinx::fem::Form<T, U>>>& a,
-         const std::vector<nb::ndarray<const T, nb::numpy>>& constants,
+         const std::vector<nb::ndarray<const T, nb::c_contig>>& constants,
          const std::vector<std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                                    nb::ndarray<const T, nb::numpy>>>& coeffs,
+                                    nb::ndarray<const T, nb::c_contig>>>&
+             coeffs,
          const std::vector<std::vector<
              std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>>& bcs1,
-         const std::vector<nb::ndarray<const T, nb::numpy>>& x0, T scale)
+         const std::vector<nb::ndarray<const T, nb::ndim<1>, nb::c_contig>>& x0,
+         T scale)
       {
         std::vector<std::span<const T>> _x0;
         for (auto x : x0)
@@ -299,10 +303,10 @@ void declare_assembly_functions(nb::module_& m)
       "Modify vector for lifted boundary conditions");
   m.def(
       "set_bc",
-      [](nb::ndarray<T, nb::numpy> b,
+      [](nb::ndarray<T, nb::ndim<1>, nb::c_contig> b,
          const std::vector<
              std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>& bcs,
-         nb::ndarray<const T, nb::numpy> x0, T scale)
+         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> x0, T scale)
       {
         if (x0.ndim() == 0)
           dolfinx::fem::set_bc<T>(std::span(b.data(), b.size()), bcs, scale);
@@ -317,7 +321,7 @@ void declare_assembly_functions(nb::module_& m)
       nb::arg("b"), nb::arg("bcs"), nb::arg("x0"), nb::arg("scale") = T(1));
   m.def(
       "set_bc",
-      [](nb::ndarray<T, nb::numpy> b,
+      [](nb::ndarray<T, nb::ndim<1>, nb::c_contig> b,
          const std::vector<
              std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>& bcs,
          nb::object x0, T scale)
@@ -336,12 +340,12 @@ void assemble(nb::module_& m)
   // dolfinx::fem::assemble
   declare_assembly_functions<float, float>(m);
   declare_assembly_functions<double, double>(m);
-  declare_assembly_functions<std::complex<float>, float>(m);
-  declare_assembly_functions<std::complex<double>, double>(m);
+  // declare_assembly_functions<std::complex<float>, float>(m);
+  // declare_assembly_functions<std::complex<double>, double>(m);
 
   declare_discrete_operators<float, float>(m);
   declare_discrete_operators<double, double>(m);
-  declare_discrete_operators<std::complex<float>, float>(m);
-  declare_discrete_operators<std::complex<double>, double>(m);
+  // declare_discrete_operators<std::complex<float>, float>(m);
+  // declare_discrete_operators<std::complex<double>, double>(m);
 }
 } // namespace dolfinx_wrappers
