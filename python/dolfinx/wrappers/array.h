@@ -28,9 +28,8 @@ auto as_nbndarray_new(V&& array, U&& shape)
   std::size_t dim = shape.size();
   typename _V::value_type* data = array.data();
   std::unique_ptr<_V> x_ptr = std::make_unique<_V>(std::move(array));
-  auto capsule
-      = nb::capsule(x_ptr.get(), [](void* p) noexcept
-                    { std::unique_ptr<_V>(reinterpret_cast<_V*>(p)); });
+  auto capsule = nb::capsule(x_ptr.get(), [](void* p) noexcept
+                             { delete reinterpret_cast<_V*>(p); });
   x_ptr.release();
   return nb::ndarray<nb::numpy, typename _V::value_type>(
       static_cast<typename _V::value_type*>(data), dim, shape.data(), capsule);
