@@ -66,8 +66,8 @@ void common(nb::module_& m)
           "__init__",
           [](dolfinx::common::IndexMap* self, const MPICommWrapper comm,
              std::int32_t local_size,
-             nb::ndarray<const std::int64_t, nb::numpy> ghosts,
-             nb::ndarray<const int, nb::numpy> ghost_owners)
+             nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig> ghosts,
+             nb::ndarray<const int, nb::ndim<1>, nb::c_contig> ghost_owners)
           {
             new (self) dolfinx::common::IndexMap(
                 comm.get(), local_size, std::span(ghosts.data(), ghosts.size()),
@@ -79,9 +79,10 @@ void common(nb::module_& m)
           "__init__",
           [](dolfinx::common::IndexMap* self, const MPICommWrapper comm,
              std::int32_t local_size,
-             std::array<nb::ndarray<const int, nb::numpy>, 2> dest_src,
-             nb::ndarray<const std::int64_t, nb::numpy> ghosts,
-             nb::ndarray<const int, nb::numpy> ghost_owners)
+             std::array<nb::ndarray<const int, nb::ndim<1>, nb::c_contig>, 2>
+                 dest_src,
+             nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig> ghosts,
+             nb::ndarray<const int, nb::ndim<1>, nb::c_contig> ghost_owners)
           {
             std::array<std::vector<int>, 2> ranks;
             ranks[0].assign(dest_src[0].data(),
@@ -128,7 +129,7 @@ void common(nb::module_& m)
       .def(
           "local_to_global",
           [](const dolfinx::common::IndexMap& self,
-             const nb::ndarray<std::int32_t, nb::numpy>& local)
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> local)
           {
             if (local.ndim() != 1)
               throw std::runtime_error("Array of local indices must be 1D.");
@@ -142,7 +143,8 @@ void common(nb::module_& m)
       .def(
           "create_submap",
           [](const dolfinx::common::IndexMap& self,
-             nb::ndarray<const std::int32_t, nb::numpy> entities)
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>
+                 entities)
           {
             auto [map, ghosts] = self.create_submap(
                 std::span(entities.data(), entities.size()));
