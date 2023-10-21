@@ -194,9 +194,9 @@ A.assemble()
 bb_tree = geometry.bb_tree(msh, 2)
 
 # Check against standard table value
-p = np.array([48.0, 52.0, 0.0], dtype=np.float64)
-cell_candidates = geometry.compute_collisions_points(bb_tree, p)
-cells = geometry.compute_colliding_cells(msh, cell_candidates, p)
+# p = np.array([48.0, 52.0, 0.0], dtype=np.float64)
+# cell_candidates = geometry.compute_collisions_points(bb_tree, p)
+# cells = geometry.compute_colliding_cells(msh, cell_candidates, p)
 
 # uc.x.scatter_forward()
 # if len(cells) > 0:
