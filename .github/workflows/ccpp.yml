@@ -144,11 +144,11 @@ jobs:
         run: |
           python3 -m pip install nanobind
           CMAKE_BUILD_TYPE=Debug python3 -m pip -v install python/
-      - name: Build Python interface documentation
-        run: |
-          python3 -m pip install sphinx==5.0.2
-          cd python/doc
-          make html
+      # - name: Build Python interface documentation
+      #   run: |
+      #     python3 -m pip install sphinx==5.0.2
+      #     cd python/doc
+      #     make html
 
       - name: Set default DOLFINx JIT options
         run: |
