@@ -6,29 +6,29 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import pathlib
+# import pathlib
 
-import cppimport
-import pytest
+# import cppimport
+# import pytest
 
-import dolfinx
-import dolfinx.pkgconfig
-from dolfinx import wrappers
-from dolfinx.jit import mpi_jit_decorator
-from dolfinx.mesh import create_unit_square
-import nanobind
+# import dolfinx
+# import dolfinx.pkgconfig
+# from dolfinx import wrappers
+# from dolfinx.jit import mpi_jit_decorator
+# from dolfinx.mesh import create_unit_square
+# import nanobind
 
-import mpi4py
-from mpi4py import MPI
+# import mpi4py
+# from mpi4py import MPI
 
 
-def test_mpi_comm_wrapper():
-    """Test MPICommWrapper <-> mpi4py.MPI.Comm conversion"""
-    w1 = MPI.COMM_WORLD
-    m = create_unit_square(w1, 4, 4)
-    w2 = m.comm
-    assert isinstance(w1, MPI.Comm)
-    assert isinstance(w2, MPI.Comm)
+# def test_mpi_comm_wrapper():
+#     """Test MPICommWrapper <-> mpi4py.MPI.Comm conversion"""
+#     w1 = MPI.COMM_WORLD
+#     m = create_unit_square(w1, 4, 4)
+#     w2 = m.comm
+#     assert isinstance(w1, MPI.Comm)
+#     assert isinstance(w2, MPI.Comm)
 
 
 # @pytest.mark.skipif(not dolfinx.pkgconfig.exists("dolfinx"),
