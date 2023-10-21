@@ -527,7 +527,7 @@ void declare_form(nb::module_& m, std::string type)
                  std::shared_ptr<const dolfinx::fem::FunctionSpace<U>>>& spaces,
              const std::map<
                  dolfinx::fem::IntegralType,
-                 std::vector<std::tuple<int, nb::object,
+                 std::vector<std::tuple<int, std::uintptr_t,
                                         nb::ndarray<const std::int32_t>>>>&
                  integrals,
              const std::vector<std::shared_ptr<
@@ -549,9 +549,8 @@ void declare_form(nb::module_& m, std::string type)
             // Loop over kernel for each entity type
             for (auto& [type, kernels] : integrals)
             {
-              for (auto& [id, kn, e] : kernels)
+              for (auto& [id, ptr, e] : kernels)
               {
-                std::uintptr_t ptr = nb::cast<std::uintptr_t>(kn, false);
                 auto kn_ptr
                     = (void (*)(T*, const T*, const T*,
                                 const typename geom_type<T>::value_type*,
@@ -568,7 +567,7 @@ void declare_form(nb::module_& m, std::string type)
           },
           nb::arg("spaces"), nb::arg("integrals"), nb::arg("coefficients"),
           nb::arg("constants"), nb::arg("need_permutation_data"),
-          nb::arg("mesh") = nb::none())
+          nb::arg("mesh").none())
       .def(
           "__init__",
           [](dolfinx::fem::Form<T, U>* fp, std::uintptr_t form,
@@ -593,9 +592,7 @@ void declare_form(nb::module_& m, std::string type)
             {
               std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>> x;
               for (auto& [id, e] : data)
-              {
                 x.emplace_back(id, std::vector(e.data(), e.data() + e.size()));
-              }
               sd.insert({itg, std::move(x)});
             }
 
@@ -604,7 +601,7 @@ void declare_form(nb::module_& m, std::string type)
                 *p, spaces, coefficients, constants, sd, mesh));
           },
           nb::arg("form"), nb::arg("spaces"), nb::arg("coefficients"),
-          nb::arg("constants"), nb::arg("subdomains"), nb::arg("mesh"),
+          nb::arg("constants"), nb::arg("subdomains"), nb::arg("mesh").none(),
           "Create a Form from a pointer to a ufcx_form")
       .def_prop_ro("dtype", [dtype](const dolfinx::fem::Form<T, U>& self)
                    { return dtype; })
