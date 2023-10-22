@@ -61,7 +61,7 @@ jobs:
       - name: Build Python interface
         run: |
           python3 -m pip install nanobind
-          python3 -m pip -v install --global-option build --global-option --debug python/
+          python3 -m pip install --global-option build --global-option --debug python/
 
       - name: Set default DOLFINx JIT options
         run: |

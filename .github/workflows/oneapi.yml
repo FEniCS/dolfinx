@@ -88,7 +88,7 @@ jobs:
         run: |
           . /opt/intel/oneapi/setvars.sh
           pip install nanobind
-          pip -v install python/
+          pip install python/
       - name: Set default DOLFINx JIT options
         run: |
           mkdir -p ~/.config/dolfinx
@@ -97,11 +97,11 @@ jobs:
         run: |
           . /opt/intel/oneapi/setvars.sh
           pip install matplotlib
-          pytest -v -n=2 -m serial --durations=10 python/demo/test.py
+          pytest -n=2 -m serial --durations=10 python/demo/test.py
       - name: Run DOLFINx demos (Python, MPI (np=2))
         run: |
           . /opt/intel/oneapi/setvars.sh
-          pytest -v -m mpi --num-proc=2 python/demo/test.py
+          pytest -m mpi --num-proc=2 python/demo/test.py
       - name: Run DOLFINx Python unit tests (serial)
         run: |
           . /opt/intel/oneapi/setvars.sh
@@ -110,4 +110,4 @@ jobs:
         run: |
           . /opt/intel/oneapi/setvars.sh
           cd python/test/unit
-          mpiexec -n 2 pytest -vs .
+          mpiexec -n 2 pytest .
