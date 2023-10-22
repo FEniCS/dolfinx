@@ -141,7 +141,7 @@ void declare_assembly_functions(nb::module_& m)
   m.def(
       "assemble_scalar",
       [](const dolfinx::fem::Form<T, U>& M,
-         nb::ndarray<const T, nb::c_contig> constants,
+         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                         nb::ndarray<const T, nb::c_contig>>& coefficients)
       {
@@ -157,7 +157,7 @@ void declare_assembly_functions(nb::module_& m)
       "assemble_vector",
       [](nb::ndarray<T, nb::ndim<1>, nb::c_contig> b,
          const dolfinx::fem::Form<T, U>& L,
-         nb::ndarray<const T, nb::c_contig> constants,
+         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                         nb::ndarray<const T, nb::c_contig>>& coefficients)
       {
@@ -173,7 +173,7 @@ void declare_assembly_functions(nb::module_& m)
   m.def(
       "assemble_matrix",
       [](dolfinx::la::MatrixCSR<T>& A, const dolfinx::fem::Form<T, U>& a,
-         nb::ndarray<const T, nb::c_contig> constants,
+         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
                         nb::ndarray<const T, nb::c_contig>>& coefficients,
          const std::vector<
@@ -270,7 +270,8 @@ void declare_assembly_functions(nb::module_& m)
       "apply_lifting",
       [](nb::ndarray<T, nb::ndim<1>, nb::c_contig> b,
          const std::vector<std::shared_ptr<const dolfinx::fem::Form<T, U>>>& a,
-         const std::vector<nb::ndarray<const T, nb::c_contig>>& constants,
+         const std::vector<nb::ndarray<const T, nb::ndim<1>, nb::c_contig>>&
+             constants,
          const std::vector<std::map<std::pair<dolfinx::fem::IntegralType, int>,
                                     nb::ndarray<const T, nb::c_contig>>>&
              coeffs,
