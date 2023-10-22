@@ -14,15 +14,15 @@
 template <typename T>
 std::map<std::pair<dolfinx::fem::IntegralType, int>,
          std::pair<std::span<const T>, int>>
-py_to_cpp_coeffs(const std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                                nb::ndarray<T, nb::c_contig>>& coeffs)
+py_to_cpp_coeffs(
+    const std::map<std::pair<dolfinx::fem::IntegralType, int>,
+                   nb::ndarray<T, nb::ndim<2>, nb::c_contig>>& coeffs)
 {
   using Key_t = typename std::remove_reference_t<decltype(coeffs)>::key_type;
   std::map<Key_t, std::pair<std::span<const T>, int>> c;
   std::transform(coeffs.begin(), coeffs.end(), std::inserter(c, c.end()),
                  [](auto& e) -> typename decltype(c)::value_type
                  {
-                   assert(e.second.ndim() == 2);
                    return {e.first,
                            {std::span(static_cast<const T*>(e.second.data()),
                                       e.second.shape(0)),

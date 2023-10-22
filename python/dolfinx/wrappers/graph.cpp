@@ -45,7 +45,7 @@ void declare_adjacency_list(nb::module_& m, std::string type)
       .def(
           "__init__",
           [](dolfinx::graph::AdjacencyList<T>* a,
-             nb::ndarray<const T, nb::ndim<2>, nb::c_contig> adj)
+             nb::ndarray<const T, nb::c_contig> adj)
           {
             const std::size_t dim = adj.ndim() < 2 ? 1 : adj.shape(1);
             std::size_t size = adj.shape(0) * dim;

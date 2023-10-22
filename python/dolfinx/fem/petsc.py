@@ -365,6 +365,8 @@ def assemble_matrix_mat(A: PETSc.Mat, a: Form, bcs: typing.List[DirichletBC] = [
     constants = _pack_constants(a._cpp_object) if constants is None else constants
     coeffs = _pack_coefficients(a._cpp_object) if coeffs is None else coeffs
     _bcs = [bc._cpp_object for bc in bcs]
+    print(coeffs)
+    print(constants)
     _cpp.fem.petsc.assemble_matrix(A, a._cpp_object, constants, coeffs, _bcs)
     if a.function_spaces[0] is a.function_spaces[1]:
         A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)
