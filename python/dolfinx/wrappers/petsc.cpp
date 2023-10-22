@@ -25,6 +25,7 @@
 #include <dolfinx/nls/NewtonSolver.h>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
+#include <nanobind/stl/complex.h>
 #include <nanobind/stl/function.h>
 #include <nanobind/stl/map.h>
 #include <nanobind/stl/pair.h>
@@ -173,8 +174,6 @@ void petsc_la_module(nb::module_& m)
       "Scatter the (ordered) list of sub vectors into a block "
       "vector.");
 
-  // FIXME: build with nanobind fails in complex mode
-#if !defined(PETSC_USE_COMPLEX)
   m.def(
       "get_local_vectors",
       [](const Vec x,
@@ -202,7 +201,6 @@ void petsc_la_module(nb::module_& m)
       },
       nb::arg("x"), nb::arg("maps"),
       "Gather an (ordered) list of sub vectors from a block vector.");
-#endif
 }
 
 void petsc_fem_module(nb::module_& m)
