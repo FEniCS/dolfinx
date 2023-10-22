@@ -188,12 +188,10 @@ void declare_real_types(nb::module_& m)
   m.def(
       "distribute_entity_data",
       [](const dolfinx::mesh::Mesh<T>& mesh, int entity_dim,
-         nb::ndarray<const std::int64_t, nb::numpy> entities,
-         nb::ndarray<const std::int32_t, nb::numpy> values)
+         nb::ndarray<const std::int64_t, nb::ndim<2>, nb::c_contig> entities,
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> values)
       {
-        assert(entities.ndim() == 2);
-        assert(values.ndim() == 1);
-        assert(entities.shape(0) == values.shape(0));
+        assert(entities.shape(0) == values.size());
         std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
             entities_values = dolfinx::io::xdmf_utils::distribute_entity_data(
                 *mesh.topology(), mesh.geometry().input_global_indices(),
@@ -226,11 +224,9 @@ void io(nb::module_& m)
 
   m.def(
       "extract_vtk_connectivity",
-      [](nb::ndarray<const std::int32_t, nb::numpy> dofmap,
+      [](nb::ndarray<const std::int32_t, nb::ndim<2>, nb::c_contig> dofmap,
          dolfinx::mesh::CellType cell)
       {
-        if (dofmap.ndim() != 2)
-          throw std::runtime_error("Geometry dofmap must be rank 2.");
         MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
             const std::int32_t,
             MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
@@ -262,7 +258,7 @@ void io(nb::module_& m)
   xdmf_file
       .def(
           "__init__",
-          [](dolfinx::io::XDMFFile* x, const MPICommWrapper comm,
+          [](dolfinx::io::XDMFFile* x, MPICommWrapper comm,
              std::filesystem::path filename, std::string file_mode,
              dolfinx::io::XDMFFile::Encoding encoding) {
             new (x) dolfinx::io::XDMFFile(comm.get(), filename, file_mode,

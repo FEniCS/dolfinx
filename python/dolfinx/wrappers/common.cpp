@@ -58,13 +58,13 @@ void common(nb::module_& m)
   nb::class_<dolfinx::common::IndexMap>(m, "IndexMap")
       .def(
           "__init__",
-          [](dolfinx::common::IndexMap* self, const MPICommWrapper comm,
+          [](dolfinx::common::IndexMap* self, MPICommWrapper comm,
              std::int32_t local_size)
           { new (self) dolfinx::common::IndexMap(comm.get(), local_size); },
           nb::arg("comm"), nb::arg("local_size"))
       .def(
           "__init__",
-          [](dolfinx::common::IndexMap* self, const MPICommWrapper comm,
+          [](dolfinx::common::IndexMap* self, MPICommWrapper comm,
              std::int32_t local_size,
              nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig> ghosts,
              nb::ndarray<const int, nb::ndim<1>, nb::c_contig> ghost_owners)
@@ -77,7 +77,7 @@ void common(nb::module_& m)
           nb::arg("ghost_owners"))
       .def(
           "__init__",
-          [](dolfinx::common::IndexMap* self, const MPICommWrapper comm,
+          [](dolfinx::common::IndexMap* self, MPICommWrapper comm,
              std::int32_t local_size,
              std::array<nb::ndarray<const int, nb::ndim<1>, nb::c_contig>, 2>
                  dest_src,
@@ -176,7 +176,7 @@ void common(nb::module_& m)
 
   m.def(
       "list_timings",
-      [](const MPICommWrapper comm, std::vector<dolfinx::TimingType> type,
+      [](MPICommWrapper comm, std::vector<dolfinx::TimingType> type,
          dolfinx::Table::Reduction reduction)
       {
         std::set<dolfinx::TimingType> _type(type.begin(), type.end());

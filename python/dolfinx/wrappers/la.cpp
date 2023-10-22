@@ -244,7 +244,7 @@ void la(nb::module_& m)
   nb::class_<dolfinx::la::SparsityPattern>(m, "SparsityPattern")
       .def(
           "__init__",
-          [](dolfinx::la::SparsityPattern* sp, const MPICommWrapper comm,
+          [](dolfinx::la::SparsityPattern* sp, MPICommWrapper comm,
              const std::array<std::shared_ptr<const dolfinx::common::IndexMap>,
                               2>& maps,
              const std::array<int, 2>& bs)
@@ -252,7 +252,7 @@ void la(nb::module_& m)
           nb::arg("comm"), nb::arg("maps"), nb::arg("bs"))
       .def(
           "__init__",
-          [](dolfinx::la::SparsityPattern* sp, const MPICommWrapper comm,
+          [](dolfinx::la::SparsityPattern* sp, MPICommWrapper comm,
              const std::vector<std::vector<const dolfinx::la::SparsityPattern*>>
                  patterns,
              const std::array<
@@ -273,8 +273,8 @@ void la(nb::module_& m)
       .def(
           "insert",
           [](dolfinx::la::SparsityPattern& self,
-             const nb::ndarray<std::int32_t, nb::numpy>& rows,
-             const nb::ndarray<std::int32_t, nb::numpy>& cols)
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows,
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cols)
           {
             self.insert(std::span(rows.data(), rows.size()),
                         std::span(cols.data(), cols.size()));
@@ -283,7 +283,7 @@ void la(nb::module_& m)
       .def(
           "insert_diagonal",
           [](dolfinx::la::SparsityPattern& self,
-             const nb::ndarray<std::int32_t, nb::numpy>& rows)
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows)
           { self.insert_diagonal(std::span(rows.data(), rows.size())); },
           nb::arg("rows"))
       .def_prop_ro("graph",

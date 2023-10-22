@@ -45,10 +45,8 @@ void declare_adjacency_list(nb::module_& m, std::string type)
       .def(
           "__init__",
           [](dolfinx::graph::AdjacencyList<T>* a,
-             nb::ndarray<const T, nb::numpy> adj)
+             nb::ndarray<const T, nb::ndim<2>, nb::c_contig> adj)
           {
-            if (adj.ndim() > 2)
-              throw std::runtime_error("Incorrect array dimension.");
             const std::size_t dim = adj.ndim() < 2 ? 1 : adj.shape(1);
             std::size_t size = adj.shape(0) * dim;
             std::vector<T> data(adj.data(), adj.data() + size);
@@ -59,14 +57,12 @@ void declare_adjacency_list(nb::module_& m, std::string type)
       .def(
           "__init__",
           [](dolfinx::graph::AdjacencyList<T>* a,
-             nb::ndarray<const T, nb::numpy> array,
-             nb::ndarray<const std::int32_t, nb::numpy> displ)
+             nb::ndarray<const T, nb::ndim<1>, nb::c_contig> array,
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> displ)
           {
-            assert(array.ndim() == 1);
-            std::vector<T> data(array.data(), array.data() + array.shape(0));
-            assert(displ.ndim() == 1);
+            std::vector<T> data(array.data(), array.data() + array.size());
             std::vector<std::int32_t> offsets(displ.data(),
-                                              displ.data() + displ.shape(0));
+                                              displ.data() + displ.size());
             new (a) dolfinx::graph::AdjacencyList<T>(std::move(data),
                                                      std::move(offsets));
           },

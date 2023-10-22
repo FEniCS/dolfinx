@@ -256,10 +256,10 @@ void petsc_fem_module(nb::module_& m)
   m.def(
       "assemble_matrix",
       [](Mat A, const dolfinx::fem::Form<PetscScalar, PetscReal>& a,
-         nb::ndarray<const PetscScalar, nb::ndim<1>, nb::c_contig> constants,
+         nb::ndarray<const PetscScalar, nb::c_contig> constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                        nb::ndarray<const PetscScalar, nb::ndim<1>,
-                                    nb::c_contig>>& coefficients,
+                        nb::ndarray<const PetscScalar, nb::c_contig>>&
+             coefficients,
          const std::vector<std::shared_ptr<
              const dolfinx::fem::DirichletBC<PetscScalar, PetscReal>>>& bcs,
          bool unrolled)
@@ -290,10 +290,10 @@ void petsc_fem_module(nb::module_& m)
   m.def(
       "assemble_matrix",
       [](Mat A, const dolfinx::fem::Form<PetscScalar, PetscReal>& a,
-         nb::ndarray<const PetscScalar, nb::ndim<1>, nb::c_contig> constants,
+         nb::ndarray<const PetscScalar, nb::c_contig> constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                        nb::ndarray<const PetscScalar, nb::ndim<1>,
-                                    nb::c_contig>>& coefficients,
+                        nb::ndarray<const PetscScalar, nb::c_contig>>&
+             coefficients,
          nb::ndarray<const std::int8_t, nb::ndim<1>, nb::c_contig> rows0,
          nb::ndarray<const std::int8_t, nb::ndim<1>, nb::c_contig> rows1,
          bool unrolled)

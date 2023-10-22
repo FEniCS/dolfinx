@@ -135,8 +135,8 @@ void declare_function_space(nb::module_& m, std::string type)
         .def(
             "apply_dof_transformation",
             [](const dolfinx::fem::FiniteElement<T>& self,
-               nb::ndarray<nb::numpy, T> x, std::uint32_t cell_permutation,
-               int dim)
+               nb::ndarray<T, nb::ndim<1>, nb::c_contig> x,
+               std::uint32_t cell_permutation, int dim)
             {
               self.apply_dof_transformation(std::span(x.data(), x.size()),
                                             cell_permutation, dim);
@@ -145,18 +145,18 @@ void declare_function_space(nb::module_& m, std::string type)
         .def(
             "apply_transpose_dof_transformation",
             [](const dolfinx::fem::FiniteElement<T>& self,
-               nb::ndarray<T, nb::numpy> x, std::uint32_t cell_permutation,
-               int dim)
+               nb::ndarray<T, nb::ndim<1>, nb::c_contig> x,
+               std::uint32_t cell_permutation, int dim)
             {
               self.apply_transpose_dof_transformation(
-                  std::span(x.data(), x.shape(0)), cell_permutation, dim);
+                  std::span(x.data(), x.size()), cell_permutation, dim);
             },
             nb::arg("x"), nb::arg("cell_permutation"), nb::arg("dim"))
         .def(
             "apply_inverse_transpose_dof_transformation",
             [](const dolfinx::fem::FiniteElement<T>& self,
-               nb::ndarray<T, nb::numpy> x, std::uint32_t cell_permutation,
-               int dim)
+               nb::ndarray<T, nb::ndim<1>, nb::c_contig> x,
+               std::uint32_t cell_permutation, int dim)
             {
               self.apply_inverse_transpose_dof_transformation(
                   std::span(x.data(), x.size()), cell_permutation, dim);
@@ -165,7 +165,7 @@ void declare_function_space(nb::module_& m, std::string type)
         .def(
             "apply_dof_transformation",
             [](const dolfinx::fem::FiniteElement<T>& self,
-               nb::ndarray<std::complex<T>, nb::numpy> x,
+               nb::ndarray<std::complex<T>, nb::ndim<1>, nb::c_contig> x,
                std::uint32_t cell_permutation, int dim)
             {
               self.apply_dof_transformation(
@@ -176,7 +176,7 @@ void declare_function_space(nb::module_& m, std::string type)
         .def(
             "apply_transpose_dof_transformation",
             [](const dolfinx::fem::FiniteElement<T>& self,
-               nb::ndarray<std::complex<T>, nb::numpy> x,
+               nb::ndarray<std::complex<T>, nb::ndim<1>, nb::c_contig> x,
                std::uint32_t cell_permutation, int dim)
             {
               self.apply_transpose_dof_transformation(
@@ -187,7 +187,7 @@ void declare_function_space(nb::module_& m, std::string type)
         .def(
             "apply_inverse_transpose_dof_transformation",
             [](const dolfinx::fem::FiniteElement<T>& self,
-               nb::ndarray<std::complex<T>, nb::numpy> x,
+               nb::ndarray<std::complex<T>, nb::ndim<1>, nb::c_contig> x,
                std::uint32_t cell_permutation, int dim)
             {
               self.apply_inverse_transpose_dof_transformation(
@@ -221,12 +221,10 @@ void declare_objects(nb::module_& m, const std::string& type)
       .def(
           "__init__",
           [](dolfinx::fem::DirichletBC<T, U>* bc,
-             nb::ndarray<const T, nb::numpy> g,
-             const nb::ndarray<std::int32_t, nb::numpy>& dofs,
+             nb::ndarray<const T, nb::c_contig> g,
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> dofs,
              std::shared_ptr<const dolfinx::fem::FunctionSpace<U>> V)
           {
-            if (dofs.ndim() != 1)
-              throw std::runtime_error("Wrong number of dims");
             std::vector<std::size_t> shape(g.shape_ptr(),
                                            g.shape_ptr() + g.ndim());
 
@@ -242,7 +240,7 @@ void declare_objects(nb::module_& m, const std::string& type)
           "__init__",
           [](dolfinx::fem::DirichletBC<T, U>* bc,
              std::shared_ptr<const dolfinx::fem::Constant<T>> g,
-             nb::ndarray<const std::int32_t, nb::numpy> dofs,
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> dofs,
              std::shared_ptr<const dolfinx::fem::FunctionSpace<U>> V)
           {
             new (bc) dolfinx::fem::DirichletBC<T, U>(
@@ -253,7 +251,7 @@ void declare_objects(nb::module_& m, const std::string& type)
           "__init__",
           [](dolfinx::fem::DirichletBC<T, U>* bc,
              std::shared_ptr<const dolfinx::fem::Function<T, U>> g,
-             nb::ndarray<const std::int32_t, nb::numpy> dofs)
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> dofs)
           {
             new (bc) dolfinx::fem::DirichletBC<T, U>(
                 g, std::vector(dofs.data(), dofs.data() + dofs.size()));
@@ -263,7 +261,9 @@ void declare_objects(nb::module_& m, const std::string& type)
           "__init__",
           [](dolfinx::fem::DirichletBC<T, U>* bc,
              std::shared_ptr<const dolfinx::fem::Function<T, U>> g,
-             std::array<nb::ndarray<const std::int32_t, nb::numpy>, 2> V_g_dofs,
+             std::array<
+                 nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>, 2>
+                 V_g_dofs,
              std::shared_ptr<const dolfinx::fem::FunctionSpace<U>> V)
           {
             std::array dofs
@@ -1002,7 +1002,7 @@ void fem(nb::module_& m)
       "Create ElementDofLayout object from a ufc dofmap.");
   m.def(
       "build_dofmap",
-      [](const MPICommWrapper comm, const dolfinx::mesh::Topology& topology,
+      [](MPICommWrapper comm, const dolfinx::mesh::Topology& topology,
          const dolfinx::fem::ElementDofLayout& layout)
       {
         auto [map, bs, dofmap] = dolfinx::fem::build_dofmap_data(
