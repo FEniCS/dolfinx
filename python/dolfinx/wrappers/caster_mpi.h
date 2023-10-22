@@ -30,7 +30,7 @@ class type_caster<dolfinx_wrappers::MPICommWrapper>
 {
 public:
   // Define this->value of type MPICommWrapper
-  NB_TYPE_CASTER(dolfinx_wrappers::MPICommWrapper, const_name("MPICommWrapper"));
+  NB_TYPE_CASTER(dolfinx_wrappers::MPICommWrapper, const_name("MPICommWrapper"))
 
   // Python to C++
   bool from_python(handle src, uint8_t, cleanup_list*)

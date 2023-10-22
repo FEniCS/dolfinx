@@ -33,7 +33,7 @@ namespace nb = nanobind;
   class type_caster<_p_##TYPE>                                                 \
   {                                                                            \
   public:                                                                      \
-    NB_TYPE_CASTER(TYPE, const_name(#NAME));                                   \
+    NB_TYPE_CASTER(TYPE, const_name(#NAME))                                    \
     bool from_python(handle src, uint8_t, cleanup_list*)                       \
     {                                                                          \
       VERIFY_PETSC4PY(PyPetsc##P4PYTYPE##_Get);                                \
@@ -51,9 +51,13 @@ namespace nb = nanobind;
       VERIFY_PETSC4PY(PyPetsc##P4PYTYPE##_New);                                \
       auto obj = PyPetsc##P4PYTYPE##_New(src);                                 \
       if (policy == nb::rv_policy::take_ownership)                             \
+      {                                                                        \
         PetscObjectDereference((PetscObject)src);                              \
+      }                                                                        \
       else if (policy == nb::rv_policy::reference_internal)                    \
-        nb::keep_alive<0, 1>(obj);                                             \
+      {                                                                        \
+        nb::keep_alive<0, 1>(obj);                                           \
+      }                                                                        \
       return nb::handle(obj);                                                  \
     }                                                                          \
                                                                                \
