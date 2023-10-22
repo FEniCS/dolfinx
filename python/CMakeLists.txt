@@ -75,13 +75,7 @@ if(HAVE_PEDANTIC)
 #  target_compile_options(cpp PRIVATE -Wall;-Werror;-pedantic)
 endif()
 
-# In Debug mode override pybind11 symbols visibility Symbols must be visible to
-# backtrace_symbols() to produce nice logs
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  target_compile_options(cpp PRIVATE "-fvisibility=default")
-endif()
-
-# Add DOLFINx libraries.
+# Add DOLFINx libraries
 target_link_libraries(cpp PRIVATE dolfinx)
 
 # Check for petsc4py
