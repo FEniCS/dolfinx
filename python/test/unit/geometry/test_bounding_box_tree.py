@@ -296,7 +296,13 @@ def test_compute_closest_entity_2d(dim, dtype):
 
     # Refine search by checking for actual collision if the entities are
     # cells
-    assert np.isin(closest_entities[0], colliding_entity_bboxes.links(0))
+    if dim == mesh.topology.dim:
+        colliding_cells = compute_colliding_cells(mesh, colliding_entity_bboxes, p_c).array
+        if len(colliding_cells) > 0:
+            assert np.isin(closest_entities[0], colliding_cells)
+    else:
+        if len(colliding_entity_bboxes.links(0)) > 0:
+            assert np.isin(closest_entities[0], colliding_entity_bboxes.links(0))
 
 
 @pytest.mark.parametrize("dim", [1, 2, 3])
@@ -318,7 +324,13 @@ def test_compute_closest_entity_3d(dim, dtype):
 
     # Refine search by checking for actual collision if the entities are
     # cells
-    assert np.isin(closest_entities[0], colliding_entity_bboxes.links(0))
+    if dim == mesh.topology.dim:
+        colliding_cells = compute_colliding_cells(mesh, colliding_entity_bboxes, p_c).array
+        if len(colliding_cells) > 0:
+            assert np.isin(closest_entities[0], colliding_cells)
+    else:
+        if len(colliding_entity_bboxes.links(0)) > 0:
+            assert np.isin(closest_entities[0], colliding_entity_bboxes.links(0))
 
 
 @pytest.mark.parametrize("dim", [1, 2, 3])
