@@ -141,9 +141,10 @@ void declare_assembly_functions(nb::module_& m)
   m.def(
       "assemble_scalar",
       [](const dolfinx::fem::Form<T, U>& M,
-         nb::ndarray<const T, nb::c_contig> constants,
+         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                        nb::ndarray<const T, nb::c_contig>>& coefficients)
+                        nb::ndarray<const T, nb::ndim<1>, nb::c_contig>>&
+             coefficients)
       {
         return dolfinx::fem::assemble_scalar<T>(
             M, std::span(constants.data(), constants.size()),
@@ -157,13 +158,14 @@ void declare_assembly_functions(nb::module_& m)
       "assemble_vector",
       [](nb::ndarray<T, nb::ndim<1>, nb::c_contig> b,
          const dolfinx::fem::Form<T, U>& L,
-         nb::ndarray<const T, nb::c_contig> constants,
+         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                        nb::ndarray<const T, nb::c_contig>>& coefficients)
+                        nb::ndarray<const T, nb::ndim<1>, nb::c_contig>>&
+             coefficients)
       {
         dolfinx::fem::assemble_vector<T>(
-            std::span(b.data(), b.shape(0)), L,
-            std::span(constants.data(), constants.shape(0)),
+            std::span(b.data(), b.size()), L,
+            std::span(constants.data(), constants.size()),
             py_to_cpp_coeffs(coefficients));
       },
       nb::arg("b"), nb::arg("L"), nb::arg("constants"), nb::arg("coeffs"),
@@ -173,9 +175,10 @@ void declare_assembly_functions(nb::module_& m)
   m.def(
       "assemble_matrix",
       [](dolfinx::la::MatrixCSR<T>& A, const dolfinx::fem::Form<T, U>& a,
-         nb::ndarray<const T, nb::numpy> constants,
+         nb::ndarray<const T, nb::ndim<1>, nb::numpy> constants,
          const std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                        nb::ndarray<const T, nb::c_contig>>& coefficients,
+                        nb::ndarray<const T, nb::ndim<1>, nb::c_contig>>&
+             coefficients,
          const std::vector<
              std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>& bcs)
       {
@@ -191,7 +194,7 @@ void declare_assembly_functions(nb::module_& m)
         {
           dolfinx::fem::assemble_matrix(
               A.mat_add_values(), a,
-              std::span<const T>(constants.data(), constants.shape(0)),
+              std::span<const T>(constants.data(), constants.size()),
               py_to_cpp_coeffs(coefficients), bcs);
         }
         else if (data_bs[0] == 2)
@@ -270,10 +273,12 @@ void declare_assembly_functions(nb::module_& m)
       "apply_lifting",
       [](nb::ndarray<T, nb::ndim<1>, nb::c_contig> b,
          const std::vector<std::shared_ptr<const dolfinx::fem::Form<T, U>>>& a,
-         const std::vector<nb::ndarray<const T, nb::c_contig>>& constants,
-         const std::vector<std::map<std::pair<dolfinx::fem::IntegralType, int>,
-                                    nb::ndarray<const T, nb::c_contig>>>&
-             coeffs,
+         const std::vector<nb::ndarray<const T, nb::ndim<1>,
+         nb::c_contig>>&
+             constants,
+         const std::vector<
+             std::map<std::pair<dolfinx::fem::IntegralType, int>,
+                      nb::ndarray<const T, nb::ndim<1>, nb::c_contig>>>& coeffs,
          const std::vector<std::vector<
              std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>>& bcs1,
          const std::vector<nb::ndarray<const T, nb::ndim<1>, nb::c_contig>>& x0,
