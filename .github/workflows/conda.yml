@@ -33,7 +33,7 @@ jobs:
       - name: Install DOLFINx (py3-9)
         run: |
           conda create -n env3-9 -c conda-forge python=3.9 fenics-dolfinx mpich
-          conda env -n env3-9 export
+          conda env export -n env3-9
       - name: Test (py3-9)
         run: |
           conda run -n env3-9 python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
@@ -42,7 +42,7 @@ jobs:
       - name: Install DOLFINx (py3-10)
         run: |
           conda create -n env3-10 -c conda-forge python=3.10 fenics-dolfinx mpich
-          conda env -n env3-10 export
+          conda env export -n env3-10
       - name: Test (py3-10)
         run: |
           conda run -n env3-10 python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
@@ -51,7 +51,7 @@ jobs:
       - name: Install DOLFINx (py3-10, petsc-complex)
         run: |
           conda create -n env3-10-complex -c conda-forge python=3.10 fenics-dolfinx petsc=*=complex* mpich
-          conda env -n env3-10-complex export
+          conda env export -n env3-10-complex
       - name: Test (py3-10-complex)
         run: |
           conda run -n env3-10-complex python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
