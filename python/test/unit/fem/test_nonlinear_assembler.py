@@ -333,6 +333,9 @@ def test_assembly_solve_block_nl():
         p.interpolate(initial_guess_p)
 
         x = create_vector_block(F)
+        # scatter_local_vectors(x, [u.vector.array, p.vector.array],
+        #                       [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
+        #                        (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
         scatter_local_vectors(x, [u.vector.array_r, p.vector.array_r],
                               [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
                                (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
@@ -426,14 +429,14 @@ def test_assembly_solve_block_nl():
         x.array[:] = U.vector.array_r
 
         snes.solve(None, x)
-        # assert snes.getKSP().getConvergedReason() > 0
-        # assert snes.getConvergedReason() > 0
-        # xnorm = x.norm()
-        # snes.destroy()
-        # Jmat.destroy()
-        # Fvec.destroy()
-        # x.destroy()
-        # return xnorm
+        assert snes.getKSP().getConvergedReason() > 0
+        assert snes.getConvergedReason() > 0
+        xnorm = x.norm()
+        snes.destroy()
+        Jmat.destroy()
+        Fvec.destroy()
+        x.destroy()
+        return xnorm
 
     norm0 = blocked_solve()
     norm2 = monolithic_solve()
@@ -442,14 +445,14 @@ def test_assembly_solve_block_nl():
     if not ((PETSc.ScalarType == np.float32 or PETSc.ScalarType == np.complex64) and mesh.comm.size > 1):
         norm1 = nested_solve()
         assert norm1 == pytest.approx(norm0, 1.0e-6)
-    # assert norm2 == pytest.approx(norm0, 1.0e-6)
+    assert norm2 == pytest.approx(norm0, 1.0e-6)
 
 
 @pytest.mark.parametrize("mesh", [
     create_unit_square(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.none),
-    # create_unit_square(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.shared_facet),
-    # create_unit_cube(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=GhostMode.none),
-    # create_unit_cube(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=GhostMode.shared_facet)
+    create_unit_square(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.shared_facet),
+    create_unit_cube(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=GhostMode.none),
+    create_unit_cube(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=GhostMode.shared_facet)
 ])
 def test_assembly_solve_taylor_hood_nl(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
