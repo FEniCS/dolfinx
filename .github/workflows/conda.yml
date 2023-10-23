@@ -24,6 +24,7 @@ jobs:
         if: ${{ matrix.os == 'macos-13' }}
         run: |
           brew install anaconda
+          echo "/usr/local/anaconda3/bin" >> $GITHUB_PATH
       - name: Update conda
         run: |
           conda update conda
