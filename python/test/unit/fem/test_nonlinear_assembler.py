@@ -96,7 +96,10 @@ def test_matrix_assembly_block_nl():
     def blocked():
         """Monolithic blocked"""
         x = create_vector_block(L_block)
-        scatter_local_vectors(x, [u.vector.array_r, p.vector.array_r],
+        # scatter_local_vectors(x, [u.vector.array_r, p.vector.array_r],
+        #                       [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
+        #                        (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
+        scatter_local_vectors(x, [u.vector.array, p.vector.array],
                               [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
                                (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
@@ -333,7 +336,10 @@ def test_assembly_solve_block_nl():
         p.interpolate(initial_guess_p)
 
         x = create_vector_block(F)
-        scatter_local_vectors(x, [u.vector.array_r, p.vector.array_r],
+        # scatter_local_vectors(x, [u.vector.array_r, p.vector.array_r],
+        #                       [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
+        #                        (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
+        scatter_local_vectors(x, [u.vector.array, p.vector.array],
                               [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
                                (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
@@ -520,7 +526,10 @@ def test_assembly_solve_taylor_hood_nl(mesh):
         p.interpolate(initial_guess_p)
         x = create_vector_block(F)
         with u.vector.localForm() as _u, p.vector.localForm() as _p:
-            scatter_local_vectors(x, [_u.array_r, _p.array_r],
+            # scatter_local_vectors(x, [_u.array_r, _p.array_r],
+            #                       [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
+            #                        (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
+            scatter_local_vectors(x, [_u.array, _p.array],
                                   [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
                                    (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
