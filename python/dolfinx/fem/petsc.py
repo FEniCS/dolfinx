@@ -538,7 +538,8 @@ def set_bc(b: PETSc.Vec, bcs: typing.List[DirichletBC],
            x0: typing.Optional[PETSc.Vec] = None, scale: float = 1.0) -> None:
     """Apply the function :func:`dolfinx.fem.set_bc` to a PETSc Vector."""
     if x0 is not None:
-        x0 = x0.array_r
+        x0 = x0.array
+        # x0 = x0.array_r
     assemble.set_bc(b.array_w, bcs, x0, scale)
 
 

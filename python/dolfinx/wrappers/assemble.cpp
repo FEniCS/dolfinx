@@ -309,7 +309,7 @@ void declare_assembly_functions(nb::module_& m)
       [](nb::ndarray<T, nb::ndim<1>, nb::c_contig> b,
          const std::vector<
              std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>& bcs,
-         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> x0, U scale)
+         nb::ndarray<const T, nb::c_contig> x0, U scale)
       {
         if (x0.ndim() == 0)
           dolfinx::fem::set_bc<T>(std::span(b.data(), b.size()), bcs, scale);
