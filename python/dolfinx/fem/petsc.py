@@ -365,8 +365,6 @@ def assemble_matrix_mat(A: PETSc.Mat, a: Form, bcs: typing.List[DirichletBC] = [
     constants = _pack_constants(a._cpp_object) if constants is None else constants
     coeffs = _pack_coefficients(a._cpp_object) if coeffs is None else coeffs
     _bcs = [bc._cpp_object for bc in bcs]
-    print(coeffs)
-    print(constants)
     _cpp.fem.petsc.assemble_matrix(A, a._cpp_object, constants, coeffs, _bcs)
     if a.function_spaces[0] is a.function_spaces[1]:
         A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)
@@ -511,7 +509,10 @@ def apply_lifting(b: PETSc.Vec, a: typing.List[Form],
     """Apply the function :func:`dolfinx.fem.apply_lifting` to a PETSc Vector."""
     with contextlib.ExitStack() as stack:
         x0 = [stack.enter_context(x.localForm()) for x in x0]
-        x0_r = [x.array_r for x in x0]
+        # Note: using x.array_r causes a failure in the nanobind layer
+        # when in complex mode
+        # x0_r = [x.array_r for x in x0]
+        x0_r = [x.array for x in x0]
         b_local = stack.enter_context(b.localForm())
         assemble.apply_lifting(b_local.array_w, a, bcs, x0_r, scale, constants, coeffs)
 

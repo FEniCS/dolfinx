@@ -280,7 +280,7 @@ void declare_assembly_functions(nb::module_& m)
          const std::vector<std::vector<
              std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>>& bcs1,
          const std::vector<nb::ndarray<const T, nb::ndim<1>, nb::c_contig>>& x0,
-         U scale)
+         T scale)
       {
         std::vector<std::span<const T>> _x0;
         for (auto x : x0)
