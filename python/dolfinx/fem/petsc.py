@@ -511,8 +511,8 @@ def apply_lifting(b: PETSc.Vec, a: typing.List[Form],
         x0 = [stack.enter_context(x.localForm()) for x in x0]
         # Note: using x.array_r causes a failure in the nanobind layer
         # when in complex mode
-        # x0_r = [x.array_r for x in x0]
-        x0_r = [x.array for x in x0]
+        x0_r = [x.array_r for x in x0]
+        # x0_r = [x.array for x in x0]
         b_local = stack.enter_context(b.localForm())
         assemble.apply_lifting(b_local.array_w, a, bcs, x0_r, scale, constants, coeffs)
 
@@ -538,9 +538,15 @@ def set_bc(b: PETSc.Vec, bcs: typing.List[DirichletBC],
            x0: typing.Optional[PETSc.Vec] = None, scale: float = 1.0) -> None:
     """Apply the function :func:`dolfinx.fem.set_bc` to a PETSc Vector."""
     if x0 is not None:
-        x0 = x0.array
-        # x0 = x0.array_r
-    assemble.set_bc(b.array_w, bcs, x0, scale)
+        # x0 = x0.array
+        x0 = x0.array_r
+    # x0 = None
+    with b.localForm() as blocal:
+        if x0 is not None:
+            with x0.localForm() as x0local:
+                assemble.set_bc(blocal.array, bcs, x0local.array, scale)
+        else:
+            assemble.set_bc(blocal.array, bcs, x0, scale)
 
 
 def set_bc_nest(b: PETSc.Vec, bcs: typing.List[typing.List[DirichletBC]],

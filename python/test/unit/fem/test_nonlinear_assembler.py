@@ -177,12 +177,12 @@ def test_matrix_assembly_block_nl():
 
     Anorm0, bnorm0 = blocked()
     Anorm1, bnorm1 = nested()
-    # assert Anorm1 == pytest.approx(Anorm0, 1.0e-6)
-    # assert bnorm1 == pytest.approx(bnorm0, 1.0e-6)
+    assert Anorm1 == pytest.approx(Anorm0, 1.0e-6)
+    assert bnorm1 == pytest.approx(bnorm0, 1.0e-6)
 
     Anorm2, bnorm2 = monolithic()
-    # assert Anorm2 == pytest.approx(Anorm0, 1.0e-5)
-    # assert bnorm2 == pytest.approx(bnorm0, 1.0e-6)
+    assert Anorm2 == pytest.approx(Anorm0, 1.0e-5)
+    assert bnorm2 == pytest.approx(bnorm0, 1.0e-6)
 
 
 class NonlinearPDE_SNESProblem():
@@ -202,7 +202,7 @@ class NonlinearPDE_SNESProblem():
         assemble_vector(F, self.L)
         apply_lifting(F, [self.a], bcs=[self.bcs], x0=[x], scale=-1.0)
         F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-        set_bc(F, self.bcs, x, -1.0)
+        set_bc(F, self.bcs, self.soln_vars.x, -1.0)
 
     def J_mono(self, snes, x, J, P):
         J.zeroEntries()
@@ -430,8 +430,8 @@ def test_assembly_solve_block_nl():
         U.sub(1).interpolate(initial_guess_p)
 
         x = create_vector(F)
-        x.array = U.vector.array
-        # x.array = U.vector.array_r
+        # x.array[:] = U.vector.array
+        x.array[:] = U.vector.array_r
 
         snes.solve(None, x)
         assert snes.getKSP().getConvergedReason() > 0
@@ -640,11 +640,11 @@ def test_assembly_solve_taylor_hood_nl(mesh):
 
     Jnorm0, Fnorm0, xnorm0 = blocked()
     Jnorm1, Fnorm1, xnorm1 = nested()
-    # assert Jnorm1 == pytest.approx(Jnorm0, 1.0e-3, abs=1.0e-6)
-    # assert Fnorm1 == pytest.approx(Fnorm0, 1.0e-6, abs=1.0e-5)
-    # assert xnorm1 == pytest.approx(xnorm0, 1.0e-6, abs=1.0e-5)
+    assert Jnorm1 == pytest.approx(Jnorm0, 1.0e-3, abs=1.0e-6)
+    assert Fnorm1 == pytest.approx(Fnorm0, 1.0e-6, abs=1.0e-5)
+    assert xnorm1 == pytest.approx(xnorm0, 1.0e-6, abs=1.0e-5)
 
     Jnorm2, Fnorm2, xnorm2 = monolithic()
-    # assert Jnorm2 == pytest.approx(Jnorm1, rel=1.0e-3, abs=1.0e-6)
-    # assert Fnorm2 == pytest.approx(Fnorm0, 1.0e-6, abs=1.0e-5)
-    # assert xnorm2 == pytest.approx(xnorm0, 1.0e-6, abs=1.0e-6)
+    assert Jnorm2 == pytest.approx(Jnorm1, rel=1.0e-3, abs=1.0e-6)
+    assert Fnorm2 == pytest.approx(Fnorm0, 1.0e-6, abs=1.0e-5)
+    assert xnorm2 == pytest.approx(xnorm0, 1.0e-6, abs=1.0e-6)
