@@ -7,11 +7,15 @@
 import math
 import sys
 
-import basix
 import numpy as np
 import pytest
+
+import basix
 import ufl
 from basix.ufl import element
+from dolfinx import cpp as _cpp
+from dolfinx import graph
+from dolfinx import mesh as _mesh
 from dolfinx.cpp.mesh import (create_cell_partitioner, entities_to_geometry,
                               is_simplex)
 from dolfinx.fem import assemble_scalar, form
@@ -20,11 +24,8 @@ from dolfinx.mesh import (CellType, DiagonalType, GhostMode, create_box,
                           create_unit_cube, create_unit_interval,
                           create_unit_square, exterior_facet_indices,
                           locate_entities, locate_entities_boundary)
-from mpi4py import MPI
 
-from dolfinx import cpp as _cpp
-from dolfinx import graph
-from dolfinx import mesh as _mesh
+from mpi4py import MPI
 
 
 def submesh_topology_test(mesh, submesh, entity_map, vertex_map, entity_dim):
@@ -501,19 +502,19 @@ def test_empty_rank_mesh(dtype):
     comm = MPI.COMM_WORLD
     cell_type = CellType.triangle
     tdim = 2
-    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, rank=1))
+    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, shape=(2,)))
 
     def partitioner(comm, nparts, local_graph, num_ghost_nodes):
         """Leave cells on the curent rank"""
         dest = np.full(len(cells), comm.rank, dtype=np.int32)
-        return graph.create_adjacencylist(dest)
+        return graph.adjacencylist(dest)
 
     if comm.rank == 0:
         cells = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.int64)
-        cells = graph.create_adjacencylist(cells)
+        cells = graph.adjacencylist(cells)
         x = np.array([[0., 0.], [1., 0.], [1., 1.], [0., 1.]], dtype=dtype)
     else:
-        cells = graph.create_adjacencylist(np.empty((0, 3), dtype=np.int64))
+        cells = graph.adjacencylist(np.empty((0, 3), dtype=np.int64))
         x = np.empty((0, 2), dtype=dtype)
 
     mesh = _mesh.create_mesh(comm, cells, x, domain, partitioner)

@@ -30,7 +30,6 @@ namespace py = pybind11;
 
 namespace dolfinx_wrappers
 {
-
 namespace
 {
 template <typename T>
@@ -50,7 +49,7 @@ void xdmf_real_fn(auto&& m)
       { self.write_meshtags(meshtags, x, geometry_xpath, xpath); },
       py::arg("meshtags"), py::arg("x"), py::arg("geometry_xpath"),
       py::arg("xpath") = "/Xdmf/Domain");
-};
+}
 
 template <typename T, typename U>
 void xdmf_scalar_fn(auto&& m)
@@ -62,7 +61,7 @@ void xdmf_scalar_fn(auto&& m)
       { self.write_function(u, t, mesh_xpath); },
       py::arg("u"), py::arg("t"),
       py::arg("mesh_xpath") = "/Xdmf/Domain/Grid[@GridType='Uniform'][1]");
-};
+}
 
 template <typename T>
 void vtk_real_fn(auto&& m)
@@ -221,8 +220,9 @@ void io(py::module& m)
       {
         if (dofmap.ndim() != 2)
           throw std::runtime_error("Geometry dofmap must be rank 2.");
-        std::experimental::mdspan<const std::int32_t,
-                                  std::experimental::dextents<std::size_t, 2>>
+        MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+            const std::int32_t,
+            MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
             _dofmap(dofmap.data(), dofmap.shape(0), dofmap.shape(1));
         auto [cells, shape]
             = dolfinx::io::extract_vtk_connectivity(_dofmap, cell);

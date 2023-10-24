@@ -10,15 +10,15 @@ from itertools import combinations, product
 
 import numpy as np
 import pytest
-import ufl
-from basix.ufl import element
-from dolfinx.fem import (Constant, Function, FunctionSpace,
-                         VectorFunctionSpace, assemble_matrix, assemble_scalar,
-                         assemble_vector, form)
-from dolfinx.mesh import CellType, create_mesh, meshtags
-from mpi4py import MPI
 
 import dolfinx
+import ufl
+from basix.ufl import element
+from dolfinx.fem import (Constant, Function, assemble_matrix, assemble_scalar,
+                         assemble_vector, form, functionspace)
+from dolfinx.mesh import CellType, create_mesh, meshtags
+
+from mpi4py import MPI
 
 parametrize_cell_types = pytest.mark.parametrize(
     "cell_type",
@@ -62,7 +62,7 @@ def unit_cell(cell_type, dtype, random_order=True):
         ordered_points[j] = points[i]
     cells = np.array([order])
 
-    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, rank=1))
+    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, shape=(ordered_points.shape[1],)))
     mesh = create_mesh(MPI.COMM_WORLD, cells, ordered_points, domain)
     return mesh
 
@@ -122,7 +122,7 @@ def two_unit_cells(cell_type, dtype, agree=False, random_order=True, return_orde
         ordered_points[j] = points[i]
     ordered_cells = np.array([[order[i] for i in c] for c in cells])
 
-    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, rank=1))
+    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, shape=(ordered_points.shape[1],)))
     mesh = create_mesh(MPI.COMM_WORLD, ordered_cells, ordered_points, domain)
     if return_order:
         return mesh, order
@@ -139,7 +139,7 @@ def test_facet_integral(cell_type, dtype):
         mesh = unit_cell(cell_type, xtype)
         tdim = mesh.topology.dim
 
-        V = FunctionSpace(mesh, ("Lagrange", 2))
+        V = functionspace(mesh, ("Lagrange", 2))
         v = Function(V, dtype=dtype)
 
         mesh.topology.create_entities(tdim - 1)
@@ -185,7 +185,8 @@ def test_facet_normals(cell_type, dtype):
         tdim = mesh.topology.dim
         mesh.topology.create_entities(tdim - 1)
 
-        V = VectorFunctionSpace(mesh, ("Lagrange", 1))
+        gdim = mesh.geometry.dim
+        V = functionspace(mesh, ("Lagrange", 1, (gdim,)))
         normal = ufl.FacetNormal(mesh)
         v = Function(V, dtype=dtype)
 
@@ -250,7 +251,7 @@ def test_plus_minus(cell_type, space_type, dtype):
     for count in range(3):
         for agree in [True, False]:
             mesh = two_unit_cells(cell_type, xtype, agree)
-            V = FunctionSpace(mesh, (space_type, 1))
+            V = functionspace(mesh, (space_type, 1))
             v = Function(V, dtype=dtype)
             v.interpolate(lambda x: x[0] - 2 * x[1])
             # Check that these two integrals are equal
@@ -276,9 +277,9 @@ def test_plus_minus_simple_vector(cell_type, pm, dtype):
             # Two cell mesh with randomly numbered points
             mesh, order = two_unit_cells(cell_type, xtype, agree, return_order=True)
             if cell_type in [CellType.interval, CellType.triangle, CellType.tetrahedron]:
-                V = FunctionSpace(mesh, ("DG", 1))
+                V = functionspace(mesh, ("DG", 1))
             else:
-                V = FunctionSpace(mesh, ("DQ", 1))
+                V = functionspace(mesh, ("DQ", 1))
 
             # Assemble vectors v['+'] * dS and v['-'] * dS for a few
             # different numberings
@@ -327,9 +328,9 @@ def test_plus_minus_vector(cell_type, pm1, pm2, dtype):
             # Two cell mesh with randomly numbered points
             mesh, order = two_unit_cells(cell_type, xtype, agree, return_order=True)
             if cell_type in [CellType.interval, CellType.triangle, CellType.tetrahedron]:
-                V = FunctionSpace(mesh, ("DG", 1))
+                V = functionspace(mesh, ("DG", 1))
             else:
-                V = FunctionSpace(mesh, ("DQ", 1))
+                V = functionspace(mesh, ("DQ", 1))
 
             # Assemble vectors with combinations of + and - for a few
             # different numberings
@@ -379,14 +380,14 @@ def test_plus_minus_matrix(cell_type, pm1, pm2, dtype):
         for agree in [True, False]:
             # Two cell mesh with randomly numbered points
             mesh, order = two_unit_cells(cell_type, xtype, agree, return_order=True)
-            V = FunctionSpace(mesh, ("DG", 1))
+            V = functionspace(mesh, ("DG", 1))
             u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
             # Assemble matrices with combinations of + and - for a few
             # different numberings
             a = form(ufl.inner(u(pm1), v(pm2)) * ufl.dS, dtype=dtype)
             result = assemble_matrix(a, [])
-            result.finalize()
+            result.scatter_reverse()
             spaces.append(V)
             results.append(result.to_dense())
             orders.append(order)
@@ -438,9 +439,9 @@ def test_curl(space_type, order, dtype):
     # Assemble vector on 5 randomly numbered cells
     for i in range(5):
         random.shuffle(cell)
-        domain = ufl.Mesh(element("Lagrange", "tetrahedron", 1, rank=1))
+        domain = ufl.Mesh(element("Lagrange", "tetrahedron", 1, shape=(3,)))
         mesh = create_mesh(MPI.COMM_WORLD, [cell], points, domain)
-        V = FunctionSpace(mesh, (space_type, order))
+        V = functionspace(mesh, (space_type, order))
         v = ufl.TestFunction(V)
         f = ufl.as_vector(tuple(1 if i == 0 else 0 for i in range(tdim)))
         L = form(ufl.inner(f, ufl.curl(v)) * ufl.dx)
@@ -486,7 +487,7 @@ def create_quad_mesh(offset, dtype):
                   [0, 0.5 + offset],
                   [1, 0.5 - offset]], dtype=dtype)
     cells = np.array([[0, 1, 2, 3]])
-    ufl_mesh = ufl.Mesh(element("Lagrange", "quadrilateral", 1, rank=1))
+    ufl_mesh = ufl.Mesh(element("Lagrange", "quadrilateral", 1, shape=(2,)))
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh)
     return mesh
 
@@ -505,8 +506,8 @@ def test_div_general_quads_mat(k, dtype):
 
     def assemble_div_matrix(k, offset):
         mesh = create_quad_mesh(offset, dtype=xtype)
-        V = FunctionSpace(mesh, ("DQ", k))
-        W = FunctionSpace(mesh, ("RTCF", k + 1))
+        V = functionspace(mesh, ("DQ", k))
+        W = functionspace(mesh, ("RTCF", k + 1))
         u, w = ufl.TrialFunction(V), ufl.TestFunction(W)
         a = form(ufl.inner(u, ufl.div(w)) * ufl.dx, dtype=dtype)
         A = assemble_matrix(a)
@@ -534,7 +535,7 @@ def test_div_general_quads_vec(k, dtype):
 
     def assemble_div_vector(k, offset):
         mesh = create_quad_mesh(offset, dtype=xtype)
-        V = FunctionSpace(mesh, ("RTCF", k + 1))
+        V = functionspace(mesh, ("RTCF", k + 1))
         v = ufl.TestFunction(V)
         L = form(ufl.inner(Constant(mesh, dtype(1)), ufl.div(v)) * ufl.dx, dtype=dtype)
         b = assemble_vector(L)

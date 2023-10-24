@@ -34,13 +34,13 @@
 #    echo "FROM dolfinx/dolfinx-onbuild:nightly" | docker build -f- .
 #
 
-ARG PYVISTA_VERSION=0.40.0
+ARG PYVISTA_VERSION=0.42.2
 
 # Used to set the correct PYTHONPATH for the real and complex install of
 # DOLFINx
 ARG PYTHON_VERSION=3.10
 # Base image for end-user images
-ARG BASEIMAGE=docker.io/dolfinx/dev-env:current
+ARG BASEIMAGE=ghcr.io/fenics/dolfinx/dev-env:current
 
 FROM ${BASEIMAGE} as dolfinx-onbuild
 LABEL description="DOLFINx in 32-bit real and complex modes (onbuild)"

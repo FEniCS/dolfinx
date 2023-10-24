@@ -11,15 +11,16 @@ import sys
 
 import numpy as np
 import pytest
-from dolfinx.fem import Form, Function, FunctionSpace, IntegralType
-from dolfinx.mesh import create_unit_square
-from mpi4py import MPI
 
 import dolfinx
 from dolfinx import TimingType
 from dolfinx import cpp as _cpp
 from dolfinx import (default_real_type, default_scalar_type, fem, la,
                      list_timings)
+from dolfinx.fem import Form, Function, IntegralType, functionspace
+from dolfinx.mesh import create_unit_square
+
+from mpi4py import MPI
 
 numba = pytest.importorskip("numba")
 
@@ -92,7 +93,7 @@ def test_numba_assembly():
         raise RuntimeError("Unknown scalar type")
 
     mesh = create_unit_square(MPI.COMM_WORLD, 13, 13)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
 
     cells = range(mesh.topology.index_map(mesh.topology.dim).size_local)
 
@@ -105,7 +106,7 @@ def test_numba_assembly():
     L = Form(formtype([V._cpp_object], integrals, [], [], False))
 
     A = dolfinx.fem.assemble_matrix(a)
-    A.finalize()
+    A.scatter_reverse()
     b = dolfinx.fem.assemble_vector(L)
     b.scatter_reverse(dolfinx.la.InsertMode.add)
 
@@ -130,8 +131,8 @@ def test_coefficient():
         raise RuntimeError("Unknown scalar type")
 
     mesh = create_unit_square(MPI.COMM_WORLD, 13, 13)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
-    DG0 = FunctionSpace(mesh, ("DG", 0))
+    V = functionspace(mesh, ("Lagrange", 1))
+    DG0 = functionspace(mesh, ("DG", 0))
     vals = Function(DG0)
     vals.vector.set(2.0)
 
@@ -149,7 +150,7 @@ def test_coefficient():
 @pytest.mark.skip_in_parallel
 def test_cffi_assembly():
     mesh = create_unit_square(MPI.COMM_WORLD, 13, 13, dtype=np.float64)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
 
     if mesh.comm.rank == 0:
         from cffi import FFI
@@ -260,7 +261,7 @@ def test_cffi_assembly():
     L = Form(_cpp.fem.Form_float64([V._cpp_object], integrals, [], [], False))
 
     A = fem.assemble_matrix(a)
-    A.finalize()
+    A.scatter_reverse()
     assert np.isclose(np.sqrt(A.squared_norm()), 56.124860801609124)
 
     b = fem.assemble_vector(L)

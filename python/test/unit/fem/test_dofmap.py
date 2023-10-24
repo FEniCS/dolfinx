@@ -13,7 +13,7 @@ import pytest
 import dolfinx
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx.fem import FunctionSpace, VectorFunctionSpace
+from dolfinx.fem import functionspace
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_interval, create_unit_square)
 
@@ -36,8 +36,8 @@ def test_tabulate_dofs(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
     W0 = element("Lagrange", mesh.basix_cell(), 1)
-    W1 = element("Lagrange", mesh.basix_cell(), 1, rank=1)
-    W = FunctionSpace(mesh, W0 * W1)
+    W1 = element("Lagrange", mesh.basix_cell(), 1, shape=(mesh.geometry.dim,))
+    W = functionspace(mesh, W0 * W1)
 
     L0 = W.sub(0)
     L1 = W.sub(1)
@@ -59,38 +59,40 @@ def test_tabulate_dofs(mesh_factory):
 
 def test_entity_dofs(mesh):
     """Test that num entity dofs is correctly wrapped to dolfinx::DofMap"""
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    gdim = mesh.geometry.dim
+
+    V = functionspace(mesh, ("Lagrange", 1))
     assert V.dofmap.dof_layout.num_entity_dofs(0) == 1
     assert V.dofmap.dof_layout.num_entity_dofs(1) == 0
     assert V.dofmap.dof_layout.num_entity_dofs(2) == 0
 
-    V = VectorFunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1, (gdim,)))
     bs = V.dofmap.dof_layout.block_size
     assert V.dofmap.dof_layout.num_entity_dofs(0) * bs == 2
     assert V.dofmap.dof_layout.num_entity_dofs(1) * bs == 0
     assert V.dofmap.dof_layout.num_entity_dofs(2) * bs == 0
 
-    V = FunctionSpace(mesh, ("Lagrange", 2))
+    V = functionspace(mesh, ("Lagrange", 2))
     assert V.dofmap.dof_layout.num_entity_dofs(0) == 1
     assert V.dofmap.dof_layout.num_entity_dofs(1) == 1
     assert V.dofmap.dof_layout.num_entity_dofs(2) == 0
 
-    V = FunctionSpace(mesh, ("Lagrange", 3))
+    V = functionspace(mesh, ("Lagrange", 3))
     assert V.dofmap.dof_layout.num_entity_dofs(0) == 1
     assert V.dofmap.dof_layout.num_entity_dofs(1) == 2
     assert V.dofmap.dof_layout.num_entity_dofs(2) == 1
 
-    V = FunctionSpace(mesh, ("DG", 0))
+    V = functionspace(mesh, ("DG", 0))
     assert V.dofmap.dof_layout.num_entity_dofs(0) == 0
     assert V.dofmap.dof_layout.num_entity_dofs(1) == 0
     assert V.dofmap.dof_layout.num_entity_dofs(2) == 1
 
-    V = FunctionSpace(mesh, ("DG", 1))
+    V = functionspace(mesh, ("DG", 1))
     assert V.dofmap.dof_layout.num_entity_dofs(0) == 0
     assert V.dofmap.dof_layout.num_entity_dofs(1) == 0
     assert V.dofmap.dof_layout.num_entity_dofs(2) == 3
 
-    V = VectorFunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1, (gdim,)))
     bs = V.dofmap.dof_layout.block_size
     for i, cdofs in enumerate([[0, 1], [2, 3], [4, 5]]):
         dofs = [bs * d + b for d in V.dofmap.dof_layout.entity_dofs(0, i)
@@ -109,7 +111,7 @@ def test_entity_closure_dofs(mesh_factory):
     tdim = mesh.topology.dim
 
     for degree in (1, 2, 3):
-        V = FunctionSpace(mesh, ("Lagrange", degree))
+        V = functionspace(mesh, ("Lagrange", degree))
         for d in range(tdim + 1):
             map = mesh.topology.index_map(d)
             num_entities = map.size_local + map.num_ghosts
@@ -140,25 +142,26 @@ def test_entity_closure_dofs(mesh_factory):
         assert set(V.dofmap.entity_closure_dofs(mesh, d, all_cells)) == set(range(V.dim))
 
 
-def test_block_size(mesh):
+def test_block_size():
     meshes = [create_unit_square(MPI.COMM_WORLD, 8, 8),
               create_unit_cube(MPI.COMM_WORLD, 4, 4, 4),
               create_unit_square(MPI.COMM_WORLD, 8, 8, CellType.quadrilateral),
               create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, CellType.hexahedron)]
     for mesh in meshes:
         P2 = element("Lagrange", mesh.basix_cell(), 2)
-        V = FunctionSpace(mesh, P2)
+        V = functionspace(mesh, P2)
         assert V.dofmap.bs == 1
 
         # Only BlockedElements have index_map_bs > 1
-        V = FunctionSpace(mesh, mixed_element([P2, P2]))
+        V = functionspace(mesh, mixed_element([P2, P2]))
         assert V.dofmap.index_map_bs == 1
 
         for i in range(1, 6):
-            W = FunctionSpace(mesh, mixed_element(i * [P2]))
+            W = functionspace(mesh, mixed_element(i * [P2]))
             assert W.dofmap.index_map_bs == 1
 
-        V = VectorFunctionSpace(mesh, ("Lagrange", 2))
+        gdim = mesh.geometry.dim
+        V = functionspace(mesh, ("Lagrange", 2, (gdim,)))
         assert V.dofmap.index_map_bs == mesh.geometry.dim
 
 
@@ -167,7 +170,7 @@ def test_block_size_real():
     mesh = create_unit_interval(MPI.COMM_WORLD, 12)
     V = element('DG', mesh.basix_cell(), 0)
     R = element('R', mesh.basix_cell(), 0)
-    X = FunctionSpace(mesh, V * R)
+    X = functionspace(mesh, V * R)
     assert X.dofmap.index_map_bs == 1
 
 
@@ -180,12 +183,12 @@ def test_local_dimension(mesh_factory):
     mesh = func(*args)
 
     v = element("Lagrange", mesh.basix_cell(), 1)
-    q = element("Lagrange", mesh.basix_cell(), 1, rank=1)
+    q = element("Lagrange", mesh.basix_cell(), 1, shape=(mesh.geometry.dim,))
     w = v * q
 
-    V = FunctionSpace(mesh, v)
-    Q = FunctionSpace(mesh, q)
-    W = FunctionSpace(mesh, w)
+    V = functionspace(mesh, v)
+    Q = functionspace(mesh, q)
+    W = functionspace(mesh, w)
     for space in [V, Q, W]:
         dofmap = space.dofmap
         local_to_global_map = dofmap.tabulate_local_to_global_dofs()
@@ -200,7 +203,7 @@ def test_local_dimension(mesh_factory):
 def test_readonly_view_local_to_global_unwoned(mesh):
     """Test that local_to_global_unwoned() returns readonly
     view into the data; in particular test lifetime of data owner"""
-    V = FunctionSpace(mesh, "P", 1)
+    V = functionspace(mesh, "P", 1)
     dofmap = V.dofmap
     index_map = dofmap().index_map
 
@@ -245,10 +248,10 @@ def test_readonly_view_local_to_global_unwoned(mesh):
 def test_higher_order_coordinate_map(points, celltype, order):
     """Computes physical coordinates of a cell, based on the coordinate map."""
     cells = np.array([range(len(points))])
-    domain = ufl.Mesh(element("Lagrange", celltype.name, order, rank=1))
+    domain = ufl.Mesh(element("Lagrange", celltype.name, order, shape=(points.shape[1],)))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
 
-    V = FunctionSpace(mesh, ("Lagrange", 2))
+    V = functionspace(mesh, ("Lagrange", 2))
     X = V.element.interpolation_points()
     coord_dofs = mesh.geometry.dofmap
     x_g = mesh.geometry.x
@@ -293,9 +296,9 @@ def test_higher_order_tetra_coordinate_map(order):
                            [0, 1, 3 / 2], [1 / 2, 0, 3 / 2], [1 / 2, 1, 0], [0, 0, 3 / 2],
                            [0, 1, 0], [1 / 2, 0, 0]])
     cells = np.array([range(len(points))])
-    domain = ufl.Mesh(element("Lagrange", celltype.name, order, rank=1))
+    domain = ufl.Mesh(element("Lagrange", celltype.name, order, shape=(3,)))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
-    V = FunctionSpace(mesh, ("Lagrange", order))
+    V = functionspace(mesh, ("Lagrange", order))
     X = V.element.interpolation_points()
     coord_dofs = mesh.geometry.dofmap
     x_g = mesh.geometry.x

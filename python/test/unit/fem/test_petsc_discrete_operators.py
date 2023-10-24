@@ -7,17 +7,18 @@
 
 import numpy as np
 import pytest
+
 import ufl
 from basix.ufl import element
+from dolfinx import default_real_type
 from dolfinx.cpp.fem.petsc import discrete_gradient, interpolation_matrix
-from dolfinx.fem import (Expression, Function, FunctionSpace,
-                         VectorFunctionSpace, assemble_scalar, form)
+from dolfinx.fem import (Expression, Function, assemble_scalar, form,
+                         functionspace)
 from dolfinx.mesh import (CellType, GhostMode, create_mesh, create_unit_cube,
                           create_unit_square)
+
 from mpi4py import MPI
 from petsc4py import PETSc
-
-from dolfinx import default_real_type
 
 
 @pytest.mark.skip_in_parallel
@@ -27,8 +28,8 @@ from dolfinx import default_real_type
                                   create_unit_cube(MPI.COMM_WORLD, 4, 3, 7, ghost_mode=GhostMode.shared_facet)])
 def test_gradient(mesh):
     """Test discrete gradient computation for lowest order elements."""
-    V = FunctionSpace(mesh, ("Lagrange", 1))
-    W = FunctionSpace(mesh, ("Nedelec 1st kind H(curl)", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
+    W = functionspace(mesh, ("Nedelec 1st kind H(curl)", 1))
     G = discrete_gradient(V._cpp_object, W._cpp_object)
     assert G.getRefCount() == 1
     num_edges = mesh.topology.index_map(1).size_global
@@ -66,8 +67,8 @@ def test_gradient_interpolation(cell_type, p, q):
         family0 = "Lagrange"
         family1 = "Nedelec 1st kind H(curl)"
 
-    V = FunctionSpace(mesh, (family0, p))
-    W = FunctionSpace(mesh, (family1, q))
+    V = functionspace(mesh, (family0, p))
+    W = functionspace(mesh, (family1, q))
     G = discrete_gradient(V._cpp_object, W._cpp_object)
     G.assemble()
 
@@ -120,7 +121,7 @@ def test_interpolation_matrix(cell_type, p, q, from_lagrange):
         mesh = create_unit_cube(comm, 3, 2, 2, ghost_mode=GhostMode.none, cell_type=cell_type)
         lagrange = "Lagrange" if from_lagrange else "DG"
         nedelec = "Nedelec 1st kind H(curl)"
-    v_el = element(lagrange, mesh.basix_cell(), p, rank=1)
+    v_el = element(lagrange, mesh.basix_cell(), p, shape=(mesh.geometry.dim,))
     s_el = element(nedelec, mesh.basix_cell(), q)
     if from_lagrange:
         el0 = v_el
@@ -129,8 +130,8 @@ def test_interpolation_matrix(cell_type, p, q, from_lagrange):
         el0 = s_el
         el1 = v_el
 
-    V = FunctionSpace(mesh, el0)
-    W = FunctionSpace(mesh, el1)
+    V = functionspace(mesh, el0)
+    W = functionspace(mesh, el1)
     G = interpolation_matrix(V._cpp_object, W._cpp_object)
     G.assemble()
 
@@ -169,10 +170,11 @@ def test_nonaffine_discrete_operator():
 
     cells = np.array([range(len(points))], dtype=np.int32)
     cell_type = CellType.hexahedron
-    domain = ufl.Mesh(element("Lagrange", cell_type.name, 2, rank=1))
+    domain = ufl.Mesh(element("Lagrange", cell_type.name, 2, shape=(3,)))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
-    W = VectorFunctionSpace(mesh, ("DG", 1))
-    V = FunctionSpace(mesh, ("NCE", 4))
+    gdim = mesh.geometry.dim
+    W = functionspace(mesh, ("DG", 1, (gdim,)))
+    V = functionspace(mesh, ("NCE", 4))
     w, v = Function(W), Function(V)
     w.interpolate(lambda x: x)
     v.interpolate(w)

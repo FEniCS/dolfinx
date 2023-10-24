@@ -92,28 +92,28 @@ jobs:
       - name: Set baseimage
         run: |
           USER_INPUT=${{ github.event.inputs.baseimage }}
-          echo "BASEIMAGE=${USER_INPUT:-docker.io/dolfinx/dev-env:current}" >> $GITHUB_ENV
+          echo "BASEIMAGE=${USER_INPUT:-ghcr.io/fenics/dolfinx/dev-env:current}" >> $GITHUB_ENV
 
       - name: Checkout basix
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: "FEniCS/basix"
           path: "basix"
           ref: ${{ env.BASIX_REF }}
       - name: Checkout UFL
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: "FEniCS/ufl"
           path: "ufl"
           ref: ${{ env.UFL_REF }}
       - name: Checkout FFCx
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: "FEniCS/ffcx"
           path: "ffcx"
           ref: ${{ env.FFCX_REF }}
       - name: Checkout DOLFINx
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: "FEniCS/dolfinx"
           path: "dolfinx"
@@ -180,9 +180,9 @@ jobs:
         if: ${{ !contains(github.event.inputs.dockerfile, 'dummy') }}
         run: |
           docker run --rm docker.io/dolfinx/dolfinx:${{ env.TAG }} \
-            python3 -c "import dolfinx; from dolfinx.fem import FunctionSpace; from dolfinx.mesh import create_unit_square; from mpi4py import MPI; mesh = create_unit_square(MPI.COMM_WORLD, 10, 10); V = FunctionSpace(mesh, ('Lagrange', 1));"
+            python3 -c "import dolfinx; from dolfinx.fem import functionspace; from dolfinx.mesh import create_unit_square; from mpi4py import MPI; mesh = create_unit_square(MPI.COMM_WORLD, 10, 10); V = functionspace(mesh, ('Lagrange', 1));"
           docker run --rm docker.io/dolfinx/dolfinx:${{ env.TAG }} \
-            /bin/bash -c "source /usr/local/bin/dolfinx-complex-mode && python3 -c $'import dolfinx; from dolfinx.fem import FunctionSpace; from dolfinx.mesh import create_unit_square; from mpi4py import MPI; mesh = create_unit_square(MPI.COMM_WORLD, 10, 10); V = FunctionSpace(mesh, (\"Lagrange\", 1));'"
+            /bin/bash -c "source /usr/local/bin/dolfinx-complex-mode && python3 -c $'import dolfinx; from dolfinx.fem import functionspace; from dolfinx.mesh import create_unit_square; from mpi4py import MPI; mesh = create_unit_square(MPI.COMM_WORLD, 10, 10); V = functionspace(mesh, (\"Lagrange\", 1));'"
 
       - name: Login to Docker Hub
         uses: docker/login-action@v2

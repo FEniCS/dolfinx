@@ -48,16 +48,16 @@ class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
         return n, converged
 
     @property
-    def A(self) -> PETSc.Mat:
+    def A(self) -> PETSc.Mat:  # type: ignore
         """Jacobian matrix"""
         return self._A
 
     @property
-    def b(self) -> PETSc.Vec:
+    def b(self) -> PETSc.Vec:  # type: ignore
         """Residual vector"""
         return self._b
 
-    def setP(self, P: types.FunctionType, Pmat: PETSc.Mat):
+    def setP(self, P: types.FunctionType, Pmat: PETSc.Mat):  # type: ignore
         """
         Set the function for computing the preconditioner matrix
 

@@ -12,20 +12,21 @@
 #    docker build --target dev-env --file dolfinx/docker/Dockerfile.test-env --build-arg PETSC_SLEPC_OPTFLAGS="-O2 -march=native" .
 #
 
-ARG ADIOS2_VERSION=2.9.0
-ARG DOXYGEN_VERSION=1_9_7
+ARG ADIOS2_VERSION=2.9.1
+ARG DOXYGEN_VERSION=1_9_8
 ARG GMSH_VERSION=4_11_1
-ARG HDF5_SERIES=1.12
+ARG HDF5_SERIES=1.14
 ARG HDF5_PATCH=2
+ARG HDF5_FIX=
 ARG KAHIP_VERSION=3.15
 ARG NUMPY_VERSION=1.23.2
-ARG PYBIND11_VERSION=2.10.4
-ARG PETSC_VERSION=3.19.2
-ARG SLEPC_VERSION=3.19.1
+ARG PYBIND11_VERSION=2.11.1
+ARG PETSC_VERSION=3.20.0
+ARG SLEPC_VERSION=3.20.0
 
 ARG MPICH_VERSION=4.1.2
 ARG OPENMPI_SERIES=4.1
-ARG OPENMPI_PATCH=5
+ARG OPENMPI_PATCH=6
 
 ########################################
 
@@ -37,6 +38,7 @@ ARG DOXYGEN_VERSION
 ARG GMSH_VERSION
 ARG HDF5_SERIES
 ARG HDF5_PATCH
+ARG HDF5_FIX
 ARG PYBIND11_VERSION
 ARG PETSC_VERSION
 ARG SLEPC_VERSION
@@ -130,7 +132,7 @@ RUN apt-get -qq update && \
 
 # Install MPI
 RUN if [ "$MPI" = "mpich" ]; then \
-    wget http://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${MPICH_VERSION}.tar.gz && \
+    wget https://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${MPICH_VERSION}.tar.gz && \
     tar xfz mpich-${MPICH_VERSION}.tar.gz  && \
     cd mpich-${MPICH_VERSION}  && \
     ./configure ${MPICH_CONFIGURE_OPTIONS} && \
@@ -169,18 +171,18 @@ RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.ta
 # HDF5 overrides CMAKE_INSTALL_PREFIX by default, hence it is set
 # below to ensure that HDF5 is installed into a path where it can be
 # found.
-RUN wget -nc --quiet https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES}/hdf5-${HDF5_SERIES}.${HDF5_PATCH}/src/hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
-    tar xfz hdf5-${HDF5_SERIES}.${HDF5_PATCH}.tar.gz && \
-    cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release -DHDF5_ENABLE_PARALLEL=on -DHDF5_ENABLE_Z_LIB_SUPPORT=on -B build-dir -S hdf5-${HDF5_SERIES}.${HDF5_PATCH} && \
+RUN wget -nc --quiet https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES}/hdf5-${HDF5_SERIES}.${HDF5_PATCH}/src/hdf5-${HDF5_SERIES}.${HDF5_PATCH}${HDF5_FIX}.tar.gz && \
+    tar xfz hdf5-${HDF5_SERIES}.${HDF5_PATCH}${HDF5_FIX}.tar.gz && \
+    cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release -DHDF5_ENABLE_PARALLEL=on -DHDF5_ENABLE_Z_LIB_SUPPORT=on -B build-dir -S hdf5-${HDF5_SERIES}.${HDF5_PATCH}${HDF5_FIX} && \
     cmake --build build-dir && \
     cmake --install build-dir && \
     rm -rf /tmp/*
 
-# Install ADIOS2
+# Install ADIOS2 (Python interface in /usr/local/lib), same as GMSH
 RUN wget -nc --quiet https://github.com/ornladios/ADIOS2/archive/v${ADIOS2_VERSION}.tar.gz -O adios2-v${ADIOS2_VERSION}.tar.gz && \
     mkdir -p adios2-v${ADIOS2_VERSION} && \
     tar -xf adios2-v${ADIOS2_VERSION}.tar.gz -C adios2-v${ADIOS2_VERSION} --strip-components 1 && \
-    cmake -G Ninja -DADIOS2_USE_HDF5=on -DADIOS2_USE_Fortran=off -DBUILD_TESTING=off -DADIOS2_BUILD_EXAMPLES=off -DADIOS2_USE_ZeroMQ=off -B build-dir -S ./adios2-v${ADIOS2_VERSION} && \
+    cmake -G Ninja -DADIOS2_USE_HDF5=on -DCMAKE_INSTALL_PYTHONDIR=/usr/local/lib/ -DADIOS2_USE_Fortran=off -DBUILD_TESTING=off -DADIOS2_BUILD_EXAMPLES=off -DADIOS2_USE_ZeroMQ=off -B build-dir -S ./adios2-v${ADIOS2_VERSION} && \
     cmake --build build-dir && \
     cmake --install build-dir && \
     rm -rf /tmp/*
@@ -199,8 +201,7 @@ ENV PYTHONPATH=/usr/local/lib:$PYTHONPATH
 ENV PETSC_DIR=/usr/local/petsc SLEPC_DIR=/usr/local/slepc
 RUN apt-get -qq update && \
     apt-get -y install bison flex && \
-    wget -nc --quiet http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${PETSC_VERSION}.tar.gz -O petsc-${PETSC_VERSION}.tar.gz && \
-    mkdir -p ${PETSC_DIR} && tar -xf petsc-${PETSC_VERSION}.tar.gz -C ${PETSC_DIR} --strip-components 1 && \
+    git clone -b v${PETSC_VERSION}  https://gitlab.com/petsc/petsc.git ${PETSC_DIR} && \
     cd ${PETSC_DIR} && \
     # Real32, 32-bit int
     ./configure \
@@ -220,7 +221,7 @@ RUN apt-get -qq update && \
     --download-superlu_dist \
     --with-scalar-type=real \
     --with-precision=single && \
-    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real32-32 ${MAKEFLAGS} all && \
+    make PETSC_ARCH=linux-gnu-real32-32 ${MAKEFLAGS} all && \
     # Complex64, 32-bit int
     ./configure \
     PETSC_ARCH=linux-gnu-complex64-32 \
@@ -237,7 +238,7 @@ RUN apt-get -qq update && \
     --download-scalapack \
     --with-scalar-type=complex \
     --with-precision=single && \
-    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex64-32 ${MAKEFLAGS} all && \
+    make PETSC_ARCH=linux-gnu-complex64-32 ${MAKEFLAGS} all && \
     # Real64, 32-bit int
     ./configure \
     PETSC_ARCH=linux-gnu-real64-32 \
@@ -259,7 +260,7 @@ RUN apt-get -qq update && \
     --download-superlu_dist \
     --with-scalar-type=real \
     --with-precision=double && \
-    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real64-32 ${MAKEFLAGS} all && \
+    make PETSC_ARCH=linux-gnu-real64-32 ${MAKEFLAGS} all && \
     # Complex128, 32-bit int
     ./configure \
     PETSC_ARCH=linux-gnu-complex128-32 \
@@ -280,7 +281,7 @@ RUN apt-get -qq update && \
     --download-superlu_dist \
     --with-scalar-type=complex \
     --with-precision=double && \
-    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex128-32 ${MAKEFLAGS} all && \
+    make PETSC_ARCH=linux-gnu-complex128-32 ${MAKEFLAGS} all && \
     # Real64, 64-bit int
     ./configure \
     PETSC_ARCH=linux-gnu-real64-64 \
@@ -299,7 +300,7 @@ RUN apt-get -qq update && \
     --download-superlu_dist \
     --with-scalar-type=real \
     --with-precision=double && \
-    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real64-64 ${MAKEFLAGS} all && \
+    make PETSC_ARCH=linux-gnu-real64-64 ${MAKEFLAGS} all && \
     # Complex128, 64-bit int
     ./configure \
     PETSC_ARCH=linux-gnu-complex128-64 \
@@ -318,10 +319,9 @@ RUN apt-get -qq update && \
     --download-superlu_dist \
     --with-scalar-type=complex \
     --with-precision=double && \
-    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex128-64 ${MAKEFLAGS} all && \
+    make PETSC_ARCH=linux-gnu-complex128-64 ${MAKEFLAGS} all && \
     # Install petsc4py
     cd src/binding/petsc4py && \
-    pip3 install --no-cache-dir Cython==0.29.32 && \
     PETSC_ARCH=linux-gnu-real32-32:linux-gnu-complex64-32:linux-gnu-real64-32:linux-gnu-complex128-32:linux-gnu-real64-64:linux-gnu-complex128-64 pip3 install --no-cache-dir -v . && \
     # Cleanup
     apt-get -y purge bison flex && \
@@ -341,8 +341,7 @@ RUN apt-get -qq update && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install SLEPc
-RUN wget -nc --quiet https://gitlab.com/slepc/slepc/-/archive/v${SLEPC_VERSION}/slepc-v${SLEPC_VERSION}.tar.gz && \
-    mkdir -p ${SLEPC_DIR} && tar -xf slepc-v${SLEPC_VERSION}.tar.gz -C ${SLEPC_DIR} --strip-components 1 && \
+RUN git clone -b v${SLEPC_VERSION} https://gitlab.com/slepc/slepc.git ${SLEPC_DIR} && \
     cd ${SLEPC_DIR} && \
     export PETSC_ARCH=linux-gnu-real32-32 && \
     ./configure && \

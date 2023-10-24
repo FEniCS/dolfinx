@@ -9,6 +9,7 @@ Functions in this module generally apply functions in :mod:`dolfinx.fem`
 to PETSc linear algebra objects and handle any PETSc-specific
 preparation."""
 
+# mypy: ignore-errors
 
 from __future__ import annotations
 
@@ -17,9 +18,9 @@ import functools
 import os
 import typing
 
-import petsc4py
-import petsc4py.lib
 import ufl
+from dolfinx import cpp as _cpp
+from dolfinx import la
 from dolfinx.cpp.fem import pack_coefficients as _pack_coefficients
 from dolfinx.cpp.fem import pack_constants as _pack_constants
 from dolfinx.fem import assemble
@@ -30,10 +31,10 @@ from dolfinx.fem.forms import extract_function_spaces as _extract_spaces
 from dolfinx.fem.forms import form as _create_form
 from dolfinx.fem.function import Function as _Function
 from dolfinx.la import create_petsc_vector
-from petsc4py import PETSc
 
-from dolfinx import cpp as _cpp
-from dolfinx import la
+import petsc4py
+import petsc4py.lib
+from petsc4py import PETSc
 
 __all__ = ["create_vector", "create_vector_block", "create_vector_nest",
            "create_matrix", "create_matrix_block", "create_matrix_nest",
@@ -553,7 +554,10 @@ class LinearProblem:
     """
 
     def __init__(self, a: ufl.Form, L: ufl.Form, bcs: typing.List[DirichletBC] = [],
-                 u: typing.Optional[_Function] = None, petsc_options={}, form_compiler_options={}, jit_options={}):
+                 u: typing.Optional[_Function] = None,
+                 petsc_options: typing.Optional[dict] = None,
+                 form_compiler_options: typing.Optional[dict] = None,
+                 jit_options: typing.Optional[dict] = None):
         """Initialize solver for a linear variational problem.
 
         Args:
@@ -607,8 +611,9 @@ class LinearProblem:
         # Set PETSc options
         opts = PETSc.Options()
         opts.prefixPush(problem_prefix)
-        for k, v in petsc_options.items():
-            opts[k] = v
+        if petsc_options is not None:
+            for k, v in petsc_options.items():
+                opts[k] = v
         opts.prefixPop()
         self._solver.setFromOptions()
 
@@ -682,7 +687,8 @@ class NonlinearProblem:
     """
 
     def __init__(self, F: ufl.form.Form, u: _Function, bcs: typing.List[DirichletBC] = [],
-                 J: ufl.form.Form = None, form_compiler_options={}, jit_options={}):
+                 J: ufl.form.Form = None, form_compiler_options: typing.Optional[dict] = None,
+                 jit_options: typing.Optional[dict] = None):
         """Initialize solver for solving a non-linear problem using Newton's method, :math:`(dF/du)(u) du = -F(u)`.
 
         Args:

@@ -66,27 +66,27 @@ public:
 
   /// @brief Set the offsets for each group of entities of a particular
   /// dimension. See `entity_group_offsets`.
-  ///
   /// @param dim Dimension of the entities
   /// @param offsets The offsets
   void set_entity_group_offsets(int dim,
                                 const std::vector<std::int32_t>& offsets);
 
   /// @brief Get the offsets for each group of entities of a particular
-  /// dimension. The topology may consist of more than one cell type
-  /// or facet type. In that case, the cells of the same types are
-  /// grouped together in blocks, firstly for regular cells, then
-  /// repeated for ghost cells. For example, a mesh with two
-  /// triangles, three quads and no ghosts would have offsets: 0, 2,
-  /// 5, 5, 5. A mesh with twenty tetrahedra and two ghost tetrahedra
-  /// has offsets: 0, 20, 22.
+  /// dimension.
+  ///
+  /// The topology may consist of more than one cell type or facet type.
+  /// In that case, the cells of the same types are grouped together in
+  /// blocks, firstly for regular cells, then repeated for ghost cells.
+  /// For example, a mesh with two triangles, three quads and no ghosts
+  /// would have offsets: 0, 2, 5, 5, 5. A mesh with twenty tetrahedra
+  /// and two ghost tetrahedra has offsets: 0, 20, 22.
   /// @param dim Dimension of the entities
   /// @return The offsets
   const std::vector<std::int32_t>& entity_group_offsets(int dim) const;
 
   /// @todo Merge with set_connectivity
   ///
-  /// Set the IndexMap for dimension dim
+  /// @brief Set the IndexMap for dimension dim
   /// @warning This is experimental and likely to change
   void set_index_map(int dim, std::shared_ptr<const common::IndexMap> map);
 
@@ -114,7 +114,7 @@ public:
   void set_connectivity(std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
                         int d0, int d1);
 
-  /// Returns the permutation information
+  /// @brief Returns the permutation information
   const std::vector<std::uint32_t>& get_cell_permutation_info() const;
 
   /// @brief Get the permutation number to apply to a facet.
@@ -131,7 +131,7 @@ public:
   /// computed
   const std::vector<std::uint8_t>& get_facet_permutations() const;
 
-  /// Cell type
+  /// @brief Cell type
   /// @return Cell types that the topology is for
   std::vector<CellType> cell_types() const noexcept;
 
@@ -147,10 +147,11 @@ public:
   /// @param[in] d1 Topological dimension
   void create_connectivity(int d0, int d1);
 
-  /// Compute entity permutations and reflections
+  /// @brief Compute entity permutations and reflections.
   void create_entity_permutations();
 
-  /// List of inter-process facets, if facet topology has been computed
+  /// @brief List of inter-process facets, if facet topology has been
+  /// computed.
   const std::vector<std::int32_t>& interprocess_facets() const;
 
   /// Original cell index

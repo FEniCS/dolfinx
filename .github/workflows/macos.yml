@@ -56,7 +56,7 @@ jobs:
           python -m pip install git+https://github.com/FEniCS/ufl.git
           python -m pip install git+https://github.com/FEniCS/ffcx.git
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           path: dolfinx
 

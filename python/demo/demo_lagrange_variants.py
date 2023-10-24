@@ -18,16 +18,18 @@
 # We begin this demo by importing the required modules.
 
 # +
-import basix
-import basix.ufl
 import matplotlib.pylab as plt
 import numpy as np
+
+import basix
+import basix.ufl
 import ufl
+from dolfinx import default_scalar_type, fem, mesh
 from dolfinx.fem.petsc import LinearProblem
-from mpi4py import MPI
 from ufl import ds, dx, grad, inner
 
-from dolfinx import default_scalar_type, fem, mesh
+from mpi4py import MPI
+
 # -
 
 # Note that Basix and the Basix UFL wrapper are imported directly. Basix
@@ -113,7 +115,7 @@ ufl_element = basix.ufl.element(basix.ElementFamily.P, basix.CellType.triangle, 
 msh = mesh.create_rectangle(comm=MPI.COMM_WORLD,
                             points=((0.0, 0.0), (2.0, 1.0)), n=(32, 16),
                             cell_type=mesh.CellType.triangle,)
-V = fem.FunctionSpace(msh, ufl_element)
+V = fem.functionspace(msh, ufl_element)
 facets = mesh.locate_entities_boundary(msh, dim=1,
                                        marker=lambda x: np.logical_or(np.isclose(x[0], 0.0),
                                                                       np.isclose(x[0], 2.0)))
@@ -158,7 +160,7 @@ u_exact = saw_tooth(x[0])
 
 for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warped]:
     ufl_element = basix.ufl.element(basix.ElementFamily.P, basix.CellType.interval, 10, variant)
-    V = fem.FunctionSpace(msh, ufl_element)
+    V = fem.functionspace(msh, ufl_element)
     uh = fem.Function(V)
     uh.interpolate(lambda x: saw_tooth(x[0]))
     if MPI.COMM_WORLD.size == 1:  # Skip this plotting in parallel
@@ -173,8 +175,8 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
         plt.plot(pts, values, "r-")
         plt.legend(["function", "approximation"])
         plt.ylim([-0.1, 0.4])
-        plt.title(variant.name)
-        plt.savefig(f"demo_lagrange_variants_interpolation_{variant.name}.png")
+        plt.title(variant.__name__)
+        plt.savefig(f"demo_lagrange_variants_interpolation_{variant.__name__}.png")
         plt.clf()
 # -
 
@@ -197,12 +199,12 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
 # +
 for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warped]:
     ufl_element = basix.ufl.element(basix.ElementFamily.P, basix.CellType.interval, 10, variant)
-    V = fem.FunctionSpace(msh, ufl_element)
+    V = fem.functionspace(msh, ufl_element)
     uh = fem.Function(V)
     uh.interpolate(lambda x: saw_tooth(x[0]))
     M = fem.form((u_exact - uh)**2 * dx)
     error = msh.comm.allreduce(fem.assemble_scalar(M), op=MPI.SUM)
-    print(f"Computed L2 interpolation error ({variant.name}):", error ** 0.5)
+    print(f"Computed L2 interpolation error ({variant.__name__}):", error ** 0.5)
 # -
 
 # ## Available Lagrange variants

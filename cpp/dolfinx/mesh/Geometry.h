@@ -47,9 +47,13 @@ public:
   /// @param[in] dim The geometric dimension (`0 < dim <= 3`).
   /// @param[in] input_global_indices The 'global' input index of each
   /// point, commonly from a mesh input file.
-  template <std::convertible_to<std::vector<std::int32_t>> U,
-            std::convertible_to<std::vector<T>> V,
-            std::convertible_to<std::vector<std::int64_t>> W>
+  template <typename U, typename V, typename W>
+    requires std::is_convertible_v<std::remove_cvref_t<U>,
+                                   std::vector<std::int32_t>>
+                 and std::is_convertible_v<std::remove_cvref_t<V>,
+                                           std::vector<T>>
+                 and std::is_convertible_v<std::remove_cvref_t<W>,
+                                           std::vector<std::int64_t>>
   Geometry(std::shared_ptr<const common::IndexMap> index_map, U&& dofmap,
            const std::vector<fem::CoordinateElement<
                typename
@@ -84,13 +88,15 @@ public:
   int dim() const { return _dim; }
 
   /// DOF map
-  std::experimental::mdspan<const std::int32_t,
-                            std::experimental::dextents<std::size_t, 2>>
+  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      const std::int32_t,
+      MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
   dofmap() const
   {
     int ndofs = _cmaps[0].dim();
-    return std::experimental::mdspan<
-        const std::int32_t, std::experimental::dextents<std::size_t, 2>>(
+    return MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        const std::int32_t,
+        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>(
         _dofmap.data(), _dofmap.size() / ndofs, ndofs);
   }
 
@@ -274,8 +280,6 @@ std::pair<mesh::Geometry<T>, std::vector<int32_t>>
 create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
                    int dim, std::span<const std::int32_t> subentity_to_entity)
 {
-  namespace stdex = std::experimental;
-
   if (geometry.cmaps().size() > 1)
     throw std::runtime_error("Mixed topology not supported");
 
@@ -309,7 +313,8 @@ create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
       assert(it != cell_entities.end());
       std::size_t local_entity = std::distance(cell_entities.begin(), it);
 
-      auto xc = stdex::submdspan(xdofs, cell, stdex::full_extent);
+      auto xc = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+          submdspan(xdofs, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
       for (std::int32_t entity_dof : closure_dofs[dim][local_entity])
         x_indices.push_back(xc[entity_dof]);
     }

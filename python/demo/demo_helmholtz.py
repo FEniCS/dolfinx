@@ -23,7 +23,7 @@
 import numpy as np
 
 import ufl
-from dolfinx.fem import Function, FunctionSpace, assemble_scalar, form
+from dolfinx.fem import Function, assemble_scalar, form, functionspace
 from dolfinx.fem.petsc import LinearProblem
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import create_unit_square
@@ -45,13 +45,13 @@ msh = create_unit_square(MPI.COMM_WORLD, n_elem, n_elem)
 n = ufl.FacetNormal(msh)
 
 # Source amplitude
-if np.issubdtype(PETSc.ScalarType, np.complexfloating):
-    A = PETSc.ScalarType(1 + 1j)
+if np.issubdtype(PETSc.ScalarType, np.complexfloating):  # type: ignore
+    A = PETSc.ScalarType(1 + 1j)  # type: ignore
 else:
     A = 1
 
 # Test and trial function space
-V = FunctionSpace(msh, ("Lagrange", deg))
+V = functionspace(msh, ("Lagrange", deg))
 
 # Define variational problem
 u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
@@ -78,7 +78,7 @@ with XDMFFile(MPI.COMM_WORLD, "out_helmholtz/plane_wave.xdmf", "w", encoding=XDM
 
 # +
 # Function space for exact solution - need it to be higher than deg
-V_exact = FunctionSpace(msh, ("Lagrange", deg + 3))
+V_exact = functionspace(msh, ("Lagrange", deg + 3))
 u_exact = Function(V_exact)
 u_exact.interpolate(lambda x: A * np.cos(k0 * x[0]) * np.cos(k0 * x[1]))
 

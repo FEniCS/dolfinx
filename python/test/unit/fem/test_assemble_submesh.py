@@ -8,17 +8,18 @@
 
 import numpy as np
 import pytest
+
 import ufl
+from dolfinx import default_scalar_type, fem, la
 from dolfinx.mesh import (GhostMode, create_box, create_rectangle,
                           create_submesh, create_unit_cube, create_unit_square,
                           locate_entities, locate_entities_boundary)
-from mpi4py import MPI
 
-from dolfinx import default_scalar_type, fem, la
+from mpi4py import MPI
 
 
 def assemble(mesh, space, k):
-    V = fem.FunctionSpace(mesh, (space, k))
+    V = fem.functionspace(mesh, (space, k))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     dx = ufl.Measure("dx", domain=mesh)
     ds = ufl.Measure("ds", domain=mesh)
@@ -37,7 +38,7 @@ def assemble(mesh, space, k):
     bc = fem.dirichletbc(bc_func, dofs)
 
     A = fem.assemble_matrix(a, bcs=[bc])
-    A.finalize()
+    A.scatter_reverse()
 
     # TODO Test assembly with fem.Function
     x = ufl.SpatialCoordinate(mesh)

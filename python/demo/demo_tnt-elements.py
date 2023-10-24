@@ -21,17 +21,18 @@
 # We begin this demo by importing the required modules.
 
 # +
-import basix
-import basix.ufl
 import matplotlib
 import matplotlib.pylab as plt
 import numpy as np
+
+import basix
+import basix.ufl
+from dolfinx import fem, mesh
 from dolfinx.fem.petsc import LinearProblem
-from mpi4py import MPI
 from ufl import (SpatialCoordinate, TestFunction, TrialFunction, cos, div, dx,
                  grad, inner, sin)
 
-from dolfinx import fem, mesh
+from mpi4py import MPI
 
 matplotlib.use('agg')
 # -
@@ -58,6 +59,34 @@ matplotlib.use('agg')
 # documentation](https://docs.fenicsproject.org/basix/main/polyset-order.html).
 
 wcoeffs = np.eye(8, 9)
+
+# For elements where the coefficients matrix is not an identity, we can
+# use the properties of orthonormal polynomials to compute `wcoeffs`.
+# Let $\{q_0, q_1,\dots\}$ be the orthonormal polynomials of a given
+# degree for a given cell, and suppose that we're trying to represent a function
+# $f_i\in\operatorname{span}\{q_1, q_2,\dots\}$ (as $\{f_0, f_1,\dots\}$ is a
+# basis of the polynomial space for our element). Using the properties of
+# orthonormal polynomials, we see that
+# \[f_i = \sum_j\left(\int_R f_iq_j\,\mathrm{d}\mathbf{x}\right)q_j,\]
+# and so the coefficients are given by
+# \[
+#   a_{ij}=\int_R f_iq_j\,\mathrm{d}\mathbf{x}.
+# \]
+# Hence we could compute `wcoeffs` as follows:
+
+# +
+wcoeffs2 = np.empty((8, 9))
+pts, wts = basix.make_quadrature(basix.CellType.quadrilateral, 4)
+evals = basix.tabulate_polynomials(basix.PolynomialType.legendre, basix.CellType.quadrilateral, 2, pts)
+
+for j, v in enumerate(evals):
+    wcoeffs2[0, j] = sum(v * wts)  # 1
+    wcoeffs2[1, j] = sum(v * pts[:, 1] * wts)  # y
+    wcoeffs2[2, j] = sum(v * pts[:, 1]**2 * wts)  # y^2
+    wcoeffs2[3, j] = sum(v * pts[:, 0] * pts[:, 1] * wts)  # xy
+    wcoeffs2[4, j] = sum(v * pts[:, 0] * pts[:, 1] ** 2 * wts)  # xy^2
+    wcoeffs2[5, j] = sum(v * pts[:, 0]**2 * pts[:, 1] * wts)  # x^2y
+# -
 
 # ### Interpolation operators
 #
@@ -187,7 +216,7 @@ def create_tnt_quad(degree):
 # the solution.
 
 
-def poisson_error(V):
+def poisson_error(V: fem.FunctionSpace):
     msh = V.mesh
     u, v = TrialFunction(V), TestFunction(V)
 
@@ -229,13 +258,13 @@ tnt_ndofs = []
 tnt_degrees = []
 tnt_errors = []
 
-V = fem.FunctionSpace(msh, tnt_degree1)
+V = fem.functionspace(msh, tnt_degree1)
 tnt_degrees.append(2)
 tnt_ndofs.append(V.dofmap.index_map.size_global)
 tnt_errors.append(poisson_error(V))
 print(f"TNT degree 2 error: {tnt_errors[-1]}")
 for degree in range(2, 9):
-    V = fem.FunctionSpace(msh, create_tnt_quad(degree))
+    V = fem.functionspace(msh, create_tnt_quad(degree))
     tnt_degrees.append(degree + 1)
     tnt_ndofs.append(V.dofmap.index_map.size_global)
     tnt_errors.append(poisson_error(V))
@@ -245,7 +274,7 @@ q_ndofs = []
 q_degrees = []
 q_errors = []
 for degree in range(1, 9):
-    V = fem.FunctionSpace(msh, ("Q", degree))
+    V = fem.functionspace(msh, ("Q", degree))
     q_degrees.append(degree)
     q_ndofs.append(V.dofmap.index_map.size_global)
     q_errors.append(poisson_error(V))

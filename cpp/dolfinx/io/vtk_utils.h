@@ -101,9 +101,10 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
   auto apply_dof_transformation
       = element->template get_dof_transformation_function<T>();
 
-  namespace stdex = std::experimental;
-  using mdspan2_t = stdex::mdspan<T, stdex::dextents<std::size_t, 2>>;
-  using cmdspan4_t = stdex::mdspan<T, stdex::dextents<std::size_t, 4>>;
+  using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+  using cmdspan4_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
 
   // Tabulate basis functions at node reference coordinates
   const std::array<std::size_t, 4> phi_shape
@@ -112,8 +113,9 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
       std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
   cmdspan4_t phi_full(phi_b.data(), phi_shape);
   cmap.tabulate(0, X, Xshape, phi_b);
-  auto phi = stdex::submdspan(phi_full, 0, stdex::full_extent,
-                              stdex::full_extent, 0);
+  auto phi = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+      submdspan(phi_full, 0, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
+                MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
 
   // Loop over cells and tabulate dofs
   auto map = topology->index_map(tdim);
@@ -148,7 +150,7 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
     }
   }
 
-  // Origina points IDs
+  // Original point IDs
   std::vector<std::int64_t> x_id(num_nodes);
   std::array<std::int64_t, 2> range = map_dofs->local_range();
   std::int32_t size_local = range[1] - range[0];
@@ -234,18 +236,19 @@ vtk_mesh_from_space(const fem::FunctionSpace<T>& V)
 /// The index of a 'node' corresponds to the index of DOLFINx geometry
 /// 'nodes'.
 ///
-/// @param[in] dofmap_x Geometry dofmap
-/// @param[in] cell_type Cell type
+/// @param[in] dofmap_x Geometry dofmap.
+/// @param[in] cell_type Cell type.
 /// @return Cell topology in VTK ordering and in term of the DOLFINx
-/// geometry 'nodes'
+/// geometry 'nodes'.
 /// @note The indices in the return array correspond to the point
-/// indices in the mesh geometry array
+/// indices in the mesh geometry array.
 /// @note Even if the indices are local (int32), both Fides and VTX
-/// require int64 as local input
+/// require int64 as local input.
 std::pair<std::vector<std::int64_t>, std::array<std::size_t, 2>>
 extract_vtk_connectivity(
-    std::experimental::mdspan<const std::int32_t,
-                              std::experimental::dextents<std::size_t, 2>>
+    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        const std::int32_t,
+        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
         dofmap_x,
     mesh::CellType cell_type);
 } // namespace io

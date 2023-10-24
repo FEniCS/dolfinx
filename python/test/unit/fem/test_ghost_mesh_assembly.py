@@ -5,15 +5,16 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for assembly"""
 
-import pytest
-import ufl
 import numpy as np
-from dolfinx.fem import Function, FunctionSpace, form
+import pytest
+
+import ufl
+from dolfinx import fem, la
+from dolfinx.fem import Function, form, functionspace
 from dolfinx.mesh import GhostMode, create_unit_square
-from mpi4py import MPI
 from ufl import avg, inner
 
-from dolfinx import fem, la
+from mpi4py import MPI
 
 
 def dx_from_ufl(mesh):
@@ -36,7 +37,7 @@ def dS_from_ufl(mesh):
 @pytest.mark.parametrize("ds", [ds_from_ufl])
 def test_ghost_mesh_assembly(mode, dx, ds):
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     dx, ds = dx(mesh), ds(mesh)
 
@@ -47,7 +48,7 @@ def test_ghost_mesh_assembly(mode, dx, ds):
 
     # Initial assembly
     A = fem.assemble_matrix(a)
-    A.finalize()
+    A.scatter_reverse()
     assert isinstance(A, la.MatrixCSR)
     b = fem.assemble_vector(L)
     b.scatter_reverse(la.InsertMode.add)
@@ -71,14 +72,14 @@ def test_ghost_mesh_assembly(mode, dx, ds):
 @pytest.mark.parametrize("dS", [dS_from_ufl])
 def test_ghost_mesh_dS_assembly(mode, dS):
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     dS = dS(mesh)
     a = form(inner(avg(u), avg(v)) * dS)
 
     # Initial assembly
     A = fem.assemble_matrix(a)
-    A.finalize()
+    A.scatter_reverse()
     assert isinstance(A, la.MatrixCSR)
 
     # Check that the norms are the same for all three modes

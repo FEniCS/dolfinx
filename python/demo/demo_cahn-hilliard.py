@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.13.6
+#       jupytext_version: 1.15.1
 # ---
 
 # # Cahn-Hilliard equation
@@ -22,7 +22,8 @@
 #   ({py:class}`NewtonSolver<dolfinx.nls.petsc.NewtonSolver>`)
 # - Form compiler options
 # - Interpolation of functions
-# - Visualisation of a running simulation with pyvista
+# - Visualisation of a running simulation with
+#   [PyVista](https://pyvista.org/)
 #
 # This demo is implemented in {download}`demo_cahn-hilliard.py`.
 #
@@ -34,7 +35,6 @@
 # derivatives.  The equation reads:
 #
 # $$
-# \begin{align}
 # \frac{\partial c}{\partial t} -
 #   \nabla \cdot M \left(\nabla\left(\frac{d f}{dc}
 #   - \lambda \nabla^{2}c\right)\right) &= 0 \quad {\rm in} \ \Omega, \\
@@ -42,7 +42,6 @@
 #   \lambda \nabla^{2}c\right)\right) \cdot n
 #   &= 0 \quad {\rm on} \ \partial\Omega, \\
 # M \lambda \nabla c \cdot n &= 0 \quad {\rm on} \ \partial\Omega.
-# \end{align}
 # $$
 #
 # where $c$ is the unknown field, the function $f$ is usually non-convex
@@ -58,25 +57,21 @@
 # as two coupled second-order equations:
 #
 # $$
-# \begin{align}
 # \frac{\partial c}{\partial t} - \nabla \cdot M \nabla\mu
 #     &= 0 \quad {\rm in} \ \Omega, \\
 # \mu -  \frac{d f}{d c} + \lambda \nabla^{2}c &= 0 \quad {\rm in} \ \Omega.
-# \end{align}
 # $$
 #
 # The unknown fields are now $c$ and $\mu$. The weak (variational) form
 # of the problem reads: find $(c, \mu) \in V \times V$ such that
 #
 # $$
-# \begin{align}
 # \int_{\Omega} \frac{\partial c}{\partial t} q \, {\rm d} x +
 #     \int_{\Omega} M \nabla\mu \cdot \nabla q \, {\rm d} x
 #     &= 0 \quad \forall \ q \in V,  \\
 # \int_{\Omega} \mu v \, {\rm d} x - \int_{\Omega} \frac{d f}{d c} v \, {\rm d} x
 #   - \int_{\Omega} \lambda \nabla c \cdot \nabla v \, {\rm d} x
 #    &= 0 \quad \forall \ v \in V.
-# \end{align}
 # $$
 #
 # ### Time discretisation
@@ -86,19 +81,17 @@
 # equation:
 #
 # $$
-# \begin{align}
 # \int_{\Omega} \frac{c_{n+1} - c_{n}}{dt} q \, {\rm d} x
 # + \int_{\Omega} M \nabla \mu_{n+\theta} \cdot \nabla q \, {\rm d} x
 #        &= 0 \quad \forall \ q \in V  \\
 # \int_{\Omega} \mu_{n+1} v  \, {\rm d} x - \int_{\Omega} \frac{d f_{n+1}}{d c} v  \, {\rm d} x
 # - \int_{\Omega} \lambda \nabla c_{n+1} \cdot \nabla v \, {\rm d} x
 #        &= 0 \quad \forall \ v \in V
-# \end{align}
 # $$
 #
-# where $dt = t_{n+1} - t_{n}$ and $\mu_{n+\theta} = (1-\theta) \mu_{n}
-# + \theta \mu_{n+1}$.  The task is: given $c_{n}$ and $\mu_{n}$, solve
-# the above equation to find $c_{n+1}$ and $\mu_{n+1}$.
+# where $dt = t_{n+1} - t_{n}$ and $\mu_{n+\theta} = (1-\theta) \mu_{n} + \theta \mu_{n+1}$.
+# The task is: given $c_{n}$ and $\mu_{n}$, solve the above equation to
+# find $c_{n+1}$ and $\mu_{n+1}$.
 #
 # ### Demo parameters
 #
@@ -121,18 +114,19 @@
 import os
 
 import numpy as np
+
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx.fem import Function, FunctionSpace
+from dolfinx import default_real_type, log, plot
+from dolfinx.fem import Function, functionspace
 from dolfinx.fem.petsc import NonlinearProblem
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_unit_square
 from dolfinx.nls.petsc import NewtonSolver
-from mpi4py import MPI
-from petsc4py import PETSc
 from ufl import dx, grad, inner
 
-from dolfinx import default_real_type, log, plot
+from mpi4py import MPI
+from petsc4py import PETSc
 
 try:
     import pyvista as pv
@@ -156,12 +150,12 @@ theta = 0.5  # time stepping family, e.g. theta=1 -> backward Euler, theta=0.5 -
 
 # A unit square mesh with 96 cells edges in each direction is created,
 # and on this mesh a
-# {py:class}`FunctionSpace<dolfinx.fem.FunctionSpace>` `ME` is built
+# {py:class}`FunctionSpace <dolfinx.fem.FunctionSpace>` `ME` is built
 # using a pair of linear Lagrange elements.
 
 msh = create_unit_square(MPI.COMM_WORLD, 96, 96, CellType.triangle)
 P1 = element("Lagrange", msh.basix_cell(), 1)
-ME = FunctionSpace(msh, mixed_element([P1, P1]))
+ME = functionspace(msh, mixed_element([P1, P1]))
 
 # Trial and test functions of the space `ME` are now defined:
 
@@ -258,7 +252,7 @@ solver.rtol = np.sqrt(np.finfo(default_real_type).eps) * 1e-2
 # We can customize the linear solver used inside the NewtonSolver by
 # modifying the PETSc options
 ksp = solver.krylov_solver
-opts = PETSc.Options()
+opts = PETSc.Options()  # type: ignore
 option_prefix = ksp.getOptionsPrefix()
 opts[f"{option_prefix}ksp_type"] = "preonly"
 opts[f"{option_prefix}pc_type"] = "lu"
@@ -296,7 +290,7 @@ V0, dofs = ME.sub(0).collapse()
 # Prepare viewer for plotting the solution during the computation
 if have_pyvista:
     # Create a VTK 'mesh' with 'nodes' at the function dofs
-    topology, cell_types, x = plot.create_vtk_mesh(V0)
+    topology, cell_types, x = plot.vtk_mesh(V0)
     grid = pv.UnstructuredGrid(topology, cell_types, x)
 
     # Set output data

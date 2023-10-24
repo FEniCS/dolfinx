@@ -28,8 +28,8 @@ import sys
 
 try:
     from petsc4py import PETSc as _PETSc
-    default_scalar_type = _PETSc.ScalarType
-    default_real_type = _PETSc.RealType
+    default_scalar_type = _PETSc.ScalarType  # type: ignore
+    default_real_type = _PETSc.RealType  # type: ignore
 except ImportError:
     import numpy as _np
     default_scalar_type = _np.float64

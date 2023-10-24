@@ -6,13 +6,16 @@
 """Unit tests for the DiscreteOperator class"""
 
 import numpy as np
-import scipy
 import pytest
+import scipy
+
+import dolfinx.la
 import ufl
 from dolfinx.cpp.fem import discrete_gradient
-from dolfinx.fem import (Expression, Function, FunctionSpace)
-import dolfinx.la
-from dolfinx.mesh import (CellType, GhostMode, create_unit_cube, create_unit_square)
+from dolfinx.fem import Expression, Function, functionspace
+from dolfinx.mesh import (CellType, GhostMode, create_unit_cube,
+                          create_unit_square)
+
 from mpi4py import MPI
 
 
@@ -26,10 +29,10 @@ from mpi4py import MPI
                                                    ghost_mode=GhostMode.shared_facet, dtype=np.float32)])
 def test_gradient(mesh):
     """Test discrete gradient computation for lowest order elements."""
-    V = FunctionSpace(mesh, ("Lagrange", 1))
-    W = FunctionSpace(mesh, ("Nedelec 1st kind H(curl)", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
+    W = functionspace(mesh, ("Nedelec 1st kind H(curl)", 1))
     G = discrete_gradient(V._cpp_object, W._cpp_object)
-    # N.B. do not finalize G - doing so would transfer rows to other processes
+    # N.B. do not scatter_rev G - doing so would transfer rows to other processes
     # where they will be summed to give an incorrect matrix
 
     num_edges = mesh.topology.index_map(1).size_global
@@ -66,10 +69,10 @@ def test_gradient_interpolation(cell_type, p, q, dtype):
         family0 = "Lagrange"
         family1 = "Nedelec 1st kind H(curl)"
 
-    V = FunctionSpace(mesh, (family0, p))
-    W = FunctionSpace(mesh, (family1, q))
+    V = functionspace(mesh, (family0, p))
+    W = functionspace(mesh, (family1, q))
     G = discrete_gradient(V._cpp_object, W._cpp_object)
-    # N.B. do not finalize G - doing so would transfer rows to other processes
+    # N.B. do not scatter_rev G - doing so would transfer rows to other processes
     # where they will be summed to give an incorrect matrix
 
     # Vector for 'u' needs additional ghosts defined in columns of G
