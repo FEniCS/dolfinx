@@ -511,8 +511,8 @@ def apply_lifting(b: PETSc.Vec, a: typing.List[Form],
         x0 = [stack.enter_context(x.localForm()) for x in x0]
         # Note: using x.array_r causes a failure in the nanobind layer
         # when in complex mode
-        # x0_r = [x.array_r for x in x0]
-        x0_r = [x.array for x in x0]
+        x0_r = [x.array_r for x in x0]
+        # x0_r = [x.array for x in x0]
         b_local = stack.enter_context(b.localForm())
         assemble.apply_lifting(b_local.array_w, a, bcs, x0_r, scale, constants, coeffs)
 
