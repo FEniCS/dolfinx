@@ -625,7 +625,7 @@ def test_assembly_solve_taylor_hood_nl(mesh):
         U.sub(1).interpolate(initial_guess_p)
 
         x = create_vector(F)
-        x.array = U.vector.array_r
+        x.array[:] = U.vector.array_r
 
         snes.solve(None, x)
         assert snes.getConvergedReason() > 0
