@@ -333,12 +333,12 @@ def test_assembly_solve_block_nl():
         p.interpolate(initial_guess_p)
 
         x = create_vector_block(F)
-        # scatter_local_vectors(x, [u.vector.array, p.vector.array],
-        #                       [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
-        #                        (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
-        scatter_local_vectors(x, [u.vector.array_r, p.vector.array_r],
+        scatter_local_vectors(x, [u.vector.array, p.vector.array],
                               [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
                                (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
+        # scatter_local_vectors(x, [u.vector.array_r, p.vector.array_r],
+        #                       [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
+        #                        (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
         snes.solve(None, x)
         assert snes.getKSP().getConvergedReason() > 0
