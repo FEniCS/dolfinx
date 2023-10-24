@@ -29,9 +29,6 @@ find_package(
   $ENV{PYBIND11_ROOT}
 )
 
-# Why is this needed...
-set(ENV{PYTHONPATH} "/usr/local/lib/python3.10")
-
 execute_process(
   COMMAND
   ${Python3_EXECUTABLE} -c "import os, sys, basix; sys.stdout.write(os.path.dirname(basix.__file__))"
@@ -39,11 +36,6 @@ execute_process(
   RESULT_VARIABLE BASIX_PY_COMMAND_RESULT
   ERROR_VARIABLE BASIX_ERROR_OUT OUTPUT_STRIP_TRAILING_WHITESPACE
 )
-message("BASIX_PY_DIR=${BASIX_PY_DIR}")
-message("RESULT=${BASIX_PY_COMMAND_RESULT}")
-message("ERROR=${BASIX_ERROR_OUT}")
-message("Ex0: ${Python3_EXECUTABLE}")
-message("Ex1: ${Python_EXECUTABLE}")
 
 find_package(Basix REQUIRED CONFIG HINTS ${BASIX_PY_DIR})
 
@@ -117,7 +109,14 @@ else()
   message(FATAL_ERROR "mpi4py could not be found.")
 endif()
 
-# scikit-build specific steps
-if (SKBUILD)
-  install(TARGETS cpp DESTINATION dolfinx)
-endif()
+# Add relative rpath so _cpp can find the DOLFINX::dolfinx library
+# when the build is relocated
+get_target_property(_location dolfinx LOCATION)
+get_filename_component(_dolfinx_dir ${_location} DIRECTORY)
+
+get_target_property(_location Basix::basix LOCATION)
+get_filename_component(_basix_dir ${_location} DIRECTORY)
+
+set_target_properties(cpp PROPERTIES INSTALL_RPATH "${_dolfinx_dir};${_basix_dir}")
+  
+install(TARGETS cpp DESTINATION dolfinx)
