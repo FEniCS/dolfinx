@@ -1144,10 +1144,13 @@ Expression<T, U> create_expression(
 /// @warning This is subject to change
 /// @brief Pack coefficients of a Form
 /// @param[in] form The Form
-/// @param[in] coeffs A map from a (integral_type, domain_id) pair to a
-/// (coeffs, cstride) pair, where coeffs is a storage container in which
-/// to pack the coefficient data and cstride is the column stride of this
-/// data (i.e. the number of entries per integration entity)
+/// @param[in] coeffs A map from an (integral_type, domain_id) pair to a
+/// (coeffs, cstride) pair. `coeffs` is a storage container representing
+/// an array of shape (num_int_entities, cstride) in which to pack the
+/// coefficient data, where num_int_entities is the number of entities
+/// being integrated over and cstride is the number of coefficient data
+/// entries per integration entity. `coeffs` is flattened into row-major
+/// layout.
 template <dolfinx::scalar T, std::floating_point U>
 void pack_coefficients(const Form<T, U>& form,
                        std::map<std::pair<IntegralType, int>,
