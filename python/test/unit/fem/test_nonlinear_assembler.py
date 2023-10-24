@@ -202,7 +202,7 @@ class NonlinearPDE_SNESProblem():
         assemble_vector(F, self.L)
         apply_lifting(F, [self.a], bcs=[self.bcs], x0=[x], scale=-1.0)
         F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-        set_bc(F, self.bcs, self.soln_vars.x, -1.0)
+        set_bc(F, self.bcs, x, -1.0)
 
     def J_mono(self, snes, x, J, P):
         J.zeroEntries()
