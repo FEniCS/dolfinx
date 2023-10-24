@@ -19,7 +19,7 @@ find_package(
 
 find_package(
   pybind11
-  2.7.0
+  2.9.1
   REQUIRED
   CONFIG
   HINTS
