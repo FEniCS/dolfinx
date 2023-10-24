@@ -537,10 +537,10 @@ def apply_lifting_nest(b: PETSc.Vec, a: typing.List[typing.List[Form]],
 def set_bc(b: PETSc.Vec, bcs: typing.List[DirichletBC],
            x0: typing.Optional[PETSc.Vec] = None, scale: float = 1.0) -> None:
     """Apply the function :func:`dolfinx.fem.set_bc` to a PETSc Vector."""
-    if x0 is not None:
-        # x0 = x0.array
-        x0 = x0.array_r
-    # x0 = None
+    # if x0 is not None:
+    #     # x0 = x0.array
+    #     x0 = x0.array_r
+    # # x0 = None
     with b.localForm() as blocal:
         if x0 is not None:
             with x0.localForm() as x0local:
