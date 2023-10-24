@@ -55,7 +55,7 @@ build-python-interface: &build-python-interface
   command: |
     export CMAKE_BUILD_PARALLEL_LEVEL=2
     cd python
-    pip3 install -r build_requirements.txt
+    pip3 install -r build-requirements.txt
     pip3 -v install --config-setting cmake.build-type=Debug --no-build-isolation --user .
 
 demos-python: &demos-python
