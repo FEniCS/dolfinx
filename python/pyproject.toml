@@ -2,7 +2,7 @@
 # due to its depedency on system built petsc4py and mpi4py.
 # pip install -r build_requirements.txt
 [build-system]
-requires = ["scikit_build_core"]
+requires = ["scikit-build-core[pyproject]"]
 build-backend = "scikit_build_core.build"
 
 [project]

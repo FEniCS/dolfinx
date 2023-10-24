@@ -63,7 +63,7 @@ RUN curl -L -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES
 
 # First set of dependencies for building and running Python DOLFINx
 # Second set of dependencies for running DOLFINx tests
-RUN python3 -m pip install --no-binary="numpy" --no-cache-dir cffi numba mpi4py pybind11 wheel && \
+RUN python3 -m pip install --no-binary="numpy" --no-cache-dir cffi numba mpi4py pybind11 scikit-build-core[pyproject] wheel && \
     python3 -m pip install --no-cache-dir cppimport pytest pytest-xdist scipy matplotlib
 
 # Build PETSc

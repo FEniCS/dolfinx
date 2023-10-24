@@ -64,8 +64,8 @@ jobs:
 
       - name: Build Python interface
         run: |
-          python3 -m pip -v install -r python/build-requirements.txt
-          python3 -m pip -v install python/ --no-build-isolation --config-settings=cmake.build-type=Debug 
+          python3 -m pip -v install -r python/build-requirements.txt # TO REMOVE
+          python3 -m pip -v install --no-build-isolation --config-settings=cmake.build-type=Debug python/
 
       - name: Set default DOLFINx JIT options
         run: |
