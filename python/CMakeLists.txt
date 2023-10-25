@@ -52,7 +52,7 @@ find_package(DOLFINX REQUIRED CONFIG)
 nanobind_add_module(
   cpp
   MODULE
-  # NB_SHARED
+  NB_SHARED
   dolfinx/wrappers/dolfinx.cpp
   dolfinx/wrappers/assemble.cpp
   dolfinx/wrappers/common.cpp
@@ -68,11 +68,11 @@ nanobind_add_module(
 )
 
 # Add strict compiler flags
-include(CheckCXXCompilerFlag)
-check_cxx_compiler_flag("-Wall -Werror -pedantic" HAVE_PEDANTIC)
-if(HAVE_PEDANTIC)
-#  target_compile_options(cpp PRIVATE -Wall;-Werror;-pedantic)
-endif()
+# include(CheckCXXCompilerFlag)
+# check_cxx_compiler_flag("-Wall -Werror -pedantic" HAVE_PEDANTIC)
+# if(HAVE_PEDANTIC)
+#   target_compile_options(cpp PRIVATE -Wall;-Werror;-pedantic)
+# endif()
 
 # Add DOLFINx libraries
 target_link_libraries(cpp PRIVATE dolfinx)
