@@ -53,7 +53,7 @@ void declare_adjacency_list(nb::module_& m, std::string type)
             new (a) dolfinx::graph::AdjacencyList<T>(
                 dolfinx::graph::regular_adjacency_list(std::move(data), dim));
           },
-          nb::arg("adj"))
+          nb::arg("adj").noconvert())
       .def(
           "__init__",
           [](dolfinx::graph::AdjacencyList<T>* a,
@@ -66,7 +66,7 @@ void declare_adjacency_list(nb::module_& m, std::string type)
             new (a) dolfinx::graph::AdjacencyList<T>(std::move(data),
                                                      std::move(offsets));
           },
-          nb::arg("data"), nb::arg("offsets"))
+          nb::arg("data").noconvert(), nb::arg("offsets"))
       .def(
           "links",
           [](const dolfinx::graph::AdjacencyList<T>& self, int i)
