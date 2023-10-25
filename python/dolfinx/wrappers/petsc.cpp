@@ -190,12 +190,8 @@ void petsc_la_module(nb::module_& m)
         std::vector<nb::ndarray<nb::numpy, PetscScalar>> ret;
         for (std::vector<PetscScalar>& v : vecs)
         {
-          auto tmp = dolfinx_wrappers::as_nbndarray_new(std::move(v),
-                                                        std::array{v.size()});
-          ret.push_back(tmp);
-          // ret.push_back(
-          //     dolfinx_wrappers::as_nbarray(std::move(v),
-          //     std::array{v.size()}));
+          ret.push_back(dolfinx_wrappers::as_nbndarray_new(
+              std::move(v), std::array{v.size()}));
         }
         return ret;
       },
