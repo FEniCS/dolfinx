@@ -1144,7 +1144,7 @@ Expression<T, U> create_expression(
 /// @warning This is subject to change
 /// @brief Pack coefficients of a Form
 /// @param[in] form The Form
-/// @param[in] coeffs A map from an (integral_type, domain_id) pair to a
+/// @param[in,out] coeffs A map from an (integral_type, domain_id) pair to a
 /// (coeffs, cstride) pair. `coeffs` is a storage container representing
 /// an array of shape (num_int_entities, cstride) in which to pack the
 /// coefficient data, where num_int_entities is the number of entities
