@@ -239,17 +239,18 @@ void declare_assembly_functions(nb::module_& m)
       nb::arg("A"), nb::arg("rows"), nb::arg("diagonal"), "Experimental.");
   m.def(
       "assemble_matrix",
-      [](const std::function<int(
-             const nb::ndarray<const std::int32_t, nb::numpy, nb::c_contig>&,
-             const nb::ndarray<const std::int32_t, nb::numpy, nb::c_contig>&,
-             const nb::ndarray<const T, nb::numpy, nb::c_contig>&)>& fin,
+      [](std::function<int(
+             nb::ndarray<const std::int32_t, nb::numpy, nb::c_contig>,
+             nb::ndarray<const std::int32_t, nb::numpy, nb::c_contig>,
+             nb::ndarray<const T, nb::numpy, nb::c_contig>)>
+             fin,
          const dolfinx::fem::Form<T, U>& form,
          const std::vector<
              std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>& bcs)
       {
-        auto f = [&fin](const std::span<const std::int32_t>& rows,
-                        const std::span<const std::int32_t>& cols,
-                        const std::span<const T>& data)
+        auto f = [&fin](std::span<const std::int32_t> rows,
+                        std::span<const std::int32_t> cols,
+                        std::span<const T> data)
         {
           std::size_t rsize = rows.size();
           std::size_t csize = cols.size();

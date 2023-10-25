@@ -6,7 +6,7 @@ project(dolfinx_nanobind)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_BUILD_TYPE Debug)
+# set(CMAKE_BUILD_TYPE Debug)
 
 # Development component which includes both Development.Module and
 # Development.Embed is not required for building a Python module.  Correct

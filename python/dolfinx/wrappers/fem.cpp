@@ -878,8 +878,9 @@ void declare_real_functions(nb::module_& m)
       "locate_dofs_geometrical",
       [](const std::vector<
              std::shared_ptr<const dolfinx::fem::FunctionSpace<T>>>& V,
-         const std::function<nb::ndarray<bool, nb::numpy>(
-             const nb::ndarray<const T, nb::numpy>&)>& marker)
+         std::function<nb::ndarray<bool, nb::numpy>(
+             nb::ndarray<const T, nb::numpy>)>
+             marker)
 
       {
         if (V.size() != 2)
@@ -905,8 +906,9 @@ void declare_real_functions(nb::module_& m)
   m.def(
       "locate_dofs_geometrical",
       [](const dolfinx::fem::FunctionSpace<T>& V,
-         const std::function<nb::ndarray<bool, nb::numpy>(
-             const nb::ndarray<const T, nb::numpy>&)>& marker)
+         std::function<nb::ndarray<bool, nb::numpy>(
+             nb::ndarray<const T, nb::numpy>)>
+             marker)
       {
         auto _marker = [&marker](auto x)
         {
