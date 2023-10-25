@@ -536,8 +536,7 @@ def set_bc(b: PETSc.Vec, bcs: typing.List[DirichletBC],
     """Apply the function :func:`dolfinx.fem.set_bc` to a PETSc Vector."""
     if x0 is not None:
         x0 = x0.array_r
-    with b.localForm() as blocal:
-        assemble.set_bc(blocal.array, bcs, x0, scale)
+    assemble.set_bc(b.array_w, bcs, x0, scale)
 
 
 def set_bc_nest(b: PETSc.Vec, bcs: typing.List[typing.List[DirichletBC]],
