@@ -5,6 +5,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Test that matrices are symmetric."""
 
+from mpi4py import MPI
+
 import numpy as np
 import pytest
 
@@ -15,8 +17,6 @@ from basix.ufl import element, mixed_element
 from dolfinx.fem import form, functionspace
 from dolfinx.mesh import CellType, create_unit_cube, create_unit_square
 from ufl import grad, inner
-
-from mpi4py import MPI
 
 
 def check_symmetry(A, tol):

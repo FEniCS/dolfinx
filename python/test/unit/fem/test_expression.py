@@ -4,6 +4,8 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+from mpi4py import MPI
+
 import numpy as np
 import pytest
 
@@ -15,8 +17,6 @@ from dolfinx import fem, la
 from dolfinx.fem import Constant, Expression, Function, form, functionspace
 from dolfinx.mesh import create_unit_square
 from ffcx.element_interface import QuadratureElement
-
-from mpi4py import MPI
 
 dolfinx.cpp.common.init_logging(["-v"])
 

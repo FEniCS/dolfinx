@@ -1,3 +1,6 @@
+from mpi4py import MPI
+from petsc4py import PETSc
+
 import numpy as np
 import pytest
 
@@ -12,9 +15,6 @@ from dolfinx.mesh import (CellType, create_unit_cube, create_unit_square,
                           exterior_facet_indices)
 from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
                  inner)
-
-from mpi4py import MPI
-from petsc4py import PETSc
 
 
 def run_scalar_test(V, degree):

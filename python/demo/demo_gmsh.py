@@ -17,10 +17,10 @@
 #
 # The Gmsh module is required for this demo.
 
+from mpi4py import MPI
+
 # +
 from dolfinx.io import XDMFFile, gmshio
-
-from mpi4py import MPI
 
 try:
     import gmsh  # type: ignore

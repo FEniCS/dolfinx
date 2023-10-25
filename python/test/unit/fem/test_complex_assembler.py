@@ -5,6 +5,9 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for assembly in complex mode"""
 
+from mpi4py import MPI
+from petsc4py import PETSc
+
 import numpy as np
 import pytest
 
@@ -14,9 +17,6 @@ from dolfinx.fem import Function, form, functionspace
 from dolfinx.fem.petsc import assemble_matrix, assemble_vector
 from dolfinx.mesh import create_unit_square
 from ufl import dx, grad, inner
-
-from mpi4py import MPI
-from petsc4py import PETSc
 
 pytestmark = pytest.mark.skipif(
     not np.issubdtype(PETSc.ScalarType, np.complexfloating), reason="Only works in complex mode.")  # type: ignore

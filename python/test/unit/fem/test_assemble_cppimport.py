@@ -7,6 +7,8 @@
 
 import pathlib
 
+from mpi4py import MPI
+
 import cppimport
 import numpy as np
 import pybind11
@@ -19,8 +21,6 @@ from dolfinx.fem import (assemble_matrix, dirichletbc, form, functionspace,
                          locate_dofs_geometrical)
 from dolfinx.mesh import create_unit_square
 from dolfinx.wrappers import get_include_path as pybind_inc
-
-from mpi4py import MPI
 
 
 @pytest.mark.skip_in_parallel

@@ -11,11 +11,11 @@ import os
 from pathlib import Path
 from typing import Optional
 
+from mpi4py import MPI
+
 import ffcx
 import ffcx.codegeneration.jit
 import ufl
-
-from mpi4py import MPI
 
 __all__ = ["ffcx_jit", "get_options", "mpi_jit_decorator"]
 

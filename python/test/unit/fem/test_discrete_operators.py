@@ -5,6 +5,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the DiscreteOperator class"""
 
+from mpi4py import MPI
+
 import numpy as np
 import pytest
 import scipy
@@ -15,8 +17,6 @@ from dolfinx.cpp.fem import discrete_gradient
 from dolfinx.fem import Expression, Function, functionspace
 from dolfinx.mesh import (CellType, GhostMode, create_unit_cube,
                           create_unit_square)
-
-from mpi4py import MPI
 
 
 @pytest.mark.parametrize("mesh", [create_unit_square(MPI.COMM_WORLD, 11, 6,
