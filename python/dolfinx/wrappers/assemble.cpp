@@ -114,11 +114,12 @@ void declare_assembly_functions(nb::module_& m)
                   = e.second.first.empty()
                         ? 0
                         : e.second.first.size() / e.second.second;
-              std::array shape = {num_ents, (std::size_t)e.second.second};
               return std::pair<const std::pair<dolfinx::fem::IntegralType, int>,
                                nb::ndarray<T, nb::numpy>>(
-                  e.first, dolfinx_wrappers::as_nbarray(
-                               std::move(e.second.first), shape));
+                  e.first,
+                  dolfinx_wrappers::as_nbarray(
+                      std::move(e.second.first),
+                      {num_ents, static_cast<std::size_t>(e.second.second)}));
             });
 
         return c;

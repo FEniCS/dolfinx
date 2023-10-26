@@ -149,7 +149,7 @@ void declare_objects(nb::module_& m, const std::string& type)
              std::size_t ncols
                  = (map_col->size_local() + map_col->num_ghosts()) * bs[1];
              return dolfinx_wrappers::as_nbarray(self.to_dense(),
-                                                 std::array{nrows, ncols});
+                                                 {nrows, ncols});
            })
       .def_prop_ro("data",
                    [](dolfinx::la::MatrixCSR<T>& self)

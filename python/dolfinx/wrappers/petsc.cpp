@@ -187,12 +187,9 @@ void petsc_la_module(nb::module_& m)
           _maps.push_back({*m.first, m.second});
         std::vector<std::vector<PetscScalar>> vecs
             = dolfinx::la::petsc::get_local_vectors(x, _maps);
-        std::vector<nb::ndarray<nb::numpy, PetscScalar>> ret;
+        std::vector<nb::ndarray<PetscScalar, nb::numpy>> ret;
         for (std::vector<PetscScalar>& v : vecs)
-        {
-          ret.push_back(dolfinx_wrappers::as_nbndarray_new(
-              std::move(v), std::array{v.size()}));
-        }
+          ret.push_back(dolfinx_wrappers::as_nbarray(std::move(v)));
         return ret;
       },
       nb::arg("x"), nb::arg("maps"),

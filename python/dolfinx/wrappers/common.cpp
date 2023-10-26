@@ -146,7 +146,8 @@ void common(nb::module_& m)
           {
             auto [map, ghosts] = self.create_submap(
                 std::span(entities.data(), entities.size()));
-            return std::pair(std::move(map), as_nbarray(std::move(ghosts)));
+            return std::pair(std::move(map),
+                             dolfinx_wrappers::as_nbarray(std::move(ghosts)));
           },
           nb::arg("entities"));
 

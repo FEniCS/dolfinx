@@ -52,9 +52,8 @@ void declare_bbtree(nb::module_& m, std::string type)
              const std::size_t i)
           {
             std::array<T, 6> bbox = self.get_bbox(i);
-            std::vector _bbox(bbox.begin(), bbox.end());
-            return dolfinx_wrappers::as_nbndarray_new(
-                _bbox, std::array<std::size_t, 2>{2, 3});
+            std::vector<T> _bbox(bbox.begin(), bbox.end());
+            return dolfinx_wrappers::as_nbarray(_bbox, {2, 3});
           },
           nb::arg("i)"))
       .def("__repr__", &dolfinx::geometry::BoundingBoxTree<T>::str)
@@ -82,8 +81,8 @@ void declare_bbtree(nb::module_& m, std::string type)
       {
         std::vector coll
             = dolfinx::geometry::compute_collisions<T>(treeA, treeB);
-        std::array<std::size_t, 2> shape{std::size_t(coll.size() / 2), 2};
-        return dolfinx_wrappers::as_nbarray(std::move(coll), shape);
+        return dolfinx_wrappers::as_nbarray(std::move(coll),
+                                            {coll.size() / 2, 2});
       },
       nb::arg("tree0"), nb::arg("tree1"));
   m.def(
