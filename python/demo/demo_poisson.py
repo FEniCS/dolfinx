@@ -73,6 +73,9 @@ from ufl import ds, dx, grad, inner
 
 # -
 
+# Note that it is important to first `from mpi4py import MPI` to
+# ensure that MPI is correctly initialised.
+
 # We create a rectangular {py:class}`Mesh <dolfinx.mesh.Mesh>` using
 # {py:func}`create_rectangle <dolfinx.mesh.create_rectangle>`, and
 # create a finite element {py:class}`function space
