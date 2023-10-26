@@ -184,7 +184,7 @@ void initialize_function_attributes(adios2::IO& io,
         {
           using U = std::decay_t<decltype(u)>;
           using X = typename U::element_type;
-          if constexpr (std::is_floating_point_v<typename X::geometry_type>)
+          if constexpr (std::is_floating_point_v<typename X::value_type>)
             u_data.push_back({u->name, "points"});
           else
           {
