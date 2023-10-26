@@ -514,11 +514,11 @@ void declare_form(nb::module_& m, std::string type)
           [](dolfinx::fem::Form<T, U>* fp,
              const std::vector<
                  std::shared_ptr<const dolfinx::fem::FunctionSpace<U>>>& spaces,
-             const std::map<
-                 dolfinx::fem::IntegralType,
-                 std::vector<std::tuple<int, std::uintptr_t,
-                                        nb::ndarray<const std::int32_t>>>>&
-                 integrals,
+             const std::map<dolfinx::fem::IntegralType,
+                            std::vector<std::tuple<
+                                int, std::uintptr_t,
+                                nb::ndarray<const std::int32_t, nb::ndim<1>,
+                                            nb::c_contig>>>>& integrals,
              const std::vector<std::shared_ptr<
                  const dolfinx::fem::Function<T, U>>>& coefficients,
              const std::vector<
@@ -566,11 +566,11 @@ void declare_form(nb::module_& m, std::string type)
                  const dolfinx::fem::Function<T, U>>>& coefficients,
              const std::vector<
                  std::shared_ptr<const dolfinx::fem::Constant<T>>>& constants,
-             const std::map<dolfinx::fem::IntegralType,
-                            std::vector<std::pair<
-                                std::int32_t,
-                                nb::ndarray<const std::int32_t, nb::numpy>>>>&
-                 subdomains,
+             const std::map<
+                 dolfinx::fem::IntegralType,
+                 std::vector<std::pair<
+                     std::int32_t, nb::ndarray<const std::int32_t, nb::ndim<1>,
+                                               nb::c_contig>>>>& subdomains,
              std::shared_ptr<const dolfinx::mesh::Mesh<U>> mesh)
           {
             std::map<
@@ -606,29 +606,23 @@ void declare_form(nb::module_& m, std::string type)
       .def(
           "domains",
           [](const dolfinx::fem::Form<T, U>& self,
-             dolfinx::fem::IntegralType type,
-             int i) -> nb::ndarray<const std::int32_t>
+             dolfinx::fem::IntegralType type, int i)
           {
             std::span<const std::int32_t> _d = self.domain(type, i);
             switch (type)
             {
             case dolfinx::fem::IntegralType::cell:
-            {
-              const std::size_t size = _d.size();
-              return nb::ndarray<const std::int32_t>(_d.data(), 1, &size);
-            }
+              return nb::ndarray<const std::int32_t, nb::numpy>(_d.data(),
+                                                                {_d.size()});
             case dolfinx::fem::IntegralType::exterior_facet:
             {
-              std::array<std::size_t, 2> shape{std::size_t(_d.size()) / 2, 2};
-              return nb::ndarray<const std::int32_t>(_d.data(), 2,
-                                                     shape.data());
+              return nb::ndarray<const std::int32_t, nb::numpy>(
+                  _d.data(), {_d.size() / 2, 2});
             }
             case dolfinx::fem::IntegralType::interior_facet:
             {
-              std::array<std::size_t, 3> shape{std::size_t(_d.size()) / 4, 2,
-                                               2};
-              return nb::ndarray<const std::int32_t>(_d.data(), 3,
-                                                     shape.data());
+              return nb::ndarray<const std::int32_t, nb::numpy>(
+                  _d.data(), {_d.size() / 4, 2, 2});
             }
             default:
               throw ::std::runtime_error("Integral type unsupported.");
@@ -650,7 +644,7 @@ void declare_form(nb::module_& m, std::string type)
          const std::map<
              dolfinx::fem::IntegralType,
              std::vector<std::pair<
-                 std::int32_t, nb::ndarray<const std::int32_t, nb::numpy>>>>&
+                 std::int32_t, nb::ndarray<const std::int32_t, nb::c_contig>>>>&
              subdomains,
          std::shared_ptr<const dolfinx::mesh::Mesh<U>> mesh)
       {
