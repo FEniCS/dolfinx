@@ -9,6 +9,8 @@
 import typing
 from pathlib import Path
 
+from mpi4py import MPI as _MPI
+
 import numpy as np
 import numpy.typing as npt
 
@@ -20,8 +22,6 @@ from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh  # noqa F401
 from dolfinx.cpp.io import perm_vtk as cell_perm_vtk  # noqa F401
 from dolfinx.fem import Function
 from dolfinx.mesh import GhostMode, Mesh, MeshTags
-
-from mpi4py import MPI as _MPI
 
 __all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk",
            "distribute_entity_data"]

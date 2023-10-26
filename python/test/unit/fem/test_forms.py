@@ -6,13 +6,13 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+from mpi4py import MPI
+
 import pytest
 
 from dolfinx.fem import extract_function_spaces, form, functionspace
 from dolfinx.mesh import create_unit_square
 from ufl import TestFunction, TrialFunction, dx, inner
-
-from mpi4py import MPI
 
 
 def test_extract_forms():

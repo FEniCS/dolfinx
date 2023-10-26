@@ -7,6 +7,9 @@
 
 from contextlib import ExitStack
 
+from mpi4py import MPI
+from petsc4py import PETSc
+
 import numpy as np
 import pytest
 
@@ -19,9 +22,6 @@ from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
 from dolfinx.mesh import create_unit_square, locate_entities_boundary
 from ufl import (Identity, TestFunction, TrialFunction, dot, dx, grad, inner,
                  sym, tr)
-
-from mpi4py import MPI
-from petsc4py import PETSc
 
 
 def test_krylov_solver_lu():

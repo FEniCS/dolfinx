@@ -8,9 +8,9 @@
 from __future__ import annotations
 
 import numpy as np
-from dolfinx.cpp.graph import partitioner
 
 from dolfinx import cpp as _cpp
+from dolfinx.cpp.graph import partitioner
 
 # Import graph partitioners, which may or may not be available
 # (dependent on build configuration)

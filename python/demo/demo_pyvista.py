@@ -22,6 +22,8 @@
 # To start, the required modules are imported and some PyVista
 # parameters set.
 
+from mpi4py import MPI
+
 # +
 import numpy as np
 
@@ -29,8 +31,6 @@ import dolfinx.plot as plot
 from dolfinx.fem import Function, functionspace
 from dolfinx.mesh import (CellType, compute_midpoints, create_unit_cube,
                           create_unit_square, meshtags)
-
-from mpi4py import MPI
 
 try:
     import pyvista

@@ -11,15 +11,17 @@
 # import cppimport
 # import pytest
 
+# import mpi4py
+from mpi4py import MPI
+
 # import dolfinx
 # import dolfinx.pkgconfig
 # from dolfinx import wrappers
 # from dolfinx.jit import mpi_jit_decorator
 from dolfinx.mesh import create_unit_square
+
 # import nanobind
 
-# import mpi4py
-from mpi4py import MPI
 
 
 def test_mpi_comm_wrapper():

@@ -6,6 +6,9 @@
 
 from pathlib import Path
 
+from mpi4py import MPI
+from petsc4py import PETSc
+
 import numpy as np
 import pytest
 
@@ -23,9 +26,6 @@ from dolfinx.mesh import (CellType, create_rectangle, create_unit_cube,
                           locate_entities_boundary)
 from ufl import (CellDiameter, FacetNormal, SpatialCoordinate, TestFunction,
                  TrialFunction, avg, div, ds, dS, dx, grad, inner, jump)
-
-from mpi4py import MPI
-from petsc4py import PETSc
 
 
 def run_scalar_test(mesh, V, degree):

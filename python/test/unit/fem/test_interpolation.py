@@ -7,6 +7,8 @@
 
 import random
 
+from mpi4py import MPI
+
 import numpy as np
 import pytest
 
@@ -22,8 +24,6 @@ from dolfinx.geometry import bb_tree, compute_collisions_points
 from dolfinx.mesh import (CellType, create_mesh, create_rectangle,
                           create_unit_cube, create_unit_square,
                           locate_entities, locate_entities_boundary, meshtags)
-
-from mpi4py import MPI
 
 parametrize_cell_types = pytest.mark.parametrize(
     "cell_type", [

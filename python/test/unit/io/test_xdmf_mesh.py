@@ -6,6 +6,8 @@
 
 from pathlib import Path
 
+from mpi4py import MPI
+
 import numpy as np
 import pytest
 
@@ -16,8 +18,6 @@ from dolfinx.io.gmshio import cell_perm_array, ufl_mesh
 from dolfinx.mesh import (CellType, GhostMode, create_mesh, create_submesh,
                           create_unit_cube, create_unit_interval,
                           create_unit_square, locate_entities)
-
-from mpi4py import MPI
 
 # Supported XDMF file encoding
 if MPI.COMM_WORLD.size > 1:

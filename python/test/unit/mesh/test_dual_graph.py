@@ -1,9 +1,10 @@
 
-from dolfinx import cpp as _cpp
-from dolfinx import mesh
+from mpi4py import MPI
+
 import numpy as np
 
-from mpi4py import MPI
+from dolfinx import cpp as _cpp
+from dolfinx import mesh
 
 
 def to_adj(cells):

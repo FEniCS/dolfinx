@@ -5,12 +5,13 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import math
+
+from mpi4py import MPI
+
 import numpy as np
 
 import dolfinx
 from dolfinx.mesh import GhostMode, create_unit_square
-
-from mpi4py import MPI
 
 
 def test_sub_index_map():

@@ -5,6 +5,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the FunctionSpace class"""
 
+from mpi4py import MPI
+
 # import basix
 import numpy as np
 import pytest
@@ -14,8 +16,6 @@ from dolfinx import default_real_type
 from dolfinx.fem import Function, FunctionSpace, functionspace
 from dolfinx.mesh import create_mesh, create_unit_cube
 from ufl import Cell, Mesh, TestFunction, TrialFunction, grad
-
-from mpi4py import MPI
 
 
 @pytest.fixture
