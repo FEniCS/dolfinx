@@ -41,7 +41,7 @@ auto as_nbndarray_new(V&& x, U&& shape)
 /// std::vector alive.
 // From https://github.com/pybind/pybind11/issues/1042
 template <typename V>
-auto as_nbndarray_new(V&& x)
+auto as_nbndarray(V&& x)
 {
   return as_nbndarray_new(std::move(x), std::array{x.size()});
 }
