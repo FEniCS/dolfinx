@@ -24,7 +24,7 @@ import petsc4py.lib
 import ufl
 from dolfinx.cpp.fem import pack_coefficients as _pack_coefficients
 from dolfinx.cpp.fem import pack_constants as _pack_constants
-from dolfinx.fem import assemble
+from dolfinx.fem import assemble as _assemble
 from dolfinx.fem.bcs import DirichletBC
 from dolfinx.fem.bcs import bcs_by_block as _bcs_by_block
 from dolfinx.fem.forms import Form
@@ -191,7 +191,7 @@ def assemble_vector(L: typing.Any, constants=None, coeffs=None) -> PETSc.Vec:
     b = create_petsc_vector(L.function_spaces[0].dofmap.index_map,
                             L.function_spaces[0].dofmap.index_map_bs)
     with b.localForm() as b_local:
-        assemble._assemble_vector_array(b_local.array_w, L, constants, coeffs)
+        _assemble._assemble_vector_array(b_local.array_w, L, constants, coeffs)
     return b
 
 
@@ -213,7 +213,7 @@ def _assemble_vector_vec(b: PETSc.Vec, L: Form, constants=None, coeffs=None) -> 
 
     """
     with b.localForm() as b_local:
-        assemble._assemble_vector_array(b_local.array_w, L, constants, coeffs)
+        _assemble._assemble_vector_array(b_local.array_w, L, constants, coeffs)
     return b
 
 
@@ -244,7 +244,7 @@ def _assemble_vector_nest_vec(b: PETSc.Vec, L: typing.List[Form], constants=None
     coeffs = [None] * len(L) if coeffs is None else coeffs
     for b_sub, L_sub, const, coeff in zip(b.getNestSubVecs(), L, constants, coeffs):
         with b_sub.localForm() as b_local:
-            assemble._assemble_vector_array(b_local.array_w, L_sub, const, coeff)
+            _assemble._assemble_vector_array(b_local.array_w, L_sub, const, coeff)
     return b
 
 
@@ -321,7 +321,10 @@ def _assemble_vector_block_vec(b: PETSc.Vec,
     b_array = b.getArray(readonly=False)
     for submap, bc, _x0 in zip(maps, bcs0, x0_sub):
         size = submap[0].size_local * submap[1]
-        _cpp.fem.set_bc(b_array[offset: offset + size], bc, _x0, scale)
+        if _x0 is None:
+            _cpp.fem.set_bc(b_array[offset: offset + size], bc, scale)
+        else:
+            _cpp.fem.set_bc(b_array[offset: offset + size], bc, _x0, scale)
         offset += size
 
     return b
@@ -511,7 +514,7 @@ def apply_lifting(b: PETSc.Vec, a: typing.List[Form],
         x0 = [stack.enter_context(x.localForm()) for x in x0]
         x0_r = [x.array_r for x in x0]
         b_local = stack.enter_context(b.localForm())
-        assemble.apply_lifting(b_local.array_w, a, bcs, x0_r, scale, constants, coeffs)
+        _assemble.apply_lifting(b_local.array_w, a, bcs, x0_r, scale, constants, coeffs)
 
 
 def apply_lifting_nest(b: PETSc.Vec, a: typing.List[typing.List[Form]],
@@ -536,7 +539,7 @@ def set_bc(b: PETSc.Vec, bcs: typing.List[DirichletBC],
     """Apply the function :func:`dolfinx.fem.set_bc` to a PETSc Vector."""
     if x0 is not None:
         x0 = x0.array_r
-    assemble.set_bc(b.array_w, bcs, x0, scale)
+    _assemble.set_bc(b.array_w, bcs, x0, scale)
 
 
 def set_bc_nest(b: PETSc.Vec, bcs: typing.List[typing.List[DirichletBC]],

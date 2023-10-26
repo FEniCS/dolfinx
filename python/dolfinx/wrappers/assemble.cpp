@@ -302,36 +302,29 @@ void declare_assembly_functions(nb::module_& m)
         dolfinx::fem::apply_lifting<T>(std::span<T>(b.data(), b.size()), a,
                                        _constants, _coeffs, bcs1, _x0, scale);
       },
-      nb::arg("b"), nb::arg("a"), nb::arg("constants"), nb::arg("coeffs"),
-      nb::arg("bcs1"), nb::arg("x0"), nb::arg("scale"),
+      nb::arg("b").noconvert(), nb::arg("a"), nb::arg("constants"),
+      nb::arg("coeffs"), nb::arg("bcs1"), nb::arg("x0"), nb::arg("scale"),
       "Modify vector for lifted boundary conditions");
   m.def(
       "set_bc",
       [](nb::ndarray<T, nb::ndim<1>, nb::c_contig> b,
          const std::vector<
              std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>& bcs,
-         nb::ndarray<const T, nb::c_contig> x0, U scale)
+         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> x0, T scale)
       {
-        if (x0.ndim() == 0)
-          dolfinx::fem::set_bc<T>(std::span(b.data(), b.size()), bcs, scale);
-        else if (x0.ndim() == 1)
-        {
-          dolfinx::fem::set_bc<T>(std::span(b.data(), b.size()), bcs,
-                                  std::span(x0.data(), x0.shape(0)), scale);
-        }
-        else
-          throw std::runtime_error("Wrong array dimension.");
+        dolfinx::fem::set_bc<T>(std::span(b.data(), b.size()), bcs,
+                                std::span(x0.data(), x0.shape(0)), scale);
       },
-      nb::arg("b"), nb::arg("bcs"), nb::arg("x0"), nb::arg("scale") = T(1));
+      nb::arg("b").noconvert(), nb::arg("bcs"), nb::arg("x0").noconvert(),
+      nb::arg("scale"));
   m.def(
       "set_bc",
       [](nb::ndarray<T, nb::ndim<1>, nb::c_contig> b,
          const std::vector<
              std::shared_ptr<const dolfinx::fem::DirichletBC<T, U>>>& bcs,
-         nb::object x0, T scale)
+         T scale)
       { dolfinx::fem::set_bc<T>(std::span(b.data(), b.size()), bcs, scale); },
-      nb::arg("b"), nb::arg("bcs"), nb::arg("x0") = nb::none(),
-      nb::arg("scale") = T(1));
+      nb::arg("b").noconvert(), nb::arg("bcs"), nb::arg("scale"));
 }
 
 } // namespace

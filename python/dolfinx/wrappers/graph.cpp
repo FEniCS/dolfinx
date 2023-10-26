@@ -45,13 +45,22 @@ void declare_adjacency_list(nb::module_& m, std::string type)
       .def(
           "__init__",
           [](dolfinx::graph::AdjacencyList<T>* a,
-             nb::ndarray<const T, nb::c_contig> adj)
+             nb::ndarray<const T, nb::ndim<1>, nb::c_contig> adj)
           {
-            const std::size_t dim = adj.ndim() < 2 ? 1 : adj.shape(1);
-            std::size_t size = adj.shape(0) * dim;
-            std::vector<T> data(adj.data(), adj.data() + size);
+            std::vector<T> data(adj.data(), adj.data() + adj.size());
             new (a) dolfinx::graph::AdjacencyList<T>(
-                dolfinx::graph::regular_adjacency_list(std::move(data), dim));
+                dolfinx::graph::regular_adjacency_list(std::move(data), 1));
+          },
+          nb::arg("adj").noconvert())
+      .def(
+          "__init__",
+          [](dolfinx::graph::AdjacencyList<T>* a,
+             nb::ndarray<const T, nb::ndim<1>, nb::c_contig> adj)
+          {
+            std::vector<T> data(adj.data(), adj.data() + adj.size());
+            new (a) dolfinx::graph::AdjacencyList<T>(
+                dolfinx::graph::regular_adjacency_list(std::move(data),
+                                                       adj.shape(1)));
           },
           nb::arg("adj").noconvert())
       .def(

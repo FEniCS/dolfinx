@@ -131,8 +131,6 @@ void common(nb::module_& m)
           [](const dolfinx::common::IndexMap& self,
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> local)
           {
-            if (local.ndim() != 1)
-              throw std::runtime_error("Array of local indices must be 1D.");
             std::vector<std::int64_t> global(local.size());
             self.local_to_global(
                 std::span(local.data(), local.size()),
