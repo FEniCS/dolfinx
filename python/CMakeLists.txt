@@ -52,7 +52,7 @@ find_package(DOLFINX REQUIRED CONFIG)
 nanobind_add_module(
   cpp
   MODULE
-  NB_SHARED
+  # NB_SHARED
   dolfinx/wrappers/dolfinx.cpp
   dolfinx/wrappers/assemble.cpp
   dolfinx/wrappers/common.cpp
