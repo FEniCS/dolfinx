@@ -8,6 +8,10 @@
 
 import pathlib
 
+import petsc4py
+from mpi4py import MPI
+from petsc4py import PETSc
+
 import cppimport
 import numpy as np
 import pytest
@@ -16,10 +20,6 @@ import dolfinx
 import dolfinx.pkgconfig
 from dolfinx.jit import mpi_jit_decorator
 from dolfinx.wrappers import get_include_path as pybind_inc
-
-import petsc4py
-from mpi4py import MPI
-from petsc4py import PETSc
 
 
 @pytest.mark.skipif(not dolfinx.pkgconfig.exists("dolfinx"),

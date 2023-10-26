@@ -155,6 +155,9 @@
 #
 # We begin by importing the required modules and functions
 
+from mpi4py import MPI
+from petsc4py import PETSc
+
 # +
 import numpy as np
 
@@ -162,9 +165,6 @@ from dolfinx import default_real_type, fem, io, mesh
 from dolfinx.fem.petsc import assemble_matrix_block, assemble_vector_block
 from ufl import (CellDiameter, FacetNormal, TestFunction, TrialFunction, avg,
                  conditional, div, dot, dS, ds, dx, grad, gt, inner, outer)
-
-from mpi4py import MPI
-from petsc4py import PETSc
 
 if np.issubdtype(PETSc.ScalarType, np.complexfloating):  # type: ignore
     print("Demo should only be executed with DOLFINx real mode")

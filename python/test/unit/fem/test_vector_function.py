@@ -5,6 +5,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Test that the vectors in vector spaces are correctly oriented"""
 
+from mpi4py import MPI
+
 import numpy as np
 import pytest
 
@@ -13,8 +15,6 @@ from basix.ufl import element
 from dolfinx import default_real_type
 from dolfinx.fem import Function, functionspace
 from dolfinx.mesh import create_mesh
-
-from mpi4py import MPI
 
 
 @pytest.mark.skip_in_parallel

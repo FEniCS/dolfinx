@@ -5,6 +5,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for BoundingBoxTree"""
 
+from mpi4py import MPI
+
 import numpy as np
 import pytest
 
@@ -18,8 +20,6 @@ from dolfinx.mesh import (CellType, create_box, create_unit_cube,
                           create_unit_interval, create_unit_square,
                           exterior_facet_indices, locate_entities,
                           locate_entities_boundary)
-
-from mpi4py import MPI
 
 
 def extract_geometricial_data(mesh, dim, entities):
