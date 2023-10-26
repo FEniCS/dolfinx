@@ -460,7 +460,6 @@ void declare_objects(nb::module_& m, const std::string& type)
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells,
              nb::ndarray<T, nb::ndim<2>, nb::c_contig> values)
           {
-            std::size_t size = values.shape(0) * values.shape(1);
             std::span<T> foo(values.data(), values.size());
             self.eval(mesh, std::span(cells.data(), cells.size()), foo,
                       {values.shape(0), values.shape(1)});
