@@ -19,6 +19,7 @@ WORKDIR /tmp
 RUN dnf -y update && \
     dnf install -y dnf-plugins-core && \
     dnf config-manager --set-enabled crb && \
+    dnf install -y epel-release && \
     dnf -y install \
     bison \
     boost-devel \
