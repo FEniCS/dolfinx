@@ -205,11 +205,11 @@ void declare_real_types(nb::module_& m)
             dolfinx::mesh::cell_entity_type(
                 mesh.topology()->cell_types().back(), entity_dim, 0),
             0);
-        std::array shape_e{entities_values.first.size() / num_vert_per_entity,
-                           num_vert_per_entity};
         return std::pair(
-            as_nbndarray_new(std::move(entities_values.first), shape_e),
-            as_nbndarray(std::move(entities_values.second)));
+            as_nbarray(std::move(entities_values.first),
+                       {entities_values.first.size() / num_vert_per_entity,
+                        num_vert_per_entity}),
+            as_nbarray(std::move(entities_values.second)));
       },
       nb::arg("mesh"), nb::arg("entity_dim"), nb::arg("entities"),
       nb::arg("values"));
@@ -234,7 +234,7 @@ void io(nb::module_& m)
             _dofmap(dofmap.data(), dofmap.shape(0), dofmap.shape(1));
         auto [cells, shape]
             = dolfinx::io::extract_vtk_connectivity(_dofmap, cell);
-        return as_nbndarray_new(std::move(cells), shape);
+        return as_nbarray(std::move(cells), shape.size(), shape.data());
       },
       nb::arg("dofmap"), nb::arg("celltype"),
       "Extract the mesh topology with VTK ordering using "
@@ -276,7 +276,7 @@ void io(nb::module_& m)
           [](dolfinx::io::XDMFFile& self, std::string name, std::string xpath)
           {
             auto [cells, shape] = self.read_topology_data(name, xpath);
-            return as_nbndarray_new(std::move(cells), shape);
+            return as_nbarray(std::move(cells), shape.size(), shape.data());
           },
           nb::arg("name") = "mesh", nb::arg("xpath") = "/Xdmf/Domain")
       .def(
@@ -285,7 +285,7 @@ void io(nb::module_& m)
           {
             auto [x, shape] = self.read_geometry_data(name, xpath);
             std::vector<double>& _x = std::get<std::vector<double>>(x);
-            return as_nbndarray_new(std::move(_x), shape);
+            return as_nbarray(std::move(_x), shape.size(), shape.data());
           },
           nb::arg("name") = "mesh", nb::arg("xpath") = "/Xdmf/Domain")
       .def("read_geometry_data", &dolfinx::io::XDMFFile::read_geometry_data,

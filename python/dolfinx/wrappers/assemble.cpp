@@ -114,11 +114,12 @@ void declare_assembly_functions(nb::module_& m)
                   = e.second.first.empty()
                         ? 0
                         : e.second.first.size() / e.second.second;
-              std::array shape = {num_ents, (std::size_t)e.second.second};
               return std::pair<const std::pair<dolfinx::fem::IntegralType, int>,
                                nb::ndarray<T, nb::numpy>>(
-                  e.first, dolfinx_wrappers::as_nbndarray_new(
-                               std::move(e.second.first), shape));
+                  e.first,
+                  dolfinx_wrappers::as_nbarray(
+                      std::move(e.second.first),
+                      {num_ents, static_cast<std::size_t>(e.second.second)}));
             });
 
         return c;
@@ -127,15 +128,13 @@ void declare_assembly_functions(nb::module_& m)
   m.def(
       "pack_constants",
       [](const dolfinx::fem::Form<T, U>& form) {
-        return dolfinx_wrappers::as_nbndarray(
-            dolfinx::fem::pack_constants(form));
+        return dolfinx_wrappers::as_nbarray(dolfinx::fem::pack_constants(form));
       },
       nb::arg("form"), "Pack constants for a Form.");
   m.def(
       "pack_constants",
-      [](const dolfinx::fem::Expression<T, U>& e) {
-        return dolfinx_wrappers::as_nbndarray(dolfinx::fem::pack_constants(e));
-      },
+      [](const dolfinx::fem::Expression<T, U>& e)
+      { return dolfinx_wrappers::as_nbarray(dolfinx::fem::pack_constants(e)); },
       nb::arg("e"), "Pack constants for an Expression.");
 
   // Functional

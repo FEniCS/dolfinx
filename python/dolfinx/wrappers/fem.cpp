@@ -89,8 +89,8 @@ void declare_function_space(nb::module_& m, std::string type)
              [](const dolfinx::fem::FunctionSpace<T>& self)
              {
                std::vector x = self.tabulate_dof_coordinates(false);
-               std::vector<std::size_t> shape{x.size() / 3, 3};
-               return dolfinx_wrappers::as_nbarray(std::move(x), shape);
+               return dolfinx_wrappers::as_nbarray(std::move(x),
+                                                   {x.size() / 3, 3});
              });
   }
 
@@ -118,7 +118,8 @@ void declare_function_space(nb::module_& m, std::string type)
              [](const dolfinx::fem::FiniteElement<T>& self)
              {
                auto [X, shape] = self.interpolation_points();
-               return dolfinx_wrappers::as_nbarray(std::move(X), shape);
+               return dolfinx_wrappers::as_nbarray(std::move(X), shape.size(),
+                                                   shape.data());
              })
         .def_prop_ro("interpolation_ident",
                      &dolfinx::fem::FiniteElement<T>::interpolation_ident)
@@ -469,7 +470,8 @@ void declare_objects(nb::module_& m, const std::string& type)
            [](const dolfinx::fem::Expression<T, U>& self)
            {
              auto [X, shape] = self.X();
-             return dolfinx_wrappers::as_nbarray(std::move(X), shape);
+             return dolfinx_wrappers::as_nbarray(std::move(X), shape.size(),
+                                                 shape.data());
            })
       .def_prop_ro("dtype", [dtype](const dolfinx::fem::Expression<T, U>& self)
                    { return dtype; })
@@ -716,9 +718,7 @@ void declare_cmap(nb::module_& m, std::string type)
                 const T,
                 MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
 
-            std::array<std::size_t, 2> Xshape
-                = {(std::size_t)X.shape(0), (std::size_t)X.shape(1)};
-
+            std::array<std::size_t, 2> Xshape{X.shape(0), X.shape(1)};
             std::array<std::size_t, 4> phi_shape
                 = self.tabulate_shape(0, X.shape(0));
             std::vector<T> phi_b(std::reduce(phi_shape.begin(), phi_shape.end(),
@@ -730,14 +730,14 @@ void declare_cmap(nb::module_& m, std::string type)
                     phi_full, 0, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
                     MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
 
-            std::array<std::size_t, 2> shape
-                = {(std::size_t)X.shape(0), (std::size_t)cell.shape(1)};
+            std::array<std::size_t, 2> shape = {X.shape(0), cell.shape(1)};
             std::vector<T> xb(shape[0] * shape[1]);
             self.push_forward(
                 mdspan2_t(xb.data(), shape),
                 cmdspan2_t(cell.data(), cell.shape(0), cell.shape(1)), phi);
 
-            return dolfinx_wrappers::as_nbarray(std::move(xb), shape);
+            return dolfinx_wrappers::as_nbarray(std::move(xb),
+                                                {X.shape(0), cell.shape(1)});
           },
           nb::arg("X"), nb::arg("cell_geometry"))
       .def(
@@ -794,7 +794,7 @@ void declare_cmap(nb::module_& m, std::string type)
               self.pull_back_nonaffine(X, _x, g);
 
             return dolfinx_wrappers::as_nbarray(std::move(Xb),
-                                                std::array{num_points, tdim});
+                                                {num_points, tdim});
           },
           nb::arg("x"), nb::arg("cell_geometry"));
 }
@@ -916,8 +916,7 @@ void declare_real_functions(nb::module_& m)
       {
         std::vector<T> x = dolfinx::fem::interpolation_coords(
             e, geometry, std::span(cells.data(), cells.size()));
-        return dolfinx_wrappers::as_nbarray(
-            std::move(x), std::array<std::size_t, 2>{3, x.size() / 3});
+        return dolfinx_wrappers::as_nbarray(std::move(x), {3, x.size() / 3});
       },
       nb::arg("element"), nb::arg("V"), nb::arg("cells"));
 
