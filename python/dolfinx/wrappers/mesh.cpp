@@ -317,8 +317,8 @@ void declare_mesh(nb::module_& m, std::string type)
   m.def(
       "locate_entities",
       [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
-         const std::function<nb::ndarray<bool>(
-             const nb::ndarray<const T, nb::numpy>&)>& marker)
+         std::function<nb::ndarray<bool>(nb::ndarray<const T, nb::numpy>)>
+             marker)
       {
         auto cpp_marker = [&marker](auto x)
         {
@@ -338,8 +338,8 @@ void declare_mesh(nb::module_& m, std::string type)
   m.def(
       "locate_entities_boundary",
       [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
-         const std::function<nb::ndarray<bool>(
-             const nb::ndarray<const T, nb::numpy>&)>& marker)
+         std::function<nb::ndarray<bool>(nb::ndarray<const T, nb::numpy>)>
+             marker)
       {
         auto cpp_marker = [&marker](auto x)
         {
@@ -515,10 +515,11 @@ void mesh(nb::module_& m)
       "Create default cell partitioner.");
   m.def(
       "create_cell_partitioner",
-      [](const std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
+      [](std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
              MPICommWrapper comm, int nparts,
              const dolfinx::graph::AdjacencyList<std::int64_t>& local_graph,
-             bool ghosting)>& part,
+             bool ghosting)>
+             part,
          dolfinx::mesh::GhostMode ghost_mode) -> PythonCellPartitionFunction
       {
         return create_cell_partitioner_py(

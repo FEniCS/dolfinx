@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <array>
 #include <memory>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
@@ -22,12 +23,12 @@ namespace dolfinx_wrappers
 /// From https://github.com/pybind/pybind11/issues/1042
 
 template <typename V, typename U>
-auto as_nbndarray_new(V&& array, U&& shape)
+auto as_nbndarray_new(V&& x, U&& shape)
 {
   using _V = std::decay_t<V>;
   std::size_t dim = shape.size();
-  typename _V::value_type* data = array.data();
-  std::unique_ptr<_V> x_ptr = std::make_unique<_V>(std::move(array));
+  typename _V::value_type* data = x.data();
+  std::unique_ptr<_V> x_ptr = std::make_unique<_V>(std::move(x));
   auto capsule = nb::capsule(x_ptr.get(), [](void* p) noexcept
                              { delete reinterpret_cast<_V*>(p); });
   x_ptr.release();
@@ -35,31 +36,38 @@ auto as_nbndarray_new(V&& array, U&& shape)
       static_cast<typename _V::value_type*>(data), dim, shape.data(), capsule);
 }
 
-template <typename Sequence, typename U>
-auto as_nbarray(Sequence&& seq, U&& shape)
+/// Create a nb::ndarray that shares data with a std::vector. The
+/// std::vector owns the data, and the nb::ndarray object keeps the
+/// std::vector alive.
+// From https://github.com/pybind/pybind11/issues/1042
+template <typename V>
+auto as_nbndarray_new(V&& x)
+{
+  return as_nbndarray_new(std::move(x), std::array{x.size()});
+}
+
+template <typename V, typename U>
+auto as_nbarray(V&& x, U&& shape)
 {
   std::size_t dim = shape.size();
-  auto data = seq.data();
-  std::unique_ptr<Sequence> seq_ptr
-      = std::make_unique<Sequence>(std::move(seq));
-  auto capsule = nb::capsule(
-      seq_ptr.get(), [](void* p) noexcept
-      { std::unique_ptr<Sequence>(reinterpret_cast<Sequence*>(p)); });
-  seq_ptr.release();
+  auto data = x.data();
+  std::unique_ptr<V> x_ptr = std::make_unique<V>(std::move(x));
+  auto capsule = nb::capsule(x_ptr.get(), [](void* p) noexcept
+                             { std::unique_ptr<V>(reinterpret_cast<V*>(p)); });
+  x_ptr.release();
 
-  return nb::ndarray<typename Sequence::value_type, nb::numpy>(
-      static_cast<typename Sequence::value_type*>(data), dim, shape.data(),
-      capsule);
+  return nb::ndarray<typename V::value_type, nb::numpy>(
+      static_cast<typename V::value_type*>(data), dim, shape.data(), capsule);
 }
 
 /// Create a nb::ndarray that shares data with a std::vector. The
 /// std::vector owns the data, and the nb::ndarray object keeps the std::vector
 /// alive.
 // From https://github.com/pybind/pybind11/issues/1042
-template <typename Sequence>
-auto as_nbarray(Sequence&& seq)
+template <typename V>
+auto as_nbarray(V&& x)
 {
-  return as_nbarray(std::move(seq), std::array{seq.size()});
+  return as_nbarray(std::move(x), std::array{x.size()});
 }
 
 } // namespace dolfinx_wrappers

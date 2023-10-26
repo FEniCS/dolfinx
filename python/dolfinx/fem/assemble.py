@@ -326,4 +326,7 @@ def set_bc(b: np.ndarray, bcs: typing.List[DirichletBC],
 
     """
     _bcs = [bc._cpp_object for bc in bcs]
-    _cpp.fem.set_bc(b, _bcs, x0, scale)
+    if x0 is None:
+        _cpp.fem.set_bc(b, _bcs, scale)
+    else:
+        _cpp.fem.set_bc(b, _bcs, x0, scale)

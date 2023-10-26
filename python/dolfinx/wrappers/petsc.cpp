@@ -298,9 +298,9 @@ void petsc_fem_module(nb::module_& m)
               "Expected 1D arrays for boundary condition rows/columns");
         }
 
-        std::function<int(const std::span<const std::int32_t>&,
-                          const std::span<const std::int32_t>&,
-                          const std::span<const PetscScalar>&)>
+        std::function<int(std::span<const std::int32_t>,
+                          std::span<const std::int32_t>,
+                          std::span<const PetscScalar>)>
             set_fn;
         if (unrolled)
         {

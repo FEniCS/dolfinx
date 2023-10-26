@@ -8,9 +8,9 @@
 from __future__ import annotations
 
 import numpy as np
+from dolfinx.cpp.graph import partitioner
 
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.graph import partitioner
 
 # Import graph partitioners, which may or may not be available
 # (dependent on build configuration)
@@ -46,16 +46,12 @@ def adjacencylist(data: np.ndarray, offsets=None):
     """
 
     if offsets is None:
-        if data.dtype == np.int32:
+        try:
             return _cpp.graph.AdjacencyList_int32(data)
-        elif data.dtype == np.int64:
+        except TypeError:
             return _cpp.graph.AdjacencyList_int64(data)
-        else:
-            raise TypeError("Wrong data type")
     else:
-        if data.dtype == np.int32:
+        try:
             return _cpp.graph.AdjacencyList_int32(data, offsets)
-        elif data.dtype == np.int64:
+        except TypeError:
             return _cpp.graph.AdjacencyList_int64(data, offsets)
-        else:
-            raise TypeError("Wrong data type")
