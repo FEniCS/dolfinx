@@ -129,7 +129,7 @@ void declare_function_space(nb::module_& m, std::string type)
                      {
                        std::span<const std::size_t> vshape = self.value_shape();
                        const std::size_t size = vshape.size();
-                       return nb::ndarray<nb::numpy, const std::size_t>(
+                       return nb::ndarray<const std::size_t, nb::numpy>(
                            vshape.data(), 1, &size);
                      })
         .def(
@@ -227,11 +227,8 @@ void declare_objects(nb::module_& m, const std::string& type)
           {
             std::vector<std::size_t> shape(g.shape_ptr(),
                                            g.shape_ptr() + g.ndim());
-
-            std::size_t size = std::accumulate(shape.begin(), shape.end(), 1,
-                                               std::multiplies{});
-            auto foo = std::span(static_cast<const T*>(g.data()), size);
-            auto _g = std::make_shared<dolfinx::fem::Constant<T>>(foo, shape);
+            auto _g = std::make_shared<dolfinx::fem::Constant<T>>(
+                std::span(g.data(), g.size()), shape);
             new (bc) dolfinx::fem::DirichletBC<T, U>(
                 _g, std::vector(dofs.data(), dofs.data() + dofs.size()), V);
           },
@@ -306,29 +303,23 @@ void declare_objects(nb::module_& m, const std::string& type)
       .def(
           "interpolate",
           [](dolfinx::fem::Function<T, U>& self,
-             nb::ndarray<const T, nb::numpy> f,
-             nb::ndarray<const std::int32_t, nb::numpy> cells)
+             nb::ndarray<const T, nb::ndim<1>, nb::c_contig> f,
+             nb::ndarray<const std::int32_t, nb::c_contig> cells)
           {
-            if (f.ndim() == 1)
-            {
-              std::array<std::size_t, 2> fshape
-                  = {1, static_cast<std::size_t>(f.shape(0))};
-              std::span<const T> foo(static_cast<const T*>(f.data()),
-                                     f.shape(0));
-              dolfinx::fem::interpolate(self, foo, fshape,
-                                        std::span(cells.data(), cells.size()));
-            }
-            else
-            {
-              std::array<std::size_t, 2> fshape
-                  = {static_cast<std::size_t>(f.shape(0)),
-                     static_cast<std::size_t>(f.shape(1))};
-              dolfinx::fem::interpolate(
-                  self,
-                  std::span<const T>(static_cast<const T*>(f.data()),
-                                     f.shape(0) * f.shape(1)),
-                  fshape, std::span(cells.data(), cells.size()));
-            }
+            dolfinx::fem::interpolate(self, std::span(f.data(), f.size()),
+                                      {1, f.size()},
+                                      std::span(cells.data(), cells.size()));
+          },
+          nb::arg("f"), nb::arg("cells"), "Interpolate an expression function")
+      .def(
+          "interpolate",
+          [](dolfinx::fem::Function<T, U>& self,
+             nb::ndarray<const T, nb::ndim<2>, nb::c_contig> f,
+             nb::ndarray<const std::int32_t, nb::c_contig> cells)
+          {
+            dolfinx::fem::interpolate(self, std::span(f.data(), f.size()),
+                                      {f.shape(0), f.shape(1)},
+                                      std::span(cells.data(), cells.size()));
           },
           nb::arg("f"), nb::arg("cells"), "Interpolate an expression function")
       .def(
@@ -348,7 +339,7 @@ void declare_objects(nb::module_& m, const std::string& type)
       .def(
           "interpolate_ptr",
           [](dolfinx::fem::Function<T, U>& self, std::uintptr_t addr,
-             nb::ndarray<const std::int32_t, nb::numpy> cells)
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells)
           {
             assert(self.function_space());
             auto element = self.function_space()->element();
@@ -378,7 +369,7 @@ void declare_objects(nb::module_& m, const std::string& type)
           "interpolate",
           [](dolfinx::fem::Function<T, U>& self,
              const dolfinx::fem::Expression<T, U>& expr,
-             nb::ndarray<const std::int32_t, nb::numpy> cells)
+             nb::ndarray<const std::int32_t, nb::c_contig> cells)
           { self.interpolate(expr, std::span(cells.data(), cells.size())); },
           nb::arg("expr"), nb::arg("cells"),
           "Interpolate an Expression on a set of cells")
@@ -388,9 +379,9 @@ void declare_objects(nb::module_& m, const std::string& type)
       .def(
           "eval",
           [](const dolfinx::fem::Function<T, U>& self,
-             nb::ndarray<const U, nb::numpy> x,
-             nb::ndarray<const std::int32_t, nb::numpy> cells,
-             nb::ndarray<T, nb::numpy> u)
+             nb::ndarray<const U, nb::c_contig> x,
+             nb::ndarray<const std::int32_t, nb::c_contig> cells,
+             nb::ndarray<T, nb::c_contig> u)
           {
             // TODO: handle 1d case
             self.eval(std::span(x.data(), x.size()),
@@ -413,7 +404,8 @@ void declare_objects(nb::module_& m, const std::string& type)
       "Value constant with respect to integration domain")
       .def(
           "__init__",
-          [](dolfinx::fem::Constant<T>* cp, nb::ndarray<const T, nb::numpy> c)
+          [](dolfinx::fem::Constant<T>* cp,
+             nb::ndarray<const T, nb::c_contig> c)
           {
             std::vector<std::size_t> shape(c.shape_ptr(),
                                            c.shape_ptr() + c.ndim());
@@ -443,8 +435,8 @@ void declare_objects(nb::module_& m, const std::string& type)
                  const dolfinx::fem::Function<T, U>>>& coefficients,
              const std::vector<
                  std::shared_ptr<const dolfinx::fem::Constant<T>>>& constants,
-             nb::ndarray<const U, nb::numpy> X, std::uintptr_t fn_addr,
-             const std::vector<int>& value_shape,
+             nb::ndarray<const U, nb::ndim<2>, nb::c_contig> X,
+             std::uintptr_t fn_addr, const std::vector<int>& value_shape,
              std::shared_ptr<const dolfinx::fem::FunctionSpace<U>>
                  argument_function_space)
           {
@@ -454,9 +446,8 @@ void declare_objects(nb::module_& m, const std::string& type)
                             const int*, const std::uint8_t*))fn_addr;
             new (ex) dolfinx::fem::Expression<T, U>(
                 coefficients, constants, std::span(X.data(), X.size()),
-                {static_cast<std::size_t>(X.shape(0)),
-                 static_cast<std::size_t>(X.shape(1))},
-                tabulate_expression_ptr, value_shape, argument_function_space);
+                {X.shape(0), X.shape(1)}, tabulate_expression_ptr, value_shape,
+                argument_function_space);
           },
           nb::arg("coefficients"), nb::arg("constants"), nb::arg("X"),
           nb::arg("fn"), nb::arg("value_shape"),
@@ -465,15 +456,13 @@ void declare_objects(nb::module_& m, const std::string& type)
           "eval",
           [](const dolfinx::fem::Expression<T, U>& self,
              const dolfinx::mesh::Mesh<U>& mesh,
-             nb::ndarray<const std::int32_t, nb::numpy> cells,
-             nb::ndarray<T, nb::numpy> values)
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells,
+             nb::ndarray<T, nb::ndim<2>, nb::c_contig> values)
           {
             std::size_t size = values.shape(0) * values.shape(1);
-            std::span<T> foo(static_cast<T*>(values.data()), size);
-            self.eval(
-                mesh, std::span<const std::int32_t>(cells.data(), cells.size()),
-                foo,
-                {(std::size_t)values.shape(0), (std::size_t)values.shape(1)});
+            std::span<T> foo(values.data(), values.size());
+            self.eval(mesh, std::span(cells.data(), cells.size()), foo,
+                      {values.shape(0), values.shape(1)});
           },
           nb::arg("mesh"), nb::arg("active_cells"), nb::arg("values"))
       .def("X",
@@ -1017,10 +1006,9 @@ void fem(nb::module_& m)
       "Build and dofmap on a mesh.");
   m.def(
       "transpose_dofmap",
-      [](nb::ndarray<std::int32_t, nb::numpy> dofmap, int num_cells)
+      [](nb::ndarray<const std::int32_t, nb::ndim<2>, nb::numpy> dofmap,
+         int num_cells)
       {
-        if (dofmap.ndim() != 2)
-          throw std::runtime_error("Dofmap data has wrong rank");
         MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
             const std::int32_t,
             MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
