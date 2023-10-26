@@ -55,7 +55,7 @@ void declare_adjacency_list(nb::module_& m, std::string type)
       .def(
           "__init__",
           [](dolfinx::graph::AdjacencyList<T>* a,
-             nb::ndarray<const T, nb::ndim<1>, nb::c_contig> adj)
+             nb::ndarray<const T, nb::ndim<2>, nb::c_contig> adj)
           {
             std::vector<T> data(adj.data(), adj.data() + adj.size());
             new (a) dolfinx::graph::AdjacencyList<T>(
