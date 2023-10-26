@@ -133,7 +133,7 @@ void declare_meshtags(nb::module_& m, std::string type)
                          self.indices().data(), 1, &size);
                    })
       .def("find", [](dolfinx::mesh::MeshTags<T>& self, T value)
-           { return as_nbarray(self.find(value)); });
+           { return as_nbndarray(self.find(value)); });
 
   m.def("create_meshtags",
         [](std::shared_ptr<const dolfinx::mesh::Topology> topology, int dim,
@@ -288,8 +288,8 @@ void declare_mesh(nb::module_& m, std::string type)
       {
         std::vector<T> n = dolfinx::mesh::cell_normals(
             mesh, dim, std::span(entities.data(), entities.size()));
-        return as_nbarray(std::move(n),
-                          std::array<std::size_t, 2>{n.size() / 3, 3});
+        return as_nbndarray_new(std::move(n),
+                                std::array<std::size_t, 2>{n.size() / 3, 3});
       },
       nb::arg("mesh"), nb::arg("dim"), nb::arg("entities"));
   m.def(
@@ -310,7 +310,7 @@ void declare_mesh(nb::module_& m, std::string type)
         std::vector<T> x = dolfinx::mesh::compute_midpoints(
             mesh, dim, std::span(entities.data(), entities.size()));
         std::array<std::size_t, 2> shape{(std::size_t)entities.size(), 3};
-        return as_nbarray(std::move(x), shape);
+        return as_nbndarray_new(std::move(x), shape);
       },
       nb::arg("mesh"), nb::arg("dim"), nb::arg("entities"));
 
@@ -330,7 +330,7 @@ void declare_mesh(nb::module_& m, std::string type)
                                           marked.data() + marked.size());
         };
 
-        return as_nbarray(
+        return as_nbndarray(
             dolfinx::mesh::locate_entities(mesh, dim, cpp_marker));
       },
       nb::arg("mesh"), nb::arg("dim"), nb::arg("marker"));
@@ -350,7 +350,7 @@ void declare_mesh(nb::module_& m, std::string type)
           return std::vector<std::int8_t>(marked.data(),
                                           marked.data() + marked.size());
         };
-        return as_nbarray(
+        return as_nbndarray(
             dolfinx::mesh::locate_entities_boundary(mesh, dim, cpp_marker));
       },
       nb::arg("mesh"), nb::arg("dim"), nb::arg("marker"));
@@ -373,7 +373,7 @@ void declare_mesh(nb::module_& m, std::string type)
             cell_entity_type(cell_type, dim, 0));
         std::array<std::size_t, 2> shape{(std::size_t)entities.size(),
                                          num_vertices};
-        return as_nbarray(std::move(idx), shape);
+        return as_nbndarray_new(std::move(idx), shape);
       },
       nb::arg("mesh"), nb::arg("dim"), nb::arg("entities"), nb::arg("orient"));
 }
@@ -532,7 +532,10 @@ void mesh(nb::module_& m)
   m.def(
       "exterior_facet_indices",
       [](const dolfinx::mesh::Topology& t)
-      { return as_nbarray(dolfinx::mesh::exterior_facet_indices(t)); },
+      {
+        return dolfinx_wrappers::as_nbndarray(
+            dolfinx::mesh::exterior_facet_indices(t));
+      },
       nb::arg("topology"));
   m.def(
       "compute_incident_entities",
@@ -540,8 +543,9 @@ void mesh(nb::module_& m)
          nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> entities,
          int d0, int d1)
       {
-        return as_nbarray(dolfinx::mesh::compute_incident_entities(
-            topology, std::span(entities.data(), entities.size()), d0, d1));
+        return dolfinx_wrappers::as_nbndarray(
+            dolfinx::mesh::compute_incident_entities(
+                topology, std::span(entities.data(), entities.size()), d0, d1));
       },
       nb::arg("mesh"), nb::arg("entities"), nb::arg("d0"), nb::arg("d1"));
 

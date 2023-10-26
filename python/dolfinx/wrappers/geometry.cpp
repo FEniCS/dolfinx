@@ -83,7 +83,7 @@ void declare_bbtree(nb::module_& m, std::string type)
         std::vector coll
             = dolfinx::geometry::compute_collisions<T>(treeA, treeB);
         std::array<std::size_t, 2> shape{std::size_t(coll.size() / 2), 2};
-        return dolfinx_wrappers::as_nbarray(std::move(coll), shape);
+        return dolfinx_wrappers::as_nbndarray_new(std::move(coll), shape);
       },
       nb::arg("tree0"), nb::arg("tree1"));
   m.def(
@@ -95,7 +95,7 @@ void declare_bbtree(nb::module_& m, std::string type)
       {
         // const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
         std::span<const T> _p(points.data(), 3 * points.shape(0));
-        return dolfinx_wrappers::as_nbarray(
+        return dolfinx_wrappers::as_nbndarray(
             dolfinx::geometry::compute_closest_entity<T>(tree, midpoint_tree,
                                                          mesh, _p));
       },
@@ -134,7 +134,7 @@ void declare_bbtree(nb::module_& m, std::string type)
         const std::array<T, 3> d
             = dolfinx::geometry::compute_distance_gjk<T>(_p, _q);
         std::vector<T> _d(d.begin(), d.end());
-        return dolfinx_wrappers::as_nbarray(std::move(_d));
+        return dolfinx_wrappers::as_nbndarray(std::move(_d));
       },
       nb::arg("p"), nb::arg("q"));
 
@@ -146,7 +146,7 @@ void declare_bbtree(nb::module_& m, std::string type)
       {
         const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
         std::span<const T> _p(points.data(), 3 * p_s0);
-        return dolfinx_wrappers::as_nbarray(
+        return dolfinx_wrappers::as_nbndarray(
             dolfinx::geometry::squared_distance<T>(mesh, dim, indices, _p));
       },
       nb::arg("mesh"), nb::arg("dim"), nb::arg("indices"), nb::arg("points"));

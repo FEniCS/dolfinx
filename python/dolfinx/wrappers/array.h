@@ -55,7 +55,6 @@ auto as_nbarray(V&& x, U&& shape)
   auto capsule = nb::capsule(x_ptr.get(), [](void* p) noexcept
                              { std::unique_ptr<V>(reinterpret_cast<V*>(p)); });
   x_ptr.release();
-
   return nb::ndarray<typename V::value_type, nb::numpy>(
       static_cast<typename V::value_type*>(data), dim, shape.data(), capsule);
 }
