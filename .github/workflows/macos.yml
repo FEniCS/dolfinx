@@ -29,7 +29,6 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip setuptools wheel
-          python -m pip install -r dolfinx/python/build-requirements.txt
           python -m pip install cython numpy mpi4py
 
       - name: Install minimal PETSc and petsc4py
@@ -69,6 +68,7 @@ jobs:
         env:
           PYTHONPATH: ${{ github.workspace }}/petsc/${{ env.PETSC_ARCH }}/lib:${{ env.PYTHONPATH }}
         run: |
+          python -m pip install -r dolfinx/python/build-requirements.txt
           python -m pip install --no-build-isolation dolfinx/python/
       - name: Basic test
         env:
