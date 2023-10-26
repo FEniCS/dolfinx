@@ -20,6 +20,8 @@
 #
 # We begin this demo by importing the required modules.
 
+from mpi4py import MPI
+
 # +
 import matplotlib
 import matplotlib.pylab as plt
@@ -31,8 +33,6 @@ from dolfinx import fem, mesh
 from dolfinx.fem.petsc import LinearProblem
 from ufl import (SpatialCoordinate, TestFunction, TrialFunction, cos, div, dx,
                  grad, inner, sin)
-
-from mpi4py import MPI
 
 matplotlib.use('agg')
 # -

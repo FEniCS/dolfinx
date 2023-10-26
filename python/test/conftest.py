@@ -4,9 +4,9 @@ import shutil
 import time
 from collections import defaultdict
 
-import pytest
-
 from mpi4py import MPI
+
+import pytest
 
 
 def pytest_runtest_teardown(item):

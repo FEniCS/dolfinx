@@ -6,6 +6,8 @@
 
 from pathlib import Path
 
+from mpi4py import MPI
+
 import numpy as np
 import pytest
 from numpy.testing import assert_array_equal
@@ -19,8 +21,6 @@ from dolfinx.io.utils import cell_perm_vtk  # noqa F401
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_interval, create_unit_square)
 from dolfinx.plot import vtk_mesh
-
-from mpi4py import MPI
 
 cell_types_2D = [CellType.triangle, CellType.quadrilateral]
 cell_types_3D = [CellType.tetrahedron, CellType.hexahedron]

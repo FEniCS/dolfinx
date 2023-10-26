@@ -60,6 +60,9 @@
 #
 # The modules that will be used are imported:
 
+from mpi4py import MPI
+from petsc4py.PETSc import ScalarType  # type: ignore
+
 # +
 import numpy as np
 
@@ -68,10 +71,10 @@ from dolfinx import fem, io, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
 from ufl import ds, dx, grad, inner
 
-from mpi4py import MPI
-from petsc4py.PETSc import ScalarType  # type: ignore
-
 # -
+
+# Note that it is important to first `from mpi4py import MPI` to
+# ensure that MPI is correctly initialised.
 
 # We create a rectangular {py:class}`Mesh <dolfinx.mesh.Mesh>` using
 # {py:func}`create_rectangle <dolfinx.mesh.create_rectangle>`, and

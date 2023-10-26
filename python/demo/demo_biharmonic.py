@@ -108,6 +108,9 @@
 #
 # We first import the modules and functions that the program uses:
 
+from mpi4py import MPI
+from petsc4py.PETSc import ScalarType  # type: ignore
+
 # +
 import numpy as np
 
@@ -117,9 +120,6 @@ from dolfinx.fem.petsc import LinearProblem
 from dolfinx.mesh import CellType, GhostMode
 from ufl import (CellDiameter, FacetNormal, avg, div, dS, dx, grad, inner,
                  jump, pi, sin)
-
-from mpi4py import MPI
-from petsc4py.PETSc import ScalarType  # type: ignore
 
 # -
 

@@ -4,6 +4,8 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+from mpi4py import MPI
+
 import numpy as np
 import pytest
 
@@ -18,8 +20,6 @@ from dolfinx.fem import (Constant, Function, apply_lifting, assemble_matrix,
 from dolfinx.mesh import (CellType, create_unit_cube, create_unit_square,
                           locate_entities_boundary)
 from ufl import dx, inner
-
-from mpi4py import MPI
 
 
 def test_locate_dofs_geometrical():
