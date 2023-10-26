@@ -81,23 +81,20 @@ void declare_adjacency_list(nb::module_& m, std::string type)
           [](const dolfinx::graph::AdjacencyList<T>& self, int i)
           {
             std::span<const T> link = self.links(i);
-            std::size_t size = link.size();
-            return nb::ndarray<const T, nb::numpy>(link.data(), 1, &size);
+            return nb::ndarray<const T, nb::numpy>(link.data(), {link.size()});
           },
           nb::arg("i"), "Links (edges) of a node")
       .def_prop_ro("array",
                    [](const dolfinx::graph::AdjacencyList<T>& self)
                    {
-                     std::size_t size = self.array().size();
-                     return nb::ndarray<const T, nb::numpy>(self.array().data(),
-                                                            1, &size);
+                     return nb::ndarray<const T, nb::numpy>(
+                         self.array().data(), {self.array().size()});
                    })
       .def_prop_ro("offsets",
                    [](const dolfinx::graph::AdjacencyList<T>& self)
                    {
-                     std::size_t size = self.offsets().size();
                      return nb::ndarray<const std::int32_t, nb::numpy>(
-                         self.offsets().data(), 1, &size);
+                         self.offsets().data(), {self.offsets().size()});
                    })
       .def_prop_ro("num_nodes", &dolfinx::graph::AdjacencyList<T>::num_nodes)
       .def("__eq__", &dolfinx::graph::AdjacencyList<T>::operator==,

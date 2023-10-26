@@ -129,9 +129,8 @@ void declare_function_space(nb::module_& m, std::string type)
                      [](const dolfinx::fem::FiniteElement<T>& self)
                      {
                        std::span<const std::size_t> vshape = self.value_shape();
-                       const std::size_t size = vshape.size();
                        return nb::ndarray<const std::size_t, nb::numpy>(
-                           vshape.data(), 1, &size);
+                           vshape.data(), {vshape.size()});
                      })
         .def(
             "apply_dof_transformation",
@@ -1074,9 +1073,8 @@ void fem(nb::module_& m)
           [](const dolfinx::fem::DofMap& self, int cell)
           {
             std::span<const std::int32_t> dofs = self.cell_dofs(cell);
-            std::size_t size = dofs.size();
-            return nb::ndarray<const std::int32_t, nb::numpy>(dofs.data(), 1,
-                                                              &size);
+            return nb::ndarray<const std::int32_t, nb::numpy>(dofs.data(),
+                                                              {dofs.size()});
           },
           nb::arg("cell"))
       .def_prop_ro("bs", &dolfinx::fem::DofMap::bs)
@@ -1085,9 +1083,8 @@ void fem(nb::module_& m)
           [](const dolfinx::fem::DofMap& self)
           {
             auto dofs = self.map();
-            std::array shape{dofs.extent(0), dofs.extent(1)};
             return nb::ndarray<const std::int32_t, nb::numpy>(
-                dofs.data_handle(), shape.size(), shape.data());
+                dofs.data_handle(), {dofs.extent(0), dofs.extent(1)});
           },
           nb::rv_policy::reference_internal);
 

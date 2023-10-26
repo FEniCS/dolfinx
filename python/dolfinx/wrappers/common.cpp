@@ -112,9 +112,8 @@ void common(nb::module_& m)
           [](const dolfinx::common::IndexMap& self)
           {
             const std::vector<std::int64_t>& ghosts = self.ghosts();
-            std::size_t size = ghosts.size();
-            return nb::ndarray<const std::int64_t, nb::numpy>(ghosts.data(), 1,
-                                                              &size);
+            return nb::ndarray<const std::int64_t, nb::numpy>(ghosts.data(),
+                                                              {ghosts.size()});
           },
           "Return list of ghost indices")
       .def_prop_ro(

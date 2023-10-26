@@ -23,7 +23,6 @@ from dolfinx.mesh import create_unit_square
 # import nanobind
 
 
-
 def test_mpi_comm_wrapper():
     """Test MPICommWrapper <-> mpi4py.MPI.Comm conversion"""
     w1 = MPI.COMM_WORLD
