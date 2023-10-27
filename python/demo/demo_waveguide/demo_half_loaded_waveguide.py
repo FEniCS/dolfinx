@@ -41,6 +41,8 @@
 # +
 import sys
 
+from mpi4py import MPI
+
 import numpy as np
 from analytical_modes import verify_mode
 
@@ -50,8 +52,6 @@ from dolfinx import default_scalar_type, fem, io, plot
 from dolfinx.fem.petsc import assemble_matrix
 from dolfinx.mesh import (CellType, create_rectangle, exterior_facet_indices,
                           locate_entities)
-
-from mpi4py import MPI
 
 try:
     import pyvista

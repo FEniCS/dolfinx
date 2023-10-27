@@ -5,13 +5,13 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the Constant class"""
 
+from mpi4py import MPI
+
 import numpy as np
 import pytest
 
 from dolfinx.fem import Constant
 from dolfinx.mesh import create_unit_cube
-
-from mpi4py import MPI
 
 
 def test_scalar_constant():
