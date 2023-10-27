@@ -236,7 +236,6 @@ def test_sub_constant_bc(mesh_factory):
         bc_c = dirichletbc(c, boundary_dofs, V.sub(i))
 
         u_f = Function(V)
-        print(bc_fi)
         set_bc(u_f.x.array, [bc_fi])
         u_c = Function(V)
         set_bc(u_c.x.array, [bc_c])

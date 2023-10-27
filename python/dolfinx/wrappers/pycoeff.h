@@ -6,7 +6,6 @@
 
 #include <algorithm>
 #include <dolfinx/fem/Form.h>
-#include <iostream>
 #include <map>
 #include <nanobind/ndarray.h>
 #include <span>
