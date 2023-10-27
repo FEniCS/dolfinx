@@ -17,6 +17,8 @@
 #
 # We begin this demo by importing the required modules.
 
+from mpi4py import MPI
+
 # +
 import matplotlib.pylab as plt
 import numpy as np
@@ -27,8 +29,6 @@ import ufl
 from dolfinx import default_scalar_type, fem, mesh
 from dolfinx.fem.petsc import LinearProblem
 from ufl import ds, dx, grad, inner
-
-from mpi4py import MPI
 
 # -
 

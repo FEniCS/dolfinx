@@ -13,6 +13,11 @@ import os
 import pathlib
 import time
 
+import petsc4py.lib
+from mpi4py import MPI
+from petsc4py import PETSc
+from petsc4py import get_config as PETSc_get_config
+
 import cffi
 import numpy as np
 import numpy.typing
@@ -25,11 +30,6 @@ from dolfinx.fem import Function, FunctionSpace, form
 from dolfinx.fem.petsc import assemble_matrix, load_petsc_lib
 from dolfinx.mesh import create_unit_square
 from ufl import dx, inner
-
-import petsc4py.lib
-from mpi4py import MPI
-from petsc4py import PETSc
-from petsc4py import get_config as PETSc_get_config
 
 numba = pytest.importorskip("numba")
 cffi_support = pytest.importorskip("numba.core.typing.cffi_utils")

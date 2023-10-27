@@ -6,6 +6,8 @@
 
 # TODO Test replacing mesh with submesh for existing assembler tests
 
+from mpi4py import MPI
+
 import numpy as np
 import pytest
 
@@ -14,8 +16,6 @@ from dolfinx import default_scalar_type, fem, la
 from dolfinx.mesh import (GhostMode, create_box, create_rectangle,
                           create_submesh, create_unit_cube, create_unit_square,
                           locate_entities, locate_entities_boundary)
-
-from mpi4py import MPI
 
 
 def assemble(mesh, space, k):

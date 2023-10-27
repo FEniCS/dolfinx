@@ -7,6 +7,8 @@
 
 import random
 
+from mpi4py import MPI
+
 import numpy as np
 import pytest
 
@@ -15,8 +17,6 @@ from basix.ufl import element
 from dolfinx import default_real_type
 from dolfinx.fem import Function, FunctionSpace, assemble_scalar, form
 from dolfinx.mesh import create_mesh
-
-from mpi4py import MPI
 
 
 def randomly_ordered_mesh(cell_type):

@@ -8,6 +8,8 @@
 import random
 from itertools import combinations, product
 
+from mpi4py import MPI
+
 import numpy as np
 import pytest
 
@@ -17,8 +19,6 @@ from basix.ufl import element
 from dolfinx.fem import (Constant, Function, FunctionSpace, assemble_matrix,
                          assemble_scalar, assemble_vector, form)
 from dolfinx.mesh import CellType, create_mesh, meshtags
-
-from mpi4py import MPI
 
 parametrize_cell_types = pytest.mark.parametrize(
     "cell_type",

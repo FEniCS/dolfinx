@@ -60,6 +60,9 @@
 #
 # The modules that will be used are imported:
 
+from mpi4py import MPI
+from petsc4py.PETSc import ScalarType  # type: ignore
+
 # +
 import numpy as np
 
@@ -67,9 +70,6 @@ import ufl
 from dolfinx import fem, io, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
 from ufl import ds, dx, grad, inner
-
-from mpi4py import MPI
-from petsc4py.PETSc import ScalarType  # type: ignore
 
 # -
 

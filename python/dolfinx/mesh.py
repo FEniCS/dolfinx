@@ -7,8 +7,9 @@
 
 from __future__ import annotations
 
-
 import typing
+
+from mpi4py import MPI as _MPI
 
 import numpy as np
 import numpy.typing as npt
@@ -23,8 +24,6 @@ from dolfinx.cpp.mesh import (CellType, DiagonalType, GhostMode,
                               create_cell_partitioner, exterior_facet_indices,
                               to_string, to_type)
 from dolfinx.cpp.refinement import RefinementOption
-
-from mpi4py import MPI as _MPI
 
 __all__ = ["meshtags_from_entities", "locate_entities", "locate_entities_boundary",
            "refine", "create_mesh", "Mesh", "MeshTags", "meshtags", "CellType",

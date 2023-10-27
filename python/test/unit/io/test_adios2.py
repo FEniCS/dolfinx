@@ -6,6 +6,8 @@
 
 from pathlib import Path
 
+from mpi4py import MPI
+
 import numpy as np
 import pytest
 
@@ -17,8 +19,6 @@ from dolfinx.fem import Function, FunctionSpace
 from dolfinx.graph import adjacencylist
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_square)
-
-from mpi4py import MPI
 
 try:
     from dolfinx.io import FidesWriter, VTXWriter

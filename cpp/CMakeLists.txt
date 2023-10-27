@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.19)
 
 # ------------------------------------------------------------------------------
 # Set project name and version number
-project(DOLFINX VERSION "0.7.0")
+project(DOLFINX VERSION "0.7.1")
 
 set(DOXYGEN_DOLFINX_VERSION
   ${DOLFINX_VERSION}

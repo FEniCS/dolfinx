@@ -21,9 +21,9 @@ from dolfinx import default_scalar_type, jit, la
 from dolfinx.fem import dofmap
 
 if typing.TYPE_CHECKING:
-    from dolfinx.mesh import Mesh
-
     from mpi4py import MPI as _MPI
+
+    from dolfinx.mesh import Mesh
 
 
 class Constant(ufl.Constant):

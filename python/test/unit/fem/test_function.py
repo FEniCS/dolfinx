@@ -7,6 +7,8 @@
 
 import importlib
 
+from mpi4py import MPI
+
 import cffi
 import numpy as np
 import pytest
@@ -18,8 +20,6 @@ from dolfinx.fem import Function, FunctionSpace
 from dolfinx.geometry import (bb_tree, compute_colliding_cells,
                               compute_collisions_points)
 from dolfinx.mesh import create_mesh, create_unit_cube
-
-from mpi4py import MPI
 
 
 @pytest.fixture

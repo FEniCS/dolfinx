@@ -7,6 +7,9 @@
 
 import math
 
+from mpi4py import MPI
+from petsc4py import PETSc
+
 import numpy as np
 import pytest
 import scipy.sparse
@@ -39,9 +42,6 @@ from dolfinx.mesh import (CellType, GhostMode, create_mesh, create_rectangle,
                           locate_entities_boundary)
 from ufl import derivative, ds, dx, inner
 from ufl.geometry import SpatialCoordinate
-
-from mpi4py import MPI
-from petsc4py import PETSc
 
 
 def nest_matrix_norm(A):

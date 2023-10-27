@@ -4,6 +4,8 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+from mpi4py import MPI
+
 import numpy
 import pytest
 from numpy import isclose, logical_and
@@ -15,8 +17,6 @@ from dolfinx.mesh import (CellType, DiagonalType, GhostMode, RefinementOption,
                           create_unit_square, locate_entities,
                           locate_entities_boundary, meshtags, refine,
                           refine_plaza, transfer_meshtag)
-
-from mpi4py import MPI
 
 
 def test_Refinecreate_unit_square():

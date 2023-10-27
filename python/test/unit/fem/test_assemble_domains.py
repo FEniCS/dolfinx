@@ -5,6 +5,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for assembly over domains"""
 
+from mpi4py import MPI
+
 import numpy as np
 import pytest
 
@@ -16,8 +18,6 @@ from dolfinx.fem import (Constant, Function, FunctionSpace, assemble_scalar,
 from dolfinx.mesh import (GhostMode, Mesh, create_unit_square, locate_entities,
                           locate_entities_boundary, meshtags,
                           meshtags_from_entities)
-
-from mpi4py import MPI
 
 
 @pytest.fixture

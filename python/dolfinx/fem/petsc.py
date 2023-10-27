@@ -18,6 +18,10 @@ import functools
 import os
 import typing
 
+import petsc4py
+import petsc4py.lib
+from petsc4py import PETSc
+
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import la
@@ -31,10 +35,6 @@ from dolfinx.fem.forms import extract_function_spaces as _extract_spaces
 from dolfinx.fem.forms import form as _create_form
 from dolfinx.fem.function import Function as _Function
 from dolfinx.la import create_petsc_vector
-
-import petsc4py
-import petsc4py.lib
-from petsc4py import PETSc
 
 __all__ = ["create_vector", "create_vector_block", "create_vector_nest",
            "create_matrix", "create_matrix_block", "create_matrix_nest",

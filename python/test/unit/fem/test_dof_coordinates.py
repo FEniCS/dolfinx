@@ -1,10 +1,10 @@
+from mpi4py import MPI
+
 import numpy as np
 import pytest
 
 from dolfinx.fem import Function, FunctionSpace
 from dolfinx.mesh import create_unit_cube, create_unit_square
-
-from mpi4py import MPI
 
 
 @pytest.mark.parametrize("degree", range(1, 5))

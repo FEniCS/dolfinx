@@ -7,6 +7,8 @@
 
 import sys
 
+from mpi4py import MPI
+
 import numpy as np
 import pytest
 
@@ -16,8 +18,6 @@ from basix.ufl import element, mixed_element
 from dolfinx.fem import FunctionSpace
 from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_interval, create_unit_square)
-
-from mpi4py import MPI
 
 xfail = pytest.mark.xfail(strict=True)
 

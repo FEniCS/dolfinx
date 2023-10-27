@@ -22,6 +22,9 @@
 #
 # The required modules are first imported:
 
+from mpi4py import MPI
+from petsc4py import PETSc
+
 # +
 import numpy as np
 
@@ -36,9 +39,6 @@ from dolfinx.io import XDMFFile
 from dolfinx.mesh import (CellType, GhostMode, create_box,
                           locate_entities_boundary)
 from ufl import dx, grad, inner
-
-from mpi4py import MPI
-from petsc4py import PETSc
 
 dtype = PETSc.ScalarType  # type: ignore
 # -
