@@ -88,7 +88,7 @@ jobs:
         run: |
           . /opt/intel/oneapi/setvars.sh
           pip -v install -r python/build-requirements.txt # TO REMOVE
-          pip -v install --no-build-isolation python/
+          pip -v install --check-build-dependencies --no-build-isolation python/
       - name: Set default DOLFINx JIT options
         run: |
           mkdir -p ~/.config/dolfinx

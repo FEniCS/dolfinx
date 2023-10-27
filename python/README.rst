@@ -14,8 +14,8 @@ interface explicitly depends on the system built petsc4py and mpi4py.
 
 3. Build DOLFINx Python interface::
 
-     pip -v install --no-build-isolation .
+     pip -v install --check-build-dependencies --no-build-isolation .
 
    To build in debug and editable mode for development::
 
-     pip -v install --config-settings=build-dir="build" --config-settings=cmake.build-type="Debug" --no-build-isolation -e .
+     pip -v install --check-build-dependencies --config-settings=build-dir="build" --config-settings=cmake.build-type="Debug" --no-build-isolation -e .
