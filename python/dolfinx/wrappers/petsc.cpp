@@ -258,17 +258,14 @@ void petsc_fem_module(nb::module_& m)
               A, a.function_spaces()[0]->dofmap()->bs(),
               a.function_spaces()[1]->dofmap()->bs(), ADD_VALUES);
           dolfinx::fem::assemble_matrix(
-              set_fn, a,
-              std::span(static_cast<const PetscScalar*>(constants.data()),
-                        constants.size()),
+              set_fn, a, std::span(constants.data(), constants.size()),
               py_to_cpp_coeffs(coefficients), bcs);
         }
         else
         {
           dolfinx::fem::assemble_matrix(
               dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES), a,
-              std::span(static_cast<const PetscScalar*>(constants.data()),
-                        constants.size()),
+              std::span(constants.data(), constants.size()),
               py_to_cpp_coeffs(coefficients), bcs);
         }
       },
@@ -306,9 +303,7 @@ void petsc_fem_module(nb::module_& m)
           set_fn = dolfinx::la::petsc::Matrix::set_block_fn(A, ADD_VALUES);
 
         dolfinx::fem::assemble_matrix(
-            set_fn, a,
-            std::span(static_cast<const PetscScalar*>(constants.data()),
-                      constants.size()),
+            set_fn, a, std::span(constants.data(), constants.size()),
             py_to_cpp_coeffs(coefficients),
             std::span(rows0.data(), rows0.size()),
             std::span(rows1.data(), rows1.size()));

@@ -405,8 +405,8 @@ void declare_objects(nb::module_& m, const std::string& type)
           {
             std::vector<std::size_t> shape(c.shape_ptr(),
                                            c.shape_ptr() + c.ndim());
-            new (cp) dolfinx::fem::Constant<T>(
-                std::span(static_cast<const T*>(c.data()), c.size()), shape);
+            new (cp)
+                dolfinx::fem::Constant<T>(std::span(c.data(), c.size()), shape);
           },
           nb::arg("c").noconvert(), "Create a constant from a value array")
       .def_prop_ro("dtype", [dtype](const dolfinx::fem::Constant<T>& self)

@@ -279,7 +279,7 @@ def test_compute_closest_entity_1d(dim, dtype):
 @pytest.mark.parametrize("dim", [0, 1, 2])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_compute_closest_entity_2d(dim, dtype):
-    points = np.array([[-1.0, -0.01, 0.0]], dtype=dtype)
+    points = np.array([-1.0, -0.01, 0.0], dtype=dtype)
     mesh = create_unit_square(MPI.COMM_WORLD, 15, 15, dtype=dtype)
     mesh.topology.create_entities(dim)
     tree = bb_tree(mesh, dim)
@@ -291,7 +291,7 @@ def test_compute_closest_entity_2d(dim, dtype):
     closest_entities = compute_closest_entity(tree, midpoint_tree, mesh, points)
 
     # Find which entity is colliding with known closest point on mesh
-    p_c = np.array([[0, 0, 0]], dtype=dtype)
+    p_c = np.array([0, 0, 0], dtype=dtype)
     colliding_entity_bboxes = compute_collisions_points(tree, p_c)
 
     # Refine search by checking for actual collision if the entities are

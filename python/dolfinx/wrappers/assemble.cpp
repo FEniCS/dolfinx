@@ -283,7 +283,7 @@ void declare_assembly_functions(nb::module_& m)
       {
         std::vector<std::span<const T>> _x0;
         for (auto x : x0)
-          _x0.emplace_back(static_cast<const T*>(x.data()), x.size());
+          _x0.emplace_back(x.data(), x.size());
 
         std::vector<std::span<const T>> _constants;
         std::transform(

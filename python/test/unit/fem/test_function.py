@@ -90,7 +90,7 @@ def test_eval(V, W, Q, mesh):
     u2.interpolate(e2)
     u3.interpolate(e3)
 
-    x0 = np.array([mesh.geometry.x[0] + mesh.geometry.x[1]]) / 2.0
+    x0 = (mesh.geometry.x[0] + mesh.geometry.x[1]) / 2.0
     tree = bb_tree(mesh, mesh.geometry.dim)
     cell_candidates = compute_collisions_points(tree, x0)
     cell = compute_colliding_cells(mesh, cell_candidates, x0).array

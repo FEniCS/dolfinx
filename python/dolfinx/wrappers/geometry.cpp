@@ -68,11 +68,19 @@ void declare_bbtree(nb::module_& m, std::string type)
   m.def(
       "compute_collisions_points",
       [](const dolfinx::geometry::BoundingBoxTree<T>& tree,
-         nb::ndarray<const T, nb::c_contig> points)
+         nb::ndarray<const T, nb::shape<3>, nb::c_contig> points)
       {
-        const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
-        std::span<const T> _p(points.data(), 3 * p_s0);
-        return dolfinx::geometry::compute_collisions<T>(tree, _p);
+        return dolfinx::geometry::compute_collisions<T>(
+            tree, std::span(points.data(), 3));
+      },
+      nb::arg("tree"), nb::arg("points"));
+  m.def(
+      "compute_collisions_points",
+      [](const dolfinx::geometry::BoundingBoxTree<T>& tree,
+         nb::ndarray<const T, nb::shape<nb::any, 3>, nb::c_contig> points)
+      {
+        return dolfinx::geometry::compute_collisions<T>(
+            tree, std::span(points.data(), points.size()));
       },
       nb::arg("tree"), nb::arg("points"));
   m.def(
@@ -91,12 +99,26 @@ void declare_bbtree(nb::module_& m, std::string type)
       [](const dolfinx::geometry::BoundingBoxTree<T>& tree,
          const dolfinx::geometry::BoundingBoxTree<T>& midpoint_tree,
          const dolfinx::mesh::Mesh<T>& mesh,
+         nb::ndarray<const T, nb::shape<3>, nb::c_contig> points)
+      {
+        return dolfinx_wrappers::as_nbarray(
+            dolfinx::geometry::compute_closest_entity<T>(
+                tree, midpoint_tree, mesh,
+                std::span(points.data(), points.size())));
+      },
+      nb::arg("tree"), nb::arg("midpoint_tree"), nb::arg("mesh"),
+      nb::arg("points"));
+  m.def(
+      "compute_closest_entity",
+      [](const dolfinx::geometry::BoundingBoxTree<T>& tree,
+         const dolfinx::geometry::BoundingBoxTree<T>& midpoint_tree,
+         const dolfinx::mesh::Mesh<T>& mesh,
          nb::ndarray<const T, nb::shape<nb::any, 3>, nb::c_contig> points)
       {
-        std::span<const T> _p(points.data(), 3 * points.shape(0));
         return dolfinx_wrappers::as_nbarray(
-            dolfinx::geometry::compute_closest_entity<T>(tree, midpoint_tree,
-                                                         mesh, _p));
+            dolfinx::geometry::compute_closest_entity<T>(
+                tree, midpoint_tree, mesh,
+                std::span(points.data(), points.size())));
       },
       nb::arg("tree"), nb::arg("midpoint_tree"), nb::arg("mesh"),
       nb::arg("points"));
@@ -114,11 +136,20 @@ void declare_bbtree(nb::module_& m, std::string type)
       "compute_colliding_cells",
       [](const dolfinx::mesh::Mesh<T>& mesh,
          const dolfinx::graph::AdjacencyList<int>& candidate_cells,
+         nb::ndarray<const T, nb::shape<3>, nb::c_contig> points)
+      {
+        return dolfinx::geometry::compute_colliding_cells<T>(
+            mesh, candidate_cells, std::span(points.data(), points.size()));
+      },
+      nb::arg("mesh"), nb::arg("candidate_cells"), nb::arg("points"));
+  m.def(
+      "compute_colliding_cells",
+      [](const dolfinx::mesh::Mesh<T>& mesh,
+         const dolfinx::graph::AdjacencyList<int>& candidate_cells,
          nb::ndarray<const T, nb::shape<nb::any, 3>, nb::c_contig> points)
       {
-        std::span<const T> _p(points.data(), 3 * points.shape(0));
         return dolfinx::geometry::compute_colliding_cells<T>(
-            mesh, candidate_cells, _p);
+            mesh, candidate_cells, std::span(points.data(), points.size()));
       },
       nb::arg("mesh"), nb::arg("candidate_cells"), nb::arg("points"));
 

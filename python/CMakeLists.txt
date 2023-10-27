@@ -72,7 +72,7 @@ include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag("-Wall -Werror -pedantic" HAVE_PEDANTIC)
 if(HAVE_PEDANTIC)
   # target_compile_options(cpp PRIVATE -Wall;-Werror;-pedantic)
-  target_compile_options(cpp PRIVATE -Wall;-pedantic)
+  # target_compile_options(cpp PRIVATE -Wall;-pedantic)
 endif()
 
 # Add DOLFINx libraries
