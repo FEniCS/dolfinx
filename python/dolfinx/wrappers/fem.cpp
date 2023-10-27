@@ -884,8 +884,7 @@ void declare_real_functions(nb::module_& m)
   m.def(
       "locate_dofs_geometrical",
       [](const dolfinx::fem::FunctionSpace<T>& V,
-         std::function<nb::ndarray<bool, nb::ndim<1>, nb::ndim<1>, nb::c_contig,
-                                   nb::numpy>(
+         std::function<nb::ndarray<bool, nb::ndim<1>, nb::c_contig, nb::numpy>(
              nb::ndarray<const T, nb::ndim<2>, nb::c_contig, nb::numpy>)>
              marker)
       {
@@ -893,8 +892,8 @@ void declare_real_functions(nb::module_& m)
         {
           nb::ndarray<const T, nb::ndim<2>, nb::c_contig, nb::numpy> x_view(
               x.data_handle(), {x.extent(0), x.extent(1)});
-          nb::ndarray<bool, nb::ndim<1>, nb::ndim<1>, nb::c_contig, nb::numpy>
-              marked = marker(x_view);
+          nb::ndarray<bool, nb::ndim<1>, nb::c_contig, nb::numpy> marked
+              = marker(x_view);
           return std::vector<std::int8_t>(marked.data(),
                                           marked.data() + marked.size());
         };
