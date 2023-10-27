@@ -92,7 +92,6 @@ void declare_bbtree(nb::module_& m, std::string type)
          const dolfinx::mesh::Mesh<T>& mesh,
          nb::ndarray<const T, nb::shape<nb::any, 3>, nb::c_contig> points)
       {
-        // const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
         std::span<const T> _p(points.data(), 3 * points.shape(0));
         return dolfinx_wrappers::as_nbarray(
             dolfinx::geometry::compute_closest_entity<T>(tree, midpoint_tree,
