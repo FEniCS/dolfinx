@@ -13,7 +13,7 @@
 # This demo is implemented in {download}`demo_poisson.py`. It
 # illustrates how to:
 #
-# - Create a {py:class}`function space <dolfinx.fem.FunctionSpaceBase>`
+# - Create a {py:class}`function space <dolfinx.fem.FunctionSpace>`
 # - Solve a linear partial differential equation
 #
 # ## Equation and problem definition
@@ -73,10 +73,13 @@ from ufl import ds, dx, grad, inner
 
 # -
 
+# Note that it is important to first `from mpi4py import MPI` to
+# ensure that MPI is correctly initialised.
+
 # We create a rectangular {py:class}`Mesh <dolfinx.mesh.Mesh>` using
 # {py:func}`create_rectangle <dolfinx.mesh.create_rectangle>`, and
 # create a finite element {py:class}`function space
-# <dolfinx.fem.FunctionSpaceBase>` $V$ on the mesh.
+# <dolfinx.fem.FunctionSpace>` $V$ on the mesh.
 
 # +
 msh = mesh.create_rectangle(comm=MPI.COMM_WORLD,
