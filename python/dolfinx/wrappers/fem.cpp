@@ -885,12 +885,12 @@ void declare_real_functions(nb::module_& m)
       "locate_dofs_geometrical",
       [](const dolfinx::fem::FunctionSpace<T>& V,
          std::function<nb::ndarray<bool, nb::ndim<1>, nb::c_contig>(
-             nb::ndarray<const T, nb::ndim<2>, nb::c_contig, nb::numpy>)>
+             nb::ndarray<const T, nb::ndim<2>, nb::numpy>)>
              marker)
       {
         auto _marker = [&marker](auto x)
         {
-          nb::ndarray<const T, nb::ndim<2>, nb::c_contig, nb::numpy> x_view(
+          nb::ndarray<const T, nb::ndim<2>, nb::numpy> x_view(
               x.data_handle(), {x.extent(0), x.extent(1)});
           auto marked = marker(x_view);
           return std::vector<std::int8_t>(marked.data(),
