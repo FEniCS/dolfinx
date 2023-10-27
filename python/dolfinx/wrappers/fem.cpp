@@ -278,9 +278,8 @@ void declare_objects(nb::module_& m, const std::string& type)
            [](const dolfinx::fem::DirichletBC<T, U>& self)
            {
              auto [dofs, owned] = self.dof_indices();
-             std::size_t size = dofs.size();
              return std::pair(nb::ndarray<const std::int32_t, nb::numpy>(
-                                  dofs.data(), 1, &size),
+                                  dofs.data(), {dofs.size()}),
                               owned);
            })
       .def_prop_ro("function_space",
@@ -326,7 +325,7 @@ void declare_objects(nb::module_& m, const std::string& type)
           "interpolate",
           [](dolfinx::fem::Function<T, U>& self,
              dolfinx::fem::Function<T, U>& u,
-             nb::ndarray<const std::int32_t, nb::numpy> cells,
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells,
              const std::tuple<std::vector<std::int32_t>,
                               std::vector<std::int32_t>, std::vector<U>,
                               std::vector<std::int32_t>>& interpolation_data)
@@ -379,18 +378,15 @@ void declare_objects(nb::module_& m, const std::string& type)
       .def(
           "eval",
           [](const dolfinx::fem::Function<T, U>& self,
-             nb::ndarray<const U, nb::c_contig> x,
-             nb::ndarray<const std::int32_t, nb::c_contig> cells,
-             nb::ndarray<T, nb::c_contig> u)
+             nb::ndarray<const U, nb::ndim<2>, nb::c_contig> x,
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells,
+             nb::ndarray<T, nb::ndim<2>, nb::c_contig> u)
           {
             // TODO: handle 1d case
-            self.eval(std::span(x.data(), x.size()),
-                      {static_cast<std::size_t>(x.shape(0)),
-                       static_cast<std::size_t>(x.shape(1))},
+            self.eval(std::span(x.data(), x.size()), {x.shape(0), x.shape(1)},
                       std::span(cells.data(), cells.size()),
-                      std::span<T>(static_cast<T*>(u.data()), u.size()),
-                      {static_cast<std::size_t>(u.shape(0)),
-                       static_cast<std::size_t>(u.shape(1))});
+                      std::span<T>(u.data(), u.size()),
+                      {u.shape(0), u.shape(1)});
           },
           nb::arg("x"), nb::arg("cells"), nb::arg("values"),
           "Evaluate Function")
@@ -741,12 +737,12 @@ void declare_cmap(nb::module_& m, std::string type)
       .def(
           "pull_back",
           [](const dolfinx::fem::CoordinateElement<T>& self,
-             nb::ndarray<const T, nb::numpy> x,
-             nb::ndarray<const T, nb::numpy> cell_geometry)
+             nb::ndarray<const T, nb::ndim<2>, nb::c_contig> x,
+             nb::ndarray<const T, nb::ndim<2>, nb::c_contig> cell_geometry)
           {
-            const std::size_t num_points = x.shape(0);
-            const std::size_t gdim = x.shape(1);
-            const std::size_t tdim = dolfinx::mesh::cell_dim(self.cell_shape());
+            std::size_t num_points = x.shape(0);
+            std::size_t gdim = x.shape(1);
+            std::size_t tdim = dolfinx::mesh::cell_dim(self.cell_shape());
 
             using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
                 T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
@@ -827,7 +823,8 @@ void declare_real_functions(nb::module_& m)
       "locate_dofs_topological",
       [](const std::vector<
              std::shared_ptr<const dolfinx::fem::FunctionSpace<T>>>& V,
-         int dim, nb::ndarray<const std::int32_t, nb::numpy> entities,
+         int dim,
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> entities,
          bool remote)
       {
         if (V.size() != 2)
@@ -846,7 +843,8 @@ void declare_real_functions(nb::module_& m)
   m.def(
       "locate_dofs_topological",
       [](const dolfinx::fem::FunctionSpace<T>& V, int dim,
-         nb::ndarray<const std::int32_t, nb::numpy> entities, bool remote)
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> entities,
+         bool remote)
       {
         return dolfinx_wrappers::as_nbarray(
             dolfinx::fem::locate_dofs_topological(
@@ -859,20 +857,18 @@ void declare_real_functions(nb::module_& m)
       "locate_dofs_geometrical",
       [](const std::vector<
              std::shared_ptr<const dolfinx::fem::FunctionSpace<T>>>& V,
-         std::function<nb::ndarray<bool, nb::numpy>(
-             nb::ndarray<const T, nb::numpy>)>
+         std::function<nb::ndarray<bool, nb::ndim<1>, nb::numpy>(
+             nb::ndarray<const T, nb::ndim<2>, nb::numpy>)>
              marker)
-
       {
         if (V.size() != 2)
           throw std::runtime_error("Expected two function spaces.");
 
         auto _marker = [&marker](auto x)
         {
-          std::array shape{x.extent(0), x.extent(1)};
-          nb::ndarray<const T, nb::numpy> x_view(x.data_handle(), 2,
-                                                 shape.data());
-          nb::ndarray<bool, nb::numpy> marked = marker(x_view);
+          nb::ndarray<const T, nb::ndim<2>, nb::numpy> x_view(
+              x.data_handle(), {x.extent(0), x.extent(1)});
+          nb::ndarray<bool, nb::ndim<1>, nb::numpy> marked = marker(x_view);
           return std::vector<std::int8_t>(marked.data(),
                                           marked.data() + marked.size());
         };
@@ -887,16 +883,15 @@ void declare_real_functions(nb::module_& m)
   m.def(
       "locate_dofs_geometrical",
       [](const dolfinx::fem::FunctionSpace<T>& V,
-         std::function<nb::ndarray<bool, nb::numpy>(
-             nb::ndarray<const T, nb::numpy>)>
+         std::function<nb::ndarray<bool, nb::ndim<1>, nb::numpy>(
+             nb::ndarray<const T, nb::ndim<2>, nb::numpy>)>
              marker)
       {
         auto _marker = [&marker](auto x)
         {
-          std::array shape{x.extent(0), x.extent(1)};
-          nb::ndarray<const T, nb::numpy> x_view(x.data_handle(), 2,
-                                                 shape.data());
-          nb::ndarray<bool, nb::numpy> marked = marker(x_view);
+          nb::ndarray<const T, nb::ndim<2>, nb::numpy> x_view(
+              x.data_handle(), {x.extent(0), x.extent(1)});
+          nb::ndarray<bool, nb::ndim<1>, nb::numpy> marked = marker(x_view);
           return std::vector<std::int8_t>(marked.data(),
                                           marked.data() + marked.size());
         };
@@ -910,7 +905,7 @@ void declare_real_functions(nb::module_& m)
       "interpolation_coords",
       [](const dolfinx::fem::FiniteElement<T>& e,
          const dolfinx::mesh::Geometry<T>& geometry,
-         nb::ndarray<std::int32_t, nb::numpy> cells)
+         nb::ndarray<std::int32_t, nb::ndim<1>, nb::c_contig> cells)
       {
         std::vector<T> x = dolfinx::fem::interpolation_coords(
             e, geometry, std::span(cells.data(), cells.size()));
@@ -941,7 +936,7 @@ void declare_real_functions(nb::module_& m)
       [](const dolfinx::mesh::Geometry<T>& geometry0,
          const dolfinx::fem::FiniteElement<T>& element0,
          const dolfinx::mesh::Mesh<T>& mesh1,
-         const nb::ndarray<std::int32_t, nb::numpy>& cells)
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells)
       {
         return dolfinx::fem::create_nonmatching_meshes_interpolation_data(
             geometry0, element0, mesh1, std::span(cells.data(), cells.size()));
