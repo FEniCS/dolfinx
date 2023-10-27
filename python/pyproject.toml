@@ -29,6 +29,7 @@ ci = ["mypy", "pytest-xdist", "types-setuptools", "fenics-dolfinx[build]",
 
 [tool.scikit-build]
 wheel.packages = ["dolfinx"]
+sdist.exclude = ["*.cpp"]
 
 [tool.pytest]
 junit_family = "xunit2"
