@@ -58,9 +58,7 @@ def test_sub_index_map():
     # map
     owners = map.owners
     assert (dest_ranks == owners).all()
-
     subowners = submap.owners
-    print(ghosts_pos_sub)
     assert (owners[ghosts_pos_sub] == subowners).all()
 
     # Check that ghost indices are correct in submap

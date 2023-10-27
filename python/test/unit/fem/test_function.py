@@ -93,9 +93,9 @@ def test_eval(V, W, Q, mesh):
     x0 = np.array([mesh.geometry.x[0] + mesh.geometry.x[1]]) / 2.0
     tree = bb_tree(mesh, mesh.geometry.dim)
     cell_candidates = compute_collisions_points(tree, x0)
-    cell = compute_colliding_cells(mesh, cell_candidates, x0)
-    assert len(cell.array) > 0
-    first_cell = cell.array[0]
+    cell = compute_colliding_cells(mesh, cell_candidates, x0).array
+    assert len(cell) > 0
+    first_cell = cell[0]
     assert np.allclose(u3.eval(x0, first_cell)[:3], u2.eval(x0, first_cell), rtol=1e-15, atol=1e-15)
 
 

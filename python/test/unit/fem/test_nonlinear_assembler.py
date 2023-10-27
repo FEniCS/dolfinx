@@ -414,7 +414,6 @@ def test_assembly_solve_block_nl():
 
         snes = PETSc.SNES().create(MPI.COMM_WORLD)
         snes.setTolerances(rtol=1.0e-15, max_it=10)
-        snes.setConvergenceHistory()
 
         problem = NonlinearPDE_SNESProblem(F, J, U, bcs)
         snes.setFunction(problem.F_mono, Fvec)
@@ -512,8 +511,6 @@ def test_assembly_solve_taylor_hood_nl(mesh):
         snes = PETSc.SNES().create(MPI.COMM_WORLD)
         snes.setTolerances(rtol=1.0e-15, max_it=20)
         snes.getKSP().setType("minres")
-
-        snes.setConvergenceHistory()
 
         problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs, P=P)
         snes.setFunction(problem.F_block, Fvec)

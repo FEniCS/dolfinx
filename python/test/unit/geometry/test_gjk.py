@@ -36,7 +36,6 @@ def test_line_point_distance(delta, dtype):
     normal = np.cross(line[0], line[1])
     point = point_on_line + delta * normal
     d = compute_distance_gjk(line, point)
-    print(d)
     distance = np.linalg.norm(d)
     actual_distance = distance_point_to_line_3D(line[0], line[1], point)
     assert np.isclose(distance, actual_distance, atol=1e-8)

@@ -163,8 +163,8 @@ void declare_mesh(nb::module_& m, std::string type)
           "x",
           [](dolfinx::mesh::Geometry<T>& self)
           {
-            std::array<std::size_t, 2> shape{self.x().size() / 3, 3};
-            return nb::ndarray<T, nb::numpy>(self.x().data(), 2, shape.data());
+            return nb::ndarray<T, nb::numpy>(self.x().data(),
+                                             {self.x().size() / 3, 3});
           },
           "Return coordinates of all geometry points. Each row is the "
           "coordinate of a point.")

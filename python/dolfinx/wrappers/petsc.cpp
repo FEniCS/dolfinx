@@ -161,10 +161,7 @@ void petsc_la_module(nb::module_& m)
             std::reference_wrapper<const dolfinx::common::IndexMap>, int>>
             _maps;
         for (auto& array : x_b)
-        {
-          _x_b.emplace_back(static_cast<const PetscScalar*>(array.data()),
-                            array.size());
-        }
+          _x_b.emplace_back(array.data(), array.size());
         for (auto q : maps)
           _maps.push_back({*q.first, q.second});
 
