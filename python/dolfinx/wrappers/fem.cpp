@@ -303,7 +303,7 @@ void declare_objects(nb::module_& m, const std::string& type)
           "interpolate",
           [](dolfinx::fem::Function<T, U>& self,
              nb::ndarray<const T, nb::ndim<1>, nb::c_contig> f,
-             nb::ndarray<const std::int32_t, nb::c_contig> cells)
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells)
           {
             dolfinx::fem::interpolate(self, std::span(f.data(), f.size()),
                                       {1, f.size()},
@@ -314,7 +314,7 @@ void declare_objects(nb::module_& m, const std::string& type)
           "interpolate",
           [](dolfinx::fem::Function<T, U>& self,
              nb::ndarray<const T, nb::ndim<2>, nb::c_contig> f,
-             nb::ndarray<const std::int32_t, nb::c_contig> cells)
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells)
           {
             dolfinx::fem::interpolate(self, std::span(f.data(), f.size()),
                                       {f.shape(0), f.shape(1)},
@@ -700,8 +700,8 @@ void declare_cmap(nb::module_& m, std::string type)
       .def(
           "push_forward",
           [](const dolfinx::fem::CoordinateElement<T>& self,
-             nb::ndarray<const T, nb::numpy> X,
-             nb::ndarray<const T, nb::numpy> cell)
+             nb::ndarray<const T, nb::ndim<2>, nb::c_contig> X,
+             nb::ndarray<const T, nb::ndim<2>, nb::c_contig> cell_x)
           {
             using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
                 T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
@@ -724,14 +724,15 @@ void declare_cmap(nb::module_& m, std::string type)
                     phi_full, 0, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
                     MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
 
-            std::array<std::size_t, 2> shape = {X.shape(0), cell.shape(1)};
+            std::array<std::size_t, 2> shape = {X.shape(0), cell_x.shape(1)};
             std::vector<T> xb(shape[0] * shape[1]);
             self.push_forward(
                 mdspan2_t(xb.data(), shape),
-                cmdspan2_t(cell.data(), cell.shape(0), cell.shape(1)), phi);
+                cmdspan2_t(cell_x.data(), cell_x.shape(0), cell_x.shape(1)),
+                phi);
 
             return dolfinx_wrappers::as_nbarray(std::move(xb),
-                                                {X.shape(0), cell.shape(1)});
+                                                {X.shape(0), cell_x.shape(1)});
           },
           nb::arg("X"), nb::arg("cell_geometry"))
       .def(
@@ -883,15 +884,17 @@ void declare_real_functions(nb::module_& m)
   m.def(
       "locate_dofs_geometrical",
       [](const dolfinx::fem::FunctionSpace<T>& V,
-         std::function<nb::ndarray<bool, nb::ndim<1>, nb::numpy>(
-             nb::ndarray<const T, nb::ndim<2>, nb::numpy>)>
+         std::function<nb::ndarray<bool, nb::ndim<1>, nb::ndim<1>, nb::c_contig,
+                                   nb::numpy>(
+             nb::ndarray<const T, nb::ndim<2>, nb::c_contig, nb::numpy>)>
              marker)
       {
         auto _marker = [&marker](auto x)
         {
-          nb::ndarray<const T, nb::ndim<2>, nb::numpy> x_view(
+          nb::ndarray<const T, nb::ndim<2>, nb::c_contig, nb::numpy> x_view(
               x.data_handle(), {x.extent(0), x.extent(1)});
-          nb::ndarray<bool, nb::ndim<1>, nb::numpy> marked = marker(x_view);
+          nb::ndarray<bool, nb::ndim<1>, nb::ndim<1>, nb::c_contig, nb::numpy>
+              marked = marker(x_view);
           return std::vector<std::int8_t>(marked.data(),
                                           marked.data() + marked.size());
         };
@@ -992,7 +995,7 @@ void fem(nb::module_& m)
       "Build and dofmap on a mesh.");
   m.def(
       "transpose_dofmap",
-      [](nb::ndarray<const std::int32_t, nb::ndim<2>, nb::numpy> dofmap,
+      [](nb::ndarray<const std::int32_t, nb::ndim<2>, nb::c_contig> dofmap,
          int num_cells)
       {
         MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
