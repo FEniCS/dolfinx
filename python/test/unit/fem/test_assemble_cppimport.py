@@ -137,6 +137,7 @@ NB_MODULE(eigen_csr, m)
     assert np.isclose(np.sqrt(A1.squared_norm()), scipy.sparse.linalg.norm(A2))
 
 
+@pytest.mark.skip("Does not work with nanobind")
 @pytest.mark.skip_in_parallel
 @pytest.mark.skipif(not dolfinx.pkgconfig.exists("dolfinx"),
                     reason="This test needs DOLFINx pkg-config.")
