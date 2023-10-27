@@ -312,15 +312,15 @@ void declare_mesh(nb::module_& m, std::string type)
   m.def(
       "locate_entities",
       [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
-         std::function<nb::ndarray<bool>(nb::ndarray<const T, nb::numpy>)>
+         std::function<nb::ndarray<bool, nb::ndim<1>, nb::c_contig>(
+             nb::ndarray<const T, nb::ndim<2>, nb::numpy>)>
              marker)
       {
         auto cpp_marker = [&marker](auto x)
         {
-          std::array shape{x.extent(0), x.extent(1)};
-          nb::ndarray<const T, nb::numpy> x_view(x.data_handle(), 2,
-                                                 shape.data(), nb::none());
-          nb::ndarray<bool> marked = marker(x_view);
+          nb::ndarray<const T, nb::ndim<2>, nb::numpy> x_view(
+              x.data_handle(), {x.extent(0), x.extent(1)});
+          auto marked = marker(x_view);
           return std::vector<std::int8_t>(marked.data(),
                                           marked.data() + marked.size());
         };
@@ -333,15 +333,15 @@ void declare_mesh(nb::module_& m, std::string type)
   m.def(
       "locate_entities_boundary",
       [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
-         std::function<nb::ndarray<bool>(nb::ndarray<const T, nb::numpy>)>
+         std::function<nb::ndarray<bool, nb::ndim<1>, nb::c_contig>(
+             nb::ndarray<const T, nb::ndim<2>, nb::numpy>)>
              marker)
       {
         auto cpp_marker = [&marker](auto x)
         {
-          std::array shape{x.extent(0), x.extent(1)};
-          nb::ndarray<const T, nb::numpy> x_view(x.data_handle(), 2,
-                                                 shape.data(), nb::none());
-          nb::ndarray<bool> marked = marker(x_view);
+          nb::ndarray<const T, nb::ndim<2>, nb::numpy> x_view(
+              x.data_handle(), {x.extent(0), x.extent(1)});
+          auto marked = marker(x_view);
           return std::vector<std::int8_t>(marked.data(),
                                           marked.data() + marked.size());
         };

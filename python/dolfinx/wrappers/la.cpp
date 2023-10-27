@@ -67,9 +67,8 @@ void declare_objects(nb::module_& m, const std::string& type)
       .def_prop_ro("array",
                    [](dolfinx::la::Vector<T>& self)
                    {
-                     std::span<T> array = self.mutable_array();
-                     const std::size_t size = array.size();
-                     return nb::ndarray<T, nb::numpy>(array.data(), 1, &size);
+                     return nb::ndarray<T, nb::numpy>(
+                         self.mutable_array().data(), {self.array().size()});
                    })
       .def("scatter_forward", &dolfinx::la::Vector<T>::scatter_fwd)
       .def(
@@ -154,16 +153,14 @@ void declare_objects(nb::module_& m, const std::string& type)
       .def_prop_ro("data",
                    [](dolfinx::la::MatrixCSR<T>& self)
                    {
-                     std::span<T> array = self.values();
-                     const std::size_t size = array.size();
-                     return nb::ndarray<T, nb::numpy>(array.data(), 1, &size);
+                     return nb::ndarray<T, nb::numpy>(self.values().data(),
+                                                      {self.values().size()});
                    })
       .def_prop_ro("indices",
                    [](dolfinx::la::MatrixCSR<T>& self)
                    {
-                     std::span<const std::int32_t> array = self.cols();
                      return nb::ndarray<const std::int32_t, nb::numpy>(
-                         array.data(), {array.size()});
+                         self.cols().data(), {self.cols().size()});
                    })
       .def_prop_ro("indptr",
                    [](dolfinx::la::MatrixCSR<T>& self)
@@ -288,13 +285,11 @@ void la(nb::module_& m)
                    [](dolfinx::la::SparsityPattern& self)
                    {
                      auto [edges, ptr] = self.graph();
-                     std::size_t esize = edges.size();
-                     std::size_t psize = ptr.size();
                      return std::pair(
                          nb::ndarray<const std::int32_t, nb::numpy>(
-                             edges.data(), 1, &esize),
-                         nb::ndarray<const std::int64_t, nb::numpy>(ptr.data(),
-                                                                    1, &psize));
+                             edges.data(), {edges.size()}),
+                         nb::ndarray<const std::int64_t, nb::numpy>(
+                             ptr.data(), {ptr.size()}));
                    });
 
   // Declare objects that are templated over type
