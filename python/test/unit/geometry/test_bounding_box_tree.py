@@ -319,7 +319,7 @@ def test_compute_closest_entity_3d(dim, dtype):
     closest_entities = compute_closest_entity(tree, midpoint_tree, mesh, points)
 
     # Find which entity is colliding with known closest point on mesh
-    p_c = np.array([[0.9, 0, 1]], dtype=dtype)
+    p_c = np.array([0.9, 0, 1], dtype=dtype)
     colliding_entity_bboxes = compute_collisions_points(tree, p_c)
 
     # Refine search by checking for actual collision if the entities are
@@ -339,7 +339,7 @@ def test_compute_closest_sub_entity(dim, dtype):
     """Compute distance from subset of cells in a mesh to a point inside the mesh"""
     ref_distance = 0.31
     xc, yc, zc = 0.5, 0.5, 0.5
-    points = np.array([[xc + ref_distance, yc, zc]], dtype=dtype)
+    points = np.array([xc + ref_distance, yc, zc], dtype=dtype)
     mesh = create_unit_cube(MPI.COMM_WORLD, 8, 8, 8, dtype=dtype)
     mesh.topology.create_entities(dim)
     left_entities = locate_entities(mesh, dim, lambda x: x[0] <= xc)
@@ -348,13 +348,18 @@ def test_compute_closest_sub_entity(dim, dtype):
     closest_entities = compute_closest_entity(tree, midpoint_tree, mesh, points)
 
     # Find which entity is colliding with known closest point on mesh
-    p_c = np.array([[xc, yc, zc]], dtype=dtype)
+    p_c = np.array([xc, yc, zc], dtype=dtype)
     colliding_entity_bboxes = compute_collisions_points(tree, p_c)
 
     # Refine search by checking for actual collision if the entities are
     # cells
-    if len(colliding_entity_bboxes.links(0)) > 0:
-        assert np.isin(closest_entities[0], colliding_entity_bboxes.links(0))
+    if dim == mesh.topology.dim:
+        colliding_cells = compute_colliding_cells(mesh, colliding_entity_bboxes, p_c).array
+        if len(colliding_cells) > 0:
+            assert np.isin(closest_entities[0], colliding_cells)
+    else:
+        if len(colliding_entity_bboxes.links(0)) > 0:
+            assert np.isin(closest_entities[0], colliding_entity_bboxes.links(0))
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
