@@ -34,7 +34,8 @@ void declare_bbtree(nb::module_& m, std::string type)
           "__init__",
           [](dolfinx::geometry::BoundingBoxTree<T>* bbt,
              const dolfinx::mesh::Mesh<T>& mesh, int dim,
-             nb::ndarray<const std::int32_t, nb::c_contig> entities,
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>
+                 entities,
              double padding = 0.0)
           {
             new (bbt) dolfinx::geometry::BoundingBoxTree<T>(
@@ -102,7 +103,7 @@ void declare_bbtree(nb::module_& m, std::string type)
   m.def(
       "create_midpoint_tree",
       [](const dolfinx::mesh::Mesh<T>& mesh, int tdim,
-         nb::ndarray<const std::int32_t, nb::c_contig> entities)
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> entities)
       {
         return dolfinx::geometry::create_midpoint_tree(
             mesh, tdim,

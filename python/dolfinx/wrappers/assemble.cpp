@@ -241,9 +241,9 @@ void declare_assembly_functions(nb::module_& m)
   m.def(
       "assemble_matrix",
       [](std::function<int(
-             nb::ndarray<const std::int32_t, nb::numpy, nb::c_contig>,
-             nb::ndarray<const std::int32_t, nb::numpy, nb::c_contig>,
-             nb::ndarray<const T, nb::numpy, nb::c_contig>)>
+             nb::ndarray<const std::int32_t, nb::c_contig, nb::numpy>,
+             nb::ndarray<const std::int32_t, nb::c_contig, nb::numpy>,
+             nb::ndarray<const T, nb::c_contig, nb::numpy>)>
              fin,
          const dolfinx::fem::Form<T, U>& form,
          const std::vector<
@@ -253,15 +253,12 @@ void declare_assembly_functions(nb::module_& m)
                         std::span<const std::int32_t> cols,
                         std::span<const T> data)
         {
-          std::size_t rsize = rows.size();
-          std::size_t csize = cols.size();
-          std::size_t dsize = data.size();
-          return fin(nb::ndarray<const std::int32_t, nb::numpy, nb::c_contig>(
-                         rows.data(), 1, &rsize),
-                     nb::ndarray<const std::int32_t, nb::numpy, nb::c_contig>(
-                         cols.data(), 1, &csize),
-                     nb::ndarray<const T, nb::numpy, nb::c_contig>(data.data(),
-                                                                   1, &dsize));
+          return fin(nb::ndarray<const std::int32_t, nb::c_contig, nb::numpy>(
+                         rows.data(), {rows.size()}),
+                     nb::ndarray<const std::int32_t, nb::c_contig, nb::numpy>(
+                         cols.data(), {cols.size()}),
+                     nb::ndarray<const T, nb::c_contig, nb::numpy>(
+                         data.data(), {data.size()}));
         };
         dolfinx::fem::assemble_matrix(f, form, bcs);
       },
