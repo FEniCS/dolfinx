@@ -7,10 +7,6 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Development component which includes both Development.Module and
-# Development.Embed is not required for building a Python module.  Correct
-# COMPONENT specification Development.Module added only in CMake 3.18 and above.
-
 find_package(
   Python3
   COMPONENTS Interpreter Development.Module
