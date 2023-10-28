@@ -32,8 +32,8 @@ public:
   // Define this->value of type MPICommWrapper
   NB_TYPE_CASTER(dolfinx_wrappers::MPICommWrapper, const_name("MPICommWrapper"))
 
-  // Python to C++
-  bool from_python(handle src, uint8_t, cleanup_list*)
+  // Python -> C++
+  bool from_python(handle src, uint8_t, cleanup_list*) noexcept
   {
     // Check whether src is an mpi4py communicator
     VERIFY_MPI4PY(PyMPIComm_Get);
@@ -42,13 +42,13 @@ public:
       value = dolfinx_wrappers::MPICommWrapper(*PyMPIComm_Get(src.ptr()));
       return true;
     }
-
-    return false;
+    else
+      return false;
   }
 
-  // C++ to Python
-  static handle from_cpp(dolfinx_wrappers::MPICommWrapper src,
-			 nanobind::rv_policy policy, cleanup_list*)
+  // C++ -> Python
+  static handle from_cpp(dolfinx_wrappers::MPICommWrapper src, rv_policy policy,
+                         cleanup_list*) noexcept
   {
     VERIFY_MPI4PY(PyMPIComm_New);
     return nanobind::handle(PyMPIComm_New(src.get()));
@@ -58,4 +58,3 @@ public:
 };
 } // namespace detail
 } // namespace nanobind
-

@@ -21,21 +21,14 @@ namespace dolfinx_wrappers
 /// Create an n-dimensional nb::ndarray that shares data with a
 /// std::vector. The std::vector owns the data, and the nb::ndarray
 /// object keeps the std::vector alive.
-/// From https://github.com/pybind/pybind11/issues/1042
 template <typename V>
 auto as_nbarray(V&& x, std::size_t ndim, const std::size_t* shape)
 {
   using _V = std::decay_t<V>;
-  auto data = x.data();
-  std::unique_ptr<_V> ptr = std::make_unique<_V>(std::move(x));
-  // auto capsule = nb::capsule(x_ptr.get(), [](void* p) noexcept
-  //                            { delete reinterpret_cast<_V*>(p); });
-  auto capsule
-      = nb::capsule(ptr.get(), [](void* p) noexcept
-                    { std::unique_ptr<_V>(reinterpret_cast<_V*>(p)); });
-  ptr.release();
-  return nb::ndarray<typename _V::value_type, nb::numpy>(
-      static_cast<typename _V::value_type*>(data), ndim, shape, capsule);
+  _V* ptr = new _V(std::move(x));
+  auto capsule = nb::capsule(ptr, [](void* p) noexcept { delete (_V*)p; });
+  return nb::ndarray<typename _V::value_type, nb::numpy>(ptr->data(), ndim,
+                                                         shape, capsule);
 }
 
 template <typename V>
