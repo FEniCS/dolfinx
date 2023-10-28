@@ -7,6 +7,7 @@
 
 
 import pathlib
+import sys
 
 import mpi4py
 from mpi4py import MPI
@@ -24,11 +25,24 @@ from dolfinx.mesh import create_unit_square
 
 def test_mpi_comm_wrapper():
     """Test MPICommWrapper <-> mpi4py.MPI.Comm conversion"""
-    w1 = MPI.COMM_WORLD
-    m = create_unit_square(w1, 4, 4)
-    w2 = m.comm
-    assert isinstance(w1, MPI.Comm)
-    assert isinstance(w2, MPI.Comm)
+    comm0 = MPI.COMM_WORLD
+    m = create_unit_square(comm0, 4, 4)
+    comm1 = m.comm
+    assert isinstance(comm0, MPI.Comm)
+    assert isinstance(comm1, MPI.Comm)
+
+
+def test_mpi_comm_refcount():
+    """Test MPICommWrapper <-> mpi4py.MPI.Comm reference counting"""
+    comm0 = MPI.COMM_WORLD
+    m = create_unit_square(comm0, 4, 4)
+    comm1 = m.comm
+    assert comm1 != comm0
+    comm2 = m.comm
+    assert comm2 == comm1
+    del m
+    assert sys.getrefcount(comm1) == 2
+    assert comm1.rank == comm0.rank
 
 
 @pytest.mark.skip("Does not work with nanobind")

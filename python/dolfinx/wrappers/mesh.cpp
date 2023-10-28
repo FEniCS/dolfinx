@@ -215,9 +215,15 @@ void declare_mesh(nb::module_& m, std::string type)
          const PythonCellPartitionFunction& part,
          dolfinx::mesh::DiagonalType diagonal)
       {
-        return dolfinx::mesh::create_rectangle<T>(
+        std::cout << "Create cpp rectangle" << std::endl;
+        auto foo = dolfinx::mesh::create_rectangle<T>(
             comm.get(), p, n, celltype, create_cell_partitioner_cpp(part),
             diagonal);
+        std::cout << "Done ceate cpp rectangle" << std::endl;
+        return foo;
+        // return dolfinx::mesh::create_rectangle<T>(
+        //     comm.get(), p, n, celltype, create_cell_partitioner_cpp(part),
+        //     diagonal);
       },
       nb::arg("comm"), nb::arg("p"), nb::arg("n"), nb::arg("celltype"),
       nb::arg("partitioner"), nb::arg("diagonal"));
