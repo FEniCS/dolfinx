@@ -243,7 +243,6 @@ void declare_mesh(nb::module_& m, std::string type)
          const PythonPartitioningFunction& p)
       {
         std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape(1);
-        std::vector shape{std::size_t(x.shape(0)), shape1};
         if (p)
         {
           auto p_wrap
@@ -252,13 +251,13 @@ void declare_mesh(nb::module_& m, std::string type)
           { return p(MPICommWrapper(comm), n, tdim, cells); };
           return dolfinx::mesh::create_mesh(comm.get(), cells, {element},
                                             std::span(x.data(), x.size()),
-                                            {x.shape(0), x.shape(1)}, p_wrap);
+                                            {x.shape(0), shape1}, p_wrap);
         }
         else
         {
           return dolfinx::mesh::create_mesh(comm.get(), cells, {element},
                                             std::span(x.data(), x.size()),
-                                            {x.shape(0), x.shape(1)}, p);
+                                            {x.shape(0), shape1}, p);
         }
       },
       nb::arg("comm"), nb::arg("cells"), nb::arg("element"),

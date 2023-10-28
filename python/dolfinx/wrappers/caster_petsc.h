@@ -56,19 +56,25 @@ namespace nb = nanobind;
     }                                                                          \
                                                                                \
     static handle from_cpp(TYPE src, rv_policy policy,                         \
-                           cleanup_list* cleanup) noexcept                     \
+                           cleanup_list* /*cleanup*/) noexcept                 \
     {                                                                          \
       VERIFY_PETSC4PY1(PyPetsc##P4PYTYPE##_New);                               \
-      PyObject* obj = PyPetsc##P4PYTYPE##_New(src);                            \
-      if (policy == nb::rv_policy::take_ownership)                             \
+      if (policy == rv_policy::take_ownership)                                 \
       {                                                                        \
+        PyObject* obj = PyPetsc##P4PYTYPE##_New(src);                          \
         PetscObjectDereference((PetscObject)src);                              \
+        return nb::handle(obj);                                                \
       }                                                                        \
-      else if (policy == nb::rv_policy::reference_internal)                    \
+      else if (policy == rv_policy::automatic_reference                        \
+               or policy == rv_policy::reference)                              \
+      {                                                                        \
+        PyObject* obj = PyPetsc##P4PYTYPE##_New(src);                          \
+        return nb::handle(obj);                                                \
+      }                                                                        \
+      else                                                                     \
       {                                                                        \
         return {};                                                             \
       }                                                                        \
-      return nb::handle(obj);                                                  \
     }                                                                          \
                                                                                \
     operator TYPE() { return value; }                                          \
