@@ -1,26 +1,18 @@
 DOLFINx Python interface
 ========================
 
-Building the DOLFINx Python interface uses pybind11.
+Building the DOLFINx Python interface uses nanobind.
 
-1. Install pybdind11 version 2.2.1 or later. Use CMake to install
-   pybind11, e.g.::
+1. Install nanobind from source, e.g.::
 
-     wget -nc --quiet https://github.com/pybind/pybind11/archive/v2.2.1.tar.gz
-     tar -xf v2.2.1.tar.gz
-     cd pybind11-2.2.1
-     mkdir build-dir
-     cd build-dir
-     cmake -DPYBIND11_TEST=off -DCMAKE_INSTALL_PREFIX=/path/to/pybind11/install ..
-     make install
+     python3 -m pip install git+https://github.com/wjakob/nanobind.git
 
-   The FEniCS Docker images are configured with pybind11.
+   The FEniCS Docker images are configured with nanobind.
 
 2. Build and install the DOLFINx C++ library in the usual way.
 
 3. Build DOLFINx Python interface::
 
-     export PYBIND11_DIR=/path/to/pybind11/install
      pip3 -v install . --user
 
 To install in a local build directory::

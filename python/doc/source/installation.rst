@@ -65,7 +65,7 @@ Below are additional requirements for the Python interface.
 
 - Python
 - FFCx, UFL and Basix (https://github.com/FEniCS/).
-- pybind11 (https://github.com/pybind/pybind11)
+- nanobind (https://github.com/wjakob/nanobind)
 - NumPy (https://www.numpy.org)
 - mpi4py
 - petsc4py
