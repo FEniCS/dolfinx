@@ -39,8 +39,8 @@ public:
   }
 
   // C++ -> Python
-  static handle from_cpp(dolfinx_wrappers::MPICommWrapper src, rv_policy policy,
-                         cleanup_list* /*cleanup*/) noexcept
+  static handle from_cpp(const dolfinx_wrappers::MPICommWrapper& src,
+                         rv_policy policy, cleanup_list* /*cleanup*/) noexcept
   {
     if (policy == rv_policy::automatic
         or policy == rv_policy::automatic_reference

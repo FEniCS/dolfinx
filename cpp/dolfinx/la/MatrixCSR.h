@@ -20,7 +20,7 @@
 namespace dolfinx::la
 {
 /// @brief Modes for representing block structured matrices
-enum class BlockMode 
+enum class BlockMode
 {
   compact = 0, /// Each entry in the sparsity pattern of the matrix refers to a
                /// block of data of size (bs[0], bs[1]).
