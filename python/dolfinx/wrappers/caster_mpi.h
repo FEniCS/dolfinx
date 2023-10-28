@@ -10,17 +10,6 @@
 #include <mpi4py/mpi4py.h>
 #include <nanobind/nanobind.h>
 
-// Import mpi4py on demand
-#define VERIFY_MPI4PY(func)                                                    \
-  if (!func)                                                                   \
-  {                                                                            \
-    int rc = import_mpi4py();                                                  \
-    if (rc != 0)                                                               \
-    {                                                                          \
-      throw std::runtime_error("Error when importing mpi4py");                 \
-    }                                                                          \
-  }
-
 namespace nanobind::detail
 {
 template <>
@@ -34,7 +23,12 @@ public:
   bool from_python(handle src, uint8_t /*flags*/,
                    cleanup_list* /*cleanup*/) noexcept
   {
-    VERIFY_MPI4PY(PyMPIComm_Get);
+    if (!PyMPIComm_Get)
+    {
+      if (import_mpi4py() != 0)
+        return false;
+    }
+
     if (PyObject_TypeCheck(src.ptr(), &PyMPIComm_Type))
     {
       value = dolfinx_wrappers::MPICommWrapper(*PyMPIComm_Get(src.ptr()));
@@ -54,7 +48,13 @@ public:
     {
       return {};
     }
-    VERIFY_MPI4PY(PyMPIComm_New);
+
+    if (!PyMPIComm_New)
+    {
+      if (import_mpi4py() != 0)
+        return {};
+    }
+
     PyObject* c = PyMPIComm_New(src.get());
     return nanobind::handle(c);
   }

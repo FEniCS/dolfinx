@@ -35,6 +35,14 @@
 #include <nanobind/stl/vector.h>
 #include <petsc4py/petsc4py.h>
 
+#include <petsc4py/petsc4py.h>
+#include <petscdm.h>
+#include <petscis.h>
+#include <petscksp.h>
+#include <petscmat.h>
+#include <petscsnes.h>
+#include <petscvec.h>
+
 namespace
 {
 // Declare assembler function that have multiple scalar types
@@ -125,29 +133,45 @@ void declare_petsc_discrete_operators(nb::module_& m)
 
 void petsc_la_module(nb::module_& m)
 {
+  import_petsc4py();
+
   m.def(
       "create_matrix",
       [](dolfinx_wrappers::MPICommWrapper comm,
          const dolfinx::la::SparsityPattern& p, const std::string& type)
-      { return dolfinx::la::petsc::create_matrix(comm.get(), p, type); },
-      nb::rv_policy::take_ownership, nb::arg("comm"), nb::arg("p"),
-      nb::arg("type") = std::string(),
+      {
+        std::cout << "Create mat cpp" << std::endl;
+        Mat A = dolfinx::la::petsc::create_matrix(comm.get(), p, type);
+        PyObject* obj = PyPetscMat_New(A);
+        PetscObjectDereference((PetscObject)A);
+        return nb::borrow(obj);
+      },
+      nb::arg("comm"), nb::arg("p"), nb::arg("type") = std::string(),
       "Create a PETSc Mat from sparsity pattern.");
-  // TODO: check reference counting for index sets
 
+  // TODO: check reference counting for index sets
   m.def(
       "create_index_sets",
-      [](const std::vector<
-          std::pair<std::shared_ptr<const common::IndexMap>, int>>& maps)
+      [](const std::vector<std::pair<const common::IndexMap*, int>>& maps)
       {
         std::vector<
             std::pair<std::reference_wrapper<const common::IndexMap>, int>>
             _maps;
         for (auto m : maps)
           _maps.push_back({*m.first, m.second});
-        return dolfinx::la::petsc::create_index_sets(_maps);
+        std::vector<IS> index_sets
+            = dolfinx::la::petsc::create_index_sets(_maps);
+
+        std::vector<nb::object> py_index_sets;
+        for (auto is : index_sets)
+        {
+          PyObject* obj = PyPetscIS_New(is);
+          PetscObjectDereference((PetscObject)is);
+          py_index_sets.push_back(nb::steal(obj));
+        }
+        return py_index_sets;
       },
-      nb::arg("maps"), nb::rv_policy::take_ownership);
+      nb::arg("maps"));
 
   m.def(
       "scatter_local_vectors",
@@ -225,6 +249,22 @@ void petsc_fem_module(nb::module_& m)
       },
       nb::rv_policy::take_ownership, nb::arg("maps"),
       "Create nested vector for multiple (stacked) linear forms.");
+  // m.def(
+  //     "create_matrix",
+  //     [](const dolfinx::fem::Form<PetscScalar, PetscReal>& a,
+  //        const std::string& type)
+  //     {
+  //       std::cout << "Create mat cpp" << std::endl;
+  //       Mat A = dolfinx::fem::petsc::create_matrix(a, type);
+  //       PyObject* obj = PyPetscMat_New(A);
+  //       PetscObjectDereference((PetscObject)A);
+  //       // auto mat = nb::steal(obj);
+  //       // return mat;
+  //       return nb::handle(obj);
+  //     },
+  //     nb::rv_policy::take_ownership, nb::arg("a"),
+  //     nb::arg("type") = std::string(), "Create a PETSc Mat for bilinear
+  //     form.");
   m.def("create_matrix", dolfinx::fem::petsc::create_matrix<PetscReal>,
         nb::rv_policy::take_ownership, nb::arg("a"),
         nb::arg("type") = std::string(),
@@ -283,12 +323,6 @@ void petsc_fem_module(nb::module_& m)
          nb::ndarray<const std::int8_t, nb::ndim<1>, nb::c_contig> rows1,
          bool unrolled)
       {
-        if (rows0.ndim() != 1 or rows1.ndim())
-        {
-          throw std::runtime_error(
-              "Expected 1D arrays for boundary condition rows/columns");
-        }
-
         std::function<int(std::span<const std::int32_t>,
                           std::span<const std::int32_t>,
                           std::span<const PetscScalar>)>
@@ -339,9 +373,10 @@ void petsc_nls_module(nb::module_& m)
       .def_prop_ro("krylov_solver",
                    [](const dolfinx::nls::petsc::NewtonSolver& self)
                    {
-                     const dolfinx::la::petsc::KrylovSolver& solver
-                         = self.get_krylov_solver();
-                     return solver.ksp();
+                     KSP ksp = self.get_krylov_solver().ksp();
+                     PyObject* obj = PyPetscKSP_New(ksp);
+                     PetscObjectDereference((PetscObject)ksp);
+                     return nb::borrow(obj);
                    })
       .def("setF", &dolfinx::nls::petsc::NewtonSolver::setF, nb::arg("F"),
            nb::arg("b"))

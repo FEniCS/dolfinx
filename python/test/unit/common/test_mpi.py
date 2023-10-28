@@ -36,10 +36,13 @@ def test_mpi_comm_refcount():
     """Test MPICommWrapper <-> mpi4py.MPI.Comm reference counting"""
     comm0 = MPI.COMM_WORLD
     m = create_unit_square(comm0, 4, 4)
+
     comm1 = m.comm
     assert comm1 != comm0
+
     comm2 = m.comm
     assert comm2 == comm1
+
     del m
     assert sys.getrefcount(comm1) == 2
     assert comm1.rank == comm0.rank
