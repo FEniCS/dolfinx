@@ -41,9 +41,7 @@ def test_mpi_comm_refcount():
     comm2 = m.comm
     assert comm2 == comm1
 
-    print("-------")
     del m
-    print("-------")
     assert sys.getrefcount(comm1) == 2
     assert comm1.rank == comm0.rank
 
@@ -89,7 +87,8 @@ NB_MODULE(mpi_comm_wrapper, m)
 """
 
         path = pathlib.Path(tempdir)
-        open(pathlib.Path(tempdir, "mpi_comm_wrapper.cpp"), "w").write(cpp_code + cpp_code_header)
+        open(pathlib.Path(tempdir, "mpi_comm_wrapper.cpp"),
+             "w").write(cpp_code + cpp_code_header)
         rel_path = path.relative_to(pathlib.Path(__file__).parent)
         p = str(rel_path).replace("/", ".") + ".mpi_comm_wrapper"
         return cppimport.imp(p)
