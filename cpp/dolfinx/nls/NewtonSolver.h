@@ -56,8 +56,6 @@ public:
   /// @param[in] b The vector to assemble to residual into
   void setF(const std::function<void(const Vec, Vec)>& F, Vec b);
 
-  Mat getJ() { return _matJ; }
-
   /// Set the function for computing the Jacobian (dF/dx) and the matrix
   /// to assemble the residual into
   /// @param[in] J Function to compute the Jacobian matrix b (x, A)
