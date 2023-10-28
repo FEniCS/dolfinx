@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2021 Chris Richardson and Garth N. Wells
+// Copyright (C) 2017-2023 Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -14,8 +14,6 @@
 #include <petscmat.h>
 #include <petscsnes.h>
 #include <petscvec.h>
-
-#include <iostream>
 
 // nanobind casters for PETSc/petsc4py objects
 
