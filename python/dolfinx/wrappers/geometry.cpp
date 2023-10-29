@@ -14,6 +14,7 @@
 #include <memory>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
+#include <nanobind/stl/array.h>
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
 #include <span>
@@ -51,10 +52,11 @@ void declare_bbtree(nb::module_& m, std::string type)
              const std::size_t i)
           {
             std::array<T, 6> bbox = self.get_bbox(i);
-            return nb::ndarray<T, nb::shape<2, 3>, nb::numpy>(bbox.data(),
-                                                              {2, 3});
+            std::vector _bbox(bbox.begin(), bbox.end());
+            // return nb::ndarray<T, nb::numpy>(_bbox.data(), {2, 3});
+            return dolfinx_wrappers::as_nbarray(std::move(_bbox), {2, 3});
           },
-          nb::rv_policy::copy, nb::arg("i)"))
+          nb::arg("i)"))
       .def("__repr__", &dolfinx::geometry::BoundingBoxTree<T>::str)
       .def(
           "create_global_tree",
