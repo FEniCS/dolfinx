@@ -650,15 +650,16 @@ graph::AdjacencyList<std::int32_t> compute_colliding_cells(
 /// @param[in] mesh The mesh
 /// @param[in] points Points to check for collision (`shape=(num_points,
 /// 3)`). Storage is row-major.
-/// @return Quadratuplet (src_owner, dest_owner, dest_points,
-/// dest_cells), where src_owner is a list of ranks corresponding to the
-/// input points. dest_owner is a list of ranks corresponding to
-/// dest_points, the points that this process owns. dest_cells contains
-/// the corresponding cell for each entry in dest_points.
+/// @return Tuple `(src_owner, dest_owner, dest_points, dest_cells)`,
+/// where src_owner is a list of ranks corresponding to the input
+/// points. dest_owner is a list of ranks corresponding to dest_points,
+/// the points that this process owns. dest_cells contains the
+/// corresponding cell for each entry in dest_points.
 ///
-/// @note dest_owner is sorted
+/// @note `dest_owner` is sorted
 /// @note Returns -1 if no colliding process is found
-/// @note dest_points is flattened row-major, shape (dest_owner.size(), 3)
+/// @note dest_points is flattened row-major, shape `(dest_owner.size(),
+/// 3)`
 /// @note Only looks through cells owned by the process
 template <std::floating_point T>
 std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>, std::vector<T>,
@@ -700,8 +701,8 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points)
       comm, in_ranks.size(), in_ranks.data(), MPI_UNWEIGHTED, out_ranks.size(),
       out_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &forward_comm);
 
-  // Compute map from global mpi rank to neighbor rank, "collisions" uses
-  // global rank
+  // Compute map from global mpi rank to neighbor rank, "collisions"
+  // uses global rank
   std::map<std::int32_t, std::int32_t> rank_to_neighbor;
   for (std::size_t i = 0; i < out_ranks.size(); i++)
     rank_to_neighbor[out_ranks[i]] = i;
@@ -755,8 +756,8 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points)
       dolfinx::MPI::mpi_type<T>(), received_points.data(), recv_sizes.data(),
       recv_offsets.data(), dolfinx::MPI::mpi_type<T>(), forward_comm);
 
-  // Each process checks which local cell is closest and computes the squared
-  // distance to the cell
+  // Each process checks which local cell is closest and computes the
+  // squared distance to the cell
   const int rank = dolfinx::MPI::rank(comm);
   const std::vector<std::int32_t> closest_cells = compute_closest_entity(
       bb, midpoint_tree, mesh,
@@ -804,8 +805,8 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points)
     for (std::int32_t j = recv_offsets[i]; j < recv_offsets[i + 1]; j++)
     {
       const std::int32_t pos = unpack_map[j];
-      // If point has not been found yet distance is negative
-      // If new received distance smaller than current distance choose owner
+      // If point has not been found yet distance is negative. If new
+      // received distance smaller than current distance choose owner.
       if (auto d = closest_distance[pos]; d < 0 or d > recv_distances[j])
       {
         point_owners[pos] = out_ranks[i];
