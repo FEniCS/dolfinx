@@ -162,9 +162,12 @@ void declare_bbtree(nb::module_& m, std::string type)
         std::size_t q_s0 = q.ndim() == 1 ? 1 : q.shape(0);
         std::span<const T> _p(p.data(), 3 * p_s0), _q(q.data(), 3 * q_s0);
         std::array<T, 3> d = dolfinx::geometry::compute_distance_gjk<T>(_p, _q);
-        return nb::ndarray<T, nb::shape<3>, nb::numpy>(d.data(), {d.size()});
+        std::vector<T> _d(d.begin(), d.end());
+        return dolfinx_wrappers::as_nbarray(std::move(_d));
+        // return nb::ndarray<T, nb::shape<3>, nb::numpy>(d.data(), {d.size()});
       },
-      nb::rv_policy::copy, nb::arg("p"), nb::arg("q"));
+      //   nb::rv_policy::copy,
+      nb::arg("p"), nb::arg("q"));
 
   m.def(
       "squared_distance",
