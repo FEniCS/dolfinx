@@ -11,7 +11,6 @@ ARG HDF5_SERIES=1.14
 ARG HDF5_PATCH=2
 ARG HDF5_FIX=
 ARG PETSC_VERSION=3.20.0
-ARG NUMPY_VERSION=1.23.3
 ARG MPICH_VERSION=4.1.2
 
 WORKDIR /tmp
@@ -64,7 +63,7 @@ RUN curl -L -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES
 
 # First set of dependencies for building and running Python DOLFINx
 # Second set of dependencies for running DOLFINx tests
-RUN python3 -m pip install --no-binary="numpy" --no-cache-dir cffi numba mpi4py pybind11 wheel && \
+RUN python3 -m pip install --no-cache-dir cffi numba mpi4py pybind11 wheel && \
     python3 -m pip install --no-cache-dir cppimport pytest pytest-xdist scipy matplotlib
 
 # Build PETSc
