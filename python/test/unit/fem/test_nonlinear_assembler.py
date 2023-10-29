@@ -7,6 +7,9 @@
 
 import math
 
+from mpi4py import MPI
+from petsc4py import PETSc
+
 import numpy as np
 import pytest
 
@@ -27,9 +30,6 @@ from dolfinx.fem.petsc import (apply_lifting, apply_lifting_nest,
 from dolfinx.mesh import (GhostMode, create_unit_cube, create_unit_square,
                           locate_entities_boundary)
 from ufl import derivative, dx, inner
-
-from mpi4py import MPI
-from petsc4py import PETSc
 
 
 def nest_matrix_norm(A):

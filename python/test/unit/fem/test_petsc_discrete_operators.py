@@ -5,6 +5,9 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the DiscreteOperator class"""
 
+from mpi4py import MPI
+from petsc4py import PETSc
+
 import numpy as np
 import pytest
 
@@ -16,9 +19,6 @@ from dolfinx.fem import (Expression, Function, assemble_scalar, form,
                          functionspace)
 from dolfinx.mesh import (CellType, GhostMode, create_mesh, create_unit_cube,
                           create_unit_square)
-
-from mpi4py import MPI
-from petsc4py import PETSc
 
 
 @pytest.mark.skip_in_parallel

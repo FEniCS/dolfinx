@@ -6,6 +6,8 @@
 """Unit tests for the KrylovSolver interface"""
 
 
+from mpi4py import MPI
+
 import numpy as np
 import pytest
 
@@ -13,8 +15,6 @@ from basix.ufl import element
 from dolfinx import la
 from dolfinx.fem import Function, functionspace
 from dolfinx.mesh import create_unit_square
-
-from mpi4py import MPI
 
 
 @pytest.mark.parametrize("e", [

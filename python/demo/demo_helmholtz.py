@@ -19,6 +19,9 @@
 # Scattering" p138-139. In real mode, the Method of Manufactured
 # Solutions is used to produce the exact solution and source term.
 
+from mpi4py import MPI
+from petsc4py import PETSc
+
 # +
 import numpy as np
 
@@ -28,9 +31,6 @@ from dolfinx.fem.petsc import LinearProblem
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import create_unit_square
 from ufl import dx, grad, inner
-
-from mpi4py import MPI
-from petsc4py import PETSc
 
 # Wavenumber
 k0 = 4 * np.pi

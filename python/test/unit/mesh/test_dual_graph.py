@@ -1,8 +1,8 @@
 
+from mpi4py import MPI
+
 from dolfinx import cpp as _cpp
 from dolfinx import mesh
-
-from mpi4py import MPI
 
 
 def to_adj(cells):
