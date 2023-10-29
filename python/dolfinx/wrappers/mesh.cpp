@@ -200,10 +200,7 @@ void declare_mesh(nb::module_& m, std::string type)
       .def_prop_ro(
           "comm",
           [](dolfinx::mesh::Mesh<T>& self)
-          {
-            PyObject* c = PyMPIComm_New(self.comm());
-            return nb::steal(c);
-          },
+          { return MPICommWrapper(self.comm()); },
           nb::keep_alive<0, 1>())
       .def_rw("name", &dolfinx::mesh::Mesh<T>::name);
 
