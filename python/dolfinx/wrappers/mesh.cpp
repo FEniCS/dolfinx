@@ -193,7 +193,10 @@ void declare_mesh(nb::module_& m, std::string type)
       .def_prop_ro(
           "comm",
           [](dolfinx::mesh::Mesh<T>& self)
-          { return MPICommWrapper(self.comm()); },
+          {
+            PyObject* c = PyMPIComm_New(self.comm());
+            return nb::steal(c);
+          },
           nb::keep_alive<0, 1>())
       .def_rw("name", &dolfinx::mesh::Mesh<T>::name);
 
@@ -481,8 +484,11 @@ void mesh(nb::module_& m)
              return dolfinx::mesh::to_string(self.cell_types()[0]);
            })
       .def("interprocess_facets", &dolfinx::mesh::Topology::interprocess_facets)
-      .def_prop_ro("comm", [](dolfinx::mesh::Topology& self)
-                   { return MPICommWrapper(self.comm()); });
+      .def_prop_ro(
+          "comm",
+          [](dolfinx::mesh::Topology& self)
+          { return MPICommWrapper(self.comm()); },
+          nb::keep_alive<0, 1>());
 
   // dolfinx::mesh::MeshTags
 
