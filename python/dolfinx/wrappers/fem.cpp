@@ -125,13 +125,15 @@ void declare_function_space(nb::module_& m, std::string type)
                      &dolfinx::fem::FiniteElement<T>::interpolation_ident)
         .def_prop_ro("space_dimension",
                      &dolfinx::fem::FiniteElement<T>::space_dimension)
-        .def_prop_ro("value_shape",
-                     [](const dolfinx::fem::FiniteElement<T>& self)
-                     {
-                       std::span<const std::size_t> vshape = self.value_shape();
-                       return nb::ndarray<const std::size_t, nb::numpy>(
-                           vshape.data(), {vshape.size()});
-                     })
+        .def_prop_ro(
+            "value_shape",
+            [](const dolfinx::fem::FiniteElement<T>& self)
+            {
+              std::span<const std::size_t> vshape = self.value_shape();
+              return nb::ndarray<const std::size_t, nb::numpy>(vshape.data(),
+                                                               {vshape.size()});
+            },
+            nb::rv_policy::reference_internal)
         .def(
             "apply_dof_transformation",
             [](const dolfinx::fem::FiniteElement<T>& self,
@@ -624,7 +626,7 @@ void declare_form(nb::module_& m, std::string type)
               throw ::std::runtime_error("Integral type unsupported.");
             }
           },
-          nb::arg("type"), nb::arg("i"));
+          nb::rv_policy::reference_internal, nb::arg("type"), nb::arg("i"));
 
   // Form
   std::string pymethod_create_form = std::string("create_form_") + type;
@@ -1072,7 +1074,7 @@ void fem(nb::module_& m)
             return nb::ndarray<const std::int32_t, nb::numpy>(dofs.data(),
                                                               {dofs.size()});
           },
-          nb::arg("cell"))
+          nb::rv_policy::reference_internal, nb::arg("cell"))
       .def_prop_ro("bs", &dolfinx::fem::DofMap::bs)
       .def(
           "map",

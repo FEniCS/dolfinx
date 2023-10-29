@@ -118,16 +118,16 @@ void common(nb::module_& m)
             return nb::ndarray<const std::int64_t, nb::numpy>(ghosts.data(),
                                                               {ghosts.size()});
           },
-          "Return list of ghost indices")
+          nb::rv_policy::reference_internal, "Return list of ghost indices")
       .def_prop_ro(
           "owners",
           [](const dolfinx::common::IndexMap& self)
           {
             const std::vector<int>& owners = self.owners();
-            std::size_t size = owners.size();
-            return nb::ndarray<nb::numpy, const int, nb::shape<nb::any>>(
-                owners.data(), 1, &size);
-          })
+            return nb::ndarray<nb::numpy, const int, nb::ndim<1>>(
+                owners.data(), {owners.size()});
+          },
+          nb::rv_policy::reference_internal)
       .def(
           "local_to_global",
           [](const dolfinx::common::IndexMap& self,

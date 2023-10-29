@@ -64,12 +64,14 @@ void declare_objects(nb::module_& m, const std::string& type)
           nb::arg("type") = dolfinx::la::Norm::l2)
       .def_prop_ro("index_map", &dolfinx::la::Vector<T>::index_map)
       .def_prop_ro("bs", &dolfinx::la::Vector<T>::bs)
-      .def_prop_ro("array",
-                   [](dolfinx::la::Vector<T>& self)
-                   {
-                     return nb::ndarray<T, nb::numpy>(
-                         self.mutable_array().data(), {self.array().size()});
-                   })
+      .def_prop_ro(
+          "array",
+          [](dolfinx::la::Vector<T>& self)
+          {
+            return nb::ndarray<T, nb::numpy>(self.mutable_array().data(),
+                                             {self.array().size()});
+          },
+          nb::rv_policy::reference_internal)
       .def("scatter_forward", &dolfinx::la::Vector<T>::scatter_fwd)
       .def(
           "scatter_reverse",
@@ -150,25 +152,31 @@ void declare_objects(nb::module_& m, const std::string& type)
              return dolfinx_wrappers::as_nbarray(self.to_dense(),
                                                  {nrows, ncols});
            })
-      .def_prop_ro("data",
-                   [](dolfinx::la::MatrixCSR<T>& self)
-                   {
-                     return nb::ndarray<T, nb::numpy>(self.values().data(),
-                                                      {self.values().size()});
-                   })
-      .def_prop_ro("indices",
-                   [](dolfinx::la::MatrixCSR<T>& self)
-                   {
-                     return nb::ndarray<const std::int32_t, nb::numpy>(
-                         self.cols().data(), {self.cols().size()});
-                   })
-      .def_prop_ro("indptr",
-                   [](dolfinx::la::MatrixCSR<T>& self)
-                   {
-                     std::span<const std::int64_t> array = self.row_ptr();
-                     return nb::ndarray<const std::int64_t, nb::numpy>(
-                         array.data(), {array.size()});
-                   })
+      .def_prop_ro(
+          "data",
+          [](dolfinx::la::MatrixCSR<T>& self)
+          {
+            return nb::ndarray<T, nb::numpy>(self.values().data(),
+                                             {self.values().size()});
+          },
+          nb::rv_policy::reference_internal)
+      .def_prop_ro(
+          "indices",
+          [](dolfinx::la::MatrixCSR<T>& self)
+          {
+            return nb::ndarray<const std::int32_t, nb::numpy>(
+                self.cols().data(), {self.cols().size()});
+          },
+          nb::rv_policy::reference_internal)
+      .def_prop_ro(
+          "indptr",
+          [](dolfinx::la::MatrixCSR<T>& self)
+          {
+            std::span<const std::int64_t> array = self.row_ptr();
+            return nb::ndarray<const std::int64_t, nb::numpy>(array.data(),
+                                                              {array.size()});
+          },
+          nb::rv_policy::reference_internal)
       .def("scatter_rev_begin", &dolfinx::la::MatrixCSR<T>::scatter_rev_begin)
       .def("scatter_rev_end", &dolfinx::la::MatrixCSR<T>::scatter_rev_end);
 }
