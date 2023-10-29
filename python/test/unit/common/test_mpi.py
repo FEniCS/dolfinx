@@ -51,7 +51,6 @@ def test_mpi_comm_refcount():
                     reason="This test needs DOLFINx pkg-config.")
 def test_mpi_comm_wrapper_cppimport(tempdir):  # noqa: F811
     """Test MPICommWrapper <-> mpi4py.MPI.Comm conversion for code compiled with cppimport"""
-
     dolfinx_pc = dolfinx.pkgconfig.parse("dolfinx")
 
     @mpi_jit_decorator
@@ -87,8 +86,7 @@ NB_MODULE(mpi_comm_wrapper, m)
 """
 
         path = pathlib.Path(tempdir)
-        open(pathlib.Path(tempdir, "mpi_comm_wrapper.cpp"),
-             "w").write(cpp_code + cpp_code_header)
+        open(pathlib.Path(tempdir, "mpi_comm_wrapper.cpp"), "w").write(cpp_code + cpp_code_header)
         rel_path = path.relative_to(pathlib.Path(__file__).parent)
         p = str(rel_path).replace("/", ".") + ".mpi_comm_wrapper"
         return cppimport.imp(p)
