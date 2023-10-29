@@ -104,6 +104,6 @@ def test_index_map_ghost_lifetime():
 
     # Test lifetime management
     ghosts = map.ghosts
-    assert ghosts == map_ghosts
+    assert np.array_equal(ghosts, map_ghosts)
     del map
-    assert ghosts == map_ghosts
+    assert np.array_equal(ghosts, map_ghosts)

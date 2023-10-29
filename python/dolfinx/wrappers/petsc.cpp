@@ -167,7 +167,8 @@ void petsc_la_module(nb::module_& m)
   m.def(
       "scatter_local_vectors",
       [](Vec x,
-         const std::vector<nb::ndarray<const PetscScalar, nb::c_contig>>& x_b,
+         const std::vector<
+             nb::ndarray<const PetscScalar, nb::ndim<1>, nb::c_contig>>& x_b,
          const std::vector<std::pair<
              std::shared_ptr<const dolfinx::common::IndexMap>, int>>& maps)
       {
