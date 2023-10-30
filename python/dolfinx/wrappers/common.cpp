@@ -96,8 +96,11 @@ void common(nb::module_& m)
           },
           nb::arg("comm"), nb::arg("local_size"), nb::arg("dest_src"),
           nb::arg("ghosts"), nb::arg("ghost_owners"))
-      .def_prop_ro("comm", [](const dolfinx::common::IndexMap& self)
-                   { return MPICommWrapper(self.comm()); })
+      .def_prop_ro(
+          "comm",
+          [](const dolfinx::common::IndexMap& self)
+          { return MPICommWrapper(self.comm()); },
+          nb::keep_alive<0, 1>())
       .def_prop_ro("size_local", &dolfinx::common::IndexMap::size_local)
       .def_prop_ro("size_global", &dolfinx::common::IndexMap::size_global)
       .def_prop_ro("num_ghosts", &dolfinx::common::IndexMap::num_ghosts)
@@ -115,16 +118,16 @@ void common(nb::module_& m)
             return nb::ndarray<const std::int64_t, nb::numpy>(ghosts.data(),
                                                               {ghosts.size()});
           },
-          "Return list of ghost indices")
+          nb::rv_policy::reference_internal, "Return list of ghost indices")
       .def_prop_ro(
           "owners",
           [](const dolfinx::common::IndexMap& self)
           {
             const std::vector<int>& owners = self.owners();
-            std::size_t size = owners.size();
-            return nb::ndarray<nb::numpy, const int, nb::shape<nb::any>>(
-                owners.data(), 1, &size);
-          })
+            return nb::ndarray<nb::numpy, const int, nb::ndim<1>>(
+                owners.data(), {owners.size()});
+          },
+          nb::rv_policy::reference_internal)
       .def(
           "local_to_global",
           [](const dolfinx::common::IndexMap& self,

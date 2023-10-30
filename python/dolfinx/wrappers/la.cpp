@@ -64,12 +64,14 @@ void declare_objects(nb::module_& m, const std::string& type)
           nb::arg("type") = dolfinx::la::Norm::l2)
       .def_prop_ro("index_map", &dolfinx::la::Vector<T>::index_map)
       .def_prop_ro("bs", &dolfinx::la::Vector<T>::bs)
-      .def_prop_ro("array",
-                   [](dolfinx::la::Vector<T>& self)
-                   {
-                     return nb::ndarray<T, nb::numpy>(
-                         self.mutable_array().data(), {self.array().size()});
-                   })
+      .def_prop_ro(
+          "array",
+          [](dolfinx::la::Vector<T>& self)
+          {
+            return nb::ndarray<T, nb::numpy>(self.mutable_array().data(),
+                                             {self.array().size()});
+          },
+          nb::rv_policy::reference_internal)
       .def("scatter_forward", &dolfinx::la::Vector<T>::scatter_fwd)
       .def(
           "scatter_reverse",
@@ -116,8 +118,10 @@ void declare_objects(nb::module_& m, const std::string& type)
              else if (bs == 3)
                self.template add<3, 3>(x, rows, cols);
              else
+             {
                throw std::runtime_error(
                    "Block size not supported in this function");
+             }
            })
       .def("set",
            [](dolfinx::la::MatrixCSR<T>& self, const std::vector<T>& x,
@@ -131,8 +135,10 @@ void declare_objects(nb::module_& m, const std::string& type)
              else if (bs == 3)
                self.template set<3, 3>(x, rows, cols);
              else
+             {
                throw std::runtime_error(
                    "Block size not supported in this function");
+             }
            })
       .def("set_value",
            static_cast<void (dolfinx::la::MatrixCSR<T>::*)(T)>(
@@ -150,25 +156,31 @@ void declare_objects(nb::module_& m, const std::string& type)
              return dolfinx_wrappers::as_nbarray(self.to_dense(),
                                                  {nrows, ncols});
            })
-      .def_prop_ro("data",
-                   [](dolfinx::la::MatrixCSR<T>& self)
-                   {
-                     return nb::ndarray<T, nb::numpy>(self.values().data(),
-                                                      {self.values().size()});
-                   })
-      .def_prop_ro("indices",
-                   [](dolfinx::la::MatrixCSR<T>& self)
-                   {
-                     return nb::ndarray<const std::int32_t, nb::numpy>(
-                         self.cols().data(), {self.cols().size()});
-                   })
-      .def_prop_ro("indptr",
-                   [](dolfinx::la::MatrixCSR<T>& self)
-                   {
-                     std::span<const std::int64_t> array = self.row_ptr();
-                     return nb::ndarray<const std::int64_t, nb::numpy>(
-                         array.data(), {array.size()});
-                   })
+      .def_prop_ro(
+          "data",
+          [](dolfinx::la::MatrixCSR<T>& self)
+          {
+            return nb::ndarray<T, nb::numpy>(self.values().data(),
+                                             {self.values().size()});
+          },
+          nb::rv_policy::reference_internal)
+      .def_prop_ro(
+          "indices",
+          [](dolfinx::la::MatrixCSR<T>& self)
+          {
+            return nb::ndarray<const std::int32_t, nb::numpy>(
+                self.cols().data(), {self.cols().size()});
+          },
+          nb::rv_policy::reference_internal)
+      .def_prop_ro(
+          "indptr",
+          [](dolfinx::la::MatrixCSR<T>& self)
+          {
+            std::span<const std::int64_t> array = self.row_ptr();
+            return nb::ndarray<const std::int64_t, nb::numpy>(array.data(),
+                                                              {array.size()});
+          },
+          nb::rv_policy::reference_internal)
       .def("scatter_rev_begin", &dolfinx::la::MatrixCSR<T>::scatter_rev_begin)
       .def("scatter_rev_end", &dolfinx::la::MatrixCSR<T>::scatter_rev_end);
 }
@@ -203,16 +215,6 @@ void declare_functions(nb::module_& m)
         return dolfinx::la::is_orthonormal(_basis);
       },
       nb::arg("basis"));
-  // m.def(
-  //     "orthonormalize",
-  //     [](std::vector<std::reference_wrapper<dolfinx::la::Vector<T>>> basis)
-  //     { dolfinx::la::orthonormalize(basis); },
-  //     nb::arg("basis"));
-  // m.def(
-  //     "is_orthonormal",
-  //     [](std::vector<std::reference_wrapper<const dolfinx::la::Vector<T>>>
-  //            basis) { return dolfinx::la::is_orthonormal(basis); },
-  //     nb::arg("basis"));
 }
 
 } // namespace
@@ -281,16 +283,17 @@ void la(nb::module_& m)
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> rows)
           { self.insert_diagonal(std::span(rows.data(), rows.size())); },
           nb::arg("rows"))
-      .def_prop_ro("graph",
-                   [](dolfinx::la::SparsityPattern& self)
-                   {
-                     auto [edges, ptr] = self.graph();
-                     return std::pair(
-                         nb::ndarray<const std::int32_t, nb::numpy>(
-                             edges.data(), {edges.size()}),
-                         nb::ndarray<const std::int64_t, nb::numpy>(
-                             ptr.data(), {ptr.size()}));
-                   });
+      .def_prop_ro(
+          "graph",
+          [](dolfinx::la::SparsityPattern& self)
+          {
+            auto [edges, ptr] = self.graph();
+            return std::pair(nb::ndarray<const std::int32_t, nb::numpy>(
+                                 edges.data(), {edges.size()}),
+                             nb::ndarray<const std::int64_t, nb::numpy>(
+                                 ptr.data(), {ptr.size()}));
+          },
+          nb::rv_policy::reference_internal);
 
   // Declare objects that are templated over type
   declare_objects<float>(m, "float32");

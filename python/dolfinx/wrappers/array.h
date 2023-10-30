@@ -18,24 +18,35 @@ namespace nb = nanobind;
 namespace dolfinx_wrappers
 {
 
+template <typename V>
+auto as_nbarray_copy(const V& x, std::size_t ndim, const std::size_t* shape)
+{
+  using _V = std::decay_t<V>;
+  using T = typename _V::value_type;
+  T* ptr = new T[x.size()];
+  std::copy(x.begin(), x.end(), ptr);
+  return nb::ndarray<T, nb::numpy>(
+      ptr, ndim, shape,
+      nb::capsule(ptr, [](void* p) noexcept { delete[] (T*)p; }));
+}
+
+template <typename V>
+auto as_nbarray_copy(const V& x, const std::initializer_list<std::size_t> shape)
+{
+  return as_nbarray_copy(x, shape.size(), shape.begin());
+}
+
 /// Create an n-dimensional nb::ndarray that shares data with a
 /// std::vector. The std::vector owns the data, and the nb::ndarray
 /// object keeps the std::vector alive.
-/// From https://github.com/pybind/pybind11/issues/1042
 template <typename V>
 auto as_nbarray(V&& x, std::size_t ndim, const std::size_t* shape)
 {
   using _V = std::decay_t<V>;
-  auto data = x.data();
-  std::unique_ptr<_V> ptr = std::make_unique<_V>(std::move(x));
-  // auto capsule = nb::capsule(x_ptr.get(), [](void* p) noexcept
-  //                            { delete reinterpret_cast<_V*>(p); });
-  auto capsule
-      = nb::capsule(ptr.get(), [](void* p) noexcept
-                    { std::unique_ptr<_V>(reinterpret_cast<_V*>(p)); });
-  ptr.release();
+  _V* ptr = new _V(std::move(x));
   return nb::ndarray<typename _V::value_type, nb::numpy>(
-      static_cast<typename _V::value_type*>(data), ndim, shape, capsule);
+      ptr->data(), ndim, shape,
+      nb::capsule(ptr, [](void* p) noexcept { delete (_V*)p; }));
 }
 
 template <typename V>

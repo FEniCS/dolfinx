@@ -15,8 +15,7 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
-#include <nanobind/stl/unique_ptr.h>
-#include <nanobind/stl/variant.h>
+#include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
 #include <span>
 
@@ -53,8 +52,7 @@ void declare_bbtree(nb::module_& m, std::string type)
              const std::size_t i)
           {
             std::array<T, 6> bbox = self.get_bbox(i);
-            std::vector<T> _bbox(bbox.begin(), bbox.end());
-            return dolfinx_wrappers::as_nbarray(_bbox, {2, 3});
+            return dolfinx_wrappers::as_nbarray_copy(bbox, {2, 3});
           },
           nb::arg("i)"))
       .def("__repr__", &dolfinx::geometry::BoundingBoxTree<T>::str)
@@ -158,14 +156,13 @@ void declare_bbtree(nb::module_& m, std::string type)
       [](nb::ndarray<const T, nb::c_contig> p,
          nb::ndarray<const T, nb::c_contig> q)
       {
-        const std::size_t p_s0 = p.ndim() == 1 ? 1 : p.shape(0);
-        const std::size_t q_s0 = q.ndim() == 1 ? 1 : q.shape(0);
+        std::size_t p_s0 = p.ndim() == 1 ? 1 : p.shape(0);
+        std::size_t q_s0 = q.ndim() == 1 ? 1 : q.shape(0);
         std::span<const T> _p(p.data(), 3 * p_s0), _q(q.data(), 3 * q_s0);
-        const std::array<T, 3> d
-            = dolfinx::geometry::compute_distance_gjk<T>(_p, _q);
-        std::vector<T> _d(d.begin(), d.end());
-        return dolfinx_wrappers::as_nbarray(std::move(_d));
+        std::array<T, 3> d = dolfinx::geometry::compute_distance_gjk<T>(_p, _q);
+        return dolfinx_wrappers::as_nbarray_copy(d, {d.size()});
       },
+      //   nb::rv_policy::copy,
       nb::arg("p"), nb::arg("q"));
 
   m.def(

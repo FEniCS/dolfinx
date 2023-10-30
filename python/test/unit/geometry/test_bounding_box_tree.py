@@ -422,7 +422,6 @@ def test_sub_bbtree_box(ct, N, dtype):
     if num_boxes > 0:
         bbox = bbtree.get_bbox(num_boxes - 1)
         assert np.isclose(bbox[0][1], (N - 1) / N)
-
     tree = bb_tree(mesh, tdim)
     assert num_boxes < tree.num_bboxes
 

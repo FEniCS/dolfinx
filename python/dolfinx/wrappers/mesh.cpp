@@ -118,18 +118,22 @@ void declare_meshtags(nb::module_& m, std::string type)
       .def_rw("name", &dolfinx::mesh::MeshTags<T>::name)
       .def_prop_ro("dim", &dolfinx::mesh::MeshTags<T>::dim)
       .def_prop_ro("topology", &dolfinx::mesh::MeshTags<T>::topology)
-      .def_prop_ro("values",
-                   [](dolfinx::mesh::MeshTags<T>& self)
-                   {
-                     return nb::ndarray<const T, nb::numpy>(
-                         self.values().data(), {self.values().size()});
-                   })
-      .def_prop_ro("indices",
-                   [](dolfinx::mesh::MeshTags<T>& self)
-                   {
-                     return nb::ndarray<const std::int32_t, nb::numpy>(
-                         self.indices().data(), {self.indices().size()});
-                   })
+      .def_prop_ro(
+          "values",
+          [](dolfinx::mesh::MeshTags<T>& self)
+          {
+            return nb::ndarray<const T, nb::numpy>(self.values().data(),
+                                                   {self.values().size()});
+          },
+          nb::rv_policy::reference_internal)
+      .def_prop_ro(
+          "indices",
+          [](dolfinx::mesh::MeshTags<T>& self)
+          {
+            return nb::ndarray<const std::int32_t, nb::numpy>(
+                self.indices().data(), {self.indices().size()});
+          },
+          nb::rv_policy::reference_internal)
       .def("find", [](dolfinx::mesh::MeshTags<T>& self, T value)
            { return as_nbarray(self.find(value)); });
 
@@ -151,13 +155,15 @@ void declare_mesh(nb::module_& m, std::string type)
                                          "Geometry object")
       .def_prop_ro("dim", &dolfinx::mesh::Geometry<T>::dim,
                    "Geometric dimension")
-      .def_prop_ro("dofmap",
-                   [](dolfinx::mesh::Geometry<T>& self)
-                   {
-                     auto dofs = self.dofmap();
-                     return nb::ndarray<const std::int32_t, nb::numpy>(
-                         dofs.data_handle(), {dofs.extent(0), dofs.extent(1)});
-                   })
+      .def_prop_ro(
+          "dofmap",
+          [](dolfinx::mesh::Geometry<T>& self)
+          {
+            auto dofs = self.dofmap();
+            return nb::ndarray<const std::int32_t, nb::numpy>(
+                dofs.data_handle(), {dofs.extent(0), dofs.extent(1)});
+          },
+          nb::rv_policy::reference_internal)
       .def("index_map", &dolfinx::mesh::Geometry<T>::index_map)
       .def_prop_ro(
           "x",
@@ -166,6 +172,7 @@ void declare_mesh(nb::module_& m, std::string type)
             return nb::ndarray<T, nb::numpy>(self.x().data(),
                                              {self.x().size() / 3, 3});
           },
+          nb::rv_policy::reference_internal,
           "Return coordinates of all geometry points. Each row is the "
           "coordinate of a point.")
       .def_prop_ro("cmaps", &dolfinx::mesh::Geometry<T>::cmaps,
@@ -190,8 +197,11 @@ void declare_mesh(nb::module_& m, std::string type)
       .def_prop_ro("topology",
                    nb::overload_cast<>(&dolfinx::mesh::Mesh<T>::topology),
                    "Mesh topology")
-      .def_prop_ro("comm", [](dolfinx::mesh::Mesh<T>& self)
-                   { return MPICommWrapper(self.comm()); })
+      .def_prop_ro(
+          "comm",
+          [](dolfinx::mesh::Mesh<T>& self)
+          { return MPICommWrapper(self.comm()); },
+          nb::keep_alive<0, 1>())
       .def_rw("name", &dolfinx::mesh::Mesh<T>::name);
 
   std::string create_interval("create_interval_" + type);
@@ -243,7 +253,6 @@ void declare_mesh(nb::module_& m, std::string type)
          const PythonPartitioningFunction& p)
       {
         std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape(1);
-        std::vector shape{std::size_t(x.shape(0)), shape1};
         if (p)
         {
           auto p_wrap
@@ -252,13 +261,13 @@ void declare_mesh(nb::module_& m, std::string type)
           { return p(MPICommWrapper(comm), n, tdim, cells); };
           return dolfinx::mesh::create_mesh(comm.get(), cells, {element},
                                             std::span(x.data(), x.size()),
-                                            {x.shape(0), x.shape(1)}, p_wrap);
+                                            {x.shape(0), shape1}, p_wrap);
         }
         else
         {
           return dolfinx::mesh::create_mesh(comm.get(), cells, {element},
                                             std::span(x.data(), x.size()),
-                                            {x.shape(0), x.shape(1)}, p);
+                                            {x.shape(0), shape1}, p);
         }
       },
       nb::arg("comm"), nb::arg("cells"), nb::arg("element"),
@@ -441,30 +450,36 @@ void mesh(nb::module_& m)
            &dolfinx::mesh::Topology::create_entity_permutations)
       .def("create_connectivity", &dolfinx::mesh::Topology::create_connectivity,
            nb::arg("d0"), nb::arg("d1"))
-      .def("get_facet_permutations",
-           [](const dolfinx::mesh::Topology& self)
-           {
-             const std::vector<std::uint8_t>& p = self.get_facet_permutations();
-             return nb::ndarray<const std::uint8_t, nb::numpy>(p.data(),
+      .def(
+          "get_facet_permutations",
+          [](const dolfinx::mesh::Topology& self)
+          {
+            const std::vector<std::uint8_t>& p = self.get_facet_permutations();
+            return nb::ndarray<const std::uint8_t, nb::numpy>(p.data(),
+                                                              {p.size()});
+          },
+          nb::rv_policy::reference_internal)
+      .def(
+          "get_cell_permutation_info",
+          [](const dolfinx::mesh::Topology& self)
+          {
+            const std::vector<std::uint32_t>& p
+                = self.get_cell_permutation_info();
+            return nb::ndarray<const std::uint32_t, nb::numpy>(p.data(),
                                                                {p.size()});
-           })
-      .def("get_cell_permutation_info",
-           [](const dolfinx::mesh::Topology& self)
-           {
-             const std::vector<std::uint32_t>& p
-                 = self.get_cell_permutation_info();
-             return nb::ndarray<const std::uint32_t, nb::numpy>(p.data(),
-                                                                {p.size()});
-           })
+          },
+          nb::rv_policy::reference_internal)
       .def_prop_ro("dim", &dolfinx::mesh::Topology::dim,
                    "Topological dimension")
-      .def_prop_ro("original_cell_index",
-                   [](const dolfinx::mesh::Topology& self)
-                   {
-                     return nb::ndarray<const std::int64_t, nb::numpy>(
-                         self.original_cell_index.data(),
-                         {self.original_cell_index.size()});
-                   })
+      .def_prop_ro(
+          "original_cell_index",
+          [](const dolfinx::mesh::Topology& self)
+          {
+            return nb::ndarray<const std::int64_t, nb::numpy>(
+                self.original_cell_index.data(),
+                {self.original_cell_index.size()});
+          },
+          nb::rv_policy::reference_internal)
       .def("connectivity",
            nb::overload_cast<int, int>(&dolfinx::mesh::Topology::connectivity,
                                        nb::const_),
@@ -479,8 +494,11 @@ void mesh(nb::module_& m)
              return dolfinx::mesh::to_string(self.cell_types()[0]);
            })
       .def("interprocess_facets", &dolfinx::mesh::Topology::interprocess_facets)
-      .def_prop_ro("comm", [](dolfinx::mesh::Topology& self)
-                   { return MPICommWrapper(self.comm()); });
+      .def_prop_ro(
+          "comm",
+          [](dolfinx::mesh::Topology& self)
+          { return MPICommWrapper(self.comm()); },
+          nb::keep_alive<0, 1>());
 
   // dolfinx::mesh::MeshTags
 
