@@ -67,6 +67,11 @@ jobs:
 
       - name: Flake8 checks
         run: |
+          cd cpp/
+          python3 -m flake8 cmake
+          python3 -m flake8 demo
+          python3 -m flake8 test
+          cd ..
           cd python/
           python3 -m flake8 dolfinx
           python3 -m flake8 demo
