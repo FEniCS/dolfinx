@@ -58,7 +58,7 @@ ENV CC=icx \
 
 # Install Python packages (via pip)
 RUN . /opt/intel/oneapi/setvars.sh && \
-    pip install --no-cache-dir cppimport mpi4py nanobind==${NANOBIND_VERSION} pytest pytest-xdist
+    pip install --no-cache-dir cppimport matplotlib mpi4py nanobind==${NANOBIND_VERSION} pytest pytest-xdist scikit-build-core[pyproject]
 
 # Install KaHIP
 RUN . /opt/intel/oneapi/setvars.sh && \

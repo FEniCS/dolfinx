@@ -1,24 +1,21 @@
 DOLFINx Python interface
 ========================
 
-Building the DOLFINx Python interface uses nanobind.
+This document explains how to install the DOLFINx Python interface. Note that
+this interface must be built without PEP517 build isolation by passing
+`--no-build-isolation` flag to `pip install`. This is because the Python
+interface explicitly depends on the system built petsc4py and mpi4py.
 
-1. Install nanobind from source, e.g.::
+1. Build and install the DOLFINx C++ library in the usual way.
 
-     python3 -m pip install git+https://github.com/wjakob/nanobind.git
+2. Ensure the build time requirements are installed::
 
-   The FEniCS Docker images are configured with nanobind.
-
-2. Build and install the DOLFINx C++ library in the usual way.
+     pip install -v -r build-requirements.txt
 
 3. Build DOLFINx Python interface::
 
-     pip3 -v install . --user
+     pip -v install --check-build-dependencies --no-build-isolation .
 
-To install in a local build directory::
+   To build in debug and editable mode for development::
 
-  python3 setup.py build
-
-and set the ``PYTHONPATH``. To build in debug mode::
-
-  python3 setup.py build --debug
+     pip -v install --check-build-dependencies --config-settings=build-dir="build" --config-settings=cmake.build-type="Debug" --no-build-isolation -e .
