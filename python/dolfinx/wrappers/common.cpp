@@ -41,12 +41,6 @@ void common(nb::module_& m)
   m.attr("has_kahip") = dolfinx::has_kahip();
   m.attr("has_slepc") = dolfinx::has_slepc();
   m.attr("has_adios2") = dolfinx::has_adios2();
-
-#ifdef HAS_PYBIND11_SLEPC4PY
-  m.attr("has_slepc4py") = true;
-#else
-  m.attr("has_slepc4py") = false;
-#endif
   m.attr("git_commit_hash") = dolfinx::git_commit_hash();
 
   nb::enum_<dolfinx::Table::Reduction>(m, "Reduction")

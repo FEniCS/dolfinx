@@ -27,7 +27,7 @@ Public user interface
    dolfinx.plot
 
 
-pybind11/C++interface
+nanobind/C++interface
 ^^^^^^^^^^^^^^^^^^^^^
 
 These are low-level interfaces to the C++ component of DOLFINx. These

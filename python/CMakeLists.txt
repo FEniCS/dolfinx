@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 
 project(dolfinx_nanobind)
 
-# Set C++ standard before finding pybind11
+# Set C++ standard
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -47,7 +47,7 @@ find_package(Basix REQUIRED CONFIG HINTS ${BASIX_PY_DIR})
 
 find_package(DOLFINX REQUIRED CONFIG)
 
-# Create the binding library pybind11 handles its own calls to
+# Create the binding library nanobind handles its own calls to
 # target_link_libraries
 nanobind_add_module(
   cpp

@@ -59,9 +59,6 @@ class CMakeBuild(build_ext):
         if "CMAKE_BUILD_PARALLEL_LEVEL" not in env:
             env["CMAKE_BUILD_PARALLEL_LEVEL"] = "3"
 
-        import pybind11
-        env['pybind11_DIR'] = pybind11.get_cmake_dir()
-
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
         subprocess.check_call(['cmake', ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
@@ -83,5 +80,4 @@ setup(name='fenics-dolfinx',
       ext_modules=[CMakeExtension('dolfinx.cpp')],
       cmdclass=dict(build_ext=CMakeBuild),
       install_requires=REQUIREMENTS,
-      setup_requires=["pybind11"],
       zip_safe=False)
