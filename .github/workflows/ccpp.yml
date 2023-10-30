@@ -79,6 +79,9 @@ jobs:
       - name: isort checks (non-blocking)
         continue-on-error: true
         run: |
+          cd cpp/
+          python3 -m isort --check .
+          cd ..
           cd python/
           python3 -m isort --check .
       - name: mypy checks
