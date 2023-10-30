@@ -24,6 +24,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Upgrade pip and setuptools
+        run: |
+          python3 -m pip install --upgrade pip setuptools wheel
+
       - name: Install FEniCS Python components
         run: |
           python3 -m pip install git+https://github.com/FEniCS/ufl.git
@@ -61,7 +65,8 @@ jobs:
       - name: Build Python interface
         run: |
           python3 -m pip install git+https://github.com/wjakob/nanobind.git
-          python3 -m pip install --global-option build --global-option --debug python/
+          python3 -m pip -v install -r python/build-requirements.txt # TO REMOVE
+          python3 -m pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type=Debug python/
 
       - name: Set default DOLFINx JIT options
         run: |

@@ -88,7 +88,8 @@ jobs:
         run: |
           . /opt/intel/oneapi/setvars.sh
           pip install git+https://github.com/wjakob/nanobind.git
-          pip install python/
+          pip -v install -r python/build-requirements.txt # TO REMOVE
+          pip -v install --check-build-dependencies --no-build-isolation python/
       - name: Set default DOLFINx JIT options
         run: |
           mkdir -p ~/.config/dolfinx
@@ -96,8 +97,8 @@ jobs:
       - name: Run DOLFINx demos (Python, serial)
         run: |
           . /opt/intel/oneapi/setvars.sh
-          pip install matplotlib
-          pytest -n=2 -m serial --durations=10 python/demo/test.py
+          pip install matplotlib # TO REMOVE
+          pytest -v -n=2 -m serial --durations=10 python/demo/test.py
       - name: Run DOLFINx demos (Python, MPI (np=2))
         run: |
           . /opt/intel/oneapi/setvars.sh
@@ -105,7 +106,8 @@ jobs:
       - name: Run DOLFINx Python unit tests (serial)
         run: |
           . /opt/intel/oneapi/setvars.sh
-          pytest -n=auto --durations=50 python/test/unit/
+          cd python/test
+          pytest -n=auto --durations=50 unit/
       - name: Run DOLFINx Python unit tests (MPI, np=2)
         run: |
           . /opt/intel/oneapi/setvars.sh
