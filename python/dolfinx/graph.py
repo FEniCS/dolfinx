@@ -44,7 +44,6 @@ def adjacencylist(data: np.ndarray, offsets=None):
         An adjacency list.
 
     """
-
     if offsets is None:
         try:
             return _cpp.graph.AdjacencyList_int32(data)
