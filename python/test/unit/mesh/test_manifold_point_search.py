@@ -1,3 +1,5 @@
+from mpi4py import MPI
+
 import numpy as np
 import pytest
 
@@ -7,8 +9,6 @@ from dolfinx import cpp as _cpp
 from dolfinx import default_real_type, geometry
 from dolfinx.geometry import bb_tree
 from dolfinx.mesh import create_mesh
-
-from mpi4py import MPI
 
 
 @pytest.mark.skip_in_parallel

@@ -5,11 +5,11 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for sparsity pattern creation"""
 
+from mpi4py import MPI
+
 from dolfinx.cpp.la import SparsityPattern
 from dolfinx.fem import functionspace, locate_dofs_topological
 from dolfinx.mesh import create_unit_square, exterior_facet_indices
-
-from mpi4py import MPI
 
 
 def test_add_diagonal():
