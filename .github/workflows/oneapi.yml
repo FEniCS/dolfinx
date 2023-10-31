@@ -24,8 +24,7 @@ jobs:
 
     strategy:
       matrix:
-        # petsc_arch: [linux-gnu-real32-32, linux-gnu-real64-32, linux-gnu-complex128-32]
-        petsc_arch: [linux-gnu-real64-32]
+        petsc_arch: [linux-gnu-real32-32, linux-gnu-real64-32, linux-gnu-complex128-32]
 
     name: oneAPI build and test (${{ matrix.petsc_arch }})
 
@@ -35,9 +34,7 @@ jobs:
       - name: Install Basix
         run: |
           . /opt/intel/oneapi/setvars.sh
-          pip install scikit-build-core[pyproject]
-          pip install git+https://github.com/wjakob/nanobind.git
-          pip install --no-build-isolation git+https://github.com/FEniCS/basix.git
+          pip install git+https://github.com/FEniCS/basix.git
 
       - name: Clone FFCx
         uses: actions/checkout@v4
@@ -69,43 +66,42 @@ jobs:
           pip install git+https://github.com/FEniCS/ufl.git
           pip install ffcx/
 
-      # - name: Build and run DOLFINx C++ unit tests (serial and MPI)
-      #   run: |
-      #     . /opt/intel/oneapi/setvars.sh
-      #     cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
-      #     cmake --build build/test
-      #     cd build/test
-      #     ctest --output-on-failure -R unittests
-      #     mpiexec -n 2 ctest --output-on-failure -R unittests
+      - name: Build and run DOLFINx C++ unit tests (serial and MPI)
+        run: |
+          . /opt/intel/oneapi/setvars.sh
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
+          cmake --build build/test
+          cd build/test
+          ctest --output-on-failure -R unittests
+          mpiexec -n 2 ctest --output-on-failure -R unittests
 
-      # - name: Build and run DOLFINx C++ regression tests (serial and MPI (np=2))
-      #   run: |
-      #     . /opt/intel/oneapi/setvars.sh
-      #     cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S cpp/demo/
-      #     cmake --build build/demo
-      #     cd build/demo
-      #     ctest -R demo -R serial
-      #     ctest -R demo -R mpi_2
+      - name: Build and run DOLFINx C++ regression tests (serial and MPI (np=2))
+        run: |
+          . /opt/intel/oneapi/setvars.sh
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S cpp/demo/
+          cmake --build build/demo
+          cd build/demo
+          ctest -R demo -R serial
+          ctest -R demo -R mpi_2
 
       - name: Build DOLFINx Python interface
         run: |
           . /opt/intel/oneapi/setvars.sh
-          pip install git+https://github.com/wjakob/nanobind.git
           pip -v install -r python/build-requirements.txt # TO REMOVE
           pip -v install --check-build-dependencies --no-build-isolation python/
       - name: Set default DOLFINx JIT options
         run: |
           mkdir -p ~/.config/dolfinx
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
-      # - name: Run DOLFINx demos (Python, serial)
-      #   run: |
-      #     . /opt/intel/oneapi/setvars.sh
-      #     pip install matplotlib # TO REMOVE
-      #     pytest -v -n=2 -m serial --durations=10 python/demo/test.py
-      # - name: Run DOLFINx demos (Python, MPI (np=2))
-      #   run: |
-      #     . /opt/intel/oneapi/setvars.sh
-      #     pytest -m mpi --num-proc=2 python/demo/test.py
+      - name: Run DOLFINx demos (Python, serial)
+        run: |
+          . /opt/intel/oneapi/setvars.sh
+          pip install matplotlib # TO REMOVE
+          pytest -v -n=2 -m serial --durations=10 python/demo/test.py
+      - name: Run DOLFINx demos (Python, MPI (np=2))
+        run: |
+          . /opt/intel/oneapi/setvars.sh
+          pytest -m mpi --num-proc=2 python/demo/test.py
       - name: Run DOLFINx Python unit tests (serial)
         run: |
           . /opt/intel/oneapi/setvars.sh
