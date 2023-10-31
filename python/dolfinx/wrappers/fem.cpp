@@ -193,8 +193,7 @@ void declare_function_space(nb::module_& m, std::string type)
                std::uint32_t cell_permutation, int dim)
             {
               self.apply_inverse_transpose_dof_transformation(
-                  std::span((std::complex<T>*)x.data(),
-                            x.shape(0) * x.shape(1)),
+                  std::span(x.data(), x.shape(0) * x.shape(1)),
                   cell_permutation, dim);
             },
             nb::arg("x"), nb::arg("cell_permutation"), nb::arg("dim"))

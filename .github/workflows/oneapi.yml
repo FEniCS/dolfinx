@@ -34,6 +34,7 @@ jobs:
       - name: Install Basix
         run: |
           . /opt/intel/oneapi/setvars.sh
+          pip install scikit-build-core[pyproject]
           pip install git+https://github.com/wjakob/nanobind.git
           pip install --no-build-isolation git+https://github.com/FEniCS/basix.git
 
