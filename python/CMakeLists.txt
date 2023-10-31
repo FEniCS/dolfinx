@@ -1,32 +1,21 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.18)
 
-project(dolfinx_pybind11)
+project(fenics-dolfinx)
 
 # Set C++ standard before finding pybind11
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Development component which includes both Development.Module and
-# Development.Embed is not required for building a Python module.  Correct
-# COMPONENT specification Development.Module added only in CMake 3.18 and above.
-if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.18.0")
-  find_package(
-    Python3
-    COMPONENTS Interpreter Development.Module
-    REQUIRED
-  )
-else()
-  find_package(
-    Python3
-    COMPONENTS Interpreter Development
-    REQUIRED
-  )
-endif()
+find_package(
+  Python3
+  COMPONENTS Interpreter Development.Module
+  REQUIRED
+)
 
 find_package(
   pybind11
-  2.7.0
+  2.9.1
   REQUIRED
   CONFIG
   HINTS
@@ -38,11 +27,12 @@ find_package(
 
 execute_process(
   COMMAND
-  ${Python3_EXECUTABLE} -c "import basix, os, sys; sys.stdout.write(os.path.dirname(basix.__file__))"
+  ${Python3_EXECUTABLE} -c "import os, sys, basix; sys.stdout.write(os.path.dirname(basix.__file__))"
   OUTPUT_VARIABLE BASIX_PY_DIR
   RESULT_VARIABLE BASIX_PY_COMMAND_RESULT
-  ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
+  ERROR_VARIABLE BASIX_ERROR_OUT OUTPUT_STRIP_TRAILING_WHITESPACE
 )
+
 find_package(Basix REQUIRED CONFIG HINTS ${BASIX_PY_DIR})
 
 find_package(DOLFINX REQUIRED CONFIG)
@@ -114,3 +104,7 @@ if(NOT MPI4PY_COMMAND_RESULT)
 else()
   message(FATAL_ERROR "mpi4py could not be found.")
 endif()
+
+set_target_properties(cpp PROPERTIES INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+install(TARGETS cpp DESTINATION dolfinx)

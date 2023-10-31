@@ -65,10 +65,13 @@ jobs:
           python3 -m pip install git+https://github.com/FEniCS/basix.git@${{ github.event.inputs.basix_ref }}
           python3 -m pip install git+https://github.com/FEniCS/ffcx.git@${{ github.event.inputs.ffcx_ref }}
 
-      - name: Install matplotlib
-        run: pip3 install matplotlib
       - name: Flake8 checks
         run: |
+          cd cpp/
+          python3 -m flake8 cmake
+          python3 -m flake8 demo
+          python3 -m flake8 test
+          cd ..
           cd python/
           python3 -m flake8 dolfinx
           python3 -m flake8 demo
@@ -76,11 +79,14 @@ jobs:
       - name: isort checks (non-blocking)
         continue-on-error: true
         run: |
+          cd cpp/
+          python3 -m isort --check .
+          cd ..
           cd python/
           python3 -m isort --check .
       - name: mypy checks
         run: |
-          python3 -m pip install types-setuptools mypy --upgrade
+          python3 -m pip install mypy types-setuptools --upgrade # TO REMOVE
           cd python/
           mypy dolfinx
           mypy demo
@@ -112,7 +118,7 @@ jobs:
 
       - name: Build C++ interface documentation
         run: |
-          python3 -m pip install breathe
+          python3 -m pip install breathe # TO REMOVE
           export DOLFINX_VERSION=`cmake -L build | grep DOXYGEN_DOLFINX_VERSION | cut -f2 -d "="`
           echo $DOLFINX_VERSION
           cd cpp/doc
@@ -140,10 +146,12 @@ jobs:
           ctest -V -R demo -R mpi_2
 
       - name: Build Python interface
-        run: CMAKE_BUILD_TYPE=Debug python3 -m pip -v install python/
+        run: |
+          python3 -m pip install -r python/build-requirements.txt # TO REMOVE
+          python3 -m pip -v install --check-build-dependencies --no-build-isolation python/
       - name: Build Python interface documentation
         run: |
-          python3 -m pip install sphinx==5.0.2
+          python3 -m pip install sphinx==5.0.2 # TO REMOVE
           cd python/doc
           make html
 
