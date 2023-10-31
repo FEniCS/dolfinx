@@ -15,12 +15,6 @@ endif()
 
 find_package(Python COMPONENTS Interpreter Development REQUIRED)
 
-# find_package(
-# Python3
-# COMPONENTS Interpreter Development.Module
-# REQUIRED
-# )
-
 # Detect the installed nanobind package and import it into CMake
 execute_process(
   COMMAND "${Python_EXECUTABLE}" -m nanobind --cmake_dir
@@ -28,15 +22,6 @@ execute_process(
 list(APPEND CMAKE_PREFIX_PATH "${NB_DIR}")
 find_package(nanobind CONFIG REQUIRED)
 
-# execute_process(
-# COMMAND
-# "${Python3_EXECUTABLE}" -c
-# "import nanobind; print(nanobind.cmake_dir())"
-# OUTPUT_VARIABLE _tmp_dir
-# OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ECHO STDOUT)
-# list(APPEND CMAKE_PREFIX_PATH "${_tmp_dir}")
-
-# find_package(nanobind CONFIG REQUIRED)
 execute_process(
   COMMAND
   ${Python3_EXECUTABLE} -c "import os, sys, basix; sys.stdout.write(os.path.dirname(basix.__file__))"
@@ -44,7 +29,6 @@ execute_process(
   RESULT_VARIABLE BASIX_PY_COMMAND_RESULT
   ERROR_VARIABLE BASIX_ERROR_OUT OUTPUT_STRIP_TRAILING_WHITESPACE
 )
-
 find_package(Basix REQUIRED CONFIG HINTS ${BASIX_PY_DIR})
 find_package(DOLFINX REQUIRED CONFIG)
 
@@ -75,7 +59,6 @@ check_cxx_compiler_flag("-Wall -Werror -pedantic" HAVE_PEDANTIC)
 
 if(HAVE_PEDANTIC)
   # target_compile_options(cpp PRIVATE -Wall;-Werror;-pedantic)
-  # target_compile_options(cpp PRIVATE -Wall;-pedantic)
 endif()
 
 # Add DOLFINx libraries
