@@ -35,9 +35,7 @@ jobs:
       - name: Install Basix
         run: |
           . /opt/intel/oneapi/setvars.sh
-          pip install scikit-build-core[pyproject]
-          pip install git+https://github.com/wjakob/nanobind.git
-          pip install --no-build-isolation git+https://github.com/FEniCS/basix.git
+          pip install git+https://github.com/FEniCS/basix.git
 
       - name: Clone FFCx
         uses: actions/checkout@v4
@@ -90,7 +88,6 @@ jobs:
       - name: Build DOLFINx Python interface
         run: |
           . /opt/intel/oneapi/setvars.sh
-          pip install git+https://github.com/wjakob/nanobind.git
           pip -v install -r python/build-requirements.txt # TO REMOVE
           pip -v install --check-build-dependencies --no-build-isolation python/
       - name: Set default DOLFINx JIT options

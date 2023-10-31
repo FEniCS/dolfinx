@@ -1,4 +1,4 @@
-nanobind>=1.7.0
+nanobind @ git+https://github.com/wjakob/nanobind.git
 scikit-build-core[pyproject]
 petsc4py
 mpi4py
