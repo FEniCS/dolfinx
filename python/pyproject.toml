@@ -20,7 +20,7 @@ dependencies = ["numpy>=1.21", "cffi", "petsc4py", "mpi4py",
     		"fenics-ufl>=2023.3.0.dev0,<2023.4.0"]
 
 [project.optional-dependencies]
-docs = ["markdown", "pylit3", "pyyaml", "sphinx==5.0.2", "sphinx_rtd_theme"]
+docs = ["markdown", "pyyaml", "sphinx==5.0.2", "sphinx_rtd_theme"]
 lint = ["flake8", "pydocstyle"]
 optional = ["numba"]
 test = ["pytest", "sympy", "scipy", "matplotlib", "fenics-dolfinx[optional]"]
