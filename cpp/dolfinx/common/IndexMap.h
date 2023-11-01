@@ -189,6 +189,10 @@ public:
   std::pair<IndexMap, std::vector<std::int32_t>>
   create_submap(std::span<const std::int32_t> indices) const;
 
+  // std::tuple<IndexMap, std::vector<std::int32_t>>
+  void
+  create_submap_conn(std::span<const std::int32_t> indices) const;
+
   /// @todo Aim to remove this function?
   ///
   /// @brief Compute map from each local (owned) index to the set of

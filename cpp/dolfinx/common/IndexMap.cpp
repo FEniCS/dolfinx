@@ -14,8 +14,38 @@
 #include <utility>
 #include <vector>
 
+#include <iostream>
+
 using namespace dolfinx;
 using namespace dolfinx::common;
+
+std::stringstream ss;
+
+// A function for printing vectors
+template <typename S>
+std::ostream &operator<<(std::ostream &os,
+                         const std::vector<S> &vector)
+{
+  os << "{ ";
+  for (auto v : vector)
+  {
+    os << v << " ";
+  }
+  os << "}";
+  return os;
+}
+
+// A function for printing maps
+template <typename T, typename U>
+std::ostream &operator<<(std::ostream &os,
+                         const std::map<T, U> &map)
+{
+  os << "{ ";
+  for (const auto &[k, v] : map)
+    os << k << ": " << v << " ";
+  os << "}";
+  return os;
+}
 
 namespace
 {
@@ -31,6 +61,224 @@ std::array<std::vector<int>, 2> build_src_dest(MPI_Comm comm,
   std::sort(dest.begin(), dest.end());
 
   return {std::move(src), std::move(dest)};
+}
+
+std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
+           std::vector<std::int32_t>>
+compute_submap_indices(const dolfinx::common::IndexMap& imap,
+                       std::span<const std::int32_t> indices)
+{
+  // --- Step 1 ---: Send ghost indices in `indices` to their owners
+  // and receive indices owned by this process that are in `indices`
+  // on other processes
+
+  const MPI_Comm comm = imap.comm();
+  // TODO Should these be spans?
+  const std::vector<std::int32_t>& src = imap.src();
+  const std::vector<std::int32_t>& dest = imap.dest();
+  const std::vector<std::int64_t>& ghosts = imap.ghosts();
+  const std::vector<std::int32_t>& ghost_owners = imap.owners();
+  // ss << "src = " << src << "\n";
+  // ss << "dest = " << dest << "\n";
+
+  // Create neighbourhood comm (ghost -> owner)
+  MPI_Comm comm0;
+  int ierr = MPI_Dist_graph_create_adjacent(
+      comm, dest.size(), dest.data(), MPI_UNWEIGHTED, src.size(), src.data(),
+      MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
+  dolfinx::MPI::check_error(comm, ierr);
+
+  // Create lookup array to determine if an index is in the sub-map
+  std::vector<int> is_in_submap(imap.size_local() + imap.num_ghosts(), 0);
+  for (auto v : indices)
+    is_in_submap[v] = 1;
+  // ss << "is_in_submap = " << is_in_submap << "\n";
+
+  // Pack ghosts indices that this process wants to include in the
+  // sub-map
+  std::vector<std::vector<std::int64_t>> send_data(src.size());
+  for (std::size_t i = 0; i < ghosts.size(); ++i)
+  {
+    auto it = std::lower_bound(src.begin(), src.end(), ghost_owners[i]);
+    assert(it != src.end() and *it == ghost_owners[i]);
+    int r = std::distance(src.begin(), it);
+    // Send ghost index if it is in the submap, else send -1
+    if (is_in_submap[imap.size_local() + i])
+      send_data[r].push_back(ghosts[i]);
+    else
+      send_data[r].push_back(-1);
+  }
+  // ss << "send_data = " << send_data << "\n";
+
+  // Count number of indices to send per dest
+  std::vector<std::int32_t> send_sizes;
+  std::transform(send_data.begin(), send_data.end(),
+                 std::back_inserter(send_sizes),
+                 [](auto& d) { return d.size(); });
+
+  // ss << "send_sizes = " << send_sizes << "\n";
+
+  // Send how many indices I ghost to each owner, and receive how many
+  // of my indices other ranks ghost
+  std::vector<std::int32_t> recv_sizes;
+  recv_sizes.resize(dest.size(), 0);
+  send_sizes.reserve(1);
+  recv_sizes.reserve(1);
+  ierr = MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT32_T,
+                               recv_sizes.data(), 1, MPI_INT32_T, comm0);
+  dolfinx::MPI::check_error(comm, ierr);
+
+  // ss << "recv_sizes = " << recv_sizes << "\n";
+
+  // Prepare displacement vectors
+  std::vector<int> send_disp, recv_disp;
+  send_disp.resize(src.size() + 1, 0);
+  recv_disp.resize(dest.size() + 1, 0);
+  std::partial_sum(send_sizes.begin(), send_sizes.end(),
+                   std::next(send_disp.begin()));
+  std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
+                   std::next(recv_disp.begin()));
+
+  // ss << "send_disp = " << send_disp << "\n";
+  // ss << "recv_disp = " << recv_disp << "\n";
+
+  // Send ghost indices to owner, and receive indices owned by this process
+  // that are ghosts on others
+  std::vector<std::int64_t> send_indices, recv_indices;
+  for (auto& d : send_data)
+    send_indices.insert(send_indices.end(), d.begin(), d.end());
+
+  // ss << "send_indices = " << send_indices << "\n";
+
+  recv_indices.resize(recv_disp.back());
+  ierr = MPI_Neighbor_alltoallv(send_indices.data(), send_sizes.data(),
+                                send_disp.data(), MPI_INT64_T,
+                                recv_indices.data(), recv_sizes.data(),
+                                recv_disp.data(), MPI_INT64_T, comm0);
+  dolfinx::MPI::check_error(comm, ierr);
+
+  // ss << "recv_indices = " << recv_indices << "\n";
+
+  // Free the communicator
+  ierr = MPI_Comm_free(&comm0);
+  dolfinx::MPI::check_error(comm, ierr);
+
+  // --- Step 2 ---: Create a map from the indices in `recv_indices` (i.e.
+  // indices owned by this process that are in `indices` on other processes) to
+  // their owner in the submap. This is required since not all indices in
+  // `recv_indices` will be in `indices` on this process, and thus other
+  // processes must own them in the submap.
+
+  // Create a map from (global) indices owned by this process that are ghosted
+  // on others to processes that can own them.
+  // FIXME Avoid map
+  const int rank = dolfinx::MPI::rank(comm);
+  // A map from (global) indices in `recv_indices` to a list of processes that
+  // can own the index in the submap.
+  std::map<std::int64_t, std::vector<std::int32_t>>
+      global_idx_to_possible_owner;
+  const std::array local_range = imap.local_range();
+  for (std::size_t i = 0; i < recv_disp.size() - 1; ++i)
+  {
+    for (int j = recv_disp[i]; j < recv_disp[i + 1]; ++j)
+    {
+      std::int64_t idx = recv_indices[j];
+      // Check that the index is in the submap
+      if (idx != -1)
+      {
+        // Compute the local index
+        std::int32_t idx_local = idx - local_range[0];
+        assert(idx_local >= 0);
+        assert(idx_local < local_range[1]);
+
+        // Check if index is in the submap on this process. If so, this process
+        // remains its owner in the submap. Otherwise, add the process that sent
+        // it to the list of possible owners.
+        if (is_in_submap[idx_local])
+          global_idx_to_possible_owner[idx].push_back(rank);
+        else
+          global_idx_to_possible_owner[idx].push_back(dest[i]);
+      }
+    }
+  }
+
+  // ss << "global_idx_to_possible_owner = " << global_idx_to_possible_owner <<
+  // "\n";
+
+  // Choose the submap owner for each index in `recv_indices`
+  std::vector<std::int32_t> send_owners;
+  send_owners.reserve(recv_indices.size());
+  for (auto idx : recv_indices)
+  {
+    // Check the index is in the submap, otherwise send -1
+    if (idx != -1)
+    {
+      // Choose new owner randomly for load balancing
+      const std::vector<std::int32_t>& possible_owners
+          = global_idx_to_possible_owner[idx];
+      const int random_index = std::rand() % possible_owners.size();
+      send_owners.push_back(possible_owners[random_index]);
+    }
+    else
+      send_owners.push_back(-1);
+  }
+
+  // ss << "send_owners = " << send_owners << "\n";
+
+  // Create neighbourhood comm (owner -> ghost)
+  MPI_Comm comm1;
+  ierr = MPI_Dist_graph_create_adjacent(
+      comm, src.size(), src.data(), MPI_UNWEIGHTED, dest.size(), dest.data(),
+      MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
+  dolfinx::MPI::check_error(comm, ierr);
+
+  // Send the data
+  std::vector<std::int32_t> recv_owners(send_disp.back());
+  ierr = MPI_Neighbor_alltoallv(send_owners.data(), recv_sizes.data(),
+                                recv_disp.data(), MPI_INT32_T,
+                                recv_owners.data(), send_sizes.data(),
+                                send_disp.data(), MPI_INT32_T, comm1);
+  dolfinx::MPI::check_error(comm, ierr);
+
+  // Free the communicator
+  ierr = MPI_Comm_free(&comm1);
+  dolfinx::MPI::check_error(comm, ierr);
+
+  // ss << "recv_owners = " << recv_owners << "\n";
+
+  // Local indices (w.r.t. original map) owned by this process in the submap
+  std::vector<std::int32_t> submap_owned;
+  // Local indices (w.r.t. original map) ghosted by this process in the submap
+  std::vector<std::int32_t> submap_ghost;
+  // The owners of the submap ghost indices (process submap_ghost_owners[i] owns
+  // index submap_ghost[i])
+  std::vector<std::int32_t> submap_ghost_owners;
+  for (std::int32_t v : indices)
+    if (v < imap.size_local())
+      submap_owned.push_back(v);
+
+  for (int i = 0; i < send_indices.size(); ++i)
+  {
+    std::int32_t local_idx = imap.size_local() + i;
+    std::int64_t global_idx = send_indices[i];
+    std::int32_t owner = recv_owners[i];
+
+    // Check if index is in the submap
+    if (global_idx >= 0)
+    {
+      if (owner == rank)
+      {
+        submap_owned.push_back(local_idx);
+      }
+      else
+      {
+        submap_ghost.push_back(local_idx);
+        submap_ghost_owners.push_back(owner);
+      }
+    }
+  }
+
+  return {submap_owned, submap_ghost, submap_ghost_owners};
 }
 } // namespace
 
@@ -628,6 +876,32 @@ IndexMap::create_submap(std::span<const std::int32_t> indices) const
     assert(new_to_old_ghost.empty());
     return {IndexMap(_comm.comm(), local_size_new),
             std::vector<std::int32_t>()};
+  }
+}
+//-----------------------------------------------------------------------------
+// std::tuple<IndexMap, std::vector<std::int32_t>>
+void
+IndexMap::create_submap_conn(std::span<const std::int32_t> indices) const
+{
+  const int rank = dolfinx::MPI::rank(_comm.comm());
+  const int comm_size = dolfinx::MPI::size(_comm.comm());
+  ss << "Rank " << rank << ":\n";
+
+  // TODO Maybe submap_ghost (at least) should return global indices?
+  auto [submap_owned, submap_ghost, submap_ghost_owners]
+      = compute_submap_indices(*this, indices);
+
+  ss << "submap_owned = " << submap_owned << "\n";
+  ss << "submap_ghost = " << submap_ghost << "\n";
+  ss << "submap_ghost_owners = " << submap_ghost_owners << "\n";
+
+  for (int i = 0; i < comm_size; ++i)
+  {
+    if (i == rank)
+    {
+      std::cout << ss.str() << "\n";
+    }
+    MPI_Barrier(_comm.comm());
   }
 }
 //-----------------------------------------------------------------------------
