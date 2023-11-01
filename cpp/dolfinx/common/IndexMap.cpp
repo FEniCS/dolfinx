@@ -255,7 +255,7 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
     if (v < imap.size_local())
       submap_owned.push_back(v);
 
-  for (int i = 0; i < send_indices.size(); ++i)
+  for (std::size_t i = 0; i < send_indices.size(); ++i)
   {
     std::int32_t local_idx = imap.size_local() + i;
     std::int64_t global_idx = send_indices[i];
