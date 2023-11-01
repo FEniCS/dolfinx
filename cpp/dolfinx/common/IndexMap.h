@@ -191,8 +191,7 @@ public:
 
   /// @brief TODO
   /// @param[in] indices
-  // std::tuple<IndexMap, std::vector<std::int32_t>>
-  void
+  std::pair<IndexMap, std::vector<std::int32_t>>
   create_submap_conn(std::span<const std::int32_t> indices) const;
 
   /// @todo Aim to remove this function?

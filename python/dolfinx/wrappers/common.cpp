@@ -144,14 +144,15 @@ void common(py::module& m)
             return std::pair(std::move(map), as_pyarray(std::move(ghosts)));
           },
           py::arg("entities"))
-      .def("create_submap_conn",
+      .def(
+          "create_submap_conn",
           [](const dolfinx::common::IndexMap& self,
              const py::array_t<std::int32_t, py::array::c_style>& indices)
           {
-            // auto [map, submap_to_map] =
-            self.create_submap_conn(
+            auto [map, submap_to_map] = self.create_submap_conn(
                 std::span(indices.data(), indices.size()));
-            // return std::pair(std::move(map), as_pyarray(std::move(submap_to_map)));
+            return std::pair(std::move(map),
+                             as_pyarray(std::move(submap_to_map)));
           },
           py::arg("indices"));
 

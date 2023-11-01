@@ -1012,8 +1012,8 @@ IndexMap::create_submap(std::span<const std::int32_t> indices) const
   }
 }
 //-----------------------------------------------------------------------------
-// std::tuple<IndexMap, std::vector<std::int32_t>>
-void IndexMap::create_submap_conn(std::span<const std::int32_t> indices) const
+std::pair<IndexMap, std::vector<std::int32_t>>
+IndexMap::create_submap_conn(std::span<const std::int32_t> indices) const
 {
   const int rank = dolfinx::MPI::rank(_comm.comm());
   const int comm_size = dolfinx::MPI::size(_comm.comm());
@@ -1066,10 +1066,6 @@ void IndexMap::create_submap_conn(std::span<const std::int32_t> indices) const
 
   ss << "submap_ghost_gidxs = " << submap_ghost_gidxs << "\n";
 
-  // Create sub-index map
-  dolfinx::common::IndexMap(_comm.comm(), submap_local_size, submap_ghost_gidxs,
-                            submap_ghost_owners);
-
   // Create a map from (local) indices in the submap to the corresponding
   // (local) index in the original map
   std::vector<std::int32_t> sub_imap_to_imap;
@@ -1089,6 +1085,9 @@ void IndexMap::create_submap_conn(std::span<const std::int32_t> indices) const
     }
     MPI_Barrier(_comm.comm());
   }
+
+  return {IndexMap(_comm.comm(), submap_local_size, submap_ghost_gidxs, submap_ghost_owners),
+          std::move(sub_imap_to_imap)};
 }
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<int> IndexMap::index_to_dest_ranks() const
