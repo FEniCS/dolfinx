@@ -473,9 +473,10 @@ void declare_objects(nb::module_& m, const std::string& type)
       .def_prop_ro("value_size", &dolfinx::fem::Expression<T, U>::value_size)
       .def_prop_ro("value_shape", &dolfinx::fem::Expression<T, U>::value_shape);
 
-  std::string * pymethod_create_expression
-      = new std::string("create_expression_" + type);
-  m.def(pymethod_create_expression->c_str(),
+  std::string pymethod_create_expression
+      = std::string("create_expression_") + type;
+  m.def(
+      pymethod_create_expression.c_str(),
       [](const std::uintptr_t expression,
          const std::vector<std::shared_ptr<const dolfinx::fem::Function<T, U>>>&
              coefficients,

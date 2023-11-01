@@ -217,11 +217,9 @@ void declare_mesh(nb::module_& m, std::string type)
       nb::arg("comm"), nb::arg("n"), nb::arg("p"), nb::arg("ghost_mode"),
       nb::arg("partitioner").none());
 
-  
-  std::string * create_rectangle = new std::string("create_rectangle_" + type);
-  
+  std::string create_rectangle("create_rectangle_" + type);
   m.def(
-      create_rectangle->c_str(),
+      create_rectangle.c_str(),
       [](MPICommWrapper comm, std::array<std::array<double, 2>, 2> p,
          std::array<std::size_t, 2> n, dolfinx::mesh::CellType celltype,
          const PythonCellPartitionFunction& part,
@@ -234,9 +232,9 @@ void declare_mesh(nb::module_& m, std::string type)
       nb::arg("comm"), nb::arg("p"), nb::arg("n"), nb::arg("celltype"),
       nb::arg("partitioner").none(), nb::arg("diagonal"));
 
-  std::string * create_box = new std::string("create_box_" + type);
+  std::string create_box("create_box_" + type);
   m.def(
-      create_box->c_str(),
+      create_box.c_str(),
       [](MPICommWrapper comm, std::array<std::array<double, 3>, 2> p,
          std::array<std::size_t, 3> n, dolfinx::mesh::CellType celltype,
          const PythonCellPartitionFunction& part)
