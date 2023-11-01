@@ -304,7 +304,6 @@ std::vector<std::int64_t> compute_submap_ghost_indices(
 
     // Pack ghosts indices
     std::vector<std::vector<std::int64_t>> send_data(submap_src.size());
-    std::vector<std::vector<std::size_t>> pos_to_ghost(submap_src.size());
     for (std::size_t i = 0; i < submap_ghosts_global.size(); ++i)
     {
       auto it = std::lower_bound(submap_src.begin(), submap_src.end(),
@@ -312,7 +311,6 @@ std::vector<std::int64_t> compute_submap_ghost_indices(
       assert(it != submap_src.end() and *it == submap_ghost_owners[i]);
       int r = std::distance(submap_src.begin(), it);
       send_data[r].push_back(submap_ghosts_global[i]);
-      pos_to_ghost[r].push_back(i);
     }
 
     // Count number of ghosts per dest
