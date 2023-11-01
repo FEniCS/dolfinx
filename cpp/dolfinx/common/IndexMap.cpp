@@ -23,8 +23,7 @@ std::stringstream ss;
 
 // A function for printing vectors
 template <typename S>
-std::ostream &operator<<(std::ostream &os,
-                         const std::vector<S> &vector)
+std::ostream& operator<<(std::ostream& os, const std::vector<S>& vector)
 {
   os << "{ ";
   for (auto v : vector)
@@ -37,11 +36,10 @@ std::ostream &operator<<(std::ostream &os,
 
 // A function for printing maps
 template <typename T, typename U>
-std::ostream &operator<<(std::ostream &os,
-                         const std::map<T, U> &map)
+std::ostream& operator<<(std::ostream& os, const std::map<T, U>& map)
 {
   os << "{ ";
-  for (const auto &[k, v] : map)
+  for (const auto& [k, v] : map)
     os << k << ": " << v << " ";
   os << "}";
   return os;
@@ -880,8 +878,7 @@ IndexMap::create_submap(std::span<const std::int32_t> indices) const
 }
 //-----------------------------------------------------------------------------
 // std::tuple<IndexMap, std::vector<std::int32_t>>
-void
-IndexMap::create_submap_conn(std::span<const std::int32_t> indices) const
+void IndexMap::create_submap_conn(std::span<const std::int32_t> indices) const
 {
   const int rank = dolfinx::MPI::rank(_comm.comm());
   const int comm_size = dolfinx::MPI::size(_comm.comm());
@@ -894,6 +891,16 @@ IndexMap::create_submap_conn(std::span<const std::int32_t> indices) const
   ss << "submap_owned = " << submap_owned << "\n";
   ss << "submap_ghost = " << submap_ghost << "\n";
   ss << "submap_ghost_owners = " << submap_ghost_owners << "\n";
+
+  // Compute submap offset for this rank
+  std::int64_t submap_local_size = submap_owned.size();
+  ss << "submap_local_size = " << submap_local_size << "\n";
+  std::int64_t submap_offset = 0;
+  int ierr = MPI_Exscan(&submap_local_size, &submap_offset, 1, MPI_INT64_T,
+                        MPI_SUM, _comm.comm());
+  dolfinx::MPI::check_error(_comm.comm(), ierr);
+
+  ss << "submap_offset = " << submap_offset << "\n";
 
   for (int i = 0; i < comm_size; ++i)
   {
