@@ -189,6 +189,8 @@ public:
   std::pair<IndexMap, std::vector<std::int32_t>>
   create_submap(std::span<const std::int32_t> indices) const;
 
+  /// @brief TODO
+  /// @param[in] indices
   // std::tuple<IndexMap, std::vector<std::int32_t>>
   void
   create_submap_conn(std::span<const std::int32_t> indices) const;
