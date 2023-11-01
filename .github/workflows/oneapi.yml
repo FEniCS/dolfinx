@@ -34,7 +34,7 @@ jobs:
       - name: Install Basix
         run: |
           . /opt/intel/oneapi/setvars.sh
-          pip install git+https://github.com/FEniCS/basix.git@mscroggs/embedded-degrees
+          pip install git+https://github.com/FEniCS/basix.git@mscroggs/embedded_degrees
 
       - name: Clone FFCx
         uses: actions/checkout@v4
