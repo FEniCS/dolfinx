@@ -1066,6 +1066,21 @@ void IndexMap::create_submap_conn(std::span<const std::int32_t> indices) const
 
   ss << "submap_ghost_gidxs = " << submap_ghost_gidxs << "\n";
 
+  // Create sub-index map
+  dolfinx::common::IndexMap(_comm.comm(), submap_local_size, submap_ghost_gidxs,
+                            submap_ghost_owners);
+
+  // Create a map from (local) indices in the submap to the corresponding
+  // (local) index in the original map
+  std::vector<std::int32_t> sub_imap_to_imap;
+  sub_imap_to_imap.reserve(submap_owned.size() + submap_ghost.size());
+  sub_imap_to_imap.insert(sub_imap_to_imap.end(), submap_owned.begin(),
+                          submap_owned.end());
+  sub_imap_to_imap.insert(sub_imap_to_imap.end(), submap_ghost.begin(),
+                          submap_ghost.end());
+
+  ss << "sub_imap_to_imap = " << sub_imap_to_imap << "\n";
+
   for (int i = 0; i < comm_size; ++i)
   {
     if (i == rank)
