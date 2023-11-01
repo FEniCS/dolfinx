@@ -902,6 +902,16 @@ void IndexMap::create_submap_conn(std::span<const std::int32_t> indices) const
 
   ss << "submap_offset = " << submap_offset << "\n";
 
+  // Get submap source ranks
+  std::vector<int> submap_src(submap_ghost_owners.begin(),
+                              submap_ghost_owners.end());
+  std::sort(submap_src.begin(), submap_src.end());
+  submap_src.erase(std::unique(submap_src.begin(), submap_src.end()),
+                   submap_src.end());
+  submap_src.shrink_to_fit();
+
+  ss << "submap_src = " << submap_src << "\n";
+
   for (int i = 0; i < comm_size; ++i)
   {
     if (i == rank)
