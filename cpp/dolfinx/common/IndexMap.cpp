@@ -912,6 +912,14 @@ void IndexMap::create_submap_conn(std::span<const std::int32_t> indices) const
 
   ss << "submap_src = " << submap_src << "\n";
 
+  // Compute submap destination ranks
+  // FIXME Can NBX call be avoided by using O^r_p and O^g_p?
+  std::vector<int> submap_dest
+      = dolfinx::MPI::compute_graph_edges_nbx(_comm.comm(), submap_src);
+  std::sort(submap_dest.begin(), submap_dest.end());
+
+  ss << "submap_dest = " << submap_dest << "\n";
+
   for (int i = 0; i < comm_size; ++i)
   {
     if (i == rank)
