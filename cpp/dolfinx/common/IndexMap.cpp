@@ -278,6 +278,143 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
 
   return {submap_owned, submap_ghost, submap_ghost_owners};
 }
+std::vector<std::int64_t> compute_submap_ghost_indices(
+    const MPI_Comm& comm, const std::vector<int>& submap_src,
+    const std::vector<int>& submap_dest,
+    const std::vector<std::int32_t>& submap_owned,
+    const std::vector<std::int64_t>& submap_ghosts_global,
+    const std::vector<std::int32_t>& submap_ghost_owners,
+    const int submap_offset,
+    const dolfinx::common::IndexMap& imap) // NOTE: This is the original imap!
+{
+  // --- Step 1 ---: Send submap global ghost indices (indexed w.r.t. original
+  // imap) to owning rank
+
+  std::vector<std::int64_t> recv_indices;
+  std::vector<int> send_disp, recv_disp;
+  std::vector<std::int32_t> send_sizes, recv_sizes;
+  {
+    // Create neighbourhood comm (ghost -> owner)
+    MPI_Comm comm0;
+    int ierr = MPI_Dist_graph_create_adjacent(
+        comm, submap_dest.size(), submap_dest.data(), MPI_UNWEIGHTED,
+        submap_src.size(), submap_src.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
+        false, &comm0);
+    dolfinx::MPI::check_error(comm, ierr);
+
+    // Pack ghosts indices
+    std::vector<std::vector<std::int64_t>> send_data(submap_src.size());
+    std::vector<std::vector<std::size_t>> pos_to_ghost(submap_src.size());
+    for (std::size_t i = 0; i < submap_ghosts_global.size(); ++i)
+    {
+      auto it = std::lower_bound(submap_src.begin(), submap_src.end(),
+                                 submap_ghost_owners[i]);
+      assert(it != submap_src.end() and *it == submap_ghost_owners[i]);
+      int r = std::distance(submap_src.begin(), it);
+      send_data[r].push_back(submap_ghosts_global[i]);
+      pos_to_ghost[r].push_back(i);
+    }
+
+    // Count number of ghosts per dest
+    std::transform(send_data.begin(), send_data.end(),
+                   std::back_inserter(send_sizes),
+                   [](auto& d) { return d.size(); });
+
+    // Build send buffer and ghost position to send buffer position
+    std::vector<std::int64_t> send_indices;
+    for (auto& d : send_data)
+      send_indices.insert(send_indices.end(), d.begin(), d.end());
+
+    // Send how many indices I ghost to each owner, and receive how many
+    // of my indices other ranks ghost
+    recv_sizes.resize(submap_dest.size(), 0);
+    send_sizes.reserve(1);
+    recv_sizes.reserve(1);
+    ierr = MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT32_T,
+                                 recv_sizes.data(), 1, MPI_INT32_T, comm0);
+    dolfinx::MPI::check_error(comm, ierr);
+
+    // Prepare displacement vectors
+    send_disp.resize(submap_src.size() + 1, 0);
+    recv_disp.resize(submap_dest.size() + 1, 0);
+    std::partial_sum(send_sizes.begin(), send_sizes.end(),
+                     std::next(send_disp.begin()));
+    std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
+                     std::next(recv_disp.begin()));
+
+    // Send ghost indices to owner, and receive indices
+    recv_indices.resize(recv_disp.back());
+    ierr = MPI_Neighbor_alltoallv(send_indices.data(), send_sizes.data(),
+                                  send_disp.data(), MPI_INT64_T,
+                                  recv_indices.data(), recv_sizes.data(),
+                                  recv_disp.data(), MPI_INT64_T, comm0);
+    dolfinx::MPI::check_error(comm, ierr);
+
+    ierr = MPI_Comm_free(&comm0);
+    dolfinx::MPI::check_error(comm, ierr);
+  }
+
+  // --- Step 2 ---: For each received index, compute the submap global index
+
+  std::vector<std::int64_t> send_gidx;
+  send_gidx.reserve(recv_indices.size());
+  const std::array local_range = imap.local_range();
+  for (auto idx : recv_indices)
+  {
+    std::int32_t idx_local = idx - local_range[0];
+    assert(idx_local >= 0);
+    assert(idx_local < local_range[1]);
+
+    // Could avoid search by creating look-up array
+    auto it
+        = std::lower_bound(submap_owned.begin(), submap_owned.end(), idx_local);
+    assert(it != submap_owned.end() and *it == idx_local);
+    std::size_t idx_local_submap = std::distance(submap_owned.begin(), it);
+    send_gidx.push_back(idx_local_submap + submap_offset);
+  }
+
+  // ss << "send_gidx = " << send_gidx << "\n";
+
+  // --- Step 3 ---: Send submap global indices to process that ghost them
+
+  // Create neighbourhood comm (owner -> ghost)
+  MPI_Comm comm1;
+  int ierr = MPI_Dist_graph_create_adjacent(
+      comm, submap_src.size(), submap_src.data(), MPI_UNWEIGHTED,
+      submap_dest.size(), submap_dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
+      false, &comm1);
+  dolfinx::MPI::check_error(comm, ierr);
+
+  // Send indices to ghosting ranks
+  std::vector<std::int64_t> recv_gidx(send_disp.back());
+  ierr = MPI_Neighbor_alltoallv(send_gidx.data(), recv_sizes.data(),
+                                recv_disp.data(), MPI_INT64_T, recv_gidx.data(),
+                                send_sizes.data(), send_disp.data(),
+                                MPI_INT64_T, comm1);
+  dolfinx::MPI::check_error(comm, ierr);
+
+  ierr = MPI_Comm_free(&comm1);
+  dolfinx::MPI::check_error(comm, ierr);
+
+  // ss << "recv_gidx = " << recv_gidx << "\n";
+
+  // // --- Step 4---: Unpack received data
+
+  std::vector<std::int64_t> ghost_submap_gidx;
+  for (std::size_t i = 0; i < send_disp.size() - 1; ++i)
+  {
+    for (int j = send_disp[i]; j < send_disp[i + 1]; ++j)
+    {
+      std::int64_t idx = recv_gidx[j];
+      assert(idx >= 0);
+      ghost_submap_gidx.push_back(idx);
+    }
+  }
+
+  // ss << "ghost_submap_gidx = " << ghost_submap_gidx << "\n";
+
+  return ghost_submap_gidx;
+}
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -919,6 +1056,17 @@ void IndexMap::create_submap_conn(std::span<const std::int32_t> indices) const
   std::sort(submap_dest.begin(), submap_dest.end());
 
   ss << "submap_dest = " << submap_dest << "\n";
+
+  // Compute the global indices (w.r.t. the submap) of the submap ghosts
+  std::vector<std::int64_t> submap_ghost_global(submap_ghost.size());
+  this->local_to_global(submap_ghost, submap_ghost_global);
+  // FIXME Maybe return submap_owned to as global to simplify
+  // compute_submap_ghost_indices?
+  auto submap_ghost_gidxs = compute_submap_ghost_indices(
+      _comm.comm(), submap_src, submap_dest, submap_owned, submap_ghost_global,
+      submap_ghost_owners, submap_offset, *this);
+
+  ss << "submap_ghost_gidxs = " << submap_ghost_gidxs << "\n";
 
   for (int i = 0; i < comm_size; ++i)
   {
