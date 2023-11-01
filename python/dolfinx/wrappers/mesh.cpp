@@ -215,7 +215,7 @@ void declare_mesh(nb::module_& m, std::string type)
             comm.get(), n, p, create_cell_partitioner_cpp(part));
       },
       nb::arg("comm"), nb::arg("n"), nb::arg("p"), nb::arg("ghost_mode"),
-      nb::arg("partitioner"));
+      nb::arg("partitioner").none());
 
   std::string create_rectangle("create_rectangle_" + type);
   m.def(
@@ -230,7 +230,7 @@ void declare_mesh(nb::module_& m, std::string type)
             diagonal);
       },
       nb::arg("comm"), nb::arg("p"), nb::arg("n"), nb::arg("celltype"),
-      nb::arg("partitioner"), nb::arg("diagonal"));
+      nb::arg("partitioner").none(), nb::arg("diagonal"));
 
   std::string create_box("create_box_" + type);
   m.def(
@@ -243,7 +243,7 @@ void declare_mesh(nb::module_& m, std::string type)
                                             create_cell_partitioner_cpp(part));
       },
       nb::arg("comm"), nb::arg("p"), nb::arg("n"), nb::arg("celltype"),
-      nb::arg("partitioner"));
+      nb::arg("partitioner").none());
   m.def(
       "create_mesh",
       [](MPICommWrapper comm,
@@ -271,7 +271,7 @@ void declare_mesh(nb::module_& m, std::string type)
         }
       },
       nb::arg("comm"), nb::arg("cells"), nb::arg("element"),
-      nb::arg("x").noconvert(), nb::arg("partitioner"),
+      nb::arg("x").noconvert(), nb::arg("partitioner").none(),
       "Helper function for creating meshes.");
   m.def(
       "create_submesh",

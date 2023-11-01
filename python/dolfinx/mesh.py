@@ -341,7 +341,7 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
         A mesh.
 
     """
-    if partitioner is None:
+    if partitioner is None and comm.size > 1:
         partitioner = _cpp.mesh.create_cell_partitioner(GhostMode.none)
 
     ufl_element = domain.ufl_coordinate_element()
@@ -473,7 +473,7 @@ def create_interval(comm: _MPI.Comm, nx: int, points: npt.ArrayLike,
         An interval mesh.
 
     """
-    if partitioner is None:
+    if partitioner is None and comm.size > 1:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     domain = ufl.Mesh(basix.ufl.element("Lagrange", "interval", 1, shape=(1,)))
     if dtype == np.float32:
@@ -532,7 +532,7 @@ def create_rectangle(comm: _MPI.Comm, points: npt.ArrayLike, n: npt.ArrayLike,
         A mesh of a rectangle.
 
     """
-    if partitioner is None:
+    if partitioner is None and comm.size > 1:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_type.name, 1, shape=(2,)))
     if dtype == np.float32:
@@ -594,7 +594,7 @@ def create_box(comm: _MPI.Comm, points: typing.List[npt.ArrayLike], n: list,
         A mesh of a box domain.
 
     """
-    if partitioner is None:
+    if partitioner is None and comm.size > 1:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_type.name, 1, shape=(3,)))
     if dtype == np.float32:
