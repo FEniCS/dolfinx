@@ -6,20 +6,10 @@
 """Unit tests for MPI facilities"""
 
 
-import pathlib
 import sys
 
-import mpi4py
 from mpi4py import MPI
 
-import cppimport
-import nanobind
-import pytest
-
-import dolfinx
-import dolfinx.pkgconfig
-from dolfinx import wrappers
-from dolfinx.jit import mpi_jit_decorator
 from dolfinx.mesh import create_unit_square
 
 
