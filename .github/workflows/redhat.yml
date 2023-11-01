@@ -23,16 +23,16 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Upgrade pip and setuptools
         run: |
-          python3 -m pip install --upgrade pip setuptools wheel 
+          python3 -m pip install --upgrade pip setuptools wheel
 
       - name: Install FEniCS Python components
         run: |
           python3 -m pip install git+https://github.com/FEniCS/ufl.git
-          python3 -m pip install git+https://github.com/FEniCS/basix.git
-          python3 -m pip install git+https://github.com/FEniCS/ffcx.git
+          python3 -m pip install git+https://github.com/FEniCS/basix.git@mscroggs/embedded-degrees
+          python3 -m pip install git+https://github.com/FEniCS/ffcx.git@mscroggs/embedded-degree
 
       - name: Configure C++
         run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
