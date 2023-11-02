@@ -68,15 +68,10 @@ void declare_function_space(nb::module_& m, std::string type)
     std::string pyclass_name = "FunctionSpace_" + type;
     nb::class_<dolfinx::fem::FunctionSpace<T>>(m, pyclass_name.c_str(),
                                                "Finite element function space")
-        .def(
-            "__init__",
-            [](dolfinx::fem::FunctionSpace<T>* self,
-               std::shared_ptr<dolfinx::mesh::Mesh<T>> mesh,
-               std::shared_ptr<dolfinx::fem::FiniteElement<T>> element,
-               std::shared_ptr<dolfinx::fem::DofMap> dofmap) {
-              new (self) dolfinx::fem::FunctionSpace<T>(mesh, element, dofmap);
-            },
-            nb::arg("mesh"), nb::arg("element"), nb::arg("dofmap"))
+        .def(nb::init<std::shared_ptr<const dolfinx::mesh::Mesh<T>>,
+                      std::shared_ptr<const dolfinx::fem::FiniteElement<T>>,
+                      std::shared_ptr<const dolfinx::fem::DofMap>>(),
+             nb::arg("mesh"), nb::arg("element"), nb::arg("dofmap"))
         .def("collapse", &dolfinx::fem::FunctionSpace<T>::collapse)
         .def("component", &dolfinx::fem::FunctionSpace<T>::component)
         .def("contains", &dolfinx::fem::FunctionSpace<T>::contains,
@@ -679,11 +674,8 @@ void declare_cmap(nb::module_& m, std::string type)
   std::string pyclass_name = std::string("CoordinateElement_") + type;
   nb::class_<dolfinx::fem::CoordinateElement<T>>(m, pyclass_name.c_str(),
                                                  "Coordinate map element")
-      .def(
-          "__init__",
-          [](dolfinx::fem::CoordinateElement<T>* cm, dolfinx::mesh::CellType ct,
-             int d) { new (cm) dolfinx::fem::CoordinateElement<T>(ct, d); },
-          nb::arg("celltype"), nb::arg("degree"))
+      .def(nb::init<dolfinx::mesh::CellType, int>(), nb::arg("celltype"),
+           nb::arg("degree"))
       .def(
           "__init__",
           [](dolfinx::fem::CoordinateElement<T>* cm, dolfinx::mesh::CellType ct,
@@ -1019,21 +1011,13 @@ void fem(nb::module_& m)
   // dolfinx::fem::ElementDofLayout
   nb::class_<dolfinx::fem::ElementDofLayout>(
       m, "ElementDofLayout", "Object describing the layout of dofs on a cell")
-      .def(
-          "__init__",
-          [](dolfinx::fem::ElementDofLayout* edl, int bs,
-             const std::vector<std::vector<std::vector<int>>>& entity_dofs,
-             const std::vector<std::vector<std::vector<int>>>&
-                 entity_closure_dofs,
-             const std::vector<int>& parent_map,
-             const std::vector<dolfinx::fem::ElementDofLayout>& sub_layouts)
-          {
-            new (edl) dolfinx::fem::ElementDofLayout(
-                bs, entity_dofs, entity_closure_dofs, parent_map, sub_layouts);
-          },
-          nb::arg("block_size"), nb::arg("endity_dofs"),
-          nb::arg("entity_closure_dofs"), nb::arg("parent_map"),
-          nb::arg("sub_layouts"))
+      .def(nb::init<int, const std::vector<std::vector<std::vector<int>>>&,
+                    const std::vector<std::vector<std::vector<int>>>&,
+                    const std::vector<int>&,
+                    const std::vector<dolfinx::fem::ElementDofLayout>&>(),
+           nb::arg("block_size"), nb::arg("endity_dofs"),
+           nb::arg("entity_closure_dofs"), nb::arg("parent_map"),
+           nb::arg("sub_layouts"))
       .def_prop_ro("num_dofs", &dolfinx::fem::ElementDofLayout::num_dofs)
       .def("num_entity_dofs", &dolfinx::fem::ElementDofLayout::num_entity_dofs,
            nb::arg("dim"))
