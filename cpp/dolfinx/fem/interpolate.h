@@ -1118,7 +1118,6 @@ create_nonmatching_meshes_interpolation_data(const mesh::Mesh<T>& mesh0,
 /// @param[in] v The function to be interpolated
 /// @param[in] cells List of cell indices to interpolate on
 /// @param[in] nmm_interpolation_data Auxiliary data to interpolate on
-/// @param[in] padding Extrapolation padding
 /// nonmatching meshes. This data can be generated with
 /// create_nonmatching_meshes_interpolation_data (optional).
 template <dolfinx::scalar T, std::floating_point U>
