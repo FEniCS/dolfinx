@@ -44,22 +44,14 @@ void declare_objects(nb::module_& m, const std::string& type)
   // dolfinx::la::Vector
   std::string pyclass_vector_name = std::string("Vector_") + type;
   nb::class_<dolfinx::la::Vector<T>>(m, pyclass_vector_name.c_str())
-      .def(
-          "__init__",
-          [](dolfinx::la::Vector<T>* v,
-             std::shared_ptr<const dolfinx::common::IndexMap> map, int bs)
-          { new (v) dolfinx::la::Vector<T>(map, bs); },
-          nb::arg("map"), nb::arg("bs"))
-      .def(
-          "__init__",
-          [](dolfinx::la::Vector<T>* v, const dolfinx::la::Vector<T>& vec)
-          { new (v) dolfinx::la::Vector<T>(vec); },
-          nb::arg("vec"))
+      .def(nb::init<std::shared_ptr<const dolfinx::common::IndexMap>, int>(),
+           nb::arg("map"), nb::arg("bs"))
+      .def(nb::init<const dolfinx::la::Vector<T>&>(), nb::arg("vec"))
       .def_prop_ro("dtype", [dtype](const dolfinx::la::Vector<T>& self)
                    { return dtype; })
       .def(
           "norm",
-          [](dolfinx::la::Vector<T>& self, dolfinx::la::Norm type)
+          [](const dolfinx::la::Vector<T>& self, dolfinx::la::Norm type)
           { return dolfinx::la::norm(self, type); },
           "type"_a = dolfinx::la::Norm::l2)
       .def_prop_ro("index_map", &dolfinx::la::Vector<T>::index_map)
@@ -95,12 +87,10 @@ void declare_objects(nb::module_& m, const std::string& type)
   // dolfinx::la::MatrixCSR
   std::string pyclass_matrix_name = std::string("MatrixCSR_") + type;
   nb::class_<dolfinx::la::MatrixCSR<T>>(m, pyclass_matrix_name.c_str())
-      .def(
-          "__init__",
-          [](dolfinx::la::MatrixCSR<T>* mat,
-             const dolfinx::la::SparsityPattern& p, dolfinx::la::BlockMode bm)
-          { new (mat) dolfinx::la::MatrixCSR<T>(p, bm); },
-          nb::arg("p"), nb::arg("block_mode") = dolfinx::la::BlockMode::compact)
+      .def(nb::init<const dolfinx::la::SparsityPattern&,
+                    dolfinx::la::BlockMode>(),
+           nb::arg("p"),
+           nb::arg("block_mode") = dolfinx::la::BlockMode::compact)
       .def_prop_ro("dtype", [dtype](const dolfinx::la::MatrixCSR<T>& self)
                    { return dtype; })
       .def_prop_ro("bs", &dolfinx::la::MatrixCSR<T>::block_size)

@@ -149,13 +149,8 @@ void common(nb::module_& m)
 
   // dolfinx::common::Timer
   nb::class_<dolfinx::common::Timer>(m, "Timer", "Timer class")
-      .def("__init__",
-           [](dolfinx::common::Timer* t) { new (t) dolfinx::common::Timer(); })
-      .def(
-          "__init__",
-          [](dolfinx::common::Timer* t, std::string task)
-          { new (t) dolfinx::common::Timer(task); },
-          nb::arg("task"))
+      .def(nb::init<>())
+      .def(nb::init<std::string>(), nb::arg("task"))
       .def("start", &dolfinx::common::Timer::start, "Start timer")
       .def("stop", &dolfinx::common::Timer::stop, "Stop timer")
       .def("resume", &dolfinx::common::Timer::resume)
