@@ -3,7 +3,7 @@
 # mpi4py.
 # pip install -r build-requirements.txt
 [build-system]
-requires = ["scikit-build-core[pyproject]", "nanobind @ git+https://github.com/wjakob/nanobind.git", "petsc4py", "mpi4py"]
+requires = ["scikit-build-core[pyproject]", "nanobind>=1.8.0", "petsc4py", "mpi4py"]
 build-backend = "scikit_build_core.build"
 
 [project]
