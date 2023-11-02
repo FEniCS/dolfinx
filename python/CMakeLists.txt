@@ -54,12 +54,12 @@ nanobind_add_module(
 )
 
 # Add strict compiler flags
-include(CheckCXXCompilerFlag)
-check_cxx_compiler_flag("-Wall -Werror -pedantic" HAVE_PEDANTIC)
+# include(CheckCXXCompilerFlag)
+# check_cxx_compiler_flag("-Wall -Werror -pedantic" HAVE_PEDANTIC)
 
-if(HAVE_PEDANTIC)
-  # target_compile_options(cpp PRIVATE -Wall;-Werror;-pedantic)
-endif()
+# if(HAVE_PEDANTIC)
+#   # target_compile_options(cpp PRIVATE -Wall;-Werror;-pedantic)
+# endif()
 
 # Add DOLFINx libraries
 target_link_libraries(cpp PRIVATE dolfinx)
