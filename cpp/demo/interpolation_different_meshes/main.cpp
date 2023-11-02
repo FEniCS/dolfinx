@@ -67,11 +67,12 @@ int main(int argc, char* argv[])
     u_tet->interpolate(fun);
 
     // Interpolate from u_tet to u_hex
+    const T padding = 1e-8;
     auto nmm_interpolation_data
         = fem::create_nonmatching_meshes_interpolation_data(
             *u_hex->function_space()->mesh(),
             *u_hex->function_space()->element(),
-            *u_tet->function_space()->mesh());
+            *u_tet->function_space()->mesh(), padding);
     u_hex->interpolate(*u_tet, nmm_interpolation_data);
 
 #ifdef HAS_ADIOS2
