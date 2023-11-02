@@ -28,7 +28,7 @@ namespace
 /// Tensor).
 std::string shape_to_string(std::span<const std::size_t> shape)
 {
-  if (shape.size() == 0)
+  if (shape.empty())
     return "Scalar";
   else if (shape.size() == 1 and shape[0] == 1)
     return "Scalar";
