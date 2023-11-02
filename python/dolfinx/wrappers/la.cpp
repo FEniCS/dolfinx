@@ -20,10 +20,10 @@
 #include <nanobind/stl/complex.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/vector.h>
-
 #include <span>
 
 namespace nb = nanobind;
+using namespace nb::literals;
 
 namespace
 {
@@ -61,7 +61,7 @@ void declare_objects(nb::module_& m, const std::string& type)
           "norm",
           [](dolfinx::la::Vector<T>& self, dolfinx::la::Norm type)
           { return dolfinx::la::norm(self, type); },
-          nb::arg("type") = dolfinx::la::Norm::l2)
+          "type"_a = dolfinx::la::Norm::l2)
       .def_prop_ro("index_map", &dolfinx::la::Vector<T>::index_map)
       .def_prop_ro("bs", &dolfinx::la::Vector<T>::bs)
       .def_prop_ro(
@@ -232,10 +232,10 @@ void la(nb::module_& m)
       .value("expanded", dolfinx::la::BlockMode::expanded);
 
   nb::enum_<dolfinx::la::Norm>(m, "Norm")
-      .value("l1", dolfinx::la::Norm::l1)
-      .value("l2", dolfinx::la::Norm::l2)
-      .value("linf", dolfinx::la::Norm::linf)
-      .value("frobenius", dolfinx::la::Norm::frobenius);
+      .value("l1", dolfinx::la::Norm::l1, "l1 norm")
+      .value("l2", dolfinx::la::Norm::l2, "l2 norm")
+      .value("linf", dolfinx::la::Norm::linf, "linf norm")
+      .value("frobenius", dolfinx::la::Norm::frobenius, "Frobenius norm");
 
   // dolfinx::la::SparsityPattern
   nb::class_<dolfinx::la::SparsityPattern>(m, "SparsityPattern")
