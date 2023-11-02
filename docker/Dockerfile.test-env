@@ -153,7 +153,7 @@ RUN if [ "$MPI" = "mpich" ]; then \
 # - Second set of packages are recommended and/or required to build
 #   documentation or run tests.
 RUN pip3 install --no-cache-dir --upgrade setuptools pip && \
-    pip3 install  -no-cache-dir cffi mpi4py numba numpy==${NUMPY_VERSION} scikit-build-core[pyproject] && \
+    pip3 install --no-cache-dir cffi mpi4py numba numpy==${NUMPY_VERSION} scikit-build-core[pyproject] && \
     pip3 install --no-cache-dir breath clang-format cppimport cmakelang flake8 isort jupytext matplotlib mypy myst-parser pybind11==${PYBIND11_VERSION} pytest pytest-xdist scipy sphinx==5.0.2 sphinx_rtd_theme types-setuptools
 
 # Install KaHIP
