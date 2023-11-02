@@ -10,11 +10,11 @@ interface explicitly depends on the system built petsc4py and mpi4py.
 
 2. Ensure the build time requirements are installed::
 
-     pip install -v -r build-requirements.txt
+     pip install -r build-requirements.txt
 
 3. Build DOLFINx Python interface::
 
-     pip -v install --check-build-dependencies --no-build-isolation .
+     pip install --check-build-dependencies --no-build-isolation .
 
    To build in debug and editable mode for development::
 

@@ -13,12 +13,26 @@ find_package(
   REQUIRED
 )
 
+# Help cmake find pybind11 installed as Python package
+execute_process(
+  COMMAND "${Python3_EXECUTABLE}" "-c"
+  "import pybind11; print(pybind11.get_cmake_dir())"
+  OUTPUT_VARIABLE PYBIND11_CMAKE_DIR
+  RESULT_VARIABLE PYBIND11_COMMAND_RESULT
+  ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+if(NOT PYBIND11_COMMAND_RESULT)
+  message(STATUS "Found pybind11 cmake directory at ${PYBIND11_CMAKE_DIR}")
+endif() 
+
 find_package(
   pybind11
   2.9.1
   REQUIRED
   CONFIG
   HINTS
+  ${PYBIND11_CMAKE_DIR}
   ${PYBIND11_DIR}
   ${PYBIND11_ROOT}
   $ENV{PYBIND11_DIR}
