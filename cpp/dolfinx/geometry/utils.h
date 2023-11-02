@@ -753,15 +753,62 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points)
       dolfinx::MPI::mpi_type<T>(), received_points.data(), recv_sizes.data(),
       recv_offsets.data(), dolfinx::MPI::mpi_type<T>(), forward_comm);
 
+  // Get mesh geometry for closest entity
+  const mesh::Geometry<T>& geometry = mesh.geometry();
+  if (geometry.cmaps().size() > 1)
+    throw std::runtime_error("Mixed topology not supported");
+  std::span<const T> geom_dofs = geometry.x();
+  auto x_dofmap = geometry.dofmap();
+
+  std::vector<std::int32_t> closest_cells(received_points.size() / 3);
+  std::vector<T> squared_distances(received_points.size() / 3);
+  for (std::size_t p = 0; p < received_points.size(); p += 3)
+  {
+    std::array<T, 3> point;
+    std::copy(std::next(received_points.begin(), p),
+              std::next(received_points.begin(), p + 3), point.begin());
+    const int colliding_cell
+        = geometry::compute_first_colliding_cell(mesh, bb, point);
+    if (colliding_cell >= 0)
+    {
+      closest_cells[p / 3] = colliding_cell;
+      squared_distances[p / 3] = 0;
+    }
+    else
+    {
+      // Compute closest cell
+      const std::vector<std::int32_t> closest_cell = compute_closest_entity(
+          bb, midpoint_tree, mesh,
+          std::span<const T>(point.data(), point.size()));
+      closest_cells[p / 3] = closest_cell.front();
+
+      if (closest_cell.front() >= 0)
+      {
+        // Compute squared distance for closest cell
+        auto dofs
+            = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+                submdspan(x_dofmap, closest_cell.front(),
+                          MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+        std::vector<T> nodes(3 * dofs.size());
+        for (std::size_t i = 0; i < dofs.size(); ++i)
+        {
+          const int pos = 3 * dofs[i];
+          for (std::size_t j = 0; j < 3; ++j)
+            nodes[3 * i + j] = geom_dofs[pos + j];
+        }
+        std::array<T, 3> d = compute_distance_gjk<T>(
+            std::span<const T>(point.data(), point.size()), nodes);
+        squared_distances[p / 3] = d[0] * d[0] + d[1] * d[1] + d[2] * d[2];
+      }
+      else
+      {
+        squared_distances[p / 3] = std::numeric_limits<T>::max();
+      }
+    }
+  }
+
   // Each process checks which local cell is closest and computes the squared
   // distance to the cell
-  const int rank = dolfinx::MPI::rank(comm);
-  const std::vector<std::int32_t> closest_cells = compute_closest_entity(
-      bb, midpoint_tree, mesh,
-      std::span<const T>(received_points.data(), received_points.size()));
-  const std::vector<T> squared_distances = squared_distance(
-      mesh, tdim, closest_cells,
-      std::span<const T>(received_points.data(), received_points.size()));
 
   // Create neighborhood communicator in the reverse direction: send
   // back col to requesting processes
@@ -842,6 +889,8 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points)
   owned_recv_ranks.reserve(recv_offsets.back());
   std::vector<T> owned_recv_points;
   std::vector<std::int32_t> owned_recv_cells;
+  const int rank = dolfinx::MPI::rank(comm);
+
   for (std::size_t i = 0; i < in_ranks.size(); i++)
   {
     for (std::int32_t j = recv_offsets[i]; j < recv_offsets[i + 1]; j++)
