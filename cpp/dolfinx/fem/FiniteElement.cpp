@@ -234,7 +234,7 @@ FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
             cell_type, value_shape, wcoeffs, _x, _M, nderivs,
             static_cast<basix::maps::type>(ce->map_type),
             static_cast<basix::sobolev::space>(ce->sobolev_space),
-            ce->discontinuous, ce->highest_complete_degree, ce->highest_degree,
+            ce->discontinuous, ce->embedded_subdegree, ce->embedded_superdegree,
             static_cast<basix::polyset::type>(ce->polyset_type)));
     _needs_dof_transformations
         = !_element->dof_transformations_are_identity()
