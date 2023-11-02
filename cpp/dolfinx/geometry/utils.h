@@ -937,7 +937,6 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
   owned_recv_ranks.reserve(recv_offsets.back());
   std::vector<T> owned_recv_points;
   std::vector<std::int32_t> owned_recv_cells;
-
   for (std::size_t i = 0; i < in_ranks.size(); i++)
   {
     for (std::int32_t j = recv_offsets[i]; j < recv_offsets[i + 1]; j++)
