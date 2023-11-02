@@ -301,9 +301,9 @@ void _compute_collisions_point(const geometry::BoundingBoxTree<T>& tree,
   while (next != -1)
   {
     const std::array<int, 2> bbox = tree.bbox(next);
+    std::int32_t current_bbox = next;
     next = -1;
-
-    if ((is_leaf(bbox)) and point_in_bbox(tree.get_bbox(next), p))
+    if ((is_leaf(bbox)) and point_in_bbox(tree.get_bbox(current_bbox), p))
     {
       // If box is a leaf node then add it to the list of colliding entities
       entities.push_back(bbox[1]);
@@ -679,17 +679,19 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points)
   BoundingBoxTree bb(mesh, tdim, cells, padding);
   BoundingBoxTree midpoint_tree = create_midpoint_tree(mesh, tdim, cells);
   BoundingBoxTree global_bbtree = bb.create_global_tree(comm);
+  std::cout << "HERE!\n";
 
   // Compute collisions:
   // For each point in `x` get the processes it should be sent to
   graph::AdjacencyList collisions = compute_collisions(global_bbtree, points);
-
   // Get unique list of outgoing ranks
   std::vector<std::int32_t> out_ranks = collisions.array();
   std::sort(out_ranks.begin(), out_ranks.end());
   out_ranks.erase(std::unique(out_ranks.begin(), out_ranks.end()),
                   out_ranks.end());
-
+  for (auto rank : out_ranks)
+    std::cout << rank << " ";
+  std::cout << "\n";
   // Compute incoming edges (source processes)
   std::vector in_ranks = dolfinx::MPI::compute_graph_edges_nbx(comm, out_ranks);
   std::sort(in_ranks.begin(), in_ranks.end());
