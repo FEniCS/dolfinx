@@ -303,7 +303,7 @@ void _compute_collisions_point(const geometry::BoundingBoxTree<T>& tree,
     const std::array<int, 2> bbox = tree.bbox(next);
     next = -1;
 
-    if ((is_leaf(bbox)) && point_in_bbox(tree.get_bbox(next), p))
+    if ((is_leaf(bbox)) and point_in_bbox(tree.get_bbox(next), p))
     {
       // If box is a leaf node then add it to the list of colliding entities
       entities.push_back(bbox[1]);
@@ -313,7 +313,7 @@ void _compute_collisions_point(const geometry::BoundingBoxTree<T>& tree,
       // Check whether the point collides with child nodes (left and right)
       bool left = point_in_bbox(tree.get_bbox(bbox[0]), p);
       bool right = point_in_bbox(tree.get_bbox(bbox[1]), p);
-      if (left && right)
+      if (left and right)
       {
         // If the point collides with both child nodes, add the right node to
         // the stack (for later visiting) and continue the tree traversal with
@@ -683,16 +683,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points)
   // Compute collisions:
   // For each point in `x` get the processes it should be sent to
   graph::AdjacencyList collisions = compute_collisions(global_bbtree, points);
-  for (std::size_t i = 0; i < collisions.num_nodes(); ++i)
-  {
-    std::cout << points[3 * i] << " " << points[3 * i + 1] << " "
-              << points[3 * i + 2] << ": ";
-    for (auto col : collisions.links(i))
-    {
-      std::cout << col << "  ";
-    }
-    std::cout << std::endl;
-  }
+
   // Get unique list of outgoing ranks
   std::vector<std::int32_t> out_ranks = collisions.array();
   std::sort(out_ranks.begin(), out_ranks.end());
@@ -720,9 +711,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points)
   for (std::size_t i = 0; i < points.size() / 3; ++i)
     for (auto p : collisions.links(i))
       send_sizes[rank_to_neighbor[p]] += 3;
-  for (auto rank : send_sizes)
-    std::cout << rank << ", ";
-  std::cout << "\n";
+
   // Compute receive sizes
   std::vector<std::int32_t> recv_sizes(in_ranks.size());
   send_sizes.reserve(1);
