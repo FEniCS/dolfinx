@@ -679,7 +679,6 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points)
   BoundingBoxTree bb(mesh, tdim, cells, padding);
   BoundingBoxTree midpoint_tree = create_midpoint_tree(mesh, tdim, cells);
   BoundingBoxTree global_bbtree = bb.create_global_tree(comm);
-  std::cout << "HERE!\n";
 
   // Compute collisions:
   // For each point in `x` get the processes it should be sent to
@@ -689,9 +688,6 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points)
   std::sort(out_ranks.begin(), out_ranks.end());
   out_ranks.erase(std::unique(out_ranks.begin(), out_ranks.end()),
                   out_ranks.end());
-  for (auto rank : out_ranks)
-    std::cout << rank << " ";
-  std::cout << "\n";
   // Compute incoming edges (source processes)
   std::vector in_ranks = dolfinx::MPI::compute_graph_edges_nbx(comm, out_ranks);
   std::sort(in_ranks.begin(), in_ranks.end());
