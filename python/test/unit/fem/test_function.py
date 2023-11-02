@@ -174,7 +174,7 @@ def test_interpolation_rank1(W):
 
 
 @ pytest.mark.parametrize("types", [
-    # (np.float32, "float"),  # Fails on Redhat CI, needs further investigation
+    (np.float32, "float"),
     (np.float64, "double")
 ])
 def test_cffi_expression(types):
