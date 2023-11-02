@@ -653,6 +653,8 @@ graph::AdjacencyList<std::int32_t> compute_colliding_cells(
 /// @param[in] mesh The mesh
 /// @param[in] points Points to check for collision (`shape=(num_points,
 /// 3)`). Storage is row-major.
+/// @param[in] padding Amount of padding of bounding boxes. Used for
+/// extrapolation if point is not found after collision detection.
 /// @return Quadratuplet (src_owner, dest_owner, dest_points,
 /// dest_cells), where src_owner is a list of ranks corresponding to the
 /// input points. dest_owner is a list of ranks corresponding to
@@ -663,6 +665,10 @@ graph::AdjacencyList<std::int32_t> compute_colliding_cells(
 /// @note Returns -1 if no colliding process is found
 /// @note dest_points is flattened row-major, shape (dest_owner.size(), 3)
 /// @note Only looks through cells owned by the process
+/// @note A large padding value can increase the runtime of the function by
+/// orders of magnitude. This is due to extrapolation, which is an expensive
+/// operation to perform. Especially computing the closest entity for every
+/// interpolation point.
 template <std::floating_point T>
 std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>, std::vector<T>,
            std::vector<std::int32_t>>
