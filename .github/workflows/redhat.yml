@@ -24,10 +24,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Upgrade pip and setuptools
-        run: |
-          python3 -m pip install --upgrade pip setuptools wheel
-
       - name: Install FEniCS Python components
         run: |
           python3 -m pip install git+https://github.com/FEniCS/ufl.git
