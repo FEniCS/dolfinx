@@ -2,8 +2,7 @@
 #
 
 # You can set these variables from the command line.
-SPHINXOPTS    =
-# SPHINXOPTS    = -W
+SPHINXOPTS    = -W
 SPHINXBUILD   = sphinx-build
 SPHINXPROJ    = FEniCSProject
 SOURCEDIR     = source
