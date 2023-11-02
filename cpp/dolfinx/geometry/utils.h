@@ -822,7 +822,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
   for (std::size_t i = 0; i < recv_offsets.back(); i++)
   {
     const std::int32_t pos = unpack_map[i];
-    send_extrapolate[i] = (point_owners[pos] == -1);
+    send_extrapolate[i] = std::uint8_t(point_owners[pos] == -1);
   }
 
   // Swap communication direction, to send extrapolation marker to other
@@ -898,7 +898,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
       if (auto d = closest_distance[pos];
           (current_dist > 0) and (current_dist < d))
       {
-        point_owners[pos] = recv_ranks[i];
+        point_owners[pos] = out_ranks[i];
         closest_distance[pos] = current_dist;
       }
     }
