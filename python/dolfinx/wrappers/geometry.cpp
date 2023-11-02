@@ -253,7 +253,8 @@ void declare_bbtree(py::module& m, std::string type)
       },
       py::arg("mesh"), py::arg("dim"), py::arg("indices"), py::arg("points"));
   m.def("determine_point_ownership",
-        [](const dolfinx::mesh::Mesh<T>& mesh, const py::array_t<T>& points)
+        [](const dolfinx::mesh::Mesh<T>& mesh, const py::array_t<T>& points,
+           const T padding)
         {
           const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
           std::vector<T> _p(3 * p_s0);
@@ -272,7 +273,8 @@ void declare_bbtree(py::module& m, std::string type)
           else
             throw std::runtime_error("Array has wrong ndim.");
 
-          return dolfinx::geometry::determine_point_ownership<T>(mesh, _p);
+          return dolfinx::geometry::determine_point_ownership<T>(mesh, _p,
+                                                                 padding);
         });
 }
 } // namespace

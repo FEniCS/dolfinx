@@ -917,7 +917,7 @@ void declare_real_functions(py::module& m)
       "create_nonmatching_meshes_interpolation_data",
       [](const dolfinx::mesh::Mesh<T>& mesh0,
          const dolfinx::fem::FiniteElement<T>& element0,
-         const dolfinx::mesh::Mesh<T>& mesh1)
+         const dolfinx::mesh::Mesh<T>& mesh1, T padding)
       {
         int tdim = mesh0.topology()->dim();
         auto cell_map = mesh0.topology()->index_map(tdim);
@@ -928,21 +928,23 @@ void declare_real_functions(py::module& m)
         std::iota(cells.begin(), cells.end(), 0);
         return dolfinx::fem::create_nonmatching_meshes_interpolation_data(
             mesh0.geometry(), element0, mesh1,
-            std::span(cells.data(), cells.size()));
+            std::span(cells.data(), cells.size()), padding);
       },
-      py::arg("mesh0"), py::arg("element0"), py::arg("mesh1"));
+      py::arg("mesh0"), py::arg("element0"), py::arg("mesh1"),
+      py::arg("padding"));
   m.def(
       "create_nonmatching_meshes_interpolation_data",
       [](const dolfinx::mesh::Geometry<T>& geometry0,
          const dolfinx::fem::FiniteElement<T>& element0,
          const dolfinx::mesh::Mesh<T>& mesh1,
-         const py::array_t<std::int32_t, py::array::c_style>& cells)
+         const py::array_t<std::int32_t, py::array::c_style>& cells, T padding)
       {
         return dolfinx::fem::create_nonmatching_meshes_interpolation_data(
-            geometry0, element0, mesh1, std::span(cells.data(), cells.size()));
+            geometry0, element0, mesh1, std::span(cells.data(), cells.size()),
+            padding);
       },
       py::arg("geometry0"), py::arg("element0"), py::arg("mesh1"),
-      py::arg("cells"));
+      py::arg("cells"), py::arg("padding"));
 }
 
 } // namespace

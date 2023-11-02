@@ -734,13 +734,13 @@ def test_nonmatching_mesh_interpolation(xtype, cell_type0, cell_type1):
     u0 = Function(V0, dtype=xtype)
     u0.interpolate(f)
     u0.x.scatter_forward()
-
+    padding = 1e-14
     # Interpolate 3D->2D
     u1 = Function(V1, dtype=xtype)
     u1.interpolate(u0, nmm_interpolation_data=create_nonmatching_meshes_interpolation_data(
         u1.function_space.mesh._cpp_object,
         u1.function_space.element,
-        u0.function_space.mesh._cpp_object))
+        u0.function_space.mesh._cpp_object, padding=padding))
     u1.x.scatter_forward()
 
     # Exact interpolation on 2D mesh
@@ -755,7 +755,7 @@ def test_nonmatching_mesh_interpolation(xtype, cell_type0, cell_type1):
     u0_2.interpolate(u1, nmm_interpolation_data=create_nonmatching_meshes_interpolation_data(
         u0_2.function_space.mesh._cpp_object,
         u0_2.function_space.element,
-        u1.function_space.mesh._cpp_object))
+        u1.function_space.mesh._cpp_object, padding=padding))
 
     # Check that function values over facets of 3D mesh of the twice interpolated property is preserved
     def locate_bottom_facets(x):
@@ -789,11 +789,11 @@ def test_nonmatching_mesh_single_cell_overlap_interpolation(xtype):
 
     u1.interpolate(f_test1)
     u1.x.scatter_forward()
-
+    padding = 1e-14
     u1_2_u2_nmm_data = create_nonmatching_meshes_interpolation_data(
         u2.function_space.mesh._cpp_object,
         u2.function_space.element,
-        u1.function_space.mesh._cpp_object)
+        u1.function_space.mesh._cpp_object, padding=padding)
 
     u2.interpolate(u1, nmm_interpolation_data=u1_2_u2_nmm_data)
     u2.x.scatter_forward()
@@ -815,12 +815,12 @@ def test_nonmatching_mesh_single_cell_overlap_interpolation(xtype):
 
     u2.interpolate(f_test2)
     u2.x.scatter_forward()
-
+    padding = 1e-14
     u2_2_u1_nmm_data = \
         create_nonmatching_meshes_interpolation_data(
             u1.function_space.mesh._cpp_object,
             u1.function_space.element,
-            u2.function_space.mesh._cpp_object)
+            u2.function_space.mesh._cpp_object, padding)
 
     u1.interpolate(u2, nmm_interpolation_data=u2_2_u1_nmm_data)
     u1.x.scatter_forward()
