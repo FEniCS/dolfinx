@@ -800,12 +800,6 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
     std::swap(recv_offsets, send_offsets);
   }
 
-  // Get distances from closest entity of points that were on the other process
-  // std::vector<T> recv_distances(recv_offsets.back());
-  // MPI_Neighbor_alltoallv(
-  //     squared_distances.data(), send_sizes.data(), send_offsets.data(),
-  //     dolfinx::MPI::mpi_type<T>(), recv_distances.data(), recv_sizes.data(),
-  //     recv_offsets.data(), dolfinx::MPI::mpi_type<T>(), reverse_comm);
   std::vector<std::int32_t> recv_ranks(recv_offsets.back());
   MPI_Neighbor_alltoallv(
       cell_indicator.data(), send_sizes.data(), send_offsets.data(),
@@ -822,116 +816,93 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
       point_owners[pos] = recv_ranks[i];
   }
 
-  // Count the number of points that still has no owner
-  std::vector<std::int32_t> extr_send_sizes(out_ranks.size());
-  std::vector<std::int32_t> extr_point_indices;
-  extr_point_indices.reserve(points.size());
-  for (std::size_t i = 0; i < point_owners.size(); ++i)
+  // Create extrapolation marker for those points already sent to other
+  // process
+  std::vector<std::uint8_t> send_extrapolate(recv_offsets.back());
+  for (std::size_t i = 0; i < recv_offsets.back(); i++)
   {
-    if (point_owners[i] == -1)
-      for (auto p : collisions.links(i))
-      {
-        extr_send_sizes[rank_to_neighbor[p]] += 3;
-        extr_point_indices.push_back(i);
-      }
+    const std::int32_t pos = unpack_map[i];
+    send_extrapolate[i] = (point_owners[pos] == -1);
   }
 
-  // Send sizes to receiving processes
-  MPI_Request extr_sizes_request;
-  std::vector<std::int32_t> extr_recv_sizes(in_ranks.size());
-  extr_recv_sizes.reserve(1);
-  extr_send_sizes.reserve(1);
-  MPI_Ineighbor_alltoall(extr_send_sizes.data(), 1, MPI_INT,
-                         extr_recv_sizes.data(), 1, MPI_INT, forward_comm,
-                         &extr_sizes_request);
-
-  // Compute sending offsets
-  std::vector<std::int32_t> extr_send_offsets(extr_send_sizes.size() + 1, 0);
-  std::partial_sum(extr_send_sizes.begin(), extr_send_sizes.end(),
-                   std::next(extr_send_offsets.begin(), 1));
-
-  // Pack data for finding closest entity on processes within padded bounding
-  std::vector<T> extr_send_data(extr_send_offsets.back());
-  std::vector<std::int32_t> extr_counter(extr_send_sizes.size(), 0);
-  // unpack map: [index in adj list][pos in x]
-  std::vector<std::int32_t> extr_unpack_map(extr_send_offsets.back() / 3);
-  // FIXME: Should avoid sending the points over again, only send local indices
-  // of those that were found in first round
-  for (std::size_t i = 0; i < extr_point_indices.size(); i++)
-  {
-    const auto& point_idx = extr_point_indices[i];
-    for (auto p : collisions.links(point_idx))
-    {
-      int neighbor = rank_to_neighbor[p];
-      int pos = extr_send_offsets[neighbor] + extr_counter[neighbor];
-      auto it = std::next(extr_send_data.begin(), pos);
-      std::copy(std::next(points.begin(), 3 * point_idx),
-                std::next(points.begin(), 3 * point_idx + 3), it);
-      extr_unpack_map[pos / 3] = i;
-      extr_counter[neighbor] += 3;
-    }
-  }
-
-  MPI_Wait(&sizes_request, MPI_STATUS_IGNORE);
-  std::vector<std::int32_t> extr_recv_offsets(in_ranks.size() + 1, 0);
-  std::partial_sum(extr_recv_sizes.begin(), extr_recv_sizes.end(),
-                   std::next(extr_recv_offsets.begin(), 1));
-
-  // Send extrapolation points to potential candidates
-  std::vector<T> extr_received_points((std::size_t)recv_offsets.back());
-  MPI_Neighbor_alltoallv(extr_send_data.data(), extr_send_sizes.data(),
-                         extr_send_offsets.data(), dolfinx::MPI::mpi_type<T>(),
-                         extr_received_points.data(), extr_recv_sizes.data(),
-                         extr_recv_offsets.data(), dolfinx::MPI::mpi_type<T>(),
-                         forward_comm);
+  // Swap communication direction, to send extrapolation marker to other
+  // processes
+  std::swap(send_sizes, recv_sizes);
+  std::swap(send_offsets, recv_offsets);
+  std::vector<std::uint8_t> dest_extrapolate(recv_offsets.back());
+  MPI_Neighbor_alltoallv(send_extrapolate.data(), send_sizes.data(),
+                         send_offsets.data(), MPI_UINT8_T,
+                         dest_extrapolate.data(), recv_sizes.data(),
+                         recv_offsets.data(), MPI_UINT8_T, forward_comm);
 
   BoundingBoxTree midpoint_tree = create_midpoint_tree(mesh, tdim, cells);
-  std::vector<T> squared_distances(extr_received_points.size() / 3);
-  for (std::size_t p = 0; p < extr_received_points.size(); p += 3)
-  {
-    std::array<T, 3> point;
-    std::copy(std::next(extr_received_points.begin(), p),
-              std::next(extr_received_points.begin(), p + 3), point.begin());
-    // Compute closest cell
-    const std::vector<std::int32_t> closest_cell = compute_closest_entity(
-        bb, midpoint_tree, mesh,
-        std::span<const T>(point.data(), point.size()));
-    closest_cells[p / 3] = closest_cell.front();
+  std::vector<T> squared_distances(received_points.size() / 3, -1);
 
-    if (closest_cell.front() >= 0)
+  for (std::size_t i = 0; i < dest_extrapolate.size(); i++)
+  {
+    if (dest_extrapolate[i] == 1)
     {
-      // Compute squared distance for closest cell
-      auto dofs
-          = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
-              submdspan(x_dofmap, closest_cell.front(),
-                        MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
-      std::vector<T> nodes(3 * dofs.size());
-      for (std::size_t i = 0; i < dofs.size(); ++i)
+      assert(closest_cells[i] == -1);
+
+      std::array<T, 3> point;
+      std::copy(std::next(received_points.begin(), 3 * i),
+                std::next(received_points.begin(), 3 * i + 3), point.begin());
+      // Compute closest cell
+      const std::vector<std::int32_t> closest_cell = compute_closest_entity(
+          bb, midpoint_tree, mesh,
+          std::span<const T>(point.data(), point.size()));
+
+      closest_cells[i] = closest_cell.front();
+
+      if (closest_cell.front() >= 0)
       {
-        const int pos = 3 * dofs[i];
-        for (std::size_t j = 0; j < 3; ++j)
-          nodes[3 * i + j] = geom_dofs[pos + j];
+        // Compute squared distance for closest cell
+        auto dofs
+            = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+                submdspan(x_dofmap, closest_cell.front(),
+                          MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+        std::vector<T> nodes(3 * dofs.size());
+        for (std::size_t j = 0; j < dofs.size(); ++j)
+        {
+          const int pos = 3 * dofs[j];
+          for (std::size_t k = 0; k < 3; ++k)
+            nodes[3 * j + k] = geom_dofs[pos + k];
+        }
+        const std::array<T, 3> d = compute_distance_gjk<T>(
+            std::span<const T>(point.data(), point.size()), nodes);
+        squared_distances[i] = d[0] * d[0] + d[1] * d[1] + d[2] * d[2];
       }
-      std::array<T, 3> d = compute_distance_gjk<T>(
-          std::span<const T>(point.data(), point.size()), nodes);
-      squared_distances[p / 3] = d[0] * d[0] + d[1] * d[1] + d[2] * d[2];
-    }
-    else
-    {
-      squared_distances[p / 3] = std::numeric_limits<T>::max();
     }
   }
 
-  std::stringstream cc;
-  cc << "\n Num points out (process dist)";
-  for (auto c : extr_counter)
+  std::swap(recv_sizes, send_sizes);
+  std::swap(recv_offsets, send_offsets);
+
+  // Get distances from closest entity of points that were on the other process
+  std::vector<T> recv_distances(recv_offsets.back());
+  MPI_Neighbor_alltoallv(
+      squared_distances.data(), send_sizes.data(), send_offsets.data(),
+      dolfinx::MPI::mpi_type<T>(), recv_distances.data(), recv_sizes.data(),
+      recv_offsets.data(), dolfinx::MPI::mpi_type<T>(), reverse_comm);
+
+  // Update point ownership with extrapolation information
+  std::vector<T> closest_distance(unpack_map.size(),
+                                  std::numeric_limits<T>::max());
+  for (std::size_t i = 0; i < out_ranks.size(); i++)
   {
-    cc << c << " ";
+    for (std::int32_t j = recv_offsets[i]; j < recv_offsets[i + 1]; j++)
+    {
+      const std::int32_t pos = unpack_map[j];
+      auto current_dist = recv_distances[j];
+      // Only update if closer than previous guess and was found
+      if (auto d = closest_distance[pos];
+          (current_dist > 0) and (current_dist < d))
+      {
+        point_owners[pos] = recv_ranks[i];
+        closest_distance[pos] = current_dist;
+      }
+    }
   }
-  cc << extr_point_indices.size();
-  cc << "Sending data size:" << extr_send_data.size() << "\n";
-  cc << "Received data size" << extr_received_points.size() << "\n";
-  std::cout << cc.str() << "\n";
 
   // Communication is reversed again to send dest ranks to all processes
   std::swap(send_sizes, recv_sizes);
