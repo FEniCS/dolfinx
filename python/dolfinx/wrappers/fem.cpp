@@ -913,6 +913,8 @@ void declare_real_functions(nb::module_& m)
          const dolfinx::fem::FiniteElement<T>& element0,
          const dolfinx::mesh::Mesh<T>& mesh1, T padding)
       {
+        int tdim = mesh0.topology()->dim();
+        auto cell_map = mesh0.topology()->index_map(tdim);
         assert(cell_map);
         std::int32_t num_cells
             = cell_map->size_local() + cell_map->num_ghosts();
