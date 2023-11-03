@@ -858,50 +858,35 @@ graph::AdjacencyList<int> IndexMap::index_to_dest_ranks() const
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> IndexMap::shared_indices() const
 {
-  // Build list of (owner, index) pairs for each ghost, and sort
-  std::vector<std::pair<int, std::int64_t>> send_idx;
-  std::transform(_ghosts.begin(), _ghosts.end(), _owners.begin(),
-                 std::back_inserter(send_idx),
-                 [](auto idx, auto r)
-                 { return std::pair<int, std::int64_t>(r, idx); });
-  std::sort(send_idx.begin(), send_idx.end());
+  // Each process gets a chunk of consecutive indices (global indices)
+  // Sorting the ghosts groups them by owner
+  std::vector<std::int64_t> send_buffer(_ghosts);
+  std::sort(send_buffer.begin(), send_buffer.end());
 
-  std::vector<int> src;
-  std::vector<std::int64_t> send_buffer;
+  std::vector<int32_t> owners(_owners);
+  std::sort(owners.begin(), owners.end());
   std::vector<int> send_sizes, send_disp{0};
+
+  // Count number of ghost per destination
+  auto it = owners.begin();
+  while (it != owners.end())
   {
-    auto it = send_idx.begin();
-    while (it != send_idx.end())
-    {
-      src.push_back(it->first);
-      auto it1 = std::find_if(it, send_idx.end(),
-                              [r = src.back()](auto& idx)
-                              { return idx.first != r; });
+    auto it1 = std::upper_bound(it, owners.end(), *it);
+    send_sizes.push_back(std::distance(it, it1));
+    send_disp.push_back(send_disp.back() + send_sizes.back());
 
-      // Pack send buffer
-      std::transform(it, it1, std::back_inserter(send_buffer),
-                     [](auto& idx) { return idx.second; });
-
-      // Send sizes and displacements
-      send_sizes.push_back(std::distance(it, it1));
-      send_disp.push_back(send_disp.back() + send_sizes.back());
-
-      // Advance iterator
-      it = it1;
-    }
+    // Advance iterator
+    it = it1;
   }
-
-  auto dest = dolfinx::MPI::compute_graph_edges_nbx(_comm.comm(), src);
-  std::sort(dest.begin(), dest.end());
 
   // Create ghost -> owner comm
   MPI_Comm comm;
   int ierr = MPI_Dist_graph_create_adjacent(
-      _comm.comm(), dest.size(), dest.data(), MPI_UNWEIGHTED, src.size(),
-      src.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+      _comm.comm(), _dest.size(), _dest.data(), MPI_UNWEIGHTED, _src.size(),
+      _src.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
   dolfinx::MPI::check_error(_comm.comm(), ierr);
 
-  std::vector<int> recv_sizes(dest.size(), 0);
+  std::vector<int> recv_sizes(_dest.size(), 0);
   send_sizes.reserve(1);
   recv_sizes.reserve(1);
   ierr = MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(),
@@ -909,7 +894,7 @@ std::vector<std::int32_t> IndexMap::shared_indices() const
   dolfinx::MPI::check_error(_comm.comm(), ierr);
 
   // Prepare receive displacement array
-  std::vector<int> recv_disp(dest.size() + 1, 0);
+  std::vector<int> recv_disp(_dest.size() + 1, 0);
   std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
                    std::next(recv_disp.begin()));
 
@@ -934,7 +919,8 @@ std::vector<std::int32_t> IndexMap::shared_indices() const
                    assert(idx < range[1]);
                    return idx - range[0];
                  });
-
+  
+  // Sort and remove duplicates
   std::sort(shared.begin(), shared.end());
   shared.erase(std::unique(shared.begin(), shared.end()), shared.end());
 
