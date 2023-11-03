@@ -51,7 +51,7 @@ regression-tests-cpp-mpi: &regression-tests-cpp-mpi
     ctest --verbose -R demo -R mpi_3
 
 build-python-interface: &build-python-interface
-  name: Build Python/pybind11 interface
+  name: Build Python/nanobind interface
   command: |
     export CMAKE_BUILD_PARALLEL_LEVEL=2
     cd python

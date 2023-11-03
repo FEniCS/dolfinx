@@ -654,15 +654,17 @@ graph::AdjacencyList<std::int32_t> compute_colliding_cells(
 /// 3)`). Storage is row-major.
 /// @param[in] padding Amount of padding of bounding boxes. Used for
 /// extrapolation if point is not found after collision detection.
-/// @return Quadratuplet (src_owner, dest_owner, dest_points,
-/// dest_cells), where src_owner is a list of ranks corresponding to the
-/// input points. dest_owner is a list of ranks corresponding to
-/// dest_points, the points that this process owns. dest_cells contains
-/// the corresponding cell for each entry in dest_points.
+/// @return Tuple `(src_owner, dest_owner, dest_points, dest_cells)`,
+/// where src_owner is a list of ranks corresponding to the input
+/// points. dest_owner is a list of ranks corresponding to dest_points,
+/// the points that this process owns. dest_cells contains the
+/// corresponding cell for each entry in dest_points.
+
 ///
-/// @note dest_owner is sorted
+/// @note `dest_owner` is sorted
 /// @note Returns -1 if no colliding process is found
-/// @note dest_points is flattened row-major, shape (dest_owner.size(), 3)
+/// @note dest_points is flattened row-major, shape `(dest_owner.size(),
+/// 3)`
 /// @note Only looks through cells owned by the process
 /// @note A large padding value can increase the runtime of the function by
 /// orders of magnitude. This is due to extrapolation, which is an expensive
@@ -706,8 +708,8 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
       comm, in_ranks.size(), in_ranks.data(), MPI_UNWEIGHTED, out_ranks.size(),
       out_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &forward_comm);
 
-  // Compute map from global mpi rank to neighbor rank, "collisions" uses
-  // global rank
+  // Compute map from global mpi rank to neighbor rank, "collisions"
+  // uses global rank
   std::map<std::int32_t, std::int32_t> rank_to_neighbor;
   for (std::size_t i = 0; i < out_ranks.size(); i++)
     rank_to_neighbor[out_ranks[i]] = i;

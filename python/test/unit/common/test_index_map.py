@@ -4,6 +4,8 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import math
+
 from mpi4py import MPI
 
 import numpy as np
@@ -19,7 +21,7 @@ def test_sub_index_map():
     # Create index map with one ghost from each other process
     n = 7
     assert comm.size < n + 1
-    map_local_size = np.math.factorial(n)
+    map_local_size = math.factorial(n)
 
     # The ghosts added are the ith ghost from the ith process relative
     # to the current rank, i.e. rank 0 contains the first index of rank
@@ -56,7 +58,6 @@ def test_sub_index_map():
     # map
     owners = map.owners
     assert (dest_ranks == owners).all()
-
     subowners = submap.owners
     assert (owners[ghosts_pos_sub] == subowners).all()
 
@@ -79,5 +80,30 @@ def test_sub_index_map_ghost_mode_none():
     mesh = create_unit_square(MPI.COMM_WORLD, n, n, ghost_mode=GhostMode.none)
     tdim = mesh.topology.dim
     map = mesh.topology.index_map(tdim)
-    submap_indices = range(0, min(2, map.size_local))
+    submap_indices = np.arange(0, min(2, map.size_local), dtype=np.int32)
     map.create_submap(submap_indices)
+
+
+def test_index_map_ghost_lifetime():
+    """Test lifetime management of arrays."""
+    # Create index map with one ghost from each other process. The
+    # ghosts added are the ith ghost from the ith process relative to
+    # the current rank, i.e. rank 0 contains the first index of rank 2,
+    # second of rank 3 etc. rank 1 contains the first index of rank 0,
+    # the second of rank 2 etc. Ghost one index from from every other
+    # rank
+    comm = MPI.COMM_WORLD
+    n = 7
+    assert comm.size < n + 1
+    local_size = math.factorial(n)
+    dest = np.delete(np.arange(0, comm.size, dtype=np.int32), comm.rank)
+    map_ghosts = np.array([local_size * dest[r] + r % local_size for r in range(len(dest))], dtype=np.int64)
+    src = dest
+    map = dolfinx.common.IndexMap(comm, local_size, [dest, src], map_ghosts, src)
+    assert map.size_global == local_size * comm.size
+
+    # Test lifetime management
+    ghosts = map.ghosts
+    assert np.array_equal(ghosts, map_ghosts)
+    del map
+    assert np.array_equal(ghosts, map_ghosts)

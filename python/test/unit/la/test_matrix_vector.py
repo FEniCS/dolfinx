@@ -24,8 +24,8 @@ def test_create_matrix_csr():
     bs = V.dofmap.index_map_bs
 
     pattern = _cpp.la.SparsityPattern(mesh.comm, [map, map], [bs, bs])
-    rows = range(0, bs * map.size_local)
-    cols = range(0, bs * map.size_local)
+    rows = np.arange(0, bs * map.size_local)
+    cols = np.arange(0, bs * map.size_local)
     pattern.insert(rows, cols)
     pattern.finalize()
 

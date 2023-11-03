@@ -87,8 +87,7 @@ if _cpp.common.has_adios2:
 
             try:
                 # Input is a mesh
-                self._cpp_object = _vtxwriter(
-                    comm, filename, output._cpp_object, engine)  # type: ignore[union-attr]
+                self._cpp_object = _vtxwriter(comm, filename, output._cpp_object, engine)  # type: ignore[union-attr]
             except (NotImplementedError, TypeError, AttributeError):
                 # Input is a single function or a list of functions
                 self._cpp_object = _vtxwriter(comm, filename, _extract_cpp_functions(
@@ -242,7 +241,7 @@ class XDMFFile(_cpp.io.XDMFFile):
 
         # Build the mesh
         cmap = _cpp.fem.CoordinateElement_float64(cell_shape, cell_degree)
-        msh = _cpp.mesh.create_mesh(self.comm(), _cpp.graph.AdjacencyList_int64(cells),
+        msh = _cpp.mesh.create_mesh(self.comm, _cpp.graph.AdjacencyList_int64(cells),
                                     cmap, x, _cpp.mesh.create_cell_partitioner(ghost_mode))
         msh.name = name
 

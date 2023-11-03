@@ -164,9 +164,10 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]],
                         tdim = subdomain.topology.dim
                         subdomain._cpp_object.topology.create_connectivity(tdim - 1, tdim)
                         subdomain._cpp_object.topology.create_connectivity(tdim, tdim - 1)
-                    return _cpp.fem.compute_integration_domains(integral_type, subdomain._cpp_object)
+                    domains = _cpp.fem.compute_integration_domains(integral_type, subdomain._cpp_object)
+                    return [(s[0], np.array(s[1])) for s in domains]
                 except AttributeError:
-                    return subdomain
+                    return [(s[0], np.array(s[1])) for s in subdomain]
 
         # Subdomain markers (possibly empty list for some integral types)
         subdomains = {_ufl_to_dolfinx_domain[key]: get_integration_domains(

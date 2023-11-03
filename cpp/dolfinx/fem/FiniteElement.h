@@ -47,7 +47,7 @@ public:
   FiniteElement(FiniteElement&& element) = default;
 
   /// Destructor
-  virtual ~FiniteElement() = default;
+  ~FiniteElement() = default;
 
   /// Copy assignment
   FiniteElement& operator=(const FiniteElement& element) = delete;
