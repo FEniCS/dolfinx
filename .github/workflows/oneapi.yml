@@ -104,8 +104,8 @@ jobs:
       - name: Run DOLFINx Python unit tests (serial)
         run: |
           . /opt/intel/oneapi/setvars.sh
-          pytest -vs -n=auto --durations=50 python/test/unit/fem
+          pytest -n=auto --durations=50 python/test/unit
       - name: Run DOLFINx Python unit tests (MPI, np=2)
         run: |
           . /opt/intel/oneapi/setvars.sh
-          mpiexec -n 2 pytest -vs python/test/unit/fem
+          mpiexec -n 2 pytest -vs python/test/unit
