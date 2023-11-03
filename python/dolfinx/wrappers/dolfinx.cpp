@@ -33,6 +33,10 @@ NB_MODULE(cpp, m)
   m.doc() = "DOLFINx Python interface";
   m.attr("__version__") = DOLFINX_VERSION;
 
+#ifdef NDEBUG
+  nanobind::set_leak_warnings(false);
+#endif
+
   // Create common submodule [common]
   nb::module_ common = m.def_submodule("common", "Common module");
   dolfinx_wrappers::common(common);
