@@ -1070,10 +1070,12 @@ void fem(nb::module_& m)
           nb::rv_policy::reference_internal);
 
   nb::enum_<dolfinx::fem::IntegralType>(m, "IntegralType")
-      .value("cell", dolfinx::fem::IntegralType::cell)
-      .value("exterior_facet", dolfinx::fem::IntegralType::exterior_facet)
-      .value("interior_facet", dolfinx::fem::IntegralType::interior_facet)
-      .value("vertex", dolfinx::fem::IntegralType::vertex);
+      .value("cell", dolfinx::fem::IntegralType::cell, "cell integral")
+      .value("exterior_facet", dolfinx::fem::IntegralType::exterior_facet,
+             "exterior facet integral")
+      .value("interior_facet", dolfinx::fem::IntegralType::interior_facet,
+             "exterior facet integral")
+      .value("vertex", dolfinx::fem::IntegralType::vertex, "vertex integral");
 
   declare_function_space<float>(m, "float32");
   declare_function_space<double>(m, "float64");

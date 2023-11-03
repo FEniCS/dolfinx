@@ -253,8 +253,9 @@ void io(nb::module_& m)
 
   // dolfinx::io::XDMFFile::Encoding enums
   nb::enum_<dolfinx::io::XDMFFile::Encoding>(xdmf_file, "Encoding")
-      .value("HDF5", dolfinx::io::XDMFFile::Encoding::HDF5)
-      .value("ASCII", dolfinx::io::XDMFFile::Encoding::ASCII);
+      .value("HDF5", dolfinx::io::XDMFFile::Encoding::HDF5, "HDF5 encoding")
+      .value("ASCII", dolfinx::io::XDMFFile::Encoding::ASCII,
+             "Plain text encoding");
 
   xdmf_file
       .def(
