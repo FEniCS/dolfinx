@@ -486,32 +486,28 @@ compute_collisions(const BoundingBoxTree<T>& tree, std::span<const T> points)
   }
 }
 
-/// @brief Compute the cell that collides with a point.
+/// @brief Given a set of cells, find the first one that collides with a point.
 ///
 /// A point can collide with more than one cell. The first cell detected
 /// to collide with the point is returned. If no collision is detected,
 /// -1 is returned.
 ///
 /// @param[in] mesh The mesh
-/// @param[in] tree The bounding box tree
+/// @param[in] cells The candidate cells
 /// @param[in] point The point (`shape=(3,)`)
 /// @param[in] tol The tolerance for accepting a collision (squared norm)
 /// @return The local cell index, -1 if not found
 template <std::floating_point T>
 std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
-                                          const BoundingBoxTree<T>& tree,
+                                          std::span<const std::int32_t> cells,
                                           const std::array<T, 3>& point, T tol)
 {
-  // Compute colliding bounding boxes(cell candidates)
-  std::vector<std::int32_t> cell_candidates;
-  impl::_compute_collisions_point<T>(tree, point, cell_candidates);
-
   if (mesh.geometry().cmaps().size() > 1)
   {
     throw std::runtime_error("Mixed topology not supported");
   }
 
-  if (cell_candidates.empty())
+  if (cells.empty())
     return -1;
   else
   {
@@ -520,7 +516,7 @@ std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
     auto x_dofmap = geometry.dofmap();
     const std::size_t num_nodes = x_dofmap.extent(1);
     std::vector<T> coordinate_dofs(num_nodes * 3);
-    for (auto cell : cell_candidates)
+    for (auto cell : cells)
     {
       auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::
           MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
@@ -768,6 +764,11 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
   std::span<const T> geom_dofs = geometry.x();
   auto x_dofmap = geometry.dofmap();
 
+  // Compute candidate cells for collisions (and extrapolation)
+  const graph::AdjacencyList<std::int32_t> candidate_collisions
+      = compute_collisions(bb, std::span<const T>(received_points.data(),
+                                                  received_points.size()));
+
   // Each process checks which points collides with a cell on the process
   const int rank = dolfinx::MPI::rank(comm);
   std::vector<std::int32_t> cell_indicator(received_points.size() / 3);
@@ -778,7 +779,8 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
     std::copy(std::next(received_points.begin(), p),
               std::next(received_points.begin(), p + 3), point.begin());
     const int colliding_cell = geometry::compute_first_colliding_cell(
-        mesh, bb, point, 10 * std::numeric_limits<T>::epsilon());
+        mesh, candidate_collisions.links(p / 3), point,
+        10 * std::numeric_limits<T>::epsilon());
     cell_indicator[p / 3] = (colliding_cell >= 0) ? rank : -1;
     closest_cells[p / 3] = colliding_cell;
   }
@@ -843,7 +845,6 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
                          dest_extrapolate.data(), recv_sizes.data(),
                          recv_offsets.data(), MPI_UINT8_T, forward_comm);
 
-  BoundingBoxTree midpoint_tree = create_midpoint_tree(mesh, tdim, cells);
   std::vector<T> squared_distances(received_points.size() / 3, -1);
 
   for (std::size_t i = 0; i < dest_extrapolate.size(); i++)
@@ -855,20 +856,15 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
       std::array<T, 3> point;
       std::copy(std::next(received_points.begin(), 3 * i),
                 std::next(received_points.begin(), 3 * i + 3), point.begin());
-      // Compute closest cell
-      const std::vector<std::int32_t> closest_cell = compute_closest_entity(
-          bb, midpoint_tree, mesh,
-          std::span<const T>(point.data(), point.size()));
 
-      closest_cells[i] = closest_cell.front();
-
-      if (closest_cell.front() >= 0)
+      // Find shortest distance among cells with colldiing bounding box
+      T shortest_distance = std::numeric_limits<T>::max();
+      std::int32_t closest_cell = -1;
+      for (auto cell : candidate_collisions.links(i))
       {
-        // Compute squared distance for closest cell
-        auto dofs
-            = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
-                submdspan(x_dofmap, closest_cell.front(),
-                          MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+        auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::
+            MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
+                x_dofmap, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
         std::vector<T> nodes(3 * dofs.size());
         for (std::size_t j = 0; j < dofs.size(); ++j)
         {
@@ -878,8 +874,15 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
         }
         const std::array<T, 3> d = compute_distance_gjk<T>(
             std::span<const T>(point.data(), point.size()), nodes);
-        squared_distances[i] = d[0] * d[0] + d[1] * d[1] + d[2] * d[2];
+        if (T current_distance = d[0] * d[0] + d[1] * d[1] + d[2] * d[2];
+            current_distance < shortest_distance)
+        {
+          shortest_distance = current_distance;
+          closest_cell = cell;
+        }
       }
+      closest_cells[i] = closest_cell;
+      squared_distances[i] = shortest_distance;
     }
   }
 
