@@ -166,9 +166,9 @@ elif PETSc.ScalarType == np.complex64:  # type: ignore
 elif PETSc.ScalarType == np.complex128:  # type: ignore
     formtype = Form_complex128
 else:
-    raise RuntimeError(f"Unsupported PETSc ScalarType '{PETSc.ScalarType }'.")  # type: ignore
+    raise RuntimeError(f"Unsupported PETSc ScalarType '{PETSc.ScalarType}'.")  # type: ignore
 
-cells = range(msh.topology.index_map(msh.topology.dim).size_local)
+cells = np.arange(msh.topology.index_map(msh.topology.dim).size_local)
 integrals = {IntegralType.cell: [(-1, tabulate_condensed_tensor_A.address, cells)]}
 a_cond = Form(formtype([U._cpp_object, U._cpp_object], integrals, [], [], False, None))
 
@@ -194,13 +194,13 @@ A.assemble()
 bb_tree = geometry.bb_tree(msh, 2)
 
 # Check against standard table value
-p = np.array([48.0, 52.0, 0.0], dtype=np.float64)
+p = np.array([[48.0, 52.0, 0.0]], dtype=np.float64)
 cell_candidates = geometry.compute_collisions_points(bb_tree, p)
-cells = geometry.compute_colliding_cells(msh, cell_candidates, p)
+cells = geometry.compute_colliding_cells(msh, cell_candidates, p).array
 
 uc.x.scatter_forward()
 if len(cells) > 0:
-    value = uc.eval(p, cells[0])
+    value = uc.eval(p, cells[0])  # type: ignore
     print(value[1])
     assert np.isclose(value[1], 23.95, rtol=1.e-2)
 

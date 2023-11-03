@@ -22,7 +22,7 @@ class MatrixCSR:
         """A distributed sparse matrix that uses compressed sparse row storage.
 
         Args:
-            A: The C++/pybind11 matrix object.
+            A: The C++/nanobind matrix object.
         Note:
             Objects of this type should be created using
             :func:`matrix_csr` and not created using the class

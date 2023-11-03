@@ -1,43 +1,25 @@
 cmake_minimum_required(VERSION 3.18)
 
-project(fenics-dolfinx)
+project(dolfinx_nanobind)
 
-# Set C++ standard before finding pybind11
+# Set C++ standard
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-find_package(
-  Python3
-  COMPONENTS Interpreter Development.Module
-  REQUIRED
-)
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+endif()
 
-# Help cmake find pybind11 installed as Python package
+find_package(Python COMPONENTS Interpreter Development REQUIRED)
+
+# Detect the installed nanobind package and import it into CMake
 execute_process(
-  COMMAND "${Python3_EXECUTABLE}" "-c"
-  "import pybind11; print(pybind11.get_cmake_dir())"
-  OUTPUT_VARIABLE PYBIND11_CMAKE_DIR
-  RESULT_VARIABLE PYBIND11_COMMAND_RESULT
-  ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-
-if(NOT PYBIND11_COMMAND_RESULT)
-  message(STATUS "Found pybind11 cmake directory at ${PYBIND11_CMAKE_DIR}")
-endif() 
-
-find_package(
-  pybind11
-  2.9.1
-  REQUIRED
-  CONFIG
-  HINTS
-  ${PYBIND11_CMAKE_DIR}
-  ${PYBIND11_DIR}
-  ${PYBIND11_ROOT}
-  $ENV{PYBIND11_DIR}
-  $ENV{PYBIND11_ROOT}
-)
+  COMMAND "${Python_EXECUTABLE}" -m nanobind --cmake_dir
+  OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE NB_DIR)
+list(APPEND CMAKE_PREFIX_PATH "${NB_DIR}")
+find_package(nanobind CONFIG REQUIRED)
 
 execute_process(
   COMMAND
@@ -46,16 +28,16 @@ execute_process(
   RESULT_VARIABLE BASIX_PY_COMMAND_RESULT
   ERROR_VARIABLE BASIX_ERROR_OUT OUTPUT_STRIP_TRAILING_WHITESPACE
 )
-
 find_package(Basix REQUIRED CONFIG HINTS ${BASIX_PY_DIR})
-
 find_package(DOLFINX REQUIRED CONFIG)
 
-# Create the binding library pybind11 handles its own calls to
+# Create the binding library nanobind handles its own calls to
 # target_link_libraries
-pybind11_add_module(
+nanobind_add_module(
   cpp
   MODULE
+
+  # NB_SHARED
   dolfinx/wrappers/dolfinx.cpp
   dolfinx/wrappers/assemble.cpp
   dolfinx/wrappers/common.cpp
@@ -71,26 +53,19 @@ pybind11_add_module(
 )
 
 # Add strict compiler flags
-include(CheckCXXCompilerFlag)
-check_cxx_compiler_flag("-Wall -Werror -pedantic" HAVE_PEDANTIC)
+# include(CheckCXXCompilerFlag)
+# check_cxx_compiler_flag("-Wall -Werror -pedantic" HAVE_PEDANTIC)
 
-if(HAVE_PEDANTIC)
-  target_compile_options(cpp PRIVATE -Wall;-Werror;-pedantic)
-endif()
+# if(HAVE_PEDANTIC)
+#   # target_compile_options(cpp PRIVATE -Wall;-Werror;-pedantic)
+# endif()
 
-# In Debug mode override pybind11 symbols visibility Symbols must be visible to
-# backtrace_symbols() to produce nice logs
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  target_compile_options(cpp PRIVATE "-fvisibility=default")
-endif()
-
-# Add DOLFINx libraries.
+# Add DOLFINx libraries
 target_link_libraries(cpp PRIVATE dolfinx)
 
 # Check for petsc4py
 execute_process(
-  COMMAND ${Python3_EXECUTABLE} -c
-  "import petsc4py; print(petsc4py.get_include())"
+  COMMAND ${Python_EXECUTABLE} -c "import petsc4py; print(petsc4py.get_include())"
   OUTPUT_VARIABLE PETSC4PY_INCLUDE_DIR
   RESULT_VARIABLE PETSC4PY_COMMAND_RESULT
   ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -105,8 +80,7 @@ endif()
 
 # Check for mpi4py
 execute_process(
-  COMMAND "${Python3_EXECUTABLE}" "-c"
-  "import mpi4py; print(mpi4py.get_include())"
+  COMMAND "${Python_EXECUTABLE}" -c "import mpi4py; print(mpi4py.get_include())"
   OUTPUT_VARIABLE MPI4PY_INCLUDE_DIR
   RESULT_VARIABLE MPI4PY_COMMAND_RESULT
   ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE

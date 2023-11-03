@@ -111,7 +111,7 @@ public:
   DofMap(DofMap&& dofmap) = default;
 
   // Destructor
-  virtual ~DofMap() = default;
+  ~DofMap() = default;
 
   // Copy assignment
   DofMap& operator=(const DofMap& dofmap) = delete;

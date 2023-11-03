@@ -131,8 +131,8 @@ std::vector<IS> la::petsc::create_index_sets(
   std::int64_t offset = 0;
   for (auto& map : maps)
   {
-    const int bs = map.second;
-    const std::int32_t size
+    int bs = map.second;
+    std::int32_t size
         = map.first.get().size_local() + map.first.get().num_ghosts();
     IS _is;
     ISCreateStride(PETSC_COMM_SELF, bs * size, offset, 1, &_is);
