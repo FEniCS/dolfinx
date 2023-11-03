@@ -827,7 +827,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
   // Create extrapolation marker for those points already sent to other
   // process
   std::vector<std::uint8_t> send_extrapolate(recv_offsets.back());
-  for (std::size_t i = 0; i < recv_offsets.back(); i++)
+  for (std::int32_t i = 0; i < recv_offsets.back(); i++)
   {
     const std::int32_t pos = unpack_map[i];
     send_extrapolate[i] = std::uint8_t(point_owners[pos] == -1);
