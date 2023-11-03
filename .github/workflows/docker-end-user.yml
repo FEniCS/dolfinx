@@ -19,7 +19,7 @@ on:
         required: true
 
       baseimage:
-        description: "tag prefix for docker images"
+        description: "base image"
         default: "docker.io/dolfinx/dev-env:current"
         type: string
         required: true
