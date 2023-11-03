@@ -168,13 +168,14 @@ void declare_bbtree(nb::module_& m, std::string type)
   m.def(
       "squared_distance",
       [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
-         const std::vector<std::int32_t>& indices,
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> indices,
          nb::ndarray<const T, nb::c_contig> points)
       {
         const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
         std::span<const T> _p(points.data(), 3 * p_s0);
         return dolfinx_wrappers::as_nbarray(
-            dolfinx::geometry::squared_distance<T>(mesh, dim, indices, _p));
+            dolfinx::geometry::squared_distance<T>(
+                mesh, dim, std::span(indices.data(), indices.size()), _p));
       },
       nb::arg("mesh"), nb::arg("dim"), nb::arg("indices"), nb::arg("points"));
   m.def("determine_point_ownership",
