@@ -300,8 +300,7 @@ void _compute_collisions_point(const geometry::BoundingBoxTree<T>& tree,
   while (next != -1)
   {
     const std::array<int, 2> bbox = tree.bbox(next);
-    std::int32_t current_bbox = next;
-    if (is_leaf(bbox) and point_in_bbox(tree.get_bbox(current_bbox), p))
+    if (is_leaf(bbox) and point_in_bbox(tree.get_bbox(next), p))
     {
       // If box is a leaf node then add it to the list of colliding
       // entities
