@@ -8,6 +8,7 @@
 #include "sort.h"
 #include <algorithm>
 #include <functional>
+#include <iostream>
 #include <map>
 #include <numeric>
 #include <span>
@@ -858,26 +859,23 @@ graph::AdjacencyList<int> IndexMap::index_to_dest_ranks() const
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> IndexMap::shared_indices() const
 {
+  std::vector<std::int64_t> send_buffer(_ghosts);
+  std::sort(send_buffer.begin(), send_buffer.end());
 
-  std::vector<std::int64_t> send_buffer;
-  std::vector<int> send_sizes(_src.size(), 0);
-  std::vector<int> send_disp(_src.size() + 1, 0);
+  std::vector<int32_t> owners(_owners);
+  std::sort(owners.begin(), owners.end());
+  std::vector<int> send_sizes, send_disp{0};
 
-  std::vector<int> perm(_owners.size());
-  std::iota(perm.begin(), perm.end(), 0);
-
-  // Sort indices by owner
-  argsort_radix<std::int32_t>(_owners, perm);
-  for (std::size_t i = 0; i < _owners.size(); ++i)
+  auto it = owners.begin();
+  while (it != owners.end())
   {
-    int r = _owners[perm[i]];
-    send_buffer.push_back(_ghosts[perm[i]]);
-    send_sizes[r] += 1;
-  }
+    auto it1 = std::upper_bound(it, owners.end(), *it);
+    send_sizes.push_back(std::distance(it, it1));
+    send_disp.push_back(send_disp.back() + send_sizes.back());
 
-  // compute displacements
-  std::partial_sum(send_sizes.begin(), send_sizes.end(),
-                   std::next(send_disp.begin()));
+    // Advance iterator
+    it = it1;
+  }
 
   // Create ghost -> owner comm
   MPI_Comm comm;
@@ -919,7 +917,8 @@ std::vector<std::int32_t> IndexMap::shared_indices() const
                    assert(idx < range[1]);
                    return idx - range[0];
                  });
-
+  
+  // Sort and remove duplicates
   std::sort(shared.begin(), shared.end());
   shared.erase(std::unique(shared.begin(), shared.end()), shared.end());
 
