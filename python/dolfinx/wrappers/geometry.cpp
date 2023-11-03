@@ -54,7 +54,7 @@ void declare_bbtree(nb::module_& m, std::string type)
             std::array<T, 6> bbox = self.get_bbox(i);
             return dolfinx_wrappers::as_nbarray_copy(bbox, {2, 3});
           },
-          nb::arg("i)"))
+          nb::arg("i"))
       .def("__repr__", &dolfinx::geometry::BoundingBoxTree<T>::str)
       .def(
           "create_global_tree",

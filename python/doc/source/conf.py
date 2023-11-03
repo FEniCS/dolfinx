@@ -102,7 +102,7 @@ html_static_path = []
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = "DOLFINdoc"
+htmlhelp_basename = "DOLFINxdoc"
 
 
 # -- Options for LaTeX output ---------------------------------------------

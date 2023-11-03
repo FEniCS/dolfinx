@@ -20,14 +20,14 @@
 namespace nb = nanobind;
 
 // Import petsc4py on demand
-#define VERIFY_PETSC4PY0(func)                                                 \
+#define VERIFY_PETSC4PY_FROMPY(func)                                           \
   if (!func)                                                                   \
   {                                                                            \
     if (import_petsc4py() != 0)                                                \
       return false;                                                            \
   }
 
-#define VERIFY_PETSC4PY1(func)                                                 \
+#define VERIFY_PETSC4PY_FROMCPP(func)                                          \
   if (!func)                                                                   \
   {                                                                            \
     if (import_petsc4py() != 0)                                                \
@@ -43,7 +43,7 @@ namespace nb = nanobind;
     NB_TYPE_CASTER(TYPE, const_name(#NAME))                                    \
     bool from_python(handle src, uint8_t, cleanup_list*) noexcept              \
     {                                                                          \
-      VERIFY_PETSC4PY0(PyPetsc##P4PYTYPE##_Get);                               \
+      VERIFY_PETSC4PY_FROMPY(PyPetsc##P4PYTYPE##_Get);                         \
       if (PyObject_TypeCheck(src.ptr(), &PyPetsc##P4PYTYPE##_Type) != 0)       \
       {                                                                        \
         value = PyPetsc##P4PYTYPE##_Get(src.ptr());                            \
@@ -56,7 +56,7 @@ namespace nb = nanobind;
     static handle from_cpp(TYPE src, rv_policy policy,                         \
                            cleanup_list* /*cleanup*/) noexcept                 \
     {                                                                          \
-      VERIFY_PETSC4PY1(PyPetsc##P4PYTYPE##_New);                               \
+      VERIFY_PETSC4PY_FROMCPP(PyPetsc##P4PYTYPE##_New);                        \
       if (policy == rv_policy::take_ownership)                                 \
       {                                                                        \
         PyObject* obj = PyPetsc##P4PYTYPE##_New(src);                          \
