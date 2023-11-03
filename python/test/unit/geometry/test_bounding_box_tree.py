@@ -405,6 +405,31 @@ def test_sub_bbtree(dtype):
         assert len(cells.links(0)) == 0
 
 
+@pytest.mark.parametrize("comm", [MPI.COMM_WORLD, MPI.COMM_SELF])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_serial_global_bb_tree(dtype, comm):
+
+    # Test if global bb tree with only one node returns the correct collision
+    mesh = create_unit_cube(comm, 4, 5, 3)
+
+    # First point should not be in any tree
+    # Second point should always be in the global tree, but only in
+    # entity tree with a serial mesh
+    x = np.array([[2.0, 2.0, 3.0],
+                  [0.3, 0.2, 0.1]], dtype=dtype)
+
+    tree = bb_tree(mesh, mesh.topology.dim)
+    global_tree = tree.create_global_tree(mesh.comm)
+
+    tree_col = compute_collisions_points(tree, x)
+    global_tree_col = compute_collisions_points(global_tree, x)
+    assert len(tree_col.links(0)) == 0 and len(global_tree_col.links(0)) == 0
+    assert len(global_tree_col.links(1)) > 0
+    # Only guaranteed local tree collision if mesh is on one process
+    if comm.size == 1:
+        assert len(tree_col.links(1)) > 0
+
+
 @pytest.mark.parametrize("ct", [CellType.hexahedron, CellType.tetrahedron])
 @pytest.mark.parametrize("N", [7, 13])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
