@@ -859,6 +859,8 @@ graph::AdjacencyList<int> IndexMap::index_to_dest_ranks() const
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> IndexMap::shared_indices() const
 {
+  // Each process gets a chunk of consecutive indices (global indices)
+  // Sorting the ghosts groups them by owner
   std::vector<std::int64_t> send_buffer(_ghosts);
   std::sort(send_buffer.begin(), send_buffer.end());
 
@@ -866,6 +868,7 @@ std::vector<std::int32_t> IndexMap::shared_indices() const
   std::sort(owners.begin(), owners.end());
   std::vector<int> send_sizes, send_disp{0};
 
+  // Count number of ghost per destination
   auto it = owners.begin();
   while (it != owners.end())
   {
