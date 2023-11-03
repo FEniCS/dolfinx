@@ -127,7 +127,7 @@ jobs:
           echo '{ "cffi_extra_compile_args" : ["-O2"] } ' > dolfinx/docker/dolfinx_jit_options.json
 
       - name: Build dolfinx-onbuild
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
           build-args: |
             DOLFINX_CMAKE_BUILD_TYPE=RelWithDebug
@@ -140,7 +140,7 @@ jobs:
           tags: docker.io/dolfinx/dolfinx-onbuild:${{ env.TAG }}
 
       - name: Build intermediate
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
           build-args: |
             DOLFINX_CMAKE_BUILD_TYPE=RelWithDebug
@@ -151,7 +151,7 @@ jobs:
           target: intermediate
 
       - name: Build dolfinx
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
           build-args: |
             DOLFINX_CMAKE_BUILD_TYPE=RelWithDebug
@@ -164,7 +164,7 @@ jobs:
           tags: docker.io/dolfinx/dolfinx:${{ env.TAG }}
 
       - name: Build lab
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
           build-args: |
             DOLFINX_CMAKE_BUILD_TYPE=RelWithDebug
