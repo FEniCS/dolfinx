@@ -3,7 +3,12 @@
 # mpi4py.
 # pip install -r build-requirements.txt
 [build-system]
-requires = ["scikit-build-core[pyproject]", "pybind11>=2.9.1", "petsc4py", "mpi4py"]
+requires = [
+      "scikit-build-core[pyproject]",
+      "nanobind>=1.8.0",
+      "petsc4py",
+      "mpi4py",
+]
 build-backend = "scikit_build_core.build"
 
 [project]
@@ -12,25 +17,41 @@ version = "0.8.0.dev0"
 description = "DOLFINx Python interface"
 readme = "../README.md"
 requires-python = ">=3.8.0"
-license = {file = "../COPYING"}
-authors = [{email="fenics-steering-council@googlegroups.com"}, {name="FEniCS Steering Council"}]
+license = { file = "../COPYING" }
+authors = [
+      { email = "fenics-steering-council@googlegroups.com" },
+      { name = "FEniCS Steering Council" },
+]
 packages = ["dolfinx"]
-dependencies = ["numpy>=1.21", "cffi", "petsc4py", "mpi4py",
-	        "fenics-ffcx>=0.8.0.dev0,<0.9.0",
-    		"fenics-ufl>=2023.3.0.dev0,<2023.4.0"]
+dependencies = [
+      "numpy>=1.21",
+      "cffi",
+      "petsc4py",
+      "mpi4py",
+      "fenics-ffcx>=0.8.0.dev0,<0.9.0",
+      "fenics-ufl>=2023.3.0.dev0,<2023.4.0",
+]
 
 [project.optional-dependencies]
 docs = ["markdown", "pyyaml", "sphinx==5.0.2", "sphinx_rtd_theme"]
 lint = ["flake8", "pydocstyle"]
 optional = ["numba"]
 test = ["pytest", "sympy", "scipy", "matplotlib", "fenics-dolfinx[optional]"]
-ci = ["mypy", "pytest-xdist", "types-setuptools", "fenics-dolfinx[build]",
-      "fenics-dolfinx[docs]", "fenics-dolfinx[lint]", "fenics-dolfinx[optional]",
-      "fenics-dolfinx[test]"]
+ci = [
+      "mypy",
+      "pytest-xdist",
+      "types-setuptools",
+      "fenics-dolfinx[build]",
+      "fenics-dolfinx[docs]",
+      "fenics-dolfinx[lint]",
+      "fenics-dolfinx[optional]",
+      "fenics-dolfinx[test]",
+]
 
 [tool.scikit-build]
 wheel.packages = ["dolfinx"]
 sdist.exclude = ["*.cpp"]
+cmake.build-type = "Release"
 
 [tool.pytest]
 junit_family = "xunit2"
