@@ -86,7 +86,6 @@ jobs:
           python3 -m isort --check .
       - name: mypy checks
         run: |
-          python3 -m pip install mypy types-setuptools --upgrade # TO REMOVE
           cd python/
           mypy dolfinx
           mypy demo
@@ -118,7 +117,6 @@ jobs:
 
       - name: Build C++ interface documentation
         run: |
-          python3 -m pip install breathe # TO REMOVE
           export DOLFINX_VERSION=`cmake -L build | grep DOXYGEN_DOLFINX_VERSION | cut -f2 -d "="`
           echo $DOLFINX_VERSION
           cd cpp/doc
@@ -147,11 +145,9 @@ jobs:
 
       - name: Build Python interface
         run: |
-          python3 -m pip install -r python/build-requirements.txt # TO REMOVE
           python3 -m pip -v install --check-build-dependencies --no-build-isolation python/
       - name: Build Python interface documentation
         run: |
-          python3 -m pip install sphinx==5.0.2 # TO REMOVE
           cd python/doc
           make html
 
