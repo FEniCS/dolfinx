@@ -5,6 +5,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for MatrixCSR"""
 
+from mpi4py import MPI
+
 import numpy as np
 import pytest
 
@@ -16,8 +18,6 @@ from dolfinx.cpp.la import BlockMode, SparsityPattern
 from dolfinx.la import matrix_csr
 from dolfinx.mesh import GhostMode, create_unit_square
 
-from mpi4py import MPI
-
 
 def create_test_sparsity(n, bs):
     im = IndexMap(MPI.COMM_WORLD, n)
@@ -25,9 +25,9 @@ def create_test_sparsity(n, bs):
     if bs == 1:
         for i in range(2):
             for j in range(2):
-                sp.insert(2 + i, 4 + j)
+                sp.insert(np.array([2 + i]), np.array([4 + j]))
     elif bs == 2:
-        sp.insert(1, 2)
+        sp.insert(np.array([1]), np.array([2]))
     sp.finalize()
     return sp
 
@@ -123,10 +123,10 @@ def test_distributed_csr(dtype):
     sp = SparsityPattern(MPI.COMM_WORLD, [im, im], [1, 1])
     for i in range(n):
         for j in range(n + nghost):
-            sp.insert(i, j)
+            sp.insert(np.array([i]), np.array([j]))
     for i in range(n, n + nghost):
         for j in range(n, n + nghost):
-            sp.insert(i, j)
+            sp.insert(np.array([i]), np.array([j]))
     sp.finalize()
 
     mat = matrix_csr(sp, dtype=dtype)
@@ -149,7 +149,7 @@ def test_set_diagonal_distributed(dtype):
     mesh_dtype = np.real(dtype(0)).dtype
     ghost_mode = GhostMode.shared_facet
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, ghost_mode=ghost_mode, dtype=mesh_dtype)
-    V = fem.FunctionSpace(mesh, ("Lagrange", 1))
+    V = fem.functionspace(mesh, ("Lagrange", 1))
 
     tdim = mesh.topology.dim
     cellmap = mesh.topology.index_map(tdim)

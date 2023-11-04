@@ -28,32 +28,31 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          pip install pip --upgrade
-          pip install numpy setuptools wheel
-          pip install cython
-          pip install mpi4py
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install cython numpy mpi4py
 
-      - name: Install minimal PETSc and petsc4y
+      - name: Install minimal PETSc and petsc4py
         run: |
           export PATH="$(brew --prefix bison)/bin:$PATH"
           git clone -b release https://gitlab.com/petsc/petsc.git petsc
           cd petsc
-          ./configure \
+          python ./configure \
             --with-64-bit-indices=no \
             --with-debugging=no \
             --with-fortran-bindings=no \
             --with-scalar-type=real \
             --with-shared-libraries \
             --with-scalar-type=real \
-            -–with-petsc4py=yes \
             --download-ptscotch
           make all
+          cd src/binding/petsc4py
+          PETSC_DIR=$GITHUB_WORKSPACE/petsc PETSC_ARCH=arch-darwin-c-opt arch -x86_64 python -m pip install --no-cache-dir -v .
 
       - name: Install FEniCSx dependencies
         run: |
-          pip install git+https://github.com/FEniCS/basix.git
-          pip install git+https://github.com/FEniCS/ufl.git
-          pip install git+https://github.com/FEniCS/ffcx.git
+          python -m pip install git+https://github.com/FEniCS/basix.git
+          python -m pip install git+https://github.com/FEniCS/ufl.git
+          python -m pip install git+https://github.com/FEniCS/ffcx.git
 
       - uses: actions/checkout@v4
         with:
@@ -69,8 +68,8 @@ jobs:
         env:
           PYTHONPATH: ${{ github.workspace }}/petsc/${{ env.PETSC_ARCH }}/lib:${{ env.PYTHONPATH }}
         run: |
-          echo "Path: ${PYTHONPATH}"
-          pip install dolfinx/python/
+          python -m pip install -r dolfinx/python/build-requirements.txt
+          python -m pip install --check-build-dependencies --no-build-isolation dolfinx/python/
       - name: Basic test
         env:
           PYTHONPATH: ${{ github.workspace }}/petsc/${{ env.PETSC_ARCH }}/lib:${{ env.PYTHONPATH }}

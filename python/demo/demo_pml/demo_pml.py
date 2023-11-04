@@ -19,6 +19,8 @@ import sys
 from functools import partial
 from typing import Tuple, Union
 
+from mpi4py import MPI
+
 from efficiencies_pml_demo import calculate_analytical_efficiencies
 from mesh_wire_pml import generate_mesh_wire
 
@@ -27,8 +29,6 @@ from basix.ufl import element
 from dolfinx import default_scalar_type, fem, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
 from dolfinx.io import VTXWriter, gmshio
-
-from mpi4py import MPI
 
 try:
     import gmsh
@@ -548,15 +548,15 @@ if msh.comm.rank == 0:
     print()
     print(f"The analytical absorption efficiency is {q_abs_analyt}")
     print(f"The numerical absorption efficiency is {q_abs_fenics}")
-    print(f"The error is {err_abs*100}%")
+    print(f"The error is {err_abs * 100}%")
     print()
     print(f"The analytical scattering efficiency is {q_sca_analyt}")
     print(f"The numerical scattering efficiency is {q_sca_fenics}")
-    print(f"The error is {err_sca*100}%")
+    print(f"The error is {err_sca * 100}%")
     print()
     print(f"The analytical extinction efficiency is {q_ext_analyt}")
     print(f"The numerical extinction efficiency is {q_ext_fenics}")
-    print(f"The error is {err_ext*100}%")
+    print(f"The error is {err_ext * 100}%")
 # -
 
 # Check if errors are smaller than 1%

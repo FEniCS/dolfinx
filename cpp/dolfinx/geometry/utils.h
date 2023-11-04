@@ -124,7 +124,6 @@ template <std::floating_point T>
 T compute_squared_distance_bbox(std::span<const T, 6> b,
                                 std::span<const T, 3> x)
 {
-  assert(b.size() == 6);
   auto b0 = b.template subspan<0, 3>();
   auto b1 = b.template subspan<3, 3>();
   return std::transform_reduce(x.begin(), x.end(), b0.begin(), 0.0,
@@ -187,7 +186,6 @@ constexpr bool is_leaf(std::array<int, 2> bbox)
 template <std::floating_point T>
 constexpr bool point_in_bbox(const std::array<T, 6>& b, std::span<const T, 3> x)
 {
-  assert(b.size() == 6);
   constexpr T rtol = 1e-14;
   bool in = true;
   for (std::size_t i = 0; i < 3; i++)
@@ -287,10 +285,11 @@ _compute_closest_entity(const geometry::BoundingBoxTree<T>& tree,
   }
 }
 
-/// Compute collisions with a single point
+/// @brief Compute collisions with a single point.
 /// @param[in] tree The bounding box tree
-/// @param[in] points The points (shape=(num_points, 3))
-/// @param[in, out] entities The list of colliding entities (local to process)
+/// @param[in] points The points (`shape=(num_points, 3)`)
+/// @param[in, out] entities The list of colliding entities (local to
+/// process)
 template <std::floating_point T>
 void _compute_collisions_point(const geometry::BoundingBoxTree<T>& tree,
                                std::span<const T, 3> p,
@@ -301,23 +300,24 @@ void _compute_collisions_point(const geometry::BoundingBoxTree<T>& tree,
   while (next != -1)
   {
     const std::array<int, 2> bbox = tree.bbox(next);
-    next = -1;
-
-    if (is_leaf(bbox))
+    if (is_leaf(bbox) and point_in_bbox(tree.get_bbox(next), p))
     {
-      // If box is a leaf node then add it to the list of colliding entities
+      // If box is a leaf node then add it to the list of colliding
+      // entities
       entities.push_back(bbox[1]);
+      next = -1;
     }
     else
     {
-      // Check whether the point collides with child nodes (left and right)
+      // Check whether the point collides with child nodes (left and
+      // right)
       bool left = point_in_bbox(tree.get_bbox(bbox[0]), p);
       bool right = point_in_bbox(tree.get_bbox(bbox[1]), p);
-      if (left && right)
+      if (left and right)
       {
-        // If the point collides with both child nodes, add the right node to
-        // the stack (for later visiting) and continue the tree traversal with
-        // the left subtree
+        // If the point collides with both child nodes, add the right
+        // node to the stack (for later visiting) and continue the tree
+        // traversal with the left subtree
         stack.push_back(bbox[1]);
         next = bbox[0];
       }
@@ -331,10 +331,12 @@ void _compute_collisions_point(const geometry::BoundingBoxTree<T>& tree,
         // Traverse the current node's right subtree
         next = bbox[1];
       }
+      else
+        next = -1;
     }
 
     // If tree traversal reaches a dead end (box is a leaf node or no
-    // collision detected), check the stack for deferred subtrees.
+    // collision detected), check the stack for deferred subtrees
     if (next == -1 and !stack.empty())
     {
       next = stack.back();
@@ -650,15 +652,16 @@ graph::AdjacencyList<std::int32_t> compute_colliding_cells(
 /// @param[in] mesh The mesh
 /// @param[in] points Points to check for collision (`shape=(num_points,
 /// 3)`). Storage is row-major.
-/// @return Quadratuplet (src_owner, dest_owner, dest_points,
-/// dest_cells), where src_owner is a list of ranks corresponding to the
-/// input points. dest_owner is a list of ranks corresponding to
-/// dest_points, the points that this process owns. dest_cells contains
-/// the corresponding cell for each entry in dest_points.
+/// @return Tuple `(src_owner, dest_owner, dest_points, dest_cells)`,
+/// where src_owner is a list of ranks corresponding to the input
+/// points. dest_owner is a list of ranks corresponding to dest_points,
+/// the points that this process owns. dest_cells contains the
+/// corresponding cell for each entry in dest_points.
 ///
-/// @note dest_owner is sorted
+/// @note `dest_owner` is sorted
 /// @note Returns -1 if no colliding process is found
-/// @note dest_points is flattened row-major, shape (dest_owner.size(), 3)
+/// @note dest_points is flattened row-major, shape `(dest_owner.size(),
+/// 3)`
 /// @note Only looks through cells owned by the process
 template <std::floating_point T>
 std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>, std::vector<T>,
@@ -700,8 +703,8 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points)
       comm, in_ranks.size(), in_ranks.data(), MPI_UNWEIGHTED, out_ranks.size(),
       out_ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &forward_comm);
 
-  // Compute map from global mpi rank to neighbor rank, "collisions" uses
-  // global rank
+  // Compute map from global mpi rank to neighbor rank, "collisions"
+  // uses global rank
   std::map<std::int32_t, std::int32_t> rank_to_neighbor;
   for (std::size_t i = 0; i < out_ranks.size(); i++)
     rank_to_neighbor[out_ranks[i]] = i;
@@ -755,8 +758,8 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points)
       dolfinx::MPI::mpi_type<T>(), received_points.data(), recv_sizes.data(),
       recv_offsets.data(), dolfinx::MPI::mpi_type<T>(), forward_comm);
 
-  // Each process checks which local cell is closest and computes the squared
-  // distance to the cell
+  // Each process checks which local cell is closest and computes the
+  // squared distance to the cell
   const int rank = dolfinx::MPI::rank(comm);
   const std::vector<std::int32_t> closest_cells = compute_closest_entity(
       bb, midpoint_tree, mesh,
@@ -804,8 +807,8 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points)
     for (std::int32_t j = recv_offsets[i]; j < recv_offsets[i + 1]; j++)
     {
       const std::int32_t pos = unpack_map[j];
-      // If point has not been found yet distance is negative
-      // If new received distance smaller than current distance choose owner
+      // If point has not been found yet distance is negative. If new
+      // received distance smaller than current distance choose owner.
       if (auto d = closest_distance[pos]; d < 0 or d > recv_distances[j])
       {
         point_owners[pos] = out_ranks[i];

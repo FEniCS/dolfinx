@@ -4,6 +4,8 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+from mpi4py import MPI
+
 import numpy as np
 import pytest
 
@@ -12,11 +14,9 @@ import dolfinx.cpp
 import ufl
 from basix.ufl import blocked_element
 from dolfinx import fem, la
-from dolfinx.fem import Constant, Expression, Function, FunctionSpace, form
+from dolfinx.fem import Constant, Expression, Function, form, functionspace
 from dolfinx.mesh import create_unit_square
 from ffcx.element_interface import QuadratureElement
-
-from mpi4py import MPI
 
 dolfinx.cpp.common.init_logging(["-v"])
 
@@ -34,8 +34,8 @@ def test_rank0(dtype):
     """
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=dtype(0).real.dtype)
     gdim = mesh.geometry.dim
-    P2 = FunctionSpace(mesh, ("P", 2))
-    vdP1 = FunctionSpace(mesh, ("DG", 1, (gdim,)))
+    P2 = functionspace(mesh, ("P", 2))
+    vdP1 = functionspace(mesh, ("DG", 1, (gdim,)))
 
     f = Function(P2, dtype=dtype)
     f.interpolate(lambda x: x[0] ** 2 + 2.0 * x[1] ** 2)
@@ -77,8 +77,8 @@ def test_rank1_hdiv(dtype):
     """
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, dtype=dtype(0).real.dtype)
     gdim = mesh.geometry.dim
-    vdP1 = FunctionSpace(mesh, ("DG", 2, (gdim,)))
-    RT1 = FunctionSpace(mesh, ("RT", 2))
+    vdP1 = functionspace(mesh, ("DG", 2, (gdim,)))
+    RT1 = functionspace(mesh, ("RT", 2))
     f = ufl.TrialFunction(RT1)
 
     points = vdP1.element.interpolation_points()
@@ -148,7 +148,7 @@ def test_simple_evaluation(dtype):
     """
     xtype = dtype(0).real.dtype
     mesh = create_unit_square(MPI.COMM_WORLD, 3, 3, dtype=xtype)
-    P2 = FunctionSpace(mesh, ("P", 2))
+    P2 = functionspace(mesh, ("P", 2))
 
     # NOTE: The scaling by a constant factor of 3.0 to get f(x, y) is
     # implemented within the UFL Expression. This is to check that the
@@ -235,8 +235,8 @@ def test_assembly_into_quadrature_function(dtype):
     quadrature_points = quadrature_points.astype(xtype)
     Q_element = blocked_element(QuadratureElement(
         "triangle", (), degree=quadrature_degree, scheme="default"), shape=(2, ))
-    Q = FunctionSpace(mesh, Q_element)
-    P2 = FunctionSpace(mesh, ("P", 2))
+    Q = functionspace(mesh, Q_element)
+    P2 = functionspace(mesh, ("P", 2))
 
     T = Function(P2, dtype=dtype)
     T.interpolate(lambda x: x[0] + 2.0 * x[1])
@@ -299,7 +299,7 @@ def test_assembly_into_quadrature_function(dtype):
 def test_expression_eval_cells_subset(dtype):
     xtype = dtype(0).real.dtype
     mesh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 2, 4, dtype=xtype)
-    V = dolfinx.fem.FunctionSpace(mesh, ("DG", 0))
+    V = dolfinx.fem.functionspace(mesh, ("DG", 0))
 
     cells_imap = mesh.topology.index_map(mesh.topology.dim)
     all_cells = np.arange(cells_imap.size_local + cells_imap.num_ghosts, dtype=np.int32)
@@ -317,12 +317,12 @@ def test_expression_eval_cells_subset(dtype):
         assert np.allclose(u_, float(c))
 
     # Test eval on unordered cells
-    cells = np.arange(cells_imap.size_local, dtype=np.int32)[::-1]
+    cells = np.arange(cells_imap.size_local - 1, -1, -1, dtype=np.int32)
     u_ = e.eval(mesh, cells).flatten()
     assert np.allclose(u_, cells)
 
     # Test eval on unordered and non sequential cells
-    cells = np.arange(cells_imap.size_local, dtype=np.int32)[::-2]
+    cells = np.arange(cells_imap.size_local - 1, -1, -2, dtype=np.int32)
     u_ = e.eval(mesh, cells)
     assert np.allclose(u_.ravel(), cells)
 
@@ -332,6 +332,6 @@ def test_expression_comm(dtype):
     xtype = dtype(0).real.dtype
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=xtype)
     v = Constant(mesh, dtype(1))
-    u = Function(FunctionSpace(mesh, ("Lagrange", 1)), dtype=dtype)
+    u = Function(functionspace(mesh, ("Lagrange", 1)), dtype=dtype)
     Expression(v, u.function_space.element.interpolation_points(), comm=MPI.COMM_WORLD)
     Expression(v, u.function_space.element.interpolation_points(), comm=MPI.COMM_SELF)

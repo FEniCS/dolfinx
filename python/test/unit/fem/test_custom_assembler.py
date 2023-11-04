@@ -13,6 +13,11 @@ import os
 import pathlib
 import time
 
+import petsc4py.lib
+from mpi4py import MPI
+from petsc4py import PETSc
+from petsc4py import get_config as PETSc_get_config
+
 import cffi
 import numpy as np
 import numpy.typing
@@ -21,15 +26,10 @@ import pytest
 import dolfinx
 import dolfinx.pkgconfig
 import ufl
-from dolfinx.fem import Function, FunctionSpace, form
+from dolfinx.fem import Function, form, functionspace
 from dolfinx.fem.petsc import assemble_matrix, load_petsc_lib
 from dolfinx.mesh import create_unit_square
 from ufl import dx, inner
-
-import petsc4py.lib
-from mpi4py import MPI
-from petsc4py import PETSc
-from petsc4py import get_config as PETSc_get_config
 
 numba = pytest.importorskip("numba")
 cffi_support = pytest.importorskip("numba.core.typing.cffi_utils")
@@ -274,7 +274,7 @@ def assemble_petsc_matrix_ctypes(A, mesh, dofmap, num_cells, set_vals, mode):
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 def test_custom_mesh_loop_rank1(dtype):
     mesh = create_unit_square(MPI.COMM_WORLD, 64, 64, dtype=dtype(0).real.dtype)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
 
     # Unpack mesh and dofmap data
     num_owned_cells = mesh.topology.index_map(mesh.topology.dim).size_local
@@ -369,7 +369,7 @@ def test_custom_mesh_loop_petsc_ctypes_rank2():
 
     # Create mesh and function space
     mesh = create_unit_square(MPI.COMM_WORLD, 64, 64)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
 
     # Extract mesh and dofmap data
     num_owned_cells = mesh.topology.index_map(mesh.topology.dim).size_local
@@ -412,7 +412,7 @@ def test_custom_mesh_loop_petsc_cffi_rank2(set_vals):
     """Test numba assembler for bilinear form"""
 
     mesh = create_unit_square(MPI.COMM_WORLD, 64, 64)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
 
     # Test against generated code and general assembler
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)

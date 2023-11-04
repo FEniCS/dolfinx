@@ -13,7 +13,7 @@ ARG HDF5_PATCH=2
 ARG HDF5_FIX=
 ARG PETSC_VERSION=3.20.0
 ARG SLEPC_VERSION=3.20.0
-ARG PYBIND11_VERSION=2.11.1
+ARG NANOBIND_VERSION=1.8.0
 ARG KAHIP_VERSION=3.15
 
 WORKDIR /tmp
@@ -58,7 +58,7 @@ ENV CC=icx \
 
 # Install Python packages (via pip)
 RUN . /opt/intel/oneapi/setvars.sh && \
-    pip install --no-cache-dir cppimport mpi4py pybind11==${PYBIND11_VERSION} pytest pytest-xdist
+    pip install --no-cache-dir cppimport matplotlib mpi4py nanobind==${NANOBIND_VERSION} pytest pytest-xdist scikit-build-core[pyproject]
 
 # Install KaHIP
 RUN . /opt/intel/oneapi/setvars.sh && \

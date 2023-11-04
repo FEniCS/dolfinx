@@ -5,17 +5,17 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the FunctionSpace class"""
 
+from mpi4py import MPI
+
 # import basix
 import numpy as np
 import pytest
 
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type
-from dolfinx.fem import Function, FunctionSpace, FunctionSpaceBase
+from dolfinx.fem import Function, FunctionSpace, functionspace
 from dolfinx.mesh import create_mesh, create_unit_cube
 from ufl import Cell, Mesh, TestFunction, TrialFunction, grad
-
-from mpi4py import MPI
 
 
 @pytest.fixture
@@ -25,20 +25,20 @@ def mesh():
 
 @pytest.fixture
 def V(mesh):
-    return FunctionSpace(mesh, ('Lagrange', 1))
+    return functionspace(mesh, ('Lagrange', 1))
 
 
 @pytest.fixture
 def W(mesh):
     gdim = mesh.geometry.dim
-    return FunctionSpace(mesh, ('Lagrange', 1, (gdim,)))
+    return functionspace(mesh, ('Lagrange', 1, (gdim,)))
 
 
 @pytest.fixture
 def Q(mesh):
     W = element('Lagrange', mesh.basix_cell(), 1, shape=(mesh.geometry.dim,))
     V = element('Lagrange', mesh.basix_cell(), 1)
-    return FunctionSpace(mesh, mixed_element([W, V]))
+    return functionspace(mesh, mixed_element([W, V]))
 
 
 @pytest.fixture
@@ -62,11 +62,11 @@ def W2(g):
 
 
 def test_python_interface(V, V2, W, W2, Q):
-    # Test Python interface of cpp generated FunctionSpace
-    assert isinstance(V, FunctionSpaceBase)
-    assert isinstance(W, FunctionSpaceBase)
-    assert isinstance(V2, FunctionSpaceBase)
-    assert isinstance(W2, FunctionSpaceBase)
+    # Test Python interface of cpp generated functionspace
+    assert isinstance(V, FunctionSpace)
+    assert isinstance(W, FunctionSpace)
+    assert isinstance(V2, FunctionSpace)
+    assert isinstance(W2, FunctionSpace)
 
     assert V.mesh.ufl_cell() == V2.mesh.ufl_cell()
     assert W.mesh.ufl_cell() == W2.mesh.ufl_cell()
@@ -176,8 +176,8 @@ def test_argument_equality(mesh, V, V2, W, W2):
     function spaces"""
     mesh2 = create_unit_cube(MPI.COMM_WORLD, 8, 8, 8)
     gdim = mesh2.geometry.dim
-    V3 = FunctionSpace(mesh2, ("Lagrange", 1))
-    W3 = FunctionSpace(mesh2, ("Lagrange", 1, (gdim,)))
+    V3 = functionspace(mesh2, ("Lagrange", 1))
+    W3 = functionspace(mesh2, ("Lagrange", 1, (gdim,)))
 
     for TF in (TestFunction, TrialFunction):
         v = TF(V)
@@ -225,7 +225,7 @@ def test_cell_mismatch(mesh):
     """Test that cell mismatch raises early enough from UFL"""
     e = element("P", "triangle", 1)
     with pytest.raises(BaseException):
-        FunctionSpace(mesh, e)
+        functionspace(mesh, e)
 
 
 # NOTE: Test relies on Basix and DOLFINx both using pybind11
@@ -256,8 +256,8 @@ def test_vector_function_space_cell_type():
 
     # Create functions space over mesh, and check element cell
     # is correct
-    V = FunctionSpace(mesh, ('Lagrange', 1, (gdim,)))
-    assert V.ufl_element().cell() == cell
+    V = functionspace(mesh, ('Lagrange', 1, (gdim,)))
+    assert V.ufl_element().cell == cell
 
 
 @pytest.mark.skip_in_parallel
@@ -269,8 +269,8 @@ def test_manifold_spaces():
     domain = Mesh(element("Lagrange", "triangle", 1, gdim=3, shape=(2,)))
     mesh = create_mesh(MPI.COMM_WORLD, cells, vertices, domain)
     gdim = mesh.geometry.dim
-    QV = FunctionSpace(mesh, ("Lagrange", 1, (gdim,)))
-    QT = FunctionSpace(mesh, ("Lagrange", 1, (gdim, gdim)))
+    QV = functionspace(mesh, ("Lagrange", 1, (gdim,)))
+    QT = functionspace(mesh, ("Lagrange", 1, (gdim, gdim)))
     u, v = Function(QV), Function(QT)
     assert u.ufl_shape == (3,)
     assert v.ufl_shape == (3, 3)

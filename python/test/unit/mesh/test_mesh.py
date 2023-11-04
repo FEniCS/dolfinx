@@ -7,6 +7,8 @@
 import math
 import sys
 
+from mpi4py import MPI
+
 import numpy as np
 import pytest
 
@@ -24,8 +26,6 @@ from dolfinx.mesh import (CellType, DiagonalType, GhostMode, create_box,
                           create_unit_cube, create_unit_interval,
                           create_unit_square, exterior_facet_indices,
                           locate_entities, locate_entities_boundary)
-
-from mpi4py import MPI
 
 
 def submesh_topology_test(mesh, submesh, entity_map, vertex_map, entity_dim):
@@ -64,7 +64,7 @@ def submesh_geometry_test(mesh, submesh, entity_map, geom_map, entity_dim):
     if len(entity_map) > 0:
         assert mesh.geometry.dim == submesh.geometry.dim
 
-        e_to_g = entities_to_geometry(mesh._cpp_object, entity_dim, entity_map, False)
+        e_to_g = entities_to_geometry(mesh._cpp_object, entity_dim, np.array(entity_map), False)
         for submesh_entity in range(len(entity_map)):
             submesh_x_dofs = submesh.geometry.dofmap[submesh_entity]
             # e_to_g[i] gets the mesh x_dofs of entities[i], which should
@@ -276,7 +276,7 @@ def test_cell_circumradius(c0, c1, c5):
 @pytest.mark.skip_in_parallel
 def test_cell_h(c0, c1, c5):
     for c in [c0, c1, c5]:
-        assert c[0].h(c[1], [c[2]])
+        assert c[0].h(c[1], np.array([c[2]]))
 
 
 def test_cell_h_prism():
@@ -323,7 +323,7 @@ def test_hmin_hmax(_mesh, dtype, hmin, hmax):
     mesh = _mesh(dtype)
     tdim = mesh.topology.dim
     num_cells = mesh.topology.index_map(tdim).size_local
-    h = _cpp.mesh.h(mesh._cpp_object, tdim, range(num_cells))
+    h = _cpp.mesh.h(mesh._cpp_object, tdim, np.arange(num_cells))
     assert h.min() == pytest.approx(hmin)
     assert h.max() == pytest.approx(hmax)
 

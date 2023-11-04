@@ -20,6 +20,8 @@
 #
 # We begin this demo by importing the required modules.
 
+from mpi4py import MPI
+
 # +
 import matplotlib
 import matplotlib.pylab as plt
@@ -31,8 +33,6 @@ from dolfinx import fem, mesh
 from dolfinx.fem.petsc import LinearProblem
 from ufl import (SpatialCoordinate, TestFunction, TrialFunction, cos, div, dx,
                  grad, inner, sin)
-
-from mpi4py import MPI
 
 matplotlib.use('agg')
 # -
@@ -216,7 +216,7 @@ def create_tnt_quad(degree):
 # the solution.
 
 
-def poisson_error(V: fem.FunctionSpaceBase):
+def poisson_error(V: fem.FunctionSpace):
     msh = V.mesh
     u, v = TrialFunction(V), TestFunction(V)
 

@@ -5,8 +5,11 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Creation, refining and marking of meshes"""
 
+from __future__ import annotations
 
 import typing
+
+from mpi4py import MPI as _MPI
 
 import numpy as np
 import numpy.typing as npt
@@ -21,8 +24,6 @@ from dolfinx.cpp.mesh import (CellType, DiagonalType, GhostMode,
                               create_cell_partitioner, exterior_facet_indices,
                               to_string, to_type)
 from dolfinx.cpp.refinement import RefinementOption
-
-from mpi4py import MPI as _MPI
 
 __all__ = ["meshtags_from_entities", "locate_entities", "locate_entities_boundary",
            "refine", "create_mesh", "Mesh", "MeshTags", "meshtags", "CellType",
@@ -344,8 +345,8 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
         partitioner = _cpp.mesh.create_cell_partitioner(GhostMode.none)
 
     ufl_element = domain.ufl_coordinate_element()
-    cell_shape = ufl_element.cell().cellname()
-    cell_degree = ufl_element.degree()
+    cell_shape = ufl_element.cell.cellname()
+    cell_degree = ufl_element.degree
     try:
         variant = int(ufl_element.lagrange_variant)
     except AttributeError:

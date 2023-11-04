@@ -17,6 +17,8 @@
 import sys
 from functools import partial
 
+from mpi4py import MPI
+
 import numpy as np
 from mesh_sphere_axis import generate_mesh_sphere_axis
 from scipy.special import jv, jvp
@@ -25,8 +27,6 @@ import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_scalar_type, fem, io, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
-
-from mpi4py import MPI
 
 try:
     from dolfinx.io import VTXWriter
@@ -607,15 +607,15 @@ if MPI.COMM_WORLD.rank == 0:
     print()
     print(f"The analytical absorption efficiency is {q_abs_analyt}")
     print(f"The numerical absorption efficiency is {q_abs_fenics}")
-    print(f"The error is {err_abs*100}%")
+    print(f"The error is {err_abs * 100}%")
     print()
     print(f"The analytical scattering efficiency is {q_sca_analyt}")
     print(f"The numerical scattering efficiency is {q_sca_fenics}")
-    print(f"The error is {err_sca*100}%")
+    print(f"The error is {err_sca * 100}%")
     print()
     print(f"The analytical extinction efficiency is {q_ext_analyt}")
     print(f"The numerical extinction efficiency is {q_ext_fenics}")
-    print(f"The error is {err_ext*100}%")
+    print(f"The error is {err_ext * 100}%")
 
 # Check whether the geometrical and optical parameters are correct
 # assert radius_sph / wl0 == 0.025 / 0.4

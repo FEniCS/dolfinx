@@ -7,6 +7,9 @@
 
 import math
 
+from mpi4py import MPI
+from petsc4py import PETSc
+
 import numpy as np
 import pytest
 import scipy.sparse
@@ -16,9 +19,9 @@ import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type, fem, graph, la
-from dolfinx.fem import (Constant, Function, FunctionSpace, assemble_scalar,
-                         bcs_by_block, dirichletbc, extract_function_spaces,
-                         form, locate_dofs_geometrical,
+from dolfinx.fem import (Constant, Function, assemble_scalar, bcs_by_block,
+                         dirichletbc, extract_function_spaces, form,
+                         functionspace, locate_dofs_geometrical,
                          locate_dofs_topological)
 from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
 from dolfinx.fem.petsc import apply_lifting_nest as petsc_apply_lifting_nest
@@ -39,9 +42,6 @@ from dolfinx.mesh import (CellType, GhostMode, create_mesh, create_rectangle,
                           locate_entities_boundary)
 from ufl import derivative, ds, dx, inner
 from ufl.geometry import SpatialCoordinate
-
-from mpi4py import MPI
-from petsc4py import PETSc
 
 
 def nest_matrix_norm(A):
@@ -91,7 +91,7 @@ def test_assemble_derivatives(dtype):
     under differentiation (some coefficients and constants are
     eliminated)"""
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, dtype=dtype(0).real.dtype)
-    Q = FunctionSpace(mesh, ("Lagrange", 1))
+    Q = functionspace(mesh, ("Lagrange", 1))
     u = Function(Q, dtype=dtype)
     v = ufl.TestFunction(Q)
     du = ufl.TrialFunction(Q)
@@ -117,7 +117,7 @@ def test_assemble_derivatives(dtype):
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 def test_basic_assembly(mode, dtype):
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode, dtype=dtype(0).real.dtype)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
     f = Function(V, dtype=dtype)
@@ -162,7 +162,7 @@ def test_basic_assembly(mode, dtype):
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_basic_assembly_petsc_matrixcsr(mode):
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = form(inner(u, v) * dx + inner(u, v) * ds)
 
@@ -176,7 +176,7 @@ def test_basic_assembly_petsc_matrixcsr(mode):
     A1.destroy()
 
     gdim = mesh.geometry.dim
-    V = FunctionSpace(mesh, ("Lagrange", 1, (gdim,)))
+    V = functionspace(mesh, ("Lagrange", 1, (gdim,)))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = form(inner(u, v) * dx + inner(u, v) * ds)
     A0 = fem.assemble_matrix(a)
@@ -192,7 +192,7 @@ def test_basic_assembly_petsc_matrixcsr(mode):
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_assembly_bcs(mode):
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = form(inner(u, v) * dx + inner(u, v) * ds)
     L = form(inner(1.0, v) * dx)
@@ -236,7 +236,7 @@ def test_petsc_assemble_manifold():
     assert mesh.geometry.dim == 2
     assert mesh.topology.dim == 1
 
-    U = FunctionSpace(mesh, ("P", 1))
+    U = functionspace(mesh, ("P", 1))
     u, v = ufl.TrialFunction(U), ufl.TestFunction(U)
     a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx(mesh)
     L = ufl.inner(1.0, v) * ufl.dx(mesh)
@@ -267,9 +267,9 @@ def test_matrix_assembly_block(mode):
     P0 = element("Lagrange", mesh.basix_cell(), p0)
     P1 = element("Lagrange", mesh.basix_cell(), p1)
     P2 = element("Lagrange", mesh.basix_cell(), p0)
-    V0 = FunctionSpace(mesh, P0)
-    V1 = FunctionSpace(mesh, P1)
-    V2 = FunctionSpace(mesh, P2)
+    V0 = functionspace(mesh, P0)
+    V1 = functionspace(mesh, P1)
+    V2 = functionspace(mesh, P2)
 
     # Locate facets on boundary
     facetdim = mesh.topology.dim - 1
@@ -342,7 +342,7 @@ def test_matrix_assembly_block(mode):
 
     def monolithic():
         """Monolithic version"""
-        W = FunctionSpace(mesh, mixed_element([P0, P1, P2]))
+        W = functionspace(mesh, mixed_element([P0, P1, P2]))
         u0, u1, u2 = ufl.TrialFunctions(W)
         v0, v1, v2 = ufl.TestFunctions(W)
         a = inner(u0, v0) * dx + inner(u1, v1) * dx + inner(u0, v1) * dx + inner(
@@ -384,7 +384,7 @@ def test_assembly_solve_block(mode):
     and test that solution is the same"""
     mesh = create_unit_square(MPI.COMM_WORLD, 32, 31, ghost_mode=mode)
     P = element("Lagrange", mesh.basix_cell(), 1)
-    V0 = FunctionSpace(mesh, P)
+    V0 = functionspace(mesh, P)
     V1 = V0.clone()
 
     # Locate facets on boundary
@@ -474,7 +474,7 @@ def test_assembly_solve_block(mode):
     def monolithic():
         """Monolithic version"""
         E = mixed_element([P, P])
-        W = FunctionSpace(mesh, E)
+        W = functionspace(mesh, E)
         u0, u1 = ufl.TrialFunctions(W)
         v0, v1 = ufl.TestFunctions(W)
         a = inner(u0, v0) * dx + inner(u1, v1) * dx
@@ -528,8 +528,8 @@ def test_assembly_solve_block(mode):
 def test_assembly_solve_taylor_hood(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
     gdim = mesh.geometry.dim
-    P2 = FunctionSpace(mesh, ("Lagrange", 2, (gdim,)))
-    P1 = FunctionSpace(mesh, ("Lagrange", 1))
+    P2 = functionspace(mesh, ("Lagrange", 2, (gdim,)))
+    P1 = functionspace(mesh, ("Lagrange", 1))
 
     def boundary0(x):
         """Define boundary x = 0"""
@@ -639,7 +639,7 @@ def test_assembly_solve_taylor_hood(mesh):
         P2_el = element("Lagrange", mesh.basix_cell(), 2, shape=(mesh.geometry.dim,))
         P1_el = element("Lagrange", mesh.basix_cell(), 1)
         TH = mixed_element([P2_el, P1_el])
-        W = FunctionSpace(mesh, TH)
+        W = functionspace(mesh, TH)
         (u, p) = ufl.TrialFunctions(W)
         (v, q) = ufl.TestFunctions(W)
         a00 = ufl.inner(ufl.grad(u), ufl.grad(v)) * dx
@@ -713,7 +713,7 @@ def test_basic_interior_facet_assembly():
     mesh = create_rectangle(MPI.COMM_WORLD, [np.array([0.0, 0.0]), np.array([1.0, 1.0])],
                             [5, 5], cell_type=CellType.triangle,
                             ghost_mode=GhostMode.shared_facet)
-    V = FunctionSpace(mesh, ("DG", 1))
+    V = functionspace(mesh, ("DG", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = ufl.inner(ufl.avg(u), ufl.avg(v)) * ufl.dS
     a = form(a)
@@ -740,7 +740,7 @@ def test_basic_assembly_constant(mode, dtype):
     """
     xtype = dtype(0).real.dtype
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, ghost_mode=mode, dtype=xtype)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
     c = Constant(mesh, np.array([[1.0, 2.0], [5.0, 3.0]], dtype=dtype))
@@ -770,7 +770,7 @@ def test_basic_assembly_constant(mode, dtype):
 def test_lambda_assembler():
     """Tests assembly with a lambda function"""
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
     a = inner(u, v) * dx
@@ -783,9 +783,9 @@ def test_lambda_assembler():
     vdata = []
 
     def mat_insert(rows, cols, vals):
-        vdata.append(vals)
-        rdata.append(np.repeat(rows, len(cols)))
-        cdata.append(np.tile(cols, len(rows)))
+        vdata.append(list(vals))
+        rdata.append(list(np.repeat(rows, len(cols))))
+        cdata.append(list(np.tile(cols, len(rows))))
         return 0
 
     _cpp.fem.assemble_matrix(mat_insert, a_form._cpp_object, [])
@@ -801,7 +801,7 @@ def test_lambda_assembler():
 def test_pack_coefficients():
     """Test packing of form coefficients ahead of main assembly call"""
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 15)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
 
     # Non-blocked
     u = Function(V)
@@ -864,7 +864,7 @@ def test_pack_coefficients():
 def test_coefficents_non_constant():
     "Test packing coefficients with non-constant values"
     mesh = create_unit_square(MPI.COMM_WORLD, 3, 5)
-    V = FunctionSpace(mesh, ("Lagrange", 3))  # degree 3 so that interpolation is exact
+    V = functionspace(mesh, ("Lagrange", 3))  # degree 3 so that interpolation is exact
 
     u = Function(V)
     u.interpolate(lambda x: x[0] * x[1]**2)
@@ -885,7 +885,7 @@ def test_coefficents_non_constant():
     assert np.linalg.norm(b0.array) == pytest.approx(0.0, abs=1.0e-7)
 
     # -- Interior facet integral vector
-    V = FunctionSpace(mesh, ("DG", 3))  # degree 3 so that interpolation is exact
+    V = functionspace(mesh, ("DG", 3))  # degree 3 so that interpolation is exact
 
     u0 = Function(V)
     u0.interpolate(lambda x: x[1]**2)
@@ -908,7 +908,7 @@ def test_vector_types():
     """Assemble form using different types"""
     mesh0 = create_unit_square(MPI.COMM_WORLD, 3, 5, dtype=np.float32)
     mesh1 = create_unit_square(MPI.COMM_WORLD, 3, 5, dtype=np.float64)
-    V0, V1 = FunctionSpace(mesh0, ("Lagrange", 3)), FunctionSpace(mesh1, ("Lagrange", 3))
+    V0, V1 = functionspace(mesh0, ("Lagrange", 3)), functionspace(mesh1, ("Lagrange", 3))
     v0, v1 = ufl.TestFunction(V0), ufl.TestFunction(V1)
 
     c = Constant(mesh1, np.float64(1))
@@ -965,7 +965,7 @@ def test_assemble_empty_rank_mesh():
 
     mesh = create_mesh(comm, cells, x, domain, partitioner)
 
-    V = FunctionSpace(mesh, ("Lagrange", 2))
+    V = functionspace(mesh, ("Lagrange", 2))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
     f, k, zero = Function(V), Function(V), Function(V)
@@ -1001,7 +1001,7 @@ def test_assemble_empty_rank_mesh():
 def test_matrix_assembly_rectangular(mode):
     """Test assembly of block rectangular block matrices"""
     msh = create_unit_square(MPI.COMM_WORLD, 4, 8, ghost_mode=mode)
-    V0 = FunctionSpace(msh, ("Lagrange", 1))
+    V0 = functionspace(msh, ("Lagrange", 1))
     V1 = V0.clone()
     u = ufl.TrialFunction(V0)
     v0, v1 = ufl.TestFunction(V0), ufl.TestFunction(V1)

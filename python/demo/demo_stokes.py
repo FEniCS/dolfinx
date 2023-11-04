@@ -82,6 +82,9 @@
 #
 # The required modules are first imported:
 
+from mpi4py import MPI
+from petsc4py import PETSc
+
 import numpy as np
 
 import ufl
@@ -94,9 +97,6 @@ from dolfinx.fem.petsc import assemble_matrix_block, assemble_vector_block
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_rectangle, locate_entities_boundary
 from ufl import div, dx, grad, inner
-
-from mpi4py import MPI
-from petsc4py import PETSc
 
 # We create a {py:class}`Mesh <dolfinx.mesh.Mesh>`, define functions for
 # locating geometrically subsets of the boundary, and define a function
@@ -124,7 +124,7 @@ def lid_velocity_expression(x):
     return np.stack((np.ones(x.shape[1]), np.zeros(x.shape[1])))
 # -
 
-# Two {py:class}`function spaces <dolfinx.fem.FunctionSpaceBase>` are
+# Two {py:class}`function spaces <dolfinx.fem.FunctionSpace>` are
 # defined using different finite elements. `P2` corresponds to a
 # continuous piecewise quadratic basis (vector) and `P1` to a continuous
 # piecewise linear basis (scalar).

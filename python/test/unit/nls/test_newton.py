@@ -5,21 +5,21 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for Newton solver assembly"""
 
+from mpi4py import MPI
+from petsc4py import PETSc
+
 import numpy as np
 
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
-from dolfinx.fem import (Function, FunctionSpace, dirichletbc, form,
+from dolfinx.fem import (Function, dirichletbc, form, functionspace,
                          locate_dofs_geometrical)
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                create_matrix, create_vector, set_bc)
 from dolfinx.la import create_petsc_vector
 from dolfinx.mesh import create_unit_square
 from ufl import TestFunction, TrialFunction, derivative, dx, grad, inner
-
-from mpi4py import MPI
-from petsc4py import PETSc
 
 
 class NonlinearPDEProblem:
@@ -91,7 +91,7 @@ def test_linear_pde():
     """Test Newton solver for a linear PDE"""
     # Create mesh and function space
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
     u = Function(V)
     v = TestFunction(V)
     F = inner(10.0, v) * dx - inner(grad(u), grad(v)) * dx
@@ -124,7 +124,7 @@ def test_linear_pde():
 def test_nonlinear_pde():
     """Test Newton solver for a simple nonlinear PDE"""
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 5)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
     u = Function(V)
     v = TestFunction(V)
     F = inner(5.0, v) * dx - ufl.sqrt(u * u) * inner(
@@ -159,7 +159,7 @@ def test_nonlinear_pde():
 def test_nonlinear_pde_snes():
     """Test Newton solver for a simple nonlinear PDE"""
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 15)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
     u = Function(V)
     v = TestFunction(V)
     F = inner(5.0, v) * dx - ufl.sqrt(u * u) * inner(grad(u), grad(v)) * dx - inner(u, v) * dx

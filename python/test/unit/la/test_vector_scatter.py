@@ -6,15 +6,15 @@
 """Unit tests for the KrylovSolver interface"""
 
 
+from mpi4py import MPI
+
 import numpy as np
 import pytest
 
 from basix.ufl import element
 from dolfinx import la
-from dolfinx.fem import Function, FunctionSpace
+from dolfinx.fem import Function, functionspace
 from dolfinx.mesh import create_unit_square
-
-from mpi4py import MPI
 
 
 @pytest.mark.parametrize("e", [
@@ -23,7 +23,7 @@ from mpi4py import MPI
 def test_scatter_forward(e):
 
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
-    V = FunctionSpace(mesh, e)
+    V = functionspace(mesh, e)
     u = Function(V)
     bs = V.dofmap.bs
 
@@ -54,7 +54,7 @@ def test_scatter_reverse(e):
 
     comm = MPI.COMM_WORLD
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
-    V = FunctionSpace(mesh, e)
+    V = functionspace(mesh, e)
     u = Function(V)
     bs = V.dofmap.bs
 

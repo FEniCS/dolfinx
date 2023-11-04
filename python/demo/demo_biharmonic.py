@@ -108,6 +108,9 @@
 #
 # We first import the modules and functions that the program uses:
 
+from mpi4py import MPI
+from petsc4py.PETSc import ScalarType  # type: ignore
+
 # +
 import numpy as np
 
@@ -118,15 +121,12 @@ from dolfinx.mesh import CellType, GhostMode
 from ufl import (CellDiameter, FacetNormal, avg, div, dS, dx, grad, inner,
                  jump, pi, sin)
 
-from mpi4py import MPI
-from petsc4py.PETSc import ScalarType  # type: ignore
-
 # -
 
 # We begin by using {py:func}`create_rectangle
 # <dolfinx.mesh.create_rectangle>` to create a rectangular
 # {py:class}`Mesh <dolfinx.mesh.Mesh>` of the domain, and creating a
-# finite element {py:class}`FunctionSpaceBase <dolfinx.fem.FunctionSpaceBase>`
+# finite element {py:class}`FunctionSpace <dolfinx.fem.FunctionSpace>`
 # $V$ on the mesh.
 
 msh = mesh.create_rectangle(comm=MPI.COMM_WORLD,

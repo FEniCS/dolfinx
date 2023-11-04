@@ -33,6 +33,8 @@
 import sys
 from typing import Tuple
 
+from mpi4py import MPI
+
 from analytical_efficiencies_wire import calculate_analytical_efficiencies
 from mesh_wire import generate_mesh_wire
 
@@ -40,8 +42,6 @@ import ufl
 from basix.ufl import element
 from dolfinx import default_scalar_type, fem, io, plot
 from dolfinx.fem.petsc import LinearProblem
-
-from mpi4py import MPI
 
 try:
     import gmsh
@@ -543,12 +543,12 @@ if domain.comm.rank == 0:
     print()
     print(f"The analytical absorption efficiency is {q_abs_analyt}")
     print(f"The numerical absorption efficiency is {q_abs_fenics}")
-    print(f"The error is {err_abs*100}%")
+    print(f"The error is {err_abs * 100}%")
     print()
     print(f"The analytical scattering efficiency is {q_sca_analyt}")
     print(f"The numerical scattering efficiency is {q_sca_fenics}")
-    print(f"The error is {err_sca*100}%")
+    print(f"The error is {err_sca * 100}%")
     print()
     print(f"The analytical extinction efficiency is {q_ext_analyt}")
     print(f"The numerical extinction efficiency is {q_ext_fenics}")
-    print(f"The error is {err_ext*100}%")
+    print(f"The error is {err_ext * 100}%")

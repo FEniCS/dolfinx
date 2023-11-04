@@ -6,21 +6,21 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+from mpi4py import MPI
+
 import pytest
 
-from dolfinx.fem import FunctionSpace, extract_function_spaces, form
+from dolfinx.fem import extract_function_spaces, form, functionspace
 from dolfinx.mesh import create_unit_square
 from ufl import TestFunction, TrialFunction, dx, inner
-
-from mpi4py import MPI
 
 
 def test_extract_forms():
     """Test extraction on unique function spaces for rows and columns of
     a block system"""
     mesh = create_unit_square(MPI.COMM_WORLD, 32, 31)
-    V0 = FunctionSpace(mesh, ("Lagrange", 1))
-    V1 = FunctionSpace(mesh, ("Lagrange", 2))
+    V0 = functionspace(mesh, ("Lagrange", 1))
+    V1 = functionspace(mesh, ("Lagrange", 2))
     V2 = V0.clone()
     V3 = V1.clone()
 

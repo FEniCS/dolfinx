@@ -6,6 +6,8 @@
 
 from pathlib import Path
 
+from mpi4py import MPI
+
 import numpy as np
 import pytest
 
@@ -17,8 +19,6 @@ from dolfinx import default_real_type
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (CellType, GhostMode, compute_midpoints, create_box,
                           create_cell_partitioner, create_mesh)
-
-from mpi4py import MPI
 
 partitioners = [dolfinx.graph.partitioner()]
 try:
@@ -98,7 +98,7 @@ def test_custom_partitioner(tempdir, Nx, cell_type):
     tdim = new_mesh.topology.dim
     assert mesh.topology.index_map(tdim).size_global == new_mesh.topology.index_map(tdim).size_global
     num_cells = new_mesh.topology.index_map(tdim).size_local
-    cell_midpoints = compute_midpoints(new_mesh, tdim, range(num_cells))
+    cell_midpoints = compute_midpoints(new_mesh, tdim, np.arange(num_cells))
     assert num_cells > 0
     assert np.all(cell_midpoints[:, 0] >= mpi_comm.rank)
     assert np.all(cell_midpoints[:, 0] <= mpi_comm.rank + 1)

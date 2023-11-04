@@ -7,6 +7,8 @@
 
 import typing
 
+from mpi4py import MPI as _MPI
+
 import numpy as np
 import numpy.typing as npt
 
@@ -18,8 +20,6 @@ from dolfinx import default_real_type
 from dolfinx.cpp.graph import AdjacencyList_int32
 from dolfinx.mesh import (CellType, Mesh, create_mesh, meshtags,
                           meshtags_from_entities)
-
-from mpi4py import MPI as _MPI
 
 __all__ = ["cell_perm_array", "ufl_mesh", "extract_topology_and_markers",
            "extract_geometry", "model_to_mesh", "read_from_msh"]
@@ -261,7 +261,7 @@ def model_to_mesh(model, comm: _MPI.Comm, rank: int, gdim: int = 3,
     # Create distributed mesh
     ufl_domain = ufl_mesh(cell_id, gdim)
     gmsh_cell_perm = cell_perm_array(_cpp.mesh.to_type(str(ufl_domain.ufl_cell())), num_nodes)
-    cells = cells[:, gmsh_cell_perm]
+    cells = cells[:, gmsh_cell_perm].copy()
     mesh = create_mesh(comm, cells, x[:, :gdim].astype(dtype, copy=False), ufl_domain, partitioner)
 
     # Create MeshTags for cells

@@ -90,7 +90,9 @@ ONBUILD RUN cd dolfinx && \
     PETSC_ARCH=linux-gnu-real64-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-real -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFINX_CMAKE_CXX_FLAGS} ../cpp && \
     ninja install && \
     cd ../python && \
-    CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-real64-32 pip3 install -v --target /usr/local/dolfinx-real/lib/python${PYTHON_VERSION}/dist-packages --no-dependencies --no-cache-dir . && \
+    PETSC_ARCH=linux-gnu-real64-32 pip3 install -v --config-settings=cmake.define.-DCMAKE_CXX_FLAGS="${DOLFINX_CMAKE_CXX_FLAGS}" \
+      --config-settings=cmake.build-type="${DOLFINX_CMAKE_BUILD_TYPE}"  --no-build-isolation --check-build-dependencies \
+      --target /usr/local/dolfinx-real/lib/python${PYTHON_VERSION}/dist-packages --no-dependencies --no-cache-dir . && \
     git clean -fdx && \
     cd ../ && \
     mkdir -p build-complex && \
@@ -99,7 +101,9 @@ ONBUILD RUN cd dolfinx && \
     ninja install && \
     . /usr/local/dolfinx-complex/lib/dolfinx/dolfinx.conf && \
     cd ../python && \
-    CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-complex128-32 pip3 install -v --target /usr/local/dolfinx-complex/lib/python${PYTHON_VERSION}/dist-packages --no-dependencies --no-cache-dir .
+    PETSC_ARCH=linux-gnu-complex128-32 pip3 install -v --config-settings=cmake.define.-DCMAKE_CXX_FLAGS="${DOLFINX_CMAKE_CXX_FLAGS}" \
+      --config-settings=cmake.build-type="${DOLFINX_CMAKE_BUILD_TYPE}" --no-build-isolation --check-build-dependencies \
+      --target /usr/local/dolfinx-complex/lib/python${PYTHON_VERSION}/dist-packages --no-dependencies --no-cache-dir .
 
 # Real by default.
 ONBUILD ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \

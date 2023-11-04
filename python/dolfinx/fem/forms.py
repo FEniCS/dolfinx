@@ -16,7 +16,7 @@ import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit
 from dolfinx.fem import IntegralType
-from dolfinx.fem.function import FunctionSpaceBase
+from dolfinx.fem.function import FunctionSpace
 
 if typing.TYPE_CHECKING:
     from dolfinx.fem import function
@@ -59,7 +59,7 @@ class Form:
         return self._cpp_object.rank
 
     @property
-    def function_spaces(self) -> typing.List[FunctionSpaceBase]:
+    def function_spaces(self) -> typing.List[FunctionSpace]:
         """Function spaces on which this form is defined"""
         return self._cpp_object.function_spaces
 
@@ -127,7 +127,7 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]],
         raise NotImplementedError(f"Type {dtype} not supported.")
 
     def _form(form):
-        """"Compile a single UFL form"""
+        """Compile a single UFL form"""
         # Extract subdomain data from UFL form
         sd = form.subdomain_data()
         domain, = list(sd.keys())  # Assuming single domain
@@ -164,9 +164,10 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]],
                         tdim = subdomain.topology.dim
                         subdomain._cpp_object.topology.create_connectivity(tdim - 1, tdim)
                         subdomain._cpp_object.topology.create_connectivity(tdim, tdim - 1)
-                    return _cpp.fem.compute_integration_domains(integral_type, subdomain._cpp_object)
+                    domains = _cpp.fem.compute_integration_domains(integral_type, subdomain._cpp_object)
+                    return [(s[0], np.array(s[1])) for s in domains]
                 except AttributeError:
-                    return subdomain
+                    return [(s[0], np.array(s[1])) for s in subdomain]
 
         # Subdomain markers (possibly empty list for some integral types)
         subdomains = {_ufl_to_dolfinx_domain[key]: get_integration_domains(
@@ -190,7 +191,7 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]],
 
 def extract_function_spaces(forms: typing.Union[typing.Iterable[Form],  # type: ignore [return]
                                                 typing.Iterable[typing.Iterable[Form]]],
-                            index: int = 0) -> typing.Iterable[typing.Union[None, function.FunctionSpaceBase]]:
+                            index: int = 0) -> typing.Iterable[typing.Union[None, function.FunctionSpace]]:
     """Extract common function spaces from an array of forms. If `forms`
     is a list of linear form, this function returns of list of the
     corresponding test functions. If `forms` is a 2D array of bilinear

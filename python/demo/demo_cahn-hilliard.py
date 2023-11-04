@@ -113,6 +113,9 @@
 # +
 import os
 
+from mpi4py import MPI
+from petsc4py import PETSc
+
 import numpy as np
 
 import ufl
@@ -124,9 +127,6 @@ from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_unit_square
 from dolfinx.nls.petsc import NewtonSolver
 from ufl import dx, grad, inner
-
-from mpi4py import MPI
-from petsc4py import PETSc
 
 try:
     import pyvista as pv
@@ -150,7 +150,7 @@ theta = 0.5  # time stepping family, e.g. theta=1 -> backward Euler, theta=0.5 -
 
 # A unit square mesh with 96 cells edges in each direction is created,
 # and on this mesh a
-# {py:class}`FunctionSpaceBase <dolfinx.fem.FunctionSpaceBase>` `ME` is built
+# {py:class}`FunctionSpace <dolfinx.fem.FunctionSpace>` `ME` is built
 # using a pair of linear Lagrange elements.
 
 msh = create_unit_square(MPI.COMM_WORLD, 96, 96, CellType.triangle)
@@ -307,7 +307,7 @@ u0.x.array[:] = u.x.array
 while (t < T):
     t += dt
     r = solver.solve(u)
-    print(f"Step {int(t/dt)}: num iterations: {r[0]}")
+    print(f"Step {int(t / dt)}: num iterations: {r[0]}")
     u0.x.array[:] = u.x.array
     file.write_function(c, t)
 
