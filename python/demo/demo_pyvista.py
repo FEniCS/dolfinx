@@ -108,7 +108,7 @@ def plot_meshtags():
     # Create cell tags - if midpoint is inside circle, it gets value 1,
     # otherwise 0
     num_cells = msh.topology.index_map(msh.topology.dim).size_local
-    midpoints = compute_midpoints(msh, msh.topology.dim, list(np.arange(num_cells, dtype=np.int32)))
+    midpoints = compute_midpoints(msh, msh.topology.dim, np.arange(num_cells, dtype=np.int32))
     cell_tags = meshtags(msh, msh.topology.dim, np.arange(num_cells), in_circle(midpoints))
 
     # Create VTK mesh
@@ -161,7 +161,7 @@ def plot_higher_order():
     # Create mesh tags for all cells. If midpoint is inside the circle,
     # it gets value 1, otherwise 0.
     num_cells = msh.topology.index_map(msh.topology.dim).size_local
-    midpoints = compute_midpoints(msh, msh.topology.dim, list(np.arange(num_cells, dtype=np.int32)))
+    midpoints = compute_midpoints(msh, msh.topology.dim, np.arange(num_cells, dtype=np.int32))
     cell_tags = meshtags(msh, msh.topology.dim, np.arange(num_cells), in_circle(midpoints))
 
     # We start by interpolating a discontinuous function (discontinuous
