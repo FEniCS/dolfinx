@@ -531,8 +531,11 @@ std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
 
       std::array<T, 3> shortest_vector
           = compute_distance_gjk<T>(point, coordinate_dofs);
-      T d2 = std::reduce(shortest_vector.begin(), shortest_vector.end(), 0,
-                         [](auto d, auto e) { return d + e * e; });
+      T d2 = shortest_vector[0] * shortest_vector[0]
+             + shortest_vector[1] * shortest_vector[1]
+             + shortest_vector[2] * shortest_vector[2];
+      // T d2 = std::reduce(shortest_vector.begin(), shortest_vector.end(), 0,
+      //                    [](auto d, auto e) { return d + e * e; });
       if (d2 < tol)
         return cell;
     }
