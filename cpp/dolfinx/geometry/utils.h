@@ -15,6 +15,7 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <map>
+#include <numeric>
 #include <span>
 #include <vector>
 
@@ -486,7 +487,8 @@ compute_collisions(const BoundingBoxTree<T>& tree, std::span<const T> points)
   }
 }
 
-/// @brief Given a set of cells, find the first one that collides with a point.
+/// @brief Given a set of cells, find the first one that collides with a
+/// point.
 ///
 /// A point can collide with more than one cell. The first cell detected
 /// to collide with the point is returned. If no collision is detected,
@@ -495,17 +497,16 @@ compute_collisions(const BoundingBoxTree<T>& tree, std::span<const T> points)
 /// @param[in] mesh The mesh
 /// @param[in] cells The candidate cells
 /// @param[in] point The point (`shape=(3,)`)
-/// @param[in] tol The tolerance for accepting a collision (squared norm)
+/// @param[in] tol Tolerance for accepting a collision (in the squared
+/// distance)
 /// @return The local cell index, -1 if not found
 template <std::floating_point T>
 std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
                                           std::span<const std::int32_t> cells,
-                                          const std::array<T, 3>& point, T tol)
+                                          std::array<T, 3> point, T tol)
 {
   if (mesh.geometry().cmaps().size() > 1)
-  {
     throw std::runtime_error("Mixed topology not supported");
-  }
 
   if (cells.empty())
     return -1;
@@ -527,13 +528,12 @@ std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
                   std::next(geom_dofs.begin(), 3 * dofs[i] + 3),
                   std::next(coordinate_dofs.begin(), 3 * i));
       }
+
       std::array<T, 3> shortest_vector
           = compute_distance_gjk<T>(point, coordinate_dofs);
-      T norm = 0;
-      std::for_each(shortest_vector.cbegin(), shortest_vector.cend(),
-                    [&norm](auto e) { norm += std::pow(e, 2); });
-
-      if (norm < tol)
+      T d2 = std::reduce(shortest_vector.begin(), shortest_vector.end(), 0,
+                         [](auto d, auto e) { return d + e * e; });
+      if (d2 < tol)
         return cell;
     }
 
