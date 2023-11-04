@@ -70,17 +70,10 @@ graph::AdjacencyList<T> reorder_list(const graph::AdjacencyList<T>& list,
 }
 } // namespace
 
-// See https://github.com/doxygen/doxygen/issues/9552
-/// Signature for the cell partitioning function. The function should
-/// compute the destination rank for cells currently on this rank.
-using CellPartitionFunction = std::function<graph::AdjacencyList<std::int32_t>(
-    MPI_Comm comm, int nparts, int tdim,
-    const graph::AdjacencyList<std::int64_t>& cells)>;
-
 namespace impl
 {
-/// The coordinates of 'vertices' for for entities of a give dimension
-/// that are attached to specified facets.
+/// @brief The coordinates of 'vertices' for for entities of a give
+/// dimension that are attached to specified facets.
 ///
 /// @pre The provided facets must be on the boundary of the mesh.
 ///
@@ -97,8 +90,6 @@ std::tuple<std::vector<std::int32_t>, std::vector<T>, std::vector<std::int32_t>>
 compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
                                std::span<const std::int32_t> facets)
 {
-  namespace stdex = std::experimental;
-
   auto topology = mesh.topology();
   assert(topology);
   const int tdim = topology->dim();
@@ -158,7 +149,8 @@ compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
     assert(it != cell_vertices.end());
     const int local_pos = std::distance(cell_vertices.begin(), it);
 
-    auto dofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
+    auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+        submdspan(x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     for (std::size_t j = 0; j < 3; ++j)
       x_vertices[j * vertices.size() + i] = x_nodes[3 * dofs[local_pos] + j];
     vertex_to_pos[v] = i;
@@ -182,10 +174,9 @@ compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
 /// of the mesh.
 std::vector<std::int32_t> exterior_facet_indices(const Topology& topology);
 
-// See https://github.com/doxygen/doxygen/issues/9552
-/// Signature for the cell partitioning function. The function should
-/// compute the destination rank for cells currently on this rank.
-/*
+/// @brief Signature for the cell partitioning function. The function
+/// should compute the destination rank for cells currently on this
+/// rank.
 ///
 /// @param[in] comm MPI Communicator
 /// @param[in] nparts Number of partitions
@@ -199,12 +190,11 @@ std::vector<std::int32_t> exterior_facet_indices(const Topology& topology);
 /// @param[in] ghost_mode How to overlap the cell partitioning: none,
 /// shared_facet or shared_vertex
 /// @return Destination ranks for each cell on this process
-*/
 using CellPartitionFunction = std::function<graph::AdjacencyList<std::int32_t>(
     MPI_Comm comm, int nparts, int tdim,
     const graph::AdjacencyList<std::int64_t>& cells)>;
 
-/// Extract topology from cell data, i.e. extract cell vertices
+/// @brief Extract topology from cell data, i.e. extract cell vertices.
 /// @param[in] cell_type The cell shape
 /// @param[in] layout The layout of geometry 'degrees-of-freedom' on the
 /// reference cell
@@ -445,8 +435,6 @@ template <std::floating_point T>
 std::pair<std::vector<T>, std::array<std::size_t, 2>>
 compute_vertex_coords(const mesh::Mesh<T>& mesh)
 {
-  namespace stdex = std::experimental;
-
   auto topology = mesh.topology();
   assert(topology);
   const int tdim = topology->dim();
@@ -463,7 +451,9 @@ compute_vertex_coords(const mesh::Mesh<T>& mesh)
   std::vector<std::int32_t> vertex_to_node(num_vertices);
   for (int c = 0; c < c_to_v->num_nodes(); ++c)
   {
-    auto x_dofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
+    auto x_dofs
+        = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+            submdspan(x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     auto vertices = c_to_v->links(c);
     for (std::size_t i = 0; i < vertices.size(); ++i)
       vertex_to_node[vertices[i]] = x_dofs[i];
@@ -488,10 +478,10 @@ compute_vertex_coords(const mesh::Mesh<T>& mesh)
 template <typename Fn, typename T>
 concept MarkerFn = std::is_invocable_r<
     std::vector<std::int8_t>, Fn,
-    std::experimental::mdspan<
-        const T,
-        std::experimental::extents<std::size_t, 3,
-                                   std::experimental::dynamic_extent>>>::value;
+    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        const T, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+                     std::size_t, 3,
+                     MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>>::value;
 
 /// @brief Compute indices of all mesh entities that evaluate to true
 /// for the provided geometric marking function.
@@ -510,10 +500,10 @@ template <std::floating_point T, MarkerFn<T> U>
 std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
                                           U marker)
 {
-  namespace stdex = std::experimental;
-  using cmdspan3x_t
-      = stdex::mdspan<const T,
-                      stdex::extents<std::size_t, 3, stdex::dynamic_extent>>;
+  using cmdspan3x_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      const T,
+      MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+          std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>;
 
   // Run marker function on vertex coordinates
   const auto [xdata, xshape] = impl::compute_vertex_coords(mesh);
@@ -598,10 +588,10 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
   const std::vector<std::int32_t> boundary_facets
       = exterior_facet_indices(*topology);
 
-  namespace stdex = std::experimental;
-  using cmdspan3x_t
-      = stdex::mdspan<const T,
-                      stdex::extents<std::size_t, 3, stdex::dynamic_extent>>;
+  using cmdspan3x_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      const T,
+      MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+          std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>;
 
   // Run marker function on the vertex coordinates
   const auto [facet_entities, xdata, vertex_to_pos]
@@ -659,8 +649,6 @@ std::vector<std::int32_t>
 entities_to_geometry(const Mesh<T>& mesh, int dim,
                      std::span<const std::int32_t> entities, bool orient)
 {
-  namespace stdex = std::experimental;
-
   auto topology = mesh.topology();
   assert(topology);
 
@@ -784,20 +772,23 @@ compute_incident_entities(const Topology& topology,
                           std::span<const std::int32_t> entities, int d0,
                           int d1);
 
-/// Create a mesh using a provided mesh partitioning function
+/// Create a mesh using a provided mesh partitioning function.
+///
+/// If the partitioning function is not callable, i.e. it does not store
+/// a callable function, no re-distribution of cells is done.
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
     const std::vector<fem::CoordinateElement<
         typename std::remove_reference_t<typename U::value_type>>>& elements,
     const U& x, std::array<std::size_t, 2> xshape,
-    const CellPartitionFunction& cell_partitioner)
+    CellPartitionFunction partitioner)
 {
   const fem::ElementDofLayout dof_layout = elements[0].create_dof_layout();
 
   // Function top build geometry. Used to scope memory operations.
   auto build_topology = [](auto comm, auto& elements, auto& dof_layout,
-                           auto& cells, auto& cell_partitioner)
+                           auto& cells, auto& partitioner)
   {
     // -- Partition topology
 
@@ -806,7 +797,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     // vertices. For P1 geometry this should just be the identity
     // operator. For other elements the filtered lists may have 'gaps',
     // i.e. the indices might not be contiguous. We don't create an
-    // object before calling cell_partitioner to ensure that memory is
+    // object before calling partitioner to ensure that memory is
     // freed immediately.
     //
     // Note: extract_topology could be skipped for 'P1' elements since
@@ -814,20 +805,38 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 
     // Compute the destination rank for cells on this process via graph
     // partitioning.
-    const int size = dolfinx::MPI::size(comm);
     const int tdim = cell_dim(elements[0].cell_shape());
-    const graph::AdjacencyList<std::int32_t> dest = cell_partitioner(
-        comm, size, tdim,
-        extract_topology(elements[0].cell_shape(), dof_layout, cells));
 
-    // -- Distribute cells (topology, includes higher-order 'nodes')
+    graph::AdjacencyList<std::int32_t> dest(0);
+    graph::AdjacencyList<std::int64_t> cell_nodes(0);
+    std::vector<std::int64_t> original_cell_index0;
+    std::vector<int> ghost_owners;
+    if (partitioner)
+    {
+      const int size = dolfinx::MPI::size(comm);
+      dest = partitioner(
+          comm, size, tdim,
+          extract_topology(elements[0].cell_shape(), dof_layout, cells));
 
-    // Distribute cells to destination rank
-    auto [cell_nodes, src, original_cell_index0, ghost_owners]
-        = graph::build::distribute(comm, cells, dest);
+      // -- Distribute cells (topology, includes higher-order 'nodes')
 
-    // Release memory (src is not used)
-    decltype(src)().swap(src);
+      // Distribute cells to destination rank
+      std::vector<int> src;
+      std::tie(cell_nodes, src, original_cell_index0, ghost_owners)
+          = graph::build::distribute(comm, cells, dest);
+    }
+    else
+    {
+      int rank = dolfinx::MPI::rank(comm);
+      dest = graph::regular_adjacency_list(
+          std::vector<std::int32_t>(cells.num_nodes(), rank), 1);
+      cell_nodes = cells;
+      std::int64_t offset(0), num_owned(cells.num_nodes());
+      MPI_Exscan(&num_owned, &offset, 1, MPI_INT64_T, MPI_SUM, comm);
+      original_cell_index0.resize(cell_nodes.num_nodes());
+      std::iota(original_cell_index0.begin(), original_cell_index0.end(),
+                offset);
+    }
 
     // -- Extra cell topology
 
@@ -892,7 +901,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   };
 
   auto [topology, cell_nodes]
-      = build_topology(comm, elements, dof_layout, cells, cell_partitioner);
+      = build_topology(comm, elements, dof_layout, cells, partitioner);
 
   // Create connectivity required to compute the Geometry (extra
   // connectivities for higher-order geometries)
@@ -918,17 +927,17 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// This function takes mesh input data that is distributed across
 /// processes and creates a mesh::Mesh, with the mesh cell distribution
 /// determined by the default cell partitioner. The default partitioner
-/// is based a graph partitioning.
+/// is based on graph partitioning.
 ///
-/// @param[in] comm The MPI communicator to build the mesh on
+/// @param[in] comm The MPI communicator to build the mesh on.
 /// @param[in] cells The cells on the this MPI rank. Each cell (node in
 /// the `AdjacencyList`) is defined by its 'nodes' (using global
 /// indices). For lowest order cells this will be just the cell
 /// vertices. For higher-order cells, other cells 'nodes' will be
 /// included.
 /// @param[in] elements The coordinate elements that describe the
-/// geometric mapping for cells
-/// @param[in] x The coordinates of mesh nodes
+/// geometric mapping for cells.
+/// @param[in] x The coordinates of mesh nodes.
 /// @param[in] xshape The shape of `x`. It should be `(num_points, gdim)`.
 /// @param[in] ghost_mode The requested type of cell ghosting/overlap
 /// @return A distributed Mesh.
@@ -939,8 +948,13 @@ create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
                 std::remove_reference_t<typename U::value_type>>>& elements,
             const U& x, std::array<std::size_t, 2> xshape, GhostMode ghost_mode)
 {
-  return create_mesh(comm, cells, elements, x, xshape,
-                     create_cell_partitioner(ghost_mode));
+  if (dolfinx::MPI::size(comm) == 1)
+    return create_mesh(comm, cells, elements, x, xshape, nullptr);
+  else
+  {
+    return create_mesh(comm, cells, elements, x, xshape,
+                       create_cell_partitioner(ghost_mode));
+  }
 }
 
 /// @brief Create a new mesh consisting of a subset of entities in a

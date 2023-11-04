@@ -6,14 +6,15 @@
 
 from pathlib import Path
 
+from mpi4py import MPI
+
 import numpy as np
 import pytest
+
+from dolfinx import default_real_type
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (CellType, create_unit_cube, create_unit_interval,
                           create_unit_square)
-from mpi4py import MPI
-
-from dolfinx import default_real_type
 
 # Supported XDMF file encoding
 if MPI.COMM_WORLD.size > 1:

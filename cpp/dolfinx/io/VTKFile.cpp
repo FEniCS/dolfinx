@@ -8,6 +8,7 @@
 #include "cells.h"
 #include "vtk_utils.h"
 #include "xdmf_utils.h"
+#include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/fem/DofMap.h>
@@ -32,27 +33,13 @@ namespace
 /// field
 constexpr std::array field_ext = {"_real", "_imag"};
 
-//----------------------------------------------------------------------------
-/// Return true if Function is a cell-wise constant, otherwise false
-template <dolfinx::scalar T>
-bool is_cellwise(const fem::FunctionSpace<T>& V)
+/// Return true if element is a cell-wise constant, otherwise false
+template <std::floating_point T>
+bool is_cellwise(const fem::FiniteElement<T>& e)
 {
-  assert(V.element());
-  const int rank = V.element()->value_shape().size();
-  assert(V.mesh());
-  const int tdim = V.mesh()->topology()->dim();
-
-  // cell_based_dim = tdim^rank
-  int cell_based_dim = 1;
-  for (int i = 0; i < rank; ++i)
-    cell_based_dim *= tdim;
-
-  assert(V.dofmap());
-  if (V.dofmap()->element_dof_layout().num_dofs() == cell_based_dim)
-    return true;
-  else
-    return false;
+  return e.space_dimension() / e.block_size() == 1;
 }
+
 //----------------------------------------------------------------------------
 
 /// Get counter string to include in filename
@@ -169,11 +156,9 @@ void add_data(const std::string& name, int rank, std::span<const T> values,
   {
     using U = typename T::value_type;
     std::vector<U> v(values.size());
-
     std::transform(values.begin(), values.end(), v.begin(),
                    [](auto x) { return x.real(); });
     add_data_float(name + field_ext[0], rank, std::span<const U>(v), node);
-
     std::transform(values.begin(), values.end(), v.begin(),
                    [](auto x) { return x.imag(); });
     add_data_float(name + field_ext[1], rank, std::span<const U>(v), node);
@@ -350,14 +335,14 @@ void write_function(
     return;
 
   // Extract the first function space with pointwise data. If no
-  // pointwise functions, take first FunctionSpace
+  // pointwise functions, take first FunctionSpace.
   auto V0 = u.front().get().function_space();
   assert(V0);
   for (auto& v : u)
   {
     auto V = v.get().function_space();
     assert(V);
-    if (!is_cellwise(*V))
+    if (!is_cellwise(*V->element()))
     {
       V0 = V;
       break;
@@ -385,10 +370,20 @@ void write_function(
     if (!V->component().empty())
       throw std::runtime_error("Cannot write sub-Functions to VTK file.");
 
-    // Check that pointwise elements are the same (up to the block size)
-    if (!is_cellwise(*V))
+    auto e = V->element();
+    assert(e);
+
+    // Check that element uses point evaluations
+    if (!e->interpolation_ident())
     {
-      if (*(V->element()) != *element0)
+      throw std::runtime_error("Only Lagrange functions are supported. "
+                               "Interpolate Functions before output.");
+    }
+
+    // Check that pointwise elements are the same (up to the block size)
+    if (!is_cellwise(*e))
+    {
+      if (*e != *element0)
       {
         throw std::runtime_error("All point-wise Functions written to VTK file "
                                  "must have same element.");
@@ -421,7 +416,7 @@ void write_function(
   std::vector<std::uint8_t> x_ghost;
   std::vector<std::int64_t> cells;
   std::array<std::size_t, 2> cshape;
-  if (is_cellwise(*V0))
+  if (is_cellwise(*V0->element()))
   {
     std::vector<std::int64_t> tmp;
     std::tie(tmp, cshape) = io::extract_vtk_connectivity(
@@ -437,8 +432,10 @@ void write_function(
     std::fill(std::next(x_ghost.begin(), xmap->size_local()), x_ghost.end(), 1);
   }
   else
+  {
     std::tie(x, xshape, x_id, x_ghost, cells, cshape)
         = io::vtk_mesh_from_space(*V0);
+  }
 
   // Add "Piece" node and required metadata
   pugi::xml_node piece_node = grid_node_vtu.append_child("Piece");
@@ -448,9 +445,7 @@ void write_function(
   // FIXME
   auto cell_types = topology0->cell_types();
   if (cell_types.size() > 1)
-  {
     throw std::runtime_error("Multiple cell types in IO");
-  }
 
   // Add mesh data to "Piece" node
   int tdim = topology0->dim();
@@ -464,13 +459,14 @@ void write_function(
   constexpr std::array tensor_str = {"Scalars", "Vectors", "Tensors"};
   for (auto _u : u)
   {
-    auto V = _u.get().function_space();
-    assert(V);
-    auto data_type = is_cellwise(*V) ? "CellData" : "PointData";
+    assert(_u.get().function_space());
+    auto e = _u.get().function_space()->element();
+    assert(e);
+    auto data_type = is_cellwise(*e) ? "CellData" : "PointData";
     if (piece_node.child(data_type).empty())
       piece_node.append_child(data_type);
 
-    const int rank = V->element()->value_shape().size();
+    const int rank = e->value_shape().size();
     pugi::xml_node data_node = piece_node.child(data_type);
     if (data_node.attribute(tensor_str[rank]).empty())
       data_node.append_attribute(tensor_str[rank]);
@@ -482,10 +478,11 @@ void write_function(
   for (auto _u : u)
   {
     auto V = _u.get().function_space();
-    auto element = V->element();
-    int rank = element->value_shape().size();
+    auto e = V->element();
+    assert(e);
+    int rank = e->value_shape().size();
     std::int32_t num_comp = std::pow(3, rank);
-    if (is_cellwise(*V))
+    if (is_cellwise(*e))
     {
       // -- Cell-wise data
 
@@ -497,7 +494,7 @@ void write_function(
       auto u_vector = _u.get().x()->array();
       for (std::size_t c = 0; c < cshape[0]; ++c)
       {
-        std::span<const std::int32_t> dofs = dofmap->cell_dofs(c);
+        auto dofs = dofmap->cell_dofs(c);
         for (std::size_t i = 0; i < dofs.size(); ++i)
           for (int k = 0; k < bs; ++k)
             data[num_comp * c + k] = u_vector[bs * dofs[i] + k];
@@ -543,7 +540,7 @@ void write_function(
           add_data(_u.get().name, rank, std::span<const T>(data), data_node);
         }
       }
-      else if (*element == *element0)
+      else if (*e == *element0)
       {
         // -- Same element, possibly different dofmaps
 
@@ -554,7 +551,7 @@ void write_function(
         assert(dofmap);
         int bs = dofmap->bs();
 
-        // Interpolate on each cell
+        // Get data on each cell
         auto u_vector = _u.get().x()->array();
         std::vector<T> u(u_vector.size());
         for (std::size_t c = 0; c < cshape[0]; ++c)
@@ -622,7 +619,7 @@ void write_function(
     grid_node.append_attribute("GhostLevel") = 1;
     for (auto _u : u)
     {
-      if (is_cellwise(*_u.get().function_space()))
+      if (auto e = _u.get().function_space()->element(); is_cellwise(*e))
       {
         if (grid_node.child("PCellData").empty())
           grid_node.append_child("PCellData");
@@ -641,9 +638,12 @@ void write_function(
     for (auto _u : u)
     {
       auto V = _u.get().function_space();
-      std::string d_type = is_cellwise(*V) ? "PCellData" : "PPointData";
+      assert(V);
+      auto e = V->element();
+      assert(e);
+      std::string d_type = is_cellwise(*e) ? "PCellData" : "PPointData";
       pugi::xml_node data_pnode = grid_node.child(d_type.c_str());
-      const int rank = V->element()->value_shape().size();
+      const int rank = e->value_shape().size();
       constexpr std::array ncomps = {0, 3, 9};
 
       auto add_field = [&](const std::string& name, int size)
@@ -734,10 +734,11 @@ void io::VTKFile::close()
 //----------------------------------------------------------------------------
 void io::VTKFile::flush()
 {
-  if (!_pvd_xml and dolfinx::MPI::rank(_comm.comm()) == 0)
+  int mpi_rank = dolfinx::MPI::rank(_comm.comm());
+  if (!_pvd_xml and mpi_rank == 0)
     throw std::runtime_error("VTKFile has already been closed");
 
-  if (MPI::rank(_comm.comm()) == 0)
+  if (mpi_rank == 0)
   {
     if (_filename.has_parent_path())
       std::filesystem::create_directories(_filename.parent_path());

@@ -12,14 +12,14 @@ import functools
 import typing
 
 import numpy as np
-from dolfinx.cpp.fem import pack_coefficients as _pack_coefficients
-from dolfinx.cpp.fem import pack_constants as _pack_constants
-from dolfinx.fem.bcs import DirichletBC
-from dolfinx.fem.forms import Form
 
 import dolfinx
 from dolfinx import cpp as _cpp
 from dolfinx import la
+from dolfinx.cpp.fem import pack_coefficients as _pack_coefficients
+from dolfinx.cpp.fem import pack_constants as _pack_constants
+from dolfinx.fem.bcs import DirichletBC
+from dolfinx.fem.forms import Form
 
 
 def pack_constants(form: typing.Union[Form, typing.Sequence[Form]]) -> typing.Union[np.ndarray,
@@ -120,7 +120,7 @@ def assemble_scalar(M: Form, constants=None, coeffs=None):
         coeffs: Coefficients that appear in the form. If not provided,
             any required coefficients will be computed.
 
-    Return:
+    Returns:
         The computed scalar on the calling rank.
 
     Note:
@@ -156,7 +156,7 @@ def _assemble_vector_form(L: Form, constants=None, coeffs=None) -> la.Vector:
         coeffs: Coefficients that appear in the form. If not provided,
             any required coefficients will be computed.
 
-    Return:
+    Returns:
         The assembled vector for the calling rank.
 
     Note:
@@ -308,7 +308,8 @@ def apply_lifting(b: np.ndarray, a: typing.List[Form],
 
     """
     x0 = [] if x0 is None else x0
-    constants = [form and _pack_constants(form._cpp_object) for form in a] if constants is None else constants
+    constants = [_pack_constants(form._cpp_object) if form is not None else np.array(
+        [], dtype=b.dtype) for form in a] if constants is None else constants
     coeffs = [{} if form is None else _pack_coefficients(form._cpp_object) for form in a] if coeffs is None else coeffs
     _a = [None if form is None else form._cpp_object for form in a]
     _bcs = [[bc._cpp_object for bc in bcs0] for bcs0 in bcs]
@@ -317,11 +318,15 @@ def apply_lifting(b: np.ndarray, a: typing.List[Form],
 
 def set_bc(b: np.ndarray, bcs: typing.List[DirichletBC],
            x0: typing.Optional[np.ndarray] = None, scale: float = 1.0) -> None:
-    """Insert boundary condition values into vector. Only local (owned)
-    entries are set, hence communication after calling this function is
-    not required unless ghost entries need to be updated to the boundary
-    condition value.
+    """Insert boundary condition values into vector.
+
+    Only local (owned) entries are set, hence communication after
+    calling this function is not required unless ghost entries need to
+    be updated to the boundary condition value.
 
     """
     _bcs = [bc._cpp_object for bc in bcs]
-    _cpp.fem.set_bc(b, _bcs, x0, scale)
+    if x0 is None:
+        _cpp.fem.set_bc(b, _bcs, scale)
+    else:
+        _cpp.fem.set_bc(b, _bcs, x0, scale)

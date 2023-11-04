@@ -22,25 +22,25 @@
 #
 # The required modules are first imported:
 
+from mpi4py import MPI
+from petsc4py import PETSc
+
 # +
 import numpy as np
+
+import dolfinx
 import ufl
-from dolfinx.fem import (Expression, Function, FunctionSpace,
-                         VectorFunctionSpace, dirichletbc, form,
-                         locate_dofs_topological)
+from dolfinx import la
+from dolfinx.fem import (Expression, Function, FunctionSpace, dirichletbc,
+                         form, functionspace, locate_dofs_topological)
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                set_bc)
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (CellType, GhostMode, create_box,
                           locate_entities_boundary)
-from mpi4py import MPI
-from petsc4py import PETSc
 from ufl import dx, grad, inner
 
-import dolfinx
-from dolfinx import la
-
-dtype = PETSc.ScalarType
+dtype = PETSc.ScalarType  # type: ignore
 # -
 
 # ## Create the operator near-nullspace
@@ -53,7 +53,7 @@ dtype = PETSc.ScalarType
 # modes.
 
 
-def build_nullspace(V):
+def build_nullspace(V: FunctionSpace):
     """Build PETSc nullspace for 3D elasticity"""
 
     # Create vectors that will span the nullspace
@@ -84,8 +84,8 @@ def build_nullspace(V):
     dolfinx.cpp.la.orthonormalize(_basis)
     assert dolfinx.cpp.la.is_orthonormal(_basis)
 
-    basis_petsc = [PETSc.Vec().createWithArray(x[:bs * length0], bsize=3, comm=V.mesh.comm) for x in b]
-    return PETSc.NullSpace().create(vectors=basis_petsc)
+    basis_petsc = [PETSc.Vec().createWithArray(x[:bs * length0], bsize=3, comm=V.mesh.comm) for x in b]  # type: ignore
+    return PETSc.NullSpace().create(vectors=basis_petsc)  # type: ignore
 
 
 # ## Problem definition
@@ -122,7 +122,7 @@ def σ(v):
 # problem defined:
 
 
-V = VectorFunctionSpace(msh, ("Lagrange", 1))
+V = functionspace(msh, ("Lagrange", 1, (msh.geometry.dim,)))
 u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 a = form(inner(σ(u), grad(v)) * dx)
 L = form(inner(f, v) * dx)
@@ -159,7 +159,7 @@ A.assemble()
 # +
 b = assemble_vector(L)
 apply_lifting(b, [a], bcs=[[bc]])
-b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)  # type: ignore
 set_bc(b, [bc])
 # -
 
@@ -167,14 +167,14 @@ set_bc(b, [bc])
 
 ns = build_nullspace(V)
 A.setNearNullSpace(ns)
-A.setOption(PETSc.Mat.Option.SPD, True)
+A.setOption(PETSc.Mat.Option.SPD, True)  # type: ignore
 
 # Set PETSc solver options, create a PETSc Krylov solver, and attach the
 # matrix `A` to the solver:
 
 # +
 # Set solver options
-opts = PETSc.Options()
+opts = PETSc.Options()  # type: ignore
 opts["ksp_type"] = "cg"
 opts["ksp_rtol"] = 1.0e-8
 opts["pc_type"] = "gamg"
@@ -187,7 +187,7 @@ opts["mg_levels_pc_type"] = "jacobi"
 opts["mg_levels_ksp_chebyshev_esteig_steps"] = 10
 
 # Create PETSc Krylov solver and turn convergence monitoring on
-solver = PETSc.KSP().create(msh.comm)
+solver = PETSc.KSP().create(msh.comm)  # type: ignore
 solver.setFromOptions()
 
 # Set matrix operator
@@ -226,7 +226,7 @@ sigma_vm = ufl.sqrt((3 / 2) * inner(sigma_dev, sigma_dev))
 # {py:class}`Function<dolfinx.fem.Function>` `sigma_vm_h`.
 
 # +
-W = FunctionSpace(msh, ("Discontinuous Lagrange", 0))
+W = functionspace(msh, ("Discontinuous Lagrange", 0))
 sigma_vm_expr = Expression(sigma_vm, W.element.interpolation_points())
 sigma_vm_h = Function(W)
 sigma_vm_h.interpolate(sigma_vm_expr)

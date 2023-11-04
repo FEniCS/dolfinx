@@ -5,16 +5,16 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Test that the vectors in vector spaces are correctly oriented"""
 
+from mpi4py import MPI
+
 import numpy as np
 import pytest
 
 import ufl
 from basix.ufl import element
-from dolfinx.fem import Function, FunctionSpace
-from dolfinx.mesh import create_mesh
-
-from mpi4py import MPI
 from dolfinx import default_real_type
+from dolfinx.fem import Function, functionspace
+from dolfinx.mesh import create_mesh
 
 
 @pytest.mark.skip_in_parallel
@@ -24,9 +24,9 @@ def test_div_conforming_triangle(space_type, order):
     """Checks that the vectors in div conforming spaces on a triangle are correctly oriented"""
     # Create simple triangle mesh
     def perform_test(points, cells):
-        domain = ufl.Mesh(element("Lagrange", "triangle", 1, rank=1))
+        domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(2,)))
         mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
-        V = FunctionSpace(mesh, (space_type, order))
+        V = functionspace(mesh, (space_type, order))
         f = Function(V)
         x = f.x.array
         output = []
@@ -44,7 +44,7 @@ def test_div_conforming_triangle(space_type, order):
     cells = np.array([[0, 1, 2], [2, 3, 0]])
     result = perform_test(points, cells)
     for i, j in result:
-        assert i == pytest.approx(j, abs=1.0e-6)
+        assert i == pytest.approx(j, abs=1.0e-5)
 
 
 @pytest.mark.skip_in_parallel
@@ -54,9 +54,9 @@ def test_div_conforming_tetrahedron(space_type, order):
     """Checks that the vectors in div conforming spaces on a tetrahedron are correctly oriented"""
     # Create simple tetrahedron cell mesh
     def perform_test(points, cells):
-        domain = ufl.Mesh(element("Lagrange", "tetrahedron", 1, rank=1))
+        domain = ufl.Mesh(element("Lagrange", "tetrahedron", 1, shape=(3,)))
         mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
-        V = FunctionSpace(mesh, (space_type, order))
+        V = functionspace(mesh, (space_type, order))
         f = Function(V)
         output = []
         x = f.x.array

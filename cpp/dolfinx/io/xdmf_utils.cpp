@@ -26,7 +26,6 @@
 
 using namespace dolfinx;
 using namespace dolfinx::io;
-namespace stdex = std::experimental;
 
 namespace
 {
@@ -69,59 +68,6 @@ graph::AdjacencyList<T> all_to_all(MPI_Comm comm,
   return graph::AdjacencyList<T>(std::move(recv_values),
                                  std::move(recv_offset));
 }
-
-/// Compute values at all mesh 'nodes'
-/// @return The values at all geometric points
-/// @warning This function will be removed soon. Use interpolation
-/// instead.
-template <typename T>
-std::pair<std::vector<T>, std::array<std::size_t, 2>>
-compute_point_values(const fem::Function<T, dolfinx::scalar_value_type_t<T>>& u)
-{
-  auto V = u.function_space();
-  assert(V);
-  auto mesh = V->mesh();
-  assert(mesh);
-  const int tdim = mesh->topology()->dim();
-
-  // Compute in tensor (one for scalar function, . . .)
-  const std::size_t value_size_loc = V->element()->value_size();
-
-  const std::size_t num_points = mesh->geometry().x().size() / 3;
-
-  // Resize Array for holding point values
-  std::vector<T> point_values(num_points * value_size_loc);
-
-  // Prepare cell geometry
-  auto x_dofmap = mesh->geometry().dofmap();
-
-  if (mesh->geometry().cmaps().size() > 1)
-  {
-    throw std::runtime_error(
-        "XDMF I/O with multiple geometry maps not implemented.");
-  }
-
-  // Interpolate point values on each cell (using last computed value if
-  // not continuous, e.g. discontinuous Galerkin methods)
-  auto map = mesh->topology()->index_map(tdim);
-  assert(map);
-  const std::int32_t num_cells = map->size_local() + map->num_ghosts();
-
-  std::vector<std::int32_t> cells(num_points, -1);
-  for (std::int32_t c = 0; c < num_cells; ++c)
-  {
-    // Get coordinates for all points in cell
-    auto xdofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
-    for (std::size_t i = 0; i < xdofs.size(); ++i)
-      cells[xdofs[i]] = c;
-  }
-
-  u.eval(mesh->geometry().x(), {num_points, 3}, cells, point_values,
-         {num_points, value_size_loc});
-
-  return {std::move(point_values), {num_points, value_size_loc}};
-}
-
 //-----------------------------------------------------------------------------
 // Get data width - normally the same as u.value_size(), but expand for
 // 2D vector/tensor because XDMF presents everything as 3D
@@ -173,6 +119,7 @@ xdmf_utils::get_cell_type(const pugi::xml_node& topology_node)
     throw std::runtime_error("Cannot recognise cell type. Unknown value: "
                              + cell_type);
   }
+
   return it->second;
 }
 //----------------------------------------------------------------------------
@@ -273,8 +220,8 @@ std::int64_t xdmf_utils::get_num_cells(const pugi::xml_node& topology_node)
   if (tdims.size() != 2 and num_cells_topology == -1)
     throw std::runtime_error("Cannot determine number of cells in XDMF mesh");
 
-  // Check for consistency if number of cells appears in both the topology
-  // and DataItem nodes
+  // Check for consistency if number of cells appears in both the
+  // topology and DataItem nodes
   if (num_cells_topology != -1 and tdims.size() == 2)
   {
     if (num_cells_topology != tdims[0])
@@ -284,142 +231,6 @@ std::int64_t xdmf_utils::get_num_cells(const pugi::xml_node& topology_node)
   return std::max(num_cells_topology, tdims[0]);
 }
 //----------------------------------------------------------------------------
-template <dolfinx::scalar T, std::floating_point U>
-std::vector<T> xdmf_utils::get_point_data_values(const fem::Function<T, U>& u)
-{
-  auto mesh = u.function_space()->mesh();
-  assert(mesh);
-  const auto [data_values, dshape] = compute_point_values(u);
-
-  const int width = get_padded_width(*u.function_space()->element());
-  assert(mesh->geometry().index_map());
-  const std::size_t num_local_points
-      = mesh->geometry().index_map()->size_local();
-  assert(dshape[0] >= num_local_points);
-
-  // FIXME: Unpick the below code for the new layout of data from
-  //        GenericFunction::compute_vertex_values
-  std::vector<T> values(width * num_local_points, 0.0);
-  int value_rank = u.function_space()->element()->value_shape().size();
-  if (value_rank > 0)
-  {
-    // Transpose vector/tensor data arrays
-    int value_size = u.function_space()->element()->value_size();
-    for (std::size_t i = 0; i < num_local_points; i++)
-    {
-      for (int j = 0; j < value_size; j++)
-      {
-        int tensor2d_off
-            = (j > 1 && value_rank == 2 && value_size == 4) ? 1 : 0;
-        values[i * width + j + tensor2d_off] = data_values[i * dshape[1] + j];
-      }
-    }
-  }
-  else
-  {
-    values.assign(data_values.begin(),
-                  std::next(data_values.begin(), num_local_points * dshape[1]));
-  }
-
-  return values;
-}
-//-----------------------------------------------------------------------------
-// Instantiation for different types
-/// @cond
-template std::vector<float>
-xdmf_utils::get_point_data_values(const fem::Function<float, float>&);
-template std::vector<double>
-xdmf_utils::get_point_data_values(const fem::Function<double, double>&);
-template std::vector<std::complex<float>> xdmf_utils::get_point_data_values(
-    const fem::Function<std::complex<float>, float>&);
-template std::vector<std::complex<double>> xdmf_utils::get_point_data_values(
-    const fem::Function<std::complex<double>, double>&);
-/// @endcond
-//-----------------------------------------------------------------------------
-template <dolfinx::scalar T, std::floating_point U>
-std::vector<T> xdmf_utils::get_cell_data_values(const fem::Function<T, U>& u)
-{
-  assert(u.function_space()->dofmap());
-  auto mesh = u.function_space()->mesh();
-  const int value_size = u.function_space()->element()->value_size();
-  const int value_rank = u.function_space()->element()->value_shape().size();
-
-  // Allocate memory for function values at cell centres
-  const int tdim = mesh->topology()->dim();
-  const std::int32_t num_local_cells
-      = mesh->topology()->index_map(tdim)->size_local();
-  const std::int32_t local_size = num_local_cells * value_size;
-
-  // Build lists of dofs and create map
-  std::vector<std::int32_t> dof_set;
-  dof_set.reserve(local_size);
-  auto dofmap = u.function_space()->dofmap();
-  const int ndofs = dofmap->element_dof_layout().num_dofs();
-  const int bs = dofmap->bs();
-  assert(ndofs * bs == value_size);
-
-  for (int cell = 0; cell < num_local_cells; ++cell)
-  {
-    // Tabulate dofs
-    auto dofs = dofmap->cell_dofs(cell);
-    for (int i = 0; i < ndofs; ++i)
-    {
-      for (int j = 0; j < bs; ++j)
-        dof_set.push_back(bs * dofs[i] + j);
-    }
-  }
-
-  // Get values
-  std::vector<T> values(dof_set.size());
-  std::span<const T> _u = u.x()->array();
-  for (std::size_t i = 0; i < dof_set.size(); ++i)
-    values[i] = _u[dof_set[i]];
-
-  // Pad out data for 2D vectors/tensors
-  if (value_rank == 1 and value_size == 2)
-  {
-    values.resize(3 * num_local_cells);
-    for (int j = (num_local_cells - 1); j >= 0; --j)
-    {
-      std::array<T, 3> nd = {values[j * 2], values[j * 2 + 1], 0.0};
-      std::copy(nd.begin(), nd.end(), std::next(values.begin(), 3 * j));
-    }
-  }
-  else if (value_rank == 2 and value_size == 4)
-  {
-    values.resize(9 * num_local_cells);
-    for (int j = (num_local_cells - 1); j >= 0; --j)
-    {
-      std::array<T, 9> nd = {values[j * 4],
-                             values[j * 4 + 1],
-                             0.0,
-                             values[j * 4 + 2],
-                             values[j * 4 + 3],
-                             0.0,
-                             0.0,
-                             0.0,
-                             0.0};
-      std::copy(nd.begin(), nd.end(), std::next(values.begin(), 9 * j));
-    }
-  }
-  return values;
-}
-//-----------------------------------------------------------------------------
-// Instantiation for different types
-/// @cond
-template std::vector<float>
-xdmf_utils::get_cell_data_values(const fem::Function<float, float>&);
-
-template std::vector<double>
-xdmf_utils::get_cell_data_values(const fem::Function<double, double>&);
-
-template std::vector<std::complex<float>> xdmf_utils::get_cell_data_values(
-    const fem::Function<std::complex<float>, float>&);
-
-template std::vector<std::complex<double>> xdmf_utils::get_cell_data_values(
-    const fem::Function<std::complex<double>, double>&);
-/// @endcond
-//-----------------------------------------------------------------------------
 std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type,
                                           int num_nodes)
 {
@@ -454,8 +265,9 @@ std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
 xdmf_utils::distribute_entity_data(
     const mesh::Topology& topology, const std::vector<std::int64_t>& nodes_g,
     std::int64_t num_nodes_g, const fem::ElementDofLayout& cmap_dof_layout,
-    std::experimental::mdspan<const std::int32_t,
-                              std::experimental::dextents<std::size_t, 2>>
+    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        const std::int32_t,
+        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
         xdofmap,
     int entity_dim, std::span<const std::int64_t> entities,
     std::span<const std::int32_t> data)
@@ -692,15 +504,16 @@ xdmf_utils::distribute_entity_data(
   //       the std::map for *all* entities and just for candidate
   //       entities.
 
-  auto determine_my_entities =
-      [&cell_vertex_dofs](
-          const mesh::Topology& topology,
-          const std::vector<std::int64_t>& nodes_g,
-          std::experimental::mdspan<const std::int32_t,
-                                    std::experimental::dextents<std::size_t, 2>>
-              x_dofmap,
-          int entity_dim, const graph::AdjacencyList<std::int64_t>& recv_ents,
-          const graph::AdjacencyList<std::int32_t>& recv_vals)
+  auto determine_my_entities
+      = [&cell_vertex_dofs](
+            const mesh::Topology& topology,
+            const std::vector<std::int64_t>& nodes_g,
+            MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+                const std::int32_t,
+                MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+                x_dofmap,
+            int entity_dim, const graph::AdjacencyList<std::int64_t>& recv_ents,
+            const graph::AdjacencyList<std::int32_t>& recv_vals)
   {
     // Build map from input global indices to local vertex numbers
     LOG(INFO) << "XDMF build map";
@@ -719,7 +532,9 @@ xdmf_utils::distribute_entity_data(
     for (int c = 0; c < c_to_v->num_nodes(); ++c)
     {
       auto vertices = c_to_v->links(c);
-      auto xdofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
+      auto xdofs = MDSPAN_IMPL_STANDARD_NAMESPACE::
+          MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
+              x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
       for (std::size_t v = 0; v < vertices.size(); ++v)
         igi_to_vertex[nodes_g[xdofs[cell_vertex_dofs[v]]]] = vertices[v];
     }

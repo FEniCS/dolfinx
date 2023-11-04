@@ -30,7 +30,7 @@ on:
 jobs:
   build:
     if: "!(contains(github.event.head_commit.message, '[ci skip]') || contains(github.event.head_commit.message, '[skip ci]'))"
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     container: ghcr.io/fenics/test-env:current-openmpi
 
     env:
@@ -50,7 +50,7 @@ jobs:
     name: Build and test (${{ matrix.petsc_arch }})
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
@@ -65,10 +65,13 @@ jobs:
           python3 -m pip install git+https://github.com/FEniCS/basix.git@${{ github.event.inputs.basix_ref }}
           python3 -m pip install git+https://github.com/FEniCS/ffcx.git@${{ github.event.inputs.ffcx_ref }}
 
-      - name: Install matplotlib
-        run: pip3 install matplotlib
       - name: Flake8 checks
         run: |
+          cd cpp/
+          python3 -m flake8 cmake
+          python3 -m flake8 demo
+          python3 -m flake8 test
+          cd ..
           cd python/
           python3 -m flake8 dolfinx
           python3 -m flake8 demo
@@ -76,11 +79,13 @@ jobs:
       - name: isort checks (non-blocking)
         continue-on-error: true
         run: |
+          cd cpp/
+          python3 -m isort --check .
+          cd ..
           cd python/
           python3 -m isort --check .
       - name: mypy checks
         run: |
-          python3 -m pip install types-setuptools
           cd python/
           mypy dolfinx
           mypy demo
@@ -112,7 +117,6 @@ jobs:
 
       - name: Build C++ interface documentation
         run: |
-          python3 -m pip install breathe
           export DOLFINX_VERSION=`cmake -L build | grep DOXYGEN_DOLFINX_VERSION | cut -f2 -d "="`
           echo $DOLFINX_VERSION
           cd cpp/doc
@@ -121,8 +125,8 @@ jobs:
 
       - name: Build C++ unit tests
         run: |
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S build/test/
-          cmake --build build/test
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
+          cmake --build build/test --parallel 3
       - name: Run C++ unit tests (serial)
         run: |
           cd build/test
@@ -133,17 +137,17 @@ jobs:
           mpiexec -np 2 ctest -V --output-on-failure -R unittests
       - name: Build and run C++ regression tests (serial and MPI (np=2))
         run: |
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S build/demo/
-          cmake --build build/demo
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S cpp/demo/
+          cmake --build build/demo --parallel 3
           cd build/demo
           ctest -V -R demo -R serial
           ctest -V -R demo -R mpi_2
 
       - name: Build Python interface
-        run: CMAKE_BUILD_TYPE=Debug python3 -m pip -v install python/
+        run: |
+          python3 -m pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
       - name: Build Python interface documentation
         run: |
-          python3 -m pip install sphinx==5.0.2
           cd python/doc
           make html
 
@@ -183,7 +187,7 @@ jobs:
 
       - name: Checkout FEniCS/docs
         if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) && runner.os == 'Linux' }}
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: "FEniCS/docs"
           path: "docs"

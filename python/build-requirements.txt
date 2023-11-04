@@ -1,0 +1,4 @@
+nanobind>=1.8.0
+scikit-build-core[pyproject]
+petsc4py
+mpi4py

@@ -54,8 +54,8 @@ public:
   /// @param[in] V The function space
   explicit Function(std::shared_ptr<const FunctionSpace<geometry_type>> V)
       : _function_space(V),
-        _x(std::make_shared<la::Vector<T>>(V->dofmap()->index_map,
-                                           V->dofmap()->index_map_bs()))
+        _x(std::make_shared<la::Vector<value_type>>(
+            V->dofmap()->index_map, V->dofmap()->index_map_bs()))
   {
     if (!V->component().empty())
     {
@@ -119,8 +119,8 @@ public:
     auto [V, map] = _function_space->collapse();
 
     // Create new vector
-    auto x = std::make_shared<la::Vector<T>>(V.dofmap()->index_map,
-                                             V.dofmap()->index_map_bs());
+    auto x = std::make_shared<la::Vector<value_type>>(
+        V.dofmap()->index_map, V.dofmap()->index_map_bs());
 
     // Copy values into new vector
     std::span<const value_type> x_old = _x->array();
@@ -132,7 +132,8 @@ public:
       x_new[i] = x_old[map[i]];
     }
 
-    return Function(std::make_shared<FunctionSpace<U>>(std::move(V)), x);
+    return Function(
+        std::make_shared<FunctionSpace<geometry_type>>(std::move(V)), x);
   }
 
   /// @brief Access the function space.
@@ -158,7 +159,7 @@ public:
       const Function<value_type, geometry_type>& v,
       std::span<const std::int32_t> cells,
       const std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
-                       std::vector<U>, std::vector<std::int32_t>>&
+                       std::vector<geometry_type>, std::vector<std::int32_t>>&
           nmm_interpolation_data
       = {})
   {
@@ -194,21 +195,24 @@ public:
   void interpolate(
       const std::function<
           std::pair<std::vector<value_type>, std::vector<std::size_t>>(
-              std::experimental::mdspan<
+              MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
                   const geometry_type,
-                  std::experimental::extents<
-                      std::size_t, 3, std::experimental::dynamic_extent>>)>& f,
+                  MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+                      std::size_t, 3,
+                      MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>)>& f,
       std::span<const std::int32_t> cells)
   {
     assert(_function_space);
     assert(_function_space->element());
     assert(_function_space->mesh());
-    const std::vector<U> x = fem::interpolation_coords<U>(
-        *_function_space->element(), _function_space->mesh()->geometry(),
-        cells);
-    namespace stdex = std::experimental;
-    stdex::mdspan<const geometry_type,
-                  stdex::extents<std::size_t, 3, stdex::dynamic_extent>>
+    const std::vector<geometry_type> x
+        = fem::interpolation_coords<geometry_type>(
+            *_function_space->element(), _function_space->mesh()->geometry(),
+            cells);
+    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        const geometry_type,
+        MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+            std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>
         _x(x.data(), 3, x.size() / 3);
 
     const auto [fx, fshape] = f(_x);
@@ -251,13 +255,14 @@ public:
 
   /// @brief Interpolate an expression function on the whole domain.
   /// @param[in] f Expression to be interpolated
-  void interpolate(
-      const std::function<
-          std::pair<std::vector<value_type>, std::vector<std::size_t>>(
-              std::experimental::mdspan<
-                  const geometry_type,
-                  std::experimental::extents<
-                      std::size_t, 3, std::experimental::dynamic_extent>>)>& f)
+  void
+  interpolate(const std::function<
+              std::pair<std::vector<value_type>, std::vector<std::size_t>>(
+                  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+                      const geometry_type,
+                      MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+                          std::size_t, 3,
+                          MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>)>& f)
   {
     assert(_function_space);
     assert(_function_space->mesh());
@@ -314,15 +319,18 @@ public:
     }
 
     // Array to hold evaluated Expression
-    namespace stdex = std::experimental;
     std::size_t num_cells = cells.size();
     std::size_t num_points = e.X().second[0];
     std::vector<value_type> fdata(num_cells * num_points * value_size);
-    stdex::mdspan<const value_type, stdex::dextents<std::size_t, 3>> f(
-        fdata.data(), num_cells, num_points, value_size);
+    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        const value_type,
+        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 3>>
+        f(fdata.data(), num_cells, num_points, value_size);
 
     // Evaluate Expression at points
-    e.eval(cells, fdata, {num_cells, num_points * value_size});
+    assert(_function_space->mesh());
+    e.eval(*_function_space->mesh(), cells, fdata,
+           {num_cells, num_points * value_size});
 
     // Reshape evaluated data to fit interpolate
     // Expression returns matrix of shape (num_cells, num_points *
@@ -330,8 +338,9 @@ public:
     // point. The interpolation uses xxyyzz input, ordered for all
     // points of each cell, i.e. (value_size, num_cells*num_points)
     std::vector<value_type> fdata1(num_cells * num_points * value_size);
-    stdex::mdspan<value_type, stdex::dextents<std::size_t, 3>> f1(
-        fdata1.data(), value_size, num_cells, num_points);
+    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        value_type, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 3>>
+        f1(fdata1.data(), value_size, num_cells, num_points);
     for (std::size_t i = 0; i < f.extent(0); ++i)
       for (std::size_t j = 0; j < f.extent(1); ++j)
         for (std::size_t k = 0; k < f.extent(2); ++k)
@@ -410,7 +419,7 @@ public:
       throw std::runtime_error(
           "Function with multiple geometry maps not implemented.");
     }
-    const CoordinateElement<U>& cmap = mesh->geometry().cmaps()[0];
+    const CoordinateElement<geometry_type>& cmap = mesh->geometry().cmaps()[0];
 
     // Get geometry data
     auto x_dofmap = mesh->geometry().dofmap();
@@ -450,11 +459,15 @@ public:
       cell_info = std::span(mesh->topology()->get_cell_permutation_info());
     }
 
-    namespace stdex = std::experimental;
-    using cmdspan4_t
-        = stdex::mdspan<const geometry_type, stdex::dextents<std::size_t, 4>>;
-    using mdspan2_t = stdex::mdspan<U, stdex::dextents<std::size_t, 2>>;
-    using mdspan3_t = stdex::mdspan<U, stdex::dextents<std::size_t, 3>>;
+    using cmdspan4_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        const geometry_type,
+        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
+    using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        geometry_type,
+        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+    using mdspan3_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        geometry_type,
+        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 3>>;
 
     std::vector<geometry_type> coord_dofs_b(num_dofs_g * gdim);
     mdspan2_t coord_dofs(coord_dofs_b.data(), num_dofs_g, gdim);
@@ -471,9 +484,11 @@ public:
     std::vector<geometry_type> phi0_b(std::reduce(
         phi0_shape.begin(), phi0_shape.end(), 1, std::multiplies{}));
     cmdspan4_t phi0(phi0_b.data(), phi0_shape);
-    cmap.tabulate(1, std::vector<U>(tdim), {1, tdim}, phi0_b);
-    auto dphi0 = stdex::submdspan(phi0, std::pair(1, tdim + 1), 0,
-                                  stdex::full_extent, 0);
+    cmap.tabulate(1, std::vector<geometry_type>(tdim), {1, tdim}, phi0_b);
+    auto dphi0
+        = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+            submdspan(phi0, std::pair(1, tdim + 1), 0,
+                      MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
 
     // Data structure for evaluating geometry basis at specific points.
     // Used in non-affine case.
@@ -481,8 +496,9 @@ public:
     std::vector<geometry_type> phi_b(
         std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
     cmdspan4_t phi(phi_b.data(), phi_shape);
-    auto dphi = stdex::submdspan(phi, std::pair(1, tdim + 1), 0,
-                                 stdex::full_extent, 0);
+    auto dphi = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+        submdspan(phi, std::pair(1, tdim + 1), 0,
+                  MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
 
     // Reference coordinates for each point
     std::vector<geometry_type> Xb(xshape[0] * tdim);
@@ -506,7 +522,10 @@ public:
         continue;
 
       // Get cell geometry (coordinate dofs)
-      auto x_dofs = stdex::submdspan(x_dofmap, cell_index, stdex::full_extent);
+      auto x_dofs
+          = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+              submdspan(x_dofmap, cell_index,
+                        MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
       assert(x_dofs.size() == num_dofs_g);
       for (std::size_t i = 0; i < num_dofs_g; ++i)
       {
@@ -518,12 +537,18 @@ public:
       for (std::size_t j = 0; j < gdim; ++j)
         xp(0, j) = x[p * xshape[1] + j];
 
-      auto _J = stdex::submdspan(J, p, stdex::full_extent, stdex::full_extent);
-      auto _K = stdex::submdspan(K, p, stdex::full_extent, stdex::full_extent);
+      auto _J = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+          submdspan(J, p, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
+                    MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto _K = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+          submdspan(K, p, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
+                    MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
 
       std::array<geometry_type, 3> Xpb = {0, 0, 0};
-      stdex::mdspan<geometry_type,
-                    stdex::extents<std::size_t, 1, stdex::dynamic_extent>>
+      MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+          geometry_type,
+          MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+              std::size_t, 1, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>
           Xp(Xpb.data(), 1, tdim);
 
       // Compute reference coordinates X, and J, detJ and K
@@ -532,7 +557,7 @@ public:
         CoordinateElement<geometry_type>::compute_jacobian(dphi0, coord_dofs,
                                                            _J);
         CoordinateElement<geometry_type>::compute_jacobian_inverse(_J, _K);
-        std::array<U, 3> x0 = {0, 0, 0};
+        std::array<geometry_type, 3> x0 = {0, 0, 0};
         for (std::size_t i = 0; i < coord_dofs.extent(1); ++i)
           x0[i] += coord_dofs(0, i);
         CoordinateElement<geometry_type>::pull_back_affine(Xp, _K, x0, xp);
@@ -571,18 +596,23 @@ public:
     element->tabulate(basis_derivatives_reference_values_b, Xb,
                       {X.extent(0), X.extent(1)}, 0);
 
-    using xu_t = stdex::mdspan<geometry_type, stdex::dextents<std::size_t, 2>>;
-    using xU_t
-        = stdex::mdspan<const geometry_type, stdex::dextents<std::size_t, 2>>;
-    using xJ_t
-        = stdex::mdspan<const geometry_type, stdex::dextents<std::size_t, 2>>;
-    using xK_t
-        = stdex::mdspan<const geometry_type, stdex::dextents<std::size_t, 2>>;
+    using xu_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        geometry_type,
+        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+    using xU_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        const geometry_type,
+        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+    using xJ_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        const geometry_type,
+        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+    using xK_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        const geometry_type,
+        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
     auto push_forward_fn
         = element->basix_element().template map_fn<xu_t, xU_t, xJ_t, xK_t>();
 
     auto apply_dof_transformation
-        = element->template get_dof_transformation_function<U>();
+        = element->template get_dof_transformation_function<geometry_type>();
     const std::size_t num_basis_values = space_dimension * reference_value_size;
 
     for (std::size_t p = 0; p < cells.size(); ++p)
@@ -602,12 +632,19 @@ public:
           cell_info, cell_index, reference_value_size);
 
       {
-        auto _U = stdex::submdspan(basis_derivatives_reference_values, 0, p,
-                                   stdex::full_extent, stdex::full_extent);
+        auto _U
+            = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+                submdspan(basis_derivatives_reference_values, 0, p,
+                          MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
+                          MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
         auto _J
-            = stdex::submdspan(J, p, stdex::full_extent, stdex::full_extent);
+            = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+                submdspan(J, p, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
+                          MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
         auto _K
-            = stdex::submdspan(K, p, stdex::full_extent, stdex::full_extent);
+            = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+                submdspan(K, p, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
+                          MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
         push_forward_fn(basis_values, _U, _J, detJ[p], _K);
       }
 
