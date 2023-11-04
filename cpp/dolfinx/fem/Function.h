@@ -459,20 +459,11 @@ public:
       cell_info = std::span(mesh->topology()->get_cell_permutation_info());
     }
 
-    using cmdspan4_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const geometry_type,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
-    using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        geometry_type,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-    using mdspan3_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        geometry_type,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 3>>;
-
     std::vector<geometry_type> coord_dofs_b(num_dofs_g * gdim);
-    mdspan2_t coord_dofs(coord_dofs_b.data(), num_dofs_g, gdim);
+    impl::mdspan_t<geometry_type, 2> coord_dofs(coord_dofs_b.data(), num_dofs_g,
+                                                gdim);
     std::vector<geometry_type> xp_b(1 * gdim);
-    mdspan2_t xp(xp_b.data(), 1, gdim);
+    impl::mdspan_t<geometry_type, 2> xp(xp_b.data(), 1, gdim);
 
     // Loop over points
     std::fill(u.data(), u.data() + u.size(), 0.0);
@@ -483,7 +474,7 @@ public:
     std::array<std::size_t, 4> phi0_shape = cmap.tabulate_shape(1, 1);
     std::vector<geometry_type> phi0_b(std::reduce(
         phi0_shape.begin(), phi0_shape.end(), 1, std::multiplies{}));
-    cmdspan4_t phi0(phi0_b.data(), phi0_shape);
+    impl::mdspan_t<const geometry_type, 4> phi0(phi0_b.data(), phi0_shape);
     cmap.tabulate(1, std::vector<geometry_type>(tdim), {1, tdim}, phi0_b);
     auto dphi0
         = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
@@ -495,20 +486,20 @@ public:
     std::array<std::size_t, 4> phi_shape = cmap.tabulate_shape(1, 1);
     std::vector<geometry_type> phi_b(
         std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
-    cmdspan4_t phi(phi_b.data(), phi_shape);
+    impl::mdspan_t<const geometry_type, 4> phi(phi_b.data(), phi_shape);
     auto dphi = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
         submdspan(phi, std::pair(1, tdim + 1), 0,
                   MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
 
     // Reference coordinates for each point
     std::vector<geometry_type> Xb(xshape[0] * tdim);
-    mdspan2_t X(Xb.data(), xshape[0], tdim);
+    impl::mdspan_t<geometry_type, 2> X(Xb.data(), xshape[0], tdim);
 
     // Geometry data at each point
     std::vector<geometry_type> J_b(xshape[0] * gdim * tdim);
-    mdspan3_t J(J_b.data(), xshape[0], gdim, tdim);
+    impl::mdspan_t<geometry_type, 3> J(J_b.data(), xshape[0], gdim, tdim);
     std::vector<geometry_type> K_b(xshape[0] * tdim * gdim);
-    mdspan3_t K(K_b.data(), xshape[0], tdim, gdim);
+    impl::mdspan_t<geometry_type, 3> K(K_b.data(), xshape[0], tdim, gdim);
     std::vector<geometry_type> detJ(xshape[0]);
     std::vector<geometry_type> det_scratch(2 * gdim * tdim);
 
@@ -586,28 +577,21 @@ public:
     // Prepare basis function data structures
     std::vector<geometry_type> basis_derivatives_reference_values_b(
         1 * xshape[0] * space_dimension * reference_value_size);
-    cmdspan4_t basis_derivatives_reference_values(
+    impl::mdspan_t<const geometry_type, 4> basis_derivatives_reference_values(
         basis_derivatives_reference_values_b.data(), 1, xshape[0],
         space_dimension, reference_value_size);
     std::vector<geometry_type> basis_values_b(space_dimension * value_size);
-    mdspan2_t basis_values(basis_values_b.data(), space_dimension, value_size);
+    impl::mdspan_t<geometry_type, 2> basis_values(basis_values_b.data(),
+                                                  space_dimension, value_size);
 
     // Compute basis on reference element
     element->tabulate(basis_derivatives_reference_values_b, Xb,
                       {X.extent(0), X.extent(1)}, 0);
 
-    using xu_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        geometry_type,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-    using xU_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const geometry_type,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-    using xJ_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const geometry_type,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-    using xK_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const geometry_type,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+    using xu_t = impl::mdspan_t<geometry_type, 2>;
+    using xU_t = impl::mdspan_t<const geometry_type, 2>;
+    using xJ_t = impl::mdspan_t<const geometry_type, 2>;
+    using xK_t = impl::mdspan_t<const geometry_type, 2>;
     auto push_forward_fn
         = element->basix_element().template map_fn<xu_t, xU_t, xJ_t, xK_t>();
 
