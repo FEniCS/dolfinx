@@ -106,7 +106,7 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 /// connectivity for this triangle.
 std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
 distribute_entity_data(
-    const mesh::Topology& topology, const std::vector<std::int64_t>& nodes_g,
+    const mesh::Topology& topology, std::span<const std::int64_t> nodes_g,
     std::int64_t num_nodes_g, const fem::ElementDofLayout& cmap_dof_layout,
     MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
         const std::int32_t,
