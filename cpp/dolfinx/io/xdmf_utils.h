@@ -79,10 +79,10 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 /// @param[in] topology A mesh topology.
 /// @param[in] nodes_g Global 'input' indices for the mesh, as returned
 /// by Geometry::input_global_indices.
-/// @param[in] num_nodes_g Glocal number of 'geometry; nodes, as
-/// returned by ``Geometry::index_map()->size_global()`.
+/// @param[in] num_nodes_g Global number of geometry nodes, as returned
+/// by `Geometry::index_map()->size_global()`.
 /// @param[in] cmap_dof_layout Coordinate element dof layout, computed
-/// using Geometry::cmaps()[0].create_dof_layout().
+/// using `Geometry::cmaps()[0].create_dof_layout()`.
 /// @param[in] xdofmap Dofmap for the mesh geometry (Geometry::dofmap).
 /// @param[in] entity_dim Topological dimension of entities to extract
 /// @param[in] entities Mesh entities defined using global input indices
@@ -96,6 +96,7 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 /// @param[in] data Data associated with each entity in `entities`.
 /// @return (entity-vertex connectivity of owned entities, associated
 /// data (values) with each entity).
+///
 /// @note This function involves parallel distribution and must be
 /// called collectively. Global input indices for entities which are not
 /// owned by current rank could be passed to this function. E.g., rank0
