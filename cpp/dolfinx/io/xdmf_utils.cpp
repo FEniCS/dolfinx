@@ -869,8 +869,8 @@ xdmf_utils::distribute_entity_data(
               const std::int32_t,
               MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
               x_dofmap,
-          int entity_dim, const std::span<const std::int64_t> recv_ents,
-          int num_vert_per_entity)
+          const std::span<const std::int64_t> recv_ents,
+          std::size_t num_vert_per_entity)
   {
     // Build map from input global indices to local vertex numbers
     LOG(INFO) << "XDMF build map";
@@ -920,9 +920,8 @@ xdmf_utils::distribute_entity_data(
 
     return std::pair(std::move(entities_new), std::move(data_new));
   };
-  auto [Xentities_new, Xdata_new]
-      = Xdetermine_my_entities(topology, nodes_g, xdofmap, entity_dim,
-                               entity_data_revc, num_vert_per_entity);
+  auto [Xentities_new, Xdata_new] = Xdetermine_my_entities(
+      topology, nodes_g, xdofmap, entity_data_revc, num_vert_per_entity);
 
   // std::cout << "Sizes: " << entities_new.size() << ", " <<
   // Xentities_new.size()
