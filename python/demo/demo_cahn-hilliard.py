@@ -307,7 +307,7 @@ u0.x.array[:] = u.x.array
 while (t < T):
     t += dt
     r = solver.solve(u)
-    print(f"Step {int(t/dt)}: num iterations: {r[0]}")
+    print(f"Step {int(t / dt)}: num iterations: {r[0]}")
     u0.x.array[:] = u.x.array
     file.write_function(c, t)
 

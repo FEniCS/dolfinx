@@ -73,7 +73,7 @@ def test_krylov_samg_solver_elasticity():
             basis = [np.asarray(x) for x in vec_local]
 
             # Build null space basis
-            dofs = [V.sub(i).dofmap.list.array for i in range(2)]
+            dofs = [V.sub(i).dofmap.list.array_r for i in range(2)]
             for i in range(2):
                 basis[i][dofs[i]] = 1.0
             x = V.tabulate_dof_coordinates()

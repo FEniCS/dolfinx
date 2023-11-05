@@ -98,7 +98,6 @@ def test_submesh(order):
 
     domain = ufl.Mesh(element("Lagrange", "tetrahedron", order, gdim=3,
                       lagrange_variant=basix.LagrangeVariant.equispaced, shape=(3, )))
-
     points = np.array(points, dtype=default_real_type)
     mesh = create_mesh(MPI.COMM_WORLD, [cell], points, domain)
     for i in range(mesh.topology.dim):
@@ -635,7 +634,7 @@ def test_gmsh_input_2d(order, cell_type):
         gmsh_cell_id = gmsh.model.mesh.getElementType("quadrangle", order)
     gmsh.finalize()
 
-    cells = cells[:, cell_perm_array(cell_type, cells.shape[1])]
+    cells = cells[:, cell_perm_array(cell_type, cells.shape[1])].copy()
     x = x.astype(default_real_type)
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh(gmsh_cell_id, x.shape[1]))
     surface = assemble_scalar(form(1 * dx(mesh)))
@@ -694,7 +693,7 @@ def test_gmsh_input_3d(order, cell_type):
 
     # Permute the mesh topology from Gmsh ordering to DOLFINx ordering
     domain = ufl_mesh(gmsh_cell_id, 3)
-    cells = cells[:, cell_perm_array(cell_type, cells.shape[1])]
+    cells = cells[:, cell_perm_array(cell_type, cells.shape[1])].copy()
 
     x = x.astype(default_real_type)
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
