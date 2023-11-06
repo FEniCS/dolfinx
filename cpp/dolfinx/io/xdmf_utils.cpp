@@ -238,12 +238,11 @@ xdmf_utils::distribute_entity_data(
         entities,
     std::span<const std::int32_t> data)
 {
+  assert(entities.extent(0) == data.size());
   LOG(INFO) << "XDMF distribute entity data";
   auto cell_types = topology.cell_types();
   if (cell_types.size() > 1)
     throw std::runtime_error("cell type IO");
-
-  assert(entities.extent(0) == data.size());
 
   // Get layout of dofs on 0th cell entity of dimension entity_dim
   std::vector<int> cell_vertex_dofs;
@@ -574,9 +573,8 @@ xdmf_utils::distribute_entity_data(
     for (int c = 0; c < c_to_v->num_nodes(); ++c)
     {
       auto vertices = c_to_v->links(c);
-      auto xdofs = MDSPAN_IMPL_STANDARD_NAMESPACE::
-          MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
-              xdofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      std::span<const std::int32_t> xdofs(
+          xdofmap.data_handle() + c * xdofmap.extent(1), xdofmap.extent(1));
       for (std::size_t v = 0; v < vertices.size(); ++v)
         input_idx_to_vertex[nodes_g[xdofs[cell_vertex_dofs[v]]]] = vertices[v];
     }
