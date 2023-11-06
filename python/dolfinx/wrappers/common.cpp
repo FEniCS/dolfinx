@@ -145,7 +145,7 @@ void common(nb::module_& m)
             return std::pair(std::move(map),
                              dolfinx_wrappers::as_nbarray(std::move(ghosts)));
           },
-          np::arg("entities"))
+          nb::arg("entities"))
       .def(
           "create_submap_conn",
           [](const dolfinx::common::IndexMap& self,
@@ -156,7 +156,7 @@ void common(nb::module_& m)
             return std::pair(std::move(map), dolfinx_wrappers::as_nbarray(
                                                  std::move(submap_to_map)));
           },
-          py::arg("indices"));
+          nb::arg("indices"));
 
   // dolfinx::common::Timer
   nb::class_<dolfinx::common::Timer>(m, "Timer", "Timer class")
