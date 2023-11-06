@@ -37,11 +37,6 @@ jobs:
       PETSC_ARCH: ${{ matrix.petsc_arch }}
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
-      OMPI_MCA_rmaps_base_oversubscribe: 1
-      OMPI_MCA_plm: isolated
-      OMPI_MCA_btl_vader_single_copy_mechanism: none
-      OMPI_MCA_mpi_yield_when_idle: 1
-      OMPI_MCA_hwloc_base_binding_policy: none
 
     strategy:
       matrix:
@@ -86,7 +81,6 @@ jobs:
           python3 -m isort --check .
       - name: mypy checks
         run: |
-          python3 -m pip install mypy types-setuptools --upgrade # TO REMOVE
           cd python/
           mypy dolfinx
           mypy demo
@@ -118,7 +112,6 @@ jobs:
 
       - name: Build C++ interface documentation
         run: |
-          python3 -m pip install breathe # TO REMOVE
           export DOLFINX_VERSION=`cmake -L build | grep DOXYGEN_DOLFINX_VERSION | cut -f2 -d "="`
           echo $DOLFINX_VERSION
           cd cpp/doc
@@ -147,11 +140,9 @@ jobs:
 
       - name: Build Python interface
         run: |
-          python3 -m pip install -r python/build-requirements.txt # TO REMOVE
-          python3 -m pip -v install --check-build-dependencies --no-build-isolation python/
+          python3 -m pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
       - name: Build Python interface documentation
         run: |
-          python3 -m pip install sphinx==5.0.2 # TO REMOVE
           cd python/doc
           make html
 
