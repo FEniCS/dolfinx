@@ -298,7 +298,8 @@ xdmf_utils::distribute_entity_data(
   MPI_Comm comm = topology.comm();
 
   // -- B. Send entities and entity data to postmaster
-  std::vector<std::int64_t> entities_p;
+  std::vector<std::int64_t> entities_p_buffer;
+  mdspan_t<const std::int64_t, 2> entities_p;
   {
     int size = dolfinx::MPI::size(comm);
 
@@ -387,7 +388,11 @@ xdmf_utils::distribute_entity_data(
     err = MPI_Comm_free(&comm0);
     dolfinx::MPI::check_error(comm, err);
 
-    std::swap(recv_buffer, entities_p);
+    std::swap(recv_buffer, entities_p_buffer);
+    entities_p = mdspan_t<std::int64_t, 2>(entities_p_buffer.data(),
+                                           entities_p_buffer.size()
+                                               / (entities_v.extent(1) + 1),
+                                           (entities_v.extent(1) + 1));
   }
 
   // -- C. Send mesh global indices to postmaster
@@ -489,7 +494,7 @@ xdmf_utils::distribute_entity_data(
     {
       std::span e_recv(entities.data_handle() + e * entities.extent(1),
                        entities.extent(1));
-      auto [it0, it1] = node_to_rank.equal_range(e_recv.front());
+      auto [it0, it1] = node_to_rank.equal_range(entities(e, 0));
       for (auto it = it0; it != it1; ++it)
       {
         int p = it->second;
@@ -546,11 +551,12 @@ xdmf_utils::distribute_entity_data(
   };
   // NOTE: src and dest are transposed here because we're reversing the
   // direction of communication
-  auto entity_data_revc = candidate_ranks(
-      nodes_g_p, recv_disp, dest, src,
-      mdspan_t<const std::int64_t, 2>(
-          entities_p.data(), entities_p.size() / (entities_v.extent(1) + 1),
-          entities_v.extent(1) + 1));
+  const std::vector<std::int64_t> entity_data_revc_buffer
+      = candidate_ranks(nodes_g_p, recv_disp, dest, src, entities_p);
+  mdspan_t<const std::int64_t, 2> entity_data_revc(
+      entity_data_revc_buffer.data(),
+      entity_data_revc_buffer.size() / (entities_v.extent(1) + 1),
+      entities_v.extent(1) + 1);
 
   // -- E. From the received (key, value) data, determine which keys
   //    (entities) are on this process.
@@ -575,20 +581,13 @@ xdmf_utils::distribute_entity_data(
         input_idx_to_vertex[nodes_g[xdofs[cell_vertex_dofs[v]]]] = vertices[v];
     }
 
-    std::size_t shape1 = entities_v.extent(1) + 1;
-    std::size_t shape0 = entity_data_revc.size() / shape1;
-    entities_new.reserve(shape0 * entities_v.extent(1));
-    data_new.reserve(shape1);
     std::vector<std::int32_t> entity(entities_v.extent(1));
-    for (std::size_t e = 0; e < shape0; ++e)
+    for (std::size_t e = 0; e < entity_data_revc.extent(0); ++e)
     {
-      // auto ent = entity_data_revc.subspan(e * shape1, num_vert_per_entity);
-      auto ent = std::span(entity_data_revc.data() + e * shape1,
-                           entities_v.extent(1));
       bool entity_found = true;
-      for (std::size_t i = 0; i < entities_v.extent(1); ++i)
+      for (std::size_t i = 0; i < entity_data_revc.extent(1) - 1; ++i)
       {
-        if (auto it = input_idx_to_vertex.find(ent[i]);
+        if (auto it = input_idx_to_vertex.find(entity_data_revc(e, i));
             it == input_idx_to_vertex.end())
         {
           // As soon as this received index is not in locally owned
@@ -603,7 +602,7 @@ xdmf_utils::distribute_entity_data(
       if (entity_found)
       {
         entities_new.insert(entities_new.end(), entity.begin(), entity.end());
-        data_new.push_back(entity_data_revc[e * shape1 + entities_v.extent(1)]);
+        data_new.push_back(entity_data_revc(e, entity_data_revc.extent(1) - 1));
       }
     }
   }
