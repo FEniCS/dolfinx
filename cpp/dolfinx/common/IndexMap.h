@@ -19,10 +19,10 @@ namespace dolfinx::common
 // Forward declaration
 class IndexMap;
 
-/// @brief Given a vector of indices (local numbering, owned or ghost)
-/// and an index map, this function returns the indices owned by this
-/// process, including indices that might have been in the list of
-/// indices on another processes.
+/// @brief Given a sorted vector of indices (local numbering, owned or ghost)
+/// and an index map, this function returns the indices owned by this process,
+/// including indices that might have been in the list of indices on another
+/// processes.
 /// @param[in] indices List of indices
 /// @param[in] map The index map
 /// @return Indices owned by the calling process
