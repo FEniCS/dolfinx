@@ -291,14 +291,13 @@ xdmf_utils::distribute_entity_data(
     }
   }
 
+  // -- A. Convert from list of entities by 'nodex' to list of entities
+  // by 'vertex nodes'
   std::vector<std::int64_t> entities_v;
   {
     // Use ElementDofLayout of the cell to get vertex dof indices (local
     // to a cell), i.e. build a map from local vertex index to associated
     // local dof index
-
-    // const std::size_t num_vert_per_entity = mesh::cell_num_entities(
-    //     mesh::cell_entity_type(cell_types.back(), entity_dim, 0), 0);
     auto c_to_v = topology.connectivity(topology.dim(), 0);
     if (!c_to_v)
       throw std::runtime_error("Missing cell-vertex connectivity.");
@@ -327,8 +326,9 @@ xdmf_utils::distribute_entity_data(
     }
   }
 
-  // -- A. Send entities and entity data to postmaster
   MPI_Comm comm = topology.comm();
+
+  // -- B. Send entities and entity data to postmaster
   auto entities_to_postoffice
       = [comm, num_nodes = num_nodes_g](std::span<const std::int64_t> entities,
                                         int bs,
@@ -424,7 +424,7 @@ xdmf_utils::distribute_entity_data(
   std::vector<std::int64_t> entity_data
       = entities_to_postoffice(entities_v, num_vert_per_entity, data);
 
-  // -- B. Send mesh global indices to postmaster
+  // -- C. Send mesh global indices to postmaster
   auto indices_to_postoffice
       = [comm, num_nodes = num_nodes_g](std::span<const std::int64_t> indices)
   {
@@ -498,18 +498,16 @@ xdmf_utils::distribute_entity_data(
                                  recv_buffer.data(), num_items_recv.data(),
                                  recv_disp.data(), MPI_INT64_T, comm0);
     dolfinx::MPI::check_error(comm, err);
-
     err = MPI_Comm_free(&comm0);
     dolfinx::MPI::check_error(comm, err);
-
     return std::tuple(recv_buffer, recv_disp, src, dest);
   };
   auto [global_indices1, recv_disp, src, dest] = indices_to_postoffice(nodes_g);
 
-  // C. Send entities to possible owners, based on first entity index
+  // D. Send entities to possible owners, based on first entity index
   auto candidate_ranks
       = [comm](auto indices_recv, auto indices_recv_disp, auto src, auto dest,
-               auto entities_v, auto eshape1)
+               auto entities, auto eshape1)
   {
     // Build map from received global node indices to neighbourhood
     // ranks that have the node
@@ -519,9 +517,9 @@ xdmf_utils::distribute_entity_data(
         node_to_rank.insert({indices_recv[j], i});
 
     std::vector<std::vector<std::int64_t>> send_data(dest.size());
-    for (std::size_t e = 0; e < entities_v.size() / eshape1; ++e)
+    for (std::size_t e = 0; e < entities.size() / eshape1; ++e)
     {
-      std::span e_recv(entities_v.data() + e * eshape1, eshape1);
+      std::span e_recv(entities.data() + e * eshape1, eshape1);
       auto [it0, it1] = node_to_rank.equal_range(e_recv.front());
       for (auto it = it0; it != it1; ++it)
       {
@@ -572,10 +570,8 @@ xdmf_utils::distribute_entity_data(
                                  send_disp.data(), compound_type,
                                  recv_buffer.data(), num_items_recv.data(),
                                  recv_disp.data(), compound_type, comm0);
-
     err = MPI_Comm_free(&comm0);
     dolfinx::MPI::check_error(comm, err);
-
     return recv_buffer;
   };
   // NOTE: src and dest are transposed here because we're reversing the
@@ -583,209 +579,9 @@ xdmf_utils::distribute_entity_data(
   auto entity_data_revc = candidate_ranks(global_indices1, recv_disp, dest, src,
                                           entity_data, num_vert_per_entity + 1);
 
-  //-------------------------------------------------------
-
-  // -------------------
-  // 1. Send this rank's global "input" nodes indices to the
-  //    'postmaster' rank, and receive global "input" nodes for which
-  //    this rank is the postmaster
-
-  auto postmaster_global_nodes_sendrecv
-      = [](const mesh::Topology& topology,
-           std::span<const std::int64_t> nodes_g, std::int64_t num_nodes_g)
-  {
-    const MPI_Comm comm = topology.comm();
-    const int comm_size = dolfinx::MPI::size(comm);
-
-    // Send input global indices to 'post master' rank, based on input
-    // global index value
-    // NOTE: could make this int32_t be sending: index <- index -
-    // dest_rank_offset
-    std::vector<std::vector<std::int64_t>> nodes_g_send(comm_size);
-    for (std::int64_t node : nodes_g)
-    {
-      // Figure out which process is the postmaster for the input global
-      // index
-      const std::int32_t p
-          = dolfinx::MPI::index_owner(comm_size, node, num_nodes_g);
-      nodes_g_send[p].push_back(node);
-    }
-
-    // Send/receive
-    LOG(INFO) << "XDMF send entity nodes size: (" << num_nodes_g << ")";
-    graph::AdjacencyList<std::int64_t> nodes_g_recv
-        = all_to_all(comm, graph::AdjacencyList<std::int64_t>(nodes_g_send));
-
-    return nodes_g_recv;
-  };
-  const graph::AdjacencyList<std::int64_t> nodes_g_recv
-      = postmaster_global_nodes_sendrecv(topology, nodes_g, num_nodes_g);
-
-  // -------------------
-  // 2. Send the entity key (nodes list) and tag to the postmaster based
-  //    on the lowest index node in the entity 'key'
-  //
-  //    NOTE: Stage 2 doesn't depend on the data received in Step 1, so
-  //    data (i) the communication could be combined, or (ii) the
-  //    communication in Step 1 could be make non-blocking.
-
-  auto postmaster_global_ent_sendrecv
-      = [&cell_vertex_dofs](
-            const mesh::Topology& topology, std::int64_t num_nodes_g,
-            const fem::ElementDofLayout& cmap_dof_layout, int entity_dim,
-            std::span<const std::int64_t> entities,
-            std::span<const std::int32_t> data)
-  {
-    const MPI_Comm comm = topology.comm();
-    const int comm_size = dolfinx::MPI::size(comm);
-
-    auto cell_types = topology.cell_types();
-    if (cell_types.size() > 1)
-      throw std::runtime_error("cell type IO");
-
-    const std::size_t num_vert_per_entity = mesh::cell_num_entities(
-        mesh::cell_entity_type(cell_types.back(), entity_dim, 0), 0);
-    auto c_to_v = topology.connectivity(topology.dim(), 0);
-    if (!c_to_v)
-      throw std::runtime_error("Missing cell-vertex connectivity.");
-
-    const std::vector<int> entity_layout
-        = cmap_dof_layout.entity_closure_dofs(entity_dim, 0);
-
-    // Find map from entity vertex to local (w.r.t. dof numbering on the
-    // entity) dof number. E.g., if there are dofs on entity [0 3 6 7 9]
-    // and dofs 3 and 7 belong to vertices, then this produces map [1,
-    // 3].
-    std::vector<int> entity_vertex_dofs;
-    for (std::size_t i = 0; i < cell_vertex_dofs.size(); ++i)
-    {
-      auto it = std::find(entity_layout.begin(), entity_layout.end(),
-                          cell_vertex_dofs[i]);
-      if (it != entity_layout.end())
-        entity_vertex_dofs.push_back(std::distance(entity_layout.begin(), it));
-    }
-
-    const std::size_t shape_e_1 = entity_layout.size();
-    const std::size_t shape_e_0 = entities.size() / shape_e_1;
-    std::vector<std::int64_t> entities_vertices(shape_e_0
-                                                * num_vert_per_entity);
-    for (std::size_t e = 0; e < shape_e_0; ++e)
-    {
-      for (std::size_t i = 0; i < num_vert_per_entity; ++i)
-      {
-        entities_vertices[e * num_vert_per_entity + i]
-            = entities[e * shape_e_1 + entity_vertex_dofs[i]];
-      }
-    }
-
-    std::vector<std::vector<std::int64_t>> entities_send(comm_size);
-    std::vector<std::vector<std::int32_t>> data_send(comm_size);
-    for (std::size_t e = 0; e < shape_e_0; ++e)
-    {
-      std::span<std::int64_t> entity(entities_vertices.data()
-                                         + e * num_vert_per_entity,
-                                     num_vert_per_entity);
-      std::sort(entity.begin(), entity.end());
-
-      // Determine postmaster based on lowest entity node
-      const std::int32_t p
-          = dolfinx::MPI::index_owner(comm_size, entity.front(), num_nodes_g);
-      entities_send[p].insert(entities_send[p].end(), entity.begin(),
-                              entity.end());
-      data_send[p].push_back(data[e]);
-    }
-
-    LOG(INFO) << "XDMF send entity keys size: (" << shape_e_0 << ")";
-    // TODO: Pack into one MPI call
-    graph::AdjacencyList<std::int64_t> entities_recv
-        = all_to_all(comm, graph::AdjacencyList<std::int64_t>(entities_send));
-    graph::AdjacencyList<std::int32_t> data_recv
-        = all_to_all(comm, graph::AdjacencyList<std::int32_t>(data_send));
-
-    return std::pair(entities_recv, data_recv);
-  };
-
-  const auto [entities_recv, data_recv] = postmaster_global_ent_sendrecv(
-      topology, num_nodes_g, cmap_dof_layout, entity_dim, entities, data);
-
-  // -------------------
-  // 3. As 'postmaster', send back the entity key (vertex list) and tag
-  //    value to ranks that possibly need the data. Do this based on the
-  //    first node index in the entity key.
-
-  // NOTE: Could: (i) use a std::unordered_multimap, or (ii) only send
-  // owned nodes to the postmaster and use map, unordered_map or
-  // std::vector<pair>>, followed by a neighborhood all_to_all at the
-  // end.
-
-  auto postmaster_send_to_candidates
-      = [](const mesh::Topology& topology, int entity_dim,
-           const graph::AdjacencyList<std::int64_t>& nodes_g_recv,
-           const graph::AdjacencyList<std::int64_t>& entities_recv,
-           const graph::AdjacencyList<std::int32_t>& data_recv)
-  {
-    const MPI_Comm comm = topology.comm();
-    const int comm_size = dolfinx::MPI::size(comm);
-
-    auto cell_types = topology.cell_types();
-    if (cell_types.size() > 1)
-      throw std::runtime_error("cell type IO");
-    const std::size_t num_vert_per_entity = mesh::cell_num_entities(
-        mesh::cell_entity_type(cell_types.back(), entity_dim, 0), 0);
-
-    // Build map from global node index to ranks that have the node
-    std::multimap<std::int64_t, int> node_to_rank;
-    for (int p = 0; p < nodes_g_recv.num_nodes(); ++p)
-    {
-      auto nodes = nodes_g_recv.links(p);
-      for (std::int32_t node : nodes)
-        node_to_rank.insert({node, p});
-    }
-
-    // Figure out which processes are owners of received nodes
-    std::vector<std::vector<std::int64_t>> send_nodes_owned(comm_size);
-    std::vector<std::vector<std::int32_t>> send_vals_owned(comm_size);
-    const std::size_t shape0
-        = entities_recv.array().size() / num_vert_per_entity;
-    const std::size_t shape1 = num_vert_per_entity;
-    const std::vector<std::int32_t>& _data_recv = data_recv.array();
-    assert(_data_recv.size() == shape0);
-    for (std::size_t e = 0; e < shape0; ++e)
-    {
-      std::span e_recv(entities_recv.array().data() + e * shape1, shape1);
-
-      // Find ranks that have node0
-      auto [it0, it1] = node_to_rank.equal_range(e_recv.front());
-      for (auto it = it0; it != it1; ++it)
-      {
-        const int p1 = it->second;
-        send_nodes_owned[p1].insert(send_nodes_owned[p1].end(), e_recv.begin(),
-                                    e_recv.end());
-        send_vals_owned[p1].push_back(_data_recv[e]);
-      }
-    }
-
-    // TODO: Pack into one MPI call
-    const int send_val_size = std::transform_reduce(
-        send_vals_owned.begin(), send_vals_owned.end(), 0, std::plus{},
-        [](const std::vector<std::int32_t>& v) { return v.size(); });
-    LOG(INFO) << "XDMF return entity and value data size:(" << send_val_size
-              << ")";
-    graph::AdjacencyList<std::int64_t> recv_ents = all_to_all(
-        comm, graph::AdjacencyList<std::int64_t>(send_nodes_owned));
-    graph::AdjacencyList<std::int32_t> recv_vals
-        = all_to_all(comm, graph::AdjacencyList<std::int32_t>(send_vals_owned));
-
-    return std::pair(std::move(recv_ents), std::move(recv_vals));
-  };
-
-  const auto [recv_ents, recv_vals] = postmaster_send_to_candidates(
-      topology, entity_dim, nodes_g_recv, entities_recv, data_recv);
-
-  // -------------------
-  // 4. From the received (key, value) data, determine which keys
+  // -- E. From the received (key, value) data, determine which keys
   //    (entities) are on this process.
-
+  //
   // TODO: Rather than using std::map<std::vector<std::int64_t>,
   //       std::int32_t>, use a rectangular array to avoid the
   //       cost of std::vector<std::int64_t> allocations, and sort the
@@ -795,74 +591,7 @@ xdmf_utils::distribute_entity_data(
   //       ranks, so we could use the received data to avoid creating
   //       the std::map for *all* entities and just for candidate
   //       entities.
-
   auto determine_my_entities =
-      [&cell_vertex_dofs](
-          const mesh::Topology& topology, std::span<const std::int64_t> nodes_g,
-          MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-              const std::int32_t,
-              MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
-              x_dofmap,
-          int entity_dim, std::span<const std::int64_t> recv_ents,
-          std::span<const std::int32_t> recv_vals)
-  {
-    // Build map from input global indices to local vertex numbers
-    LOG(INFO) << "XDMF build map";
-
-    auto cell_types = topology.cell_types();
-    const std::size_t num_vert_per_entity = mesh::cell_num_entities(
-        mesh::cell_entity_type(cell_types.back(), entity_dim, 0), 0);
-    auto c_to_v = topology.connectivity(topology.dim(), 0);
-    if (!c_to_v)
-      throw std::runtime_error("Missing cell-vertex connectivity.");
-
-    std::map<std::int64_t, std::int32_t> input_idx_to_vertex;
-    for (int c = 0; c < c_to_v->num_nodes(); ++c)
-    {
-      auto vertices = c_to_v->links(c);
-      auto xdofs = MDSPAN_IMPL_STANDARD_NAMESPACE::
-          MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
-              x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
-      for (std::size_t v = 0; v < vertices.size(); ++v)
-        input_idx_to_vertex[nodes_g[xdofs[cell_vertex_dofs[v]]]] = vertices[v];
-    }
-
-    std::vector<std::int32_t> entities_new, data_new;
-    entities_new.reserve(recv_ents.size());
-    data_new.reserve(recv_vals.size());
-    std::vector<std::int32_t> entity(num_vert_per_entity);
-    for (std::size_t e = 0; e < recv_ents.size() / num_vert_per_entity; ++e)
-    {
-      bool entity_found = true;
-      for (std::size_t i = 0; i < num_vert_per_entity; ++i)
-      {
-        if (auto it
-            = input_idx_to_vertex.find(recv_ents[e * num_vert_per_entity + i]);
-            it == input_idx_to_vertex.end())
-        {
-          // As soon as this received index is not in locally owned input
-          // global indices skip the entire entity
-          entity_found = false;
-          break;
-        }
-        else
-          entity[i] = it->second;
-      }
-
-      if (entity_found == true)
-      {
-        entities_new.insert(entities_new.end(), entity.begin(), entity.end());
-        data_new.push_back(recv_vals[e]);
-      }
-    }
-
-    return std::pair(std::move(entities_new), std::move(data_new));
-  };
-  auto [entities_new, data_new]
-      = determine_my_entities(topology, nodes_g, xdofmap, entity_dim,
-                              recv_ents.array(), recv_vals.array());
-
-  auto Xdetermine_my_entities =
       [&cell_vertex_dofs](
           const mesh::Topology& topology, std::span<const std::int64_t> nodes_g,
           MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
@@ -920,41 +649,9 @@ xdmf_utils::distribute_entity_data(
 
     return std::pair(std::move(entities_new), std::move(data_new));
   };
-  auto [Xentities_new, Xdata_new] = Xdetermine_my_entities(
+  auto [entities_new, data_new] = determine_my_entities(
       topology, nodes_g, xdofmap, entity_data_revc, num_vert_per_entity);
 
-  // std::cout << "Sizes: " << entities_new.size() << ", " <<
-  // Xentities_new.size()
-  //           << std::endl;
-  // std::cout << "TestA: " << int(Xentities_new == Xentities_new) << std::endl;
-  // std::cout << "TestB: " << int(data_new == Xdata_new) << std::endl;
-  // for (std::size_t i = 0; i < data_new.size(); ++i)
-  //   std::cout << "Data: " << data_new[i] << ", " << Xdata_new[i] <<
-  //   std::endl;
-
-  {
-    std::vector<std::pair<std::vector<std::int64_t>, std::int32_t>> oldd, newd;
-    for (std::size_t i = 0; i < Xentities_new.size() / num_vert_per_entity; ++i)
-    {
-      std::vector<std::int64_t> e(
-          Xentities_new.begin() + i * num_vert_per_entity,
-          Xentities_new.begin() + i * num_vert_per_entity
-              + num_vert_per_entity);
-      newd.push_back(std::pair(e, Xdata_new[i]));
-    }
-    for (std::size_t i = 0; i < entities_new.size() / num_vert_per_entity; ++i)
-    {
-      std::vector<std::int64_t> e(
-          entities_new.begin() + i * num_vert_per_entity,
-          entities_new.begin() + i * num_vert_per_entity + num_vert_per_entity);
-      oldd.push_back(std::pair(e, data_new[i]));
-    }
-    std::sort(newd.begin(), newd.end());
-    std::sort(oldd.begin(), oldd.end());
-    assert(newd == oldd);
-  }
-
-  return {std::move(Xentities_new), std::move(Xdata_new)};
-  // return {std::move(entities_new), std::move(data_new)};
+  return {std::move(entities_new), std::move(data_new)};
 }
 //-----------------------------------------------------------------------------
