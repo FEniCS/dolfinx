@@ -168,18 +168,19 @@ common::stack_index_maps(
                    std::next(local_offset.begin()));
 
   // Build list of src ranks (ranks that own ghosts)
-  std::vector<int> src;
+  std::set<int> src_set;
+  std::set<int> dest_set;
   for (auto& [map, _] : maps)
   {
-    src.insert(src.end(), map.get().owners().begin(), map.get().owners().end());
-    std::sort(src.begin(), src.end());
-    src.erase(std::unique(src.begin(), src.end()), src.end());
+    const std::vector<std::int32_t>& _src = map.get().src();
+    const std::vector<std::int32_t>& _dest = map.get().dest();
+
+    src_set.insert(_src.begin(), _src.end());
+    dest_set.insert(_dest.begin(), _dest.end());
   }
 
-  // Get destination ranks (ranks that ghost my indices), and sort
-  std::vector<int> dest = dolfinx::MPI::compute_graph_edges_nbx(
-      maps.at(0).first.get().comm(), src);
-  std::sort(dest.begin(), dest.end());
+  std::vector<int> src(src_set.begin(), src_set.end());
+  std::vector<int> dest(dest_set.begin(), dest_set.end());
 
   // Create neighbour comms (0: ghost -> owner, 1: (owner -> ghost)
   MPI_Comm comm0, comm1;
