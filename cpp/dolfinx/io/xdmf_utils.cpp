@@ -29,48 +29,8 @@ using namespace dolfinx::io;
 
 namespace
 {
-/// @warning Do not use. This function will be removed.
-///
-/// Send in_values[p0] to process p0 and receive values from process p1
-/// in out_values[p1]
-template <typename T>
-graph::AdjacencyList<T> all_to_all(MPI_Comm comm,
-                                   const graph::AdjacencyList<T>& send_data)
-{
-  const std::vector<std::int32_t>& send_offsets = send_data.offsets();
-  const std::vector<T>& values_in = send_data.array();
-
-  const int comm_size = dolfinx::MPI::size(comm);
-  assert(send_data.num_nodes() == comm_size);
-
-  // Data size per destination rank
-  std::vector<int> send_size(comm_size);
-  std::adjacent_difference(std::next(send_offsets.begin()), send_offsets.end(),
-                           send_size.begin());
-
-  // Get received data sizes from each rank
-  std::vector<int> recv_size(comm_size);
-  MPI_Alltoall(send_size.data(), 1, MPI_INT, recv_size.data(), 1, MPI_INT,
-               comm);
-
-  // Compute receive offset
-  std::vector<std::int32_t> recv_offset(comm_size + 1, 0);
-  std::partial_sum(recv_size.begin(), recv_size.end(),
-                   std::next(recv_offset.begin()));
-
-  // Send/receive data
-  std::vector<T> recv_values(recv_offset.back());
-  MPI_Alltoallv(values_in.data(), send_size.data(), send_offsets.data(),
-                dolfinx::MPI::mpi_type<T>(), recv_values.data(),
-                recv_size.data(), recv_offset.data(),
-                dolfinx::MPI::mpi_type<T>(), comm);
-
-  return graph::AdjacencyList<T>(std::move(recv_values),
-                                 std::move(recv_offset));
-}
-//-----------------------------------------------------------------------------
-// Get data width - normally the same as u.value_size(), but expand for
-// 2D vector/tensor because XDMF presents everything as 3D
+/// Get data width - normally the same as u.value_size(), but expand for
+/// 2D vector/tensor because XDMF presents everything as 3D
 template <std::floating_point U>
 std::int64_t get_padded_width(const fem::FiniteElement<U>& e)
 {
@@ -83,8 +43,6 @@ std::int64_t get_padded_width(const fem::FiniteElement<U>& e)
   else
     return width;
 }
-//-----------------------------------------------------------------------------
-
 } // namespace
 
 //----------------------------------------------------------------------------
@@ -592,14 +550,10 @@ xdmf_utils::distribute_entity_data(
   //       the std::map for *all* entities and just for candidate
   //       entities.
   auto determine_my_entities =
-      [&cell_vertex_dofs](
-          const mesh::Topology& topology, std::span<const std::int64_t> nodes_g,
-          MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-              const std::int32_t,
-              MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
-              x_dofmap,
-          const std::span<const std::int64_t> recv_ents,
-          std::size_t num_vert_per_entity)
+      [&cell_vertex_dofs](const mesh::Topology& topology,
+                          std::span<const std::int64_t> nodes_g, auto x_dofmap,
+                          const std::span<const std::int64_t> recv_ents,
+                          std::size_t num_vert_per_entity)
   {
     // Build map from input global indices to local vertex numbers
     LOG(INFO) << "XDMF build map";
