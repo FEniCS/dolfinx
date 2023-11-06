@@ -112,7 +112,11 @@ distribute_entity_data(
         const std::int32_t,
         MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
         xdofmap,
-    int entity_dim, std::span<const std::int64_t> entities,
+    int entity_dim,
+    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        const std::int64_t,
+        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+        entities,
     std::span<const std::int32_t> data);
 
 /// TODO: Document

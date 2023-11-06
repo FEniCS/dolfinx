@@ -227,7 +227,11 @@ xdmf_utils::distribute_entity_data(
         const std::int32_t,
         MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
         xdofmap,
-    int entity_dim, std::span<const std::int64_t> entities,
+    int entity_dim,
+    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        const std::int64_t,
+        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+        entities,
     std::span<const std::int32_t> data)
 {
   LOG(INFO) << "XDMF distribute entity data";
@@ -237,6 +241,7 @@ xdmf_utils::distribute_entity_data(
 
   const std::size_t num_vert_per_entity = mesh::cell_num_entities(
       mesh::cell_entity_type(cell_types.back(), entity_dim, 0), 0);
+  assert(entities.extent(0) == data.size());
 
   // Get layout of dofs on 0th cell entity of dimension entity_dim
   std::vector<int> cell_vertex_dofs;
@@ -247,6 +252,10 @@ xdmf_utils::distribute_entity_data(
     cell_vertex_dofs.push_back(local_index[0]);
   }
 
+  auto c_to_v = topology.connectivity(topology.dim(), 0);
+  if (!c_to_v)
+    throw std::runtime_error("Missing cell-vertex connectivity.");
+
   // -- A. Convert from list of entities by 'nodes' to list of entities
   // by 'vertex nodes'
   std::vector<std::int64_t> entities_v;
@@ -254,12 +263,8 @@ xdmf_utils::distribute_entity_data(
     // Use ElementDofLayout of the cell to get vertex dof indices (local
     // to a cell), i.e. build a map from local vertex index to associated
     // local dof index
-    auto c_to_v = topology.connectivity(topology.dim(), 0);
-    if (!c_to_v)
-      throw std::runtime_error("Missing cell-vertex connectivity.");
     const std::vector<int> entity_layout
         = cmap_dof_layout.entity_closure_dofs(entity_dim, 0);
-
     std::vector<int> entity_vertex_dofs;
     for (std::size_t i = 0; i < cell_vertex_dofs.size(); ++i)
     {
@@ -269,15 +274,14 @@ xdmf_utils::distribute_entity_data(
         entity_vertex_dofs.push_back(std::distance(entity_layout.begin(), it));
     }
 
-    const std::size_t shape_e1 = entity_layout.size();
-    const std::size_t shape_e0 = entities.size() / shape_e1;
-    entities_v.resize(shape_e0 * num_vert_per_entity);
-    for (std::size_t e = 0; e < shape_e0; ++e)
+    assert(entities.extent(1) == entity_layout.size());
+    entities_v.resize(entities.extent(0) * num_vert_per_entity);
+    for (std::size_t e = 0; e < entities.extent(0); ++e)
     {
       std::span entity(entities_v.data() + e * num_vert_per_entity,
                        num_vert_per_entity);
       for (std::size_t i = 0; i < num_vert_per_entity; ++i)
-        entity[i] = entities[e * shape_e1 + entity_vertex_dofs[i]];
+        entity[i] = entities(e, entity_vertex_dofs[i]);
       std::sort(entity.begin(), entity.end());
     }
   }
@@ -287,14 +291,15 @@ xdmf_utils::distribute_entity_data(
   // -- B. Send entities and entity data to postmaster
   std::vector<std::int64_t> entity_data;
   {
-    assert(entities.size() / num_vert_per_entity == data.size());
     int size = dolfinx::MPI::size(comm);
 
     // Determine destination by index of first vertex
     std::vector<int> dest0;
     for (std::size_t i = 0; i < entities_v.size(); i += num_vert_per_entity)
+    {
       dest0.push_back(
           dolfinx::MPI::index_owner(size, entities_v[i], num_nodes_g));
+    }
     std::vector<int> perm(dest0.size());
     std::iota(perm.begin(), perm.end(), 0);
     std::sort(perm.begin(), perm.end(),
@@ -370,7 +375,6 @@ xdmf_utils::distribute_entity_data(
                                  recv_buffer.data(), num_items_recv.data(),
                                  recv_disp.data(), compound_type, comm0);
     dolfinx::MPI::check_error(comm, err);
-
     err = MPI_Comm_free(&comm0);
     dolfinx::MPI::check_error(comm, err);
 
@@ -549,7 +553,6 @@ xdmf_utils::distribute_entity_data(
     // Build map from input global indices to local vertex numbers
     LOG(INFO) << "XDMF build map";
 
-    auto c_to_v = topology.connectivity(topology.dim(), 0);
     std::map<std::int64_t, std::int32_t> input_idx_to_vertex;
     for (int c = 0; c < c_to_v->num_nodes(); ++c)
     {
