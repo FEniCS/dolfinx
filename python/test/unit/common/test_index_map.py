@@ -107,3 +107,76 @@ def test_index_map_ghost_lifetime():
     assert np.array_equal(ghosts, map_ghosts)
     del map
     assert np.array_equal(ghosts, map_ghosts)
+
+
+# Test create_submap_conn. The diagram illustrates the case with four
+# processes. Original map numbering and connectivity (G indicates a ghost
+# index):
+#    Global    Rank 0    Rank 1    Rank 2    Rank 3
+#    1 - 0     1 - 0
+#    | / |     | / |
+#    3 - 2    3G - 2     0 - 2G
+#    | / |               | / |
+#    5 - 4              3G - 1     0 - 2G
+#    | / |                         | / |
+#    7 - 6                        3G - 1     0 - 3G
+#    | / |                                   | / |
+#    9 - 8                                   2 - 1
+# We now create a submap of the "upper triangular" parts (i.e. to
+# get the following):
+#    Global    Rank 0    Rank 1    Rank 2    Rank 3
+#    1 - 0     1 - 0
+#    | /       | /
+#    2 - 3     2G        0 - 1
+#    | /                 | /
+#    4 - 5               2G        0 - 1
+#    | /                           | /
+#    6 - 8                         2G        0 - 2
+#    | /                                     | /
+#    7                                       1
+def test_create_submap_connected():
+    comm = MPI.COMM_WORLD
+
+    if comm.size == 1:
+        return
+
+    if comm.rank == 0:
+        local_size = 3
+        ghosts = np.array([local_size], dtype=np.int64)
+        owners = np.array([1], dtype=np.int32)
+        submap_indices = np.array([0, 1, 3], dtype=np.int32)
+    elif comm.rank == comm.size - 1:
+        local_size = 3
+        ghosts = np.array([2 * comm.rank], dtype=np.int64)
+        owners = np.array([comm.rank - 1], dtype=np.int32)
+        submap_indices = np.array([0, 3, 2], dtype=np.int32)
+    else:
+        local_size = 2
+        ghosts = np.array([2 * comm.rank, 2 * comm.rank + 3], dtype=np.int64)
+        owners = np.array([comm.rank - 1, comm.rank + 1], dtype=np.int32)
+        submap_indices = np.array([0, 2, 3], dtype=np.int32)
+
+    imap = dolfinx.common.IndexMap(comm, local_size, ghosts, owners)
+    sub_imap, sub_imap_to_imap = imap.create_submap_conn(submap_indices)
+
+    if comm.rank == 0:
+        assert sub_imap.size_local == 2
+        assert np.array_equal(sub_imap.ghosts, [2])
+        assert np.array_equal(sub_imap.owners, [comm.rank + 1])
+        assert np.array_equal(sub_imap_to_imap, [0, 1, 3])
+    elif comm.rank == comm.size - 1:
+        assert sub_imap.size_local == 3
+        assert np.array_equal(sub_imap.ghosts, [])
+        assert np.array_equal(sub_imap.owners, [])
+        assert np.array_equal(sub_imap_to_imap, [0, 2, 3])
+    else:
+        assert sub_imap.size_local == 2
+        assert np.array_equal(sub_imap.ghosts, [2 * (comm.rank + 1)])
+        assert np.array_equal(sub_imap.owners, [comm.rank + 1])
+        assert np.array_equal(sub_imap_to_imap, [0, 2, 3])
+
+    global_indices = sub_imap.local_to_global(
+        np.arange(sub_imap.size_local + sub_imap.num_ghosts,
+                  dtype=np.int32))
+    assert np.array_equal(
+        global_indices, np.arange(comm.rank * 2, comm.rank * 2 + 3))
