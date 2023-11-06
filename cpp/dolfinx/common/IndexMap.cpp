@@ -72,16 +72,16 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
   const std::vector<std::int32_t>& src = map.src();
 
   // Count number of ghost per destination
-  std::vector<int> send_sizes(dest.size(), 0);
-  std::vector<int> send_disp(dest.size() + 1, 0);
+  std::vector<int> send_sizes(src.size(), 0);
+  std::vector<int> send_disp(src.size() + 1, 0);
   auto it = ghost_owners.begin();
-  for (std::size_t i = 0; i < dest.size(); i++)
+  for (std::size_t i = 0; i < src.size(); i++)
   {
-    int owner = dest[i];
+    int owner = src[i];
     auto begin = std::find(it, ghost_owners.end(), owner);
     auto end = std::upper_bound(begin, ghost_owners.end(), owner);
 
-    // Count number of ghosts for this destination (if any)
+    // Count number of ghosts (if any)
     send_sizes[i] = std::distance(begin, end);
     send_disp[i + 1] = send_disp[i] + send_sizes[i];
 
