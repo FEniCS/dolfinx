@@ -359,6 +359,11 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
       const std::int64_t,
       MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
       entities_span(entities1.data(), eshape);
+
+  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      const std::int64_t,
+      MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+      entities_span(entities1.data(), eshape);
   std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
       entities_values = xdmf_utils::distribute_entity_data(
           *mesh.topology(), mesh.geometry().input_global_indices(),
