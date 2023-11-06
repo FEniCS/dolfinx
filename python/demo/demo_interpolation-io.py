@@ -18,13 +18,14 @@
 # elements in discontinuous Lagrange spaces for artifact-free
 # visualisation.
 
-# +
-import numpy as np
-from dolfinx.fem import Function, FunctionSpace, VectorFunctionSpace
-from dolfinx.mesh import CellType, create_rectangle, locate_entities
 from mpi4py import MPI
 
+# +
+import numpy as np
+
 from dolfinx import default_scalar_type, plot
+from dolfinx.fem import Function, functionspace
+from dolfinx.mesh import CellType, create_rectangle, locate_entities
 
 # -
 
@@ -35,7 +36,7 @@ msh = create_rectangle(MPI.COMM_WORLD, ((0.0, 0.0), (1.0, 1.0)), (16, 16), CellT
 
 # Create a Nédélec function space and finite element Function
 
-V = FunctionSpace(msh, ("Nedelec 1st kind H(curl)", 1))
+V = functionspace(msh, ("Nedelec 1st kind H(curl)", 1))
 u = Function(V, dtype=default_scalar_type)
 
 # Find cells with *all* vertices (0) $x_0 <= 0.5$ or (1) $x_0 >= 0.5$:
@@ -54,7 +55,8 @@ u.interpolate(lambda x: np.vstack((x[0] + 1, x[1])), cells1)
 # Create a vector-valued discontinuous Lagrange space and function, and
 # interpolate the $H({\rm curl})$ function `u`
 
-V0 = VectorFunctionSpace(msh, ("Discontinuous Lagrange", 1))
+gdim = msh.geometry.dim
+V0 = functionspace(msh, ("Discontinuous Lagrange", 1, (gdim,)))
 u0 = Function(V0, dtype=default_scalar_type)
 u0.interpolate(u)
 
@@ -64,7 +66,7 @@ u0.interpolate(u)
 
 try:
     from dolfinx.io import VTXWriter
-    with VTXWriter(msh.comm, "output_nedelec.bp", u0) as f:
+    with VTXWriter(msh.comm, "output_nedelec.bp", u0, "bp4") as f:
         f.write(0.0)
 except ImportError:
     print("ADIOS2 required for VTX output")
@@ -74,7 +76,7 @@ except ImportError:
 
 try:
     import pyvista
-    cells, types, x = plot.create_vtk_mesh(V0)
+    cells, types, x = plot.vtk_mesh(V0)
     grid = pyvista.UnstructuredGrid(cells, types, x)
     values = np.zeros((x.shape[0], 3), dtype=np.float64)
     values[:, :msh.topology.dim] = u0.x.array.reshape(x.shape[0], msh.topology.dim).real

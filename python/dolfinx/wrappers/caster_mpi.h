@@ -8,53 +8,57 @@
 
 #include "MPICommWrapper.h"
 #include <mpi4py/mpi4py.h>
-#include <pybind11/pybind11.h>
+#include <nanobind/nanobind.h>
 
-// Import mpi4py on demand
-#define VERIFY_MPI4PY(func)                                                    \
-  if (!func)                                                                   \
-  {                                                                            \
-    int rc = import_mpi4py();                                                  \
-    if (rc != 0)                                                               \
-    {                                                                          \
-      throw std::runtime_error("Error when importing mpi4py");                 \
-    }                                                                          \
-  }
-
-namespace pybind11
-{
-namespace detail
+namespace nanobind::detail
 {
 template <>
 class type_caster<dolfinx_wrappers::MPICommWrapper>
 {
 public:
   // Define this->value of type MPICommWrapper
-  PYBIND11_TYPE_CASTER(dolfinx_wrappers::MPICommWrapper, _("MPICommWrapper"));
+  NB_TYPE_CASTER(dolfinx_wrappers::MPICommWrapper, const_name("MPICommWrapper"))
 
-  // Python to C++
-  bool load(handle src, bool)
+  // Python -> C++
+  bool from_python(handle src, uint8_t /*flags*/,
+                   cleanup_list* /*cleanup*/) noexcept
   {
-    // Check whether src is an mpi4py communicator
-    VERIFY_MPI4PY(PyMPIComm_Get);
+    if (!PyMPIComm_Get)
+    {
+      if (import_mpi4py() != 0)
+        return false;
+    }
+
     if (PyObject_TypeCheck(src.ptr(), &PyMPIComm_Type))
     {
       value = dolfinx_wrappers::MPICommWrapper(*PyMPIComm_Get(src.ptr()));
       return true;
     }
-
-    return false;
+    else
+      return false;
   }
 
-  // C++ to Python
-  static handle cast(dolfinx_wrappers::MPICommWrapper src,
-                     pybind11::return_value_policy policy, handle parent)
+  // C++ -> Python
+  static handle from_cpp(const dolfinx_wrappers::MPICommWrapper& src,
+                         rv_policy policy, cleanup_list* /*cleanup*/) noexcept
   {
-    VERIFY_MPI4PY(PyMPIComm_New);
-    return pybind11::handle(PyMPIComm_New(src.get()));
+    if (policy == rv_policy::automatic
+        or policy == rv_policy::automatic_reference
+        or policy == rv_policy::reference_internal)
+    {
+      if (!PyMPIComm_New)
+      {
+        if (import_mpi4py() != 0)
+          return {};
+      }
+
+      PyObject* c = PyMPIComm_New(src.get());
+      return nanobind::handle(c);
+    }
+    else
+      return {};
   }
 
   operator dolfinx_wrappers::MPICommWrapper() { return this->value; }
 };
-} // namespace detail
-} // namespace pybind11
+} // namespace nanobind::detail

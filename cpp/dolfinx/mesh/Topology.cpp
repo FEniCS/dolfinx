@@ -76,8 +76,6 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
     auto it = dest_to_index.begin();
     while (it != dest_to_index.end())
     {
-      // const int neigh_rank = dest.size();
-
       // Store global rank and find iterator to next global rank
       dest.push_back((*it)[0]);
       auto it1
@@ -763,13 +761,13 @@ std::int32_t Topology::create_entities(int dim)
     return -1;
 
   // Create local entities
-  const auto [cell_entity, entity_vertex, index_map, interprocess_entities]
+  auto [cell_entity, entity_vertex, index_map, interprocess_entities]
       = compute_entities(_comm.comm(), *this, dim);
 
   if (cell_entity)
     set_connectivity(cell_entity, this->dim(), dim);
 
-  // TODO: is this check necessary? Seems redundant after to the "skip check"
+  // TODO: is this check necessary? Seems redundant after the "skip check"
   if (entity_vertex)
     set_connectivity(entity_vertex, dim, 0);
 

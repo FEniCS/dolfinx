@@ -4,12 +4,13 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+from mpi4py import MPI
+
+import numpy as np
 import pytest
 
 from dolfinx.mesh import (GhostMode, compute_midpoints, create_unit_cube,
                           create_unit_interval, create_unit_square)
-
-from mpi4py import MPI
 
 
 @pytest.mark.xfail(reason="Shared vertex currently disabled")
@@ -76,9 +77,9 @@ def test_ghost_connectivities(mode):
     map_f = topology.index_map(tdim - 1)
     num_facets = map_f.size_local + map_f.num_ghosts
 
-    reference = {}
-    facet_mp = compute_midpoints(meshR, tdim - 1, range(num_facets))
-    cell_mp = compute_midpoints(meshR, tdim, range(num_cells))
+    reference = dict()
+    facet_mp = compute_midpoints(meshR, tdim - 1, np.arange(num_facets))
+    cell_mp = compute_midpoints(meshR, tdim, np.arange(num_cells))
     reference = dict.fromkeys([tuple(row) for row in facet_mp], [])
     for i in range(num_facets):
         for cidx in meshR.topology.connectivity(1, 2).links(i):
@@ -95,8 +96,8 @@ def test_ghost_connectivities(mode):
 
     num_facets_ghost = map_f.num_ghosts
     allowable_cell_indices = range(num_cells)
-    facet_mp = compute_midpoints(meshG, tdim - 1, range(num_facets))
-    cell_mp = compute_midpoints(meshG, tdim, range(num_cells))
+    facet_mp = compute_midpoints(meshG, tdim - 1, np.arange(num_facets))
+    cell_mp = compute_midpoints(meshG, tdim, np.arange(num_cells))
     for i in range(num_facets_ghost):
         assert tuple(facet_mp[i]) in reference
         for cidx in meshG.topology.connectivity(1, 2).links(i):

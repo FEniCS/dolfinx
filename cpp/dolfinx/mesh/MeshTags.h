@@ -42,8 +42,11 @@ public:
   /// @param[in] values List of values for each index in indices. The
   /// size must be equal to the size of `indices`.
   /// @pre `indices` must be sorted and unique.
-  template <std::convertible_to<std::vector<std::int32_t>> U,
-            std::convertible_to<std::vector<T>> V>
+  template <typename U, typename V>
+    requires std::is_convertible_v<std::remove_cvref_t<U>,
+                                   std::vector<std::int32_t>>
+                 and std::is_convertible_v<std::remove_cvref_t<V>,
+                                           std::vector<T>>
   MeshTags(std::shared_ptr<const Topology> topology, int dim, U&& indices,
            V&& values)
       : _topology(topology), _dim(dim), _indices(std::forward<U>(indices)),

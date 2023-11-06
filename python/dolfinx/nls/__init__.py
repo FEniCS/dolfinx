@@ -4,7 +4,3 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Tools for solving nonlinear problems."""
-
-from dolfinx.nls import petsc
-
-__all__ = ["petsc"]

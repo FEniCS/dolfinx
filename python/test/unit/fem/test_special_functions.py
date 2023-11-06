@@ -5,16 +5,16 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the function library"""
 
+from mpi4py import MPI
+
 import numpy
 import pytest
 
 import ufl
+from dolfinx import default_scalar_type
 from dolfinx.fem import Constant, assemble_scalar, form
 from dolfinx.mesh import (create_unit_cube, create_unit_interval,
                           create_unit_square)
-
-from mpi4py import MPI
-from petsc4py.PETSc import ScalarType
 
 
 def test_facet_area1D():
@@ -22,7 +22,7 @@ def test_facet_area1D():
 
     # NOTE: Area of a vertex is defined to 1 in ufl
     c0 = ufl.FacetArea(mesh)
-    c = Constant(mesh, ScalarType(1))
+    c = Constant(mesh, default_scalar_type(1))
 
     ds = ufl.Measure("ds", domain=mesh)
     a0 = mesh.comm.allreduce(assemble_scalar(form(c * ds)), op=MPI.SUM)
@@ -45,7 +45,7 @@ def test_facet_area(mesh_factory):
     func, args, exact_area = mesh_factory
     mesh = func(*args)
     c0 = ufl.FacetArea(mesh)
-    c = Constant(mesh, ScalarType(1))
+    c = Constant(mesh, default_scalar_type(1))
     tdim = mesh.topology.dim
     num_faces = 4 if tdim == 2 else 6
 

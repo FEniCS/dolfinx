@@ -21,7 +21,8 @@ dolfinx::MPI::Comm::Comm(MPI_Comm comm, bool duplicate)
     _comm = comm;
 }
 //-----------------------------------------------------------------------------
-dolfinx::MPI::Comm::Comm(const Comm& comm) noexcept : Comm(comm._comm)
+dolfinx::MPI::Comm::Comm(const Comm& comm) noexcept
+    : dolfinx::MPI::Comm::Comm(comm._comm, true)
 {
   // Do nothing
 }

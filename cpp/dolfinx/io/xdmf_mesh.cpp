@@ -6,24 +6,24 @@
 
 #include "xdmf_mesh.h"
 #include "cells.h"
-#include "xdmf_read.h"
 #include "xdmf_utils.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/ElementDofLayout.h>
+#include <dolfinx/mesh/Geometry.h>
+#include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/Topology.h>
 #include <pugixml.hpp>
 #include <vector>
 
 using namespace dolfinx;
 using namespace dolfinx::io;
-namespace stdex = std::experimental;
 
 //-----------------------------------------------------------------------------
+template <std::floating_point U>
 void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
-                                  const hid_t h5_id,
-                                  const std::string path_prefix,
+                                  hid_t h5_id, std::string path_prefix,
                                   const mesh::Topology& topology,
-                                  const mesh::Geometry<double>& geometry,
-                                  int dim,
+                                  const mesh::Geometry<U>& geometry, int dim,
                                   std::span<const std::int32_t> entities)
 {
   LOG(INFO) << "Adding topology data to node \"" << xml_node.path('/') << "\"";
@@ -78,7 +78,9 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
     for (std::int32_t c : entities)
     {
       assert(c < (std::int32_t)x_dofmap.extent(0));
-      auto xdofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
+      auto xdofs = MDSPAN_IMPL_STANDARD_NAMESPACE::
+          MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
+              x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
       for (std::size_t i = 0; i < x_dofmap.extent(1); ++i)
       {
         std::int64_t global_index = xdofs[vtk_map[i]];
@@ -122,7 +124,9 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
       // Get geometry dofs for the entity
       const std::vector<int>& entity_dofs_e = entity_dofs[local_cell_entity];
 
-      auto xdofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
+      auto xdofs = MDSPAN_IMPL_STANDARD_NAMESPACE::
+          MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
+              x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
       for (std::size_t i = 0; i < entity_dofs_e.size(); ++i)
       {
         std::int64_t global_index = xdofs[entity_dofs_e[vtk_map[i]]];
@@ -156,14 +160,15 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   std::int64_t offset = 0;
   MPI_Exscan(&num_local, &offset, 1, MPI_INT64_T, MPI_SUM, comm);
   const bool use_mpi_io = (dolfinx::MPI::size(comm) > 1);
-  xdmf_utils::add_data_item(topology_node, h5_id, h5_path, topology_data,
+  xdmf_utils::add_data_item(topology_node, h5_id, h5_path,
+                            std::span<const std::int64_t>(topology_data),
                             offset, shape, number_type, use_mpi_io);
 }
 //-----------------------------------------------------------------------------
+template <std::floating_point U>
 void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
-                                  const hid_t h5_id,
-                                  const std::string path_prefix,
-                                  const mesh::Geometry<double>& geometry)
+                                  hid_t h5_id, std::string path_prefix,
+                                  const mesh::Geometry<U>& geometry)
 {
   LOG(INFO) << "Adding geometry data to node \"" << xml_node.path('/') << "\"";
   auto map = geometry.index_map();
@@ -185,10 +190,10 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   // Increase 1D to 2D because XDMF has no "X" geometry, use "XY"
   const int width = (gdim == 1) ? 2 : gdim;
 
-  std::span<const double> _x = geometry.x();
+  std::span<const U> _x = geometry.x();
 
   int num_values = num_points_local * width;
-  std::vector<double> x(num_values, 0.0);
+  std::vector<U> x(num_values, 0.0);
 
   if (width == 3)
     std::copy_n(_x.data(), num_values, x.begin());
@@ -209,13 +214,14 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   std::int64_t offset = 0;
   MPI_Exscan(&num_local, &offset, 1, MPI_INT64_T, MPI_SUM, comm);
   const bool use_mpi_io = (dolfinx::MPI::size(comm) > 1);
-  xdmf_utils::add_data_item(geometry_node, h5_id, h5_path, x, offset, shape, "",
+  xdmf_utils::add_data_item(geometry_node, h5_id, h5_path,
+                            std::span<const U>(x), offset, shape, "",
                             use_mpi_io);
 }
 //----------------------------------------------------------------------------
-void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
-                         const hid_t h5_id, const mesh::Mesh<double>& mesh,
-                         const std::string name)
+template <std::floating_point U>
+void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
+                         const mesh::Mesh<U>& mesh, const std::string& name)
 {
   LOG(INFO) << "Adding mesh to node \"" << xml_node.path('/') << "\"";
 
@@ -244,9 +250,17 @@ void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
   // Add geometry node and attributes (including writing data)
   add_geometry_data(comm, grid_node, h5_id, path_prefix, mesh.geometry());
 }
+/// @cond
+template void xdmf_mesh::add_mesh(MPI_Comm, pugi::xml_node&, hid_t,
+                                  const mesh::Mesh<float>&, const std::string&);
+template void xdmf_mesh::add_mesh(MPI_Comm, pugi::xml_node&, hid_t,
+                                  const mesh::Mesh<double>&,
+                                  const std::string&);
+/// @endcond
 //----------------------------------------------------------------------------
-std::pair<std::vector<double>, std::array<std::size_t, 2>>
-xdmf_mesh::read_geometry_data(MPI_Comm comm, const hid_t h5_id,
+std::pair<std::variant<std::vector<float>, std::vector<double>>,
+          std::array<std::size_t, 2>>
+xdmf_mesh::read_geometry_data(MPI_Comm comm, hid_t h5_id,
                               const pugi::xml_node& node)
 {
   // Get geometry node
@@ -279,15 +293,14 @@ xdmf_mesh::read_geometry_data(MPI_Comm comm, const hid_t h5_id,
 
   // Read geometry data
   std::vector geometry_data
-      = xdmf_read::get_dataset<double>(comm, geometry_data_node, h5_id);
+      = xdmf_utils::get_dataset<double>(comm, geometry_data_node, h5_id);
   const std::size_t num_local_nodes = geometry_data.size() / gdim;
   std::array<std::size_t, 2> shape = {num_local_nodes, gdim};
-
   return {std::move(geometry_data), shape};
 }
 //----------------------------------------------------------------------------
 std::pair<std::vector<std::int64_t>, std::array<std::size_t, 2>>
-xdmf_mesh::read_topology_data(MPI_Comm comm, const hid_t h5_id,
+xdmf_mesh::read_topology_data(MPI_Comm comm, hid_t h5_id,
                               const pugi::xml_node& node)
 {
   // Get topology node
@@ -309,14 +322,13 @@ xdmf_mesh::read_topology_data(MPI_Comm comm, const hid_t h5_id,
 
   // Read topology data
   std::vector<std::int64_t> topology_data
-      = xdmf_read::get_dataset<std::int64_t>(comm, topology_data_node, h5_id);
+      = xdmf_utils::get_dataset<std::int64_t>(comm, topology_data_node, h5_id);
   const std::size_t num_local_cells = topology_data.size() / npoint_per_cell;
 
   //  Permute cells from VTK to DOLFINx ordering
   std::array<std::size_t, 2> shape = {num_local_cells, npoint_per_cell};
   std::vector<std::int64_t> cells = io::cells::apply_permutation(
       topology_data, shape, io::cells::perm_vtk(cell_type, shape[1]));
-
   return {std::move(cells), shape};
 }
 //----------------------------------------------------------------------------

@@ -7,13 +7,14 @@
 from pathlib import Path
 from xml.etree import ElementTree
 
+from mpi4py import MPI
+
 import numpy as np
 import pytest
 
+from dolfinx import default_real_type
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_unit_cube, locate_entities, meshtags
-
-from mpi4py import MPI
 
 # Supported XDMF file encoding
 if MPI.COMM_WORLD.size > 1:
@@ -24,6 +25,7 @@ else:
 celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
 
 
+@pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
 @pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
 def test_3d(tempdir, cell_type, encoding):

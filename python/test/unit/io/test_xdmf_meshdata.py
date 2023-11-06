@@ -6,13 +6,15 @@
 
 from pathlib import Path
 
+from mpi4py import MPI
+
+import numpy as np
 import pytest
 
+from dolfinx import default_real_type
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (CellType, create_unit_cube, create_unit_interval,
                           create_unit_square)
-
-from mpi4py import MPI
 
 # Supported XDMF file encoding
 if MPI.COMM_WORLD.size > 1:
@@ -33,6 +35,7 @@ def mesh_factory(tdim, n):
         return create_unit_cube(MPI.COMM_WORLD, n, n, n)
 
 
+@pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
 @pytest.mark.parametrize("tdim", [2, 3])
 @pytest.mark.parametrize("n", [6])
 def test_read_mesh_data(tempdir, tdim, n):

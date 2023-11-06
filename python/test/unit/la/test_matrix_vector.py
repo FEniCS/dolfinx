@@ -6,26 +6,26 @@
 """Unit tests for MatrixCSR"""
 
 
+from mpi4py import MPI
+
 import numpy as np
 
 from dolfinx import cpp as _cpp
 from dolfinx import la
-from dolfinx.fem import FunctionSpace
+from dolfinx.fem import functionspace
 from dolfinx.mesh import create_unit_square
-
-from mpi4py import MPI
 
 
 def test_create_matrix_csr():
     """Test creation of CSR matrix with specified types"""
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 11)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
     map = V.dofmap.index_map
     bs = V.dofmap.index_map_bs
 
     pattern = _cpp.la.SparsityPattern(mesh.comm, [map, map], [bs, bs])
-    rows = range(0, bs * map.size_local)
-    cols = range(0, bs * map.size_local)
+    rows = np.arange(0, bs * map.size_local)
+    cols = np.arange(0, bs * map.size_local)
     pattern.insert(rows, cols)
     pattern.finalize()
 
@@ -50,7 +50,7 @@ def test_create_matrix_csr():
 def test_create_vector():
     """Test creation of a distributed vector"""
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 11)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
     map = V.dofmap.index_map
     bs = V.dofmap.index_map_bs
 

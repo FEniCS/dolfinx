@@ -41,10 +41,9 @@ To install the Python interface, first install the C++ core, and then
 in the ``python/`` directory run::
 
 ```shell
-pip install .
+pip install -r build-requirements.txt
+pip install --check-build-dependencies --no-build-isolation .
 ```
-
-(you may need to use ``pip3``, depending on your system).
 
 For detailed instructions, see
 <https://docs.fenicsproject.org/dolfinx/main/python/installation>.
@@ -192,7 +191,7 @@ Lesser General Public License for more details.
 
 You should have received a copy of the GNU Lesser General Public
 License along with DOLFINx. If not, see
-<http://www.gnu.org/licenses/>.
+<https://www.gnu.org/licenses/>.
 
 ## Contact
 

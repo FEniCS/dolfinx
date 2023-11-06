@@ -6,24 +6,24 @@
 """Unit tests for the KrylovSolver interface"""
 
 
+from mpi4py import MPI
+
 import numpy as np
 import pytest
 
 from basix.ufl import element
-from dolfinx import cpp as _cpp
-from dolfinx.fem import Function, FunctionSpace
+from dolfinx import la
+from dolfinx.fem import Function, functionspace
 from dolfinx.mesh import create_unit_square
-
-from mpi4py import MPI
 
 
 @pytest.mark.parametrize("e", [
     element("Lagrange", "triangle", 1),
-    element("Lagrange", "triangle", 1, rank=1)])
+    element("Lagrange", "triangle", 1, shape=(2,))])
 def test_scatter_forward(e):
 
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
-    V = FunctionSpace(mesh, e)
+    V = functionspace(mesh, e)
     u = Function(V)
     bs = V.dofmap.bs
 
@@ -49,12 +49,12 @@ def test_scatter_forward(e):
 
 @pytest.mark.parametrize("e", [
     element("Lagrange", "triangle", 1),
-    element("Lagrange", "triangle", 1, rank=1)])
+    element("Lagrange", "triangle", 1, shape=(2, ))])
 def test_scatter_reverse(e):
 
     comm = MPI.COMM_WORLD
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
-    V = FunctionSpace(mesh, e)
+    V = functionspace(mesh, e)
     u = Function(V)
     bs = V.dofmap.bs
 
@@ -62,7 +62,7 @@ def test_scatter_reverse(e):
 
     # Reverse scatter (insert) should have no effect
     w0 = u.x.array.copy()
-    u.x.scatter_reverse(_cpp.la.InsertMode.insert)
+    u.x.scatter_reverse(la.InsertMode.insert)
     assert np.allclose(w0, u.x.array)
 
     # Fill with MPI rank, and sum all entries in the vector (including
@@ -71,7 +71,7 @@ def test_scatter_reverse(e):
     all_count0 = MPI.COMM_WORLD.allreduce(u.x.array.sum(), op=MPI.SUM)
 
     # Reverse scatter (add)
-    u.x.scatter_reverse(_cpp.la.InsertMode.add)
+    u.x.scatter_reverse(la.InsertMode.add)
     num_ghosts = V.dofmap.index_map.num_ghosts
     ghost_count = MPI.COMM_WORLD.allreduce(num_ghosts * comm.rank, op=MPI.SUM)
 

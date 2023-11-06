@@ -5,16 +5,16 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for assembly"""
 
+from mpi4py import MPI
+
+import numpy as np
 import pytest
 
 import ufl
-from dolfinx import fem
-from dolfinx.fem import Function, FunctionSpace, form
+from dolfinx import fem, la
+from dolfinx.fem import Function, form, functionspace
 from dolfinx.mesh import GhostMode, create_unit_square
 from ufl import avg, inner
-
-from mpi4py import MPI
-from petsc4py import PETSc
 
 
 def dx_from_ufl(mesh):
@@ -37,10 +37,9 @@ def dS_from_ufl(mesh):
 @pytest.mark.parametrize("ds", [ds_from_ufl])
 def test_ghost_mesh_assembly(mode, dx, ds):
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-    dx = dx(mesh)
-    ds = ds(mesh)
+    dx, ds = dx(mesh), ds(mesh)
 
     f = Function(V)
     f.x.array[:] = 10.0
@@ -48,22 +47,18 @@ def test_ghost_mesh_assembly(mode, dx, ds):
     L = form(inner(f, v) * dx + inner(2.0, v) * ds)
 
     # Initial assembly
-    A = fem.petsc.assemble_matrix(a)
-    A.assemble()
-    assert isinstance(A, PETSc.Mat)
-    b = fem.petsc.assemble_vector(L)
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    assert isinstance(b, PETSc.Vec)
+    A = fem.assemble_matrix(a)
+    A.scatter_reverse()
+    assert isinstance(A, la.MatrixCSR)
+    b = fem.assemble_vector(L)
+    b.scatter_reverse(la.InsertMode.add)
+    assert isinstance(b, la.Vector)
 
     # Check that the norms are the same for all three modes
-    normA = A.norm()
-    assert normA == pytest.approx(0.6713621455570528, rel=1.e-6, abs=1.e-12)
-
+    normA = np.sqrt(A.squared_norm())
+    assert normA == pytest.approx(0.6713621455570528, rel=1.e-5, abs=1.e-8)
     normb = b.norm()
-    assert normb == pytest.approx(1.582294032953906, rel=1.e-6, abs=1.e-12)
-
-    A.destroy()
-    b.destroy()
+    assert normb == pytest.approx(1.582294032953906, rel=1.e-5, abs=1.e-8)
 
 
 @pytest.mark.parametrize("mode",
@@ -77,17 +72,16 @@ def test_ghost_mesh_assembly(mode, dx, ds):
 @pytest.mark.parametrize("dS", [dS_from_ufl])
 def test_ghost_mesh_dS_assembly(mode, dS):
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     dS = dS(mesh)
     a = form(inner(avg(u), avg(v)) * dS)
 
     # Initial assembly
-    A = fem.petsc.assemble_matrix(a)
-    A.assemble()
-    assert isinstance(A, PETSc.Mat)
+    A = fem.assemble_matrix(a)
+    A.scatter_reverse()
+    assert isinstance(A, la.MatrixCSR)
 
     # Check that the norms are the same for all three modes
-    normA = A.norm()
-    assert normA == pytest.approx(2.1834054713561906, rel=1.e-6, abs=1.e-12)
-    A.destroy()
+    normA = np.sqrt(A.squared_norm())
+    assert normA == pytest.approx(2.1834054713561906, rel=1.e-5, abs=1.e-12)

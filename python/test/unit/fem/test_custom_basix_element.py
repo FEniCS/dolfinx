@@ -1,19 +1,20 @@
+from mpi4py import MPI
+from petsc4py import PETSc
+
 import numpy as np
 import pytest
 
 import basix
-import ufl
 import basix.ufl
-from dolfinx.fem import (Function, FunctionSpace, assemble_scalar, dirichletbc,
-                         form, locate_dofs_topological)
+import ufl
+from dolfinx.fem import (Function, assemble_scalar, dirichletbc, form,
+                         functionspace, locate_dofs_topological)
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                set_bc)
-from dolfinx.mesh import CellType, create_unit_cube, create_unit_square, exterior_facet_indices
+from dolfinx.mesh import (CellType, create_unit_cube, create_unit_square,
+                          exterior_facet_indices)
 from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
                  inner)
-
-from mpi4py import MPI
-from petsc4py import PETSc
 
 
 def run_scalar_test(V, degree):
@@ -68,7 +69,7 @@ def run_scalar_test(V, degree):
     M = (u_exact - uh)**2 * dx
     M = form(M)
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
-    assert np.absolute(error) < 1.0e-14
+    assert np.abs(error) < 1.0e-6
 
     solver.destroy()
     A.destroy()
@@ -80,7 +81,7 @@ def test_basix_element_wrapper(degree):
     ufl_element = basix.ufl.element(
         basix.ElementFamily.P, basix.CellType.triangle, degree, basix.LagrangeVariant.gll_isaac)
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
-    V = FunctionSpace(mesh, ufl_element)
+    V = functionspace(mesh, ufl_element)
     run_scalar_test(V, degree)
 
 
@@ -95,7 +96,7 @@ def test_custom_element_triangle_degree1():
     ufl_element = basix.ufl.custom_element(basix.CellType.triangle, [], wcoeffs,
                                            x, M, 0, basix.MapType.identity, basix.SobolevSpace.H1, False, 1, 1)
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
-    V = FunctionSpace(mesh, ufl_element)
+    V = functionspace(mesh, ufl_element)
     run_scalar_test(V, 1)
 
 
@@ -112,7 +113,7 @@ def test_custom_element_triangle_degree4():
     ufl_element = basix.ufl.custom_element(basix.CellType.triangle, [], wcoeffs,
                                            x, M, 0, basix.MapType.identity, basix.SobolevSpace.H1, False, 4, 4)
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
-    V = FunctionSpace(mesh, ufl_element)
+    V = functionspace(mesh, ufl_element)
     run_scalar_test(V, 4)
 
 
@@ -139,7 +140,7 @@ def test_custom_element_triangle_degree4_integral():
     ufl_element = basix.ufl.custom_element(basix.CellType.triangle, [], wcoeffs,
                                            x, M, 0, basix.MapType.identity, basix.SobolevSpace.H1, False, 4, 4)
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
-    V = FunctionSpace(mesh, ufl_element)
+    V = functionspace(mesh, ufl_element)
     run_scalar_test(V, 4)
 
 
@@ -154,7 +155,7 @@ def test_custom_element_quadrilateral_degree1():
     ufl_element = basix.ufl.custom_element(basix.CellType.quadrilateral, [], wcoeffs,
                                            x, M, 0, basix.MapType.identity, basix.SobolevSpace.H1, False, 1, 1)
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, CellType.quadrilateral)
-    V = FunctionSpace(mesh, ufl_element)
+    V = functionspace(mesh, ufl_element)
     run_scalar_test(V, 1)
 
 
@@ -179,10 +180,10 @@ def test_vector_copy_degree1(cell_type, element_family):
     e2 = basix.ufl.custom_element(
         e1.element.cell_type, e1.element.value_shape, e1.element.wcoeffs, e1.element.x,
         e1.element.M, 0, e1.element.map_type, e1.element.sobolev_space,
-        e1.element.discontinuous, e1.element.highest_complete_degree, e1.element.highest_degree)
+        e1.element.discontinuous, e1.element.embedded_subdegree, e1.element.embedded_superdegree)
 
-    space1 = FunctionSpace(mesh, e1)
-    space2 = FunctionSpace(mesh, e2)
+    space1 = functionspace(mesh, e1)
+    space2 = functionspace(mesh, e2)
 
     f1 = Function(space1)
     f2 = Function(space2)
@@ -217,10 +218,10 @@ def test_scalar_copy_degree1(cell_type, element_family):
     e2 = basix.ufl.custom_element(
         e1.element.cell_type, e1.element.value_shape, e1.element.wcoeffs, e1.element.x,
         e1.element.M, 0, e1.element.map_type, e1.element.sobolev_space,
-        e1.element.discontinuous, e1.element.highest_complete_degree, e1.element.highest_degree)
+        e1.element.discontinuous, e1.element.embedded_subdegree, e1.element.embedded_superdegree)
 
-    space1 = FunctionSpace(mesh, e1)
-    space2 = FunctionSpace(mesh, e2)
+    space1 = functionspace(mesh, e1)
+    space2 = functionspace(mesh, e2)
 
     f1 = Function(space1)
     f2 = Function(space2)

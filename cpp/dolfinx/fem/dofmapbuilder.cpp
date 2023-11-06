@@ -27,10 +27,9 @@ using namespace dolfinx;
 
 namespace
 {
-
-namespace stdex = std::experimental;
 template <typename T>
-using mdspan2_t = stdex::mdspan<T, stdex::dextents<std::size_t, 2>>;
+using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+    T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
 
 //-----------------------------------------------------------------------------
 
@@ -240,8 +239,19 @@ build_basic_dofmap(
   const int num_cells = topology.connectivity(D, 0)->num_nodes();
   const std::vector<int>& group_offsets = topology.entity_group_offsets(D);
 
+  std::vector<std::int32_t> doffsets;
+  doffsets.reserve(num_cells + 1);
+  doffsets.push_back(0);
   const std::size_t nelem = element_dof_layouts.size();
-  std::vector<std::int32_t> dofs(num_cells * element_dof_layouts[0].num_dofs());
+  // Go through elements twice: regular cells followed by ghost cells.
+  for (std::size_t i = 0; i < 2 * nelem; ++i)
+  {
+    // Number of dofs per cell for this element layout
+    const int local_dim = element_dof_layouts[i % nelem].num_dofs();
+    for (int j = group_offsets[i]; j < group_offsets[i + 1]; ++j)
+      doffsets.push_back(doffsets.back() + local_dim);
+  }
+  std::vector<std::int32_t> dofs(doffsets.back());
 
   // Allocate entity indices array
   std::vector<std::vector<int32_t>> entity_indices_local(D + 1);
@@ -272,7 +282,6 @@ build_basic_dofmap(
 
   // Loop over cells, group by group, and build dofmaps from respective
   // ElementDofmap
-  const int num_dofs_cell = element_dof_layouts[0].num_dofs();
   for (std::size_t i = 0; i < 2 * nelem; ++i)
   {
     for (int c = group_offsets[i]; c < group_offsets[i + 1]; ++c)
@@ -298,8 +307,8 @@ build_basic_dofmap(
         entity_indices_local[D][0] = c;
       }
 
-      std::span<std::int32_t> dofs_c(dofs.data() + c * num_dofs_cell,
-                                     num_dofs_cell);
+      std::span<std::int32_t> dofs_c(dofs.data() + doffsets[c],
+                                     doffsets[c + 1] - doffsets[c]);
 
       // Iterate over each topological dimension for this element (twice, once
       // for regular, and later for ghosts).
@@ -422,7 +431,8 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
   std::int32_t counter_owned(0), counter_unowned(owned_size);
   for (std::size_t cell = 0; cell < dofmap.extent(0); ++cell)
   {
-    auto dofs = stdex::submdspan(dofmap, cell, stdex::full_extent);
+    auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+        submdspan(dofmap, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     for (std::size_t i = 0; i < dofs.size(); ++i)
     {
       if (original_to_contiguous[dofs[i]] == -1)
@@ -691,7 +701,9 @@ fem::build_dofmap_data(
   for (std::size_t cell = 0; cell < _node_graph0.extent(0); ++cell)
   {
     // Get dof order on this cell
-    auto old_nodes = stdex::submdspan(_node_graph0, cell, stdex::full_extent);
+    auto old_nodes = MDSPAN_IMPL_STANDARD_NAMESPACE::
+        MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
+            _node_graph0, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     const std::int32_t local_dim0 = old_nodes.size();
     std::span<std::int32_t> dofs(dofmap.data() + cell * local_dim0, local_dim0);
     for (std::int32_t j = 0; j < local_dim0; ++j)

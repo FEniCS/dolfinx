@@ -7,6 +7,7 @@
 #include "xdmf_function.h"
 #include "xdmf_mesh.h"
 #include "xdmf_utils.h"
+#include <basix/mdspan.hpp>
 #include <boost/lexical_cast.hpp>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/DofMap.h>
@@ -23,175 +24,204 @@ using namespace dolfinx::io;
 
 namespace
 {
-//-----------------------------------------------------------------------------
-
-// Convert a value_rank to the XDMF string description (Scalar, Vector,
-// Tensor)
-std::string rank_to_string(int value_rank)
+/// Convert a shape to the XDMF string description (Scalar, Vector,
+/// Tensor).
+std::string shape_to_string(std::span<const std::size_t> shape)
 {
-  switch (value_rank)
-  {
-  case 0:
+  if (shape.empty())
     return "Scalar";
-  case 1:
+  else if (shape.size() == 1 and shape[0] == 1)
+    return "Scalar";
+  else if (shape.size() == 1)
     return "Vector";
-  case 2:
+  else if (shape.size() == 2)
     return "Tensor";
-  default:
-    throw std::runtime_error("Range Error");
-  }
+  else
+    throw std::runtime_error("Unsupported value shape");
 }
-//-----------------------------------------------------------------------------
+} // namespace
 
-/// Returns true for DG0 fem::Functions
-template <typename Scalar>
-bool has_cell_centred_data(const fem::Function<Scalar, double>& u)
-{
-  int cell_based_dim = 1;
-  const int rank = u.function_space()->element()->value_shape().size();
-  for (int i = 0; i < rank; i++)
-    cell_based_dim *= u.function_space()->mesh()->topology()->dim();
-
-  assert(u.function_space());
-  assert(u.function_space()->dofmap());
-  return (u.function_space()->dofmap()->element_dof_layout().num_dofs()
-              * u.function_space()->dofmap()->bs()
-          == cell_based_dim);
-}
 //-----------------------------------------------------------------------------
-
-// Get data width - normally the same as u.value_size(), but expand for
-// 2D vector/tensor because XDMF presents everything as 3D
-int get_padded_width(const fem::FiniteElement<double>& e)
-{
-  const int width = e.value_size();
-  const int rank = e.value_shape().size();
-  if (rank == 1 and width == 2)
-    return 3;
-  else if (rank == 2 and width == 4)
-    return 9;
-  return width;
-}
-//-----------------------------------------------------------------------------
-template <typename Scalar>
-void _add_function(MPI_Comm comm, const fem::Function<Scalar, double>& u,
-                   const double t, pugi::xml_node& xml_node, const hid_t h5_id)
+template <dolfinx::scalar T, std::floating_point U>
+void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
+                                 double t, pugi::xml_node& xml_node,
+                                 hid_t h5_id)
 {
   LOG(INFO) << "Adding function to node \"" << xml_node.path('/') << "\"";
 
   assert(u.function_space());
   auto mesh = u.function_space()->mesh();
   assert(mesh);
+  std::shared_ptr<const fem::FiniteElement<U>> element
+      = u.function_space()->element();
+  assert(element);
 
-  // Get fem::Function data values and shape
-  std::vector<Scalar> data_values;
-  const bool cell_centred = has_cell_centred_data(u);
-  if (cell_centred)
-    data_values = xdmf_utils::get_cell_data_values(u);
-  else
-    data_values = xdmf_utils::get_point_data_values(u);
+  // FIXME: is the below check adequate for detecting a Lagrange
+  // element?
+  // Check that element is Lagrange
+  if (!element->interpolation_ident())
+  {
+    throw std::runtime_error("Only Lagrange functions are supported. "
+                             "Interpolate Functions before output.");
+  }
 
   auto map_c = mesh->topology()->index_map(mesh->topology()->dim());
   assert(map_c);
 
-  auto map_v = mesh->geometry().index_map();
-  assert(map_v);
+  auto map_x = mesh->geometry().index_map();
+  assert(map_x);
 
-  // Add attribute DataItem node and write data
-  const int width = get_padded_width(*u.function_space()->element());
-  assert(data_values.size() % width == 0);
-  const int num_values
-      = cell_centred ? map_c->size_global() : map_v->size_global();
+  auto dofmap = u.function_space()->dofmap();
+  assert(dofmap);
+  const int bs = dofmap->bs();
 
-  const int value_rank = u.function_space()->element()->value_shape().size();
+  std::span<const std::size_t> value_shape = element->value_shape();
+  int num_components = std::reduce(value_shape.begin(), value_shape.end(), 1,
+                                   std::multiplies{});
+
+  // Get fem::Function data values and shape
+  std::vector<T> data_values;
+  std::span<const T> x = u.x()->array();
+
+  const bool cell_centred
+      = element->space_dimension() / element->block_size() == 1;
+  if (cell_centred)
+  {
+    // Get dof array and pack into array (padded where appropriate)
+    const std::int32_t num_local_cells = map_c->size_local();
+    data_values.resize(num_local_cells * num_components, 0);
+    for (std::int32_t c = 0; c < num_local_cells; ++c)
+    {
+      auto dofs = dofmap->cell_dofs(c);
+      assert(dofs.size() == 1);
+      for (std::size_t i = 0; i < dofs.size(); ++i)
+        for (int j = 0; j < bs; ++j)
+          data_values[num_components * c + j] = x[bs * dofs[i] + j];
+    }
+  }
+  else
+  {
+    // Get number of geometry nodes per cell
+    const auto& geometry = mesh->geometry();
+    auto& cmap = geometry.cmaps()[0];
+    int cmap_dim = cmap.dim();
+    int cell_dim = element->space_dimension() / element->block_size();
+    if (cmap_dim != cell_dim)
+    {
+      throw std::runtime_error(
+          "Degree of output Function must be same as mesh degree. Maybe the "
+          "Function needs to be interpolated?");
+    }
+
+    // Check that dofmap layouts are equal and check Lagrange variants
+    if (dofmap->element_dof_layout() != cmap.create_dof_layout())
+    {
+      throw std::runtime_error("Function and Mesh dof layouts do not match. "
+                               "Maybe the Function needs to be interpolated?");
+    }
+    if (cmap.degree() > 2
+        and element->basix_element().lagrange_variant() != cmap.variant())
+    {
+      throw std::runtime_error("Mis-match in Lagrange family. Maybe the "
+                               "Function needs to be interpolated?");
+    }
+
+    std::int32_t num_cells = map_c->size_local() + map_c->num_ghosts();
+    std::int32_t num_local_points = map_x->size_local();
+
+    // Get dof array and pack into array (padded where appropriate)
+    auto dofmap_x = geometry.dofmap();
+    data_values.resize(num_local_points * num_components, 0);
+    for (std::int32_t c = 0; c < num_cells; ++c)
+    {
+      auto dofs = dofmap->cell_dofs(c);
+      auto dofs_x = MDSPAN_IMPL_STANDARD_NAMESPACE::
+          MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
+              dofmap_x, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      assert(dofs.size() == dofs_x.size());
+      for (std::size_t i = 0; i < dofs.size(); ++i)
+      {
+        if (dofs_x[i] < num_local_points)
+        {
+          for (int j = 0; j < bs; ++j)
+            data_values[num_components * dofs_x[i] + j] = x[bs * dofs[i] + j];
+        }
+      }
+    }
+  }
+
+  // Global size
+  const std::int64_t num_values
+      = cell_centred ? map_c->size_global() : map_x->size_global();
+
+  const std::int64_t num_local = data_values.size() / num_components;
+  std::int64_t offset = 0;
+  MPI_Exscan(&num_local, &offset, 1, MPI_INT64_T, MPI_SUM, comm);
+
+  const bool use_mpi_io = dolfinx::MPI::size(comm) > 1;
 
   std::vector<std::string> components = {""};
-  if constexpr (!std::is_scalar_v<Scalar>)
-    components = {"real", "imag"};
-
+  if constexpr (!std::is_scalar_v<T>)
+    components = {"real_", "imag_"};
   std::string t_str = boost::lexical_cast<std::string>(t);
   std::replace(t_str.begin(), t_str.end(), '.', '_');
-
-  for (const auto& component : components)
+  for (auto component : components)
   {
-    std::string attr_name;
-    std::string dataset_name;
-    if (component.empty())
-    {
-      attr_name = u.name;
-      dataset_name
-          = std::string("/Function/") + attr_name + std::string("/") + t_str;
-    }
-    else
-    {
-      attr_name = component + std::string("_") + u.name;
-      dataset_name
-          = std::string("/Function/") + attr_name + std::string("/") + t_str;
-    }
+    std::string attr_name = component + u.name;
+    std::string dataset_name
+        = std::string("/Function/") + attr_name + std::string("/") + t_str;
+
     // Add attribute node
-    pugi::xml_node attribute_node = xml_node.append_child("Attribute");
-    assert(attribute_node);
-    attribute_node.append_attribute("Name") = attr_name.c_str();
-    attribute_node.append_attribute("AttributeType")
-        = rank_to_string(value_rank).c_str();
-    attribute_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
+    pugi::xml_node attr_node = xml_node.append_child("Attribute");
+    assert(attr_node);
+    attr_node.append_attribute("Name") = attr_name.c_str();
+    attr_node.append_attribute("AttributeType")
+        = shape_to_string(value_shape).c_str();
+    attr_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
 
-    const bool use_mpi_io = (dolfinx::MPI::size(comm) > 1);
-    if constexpr (!std::is_scalar_v<Scalar>)
+    std::span<const scalar_value_type_t<T>> u;
+    std::vector<scalar_value_type_t<T>> _data;
+    if constexpr (!std::is_scalar_v<T>)
     {
-      // Complex case
-
-      // FIXME: Avoid copies by writing directly a compound data
-      std::vector<double> component_data_values(data_values.size());
-      if (component == "real")
+      // Complex-valued case
+      _data.resize(data_values.size());
+      if (component == "real_")
       {
-        for (std::size_t i = 0; i < data_values.size(); i++)
-          component_data_values[i] = data_values[i].real();
+        std::transform(data_values.begin(), data_values.end(), _data.begin(),
+                       [](auto x) { return x.real(); });
       }
-      else if (component == "imag")
+      else if (component == "imag_")
       {
-        for (std::size_t i = 0; i < data_values.size(); i++)
-          component_data_values[i] = data_values[i].imag();
+        std::transform(data_values.begin(), data_values.end(), _data.begin(),
+                       [](auto x) { return x.imag(); });
       }
-
-      // Add data item of component
-      const std::int64_t num_local = component_data_values.size() / width;
-      std::int64_t offset = 0;
-      MPI_Exscan(&num_local, &offset, 1, MPI_INT64_T, MPI_SUM, comm);
-      xdmf_utils::add_data_item(attribute_node, h5_id, dataset_name,
-                                component_data_values, offset,
-                                {num_values, width}, "", use_mpi_io);
+      u = std::span<const scalar_value_type_t<T>>(_data);
     }
     else
-    {
-      // Real case
+      u = std::span<const T>(data_values);
 
-      // Add data item
-      const std::int64_t num_local = data_values.size() / width;
-      std::int64_t offset = 0;
-      MPI_Exscan(&num_local, &offset, 1, MPI_INT64_T, MPI_SUM, comm);
-      xdmf_utils::add_data_item(attribute_node, h5_id, dataset_name,
-                                data_values, offset, {num_values, width}, "",
-                                use_mpi_io);
-    }
+    // -- Real case, add data item
+    xdmf_utils::add_data_item(attr_node, h5_id, dataset_name, u, offset,
+                              {num_values, num_components}, "", use_mpi_io);
   }
 }
 //-----------------------------------------------------------------------------
-} // namespace
+// Instantiation for different types
+/// @cond
+template void xdmf_function::add_function(MPI_Comm,
+                                          const fem::Function<float, float>&,
+                                          double, pugi::xml_node&, hid_t);
+template void xdmf_function::add_function(MPI_Comm,
+                                          const fem::Function<double, double>&,
+                                          double, pugi::xml_node&, hid_t);
+template void
+xdmf_function::add_function(MPI_Comm,
+                            const fem::Function<std::complex<float>, float>&,
+                            double, pugi::xml_node&, hid_t);
+template void
+xdmf_function::add_function(MPI_Comm,
+                            const fem::Function<std::complex<double>, double>&,
+                            double, pugi::xml_node&, hid_t);
 
-//-----------------------------------------------------------------------------
-void xdmf_function::add_function(MPI_Comm comm,
-                                 const fem::Function<double, double>& u,
-                                 const double t, pugi::xml_node& xml_node,
-                                 const hid_t h5_id)
-{
-  _add_function(comm, u, t, xml_node, h5_id);
-}
-//-----------------------------------------------------------------------------
-void xdmf_function::add_function(
-    MPI_Comm comm, const fem::Function<std::complex<double>, double>& u,
-    const double t, pugi::xml_node& xml_node, const hid_t h5_id)
-{
-  _add_function(comm, u, t, xml_node, h5_id);
-}
+/// @endcond
 //-----------------------------------------------------------------------------

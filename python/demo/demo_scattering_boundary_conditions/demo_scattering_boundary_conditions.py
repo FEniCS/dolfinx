@@ -31,6 +31,17 @@
 
 # +
 import sys
+from typing import Tuple
+
+from mpi4py import MPI
+
+from analytical_efficiencies_wire import calculate_analytical_efficiencies
+from mesh_wire import generate_mesh_wire
+
+import ufl
+from basix.ufl import element
+from dolfinx import default_scalar_type, fem, io, plot
+from dolfinx.fem.petsc import LinearProblem
 
 try:
     import gmsh
@@ -45,17 +56,6 @@ try:
 except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
-from typing import Tuple
-
-from analytical_efficiencies_wire import calculate_analytical_efficiencies
-from mesh_wire import generate_mesh_wire
-
-import ufl
-from basix.ufl import element
-from dolfinx import fem, io, plot
-
-from mpi4py import MPI
-from petsc4py import PETSc
 
 # -
 
@@ -63,7 +63,7 @@ from petsc4py import PETSc
 # solve a complex-valued PDE, and therefore need to use PETSc compiled
 # with complex numbers.
 
-if not np.issubdtype(PETSc.ScalarType, np.complexfloating):
+if not np.issubdtype(default_scalar_type, np.complexfloating):
     print("Demo should only be executed with DOLFINx complex mode")
     exit(0)
 
@@ -244,7 +244,7 @@ MPI.COMM_WORLD.barrier()
 # The mesh is visualized with [PyVista](https://docs.pyvista.org/)
 
 if have_pyvista:
-    topology, cell_types, geometry = plot.create_vtk_mesh(domain, 2)
+    topology, cell_types, geometry = plot.vtk_mesh(domain, 2)
     grid = pyvista.UnstructuredGrid(topology, cell_types, geometry)
     plotter = pyvista.Plotter()
     num_local_cells = domain.topology.index_map(domain.topology.dim).size_local
@@ -272,7 +272,7 @@ theta = np.pi / 4  # Angle of incidence of the background field
 
 degree = 3
 curl_el = element("N1curl", domain.basix_cell(), degree)
-V = fem.FunctionSpace(domain, curl_el)
+V = fem.functionspace(domain, curl_el)
 
 # Next, we can interpolate $\mathbf{E}_b$ into the function space $V$:
 
@@ -316,12 +316,12 @@ eps_au = -1.0782 + 1j * 5.8089
 # of the gold permittivity $\varepsilon_m$ for cells inside the wire,
 # while it takes the value of the background permittivity otherwise:
 
-D = fem.FunctionSpace(domain, ("DG", 0))
+D = fem.functionspace(domain, ("DG", 0))
 eps = fem.Function(D)
 au_cells = cell_tags.find(au_tag)
 bkg_cells = cell_tags.find(bkg_tag)
-eps.x.array[au_cells] = np.full_like(au_cells, eps_au, dtype=np.complex128)
-eps.x.array[bkg_cells] = np.full_like(bkg_cells, eps_bkg, dtype=np.complex128)
+eps.x.array[au_cells] = np.full_like(au_cells, eps_au, dtype=eps.x.array.dtype)
+eps.x.array[bkg_cells] = np.full_like(bkg_cells, eps_bkg, dtype=eps.x.array.dtype)
 eps.x.scatter_forward()
 
 # Next we derive the weak formulation of the Maxwell's equation plus
@@ -330,7 +330,6 @@ eps.x.scatter_forward()
 # integrate the terms over the corresponding domains:
 #
 # $$
-# \begin{align}
 # & \int_{\Omega}-\nabla \times( \nabla \times \mathbf{E}_s) \cdot
 # \bar{\mathbf{v}}+\varepsilon_{r} k_{0}^{2} \mathbf{E}_s \cdot
 # \bar{\mathbf{v}}+k_{0}^{2}\left(\varepsilon_{r}-\varepsilon_b\right)
@@ -338,7 +337,6 @@ eps.x.scatter_forward()
 # (\mathbf{n} \times \nabla \times \mathbf{E}_s) \cdot \bar{\mathbf{v}}
 # +\left(j n_bk_{0}+\frac{1}{2r}\right) (\mathbf{n} \times \mathbf{E}_s
 # \times \mathbf{n}) \cdot \bar{\mathbf{v}}~\mathrm{d}s=0
-# \end{align}.
 # $$
 #
 # By using $(\nabla \times \mathbf{A}) \cdot \mathbf{B}=\mathbf{A}
@@ -346,7 +344,6 @@ eps.x.scatter_forward()
 # \mathbf{B}),$ we can change the first term into:
 #
 # $$
-# \begin{align}
 # & \int_{\Omega}-\nabla \cdot(\nabla\times\mathbf{E}_s \times
 # \bar{\mathbf{v}})-\nabla \times \mathbf{E}_s \cdot \nabla
 # \times\bar{\mathbf{v}}+\varepsilon_{r} k_{0}^{2} \mathbf{E}_s
@@ -355,7 +352,6 @@ eps.x.scatter_forward()
 # (\mathbf{n} \times \nabla \times \mathbf{E}_s) \cdot \bar{\mathbf{v}}
 # +\left(j n_bk_{0}+\frac{1}{2r}\right) (\mathbf{n} \times \mathbf{E}_s
 # \times \mathbf{n}) \cdot \bar{\mathbf{v}}~\mathrm{d}s=0,
-# \end{align}
 # $$
 #
 # using the divergence theorem
@@ -363,7 +359,6 @@ eps.x.scatter_forward()
 # \mathbf{F}\cdot\mathbf{n}~\mathrm{d}s$, we can write:
 #
 # $$
-# \begin{align}
 # & \int_{\Omega}-(\nabla \times \mathbf{E}_s) \cdot (\nabla \times
 # \bar{\mathbf{v}})+\varepsilon_{r} k_{0}^{2} \mathbf{E}_s \cdot
 # \bar{\mathbf{v}}+k_{0}^{2}\left(\varepsilon_{r}-\varepsilon_b\right)
@@ -372,7 +367,6 @@ eps.x.scatter_forward()
 # + (\mathbf{n} \times \nabla \times \mathbf{E}_s) \cdot \bar{\mathbf{v}}
 # +\left(j n_bk_{0}+\frac{1}{2r}\right) (\mathbf{n} \times \mathbf{E}_s
 # \times \mathbf{n}) \cdot \bar{\mathbf{v}}~\mathrm{d}s=0.
-# \end{align}
 # $$
 #
 # Cancelling $-(\nabla\times\mathbf{E}_s \times \bar{\mathbf{V}})
@@ -382,14 +376,12 @@ eps.x.scatter_forward()
 # \mathbf{A})=\mathbf{C} \cdot(\mathbf{A} \times \mathbf{B})$, we get:
 #
 # $$
-# \begin{align}
 # & \int_{\Omega}-(\nabla \times \mathbf{E}_s) \cdot (\nabla \times
 # \bar{\mathbf{v}})+\varepsilon_{r} k_{0}^{2} \mathbf{E}_s \cdot
 # \bar{\mathbf{v}}+k_{0}^{2}\left(\varepsilon_{r}-\varepsilon_b\right)
 # \mathbf{E}_b \cdot \bar{\mathbf{v}}~\mathrm{d}x \\ +&\int_{\partial \Omega}
 # \left(j n_bk_{0}+\frac{1}{2r}\right)( \mathbf{n} \times \mathbf{E}_s \times
 # \mathbf{n}) \cdot \bar{\mathbf{v}} ~\mathrm{d} s = 0.
-# \end{align}
 # $$
 #
 # We use the [UFL](https://github.com/FEniCS/ufl/) to implement the
@@ -407,7 +399,7 @@ F = - ufl.inner(ufl.curl(Es), ufl.curl(v)) * dDom \
 # `Esh`:
 
 a, L = ufl.lhs(F), ufl.rhs(F)
-problem = fem.petsc.LinearProblem(a, L, bcs=[], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+problem = LinearProblem(a, L, bcs=[], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 Esh = problem.solve()
 
 # We save the solution as an [ADIOS2
@@ -417,7 +409,8 @@ Esh = problem.solve()
 # Lagrange space.
 
 # +
-V_dg = fem.VectorFunctionSpace(domain, ("Discontinuous Lagrange", degree))
+gdim = domain.geometry.dim
+V_dg = fem.functionspace(domain, ("Discontinuous Lagrange", degree, (gdim,)))
 Esh_dg = fem.Function(V_dg)
 Esh_dg.interpolate(Esh)
 
@@ -432,7 +425,7 @@ with io.VTXWriter(domain.comm, "Esh.bp", Esh_dg) as vtx:
 # DOLFINx demo.
 
 if have_pyvista:
-    V_cells, V_types, V_x = plot.create_vtk_mesh(V_dg)
+    V_cells, V_types, V_x = plot.vtk_mesh(V_dg)
     V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
     Esh_values = np.zeros((V_x.shape[0], 3), dtype=np.float64)
     Esh_values[:, : domain.topology.dim] = Esh_dg.x.array.reshape(V_x.shape[0], domain.topology.dim).real
@@ -550,12 +543,12 @@ if domain.comm.rank == 0:
     print()
     print(f"The analytical absorption efficiency is {q_abs_analyt}")
     print(f"The numerical absorption efficiency is {q_abs_fenics}")
-    print(f"The error is {err_abs*100}%")
+    print(f"The error is {err_abs * 100}%")
     print()
     print(f"The analytical scattering efficiency is {q_sca_analyt}")
     print(f"The numerical scattering efficiency is {q_sca_fenics}")
-    print(f"The error is {err_sca*100}%")
+    print(f"The error is {err_sca * 100}%")
     print()
     print(f"The analytical extinction efficiency is {q_ext_analyt}")
     print(f"The numerical extinction efficiency is {q_ext_fenics}")
-    print(f"The error is {err_ext*100}%")
+    print(f"The error is {err_ext * 100}%")

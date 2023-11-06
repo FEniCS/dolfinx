@@ -17,20 +17,19 @@
 #
 # We begin this demo by importing the required modules.
 
+from mpi4py import MPI
+
 # +
-import basix
-import basix.ufl
 import matplotlib.pylab as plt
 import numpy as np
+
+import basix
+import basix.ufl
 import ufl
-from mpi4py import MPI
+from dolfinx import default_scalar_type, fem, mesh
+from dolfinx.fem.petsc import LinearProblem
 from ufl import ds, dx, grad, inner
 
-from dolfinx import default_scalar_type, fem, mesh
-
-if np.issubdtype(default_scalar_type, np.complexfloating):
-    print("Demo should only be executed with DOLFINx real mode")
-    exit(0)
 # -
 
 # Note that Basix and the Basix UFL wrapper are imported directly. Basix
@@ -116,7 +115,7 @@ ufl_element = basix.ufl.element(basix.ElementFamily.P, basix.CellType.triangle, 
 msh = mesh.create_rectangle(comm=MPI.COMM_WORLD,
                             points=((0.0, 0.0), (2.0, 1.0)), n=(32, 16),
                             cell_type=mesh.CellType.triangle,)
-V = fem.FunctionSpace(msh, ufl_element)
+V = fem.functionspace(msh, ufl_element)
 facets = mesh.locate_entities_boundary(msh, dim=1,
                                        marker=lambda x: np.logical_or(np.isclose(x[0], 0.0),
                                                                       np.isclose(x[0], 2.0)))
@@ -131,7 +130,7 @@ g = ufl.sin(5 * x[0])
 a = inner(grad(u), grad(v)) * dx
 L = inner(f, v) * dx + inner(g, v) * ds
 
-problem = fem.petsc.LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+problem = LinearProblem(a, L, bcs=[bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 uh = problem.solve()
 # -
 
@@ -161,23 +160,23 @@ u_exact = saw_tooth(x[0])
 
 for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warped]:
     ufl_element = basix.ufl.element(basix.ElementFamily.P, basix.CellType.interval, 10, variant)
-    V = fem.FunctionSpace(msh, ufl_element)
+    V = fem.functionspace(msh, ufl_element)
     uh = fem.Function(V)
     uh.interpolate(lambda x: saw_tooth(x[0]))
     if MPI.COMM_WORLD.size == 1:  # Skip this plotting in parallel
-        pts = []
+        pts = []  # type: ignore
         cells = []
         for cell in range(10):
             for i in range(51):
-                pts.append([cell / 10 + i / 50 / 10, 0, 0])
+                pts.append([cell / 10 + i / 50 / 10, 0, 0])  # type: ignore
                 cells.append(cell)
         values = uh.eval(pts, cells)
         plt.plot(pts, [saw_tooth(i[0]) for i in pts], "k--")
         plt.plot(pts, values, "r-")
         plt.legend(["function", "approximation"])
         plt.ylim([-0.1, 0.4])
-        plt.title(variant.name)
-        plt.savefig(f"demo_lagrange_variants_interpolation_{variant.name}.png")
+        plt.title(variant.__name__)
+        plt.savefig(f"demo_lagrange_variants_interpolation_{variant.__name__}.png")
         plt.clf()
 # -
 
@@ -200,12 +199,12 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
 # +
 for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warped]:
     ufl_element = basix.ufl.element(basix.ElementFamily.P, basix.CellType.interval, 10, variant)
-    V = fem.FunctionSpace(msh, ufl_element)
+    V = fem.functionspace(msh, ufl_element)
     uh = fem.Function(V)
     uh.interpolate(lambda x: saw_tooth(x[0]))
     M = fem.form((u_exact - uh)**2 * dx)
     error = msh.comm.allreduce(fem.assemble_scalar(M), op=MPI.SUM)
-    print(f"Computed L2 interpolation error ({variant.name}):", error ** 0.5)
+    print(f"Computed L2 interpolation error ({variant.__name__}):", error ** 0.5)
 # -
 
 # ## Available Lagrange variants

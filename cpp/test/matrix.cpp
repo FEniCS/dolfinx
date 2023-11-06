@@ -8,7 +8,8 @@
 
 #include "poisson.h"
 #include <basix/mdspan.hpp>
-#include <catch2/catch.hpp>
+#include <catch2/catch_approx.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include <dolfinx.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/la/MatrixCSR.h>
@@ -123,7 +124,7 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
   sp.finalize();
   la::MatrixCSR<double> A(sp);
   fem::assemble_matrix(A.mat_add_values(), *a, {});
-  A.finalize();
+  A.scatter_rev();
 
   return A;
 }
@@ -132,7 +133,7 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
 {
   la::MatrixCSR A0 = create_operator(MPI_COMM_SELF);
   la::MatrixCSR A1 = create_operator(MPI_COMM_WORLD);
-  CHECK(A1.squared_norm() == Approx(A0.squared_norm()).epsilon(1e-8));
+  CHECK(A1.squared_norm() == Catch::Approx(A0.squared_norm()).epsilon(1e-8));
 }
 
 [[maybe_unused]] void test_matrix_apply()
@@ -162,7 +163,7 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
   // Assemble matrix
   la::MatrixCSR<double> A(sp);
   fem::assemble_matrix(A.mat_add_values(), *a, {});
-  A.finalize();
+  A.scatter_rev();
   CHECK((V->dofmap()->index_map->size_local() == A.num_owned_rows()));
 
   // Get compatible vectors
@@ -203,13 +204,14 @@ void test_matrix()
 
   const std::vector Adense0 = A.to_dense();
 
-  namespace stdex = std::experimental;
-  stdex::mdspan<const T, stdex::extents<std::size_t, 8, 8>> Adense(
-      Adense0.data(), 8, 8);
+  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      const T, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<std::size_t, 8, 8>>
+      Adense(Adense0.data(), 8, 8);
 
   std::vector<T> Aref_data(8 * 8, 0);
-  stdex::mdspan<T, stdex::extents<std::size_t, 8, 8>> Aref(Aref_data.data(), 8,
-                                                           8);
+  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      T, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<std::size_t, 8, 8>>
+      Aref(Aref_data.data(), 8, 8);
   Aref(0, 0) = 1;
   Aref(4, 5) = 2.3;
 
