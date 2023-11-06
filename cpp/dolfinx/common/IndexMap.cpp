@@ -48,6 +48,7 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
   // Find first index that is not owned by this rank
   int size_local = map.size_local();
   auto owned_end = std::lower_bound(indices.begin(), indices.end(), size_local);
+
   int first_ghost_index = std::distance(indices.begin(), owned_end);
   int num_ghost_indices = indices.size() - first_ghost_index;
 
@@ -77,15 +78,15 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
   for (std::size_t i = 0; i < dest.size(); i++)
   {
     int owner = dest[i];
-    auto it1 = std::upper_bound(it, ghost_owners.end(), owner);
+    auto begin = std::find(it, ghost_owners.end(), owner);
+    auto end = std::upper_bound(begin, ghost_owners.end(), owner);
 
     // Count number of ghosts for this destination (if any)
-    if (it1 != ghost_owners.end() and *it1 == owner)
-    {
-      send_sizes[i] = std::distance(it, it1);
-      it = it1;
-    }
+    send_sizes[i] = std::distance(begin, end);
     send_disp[i + 1] = send_disp[i] + send_sizes[i];
+
+    if (begin != end)
+      it = end;
   }
 
   // Create ghost -> owner comm
