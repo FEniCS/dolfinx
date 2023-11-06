@@ -54,6 +54,7 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
   std::vector<std::int64_t> global_indices(num_ghost_indices);
   std::vector<int> ghost_owners(num_ghost_indices);
 
+  // Get global indices and owners for ghost indices
   for (int i = 0; i < num_ghost_indices; ++i)
   {
     int idx = indices[first_ghost_index + i];
@@ -78,6 +79,7 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
     int owner = dest[i];
     auto it1 = std::upper_bound(it, ghost_owners.end(), owner);
 
+    // Count number of ghosts for this destination (if any)
     if (it1 != ghost_owners.end() and *it1 == owner)
     {
       send_sizes[i] = std::distance(it, it1);
