@@ -253,10 +253,6 @@ xdmf_utils::distribute_entity_data(
     cell_vertex_dofs.push_back(local_index[0]);
   }
 
-  auto c_to_v = topology.connectivity(topology.dim(), 0);
-  if (!c_to_v)
-    throw std::runtime_error("Missing cell-vertex connectivity.");
-
   // -- A. Convert from list of entities by 'nodes' to list of entities
   // by 'vertex nodes'
   std::vector<std::int64_t> entities_v_buffer;
@@ -568,6 +564,10 @@ xdmf_utils::distribute_entity_data(
   {
     // Build map from input global indices to local vertex numbers
     LOG(INFO) << "XDMF build map";
+
+    auto c_to_v = topology.connectivity(topology.dim(), 0);
+    if (!c_to_v)
+      throw std::runtime_error("Missing cell-vertex connectivity.");
 
     std::map<std::int64_t, std::int32_t> input_idx_to_vertex;
     for (int c = 0; c < c_to_v->num_nodes(); ++c)
