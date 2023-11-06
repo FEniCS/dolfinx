@@ -1065,7 +1065,15 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 /// @param[in] cells Indices of the cells in the destination mesh on
 /// which to interpolate. Should be the same as the list used when
 /// calling fem::interpolation_coords.
-/// @param[in] padding Extrapolation distance
+/// @param[in] padding Absolute padding of bounding boxes of all entities on
+/// `mesh1`. This is used avoid floating point issues when an interpolation
+/// point from `mesh0` is on the surface of a cell in `mesh1`. This parameter
+/// can also be used for extrapolation, i.e. if cells in `mesh0` is not
+/// overlapped by `mesh1`.
+///
+/// @note Setting the `padding` to a large value will increase runtime of this
+/// function, as one has to determine what entity is closest if there is no
+/// intersection.
 template <std::floating_point T>
 std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>, std::vector<T>,
            std::vector<std::int32_t>>
@@ -1094,7 +1102,14 @@ create_nonmatching_meshes_interpolation_data(
 /// @param[in] mesh0 Mesh of the space to interpolate into
 /// @param[in] element0 Element of the space to interpolate into
 /// @param[in] mesh1 Mesh of the function to interpolate from
-/// @param[in] padding Extrapolation padding
+/// @param[in] padding Absolute padding of bounding boxes of all entities on
+/// `mesh1`. This is used avoid floating point issues when an interpolation
+/// point from `mesh0` is on the surface of a cell in `mesh1`. This parameter
+/// can also be used for extrapolation, i.e. if cells in `mesh0` is not
+/// overlapped by `mesh1`.
+/// @note Setting the `padding` to a large value will increase runtime of this
+/// function, as one has to determine what entity is closest if there is no
+/// intersection.
 template <std::floating_point T>
 std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>, std::vector<T>,
            std::vector<std::int32_t>>

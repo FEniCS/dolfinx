@@ -495,6 +495,10 @@ compute_collisions(const BoundingBoxTree<T>& tree, std::span<const T> points)
 /// to collide with the point is returned. If no collision is detected,
 /// -1 is returned.
 ///
+/// @note `cells` can for instance be found by using
+/// `dolfinx::geometry::compute_collisions` between a bounding box tree for the
+/// cells of the mesh and the point.
+///
 /// @param[in] mesh The mesh
 /// @param[in] cells The candidate cells
 /// @param[in] point The point (`shape=(3,)`)
@@ -604,6 +608,10 @@ compute_closest_entity(const BoundingBoxTree<T>& tree,
 /// @note Uses the GJK algorithm, see geometry::compute_distance_gjk for
 /// details.
 ///
+/// @note `candidate_cells` can for instance be found by using
+/// `dolfinx::geometry::compute_collisions` between a bounding box tree and the
+/// set of points.
+///
 /// @param[in] mesh The mesh
 /// @param[in] candidate_cells List of candidate colliding cells for the
 /// ith point in `points`
@@ -648,8 +656,10 @@ graph::AdjacencyList<std::int32_t> compute_colliding_cells(
 /// @param[in] mesh The mesh
 /// @param[in] points Points to check for collision (`shape=(num_points,
 /// 3)`). Storage is row-major.
-/// @param[in] padding Amount of padding of bounding boxes. Used for
-/// extrapolation if point is not found after collision detection.
+/// @param[in] padding Amount of absolute padding of bounding boxes of the mesh.
+/// Each bounding box of the mesh is padded with this amount, to increase
+/// the number of candidates, avoiding rounding errors in determining the owner
+/// of a point if the point is on the surface of a cell in the mesh.
 /// @return Tuple `(src_owner, dest_owner, dest_points, dest_cells)`,
 /// where src_owner is a list of ranks corresponding to the input
 /// points. dest_owner is a list of ranks corresponding to dest_points,
@@ -663,9 +673,9 @@ graph::AdjacencyList<std::int32_t> compute_colliding_cells(
 /// 3)`
 /// @note Only looks through cells owned by the process
 /// @note A large padding value can increase the runtime of the function by
-/// orders of magnitude. This is due to extrapolation, which is an expensive
-/// operation to perform. Especially computing the closest entity for every
-/// interpolation point.
+/// orders of magnitude, because that for non-colliding cells
+/// one has to determine the closest cell among all processes with an
+/// intersecting bounding box, which is an expensive operation to perform.
 template <std::floating_point T>
 std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>, std::vector<T>,
            std::vector<std::int32_t>>
@@ -778,10 +788,15 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
   {
     std::array<T, 3> point;
     std::copy_n(std::next(received_points.begin(), p), 3, point.begin());
+    // Find first collding cell among the cells with colliding bounding boxes
     const int colliding_cell = geometry::compute_first_colliding_cell(
         mesh, candidate_collisions.links(p / 3), point,
         10 * std::numeric_limits<T>::epsilon());
+    // If a collding cell is found, store the rank of the current process
+    // which will be sent back to the owner of the point
     cell_indicator[p / 3] = (colliding_cell >= 0) ? rank : -1;
+    // Store the cell index for lookup once the owning processes has determined
+    // the ownership of the point
     closest_cells[p / 3] = colliding_cell;
   }
 
@@ -811,18 +826,17 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
   }
 
   std::vector<std::int32_t> recv_ranks(recv_offsets.back());
-  MPI_Neighbor_alltoallv(
-      cell_indicator.data(), send_sizes.data(), send_offsets.data(),
-      dolfinx::MPI::mpi_type<std::int32_t>(), recv_ranks.data(),
-      recv_sizes.data(), recv_offsets.data(),
-      dolfinx::MPI::mpi_type<std::int32_t>(), reverse_comm);
+  MPI_Neighbor_alltoallv(cell_indicator.data(), send_sizes.data(),
+                         send_offsets.data(), MPI_INT32_T, recv_ranks.data(),
+                         recv_sizes.data(), recv_offsets.data(), MPI_INT32_T,
+                         reverse_comm);
 
   std::vector<std::int32_t> point_owners(points.size() / 3, -1);
   for (std::size_t i = 0; i < unpack_map.size(); i++)
   {
     const std::int32_t pos = unpack_map[i];
     // Only insert new owner if no owner has previously been found
-    if ((recv_ranks[i] >= 0) && (point_owners[pos] == -1))
+    if (recv_ranks[i] >= 0 && point_owners[pos] == -1)
       point_owners[pos] = recv_ranks[i];
   }
 
@@ -832,7 +846,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
   for (std::int32_t i = 0; i < recv_offsets.back(); i++)
   {
     const std::int32_t pos = unpack_map[i];
-    send_extrapolate[i] = std::uint8_t(point_owners[pos] == -1);
+    send_extrapolate[i] = point_owners[pos] == -1;
   }
 
   // Swap communication direction, to send extrapolation marker to other
@@ -903,7 +917,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
     {
       const std::int32_t pos = unpack_map[j];
       auto current_dist = recv_distances[j];
-      // Only update if closer than previous guess and was found
+      // Update if closer than previous guess and was found
       if (auto d = closest_distance[pos];
           (current_dist > 0) and (current_dist < d))
       {
@@ -932,11 +946,10 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
 
   // Send ownership info
   std::vector<std::int32_t> dest_ranks(recv_offsets.back());
-  MPI_Neighbor_alltoallv(
-      send_owners.data(), send_sizes.data(), send_offsets.data(),
-      dolfinx::MPI::mpi_type<std::int32_t>(), dest_ranks.data(),
-      recv_sizes.data(), recv_offsets.data(),
-      dolfinx::MPI::mpi_type<std::int32_t>(), forward_comm);
+  MPI_Neighbor_alltoallv(send_owners.data(), send_sizes.data(),
+                         send_offsets.data(), MPI_INT32_T, dest_ranks.data(),
+                         recv_sizes.data(), recv_offsets.data(), MPI_INT32_T,
+                         forward_comm);
 
   // Unpack dest ranks if point owner is this rank
   std::vector<std::int32_t> owned_recv_ranks;

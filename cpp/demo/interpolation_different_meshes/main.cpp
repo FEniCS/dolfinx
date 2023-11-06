@@ -67,7 +67,7 @@ int main(int argc, char* argv[])
     u_tet->interpolate(fun);
 
     // Interpolate from u_tet to u_hex
-    const T padding = 1e-8;
+    constexpr T padding = 1e-8;
     auto nmm_interpolation_data
         = fem::create_nonmatching_meshes_interpolation_data(
             *u_hex->function_space()->mesh(),
