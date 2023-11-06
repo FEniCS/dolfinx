@@ -8,11 +8,7 @@
 
 #include <nanobind/nanobind.h>
 #include <petsc4py/petsc4py.h>
-#include <petscdm.h>
-#include <petscis.h>
-#include <petscksp.h>
 #include <petscmat.h>
-#include <petscsnes.h>
 #include <petscvec.h>
 
 // nanobind casters for PETSc/petsc4py objects
@@ -83,5 +79,3 @@ namespace nanobind::detail
 PETSC_CASTER_MACRO(Mat, Mat, mat);
 PETSC_CASTER_MACRO(Vec, Vec, vec);
 } // namespace nanobind::detail
-
-#undef PETSC_CASTER_MACRO
