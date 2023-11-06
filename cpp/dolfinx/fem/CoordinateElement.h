@@ -28,7 +28,6 @@ class FiniteElement;
 
 namespace dolfinx::fem
 {
-
 /// A CoordinateElement manages coordinate mappings for isoparametric
 /// cells.
 /// @todo A dof layout on a reference cell needs to be defined.

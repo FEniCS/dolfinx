@@ -79,10 +79,10 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 /// @param[in] topology A mesh topology.
 /// @param[in] nodes_g Global 'input' indices for the mesh, as returned
 /// by Geometry::input_global_indices.
-/// @param[in] num_nodes_g Glocal number of 'geometry; nodes, as
-/// returned by ``Geometry::index_map()->size_global()`.
+/// @param[in] num_nodes_g Global number of geometry nodes, as returned
+/// by `Geometry::index_map()->size_global()`.
 /// @param[in] cmap_dof_layout Coordinate element dof layout, computed
-/// using Geometry::cmaps()[0].create_dof_layout().
+/// using `Geometry::cmaps()[0].create_dof_layout()`.
 /// @param[in] xdofmap Dofmap for the mesh geometry (Geometry::dofmap).
 /// @param[in] entity_dim Topological dimension of entities to extract
 /// @param[in] entities Mesh entities defined using global input indices
@@ -96,6 +96,7 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 /// @param[in] data Data associated with each entity in `entities`.
 /// @return (entity-vertex connectivity of owned entities, associated
 /// data (values) with each entity).
+///
 /// @note This function involves parallel distribution and must be
 /// called collectively. Global input indices for entities which are not
 /// owned by current rank could be passed to this function. E.g., rank0
@@ -105,13 +106,17 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 /// connectivity for this triangle.
 std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
 distribute_entity_data(
-    const mesh::Topology& topology, const std::vector<std::int64_t>& nodes_g,
+    const mesh::Topology& topology, std::span<const std::int64_t> nodes_g,
     std::int64_t num_nodes_g, const fem::ElementDofLayout& cmap_dof_layout,
     MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
         const std::int32_t,
         MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
         xdofmap,
-    int entity_dim, std::span<const std::int64_t> entities,
+    int entity_dim,
+    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        const std::int64_t,
+        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+        entities,
     std::span<const std::int32_t> data);
 
 /// TODO: Document
