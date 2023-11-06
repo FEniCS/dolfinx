@@ -136,20 +136,16 @@ fem::DofMap fem::create_dofmap(
 //-----------------------------------------------------------------------------
 std::vector<std::string> fem::get_coefficient_names(const ufcx_form& ufcx_form)
 {
-  std::vector<std::string> coefficients;
-  const char** names = ufcx_form.coefficient_name_map();
-  for (int i = 0; i < ufcx_form.num_coefficients; ++i)
-    coefficients.push_back(names[i]);
-  return coefficients;
+  return std::vector<std::string>(ufcx_form.coefficient_name_map,
+                                  ufcx_form.coefficient_name_map
+                                      + ufcx_form.num_coefficients);
 }
 //-----------------------------------------------------------------------------
 std::vector<std::string> fem::get_constant_names(const ufcx_form& ufcx_form)
 {
-  std::vector<std::string> constants;
-  const char** names = ufcx_form.constant_name_map();
-  for (int i = 0; i < ufcx_form.num_constants; ++i)
-    constants.push_back(names[i]);
-  return constants;
+  return std::vector<std::string>(ufcx_form.constant_name_map,
+                                  ufcx_form.constant_name_map
+                                      + ufcx_form.num_constants);
 }
 //-----------------------------------------------------------------------------
 std::vector<std::pair<int, std::vector<std::int32_t>>>
