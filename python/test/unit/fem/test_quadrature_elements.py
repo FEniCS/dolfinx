@@ -48,7 +48,7 @@ def test_points_and_weights():
     CG2_vect = dolfinx.fem.functionspace(msh, ("Lagrange", 1))
     Qe = basix.ufl.quadrature_element(
         msh.topology.cell_name(), value_shape=(),
-        points=np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1/3, 1/3]]),
+        points=np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1 / 3, 1 / 3]]),
         weights=np.array([0.2, 0.2, 0.2, 0.4]))
     Quad = dolfinx.fem.functionspace(msh, Qe)
 
