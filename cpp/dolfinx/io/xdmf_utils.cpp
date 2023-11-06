@@ -29,6 +29,10 @@ using namespace dolfinx::io;
 
 namespace
 {
+template <typename T, std::size_t ndim>
+using mdspan_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+    T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, ndim>>;
+
 /// Get data width - normally the same as u.value_size(), but expand for
 /// 2D vector/tensor because XDMF presents everything as 3D
 template <std::floating_point U>
@@ -257,10 +261,7 @@ xdmf_utils::distribute_entity_data(
   // -- A. Convert from list of entities by 'nodes' to list of entities
   // by 'vertex nodes'
   std::vector<std::int64_t> entities_v_buffer;
-  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      const std::int64_t,
-      MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
-      entities_v;
+  mdspan_t<const std::int64_t, 2> entities_v;
   {
     // Use ElementDofLayout of the cell to get vertex dof indices (local
     // to a cell), i.e. build a map from local vertex index to associated
@@ -290,16 +291,13 @@ xdmf_utils::distribute_entity_data(
       std::sort(entity.begin(), entity.end());
     }
 
-    entities_v = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const std::int64_t,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>(
+    entities_v = mdspan_t<const std::int64_t, 2>(
         entities_v_buffer.data(), entities.extent(0), num_vert_per_entity);
   }
 
   MPI_Comm comm = topology.comm();
 
   // -- B. Send entities and entity data to postmaster
-  // std::vector<std::int64_t> entity_data;
   std::vector<std::int64_t> entities_p;
   {
     int size = dolfinx::MPI::size(comm);
@@ -335,7 +333,7 @@ xdmf_utils::distribute_entity_data(
     }
 
     // Compute send displacements
-    std::vector<std::int32_t> send_disp(num_items_send.size() + 1, 0);
+    std::vector<int> send_disp(num_items_send.size() + 1, 0);
     std::partial_sum(num_items_send.begin(), num_items_send.end(),
                      std::next(send_disp.begin()));
 
@@ -361,7 +359,7 @@ xdmf_utils::distribute_entity_data(
     dolfinx::MPI::check_error(comm, err);
 
     // Compute receive displacements
-    std::vector<std::int32_t> recv_disp(num_items_recv.size() + 1, 0);
+    std::vector<int> recv_disp(num_items_recv.size() + 1, 0);
     std::partial_sum(num_items_recv.begin(), num_items_recv.end(),
                      std::next(recv_disp.begin()));
 
@@ -423,7 +421,7 @@ xdmf_utils::distribute_entity_data(
     }
 
     // Compute send displacements
-    std::vector<std::int32_t> send_disp(num_items_send.size() + 1, 0);
+    std::vector<int> send_disp(num_items_send.size() + 1, 0);
     std::partial_sum(num_items_send.begin(), num_items_send.end(),
                      std::next(send_disp.begin()));
 
@@ -449,7 +447,7 @@ xdmf_utils::distribute_entity_data(
     dolfinx::MPI::check_error(comm, err);
 
     // Compute receive displacements
-    std::vector<std::int32_t> recv_disp(num_items_recv.size() + 1, 0);
+    std::vector<int> recv_disp(num_items_recv.size() + 1, 0);
     std::partial_sum(num_items_recv.begin(), num_items_recv.end(),
                      std::next(recv_disp.begin()));
 
@@ -468,14 +466,16 @@ xdmf_utils::distribute_entity_data(
     dolfinx::MPI::check_error(comm, err);
     err = MPI_Comm_free(&comm0);
     dolfinx::MPI::check_error(comm, err);
-    return std::tuple(recv_buffer, recv_disp, src, dest);
+    return std::tuple(std::move(recv_buffer), std::move(recv_disp),
+                      std::move(src), std::move(dest));
   };
   auto [nodes_g_p, recv_disp, src, dest] = indices_to_postoffice(nodes_g);
 
   // D. Send entities to possible owners, based on first entity index
   auto candidate_ranks
-      = [comm](auto indices_recv, auto indices_recv_disp, auto src, auto dest,
-               auto entities, auto eshape1)
+      = [comm](std::span<const std::int64_t> indices_recv,
+               std::span<const int> indices_recv_disp, std::span<const int> src,
+               std::span<const int> dest, auto entities)
   {
     // Build map from received global node indices to neighbourhood
     // ranks that have the node
@@ -485,9 +485,10 @@ xdmf_utils::distribute_entity_data(
         node_to_rank.insert({indices_recv[j], i});
 
     std::vector<std::vector<std::int64_t>> send_data(dest.size());
-    for (std::size_t e = 0; e < entities.size() / eshape1; ++e)
+    for (std::size_t e = 0; e < entities.extent(0); ++e)
     {
-      std::span e_recv(entities.data() + e * eshape1, eshape1);
+      std::span e_recv(entities.data_handle() + e * entities.extent(1),
+                       entities.extent(1));
       auto [it0, it1] = node_to_rank.equal_range(e_recv.front());
       for (auto it = it0; it != it1; ++it)
       {
@@ -506,7 +507,7 @@ xdmf_utils::distribute_entity_data(
 
     std::vector<int> num_items_send;
     for (auto& x : send_data)
-      num_items_send.push_back(x.size() / eshape1);
+      num_items_send.push_back(x.size() / entities.extent(1));
 
     std::vector<int> num_items_recv(src.size());
     num_items_send.reserve(1);
@@ -530,9 +531,10 @@ xdmf_utils::distribute_entity_data(
     for (auto& x : send_data)
       send_buffer.insert(send_buffer.end(), x.begin(), x.end());
 
-    std::vector<std::int64_t> recv_buffer(eshape1 * recv_disp.back());
+    std::vector<std::int64_t> recv_buffer(entities.extent(1)
+                                          * recv_disp.back());
     MPI_Datatype compound_type;
-    MPI_Type_contiguous(eshape1, MPI_INT64_T, &compound_type);
+    MPI_Type_contiguous(entities.extent(1), MPI_INT64_T, &compound_type);
     MPI_Type_commit(&compound_type);
     err = MPI_Neighbor_alltoallv(send_buffer.data(), num_items_send.data(),
                                  send_disp.data(), compound_type,
@@ -544,16 +546,14 @@ xdmf_utils::distribute_entity_data(
   };
   // NOTE: src and dest are transposed here because we're reversing the
   // direction of communication
-  auto entity_data_revc = candidate_ranks(nodes_g_p, recv_disp, dest, src,
-                                          entities_p, entities_v.extent(1) + 1);
+  auto entity_data_revc = candidate_ranks(
+      nodes_g_p, recv_disp, dest, src,
+      mdspan_t<const std::int64_t, 2>(
+          entities_p.data(), entities_p.size() / (entities_v.extent(1) + 1),
+          entities_v.extent(1) + 1));
 
   // -- E. From the received (key, value) data, determine which keys
   //    (entities) are on this process.
-  //
-  // TODO: Rather than using std::map<std::vector<std::int64_t>,
-  //       std::int32_t>, use a rectangular array to avoid the
-  //       cost of std::vector<std::int64_t> allocations, and sort the
-  //       Array by row.
   //
   // TODO: We have already received possibly tagged entities from other
   //       ranks, so we could use the received data to avoid creating
