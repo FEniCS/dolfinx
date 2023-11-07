@@ -350,11 +350,11 @@ create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
   std::vector<std::int32_t> subx_to_x_dofmap;
   {
     std::pair<common::IndexMap, std::vector<int32_t>> map_data
-     = x_index_map->create_submap_conn(sub_x_dofs);
-    sub_x_dof_index_map = std::make_shared<common::IndexMap>(std::move(map_data.first));
+        = x_index_map->create_submap_conn(sub_x_dofs);
+    sub_x_dof_index_map
+        = std::make_shared<common::IndexMap>(std::move(map_data.first));
     subx_to_x_dofmap = std::move(map_data.second);
   }
-
 
   // Create sub-geometry coordinates
   std::span<const T> x = geometry.x();
