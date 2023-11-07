@@ -85,7 +85,7 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 /// using `Geometry::cmaps()[0].create_dof_layout()`.
 /// @param[in] xdofmap Dofmap for the mesh geometry (Geometry::dofmap).
 /// @param[in] entity_dim Topological dimension of entities to extract
-/// @param[in] entities Mesh entities defined using global input indices
+/// @param[in] entities0 Mesh entities defined using global input indices
 /// ('nodes'), typically from an input mesh file, e.g. [gi0, gi1, gi2]
 /// for a triangle. Let [v0, v1, v2] be the vertex indices of some
 /// triangle (using local indexing). Each vertex has a 'node' (geometry
@@ -93,7 +93,7 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 /// the triangle [gi0, gi1, gi2] could be identified with [v0, v1, v2].
 /// The data is flattened and the shape is `(num_entities,
 /// nodes_per_entity)`.
-/// @param[in] data Data associated with each entity in `entities`.
+/// @param[in] data0 Data associated with each entity in `entities`.
 /// @return (entity-vertex connectivity of owned entities, associated
 /// data (values) with each entity).
 ///
@@ -116,8 +116,8 @@ distribute_entity_data(
     MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
         const std::int64_t,
         MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
-        entities,
-    std::span<const std::int32_t> data);
+        entities1,
+    std::span<const std::int32_t> data0);
 
 /// TODO: Document
 template <typename T>

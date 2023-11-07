@@ -235,10 +235,10 @@ xdmf_utils::distribute_entity_data(
     MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
         const std::int64_t,
         MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
-        entities,
-    std::span<const std::int32_t> data)
+        entities0,
+    std::span<const std::int32_t> data0)
 {
-  assert(entities.extent(0) == data.size());
+  assert(entities0.extent(0) == data0.size());
   LOG(INFO) << "XDMF distribute entity data";
   auto cell_types = topology.cell_types();
   if (cell_types.size() > 1)
@@ -255,8 +255,9 @@ xdmf_utils::distribute_entity_data(
 
   // -- A. Convert from list of entities by 'nodes' to list of entities
   // by 'vertex nodes'
-  std::vector<std::int64_t> entities_v_buffer;
-  mdspan_t<const std::int64_t, 2> entities_v;
+  auto to_vertex_entities
+      = [](const auto& cmap_dof_layout, int entity_dim,
+           std::span<const int> cell_vertex_dofs, auto cell_type, auto entities)
   {
     // Use ElementDofLayout of the cell to get vertex dof indices (local
     // to a cell), i.e. build a map from local vertex index to associated
@@ -272,38 +273,44 @@ xdmf_utils::distribute_entity_data(
         entity_vertex_dofs.push_back(std::distance(entity_layout.begin(), it));
     }
 
-    const std::size_t num_vert_per_entity = mesh::cell_num_entities(
-        mesh::cell_entity_type(cell_types.back(), entity_dim, 0), 0);
+    const std::size_t num_vert_per_e = mesh::cell_num_entities(
+        mesh::cell_entity_type(cell_type, entity_dim, 0), 0);
 
     assert(entities.extent(1) == entity_layout.size());
-    entities_v_buffer.resize(entities.extent(0) * num_vert_per_entity);
+    std::vector<std::int64_t> entities_v_b(entities.extent(0) * num_vert_per_e);
     for (std::size_t e = 0; e < entities.extent(0); ++e)
     {
-      std::span entity(entities_v_buffer.data() + e * num_vert_per_entity,
-                       num_vert_per_entity);
-      for (std::size_t i = 0; i < num_vert_per_entity; ++i)
+      std::span entity(entities_v_b.data() + e * num_vert_per_e,
+                       num_vert_per_e);
+      for (std::size_t i = 0; i < num_vert_per_e; ++i)
         entity[i] = entities(e, entity_vertex_dofs[i]);
       std::sort(entity.begin(), entity.end());
     }
 
-    entities_v = mdspan_t<const std::int64_t, 2>(
-        entities_v_buffer.data(), entities.extent(0), num_vert_per_entity);
-  }
+    std::array<std::size_t, 2> shape = {entities.extent(0), num_vert_per_e};
+    return std::pair(entities_v_b, shape);
+  };
+  const auto [entities0_v_b, shapev]
+      = to_vertex_entities(cmap_dof_layout, entity_dim, cell_vertex_dofs,
+                           cell_types.back(), entities0);
+  mdspan_t<const std::int64_t, 2> entities0_v(entities0_v_b.data(), shapev);
 
   MPI_Comm comm = topology.comm();
+  MPI_Datatype compound_type;
+  MPI_Type_contiguous(entities0_v.extent(1) + 1, MPI_INT64_T, &compound_type);
+  MPI_Type_commit(&compound_type);
+  const int size = dolfinx::MPI::size(comm);
 
   // -- B. Send entities and entity data to postmaster
-  std::vector<std::int64_t> entities_p_buffer;
-  mdspan_t<const std::int64_t, 2> entities_p;
+  std::vector<std::int64_t> entitiesp_b;
+  mdspan_t<const std::int64_t, 2> entitiesp;
   {
-    int size = dolfinx::MPI::size(comm);
-
     // Determine destination by index of first vertex
     std::vector<int> dest0;
-    for (std::size_t e = 0; e < entities_v.extent(0); ++e)
+    for (std::size_t e = 0; e < entities0_v.extent(0); ++e)
     {
       dest0.push_back(
-          dolfinx::MPI::index_owner(size, entities_v(e, 0), num_nodes_g));
+          dolfinx::MPI::index_owner(size, entities0_v(e, 0), num_nodes_g));
     }
     std::vector<int> perm(dest0.size());
     std::iota(perm.begin(), perm.end(), 0);
@@ -361,20 +368,18 @@ xdmf_utils::distribute_entity_data(
 
     // Prepare send buffer
     std::vector<std::int64_t> send_buffer;
-    send_buffer.reserve(entities_v.size() + data.size());
-    for (std::size_t e = 0; e < entities_v.extent(0); ++e)
+    send_buffer.reserve(entities0_v.size() + data0.size());
+    for (std::size_t e = 0; e < entities0_v.extent(0); ++e)
     {
       auto idx = perm[e];
-      auto it = std::next(entities_v.data_handle(), idx * entities_v.extent(1));
-      send_buffer.insert(send_buffer.end(), it, it + entities_v.extent(1));
-      send_buffer.push_back(data[idx]);
+      auto it
+          = std::next(entities0_v.data_handle(), idx * entities0_v.extent(1));
+      send_buffer.insert(send_buffer.end(), it, it + entities0_v.extent(1));
+      send_buffer.push_back(data0[idx]);
     }
 
     std::vector<std::int64_t> recv_buffer(recv_disp.back()
-                                          * (entities_v.extent(1) + 1));
-    MPI_Datatype compound_type;
-    MPI_Type_contiguous(entities_v.extent(1) + 1, MPI_INT64_T, &compound_type);
-    MPI_Type_commit(&compound_type);
+                                          * (entities0_v.extent(1) + 1));
     err = MPI_Neighbor_alltoallv(send_buffer.data(), num_items_send.data(),
                                  send_disp.data(), compound_type,
                                  recv_buffer.data(), num_items_recv.data(),
@@ -383,11 +388,10 @@ xdmf_utils::distribute_entity_data(
     err = MPI_Comm_free(&comm0);
     dolfinx::MPI::check_error(comm, err);
 
-    std::swap(recv_buffer, entities_p_buffer);
-    entities_p = mdspan_t<std::int64_t, 2>(entities_p_buffer.data(),
-                                           entities_p_buffer.size()
-                                               / (entities_v.extent(1) + 1),
-                                           (entities_v.extent(1) + 1));
+    std::swap(recv_buffer, entitiesp_b);
+    entitiesp = mdspan_t<std::int64_t, 2>(
+        entitiesp_b.data(), entitiesp_b.size() / (entities0_v.extent(1) + 1),
+        (entities0_v.extent(1) + 1));
   }
 
   // -- C. Send mesh global indices to postmaster
@@ -473,9 +477,10 @@ xdmf_utils::distribute_entity_data(
 
   // D. Send entities to possible owners, based on first entity index
   auto candidate_ranks
-      = [comm](std::span<const std::int64_t> indices_recv,
-               std::span<const int> indices_recv_disp, std::span<const int> src,
-               std::span<const int> dest, auto entities)
+      = [comm, compound_type](std::span<const std::int64_t> indices_recv,
+                              std::span<const int> indices_recv_disp,
+                              std::span<const int> src,
+                              std::span<const int> dest, auto entities)
   {
     // Build map from received global node indices to neighbourhood
     // ranks that have the node
@@ -533,9 +538,6 @@ xdmf_utils::distribute_entity_data(
 
     std::vector<std::int64_t> recv_buffer(entities.extent(1)
                                           * recv_disp.back());
-    MPI_Datatype compound_type;
-    MPI_Type_contiguous(entities.extent(1), MPI_INT64_T, &compound_type);
-    MPI_Type_commit(&compound_type);
     err = MPI_Neighbor_alltoallv(send_buffer.data(), num_items_send.data(),
                                  send_disp.data(), compound_type,
                                  recv_buffer.data(), num_items_recv.data(),
@@ -547,11 +549,11 @@ xdmf_utils::distribute_entity_data(
   // NOTE: src and dest are transposed here because we're reversing the
   // direction of communication
   const std::vector<std::int64_t> entity_data_revc_buffer
-      = candidate_ranks(nodes_g_p, recv_disp, dest, src, entities_p);
+      = candidate_ranks(nodes_g_p, recv_disp, dest, src, entitiesp);
   mdspan_t<const std::int64_t, 2> entity_data_revc(
       entity_data_revc_buffer.data(),
-      entity_data_revc_buffer.size() / (entities_v.extent(1) + 1),
-      entities_v.extent(1) + 1);
+      entity_data_revc_buffer.size() / (entities0_v.extent(1) + 1),
+      entities0_v.extent(1) + 1);
 
   // -- E. From the received (key, value) data, determine which keys
   //    (entities) are on this process.
@@ -560,7 +562,7 @@ xdmf_utils::distribute_entity_data(
   //       ranks, so we could use the received data to avoid creating
   //       the std::map for *all* entities and just for candidate
   //       entities.
-  std::vector<std::int32_t> entities_new, data_new;
+  std::vector<std::int32_t> entities, data;
   {
     // Build map from input global indices to local vertex numbers
     LOG(INFO) << "XDMF build map";
@@ -579,7 +581,7 @@ xdmf_utils::distribute_entity_data(
         input_idx_to_vertex[nodes_g[xdofs[cell_vertex_dofs[v]]]] = vertices[v];
     }
 
-    std::vector<std::int32_t> entity(entities_v.extent(1));
+    std::vector<std::int32_t> entity(entities0_v.extent(1));
     for (std::size_t e = 0; e < entity_data_revc.extent(0); ++e)
     {
       bool entity_found = true;
@@ -599,12 +601,12 @@ xdmf_utils::distribute_entity_data(
 
       if (entity_found)
       {
-        entities_new.insert(entities_new.end(), entity.begin(), entity.end());
-        data_new.push_back(entity_data_revc(e, entity_data_revc.extent(1) - 1));
+        entities.insert(entities.end(), entity.begin(), entity.end());
+        data.push_back(entity_data_revc(e, entity_data_revc.extent(1) - 1));
       }
     }
   }
 
-  return {std::move(entities_new), std::move(data_new)};
+  return {std::move(entities), std::move(data)};
 }
 //-----------------------------------------------------------------------------
