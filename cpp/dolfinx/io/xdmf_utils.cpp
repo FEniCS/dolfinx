@@ -546,11 +546,12 @@ xdmf_utils::distribute_entity_data(
                                  send_disp.data(), compound_type,
                                  recv_buffer.data(), num_items_recv.data(),
                                  recv_disp.data(), compound_type, comm0);
+    dolfinx::MPI::check_error(comm, err);
     err = MPI_Comm_free(&comm0);
     dolfinx::MPI::check_error(comm, err);
 
     std::array<std::size_t, 2> shape
-        = {std::size_t(recv_disp.back()), entities.extent(1)};
+        = {recv_disp.size() / entities.extent(1), entities.extent(1)};
     return std::pair(std::move(recv_buffer), shape);
   };
   // NOTE: src and dest are transposed here because we're reversing the
@@ -568,12 +569,11 @@ xdmf_utils::distribute_entity_data(
   //       the std::map for *all* entities and just for candidate
   //       entities.
   auto select_entities
-      = [](auto& topology, auto xdofmap, std::span<const std::int64_t> nodes_g,
+      = [](const mesh::Topology& topology, auto xdofmap,
+           std::span<const std::int64_t> nodes_g,
            std::span<const int> cell_vertex_dofs, auto entities_data)
   {
-    // Build map from input global indices to local vertex numbers
     LOG(INFO) << "XDMF build map";
-
     auto c_to_v = topology.connectivity(topology.dim(), 0);
     if (!c_to_v)
       throw std::runtime_error("Missing cell-vertex connectivity.");
