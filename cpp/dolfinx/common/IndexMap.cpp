@@ -357,36 +357,22 @@ std::vector<std::int64_t> compute_submap_ghost_indices(
 
   std::vector<std::int64_t> send_gidx;
   send_gidx.reserve(recv_indices.size());
-  const std::array local_range = imap.local_range();
-  for (auto idx : recv_indices)
+  // NOTE: Received indices are owned by this process in the submap, but not
+  // necessarily in the original imap, so we must use global_to_local to convert
+  // rather than rather than subtracting the local_range[0]
+  // TODO Convert recv_indices or submap_owned?
+  std::vector<int32_t> recv_indices_local(recv_indices.size());
+  imap.global_to_local(recv_indices, recv_indices_local);
+  ss << "recv_indices_local = " << recv_indices_local << "\n";
+  for (auto idx : recv_indices_local)
   {
-    std::int32_t idx_local = idx - local_range[0];
-    assert(idx_local >= 0);
-    assert(idx_local < local_range[1]);
-
+    // TODO Check submap owned is always sorted
     // Could avoid search by creating look-up array
-    auto it
-        = std::lower_bound(submap_owned.begin(), submap_owned.end(), idx_local);
-    assert(it != submap_owned.end() and *it == idx_local);
+    auto it = std::lower_bound(submap_owned.begin(), submap_owned.end(), idx);
+    assert(it != submap_owned.end() and *it == idx);
     std::size_t idx_local_submap = std::distance(submap_owned.begin(), it);
     send_gidx.push_back(idx_local_submap + submap_offset);
   }
-
-  // TODO POSSIBLE FIX
-  // // TODO Convert recv_indices or submap_owned?
-  // std::vector<int32_t> recv_indices_local(recv_indices.size());
-  // imap.global_to_local(recv_indices, recv_indices_local);
-  // ss << "recv_indices_local = " << recv_indices_local << "\n";
-  // for (auto idx : recv_indices_local)
-  // {
-  //   // TODO Check submap owned is always sorted
-  //   // Could avoid search by creating look-up array
-  //   auto it
-  //       = std::lower_bound(submap_owned.begin(), submap_owned.end(), idx);
-  //   assert(it != submap_owned.end() and *it == idx);
-  //   std::size_t idx_local_submap = std::distance(submap_owned.begin(), it);
-  //   send_gidx.push_back(idx_local_submap + submap_offset);
-  // }
 
   // ss << "send_gidx = " << send_gidx << "\n";
 
@@ -1110,6 +1096,7 @@ IndexMap::create_submap_conn(std::span<const std::int32_t> indices) const
     }
     MPI_Barrier(_comm.comm());
   }
+  ss = std::stringstream();
 
   return {IndexMap(_comm.comm(), submap_local_size, submap_ghost_gidxs,
                    submap_ghost_owners),
