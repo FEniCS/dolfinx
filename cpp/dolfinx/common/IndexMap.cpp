@@ -460,7 +460,7 @@ std::vector<std::int64_t> IndexMap::global_indices() const
 //-----------------------------------------------------------------------------
 MPI_Comm IndexMap::comm() const { return _comm.comm(); }
 //----------------------------------------------------------------------------
-std::pair<IndexMap, std::vector<std::int32_t>>
+std::pair<std::shared_ptr<IndexMap>, std::vector<std::int32_t>>
 IndexMap::create_submap(std::span<const std::int32_t> indices) const
 {
   if (!indices.empty() and indices.back() >= this->size_local())
@@ -620,13 +620,13 @@ IndexMap::create_submap(std::span<const std::int32_t> indices) const
 
   if (_overlapping)
   {
-    return {IndexMap(_comm.comm(), local_size_new, ghosts, src_ranks),
+    return {std::make_shared<IndexMap>(_comm.comm(), local_size_new, ghosts, src_ranks),
             std::move(new_to_old_ghost)};
   }
   else
   {
     assert(new_to_old_ghost.empty());
-    return {IndexMap(_comm.comm(), local_size_new),
+    return {std::make_shared<IndexMap>(_comm.comm(), local_size_new),
             std::vector<std::int32_t>()};
   }
 }
@@ -919,7 +919,7 @@ std::vector<std::int32_t> IndexMap::shared_indices() const
                    assert(idx < range[1]);
                    return idx - range[0];
                  });
-  
+
   // Sort and remove duplicates
   std::sort(shared.begin(), shared.end());
   shared.erase(std::unique(shared.begin(), shared.end()), shared.end());

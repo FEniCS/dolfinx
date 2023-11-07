@@ -21,6 +21,7 @@
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
 #include <nanobind/stl/pair.h>
+#include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
@@ -142,7 +143,7 @@ void common(nb::module_& m)
           {
             auto [map, ghosts] = self.create_submap(
                 std::span(entities.data(), entities.size()));
-            return std::pair(std::move(map),
+            return std::pair(map,
                              dolfinx_wrappers::as_nbarray(std::move(ghosts)));
           },
           nb::arg("entities"));

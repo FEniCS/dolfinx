@@ -332,15 +332,14 @@ create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
       = common::compute_owned_indices(sub_x_dofs, *x_index_map);
   std::shared_ptr<common::IndexMap> sub_x_dof_index_map;
   {
-    std::pair<common::IndexMap, std::vector<int32_t>> map_data
+    auto [_sub_x_dof_index_map, gmap]
         = x_index_map->create_submap(subx_to_x_dofmap);
-    sub_x_dof_index_map
-        = std::make_shared<common::IndexMap>(std::move(map_data.first));
+    sub_x_dof_index_map = std::move(_sub_x_dof_index_map);
 
     // Create a map from the dofs in the sub-geometry to the geometry
     subx_to_x_dofmap.reserve(sub_x_dof_index_map->size_local()
                              + sub_x_dof_index_map->num_ghosts());
-    std::transform(map_data.second.begin(), map_data.second.end(),
+    std::transform(gmap.begin(), gmap.end(),
                    std::back_inserter(subx_to_x_dofmap),
                    [offset = x_index_map->size_local()](auto x_dof_index)
                    { return offset + x_dof_index; });

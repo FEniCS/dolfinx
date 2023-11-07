@@ -186,7 +186,7 @@ public:
   /// @return The (i) new index map and (ii) a map from the ghost
   /// position in the new map to the ghost position in the original
   /// (this) map
-  std::pair<IndexMap, std::vector<std::int32_t>>
+  std::pair<std::shared_ptr<IndexMap>, std::vector<std::int32_t>>
   create_submap(std::span<const std::int32_t> indices) const;
 
   /// @todo Aim to remove this function?

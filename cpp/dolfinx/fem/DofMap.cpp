@@ -67,7 +67,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
     std::span<std::int32_t> indices(dofs_view.data(),
                                     std::distance(dofs_view.begin(), it));
     auto [_index_map, gmap] = dofmap_view.index_map->create_submap(indices);
-    index_map = std::make_shared<common::IndexMap>(std::move(_index_map));
+    index_map = std::move(_index_map);
     ghost_new_to_old = std::move(gmap);
   }
   else
@@ -78,7 +78,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
                    [bs_view](auto idx) { return idx / bs_view; });
     indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
     auto [_index_map, gmap] = dofmap_view.index_map->create_submap(indices);
-    index_map = std::make_shared<common::IndexMap>(std::move(_index_map));
+    index_map = std::move(_index_map);
     ghost_new_to_old = std::move(gmap);
   }
 

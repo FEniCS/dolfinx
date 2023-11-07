@@ -1176,13 +1176,12 @@ mesh::create_subtopology(const Topology& topology, int dim,
         entities.begin(), entities.end(), std::back_inserter(subentities),
         [size = entity_map->size_local()](std::int32_t e) { return e < size; });
 
-    std::pair<common::IndexMap, std::vector<int32_t>> map_data
-        = entity_map->create_submap(subentities);
-    submap = std::make_shared<common::IndexMap>(std::move(map_data.first));
+    auto [_submap, gmap] = entity_map->create_submap(subentities);
+    submap = std::move(_submap);
 
     // Add ghost entities to subentities
     subentities.reserve(submap->size_local() + submap->num_ghosts());
-    std::transform(map_data.second.begin(), map_data.second.end(),
+    std::transform(gmap.begin(), gmap.end(),
                    std::back_inserter(subentities),
                    [offset = entity_map->size_local()](auto entity_index)
                    { return offset + entity_index; });
@@ -1202,13 +1201,12 @@ mesh::create_subtopology(const Topology& topology, int dim,
   // parent topology, and an index map
   std::shared_ptr<common::IndexMap> submap0;
   {
-    std::pair<common::IndexMap, std::vector<int32_t>> map_data
-        = map0->create_submap(subvertices0);
-    submap0 = std::make_shared<common::IndexMap>(std::move(map_data.first));
+    auto [_submap0, gmap0] = map0->create_submap(subvertices0);
+    submap0 = std::move(_submap0);
 
     // Add ghost vertices to the map
     subvertices0.reserve(submap0->size_local() + submap0->num_ghosts());
-    std::transform(map_data.second.begin(), map_data.second.end(),
+    std::transform(gmap0.begin(), gmap0.end(),
                    std::back_inserter(subvertices0),
                    [offset = map0->size_local()](std::int32_t vertex_index)
                    { return offset + vertex_index; });
