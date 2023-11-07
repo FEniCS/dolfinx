@@ -41,6 +41,23 @@ bool is_basix_element(const ufcx_finite_element& element)
 }
 //-----------------------------------------------------------------------------
 
+/// Check if an element is a quadrature element (or a blocked element
+/// containing a quadrature element)
+bool is_quadrature_element(const ufcx_finite_element& element)
+{
+  if (element.element_type == ufcx_quadrature_element)
+    return true;
+  else if (element.block_size != 1)
+  {
+    // TODO: what should happen if the element is a blocked element
+    // containing a blocked element containing a quadrature element?
+    return element.sub_elements[0]->element_type == ufcx_quadrature_element;
+  }
+  else
+    return false;
+}
+//-----------------------------------------------------------------------------
+
 /// Check if an element is a custom Basix element (or a blocked element
 /// containing a custom Basix element)
 bool is_basix_custom_element(const ufcx_finite_element& element)
@@ -135,8 +152,6 @@ FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
         "Unknown UFC cell type when building FiniteElement.");
   }
   assert(mesh::cell_dim(_cell_shape) == e.topological_dimension);
-
-  _map_type = static_cast<basix::maps::type>(e.map_type);
 
   static const std::map<ufcx_shape, std::string> ufcx_to_cell
       = {{vertex, "point"},         {interval, "interval"},
@@ -263,8 +278,9 @@ FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
           and _element->dof_transformations_are_permutations();
   }
 
-  if (e.custom_quadrature)
+  if (is_quadrature_element(e))
   {
+    assert (e.custom_quadrature);
     ufcx_quadrature_rule* qr = e.custom_quadrature;
     std::size_t npts = qr->npts;
     std::size_t tdim = qr->topological_dimension;
@@ -298,7 +314,6 @@ FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
   else
     _bs = 1;
 
-  _map_type = element.map_type();
   _space_dim = _bs * element.dim();
 
   // Create all sub-elements
@@ -473,7 +488,11 @@ basix::maps::type FiniteElement<T>::map_type() const
 template <std::floating_point T>
 bool FiniteElement<T>::map_ident() const noexcept
 {
-  return _map_type == basix::maps::type::identity;
+  if (!_element && _points.second[0] > 0)
+    // Quadratute elements must use identity map
+    return true;
+  assert(_element);
+  return _element->map_type() == basix::maps::type::identity;
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>

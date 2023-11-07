@@ -688,9 +688,6 @@ private:
   bool _needs_dof_permutations;
   bool _needs_dof_transformations;
 
-  // Pullback map type
-  basix::maps::type _map_type;
-
   // Basix Element (nullptr for mixed elements)
   std::unique_ptr<basix::FiniteElement<T>> _element;
 
