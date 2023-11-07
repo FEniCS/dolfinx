@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "xdmf_utils.h"
+#include <array>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <dolfinx/common/IndexMap.h>
@@ -22,6 +23,7 @@
 #include <filesystem>
 #include <map>
 #include <pugixml.hpp>
+#include <span>
 #include <vector>
 
 using namespace dolfinx;
@@ -286,7 +288,7 @@ xdmf_utils::distribute_entity_data(
       std::sort(entity.begin(), entity.end());
     }
 
-    std::array<std::size_t, 2> shape = {entities.extent(0), num_vert_per_e};
+    std::array shape{entities.extent(0), num_vert_per_e};
     return std::pair(std::move(entities_v), shape);
   };
   const auto [entities0_v_b, shapev]
@@ -388,9 +390,8 @@ xdmf_utils::distribute_entity_data(
     err = MPI_Comm_free(&comm0);
     dolfinx::MPI::check_error(comm, err);
 
-    std::array<std::size_t, 2> shape
-        = {recv_buffer.size() / (entities.extent(1) + 1),
-           (entities.extent(1) + 1)};
+    std::array shape{recv_buffer.size() / (entities.extent(1) + 1),
+                     (entities.extent(1) + 1)};
     return std::pair(std::move(recv_buffer), shape);
   };
   const auto [entitiesp_b, shapep] = send_entities_to_postmater(
@@ -550,8 +551,8 @@ xdmf_utils::distribute_entity_data(
     err = MPI_Comm_free(&comm0);
     dolfinx::MPI::check_error(comm, err);
 
-    std::array<std::size_t, 2> shape
-        = {recv_buffer.size() / entities.extent(1), entities.extent(1)};
+    std::array shape{recv_buffer.size() / entities.extent(1),
+                     entities.extent(1)};
     return std::pair(std::move(recv_buffer), shape);
   };
   // NOTE: src and dest are transposed here because we're reversing the
