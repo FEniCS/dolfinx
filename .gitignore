@@ -16,7 +16,6 @@
 *.dylib
 *.nbi
 *.nbc
-dolfinx/libdolfin.so*
 dolfinx/libdolfinx.so*
 
 # Log files
@@ -42,10 +41,6 @@ python/doc/source/generated/
 cpp/dolfinx/common/version.h
 
 # Configuration files
-dolfin.conf
-DOLFINConfig.cmake
-DOLFINConfigVersion.cmake
-dolfinx.conf
 DOLFINXConfig.cmake
 DOLFINXConfigVersion.cmake
 
