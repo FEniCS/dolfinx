@@ -72,3 +72,23 @@ def test_points_and_weights():
     vol_surf = dolfinx.fem.assemble_vector(vol_surf)
 
     assert np.allclose(vol_v.array + sur_v.array, vol_surf.array)
+
+
+def test_interpolation():
+    msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 10, 10)
+
+    e = basix.ufl.quadrature_element(msh.topology.cell_name(), value_shape=(), scheme="default", degree=1)
+    space = dolfinx.fem.functionspace(msh, e)
+    p1 = dolfinx.fem.functionspace(msh, ("Lagrange", 1))
+
+    f_p1 = dolfinx.fem.Function(p1)
+    f_p1.interpolate(lambda x: x[0])
+
+    f = dolfinx.fem.Function(space)
+    f.interpolate(lambda x: x[0])
+
+    diff = dolfinx.fem.form((f - f_p1) * ufl.dx)
+
+    error = dolfinx.fem.assemble_scalar(diff)
+
+    assert np.isclose(error, 0)
