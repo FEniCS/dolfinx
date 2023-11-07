@@ -689,7 +689,7 @@ private:
   bool _needs_dof_transformations;
 
   // Pullback map type
-  int _map_type;
+  basix::maps::type _map_type;
 
   // Basix Element (nullptr for mixed elements)
   std::unique_ptr<basix::FiniteElement<T>> _element;

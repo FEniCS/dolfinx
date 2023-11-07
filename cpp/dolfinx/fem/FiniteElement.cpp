@@ -107,7 +107,7 @@ template <std::floating_point T>
 FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
     : _signature(e.signature), _space_dim(e.space_dimension),
       _value_shape(e.value_shape, e.value_shape + e.value_rank),
-      _bs(e.block_size), _map_type(e.map_type)
+      _bs(e.block_size)
 {
   const ufcx_shape _shape = e.cell_shape;
   switch (_shape)
@@ -135,6 +135,8 @@ FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
         "Unknown UFC cell type when building FiniteElement.");
   }
   assert(mesh::cell_dim(_cell_shape) == e.topological_dimension);
+
+  _map_type = static_cast<basix::maps::type>(e.map_type);
 
   static const std::map<ufcx_shape, std::string> ufcx_to_cell
       = {{vertex, "point"},         {interval, "interval"},
@@ -296,6 +298,7 @@ FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
   else
     _bs = 1;
 
+  _map_type = element.map_type();
   _space_dim = _bs * element.dim();
 
   // Create all sub-elements
@@ -470,7 +473,7 @@ basix::maps::type FiniteElement<T>::map_type() const
 template <std::floating_point T>
 bool FiniteElement<T>::map_ident() const noexcept
 {
-  return _map_type == ufcx_identity_pullback;
+  return _map_type == basix::maps::type::identity;
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
