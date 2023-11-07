@@ -302,15 +302,16 @@ xdmf_utils::distribute_entity_data(
   const int size = dolfinx::MPI::size(comm);
 
   // -- B. Send entities and entity data to postmaster
-  std::vector<std::int64_t> entitiesp_b;
-  mdspan_t<const std::int64_t, 2> entitiesp;
+  auto send_entities_to_postmater
+      = [size, num_nodes_g](MPI_Comm comm, MPI_Datatype compound_type,
+                            auto entities, std::span<const std::int32_t> data)
   {
     // Determine destination by index of first vertex
     std::vector<int> dest0;
-    for (std::size_t e = 0; e < entities0_v.extent(0); ++e)
+    for (std::size_t e = 0; e < entities.extent(0); ++e)
     {
       dest0.push_back(
-          dolfinx::MPI::index_owner(size, entities0_v(e, 0), num_nodes_g));
+          dolfinx::MPI::index_owner(size, entities(e, 0), num_nodes_g));
     }
     std::vector<int> perm(dest0.size());
     std::iota(perm.begin(), perm.end(), 0);
@@ -368,18 +369,17 @@ xdmf_utils::distribute_entity_data(
 
     // Prepare send buffer
     std::vector<std::int64_t> send_buffer;
-    send_buffer.reserve(entities0_v.size() + data0.size());
-    for (std::size_t e = 0; e < entities0_v.extent(0); ++e)
+    send_buffer.reserve(entities.size() + data.size());
+    for (std::size_t e = 0; e < entities.extent(0); ++e)
     {
       auto idx = perm[e];
-      auto it
-          = std::next(entities0_v.data_handle(), idx * entities0_v.extent(1));
-      send_buffer.insert(send_buffer.end(), it, it + entities0_v.extent(1));
-      send_buffer.push_back(data0[idx]);
+      auto it = std::next(entities.data_handle(), idx * entities.extent(1));
+      send_buffer.insert(send_buffer.end(), it, it + entities.extent(1));
+      send_buffer.push_back(data[idx]);
     }
 
     std::vector<std::int64_t> recv_buffer(recv_disp.back()
-                                          * (entities0_v.extent(1) + 1));
+                                          * (entities.extent(1) + 1));
     err = MPI_Neighbor_alltoallv(send_buffer.data(), num_items_send.data(),
                                  send_disp.data(), compound_type,
                                  recv_buffer.data(), num_items_recv.data(),
@@ -388,11 +388,14 @@ xdmf_utils::distribute_entity_data(
     err = MPI_Comm_free(&comm0);
     dolfinx::MPI::check_error(comm, err);
 
-    std::swap(recv_buffer, entitiesp_b);
-    entitiesp = mdspan_t<std::int64_t, 2>(
-        entitiesp_b.data(), entitiesp_b.size() / (entities0_v.extent(1) + 1),
-        (entities0_v.extent(1) + 1));
-  }
+    std::array<std::size_t, 2> shape
+        = {recv_buffer.size() / (entities.extent(1) + 1),
+           (entities.extent(1) + 1)};
+    return std::pair(recv_buffer, shape);
+  };
+  const auto [entitiesp_b, shapep]
+      = send_entities_to_postmater(comm, compound_type, entities0_v, data0);
+  mdspan_t<const std::int64_t, 2> entitiesp(entitiesp_b.data(), shapep);
 
   // -- C. Send mesh global indices to postmaster
   auto indices_to_postoffice
@@ -473,7 +476,7 @@ xdmf_utils::distribute_entity_data(
     return std::tuple(std::move(recv_buffer), std::move(recv_disp),
                       std::move(src), std::move(dest));
   };
-  auto [nodes_g_p, recv_disp, src, dest] = indices_to_postoffice(nodes_g);
+  const auto [nodes_g_p, recv_disp, src, dest] = indices_to_postoffice(nodes_g);
 
   // D. Send entities to possible owners, based on first entity index
   auto candidate_ranks
