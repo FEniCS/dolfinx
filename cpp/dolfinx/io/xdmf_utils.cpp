@@ -548,16 +548,17 @@ xdmf_utils::distribute_entity_data(
                                  recv_disp.data(), compound_type, comm0);
     err = MPI_Comm_free(&comm0);
     dolfinx::MPI::check_error(comm, err);
-    return recv_buffer;
+
+    std::array<std::size_t, 2> shape
+        = {std::size_t(recv_disp.back()), entities.extent(1)};
+    return std::pair(std::move(recv_buffer), shape);
   };
   // NOTE: src and dest are transposed here because we're reversing the
   // direction of communication
-  const std::vector<std::int64_t> entities_data_b = candidate_ranks(
+  const auto [entities_data_b, shape_eb] = candidate_ranks(
       comm, compound_type, nodes_g_p, recv_disp, dest, src, entitiesp);
-  mdspan_t<const std::int64_t, 2> entities_data(
-      entities_data_b.data(),
-      entities_data_b.size() / (entities0_v.extent(1) + 1),
-      entities0_v.extent(1) + 1);
+  mdspan_t<const std::int64_t, 2> entities_data(entities_data_b.data(),
+                                                shape_eb);
 
   // -- E. From the received (key, value) data, determine which keys
   //    (entities) are on this process.
