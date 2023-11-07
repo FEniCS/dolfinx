@@ -191,6 +191,7 @@ public:
 
   /// @brief TODO
   /// @param[in] indices
+  /// @pre `indices` must be sorted and contain no duplicates.
   std::pair<IndexMap, std::vector<std::int32_t>>
   create_submap_conn(std::span<const std::int32_t> indices) const;
 
