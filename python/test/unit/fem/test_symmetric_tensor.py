@@ -1,9 +1,11 @@
 from mpi4py import MPI
-import basix.ufl
-import ufl
-import dolfinx
+
 import numpy as np
 import pytest
+
+import basix.ufl
+import dolfinx
+import ufl
 
 
 @pytest.mark.parametrize("degree", range(1, 4))
