@@ -46,20 +46,19 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
   std::vector<int> owners = map.owners();
 
   // Find first index that is not owned by this rank
-  int size_local = map.size_local();
-  auto owned_end = std::lower_bound(indices.begin(), indices.end(), size_local);
-
-  int first_ghost_index = std::distance(indices.begin(), owned_end);
-  int num_ghost_indices = indices.size() - first_ghost_index;
-
-  std::vector<std::int64_t> global_indices(num_ghost_indices);
-  std::vector<int> ghost_owners(num_ghost_indices);
+  std::int32_t size_local = map.size_local();
+  const auto it_owned_end
+      = std::lower_bound(indices.begin(), indices.end(), size_local);
 
   // Get global indices and owners for ghost indices
-  for (int i = 0; i < num_ghost_indices; ++i)
+  std::size_t first_ghost_index = std::distance(indices.begin(), it_owned_end);
+  std::int32_t num_ghost_indices = indices.size() - first_ghost_index;
+  std::vector<std::int64_t> global_indices(num_ghost_indices);
+  std::vector<int> ghost_owners(num_ghost_indices);
+  for (std::int32_t i = 0; i < num_ghost_indices; ++i)
   {
-    int idx = indices[first_ghost_index + i];
-    int pos = idx - size_local;
+    std::int32_t idx = indices[first_ghost_index + i];
+    std::int32_t pos = idx - size_local;
     global_indices[i] = ghosts[pos];
     ghost_owners[i] = owners[pos];
   }
@@ -68,8 +67,8 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
   std::sort(global_indices.begin(), global_indices.end());
   std::sort(ghost_owners.begin(), ghost_owners.end());
 
-  const std::vector<std::int32_t>& dest = map.dest();
-  const std::vector<std::int32_t>& src = map.src();
+  const std::vector<int>& dest = map.dest();
+  const std::vector<int>& src = map.src();
 
   // Count number of ghost per destination
   std::vector<int> send_sizes(src.size(), 0);
@@ -117,7 +116,6 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
                                 recv_buffer.data(), recv_sizes.data(),
                                 recv_disp.data(), MPI_INT64_T, comm);
   dolfinx::MPI::check_error(comm, ierr);
-
   ierr = MPI_Comm_free(&comm);
   dolfinx::MPI::check_error(comm, ierr);
 
@@ -129,7 +127,7 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
   // Copy owned and ghost indices into return array
   std::vector<std::int32_t> owned;
   owned.reserve(num_ghost_indices + recv_buffer.size());
-  std::copy(indices.begin(), owned_end, std::back_inserter(owned));
+  std::copy(indices.begin(), it_owned_end, std::back_inserter(owned));
   std::transform(recv_buffer.begin(), recv_buffer.end(),
                  std::back_inserter(owned),
                  [range = map.local_range()](auto idx)
@@ -172,8 +170,8 @@ common::stack_index_maps(
   std::set<int> dest_set;
   for (auto& [map, _] : maps)
   {
-    const std::vector<std::int32_t>& _src = map.get().src();
-    const std::vector<std::int32_t>& _dest = map.get().dest();
+    const std::vector<int>& _src = map.get().src();
+    const std::vector<int>& _dest = map.get().dest();
 
     src_set.insert(_src.begin(), _src.end());
     dest_set.insert(_dest.begin(), _dest.end());
