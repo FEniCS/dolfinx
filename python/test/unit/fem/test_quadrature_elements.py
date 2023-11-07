@@ -93,3 +93,24 @@ def test_interpolation(degree):
     error = dolfinx.fem.assemble_scalar(diff)
 
     assert np.isclose(error, 0)
+
+
+@pytest.mark.parametrize("degree", range(1, 5))
+def test_interpolation_blocked(degree):
+    msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 10, 10)
+
+    e = basix.ufl.quadrature_element(msh.topology.cell_name(), value_shape=(2, ), scheme="default", degree=degree)
+    space = dolfinx.fem.functionspace(msh, e)
+    p4 = dolfinx.fem.functionspace(msh, ("Lagrange", 4, (2, )))
+
+    f_p4 = dolfinx.fem.Function(p4)
+    f_p4.interpolate(lambda x: ([x[1] ** 4, x[0] ** 3]))
+
+    f = dolfinx.fem.Function(space)
+    f.interpolate(lambda x: ([x[1] ** 4, x[0] ** 3]))
+
+    diff = dolfinx.fem.form(ufl.inner(f - f_p4, f - f_p4) * ufl.dx)
+
+    error = dolfinx.fem.assemble_scalar(diff)
+
+    assert np.isclose(error, 0)
