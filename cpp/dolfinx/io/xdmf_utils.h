@@ -116,7 +116,7 @@ distribute_entity_data(
     MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
         const std::int64_t,
         MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
-        entities1,
+        entities0,
     std::span<const std::int32_t> data0);
 
 /// TODO: Document
