@@ -38,8 +38,7 @@ namespace
 {
 template <typename T, std::size_t ndim>
 using mdspan_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-    const std::int64_t,
-    MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, ndim>>;
+    const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, ndim>>;
 
 template <typename T>
 void xdmf_real_fn(auto&& m)
