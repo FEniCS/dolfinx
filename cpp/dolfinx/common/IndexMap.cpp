@@ -276,6 +276,7 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
     }
   }
 
+  // TODO Move
   return {submap_owned, submap_ghost, submap_ghost_owners};
 }
 std::vector<std::int64_t> compute_submap_ghost_indices(
@@ -370,6 +371,22 @@ std::vector<std::int64_t> compute_submap_ghost_indices(
     std::size_t idx_local_submap = std::distance(submap_owned.begin(), it);
     send_gidx.push_back(idx_local_submap + submap_offset);
   }
+
+  // TODO POSSIBLE FIX
+  // // TODO Convert recv_indices or submap_owned?
+  // std::vector<int32_t> recv_indices_local(recv_indices.size());
+  // imap.global_to_local(recv_indices, recv_indices_local);
+  // ss << "recv_indices_local = " << recv_indices_local << "\n";
+  // for (auto idx : recv_indices_local)
+  // {
+  //   // TODO Check submap owned is always sorted
+  //   // Could avoid search by creating look-up array
+  //   auto it
+  //       = std::lower_bound(submap_owned.begin(), submap_owned.end(), idx);
+  //   assert(it != submap_owned.end() and *it == idx);
+  //   std::size_t idx_local_submap = std::distance(submap_owned.begin(), it);
+  //   send_gidx.push_back(idx_local_submap + submap_offset);
+  // }
 
   // ss << "send_gidx = " << send_gidx << "\n";
 
@@ -1055,9 +1072,17 @@ IndexMap::create_submap_conn(std::span<const std::int32_t> indices) const
 
   ss << "submap_dest = " << submap_dest << "\n";
 
+  // std::vector<std::int64_t> submap_owned_global(submap_owned.size());
+  // this->local_to_global(submap_owned, submap_owned_global);
+
+  // ss << "submap_owned_global = " << submap_owned_global << "\n";
+
   // Compute the global indices (w.r.t. the submap) of the submap ghosts
   std::vector<std::int64_t> submap_ghost_global(submap_ghost.size());
   this->local_to_global(submap_ghost, submap_ghost_global);
+
+  // ss << "submap_ghost_global = " << submap_ghost_global << "\n";
+
   // FIXME Maybe return submap_owned to as global to simplify
   // compute_submap_ghost_indices?
   auto submap_ghost_gidxs = compute_submap_ghost_indices(
@@ -1086,7 +1111,8 @@ IndexMap::create_submap_conn(std::span<const std::int32_t> indices) const
     MPI_Barrier(_comm.comm());
   }
 
-  return {IndexMap(_comm.comm(), submap_local_size, submap_ghost_gidxs, submap_ghost_owners),
+  return {IndexMap(_comm.comm(), submap_local_size, submap_ghost_gidxs,
+                   submap_ghost_owners),
           std::move(sub_imap_to_imap)};
 }
 //-----------------------------------------------------------------------------
@@ -1378,7 +1404,7 @@ std::vector<std::int32_t> IndexMap::shared_indices() const
                    assert(idx < range[1]);
                    return idx - range[0];
                  });
-  
+
   // Sort and remove duplicates
   std::sort(shared.begin(), shared.end());
   shared.erase(std::unique(shared.begin(), shared.end()), shared.end());
