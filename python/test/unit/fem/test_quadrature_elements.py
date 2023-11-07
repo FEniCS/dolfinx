@@ -17,7 +17,7 @@ def test_default(degree):
     msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 10, 10)
 
     CG2_vect = dolfinx.fem.functionspace(msh, ("Lagrange", 1))
-    Qe = basix.ufl.quadrature_element(msh.topology.cell_name(), scheme="default", degree=degree)
+    Qe = basix.ufl.quadrature_element(msh.topology.cell_name(), degree=degree)
     Quad = dolfinx.fem.functionspace(msh, Qe)
 
     u = dolfinx.fem.Function(Quad)
@@ -78,7 +78,7 @@ def test_points_and_weights():
 def test_interpolation(degree):
     msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 10, 10)
 
-    e = basix.ufl.quadrature_element(msh.topology.cell_name(), scheme="default", degree=degree)
+    e = basix.ufl.quadrature_element(msh.topology.cell_name(), degree=degree)
     space = dolfinx.fem.functionspace(msh, e)
     p4 = dolfinx.fem.functionspace(msh, ("Lagrange", 4))
 
@@ -99,7 +99,7 @@ def test_interpolation(degree):
 def test_interpolation_blocked(degree):
     msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 10, 10)
 
-    e = basix.ufl.quadrature_element(msh.topology.cell_name(), value_shape=(2, ), scheme="default", degree=degree)
+    e = basix.ufl.quadrature_element(msh.topology.cell_name(), value_shape=(2, ), degree=degree)
     space = dolfinx.fem.functionspace(msh, e)
     p4 = dolfinx.fem.functionspace(msh, ("Lagrange", 4, (2, )))
 
