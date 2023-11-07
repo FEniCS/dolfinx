@@ -17,7 +17,7 @@ def test_default(degree):
     msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 10, 10)
 
     CG2_vect = dolfinx.fem.functionspace(msh, ("Lagrange", 1))
-    Qe = basix.ufl.quadrature_element(msh.topology.cell_name(), value_shape=(), scheme="default", degree=degree)
+    Qe = basix.ufl.quadrature_element(msh.topology.cell_name(), scheme="default", degree=degree)
     Quad = dolfinx.fem.functionspace(msh, Qe)
 
     u = dolfinx.fem.Function(Quad)
@@ -74,20 +74,21 @@ def test_points_and_weights():
     assert np.allclose(vol_v.array + sur_v.array, vol_surf.array)
 
 
-def test_interpolation():
+@pytest.mark.parametrize("degree", range(1, 5))
+def test_interpolation(degree):
     msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 10, 10)
 
-    e = basix.ufl.quadrature_element(msh.topology.cell_name(), value_shape=(), scheme="default", degree=1)
+    e = basix.ufl.quadrature_element(msh.topology.cell_name(), scheme="default", degree=degree)
     space = dolfinx.fem.functionspace(msh, e)
-    p1 = dolfinx.fem.functionspace(msh, ("Lagrange", 1))
+    p4 = dolfinx.fem.functionspace(msh, ("Lagrange", 4))
 
-    f_p1 = dolfinx.fem.Function(p1)
-    f_p1.interpolate(lambda x: x[0])
+    f_p4 = dolfinx.fem.Function(p4)
+    f_p4.interpolate(lambda x: x[0] ** 4)
 
     f = dolfinx.fem.Function(space)
-    f.interpolate(lambda x: x[0])
+    f.interpolate(lambda x: x[0] ** 4)
 
-    diff = dolfinx.fem.form((f - f_p1) * ufl.dx)
+    diff = dolfinx.fem.form(ufl.inner(f - f_p4, f - f_p4) * ufl.dx)
 
     error = dolfinx.fem.assemble_scalar(diff)
 
