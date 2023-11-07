@@ -328,23 +328,33 @@ create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
   // Get the sub-geometry dofs owned by this process
   auto x_index_map = geometry.index_map();
   assert(x_index_map);
-  auto subx_to_x_dofmap
-      = common::compute_owned_indices(sub_x_dofs, *x_index_map);
+  // auto subx_to_x_dofmap
+  //     = common::compute_owned_indices(sub_x_dofs, *x_index_map);
+  // std::shared_ptr<common::IndexMap> sub_x_dof_index_map;
+  // {
+  //   std::pair<common::IndexMap, std::vector<int32_t>> map_data
+  //       = x_index_map->create_submap(subx_to_x_dofmap);
+  //   sub_x_dof_index_map
+  //       = std::make_shared<common::IndexMap>(std::move(map_data.first));
+
+  //   // Create a map from the dofs in the sub-geometry to the geometry
+  //   subx_to_x_dofmap.reserve(sub_x_dof_index_map->size_local()
+  //                            + sub_x_dof_index_map->num_ghosts());
+  //   std::transform(map_data.second.begin(), map_data.second.end(),
+  //                  std::back_inserter(subx_to_x_dofmap),
+  //                  [offset = x_index_map->size_local()](auto x_dof_index)
+  //                  { return offset + x_dof_index; });
+  // }
+
   std::shared_ptr<common::IndexMap> sub_x_dof_index_map;
+  std::vector<std::int32_t> subx_to_x_dofmap;
   {
     std::pair<common::IndexMap, std::vector<int32_t>> map_data
-        = x_index_map->create_submap(subx_to_x_dofmap);
-    sub_x_dof_index_map
-        = std::make_shared<common::IndexMap>(std::move(map_data.first));
-
-    // Create a map from the dofs in the sub-geometry to the geometry
-    subx_to_x_dofmap.reserve(sub_x_dof_index_map->size_local()
-                             + sub_x_dof_index_map->num_ghosts());
-    std::transform(map_data.second.begin(), map_data.second.end(),
-                   std::back_inserter(subx_to_x_dofmap),
-                   [offset = x_index_map->size_local()](auto x_dof_index)
-                   { return offset + x_dof_index; });
+     = x_index_map->create_submap_conn(sub_x_dofs);
+    sub_x_dof_index_map = std::make_shared<common::IndexMap>(std::move(map_data.first));
+    subx_to_x_dofmap = std::move(map_data.second);
   }
+
 
   // Create sub-geometry coordinates
   std::span<const T> x = geometry.x();
