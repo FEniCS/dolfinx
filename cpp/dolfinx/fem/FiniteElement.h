@@ -688,7 +688,14 @@ private:
   bool _needs_dof_permutations;
   bool _needs_dof_transformations;
 
+  // Pullback map type
+  int _map_type;
+
   // Basix Element (nullptr for mixed elements)
   std::unique_ptr<basix::FiniteElement<T>> _element;
+
+  // Quadrature points of a quadrature element (nullptr for non-quadrature
+  // elements)
+  std::pair<std::vector<T>, std::array<std::size_t, 2>> _points;
 };
 } // namespace dolfinx::fem

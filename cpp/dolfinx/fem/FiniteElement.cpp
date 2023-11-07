@@ -107,7 +107,7 @@ template <std::floating_point T>
 FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
     : _signature(e.signature), _space_dim(e.space_dimension),
       _value_shape(e.value_shape, e.value_shape + e.value_rank),
-      _bs(e.block_size)
+      _bs(e.block_size), _map_type(e.map_type)
 {
   const ufcx_shape _shape = e.cell_shape;
   switch (_shape)
@@ -259,6 +259,16 @@ FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
     _needs_dof_permutations
         = !_element->dof_transformations_are_identity()
           and _element->dof_transformations_are_permutations();
+  }
+
+  if (e.custom_quadrature)
+  {
+    ufcx_quadrature_rule* qr = e.custom_quadrature;
+    std::size_t npts = qr->npts;
+    std::size_t tdim = qr->topological_dimension;
+    std::array qshape = {npts, tdim};
+    _points = std::make_pair(std::vector<T>(qshape[0] * qshape[1]), qshape);
+    std::copy_n(qr->points, _points.first.size(), _points.first.begin());
   }
 }
 //-----------------------------------------------------------------------------
@@ -460,13 +470,14 @@ basix::maps::type FiniteElement<T>::map_type() const
 template <std::floating_point T>
 bool FiniteElement<T>::map_ident() const noexcept
 {
-  assert(_element);
-  return _element->map_type() == basix::maps::type::identity;
+  return _map_type == ufcx_identity_pullback;
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
 bool FiniteElement<T>::interpolation_ident() const noexcept
 {
+  if (!_element && _points.second[0] > 0)
+    return true;
   assert(_element);
   return _element->interpolation_is_identity();
 }
@@ -475,6 +486,8 @@ template <std::floating_point T>
 std::pair<std::vector<T>, std::array<std::size_t, 2>>
 FiniteElement<T>::interpolation_points() const
 {
+  if (_points.second[0] > 0)
+    return _points;
   if (!_element)
   {
     throw std::runtime_error(
