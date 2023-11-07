@@ -237,10 +237,10 @@ xdmf_utils::distribute_entity_data(
     MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
         const std::int64_t,
         MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
-        entities0,
-    std::span<const std::int32_t> data0)
+        entities,
+    std::span<const std::int32_t> data)
 {
-  assert(entities0.extent(0) == data0.size());
+  assert(entities.extent(0) == data.size());
   LOG(INFO) << "XDMF distribute entity data";
   auto cell_types = topology.cell_types();
   if (cell_types.size() > 1)
@@ -291,14 +291,14 @@ xdmf_utils::distribute_entity_data(
     std::array shape{entities.extent(0), num_vert_per_e};
     return std::pair(std::move(entities_v), shape);
   };
-  const auto [entities0_v_b, shapev]
+  const auto [entities_v_b, shapev]
       = to_vertex_entities(cmap_dof_layout, entity_dim, cell_vertex_dofs,
-                           cell_types.back(), entities0);
-  mdspan_t<const std::int64_t, 2> entities0_v(entities0_v_b.data(), shapev);
+                           cell_types.back(), entities);
+  mdspan_t<const std::int64_t, 2> entities_v(entities_v_b.data(), shapev);
 
   MPI_Comm comm = topology.comm();
   MPI_Datatype compound_type;
-  MPI_Type_contiguous(entities0_v.extent(1) + 1, MPI_INT64_T, &compound_type);
+  MPI_Type_contiguous(entities_v.extent(1) + 1, MPI_INT64_T, &compound_type);
   MPI_Type_commit(&compound_type);
 
   // -- B. Send entities and entity data to postmaster
@@ -395,7 +395,7 @@ xdmf_utils::distribute_entity_data(
     return std::pair(std::move(recv_buffer), shape);
   };
   const auto [entitiesp_b, shapep] = send_entities_to_postmater(
-      comm, compound_type, num_nodes_g, entities0_v, data0);
+      comm, compound_type, num_nodes_g, entities_v, data);
   mdspan_t<const std::int64_t, 2> entitiesp(entitiesp_b.data(), shapep);
 
   // -- C. Send mesh global indices to postmaster
