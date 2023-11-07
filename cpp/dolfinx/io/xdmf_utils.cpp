@@ -551,7 +551,7 @@ xdmf_utils::distribute_entity_data(
     dolfinx::MPI::check_error(comm, err);
 
     std::array<std::size_t, 2> shape
-        = {recv_disp.size() / entities.extent(1), entities.extent(1)};
+        = {recv_buffer.size() / entities.extent(1), entities.extent(1)};
     return std::pair(std::move(recv_buffer), shape);
   };
   // NOTE: src and dest are transposed here because we're reversing the
