@@ -214,8 +214,11 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
       // Choose new owner randomly for load balancing
       const std::vector<std::int32_t>& possible_owners
           = global_idx_to_possible_owner[idx];
-      const int random_index = std::rand() % possible_owners.size();
-      send_owners.push_back(possible_owners[random_index]);
+      // const int random_index = std::rand() % possible_owners.size();
+      // send_owners.push_back(possible_owners[random_index]);
+
+      // FIXME TEMPORARILY CHOOSE THE FIRST PROCESS, MAKE RANDOM
+      send_owners.push_back(possible_owners[0]);
     }
     else
       send_owners.push_back(-1);
@@ -367,6 +370,19 @@ std::vector<std::int64_t> compute_submap_ghost_indices(
   // TODO Convert recv_indices or submap_owned?
   std::vector<int32_t> recv_indices_local(recv_indices.size());
   imap.global_to_local(recv_indices, recv_indices_local);
+
+  // ss << "recv_indices_local = " << recv_indices_local << "\n";
+
+  // for (int i = 0; i < dolfinx::MPI::size(comm); ++i)
+  // {
+  //   if (i == dolfinx::MPI::rank(comm))
+  //   {
+  //     std::cout << ss.str() << "\n";
+  //   }
+  //   MPI_Barrier(comm);
+  // }
+  // ss = std::stringstream();
+
   // ss << "recv_indices_local = " << recv_indices_local << "\n";
   for (auto idx : recv_indices_local)
   {
