@@ -32,13 +32,11 @@ namespace
 /// @returns A list of (cell_index, entity_index) pairs for each input
 /// entity.
 std::vector<std::pair<std::int32_t, int>>
-find_local_entity_index(mesh::Topology& topology,
+find_local_entity_index(const mesh::Topology& topology,
                         std::span<const std::int32_t> entities, int dim)
 {
   // Initialise entity-cell connectivity
   const int tdim = topology.dim();
-  topology.create_entities(tdim);
-  topology.create_connectivity(dim, tdim);
   auto e_to_c = topology.connectivity(dim, tdim);
   assert(e_to_c);
   auto c_to_e = topology.connectivity(tdim, dim);
@@ -176,10 +174,9 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::vector<std::int32_t>
-fem::locate_dofs_topological(mesh::Topology& topology, const DofMap& dofmap,
-                             int dim, std::span<const std::int32_t> entities,
-                             bool remote)
+std::vector<std::int32_t> fem::locate_dofs_topological(
+    const mesh::Topology& topology, const DofMap& dofmap, int dim,
+    std::span<const std::int32_t> entities, bool remote)
 {
   auto cell_types = topology.cell_types();
   if (cell_types.size() > 1)

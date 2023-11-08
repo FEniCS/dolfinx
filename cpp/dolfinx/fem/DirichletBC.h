@@ -47,8 +47,8 @@ namespace dolfinx::fem
 /// space V. The array uses the block size of the dofmap associated
 /// with V.
 std::vector<std::int32_t>
-locate_dofs_topological(mesh::Topology& topology, const DofMap& dofmap, int dim,
-                        std::span<const std::int32_t> entities,
+locate_dofs_topological(const mesh::Topology& topology, const DofMap& dofmap,
+                        int dim, std::span<const std::int32_t> entities,
                         bool remote = true);
 
 /// Find degrees-of-freedom which belong to the provided mesh entities
@@ -74,7 +74,7 @@ locate_dofs_topological(mesh::Topology& topology, const DofMap& dofmap, int dim,
 /// V[0] and array[1](i) is the corresponding DOF entry in the space
 /// V[1]. The returned dofs are 'unrolled', i.e. block size = 1.
 std::array<std::vector<std::int32_t>, 2> locate_dofs_topological(
-    mesh::Topology& topology,
+    const mesh::Topology& topology,
     std::array<std::reference_wrapper<const DofMap>, 2> dofmaps, int dim,
     std::span<const std::int32_t> entities, bool remote = true);
 
