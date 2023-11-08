@@ -109,6 +109,8 @@ def test_index_map_ghost_lifetime():
     assert np.array_equal(ghosts, map_ghosts)
 
 
+# TODO: Add test for case where more than one two process shares an index
+# whose owner changes in the submap
 # Test create_submap_conn. The diagram illustrates the case with four
 # processes. Original map numbering and connectivity (G indicates a ghost
 # index):
