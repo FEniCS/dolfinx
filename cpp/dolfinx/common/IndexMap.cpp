@@ -1039,7 +1039,7 @@ std::pair<IndexMap, std::vector<std::int32_t>>
 IndexMap::create_submap_conn(std::span<const std::int32_t> indices) const
 {
   const int rank = dolfinx::MPI::rank(_comm.comm());
-  const int comm_size = dolfinx::MPI::size(_comm.comm());
+  // const int comm_size = dolfinx::MPI::size(_comm.comm());
   ss << "Rank " << rank << ":\n";
 
   // ss << "indices = ";
@@ -1128,15 +1128,15 @@ IndexMap::create_submap_conn(std::span<const std::int32_t> indices) const
 
   // ss << "sub_imap_to_imap = " << sub_imap_to_imap << "\n";
 
-  for (int i = 0; i < comm_size; ++i)
-  {
-    if (i == rank)
-    {
-      std::cout << ss.str() << "\n";
-    }
-    MPI_Barrier(_comm.comm());
-  }
-  ss = std::stringstream();
+  // for (int i = 0; i < comm_size; ++i)
+  // {
+  //   if (i == rank)
+  //   {
+  //     std::cout << ss.str() << "\n";
+  //   }
+  //   MPI_Barrier(_comm.comm());
+  // }
+  // ss = std::stringstream();
 
   return {IndexMap(_comm.comm(), submap_local_size, submap_ghost_gidxs,
                    submap_ghost_owners),
