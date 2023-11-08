@@ -7,23 +7,28 @@
 
 import random
 
-import numpy as np
-import pytest
-import ufl
-from basix.ufl import element
-from dolfinx.fem import (Function, FunctionSpace, VectorFunctionSpace,
-                         assemble_scalar, form)
-from dolfinx.mesh import create_mesh
 from mpi4py import MPI
 
+import numpy as np
+import pytest
+
+import ufl
+from basix.ufl import element
 from dolfinx import default_real_type
+from dolfinx.fem import Function, assemble_scalar, form, functionspace
+from dolfinx.mesh import create_mesh
 
 
 def randomly_ordered_mesh(cell_type):
     """Create a randomly ordered mesh to use in the test."""
     random.seed(6)
 
-    domain = ufl.Mesh(element("Lagrange", cell_type, 1, rank=1))
+    if cell_type == "triangle" or cell_type == "quadrilateral":
+        gdim = 2
+    elif cell_type == "tetrahedron" or cell_type == "hexahedron":
+        gdim = 3
+
+    domain = ufl.Mesh(element("Lagrange", cell_type, 1, shape=(gdim,)))
     # Create a mesh
     if MPI.COMM_WORLD.rank == 0:
         N = 6
@@ -124,7 +129,7 @@ def test_dof_positions(cell_type, space_type):
     cmap = mesh.geometry.cmaps[0]
     tdim = mesh.topology.dim
 
-    V = FunctionSpace(mesh, space_type)
+    V = functionspace(mesh, space_type)
     entities = {i: {} for i in range(1, tdim)}
     for cell in range(coord_dofs.shape[0]):
         # Push coordinates forward
@@ -149,7 +154,12 @@ def test_dof_positions(cell_type, space_type):
 def random_evaluation_mesh(cell_type):
     random.seed(6)
 
-    domain = ufl.Mesh(element("Lagrange", cell_type, 1, rank=1))
+    if cell_type == "triangle" or cell_type == "quadrilateral":
+        gdim = 2
+    elif cell_type == "tetrahedron" or cell_type == "hexahedron":
+        gdim = 3
+
+    domain = ufl.Mesh(element("Lagrange", cell_type, 1, shape=(gdim,)))
     if cell_type == "triangle":
         temp_points = np.array([[-1., -1.], [0., 0.], [1., 0.], [0., 1.]], dtype=default_real_type)
         temp_cells = [[0, 1, 3], [1, 2, 3]]
@@ -225,7 +235,7 @@ def test_evaluation(cell_type, space_type, space_order):
     random.seed(4)
     for repeat in range(10):
         mesh = random_evaluation_mesh(cell_type)
-        V = FunctionSpace(mesh, (space_type, space_order))
+        V = functionspace(mesh, (space_type, space_order))
         dofs = [i for i in V.dofmap.cell_dofs(0) if i in V.dofmap.cell_dofs(1)]
 
         N = 5
@@ -280,11 +290,12 @@ def test_integral(cell_type, space_type, space_order):
     random.seed(4)
     for repeat in range(10):
         mesh = random_evaluation_mesh(cell_type)
-        tdim = mesh.topology.dim
-        V = FunctionSpace(mesh, (space_type, space_order))
-        Vvec = VectorFunctionSpace(mesh, ("P", 1))
+        V = functionspace(mesh, (space_type, space_order))
+        gdim = mesh.geometry.dim
+        Vvec = functionspace(mesh, ("P", 1, (gdim,)))
         dofs = [i for i in V.dofmap.cell_dofs(0) if i in V.dofmap.cell_dofs(1)]
 
+        tdim = mesh.topology.dim
         for d in dofs:
             v = Function(V)
             v.vector[:] = [1 if i == d else 0 for i, _ in enumerate(v.vector[:])]

@@ -4,16 +4,17 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+from mpi4py import MPI
+
 import numpy as np
 import pytest
-import ufl
-from basix.ufl import element
-from dolfinx.geometry import compute_distance_gjk
-from dolfinx.mesh import create_mesh
-from mpi4py import MPI
 from scipy.spatial.transform import Rotation
 
+import ufl
+from basix.ufl import element
 from dolfinx import geometry
+from dolfinx.geometry import compute_distance_gjk
+from dolfinx.mesh import create_mesh
 
 
 def distance_point_to_line_3D(P1, P2, point):
@@ -28,13 +29,14 @@ def distance_point_to_plane_3D(P1, P2, P3, point):
 
 
 @pytest.mark.parametrize("delta", [0.1, 1e-12, 0, -2])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("dtype", [np.float64, np.float32])
 def test_line_point_distance(delta, dtype):
     line = np.array([[0.1, 0.2, 0.3], [0.5, 0.8, 0.7]], dtype=dtype)
     point_on_line = line[0] + 0.27 * (line[1] - line[0])
     normal = np.cross(line[0], line[1])
     point = point_on_line + delta * normal
-    distance = np.linalg.norm(compute_distance_gjk(line, point))
+    d = compute_distance_gjk(line, point)
+    distance = np.linalg.norm(d)
     actual_distance = distance_point_to_line_3D(line[0], line[1], point)
     assert np.isclose(distance, actual_distance, atol=1e-8)
 
@@ -168,7 +170,7 @@ def test_cube_distance(delta, scale, dtype):
 def test_collision_2nd_order_triangle(dtype):
     points = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [0.65, 0.65], [0.0, 0.5], [0.5, 0.0]], dtype=dtype)
     cells = np.array([[0, 1, 2, 3, 4, 5]])
-    domain = ufl.Mesh(element("Lagrange", "triangle", 2, gdim=2, rank=1))
+    domain = ufl.Mesh(element("Lagrange", "triangle", 2, gdim=2, shape=(2,)))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
 
     # Sample points along an interior line of the domain. The last point
@@ -193,5 +195,5 @@ def test_collision_2nd_order_triangle(dtype):
     # Point inside 2nd order geometry, outside linear approximation
     # Useful for debugging on a later stage
     # point = np.array([0.25, 0.89320760, 0])
-    distance = geometry.squared_distance(mesh, mesh.topology.dim - 1, [2], point)
+    distance = geometry.squared_distance(mesh, mesh.topology.dim - 1, np.array([2]), point)
     assert np.isclose(distance, 0)

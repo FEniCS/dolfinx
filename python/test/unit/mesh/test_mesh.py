@@ -7,11 +7,17 @@
 import math
 import sys
 
-import basix
+from mpi4py import MPI
+
 import numpy as np
 import pytest
+
+import basix
 import ufl
 from basix.ufl import element
+from dolfinx import cpp as _cpp
+from dolfinx import graph
+from dolfinx import mesh as _mesh
 from dolfinx.cpp.mesh import (create_cell_partitioner, entities_to_geometry,
                               is_simplex)
 from dolfinx.fem import assemble_scalar, form
@@ -20,11 +26,6 @@ from dolfinx.mesh import (CellType, DiagonalType, GhostMode, create_box,
                           create_unit_cube, create_unit_interval,
                           create_unit_square, exterior_facet_indices,
                           locate_entities, locate_entities_boundary)
-from mpi4py import MPI
-
-from dolfinx import cpp as _cpp
-from dolfinx import graph
-from dolfinx import mesh as _mesh
 
 
 def submesh_topology_test(mesh, submesh, entity_map, vertex_map, entity_dim):
@@ -63,7 +64,7 @@ def submesh_geometry_test(mesh, submesh, entity_map, geom_map, entity_dim):
     if len(entity_map) > 0:
         assert mesh.geometry.dim == submesh.geometry.dim
 
-        e_to_g = entities_to_geometry(mesh._cpp_object, entity_dim, entity_map, False)
+        e_to_g = entities_to_geometry(mesh._cpp_object, entity_dim, np.array(entity_map), False)
         for submesh_entity in range(len(entity_map)):
             submesh_x_dofs = submesh.geometry.dofmap[submesh_entity]
             # e_to_g[i] gets the mesh x_dofs of entities[i], which should
@@ -275,7 +276,7 @@ def test_cell_circumradius(c0, c1, c5):
 @pytest.mark.skip_in_parallel
 def test_cell_h(c0, c1, c5):
     for c in [c0, c1, c5]:
-        assert c[0].h(c[1], [c[2]])
+        assert c[0].h(c[1], np.array([c[2]]))
 
 
 def test_cell_h_prism():
@@ -322,7 +323,7 @@ def test_hmin_hmax(_mesh, dtype, hmin, hmax):
     mesh = _mesh(dtype)
     tdim = mesh.topology.dim
     num_cells = mesh.topology.index_map(tdim).size_local
-    h = _cpp.mesh.h(mesh._cpp_object, tdim, range(num_cells))
+    h = _cpp.mesh.h(mesh._cpp_object, tdim, np.arange(num_cells))
     assert h.min() == pytest.approx(hmin)
     assert h.max() == pytest.approx(hmax)
 
@@ -501,19 +502,19 @@ def test_empty_rank_mesh(dtype):
     comm = MPI.COMM_WORLD
     cell_type = CellType.triangle
     tdim = 2
-    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, rank=1))
+    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, shape=(2,)))
 
     def partitioner(comm, nparts, local_graph, num_ghost_nodes):
         """Leave cells on the curent rank"""
         dest = np.full(len(cells), comm.rank, dtype=np.int32)
-        return graph.create_adjacencylist(dest)
+        return graph.adjacencylist(dest)
 
     if comm.rank == 0:
         cells = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.int64)
-        cells = graph.create_adjacencylist(cells)
+        cells = graph.adjacencylist(cells)
         x = np.array([[0., 0.], [1., 0.], [1., 1.], [0., 1.]], dtype=dtype)
     else:
-        cells = graph.create_adjacencylist(np.empty((0, 3), dtype=np.int64))
+        cells = graph.adjacencylist(np.empty((0, 3), dtype=np.int64))
         x = np.empty((0, 2), dtype=dtype)
 
     mesh = _mesh.create_mesh(comm, cells, x, domain, partitioner)

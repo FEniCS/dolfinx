@@ -40,8 +40,10 @@ public:
   /// @param [in] data Adjacency array
   /// @param [in] offsets The index to the adjacency list in the data
   /// array for node i
-  template <std::convertible_to<std::vector<T>> U,
-            std::convertible_to<std::vector<std::int32_t>> V>
+  template <typename U, typename V>
+    requires std::is_convertible_v<std::remove_cvref_t<U>, std::vector<T>>
+                 and std::is_convertible_v<std::remove_cvref_t<V>,
+                                           std::vector<std::int32_t>>
   AdjacencyList(U&& data, V&& offsets)
       : _array(std::forward<U>(data)), _offsets(std::forward<V>(offsets))
   {

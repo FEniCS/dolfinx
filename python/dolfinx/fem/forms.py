@@ -7,17 +7,16 @@
 from __future__ import annotations
 
 import collections
-import collections.abc
 import typing
 
 import numpy as np
 import numpy.typing as npt
-import ufl
-from dolfinx.fem import IntegralType
-from dolfinx.fem.function import FunctionSpace
 
+import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit
+from dolfinx.fem import IntegralType
+from dolfinx.fem.function import FunctionSpace
 
 if typing.TYPE_CHECKING:
     from dolfinx.fem import function
@@ -25,22 +24,19 @@ if typing.TYPE_CHECKING:
 
 
 class Form:
-    def __init__(self, form, ufcx_form=None, code=None):
+    def __init__(self, form, ufcx_form=None, code: typing.Optional[str] = None):
         """A finite element form
 
-        Notes:
-            Forms should normally be constructed using
-            :func:`forms.form` and not using this class initialiser.
-            This class is combined with different base classes that
-            depend on the scalar type used in the Form.
+        Note:
+            Forms should normally be constructed using :func:`form` and
+            not using this class initialiser. This class is combined
+            with different base classes that depend on the scalar type
+            used in the Form.
 
         Args:
-            form: Compiled UFC form
-            V: The argument function spaces
-            coeffs: Finite element coefficients that appear in the form
-            constants: Constants appearing in the form
-            subdomains: Subdomains for integrals
-            mesh: The mesh that the form is defined on
+            form: Compiled form object.
+            ufcx_form: UFCx form
+            code: Form C++ code
 
         """
 
@@ -104,12 +100,12 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]],
     Returns:
         Compiled finite element Form.
 
-    Notes:
+    Note:
         This function is responsible for the compilation of a UFL form
         (using FFCx) and attaching coefficients and domains specific
         data to the underlying C++ form. It dynamically create a
         :class:`Form` instance with an appropriate base class for the
-        scalar type, e.g. `_cpp.fem.Form_float64`.
+        scalar type, e.g. :func:`_cpp.fem.Form_float64`.
 
     """
     if form_compiler_options is None:
@@ -131,7 +127,7 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]],
         raise NotImplementedError(f"Type {dtype} not supported.")
 
     def _form(form):
-        """"Compile a single UFL form"""
+        """Compile a single UFL form"""
         # Extract subdomain data from UFL form
         sd = form.subdomain_data()
         domain, = list(sd.keys())  # Assuming single domain
@@ -168,9 +164,10 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]],
                         tdim = subdomain.topology.dim
                         subdomain._cpp_object.topology.create_connectivity(tdim - 1, tdim)
                         subdomain._cpp_object.topology.create_connectivity(tdim, tdim - 1)
-                    return _cpp.fem.compute_integration_domains(integral_type, subdomain._cpp_object)
+                    domains = _cpp.fem.compute_integration_domains(integral_type, subdomain._cpp_object)
+                    return [(s[0], np.array(s[1])) for s in domains]
                 except AttributeError:
-                    return subdomain
+                    return [(s[0], np.array(s[1])) for s in subdomain]
 
         # Subdomain markers (possibly empty list for some integral types)
         subdomains = {_ufl_to_dolfinx_domain[key]: get_integration_domains(

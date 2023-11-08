@@ -20,7 +20,6 @@ Vec fem::petsc::create_vector_block(
 
   auto [rank_offset, local_offset, ghosts_new, ghost_new_owners]
       = common::stack_index_maps(maps);
-  std::int32_t local_size = local_offset.back();
 
   std::vector<std::int64_t> ghosts;
   for (auto& sub_ghost : ghosts_new)
@@ -31,10 +30,31 @@ Vec fem::petsc::create_vector_block(
     ghost_owners.insert(ghost_owners.end(), sub_owner.begin(), sub_owner.end());
 
   // Create map for combined problem, and create vector
-  common::IndexMap index_map(maps[0].first.get().comm(), local_size, ghosts,
-                             ghost_owners);
+  common::IndexMap index_map(maps[0].first.get().comm(), local_offset.back(),
+                             ghosts, ghost_owners);
 
-  return la::petsc::create_vector(index_map, 1);
+  // NOTE: Calling
+  //
+  //     la::petsc::create_vector(const common::IndexMap& map, int bs)
+  //
+  // can lead to memory errors because the MPI communicator associated
+  // with map gets destroyed upon exit from this function. The lifetime
+  // of the communicators should be managed correctly, see thread at
+  // https://lists.mcs.anl.gov/pipermail/petsc-users/2021-July/044103.html.
+
+  // Get PETSc Vec
+  auto range = index_map.local_range();
+  assert(range[1] >= range[0]);
+  std::int32_t local_size = range[1] - range[0];
+  std::vector<PetscInt> _ghosts(ghosts.begin(), ghosts.end());
+  Vec x = nullptr;
+  PetscErrorCode ierr
+      = VecCreateGhost(maps[0].first.get().comm(), local_size, PETSC_DETERMINE,
+                       _ghosts.size(), _ghosts.data(), &x);
+  if (ierr != 0)
+    throw std::runtime_error("Call to PETSc VecCreateGhost failed.");
+
+  return x;
 }
 //-----------------------------------------------------------------------------
 Vec fem::petsc::create_vector_nest(

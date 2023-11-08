@@ -5,17 +5,18 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Test that matrices are symmetric."""
 
-import basix
+from mpi4py import MPI
+
 import numpy as np
 import pytest
+
+import basix
+import dolfinx
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx.fem import FunctionSpace, form
+from dolfinx.fem import form, functionspace
 from dolfinx.mesh import CellType, create_unit_cube, create_unit_square
-from mpi4py import MPI
 from ufl import grad, inner
-
-import dolfinx
 
 
 def check_symmetry(A, tol):
@@ -31,7 +32,7 @@ def run_symmetry_test(cell_type, e, form_f):
     else:
         mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type, dtype=dtype)
 
-    space = FunctionSpace(mesh, e)
+    space = functionspace(mesh, e)
     u = ufl.TrialFunction(space)
     v = ufl.TestFunction(space)
     f = form(form_f(u, v), dtype=dtype)
@@ -115,7 +116,7 @@ def test_mixed_element_form(cell_type, sign, order, dtype):
     U_el = mixed_element([element(basix.ElementFamily.P, cell_type.name, order),
                           element(basix.ElementFamily.N1E, cell_type.name, order)])
 
-    U = FunctionSpace(mesh, U_el)
+    U = functionspace(mesh, U_el)
     u, p = ufl.TrialFunctions(U)
     v, q = ufl.TestFunctions(U)
     f = form(inner(u, v) * ufl.dx + inner(p, q)(sign) * ufl.dS, dtype=dtype)
@@ -137,11 +138,10 @@ def test_mixed_element_vector_element_form(cell_type, sign, order, dtype):
     else:
         mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type, dtype=dtype)
 
-    U_el = mixed_element([
-        element(basix.ElementFamily.P, cell_type.name, order, rank=1),
-        element(basix.ElementFamily.N1E, cell_type.name, order)])
+    U_el = mixed_element([element(basix.ElementFamily.P, cell_type.name, order, shape=(mesh.geometry.dim,)),
+                          element(basix.ElementFamily.N1E, cell_type.name, order)])
 
-    U = FunctionSpace(mesh, U_el)
+    U = functionspace(mesh, U_el)
     u, p = ufl.TrialFunctions(U)
     v, q = ufl.TestFunctions(U)
     f = form(inner(u, v) * ufl.dx + inner(p, q)(sign) * ufl.dS, dtype=dtype)

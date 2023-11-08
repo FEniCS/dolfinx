@@ -76,7 +76,7 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
     pugi::xml_node xdmf_node = _xml_doc->append_child("Xdmf");
     assert(xdmf_node);
     xdmf_node.append_attribute("Version") = "3.0";
-    xdmf_node.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
+    xdmf_node.append_attribute("xmlns:xi") = "https://www.w3.org/2001/XInclude";
 
     pugi::xml_node domain_node = xdmf_node.append_child("Domain");
     if (!domain_node)
@@ -108,7 +108,7 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
       assert(xdmf_node);
       xdmf_node.append_attribute("Version") = "3.0";
       xdmf_node.append_attribute("xmlns:xi")
-          = "http://www.w3.org/2001/XInclude";
+          = "https://www.w3.org/2001/XInclude";
 
       pugi::xml_node domain_node = xdmf_node.append_child("Domain");
       if (!domain_node)
@@ -355,12 +355,16 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
   std::vector<std::int64_t> entities1 = io::cells::apply_permutation(
       entities, eshape, io::cells::perm_vtk(cell_type, eshape[1]));
 
+  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      const std::int64_t,
+      MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+      entities_span(entities1.data(), eshape);
   std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
       entities_values = xdmf_utils::distribute_entity_data(
           *mesh.topology(), mesh.geometry().input_global_indices(),
           mesh.geometry().index_map()->size_global(),
           mesh.geometry().cmaps()[0].create_dof_layout(),
-          mesh.geometry().dofmap(), mesh::cell_dim(cell_type), entities1,
+          mesh.geometry().dofmap(), mesh::cell_dim(cell_type), entities_span,
           values);
 
   auto cell_types = mesh.topology()->cell_types();

@@ -7,29 +7,12 @@
 
 # flake8: noqa
 
-# Store dl open flags to restore them after import
-import sys
-
-stored_dlopen_flags = sys.getdlopenflags()
-
-# Developer note: below is related to OpenMPI
-# Fix dlopen flags
-if "linux" in sys.platform:
-    RTLD_NOW = 2
-    RTLD_GLOBAL = 256
-    sys.setdlopenflags(RTLD_NOW | RTLD_GLOBAL)
-del sys
-
-# Reset dl open flags
-# sys.setdlopenflags(stored_dlopen_flags)
-# del sys
-
 import sys
 
 try:
     from petsc4py import PETSc as _PETSc
-    default_scalar_type = _PETSc.ScalarType
-    default_real_type = _PETSc.RealType
+    default_scalar_type = _PETSc.ScalarType  # type: ignore
+    default_real_type = _PETSc.RealType  # type: ignore
 except ImportError:
     import numpy as _np
     default_scalar_type = _np.float64

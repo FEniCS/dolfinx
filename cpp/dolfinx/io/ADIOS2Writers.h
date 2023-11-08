@@ -184,7 +184,7 @@ void initialize_function_attributes(adios2::IO& io,
         {
           using U = std::decay_t<decltype(u)>;
           using X = typename U::element_type;
-          if constexpr (std::is_floating_point_v<typename X::geometry_type>)
+          if constexpr (std::is_floating_point_v<typename X::value_type>)
             u_data.push_back({u->name, "points"});
           else
           {
@@ -225,8 +225,6 @@ void initialize_function_attributes(adios2::IO& io,
 template <typename T, std::floating_point U>
 std::vector<T> pack_function_data(const fem::Function<T, U>& u)
 {
-  namespace stdex = std::experimental;
-
   auto V = u.function_space();
   assert(V);
   auto dofmap = V->dofmap();
@@ -263,7 +261,9 @@ std::vector<T> pack_function_data(const fem::Function<T, U>& u)
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     auto dofs = dofmap->cell_dofs(c);
-    auto dofs_x = stdex::submdspan(dofmap_x, c, stdex::full_extent);
+    auto dofs_x
+        = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+            submdspan(dofmap_x, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     assert(dofs.size() == dofs_x.size());
     for (std::size_t i = 0; i < dofs.size(); ++i)
       for (int j = 0; j < bs; ++j)
@@ -616,7 +616,7 @@ extract_function_names(const typename adios2_writer::U<T>& u)
         {
           using U = std::decay_t<decltype(u)>;
           using X = typename U::element_type;
-          if constexpr (std::is_floating_point_v<typename X::geometry_type>)
+          if constexpr (std::is_floating_point_v<typename X::value_type>)
             names.push_back(u->name);
           else
           {

@@ -9,17 +9,18 @@
 import os
 import sys
 
+from mpi4py import MPI
+
 import numpy as np
 import pytest
-from dolfinx.fem import Form, Function, FunctionSpace, IntegralType
-from dolfinx.mesh import create_unit_square
-from mpi4py import MPI
 
 import dolfinx
 from dolfinx import TimingType
 from dolfinx import cpp as _cpp
 from dolfinx import (default_real_type, default_scalar_type, fem, la,
                      list_timings)
+from dolfinx.fem import Form, Function, IntegralType, functionspace
+from dolfinx.mesh import create_unit_square
 
 numba = pytest.importorskip("numba")
 
@@ -92,17 +93,15 @@ def test_numba_assembly():
         raise RuntimeError("Unknown scalar type")
 
     mesh = create_unit_square(MPI.COMM_WORLD, 13, 13)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
-
-    cells = range(mesh.topology.index_map(mesh.topology.dim).size_local)
-
+    V = functionspace(mesh, ("Lagrange", 1))
+    cells = np.arange(mesh.topology.index_map(mesh.topology.dim).size_local, dtype=np.int32)
     integrals = {IntegralType.cell: [(-1, tabulate_tensor_A.address, cells),
-                                     (12, tabulate_tensor_A.address, range(0)),
-                                     (2, tabulate_tensor_A.address, range(0))]}
-    a = Form(formtype([V._cpp_object, V._cpp_object], integrals, [], [], False))
+                                     (12, tabulate_tensor_A.address, np.arange(0)),
+                                     (2, tabulate_tensor_A.address, np.arange(0))]}
+    a = Form(formtype([V._cpp_object, V._cpp_object], integrals, [], [], False, None))
 
     integrals = {IntegralType.cell: [(-1, tabulate_tensor_b.address, cells)]}
-    L = Form(formtype([V._cpp_object], integrals, [], [], False))
+    L = Form(formtype([V._cpp_object], integrals, [], [], False, None))
 
     A = dolfinx.fem.assemble_matrix(a)
     A.scatter_reverse()
@@ -130,15 +129,15 @@ def test_coefficient():
         raise RuntimeError("Unknown scalar type")
 
     mesh = create_unit_square(MPI.COMM_WORLD, 13, 13)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
-    DG0 = FunctionSpace(mesh, ("DG", 0))
+    V = functionspace(mesh, ("Lagrange", 1))
+    DG0 = functionspace(mesh, ("DG", 0))
     vals = Function(DG0)
     vals.vector.set(2.0)
 
     tdim = mesh.topology.dim
     num_cells = mesh.topology.index_map(tdim).size_local + mesh.topology.index_map(tdim).num_ghosts
     integrals = {IntegralType.cell: [(1, tabulate_tensor_b_coeff.address, np.arange(num_cells, dtype=np.intc))]}
-    L = Form(formtype([V._cpp_object], integrals, [vals._cpp_object], [], False))
+    L = Form(formtype([V._cpp_object], integrals, [vals._cpp_object], [], False, None))
 
     b = dolfinx.fem.assemble_vector(L)
     b.scatter_reverse(la.InsertMode.add)
@@ -149,8 +148,7 @@ def test_coefficient():
 @pytest.mark.skip_in_parallel
 def test_cffi_assembly():
     mesh = create_unit_square(MPI.COMM_WORLD, 13, 13, dtype=np.float64)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
-
+    V = functionspace(mesh, ("Lagrange", 1))
     if mesh.comm.rank == 0:
         from cffi import FFI
         ffibuilder = FFI()
@@ -249,15 +247,15 @@ def test_cffi_assembly():
     mesh.comm.Barrier()
     from _cffi_kernelA import ffi, lib
 
-    cells = range(mesh.topology.index_map(mesh.topology.dim).size_local)
+    cells = np.arange(mesh.topology.index_map(mesh.topology.dim).size_local, dtype=np.int32)
 
     ptrA = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonA"))
     integrals = {IntegralType.cell: [(-1, ptrA, cells)]}
-    a = Form(_cpp.fem.Form_float64([V._cpp_object, V._cpp_object], integrals, [], [], False))
+    a = Form(_cpp.fem.Form_float64([V._cpp_object, V._cpp_object], integrals, [], [], False, None))
 
     ptrL = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonL"))
     integrals = {IntegralType.cell: [(-1, ptrL, cells)]}
-    L = Form(_cpp.fem.Form_float64([V._cpp_object], integrals, [], [], False))
+    L = Form(_cpp.fem.Form_float64([V._cpp_object], integrals, [], [], False, None))
 
     A = fem.assemble_matrix(a)
     A.scatter_reverse()

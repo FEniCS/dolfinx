@@ -6,17 +6,18 @@
 
 from pathlib import Path
 
+from mpi4py import MPI
+
 import numpy as np
 import pytest
+
+from dolfinx import cpp as _cpp
+from dolfinx import default_real_type
 from dolfinx.io import XDMFFile
 from dolfinx.io.gmshio import cell_perm_array, ufl_mesh
 from dolfinx.mesh import (CellType, GhostMode, create_mesh, create_submesh,
                           create_unit_cube, create_unit_interval,
                           create_unit_square, locate_entities)
-from mpi4py import MPI
-
-from dolfinx import cpp as _cpp
-from dolfinx import default_real_type
 
 # Supported XDMF file encoding
 if MPI.COMM_WORLD.size > 1:
@@ -128,7 +129,7 @@ def test_read_write_p2_mesh(tempdir, encoding):
 
     domain = ufl_mesh(gmsh_cell_id, 3)
     cell_type = _cpp.mesh.to_type(str(domain.ufl_cell()))
-    cells = cells[:, cell_perm_array(cell_type, cells.shape[1])]
+    cells = cells[:, cell_perm_array(cell_type, cells.shape[1])].copy()
 
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
 

@@ -90,8 +90,6 @@ std::tuple<std::vector<std::int32_t>, std::vector<T>, std::vector<std::int32_t>>
 compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
                                std::span<const std::int32_t> facets)
 {
-  namespace stdex = std::experimental;
-
   auto topology = mesh.topology();
   assert(topology);
   const int tdim = topology->dim();
@@ -151,7 +149,8 @@ compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
     assert(it != cell_vertices.end());
     const int local_pos = std::distance(cell_vertices.begin(), it);
 
-    auto dofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
+    auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+        submdspan(x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     for (std::size_t j = 0; j < 3; ++j)
       x_vertices[j * vertices.size() + i] = x_nodes[3 * dofs[local_pos] + j];
     vertex_to_pos[v] = i;
@@ -194,8 +193,6 @@ std::vector<std::int32_t> exterior_facet_indices(const Topology& topology);
 using CellPartitionFunction = std::function<graph::AdjacencyList<std::int32_t>(
     MPI_Comm comm, int nparts, int tdim,
     const graph::AdjacencyList<std::int64_t>& cells)>;
-
-
 
 /// @brief Extract topology from cell data, i.e. extract cell vertices.
 /// @param[in] cell_type The cell shape
@@ -438,8 +435,6 @@ template <std::floating_point T>
 std::pair<std::vector<T>, std::array<std::size_t, 2>>
 compute_vertex_coords(const mesh::Mesh<T>& mesh)
 {
-  namespace stdex = std::experimental;
-
   auto topology = mesh.topology();
   assert(topology);
   const int tdim = topology->dim();
@@ -456,7 +451,9 @@ compute_vertex_coords(const mesh::Mesh<T>& mesh)
   std::vector<std::int32_t> vertex_to_node(num_vertices);
   for (int c = 0; c < c_to_v->num_nodes(); ++c)
   {
-    auto x_dofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
+    auto x_dofs
+        = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+            submdspan(x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     auto vertices = c_to_v->links(c);
     for (std::size_t i = 0; i < vertices.size(); ++i)
       vertex_to_node[vertices[i]] = x_dofs[i];
@@ -481,10 +478,10 @@ compute_vertex_coords(const mesh::Mesh<T>& mesh)
 template <typename Fn, typename T>
 concept MarkerFn = std::is_invocable_r<
     std::vector<std::int8_t>, Fn,
-    std::experimental::mdspan<
-        const T,
-        std::experimental::extents<std::size_t, 3,
-                                   std::experimental::dynamic_extent>>>::value;
+    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        const T, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+                     std::size_t, 3,
+                     MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>>::value;
 
 /// @brief Compute indices of all mesh entities that evaluate to true
 /// for the provided geometric marking function.
@@ -503,10 +500,10 @@ template <std::floating_point T, MarkerFn<T> U>
 std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
                                           U marker)
 {
-  namespace stdex = std::experimental;
-  using cmdspan3x_t
-      = stdex::mdspan<const T,
-                      stdex::extents<std::size_t, 3, stdex::dynamic_extent>>;
+  using cmdspan3x_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      const T,
+      MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+          std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>;
 
   // Run marker function on vertex coordinates
   const auto [xdata, xshape] = impl::compute_vertex_coords(mesh);
@@ -591,10 +588,10 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
   const std::vector<std::int32_t> boundary_facets
       = exterior_facet_indices(*topology);
 
-  namespace stdex = std::experimental;
-  using cmdspan3x_t
-      = stdex::mdspan<const T,
-                      stdex::extents<std::size_t, 3, stdex::dynamic_extent>>;
+  using cmdspan3x_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      const T,
+      MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+          std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>;
 
   // Run marker function on the vertex coordinates
   const auto [facet_entities, xdata, vertex_to_pos]
@@ -652,8 +649,6 @@ std::vector<std::int32_t>
 entities_to_geometry(const Mesh<T>& mesh, int dim,
                      std::span<const std::int32_t> entities, bool orient)
 {
-  namespace stdex = std::experimental;
-
   auto topology = mesh.topology();
   assert(topology);
 

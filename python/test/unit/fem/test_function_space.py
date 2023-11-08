@@ -4,17 +4,18 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the FunctionSpace class"""
-import basix
+
+from mpi4py import MPI
+
 import numpy as np
 import pytest
-from basix.ufl import element, mixed_element
-from dolfinx.fem import (Function, FunctionSpace, TensorFunctionSpace,
-                         VectorFunctionSpace)
-from dolfinx.mesh import create_mesh, create_unit_cube
-from mpi4py import MPI
-from ufl import Cell, Mesh, TestFunction, TrialFunction, grad
 
+import basix
+from basix.ufl import element, mixed_element
 from dolfinx import default_real_type
+from dolfinx.fem import Function, FunctionSpace, functionspace
+from dolfinx.mesh import create_mesh, create_unit_cube
+from ufl import Cell, Mesh, TestFunction, TrialFunction, grad
 
 
 @pytest.fixture
@@ -24,19 +25,20 @@ def mesh():
 
 @pytest.fixture
 def V(mesh):
-    return FunctionSpace(mesh, ('Lagrange', 1))
+    return functionspace(mesh, ('Lagrange', 1))
 
 
 @pytest.fixture
 def W(mesh):
-    return VectorFunctionSpace(mesh, ('Lagrange', 1))
+    gdim = mesh.geometry.dim
+    return functionspace(mesh, ('Lagrange', 1, (gdim,)))
 
 
 @pytest.fixture
 def Q(mesh):
-    W = element('Lagrange', mesh.basix_cell(), 1, rank=1)
+    W = element('Lagrange', mesh.basix_cell(), 1, shape=(mesh.geometry.dim,))
     V = element('Lagrange', mesh.basix_cell(), 1)
-    return FunctionSpace(mesh, mixed_element([W, V]))
+    return functionspace(mesh, mixed_element([W, V]))
 
 
 @pytest.fixture
@@ -60,7 +62,7 @@ def W2(g):
 
 
 def test_python_interface(V, V2, W, W2, Q):
-    # Test Python interface of cpp generated FunctionSpace
+    # Test Python interface of cpp generated functionspace
     assert isinstance(V, FunctionSpace)
     assert isinstance(W, FunctionSpace)
     assert isinstance(V2, FunctionSpace)
@@ -88,7 +90,7 @@ def test_component(V, W, Q):
 def test_equality(V, V2, W, W2):
     assert V == V  # /NOSONAR
     assert V == V2
-    assert W == W
+    assert W == W  # /NOSONAR
     assert W == W2
 
 
@@ -173,8 +175,9 @@ def test_argument_equality(mesh, V, V2, W, W2):
     """Placed this test here because it's mainly about detecting differing
     function spaces"""
     mesh2 = create_unit_cube(MPI.COMM_WORLD, 8, 8, 8)
-    V3 = FunctionSpace(mesh2, ("Lagrange", 1))
-    W3 = VectorFunctionSpace(mesh2, ("Lagrange", 1))
+    gdim = mesh2.geometry.dim
+    V3 = functionspace(mesh2, ("Lagrange", 1))
+    W3 = functionspace(mesh2, ("Lagrange", 1, (gdim,)))
 
     for TF in (TestFunction, TrialFunction):
         v = TF(V)
@@ -222,7 +225,7 @@ def test_cell_mismatch(mesh):
     """Test that cell mismatch raises early enough from UFL"""
     e = element("P", "triangle", 1)
     with pytest.raises(BaseException):
-        FunctionSpace(mesh, e)
+        functionspace(mesh, e)
 
 
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
@@ -245,29 +248,28 @@ def test_vector_function_space_cell_type():
 
     # Create a mesh containing a single interval living in 2D
     cell = Cell("interval", geometric_dimension=gdim)
-    domain = Mesh(element("Lagrange", "interval", 1, gdim=gdim, rank=1))
+    domain = Mesh(element("Lagrange", "interval", 1, gdim=gdim, shape=(1,)))
     cells = np.array([[0, 1]], dtype=np.int64)
     x = np.array([[0., 0.], [1., 1.]])
     mesh = create_mesh(comm, cells, x, domain)
 
     # Create functions space over mesh, and check element cell
     # is correct
-    V = VectorFunctionSpace(mesh, ('Lagrange', 1))
-    assert V.ufl_element().cell() == cell
+    V = functionspace(mesh, ('Lagrange', 1, (gdim,)))
+    assert V.ufl_element().cell == cell
 
 
 @pytest.mark.skip_in_parallel
 def test_manifold_spaces():
-    vertices = np.array([(0.0, 0.0, 1.0),
-                         (1.0, 1.0, 1.0),
-                         (1.0, 0.0, 0.0),
-                         (0.0, 1.0, 0.0)], dtype=default_real_type)
+    vertices = np.array([
+        (0.0, 0.0, 1.0), (1.0, 1.0, 1.0),
+        (1.0, 0.0, 0.0), (0.0, 1.0, 0.0)], dtype=default_real_type)
     cells = [(0, 1, 2), (0, 1, 3)]
-    domain = Mesh(element("Lagrange", "triangle", 1, gdim=3, rank=1))
+    domain = Mesh(element("Lagrange", "triangle", 1, gdim=3, shape=(2,)))
     mesh = create_mesh(MPI.COMM_WORLD, cells, vertices, domain)
-    QV = VectorFunctionSpace(mesh, ("Lagrange", 1))
-    QT = TensorFunctionSpace(mesh, ("Lagrange", 1))
-    u = Function(QV)
-    v = Function(QT)
+    gdim = mesh.geometry.dim
+    QV = functionspace(mesh, ("Lagrange", 1, (gdim,)))
+    QT = functionspace(mesh, ("Lagrange", 1, (gdim, gdim)))
+    u, v = Function(QV), Function(QT)
     assert u.ufl_shape == (3,)
     assert v.ufl_shape == (3, 3)

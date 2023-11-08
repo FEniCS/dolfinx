@@ -105,7 +105,7 @@ _extract_sub_element(const FiniteElement<T>& finite_element,
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
 FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
-    : _signature(e.signature), _family(e.family), _space_dim(e.space_dimension),
+    : _signature(e.signature), _space_dim(e.space_dimension),
       _value_shape(e.value_shape, e.value_shape + e.value_rank),
       _bs(e.block_size)
 {
@@ -210,9 +210,10 @@ FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
       }
     }
 
-    namespace stdex = std::experimental;
-    using cmdspan2_t = stdex::mdspan<const T, stdex::dextents<std::size_t, 2>>;
-    using cmdspan4_t = stdex::mdspan<const T, stdex::dextents<std::size_t, 4>>;
+    using cmdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+    using cmdspan4_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
 
     std::array<std::vector<cmdspan2_t>, 4> _x;
     for (std::size_t i = 0; i < x.size(); ++i)
@@ -233,8 +234,8 @@ FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
             cell_type, value_shape, wcoeffs, _x, _M, nderivs,
             static_cast<basix::maps::type>(ce->map_type),
             static_cast<basix::sobolev::space>(ce->sobolev_space),
-            ce->discontinuous, ce->highest_complete_degree,
-            ce->highest_degree, static_cast<basix::polyset::type>(ce->polyset_type)));
+            ce->discontinuous, ce->embedded_subdegree, ce->embedded_superdegree,
+            static_cast<basix::polyset::type>(ce->polyset_type)));
     _needs_dof_transformations
         = !_element->dof_transformations_are_identity()
           and !_element->dof_transformations_are_permutations();
@@ -305,20 +306,21 @@ FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
   _needs_dof_permutations
       = !_element->dof_transformations_are_identity()
         and _element->dof_transformations_are_permutations();
+  std::string family;
   switch (_element->family())
   {
   case basix::element::family::P:
-    _family = "Lagrange";
+    family = "Lagrange";
     break;
   case basix::element::family::DPC:
-    _family = "Discontinuous Lagrange";
+    family = "Discontinuous Lagrange";
     break;
   default:
-    _family = "unknown";
+    family = "unknown";
     break;
   }
 
-  _signature = "Basix element " + _family + " " + std::to_string(_bs);
+  _signature = "Basix element " + family + " " + std::to_string(_bs);
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -381,12 +383,6 @@ template <std::floating_point T>
 std::span<const std::size_t> FiniteElement<T>::value_shape() const noexcept
 {
   return _value_shape;
-}
-//-----------------------------------------------------------------------------
-template <std::floating_point T>
-std::string FiniteElement<T>::family() const noexcept
-{
-  return _family;
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>

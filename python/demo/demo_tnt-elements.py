@@ -20,18 +20,19 @@
 #
 # We begin this demo by importing the required modules.
 
+from mpi4py import MPI
+
 # +
-import basix
-import basix.ufl
 import matplotlib
 import matplotlib.pylab as plt
 import numpy as np
+
+import basix
+import basix.ufl
+from dolfinx import fem, mesh
 from dolfinx.fem.petsc import LinearProblem
-from mpi4py import MPI
 from ufl import (SpatialCoordinate, TestFunction, TrialFunction, cos, div, dx,
                  grad, inner, sin)
-
-from dolfinx import fem, mesh
 
 matplotlib.use('agg')
 # -
@@ -257,13 +258,13 @@ tnt_ndofs = []
 tnt_degrees = []
 tnt_errors = []
 
-V = fem.FunctionSpace(msh, tnt_degree1)
+V = fem.functionspace(msh, tnt_degree1)
 tnt_degrees.append(2)
 tnt_ndofs.append(V.dofmap.index_map.size_global)
 tnt_errors.append(poisson_error(V))
 print(f"TNT degree 2 error: {tnt_errors[-1]}")
 for degree in range(2, 9):
-    V = fem.FunctionSpace(msh, create_tnt_quad(degree))
+    V = fem.functionspace(msh, create_tnt_quad(degree))
     tnt_degrees.append(degree + 1)
     tnt_ndofs.append(V.dofmap.index_map.size_global)
     tnt_errors.append(poisson_error(V))
@@ -273,7 +274,7 @@ q_ndofs = []
 q_degrees = []
 q_errors = []
 for degree in range(1, 9):
-    V = fem.FunctionSpace(msh, ("Q", degree))
+    V = fem.functionspace(msh, ("Q", degree))
     q_degrees.append(degree)
     q_ndofs.append(V.dofmap.index_map.size_global)
     q_errors.append(poisson_error(V))

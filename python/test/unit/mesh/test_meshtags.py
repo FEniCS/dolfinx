@@ -4,15 +4,15 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+from mpi4py import MPI
+
 import numpy as np
 import pytest
 
-from dolfinx.graph import create_adjacencylist
+from dolfinx.graph import adjacencylist
 from dolfinx.mesh import (CellType, create_unit_cube, locate_entities,
                           meshtags_from_entities)
 from ufl import Measure
-
-from mpi4py import MPI
 
 celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
 
@@ -25,7 +25,7 @@ def test_create(cell_type):
     marked_lines = locate_entities(mesh, 1, lambda x: np.isclose(x[1], 0.5))
     f_v = mesh.topology.connectivity(1, 0).array.reshape(-1, 2)
 
-    entities = create_adjacencylist(f_v[marked_lines])
+    entities = adjacencylist(f_v[marked_lines])
     values = np.full(marked_lines.shape[0], 2, dtype=np.int32)
     mt = meshtags_from_entities(mesh, 1, entities, values)
 
@@ -43,7 +43,7 @@ def test_ufl_id():
     marked_facets = locate_entities(msh, tdim - 1, lambda x: np.isclose(x[1], 1))
     f_v = msh.topology.connectivity(tdim - 1, 0).array.reshape(-1, 3)
 
-    entities = create_adjacencylist(f_v[marked_facets])
+    entities = adjacencylist(f_v[marked_facets])
     values = np.full(marked_facets.shape[0], 2, dtype=np.int32)
     ft = meshtags_from_entities(msh, tdim - 1, entities, values)
     ds = Measure("ds", domain=msh, subdomain_data=ft, subdomain_id=(2, 3))

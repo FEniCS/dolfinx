@@ -1144,8 +1144,13 @@ Expression<T, U> create_expression(
 /// @warning This is subject to change
 /// @brief Pack coefficients of a Form
 /// @param[in] form The Form
-/// @param[in] coeffs A map from a (integral_type, domain_id) pair to a
-/// (coeffs, cstride) pair
+/// @param[in,out] coeffs A map from an (integral_type, domain_id) pair to a
+/// (coeffs, cstride) pair. `coeffs` is a storage container representing
+/// an array of shape (num_int_entities, cstride) in which to pack the
+/// coefficient data, where num_int_entities is the number of entities
+/// being integrated over and cstride is the number of coefficient data
+/// entries per integration entity. `coeffs` is flattened into row-major
+/// layout.
 template <dolfinx::scalar T, std::floating_point U>
 void pack_coefficients(const Form<T, U>& form,
                        std::map<std::pair<IntegralType, int>,
@@ -1190,8 +1195,8 @@ pack_coefficients(const Expression<T, U>& e,
   return {std::move(c), cstride};
 }
 
-/// @brief Pack constants of u of generic type U ready for assembly
-/// @warning This function is subject to change
+/// @brief Pack constants of u into a sigle array ready for assembly.
+/// @warning This function is subject to change.
 template <typename U>
 std::vector<typename U::scalar_type> pack_constants(const U& u)
 {

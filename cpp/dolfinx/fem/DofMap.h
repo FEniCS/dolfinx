@@ -59,11 +59,12 @@ namespace dolfinx::fem
 /// typically used to exclude ghost cell contributions.
 /// @return Map from global (process-wise) index to positions in an
 /// unaassembled array. The links for each node are sorted.
-graph::AdjacencyList<std::int32_t> transpose_dofmap(
-    std::experimental::mdspan<const std::int32_t,
-                              std::experimental::dextents<std::size_t, 2>>
-        dofmap,
-    std::int32_t num_cells);
+graph::AdjacencyList<std::int32_t>
+transpose_dofmap(MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+                     const std::int32_t,
+                     MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+                     dofmap,
+                 std::int32_t num_cells);
 
 /// @brief Degree-of-freedom map.
 ///
@@ -87,8 +88,11 @@ public:
   /// @param[in] dofmap Adjacency list with the degrees-of-freedom for
   /// each cell.
   /// @param[in] bs The block size of the `dofmap`.
-  template <std::convertible_to<fem::ElementDofLayout> E,
-            std::convertible_to<std::vector<std::int32_t>> U>
+  template <typename E, typename U>
+    requires std::is_convertible_v<std::remove_cvref_t<E>,
+                                   fem::ElementDofLayout>
+                 and std::is_convertible_v<std::remove_cvref_t<U>,
+                                           std::vector<std::int32_t>>
   DofMap(E&& element, std::shared_ptr<const common::IndexMap> index_map,
          int index_map_bs, U&& dofmap, int bs)
       : index_map(index_map), _index_map_bs(index_map_bs),
@@ -107,7 +111,7 @@ public:
   DofMap(DofMap&& dofmap) = default;
 
   // Destructor
-  virtual ~DofMap() = default;
+  ~DofMap() = default;
 
   // Copy assignment
   DofMap& operator=(const DofMap& dofmap) = delete;
@@ -151,8 +155,9 @@ public:
 
   /// @brief Get dofmap data
   /// @return The adjacency list with dof indices for each cell
-  std::experimental::mdspan<const std::int32_t,
-                            std::experimental::dextents<std::size_t, 2>>
+  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      const std::int32_t,
+      MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
   map() const;
 
   /// Layout of dofs on an element

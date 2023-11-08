@@ -113,19 +113,20 @@
 # +
 import os
 
+from mpi4py import MPI
+from petsc4py import PETSc
+
 import numpy as np
+
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx.fem import Function, FunctionSpace
+from dolfinx import default_real_type, log, plot
+from dolfinx.fem import Function, functionspace
 from dolfinx.fem.petsc import NonlinearProblem
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_unit_square
 from dolfinx.nls.petsc import NewtonSolver
-from mpi4py import MPI
-from petsc4py import PETSc
 from ufl import dx, grad, inner
-
-from dolfinx import default_real_type, log, plot
 
 try:
     import pyvista as pv
@@ -149,12 +150,12 @@ theta = 0.5  # time stepping family, e.g. theta=1 -> backward Euler, theta=0.5 -
 
 # A unit square mesh with 96 cells edges in each direction is created,
 # and on this mesh a
-# {py:class}`FunctionSpace<dolfinx.fem.FunctionSpace>` `ME` is built
+# {py:class}`FunctionSpace <dolfinx.fem.FunctionSpace>` `ME` is built
 # using a pair of linear Lagrange elements.
 
 msh = create_unit_square(MPI.COMM_WORLD, 96, 96, CellType.triangle)
 P1 = element("Lagrange", msh.basix_cell(), 1)
-ME = FunctionSpace(msh, mixed_element([P1, P1]))
+ME = functionspace(msh, mixed_element([P1, P1]))
 
 # Trial and test functions of the space `ME` are now defined:
 
@@ -251,7 +252,7 @@ solver.rtol = np.sqrt(np.finfo(default_real_type).eps) * 1e-2
 # We can customize the linear solver used inside the NewtonSolver by
 # modifying the PETSc options
 ksp = solver.krylov_solver
-opts = PETSc.Options()
+opts = PETSc.Options()  # type: ignore
 option_prefix = ksp.getOptionsPrefix()
 opts[f"{option_prefix}ksp_type"] = "preonly"
 opts[f"{option_prefix}pc_type"] = "lu"
@@ -289,7 +290,7 @@ V0, dofs = ME.sub(0).collapse()
 # Prepare viewer for plotting the solution during the computation
 if have_pyvista:
     # Create a VTK 'mesh' with 'nodes' at the function dofs
-    topology, cell_types, x = plot.create_vtk_mesh(V0)
+    topology, cell_types, x = plot.vtk_mesh(V0)
     grid = pv.UnstructuredGrid(topology, cell_types, x)
 
     # Set output data
@@ -306,7 +307,7 @@ u0.x.array[:] = u.x.array
 while (t < T):
     t += dt
     r = solver.solve(u)
-    print(f"Step {int(t/dt)}: num iterations: {r[0]}")
+    print(f"Step {int(t / dt)}: num iterations: {r[0]}")
     u0.x.array[:] = u.x.array
     file.write_function(c, t)
 

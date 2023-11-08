@@ -5,18 +5,18 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for MatrixCSR"""
 
+from mpi4py import MPI
+
 import numpy as np
 import pytest
+
 import ufl
+from dolfinx import cpp as _cpp
+from dolfinx import fem
 from dolfinx.common import IndexMap
 from dolfinx.cpp.la import BlockMode, SparsityPattern
 from dolfinx.la import matrix_csr
 from dolfinx.mesh import GhostMode, create_unit_square
-
-from dolfinx import cpp as _cpp
-from dolfinx import fem
-
-from mpi4py import MPI
 
 
 def create_test_sparsity(n, bs):
@@ -25,9 +25,9 @@ def create_test_sparsity(n, bs):
     if bs == 1:
         for i in range(2):
             for j in range(2):
-                sp.insert(2 + i, 4 + j)
+                sp.insert(np.array([2 + i]), np.array([4 + j]))
     elif bs == 2:
-        sp.insert(1, 2)
+        sp.insert(np.array([1]), np.array([2]))
     sp.finalize()
     return sp
 
@@ -73,7 +73,7 @@ def test_add(dtype):
     assert np.allclose(A1, A3)
 
     mat3.set_value(0.0)
-    assert mat3.squared_norm() == 0.0
+    assert mat3.squared_norm() == 0.0  # /NOSONAR
 
 
 @pytest.mark.parametrize('dtype', [np.float32, np.float64, np.complex64, np.complex128])
@@ -86,7 +86,7 @@ def test_set(dtype):
     # Set a block with bs=1
     mat1.set([2.0, 3.0, 4.0, 5.0], [2, 3], [4, 5], 1)
     n1 = mat1.squared_norm()
-    assert (n1 == 54.0 * mpi_size)
+    assert (n1 == 54.0 * mpi_size)  # /NOSONAR
 
     # Set same block with bs=2
     mat1.set([2.0, 3.0, 4.0, 5.0], [1], [2], 2)
@@ -104,7 +104,7 @@ def test_set_blocked(dtype):
     # Set a block with bs=1
     mat1.set([2.0, 3.0, 4.0, 5.0], [2, 3], [4, 5], 1)
     n1 = mat1.squared_norm()
-    assert (n1 == 54.0 * mpi_size)
+    assert (n1 == 54.0 * mpi_size)  # /NOSONAR
 
 
 @pytest.mark.parametrize('dtype', [np.float32, np.float64, np.complex64, np.complex128])
@@ -123,10 +123,10 @@ def test_distributed_csr(dtype):
     sp = SparsityPattern(MPI.COMM_WORLD, [im, im], [1, 1])
     for i in range(n):
         for j in range(n + nghost):
-            sp.insert(i, j)
+            sp.insert(np.array([i]), np.array([j]))
     for i in range(n, n + nghost):
         for j in range(n, n + nghost):
-            sp.insert(i, j)
+            sp.insert(np.array([i]), np.array([j]))
     sp.finalize()
 
     mat = matrix_csr(sp, dtype=dtype)
@@ -149,7 +149,7 @@ def test_set_diagonal_distributed(dtype):
     mesh_dtype = np.real(dtype(0)).dtype
     ghost_mode = GhostMode.shared_facet
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, ghost_mode=ghost_mode, dtype=mesh_dtype)
-    V = fem.FunctionSpace(mesh, ("Lagrange", 1))
+    V = fem.functionspace(mesh, ("Lagrange", 1))
 
     tdim = mesh.topology.dim
     cellmap = mesh.topology.index_map(tdim)

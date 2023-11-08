@@ -24,25 +24,21 @@ using namespace dolfinx::io;
 
 namespace
 {
-//-----------------------------------------------------------------------------
-
-/// Convert a value_rank to the XDMF string description (Scalar, Vector,
+/// Convert a shape to the XDMF string description (Scalar, Vector,
 /// Tensor).
-std::string rank_to_string(int value_rank)
+std::string shape_to_string(std::span<const std::size_t> shape)
 {
-  switch (value_rank)
-  {
-  case 0:
+  if (shape.empty())
     return "Scalar";
-  case 1:
+  else if (shape.size() == 1 and shape[0] == 1)
+    return "Scalar";
+  else if (shape.size() == 1)
     return "Vector";
-  case 2:
+  else if (shape.size() == 2)
     return "Tensor";
-  default:
-    throw std::runtime_error("Range Error");
-  }
+  else
+    throw std::runtime_error("Unsupported value shape");
 }
-//-----------------------------------------------------------------------------
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -56,7 +52,8 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
   assert(u.function_space());
   auto mesh = u.function_space()->mesh();
   assert(mesh);
-  auto element = u.function_space()->element();
+  std::shared_ptr<const fem::FiniteElement<U>> element
+      = u.function_space()->element();
   assert(element);
 
   // FIXME: is the below check adequate for detecting a Lagrange
@@ -78,8 +75,9 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
   assert(dofmap);
   const int bs = dofmap->bs();
 
-  int rank = element->value_shape().size();
-  int num_components = std::pow(3, rank);
+  std::span<const std::size_t> value_shape = element->value_shape();
+  int num_components = std::reduce(value_shape.begin(), value_shape.end(), 1,
+                                   std::multiplies{});
 
   // Get fem::Function data values and shape
   std::vector<T> data_values;
@@ -132,13 +130,14 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
     std::int32_t num_local_points = map_x->size_local();
 
     // Get dof array and pack into array (padded where appropriate)
-    namespace stdex = std::experimental;
     auto dofmap_x = geometry.dofmap();
     data_values.resize(num_local_points * num_components, 0);
     for (std::int32_t c = 0; c < num_cells; ++c)
     {
       auto dofs = dofmap->cell_dofs(c);
-      auto dofs_x = stdex::submdspan(dofmap_x, c, stdex::full_extent);
+      auto dofs_x = MDSPAN_IMPL_STANDARD_NAMESPACE::
+          MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
+              dofmap_x, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
       assert(dofs.size() == dofs_x.size());
       for (std::size_t i = 0; i < dofs.size(); ++i)
       {
@@ -176,7 +175,8 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
     pugi::xml_node attr_node = xml_node.append_child("Attribute");
     assert(attr_node);
     attr_node.append_attribute("Name") = attr_name.c_str();
-    attr_node.append_attribute("AttributeType") = rank_to_string(rank).c_str();
+    attr_node.append_attribute("AttributeType")
+        = shape_to_string(value_shape).c_str();
     attr_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
 
     std::span<const scalar_value_type_t<T>> u;
