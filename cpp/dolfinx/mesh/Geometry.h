@@ -328,7 +328,7 @@ create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
   // Get the sub-geometry dofs owned by this process
   auto x_index_map = geometry.index_map();
   assert(x_index_map);
-  auto subx_to_x_dofmap
+  std::vector<std::int32_t> subx_to_x_dofmap
       = common::compute_owned_indices(sub_x_dofs, *x_index_map);
   std::shared_ptr<common::IndexMap> sub_x_dof_index_map;
   {
