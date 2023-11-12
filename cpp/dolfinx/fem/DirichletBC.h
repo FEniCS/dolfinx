@@ -25,10 +25,12 @@
 namespace dolfinx::fem
 {
 
-/// Find degrees-of-freedom which belong to the provided mesh entities
-/// (topological). Note that degrees-of-freedom for discontinuous
-/// elements are associated with the cell even if they may appear to be
-/// associated with a facet/edge/vertex.
+/// @brief Find degrees-of-freedom which belong to the provided mesh
+/// entities (topological).
+///
+/// @note Degrees-of-freedom for discontinuous elements are associated
+/// with the cell even if they may appear to be associated with a
+/// facet/edge/vertex.
 ///
 /// @param[in] topology Mesh topology.
 /// @param[in] dofmap Dofmap that associated DOFs with cells.
@@ -53,10 +55,12 @@ locate_dofs_topological(const mesh::Topology& topology, const DofMap& dofmap,
                         int dim, std::span<const std::int32_t> entities,
                         bool remote = true);
 
-/// Find degrees-of-freedom which belong to the provided mesh entities
-/// (topological). Note that degrees-of-freedom for discontinuous
-/// elements are associated with the cell even if they may appear to be
-/// associated with a facet/edge/vertex.
+/// @brief Find degrees-of-freedom which belong to the provided mesh
+/// entities (topological).
+///
+/// @note Degrees-of-freedom for discontinuous elements are associated
+/// with the cell even if they may appear to be associated with a
+/// facet/edge/vertex.
 ///
 /// @param[in] topology Mesh topology.
 /// @param[in] dofmaps The dofmaps.
@@ -75,6 +79,8 @@ locate_dofs_topological(const mesh::Topology& topology, const DofMap& dofmap,
 /// V[0] and V[1]. The array[0](i) entry is the DOF index in the space
 /// V[0] and array[1](i) is the corresponding DOF entry in the space
 /// V[1]. The returned dofs are 'unrolled', i.e. block size = 1.
+/// @pre The topology cell->entity and entity->cell connectivity must
+/// have been computed before calling this function.
 std::array<std::vector<std::int32_t>, 2> locate_dofs_topological(
     const mesh::Topology& topology,
     std::array<std::reference_wrapper<const DofMap>, 2> dofmaps, int dim,
