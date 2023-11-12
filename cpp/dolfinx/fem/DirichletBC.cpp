@@ -38,9 +38,18 @@ find_local_entity_index(const mesh::Topology& topology,
   // Initialise entity-cell connectivity
   const int tdim = topology.dim();
   auto e_to_c = topology.connectivity(dim, tdim);
-  assert(e_to_c);
+  if (!e_to_c)
+  {
+    throw std::runtime_error(
+        "Entity-to-cell connectivity has not been computed.");
+  }
+
   auto c_to_e = topology.connectivity(tdim, dim);
-  assert(c_to_e);
+  if (!c_to_e)
+  {
+    throw std::runtime_error(
+        "Cell-to-entity connectivity has not been computed.");
+  }
 
   std::vector<std::pair<std::int32_t, int>> entity_indices;
   entity_indices.reserve(entities.size());
