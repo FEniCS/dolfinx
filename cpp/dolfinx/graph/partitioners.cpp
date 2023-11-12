@@ -537,11 +537,12 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
     // the graph
     std::vector<idx_t> part(graph.num_nodes());
     MPI_Comm pcomm = MPI_COMM_NULL;
-    int color = graph.num_nodes() == 0 ? 0 : 1;
+    int color = graph.num_nodes() == 0 ? MPI_UNDEFINED : 1;
+
     MPI_Comm_split(comm, color, rank, &pcomm);
 
     std::vector<idx_t> node_disp;
-    if (color == 1)
+    if (pcomm != MPI_COMM_NULL)
     {
       // Build adjacency list data
       const int psize = dolfinx::MPI::size(pcomm);

@@ -48,7 +48,8 @@ std::vector<T> create_geom(MPI_Comm comm,
                            std::array<std::size_t, 3> n);
 
 template <std::floating_point T>
-Mesh<T> build_tet(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
+Mesh<T> build_tet(MPI_Comm comm, MPI_Comm comm1,
+                  const std::array<std::array<double, 3>, 2>& p,
                   std::array<std::size_t, 3> n,
                   const CellPartitionFunction& partitioner);
 
@@ -75,6 +76,7 @@ Mesh<T> build_prism(MPI_Comm comm,
 /// `n[0]*n[1]*n[2]`.
 ///
 /// @param[in] comm MPI communicator to build mesh on.
+/// @param[in] comm1 MPI communicator to construct and partition the mesh
 /// @param[in] p Corner of the box.
 /// @param[in] n Number of cells in each direction.
 /// @param[in] celltype Cell shape.
@@ -82,7 +84,8 @@ Mesh<T> build_prism(MPI_Comm comm,
 /// across MPI ranks.
 /// @return Mesh
 template <std::floating_point T = double>
-Mesh<T> create_box(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
+Mesh<T> create_box(MPI_Comm comm, MPI_Comm comm1,
+                   std::array<std::array<double, 3>, 2>& p,
                    std::array<std::size_t, 3> n, CellType celltype,
                    mesh::CellPartitionFunction partitioner = nullptr)
 {
@@ -92,14 +95,38 @@ Mesh<T> create_box(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
   switch (celltype)
   {
   case CellType::tetrahedron:
-    return impl::build_tet<T>(comm, p, n, partitioner);
+    return impl::build_tet<T>(comm, comm1, p, n, partitioner);
   case CellType::hexahedron:
-    return impl::build_hex<T>(comm, p, n, partitioner);
+    return impl::build_hex<T>(comm, comm, p, n, partitioner);
   case CellType::prism:
     return impl::build_prism<T>(comm, p, n, partitioner);
   default:
     throw std::runtime_error("Generate box mesh. Wrong cell type");
   }
+}
+
+/// @brief Create a uniform mesh::Mesh over rectangular prism spanned by
+/// the two points @p p.
+///
+/// The order of the two points is not important in terms of minimum and
+/// maximum coordinates. The total number of vertices will be `(n[0] +
+/// 1)*(n[1] + 1)*(n[2] + 1)`. For tetrahedra there will be  will be
+/// `6*n[0]*n[1]*n[2]` cells. For hexahedra the number of cells will be
+/// `n[0]*n[1]*n[2]`.
+///
+/// @param[in] comm MPI communicator to build mesh on.
+/// @param[in] p Corner of the box.
+/// @param[in] n Number of cells in each direction.
+/// @param[in] celltype Cell shape.
+/// @param[in] partitioner Partitioning function for distributing cells
+/// across MPI ranks.
+/// @return Mesh
+template <std::floating_point T = double>
+Mesh<T> create_box(MPI_Comm comm, std::array<std::array<double, 3>, 2>& p,
+                   std::array<std::size_t, 3> n, CellType celltype,
+                   mesh::CellPartitionFunction partitioner = nullptr)
+{
+  return create_box<T>(comm, comm, p, n, celltype, partitioner);
 }
 
 /// @brief Create a uniform mesh::Mesh over the rectangle spanned by the
@@ -295,20 +322,28 @@ std::vector<T> create_geom(MPI_Comm comm,
 }
 
 template <std::floating_point T>
-Mesh<T> build_tet(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
+Mesh<T> build_tet(MPI_Comm comm, MPI_Comm comm1,
+                  const std::array<std::array<double, 3>, 2>& p,
                   std::array<std::size_t, 3> n,
                   const CellPartitionFunction& partitioner)
 {
   common::Timer timer("Build BoxMesh");
 
-  std::vector geom = create_geom<T>(comm, p, n);
+  std::vector<T> geom(0);
+  std::array<std::int64_t, 2> range_c = {0, 0};
+  if (comm1 != MPI_COMM_NULL)
+  {
+    int rank = dolfinx::MPI::rank(comm1);
+    int size = dolfinx::MPI::size(comm1);
+    range_c = dolfinx::MPI::local_range(rank, n_cells, size);
+    geom = create_geom<T>(comm1, p, n);
+  }
 
   const std::int64_t nx = n[0];
   const std::int64_t ny = n[1];
   const std::int64_t nz = n[2];
   const std::int64_t n_cells = nx * ny * nz;
-  std::array range_c = dolfinx::MPI::local_range(
-      dolfinx::MPI::rank(comm), n_cells, dolfinx::MPI::size(comm));
+
   const std::size_t cell_range = range_c[1] - range_c[0];
   std::vector<std::int64_t> cells(6 * cell_range * 4);
 
