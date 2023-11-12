@@ -46,6 +46,8 @@ namespace dolfinx::fem
 /// @return Array of DOF index blocks (local to the MPI rank) in the
 /// space V. The array uses the block size of the dofmap associated
 /// with V.
+/// @pre The topology cell->entity and entity->cell connectivity must
+/// have been computed before calling this function.
 std::vector<std::int32_t>
 locate_dofs_topological(const mesh::Topology& topology, const DofMap& dofmap,
                         int dim, std::span<const std::int32_t> entities,
