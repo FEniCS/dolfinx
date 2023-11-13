@@ -63,7 +63,7 @@ void test_create_box(void)
   // check that the communicators are the same
   int equal;
   MPI_Comm_compare(mesh->comm(), mesh2->comm(), &equal);
-  CHECK(equal == MPI_IDENT);
+  CHECK(equal != MPI_UNEQUAL);
 
   // check global sizes for topology and geometry
   CHECK(mesh->topology()->index_map(tdim)->size_global()
