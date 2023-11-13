@@ -38,7 +38,7 @@ Mesh<T> build_tri(MPI_Comm comm, const std::array<std::array<double, 2>, 2>& p,
                   DiagonalType diagonal);
 
 template <std::floating_point T>
-Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
+Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2>& p,
                    std::array<std::size_t, 2> n,
                    const CellPartitionFunction& partitioner);
 
@@ -86,7 +86,7 @@ Mesh<T> build_prism(MPI_Comm comm,
 /// @return Mesh
 template <std::floating_point T = double>
 Mesh<T> create_box(MPI_Comm comm, MPI_Comm comm1,
-                   std::array<std::array<double, 3>, 2>& p,
+                   std::array<std::array<double, 3>, 2> p,
                    std::array<std::size_t, 3> n, CellType celltype,
                    mesh::CellPartitionFunction partitioner = nullptr)
 {
@@ -123,7 +123,7 @@ Mesh<T> create_box(MPI_Comm comm, MPI_Comm comm1,
 /// across MPI ranks.
 /// @return Mesh
 template <std::floating_point T = double>
-Mesh<T> create_box(MPI_Comm comm, std::array<std::array<double, 3>, 2>& p,
+Mesh<T> create_box(MPI_Comm comm, std::array<std::array<double, 3>, 2> p,
                    std::array<std::size_t, 3> n, CellType celltype,
                    mesh::CellPartitionFunction partitioner = nullptr)
 {
@@ -147,8 +147,7 @@ Mesh<T> create_box(MPI_Comm comm, std::array<std::array<double, 3>, 2>& p,
 /// @param[in] diagonal Direction of diagonals
 /// @return Mesh
 template <std::floating_point T = double>
-Mesh<T> create_rectangle(MPI_Comm comm,
-                         const std::array<std::array<double, 2>, 2>& p,
+Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
                          std::array<std::size_t, 2> n, CellType celltype,
                          const CellPartitionFunction& partitioner,
                          DiagonalType diagonal = DiagonalType::right)
@@ -179,8 +178,7 @@ Mesh<T> create_rectangle(MPI_Comm comm,
 /// @param[in] diagonal Direction of diagonals
 /// @return Mesh
 template <std::floating_point T = double>
-Mesh<T> create_rectangle(MPI_Comm comm,
-                         const std::array<std::array<double, 2>, 2>& p,
+Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
                          std::array<std::size_t, 2> n, CellType celltype,
                          DiagonalType diagonal = DiagonalType::right)
 {
