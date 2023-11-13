@@ -38,11 +38,11 @@ void create_mesh_file()
 void test_create_box(void)
 {
   MPI_Comm mpi_comm = MPI_COMM_WORLD;
-  // const int mpi_size = dolfinx::MPI::size(mpi_comm);
-  const int mpi_rank = dolfinx::MPI::size(mpi_comm);
+  const int mpi_rank = dolfinx::MPI::rank(mpi_comm);
 
   // Create subcommunicator on even ranks
-  int color = mpi_rank % 2 ? 1 : MPI_UNDEFINED;
+  int color = mpi_rank % 2 ? MPI_UNDEFINED : 1;
+
   MPI_Comm subset_comm;
   MPI_Comm_split(mpi_comm, color, mpi_rank, &subset_comm);
 
