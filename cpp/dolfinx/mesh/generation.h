@@ -664,7 +664,7 @@ Mesh<T> build_tri(MPI_Comm comm, const std::array<std::array<double, 2>, 2>& p,
 }
 
 template <std::floating_point T>
-Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
+Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2>& p,
                    std::array<std::size_t, 2> n,
                    const CellPartitionFunction& partitioner)
 {
