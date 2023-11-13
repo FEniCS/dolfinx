@@ -54,7 +54,8 @@ Mesh<T> build_tet(MPI_Comm comm, MPI_Comm comm1,
                   const CellPartitionFunction& partitioner);
 
 template <std::floating_point T>
-Mesh<T> build_hex(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
+Mesh<T> build_hex(MPI_Comm comm, MPI_Comm comm1,
+                  const std::array<std::array<double, 3>, 2>& p,
                   std::array<std::size_t, 3> n,
                   const CellPartitionFunction& partitioner);
 
@@ -97,7 +98,7 @@ Mesh<T> create_box(MPI_Comm comm, MPI_Comm comm1,
   case CellType::tetrahedron:
     return impl::build_tet<T>(comm, comm1, p, n, partitioner);
   case CellType::hexahedron:
-    return impl::build_hex<T>(comm, comm, p, n, partitioner);
+    return impl::build_hex<T>(comm, comm1, p, n, partitioner);
   case CellType::prism:
     return impl::build_prism<T>(comm, p, n, partitioner);
   default:
@@ -378,19 +379,27 @@ Mesh<T> build_tet(MPI_Comm comm, MPI_Comm comm1,
 }
 
 template <std::floating_point T>
-mesh::Mesh<T> build_hex(MPI_Comm comm,
+mesh::Mesh<T> build_hex(MPI_Comm comm, MPI_Comm comm1,
                         const std::array<std::array<double, 3>, 2>& p,
                         std::array<std::size_t, 3> n,
                         const CellPartitionFunction& partitioner)
 {
-  std::vector geom = create_geom<T>(comm, p, n);
+  std::vector<T> geom(0);
+  std::array<std::int64_t, 2> range_c = {0, 0};
 
   const std::int64_t nx = n[0];
   const std::int64_t ny = n[1];
   const std::int64_t nz = n[2];
   const std::int64_t n_cells = nx * ny * nz;
-  std::array range_c = dolfinx::MPI::local_range(
-      dolfinx::MPI::rank(comm), n_cells, dolfinx::MPI::size(comm));
+
+  if (comm1 != MPI_COMM_NULL)
+  {
+    int rank = dolfinx::MPI::rank(comm1);
+    int size = dolfinx::MPI::size(comm1);
+    range_c = dolfinx::MPI::local_range(rank, n_cells, size);
+    geom = create_geom<T>(comm1, p, n);
+  }
+
   const std::size_t cell_range = range_c[1] - range_c[0];
   std::vector<std::int64_t> cells(cell_range * 8);
 
