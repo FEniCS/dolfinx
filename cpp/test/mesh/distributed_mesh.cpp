@@ -42,7 +42,7 @@ void test_create_box(void)
   const int mpi_rank = dolfinx::MPI::size(mpi_comm);
 
   // Create subcommunicator on even ranks
-  int color = mpi_rank % 2 ? MPI_UNDEFINED : 1;
+  int color = mpi_rank % 2 ? 1 : MPI_UNDEFINED;
   MPI_Comm subset_comm;
   MPI_Comm_split(mpi_comm, color, mpi_rank, &subset_comm);
 
