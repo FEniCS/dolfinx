@@ -6,6 +6,7 @@
 
 #include "array.h"
 #include "caster_mpi.h"
+#include <basix/mdspan.hpp>
 #include <dolfinx/common/defines.h>
 #include <dolfinx/fem/Function.h>
 #include <dolfinx/fem/FunctionSpace.h>
@@ -35,6 +36,10 @@ namespace dolfinx_wrappers
 {
 namespace
 {
+template <typename T, std::size_t ndim>
+using mdspan_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+    const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, ndim>>;
+
 template <typename T>
 void xdmf_real_fn(auto&& m)
 {
@@ -192,13 +197,14 @@ void declare_real_types(nb::module_& m)
          nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> values)
       {
         assert(entities.shape(0) == values.size());
+        mdspan_t<const std::int64_t, 2> entities_span(
+            entities.data(), entities.shape(0), entities.shape(1));
         std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
             entities_values = dolfinx::io::xdmf_utils::distribute_entity_data(
                 *mesh.topology(), mesh.geometry().input_global_indices(),
                 mesh.geometry().index_map()->size_global(),
                 mesh.geometry().cmaps()[0].create_dof_layout(),
-                mesh.geometry().dofmap(), entity_dim,
-                std::span(entities.data(), entities.size()),
+                mesh.geometry().dofmap(), entity_dim, entities_span,
                 std::span(values.data(), values.size()));
 
         std::size_t num_vert_per_entity = dolfinx::mesh::cell_num_entities(
@@ -228,10 +234,8 @@ void io(nb::module_& m)
       [](nb::ndarray<const std::int32_t, nb::ndim<2>, nb::c_contig> dofmap,
          dolfinx::mesh::CellType cell)
       {
-        MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-            const std::int32_t,
-            MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
-            _dofmap(dofmap.data(), dofmap.shape(0), dofmap.shape(1));
+        mdspan_t<const std::int32_t, 2> _dofmap(dofmap.data(), dofmap.shape(0),
+                                                dofmap.shape(1));
         auto [cells, shape]
             = dolfinx::io::extract_vtk_connectivity(_dofmap, cell);
         return as_nbarray(std::move(cells), shape.size(), shape.data());
