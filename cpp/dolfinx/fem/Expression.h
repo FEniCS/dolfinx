@@ -175,7 +175,7 @@ public:
     std::function<void(const std::span<scalar_type>&,
                        const std::span<const std::uint32_t>&, std::int32_t,
                        int)>
-        dof_transform_to_transpose
+        post_dof_transform
         = [](const std::span<scalar_type>&,
              const std::span<const std::uint32_t>&, std::int32_t, int)
     {
@@ -193,7 +193,7 @@ public:
       {
         mesh.topology_mutable()->create_entity_permutations();
         cell_info = std::span(mesh.topology()->get_cell_permutation_info());
-        dof_transform_to_transpose
+        post_dof_transform
             = element
                   ->template get_post_dof_transformation_function<scalar_type>(
                       false, true);
@@ -220,7 +220,7 @@ public:
       _fn(values_local.data(), coeff_cell, constant_data.data(),
           coord_dofs.data(), nullptr, nullptr);
 
-      dof_transform_to_transpose(values_local, cell_info, c, size0);
+      post_dof_transform(values_local, cell_info, c, size0);
       for (std::size_t j = 0; j < values_local.size(); ++j)
         values[c * vshape[1] + j] = values_local[j];
     }
