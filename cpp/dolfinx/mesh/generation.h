@@ -48,13 +48,13 @@ std::vector<T> create_geom(MPI_Comm comm,
                            std::array<std::size_t, 3> n);
 
 template <std::floating_point T>
-Mesh<T> build_tet(MPI_Comm comm, MPI_Comm comm1,
+Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
                   const std::array<std::array<double, 3>, 2>& p,
                   std::array<std::size_t, 3> n,
                   const CellPartitionFunction& partitioner);
 
 template <std::floating_point T>
-Mesh<T> build_hex(MPI_Comm comm, MPI_Comm comm1,
+Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
                   const std::array<std::array<double, 3>, 2>& p,
                   std::array<std::size_t, 3> n,
                   const CellPartitionFunction& partitioner);
@@ -77,7 +77,7 @@ Mesh<T> build_prism(MPI_Comm comm,
 /// `n[0]*n[1]*n[2]`.
 ///
 /// @param[in] comm MPI communicator to build mesh on.
-/// @param[in] comm1 MPI communicator to construct and partition the mesh
+/// @param[in] subcomm MPI communicator to construct and partition the mesh
 /// @param[in] p Corner of the box.
 /// @param[in] n Number of cells in each direction.
 /// @param[in] celltype Cell shape.
@@ -85,7 +85,7 @@ Mesh<T> build_prism(MPI_Comm comm,
 /// across MPI ranks.
 /// @return Mesh
 template <std::floating_point T = double>
-Mesh<T> create_box(MPI_Comm comm, MPI_Comm comm1,
+Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
                    std::array<std::array<double, 3>, 2> p,
                    std::array<std::size_t, 3> n, CellType celltype,
                    mesh::CellPartitionFunction partitioner = nullptr)
@@ -96,9 +96,9 @@ Mesh<T> create_box(MPI_Comm comm, MPI_Comm comm1,
   switch (celltype)
   {
   case CellType::tetrahedron:
-    return impl::build_tet<T>(comm, comm1, p, n, partitioner);
+    return impl::build_tet<T>(comm, subcomm, p, n, partitioner);
   case CellType::hexahedron:
-    return impl::build_hex<T>(comm, comm1, p, n, partitioner);
+    return impl::build_hex<T>(comm, subcomm, p, n, partitioner);
   case CellType::prism:
     return impl::build_prism<T>(comm, p, n, partitioner);
   default:
@@ -321,7 +321,7 @@ std::vector<T> create_geom(MPI_Comm comm,
 }
 
 template <std::floating_point T>
-Mesh<T> build_tet(MPI_Comm comm, MPI_Comm comm1,
+Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
                   const std::array<std::array<double, 3>, 2>& p,
                   std::array<std::size_t, 3> n,
                   const CellPartitionFunction& partitioner)
@@ -336,12 +336,12 @@ Mesh<T> build_tet(MPI_Comm comm, MPI_Comm comm1,
   const std::int64_t nz = n[2];
   const std::int64_t n_cells = nx * ny * nz;
 
-  if (comm1 != MPI_COMM_NULL)
+  if (subcomm != MPI_COMM_NULL)
   {
-    int rank = dolfinx::MPI::rank(comm1);
-    int size = dolfinx::MPI::size(comm1);
+    int rank = dolfinx::MPI::rank(subcomm);
+    int size = dolfinx::MPI::size(subcomm);
     range_c = dolfinx::MPI::local_range(rank, n_cells, size);
-    geom = create_geom<T>(comm1, p, n);
+    geom = create_geom<T>(subcomm, p, n);
   }
 
   const std::size_t cell_range = range_c[1] - range_c[0];
@@ -378,7 +378,7 @@ Mesh<T> build_tet(MPI_Comm comm, MPI_Comm comm1,
 }
 
 template <std::floating_point T>
-mesh::Mesh<T> build_hex(MPI_Comm comm, MPI_Comm comm1,
+mesh::Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
                         const std::array<std::array<double, 3>, 2>& p,
                         std::array<std::size_t, 3> n,
                         const CellPartitionFunction& partitioner)
@@ -391,12 +391,12 @@ mesh::Mesh<T> build_hex(MPI_Comm comm, MPI_Comm comm1,
   const std::int64_t nz = n[2];
   const std::int64_t n_cells = nx * ny * nz;
 
-  if (comm1 != MPI_COMM_NULL)
+  if (subcomm != MPI_COMM_NULL)
   {
-    int rank = dolfinx::MPI::rank(comm1);
-    int size = dolfinx::MPI::size(comm1);
+    int rank = dolfinx::MPI::rank(subcomm);
+    int size = dolfinx::MPI::size(subcomm);
     range_c = dolfinx::MPI::local_range(rank, n_cells, size);
-    geom = create_geom<T>(comm1, p, n);
+    geom = create_geom<T>(subcomm, p, n);
   }
 
   const std::size_t cell_range = range_c[1] - range_c[0];
