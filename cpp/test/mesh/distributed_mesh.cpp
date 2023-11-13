@@ -42,8 +42,9 @@ void test_create_box(void)
   const int mpi_rank = dolfinx::MPI::size(mpi_comm);
 
   // Create subcommunicator on even ranks
+  int color = mpi_rank % 2 ? MPI_UNDEFINED : 1;
   MPI_Comm subset_comm;
-  MPI_Comm_split(mpi_comm, mpi_rank % 2, mpi_rank, &subset_comm);
+  MPI_Comm_split(mpi_comm, color, mpi_rank, &subset_comm);
 
   auto part = mesh::create_cell_partitioner(mesh::GhostMode::none);
 
