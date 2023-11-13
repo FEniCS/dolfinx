@@ -312,7 +312,11 @@ std::vector<std::int64_t> compute_submap_ghost_indices(
   // --- Step 1 ---: Send submap global ghost indices (indexed w.r.t. original
   // imap) to owning rank
 
+  // ss << "submap_src = " << submap_src << "\n";
+  // ss << "submap_dest = " << submap_dest << "\n";
+
   std::vector<std::int64_t> recv_indices;
+  std::vector<std::size_t> ghost_perm;
   std::vector<int> send_disp, recv_disp;
   std::vector<std::int32_t> send_sizes, recv_sizes;
   {
@@ -326,6 +330,7 @@ std::vector<std::int64_t> compute_submap_ghost_indices(
 
     // Pack ghosts indices
     std::vector<std::vector<std::int64_t>> send_data(submap_src.size());
+    std::vector<std::vector<std::size_t>> ghost_perm_dict(submap_src.size());
     for (std::size_t i = 0; i < submap_ghosts_global.size(); ++i)
     {
       auto it = std::lower_bound(submap_src.begin(), submap_src.end(),
@@ -333,7 +338,10 @@ std::vector<std::int64_t> compute_submap_ghost_indices(
       assert(it != submap_src.end() and *it == submap_ghost_owners[i]);
       int r = std::distance(submap_src.begin(), it);
       send_data[r].push_back(submap_ghosts_global[i]);
+      ghost_perm_dict[r].push_back(i);
     }
+
+    // ss << "ghost_perm_dict = " << ghost_perm_dict << "\n";
 
     // Count number of ghosts per dest
     std::transform(send_data.begin(), send_data.end(),
@@ -344,6 +352,10 @@ std::vector<std::int64_t> compute_submap_ghost_indices(
     std::vector<std::int64_t> send_indices;
     for (auto& d : send_data)
       send_indices.insert(send_indices.end(), d.begin(), d.end());
+    for (auto& p : ghost_perm_dict)
+      ghost_perm.insert(ghost_perm.end(), p.begin(), p.end());
+
+    // ss << "send_indices =" << send_indices << "\n";
 
     // Send how many indices I ghost to each owner, and receive how many
     // of my indices other ranks ghost
@@ -361,6 +373,9 @@ std::vector<std::int64_t> compute_submap_ghost_indices(
                      std::next(send_disp.begin()));
     std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
                      std::next(recv_disp.begin()));
+
+  // ss << "send_sizes = " << send_sizes << "\n";
+  // ss << "recv_sizes = " << recv_sizes << "\n";
 
     // Send ghost indices to owner, and receive indices
     recv_indices.resize(recv_disp.back());
@@ -384,6 +399,8 @@ std::vector<std::int64_t> compute_submap_ghost_indices(
   // TODO Convert recv_indices or submap_owned?
   std::vector<int32_t> recv_indices_local(recv_indices.size());
   imap.global_to_local(recv_indices, recv_indices_local);
+
+  // ss << "recv_indices = " << recv_indices << "\n";
 
   // ss << "recv_indices_local = " << recv_indices_local << "\n";
 
@@ -434,18 +451,13 @@ std::vector<std::int64_t> compute_submap_ghost_indices(
 
   // ss << "recv_gidx = " << recv_gidx << "\n";
 
+  // ss << "ghost_perm = " << ghost_perm << "\n";
+
   // // --- Step 4---: Unpack received data
 
-  std::vector<std::int64_t> ghost_submap_gidx;
-  for (std::size_t i = 0; i < send_disp.size() - 1; ++i)
-  {
-    for (int j = send_disp[i]; j < send_disp[i + 1]; ++j)
-    {
-      std::int64_t idx = recv_gidx[j];
-      assert(idx >= 0);
-      ghost_submap_gidx.push_back(idx);
-    }
-  }
+  std::vector<std::int64_t> ghost_submap_gidx(submap_ghosts_global);
+  for (std::size_t i = 0; i < recv_gidx.size(); ++i)
+    ghost_submap_gidx[ghost_perm[i]] = recv_gidx[i];
 
   // ss << "ghost_submap_gidx = " << ghost_submap_gidx << "\n";
 
@@ -1054,7 +1066,7 @@ std::pair<IndexMap, std::vector<std::int32_t>>
 IndexMap::create_submap_conn(std::span<const std::int32_t> indices) const
 {
   const int rank = dolfinx::MPI::rank(_comm.comm());
-  // const int comm_size = dolfinx::MPI::size(_comm.comm());
+  const int comm_size = dolfinx::MPI::size(_comm.comm());
   ss << "Rank " << rank << ":\n";
 
   ss << "indices = ";
@@ -1144,15 +1156,15 @@ IndexMap::create_submap_conn(std::span<const std::int32_t> indices) const
 
   // ss << "sub_imap_to_imap = " << sub_imap_to_imap << "\n";
 
-  // for (int i = 0; i < comm_size; ++i)
-  // {
-  //   if (i == rank)
-  //   {
-  //     std::cout << ss.str() << "\n";
-  //   }
-  //   MPI_Barrier(_comm.comm());
-  // }
-  // ss = std::stringstream();
+  for (int i = 0; i < comm_size; ++i)
+  {
+    if (i == rank)
+    {
+      std::cout << ss.str() << "\n";
+    }
+    MPI_Barrier(_comm.comm());
+  }
+  ss = std::stringstream();
 
   return {IndexMap(_comm.comm(), submap_local_size, submap_ghost_gidxs,
                    submap_ghost_owners),
