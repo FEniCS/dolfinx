@@ -930,7 +930,8 @@ void declare_real_functions(py::module& m)
             mesh0.geometry(), element0, mesh1,
             std::span(cells.data(), cells.size()), padding);
       },
-      py::arg("mesh0"), py::arg("element0"), py::arg("mesh1"), py::arg("padding"));
+      py::arg("mesh0"), py::arg("element0"), py::arg("mesh1"),
+      py::arg("padding"));
   m.def(
       "create_nonmatching_meshes_interpolation_data",
       [](const dolfinx::mesh::Geometry<T>& geometry0,
