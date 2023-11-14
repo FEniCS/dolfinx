@@ -1195,8 +1195,11 @@ mesh::create_subtopology(const Topology& topology, int dim,
   // Get the vertices in the sub-topology owned by this process
   auto map0 = topology.index_map(0);
   assert(map0);
-  std::vector<int32_t> subvertices0 = common::compute_owned_indices(
-      compute_incident_entities(topology, subentities, dim, 0), *map0);
+  std::vector<std::int32_t> indices
+      = compute_incident_entities(topology, subentities, dim, 0);
+  std::sort(indices.begin(), indices.end());
+  std::vector<std::int32_t> subvertices0
+      = common::compute_owned_indices(indices, *map0);
 
   // Create map from the vertices in the sub-topology to the vertices in the
   // parent topology, and an index map

@@ -7,10 +7,10 @@
 
 from mpi4py import MPI
 
-# import basix
 import numpy as np
 import pytest
 
+import basix
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type
 from dolfinx.fem import Function, FunctionSpace, functionspace
@@ -228,16 +228,15 @@ def test_cell_mismatch(mesh):
         functionspace(mesh, e)
 
 
-# NOTE: Test relies on Basix and DOLFINx both using pybind11
-# @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
-# def test_basix_element(V, W, Q, V2):
-#     for V_ in (V, W, V2):
-#         e = V_.element.basix_element
-#         assert isinstance(e, basix.finite_element.FiniteElement)
+@pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
+def test_basix_element(V, W, Q, V2):
+    for V_ in (V, W, V2):
+        e = V_.element.basix_element
+        assert isinstance(e, basix.finite_element.FiniteElement)
 
-#     # Mixed spaces do not yet return a basix element
-#     with pytest.raises(RuntimeError):
-#         e = Q.element.basix_element
+    # Mixed spaces do not yet return a basix element
+    with pytest.raises(RuntimeError):
+        e = Q.element.basix_element
 
 
 @pytest.mark.skip_in_parallel
