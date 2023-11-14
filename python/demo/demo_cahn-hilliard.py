@@ -117,6 +117,7 @@ from mpi4py import MPI
 from petsc4py import PETSc
 
 import numpy as np
+import platform
 
 import ufl
 from basix.ufl import element, mixed_element
@@ -256,6 +257,12 @@ opts = PETSc.Options()  # type: ignore
 option_prefix = ksp.getOptionsPrefix()
 opts[f"{option_prefix}ksp_type"] = "preonly"
 opts[f"{option_prefix}pc_type"] = "lu"
+# MUMPS fails to solve this problem on ARM Mac
+if platform.system() == "Darwin" and platform.processor() == "arm":
+    opts[f"{option_prefix}pc_factor_mat_solver_type"] = "superlu_dist"
+else:
+    opts[f"{option_prefix}pc_factor_mat_solver_type"] = "mumps"
+opts[f"{option_prefix}ksp_view"] = ""
 ksp.setFromOptions()
 # -
 
