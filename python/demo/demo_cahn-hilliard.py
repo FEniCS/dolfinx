@@ -117,7 +117,6 @@ from mpi4py import MPI
 from petsc4py import PETSc
 
 import numpy as np
-import platform
 
 import ufl
 from basix.ufl import element, mixed_element
