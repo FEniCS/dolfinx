@@ -1196,6 +1196,8 @@ mesh::create_subtopology(const Topology& topology, int dim,
   auto map0 = topology.index_map(0);
   assert(map0);
 
+  // Create map from the vertices in the sub-topology to the vertices in the
+  // parent topology, and an index map
   std::shared_ptr<common::IndexMap> submap0;
   std::vector<int32_t> subvertices0;
   {

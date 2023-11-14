@@ -189,9 +189,18 @@ public:
   std::pair<IndexMap, std::vector<std::int32_t>>
   create_submap(std::span<const std::int32_t> indices) const;
 
-  /// @brief TODO
-  /// @param[in] indices
+  /// @brief Create a new index map from a subset of indices in this index
+  /// map, changing the owner of indices that are included on other processes
+  /// but not on the owning process.
+  ///
+  /// This can be used when, for instance, creating a submesh to ensure
+  /// that all vertices have exactly one owner and are connected to at least
+  /// one cell on the owning process.
+  /// @param[in] indices Local indices to include in the new index map (owned
+  /// and ghost)
   /// @pre `indices` must be sorted and contain no duplicates.
+  /// @return The (i) new index map and (ii) a map from local indices in the
+  /// submap to local indices in the original (this) map
   std::pair<IndexMap, std::vector<std::int32_t>>
   create_submap_conn(std::span<const std::int32_t> indices) const;
 

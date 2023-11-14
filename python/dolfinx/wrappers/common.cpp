@@ -138,14 +138,14 @@ void common(nb::module_& m)
           "create_submap",
           [](const dolfinx::common::IndexMap& self,
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>
-                 entities)
+                 indices)
           {
             auto [map, ghosts] = self.create_submap(
-                std::span(entities.data(), entities.size()));
+                std::span(indices.data(), indices.size()));
             return std::pair(std::move(map),
                              dolfinx_wrappers::as_nbarray(std::move(ghosts)));
           },
-          nb::arg("entities"))
+          nb::arg("indices"))
       .def(
           "create_submap_conn",
           [](const dolfinx::common::IndexMap& self,

@@ -14,36 +14,8 @@
 #include <utility>
 #include <vector>
 
-#include <iostream>
-
 using namespace dolfinx;
 using namespace dolfinx::common;
-
-std::stringstream ss;
-
-// A function for printing vectors
-template <typename S>
-std::ostream& operator<<(std::ostream& os, const std::vector<S>& vector)
-{
-  os << "{ ";
-  for (auto v : vector)
-  {
-    os << v << " ";
-  }
-  os << "}";
-  return os;
-}
-
-// A function for printing maps
-template <typename T, typename U>
-std::ostream& operator<<(std::ostream& os, const std::map<T, U>& map)
-{
-  os << "{ ";
-  for (const auto& [k, v] : map)
-    os << k << ": " << v << " ";
-  os << "}";
-  return os;
-}
 
 namespace
 {
@@ -61,6 +33,10 @@ std::array<std::vector<int>, 2> build_src_dest(MPI_Comm comm,
   return {std::move(src), std::move(dest)};
 }
 
+// A helper function that, given an index map and a set of local indices (can be
+// owned or ghost but must be unique and sorted), returns the owned, ghost and
+// ghost owners in the submap. All indices are local and with respect to the
+// original index map.
 std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
            std::vector<std::int32_t>>
 compute_submap_indices(const dolfinx::common::IndexMap& imap,
@@ -76,8 +52,6 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
   const std::vector<std::int32_t>& dest = imap.dest();
   const std::vector<std::int64_t>& ghosts = imap.ghosts();
   const std::vector<std::int32_t>& ghost_owners = imap.owners();
-  // ss << "src = " << src << "\n";
-  // ss << "dest = " << dest << "\n";
 
   // Create neighbourhood comm (ghost -> owner)
   MPI_Comm comm0;
@@ -90,9 +64,8 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
   std::vector<int> is_in_submap(imap.size_local() + imap.num_ghosts(), 0);
   for (auto v : indices)
     is_in_submap[v] = 1;
-  // ss << "is_in_submap = " << is_in_submap << "\n";
 
-  // Pack ghosts indices that this process wants to include in the
+  // Pack ghost indices that this process wants to include in the
   // sub-map
   std::vector<std::vector<std::int64_t>> send_data(src.size());
   for (std::size_t i = 0; i < ghosts.size(); ++i)
@@ -106,15 +79,12 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
     else
       send_data[r].push_back(-1);
   }
-  // ss << "send_data = " << send_data << "\n";
 
   // Count number of indices to send per dest
   std::vector<std::int32_t> send_sizes;
   std::transform(send_data.begin(), send_data.end(),
                  std::back_inserter(send_sizes),
                  [](auto& d) { return d.size(); });
-
-  // ss << "send_sizes = " << send_sizes << "\n";
 
   // Send how many indices I ghost to each owner, and receive how many
   // of my indices other ranks ghost
@@ -126,8 +96,6 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
                                recv_sizes.data(), 1, MPI_INT32_T, comm0);
   dolfinx::MPI::check_error(comm, ierr);
 
-  // ss << "recv_sizes = " << recv_sizes << "\n";
-
   // Prepare displacement vectors
   std::vector<int> send_disp, recv_disp;
   send_disp.resize(src.size() + 1, 0);
@@ -137,16 +105,11 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
   std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
                    std::next(recv_disp.begin()));
 
-  // ss << "send_disp = " << send_disp << "\n";
-  // ss << "recv_disp = " << recv_disp << "\n";
-
   // Send ghost indices to owner, and receive indices owned by this process
   // that are ghosts on others
   std::vector<std::int64_t> send_indices, recv_indices;
   for (auto& d : send_data)
     send_indices.insert(send_indices.end(), d.begin(), d.end());
-
-  // ss << "send_indices = " << send_indices << "\n";
 
   recv_indices.resize(recv_disp.back());
   ierr = MPI_Neighbor_alltoallv(send_indices.data(), send_sizes.data(),
@@ -155,8 +118,6 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
                                 recv_disp.data(), MPI_INT64_T, comm0);
   dolfinx::MPI::check_error(comm, ierr);
 
-  // ss << "recv_indices = " << recv_indices << "\n";
-
   // Free the communicator
   ierr = MPI_Comm_free(&comm0);
   dolfinx::MPI::check_error(comm, ierr);
@@ -164,11 +125,11 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
   // --- Step 2 ---: Create a map from the indices in `recv_indices` (i.e.
   // indices owned by this process that are in `indices` on other processes) to
   // their owner in the submap. This is required since not all indices in
-  // `recv_indices` will be in `indices` on this process, and thus other
-  // processes must own them in the submap.
+  // `recv_indices` will necessarily be in `indices` on this process, and thus
+  // other processes must own them in the submap.
 
-  // Create a map from (global) indices owned by this process that are ghosted
-  // on others to processes that can own them.
+  // Create a map from (global) owned shared indices owned to processes that can
+  // own them.
   // FIXME Avoid map
   const int rank = dolfinx::MPI::rank(comm);
   // A map from (global) indices in `recv_indices` to a list of processes that
@@ -200,9 +161,6 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
     }
   }
 
-  // ss << "global_idx_to_possible_owner = " << global_idx_to_possible_owner
-  //    << "\n";
-
   // Choose the submap owner for each index in `recv_indices`
   std::vector<std::int32_t> send_owners;
   send_owners.reserve(recv_indices.size());
@@ -211,7 +169,7 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
     // Check the index is in the submap, otherwise send -1
     if (idx != -1)
     {
-      // Choose new owner randomly for load balancing
+      // TODO Choose new owner randomly for load balancing
       const std::vector<std::int32_t>& possible_owners
           = global_idx_to_possible_owner[idx];
       // const int random_index = std::rand() % possible_owners.size();
@@ -223,8 +181,6 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
     else
       send_owners.push_back(-1);
   }
-
-  // ss << "send_owners = " << send_owners << "\n";
 
   // Create neighbourhood comm (owner -> ghost)
   MPI_Comm comm1;
@@ -245,8 +201,6 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
   ierr = MPI_Comm_free(&comm1);
   dolfinx::MPI::check_error(comm, ierr);
 
-  // ss << "recv_owners = " << recv_owners << "\n";
-
   // Local indices (w.r.t. original map) owned by this process in the submap
   std::vector<std::int32_t> submap_owned;
   // Local indices (w.r.t. original map) ghosted by this process in the submap
@@ -254,6 +208,8 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
   // The owners of the submap ghost indices (process submap_ghost_owners[i] owns
   // index submap_ghost[i])
   std::vector<std::int32_t> submap_ghost_owners;
+
+  // Add owned indices to submap_owned
   for (std::int32_t v : indices)
     if (v < imap.size_local())
       submap_owned.push_back(v);
@@ -262,6 +218,10 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
   std::vector<std::int32_t> send_indices_local(send_indices.size());
   imap.global_to_local(send_indices, send_indices_local);
 
+  // Loop over ghost indices (in the original map) and add to submap_owned
+  // if the owning process has decided this process to be the submap owner.
+  // Else, add the index and its (possibly new) owner to submap_ghost and
+  // submap_ghost_owners respectively.
   for (std::size_t i = 0; i < send_indices.size(); ++i)
   {
     std::int32_t local_idx = send_indices_local[i];
@@ -284,22 +244,12 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
   }
   std::sort(submap_owned.begin(), submap_owned.end());
 
-  // std::vector<int> perm(submap_ghost.size()); 
-  // std::iota(perm.begin(), perm.end(), 0);
-  // std::sort(perm.begin(), perm.end(), [&](int i, int j){return submap_ghost[i] < submap_ghost[j];});
-
-  // std::vector<std::int32_t> submap_ghost_sorted(submap_ghost.size());
-  // std::vector<std::int32_t> submap_ghost_owners_sorted(submap_ghost_owners.size());
-  // for (std::size_t i = 0; i < submap_ghost.size(); ++i)
-  // {
-  //   submap_ghost_sorted[i] = submap_ghost[perm[i]];
-  //   submap_ghost_owners_sorted[i] = submap_ghost_owners[perm[i]];
-  // }
-  // return {submap_owned, submap_ghost_sorted, submap_ghost_owners_sorted};
-
   // TODO Move
   return {submap_owned, submap_ghost, submap_ghost_owners};
 }
+
+// Helper function to compute the submap indices of ghosts.
+// NOTE: submap_owned must be sorted and contain no repeated indices
 std::vector<std::int64_t> compute_submap_ghost_indices(
     const MPI_Comm& comm, const std::vector<int>& submap_src,
     const std::vector<int>& submap_dest,
@@ -309,12 +259,8 @@ std::vector<std::int64_t> compute_submap_ghost_indices(
     const int submap_offset,
     const dolfinx::common::IndexMap& imap) // NOTE: This is the original imap!
 {
-  // --- Step 1 ---: Send submap global ghost indices (indexed w.r.t. original
-  // imap) to owning rank
-
-  // ss << "submap_src = " << submap_src << "\n";
-  // ss << "submap_dest = " << submap_dest << "\n";
-
+  // --- Step 1 ---: Send global ghost indices (w.r.t. original imap) to owning
+  // rank
   std::vector<std::int64_t> recv_indices;
   std::vector<std::size_t> ghost_perm;
   std::vector<int> send_disp, recv_disp;
@@ -341,8 +287,6 @@ std::vector<std::int64_t> compute_submap_ghost_indices(
       ghost_perm_dict[r].push_back(i);
     }
 
-    // ss << "ghost_perm_dict = " << ghost_perm_dict << "\n";
-
     // Count number of ghosts per dest
     std::transform(send_data.begin(), send_data.end(),
                    std::back_inserter(send_sizes),
@@ -354,8 +298,6 @@ std::vector<std::int64_t> compute_submap_ghost_indices(
       send_indices.insert(send_indices.end(), d.begin(), d.end());
     for (auto& p : ghost_perm_dict)
       ghost_perm.insert(ghost_perm.end(), p.begin(), p.end());
-
-    // ss << "send_indices =" << send_indices << "\n";
 
     // Send how many indices I ghost to each owner, and receive how many
     // of my indices other ranks ghost
@@ -374,10 +316,8 @@ std::vector<std::int64_t> compute_submap_ghost_indices(
     std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
                      std::next(recv_disp.begin()));
 
-  // ss << "send_sizes = " << send_sizes << "\n";
-  // ss << "recv_sizes = " << recv_sizes << "\n";
-
-    // Send ghost indices to owner, and receive indices
+    // Send ghost indices to owner, and receive indices owned by this process
+    // that are shared with others in the submap
     recv_indices.resize(recv_disp.back());
     ierr = MPI_Neighbor_alltoallv(send_indices.data(), send_sizes.data(),
                                   send_disp.data(), MPI_INT64_T,
@@ -395,38 +335,20 @@ std::vector<std::int64_t> compute_submap_ghost_indices(
   send_gidx.reserve(recv_indices.size());
   // NOTE: Received indices are owned by this process in the submap, but not
   // necessarily in the original imap, so we must use global_to_local to convert
-  // rather than rather than subtracting the local_range[0]
+  // rather than subtracting local_range[0]
   // TODO Convert recv_indices or submap_owned?
   std::vector<int32_t> recv_indices_local(recv_indices.size());
   imap.global_to_local(recv_indices, recv_indices_local);
 
-  // ss << "recv_indices = " << recv_indices << "\n";
-
-  // ss << "recv_indices_local = " << recv_indices_local << "\n";
-
-  // for (int i = 0; i < dolfinx::MPI::size(comm); ++i)
-  // {
-  //   if (i == dolfinx::MPI::rank(comm))
-  //   {
-  //     std::cout << ss.str() << "\n";
-  //   }
-  //   MPI_Barrier(comm);
-  // }
-  // ss = std::stringstream();
-
-  // ss << "recv_indices_local = " << recv_indices_local << "\n";
+  // Compute submap global index
   for (auto idx : recv_indices_local)
   {
-    // TODO Check submap owned is always sorted
     // Could avoid search by creating look-up array
     auto it = std::lower_bound(submap_owned.begin(), submap_owned.end(), idx);
-    // auto it = std::find(submap_owned.begin(), submap_owned.end(), idx);
     assert(it != submap_owned.end() and *it == idx);
     std::size_t idx_local_submap = std::distance(submap_owned.begin(), it);
     send_gidx.push_back(idx_local_submap + submap_offset);
   }
-
-  // ss << "send_gidx = " << send_gidx << "\n";
 
   // --- Step 3 ---: Send submap global indices to process that ghost them
 
@@ -449,17 +371,11 @@ std::vector<std::int64_t> compute_submap_ghost_indices(
   ierr = MPI_Comm_free(&comm1);
   dolfinx::MPI::check_error(comm, ierr);
 
-  // ss << "recv_gidx = " << recv_gidx << "\n";
-
-  // ss << "ghost_perm = " << ghost_perm << "\n";
-
-  // // --- Step 4---: Unpack received data
+  // --- Step 4---: Unpack received data
 
   std::vector<std::int64_t> ghost_submap_gidx(submap_ghosts_global);
   for (std::size_t i = 0; i < recv_gidx.size(); ++i)
     ghost_submap_gidx[ghost_perm[i]] = recv_gidx[i];
-
-  // ss << "ghost_submap_gidx = " << ghost_submap_gidx << "\n";
 
   return ghost_submap_gidx;
 }
@@ -1070,40 +986,18 @@ IndexMap::create_submap(std::span<const std::int32_t> indices) const
 std::pair<IndexMap, std::vector<std::int32_t>>
 IndexMap::create_submap_conn(std::span<const std::int32_t> indices) const
 {
-  const int rank = dolfinx::MPI::rank(_comm.comm());
-  const int comm_size = dolfinx::MPI::size(_comm.comm());
-  ss << "Rank " << rank << ":\n";
-
-  ss << "indices = ";
-  for (auto idx : indices)
-  {
-    ss << idx << " ";
-  }
-  ss << "\n";
-
-  ss << "this->size_local() = " << this->size_local() << "\n";
-
-  std::vector<std::int64_t> indices_global(indices.size());
-  this->local_to_global(indices, indices_global);
-  ss << "indices_global = " << indices_global << "\n";
-
-  // TODO Maybe submap_ghost (at least) should return global indices?
+  // Compute the owned, ghost, and ghost owners of submap indices.
+  // NOTE: All indices are local and numbered w.r.t. the original (this) index
+  // map
   auto [submap_owned, submap_ghost, submap_ghost_owners]
       = compute_submap_indices(*this, indices);
 
-  ss << "submap_owned = " << submap_owned << "\n";
-  ss << "submap_ghost = " << submap_ghost << "\n";
-  ss << "submap_ghost_owners = " << submap_ghost_owners << "\n";
-
   // Compute submap offset for this rank
   std::int64_t submap_local_size = submap_owned.size();
-  ss << "submap_local_size = " << submap_local_size << "\n";
   std::int64_t submap_offset = 0;
   int ierr = MPI_Exscan(&submap_local_size, &submap_offset, 1, MPI_INT64_T,
                         MPI_SUM, _comm.comm());
   dolfinx::MPI::check_error(_comm.comm(), ierr);
-
-  ss << "submap_offset = " << submap_offset << "\n";
 
   // Get submap source ranks
   std::vector<int> submap_src(submap_ghost_owners.begin(),
@@ -1113,42 +1007,19 @@ IndexMap::create_submap_conn(std::span<const std::int32_t> indices) const
                    submap_src.end());
   submap_src.shrink_to_fit();
 
-  // ss << "submap_src = " << submap_src << "\n";
-
   // Compute submap destination ranks
-  // FIXME Can NBX call be avoided by using O^r_p and O^g_p?
+  // NOTE: The call to NBX can be avoided by a two-step communication process
+  // TODO: Can NBX call be avoided by using O^r_p and O^g_p?
   std::vector<int> submap_dest
       = dolfinx::MPI::compute_graph_edges_nbx(_comm.comm(), submap_src);
   std::sort(submap_dest.begin(), submap_dest.end());
 
-  // ss << "submap_dest = " << submap_dest << "\n";
-
-  // std::vector<std::int64_t> submap_owned_global(submap_owned.size());
-  // this->local_to_global(submap_owned, submap_owned_global);
-  // ss << "submap_owned_global = " << submap_owned_global << "\n";
   // Compute the global indices (w.r.t. the submap) of the submap ghosts
   std::vector<std::int64_t> submap_ghost_global(submap_ghost.size());
   this->local_to_global(submap_ghost, submap_ghost_global);
-
-  ss << "submap_ghost_global = " << submap_ghost_global << "\n";
-
-  // for (int i = 0; i < comm_size; ++i)
-  // {
-  //   if (i == rank)
-  //   {
-  //     std::cout << ss.str() << "\n";
-  //   }
-  //   MPI_Barrier(_comm.comm());
-  // }
-  // ss = std::stringstream();
-
-  // FIXME Maybe return submap_owned to as global to simplify
-  // compute_submap_ghost_indices?
   auto submap_ghost_gidxs = compute_submap_ghost_indices(
       _comm.comm(), submap_src, submap_dest, submap_owned, submap_ghost_global,
       submap_ghost_owners, submap_offset, *this);
-
-  // ss << "submap_ghost_gidxs = " << submap_ghost_gidxs << "\n";
 
   // Create a map from (local) indices in the submap to the corresponding
   // (local) index in the original map
@@ -1158,18 +1029,6 @@ IndexMap::create_submap_conn(std::span<const std::int32_t> indices) const
                           submap_owned.end());
   sub_imap_to_imap.insert(sub_imap_to_imap.end(), submap_ghost.begin(),
                           submap_ghost.end());
-
-  // ss << "sub_imap_to_imap = " << sub_imap_to_imap << "\n";
-
-  for (int i = 0; i < comm_size; ++i)
-  {
-    if (i == rank)
-    {
-      std::cout << ss.str() << "\n";
-    }
-    MPI_Barrier(_comm.comm());
-  }
-  ss = std::stringstream();
 
   return {IndexMap(_comm.comm(), submap_local_size, submap_ghost_gidxs,
                    submap_ghost_owners),

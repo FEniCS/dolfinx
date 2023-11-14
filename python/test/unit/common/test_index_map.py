@@ -111,32 +111,34 @@ def test_index_map_ghost_lifetime():
 
 # TODO: Add test for case where more than one two process shares an index
 # whose owner changes in the submap
-# Test create_submap_conn. The diagram illustrates the case with four
-# processes. Original map numbering and connectivity (G indicates a ghost
-# index):
-#    Global    Rank 0    Rank 1    Rank 2    Rank 3
-#    1 - 0     1 - 0
-#    | / |     | / |
-#    3 - 2    3G - 2     0 - 2G
-#    | / |               | / |
-#    5 - 4              3G - 1     0 - 2G
-#    | / |                         | / |
-#    7 - 6                        3G - 1     0 - 3G
-#    | / |                                   | / |
-#    9 - 8                                   2 - 1
-# We now create a submap of the "upper triangular" parts (i.e. to
-# get the following):
-#    Global    Rank 0    Rank 1    Rank 2    Rank 3
-#    1 - 0     1 - 0
-#    | /       | /
-#    2 - 3     2G        0 - 1
-#    | /                 | /
-#    4 - 5               2G        0 - 1
-#    | /                           | /
-#    6 - 8                         2G        0 - 2
-#    | /                                     | /
-#    7                                       1
 def test_create_submap_connected():
+    """
+    Test create_submap_conn. The diagram illustrates the case with four
+    processes. Original map numbering and connectivity (G indicates a ghost
+    index):
+    Global    Rank 0    Rank 1    Rank 2    Rank 3
+    1 - 0     1 - 0
+    | / |     | / |
+    3 - 2    3G - 2     0 - 2G
+    | / |               | / |
+    5 - 4              3G - 1     0 - 2G
+    | / |                         | / |
+    7 - 6                        3G - 1     0 - 3G
+    | / |                                   | / |
+    9 - 8                                   2 - 1
+    We now create a submap of the "upper triangular" parts to
+    get the following:
+    Global    Rank 0    Rank 1    Rank 2    Rank 3
+    1 - 0     1 - 0
+    | /       | /
+    2 - 3     2G        0 - 1
+    | /                 | /
+    4 - 5               2G        0 - 1
+    | /                           | /
+    6 - 8                         2G        0 - 2
+    | /                                     | /
+    7                                       1
+    """
     comm = MPI.COMM_WORLD
 
     if comm.size == 1:
