@@ -257,10 +257,11 @@ opts = PETSc.Options()  # type: ignore
 option_prefix = ksp.getOptionsPrefix()
 opts[f"{option_prefix}ksp_type"] = "preonly"
 opts[f"{option_prefix}pc_type"] = "lu"
+sys = PETSc.Sys()  # type: ignore
 # MUMPS fails to solve this problem on ARM Mac.
-if platform.system() == "Darwin" and platform.processor() == "arm" and PETSc.Sys().hasExternalPackage("superlu_dist"):
+if platform.system() == "Darwin" and platform.processor() == "arm" and sys.hasExternalPackage("superlu_dist"):
     opts[f"{option_prefix}pc_factor_mat_solver_type"] = "superlu_dist"
-elif PETSc.Sys().hasExternalPackage("mumps"):
+elif sys.hasExternalPackage("mumps"):
     opts[f"{option_prefix}pc_factor_mat_solver_type"] = "mumps"
 else:
     # Fall through to factor solver that PETSc selects by default.
