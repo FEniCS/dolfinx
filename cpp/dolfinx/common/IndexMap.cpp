@@ -252,7 +252,14 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
 }
 
 /// Computes the global indices of ghosts in a submap.
-// NOTE: submap_owned must be sorted and contain no repeated indices
+/// @param[in] submap_src The submap source ranks
+/// @param[in] submap_dest The submap destination ranks
+/// @param[in] submap_owned Owned submap indices (local w.r.t. original index map)
+/// @param[in] submap_ghosts_global Ghost submap indices (global w.r.t. original index map)
+/// @param[in] submap_ghost_owners The ranks that own the ghosts in the submap
+/// @param[in] submap_offset The global offset for this rank in the submap
+/// @param[in] imap The original index map
+/// @pre submap_owned must be sorted and contain no repeated indices
 std::vector<std::int64_t> compute_submap_ghost_indices(
     const std::vector<int>& submap_src,
     const std::vector<int>& submap_dest,
