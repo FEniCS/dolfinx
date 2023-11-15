@@ -244,7 +244,6 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
   }
   std::sort(submap_owned.begin(), submap_owned.end());
 
-  // TODO Move
   return {submap_owned, submap_ghost, submap_ghost_owners};
 }
 
