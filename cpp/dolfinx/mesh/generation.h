@@ -76,8 +76,9 @@ Mesh<T> build_prism(MPI_Comm comm,
 /// `6*n[0]*n[1]*n[2]` cells. For hexahedra the number of cells will be
 /// `n[0]*n[1]*n[2]`.
 ///
-/// @param[in] comm MPI communicator to build mesh on.
-/// @param[in] subcomm MPI communicator to construct and partition the mesh
+/// @param[in] comm MPI communicator to distribute the mesh on.
+/// @param[in] subcomm MPI communicator to construct and partition the
+/// mesh on.
 /// @param[in] p Corner of the box.
 /// @param[in] n Number of cells in each direction.
 /// @param[in] celltype Cell shape.
@@ -294,7 +295,7 @@ std::vector<T> create_geom(MPI_Comm comm,
         "Box seems to have zero width, height or depth. Check dimensions");
   }
 
-  if (nx < 1 || ny < 1 || nz < 1)
+  if (nx < 1 or ny < 1 or nz < 1)
   {
     throw std::runtime_error(
         "BoxMesh has non-positive number of vertices in some dimension");
@@ -302,7 +303,6 @@ std::vector<T> create_geom(MPI_Comm comm,
 
   std::vector<T> geom((range_p[1] - range_p[0]) * 3);
   const std::int64_t sqxy = (nx + 1) * (ny + 1);
-  std::array<T, 3> point;
   for (std::int64_t v = range_p[0]; v < range_p[1]; ++v)
   {
     const std::int64_t iz = v / sqxy;
@@ -312,7 +312,7 @@ std::vector<T> create_geom(MPI_Comm comm,
     const T z = e + ef * static_cast<T>(iz);
     const T y = c + cd * static_cast<T>(iy);
     const T x = a + ab * static_cast<T>(ix);
-    point = {x, y, z};
+    std::array<T, 3> point{x, y, z};
     for (std::size_t i = 0; i < 3; i++)
       geom[3 * (v - range_p[0]) + i] = point[i];
   }
@@ -326,16 +326,15 @@ Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
                   std::array<std::size_t, 3> n,
                   const CellPartitionFunction& partitioner)
 {
-  common::Timer timer("Build BoxMesh");
-
-  std::vector<T> geom(0);
-  std::array<std::int64_t, 2> range_c = {0, 0};
+  common::Timer timer("Build tetrahedral cell box mesh");
 
   const std::int64_t nx = n[0];
   const std::int64_t ny = n[1];
   const std::int64_t nz = n[2];
   const std::int64_t n_cells = nx * ny * nz;
 
+  std::vector<T> geom;
+  std::array<std::int64_t, 2> range_c{0, 0};
   if (subcomm != MPI_COMM_NULL)
   {
     int rank = dolfinx::MPI::rank(subcomm);
@@ -365,9 +364,9 @@ Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
     const std::int64_t v7 = v3 + (nx + 1) * (ny + 1);
 
     // Note that v0 < v1 < v2 < v3 < vmid
-    std::array<std::int64_t, 24> c
-        = {v0, v1, v3, v7, v0, v1, v7, v5, v0, v5, v7, v4,
-           v0, v3, v2, v7, v0, v6, v4, v7, v0, v2, v6, v7};
+    std::array<std::int64_t, 24> c{v0, v1, v3, v7, v0, v1, v7, v5,
+                                   v0, v5, v7, v4, v0, v3, v2, v7,
+                                   v0, v6, v4, v7, v0, v2, v6, v7};
     std::size_t offset = 6 * (i - range_c[0]);
     std::copy(c.begin(), c.end(), std::next(cells.begin(), 4 * offset));
   }
@@ -383,14 +382,15 @@ mesh::Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
                         std::array<std::size_t, 3> n,
                         const CellPartitionFunction& partitioner)
 {
-  std::vector<T> geom(0);
-  std::array<std::int64_t, 2> range_c = {0, 0};
+  common::Timer timer("Build hexahedral cell box mesh");
 
   const std::int64_t nx = n[0];
   const std::int64_t ny = n[1];
   const std::int64_t nz = n[2];
   const std::int64_t n_cells = nx * ny * nz;
 
+  std::vector<T> geom;
+  std::array<std::int64_t, 2> range_c{0, 0};
   if (subcomm != MPI_COMM_NULL)
   {
     int rank = dolfinx::MPI::rank(subcomm);
@@ -419,7 +419,7 @@ mesh::Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
     const std::int64_t v6 = v2 + (nx + 1) * (ny + 1);
     const std::int64_t v7 = v3 + (nx + 1) * (ny + 1);
 
-    std::array<std::int64_t, 8> c = {v0, v1, v2, v3, v4, v5, v6, v7};
+    std::array<std::int64_t, 8> c{v0, v1, v2, v3, v4, v5, v6, v7};
     std::copy(c.begin(), c.end(),
               std::next(cells.begin(), (i - range_c[0]) * 8));
   }
@@ -463,8 +463,8 @@ Mesh<T> build_prism(MPI_Comm comm,
     const std::int64_t v6 = v2 + (nx + 1) * (ny + 1);
     const std::int64_t v7 = v3 + (nx + 1) * (ny + 1);
 
-    std::array<std::int64_t, 6> c0 = {v0, v1, v2, v4, v5, v6};
-    std::array<std::int64_t, 6> c1 = {v1, v2, v3, v5, v6, v7};
+    std::array<std::int64_t, 6> c0{v0, v1, v2, v4, v5, v6};
+    std::array<std::int64_t, 6> c1{v1, v2, v3, v5, v6, v7};
 
     std::copy(c0.begin(), c0.end(),
               std::next(cells.begin(), 6 * ((i - range_c[0]) * 2)));
@@ -589,8 +589,8 @@ Mesh<T> build_tri(MPI_Comm comm, const std::array<std::array<double, 2>, 2>& p,
         const std::size_t vmid = (nx + 1) * (ny + 1) + iy * nx + ix;
 
         // Note that v0 < v1 < v2 < v3 < vmid
-        std::array<std::size_t, 12> c
-            = {v0, v1, vmid, v0, v2, vmid, v1, v3, vmid, v2, v3, vmid};
+        std::array<std::size_t, 12> c{v0, v1, vmid, v0, v2, vmid,
+                                      v1, v3, vmid, v2, v3, vmid};
         std::size_t offset = iy * nx + ix;
         std::copy(c.begin(), c.end(), std::next(cells.begin(), 4 * offset * 3));
       }
@@ -632,7 +632,7 @@ Mesh<T> build_tri(MPI_Comm comm, const std::array<std::array<double, 2>, 2>& p,
         {
         case DiagonalType::left:
         {
-          std::array<std::size_t, 6> c = {v0, v1, v2, v1, v2, v3};
+          std::array<std::size_t, 6> c{v0, v1, v2, v1, v2, v3};
           std::copy(c.begin(), c.end(),
                     std::next(cells.begin(), 2 * offset * 3));
           if (diagonal == DiagonalType::right_left
@@ -644,7 +644,7 @@ Mesh<T> build_tri(MPI_Comm comm, const std::array<std::array<double, 2>, 2>& p,
         }
         default:
         {
-          std::array<std::size_t, 6> c = {v0, v1, v3, v0, v2, v3};
+          std::array<std::size_t, 6> c{v0, v1, v3, v0, v2, v3};
           std::copy(c.begin(), c.end(),
                     std::next(cells.begin(), 2 * offset * 3));
           if (diagonal == DiagonalType::right_left
@@ -711,8 +711,8 @@ Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2>& p,
     {
       const std::size_t i0 = ix * (ny + 1);
       std::size_t cell = ix * ny + iy;
-      std::array<std::size_t, 4> c
-          = {i0 + iy, i0 + iy + 1, i0 + iy + ny + 1, i0 + iy + ny + 2};
+      std::array<std::size_t, 4> c{i0 + iy, i0 + iy + 1, i0 + iy + ny + 1,
+                                   i0 + iy + ny + 2};
       std::copy(c.begin(), c.end(), std::next(cells.begin(), 4 * cell));
     }
   }

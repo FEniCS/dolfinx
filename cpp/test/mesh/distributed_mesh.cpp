@@ -109,9 +109,9 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
 
   // read mesh data
   std::vector<T> x;
-  std::array<std::size_t, 2> xshape = {0, 2};
+  std::array<std::size_t, 2> xshape{0, 2};
   std::vector<std::int64_t> cells;
-  std::array<std::size_t, 2> cshape = {0, 3};
+  std::array<std::size_t, 2> cshape{0, 3};
   graph::AdjacencyList<std::int32_t> dest(0);
   if (subset_comm != MPI_COMM_NULL)
   {
@@ -160,11 +160,11 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
                     [](std::int64_t i) { return (i != -1); });
   external_vertices.erase(external_vertices.begin(), it);
 
-  std::vector<int> cell_group_offsets
-      = {0, std::int32_t(cell_nodes.num_nodes() - ghost_owners.size()),
-         cell_nodes.num_nodes()};
+  std::vector<int> cell_group_offsets{
+      0, std::int32_t(cell_nodes.num_nodes() - ghost_owners.size()),
+      cell_nodes.num_nodes()};
 
-  std::vector<mesh::CellType> cell_types = {cmap.cell_shape()};
+  std::vector<mesh::CellType> cell_types{cmap.cell_shape()};
   mesh::Topology topology = mesh::create_topology(
       mpi_comm, cell_nodes, original_cell_index, ghost_owners, cell_types,
       cell_group_offsets, external_vertices);
