@@ -530,8 +530,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     }
     else
     {
-      // Free communicator
-      MPI_Comm_free(&pcomm);
+      // No need to free communicator, since it is MPI_COMM_NULL
 
       // No nodes on this process
       return regular_adjacency_list(std::vector<std::int32_t>(), 1);
@@ -613,7 +612,8 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
     }
     else
     {
-      MPI_Comm_free(&pcomm);
+      if (pcomm != MPI_COMM_NULL)
+        MPI_Comm_free(&pcomm);
       return regular_adjacency_list(std::vector<int>(part.begin(), part.end()),
                                     1);
     }
@@ -688,7 +688,9 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
     }
     else
     {
-      MPI_Comm_free(&pcomm);
+      if (pcomm != MPI_COMM_NULL)
+        MPI_Comm_free(&pcomm);
+
       return regular_adjacency_list(
           std::vector<std::int32_t>(part.begin(), part.end()), 1);
     }
