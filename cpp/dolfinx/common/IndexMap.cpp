@@ -205,8 +205,10 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
 
   // Local indices (w.r.t. original map) owned by this process in the submap
   std::vector<std::int32_t> submap_owned;
+
   // Local indices (w.r.t. original map) ghosted by this process in the submap
   std::vector<std::int32_t> submap_ghost;
+
   // The owners of the submap ghost indices (process submap_ghost_owners[i] owns
   // index submap_ghost[i])
   std::vector<std::int32_t> submap_ghost_owners;
