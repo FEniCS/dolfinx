@@ -316,198 +316,226 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     LOG(INFO) << "Compute graph partition using PT-SCOTCH";
     common::Timer timer("Compute graph partition (SCOTCH)");
 
-    std::int64_t offset_global = 0;
-    const std::int64_t num_owned = graph.num_nodes();
-    MPI_Request request_offset_scan;
-    MPI_Iexscan(&num_owned, &offset_global, 1, MPI_INT64_T, MPI_SUM, comm,
-                &request_offset_scan);
+    if (nparts == 1 and dolfinx::MPI::size(comm) == 1)
+    {
+      // Nothing to be partitioned
+      return regular_adjacency_list(
+          std::vector<std::int32_t>(graph.num_nodes(), 0), 1);
+    }
 
-    // C-style array indexing
-    constexpr SCOTCH_Num baseval = 0;
+    const int rank = dolfinx::MPI::rank(comm);
+    MPI_Comm pcomm = MPI_COMM_NULL;
+    int color = graph.num_nodes() == 0 ? MPI_UNDEFINED : 1;
+    MPI_Comm_split(comm, color, rank, &pcomm);
 
-    // Copy  graph data to get the required type (SCOTCH_Num)
-    std::vector<SCOTCH_Num> edgeloctab(graph.array().begin(),
-                                       graph.array().end());
-    std::vector<SCOTCH_Num> vertloctab(graph.offsets().begin(),
-                                       graph.offsets().end());
+    if (pcomm != MPI_COMM_NULL)
+    {
 
-    // Create SCOTCH graph and initialise
-    SCOTCH_Dgraph dgrafdat;
-    int err = SCOTCH_dgraphInit(&dgrafdat, comm);
-    if (err != 0)
-      throw std::runtime_error("Error initializing SCOTCH graph");
+      std::int64_t offset_global = 0;
+      const std::int64_t num_owned = graph.num_nodes();
+      MPI_Request request_offset_scan;
+      MPI_Iexscan(&num_owned, &offset_global, 1, MPI_INT64_T, MPI_SUM, pcomm,
+                  &request_offset_scan);
 
-    // FIXME: If the nodes have weights but this rank has no nodes, then
-    //        SCOTCH may deadlock since vload.data() will be nullptr on
-    //        this rank but not null on all other ranks.
-    // Handle node weights (disabled for now)
-    std::vector<SCOTCH_Num> node_weights;
-    std::vector<SCOTCH_Num> vload;
-    if (!node_weights.empty())
-      vload.assign(node_weights.begin(), node_weights.end());
+      // C-style array indexing
+      constexpr SCOTCH_Num baseval = 0;
 
-    // Set seed and reset SCOTCH random number generator to produce
-    // deterministic partitions on repeated calls
-    SCOTCH_randomSeed(seed);
-    SCOTCH_randomReset();
+      // Copy  graph data to get the required type (SCOTCH_Num)
+      std::vector<SCOTCH_Num> edgeloctab(graph.array().begin(),
+                                         graph.array().end());
+      std::vector<SCOTCH_Num> vertloctab(graph.offsets().begin(),
+                                         graph.offsets().end());
 
-    // Build SCOTCH distributed graph (SCOTCH is not const-correct, so
-    // we throw away constness and trust SCOTCH)
-    common::Timer timer1("SCOTCH: call SCOTCH_dgraphBuild");
-    err = SCOTCH_dgraphBuild(
-        &dgrafdat, baseval, graph.num_nodes(), graph.num_nodes(),
-        vertloctab.data(), nullptr, vload.data(), nullptr, edgeloctab.size(),
-        edgeloctab.size(), edgeloctab.data(), nullptr, nullptr);
-    if (err != 0)
-      throw std::runtime_error("Error building SCOTCH graph");
-    timer1.stop();
+      // Create SCOTCH graph and initialise
+      SCOTCH_Dgraph dgrafdat;
+      int err = SCOTCH_dgraphInit(&dgrafdat, pcomm);
+      if (err != 0)
+        throw std::runtime_error("Error initializing SCOTCH graph");
+
+      // FIXME: If the nodes have weights but this rank has no nodes, then
+      //        SCOTCH may deadlock since vload.data() will be nullptr on
+      //        this rank but not null on all other ranks.
+      // Handle node weights (disabled for now)
+      std::vector<SCOTCH_Num> node_weights;
+      std::vector<SCOTCH_Num> vload;
+      if (!node_weights.empty())
+        vload.assign(node_weights.begin(), node_weights.end());
+
+      // Set seed and reset SCOTCH random number generator to produce
+      // deterministic partitions on repeated calls
+      SCOTCH_randomSeed(seed);
+      SCOTCH_randomReset();
+
+      // Build SCOTCH distributed graph (SCOTCH is not const-correct, so
+      // we throw away constness and trust SCOTCH)
+      common::Timer timer1("SCOTCH: call SCOTCH_dgraphBuild");
+      err = SCOTCH_dgraphBuild(
+          &dgrafdat, baseval, graph.num_nodes(), graph.num_nodes(),
+          vertloctab.data(), nullptr, vload.data(), nullptr, edgeloctab.size(),
+          edgeloctab.size(), edgeloctab.data(), nullptr, nullptr);
+      if (err != 0)
+        throw std::runtime_error("Error building SCOTCH graph");
+      timer1.stop();
 
 // Check graph data for consistency
 #ifndef NDEBUG
-    err = SCOTCH_dgraphCheck(&dgrafdat);
-    if (err != 0)
-      throw std::runtime_error("Consistency error in SCOTCH graph");
+      err = SCOTCH_dgraphCheck(&dgrafdat);
+      if (err != 0)
+        throw std::runtime_error("Consistency error in SCOTCH graph");
 #endif
 
-    // Initialise partitioning strategy
-    SCOTCH_Strat strat;
-    SCOTCH_stratInit(&strat);
+      // Initialise partitioning strategy
+      SCOTCH_Strat strat;
+      SCOTCH_stratInit(&strat);
 
-    // Set SCOTCH strategy
-    SCOTCH_Num strat_val;
-    switch (strategy)
-    {
-    case strategy::none:
-      strat_val = SCOTCH_STRATDEFAULT;
-      break;
-    case strategy::balance:
-      strat_val = SCOTCH_STRATBALANCE;
-      break;
-    case strategy::quality:
-      strat_val = SCOTCH_STRATQUALITY;
-      break;
-    case strategy::safety:
-      strat_val = SCOTCH_STRATSAFETY;
-      break;
-    case strategy::speed:
-      strat_val = SCOTCH_STRATSPEED;
-      break;
-    case strategy::scalability:
-      strat_val = SCOTCH_STRATSCALABILITY;
-      break;
-    default:
-      throw std::runtime_error("Unknown SCOTCH strategy");
-    }
-    err = SCOTCH_stratDgraphMapBuild(&strat, strat_val, nparts, nparts,
-                                     imbalance);
-    if (err != 0)
-      throw std::runtime_error("Error calling SCOTCH_stratDgraphMapBuild");
-
-    // Count number of 'ghost' edges, i.e. an edge to a cell that does
-    // not belong to the caller
-    std::int32_t num_ghost_nodes = 0;
-    {
-      MPI_Wait(&request_offset_scan, MPI_STATUS_IGNORE);
-      std::array<std::int64_t, 2> range
-          = {offset_global, offset_global + num_owned};
-      std::vector<std::int64_t> ghost_edges;
-      std::copy_if(graph.array().begin(), graph.array().end(),
-                   std::back_inserter(ghost_edges),
-                   [range](auto e) { return e < range[0] or e >= range[1]; });
-      std::sort(ghost_edges.begin(), ghost_edges.end());
-      auto it = std::unique(ghost_edges.begin(), ghost_edges.end());
-      num_ghost_nodes = std::distance(ghost_edges.begin(), it);
-    }
-
-    // Resize vector to hold node partition indices with enough extra
-    // space for ghost node partition information too. When there are no
-    // nodes, vertgstnbr may be zero, and at least one dummy location must
-    // be created.
-    const std::int32_t vertgstnbr = graph.num_nodes() + num_ghost_nodes;
-    std::vector<SCOTCH_Num> node_partition(std::max(1, vertgstnbr), 0);
-
-    // Partition the graph
-    common::Timer timer2("SCOTCH: call SCOTCH_dgraphPart");
-    err = SCOTCH_dgraphPart(&dgrafdat, nparts, &strat, node_partition.data());
-    if (err != 0)
-      throw std::runtime_error("Error during SCOTCH partitioning");
-    timer2.stop();
-
-    // Data arrays for adjacency list, where the edges are the destination
-    // ranks for each node
-    std::vector<std::int32_t> dests;
-    std::vector<std::int32_t> offsets(1, 0);
-
-    if (ghosting)
-    {
-      // Exchange halo with node_partition data for ghosts
-      common::Timer timer3("SCOTCH: call SCOTCH_dgraphHalo");
-      err = SCOTCH_dgraphHalo(&dgrafdat, node_partition.data(),
-                              dolfinx::MPI::mpi_type<SCOTCH_Num>());
+      // Set SCOTCH strategy
+      SCOTCH_Num strat_val;
+      switch (strategy)
+      {
+      case strategy::none:
+        strat_val = SCOTCH_STRATDEFAULT;
+        break;
+      case strategy::balance:
+        strat_val = SCOTCH_STRATBALANCE;
+        break;
+      case strategy::quality:
+        strat_val = SCOTCH_STRATQUALITY;
+        break;
+      case strategy::safety:
+        strat_val = SCOTCH_STRATSAFETY;
+        break;
+      case strategy::speed:
+        strat_val = SCOTCH_STRATSPEED;
+        break;
+      case strategy::scalability:
+        strat_val = SCOTCH_STRATSCALABILITY;
+        break;
+      default:
+        throw std::runtime_error("Unknown SCOTCH strategy");
+      }
+      err = SCOTCH_stratDgraphMapBuild(&strat, strat_val, nparts, nparts,
+                                       imbalance);
       if (err != 0)
-        throw std::runtime_error("Error during SCOTCH halo exchange");
-      timer3.stop();
+        throw std::runtime_error("Error calling SCOTCH_stratDgraphMapBuild");
 
-      // Get SCOTCH's locally indexed graph
-      common::Timer timer4("Get SCOTCH graph data");
-      SCOTCH_Num* edge_ghost_tab;
-      SCOTCH_dgraphData(&dgrafdat, nullptr, nullptr, nullptr, nullptr, nullptr,
-                        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-                        nullptr, nullptr, &edge_ghost_tab, nullptr, &comm);
-      timer4.stop();
-
-      // Iterate through SCOTCH's local compact graph to find partition
-      // boundaries and save to map
-      common::Timer timer5("Extract partition boundaries from SCOTCH graph");
-
-      // Create a map of local nodes to their additional destination
-      // processes, due to ghosting
-      std::map<std::int32_t, std::set<std::int32_t>> local_node_to_dests;
-      for (std::int32_t node0 = 0; node0 < graph.num_nodes(); ++node0)
+      // Count number of 'ghost' edges, i.e. an edge to a cell that does
+      // not belong to the caller
+      std::int32_t num_ghost_nodes = 0;
       {
-        // Get all edges outward from node i
-        const std::int32_t node0_rank = node_partition[node0];
-        for (SCOTCH_Num j = vertloctab[node0]; j < vertloctab[node0 + 1]; ++j)
-        {
-          // Any edge which connects to a different partition will be a
-          // ghost
-          const std::int32_t node1_rank = node_partition[edge_ghost_tab[j]];
-          if (node0_rank != node1_rank)
-            local_node_to_dests[node0].insert(node1_rank);
-        }
-      }
-      timer5.stop();
-
-      offsets.reserve(graph.num_nodes() + 1);
-      for (std::int32_t i = 0; i < graph.num_nodes(); ++i)
-      {
-        dests.push_back(node_partition[i]);
-        if (auto it = local_node_to_dests.find(i);
-            it != local_node_to_dests.end())
-        {
-          dests.insert(dests.end(), it->second.begin(), it->second.end());
-        }
-
-        offsets.push_back(dests.size());
+        MPI_Wait(&request_offset_scan, MPI_STATUS_IGNORE);
+        std::array<std::int64_t, 2> range
+            = {offset_global, offset_global + num_owned};
+        std::vector<std::int64_t> ghost_edges;
+        std::copy_if(graph.array().begin(), graph.array().end(),
+                     std::back_inserter(ghost_edges),
+                     [range](auto e) { return e < range[0] or e >= range[1]; });
+        std::sort(ghost_edges.begin(), ghost_edges.end());
+        auto it = std::unique(ghost_edges.begin(), ghost_edges.end());
+        num_ghost_nodes = std::distance(ghost_edges.begin(), it);
       }
 
-      dests.shrink_to_fit();
+      // Resize vector to hold node partition indices with enough extra
+      // space for ghost node partition information too. When there are no
+      // nodes, vertgstnbr may be zero, and at least one dummy location must
+      // be created.
+      const std::int32_t vertgstnbr = graph.num_nodes() + num_ghost_nodes;
+      std::vector<SCOTCH_Num> node_partition(std::max(1, vertgstnbr), 0);
+
+      // Partition the graph
+      common::Timer timer2("SCOTCH: call SCOTCH_dgraphPart");
+      err = SCOTCH_dgraphPart(&dgrafdat, nparts, &strat, node_partition.data());
+      if (err != 0)
+        throw std::runtime_error("Error during SCOTCH partitioning");
+      timer2.stop();
+
+      // Data arrays for adjacency list, where the edges are the destination
+      // ranks for each node
+      std::vector<std::int32_t> dests;
+      std::vector<std::int32_t> offsets(1, 0);
+
+      if (ghosting)
+      {
+        // Exchange halo with node_partition data for ghosts
+        common::Timer timer3("SCOTCH: call SCOTCH_dgraphHalo");
+        err = SCOTCH_dgraphHalo(&dgrafdat, node_partition.data(),
+                                dolfinx::MPI::mpi_type<SCOTCH_Num>());
+        if (err != 0)
+          throw std::runtime_error("Error during SCOTCH halo exchange");
+        timer3.stop();
+
+        // Get SCOTCH's locally indexed graph
+        common::Timer timer4("Get SCOTCH graph data");
+        SCOTCH_Num* edge_ghost_tab;
+        SCOTCH_dgraphData(&dgrafdat, nullptr, nullptr, nullptr, nullptr,
+                          nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+                          nullptr, nullptr, nullptr, &edge_ghost_tab, nullptr,
+                          &pcomm);
+        timer4.stop();
+
+        // Iterate through SCOTCH's local compact graph to find partition
+        // boundaries and save to map
+        common::Timer timer5("Extract partition boundaries from SCOTCH graph");
+
+        // Create a map of local nodes to their additional destination
+        // processes, due to ghosting
+        std::map<std::int32_t, std::set<std::int32_t>> local_node_to_dests;
+        for (std::int32_t node0 = 0; node0 < graph.num_nodes(); ++node0)
+        {
+          // Get all edges outward from node i
+          const std::int32_t node0_rank = node_partition[node0];
+          for (SCOTCH_Num j = vertloctab[node0]; j < vertloctab[node0 + 1]; ++j)
+          {
+            // Any edge which connects to a different partition will be a
+            // ghost
+            const std::int32_t node1_rank = node_partition[edge_ghost_tab[j]];
+            if (node0_rank != node1_rank)
+              local_node_to_dests[node0].insert(node1_rank);
+          }
+        }
+        timer5.stop();
+
+        offsets.reserve(graph.num_nodes() + 1);
+        for (std::int32_t i = 0; i < graph.num_nodes(); ++i)
+        {
+          dests.push_back(node_partition[i]);
+          if (auto it = local_node_to_dests.find(i);
+              it != local_node_to_dests.end())
+          {
+            dests.insert(dests.end(), it->second.begin(), it->second.end());
+          }
+
+          offsets.push_back(dests.size());
+        }
+
+        dests.shrink_to_fit();
+      }
+      else
+      {
+        offsets.resize(graph.num_nodes() + 1);
+        std::iota(offsets.begin(), offsets.end(), 0);
+        dests = std::vector<std::int32_t>(
+            node_partition.begin(),
+            std::next(node_partition.begin(), graph.num_nodes()));
+      }
+
+      // Clean up SCOTCH objects
+      SCOTCH_dgraphExit(&dgrafdat);
+      SCOTCH_stratExit(&strat);
+
+      // Free communicator
+      MPI_Comm_free(&pcomm);
+
+      return graph::AdjacencyList<std::int32_t>(std::move(dests),
+                                                std::move(offsets));
     }
     else
     {
-      offsets.resize(graph.num_nodes() + 1);
-      std::iota(offsets.begin(), offsets.end(), 0);
-      dests = std::vector<std::int32_t>(
-          node_partition.begin(),
-          std::next(node_partition.begin(), graph.num_nodes()));
+      // Free communicator
+      MPI_Comm_free(&pcomm);
+
+      // No nodes on this process
+      return regular_adjacency_list(std::vector<std::int32_t>(), 1);
     }
-
-    // Clean up SCOTCH objects
-    SCOTCH_dgraphExit(&dgrafdat);
-    SCOTCH_stratExit(&strat);
-
-    return graph::AdjacencyList<std::int32_t>(std::move(dests),
-                                              std::move(offsets));
   };
 }
 #endif
@@ -529,16 +557,12 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
       return regular_adjacency_list(
           std::vector<std::int32_t>(graph.num_nodes(), 0), 1);
     }
-
-    // Build adjacency list data
-    const int rank = dolfinx::MPI::rank(comm);
-
     // Split communicator in groups (0) without and (1) with parts of
     // the graph
+    const int rank = dolfinx::MPI::rank(comm);
     std::vector<idx_t> part(graph.num_nodes());
     MPI_Comm pcomm = MPI_COMM_NULL;
     int color = graph.num_nodes() == 0 ? MPI_UNDEFINED : 1;
-
     MPI_Comm_split(comm, color, rank, &pcomm);
 
     std::vector<idx_t> node_disp;
