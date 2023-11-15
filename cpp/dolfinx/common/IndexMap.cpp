@@ -1031,7 +1031,7 @@ IndexMap::create_submap_conn(std::span<const std::int32_t> indices) const
 
   return {IndexMap(_comm.comm(), submap_local_size, submap_ghost_gidxs,
                    submap_ghost_owners),
-          std::move(sub_imap_to_imap)};
+          sub_imap_to_imap};
 }
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<int> IndexMap::index_to_dest_ranks() const
