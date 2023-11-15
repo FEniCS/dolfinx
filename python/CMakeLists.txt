@@ -29,15 +29,19 @@ execute_process(
   ERROR_VARIABLE BASIX_ERROR_OUT OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 find_package(Basix REQUIRED CONFIG HINTS ${BASIX_PY_DIR})
+if (Basix_FOUND)
+  message(STATUS "Found Basix at ${Basix_DIR}")
+endif()
 find_package(DOLFINX REQUIRED CONFIG)
+if (DOLFINX_FOUND)
+  message(STATUS "Found DOLFINx at ${DOLFINX_DIR}")
+endif()
 
 # Create the binding library nanobind handles its own calls to
 # target_link_libraries
 nanobind_add_module(
   cpp
   MODULE
-
-  # NB_SHARED
   dolfinx/wrappers/dolfinx.cpp
   dolfinx/wrappers/assemble.cpp
   dolfinx/wrappers/common.cpp
