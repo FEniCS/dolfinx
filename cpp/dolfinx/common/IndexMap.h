@@ -190,8 +190,9 @@ public:
   create_submap(std::span<const std::int32_t> indices) const;
 
   /// @brief Create a new index map from a subset of indices in this index
-  /// map, changing the owner of indices that are included on other processes
-  /// but not on the owning process.
+  /// map. Any indices that are not included by their owning process, but
+  /// are included on sharing processes, will be owned by one of the sharing
+  /// processes in the submap.
   ///
   /// This can be used when, for instance, creating a submesh to ensure
   /// that all vertices have exactly one owner and are connected to at least
