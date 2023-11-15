@@ -51,11 +51,10 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
   // on other processes
 
   const MPI_Comm comm = imap.comm();
-  // TODO Should these be spans?
-  const std::vector<std::int32_t>& src = imap.src();
-  const std::vector<std::int32_t>& dest = imap.dest();
-  const std::vector<std::int64_t>& ghosts = imap.ghosts();
-  const std::vector<std::int32_t>& ghost_owners = imap.owners();
+  std::span<const std::int32_t> src = imap.src();
+  std::span<const std::int32_t> dest = imap.dest();
+  std::span<const std::int64_t> ghosts = imap.ghosts();
+  std::span<const std::int32_t> ghost_owners = imap.owners();
 
   // Create neighbourhood comm (ghost -> owner)
   MPI_Comm comm0;
