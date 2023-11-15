@@ -251,10 +251,10 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
           std::move(submap_ghost_owners)};
 }
 
-// Helper function to compute the submap indices of ghosts.
+/// Computes the global indices of ghosts in a submap.
 // NOTE: submap_owned must be sorted and contain no repeated indices
 std::vector<std::int64_t> compute_submap_ghost_indices(
-    const MPI_Comm& comm, const std::vector<int>& submap_src,
+    const std::vector<int>& submap_src,
     const std::vector<int>& submap_dest,
     const std::vector<std::int32_t>& submap_owned,
     const std::vector<std::int64_t>& submap_ghosts_global,
@@ -264,6 +264,7 @@ std::vector<std::int64_t> compute_submap_ghost_indices(
 {
   // --- Step 1 ---: Send global ghost indices (w.r.t. original imap) to owning
   // rank
+  const MPI_Comm comm = imap.comm();
   std::vector<std::int64_t> recv_indices;
   std::vector<std::size_t> ghost_perm;
   std::vector<int> send_disp, recv_disp;
@@ -1021,7 +1022,7 @@ IndexMap::create_submap_conn(std::span<const std::int32_t> indices) const
   std::vector<std::int64_t> submap_ghost_global(submap_ghost.size());
   this->local_to_global(submap_ghost, submap_ghost_global);
   auto submap_ghost_gidxs = compute_submap_ghost_indices(
-      _comm.comm(), submap_src, submap_dest, submap_owned, submap_ghost_global,
+      submap_src, submap_dest, submap_owned, submap_ghost_global,
       submap_ghost_owners, submap_offset, *this);
 
   // Create a map from (local) indices in the submap to the corresponding
