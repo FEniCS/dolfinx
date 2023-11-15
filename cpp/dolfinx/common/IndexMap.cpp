@@ -144,9 +144,8 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
   {
     for (int j = recv_disp[i]; j < recv_disp[i + 1]; ++j)
     {
-      std::int64_t idx = recv_indices[j];
       // Check that the index is in the submap
-      if (idx != -1)
+      if (std::int64_t idx = recv_indices[j]; idx != -1)
       {
         // Compute the local index
         std::int32_t idx_local = idx - local_range[0];
