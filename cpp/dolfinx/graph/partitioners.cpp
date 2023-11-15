@@ -654,7 +654,7 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
       timer2.stop();
     }
 
-    if (ghosting)
+    if (ghosting and graph.num_nodes() > 0)
     {
       graph::AdjacencyList<int> dest
           = compute_destination_ranks(pcomm, graph, node_disp, part);
