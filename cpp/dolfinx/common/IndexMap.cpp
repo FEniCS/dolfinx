@@ -75,7 +75,7 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
   {
     auto it = std::lower_bound(src.begin(), src.end(), ghost_owners[i]);
     assert(it != src.end() and *it == ghost_owners[i]);
-    int r = std::distance(src.begin(), it);
+    std::size_t r = std::distance(src.begin(), it);
     // Send ghost index if it is in the submap, else send -1
     if (is_in_submap[imap.size_local() + i])
       send_data[r].push_back(ghosts[i]);
@@ -294,7 +294,7 @@ std::vector<std::int64_t> compute_submap_ghost_indices(
       auto it = std::lower_bound(submap_src.begin(), submap_src.end(),
                                  submap_ghost_owners[i]);
       assert(it != submap_src.end() and *it == submap_ghost_owners[i]);
-      int r = std::distance(submap_src.begin(), it);
+      std::size_t r = std::distance(submap_src.begin(), it);
       send_data[r].push_back(submap_ghosts_global[i]);
       ghost_perm_dict[r].push_back(i);
     }
