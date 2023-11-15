@@ -556,6 +556,9 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
       return regular_adjacency_list(
           std::vector<std::int32_t>(graph.num_nodes(), 0), 1);
     }
+
+    // NOTE: he communicator is split because ParMETIS fails if an MP
+    // rank has no part of the graph
     // Split communicator in groups (0) without and (1) with parts of
     // the graph
     const int rank = dolfinx::MPI::rank(comm);
