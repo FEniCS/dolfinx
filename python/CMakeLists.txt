@@ -30,7 +30,7 @@ execute_process(
 )
 find_package(Basix REQUIRED CONFIG HINTS ${BASIX_PY_DIR})
 if (Basix_FOUND)
-  message(STATUS "Found Basix at ${BASIX_DIR}")
+  message(STATUS "Found Basix at ${Basix_DIR}")
 endif()
 find_package(DOLFINX REQUIRED CONFIG)
 if (DOLFINX_FOUND)
