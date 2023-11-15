@@ -1065,12 +1065,21 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 /// @param[in] cells Indices of the cells in the destination mesh on
 /// which to interpolate. Should be the same as the list used when
 /// calling fem::interpolation_coords.
+/// @param[in] padding Absolute padding of bounding boxes of all entities on
+/// `mesh1`. This is used avoid floating point issues when an interpolation
+/// point from `mesh0` is on the surface of a cell in `mesh1`. This parameter
+/// can also be used for extrapolation, i.e. if cells in `mesh0` is not
+/// overlapped by `mesh1`.
+///
+/// @note Setting the `padding` to a large value will increase runtime of this
+/// function, as one has to determine what entity is closest if there is no
+/// intersection.
 template <std::floating_point T>
 std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>, std::vector<T>,
            std::vector<std::int32_t>>
 create_nonmatching_meshes_interpolation_data(
     const mesh::Geometry<T>& geometry0, const FiniteElement<T>& element0,
-    const mesh::Mesh<T>& mesh1, std::span<const std::int32_t> cells)
+    const mesh::Mesh<T>& mesh1, std::span<const std::int32_t> cells, T padding)
 {
   // Collect all the points at which values are needed to define the
   // interpolating function
@@ -1085,7 +1094,7 @@ create_nonmatching_meshes_interpolation_data(
       x[3 * i + j] = coords[i + j * num_points];
 
   // Determine ownership of each point
-  return geometry::determine_point_ownership<T>(mesh1, x);
+  return geometry::determine_point_ownership<T>(mesh1, x, padding);
 }
 
 /// @brief Generate data needed to interpolate discrete functions
@@ -1093,12 +1102,21 @@ create_nonmatching_meshes_interpolation_data(
 /// @param[in] mesh0 Mesh of the space to interpolate into
 /// @param[in] element0 Element of the space to interpolate into
 /// @param[in] mesh1 Mesh of the function to interpolate from
+/// @param[in] padding Absolute padding of bounding boxes of all entities on
+/// `mesh1`. This is used avoid floating point issues when an interpolation
+/// point from `mesh0` is on the surface of a cell in `mesh1`. This parameter
+/// can also be used for extrapolation, i.e. if cells in `mesh0` is not
+/// overlapped by `mesh1`.
+/// @note Setting the `padding` to a large value will increase runtime of this
+/// function, as one has to determine what entity is closest if there is no
+/// intersection.
 template <std::floating_point T>
 std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>, std::vector<T>,
            std::vector<std::int32_t>>
 create_nonmatching_meshes_interpolation_data(const mesh::Mesh<T>& mesh0,
                                              const FiniteElement<T>& element0,
-                                             const mesh::Mesh<T>& mesh1)
+                                             const mesh::Mesh<T>& mesh1,
+                                             T padding)
 {
   int tdim = mesh0.topology()->dim();
   auto cell_map = mesh0.topology()->index_map(tdim);
@@ -1106,8 +1124,8 @@ create_nonmatching_meshes_interpolation_data(const mesh::Mesh<T>& mesh0,
   std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
   std::vector<std::int32_t> cells(num_cells, 0);
   std::iota(cells.begin(), cells.end(), 0);
-  return create_nonmatching_meshes_interpolation_data(mesh0.geometry(),
-                                                      element0, mesh1, cells);
+  return create_nonmatching_meshes_interpolation_data(
+      mesh0.geometry(), element0, mesh1, cells, padding);
 }
 
 /// @brief Interpolate from one finite element Function to another one.
