@@ -244,7 +244,8 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
   }
   std::sort(submap_owned.begin(), submap_owned.end());
 
-  return {submap_owned, submap_ghost, submap_ghost_owners};
+  return {std::move(submap_owned), std::move(submap_ghost),
+          std::move(submap_ghost_owners)};
 }
 
 // Helper function to compute the submap indices of ghosts.
@@ -1031,7 +1032,7 @@ IndexMap::create_submap_conn(std::span<const std::int32_t> indices) const
 
   return {IndexMap(_comm.comm(), submap_local_size, submap_ghost_gidxs,
                    submap_ghost_owners),
-          sub_imap_to_imap};
+          std::move(sub_imap_to_imap)};
 }
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<int> IndexMap::index_to_dest_ranks() const
