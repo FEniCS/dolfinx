@@ -132,77 +132,82 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
   // `recv_indices` will necessarily be in `indices` on this process, and thus
   // other processes must own them in the submap.
 
-  // Create a map from (global) owned shared indices owned to processes that can
-  // own them.
-  // FIXME Avoid map
+  std::vector<std::int32_t> recv_owners(send_disp.back());
   const int rank = dolfinx::MPI::rank(comm);
-  // A map from (global) indices in `recv_indices` to a list of processes that
-  // can own the index in the submap.
-  std::map<std::int64_t, std::vector<std::int32_t>>
-      global_idx_to_possible_owner;
-  const std::array local_range = imap.local_range();
-  for (std::size_t i = 0; i < recv_disp.size() - 1; ++i)
   {
-    for (int j = recv_disp[i]; j < recv_disp[i + 1]; ++j)
+    // Create a map from (global) owned shared indices owned to processes that
+    // can own them.
+    // FIXME Avoid map
+    // A map from (global) indices in `recv_indices` to a list of processes that
+    // can own the index in the submap.
+    std::map<std::int64_t, std::vector<std::int32_t>>
+        global_idx_to_possible_owner;
+    const std::array local_range = imap.local_range();
+    for (std::size_t i = 0; i < recv_disp.size() - 1; ++i)
     {
-      // Check that the index is in the submap
-      if (std::int64_t idx = recv_indices[j]; idx != -1)
+      for (int j = recv_disp[i]; j < recv_disp[i + 1]; ++j)
       {
-        // Compute the local index
-        std::int32_t idx_local = idx - local_range[0];
-        assert(idx_local >= 0);
-        assert(idx_local < local_range[1]);
+        // Check that the index is in the submap
+        if (std::int64_t idx = recv_indices[j]; idx != -1)
+        {
+          // Compute the local index
+          std::int32_t idx_local = idx - local_range[0];
+          assert(idx_local >= 0);
+          assert(idx_local < local_range[1]);
 
-        // Check if index is in the submap on this process. If so, this process
-        // remains its owner in the submap. Otherwise, add the process that sent
-        // it to the list of possible owners.
-        if (is_in_submap[idx_local])
-          global_idx_to_possible_owner[idx].push_back(rank);
-        else
-          global_idx_to_possible_owner[idx].push_back(dest[i]);
+          // Check if index is in the submap on this process. If so, this
+          // process remains its owner in the submap. Otherwise, add the process
+          // that sent it to the list of possible owners.
+          if (is_in_submap[idx_local])
+            global_idx_to_possible_owner[idx].push_back(rank);
+          else
+            global_idx_to_possible_owner[idx].push_back(dest[i]);
+        }
       }
     }
-  }
 
-  // Choose the submap owner for each index in `recv_indices`
-  std::vector<std::int32_t> send_owners;
-  send_owners.reserve(recv_indices.size());
-  for (auto idx : recv_indices)
-  {
-    // Check the index is in the submap, otherwise send -1
-    if (idx != -1)
+    // Choose the submap owner for each index in `recv_indices`
+    std::vector<std::int32_t> send_owners;
+    send_owners.reserve(recv_indices.size());
+    for (auto idx : recv_indices)
     {
-      // TODO Choose new owner randomly for load balancing
-      const std::vector<std::int32_t>& possible_owners
-          = global_idx_to_possible_owner[idx];
-      // const int random_index = std::rand() % possible_owners.size();
-      // send_owners.push_back(possible_owners[random_index]);
+      // Check the index is in the submap, otherwise send -1
+      if (idx != -1)
+      {
+        // TODO Choose new owner randomly for load balancing
+        const std::vector<std::int32_t>& possible_owners
+            = global_idx_to_possible_owner[idx];
+        // const int random_index = std::rand() % possible_owners.size();
+        // send_owners.push_back(possible_owners[random_index]);
 
-      // FIXME TEMPORARILY CHOOSE THE FIRST PROCESS, MAKE RANDOM
-      send_owners.push_back(possible_owners[0]);
+        // FIXME TEMPORARILY CHOOSE THE FIRST PROCESS, MAKE RANDOM
+        send_owners.push_back(possible_owners[0]);
+      }
+      else
+        send_owners.push_back(-1);
     }
-    else
-      send_owners.push_back(-1);
+
+    // Create neighbourhood comm (owner -> ghost)
+    MPI_Comm comm1;
+    int ierr = MPI_Dist_graph_create_adjacent(
+        comm, src.size(), src.data(), MPI_UNWEIGHTED, dest.size(), dest.data(),
+        MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
+    dolfinx::MPI::check_error(comm, ierr);
+
+    // Send the data
+    ierr = MPI_Neighbor_alltoallv(send_owners.data(), recv_sizes.data(),
+                                  recv_disp.data(), MPI_INT32_T,
+                                  recv_owners.data(), send_sizes.data(),
+                                  send_disp.data(), MPI_INT32_T, comm1);
+    dolfinx::MPI::check_error(comm, ierr);
+
+    // Free the communicator
+    ierr = MPI_Comm_free(&comm1);
+    dolfinx::MPI::check_error(comm, ierr);
   }
 
-  // Create neighbourhood comm (owner -> ghost)
-  MPI_Comm comm1;
-  int ierr = MPI_Dist_graph_create_adjacent(
-      comm, src.size(), src.data(), MPI_UNWEIGHTED, dest.size(), dest.data(),
-      MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm1);
-  dolfinx::MPI::check_error(comm, ierr);
-
-  // Send the data
-  std::vector<std::int32_t> recv_owners(send_disp.back());
-  ierr = MPI_Neighbor_alltoallv(send_owners.data(), recv_sizes.data(),
-                                recv_disp.data(), MPI_INT32_T,
-                                recv_owners.data(), send_sizes.data(),
-                                send_disp.data(), MPI_INT32_T, comm1);
-  dolfinx::MPI::check_error(comm, ierr);
-
-  // Free the communicator
-  ierr = MPI_Comm_free(&comm1);
-  dolfinx::MPI::check_error(comm, ierr);
+  // --- Step 3 --- : Determine the owned indices, ghost indices, and ghost
+  // owners in the submap
 
   // Local indices (w.r.t. original map) owned by this process in the submap
   std::vector<std::int32_t> submap_owned;
