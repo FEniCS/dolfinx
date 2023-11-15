@@ -651,6 +651,7 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
 
     // Build adjacency list data
     common::Timer timer1("KaHIP: build adjacency data");
+    std::vector<idx_t> node_disp;
     if (pcomm != MPI_COMM_NULL)
     {
       // Graph does not have vertex or adjacency weights, so we use null
@@ -659,7 +660,7 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
 
       // Build adjacency list data
       const int size = dolfinx::MPI::size(pcomm);
-      std::vector<T> node_disp(size + 1, 0);
+      node_disp.resize(size + 1, 0);
       const T num_local_nodes = graph.num_nodes();
       MPI_Allgather(&num_local_nodes, 1, dolfinx::MPI::mpi_type<T>(),
                     node_disp.data() + 1, 1, dolfinx::MPI::mpi_type<T>(), comm);
