@@ -33,15 +33,14 @@ std::array<std::vector<int>, 2> build_src_dest(MPI_Comm comm,
   return {std::move(src), std::move(dest)};
 }
 
-/// Given a subset of indices in an index map, compute owned indices, ghost indices and owners of ghosts.
-///
-/// A helper function that, given an index map and a set of local indices (can be
-/// owned or ghost but must be unique and sorted), returns the owned, ghost and
-/// ghost owners in the submap. All indices are local and with respect to the
-/// original index map.
-/// @param[in] imap Index map.
+/// Given an index map and a subset of local indices (can be owned or ghost but
+/// must be unique and sorted), computes the owned, ghost and ghost owners in
+/// the submap.
+/// @param[in] imap An index map.
 /// @param[in] indices List of entity indices (indices local to the process).
-/// @pre `indices` must be sorted and unique. 
+/// @pre `indices` must be sorted and unique.
+/// @return The owned, ghost, and ghost owners in the submap. All indices are
+/// local and with respect to the original index map.
 std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
            std::vector<std::int32_t>>
 compute_submap_indices(const dolfinx::common::IndexMap& imap,
