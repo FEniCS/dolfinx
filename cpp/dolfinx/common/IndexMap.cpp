@@ -349,44 +349,48 @@ std::vector<std::int64_t> compute_submap_ghost_indices(
   // --- Step 2 ---: For each received index, compute the submap global index
 
   std::vector<std::int64_t> send_gidx;
-  send_gidx.reserve(recv_indices.size());
-  // NOTE: Received indices are owned by this process in the submap, but not
-  // necessarily in the original imap, so we must use global_to_local to convert
-  // rather than subtracting local_range[0]
-  // TODO Convert recv_indices or submap_owned?
-  std::vector<int32_t> recv_indices_local(recv_indices.size());
-  imap.global_to_local(recv_indices, recv_indices_local);
-
-  // Compute submap global index
-  for (auto idx : recv_indices_local)
   {
-    // Could avoid search by creating look-up array
-    auto it = std::lower_bound(submap_owned.begin(), submap_owned.end(), idx);
-    assert(it != submap_owned.end() and *it == idx);
-    std::size_t idx_local_submap = std::distance(submap_owned.begin(), it);
-    send_gidx.push_back(idx_local_submap + submap_offset);
+    send_gidx.reserve(recv_indices.size());
+    // NOTE: Received indices are owned by this process in the submap, but not
+    // necessarily in the original imap, so we must use global_to_local to
+    // convert rather than subtracting local_range[0]
+    // TODO Convert recv_indices or submap_owned?
+    std::vector<int32_t> recv_indices_local(recv_indices.size());
+    imap.global_to_local(recv_indices, recv_indices_local);
+
+    // Compute submap global index
+    for (auto idx : recv_indices_local)
+    {
+      // Could avoid search by creating look-up array
+      auto it = std::lower_bound(submap_owned.begin(), submap_owned.end(), idx);
+      assert(it != submap_owned.end() and *it == idx);
+      std::size_t idx_local_submap = std::distance(submap_owned.begin(), it);
+      send_gidx.push_back(idx_local_submap + submap_offset);
+    }
   }
 
   // --- Step 3 ---: Send submap global indices to process that ghost them
 
-  // Create neighbourhood comm (owner -> ghost)
-  MPI_Comm comm1;
-  int ierr = MPI_Dist_graph_create_adjacent(
-      comm, submap_src.size(), submap_src.data(), MPI_UNWEIGHTED,
-      submap_dest.size(), submap_dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
-      false, &comm1);
-  dolfinx::MPI::check_error(comm, ierr);
-
-  // Send indices to ghosting ranks
   std::vector<std::int64_t> recv_gidx(send_disp.back());
-  ierr = MPI_Neighbor_alltoallv(send_gidx.data(), recv_sizes.data(),
-                                recv_disp.data(), MPI_INT64_T, recv_gidx.data(),
-                                send_sizes.data(), send_disp.data(),
-                                MPI_INT64_T, comm1);
-  dolfinx::MPI::check_error(comm, ierr);
+  {
+    // Create neighbourhood comm (owner -> ghost)
+    MPI_Comm comm1;
+    int ierr = MPI_Dist_graph_create_adjacent(
+        comm, submap_src.size(), submap_src.data(), MPI_UNWEIGHTED,
+        submap_dest.size(), submap_dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
+        false, &comm1);
+    dolfinx::MPI::check_error(comm, ierr);
 
-  ierr = MPI_Comm_free(&comm1);
-  dolfinx::MPI::check_error(comm, ierr);
+    // Send indices to ghosting ranks
+    ierr = MPI_Neighbor_alltoallv(send_gidx.data(), recv_sizes.data(),
+                                  recv_disp.data(), MPI_INT64_T,
+                                  recv_gidx.data(), send_sizes.data(),
+                                  send_disp.data(), MPI_INT64_T, comm1);
+    dolfinx::MPI::check_error(comm, ierr);
+
+    ierr = MPI_Comm_free(&comm1);
+    dolfinx::MPI::check_error(comm, ierr);
+  }
 
   // --- Step 4---: Unpack received data
 
