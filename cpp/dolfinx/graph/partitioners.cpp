@@ -629,7 +629,6 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
     common::Timer timer1("KaHIP: build adjacency data");
     if (pcomm != MPI_COMM_NULL)
     {
-
       // Graph does not have vertex or adjacency weights, so we use null
       // pointers as arguments
       T *vwgt(nullptr), *adjcwgt(nullptr);
@@ -655,11 +654,17 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
       timer2.stop();
     }
 
-    MPI_Comm_free(&pcomm);
     if (ghosting)
-      return compute_destination_ranks(comm, graph, node_disp, part);
+    {
+      graph::AdjacencyList<int> dest
+          = compute_destination_ranks(pcomm, graph, node_disp, part);
+
+      MPI_Comm_free(&pcomm);
+      return dest;
+    }
     else
     {
+      MPI_Comm_free(&pcomm);
       return regular_adjacency_list(
           std::vector<std::int32_t>(part.begin(), part.end()), 1);
     }
