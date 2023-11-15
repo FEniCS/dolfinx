@@ -261,12 +261,13 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
 /// @param[in] imap The original index map
 /// @pre submap_owned must be sorted and contain no repeated indices
 std::vector<std::int64_t> compute_submap_ghost_indices(
-    const std::vector<int>& submap_src, const std::vector<int>& submap_dest,
-    const std::vector<std::int32_t>& submap_owned,
-    const std::vector<std::int64_t>& submap_ghosts_global,
-    const std::vector<std::int32_t>& submap_ghost_owners,
+    std::span<const int> submap_src,
+    std::span<const int> submap_dest,
+    std::span<const std::int32_t> submap_owned,
+    std::span<const std::int64_t> submap_ghosts_global,
+    std::span<const std::int32_t> submap_ghost_owners,
     const int submap_offset,
-    const dolfinx::common::IndexMap& imap) // NOTE: This is the original imap!
+    const dolfinx::common::IndexMap& imap)
 {
   // --- Step 1 ---: Send global ghost indices (w.r.t. original imap) to owning
   // rank
@@ -383,7 +384,7 @@ std::vector<std::int64_t> compute_submap_ghost_indices(
 
   // --- Step 4---: Unpack received data
 
-  std::vector<std::int64_t> ghost_submap_gidx(submap_ghosts_global);
+  std::vector<std::int64_t> ghost_submap_gidx(submap_ghosts_global.size());
   for (std::size_t i = 0; i < recv_gidx.size(); ++i)
     ghost_submap_gidx[ghost_perm[i]] = recv_gidx[i];
 
