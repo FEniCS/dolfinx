@@ -228,13 +228,13 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
   // submap_ghost_owners respectively.
   for (std::size_t i = 0; i < send_indices.size(); ++i)
   {
-    std::int32_t local_idx = send_indices_local[i];
     std::int64_t global_idx = send_indices[i];
     std::int32_t owner = recv_owners[i];
 
     // Check if index is in the submap
     if (global_idx >= 0)
     {
+      std::int32_t local_idx = send_indices_local[i];
       if (owner == rank)
       {
         submap_owned.push_back(local_idx);
