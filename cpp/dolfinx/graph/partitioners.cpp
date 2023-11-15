@@ -686,7 +686,6 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
     {
       graph::AdjacencyList<int> dest
           = compute_destination_ranks(pcomm, graph, node_disp, part);
-
       MPI_Comm_free(&pcomm);
       return dest;
     }
@@ -694,7 +693,6 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
     {
       if (pcomm != MPI_COMM_NULL)
         MPI_Comm_free(&pcomm);
-
       return regular_adjacency_list(
           std::vector<std::int32_t>(part.begin(), part.end()), 1);
     }
