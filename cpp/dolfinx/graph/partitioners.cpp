@@ -616,32 +616,46 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
 
     common::Timer timer("Compute graph partition (KaHIP)");
 
-    // Graph does not have vertex or adjacency weights, so we use null
-    // pointers as arguments
-    T *vwgt(nullptr), *adjcwgt(nullptr);
+    // Split communicator in groups (0) without and (1) with parts of
+    // the graph
+    const int rank = dolfinx::MPI::rank(comm);
+    std::vector<T> part(graph.num_nodes());
+    MPI_Comm pcomm = MPI_COMM_NULL;
+    int color = graph.num_nodes() == 0 ? MPI_UNDEFINED : 1;
+
+    MPI_Comm_split(comm, color, rank, &pcomm);
 
     // Build adjacency list data
     common::Timer timer1("KaHIP: build adjacency data");
-    const int size = dolfinx::MPI::size(comm);
-    std::vector<T> node_disp(size + 1, 0);
-    const T num_local_nodes = graph.num_nodes();
-    MPI_Allgather(&num_local_nodes, 1, dolfinx::MPI::mpi_type<T>(),
-                  node_disp.data() + 1, 1, dolfinx::MPI::mpi_type<T>(), comm);
-    std::partial_sum(node_disp.begin(), node_disp.end(), node_disp.begin());
-    std::vector<T> array(graph.array().begin(), graph.array().end());
-    std::vector<T> offsets(graph.offsets().begin(), graph.offsets().end());
-    timer1.stop();
+    if (pcomm != MPI_COMM_NULL)
+    {
 
-    // Call KaHIP to partition graph
-    common::Timer timer2("KaHIP: call ParHIPPartitionKWay");
-    std::vector<T> part(graph.num_nodes());
-    int edgecut = 0;
-    double _imbalance = imbalance;
-    ParHIPPartitionKWay(node_disp.data(), offsets.data(), array.data(), vwgt,
-                        adjcwgt, &nparts, &_imbalance, suppress_output, seed,
-                        mode, &edgecut, part.data(), &comm);
-    timer2.stop();
+      // Graph does not have vertex or adjacency weights, so we use null
+      // pointers as arguments
+      T *vwgt(nullptr), *adjcwgt(nullptr);
 
+      // Build adjacency list data
+      const int size = dolfinx::MPI::size(pcomm);
+      std::vector<T> node_disp(size + 1, 0);
+      const T num_local_nodes = graph.num_nodes();
+      MPI_Allgather(&num_local_nodes, 1, dolfinx::MPI::mpi_type<T>(),
+                    node_disp.data() + 1, 1, dolfinx::MPI::mpi_type<T>(), comm);
+      std::partial_sum(node_disp.begin(), node_disp.end(), node_disp.begin());
+      std::vector<T> array(graph.array().begin(), graph.array().end());
+      std::vector<T> offsets(graph.offsets().begin(), graph.offsets().end());
+      timer1.stop();
+
+      // Call KaHIP to partition graph
+      common::Timer timer2("KaHIP: call ParHIPPartitionKWay");
+      int edgecut = 0;
+      double _imbalance = imbalance;
+      ParHIPPartitionKWay(node_disp.data(), offsets.data(), array.data(), vwgt,
+                          adjcwgt, &nparts, &_imbalance, suppress_output, seed,
+                          mode, &edgecut, part.data(), &pcomm);
+      timer2.stop();
+    }
+
+    MPI_Comm_free(&pcomm);
     if (ghosting)
       return compute_destination_ranks(comm, graph, node_disp, part);
     else
