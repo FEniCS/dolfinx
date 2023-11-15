@@ -654,7 +654,7 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
 
     // Build adjacency list data
     common::Timer timer1("KaHIP: build adjacency data");
-    std::vector<idx_t> node_disp;
+    std::vector<T> node_disp;
     if (pcomm != MPI_COMM_NULL)
     {
       // Graph does not have vertex or adjacency weights, so we use null
