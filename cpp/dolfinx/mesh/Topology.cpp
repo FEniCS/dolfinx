@@ -1011,7 +1011,6 @@ Topology mesh::create_topology(
     for (std::size_t i = 0; i < unowned_vertex_data.size(); i += 3)
     {
       const std::int64_t idx_global = unowned_vertex_data[i];
-
       auto it = std::lower_bound(unowned_vertices.begin(),
                                  unowned_vertices.end(), idx_global);
       assert(it != unowned_vertices.end() and *it == idx_global);

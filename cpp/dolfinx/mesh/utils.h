@@ -772,13 +772,30 @@ compute_incident_entities(const Topology& topology,
                           std::span<const std::int32_t> entities, int d0,
                           int d1);
 
-/// Create a mesh using a provided mesh partitioning function.
+/// @brief Create a mesh using a provided mesh partitioning function.
 ///
 /// If the partitioning function is not callable, i.e. it does not store
 /// a callable function, no re-distribution of cells is done.
+///
+/// @todo Write docs for sub-communicators
+///
+/// @param[in] comm Communicator to build the mesh on
+/// @param[in] commt Communicator that the topology data (`cells`) is
+/// distributed on.
+/// @param[in] cells The cells on the this MPI rank. Each cell (node in
+/// the `AdjacencyList`) is defined by its 'nodes' (using global
+/// indices). For lowest order cells this will be just the cell
+/// vertices. For higher-order cells, other cells 'nodes' will be
+/// included.
+/// @param[in] elements
+/// @param[in] x
+/// @param[in] xshape
+/// @param[in] partitioner
+/// @return A mesh distributed on the communicator `comm`.
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
-    MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
+    MPI_Comm comm, MPI_Comm commt,
+    const graph::AdjacencyList<std::int64_t>& cells,
     const std::vector<fem::CoordinateElement<
         typename std::remove_reference_t<typename U::value_type>>>& elements,
     const U& x, std::array<std::size_t, 2> xshape,
@@ -787,8 +804,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   const fem::ElementDofLayout dof_layout = elements[0].create_dof_layout();
 
   // Function top build geometry. Used to scope memory operations.
-  auto build_topology = [](auto comm, auto& elements, auto& dof_layout,
-                           auto& cells, auto& partitioner)
+  auto build_topology = [](MPI_Comm comm, MPI_Comm commt, auto& elements,
+                           auto& dof_layout, auto& cells, auto& partitioner)
   {
     // -- Partition topology
 
@@ -797,11 +814,11 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     // vertices. For P1 geometry this should just be the identity
     // operator. For other elements the filtered lists may have 'gaps',
     // i.e. the indices might not be contiguous. We don't create an
-    // object before calling partitioner to ensure that memory is
-    // freed immediately.
+    // object before calling partitioner to ensure that memory is freed
+    // immediately.
     //
-    // Note: extract_topology could be skipped for 'P1' elements since
-    // it is just the identity
+    // Note: extract_topology could be skipped for 'P1' cells since it
+    // is just the identity
 
     // Compute the destination rank for cells on this process via graph
     // partitioning.
@@ -813,14 +830,14 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     std::vector<int> ghost_owners;
     if (partitioner)
     {
-      const int size = dolfinx::MPI::size(comm);
+      // Partition topology (cell) data on comm1 to determine
+      // destination rank (on comm) for each cell
       dest = partitioner(
-          comm, size, tdim,
+          commt, dolfinx::MPI::size(comm), tdim,
           extract_topology(elements[0].cell_shape(), dof_layout, cells));
 
-      // -- Distribute cells (topology, includes higher-order 'nodes')
-
-      // Distribute cells to destination rank
+      // Distribute cells (topology, includes higher-order 'nodes') to
+      // destination rank
       std::vector<int> src;
       std::tie(cell_nodes, src, original_cell_index0, ghost_owners)
           = graph::build::distribute(comm, cells, dest);
@@ -901,7 +918,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   };
 
   auto [topology, cell_nodes]
-      = build_topology(comm, elements, dof_layout, cells, partitioner);
+      = build_topology(comm, commt, elements, dof_layout, cells, partitioner);
 
   // Create connectivity required to compute the Geometry (extra
   // connectivities for higher-order geometries)
@@ -929,7 +946,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// determined by the default cell partitioner. The default partitioner
 /// is based on graph partitioning.
 ///
-/// @param[in] comm The MPI communicator to build the mesh on.
+/// @param[in] comm The communicator to build the mesh on.
 /// @param[in] cells The cells on the this MPI rank. Each cell (node in
 /// the `AdjacencyList`) is defined by its 'nodes' (using global
 /// indices). For lowest order cells this will be just the cell
@@ -949,10 +966,10 @@ create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
             const U& x, std::array<std::size_t, 2> xshape, GhostMode ghost_mode)
 {
   if (dolfinx::MPI::size(comm) == 1)
-    return create_mesh(comm, cells, elements, x, xshape, nullptr);
+    return create_mesh(comm, comm, cells, elements, x, xshape, nullptr);
   else
   {
-    return create_mesh(comm, cells, elements, x, xshape,
+    return create_mesh(comm, comm, cells, elements, x, xshape,
                        create_cell_partitioner(ghost_mode));
   }
 }
