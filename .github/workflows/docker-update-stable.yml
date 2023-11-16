@@ -1,15 +1,19 @@
 ---
-name: Link stable Docker tag
+name: Update stable Docker tag
 
-# Links stable docker tag to specified version.
+# Links/updates stable docker tags to specified version.
+# This should be used after building a specific tagged image e.g. `:v0.7.2`.
 #
-# This should be used after building a specific version of Docker.
+#   dolfinx/dolfinx:stable 
+#   dolfinx/lab:stable 
+#   dolfinx/dev-env:stable 
+#   dolfinx/dolfinx-onbuild:stable
 
 on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "link stable to this tag"
+        description: "link :stable to tag"
         type: string
         required: true
 
