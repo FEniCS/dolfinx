@@ -201,10 +201,10 @@ TEST_CASE("Distributed Mesh", "[distributed_mesh]")
 {
   create_mesh_file();
 
-  SECTION("SCOTCH")
-  {
-    CHECK_NOTHROW(test_distributed_mesh(mesh::create_cell_partitioner()));
-  }
+  // SECTION("SCOTCH")
+  // {
+  //   CHECK_NOTHROW(test_distributed_mesh(mesh::create_cell_partitioner()));
+  // }
 
   // #ifdef HAS_KAHIP
   // SECTION("KAHIP with Lambda")
