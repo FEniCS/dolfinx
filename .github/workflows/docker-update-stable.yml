@@ -38,13 +38,14 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install regclient
+      - name: Install regctl
         run: |
           wget -O ./regctl https://github.com/regclient/regclient/releases/download/v0.5.4/regctl-linux-amd64
           chmod +x ./regctl
 
       - name: Link supplied tag to stable on docker.io
         run: |
+           ls -a
            regctl image copy dolfinx/dolfinx:${{ inputs.tag }} dolfinx/dolfinx:stable 
            regctl image copy dolfinx/lab:${{ inputs.tag }} dolfinx/lab:stable 
            regctl image copy dolfinx/dev-env:${{ inputs.tag }} dolfinx/dev-env:stable 
