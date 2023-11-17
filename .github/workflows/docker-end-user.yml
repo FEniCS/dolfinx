@@ -133,7 +133,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           build-args: |
-            DOLFINX_CMAKE_BUILD_TYPE=RelWithDebug
+            DOLFINX_CMAKE_BUILD_TYPE=RelWithDebInfo
             DOLFINX_CMAKE_CXX_FLAGS=-O2
             BASEIMAGE=${{ env.BASEIMAGE }}
           context: .
@@ -146,7 +146,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           build-args: |
-            DOLFINX_CMAKE_BUILD_TYPE=RelWithDebug
+            DOLFINX_CMAKE_BUILD_TYPE=RelWithDebInfo
             DOLFINX_CMAKE_CXX_FLAGS=-O2
             BASEIMAGE=${{ env.BASEIMAGE }}
           context: .
@@ -157,7 +157,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           build-args: |
-            DOLFINX_CMAKE_BUILD_TYPE=RelWithDebug
+            DOLFINX_CMAKE_BUILD_TYPE=RelWithDebInfo
             DOLFINX_CMAKE_CXX_FLAGS=-O2
             BASEIMAGE=${{ env.BASEIMAGE }}
           context: .
@@ -170,7 +170,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           build-args: |
-            DOLFINX_CMAKE_BUILD_TYPE=RelWithDebug
+            DOLFINX_CMAKE_BUILD_TYPE=RelWithDebInfo
             DOLFINX_CMAKE_CXX_FLAGS=-O2
             BASEIMAGE=${{ env.BASEIMAGE }}
           context: .
