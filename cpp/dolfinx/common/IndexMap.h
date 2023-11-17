@@ -54,7 +54,7 @@ stack_index_maps(
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
 
-/// @brief Create a new index map from a subset of indices in this index
+/// @brief Create a new index map from a subset of indices in an index
 /// map. Any indices that are not included by their owning process, but
 /// are included on sharing processes, will be owned by one of the sharing
 /// processes in the submap.
@@ -62,6 +62,7 @@ stack_index_maps(
 /// This can be used when, for instance, creating a submesh to ensure
 /// that all vertices have exactly one owner and are connected to at least
 /// one cell on the owning process.
+/// @param[in] imap The index map
 /// @param[in] indices Local indices to include in the new index map (owned
 /// and ghost)
 /// @pre `indices` must be sorted and contain no duplicates.
