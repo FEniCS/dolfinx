@@ -6,7 +6,6 @@ name: Docker update stable tag
 #
 #   dolfinx/dolfinx:stable 
 #   dolfinx/lab:stable 
-#   dolfinx/dev-env:stable 
 #   dolfinx/dolfinx-onbuild:stable
 
 on:
@@ -47,12 +46,10 @@ jobs:
         run: |
            ./regctl image copy dolfinx/dolfinx:${{ inputs.tag }} dolfinx/dolfinx:stable 
            ./regctl image copy dolfinx/lab:${{ inputs.tag }} dolfinx/lab:stable 
-           ./regctl image copy dolfinx/dev-env:${{ inputs.tag }} dolfinx/dev-env:stable 
            ./regctl image copy dolfinx/dolfinx-onbuild:${{ inputs.tag }} dolfinx/dolfinx-onbuild:stable
       
       - name: Link supplied tag to stable on ghcr.io
         run: |
            ./regctl image copy ghcr.io/fenics/dolfinx/dolfinx:${{ inputs.tag }} ghcr.io/fenics/dolfinx/dolfinx:stable 
            ./regctl image copy ghcr.io/fenics/dolfinx/lab:${{ inputs.tag }} ghcr.io/fenics/dolfinx/lab:stable 
-           ./regctl image copy ghcr.io/fenics/dolfinx/dev-env:${{ inputs.tag }} ghcr.io/fenics/dolfinx/dev-env:stable 
            ./regctl image copy ghcr.io/dolfinx/dolfinx-onbuild:${{ inputs.tag }} ghcr.io/fenics/dolfinx/dolfinx-onbuild:stable
