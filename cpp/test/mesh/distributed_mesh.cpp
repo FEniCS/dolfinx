@@ -79,7 +79,8 @@ void test_create_box(void)
   MPI_Comm_free(&subset_comm);
 }
 
-void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
+[[maybe_unused]] void
+test_distributed_mesh(mesh::CellPartitionFunction partitioner)
 {
   using T = double;
 
