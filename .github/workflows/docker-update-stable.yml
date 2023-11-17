@@ -1,5 +1,5 @@
 ---
-name: Update stable Docker tag
+name: Docker update stable tag
 
 # Links/updates stable docker tags to specified version.
 # This should be used after building a specific tagged image e.g. `:v0.7.2`.
@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "link :stable to tag"
+        description: "link :stable to :tag"
         type: string
         required: true
 
@@ -40,8 +40,8 @@ jobs:
 
       - name: Install regclient
         run: |
-          wget -O regctl https://github.com/regclient/regclient/releases/download/v0.5.4/regctl-linux-amd64
-          chmod +x regctl
+          wget -O ./regctl https://github.com/regclient/regclient/releases/download/v0.5.4/regctl-linux-amd64
+          chmod +x ./regctl
 
       - name: Link supplied tag to stable on docker.io
         run: |
