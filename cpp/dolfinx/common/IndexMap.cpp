@@ -875,79 +875,13 @@ IndexMap::create_submap(std::span<const std::int32_t> indices) const
   dolfinx::MPI::check_error(_comm.comm(), ierr);
 
   // --- Step 2: Send ghost indices to owning rank
-
-  // Get source ranks (ranks that own ghosts) and destination ranks
-  // (ranks that ghost my indices)
   const std::vector<int>& src = this->src();
   const std::vector<int>& dest = this->dest();
-
-  std::vector<std::int64_t> recv_indices;
-  std::vector<std::size_t> ghost_buffer_pos;
-  std::vector<int> send_disp, recv_disp;
-  std::vector<std::int32_t> send_sizes, recv_sizes;
-  {
-    // Create neighbourhood comm (ghost -> owner)
-    MPI_Comm comm0;
-    int ierr = MPI_Dist_graph_create_adjacent(
-        _comm.comm(), dest.size(), dest.data(), MPI_UNWEIGHTED, src.size(),
-        src.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
-    dolfinx::MPI::check_error(_comm.comm(), ierr);
-
-    // Pack ghosts indices
-    std::vector<std::vector<std::int64_t>> send_data(src.size());
-    std::vector<std::vector<std::size_t>> pos_to_ghost(src.size());
-    for (std::size_t i = 0; i < _ghosts.size(); ++i)
-    {
-      auto it = std::lower_bound(src.begin(), src.end(), _owners[i]);
-      assert(it != src.end() and *it == _owners[i]);
-      int r = std::distance(src.begin(), it);
-      send_data[r].push_back(_ghosts[i]);
-      pos_to_ghost[r].push_back(i);
-    }
-
-    // Count number of ghosts per dest
-    std::transform(send_data.begin(), send_data.end(),
-                   std::back_inserter(send_sizes),
-                   [](auto& d) { return d.size(); });
-
-    // Build send buffer and ghost position to send buffer position
-    std::vector<std::int64_t> send_indices;
-    for (auto& d : send_data)
-      send_indices.insert(send_indices.end(), d.begin(), d.end());
-    for (auto& p : pos_to_ghost)
-      ghost_buffer_pos.insert(ghost_buffer_pos.end(), p.begin(), p.end());
-
-    // Send how many indices I ghost to each owner, and receive how many
-    // of my indices other ranks ghost
-    recv_sizes.resize(dest.size(), 0);
-    send_sizes.reserve(1);
-    recv_sizes.reserve(1);
-    ierr = MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT32_T,
-                                 recv_sizes.data(), 1, MPI_INT32_T, comm0);
-    dolfinx::MPI::check_error(_comm.comm(), ierr);
-
-    // Prepare displacement vectors
-    send_disp.resize(src.size() + 1, 0);
-    recv_disp.resize(dest.size() + 1, 0);
-    std::partial_sum(send_sizes.begin(), send_sizes.end(),
-                     std::next(send_disp.begin()));
-    std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
-                     std::next(recv_disp.begin()));
-
-    // Send ghost indices to owner, and receive indices
-    recv_indices.resize(recv_disp.back());
-    ierr = MPI_Neighbor_alltoallv(send_indices.data(), send_sizes.data(),
-                                  send_disp.data(), MPI_INT64_T,
-                                  recv_indices.data(), recv_sizes.data(),
-                                  recv_disp.data(), MPI_INT64_T, comm0);
-    dolfinx::MPI::check_error(_comm.comm(), ierr);
-
-    ierr = MPI_Comm_free(&comm0);
-    dolfinx::MPI::check_error(_comm.comm(), ierr);
-  }
-
-  ierr = MPI_Wait(&request_offset, MPI_STATUS_IGNORE);
-  dolfinx::MPI::check_error(_comm.comm(), ierr);
+  auto [send_indices, recv_indices, ghost_buffer_pos, send_sizes, recv_sizes,
+        send_disp, recv_disp]
+      = communicate_ghosts_to_owners(
+          this->comm(), src, dest, this->ghosts(), this->owners(),
+          std::vector<int>(this->ghosts().size(), 1));
 
   // --- Step 3: Check which received indexes (all of which I should
   // own) are in the submap
