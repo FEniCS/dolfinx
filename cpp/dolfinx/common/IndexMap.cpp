@@ -681,6 +681,61 @@ common::stack_index_maps(
   return {process_offset, std::move(local_offset), std::move(ghosts_new),
           std::move(ghost_owners_new)};
 }
+//-----------------------------------------------------------------------------
+std::pair<IndexMap, std::vector<std::int32_t>>
+common::create_submap_conn(const dolfinx::common::IndexMap& imap,
+                           std::span<const std::int32_t> indices)
+{
+  const MPI_Comm comm = imap.comm();
+
+  // Compute the owned, ghost, and ghost owners of submap indices.
+  // NOTE: All indices are local and numbered w.r.t. the original (imap) index
+  // map
+  auto [submap_owned, submap_ghost, submap_ghost_owners]
+      = compute_submap_indices(imap, indices);
+
+  // Compute submap offset for this rank
+  std::int64_t submap_local_size = submap_owned.size();
+  std::int64_t submap_offset = 0;
+  int ierr = MPI_Exscan(&submap_local_size, &submap_offset, 1, MPI_INT64_T,
+                        MPI_SUM, comm);
+  dolfinx::MPI::check_error(comm, ierr);
+
+  // Get submap source ranks
+  std::vector<int> submap_src(submap_ghost_owners.begin(),
+                              submap_ghost_owners.end());
+  std::sort(submap_src.begin(), submap_src.end());
+  submap_src.erase(std::unique(submap_src.begin(), submap_src.end()),
+                   submap_src.end());
+  submap_src.shrink_to_fit();
+
+  // Compute submap destination ranks
+  // NOTE: The call to NBX can be avoided by a two-step communication process
+  // TODO: Can NBX call be avoided by using O^r_p and O^g_p?
+  std::vector<int> submap_dest
+      = dolfinx::MPI::compute_graph_edges_nbx(comm, submap_src);
+  std::sort(submap_dest.begin(), submap_dest.end());
+
+  // Compute the global indices (w.r.t. the submap) of the submap ghosts
+  std::vector<std::int64_t> submap_ghost_global(submap_ghost.size());
+  imap.local_to_global(submap_ghost, submap_ghost_global);
+  auto submap_ghost_gidxs = compute_submap_ghost_indices(
+      submap_src, submap_dest, submap_owned, submap_ghost_global,
+      submap_ghost_owners, submap_offset, imap);
+
+  // Create a map from (local) indices in the submap to the corresponding
+  // (local) index in the original map
+  std::vector<std::int32_t> sub_imap_to_imap;
+  sub_imap_to_imap.reserve(submap_owned.size() + submap_ghost.size());
+  sub_imap_to_imap.insert(sub_imap_to_imap.end(), submap_owned.begin(),
+                          submap_owned.end());
+  sub_imap_to_imap.insert(sub_imap_to_imap.end(), submap_ghost.begin(),
+                          submap_ghost.end());
+
+  return {IndexMap(comm, submap_local_size, submap_ghost_gidxs,
+                   submap_ghost_owners),
+          std::move(sub_imap_to_imap)};
+}
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -1002,58 +1057,6 @@ IndexMap::create_submap(std::span<const std::int32_t> indices) const
     return {IndexMap(_comm.comm(), local_size_new),
             std::vector<std::int32_t>()};
   }
-}
-//-----------------------------------------------------------------------------
-std::pair<IndexMap, std::vector<std::int32_t>>
-IndexMap::create_submap_conn(std::span<const std::int32_t> indices) const
-{
-  // Compute the owned, ghost, and ghost owners of submap indices.
-  // NOTE: All indices are local and numbered w.r.t. the original (this) index
-  // map
-  auto [submap_owned, submap_ghost, submap_ghost_owners]
-      = compute_submap_indices(*this, indices);
-
-  // Compute submap offset for this rank
-  std::int64_t submap_local_size = submap_owned.size();
-  std::int64_t submap_offset = 0;
-  int ierr = MPI_Exscan(&submap_local_size, &submap_offset, 1, MPI_INT64_T,
-                        MPI_SUM, _comm.comm());
-  dolfinx::MPI::check_error(_comm.comm(), ierr);
-
-  // Get submap source ranks
-  std::vector<int> submap_src(submap_ghost_owners.begin(),
-                              submap_ghost_owners.end());
-  std::sort(submap_src.begin(), submap_src.end());
-  submap_src.erase(std::unique(submap_src.begin(), submap_src.end()),
-                   submap_src.end());
-  submap_src.shrink_to_fit();
-
-  // Compute submap destination ranks
-  // NOTE: The call to NBX can be avoided by a two-step communication process
-  // TODO: Can NBX call be avoided by using O^r_p and O^g_p?
-  std::vector<int> submap_dest
-      = dolfinx::MPI::compute_graph_edges_nbx(_comm.comm(), submap_src);
-  std::sort(submap_dest.begin(), submap_dest.end());
-
-  // Compute the global indices (w.r.t. the submap) of the submap ghosts
-  std::vector<std::int64_t> submap_ghost_global(submap_ghost.size());
-  this->local_to_global(submap_ghost, submap_ghost_global);
-  auto submap_ghost_gidxs = compute_submap_ghost_indices(
-      submap_src, submap_dest, submap_owned, submap_ghost_global,
-      submap_ghost_owners, submap_offset, *this);
-
-  // Create a map from (local) indices in the submap to the corresponding
-  // (local) index in the original map
-  std::vector<std::int32_t> sub_imap_to_imap;
-  sub_imap_to_imap.reserve(submap_owned.size() + submap_ghost.size());
-  sub_imap_to_imap.insert(sub_imap_to_imap.end(), submap_owned.begin(),
-                          submap_owned.end());
-  sub_imap_to_imap.insert(sub_imap_to_imap.end(), submap_ghost.begin(),
-                          submap_ghost.end());
-
-  return {IndexMap(_comm.comm(), submap_local_size, submap_ghost_gidxs,
-                   submap_ghost_owners),
-          std::move(sub_imap_to_imap)};
 }
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<int> IndexMap::index_to_dest_ranks() const

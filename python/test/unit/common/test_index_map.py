@@ -12,6 +12,7 @@ import numpy as np
 
 import dolfinx
 from dolfinx.mesh import GhostMode, create_unit_square
+from dolfinx import cpp as _cpp
 
 
 def test_sub_index_map():
@@ -161,7 +162,8 @@ def test_create_submap_connected():
         submap_indices = np.array([0, 2, 3], dtype=np.int32)
 
     imap = dolfinx.common.IndexMap(comm, local_size, ghosts, owners)
-    sub_imap, sub_imap_to_imap = imap.create_submap_conn(submap_indices)
+    sub_imap, sub_imap_to_imap = _cpp.common.create_submap_conn(
+        imap, submap_indices)
 
     if comm.rank == 0:
         assert sub_imap.size_local == 2

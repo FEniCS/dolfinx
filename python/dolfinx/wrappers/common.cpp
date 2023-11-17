@@ -137,24 +137,12 @@ void common(nb::module_& m)
       .def(
           "create_submap",
           [](const dolfinx::common::IndexMap& self,
-             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>
-                 indices)
-          {
-            auto [map, ghosts] = self.create_submap(
-                std::span(indices.data(), indices.size()));
-            return std::pair(std::move(map),
-                             dolfinx_wrappers::as_nbarray(std::move(ghosts)));
-          },
-          nb::arg("indices"))
-      .def(
-          "create_submap_conn",
-          [](const dolfinx::common::IndexMap& self,
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> indices)
           {
-            auto [map, submap_to_map] = self.create_submap_conn(
-                std::span(indices.data(), indices.size()));
-            return std::pair(std::move(map), dolfinx_wrappers::as_nbarray(
-                                                 std::move(submap_to_map)));
+            auto [map, ghosts]
+                = self.create_submap(std::span(indices.data(), indices.size()));
+            return std::pair(std::move(map),
+                             dolfinx_wrappers::as_nbarray(std::move(ghosts)));
           },
           nb::arg("indices"));
 
@@ -195,5 +183,17 @@ void common(nb::module_& m)
         dolfinx::init_logging(args.size(), argv.data());
       },
       nb::arg("args"));
+
+  m.def(
+      "create_submap_conn",
+      [](const dolfinx::common::IndexMap& imap,
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> indices)
+      {
+        auto [map, submap_to_map] = dolfinx::common::create_submap_conn(
+            imap, std::span(indices.data(), indices.size()));
+        return std::pair(std::move(map), dolfinx_wrappers::as_nbarray(
+                                             std::move(submap_to_map)));
+      },
+      nb::arg("index_map"), nb::arg("indices"));
 }
 } // namespace dolfinx_wrappers

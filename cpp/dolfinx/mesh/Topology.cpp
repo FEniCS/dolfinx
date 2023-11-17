@@ -1202,8 +1202,8 @@ mesh::create_subtopology(const Topology& topology, int dim,
   std::vector<int32_t> subvertices0;
   {
     std::pair<common::IndexMap, std::vector<int32_t>> map_data
-        = map0->create_submap_conn(
-            compute_incident_entities(topology, subentities, dim, 0));
+        = dolfinx::common::create_submap_conn(
+            *map0, compute_incident_entities(topology, subentities, dim, 0));
     submap0 = std::make_shared<common::IndexMap>(std::move(map_data.first));
     subvertices0 = std::move(map_data.second);
   }

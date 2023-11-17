@@ -54,6 +54,22 @@ stack_index_maps(
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
 
+/// @brief Create a new index map from a subset of indices in this index
+/// map. Any indices that are not included by their owning process, but
+/// are included on sharing processes, will be owned by one of the sharing
+/// processes in the submap.
+///
+/// This can be used when, for instance, creating a submesh to ensure
+/// that all vertices have exactly one owner and are connected to at least
+/// one cell on the owning process.
+/// @param[in] indices Local indices to include in the new index map (owned
+/// and ghost)
+/// @pre `indices` must be sorted and contain no duplicates.
+/// @return The (i) new index map and (ii) a map from local indices in the
+/// submap to local indices in the original (this) map
+std::pair<IndexMap, std::vector<std::int32_t>>
+create_submap_conn(const IndexMap& imap, std::span<const std::int32_t> indices);
+
 /// This class represents the distribution index arrays across
 /// processes. An index array is a contiguous collection of N+1 indices
 /// [0, 1, . . ., N] that are distributed across M processes. On a given
@@ -188,22 +204,6 @@ public:
   /// (this) map
   std::pair<IndexMap, std::vector<std::int32_t>>
   create_submap(std::span<const std::int32_t> indices) const;
-
-  /// @brief Create a new index map from a subset of indices in this index
-  /// map. Any indices that are not included by their owning process, but
-  /// are included on sharing processes, will be owned by one of the sharing
-  /// processes in the submap.
-  ///
-  /// This can be used when, for instance, creating a submesh to ensure
-  /// that all vertices have exactly one owner and are connected to at least
-  /// one cell on the owning process.
-  /// @param[in] indices Local indices to include in the new index map (owned
-  /// and ghost)
-  /// @pre `indices` must be sorted and contain no duplicates.
-  /// @return The (i) new index map and (ii) a map from local indices in the
-  /// submap to local indices in the original (this) map
-  std::pair<IndexMap, std::vector<std::int32_t>>
-  create_submap_conn(std::span<const std::int32_t> indices) const;
 
   /// @todo Aim to remove this function?
   ///
