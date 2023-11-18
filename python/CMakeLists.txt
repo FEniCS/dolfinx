@@ -7,11 +7,6 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-  set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
-  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
-endif()
-
 find_package(Python COMPONENTS Interpreter Development REQUIRED)
 
 # Detect the installed nanobind package and import it into CMake
@@ -29,11 +24,14 @@ execute_process(
   ERROR_VARIABLE BASIX_ERROR_OUT OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 find_package(Basix REQUIRED CONFIG HINTS ${BASIX_PY_DIR})
-if (Basix_FOUND)
+
+if(Basix_FOUND)
   message(STATUS "Found Basix at ${Basix_DIR}")
 endif()
+
 find_package(DOLFINX REQUIRED CONFIG)
-if (DOLFINX_FOUND)
+
+if(DOLFINX_FOUND)
   message(STATUS "Found DOLFINx at ${DOLFINX_DIR}")
 endif()
 
@@ -61,7 +59,7 @@ nanobind_add_module(
 # check_cxx_compiler_flag("-Wall -Werror -pedantic" HAVE_PEDANTIC)
 
 # if(HAVE_PEDANTIC)
-#   # target_compile_options(cpp PRIVATE -Wall;-Werror;-pedantic)
+# # target_compile_options(cpp PRIVATE -Wall;-Werror;-pedantic)
 # endif()
 
 # Add DOLFINx libraries
