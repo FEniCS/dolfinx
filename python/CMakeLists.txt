@@ -41,7 +41,7 @@ endif()
 # target_link_libraries
 nanobind_add_module(
   cpp
-  MODULE
+  NOMINSIZE
   dolfinx/wrappers/dolfinx.cpp
   dolfinx/wrappers/assemble.cpp
   dolfinx/wrappers/common.cpp
