@@ -1166,26 +1166,20 @@ mesh::create_subtopology(const Topology& topology, int dim,
 
   // Create a map from an entity in the sub-topology to the
   // corresponding entity in the topology, and create an index map
-  std::vector<int32_t> subentities;
   std::shared_ptr<common::IndexMap> submap;
+  std::vector<int32_t> subentities;
   {
-    // Entities in the sub-topology that are owned by this process
-    auto entity_map = topology.index_map(dim);
-    assert(entity_map);
-    std::copy_if(
-        entities.begin(), entities.end(), std::back_inserter(subentities),
-        [size = entity_map->size_local()](std::int32_t e) { return e < size; });
-
+    // FIXME Make this an input requirement?
+    std::vector<std::int32_t> unique_entities(entities.begin(), entities.end());
+    std::sort(unique_entities.begin(), unique_entities.end());
+    unique_entities.erase(
+        std::unique(unique_entities.begin(), unique_entities.end()),
+        unique_entities.end());
     std::pair<common::IndexMap, std::vector<int32_t>> map_data
-        = entity_map->create_submap(subentities);
+        = dolfinx::common::create_submap_conn(*topology.index_map(dim),
+                                              unique_entities);
     submap = std::make_shared<common::IndexMap>(std::move(map_data.first));
-
-    // Add ghost entities to subentities
-    subentities.reserve(submap->size_local() + submap->num_ghosts());
-    std::transform(map_data.second.begin(), map_data.second.end(),
-                   std::back_inserter(subentities),
-                   [offset = entity_map->size_local()](auto entity_index)
-                   { return offset + entity_index; });
+    subentities = std::move(map_data.second);
   }
 
   // Get the vertices in the sub-topology. Use subentities
