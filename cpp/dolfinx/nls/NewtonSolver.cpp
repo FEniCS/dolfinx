@@ -88,24 +88,24 @@ nls::petsc::NewtonSolver::~NewtonSolver()
     MatDestroy(&_matP);
 }
 //-----------------------------------------------------------------------------
-void nls::petsc::NewtonSolver::setF(
-    const std::function<void(const Vec, Vec)>& F, Vec b)
+void nls::petsc::NewtonSolver::setF(std::function<void(const Vec, Vec)> F,
+                                    Vec b)
 {
   _fnF = F;
   _b = b;
   PetscObjectReference((PetscObject)_b);
 }
 //-----------------------------------------------------------------------------
-void nls::petsc::NewtonSolver::setJ(
-    const std::function<void(const Vec, Mat)>& J, Mat Jmat)
+void nls::petsc::NewtonSolver::setJ(std::function<void(const Vec, Mat)> J,
+                                    Mat Jmat)
 {
   _fnJ = J;
   _matJ = Jmat;
   PetscObjectReference((PetscObject)_matJ);
 }
 //-----------------------------------------------------------------------------
-void nls::petsc::NewtonSolver::setP(
-    const std::function<void(const Vec, Mat)>& P, Mat Pmat)
+void nls::petsc::NewtonSolver::setP(std::function<void(const Vec, Mat)> P,
+                                    Mat Pmat)
 {
   _fnP = P;
   _matP = Pmat;
@@ -123,21 +123,19 @@ la::petsc::KrylovSolver& nls::petsc::NewtonSolver::get_krylov_solver()
   return _solver;
 }
 //-----------------------------------------------------------------------------
-void nls::petsc::NewtonSolver::set_form(const std::function<void(Vec)>& form)
+void nls::petsc::NewtonSolver::set_form(std::function<void(Vec)> form)
 {
   _system = form;
 }
 //-----------------------------------------------------------------------------
 void nls::petsc::NewtonSolver::set_convergence_check(
-    const std::function<std::pair<double, bool>(const NewtonSolver&,
-                                                const Vec)>& c)
+    std::function<std::pair<double, bool>(const NewtonSolver&, const Vec)> c)
 {
   _converged = c;
 }
 //-----------------------------------------------------------------------------
 void nls::petsc::NewtonSolver::set_update(
-    const std::function<void(const NewtonSolver& solver, const Vec, Vec)>&
-        update)
+    std::function<void(const NewtonSolver& solver, const Vec, Vec)> update)
 {
   _update_solution = update;
 }
