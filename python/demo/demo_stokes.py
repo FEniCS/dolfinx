@@ -82,22 +82,21 @@
 #
 # The required modules are first imported:
 
+from mpi4py import MPI
+from petsc4py import PETSc
 
 import numpy as np
 
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import fem, la
-from dolfinx.fem import (Constant, Function, FunctionSpace, dirichletbc,
-                         extract_function_spaces, form,
+from dolfinx.fem import (Constant, Function, dirichletbc,
+                         extract_function_spaces, form, functionspace,
                          locate_dofs_topological)
 from dolfinx.fem.petsc import assemble_matrix_block, assemble_vector_block
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_rectangle, locate_entities_boundary
 from ufl import div, dx, grad, inner
-
-from mpi4py import MPI
-from petsc4py import PETSc
 
 # We create a {py:class}`Mesh <dolfinx.mesh.Mesh>`, define functions for
 # locating geometrically subsets of the boundary, and define a function
@@ -125,21 +124,21 @@ def lid_velocity_expression(x):
     return np.stack((np.ones(x.shape[1]), np.zeros(x.shape[1])))
 # -
 
-# Two {py:class}`FunctionSpace <dolfinx.fem.FunctionSpace>`s are defined
-# using different finite elements. `P2` corresponds to a continuous
-# piecewise quadratic basis (vector) and `P1` to a continuous piecewise
-# linear basis (scalar).
+# Two {py:class}`function spaces <dolfinx.fem.FunctionSpace>` are
+# defined using different finite elements. `P2` corresponds to a
+# continuous piecewise quadratic basis (vector) and `P1` to a continuous
+# piecewise linear basis (scalar).
 
 
-P2 = element("Lagrange", msh.basix_cell(), 2, rank=1)
+P2 = element("Lagrange", msh.basix_cell(), 2, shape=(msh.geometry.dim,))
 P1 = element("Lagrange", msh.basix_cell(), 1)
-V, Q = FunctionSpace(msh, P2), FunctionSpace(msh, P1)
+V, Q = functionspace(msh, P2), functionspace(msh, P1)
 
 # Boundary conditions for the velocity field are defined:
 
 # +
 # No-slip condition on boundaries where x = 0, x = 1, and y = 0
-noslip = np.zeros(msh.geometry.dim, dtype=PETSc.ScalarType)
+noslip = np.zeros(msh.geometry.dim, dtype=PETSc.ScalarType)   # type: ignore
 facets = locate_entities_boundary(msh, 1, noslip_boundary)
 bc0 = dirichletbc(noslip, locate_dofs_topological(V, 1, facets), V)
 
@@ -160,11 +159,11 @@ bcs = [bc0, bc1]
 # Define variational problem
 (u, p) = ufl.TrialFunction(V), ufl.TrialFunction(Q)
 (v, q) = ufl.TestFunction(V), ufl.TestFunction(Q)
-f = Constant(msh, (PETSc.ScalarType(0), PETSc.ScalarType(0)))
+f = Constant(msh, (PETSc.ScalarType(0), PETSc.ScalarType(0)))  # type: ignore
 
 a = form([[inner(grad(u), grad(v)) * dx, inner(p, div(v)) * dx],
           [inner(div(u), q) * dx, None]])
-L = form([inner(f, v) * dx, inner(Constant(msh, PETSc.ScalarType(0)), q) * dx])
+L = form([inner(f, v) * dx, inner(Constant(msh, PETSc.ScalarType(0)), q) * dx])  # type: ignore
 # -
 
 # A block-diagonal preconditioner will be used with the iterative
@@ -275,8 +274,11 @@ def nested_iterative_solver():
     # `scatter_forward`.
     with XDMFFile(MPI.COMM_WORLD, "out_stokes/velocity.xdmf", "w") as ufile_xdmf:
         u.x.scatter_forward()
+        P1 = element("Lagrange", msh.basix_cell(), 1, shape=(msh.geometry.dim,))
+        u1 = Function(functionspace(msh, P1))
+        u1.interpolate(u)
         ufile_xdmf.write_mesh(msh)
-        ufile_xdmf.write_function(u)
+        ufile_xdmf.write_function(u1)
 
     with XDMFFile(MPI.COMM_WORLD, "out_stokes/pressure.xdmf", "w") as pfile_xdmf:
         p.x.scatter_forward()
@@ -455,7 +457,7 @@ def mixed_direct():
 
     # Create the Taylot-Hood function space
     TH = mixed_element([P2, P1])
-    W = FunctionSpace(msh, TH)
+    W = functionspace(msh, TH)
 
     # No slip boundary condition
     W0, _ = W.sub(0).collapse()

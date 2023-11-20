@@ -76,8 +76,6 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
     auto it = dest_to_index.begin();
     while (it != dest_to_index.end())
     {
-      // const int neigh_rank = dest.size();
-
       // Store global rank and find iterator to next global rank
       dest.push_back((*it)[0]);
       auto it1
@@ -763,7 +761,7 @@ std::int32_t Topology::create_entities(int dim)
     return -1;
 
   // Create local entities
-  const auto [cell_entity, entity_vertex, index_map, interprocess_entities]
+  auto [cell_entity, entity_vertex, index_map, interprocess_entities]
       = compute_entities(_comm.comm(), *this, dim);
 
   if (cell_entity)
@@ -1197,8 +1195,11 @@ mesh::create_subtopology(const Topology& topology, int dim,
   // Get the vertices in the sub-topology owned by this process
   auto map0 = topology.index_map(0);
   assert(map0);
-  std::vector<int32_t> subvertices0 = common::compute_owned_indices(
-      compute_incident_entities(topology, subentities, dim, 0), *map0);
+  std::vector<std::int32_t> indices
+      = compute_incident_entities(topology, subentities, dim, 0);
+  std::sort(indices.begin(), indices.end());
+  std::vector<std::int32_t> subvertices0
+      = common::compute_owned_indices(indices, *map0);
 
   // Create map from the vertices in the sub-topology to the vertices in the
   // parent topology, and an index map

@@ -184,7 +184,7 @@ void initialize_function_attributes(adios2::IO& io,
         {
           using U = std::decay_t<decltype(u)>;
           using X = typename U::element_type;
-          if constexpr (std::is_floating_point_v<typename X::geometry_type>)
+          if constexpr (std::is_floating_point_v<typename X::value_type>)
             u_data.push_back({u->name, "points"});
           else
           {
@@ -225,8 +225,6 @@ void initialize_function_attributes(adios2::IO& io,
 template <typename T, std::floating_point U>
 std::vector<T> pack_function_data(const fem::Function<T, U>& u)
 {
-  namespace stdex = std::experimental;
-
   auto V = u.function_space();
   assert(V);
   auto dofmap = V->dofmap();
@@ -263,12 +261,15 @@ std::vector<T> pack_function_data(const fem::Function<T, U>& u)
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     auto dofs = dofmap->cell_dofs(c);
-    auto dofs_x = stdex::submdspan(dofmap_x, c, stdex::full_extent);
+    auto dofs_x
+        = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+            submdspan(dofmap_x, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     assert(dofs.size() == dofs_x.size());
     for (std::size_t i = 0; i < dofs.size(); ++i)
       for (int j = 0; j < bs; ++j)
         data[num_components * dofs_x[i] + j] = u_data[bs * dofs[i] + j];
   }
+
   return data;
 }
 
@@ -474,19 +475,19 @@ public:
           "Mixed functions are not supported by FidesWriter");
     }
 
-    // Check if function is DG 0
-    if (element0->space_dimension() / element0->block_size() == 1)
-    {
-      throw std::runtime_error(
-          "Piecewise constants are not (yet) supported by FidesWriter");
-    }
-
     // FIXME: is the below check adequate for detecting a
     // Lagrange element? Check that element is Lagrange
     if (!element0->interpolation_ident())
     {
       throw std::runtime_error("Only Lagrange functions are supported. "
                                "Interpolate Functions before output.");
+    }
+
+    // Check if function is DG 0
+    if (element0->space_dimension() / element0->block_size() == 1)
+    {
+      throw std::runtime_error(
+          "Piecewise constants are not (yet) supported by FidesWriter");
     }
 
     // Check that all functions are first order Lagrange
@@ -615,7 +616,7 @@ extract_function_names(const typename adios2_writer::U<T>& u)
         {
           using U = std::decay_t<decltype(u)>;
           using X = typename U::element_type;
-          if constexpr (std::is_floating_point_v<typename X::geometry_type>)
+          if constexpr (std::is_floating_point_v<typename X::value_type>)
             names.push_back(u->name);
           else
           {
@@ -629,16 +630,15 @@ extract_function_names(const typename adios2_writer::U<T>& u)
   return names;
 }
 
-/// Given a Function, write the coefficient to file using ADIOS2
+/// Given a Function, write the coefficient to file using ADIOS2.
 /// @note Only supports (discontinuous) Lagrange functions.
 /// @note For a complex function, the coefficient is split into a real
-/// and imaginary function
+/// and imaginary function.
 /// @note Data is padded to be three dimensional if vector and 9
-/// dimensional if tensor
-/// @note Only supports (discontinuous) Lagrange functions
-/// @param[in] io The ADIOS2 io object
-/// @param[in] engine The ADIOS2 engine object
-/// @param[in] u The function
+/// dimensional if tensor.
+/// @param[in] io ADIOS2 io object.
+/// @param[in] engine ADIOS2 engine object.
+/// @param[in] u Function to write.
 template <typename T, std::floating_point X>
 void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
                     const fem::Function<T, X>& u)
@@ -760,10 +760,10 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   engine.PerformPuts();
 }
 
-/// Given a FunctionSpace, create a topology and geometry based on the
-/// dof coordinates. Writes the topology and geometry using ADIOS2 in
-/// VTX format.
-/// @note Only supports (discontinuous) Lagrange functions
+/// @brief Given a FunctionSpace, create a topology and geometry based
+/// on the function space dof coordinates. Writes the topology and
+/// geometry using ADIOS2 in VTX format.
+/// @note Only supports (discontinuous) Lagrange functions.
 /// @param[in] io The ADIOS2 io object
 /// @param[in] engine The ADIOS2 engine object
 /// @param[in] V The function space
@@ -843,13 +843,13 @@ public:
   ///
   /// This format supports arbitrary degree meshes.
   ///
-  /// @param[in] comm The MPI communicator to open the file on
-  /// @param[in] filename Name of output file
-  /// @param[in] mesh The mesh to write
-  /// @param[in] engine ADIOS2 engine type
-  /// @note This format support arbitrary degree meshes
+  /// @param[in] comm MPI communicator to open the file on.
+  /// @param[in] filename Name of output file.
+  /// @param[in] mesh Mesh to write.
+  /// @param[in] engine ADIOS2 engine type.
+  /// @note This format supports arbitrary degree meshes.
   /// @note The mesh geometry can be updated between write steps but the
-  /// topology should not be changed between write steps
+  /// topology should not be changed between write steps.
   VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
             std::shared_ptr<const mesh::Mesh<T>> mesh,
             std::string engine = "BPFile")
@@ -870,7 +870,7 @@ public:
   /// same mesh and (2) be (discontinuous) Lagrange functions. The
   /// element family and degree must be the same for all functions.
   /// @param[in] engine ADIOS2 engine type.
-  /// @note This format supports arbitrary degree meshes
+  /// @note This format supports arbitrary degree meshes.
   VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
             const typename adios2_writer::U<T>& u,
             std::string engine = "BPFile")
@@ -893,14 +893,6 @@ public:
           "Mixed functions are not supported by VTXWriter.");
     }
 
-    // Check if function is DG 0
-    if (element0->space_dimension() / element0->block_size() == 1)
-    {
-      throw std::runtime_error(
-          "VTK does not support cell-wise fields. See "
-          "https://gitlab.kitware.com/vtk/vtk/-/issues/18458.");
-    }
-
     // FIXME: is the below check adequate for detecting a Lagrange
     // element?
     // Check that element is Lagrange
@@ -909,6 +901,14 @@ public:
       throw std::runtime_error(
           "Only (discontinuous) Lagrange functions are "
           "supported. Interpolate Functions before output.");
+    }
+
+    // Check if function is DG 0
+    if (element0->space_dimension() / element0->block_size() == 1)
+    {
+      throw std::runtime_error(
+          "VTK does not support cell-wise fields. See "
+          "https://gitlab.kitware.com/vtk/vtk/-/issues/18458.");
     }
 
     // Check that all functions come from same element type

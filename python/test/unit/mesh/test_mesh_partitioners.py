@@ -6,18 +6,19 @@
 
 from pathlib import Path
 
-import dolfinx.graph
+from mpi4py import MPI
+
 import numpy as np
 import pytest
+
+import dolfinx
+import dolfinx.graph
 import ufl
 from basix.ufl import element
+from dolfinx import default_real_type
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (CellType, GhostMode, compute_midpoints, create_box,
                           create_cell_partitioner, create_mesh)
-from mpi4py import MPI
-
-import dolfinx
-from dolfinx import default_real_type
 
 partitioners = [dolfinx.graph.partitioner()]
 try:
@@ -83,7 +84,7 @@ def test_custom_partitioner(tempdir, Nx, cell_type):
     rank = mpi_comm.rank
     assert np.all(x_global[all_ranges[rank]:all_ranges[rank + 1]] == x)
 
-    domain = ufl.Mesh(element("Lagrange", cell_shape.name, cell_degree, rank=1))
+    domain = ufl.Mesh(element("Lagrange", cell_shape.name, cell_degree, shape=(3, )))
 
     # Partition mesh in layers, capture geometrical data and topological
     # data from outer scope
@@ -97,7 +98,7 @@ def test_custom_partitioner(tempdir, Nx, cell_type):
     tdim = new_mesh.topology.dim
     assert mesh.topology.index_map(tdim).size_global == new_mesh.topology.index_map(tdim).size_global
     num_cells = new_mesh.topology.index_map(tdim).size_local
-    cell_midpoints = compute_midpoints(new_mesh, tdim, range(num_cells))
+    cell_midpoints = compute_midpoints(new_mesh, tdim, np.arange(num_cells))
     assert num_cells > 0
     assert np.all(cell_midpoints[:, 0] >= mpi_comm.rank)
     assert np.all(cell_midpoints[:, 0] <= mpi_comm.rank + 1)
@@ -107,7 +108,7 @@ def test_asymmetric_partitioner():
     mpi_comm = MPI.COMM_WORLD
     n = mpi_comm.Get_size()
     r = mpi_comm.Get_rank()
-    domain = ufl.Mesh(element("Lagrange", "triangle", 1, rank=1))
+    domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(2,)))
 
     # Create a simple triangle mesh with a strip on each process
     topo = []

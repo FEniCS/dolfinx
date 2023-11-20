@@ -22,7 +22,7 @@ jobs:
     name: Rocky build and test
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install FEniCS Python components
         run: |
@@ -40,7 +40,7 @@ jobs:
 
       - name: Build C++ unit tests
         run: |
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S build/test/
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
           cmake --build build/test
       - name: Run C++ unit tests (serial)
         run: |
@@ -52,14 +52,15 @@ jobs:
           mpiexec -np 2 ctest -V --output-on-failure -R unittests
       - name: Build and run C++ regression tests (serial and MPI (np=2))
         run: |
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S build/demo/
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S cpp/demo/
           cmake --build build/demo
           cd build/demo
           ctest -V -R demo -R serial
           ctest -V -R demo -R mpi_2
 
-      - name: Build Python interface
-        run: python3 -m pip -v install --global-option build --global-option --debug python/
+      - name: Build Python interface (editable install)
+        run: |
+          python3 -m pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type=Debug --config-settings=build-dir="build" -e python/
 
       - name: Set default DOLFINx JIT options
         run: |

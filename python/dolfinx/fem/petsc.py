@@ -9,6 +9,7 @@ Functions in this module generally apply functions in :mod:`dolfinx.fem`
 to PETSc linear algebra objects and handle any PETSc-specific
 preparation."""
 
+# mypy: ignore-errors
 
 from __future__ import annotations
 
@@ -19,10 +20,16 @@ import typing
 
 import petsc4py
 import petsc4py.lib
+from petsc4py import PETSc
+
+import numpy as np
+
+import dolfinx.cpp as _cpp
 import ufl
+from dolfinx import la
 from dolfinx.cpp.fem import pack_coefficients as _pack_coefficients
 from dolfinx.cpp.fem import pack_constants as _pack_constants
-from dolfinx.fem import assemble
+from dolfinx.fem import assemble as _assemble
 from dolfinx.fem.bcs import DirichletBC
 from dolfinx.fem.bcs import bcs_by_block as _bcs_by_block
 from dolfinx.fem.forms import Form
@@ -30,10 +37,6 @@ from dolfinx.fem.forms import extract_function_spaces as _extract_spaces
 from dolfinx.fem.forms import form as _create_form
 from dolfinx.fem.function import Function as _Function
 from dolfinx.la import create_petsc_vector
-from petsc4py import PETSc
-
-from dolfinx import cpp as _cpp
-from dolfinx import la
 
 __all__ = ["create_vector", "create_vector_block", "create_vector_nest",
            "create_matrix", "create_matrix_block", "create_matrix_nest",
@@ -189,7 +192,7 @@ def assemble_vector(L: typing.Any, constants=None, coeffs=None) -> PETSc.Vec:
     b = create_petsc_vector(L.function_spaces[0].dofmap.index_map,
                             L.function_spaces[0].dofmap.index_map_bs)
     with b.localForm() as b_local:
-        assemble._assemble_vector_array(b_local.array_w, L, constants, coeffs)
+        _assemble._assemble_vector_array(b_local.array_w, L, constants, coeffs)
     return b
 
 
@@ -211,7 +214,7 @@ def _assemble_vector_vec(b: PETSc.Vec, L: Form, constants=None, coeffs=None) -> 
 
     """
     with b.localForm() as b_local:
-        assemble._assemble_vector_array(b_local.array_w, L, constants, coeffs)
+        _assemble._assemble_vector_array(b_local.array_w, L, constants, coeffs)
     return b
 
 
@@ -242,7 +245,7 @@ def _assemble_vector_nest_vec(b: PETSc.Vec, L: typing.List[Form], constants=None
     coeffs = [None] * len(L) if coeffs is None else coeffs
     for b_sub, L_sub, const, coeff in zip(b.getNestSubVecs(), L, constants, coeffs):
         with b_sub.localForm() as b_local:
-            assemble._assemble_vector_array(b_local.array_w, L_sub, const, coeff)
+            _assemble._assemble_vector_array(b_local.array_w, L_sub, const, coeff)
     return b
 
 
@@ -294,8 +297,10 @@ def _assemble_vector_block_vec(b: PETSc.Vec,
     constants_L = [form and _pack_constants(form._cpp_object) for form in L] if constants_L is None else constants_L
     coeffs_L = [{} if form is None else _pack_coefficients(
         form._cpp_object) for form in L] if coeffs_L is None else coeffs_L
-    constants_a = [[form and _pack_constants(form._cpp_object) for form in forms]
-                   for forms in a] if constants_a is None else constants_a
+
+    constants_a = [[_pack_constants(form._cpp_object) if form is not None else np.array(
+        [], dtype=PETSc.ScalarType) for form in forms] for forms in a] if constants_a is None else constants_a
+
     coeffs_a = [[{} if form is None else _pack_coefficients(
         form._cpp_object) for form in forms] for forms in a] if coeffs_a is None else coeffs_a
 
@@ -317,7 +322,10 @@ def _assemble_vector_block_vec(b: PETSc.Vec,
     b_array = b.getArray(readonly=False)
     for submap, bc, _x0 in zip(maps, bcs0, x0_sub):
         size = submap[0].size_local * submap[1]
-        _cpp.fem.set_bc(b_array[offset: offset + size], bc, _x0, scale)
+        if _x0 is None:
+            _cpp.fem.set_bc(b_array[offset: offset + size], bc, scale)
+        else:
+            _cpp.fem.set_bc(b_array[offset: offset + size], bc, _x0, scale)
         offset += size
 
     return b
@@ -455,9 +463,8 @@ def _assemble_matrix_block_mat(A: PETSc.Mat, a: typing.List[typing.List[Form]],
                                bcs: typing.List[DirichletBC] = [], diagonal: float = 1.0,
                                constants=None, coeffs=None) -> PETSc.Mat:
     """Assemble bilinear forms into a blocked matrix."""
-
-    constants = [[form and _pack_constants(form._cpp_object) for form in forms]
-                 for forms in a] if constants is None else constants
+    constants = [[_pack_constants(form._cpp_object) if form is not None else np.array(
+        [], dtype=PETSc.ScalarType) for form in forms] for forms in a] if constants is None else constants
     coeffs = [[{} if form is None else _pack_coefficients(
         form._cpp_object) for form in forms] for forms in a] if coeffs is None else coeffs
 
@@ -508,7 +515,7 @@ def apply_lifting(b: PETSc.Vec, a: typing.List[Form],
         x0 = [stack.enter_context(x.localForm()) for x in x0]
         x0_r = [x.array_r for x in x0]
         b_local = stack.enter_context(b.localForm())
-        assemble.apply_lifting(b_local.array_w, a, bcs, x0_r, scale, constants, coeffs)
+        _assemble.apply_lifting(b_local.array_w, a, bcs, x0_r, scale, constants, coeffs)
 
 
 def apply_lifting_nest(b: PETSc.Vec, a: typing.List[typing.List[Form]],
@@ -519,9 +526,8 @@ def apply_lifting_nest(b: PETSc.Vec, a: typing.List[typing.List[Form]],
 
     x0 = [] if x0 is None else x0.getNestSubVecs()
     bcs1 = _bcs_by_block(_extract_spaces(a, 1), bcs)
-
-    constants = [[form and _pack_constants(form._cpp_object) for form in forms]
-                 for forms in a] if constants is None else constants
+    constants = [[_pack_constants(form._cpp_object) if form is not None else np.array(
+        [], dtype=PETSc.ScalarType) for form in forms] for forms in a] if constants is None else constants
     coeffs = [[{} if form is None else _pack_coefficients(
         form._cpp_object) for form in forms] for forms in a] if coeffs is None else coeffs
     for b_sub, a_sub, const, coeff in zip(b.getNestSubVecs(), a, constants, coeffs):
@@ -534,7 +540,7 @@ def set_bc(b: PETSc.Vec, bcs: typing.List[DirichletBC],
     """Apply the function :func:`dolfinx.fem.set_bc` to a PETSc Vector."""
     if x0 is not None:
         x0 = x0.array_r
-    assemble.set_bc(b.array_w, bcs, x0, scale)
+    _assemble.set_bc(b.array_w, bcs, x0, scale)
 
 
 def set_bc_nest(b: PETSc.Vec, bcs: typing.List[typing.List[DirichletBC]],
@@ -553,7 +559,10 @@ class LinearProblem:
     """
 
     def __init__(self, a: ufl.Form, L: ufl.Form, bcs: typing.List[DirichletBC] = [],
-                 u: typing.Optional[_Function] = None, petsc_options={}, form_compiler_options={}, jit_options={}):
+                 u: typing.Optional[_Function] = None,
+                 petsc_options: typing.Optional[dict] = None,
+                 form_compiler_options: typing.Optional[dict] = None,
+                 jit_options: typing.Optional[dict] = None):
         """Initialize solver for a linear variational problem.
 
         Args:
@@ -607,8 +616,9 @@ class LinearProblem:
         # Set PETSc options
         opts = PETSc.Options()
         opts.prefixPush(problem_prefix)
-        for k, v in petsc_options.items():
-            opts[k] = v
+        if petsc_options is not None:
+            for k, v in petsc_options.items():
+                opts[k] = v
         opts.prefixPop()
         self._solver.setFromOptions()
 
@@ -682,7 +692,8 @@ class NonlinearProblem:
     """
 
     def __init__(self, F: ufl.form.Form, u: _Function, bcs: typing.List[DirichletBC] = [],
-                 J: ufl.form.Form = None, form_compiler_options={}, jit_options={}):
+                 J: ufl.form.Form = None, form_compiler_options: typing.Optional[dict] = None,
+                 jit_options: typing.Optional[dict] = None):
         """Initialize solver for solving a non-linear problem using Newton's method, :math:`(dF/du)(u) du = -F(u)`.
 
         Args:

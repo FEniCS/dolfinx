@@ -11,11 +11,11 @@ import os
 from pathlib import Path
 from typing import Optional
 
+from mpi4py import MPI
+
 import ffcx
 import ffcx.codegeneration.jit
 import ufl
-
-from mpi4py import MPI
 
 __all__ = ["ffcx_jit", "get_options", "mpi_jit_decorator"]
 
@@ -105,14 +105,14 @@ def _load_options():
         with open(user_config_file) as f:
             user_options = json.load(f)
     except FileNotFoundError:
-        user_options = {}
+        user_options = dict()
 
     pwd_config_file = Path.cwd().joinpath("dolfinx_jit_options.json")
     try:
         with open(pwd_config_file) as f:
             pwd_options = json.load(f)
     except FileNotFoundError:
-        pwd_options = {}
+        pwd_options = dict()
 
     return (user_options, pwd_options)
 
@@ -127,12 +127,11 @@ def get_options(priority_options: Optional[dict] = None) -> dict:
     Returns:
         dict: Merged option values.
 
-    Notes:
+    Note:
         See :func:`ffcx_jit` for user facing documentation.
 
     """
-    options = {}
-
+    options = dict()
     for param, (value, _) in DOLFINX_DEFAULT_JIT_OPTIONS.items():
         options[param] = value
 
@@ -150,7 +149,8 @@ def get_options(priority_options: Optional[dict] = None) -> dict:
 
 
 @mpi_jit_decorator
-def ffcx_jit(ufl_object, form_compiler_options={}, jit_options={}):
+def ffcx_jit(ufl_object, form_compiler_options: Optional[dict] = None,
+             jit_options: Optional[dict] = None):
     """Compile UFL object with FFCx and CFFI.
 
     Args:
@@ -167,7 +167,7 @@ def ffcx_jit(ufl_object, form_compiler_options={}, jit_options={}):
     Returns:
         (compiled object, module, (header code, implementation code))
 
-    Notes:
+    Note:
         Priority ordering of options controlling DOLFINx JIT
         compilation from highest to lowest is:
 
@@ -202,11 +202,10 @@ def ffcx_jit(ufl_object, form_compiler_options={}, jit_options={}):
     # Switch on type and compile, returning cffi object
     if isinstance(ufl_object, ufl.Form):
         r = ffcx.codegeneration.jit.compile_forms([ufl_object], options=p_ffcx, **p_jit)
-    elif isinstance(ufl_object, ufl.FiniteElementBase):
+    elif isinstance(ufl_object, ufl.AbstractFiniteElement):
         r = ffcx.codegeneration.jit.compile_elements([ufl_object], options=p_ffcx, **p_jit)
     elif isinstance(ufl_object, ufl.Mesh):
-        r = ffcx.codegeneration.jit.compile_coordinate_maps(
-            [ufl_object], options=p_ffcx, **p_jit)
+        r = ffcx.codegeneration.jit.compile_coordinate_maps([ufl_object], options=p_ffcx, **p_jit)
     elif isinstance(ufl_object, tuple) and isinstance(ufl_object[0], ufl.core.expr.Expr):
         r = ffcx.codegeneration.jit.compile_expressions([ufl_object], options=p_ffcx, **p_jit)
     else:

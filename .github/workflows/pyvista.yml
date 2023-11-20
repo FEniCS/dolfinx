@@ -13,8 +13,8 @@ on:
 jobs:
   pyvista:
     if: "!(contains(github.event.head_commit.message, '[ci skip]') || contains(github.event.head_commit.message, '[skip ci]'))"
-    runs-on: ubuntu-22.04
-    container: fenicsproject/test-env:current-openmpi
+    runs-on: ubuntu-latest
+    container: ghcr.io/fenics/test-env:current-openmpi
 
     env:
       # For pyvista/pyvistaqt
@@ -26,11 +26,6 @@ jobs:
       PETSC_ARCH: ${{ matrix.petsc_arch }}
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
-      OMPI_MCA_rmaps_base_oversubscribe: 1
-      OMPI_MCA_plm: isolated
-      OMPI_MCA_btl_vader_single_copy_mechanism: none
-      OMPI_MCA_mpi_yield_when_idle: 1
-      OMPI_MCA_hwloc_base_binding_policy: none
 
     strategy:
       matrix:
@@ -38,7 +33,7 @@ jobs:
         petsc_arch: [linux-gnu-real64-32, linux-gnu-complex128-32]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install FEniCS Python components
         run: |
@@ -60,7 +55,7 @@ jobs:
           cmake --install build
 
       - name: Build Python interface
-        run: python3 -m pip -v install --global-option build --global-option --debug python/
+        run: pip -v install --check-build-dependencies --config-settings=build-dir="build" --config-settings=cmake.build-type="Debug" --no-build-isolation python/
 
       - name: Run pyvista demos (Python, serial)
         run: python3 -m pytest -v -n=2 -m serial --durations=10 python/demo/test.py

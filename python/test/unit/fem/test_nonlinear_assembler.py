@@ -7,15 +7,18 @@
 
 import math
 
+from mpi4py import MPI
+from petsc4py import PETSc
+
 import numpy as np
 import pytest
 
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx.cpp.la.petsc import scatter_local_vectors
-from dolfinx.fem import (Function, FunctionSpace, VectorFunctionSpace,
-                         bcs_by_block, dirichletbc, extract_function_spaces,
-                         form, locate_dofs_topological)
+from dolfinx.fem import (Function, bcs_by_block, dirichletbc,
+                         extract_function_spaces, form, functionspace,
+                         locate_dofs_topological)
 from dolfinx.fem.petsc import (apply_lifting, apply_lifting_nest,
                                assemble_matrix, assemble_matrix_block,
                                assemble_matrix_nest, assemble_vector,
@@ -27,9 +30,6 @@ from dolfinx.fem.petsc import (apply_lifting, apply_lifting_nest,
 from dolfinx.mesh import (GhostMode, create_unit_cube, create_unit_square,
                           locate_entities_boundary)
 from ufl import derivative, dx, inner
-
-from mpi4py import MPI
-from petsc4py import PETSc
 
 
 def nest_matrix_norm(A):
@@ -54,8 +54,8 @@ def test_matrix_assembly_block_nl():
     p0, p1 = 1, 2
     P0 = element("Lagrange", mesh.basix_cell(), p0)
     P1 = element("Lagrange", mesh.basix_cell(), p1)
-    V0 = FunctionSpace(mesh, P0)
-    V1 = FunctionSpace(mesh, P1)
+    V0 = functionspace(mesh, P0)
+    V1 = functionspace(mesh, P1)
 
     def initial_guess_u(x):
         return np.sin(x[0]) * np.sin(x[1])
@@ -143,7 +143,7 @@ def test_matrix_assembly_block_nl():
     def monolithic():
         """Monolithic version"""
         E = mixed_element([P0, P1])
-        W = FunctionSpace(mesh, E)
+        W = functionspace(mesh, E)
         dU = ufl.TrialFunction(W)
         U = Function(W)
         u0, u1 = ufl.split(U)
@@ -280,7 +280,7 @@ def test_assembly_solve_block_nl():
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 11)
     p = 1
     P = element("Lagrange", mesh.basix_cell(), p)
-    V0 = FunctionSpace(mesh, P)
+    V0 = functionspace(mesh, P)
     V1 = V0.clone()
 
     def bc_val_0(x):
@@ -389,7 +389,7 @@ def test_assembly_solve_block_nl():
     def monolithic_solve():
         """Monolithic version"""
         E = mixed_element([P, P])
-        W = FunctionSpace(mesh, E)
+        W = functionspace(mesh, E)
         U = Function(W)
         dU = ufl.TrialFunction(W)
         u0, u1 = ufl.split(U)
@@ -423,7 +423,7 @@ def test_assembly_solve_block_nl():
         U.sub(1).interpolate(initial_guess_p)
 
         x = create_vector(F)
-        x.array = U.vector.array_r
+        x.array[:] = U.vector.array_r
 
         snes.solve(None, x)
         assert snes.getKSP().getConvergedReason() > 0
@@ -454,8 +454,8 @@ def test_assembly_solve_block_nl():
 def test_assembly_solve_taylor_hood_nl(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
     gdim = mesh.geometry.dim
-    P2 = VectorFunctionSpace(mesh, ("Lagrange", 2))
-    P1 = FunctionSpace(mesh, ("Lagrange", 1))
+    P2 = functionspace(mesh, ("Lagrange", 2, (gdim,)))
+    P1 = functionspace(mesh, ("Lagrange", 1))
 
     def boundary0(x):
         """Define boundary x = 0"""
@@ -577,10 +577,10 @@ def test_assembly_solve_taylor_hood_nl(mesh):
 
     def monolithic():
         """Monolithic"""
-        P2_el = element("Lagrange", mesh.basix_cell(), 2, rank=1)
+        P2_el = element("Lagrange", mesh.basix_cell(), 2, shape=(mesh.geometry.dim,))
         P1_el = element("Lagrange", mesh.basix_cell(), 1)
         TH = mixed_element([P2_el, P1_el])
-        W = FunctionSpace(mesh, TH)
+        W = functionspace(mesh, TH)
         U = Function(W)
         dU = ufl.TrialFunction(W)
         u, p = ufl.split(U)
@@ -612,7 +612,7 @@ def test_assembly_solve_taylor_hood_nl(mesh):
         U.sub(1).interpolate(initial_guess_p)
 
         x = create_vector(F)
-        x.array = U.vector.array_r
+        x.array[:] = U.vector.array_r
 
         snes.solve(None, x)
         assert snes.getConvergedReason() > 0

@@ -26,14 +26,19 @@ template <std::floating_point T>
 class FiniteElement
 {
 public:
-  /// Create finite element from UFC finite element
-  /// @param[in] e UFC finite element
+  /// @brief Create finite element from UFC finite element.
+  /// @param[in] e UFC finite element.
   explicit FiniteElement(const ufcx_finite_element& e);
 
-  /// Create finite element from a Basix finite element
+  /// @brief Create finite element from a Basix finite element.
   /// @param[in] element Basix finite element
-  /// @param[in] bs The block size
-  FiniteElement(const basix::FiniteElement<T>& element, int bs);
+  /// @param[in] value_shape Value shape for 'blocked' elements, e.g.
+  /// vector-valued Lagrange elements where each component for the
+  /// vector field is a Lagrange element. For example, a vector-valued
+  /// element in 3D will have `value_shape` equal to `{3}`, and for a
+  /// second-order tensor element in 2D `value_shape` equal to `{2, 2}`.
+  FiniteElement(const basix::FiniteElement<T>& element,
+                const std::vector<std::size_t>& value_shape);
 
   /// Copy constructor
   FiniteElement(const FiniteElement& element) = delete;
@@ -42,7 +47,7 @@ public:
   FiniteElement(FiniteElement&& element) = default;
 
   /// Destructor
-  virtual ~FiniteElement() = default;
+  ~FiniteElement() = default;
 
   /// Copy assignment
   FiniteElement& operator=(const FiniteElement& element) = delete;
@@ -101,10 +106,6 @@ public:
   /// Shape of the value space. The rank is the size of the
   /// `value_shape`.
   std::span<const std::size_t> value_shape() const noexcept;
-
-  /// The finite element family
-  /// @return The string of the finite element family
-  std::string family() const noexcept;
 
   /// @brief Evaluate derivatives of the basis functions up to given order
   /// at points in the reference cell.
@@ -165,18 +166,19 @@ public:
   /// @return True if interpolation is an identity operation
   bool interpolation_ident() const noexcept;
 
-  /// Check if the push forward/pull back map from the values on reference to
-  /// the values on a physical cell for this element is the identity map.
+  /// Check if the push forward/pull back map from the values on
+  /// reference to the values on a physical cell for this element is the
+  /// identity map.
   /// @return True if the map is the identity
   bool map_ident() const noexcept;
 
-  /// @brief Points on the reference cell at which an expression needs to
-  /// be evaluated in order to interpolate the expression in the finite
-  /// element space.
+  /// @brief Points on the reference cell at which an expression needs
+  /// to be evaluated in order to interpolate the expression in the
+  /// finite element space.
   ///
-  /// For Lagrange elements the points will just be the
-  /// nodal positions. For other elements the points will typically be
-  /// the quadrature points used to evaluate moment degrees of freedom.
+  /// For Lagrange elements the points will just be the nodal positions.
+  /// For other elements the points will typically be the quadrature
+  /// points used to evaluate moment degrees of freedom.
   /// @return Interpolation point coordinates on the reference cell,
   /// returning the (0) coordinates data (row-major) storage and (1) the
   /// shape `(num_points, tdim)`.
@@ -261,8 +263,9 @@ public:
   template <typename U>
   std::function<void(const std::span<U>&, const std::span<const std::uint32_t>&,
                      std::int32_t, int)>
-  get_dof_transformation_function(bool inverse = false, bool transpose = false,
-                                  bool scalar_element = false) const
+  get_pre_dof_transformation_function(bool inverse = false,
+                                      bool transpose = false,
+                                      bool scalar_element = false) const
   {
     if (!needs_dof_transformations())
     {
@@ -287,7 +290,7 @@ public:
         for (std::size_t i = 0; i < _sub_elements.size(); ++i)
         {
           sub_element_functions.push_back(
-              _sub_elements[i]->template get_dof_transformation_function<U>(
+              _sub_elements[i]->template get_pre_dof_transformation_function<U>(
                   inverse, transpose));
           dims.push_back(_sub_elements[i]->space_dimension());
         }
@@ -314,7 +317,7 @@ public:
                                  const std::span<const std::uint32_t>&,
                                  std::int32_t, int)>
             sub_function
-            = _sub_elements[0]->template get_dof_transformation_function<U>(
+            = _sub_elements[0]->template get_pre_dof_transformation_function<U>(
                 inverse, transpose);
         const int ebs = _bs;
         return
@@ -332,8 +335,8 @@ public:
                       const std::span<const std::uint32_t>& cell_info,
                       std::int32_t cell, int block_size)
         {
-          apply_inverse_transpose_dof_transformation(data, cell_info[cell],
-                                                     block_size);
+          pre_apply_inverse_transpose_dof_transformation(data, cell_info[cell],
+                                                         block_size);
         };
       }
       else
@@ -341,7 +344,8 @@ public:
         return [this](const std::span<U>& data,
                       const std::span<const std::uint32_t>& cell_info,
                       std::int32_t cell, int block_size) {
-          apply_transpose_dof_transformation(data, cell_info[cell], block_size);
+          pre_apply_transpose_dof_transformation(data, cell_info[cell],
+                                                 block_size);
         };
       }
     }
@@ -352,7 +356,8 @@ public:
         return [this](const std::span<U>& data,
                       const std::span<const std::uint32_t>& cell_info,
                       std::int32_t cell, int block_size) {
-          apply_inverse_dof_transformation(data, cell_info[cell], block_size);
+          pre_apply_inverse_dof_transformation(data, cell_info[cell],
+                                               block_size);
         };
       }
       else
@@ -360,7 +365,7 @@ public:
         return [this](const std::span<U>& data,
                       const std::span<const std::uint32_t>& cell_info,
                       std::int32_t cell, int block_size)
-        { apply_dof_transformation(data, cell_info[cell], block_size); };
+        { pre_apply_dof_transformation(data, cell_info[cell], block_size); };
       }
     }
   }
@@ -386,10 +391,9 @@ public:
   template <typename U>
   std::function<void(const std::span<U>&, const std::span<const std::uint32_t>&,
                      std::int32_t, int)>
-  get_dof_transformation_to_transpose_function(bool inverse = false,
-                                               bool transpose = false,
-                                               bool scalar_element
-                                               = false) const
+  get_post_dof_transformation_function(bool inverse = false,
+                                       bool transpose = false,
+                                       bool scalar_element = false) const
   {
     if (!needs_dof_transformations())
     {
@@ -413,7 +417,7 @@ public:
         {
           sub_element_functions.push_back(
               _sub_elements[i]
-                  ->template get_dof_transformation_to_transpose_function<U>(
+                  ->template get_post_dof_transformation_function<U>(
                       inverse, transpose));
         }
 
@@ -438,7 +442,7 @@ public:
                                  const std::span<const std::uint32_t>&,
                                  std::int32_t, int)>
             sub_function
-            = _sub_elements[0]->template get_dof_transformation_function<U>(
+            = _sub_elements[0]->template get_pre_dof_transformation_function<U>(
                 inverse, transpose);
         return [this,
                 sub_function](const std::span<U>& data,
@@ -464,18 +468,17 @@ public:
                       const std::span<const std::uint32_t>& cell_info,
                       std::int32_t cell, int block_size)
         {
-          apply_inverse_transpose_dof_transformation_to_transpose(
-              data, cell_info[cell], block_size);
+          post_apply_inverse_transpose_dof_transformation(data, cell_info[cell],
+                                                          block_size);
         };
       }
       else
       {
         return [this](const std::span<U>& data,
                       const std::span<const std::uint32_t>& cell_info,
-                      std::int32_t cell, int block_size)
-        {
-          apply_transpose_dof_transformation_to_transpose(data, cell_info[cell],
-                                                          block_size);
+                      std::int32_t cell, int block_size) {
+          post_apply_transpose_dof_transformation(data, cell_info[cell],
+                                                  block_size);
         };
       }
     }
@@ -485,20 +488,17 @@ public:
       {
         return [this](const std::span<U>& data,
                       const std::span<const std::uint32_t>& cell_info,
-                      std::int32_t cell, int block_size)
-        {
-          apply_inverse_dof_transformation_to_transpose(data, cell_info[cell],
-                                                        block_size);
+                      std::int32_t cell, int block_size) {
+          post_apply_inverse_dof_transformation(data, cell_info[cell],
+                                                block_size);
         };
       }
       else
       {
         return [this](const std::span<U>& data,
                       const std::span<const std::uint32_t>& cell_info,
-                      std::int32_t cell, int block_size) {
-          apply_dof_transformation_to_transpose(data, cell_info[cell],
-                                                block_size);
-        };
+                      std::int32_t cell, int block_size)
+        { post_apply_dof_transformation(data, cell_info[cell], block_size); };
       }
     }
   }
@@ -510,12 +510,12 @@ public:
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename U>
-  void apply_dof_transformation(const std::span<U>& data,
-                                std::uint32_t cell_permutation,
-                                int block_size) const
+  void pre_apply_dof_transformation(const std::span<U>& data,
+                                    std::uint32_t cell_permutation,
+                                    int block_size) const
   {
     assert(_element);
-    _element->apply_dof_transformation(data, block_size, cell_permutation);
+    _element->pre_apply_dof_transformation(data, block_size, cell_permutation);
   }
 
   /// Apply inverse transpose transformation to some data. For
@@ -528,13 +528,13 @@ public:
   /// @param[in] block_size The block_size of the input data
   template <typename U>
   void
-  apply_inverse_transpose_dof_transformation(const std::span<U>& data,
-                                             std::uint32_t cell_permutation,
-                                             int block_size) const
+  pre_apply_inverse_transpose_dof_transformation(const std::span<U>& data,
+                                                 std::uint32_t cell_permutation,
+                                                 int block_size) const
   {
     assert(_element);
-    _element->apply_inverse_transpose_dof_transformation(data, block_size,
-                                                         cell_permutation);
+    _element->pre_apply_inverse_transpose_dof_transformation(data, block_size,
+                                                             cell_permutation);
   }
 
   /// Apply transpose transformation to some data. For VectorElements,
@@ -545,13 +545,13 @@ public:
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename U>
-  void apply_transpose_dof_transformation(const std::span<U>& data,
-                                          std::uint32_t cell_permutation,
-                                          int block_size) const
+  void pre_apply_transpose_dof_transformation(const std::span<U>& data,
+                                              std::uint32_t cell_permutation,
+                                              int block_size) const
   {
     assert(_element);
-    _element->apply_transpose_dof_transformation(data, block_size,
-                                                 cell_permutation);
+    _element->pre_apply_transpose_dof_transformation(data, block_size,
+                                                     cell_permutation);
   }
 
   /// Apply inverse transformation to some data. For VectorElements,
@@ -562,13 +562,13 @@ public:
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename U>
-  void apply_inverse_dof_transformation(const std::span<U>& data,
-                                        std::uint32_t cell_permutation,
-                                        int block_size) const
+  void pre_apply_inverse_dof_transformation(const std::span<U>& data,
+                                            std::uint32_t cell_permutation,
+                                            int block_size) const
   {
     assert(_element);
-    _element->apply_inverse_dof_transformation(data, block_size,
-                                               cell_permutation);
+    _element->pre_apply_inverse_dof_transformation(data, block_size,
+                                                   cell_permutation);
   }
 
   /// Apply DOF transformation to some transposed data
@@ -578,13 +578,12 @@ public:
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename U>
-  void apply_dof_transformation_to_transpose(const std::span<U>& data,
-                                             std::uint32_t cell_permutation,
-                                             int block_size) const
+  void post_apply_dof_transformation(const std::span<U>& data,
+                                     std::uint32_t cell_permutation,
+                                     int block_size) const
   {
     assert(_element);
-    _element->apply_dof_transformation_to_transpose(data, block_size,
-                                                    cell_permutation);
+    _element->post_apply_dof_transformation(data, block_size, cell_permutation);
   }
 
   /// Apply inverse of DOF transformation to some transposed data.
@@ -594,14 +593,13 @@ public:
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename U>
-  void
-  apply_inverse_dof_transformation_to_transpose(const std::span<U>& data,
-                                                std::uint32_t cell_permutation,
-                                                int block_size) const
+  void post_apply_inverse_dof_transformation(const std::span<U>& data,
+                                             std::uint32_t cell_permutation,
+                                             int block_size) const
   {
     assert(_element);
-    _element->apply_inverse_dof_transformation_to_transpose(data, block_size,
-                                                            cell_permutation);
+    _element->post_apply_inverse_dof_transformation(data, block_size,
+                                                    cell_permutation);
   }
 
   /// Apply transpose of transformation to some transposed data.
@@ -611,13 +609,13 @@ public:
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename U>
-  void apply_transpose_dof_transformation_to_transpose(
-      const std::span<U>& data, std::uint32_t cell_permutation,
-      int block_size) const
+  void post_apply_transpose_dof_transformation(const std::span<U>& data,
+                                               std::uint32_t cell_permutation,
+                                               int block_size) const
   {
     assert(_element);
-    _element->apply_transpose_dof_transformation_to_transpose(data, block_size,
-                                                              cell_permutation);
+    _element->post_apply_transpose_dof_transformation(data, block_size,
+                                                      cell_permutation);
   }
 
   /// Apply inverse transpose transformation to some transposed data
@@ -627,13 +625,13 @@ public:
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename U>
-  void apply_inverse_transpose_dof_transformation_to_transpose(
+  void post_apply_inverse_transpose_dof_transformation(
       const std::span<U>& data, std::uint32_t cell_permutation,
       int block_size) const
   {
     assert(_element);
-    _element->apply_inverse_transpose_dof_transformation_to_transpose(
-        data, block_size, cell_permutation);
+    _element->post_apply_inverse_transpose_dof_transformation(data, block_size,
+                                                              cell_permutation);
   }
 
   /// Permute the DOFs of the element
@@ -666,7 +664,7 @@ public:
                                bool scalar_element = false) const;
 
 private:
-  std::string _signature, _family;
+  std::string _signature;
 
   mesh::CellType _cell_shape;
 

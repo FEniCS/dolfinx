@@ -25,10 +25,12 @@
 namespace dolfinx::fem
 {
 
-/// Find degrees-of-freedom which belong to the provided mesh entities
-/// (topological). Note that degrees-of-freedom for discontinuous
-/// elements are associated with the cell even if they may appear to be
-/// associated with a facet/edge/vertex.
+/// @brief Find degrees-of-freedom which belong to the provided mesh
+/// entities (topological).
+///
+/// @note Degrees-of-freedom for discontinuous elements are associated
+/// with the cell even if they may appear to be associated with a
+/// facet/edge/vertex.
 ///
 /// @param[in] topology Mesh topology.
 /// @param[in] dofmap Dofmap that associated DOFs with cells.
@@ -46,15 +48,19 @@ namespace dolfinx::fem
 /// @return Array of DOF index blocks (local to the MPI rank) in the
 /// space V. The array uses the block size of the dofmap associated
 /// with V.
+/// @pre The topology cell->entity and entity->cell connectivity must
+/// have been computed before calling this function.
 std::vector<std::int32_t>
-locate_dofs_topological(mesh::Topology& topology, const DofMap& dofmap, int dim,
-                        std::span<const std::int32_t> entities,
+locate_dofs_topological(const mesh::Topology& topology, const DofMap& dofmap,
+                        int dim, std::span<const std::int32_t> entities,
                         bool remote = true);
 
-/// Find degrees-of-freedom which belong to the provided mesh entities
-/// (topological). Note that degrees-of-freedom for discontinuous
-/// elements are associated with the cell even if they may appear to be
-/// associated with a facet/edge/vertex.
+/// @brief Find degrees-of-freedom which belong to the provided mesh
+/// entities (topological).
+///
+/// @note Degrees-of-freedom for discontinuous elements are associated
+/// with the cell even if they may appear to be associated with a
+/// facet/edge/vertex.
 ///
 /// @param[in] topology Mesh topology.
 /// @param[in] dofmaps The dofmaps.
@@ -73,8 +79,10 @@ locate_dofs_topological(mesh::Topology& topology, const DofMap& dofmap, int dim,
 /// V[0] and V[1]. The array[0](i) entry is the DOF index in the space
 /// V[0] and array[1](i) is the corresponding DOF entry in the space
 /// V[1]. The returned dofs are 'unrolled', i.e. block size = 1.
+/// @pre The topology cell->entity and entity->cell connectivity must
+/// have been computed before calling this function.
 std::array<std::vector<std::int32_t>, 2> locate_dofs_topological(
-    mesh::Topology& topology,
+    const mesh::Topology& topology,
     std::array<std::reference_wrapper<const DofMap>, 2> dofmaps, int dim,
     std::span<const std::int32_t> entities, bool remote = true);
 
@@ -107,10 +115,10 @@ std::vector<std::int32_t> locate_dofs_geometrical(const FunctionSpace<T>& V,
   // Compute dof coordinates
   const std::vector<T> dof_coordinates = V.tabulate_dof_coordinates(true);
 
-  namespace stdex = std::experimental;
-  using cmdspan3x_t
-      = stdex::mdspan<const T,
-                      stdex::extents<std::size_t, 3, stdex::dynamic_extent>>;
+  using cmdspan3x_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      const T,
+      MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+          std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>;
 
   // Compute marker for each dof coordinate
   cmdspan3x_t x(dof_coordinates.data(), 3, dof_coordinates.size() / 3);
@@ -169,10 +177,10 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
   // Compute dof coordinates
   const std::vector<T> dof_coordinates = V1.tabulate_dof_coordinates(true);
 
-  namespace stdex = std::experimental;
-  using cmdspan3x_t
-      = stdex::mdspan<const T,
-                      stdex::extents<std::size_t, 3, stdex::dynamic_extent>>;
+  using cmdspan3x_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      const T,
+      MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+          std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>;
 
   // Evaluate marker for each dof coordinate
   cmdspan3x_t x(dof_coordinates.data(), 3, dof_coordinates.size() / 3);
@@ -291,10 +299,12 @@ public:
   /// @note The size of of `g` must be equal to the block size if `V`.
   /// Use the Function version if this is not the case, e.g. for some
   /// mixed spaces.
-  template <typename S, std::convertible_to<std::vector<std::int32_t>> X,
+  template <typename S, typename X,
             typename
             = std::enable_if_t<std::is_convertible_v<S, T>
                                or std::is_convertible_v<S, std::span<const T>>>>
+    requires std::is_convertible_v<std::remove_cvref_t<X>,
+                                   std::vector<std::int32_t>>
   DirichletBC(const S& g, X&& dofs, std::shared_ptr<const FunctionSpace<U>> V)
       : DirichletBC(std::make_shared<Constant<T>>(g), dofs, V)
   {
@@ -315,7 +325,9 @@ public:
   /// @note The size of of `g` must be equal to the block size if `V`.
   /// Use the Function version if this is not the case, e.g. for some
   /// mixed spaces.
-  template <std::convertible_to<std::vector<std::int32_t>> X>
+  template <typename X>
+    requires std::is_convertible_v<std::remove_cvref_t<X>,
+                                   std::vector<std::int32_t>>
   DirichletBC(std::shared_ptr<const Constant<T>> g, X&& dofs,
               std::shared_ptr<const FunctionSpace<U>> V)
       : _function_space(V), _g(g), _dofs0(std::forward<X>(dofs)),
@@ -363,7 +375,9 @@ public:
   /// @note The indices in `dofs` are for *blocks*, e.g. a block index
   /// corresponds to 3 degrees-of-freedom if the dofmap associated with
   /// `g` has block size 3.
-  template <std::convertible_to<std::vector<std::int32_t>> X>
+  template <typename X>
+    requires std::is_convertible_v<std::remove_cvref_t<X>,
+                                   std::vector<std::int32_t>>
   DirichletBC(std::shared_ptr<const Function<T, U>> g, X&& dofs)
       : _function_space(g->function_space()), _g(g),
         _dofs0(std::forward<X>(dofs)),

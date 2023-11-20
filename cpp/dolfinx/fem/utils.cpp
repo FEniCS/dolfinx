@@ -35,29 +35,29 @@ fem::create_element_dof_layout(const ufcx_dofmap& dofmap,
 {
   const int element_block_size = dofmap.block_size;
 
-  // Copy over number of dofs per entity type
-  std::array<int, 4> num_entity_dofs, num_entity_closure_dofs;
-  std::copy_n(dofmap.num_entity_dofs, 4, num_entity_dofs.begin());
-  std::copy_n(dofmap.num_entity_closure_dofs, 4,
-              num_entity_closure_dofs.begin());
-
   // Fill entity dof indices
   const int tdim = mesh::cell_dim(cell_type);
   std::vector<std::vector<std::vector<int>>> entity_dofs(tdim + 1);
   std::vector<std::vector<std::vector<int>>> entity_closure_dofs(tdim + 1);
-  for (int dim = 0; dim <= tdim; ++dim)
   {
-    const int num_entities = mesh::cell_num_entities(cell_type, dim);
-    entity_dofs[dim].resize(num_entities);
-    entity_closure_dofs[dim].resize(num_entities);
-    for (int i = 0; i < num_entities; ++i)
+    int* offset0 = dofmap.entity_dof_offsets;
+    int* offset1 = dofmap.entity_closure_dof_offsets;
+    for (int d = 0; d <= tdim; ++d)
     {
-      entity_dofs[dim][i].resize(num_entity_dofs[dim]);
-      dofmap.tabulate_entity_dofs(entity_dofs[dim][i].data(), dim, i);
-
-      entity_closure_dofs[dim][i].resize(num_entity_closure_dofs[dim]);
-      dofmap.tabulate_entity_closure_dofs(entity_closure_dofs[dim][i].data(),
-                                          dim, i);
+      int num_entities = mesh::cell_num_entities(cell_type, d);
+      entity_dofs[d].resize(num_entities);
+      entity_closure_dofs[d].resize(num_entities);
+      for (int i = 0; i < num_entities; ++i)
+      {
+        std::copy(dofmap.entity_dofs + *offset0,
+                  dofmap.entity_dofs + *(offset0 + 1),
+                  std::back_inserter(entity_dofs[d][i]));
+        std::copy(dofmap.entity_closure_dofs + *offset1,
+                  dofmap.entity_closure_dofs + *(offset1 + 1),
+                  std::back_inserter(entity_closure_dofs[d][i]));
+        ++offset0;
+        ++offset1;
+      }
     }
   }
 
@@ -90,7 +90,7 @@ fem::create_element_dof_layout(const ufcx_dofmap& dofmap,
   }
 
   // Check for "block structure". This should ultimately be replaced,
-  // but keep for now to mimic existing code
+  // but keep for now to mimic existing code.
   return ElementDofLayout(element_block_size, entity_dofs, entity_closure_dofs,
                           parent_map, sub_doflayout);
 }
@@ -136,20 +136,16 @@ fem::DofMap fem::create_dofmap(
 //-----------------------------------------------------------------------------
 std::vector<std::string> fem::get_coefficient_names(const ufcx_form& ufcx_form)
 {
-  std::vector<std::string> coefficients;
-  const char** names = ufcx_form.coefficient_name_map();
-  for (int i = 0; i < ufcx_form.num_coefficients; ++i)
-    coefficients.push_back(names[i]);
-  return coefficients;
+  return std::vector<std::string>(ufcx_form.coefficient_name_map,
+                                  ufcx_form.coefficient_name_map
+                                      + ufcx_form.num_coefficients);
 }
 //-----------------------------------------------------------------------------
 std::vector<std::string> fem::get_constant_names(const ufcx_form& ufcx_form)
 {
-  std::vector<std::string> constants;
-  const char** names = ufcx_form.constant_name_map();
-  for (int i = 0; i < ufcx_form.num_constants; ++i)
-    constants.push_back(names[i]);
-  return constants;
+  return std::vector<std::string>(ufcx_form.constant_name_map,
+                                  ufcx_form.constant_name_map
+                                      + ufcx_form.num_constants);
 }
 //-----------------------------------------------------------------------------
 std::vector<std::pair<int, std::vector<std::int32_t>>>

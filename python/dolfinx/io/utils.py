@@ -7,19 +7,21 @@
 """IO module for input data and post-processing file output."""
 
 import typing
+from pathlib import Path
+
+from mpi4py import MPI as _MPI
+
+import numpy as np
+import numpy.typing as npt
 
 import basix
 import basix.ufl
-import numpy as np
-import numpy.typing as npt
 import ufl
+from dolfinx import cpp as _cpp
 from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh  # noqa F401
 from dolfinx.cpp.io import perm_vtk as cell_perm_vtk  # noqa F401
 from dolfinx.fem import Function
 from dolfinx.mesh import GhostMode, Mesh, MeshTags
-from mpi4py import MPI as _MPI
-
-from dolfinx import cpp as _cpp
 
 __all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk",
            "distribute_entity_data"]
@@ -49,7 +51,8 @@ if _cpp.common.has_adios2:
 
         """
 
-        def __init__(self, comm: _MPI.Comm, filename: str, output: typing.Union[Mesh, Function, typing.List[Function]],
+        def __init__(self, comm: _MPI.Comm, filename: typing.Union[str, Path],
+                     output: typing.Union[Mesh, Function, typing.List[Function]],
                      engine: typing.Optional[str] = "BPFile"):
             """Initialize a writer for outputting data in the VTX format.
 
@@ -84,8 +87,7 @@ if _cpp.common.has_adios2:
 
             try:
                 # Input is a mesh
-                self._cpp_object = _vtxwriter(
-                    comm, filename, output._cpp_object, engine)  # type: ignore[union-attr]
+                self._cpp_object = _vtxwriter(comm, filename, output._cpp_object, engine)  # type: ignore[union-attr]
             except (NotImplementedError, TypeError, AttributeError):
                 # Input is a single function or a list of functions
                 self._cpp_object = _vtxwriter(comm, filename, _extract_cpp_functions(
@@ -115,7 +117,7 @@ if _cpp.common.has_adios2:
 
         """
 
-        def __init__(self, comm: _MPI.Comm, filename: str,
+        def __init__(self, comm: _MPI.Comm, filename: typing.Union[str, Path],
                      output: typing.Union[Mesh, typing.List[Function], Function],
                      engine: typing.Optional[str] = "BPFile",
                      mesh_policy: typing.Optional[FidesMeshPolicy] = FidesMeshPolicy.update):
@@ -239,7 +241,7 @@ class XDMFFile(_cpp.io.XDMFFile):
 
         # Build the mesh
         cmap = _cpp.fem.CoordinateElement_float64(cell_shape, cell_degree)
-        msh = _cpp.mesh.create_mesh(self.comm(), _cpp.graph.AdjacencyList_int64(cells),
+        msh = _cpp.mesh.create_mesh(self.comm, _cpp.graph.AdjacencyList_int64(cells),
                                     cmap, x, _cpp.mesh.create_cell_partitioner(ghost_mode))
         msh.name = name
 

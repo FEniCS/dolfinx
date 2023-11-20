@@ -22,7 +22,8 @@ import dolfinx
 from dolfinx import cpp as _cpp
 
 
-def locate_dofs_geometrical(V: typing.Union[dolfinx.fem.FunctionSpace, typing.Iterable[dolfinx.fem.FunctionSpace]],
+def locate_dofs_geometrical(V: typing.Union[dolfinx.fem.FunctionSpace,
+                                            typing.Iterable[dolfinx.fem.FunctionSpace]],
                             marker: typing.Callable) -> np.ndarray:
     """Locate degrees-of-freedom geometrically using a marker function.
 
@@ -53,7 +54,8 @@ def locate_dofs_geometrical(V: typing.Union[dolfinx.fem.FunctionSpace, typing.It
         return _cpp.fem.locate_dofs_geometrical(_V, marker)
 
 
-def locate_dofs_topological(V: typing.Union[dolfinx.fem.FunctionSpace, typing.Iterable[dolfinx.fem.FunctionSpace]],
+def locate_dofs_topological(V: typing.Union[dolfinx.fem.FunctionSpace,
+                                            typing.Iterable[dolfinx.fem.FunctionSpace]],
                             entity_dim: int, entities: numpy.typing.NDArray[np.int32],
                             remote: bool = True) -> np.ndarray:
     """Locate degrees-of-freedom belonging to mesh entities topologically.
@@ -89,7 +91,7 @@ class DirichletBC:
         """Representation of Dirichlet boundary condition which is imposed on
         a linear system.
 
-        Notes:
+        Note:
             Dirichlet boundary conditions  should normally be
             constructed using :func:`fem.dirichletbc` and not using this
             class initialiser. This class is combined with different
@@ -104,6 +106,7 @@ class DirichletBC:
                 Otherwise assumes function space of the problem is the same
                 of function space of boundary values function.
             V: Function space of a problem to which boundary conditions are applied.
+
         """
         self._cpp_object = bc
 

@@ -77,7 +77,7 @@ Vec la::petsc::create_vector(MPI_Comm comm, std::array<std::int64_t, 2> range,
   assert(range[1] >= range[0]);
   std::int32_t local_size = range[1] - range[0];
 
-  Vec x;
+  Vec x = nullptr;
   std::vector<PetscInt> _ghosts(ghosts.begin(), ghosts.end());
   if (bs == 1)
   {
@@ -131,8 +131,8 @@ std::vector<IS> la::petsc::create_index_sets(
   std::int64_t offset = 0;
   for (auto& map : maps)
   {
-    const int bs = map.second;
-    const std::int32_t size
+    int bs = map.second;
+    std::int32_t size
         = map.first.get().size_local() + map.first.get().num_ghosts();
     IS _is;
     ISCreateStride(PETSC_COMM_SELF, bs * size, offset, 1, &_is);

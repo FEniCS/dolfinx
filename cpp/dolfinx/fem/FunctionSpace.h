@@ -227,9 +227,10 @@ public:
     const std::size_t shape_c1 = transpose ? num_dofs : 3;
     std::vector<T> coords(shape_c0 * shape_c1, 0);
 
-    namespace stdex = std::experimental;
-    using mdspan2_t = stdex::mdspan<T, stdex::dextents<std::size_t, 2>>;
-    using cmdspan4_t = stdex::mdspan<const T, stdex::dextents<std::size_t, 4>>;
+    using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+    using cmdspan4_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
 
     // Loop over cells and tabulate dofs
     std::vector<T> x_b(scalar_dofs * gdim);
@@ -250,7 +251,7 @@ public:
     }
 
     auto apply_dof_transformation
-        = _element->template get_dof_transformation_function<T>();
+        = _element->template get_pre_dof_transformation_function<T>();
 
     const std::array<std::size_t, 4> phi_shape
         = cmap.tabulate_shape(0, Xshape[0]);
@@ -258,13 +259,16 @@ public:
         std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
     cmdspan4_t phi_full(phi_b.data(), phi_shape);
     cmap.tabulate(0, X, Xshape, phi_b);
-    auto phi = stdex::submdspan(phi_full, 0, stdex::full_extent,
-                                stdex::full_extent, 0);
+    auto phi = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
+        submdspan(phi_full, 0, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
+                  MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
 
     for (int c = 0; c < num_cells; ++c)
     {
       // Extract cell geometry
-      auto x_dofs = stdex::submdspan(x_dofmap, c, stdex::full_extent);
+      auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::
+          MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
+              x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
       for (std::size_t i = 0; i < x_dofs.size(); ++i)
         for (std::size_t j = 0; j < gdim; ++j)
           coordinate_dofs(i, j) = x_g[3 * x_dofs[i] + j];

@@ -29,7 +29,8 @@ public:
   /// @param[in] comm MPI Communicator
   /// @param[in] topology Mesh topology
   /// @param[in] geometry Mesh geometry
-  template <std::convertible_to<Geometry<T>> V>
+  template <typename V>
+    requires std::is_convertible_v<std::remove_cvref_t<V>, Geometry<T>>
   Mesh(MPI_Comm comm, std::shared_ptr<Topology> topology, V&& geometry)
       : _topology(topology), _geometry(std::forward<V>(geometry)), _comm(comm)
   {
