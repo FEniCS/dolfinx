@@ -17,7 +17,7 @@ version = "0.8.0.dev0"
 description = "DOLFINx Python interface"
 readme = "../README.md"
 requires-python = ">=3.8.0"
-license = { file = "../COPYING" }
+license = { text = "LGPL-3.0-or-later" }
 authors = [
       { email = "fenics-steering-council@googlegroups.com" },
       { name = "FEniCS Steering Council" },
