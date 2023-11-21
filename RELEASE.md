@@ -32,6 +32,7 @@ UFL still runs on the year-based release scheme.
 
 1. Merge `main` into `release` resolving all conflicts in favour of `main`.
 
+       git pull
        git checkout release
        git merge --no-commit main
        git checkout --theirs main .
@@ -47,12 +48,13 @@ UFL still runs on the year-based release scheme.
 
 4. Commit and push.
 
-5. Check `git diff main` for obvious errors.
+5. Check `git diff origin/main` for obvious errors.
 
 ### UFL version bump
 
 1. Merge `main` into `release` resolving all conflicts in favour of `main`.
 
+       git pull
        git checkout release
        git merge --no-commit main
        git checkout --theirs main .
@@ -62,12 +64,13 @@ UFL still runs on the year-based release scheme.
 
 3. Commit and push.
 
-4. Check `git diff main` for obvious errors.
+4. Check `git diff origin/main` for obvious errors.
 
 ### FFCx version bump
 
 1. Merge `main` into `release` resolving all conflicts in favour of `main`.
 
+       git pull
        git checkout release
        git merge --no-commit main
        git checkout --theirs main .
@@ -85,16 +88,17 @@ UFL still runs on the year-based release scheme.
 
 6. Commit and push.
 
-7. Check `git diff main` for obvious errors.
+7. Check `git diff origin/main` for obvious errors.
 
 ### DOLFINx
 
 1. Merge `main` into `release` resolving all conflicts in favour of `main`.
 
+       git pull
        git checkout release
        git merge --no-commit main
        git checkout --theirs main .
-       git diff main
+       git diff origin/main
 
 2. In `cpp/CMakeLists.txt` change the version number near the top of the file,
    e.g. `0.5.0`.
@@ -109,7 +113,7 @@ UFL still runs on the year-based release scheme.
 
 5. Commit and push.
 
-6. Check `git diff main` for obvious errors.
+6. Check `git diff origin/main` for obvious errors.
 
 ## Integration testing
 
@@ -133,7 +137,7 @@ Full stack: https://github.com/FEniCS/dolfinx/actions/workflows/ccpp.yml
 
 ## Tagging
 
-Make appropriate version tags in each repository. UFL does not use the v prefix.
+Make appropriate version tags in each repository. UFL does not use the `v` prefix.
 
     git tag v0.5.0
     git push --tags origin
@@ -156,7 +160,7 @@ Tagged Docker images will be pushed to Dockerhub.
 
     docker run -ti dolfinx/dolfinx:v0.5.0
 
-Use the Update stable Docker tag workflow to update/link `:stable` to e.g.
+Use the *Docker update stable* tag workflow to update/link `:stable` to e.g.
 `v0.5.0`.
 
 ### pypa
@@ -184,8 +188,9 @@ Aside from version numbering changes, it is easier to merge changes onto `main`
 and then cherry-pick or merge back onto `release`.
 
 If a mistake is noticed soon after making a tag then you can delete the tag and
-recreate it. After GitHub releases or pypa packages are pushed you must create .post0 tags
-or make minor version bumps.
+recreate it. It is also possible to recreate GitHub releases. After pypa
+packages are pushed you must create .post0 tags or make minor version bumps, as
+pypa is immutable.
 
 ### GitHub releases
 
