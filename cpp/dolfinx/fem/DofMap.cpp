@@ -83,7 +83,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   }
 
   // Create map from dof in view to new dof index
-  std::vector<std::int32_t> old_to_new((dofs_view.back() + 1) * bs_view, -1);
+  std::vector<std::int32_t> old_to_new(dofs_view.back() + 1, -1);
   {
     // old-to-new map for owned dofs
     std::int32_t count = 0;
