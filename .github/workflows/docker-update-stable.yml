@@ -55,4 +55,4 @@ jobs:
            ./regctl image copy ghcr.io/fenics/dolfinx/dolfinx:${{ inputs.tag }} ghcr.io/fenics/dolfinx/dolfinx:stable 
            ./regctl image copy ghcr.io/fenics/dolfinx/dev-env:${{ inputs.tag }} ghcr.io/fenics/dolfinx/dev-env:stable
            ./regctl image copy ghcr.io/fenics/dolfinx/lab:${{ inputs.tag }} ghcr.io/fenics/dolfinx/lab:stable 
-           ./regctl image copy ghcr.io/dolfinx/dolfinx-onbuild:${{ inputs.tag }} ghcr.io/fenics/dolfinx/dolfinx-onbuild:stable
+           ./regctl image copy ghcr.io/fenics/dolfinx/dolfinx-onbuild:${{ inputs.tag }} ghcr.io/fenics/dolfinx/dolfinx-onbuild:stable
