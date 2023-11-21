@@ -22,7 +22,6 @@ authors = [
       { email = "fenics-steering-council@googlegroups.com" },
       { name = "FEniCS Steering Council" },
 ]
-packages = ["dolfinx"]
 dependencies = [
       "numpy>=1.21",
       "cffi",
