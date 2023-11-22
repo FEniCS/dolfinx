@@ -686,5 +686,9 @@ private:
 
   // Basix Element (nullptr for mixed elements)
   std::unique_ptr<basix::FiniteElement<T>> _element;
+
+  // Quadrature points of a quadrature element (0 dimensional array for
+  // all elements except quadrature elements)
+  std::pair<std::vector<T>, std::array<std::size_t, 2>> _points;
 };
 } // namespace dolfinx::fem
