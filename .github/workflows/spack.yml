@@ -85,7 +85,7 @@ jobs:
       - name: Get DOLFINx release code (to access test files)
         uses: actions/checkout@v4
         with:
-          ref: v0.6.0
+          ref: v0.7.2
           # ref: v${{ github.event.inputs.spack_branch }}
           path: ./dolfinx-release
       - name: Run a C++ test (release version)
