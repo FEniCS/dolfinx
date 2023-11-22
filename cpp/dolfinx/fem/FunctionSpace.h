@@ -251,7 +251,7 @@ public:
     }
 
     auto apply_dof_transformation
-        = _element->template get_dof_transformation_function<T>();
+        = _element->template get_pre_dof_transformation_function<T>();
 
     const std::array<std::size_t, 4> phi_shape
         = cmap.tabulate_shape(0, Xshape[0]);

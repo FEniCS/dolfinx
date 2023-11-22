@@ -367,11 +367,11 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
   const int bs1 = dofmap1->bs();
   const int bs0 = dofmap0->bs();
   auto apply_dof_transformation
-      = element0->template get_dof_transformation_function<T>(false, true,
-                                                              false);
+      = element0->template get_pre_dof_transformation_function<T>(false, true,
+                                                                  false);
   auto apply_inverse_dof_transform
-      = element1->template get_dof_transformation_function<T>(true, true,
-                                                              false);
+      = element1->template get_pre_dof_transformation_function<T>(true, true,
+                                                                  false);
 
   // Create working array
   std::vector<T> local0(element0->space_dimension());
@@ -458,11 +458,11 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
   const int bs0 = element0->block_size();
   const int bs1 = element1->block_size();
   auto apply_dof_transformation0
-      = element0->template get_dof_transformation_function<U>(false, false,
-                                                              false);
+      = element0->template get_pre_dof_transformation_function<U>(false, false,
+                                                                  false);
   auto apply_inverse_dof_transform1
-      = element1->template get_dof_transformation_function<T>(true, true,
-                                                              false);
+      = element1->template get_pre_dof_transformation_function<T>(true, true,
+                                                                  false);
 
   // Get sizes of elements
   const std::size_t dim0 = element0->space_dimension() / bs0;
@@ -810,8 +810,8 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
     // e.g. not Piola mapped
 
     auto apply_inv_transpose_dof_transformation
-        = element->template get_dof_transformation_function<T>(true, true,
-                                                               true);
+        = element->template get_pre_dof_transformation_function<T>(true, true,
+                                                                   true);
 
     // Loop over cells
     for (std::size_t c = 0; c < cells.size(); ++c)
@@ -854,8 +854,8 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
     assert(Pi.extent(0) == num_scalar_dofs);
 
     auto apply_inv_transpose_dof_transformation
-        = element->template get_dof_transformation_function<T>(true, true,
-                                                               true);
+        = element->template get_pre_dof_transformation_function<T>(true, true,
+                                                                   true);
 
     // Loop over cells
     std::vector<T> ref_data_b(num_interp_points);
@@ -949,7 +949,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
                              const std::span<const std::uint32_t>&,
                              std::int32_t, int)>
         apply_inverse_transpose_dof_transformation
-        = element->template get_dof_transformation_function<T>(true, true);
+        = element->template get_pre_dof_transformation_function<T>(true, true);
 
     // Get interpolation operator
     const auto [_Pi, pi_shape] = element->interpolation_operator();
@@ -1065,12 +1065,21 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 /// @param[in] cells Indices of the cells in the destination mesh on
 /// which to interpolate. Should be the same as the list used when
 /// calling fem::interpolation_coords.
+/// @param[in] padding Absolute padding of bounding boxes of all entities on
+/// `mesh1`. This is used avoid floating point issues when an interpolation
+/// point from `mesh0` is on the surface of a cell in `mesh1`. This parameter
+/// can also be used for extrapolation, i.e. if cells in `mesh0` is not
+/// overlapped by `mesh1`.
+///
+/// @note Setting the `padding` to a large value will increase runtime of this
+/// function, as one has to determine what entity is closest if there is no
+/// intersection.
 template <std::floating_point T>
 std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>, std::vector<T>,
            std::vector<std::int32_t>>
 create_nonmatching_meshes_interpolation_data(
     const mesh::Geometry<T>& geometry0, const FiniteElement<T>& element0,
-    const mesh::Mesh<T>& mesh1, std::span<const std::int32_t> cells)
+    const mesh::Mesh<T>& mesh1, std::span<const std::int32_t> cells, T padding)
 {
   // Collect all the points at which values are needed to define the
   // interpolating function
@@ -1085,7 +1094,7 @@ create_nonmatching_meshes_interpolation_data(
       x[3 * i + j] = coords[i + j * num_points];
 
   // Determine ownership of each point
-  return geometry::determine_point_ownership<T>(mesh1, x);
+  return geometry::determine_point_ownership<T>(mesh1, x, padding);
 }
 
 /// @brief Generate data needed to interpolate discrete functions
@@ -1093,12 +1102,21 @@ create_nonmatching_meshes_interpolation_data(
 /// @param[in] mesh0 Mesh of the space to interpolate into
 /// @param[in] element0 Element of the space to interpolate into
 /// @param[in] mesh1 Mesh of the function to interpolate from
+/// @param[in] padding Absolute padding of bounding boxes of all entities on
+/// `mesh1`. This is used avoid floating point issues when an interpolation
+/// point from `mesh0` is on the surface of a cell in `mesh1`. This parameter
+/// can also be used for extrapolation, i.e. if cells in `mesh0` is not
+/// overlapped by `mesh1`.
+/// @note Setting the `padding` to a large value will increase runtime of this
+/// function, as one has to determine what entity is closest if there is no
+/// intersection.
 template <std::floating_point T>
 std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>, std::vector<T>,
            std::vector<std::int32_t>>
 create_nonmatching_meshes_interpolation_data(const mesh::Mesh<T>& mesh0,
                                              const FiniteElement<T>& element0,
-                                             const mesh::Mesh<T>& mesh1)
+                                             const mesh::Mesh<T>& mesh1,
+                                             T padding)
 {
   int tdim = mesh0.topology()->dim();
   auto cell_map = mesh0.topology()->index_map(tdim);
@@ -1106,8 +1124,8 @@ create_nonmatching_meshes_interpolation_data(const mesh::Mesh<T>& mesh0,
   std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
   std::vector<std::int32_t> cells(num_cells, 0);
   std::iota(cells.begin(), cells.end(), 0);
-  return create_nonmatching_meshes_interpolation_data(mesh0.geometry(),
-                                                      element0, mesh1, cells);
+  return create_nonmatching_meshes_interpolation_data(
+      mesh0.geometry(), element0, mesh1, cells, padding);
 }
 
 /// @brief Interpolate from one finite element Function to another one.

@@ -1,0 +1,58 @@
+---
+name: Docker update stable tag
+
+# Links/updates stable docker tags to specified version.
+# This should be used after building a specific tagged image e.g. `:v0.7.2`.
+#
+#   dolfinx/dolfinx:stable
+#   dolfinx/lab:stable
+#   dolfinx/dev-env:stable
+#   dolfinx/dolfinx-onbuild:stable
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "link :stable to :tag"
+        type: string
+        required: true
+
+jobs:
+  update_stable_tag:
+    name: Update stable tags
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install regctl
+        run: |
+          wget -O ./regctl https://github.com/regclient/regclient/releases/download/v0.5.4/regctl-linux-amd64
+          chmod +x ./regctl
+
+      - name: Link supplied tag to stable on docker.io
+        run: |
+           ./regctl image copy dolfinx/dolfinx:${{ inputs.tag }} dolfinx/dolfinx:stable
+           ./regctl image copy dolfinx/dev-env:${{ inputs.tag }} dolfinx/dev-env:stable
+           ./regctl image copy dolfinx/lab:${{ inputs.tag }} dolfinx/lab:stable
+           ./regctl image copy dolfinx/dolfinx-onbuild:${{ inputs.tag }} dolfinx/dolfinx-onbuild:stable
+
+      - name: Link supplied tag to stable on ghcr.io
+        run: |
+           ./regctl image copy ghcr.io/fenics/dolfinx/dolfinx:${{ inputs.tag }} ghcr.io/fenics/dolfinx/dolfinx:stable
+           ./regctl image copy ghcr.io/fenics/dolfinx/dev-env:${{ inputs.tag }} ghcr.io/fenics/dolfinx/dev-env:stable
+           ./regctl image copy ghcr.io/fenics/dolfinx/lab:${{ inputs.tag }} ghcr.io/fenics/dolfinx/lab:stable
+           ./regctl image copy ghcr.io/fenics/dolfinx/dolfinx-onbuild:${{ inputs.tag }} ghcr.io/fenics/dolfinx/dolfinx-onbuild:stable
