@@ -175,8 +175,8 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
         plt.plot(pts, values, "r-")
         plt.legend(["function", "approximation"])
         plt.ylim([-0.1, 0.4])
-        plt.title(variant.__name__)
-        plt.savefig(f"demo_lagrange_variants_interpolation_{variant.__name__}.png")
+        plt.title(variant.name)
+        plt.savefig(f"demo_lagrange_variants_interpolation_{variant.name}.png")
         plt.clf()
 # -
 
@@ -204,7 +204,7 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
     uh.interpolate(lambda x: saw_tooth(x[0]))
     M = fem.form((u_exact - uh)**2 * dx)
     error = msh.comm.allreduce(fem.assemble_scalar(M), op=MPI.SUM)
-    print(f"Computed L2 interpolation error ({variant.__name__}):", error ** 0.5)
+    print(f"Computed L2 interpolation error ({variant.name}):", error ** 0.5)
 # -
 
 # ## Available Lagrange variants
