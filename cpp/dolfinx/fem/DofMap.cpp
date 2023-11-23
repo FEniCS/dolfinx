@@ -20,6 +20,20 @@
 using namespace dolfinx;
 using namespace dolfinx::fem;
 
+// A function for printing vectors
+template <typename S>
+std::ostream &operator<<(std::ostream &os,
+                         const std::vector<S> &vector)
+{
+  os << "{ ";
+  for (auto v : vector)
+  {
+    os << v << " ";
+  }
+  os << "}";
+  return os;
+}
+
 namespace
 {
 //-----------------------------------------------------------------------------
@@ -28,6 +42,12 @@ namespace
 fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
                                    const mesh::Topology& topology)
 {
+  std::stringstream ss;
+
+  const int rank = dolfinx::MPI::rank(topology.comm());
+
+  ss << "Rank " << rank << ":\n";
+
   if (dofmap_view.element_dof_layout().block_size() > 1)
   {
     throw std::runtime_error(
@@ -50,6 +70,8 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   dofs_view.erase(std::unique(dofs_view.begin(), dofs_view.end()),
                   dofs_view.end());
 
+  ss << "dofs_view = " << dofs_view << "\n";
+
   // Compute sizes
   const std::int32_t num_owned_view = dofmap_view.index_map->size_local();
 
@@ -62,6 +84,9 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   // Create sub-index map
   std::shared_ptr<common::IndexMap> index_map;
   std::vector<std::int32_t> ghost_new_to_old;
+  std::shared_ptr<common::IndexMap> index_map_conn;
+  std::vector<std::int32_t> new_to_old_conn;
+    std::vector<std::int32_t> indices_conn;
   if (bs_view == 1)
   {
     std::span<std::int32_t> indices(dofs_view.data(),
@@ -69,6 +94,16 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
     auto [_index_map, gmap] = dofmap_view.index_map->create_submap(indices);
     index_map = std::make_shared<common::IndexMap>(std::move(_index_map));
     ghost_new_to_old = std::move(gmap);
+
+    // ss << "indices = " << indices << "\n";
+
+    indices_conn = dofs_view;
+    auto [_index_map_conn, gmap_conn] = dolfinx::common::create_submap_conn(
+      *dofmap_view.index_map, indices_conn);
+    index_map_conn = std::make_shared<common::IndexMap>(std::move(_index_map_conn));
+    new_to_old_conn = std::move(gmap_conn);
+
+    ss << "indices_conn = " << dofs_view << "\n";
   }
   else
   {
@@ -80,7 +115,21 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
     auto [_index_map, gmap] = dofmap_view.index_map->create_submap(indices);
     index_map = std::make_shared<common::IndexMap>(std::move(_index_map));
     ghost_new_to_old = std::move(gmap);
+
+    // ss << "indices = " << indices << "\n";
+    indices_conn.reserve(dofs_view.size());
+    std::transform(dofs_view.begin(), dofs_view.end(), std::back_inserter(indices_conn),
+                   [bs_view](auto idx) { return idx / bs_view; });
+    indices_conn.erase(std::unique(indices_conn.begin(), indices_conn.end()), indices_conn.end());
+    auto [_index_map_conn, gmap_conn] = dolfinx::common::create_submap_conn(
+      *dofmap_view.index_map, indices_conn);
+    index_map_conn = std::make_shared<common::IndexMap>(std::move(_index_map_conn));
+    new_to_old_conn = std::move(gmap_conn);
+
+    ss << "indices_conn = " << indices_conn << "\n";
   }
+
+  ss << "new_to_old_conn = " << new_to_old_conn << "\n";
 
   // Create map from dof in view to new dof index
   std::vector<std::int32_t> old_to_new(dofs_view.back() + bs_view, -1);
@@ -106,6 +155,16 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
     }
   }
 
+  ss << "old_to_new = " << old_to_new << "\n";
+
+  std::vector<std::int32_t> old_to_new_conn(dofs_view.back() + 1, -1);
+  for (std::size_t i = 0; i < dofs_view.size(); ++i)
+  {
+    old_to_new_conn[dofs_view[i]] = new_to_old_conn[indices_conn[i]];
+  }
+
+  ss << "old_to_new_conn = " << old_to_new_conn << "\n";
+
   // Map dofs to new collapsed indices for new dofmap
   auto dof_array_view = dofmap_view.map();
   std::vector<std::int32_t> dofmap;
@@ -122,6 +181,15 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
 
   // Copy dof layout, discarding parent data
   ElementDofLayout element_dof_layout = dofmap_view.element_dof_layout().copy();
+
+  for (int r = 0; r < dolfinx::MPI::size(topology.comm()); ++r)
+  {
+    if (r == rank)
+    {
+      std::cout << ss.str() << "\n";
+    }
+    MPI_Barrier(topology.comm());
+  }
 
   // Create new dofmap and return
   return DofMap(std::move(element_dof_layout), index_map, 1, std::move(dofmap),
