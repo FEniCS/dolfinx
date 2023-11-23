@@ -121,7 +121,8 @@ jobs:
           spack env create py-release
           spack env activate py-release
           spack add py-fenics-dolfinx
-          spack install
+          # TO REMOVE -j1 once 0.8.0/nanobind released.
+          spack install -j1
       - name: Run DOLFINx (Python, release) test
         run: |
           . ./spack/share/spack/setup-env.sh
