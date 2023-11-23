@@ -41,6 +41,23 @@ bool is_basix_element(const ufcx_finite_element& element)
 }
 //-----------------------------------------------------------------------------
 
+/// Check if an element is a quadrature element (or a blocked element
+/// containing a quadrature element)
+bool is_quadrature_element(const ufcx_finite_element& element)
+{
+  if (element.element_type == ufcx_quadrature_element)
+    return true;
+  else if (element.block_size != 1)
+  {
+    // TODO: what should happen if the element is a blocked element
+    // containing a blocked element containing a quadrature element?
+    return element.sub_elements[0]->element_type == ufcx_quadrature_element;
+  }
+  else
+    return false;
+}
+//-----------------------------------------------------------------------------
+
 /// Check if an element is a custom Basix element (or a blocked element
 /// containing a custom Basix element)
 bool is_basix_custom_element(const ufcx_finite_element& element)
@@ -260,6 +277,17 @@ FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
         = !_element->dof_transformations_are_identity()
           and _element->dof_transformations_are_permutations();
   }
+
+  if (is_quadrature_element(e))
+  {
+    assert (e.custom_quadrature);
+    ufcx_quadrature_rule* qr = e.custom_quadrature;
+    std::size_t npts = qr->npts;
+    std::size_t tdim = qr->topological_dimension;
+    std::array qshape = {npts, tdim};
+    _points = std::make_pair(std::vector<T>(qshape[0] * qshape[1]), qshape);
+    std::copy_n(qr->points, _points.first.size(), _points.first.begin());
+  }
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -460,6 +488,9 @@ basix::maps::type FiniteElement<T>::map_type() const
 template <std::floating_point T>
 bool FiniteElement<T>::map_ident() const noexcept
 {
+  if (!_element && _points.second[0] > 0)
+    // Quadratute elements must use identity map
+    return true;
   assert(_element);
   return _element->map_type() == basix::maps::type::identity;
 }
@@ -467,6 +498,8 @@ bool FiniteElement<T>::map_ident() const noexcept
 template <std::floating_point T>
 bool FiniteElement<T>::interpolation_ident() const noexcept
 {
+  if (!_element && _points.second[0] > 0)
+    return true;
   assert(_element);
   return _element->interpolation_is_identity();
 }
@@ -475,6 +508,8 @@ template <std::floating_point T>
 std::pair<std::vector<T>, std::array<std::size_t, 2>>
 FiniteElement<T>::interpolation_points() const
 {
+  if (_points.second[0] > 0)
+    return _points;
   if (!_element)
   {
     throw std::runtime_error(

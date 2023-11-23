@@ -180,11 +180,12 @@ void declare_bbtree(nb::module_& m, std::string type)
       nb::arg("mesh"), nb::arg("dim"), nb::arg("indices"), nb::arg("points"));
   m.def("determine_point_ownership",
         [](const dolfinx::mesh::Mesh<T>& mesh,
-           nb::ndarray<const T, nb::c_contig> points)
+           nb::ndarray<const T, nb::c_contig> points, const T padding)
         {
           const std::size_t p_s0 = points.ndim() == 1 ? 1 : points.shape(0);
           std::span<const T> _p(points.data(), 3 * p_s0);
-          return dolfinx::geometry::determine_point_ownership<T>(mesh, _p);
+          return dolfinx::geometry::determine_point_ownership<T>(mesh, _p,
+                                                                 padding);
         });
 }
 } // namespace
