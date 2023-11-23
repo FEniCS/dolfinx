@@ -75,6 +75,8 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   // Compute sizes
   const std::int32_t num_owned_view = dofmap_view.index_map->size_local();
 
+  ss << "num_owned_view = " << num_owned_view << "\n";
+
   // Get block size
   int bs_view = dofmap_view.index_map_bs();
 
@@ -155,12 +157,17 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
     }
   }
 
-  ss << "old_to_new = " << old_to_new << "\n";
+  ss << "old_to_new =      " << old_to_new << "\n";
 
   std::vector<std::int32_t> old_to_new_conn(dofs_view.back() + 1, -1);
-  for (std::size_t i = 0; i < dofs_view.size(); ++i)
+  // for (std::size_t i = 0; i < dofs_view.size(); ++i)
+  // {
+  //   old_to_new_conn[dofs_view[i]] = new_to_old_conn[indices_conn[i]];
+  // }
+  for (std::size_t i = 0; i < new_to_old_conn.size(); ++i)
   {
-    old_to_new_conn[dofs_view[i]] = new_to_old_conn[indices_conn[i]];
+    // FIXME This needs to take block size into account
+    old_to_new_conn[new_to_old_conn[i]] = i;
   }
 
   ss << "old_to_new_conn = " << old_to_new_conn << "\n";
@@ -172,7 +179,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   std::transform(dof_array_view.data_handle(),
                  dof_array_view.data_handle() + dof_array_view.size(),
                  std::back_inserter(dofmap),
-                 [&old_to_new](auto idx_old) { return old_to_new[idx_old]; });
+                 [&old_to_new_conn](auto idx_old) { return old_to_new_conn[idx_old]; });
 
   // Dimension sanity checks
   assert((int)dofmap.size()
@@ -192,7 +199,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   }
 
   // Create new dofmap and return
-  return DofMap(std::move(element_dof_layout), index_map, 1, std::move(dofmap),
+  return DofMap(std::move(element_dof_layout), index_map_conn, 1, std::move(dofmap),
                 1);
 }
 
