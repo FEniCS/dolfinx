@@ -87,8 +87,8 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   std::shared_ptr<common::IndexMap> index_map;
   std::vector<std::int32_t> ghost_new_to_old;
   std::shared_ptr<common::IndexMap> index_map_conn;
-  std::vector<std::int32_t> new_to_old_conn;
-    std::vector<std::int32_t> indices_conn;
+  std::vector<std::int32_t> new_to_old_conn;  // TODO Rename as this is non-block index
+  std::vector<std::int32_t> indices_conn;
   if (bs_view == 1)
   {
     std::span<std::int32_t> indices(dofs_view.data(),
