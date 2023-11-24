@@ -119,7 +119,7 @@ def test_interpolation_blocked(degree):
 
 
 def test_vector_element(shape):
-    msh = mesh.create_unit_square(MPI.COMM_WORLD, 10, 10)
+    msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 10, 10)
 
     dx_m = ufl.Measure(
         "dx",
@@ -127,17 +127,17 @@ def test_vector_element(shape):
         metadata={"quadrature_degree": 1, "quadrature_scheme": "default"},
     )
 
-    Qe = quadrature_element(
+    Qe = basix.ufl.quadrature_element(
         msh.topology.cell_name(), value_shape=shape, scheme="default", degree=1
     )
-    Quad = fem.functionspace(msh, Qe)
+    Quad = dolfinx.fem.functionspace(msh, Qe)
     q_ = ufl.TestFunction(Quad)
     dq = ufl.TrialFunction(Quad)
-    one = fem.Function(Quad)
+    one = dolfinx.fem.Function(Quad)
     one.vector.set(1.0)
-    mass_L_form = fem.form(ufl.inner(one, q_) * dx_m)
-    mass_v = fem.assemble_vector(mass_L_form)
-    mass_a_form = fem.form(ufl.inner(dq, q_) * dx_m)
-    mass_A = fem.assemble_matrix(mass_a_form)
+    mass_L_form = dolfinx.fem.form(ufl.inner(one, q_) * dx_m)
+    mass_v = dolfinx.fem.assemble_vector(mass_L_form)
+    mass_a_form = dolfinx.fem.form(ufl.inner(dq, q_) * dx_m)
+    mass_A = dolfinx.fem.assemble_matrix(mass_a_form)
     assert np.isclose(sum(mass_v.array), 1.0)
     assert np.allclose(np.diag(mass_A.to_dense()), mass_v.array)
