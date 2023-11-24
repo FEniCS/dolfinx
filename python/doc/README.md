@@ -4,9 +4,9 @@ To build the documentation:
 
 1. Install DOLFINx (Python interface). It must be possible to import
    the module ``dolfinx``.
-2. Run:
+2. Run in this directory:
  
-      python -m sphinx -b html source/ build/html/.
+       python -m sphinx -b html source/ build/html/
 
 ## Processing demo programs
 
