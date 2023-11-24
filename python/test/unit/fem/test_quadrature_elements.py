@@ -118,6 +118,7 @@ def test_interpolation_blocked(degree):
     assert np.isclose(error, 0)
 
 
+@pytest.mark.parametrize("shape", [(), (1, ), (2, ), (3, ), (4, )])
 def test_vector_element(shape):
     msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 10, 10)
 
