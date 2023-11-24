@@ -129,6 +129,7 @@ def extract_diagonal(mat):
     return diag
 
 
+@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("shape", [(), (1, ), (2, ), (3, ), (4, ), (2, 2), (3, 3)])
 def test_vector_element(shape):
     msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 10, 10)
