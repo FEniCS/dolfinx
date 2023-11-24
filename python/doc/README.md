@@ -6,7 +6,7 @@ To build the documentation:
    the module ``dolfinx``.
 2. Run in this directory:
  
-       python -m sphinx -b html source/ build/html/
+       python -m sphinx -W -b html source/ build/html/
 
 ## Processing demo programs
 
