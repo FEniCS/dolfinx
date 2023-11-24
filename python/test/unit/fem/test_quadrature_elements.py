@@ -116,3 +116,28 @@ def test_interpolation_blocked(degree):
     error = dolfinx.fem.assemble_scalar(diff)
 
     assert np.isclose(error, 0)
+
+
+def test_vector_element(shape):
+    msh = mesh.create_unit_square(MPI.COMM_WORLD, 10, 10)
+
+    dx_m = ufl.Measure(
+        "dx",
+        domain=msh,
+        metadata={"quadrature_degree": 1, "quadrature_scheme": "default"},
+    )
+
+    Qe = quadrature_element(
+        msh.topology.cell_name(), value_shape=shape, scheme="default", degree=1
+    )
+    Quad = fem.functionspace(msh, Qe)
+    q_ = ufl.TestFunction(Quad)
+    dq = ufl.TrialFunction(Quad)
+    one = fem.Function(Quad)
+    one.vector.set(1.0)
+    mass_L_form = fem.form(ufl.inner(one, q_) * dx_m)
+    mass_v = fem.assemble_vector(mass_L_form)
+    mass_a_form = fem.form(ufl.inner(dq, q_) * dx_m)
+    mass_A = fem.assemble_matrix(mass_a_form)
+    assert np.isclose(sum(mass_v.array), 1.0)
+    assert np.allclose(np.diag(mass_A.to_dense()), mass_v.array)
