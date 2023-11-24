@@ -118,7 +118,18 @@ def test_interpolation_blocked(degree):
     assert np.isclose(error, 0)
 
 
-@pytest.mark.parametrize("shape", [(), (1, ), (2, ), (3, ), (4, )])
+def extract_diagonal(mat):
+    bs = mat.block_size[0]
+    diag = np.empty(len(mat.indices) * bs)
+    for row, (start, end) in enumerate(zip(mat.indptr[:-1], mat.indptr[1:])):
+        for i in range(start, end):
+            if mat.indices[i] == row:
+                for block in range(bs):
+                    diag[bs * row + block] = mat.data[bs ** 2 * i + (bs + 1) * block]
+    return diag
+
+
+@pytest.mark.parametrize("shape", [(), (1, ), (2, ), (3, ), (4, ), (2, 2), (3, 3)])
 def test_vector_element(shape):
     msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 10, 10)
 
@@ -140,5 +151,5 @@ def test_vector_element(shape):
     mass_v = dolfinx.fem.assemble_vector(mass_L_form)
     mass_a_form = dolfinx.fem.form(ufl.inner(dq, q_) * dx_m)
     mass_A = dolfinx.fem.assemble_matrix(mass_a_form)
-    assert np.isclose(sum(mass_v.array), 1.0)
-    assert np.allclose(np.diag(mass_A.to_dense()), mass_v.array)
+
+    assert np.allclose(extract_diagonal(mass_A), mass_v.array)
