@@ -103,11 +103,15 @@ def test_linear_pde():
     # Create nonlinear problem
     problem = NonlinearPDEProblem(F, u, bc)
 
+    def update(solver, dx, x):
+        x.axpy(-1, dx)
+
     # Create Newton solver and solve
     solver = _cpp.nls.petsc.NewtonSolver(MPI.COMM_WORLD)
     solver.setF(problem.F, problem.vector())
     solver.setJ(problem.J, problem.matrix())
     solver.set_form(problem.form)
+    solver.set_update(update)
     solver.atol = 1.0e-8
     solver.rtol = 1.0e2 * np.finfo(default_real_type).eps
     n, converged = solver.solve(u.vector)

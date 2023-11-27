@@ -144,7 +144,7 @@ jobs:
       - name: Build Python interface documentation
         run: |
           cd python/doc
-          make html
+          python3 -m sphinx -W -b html source/ build/html/ 
 
       - name: Set default DOLFINx JIT options
         run: |

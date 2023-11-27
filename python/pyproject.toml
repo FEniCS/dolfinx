@@ -17,12 +17,11 @@ version = "0.8.0.dev0"
 description = "DOLFINx Python interface"
 readme = "../README.md"
 requires-python = ">=3.8.0"
-license = { file = "../COPYING" }
+license = { file = "../COPYING.LESSER" }
 authors = [
       { email = "fenics-steering-council@googlegroups.com" },
       { name = "FEniCS Steering Council" },
 ]
-packages = ["dolfinx"]
 dependencies = [
       "numpy>=1.21",
       "cffi",
@@ -33,7 +32,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-docs = ["markdown", "pyyaml", "sphinx==5.0.2", "sphinx_rtd_theme"]
+docs = ["markdown", "pyyaml", "sphinx", "sphinx_rtd_theme"]
 lint = ["flake8", "pydocstyle"]
 optional = ["numba"]
 test = ["pytest", "sympy", "scipy", "matplotlib", "fenics-dolfinx[optional]"]
@@ -52,6 +51,7 @@ ci = [
 wheel.packages = ["dolfinx"]
 sdist.exclude = ["*.cpp"]
 cmake.build-type = "Release"
+wheel.license-files = ["../COPYING*"]
 
 [tool.pytest]
 junit_family = "xunit2"

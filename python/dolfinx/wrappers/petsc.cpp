@@ -360,8 +360,19 @@ void petsc_nls_module(nb::module_& m)
            nb::arg("Jmat"))
       .def("setP", &dolfinx::nls::petsc::NewtonSolver::setP, nb::arg("P"),
            nb::arg("Pmat"))
-      .def("set_update", &dolfinx::nls::petsc::NewtonSolver::set_update,
-           nb::arg("update"))
+      .def(
+          "set_update",
+          [](dolfinx::nls::petsc::NewtonSolver& self,
+             std::function<void(const dolfinx::nls::petsc::NewtonSolver* solver,
+                                const Vec, Vec)>
+                 update)
+          {
+            // See https://github.com/wjakob/nanobind/discussions/361 on below
+            self.set_update(
+                [update](const dolfinx::nls::petsc::NewtonSolver& solver,
+                         const Vec dx, Vec x) { update(&solver, dx, x); });
+          },
+          nb::arg("update"))
       .def("set_form", &dolfinx::nls::petsc::NewtonSolver::set_form,
            nb::arg("form"))
       .def("solve", &dolfinx::nls::petsc::NewtonSolver::solve, nb::arg("x"))
