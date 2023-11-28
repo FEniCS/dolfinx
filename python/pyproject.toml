@@ -95,7 +95,7 @@ ignore = []
 [tool.ruff.lint.isort]
 known-first-party = ["basix", "dolfinx", "ffcx", "ufl"]
 known-third-party = ["gmsh", "numba", "numpy", "pytest", "pyvista"]
-section-order = ["future", "standard-library", "mpi", "first-party", "local-folder", "third-party"]
+section-order = ["future", "standard-library", "mpi", "third-party", "first-party", "local-folder"]
 
 [tool.ruff.lint.isort.sections]
 "mpi" = ["mpi4py", "petsc4py"]

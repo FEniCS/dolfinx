@@ -9,6 +9,9 @@ from pathlib import Path
 from mpi4py import MPI
 from petsc4py import PETSc
 
+import numpy as np
+import pytest
+
 import basix
 import ufl
 from basix.ufl import element, mixed_element
@@ -39,9 +42,6 @@ from ufl import (
     inner,
     jump,
 )
-
-import numpy as np
-import pytest
 
 
 def run_scalar_test(mesh, V, degree):

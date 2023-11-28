@@ -116,6 +116,8 @@ import os
 from mpi4py import MPI
 from petsc4py import PETSc
 
+import numpy as np
+
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type, log, plot
@@ -125,8 +127,6 @@ from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_unit_square
 from dolfinx.nls.petsc import NewtonSolver
 from ufl import dx, grad, inner
-
-import numpy as np
 
 try:
     import pyvista as pv

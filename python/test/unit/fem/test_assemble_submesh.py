@@ -8,6 +8,9 @@
 
 from mpi4py import MPI
 
+import numpy as np
+import pytest
+
 import ufl
 from dolfinx import default_scalar_type, fem, la
 from dolfinx.mesh import (
@@ -20,9 +23,6 @@ from dolfinx.mesh import (
     locate_entities,
     locate_entities_boundary,
 )
-
-import numpy as np
-import pytest
 
 
 def assemble(mesh, space, k):

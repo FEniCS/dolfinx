@@ -22,16 +22,16 @@
 
 from mpi4py import MPI
 
+# +
+import matplotlib as mpl
+import matplotlib.pylab as plt
+import numpy as np
+
 import basix
 import basix.ufl
 from dolfinx import fem, mesh
 from dolfinx.fem.petsc import LinearProblem
 from ufl import SpatialCoordinate, TestFunction, TrialFunction, cos, div, dx, grad, inner, sin
-
-# +
-import matplotlib as mpl
-import matplotlib.pylab as plt
-import numpy as np
 
 mpl.use("agg")
 # -

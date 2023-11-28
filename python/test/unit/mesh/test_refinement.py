@@ -6,6 +6,10 @@
 
 from mpi4py import MPI
 
+import numpy as np
+import pytest
+from numpy import isclose, logical_and
+
 import ufl
 from dolfinx.fem import assemble_matrix, form, functionspace
 from dolfinx.mesh import (
@@ -23,10 +27,6 @@ from dolfinx.mesh import (
     refine_plaza,
     transfer_meshtag,
 )
-
-import numpy as np
-import pytest
-from numpy import isclose, logical_and
 
 
 def test_Refinecreate_unit_square():

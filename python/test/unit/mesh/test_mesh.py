@@ -9,6 +9,9 @@ import sys
 
 from mpi4py import MPI
 
+import numpy as np
+import pytest
+
 import basix
 import ufl
 from basix.ufl import element
@@ -32,9 +35,6 @@ from dolfinx.mesh import (
     locate_entities,
     locate_entities_boundary,
 )
-
-import numpy as np
-import pytest
 
 
 def submesh_topology_test(mesh, submesh, entity_map, vertex_map, entity_dim):

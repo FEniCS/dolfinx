@@ -9,6 +9,9 @@ import random
 
 from mpi4py import MPI
 
+import numpy as np
+import pytest
+
 import basix
 import ufl
 from basix.ufl import blocked_element, custom_element, element, enriched_element, mixed_element
@@ -32,9 +35,6 @@ from dolfinx.mesh import (
     locate_entities_boundary,
     meshtags,
 )
-
-import numpy as np
-import pytest
 
 parametrize_cell_types = pytest.mark.parametrize(
     "cell_type",

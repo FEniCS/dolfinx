@@ -8,10 +8,10 @@ import math
 
 from mpi4py import MPI
 
+import numpy as np
+
 import dolfinx
 from dolfinx.mesh import GhostMode, create_unit_square
-
-import numpy as np
 
 
 def test_sub_index_map():

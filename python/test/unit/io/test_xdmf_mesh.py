@@ -8,6 +8,9 @@ from pathlib import Path
 
 from mpi4py import MPI
 
+import numpy as np
+import pytest
+
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
 from dolfinx.io import XDMFFile
@@ -22,9 +25,6 @@ from dolfinx.mesh import (
     create_unit_square,
     locate_entities,
 )
-
-import numpy as np
-import pytest
 
 # Supported XDMF file encoding
 if MPI.COMM_WORLD.size > 1:

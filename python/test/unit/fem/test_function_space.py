@@ -7,15 +7,15 @@
 
 from mpi4py import MPI
 
+import numpy as np
+import pytest
+
 import basix
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type
 from dolfinx.fem import Function, FunctionSpace, functionspace
 from dolfinx.mesh import create_mesh, create_unit_cube
 from ufl import Cell, Mesh, TestFunction, TrialFunction, grad
-
-import numpy as np
-import pytest
 
 
 @pytest.fixture

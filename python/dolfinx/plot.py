@@ -9,10 +9,10 @@ import functools
 import typing
 import warnings
 
+import numpy as np
+
 from dolfinx import cpp as _cpp
 from dolfinx import fem, mesh
-
-import numpy as np
 
 # NOTE: This dictionary and the below function that uses it should be
 # revised when pyvista improves rendering of 'arbitrary' Lagrange

@@ -9,6 +9,9 @@ import typing
 
 from mpi4py import MPI as _MPI
 
+import numpy as np
+import numpy.typing as npt
+
 import basix
 import basix.ufl
 import ufl
@@ -16,9 +19,6 @@ from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
 from dolfinx.cpp.graph import AdjacencyList_int32
 from dolfinx.mesh import CellType, Mesh, create_mesh, meshtags, meshtags_from_entities
-
-import numpy as np
-import numpy.typing as npt
 
 __all__ = [
     "cell_perm_array",

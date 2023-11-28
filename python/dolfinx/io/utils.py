@@ -11,6 +11,9 @@ from pathlib import Path
 
 from mpi4py import MPI as _MPI
 
+import numpy as np
+import numpy.typing as npt
+
 import basix
 import basix.ufl
 import ufl
@@ -19,9 +22,6 @@ from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh  # F401
 from dolfinx.cpp.io import perm_vtk as cell_perm_vtk  # F401
 from dolfinx.fem import Function
 from dolfinx.mesh import GhostMode, Mesh, MeshTags
-
-import numpy as np
-import numpy.typing as npt
 
 __all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk", "distribute_entity_data"]
 

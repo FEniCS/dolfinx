@@ -4,10 +4,10 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from dolfinx.graph import adjacencylist
-
 import numpy as np
 import pytest
+
+from dolfinx.graph import adjacencylist
 
 
 @pytest.mark.parametrize("dtype", [np.int32, np.int64])

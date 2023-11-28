@@ -7,6 +7,9 @@
 
 from mpi4py import MPI
 
+import numpy as np
+import pytest
+
 from dolfinx import cpp as _cpp
 from dolfinx.geometry import (
     bb_tree,
@@ -27,9 +30,6 @@ from dolfinx.mesh import (
     locate_entities,
     locate_entities_boundary,
 )
-
-import numpy as np
-import pytest
 
 
 def extract_geometricial_data(mesh, dim, entities):

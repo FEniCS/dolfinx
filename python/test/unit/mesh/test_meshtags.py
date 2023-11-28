@@ -6,12 +6,12 @@
 
 from mpi4py import MPI
 
+import numpy as np
+import pytest
+
 from dolfinx.graph import adjacencylist
 from dolfinx.mesh import CellType, create_unit_cube, locate_entities, meshtags_from_entities
 from ufl import Measure
-
-import numpy as np
-import pytest
 
 celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
 

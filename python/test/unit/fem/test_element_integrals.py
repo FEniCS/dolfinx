@@ -10,14 +10,14 @@ from itertools import combinations, product
 
 from mpi4py import MPI
 
+import numpy as np
+import pytest
+
 import dolfinx
 import ufl
 from basix.ufl import element
 from dolfinx.fem import Constant, Function, assemble_matrix, assemble_scalar, assemble_vector, form, functionspace
 from dolfinx.mesh import CellType, create_mesh, meshtags
-
-import numpy as np
-import pytest
 
 parametrize_cell_types = pytest.mark.parametrize(
     "cell_type",

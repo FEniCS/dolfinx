@@ -35,13 +35,13 @@ from typing import Tuple
 
 from mpi4py import MPI
 
+from analytical_efficiencies_wire import calculate_analytical_efficiencies
+from mesh_wire import generate_mesh_wire
+
 import ufl
 from basix.ufl import element
 from dolfinx import default_scalar_type, fem, io, plot
 from dolfinx.fem.petsc import LinearProblem
-
-from analytical_efficiencies_wire import calculate_analytical_efficiencies
-from mesh_wire import generate_mesh_wire
 
 try:
     import gmsh

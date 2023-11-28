@@ -111,14 +111,14 @@
 from mpi4py import MPI
 from petsc4py.PETSc import ScalarType  # type: ignore
 
+# +
+import numpy as np
+
 import ufl
 from dolfinx import fem, io, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
 from dolfinx.mesh import CellType, GhostMode
 from ufl import CellDiameter, FacetNormal, avg, div, dS, dx, grad, inner, jump, pi, sin
-
-# +
-import numpy as np
 
 # -
 

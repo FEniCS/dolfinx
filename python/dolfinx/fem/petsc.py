@@ -22,6 +22,8 @@ import petsc4py
 import petsc4py.lib
 from petsc4py import PETSc
 
+import numpy as np
+
 import dolfinx.cpp as _cpp
 import ufl
 from dolfinx import la
@@ -35,8 +37,6 @@ from dolfinx.fem.forms import extract_function_spaces as _extract_spaces
 from dolfinx.fem.forms import form as _create_form
 from dolfinx.fem.function import Function as _Function
 from dolfinx.la import create_petsc_vector
-
-import numpy as np
 
 __all__ = [
     "create_vector",

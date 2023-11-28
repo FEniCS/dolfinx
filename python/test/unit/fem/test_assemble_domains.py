@@ -7,6 +7,9 @@
 
 from mpi4py import MPI
 
+import numpy as np
+import pytest
+
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, fem, la
@@ -20,9 +23,6 @@ from dolfinx.mesh import (
     meshtags,
     meshtags_from_entities,
 )
-
-import numpy as np
-import pytest
 
 
 @pytest.fixture

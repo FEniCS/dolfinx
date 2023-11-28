@@ -4,9 +4,9 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import dolfinx
-
 import pkg_resources
+
+import dolfinx
 
 
 def test_version():

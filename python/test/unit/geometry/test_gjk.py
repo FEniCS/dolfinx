@@ -6,15 +6,15 @@
 
 from mpi4py import MPI
 
+import numpy as np
+import pytest
+from scipy.spatial.transform import Rotation
+
 import ufl
 from basix.ufl import element
 from dolfinx import geometry
 from dolfinx.geometry import compute_distance_gjk
 from dolfinx.mesh import create_mesh
-
-import numpy as np
-import pytest
-from scipy.spatial.transform import Rotation
 
 
 def distance_point_to_line_3D(P1, P2, point):

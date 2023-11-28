@@ -19,13 +19,13 @@
 
 from mpi4py import MPI
 
-import ufl
-from dolfinx import fem, la, mesh, plot
-
 # +
 import numpy as np
 import scipy.sparse
 import scipy.sparse.linalg
+
+import ufl
+from dolfinx import fem, la, mesh, plot
 
 # -
 

@@ -8,6 +8,9 @@ from pathlib import Path
 
 from mpi4py import MPI
 
+import numpy as np
+import pytest
+
 import dolfinx
 import dolfinx.graph
 import ufl
@@ -15,9 +18,6 @@ from basix.ufl import element
 from dolfinx import default_real_type
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, GhostMode, compute_midpoints, create_box, create_cell_partitioner, create_mesh
-
-import numpy as np
-import pytest
 
 partitioners = [dolfinx.graph.partitioner()]
 try:

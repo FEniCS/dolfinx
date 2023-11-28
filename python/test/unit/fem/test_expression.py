@@ -6,6 +6,9 @@
 
 from mpi4py import MPI
 
+import numpy as np
+import pytest
+
 import basix
 import dolfinx.cpp
 import ufl
@@ -14,9 +17,6 @@ from dolfinx import fem, la
 from dolfinx.fem import Constant, Expression, Function, form, functionspace
 from dolfinx.mesh import create_unit_square
 from ffcx.element_interface import QuadratureElement
-
-import numpy as np
-import pytest
 
 dolfinx.cpp.common.init_logging(["-v"])
 

@@ -6,10 +6,10 @@
 
 from mpi4py import MPI
 
-from dolfinx.mesh import GhostMode, compute_midpoints, create_unit_cube, create_unit_interval, create_unit_square
-
 import numpy as np
 import pytest
+
+from dolfinx.mesh import GhostMode, compute_midpoints, create_unit_cube, create_unit_interval, create_unit_square
 
 
 @pytest.mark.xfail(reason="Shared vertex currently disabled")

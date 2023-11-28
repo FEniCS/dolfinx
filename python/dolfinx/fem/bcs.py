@@ -16,10 +16,10 @@ import numpy.typing
 if typing.TYPE_CHECKING:
     from dolfinx.fem.function import Constant, Function
 
+import numpy as np
+
 import dolfinx
 from dolfinx import cpp as _cpp
-
-import numpy as np
 
 
 def locate_dofs_geometrical(

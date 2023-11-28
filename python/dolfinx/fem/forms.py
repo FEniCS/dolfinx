@@ -9,14 +9,14 @@ from __future__ import annotations
 import collections
 import typing
 
+import numpy as np
+import numpy.typing as npt
+
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit
 from dolfinx.fem import IntegralType
 from dolfinx.fem.function import FunctionSpace
-
-import numpy as np
-import numpy.typing as npt
 
 if typing.TYPE_CHECKING:
     from dolfinx.fem import function

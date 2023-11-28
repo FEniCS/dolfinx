@@ -7,14 +7,14 @@
 
 from mpi4py import MPI
 
+import numpy as np
+import pytest
+
 import ufl
 from dolfinx import fem, la
 from dolfinx.fem import Function, form, functionspace
 from dolfinx.mesh import GhostMode, create_unit_square
 from ufl import avg, inner
-
-import numpy as np
-import pytest
 
 
 def dx_from_ufl(mesh):

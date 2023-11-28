@@ -8,13 +8,13 @@
 
 from mpi4py import MPI
 
+import numpy as np
+import pytest
+
 from basix.ufl import element
 from dolfinx import la
 from dolfinx.fem import Function, functionspace
 from dolfinx.mesh import create_unit_square
-
-import numpy as np
-import pytest
 
 
 @pytest.mark.parametrize("e", [element("Lagrange", "triangle", 1), element("Lagrange", "triangle", 1, shape=(2,))])

@@ -22,15 +22,15 @@
 from mpi4py import MPI
 from petsc4py import PETSc
 
+# +
+import numpy as np
+
 import ufl
 from dolfinx.fem import Function, assemble_scalar, form, functionspace
 from dolfinx.fem.petsc import LinearProblem
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import create_unit_square
 from ufl import dx, grad, inner
-
-# +
-import numpy as np
 
 # Wavenumber
 k0 = 4 * np.pi
