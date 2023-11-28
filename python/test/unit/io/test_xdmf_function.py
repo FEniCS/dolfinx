@@ -14,8 +14,7 @@ import pytest
 import basix
 from dolfinx.fem import Function, functionspace
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import (CellType, create_unit_cube, create_unit_interval,
-                          create_unit_square)
+from dolfinx.mesh import CellType, create_unit_cube, create_unit_interval, create_unit_square
 
 # Supported XDMF file encoding
 if MPI.COMM_WORLD.size > 1:
@@ -44,7 +43,7 @@ def mesh_factory(tdim, n):
 @pytest.mark.parametrize("dtype", [np.double, np.complex128])
 def test_save_1d_scalar(tempdir, encoding, dtype, use_pathlib):
     xtype = np.real(dtype(0)).dtype
-    filename2 = (Path(tempdir).joinpath("u1_.xdmf")if use_pathlib else Path(tempdir, "u1_.xdmf"))
+    filename2 = Path(tempdir).joinpath("u1_.xdmf") if use_pathlib else Path(tempdir, "u1_.xdmf")
     mesh = create_unit_interval(MPI.COMM_WORLD, 32, dtype=xtype)
     V = functionspace(mesh, ("Lagrange", 2))
     u = Function(V, dtype=dtype)
@@ -224,7 +223,7 @@ def test_save_3d_vector_series(tempdir, encoding, dtype, cell_type):
 
 def test_higher_order_function(tempdir):
     """Test Function output for higher-order meshes."""
-    gmsh = pytest.importorskip('gmsh')
+    gmsh = pytest.importorskip("gmsh")
     from dolfinx.io import gmshio
 
     gmsh.initialize()

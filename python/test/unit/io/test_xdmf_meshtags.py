@@ -81,8 +81,7 @@ def test_3d(tempdir, cell_type, encoding):
 
     # Check number of owned and marked entities
     lines_local = comm.allreduce((mt_lines.indices < mesh.topology.index_map(1).size_local).sum(), op=MPI.SUM)
-    lines_local_in = comm.allreduce(
-        (mt_lines_in.indices < mesh_in.topology.index_map(1).size_local).sum(), op=MPI.SUM)
+    lines_local_in = comm.allreduce((mt_lines_in.indices < mesh_in.topology.index_map(1).size_local).sum(), op=MPI.SUM)
 
     assert lines_local == lines_local_in
 

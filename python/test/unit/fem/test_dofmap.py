@@ -16,8 +16,7 @@ import dolfinx
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx.fem import functionspace
-from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
-                          create_unit_interval, create_unit_square)
+from dolfinx.mesh import CellType, create_mesh, create_unit_cube, create_unit_interval, create_unit_square
 
 xfail = pytest.mark.xfail(strict=True)
 
@@ -29,9 +28,12 @@ def mesh():
 
 @pytest.mark.skip
 @pytest.mark.parametrize(
-    'mesh_factory', [(create_unit_square, (MPI.COMM_WORLD, 4, 4)),
-                     (create_unit_square,
-                      (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral))])
+    "mesh_factory",
+    [
+        (create_unit_square, (MPI.COMM_WORLD, 4, 4)),
+        (create_unit_square, (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral)),
+    ],
+)
 def test_tabulate_dofs(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
@@ -95,16 +97,19 @@ def test_entity_dofs(mesh):
     V = functionspace(mesh, ("Lagrange", 1, (gdim,)))
     bs = V.dofmap.dof_layout.block_size
     for i, cdofs in enumerate([[0, 1], [2, 3], [4, 5]]):
-        dofs = [bs * d + b for d in V.dofmap.dof_layout.entity_dofs(0, i)
-                for b in range(bs)]
+        dofs = [bs * d + b for d in V.dofmap.dof_layout.entity_dofs(0, i) for b in range(bs)]
         assert all(d == cd for d, cd in zip(dofs, cdofs))
 
 
 @pytest.mark.skip
 @pytest.mark.skip_in_parallel
-@pytest.mark.parametrize('mesh_factory', [(create_unit_square, (MPI.COMM_WORLD, 2, 2)),
-                                          (create_unit_square,
-                                           (MPI.COMM_WORLD, 2, 2, CellType.quadrilateral))])
+@pytest.mark.parametrize(
+    "mesh_factory",
+    [
+        (create_unit_square, (MPI.COMM_WORLD, 2, 2)),
+        (create_unit_square, (MPI.COMM_WORLD, 2, 2, CellType.quadrilateral)),
+    ],
+)
 def test_entity_closure_dofs(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
@@ -121,16 +126,13 @@ def test_entity_closure_dofs(mesh_factory):
             for entity in all_entities:
                 entities = np.array([entity], dtype=np.uintp)
                 dofs_on_this_entity = V.dofmap.entity_dofs(mesh, d, entities)
-                closure_dofs = V.dofmap.entity_closure_dofs(
-                    mesh, d, entities)
+                closure_dofs = V.dofmap.entity_closure_dofs(mesh, d, entities)
                 assert len(dofs_on_this_entity) == V.dofmap.dof_layout.num_entity_dofs(d)
                 assert len(dofs_on_this_entity) <= len(closure_dofs)
                 covered.update(dofs_on_this_entity)
                 covered2.update(closure_dofs)
-            dofs_on_all_entities = V.dofmap.entity_dofs(
-                mesh, d, all_entities)
-            closure_dofs_on_all_entities = V.dofmap.entity_closure_dofs(
-                mesh, d, all_entities)
+            dofs_on_all_entities = V.dofmap.entity_dofs(mesh, d, all_entities)
+            closure_dofs_on_all_entities = V.dofmap.entity_closure_dofs(mesh, d, all_entities)
             assert len(dofs_on_all_entities) == V.dofmap.dof_layout.num_entity_dofs(d) * num_entities
             assert covered == set(dofs_on_all_entities)
             assert covered2 == set(closure_dofs_on_all_entities)
@@ -143,10 +145,12 @@ def test_entity_closure_dofs(mesh_factory):
 
 
 def test_block_size():
-    meshes = [create_unit_square(MPI.COMM_WORLD, 8, 8),
-              create_unit_cube(MPI.COMM_WORLD, 4, 4, 4),
-              create_unit_square(MPI.COMM_WORLD, 8, 8, CellType.quadrilateral),
-              create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, CellType.hexahedron)]
+    meshes = [
+        create_unit_square(MPI.COMM_WORLD, 8, 8),
+        create_unit_cube(MPI.COMM_WORLD, 4, 4, 4),
+        create_unit_square(MPI.COMM_WORLD, 8, 8, CellType.quadrilateral),
+        create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, CellType.hexahedron),
+    ]
     for mesh in meshes:
         P2 = element("Lagrange", mesh.basix_cell(), 2)
         V = functionspace(mesh, P2)
@@ -168,16 +172,20 @@ def test_block_size():
 @pytest.mark.skip
 def test_block_size_real():
     mesh = create_unit_interval(MPI.COMM_WORLD, 12)
-    V = element('DG', mesh.basix_cell(), 0)
-    R = element('R', mesh.basix_cell(), 0)
+    V = element("DG", mesh.basix_cell(), 0)
+    R = element("R", mesh.basix_cell(), 0)
     X = functionspace(mesh, V * R)
     assert X.dofmap.index_map_bs == 1
 
 
 @pytest.mark.skip
-@pytest.mark.parametrize('mesh_factory', [(create_unit_square, (MPI.COMM_WORLD, 4, 4)),
-                                          (create_unit_square,
-                                           (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral))])
+@pytest.mark.parametrize(
+    "mesh_factory",
+    [
+        (create_unit_square, (MPI.COMM_WORLD, 4, 4)),
+        (create_unit_square, (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral)),
+    ],
+)
 def test_local_dimension(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
@@ -225,26 +233,62 @@ def test_readonly_view_local_to_global_unwoned(mesh):
 
 
 @pytest.mark.skip_in_parallel
-@pytest.mark.parametrize("points, celltype, order", [
-    (np.array([[0, 0], [1, 0], [0, 2], [1, 2]], dtype=np.float64),
-     CellType.quadrilateral, 1),
-    (np.array([[0, 0], [1, 0], [0, 2], [1, 2],
-               [0.5, 0], [0, 1], [1, 1], [0.5, 2], [0.5, 1]], dtype=np.float64),
-     CellType.quadrilateral, 2),
-    (np.array([[0, 0], [1, 0], [0, 2], [0.5, 1], [0, 1], [0.5, 0]], dtype=np.float64),
-     CellType.triangle, 2),
-    (np.array([[0, 0, 0], [1, 0, 0], [0, 2, 0], [1, 2, 0],
-               [0, 0, 3], [1, 0, 3], [0, 2, 3], [1, 2, 3]], dtype=np.float64),
-     CellType.hexahedron, 1),
-    (np.array([[0, 0, 0], [1, 0, 0], [0, 2, 0], [1, 2, 0],
-               [0, 0, 3], [1, 0, 3], [0, 2, 3], [1, 2, 3],
-               [0.5, 0, 0], [0, 1, 0], [0, 0, 1.5], [1, 1, 0],
-               [1, 0, 1.5], [0.5, 2, 0], [0, 2, 1.5], [1, 2, 1.5],
-               [0.5, 0, 3], [0, 1, 3], [1, 1, 3], [0.5, 2, 3],
-               [0.5, 1, 0], [0.5, 0, 1.5], [0, 1, 1.5], [1, 1, 1.5],
-               [0.5, 2, 1.5], [0.5, 1, 3], [0.5, 1, 1.5]], dtype=np.float64),
-     CellType.hexahedron, 2)
-])
+@pytest.mark.parametrize(
+    "points, celltype, order",
+    [
+        (np.array([[0, 0], [1, 0], [0, 2], [1, 2]], dtype=np.float64), CellType.quadrilateral, 1),
+        (
+            np.array([[0, 0], [1, 0], [0, 2], [1, 2], [0.5, 0], [0, 1], [1, 1], [0.5, 2], [0.5, 1]], dtype=np.float64),
+            CellType.quadrilateral,
+            2,
+        ),
+        (np.array([[0, 0], [1, 0], [0, 2], [0.5, 1], [0, 1], [0.5, 0]], dtype=np.float64), CellType.triangle, 2),
+        (
+            np.array(
+                [[0, 0, 0], [1, 0, 0], [0, 2, 0], [1, 2, 0], [0, 0, 3], [1, 0, 3], [0, 2, 3], [1, 2, 3]],
+                dtype=np.float64,
+            ),
+            CellType.hexahedron,
+            1,
+        ),
+        (
+            np.array(
+                [
+                    [0, 0, 0],
+                    [1, 0, 0],
+                    [0, 2, 0],
+                    [1, 2, 0],
+                    [0, 0, 3],
+                    [1, 0, 3],
+                    [0, 2, 3],
+                    [1, 2, 3],
+                    [0.5, 0, 0],
+                    [0, 1, 0],
+                    [0, 0, 1.5],
+                    [1, 1, 0],
+                    [1, 0, 1.5],
+                    [0.5, 2, 0],
+                    [0, 2, 1.5],
+                    [1, 2, 1.5],
+                    [0.5, 0, 3],
+                    [0, 1, 3],
+                    [1, 1, 3],
+                    [0.5, 2, 3],
+                    [0.5, 1, 0],
+                    [0.5, 0, 1.5],
+                    [0, 1, 1.5],
+                    [1, 1, 1.5],
+                    [0.5, 2, 1.5],
+                    [0.5, 1, 3],
+                    [0.5, 1, 1.5],
+                ],
+                dtype=np.float64,
+            ),
+            CellType.hexahedron,
+            2,
+        ),
+    ],
+)
 def test_higher_order_coordinate_map(points, celltype, order):
     """Computes physical coordinates of a cell, based on the coordinate map."""
     cells = np.array([range(len(points))])
@@ -262,7 +306,7 @@ def test_higher_order_coordinate_map(points, celltype, order):
 
     i = 0
     for node in range(len(points)):
-        x_coord_new[i] = x_g[coord_dofs[0, node], :mesh.geometry.dim]
+        x_coord_new[i] = x_g[coord_dofs[0, node], : mesh.geometry.dim]
         i += 1
     x = cmap.push_forward(X, x_coord_new)
 
@@ -279,22 +323,48 @@ def test_higher_order_coordinate_map(points, celltype, order):
 def test_higher_order_tetra_coordinate_map(order):
     """Computes physical coordinates of a cell, based on the coordinate map."""
     celltype = CellType.tetrahedron
-    points = np.array([[0, 0, 0], [1, 0, 0], [0, 2, 0], [0, 0, 3],
-                       [0, 4 / 3, 1], [0, 2 / 3, 2],
-                       [2 / 3, 0, 1], [1 / 3, 0, 2],
-                       [2 / 3, 2 / 3, 0], [1 / 3, 4 / 3, 0],
-                       [0, 0, 1], [0, 0, 2],
-                       [0, 2 / 3, 0], [0, 4 / 3, 0],
-                       [1 / 3, 0, 0], [2 / 3, 0, 0],
-                       [1 / 3, 2 / 3, 1], [0, 2 / 3, 1],
-                       [1 / 3, 0, 1], [1 / 3, 2 / 3, 0]])
+    points = np.array(
+        [
+            [0, 0, 0],
+            [1, 0, 0],
+            [0, 2, 0],
+            [0, 0, 3],
+            [0, 4 / 3, 1],
+            [0, 2 / 3, 2],
+            [2 / 3, 0, 1],
+            [1 / 3, 0, 2],
+            [2 / 3, 2 / 3, 0],
+            [1 / 3, 4 / 3, 0],
+            [0, 0, 1],
+            [0, 0, 2],
+            [0, 2 / 3, 0],
+            [0, 4 / 3, 0],
+            [1 / 3, 0, 0],
+            [2 / 3, 0, 0],
+            [1 / 3, 2 / 3, 1],
+            [0, 2 / 3, 1],
+            [1 / 3, 0, 1],
+            [1 / 3, 2 / 3, 0],
+        ]
+    )
 
     if order == 1:
         points = np.array([points[0, :], points[1, :], points[2, :], points[3, :]])
     elif order == 2:
-        points = np.array([points[0, :], points[1, :], points[2, :], points[3, :],
-                           [0, 1, 3 / 2], [1 / 2, 0, 3 / 2], [1 / 2, 1, 0], [0, 0, 3 / 2],
-                           [0, 1, 0], [1 / 2, 0, 0]])
+        points = np.array(
+            [
+                points[0, :],
+                points[1, :],
+                points[2, :],
+                points[3, :],
+                [0, 1, 3 / 2],
+                [1 / 2, 0, 3 / 2],
+                [1 / 2, 1, 0],
+                [0, 0, 3 / 2],
+                [0, 1, 0],
+                [1 / 2, 0, 0],
+            ]
+        )
     cells = np.array([range(len(points))])
     domain = ufl.Mesh(element("Lagrange", celltype.name, order, shape=(3,)))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
@@ -309,7 +379,7 @@ def test_higher_order_tetra_coordinate_map(order):
 
     i = 0
     for node in range(len(points)):
-        x_coord_new[i] = x_g[coord_dofs[0, node], :mesh.geometry.dim]
+        x_coord_new[i] = x_g[coord_dofs[0, node], : mesh.geometry.dim]
         i += 1
 
     x = cmap.push_forward(X, x_coord_new)

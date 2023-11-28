@@ -17,8 +17,7 @@ import pytest
 import dolfinx
 from dolfinx import TimingType
 from dolfinx import cpp as _cpp
-from dolfinx import (default_real_type, default_scalar_type, fem, la,
-                     list_timings)
+from dolfinx import default_real_type, default_scalar_type, fem, la, list_timings
 from dolfinx.fem import Form, Function, IntegralType, functionspace
 from dolfinx.mesh import create_unit_square
 
@@ -34,7 +33,8 @@ c_signature = numba.types.void(
     numba.types.CPointer(numba.typeof(default_scalar_type())),
     numba.types.CPointer(numba.typeof(default_real_type())),
     numba.types.CPointer(numba.types.int32),
-    numba.types.CPointer(numba.types.int32))
+    numba.types.CPointer(numba.types.int32),
+)
 
 
 @numba.cfunc(c_signature, nopython=True)
@@ -95,9 +95,13 @@ def test_numba_assembly():
     mesh = create_unit_square(MPI.COMM_WORLD, 13, 13)
     V = functionspace(mesh, ("Lagrange", 1))
     cells = np.arange(mesh.topology.index_map(mesh.topology.dim).size_local, dtype=np.int32)
-    integrals = {IntegralType.cell: [(-1, tabulate_tensor_A.address, cells),
-                                     (12, tabulate_tensor_A.address, np.arange(0)),
-                                     (2, tabulate_tensor_A.address, np.arange(0))]}
+    integrals = {
+        IntegralType.cell: [
+            (-1, tabulate_tensor_A.address, cells),
+            (12, tabulate_tensor_A.address, np.arange(0)),
+            (2, tabulate_tensor_A.address, np.arange(0)),
+        ]
+    }
     a = Form(formtype([V._cpp_object, V._cpp_object], integrals, [], [], False, None))
 
     integrals = {IntegralType.cell: [(-1, tabulate_tensor_b.address, cells)]}
@@ -151,8 +155,11 @@ def test_cffi_assembly():
     V = functionspace(mesh, ("Lagrange", 1))
     if mesh.comm.rank == 0:
         from cffi import FFI
+
         ffibuilder = FFI()
-        ffibuilder.set_source("_cffi_kernelA", r"""
+        ffibuilder.set_source(
+            "_cffi_kernelA",
+            r"""
         #include <math.h>
         void tabulate_tensor_poissonA(double* restrict A, const double* w,
                                     const double* c,
@@ -228,8 +235,10 @@ def test_cffi_assembly():
         A[1] = 0.1666666666666667 * sp[3];
         A[2] = 0.1666666666666667 * sp[3];
         }
-        """)
-        ffibuilder.cdef("""
+        """,
+        )
+        ffibuilder.cdef(
+            """
         void tabulate_tensor_poissonA(double* restrict A, const double* w,
                                     const double* c,
                                     const double* restrict coordinate_dofs,
@@ -240,7 +249,8 @@ def test_cffi_assembly():
                                     const double* restrict coordinate_dofs,
                                     const int* entity_local_index,
                                     const int* cell_orientation);
-        """)
+        """
+        )
 
         ffibuilder.compile(verbose=True)
 

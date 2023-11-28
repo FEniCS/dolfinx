@@ -19,7 +19,8 @@ from dolfinx.mesh import create_unit_square
 from ufl import dx, grad, inner
 
 pytestmark = pytest.mark.skipif(
-    not np.issubdtype(PETSc.ScalarType, np.complexfloating), reason="Only works in complex mode.")  # type: ignore
+    not np.issubdtype(PETSc.ScalarType, np.complexfloating), reason="Only works in complex mode."
+)  # type: ignore
 
 
 def test_complex_assembly():
@@ -85,8 +86,8 @@ def test_complex_assembly_solve():
     x = ufl.SpatialCoordinate(mesh)
 
     # Define source term
-    A = 1.0 + 2.0 * (2.0 * np.pi)**2
-    f = (1. + 1j) * A * ufl.cos(2 * np.pi * x[0]) * ufl.cos(2 * np.pi * x[1])
+    A = 1.0 + 2.0 * (2.0 * np.pi) ** 2
+    f = (1.0 + 1j) * A * ufl.cos(2 * np.pi * x[0]) * ufl.cos(2 * np.pi * x[1])
 
     # Variational problem
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
@@ -109,6 +110,7 @@ def test_complex_assembly_solve():
     # Reference Solution
     def ref_eval(x):
         return np.cos(2 * np.pi * x[0]) * np.cos(2 * np.pi * x[1])
+
     u_ref = Function(V)
     u_ref.interpolate(ref_eval)
 

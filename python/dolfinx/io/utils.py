@@ -23,8 +23,7 @@ from dolfinx.cpp.io import perm_vtk as cell_perm_vtk  # noqa F401
 from dolfinx.fem import Function
 from dolfinx.mesh import GhostMode, Mesh, MeshTags
 
-__all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk",
-           "distribute_entity_data"]
+__all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk", "distribute_entity_data"]
 
 
 def _extract_cpp_functions(functions: typing.Union[typing.List[Function], Function]):
@@ -38,6 +37,7 @@ def _extract_cpp_functions(functions: typing.Union[typing.List[Function], Functi
 # FidesWriter and VTXWriter require ADIOS2
 if _cpp.common.has_adios2:
     from dolfinx.cpp.io import FidesMeshPolicy  # noqa F401
+
     __all__ = __all__ + ["FidesWriter", "VTXWriter", "FidesMeshPolicy"]
 
     class VTXWriter:
@@ -51,9 +51,13 @@ if _cpp.common.has_adios2:
 
         """
 
-        def __init__(self, comm: _MPI.Comm, filename: typing.Union[str, Path],
-                     output: typing.Union[Mesh, Function, typing.List[Function]],
-                     engine: typing.Optional[str] = "BPFile"):
+        def __init__(
+            self,
+            comm: _MPI.Comm,
+            filename: typing.Union[str, Path],
+            output: typing.Union[Mesh, Function, typing.List[Function]],
+            engine: typing.Optional[str] = "BPFile",
+        ):
             """Initialize a writer for outputting data in the VTX format.
 
             Args:
@@ -90,8 +94,7 @@ if _cpp.common.has_adios2:
                 self._cpp_object = _vtxwriter(comm, filename, output._cpp_object, engine)  # type: ignore[union-attr]
             except (NotImplementedError, TypeError, AttributeError):
                 # Input is a single function or a list of functions
-                self._cpp_object = _vtxwriter(comm, filename, _extract_cpp_functions(
-                    output), engine)   # type: ignore[arg-type]
+                self._cpp_object = _vtxwriter(comm, filename, _extract_cpp_functions(output), engine)  # type: ignore[arg-type]
 
         def __enter__(self):
             return self
@@ -117,10 +120,14 @@ if _cpp.common.has_adios2:
 
         """
 
-        def __init__(self, comm: _MPI.Comm, filename: typing.Union[str, Path],
-                     output: typing.Union[Mesh, typing.List[Function], Function],
-                     engine: typing.Optional[str] = "BPFile",
-                     mesh_policy: typing.Optional[FidesMeshPolicy] = FidesMeshPolicy.update):
+        def __init__(
+            self,
+            comm: _MPI.Comm,
+            filename: typing.Union[str, Path],
+            output: typing.Union[Mesh, typing.List[Function], Function],
+            engine: typing.Optional[str] = "BPFile",
+            mesh_policy: typing.Optional[FidesMeshPolicy] = FidesMeshPolicy.update,
+        ):
             """Initialize a writer for outputting a mesh, a single Lagrange
             function or list of Lagrange functions sharing the same
             element family and degree
@@ -147,7 +154,7 @@ if _cpp.common.has_adios2:
                 try:
                     dtype = output.function_space.mesh.geometry.x.dtype  # type: ignore
                 except AttributeError:
-                    dtype = output[0].function_space.mesh.geometry.x.dtype   # type: ignore
+                    dtype = output[0].function_space.mesh.geometry.x.dtype  # type: ignore
 
             if dtype == np.float32:
                 _fides_writer = _cpp.io.FidesWriter_float32
@@ -155,11 +162,9 @@ if _cpp.common.has_adios2:
                 _fides_writer = _cpp.io.FidesWriter_float64
 
             try:
-                self._cpp_object = _fides_writer(
-                    comm, filename, output._cpp_object, engine)  # type: ignore
+                self._cpp_object = _fides_writer(comm, filename, output._cpp_object, engine)  # type: ignore
             except (NotImplementedError, TypeError, AttributeError):
-                self._cpp_object = _fides_writer(comm, filename, _extract_cpp_functions(
-                    output), engine, mesh_policy)  # type: ignore[arg-type]
+                self._cpp_object = _fides_writer(comm, filename, _extract_cpp_functions(output), engine, mesh_policy)  # type: ignore[arg-type]
 
         def __enter__(self):
             return self
@@ -209,9 +214,13 @@ class XDMFFile(_cpp.io.XDMFFile):
         """Write mesh to file"""
         super().write_mesh(mesh._cpp_object, xpath)
 
-    def write_meshtags(self, tags: MeshTags, x: typing.Union[_cpp.mesh.Geometry_float32, _cpp.mesh.Geometry_float64],
-                       geometry_xpath: str = "/Xdmf/Domain/Grid/Geometry",
-                       xpath: str = "/Xdmf/Domain") -> None:
+    def write_meshtags(
+        self,
+        tags: MeshTags,
+        x: typing.Union[_cpp.mesh.Geometry_float32, _cpp.mesh.Geometry_float64],
+        geometry_xpath: str = "/Xdmf/Domain/Grid/Geometry",
+        xpath: str = "/Xdmf/Domain",
+    ) -> None:
         """Write mesh tags to file"""
         super().write_meshtags(tags._cpp_object, x, geometry_xpath, xpath)
 
@@ -241,12 +250,21 @@ class XDMFFile(_cpp.io.XDMFFile):
 
         # Build the mesh
         cmap = _cpp.fem.CoordinateElement_float64(cell_shape, cell_degree)
-        msh = _cpp.mesh.create_mesh(self.comm, _cpp.graph.AdjacencyList_int64(cells),
-                                    cmap, x, _cpp.mesh.create_cell_partitioner(ghost_mode))
+        msh = _cpp.mesh.create_mesh(
+            self.comm, _cpp.graph.AdjacencyList_int64(cells), cmap, x, _cpp.mesh.create_cell_partitioner(ghost_mode)
+        )
         msh.name = name
 
-        domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_shape.name, cell_degree,
-                                            basix.LagrangeVariant.equispaced, shape=(x.shape[1], ), gdim=x.shape[1]))
+        domain = ufl.Mesh(
+            basix.ufl.element(
+                "Lagrange",
+                cell_shape.name,
+                cell_degree,
+                basix.LagrangeVariant.equispaced,
+                shape=(x.shape[1],),
+                gdim=x.shape[1],
+            )
+        )
         return Mesh(msh, domain)
 
     def read_meshtags(self, mesh, name, xpath="/Xdmf/Domain"):
@@ -254,6 +272,7 @@ class XDMFFile(_cpp.io.XDMFFile):
         return MeshTags(mt)
 
 
-def distribute_entity_data(mesh: Mesh, entity_dim: int, entities: npt.NDArray[np.int64],
-                           values: npt.NDArray[np.int32]) -> typing.Tuple[npt.NDArray[np.int64], npt.NDArray[np.int32]]:
+def distribute_entity_data(
+    mesh: Mesh, entity_dim: int, entities: npt.NDArray[np.int64], values: npt.NDArray[np.int32]
+) -> typing.Tuple[npt.NDArray[np.int64], npt.NDArray[np.int32]]:
     return _cpp.io.distribute_entity_data(mesh._cpp_object, entity_dim, entities, values)

@@ -50,11 +50,11 @@ import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_scalar_type, fem, io, plot
 from dolfinx.fem.petsc import assemble_matrix
-from dolfinx.mesh import (CellType, create_rectangle, exterior_facet_indices,
-                          locate_entities)
+from dolfinx.mesh import CellType, create_rectangle, exterior_facet_indices, locate_entities
 
 try:
     import pyvista
+
     have_pyvista = True
 except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
@@ -302,7 +302,7 @@ eps.setWhichEigenpairs(SLEPc.EPS.Which.TARGET_REAL)
 # that $k_z$ will be quite close to $k_0$ in value, for instance $k_z =
 # 0.5k_0^2$. Therefore, we can set a target value of $-(0.5k_0^2)$:
 
-eps.setTarget(-(0.5 * k0)**2)
+eps.setTarget(-((0.5 * k0) ** 2))
 
 # Then, we need to define the number of eigenvalues we want to
 # calculate. We can do this with the `setDimensions` function, where we

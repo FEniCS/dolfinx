@@ -90,9 +90,15 @@ import numpy as np
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import fem, la
-from dolfinx.fem import (Constant, Function, dirichletbc,
-                         extract_function_spaces, form, functionspace,
-                         locate_dofs_topological)
+from dolfinx.fem import (
+    Constant,
+    Function,
+    dirichletbc,
+    extract_function_spaces,
+    form,
+    functionspace,
+    locate_dofs_topological,
+)
 from dolfinx.fem.petsc import assemble_matrix_block, assemble_vector_block
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_rectangle, locate_entities_boundary
@@ -104,14 +110,12 @@ from ufl import div, dx, grad, inner
 
 # +
 # Create mesh
-msh = create_rectangle(MPI.COMM_WORLD, [np.array([0, 0]), np.array([1, 1])],
-                       [32, 32], CellType.triangle)
+msh = create_rectangle(MPI.COMM_WORLD, [np.array([0, 0]), np.array([1, 1])], [32, 32], CellType.triangle)
 
 
 # Function to mark x = 0, x = 1 and y = 0
 def noslip_boundary(x):
-    return np.logical_or(np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 1.0)),
-                         np.isclose(x[1], 0.0))
+    return np.logical_or(np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 1.0)), np.isclose(x[1], 0.0))
 
 
 # Function to mark the lid (y = 1)
@@ -122,6 +126,8 @@ def lid(x):
 # Lid velocity
 def lid_velocity_expression(x):
     return np.stack((np.ones(x.shape[1]), np.zeros(x.shape[1])))
+
+
 # -
 
 # Two {py:class}`function spaces <dolfinx.fem.FunctionSpace>` are
@@ -138,7 +144,7 @@ V, Q = functionspace(msh, P2), functionspace(msh, P1)
 
 # +
 # No-slip condition on boundaries where x = 0, x = 1, and y = 0
-noslip = np.zeros(msh.geometry.dim, dtype=PETSc.ScalarType)   # type: ignore
+noslip = np.zeros(msh.geometry.dim, dtype=PETSc.ScalarType)  # type: ignore
 facets = locate_entities_boundary(msh, 1, noslip_boundary)
 bc0 = dirichletbc(noslip, locate_dofs_topological(V, 1, facets), V)
 
@@ -161,8 +167,7 @@ bcs = [bc0, bc1]
 (v, q) = ufl.TestFunction(V), ufl.TestFunction(Q)
 f = Constant(msh, (PETSc.ScalarType(0), PETSc.ScalarType(0)))  # type: ignore
 
-a = form([[inner(grad(u), grad(v)) * dx, inner(p, div(v)) * dx],
-          [inner(div(u), q) * dx, None]])
+a = form([[inner(grad(u), grad(v)) * dx, inner(p, div(v)) * dx], [inner(div(u), q) * dx, None]])
 L = form([inner(f, v) * dx, inner(Constant(msh, PETSc.ScalarType(0)), q) * dx])  # type: ignore
 # -
 
@@ -170,8 +175,7 @@ L = form([inner(f, v) * dx, inner(Constant(msh, PETSc.ScalarType(0)), q) * dx]) 
 # solvers for this problem:
 
 a_p11 = form(inner(p, q) * dx)
-a_p = [[a[0][0], None],
-       [None, a_p11]]
+a_p = [[a[0][0], None], [None, a_p11]]
 
 # ### Nested matrix solver
 #
@@ -265,8 +269,7 @@ def nested_iterative_solver():
     # space `Q`). The vectors for `u` and `p` are combined to form a
     # nested vector and the system is solved.
     u, p = Function(V), Function(Q)
-    x = PETSc.Vec().createNest([la.create_petsc_vector_wrap(u.x),
-                                la.create_petsc_vector_wrap(p.x)])
+    x = PETSc.Vec().createNest([la.create_petsc_vector_wrap(u.x), la.create_petsc_vector_wrap(p.x)])
     ksp.solve(b, x)
 
     # Save solution to file in XDMF format for visualization, e.g. with
@@ -301,6 +304,7 @@ def nested_iterative_solver():
 # (non-nested) matrices. We first create a helper function for
 # assembling the linear operators and the RHS vector.
 
+
 def block_operators():
     """Return block operators and block RHS vector for the Stokes
     problem"""
@@ -324,6 +328,7 @@ def block_operators():
     A.setNullSpace(nsp)
 
     return A, P, b
+
 
 # The following function solves the Stokes problem using a
 # block-diagonal preconditioner and monolithic PETSc matrices.
@@ -380,7 +385,7 @@ def block_iterative_solver():
     u, p = Function(V), Function(Q)
     offset = V_map.size_local * V.dofmap.index_map_bs
     u.x.array[:offset] = x.array_r[:offset]
-    p.x.array[:(len(x.array_r) - offset)] = x.array_r[offset:]
+    p.x.array[: (len(x.array_r) - offset)] = x.array_r[offset:]
 
     # Compute the $L^2$ norms of the solution vectors
     norm_u, norm_p = u.x.norm(), p.x.norm()
@@ -434,7 +439,7 @@ def block_direct_solver():
     u, p = Function(V), Function(Q)
     offset = V.dofmap.index_map.size_local * V.dofmap.index_map_bs
     u.x.array[:offset] = x.array_r[:offset]
-    p.x.array[:(len(x.array_r) - offset)] = x.array_r[offset:]
+    p.x.array[: (len(x.array_r) - offset)] = x.array_r[offset:]
 
     # Compute the $L^2$ norms of the u and p vectors
     norm_u, norm_p = u.x.norm(), p.x.norm()
@@ -454,7 +459,6 @@ def block_direct_solver():
 
 
 def mixed_direct():
-
     # Create the Taylot-Hood function space
     TH = mixed_element([P2, P1])
     W = functionspace(msh, TH)

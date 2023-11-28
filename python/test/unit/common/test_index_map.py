@@ -29,8 +29,9 @@ def test_sub_index_map():
     # 0, the second of rank 2 etc.
     # Ghost one index from from every other rank
     dest_ranks = np.delete(np.arange(0, comm.size, dtype=np.int32), my_rank)
-    map_ghosts = np.array([map_local_size * dest_ranks[r] + r %
-                          map_local_size for r in range(len(dest_ranks))], dtype=np.int64)
+    map_ghosts = np.array(
+        [map_local_size * dest_ranks[r] + r % map_local_size for r in range(len(dest_ranks))], dtype=np.int64
+    )
     src_ranks = dest_ranks
 
     # Create index map
@@ -64,8 +65,9 @@ def test_sub_index_map():
     # Check that ghost indices are correct in submap
     # NOTE This assumes size_local is the same for all ranks
     # TODO Consider renaming to something shorter
-    submap_global_to_map_global_map = np.concatenate([local_indices[rank] + map_local_size * rank
-                                                      for rank in range(comm.size)])
+    submap_global_to_map_global_map = np.concatenate(
+        [local_indices[rank] + map_local_size * rank for rank in range(comm.size)]
+    )
     # FIXME Do this more elegantly
     submap_ghosts = []
     for map_ghost in map.ghosts:

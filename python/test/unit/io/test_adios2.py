@@ -17,8 +17,7 @@ from dolfinx import default_real_type, default_scalar_type
 from dolfinx.common import has_adios2
 from dolfinx.fem import Function, functionspace
 from dolfinx.graph import adjacencylist
-from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
-                          create_unit_square)
+from dolfinx.mesh import CellType, create_mesh, create_unit_cube, create_unit_square
 
 try:
     from dolfinx.io import FidesWriter, VTXWriter
@@ -35,8 +34,7 @@ def generate_mesh(dim: int, simplex: bool, N: int = 5, dtype=None):
         if simplex:
             return create_unit_square(MPI.COMM_WORLD, N, N, dtype=dtype)
         else:
-            return create_unit_square(MPI.COMM_WORLD, 2 * N, N, CellType.quadrilateral,
-                                      dtype=dtype)
+            return create_unit_square(MPI.COMM_WORLD, 2 * N, N, CellType.quadrilateral, dtype=dtype)
     elif dim == 3:
         if simplex:
             return create_unit_cube(MPI.COMM_WORLD, N, N, N, dtype=dtype)
@@ -50,7 +48,7 @@ def generate_mesh(dim: int, simplex: bool, N: int = 5, dtype=None):
 @pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("simplex", [True, False])
 def test_fides_mesh(tempdir, dim, simplex):
-    """ Test writing of a single Fides mesh with changing geometry"""
+    """Test writing of a single Fides mesh with changing geometry"""
     filename = Path(tempdir, "mesh_fides.bp")
     mesh = generate_mesh(dim, simplex)
     with FidesWriter(mesh.comm, filename, mesh) as f:
@@ -77,6 +75,7 @@ def test_two_fides_functions(tempdir, dim, simplex):
             values[0] = x[1]
             values[1] = x[0]
             return values
+
         v.interpolate(vel)
         q.interpolate(lambda x: x[0])
         f.write(1)
@@ -115,7 +114,7 @@ def test_fides_function_at_nodes(tempdir, dim, simplex):
     with FidesWriter(mesh.comm, filename, [v, q]) as f:
         for t in [0.1, 0.5, 1]:
             # Only change one function
-            q.interpolate(lambda x: t * (x[0] - 0.5)**2)
+            q.interpolate(lambda x: t * (x[0] - 0.5) ** 2)
             f.write(t)
 
             mesh.geometry.x[:, :2] += 0.1
@@ -197,12 +196,7 @@ def test_vtx_single_function(tempdir, dim, simplex):
 
 
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
-@pytest.mark.parametrize("dtype", [
-    np.float32,
-    np.float64,
-    np.complex64,
-    np.complex128
-])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 @pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("simplex", [True, False])
 def test_vtx_functions(tempdir, dtype, dim, simplex):
@@ -219,6 +213,7 @@ def test_vtx_functions(tempdir, dtype, dim, simplex):
         values[0] = x[1]
         values[1] = x[0]
         return values
+
     v.interpolate(vel)
 
     W = functionspace(mesh, ("DG", 2))
@@ -276,7 +271,7 @@ def test_empty_rank_mesh(tempdir):
     if comm.rank == 0:
         cells = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.int64)
         cells = adjacencylist(cells)
-        x = np.array([[0., 0.], [1., 0.], [1., 1.], [0., 1.]], dtype=default_real_type)
+        x = np.array([[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]], dtype=default_real_type)
     else:
         cells = adjacencylist(np.empty((0, 3), dtype=np.int64))
         x = np.empty((0, 2), dtype=default_real_type)

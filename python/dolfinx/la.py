@@ -13,8 +13,17 @@ from dolfinx import cpp as _cpp
 from dolfinx.cpp.common import IndexMap
 from dolfinx.cpp.la import BlockMode, InsertMode, Norm
 
-__all__ = ["orthonormalize", "is_orthonormal", "matrix_csr", "vector",
-           "MatrixCSR", "Norm", "InsertMode", "Vector", "create_petsc_vector"]
+__all__ = [
+    "orthonormalize",
+    "is_orthonormal",
+    "matrix_csr",
+    "vector",
+    "MatrixCSR",
+    "Norm",
+    "InsertMode",
+    "Vector",
+    "create_petsc_vector",
+]
 
 
 class MatrixCSR:
@@ -125,7 +134,11 @@ class MatrixCSR:
         else:
             nrows = self.index_map(0).size_local
             nnzlocal = self.indptr[nrows]
-            data, indices, indptr = self.data[:(bs0 * bs1) * nnzlocal], self.indices[:nnzlocal], self.indptr[:nrows + 1]
+            data, indices, indptr = (
+                self.data[: (bs0 * bs1) * nnzlocal],
+                self.indices[:nnzlocal],
+                self.indptr[: nrows + 1],
+            )
 
         if bs0 == 1 and bs1 == 1:
             return _csr((data, indices, indptr), shape=(nrows, ncols))
@@ -259,6 +272,7 @@ def create_petsc_vector_wrap(x: Vector):
 
     """
     from petsc4py import PETSc
+
     map = x.index_map
     ghosts = map.ghosts.astype(PETSc.IntType)  # type: ignore
     bs = x.block_size
@@ -276,6 +290,7 @@ def create_petsc_vector(map, bs: int):
 
     """
     from petsc4py import PETSc
+
     ghosts = map.ghosts.astype(PETSc.IntType)  # type: ignore
     size = (map.size_local * bs, map.size_global * bs)
     return PETSc.Vec().createGhost(ghosts, size=size, bsize=bs, comm=map.comm)  # type: ignore
@@ -296,7 +311,7 @@ def is_orthonormal(basis, eps: float = 1.0e-12) -> bool:
         if abs(x.norm() - 1.0) > eps:
             return False
     for i, x in enumerate(basis[:-1]):
-        for y in basis[i + 1:]:
+        for y in basis[i + 1 :]:
             if abs(x.dot(y)) > eps:
                 return False
     return True

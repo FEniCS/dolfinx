@@ -13,8 +13,7 @@ import pytest
 import ufl
 from dolfinx import default_scalar_type
 from dolfinx.fem import Constant, assemble_scalar, form
-from dolfinx.mesh import (create_unit_cube, create_unit_interval,
-                          create_unit_square)
+from dolfinx.mesh import create_unit_cube, create_unit_interval, create_unit_square
 
 
 def test_facet_area1D():
@@ -31,13 +30,17 @@ def test_facet_area1D():
     assert numpy.isclose(a0.real, 2)
 
 
-@pytest.mark.parametrize('mesh_factory', [(create_unit_square, (MPI.COMM_WORLD, 3, 3), 1. / 3),
-                                          #   (create_unit_square,
-                                          #   (MPI.COMM_WORLD, 3, 3, CellType.quadrilateral), 1. / 3),
-                                          (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3), 1 / 18.),
-                                          #   (create_unit_cube,
-                                          #   (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron), 1. / 9)
-                                          ])
+@pytest.mark.parametrize(
+    "mesh_factory",
+    [
+        (create_unit_square, (MPI.COMM_WORLD, 3, 3), 1.0 / 3),
+        #   (create_unit_square,
+        #   (MPI.COMM_WORLD, 3, 3, CellType.quadrilateral), 1. / 3),
+        (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3), 1 / 18.0),
+        #   (create_unit_cube,
+        #   (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron), 1. / 9)
+    ],
+)
 def test_facet_area(mesh_factory):
     """Compute facet area of cell. UFL currently only supports affine
     cells for this computation"""

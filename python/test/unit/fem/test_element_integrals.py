@@ -16,37 +16,52 @@ import pytest
 import dolfinx
 import ufl
 from basix.ufl import element
-from dolfinx.fem import (Constant, Function, assemble_matrix, assemble_scalar,
-                         assemble_vector, form, functionspace)
+from dolfinx.fem import Constant, Function, assemble_matrix, assemble_scalar, assemble_vector, form, functionspace
 from dolfinx.mesh import CellType, create_mesh, meshtags
 
 parametrize_cell_types = pytest.mark.parametrize(
     "cell_type",
-    [CellType.interval, CellType.triangle, CellType.tetrahedron, CellType.quadrilateral, CellType.hexahedron])
+    [CellType.interval, CellType.triangle, CellType.tetrahedron, CellType.quadrilateral, CellType.hexahedron],
+)
 
 
 def unit_cell_points(cell_type, dtype):
     if cell_type == CellType.interval:
-        return np.array([[0.], [1.]], dtype=dtype)
+        return np.array([[0.0], [1.0]], dtype=dtype)
     if cell_type == CellType.triangle:
         # Define equilateral triangle with area 1
-        root = 3 ** 0.25  # 4th root of 3
-        return np.array([[0., 0.], [2 / root, 0.],
-                         [1 / root, root]], dtype=dtype)
+        root = 3**0.25  # 4th root of 3
+        return np.array([[0.0, 0.0], [2 / root, 0.0], [1 / root, root]], dtype=dtype)
     if cell_type == CellType.tetrahedron:
         # Define regular tetrahedron with volume 1
-        s = 2 ** 0.5 * 3 ** (1 / 3)  # side length
-        return np.array([[0., 0., 0.], [s, 0., 0.],
-                         [s / 2, s * np.sqrt(3) / 2, 0.],
-                         [s / 2, s / 2 / np.sqrt(3), s * np.sqrt(2 / 3)]], dtype=dtype)
+        s = 2**0.5 * 3 ** (1 / 3)  # side length
+        return np.array(
+            [
+                [0.0, 0.0, 0.0],
+                [s, 0.0, 0.0],
+                [s / 2, s * np.sqrt(3) / 2, 0.0],
+                [s / 2, s / 2 / np.sqrt(3), s * np.sqrt(2 / 3)],
+            ],
+            dtype=dtype,
+        )
     elif cell_type == CellType.quadrilateral:
         # Define unit quadrilateral (area 1)
-        return np.array([[0., 0.], [1., 0.], [0., 1.], [1., 1.]], dtype=dtype)
+        return np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]], dtype=dtype)
     elif cell_type == CellType.hexahedron:
         # Define unit hexahedron (volume 1)
-        return np.array([[0., 0., 0.], [1., 0., 0.], [0., 1., 0.],
-                         [1., 1., 0.], [0., 0., 1.], [1., 0., 1.],
-                         [0., 1., 1.], [1., 1., 1.]], dtype=dtype)
+        return np.array(
+            [
+                [0.0, 0.0, 0.0],
+                [1.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0],
+                [1.0, 1.0, 0.0],
+                [0.0, 0.0, 1.0],
+                [1.0, 0.0, 1.0],
+                [0.0, 1.0, 1.0],
+                [1.0, 1.0, 1.0],
+            ],
+            dtype=dtype,
+        )
 
 
 def unit_cell(cell_type, dtype, random_order=True):
@@ -69,44 +84,62 @@ def unit_cell(cell_type, dtype, random_order=True):
 
 def two_unit_cells(cell_type, dtype, agree=False, random_order=True, return_order=False):
     if cell_type == CellType.interval:
-        points = np.array([[0.], [1.], [-1.]], dtype=dtype)
+        points = np.array([[0.0], [1.0], [-1.0]], dtype=dtype)
         if agree:
             cells = [[0, 1], [2, 0]]
         else:
             cells = [[0, 1], [0, 2]]
     if cell_type == CellType.triangle:
         # Define equilateral triangles with area 1
-        root = 3 ** 0.25  # 4th root of 3
-        points = np.array([[0., 0.], [2 / root, 0.],
-                           [1 / root, root], [1 / root, -root]], dtype=dtype)
+        root = 3**0.25  # 4th root of 3
+        points = np.array([[0.0, 0.0], [2 / root, 0.0], [1 / root, root], [1 / root, -root]], dtype=dtype)
         if agree:
             cells = [[0, 1, 2], [0, 3, 1]]
         else:
             cells = [[0, 1, 2], [1, 0, 3]]
     elif cell_type == CellType.tetrahedron:
         # Define regular tetrahedra with volume 1
-        s = 2 ** 0.5 * 3 ** (1 / 3)  # side length
-        points = np.array([[0., 0., 0.], [s, 0., 0.],
-                           [s / 2, s * np.sqrt(3) / 2, 0.],
-                           [s / 2, s / 2 / np.sqrt(3), s * np.sqrt(2 / 3)],
-                           [s / 2, s / 2 / np.sqrt(3), -s * np.sqrt(2 / 3)]], dtype=dtype)
+        s = 2**0.5 * 3 ** (1 / 3)  # side length
+        points = np.array(
+            [
+                [0.0, 0.0, 0.0],
+                [s, 0.0, 0.0],
+                [s / 2, s * np.sqrt(3) / 2, 0.0],
+                [s / 2, s / 2 / np.sqrt(3), s * np.sqrt(2 / 3)],
+                [s / 2, s / 2 / np.sqrt(3), -s * np.sqrt(2 / 3)],
+            ],
+            dtype=dtype,
+        )
         if agree:
             cells = [[0, 1, 2, 3], [0, 1, 4, 2]]
         else:
             cells = [[0, 1, 2, 3], [0, 2, 1, 4]]
     elif cell_type == CellType.quadrilateral:
         # Define unit quadrilaterals (area 1)
-        points = np.array([[0., 0.], [1., 0.], [0., 1.], [1., 1.], [0., -1.], [1., -1.]], dtype=dtype)
+        points = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0], [0.0, -1.0], [1.0, -1.0]], dtype=dtype)
         if agree:
             cells = [[0, 1, 2, 3], [4, 5, 0, 1]]
         else:
             cells = [[0, 1, 2, 3], [5, 1, 4, 0]]
     elif cell_type == CellType.hexahedron:
         # Define unit hexahedra (volume 1)
-        points = np.array([[0., 0., 0.], [1., 0., 0.], [0., 1., 0.],
-                           [1., 1., 0.], [0., 0., 1.], [1., 0., 1.],
-                           [0., 1., 1.], [1., 1., 1.], [0., 0., -1.],
-                           [1., 0., -1.], [0., 1., -1.], [1., 1., -1.]], dtype=dtype)
+        points = np.array(
+            [
+                [0.0, 0.0, 0.0],
+                [1.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0],
+                [1.0, 1.0, 0.0],
+                [0.0, 0.0, 1.0],
+                [1.0, 0.0, 1.0],
+                [0.0, 1.0, 1.0],
+                [1.0, 1.0, 1.0],
+                [0.0, 0.0, -1.0],
+                [1.0, 0.0, -1.0],
+                [0.0, 1.0, -1.0],
+                [1.0, 1.0, -1.0],
+            ],
+            dtype=dtype,
+        )
         if agree:
             cells = [[0, 1, 2, 3, 4, 5, 6, 7], [8, 9, 10, 11, 0, 1, 2, 3]]
         else:
@@ -151,14 +184,15 @@ def test_facet_integral(cell_type, dtype):
 
         # Functions that will have the same integral over each facet
         if cell_type == CellType.triangle:
-            root = 3 ** 0.25  # 4th root of 3
+            root = 3**0.25  # 4th root of 3
             v.interpolate(lambda x: (x[0] - 1 / root) ** 2 + (x[1] - root / 3) ** 2)
         elif cell_type == CellType.quadrilateral:
             v.interpolate(lambda x: x[0] * (1 - x[0]) + x[1] * (1 - x[1]))
         elif cell_type == CellType.tetrahedron:
-            s = 2 ** 0.5 * 3 ** (1 / 3)  # side length
-            v.interpolate(lambda x: (x[0] - s / 2) ** 2 + (x[1] - s / 2 / np.sqrt(3)) ** 2
-                          + (x[2] - s * np.sqrt(2 / 3) / 4) ** 2)
+            s = 2**0.5 * 3 ** (1 / 3)  # side length
+            v.interpolate(
+                lambda x: (x[0] - s / 2) ** 2 + (x[1] - s / 2 / np.sqrt(3)) ** 2 + (x[2] - s * np.sqrt(2 / 3) / 4) ** 2
+            )
         elif cell_type == CellType.hexahedron:
             v.interpolate(lambda x: x[0] * (1 - x[0]) + x[1] * (1 - x[1]) + x[2] * (1 - x[2]))
 
@@ -241,7 +275,7 @@ def test_facet_normals(cell_type, dtype):
 
 
 @pytest.mark.skip_in_parallel
-@pytest.mark.parametrize('space_type', ["Lagrange", "DG"])
+@pytest.mark.parametrize("space_type", ["Lagrange", "DG"])
 @parametrize_cell_types
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 def test_plus_minus(cell_type, space_type, dtype):
@@ -263,7 +297,7 @@ def test_plus_minus(cell_type, space_type, dtype):
 
 
 @pytest.mark.skip_in_parallel
-@pytest.mark.parametrize('pm', ["+", "-"])
+@pytest.mark.parametrize("pm", ["+", "-"])
 @parametrize_cell_types
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 def test_plus_minus_simple_vector(cell_type, pm, dtype):
@@ -313,8 +347,8 @@ def test_plus_minus_simple_vector(cell_type, pm, dtype):
 
 
 @pytest.mark.skip_in_parallel
-@pytest.mark.parametrize('pm1', ["+", "-"])
-@pytest.mark.parametrize('pm2', ["+", "-"])
+@pytest.mark.parametrize("pm1", ["+", "-"])
+@pytest.mark.parametrize("pm2", ["+", "-"])
 @parametrize_cell_types
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 def test_plus_minus_vector(cell_type, pm1, pm2, dtype):
@@ -366,8 +400,8 @@ def test_plus_minus_vector(cell_type, pm1, pm2, dtype):
 
 
 @pytest.mark.skip_in_parallel
-@pytest.mark.parametrize('pm1', ["+", "-"])
-@pytest.mark.parametrize('pm2', ["+", "-"])
+@pytest.mark.parametrize("pm1", ["+", "-"])
+@pytest.mark.parametrize("pm2", ["+", "-"])
 @parametrize_cell_types
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 def test_plus_minus_matrix(cell_type, pm1, pm2, dtype):
@@ -422,8 +456,8 @@ def test_plus_minus_matrix(cell_type, pm1, pm2, dtype):
 
 @pytest.mark.skip(reason="This test relies on the mesh constructor not re-ordering the mesh points. Needs replacing.")
 @pytest.mark.skip_in_parallel
-@pytest.mark.parametrize('order', [1, 2])
-@pytest.mark.parametrize('space_type', ["N1curl", "N2curl"])
+@pytest.mark.parametrize("order", [1, 2])
+@pytest.mark.parametrize("space_type", ["N1curl", "N2curl"])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 def test_curl(space_type, order, dtype):
     """Test that curl is consistent for different cell permutations of a tetrahedron."""
@@ -457,7 +491,6 @@ def test_curl(space_type, order, dtype):
 
     # Loop over cell edges
     for i, edge in enumerate(V0.mesh.topology.connectivity(tdim, 1).links(0)):
-
         # Get the edge vertices
         vertices0 = c10_0.links(edge)  # Need to map back
 
@@ -482,10 +515,7 @@ def test_curl(space_type, order, dtype):
 def create_quad_mesh(offset, dtype):
     """Creates a mesh of a single square element if offset = 0, or a
     trapezium element if |offset| > 0."""
-    x = np.array([[0, 0],
-                  [1, 0],
-                  [0, 0.5 + offset],
-                  [1, 0.5 - offset]], dtype=dtype)
+    x = np.array([[0, 0], [1, 0], [0, 0.5 + offset], [1, 0.5 - offset]], dtype=dtype)
     cells = np.array([[0, 1, 2, 3]])
     ufl_mesh = ufl.Mesh(element("Lagrange", "quadrilateral", 1, shape=(2,)))
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh)

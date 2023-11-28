@@ -15,18 +15,18 @@ import dolfinx.la
 import ufl
 from dolfinx.cpp.fem import discrete_gradient
 from dolfinx.fem import Expression, Function, functionspace
-from dolfinx.mesh import (CellType, GhostMode, create_unit_cube,
-                          create_unit_square)
+from dolfinx.mesh import CellType, GhostMode, create_unit_cube, create_unit_square
 
 
-@pytest.mark.parametrize("mesh", [create_unit_square(MPI.COMM_WORLD, 11, 6,
-                                                     ghost_mode=GhostMode.none, dtype=np.float32),
-                                  create_unit_square(MPI.COMM_WORLD, 11, 6,
-                                                     ghost_mode=GhostMode.shared_facet, dtype=np.float64),
-                                  create_unit_cube(MPI.COMM_WORLD, 4, 3, 7,
-                                                   ghost_mode=GhostMode.none, dtype=np.float64),
-                                  create_unit_cube(MPI.COMM_WORLD, 4, 3, 7,
-                                                   ghost_mode=GhostMode.shared_facet, dtype=np.float32)])
+@pytest.mark.parametrize(
+    "mesh",
+    [
+        create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.none, dtype=np.float32),
+        create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.shared_facet, dtype=np.float64),
+        create_unit_cube(MPI.COMM_WORLD, 4, 3, 7, ghost_mode=GhostMode.none, dtype=np.float64),
+        create_unit_cube(MPI.COMM_WORLD, 4, 3, 7, ghost_mode=GhostMode.shared_facet, dtype=np.float32),
+    ],
+)
 def test_gradient(mesh):
     """Test discrete gradient computation for lowest order elements."""
     V = functionspace(mesh, ("Lagrange", 1))
@@ -44,10 +44,9 @@ def test_gradient(mesh):
 
 @pytest.mark.parametrize("p", range(1, 4))
 @pytest.mark.parametrize("q", range(1, 4))
-@pytest.mark.parametrize("cell_type", [CellType.quadrilateral,
-                                       CellType.triangle,
-                                       CellType.tetrahedron,
-                                       CellType.hexahedron])
+@pytest.mark.parametrize(
+    "cell_type", [CellType.quadrilateral, CellType.triangle, CellType.tetrahedron, CellType.hexahedron]
+)
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_gradient_interpolation(cell_type, p, q, dtype):
     """Test discrete gradient computation with verification using Expression."""
@@ -78,7 +77,7 @@ def test_gradient_interpolation(cell_type, p, q, dtype):
     # Vector for 'u' needs additional ghosts defined in columns of G
     uvec = dolfinx.la.vector(G.index_map(1), dtype=dtype)
     u = Function(V, uvec, dtype=dtype)
-    u.interpolate(lambda x: 2 * x[0]**p + 3 * x[1]**p)
+    u.interpolate(lambda x: 2 * x[0] ** p + 3 * x[1] ** p)
 
     grad_u = Expression(ufl.grad(u), W.element.interpolation_points(), dtype=dtype)
     w_expr = Function(W, dtype=dtype)
@@ -90,7 +89,7 @@ def test_gradient_interpolation(cell_type, p, q, dtype):
     # Get the local part of G (no ghost rows)
     nrlocal = G.index_map(0).size_local
     nnzlocal = G.indptr[nrlocal]
-    Glocal = scipy.sparse.csr_matrix((G.data[:nnzlocal], G.indices[:nnzlocal], G.indptr[:nrlocal + 1]))
+    Glocal = scipy.sparse.csr_matrix((G.data[:nnzlocal], G.indices[:nnzlocal], G.indptr[: nrlocal + 1]))
 
     # MatVec
     w.x.array[:nrlocal] = Glocal @ u.x.array

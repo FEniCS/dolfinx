@@ -8,4 +8,5 @@
 def get_include_path():
     """Return path to nanobind wrapper header files"""
     import pathlib
+
     return pathlib.Path(__file__).parent

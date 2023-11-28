@@ -13,8 +13,7 @@ import dolfinx
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx.fem import form, functionspace
-from dolfinx.mesh import (CellType, GhostMode, create_unit_cube,
-                          create_unit_square)
+from dolfinx.mesh import CellType, GhostMode, create_unit_cube, create_unit_square
 
 
 @pytest.mark.skip_in_parallel
@@ -49,8 +48,7 @@ def test_mixed_element(rank, family, cell, degree):
 @pytest.mark.skip_in_parallel
 def test_vector_element():
     # Function space containing a scalar should work
-    mesh = create_unit_square(MPI.COMM_WORLD, 1, 1, CellType.triangle,
-                              ghost_mode=GhostMode.shared_facet)
+    mesh = create_unit_square(MPI.COMM_WORLD, 1, 1, CellType.triangle, ghost_mode=GhostMode.shared_facet)
     gdim = mesh.geometry.dim
     U = functionspace(mesh, ("P", 2, (gdim,)))
     u, v = ufl.TrialFunction(U), ufl.TestFunction(U)
@@ -62,7 +60,7 @@ def test_vector_element():
         # Function space containing a vector should throw an error rather
         # than segfaulting
         gdim = mesh.geometry.dim
-        U = functionspace(mesh, ("RT", 2, (gdim + 1, )))
+        U = functionspace(mesh, ("RT", 2, (gdim + 1,)))
         u, v = ufl.TrialFunction(U), ufl.TestFunction(U)
         a = form(ufl.inner(u, v) * ufl.dx)
         A = dolfinx.fem.assemble_matrix(a)

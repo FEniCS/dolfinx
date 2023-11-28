@@ -19,9 +19,17 @@ if typing.TYPE_CHECKING:
 
 from dolfinx import cpp as _cpp
 
-__all__ = ["BoundingBoxTree", "bb_tree", "compute_colliding_cells", "squared_distance",
-           "compute_closest_entity", "compute_collisions_trees", "compute_collisions_points",
-           "compute_distance_gjk", "create_midpoint_tree"]
+__all__ = [
+    "BoundingBoxTree",
+    "bb_tree",
+    "compute_colliding_cells",
+    "squared_distance",
+    "compute_closest_entity",
+    "compute_collisions_trees",
+    "compute_collisions_points",
+    "compute_distance_gjk",
+    "create_midpoint_tree",
+]
 
 
 class BoundingBoxTree:
@@ -59,8 +67,9 @@ class BoundingBoxTree:
         return BoundingBoxTree(self._cpp_object.create_global_tree(comm))
 
 
-def bb_tree(mesh: Mesh, dim: int, entities: typing.Optional[npt.NDArray[np.int32]] = None,
-            padding: float = 0.0) -> BoundingBoxTree:
+def bb_tree(
+    mesh: Mesh, dim: int, entities: typing.Optional[npt.NDArray[np.int32]] = None, padding: float = 0.0
+) -> BoundingBoxTree:
     """Create a bounding box tree for use in collision detection.
 
     Args:
@@ -122,8 +131,9 @@ def compute_collisions_points(tree: BoundingBoxTree, x: npt.NDArray[np.floating]
     return _cpp.geometry.compute_collisions_points(tree._cpp_object, x)
 
 
-def compute_closest_entity(tree: BoundingBoxTree, midpoint_tree: BoundingBoxTree, mesh: Mesh,
-                           points: npt.NDArray[np.floating]) -> npt.NDArray[np.int32]:
+def compute_closest_entity(
+    tree: BoundingBoxTree, midpoint_tree: BoundingBoxTree, mesh: Mesh, points: npt.NDArray[np.floating]
+) -> npt.NDArray[np.int32]:
     """Compute closest mesh entity to a point.
 
     Args:

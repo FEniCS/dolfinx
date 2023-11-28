@@ -92,8 +92,7 @@ import numpy as np
 from basix.ufl import element, mixed_element
 from dolfinx import fem, io, mesh
 from dolfinx.fem.petsc import LinearProblem
-from ufl import (Measure, SpatialCoordinate, TestFunctions, TrialFunctions,
-                 div, exp, inner)
+from ufl import Measure, SpatialCoordinate, TestFunctions, TrialFunctions, div, exp, inner
 
 domain = mesh.create_unit_square(MPI.COMM_WORLD, 32, 32, mesh.CellType.quadrilateral)
 
@@ -148,8 +147,9 @@ bc_bottom = fem.dirichletbc(f_h2, dofs_bottom, V.sub(0))
 
 bcs = [bc_top, bc_bottom]
 
-problem = LinearProblem(a, L, bcs=bcs, petsc_options={"ksp_type": "preonly", "pc_type": "lu",
-                                                      "pc_factor_mat_solver_type": "mumps"})
+problem = LinearProblem(
+    a, L, bcs=bcs, petsc_options={"ksp_type": "preonly", "pc_type": "lu", "pc_factor_mat_solver_type": "mumps"}
+)
 try:
     w_h = problem.solve()
 except PETSc.Error as e:  # type: ignore

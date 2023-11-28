@@ -12,13 +12,22 @@ import pytest
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type, default_scalar_type, la
-from dolfinx.fem import (Constant, Function, apply_lifting, assemble_matrix,
-                         assemble_vector, create_matrix, create_vector,
-                         dirichletbc, form, functionspace,
-                         locate_dofs_geometrical, locate_dofs_topological,
-                         set_bc)
-from dolfinx.mesh import (CellType, create_unit_cube, create_unit_square,
-                          locate_entities_boundary)
+from dolfinx.fem import (
+    Constant,
+    Function,
+    apply_lifting,
+    assemble_matrix,
+    assemble_vector,
+    create_matrix,
+    create_vector,
+    dirichletbc,
+    form,
+    functionspace,
+    locate_dofs_geometrical,
+    locate_dofs_topological,
+    set_bc,
+)
+from dolfinx.mesh import CellType, create_unit_cube, create_unit_square, locate_entities_boundary
 from ufl import dx, inner
 
 
@@ -75,8 +84,7 @@ def test_overlapping_bcs():
     # Check only one dof pair is found globally
     assert len(set(np.concatenate(MPI.COMM_WORLD.allgather(dof_corner)))) == 1
 
-    bcs = [dirichletbc(default_scalar_type(0), dofs_left, V),
-           dirichletbc(default_scalar_type(123.456), dofs_top, V)]
+    bcs = [dirichletbc(default_scalar_type(0), dofs_left, V), dirichletbc(default_scalar_type(123.456), dofs_top, V)]
 
     A, b = create_matrix(a), create_vector(L)
     assemble_matrix(A, a, bcs=bcs)
@@ -134,12 +142,15 @@ def test_constant_bc_constructions():
     assert (bc2.g.value == [[1.0, 3.0], [3.0, -2.0]]).all()
 
 
-@pytest.mark.parametrize('mesh_factory',
-                         [(create_unit_square, (MPI.COMM_WORLD, 4, 4)),
-                          (create_unit_square, (MPI.COMM_WORLD, 8, 8, CellType.quadrilateral)),
-                          (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3)),
-                          (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))
-                          ])
+@pytest.mark.parametrize(
+    "mesh_factory",
+    [
+        (create_unit_square, (MPI.COMM_WORLD, 4, 4)),
+        (create_unit_square, (MPI.COMM_WORLD, 8, 8, CellType.quadrilateral)),
+        (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3)),
+        (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron)),
+    ],
+)
 def test_constant_bc(mesh_factory):
     """Test that setting a dirichletbc with a constant yields the same
     result as setting it with a function"""
@@ -167,11 +178,14 @@ def test_constant_bc(mesh_factory):
 
 
 @pytest.mark.parametrize(
-    'mesh_factory', [(create_unit_square, (MPI.COMM_WORLD, 4, 4)),
-                     (create_unit_square, (MPI.COMM_WORLD, 8, 8, CellType.quadrilateral)),
-                     (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3)),
-                     (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))
-                     ])
+    "mesh_factory",
+    [
+        (create_unit_square, (MPI.COMM_WORLD, 4, 4)),
+        (create_unit_square, (MPI.COMM_WORLD, 8, 8, CellType.quadrilateral)),
+        (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3)),
+        (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron)),
+    ],
+)
 def test_vector_constant_bc(mesh_factory):
     """Test that setting a dirichletbc with a vector valued constant
     yields the same result as setting it with a function"""
@@ -186,8 +200,7 @@ def test_vector_constant_bc(mesh_factory):
 
     # Set using sub-functions
     Vs = [V.sub(i).collapse()[0] for i in range(V.num_sub_spaces)]
-    boundary_dofs = [locate_dofs_topological((V.sub(i), Vs[i]), tdim - 1, boundary_facets)
-                     for i in range(len(Vs))]
+    boundary_dofs = [locate_dofs_topological((V.sub(i), Vs[i]), tdim - 1, boundary_facets) for i in range(len(Vs))]
     u_bcs = [Function(Vs[i]) for i in range(len(Vs))]
     bcs_f = []
     for i, u in enumerate(u_bcs):
@@ -207,12 +220,14 @@ def test_vector_constant_bc(mesh_factory):
 
 
 @pytest.mark.parametrize(
-    'mesh_factory', [
+    "mesh_factory",
+    [
         (create_unit_square, (MPI.COMM_WORLD, 4, 4)),
         (create_unit_square, (MPI.COMM_WORLD, 8, 8, CellType.quadrilateral)),
         (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3)),
-        (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))
-    ])
+        (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron)),
+    ],
+)
 def test_sub_constant_bc(mesh_factory):
     """Test that setting a dirichletbc with on a component of a vector
     valued function yields the same result as setting it with a
@@ -243,10 +258,14 @@ def test_sub_constant_bc(mesh_factory):
 
 
 @pytest.mark.parametrize(
-    'mesh_factory', [(create_unit_square, (MPI.COMM_WORLD, 4, 4)),
-                     (create_unit_square, (MPI.COMM_WORLD, 8, 8, CellType.quadrilateral)),
-                     (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3)),
-                     (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron))])
+    "mesh_factory",
+    [
+        (create_unit_square, (MPI.COMM_WORLD, 4, 4)),
+        (create_unit_square, (MPI.COMM_WORLD, 8, 8, CellType.quadrilateral)),
+        (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3)),
+        (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron)),
+    ],
+)
 def test_mixed_constant_bc(mesh_factory):
     """Test that setting a dirichletbc with on a component of a mixed
     function yields the same result as setting it with a function"""
@@ -254,9 +273,7 @@ def test_mixed_constant_bc(mesh_factory):
     mesh = func(*args)
     tdim = mesh.topology.dim
     boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
-    TH = mixed_element([
-        element("Lagrange", mesh.basix_cell(), 1),
-        element("Lagrange", mesh.basix_cell(), 2)])
+    TH = mixed_element([element("Lagrange", mesh.basix_cell(), 1), element("Lagrange", mesh.basix_cell(), 2)])
     W = functionspace(mesh, TH)
     u = Function(W)
 
@@ -290,8 +307,12 @@ def test_mixed_blocked_constant():
     tdim = mesh.topology.dim
     boundary_facets = locate_entities_boundary(mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool))
 
-    TH = mixed_element([element("Lagrange", mesh.basix_cell(), 1),
-                        element("Lagrange", mesh.basix_cell(), 2, shape=(mesh.geometry.dim,))])
+    TH = mixed_element(
+        [
+            element("Lagrange", mesh.basix_cell(), 1),
+            element("Lagrange", mesh.basix_cell(), 2, shape=(mesh.geometry.dim,)),
+        ]
+    )
     W = functionspace(mesh, TH)
     u = Function(W)
     c0 = default_scalar_type(3)

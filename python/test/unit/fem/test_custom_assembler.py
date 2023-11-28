@@ -35,11 +35,11 @@ numba = pytest.importorskip("numba")
 cffi_support = pytest.importorskip("numba.core.typing.cffi_utils")
 
 # Get details of PETSc install
-petsc_dir = PETSc_get_config()['PETSC_DIR']
+petsc_dir = PETSc_get_config()["PETSC_DIR"]
 petsc_arch = petsc4py.lib.getPathArchPETSc()[1]
 
 # Get PETSc int and scalar types
-if np.dtype(PETSc.ScalarType).kind == 'c':  # type: ignore
+if np.dtype(PETSc.ScalarType).kind == "c":  # type: ignore
     complex = True
 else:
     complex = False
@@ -69,28 +69,38 @@ elif not complex and scalar_size == 4:
     c_scalar_t = "float"
     numba_scalar_t = numba.types.float32
 else:
-    raise RuntimeError(
-        f"Cannot translate PETSc scalar type to a C type, complex: {complex} size: {scalar_size}.")
+    raise RuntimeError(f"Cannot translate PETSc scalar type to a C type, complex: {complex} size: {scalar_size}.")
 
 
 petsc_lib_ctypes = load_petsc_lib(ctypes.cdll.LoadLibrary)
 # Get the PETSc MatSetValuesLocal function via ctypes
 # ctypes does not support static types well, ignore type check errors
 MatSetValues_ctypes = petsc_lib_ctypes.MatSetValuesLocal
-MatSetValues_ctypes.argtypes = [ctypes.c_void_p, ctypes_index, ctypes.POINTER(  # type: ignore
-    ctypes_index), ctypes_index, ctypes.POINTER(ctypes_index), ctypes.c_void_p, ctypes.c_int]  # type: ignore
+MatSetValues_ctypes.argtypes = [
+    ctypes.c_void_p,
+    ctypes_index,
+    ctypes.POINTER(  # type: ignore
+        ctypes_index
+    ),
+    ctypes_index,
+    ctypes.POINTER(ctypes_index),
+    ctypes.c_void_p,
+    ctypes.c_int,
+]  # type: ignore
 del petsc_lib_ctypes
 
 
 # CFFI - register complex types
 ffi = cffi.FFI()
-cffi_support.register_type(ffi.typeof('double _Complex'), numba.types.complex128)
-cffi_support.register_type(ffi.typeof('float _Complex'), numba.types.complex64)
+cffi_support.register_type(ffi.typeof("double _Complex"), numba.types.complex128)
+cffi_support.register_type(ffi.typeof("float _Complex"), numba.types.complex64)
 
 # Get MatSetValuesLocal from PETSc available via cffi in ABI mode
-ffi.cdef("""int MatSetValuesLocal(void* mat, {0} nrow, const {0}* irow,
+ffi.cdef(
+    """int MatSetValuesLocal(void* mat, {0} nrow, const {0}* irow,
                                   {0} ncol, const {0}* icol, const {1}* y, int addv);
-""".format(c_int_t, c_scalar_t))
+""".format(c_int_t, c_scalar_t)
+)
 
 
 petsc_lib_cffi = load_petsc_lib(ffi.dlopen)
@@ -105,26 +115,31 @@ def get_matsetvalues_api():
     else:
         raise RuntimeError("Could not find DOLFINx pkgconfig file")
 
-    worker = os.getenv('PYTEST_XDIST_WORKER', None)
+    worker = os.getenv("PYTEST_XDIST_WORKER", None)
     module_name = "_petsc_cffi_{}".format(worker)
     if MPI.COMM_WORLD.Get_rank() == 0:
         ffibuilder = cffi.FFI()
-        ffibuilder.cdef("""
+        ffibuilder.cdef(
+            """
             typedef int... PetscInt;
             typedef ... PetscScalar;
             typedef int... InsertMode;
             int MatSetValuesLocal(void* mat, PetscInt nrow, const PetscInt* irow,
                                 PetscInt ncol, const PetscInt* icol,
                                 const PetscScalar* y, InsertMode addv);
-        """)
-        ffibuilder.set_source(module_name, """
+        """
+        )
+        ffibuilder.set_source(
+            module_name,
+            """
             #include "petscmat.h"
         """,
-                              libraries=['petsc'],
-                              include_dirs=[os.path.join(petsc_dir, petsc_arch, 'include'),
-                                            os.path.join(petsc_dir, 'include')] + dolfinx_pc["include_dirs"],
-                              library_dirs=[os.path.join(petsc_dir, petsc_arch, 'lib')],
-                              extra_compile_args=[])
+            libraries=["petsc"],
+            include_dirs=[os.path.join(petsc_dir, petsc_arch, "include"), os.path.join(petsc_dir, "include")]
+            + dolfinx_pc["include_dirs"],
+            library_dirs=[os.path.join(petsc_dir, petsc_arch, "lib")],
+            extra_compile_args=[],
+        )
 
         # Build module in same directory as test file
         path = pathlib.Path(__file__).parent.absolute()
@@ -151,9 +166,9 @@ def sink(*args):
 @numba.njit(fastmath=True)
 def area(x0, x1, x2) -> float:
     """Compute the area of a triangle embedded in 2D from the three vertices"""
-    a = (x1[0] - x2[0])**2 + (x1[1] - x2[1])**2
-    b = (x0[0] - x2[0])**2 + (x0[1] - x2[1])**2
-    c = (x0[0] - x1[0])**2 + (x0[1] - x1[1])**2
+    a = (x1[0] - x2[0]) ** 2 + (x1[1] - x2[1]) ** 2
+    b = (x0[0] - x2[0]) ** 2 + (x0[1] - x2[1]) ** 2
+    c = (x0[0] - x1[0]) ** 2 + (x0[1] - x1[1]) ** 2
     return math.sqrt(2 * (a * b + a * c + b * c) - (a**2 + b**2 + c**2)) / 4.0
 
 
@@ -206,10 +221,14 @@ def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells, dtype):
         for j in range(3):
             geometry[j] = x[v[cell, j], :]
         b_local.fill(0.0)
-        kernel(ffi.from_buffer(b_local), ffi.from_buffer(coeffs),
-               ffi.from_buffer(constants),
-               ffi.from_buffer(geometry), ffi.from_buffer(entity_local_index),
-               ffi.from_buffer(perm))
+        kernel(
+            ffi.from_buffer(b_local),
+            ffi.from_buffer(coeffs),
+            ffi.from_buffer(constants),
+            ffi.from_buffer(geometry),
+            ffi.from_buffer(entity_local_index),
+            ffi.from_buffer(perm),
+        )
         for j in range(3):
             b[dofmap[cell, j]] += b_local[j]
 
@@ -293,7 +312,7 @@ def test_custom_mesh_loop_rank1(dtype):
         end = time.time()
         print("Time (numba, pass {}): {}".format(i, end - start))
     b0.x.scatter_reverse(dolfinx.la.InsertMode.add)
-    b0sum = np.sum(b0.x.array[:b0.x.index_map.size_local * b0.x.block_size])
+    b0sum = np.sum(b0.x.array[: b0.x.index_map.size_local * b0.x.block_size])
     assert mesh.comm.allreduce(b0sum, op=MPI.SUM) == pytest.approx(1.0)
 
     # NOTE: Parallel (threaded) Numba can cause problems with MPI
@@ -347,8 +366,7 @@ def test_custom_mesh_loop_rank1(dtype):
         raise RuntimeError("Unknown scalar type")
 
     b3 = Function(V, dtype=dtype)
-    ufcx_form, module, code = dolfinx.jit.ffcx_jit(
-        mesh.comm, L, form_compiler_options={"scalar_type": ffcxtype})
+    ufcx_form, module, code = dolfinx.jit.ffcx_jit(mesh.comm, L, form_compiler_options={"scalar_type": ffcxtype})
 
     # Get the one and only kernel
     kernel = getattr(ufcx_form.form_integrals[0], f"tabulate_tensor_{nptype}")
@@ -396,8 +414,9 @@ def test_custom_mesh_loop_petsc_ctypes_rank2():
         A1.zeroEntries()
         mat = A1.handle
         start = time.time()
-        assemble_petsc_matrix_ctypes(mat, (x_dofs, x), dofmap, num_owned_cells,
-                                     MatSetValues_ctypes, PETSc.InsertMode.ADD_VALUES)
+        assemble_petsc_matrix_ctypes(
+            mat, (x_dofs, x), dofmap, num_owned_cells, MatSetValues_ctypes, PETSc.InsertMode.ADD_VALUES
+        )
         end = time.time()
         print("Time (numba, pass {}): {}".format(i, end - start))
         A1.assemble()
@@ -437,8 +456,9 @@ def test_custom_mesh_loop_petsc_cffi_rank2(set_vals):
     for i in range(2):
         A1.zeroEntries()
         start = time.time()
-        assemble_petsc_matrix_cffi(A1.handle, (x_dofs, x), dofmap, num_owned_cells,
-                                   set_vals, PETSc.InsertMode.ADD_VALUES)
+        assemble_petsc_matrix_cffi(
+            A1.handle, (x_dofs, x), dofmap, num_owned_cells, set_vals, PETSc.InsertMode.ADD_VALUES
+        )
         end = time.time()
         print("Time (Numba, pass {}): {}".format(i, end - start))
         A1.assemble()
