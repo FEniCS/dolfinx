@@ -60,8 +60,11 @@ jobs:
           python3 -m pip install git+https://github.com/FEniCS/basix.git@${{ github.event.inputs.basix_ref }}
           python3 -m pip install git+https://github.com/FEniCS/ffcx.git@${{ github.event.inputs.ffcx_ref }}
 
-      - name: ruff checks (non-blocking)
-        continue-on-error: true
+      - name: ruff C++ .py file checks
+        run: |
+          cd cpp/
+          ruff check .
+      - name: ruff Python interface checks
         run: |
           cd python/
           ruff check .
