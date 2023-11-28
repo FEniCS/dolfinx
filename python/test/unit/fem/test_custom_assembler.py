@@ -18,11 +18,6 @@ from mpi4py import MPI
 from petsc4py import PETSc
 from petsc4py import get_config as PETSc_get_config
 
-import cffi
-import numpy as np
-import numpy.typing
-import pytest
-
 import dolfinx
 import dolfinx.pkgconfig
 import ufl
@@ -30,6 +25,11 @@ from dolfinx.fem import Function, form, functionspace
 from dolfinx.fem.petsc import assemble_matrix, load_petsc_lib
 from dolfinx.mesh import create_unit_square
 from ufl import dx, inner
+
+import cffi
+import numpy as np
+import numpy.typing
+import pytest
 
 numba = pytest.importorskip("numba")
 cffi_support = pytest.importorskip("numba.core.typing.cffi_utils")
@@ -97,9 +97,9 @@ cffi_support.register_type(ffi.typeof("float _Complex"), numba.types.complex64)
 
 # Get MatSetValuesLocal from PETSc available via cffi in ABI mode
 ffi.cdef(
-    """int MatSetValuesLocal(void* mat, {0} nrow, const {0}* irow,
-                                  {0} ncol, const {0}* icol, const {1}* y, int addv);
-""".format(c_int_t, c_scalar_t)
+    f"""int MatSetValuesLocal(void* mat, {c_int_t} nrow, const {c_int_t}* irow,
+                                  {c_int_t} ncol, const {c_int_t}* icol, const {c_scalar_t}* y, int addv);
+"""
 )
 
 
@@ -116,7 +116,7 @@ def get_matsetvalues_api():
         raise RuntimeError("Could not find DOLFINx pkgconfig file")
 
     worker = os.getenv("PYTEST_XDIST_WORKER", None)
-    module_name = "_petsc_cffi_{}".format(worker)
+    module_name = f"_petsc_cffi_{worker}"
     if MPI.COMM_WORLD.Get_rank() == 0:
         ffibuilder = cffi.FFI()
         ffibuilder.cdef(
@@ -310,7 +310,7 @@ def test_custom_mesh_loop_rank1(dtype):
         start = time.time()
         assemble_vector(b, (x_dofs, x), dofmap, num_owned_cells)
         end = time.time()
-        print("Time (numba, pass {}): {}".format(i, end - start))
+        print(f"Time (numba, pass {i}): {end - start}")
     b0.x.scatter_reverse(dolfinx.la.InsertMode.add)
     b0sum = np.sum(b0.x.array[: b0.x.index_map.size_local * b0.x.block_size])
     assert mesh.comm.allreduce(b0sum, op=MPI.SUM) == pytest.approx(1.0)
@@ -377,7 +377,7 @@ def test_custom_mesh_loop_rank1(dtype):
         start = time.time()
         assemble_vector_ufc(b, kernel, (x_dofs, x), dofmap, num_owned_cells, dtype)
         end = time.time()
-        print("Time (numba/cffi, pass {}): {}".format(i, end - start))
+        print(f"Time (numba/cffi, pass {i}): {end - start}")
     b3.x.scatter_reverse(dolfinx.la.InsertMode.add)
     assert np.linalg.norm(b3.x.array - b0.x.array) == pytest.approx(0.0, abs=1e-8)
 
@@ -418,7 +418,7 @@ def test_custom_mesh_loop_petsc_ctypes_rank2():
             mat, (x_dofs, x), dofmap, num_owned_cells, MatSetValues_ctypes, PETSc.InsertMode.ADD_VALUES
         )
         end = time.time()
-        print("Time (numba, pass {}): {}".format(i, end - start))
+        print(f"Time (numba, pass {i}): {end - start}")
         A1.assemble()
         assert (A0 - A1).norm() == pytest.approx(0.0, abs=1.0e-9)
 
@@ -460,7 +460,7 @@ def test_custom_mesh_loop_petsc_cffi_rank2(set_vals):
             A1.handle, (x_dofs, x), dofmap, num_owned_cells, set_vals, PETSc.InsertMode.ADD_VALUES
         )
         end = time.time()
-        print("Time (Numba, pass {}): {}".format(i, end - start))
+        print(f"Time (Numba, pass {i}): {end - start}")
         A1.assemble()
     assert (A1 - A0).norm() == pytest.approx(0.0, abs=1.0e-9)
 

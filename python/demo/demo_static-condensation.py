@@ -25,11 +25,6 @@ from pathlib import Path
 from mpi4py import MPI
 from petsc4py import PETSc
 
-import cffi
-import numba
-import numba.core.typing.cffi_utils as cffi_support
-import numpy as np
-
 import ufl
 from basix.ufl import element
 from dolfinx import default_real_type, geometry
@@ -39,6 +34,11 @@ from dolfinx.fem.petsc import apply_lifting, assemble_matrix, assemble_vector, s
 from dolfinx.io import XDMFFile
 from dolfinx.jit import ffcx_jit
 from dolfinx.mesh import locate_entities_boundary, meshtags
+
+import cffi
+import numba
+import numba.core.typing.cffi_utils as cffi_support
+import numpy as np
 
 if default_real_type == np.float32:
     print("float32 not yet supported for this demo.")

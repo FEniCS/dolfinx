@@ -9,14 +9,14 @@ import sys
 
 from mpi4py import MPI
 
-import numpy as np
-import pytest
-
 import dolfinx
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx.fem import functionspace
 from dolfinx.mesh import CellType, create_mesh, create_unit_cube, create_unit_interval, create_unit_square
+
+import numpy as np
+import pytest
 
 xfail = pytest.mark.xfail(strict=True)
 

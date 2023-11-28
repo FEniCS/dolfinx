@@ -6,12 +6,12 @@
 """Linear algebra functionality"""
 
 
-import numpy as np
-import numpy.typing as npt
-
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.common import IndexMap
 from dolfinx.cpp.la import BlockMode, InsertMode, Norm
+
+import numpy as np
+import numpy.typing as npt
 
 __all__ = [
     "orthonormalize",

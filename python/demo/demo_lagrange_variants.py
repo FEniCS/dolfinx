@@ -19,16 +19,16 @@
 
 from mpi4py import MPI
 
-# +
-import matplotlib.pylab as plt
-import numpy as np
-
 import basix
 import basix.ufl
 import ufl
 from dolfinx import default_scalar_type, fem, mesh
 from dolfinx.fem.petsc import LinearProblem
 from ufl import ds, dx, grad, inner
+
+# +
+import matplotlib.pylab as plt
+import numpy as np
 
 # -
 

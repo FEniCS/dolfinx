@@ -11,8 +11,6 @@ import collections
 import functools
 import typing
 
-import numpy as np
-
 import dolfinx
 from dolfinx import cpp as _cpp
 from dolfinx import la
@@ -20,6 +18,8 @@ from dolfinx.cpp.fem import pack_coefficients as _pack_coefficients
 from dolfinx.cpp.fem import pack_constants as _pack_constants
 from dolfinx.fem.bcs import DirichletBC
 from dolfinx.fem.forms import Form
+
+import numpy as np
 
 
 def pack_constants(
@@ -221,7 +221,7 @@ def _assemble_vector_array(b: np.ndarray, L: Form, constants=None, coeffs=None):
 @functools.singledispatch
 def assemble_matrix(
     a: typing.Any,
-    bcs: typing.Optional[typing.List[DirichletBC]] = None,
+    bcs: typing.Optional[list[DirichletBC]] = None,
     diagonal: float = 1.0,
     constants=None,
     coeffs=None,
@@ -260,7 +260,7 @@ def assemble_matrix(
 def _assemble_matrix_csr(
     A: la.MatrixCSR,
     a: Form,
-    bcs: typing.Optional[typing.List[DirichletBC]] = None,
+    bcs: typing.Optional[list[DirichletBC]] = None,
     diagonal: float = 1.0,
     constants=None,
     coeffs=None,
@@ -303,9 +303,9 @@ def _assemble_matrix_csr(
 
 def apply_lifting(
     b: np.ndarray,
-    a: typing.List[Form],
-    bcs: typing.List[typing.List[DirichletBC]],
-    x0: typing.Optional[typing.List[np.ndarray]] = None,
+    a: list[Form],
+    bcs: list[list[DirichletBC]],
+    x0: typing.Optional[list[np.ndarray]] = None,
     scale: float = 1.0,
     constants=None,
     coeffs=None,
@@ -342,7 +342,7 @@ def apply_lifting(
 
 
 def set_bc(
-    b: np.ndarray, bcs: typing.List[DirichletBC], x0: typing.Optional[np.ndarray] = None, scale: float = 1.0
+    b: np.ndarray, bcs: list[DirichletBC], x0: typing.Optional[np.ndarray] = None, scale: float = 1.0
 ) -> None:
     """Insert boundary condition values into vector.
 

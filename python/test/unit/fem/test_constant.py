@@ -7,11 +7,11 @@
 
 from mpi4py import MPI
 
-import numpy as np
-import pytest
-
 from dolfinx.fem import Constant
 from dolfinx.mesh import create_unit_cube
+
+import numpy as np
+import pytest
 
 
 def test_scalar_constant():

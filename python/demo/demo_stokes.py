@@ -85,8 +85,6 @@
 from mpi4py import MPI
 from petsc4py import PETSc
 
-import numpy as np
-
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import fem, la
@@ -103,6 +101,8 @@ from dolfinx.fem.petsc import assemble_matrix_block, assemble_vector_block
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_rectangle, locate_entities_boundary
 from ufl import div, dx, grad, inner
+
+import numpy as np
 
 # We create a {py:class}`Mesh <dolfinx.mesh.Mesh>`, define functions for
 # locating geometrically subsets of the boundary, and define a function

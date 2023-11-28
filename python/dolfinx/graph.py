@@ -7,10 +7,10 @@
 
 from __future__ import annotations
 
-import numpy as np
-
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.graph import partitioner
+
+import numpy as np
 
 # Import graph partitioners, which may or may not be available
 # (dependent on build configuration)

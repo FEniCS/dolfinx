@@ -21,14 +21,14 @@ from typing import Tuple, Union
 
 from mpi4py import MPI
 
-from efficiencies_pml_demo import calculate_analytical_efficiencies
-from mesh_wire_pml import generate_mesh_wire
-
 import ufl
 from basix.ufl import element
 from dolfinx import default_scalar_type, fem, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
 from dolfinx.io import VTXWriter, gmshio
+
+from efficiencies_pml_demo import calculate_analytical_efficiencies
+from mesh_wire_pml import generate_mesh_wire
 
 try:
     import gmsh

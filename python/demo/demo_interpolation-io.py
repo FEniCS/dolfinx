@@ -20,12 +20,12 @@
 
 from mpi4py import MPI
 
-# +
-import numpy as np
-
 from dolfinx import default_scalar_type, plot
 from dolfinx.fem import Function, functionspace
 from dolfinx.mesh import CellType, create_rectangle, locate_entities
+
+# +
+import numpy as np
 
 # -
 

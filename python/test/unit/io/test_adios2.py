@@ -8,9 +8,6 @@ from pathlib import Path
 
 from mpi4py import MPI
 
-import numpy as np
-import pytest
-
 import ufl
 from basix.ufl import element
 from dolfinx import default_real_type, default_scalar_type
@@ -18,6 +15,9 @@ from dolfinx.common import has_adios2
 from dolfinx.fem import Function, functionspace
 from dolfinx.graph import adjacencylist
 from dolfinx.mesh import CellType, create_mesh, create_unit_cube, create_unit_square
+
+import numpy as np
+import pytest
 
 try:
     from dolfinx.io import FidesWriter, VTXWriter

@@ -9,10 +9,10 @@ import functools
 import typing
 import warnings
 
-import numpy as np
-
 from dolfinx import cpp as _cpp
 from dolfinx import fem, mesh
+
+import numpy as np
 
 # NOTE: This dictionary and the below function that uses it should be
 # revised when pyvista improves rendering of 'arbitrary' Lagrange
@@ -110,7 +110,7 @@ def _(V: fem.FunctionSpace, entities=None):
         Topology, type for each cell, and geometry in VTK-ready format.
 
     """
-    if not (V.ufl_element().family_name in ["Discontinuous Lagrange", "Lagrange", "DQ", "Q", "DP", "P"]):
+    if V.ufl_element().family_name not in ["Discontinuous Lagrange", "Lagrange", "DQ", "Q", "DP", "P"]:
         raise RuntimeError("Can only create meshes from continuous or discontinuous Lagrange spaces")
 
     degree = V.ufl_element().degree

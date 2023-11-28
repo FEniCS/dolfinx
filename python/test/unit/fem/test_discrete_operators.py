@@ -7,15 +7,15 @@
 
 from mpi4py import MPI
 
-import numpy as np
-import pytest
-import scipy
-
 import dolfinx.la
 import ufl
 from dolfinx.cpp.fem import discrete_gradient
 from dolfinx.fem import Expression, Function, functionspace
 from dolfinx.mesh import CellType, GhostMode, create_unit_cube, create_unit_square
+
+import numpy as np
+import pytest
+import scipy
 
 
 @pytest.mark.parametrize(

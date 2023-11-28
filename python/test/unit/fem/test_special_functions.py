@@ -7,13 +7,13 @@
 
 from mpi4py import MPI
 
-import numpy
-import pytest
-
 import ufl
 from dolfinx import default_scalar_type
 from dolfinx.fem import Constant, assemble_scalar, form
 from dolfinx.mesh import create_unit_cube, create_unit_interval, create_unit_square
+
+import numpy
+import pytest
 
 
 def test_facet_area1D():

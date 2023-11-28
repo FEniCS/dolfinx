@@ -8,8 +8,6 @@
 from mpi4py import MPI
 from petsc4py import PETSc
 
-import numpy as np
-
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
@@ -18,6 +16,8 @@ from dolfinx.fem.petsc import apply_lifting, assemble_matrix, assemble_vector, c
 from dolfinx.la import create_petsc_vector
 from dolfinx.mesh import create_unit_square
 from ufl import TestFunction, TrialFunction, derivative, dx, grad, inner
+
+import numpy as np
 
 
 class NonlinearPDEProblem:

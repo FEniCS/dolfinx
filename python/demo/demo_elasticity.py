@@ -25,9 +25,6 @@
 from mpi4py import MPI
 from petsc4py import PETSc
 
-# +
-import numpy as np
-
 import dolfinx
 import ufl
 from dolfinx import la
@@ -36,6 +33,9 @@ from dolfinx.fem.petsc import apply_lifting, assemble_matrix, assemble_vector, s
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, GhostMode, create_box, locate_entities_boundary
 from ufl import dx, grad, inner
+
+# +
+import numpy as np
 
 dtype = PETSc.ScalarType  # type: ignore
 # -

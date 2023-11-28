@@ -7,9 +7,6 @@
 
 from mpi4py import MPI
 
-import numpy as np
-import pytest
-
 import basix
 import dolfinx
 import ufl
@@ -17,6 +14,9 @@ from basix.ufl import element, mixed_element
 from dolfinx.fem import form, functionspace
 from dolfinx.mesh import CellType, create_unit_cube, create_unit_square
 from ufl import grad, inner
+
+import numpy as np
+import pytest
 
 
 def check_symmetry(A, tol):

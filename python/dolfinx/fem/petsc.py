@@ -22,8 +22,6 @@ import petsc4py
 import petsc4py.lib
 from petsc4py import PETSc
 
-import numpy as np
-
 import dolfinx.cpp as _cpp
 import ufl
 from dolfinx import la
@@ -37,6 +35,8 @@ from dolfinx.fem.forms import extract_function_spaces as _extract_spaces
 from dolfinx.fem.forms import form as _create_form
 from dolfinx.fem.function import Function as _Function
 from dolfinx.la import create_petsc_vector
+
+import numpy as np
 
 __all__ = [
     "create_vector",
@@ -60,7 +60,7 @@ __all__ = [
 ]
 
 
-def _extract_function_spaces(a: typing.List[typing.List[Form]]):
+def _extract_function_spaces(a: list[list[Form]]):
     """From a rectangular array of bilinear forms, extract the function
     spaces for each block row and block column.
 
@@ -77,8 +77,8 @@ def _extract_function_spaces(a: typing.List[typing.List[Form]]):
     Vblock: typing.Iterable = map(partial(map, fn), a)
 
     # Compute spaces for each row/column block
-    rows: typing.List[typing.Set] = [set() for i in range(len(a))]
-    cols: typing.List[typing.Set] = [set() for i in range(len(a[0]))]
+    rows: list[set] = [set() for i in range(len(a))]
+    cols: list[set] = [set() for i in range(len(a[0]))]
     for i, Vrow in enumerate(Vblock):
         for j, V in enumerate(Vrow):
             if V is not None:
@@ -109,7 +109,7 @@ def create_vector(L: Form) -> PETSc.Vec:
     return create_petsc_vector(dofmap.index_map, dofmap.index_map_bs)
 
 
-def create_vector_block(L: typing.List[Form]) -> PETSc.Vec:
+def create_vector_block(L: list[Form]) -> PETSc.Vec:
     """Create a PETSc vector (blocked) that is compaible with a list of linear forms.
 
     Args:
@@ -123,7 +123,7 @@ def create_vector_block(L: typing.List[Form]) -> PETSc.Vec:
     return _cpp.fem.petsc.create_vector_block(maps)
 
 
-def create_vector_nest(L: typing.List[Form]) -> PETSc.Vec:
+def create_vector_nest(L: list[Form]) -> PETSc.Vec:
     """Create a PETSc nested vector (``VecNest``) that is compatible with a list of linear forms.
 
     Args:
@@ -158,7 +158,7 @@ def create_matrix(a: Form, mat_type=None) -> PETSc.Mat:
         return _cpp.fem.petsc.create_matrix(a._cpp_object, mat_type)
 
 
-def create_matrix_block(a: typing.List[typing.List[Form]]) -> PETSc.Mat:
+def create_matrix_block(a: list[list[Form]]) -> PETSc.Mat:
     """Create a PETSc matrix that is compatible with a rectangular array of bilinear forms.
 
     Args:
@@ -173,7 +173,7 @@ def create_matrix_block(a: typing.List[typing.List[Form]]) -> PETSc.Mat:
     return _cpp.fem.petsc.create_matrix_block(_a)
 
 
-def create_matrix_nest(a: typing.List[typing.List[Form]]) -> PETSc.Mat:
+def create_matrix_nest(a: list[list[Form]]) -> PETSc.Mat:
     """Create a PETSc matrix (``MatNest``) that is compatible with a rectangular array of bilinear forms.
 
     Args:
@@ -249,7 +249,7 @@ def assemble_vector_nest(L: typing.Any, constants=None, coeffs=None) -> PETSc.Ve
 
 
 @assemble_vector_nest.register
-def _assemble_vector_nest_vec(b: PETSc.Vec, L: typing.List[Form], constants=None, coeffs=None) -> PETSc.Vec:
+def _assemble_vector_nest_vec(b: PETSc.Vec, L: list[Form], constants=None, coeffs=None) -> PETSc.Vec:
     """Assemble linear forms into a nested PETSc (``VecNest``) vector. The
     vector is not zeroed before assembly and it is not finalised, i.e.
     ghost values are not accumulated on the owning processes.
@@ -266,9 +266,9 @@ def _assemble_vector_nest_vec(b: PETSc.Vec, L: typing.List[Form], constants=None
 # FIXME: Revise this interface
 @functools.singledispatch
 def assemble_vector_block(
-    L: typing.List[Form],
-    a: typing.List[typing.List[Form]],
-    bcs: typing.List[DirichletBC] = [],
+    L: list[Form],
+    a: list[list[Form]],
+    bcs: list[DirichletBC] = [],
     x0: typing.Optional[PETSc.Vec] = None,
     scale: float = 1.0,
     constants_L=None,
@@ -290,9 +290,9 @@ def assemble_vector_block(
 @assemble_vector_block.register
 def _assemble_vector_block_vec(
     b: PETSc.Vec,
-    L: typing.List[Form],
-    a: typing.List[typing.List[Form]],
-    bcs: typing.List[DirichletBC] = [],
+    L: list[Form],
+    a: list[list[Form]],
+    bcs: list[DirichletBC] = [],
     x0: typing.Optional[PETSc.Vec] = None,
     scale: float = 1.0,
     constants_L=None,
@@ -366,7 +366,7 @@ def _assemble_vector_block_vec(
 # -- Matrix assembly ---------------------------------------------------------
 @functools.singledispatch
 def assemble_matrix(
-    a: typing.Any, bcs: typing.List[DirichletBC] = [], diagonal: float = 1.0, constants=None, coeffs=None
+    a: typing.Any, bcs: list[DirichletBC] = [], diagonal: float = 1.0, constants=None, coeffs=None
 ):
     """Assemble bilinear form into a matrix. The returned matrix is not
     finalised, i.e. ghost values are not accumulated.
@@ -394,7 +394,7 @@ def assemble_matrix(
 
 @assemble_matrix.register
 def assemble_matrix_mat(
-    A: PETSc.Mat, a: Form, bcs: typing.List[DirichletBC] = [], diagonal: float = 1.0, constants=None, coeffs=None
+    A: PETSc.Mat, a: Form, bcs: list[DirichletBC] = [], diagonal: float = 1.0, constants=None, coeffs=None
 ) -> PETSc.Mat:
     """Assemble bilinear form into a matrix. The returned matrix is not
     finalised, i.e. ghost values are not accumulated.
@@ -414,8 +414,8 @@ def assemble_matrix_mat(
 # FIXME: Revise this interface
 @functools.singledispatch
 def assemble_matrix_nest(
-    a: typing.List[typing.List[Form]],
-    bcs: typing.List[DirichletBC] = [],
+    a: list[list[Form]],
+    bcs: list[DirichletBC] = [],
     mat_types=[],
     diagonal: float = 1.0,
     constants=None,
@@ -446,8 +446,8 @@ def assemble_matrix_nest(
 @assemble_matrix_nest.register
 def _assemble_matrix_nest_mat(
     A: PETSc.Mat,
-    a: typing.List[typing.List[Form]],
-    bcs: typing.List[DirichletBC] = [],
+    a: list[list[Form]],
+    bcs: list[DirichletBC] = [],
     diagonal: float = 1.0,
     constants=None,
     coeffs=None,
@@ -500,8 +500,8 @@ def _assemble_matrix_nest_mat(
 # FIXME: Revise this interface
 @functools.singledispatch
 def assemble_matrix_block(
-    a: typing.List[typing.List[Form]],
-    bcs: typing.List[DirichletBC] = [],
+    a: list[list[Form]],
+    bcs: list[DirichletBC] = [],
     diagonal: float = 1.0,
     constants=None,
     coeffs=None,
@@ -515,8 +515,8 @@ def assemble_matrix_block(
 @assemble_matrix_block.register
 def _assemble_matrix_block_mat(
     A: PETSc.Mat,
-    a: typing.List[typing.List[Form]],
-    bcs: typing.List[DirichletBC] = [],
+    a: list[list[Form]],
+    bcs: list[DirichletBC] = [],
     diagonal: float = 1.0,
     constants=None,
     coeffs=None,
@@ -581,9 +581,9 @@ def _assemble_matrix_block_mat(
 
 def apply_lifting(
     b: PETSc.Vec,
-    a: typing.List[Form],
-    bcs: typing.List[typing.List[DirichletBC]],
-    x0: typing.List[PETSc.Vec] = [],
+    a: list[Form],
+    bcs: list[list[DirichletBC]],
+    x0: list[PETSc.Vec] = [],
     scale: float = 1.0,
     constants=None,
     coeffs=None,
@@ -598,8 +598,8 @@ def apply_lifting(
 
 def apply_lifting_nest(
     b: PETSc.Vec,
-    a: typing.List[typing.List[Form]],
-    bcs: typing.List[DirichletBC],
+    a: list[list[Form]],
+    bcs: list[DirichletBC],
     x0: typing.Optional[PETSc.Vec] = None,
     scale: float = 1.0,
     constants=None,
@@ -631,7 +631,7 @@ def apply_lifting_nest(
 
 
 def set_bc(
-    b: PETSc.Vec, bcs: typing.List[DirichletBC], x0: typing.Optional[PETSc.Vec] = None, scale: float = 1.0
+    b: PETSc.Vec, bcs: list[DirichletBC], x0: typing.Optional[PETSc.Vec] = None, scale: float = 1.0
 ) -> None:
     """Apply the function :func:`dolfinx.fem.set_bc` to a PETSc Vector."""
     if x0 is not None:
@@ -640,7 +640,7 @@ def set_bc(
 
 
 def set_bc_nest(
-    b: PETSc.Vec, bcs: typing.List[typing.List[DirichletBC]], x0: typing.Optional[PETSc.Vec] = None, scale: float = 1.0
+    b: PETSc.Vec, bcs: list[list[DirichletBC]], x0: typing.Optional[PETSc.Vec] = None, scale: float = 1.0
 ) -> None:
     """Apply the function :func:`dolfinx.fem.set_bc` to each sub-vector of a nested PETSc Vector."""
     _b = b.getNestSubVecs()
@@ -659,7 +659,7 @@ class LinearProblem:
         self,
         a: ufl.Form,
         L: ufl.Form,
-        bcs: typing.List[DirichletBC] = [],
+        bcs: list[DirichletBC] = [],
         u: typing.Optional[_Function] = None,
         petsc_options: typing.Optional[dict] = None,
         form_compiler_options: typing.Optional[dict] = None,
@@ -797,7 +797,7 @@ class NonlinearProblem:
         self,
         F: ufl.form.Form,
         u: _Function,
-        bcs: typing.List[DirichletBC] = [],
+        bcs: list[DirichletBC] = [],
         J: ufl.form.Form = None,
         form_compiler_options: typing.Optional[dict] = None,
         jit_options: typing.Optional[dict] = None,

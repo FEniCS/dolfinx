@@ -10,14 +10,14 @@ from __future__ import annotations
 import typing
 from functools import singledispatch
 
-import numpy as np
-import numpy.typing as npt
-
 import basix
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit, la
 from dolfinx.fem import dofmap
+
+import numpy as np
+import numpy.typing as npt
 
 if typing.TYPE_CHECKING:
     from mpi4py import MPI as _MPI
@@ -472,7 +472,7 @@ class Function(ufl.Coefficient):
             the number of sub-spaces.
 
         """
-        return Function(self._V.sub(i), self.x, name=f"{str(self)}_{i}")
+        return Function(self._V.sub(i), self.x, name=f"{self!s}_{i}")
 
     def split(self) -> tuple[Function, ...]:
         """Extract (any) sub-functions.
@@ -509,13 +509,13 @@ class ElementMetaData(typing.NamedTuple):
 
     family: str
     degree: int
-    shape: typing.Optional[typing.Tuple[int, ...]] = None
+    shape: typing.Optional[tuple[int, ...]] = None
     symmetry: typing.Optional[bool] = None
 
 
 def functionspace(
     mesh: Mesh,
-    element: typing.Union[ufl.FiniteElementBase, ElementMetaData, typing.Tuple[str, int, typing.Tuple, bool]],
+    element: typing.Union[ufl.FiniteElementBase, ElementMetaData, tuple[str, int, tuple, bool]],
     form_compiler_options: typing.Optional[dict[str, typing.Any]] = None,
     jit_options: typing.Optional[dict[str, typing.Any]] = None,
 ) -> FunctionSpace:

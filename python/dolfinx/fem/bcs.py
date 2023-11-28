@@ -16,10 +16,10 @@ import numpy.typing
 if typing.TYPE_CHECKING:
     from dolfinx.fem.function import Constant, Function
 
-import numpy as np
-
 import dolfinx
 from dolfinx import cpp as _cpp
+
+import numpy as np
 
 
 def locate_dofs_geometrical(
@@ -187,7 +187,7 @@ def dirichletbc(
 
 def bcs_by_block(
     spaces: typing.Iterable[typing.Union[dolfinx.fem.FunctionSpace, None]], bcs: typing.Iterable[DirichletBC]
-) -> typing.List[typing.List[DirichletBC]]:
+) -> list[list[DirichletBC]]:
     """Arrange Dirichlet boundary conditions by the function space that
     they constrain.
 

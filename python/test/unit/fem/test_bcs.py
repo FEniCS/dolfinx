@@ -6,9 +6,6 @@
 
 from mpi4py import MPI
 
-import numpy as np
-import pytest
-
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type, default_scalar_type, la
@@ -29,6 +26,9 @@ from dolfinx.fem import (
 )
 from dolfinx.mesh import CellType, create_unit_cube, create_unit_square, locate_entities_boundary
 from ufl import dx, inner
+
+import numpy as np
+import pytest
 
 
 def test_locate_dofs_geometrical():

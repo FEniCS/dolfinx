@@ -6,13 +6,13 @@
 
 from mpi4py import MPI
 
-import numpy as np
-import pytest
-
 import ufl
 from basix.ufl import element
 from dolfinx.geometry import squared_distance
 from dolfinx.mesh import create_mesh, create_unit_interval
+
+import numpy as np
+import pytest
 
 
 @pytest.mark.skip_in_parallel

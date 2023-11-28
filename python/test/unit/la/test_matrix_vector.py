@@ -8,12 +8,12 @@
 
 from mpi4py import MPI
 
-import numpy as np
-
 from dolfinx import cpp as _cpp
 from dolfinx import la
 from dolfinx.fem import functionspace
 from dolfinx.mesh import create_unit_square
+
+import numpy as np
 
 
 def test_create_matrix_csr():

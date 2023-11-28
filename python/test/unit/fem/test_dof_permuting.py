@@ -9,14 +9,14 @@ import random
 
 from mpi4py import MPI
 
-import numpy as np
-import pytest
-
 import ufl
 from basix.ufl import element
 from dolfinx import default_real_type
 from dolfinx.fem import Function, assemble_scalar, form, functionspace
 from dolfinx.mesh import create_mesh
+
+import numpy as np
+import pytest
 
 
 def randomly_ordered_mesh(cell_type):

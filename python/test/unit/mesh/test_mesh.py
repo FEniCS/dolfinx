@@ -9,9 +9,6 @@ import sys
 
 from mpi4py import MPI
 
-import numpy as np
-import pytest
-
 import basix
 import ufl
 from basix.ufl import element
@@ -35,6 +32,9 @@ from dolfinx.mesh import (
     locate_entities,
     locate_entities_boundary,
 )
+
+import numpy as np
+import pytest
 
 
 def submesh_topology_test(mesh, submesh, entity_map, vertex_map, entity_dim):
@@ -394,7 +394,7 @@ def xfail_ghosted_quads_hexes(mesh_factory, ghost_mode):
     Needs implementing."""
     if mesh_factory in [create_unit_square, create_unit_cube]:
         if ghost_mode == GhostMode.shared_vertex:
-            pytest.xfail(reason="Missing functionality in '{}' with '{}' mode".format(mesh_factory, ghost_mode))
+            pytest.xfail(reason=f"Missing functionality in '{mesh_factory}' with '{ghost_mode}' mode")
 
 
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet, GhostMode.shared_vertex])

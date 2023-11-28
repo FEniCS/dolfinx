@@ -87,12 +87,12 @@
 from mpi4py import MPI
 from petsc4py import PETSc
 
-import numpy as np
-
 from basix.ufl import element, mixed_element
 from dolfinx import fem, io, mesh
 from dolfinx.fem.petsc import LinearProblem
 from ufl import Measure, SpatialCoordinate, TestFunctions, TrialFunctions, div, exp, inner
+
+import numpy as np
 
 domain = mesh.create_unit_square(MPI.COMM_WORLD, 32, 32, mesh.CellType.quadrilateral)
 

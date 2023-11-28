@@ -19,14 +19,14 @@ from functools import partial
 
 from mpi4py import MPI
 
-import numpy as np
-from mesh_sphere_axis import generate_mesh_sphere_axis
-from scipy.special import jv, jvp
-
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_scalar_type, fem, io, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
+
+import numpy as np
+from mesh_sphere_axis import generate_mesh_sphere_axis
+from scipy.special import jv, jvp
 
 try:
     from dolfinx.io import VTXWriter

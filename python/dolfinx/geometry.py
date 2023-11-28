@@ -13,8 +13,8 @@ import numpy as np
 import numpy.typing as npt
 
 if typing.TYPE_CHECKING:
-    from dolfinx.mesh import Mesh
     from dolfinx.cpp.graph import AdjacencyList_int32
+    from dolfinx.mesh import Mesh
 
 
 from dolfinx import cpp as _cpp
@@ -183,7 +183,7 @@ def compute_colliding_cells(mesh: Mesh, candidates: AdjacencyList_int32, x: npt.
     return _cpp.geometry.compute_colliding_cells(mesh._cpp_object, candidates, x)
 
 
-def squared_distance(mesh: Mesh, dim: int, entities: typing.List[int], points: npt.NDArray[np.floating]):
+def squared_distance(mesh: Mesh, dim: int, entities: list[int], points: npt.NDArray[np.floating]):
     """Compute the squared distance between a point and a mesh entity.
 
     The distance is computed between the ith input points and the ith

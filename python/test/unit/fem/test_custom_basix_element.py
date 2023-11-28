@@ -1,9 +1,6 @@
 from mpi4py import MPI
 from petsc4py import PETSc
 
-import numpy as np
-import pytest
-
 import basix
 import basix.ufl
 import ufl
@@ -11,6 +8,9 @@ from dolfinx.fem import Function, assemble_scalar, dirichletbc, form, functionsp
 from dolfinx.fem.petsc import apply_lifting, assemble_matrix, assemble_vector, set_bc
 from dolfinx.mesh import CellType, create_unit_cube, create_unit_square, exterior_facet_indices
 from ufl import SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad, inner
+
+import numpy as np
+import pytest
 
 
 def run_scalar_test(V, degree):

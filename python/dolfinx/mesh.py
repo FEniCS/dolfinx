@@ -11,9 +11,6 @@ import typing
 
 from mpi4py import MPI as _MPI
 
-import numpy as np
-import numpy.typing as npt
-
 import basix
 import basix.ufl
 import ufl
@@ -31,6 +28,9 @@ from dolfinx.cpp.mesh import (
     to_type,
 )
 from dolfinx.cpp.refinement import RefinementOption
+
+import numpy as np
+import numpy.typing as npt
 
 __all__ = [
     "meshtags_from_entities",
@@ -651,7 +651,7 @@ def create_unit_square(
 
 def create_box(
     comm: _MPI.Comm,
-    points: typing.List[npt.ArrayLike],
+    points: list[npt.ArrayLike],
     n: list,
     cell_type=CellType.tetrahedron,
     dtype: typing.Optional[npt.DTypeLike] = default_real_type,

@@ -10,10 +10,6 @@ import math
 from mpi4py import MPI
 from petsc4py import PETSc
 
-import numpy as np
-import pytest
-import scipy.sparse
-
 import basix
 import ufl
 from basix.ufl import element, mixed_element
@@ -52,6 +48,10 @@ from dolfinx.mesh import (
 )
 from ufl import derivative, ds, dx, inner
 from ufl.geometry import SpatialCoordinate
+
+import numpy as np
+import pytest
+import scipy.sparse
 
 
 def nest_matrix_norm(A):
