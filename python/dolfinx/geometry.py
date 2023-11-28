@@ -206,7 +206,7 @@ def squared_distance(mesh: Mesh, dim: int, entities: list[int], points: npt.NDAr
 def compute_distance_gjk(p: npt.NDArray[np.floating], q: npt.NDArray[np.floating]) -> npt.NDArray[np.floating]:
     """Compute the distance between two convex bodies p and q, each defined by a set of points.
 
-    Uses the Gilbert–Johnson–Keerthi (GJK) distance algorithm.
+    Uses the Gilbert-Johnson-Keerthi (GJK) distance algorithm.
 
     Args:
         p: Body 1 list of points (``shape=(num_points, gdim)``).
