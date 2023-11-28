@@ -79,11 +79,11 @@ MatSetValues_ctypes = petsc_lib_ctypes.MatSetValuesLocal
 MatSetValues_ctypes.argtypes = [
     ctypes.c_void_p,
     ctypes_index,
-    ctypes.POINTER(  # type: ignore
-        ctypes_index
+    ctypes.POINTER(
+        ctypes_index  # type: ignore
     ),
     ctypes_index,
-    ctypes.POINTER(ctypes_index),
+    ctypes.POINTER(ctypes_index),  # type: ignore
     ctypes.c_void_p,
     ctypes.c_int,
 ]  # type: ignore

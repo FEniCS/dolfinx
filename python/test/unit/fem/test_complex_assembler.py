@@ -19,8 +19,8 @@ from dolfinx.mesh import create_unit_square
 from ufl import dx, grad, inner
 
 pytestmark = pytest.mark.skipif(
-    not np.issubdtype(PETSc.ScalarType, np.complexfloating), reason="Only works in complex mode."
-)  # type: ignore
+    not np.issubdtype(PETSc.ScalarType, np.complexfloating), reason="Only works in complex mode."  # type:ignore
+)
 
 
 def test_complex_assembly():
