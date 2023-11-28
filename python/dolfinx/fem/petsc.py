@@ -365,9 +365,7 @@ def _assemble_vector_block_vec(
 
 # -- Matrix assembly ---------------------------------------------------------
 @functools.singledispatch
-def assemble_matrix(
-    a: typing.Any, bcs: list[DirichletBC] = [], diagonal: float = 1.0, constants=None, coeffs=None
-):
+def assemble_matrix(a: typing.Any, bcs: list[DirichletBC] = [], diagonal: float = 1.0, constants=None, coeffs=None):
     """Assemble bilinear form into a matrix. The returned matrix is not
     finalised, i.e. ghost values are not accumulated.
 
@@ -630,18 +628,14 @@ def apply_lifting_nest(
     return b
 
 
-def set_bc(
-    b: PETSc.Vec, bcs: list[DirichletBC], x0: PETSc.Vec | None = None, scale: float = 1.0
-) -> None:
+def set_bc(b: PETSc.Vec, bcs: list[DirichletBC], x0: PETSc.Vec | None = None, scale: float = 1.0) -> None:
     """Apply the function :func:`dolfinx.fem.set_bc` to a PETSc Vector."""
     if x0 is not None:
         x0 = x0.array_r
     _assemble.set_bc(b.array_w, bcs, x0, scale)
 
 
-def set_bc_nest(
-    b: PETSc.Vec, bcs: list[list[DirichletBC]], x0: PETSc.Vec | None = None, scale: float = 1.0
-) -> None:
+def set_bc_nest(b: PETSc.Vec, bcs: list[list[DirichletBC]], x0: PETSc.Vec | None = None, scale: float = 1.0) -> None:
     """Apply the function :func:`dolfinx.fem.set_bc` to each sub-vector of a nested PETSc Vector."""
     _b = b.getNestSubVecs()
     x0 = len(_b) * [None] if x0 is None else x0.getNestSubVecs()

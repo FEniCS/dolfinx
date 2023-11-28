@@ -9,4 +9,4 @@
 # Import nanobind wrapped code intp dolfinx.log
 from dolfinx.cpp.log import (
     log,  # noqa
-    )
+)

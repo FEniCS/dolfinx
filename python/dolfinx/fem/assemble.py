@@ -22,9 +22,7 @@ from dolfinx.fem.bcs import DirichletBC
 from dolfinx.fem.forms import Form
 
 
-def pack_constants(
-    form: Form | typing.Sequence[Form]
-) -> np.ndarray | typing.Sequence[np.ndarray]:
+def pack_constants(form: Form | typing.Sequence[Form]) -> np.ndarray | typing.Sequence[np.ndarray]:
     """Compute form constants.
 
     Pack the `constants` that appear in forms. The packed constants can
@@ -341,9 +339,7 @@ def apply_lifting(
     _cpp.fem.apply_lifting(b, _a, constants, coeffs, _bcs, x0, scale)
 
 
-def set_bc(
-    b: np.ndarray, bcs: list[DirichletBC], x0: np.ndarray | None = None, scale: float = 1.0
-) -> None:
+def set_bc(b: np.ndarray, bcs: list[DirichletBC], x0: np.ndarray | None = None, scale: float = 1.0) -> None:
     """Insert boundary condition values into vector.
 
     Only local (owned) entries are set, hence communication after

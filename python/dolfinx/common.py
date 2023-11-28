@@ -12,7 +12,7 @@ from dolfinx import cpp as _cpp
 from dolfinx.cpp.common import (
     IndexMap,
     has_adios2,  # noqa
-    )
+)
 
 __all__ = ["IndexMap", "Timer", "timed"]
 

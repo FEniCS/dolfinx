@@ -426,9 +426,7 @@ def create_submesh(msh, dim, entities):
     return (Mesh(submsh, submsh_domain), entity_map, vertex_map, geom_map)
 
 
-def meshtags(
-    mesh: Mesh, dim: int, entities: npt.NDArray[np.int32], values: np.ndarray | int | float
-) -> MeshTags:
+def meshtags(mesh: Mesh, dim: int, entities: npt.NDArray[np.int32], values: np.ndarray | int | float) -> MeshTags:
     """Create a MeshTags object that associates data with a subset of mesh entities.
 
     Args:

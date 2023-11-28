@@ -182,9 +182,7 @@ def test_refine_cell_meshtag(tdim):
 
     mesh.topology.create_entities(1)
     cell_indices = np.arange(mesh.topology.index_map(tdim).size_local)
-    meshtag = meshtags(
-        mesh, tdim, np.array(cell_indices, dtype=np.int32), np.arange(len(cell_indices), dtype=np.int32)
-    )
+    meshtag = meshtags(mesh, tdim, np.array(cell_indices, dtype=np.int32), np.arange(len(cell_indices), dtype=np.int32))
 
     fine_mesh, parent_cell, _ = refine_plaza(mesh, False, RefinementOption.parent_cell_and_facet)
     new_meshtag = transfer_meshtag(meshtag, fine_mesh, parent_cell)
