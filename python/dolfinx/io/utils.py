@@ -38,7 +38,7 @@ def _extract_cpp_functions(functions: typing.Union[typing.List[Function], Functi
 if _cpp.common.has_adios2:
     from dolfinx.cpp.io import FidesMeshPolicy  # F401
 
-    __all__ = __all__ + ["FidesWriter", "VTXWriter", "FidesMeshPolicy"]
+    __all__ = [*__all__, "FidesWriter", "VTXWriter", "FidesMeshPolicy"]
 
     class VTXWriter:
         """Writer for VTX files, using ADIOS2 to create the files.

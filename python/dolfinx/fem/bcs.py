@@ -23,7 +23,7 @@ import numpy as np
 
 
 def locate_dofs_geometrical(
-    V: typing.Union[dolfinx.fem.FunctionSpace, typing.Iterable[dolfinx.fem.FunctionSpace]], marker: typing.Callable
+    V: dolfinx.fem.FunctionSpace | typing.Iterable[dolfinx.fem.FunctionSpace], marker: typing.Callable
 ) -> np.ndarray:
     """Locate degrees-of-freedom geometrically using a marker function.
 
@@ -55,7 +55,7 @@ def locate_dofs_geometrical(
 
 
 def locate_dofs_topological(
-    V: typing.Union[dolfinx.fem.FunctionSpace, typing.Iterable[dolfinx.fem.FunctionSpace]],
+    V: dolfinx.fem.FunctionSpace | typing.Iterable[dolfinx.fem.FunctionSpace],
     entity_dim: int,
     entities: numpy.typing.NDArray[np.int32],
     remote: bool = True,
@@ -113,7 +113,7 @@ class DirichletBC:
         self._cpp_object = bc
 
     @property
-    def g(self) -> typing.Union[Function, Constant, np.ndarray]:
+    def g(self) -> Function | Constant | np.ndarray:
         """The boundary condition value(s)"""
         return self._cpp_object.value
 
@@ -124,9 +124,9 @@ class DirichletBC:
 
 
 def dirichletbc(
-    value: typing.Union[Function, Constant, np.ndarray],
+    value: Function | Constant | np.ndarray,
     dofs: numpy.typing.NDArray[np.int32],
-    V: typing.Optional[dolfinx.fem.FunctionSpace] = None,
+    V: dolfinx.fem.FunctionSpace | None = None,
 ) -> DirichletBC:
     """Create a representation of Dirichlet boundary condition which
     is imposed on a linear system.
@@ -186,7 +186,7 @@ def dirichletbc(
 
 
 def bcs_by_block(
-    spaces: typing.Iterable[typing.Union[dolfinx.fem.FunctionSpace, None]], bcs: typing.Iterable[DirichletBC]
+    spaces: typing.Iterable[dolfinx.fem.FunctionSpace | None], bcs: typing.Iterable[DirichletBC]
 ) -> list[list[DirichletBC]]:
     """Arrange Dirichlet boundary conditions by the function space that
     they constrain.

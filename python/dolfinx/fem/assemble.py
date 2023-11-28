@@ -23,8 +23,8 @@ import numpy as np
 
 
 def pack_constants(
-    form: typing.Union[Form, typing.Sequence[Form]]
-) -> typing.Union[np.ndarray, typing.Sequence[np.ndarray]]:
+    form: Form | typing.Sequence[Form]
+) -> np.ndarray | typing.Sequence[np.ndarray]:
     """Compute form constants.
 
     Pack the `constants` that appear in forms. The packed constants can
@@ -54,7 +54,7 @@ def pack_constants(
     return _pack(form)
 
 
-def pack_coefficients(form: typing.Union[Form, typing.Sequence[Form]]):
+def pack_coefficients(form: Form | typing.Sequence[Form]):
     """Compute form coefficients.
 
     Pack the `coefficients` that appear in forms. The packed
@@ -93,7 +93,7 @@ def create_vector(L: Form) -> la.Vector:
     return la.vector(dofmap.index_map, dofmap.index_map_bs, dtype=L.dtype)
 
 
-def create_matrix(a: Form, block_mode: typing.Optional[la.BlockMode] = None) -> la.MatrixCSR:
+def create_matrix(a: Form, block_mode: la.BlockMode | None = None) -> la.MatrixCSR:
     """Create a sparse matrix that is compatible with a given bilinear form.
     Args:
         a: Bilinear form to assemble.
@@ -221,11 +221,11 @@ def _assemble_vector_array(b: np.ndarray, L: Form, constants=None, coeffs=None):
 @functools.singledispatch
 def assemble_matrix(
     a: typing.Any,
-    bcs: typing.Optional[list[DirichletBC]] = None,
+    bcs: list[DirichletBC] | None = None,
     diagonal: float = 1.0,
     constants=None,
     coeffs=None,
-    block_mode: typing.Optional[la.BlockMode] = None,
+    block_mode: la.BlockMode | None = None,
 ):
     """Assemble bilinear form into a matrix.
 
@@ -260,7 +260,7 @@ def assemble_matrix(
 def _assemble_matrix_csr(
     A: la.MatrixCSR,
     a: Form,
-    bcs: typing.Optional[list[DirichletBC]] = None,
+    bcs: list[DirichletBC] | None = None,
     diagonal: float = 1.0,
     constants=None,
     coeffs=None,
@@ -305,7 +305,7 @@ def apply_lifting(
     b: np.ndarray,
     a: list[Form],
     bcs: list[list[DirichletBC]],
-    x0: typing.Optional[list[np.ndarray]] = None,
+    x0: list[np.ndarray] | None = None,
     scale: float = 1.0,
     constants=None,
     coeffs=None,
@@ -342,7 +342,7 @@ def apply_lifting(
 
 
 def set_bc(
-    b: np.ndarray, bcs: list[DirichletBC], x0: typing.Optional[np.ndarray] = None, scale: float = 1.0
+    b: np.ndarray, bcs: list[DirichletBC], x0: np.ndarray | None = None, scale: float = 1.0
 ) -> None:
     """Insert boundary condition values into vector.
 

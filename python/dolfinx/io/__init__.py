@@ -23,4 +23,4 @@ if _cpp.common.has_adios2:
         VTXWriter,
     )
 
-    __all__ = __all__ + ["FidesWriter", "VTXWriter", "FidesMeshPolicy"]
+    __all__ = [*__all__, "FidesWriter", "VTXWriter", "FidesMeshPolicy"]

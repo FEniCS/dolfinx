@@ -269,7 +269,7 @@ def assemble_vector_block(
     L: list[Form],
     a: list[list[Form]],
     bcs: list[DirichletBC] = [],
-    x0: typing.Optional[PETSc.Vec] = None,
+    x0: PETSc.Vec | None = None,
     scale: float = 1.0,
     constants_L=None,
     coeffs_L=None,
@@ -293,7 +293,7 @@ def _assemble_vector_block_vec(
     L: list[Form],
     a: list[list[Form]],
     bcs: list[DirichletBC] = [],
-    x0: typing.Optional[PETSc.Vec] = None,
+    x0: PETSc.Vec | None = None,
     scale: float = 1.0,
     constants_L=None,
     coeffs_L=None,
@@ -600,7 +600,7 @@ def apply_lifting_nest(
     b: PETSc.Vec,
     a: list[list[Form]],
     bcs: list[DirichletBC],
-    x0: typing.Optional[PETSc.Vec] = None,
+    x0: PETSc.Vec | None = None,
     scale: float = 1.0,
     constants=None,
     coeffs=None,
@@ -631,7 +631,7 @@ def apply_lifting_nest(
 
 
 def set_bc(
-    b: PETSc.Vec, bcs: list[DirichletBC], x0: typing.Optional[PETSc.Vec] = None, scale: float = 1.0
+    b: PETSc.Vec, bcs: list[DirichletBC], x0: PETSc.Vec | None = None, scale: float = 1.0
 ) -> None:
     """Apply the function :func:`dolfinx.fem.set_bc` to a PETSc Vector."""
     if x0 is not None:
@@ -640,7 +640,7 @@ def set_bc(
 
 
 def set_bc_nest(
-    b: PETSc.Vec, bcs: list[list[DirichletBC]], x0: typing.Optional[PETSc.Vec] = None, scale: float = 1.0
+    b: PETSc.Vec, bcs: list[list[DirichletBC]], x0: PETSc.Vec | None = None, scale: float = 1.0
 ) -> None:
     """Apply the function :func:`dolfinx.fem.set_bc` to each sub-vector of a nested PETSc Vector."""
     _b = b.getNestSubVecs()
@@ -660,10 +660,10 @@ class LinearProblem:
         a: ufl.Form,
         L: ufl.Form,
         bcs: list[DirichletBC] = [],
-        u: typing.Optional[_Function] = None,
-        petsc_options: typing.Optional[dict] = None,
-        form_compiler_options: typing.Optional[dict] = None,
-        jit_options: typing.Optional[dict] = None,
+        u: _Function | None = None,
+        petsc_options: dict | None = None,
+        form_compiler_options: dict | None = None,
+        jit_options: dict | None = None,
     ):
         """Initialize solver for a linear variational problem.
 
@@ -799,8 +799,8 @@ class NonlinearProblem:
         u: _Function,
         bcs: list[DirichletBC] = [],
         J: ufl.form.Form = None,
-        form_compiler_options: typing.Optional[dict] = None,
-        jit_options: typing.Optional[dict] = None,
+        form_compiler_options: dict | None = None,
+        jit_options: dict | None = None,
     ):
         """Initialize solver for solving a non-linear problem using Newton's method, :math:`(dF/du)(u) du = -F(u)`.
 

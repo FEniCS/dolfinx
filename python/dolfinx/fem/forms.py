@@ -24,7 +24,7 @@ if typing.TYPE_CHECKING:
 
 
 class Form:
-    def __init__(self, form, ufcx_form=None, code: typing.Optional[str] = None):
+    def __init__(self, form, ufcx_form=None, code: str | None = None):
         """A finite element form
 
         Note:
@@ -50,7 +50,7 @@ class Form:
         return self._ufcx_form
 
     @property
-    def code(self) -> typing.Union[str, None]:
+    def code(self) -> str | None:
         """C code strings"""
         return self._code
 
@@ -88,10 +88,10 @@ _ufl_to_dolfinx_domain = {
 
 
 def form(
-    form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]],
-    dtype: typing.Optional[npt.DTypeLike] = default_scalar_type,
-    form_compiler_options: typing.Optional[dict] = None,
-    jit_options: typing.Optional[dict] = None,
+    form: ufl.Form | typing.Iterable[ufl.Form],
+    dtype: npt.DTypeLike | None = default_scalar_type,
+    form_compiler_options: dict | None = None,
+    jit_options: dict | None = None,
 ):
     """Create a Form or an array of Forms.
 
@@ -197,12 +197,9 @@ def form(
 
 
 def extract_function_spaces(
-    forms: typing.Union[
-        typing.Iterable[Form],  # type: ignore [return]
-        typing.Iterable[typing.Iterable[Form]],
-    ],
+    forms: typing.Iterable[Form] | typing.Iterable[typing.Iterable[Form]],
     index: int = 0,
-) -> typing.Iterable[typing.Union[None, function.FunctionSpace]]:
+) -> typing.Iterable[None | function.FunctionSpace]:
     """Extract common function spaces from an array of forms. If `forms`
     is a list of linear form, this function returns of list of the
     corresponding test functions. If `forms` is a 2D array of bilinear

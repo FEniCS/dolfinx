@@ -29,11 +29,11 @@ from dolfinx.fem.petsc import LinearProblem
 from ufl import SpatialCoordinate, TestFunction, TrialFunction, cos, div, dx, grad, inner, sin
 
 # +
-import matplotlib
+import matplotlib as mpl
 import matplotlib.pylab as plt
 import numpy as np
 
-matplotlib.use("agg")
+mpl.use("agg")
 # -
 
 # ## Defining a degree 1 TNT element
