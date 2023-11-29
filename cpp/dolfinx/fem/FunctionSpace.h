@@ -25,11 +25,10 @@
 namespace dolfinx::fem
 {
 
-/// @brief This class represents a finite element function space defined
-/// by a mesh, a finite element, and a local-to-global map of the
-/// degrees-of-freedom.
-/// @tparam T The floating point (real) type of the mesh geometry and the
-/// finite element basis.
+/// @brief This class represents a finite element function space defined by a
+/// mesh, a finite element, and a local-to-global map of the degrees-of-freedom.
+/// @tparam T The floating point (real) type of the mesh geometry and the finite
+/// element basis.
 template <std::floating_point T>
 class FunctionSpace
 {
@@ -62,9 +61,13 @@ public:
   /// Move assignment operator
   FunctionSpace& operator=(FunctionSpace&& V) = default;
 
-  /// Extract subspace for component
+  ///  @brief Extracts a subspace for a specific component. 
+  ///
+  /// @note For performance reasons, it's advisable to store and reuse the
+  /// returned subspace instead of calling this function repeatedly for the same
+  /// component.
   /// @param[in] component The subspace component
-  /// @return The subspace
+  /// @return The subspace.
   std::shared_ptr<FunctionSpace<T>> sub(const std::vector<int>& component) const
   {
     assert(_mesh);
