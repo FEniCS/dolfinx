@@ -32,7 +32,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-docs = ["markdown", "pyyaml", "sphinx==5.0.2", "sphinx_rtd_theme"]
+docs = ["markdown", "pyyaml", "sphinx", "sphinx_rtd_theme"]
 lint = ["flake8", "pydocstyle"]
 optional = ["numba"]
 test = ["pytest", "sympy", "scipy", "matplotlib", "fenics-dolfinx[optional]"]
