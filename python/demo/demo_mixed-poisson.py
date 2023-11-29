@@ -113,6 +113,7 @@ dx = Measure("dx", domain)
 a = inner(sigma, tau) * dx + inner(u, div(tau)) * dx + inner(div(sigma), v) * dx
 L = -inner(f, v) * dx
 
+# sub0 = V.sub(0)
 
 fdim = domain.topology.dim - 1
 facets_top = mesh.locate_entities_boundary(domain, fdim, lambda x: np.isclose(x[1], 1.0))

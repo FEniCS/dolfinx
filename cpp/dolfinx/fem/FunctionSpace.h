@@ -65,18 +65,11 @@ public:
   /// Extract subspace for component
   /// @param[in] component The subspace component
   /// @return The subspace
-  std::shared_ptr<FunctionSpace<T>> sub(const std::vector<int>& component) const
+  FunctionSpace<T> sub(const std::vector<int>& component) const
   {
     assert(_mesh);
     assert(_element);
     assert(_dofmap);
-
-    // Check if sub space is already in the cache and not expired
-    if (auto it = _subspaces.find(component); it != _subspaces.end())
-    {
-      if (auto s = it->second.lock())
-        return s;
-    }
 
     // Extract sub-element
     auto element = this->_element->extract_sub_element(component);
@@ -86,16 +79,13 @@ public:
         = std::make_shared<DofMap>(_dofmap->extract_sub_dofmap(component));
 
     // Create new sub space
-    auto sub_space = std::make_shared<FunctionSpace<T>>(_mesh, element, dofmap);
+    FunctionSpace<T> sub_space(_mesh, element, dofmap);
 
     // Set root space id and component w.r.t. root
-    sub_space->_root_space_id = _root_space_id;
-    sub_space->_component = _component;
-    sub_space->_component.insert(sub_space->_component.end(), component.begin(),
-                                 component.end());
-
-    // Insert new subspace into cache
-    _subspaces.emplace(sub_space->_component, sub_space);
+    sub_space._root_space_id = _root_space_id;
+    sub_space._component = _component;
+    sub_space._component.insert(sub_space._component.end(), component.begin(),
+                                component.end());
 
     return sub_space;
   }
@@ -324,9 +314,6 @@ private:
   // Unique identifier for the space and for its root space
   boost::uuids::uuid _id;
   boost::uuids::uuid _root_space_id;
-
-  // Cache of subspaces
-  mutable std::map<std::vector<int>, std::weak_ptr<FunctionSpace>> _subspaces;
 };
 
 /// Extract FunctionSpaces for (0) rows blocks and (1) columns blocks
