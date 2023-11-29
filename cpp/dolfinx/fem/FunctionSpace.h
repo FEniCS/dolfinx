@@ -67,7 +67,7 @@ public:
   /// returned subspace instead of calling this function repeatedly for the same
   /// component.
   /// @param[in] component The subspace component
-  /// @return The subspace.
+  /// @return The subspace
   std::shared_ptr<FunctionSpace<T>> sub(const std::vector<int>& component) const
   {
     assert(_mesh);
