@@ -105,8 +105,7 @@ public:
   /// @return The sub-function
   Function sub(int i) const
   {
-    auto sub_space
-        = std::make_shared<FunctionSpace<U>>(_function_space->sub({i}));
+    auto sub_space = _function_space->sub({i});
     assert(sub_space);
     return Function(sub_space, _x);
   }
