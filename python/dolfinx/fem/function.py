@@ -566,7 +566,7 @@ class FunctionSpace(ufl.FunctionSpace):
 
         Note:
             This initialiser is for internal use and not normally called
-            in user code. Use :func:`FunctionSpace` to create a function space.
+            in user code. Use :func:`functionspace` to create a function space.
 
         Args:
             mesh: Mesh that space is defined on

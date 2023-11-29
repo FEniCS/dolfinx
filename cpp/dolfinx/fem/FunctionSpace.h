@@ -71,6 +71,10 @@ public:
     assert(_element);
     assert(_dofmap);
 
+    // Check that component is valid
+    if (component.empty())
+      throw std::runtime_error("Component must be non-empty");
+
     // Extract sub-element
     auto element = this->_element->extract_sub_element(component);
 
