@@ -210,5 +210,5 @@ jobs:
           git config --global user.email "fenics@github.com"
           git config --global user.name "FEniCS GitHub Actions"
           git add --all
-          git commit --allow-empty -m "C++ FEniCS/dolfinx@${{ github.sha }}"
+          git commit --allow-empty -m "C++/Python FEniCS/dolfinx@${{ github.sha }}"
           git push
