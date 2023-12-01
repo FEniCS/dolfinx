@@ -61,13 +61,14 @@ public:
   /// Move assignment operator
   FunctionSpace& operator=(FunctionSpace&& V) = default;
 
-  ///  @brief Extracts a subspace for a specific component.
+  ///  @brief Create a subspace for a specific component.
   ///
-  /// @note For performance reasons, it's advisable to store and reuse the
-  /// returned subspace instead of calling this function repeatedly for the same
-  /// component.
-  /// @param[in] component The subspace component
-  /// @return The subspace
+  /// @note If the subspace is re-used, for performance reasons the
+  /// returned subspace should be stored by the caller to avoid repeated
+  /// re-computation of the subspace.
+  ///
+  /// @param[in] component Subspace component.
+  /// @return A subspace.
   FunctionSpace<T> sub(const std::vector<int>& component) const
   {
     assert(_mesh);
@@ -93,7 +94,6 @@ public:
     sub_space._component = _component;
     sub_space._component.insert(sub_space._component.end(), component.begin(),
                                 component.end());
-
     return sub_space;
   }
 
