@@ -70,7 +70,7 @@ public:
   ///
   /// @param[in] component Subspace component.
   /// @return A subspace.
-  FunctionSpace<T> sub(const std::vector<int>& component) const
+  FunctionSpace sub(const std::vector<int>& component) const
   {
     assert(_mesh);
     assert(_element);
@@ -88,7 +88,7 @@ public:
         = std::make_shared<DofMap>(_dofmap->extract_sub_dofmap(component));
 
     // Create new sub space
-    FunctionSpace<T> sub_space(_mesh, element, dofmap);
+    FunctionSpace sub_space(_mesh, element, dofmap);
 
     // Set root space id and component w.r.t. root
     sub_space._root_space_id = _root_space_id;
@@ -136,7 +136,7 @@ public:
   /// Collapse a subspace and return a new function space and a map from
   /// new to old dofs
   /// @return The new function space and a map from new to old dofs
-  std::pair<FunctionSpace<T>, std::vector<std::int32_t>> collapse() const
+  std::pair<FunctionSpace, std::vector<std::int32_t>> collapse() const
   {
     if (_component.empty())
       throw std::runtime_error("Function space is not a subspace");
