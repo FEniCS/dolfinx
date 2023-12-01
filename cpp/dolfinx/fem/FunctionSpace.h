@@ -34,12 +34,15 @@ template <std::floating_point T>
 class FunctionSpace
 {
 public:
+  /// Geometry type of the Mesh that the FunctionSpace is defined on.
+  using geometry_type = T;
+
   /// @brief Create function space for given mesh, element and dofmap.
   /// @param[in] mesh Mesh that the space is defined on.
   /// @param[in] element Finite element for the space.
   /// @param[in] dofmap Degree-of-freedom map for the space.
-  FunctionSpace(std::shared_ptr<const mesh::Mesh<T>> mesh,
-                std::shared_ptr<const FiniteElement<T>> element,
+  FunctionSpace(std::shared_ptr<const mesh::Mesh<geometry_type>> mesh,
+                std::shared_ptr<const FiniteElement<geometry_type>> element,
                 std::shared_ptr<const DofMap> dofmap)
       : _mesh(mesh), _element(element), _dofmap(dofmap),
         _id(boost::uuids::random_generator()()), _root_space_id(_id)
@@ -167,7 +170,7 @@ public:
   /// @return The dof coordinates `[([x0, y0, z0], [x1, y1, z1], ...)`
   /// if `transpose` is false, and otherwise the returned data is
   /// transposed. Storage is row-major.
-  std::vector<T> tabulate_dof_coordinates(bool transpose) const
+  std::vector<geometry_type> tabulate_dof_coordinates(bool transpose) const
   {
     if (!_component.empty())
     {
@@ -213,28 +216,30 @@ public:
     // Get coordinate map
     if (_mesh->geometry().cmaps().size() > 1)
       throw std::runtime_error("Mixed topology not supported");
-    const CoordinateElement<T>& cmap = _mesh->geometry().cmaps()[0];
+    const CoordinateElement<geometry_type>& cmap = _mesh->geometry().cmaps()[0];
 
     // Prepare cell geometry
     auto x_dofmap = _mesh->geometry().dofmap();
     const std::size_t num_dofs_g = cmap.dim();
-    std::span<const T> x_g = _mesh->geometry().x();
+    std::span<const geometry_type> x_g = _mesh->geometry().x();
 
     // Array to hold coordinates to return
     const std::size_t shape_c0 = transpose ? 3 : num_dofs;
     const std::size_t shape_c1 = transpose ? num_dofs : 3;
-    std::vector<T> coords(shape_c0 * shape_c1, 0);
+    std::vector<geometry_type> coords(shape_c0 * shape_c1, 0);
 
     using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+        geometry_type,
+        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
     using cmdspan4_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
+        const geometry_type,
+        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
 
     // Loop over cells and tabulate dofs
-    std::vector<T> x_b(scalar_dofs * gdim);
+    std::vector<geometry_type> x_b(scalar_dofs * gdim);
     mdspan2_t x(x_b.data(), scalar_dofs, gdim);
 
-    std::vector<T> coordinate_dofs_b(num_dofs_g * gdim);
+    std::vector<geometry_type> coordinate_dofs_b(num_dofs_g * gdim);
     mdspan2_t coordinate_dofs(coordinate_dofs_b.data(), num_dofs_g, gdim);
 
     auto map = _mesh->topology()->index_map(tdim);
@@ -249,11 +254,12 @@ public:
     }
 
     auto apply_dof_transformation
-        = _element->template get_pre_dof_transformation_function<T>();
+        = _element
+              ->template get_pre_dof_transformation_function<geometry_type>();
 
     const std::array<std::size_t, 4> phi_shape
         = cmap.tabulate_shape(0, Xshape[0]);
-    std::vector<T> phi_b(
+    std::vector<geometry_type> phi_b(
         std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
     cmdspan4_t phi_full(phi_b.data(), phi_shape);
     cmap.tabulate(0, X, Xshape, phi_b);
@@ -298,20 +304,26 @@ public:
   }
 
   /// The mesh
-  std::shared_ptr<const mesh::Mesh<T>> mesh() const { return _mesh; }
+  std::shared_ptr<const mesh::Mesh<geometry_type>> mesh() const
+  {
+    return _mesh;
+  }
 
   /// The finite element
-  std::shared_ptr<const FiniteElement<T>> element() const { return _element; }
+  std::shared_ptr<const FiniteElement<geometry_type>> element() const
+  {
+    return _element;
+  }
 
   /// The dofmap
   std::shared_ptr<const DofMap> dofmap() const { return _dofmap; }
 
 private:
   // The mesh
-  std::shared_ptr<const mesh::Mesh<T>> _mesh;
+  std::shared_ptr<const mesh::Mesh<geometry_type>> _mesh;
 
   // The finite element
-  std::shared_ptr<const FiniteElement<T>> _element;
+  std::shared_ptr<const FiniteElement<geometry_type>> _element;
 
   // The dofmap
   std::shared_ptr<const DofMap> _dofmap;
