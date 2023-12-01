@@ -22,7 +22,7 @@ template <dolfinx::scalar T>
 class Constant
 {
 public:
-  /// Field type for the Expression
+  /// Field type
   using value_type = T;
 
   /// @brief Create a rank-0 (scalar-valued) constant
