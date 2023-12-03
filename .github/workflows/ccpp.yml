@@ -100,7 +100,7 @@ jobs:
       - name: cmake-format (non-blocking)
         continue-on-error: true
         run: |
-          find . -type f \( -name "*.cmake" -o -name "*.cmake.in" \) | xargs cmake-format --check
+          find . -type f \( -name "*.cmake" -o -name "*.cmake.in" -o -name "CMakeLists.txt" \) | xargs cmake-format --check
 
       - name: Configure C++
         run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
@@ -144,7 +144,7 @@ jobs:
       - name: Build Python interface documentation
         run: |
           cd python/doc
-          python3 -m sphinx -W -b html source/ build/html/ 
+          python3 -m sphinx -W -b html source/ build/html/
 
       - name: Set default DOLFINx JIT options
         run: |
@@ -210,5 +210,5 @@ jobs:
           git config --global user.email "fenics@github.com"
           git config --global user.name "FEniCS GitHub Actions"
           git add --all
-          git commit --allow-empty -m "C++ FEniCS/dolfinx@${{ github.sha }}"
+          git commit --allow-empty -m "C++/Python FEniCS/dolfinx@${{ github.sha }}"
           git push

@@ -447,15 +447,21 @@ class Function(ufl.Coefficient):
         return self.name
 
     def sub(self, i: int) -> Function:
-        """Return a sub-function.
+        """Return a sub-function (a view into the `Function`).
+
+        Sub-functions are indexed `i = 0, ..., N-1`, where `N` is the
+        number of sub-spaces.
 
         Args:
             i: Index of the sub-function to extract.
 
-        Note:
-            The sub-functions are numbered i = 0, ..., N-1, where N is
-            the number of sub-spaces.
+        Returns:
+            A view into the parent `Function`.
 
+        Note:
+            If the sub-Function is re-used, for performance reasons the
+            returned `Function` should be stored by the caller to avoid
+            repeated re-computation of the subspac.
         """
         return Function(self._V.sub(i), self.x, name=f"{str(self)}_{i}")
 
@@ -566,7 +572,7 @@ class FunctionSpace(ufl.FunctionSpace):
 
         Note:
             This initialiser is for internal use and not normally called
-            in user code. Use :func:`FunctionSpace` to create a function space.
+            in user code. Use :func:`functionspace` to create a function space.
 
         Args:
             mesh: Mesh that space is defined on
@@ -615,11 +621,15 @@ class FunctionSpace(ufl.FunctionSpace):
         """Return the i-th sub space.
 
         Args:
-            i: The subspace index
+            i: Index of the subspace to extract.
 
         Returns:
-            A subspace
+            A subspace.
 
+        Note:
+            If the subspace is re-used, for performance reasons the
+            returned subspace should be stored by the caller to avoid
+            repeated re-computation of the subspace.
         """
         assert self.ufl_element().num_sub_elements > i
         sub_element = self.ufl_element().sub_elements[i]
