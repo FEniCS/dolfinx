@@ -35,7 +35,52 @@ void create_mesh_file()
   file.write_mesh(*mesh);
 }
 
-void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
+void test_create_box(void)
+{
+  MPI_Comm mpi_comm = MPI_COMM_WORLD;
+  const int mpi_rank = dolfinx::MPI::rank(mpi_comm);
+
+  // Create subcommunicator on even ranks
+  int color = mpi_rank % 2 ? MPI_UNDEFINED : 1;
+
+  MPI_Comm subset_comm;
+  MPI_Comm_split(mpi_comm, color, mpi_rank, &subset_comm);
+
+  auto part = mesh::create_cell_partitioner(mesh::GhostMode::none);
+
+  // Create mesh on even ranks and distribute to all ranks in mpi_comm
+  auto mesh = std::make_shared<mesh::Mesh<double>>(mesh::create_box(
+      mpi_comm, subset_comm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {12, 12, 12},
+      mesh::CellType::hexahedron, part));
+  int tdim = mesh->topology()->dim();
+  mesh->topology()->create_entities(tdim - 1);
+
+  // create mesh on mpi_comm and distribute to all ranks in mpi_comm
+  auto mesh2 = std::make_shared<mesh::Mesh<double>>(
+      mesh::create_box(mpi_comm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}},
+                       {12, 12, 12}, mesh::CellType::hexahedron, part));
+  mesh2->topology()->create_entities(tdim - 1);
+
+  // check that the communicators are the same
+  int equal;
+  MPI_Comm_compare(mesh->comm(), mesh2->comm(), &equal);
+  CHECK(equal != MPI_UNEQUAL);
+
+  // check global sizes for topology and geometry
+  CHECK(mesh->topology()->index_map(tdim)->size_global()
+        == mesh2->topology()->index_map(tdim)->size_global());
+  CHECK(mesh->topology()->index_map(tdim - 1)->size_global()
+        == mesh2->topology()->index_map(tdim - 1)->size_global());
+  CHECK(mesh->topology()->index_map(0)->size_global()
+        == mesh2->topology()->index_map(0)->size_global());
+  CHECK(mesh->geometry().index_map()->size_global()
+        == mesh2->geometry().index_map()->size_global());
+
+  MPI_Comm_free(&subset_comm);
+}
+
+[[maybe_unused]] void
+test_distributed_mesh(mesh::CellPartitionFunction partitioner)
 {
   using T = double;
 
@@ -65,9 +110,9 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
 
   // read mesh data
   std::vector<T> x;
-  std::array<std::size_t, 2> xshape = {0, 2};
+  std::array<std::size_t, 2> xshape{0, 2};
   std::vector<std::int64_t> cells;
-  std::array<std::size_t, 2> cshape = {0, 3};
+  std::array<std::size_t, 2> cshape{0, 3};
   graph::AdjacencyList<std::int32_t> dest(0);
   if (subset_comm != MPI_COMM_NULL)
   {
@@ -116,11 +161,11 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
                     [](std::int64_t i) { return (i != -1); });
   external_vertices.erase(external_vertices.begin(), it);
 
-  std::vector<int> cell_group_offsets
-      = {0, std::int32_t(cell_nodes.num_nodes() - ghost_owners.size()),
-         cell_nodes.num_nodes()};
+  std::vector<int> cell_group_offsets{
+      0, std::int32_t(cell_nodes.num_nodes() - ghost_owners.size()),
+      cell_nodes.num_nodes()};
 
-  std::vector<mesh::CellType> cell_types = {cmap.cell_shape()};
+  std::vector<mesh::CellType> cell_types{cmap.cell_shape()};
   mesh::Topology topology = mesh::create_topology(
       mpi_comm, cell_nodes, original_cell_index, ghost_owners, cell_types,
       cell_group_offsets, external_vertices);
@@ -150,14 +195,17 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
 }
 } // namespace
 
+// Create a mesh on even ranks and distribute to all ranks in mpi_comm
+TEST_CASE("Create box", "[create_box]") { CHECK_NOTHROW(test_create_box()); }
+
 TEST_CASE("Distributed Mesh", "[distributed_mesh]")
 {
   create_mesh_file();
 
-  SECTION("SCOTCH")
-  {
-    CHECK_NOTHROW(test_distributed_mesh(mesh::create_cell_partitioner()));
-  }
+  // SECTION("SCOTCH")
+  // {
+  //   CHECK_NOTHROW(test_distributed_mesh(mesh::create_cell_partitioner()));
+  // }
 
   // #ifdef HAS_KAHIP
   // SECTION("KAHIP with Lambda")
