@@ -113,11 +113,13 @@ dx = Measure("dx", domain)
 a = inner(sigma, tau) * dx + inner(u, div(tau)) * dx + inner(div(sigma), v) * dx
 L = -inner(f, v) * dx
 
+# Get subspace of V
+V0 = V.sub(0)
 
 fdim = domain.topology.dim - 1
 facets_top = mesh.locate_entities_boundary(domain, fdim, lambda x: np.isclose(x[1], 1.0))
-Q, _ = V.sub(0).collapse()
-dofs_top = fem.locate_dofs_topological((V.sub(0), Q), fdim, facets_top)
+Q, _ = V0.collapse()
+dofs_top = fem.locate_dofs_topological((V0, Q), fdim, facets_top)
 
 
 def f1(x):
@@ -128,11 +130,11 @@ def f1(x):
 
 f_h1 = fem.Function(Q)
 f_h1.interpolate(f1)
-bc_top = fem.dirichletbc(f_h1, dofs_top, V.sub(0))
+bc_top = fem.dirichletbc(f_h1, dofs_top, V0)
 
 
 facets_bottom = mesh.locate_entities_boundary(domain, fdim, lambda x: np.isclose(x[1], 0.0))
-dofs_bottom = fem.locate_dofs_topological((V.sub(0), Q), fdim, facets_bottom)
+dofs_bottom = fem.locate_dofs_topological((V0, Q), fdim, facets_bottom)
 
 
 def f2(x):
@@ -143,7 +145,7 @@ def f2(x):
 
 f_h2 = fem.Function(Q)
 f_h2.interpolate(f2)
-bc_bottom = fem.dirichletbc(f_h2, dofs_bottom, V.sub(0))
+bc_bottom = fem.dirichletbc(f_h2, dofs_bottom, V0)
 
 
 bcs = [bc_top, bc_bottom]

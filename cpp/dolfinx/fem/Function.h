@@ -100,12 +100,13 @@ public:
   // Assignment
   Function& operator=(const Function& v) = delete;
 
-  /// @brief Extract sub-function (a view into the Function).
+  /// @brief Extract a sub-function (a view into the Function).
   /// @param[in] i Index of subfunction
   /// @return The sub-function
   Function sub(int i) const
   {
-    auto sub_space = _function_space->sub({i});
+    auto sub_space = std::make_shared<FunctionSpace<geometry_type>>(
+        _function_space->sub({i}));
     assert(sub_space);
     return Function(sub_space, _x);
   }

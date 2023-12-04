@@ -28,18 +28,21 @@ namespace dolfinx::fem
 /// @brief This class represents a finite element function space defined
 /// by a mesh, a finite element, and a local-to-global map of the
 /// degrees-of-freedom.
-/// @tparam T The floating point (real) type of the mesh geometry and the
-/// finite element basis.
+/// @tparam T The floating point (real) type of the mesh geometry and
+/// the finite element basis.
 template <std::floating_point T>
 class FunctionSpace
 {
 public:
+  /// Geometry type of the Mesh that the FunctionSpace is defined on.
+  using geometry_type = T;
+
   /// @brief Create function space for given mesh, element and dofmap.
   /// @param[in] mesh Mesh that the space is defined on.
   /// @param[in] element Finite element for the space.
   /// @param[in] dofmap Degree-of-freedom map for the space.
-  FunctionSpace(std::shared_ptr<const mesh::Mesh<T>> mesh,
-                std::shared_ptr<const FiniteElement<T>> element,
+  FunctionSpace(std::shared_ptr<const mesh::Mesh<geometry_type>> mesh,
+                std::shared_ptr<const FiniteElement<geometry_type>> element,
                 std::shared_ptr<const DofMap> dofmap)
       : _mesh(mesh), _element(element), _dofmap(dofmap),
         _id(boost::uuids::random_generator()()), _root_space_id(_id)
@@ -62,21 +65,23 @@ public:
   /// Move assignment operator
   FunctionSpace& operator=(FunctionSpace&& V) = default;
 
-  /// Extract subspace for component
-  /// @param[in] component The subspace component
-  /// @return The subspace
-  std::shared_ptr<FunctionSpace<T>> sub(const std::vector<int>& component) const
+  ///  @brief Create a subspace (view) for a specific component.
+  ///
+  /// @note If the subspace is re-used, for performance reasons the
+  /// returned subspace should be stored by the caller to avoid repeated
+  /// re-computation of the subspace.
+  ///
+  /// @param[in] component Subspace component.
+  /// @return A subspace.
+  FunctionSpace sub(const std::vector<int>& component) const
   {
     assert(_mesh);
     assert(_element);
     assert(_dofmap);
 
-    // Check if sub space is already in the cache and not expired
-    if (auto it = _subspaces.find(component); it != _subspaces.end())
-    {
-      if (auto s = it->second.lock())
-        return s;
-    }
+    // Check that component is valid
+    if (component.empty())
+      throw std::runtime_error("Component must be non-empty");
 
     // Extract sub-element
     auto element = this->_element->extract_sub_element(component);
@@ -86,17 +91,13 @@ public:
         = std::make_shared<DofMap>(_dofmap->extract_sub_dofmap(component));
 
     // Create new sub space
-    auto sub_space = std::make_shared<FunctionSpace<T>>(_mesh, element, dofmap);
+    FunctionSpace sub_space(_mesh, element, dofmap);
 
     // Set root space id and component w.r.t. root
-    sub_space->_root_space_id = _root_space_id;
-    sub_space->_component = _component;
-    sub_space->_component.insert(sub_space->_component.end(), component.begin(),
-                                 component.end());
-
-    // Insert new subspace into cache
-    _subspaces.emplace(sub_space->_component, sub_space);
-
+    sub_space._root_space_id = _root_space_id;
+    sub_space._component = _component;
+    sub_space._component.insert(sub_space._component.end(), component.begin(),
+                                component.end());
     return sub_space;
   }
 
@@ -138,7 +139,7 @@ public:
   /// Collapse a subspace and return a new function space and a map from
   /// new to old dofs
   /// @return The new function space and a map from new to old dofs
-  std::pair<FunctionSpace<T>, std::vector<std::int32_t>> collapse() const
+  std::pair<FunctionSpace, std::vector<std::int32_t>> collapse() const
   {
     if (_component.empty())
       throw std::runtime_error("Function space is not a subspace");
@@ -169,7 +170,7 @@ public:
   /// @return The dof coordinates `[([x0, y0, z0], [x1, y1, z1], ...)`
   /// if `transpose` is false, and otherwise the returned data is
   /// transposed. Storage is row-major.
-  std::vector<T> tabulate_dof_coordinates(bool transpose) const
+  std::vector<geometry_type> tabulate_dof_coordinates(bool transpose) const
   {
     if (!_component.empty())
     {
@@ -215,28 +216,30 @@ public:
     // Get coordinate map
     if (_mesh->geometry().cmaps().size() > 1)
       throw std::runtime_error("Mixed topology not supported");
-    const CoordinateElement<T>& cmap = _mesh->geometry().cmaps()[0];
+    const CoordinateElement<geometry_type>& cmap = _mesh->geometry().cmaps()[0];
 
     // Prepare cell geometry
     auto x_dofmap = _mesh->geometry().dofmap();
     const std::size_t num_dofs_g = cmap.dim();
-    std::span<const T> x_g = _mesh->geometry().x();
+    std::span<const geometry_type> x_g = _mesh->geometry().x();
 
     // Array to hold coordinates to return
     const std::size_t shape_c0 = transpose ? 3 : num_dofs;
     const std::size_t shape_c1 = transpose ? num_dofs : 3;
-    std::vector<T> coords(shape_c0 * shape_c1, 0);
+    std::vector<geometry_type> coords(shape_c0 * shape_c1, 0);
 
     using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+        geometry_type,
+        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
     using cmdspan4_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
+        const geometry_type,
+        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
 
     // Loop over cells and tabulate dofs
-    std::vector<T> x_b(scalar_dofs * gdim);
+    std::vector<geometry_type> x_b(scalar_dofs * gdim);
     mdspan2_t x(x_b.data(), scalar_dofs, gdim);
 
-    std::vector<T> coordinate_dofs_b(num_dofs_g * gdim);
+    std::vector<geometry_type> coordinate_dofs_b(num_dofs_g * gdim);
     mdspan2_t coordinate_dofs(coordinate_dofs_b.data(), num_dofs_g, gdim);
 
     auto map = _mesh->topology()->index_map(tdim);
@@ -251,11 +254,12 @@ public:
     }
 
     auto apply_dof_transformation
-        = _element->template get_pre_dof_transformation_function<T>();
+        = _element
+              ->template get_pre_dof_transformation_function<geometry_type>();
 
     const std::array<std::size_t, 4> phi_shape
         = cmap.tabulate_shape(0, Xshape[0]);
-    std::vector<T> phi_b(
+    std::vector<geometry_type> phi_b(
         std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
     cmdspan4_t phi_full(phi_b.data(), phi_shape);
     cmap.tabulate(0, X, Xshape, phi_b);
@@ -300,20 +304,26 @@ public:
   }
 
   /// The mesh
-  std::shared_ptr<const mesh::Mesh<T>> mesh() const { return _mesh; }
+  std::shared_ptr<const mesh::Mesh<geometry_type>> mesh() const
+  {
+    return _mesh;
+  }
 
   /// The finite element
-  std::shared_ptr<const FiniteElement<T>> element() const { return _element; }
+  std::shared_ptr<const FiniteElement<geometry_type>> element() const
+  {
+    return _element;
+  }
 
   /// The dofmap
   std::shared_ptr<const DofMap> dofmap() const { return _dofmap; }
 
 private:
   // The mesh
-  std::shared_ptr<const mesh::Mesh<T>> _mesh;
+  std::shared_ptr<const mesh::Mesh<geometry_type>> _mesh;
 
   // The finite element
-  std::shared_ptr<const FiniteElement<T>> _element;
+  std::shared_ptr<const FiniteElement<geometry_type>> _element;
 
   // The dofmap
   std::shared_ptr<const DofMap> _dofmap;
@@ -324,9 +334,6 @@ private:
   // Unique identifier for the space and for its root space
   boost::uuids::uuid _id;
   boost::uuids::uuid _root_space_id;
-
-  // Cache of subspaces
-  mutable std::map<std::vector<int>, std::weak_ptr<FunctionSpace>> _subspaces;
 };
 
 /// Extract FunctionSpaces for (0) rows blocks and (1) columns blocks
