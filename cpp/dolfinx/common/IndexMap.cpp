@@ -189,7 +189,10 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
           if (is_in_submap[idx_local])
             global_idx_to_possible_owner[idx].push_back(rank);
           else
+          {
+            // throw std::runtime_error("Index owner change detected!");
             global_idx_to_possible_owner[idx].push_back(dest[i]);
+          }
         }
       }
     }

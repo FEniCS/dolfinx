@@ -166,8 +166,8 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   // }
   for (std::size_t i = 0; i < new_to_old_conn.size(); ++i)
   {
-    // FIXME This needs to take block size into account
-    old_to_new_conn[new_to_old_conn[i]] = i;
+    // FIXME I'm not sure mapping with dofs_view is correct here
+    old_to_new_conn[dofs_view[new_to_old_conn[i]]] = i;
   }
 
   ss << "old_to_new_conn = " << old_to_new_conn << "\n";
