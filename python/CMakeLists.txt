@@ -7,21 +7,29 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-find_package(Python COMPONENTS Interpreter Development REQUIRED)
+find_package(
+  Python
+  COMPONENTS Interpreter Development
+  REQUIRED
+)
 
 # Detect the installed nanobind package and import it into CMake
 execute_process(
   COMMAND "${Python_EXECUTABLE}" -m nanobind --cmake_dir
-  OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE NB_DIR)
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  OUTPUT_VARIABLE NB_DIR
+)
 list(APPEND CMAKE_PREFIX_PATH "${NB_DIR}")
 find_package(nanobind CONFIG REQUIRED)
 
 execute_process(
   COMMAND
-  ${Python3_EXECUTABLE} -c "import os, sys, basix; sys.stdout.write(os.path.dirname(basix.__file__))"
+    ${Python3_EXECUTABLE} -c
+    "import os, sys, basix; sys.stdout.write(os.path.dirname(basix.__file__))"
   OUTPUT_VARIABLE BASIX_PY_DIR
   RESULT_VARIABLE BASIX_PY_COMMAND_RESULT
-  ERROR_VARIABLE BASIX_ERROR_OUT OUTPUT_STRIP_TRAILING_WHITESPACE
+  ERROR_VARIABLE BASIX_ERROR_OUT
+  OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 find_package(Basix REQUIRED CONFIG HINTS ${BASIX_PY_DIR})
 
@@ -54,20 +62,19 @@ nanobind_add_module(
   dolfinx/wrappers/refinement.cpp
 )
 
-# Add strict compiler flags
-# include(CheckCXXCompilerFlag)
+# Add strict compiler flags include(CheckCXXCompilerFlag)
 # check_cxx_compiler_flag("-Wall -Werror -pedantic" HAVE_PEDANTIC)
 
-# if(HAVE_PEDANTIC)
-# # target_compile_options(cpp PRIVATE -Wall;-Werror;-pedantic)
-# endif()
+# if(HAVE_PEDANTIC) # target_compile_options(cpp PRIVATE
+# -Wall;-Werror;-pedantic) endif()
 
 # Add DOLFINx libraries
 target_link_libraries(cpp PRIVATE dolfinx)
 
 # Check for petsc4py
 execute_process(
-  COMMAND ${Python_EXECUTABLE} -c "import petsc4py; print(petsc4py.get_include())"
+  COMMAND ${Python_EXECUTABLE} -c
+          "import petsc4py; print(petsc4py.get_include())"
   OUTPUT_VARIABLE PETSC4PY_INCLUDE_DIR
   RESULT_VARIABLE PETSC4PY_COMMAND_RESULT
   ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE

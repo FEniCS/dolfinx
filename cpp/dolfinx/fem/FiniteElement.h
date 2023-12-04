@@ -26,6 +26,9 @@ template <std::floating_point T>
 class FiniteElement
 {
 public:
+  /// Geometry type of the Mesh that the FunctionSpace is defined on.
+  using geometry_type = T;
+
   /// @brief Create finite element from UFC finite element.
   /// @param[in] e UFC finite element.
   explicit FiniteElement(const ufcx_finite_element& e);
@@ -37,7 +40,7 @@ public:
   /// vector field is a Lagrange element. For example, a vector-valued
   /// element in 3D will have `value_shape` equal to `{3}`, and for a
   /// second-order tensor element in 2D `value_shape` equal to `{2, 2}`.
-  FiniteElement(const basix::FiniteElement<T>& element,
+  FiniteElement(const basix::FiniteElement<geometry_type>& element,
                 const std::vector<std::size_t>& value_shape);
 
   /// Copy constructor
@@ -118,7 +121,8 @@ public:
   /// @param[in] shape The shape of `X`
   /// @param[in] order The number of derivatives (up to and including
   /// this order) to tabulate for
-  void tabulate(std::span<T> values, std::span<const T> X,
+  void tabulate(std::span<geometry_type> values,
+                std::span<const geometry_type> X,
                 std::array<std::size_t, 2> shape, int order) const;
 
   /// Evaluate all derivatives of the basis functions up to given order
@@ -130,8 +134,8 @@ public:
   /// @param[in] order The number of derivatives (up to and including
   /// this order) to tabulate for
   /// @return Basis function values and array shape (row-major storage)
-  std::pair<std::vector<T>, std::array<std::size_t, 4>>
-  tabulate(std::span<const T> X, std::array<std::size_t, 2> shape,
+  std::pair<std::vector<geometry_type>, std::array<std::size_t, 4>>
+  tabulate(std::span<const geometry_type> X, std::array<std::size_t, 2> shape,
            int order) const;
 
   /// @brief Number of sub elements (for a mixed or blocked element)
@@ -145,15 +149,15 @@ public:
   bool is_mixed() const noexcept;
 
   /// Subelements (if any)
-  const std::vector<std::shared_ptr<const FiniteElement<T>>>&
+  const std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>&
   sub_elements() const noexcept;
 
   /// Extract sub finite element for component
-  std::shared_ptr<const FiniteElement<T>>
+  std::shared_ptr<const FiniteElement<geometry_type>>
   extract_sub_element(const std::vector<int>& component) const;
 
   /// Return underlying basix element (if it exists)
-  const basix::FiniteElement<T>& basix_element() const;
+  const basix::FiniteElement<geometry_type>& basix_element() const;
 
   /// Get the map type used by the element
   basix::maps::type map_type() const;
@@ -182,7 +186,7 @@ public:
   /// @return Interpolation point coordinates on the reference cell,
   /// returning the (0) coordinates data (row-major) storage and (1) the
   /// shape `(num_points, tdim)`.
-  std::pair<std::vector<T>, std::array<std::size_t, 2>>
+  std::pair<std::vector<geometry_type>, std::array<std::size_t, 2>>
   interpolation_points() const;
 
   /// Interpolation operator (matrix) `Pi` that maps a function
@@ -194,7 +198,7 @@ public:
   /// @return The interpolation operator `Pi`, returning the data for
   /// `Pi` (row-major storage) and the shape `(num_dofs, num_points *
   /// value_size)`
-  std::pair<std::vector<T>, std::array<std::size_t, 2>>
+  std::pair<std::vector<geometry_type>, std::array<std::size_t, 2>>
   interpolation_operator() const;
 
   /// @brief Create a matrix that maps degrees of freedom from one
@@ -209,7 +213,7 @@ public:
   /// @pre The two elements must use the same mapping between the
   /// reference and physical cells
   /// @note Does not support mixed elements
-  std::pair<std::vector<T>, std::array<std::size_t, 2>>
+  std::pair<std::vector<geometry_type>, std::array<std::size_t, 2>>
   create_interpolation_operator(const FiniteElement& from) const;
 
   /// @brief Check if DOF transformations are needed for this element.
@@ -671,7 +675,8 @@ private:
   int _space_dim;
 
   // List of sub-elements (if any)
-  std::vector<std::shared_ptr<const FiniteElement<T>>> _sub_elements;
+  std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>
+      _sub_elements;
 
   // Dimension of each value space
   std::vector<std::size_t> _value_shape;
@@ -685,10 +690,10 @@ private:
   bool _needs_dof_transformations;
 
   // Basix Element (nullptr for mixed elements)
-  std::unique_ptr<basix::FiniteElement<T>> _element;
+  std::unique_ptr<basix::FiniteElement<geometry_type>> _element;
 
   // Quadrature points of a quadrature element (0 dimensional array for
   // all elements except quadrature elements)
-  std::pair<std::vector<T>, std::array<std::size_t, 2>> _points;
+  std::pair<std::vector<geometry_type>, std::array<std::size_t, 2>> _points;
 };
 } // namespace dolfinx::fem
