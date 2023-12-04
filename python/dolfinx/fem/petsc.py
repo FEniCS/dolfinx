@@ -382,7 +382,7 @@ def assemble_matrix_mat(A: PETSc.Mat, a: Form, bcs: typing.List[DirichletBC] = [
 def assemble_matrix_nest(a: typing.List[typing.List[Form]],
                          bcs: typing.List[DirichletBC] = [], mat_types=[],
                          diagonal: float = 1.0, constants=None, coeffs=None) -> PETSc.Mat:
-    """Create a nested matrix and assembled bilinear forms into the matrix.
+    """Create a nested matrix and assemble bilinear forms into the matrix.
 
     Args:
         a: Rectangular (list-of-lists) array for bilinear forms.

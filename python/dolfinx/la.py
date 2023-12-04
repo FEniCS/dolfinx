@@ -208,7 +208,7 @@ class Vector:
         """Compute a norm of the vector.
 
         Args:
-            type: Norm type to computed.
+            type: Norm type to compute.
 
         Returns:
             Computed norm.
