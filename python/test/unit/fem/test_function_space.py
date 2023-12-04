@@ -179,11 +179,16 @@ def test_collapse(W, V):
     num_cells = cell_imap.size_local + cell_imap.num_ghosts
     bs = W.dofmap.index_map_bs
     for c in range(num_cells):
-        cell_blocks = W.dofmap.cell_dofs(c)
-        for (i, dof) in enumerate(cell_blocks):
+        cell_dofs = W.dofmap.cell_dofs(c)
+        for (i, dof) in enumerate(cell_dofs):
             for k in range(bs):
-                new_to_old = np.array(Ws[k][1])
-                assert dof * bs + k == new_to_old[Ws[k][0].dofmap.cell_dofs(c)[i]]
+                new_dof = Ws[k][0].dofmap.cell_dofs(c)[i]
+                new_to_old = Ws[k][1]
+                assert dof * bs + k == new_to_old[new_dof]
+
+    # W = functionspace(msh, ("Lagrange", 1))
+    # for Vs_i in Vs:
+    #     assert np.array_equal(Vs_i[0].dofmap.list, W.dofmap.list)
 
 
 def test_argument_equality(mesh, V, V2, W, W2):
