@@ -158,16 +158,13 @@ def test_clone(W):
 
 
 def test_collapse(W, V):
-    # # Collapse the space it should now be the same as V
-    # Vc = Vs.collapse()[0]
-    # assert Vc.dofmap.cell_dofs(0)[0] == V.dofmap.cell_dofs(0)[0]
-
     with pytest.raises(RuntimeError):
         Function(W.sub(1))
 
     Ws = [W.sub(i).collapse() for i in range(W.num_sub_spaces)]
 
-    cell_imap = W.mesh.topology.index_map(W.mesh.topology.dim)
+    msh = W.mesh
+    cell_imap = msh.topology.index_map(msh.topology.dim)
     num_cells = cell_imap.size_local + cell_imap.num_ghosts
     bs = W.dofmap.index_map_bs
     for c in range(num_cells):
@@ -182,9 +179,9 @@ def test_collapse(W, V):
     f_1 = Function(V)
     assert f_0.vector.getSize() == f_1.vector.getSize()
 
-    # W = functionspace(msh, ("Lagrange", 1))
-    # for Vs_i in Vs:
-    #     assert np.array_equal(Vs_i[0].dofmap.list, W.dofmap.list)
+    # FIXME Should this work?
+    # for Ws_i in Ws:
+    #     assert np.array_equal(Ws_i[0].dofmap.list, V.dofmap.list)
 
 
 def test_argument_equality(mesh, V, V2, W, W2):
