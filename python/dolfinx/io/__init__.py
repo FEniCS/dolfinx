@@ -16,5 +16,5 @@ if _cpp.common.has_adios2:
     # FidesWriter and VTXWriter require ADIOS2
     from dolfinx.io.utils import (FidesMeshPolicy, FidesWriter,  # noqa: F401
                                   VTXMeshPolicy, VTXWriter)
-    __all__ = __all__ + ["FidesWriter", "VTXWriter", "FidesMeshPolicy", \
+    __all__ = __all__ + ["FidesWriter", "VTXWriter", "FidesMeshPolicy",
                          "VTXMeshPolicy"]
