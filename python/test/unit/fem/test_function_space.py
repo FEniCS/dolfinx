@@ -179,10 +179,6 @@ def test_collapse(W, V):
     f_1 = Function(V)
     assert f_0.vector.getSize() == f_1.vector.getSize()
 
-    # FIXME Should this work?
-    # for Ws_i in Ws:
-    #     assert np.array_equal(Ws_i[0].dofmap.list, V.dofmap.list)
-
 
 def test_argument_equality(mesh, V, V2, W, W2):
     """Placed this test here because it's mainly about detecting differing
