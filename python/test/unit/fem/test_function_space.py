@@ -255,37 +255,37 @@ def test_basix_element(V, W, Q, V2):
         e = Q.element.basix_element
 
 
-# @pytest.mark.skip_in_parallel
-# def test_vector_function_space_cell_type():
-#     """Test that the UFL element cell of a vector function
-#     space is correct on meshes where gdim > tdim"""
-#     comm = MPI.COMM_WORLD
-#     gdim = 2
+@pytest.mark.skip_in_parallel
+def test_vector_function_space_cell_type():
+    """Test that the UFL element cell of a vector function
+    space is correct on meshes where gdim > tdim"""
+    comm = MPI.COMM_WORLD
+    gdim = 2
 
-#     # Create a mesh containing a single interval living in 2D
-#     cell = Cell("interval", geometric_dimension=gdim)
-#     domain = Mesh(element("Lagrange", "interval", 1, gdim=gdim, shape=(1,)))
-#     cells = np.array([[0, 1]], dtype=np.int64)
-#     x = np.array([[0., 0.], [1., 1.]])
-#     mesh = create_mesh(comm, cells, x, domain)
+    # Create a mesh containing a single interval living in 2D
+    cell = Cell("interval", geometric_dimension=gdim)
+    domain = Mesh(element("Lagrange", "interval", 1, gdim=gdim, shape=(1,)))
+    cells = np.array([[0, 1]], dtype=np.int64)
+    x = np.array([[0., 0.], [1., 1.]])
+    mesh = create_mesh(comm, cells, x, domain)
 
-#     # Create functions space over mesh, and check element cell
-#     # is correct
-#     V = functionspace(mesh, ('Lagrange', 1, (gdim,)))
-#     assert V.ufl_element().cell == cell
+    # Create functions space over mesh, and check element cell
+    # is correct
+    V = functionspace(mesh, ('Lagrange', 1, (gdim,)))
+    assert V.ufl_element().cell == cell
 
 
-# @pytest.mark.skip_in_parallel
-# def test_manifold_spaces():
-#     vertices = np.array([
-#         (0.0, 0.0, 1.0), (1.0, 1.0, 1.0),
-#         (1.0, 0.0, 0.0), (0.0, 1.0, 0.0)], dtype=default_real_type)
-#     cells = [(0, 1, 2), (0, 1, 3)]
-#     domain = Mesh(element("Lagrange", "triangle", 1, gdim=3, shape=(2,)))
-#     mesh = create_mesh(MPI.COMM_WORLD, cells, vertices, domain)
-#     gdim = mesh.geometry.dim
-#     QV = functionspace(mesh, ("Lagrange", 1, (gdim,)))
-#     QT = functionspace(mesh, ("Lagrange", 1, (gdim, gdim)))
-#     u, v = Function(QV), Function(QT)
-#     assert u.ufl_shape == (3,)
-#     assert v.ufl_shape == (3, 3)
+@pytest.mark.skip_in_parallel
+def test_manifold_spaces():
+    vertices = np.array([
+        (0.0, 0.0, 1.0), (1.0, 1.0, 1.0),
+        (1.0, 0.0, 0.0), (0.0, 1.0, 0.0)], dtype=default_real_type)
+    cells = [(0, 1, 2), (0, 1, 3)]
+    domain = Mesh(element("Lagrange", "triangle", 1, gdim=3, shape=(2,)))
+    mesh = create_mesh(MPI.COMM_WORLD, cells, vertices, domain)
+    gdim = mesh.geometry.dim
+    QV = functionspace(mesh, ("Lagrange", 1, (gdim,)))
+    QT = functionspace(mesh, ("Lagrange", 1, (gdim, gdim)))
+    u, v = Function(QV), Function(QT)
+    assert u.ufl_shape == (3,)
+    assert v.ufl_shape == (3, 3)
