@@ -75,43 +75,6 @@ Mesh<T> build_prism(MPI_Comm comm,
 /// `6*n[0]*n[1]*n[2]` cells. For hexahedra the number of cells will be
 /// `n[0]*n[1]*n[2]`.
 ///
-/// @param[in] comm MPI communicator to build mesh on.
-/// @param[in] p Corner of the box.
-/// @param[in] n Number of cells in each direction.
-/// @param[in] celltype Cell shape.
-/// @param[in] partitioner Partitioning function for distributing cells
-/// across MPI ranks.
-/// @return Mesh
-template <std::floating_point T = double>
-Mesh<T> create_box(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
-                   std::array<std::size_t, 3> n, CellType celltype,
-                   mesh::CellPartitionFunction partitioner = nullptr)
-{
-  if (!partitioner and dolfinx::MPI::size(comm) > 1)
-    partitioner = create_cell_partitioner();
-
-  switch (celltype)
-  {
-  case CellType::tetrahedron:
-    return impl::build_tet<T>(comm, p, n, partitioner);
-  case CellType::hexahedron:
-    return impl::build_hex<T>(comm, p, n, partitioner);
-  case CellType::prism:
-    return impl::build_prism<T>(comm, p, n, partitioner);
-  default:
-    throw std::runtime_error("Generate box mesh. Wrong cell type");
-  }
-}
-
-/// @brief Create a uniform mesh::Mesh over rectangular prism spanned by
-/// the two points `p`.
-///
-/// The order of the two points is not important in terms of minimum and
-/// maximum coordinates. The total number of vertices will be `(n[0] +
-/// 1)*(n[1] + 1)*(n[2] + 1)`. For tetrahedra there will be  will be
-/// `6*n[0]*n[1]*n[2]` cells. For hexahedra the number of cells will be
-/// `n[0]*n[1]*n[2]`.
-///
 /// @param[in] comm MPI communicator to distribute the mesh on.
 /// @param[in] subcomm MPI communicator to construct and partition the
 /// mesh on.
