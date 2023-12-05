@@ -159,7 +159,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
 
   ss << "old_to_new =      " << old_to_new << "\n";
 
-  std::vector<std::int32_t> old_to_new_conn(dofs_view.back() + 1, -1);
+  std::vector<std::int32_t> old_to_new_conn(dofs_view.back() + bs_view, -1);
   for (std::size_t new_idx = 0; new_idx < new_to_old_conn.size(); ++new_idx)
   {
     for (int k = 0; k < bs_view; ++k)
