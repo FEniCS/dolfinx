@@ -110,10 +110,21 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   ss << "new_to_old_conn = " << new_to_old_conn << "\n";
 
   std::vector<std::int32_t> old_to_new_conn(dofs_view.back() + 1, -1);
-  for (std::size_t i = 0; i < indices_conn.size(); ++i)
+  for (std::size_t new_idx = 0; new_idx < new_to_old_conn.size(); ++new_idx)
   {
-    old_to_new_conn[dofs_view[i]] = indices_conn[i];
+    for (int k = 0; k < bs_view; ++k)
+    {
+      std::int32_t old_idx = new_to_old_conn[new_idx] * bs_view + k;
+      old_to_new_conn[old_idx] = new_idx;
+    }
   }
+
+  // FIXME
+  // std::vector<std::int32_t> old_to_new_conn(dofs_view.back() + 1, -1);
+  // for (std::size_t i = 0; i < indices_conn.size(); ++i)
+  // {
+  //   old_to_new_conn[dofs_view[i]] = indices_conn[i];
+  // }
 
   ss << "old_to_new_conn = " << old_to_new_conn << "\n";
 
