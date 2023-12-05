@@ -53,7 +53,7 @@ Mesh<T> build_tet(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
                   const CellPartitionFunction& partitioner);
 
 template <std::floating_point T>
-Mesh<T> build_hex(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
+Mesh<T> build_hex(MPI_Comm comm, std::array<std::array<double, 3>, 2> p,
                   std::array<std::size_t, 3> n,
                   const CellPartitionFunction& partitioner);
 
@@ -343,42 +343,45 @@ Mesh<T> build_tet(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
 }
 
 template <std::floating_point T>
-mesh::Mesh<T> build_hex(MPI_Comm comm,
-                        const std::array<std::array<double, 3>, 2>& p,
+mesh::Mesh<T> build_hex(MPI_Comm comm, std::array<std::array<double, 3>, 2> p,
                         std::array<std::size_t, 3> n,
                         const CellPartitionFunction& partitioner)
 {
-  std::vector geom = create_geom<T>(comm, p, n);
-
-  const std::int64_t nx = n[0];
-  const std::int64_t ny = n[1];
-  const std::int64_t nz = n[2];
-  const std::int64_t n_cells = nx * ny * nz;
-  std::array range_c = dolfinx::MPI::local_range(
-      dolfinx::MPI::rank(comm), n_cells, dolfinx::MPI::size(comm));
-  const std::size_t cell_range = range_c[1] - range_c[0];
-  std::vector<std::int64_t> cells(cell_range * 8);
-
-  // Create cuboids
-  for (std::int64_t i = range_c[0]; i < range_c[1]; ++i)
+  std::vector<T> geom;
+  std::vector<std::int64_t> cells;
   {
-    const std::int64_t iz = i / (nx * ny);
-    const std::int64_t j = i % (nx * ny);
-    const std::int64_t iy = j / nx;
-    const std::int64_t ix = j % nx;
+    geom = create_geom<T>(comm, p, n);
 
-    const std::int64_t v0 = (iz * (ny + 1) + iy) * (nx + 1) + ix;
-    const std::int64_t v1 = v0 + 1;
-    const std::int64_t v2 = v0 + (nx + 1);
-    const std::int64_t v3 = v1 + (nx + 1);
-    const std::int64_t v4 = v0 + (nx + 1) * (ny + 1);
-    const std::int64_t v5 = v1 + (nx + 1) * (ny + 1);
-    const std::int64_t v6 = v2 + (nx + 1) * (ny + 1);
-    const std::int64_t v7 = v3 + (nx + 1) * (ny + 1);
+    const std::int64_t nx = n[0];
+    const std::int64_t ny = n[1];
+    const std::int64_t nz = n[2];
+    const std::int64_t n_cells = nx * ny * nz;
+    int rank = dolfinx::MPI::rank(comm);
+    int size = dolfinx::MPI::size(comm);
+    std::array range_c = dolfinx::MPI::local_range(rank, n_cells, size);
 
-    std::array<std::int64_t, 8> c = {v0, v1, v2, v3, v4, v5, v6, v7};
-    std::copy(c.begin(), c.end(),
-              std::next(cells.begin(), (i - range_c[0]) * 8));
+    // Create cuboids
+    cells.resize((range_c[1] - range_c[0]) * 8);
+    for (std::int64_t i = range_c[0]; i < range_c[1]; ++i)
+    {
+      const std::int64_t iz = i / (nx * ny);
+      const std::int64_t j = i % (nx * ny);
+      const std::int64_t iy = j / nx;
+      const std::int64_t ix = j % nx;
+
+      const std::int64_t v0 = (iz * (ny + 1) + iy) * (nx + 1) + ix;
+      const std::int64_t v1 = v0 + 1;
+      const std::int64_t v2 = v0 + (nx + 1);
+      const std::int64_t v3 = v1 + (nx + 1);
+      const std::int64_t v4 = v0 + (nx + 1) * (ny + 1);
+      const std::int64_t v5 = v1 + (nx + 1) * (ny + 1);
+      const std::int64_t v6 = v2 + (nx + 1) * (ny + 1);
+      const std::int64_t v7 = v3 + (nx + 1) * (ny + 1);
+
+      std::array<std::int64_t, 8> c = {v0, v1, v2, v3, v4, v5, v6, v7};
+      std::copy(c.begin(), c.end(),
+                std::next(cells.begin(), (i - range_c[0]) * 8));
+    }
   }
 
   fem::CoordinateElement<T> element(CellType::hexahedron, 1);
