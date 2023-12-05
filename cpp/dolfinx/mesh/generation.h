@@ -53,7 +53,8 @@ Mesh<T> build_tet(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
                   const CellPartitionFunction& partitioner);
 
 template <std::floating_point T>
-Mesh<T> build_hex(MPI_Comm comm, std::array<std::array<double, 3>, 2> p,
+Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
+                  std::array<std::array<double, 3>, 2> p,
                   std::array<std::size_t, 3> n,
                   const CellPartitionFunction& partitioner);
 
@@ -66,7 +67,7 @@ Mesh<T> build_prism(MPI_Comm comm,
 } // namespace impl
 
 /// @brief Create a uniform mesh::Mesh over rectangular prism spanned by
-/// the two points @p p.
+/// the two points `p`.
 ///
 /// The order of the two points is not important in terms of minimum and
 /// maximum coordinates. The total number of vertices will be `(n[0] +
@@ -100,6 +101,70 @@ Mesh<T> create_box(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
   default:
     throw std::runtime_error("Generate box mesh. Wrong cell type");
   }
+}
+
+/// @brief Create a uniform mesh::Mesh over rectangular prism spanned by
+/// the two points `p`.
+///
+/// The order of the two points is not important in terms of minimum and
+/// maximum coordinates. The total number of vertices will be `(n[0] +
+/// 1)*(n[1] + 1)*(n[2] + 1)`. For tetrahedra there will be  will be
+/// `6*n[0]*n[1]*n[2]` cells. For hexahedra the number of cells will be
+/// `n[0]*n[1]*n[2]`.
+///
+/// @param[in] comm MPI communicator to distribute the mesh on.
+/// @param[in] subcomm MPI communicator to construct and partition the
+/// mesh on.
+/// @param[in] p Corner of the box.
+/// @param[in] n Number of cells in each direction.
+/// @param[in] celltype Cell shape.
+/// @param[in] partitioner Partitioning function for distributing cells
+/// across MPI ranks.
+/// @return Mesh
+template <std::floating_point T = double>
+Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
+                   std::array<std::array<double, 3>, 2> p,
+                   std::array<std::size_t, 3> n, CellType celltype,
+                   mesh::CellPartitionFunction partitioner = nullptr)
+{
+  if (!partitioner and dolfinx::MPI::size(comm) > 1)
+    partitioner = create_cell_partitioner();
+
+  switch (celltype)
+  {
+  case CellType::tetrahedron:
+    return impl::build_tet<T>(comm, p, n, partitioner);
+  case CellType::hexahedron:
+    return impl::build_hex<T>(comm, subcomm, p, n, partitioner);
+  case CellType::prism:
+    return impl::build_prism<T>(comm, p, n, partitioner);
+  default:
+    throw std::runtime_error("Generate box mesh. Wrong cell type");
+  }
+}
+
+/// @brief Create a uniform mesh::Mesh over rectangular prism spanned by
+/// the two points `p`.
+///
+/// The order of the two points is not important in terms of minimum and
+/// maximum coordinates. The total number of vertices will be `(n[0] +
+/// 1)*(n[1] + 1)*(n[2] + 1)`. For tetrahedra there will be  will be
+/// `6*n[0]*n[1]*n[2]` cells. For hexahedra the number of cells will be
+/// `n[0]*n[1]*n[2]`.
+///
+/// @param[in] comm MPI communicator to distribute the mesh on.
+/// @param[in] p Corner of the box.
+/// @param[in] n Number of cells in each direction.
+/// @param[in] celltype Cell shape.
+/// @param[in] partitioner Partitioning function for distributing cells
+/// across MPI ranks.
+/// @return Mesh
+template <std::floating_point T = double>
+Mesh<T> create_box(MPI_Comm comm, std::array<std::array<double, 3>, 2> p,
+                   std::array<std::size_t, 3> n, CellType celltype,
+                   mesh::CellPartitionFunction partitioner = nullptr)
+{
+  return create_box(comm, comm, p, n, celltype, partitioner);
 }
 
 /// @brief Create a uniform mesh::Mesh over the rectangle spanned by the
@@ -343,15 +408,18 @@ Mesh<T> build_tet(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
 }
 
 template <std::floating_point T>
-mesh::Mesh<T> build_hex(MPI_Comm comm, std::array<std::array<double, 3>, 2> p,
+mesh::Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
+                        std::array<std::array<double, 3>, 2> p,
                         std::array<std::size_t, 3> n,
                         const CellPartitionFunction& partitioner)
 {
   std::vector<T> geom;
   std::vector<std::int64_t> cells;
+  if (subcomm != MPI_COMM_NULL)
   {
     geom = create_geom<T>(comm, p, n);
 
+    // Create cuboids
     const std::int64_t nx = n[0];
     const std::int64_t ny = n[1];
     const std::int64_t nz = n[2];
@@ -359,8 +427,6 @@ mesh::Mesh<T> build_hex(MPI_Comm comm, std::array<std::array<double, 3>, 2> p,
     int rank = dolfinx::MPI::rank(comm);
     int size = dolfinx::MPI::size(comm);
     std::array range_c = dolfinx::MPI::local_range(rank, n_cells, size);
-
-    // Create cuboids
     cells.resize((range_c[1] - range_c[0]) * 8);
     for (std::int64_t i = range_c[0]; i < range_c[1]; ++i)
     {
