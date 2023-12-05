@@ -127,7 +127,7 @@ Mesh<T> create_box(MPI_Comm comm, std::array<std::array<double, 3>, 2> p,
                    std::array<std::size_t, 3> n, CellType celltype,
                    mesh::CellPartitionFunction partitioner = nullptr)
 {
-  return create_box(comm, comm, p, n, celltype, partitioner);
+  return create_box<T>(comm, comm, p, n, celltype, partitioner);
 }
 
 /// @brief Create a uniform mesh::Mesh over the rectangle spanned by the
