@@ -239,8 +239,8 @@ void declare_mesh(nb::module_& m, std::string type)
          std::array<std::size_t, 3> n, dolfinx::mesh::CellType celltype,
          const PythonCellPartitionFunction& part)
       {
-        return dolfinx::mesh::create_box<T>(comm.get(), comm.get(), p, n,
-                                            celltype,
+        MPI_Comm _comm = comm.get();
+        return dolfinx::mesh::create_box<T>(_comm, _comm, p, n, celltype,
                                             create_cell_partitioner_cpp(part));
       },
       nb::arg("comm"), nb::arg("p"), nb::arg("n"), nb::arg("celltype"),
