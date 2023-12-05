@@ -122,7 +122,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
     indices_conn.reserve(dofs_view.size());
     std::transform(dofs_view.begin(), dofs_view.end(), std::back_inserter(indices_conn),
                    [bs_view](auto idx) { return idx / bs_view; });
-    indices_conn.erase(std::unique(indices_conn.begin(), indices_conn.end()), indices_conn.end());
+    // indices_conn.erase(std::unique(indices_conn.begin(), indices_conn.end()), indices_conn.end());
     auto [_index_map_conn, gmap_conn] = dolfinx::common::create_submap_conn(
       *dofmap_view.index_map, indices_conn);
     index_map_conn = std::make_shared<common::IndexMap>(std::move(_index_map_conn));
@@ -164,10 +164,21 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   // {
   //   old_to_new_conn[dofs_view[i]] = new_to_old_conn[indices_conn[i]];
   // }
-  for (std::size_t i = 0; i < new_to_old_conn.size(); ++i)
+  // for (std::size_t new_unblocked_idx = 0; new_unblocked_idx < new_to_old_conn.size(); ++new_unblocked_idx)
+  // {
+  //   // FIXME I'm not sure mapping with dofs_view is correct here
+  //   std::int32_t old_unblocked_idx = new_to_old_conn[new_unblocked_idx];
+
+  //   for (int k = 0; k < bs_view; ++k)
+  //   {
+  //     std::int32_t old_blocked_idx = old_unblocked_idx * bs_view + k;
+  //     old_to_new_conn[old_blocked_idx] = new_unblocked_idx;
+  //   }
+  // }
+
+  for (std::size_t i = 0; i < indices_conn.size(); ++i)
   {
-    // FIXME I'm not sure mapping with dofs_view is correct here
-    old_to_new_conn[dofs_view[new_to_old_conn[i]]] = i;
+    old_to_new_conn[dofs_view[i]] = indices_conn[i];
   }
 
   ss << "old_to_new_conn = " << old_to_new_conn << "\n";
