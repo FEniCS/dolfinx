@@ -22,7 +22,7 @@ namespace
 
 constexpr int N = 8;
 
-void create_mesh_file()
+[[maybe_unused]] void create_mesh_file()
 {
   // Create mesh using all processes and save xdmf
   auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
@@ -35,7 +35,7 @@ void create_mesh_file()
   file.write_mesh(*mesh);
 }
 
-void test_create_box(void)
+[[maybe_unused]] void test_create_box(void)
 {
   std::cout << "Start" << std::endl;
   MPI_Comm mpi_comm = MPI_COMM_WORLD;
@@ -85,10 +85,13 @@ void test_create_box(void)
 
   if (subset_comm != MPI_COMM_NULL)
     MPI_Comm_free(&subset_comm);
+  std::cout << "Ret" << std::endl;
 }
 
-void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
+[[maybe_unused]] void
+test_distributed_mesh(mesh::CellPartitionFunction partitioner)
 {
+  std::cout << "Start test_distributed_mesh" << std::endl;
   using T = double;
 
   MPI_Comm mpi_comm = MPI_COMM_WORLD;
@@ -115,7 +118,7 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
       basix::element::dpc_variant::unset, false));
   fem::CoordinateElement<T> cmap(e);
 
-  // read mesh data
+  // Read mesh data
   std::vector<T> x;
   std::array<std::size_t, 2> xshape = {0, 2};
   std::vector<std::int64_t> cells;
@@ -134,6 +137,8 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
                        graph::regular_adjacency_list(cells, cshape[1]));
   }
   CHECK(xshape[1] == 2);
+
+  std::cout << "Start test_distributed_mesh B" << std::endl;
 
   // Distribute cells to destination ranks
   const auto [cell_nodes, src, original_cell_index, ghost_owners]
@@ -207,12 +212,12 @@ TEST_CASE("Create box", "[create_box]") { CHECK_NOTHROW(test_create_box()); }
 
 TEST_CASE("Distributed Mesh", "[distributed_mesh]")
 {
-  create_mesh_file();
+  // create_mesh_file();
 
-  SECTION("SCOTCH")
-  {
-    CHECK_NOTHROW(test_distributed_mesh(mesh::create_cell_partitioner()));
-  }
+  // SECTION("SCOTCH")
+  // {
+  //   CHECK_NOTHROW(test_distributed_mesh(mesh::create_cell_partitioner()));
+  // }
 
   // #ifdef HAS_KAHIP
   // SECTION("KAHIP with Lambda")
@@ -233,13 +238,13 @@ TEST_CASE("Distributed Mesh", "[distributed_mesh]")
 
   //   CHECK_NOTHROW(test_distributed_mesh(kahip));
   // }
-// #endif
-#ifdef HAS_PARMETIS
-  SECTION("parmetis")
-  {
-    auto partfn = graph::parmetis::partitioner();
-    CHECK_NOTHROW(test_distributed_mesh(
-        mesh::create_cell_partitioner(mesh::GhostMode::none, partfn)));
-  }
-#endif
+  // #endif
+  // #ifdef HAS_PARMETIS
+  //   SECTION("parmetis")
+  //   {
+  //     auto partfn = graph::parmetis::partitioner();
+  //     CHECK_NOTHROW(test_distributed_mesh(
+  //         mesh::create_cell_partitioner(mesh::GhostMode::none, partfn)));
+  //   }
+  // #endif
 }

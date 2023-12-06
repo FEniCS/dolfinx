@@ -384,7 +384,6 @@ mesh::Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
   x = create_geom<T>(comm, p, n);
   if (subcomm != MPI_COMM_NULL)
   {
-
     // Create cuboids
     const std::int64_t nx = n[0];
     const std::int64_t ny = n[1];
