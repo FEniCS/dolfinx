@@ -185,6 +185,7 @@ create_geometry(
         reorder_fn
     = nullptr)
 {
+  std::cout << "Create geometry A" << std::endl;
   // TODO: make sure required entities are initialised, or extend
   // fem::build_dofmap_data
 
@@ -197,6 +198,8 @@ create_geometry(
       = fem::build_dofmap_data(comm, topology, dof_layouts, reorder_fn);
   auto dof_index_map
       = std::make_shared<common::IndexMap>(std::move(_dof_index_map));
+
+  std::cout << "Create geometry B" << std::endl;
 
   // If the mesh has higher order geometry, permute the dofmap
   if (elements[0].needs_dof_permutations())
@@ -215,6 +218,8 @@ create_geometry(
       elements[0].unpermute_dofs(dofs, cell_info[cell]);
     }
   }
+
+  std::cout << "Create geometry C" << std::endl;
 
   auto remap_data
       = [](auto comm, auto& cell_nodes, auto& x, int dim, auto& dofmap)
@@ -248,6 +253,9 @@ create_geometry(
   };
 
   auto [coords, l2l, igi] = remap_data(comm, cell_nodes, x, dim, dofmap);
+
+  std::cout << "Create geometry D" << std::endl;
+
 
   // Build coordinate dof array, copying coordinates to correct
   // position

@@ -35,6 +35,58 @@ void create_mesh_file()
   file.write_mesh(*mesh);
 }
 
+void test_create_box(void)
+{
+  std::cout << "Start" << std::endl;
+  MPI_Comm mpi_comm = MPI_COMM_WORLD;
+  const int mpi_rank = dolfinx::MPI::rank(mpi_comm);
+
+  // Create subcommunicator on even ranks
+  int color = mpi_rank % 2 ? MPI_UNDEFINED : 1;
+
+  MPI_Comm subset_comm;
+  MPI_Comm_split(mpi_comm, color, mpi_rank, &subset_comm);
+  if (subset_comm == MPI_COMM_NULL)
+    std::cout << "NULL comm" << std::endl;
+  else
+    std::cout << "Non-NULL comm" << std::endl;
+
+  auto part = mesh::create_cell_partitioner(mesh::GhostMode::none);
+
+  // // Create mesh on even ranks and distribute to all ranks in mpi_comm
+  std::cout << "Start A" << std::endl;
+  auto mesh = std::make_shared<mesh::Mesh<double>>(mesh::create_box(
+      mpi_comm, subset_comm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {12, 12, 12},
+      mesh::CellType::hexahedron, part));
+  std::cout << "End A" << std::endl;
+  // int tdim = mesh->topology()->dim();
+  // mesh->topology()->create_entities(tdim - 1);
+
+  // // create mesh on mpi_comm and distribute to all ranks in mpi_comm
+  // auto mesh2 = std::make_shared<mesh::Mesh<double>>(
+  //     mesh::create_box(mpi_comm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}},
+  //                      {12, 12, 12}, mesh::CellType::hexahedron, part));
+  // mesh2->topology()->create_entities(tdim - 1);
+
+  // // check that the communicators are the same
+  // int equal;
+  // MPI_Comm_compare(mesh->comm(), mesh2->comm(), &equal);
+  // CHECK(equal != MPI_UNEQUAL);
+
+  // // check global sizes for topology and geometry
+  // CHECK(mesh->topology()->index_map(tdim)->size_global()
+  //       == mesh2->topology()->index_map(tdim)->size_global());
+  // CHECK(mesh->topology()->index_map(tdim - 1)->size_global()
+  //       == mesh2->topology()->index_map(tdim - 1)->size_global());
+  // CHECK(mesh->topology()->index_map(0)->size_global()
+  //       == mesh2->topology()->index_map(0)->size_global());
+  // CHECK(mesh->geometry().index_map()->size_global()
+  //       == mesh2->geometry().index_map()->size_global());
+
+  if (subset_comm != MPI_COMM_NULL)
+    MPI_Comm_free(&subset_comm);
+}
+
 void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
 {
   using T = double;
@@ -149,6 +201,9 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
     MPI_Comm_free(&subset_comm);
 }
 } // namespace
+
+// Create a mesh on even ranks and distribute to all ranks in mpi_comm
+TEST_CASE("Create box", "[create_box]") { CHECK_NOTHROW(test_create_box()); }
 
 TEST_CASE("Distributed Mesh", "[distributed_mesh]")
 {

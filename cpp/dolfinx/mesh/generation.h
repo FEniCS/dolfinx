@@ -379,11 +379,11 @@ mesh::Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
                         std::array<std::size_t, 3> n,
                         const CellPartitionFunction& partitioner)
 {
-  std::vector<T> geom;
+  std::vector<T> x;
   std::vector<std::int64_t> cells;
+  x = create_geom<T>(comm, p, n);
   if (subcomm != MPI_COMM_NULL)
   {
-    geom = create_geom<T>(comm, p, n);
 
     // Create cuboids
     const std::int64_t nx = n[0];
@@ -417,9 +417,10 @@ mesh::Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
   }
 
   fem::CoordinateElement<T> element(CellType::hexahedron, 1);
+  std::cout << "Create mesh" << std::endl;
   return create_mesh(comm, subcomm,
                      graph::regular_adjacency_list(std::move(cells), 8),
-                     {element}, geom, {geom.size() / 3, 3}, partitioner);
+                     {element}, x, {x.size() / 3, 3}, partitioner);
 }
 
 template <std::floating_point T>

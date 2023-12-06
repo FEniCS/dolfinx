@@ -828,35 +828,40 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     graph::AdjacencyList<std::int64_t> cell_nodes(0);
     std::vector<std::int64_t> original_cell_index0;
     std::vector<int> ghost_owners;
-    if (commt != MPI_COMM_NULL)
+    std::cout << "Pre-Partition" << std::endl;
+
+    if (partitioner)
     {
-      if (partitioner)
+      if (commt != MPI_COMM_NULL)
       {
+        std::cout << "Partition" << std::endl;
         const int size = dolfinx::MPI::size(comm);
         dest = partitioner(
             commt, size, tdim,
             extract_topology(elements[0].cell_shape(), dof_layout, cells));
-
-        // -- Distribute cells (topology, includes higher-order 'nodes')
-
-        // Distribute cells to destination rank
-        std::vector<int> src;
-        std::tie(cell_nodes, src, original_cell_index0, ghost_owners)
-            = graph::build::distribute(comm, cells, dest);
       }
-      else
-      {
-        int rank = dolfinx::MPI::rank(comm);
-        dest = graph::regular_adjacency_list(
-            std::vector<std::int32_t>(cells.num_nodes(), rank), 1);
-        cell_nodes = cells;
-        std::int64_t offset(0), num_owned(cells.num_nodes());
-        MPI_Exscan(&num_owned, &offset, 1, MPI_INT64_T, MPI_SUM, comm);
-        original_cell_index0.resize(cell_nodes.num_nodes());
-        std::iota(original_cell_index0.begin(), original_cell_index0.end(),
-                  offset);
-      }
+
+      // -- Distribute cells (topology, includes higher-order 'nodes')
+
+      // Distribute cells to destination rank
+      std::vector<int> src;
+      std::tie(cell_nodes, src, original_cell_index0, ghost_owners)
+          = graph::build::distribute(comm, cells, dest);
     }
+    else
+    {
+      int rank = dolfinx::MPI::rank(comm);
+      dest = graph::regular_adjacency_list(
+          std::vector<std::int32_t>(cells.num_nodes(), rank), 1);
+      cell_nodes = cells;
+      std::int64_t offset(0), num_owned(cells.num_nodes());
+      MPI_Exscan(&num_owned, &offset, 1, MPI_INT64_T, MPI_SUM, comm);
+      original_cell_index0.resize(cell_nodes.num_nodes());
+      std::iota(original_cell_index0.begin(), original_cell_index0.end(),
+                offset);
+    }
+
+    std::cout << "Post Partition" << std::endl;
 
     // -- Extract cell topology
 
@@ -920,8 +925,10 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
                      std::move(cell_nodes)};
   };
 
+  std::cout << "Build topology mesh" << std::endl;
   auto [topology, cell_nodes]
       = build_topology(comm, commt, elements, dof_layout, cells, partitioner);
+  std::cout << "End topology mesh" << std::endl;
 
   // Create connectivity required to compute the Geometry (extra
   // connectivities for higher-order geometries)
@@ -935,8 +942,10 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   if (elements[0].needs_dof_permutations())
     topology.create_entity_permutations();
 
+  std::cout << "Create geometry" << std::endl;
   Geometry geometry
       = create_geometry(comm, topology, elements, cell_nodes, x, xshape[1]);
+  std::cout << "Create mesh" << std::endl;
   return Mesh<typename U::value_type>(
       comm, std::make_shared<Topology>(std::move(topology)),
       std::move(geometry));
