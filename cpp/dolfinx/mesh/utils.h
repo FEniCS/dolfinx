@@ -772,13 +772,30 @@ compute_incident_entities(const Topology& topology,
                           std::span<const std::int32_t> entities, int d0,
                           int d1);
 
-/// Create a mesh using a provided mesh partitioning function.
+/// @brief Create a mesh using a provided mesh partitioning function.
 ///
 /// If the partitioning function is not callable, i.e. it does not store
 /// a callable function, no re-distribution of cells is done.
+///
+/// @todo Write docs for sub-communicators
+///
+/// @param[in] comm Communicator to build the mesh on
+/// @param[in] commt Communicator that the topology data (`cells`) is
+/// distributed on.
+/// @param[in] cells The cells on the this MPI rank. Each cell (node in
+/// the `AdjacencyList`) is defined by its 'nodes' (using global
+/// indices). For lowest order cells this will be just the cell
+/// vertices. For higher-order cells, other cells 'nodes' will be
+/// included.
+/// @param[in] elements
+/// @param[in] x
+/// @param[in] xshape
+/// @param[in] partitioner
+/// @return A mesh distributed on the communicator `comm`.
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
-    MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
+    MPI_Comm comm, MPI_Comm commt,
+    const graph::AdjacencyList<std::int64_t>& cells,
     const std::vector<fem::CoordinateElement<
         typename std::remove_reference_t<typename U::value_type>>>& elements,
     const U& x, std::array<std::size_t, 2> xshape,
@@ -787,8 +804,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   const fem::ElementDofLayout dof_layout = elements[0].create_dof_layout();
 
   // Function top build geometry. Used to scope memory operations.
-  auto build_topology = [](auto comm, auto& elements, auto& dof_layout,
-                           auto& cells, auto& partitioner)
+  auto build_topology = [](MPI_Comm comm, MPI_Comm commt, auto& elements,
+                           auto& dof_layout, auto& cells, auto& partitioner)
   {
     // -- Partition topology
 
@@ -811,34 +828,37 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     graph::AdjacencyList<std::int64_t> cell_nodes(0);
     std::vector<std::int64_t> original_cell_index0;
     std::vector<int> ghost_owners;
-    if (partitioner)
+    if (commt != MPI_COMM_NULL)
     {
-      const int size = dolfinx::MPI::size(comm);
-      dest = partitioner(
-          comm, size, tdim,
-          extract_topology(elements[0].cell_shape(), dof_layout, cells));
+      if (partitioner)
+      {
+        const int size = dolfinx::MPI::size(comm);
+        dest = partitioner(
+            commt, size, tdim,
+            extract_topology(elements[0].cell_shape(), dof_layout, cells));
 
-      // -- Distribute cells (topology, includes higher-order 'nodes')
+        // -- Distribute cells (topology, includes higher-order 'nodes')
 
-      // Distribute cells to destination rank
-      std::vector<int> src;
-      std::tie(cell_nodes, src, original_cell_index0, ghost_owners)
-          = graph::build::distribute(comm, cells, dest);
+        // Distribute cells to destination rank
+        std::vector<int> src;
+        std::tie(cell_nodes, src, original_cell_index0, ghost_owners)
+            = graph::build::distribute(comm, cells, dest);
+      }
+      else
+      {
+        int rank = dolfinx::MPI::rank(comm);
+        dest = graph::regular_adjacency_list(
+            std::vector<std::int32_t>(cells.num_nodes(), rank), 1);
+        cell_nodes = cells;
+        std::int64_t offset(0), num_owned(cells.num_nodes());
+        MPI_Exscan(&num_owned, &offset, 1, MPI_INT64_T, MPI_SUM, comm);
+        original_cell_index0.resize(cell_nodes.num_nodes());
+        std::iota(original_cell_index0.begin(), original_cell_index0.end(),
+                  offset);
+      }
     }
-    else
-    {
-      int rank = dolfinx::MPI::rank(comm);
-      dest = graph::regular_adjacency_list(
-          std::vector<std::int32_t>(cells.num_nodes(), rank), 1);
-      cell_nodes = cells;
-      std::int64_t offset(0), num_owned(cells.num_nodes());
-      MPI_Exscan(&num_owned, &offset, 1, MPI_INT64_T, MPI_SUM, comm);
-      original_cell_index0.resize(cell_nodes.num_nodes());
-      std::iota(original_cell_index0.begin(), original_cell_index0.end(),
-                offset);
-    }
 
-    // -- Extra cell topology
+    // -- Extract cell topology
 
     // Extract cell 'topology', i.e. extract the vertices for each cell
     // and discard any 'higher-order' nodes
@@ -901,7 +921,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   };
 
   auto [topology, cell_nodes]
-      = build_topology(comm, elements, dof_layout, cells, partitioner);
+      = build_topology(comm, commt, elements, dof_layout, cells, partitioner);
 
   // Create connectivity required to compute the Geometry (extra
   // connectivities for higher-order geometries)
@@ -949,10 +969,10 @@ create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
             const U& x, std::array<std::size_t, 2> xshape, GhostMode ghost_mode)
 {
   if (dolfinx::MPI::size(comm) == 1)
-    return create_mesh(comm, cells, elements, x, xshape, nullptr);
+    return create_mesh(comm, comm, cells, elements, x, xshape, nullptr);
   else
   {
-    return create_mesh(comm, cells, elements, x, xshape,
+    return create_mesh(comm, comm, cells, elements, x, xshape,
                        create_cell_partitioner(ghost_mode));
   }
 }

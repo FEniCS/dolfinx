@@ -297,7 +297,7 @@ mesh::Mesh<T> partition(const mesh::Mesh<T>& old_mesh,
                                   std::move(dest_offsets));
     };
 
-    return mesh::create_mesh(old_mesh.comm(), cell_topology,
+    return mesh::create_mesh(old_mesh.comm(), old_mesh.comm(), cell_topology,
                              old_mesh.geometry().cmaps(), new_coords, xshape,
                              partitioner);
   }
