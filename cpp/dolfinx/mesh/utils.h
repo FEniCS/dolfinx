@@ -828,13 +828,10 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     graph::AdjacencyList<std::int64_t> cell_nodes(0);
     std::vector<std::int64_t> original_cell_index0;
     std::vector<int> ghost_owners;
-    std::cout << "Pre-Partition" << std::endl;
-
     if (partitioner)
     {
       if (commt != MPI_COMM_NULL)
       {
-        std::cout << "Partition" << std::endl;
         const int size = dolfinx::MPI::size(comm);
         dest = partitioner(
             commt, size, tdim,
@@ -861,22 +858,18 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
                 offset);
     }
 
-    std::cout << "Post Partition" << std::endl;
-
     // -- Extract cell topology
 
     // Extract cell 'topology', i.e. extract the vertices for each cell
     // and discard any 'higher-order' nodes
-
     graph::AdjacencyList<std::int64_t> cells_extracted
         = extract_topology(elements[0].cell_shape(), dof_layout, cell_nodes);
 
     // -- Re-order cells
 
-    // Build local dual graph for owned cells to apply re-ordering to
+    // Build local dual graph for owned cells to apply re-ordering
     const std::int32_t num_owned_cells
         = cells_extracted.num_nodes() - ghost_owners.size();
-
     auto [graph, unmatched_facets, max_v, facet_attached_cells]
         = build_local_dual_graph(
             std::span<const std::int64_t>(
@@ -885,7 +878,6 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
             std::span<const std::int32_t>(cells_extracted.offsets().data(),
                                           num_owned_cells + 1),
             tdim);
-
     const std::vector<int> remap = graph::reorder_gps(graph);
 
     // Create re-ordered cell lists (leaves ghosts unchanged)
@@ -925,10 +917,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
                      std::move(cell_nodes)};
   };
 
-  std::cout << "Build topology mesh" << std::endl;
   auto [topology, cell_nodes]
       = build_topology(comm, commt, elements, dof_layout, cells, partitioner);
-  std::cout << "End topology mesh" << std::endl;
 
   // Create connectivity required to compute the Geometry (extra
   // connectivities for higher-order geometries)
