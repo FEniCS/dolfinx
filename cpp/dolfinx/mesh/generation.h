@@ -389,8 +389,8 @@ mesh::Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
     const std::int64_t ny = n[1];
     const std::int64_t nz = n[2];
     const std::int64_t n_cells = nx * ny * nz;
-    int rank = dolfinx::MPI::rank(comm);
-    int size = dolfinx::MPI::size(comm);
+    int rank = dolfinx::MPI::rank(subcomm);
+    int size = dolfinx::MPI::size(subcomm);
     std::array range_c = dolfinx::MPI::local_range(rank, n_cells, size);
     cells.resize((range_c[1] - range_c[0]) * 8);
     for (std::int64_t i = range_c[0]; i < range_c[1]; ++i)
@@ -478,185 +478,188 @@ Mesh<T> build_tri(MPI_Comm comm, const std::array<std::array<double, 2>, 2>& p,
                   DiagonalType diagonal)
 {
   fem::CoordinateElement<T> element(CellType::triangle, 1);
-
-  // Receive mesh if not rank 0
-  if (dolfinx::MPI::rank(comm) != 0)
+  std::vector<T> geom;
+  std::vector<std::int64_t> cells;
+  if (dolfinx::MPI::rank(comm) == 0)
   {
-    return create_mesh(
-        comm, comm,
-        graph::regular_adjacency_list(std::vector<std::int64_t>(), 3),
-        {element}, std::vector<T>(), {0, 2}, partitioner);
-  }
+    const std::array<double, 2> p0 = p[0];
+    const std::array<double, 2> p1 = p[1];
 
-  const std::array<double, 2> p0 = p[0];
-  const std::array<double, 2> p1 = p[1];
+    const std::size_t nx = n[0];
+    const std::size_t ny = n[1];
 
-  const std::size_t nx = n[0];
-  const std::size_t ny = n[1];
+    // Extract minimum and maximum coordinates
+    const T x0 = std::min(p0[0], p1[0]);
+    const T x1 = std::max(p0[0], p1[0]);
+    const T y0 = std::min(p0[1], p1[1]);
+    const T y1 = std::max(p0[1], p1[1]);
 
-  // Extract minimum and maximum coordinates
-  const T x0 = std::min(p0[0], p1[0]);
-  const T x1 = std::max(p0[0], p1[0]);
-  const T y0 = std::min(p0[1], p1[1]);
-  const T y1 = std::max(p0[1], p1[1]);
+    const T a = x0;
+    const T b = x1;
+    const T ab = (b - a) / static_cast<T>(nx);
+    const T c = y0;
+    const T d = y1;
+    const T cd = (d - c) / static_cast<T>(ny);
 
-  const T a = x0;
-  const T b = x1;
-  const T ab = (b - a) / static_cast<T>(nx);
-  const T c = y0;
-  const T d = y1;
-  const T cd = (d - c) / static_cast<T>(ny);
-
-  if (std::abs(x0 - x1) < DBL_EPSILON || std::abs(y0 - y1) < DBL_EPSILON)
-  {
-    throw std::runtime_error("Rectangle seems to have zero width, height or "
-                             "depth. Check dimensions");
-  }
-
-  if (nx < 1 or ny < 1)
-  {
-    throw std::runtime_error(
-        "Rectangle has non-positive number of vertices in some dimension: "
-        "number of vertices must be at least 1 in each dimension");
-  }
-
-  // Create vertices and cells
-  std::size_t nv, nc;
-  switch (diagonal)
-  {
-  case DiagonalType::crossed:
-    nv = (nx + 1) * (ny + 1) + nx * ny;
-    nc = 4 * nx * ny;
-    break;
-  default:
-    nv = (nx + 1) * (ny + 1);
-    nc = 2 * nx * ny;
-  }
-
-  std::vector<T> geom(nv * 2);
-  std::vector<std::int64_t> cells(nc * 3);
-
-  // Create main vertices
-  std::size_t vertex = 0;
-  for (std::size_t iy = 0; iy <= ny; iy++)
-  {
-    const T x1 = c + cd * static_cast<T>(iy);
-    for (std::size_t ix = 0; ix <= nx; ix++)
+    if (std::abs(x0 - x1) < DBL_EPSILON || std::abs(y0 - y1) < DBL_EPSILON)
     {
-      geom[2 * vertex + 0] = a + ab * static_cast<T>(ix);
-      geom[2 * vertex + 1] = x1;
-      ++vertex;
+      throw std::runtime_error("Rectangle seems to have zero width, height or "
+                               "depth. Check dimensions");
     }
-  }
 
-  // Create midpoint vertices if the mesh type is crossed
-  switch (diagonal)
-  {
-  case DiagonalType::crossed:
-    for (std::size_t iy = 0; iy < ny; iy++)
+    if (nx < 1 or ny < 1)
     {
-      const T x1 = c + cd * (static_cast<T>(iy) + 0.5);
-      for (std::size_t ix = 0; ix < nx; ix++)
+      throw std::runtime_error(
+          "Rectangle has non-positive number of vertices in some dimension: "
+          "number of vertices must be at least 1 in each dimension");
+    }
+
+    // Create vertices and cells
+    std::size_t nv, nc;
+    switch (diagonal)
+    {
+    case DiagonalType::crossed:
+      nv = (nx + 1) * (ny + 1) + nx * ny;
+      nc = 4 * nx * ny;
+      break;
+    default:
+      nv = (nx + 1) * (ny + 1);
+      nc = 2 * nx * ny;
+    }
+
+    geom = std::vector<T>(nv * 2);
+    cells = std::vector<std::int64_t>(nc * 3);
+
+    // Create main vertices
+    std::size_t vertex = 0;
+    for (std::size_t iy = 0; iy <= ny; iy++)
+    {
+      const T x1 = c + cd * static_cast<T>(iy);
+      for (std::size_t ix = 0; ix <= nx; ix++)
       {
-        geom[2 * vertex + 0] = a + ab * (static_cast<T>(ix) + 0.5);
+        geom[2 * vertex + 0] = a + ab * static_cast<T>(ix);
         geom[2 * vertex + 1] = x1;
         ++vertex;
       }
     }
-    break;
-  default:
-    break;
-  }
 
-  // Create triangles
-  switch (diagonal)
-  {
-  case DiagonalType::crossed:
-  {
-    for (std::size_t iy = 0; iy < ny; iy++)
+    // Create midpoint vertices if the mesh type is crossed
+    switch (diagonal)
     {
-      for (std::size_t ix = 0; ix < nx; ix++)
+    case DiagonalType::crossed:
+      for (std::size_t iy = 0; iy < ny; iy++)
       {
-        const std::size_t v0 = iy * (nx + 1) + ix;
-        const std::size_t v1 = v0 + 1;
-        const std::size_t v2 = v0 + (nx + 1);
-        const std::size_t v3 = v1 + (nx + 1);
-        const std::size_t vmid = (nx + 1) * (ny + 1) + iy * nx + ix;
-
-        // Note that v0 < v1 < v2 < v3 < vmid
-        std::array<std::size_t, 12> c
-            = {v0, v1, vmid, v0, v2, vmid, v1, v3, vmid, v2, v3, vmid};
-        std::size_t offset = iy * nx + ix;
-        std::copy(c.begin(), c.end(), std::next(cells.begin(), 4 * offset * 3));
+        const T x1 = c + cd * (static_cast<T>(iy) + 0.5);
+        for (std::size_t ix = 0; ix < nx; ix++)
+        {
+          geom[2 * vertex + 0] = a + ab * (static_cast<T>(ix) + 0.5);
+          geom[2 * vertex + 1] = x1;
+          ++vertex;
+        }
       }
+      break;
+    default:
+      break;
     }
-    break;
-  }
-  default:
-  {
-    DiagonalType local_diagonal = diagonal;
-    for (std::size_t iy = 0; iy < ny; iy++)
-    {
-      // Set up alternating diagonal
-      switch (diagonal)
-      {
-      case DiagonalType::right_left:
-        if (iy % 2)
-          local_diagonal = DiagonalType::right;
-        else
-          local_diagonal = DiagonalType::left;
-        break;
-      case DiagonalType::left_right:
-        if (iy % 2)
-          local_diagonal = DiagonalType::left;
-        else
-          local_diagonal = DiagonalType::right;
-        break;
-      default:
-        break;
-      }
-      for (std::size_t ix = 0; ix < nx; ix++)
-      {
-        const std::size_t v0 = iy * (nx + 1) + ix;
-        const std::size_t v1 = v0 + 1;
-        const std::size_t v2 = v0 + (nx + 1);
-        const std::size_t v3 = v1 + (nx + 1);
 
-        std::size_t offset = iy * nx + ix;
-        switch (local_diagonal)
+    // Create triangles
+    switch (diagonal)
+    {
+    case DiagonalType::crossed:
+    {
+      for (std::size_t iy = 0; iy < ny; iy++)
+      {
+        for (std::size_t ix = 0; ix < nx; ix++)
         {
-        case DiagonalType::left:
-        {
-          std::array<std::size_t, 6> c = {v0, v1, v2, v1, v2, v3};
+          const std::size_t v0 = iy * (nx + 1) + ix;
+          const std::size_t v1 = v0 + 1;
+          const std::size_t v2 = v0 + (nx + 1);
+          const std::size_t v3 = v1 + (nx + 1);
+          const std::size_t vmid = (nx + 1) * (ny + 1) + iy * nx + ix;
+
+          // Note that v0 < v1 < v2 < v3 < vmid
+          std::array<std::size_t, 12> c
+              = {v0, v1, vmid, v0, v2, vmid, v1, v3, vmid, v2, v3, vmid};
+          std::size_t offset = iy * nx + ix;
           std::copy(c.begin(), c.end(),
-                    std::next(cells.begin(), 2 * offset * 3));
-          if (diagonal == DiagonalType::right_left
-              or diagonal == DiagonalType::left_right)
-          {
+                    std::next(cells.begin(), 4 * offset * 3));
+        }
+      }
+      break;
+    }
+    default:
+    {
+      DiagonalType local_diagonal = diagonal;
+      for (std::size_t iy = 0; iy < ny; iy++)
+      {
+        // Set up alternating diagonal
+        switch (diagonal)
+        {
+        case DiagonalType::right_left:
+          if (iy % 2)
             local_diagonal = DiagonalType::right;
-          }
+          else
+            local_diagonal = DiagonalType::left;
+          break;
+        case DiagonalType::left_right:
+          if (iy % 2)
+            local_diagonal = DiagonalType::left;
+          else
+            local_diagonal = DiagonalType::right;
+          break;
+        default:
           break;
         }
-        default:
+        for (std::size_t ix = 0; ix < nx; ix++)
         {
-          std::array<std::size_t, 6> c = {v0, v1, v3, v0, v2, v3};
-          std::copy(c.begin(), c.end(),
-                    std::next(cells.begin(), 2 * offset * 3));
-          if (diagonal == DiagonalType::right_left
-              or diagonal == DiagonalType::left_right)
+          const std::size_t v0 = iy * (nx + 1) + ix;
+          const std::size_t v1 = v0 + 1;
+          const std::size_t v2 = v0 + (nx + 1);
+          const std::size_t v3 = v1 + (nx + 1);
+
+          std::size_t offset = iy * nx + ix;
+          switch (local_diagonal)
           {
-            local_diagonal = DiagonalType::left;
+          case DiagonalType::left:
+          {
+            std::array<std::size_t, 6> c = {v0, v1, v2, v1, v2, v3};
+            std::copy(c.begin(), c.end(),
+                      std::next(cells.begin(), 2 * offset * 3));
+            if (diagonal == DiagonalType::right_left
+                or diagonal == DiagonalType::left_right)
+            {
+              local_diagonal = DiagonalType::right;
+            }
+            break;
           }
-        }
+          default:
+          {
+            std::array<std::size_t, 6> c = {v0, v1, v3, v0, v2, v3};
+            std::copy(c.begin(), c.end(),
+                      std::next(cells.begin(), 2 * offset * 3));
+            if (diagonal == DiagonalType::right_left
+                or diagonal == DiagonalType::left_right)
+            {
+              local_diagonal = DiagonalType::left;
+            }
+          }
+          }
         }
       }
     }
-  }
+    }
   }
 
-  return create_mesh(comm, comm,
-                     graph::regular_adjacency_list(std::move(cells), 3),
-                     {element}, geom, {geom.size() / 2, 2}, partitioner);
+  std::cout << "Create tri mesh (0)" << std::endl;
+  auto m = create_mesh(comm, comm,
+                       graph::regular_adjacency_list(std::move(cells), 3),
+                       {element}, geom, {geom.size() / 2, 2}, partitioner);
+  std::cout << "End create tri mesh  (0)" << std::endl;
+  return m;
+
+  // return create_mesh(comm, comm,
+  //                    graph::regular_adjacency_list(std::move(cells), 3),
+  //                    {element}, geom, {geom.size() / 2, 2}, partitioner);
 }
 
 template <std::floating_point T>
