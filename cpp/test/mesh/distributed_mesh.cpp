@@ -58,22 +58,16 @@ test_create_box([[maybe_unused]] mesh::CellPartitionFunction part)
 
   // Create mesh on even ranks (subcomm) and distribute to all ranks in
   // comm
-  MPI_Barrier(comm);
   mesh::Mesh<double> mesh0
-      = mesh::create_box(comm, subcomm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}},
+      = mesh::create_box(comm, comm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}},
                          {12, 12, 12}, mesh::CellType::hexahedron, part);
   int tdim = mesh0.topology()->dim();
   mesh0.topology()->create_entities(tdim - 1);
 
-  MPI_Barrier(comm);
-
   // Create mesh on comm and distribute to all ranks in comm
-  std::cout << "** Mesh1" << std::endl;
   mesh::Mesh<double> mesh1
-      = mesh::create_box(comm, comm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}},
+      = mesh::create_box(comm, subcomm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}},
                          {12, 12, 12}, mesh::CellType::hexahedron, part);
-  MPI_Barrier(comm);
-  std::cout << "** End Mesh1" << std::endl;
   int tdim1 = mesh1.topology()->dim();
   mesh1.topology()->create_entities(tdim1 - 1);
 
