@@ -84,6 +84,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
                                    bs_view * num_owned_view);
 
   // Create sub-index map
+  // TODO Simplify
   std::shared_ptr<common::IndexMap> index_map;
   std::vector<std::int32_t> ghost_new_to_old;
   std::shared_ptr<common::IndexMap> index_map_conn;
@@ -133,6 +134,13 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
 
   ss << "new_to_old_conn = " << new_to_old_conn << "\n";
 
+  // TODO Simplify
+  std::vector<std::int32_t> non_blocked_to_blocked(indices_conn.size(), -1);
+  for (std::size_t i = 0; i < indices_conn.size(); ++i)
+  {
+    non_blocked_to_blocked[indices_conn[i]] = dofs_view[i];
+  }
+
   // Create map from dof in view to new dof index
   std::vector<std::int32_t> old_to_new(dofs_view.back() + bs_view, -1);
   {
@@ -160,21 +168,20 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   ss << "old_to_new =      " << old_to_new << "\n";
 
   std::vector<std::int32_t> old_to_new_conn(dofs_view.back() + bs_view, -1);
+  // for (std::size_t new_idx = 0; new_idx < new_to_old_conn.size(); ++new_idx)
+  // {
+  //   for (int k = 0; k < bs_view; ++k)
+  //   {
+  //     std::int32_t old_idx = new_to_old_conn[new_idx] * bs_view + k;
+  //     old_to_new_conn[old_idx] = new_idx;
+  //   }
+  // }
+
   for (std::size_t new_idx = 0; new_idx < new_to_old_conn.size(); ++new_idx)
   {
-    for (int k = 0; k < bs_view; ++k)
-    {
-      std::int32_t old_idx = new_to_old_conn[new_idx] * bs_view + k;
-      old_to_new_conn[old_idx] = new_idx;
-    }
+    // TODO Simplify
+    old_to_new_conn[non_blocked_to_blocked[new_to_old_conn[new_idx]]] = new_idx;
   }
-
-  // FIXME
-  // std::vector<std::int32_t> old_to_new_conn(dofs_view.back() + 1, -1);
-  // for (std::size_t i = 0; i < indices_conn.size(); ++i)
-  // {
-  //   old_to_new_conn[dofs_view[i]] = indices_conn[i];
-  // }
 
   ss << "old_to_new_conn = " << old_to_new_conn << "\n";
 
