@@ -135,8 +135,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   ss << "new_to_old_conn = " << new_to_old_conn << "\n";
 
   // TODO Simplify
-  std::vector<std::int32_t> non_blocked_to_blocked(
-    indices_conn.back() + 1, -1);
+  std::vector<std::int32_t> non_blocked_to_blocked(indices_conn.size(), -1);
   for (std::size_t i = 0; i < indices_conn.size(); ++i)
   {
     non_blocked_to_blocked[indices_conn[i]] = dofs_view[i];
