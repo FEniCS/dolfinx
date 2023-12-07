@@ -58,35 +58,40 @@ test_create_box([[maybe_unused]] mesh::CellPartitionFunction part)
 
   // Create mesh on even ranks (subcomm) and distribute to all ranks in
   // comm
-  // mesh::Mesh<double> mesh0
-  //     = mesh::create_box(comm, subcomm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}},
-  //                        {12, 12, 12}, mesh::CellType::hexahedron, part);
-  // int tdim = mesh0.topology()->dim();
-  // mesh0.topology()->create_entities(tdim - 1);
+  MPI_Barrier(comm);
+  mesh::Mesh<double> mesh0
+      = mesh::create_box(comm, subcomm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}},
+                         {12, 12, 12}, mesh::CellType::hexahedron, part);
+  int tdim = mesh0.topology()->dim();
+  mesh0.topology()->create_entities(tdim - 1);
+
+  MPI_Barrier(comm);
 
   // Create mesh on comm and distribute to all ranks in comm
   std::cout << "** Mesh1" << std::endl;
   mesh::Mesh<double> mesh1
-      = mesh::create_box(comm, subcomm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}},
+      = mesh::create_box(comm, comm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}},
                          {12, 12, 12}, mesh::CellType::hexahedron, part);
+  MPI_Barrier(comm);
+  std::cout << "** End Mesh1" << std::endl;
   int tdim1 = mesh1.topology()->dim();
   mesh1.topology()->create_entities(tdim1 - 1);
 
-  // // Check that mesh communicators are the same
-  // int equal;
-  // MPI_Comm_compare(mesh0.comm(), mesh1.comm(), &equal);
-  // CHECK(equal != MPI_UNEQUAL);
+  // Check that mesh communicators are the same
+  int equal;
+  MPI_Comm_compare(mesh0.comm(), mesh1.comm(), &equal);
+  CHECK(equal != MPI_UNEQUAL);
 
-  // // Check global sizes for topology and geometry
-  // auto t0 = mesh0.topology();
-  // auto t1 = mesh1.topology();
-  // CHECK(t0->index_map(tdim)->size_global()
-  //       == t1->index_map(tdim)->size_global());
-  // CHECK(t0->index_map(tdim - 1)->size_global()
-  //       == t1->index_map(tdim - 1)->size_global());
-  // CHECK(t0->index_map(0)->size_global() == t1->index_map(0)->size_global());
-  // CHECK(mesh0.geometry().index_map()->size_global()
-  //       == mesh1.geometry().index_map()->size_global());
+  // Check global sizes for topology and geometry
+  auto t0 = mesh0.topology();
+  auto t1 = mesh1.topology();
+  CHECK(t0->index_map(tdim)->size_global()
+        == t1->index_map(tdim)->size_global());
+  CHECK(t0->index_map(tdim - 1)->size_global()
+        == t1->index_map(tdim - 1)->size_global());
+  CHECK(t0->index_map(0)->size_global() == t1->index_map(0)->size_global());
+  CHECK(mesh0.geometry().index_map()->size_global()
+        == mesh1.geometry().index_map()->size_global());
 
   if (subcomm != MPI_COMM_NULL)
     MPI_Comm_free(&subcomm);
@@ -250,6 +255,7 @@ TEST_CASE("Create box", "[create_box]")
 
 TEST_CASE("Distributed Mesh", "[distributed_mesh]")
 {
+  MPI_Barrier(MPI_COMM_WORLD);
   if (dolfinx::MPI::rank(MPI_COMM_WORLD) == 0)
     create_mesh_file();
   MPI_Barrier(MPI_COMM_WORLD);
