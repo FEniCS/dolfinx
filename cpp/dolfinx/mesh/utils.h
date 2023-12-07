@@ -832,12 +832,10 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     {
       if (commt != MPI_COMM_NULL)
       {
-        std::cout << "Partition " << std::endl;
         const int size = dolfinx::MPI::size(comm);
         dest = partitioner(
             commt, size, tdim,
             extract_topology(elements[0].cell_shape(), dof_layout, cells));
-        std::cout << "Post-partition " << std::endl;
       }
 
       // -- Distribute cells (topology, includes higher-order 'nodes')
@@ -919,10 +917,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
                      std::move(cell_nodes)};
   };
 
-  std::cout << "Build topology" << std::endl;
   auto [topology, cell_nodes]
       = build_topology(comm, commt, elements, dof_layout, cells, partitioner);
-  std::cout << "End build topology" << std::endl;
 
   // Create connectivity required to compute the Geometry (extra
   // connectivities for higher-order geometries)
@@ -936,10 +932,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   if (elements[0].needs_dof_permutations())
     topology.create_entity_permutations();
 
-  std::cout << "Create geometry" << std::endl;
   Geometry geometry
       = create_geometry(comm, topology, elements, cell_nodes, x, xshape[1]);
-  std::cout << "Create mesh" << std::endl;
   return Mesh<typename U::value_type>(
       comm, std::make_shared<Topology>(std::move(topology)),
       std::move(geometry));

@@ -650,16 +650,9 @@ Mesh<T> build_tri(MPI_Comm comm, const std::array<std::array<double, 2>, 2>& p,
     }
   }
 
-  std::cout << "Create tri mesh (0)" << std::endl;
-  auto m = create_mesh(comm, comm,
-                       graph::regular_adjacency_list(std::move(cells), 3),
-                       {element}, geom, {geom.size() / 2, 2}, partitioner);
-  std::cout << "End create tri mesh  (0)" << std::endl;
-  return m;
-
-  // return create_mesh(comm, comm,
-  //                    graph::regular_adjacency_list(std::move(cells), 3),
-  //                    {element}, geom, {geom.size() / 2, 2}, partitioner);
+  return create_mesh(comm, comm,
+                     graph::regular_adjacency_list(std::move(cells), 3),
+                     {element}, geom, {geom.size() / 2, 2}, partitioner);
 }
 
 template <std::floating_point T>

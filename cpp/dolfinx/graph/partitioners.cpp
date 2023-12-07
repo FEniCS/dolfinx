@@ -606,9 +606,9 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
 {
   return [mode, seed, imbalance, suppress_output](
              MPI_Comm comm, int nparts,
-             const graph::AdjacencyList<std::int64_t>& graph, bool /*ghosting*/)
+             const graph::AdjacencyList<std::int64_t>& graph, bool ghosting)
   {
-    std::cout << "Kahip start" << std::endl;
+    // std::cout << "Kahip start" << std::endl;
     LOG(INFO) << "Compute graph partition using (parallel) KaHIP";
 
     // KaHIP integer type
@@ -637,27 +637,26 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
     std::vector<T> part(graph.num_nodes());
     int edgecut = 0;
     double _imbalance = imbalance;
-    std::cout << "Kahip part: " << graph.num_nodes() << std::endl;
+    // std::cout << "Kahip part: " << graph.num_nodes() << std::endl;
 
-    MPI_Comm _comm;
-    MPI_Comm_dup(comm, &_comm);
+    MPI_Comm _comm = comm;
     ParHIPPartitionKWay(node_disp.data(), offsets.data(), array.data(), vwgt,
                         adjcwgt, &nparts, &_imbalance, suppress_output, seed,
                         mode, &edgecut, part.data(), &_comm);
-    std::cout << "Kahip part end" << std::endl;
+    // std::cout << "Kahip part end" << std::endl;
     timer2.stop();
 
-    // if (ghosting)
-    //   return compute_destination_ranks(_comm, graph, node_disp, part);
-    // else
-    // {
-    return regular_adjacency_list(
-        std::vector<std::int32_t>(part.begin(), part.end()), 1);
-    // }
+    if (ghosting)
+      return compute_destination_ranks(_comm, graph, node_disp, part);
+    else
+    {
+      return regular_adjacency_list(
+          std::vector<std::int32_t>(part.begin(), part.end()), 1);
+    }
 
-    MPI_Comm_free(&_comm);
+    // MPI_Comm_free(&_comm);
 
-    std::cout << "Kahip end" << std::endl;
+    // std::cout << "Kahip end" << std::endl;
   };
 }
 //----------------------------------------------------------------------------
