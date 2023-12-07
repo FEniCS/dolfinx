@@ -212,39 +212,39 @@ TEST_CASE("Create box", "[create_box]") { CHECK_NOTHROW(test_create_box()); }
 
 TEST_CASE("Distributed Mesh", "[distributed_mesh]")
 {
-  // create_mesh_file();
+  create_mesh_file();
 
-  // SECTION("SCOTCH")
-  // {
-  //   CHECK_NOTHROW(test_distributed_mesh(mesh::create_cell_partitioner()));
-  // }
+  SECTION("SCOTCH")
+  {
+    CHECK_NOTHROW(test_distributed_mesh(mesh::create_cell_partitioner()));
+  }
 
-  // #ifdef HAS_KAHIP
-  // SECTION("KAHIP with Lambda")
-  // {
-  //   auto partfn = graph::kahip::partitioner();
-  //   mesh::CellPartitionFunction kahip
-  //       = [&](MPI_Comm comm, int nparts, int tdim,
-  //             const graph::AdjacencyList<std::int64_t>& cells)
-  //   {
-  //     LOG(INFO) << "Compute partition of cells across ranks (KaHIP).";
-  //     // Compute distributed dual graph (for the cells on this process)
-  //     const graph::AdjacencyList<std::int64_t> dual_graph
-  //         = mesh::build_dual_graph(comm, cells, tdim);
+// #ifdef HAS_KAHIP
+// SECTION("KAHIP with Lambda")
+// {
+//   auto partfn = graph::kahip::partitioner();
+//   mesh::CellPartitionFunction kahip
+//       = [&](MPI_Comm comm, int nparts, int tdim,
+//             const graph::AdjacencyList<std::int64_t>& cells)
+//   {
+//     LOG(INFO) << "Compute partition of cells across ranks (KaHIP).";
+//     // Compute distributed dual graph (for the cells on this process)
+//     const graph::AdjacencyList<std::int64_t> dual_graph
+//         = mesh::build_dual_graph(comm, cells, tdim);
 
-  //     // Compute partition
-  //     return partfn(comm, nparts, dual_graph, true);
-  //   };
+//     // Compute partition
+//     return partfn(comm, nparts, dual_graph, true);
+//   };
 
-  //   CHECK_NOTHROW(test_distributed_mesh(kahip));
-  // }
-  // #endif
-  // #ifdef HAS_PARMETIS
-  //   SECTION("parmetis")
-  //   {
-  //     auto partfn = graph::parmetis::partitioner();
-  //     CHECK_NOTHROW(test_distributed_mesh(
-  //         mesh::create_cell_partitioner(mesh::GhostMode::none, partfn)));
-  //   }
-  // #endif
+//   CHECK_NOTHROW(test_distributed_mesh(kahip));
+// }
+// #endif
+#ifdef HAS_PARMETIS
+  SECTION("parmetis")
+  {
+    auto partfn = graph::parmetis::partitioner();
+    CHECK_NOTHROW(test_distributed_mesh(
+        mesh::create_cell_partitioner(mesh::GhostMode::none, partfn)));
+  }
+#endif
 }
