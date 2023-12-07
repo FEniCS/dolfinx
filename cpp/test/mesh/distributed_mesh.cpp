@@ -238,11 +238,35 @@ test_distributed_mesh(mesh::CellPartitionFunction partitioner)
 // Create a mesh on even ranks and distribute to all ranks in mpi_comm
 TEST_CASE("Create box", "[create_box]")
 {
-  std::cout << "*** Create box" << std::endl;
-  auto partfn = graph::kahip::partitioner();
-  auto part = mesh::create_cell_partitioner(mesh::GhostMode::none, partfn);
-  CHECK_NOTHROW(test_create_box(part));
-  std::cout << "*** End create box" << std::endl;
+#ifdef HAS_PTSCOTCH
+  SECTION("SCOTCH")
+  {
+    auto part = mesh::create_cell_partitioner(mesh::GhostMode::none,
+                                              graph::scotch::partitioner());
+    CHECK_NOTHROW(test_create_box(part));
+    std::cout << "*** End create box" << std::endl;
+  }
+#endif
+
+#ifdef HAS_PARMETIS
+  SECTION("parmetis")
+  {
+    auto partfn = graph::parmetis::partitioner();
+    auto part = mesh::create_cell_partitioner(mesh::GhostMode::none, partfn);
+    CHECK_NOTHROW(test_create_box(part));
+    std::cout << "*** End create box" << std::endl;
+  }
+#endif
+
+#ifdef HAS_KAHIP
+  SECTION("KAHIP")
+  {
+    auto part = mesh::create_cell_partitioner(mesh::GhostMode::none,
+                                              graph::kahip::partitioner());
+    CHECK_NOTHROW(test_create_box(part));
+    std::cout << "*** End create box" << std::endl;
+  }
+#endif
 }
 
 TEST_CASE("Distributed Mesh", "[distributed_mesh]")
