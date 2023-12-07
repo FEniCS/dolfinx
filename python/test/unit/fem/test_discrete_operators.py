@@ -45,14 +45,22 @@ def test_gradient(mesh):
 @pytest.mark.parametrize("p", range(1, 4))
 @pytest.mark.parametrize("q", range(1, 4))
 @pytest.mark.parametrize("cell_type", [
-    (create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.none, cell_type=CellType.triangle, dtype=np.float32), "Lagrange", "Nedelec 1st kind H(curl)"),
-    (create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.none, cell_type=CellType.triangle, dtype=np.float64), "Lagrange", "Nedelec 1st kind H(curl)"),
-    (create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.none, cell_type=CellType.quadrilateral, dtype=np.float32),"Q", "RTCE"),
-    (create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.none, cell_type=CellType.quadrilateral, dtype=np.float64),"Q", "RTCE"),
-    (create_unit_cube(MPI.COMM_WORLD, 3, 3, 2, ghost_mode=GhostMode.none, cell_type=CellType.tetrahedron, dtype=np.float32), "Lagrange", "Nedelec 1st kind H(curl)"),
-    (create_unit_cube(MPI.COMM_WORLD, 3, 3, 2, ghost_mode=GhostMode.none, cell_type=CellType.tetrahedron, dtype=np.float64),"Lagrange", "Nedelec 1st kind H(curl)"),
-    (create_unit_cube(MPI.COMM_WORLD, 3, 3, 2, ghost_mode=GhostMode.none, cell_type=CellType.hexahedron, dtype=np.float32),"Q", "NCE"),
-    (create_unit_cube(MPI.COMM_WORLD, 3, 2, 2, ghost_mode=GhostMode.none, cell_type=CellType.hexahedron, dtype=np.float64),"Q", "NCE")
+    (create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.none,
+     cell_type=CellType.triangle, dtype=np.float32), "Lagrange", "Nedelec 1st kind H(curl)"),
+    (create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.none,
+     cell_type=CellType.triangle, dtype=np.float64), "Lagrange", "Nedelec 1st kind H(curl)"),
+    (create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.none,
+     cell_type=CellType.quadrilateral, dtype=np.float32), "Q", "RTCE"),
+    (create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.none,
+     cell_type=CellType.quadrilateral, dtype=np.float64), "Q", "RTCE"),
+    (create_unit_cube(MPI.COMM_WORLD, 3, 3, 2, ghost_mode=GhostMode.none,
+     cell_type=CellType.tetrahedron, dtype=np.float32), "Lagrange", "Nedelec 1st kind H(curl)"),
+    (create_unit_cube(MPI.COMM_WORLD, 3, 3, 2, ghost_mode=GhostMode.none,
+     cell_type=CellType.tetrahedron, dtype=np.float64), "Lagrange", "Nedelec 1st kind H(curl)"),
+    (create_unit_cube(MPI.COMM_WORLD, 3, 3, 2, ghost_mode=GhostMode.none,
+     cell_type=CellType.hexahedron, dtype=np.float32), "Q", "NCE"),
+    (create_unit_cube(MPI.COMM_WORLD, 3, 2, 2, ghost_mode=GhostMode.none,
+     cell_type=CellType.hexahedron, dtype=np.float64), "Q", "NCE")
 ])
 def test_gradient_interpolation(cell_type, p, q):
     """Test discrete gradient computation with verification using Expression."""
