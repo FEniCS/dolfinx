@@ -200,10 +200,10 @@ private:
 /// been distributed to this rank, e.g. via a graph partitioner. It must
 /// also contain all ghost cells via facet, i.e. cells that are on a
 /// neighboring process and share a facet with a local cell.
-/// @param[in] original_cell_index The original global index associated
-/// with each cell
-/// @param[in] ghost_owners The owning rank of each ghost cell (ghost
-/// cells are always at the end of the list of `cells`)
+/// @param[in] original_cell_index Original global index associated with
+/// each cell.
+/// @param[in] ghost_owners Owning rank of each ghost cell (ghost cells
+/// are always at the end of the list of `cells`).
 /// @param[in] cell_type A vector with cell shapes
 /// @param[in] cell_group_offsets vector with each group offset, including
 /// ghosts.

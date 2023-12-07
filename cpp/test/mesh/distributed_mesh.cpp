@@ -6,6 +6,7 @@
 //
 // Unit tests for Distributed Meshes
 
+#include <algorithm>
 #include <basix/finite-element.h>
 #include <catch2/catch_test_macros.hpp>
 #include <dolfinx.h>
@@ -14,6 +15,7 @@
 #include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/graphbuild.h>
+#include <memory>
 
 using namespace dolfinx;
 
@@ -59,8 +61,8 @@ constexpr int N = 8;
       mpi_comm, subset_comm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {12, 12, 12},
       mesh::CellType::hexahedron, part));
   std::cout << "End A" << std::endl;
-  // int tdim = mesh->topology()->dim();
-  // mesh->topology()->create_entities(tdim - 1);
+  int tdim = mesh->topology()->dim();
+  mesh->topology()->create_entities(tdim - 1);
 
   // // create mesh on mpi_comm and distribute to all ranks in mpi_comm
   // auto mesh2 = std::make_shared<mesh::Mesh<double>>(
@@ -97,19 +99,30 @@ test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   MPI_Comm mpi_comm = MPI_COMM_WORLD;
   const int mpi_size = dolfinx::MPI::size(mpi_comm);
 
-  // Create a communicator with subset of the original group of processes
-  const int subset_size = (mpi_size > 1) ? ceil(mpi_size / 2) : 1;
-  std::vector<int> ranks(subset_size);
-  std::iota(ranks.begin(), ranks.end(), 0);
+  // -- Create a communicator with subset of the original group of
+  // processes
 
+  // Get group of processes on mpi_comm
   MPI_Group comm_group;
-  MPI_Comm_group(mpi_comm, &comm_group);
+  int ierr = MPI_Comm_group(mpi_comm, &comm_group);
+  if (ierr != MPI_SUCCESS)
+    throw std::runtime_error("MPI_Comm_group failed");
 
+  // Create a group of processes (lower 'half' of processes by rank)
+  std::vector<int> ranks(std::max(mpi_size / 2, 1));
+  std::iota(ranks.begin(), ranks.end(), 0);
   MPI_Group new_group;
-  MPI_Group_incl(comm_group, subset_size, ranks.data(), &new_group);
+  ierr = MPI_Group_incl(comm_group, ranks.size(), ranks.data(), &new_group);
+  if (ierr != MPI_SUCCESS)
+    throw std::runtime_error("MPI_Group_incl failed");
 
-  MPI_Comm subset_comm;
-  MPI_Comm_create_group(MPI_COMM_WORLD, new_group, 0, &subset_comm);
+  // Create new communicator
+  MPI_Comm subset_comm = MPI_COMM_NULL;
+  ierr = MPI_Comm_create_group(MPI_COMM_WORLD, new_group, 0, &subset_comm);
+  if (ierr != MPI_SUCCESS)
+    throw std::runtime_error("MPI_Comm_create_group failed");
+
+  // --
 
   // Create coordinate map
   auto e = std::make_shared<basix::FiniteElement<T>>(basix::create_element<T>(
@@ -118,7 +131,7 @@ test_distributed_mesh(mesh::CellPartitionFunction partitioner)
       basix::element::dpc_variant::unset, false));
   fem::CoordinateElement<T> cmap(e);
 
-  // Read mesh data
+  // Read mesh data from file on sub-communicator
   std::vector<T> x;
   std::array<std::size_t, 2> xshape = {0, 2};
   std::vector<std::int64_t> cells;
@@ -130,9 +143,8 @@ test_distributed_mesh(mesh::CellPartitionFunction partitioner)
     std::tie(cells, cshape) = infile.read_topology_data("mesh");
     auto [_x, _xshape] = infile.read_geometry_data("mesh");
     x = std::move(std::get<std::vector<T>>(_x));
-
     int nparts = mpi_size;
-    const int tdim = mesh::cell_dim(mesh::CellType::triangle);
+    int tdim = mesh::cell_dim(mesh::CellType::triangle);
     dest = partitioner(subset_comm, nparts, tdim,
                        graph::regular_adjacency_list(cells, cshape[1]));
   }
@@ -140,7 +152,7 @@ test_distributed_mesh(mesh::CellPartitionFunction partitioner)
 
   std::cout << "Start test_distributed_mesh B" << std::endl;
 
-  // Distribute cells to destination ranks
+  // -- Distribute cells to destination ranks
   const auto [cell_nodes, src, original_cell_index, ghost_owners]
       = graph::build::distribute(
           mpi_comm, graph::regular_adjacency_list(cells, cshape[1]), dest);
@@ -148,34 +160,38 @@ test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   // FIXME: improve way to find 'external' vertices
   // Count the connections of all vertices on owned cells. If there are 6
   // connections (on a regular triangular mesh) then it is 'internal'.
-  int num_local_cells = cell_nodes.num_nodes() - ghost_owners.size();
-  int ghost_offset = cell_nodes.offsets()[num_local_cells];
-  std::vector<std::int64_t> external_vertices(
-      cell_nodes.array().begin(), cell_nodes.array().begin() + ghost_offset);
-  std::sort(external_vertices.begin(), external_vertices.end());
-  std::vector<int> counts;
-  auto it = external_vertices.begin();
-  while (it != external_vertices.end())
+  std::vector<std::int64_t> external_vertices;
+  std::vector<int> cell_group_offsets;
   {
-    auto it2 = std::find_if(it, external_vertices.end(),
-                            [&](std::int64_t val) { return (val != *it); });
-    counts.push_back(std::distance(it, it2));
-    it = it2;
-  }
-  external_vertices.erase(
-      std::unique(external_vertices.begin(), external_vertices.end()),
-      external_vertices.end());
-  for (std::size_t i = 0; i < counts.size(); ++i)
-    if (counts[i] == 6)
-      external_vertices[i] = -1;
-  std::sort(external_vertices.begin(), external_vertices.end());
-  it = std::find_if(external_vertices.begin(), external_vertices.end(),
-                    [](std::int64_t i) { return (i != -1); });
-  external_vertices.erase(external_vertices.begin(), it);
+    int num_local_cells = cell_nodes.num_nodes() - ghost_owners.size();
+    int ghost_offset = cell_nodes.offsets()[num_local_cells];
+    external_vertices = std::vector<std::int64_t>(
+        cell_nodes.array().begin(), cell_nodes.array().begin() + ghost_offset);
+    std::sort(external_vertices.begin(), external_vertices.end());
+    std::vector<int> counts;
+    auto it = external_vertices.begin();
+    while (it != external_vertices.end())
+    {
+      auto it2 = std::find_if(it, external_vertices.end(),
+                              [&](std::int64_t val) { return (val != *it); });
+      counts.push_back(std::distance(it, it2));
+      it = it2;
+    }
+    external_vertices.erase(
+        std::unique(external_vertices.begin(), external_vertices.end()),
+        external_vertices.end());
+    for (std::size_t i = 0; i < counts.size(); ++i)
+      if (counts[i] == 6)
+        external_vertices[i] = -1;
+    std::sort(external_vertices.begin(), external_vertices.end());
+    it = std::find_if(external_vertices.begin(), external_vertices.end(),
+                      [](std::int64_t i) { return (i != -1); });
+    external_vertices.erase(external_vertices.begin(), it);
 
-  std::vector<int> cell_group_offsets
-      = {0, std::int32_t(cell_nodes.num_nodes() - ghost_owners.size()),
-         cell_nodes.num_nodes()};
+    cell_group_offsets
+        = {0, std::int32_t(cell_nodes.num_nodes() - ghost_owners.size()),
+           cell_nodes.num_nodes()};
+  }
 
   std::vector<mesh::CellType> cell_types = {cmap.cell_shape()};
   mesh::Topology topology = mesh::create_topology(
