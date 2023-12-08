@@ -22,8 +22,7 @@ using namespace dolfinx::fem;
 
 // A function for printing vectors
 template <typename S>
-std::ostream &operator<<(std::ostream &os,
-                         const std::vector<S> &vector)
+std::ostream& operator<<(std::ostream& os, const std::vector<S>& vector)
 {
   os << "{ ";
   for (auto v : vector)
@@ -80,84 +79,30 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   // Get block size
   int bs_view = dofmap_view.index_map_bs();
 
-  const auto it = std::lower_bound(dofs_view.begin(), dofs_view.end(),
-                                   bs_view * num_owned_view);
-
   // Create sub-index map
-  std::shared_ptr<common::IndexMap> index_map;
-  std::vector<std::int32_t> ghost_new_to_old;
   std::shared_ptr<common::IndexMap> index_map_conn;
-  std::vector<std::int32_t> new_to_old_conn;  // TODO Rename as this is non-block index
-  std::vector<std::int32_t> indices_conn;
+  std::vector<std::int32_t> new_to_old_conn; // TODO Rename
   if (bs_view == 1)
   {
-    std::span<std::int32_t> indices(dofs_view.data(),
-                                    std::distance(dofs_view.begin(), it));
-    auto [_index_map, gmap] = dofmap_view.index_map->create_submap(indices);
-    index_map = std::make_shared<common::IndexMap>(std::move(_index_map));
-    ghost_new_to_old = std::move(gmap);
-
-    // ss << "indices = " << indices << "\n";
-
-    indices_conn = dofs_view;
     auto [_index_map_conn, gmap_conn] = dolfinx::common::create_submap_conn(
-      *dofmap_view.index_map, indices_conn);
-    index_map_conn = std::make_shared<common::IndexMap>(std::move(_index_map_conn));
+        *dofmap_view.index_map, dofs_view);
+    index_map_conn
+        = std::make_shared<common::IndexMap>(std::move(_index_map_conn));
     new_to_old_conn = std::move(gmap_conn);
-
-    ss << "indices_conn = " << dofs_view << "\n";
   }
   else
   {
     std::vector<std::int32_t> indices;
     indices.reserve(dofs_view.size());
-    std::transform(dofs_view.begin(), it, std::back_inserter(indices),
+    std::transform(dofs_view.begin(), dofs_view.end(),
+                   std::back_inserter(indices),
                    [bs_view](auto idx) { return idx / bs_view; });
-    indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
-    auto [_index_map, gmap] = dofmap_view.index_map->create_submap(indices);
-    index_map = std::make_shared<common::IndexMap>(std::move(_index_map));
-    ghost_new_to_old = std::move(gmap);
-
-    // ss << "indices = " << indices << "\n";
-    indices_conn.reserve(dofs_view.size());
-    std::transform(dofs_view.begin(), dofs_view.end(), std::back_inserter(indices_conn),
-                   [bs_view](auto idx) { return idx / bs_view; });
-    // indices_conn.erase(std::unique(indices_conn.begin(), indices_conn.end()), indices_conn.end());
-    auto [_index_map_conn, gmap_conn] = dolfinx::common::create_submap_conn(
-      *dofmap_view.index_map, indices_conn);
-    index_map_conn = std::make_shared<common::IndexMap>(std::move(_index_map_conn));
+    auto [_index_map_conn, gmap_conn]
+        = dolfinx::common::create_submap_conn(*dofmap_view.index_map, indices);
+    index_map_conn
+        = std::make_shared<common::IndexMap>(std::move(_index_map_conn));
     new_to_old_conn = std::move(gmap_conn);
-
-    ss << "indices_conn = " << indices_conn << "\n";
   }
-
-  ss << "new_to_old_conn = " << new_to_old_conn << "\n";
-
-  // Create map from dof in view to new dof index
-  std::vector<std::int32_t> old_to_new(dofs_view.back() + bs_view, -1);
-  {
-    // old-to-new map for owned dofs
-    std::int32_t count = 0;
-    for (auto dof_old = dofs_view.begin(); dof_old != it; ++dof_old)
-      old_to_new[*dof_old] = count++;
-
-    // old-to-new map for ghost dofs
-    const std::int32_t local_size_new = index_map->size_local();
-    for (auto itp_old = ghost_new_to_old.begin();
-         itp_old != ghost_new_to_old.end(); ++itp_old)
-    {
-      std::int32_t map_pos_new
-          = local_size_new + std::distance(ghost_new_to_old.begin(), itp_old);
-      std::int32_t idx = bs_view * (num_owned_view + *itp_old);
-      for (int k = 0; k < bs_view; ++k)
-      {
-        assert(idx + k < (int)old_to_new.size());
-        old_to_new[idx + k] = map_pos_new;
-      }
-    }
-  }
-
-  ss << "old_to_new =      " << old_to_new << "\n";
 
   std::vector<std::int32_t> old_to_new_conn(dofs_view.back() + bs_view, -1);
   for (std::size_t new_idx = 0; new_idx < new_to_old_conn.size(); ++new_idx)
@@ -169,13 +114,6 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
     }
   }
 
-  // FIXME
-  // std::vector<std::int32_t> old_to_new_conn(dofs_view.back() + 1, -1);
-  // for (std::size_t i = 0; i < indices_conn.size(); ++i)
-  // {
-  //   old_to_new_conn[dofs_view[i]] = indices_conn[i];
-  // }
-
   ss << "old_to_new_conn = " << old_to_new_conn << "\n";
 
   // Map dofs to new collapsed indices for new dofmap
@@ -185,7 +123,8 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   std::transform(dof_array_view.data_handle(),
                  dof_array_view.data_handle() + dof_array_view.size(),
                  std::back_inserter(dofmap),
-                 [&old_to_new_conn](auto idx_old) { return old_to_new_conn[idx_old]; });
+                 [&old_to_new_conn](auto idx_old)
+                 { return old_to_new_conn[idx_old]; });
 
   // Dimension sanity checks
   assert((int)dofmap.size()
@@ -205,8 +144,8 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   }
 
   // Create new dofmap and return
-  return DofMap(std::move(element_dof_layout), index_map_conn, 1, std::move(dofmap),
-                1);
+  return DofMap(std::move(element_dof_layout), index_map_conn, 1,
+                std::move(dofmap), 1);
 }
 
 } // namespace
