@@ -45,7 +45,7 @@ def test_sub_index_map():
 
     # Create sub index map and a map from the ghost position in new map
     # to the position in old map
-    submap, submap_to_map = _cpp.common.create_submap_conn(map, local_indices[my_rank])
+    submap, submap_to_map = _cpp.common.create_submap_conn(map, local_indices[my_rank], False)
     ghosts_pos_sub = submap_to_map[map_local_size:] - map_local_size
 
     # Check local and global sizes
@@ -83,7 +83,7 @@ def test_sub_index_map_ghost_mode_none():
     tdim = mesh.topology.dim
     map = mesh.topology.index_map(tdim)
     submap_indices = np.arange(0, min(2, map.size_local), dtype=np.int32)
-    _cpp.common.create_submap_conn(map, submap_indices)
+    _cpp.common.create_submap_conn(map, submap_indices, False)
 
 
 def test_index_map_ghost_lifetime():
