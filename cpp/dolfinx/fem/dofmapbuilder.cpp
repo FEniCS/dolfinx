@@ -208,7 +208,7 @@ build_basic_dofmap(
   // Collect cell -> entity connectivities
   std::vector<std::shared_ptr<const graph::AdjacencyList<std::int32_t>>>
       connectivity;
-  for (std::size_t d = 0; d <= D; ++d)
+  for (std::size_t d = 0; d < D; ++d)
     connectivity.push_back(topology.connectivity(D, d));
 
   // Allocate dofmap memory
@@ -249,7 +249,7 @@ build_basic_dofmap(
       // Iterate over each topological dimension for this element (twice, once
       // for regular, and later for ghosts).
       std::int32_t offset_local = 0;
-      assert(entity_dofs[elem].size() == D + 1);
+      assert(entity_dofs.size() == D + 1);
       for (std::size_t d = 0; d <= D; ++d)
       {
         if (needs_entities[d])
@@ -258,7 +258,8 @@ build_basic_dofmap(
 
           // Iterate over each entity of current dimension d
           const std::size_t num_entity_dofs = e_dofs_d[0].size();
-          auto cell_entity_conn = connectivity[d]->links(c);
+          const std::int32_t* cell_entity_conn
+              = (d == D) ? nullptr : connectivity[d]->links(c).data();
           for (std::size_t e = 0; e < e_dofs_d.size(); ++e)
           {
             assert(e_dofs_d[e].size() == num_entity_dofs);
@@ -271,7 +272,7 @@ build_basic_dofmap(
             // dof_local: local index of dof at (d, e)
             for (std::size_t i = 0; i < num_entity_dofs; ++i)
             {
-              const int dof_local = e_dofs_d[e][i];
+              const std::int32_t dof_local = e_dofs_d[e][i];
               // FIXME: mixed topology - e.g. P2/Q2 when d==D
               dofs_c[dof_local]
                   = offset_local + num_entity_dofs * e_index_local + i;
