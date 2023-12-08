@@ -13,7 +13,9 @@
 #include <cfloat>
 #include <concepts>
 #include <cstddef>
+#include <limits>
 #include <mpi.h>
+#include <vector>
 
 namespace dolfinx::mesh
 {
@@ -131,7 +133,7 @@ Mesh<T> create_box(MPI_Comm comm, std::array<std::array<double, 3>, 2> p,
 }
 
 /// @brief Create a uniform mesh::Mesh over the rectangle spanned by the
-/// two points @p p.
+/// two points `p`.
 ///
 /// The order of the two points is not important in terms of minimum and
 /// maximum coordinates. The total number of vertices will be `(n[0] +
@@ -187,7 +189,7 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
 
 /// @brief Interval mesh of the 1D line `[a, b]`.
 ///
-/// Given @p n cells in the axial direction, the total number of
+/// Given `n` cells in the axial direction, the total number of
 /// intervals will be `n` and the total number of vertices will be `n +
 /// 1`.
 ///
@@ -204,7 +206,6 @@ Mesh<T> create_interval(MPI_Comm comm, std::size_t nx, std::array<double, 2> p,
   if (!partitioner and dolfinx::MPI::size(comm) > 1)
     partitioner = create_cell_partitioner();
 
-  fem::CoordinateElement<T> element(CellType::interval, 1);
   std::vector<T> x;
   std::vector<std::int64_t> cells;
   if (dolfinx::MPI::rank(comm) == 0)
@@ -213,7 +214,7 @@ Mesh<T> create_interval(MPI_Comm comm, std::size_t nx, std::array<double, 2> p,
     const T b = p[1];
     const T ab = (b - a) / static_cast<T>(nx);
 
-    if (std::abs(a - b) < DBL_EPSILON)
+    if (std::abs(a - b) < std::numeric_limits<double>::epsilon())
     {
       throw std::runtime_error(
           "Length of interval is zero. Check your dimensions.");
@@ -241,6 +242,7 @@ Mesh<T> create_interval(MPI_Comm comm, std::size_t nx, std::array<double, 2> p,
         cells[2 * ix + j] = ix + j;
   }
 
+  fem::CoordinateElement<T> element(CellType::interval, 1);
   return create_mesh(comm, comm,
                      graph::regular_adjacency_list(std::move(cells), 2),
                      {element}, x, {x.size(), 1}, partitioner);
@@ -282,9 +284,9 @@ std::vector<T> create_geom(MPI_Comm comm,
   const T f = z1;
   const T ef = (f - e) / static_cast<T>(nz);
 
-  if (std::abs(x0 - x1) < 2.0 * DBL_EPSILON
-      or std::abs(y0 - y1) < 2.0 * DBL_EPSILON
-      or std::abs(z0 - z1) < 2.0 * DBL_EPSILON)
+  if (std::abs(x0 - x1) < 2.0 * std::numeric_limits<double>::epsilon()
+      or std::abs(y0 - y1) < 2.0 * std::numeric_limits<double>::epsilon()
+      or std::abs(z0 - z1) < 2.0 * std::numeric_limits<double>::epsilon())
   {
     throw std::runtime_error(
         "Box seems to have zero width, height or depth. Check dimensions");
@@ -456,7 +458,6 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
                   const CellPartitionFunction& partitioner,
                   DiagonalType diagonal)
 {
-  fem::CoordinateElement<T> element(CellType::triangle, 1);
   std::vector<T> geom;
   std::vector<std::int64_t> cells;
   if (dolfinx::MPI::rank(comm) == 0)
@@ -480,7 +481,8 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
     const T d = y1;
     const T cd = (d - c) / static_cast<T>(ny);
 
-    if (std::abs(x0 - x1) < DBL_EPSILON || std::abs(y0 - y1) < DBL_EPSILON)
+    if (std::abs(x0 - x1) < std::numeric_limits<double>::epsilon()
+        or std::abs(y0 - y1) < std::numeric_limits<double>::epsilon())
     {
       throw std::runtime_error("Rectangle seems to have zero width, height or "
                                "depth. Check dimensions");
@@ -614,6 +616,7 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
     }
   }
 
+  fem::CoordinateElement<T> element(CellType::triangle, 1);
   return create_mesh(comm, comm,
                      graph::regular_adjacency_list(std::move(cells), 3),
                      {element}, geom, {geom.size() / 2, 2}, partitioner);
