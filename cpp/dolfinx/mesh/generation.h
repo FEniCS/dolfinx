@@ -62,7 +62,8 @@ Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
                   const CellPartitionFunction& partitioner);
 
 template <std::floating_point T>
-Mesh<T> build_prism(MPI_Comm comm, std::array<std::array<double, 3>, 2> p,
+Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
+                    std::array<std::array<double, 3>, 2> p,
                     std::array<std::size_t, 3> n,
                     const CellPartitionFunction& partitioner);
 
@@ -79,7 +80,7 @@ Mesh<T> build_prism(MPI_Comm comm, std::array<std::array<double, 3>, 2> p,
 ///
 /// @param[in] comm MPI communicator to distribute the mesh on.
 /// @param[in] subcomm MPI communicator to construct and partition the
-/// mesh on.
+/// mesh topology on. If the process is not
 /// @param[in] p Corner of the box.
 /// @param[in] n Number of cells in each direction.
 /// @param[in] celltype Cell shape.
@@ -102,7 +103,7 @@ Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
   case CellType::hexahedron:
     return impl::build_hex<T>(comm, subcomm, p, n, partitioner);
   case CellType::prism:
-    return impl::build_prism<T>(comm, p, n, partitioner);
+    return impl::build_prism<T>(comm, subcomm, p, n, partitioner);
   default:
     throw std::runtime_error("Generate box mesh. Wrong cell type");
   }
@@ -410,44 +411,48 @@ mesh::Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
 }
 
 template <std::floating_point T>
-Mesh<T> build_prism(MPI_Comm comm, std::array<std::array<double, 3>, 2> p,
+Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
+                    std::array<std::array<double, 3>, 2> p,
                     std::array<std::size_t, 3> n,
                     const CellPartitionFunction& partitioner)
 {
   std::vector x = create_geom<T>(comm, p, n);
-
-  const std::int64_t nx = n[0];
-  const std::int64_t ny = n[1];
-  const std::int64_t nz = n[2];
-  const std::int64_t n_cells = nx * ny * nz;
-  std::array range_c = dolfinx::MPI::local_range(
-      dolfinx::MPI::rank(comm), n_cells, dolfinx::MPI::size(comm));
-  const std::size_t cell_range = range_c[1] - range_c[0];
-
-  // Create cuboids
   std::vector<std::int64_t> cells;
-  cells.reserve(2 * cell_range * 6);
-  for (std::int64_t i = range_c[0]; i < range_c[1]; ++i)
+  if (subcomm != MPI_COMM_NULL)
   {
-    const std::int64_t iz = i / (nx * ny);
-    const std::int64_t j = i % (nx * ny);
-    const std::int64_t iy = j / nx;
-    const std::int64_t ix = j % nx;
+    const std::int64_t nx = n[0];
+    const std::int64_t ny = n[1];
+    const std::int64_t nz = n[2];
+    const std::int64_t n_cells = nx * ny * nz;
+    std::array range_c = dolfinx::MPI::local_range(
+        dolfinx::MPI::rank(comm), n_cells, dolfinx::MPI::size(comm));
+    const std::size_t cell_range = range_c[1] - range_c[0];
 
-    const std::int64_t v0 = (iz * (ny + 1) + iy) * (nx + 1) + ix;
-    const std::int64_t v1 = v0 + 1;
-    const std::int64_t v2 = v0 + (nx + 1);
-    const std::int64_t v3 = v1 + (nx + 1);
-    const std::int64_t v4 = v0 + (nx + 1) * (ny + 1);
-    const std::int64_t v5 = v1 + (nx + 1) * (ny + 1);
-    const std::int64_t v6 = v2 + (nx + 1) * (ny + 1);
-    const std::int64_t v7 = v3 + (nx + 1) * (ny + 1);
-    cells.insert(cells.end(), {v0, v1, v2, v4, v5, v6});
-    cells.insert(cells.end(), {v1, v2, v3, v5, v6, v7});
+    // Create cuboids
+
+    cells.reserve(2 * cell_range * 6);
+    for (std::int64_t i = range_c[0]; i < range_c[1]; ++i)
+    {
+      const std::int64_t iz = i / (nx * ny);
+      const std::int64_t j = i % (nx * ny);
+      const std::int64_t iy = j / nx;
+      const std::int64_t ix = j % nx;
+
+      const std::int64_t v0 = (iz * (ny + 1) + iy) * (nx + 1) + ix;
+      const std::int64_t v1 = v0 + 1;
+      const std::int64_t v2 = v0 + (nx + 1);
+      const std::int64_t v3 = v1 + (nx + 1);
+      const std::int64_t v4 = v0 + (nx + 1) * (ny + 1);
+      const std::int64_t v5 = v1 + (nx + 1) * (ny + 1);
+      const std::int64_t v6 = v2 + (nx + 1) * (ny + 1);
+      const std::int64_t v7 = v3 + (nx + 1) * (ny + 1);
+      cells.insert(cells.end(), {v0, v1, v2, v4, v5, v6});
+      cells.insert(cells.end(), {v1, v2, v3, v5, v6, v7});
+    }
   }
 
   fem::CoordinateElement<T> element(CellType::prism, 1);
-  return create_mesh(comm, comm,
+  return create_mesh(comm, subcomm,
                      graph::regular_adjacency_list(std::move(cells), 6),
                      {element}, x, {x.size() / 3, 3}, partitioner);
 }
