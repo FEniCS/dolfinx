@@ -32,7 +32,7 @@ enum class DiagonalType
 namespace impl
 {
 template <std::floating_point T>
-Mesh<T> build_tri(MPI_Comm comm, const std::array<std::array<double, 2>, 2>& p,
+Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
                   std::array<std::size_t, 2> n,
                   const CellPartitionFunction& partitioner,
                   DiagonalType diagonal);
@@ -44,11 +44,12 @@ Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
 
 template <std::floating_point T>
 std::vector<T> create_geom(MPI_Comm comm,
-                           const std::array<std::array<double, 3>, 2>& p,
+                           std::array<std::array<double, 3>, 2> p,
                            std::array<std::size_t, 3> n);
 
 template <std::floating_point T>
-Mesh<T> build_tet(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
+Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
+                  std::array<std::array<double, 3>, 2> p,
                   std::array<std::size_t, 3> n,
                   const CellPartitionFunction& partitioner);
 
@@ -59,8 +60,7 @@ Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
                   const CellPartitionFunction& partitioner);
 
 template <std::floating_point T>
-Mesh<T> build_prism(MPI_Comm comm,
-                    const std::array<std::array<double, 3>, 2>& p,
+Mesh<T> build_prism(MPI_Comm comm, std::array<std::array<double, 3>, 2> p,
                     std::array<std::size_t, 3> n,
                     const CellPartitionFunction& partitioner);
 
@@ -96,7 +96,7 @@ Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
   switch (celltype)
   {
   case CellType::tetrahedron:
-    return impl::build_tet<T>(comm, p, n, partitioner);
+    return impl::build_tet<T>(comm, subcomm, p, n, partitioner);
   case CellType::hexahedron:
     return impl::build_hex<T>(comm, subcomm, p, n, partitioner);
   case CellType::prism:
@@ -147,8 +147,7 @@ Mesh<T> create_box(MPI_Comm comm, std::array<std::array<double, 3>, 2> p,
 /// @param[in] diagonal Direction of diagonals
 /// @return Mesh
 template <std::floating_point T = double>
-Mesh<T> create_rectangle(MPI_Comm comm,
-                         const std::array<std::array<double, 2>, 2>& p,
+Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
                          std::array<std::size_t, 2> n, CellType celltype,
                          const CellPartitionFunction& partitioner,
                          DiagonalType diagonal = DiagonalType::right)
@@ -179,8 +178,7 @@ Mesh<T> create_rectangle(MPI_Comm comm,
 /// @param[in] diagonal Direction of diagonals
 /// @return Mesh
 template <std::floating_point T = double>
-Mesh<T> create_rectangle(MPI_Comm comm,
-                         const std::array<std::array<double, 2>, 2>& p,
+Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
                          std::array<std::size_t, 2> n, CellType celltype,
                          DiagonalType diagonal = DiagonalType::right)
 {
@@ -258,7 +256,7 @@ namespace impl
 {
 template <std::floating_point T>
 std::vector<T> create_geom(MPI_Comm comm,
-                           const std::array<std::array<double, 3>, 2>& p,
+                           std::array<std::array<double, 3>, 2> p,
                            std::array<std::size_t, 3> n)
 {
   // Extract data
@@ -325,52 +323,52 @@ std::vector<T> create_geom(MPI_Comm comm,
 }
 
 template <std::floating_point T>
-Mesh<T> build_tet(MPI_Comm comm, const std::array<std::array<double, 3>, 2>& p,
+Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
+                  std::array<std::array<double, 3>, 2> p,
                   std::array<std::size_t, 3> n,
                   const CellPartitionFunction& partitioner)
 {
-  common::Timer timer("Build BoxMesh");
-
-  std::vector geom = create_geom<T>(comm, p, n);
-
-  const std::int64_t nx = n[0];
-  const std::int64_t ny = n[1];
-  const std::int64_t nz = n[2];
-  const std::int64_t n_cells = nx * ny * nz;
-  std::array range_c = dolfinx::MPI::local_range(
-      dolfinx::MPI::rank(comm), n_cells, dolfinx::MPI::size(comm));
-  const std::size_t cell_range = range_c[1] - range_c[0];
-  std::vector<std::int64_t> cells(6 * cell_range * 4);
-
-  // Create tetrahedra
-  for (std::int64_t i = range_c[0]; i < range_c[1]; ++i)
+  common::Timer timer("Build BoxMesh (tetrahedra)");
+  std::vector x = create_geom<T>(comm, p, n);
+  std::vector<std::int64_t> cells;
+  if (subcomm != MPI_COMM_NULL)
   {
-    const int iz = i / (nx * ny);
-    const int j = i % (nx * ny);
-    const int iy = j / nx;
-    const int ix = j % nx;
+    const std::int64_t nx = n[0];
+    const std::int64_t ny = n[1];
+    const std::int64_t nz = n[2];
+    const std::int64_t n_cells = nx * ny * nz;
 
-    const std::int64_t v0 = iz * (nx + 1) * (ny + 1) + iy * (nx + 1) + ix;
-    const std::int64_t v1 = v0 + 1;
-    const std::int64_t v2 = v0 + (nx + 1);
-    const std::int64_t v3 = v1 + (nx + 1);
-    const std::int64_t v4 = v0 + (nx + 1) * (ny + 1);
-    const std::int64_t v5 = v1 + (nx + 1) * (ny + 1);
-    const std::int64_t v6 = v2 + (nx + 1) * (ny + 1);
-    const std::int64_t v7 = v3 + (nx + 1) * (ny + 1);
+    std::array range_c = dolfinx::MPI::local_range(
+        dolfinx::MPI::rank(subcomm), n_cells, dolfinx::MPI::size(subcomm));
+    cells.reserve(6 * (range_c[1] - range_c[0]) * 4);
 
-    // Note that v0 < v1 < v2 < v3 < vmid
-    std::array<std::int64_t, 24> c
-        = {v0, v1, v3, v7, v0, v1, v7, v5, v0, v5, v7, v4,
-           v0, v3, v2, v7, v0, v6, v4, v7, v0, v2, v6, v7};
-    std::size_t offset = 6 * (i - range_c[0]);
-    std::copy(c.begin(), c.end(), std::next(cells.begin(), 4 * offset));
+    // Create tetrahedra
+    for (std::int64_t i = range_c[0]; i < range_c[1]; ++i)
+    {
+      const std::size_t iz = i / (nx * ny);
+      const std::size_t j = i % (nx * ny);
+      const std::size_t iy = j / nx;
+      const std::size_t ix = j % nx;
+      const std::int64_t v0 = iz * (nx + 1) * (ny + 1) + iy * (nx + 1) + ix;
+      const std::int64_t v1 = v0 + 1;
+      const std::int64_t v2 = v0 + (nx + 1);
+      const std::int64_t v3 = v1 + (nx + 1);
+      const std::int64_t v4 = v0 + (nx + 1) * (ny + 1);
+      const std::int64_t v5 = v1 + (nx + 1) * (ny + 1);
+      const std::int64_t v6 = v2 + (nx + 1) * (ny + 1);
+      const std::int64_t v7 = v3 + (nx + 1) * (ny + 1);
+
+      // Note that v0 < v1 < v2 < v3 < vmid
+      cells.insert(cells.end(),
+                   {v0, v1, v3, v7, v0, v1, v7, v5, v0, v5, v7, v4,
+                    v0, v3, v2, v7, v0, v6, v4, v7, v0, v2, v6, v7});
+    }
   }
 
   fem::CoordinateElement<T> element(CellType::tetrahedron, 1);
-  return create_mesh(comm, comm,
+  return create_mesh(comm, subcomm,
                      graph::regular_adjacency_list(std::move(cells), 4),
-                     {element}, geom, {geom.size() / 3, 3}, partitioner);
+                     {element}, x, {x.size() / 3, 3}, partitioner);
 }
 
 template <std::floating_point T>
@@ -379,9 +377,9 @@ mesh::Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
                         std::array<std::size_t, 3> n,
                         const CellPartitionFunction& partitioner)
 {
-  std::vector<T> x;
+  common::Timer timer("Build BoxMesh (hexahedra)");
+  std::vector<T> x = create_geom<T>(comm, p, n);
   std::vector<std::int64_t> cells;
-  x = create_geom<T>(comm, p, n);
   if (subcomm != MPI_COMM_NULL)
   {
     // Create cuboids
@@ -389,10 +387,9 @@ mesh::Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
     const std::int64_t ny = n[1];
     const std::int64_t nz = n[2];
     const std::int64_t n_cells = nx * ny * nz;
-    int rank = dolfinx::MPI::rank(subcomm);
-    int size = dolfinx::MPI::size(subcomm);
-    std::array range_c = dolfinx::MPI::local_range(rank, n_cells, size);
-    cells.resize((range_c[1] - range_c[0]) * 8);
+    std::array range_c = dolfinx::MPI::local_range(
+        dolfinx::MPI::rank(subcomm), n_cells, dolfinx::MPI::size(subcomm));
+    cells.reserve((range_c[1] - range_c[0]) * 8);
     for (std::int64_t i = range_c[0]; i < range_c[1]; ++i)
     {
       const std::int64_t iz = i / (nx * ny);
@@ -408,23 +405,18 @@ mesh::Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
       const std::int64_t v5 = v1 + (nx + 1) * (ny + 1);
       const std::int64_t v6 = v2 + (nx + 1) * (ny + 1);
       const std::int64_t v7 = v3 + (nx + 1) * (ny + 1);
-
-      std::array<std::int64_t, 8> c = {v0, v1, v2, v3, v4, v5, v6, v7};
-      std::copy(c.begin(), c.end(),
-                std::next(cells.begin(), (i - range_c[0]) * 8));
+      cells.insert(cells.end(), {v0, v1, v2, v3, v4, v5, v6, v7});
     }
   }
 
   fem::CoordinateElement<T> element(CellType::hexahedron, 1);
-  std::cout << "Create mesh" << std::endl;
   return create_mesh(comm, subcomm,
                      graph::regular_adjacency_list(std::move(cells), 8),
                      {element}, x, {x.size() / 3, 3}, partitioner);
 }
 
 template <std::floating_point T>
-Mesh<T> build_prism(MPI_Comm comm,
-                    const std::array<std::array<double, 3>, 2>& p,
+Mesh<T> build_prism(MPI_Comm comm, std::array<std::array<double, 3>, 2> p,
                     std::array<std::size_t, 3> n,
                     const CellPartitionFunction& partitioner)
 {
@@ -472,7 +464,7 @@ Mesh<T> build_prism(MPI_Comm comm,
 }
 
 template <std::floating_point T>
-Mesh<T> build_tri(MPI_Comm comm, const std::array<std::array<double, 2>, 2>& p,
+Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
                   std::array<std::size_t, 2> n,
                   const CellPartitionFunction& partitioner,
                   DiagonalType diagonal)

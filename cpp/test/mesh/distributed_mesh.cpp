@@ -21,32 +21,25 @@ using namespace dolfinx;
 
 namespace
 {
-
 constexpr int N = 8;
 
 /// @brief Create a mesh and save to the file 'mesh.xdmf'
-[[maybe_unused]] void create_mesh_file()
+[[maybe_unused]] void create_mesh_file(MPI_Comm comm)
 {
-  std::cout << "** create_mesh_file" << std::endl;
-
   // Create mesh using all processes and save xdmf
   auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
   auto mesh = std::make_shared<mesh::Mesh<double>>(
-      mesh::create_rectangle(MPI_COMM_SELF, {{{0.0, 0.0}, {1.0, 1.0}}}, {N, N},
+      mesh::create_rectangle(comm, {{{0.0, 0.0}, {1.0, 1.0}}}, {N, N},
                              mesh::CellType::triangle, part));
 
   // Save mesh in XDMF format
   io::XDMFFile file(MPI_COMM_SELF, "mesh.xdmf", "w");
   file.write_mesh(*mesh);
-
-  std::cout << "** END create_mesh_file" << std::endl;
 }
 
 [[maybe_unused]] void
 test_create_box([[maybe_unused]] mesh::CellPartitionFunction part)
 {
-  std::cout << "** test_create_box" << std::endl;
-
   MPI_Comm comm;
   MPI_Comm_dup(MPI_COMM_WORLD, &comm);
 
@@ -56,15 +49,15 @@ test_create_box([[maybe_unused]] mesh::CellPartitionFunction part)
   MPI_Comm subcomm = MPI_COMM_NULL;
   MPI_Comm_split(comm, color, mpi_rank, &subcomm);
 
-  // Create mesh on even ranks (subcomm) and distribute to all ranks in
-  // comm
+  // Create mesh on comm and distribute to all ranks in comm
   mesh::Mesh<double> mesh0
       = mesh::create_box(comm, comm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}},
                          {12, 12, 12}, mesh::CellType::hexahedron, part);
   int tdim = mesh0.topology()->dim();
   mesh0.topology()->create_entities(tdim - 1);
 
-  // Create mesh on comm and distribute to all ranks in comm
+  // Create mesh on even ranks (subcomm) and distribute to all ranks in
+  // comm
   mesh::Mesh<double> mesh1
       = mesh::create_box(comm, subcomm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}},
                          {12, 12, 12}, mesh::CellType::hexahedron, part);
@@ -90,25 +83,22 @@ test_create_box([[maybe_unused]] mesh::CellPartitionFunction part)
   if (subcomm != MPI_COMM_NULL)
     MPI_Comm_free(&subcomm);
   MPI_Comm_free(&comm);
-  std::cout << "** END test_create_box" << std::endl;
 }
 
 [[maybe_unused]] void
 test_distributed_mesh(mesh::CellPartitionFunction partitioner)
 {
-  std::cout << "** test_distributed_mesh" << std::endl;
-
   using T = double;
 
-  MPI_Comm mpi_comm = MPI_COMM_WORLD;
-  const int mpi_size = dolfinx::MPI::size(mpi_comm);
+  MPI_Comm comm = MPI_COMM_WORLD;
+  const int mpi_size = dolfinx::MPI::size(comm);
 
   // -- Create a communicator with subset of the original group of
   // processes
 
-  // Get group of processes on mpi_comm
+  // Get group of processes on comm
   MPI_Group comm_group;
-  int ierr = MPI_Comm_group(mpi_comm, &comm_group);
+  int ierr = MPI_Comm_group(comm, &comm_group);
   if (ierr != MPI_SUCCESS)
     throw std::runtime_error("MPI_Comm_group failed");
 
@@ -125,10 +115,6 @@ test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   ierr = MPI_Comm_create_group(MPI_COMM_WORLD, new_group, 0, &subset_comm);
   if (ierr != MPI_SUCCESS)
     throw std::runtime_error("MPI_Comm_create_group failed");
-
-  // --
-
-  // MPI_Comm subset_comm = MPI_COMM_WORLD;
 
   // Create coordinate map
   auto e = std::make_shared<basix::FiniteElement<T>>(basix::create_element<T>(
@@ -156,12 +142,10 @@ test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   }
   CHECK(xshape[1] == 2);
 
-  std::cout << "Start test_distributed_mesh B" << std::endl;
-
   // -- Distribute cells to destination ranks
   const auto [cell_nodes, src, original_cell_index, ghost_owners]
       = graph::build::distribute(
-          mpi_comm, graph::regular_adjacency_list(cells, cshape[1]), dest);
+          comm, graph::regular_adjacency_list(cells, cshape[1]), dest);
 
   // FIXME: improve way to find 'external' vertices
   // Count the connections of all vertices on owned cells. If there are 6
@@ -193,7 +177,6 @@ test_distributed_mesh(mesh::CellPartitionFunction partitioner)
     it = std::find_if(external_vertices.begin(), external_vertices.end(),
                       [](std::int64_t i) { return (i != -1); });
     external_vertices.erase(external_vertices.begin(), it);
-
     cell_group_offsets
         = {0, std::int32_t(cell_nodes.num_nodes() - ghost_owners.size()),
            cell_nodes.num_nodes()};
@@ -201,15 +184,15 @@ test_distributed_mesh(mesh::CellPartitionFunction partitioner)
 
   std::vector<mesh::CellType> cell_types = {cmap.cell_shape()};
   mesh::Topology topology = mesh::create_topology(
-      mpi_comm, cell_nodes, original_cell_index, ghost_owners, cell_types,
+      comm, cell_nodes, original_cell_index, ghost_owners, cell_types,
       cell_group_offsets, external_vertices);
   int tdim = topology.dim();
 
-  mesh::Geometry geometry = mesh::create_geometry(mpi_comm, topology, {cmap},
-                                                  cell_nodes, x, xshape[1]);
+  mesh::Geometry geometry
+      = mesh::create_geometry(comm, topology, {cmap}, cell_nodes, x, xshape[1]);
 
   auto mesh = std::make_shared<mesh::Mesh<T>>(
-      mpi_comm, std::make_shared<mesh::Topology>(std::move(topology)),
+      comm, std::make_shared<mesh::Topology>(std::move(topology)),
       std::move(geometry));
 
   auto t = mesh->topology();
@@ -224,26 +207,23 @@ test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   MPI_Group_free(&new_group);
   if (subset_comm != MPI_COMM_NULL)
     MPI_Comm_free(&subset_comm);
-  std::cout << "-- End test_distributed_mesh" << std::endl;
 }
 } // namespace
 
-// Create a mesh on even ranks and distribute to all ranks in mpi_comm
+/// Create a mesh on even ranks and distribute to all ranks in mpi_comm
 TEST_CASE("Create box", "[create_box]")
 {
 #ifdef HAS_PTSCOTCH
   CHECK_NOTHROW(test_create_box(mesh::create_cell_partitioner(
       mesh::GhostMode::none, graph::scotch::partitioner())));
 #endif
-
 #ifdef HAS_PARMETIS
   CHECK_NOTHROW(test_create_box(mesh::create_cell_partitioner(
       mesh::GhostMode::none, graph::parmetis::partitioner())));
 #endif
-
 #ifdef HAS_KAHIP
   CHECK_NOTHROW(test_create_box(mesh::create_cell_partitioner(
-      mesh::GhostMode::none, graph::kahip::partitioner())));
+      mesh::GhostMode::none, graph::kahip::partitioner(1, 1, 0.03, false))));
 #endif
 }
 
@@ -251,19 +231,17 @@ TEST_CASE("Distributed Mesh", "[distributed_mesh]")
 {
   MPI_Barrier(MPI_COMM_WORLD);
   if (dolfinx::MPI::rank(MPI_COMM_WORLD) == 0)
-    create_mesh_file();
+    create_mesh_file(MPI_COMM_SELF);
   MPI_Barrier(MPI_COMM_WORLD);
 
 #ifdef HAS_PTSCOTCH
   CHECK_NOTHROW(test_distributed_mesh(mesh::create_cell_partitioner(
       mesh::GhostMode::none, graph::scotch::partitioner())));
 #endif
-
 #ifdef HAS_KAHIP
   CHECK_NOTHROW(test_distributed_mesh(mesh::create_cell_partitioner(
-      mesh::GhostMode::none, graph::kahip::partitioner())));
+      mesh::GhostMode::none, graph::kahip::partitioner(1, 1, 0.03, false))));
 #endif
-
 #ifdef HAS_PARMETIS
   CHECK_NOTHROW(test_distributed_mesh(mesh::create_cell_partitioner(
       mesh::GhostMode::none, graph::parmetis::partitioner())));
