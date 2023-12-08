@@ -192,24 +192,25 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
 /// 1`.
 ///
 /// @param[in] comm MPI communicator to build the mesh on
-/// @param[in] nx The number of cells
-/// @param[in] x The end points of the interval
+/// @param[in] nx Number of cells
+/// @param[in] p End points of the interval
 /// @param[in] partitioner Partitioning function for distributing cells
 /// across MPI ranks.
 /// @return A mesh
 template <std::floating_point T = double>
-Mesh<T> create_interval(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
+Mesh<T> create_interval(MPI_Comm comm, std::size_t nx, std::array<double, 2> p,
                         CellPartitionFunction partitioner = nullptr)
 {
   if (!partitioner and dolfinx::MPI::size(comm) > 1)
     partitioner = create_cell_partitioner();
 
   fem::CoordinateElement<T> element(CellType::interval, 1);
-
+  std::vector<T> x;
+  std::vector<std::int64_t> cells;
   if (dolfinx::MPI::rank(comm) == 0)
   {
-    const T a = x[0];
-    const T b = x[1];
+    const T a = p[0];
+    const T b = p[1];
     const T ab = (b - a) / static_cast<T>(nx);
 
     if (std::abs(a - b) < DBL_EPSILON)
@@ -229,27 +230,20 @@ Mesh<T> create_interval(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
           "Number of points on interval must be at least 1");
 
     // Create vertices
-    std::vector<T> geom(nx + 1);
+    x.resize(nx + 1);
     for (std::size_t ix = 0; ix <= nx; ix++)
-      geom[ix] = a + ab * static_cast<T>(ix);
+      x[ix] = a + ab * static_cast<T>(ix);
 
     // Create intervals
-    std::vector<std::int64_t> cells(nx * 2);
+    cells.resize(nx * 2);
     for (std::size_t ix = 0; ix < nx; ++ix)
       for (std::size_t j = 0; j < 2; ++j)
         cells[2 * ix + j] = ix + j;
+  }
 
-    return create_mesh(comm, comm,
-                       graph::regular_adjacency_list(std::move(cells), 2),
-                       {element}, geom, {geom.size(), 1}, partitioner);
-  }
-  else
-  {
-    return create_mesh(
-        comm, comm,
-        graph::regular_adjacency_list(std::vector<std::int64_t>(), 2),
-        {element}, std::vector<T>(), {0, 1}, partitioner);
-  }
+  return create_mesh(comm, comm,
+                     graph::regular_adjacency_list(std::move(cells), 2),
+                     {element}, x, {x.size(), 1}, partitioner);
 }
 
 namespace impl
@@ -296,15 +290,15 @@ std::vector<T> create_geom(MPI_Comm comm,
         "Box seems to have zero width, height or depth. Check dimensions");
   }
 
-  if (nx < 1 || ny < 1 || nz < 1)
+  if (nx < 1 or ny < 1 or nz < 1)
   {
     throw std::runtime_error(
         "BoxMesh has non-positive number of vertices in some dimension");
   }
 
-  std::vector<T> geom((range_p[1] - range_p[0]) * 3);
+  std::vector<T> geom;
+  geom.reserve((range_p[1] - range_p[0]) * 3);
   const std::int64_t sqxy = (nx + 1) * (ny + 1);
-  std::array<T, 3> point;
   for (std::int64_t v = range_p[0]; v < range_p[1]; ++v)
   {
     const std::int64_t iz = v / sqxy;
@@ -314,9 +308,7 @@ std::vector<T> create_geom(MPI_Comm comm,
     const T z = e + ef * static_cast<T>(iz);
     const T y = c + cd * static_cast<T>(iy);
     const T x = a + ab * static_cast<T>(ix);
-    point = {x, y, z};
-    for (std::size_t i = 0; i < 3; i++)
-      geom[3 * (v - range_p[0]) + i] = point[i];
+    geom.insert(geom.end(), {x, y, z});
   }
 
   return geom;
@@ -420,7 +412,7 @@ Mesh<T> build_prism(MPI_Comm comm, std::array<std::array<double, 3>, 2> p,
                     std::array<std::size_t, 3> n,
                     const CellPartitionFunction& partitioner)
 {
-  std::vector geom = create_geom<T>(comm, p, n);
+  std::vector x = create_geom<T>(comm, p, n);
 
   const std::int64_t nx = n[0];
   const std::int64_t ny = n[1];
@@ -429,9 +421,10 @@ Mesh<T> build_prism(MPI_Comm comm, std::array<std::array<double, 3>, 2> p,
   std::array range_c = dolfinx::MPI::local_range(
       dolfinx::MPI::rank(comm), n_cells, dolfinx::MPI::size(comm));
   const std::size_t cell_range = range_c[1] - range_c[0];
-  std::vector<std::int64_t> cells(2 * cell_range * 6);
 
   // Create cuboids
+  std::vector<std::int64_t> cells;
+  cells.reserve(2 * cell_range * 6);
   for (std::int64_t i = range_c[0]; i < range_c[1]; ++i)
   {
     const std::int64_t iz = i / (nx * ny);
@@ -447,20 +440,14 @@ Mesh<T> build_prism(MPI_Comm comm, std::array<std::array<double, 3>, 2> p,
     const std::int64_t v5 = v1 + (nx + 1) * (ny + 1);
     const std::int64_t v6 = v2 + (nx + 1) * (ny + 1);
     const std::int64_t v7 = v3 + (nx + 1) * (ny + 1);
-
-    std::array<std::int64_t, 6> c0 = {v0, v1, v2, v4, v5, v6};
-    std::array<std::int64_t, 6> c1 = {v1, v2, v3, v5, v6, v7};
-
-    std::copy(c0.begin(), c0.end(),
-              std::next(cells.begin(), 6 * ((i - range_c[0]) * 2)));
-    std::copy(c1.begin(), c1.end(),
-              std::next(cells.begin(), 6 * ((i - range_c[0]) * 2 + 1)));
+    cells.insert(cells.end(), {v0, v1, v2, v4, v5, v6});
+    cells.insert(cells.end(), {v1, v2, v3, v5, v6, v7});
   }
 
   fem::CoordinateElement<T> element(CellType::prism, 1);
   return create_mesh(comm, comm,
                      graph::regular_adjacency_list(std::move(cells), 6),
-                     {element}, geom, {geom.size() / 3, 3}, partitioner);
+                     {element}, x, {x.size() / 3, 3}, partitioner);
 }
 
 template <std::floating_point T>
@@ -519,8 +506,8 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
       nc = 2 * nx * ny;
     }
 
-    geom = std::vector<T>(nv * 2);
-    cells = std::vector<std::int64_t>(nc * 3);
+    geom.reserve(nv * 2);
+    cells.reserve(nc * 3);
 
     // Create main vertices
     std::size_t vertex = 0;
@@ -528,11 +515,7 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
     {
       const T x1 = c + cd * static_cast<T>(iy);
       for (std::size_t ix = 0; ix <= nx; ix++)
-      {
-        geom[2 * vertex + 0] = a + ab * static_cast<T>(ix);
-        geom[2 * vertex + 1] = x1;
-        ++vertex;
-      }
+        geom.insert(geom.end(), {a + ab * static_cast<T>(ix), x1});
     }
 
     // Create midpoint vertices if the mesh type is crossed
@@ -543,11 +526,7 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
       {
         const T x1 = c + cd * (static_cast<T>(iy) + 0.5);
         for (std::size_t ix = 0; ix < nx; ix++)
-        {
-          geom[2 * vertex + 0] = a + ab * (static_cast<T>(ix) + 0.5);
-          geom[2 * vertex + 1] = x1;
-          ++vertex;
-        }
+          geom.insert(geom.end(), {a + ab * (static_cast<T>(ix) + 0.5), x1});
       }
       break;
     default:
@@ -570,11 +549,8 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
           const std::size_t vmid = (nx + 1) * (ny + 1) + iy * nx + ix;
 
           // Note that v0 < v1 < v2 < v3 < vmid
-          std::array<std::size_t, 12> c
-              = {v0, v1, vmid, v0, v2, vmid, v1, v3, vmid, v2, v3, vmid};
-          std::size_t offset = iy * nx + ix;
-          std::copy(c.begin(), c.end(),
-                    std::next(cells.begin(), 4 * offset * 3));
+          cells.insert(cells.end(), {v0, v1, vmid, v0, v2, vmid, v1, v3, vmid,
+                                     v2, v3, vmid});
         }
       }
       break;
@@ -614,9 +590,7 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
           {
           case DiagonalType::left:
           {
-            std::array<std::size_t, 6> c = {v0, v1, v2, v1, v2, v3};
-            std::copy(c.begin(), c.end(),
-                      std::next(cells.begin(), 2 * offset * 3));
+            cells.insert(cells.end(), {v0, v1, v2, v1, v2, v3});
             if (diagonal == DiagonalType::right_left
                 or diagonal == DiagonalType::left_right)
             {
@@ -626,9 +600,7 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
           }
           default:
           {
-            std::array<std::size_t, 6> c = {v0, v1, v3, v0, v2, v3};
-            std::copy(c.begin(), c.end(),
-                      std::next(cells.begin(), 2 * offset * 3));
+            cells.insert(cells.end(), {v0, v1, v3, v0, v2, v3});
             if (diagonal == DiagonalType::right_left
                 or diagonal == DiagonalType::left_right)
             {
@@ -652,59 +624,46 @@ Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
                    std::array<std::size_t, 2> n,
                    const CellPartitionFunction& partitioner)
 {
+  std::vector<std::int64_t> cells;
+  std::vector<T> x;
+  if (dolfinx::MPI::rank(comm) == 0)
+  {
+    const std::size_t nx = n[0];
+    const std::size_t ny = n[1];
+    const T a = p[0][0];
+    const T b = p[1][0];
+    const T ab = (b - a) / static_cast<T>(nx);
+    const T c = p[0][1];
+    const T d = p[1][1];
+    const T cd = (d - c) / static_cast<T>(ny);
+
+    // Create vertices
+    x.reserve((nx + 1) * (ny + 1) * 2);
+    std::size_t vertex = 0;
+    for (std::size_t ix = 0; ix <= nx; ix++)
+    {
+      T x0 = a + ab * static_cast<T>(ix);
+      for (std::size_t iy = 0; iy <= ny; iy++)
+        x.insert(x.end(), {x0, c + cd * static_cast<T>(iy)});
+    }
+
+    // Create rectangles
+    cells.reserve(nx * ny * 4);
+    for (std::size_t ix = 0; ix < nx; ix++)
+    {
+      for (std::size_t iy = 0; iy < ny; iy++)
+      {
+        std::size_t i0 = ix * (ny + 1);
+        cells.insert(cells.end(), {i0 + iy, i0 + iy + 1, i0 + iy + ny + 1,
+                                   i0 + iy + ny + 2});
+      }
+    }
+  }
+
   fem::CoordinateElement<T> element(CellType::quadrilateral, 1);
-
-  // Receive mesh if not rank 0
-  if (dolfinx::MPI::rank(comm) != 0)
-  {
-    return create_mesh(
-        comm, comm,
-        graph::regular_adjacency_list(std::vector<std::int64_t>(), 4),
-        {element}, std::vector<T>(), {0, 2}, partitioner);
-  }
-
-  const std::size_t nx = n[0];
-  const std::size_t ny = n[1];
-
-  const T a = p[0][0];
-  const T b = p[1][0];
-  const T ab = (b - a) / static_cast<T>(nx);
-
-  const T c = p[0][1];
-  const T d = p[1][1];
-  const T cd = (d - c) / static_cast<T>(ny);
-
-  // Create vertices
-  std::vector<T> geom((nx + 1) * (ny + 1) * 2);
-  std::size_t vertex = 0;
-  for (std::size_t ix = 0; ix <= nx; ix++)
-  {
-    T x0 = a + ab * static_cast<T>(ix);
-    for (std::size_t iy = 0; iy <= ny; iy++)
-    {
-      geom[2 * vertex + 0] = x0;
-      geom[2 * vertex + 1] = c + cd * static_cast<T>(iy);
-      ++vertex;
-    }
-  }
-
-  // Create rectangles
-  std::vector<std::int64_t> cells(nx * ny * 4);
-  for (std::size_t ix = 0; ix < nx; ix++)
-  {
-    for (std::size_t iy = 0; iy < ny; iy++)
-    {
-      const std::size_t i0 = ix * (ny + 1);
-      std::size_t cell = ix * ny + iy;
-      std::array<std::size_t, 4> c
-          = {i0 + iy, i0 + iy + 1, i0 + iy + ny + 1, i0 + iy + ny + 2};
-      std::copy(c.begin(), c.end(), std::next(cells.begin(), 4 * cell));
-    }
-  }
-
   return create_mesh(comm, comm,
                      graph::regular_adjacency_list(std::move(cells), 4),
-                     {element}, geom, {geom.size() / 2, 2}, partitioner);
+                     {element}, x, {x.size() / 2, 2}, partitioner);
 }
 
 } // namespace impl
