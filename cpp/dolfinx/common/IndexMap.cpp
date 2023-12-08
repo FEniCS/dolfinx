@@ -664,7 +664,7 @@ common::stack_index_maps(
 }
 //-----------------------------------------------------------------------------
 std::pair<IndexMap, std::vector<std::int32_t>>
-common::create_submap_conn(const dolfinx::common::IndexMap& imap,
+common::create_sub_index_map(const dolfinx::common::IndexMap& imap,
                            std::span<const std::int32_t> indices,
                            bool allow_owner_change)
 {

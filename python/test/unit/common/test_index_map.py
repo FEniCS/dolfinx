@@ -45,7 +45,7 @@ def test_sub_index_map():
 
     # Create sub index map and a map from the ghost position in new map
     # to the position in old map
-    submap, submap_to_map = _cpp.common.create_submap_conn(map, local_indices[my_rank], False)
+    submap, submap_to_map = _cpp.common.create_sub_index_map(map, local_indices[my_rank], False)
     ghosts_pos_sub = submap_to_map[map_local_size:] - map_local_size
 
     # Check local and global sizes
@@ -83,7 +83,7 @@ def test_sub_index_map_ghost_mode_none():
     tdim = mesh.topology.dim
     map = mesh.topology.index_map(tdim)
     submap_indices = np.arange(0, min(2, map.size_local), dtype=np.int32)
-    _cpp.common.create_submap_conn(map, submap_indices, False)
+    _cpp.common.create_sub_index_map(map, submap_indices, False)
 
 
 def test_index_map_ghost_lifetime():
@@ -115,7 +115,7 @@ def test_index_map_ghost_lifetime():
 # whose owner changes in the submap
 def test_create_submap_connected():
     """
-    Test create_submap_conn. The diagram illustrates the case with four
+    Test create_sub_index_map. The diagram illustrates the case with four
     processes. Original map numbering and connectivity (G indicates a ghost
     index):
     Global    Rank 0    Rank 1    Rank 2    Rank 3
@@ -163,7 +163,7 @@ def test_create_submap_connected():
         submap_indices = np.array([0, 2, 3], dtype=np.int32)
 
     imap = dolfinx.common.IndexMap(comm, local_size, ghosts, owners)
-    sub_imap, sub_imap_to_imap = _cpp.common.create_submap_conn(
+    sub_imap, sub_imap_to_imap = _cpp.common.create_sub_index_map(
         imap, submap_indices, True)
 
     if comm.rank == 0:

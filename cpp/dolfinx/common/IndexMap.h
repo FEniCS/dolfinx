@@ -67,7 +67,7 @@ stack_index_maps(
 /// @return The (i) new index map and (ii) a map from local indices in the
 /// submap to local indices in the original (this) map
 std::pair<IndexMap, std::vector<std::int32_t>>
-create_submap_conn(const IndexMap& imap, std::span<const std::int32_t> indices,
+create_sub_index_map(const IndexMap& imap, std::span<const std::int32_t> indices,
                    bool allow_owner_change = false);
 
 /// This class represents the distribution index arrays across

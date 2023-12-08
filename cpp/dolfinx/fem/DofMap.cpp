@@ -60,7 +60,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   std::vector<std::int32_t> sub_imap_to_imap;
   if (bs_view == 1)
   {
-    auto [_index_map, _sub_imap_to_imap] = dolfinx::common::create_submap_conn(
+    auto [_index_map, _sub_imap_to_imap] = dolfinx::common::create_sub_index_map(
         *dofmap_view.index_map, dofs_view);
     index_map = std::make_shared<common::IndexMap>(std::move(_index_map));
     sub_imap_to_imap = std::move(_sub_imap_to_imap);
@@ -73,7 +73,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
                    std::back_inserter(indices),
                    [bs_view](auto idx) { return idx / bs_view; });
     auto [_index_map, _sub_imap_to_imap]
-        = dolfinx::common::create_submap_conn(*dofmap_view.index_map, indices);
+        = dolfinx::common::create_sub_index_map(*dofmap_view.index_map, indices);
     index_map = std::make_shared<common::IndexMap>(std::move(_index_map));
     sub_imap_to_imap = std::move(_sub_imap_to_imap);
   }
