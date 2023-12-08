@@ -689,7 +689,6 @@ common::create_submap_conn(const dolfinx::common::IndexMap& imap,
   std::sort(submap_src.begin(), submap_src.end());
   submap_src.erase(std::unique(submap_src.begin(), submap_src.end()),
                    submap_src.end());
-  submap_src.shrink_to_fit();
 
   // Compute submap destination ranks
   // NOTE: The call to NBX can be avoided by a two-step communication process
