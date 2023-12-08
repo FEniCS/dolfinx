@@ -14,6 +14,8 @@ import dolfinx
 from dolfinx.mesh import GhostMode, create_unit_square
 from dolfinx import cpp as _cpp
 
+import pytest
+
 
 def test_sub_index_map():
     comm = MPI.COMM_WORLD
@@ -164,7 +166,7 @@ def test_create_submap_connected():
 
     imap = dolfinx.common.IndexMap(comm, local_size, ghosts, owners)
     sub_imap, sub_imap_to_imap = _cpp.common.create_submap_conn(
-        imap, submap_indices)
+        imap, submap_indices, True)
 
     if comm.rank == 0:
         assert sub_imap.size_local == 2

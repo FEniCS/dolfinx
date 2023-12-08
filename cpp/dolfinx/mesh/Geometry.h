@@ -333,7 +333,7 @@ create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
   std::vector<std::int32_t> subx_to_x_dofmap;
   {
     std::pair<common::IndexMap, std::vector<int32_t>> map_data
-        = dolfinx::common::create_submap_conn(*x_index_map, sub_x_dofs);
+        = dolfinx::common::create_submap_conn(*x_index_map, sub_x_dofs, true);
     sub_x_dof_index_map
         = std::make_shared<common::IndexMap>(std::move(map_data.first));
     subx_to_x_dofmap = std::move(map_data.second);

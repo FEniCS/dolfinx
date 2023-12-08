@@ -187,13 +187,14 @@ void common(nb::module_& m)
   m.def(
       "create_submap_conn",
       [](const dolfinx::common::IndexMap& imap,
-         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> indices)
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> indices,
+         bool allow_owner_change = false)
       {
         auto [map, submap_to_map] = dolfinx::common::create_submap_conn(
-            imap, std::span(indices.data(), indices.size()));
+            imap, std::span(indices.data(), indices.size()), allow_owner_change);
         return std::pair(std::move(map), dolfinx_wrappers::as_nbarray(
                                              std::move(submap_to_map)));
       },
-      nb::arg("index_map"), nb::arg("indices"));
+      nb::arg("index_map"), nb::arg("indices"), nb::arg("allow_owner_change"));
 }
 } // namespace dolfinx_wrappers

@@ -127,13 +127,18 @@ communicate_ghosts_to_owners(const MPI_Comm comm,
 /// the submap.
 /// @param[in] imap An index map.
 /// @param[in] indices List of entity indices (indices local to the process).
+/// @param[in] allow_owner_change Allows indices that are not included by
+/// their owning process but included on sharing processes to be
+/// included in the submap. These indices will be owned by one of the sharing
+/// processes in the submap.
 /// @pre `indices` must be sorted and unique.
 /// @return The owned, ghost, and ghost owners in the submap. All indices are
 /// local and with respect to the original index map.
 std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
            std::vector<std::int32_t>>
 compute_submap_indices(const dolfinx::common::IndexMap& imap,
-                       std::span<const std::int32_t> indices)
+                       std::span<const std::int32_t> indices,
+                       bool allow_owner_change)
 {
   const MPI_Comm comm = imap.comm();
   std::span<const std::int32_t> src = imap.src();
@@ -163,6 +168,7 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
   std::vector<std::int32_t> recv_owners(send_disp.back());
   const int rank = dolfinx::MPI::rank(comm);
   {
+    bool owners_changed = false;
     // Create a map from (global) owned shared indices owned to processes that
     // can own them.
     // FIXME Avoid map
@@ -190,11 +196,15 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
             global_idx_to_possible_owner[idx].push_back(rank);
           else
           {
-            // throw std::runtime_error("Index owner change detected!");
+            owners_changed = true;
+
             global_idx_to_possible_owner[idx].push_back(dest[i]);
           }
         }
       }
+
+      if (owners_changed && !allow_owner_change)
+        throw std::runtime_error("Index owner change detected!");
     }
 
     // Choose the submap owner for each index in `recv_indices`
@@ -655,7 +665,8 @@ common::stack_index_maps(
 //-----------------------------------------------------------------------------
 std::pair<IndexMap, std::vector<std::int32_t>>
 common::create_submap_conn(const dolfinx::common::IndexMap& imap,
-                           std::span<const std::int32_t> indices)
+                           std::span<const std::int32_t> indices,
+                           bool allow_owner_change)
 {
   const MPI_Comm comm = imap.comm();
 
@@ -663,7 +674,7 @@ common::create_submap_conn(const dolfinx::common::IndexMap& imap,
   // NOTE: All indices are local and numbered w.r.t. the original (imap) index
   // map
   auto [submap_owned, submap_ghost, submap_ghost_owners]
-      = compute_submap_indices(imap, indices);
+      = compute_submap_indices(imap, indices, allow_owner_change);
 
   // Compute submap offset for this rank
   std::int64_t submap_local_size = submap_owned.size();

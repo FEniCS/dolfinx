@@ -55,21 +55,20 @@ stack_index_maps(
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
 
 /// @brief Create a new index map from a subset of indices in an index
-/// map. Any indices that are not included by their owning process, but
-/// are included on sharing processes, will be owned by one of the sharing
-/// processes in the submap.
-///
-/// This can be used when, for instance, creating a submesh to ensure
-/// that all vertices have exactly one owner and are connected to at least
-/// one cell on the owning process.
+/// map.
 /// @param[in] imap The index map
 /// @param[in] indices Local indices to include in the new index map (owned
 /// and ghost)
+/// @param[in] allow_owner_change Allows indices that are not included by
+/// their owning process but included on sharing processes to be
+/// included in the submap. These indices will be owned by one of the sharing
+/// processes in the submap.
 /// @pre `indices` must be sorted and contain no duplicates.
 /// @return The (i) new index map and (ii) a map from local indices in the
 /// submap to local indices in the original (this) map
 std::pair<IndexMap, std::vector<std::int32_t>>
-create_submap_conn(const IndexMap& imap, std::span<const std::int32_t> indices);
+create_submap_conn(const IndexMap& imap, std::span<const std::int32_t> indices,
+                   bool allow_owner_change = false);
 
 /// This class represents the distribution index arrays across
 /// processes. An index array is a contiguous collection of N+1 indices
