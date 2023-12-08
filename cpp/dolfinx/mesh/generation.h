@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2017 Anders Logg and Garth N. Wells
+// Copyright (C) 2005-2023 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -80,7 +80,9 @@ Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
 ///
 /// @param[in] comm MPI communicator to distribute the mesh on.
 /// @param[in] subcomm MPI communicator to construct and partition the
-/// mesh topology on. If the process is not
+/// mesh topology on. If the process should not be involved in the
+/// topology creation and partitioning then this communicator should be
+/// `MPI_COMM_NULL`.
 /// @param[in] p Corner of the box.
 /// @param[in] n Number of cells in each direction.
 /// @param[in] celltype Cell shape.
