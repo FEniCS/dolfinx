@@ -14,8 +14,6 @@ import dolfinx
 from dolfinx.mesh import GhostMode, create_unit_square
 from dolfinx import cpp as _cpp
 
-import pytest
-
 
 def test_sub_index_map():
     comm = MPI.COMM_WORLD
