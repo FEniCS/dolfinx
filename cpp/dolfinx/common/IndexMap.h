@@ -189,22 +189,6 @@ public:
   /// index is `owners()[i]`.
   const std::vector<int>& owners() const { return _owners; }
 
-  /// @brief Create new index map from a subset of indices in this index
-  /// map.
-  ///
-  /// The order of the owned indices is preserved, with new map
-  /// effectively a 'compressed' map.
-  ///
-  /// @param[in] indices Local indices in the map that should appear in
-  /// the new index map. All indices must be owned, i.e. indices must be
-  /// less than `this->size_local()`.
-  /// @pre `indices` must be sorted and contain no duplicates.
-  /// @return The (i) new index map and (ii) a map from the ghost
-  /// position in the new map to the ghost position in the original
-  /// (this) map
-  std::pair<IndexMap, std::vector<std::int32_t>>
-  create_submap(std::span<const std::int32_t> indices) const;
-
   /// @todo Aim to remove this function?
   ///
   /// @brief Compute map from each local (owned) index to the set of

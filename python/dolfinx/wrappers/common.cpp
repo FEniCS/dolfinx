@@ -133,18 +133,7 @@ void common(nb::module_& m)
                 std::span<std::int64_t>(global.data(), global.size()));
             return global;
           },
-          nb::arg("local"))
-      .def(
-          "create_submap",
-          [](const dolfinx::common::IndexMap& self,
-             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> indices)
-          {
-            auto [map, ghosts]
-                = self.create_submap(std::span(indices.data(), indices.size()));
-            return std::pair(std::move(map),
-                             dolfinx_wrappers::as_nbarray(std::move(ghosts)));
-          },
-          nb::arg("indices"));
+          nb::arg("local"));
 
   // dolfinx::common::Timer
   nb::class_<dolfinx::common::Timer>(m, "Timer", "Timer class")

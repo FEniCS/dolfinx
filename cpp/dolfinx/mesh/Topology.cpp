@@ -1160,9 +1160,6 @@ mesh::create_subtopology(const Topology& topology, int dim,
   // TODO Call common::get_owned_indices here? Do we want to
   // support `entities` possibly having a ghost on one process that is
   // not in `entities` on the owning process?
-  // TODO: Should entities still be ghosted in the sub-topology even if
-  // they are not in the `entities` list? If this is not desirable,
-  // create_submap needs to be changed
 
   // Create a map from an entity in the sub-topology to the
   // corresponding entity in the topology, and create an index map
