@@ -769,14 +769,18 @@ compute_incident_entities(const Topology& topology,
                           std::span<const std::int32_t> entities, int d0,
                           int d1);
 
-/// @brief Given a list of cells of each process, distribute cells and
-/// create a distributed mesh::Topology.
+/// @brief Given a list of cells on each process, compute cell
+/// distribution and create a distributed mesh::Topology.
 ///
-/// From cell input data that is distributed across processes, a
-/// distributed a mesh::Topology is created with the distributed of cells
-/// determined by the `partitioner`. If `partitioner` is not callable,
-/// i.e. it does not store a callable function, no re-distribution of
-/// cells is done.
+/// From the cell input data, which is distributed across processes, a
+/// dual graph (with cells as nodes and edges being connections between
+/// cells by facet) is constructed and the `partitioner` is applied to
+/// the dual graph to determine the owner of each cell. Cells are
+/// distributed their owner and a distributed mesh::Topology is created.
+/// If `partitioner` is not callable, i.e. it does not store a callable
+/// function, no re-distribution of cells is done.
+///
+/// Ghosting is controlled by `partitioner`.
 ///
 /// @param[in] comm Communicator to build the mesh on.
 /// @param[in] commt Communicator that the topology data (`cells`) is

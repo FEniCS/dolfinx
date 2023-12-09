@@ -230,7 +230,7 @@ mesh::build_topology(MPI_Comm comm, MPI_Comm commt, mesh::CellType celltype,
   // -- Create Topology
 
   // Boundary vertices are marked as unknown
-  std::vector<std::int64_t> boundary_vertices(unmatched_facets);
+  std::vector<std::int64_t> boundary_vertices = unmatched_facets;
   std::sort(boundary_vertices.begin(), boundary_vertices.end());
   boundary_vertices.erase(
       std::unique(boundary_vertices.begin(), boundary_vertices.end()),

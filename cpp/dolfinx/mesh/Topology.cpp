@@ -904,10 +904,12 @@ Topology mesh::create_topology(
     std::int32_t offset = cell_group_offsets[i];
     int num_vertices = num_cell_vertices(cell_type[i]);
     if (cells.num_nodes() > 0 and cells.num_links(offset) != num_vertices)
+    {
       throw std::runtime_error("Inconsistent number of cell vertices. Got "
                                + std::to_string(cells.num_links(offset))
                                + ", expected " + std::to_string(num_vertices)
                                + ".");
+    }
   }
 
   const std::int32_t num_local_cells = cells.num_nodes() - ghost_owners.size();
@@ -921,8 +923,8 @@ Topology mesh::create_topology(
       = vertex_ownership_groups(cells, num_local_cells, boundary_vertices);
 
   // For each vertex whose ownership needs determining, find the sharing
-  // ranks. The first index in the list of ranks for a vertex is the owner
-  // (as determined by determine_sharing_ranks).
+  // ranks. The first index in the list of ranks for a vertex is the
+  // owner (as determined by determine_sharing_ranks).
   const graph::AdjacencyList<int> global_vertex_to_ranks
       = determine_sharing_ranks(comm, boundary_vertices);
 
@@ -933,8 +935,8 @@ Topology mesh::create_topology(
     std::vector<std::int64_t> owned_shared_vertices;
     for (std::size_t i = 0; i < boundary_vertices.size(); ++i)
     {
-      // Vertex is shared and owned by this rank if the first sharing rank
-      // is my rank
+      // Vertex is shared and owned by this rank if the first sharing
+      // rank is my rank
       auto ranks = global_vertex_to_ranks.links(i);
       assert(!ranks.empty());
       if (std::int64_t global_index = boundary_vertices[i];
@@ -980,16 +982,14 @@ Topology mesh::create_topology(
     MPI_Exscan(&nlocal, &global_offset_v, 1, MPI_INT64_T, MPI_SUM, comm);
   }
 
-  // Create an index map for cells
-  std::shared_ptr<common::IndexMap> index_map_c;
-
   // Get global indices of ghost cells
   std::span cell_idx(original_cell_index);
   const std::vector cell_ghost_indices = graph::build::compute_ghost_indices(
       comm, cell_idx.first(cells.num_nodes() - ghost_owners.size()),
       std::span(original_cell_index).last(ghost_owners.size()), ghost_owners);
 
-  index_map_c = std::make_shared<common::IndexMap>(
+  // Create an index map for cells
+  auto index_map_c = std::make_shared<common::IndexMap>(
       comm, num_local_cells, cell_ghost_indices, ghost_owners);
 
   // Send and receive  ((input vertex index) -> (new global index, owner
@@ -1011,7 +1011,6 @@ Topology mesh::create_topology(
     for (std::size_t i = 0; i < unowned_vertex_data.size(); i += 3)
     {
       const std::int64_t idx_global = unowned_vertex_data[i];
-
       auto it = std::lower_bound(unowned_vertices.begin(),
                                  unowned_vertices.end(), idx_global);
       assert(it != unowned_vertices.end() and *it == idx_global);
@@ -1057,13 +1056,13 @@ Topology mesh::create_topology(
       // owners
       for (auto& data : recv_data)
       {
-        const std::int64_t global_idx_old = data[0];
+        std::int64_t global_idx_old = data[0];
         auto it0 = std::lower_bound(unowned_vertices.begin(),
                                     unowned_vertices.end(), global_idx_old);
         if (it0 != unowned_vertices.end() and *it0 == global_idx_old)
         {
-          std::size_t pos = std::distance(unowned_vertices.begin(), it0);
-          if (local_vertex_indices_unowned[pos] < 0)
+          if (std::size_t pos = std::distance(unowned_vertices.begin(), it0);
+              local_vertex_indices_unowned[pos] < 0)
           {
             local_vertex_indices_unowned[pos] = v++;
             ghost_vertices.push_back(data[1]);
@@ -1080,16 +1079,20 @@ Topology mesh::create_topology(
   std::vector<std::pair<std::int64_t, std::int32_t>> global_to_local_vertices;
   global_to_local_vertices.reserve(owned_vertices.size()
                                    + unowned_vertices.size());
-  std::transform(owned_vertices.begin(), owned_vertices.end(),
-                 local_vertex_indices.begin(),
-                 std::back_inserter(global_to_local_vertices),
-                 [](auto idx0, auto idx1)
-                 { return std::pair<std::int64_t, std::int32_t>(idx0, idx1); });
-  std::transform(unowned_vertices.begin(), unowned_vertices.end(),
-                 local_vertex_indices_unowned.begin(),
-                 std::back_inserter(global_to_local_vertices),
-                 [](auto idx0, auto idx1)
-                 { return std::pair<std::int64_t, std::int32_t>(idx0, idx1); });
+  std::transform(
+      owned_vertices.begin(), owned_vertices.end(),
+      local_vertex_indices.begin(),
+      std::back_inserter(global_to_local_vertices),
+      [](auto idx0, auto idx1) -> std::pair<std::int64_t, std::int32_t> {
+        return {idx0, idx1};
+      });
+  std::transform(
+      unowned_vertices.begin(), unowned_vertices.end(),
+      local_vertex_indices_unowned.begin(),
+      std::back_inserter(global_to_local_vertices),
+      [](auto idx0, auto idx1) -> std::pair<std::int64_t, std::int32_t> {
+        return {idx0, idx1};
+      });
   std::sort(global_to_local_vertices.begin(), global_to_local_vertices.end());
 
   const std::size_t num_local_nodes = cells.num_nodes();
@@ -1261,6 +1264,7 @@ mesh::create_subtopology(const Topology& topology, int dim,
   subtopology.set_index_map(dim, submap);
   subtopology.set_connectivity(sub_v_to_v, 0, 0);
   subtopology.set_connectivity(sub_e_to_v, dim, 0);
+
   // Set groups (only one cell type)
   subtopology.set_entity_group_offsets(
       dim,
@@ -1298,8 +1302,9 @@ mesh::entities_to_index(const Topology& topology, int dim,
   // (value)
   std::map<std::vector<std::int32_t>, std::int32_t> entity_key_to_index;
   std::vector<std::int32_t> key(num_vertices_per_entity);
-  const int num_entities_mesh = map_e->size_local() + map_e->num_ghosts();
-  for (int e = 0; e < num_entities_mesh; ++e)
+  const std::int32_t num_entities_mesh
+      = map_e->size_local() + map_e->num_ghosts();
+  for (std::int32_t e = 0; e < num_entities_mesh; ++e)
   {
     auto vertices = e_to_v->links(e);
     std::copy(vertices.begin(), vertices.end(), key.begin());
