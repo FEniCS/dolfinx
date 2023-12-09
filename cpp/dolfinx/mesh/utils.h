@@ -38,7 +38,7 @@ enum class GhostMode : int
   shared_vertex
 };
 
-namespace
+namespace impl
 {
 /// Re-order an adjacency list
 template <typename T>
@@ -68,10 +68,7 @@ graph::AdjacencyList<T> reorder_list(const graph::AdjacencyList<T>& list,
 
   return list_new;
 }
-} // namespace
 
-namespace impl
-{
 /// @brief The coordinates of 'vertices' for for entities of a give
 /// dimension that are attached to specified facets.
 ///
@@ -751,10 +748,10 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   return geometry_idx;
 }
 
-/// Create a function that computes destination rank for mesh cells in
-/// this rank by applying the default graph partitioner to the dual
-/// graph of the mesh
-/// @return Function that computes the destination ranks for each cell
+/// @brief Create a function that computes destination rank for mesh
+/// cells on this process by applying the default graph partitioner to
+/// the dual graph of the mesh.
+/// @return Function that computes the destination ranks for each cell.
 CellPartitionFunction create_cell_partitioner(mesh::GhostMode ghost_mode
                                               = mesh::GhostMode::none,
                                               const graph::partition_fn& partfn
@@ -772,12 +769,44 @@ compute_incident_entities(const Topology& topology,
                           std::span<const std::int32_t> entities, int d0,
                           int d1);
 
+/// @brief Given a list of cells of each process, distribute cells and
+/// create a distributed mesh::Topology.
+///
+/// From cell input data that is distributed across processes, a
+/// distributed a mesh::Topology is created with the distributed of cells
+/// determined by the `partitioner`. If `partitioner` is not callable,
+/// i.e. it does not store a callable function, no re-distribution of
+/// cells is done.
+///
+/// @param[in] comm Communicator to build the mesh on.
+/// @param[in] commt Communicator that the topology data (`cells`) is
+/// distributed on. This should be `MPI_COMM_NULL` for ranks that should
+/// not participate in computing the topology partitioning.
+/// @param celltype The cell shape.
+/// @param dof_layout Layout of geometry 'degrees-of-freedom' on the
+/// cell.
+/// @param[in] cells Cells on the calling process. Each cell (node in
+/// the `AdjacencyList`) is defined by its 'nodes' (using global
+/// indices) following the Basix ordering. For lowest order cells this
+/// will be just the cell vertices. For higher-order cells, other cells
+/// 'nodes' will be included. See dolfinx::io::cells for examples of the
+/// Basix ordering.
+/// @param[in] partitioner Graph partitioner that computes the owning
+/// rank for each cell. If not callable, cells are not redistributed.
+/// @return Mesh topology object and new distribution of `cells`. The
+/// cells list includes higher-order geometry 'nodes'.
+std::pair<Topology, graph::AdjacencyList<std::int64_t>>
+build_topology(MPI_Comm comm, MPI_Comm commt, mesh::CellType celltype,
+               const fem::ElementDofLayout& dof_layout,
+               const graph::AdjacencyList<std::int64_t>& cells,
+               const CellPartitionFunction& partitioner);
+
 /// @brief Create a distributed mesh from mesh data using a provided
 /// graph partitioning function for determining the parallel
 /// distribution of the mesh.
 ///
 /// From mesh input data that is distributed across processes, a
-/// distributed a mesh::Mesh is created If the partitioning function is
+/// distributed a mesh::Mesh is created. If the partitioning function is
 /// not callable, i.e. it does not store a callable function, no
 /// re-distribution of cells is done.
 ///
@@ -808,123 +837,10 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     const U& x, std::array<std::size_t, 2> xshape,
     const CellPartitionFunction& partitioner)
 {
+  // Create distributed Topology
   const fem::ElementDofLayout dof_layout = elements[0].create_dof_layout();
-
-  // Function to build topology. Used to scope memory operations.
-  auto build_topology = [](MPI_Comm comm, MPI_Comm commt, auto& elements,
-                           auto& dof_layout, auto& cells, auto& partitioner)
-  {
-    // -- Partition topology across ranks of comm
-
-    // Note: the function extract_topology (returns an
-    // AdjacencyList<std::int64_t>) extract topology data, e.g. just the
-    // vertices. For P1 geometry this should just be the identity
-    // operator. For other elements the filtered lists may have 'gaps',
-    // i.e. the indices might not be contiguous. We don't create an
-    // object before calling partitioner to ensure that memory is
-    // freed immediately.
-    //
-    // Note: extract_topology could be skipped for 'P1' elements since
-    // it is just the identity
-
-    // Compute the destination rank for cells on this process via graph
-    // partitioning.
-    const int tdim = cell_dim(elements[0].cell_shape());
-
-    graph::AdjacencyList<std::int32_t> dest(0);
-    graph::AdjacencyList<std::int64_t> cell_nodes(0);
-    std::vector<std::int64_t> original_cell_index0;
-    std::vector<int> ghost_owners;
-    if (partitioner)
-    {
-      if (commt != MPI_COMM_NULL)
-      {
-        const int size = dolfinx::MPI::size(comm);
-        dest = partitioner(
-            commt, size, tdim,
-            extract_topology(elements[0].cell_shape(), dof_layout, cells));
-      }
-
-      // -- Distribute cells (topology, includes higher-order 'nodes')
-
-      // Distribute cells to destination rank
-      std::vector<int> src;
-      std::tie(cell_nodes, src, original_cell_index0, ghost_owners)
-          = graph::build::distribute(comm, cells, dest);
-    }
-    else
-    {
-      int rank = dolfinx::MPI::rank(comm);
-      dest = graph::regular_adjacency_list(
-          std::vector<std::int32_t>(cells.num_nodes(), rank), 1);
-      cell_nodes = cells;
-      std::int64_t offset(0), num_owned(cells.num_nodes());
-      MPI_Exscan(&num_owned, &offset, 1, MPI_INT64_T, MPI_SUM, comm);
-      original_cell_index0.resize(cell_nodes.num_nodes());
-      std::iota(original_cell_index0.begin(), original_cell_index0.end(),
-                offset);
-    }
-
-    // -- Extract cell topology
-
-    // Extract cell 'topology', i.e. extract the vertices for each cell
-    // and discard any 'higher-order' nodes
-    graph::AdjacencyList<std::int64_t> cells_extracted
-        = extract_topology(elements[0].cell_shape(), dof_layout, cell_nodes);
-
-    // -- Re-order cells
-
-    // Build local dual graph for owned cells to apply re-ordering
-    const std::int32_t num_owned_cells
-        = cells_extracted.num_nodes() - ghost_owners.size();
-    auto [graph, unmatched_facets, max_v, facet_attached_cells]
-        = build_local_dual_graph(
-            std::span<const std::int64_t>(
-                cells_extracted.array().data(),
-                cells_extracted.offsets()[num_owned_cells]),
-            std::span<const std::int32_t>(cells_extracted.offsets().data(),
-                                          num_owned_cells + 1),
-            tdim);
-    const std::vector<int> remap = graph::reorder_gps(graph);
-
-    // Create re-ordered cell lists (leaves ghosts unchanged)
-    std::vector<std::int64_t> original_cell_index(original_cell_index0.size());
-    for (std::size_t i = 0; i < remap.size(); ++i)
-      original_cell_index[remap[i]] = original_cell_index0[i];
-    std::copy_n(std::next(original_cell_index0.cbegin(), num_owned_cells),
-                ghost_owners.size(),
-                std::next(original_cell_index.begin(), num_owned_cells));
-    cells_extracted = reorder_list(cells_extracted, remap);
-    cell_nodes = reorder_list(cell_nodes, remap);
-
-    // -- Create Topology
-
-    // Boundary vertices are marked as unknown
-    std::vector<std::int64_t> boundary_vertices(unmatched_facets);
-    std::sort(boundary_vertices.begin(), boundary_vertices.end());
-    boundary_vertices.erase(
-        std::unique(boundary_vertices.begin(), boundary_vertices.end()),
-        boundary_vertices.end());
-
-    // Remove -1 if it occurs in boundary vertices (may occur in mixed topology)
-    if (boundary_vertices.size() > 0 and boundary_vertices[0] == -1)
-      boundary_vertices.erase(boundary_vertices.begin());
-
-    // Create cells and vertices with the ghosting requested. Input
-    // topology includes cells shared via facet, but ghosts will be
-    // removed later if not required by ghost_mode.
-
-    std::vector<std::int32_t> cell_group_offsets
-        = {0, std::int32_t(cells_extracted.num_nodes() - ghost_owners.size()),
-           cells_extracted.num_nodes()};
-    std::vector<mesh::CellType> cell_type = {elements[0].cell_shape()};
-    return std::pair{create_topology(comm, cells_extracted, original_cell_index,
-                                     ghost_owners, cell_type,
-                                     cell_group_offsets, boundary_vertices),
-                     std::move(cell_nodes)};
-  };
-  auto [topology, cell_nodes]
-      = build_topology(comm, commt, elements, dof_layout, cells, partitioner);
+  auto [topology, cell_nodes] = build_topology(
+      comm, commt, elements[0].cell_shape(), dof_layout, cells, partitioner);
 
   // Create connectivity required to compute the Geometry (extra
   // connectivities for higher-order geometries)

@@ -193,9 +193,9 @@ private:
 
 /// @brief Create a distributed mesh topology.
 ///
-/// @param[in] comm MPI communicator across which the topology is
-/// distributed
-/// @param[in] cells The cell topology (list of vertices for each cell)
+/// @param[in] comm Communicator across which the topology is
+/// distributed.
+/// @param[in] cells Cell topology (list of vertices for each cell)
 /// using global indices for the vertices. It contains cells that have
 /// been distributed to this rank, e.g. via a graph partitioner. It must
 /// also contain all ghost cells via facet, i.e. cells that are on a
@@ -204,7 +204,7 @@ private:
 /// each cell.
 /// @param[in] ghost_owners Owning rank of each ghost cell (ghost cells
 /// are always at the end of the list of `cells`).
-/// @param[in] cell_type A vector with cell shapes
+/// @param[in] cell_type A vector with cell shapes.
 /// @param[in] cell_group_offsets vector with each group offset, including
 /// ghosts.
 /// @param[in] boundary_vertices List of vertices on the exterior of the
