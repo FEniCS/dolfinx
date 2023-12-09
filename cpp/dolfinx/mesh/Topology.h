@@ -191,9 +191,10 @@ private:
   std::vector<std::int32_t> _interprocess_facets;
 };
 
-/// @brief Create a distributed mesh topology.
+/// @brief Create a mesh topology.
 ///
-///
+/// This function creates a ::Topology from cells that have been
+/// distributed to the processes that own or ghost the cell.
 ///
 /// @param[in] comm Communicator across which the topology is
 /// distributed.

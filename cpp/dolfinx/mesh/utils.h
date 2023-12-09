@@ -17,6 +17,7 @@
 #include <functional>
 #include <mpi.h>
 #include <span>
+#include <tuple>
 
 /// @file utils.h
 /// @brief Functions supporting mesh operations
@@ -799,11 +800,14 @@ compute_incident_entities(const Topology& topology,
 /// rank for each cell. If not callable, cells are not redistributed.
 /// @return Mesh topology object and new distribution of `cells`. The
 /// cells list includes higher-order geometry 'nodes'.
-std::pair<Topology, graph::AdjacencyList<std::int64_t>>
-build_topology(MPI_Comm comm, MPI_Comm commt, mesh::CellType celltype,
-               const fem::ElementDofLayout& dof_layout,
-               const graph::AdjacencyList<std::int64_t>& cells,
-               const CellPartitionFunction& partitioner);
+// std::pair<Topology, graph::AdjacencyList<std::int64_t>>
+std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<std::int64_t>,
+           std::vector<int>, std::vector<std::int32_t>,
+           std::vector<std::int64_t>, graph::AdjacencyList<std::int64_t>>
+build_topology_data(MPI_Comm comm, MPI_Comm commt, mesh::CellType celltype,
+                    const fem::ElementDofLayout& dof_layout,
+                    const graph::AdjacencyList<std::int64_t>& cells,
+                    const CellPartitionFunction& partitioner);
 
 /// @brief Create a distributed mesh from mesh data using a provided
 /// graph partitioning function for determining the parallel
@@ -843,8 +847,13 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 {
   // Create distributed Topology
   const fem::ElementDofLayout dof_layout = elements[0].create_dof_layout();
-  auto [topology, cell_nodes] = build_topology(
-      comm, commt, elements[0].cell_shape(), dof_layout, cells, partitioner);
+  auto [cells_extracted, original_cell_index, ghost_owners, cell_group_offsets,
+        boundary_vertices, cell_nodes]
+      = build_topology_data(comm, commt, elements[0].cell_shape(), dof_layout,
+                            cells, partitioner);
+  Topology topology = create_topology(
+      comm, cells_extracted, original_cell_index, ghost_owners,
+      {elements[0].cell_shape()}, cell_group_offsets, boundary_vertices);
 
   // Create connectivity required to compute the Geometry (extra
   // connectivities for higher-order geometries)

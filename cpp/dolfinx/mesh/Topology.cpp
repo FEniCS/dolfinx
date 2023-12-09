@@ -23,8 +23,6 @@ using namespace dolfinx::mesh;
 
 namespace
 {
-
-//-----------------------------------------------------------------------------
 /// @brief Determine owner and sharing ranks sharing an index.
 ///
 /// @note Collective
@@ -276,7 +274,6 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
 
   return graph::AdjacencyList<int>(std::move(data), std::move(graph_offsets));
 }
-//-----------------------------------------------------------------------------
 
 /// @brief Build ownership 'groups' (owned/undetermined/non-owned) of
 /// vertices.
@@ -346,7 +343,6 @@ vertex_ownership_groups(const graph::AdjacencyList<std::int64_t>& cells,
 
   return {std::move(owned_vertices), std::move(unowned_vertices)};
 }
-//-----------------------------------------------------------------------------
 
 /// @brief Send entity indices for owned entities to processes that
 /// share but do not own the entities, and receive index data for
@@ -469,7 +465,6 @@ exchange_indexing(MPI_Comm comm, std::span<const std::int64_t> indices,
 
   return recv_data;
 }
-//---------------------------------------------------------------------
 
 /// @brief Send and receive vertex indices and owning ranks for
 /// vertices that lie in the ghost cell region.
@@ -678,7 +673,6 @@ exchange_ghost_indexing(const common::IndexMap& map0,
 
   return data;
 }
-//---------------------------------------------------------------------------------
 
 /// @brief Convert adjacency list edges from global indexing to local
 /// indexing.

@@ -140,11 +140,15 @@ mesh::compute_incident_entities(const Topology& topology,
   return entities1;
 }
 //-----------------------------------------------------------------------------
-std::pair<mesh::Topology, graph::AdjacencyList<std::int64_t>>
-mesh::build_topology(MPI_Comm comm, MPI_Comm commt, mesh::CellType celltype,
-                     const fem::ElementDofLayout& dof_layout,
-                     const graph::AdjacencyList<std::int64_t>& cells,
-                     const CellPartitionFunction& partitioner)
+// std::pair<mesh::Topology, graph::AdjacencyList<std::int64_t>>
+std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<std::int64_t>,
+           std::vector<int>, std::vector<std::int32_t>,
+           std::vector<std::int64_t>, graph::AdjacencyList<std::int64_t>>
+mesh::build_topology_data(MPI_Comm comm, MPI_Comm commt,
+                          mesh::CellType celltype,
+                          const fem::ElementDofLayout& dof_layout,
+                          const graph::AdjacencyList<std::int64_t>& cells,
+                          const CellPartitionFunction& partitioner)
 {
   // -- Partition topology across ranks of comm
 
@@ -247,9 +251,8 @@ mesh::build_topology(MPI_Comm comm, MPI_Comm commt, mesh::CellType celltype,
   std::vector<std::int32_t> cell_group_offsets
       = {0, std::int32_t(cells_extracted.num_nodes() - ghost_owners.size()),
          cells_extracted.num_nodes()};
-  return std::pair{create_topology(comm, cells_extracted, original_cell_index,
-                                   ghost_owners, {celltype}, cell_group_offsets,
-                                   boundary_vertices),
-                   std::move(cell_nodes)};
+  return {std::move(cells_extracted),   std::move(original_cell_index),
+          std::move(ghost_owners),      cell_group_offsets,
+          std::move(boundary_vertices), std::move(cell_nodes)};
 }
 //-----------------------------------------------------------------------------
