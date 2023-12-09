@@ -772,25 +772,30 @@ compute_incident_entities(const Topology& topology,
                           std::span<const std::int32_t> entities, int d0,
                           int d1);
 
-/// @brief Create a mesh using a provided mesh partitioning function.
+/// @brief Create a distributed mesh from mesh data using a provided
+/// graph partitioning function for determining the parallel
+/// distribution of the mesh.
 ///
 /// If the partitioning function is not callable, i.e. it does not store
 /// a callable function, no re-distribution of cells is done.
 ///
-/// @todo Write docs for sub-communicators
+/// @todo Document ordering of `cells`, including for higher-order
+/// geometry.
 ///
-/// @param[in] comm Communicator to build the mesh on
+/// @param[in] comm Communicator to build the mesh on.
 /// @param[in] commt Communicator that the topology data (`cells`) is
-/// distributed on.
-/// @param[in] cells The cells on the this MPI rank. Each cell (node in
+/// distributed on. This should be MPI_COMM_NULL for ranks that should
+/// not participate in computing the topology partitioning.
+/// @param[in] cells Cells on the calling process. Each cell (node in
 /// the `AdjacencyList`) is defined by its 'nodes' (using global
 /// indices). For lowest order cells this will be just the cell
 /// vertices. For higher-order cells, other cells 'nodes' will be
 /// included.
-/// @param[in] elements
-/// @param[in] x
-/// @param[in] xshape
-/// @param[in] partitioner
+/// @param[in] elements Coordinate elements for the cells.
+/// @param[in] x Geometry data ('node' coordinates) Row-major storage.
+/// @param[in] xshape Shape of the `x` data.
+/// @param[in] partitioner Graph partitioner that computes the owning
+/// rank for each cell.
 /// @return A mesh distributed on the communicator `comm`.
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(

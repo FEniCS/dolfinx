@@ -539,7 +539,7 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
     std::vector<idx_t> array(graph.array().begin(), graph.array().end());
     std::vector<idx_t> offsets(graph.offsets().begin(), graph.offsets().end());
 
-    // Options and sata for ParMETIS
+    // Options and data for ParMETIS
     std::array<idx_t, 3> opts = {options[0], options[1], options[2]};
     idx_t ncon = 1;
     idx_t* elmwgt = nullptr;
