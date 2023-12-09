@@ -799,15 +799,15 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     const std::vector<fem::CoordinateElement<
         typename std::remove_reference_t<typename U::value_type>>>& elements,
     const U& x, std::array<std::size_t, 2> xshape,
-    CellPartitionFunction partitioner)
+    const CellPartitionFunction& partitioner)
 {
   const fem::ElementDofLayout dof_layout = elements[0].create_dof_layout();
 
-  // Function top build geometry. Used to scope memory operations.
+  // Function to build topology. Used to scope memory operations.
   auto build_topology = [](MPI_Comm comm, MPI_Comm commt, auto& elements,
                            auto& dof_layout, auto& cells, auto& partitioner)
   {
-    // -- Partition topology
+    // -- Partition topology across ranks of comm
 
     // Note: the function extract_topology (returns an
     // AdjacencyList<std::int64_t>) extract topology data, e.g. just the
@@ -916,7 +916,6 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
                                      cell_group_offsets, boundary_vertices),
                      std::move(cell_nodes)};
   };
-
   auto [topology, cell_nodes]
       = build_topology(comm, commt, elements, dof_layout, cells, partitioner);
 

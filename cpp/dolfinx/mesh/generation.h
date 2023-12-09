@@ -19,7 +19,6 @@
 
 namespace dolfinx::mesh
 {
-
 /// Enum for different diagonal types
 enum class DiagonalType
 {
@@ -66,7 +65,6 @@ Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
                     std::array<std::array<double, 3>, 2> p,
                     std::array<std::size_t, 3> n,
                     const CellPartitionFunction& partitioner);
-
 } // namespace impl
 
 /// @brief Create a uniform mesh::Mesh over rectangular prism spanned by
@@ -93,7 +91,7 @@ template <std::floating_point T = double>
 Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
                    std::array<std::array<double, 3>, 2> p,
                    std::array<std::size_t, 3> n, CellType celltype,
-                   mesh::CellPartitionFunction partitioner = nullptr)
+                   CellPartitionFunction partitioner = nullptr)
 {
   if (!partitioner and dolfinx::MPI::size(comm) > 1)
     partitioner = create_cell_partitioner();
@@ -130,7 +128,7 @@ Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
 template <std::floating_point T = double>
 Mesh<T> create_box(MPI_Comm comm, std::array<std::array<double, 3>, 2> p,
                    std::array<std::size_t, 3> n, CellType celltype,
-                   mesh::CellPartitionFunction partitioner = nullptr)
+                   const CellPartitionFunction& partitioner = nullptr)
 {
   return create_box<T>(comm, comm, p, n, celltype, partitioner);
 }
@@ -154,9 +152,12 @@ Mesh<T> create_box(MPI_Comm comm, std::array<std::array<double, 3>, 2> p,
 template <std::floating_point T = double>
 Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
                          std::array<std::size_t, 2> n, CellType celltype,
-                         const CellPartitionFunction& partitioner,
+                         CellPartitionFunction partitioner,
                          DiagonalType diagonal = DiagonalType::right)
 {
+  if (!partitioner and dolfinx::MPI::size(comm) > 1)
+    partitioner = create_cell_partitioner();
+
   switch (celltype)
   {
   case CellType::triangle:
@@ -209,6 +210,7 @@ Mesh<T> create_interval(MPI_Comm comm, std::size_t nx, std::array<double, 2> p,
   if (!partitioner and dolfinx::MPI::size(comm) > 1)
     partitioner = create_cell_partitioner();
 
+  fem::CoordinateElement<T> element(CellType::interval, 1);
   std::vector<T> x;
   std::vector<std::int64_t> cells;
   if (dolfinx::MPI::rank(comm) == 0)
@@ -243,12 +245,17 @@ Mesh<T> create_interval(MPI_Comm comm, std::size_t nx, std::array<double, 2> p,
     for (std::size_t ix = 0; ix < nx; ++ix)
       for (std::size_t j = 0; j < 2; ++j)
         cells[2 * ix + j] = ix + j;
-  }
 
-  fem::CoordinateElement<T> element(CellType::interval, 1);
-  return create_mesh(comm, comm,
-                     graph::regular_adjacency_list(std::move(cells), 2),
-                     {element}, x, {x.size(), 1}, partitioner);
+    return create_mesh(comm, MPI_COMM_SELF,
+                       graph::regular_adjacency_list(std::move(cells), 2),
+                       {element}, x, {x.size(), 1}, partitioner);
+  }
+  else
+  {
+    return create_mesh(comm, MPI_COMM_NULL,
+                       graph::regular_adjacency_list(std::move(cells), 2),
+                       {element}, x, {x.size(), 1}, partitioner);
+  }
 }
 
 namespace impl
@@ -465,6 +472,7 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
                   const CellPartitionFunction& partitioner,
                   DiagonalType diagonal)
 {
+  fem::CoordinateElement<T> element(CellType::triangle, 1);
   std::vector<T> geom;
   std::vector<std::int64_t> cells;
   if (dolfinx::MPI::rank(comm) == 0)
@@ -621,12 +629,17 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
       }
     }
     }
-  }
 
-  fem::CoordinateElement<T> element(CellType::triangle, 1);
-  return create_mesh(comm, comm,
-                     graph::regular_adjacency_list(std::move(cells), 3),
-                     {element}, geom, {geom.size() / 2, 2}, partitioner);
+    return create_mesh(comm, MPI_COMM_SELF,
+                       graph::regular_adjacency_list(std::move(cells), 3),
+                       {element}, geom, {geom.size() / 2, 2}, partitioner);
+  }
+  else
+  {
+    return create_mesh(comm, MPI_COMM_NULL,
+                       graph::regular_adjacency_list(std::move(cells), 3),
+                       {element}, geom, {geom.size() / 2, 2}, partitioner);
+  }
 }
 
 template <std::floating_point T>
@@ -634,6 +647,7 @@ Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
                    std::array<std::size_t, 2> n,
                    const CellPartitionFunction& partitioner)
 {
+  fem::CoordinateElement<T> element(CellType::quadrilateral, 1);
   std::vector<std::int64_t> cells;
   std::vector<T> x;
   if (dolfinx::MPI::rank(comm) == 0)
@@ -668,14 +682,17 @@ Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
                                    i0 + iy + ny + 2});
       }
     }
+
+    return create_mesh(comm, MPI_COMM_SELF,
+                       graph::regular_adjacency_list(std::move(cells), 3),
+                       {element}, x, {x.size() / 2, 2}, partitioner);
   }
-
-  fem::CoordinateElement<T> element(CellType::quadrilateral, 1);
-  return create_mesh(comm, comm,
-                     graph::regular_adjacency_list(std::move(cells), 4),
-                     {element}, x, {x.size() / 2, 2}, partitioner);
+  else
+  {
+    return create_mesh(comm, MPI_COMM_NULL,
+                       graph::regular_adjacency_list(std::move(cells), 3),
+                       {element}, x, {x.size() / 2, 2}, partitioner);
+  }
 }
-
 } // namespace impl
-
 } // namespace dolfinx::mesh
