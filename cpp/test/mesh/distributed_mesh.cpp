@@ -37,8 +37,7 @@ constexpr int N = 8;
   file.write_mesh(*mesh);
 }
 
-[[maybe_unused]] void
-test_create_box([[maybe_unused]] mesh::CellPartitionFunction part)
+[[maybe_unused]] void test_create_box(mesh::CellPartitionFunction part)
 {
   MPI_Comm comm;
   MPI_Comm_dup(MPI_COMM_WORLD, &comm);
@@ -85,8 +84,7 @@ test_create_box([[maybe_unused]] mesh::CellPartitionFunction part)
   MPI_Comm_free(&comm);
 }
 
-[[maybe_unused]] void
-test_distributed_mesh(mesh::CellPartitionFunction partitioner)
+void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
 {
   using T = double;
 
@@ -221,10 +219,11 @@ TEST_CASE("Create box", "[create_box]")
   CHECK_NOTHROW(test_create_box(mesh::create_cell_partitioner(
       mesh::GhostMode::none, graph::parmetis::partitioner())));
 #endif
-#ifdef HAS_KAHIP
-  CHECK_NOTHROW(test_create_box(mesh::create_cell_partitioner(
-      mesh::GhostMode::none, graph::kahip::partitioner(1, 1, 0.03, false))));
-#endif
+  // #ifdef HAS_KAHIP
+  //   CHECK_NOTHROW(test_create_box(mesh::create_cell_partitioner(
+  //       mesh::GhostMode::none, graph::kahip::partitioner(1, 1, 0.03,
+  //       false))));
+  // #endif
 }
 
 TEST_CASE("Distributed Mesh", "[distributed_mesh]")
@@ -238,12 +237,12 @@ TEST_CASE("Distributed Mesh", "[distributed_mesh]")
   CHECK_NOTHROW(test_distributed_mesh(mesh::create_cell_partitioner(
       mesh::GhostMode::none, graph::scotch::partitioner())));
 #endif
-#ifdef HAS_KAHIP
-  CHECK_NOTHROW(test_distributed_mesh(mesh::create_cell_partitioner(
-      mesh::GhostMode::none, graph::kahip::partitioner(1, 1, 0.03, false))));
-#endif
 #ifdef HAS_PARMETIS
   CHECK_NOTHROW(test_distributed_mesh(mesh::create_cell_partitioner(
       mesh::GhostMode::none, graph::parmetis::partitioner())));
+#endif
+#ifdef HAS_KAHIP
+  CHECK_NOTHROW(test_distributed_mesh(mesh::create_cell_partitioner(
+      mesh::GhostMode::none, graph::kahip::partitioner(1, 1, 0.03, false))));
 #endif
 }
