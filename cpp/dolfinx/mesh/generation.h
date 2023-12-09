@@ -684,13 +684,13 @@ Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
     }
 
     return create_mesh(comm, MPI_COMM_SELF,
-                       graph::regular_adjacency_list(std::move(cells), 3),
+                       graph::regular_adjacency_list(std::move(cells), 4),
                        {element}, x, {x.size() / 2, 2}, partitioner);
   }
   else
   {
     return create_mesh(comm, MPI_COMM_NULL,
-                       graph::regular_adjacency_list(std::move(cells), 3),
+                       graph::regular_adjacency_list(std::move(cells), 4),
                        {element}, x, {x.size() / 2, 2}, partitioner);
   }
 }
