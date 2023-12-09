@@ -776,26 +776,28 @@ compute_incident_entities(const Topology& topology,
 /// graph partitioning function for determining the parallel
 /// distribution of the mesh.
 ///
-/// If the partitioning function is not callable, i.e. it does not store
-/// a callable function, no re-distribution of cells is done.
-///
-/// @todo Document ordering of `cells`, including for higher-order
-/// geometry.
+/// From mesh input data that is distributed across processes, a
+/// distributed a mesh::Mesh is created If the partitioning function is
+/// not callable, i.e. it does not store a callable function, no
+/// re-distribution of cells is done.
 ///
 /// @param[in] comm Communicator to build the mesh on.
 /// @param[in] commt Communicator that the topology data (`cells`) is
-/// distributed on. This should be MPI_COMM_NULL for ranks that should
+/// distributed on. This should be `MPI_COMM_NULL` for ranks that should
 /// not participate in computing the topology partitioning.
 /// @param[in] cells Cells on the calling process. Each cell (node in
 /// the `AdjacencyList`) is defined by its 'nodes' (using global
-/// indices). For lowest order cells this will be just the cell
-/// vertices. For higher-order cells, other cells 'nodes' will be
-/// included.
+/// indices) following the Basix ordering. For lowest order cells this
+/// will be just the cell vertices. For higher-order cells, other cells
+/// 'nodes' will be included. See dolfinx::io::cells for examples of the
+/// Basix ordering.
 /// @param[in] elements Coordinate elements for the cells.
-/// @param[in] x Geometry data ('node' coordinates) Row-major storage.
+/// @param[in] x Geometry data ('node' coordinates). The global index is
+/// taken as the offset for `x` on `comm` plus the local index.
+/// Row-major storage.
 /// @param[in] xshape Shape of the `x` data.
 /// @param[in] partitioner Graph partitioner that computes the owning
-/// rank for each cell.
+/// rank for each cell. If not callable, cells are not redistributed.
 /// @return A mesh distributed on the communicator `comm`.
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
@@ -943,25 +945,24 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
       std::move(geometry));
 }
 
-/// @brief Create a mesh using the default partitioner.
+/// @brief Create a distributed mesh from mesh data using the default
+/// graph partitioner to determine the parallel distribution of the
+/// mesh.
 ///
 /// This function takes mesh input data that is distributed across
 /// processes and creates a mesh::Mesh, with the mesh cell distribution
 /// determined by the default cell partitioner. The default partitioner
 /// is based on graph partitioning.
 ///
-/// @param[in] comm The MPI communicator to build the mesh on.
-/// @param[in] cells The cells on the this MPI rank. Each cell (node in
-/// the `AdjacencyList`) is defined by its 'nodes' (using global
-/// indices). For lowest order cells this will be just the cell
-/// vertices. For higher-order cells, other cells 'nodes' will be
-/// included.
-/// @param[in] elements The coordinate elements that describe the
-/// geometric mapping for cells.
-/// @param[in] x The coordinates of mesh nodes.
+/// @param[in] comm MPI communicator to build the mesh on.
+/// @param[in] cells Cells on the calling process. See ::create_mesh for
+/// a detailed description.
+/// @param[in] elements Coordinate elements for the cells.
+/// @param[in] x Geometry data ('node' coordinates). See ::create_mesh
+/// for a detailed description.
 /// @param[in] xshape The shape of `x`. It should be `(num_points, gdim)`.
 /// @param[in] ghost_mode The requested type of cell ghosting/overlap
-/// @return A distributed Mesh.
+/// @return A mesh distributed on the communicator `comm`.
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>>
 create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
