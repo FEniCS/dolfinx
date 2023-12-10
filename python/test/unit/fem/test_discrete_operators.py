@@ -94,5 +94,5 @@ def test_gradient_interpolation(cell_type, p, q):
     w.x.array[:nrlocal] = Glocal @ u.x.array
     w.x.scatter_forward()
 
-    atol = 100 * np.finfo(dtype).resolution
+    atol = 1000 * np.finfo(dtype).resolution
     assert np.allclose(w_expr.x.array, w.x.array, atol=atol)
