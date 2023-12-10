@@ -193,7 +193,7 @@ private:
 
 /// @brief Create a mesh topology.
 ///
-/// This function creates a ::Topology from cells that have been
+/// This function creates a Topology from cells that have been
 /// distributed to the processes that own or ghost the cell.
 ///
 /// @param[in] comm Communicator across which the topology is

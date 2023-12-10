@@ -770,8 +770,9 @@ compute_incident_entities(const Topology& topology,
                           std::span<const std::int32_t> entities, int d0,
                           int d1);
 
-/// @brief Given a list of cells on each process, compute cell
-/// distribution and create a distributed mesh::Topology.
+/// @brief Given a list of cells on each process, determine owner of
+/// each cell and send to owner, returning data require for creating a
+/// distributed mesh::Topology.
 ///
 /// From the cell input data, which is distributed across processes, a
 /// dual graph (with cells as nodes and edges being connections between
@@ -798,9 +799,16 @@ compute_incident_entities(const Topology& topology,
 /// Basix ordering.
 /// @param[in] partitioner Graph partitioner that computes the owning
 /// rank for each cell. If not callable, cells are not redistributed.
-/// @return Mesh topology object and new distribution of `cells`. The
-/// cells list includes higher-order geometry 'nodes'.
-// std::pair<Topology, graph::AdjacencyList<std::int64_t>>
+/// @returns The returned tuple holds:
+/// 1. Cells (vertices only) on this process after distribution. Ghost
+/// cells are stored at the end.
+/// 2. Original (input) index of cells now on this process.
+/// 3. Owning rank of ghost cells.
+/// 4. Cell group offsets.
+/// 5. Vertices on partition boundary (ownership if which needs to
+/// be determined).
+/// 6. Cells (including higher-order geometry 'nodes') on this process
+/// after distribution. Ghost cells are stored at the end.
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<std::int64_t>,
            std::vector<int>, std::vector<std::int32_t>,
            std::vector<std::int64_t>, graph::AdjacencyList<std::int64_t>>
