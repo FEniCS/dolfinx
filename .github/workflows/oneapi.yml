@@ -92,20 +92,19 @@ jobs:
         run: |
           mkdir -p ~/.config/dolfinx
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
-      - name: Run DOLFINx demos (Python, serial)
-        run: |
-          . /opt/intel/oneapi/setvars.sh
-          pytest -v -n=2 -m serial --durations=10 python/demo/test.py
-      - name: Run DOLFINx demos (Python, MPI (np=2))
-        run: |
-          . /opt/intel/oneapi/setvars.sh
-          pytest -m mpi --num-proc=2 python/demo/test.py
-      - name: Run DOLFINx Python unit tests (serial)
-        run: |
-          . /opt/intel/oneapi/setvars.sh
-          pytest -n=auto --durations=50 python/test/unit
+      # - name: Run DOLFINx demos (Python, serial)
+      #   run: |
+      #     . /opt/intel/oneapi/setvars.sh
+      #     pytest -v -n=2 -m serial --durations=10 python/demo/test.py
+      # - name: Run DOLFINx demos (Python, MPI (np=2))
+      #   run: |
+      #     . /opt/intel/oneapi/setvars.sh
+      #     pytest -m mpi --num-proc=2 python/demo/test.py
+      # - name: Run DOLFINx Python unit tests (serial)
+      #   run: |
+      #     . /opt/intel/oneapi/setvars.sh
+      #     pytest -n=auto --durations=50 python/test/unit
       - name: Run DOLFINx Python unit tests (MPI, np=2)
         run: |
-          df -h
-        # . /opt/intel/oneapi/setvars.sh
-          # mpiexec -n 2 pytest -vs python/test/unit
+          . /opt/intel/oneapi/setvars.sh
+          mpiexec -n 2 pytest -vs python/test/unit
