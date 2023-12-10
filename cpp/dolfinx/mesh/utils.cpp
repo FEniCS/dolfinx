@@ -193,11 +193,10 @@ mesh::build_topology_data(MPI_Comm comm, MPI_Comm commt,
     dest = graph::regular_adjacency_list(
         std::vector<std::int32_t>(cells.num_nodes(), rank), 1);
     cell_nodes = cells;
-    std::int64_t num_owned(cells.num_nodes());
+    std::int64_t offset(0), num_owned(cells.num_nodes());
     MPI_Exscan(&num_owned, &offset, 1, MPI_INT64_T, MPI_SUM, comm);
     original_cell_index0.resize(cell_nodes.num_nodes());
-    std::iota(original_cell_index0.begin(), original_cell_index0.end(),
-              std::int64_t(0));
+    std::iota(original_cell_index0.begin(), original_cell_index0.end(), offset);
   }
 
   // -- Extract cell topology
