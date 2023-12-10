@@ -127,7 +127,7 @@ reorder_owned(mdspan2_t<const std::int32_t> dofmap, std::int32_t owned_size,
 ///
 /// @param [in] mesh The mesh to build the dofmap on
 /// @param [in] topology The mesh topology
-/// @param [in] element_dof_layout The layout of dofs on a cell
+/// @param [in] element_dof_layouts The layout of dofs on each cell type
 /// @return Returns: * dofmap for first element type [0] (local to the process)
 ///                  * local-to-global map for each local dof
 ///                  * local-to-entity map for each local dof
@@ -171,7 +171,8 @@ build_basic_dofmap(
             + std::to_string(d) + " .");
       }
       needs_entities[d] = true;
-      num_mesh_entities_local[d] = topology.connectivity(d, 0)->num_nodes();
+      num_mesh_entities_local[d] = topology.index_map(d)->size_local()
+                                   + topology.index_map(d)->num_ghosts();
     }
 
     local_size += num_mesh_entities_local[d]
@@ -184,7 +185,7 @@ build_basic_dofmap(
       if (element_dof_layouts[j].num_entity_dofs(d)
           != element_dof_layouts[0].num_entity_dofs(d))
       {
-        throw std::runtime_error("Mismatch between elements.");
+        throw std::runtime_error("Incompatible elements.");
       }
     }
   }
