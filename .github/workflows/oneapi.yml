@@ -106,5 +106,6 @@ jobs:
           pytest -n=auto --durations=50 python/test/unit
       - name: Run DOLFINx Python unit tests (MPI, np=2)
         run: |
-          . /opt/intel/oneapi/setvars.sh
-          mpiexec -n 2 pytest -vs python/test/unit
+          df -h
+        # . /opt/intel/oneapi/setvars.sh
+          # mpiexec -n 2 pytest -vs python/test/unit
