@@ -802,7 +802,7 @@ compute_incident_entities(const Topology& topology,
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     MPI_Comm comm, MPI_Comm commt,
-    const graph::AdjacencyList<std::int64_t>& cells0,
+    const graph::AdjacencyList<std::int64_t>& cells,
     const std::vector<fem::CoordinateElement<
         typename std::remove_reference_t<typename U::value_type>>>& elements,
     const U& x, std::array<std::size_t, 2> xshape,
@@ -838,19 +838,19 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
       {
         int size = dolfinx::MPI::size(comm);
         dest = partitioner(commt, size, tdim,
-                           extract_topology(celltype, doflayout, cells0));
+                           extract_topology(celltype, doflayout, cells));
       }
 
       // Distribute cells (topology, includes higher-order 'nodes') to
       // destination rank
       std::vector<int> src;
       std::tie(cells1, src, original_idx1, ghost_owners)
-          = graph::build::distribute(comm, cells0, dest);
+          = graph::build::distribute(comm, cells, dest);
     }
     else
     {
-      cells1 = cells0;
-      std::int64_t offset(0), num_owned(cells0.num_nodes());
+      cells1 = cells;
+      std::int64_t offset(0), num_owned(cells.num_nodes());
       MPI_Exscan(&num_owned, &offset, 1, MPI_INT64_T, MPI_SUM, comm);
       original_idx1.resize(cells1.num_nodes());
       std::iota(original_idx1.begin(), original_idx1.end(), offset);
@@ -908,8 +908,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
       = create_topology(comm, cells1_v, original_idx1, ghost_owners, {celltype},
                         cell_group_offsets, boundary_v);
 
-  // Create connectivity required to compute the Geometry (extra
-  // connectivities for higher-order geometries)
+  // Create connectivity required to compute the Geometry
+  // (connectivities for higher-order geometries)
   for (int e = 1; e < topology.dim(); ++e)
     if (doflayout.num_entity_dofs(e) > 0)
       topology.create_entities(e);
