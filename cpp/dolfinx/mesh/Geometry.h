@@ -157,29 +157,29 @@ private:
 ///
 /// This function should be called after the mesh topology is built. It
 /// distributes the 'node' coordinate data to the required MPI process
-/// and then creates a mesh::Geometry object.
+/// and then returns a mesh::Geometry object.
 ///
-/// @param[in] comm The MPI communicator to build the Geometry on
-/// @param[in] topology The mesh topology
-/// @param[in] elements The elements that defines the geometry map for
-/// each cell
-/// @param[in] cell_nodes The mesh cells, including higher-order
-/// geometry 'nodes'
+/// @param[in] comm MPI communicator to build the Geometry on.
+/// @param[in] topology Mesh topology.
+/// @param[in] elements Elements that defines the geometry map for
+/// each cell.
+/// @param[in] cells The mesh cells, including higher-order
+/// geometry 'nodes', on this processes.
 /// @param[in] x The node coordinates (row-major, with shape
 /// `(num_nodes, dim)`. The global index of each node is `i +
 /// rank_offset`, where `i` is the local row index in `x` and
 /// `rank_offset` is the sum of `x` rows on all processed with a lower
 /// rank than the caller.
-/// @param[in] dim The geometric dimension (1, 2, or 3)
+/// @param[in] dim Geometric dimension (1, 2, or 3).
 /// @param[in] reorder_fn Function for re-ordering the degree-of-freedom
-/// map associated with the geometry data
+/// map associated with the geometry data.
 template <typename U>
 mesh::Geometry<typename std::remove_reference_t<typename U::value_type>>
 create_geometry(
     MPI_Comm comm, const Topology& topology,
     const std::vector<fem::CoordinateElement<
         std::remove_reference_t<typename U::value_type>>>& elements,
-    const graph::AdjacencyList<std::int64_t>& cell_nodes, const U& x, int dim,
+    const graph::AdjacencyList<std::int64_t>& cells, const U& x, int dim,
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
         reorder_fn
     = nullptr)
@@ -216,11 +216,11 @@ create_geometry(
   }
 
   auto remap_data
-      = [](MPI_Comm comm, auto& cell_nodes, auto& x, int dim, auto& dofmap)
+      = [](MPI_Comm comm, auto& cells, auto& x, int dim, auto& dofmap)
   {
     // Build list of unique (global) node indices from adjacency list
     // (geometry nodes)
-    std::vector<std::int64_t> indices = cell_nodes.array();
+    std::vector<std::int64_t> indices = cells.array();
     dolfinx::radix_sort(std::span(indices));
     indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
 
@@ -229,9 +229,9 @@ create_geometry(
     std::vector coords = dolfinx::MPI::distribute_data(comm, indices, x, dim);
 
     // Compute local-to-global map from local indices in dofmap to the
-    // corresponding global indices in cell_nodes
+    // corresponding global indices in cells
     std::vector l2g
-        = graph::build::compute_local_to_global(cell_nodes.array(), dofmap);
+        = graph::build::compute_local_to_global(cells.array(), dofmap);
 
     // Compute local (dof) to local (position in coords) map from (i)
     // local-to-global for dofs and (ii) local-to-global for entries in
@@ -246,7 +246,7 @@ create_geometry(
     return std::tuple(std::move(coords), std::move(l2l), std::move(igi));
   };
 
-  auto [coords, l2l, igi] = remap_data(comm, cell_nodes, x, dim, dofmap);
+  auto [coords, l2l, igi] = remap_data(comm, cells, x, dim, dofmap);
 
   // Build coordinate dof array, copying coordinates to correct
   // position
