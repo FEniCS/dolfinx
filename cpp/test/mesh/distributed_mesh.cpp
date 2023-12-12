@@ -124,76 +124,24 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   // Read mesh data from file on sub-communicator
   std::vector<T> x;
   std::array<std::size_t, 2> xshape = {0, 2};
-  std::vector<std::int64_t> cells;
   std::array<std::size_t, 2> cshape = {0, 3};
-  graph::AdjacencyList<std::int32_t> dest(0);
+  graph::AdjacencyList<std::int64_t> cells(0);
   if (subset_comm != MPI_COMM_NULL)
   {
     io::XDMFFile infile(subset_comm, "mesh.xdmf", "r");
-    std::tie(cells, cshape) = infile.read_topology_data("mesh");
+    auto [_cells, _cshape] = infile.read_topology_data("mesh");
     auto [_x, _xshape] = infile.read_geometry_data("mesh");
+    assert(_cshape[1] == cshape[1]);
     x = std::move(std::get<std::vector<T>>(_x));
-    int nparts = mpi_size;
-    int tdim = mesh::cell_dim(mesh::CellType::triangle);
-    dest = partitioner(subset_comm, nparts, tdim,
-                       graph::regular_adjacency_list(cells, cshape[1]));
+    cells = graph::regular_adjacency_list(std::move(_cells), cshape[1]);
   }
   CHECK(xshape[1] == 2);
 
-  // -- Distribute cells to destination ranks
-  const auto [cell_nodes, src, original_cell_index, ghost_owners]
-      = graph::build::distribute(
-          comm, graph::regular_adjacency_list(cells, cshape[1]), dest);
-
-  // FIXME: improve way to find 'external' vertices
-  // Count the connections of all vertices on owned cells. If there are 6
-  // connections (on a regular triangular mesh) then it is 'internal'.
-  std::vector<std::int64_t> external_vertices;
-  std::vector<int> cell_group_offsets;
-  {
-    int num_local_cells = cell_nodes.num_nodes() - ghost_owners.size();
-    int ghost_offset = cell_nodes.offsets()[num_local_cells];
-    external_vertices = std::vector<std::int64_t>(
-        cell_nodes.array().begin(), cell_nodes.array().begin() + ghost_offset);
-    std::sort(external_vertices.begin(), external_vertices.end());
-    std::vector<int> counts;
-    auto it = external_vertices.begin();
-    while (it != external_vertices.end())
-    {
-      auto it2 = std::find_if(it, external_vertices.end(),
-                              [&](std::int64_t val) { return (val != *it); });
-      counts.push_back(std::distance(it, it2));
-      it = it2;
-    }
-    external_vertices.erase(
-        std::unique(external_vertices.begin(), external_vertices.end()),
-        external_vertices.end());
-    for (std::size_t i = 0; i < counts.size(); ++i)
-      if (counts[i] == 6)
-        external_vertices[i] = -1;
-    std::sort(external_vertices.begin(), external_vertices.end());
-    it = std::find_if(external_vertices.begin(), external_vertices.end(),
-                      [](std::int64_t i) { return (i != -1); });
-    external_vertices.erase(external_vertices.begin(), it);
-    cell_group_offsets
-        = {0, std::int32_t(cell_nodes.num_nodes() - ghost_owners.size()),
-           cell_nodes.num_nodes()};
-  }
-
-  std::vector<mesh::CellType> cell_types = {cmap.cell_shape()};
-  mesh::Topology topology = mesh::create_topology(
-      comm, cell_nodes, original_cell_index, ghost_owners, cell_types,
-      cell_group_offsets, external_vertices);
-  int tdim = topology.dim();
-
-  mesh::Geometry geometry
-      = mesh::create_geometry(comm, topology, {cmap}, cell_nodes, x, xshape[1]);
-
-  mesh::Mesh<T> mesh(comm,
-                     std::make_shared<mesh::Topology>(std::move(topology)),
-                     std::move(geometry));
-
+  // Build mesh
+  mesh::Mesh mesh = mesh::create_mesh(comm, subset_comm, cells, {cmap}, x,
+                                      xshape, partitioner);
   auto t = mesh.topology();
+  int tdim = t->dim();
   CHECK(t->index_map(tdim)->size_global() == 2 * N * N);
   CHECK(t->index_map(tdim)->size_local() > 0);
   CHECK(t->index_map(0)->size_global() == (N + 1) * (N + 1));
