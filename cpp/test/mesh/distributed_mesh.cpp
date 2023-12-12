@@ -189,16 +189,16 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   mesh::Geometry geometry
       = mesh::create_geometry(comm, topology, {cmap}, cell_nodes, x, xshape[1]);
 
-  auto mesh = std::make_shared<mesh::Mesh<T>>(
-      comm, std::make_shared<mesh::Topology>(std::move(topology)),
-      std::move(geometry));
+  mesh::Mesh<T> mesh(comm,
+                     std::make_shared<mesh::Topology>(std::move(topology)),
+                     std::move(geometry));
 
-  auto t = mesh->topology();
+  auto t = mesh.topology();
   CHECK(t->index_map(tdim)->size_global() == 2 * N * N);
   CHECK(t->index_map(tdim)->size_local() > 0);
   CHECK(t->index_map(0)->size_global() == (N + 1) * (N + 1));
   CHECK(t->index_map(0)->size_local() > 0);
-  CHECK((int)mesh->geometry().x().size() / 3
+  CHECK((int)mesh.geometry().x().size() / 3
         == t->index_map(0)->size_local() + t->index_map(0)->num_ghosts());
 
   MPI_Group_free(&comm_group);
