@@ -54,12 +54,11 @@ public:
                                            std::vector<T>>
                  and std::is_convertible_v<std::remove_cvref_t<W>,
                                            std::vector<std::int64_t>>
-  Geometry(std::shared_ptr<const common::IndexMap> index_map, U&& dofmap,
-           const std::vector<fem::CoordinateElement<
-               typename
-
-               std::remove_reference_t<typename V::value_type>>>& elements,
-           V&& x, int dim, W&& input_global_indices)
+  Geometry(
+      std::shared_ptr<const common::IndexMap> index_map, U&& dofmap,
+      const std::vector<fem::CoordinateElement<
+          typename std::remove_reference_t<typename V::value_type>>>& elements,
+      V&& x, int dim, W&& input_global_indices)
       : _dim(dim), _dofmap(std::forward<U>(dofmap)), _index_map(index_map),
         _cmaps(elements), _x(std::forward<V>(x)),
         _input_global_indices(std::forward<W>(input_global_indices))
