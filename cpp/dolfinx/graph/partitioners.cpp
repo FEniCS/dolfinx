@@ -504,8 +504,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     SCOTCH_dgraphExit(&dgrafdat);
     SCOTCH_stratExit(&strat);
 
-    return graph::AdjacencyList<std::int32_t>(std::move(dests),
-                                              std::move(offsets));
+    return graph::AdjacencyList<int>(std::move(dests), std::move(offsets));
   };
 }
 #endif
@@ -623,8 +622,8 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
       return compute_destination_ranks(comm, graph, node_disp, part);
     else
     {
-      return regular_adjacency_list(
-          std::vector<std::int32_t>(part.begin(), part.end()), 1);
+      return regular_adjacency_list(std::vector<int>(part.begin(), part.end()),
+                                    1);
     }
   };
 }
