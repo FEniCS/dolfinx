@@ -308,6 +308,7 @@ distribute_to_postoffice(MPI_Comm comm, const U& x,
                          std::array<std::int64_t, 2> shape,
                          std::int64_t rank_offset)
 {
+  assert(rank_offset >= 0 or x.empty());
   using T = typename std::remove_reference_t<typename U::value_type>;
 
   const int size = dolfinx::MPI::size(comm);
@@ -458,6 +459,7 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
                            const U& x, std::array<std::int64_t, 2> shape,
                            std::int64_t rank_offset)
 {
+  assert(rank_offset >= 0 or x.empty());
   using T = typename std::remove_reference_t<typename U::value_type>;
 
   common::Timer timer("Distribute row-wise data (scalable)");
