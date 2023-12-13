@@ -104,11 +104,11 @@ compute_ghost_indices(MPI_Comm comm,
 /// starting from zero, compute a local-to-global map for the links.
 /// Both adjacency lists must have the same shape.
 ///
-/// @param[in] global Adjacency list with global link indices
-/// @param[in] local Adjacency list with local, contiguous link indices
+/// @param[in] global Adjacency list with global link indices.
+/// @param[in] local Adjacency list with local, contiguous link indices.
 /// @return Map from local index to global index, which if applied to
 /// the local adjacency list indices would yield the global adjacency
-/// list
+/// list.
 std::vector<std::int64_t>
 compute_local_to_global(std::span<const std::int64_t> global,
                         std::span<const std::int32_t> local);

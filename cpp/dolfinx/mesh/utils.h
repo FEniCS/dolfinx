@@ -903,8 +903,19 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
       topology.create_entities(e);
   if (elements[0].needs_dof_permutations())
     topology.create_entity_permutations();
-  Geometry geometry
-      = create_geometry(comm, topology, elements, cells1, x, xshape[1]);
+
+  // Build list of unique (global) node indices from cells1
+  std::vector<std::int64_t> nodes1 = cells1.array();
+  dolfinx::radix_sort(std::span(nodes1));
+  nodes1.erase(std::unique(nodes1.begin(), nodes1.end()), nodes1.end());
+
+  // Distribute coordinate data to processes where required
+  std::vector coords
+      = dolfinx::MPI::distribute_data(comm, nodes1, x, xshape[1]);
+
+  // Create geometry object
+  Geometry geometry = create_geometry(comm, topology, elements, nodes1,
+                                      cells1.array(), coords, xshape[1]);
 
   return Mesh<typename U::value_type>(
       comm, std::make_shared<Topology>(std::move(topology)),
