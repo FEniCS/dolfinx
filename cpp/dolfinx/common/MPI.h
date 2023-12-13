@@ -191,19 +191,19 @@ std::vector<int> compute_graph_edges_nbx(MPI_Comm comm,
 /// processes. Data is not duplicated across ranks. The global index of
 /// a row is its local row position plus the offset for the calling
 /// process. The post office rank for a row is determined by applying
-/// MPI::index_owner to the global index, and the row is then sent to
-/// the post office rank. The function returns that row data for which
-/// the caller is the post office.
+/// dolfinx::MPI::index_owner to the global index, and the row is then
+/// sent to the post office rank. The function returns that row data for
+/// which the caller is the post office.
 ///
-/// @param[in] comm MPI communicator
-/// @param[in] x Data to distribute (2D, row-major layout)
-/// @param[in] shape The global shape of `x`
+/// @param[in] comm MPI communicator.
+/// @param[in] x Data to distribute (2D, row-major layout).
+/// @param[in] shape The global shape of `x`.
 /// @param[in] rank_offset The rank offset such that global index of
 /// local row `i` in `x` is `rank_offset + i`. It is usually computed
 /// using `MPI_Exscan`.
 /// @returns (0) local indices of my post office data and (1) the data
 /// (row-major). It **does not** include rows that are in `x`, i.e. rows
-/// for which the calling process is the post office
+/// for which the calling process is the post office.
 template <typename U>
 std::pair<std::vector<std::int32_t>,
           std::vector<typename std::remove_reference_t<typename U::value_type>>>
@@ -217,21 +217,21 @@ distribute_to_postoffice(MPI_Comm comm, const U& x,
 /// This function determines local neighborhoods for communication, and
 /// then using MPI neighbourhood collectives to exchange data. It is
 /// scalable if the neighborhoods are relatively small, i.e. each
-/// process communicated with a modest number of other processes
+/// process communicated with a modest number of other processes.
 ///
-/// @param[in] comm The MPI communicator
+/// @param[in] comm The MPI communicator.
 /// @param[in] indices Global indices of the data (row indices) required
-/// by calling process
+/// by calling process.
 /// @param[in] x Data (2D array, row-major) on calling process which may
 /// be distributed (by row). The global index for the `[0, ..., n)`
 /// local rows is assumed to be the local index plus the offset for this
 /// rank.
-/// @param[in] shape The global shape of `x`
+/// @param[in] shape The global shape of `x`.
 /// @param[in] rank_offset The rank offset such that global index of
 /// local row `i` in `x` is `rank_offset + i`. It is usually computed
 /// using `MPI_Exscan`.
-/// @return The data for each index in `indices` (row-major storage)
-/// @pre `shape1 > 0`
+/// @return The data for each index in `indices` (row-major storage).
+/// @pre `shape1 > 0`.
 template <typename U>
 std::vector<typename std::remove_reference_t<typename U::value_type>>
 distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
@@ -472,7 +472,7 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
 
   // Send receive x data to post office (only for rows that need to be
   // communicated)
-  auto [post_indices, post_x] = MPI::distribute_to_postoffice(
+  auto [post_indices, post_x] = dolfinx::MPI::distribute_to_postoffice(
       comm, x, {shape[0], shape[1]}, rank_offset);
   assert(post_indices.size() == post_x.size() / shape[1]);
 
@@ -558,14 +558,14 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
   err = MPI_Comm_free(&neigh_comm0);
   dolfinx::MPI::check_error(comm, err);
 
-  // 2. Send data (rows of x) back to requesting ranks (transpose of the
-  // preceding communication pattern operation)
+  // 2. Send data (rows of x) from post office back to requesting ranks
+  //    (transpose of the preceding communication pattern operation)
 
   // Build map from local index to post_indices position. Set to -1 for
   // data that was already on this rank and was therefore was not
   // sent/received via a postoffice.
   const std::array<std::int64_t, 2> postoffice_range
-      = MPI::local_range(rank, shape[0], size);
+      = dolfinx::MPI::local_range(rank, shape[0], size);
   std::vector<std::int32_t> post_indices_map(
       postoffice_range[1] - postoffice_range[0], -1);
   for (std::size_t i = 0; i < post_indices.size(); ++i)
@@ -582,7 +582,8 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
     for (std::int32_t i = recv_disp[p]; i < recv_disp[p + 1]; ++i)
     {
       std::int64_t index = recv_buffer_index[i];
-      if (index >= rank_offset and index < (rank_offset + shape0_local))
+      if (!x.empty() and index >= rank_offset
+          and index < (rank_offset + shape0_local))
       {
         // I already had this index before any communication
         std::int32_t local_index = index - rank_offset;
@@ -633,7 +634,8 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
   for (std::size_t i = 0; i < indices.size(); ++i)
   {
     const std::int64_t index = indices[i];
-    if (index >= rank_offset and index < (rank_offset + shape0_local))
+    if (!x.empty() and index >= rank_offset
+        and index < (rank_offset + shape0_local))
     {
       // Had data from the start in x
       auto local_index = index - rank_offset;
@@ -642,7 +644,8 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
     }
     else
     {
-      if (int src = MPI::index_owner(size, index, shape[0]); src == rank)
+      if (int src = dolfinx::MPI::index_owner(size, index, shape[0]);
+          src == rank)
       {
         // In my post office bag
         auto local_index = index - postoffice_range[0];
@@ -667,21 +670,23 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
 //---------------------------------------------------------------------------
 template <typename U>
 std::vector<typename std::remove_reference_t<typename U::value_type>>
-distribute_data(MPI_Comm comm, std::span<const std::int64_t> indices,
+distribute_data(MPI_Comm comm0, std::span<const std::int64_t> indices,
                 const U& x, int shape1)
 {
   assert(shape1 > 0);
   assert(x.size() % shape1 == 0);
   const std::int64_t shape0_local = x.size() / shape1;
 
-  std::int64_t shape0(0), rank_offset(0);
-  int err
-      = MPI_Allreduce(&shape0_local, &shape0, 1, MPI_INT64_T, MPI_SUM, comm);
-  dolfinx::MPI::check_error(comm, err);
-  err = MPI_Exscan(&shape0_local, &rank_offset, 1, MPI_INT64_T, MPI_SUM, comm);
-  dolfinx::MPI::check_error(comm, err);
+  int err;
+  std::int64_t shape0 = 0;
+  err = MPI_Allreduce(&shape0_local, &shape0, 1, MPI_INT64_T, MPI_SUM, comm0);
+  dolfinx::MPI::check_error(comm0, err);
 
-  return distribute_from_postoffice(comm, indices, x, {shape0, shape1},
+  std::int64_t rank_offset = 0;
+  err = MPI_Exscan(&shape0_local, &rank_offset, 1, MPI_INT64_T, MPI_SUM, comm0);
+  dolfinx::MPI::check_error(comm0, err);
+
+  return distribute_from_postoffice(comm0, indices, x, {shape0, shape1},
                                     rank_offset);
 }
 //---------------------------------------------------------------------------
