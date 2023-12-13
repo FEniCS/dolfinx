@@ -248,13 +248,13 @@ Mesh<T> create_interval(MPI_Comm comm, std::size_t nx, std::array<double, 2> p,
 
     return create_mesh(comm, MPI_COMM_SELF,
                        graph::regular_adjacency_list(std::move(cells), 2),
-                       {element}, x, {x.size(), 1}, partitioner);
+                       {element}, MPI_COMM_SELF, x, {x.size(), 1}, partitioner);
   }
   else
   {
     return create_mesh(comm, MPI_COMM_NULL,
                        graph::regular_adjacency_list(std::move(cells), 2),
-                       {element}, x, {x.size(), 1}, partitioner);
+                       {element}, MPI_COMM_NULL, x, {x.size(), 1}, partitioner);
   }
 }
 
@@ -333,10 +333,12 @@ Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
                   const CellPartitionFunction& partitioner)
 {
   common::Timer timer("Build BoxMesh (tetrahedra)");
-  std::vector x = create_geom<T>(comm, p, n);
+  std::vector<T> x;
   std::vector<std::int64_t> cells;
   if (subcomm != MPI_COMM_NULL)
   {
+    x = create_geom<T>(subcomm, p, n);
+
     const std::int64_t nx = n[0];
     const std::int64_t ny = n[1];
     const std::int64_t nz = n[2];
@@ -372,7 +374,7 @@ Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
   fem::CoordinateElement<T> element(CellType::tetrahedron, 1);
   return create_mesh(comm, subcomm,
                      graph::regular_adjacency_list(std::move(cells), 4),
-                     {element}, x, {x.size() / 3, 3}, partitioner);
+                     {element}, subcomm, x, {x.size() / 3, 3}, partitioner);
 }
 
 template <std::floating_point T>
@@ -382,10 +384,12 @@ mesh::Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
                         const CellPartitionFunction& partitioner)
 {
   common::Timer timer("Build BoxMesh (hexahedra)");
-  std::vector<T> x = create_geom<T>(comm, p, n);
+  std::vector<T> x;
   std::vector<std::int64_t> cells;
   if (subcomm != MPI_COMM_NULL)
   {
+    x = create_geom<T>(subcomm, p, n);
+
     // Create cuboids
     const std::int64_t nx = n[0];
     const std::int64_t ny = n[1];
@@ -416,7 +420,7 @@ mesh::Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
   fem::CoordinateElement<T> element(CellType::hexahedron, 1);
   return create_mesh(comm, subcomm,
                      graph::regular_adjacency_list(std::move(cells), 8),
-                     {element}, x, {x.size() / 3, 3}, partitioner);
+                     {element}, subcomm, x, {x.size() / 3, 3}, partitioner);
 }
 
 template <std::floating_point T>
@@ -425,10 +429,12 @@ Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
                     std::array<std::size_t, 3> n,
                     const CellPartitionFunction& partitioner)
 {
-  std::vector x = create_geom<T>(comm, p, n);
+  std::vector<T> x;
   std::vector<std::int64_t> cells;
   if (subcomm != MPI_COMM_NULL)
   {
+    x = create_geom<T>(subcomm, p, n);
+
     const std::int64_t nx = n[0];
     const std::int64_t ny = n[1];
     const std::int64_t nz = n[2];
@@ -463,7 +469,7 @@ Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
   fem::CoordinateElement<T> element(CellType::prism, 1);
   return create_mesh(comm, subcomm,
                      graph::regular_adjacency_list(std::move(cells), 6),
-                     {element}, x, {x.size() / 3, 3}, partitioner);
+                     {element}, subcomm, x, {x.size() / 3, 3}, partitioner);
 }
 
 template <std::floating_point T>
@@ -473,7 +479,7 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
                   DiagonalType diagonal)
 {
   fem::CoordinateElement<T> element(CellType::triangle, 1);
-  std::vector<T> geom;
+  std::vector<T> x;
   std::vector<std::int64_t> cells;
   if (dolfinx::MPI::rank(comm) == 0)
   {
@@ -523,7 +529,7 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
       nc = 2 * nx * ny;
     }
 
-    geom.reserve(nv * 2);
+    x.reserve(nv * 2);
     cells.reserve(nc * 3);
 
     // Create main vertices
@@ -532,7 +538,7 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
     {
       const T x1 = c + cd * static_cast<T>(iy);
       for (std::size_t ix = 0; ix <= nx; ix++)
-        geom.insert(geom.end(), {a + ab * static_cast<T>(ix), x1});
+        x.insert(x.end(), {a + ab * static_cast<T>(ix), x1});
     }
 
     // Create midpoint vertices if the mesh type is crossed
@@ -543,7 +549,7 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
       {
         const T x1 = c + cd * (static_cast<T>(iy) + 0.5);
         for (std::size_t ix = 0; ix < nx; ix++)
-          geom.insert(geom.end(), {a + ab * (static_cast<T>(ix) + 0.5), x1});
+          x.insert(x.end(), {a + ab * (static_cast<T>(ix) + 0.5), x1});
       }
       break;
     default:
@@ -630,15 +636,15 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
     }
     }
 
-    return create_mesh(comm, MPI_COMM_SELF,
-                       graph::regular_adjacency_list(std::move(cells), 3),
-                       {element}, geom, {geom.size() / 2, 2}, partitioner);
+    return create_mesh(
+        comm, MPI_COMM_SELF, graph::regular_adjacency_list(std::move(cells), 3),
+        {element}, MPI_COMM_SELF, x, {x.size() / 2, 2}, partitioner);
   }
   else
   {
-    return create_mesh(comm, MPI_COMM_NULL,
-                       graph::regular_adjacency_list(std::move(cells), 3),
-                       {element}, geom, {geom.size() / 2, 2}, partitioner);
+    return create_mesh(
+        comm, MPI_COMM_NULL, graph::regular_adjacency_list(std::move(cells), 3),
+        {element}, MPI_COMM_NULL, x, {x.size() / 2, 2}, partitioner);
   }
 }
 
@@ -683,15 +689,15 @@ Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
       }
     }
 
-    return create_mesh(comm, MPI_COMM_SELF,
-                       graph::regular_adjacency_list(std::move(cells), 4),
-                       {element}, x, {x.size() / 2, 2}, partitioner);
+    return create_mesh(
+        comm, MPI_COMM_SELF, graph::regular_adjacency_list(std::move(cells), 4),
+        {element}, MPI_COMM_SELF, x, {x.size() / 2, 2}, partitioner);
   }
   else
   {
-    return create_mesh(comm, MPI_COMM_NULL,
-                       graph::regular_adjacency_list(std::move(cells), 4),
-                       {element}, x, {x.size() / 2, 2}, partitioner);
+    return create_mesh(
+        comm, MPI_COMM_NULL, graph::regular_adjacency_list(std::move(cells), 4),
+        {element}, MPI_COMM_NULL, x, {x.size() / 2, 2}, partitioner);
   }
 }
 } // namespace impl

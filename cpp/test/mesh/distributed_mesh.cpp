@@ -138,7 +138,7 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   CHECK(xshape[1] == 2);
 
   // Build mesh
-  mesh::Mesh mesh = mesh::create_mesh(comm, subset_comm, cells, {cmap}, x,
+  mesh::Mesh mesh = mesh::create_mesh(comm, subset_comm, cells, {cmap}, comm, x,
                                       xshape, partitioner);
   auto t = mesh.topology();
   int tdim = t->dim();

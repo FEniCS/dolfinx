@@ -298,8 +298,8 @@ mesh::Mesh<T> partition(const mesh::Mesh<T>& old_mesh,
     };
 
     return mesh::create_mesh(old_mesh.comm(), old_mesh.comm(), cell_topology,
-                             old_mesh.geometry().cmaps(), new_coords, xshape,
-                             partitioner);
+                             old_mesh.geometry().cmaps(), old_mesh.comm(),
+                             new_coords, xshape, partitioner);
   }
 }
 

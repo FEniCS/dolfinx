@@ -792,6 +792,7 @@ compute_incident_entities(const Topology& topology,
 /// 'nodes' will be included. See dolfinx::io::cells for examples of the
 /// Basix ordering.
 /// @param[in] elements Coordinate elements for the cells.
+/// @param[in] commg
 /// @param[in] x Geometry data ('node' coordinates). Row-major storage.
 /// The global index of the `i`th node (row) in `x` is taken as `i` plus
 /// the process offset  on`comm`, The offset  is the sum of `x` rows on
@@ -806,7 +807,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     const graph::AdjacencyList<std::int64_t>& cells,
     const std::vector<fem::CoordinateElement<
         typename std::remove_reference_t<typename U::value_type>>>& elements,
-    const U& x, std::array<std::size_t, 2> xshape,
+    MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
     const CellPartitionFunction& partitioner)
 {
   CellType celltype = elements[0].cell_shape();
@@ -911,7 +912,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   dolfinx::radix_sort(std::span(nodes1));
   nodes1.erase(std::unique(nodes1.begin(), nodes1.end()), nodes1.end());
   std::vector coords
-      = dolfinx::MPI::distribute_data(comm, nodes1, x, xshape[1]);
+      = dolfinx::MPI::distribute_data(comm, nodes1, commg, x, xshape[1]);
 
   // Create geometry object
   Geometry geometry = create_geometry(topology, elements, nodes1,
@@ -947,10 +948,10 @@ create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
             const U& x, std::array<std::size_t, 2> xshape, GhostMode ghost_mode)
 {
   if (dolfinx::MPI::size(comm) == 1)
-    return create_mesh(comm, comm, cells, elements, x, xshape, nullptr);
+    return create_mesh(comm, comm, cells, elements, comm, x, xshape, nullptr);
   else
   {
-    return create_mesh(comm, comm, cells, elements, x, xshape,
+    return create_mesh(comm, comm, cells, elements, comm, x, xshape,
                        create_cell_partitioner(ghost_mode));
   }
 }

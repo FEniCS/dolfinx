@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2014 Magnus Vikstrøm and Garth N. Wells
+// Copyright (C) 2007-2023s Magnus Vikstrøm and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -229,7 +229,7 @@ distribute_to_postoffice(MPI_Comm comm, const U& x,
 /// @param[in] shape The global shape of `x`.
 /// @param[in] rank_offset The rank offset such that global index of
 /// local row `i` in `x` is `rank_offset + i`. It is usually computed
-/// using `MPI_Exscan`.
+/// using `MPI_Exscan` on `comm1`.
 /// @return The data for each index in `indices` (row-major storage).
 /// @pre `shape1 > 0`.
 template <typename U>
@@ -246,19 +246,22 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
 /// scalable if the neighborhoods are relatively small, i.e. each
 /// process communicated with a modest number of other processes.
 ///
-/// @param[in] comm The MPI communicator.
+/// @param[in] comm0 Communicator to distribute data across.
 /// @param[in] indices Global indices of the data (row indices) required
 /// by the calling process.
+/// @param[in] comm1 Communicator across which x is distributed. Can be
+/// `MPI_COMM_NULL` on ranks where `x` is empty.
 /// @param[in] x Data (2D array, row-major) on calling process to be
 /// distributed (by row). The global index for the `[0, ..., n)` local
-/// rows is assumed to be the local index plus the offset for this rank.
+/// rows is assumed to be the local index plus the offset for this rank
+/// on `comm1`.
 /// @param[in] shape1 The number of columns of the data array `x`.
 /// @return The data for each index in `indices` (row-major storage).
 /// @pre `shape1 > 0`
 template <typename U>
 std::vector<typename std::remove_reference_t<typename U::value_type>>
-distribute_data(MPI_Comm comm, std::span<const std::int64_t> indices,
-                const U& x, int shape1);
+distribute_data(MPI_Comm comm0, std::span<const std::int64_t> indices,
+                MPI_Comm comm1, const U& x, int shape1);
 
 template <typename T>
 struct dependent_false : std::false_type
@@ -584,8 +587,7 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
     for (std::int32_t i = recv_disp[p]; i < recv_disp[p + 1]; ++i)
     {
       std::int64_t index = recv_buffer_index[i];
-      if (!x.empty() and index >= rank_offset
-          and index < (rank_offset + shape0_local))
+      if (index >= rank_offset and index < (rank_offset + shape0_local))
       {
         // I already had this index before any communication
         std::int32_t local_index = index - rank_offset;
@@ -636,8 +638,7 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
   for (std::size_t i = 0; i < indices.size(); ++i)
   {
     const std::int64_t index = indices[i];
-    if (!x.empty() and index >= rank_offset
-        and index < (rank_offset + shape0_local))
+    if (index >= rank_offset and index < (rank_offset + shape0_local))
     {
       // Had data from the start in x
       auto local_index = index - rank_offset;
@@ -673,7 +674,7 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
 template <typename U>
 std::vector<typename std::remove_reference_t<typename U::value_type>>
 distribute_data(MPI_Comm comm0, std::span<const std::int64_t> indices,
-                const U& x, int shape1)
+                MPI_Comm comm1, const U& x, int shape1)
 {
   assert(shape1 > 0);
   assert(x.size() % shape1 == 0);
@@ -684,9 +685,20 @@ distribute_data(MPI_Comm comm0, std::span<const std::int64_t> indices,
   err = MPI_Allreduce(&shape0_local, &shape0, 1, MPI_INT64_T, MPI_SUM, comm0);
   dolfinx::MPI::check_error(comm0, err);
 
-  std::int64_t rank_offset = 0;
-  err = MPI_Exscan(&shape0_local, &rank_offset, 1, MPI_INT64_T, MPI_SUM, comm0);
-  dolfinx::MPI::check_error(comm0, err);
+  std::int64_t rank_offset = -1;
+  if (comm1 != MPI_COMM_NULL)
+  {
+    rank_offset = 0;
+    err = MPI_Exscan(&shape0_local, &rank_offset, 1, MPI_INT64_T, MPI_SUM,
+                     comm1);
+    dolfinx::MPI::check_error(comm1, err);
+  }
+  else
+  {
+    rank_offset = -1;
+    if (!x.empty())
+      throw std::runtime_error("Non-empty data on null MPI communicator");
+  }
 
   return distribute_from_postoffice(comm0, indices, x, {shape0, shape1},
                                     rank_offset);
