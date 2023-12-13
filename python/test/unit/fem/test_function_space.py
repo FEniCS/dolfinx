@@ -177,6 +177,8 @@ def test_collapse(W, V):
 
     f_0 = Function(Ws[0][0])
     f_1 = Function(V)
+    for (Wi, _) in Ws:
+        assert np.allclose(Wi.dofmap.index_map.ghosts, W.dofmap.index_map.ghosts)
     assert f_0.vector.getSize() == f_1.vector.getSize()
 
 
