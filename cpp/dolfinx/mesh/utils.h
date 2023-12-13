@@ -777,7 +777,7 @@ compute_incident_entities(const Topology& topology,
 /// distribution of the mesh.
 ///
 /// From mesh input data that is distributed across processes, a
-/// distributed a mesh::Mesh is created If the partitioning function is
+/// distributed a mesh::Mesh is created. If the partitioning function is
 /// not callable, i.e. it does not store a callable function, no
 /// re-distribution of cells is done.
 ///
@@ -792,9 +792,10 @@ compute_incident_entities(const Topology& topology,
 /// 'nodes' will be included. See dolfinx::io::cells for examples of the
 /// Basix ordering.
 /// @param[in] elements Coordinate elements for the cells.
-/// @param[in] x Geometry data ('node' coordinates). The global index is
-/// taken as the offset for `x` on `comm` plus the local index.
-/// Row-major storage.
+/// @param[in] x Geometry data ('node' coordinates). Row-major storage.
+/// The global index of the `i`th node (row) in `x` is taken as `i` plus
+/// the process offset  on`comm`, The offset  is the sum of `x` rows on
+/// all processed with a lower rank than the caller.
 /// @param[in] xshape Shape of the `x` data.
 /// @param[in] partitioner Graph partitioner that computes the owning
 /// rank for each cell. If not callable, cells are not redistributed.
@@ -904,17 +905,16 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   if (elements[0].needs_dof_permutations())
     topology.create_entity_permutations();
 
-  // Build list of unique (global) node indices from cells1
+  // Build list of unique (global) node indices from cells1 and
+  // distribute coordinate data
   std::vector<std::int64_t> nodes1 = cells1.array();
   dolfinx::radix_sort(std::span(nodes1));
   nodes1.erase(std::unique(nodes1.begin(), nodes1.end()), nodes1.end());
-
-  // Distribute coordinate data to processes where required
   std::vector coords
       = dolfinx::MPI::distribute_data(comm, nodes1, x, xshape[1]);
 
   // Create geometry object
-  Geometry geometry = create_geometry(comm, topology, elements, nodes1,
+  Geometry geometry = create_geometry(topology, elements, nodes1,
                                       cells1.array(), coords, xshape[1]);
 
   return Mesh<typename U::value_type>(
