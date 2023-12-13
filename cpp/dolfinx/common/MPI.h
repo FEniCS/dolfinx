@@ -246,15 +246,14 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
 /// scalable if the neighborhoods are relatively small, i.e. each
 /// process communicated with a modest number of other processes.
 ///
-/// @param[in] comm The MPI communicator
+/// @param[in] comm The MPI communicator.
 /// @param[in] indices Global indices of the data (row indices) required
-/// by calling process
-/// @param[in] x Data (2D array, row-major) on calling process which may
-/// be distributed (by row). The global index for the `[0, ..., n)`
-/// local rows is assumed to be the local index plus the offset for this
-/// rank.
+/// by the calling process.
+/// @param[in] x Data (2D array, row-major) on calling process to be
+/// distributed (by row). The global index for the `[0, ..., n)` local
+/// rows is assumed to be the local index plus the offset for this rank.
 /// @param[in] shape1 The number of columns of the data array `x`.
-/// @return The data for each index in `indices` (row-major storage)
+/// @return The data for each index in `indices` (row-major storage).
 /// @pre `shape1 > 0`
 template <typename U>
 std::vector<typename std::remove_reference_t<typename U::value_type>>

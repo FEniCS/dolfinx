@@ -917,9 +917,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   Geometry geometry = create_geometry(topology, elements, nodes1,
                                       cells1.array(), coords, xshape[1]);
 
-  return Mesh<typename U::value_type>(
-      comm, std::make_shared<Topology>(std::move(topology)),
-      std::move(geometry));
+  return Mesh(comm, std::make_shared<Topology>(std::move(topology)),
+              std::move(geometry));
 }
 
 /// @brief Create a distributed mesh from mesh data using the default
@@ -983,8 +982,8 @@ create_submesh(const Mesh<T>& mesh, int dim,
   auto [geometry, subx_to_x_dofmap] = mesh::create_subgeometry(
       *mesh.topology(), mesh.geometry(), dim, subentity_to_entity);
 
-  return {Mesh<T>(mesh.comm(), std::make_shared<Topology>(std::move(topology)),
-                  std::move(geometry)),
+  return {Mesh(mesh.comm(), std::make_shared<Topology>(std::move(topology)),
+               std::move(geometry)),
           std::move(subentity_to_entity), std::move(subvertex_to_vertex),
           std::move(subx_to_x_dofmap)};
 }

@@ -153,6 +153,16 @@ private:
   std::vector<std::int64_t> _input_global_indices;
 };
 
+/// @cond
+/// Template type deduction
+template <typename U, typename V, typename W>
+Geometry(std::shared_ptr<const common::IndexMap>, U,
+         const std::vector<fem::CoordinateElement<
+             typename std::remove_reference_t<typename V::value_type>>>,
+         V, int, W)
+    -> Geometry<typename std::remove_cvref_t<typename V::value_type>>;
+/// @endcond
+
 /// @brief Build Geometry from input data.
 ///
 /// This function should be called after the mesh topology is built and
@@ -166,7 +176,7 @@ private:
 /// process. Must be sorted.
 /// @param[in] xdofs Geometry degree-of-freedom map (using global
 /// indices) for cells on this process. `nodes` is a sorted and unique
-/// list of indices in `xdofs`).
+/// list of the indices in `xdofs`.
 /// @param[in] x The node coordinates (row-major, with shape
 /// `(num_nodes, dim)`. The global index of each node is `i +
 /// rank_offset`, where `i` is the local row index in `x` and
@@ -244,8 +254,8 @@ create_geometry(
                 std::next(xg.begin(), 3 * i));
   }
 
-  return Geometry<T>(dof_index_map, std::move(dofmap), elements, std::move(xg),
-                     dim, std::move(igi));
+  return Geometry(dof_index_map, std::move(dofmap), elements, std::move(xg),
+                  dim, std::move(igi));
 }
 
 /// @brief Create a sub-geometry for a subset of entities.
@@ -371,9 +381,9 @@ create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
                  [&igi](std::int32_t sub_x_dof) { return igi[sub_x_dof]; });
 
   // Create geometry
-  return {Geometry<T>(sub_x_dof_index_map, std::move(sub_x_dofmap),
-                      {sub_coord_ele}, std::move(sub_x), geometry.dim(),
-                      std::move(sub_igi)),
+  return {Geometry(sub_x_dof_index_map, std::move(sub_x_dofmap),
+                   {sub_coord_ele}, std::move(sub_x), geometry.dim(),
+                   std::move(sub_igi)),
           std::move(subx_to_x_dofmap)};
 }
 
