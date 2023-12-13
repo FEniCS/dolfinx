@@ -625,8 +625,23 @@ IndexMap::create_submap(std::span<const std::int32_t> indices) const
 
   if (_overlapping)
   {
-    return {IndexMap(_comm.comm(), local_size_new, ghosts, src_ranks),
-            std::move(new_to_old_ghost)};
+    // Sort ghosts according to orignal ordering
+    std::vector<std::int64_t> sorted_ghosts(ghosts.size());
+    std::vector<int> sorted_ranks(src_ranks.size());
+    std::vector<std::int32_t> ghost_order(new_to_old_ghost.size());
+
+    // Sort ghosts by their original ordering in _ghosts
+    std::vector<std::int32_t> perm(new_to_old_ghost.size());
+    std::iota(perm.begin(), perm.end(), 0);
+    argsort_radix<std::int32_t>(std::span(new_to_old_ghost), std::span(perm));
+    for (std::size_t i = 0; i < perm.size(); ++i)
+    {
+      sorted_ghosts[i] = ghosts[perm[i]];
+      sorted_ranks[i] = src_ranks[perm[i]];
+      ghost_order[i] = new_to_old_ghost[perm[i]];
+    }
+    return {IndexMap(_comm.comm(), local_size_new, sorted_ghosts, sorted_ranks),
+            std::move(ghost_order)};
   }
   else
   {
