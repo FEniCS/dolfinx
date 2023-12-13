@@ -182,8 +182,8 @@ graph::AdjacencyList<int> compute_destination_ranks(
   std::vector<int> data(offsets.back());
   {
     std::vector<std::int32_t> pos = offsets;
-    for (const auto& x : local_node_to_dest)
-      data[pos[x[0]]++] = x[1];
+    for (auto [x0, x1] : local_node_to_dest)
+      data[pos[x0]++] = x1;
   }
 
   graph::AdjacencyList<int> g(std::move(data), std::move(offsets));
