@@ -44,4 +44,4 @@ __all__ = [
     "DirichletBC", "dirichletbc", "bcs_by_block", "DofMap", "Form",
     "form", "IntegralType", "create_vector",
     "locate_dofs_geometrical", "locate_dofs_topological",
-    "extract_function_spaces", "create_nonmatching_meshes_interpolation_data"]
+    "extract_function_spaces", "transpose_dofmap", "create_nonmatching_meshes_interpolation_data"]
