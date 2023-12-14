@@ -5,9 +5,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Tools for assembling and manipulating finite element forms."""
 
-from dolfinx.cpp.fem import transpose_dofmap  # noqa
 from dolfinx.cpp.fem import (IntegralType,
-                             create_nonmatching_meshes_interpolation_data)
+                             create_nonmatching_meshes_interpolation_data, transpose_dofmap)
 from dolfinx.cpp.fem import create_sparsity_pattern as _create_sparsity_pattern
 from dolfinx.fem.assemble import (apply_lifting, assemble_matrix,
                                   assemble_scalar, assemble_vector,
