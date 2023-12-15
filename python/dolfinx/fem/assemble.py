@@ -140,9 +140,36 @@ def assemble_scalar(M: Form, constants=None, coeffs=None):
 # -- Vector assembly ---------------------------------------------------------
 
 @functools.singledispatch
-def assemble_vector(L: typing.Any,
-                    constants=None, coeffs=None):
-    return _assemble_vector_form(L, constants, coeffs)
+def assemble_vector(b: np.ndarray, L: Form, constants=None, coeffs=None) -> np.ndarray:
+    """Assemble linear form into an existing vector.
+
+    Args:
+        b: The array to assemble the contribution from the calling MPI
+            rank into. It must have the required size.
+        L: The linear form assemble.
+        constants: Constants that appear in the form. If not provided,
+            any required constants will be computed.
+        coeffs: Coefficients that appear in the form. If not provided,
+            any required coefficients will be computed.
+
+    Note:
+        Passing `constants` and `coefficients` is a performance
+        optimisation for when a form is assembled multiple times and
+        when (some) constants and coefficients are unchanged.
+        The coefficients and constants can be created with
+        :func:`pack_coefficients` and :func:`pack_constants`
+
+    Note:
+        The returned vector is not finalised, i.e. ghost values are not
+        accumulated on the owning processes. Calling
+        :func:`dolfinx.la.Vector.scatter_reverse` on the
+        return vector can accumulate ghost contributions.
+
+    """
+    constants = _pack_constants(L._cpp_object) if constants is None else constants
+    coeffs = _pack_coefficients(L._cpp_object) if coeffs is None else coeffs
+    _cpp.fem.assemble_vector(b, L._cpp_object, constants, coeffs)
+    return b
 
 
 @assemble_vector.register(Form)
@@ -175,80 +202,17 @@ def _assemble_vector_form(L: Form, constants=None, coeffs=None) -> la.Vector:
     b.array[:] = 0
     constants = constants or _pack_constants(L._cpp_object)
     coeffs = coeffs or _pack_coefficients(L._cpp_object)
-    _assemble_vector_array(b.array, L, constants, coeffs)
+    assemble_vector(b.array, L, constants, coeffs)
     return b
 
-
-@assemble_vector.register(np.ndarray)
-def _assemble_vector_array(b: np.ndarray, L: Form, constants=None, coeffs=None):
-    """Assemble linear form into a new Vector.
-
-    Args:
-        b: The array to assemble the contribution from the calling MPI
-            rank into. It must have the required size.
-        L: The linear form assemble.
-        constants: Constants that appear in the form. If not provided,
-            any required constants will be computed.
-        coeffs: Coefficients that appear in the form. If not provided,
-            any required coefficients will be computed.
-
-    Note:
-        Passing `constants` and `coefficients` is a performance
-        optimisation for when a form is assembled multiple times and
-        when (some) constants and coefficients are unchanged.
-
-    Note:
-        The returned vector is not finalised, i.e. ghost values are not
-        accumulated on the owning processes. Calling
-        :func:`dolfinx.la.Vector.scatter_reverse` on the
-        return vector can accumulate ghost contributions.
-
-    """
-    constants = _pack_constants(L._cpp_object) if constants is None else constants
-    coeffs = _pack_coefficients(L._cpp_object) if coeffs is None else coeffs
-    _cpp.fem.assemble_vector(b, L._cpp_object, constants, coeffs)
-    return b
 
 # -- Matrix assembly ---------------------------------------------------------
 
 
 @functools.singledispatch
-def assemble_matrix(a: typing.Any, bcs: typing.Optional[typing.List[DirichletBC]] = None,
-                    diagonal: float = 1.0, constants=None, coeffs=None,
-                    block_mode: typing.Optional[la.BlockMode] = None):
-    """Assemble bilinear form into a matrix.
-
-    Args:
-        a: The bilinear form assemble.
-        bcs: Boundary conditions that affect the assembled matrix.
-            Degrees-of-freedom constrained by a boundary condition will
-            have their rows/columns zeroed and the value ``diagonal``
-            set on on the matrix diagonal.
-        constants: Constants that appear in the form. If not provided,
-            any required constants will be computed.
-        coeffs: Coefficients that appear in the form. If not provided,
-            any required coefficients will be computed.
-         block_mode: Block size mode for the returned space matrix. If
-            ``None``, default is used.
-
-    Returns:
-        Matrix representation of the bilinear form ``a``.
-
-    Note:
-        The returned matrix is not finalised, i.e. ghost values are not
-        accumulated.
-
-    """
-    bcs = [] if bcs is None else bcs
-    A: la.MatrixCSR = create_matrix(a, block_mode)
-    _assemble_matrix_csr(A, a, bcs, diagonal, constants, coeffs)
-    return A
-
-
-@assemble_matrix.register
-def _assemble_matrix_csr(A: la.MatrixCSR, a: Form, bcs: typing.Optional[typing.List[DirichletBC]] = None,
-                         diagonal: float = 1.0, constants=None, coeffs=None) -> la.MatrixCSR:
-    """Assemble bilinear form into a matrix.
+def assemble_matrix(A: la.MatrixCSR, a: Form, bcs: typing.Optional[typing.List[DirichletBC]] = None,
+                    diagonal: float = 1.0, constants=None, coeffs=None) -> la.MatrixCSR:
+    """Assemble bilinear form into an existing matrix.
 
     Args:
         A: The matrix to assemble into. It must have been initialized
@@ -278,6 +242,39 @@ def _assemble_matrix_csr(A: la.MatrixCSR, a: Form, bcs: typing.Optional[typing.L
     # dofs
     if a.function_spaces[0] is a.function_spaces[1]:
         _cpp.fem.insert_diagonal(A._cpp_object, a.function_spaces[0], bcs, diagonal)
+    return A
+
+
+@assemble_matrix.register
+def _assemble_new_matrix(a: Form, bcs: typing.Optional[typing.List[DirichletBC]] = None,
+                         diagonal: float = 1.0, constants=None, coeffs=None,
+                         block_mode: typing.Optional[la.BlockMode] = None) -> la.MatrixCSR:
+    """Assemble bilinear form into a new matrix.
+
+    Args:
+        a: The bilinear form assemble.
+        bcs: Boundary conditions that affect the assembled matrix.
+            Degrees-of-freedom constrained by a boundary condition will
+            have their rows/columns zeroed and the value ``diagonal``
+            set on on the matrix diagonal.
+        constants: Constants that appear in the form. If not provided,
+            any required constants will be computed.
+        coeffs: Coefficients that appear in the form. If not provided,
+            any required coefficients will be computed.
+         block_mode: Block size mode for the returned space matrix. If
+            ``None``, default is used.
+
+    Returns:
+        Matrix representation of the bilinear form ``a``.
+
+    Note:
+        The returned matrix is not finalised, i.e. ghost values are not
+        accumulated.
+
+    """
+    bcs = [] if bcs is None else bcs
+    A: la.MatrixCSR = create_matrix(a, block_mode)
+    assemble_matrix(A, a, bcs, diagonal, constants, coeffs)
     return A
 
 

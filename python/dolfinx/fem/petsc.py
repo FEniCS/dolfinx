@@ -174,30 +174,9 @@ def create_matrix_nest(a: typing.List[typing.List[Form]]) -> PETSc.Mat:
 
 # -- Vector assembly ---------------------------------------------------------
 
+
 @functools.singledispatch
-def assemble_vector(L: typing.Any, constants=None, coeffs=None) -> PETSc.Vec:
-    """Assemble linear form into a new PETSc vector.
-
-    Note:
-        The returned vector is not finalised, i.e. ghost values are not
-        accumulated on the owning processes.
-
-    Args:
-        L: A linear form.
-
-    Returns:
-        An assembled vector.
-
-    """
-    b = create_petsc_vector(L.function_spaces[0].dofmap.index_map,
-                            L.function_spaces[0].dofmap.index_map_bs)
-    with b.localForm() as b_local:
-        _assemble._assemble_vector_array(b_local.array_w, L, constants, coeffs)
-    return b
-
-
-@assemble_vector.register(PETSc.Vec)
-def _assemble_vector_vec(b: PETSc.Vec, L: Form, constants=None, coeffs=None) -> PETSc.Vec:
+def assemble_vector(b: PETSc.Vec, L: Form, constants=None, coeffs=None) -> PETSc.Vec:
     """Assemble linear form into an existing PETSc vector.
 
     Note:
@@ -213,6 +192,28 @@ def _assemble_vector_vec(b: PETSc.Vec, L: Form, constants=None, coeffs=None) -> 
         An assembled vector.
 
     """
+    with b.localForm() as b_local:
+        _assemble.assemble_vector(b_local.array_w, L, constants, coeffs)
+    return b
+
+
+@assemble_vector.register
+def _assemble_vector_new(L: Form, constants=None, coeffs=None) -> PETSc.Vec:
+    """Assemble linear form into a new PETSc vector.
+
+    Note:
+        The returned vector is not finalised, i.e. ghost values arefunctools not
+        accumulated on the owning processes.
+
+    Args:
+        L: A linear form.
+
+    Returns:
+        An assembled vector.
+
+    """
+    b = create_petsc_vector(L.function_spaces[0].dofmap.index_map,
+                            L.function_spaces[0].dofmap.index_map_bs)
     with b.localForm() as b_local:
         _assemble._assemble_vector_array(b_local.array_w, L, constants, coeffs)
     return b
@@ -333,10 +334,41 @@ def _assemble_vector_block_vec(b: PETSc.Vec,
 
 # -- Matrix assembly ---------------------------------------------------------
 @functools.singledispatch
-def assemble_matrix(a: typing.Any, bcs: typing.List[DirichletBC] = [],
-                    diagonal: float = 1.0, constants=None, coeffs=None):
-    """Assemble bilinear form into a matrix. The returned matrix is not
-    finalised, i.e. ghost values are not accumulated.
+def assemble_matrix(A: PETSc.Mat, a: Form, bcs: typing.List[DirichletBC] = [],
+                    diagonal: float = 1.0, constants=None, coeffs=None) -> PETSc.Mat:
+    """Assemble bilinear form into an existing matrix.
+
+    Note:
+        The returned matrix is not 'assembled', i.e. ghost contributions
+        have not been communicated.
+
+    Args:
+        A: Existing matrix with appropriate sparisty pattern
+        a: Bilinear form to assembled into a matrix.
+        bc: Dirichlet boundary conditions applied to the system.
+        diagonal: Value to set on matrix diagonal for Dirichlet boundary
+            condition constrained degrees-of-freedom.
+        constants: Constants appearing the in the form.
+        coeffs: Coefficients appearing the in the form.
+
+    Returns:
+        The matrix with contributions form the bilinear form added.
+    """
+    constants = _pack_constants(a._cpp_object) if constants is None else constants
+    coeffs = _pack_coefficients(a._cpp_object) if coeffs is None else coeffs
+    _bcs = [bc._cpp_object for bc in bcs]
+    _cpp.fem.petsc.assemble_matrix(A, a._cpp_object, constants, coeffs, _bcs)
+    if a.function_spaces[0] is a.function_spaces[1]:
+        A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)
+        A.assemblyEnd(PETSc.Mat.AssemblyType.FLUSH)
+        _cpp.fem.petsc.insert_diagonal(A, a.function_spaces[0], _bcs, diagonal)
+    return A
+
+
+@assemble_matrix.register
+def _assemble_matrix_new_matrix(a: Form, bcs: typing.List[DirichletBC] = [],
+                                diagonal: float = 1.0, constants=None, coeffs=None) -> PETSc.Mat:
+    """Assemble bilinear form into a new matrix.
 
     Note:
         The returned matrix is not 'assembled', i.e. ghost contributions
@@ -355,25 +387,7 @@ def assemble_matrix(a: typing.Any, bcs: typing.List[DirichletBC] = [],
 
     """
     A = _cpp.fem.petsc.create_matrix(a._cpp_object)
-    assemble_matrix_mat(A, a, bcs, diagonal, constants, coeffs)
-    return A
-
-
-@assemble_matrix.register
-def assemble_matrix_mat(A: PETSc.Mat, a: Form, bcs: typing.List[DirichletBC] = [],
-                        diagonal: float = 1.0, constants=None, coeffs=None) -> PETSc.Mat:
-    """Assemble bilinear form into a matrix. The returned matrix is not
-    finalised, i.e. ghost values are not accumulated.
-
-    """
-    constants = _pack_constants(a._cpp_object) if constants is None else constants
-    coeffs = _pack_coefficients(a._cpp_object) if coeffs is None else coeffs
-    _bcs = [bc._cpp_object for bc in bcs]
-    _cpp.fem.petsc.assemble_matrix(A, a._cpp_object, constants, coeffs, _bcs)
-    if a.function_spaces[0] is a.function_spaces[1]:
-        A.assemblyBegin(PETSc.Mat.AssemblyType.FLUSH)
-        A.assemblyEnd(PETSc.Mat.AssemblyType.FLUSH)
-        _cpp.fem.petsc.insert_diagonal(A, a.function_spaces[0], _bcs, diagonal)
+    assemble_matrix(A, a, bcs, diagonal, constants, coeffs)
     return A
 
 
@@ -639,7 +653,7 @@ class LinearProblem:
 
         # Assemble lhs
         self._A.zeroEntries()
-        assemble_matrix_mat(self._A, self._a, bcs=self.bcs)
+        assemble_matrix(self._A, self._a, bcs=self.bcs)
         self._A.assemble()
 
         # Assemble rhs
