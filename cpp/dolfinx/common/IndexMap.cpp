@@ -229,14 +229,9 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
       // Check the index is in the submap, otherwise send -1
       if (idx != -1)
       {
-        // TODO Choose new owner randomly for load balancing
-        const std::vector<std::int32_t>& possible_owners
-            = global_idx_to_possible_owner[idx];
-        // const int random_index = std::rand() % possible_owners.size();
-        // send_owners.push_back(possible_owners[random_index]);
-
-        // FIXME TEMPORARILY CHOOSE THE FIRST PROCESS, MAKE RANDOM
-        send_owners.push_back(possible_owners[0]);
+        // NOTE Could choose new owner in a way that is is better for
+        // load balancing, though the impact is probably only very small
+        send_owners.push_back(global_idx_to_possible_owner[idx][0]);
       }
       else
         send_owners.push_back(-1);
