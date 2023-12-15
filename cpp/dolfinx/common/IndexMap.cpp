@@ -33,6 +33,26 @@ std::array<std::vector<int>, 2> build_src_dest(MPI_Comm comm,
   return {std::move(src), std::move(dest)};
 }
 
+/// This helper function sends ghost indices on a given process to their
+/// owning rank, and receives indices owned by this process that are ghosts
+/// on other processes. The function returns the data structures used in this
+/// common communication pattern.
+/// @param[in] comm The communicator
+/// @param[in] src Source ranks
+/// @param[in] dest Destination ranks
+/// @param[in] ghosts Ghost indices
+/// @param[in] owners Ghost owners
+/// @param[in] include_ghost A list of the same length as `ghosts` whose ith
+/// entry must be non-zero to include ghost[i], otherwise the ghost will be
+/// excluded
+/// @return 1) The ghost indices packed for communication
+///         2) The received indices
+///         3) A map relating the position of a ghost in the packed data to
+///            to its position in `ghosts`
+///         4) The number of indices to send to each process
+///         5) The number of indices received by each process
+///         6) The send displacements
+///         7) The received displacements
 std::tuple<std::vector<std::int64_t>, std::vector<std::int64_t>,
            std::vector<std::size_t>, std::vector<std::int32_t>,
            std::vector<std::int32_t>, std::vector<int>, std::vector<int>>
