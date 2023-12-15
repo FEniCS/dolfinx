@@ -718,9 +718,8 @@ common::create_sub_index_map(const dolfinx::common::IndexMap& imap,
   sub_imap_to_imap.insert(sub_imap_to_imap.end(), submap_ghost.begin(),
                           submap_ghost.end());
 
-  // TODO Change constructor
-  return {IndexMap(comm, submap_local_size, submap_ghost_gidxs,
-                   submap_ghost_owners),
+  return {IndexMap(comm, submap_local_size, {submap_src, submap_dest},
+                   submap_ghost_gidxs, submap_ghost_owners),
           std::move(sub_imap_to_imap)};
 }
 
