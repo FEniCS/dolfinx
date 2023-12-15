@@ -12,7 +12,7 @@ import typing
 
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.common import has_adios2  # noqa
-from dolfinx.cpp.common import (IndexMap, git_commit_hash, has_debug,
+from dolfinx.cpp.common import (IndexMap, git_commit_hash, has_debug,  # noqa
                                 has_kahip, has_parmetis)
 
 __all__ = ["IndexMap", "Timer", "timed", "list_timings", "timing", "TimingType", "Reduction"]
@@ -26,7 +26,7 @@ def timing(task: str):
     return _cpp.common.timing(task)
 
 
-def list_timings(comm: _MPI.Comm, timing_types: list[TimingType], reduction: Reduction = Reduction.max):
+def list_timings(comm: _MPI.Comm, timing_types, reduction=Reduction.max):
     """Print out a summary of all Timer measurements.
 
     One can specify the timing types as a subset of wall time, system time or user time.
