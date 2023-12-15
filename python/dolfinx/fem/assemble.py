@@ -140,7 +140,37 @@ def assemble_scalar(M: Form, constants=None, coeffs=None):
 # -- Vector assembly ---------------------------------------------------------
 
 @functools.singledispatch
-def assemble_vector(b: np.ndarray, L: Form, constants=None, coeffs=None) -> np.ndarray:
+def assemble_vector(b: typing.Any, L: Form, constants=None, coeffs=None) -> np.ndarray:
+    """Assemble linear form into an existing vector.
+
+    Args:
+        b: The array to assemble the contribution from the calling MPI
+            rank into. It must have the required size.
+        L: The linear form assemble.
+        constants: Constants that appear in the form. If not provided,
+            any required constants will be computed.
+        coeffs: Coefficients that appear in the form. If not provided,
+            any required coefficients will be computed.
+
+    Note:
+        Passing `constants` and `coefficients` is a performance
+        optimisation for when a form is assembled multiple times and
+        when (some) constants and coefficients are unchanged.
+        The coefficients and constants can be created with
+        :func:`pack_coefficients` and :func:`pack_constants`
+
+    Note:
+        The returned vector is not finalised, i.e. ghost values are not
+        accumulated on the owning processes. Calling
+        :func:`dolfinx.la.Vector.scatter_reverse` on the
+        return vector can accumulate ghost contributions.
+
+    """
+    return _assemble_vector_numpy(b, L, constants, coeffs)
+
+
+@assemble_vector.register(np.ndarray)
+def _assemble_vector_numpy(b: np.ndarray, L: Form, constants=None, coeffs=None) -> np.ndarray:
     """Assemble linear form into an existing vector.
 
     Args:
@@ -208,9 +238,8 @@ def _assemble_vector_form(L: Form, constants=None, coeffs=None) -> la.Vector:
 
 # -- Matrix assembly ---------------------------------------------------------
 
-
 @functools.singledispatch
-def assemble_matrix(A: la.MatrixCSR, a: Form, bcs: typing.Optional[typing.List[DirichletBC]] = None,
+def assemble_matrix(A: typing.Any, a: Form, bcs: typing.Optional[typing.List[DirichletBC]] = None,
                     diagonal: float = 1.0, constants=None, coeffs=None) -> la.MatrixCSR:
     """Assemble bilinear form into an existing matrix.
 
@@ -232,6 +261,33 @@ def assemble_matrix(A: la.MatrixCSR, a: Form, bcs: typing.Optional[typing.List[D
         accumulated.
 
     """
+    return _assemble_matrix(A, a, bcs, diagonal, constants, coeffs)
+
+
+@assemble_matrix.register(la.MatrixCSR)
+def _assemble_matrix(A: la.MatrixCSR, a: Form, bcs: typing.Optional[typing.List[DirichletBC]] = None,
+                     diagonal: float = 1.0, constants=None, coeffs=None) -> la.MatrixCSR:
+    """Assemble bilinear form into an existing matrix.
+
+    Args:
+        A: The matrix to assemble into. It must have been initialized
+            with the correct sparsity pattern.
+        a: The bilinear form assemble.
+        bcs: Boundary conditions that affect the assembled matrix.
+            Degrees-of-freedom constrained by a boundary condition will
+            have their rows/columns zeroed and the value ``diagonal``
+            set on on
+        constants: Constants that appear in the form. If not provided,
+            any required constants will be computed.
+            the matrix diagonal.
+        coeffs: Coefficients that appear in the form. If not provided,
+            any required coefficients will be computed.
+
+    Note:
+        The returned matrix is not finalised, i.e. ghost values are not
+        accumulated.
+
+    """
     bcs = [] if bcs is None else [bc._cpp_object for bc in bcs]
     constants = _pack_constants(a._cpp_object) if constants is None else constants
     coeffs = _pack_coefficients(a._cpp_object) if coeffs is None else coeffs
@@ -244,7 +300,7 @@ def assemble_matrix(A: la.MatrixCSR, a: Form, bcs: typing.Optional[typing.List[D
     return A
 
 
-@assemble_matrix.register
+@assemble_matrix.register(Form)
 def _assemble_new_matrix(a: Form, bcs: typing.Optional[typing.List[DirichletBC]] = None,
                          diagonal: float = 1.0, constants=None, coeffs=None,
                          block_mode: typing.Optional[la.BlockMode] = None) -> la.MatrixCSR:
