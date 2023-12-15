@@ -115,7 +115,8 @@ def test_index_map_ghost_lifetime():
 # whose owner changes in the submap
 def test_create_submap_owner_change():
     """
-    Test create_sub_index_map. The diagram illustrates the case with four
+    Test create_sub_index_map where the ownership of indices is not
+    preserved in the submap. The diagram illustrates the case with four
     processes. Original map numbering and connectivity (G indicates a ghost
     index):
     Global    Rank 0    Rank 1    Rank 2    Rank 3
