@@ -215,7 +215,7 @@ def _assemble_vector_new(L: Form, constants=None, coeffs=None) -> PETSc.Vec:
     b = create_petsc_vector(L.function_spaces[0].dofmap.index_map,
                             L.function_spaces[0].dofmap.index_map_bs)
     with b.localForm() as b_local:
-        _assemble._assemble_vector_array(b_local.array_w, L, constants, coeffs)
+        _assemble.assemble_vector(b_local.array_w, L, constants, coeffs)
     return b
 
 
@@ -246,7 +246,7 @@ def _assemble_vector_nest_vec(b: PETSc.Vec, L: typing.List[Form], constants=None
     coeffs = [None] * len(L) if coeffs is None else coeffs
     for b_sub, L_sub, const, coeff in zip(b.getNestSubVecs(), L, constants, coeffs):
         with b_sub.localForm() as b_local:
-            _assemble._assemble_vector_array(b_local.array_w, L_sub, const, coeff)
+            _assemble.assemble_vector(b_local.array_w, L_sub, const, coeff)
     return b
 
 
