@@ -14,36 +14,8 @@
 #include <utility>
 #include <vector>
 
-#include<iostream>
-
 using namespace dolfinx;
 using namespace dolfinx::common;
-
-// A function for printing vectors
-template <typename S>
-std::ostream &operator<<(std::ostream &os,
-                         const std::vector<S> &vector)
-{
-  os << "{ ";
-  for (auto v : vector)
-  {
-    os << v << " ";
-  }
-  os << "}";
-  return os;
-}
-
-// A function for printing maps
-template <typename T, typename U>
-std::ostream &operator<<(std::ostream &os,
-                         const std::map<T, U> &map)
-{
-  os << "{ ";
-  for (const auto &[k, v] : map)
-    os << k << ": " << v << " ";
-  os << "}";
-  return os;
-}
 
 namespace
 {
@@ -174,13 +146,9 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
                        std::span<const std::int32_t> indices,
                        bool allow_owner_change)
 {
-  std::stringstream ss;
-
   const MPI_Comm comm = imap.comm();
   std::span<const std::int32_t> src = imap.src();
   std::span<const std::int32_t> dest = imap.dest();
-
-  ss << "rank " << dolfinx::MPI::rank(comm) << ":\n";
 
   // Lookup array to determine if an index is in the sub-map
   std::vector<int> is_in_submap(imap.size_local() + imap.num_ghosts(), 0);
@@ -274,11 +242,6 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
         send_owners.push_back(-1);
     }
 
-    ss << "global_idx_to_possible_owner = " << global_idx_to_possible_owner
-       << "\n";
-
-    ss << "send_owners = " << send_owners << "\n";
-
     // Create neighbourhood comm (owner -> ghost)
     MPI_Comm comm1;
     int ierr = MPI_Dist_graph_create_adjacent(
@@ -292,8 +255,6 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
                                   recv_owners.data(), send_sizes.data(),
                                   send_disp.data(), MPI_INT32_T, comm1);
     dolfinx::MPI::check_error(comm, ierr);
-
-    ss << "recv_owners = " << recv_owners << "\n";
 
     // Free the communicator
     ierr = MPI_Comm_free(&comm1);
@@ -354,15 +315,6 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
   submap_src.erase(std::unique(submap_src.begin(), submap_src.end()),
                    submap_src.end());
   submap_src.shrink_to_fit();
-
-  for (int i = 0; i < dolfinx::MPI::size(comm); ++i)
-  {
-    if (i == dolfinx::MPI::rank(comm))
-    {
-      std::cout << ss.str() << "\n";
-    }
-    MPI_Barrier(comm);
-  }
 
   return {std::move(submap_owned), std::move(submap_ghost),
           std::move(submap_ghost_owners), std::move(submap_src),
