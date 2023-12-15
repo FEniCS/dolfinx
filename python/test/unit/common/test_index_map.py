@@ -113,7 +113,7 @@ def test_index_map_ghost_lifetime():
 
 # TODO: Add test for case where more than one two process shares an index
 # whose owner changes in the submap
-def test_create_submap_connected():
+def test_create_submap_owner_change():
     """
     Test create_sub_index_map. The diagram illustrates the case with four
     processes. Original map numbering and connectivity (G indicates a ghost
