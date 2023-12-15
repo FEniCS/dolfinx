@@ -199,10 +199,10 @@ def assemble_vector(b: PETSc.Vec, L: Form, constants=None, coeffs=None) -> PETSc
 
 @assemble_vector.register
 def _assemble_vector_new(L: Form, constants=None, coeffs=None) -> PETSc.Vec:
-    """Assemble linear form into a new PETSc vector.
+    """Create a PETSc vector and assemble linear form into it.
 
     Note:
-        The returned vector is not finalised, i.e. ghost values arefunctools not
+        The returned vector is not finalised, i.e. ghost values are not
         accumulated on the owning processes.
 
     Args:

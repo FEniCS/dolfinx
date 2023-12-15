@@ -221,10 +221,9 @@ def assemble_matrix(A: la.MatrixCSR, a: Form, bcs: typing.Optional[typing.List[D
         bcs: Boundary conditions that affect the assembled matrix.
             Degrees-of-freedom constrained by a boundary condition will
             have their rows/columns zeroed and the value ``diagonal``
-            set on on
+            set on the matrix diagonal.
         constants: Constants that appear in the form. If not provided,
             any required constants will be computed.
-            the matrix diagonal.
         coeffs: Coefficients that appear in the form. If not provided,
             any required coefficients will be computed.
 
@@ -256,7 +255,7 @@ def _assemble_new_matrix(a: Form, bcs: typing.Optional[typing.List[DirichletBC]]
         bcs: Boundary conditions that affect the assembled matrix.
             Degrees-of-freedom constrained by a boundary condition will
             have their rows/columns zeroed and the value ``diagonal``
-            set on on the matrix diagonal.
+            set on the matrix diagonal.
         constants: Constants that appear in the form. If not provided,
             any required constants will be computed.
         coeffs: Coefficients that appear in the form. If not provided,
