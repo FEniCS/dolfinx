@@ -146,7 +146,7 @@ def assemble_vector(b: np.ndarray, L: Form, constants=None, coeffs=None) -> np.n
     Args:
         b: The array to assemble the contribution from the calling MPI
             rank into. It must have the required size.
-        L: The linear form assemble.
+        L: The linear form to assemble.
         constants: Constants that appear in the form. If not provided,
             any required constants will be computed.
         coeffs: Coefficients that appear in the form. If not provided,
