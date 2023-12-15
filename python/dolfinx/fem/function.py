@@ -421,7 +421,7 @@ class Function(ufl.Coefficient):
         cached and the cached ``Vec`` is returned upon subsequent calls.
 
         Note:
-            Prefer :func`x` where possible.
+            Prefer :func:`x` where possible.
 
         """
         if self._petsc_x is None:
