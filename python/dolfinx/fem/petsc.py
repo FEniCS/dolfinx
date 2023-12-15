@@ -339,7 +339,7 @@ def assemble_matrix(A: PETSc.Mat, a: Form, bcs: typing.List[DirichletBC] = [],
     """Assemble bilinear form into an existing matrix.
 
     Note:
-        The returned matrix is not 'assembled', i.e. ghost contributions
+        The matrix is not zeroed before assembly and is not 'assembled', i.e. ghost contributions
         have not been communicated.
 
     Args:
