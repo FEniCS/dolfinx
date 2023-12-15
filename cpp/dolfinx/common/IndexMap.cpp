@@ -14,33 +14,8 @@
 #include <utility>
 #include <vector>
 
-#include <iostream>
-
 using namespace dolfinx;
 using namespace dolfinx::common;
-
-template <typename S>
-std::ostream& operator<<(std::ostream& os, const std::vector<S>& vector)
-{
-  os << "{ ";
-  for (auto v : vector)
-  {
-    os << v << " ";
-  }
-  os << "}";
-  return os;
-}
-
-// A function for printing maps
-template <typename T, typename U>
-std::ostream& operator<<(std::ostream& os, const std::map<T, U>& map)
-{
-  os << "{ ";
-  for (const auto& [k, v] : map)
-    os << k << ": " << v << " ";
-  os << "}";
-  return os;
-}
 
 namespace
 {
@@ -157,13 +132,16 @@ communicate_ghosts_to_owners(const MPI_Comm comm,
 /// their owning process but included on sharing processes to be
 /// included in the submap. These indices will be owned by one of the sharing
 /// processes in the submap.
+/// @param[in] submap_src Submap source ranks (processes that own the ghost indices
+/// of this rank in the submap)
+/// @param[in] submap_dest Submap dest ranks (processes that ghost the indices owned
+/// by this rank in the submap)
 /// @pre `indices` must be sorted and unique.
 /// @return The owned, ghost, and ghost owners in the submap. All indices are
 /// local and with respect to the original index map.
-// TODO Update docs
 std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
-           std::vector<std::int32_t>, std::vector<std::int32_t>,
-           std::vector<std::int32_t>>
+           std::vector<std::int32_t>, std::vector<std::int>,
+           std::vector<std::int>>
 compute_submap_indices(const dolfinx::common::IndexMap& imap,
                        std::span<const std::int32_t> indices,
                        bool allow_owner_change)
@@ -349,17 +327,6 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
   submap_src.erase(std::unique(submap_src.begin(), submap_src.end()),
                    submap_src.end());
   submap_src.shrink_to_fit();
-
-      // Compute submap destination ranks
-      // NOTE: The call to NBX can be avoided by a two-step communication
-      // process
-      // TODO: Can NBX call be avoided by using O^r_p and O^g_p?
-      // std::vector<int> submap_dest
-      //     = dolfinx::MPI::compute_graph_edges_nbx(comm, submap_src);
-      // std::sort(submap_dest.begin(), submap_dest.end());
-
-      ss
-      << "submap_dest = " << submap_dest << "\n";
 
   for (int i = 0; i < dolfinx::MPI::size(comm); ++i)
   {
