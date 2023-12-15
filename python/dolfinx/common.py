@@ -45,7 +45,7 @@ def list_timings(comm: _MPI.Comm, timing_types, reduction=Reduction.max):
 class Timer:
     """A timer can be used for timing tasks. The basic usage is::
 
-        with Timer(\"Some costly operation\"):
+        with Timer('Some costly operation'):
             costly_call_1()
             costly_call_2()
 
@@ -54,13 +54,13 @@ class Timer:
         with Timer() as t:
             costly_call_1()
             costly_call_2()
-            print(f\"Elapsed time so far: {t.elapsed()[0]}\")
+            print(f'Elapsed time so far: {t.elapsed()[0]}')
 
     The timer is started when entering context manager and timing
     ends when exiting it. It is also possible to start and stop a
     timer explicitly by::
 
-        t = Timer(\"Some costly operation\")
+        t = Timer('Some costly operation')
         t.start()
         costly_call()
         t.stop()
@@ -104,14 +104,14 @@ class Timer:
 def timed(task: str):
     """Decorator for timing functions. The basic usage is::
 
-        @timed(\"Description of function\")
+        @timed('Description of function')
         def f(x):
             return x[0]
 
     and obtained by::
 
         f([[0]],[1], [2]])
-        print(timing(\"Description of function\"))
+        print(timing('Description of function'))
     """
 
     def decorator(func):
