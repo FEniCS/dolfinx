@@ -448,7 +448,7 @@ def _assemble_matrix_nest_mat(A: PETSc.Mat, a: typing.List[typing.List[Form]],
         for j, (a_block, const, coeff) in enumerate(zip(a_row, const_row, coeff_row)):
             if a_block is not None:
                 Asub = A.getNestSubMatrix(i, j)
-                assemble_matrix_mat(Asub, a_block, bcs, diagonal, const, coeff)
+                assemble_matrix(Asub, a_block, bcs, diagonal, const, coeff)
             elif i == j:
                 for bc in bcs:
                     row_forms = [row_form for row_form in a_row if row_form is not None]
@@ -787,7 +787,7 @@ class NonlinearProblem:
 
         """
         A.zeroEntries()
-        assemble_matrix_mat(A, self._a, self.bcs)
+        assemble_matrix(A, self._a, self.bcs)
         A.assemble()
 
 
