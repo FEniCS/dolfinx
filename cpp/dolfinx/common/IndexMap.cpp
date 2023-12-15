@@ -81,26 +81,27 @@ communicate_ghosts_to_owners(const MPI_Comm comm,
                    std::back_inserter(send_sizes),
                    [](auto& d) { return d.size(); });
 
+    // Send how many indices I ghost to each owner, and receive how many
+    // of my indices other ranks ghost
+    recv_sizes.resize(dest.size(), 0);
+    send_sizes.reserve(1);
+    recv_sizes.reserve(1);
+    MPI_Request sizes_request;
+    MPI_Ineighbor_alltoall(send_sizes.data(), 1, MPI_INT32_T, recv_sizes.data(),
+                           1, MPI_INT32_T, comm0, &sizes_request);
+
     // Build send buffer and ghost position to send buffer position
     for (auto& d : send_data)
       send_indices.insert(send_indices.end(), d.begin(), d.end());
     for (auto& p : pos_to_ghost)
       ghost_buffer_pos.insert(ghost_buffer_pos.end(), p.begin(), p.end());
 
-    // Send how many indices I ghost to each owner, and receive how many
-    // of my indices other ranks ghost
-    recv_sizes.resize(dest.size(), 0);
-    send_sizes.reserve(1);
-    recv_sizes.reserve(1);
-    ierr = MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT32_T,
-                                 recv_sizes.data(), 1, MPI_INT32_T, comm0);
-    dolfinx::MPI::check_error(comm, ierr);
-
     // Prepare displacement vectors
     send_disp.resize(src.size() + 1, 0);
     recv_disp.resize(dest.size() + 1, 0);
     std::partial_sum(send_sizes.begin(), send_sizes.end(),
                      std::next(send_disp.begin()));
+    MPI_Wait(&sizes_request, MPI_STATUS_IGNORE);
     std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
                      std::next(recv_disp.begin()));
 
@@ -665,8 +666,8 @@ common::stack_index_maps(
 //-----------------------------------------------------------------------------
 std::pair<IndexMap, std::vector<std::int32_t>>
 common::create_sub_index_map(const dolfinx::common::IndexMap& imap,
-                           std::span<const std::int32_t> indices,
-                           bool allow_owner_change)
+                             std::span<const std::int32_t> indices,
+                             bool allow_owner_change)
 {
   const MPI_Comm comm = imap.comm();
 
