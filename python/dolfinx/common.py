@@ -5,28 +5,40 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """General tools for timing and configuration."""
 
+from mpi4py import MPI as _MPI
+
 import functools
 import typing
 
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.common import (IndexMap, git_commit_hash, has_adios2,  # noqa
-                                has_debug, has_kahip, has_parmetis)
+from dolfinx.cpp.common import has_adios2  # noqa
+from dolfinx.cpp.common import (IndexMap, git_commit_hash, has_debug,
+                                has_kahip, has_parmetis)
 
-__all__ = ["IndexMap", "Timer", "timed"]
+__all__ = ["IndexMap", "Timer", "timed", "list_timings", "timing", "TimingType", "Reduction"]
 
 TimingType = _cpp.common.TimingType
 Reduction = _cpp.common.Reduction
 
 
 def timing(task: str):
+    """Return timing (count, total wall time, total user time, total system time) for given task."""
     return _cpp.common.timing(task)
 
 
-def list_timings(comm, timing_types: list, reduction=Reduction.max):
-    """Print out a summary of all Timer measurements, with a choice of
-    wall time, system time or user time. When used in parallel, a
-    reduction is applied across all processes. By default, the maximum
-    time is shown."""
+def list_timings(comm: _MPI.Comm, timing_types: list[TimingType], reduction: Reduction = Reduction.max):
+    """Print out a summary of all Timer measurements.
+
+    One can specify the timing types as a subset of wall time, system time or user time.
+
+    Note:
+        When used in parallel, a reduction is applied across all processes. By default, the maximum time is shown.
+
+    Args:
+        comm: Communicator to reduce timings over
+        timing_types: List of timings to return
+        reduction: Reduction type over MPI communicator
+    """
     _cpp.common.list_timings(comm, timing_types, reduction)
 
 
@@ -42,7 +54,7 @@ class Timer:
         with Timer() as t:
             costly_call_1()
             costly_call_2()
-            print(\"Elapsed time so far: %s\" % t.elapsed()[0])
+            print(f\"Elapsed time so far: {t.elapsed()[0]}\")
 
     The timer is started when entering context manager and timing
     ends when exiting it. It is also possible to start and stop a
@@ -58,8 +70,7 @@ class Timer:
         t.elapsed()
 
     Timings are stored globally (if task name is given) and
-    may be printed using functions ``timing``, ``timings``,
-    ``list_timings``, ``dump_timings_to_xml``, e.g.::
+    may be printed using functions :func:`timing`, or :func:`list_timings`::
 
         list_timings(comm, [TimingType.wall, TimingType.user])
     """
@@ -91,7 +102,17 @@ class Timer:
 
 
 def timed(task: str):
-    """Decorator for timing functions."""
+    """Decorator for timing functions. The basic usage is::
+
+        @timed(\"Description of function\")
+        def f(x):
+            return x[0]
+
+    and obtained by::
+
+        f([[0]],[1], [2]])
+        print(timing(\"Description of function\"))
+    """
 
     def decorator(func):
         @functools.wraps(func)

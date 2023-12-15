@@ -49,13 +49,17 @@ void common(nb::module_& m)
       .value("average", dolfinx::Table::Reduction::average);
 
   // dolfinx::common::IndexMap
-  nb::class_<dolfinx::common::IndexMap>(m, "IndexMap")
+  nb::class_<dolfinx::common::IndexMap>(
+      m, "IndexMap",
+      "This class distributes a set of contiguous indices over a set of "
+      "processes. The indices can be shared (ghosted) on other processes.")
       .def(
           "__init__",
           [](dolfinx::common::IndexMap* self, MPICommWrapper comm,
              std::int32_t local_size)
           { new (self) dolfinx::common::IndexMap(comm.get(), local_size); },
-          nb::arg("comm"), nb::arg("local_size"))
+          nb::arg("comm"), nb::arg("local_size"),
+          "Create an non-overlapping index map.")
       .def(
           "__init__",
           [](dolfinx::common::IndexMap* self, MPICommWrapper comm,
@@ -68,7 +72,7 @@ void common(nb::module_& m)
                 std::span(ghost_owners.data(), ghost_owners.size()));
           },
           nb::arg("comm"), nb::arg("local_size"), nb::arg("ghosts"),
-          nb::arg("ghost_owners"))
+          nb::arg("ghost_owners"), "Create an overlapping (ghosted) index map.")
       .def(
           "__init__",
           [](dolfinx::common::IndexMap* self, MPICommWrapper comm,
@@ -89,15 +93,20 @@ void common(nb::module_& m)
                 std::span(ghost_owners.data(), ghost_owners.size()));
           },
           nb::arg("comm"), nb::arg("local_size"), nb::arg("dest_src"),
-          nb::arg("ghosts"), nb::arg("ghost_owners"))
+          nb::arg("ghosts"), nb::arg("ghost_owners"),
+          "Create an overlapping (ghosted) index map where the incoming "
+          "processes are pre-computed.")
       .def_prop_ro(
           "comm",
           [](const dolfinx::common::IndexMap& self)
           { return MPICommWrapper(self.comm()); },
-          nb::keep_alive<0, 1>())
-      .def_prop_ro("size_local", &dolfinx::common::IndexMap::size_local)
-      .def_prop_ro("size_global", &dolfinx::common::IndexMap::size_global)
-      .def_prop_ro("num_ghosts", &dolfinx::common::IndexMap::num_ghosts)
+          nb::keep_alive<0, 1>(), "The MPI communicator")
+      .def_prop_ro("size_local", &dolfinx::common::IndexMap::size_local,
+                   "Number of indices owned by the current process")
+      .def_prop_ro("size_global", &dolfinx::common::IndexMap::size_global,
+                   "Number of unique indices in the map")
+      .def_prop_ro("num_ghosts", &dolfinx::common::IndexMap::num_ghosts,
+                   "Number of ghosted indices on the current process")
       .def_prop_ro("local_range", &dolfinx::common::IndexMap::local_range,
                    "Range of indices owned by this map")
       .def_prop_ro("index_to_dest_ranks",
@@ -121,7 +130,7 @@ void common(nb::module_& m)
             return nb::ndarray<nb::numpy, const int, nb::ndim<1>>(
                 owners.data(), {owners.size()});
           },
-          nb::rv_policy::reference_internal)
+          nb::rv_policy::reference_internal, "Return list of ghost owners")
       .def(
           "local_to_global",
           [](const dolfinx::common::IndexMap& self,
@@ -133,7 +142,14 @@ void common(nb::module_& m)
                 std::span<std::int64_t>(global.data(), global.size()));
             return global;
           },
-          nb::arg("local"))
+          nb::arg("local"),
+          nb::raw_doc(
+              "Compute global indices for array of local indices.\n"
+              "\n"
+              "Args:\n"
+              "    local (numpy.typing.NDArray[numpy.int32])): Local indices\n"
+              "Returns:\n"
+              "    The global indices"))
       .def(
           "create_submap",
           [](const dolfinx::common::IndexMap& self,
@@ -145,7 +161,22 @@ void common(nb::module_& m)
             return std::pair(std::move(map),
                              dolfinx_wrappers::as_nbarray(std::move(ghosts)));
           },
-          nb::arg("entities"));
+          nb::arg("entities"),
+          nb::raw_doc("Create new index map from a subset of indices in this "
+                      "index map.\n"
+                      "\n"
+                      "The order of the owned indices is preserved, with new "
+                      "map effectively a 'compressed' map.\n"
+                      "\n"
+                      "Args:\n"
+                      "    entities (numpy.typing.NDArray[numpy.int32])): List "
+                      "of local indices to keep in the new "
+                      "index map\n"
+                      "\n"
+                      "Returns:\n"
+                      "    The (i) new index map and (ii) a map from the "
+                      "ghost position in the new map to the ghost position in "
+                      "the original (this) map"));
 
   // dolfinx::common::Timer
   nb::class_<dolfinx::common::Timer>(m, "Timer", "Timer class")
@@ -153,8 +184,9 @@ void common(nb::module_& m)
       .def(nb::init<std::string>(), nb::arg("task"))
       .def("start", &dolfinx::common::Timer::start, "Start timer")
       .def("stop", &dolfinx::common::Timer::stop, "Stop timer")
-      .def("resume", &dolfinx::common::Timer::resume)
-      .def("elapsed", &dolfinx::common::Timer::elapsed);
+      .def("resume", &dolfinx::common::Timer::resume, "Resume timer")
+      .def("elapsed", &dolfinx::common::Timer::elapsed,
+           "Return wall, user and system time in seconds");
 
   // dolfinx::common::Timer enum
   nb::enum_<dolfinx::TimingType>(m, "TimingType")
