@@ -232,7 +232,7 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
         }
       }
 
-      if (owners_changed && !allow_owner_change)
+      if (owners_changed and !allow_owner_change)
         throw std::runtime_error("Index owner change detected!");
     }
 

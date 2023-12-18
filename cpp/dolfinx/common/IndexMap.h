@@ -54,21 +54,26 @@ stack_index_maps(
     const std::vector<
         std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
 
-/// @brief Create a new index map from a subset of indices in an index
-/// map.
-/// @param[in] imap The index map
-/// @param[in] indices Local indices to include in the new index map (owned
-/// and ghost)
-/// @param[in] allow_owner_change Allows indices that are not included by
-/// their owning process but included on sharing processes to be
-/// included in the submap. These indices will be owned by one of the sharing
-/// processes in the submap.
-/// @pre `indices` must be sorted and contain no duplicates.
-/// @return The (i) new index map and (ii) a map from local indices in the
-/// submap to local indices in the original (this) map
+/// @brief Create a new index map from a subset of indices in an
+/// existing index map.
+///
+/// @param[in] imap Parent map to create a new sub-map from.
+/// @param[in] indices Local indices in `imap` (owned and ghost) to
+/// include in the new index map.
+/// @param[in] allow_owner_change If `true`, indices that are not
+/// included in `indices` by their owning process can be included in
+/// `indices` by processes that ghost the indices to be included in the
+/// new submap. These indices will be owned by one of the sharing
+/// processes in the submap. If `false`, and exception is raised if an
+/// index is included by a sharing process and not by the owning
+/// process.
+/// @return The (i) new index map and (ii) a map from local indices in
+/// the submap to local indices in the original (this) map.
+/// @pre `indices` must be sorted and must not contain duplicates.
 std::pair<IndexMap, std::vector<std::int32_t>>
-create_sub_index_map(const IndexMap& imap, std::span<const std::int32_t> indices,
-                   bool allow_owner_change = false);
+create_sub_index_map(const IndexMap& imap,
+                     std::span<const std::int32_t> indices,
+                     bool allow_owner_change = false);
 
 /// This class represents the distribution index arrays across
 /// processes. An index array is a contiguous collection of N+1 indices
