@@ -100,10 +100,10 @@ void common(nb::module_& m)
       .def_prop_ro("num_ghosts", &dolfinx::common::IndexMap::num_ghosts)
       .def_prop_ro("local_range", &dolfinx::common::IndexMap::local_range,
                    "Range of indices owned by this map")
-      .def_prop_ro("index_to_dest_ranks",
-                   &dolfinx::common::IndexMap::index_to_dest_ranks)
-      .def_prop_ro("imbalance", &dolfinx::common::IndexMap::imbalance,
-                   "Imbalance of the current IndexMap.")
+      .def("index_to_dest_ranks",
+           &dolfinx::common::IndexMap::index_to_dest_ranks)
+      .def("imbalance", &dolfinx::common::IndexMap::imbalance,
+           "Imbalance of the current IndexMap.")
       .def_prop_ro(
           "ghosts",
           [](const dolfinx::common::IndexMap& self)
@@ -129,7 +129,7 @@ void common(nb::module_& m)
           {
             std::vector<std::int64_t> global(local.size());
             self.local_to_global(std::span(local.data(), local.size()), global);
-            return global;
+            return dolfinx_wrappers::as_nbarray(std::move(global));
           },
           nb::arg("local"));
 
