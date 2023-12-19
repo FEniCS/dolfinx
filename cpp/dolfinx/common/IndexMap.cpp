@@ -9,7 +9,6 @@
 #include <algorithm>
 #include <cstdint>
 #include <functional>
-#include <map>
 #include <numeric>
 #include <span>
 #include <utility>
@@ -870,13 +869,12 @@ void IndexMap::global_to_local(std::span<const std::int64_t> global,
                                std::span<std::int32_t> local) const
 {
   const std::int32_t local_size = _local_range[1] - _local_range[0];
-
-  std::vector<std::pair<std::int64_t, std::int32_t>> global_local_ghosts(
+  std::vector<std::pair<std::int64_t, std::int32_t>> global_to_local(
       _ghosts.size());
   for (std::size_t i = 0; i < _ghosts.size(); ++i)
-    global_local_ghosts[i] = {_ghosts[i], i + local_size};
-  std::map<std::int64_t, std::int32_t> global_to_local(
-      global_local_ghosts.begin(), global_local_ghosts.end());
+    global_to_local[i] = {_ghosts[i], i + local_size};
+
+  std::sort(global_to_local.begin(), global_to_local.end());
   std::transform(global.begin(), global.end(), local.begin(),
                  [range = _local_range,
                   &global_to_local](std::int64_t index) -> std::int32_t
@@ -885,7 +883,9 @@ void IndexMap::global_to_local(std::span<const std::int64_t> global,
                      return index - range[0];
                    else
                    {
-                     auto it = global_to_local.find(index);
+                     auto it = std::lower_bound(
+                         global_to_local.begin(), global_to_local.end(), index,
+                         [](auto a, auto b) { return a.first < b; });
                      return it != global_to_local.end() ? it->second : -1;
                    }
                  });

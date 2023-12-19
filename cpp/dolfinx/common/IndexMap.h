@@ -19,10 +19,10 @@ namespace dolfinx::common
 // Forward declaration
 class IndexMap;
 
-/// @brief Given a sorted vector of indices (local numbering, owned or ghost)
-/// and an index map, this function returns the indices owned by this process,
-/// including indices that might have been in the list of indices on another
-/// processes.
+/// @brief Given a sorted vector of indices (local numbering, owned or
+/// ghost) and an index map, this function returns the indices owned by
+/// this process, including indices that might have been in the list of
+/// indices on another processes.
 /// @param[in] indices List of indices
 /// @param[in] map The index map
 /// @return Indices owned by the calling process
@@ -76,11 +76,11 @@ create_sub_index_map(const IndexMap& imap,
                      bool allow_owner_change = false);
 
 /// This class represents the distribution index arrays across
-/// processes. An index array is a contiguous collection of N+1 indices
-/// [0, 1, . . ., N] that are distributed across M processes. On a given
-/// process, the IndexMap stores a portion of the index set using local
-/// indices [0, 1, . . . , n], and a map from the local indices to a
-/// unique global index.
+/// processes. An index array is a contiguous collection of `N+1`
+/// indices `[0, 1, . . ., N]` that are distributed across `M`
+/// processes. On a given process, the IndexMap stores a portion of the
+/// index set using local indices `[0, 1, . . . , n]`, and a map from
+/// the local indices to a unique global index.
 class IndexMap
 {
 public:
@@ -88,9 +88,10 @@ public:
   ///
   /// @note Collective
   ///
-  /// @param[in] comm The MPI communicator
+  /// @param[in] comm MPI communicator that the index map is distributed
+  /// across.
   /// @param[in] local_size Local size of the index map, i.e. the number
-  /// of owned entries
+  /// of owned entries.
   IndexMap(MPI_Comm comm, std::int32_t local_size);
 
   /// @brief Create an overlapping (ghosted) index map.
@@ -103,7 +104,8 @@ public:
   ///
   /// @note Collective
   ///
-  /// @param[in] comm The MPI communicator
+  /// @param[in] comm MPI communicator that the index map is distributed
+  /// across.
   /// @param[in] local_size Local size of the index map, i.e. the number
   /// of owned entries
   /// @param[in] ghosts The global indices of ghost entries
@@ -122,7 +124,8 @@ public:
   ///
   /// @note Collective
   ///
-  /// @param[in] comm The MPI communicator
+  /// @param[in] comm MPI communicator that the index map is distributed
+  /// across.
   /// @param[in] local_size Local size of the index map, i.e. the number
   /// @param[in] src_dest Lists of [0] src and [1] dest ranks. The list
   /// in each must be sorted and not contain duplicates. `src` ranks are
@@ -176,7 +179,7 @@ public:
   void local_to_global(std::span<const std::int32_t> local,
                        std::span<std::int64_t> global) const;
 
-  /// @brief Compute local indices for array of global indices
+  /// @brief Compute local indices for array of global indices.
   /// @param[in] global Global indices
   /// @param[out] local The local of the corresponding global index in
   /// 'global'. Returns -1 if the local index does not exist on this
@@ -185,7 +188,7 @@ public:
                        std::span<std::int32_t> local) const;
 
   /// @brief Build list of indices with global indexing.
-  /// @return The global index for all local indices (0, 1, 2, ...) on
+  /// @return The global index for all local indices `(0, 1, 2, ...)` on
   /// this process, including ghosts
   std::vector<std::int64_t> global_indices() const;
 
