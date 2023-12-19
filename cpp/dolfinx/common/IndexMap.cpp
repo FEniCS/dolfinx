@@ -164,7 +164,7 @@ communicate_ghosts_to_owners(MPI_Comm comm, std::span<const int> src,
 /// indices are local and with respect to the original index map.
 std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
            std::vector<int>, std::vector<int>, std::vector<int>>
-compute_submap_indices(const dolfinx::common::IndexMap& imap,
+compute_submap_indices(const IndexMap& imap,
                        std::span<const std::int32_t> indices,
                        bool allow_owner_change)
 {
@@ -358,12 +358,13 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
 /// submap
 /// @param[in] imap The original index map
 /// @pre submap_owned must be sorted and contain no repeated indices
-std::vector<std::int64_t> compute_submap_ghost_indices(
-    std::span<const int> submap_src, std::span<const int> submap_dest,
-    std::span<const std::int32_t> submap_owned,
-    std::span<const std::int64_t> submap_ghosts_global,
-    std::span<const std::int32_t> submap_ghost_owners, int submap_offset,
-    const dolfinx::common::IndexMap& imap)
+std::vector<std::int64_t>
+compute_submap_ghost_indices(std::span<const int> submap_src,
+                             std::span<const int> submap_dest,
+                             std::span<const std::int32_t> submap_owned,
+                             std::span<const std::int64_t> submap_ghosts_global,
+                             std::span<const std::int32_t> submap_ghost_owners,
+                             int submap_offset, const IndexMap& imap)
 {
   // --- Step 1 ---: Send global ghost indices (w.r.t. original imap) to
   // owning rank
@@ -545,8 +546,8 @@ std::tuple<std::int64_t, std::vector<std::int32_t>,
            std::vector<std::vector<std::int64_t>>,
            std::vector<std::vector<int>>>
 common::stack_index_maps(
-    const std::vector<
-        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps)
+    const std::vector<std::pair<std::reference_wrapper<const IndexMap>, int>>&
+        maps)
 {
   // Compute process offset for stacked index map
   const std::int64_t process_offset = std::accumulate(
@@ -601,7 +602,7 @@ common::stack_index_maps(
   for (std::size_t m = 0; m < maps.size(); ++m)
   {
     const int bs = maps[m].second;
-    const common::IndexMap& map = maps[m].first.get();
+    const IndexMap& map = maps[m].first.get();
     std::span ghosts = map.ghosts();
     std::span owners = map.owners();
 
@@ -712,7 +713,7 @@ common::stack_index_maps(
 }
 //-----------------------------------------------------------------------------
 std::pair<IndexMap, std::vector<std::int32_t>>
-common::create_sub_index_map(const dolfinx::common::IndexMap& imap,
+common::create_sub_index_map(const IndexMap& imap,
                              std::span<const std::int32_t> indices,
                              bool allow_owner_change)
 {

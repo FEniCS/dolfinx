@@ -1167,16 +1167,14 @@ mesh::create_subtopology(const Topology& topology, int dim,
   std::vector<int32_t> subentities;
   {
     // FIXME Make this an input requirement?
-    std::vector<std::int32_t> unique_entities(entities.begin(), entities.end());
-    std::sort(unique_entities.begin(), unique_entities.end());
-    unique_entities.erase(
-        std::unique(unique_entities.begin(), unique_entities.end()),
-        unique_entities.end());
-    std::pair<common::IndexMap, std::vector<int32_t>> map_data
-        = common::create_sub_index_map(*topology.index_map(dim),
-                                       unique_entities);
-    submap = std::make_shared<common::IndexMap>(std::move(map_data.first));
-    subentities = std::move(map_data.second);
+    std::vector<std::int32_t> _entities(entities.begin(), entities.end());
+    std::sort(_entities.begin(), _entities.end());
+    _entities.erase(std::unique(_entities.begin(), _entities.end()),
+                    _entities.end());
+    auto [_submap, _subentities]
+        = common::create_sub_index_map(*topology.index_map(dim), _entities);
+    submap = std::make_shared<common::IndexMap>(std::move(_submap));
+    subentities = std::move(_subentities);
   }
 
   // Get the vertices in the sub-topology. Use subentities
@@ -1193,7 +1191,7 @@ mesh::create_subtopology(const Topology& topology, int dim,
   std::vector<int32_t> subvertices0;
   {
     std::pair<common::IndexMap, std::vector<int32_t>> map_data
-        = dolfinx::common::create_sub_index_map(
+        = common::create_sub_index_map(
             *map0, compute_incident_entities(topology, subentities, dim, 0),
             true);
     submap0 = std::make_shared<common::IndexMap>(std::move(map_data.first));
