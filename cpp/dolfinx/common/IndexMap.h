@@ -51,8 +51,8 @@ std::tuple<std::int64_t, std::vector<std::int32_t>,
            std::vector<std::vector<std::int64_t>>,
            std::vector<std::vector<int>>>
 stack_index_maps(
-    const std::vector<
-        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& maps);
+    const std::vector<std::pair<std::reference_wrapper<const IndexMap>, int>>&
+        maps);
 
 /// @brief Create a new index map from a subset of indices in an
 /// existing index map.
