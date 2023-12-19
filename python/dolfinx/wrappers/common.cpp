@@ -108,7 +108,7 @@ void common(nb::module_& m)
           "ghosts",
           [](const dolfinx::common::IndexMap& self)
           {
-            const std::vector<std::int64_t>& ghosts = self.ghosts();
+            std::span ghosts = self.ghosts();
             return nb::ndarray<const std::int64_t, nb::numpy>(ghosts.data(),
                                                               {ghosts.size()});
           },
@@ -117,7 +117,7 @@ void common(nb::module_& m)
           "owners",
           [](const dolfinx::common::IndexMap& self)
           {
-            const std::vector<int>& owners = self.owners();
+            std::span owners = self.owners();
             return nb::ndarray<nb::numpy, const int, nb::ndim<1>>(
                 owners.data(), {owners.size()});
           },
@@ -128,9 +128,7 @@ void common(nb::module_& m)
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> local)
           {
             std::vector<std::int64_t> global(local.size());
-            self.local_to_global(
-                std::span(local.data(), local.size()),
-                std::span<std::int64_t>(global.data(), global.size()));
+            self.local_to_global(std::span(local.data(), local.size()), global);
             return global;
           },
           nb::arg("local"));
@@ -180,7 +178,8 @@ void common(nb::module_& m)
          bool allow_owner_change)
       {
         auto [map, submap_to_map] = dolfinx::common::create_sub_index_map(
-            imap, std::span(indices.data(), indices.size()), allow_owner_change);
+            imap, std::span(indices.data(), indices.size()),
+            allow_owner_change);
         return std::pair(std::move(map), dolfinx_wrappers::as_nbarray(
                                              std::move(submap_to_map)));
       },

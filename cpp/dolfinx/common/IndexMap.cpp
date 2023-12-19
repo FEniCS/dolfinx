@@ -7,6 +7,7 @@
 #include "IndexMap.h"
 #include "sort.h"
 #include <algorithm>
+#include <cstdint>
 #include <functional>
 #include <map>
 #include <numeric>
@@ -34,17 +35,17 @@ std::array<std::vector<int>, 2> build_src_dest(MPI_Comm comm,
 }
 
 /// This helper function sends ghost indices on a given process to their
-/// owning rank, and receives indices owned by this process that are ghosts
-/// on other processes. The function returns the data structures used in this
-/// common communication pattern.
-/// @param[in] comm The communicator
-/// @param[in] src Source ranks
-/// @param[in] dest Destination ranks
-/// @param[in] ghosts Ghost indices
-/// @param[in] owners Ghost owners
-/// @param[in] include_ghost A list of the same length as `ghosts` whose ith
-/// entry must be non-zero to include ghost[i], otherwise the ghost will be
-/// excluded
+/// owning rank, and receives indices owned by this process that are
+/// ghosts on other processes. The function returns the data structures
+/// used in this common communication pattern.
+/// @param[in] comm The communicator (global).
+/// @param[in] src Source ranks.
+/// @param[in] dest Destination ranks.
+/// @param[in] ghosts Ghost indices.
+/// @param[in] owners Owning rank for each entry in `ghosts`.
+/// @param[in] include_ghost A list of the same length as `ghosts` whose
+/// ith entry must be non-zero (true) to include `ghost[i]`, otherwise
+/// the ghost will be excluded
 /// @return 1) The ghost indices packed for communication
 ///         2) The received indices
 ///         3) A map relating the position of a ghost in the packed data to
@@ -53,15 +54,16 @@ std::array<std::vector<int>, 2> build_src_dest(MPI_Comm comm,
 ///         5) The number of indices received by each process
 ///         6) The send displacements
 ///         7) The received displacements
+/// @pre `src` must be sorted and unique
+/// @pre `dest` must be sorted and unique
 std::tuple<std::vector<std::int64_t>, std::vector<std::int64_t>,
            std::vector<std::size_t>, std::vector<std::int32_t>,
            std::vector<std::int32_t>, std::vector<int>, std::vector<int>>
-communicate_ghosts_to_owners(const MPI_Comm comm,
-                             std::span<const std::int32_t> src,
-                             std::span<const std::int32_t> dest,
+communicate_ghosts_to_owners(const MPI_Comm comm, std::span<const int> src,
+                             std::span<const int> dest,
                              std::span<const std::int64_t> ghosts,
                              std::span<const std::int32_t> owners,
-                             std::span<const int> include_ghost)
+                             std::span<const std::uint8_t> include_ghost)
 {
   // Send ghost indices to owning rank
   std::vector<std::int64_t> send_indices, recv_indices;
@@ -83,7 +85,7 @@ communicate_ghosts_to_owners(const MPI_Comm comm,
     {
       auto it = std::lower_bound(src.begin(), src.end(), owners[i]);
       assert(it != src.end() and *it == owners[i]);
-      int r = std::distance(src.begin(), it);
+      std::size_t r = std::distance(src.begin(), it);
       if (include_ghost[i])
       {
         send_data[r].push_back(ghosts[i]);
@@ -143,22 +145,23 @@ communicate_ghosts_to_owners(const MPI_Comm comm,
           std::move(recv_disp)};
 }
 
-/// Given an index map and a subset of local indices (can be owned or ghost but
-/// must be unique and sorted), computes the owned, ghost and ghost owners in
-/// the submap.
+/// Given an index map and a subset of local indices (can be owned or
+/// ghost but must be unique and sorted), computes the owned, ghost and
+/// ghost owners in the submap.
 /// @param[in] imap An index map.
-/// @param[in] indices List of entity indices (indices local to the process).
-/// @param[in] allow_owner_change Allows indices that are not included by
-/// their owning process but included on sharing processes to be
-/// included in the submap. These indices will be owned by one of the sharing
-/// processes in the submap.
-/// @param[in] submap_src Submap source ranks (processes that own the ghost
-/// indices of this rank in the submap)
-/// @param[in] submap_dest Submap dest ranks (processes that ghost the indices
-/// owned by this rank in the submap)
+/// @param[in] indices List of entity indices (indices local to the
+/// process).
+/// @param[in] allow_owner_change Allows indices that are not included
+/// by their owning process but included on sharing processes to be
+/// included in the submap. These indices will be owned by one of the
+/// sharing processes in the submap.
+/// @param[in] submap_src Submap source ranks (processes that own the
+/// ghost indices of this rank in the submap)
+/// @param[in] submap_dest Submap dest ranks (processes that ghost the
+/// indices owned by this rank in the submap)
 /// @pre `indices` must be sorted and unique.
-/// @return The owned, ghost, and ghost owners in the submap. All indices are
-/// local and with respect to the original index map.
+/// @return The owned, ghost, and ghost owners in the submap. All
+/// indices are local and with respect to the original index map.
 std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
            std::vector<std::int32_t>, std::vector<std::int32_t>,
            std::vector<std::int32_t>>
@@ -167,13 +170,14 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
                        bool allow_owner_change)
 {
   const MPI_Comm comm = imap.comm();
-  std::span<const std::int32_t> src = imap.src();
-  std::span<const std::int32_t> dest = imap.dest();
+  std::span<const int> src = imap.src();
+  std::span<const int> dest = imap.dest();
 
   // Lookup array to determine if an index is in the sub-map
-  std::vector<int> is_in_submap(imap.size_local() + imap.num_ghosts(), 0);
+  std::vector<std::uint8_t> is_in_submap(imap.size_local() + imap.num_ghosts(),
+                                         0);
   std::for_each(indices.begin(), indices.end(),
-                [&is_in_submap](int i) { is_in_submap[i] = 1; });
+                [&is_in_submap](auto i) { is_in_submap[i] = 1; });
 
   // --- Step 1 ---: Send ghost indices in `indices` to their owners
   // and receive indices owned by this process that are in `indices`
@@ -182,8 +186,8 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
         send_disp, recv_disp]
       = communicate_ghosts_to_owners(
           imap.comm(), imap.src(), imap.dest(), imap.ghosts(), imap.owners(),
-          std::span<const int>(is_in_submap.cbegin() + imap.size_local(),
-                               is_in_submap.cend()));
+          std::span(is_in_submap.cbegin() + imap.size_local(),
+                    is_in_submap.cend()));
 
   // --- Step 2 ---: Create a map from the indices in `recv_indices` (i.e.
   // indices owned by this process that are in `indices` on other processes) to
@@ -339,12 +343,14 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
 /// Computes the global indices of ghosts in a submap.
 /// @param[in] submap_src The submap source ranks
 /// @param[in] submap_dest The submap destination ranks
-/// @param[in] submap_owned Owned submap indices (local w.r.t. original index
-/// map)
-/// @param[in] submap_ghosts_global Ghost submap indices (global w.r.t. original
+/// @param[in] submap_owned Owned submap indices (local w.r.t. original
 /// index map)
-/// @param[in] submap_ghost_owners The ranks that own the ghosts in the submap
-/// @param[in] submap_offset The global offset for this rank in the submap
+/// @param[in] submap_ghosts_global Ghost submap indices (global w.r.t.
+/// original index map)
+/// @param[in] submap_ghost_owners The ranks that own the ghosts in the
+/// submap
+/// @param[in] submap_offset The global offset for this rank in the
+/// submap
 /// @param[in] imap The original index map
 /// @pre submap_owned must be sorted and contain no repeated indices
 std::vector<std::int64_t> compute_submap_ghost_indices(
@@ -363,7 +369,7 @@ std::vector<std::int64_t> compute_submap_ghost_indices(
       = communicate_ghosts_to_owners(
           imap.comm(), submap_src, submap_dest, submap_ghosts_global,
           submap_ghost_owners,
-          std::vector<int>(submap_ghosts_global.size(), 1));
+          std::vector<std::uint8_t>(submap_ghosts_global.size(), 1));
 
   // --- Step 2 ---: For each received index, compute the submap global index
 
@@ -429,8 +435,8 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
   // Assume that indices are sorted and unique
   assert(std::is_sorted(indices.begin(), indices.end()));
 
-  std::vector<std::int64_t> ghosts = map.ghosts();
-  std::vector<int> owners = map.owners();
+  std::span ghosts = map.ghosts();
+  std::vector<int> owners(map.owners().begin(), map.owners().end());
 
   // Find first index that is not owned by this rank
   std::int32_t size_local = map.size_local();
@@ -454,8 +460,8 @@ common::compute_owned_indices(std::span<const std::int32_t> indices,
   std::sort(global_indices.begin(), global_indices.end());
   std::sort(ghost_owners.begin(), ghost_owners.end());
 
-  const std::vector<int>& dest = map.dest();
-  const std::vector<int>& src = map.src();
+  std::span dest = map.dest();
+  std::span src = map.src();
 
   // Count number of ghost per destination
   std::vector<int> send_sizes(src.size(), 0);
@@ -557,9 +563,8 @@ common::stack_index_maps(
   std::set<int> dest_set;
   for (auto& [map, _] : maps)
   {
-    const std::vector<int>& _src = map.get().src();
-    const std::vector<int>& _dest = map.get().dest();
-
+    std::span _src = map.get().src();
+    std::span _dest = map.get().dest();
     src_set.insert(_src.begin(), _src.end());
     dest_set.insert(_dest.begin(), _dest.end());
   }
@@ -592,8 +597,8 @@ common::stack_index_maps(
   {
     const int bs = maps[m].second;
     const common::IndexMap& map = maps[m].first.get();
-    const std::vector<std::int64_t>& ghosts = map.ghosts();
-    const std::vector<int>& owners = map.owners();
+    std::span ghosts = map.ghosts();
+    std::span owners = map.owners();
 
     // For each owning rank (on comm), create vector of this rank's
     // ghosts
@@ -829,7 +834,7 @@ std::int32_t IndexMap::size_local() const noexcept
 //-----------------------------------------------------------------------------
 std::int64_t IndexMap::size_global() const noexcept { return _size_global; }
 //-----------------------------------------------------------------------------
-const std::vector<std::int64_t>& IndexMap::ghosts() const noexcept
+std::span<const std::int64_t> IndexMap::ghosts() const noexcept
 {
   return _ghosts;
 }
@@ -1190,9 +1195,9 @@ std::vector<std::int32_t> IndexMap::shared_indices() const
   return shared;
 }
 //-----------------------------------------------------------------------------
-const std::vector<int>& IndexMap::src() const noexcept { return _src; }
+std::span<const int> IndexMap::src() const noexcept { return _src; }
 //-----------------------------------------------------------------------------
-const std::vector<int>& IndexMap::dest() const noexcept { return _dest; }
+std::span<const int> IndexMap::dest() const noexcept { return _dest; }
 //-----------------------------------------------------------------------------
 bool IndexMap::overlapped() const noexcept { return _overlapping; }
 //-----------------------------------------------------------------------------

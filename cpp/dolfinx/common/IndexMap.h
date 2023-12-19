@@ -164,7 +164,7 @@ public:
 
   /// Local-to-global map for ghosts (local indexing beyond end of local
   /// range)
-  const std::vector<std::int64_t>& ghosts() const noexcept;
+  std::span<const std::int64_t> ghosts() const noexcept;
 
   /// @brief Return the MPI communicator that the map is defined on.
   /// @return Communicator
@@ -192,7 +192,7 @@ public:
   /// @brief The ranks that own each ghost index.
   /// @return List of ghost owners. The owning rank of the ith ghost
   /// index is `owners()[i]`.
-  const std::vector<int>& owners() const { return _owners; }
+  std::span<const int> owners() const { return _owners; }
 
   /// @todo Aim to remove this function?
   ///
@@ -213,7 +213,7 @@ public:
   ///
   /// @return MPI ranks than own ghost indices.  The ranks are unique
   /// and sorted.
-  const std::vector<int>& src() const noexcept;
+  std::span<const int> src() const noexcept;
 
   /// @brief Ordered set of MPI ranks that ghost indices owned by
   /// caller.
@@ -222,7 +222,7 @@ public:
   ///
   /// @return MPI ranks than own ghost indices. The ranks are unique
   /// and sorted.
-  const std::vector<int>& dest() const noexcept;
+  std::span<const int> dest() const noexcept;
 
   /// @brief Check if index map has overlaps (ghosts on any rank).
   ///

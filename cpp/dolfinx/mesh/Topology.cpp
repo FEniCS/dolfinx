@@ -516,8 +516,8 @@ exchange_ghost_indexing(const common::IndexMap& map0,
   // owner.
 
   MPI_Comm comm;
-  const std::vector<int>& src = map0.src();
-  const std::vector<int>& dest = map0.dest();
+  std::span src = map0.src();
+  std::span dest = map0.dest();
   MPI_Dist_graph_create_adjacent(map0.comm(), src.size(), src.data(),
                                  MPI_UNWEIGHTED, dest.size(), dest.data(),
                                  MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
@@ -1174,7 +1174,7 @@ mesh::create_subtopology(const Topology& topology, int dim,
         unique_entities.end());
     std::pair<common::IndexMap, std::vector<int32_t>> map_data
         = dolfinx::common::create_sub_index_map(*topology.index_map(dim),
-                                              unique_entities);
+                                                unique_entities);
     submap = std::make_shared<common::IndexMap>(std::move(map_data.first));
     subentities = std::move(map_data.second);
   }
@@ -1194,7 +1194,8 @@ mesh::create_subtopology(const Topology& topology, int dim,
   {
     std::pair<common::IndexMap, std::vector<int32_t>> map_data
         = dolfinx::common::create_sub_index_map(
-            *map0, compute_incident_entities(topology, subentities, dim, 0), true);
+            *map0, compute_incident_entities(topology, subentities, dim, 0),
+            true);
     submap0 = std::make_shared<common::IndexMap>(std::move(map_data.first));
     subvertices0 = std::move(map_data.second);
   }
