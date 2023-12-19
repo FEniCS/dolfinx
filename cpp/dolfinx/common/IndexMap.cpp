@@ -1217,12 +1217,12 @@ std::array<double, 2> IndexMap::imbalance() const
 
   // Find the maximum number of owned indices and the maximum number of ghost
   // indices across all processes.
-  MPI_Allreduce(local_sizes.data(), max_count.data(), 2,
-                dolfinx::MPI::mpi_type<std::int32_t>(), MPI_MAX, _comm.comm());
+  MPI_Allreduce(local_sizes.data(), max_count.data(), 2, MPI_INT32_T, MPI_MAX,
+                _comm.comm());
 
   std::int32_t total_num_ghosts = 0;
-  MPI_Allreduce(&local_sizes[1], &total_num_ghosts, 1,
-                dolfinx::MPI::mpi_type<std::int32_t>(), MPI_SUM, _comm.comm());
+  MPI_Allreduce(&local_sizes[1], &total_num_ghosts, 1, MPI_INT32_T, MPI_SUM,
+                _comm.comm());
 
   // Compute the average number of owned and ghost indices per process.
   int comm_size = dolfinx::MPI::size(_comm.comm());

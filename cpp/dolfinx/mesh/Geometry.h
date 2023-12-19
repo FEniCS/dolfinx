@@ -175,7 +175,7 @@ private:
 /// @param[in] reorder_fn Function for re-ordering the degree-of-freedom
 /// map associated with the geometry data
 template <typename U>
-mesh::Geometry<typename std::remove_reference_t<typename U::value_type>>
+Geometry<typename std::remove_reference_t<typename U::value_type>>
 create_geometry(
     MPI_Comm comm, const Topology& topology,
     const std::vector<fem::CoordinateElement<
@@ -276,7 +276,7 @@ create_geometry(
 /// @return A sub-geometry and a map from sub-geometry coordinate
 /// degree-of-freedom to the coordinate degree-of-freedom in `geometry`.
 template <std::floating_point T>
-std::pair<mesh::Geometry<T>, std::vector<int32_t>>
+std::pair<Geometry<T>, std::vector<int32_t>>
 create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
                    int dim, std::span<const std::int32_t> subentity_to_entity)
 {
