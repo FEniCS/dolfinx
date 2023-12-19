@@ -483,13 +483,13 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
 
   // 1. Send request to post office ranks for data
 
-  // Build list of (src, global index, global, index positions) for each
+  // Build list of (src, global index, global, index position) for each
   // entry in 'indices' that doesn't belong to this rank, then sort
   std::vector<std::tuple<int, std::int64_t, std::int32_t>> src_to_index;
   for (std::size_t i = 0; i < indices.size(); ++i)
   {
     std::size_t idx = indices[i];
-    if (int src = MPI::index_owner(size, idx, shape[0]); src != rank)
+    if (int src = dolfinx::MPI::index_owner(size, idx, shape[0]); src != rank)
       src_to_index.push_back({src, idx, i});
   }
   std::sort(src_to_index.begin(), src_to_index.end());
