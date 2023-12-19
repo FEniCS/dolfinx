@@ -926,7 +926,12 @@ public:
                                        "the same element type.");
             }
 #ifndef NDEBUG
-            if (V0->dofmap()->map() != u->function_space()->dofmap()->map())
+            auto dmap0 = V0->dofmap()->map();
+            auto dmap = u->function_space()->dofmap()->map();
+            if (dmap0.size() != dmap.size()
+                or !std::equal(dmap0.data_handle(),
+                               dmap0.data_handle() + dmap0.size(),
+                               dmap.data_handle()))
             {
               throw std::runtime_error(
                   "All functions in VTXWriter must have the dofmaps.");
