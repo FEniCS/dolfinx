@@ -880,10 +880,11 @@ public:
     if (u.empty())
       throw std::runtime_error("VTXWriter fem::Function list is empty.");
 
-    // Extract element from first function
-    auto element0 = std::visit([](auto& u)
-                               { return u->function_space()->element().get(); },
-                               u.front());
+    // Extract space from first function
+    auto V0 = std::visit([](auto& u) { return u->function_space().get(); },
+                         u.front());
+    assert(V0);
+    auto element0 = V0->element().get();
     assert(element0);
 
     // Check if function is mixed
@@ -915,15 +916,22 @@ public:
     for (auto& v : _u)
     {
       std::visit(
-          [element0](auto& u)
+          [V0](auto& u)
           {
             auto element = u->function_space()->element();
             assert(element);
-            if (*element != *element0)
+            if (*element != *V0->element().get())
             {
               throw std::runtime_error("All functions in VTXWriter must have "
                                        "the same element type.");
             }
+#ifndef NDEBUG
+            if (V0->dofmap()->map() != u->function_space()->dofmap()->map())
+            {
+              throw std::runtime_error(
+                  "All functions in VTXWriter must have the dofmaps.");
+            }
+#endif
           },
           v);
     }
