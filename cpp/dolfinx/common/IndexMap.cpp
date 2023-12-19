@@ -205,8 +205,10 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
     // FIXME Avoid map
     // A map from (global) indices in `recv_indices` to a list of processes that
     // can own the index in the submap.
-    std::map<std::int64_t, std::vector<std::int32_t>>
-        global_idx_to_possible_owner;
+    // std::map<std::int64_t, std::vector<std::int32_t>>
+    //     global_idx_to_possible_owner;
+    std::vector<std::pair<std::int64_t, std::int32_t>>
+        _global_idx_to_possible_owner;
     const std::array local_range = imap.local_range();
     for (std::size_t i = 0; i < recv_disp.size() - 1; ++i)
     {
@@ -225,13 +227,15 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
           // that sent it to the list of possible owners.
           if (is_in_submap[idx_local])
           {
-            global_idx_to_possible_owner[idx].push_back(rank);
+            // global_idx_to_possible_owner[idx].push_back(rank);
+            _global_idx_to_possible_owner.push_back({idx, rank});
             submap_dest.push_back(dest[i]);
           }
           else
           {
             owners_changed = true;
-            global_idx_to_possible_owner[idx].push_back(dest[i]);
+            // global_idx_to_possible_owner[idx].push_back(dest[i]);
+            _global_idx_to_possible_owner.push_back({idx, dest[i]});
           }
         }
       }
@@ -240,22 +244,30 @@ compute_submap_indices(const dolfinx::common::IndexMap& imap,
         throw std::runtime_error("Index owner change detected!");
     }
 
+    std::sort(_global_idx_to_possible_owner.begin(),
+              _global_idx_to_possible_owner.end());
+
     std::sort(submap_dest.begin(), submap_dest.end());
     submap_dest.erase(std::unique(submap_dest.begin(), submap_dest.end()),
                       submap_dest.end());
     submap_dest.shrink_to_fit();
 
     // Choose the submap owner for each index in `recv_indices`
-    std::vector<std::int32_t> send_owners;
+    std::vector<int> send_owners;
     send_owners.reserve(recv_indices.size());
-    for (auto idx : recv_indices)
+    for (std::int64_t idx : recv_indices)
     {
       // Check the index is in the submap, otherwise send -1
       if (idx != -1)
       {
-        // NOTE Could choose new owner in a way that is is better for
+        // NOTE: Could choose new owner in a way that is is better for
         // load balancing, though the impact is probably only very small
-        send_owners.push_back(global_idx_to_possible_owner[idx][0]);
+        auto it = std::lower_bound(_global_idx_to_possible_owner.begin(),
+                                   _global_idx_to_possible_owner.end(), idx,
+                                   [](auto a, auto b) { return a.first < b; });
+        assert(it != _global_idx_to_possible_owner.end() and it->first == idx);
+        send_owners.push_back(it->second);
+        // send_owners.push_back(global_idx_to_possible_owner[idx][0]);
       }
       else
         send_owners.push_back(-1);
@@ -869,7 +881,6 @@ void IndexMap::global_to_local(std::span<const std::int64_t> global,
     global_local_ghosts[i] = {_ghosts[i], i + local_size};
   std::map<std::int64_t, std::int32_t> global_to_local(
       global_local_ghosts.begin(), global_local_ghosts.end());
-
   std::transform(global.begin(), global.end(), local.begin(),
                  [range = _local_range,
                   &global_to_local](std::int64_t index) -> std::int32_t
