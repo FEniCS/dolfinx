@@ -63,19 +63,6 @@ def test_sub_index_map():
     subowners = submap.owners
     assert (owners[ghosts_pos_sub] == subowners).all()
 
-    # Check that ghost indices are correct in submap
-    # NOTE This assumes size_local is the same for all ranks
-    # TODO Consider renaming to something shorter
-    # submap_global_to_map_global_map = np.concatenate([local_indices[rank] + map_local_size * rank
-    #                                                   for rank in range(comm.size)])
-    # # FIXME Do this more elegantly
-    # submap_ghosts = []
-    # for map_ghost in map.ghosts:
-    #     submap_ghost = np.where(submap_global_to_map_global_map == map_ghost)[0]
-    #     if submap_ghost.size != 0:
-    #         submap_ghosts.append(submap_ghost[0])
-    # assert np.allclose(submap.ghosts, submap_ghosts)
-
 
 def test_sub_index_map_ghost_mode_none():
     n = 3
@@ -114,8 +101,7 @@ def test_index_map_ghost_lifetime():
 # TODO: Add test for case where more than one two process shares an index
 # whose owner changes in the submap
 def test_create_submap_owner_change():
-    """
-    Test create_sub_index_map where the ownership of indices is not
+    """Test create_sub_index_map where the ownership of indices is not
     preserved in the submap. The diagram illustrates the case with four
     processes. Original map numbering and connectivity (G indicates a ghost
     index):
@@ -164,8 +150,7 @@ def test_create_submap_owner_change():
         submap_indices = np.array([0, 2, 3], dtype=np.int32)
 
     imap = dolfinx.common.IndexMap(comm, local_size, ghosts, owners)
-    sub_imap, sub_imap_to_imap = _cpp.common.create_sub_index_map(
-        imap, submap_indices, True)
+    sub_imap, sub_imap_to_imap = _cpp.common.create_sub_index_map(imap, submap_indices, True)
 
     if comm.rank == 0:
         assert sub_imap.size_local == 2
@@ -183,8 +168,5 @@ def test_create_submap_owner_change():
         assert np.array_equal(sub_imap.owners, [comm.rank + 1])
         assert np.array_equal(sub_imap_to_imap, [0, 2, 3])
 
-    global_indices = sub_imap.local_to_global(
-        np.arange(sub_imap.size_local + sub_imap.num_ghosts,
-                  dtype=np.int32))
-    assert np.array_equal(
-        global_indices, np.arange(comm.rank * 2, comm.rank * 2 + 3))
+    global_indices = sub_imap.local_to_global(np.arange(sub_imap.size_local + sub_imap.num_ghosts, dtype=np.int32))
+    assert np.array_equal(global_indices, np.arange(comm.rank * 2, comm.rank * 2 + 3))
