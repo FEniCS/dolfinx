@@ -460,18 +460,19 @@ def mixed_direct():
     W = functionspace(msh, TH)
 
     # No slip boundary condition
-    W0, _ = W.sub(0).collapse()
-    noslip = Function(W0)
+    W0 = W.sub(0)
+    Q, _ = W0.collapse()
+    noslip = Function(Q)
     facets = locate_entities_boundary(msh, 1, noslip_boundary)
-    dofs = locate_dofs_topological((W.sub(0), W0), 1, facets)
-    bc0 = dirichletbc(noslip, dofs, W.sub(0))
+    dofs = locate_dofs_topological((W0, Q), 1, facets)
+    bc0 = dirichletbc(noslip, dofs, W0)
 
     # Driving velocity condition u = (1, 0) on top boundary (y = 1)
-    lid_velocity = Function(W0)
+    lid_velocity = Function(Q)
     lid_velocity.interpolate(lid_velocity_expression)
     facets = locate_entities_boundary(msh, 1, lid)
-    dofs = locate_dofs_topological((W.sub(0), W0), 1, facets)
-    bc1 = dirichletbc(lid_velocity, dofs, W.sub(0))
+    dofs = locate_dofs_topological((W0, Q), 1, facets)
+    bc1 = dirichletbc(lid_velocity, dofs, W0)
 
     # Collect Dirichlet boundary conditions
     bcs = [bc0, bc1]
@@ -479,7 +480,7 @@ def mixed_direct():
     # Define variational problem
     (u, p) = ufl.TrialFunctions(W)
     (v, q) = ufl.TestFunctions(W)
-    f = Function(W0)
+    f = Function(Q)
     a = form((inner(grad(u), grad(v)) + inner(p, div(v)) + inner(div(u), q)) * dx)
     L = form(inner(f, v) * dx)
 

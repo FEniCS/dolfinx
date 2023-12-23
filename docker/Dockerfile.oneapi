@@ -9,12 +9,12 @@ ARG BUILD_NP=3
 
 ARG ADIOS2_VERSION=2.9.2
 ARG HDF5_SERIES=1.14
-ARG HDF5_PATCH=2
+ARG HDF5_PATCH=3
 ARG HDF5_FIX=
-ARG PETSC_VERSION=3.20.1
-ARG SLEPC_VERSION=3.20.0
+ARG PETSC_VERSION=3.20.2
+ARG SLEPC_VERSION=3.20.1
 ARG NANOBIND_VERSION=1.8.0
-ARG KAHIP_VERSION=3.15
+ARG KAHIP_VERSION=3.16
 
 WORKDIR /tmp
 
@@ -58,7 +58,7 @@ ENV CC=icx \
 
 # Install Python packages (via pip)
 RUN . /opt/intel/oneapi/setvars.sh && \
-    pip install --no-cache-dir cppimport matplotlib mpi4py nanobind==${NANOBIND_VERSION} pytest pytest-xdist scikit-build-core[pyproject]
+    pip install --no-cache-dir matplotlib mpi4py nanobind==${NANOBIND_VERSION} pytest pytest-xdist scikit-build-core[pyproject]
 
 # Install KaHIP
 RUN . /opt/intel/oneapi/setvars.sh && \
@@ -108,7 +108,8 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     --download-superlu_dist \
     --with-make-np=${BUILD_NP} \
     --with-scalar-type=real \
-    --with-precision=single && \
+    --with-precision=single \
+    --download-ptscotch && \
     make PETSC_ARCH=linux-gnu-real32-32 ${MAKEFLAGS} all && \
     # Complex64, 32-bit int
     ./configure \
@@ -119,7 +120,8 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     --download-superlu_dist \
     --with-make-np=${BUILD_NP} \
     --with-scalar-type=complex \
-    --with-precision=single && \
+    --with-precision=single \
+    --download-ptscotch && \
     make PETSC_ARCH=linux-gnu-complex64-32 ${MAKEFLAGS} all && \
     # Real64, 32-bit int
     ./configure \
@@ -129,7 +131,8 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     --with-shared-libraries \
     --download-superlu_dist \
     --with-make-np=${BUILD_NP} \
-    --with-scalar-type=real && \
+    --with-scalar-type=real \
+    --download-ptscotch && \
     make PETSC_ARCH=linux-gnu-real64-32 ${MAKEFLAGS} all && \
     # Complex128, 32-bit int
     ./configure \
@@ -139,7 +142,8 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     --with-shared-libraries \
     --download-superlu_dist \
     --with-make-np=${BUILD_NP} \
-    --with-scalar-type=complex && \
+    --with-scalar-type=complex \
+    --download-ptscotch && \
     make PETSC_ARCH=linux-gnu-complex128-32 ${MAKEFLAGS} all && \
     # Install petsc4py
     cd src/binding/petsc4py && \

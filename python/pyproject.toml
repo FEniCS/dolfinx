@@ -4,7 +4,7 @@
 # pip install -r build-requirements.txt
 [build-system]
 requires = [
-      "scikit-build-core[pyproject]",
+      "scikit-build-core[pyproject]>=0.5",
       "nanobind>=1.8.0",
       "petsc4py",
       "mpi4py",
@@ -27,12 +27,13 @@ dependencies = [
       "cffi",
       "petsc4py",
       "mpi4py",
+      "fenics-basix>=0.8.0.dev0,<0.9.0",
       "fenics-ffcx>=0.8.0.dev0,<0.9.0",
       "fenics-ufl>=2023.3.0.dev0,<2023.4.0",
 ]
 
 [project.optional-dependencies]
-docs = ["markdown", "pyyaml", "sphinx==5.0.2", "sphinx_rtd_theme"]
+docs = ["markdown", "pyyaml", "sphinx", "sphinx_rtd_theme"]
 lint = ["flake8", "pydocstyle"]
 optional = ["numba"]
 test = ["pytest", "sympy", "scipy", "matplotlib", "fenics-dolfinx[optional]"]

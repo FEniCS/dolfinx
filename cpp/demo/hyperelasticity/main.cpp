@@ -205,7 +205,7 @@ int main(int argc, char* argv[])
           }
           return marker;
         });
-    auto bcs = std::vector{
+    std::vector bcs = {
         std::make_shared<const fem::DirichletBC<T>>(std::vector<T>{0, 0, 0},
                                                     bdofs_left, V),
         std::make_shared<const fem::DirichletBC<T>>(u_rotation, bdofs_right)};

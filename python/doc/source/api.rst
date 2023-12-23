@@ -21,7 +21,6 @@ Public user interface
    dolfinx.jit
    dolfinx.la
    dolfinx.mesh
-   dolfinx.nls
    dolfinx.nls.petsc
    dolfinx.pkgconfig
    dolfinx.plot
