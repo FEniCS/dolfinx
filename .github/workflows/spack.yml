@@ -121,7 +121,7 @@ jobs:
           spack env create py-release
           spack env activate py-release
           spack add py-fenics-dolfinx
-          spack install
+          spack install -j 2
       - name: Run DOLFINx (Python, release) test
         run: |
           . ./spack/share/spack/setup-env.sh
