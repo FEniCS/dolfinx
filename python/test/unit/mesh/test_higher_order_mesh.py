@@ -607,7 +607,9 @@ def test_gmsh_input_2d(order, cell_type):
     gmsh.option.setNumber("Mesh.CharacteristicLengthMax", res)
 
     if cell_type == CellType.quadrilateral:
-        gmsh.option.setNumber("Mesh.Algorithm", 2 if order == 2 else 5)
+        gmsh.option.setNumber("Mesh.Algorithm", 2)
+        # Force mesh to have no triangles
+        gmsh.option.setNumber("Mesh.RecombinationAlgorithm", 3)
 
     gmsh.model.occ.addSphere(0, 0, 0, 1, tag=1)
     gmsh.model.occ.synchronize()
