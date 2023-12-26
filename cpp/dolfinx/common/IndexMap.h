@@ -109,8 +109,7 @@ public:
   /// @param[in] local_size Local size of the index map, i.e. the number
   /// of owned entries
   /// @param[in] ghosts The global indices of ghost entries
-  /// @param[in] owners Owner rank (on global communicator) of each
-  /// entry in `ghosts`
+  /// @param[in] owners Owner rank (on `comm`) of each entry in `ghosts`
   IndexMap(MPI_Comm comm, std::int32_t local_size,
            std::span<const std::int64_t> ghosts, std::span<const int> owners);
 
@@ -132,8 +131,7 @@ public:
   /// owners of the indices in `ghosts`. `dest` ranks are the rank that
   /// ghost indices owned by the caller.
   /// @param[in] ghosts The global indices of ghost entries
-  /// @param[in] owners Owner rank (on global communicator) of each entry
-  /// in `ghosts`
+  /// @param[in] owners Owner rank (on `comm`) of each entry in `ghosts`
   IndexMap(MPI_Comm comm, std::int32_t local_size,
            const std::array<std::vector<int>, 2>& src_dest,
            std::span<const std::int64_t> ghosts, std::span<const int> owners);
@@ -265,7 +263,7 @@ private:
   // Local-to-global map for ghost indices
   std::vector<std::int64_t> _ghosts;
 
-  // Local-to-global map for ghost indices
+  // Owning rank on _comm for the ith ghost index
   std::vector<int> _owners;
 
   // Set of ranks that own ghosts
