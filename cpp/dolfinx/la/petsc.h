@@ -114,8 +114,7 @@ void scatter_local_vectors(
 
 /// Create a PETSc Mat. Caller is responsible for destroying the
 /// returned object.
-Mat create_matrix(MPI_Comm comm, const SparsityPattern& sp,
-                  const std::string& type = std::string());
+Mat create_matrix(const SparsityPattern& sp, std::string type = std::string());
 
 /// Create PETSc MatNullSpace. Caller is responsible for destruction
 /// returned object.
@@ -288,9 +287,9 @@ public:
   static auto set_fn(Mat A, InsertMode mode)
   {
     return [A, mode, cache = std::vector<PetscInt>()](
-               const std::span<const std::int32_t>& rows,
-               const std::span<const std::int32_t>& cols,
-               const std::span<const PetscScalar>& vals) mutable -> int
+               std::span<const std::int32_t> rows,
+               std::span<const std::int32_t> cols,
+               std::span<const PetscScalar> vals) mutable -> int
     {
       PetscErrorCode ierr;
 #ifdef PETSC_USE_64BIT_INDICES
@@ -388,8 +387,7 @@ public:
   }
 
   /// Create holder for a PETSc Mat object from a sparsity pattern
-  Matrix(MPI_Comm comm, const SparsityPattern& sp,
-         const std::string& type = std::string());
+  Matrix(const SparsityPattern& sp, std::string type = std::string());
 
   /// Create holder of a PETSc Mat object/pointer. The Mat A object
   /// should already be created. If inc_ref_count is true, the reference

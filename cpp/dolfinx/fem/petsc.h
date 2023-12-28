@@ -40,11 +40,11 @@ namespace petsc
 /// object.
 template <std::floating_point T>
 Mat create_matrix(const Form<PetscScalar, T>& a,
-                  const std::string& type = std::string())
+                  std::string type = std::string())
 {
   la::SparsityPattern pattern = fem::create_sparsity_pattern(a);
   pattern.finalize();
-  return la::petsc::create_matrix(a.mesh()->comm(), pattern, type);
+  return la::petsc::create_matrix(pattern, type);
 }
 
 /// Initialise a monolithic matrix for an array of bilinear forms
@@ -58,7 +58,7 @@ Mat create_matrix(const Form<PetscScalar, T>& a,
 template <std::floating_point T>
 Mat create_matrix_block(
     const std::vector<std::vector<const Form<PetscScalar, T>*>>& a,
-    const std::string& type = std::string())
+    std::string type = std::string())
 {
   // Extract and check row/column ranges
   std::array<std::vector<std::shared_ptr<const FunctionSpace<T>>>, 2> V
@@ -66,8 +66,8 @@ Mat create_matrix_block(
   std::array<std::vector<int>, 2> bs_dofs;
   for (std::size_t i = 0; i < 2; ++i)
   {
-    for (auto& _V : V[i])
-      bs_dofs[i].push_back(_V->dofmap()->bs());
+    for (auto& space : V[i])
+      bs_dofs[i].push_back(space->dofmap()->bs());
   }
 
   // Build sparsity pattern for each block
@@ -100,7 +100,7 @@ Mat create_matrix_block(
       maps;
   for (std::size_t d = 0; d < 2; ++d)
   {
-    for (auto space : V[d])
+    for (auto& space : V[d])
     {
       maps[d].emplace_back(*space->dofmap()->index_map,
                            space->dofmap()->index_map_bs());
@@ -120,7 +120,7 @@ Mat create_matrix_block(
   // Mat constructor
 
   // Initialise matrix
-  Mat A = la::petsc::create_matrix(mesh->comm(), pattern, type);
+  Mat A = la::petsc::create_matrix(pattern, type);
 
   // Create row and column local-to-global maps (field0, field1, field2,
   // etc), i.e. ghosts of field0 appear before owned indices of field1
@@ -140,14 +140,15 @@ Mat create_matrix_block(
         = common::stack_index_maps(maps[d]);
     for (std::size_t f = 0; f < maps[d].size(); ++f)
     {
-      const common::IndexMap& map = maps[d][f].first.get();
-      const int bs = maps[d][f].second;
-      const std::int32_t size_local = bs * map.size_local();
-      const std::vector global = map.global_indices();
+      const common::IndexMap& imap = maps[d][f].first.get();
+      int bs = maps[d][f].second;
+      std::int32_t size_local = bs * imap.size_local();
+      std::int32_t num_ghosts = bs * imap.num_ghosts();
+      // const std::vector global = map.global_indices();
       for (std::int32_t i = 0; i < size_local; ++i)
         _maps[d].push_back(i + rank_offset + local_offset[f]);
-      for (std::size_t i = size_local; i < bs * global.size(); ++i)
-        _maps[d].push_back(ghosts[f][i - size_local]);
+      for (std::int32_t i = 0; i < num_ghosts; ++i)
+        _maps[d].push_back(ghosts[f][i]);
     }
   }
 

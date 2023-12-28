@@ -229,12 +229,11 @@ void la::petsc::scatter_local_vectors(
   VecGhostRestoreLocalForm(x, &x_local);
 }
 //-----------------------------------------------------------------------------
-Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
-                             const std::string& type)
+Mat la::petsc::create_matrix(const SparsityPattern& sp, std::string type)
 {
   PetscErrorCode ierr;
   Mat A;
-  ierr = MatCreate(comm, &A);
+  ierr = MatCreate(sp.comm(), &A);
   if (ierr != 0)
     petsc::error(ierr, __FILE__, "MatCreate");
 
@@ -558,9 +557,8 @@ Vec petsc::Operator::create_vector(std::size_t dim) const
 Mat petsc::Operator::mat() const { return _matA; }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-petsc::Matrix::Matrix(MPI_Comm comm, const SparsityPattern& sp,
-                      const std::string& type)
-    : Operator(petsc::create_matrix(comm, sp, type), false)
+petsc::Matrix::Matrix(const SparsityPattern& sp, std::string type)
+    : Operator(petsc::create_matrix(sp, type), false)
 {
   // Do nothing
 }
