@@ -114,7 +114,8 @@ void scatter_local_vectors(
 
 /// Create a PETSc Mat. Caller is responsible for destroying the
 /// returned object.
-Mat create_matrix(const SparsityPattern& sp, std::string type = std::string());
+Mat create_matrix(MPI_Comm comm, const SparsityPattern& sp,
+                  std::string type = std::string());
 
 /// Create PETSc MatNullSpace. Caller is responsible for destruction
 /// returned object.
@@ -387,7 +388,8 @@ public:
   }
 
   /// Create holder for a PETSc Mat object from a sparsity pattern
-  Matrix(const SparsityPattern& sp, std::string type = std::string());
+  Matrix(MPI_Comm comm, const SparsityPattern& sp,
+         std::string type = std::string());
 
   /// Create holder of a PETSc Mat object/pointer. The Mat A object
   /// should already be created. If inc_ref_count is true, the reference

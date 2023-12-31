@@ -74,7 +74,7 @@ void declare_petsc_discrete_operators(nb::module_& m)
         sp.finalize();
 
         // Build operator
-        Mat A = dolfinx::la::petsc::create_matrix(sp);
+        Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
         MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE);
         dolfinx::fem::discrete_gradient<T, U>(
             *V0.mesh()->topology_mutable(), {*V0.element(), *V0.dofmap()},
@@ -115,7 +115,7 @@ void declare_petsc_discrete_operators(nb::module_& m)
         sp.finalize();
 
         // Build operator
-        Mat A = dolfinx::la::petsc::create_matrix(sp);
+        Mat A = dolfinx::la::petsc::create_matrix(comm, sp);
         MatSetOption(A, MAT_IGNORE_ZERO_ENTRIES, PETSC_TRUE);
         dolfinx::fem::interpolation_matrix<T, U>(
             V0, V1, dolfinx::la::petsc::Matrix::set_block_fn(A, INSERT_VALUES));
@@ -131,9 +131,9 @@ void petsc_la_module(nb::module_& m)
   m.def(
       "create_matrix",
       [](dolfinx_wrappers::MPICommWrapper comm,
-         const dolfinx::la::SparsityPattern& p, std::string type)
+         const dolfinx::la::SparsityPattern& p, const std::string& type)
       {
-        Mat A = dolfinx::la::petsc::create_matrix(p, type);
+        Mat A = dolfinx::la::petsc::create_matrix(comm.get(), p, type);
         PyObject* obj = PyPetscMat_New(A);
         PetscObjectDereference((PetscObject)A);
         return nb::borrow(obj);

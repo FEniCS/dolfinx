@@ -44,7 +44,7 @@ Mat create_matrix(const Form<PetscScalar, T>& a,
 {
   la::SparsityPattern pattern = fem::create_sparsity_pattern(a);
   pattern.finalize();
-  return la::petsc::create_matrix(pattern, type);
+  return la::petsc::create_matrix(a.mesh()->comm(), pattern, type);
 }
 
 /// Initialise a monolithic matrix for an array of bilinear forms
@@ -100,7 +100,7 @@ Mat create_matrix_block(
       maps;
   for (std::size_t d = 0; d < 2; ++d)
   {
-    for (auto space : V[d])
+    for (auto& space : V[d])
     {
       maps[d].emplace_back(*space->dofmap()->index_map,
                            space->dofmap()->index_map_bs());
@@ -120,34 +120,37 @@ Mat create_matrix_block(
   // Mat constructor
 
   // Initialise matrix
-  Mat A = la::petsc::create_matrix(pattern, type);
+  Mat A = la::petsc::create_matrix(mesh->comm(), pattern, type);
 
   // Create row and column local-to-global maps (field0, field1, field2,
   // etc), i.e. ghosts of field0 appear before owned indices of field1
   std::array<std::vector<PetscInt>, 2> _maps;
   for (int d = 0; d < 2; ++d)
   {
-    // FIXME: Index map concatenation has already been computed inside
+    // TODO: Index map concatenation has already been computed inside
     // the SparsityPattern constructor, but we also need it here to
     // build the PETSc local-to-global map. Compute outside and pass
     // into SparsityPattern constructor.
-
-    // FIXME: avoid concatenating the same maps twice in case that V[0]
+    // TODO: avoid concatenating the same maps twice in case that V[0]
     // == V[1].
 
+    const std::vector<
+        std::pair<std::reference_wrapper<const common::IndexMap>, int>>& map
+        = maps[d];
+    std::vector<PetscInt>& _map = _maps[d];
+
     // Concatenate the block index map in the row and column directions
-    auto [rank_offset, local_offset, ghosts, _]
-        = common::stack_index_maps(maps[d]);
-    for (std::size_t f = 0; f < maps[d].size(); ++f)
+    const auto [rank_offset, local_offset, ghosts, _]
+        = common::stack_index_maps(map);
+    for (std::size_t f = 0; f < map.size(); ++f)
     {
-      const common::IndexMap& map = maps[d][f].first.get();
-      const int bs = maps[d][f].second;
-      const std::int32_t size_local = bs * map.size_local();
-      const std::vector global = map.global_indices();
-      for (std::int32_t i = 0; i < size_local; ++i)
-        _maps[d].push_back(i + rank_offset + local_offset[f]);
-      for (std::size_t i = size_local; i < bs * global.size(); ++i)
-        _maps[d].push_back(ghosts[f][i - size_local]);
+      auto offset = local_offset[f];
+      const common::IndexMap& imap = map[f].first.get();
+      int bs = map[f].second;
+      for (std::int32_t i = 0; i < bs * imap.size_local(); ++i)
+        _map.push_back(i + rank_offset + offset);
+      for (std::int32_t i = 0; i < bs * imap.num_ghosts(); ++i)
+        _map.push_back(ghosts[f][i]);
     }
   }
 
