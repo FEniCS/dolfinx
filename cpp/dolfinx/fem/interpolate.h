@@ -400,7 +400,6 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
         local1[i] += static_cast<X>(i_m[im_shape[1] * i + j]) * local0[j];
 
     apply_inverse_dof_transform(local1, cell_info, c, 1);
-
     std::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(c);
     for (std::size_t i = 0; i < dofs1.size(); ++i)
       for (int k = 0; k < bs1; ++k)
@@ -408,11 +407,11 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
   }
 }
 
-/// Interpolate from one finite element Function to another on the same mesh.
-/// This interpolation function is for cases where the finite element basis
-/// functions for the two elements are mapped differently, e.g. one may be
-/// subject to a Piola mapping and the other to a standard isoparametric
-/// mapping.
+/// Interpolate from one finite element Function to another on the same
+/// mesh. This interpolation function is for cases where the finite
+/// element basis functions for the two elements are mapped differently,
+/// e.g. one may be subject to a Piola mapping and the other to a
+/// standard isoparametric mapping.
 /// @param[out] u1 The function to interpolate to
 /// @param[in] u0 The function to interpolate from
 /// @param[in] cells The cells to interpolate on
