@@ -210,8 +210,7 @@ private:
 /// @param[in] boundary_vertices List of vertices on the exterior of the
 /// local mesh which may be shared with other processes.
 /// @return A distributed mesh topology
-Topology create_topology(MPI_Comm comm,
-                         const graph::AdjacencyList<std::int64_t>& cells,
+Topology create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
                          std::span<const std::int64_t> original_cell_index,
                          std::span<const int> ghost_owners,
                          const std::vector<CellType>& cell_type,

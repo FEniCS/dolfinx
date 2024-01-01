@@ -122,8 +122,8 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
 
   std::vector<mesh::CellType> cell_types = {cmap.cell_shape()};
   mesh::Topology topology = mesh::create_topology(
-      mpi_comm, cell_nodes, original_cell_index, ghost_owners, cell_types,
-      cell_group_offsets, external_vertices);
+      mpi_comm, cell_nodes.array(), original_cell_index, ghost_owners,
+      cell_types, cell_group_offsets, external_vertices);
   int tdim = topology.dim();
 
   mesh::Geometry geometry = mesh::create_geometry(mpi_comm, topology, {cmap},
