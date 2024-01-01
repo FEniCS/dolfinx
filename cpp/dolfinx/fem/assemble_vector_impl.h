@@ -25,9 +25,12 @@
 
 namespace dolfinx::fem::impl
 {
+
+/// @cond
 using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
     const std::int32_t,
     MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+/// @endcond
 
 /// Implementation of vector assembly
 
