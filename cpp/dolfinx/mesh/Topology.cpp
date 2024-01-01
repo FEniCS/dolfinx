@@ -293,8 +293,8 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
 /// 2. With undetermined ownership
 /// 3. Not owned by the caller
 std::array<std::vector<std::int64_t>, 2>
-vertex_ownership_groups(const graph::AdjacencyList<std::int64_t>& cells,
-                        int num_local_cells,
+vertex_ownership_groups(std::span<const std::int64_t> cells,
+                        int num_cell_vertices, std::int32_t num_local_cells,
                         std::span<const std::int64_t> boundary_vertices)
 {
   common::Timer timer("Topology: determine vertex ownership groups (owned, "
@@ -302,8 +302,8 @@ vertex_ownership_groups(const graph::AdjacencyList<std::int64_t>& cells,
 
   // Build set of 'local' cell vertices (attached to an owned cell)
   std::vector<std::int64_t> local_vertex_set(
-      cells.array().begin(),
-      std::next(cells.array().begin(), cells.offsets()[num_local_cells]));
+      cells.begin(),
+      std::next(cells.begin(), num_cell_vertices * num_local_cells));
   dolfinx::radix_sort(std::span(local_vertex_set));
   local_vertex_set.erase(
       std::unique(local_vertex_set.begin(), local_vertex_set.end()),
@@ -311,8 +311,8 @@ vertex_ownership_groups(const graph::AdjacencyList<std::int64_t>& cells,
 
   // Build set of ghost cell vertices (attached to a ghost cell)
   std::vector<std::int64_t> ghost_vertex_set(
-      std::next(cells.array().begin(), cells.offsets()[num_local_cells]),
-      cells.array().end());
+      std::next(cells.begin(), num_cell_vertices * num_local_cells),
+      cells.end());
   dolfinx::radix_sort(std::span(ghost_vertex_set));
   ghost_vertex_set.erase(
       std::unique(ghost_vertex_set.begin(), ghost_vertex_set.end()),
@@ -904,12 +904,15 @@ Topology mesh::create_topology(
     std::int32_t offset = cell_group_offsets[i];
     int num_vertices = num_cell_vertices(cell_type[i]);
     if (cells.num_nodes() > 0 and cells.num_links(offset) != num_vertices)
+    {
       throw std::runtime_error("Inconsistent number of cell vertices. Got "
                                + std::to_string(cells.num_links(offset))
                                + ", expected " + std::to_string(num_vertices)
                                + ".");
+    }
   }
 
+  const int num_cell_vertices = mesh::num_cell_vertices(cell_type.front());
   const std::int32_t num_local_cells = cells.num_nodes() - ghost_owners.size();
 
   if (num_local_cells != cell_group_offsets[cell_type.size()])
@@ -917,8 +920,8 @@ Topology mesh::create_topology(
 
   // Create sets of owned and unowned vertices from the cell ownership
   // and the list of boundary vertices
-  auto [owned_vertices, unowned_vertices]
-      = vertex_ownership_groups(cells, num_local_cells, boundary_vertices);
+  auto [owned_vertices, unowned_vertices] = vertex_ownership_groups(
+      cells.array(), num_cell_vertices, num_local_cells, boundary_vertices);
 
   // For each vertex whose ownership needs determining, find the sharing
   // ranks. The first index in the list of ranks for a vertex is the owner
