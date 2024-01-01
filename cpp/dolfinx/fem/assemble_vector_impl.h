@@ -13,7 +13,9 @@
 #include "FunctionSpace.h"
 #include "utils.h"
 #include <algorithm>
+#include <basix/mdspan.hpp>
 #include <concepts>
+#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -809,8 +811,8 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
     }
     else
     {
-      _lift_bc_cells(b, x_dofmap, x, kernel, cells, pre_dof_transform, dofmap0, bs0,
-                     post_dof_transpose, dofmap1, bs1, constants, coeffs,
+      _lift_bc_cells(b, x_dofmap, x, kernel, cells, pre_dof_transform, dofmap0,
+                     bs0, post_dof_transpose, dofmap1, bs1, constants, coeffs,
                      cstride, cell_info, bc_values1, bc_markers1, x0, scale);
     }
   }
@@ -821,11 +823,11 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
     assert(kernel);
     auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
-    _lift_bc_exterior_facets(b, x_dofmap, x, kernel,
-                             a.domain(IntegralType::exterior_facet, i),
-                             pre_dof_transform, dofmap0, bs0, post_dof_transpose,
-                             dofmap1, bs1, constants, coeffs, cstride,
-                             cell_info, bc_values1, bc_markers1, x0, scale);
+    _lift_bc_exterior_facets(
+        b, x_dofmap, x, kernel, a.domain(IntegralType::exterior_facet, i),
+        pre_dof_transform, dofmap0, bs0, post_dof_transpose, dofmap1, bs1,
+        constants, coeffs, cstride, cell_info, bc_values1, bc_markers1, x0,
+        scale);
   }
 
   if (a.num_integrals(IntegralType::interior_facet) > 0)
