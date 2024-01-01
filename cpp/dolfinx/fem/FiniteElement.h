@@ -9,6 +9,7 @@
 #include <array>
 #include <basix/finite-element.h>
 #include <concepts>
+#include <cstdint>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
 #include <memory>
