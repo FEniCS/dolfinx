@@ -211,6 +211,48 @@ void declare_assembly_functions(nb::module_& m)
               mat_add, a, std::span(constants.data(), constants.size()),
               py_to_cpp_coeffs(coefficients), bcs);
         }
+        else if (data_bs[0] == 4)
+        {
+          auto mat_add = A.template mat_add_values<4, 4>();
+          dolfinx::fem::assemble_matrix(
+              mat_add, a, std::span(constants.data(), constants.size()),
+              py_to_cpp_coeffs(coefficients), bcs);
+        }
+        else if (data_bs[0] == 5)
+        {
+          auto mat_add = A.template mat_add_values<5, 5>();
+          dolfinx::fem::assemble_matrix(
+              mat_add, a, std::span(constants.data(), constants.size()),
+              py_to_cpp_coeffs(coefficients), bcs);
+        }
+        else if (data_bs[0] == 6)
+        {
+          auto mat_add = A.template mat_add_values<6, 6>();
+          dolfinx::fem::assemble_matrix(
+              mat_add, a, std::span(constants.data(), constants.size()),
+              py_to_cpp_coeffs(coefficients), bcs);
+        }
+        else if (data_bs[0] == 7)
+        {
+          auto mat_add = A.template mat_add_values<7, 7>();
+          dolfinx::fem::assemble_matrix(
+              mat_add, a, std::span(constants.data(), constants.size()),
+              py_to_cpp_coeffs(coefficients), bcs);
+        }
+        else if (data_bs[0] == 8)
+        {
+          auto mat_add = A.template mat_add_values<8, 8>();
+          dolfinx::fem::assemble_matrix(
+              mat_add, a, std::span(constants.data(), constants.size()),
+              py_to_cpp_coeffs(coefficients), bcs);
+        }
+        else if (data_bs[0] == 9)
+        {
+          auto mat_add = A.template mat_add_values<9, 9>();
+          dolfinx::fem::assemble_matrix(
+              mat_add, a, std::span(constants.data(), constants.size()),
+              py_to_cpp_coeffs(coefficients), bcs);
+        }
         else
           throw std::runtime_error("Block size not supported in Python");
       },
