@@ -502,8 +502,10 @@ exchange_indexing(MPI_Comm comm, std::span<const std::int64_t> indices,
 /// 3. Rank of the process that owns the entity
 std::vector<std::array<std::int64_t, 3>>
 exchange_ghost_indexing(const common::IndexMap& map0,
-                        const graph::AdjacencyList<std::int64_t>& entities0,
-                        int nlocal1, std::int64_t offset1,
+                        // const graph::AdjacencyList<std::int64_t>& entities0,
+                        std::span<const std::int64_t> entities0,
+                        int num_cell_vertices, std::int32_t nlocal1,
+                        std::int64_t offset1,
                         std::span<const std::pair<std::int64_t, std::int32_t>>
                             global_local_entities1,
                         std::span<const std::int64_t> ghost_entities1,
@@ -596,7 +598,9 @@ exchange_ghost_indexing(const common::IndexMap& map0,
         assert(recv_buffer[i] < local_range[1]);
         std::int32_t cell_idx = recv_buffer[i] - local_range[0];
 
-        auto vertices = entities0.links(cell_idx);
+        // auto vertices = entities0.links(cell_idx);
+        auto vertices = entities0.subspan(cell_idx * num_cell_vertices,
+                                          num_cell_vertices);
         shared_vertices.insert(shared_vertices.end(), vertices.begin(),
                                vertices.end());
       }
@@ -1052,7 +1056,8 @@ Topology mesh::create_topology(
       // (who we get the vertex index from) is not necessarily the
       // vertex owner.
       const std::vector<std::array<std::int64_t, 3>> recv_data
-          = exchange_ghost_indexing(*index_map_c, cells, owned_vertices.size(),
+          = exchange_ghost_indexing(*index_map_c, cells.array(),
+                                    num_cell_vertices, owned_vertices.size(),
                                     global_offset_v, global_to_local_vertices,
                                     ghost_vertices, ghost_vertex_owners);
 
