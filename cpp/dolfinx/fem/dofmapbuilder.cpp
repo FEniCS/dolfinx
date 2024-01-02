@@ -143,11 +143,11 @@ build_basic_dofmap(const mesh::Topology& topology,
   // Topological dimension
   const std::size_t D = topology.dim();
 
-  // Check that required mesh entities have been created and count
-  // the number mesh mesh entities (that are required)
+  // Check that required mesh entities have been created, count
+  // the number mesh mesh entities (that are required), and
+  // and compute number of dofs on this process
   std::vector<std::int8_t> needs_entities(D + 1, false);
   std::vector<std::int32_t> num_entities(D + 1, 0);
-  // Number of dofs on this process
   std::int32_t local_size = 0;
   for (std::size_t d = 0; d <= D; ++d)
   {
@@ -234,7 +234,7 @@ build_basic_dofmap(const mesh::Topology& topology,
           const std::vector<std::vector<int>>& e_dofs_d = entity_dofs[d];
 
           // Iterate over each entity of current dimension d
-          const std::size_t num_entity_dofs = e_dofs_d[0].size();
+          std::size_t num_entity_dofs = e_dofs_d[0].size();
           const std::int32_t* cell_entity_conn
               = (d == D) ? nullptr : connectivity[d]->links(c).data();
           for (std::size_t e = 0; e < e_dofs_d.size(); ++e)
@@ -248,7 +248,7 @@ build_basic_dofmap(const mesh::Topology& topology,
             // dof_local: local index of dof at (d, e)
             for (std::size_t i = 0; i < num_entity_dofs; ++i)
             {
-              const std::int32_t dof_local = e_dofs_d[e][i];
+              int dof_local = e_dofs_d[e][i];
               // FIXME: mixed topology - e.g. P2/Q2 when d==D
               dofs_c[dof_local]
                   = offset_local + num_entity_dofs * e_index_local + i;
@@ -283,17 +283,15 @@ build_basic_dofmap(const mesh::Topology& topology,
 
       // FIXME: invalid for d==D when cells are different, e.g. P2/Q2
       std::int32_t num_entity_dofs = element_dof_layout.num_entity_dofs(d);
-      for (std::int32_t e_index_local = 0; e_index_local < num_entities[d];
-           ++e_index_local)
+      for (std::int32_t e_index = 0; e_index < num_entities[d]; ++e_index)
       {
-        auto e_index_global = global_indices[e_index_local];
+        auto e_index_global = global_indices[e_index];
         for (std::int32_t count = 0; count < num_entity_dofs; ++count)
         {
-          std::int32_t dof
-              = offset_local + num_entity_dofs * e_index_local + count;
+          std::int32_t dof = offset_local + num_entity_dofs * e_index + count;
           local_to_global[dof]
               = offset_global + num_entity_dofs * e_index_global + count;
-          dof_entity[dof] = {d, e_index_local};
+          dof_entity[dof] = {d, e_index};
         }
       }
       offset_local += num_entity_dofs * num_entities[d];
