@@ -62,7 +62,6 @@ def random_point_in_reference(cell_type):
 
 
 def random_point_in_cell(mesh):
-    assert len(mesh.topology.cell_types) == 1
     cell_type = mesh.topology.cell_type
     point = random_point_in_reference(cell_type)
 
