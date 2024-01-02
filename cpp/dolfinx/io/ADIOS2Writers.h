@@ -237,8 +237,7 @@ std::vector<T> pack_function_data(const fem::Function<T, U>& u)
 
   // The Function and the mesh must have identical element_dof_layouts
   // (up to the block size)
-  assert(dofmap->element_dof_layout()
-         == geometry.cmaps()[0].create_dof_layout());
+  assert(dofmap->element_dof_layout() == geometry.cmap().create_dof_layout());
 
   int tdim = topology->dim();
   auto cell_map = topology->index_map(tdim);
@@ -384,7 +383,7 @@ void write_mesh(adios2::IO& io, adios2::Engine& engine,
   // cell, and compute 'VTK' connectivity
   int tdim = topology->dim();
   std::int32_t num_cells = topology->index_map(tdim)->size_local();
-  int num_nodes = geometry.cmaps()[0].dim();
+  int num_nodes = geometry.cmap().dim();
   auto [cells, shape] = io::extract_vtk_connectivity(mesh.geometry().dofmap(),
                                                      topology->cell_types()[0]);
 
@@ -431,7 +430,7 @@ public:
     auto topology = mesh->topology();
     assert(topology);
     mesh::CellType type = topology->cell_types()[0];
-    if (mesh->geometry().cmaps()[0].dim() != mesh::cell_num_entities(type, 0))
+    if (mesh->geometry().cmap().dim() != mesh::cell_num_entities(type, 0))
       throw std::runtime_error("Fides only supports lowest-order meshes.");
     impl_fides::initialize_mesh_attributes(*_io, type);
   }
@@ -523,7 +522,7 @@ public:
     auto topology = mesh->topology();
     assert(topology);
     mesh::CellType type = topology->cell_types()[0];
-    if (mesh->geometry().cmaps()[0].dim() != mesh::cell_num_entities(type, 0))
+    if (mesh->geometry().cmap().dim() != mesh::cell_num_entities(type, 0))
       throw std::runtime_error("Fides only supports lowest-order meshes.");
     impl_fides::initialize_mesh_attributes(*_io, type);
     impl_fides::initialize_function_attributes<T>(*_io, u);

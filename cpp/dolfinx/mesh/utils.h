@@ -779,15 +779,15 @@ compute_incident_entities(const Topology& topology,
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
-    const std::vector<fem::CoordinateElement<
-        typename std::remove_reference_t<typename U::value_type>>>& elements,
+    const fem::CoordinateElement<
+        typename std::remove_reference_t<typename U::value_type>>& element,
     const U& x, std::array<std::size_t, 2> xshape,
     CellPartitionFunction partitioner)
 {
-  const fem::ElementDofLayout dof_layout = elements[0].create_dof_layout();
+  const fem::ElementDofLayout dof_layout = element.create_dof_layout();
 
   // Function top build geometry. Used to scope memory operations.
-  auto build_topology = [](auto comm, auto& elements, auto& dof_layout,
+  auto build_topology = [](auto comm, auto& element, auto& dof_layout,
                            auto& cells, auto& partitioner)
   {
     // -- Partition topology
@@ -805,7 +805,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 
     // Compute the destination rank for cells on this process via graph
     // partitioning.
-    const int tdim = cell_dim(elements[0].cell_shape());
+    const int tdim = cell_dim(element.cell_shape());
 
     graph::AdjacencyList<std::int32_t> dest(0);
     graph::AdjacencyList<std::int64_t> cell_nodes(0);
@@ -816,7 +816,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
       const int size = dolfinx::MPI::size(comm);
       dest = partitioner(
           comm, size, tdim,
-          extract_topology(elements[0].cell_shape(), dof_layout, cells));
+          extract_topology(element.cell_shape(), dof_layout, cells));
 
       // -- Distribute cells (topology, includes higher-order 'nodes')
 
@@ -844,7 +844,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     // and discard any 'higher-order' nodes
 
     graph::AdjacencyList<std::int64_t> cells_extracted
-        = extract_topology(elements[0].cell_shape(), dof_layout, cell_nodes);
+        = extract_topology(element.cell_shape(), dof_layout, cell_nodes);
 
     // -- Re-order cells
 
@@ -891,13 +891,12 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     // removed later if not required by ghost_mode.
     return std::pair{create_topology(comm, cells_extracted.array(),
                                      original_cell_index, ghost_owners,
-                                     elements[0].cell_shape(),
-                                     boundary_vertices),
+                                     element.cell_shape(), boundary_vertices),
                      std::move(cell_nodes)};
   };
 
   auto [topology, cell_nodes]
-      = build_topology(comm, elements, dof_layout, cells, partitioner);
+      = build_topology(comm, element, dof_layout, cells, partitioner);
 
   // Create connectivity required to compute the Geometry (extra
   // connectivities for higher-order geometries)
@@ -908,11 +907,11 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
       topology.create_entities(e);
   }
 
-  if (elements[0].needs_dof_permutations())
+  if (element.needs_dof_permutations())
     topology.create_entity_permutations();
 
   Geometry geometry
-      = create_geometry(comm, topology, elements, cell_nodes, x, xshape[1]);
+      = create_geometry(comm, topology, element, cell_nodes, x, xshape[1]);
   return Mesh<typename U::value_type>(
       comm, std::make_shared<Topology>(std::move(topology)),
       std::move(geometry));
@@ -931,7 +930,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// indices). For lowest order cells this will be just the cell
 /// vertices. For higher-order cells, other cells 'nodes' will be
 /// included.
-/// @param[in] elements The coordinate elements that describe the
+/// @param[in] element The coordinate element that describes the
 /// geometric mapping for cells.
 /// @param[in] x The coordinates of mesh nodes.
 /// @param[in] xshape The shape of `x`. It should be `(num_points, gdim)`.
@@ -940,15 +939,15 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>>
 create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
-            const std::vector<fem::CoordinateElement<
-                std::remove_reference_t<typename U::value_type>>>& elements,
+            const fem::CoordinateElement<
+                std::remove_reference_t<typename U::value_type>>& element,
             const U& x, std::array<std::size_t, 2> xshape, GhostMode ghost_mode)
 {
   if (dolfinx::MPI::size(comm) == 1)
-    return create_mesh(comm, cells, elements, x, xshape, nullptr);
+    return create_mesh(comm, cells, element, x, xshape, nullptr);
   else
   {
-    return create_mesh(comm, cells, elements, x, xshape,
+    return create_mesh(comm, cells, element, x, xshape,
                        create_cell_partitioner(ghost_mode));
   }
 }

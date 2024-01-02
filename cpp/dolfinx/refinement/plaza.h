@@ -426,17 +426,12 @@ template <std::floating_point T>
 std::tuple<mesh::Mesh<T>, std::vector<std::int32_t>, std::vector<std::int8_t>>
 refine(const mesh::Mesh<T>& mesh, bool redistribute, Option option)
 {
-  if (mesh.geometry().cmaps().size() > 1)
-  {
-    throw std::runtime_error("Mixed topology not supported");
-  }
-
   auto [cell_adj, new_coords, xshape, parent_cell, parent_facet]
       = compute_refinement_data(mesh, option);
 
   if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
-    return {mesh::create_mesh(mesh.comm(), cell_adj, mesh.geometry().cmaps(),
+    return {mesh::create_mesh(mesh.comm(), cell_adj, mesh.geometry().cmap(),
                               new_coords, xshape, mesh::GhostMode::none),
             std::move(parent_cell), std::move(parent_facet)};
   }
@@ -477,15 +472,12 @@ std::tuple<mesh::Mesh<T>, std::vector<std::int32_t>, std::vector<std::int8_t>>
 refine(const mesh::Mesh<T>& mesh, std::span<const std::int32_t> edges,
        bool redistribute, Option option)
 {
-  if (mesh.geometry().cmaps().size() > 1)
-    throw std::runtime_error("Mixed topology not supported");
-
   auto [cell_adj, new_vertex_coords, xshape, parent_cell, parent_facet]
       = compute_refinement_data(mesh, edges, option);
 
   if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
-    return {mesh::create_mesh(mesh.comm(), cell_adj, mesh.geometry().cmaps(),
+    return {mesh::create_mesh(mesh.comm(), cell_adj, mesh.geometry().cmap(),
                               new_vertex_coords, xshape, mesh::GhostMode::none),
             std::move(parent_cell), std::move(parent_facet)};
   }

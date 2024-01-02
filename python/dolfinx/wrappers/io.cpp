@@ -203,7 +203,7 @@ void declare_real_types(nb::module_& m)
             entities_values = dolfinx::io::xdmf_utils::distribute_entity_data(
                 *mesh.topology(), mesh.geometry().input_global_indices(),
                 mesh.geometry().index_map()->size_global(),
-                mesh.geometry().cmaps()[0].create_dof_layout(),
+                mesh.geometry().cmap().create_dof_layout(),
                 mesh.geometry().dofmap(), entity_dim, entities_span,
                 std::span(values.data(), values.size()));
 

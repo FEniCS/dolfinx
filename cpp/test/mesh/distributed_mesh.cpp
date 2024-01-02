@@ -130,10 +130,8 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
 
   CHECK(mesh->topology()->index_map(tdim)->size_global() == 2 * N * N);
   CHECK(mesh->topology()->index_map(tdim)->size_local() > 0);
-
   CHECK(mesh->topology()->index_map(0)->size_global() == (N + 1) * (N + 1));
   CHECK(mesh->topology()->index_map(0)->size_local() > 0);
-
   CHECK((int)mesh->geometry().x().size() / 3
         == mesh->topology()->index_map(0)->size_local()
                + mesh->topology()->index_map(0)->num_ghosts());

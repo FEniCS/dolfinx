@@ -175,8 +175,8 @@ void declare_mesh(nb::module_& m, std::string type)
           nb::rv_policy::reference_internal,
           "Return coordinates of all geometry points. Each row is the "
           "coordinate of a point.")
-      .def_prop_ro("cmaps", &dolfinx::mesh::Geometry<T>::cmaps,
-                   "The coordinate maps")
+      .def_prop_ro("cmap", &dolfinx::mesh::Geometry<T>::cmap,
+                   "The coordinate map")
       .def_prop_ro("input_global_indices",
                    &dolfinx::mesh::Geometry<T>::input_global_indices);
 

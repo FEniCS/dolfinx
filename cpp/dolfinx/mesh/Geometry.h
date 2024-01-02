@@ -40,8 +40,7 @@ public:
   /// @param[in] index_map Index map associated with the geometry dofmap
   /// @param[in] dofmap The geometry (point) dofmap. For a cell, it
   /// gives the position in the point array of each local geometry node
-  /// @param[in] elements The elements that describes the cell geometry
-  /// maps
+  /// @param[in] element Element that describes the cell geometric map.
   /// @param[in] x The point coordinates. The shape is `(num_points, 3)`
   /// and the storage is row-major.
   /// @param[in] dim The geometric dimension (`0 < dim <= 3`).
@@ -54,14 +53,13 @@ public:
                                            std::vector<T>>
                  and std::is_convertible_v<std::remove_cvref_t<W>,
                                            std::vector<std::int64_t>>
-  Geometry(std::shared_ptr<const common::IndexMap> index_map, U&& dofmap,
-           const std::vector<fem::CoordinateElement<
-               typename
-
-               std::remove_reference_t<typename V::value_type>>>& elements,
-           V&& x, int dim, W&& input_global_indices)
+  Geometry(
+      std::shared_ptr<const common::IndexMap> index_map, U&& dofmap,
+      const fem::CoordinateElement<
+          typename std::remove_reference_t<typename V::value_type>>& element,
+      V&& x, int dim, W&& input_global_indices)
       : _dim(dim), _dofmap(std::forward<U>(dofmap)), _index_map(index_map),
-        _cmaps(elements), _x(std::forward<V>(x)),
+        _cmap(element), _x(std::forward<V>(x)),
         _input_global_indices(std::forward<W>(input_global_indices))
   {
     assert(_x.size() % 3 == 0);
@@ -93,7 +91,7 @@ public:
       MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
   dofmap() const
   {
-    int ndofs = _cmaps[0].dim();
+    int ndofs = _cmap.dim();
     return MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
         const std::int32_t,
         MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>(
@@ -122,10 +120,7 @@ public:
   /// @brief The elements that describes the geometry maps.
   ///
   /// @return The coordinate/geometry elements
-  const std::vector<fem::CoordinateElement<value_type>>& cmaps() const
-  {
-    return _cmaps;
-  }
+  const fem::CoordinateElement<value_type>& cmap() const { return _cmap; }
 
   /// Global user indices
   const std::vector<std::int64_t>& input_global_indices() const
@@ -143,8 +138,8 @@ private:
   // IndexMap for geometry 'dofmap'
   std::shared_ptr<const common::IndexMap> _index_map;
 
-  // The coordinate elements
-  std::vector<fem::CoordinateElement<value_type>> _cmaps;
+  // The coordinate element
+  fem::CoordinateElement<value_type> _cmap;
 
   // Coordinates for all points stored as a contiguous array (row-major,
   // column size = 3)
@@ -162,7 +157,7 @@ private:
 ///
 /// @param[in] comm The MPI communicator to build the Geometry on
 /// @param[in] topology The mesh topology
-/// @param[in] elements The elements that defines the geometry map for
+/// @param[in] element The elements that defines the geometry map for
 /// each cell
 /// @param[in] cell_nodes The mesh cells, including higher-order
 /// geometry 'nodes'
@@ -178,8 +173,8 @@ template <typename U>
 mesh::Geometry<typename std::remove_reference_t<typename U::value_type>>
 create_geometry(
     MPI_Comm comm, const Topology& topology,
-    const std::vector<fem::CoordinateElement<
-        std::remove_reference_t<typename U::value_type>>>& elements,
+    const fem::CoordinateElement<
+        std::remove_reference_t<typename U::value_type>>& element,
     const graph::AdjacencyList<std::int64_t>& cell_nodes, const U& x, int dim,
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
         reorder_fn
@@ -188,31 +183,26 @@ create_geometry(
   // TODO: make sure required entities are initialised, or extend
   // fem::build_dofmap_data
 
-  std::vector<fem::ElementDofLayout> dof_layouts;
-  for (auto e : elements)
-    dof_layouts.push_back(e.create_dof_layout());
+  const fem::ElementDofLayout dof_layout = element.create_dof_layout();
 
   //  Build 'geometry' dofmap on the topology
   auto [_dof_index_map, bs, dofmap]
-      = fem::build_dofmap_data(comm, topology, dof_layouts.front(), reorder_fn);
+      = fem::build_dofmap_data(comm, topology, dof_layout, reorder_fn);
   auto dof_index_map
       = std::make_shared<common::IndexMap>(std::move(_dof_index_map));
 
   // If the mesh has higher order geometry, permute the dofmap
-  if (elements[0].needs_dof_permutations())
+  if (element.needs_dof_permutations())
   {
-    if (elements.size() > 1)
-      throw std::runtime_error("Unsupported for Mixed Topology");
     const int D = topology.dim();
-    const int num_cells = topology.connectivity(D, 0)->num_nodes();
+    std::int32_t num_cells = topology.connectivity(D, 0)->num_nodes();
     const std::vector<std::uint32_t>& cell_info
         = topology.get_cell_permutation_info();
-
-    int dim = elements[0].dim();
+    int dim = element.dim();
     for (std::int32_t cell = 0; cell < num_cells; ++cell)
     {
       std::span<std::int32_t> dofs(dofmap.data() + cell * dim, dim);
-      elements[0].unpermute_dofs(dofs, cell_info[cell]);
+      element.unpermute_dofs(dofs, cell_info[cell]);
     }
   }
 
@@ -263,7 +253,7 @@ create_geometry(
   }
 
   return Geometry<typename std::remove_reference_t<typename U::value_type>>(
-      dof_index_map, std::move(dofmap), elements, std::move(xg), dim,
+      dof_index_map, std::move(dofmap), element, std::move(xg), dim,
       std::move(igi));
 }
 
@@ -280,12 +270,9 @@ std::pair<mesh::Geometry<T>, std::vector<int32_t>>
 create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
                    int dim, std::span<const std::int32_t> subentity_to_entity)
 {
-  if (geometry.cmaps().size() > 1)
-    throw std::runtime_error("Mixed topology not supported");
-
   // Get the geometry dofs in the sub-geometry based on the entities in
   // sub-geometry
-  const fem::ElementDofLayout layout = geometry.cmaps()[0].create_dof_layout();
+  const fem::ElementDofLayout layout = geometry.cmap().create_dof_layout();
   // NOTE: Unclear what this return for prisms
   const std::size_t num_entity_dofs = layout.num_entity_closure_dofs(dim);
 
@@ -375,10 +362,9 @@ create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
 
   // Create sub-geometry coordinate element
   CellType sub_coord_cell
-      = cell_entity_type(geometry.cmaps()[0].cell_shape(), dim, 0);
-  fem::CoordinateElement<T> sub_coord_ele(sub_coord_cell,
-                                          geometry.cmaps()[0].degree(),
-                                          geometry.cmaps()[0].variant());
+      = cell_entity_type(geometry.cmap().cell_shape(), dim, 0);
+  fem::CoordinateElement<T> sub_coord_ele(
+      sub_coord_cell, geometry.cmap().degree(), geometry.cmap().variant());
 
   // Sub-geometry input_global_indices
   // TODO: Check this

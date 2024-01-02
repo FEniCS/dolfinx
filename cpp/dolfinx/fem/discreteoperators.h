@@ -199,10 +199,7 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   const std::size_t value_size1 = e1->value_size() / bs1;
 
   // Get geometry data
-  auto cmaps = mesh->geometry().cmaps();
-  assert(cmaps.size() == 1);
-
-  const CoordinateElement<U>& cmap = cmaps.back();
+  const CoordinateElement<U>& cmap = mesh->geometry().cmap();
   auto x_dofmap = mesh->geometry().dofmap();
   const std::size_t num_dofs_g = cmap.dim();
   std::span<const U> x_g = mesh->geometry().x();
