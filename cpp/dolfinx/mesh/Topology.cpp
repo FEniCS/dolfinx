@@ -1217,7 +1217,7 @@ mesh::create_subtopology(const Topology& topology, int dim,
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t>
 mesh::entities_to_index(const Topology& topology, int dim,
-                        const graph::AdjacencyList<std::int32_t>& entities)
+                        std::span<const std::int32_t> entities)
 {
   LOG(INFO) << "Build list of mesh entity indices from the entity vertices.";
 
@@ -1232,9 +1232,8 @@ mesh::entities_to_index(const Topology& topology, int dim,
   auto e_to_v = topology.connectivity(dim, 0);
   assert(e_to_v);
 
-  CellType cell_type = topology.cell_type();
   const int num_vertices_per_entity
-      = cell_num_entities(cell_entity_type(cell_type, dim, 0), 0);
+      = cell_num_entities(cell_entity_type(topology.cell_type(), dim, 0), 0);
 
   // Build map from ordered local vertex indices (key) to entity index
   // (value)
@@ -1251,14 +1250,15 @@ mesh::entities_to_index(const Topology& topology, int dim,
       throw std::runtime_error("Duplicate mesh entity detected.");
   }
 
+  assert(entities.size() % num_vertices_per_entity == 0);
+
   // Iterate over all entities and find index
   std::vector<std::int32_t> indices;
-  indices.reserve(entities.num_nodes());
+  indices.reserve(entities.size() / num_vertices_per_entity);
   std::vector<std::int32_t> vertices(num_vertices_per_entity);
-  for (std::int32_t e = 0; e < entities.num_nodes(); ++e)
+  for (std::size_t e = 0; e < entities.size(); e += num_vertices_per_entity)
   {
-    auto v = entities.links(e);
-    assert(num_vertices_per_entity == entities.num_links(e));
+    auto v = entities.subspan(e, num_vertices_per_entity);
     std::copy(v.begin(), v.end(), vertices.begin());
     std::sort(vertices.begin(), vertices.end());
     if (auto it = entity_key_to_index.find(vertices);

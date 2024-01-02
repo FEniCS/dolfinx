@@ -210,11 +210,11 @@ create_subtopology(const Topology& topology, int dim,
 ///
 /// @param[in] topology The mesh topology
 /// @param[in] dim Topological dimension of the entities
-/// @param[in] entities The mesh entities defined by their vertices
+/// @param[in] entities The mesh entities defined by their vertices.
 /// @return The index of the ith entity in `entities`
 /// @note If an entity cannot be found on this rank, -1 is returned as
 /// the index.
 std::vector<std::int32_t>
 entities_to_index(const Topology& topology, int dim,
-                  const graph::AdjacencyList<std::int32_t>& entities);
+                  std::span<const std::int32_t> entities);
 } // namespace dolfinx::mesh
