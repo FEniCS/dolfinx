@@ -45,6 +45,11 @@ template <typename T>
 void reorder_list(std::span<T> list, int degree,
                   std::span<const std::int32_t> nodemap)
 {
+  if (nodemap.empty())
+    return;
+
+  assert(list.size() % nodemap.size() == 0);
+  assert(int(list.size() / nodemap.size()) == degree);
   const std::vector<T> orig(list.begin(), list.end());
   for (std::size_t n = 0; n < nodemap.size(); ++n)
   {
