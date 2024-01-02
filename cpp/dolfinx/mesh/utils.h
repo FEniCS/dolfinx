@@ -190,7 +190,7 @@ using CellPartitionFunction = std::function<graph::AdjacencyList<std::int32_t>(
 /// from the input `cell`.
 graph::AdjacencyList<std::int64_t>
 extract_topology(const CellType& cell_type, const fem::ElementDofLayout& layout,
-                 const graph::AdjacencyList<std::int64_t>& cells);
+                 std::span<const std::int64_t> cells);
 
 /// @brief Compute greatest distance between any two vertices of the
 /// mesh entities (`h`).
@@ -801,7 +801,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
       const int size = dolfinx::MPI::size(comm);
       dest = partitioner(
           comm, size, tdim,
-          extract_topology(element.cell_shape(), dof_layout, cells));
+          extract_topology(element.cell_shape(), dof_layout, cells.array()));
 
       // -- Distribute cells (topology, includes higher-order 'nodes')
 
@@ -828,8 +828,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     // Extract cell 'topology', i.e. extract the vertices for each cell
     // and discard any 'higher-order' nodes
 
-    graph::AdjacencyList<std::int64_t> cells_extracted
-        = extract_topology(element.cell_shape(), dof_layout, cell_nodes);
+    graph::AdjacencyList<std::int64_t> cells_extracted = extract_topology(
+        element.cell_shape(), dof_layout, cell_nodes.array());
 
     // -- Re-order cells
 
@@ -850,7 +850,6 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
             tdim);
 
     const std::vector<int> remap = graph::reorder_gps(graph);
-
     // Create re-ordered cell lists (leaves ghosts unchanged)
     std::vector<std::int64_t> original_cell_index(original_cell_index0.size());
     for (std::size_t i = 0; i < remap.size(); ++i)
