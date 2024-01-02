@@ -26,8 +26,7 @@ using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
 std::vector<std::int64_t>
-mesh::extract_topology(const CellType& cell_type,
-                       const fem::ElementDofLayout& layout,
+mesh::extract_topology(CellType cell_type, const fem::ElementDofLayout& layout,
                        std::span<const std::int64_t> cells)
 {
   // Use ElementDofLayout to get vertex dof indices (local to a cell)

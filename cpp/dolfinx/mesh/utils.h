@@ -192,7 +192,7 @@ using CellPartitionFunction = std::function<graph::AdjacencyList<std::int32_t>(
 /// @return Cell topology. The global indices will, in general, have
 /// 'gaps' due to mid-side and other higher-order nodes being removed
 /// from the input `cell`.
-std::vector<std::int64_t> extract_topology(const CellType& cell_type,
+std::vector<std::int64_t> extract_topology(CellType cell_type,
                                            const fem::ElementDofLayout& layout,
                                            std::span<const std::int64_t> cells);
 
@@ -797,6 +797,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     const int tdim = cell_dim(element.cell_shape());
 
     const int num_cell_vertices = mesh::num_cell_vertices(element.cell_shape());
+    const int num_cell_nodes = dof_layout.num_dofs();
 
     graph::AdjacencyList<std::int32_t> dest(0);
     graph::AdjacencyList<std::int64_t> cell_nodes(0);
@@ -806,7 +807,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     {
       const int size = dolfinx::MPI::size(comm);
       auto t = graph::regular_adjacency_list(
-          extract_topology(element.cell_shape(), dof_layout, cells.array()),
+          extract_topology(element.cell_shape(), dof_layout, cells),
           num_cell_vertices);
       dest = partitioner(comm, size, tdim, t);
 
@@ -814,16 +815,21 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 
       // Distribute cells to destination rank
       std::vector<int> src;
+
+      auto _cells = graph::regular_adjacency_list(
+          std::vector(cells.begin(), cells.end()), num_cell_nodes);
       std::tie(cell_nodes, src, original_cell_index0, ghost_owners)
-          = graph::build::distribute(comm, cells, dest);
+          = graph::build::distribute(comm, _cells, dest);
     }
     else
     {
       int rank = dolfinx::MPI::rank(comm);
       dest = graph::regular_adjacency_list(
-          std::vector<std::int32_t>(cells.num_nodes(), rank), 1);
-      cell_nodes = cells;
-      std::int64_t offset(0), num_owned(cells.num_nodes());
+          std::vector<std::int32_t>(cells.size() / num_cell_nodes, rank), 1);
+      // cell_nodes = cells;
+      cell_nodes = graph::regular_adjacency_list(
+          std::vector(cells.begin(), cells.end()), num_cell_nodes);
+      std::int64_t offset(0), num_owned(cells.size() / num_cell_nodes);
       MPI_Exscan(&num_owned, &offset, 1, MPI_INT64_T, MPI_SUM, comm);
       original_cell_index0.resize(cell_nodes.num_nodes());
       std::iota(original_cell_index0.begin(), original_cell_index0.end(),
@@ -839,8 +845,6 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
         element.cell_shape(), dof_layout, cell_nodes.array());
 
     // -- Re-order cells
-
-    const int num_cell_nodes = dof_layout.num_dofs();
 
     // Build local dual graph for owned cells to apply re-ordering to
     const std::int32_t num_owned_cells
@@ -892,7 +896,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   };
 
   auto [topology, cell_nodes]
-      = build_topology(comm, element, dof_layout, cells, partitioner);
+      = build_topology(comm, element, dof_layout, cells.array(), partitioner);
 
   // Create connectivity required to compute the Geometry (extra
   // connectivities for higher-order geometries)
@@ -906,8 +910,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   if (element.needs_dof_permutations())
     topology.create_entity_permutations();
 
-  Geometry geometry
-      = create_geometry(comm, topology, element, cell_nodes, x, xshape[1]);
+  Geometry geometry = create_geometry(comm, topology, element,
+                                      cell_nodes.array(), x, xshape[1]);
   return Mesh<typename U::value_type>(
       comm, std::make_shared<Topology>(std::move(topology)),
       std::move(geometry));

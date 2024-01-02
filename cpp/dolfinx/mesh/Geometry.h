@@ -160,7 +160,8 @@ private:
 /// @param[in] element The elements that defines the geometry map for
 /// each cell
 /// @param[in] cell_nodes The mesh cells, including higher-order
-/// geometry 'nodes'
+/// geometry 'nodes'. Row-major storage, shape=`(num_cells,
+/// nodes_per_cell)`.
 /// @param[in] x The node coordinates (row-major, with shape
 /// `(num_nodes, dim)`. The global index of each node is `i +
 /// rank_offset`, where `i` is the local row index in `x` and
@@ -175,7 +176,7 @@ create_geometry(
     MPI_Comm comm, const Topology& topology,
     const fem::CoordinateElement<
         std::remove_reference_t<typename U::value_type>>& element,
-    const graph::AdjacencyList<std::int64_t>& cell_nodes, const U& x, int dim,
+    std::span<const std::int64_t> cell_nodes, const U& x, int dim,
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
         reorder_fn
     = nullptr)
@@ -211,7 +212,7 @@ create_geometry(
   {
     // Build list of unique (global) node indices from adjacency list
     // (geometry nodes)
-    std::vector<std::int64_t> indices = cell_nodes.array();
+    std::vector<std::int64_t> indices(cell_nodes.begin(), cell_nodes.end());
     dolfinx::radix_sort(std::span(indices));
     indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
 
@@ -221,8 +222,7 @@ create_geometry(
 
     // Compute local-to-global map from local indices in dofmap to the
     // corresponding global indices in cell_nodes
-    std::vector l2g
-        = graph::build::compute_local_to_global(cell_nodes.array(), dofmap);
+    std::vector l2g = graph::build::compute_local_to_global(cell_nodes, dofmap);
 
     // Compute local (dof) to local (position in coords) map from (i)
     // local-to-global for dofs and (ii) local-to-global for entries in
