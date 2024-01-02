@@ -192,9 +192,9 @@ using CellPartitionFunction = std::function<graph::AdjacencyList<std::int32_t>(
 /// @return Cell topology. The global indices will, in general, have
 /// 'gaps' due to mid-side and other higher-order nodes being removed
 /// from the input `cell`.
-graph::AdjacencyList<std::int64_t>
-extract_topology(const CellType& cell_type, const fem::ElementDofLayout& layout,
-                 std::span<const std::int64_t> cells);
+std::vector<std::int64_t> extract_topology(const CellType& cell_type,
+                                           const fem::ElementDofLayout& layout,
+                                           std::span<const std::int64_t> cells);
 
 /// @brief Compute greatest distance between any two vertices of the
 /// mesh entities (`h`).
@@ -796,6 +796,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     // partitioning.
     const int tdim = cell_dim(element.cell_shape());
 
+    const int num_cell_vertices = mesh::num_cell_vertices(element.cell_shape());
+
     graph::AdjacencyList<std::int32_t> dest(0);
     graph::AdjacencyList<std::int64_t> cell_nodes(0);
     std::vector<std::int64_t> original_cell_index0;
@@ -803,9 +805,10 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     if (partitioner)
     {
       const int size = dolfinx::MPI::size(comm);
-      dest = partitioner(
-          comm, size, tdim,
-          extract_topology(element.cell_shape(), dof_layout, cells.array()));
+      auto t = graph::regular_adjacency_list(
+          extract_topology(element.cell_shape(), dof_layout, cells.array()),
+          num_cell_vertices);
+      dest = partitioner(comm, size, tdim, t);
 
       // -- Distribute cells (topology, includes higher-order 'nodes')
 
@@ -832,26 +835,24 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     // Extract cell 'topology', i.e. extract the vertices for each cell
     // and discard any 'higher-order' nodes
 
-    graph::AdjacencyList<std::int64_t> cells_extracted = extract_topology(
+    std::vector<std::int64_t> cells_extracted = extract_topology(
         element.cell_shape(), dof_layout, cell_nodes.array());
 
     // -- Re-order cells
 
-    const int num_cell_vertices = mesh::num_cell_vertices(element.cell_shape());
     const int num_cell_nodes = dof_layout.num_dofs();
 
     // Build local dual graph for owned cells to apply re-ordering to
     const std::int32_t num_owned_cells
-        = cells_extracted.num_nodes() - ghost_owners.size();
+        = cells_extracted.size() / num_cell_vertices - ghost_owners.size();
 
+    std::vector<std::int32_t> cell_offsets(num_owned_cells + 1, 0);
+    for (std::size_t i = 1; i < cell_offsets.size(); ++i)
+      cell_offsets[i] = cell_offsets[i - 1] + num_cell_vertices;
     auto [graph, unmatched_facets, max_v, facet_attached_cells]
-        = build_local_dual_graph(
-            std::span<const std::int64_t>(
-                cells_extracted.array().data(),
-                cells_extracted.offsets()[num_owned_cells]),
-            std::span<const std::int32_t>(cells_extracted.offsets().data(),
-                                          num_owned_cells + 1),
-            tdim);
+        = build_local_dual_graph(std::span(cells_extracted.data(),
+                                           num_owned_cells * num_cell_vertices),
+                                 cell_offsets, tdim);
 
     const std::vector<int> remap = graph::reorder_gps(graph);
     // Create re-ordered cell lists (leaves ghosts unchanged)
@@ -861,9 +862,9 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     std::copy_n(std::next(original_cell_index0.cbegin(), num_owned_cells),
                 ghost_owners.size(),
                 std::next(original_cell_index.begin(), num_owned_cells));
-    reorder_list(std::span(cells_extracted.array().data(),
-                           remap.size() * num_cell_vertices),
-                 remap);
+    reorder_list(
+        std::span(cells_extracted.data(), remap.size() * num_cell_vertices),
+        remap);
     reorder_list(
         std::span(cell_nodes.array().data(), remap.size() * num_cell_nodes),
         remap);
@@ -884,9 +885,9 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     // Create cells and vertices with the ghosting requested. Input
     // topology includes cells shared via facet, but ghosts will be
     // removed later if not required by ghost_mode.
-    return std::pair{create_topology(comm, cells_extracted.array(),
-                                     original_cell_index, ghost_owners,
-                                     element.cell_shape(), boundary_vertices),
+    return std::pair{create_topology(comm, cells_extracted, original_cell_index,
+                                     ghost_owners, element.cell_shape(),
+                                     boundary_vertices),
                      std::move(cell_nodes)};
   };
 

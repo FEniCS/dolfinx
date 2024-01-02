@@ -25,7 +25,7 @@
 using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
-graph::AdjacencyList<std::int64_t>
+std::vector<std::int64_t>
 mesh::extract_topology(const CellType& cell_type,
                        const fem::ElementDofLayout& layout,
                        std::span<const std::int64_t> cells)
@@ -53,8 +53,7 @@ mesh::extract_topology(const CellType& cell_type,
       t[j] = p[local_vertices[j]];
   }
 
-  return graph::regular_adjacency_list(std::move(topology),
-                                       num_vertices_per_cell);
+  return topology;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology)
