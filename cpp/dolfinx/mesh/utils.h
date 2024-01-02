@@ -40,33 +40,18 @@ enum class GhostMode : int
 
 namespace
 {
-/// Re-order an adjacency list
+/// Re-order an adjacency list of fixed degree
 template <typename T>
-graph::AdjacencyList<T> reorder_list(const graph::AdjacencyList<T>& list,
-                                     std::span<const std::int32_t> nodemap)
+void reorder_list(std::span<T> list, int degree,
+                  std::span<const std::int32_t> nodemap)
 {
-  // Copy existing data to keep ghost values (not reordered)
-  std::vector<T> data(list.array());
-  std::vector<std::int32_t> offsets(list.offsets().size());
-
-  // Compute new offsets (owned and ghost)
-  offsets[0] = 0;
-  for (std::size_t n = 0; n < nodemap.size(); ++n)
-    offsets[nodemap[n] + 1] = list.num_links(n);
-  for (std::size_t n = nodemap.size(); n < (std::size_t)list.num_nodes(); ++n)
-    offsets[n + 1] = list.num_links(n);
-  std::partial_sum(offsets.begin(), offsets.end(), offsets.begin());
-  graph::AdjacencyList<T> list_new(std::move(data), std::move(offsets));
-
+  const std::vector<T> orig(list.begin(), list.end());
   for (std::size_t n = 0; n < nodemap.size(); ++n)
   {
-    auto links_old = list.links(n);
-    auto links_new = list_new.links(nodemap[n]);
-    assert(links_old.size() == links_new.size());
+    auto links_old = std::span(orig.data() + n * degree, degree);
+    auto links_new = list.subspan(nodemap[n] * degree, degree);
     std::copy(links_old.begin(), links_old.end(), links_new.begin());
   }
-
-  return list_new;
 }
 } // namespace
 
@@ -848,6 +833,9 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 
     // -- Re-order cells
 
+    const int num_cell_vertices = mesh::num_cell_vertices(element.cell_shape());
+    const int num_cell_nodes = dof_layout.num_dofs();
+
     // Build local dual graph for owned cells to apply re-ordering to
     const std::int32_t num_owned_cells
         = cells_extracted.num_nodes() - ghost_owners.size();
@@ -870,8 +858,14 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     std::copy_n(std::next(original_cell_index0.cbegin(), num_owned_cells),
                 ghost_owners.size(),
                 std::next(original_cell_index.begin(), num_owned_cells));
-    cells_extracted = reorder_list(cells_extracted, remap);
-    cell_nodes = reorder_list(cell_nodes, remap);
+    // cells_extracted = reorder_list(cells_extracted, remap);
+    // cell_nodes = reorder_list(cell_nodes, remap);
+    reorder_list(std::span(cells_extracted.array().data(),
+                           remap.size() * num_cell_vertices),
+                 num_cell_vertices, remap);
+    reorder_list(
+        std::span(cell_nodes.array().data(), remap.size() * num_cell_nodes),
+        num_cell_nodes, remap);
 
     // -- Create Topology
 
