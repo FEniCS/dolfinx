@@ -360,7 +360,11 @@ def create_mesh(comm: _MPI.Comm, cells: np.ndarray,
     else:
         raise RuntimeError(f"Unsupported mesh dtype: {x.dtype}")
 
-    mesh = _cpp.mesh.create_mesh(comm, cells, cmap, x, partitioner)
+    try:
+        mesh = _cpp.mesh.create_mesh(comm, cells, cmap, x, partitioner)
+    except TypeError:
+        mesh = _cpp.mesh.create_mesh(comm, _cpp.graph.AdjacencyList_int64(np.cast['int64'](cells)),
+                                     cmap, x, partitioner)
     return Mesh(mesh, domain)
 
 
