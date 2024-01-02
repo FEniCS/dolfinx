@@ -268,20 +268,18 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
   if (entities.empty())
     return std::vector<T>();
 
-  if (topology->cell_types().size() > 1)
-    throw std::runtime_error("Mixed topology not supported");
-  if (topology->cell_types()[0] == CellType::prism and dim == 2)
+  if (topology->cell_type() == CellType::prism and dim == 2)
     throw std::runtime_error("More work needed for prism cell");
 
   const int gdim = mesh.geometry().dim();
-  const CellType type = cell_entity_type(topology->cell_types()[0], dim, 0);
+  const CellType type = cell_entity_type(topology->cell_type(), dim, 0);
 
   // Find geometry nodes for topology entities
   std::span<const T> x = mesh.geometry().x();
 
   // Orient cells if they are tetrahedron
   bool orient = false;
-  if (topology->cell_types()[0] == CellType::tetrahedron)
+  if (topology->cell_type() == CellType::tetrahedron)
     orient = true;
 
   std::vector<std::int32_t> geometry_entities
@@ -641,9 +639,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   auto topology = mesh.topology();
   assert(topology);
 
-  if (topology->cell_types().size() > 1)
-    throw std::runtime_error("Mixed topology not supported");
-  CellType cell_type = topology->cell_types()[0];
+  CellType cell_type = topology->cell_type();
   if (cell_type == CellType::prism and dim == 2)
     throw std::runtime_error("More work needed for prism cells");
   if (orient and (cell_type != CellType::tetrahedron or dim != 2))

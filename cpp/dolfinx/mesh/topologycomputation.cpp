@@ -762,7 +762,7 @@ mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim)
   assert(cell_map);
 
   auto [d0, d1, im, interprocess_facets] = compute_entities_by_key_matching(
-      comm, *cells, *vertex_map, *cell_map, topology.cell_types().back(), dim);
+      comm, *cells, *vertex_map, *cell_map, topology.cell_type(), dim);
 
   return {std::make_shared<graph::AdjacencyList<std::int32_t>>(std::move(d0)),
           std::make_shared<graph::AdjacencyList<std::int32_t>>(std::move(d1)),

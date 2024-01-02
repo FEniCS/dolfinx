@@ -366,14 +366,11 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
           mesh.geometry().cmap().create_dof_layout(), mesh.geometry().dofmap(),
           mesh::cell_dim(cell_type), entities_span, values);
 
-  auto cell_types = mesh.topology()->cell_types();
-  if (cell_types.size() > 1)
-    throw std::runtime_error("cell type IO");
+  mesh::CellType cell_type0 = mesh.topology()->cell_type();
 
   LOG(INFO) << "XDMF create meshtags";
   std::size_t num_vertices_per_entity = mesh::cell_num_entities(
-      mesh::cell_entity_type(cell_types.back(), mesh::cell_dim(cell_type), 0),
-      0);
+      mesh::cell_entity_type(cell_type0, mesh::cell_dim(cell_type0), 0), 0);
   const graph::AdjacencyList<std::int32_t> entities_adj
       = graph::regular_adjacency_list(std::move(entities_values.first),
                                       num_vertices_per_entity);

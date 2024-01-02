@@ -521,11 +521,8 @@ compute_refinement_data(const mesh::Mesh<T>& mesh, Option option)
   auto topology = mesh.topology();
   assert(topology);
 
-  if (topology->cell_types().size() > 1)
-    throw std::runtime_error("Mixed topology not supported");
-
-  if (topology->cell_types()[0] != mesh::CellType::triangle
-      and topology->cell_types()[0] != mesh::CellType::tetrahedron)
+  if (topology->cell_type() != mesh::CellType::triangle
+      and topology->cell_type() != mesh::CellType::tetrahedron)
   {
     throw std::runtime_error("Cell type not supported");
   }
@@ -591,11 +588,8 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
   auto topology = mesh.topology();
   assert(topology);
 
-  if (topology->cell_types().size() > 1)
-    throw std::runtime_error("Mixed topology not supported");
-
-  if (topology->cell_types()[0] != mesh::CellType::triangle
-      and topology->cell_types()[0] != mesh::CellType::tetrahedron)
+  if (topology->cell_type() != mesh::CellType::triangle
+      and topology->cell_type() != mesh::CellType::tetrahedron)
   {
     throw std::runtime_error("Cell type not supported");
   }

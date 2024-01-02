@@ -27,11 +27,8 @@ mesh::Mesh<T> refine(const mesh::Mesh<T>& mesh, bool redistribute = true)
   auto topology = mesh.topology();
   assert(topology);
 
-  if (topology->cell_types().size() > 1)
-    throw std::runtime_error("Mixed topology not supported");
-
-  if (topology->cell_types()[0] != mesh::CellType::triangle
-      and topology->cell_types()[0] != mesh::CellType::tetrahedron)
+  if (topology->cell_type() != mesh::CellType::triangle
+      and topology->cell_type() != mesh::CellType::tetrahedron)
   {
     throw std::runtime_error("Refinement only defined for simplices");
   }
@@ -67,11 +64,8 @@ mesh::Mesh<T> refine(const mesh::Mesh<T>& mesh,
 {
   auto topology = mesh.topology();
   assert(topology);
-
-  if (topology->cell_types().size() > 1)
-    throw std::runtime_error("Mixed topology not supported");
-  if (topology->cell_types()[0] != mesh::CellType::triangle
-      and topology->cell_types()[0] != mesh::CellType::tetrahedron)
+  if (topology->cell_type() != mesh::CellType::triangle
+      and topology->cell_type() != mesh::CellType::tetrahedron)
   {
     throw std::runtime_error("Refinement only defined for simplices");
   }

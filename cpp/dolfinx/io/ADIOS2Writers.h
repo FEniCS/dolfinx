@@ -385,7 +385,7 @@ void write_mesh(adios2::IO& io, adios2::Engine& engine,
   std::int32_t num_cells = topology->index_map(tdim)->size_local();
   int num_nodes = geometry.cmap().dim();
   auto [cells, shape] = io::extract_vtk_connectivity(mesh.geometry().dofmap(),
-                                                     topology->cell_types()[0]);
+                                                     topology->cell_type());
 
   // "Put" topology data in the result in the ADIOS2 file
   adios2::Variable local_topology = impl_adios2::define_variable<std::int64_t>(
@@ -429,7 +429,7 @@ public:
     assert(mesh);
     auto topology = mesh->topology();
     assert(topology);
-    mesh::CellType type = topology->cell_types()[0];
+    mesh::CellType type = topology->cell_type();
     if (mesh->geometry().cmap().dim() != mesh::cell_num_entities(type, 0))
       throw std::runtime_error("Fides only supports lowest-order meshes.");
     impl_fides::initialize_mesh_attributes(*_io, type);
@@ -490,10 +490,8 @@ public:
     }
 
     // Check that all functions are first order Lagrange
-    auto cell_types = mesh->topology()->cell_types();
-    if (cell_types.size() > 1)
-      throw std::runtime_error("Multiple cell types in IO.");
-    int num_vertices_per_cell = mesh::cell_num_entities(cell_types.back(), 0);
+    mesh::CellType cell_type = mesh->topology()->cell_type();
+    int num_vertices_per_cell = mesh::cell_num_entities(cell_type, 0);
     for (auto& v : _u)
     {
       std::visit(
@@ -521,7 +519,7 @@ public:
 
     auto topology = mesh->topology();
     assert(topology);
-    mesh::CellType type = topology->cell_types()[0];
+    mesh::CellType type = topology->cell_type();
     if (mesh->geometry().cmap().dim() != mesh::cell_num_entities(type, 0))
       throw std::runtime_error("Fides only supports lowest-order meshes.");
     impl_fides::initialize_mesh_attributes(*_io, type);
@@ -717,8 +715,8 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
       io, "NumberOfNodes", {adios2::LocalValueDim});
   engine.Put<std::uint32_t>(vertices, num_vertices);
 
-  auto [vtkcells, shape] = io::extract_vtk_connectivity(
-      geometry.dofmap(), topology->cell_types()[0]);
+  auto [vtkcells, shape]
+      = io::extract_vtk_connectivity(geometry.dofmap(), topology->cell_type());
 
   // Add cell metadata
   int tdim = topology->dim();
@@ -728,7 +726,7 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   adios2::Variable celltype_var
       = impl_adios2::define_variable<std::uint32_t>(io, "types");
   engine.Put<std::uint32_t>(
-      celltype_var, cells::get_vtk_cell_type(topology->cell_types()[0], tdim));
+      celltype_var, cells::get_vtk_cell_type(topology->cell_type(), tdim));
 
   // Pack mesh 'nodes'. Output is written as [N0, v0_0,...., v0_N0, N1,
   // v1_0,...., v1_N1,....], where N is the number of cell nodes and v0,
@@ -813,7 +811,7 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   engine.Put<std::uint32_t>(vertices, num_dofs);
   engine.Put<std::uint32_t>(elements, vtkshape[0]);
   engine.Put<std::uint32_t>(
-      cell_type, cells::get_vtk_cell_type(topology->cell_types()[0], tdim));
+      cell_type, cells::get_vtk_cell_type(topology->cell_type(), tdim));
   engine.Put(local_geometry, x.data());
   engine.Put(local_topology, cells.data());
 

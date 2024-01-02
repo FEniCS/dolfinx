@@ -366,9 +366,7 @@ void declare_mesh(nb::module_& m, std::string type)
 
         auto topology = mesh.topology();
         assert(topology);
-        if (topology->cell_types().size() > 1)
-          throw std::runtime_error("Multiple cell type not supported.");
-        dolfinx::mesh::CellType cell_type = topology->cell_types()[0];
+        dolfinx::mesh::CellType cell_type = topology->cell_type();
         std::size_t num_vertices = dolfinx::mesh::num_cell_vertices(
             cell_entity_type(cell_type, dim, 0));
         return as_nbarray(std::move(idx), {entities.size(), num_vertices});
@@ -483,14 +481,9 @@ void mesh(nb::module_& m)
                                        nb::const_),
            nb::arg("d0"), nb::arg("d1"))
       .def("index_map", &dolfinx::mesh::Topology::index_map, nb::arg("dim"))
-      .def_prop_ro("cell_types", &dolfinx::mesh::Topology::cell_types)
-      .def("cell_name",
-           [](const dolfinx::mesh::Topology& self)
-           {
-             if (self.cell_types().size() > 1)
-               throw std::runtime_error("Multiple cell types not supported");
-             return dolfinx::mesh::to_string(self.cell_types()[0]);
-           })
+      .def_prop_ro("cell_type", &dolfinx::mesh::Topology::cell_type)
+      .def("cell_name", [](const dolfinx::mesh::Topology& self)
+           { return dolfinx::mesh::to_string(self.cell_type()); })
       .def("interprocess_facets", &dolfinx::mesh::Topology::interprocess_facets)
       .def_prop_ro(
           "comm",

@@ -113,7 +113,7 @@ public:
 
   /// @brief Cell type
   /// @return Cell types that the topology is for
-  std::vector<CellType> cell_types() const noexcept;
+  CellType cell_type() const noexcept;
 
   /// @brief Create entities of given topological dimension.
   /// @param[in] dim Topological dimension
@@ -145,8 +145,8 @@ private:
   // MPI communicator
   dolfinx::MPI::Comm _comm;
 
-  // Cell types
-  std::vector<CellType> _cell_types;
+  // Cell type
+  CellType _cell_type;
 
   // Parallel layout of entities for each dimension
   std::array<std::shared_ptr<const common::IndexMap>, 4> _index_map;

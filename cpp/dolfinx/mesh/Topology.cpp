@@ -711,7 +711,7 @@ std::vector<std::int32_t> convert_to_local_indexing(
 
 //-----------------------------------------------------------------------------
 Topology::Topology(MPI_Comm comm, CellType cell_type)
-    : _comm(comm), _cell_types({cell_type}),
+    : _comm(comm), _cell_type(cell_type),
       _connectivity(
           cell_dim(cell_type) + 1,
           std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>(
@@ -866,10 +866,7 @@ const std::vector<std::int32_t>& Topology::interprocess_facets() const
   return _interprocess_facets;
 }
 //-----------------------------------------------------------------------------
-std::vector<mesh::CellType> Topology::cell_types() const noexcept
-{
-  return _cell_types;
-}
+mesh::CellType Topology::cell_type() const noexcept { return _cell_type; }
 //-----------------------------------------------------------------------------
 MPI_Comm Topology::comm() const { return _comm.comm(); }
 //-----------------------------------------------------------------------------
@@ -1176,8 +1173,7 @@ mesh::create_subtopology(const Topology& topology, int dim,
       submap0->size_local() + submap0->num_ghosts());
 
   // Sub-topology entity to vertex connectivity
-  const CellType entity_type
-      = cell_entity_type(topology.cell_types()[0], dim, 0);
+  const CellType entity_type = cell_entity_type(topology.cell_type(), dim, 0);
   int num_vertices_per_entity = cell_num_entities(entity_type, 0);
   auto e_to_v = topology.connectivity(dim, 0);
   assert(e_to_v);
@@ -1236,12 +1232,9 @@ mesh::entities_to_index(const Topology& topology, int dim,
   auto e_to_v = topology.connectivity(dim, 0);
   assert(e_to_v);
 
-  auto cell_types = topology.cell_types();
-  if (cell_types.size() > 1)
-    throw std::runtime_error("multiple cell types entities_to_index");
-
+  CellType cell_type = topology.cell_type();
   const int num_vertices_per_entity
-      = cell_num_entities(cell_entity_type(cell_types.back(), dim, 0), 0);
+      = cell_num_entities(cell_entity_type(cell_type, dim, 0), 0);
 
   // Build map from ordered local vertex indices (key) to entity index
   // (value)

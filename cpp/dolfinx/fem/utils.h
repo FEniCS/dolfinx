@@ -753,7 +753,7 @@ FunctionSpace<T> create_functionspace(
   const auto topology = mesh->topology();
   assert(topology);
   ElementDofLayout layout
-      = create_element_dof_layout(*ufcx_map, topology->cell_types()[0]);
+      = create_element_dof_layout(*ufcx_map, topology->cell_type());
 
   std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
       unpermute_dofs;
