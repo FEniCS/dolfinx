@@ -205,6 +205,7 @@ private:
 /// @param[in] ghost_owners The owning rank of each ghost cell (ghost
 /// cells are always at the end of the list of `cells`)
 /// @param[in] cell_type Cell shape
+/// @param[in] cell_group_offsets
 /// @param[in] boundary_vertices List of vertices on the exterior of the
 /// local mesh which may be shared with other processes.
 /// @return A distributed mesh topology
