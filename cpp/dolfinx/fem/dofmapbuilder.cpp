@@ -145,10 +145,10 @@ build_basic_dofmap(const mesh::Topology& topology,
 
   // Generate and number required mesh entities
   std::vector<std::int8_t> needs_entities(D + 1, false);
-  std::vector<std::int32_t> num_mesh_entities_local(D + 1, 0);
+  std::vector<std::int32_t> num_mesh_entities(D + 1, 0);
   // Number of dofs on this process
   std::int32_t local_size = 0;
-  for (std::size_t d = 0; d < D; ++d)
+  for (std::size_t d = 0; d <= D; ++d)
   {
     if (element_dof_layout.num_entity_dofs(d) > 0)
     {
@@ -159,12 +159,11 @@ build_basic_dofmap(const mesh::Topology& topology,
             + std::to_string(d) + " .");
       }
       needs_entities[d] = true;
-      num_mesh_entities_local[d] = topology.index_map(d)->size_local()
-                                   + topology.index_map(d)->num_ghosts();
+      num_mesh_entities[d] = topology.index_map(d)->size_local()
+                             + topology.index_map(d)->num_ghosts();
     }
 
-    local_size
-        += num_mesh_entities_local[d] * element_dof_layout.num_entity_dofs(d);
+    local_size += num_mesh_entities[d] * element_dof_layout.num_entity_dofs(d);
   }
 
   // Take care of cell dofs (dimension D), which may vary between
@@ -172,16 +171,16 @@ build_basic_dofmap(const mesh::Topology& topology,
   const std::size_t num_elem_types = 1;
   const std::vector<std::int32_t>& group_offsets
       = topology.entity_group_offsets(D);
-  for (std::size_t i = 0; i < 2 * num_elem_types; ++i)
-  {
-    std::int32_t ndofs_D = element_dof_layout.num_entity_dofs(D);
-    std::int32_t ncells_D = group_offsets[i + 1] - group_offsets[i];
-    if (ndofs_D > 0)
-      num_mesh_entities_local[D] += ncells_D;
-    local_size += ncells_D * ndofs_D;
-  }
-  if (num_mesh_entities_local[D] > 0)
-    needs_entities[D] = true;
+  // for (std::size_t i = 0; i < 2 * num_elem_types; ++i)
+  // {
+  //   std::int32_t ndofs_D = element_dof_layout.num_entity_dofs(D);
+  //   std::int32_t ncells_D = group_offsets[i + 1] - group_offsets[i];
+  //   if (ndofs_D > 0)
+  //     num_mesh_entities[D] += ncells_D;
+  //   local_size += ncells_D * ndofs_D;
+  // }
+  // if (num_mesh_entities[D] > 0)
+  //   needs_entities[D] = true;
 
   // Collect cell -> entity connectivities
   std::vector<std::shared_ptr<const graph::AdjacencyList<std::int32_t>>>
@@ -190,18 +189,18 @@ build_basic_dofmap(const mesh::Topology& topology,
     connectivity.push_back(topology.connectivity(D, d));
 
   // Allocate dofmap memory
-  const std::int32_t num_cells = connectivity[0]->num_nodes();
-  assert(group_offsets.back() == num_cells);
-
-  std::vector<std::vector<std::int32_t>> dofs(num_elem_types);
-  for (std::size_t i = 0; i < num_elem_types; ++i)
-  {
-    std::int32_t dofmap_width = element_dof_layout.num_dofs();
-    std::int32_t num_cells_i = (group_offsets[i + 1] - group_offsets[i])
-                               + (group_offsets[i + num_elem_types + 1]
-                                  - group_offsets[i + num_elem_types]);
-    dofs[i].resize(dofmap_width * num_cells_i);
-  }
+  // const std::int32_t num_cells = connectivity[0]->num_nodes();
+  // assert(group_offsets.back() == num_cells);
+  std::vector<std::int32_t> dofs(element_dof_layout.num_dofs()
+                                 * connectivity[0]->num_nodes());
+  // for (std::size_t i = 0; i < num_elem_types; ++i)
+  // {
+  //   std::int32_t dofmap_width = element_dof_layout.num_dofs();
+  //   std::int32_t num_cells_i = (group_offsets[i + 1] - group_offsets[i])
+  //                              + (group_offsets[i + num_elem_types + 1]
+  //                                 - group_offsets[i + num_elem_types]);
+  //   dofs.resize(dofmap_width * num_cells_i);
+  // }
 
   // Loop over cells, group by group, and build dofmaps from respective
   // ElementDofmap
@@ -221,8 +220,7 @@ build_basic_dofmap(const mesh::Topology& topology,
       if (i >= num_elem_types)
         dof_offset += group_offsets[elem + 1] - group_offsets[elem];
       dof_offset *= dofmap_width;
-      std::span<std::int32_t> dofs_c(dofs[elem].data() + dof_offset,
-                                     dofmap_width);
+      std::span<std::int32_t> dofs_c(dofs.data() + dof_offset, dofmap_width);
 
       // Iterate over each topological dimension for this element (twice, once
       // for regular, and later for ghosts).
@@ -256,7 +254,7 @@ build_basic_dofmap(const mesh::Topology& topology,
                   = offset_local + num_entity_dofs * e_index_local + i;
             }
           }
-          offset_local += num_entity_dofs * num_mesh_entities_local[d];
+          offset_local += num_entity_dofs * num_mesh_entities[d];
         }
       }
     }
@@ -285,8 +283,8 @@ build_basic_dofmap(const mesh::Topology& topology,
 
       // FIXME: invalid for d==D when cells are different, e.g. P2/Q2
       std::int32_t num_entity_dofs = element_dof_layout.num_entity_dofs(d);
-      for (std::int32_t e_index_local = 0;
-           e_index_local < num_mesh_entities_local[d]; ++e_index_local)
+      for (std::int32_t e_index_local = 0; e_index_local < num_mesh_entities[d];
+           ++e_index_local)
       {
         auto e_index_global = global_indices[e_index_local];
 
@@ -299,13 +297,12 @@ build_basic_dofmap(const mesh::Topology& topology,
           dof_entity[dof] = {d, e_index_local};
         }
       }
-      offset_local += num_entity_dofs * num_mesh_entities_local[d];
+      offset_local += num_entity_dofs * num_mesh_entities[d];
       offset_global += num_entity_dofs * map->size_global();
     }
   }
 
-  return {std::move(dofs[0]), std::move(local_to_global),
-          std::move(dof_entity)};
+  return {std::move(dofs), std::move(local_to_global), std::move(dof_entity)};
 }
 //-----------------------------------------------------------------------------
 
