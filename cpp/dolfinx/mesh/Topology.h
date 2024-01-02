@@ -216,5 +216,5 @@ create_subtopology(const Topology& topology, int dim,
 /// the index.
 std::vector<std::int32_t>
 entities_to_index(const Topology& topology, int dim,
-                  const graph::AdjacencyList<std::int32_t>& entities);
+                  std::span<const std::int32_t> entities);
 } // namespace dolfinx::mesh

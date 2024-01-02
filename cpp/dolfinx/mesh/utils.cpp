@@ -24,11 +24,14 @@
 using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
-graph::AdjacencyList<std::int64_t>
+std::vector<std::int64_t>
 mesh::extract_topology(const CellType& cell_type,
                        const fem::ElementDofLayout& layout,
-                       const graph::AdjacencyList<std::int64_t>& cells)
+                       std::span<const std::int64_t> cells)
 {
+  const int num_cell_nodes = layout.num_dofs();
+  const std::int32_t num_cells = cells.size() / num_cell_nodes;
+
   // Use ElementDofLayout to get vertex dof indices (local to a cell)
   const int num_vertices_per_cell = num_cell_vertices(cell_type);
   std::vector<int> local_vertices(num_vertices_per_cell);
@@ -40,16 +43,17 @@ mesh::extract_topology(const CellType& cell_type,
   }
 
   // Extract vertices
-  std::vector<std::int64_t> topology(cells.num_nodes() * num_vertices_per_cell);
-  for (int c = 0; c < cells.num_nodes(); ++c)
+  std::vector<std::int64_t> topology(num_cells * num_vertices_per_cell);
+  for (std::int32_t c = 0; c < num_cells; ++c)
   {
-    auto p = cells.links(c);
+    auto p = cells.subspan(c * num_cell_nodes, num_cell_nodes);
+    auto t = std::span(topology.data() + c * num_vertices_per_cell,
+                       num_vertices_per_cell);
     for (int j = 0; j < num_vertices_per_cell; ++j)
-      topology[num_vertices_per_cell * c + j] = p[local_vertices[j]];
+      t[j] = p[local_vertices[j]];
   }
 
-  return graph::regular_adjacency_list(std::move(topology),
-                                       num_vertices_per_cell);
+  return topology;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> mesh::exterior_facet_indices(const Topology& topology)

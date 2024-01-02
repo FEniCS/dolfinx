@@ -42,31 +42,43 @@ namespace
 {
 /// Re-order an adjacency list
 template <typename T>
-graph::AdjacencyList<T> reorder_list(const graph::AdjacencyList<T>& list,
-                                     std::span<const std::int32_t> nodemap)
+std::vector<T> reorder_list(std::span<const T> list, int degree,
+                            std::span<const std::int32_t> nodemap)
 {
   // Copy existing data to keep ghost values (not reordered)
-  std::vector<T> data(list.array());
-  std::vector<std::int32_t> offsets(list.offsets().size());
+  // std::vector<T> list_new(list.begin(), list.end());
 
-  // Compute new offsets (owned and ghost)
-  offsets[0] = 0;
-  for (std::size_t n = 0; n < nodemap.size(); ++n)
-    offsets[nodemap[n] + 1] = list.num_links(n);
-  for (std::size_t n = nodemap.size(); n < (std::size_t)list.num_nodes(); ++n)
-    offsets[n + 1] = list.num_links(n);
-  std::partial_sum(offsets.begin(), offsets.end(), offsets.begin());
-  graph::AdjacencyList<T> list_new(std::move(data), std::move(offsets));
+  // // std::vector<std::int32_t> offsets(list.offsets().size());
+  // std::vector<std::int32_t> new_idx(list.size() / degree);
 
+  // // Compute new offsets (owned and ghost)
+  // offsets[0] = 0;
+  // for (std::size_t n = 0; n < nodemap.size(); ++n)
+  //   offsets[nodemap[n] + 1] = list.num_links(n);
+  // for (std::size_t n = nodemap.size(); n < (std::size_t)list.num_nodes();
+  // ++n)
+  //   offsets[n + 1] = list.num_links(n);
+
+  // std::partial_sum(offsets.begin(), offsets.end(), offsets.begin());
+  // graph::AdjacencyList<T> list_new(std::move(data), std::move(offsets));
+
+  // for (std::size_t n = 0; n < nodemap.size(); ++n)
+  // {
+  //   auto links_old = list.links(n);
+  //   auto links_new = list_new.links(nodemap[n]);
+  //   assert(links_old.size() == links_new.size());
+  //   std::copy(links_old.begin(), links_old.end(), links_new.begin());
+  // }
+
+  std::vector<T> new_idx(nodemap.size() * degree);
   for (std::size_t n = 0; n < nodemap.size(); ++n)
   {
-    auto links_old = list.links(n);
-    auto links_new = list_new.links(nodemap[n]);
-    assert(links_old.size() == links_new.size());
+    auto links_old = list.subspan(n * degree, degree);
+    auto links_new = std::span(new_idx.data() + nodemap[n] * degree, degree);
     std::copy(links_old.begin(), links_old.end(), links_new.begin());
   }
 
-  return list_new;
+  return new_idx;
 }
 } // namespace
 
@@ -203,9 +215,9 @@ using CellPartitionFunction = std::function<graph::AdjacencyList<std::int32_t>(
 /// @return Cell topology. The global indices will, in general, have
 /// 'gaps' due to mid-side and other higher-order nodes being removed
 /// from the input `cell`.
-graph::AdjacencyList<std::int64_t>
-extract_topology(const CellType& cell_type, const fem::ElementDofLayout& layout,
-                 const graph::AdjacencyList<std::int64_t>& cells);
+std::vector<std::int64_t> extract_topology(const CellType& cell_type,
+                                           const fem::ElementDofLayout& layout,
+                                           std::span<const std::int64_t> cells);
 
 /// @brief Compute greatest distance between any two vertices of the
 /// mesh entities (`h`).
@@ -814,9 +826,11 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     if (partitioner)
     {
       const int size = dolfinx::MPI::size(comm);
-      dest = partitioner(
-          comm, size, tdim,
-          extract_topology(element.cell_shape(), dof_layout, cells));
+      std::vector<std::int64_t> _t
+          = extract_topology(element.cell_shape(), dof_layout, cells.array());
+      auto t = graph::regular_adjacency_list(
+          std::move(_t), num_cell_vertices(element.cell_shape()));
+      dest = partitioner(comm, size, tdim, t);
 
       // -- Distribute cells (topology, includes higher-order 'nodes')
 
@@ -843,22 +857,29 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     // Extract cell 'topology', i.e. extract the vertices for each cell
     // and discard any 'higher-order' nodes
 
-    graph::AdjacencyList<std::int64_t> cells_extracted
-        = extract_topology(element.cell_shape(), dof_layout, cell_nodes);
+    std::vector<std::int64_t> cells_extracted = extract_topology(
+        element.cell_shape(), dof_layout, cell_nodes.array());
 
     // -- Re-order cells
 
     // Build local dual graph for owned cells to apply re-ordering to
+    // const std::int32_t num_owned_cells
+    //     = cells.num_nodes() - ghost_owners.size();
+    const int num_vertices_per_cell = num_cell_vertices(element.cell_shape());
     const std::int32_t num_owned_cells
-        = cells_extracted.num_nodes() - ghost_owners.size();
+        = cells_extracted.size() / num_vertices_per_cell - ghost_owners.size();
 
+    std::vector<std::int32_t> offsets_owned(num_owned_cells + 1, 0);
+    for (std::size_t i = 1; i < offsets_owned.size(); ++i)
+      offsets_owned[i] = offsets_owned[i - 1] + num_vertices_per_cell;
     auto [graph, unmatched_facets, max_v, facet_attached_cells]
         = build_local_dual_graph(
-            std::span<const std::int64_t>(
-                cells_extracted.array().data(),
-                cells_extracted.offsets()[num_owned_cells]),
-            std::span<const std::int32_t>(cells_extracted.offsets().data(),
-                                          num_owned_cells + 1),
+            std::span<const std::int64_t>(cells_extracted.data(),
+                                          num_owned_cells
+                                              * num_vertices_per_cell),
+            offsets_owned,
+            // std::span<const std::int32_t>(cells_extracted.offsets().data(),
+            //                               num_owned_cells + 1),
             tdim);
 
     const std::vector<int> remap = graph::reorder_gps(graph);
@@ -870,8 +891,16 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     std::copy_n(std::next(original_cell_index0.cbegin(), num_owned_cells),
                 ghost_owners.size(),
                 std::next(original_cell_index.begin(), num_owned_cells));
-    cells_extracted = reorder_list(cells_extracted, remap);
-    cell_nodes = reorder_list(cell_nodes, remap);
+    // cells_extracted = reorder_list(cells_extracted, remap);
+    // cell_nodes = reorder_list(cell_nodes, remap);
+    cells_extracted = reorder_list(
+        std::span<const std::int64_t>(cells_extracted.data(),
+                                      remap.size() * num_vertices_per_cell),
+        num_vertices_per_cell, remap);
+    cell_nodes.array() = reorder_list(
+        std::span<const std::int64_t>(cell_nodes.array().data(),
+                                      remap.size() * dof_layout.num_dofs()),
+        dof_layout.num_dofs(), remap);
 
     // -- Create Topology
 
@@ -889,9 +918,9 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     // Create cells and vertices with the ghosting requested. Input
     // topology includes cells shared via facet, but ghosts will be
     // removed later if not required by ghost_mode.
-    return std::pair{create_topology(comm, cells_extracted.array(),
-                                     original_cell_index, ghost_owners,
-                                     element.cell_shape(), boundary_vertices),
+    return std::pair{create_topology(comm, cells_extracted, original_cell_index,
+                                     ghost_owners, element.cell_shape(),
+                                     boundary_vertices),
                      std::move(cell_nodes)};
   };
 
