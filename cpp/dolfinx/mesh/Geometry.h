@@ -175,7 +175,7 @@ private:
 /// @param[in] reorder_fn Function for re-ordering the degree-of-freedom
 /// map associated with the geometry data
 template <typename U>
-mesh::Geometry<typename std::remove_reference_t<typename U::value_type>>
+Geometry<typename std::remove_reference_t<typename U::value_type>>
 create_geometry(
     MPI_Comm comm, const Topology& topology,
     const std::vector<fem::CoordinateElement<
@@ -276,7 +276,7 @@ create_geometry(
 /// @return A sub-geometry and a map from sub-geometry coordinate
 /// degree-of-freedom to the coordinate degree-of-freedom in `geometry`.
 template <std::floating_point T>
-std::pair<mesh::Geometry<T>, std::vector<int32_t>>
+std::pair<Geometry<T>, std::vector<int32_t>>
 create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
                    int dim, std::span<const std::int32_t> subentity_to_entity)
 {
@@ -328,22 +328,14 @@ create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
   // Get the sub-geometry dofs owned by this process
   auto x_index_map = geometry.index_map();
   assert(x_index_map);
-  std::vector<std::int32_t> subx_to_x_dofmap
-      = common::compute_owned_indices(sub_x_dofs, *x_index_map);
-  std::shared_ptr<common::IndexMap> sub_x_dof_index_map;
-  {
-    std::pair<common::IndexMap, std::vector<int32_t>> map_data
-        = x_index_map->create_submap(subx_to_x_dofmap);
-    sub_x_dof_index_map
-        = std::make_shared<common::IndexMap>(std::move(map_data.first));
 
-    // Create a map from the dofs in the sub-geometry to the geometry
-    subx_to_x_dofmap.reserve(sub_x_dof_index_map->size_local()
-                             + sub_x_dof_index_map->num_ghosts());
-    std::transform(map_data.second.begin(), map_data.second.end(),
-                   std::back_inserter(subx_to_x_dofmap),
-                   [offset = x_index_map->size_local()](auto x_dof_index)
-                   { return offset + x_dof_index; });
+  std::shared_ptr<common::IndexMap> sub_x_dof_index_map;
+  std::vector<std::int32_t> subx_to_x_dofmap;
+  {
+    auto [map, new_to_old]
+        = common::create_sub_index_map(*x_index_map, sub_x_dofs, true);
+    sub_x_dof_index_map = std::make_shared<common::IndexMap>(std::move(map));
+    subx_to_x_dofmap = std::move(new_to_old);
   }
 
   // Create sub-geometry coordinates

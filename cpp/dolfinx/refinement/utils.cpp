@@ -37,7 +37,7 @@ std::int64_t refinement::impl::local_to_global(std::int32_t local_index,
   }
   else
   {
-    const std::vector<std::int64_t>& ghosts = map.ghosts();
+    std::span ghosts = map.ghosts();
     assert((local_index - local_size) < (int)ghosts.size());
     return ghosts[local_index - local_size];
   }
@@ -111,9 +111,9 @@ refinement::adjust_indices(const common::IndexMap& map, std::int32_t n)
   std::int64_t global_offset = 0;
   MPI_Exscan(&num_local, &global_offset, 1, MPI_INT64_T, MPI_SUM, map.comm());
 
-  const std::vector<int>& owners = map.owners();
-  const std::vector<int>& src = map.src();
-  const std::vector<int>& dest = map.dest();
+  std::span owners = map.owners();
+  std::span src = map.src();
+  std::span dest = map.dest();
 
   MPI_Comm comm;
   MPI_Dist_graph_create_adjacent(map.comm(), src.size(), src.data(),

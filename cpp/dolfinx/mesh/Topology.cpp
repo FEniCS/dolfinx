@@ -516,8 +516,8 @@ exchange_ghost_indexing(const common::IndexMap& map0,
   // owner.
 
   MPI_Comm comm;
-  const std::vector<int>& src = map0.src();
-  const std::vector<int>& dest = map0.dest();
+  std::span src = map0.src();
+  std::span dest = map0.dest();
   MPI_Dist_graph_create_adjacent(map0.comm(), src.size(), src.data(),
                                  MPI_UNWEIGHTED, dest.size(), dest.data(),
                                  MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
@@ -1160,32 +1160,21 @@ mesh::create_subtopology(const Topology& topology, int dim,
   // TODO Call common::get_owned_indices here? Do we want to
   // support `entities` possibly having a ghost on one process that is
   // not in `entities` on the owning process?
-  // TODO: Should entities still be ghosted in the sub-topology even if
-  // they are not in the `entities` list? If this is not desirable,
-  // create_submap needs to be changed
 
   // Create a map from an entity in the sub-topology to the
   // corresponding entity in the topology, and create an index map
-  std::vector<int32_t> subentities;
   std::shared_ptr<common::IndexMap> submap;
+  std::vector<int32_t> subentities;
   {
-    // Entities in the sub-topology that are owned by this process
-    auto entity_map = topology.index_map(dim);
-    assert(entity_map);
-    std::copy_if(
-        entities.begin(), entities.end(), std::back_inserter(subentities),
-        [size = entity_map->size_local()](std::int32_t e) { return e < size; });
-
-    std::pair<common::IndexMap, std::vector<int32_t>> map_data
-        = entity_map->create_submap(subentities);
-    submap = std::make_shared<common::IndexMap>(std::move(map_data.first));
-
-    // Add ghost entities to subentities
-    subentities.reserve(submap->size_local() + submap->num_ghosts());
-    std::transform(map_data.second.begin(), map_data.second.end(),
-                   std::back_inserter(subentities),
-                   [offset = entity_map->size_local()](auto entity_index)
-                   { return offset + entity_index; });
+    // FIXME Make this an input requirement?
+    std::vector<std::int32_t> _entities(entities.begin(), entities.end());
+    std::sort(_entities.begin(), _entities.end());
+    _entities.erase(std::unique(_entities.begin(), _entities.end()),
+                    _entities.end());
+    auto [_submap, _subentities]
+        = common::create_sub_index_map(*topology.index_map(dim), _entities);
+    submap = std::make_shared<common::IndexMap>(std::move(_submap));
+    subentities = std::move(_subentities);
   }
 
   // Get the vertices in the sub-topology. Use subentities
@@ -1195,26 +1184,18 @@ mesh::create_subtopology(const Topology& topology, int dim,
   // Get the vertices in the sub-topology owned by this process
   auto map0 = topology.index_map(0);
   assert(map0);
-  std::vector<std::int32_t> indices
-      = compute_incident_entities(topology, subentities, dim, 0);
-  std::sort(indices.begin(), indices.end());
-  std::vector<std::int32_t> subvertices0
-      = common::compute_owned_indices(indices, *map0);
 
   // Create map from the vertices in the sub-topology to the vertices in the
   // parent topology, and an index map
   std::shared_ptr<common::IndexMap> submap0;
+  std::vector<int32_t> subvertices0;
   {
     std::pair<common::IndexMap, std::vector<int32_t>> map_data
-        = map0->create_submap(subvertices0);
+        = common::create_sub_index_map(
+            *map0, compute_incident_entities(topology, subentities, dim, 0),
+            true);
     submap0 = std::make_shared<common::IndexMap>(std::move(map_data.first));
-
-    // Add ghost vertices to the map
-    subvertices0.reserve(submap0->size_local() + submap0->num_ghosts());
-    std::transform(map_data.second.begin(), map_data.second.end(),
-                   std::back_inserter(subvertices0),
-                   [offset = map0->size_local()](std::int32_t vertex_index)
-                   { return offset + vertex_index; });
+    subvertices0 = std::move(map_data.second);
   }
 
   // Sub-topology vertex-to-vertex connectivity (identity)
