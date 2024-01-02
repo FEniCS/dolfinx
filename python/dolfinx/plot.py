@@ -52,8 +52,7 @@ def vtk_mesh(msh: mesh.Mesh, dim: typing.Optional[int] = None, entities=None):
     if len(msh.topology.cell_types) != 1:
         raise RuntimeError("Multiple cell types")
     cell_type = _cpp.mesh.cell_entity_type(msh.topology.cell_types[0], dim, 0)
-    assert len(msh.geometry.cmaps) == 1
-    cmap = msh.geometry.cmaps[0]
+    cmap = msh.geometry.cmap
     degree = cmap.degree
     if cell_type == mesh.CellType.prism:
         raise RuntimeError("Plotting of prism meshes not supported")

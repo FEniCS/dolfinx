@@ -287,7 +287,7 @@ def test_higher_order_function(tempdir):
     # -- Degree 1 mesh (tet)
     msh = gmsh_tet_model(1)
     gdim = msh.geometry.dim
-    assert msh.geometry.cmaps[0].degree == 1
+    assert msh.geometry.cmap.degree == 1
 
     # Write P1 Function
     u = Function(functionspace(msh, ("Lagrange", 1, (gdim,))))
@@ -307,7 +307,7 @@ def test_higher_order_function(tempdir):
     # -- Degree 2 mesh (tet)
     msh = gmsh_tet_model(2)
     gdim = msh.geometry.dim
-    assert msh.geometry.cmaps[0].degree == 2
+    assert msh.geometry.cmap.degree == 2
 
     # Write P1 Function (exception expected)
     u = Function(functionspace(msh, ("Lagrange", 1, (gdim,))))
@@ -328,7 +328,7 @@ def test_higher_order_function(tempdir):
     # NOTE: XDMF/ParaView does not support TETRAHEDRON_20
     msh = gmsh_tet_model(3)
     gdim = msh.geometry.dim
-    assert msh.geometry.cmaps[0].degree == 3
+    assert msh.geometry.cmap.degree == 3
 
     # Write P2 Function (exception expected)
     u = Function(functionspace(msh, ("Lagrange", 2, (gdim,))))
@@ -359,7 +359,7 @@ def test_higher_order_function(tempdir):
     # --  Degree 2 mesh (hex)
     msh = gmsh_hex_model(2)
     gdim = msh.geometry.dim
-    assert msh.geometry.cmaps[0].degree == 2
+    assert msh.geometry.cmap.degree == 2
 
     # Write Q1 Function (exception expected)
     u = Function(functionspace(msh, ("Lagrange", 1, (gdim,))))
@@ -380,7 +380,7 @@ def test_higher_order_function(tempdir):
     #
     # # Degree 3 mesh (hex)
     # msh = gmsh_hex_model(3)
-    # assert msh.geometry.cmaps[0].degree == 3
+    # assert msh.geometry.cmap.degree == 3
     # gdim = msh.geometry.dim
     # u = Function(functionspace(msh, ("Lagrange", 1, (gdim,))))
     # with pytest.raises(RuntimeError):

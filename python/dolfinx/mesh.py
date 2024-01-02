@@ -325,7 +325,7 @@ def refine_plaza(mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistri
     return Mesh(mesh1, domain), cells, facets
 
 
-def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.AdjacencyList_int64],
+def create_mesh(comm: _MPI.Comm, cells: np.ndarray,
                 x: np.ndarray, domain: ufl.Mesh, partitioner=None) -> Mesh:
     """Create a mesh from topology and geometry arrays.
 
@@ -360,21 +360,16 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
     else:
         raise RuntimeError(f"Unsupported mesh dtype: {x.dtype}")
 
-    try:
-        mesh = _cpp.mesh.create_mesh(comm, cells, cmap, x, partitioner)
-    except TypeError:
-        mesh = _cpp.mesh.create_mesh(comm, _cpp.graph.AdjacencyList_int64(np.cast['int64'](cells)),
-                                     cmap, x, partitioner)
+    mesh = _cpp.mesh.create_mesh(comm, cells, cmap, x, partitioner)
     return Mesh(mesh, domain)
 
 
 def create_submesh(msh, dim, entities):
     submsh, entity_map, vertex_map, geom_map = _cpp.mesh.create_submesh(msh._cpp_object, dim, entities)
-    assert len(submsh.geometry.cmaps) == 1
     submsh_ufl_cell = ufl.Cell(submsh.topology.cell_name(), geometric_dimension=submsh.geometry.dim)
     submsh_domain = ufl.Mesh(basix.ufl.element("Lagrange", submsh_ufl_cell.cellname(),
-                                               submsh.geometry.cmaps[0].degree,
-                                               basix.LagrangeVariant(submsh.geometry.cmaps[0].variant),
+                                               submsh.geometry.cmap.degree,
+                                               basix.LagrangeVariant(submsh.geometry.cmap.variant),
                                                shape=(submsh.geometry.dim,),
                                                gdim=submsh.geometry.dim))
     return (Mesh(submsh, submsh_domain), entity_map, vertex_map, geom_map)
