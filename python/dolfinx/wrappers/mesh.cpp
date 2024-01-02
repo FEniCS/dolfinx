@@ -438,8 +438,6 @@ void mesh(nb::module_& m)
              const std::vector<dolfinx::mesh::CellType> cell_type)
           { new (t) dolfinx::mesh::Topology(comm.get(), cell_type); },
           nb::arg("comm"), nb::arg("cell_type"))
-      .def("entity_group_offsets",
-           &dolfinx::mesh::Topology::entity_group_offsets)
       .def("set_connectivity", &dolfinx::mesh::Topology::set_connectivity,
            nb::arg("c"), nb::arg("d0"), nb::arg("d1"))
       .def("set_index_map", &dolfinx::mesh::Topology::set_index_map,

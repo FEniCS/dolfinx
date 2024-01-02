@@ -710,12 +710,12 @@ std::vector<std::int32_t> convert_to_local_indexing(
 } // namespace
 
 //-----------------------------------------------------------------------------
-Topology::Topology(MPI_Comm comm, std::vector<CellType> types)
-    : _comm(comm), _cell_types(types),
+Topology::Topology(MPI_Comm comm, CellType cell_type)
+    : _comm(comm), _cell_types({cell_type}),
       _connectivity(
-          cell_dim(types[0]) + 1,
+          cell_dim(cell_type) + 1,
           std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>(
-              cell_dim(types[0]) + 1))
+              cell_dim(cell_type) + 1))
 {
   // Do nothing
 }
@@ -887,33 +887,17 @@ MPI_Comm Topology::comm() const { return _comm.comm(); }
 Topology
 mesh::create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
                       std::span<const std::int64_t> original_cell_index,
-                      std::span<const int> ghost_owners,
-                      const std::vector<CellType>& cell_type,
+                      std::span<const int> ghost_owners, CellType cell_type,
                       const std::vector<std::int32_t>& cell_group_offsets,
                       std::span<const std::int64_t> boundary_vertices)
 {
   common::Timer timer("Topology: create");
 
   LOG(INFO) << "Create topology";
-  // for (std::size_t i = 0; i < cell_type.size(); i++)
-  // {
-  //   std::int32_t offset = cell_group_offsets[i];
-  //   int num_vertices = num_cell_vertices(cell_type[i]);
-  //   if (cells.num_nodes() > 0 and cells.num_links(offset) != num_vertices)
-  //   {
-  //     throw std::runtime_error("Inconsistent number of cell vertices. Got "
-  //                              + std::to_string(cells.num_links(offset))
-  //                              + ", expected " + std::to_string(num_vertices)
-  //                              + ".");
-  //   }
-  // }
 
-  const int num_cell_vertices = mesh::num_cell_vertices(cell_type.front());
+  const int num_cell_vertices = mesh::num_cell_vertices(cell_type);
   const std::int32_t num_cells = cells.size() / num_cell_vertices;
   const std::int32_t num_local_cells = num_cells - ghost_owners.size();
-
-  // if (num_local_cells != cell_group_offsets[cell_type.size()])
-  //   throw std::runtime_error("Inconsistent offset or ghost number.");
 
   // Create sets of owned and unowned vertices from the cell ownership
   // and the list of boundary vertices
@@ -1096,10 +1080,7 @@ mesh::create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
 
   // const std::size_t num_local_nodes = cells.num_nodes();
   std::vector<std::int32_t> _cells_local_idx
-      = convert_to_local_indexing(cells,
-                                  // num_cell_vertices,
-                                  // num_local_nodes,
-                                  global_to_local_vertices);
+      = convert_to_local_indexing(cells, global_to_local_vertices);
 
   // -- Create Topology object
 
@@ -1262,7 +1243,7 @@ mesh::create_subtopology(const Topology& topology, int dim,
       std::move(sub_e_to_v_vec), std::move(sub_e_to_v_offsets));
 
   // Create sub-topology
-  Topology subtopology(topology.comm(), {entity_type});
+  Topology subtopology(topology.comm(), entity_type);
   subtopology.set_index_map(0, submap0);
   subtopology.set_index_map(dim, submap);
   subtopology.set_connectivity(sub_v_to_v, 0, 0);

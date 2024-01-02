@@ -44,7 +44,7 @@ class Topology
 {
 public:
   /// Create empty mesh topology
-  Topology(MPI_Comm comm, std::vector<CellType> type);
+  Topology(MPI_Comm comm, CellType celltype);
 
   /// Copy constructor
   Topology(const Topology& topology) = default;
@@ -204,16 +204,13 @@ private:
 /// with each cell
 /// @param[in] ghost_owners The owning rank of each ghost cell (ghost
 /// cells are always at the end of the list of `cells`)
-/// @param[in] cell_type A vector with cell shapes
-/// @param[in] cell_group_offsets vector with each group offset, including
-/// ghosts.
+/// @param[in] cell_type Cell shape
 /// @param[in] boundary_vertices List of vertices on the exterior of the
 /// local mesh which may be shared with other processes.
 /// @return A distributed mesh topology
 Topology create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
                          std::span<const std::int64_t> original_cell_index,
-                         std::span<const int> ghost_owners,
-                         const std::vector<CellType>& cell_type,
+                         std::span<const int> ghost_owners, CellType cell_type,
                          const std::vector<std::int32_t>& cell_group_offsets,
                          std::span<const std::int64_t> boundary_vertices);
 

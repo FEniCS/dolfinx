@@ -893,11 +893,10 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     std::vector<std::int32_t> cell_group_offsets
         = {0, std::int32_t(cells_extracted.num_nodes() - ghost_owners.size()),
            cells_extracted.num_nodes()};
-    std::vector<mesh::CellType> cell_type = {elements[0].cell_shape()};
     return std::pair{create_topology(comm, cells_extracted.array(),
                                      original_cell_index, ghost_owners,
-                                     cell_type, cell_group_offsets,
-                                     boundary_vertices),
+                                     elements[0].cell_shape(),
+                                     cell_group_offsets, boundary_vertices),
                      std::move(cell_nodes)};
   };
 
