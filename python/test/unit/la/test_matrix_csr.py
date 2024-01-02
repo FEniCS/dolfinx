@@ -190,7 +190,7 @@ def test_set_diagonal_distributed(dtype):
     nlocal = index_map.size_local
     assert (diag[nlocal:] == dtype(0.0)).all()
 
-    shared_dofs = index_map.index_to_dest_ranks
+    shared_dofs = index_map.index_to_dest_ranks()
     for dof in range(nlocal):
         owners = shared_dofs.links(dof)
         assert diag[dof] == len(owners) + 1

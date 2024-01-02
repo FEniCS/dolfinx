@@ -12,6 +12,7 @@ import numpy as np
 
 import dolfinx
 from dolfinx.mesh import GhostMode, create_unit_square
+from dolfinx import cpp as _cpp
 
 
 def test_sub_index_map():
@@ -44,7 +45,8 @@ def test_sub_index_map():
 
     # Create sub index map and a map from the ghost position in new map
     # to the position in old map
-    submap, ghosts_pos_sub = map.create_submap(local_indices[my_rank])
+    submap, submap_to_map = _cpp.common.create_sub_index_map(map, local_indices[my_rank], False)
+    ghosts_pos_sub = submap_to_map[map_local_size:] - map_local_size
 
     # Check local and global sizes
     assert submap.size_local == submap_local_size[my_rank]
@@ -61,19 +63,6 @@ def test_sub_index_map():
     subowners = submap.owners
     assert (owners[ghosts_pos_sub] == subowners).all()
 
-    # Check that ghost indices are correct in submap
-    # NOTE This assumes size_local is the same for all ranks
-    # TODO Consider renaming to something shorter
-    submap_global_to_map_global_map = np.concatenate([local_indices[rank] + map_local_size * rank
-                                                      for rank in range(comm.size)])
-    # FIXME Do this more elegantly
-    submap_ghosts = []
-    for map_ghost in map.ghosts:
-        submap_ghost = np.where(submap_global_to_map_global_map == map_ghost)[0]
-        if submap_ghost.size != 0:
-            submap_ghosts.append(submap_ghost[0])
-    assert np.allclose(submap.ghosts, submap_ghosts)
-
 
 def test_sub_index_map_ghost_mode_none():
     n = 3
@@ -81,7 +70,7 @@ def test_sub_index_map_ghost_mode_none():
     tdim = mesh.topology.dim
     map = mesh.topology.index_map(tdim)
     submap_indices = np.arange(0, min(2, map.size_local), dtype=np.int32)
-    map.create_submap(submap_indices)
+    _cpp.common.create_sub_index_map(map, submap_indices, False)
 
 
 def test_index_map_ghost_lifetime():
@@ -107,3 +96,77 @@ def test_index_map_ghost_lifetime():
     assert np.array_equal(ghosts, map_ghosts)
     del map
     assert np.array_equal(ghosts, map_ghosts)
+
+
+# TODO: Add test for case where more than one two process shares an index
+# whose owner changes in the submap
+def test_create_submap_owner_change():
+    """Test create_sub_index_map where the ownership of indices is not
+    preserved in the submap. The diagram illustrates the case with four
+    processes. Original map numbering and connectivity (G indicates a ghost
+    index):
+    Global    Rank 0    Rank 1    Rank 2    Rank 3
+    1 - 0     1 - 0
+    | / |     | / |
+    3 - 2    3G - 2     0 - 2G
+    | / |               | / |
+    5 - 4              3G - 1     0 - 2G
+    | / |                         | / |
+    7 - 6                        3G - 1     0 - 3G
+    | / |                                   | / |
+    9 - 8                                   2 - 1
+    We now create a submap of the "upper triangular" parts to
+    get the following:
+    Global    Rank 0    Rank 1    Rank 2    Rank 3
+    1 - 0     1 - 0
+    | /       | /
+    2 - 3     2G        0 - 1
+    | /                 | /
+    4 - 5               2G        0 - 1
+    | /                           | /
+    6 - 8                         2G        0 - 2
+    | /                                     | /
+    7                                       1
+    """
+    comm = MPI.COMM_WORLD
+
+    if comm.size == 1:
+        return
+
+    if comm.rank == 0:
+        local_size = 3
+        ghosts = np.array([local_size], dtype=np.int64)
+        owners = np.array([1], dtype=np.int32)
+        submap_indices = np.array([0, 1, 3], dtype=np.int32)
+    elif comm.rank == comm.size - 1:
+        local_size = 3
+        ghosts = np.array([2 * comm.rank], dtype=np.int64)
+        owners = np.array([comm.rank - 1], dtype=np.int32)
+        submap_indices = np.array([0, 3, 2], dtype=np.int32)
+    else:
+        local_size = 2
+        ghosts = np.array([2 * comm.rank, 2 * comm.rank + 3], dtype=np.int64)
+        owners = np.array([comm.rank - 1, comm.rank + 1], dtype=np.int32)
+        submap_indices = np.array([0, 2, 3], dtype=np.int32)
+
+    imap = dolfinx.common.IndexMap(comm, local_size, ghosts, owners)
+    sub_imap, sub_imap_to_imap = _cpp.common.create_sub_index_map(imap, submap_indices, True)
+
+    if comm.rank == 0:
+        assert sub_imap.size_local == 2
+        assert np.array_equal(sub_imap.ghosts, [2])
+        assert np.array_equal(sub_imap.owners, [comm.rank + 1])
+        assert np.array_equal(sub_imap_to_imap, [0, 1, 3])
+    elif comm.rank == comm.size - 1:
+        assert sub_imap.size_local == 3
+        assert np.array_equal(sub_imap.ghosts, [])
+        assert np.array_equal(sub_imap.owners, [])
+        assert np.array_equal(sub_imap_to_imap, [0, 2, 3])
+    else:
+        assert sub_imap.size_local == 2
+        assert np.array_equal(sub_imap.ghosts, [2 * (comm.rank + 1)])
+        assert np.array_equal(sub_imap.owners, [comm.rank + 1])
+        assert np.array_equal(sub_imap_to_imap, [0, 2, 3])
+
+    global_indices = sub_imap.local_to_global(np.arange(sub_imap.size_local + sub_imap.num_ghosts, dtype=np.int32))
+    assert np.array_equal(global_indices, np.arange(comm.rank * 2, comm.rank * 2 + 3))
