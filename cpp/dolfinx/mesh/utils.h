@@ -42,9 +42,10 @@ namespace
 {
 /// Re-order an adjacency list of fixed degree
 template <typename T>
-void reorder_list(std::span<T> list, int degree,
-                  std::span<const std::int32_t> nodemap)
+void reorder_list(std::span<T> list, std::span<const std::int32_t> nodemap)
 {
+  assert(list.size() % nodemap.size() == 0);
+  int degree = list.size() / nodemap.size();
   const std::vector<T> orig(list.begin(), list.end());
   for (std::size_t n = 0; n < nodemap.size(); ++n)
   {
@@ -859,10 +860,10 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
                 std::next(original_cell_index.begin(), num_owned_cells));
     reorder_list(std::span(cells_extracted.array().data(),
                            remap.size() * num_cell_vertices),
-                 num_cell_vertices, remap);
+                 remap);
     reorder_list(
         std::span(cell_nodes.array().data(), remap.size() * num_cell_nodes),
-        num_cell_nodes, remap);
+        remap);
 
     // -- Create Topology
 
