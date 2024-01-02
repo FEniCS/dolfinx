@@ -435,7 +435,7 @@ void mesh(nb::module_& m)
       .def(
           "__init__",
           [](dolfinx::mesh::Topology* t, MPICommWrapper comm,
-             const std::vector<dolfinx::mesh::CellType> cell_type)
+             const dolfinx::mesh::CellType& cell_type)
           { new (t) dolfinx::mesh::Topology(comm.get(), cell_type); },
           nb::arg("comm"), nb::arg("cell_type"))
       .def("set_connectivity", &dolfinx::mesh::Topology::set_connectivity,
