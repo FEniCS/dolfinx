@@ -857,8 +857,6 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     std::copy_n(std::next(original_cell_index0.cbegin(), num_owned_cells),
                 ghost_owners.size(),
                 std::next(original_cell_index.begin(), num_owned_cells));
-    // cells_extracted = reorder_list(cells_extracted, remap);
-    // cell_nodes = reorder_list(cell_nodes, remap);
     reorder_list(std::span(cells_extracted.array().data(),
                            remap.size() * num_cell_vertices),
                  num_cell_vertices, remap);
