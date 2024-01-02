@@ -194,7 +194,7 @@ create_geometry(
 
   //  Build 'geometry' dofmap on the topology
   auto [_dof_index_map, bs, dofmap]
-      = fem::build_dofmap_data(comm, topology, dof_layouts, reorder_fn);
+      = fem::build_dofmap_data(comm, topology, dof_layouts.front(), reorder_fn);
   auto dof_index_map
       = std::make_shared<common::IndexMap>(std::move(_dof_index_map));
 

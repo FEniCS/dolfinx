@@ -116,13 +116,9 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
                     [](std::int64_t i) { return (i != -1); });
   external_vertices.erase(external_vertices.begin(), it);
 
-  std::vector<int> cell_group_offsets
-      = {0, std::int32_t(cell_nodes.num_nodes() - ghost_owners.size()),
-         cell_nodes.num_nodes()};
-
   mesh::Topology topology = mesh::create_topology(
       mpi_comm, cell_nodes.array(), original_cell_index, ghost_owners,
-      cmap.cell_shape(), cell_group_offsets, external_vertices);
+      cmap.cell_shape(), external_vertices);
   int tdim = topology.dim();
 
   mesh::Geometry geometry = mesh::create_geometry(mpi_comm, topology, {cmap},

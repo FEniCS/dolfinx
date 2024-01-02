@@ -532,7 +532,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 std::tuple<common::IndexMap, int, std::vector<std::int32_t>>
 fem::build_dofmap_data(
     MPI_Comm comm, const mesh::Topology& topology,
-    const std::vector<ElementDofLayout>& element_dof_layouts,
+    const ElementDofLayout& element_dof_layout,
     const std::function<std::vector<int>(
         const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
@@ -545,26 +545,25 @@ fem::build_dofmap_data(
   // pair {dimension, mesh entity index} giving the mesh entity that dof
   // i is associated with.
   const auto [node_graph0, local_to_global0, dof_entity0]
-      = build_basic_dofmap(topology, element_dof_layouts.front());
+      = build_basic_dofmap(topology, element_dof_layout);
 
   // Compute global dofmap offset
   std::int64_t offset = 0;
   for (int d = 0; d <= D; ++d)
   {
-    if (element_dof_layouts[0].num_entity_dofs(d) > 0)
+    if (element_dof_layout.num_entity_dofs(d) > 0)
     {
       assert(topology.index_map(d));
       offset += topology.index_map(d)->local_range()[0]
-                * element_dof_layouts[0].num_entity_dofs(d);
+                * element_dof_layout.num_entity_dofs(d);
     }
   }
 
   // Build re-ordering map for data locality and get number of owned
   // nodes
   mdspan2_t<const std::int32_t> _node_graph0(
-      node_graph0.data(),
-      node_graph0.size() / element_dof_layouts[0].num_dofs(),
-      element_dof_layouts[0].num_dofs());
+      node_graph0.data(), node_graph0.size() / element_dof_layout.num_dofs(),
+      element_dof_layout.num_dofs());
   const auto [old_to_new, num_owned]
       = compute_reordering_map(_node_graph0, dof_entity0, topology, reorder_fn);
 
@@ -595,7 +594,7 @@ fem::build_dofmap_data(
     }
   }
 
-  return {std::move(index_map), element_dof_layouts[0].block_size(),
+  return {std::move(index_map), element_dof_layout.block_size(),
           std::move(dofmap)};
 }
 //-----------------------------------------------------------------------------

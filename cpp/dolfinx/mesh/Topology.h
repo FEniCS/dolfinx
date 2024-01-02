@@ -64,26 +64,6 @@ public:
   /// @brief Return the topological dimension of the mesh.
   int dim() const noexcept;
 
-  /// @brief Set the offsets for each group of entities of a particular
-  /// dimension. See `entity_group_offsets`.
-  /// @param dim Dimension of the entities
-  /// @param offsets The offsets
-  void set_entity_group_offsets(int dim,
-                                const std::vector<std::int32_t>& offsets);
-
-  /// @brief Get the offsets for each group of entities of a particular
-  /// dimension.
-  ///
-  /// The topology may consist of more than one cell type or facet type.
-  /// In that case, the cells of the same types are grouped together in
-  /// blocks, firstly for regular cells, then repeated for ghost cells.
-  /// For example, a mesh with two triangles, three quads and no ghosts
-  /// would have offsets: 0, 2, 5, 5, 5. A mesh with twenty tetrahedra
-  /// and two ghost tetrahedra has offsets: 0, 20, 22.
-  /// @param dim Dimension of the entities
-  /// @return The offsets
-  const std::vector<std::int32_t>& entity_group_offsets(int dim) const;
-
   /// @todo Merge with set_connectivity
   ///
   /// @brief Set the IndexMap for dimension dim
@@ -168,9 +148,6 @@ private:
   // Cell types
   std::vector<CellType> _cell_types;
 
-  // Entity group offsets
-  std::array<std::vector<std::int32_t>, 4> _entity_group_offsets;
-
   // Parallel layout of entities for each dimension
   std::array<std::shared_ptr<const common::IndexMap>, 4> _index_map;
 
@@ -205,14 +182,12 @@ private:
 /// @param[in] ghost_owners The owning rank of each ghost cell (ghost
 /// cells are always at the end of the list of `cells`)
 /// @param[in] cell_type Cell shape
-/// @param[in] cell_group_offsets
 /// @param[in] boundary_vertices List of vertices on the exterior of the
 /// local mesh which may be shared with other processes.
 /// @return A distributed mesh topology
 Topology create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
                          std::span<const std::int64_t> original_cell_index,
                          std::span<const int> ghost_owners, CellType cell_type,
-                         const std::vector<std::int32_t>& cell_group_offsets,
                          std::span<const std::int64_t> boundary_vertices);
 
 /// @brief Create a topology for a subset of entities of a given

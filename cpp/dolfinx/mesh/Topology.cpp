@@ -722,17 +722,6 @@ Topology::Topology(MPI_Comm comm, CellType cell_type)
 //-----------------------------------------------------------------------------
 int Topology::dim() const noexcept { return _connectivity.size() - 1; }
 //-----------------------------------------------------------------------------
-void Topology::set_entity_group_offsets(
-    int dim, const std::vector<std::int32_t>& offsets)
-{
-  _entity_group_offsets[dim] = offsets;
-}
-//-----------------------------------------------------------------------------
-const std::vector<std::int32_t>& Topology::entity_group_offsets(int dim) const
-{
-  return _entity_group_offsets[dim];
-}
-//-----------------------------------------------------------------------------
 void Topology::set_index_map(int dim,
                              std::shared_ptr<const common::IndexMap> map)
 {
@@ -888,7 +877,6 @@ Topology
 mesh::create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
                       std::span<const std::int64_t> original_cell_index,
                       std::span<const int> ghost_owners, CellType cell_type,
-                      const std::vector<std::int32_t>& cell_group_offsets,
                       std::span<const std::int64_t> boundary_vertices)
 {
   common::Timer timer("Topology: create");
@@ -1135,8 +1123,6 @@ mesh::create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
       original_cell_index.begin(),
       std::next(original_cell_index.begin(), num_cells));
 
-  topology.set_entity_group_offsets(tdim, cell_group_offsets);
-
   return topology;
 }
 //-----------------------------------------------------------------------------
@@ -1248,11 +1234,6 @@ mesh::create_subtopology(const Topology& topology, int dim,
   subtopology.set_index_map(dim, submap);
   subtopology.set_connectivity(sub_v_to_v, 0, 0);
   subtopology.set_connectivity(sub_e_to_v, dim, 0);
-  // Set groups (only one cell type)
-  subtopology.set_entity_group_offsets(
-      dim,
-      {0, submap->size_local(), submap->size_local() + submap->num_ghosts()});
-
   return {std::move(subtopology), std::move(subentities),
           std::move(subvertices0)};
 }
