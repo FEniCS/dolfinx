@@ -190,19 +190,20 @@ compute_submap_indices(const IndexMap& imap,
   std::vector<int> recv_owners(send_disp.back()), submap_dest;
   const int rank = dolfinx::MPI::rank(imap.comm());
   {
+    // Flag to track if the owner of any indices have changed in the submap
     bool owners_changed = false;
-    // Create a map from (global) owned shared indices owned to processes that
-    // can own them.
 
-    // A map from (global) indices in `recv_indices` to a list of processes that
-    // can own the index in the submap.
+    // Create a map from (global) indices in `recv_indices` to a list of
+    // processes that can own them in the submap.
     std::vector<std::pair<std::int64_t, int>> global_idx_to_possible_owner;
     const std::array local_range = imap.local_range();
+    // Loop through the received indices
     for (std::size_t i = 0; i < recv_disp.size() - 1; ++i)
     {
       for (int j = recv_disp[i]; j < recv_disp[i + 1]; ++j)
       {
-        // Check that the index is in the submap
+        // Check if the index is included in the submap by process dest[i].
+        // If so, it must be assigned a submap owner
         if (std::int64_t idx = recv_indices[j]; idx != -1)
         {
           // Compute the local index
@@ -210,13 +211,13 @@ compute_submap_indices(const IndexMap& imap,
           assert(idx_local >= 0);
           assert(idx_local < local_range[1]);
 
-          // Check if index is in the submap on this process. If so,
+          // Check if index is included in the submap on this process. If so,
           // this process remains its owner in the submap. Otherwise,
-          // add the process that sent it to the list of possible
-          // owners.
+          // add the process that sent it to the list of possible owners.
           if (is_in_submap[idx_local])
           {
             global_idx_to_possible_owner.push_back({idx, rank});
+            // Add the sending process as a destination rank in the submap
             submap_dest.push_back(dest[i]);
           }
           else
@@ -243,8 +244,8 @@ compute_submap_indices(const IndexMap& imap,
     send_owners.reserve(recv_indices.size());
     for (auto idx : recv_indices)
     {
-      // Check if the index is in the submap. If so, choose its owner in the submap,
-      // otherwise send -1
+      // Check if the index is in the submap. If so, choose its owner in the
+      // submap, otherwise send -1
       if (idx != -1)
       {
         // NOTE: Could choose new owner in a way that is is better for
