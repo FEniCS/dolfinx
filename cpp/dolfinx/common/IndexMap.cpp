@@ -243,7 +243,8 @@ compute_submap_indices(const IndexMap& imap,
     send_owners.reserve(recv_indices.size());
     for (auto idx : recv_indices)
     {
-      // Check the index is in the submap, otherwise send -1
+      // Check if the index is in the submap. If so, choose its owner in the submap,
+      // otherwise send -1
       if (idx != -1)
       {
         // NOTE: Could choose new owner in a way that is is better for
