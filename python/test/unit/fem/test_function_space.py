@@ -273,7 +273,7 @@ def test_manifold_spaces():
     vertices = np.array([
         (0.0, 0.0, 1.0), (1.0, 1.0, 1.0),
         (1.0, 0.0, 0.0), (0.0, 1.0, 0.0)], dtype=default_real_type)
-    cells = [(0, 1, 2), (0, 1, 3)]
+    cells = np.array([(0, 1, 2), (0, 1, 3)])
     domain = Mesh(element("Lagrange", "triangle", 1, gdim=3, shape=(2,)))
     mesh = create_mesh(MPI.COMM_WORLD, cells, vertices, domain)
     gdim = mesh.geometry.dim
