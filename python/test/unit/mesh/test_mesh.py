@@ -20,7 +20,7 @@ from dolfinx import graph
 from dolfinx import mesh as _mesh
 from dolfinx.cpp.mesh import (create_cell_partitioner, entities_to_geometry,
                               is_simplex)
-from dolfinx.fem import assemble_scalar, form
+from dolfinx.fem import assemble_scalar, form, coordinate_element
 from dolfinx.mesh import (CellType, DiagonalType, GhostMode, create_box,
                           create_interval, create_rectangle, create_submesh,
                           create_unit_cube, create_unit_interval,
@@ -631,3 +631,30 @@ def test_submesh_codim_1_boundary_facets(n, ghost_mode, dtype):
     submesh = create_submesh(mesh, edim, entities)[0]
     expected_num_boundary_facets = 4 * n
     assert compute_num_boundary_facets(submesh) == expected_num_boundary_facets
+
+
+@pytest.mark.skip_in_parallel
+def test_mesh_create_cmap():
+    gdim, shape, degree = 2, "triangle", 1
+
+    x = [[0., 0., 0.], [0., 1., 0.], [1., 1., 0.]]
+    cells = [[0, 1, 2]]
+
+    # ufl.Mesh
+    domain = ufl.Mesh(element("Lagrange", shape, degree, gdim=gdim, shape=(2, )))
+    _mesh.create_mesh(MPI.COMM_WORLD, cells, x, domain)
+
+    # basix.ufl.element
+    domain = element("Lagrange", shape, degree, gdim=gdim, shape=(2, ))
+    _mesh.create_mesh(MPI.COMM_WORLD, cells, x, domain)
+
+    # basix.finite_element
+    domain = basix.create_element(basix.ElementFamily.P,
+                                  basix.cell.string_to_type(shape), degree)
+    _mesh.create_mesh(MPI.COMM_WORLD, cells, x, domain)
+
+    # cpp.fem.CoordinateElement
+    e = basix.create_element(basix.ElementFamily.P,
+                             basix.cell.string_to_type(shape), degree)
+    domain = coordinate_element(e, dtype=np.float64)
+    _mesh.create_mesh(MPI.COMM_WORLD, cells, x, domain)

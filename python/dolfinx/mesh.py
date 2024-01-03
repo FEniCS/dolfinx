@@ -329,14 +329,14 @@ def refine_plaza(mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistri
 
 
 def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.AdjacencyList_int64],
-                x: np.ndarray, domain: ufl.Mesh, partitioner=None) -> Mesh:
+                x: np.ndarray, e: ufl.Mesh, partitioner=None) -> Mesh:
     """Create a mesh from topology and geometry arrays.
 
     Args:
         comm: MPI communicator to define the mesh on.
         cells: Cells of the mesh. ``cells[i]`` is the 'nodes' of cell ``i``.
         x: Mesh geometry ('node' coordinates), with shape ``(num_nodes, gdim)``.
-        domain: UFL mesh.
+        e: UFL mesh.
         partitioner: Function that computes the parallel distribution of
             cells across MPI ranks.
 
@@ -359,34 +359,34 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
 
     try:
         # UFL domain
-        ufl_element = domain.ufl_coordinate_element()
-        cell_shape = ufl_element.cell.cellname()
-        cell_degree = ufl_element.degree
-        try:
-            variant = int(ufl_element.lagrange_variant)
-        except AttributeError:
-            variant = int(basix.LagrangeVariant.unset)
-        cmap = _coordinate_element(_uflcell_to_dolfinxcell[cell_shape], cell_degree, dtype, variant)
-        _domain = domain
+        e_ufl = e.ufl_coordinate_element()
+        cmap = _coordinate_element(e_ufl.sub_element.element, dtype=dtype)
+        domain = e
     except AttributeError:
         try:
-            # Basix 'UFL' element or Coordinate element
-            cmap = _CoordinateElement(cmap_factory(domain.sub_element.element))
-            _domain = domain
+            # Basix 'UFL' element
+            cmap = _coordinate_element(e.sub_element.element, dtype=dtype)
+            domain = ufl.Mesh(e)
         except AttributeError:
-            # Basix element or CoordinateElement
-            cmap = _CoordinateElement(cmap_factory(domain))
-            _domain = None
+            try:
+                # Basix element
+                cmap = _CoordinateElement(cmap_factory(e))
+                gdim = x.shape[1]
+                e_ufl = basix.ufl._BasixElement(e, gdim=x.shape[1])
+                _domain = basix.ufl.blocked_element(e_ufl, shape=(gdim,), gdim=gdim)
+                domain = ufl.Mesh(_domain)
+            except TypeError:
+                # CoordinateElement
+                cmap = e
+                domain = None
 
     try:
         mesh = _cpp.mesh.create_mesh(comm, cells, cmap._cpp_object, x, partitioner)
     except TypeError:
         mesh = _cpp.mesh.create_mesh(comm, _cpp.graph.AdjacencyList_int64(np.cast['int64'](cells)),
-                                    cmap._cpp_object, x, partitioner)
+                                     cmap._cpp_object, x, partitioner)
 
-    if _domain is not None:
-        _domain = ufl.Mesh(_domain)
-    return Mesh(mesh, _domain)
+    return Mesh(mesh, domain)
 
 
 def create_submesh(msh, dim, entities):
