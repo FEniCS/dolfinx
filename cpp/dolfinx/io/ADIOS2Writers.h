@@ -439,9 +439,11 @@ public:
   /// @brief Create Fides writer for list of functions
   /// @param[in] comm The MPI communicator
   /// @param[in] filename Name of output file
-  /// @param[in] u List of functions. The functions must (1) share the
-  /// same mesh (degree 1) and (2) be degree 1 Lagrange. @note All
-  /// functions in `u` must share the same Mesh
+  /// @param[in] u List of functions. The functions must (i) share the
+  /// same mesh (degree 1) and (ii) be degree 1 Lagrange.
+  /// @note All functions in `u` must share the same Mesh. The element
+  /// family and degree, and degree-of-freedom map (up to the blocksize)
+  /// must be the same for all functions.
   /// @param[in] engine ADIOS2 engine type. See
   /// https://adios2.readthedocs.io/en/latest/engines/engines.html.
   /// @param[in] mesh_policy Controls if the mesh is written to file at
@@ -457,15 +459,15 @@ public:
     if (u.empty())
       throw std::runtime_error("FidesWriter fem::Function list is empty");
 
-    // Extract Mesh from first function
-    auto mesh = std::visit([](auto& u) { return u->function_space()->mesh(); },
-                           u.front());
+    // Extract space and mesh from first function
+    auto V0 = std::visit([](auto& u) { return u->function_space().get(); },
+                         u.front());
+    assert(V0);
+    auto mesh = V0->mesh().get();
     assert(mesh);
 
     // Extract element from first function
-    auto element0 = std::visit([](auto& e)
-                               { return e->function_space()->element().get(); },
-                               u.front());
+    auto element0 = V0->element().get();
     assert(element0);
 
     // Check if function is mixed
@@ -483,7 +485,7 @@ public:
                                "Interpolate Functions before output.");
     }
 
-    // Check if function is DG 0
+    // Raise exception if element is DG 0
     if (element0->space_dimension() / element0->block_size() == 1)
     {
       throw std::runtime_error(
@@ -498,7 +500,7 @@ public:
     for (auto& v : _u)
     {
       std::visit(
-          [num_vertices_per_cell, element0](auto&& u)
+          [V0, num_vertices_per_cell, element0](auto&& u)
           {
             auto element = u->function_space()->element();
             assert(element);
@@ -516,6 +518,19 @@ public:
               throw std::runtime_error("Only first order Lagrange spaces are "
                                        "supported by FidesWriter");
             }
+
+#ifndef NDEBUG
+            auto dmap0 = V0->dofmap()->map();
+            auto dmap = u->function_space()->dofmap()->map();
+            if (dmap0.size() != dmap.size()
+                or !std::equal(dmap0.data_handle(),
+                               dmap0.data_handle() + dmap0.size(),
+                               dmap.data_handle()))
+            {
+              throw std::runtime_error(
+                  "All functions must have the same dofmap for FideWriter.");
+            }
+#endif
           },
           v);
     }
@@ -868,7 +883,8 @@ public:
   /// @param[in] filename Name of output file
   /// @param[in] u List of functions. The functions must (1) share the
   /// same mesh and (2) be (discontinuous) Lagrange functions. The
-  /// element family and degree must be the same for all functions.
+  /// element family and degree, and degree-of-freedom map (up to the
+  /// blocksize) must be the same for all functions.
   /// @param[in] engine ADIOS2 engine type.
   /// @note This format supports arbitrary degree meshes.
   VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
@@ -934,7 +950,7 @@ public:
                                dmap.data_handle()))
             {
               throw std::runtime_error(
-                  "All functions in VTXWriter must have the dofmaps.");
+                  "All functions must have the same dofmap for VTXWriter.");
             }
 #endif
           },
