@@ -763,7 +763,7 @@ compute_incident_entities(const Topology& topology,
 /// a callable function, no re-distribution of cells is done.
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
-    MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
+    MPI_Comm comm, std::span<const std::int64_t> cells,
     const fem::CoordinateElement<
         typename std::remove_reference_t<typename U::value_type>>& element,
     const U& x, std::array<std::size_t, 2> xshape,
@@ -880,7 +880,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 
     // Remove -1 if it occurs in boundary vertices (may occur in mixed topology)
     if (boundary_vertices.size() > 0 and boundary_vertices[0] == -1)
-      boundary_vertices.erase(boundary_vertices.begin());
+    boundary_vertices.erase(boundary_vertices.begin());
 
     // Create cells and vertices with the ghosting requested. Input
     // topology includes cells shared via facet, but ghosts will be
@@ -892,7 +892,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   };
 
   auto [topology, cell_nodes]
-      = build_topology(comm, element, dof_layout, cells.array(), partitioner);
+      = build_topology(comm, element, dof_layout, cells, partitioner);
 
   // Create connectivity required to compute the Geometry (extra
   // connectivities for higher-order geometries)
@@ -934,7 +934,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// @return A distributed Mesh.
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>>
-create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
+create_mesh(MPI_Comm comm, std::span<const std::int64_t> cells,
             const fem::CoordinateElement<
                 std::remove_reference_t<typename U::value_type>>& element,
             const U& x, std::array<std::size_t, 2> xshape, GhostMode ghost_mode)

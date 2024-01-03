@@ -39,7 +39,7 @@ def check_cell_volume(points, cell, domain, volume):
         ordered_cell = [point_order[i] for i in cell]
 
         ordered_points = np.array(ordered_points, dtype=default_real_type)
-        mesh = create_mesh(MPI.COMM_WORLD, [ordered_cell], ordered_points, domain)
+        mesh = create_mesh(MPI.COMM_WORLD, np.array([ordered_cell]), ordered_points, domain)
         area = assemble_scalar(form(1 * dx(mesh)))
         assert np.isclose(area, volume)
 
@@ -99,7 +99,7 @@ def test_submesh(order):
     domain = ufl.Mesh(element("Lagrange", "tetrahedron", order, gdim=3,
                       lagrange_variant=basix.LagrangeVariant.equispaced, shape=(3, )))
     points = np.array(points, dtype=default_real_type)
-    mesh = create_mesh(MPI.COMM_WORLD, [cell], points, domain)
+    mesh = create_mesh(MPI.COMM_WORLD, np.array([cell]), points, domain)
     for i in range(mesh.topology.dim):
         mesh.topology.create_entities(i)
     md = {"quadrature_degree": 10}

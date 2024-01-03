@@ -177,15 +177,9 @@ XDMFFile::read_mesh(const fem::CoordinateElement<double>& element,
   auto [x, xshape] = XDMFFile::read_geometry_data(name, xpath);
 
   // Create mesh
-  std::vector<std::int32_t> offset(cshape[0] + 1, 0);
-  for (std::size_t i = 0; i < cshape[0]; ++i)
-    offset[i + 1] = offset[i] + cshape[1];
-
-  graph::AdjacencyList<std::int64_t> cells_adj(std::move(cells),
-                                               std::move(offset));
   const std::vector<double>& _x = std::get<std::vector<double>>(x);
   mesh::Mesh<double> mesh
-      = mesh::create_mesh(_comm.comm(), cells_adj, {element}, _x, xshape, mode);
+      = mesh::create_mesh(_comm.comm(), cells, element, _x, xshape, mode);
   mesh.name = name;
   return mesh;
 }

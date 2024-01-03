@@ -94,7 +94,7 @@ def randomly_ordered_mesh(cell_type):
 
         # On process 0, input mesh data and distribute to other
         # processes
-        return create_mesh(MPI.COMM_WORLD, cells, points, domain)
+        return create_mesh(MPI.COMM_WORLD, np.array(cells), points, domain)
     else:
         if cell_type == "triangle":
             return create_mesh(MPI.COMM_WORLD, np.ndarray((0, 3)), np.ndarray((0, 2)), domain)
@@ -209,7 +209,7 @@ def random_evaluation_mesh(cell_type):
                 cell_order += [c + diff for c in cell_order]
 
         cells.append([order[cell[i]] for i in cell_order])
-    return create_mesh(MPI.COMM_WORLD, cells, points, domain)
+    return create_mesh(MPI.COMM_WORLD, np.array(cells), points, domain)
 
 
 @pytest.mark.skip_in_parallel

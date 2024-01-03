@@ -106,7 +106,6 @@ def one_cell_mesh(cell_type):
     for i, j in enumerate(order):
         ordered_points[j] = points[i]
     cells = np.array([order])
-
     domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, shape=(ordered_points.shape[1],)))
     return create_mesh(MPI.COMM_WORLD, cells, ordered_points, domain)
 
@@ -141,7 +140,7 @@ def two_cell_mesh(cell_type):
         cells = [[0, 1, 2, 3, 4, 5, 6, 7], [9, 11, 8, 10, 1, 3, 0, 2]]
 
     domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, shape=(points.shape[1],)))
-    mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
+    mesh = create_mesh(MPI.COMM_WORLD, np.array(cells), points, domain)
     return mesh
 
 

@@ -29,7 +29,7 @@ def test_distance_triangle():
     gdim, shape, degree = 2, "triangle", 1
     domain = ufl.Mesh(element("Lagrange", shape, degree, gdim=gdim, shape=(2, )))
     x = [[0., 0., 0.], [0., 1., 0.], [1., 1., 0.]]
-    cells = [[0, 1, 2]]
+    cells = np.array([[0, 1, 2]])
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
     d = np.array([-1.0, -1.0, 0.0])
     assert squared_distance(mesh, mesh.topology.dim, np.array([0]), d) == pytest.approx(2.0)
@@ -46,7 +46,7 @@ def test_distance_tetrahedron():
     degree = 1
     domain = ufl.Mesh(element("Lagrange", shape, degree, gdim=gdim, shape=(3, )))
     x = [[0., 0., 0.], [0., 1., 0.], [0., 1., 1.], [1, 1., 1]]
-    cells = [[0, 1, 2, 3]]
+    cells = np.array([[0, 1, 2, 3]])
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
     d = np.array([-1.0, -1.0, -1.0])
     assert squared_distance(mesh, mesh.topology.dim, np.array([0]), d) == pytest.approx(3.0)

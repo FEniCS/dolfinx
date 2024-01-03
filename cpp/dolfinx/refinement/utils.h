@@ -278,7 +278,7 @@ mesh::Mesh<T> partition(const mesh::Mesh<T>& old_mesh,
 {
   if (redistribute)
   {
-    return mesh::create_mesh(old_mesh.comm(), cell_topology,
+    return mesh::create_mesh(old_mesh.comm(), cell_topology.array(),
                              old_mesh.geometry().cmap(), new_coords, xshape,
                              ghost_mode);
   }
@@ -297,7 +297,7 @@ mesh::Mesh<T> partition(const mesh::Mesh<T>& old_mesh,
                                   std::move(dest_offsets));
     };
 
-    return mesh::create_mesh(old_mesh.comm(), cell_topology,
+    return mesh::create_mesh(old_mesh.comm(), cell_topology.array(),
                              old_mesh.geometry().cmap(), new_coords, xshape,
                              partitioner);
   }

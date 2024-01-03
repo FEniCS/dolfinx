@@ -275,10 +275,9 @@ def test_empty_rank_mesh(tempdir):
 
     if comm.rank == 0:
         cells = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.int64)
-        cells = adjacencylist(cells)
         x = np.array([[0., 0.], [1., 0.], [1., 1.], [0., 1.]], dtype=default_real_type)
     else:
-        cells = adjacencylist(np.empty((0, 3), dtype=np.int64))
+        cells = np.empty((0, 3), dtype=np.int64)
         x = np.empty((0, 2), dtype=default_real_type)
 
     mesh = create_mesh(comm, cells, x, domain, partitioner)

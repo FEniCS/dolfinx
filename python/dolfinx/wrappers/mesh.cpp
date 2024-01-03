@@ -247,7 +247,7 @@ void declare_mesh(nb::module_& m, std::string type)
   m.def(
       "create_mesh",
       [](MPICommWrapper comm,
-         const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
+         nb::ndarray<const std::int64_t, nb::ndim<2>, nb::c_contig> cells,
          const dolfinx::fem::CoordinateElement<T>& element,
          nb::ndarray<const T, nb::c_contig> x,
          const PythonPartitioningFunction& p)
@@ -259,15 +259,15 @@ void declare_mesh(nb::module_& m, std::string type)
               = [p](MPI_Comm comm, int n, int tdim,
                     const dolfinx::graph::AdjacencyList<std::int64_t>& cells)
           { return p(MPICommWrapper(comm), n, tdim, cells); };
-          return dolfinx::mesh::create_mesh(comm.get(), cells, {element},
-                                            std::span(x.data(), x.size()),
-                                            {x.shape(0), shape1}, p_wrap);
+          return dolfinx::mesh::create_mesh(
+              comm.get(), std::span(cells.data(), cells.size()), {element},
+              std::span(x.data(), x.size()), {x.shape(0), shape1}, p_wrap);
         }
         else
         {
-          return dolfinx::mesh::create_mesh(comm.get(), cells, {element},
-                                            std::span(x.data(), x.size()),
-                                            {x.shape(0), shape1}, p);
+          return dolfinx::mesh::create_mesh(
+              comm.get(), std::span(cells.data(), cells.size()), {element},
+              std::span(x.data(), x.size()), {x.shape(0), shape1}, p);
         }
       },
       nb::arg("comm"), nb::arg("cells"), nb::arg("element"),

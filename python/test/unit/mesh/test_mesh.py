@@ -511,10 +511,9 @@ def test_empty_rank_mesh(dtype):
 
     if comm.rank == 0:
         cells = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.int64)
-        cells = graph.adjacencylist(cells)
         x = np.array([[0., 0.], [1., 0.], [1., 1.], [0., 1.]], dtype=dtype)
     else:
-        cells = graph.adjacencylist(np.empty((0, 3), dtype=np.int64))
+        cells = np.empty((0, 3), dtype=np.int64)
         x = np.empty((0, 2), dtype=dtype)
 
     mesh = _mesh.create_mesh(comm, cells, x, domain, partitioner)
@@ -528,7 +527,7 @@ def test_empty_rank_mesh(dtype):
 
     # Check number of cells
     cmap = topology.index_map(tdim)
-    assert cmap.size_local == cells.num_nodes
+    assert cmap.size_local == cells.shape[0]
     assert cmap.num_ghosts == 0
 
     # Check number of edges

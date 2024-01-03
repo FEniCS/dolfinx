@@ -431,8 +431,9 @@ refine(const mesh::Mesh<T>& mesh, bool redistribute, Option option)
 
   if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
-    return {mesh::create_mesh(mesh.comm(), cell_adj, mesh.geometry().cmap(),
-                              new_coords, xshape, mesh::GhostMode::none),
+    return {mesh::create_mesh(mesh.comm(), cell_adj.array(),
+                              mesh.geometry().cmap(), new_coords, xshape,
+                              mesh::GhostMode::none),
             std::move(parent_cell), std::move(parent_facet)};
   }
   else
@@ -477,8 +478,9 @@ refine(const mesh::Mesh<T>& mesh, std::span<const std::int32_t> edges,
 
   if (dolfinx::MPI::size(mesh.comm()) == 1)
   {
-    return {mesh::create_mesh(mesh.comm(), cell_adj, mesh.geometry().cmap(),
-                              new_vertex_coords, xshape, mesh::GhostMode::none),
+    return {mesh::create_mesh(mesh.comm(), cell_adj.array(),
+                              mesh.geometry().cmap(), new_vertex_coords, xshape,
+                              mesh::GhostMode::none),
             std::move(parent_cell), std::move(parent_facet)};
   }
   else
