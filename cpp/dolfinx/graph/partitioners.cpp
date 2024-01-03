@@ -527,46 +527,73 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
           std::vector<std::int32_t>(graph.num_nodes(), 0), 1);
     }
 
-    // Build adjacency list data
-    const int psize = dolfinx::MPI::size(comm);
-    const idx_t num_local_nodes = graph.num_nodes();
-    std::vector<idx_t> node_disp(psize + 1, 0);
-    MPI_Allgather(&num_local_nodes, 1, dolfinx::MPI::mpi_type<idx_t>(),
-                  node_disp.data() + 1, 1, dolfinx::MPI::mpi_type<idx_t>(),
-                  comm);
-    std::partial_sum(node_disp.begin(), node_disp.end(), node_disp.begin());
-    std::vector<idx_t> array(graph.array().begin(), graph.array().end());
-    std::vector<idx_t> offsets(graph.offsets().begin(), graph.offsets().end());
-
-    // Options and data for ParMETIS
-    std::array<idx_t, 3> opts = {options[0], options[1], options[2]};
-    idx_t ncon = 1;
-    idx_t* elmwgt = nullptr;
-    idx_t wgtflag(0), edgecut(0), numflag(0);
-    std::vector<real_t> tpwgts(ncon * nparts,
-                               1.0 / static_cast<real_t>(nparts));
-    real_t ubvec = static_cast<real_t>(imbalance);
-
-    // Partition
-    common::Timer timer1("ParMETIS: call ParMETIS_V3_PartKway");
-    std::vector<idx_t> part(graph.num_nodes());
-    int err = ParMETIS_V3_PartKway(
-        node_disp.data(), offsets.data(), array.data(), elmwgt, nullptr,
-        &wgtflag, &numflag, &ncon, &nparts, tpwgts.data(), &ubvec, opts.data(),
-        &edgecut, part.data(), &comm);
-    if (err != METIS_OK)
+    // Note: ParMETIS fails (crashes) if a rank does not have any graph
+    // data. Therefore we split the communicator such that ParMETIS
+    // partitioning happens only on ranks that have data. Ideallt we
+    // wouldn't need to do this.
+    constexpr bool split_comm = true;
+    MPI_Comm pcomm = MPI_COMM_NULL;
+    if (split_comm)
     {
-      throw std::runtime_error("ParMETIS_V3_PartKway failed. Error code: "
-                               + std::to_string(err));
+      int rank = dolfinx::MPI::rank(comm);
+      int color = graph.num_nodes() > 0 ? 1 : MPI_UNDEFINED;
+      int ierr = MPI_Comm_split(comm, color, rank, &pcomm);
+      dolfinx::MPI::check_error(comm, ierr);
+    }
+    else
+      pcomm = comm;
+
+    std::vector<idx_t> part(graph.num_nodes());
+    std::vector<idx_t> node_disp;
+    if (pcomm != MPI_COMM_NULL)
+    {
+      // Build adjacency list data
+      const int psize = dolfinx::MPI::size(pcomm);
+      const idx_t num_local_nodes = graph.num_nodes();
+      node_disp = std::vector<idx_t>(psize + 1, 0);
+      MPI_Allgather(&num_local_nodes, 1, dolfinx::MPI::mpi_type<idx_t>(),
+                    node_disp.data() + 1, 1, dolfinx::MPI::mpi_type<idx_t>(),
+                    pcomm);
+      std::partial_sum(node_disp.begin(), node_disp.end(), node_disp.begin());
+      std::vector<idx_t> array(graph.array().begin(), graph.array().end());
+      std::vector<idx_t> offsets(graph.offsets().begin(),
+                                 graph.offsets().end());
+
+      // Options and data for ParMETIS
+      std::array<idx_t, 3> opts = {options[0], options[1], options[2]};
+      idx_t ncon = 1;
+      idx_t* elmwgt = nullptr;
+      idx_t wgtflag(0), edgecut(0), numflag(0);
+      std::vector<real_t> tpwgts(ncon * nparts,
+                                 1.0 / static_cast<real_t>(nparts));
+      real_t ubvec = static_cast<real_t>(imbalance);
+
+      // Partition
+      common::Timer timer1("ParMETIS: call ParMETIS_V3_PartKway");
+      int err = ParMETIS_V3_PartKway(
+          node_disp.data(), offsets.data(), array.data(), elmwgt, nullptr,
+          &wgtflag, &numflag, &ncon, &nparts, tpwgts.data(), &ubvec,
+          opts.data(), &edgecut, part.data(), &pcomm);
+      if (err != METIS_OK)
+      {
+        throw std::runtime_error("ParMETIS_V3_PartKway failed. Error code: "
+                                 + std::to_string(err));
+      }
     }
 
-    if (ghosting and graph.num_nodes() > 0)
+    if (ghosting and pcomm != MPI_COMM_NULL)
     {
-      // FIXME: Is it implicit the the first entry is the owner?
-      return compute_destination_ranks(comm, graph, node_disp, part);
+      // FIXME: Is it implicit that the first entry is the owner?
+      graph::AdjacencyList<int> dest
+          = compute_destination_ranks(pcomm, graph, node_disp, part);
+      if (split_comm)
+        MPI_Comm_free(&pcomm);
+      return dest;
     }
     else
     {
+      if (split_comm and pcomm != MPI_COMM_NULL)
+        MPI_Comm_free(&pcomm);
       return regular_adjacency_list(std::vector<int>(part.begin(), part.end()),
                                     1);
     }
