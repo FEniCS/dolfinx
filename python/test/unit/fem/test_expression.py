@@ -12,7 +12,7 @@ import pytest
 import basix
 import dolfinx.cpp
 import ufl
-from basix.ufl import blocked_element, quadrature_element
+from basix.ufl import quadrature_element
 from dolfinx import fem, la
 from dolfinx.fem import Constant, Expression, Function, form, functionspace
 from dolfinx.mesh import create_unit_square
@@ -232,8 +232,7 @@ def test_assembly_into_quadrature_function(dtype):
     quadrature_degree = 2
     quadrature_points, _ = basix.make_quadrature(basix.CellType.triangle, quadrature_degree)
     quadrature_points = quadrature_points.astype(xtype)
-    Q_element = blocked_element(quadrature_element(
-        "triangle", (), degree=quadrature_degree, scheme="default"), shape=(2, ))
+    Q_element = quadrature_element("triangle", (2, ), degree=quadrature_degree, scheme="default")
     Q = functionspace(mesh, Q_element)
     P2 = functionspace(mesh, ("P", 2))
 
