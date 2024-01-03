@@ -315,6 +315,8 @@ FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
   else
     _bs = 1;
 
+  _is_mixed = false;
+
   _space_dim = _bs * element.dim();
 
   // Create all sub-elements
