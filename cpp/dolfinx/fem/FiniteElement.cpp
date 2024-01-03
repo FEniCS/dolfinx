@@ -280,7 +280,7 @@ FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
 
   if (is_quadrature_element(e))
   {
-    assert (e.custom_quadrature);
+    assert(e.custom_quadrature);
     ufcx_quadrature_rule* qr = e.custom_quadrature;
     std::size_t npts = qr->npts;
     std::size_t tdim = qr->topological_dimension;
@@ -603,10 +603,12 @@ void FiniteElement<T>::unpermute_dofs(const std::span<std::int32_t>& doflist,
   _element->unpermute_dofs(doflist, cell_permutation);
 }
 //-----------------------------------------------------------------------------
+/// @cond
 template <std::floating_point T>
 std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
 FiniteElement<T>::get_dof_permutation_function(bool inverse,
                                                bool scalar_element) const
+/// @endcond
 {
   if (!needs_dof_permutations())
     return [](const std::span<std::int32_t>&, std::uint32_t) {};

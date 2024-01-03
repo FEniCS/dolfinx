@@ -155,7 +155,7 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
   std::array<std::int64_t, 2> range = map_dofs->local_range();
   std::int32_t size_local = range[1] - range[0];
   std::iota(x_id.begin(), std::next(x_id.begin(), size_local), range[0]);
-  const std::vector<std::int64_t>& ghosts = map_dofs->ghosts();
+  std::span ghosts = map_dofs->ghosts();
   std::copy(ghosts.begin(), ghosts.end(), std::next(x_id.begin(), size_local));
 
   // Ghosts

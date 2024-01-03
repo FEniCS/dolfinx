@@ -115,15 +115,16 @@ jobs:
           spack env activate py-main
           mpirun -np 2 python3 ./dolfinx-main/python/demo/demo_elasticity.py
 
-      - name: Build DOLFINx (Python, release version)
-        run: |
-          . ./spack/share/spack/setup-env.sh
-          spack env create py-release
-          spack env activate py-release
-          spack add py-fenics-dolfinx
-          spack install
-      - name: Run DOLFINx (Python, release) test
-        run: |
-          . ./spack/share/spack/setup-env.sh
-          spack env activate py-release
-          mpirun -np 2 python3 ./dolfinx-release/python/demo/demo_elasticity.py
+      # Disabled due to capicty issues on Actions and LTO with pybind11
+      # - name: Build DOLFINx (Python, release version)
+      #   run: |
+      #     . ./spack/share/spack/setup-env.sh
+      #     spack env create py-release
+      #     spack env activate py-release
+      #     spack add py-fenics-dolfinx
+      #     spack install -j 2
+      # - name: Run DOLFINx (Python, release) test
+      #   run: |
+      #     . ./spack/share/spack/setup-env.sh
+      #     spack env activate py-release
+      #     mpirun -np 2 python3 ./dolfinx-release/python/demo/demo_elasticity.py
