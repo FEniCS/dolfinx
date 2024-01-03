@@ -5,7 +5,9 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Finite elements."""
 
+import typing
 from functools import singledispatch
+import numpy.typing as npt
 
 from dolfinx import cpp as _cpp
 import numpy as np
@@ -32,8 +34,16 @@ class CoordinateElement:
 
 
 @singledispatch
-def coordinate_element(celltype: basix.CellType, degree: int, dtype=np.float64,
+def coordinate_element(celltype: typing.Any, degree: int,
+                       dtype: typing.Optional[npt.DTypeLike] = np.float64,
                        variant=int(basix.LagrangeVariant.unset)):
+    raise NotImplementedError(f"No overload available for type {type(celltype)}")
+
+
+@coordinate_element.register(basix.CellType)
+def _(celltype: basix.CellType, degree: int,
+      dtype: typing.Optional[npt.DTypeLike] = np.float64,
+      variant=int(basix.LagrangeVariant.unset)):
     """Create a Lagrange CoordinateElement form element metadata.
 
     Coordinate elements are typically used when creating meshes.
@@ -55,8 +65,8 @@ def coordinate_element(celltype: basix.CellType, degree: int, dtype=np.float64,
         raise RuntimeError("Unsupported dtype.")
 
 
-@coordinate_element.register
-def _(e: basix._basixcpp.FiniteElement, dtype):
+@coordinate_element.register(basix._basixcpp.FiniteElement)
+def _(e: basix._basixcpp.FiniteElement, dtype: typing.Optional[npt.DTypeLike] = np.float64):
     """Create a Lagrange CoordinateElement from a Basix finite element.
 
     Coordinate elements are typically used when creating meshes.

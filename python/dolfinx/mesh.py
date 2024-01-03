@@ -376,8 +376,8 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
                 cmap = _CoordinateElement(cmap_factory(e))
                 # e_ufl = basix.ufl._BasixElement(e, gdim=x.shape[1])
                 e_ufl = basix.ufl._BasixElement(e)
-                _domain = basix.ufl.blocked_element(e_ufl, shape=(gdim,), gdim=gdim)
-                domain = ufl.Mesh(_domain)
+                e_ufl = basix.ufl.blocked_element(e_ufl, shape=(gdim,), gdim=gdim)
+                domain = ufl.Mesh(e_ufl)
             except TypeError:
                 # CoordinateElement
                 cmap = e
