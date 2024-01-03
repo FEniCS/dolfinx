@@ -23,8 +23,6 @@ using namespace dolfinx::mesh;
 
 namespace
 {
-
-//-----------------------------------------------------------------------------
 /// @brief Determine owner and sharing ranks sharing an index.
 ///
 /// @note Collective
@@ -274,9 +272,8 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
     }
   }
 
-  return graph::AdjacencyList<int>(std::move(data), std::move(graph_offsets));
+  return graph::AdjacencyList(std::move(data), std::move(graph_offsets));
 }
-//-----------------------------------------------------------------------------
 
 /// @brief Build ownership 'groups' (owned/undetermined/non-owned) of
 /// vertices.
@@ -343,8 +340,6 @@ vertex_ownership_groups(std::span<const std::int64_t> cells_owned,
 
   return {std::move(owned_vertices), std::move(unowned_vertices)};
 }
-//-----------------------------------------------------------------------------
-
 /// @brief Send entity indices for owned entities to processes that
 /// share but do not own the entities, and receive index data for
 /// entities caller shares but does not own (ghosts).
@@ -466,7 +461,6 @@ exchange_indexing(MPI_Comm comm, std::span<const std::int64_t> indices,
 
   return recv_data;
 }
-//---------------------------------------------------------------------
 
 /// @brief Send and receive vertex indices and owning ranks for
 /// vertices that lie in the ghost cell region.
@@ -677,7 +671,6 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
 
   return data;
 }
-//---------------------------------------------------------------------------------
 
 /// @brief Convert adjacency list edges from global indexing to local
 /// indexing.
@@ -880,6 +873,9 @@ mesh::create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
 
   LOG(INFO) << "Create topology";
 
+  // const std::int32_t num_local_cells = cells.num_nodes() -
+  // ghost_owners.size();
+
   const int num_cell_vertices = mesh::num_cell_vertices(cell_type);
   const std::int32_t num_cells = cells.size() / num_cell_vertices;
   const std::int32_t num_local_cells = num_cells - ghost_owners.size();
@@ -889,10 +885,12 @@ mesh::create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
   auto [owned_vertices, unowned_vertices] = vertex_ownership_groups(
       cells.first(num_cell_vertices * num_local_cells),
       cells.last(num_cell_vertices * ghost_owners.size()), boundary_vertices);
+  // auto [owned_vertices, unowned_vertices]
+  //     = vertex_ownership_groups(cells, num_local_cells, boundary_vertices);
 
   // For each vertex whose ownership needs determining, find the sharing
-  // ranks. The first index in the list of ranks for a vertex is the owner
-  // (as determined by determine_sharing_ranks).
+  // ranks. The first index in the list of ranks for a vertex is the
+  // owner (as determined by determine_sharing_ranks).
   const graph::AdjacencyList<int> global_vertex_to_ranks
       = determine_sharing_ranks(comm, boundary_vertices);
 
@@ -903,8 +901,8 @@ mesh::create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
     std::vector<std::int64_t> owned_shared_vertices;
     for (std::size_t i = 0; i < boundary_vertices.size(); ++i)
     {
-      // Vertex is shared and owned by this rank if the first sharing rank
-      // is my rank
+      // Vertex is shared and owned by this rank if the first sharing
+      // rank is my rank
       auto ranks = global_vertex_to_ranks.links(i);
       assert(!ranks.empty());
       if (std::int64_t global_index = boundary_vertices[i];
@@ -952,6 +950,11 @@ mesh::create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
   }
 
   // Get global indices of ghost cells
+  // std::span cell_idx(original_cell_index);
+  // const std::vector cell_ghost_indices = graph::build::compute_ghost_indices(
+  //     comm, cell_idx.first(cells.num_nodes() - ghost_owners.size()),
+  //     std::span(original_cell_index).last(ghost_owners.size()),
+  //     ghost_owners);
   std::span cell_idx(original_cell_index);
   const std::vector cell_ghost_indices = graph::build::compute_ghost_indices(
       comm, cell_idx.first(num_local_cells),
@@ -996,20 +999,18 @@ mesh::create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
           global_to_local_vertices;
       global_to_local_vertices.reserve(owned_vertices.size()
                                        + unowned_vertices.size());
-      std::transform(
-          owned_vertices.begin(), owned_vertices.end(),
-          local_vertex_indices.begin(),
-          std::back_inserter(global_to_local_vertices),
-          [](auto idx0, auto idx1) -> std::pair<std::int64_t, std::int32_t> {
-            return {idx0, idx1};
-          });
-      std::transform(
-          unowned_vertices.begin(), unowned_vertices.end(),
-          local_vertex_indices_unowned.begin(),
-          std::back_inserter(global_to_local_vertices),
-          [](auto idx0, auto idx1) -> std::pair<std::int64_t, std::int32_t> {
-            return {idx0, idx1};
-          });
+      std::transform(owned_vertices.begin(), owned_vertices.end(),
+                     local_vertex_indices.begin(),
+                     std::back_inserter(global_to_local_vertices),
+                     [](auto idx0, auto idx1) {
+                       return std::pair<std::int64_t, std::int32_t>(idx0, idx1);
+                     });
+      std::transform(unowned_vertices.begin(), unowned_vertices.end(),
+                     local_vertex_indices_unowned.begin(),
+                     std::back_inserter(global_to_local_vertices),
+                     [](auto idx0, auto idx1) {
+                       return std::pair<std::int64_t, std::int32_t>(idx0, idx1);
+                     });
       std::sort(global_to_local_vertices.begin(),
                 global_to_local_vertices.end());
 
@@ -1018,6 +1019,12 @@ mesh::create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
       // communicated via ghost cells. Note that the ghost cell owner
       // (who we get the vertex index from) is not necessarily the
       // vertex owner.
+      // const std::vector<std::array<std::int64_t, 3>> recv_data
+      //     = exchange_ghost_indexing(*index_map_c, cells,
+      //     owned_vertices.size(),
+      //                               global_offset_v,
+      //                               global_to_local_vertices, ghost_vertices,
+      //                               ghost_vertex_owners);
       const std::vector<std::array<std::int64_t, 3>> recv_data
           = exchange_ghost_indexing(*index_map_c, cells, num_cell_vertices,
                                     owned_vertices.size(), global_offset_v,
@@ -1028,13 +1035,13 @@ mesh::create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
       // owners
       for (auto& data : recv_data)
       {
-        const std::int64_t global_idx_old = data[0];
+        std::int64_t global_idx_old = data[0];
         auto it0 = std::lower_bound(unowned_vertices.begin(),
                                     unowned_vertices.end(), global_idx_old);
         if (it0 != unowned_vertices.end() and *it0 == global_idx_old)
         {
-          std::size_t pos = std::distance(unowned_vertices.begin(), it0);
-          if (local_vertex_indices_unowned[pos] < 0)
+          if (std::size_t pos = std::distance(unowned_vertices.begin(), it0);
+              local_vertex_indices_unowned[pos] < 0)
           {
             local_vertex_indices_unowned[pos] = v++;
             ghost_vertices.push_back(data[1]);
@@ -1051,22 +1058,30 @@ mesh::create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
   std::vector<std::pair<std::int64_t, std::int32_t>> global_to_local_vertices;
   global_to_local_vertices.reserve(owned_vertices.size()
                                    + unowned_vertices.size());
-  std::transform(owned_vertices.begin(), owned_vertices.end(),
-                 local_vertex_indices.begin(),
-                 std::back_inserter(global_to_local_vertices),
-                 [](auto idx0, auto idx1)
-                 { return std::pair<std::int64_t, std::int32_t>(idx0, idx1); });
-  std::transform(unowned_vertices.begin(), unowned_vertices.end(),
-                 local_vertex_indices_unowned.begin(),
-                 std::back_inserter(global_to_local_vertices),
-                 [](auto idx0, auto idx1)
-                 { return std::pair<std::int64_t, std::int32_t>(idx0, idx1); });
+  std::transform(
+      owned_vertices.begin(), owned_vertices.end(),
+      local_vertex_indices.begin(),
+      std::back_inserter(global_to_local_vertices),
+      [](auto idx0, auto idx1) -> std::pair<std::int64_t, std::int32_t> {
+        return {idx0, idx1};
+      });
+  std::transform(
+      unowned_vertices.begin(), unowned_vertices.end(),
+      local_vertex_indices_unowned.begin(),
+      std::back_inserter(global_to_local_vertices),
+      [](auto idx0, auto idx1) -> std::pair<std::int64_t, std::int32_t> {
+        return {idx0, idx1};
+      });
   std::sort(global_to_local_vertices.begin(), global_to_local_vertices.end());
 
   // const std::size_t num_local_nodes = cells.num_nodes();
+  // std::shared_ptr<graph::AdjacencyList<std::int32_t>> cells_local_idx
+  //     = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+  //         convert_to_local_indexing(cells, num_local_nodes,
+  //                                   global_to_local_vertices));
+  // const std::size_t num_local_nodes = cells.num_nodes();
   std::vector<std::int32_t> _cells_local_idx
       = convert_to_local_indexing(cells, global_to_local_vertices);
-
   // -- Create Topology object
 
   // Determine which ranks ghost vertices that are owned by this rank.
@@ -1119,6 +1134,9 @@ mesh::create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
   topology.original_cell_index.assign(
       original_cell_index.begin(),
       std::next(original_cell_index.begin(), num_cells));
+  // topology.original_cell_index.assign(
+  //     original_cell_index.begin(),
+  //     std::next(original_cell_index.begin(), num_local_nodes));
 
   return topology;
 }
@@ -1211,6 +1229,7 @@ mesh::create_subtopology(const Topology& topology, int dim,
   subtopology.set_index_map(dim, submap);
   subtopology.set_connectivity(sub_v_to_v, 0, 0);
   subtopology.set_connectivity(sub_e_to_v, dim, 0);
+
   return {std::move(subtopology), std::move(subentities),
           std::move(subvertices0)};
 }

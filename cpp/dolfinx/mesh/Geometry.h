@@ -40,7 +40,7 @@ public:
   /// @param[in] index_map Index map associated with the geometry dofmap
   /// @param[in] dofmap The geometry (point) dofmap. For a cell, it
   /// gives the position in the point array of each local geometry node
-  /// @param[in] element Element that describes the cell geometric map.
+  /// @param[in] element Element that describes the cell geometry map.
   /// @param[in] x The point coordinates. The shape is `(num_points, 3)`
   /// and the storage is row-major.
   /// @param[in] dim The geometric dimension (`0 < dim <= 3`).
@@ -119,7 +119,7 @@ public:
 
   /// @brief The elements that describes the geometry maps.
   ///
-  /// @return The coordinate/geometry elements
+  /// @return The coordinate/geometry element
   const fem::CoordinateElement<value_type>& cmap() const { return _cmap; }
 
   /// Global user indices
@@ -138,7 +138,7 @@ private:
   // IndexMap for geometry 'dofmap'
   std::shared_ptr<const common::IndexMap> _index_map;
 
-  // The coordinate element
+  // The coordinate elements
   fem::CoordinateElement<value_type> _cmap;
 
   // Coordinates for all points stored as a contiguous array (row-major,
@@ -149,120 +149,113 @@ private:
   std::vector<std::int64_t> _input_global_indices;
 };
 
+/// @cond
+/// Template type deduction
+template <typename U, typename V, typename W>
+Geometry(std::shared_ptr<const common::IndexMap>, U,
+         const fem::CoordinateElement<
+             typename std::remove_reference_t<typename V::value_type>>&,
+         V, int, W)
+    -> Geometry<typename std::remove_cvref_t<typename V::value_type>>;
+/// @endcond
+
 /// @brief Build Geometry from input data.
 ///
-/// This function should be called after the mesh topology is built. It
-/// distributes the 'node' coordinate data to the required MPI process
-/// and then creates a mesh::Geometry object.
+/// This function should be called after the mesh topology is built and
+/// 'node' coordinate data has been distributed to the processes where
+/// it is required.
 ///
-/// @param[in] comm The MPI communicator to build the Geometry on
-/// @param[in] topology The mesh topology
-/// @param[in] element The elements that defines the geometry map for
-/// each cell
-/// @param[in] cell_nodes The mesh cells, including higher-order
-/// geometry 'nodes'. Row-major storage, shape=`(num_cells,
-/// nodes_per_cell)`.
+/// @param[in] topology Mesh topology.
+/// @param[in] element Element that defines the geometry map for
+/// each cell.
+/// @param[in] nodes Geometry node global indices for cells on this
+/// process. Must be sorted.
+/// @param[in] xdofs Geometry degree-of-freedom map (using global
+/// indices) for cells on this process. `nodes` is a sorted and unique
+/// list of the indices in `xdofs`.
 /// @param[in] x The node coordinates (row-major, with shape
 /// `(num_nodes, dim)`. The global index of each node is `i +
 /// rank_offset`, where `i` is the local row index in `x` and
 /// `rank_offset` is the sum of `x` rows on all processed with a lower
 /// rank than the caller.
-/// @param[in] dim The geometric dimension (1, 2, or 3)
+/// @param[in] dim Geometric dimension (1, 2, or 3).
 /// @param[in] reorder_fn Function for re-ordering the degree-of-freedom
-/// map associated with the geometry data
+/// map associated with the geometry data.
+/// @return A mesh geometry.
 template <typename U>
 Geometry<typename std::remove_reference_t<typename U::value_type>>
 create_geometry(
-    MPI_Comm comm, const Topology& topology,
+    const Topology& topology,
     const fem::CoordinateElement<
         std::remove_reference_t<typename U::value_type>>& element,
-    std::span<const std::int64_t> cell_nodes, const U& x, int dim,
+    std::span<const std::int64_t> nodes,
+
+    std::span<const std::int64_t> xdofs, const U& x, int dim,
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
         reorder_fn
     = nullptr)
 {
-  // TODO: make sure required entities are initialised, or extend
-  // fem::build_dofmap_data
+  assert(std::is_sorted(nodes.begin(), nodes.end()));
+  using T = typename std::remove_reference_t<typename U::value_type>;
 
-  const fem::ElementDofLayout dof_layout = element.create_dof_layout();
+  fem::ElementDofLayout doflayout = element.create_dof_layout();
 
   //  Build 'geometry' dofmap on the topology
   auto [_dof_index_map, bs, dofmap]
-      = fem::build_dofmap_data(comm, topology, dof_layout, reorder_fn);
+      = fem::build_dofmap_data(topology.index_map(topology.dim())->comm(),
+                               topology, doflayout, reorder_fn);
   auto dof_index_map
       = std::make_shared<common::IndexMap>(std::move(_dof_index_map));
 
   // If the mesh has higher order geometry, permute the dofmap
   if (element.needs_dof_permutations())
   {
-    const int D = topology.dim();
-    std::int32_t num_cells = topology.connectivity(D, 0)->num_nodes();
+    const std::int32_t num_cells
+        = topology.connectivity(topology.dim(), 0)->num_nodes();
     const std::vector<std::uint32_t>& cell_info
         = topology.get_cell_permutation_info();
-    int dim = element.dim();
+    int d = element.dim();
     for (std::int32_t cell = 0; cell < num_cells; ++cell)
     {
-      std::span<std::int32_t> dofs(dofmap.data() + cell * dim, dim);
+      std::span dofs(dofmap.data() + cell * d, d);
       element.unpermute_dofs(dofs, cell_info[cell]);
     }
   }
 
-  auto remap_data
-      = [](auto comm, auto& cell_nodes, auto& x, int dim, auto& dofmap)
-  {
-    // Build list of unique (global) node indices from adjacency list
-    // (geometry nodes)
-    std::vector<std::int64_t> indices(cell_nodes.begin(), cell_nodes.end());
-    dolfinx::radix_sort(std::span(indices));
-    indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
+  // Compute local-to-global map from local indices in dofmap to the
+  // corresponding global indices in cells, and pass to function to
+  // compute local (dof) to local (position in coords) map from (i)
+  // local-to-global for dofs and (ii) local-to-global for entries in
+  // coords
+  const std::vector<std::int32_t> l2l = graph::build::compute_local_to_local(
+      graph::build::compute_local_to_global(xdofs, dofmap), nodes);
 
-    //  Distribute  node coordinates by global index from other ranks.
-    //  Order of coords matches order of the indices in 'indices'.
-    std::vector coords = dolfinx::MPI::distribute_data(comm, indices, x, dim);
+  // Allocate space for input global indices and copy data
+  std::vector<std::int64_t> igi(nodes.size());
+  std::transform(l2l.cbegin(), l2l.cend(), igi.begin(),
+                 [&nodes](auto index) { return nodes[index]; });
 
-    // Compute local-to-global map from local indices in dofmap to the
-    // corresponding global indices in cell_nodes
-    std::vector l2g = graph::build::compute_local_to_global(cell_nodes, dofmap);
-
-    // Compute local (dof) to local (position in coords) map from (i)
-    // local-to-global for dofs and (ii) local-to-global for entries in
-    // coords
-    std::vector l2l = graph::build::compute_local_to_local(l2g, indices);
-
-    // Allocate space for input global indices and copy data
-    std::vector<std::int64_t> igi(indices.size());
-    std::transform(l2l.cbegin(), l2l.cend(), igi.begin(),
-                   [&indices](auto index) { return indices[index]; });
-
-    return std::tuple(std::move(coords), std::move(l2l), std::move(igi));
-  };
-
-  auto [coords, l2l, igi] = remap_data(comm, cell_nodes, x, dim, dofmap);
-
-  // Build coordinate dof array, copying coordinates to correct
-  // position
-  assert(coords.size() % dim == 0);
-  const std::size_t shape0 = coords.size() / dim;
+  // Build coordinate dof array, copying coordinates to correct position
+  assert(x.size() % dim == 0);
+  const std::size_t shape0 = x.size() / dim;
   const std::size_t shape1 = dim;
-  std::vector<typename std::remove_reference_t<typename U::value_type>> xg(
-      3 * shape0, 0);
+  std::vector<T> xg(3 * shape0, 0);
   for (std::size_t i = 0; i < shape0; ++i)
   {
-    std::copy_n(std::next(coords.cbegin(), shape1 * l2l[i]), shape1,
+    std::copy_n(std::next(x.cbegin(), shape1 * l2l[i]), shape1,
                 std::next(xg.begin(), 3 * i));
   }
 
-  return Geometry<typename std::remove_reference_t<typename U::value_type>>(
-      dof_index_map, std::move(dofmap), element, std::move(xg), dim,
-      std::move(igi));
+  return Geometry(dof_index_map, std::move(dofmap), element, std::move(xg), dim,
+                  std::move(igi));
 }
 
 /// @brief Create a sub-geometry for a subset of entities.
-/// @param topology Full mesh topology
-/// @param geometry Full mesh geometry
-/// @param dim Topological dimension of the sub-topology
+/// @param topology Full mesh topology.
+/// @param geometry Full mesh geometry.
+/// @param dim Topological dimension of the sub-topology.
 /// @param subentity_to_entity Map from sub-topology entity to the
-/// entity in the parent topology
+/// entity in the parent topology.
 /// @return A sub-geometry and a map from sub-geometry coordinate
 /// degree-of-freedom to the coordinate degree-of-freedom in `geometry`.
 template <std::floating_point T>
@@ -368,9 +361,9 @@ create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
                  [&igi](std::int32_t sub_x_dof) { return igi[sub_x_dof]; });
 
   // Create geometry
-  return {Geometry<T>(sub_x_dof_index_map, std::move(sub_x_dofmap),
-                      {sub_coord_ele}, std::move(sub_x), geometry.dim(),
-                      std::move(sub_igi)),
+  return {Geometry(sub_x_dof_index_map, std::move(sub_x_dofmap),
+                   {sub_coord_ele}, std::move(sub_x), geometry.dim(),
+                   std::move(sub_igi)),
           std::move(subx_to_x_dofmap)};
 }
 

@@ -44,7 +44,7 @@ class Topology
 {
 public:
   /// Create empty mesh topology
-  Topology(MPI_Comm comm, CellType celltype);
+  Topology(MPI_Comm comm, CellType cell_type);
 
   /// Copy constructor
   Topology(const Topology& topology) = default;
@@ -112,7 +112,7 @@ public:
   const std::vector<std::uint8_t>& get_facet_permutations() const;
 
   /// @brief Cell type
-  /// @return Cell types that the topology is for
+  /// @return Cell type that the topology is for
   CellType cell_type() const noexcept;
 
   /// @brief Create entities of given topological dimension.
@@ -168,22 +168,28 @@ private:
   std::vector<std::int32_t> _interprocess_facets;
 };
 
-/// @brief Create a distributed mesh topology.
+/// @brief Create a mesh topology.
 ///
-/// @param[in] comm MPI communicator across which the topology is
-/// distributed
-/// @param[in] cells The cell topology (list of vertices for each cell)
+/// This function creates a Topology from cells that have been
+/// distributed to the processes that own or ghost the cell.
+///
+/// @param[in] comm Communicator across which the topology is
+/// distributed.
+/// @param[in] cells Cell topology (list of vertices for each cell)
 /// using global indices for the vertices. It contains cells that have
 /// been distributed to this rank, e.g. via a graph partitioner. It must
 /// also contain all ghost cells via facet, i.e. cells that are on a
-/// neighboring process and share a facet with a local cell.
-/// @param[in] original_cell_index The original global index associated
-/// with each cell
-/// @param[in] ghost_owners The owning rank of each ghost cell (ghost
-/// cells are always at the end of the list of `cells`)
-/// @param[in] cell_type Cell shape
-/// @param[in] boundary_vertices List of vertices on the exterior of the
-/// local mesh which may be shared with other processes.
+/// neighboring process and which share a facet with a local cell. Ghost
+/// cells are the last `n` entries in `cells`, where `n` is given by the
+/// length of `ghost_owners`.
+/// @param[in] original_cell_index Original global index associated with
+/// each cell.
+/// @param[in] ghost_owners Owning rank of each ghost cell (ghost cells
+/// are always at the end of the list of `cells`).
+/// @param[in] cell_type A vector with cell shapes.
+/// @param[in] boundary_vertices Vertices on the 'exterior' (boundary)
+/// of the local topology. These vertices might appear on other
+/// processes.
 /// @return A distributed mesh topology
 Topology create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
                          std::span<const std::int64_t> original_cell_index,
@@ -192,10 +198,11 @@ Topology create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
 
 /// @brief Create a topology for a subset of entities of a given
 /// topological dimension.
-/// @param topology Original topology.
+///
+/// @param topology Original (parent) topology.
 /// @param dim Topological dimension of the entities in the new topology.
-/// @param entities The indices of the entities in `topology` to include
-/// in the new topology.
+/// @param entities Indices of entities in `topology` to include in the
+/// new topology.
 /// @return New topology of dimension `dim` with all entities in
 /// `entities`, map from entities of dimension `dim` in new sub-topology
 /// to entities in `topology`, and map from vertices in new sub-topology
@@ -210,7 +217,7 @@ create_subtopology(const Topology& topology, int dim,
 ///
 /// @param[in] topology The mesh topology
 /// @param[in] dim Topological dimension of the entities
-/// @param[in] entities The mesh entities defined by their vertices.
+/// @param[in] entities The mesh entities defined by their vertices
 /// @return The index of the ith entity in `entities`
 /// @note If an entity cannot be found on this rank, -1 is returned as
 /// the index.

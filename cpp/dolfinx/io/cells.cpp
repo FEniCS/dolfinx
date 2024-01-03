@@ -211,7 +211,7 @@ std::vector<std::uint8_t> vtk_pyramid(int num_nodes)
 std::vector<std::uint8_t> vtk_quadrilateral(int num_nodes)
 {
   // Check that num_nodes is a square integer (since quadrilaterals are
-  // tensorproducts of intervals, the number of nodes for each interval
+  // tensor products of intervals, the number of nodes for each interval
   // should be an integer)
   assert((std::sqrt(num_nodes) - std::floor(std::sqrt(num_nodes))) == 0);
 
@@ -385,8 +385,8 @@ std::vector<std::uint8_t> io::cells::perm_vtk(mesh::CellType type,
   return io::cells::transpose(map);
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> io::cells::perm_gmsh(const mesh::CellType type,
-                                               const int num_nodes)
+std::vector<std::uint8_t> io::cells::perm_gmsh(mesh::CellType type,
+                                               int num_nodes)
 {
   std::vector<std::uint8_t> map;
   switch (type)
@@ -424,7 +424,7 @@ std::vector<std::uint8_t> io::cells::perm_gmsh(const mesh::CellType type,
 }
 //-----------------------------------------------------------------------------
 std::vector<std::uint8_t>
-io::cells::transpose(const std::vector<std::uint8_t>& map)
+io::cells::transpose(std::span<const std::uint8_t> map)
 {
   std::vector<std::uint8_t> transpose(map.size());
   for (std::size_t i = 0; i < map.size(); ++i)
@@ -433,9 +433,9 @@ io::cells::transpose(const std::vector<std::uint8_t>& map)
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int64_t>
-io::cells::apply_permutation(const std::span<const std::int64_t>& cells,
+io::cells::apply_permutation(std::span<const std::int64_t> cells,
                              std::array<std::size_t, 2> shape,
-                             const std::span<const std::uint8_t>& p)
+                             std::span<const std::uint8_t> p)
 {
   assert(cells.size() == shape[0] * shape[1]);
   assert(shape[1] == p.size());
