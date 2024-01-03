@@ -499,7 +499,7 @@ def test_submesh_boundary(d, n, boundary, ghost_mode):
 @pytest.mark.parametrize("dtype", [
     # np.float32,
     np.float64
-    ])
+])
 def test_empty_rank_mesh(dtype):
     """Construction of mesh where some ranks are empty"""
     comm = MPI.COMM_WORLD
