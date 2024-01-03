@@ -243,10 +243,7 @@ class XDMFFile(_cpp.io.XDMFFile):
         cmap = _cpp.fem.CoordinateElement_float64(cell_shape, cell_degree)
         msh = _cpp.mesh.create_mesh(self.comm, cells,
                                     cmap, x, _cpp.mesh.create_cell_partitioner(ghost_mode))
-        # msh = _cpp.mesh.create_mesh(self.comm, _cpp.graph.AdjacencyList_int64(cells),
-        #                             cmap, x, _cpp.mesh.create_cell_partitioner(ghost_mode))
         msh.name = name
-
         domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_shape.name, cell_degree,
                                             basix.LagrangeVariant.equispaced, shape=(x.shape[1], ), gdim=x.shape[1]))
         return Mesh(msh, domain)

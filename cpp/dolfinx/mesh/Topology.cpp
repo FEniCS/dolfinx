@@ -586,8 +586,6 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
         assert(recv_buffer[i] >= local_range[0]);
         assert(recv_buffer[i] < local_range[1]);
         std::int32_t cell_idx = recv_buffer[i] - local_range[0];
-
-        // auto vertices = entities0.links(cell_idx);
         auto vertices = entities0.subspan(cell_idx * num_entity_vertices,
                                           num_entity_vertices);
         shared_vertices.insert(shared_vertices.end(), vertices.begin(),
@@ -873,9 +871,6 @@ mesh::create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
 
   LOG(INFO) << "Create topology";
 
-  // const std::int32_t num_local_cells = cells.num_nodes() -
-  // ghost_owners.size();
-
   const int num_cell_vertices = mesh::num_cell_vertices(cell_type);
   const std::int32_t num_cells = cells.size() / num_cell_vertices;
   const std::int32_t num_local_cells = num_cells - ghost_owners.size();
@@ -885,8 +880,6 @@ mesh::create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
   auto [owned_vertices, unowned_vertices] = vertex_ownership_groups(
       cells.first(num_cell_vertices * num_local_cells),
       cells.last(num_cell_vertices * ghost_owners.size()), boundary_vertices);
-  // auto [owned_vertices, unowned_vertices]
-  //     = vertex_ownership_groups(cells, num_local_cells, boundary_vertices);
 
   // For each vertex whose ownership needs determining, find the sharing
   // ranks. The first index in the list of ranks for a vertex is the
@@ -950,11 +943,6 @@ mesh::create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
   }
 
   // Get global indices of ghost cells
-  // std::span cell_idx(original_cell_index);
-  // const std::vector cell_ghost_indices = graph::build::compute_ghost_indices(
-  //     comm, cell_idx.first(cells.num_nodes() - ghost_owners.size()),
-  //     std::span(original_cell_index).last(ghost_owners.size()),
-  //     ghost_owners);
   std::span cell_idx(original_cell_index);
   const std::vector cell_ghost_indices = graph::build::compute_ghost_indices(
       comm, cell_idx.first(num_local_cells),
@@ -1019,12 +1007,6 @@ mesh::create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
       // communicated via ghost cells. Note that the ghost cell owner
       // (who we get the vertex index from) is not necessarily the
       // vertex owner.
-      // const std::vector<std::array<std::int64_t, 3>> recv_data
-      //     = exchange_ghost_indexing(*index_map_c, cells,
-      //     owned_vertices.size(),
-      //                               global_offset_v,
-      //                               global_to_local_vertices, ghost_vertices,
-      //                               ghost_vertex_owners);
       const std::vector<std::array<std::int64_t, 3>> recv_data
           = exchange_ghost_indexing(*index_map_c, cells, num_cell_vertices,
                                     owned_vertices.size(), global_offset_v,
@@ -1074,14 +1056,9 @@ mesh::create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
       });
   std::sort(global_to_local_vertices.begin(), global_to_local_vertices.end());
 
-  // const std::size_t num_local_nodes = cells.num_nodes();
-  // std::shared_ptr<graph::AdjacencyList<std::int32_t>> cells_local_idx
-  //     = std::make_shared<graph::AdjacencyList<std::int32_t>>(
-  //         convert_to_local_indexing(cells, num_local_nodes,
-  //                                   global_to_local_vertices));
-  // const std::size_t num_local_nodes = cells.num_nodes();
   std::vector<std::int32_t> _cells_local_idx
       = convert_to_local_indexing(cells, global_to_local_vertices);
+
   // -- Create Topology object
 
   // Determine which ranks ghost vertices that are owned by this rank.
@@ -1134,9 +1111,6 @@ mesh::create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
   topology.original_cell_index.assign(
       original_cell_index.begin(),
       std::next(original_cell_index.begin(), num_cells));
-  // topology.original_cell_index.assign(
-  //     original_cell_index.begin(),
-  //     std::next(original_cell_index.begin(), num_local_nodes));
 
   return topology;
 }

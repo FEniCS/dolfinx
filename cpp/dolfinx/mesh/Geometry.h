@@ -348,8 +348,8 @@ create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
   // Create sub-geometry coordinate element
   CellType sub_coord_cell
       = cell_entity_type(geometry.cmap().cell_shape(), dim, 0);
-  fem::CoordinateElement<T> sub_coord_ele(
-      sub_coord_cell, geometry.cmap().degree(), geometry.cmap().variant());
+  fem::CoordinateElement<T> sub_cmap(sub_coord_cell, geometry.cmap().degree(),
+                                     geometry.cmap().variant());
 
   // Sub-geometry input_global_indices
   // TODO: Check this
@@ -361,9 +361,8 @@ create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
                  [&igi](std::int32_t sub_x_dof) { return igi[sub_x_dof]; });
 
   // Create geometry
-  return {Geometry(sub_x_dof_index_map, std::move(sub_x_dofmap),
-                   {sub_coord_ele}, std::move(sub_x), geometry.dim(),
-                   std::move(sub_igi)),
+  return {Geometry(sub_x_dof_index_map, std::move(sub_x_dofmap), sub_cmap,
+                   std::move(sub_x), geometry.dim(), std::move(sub_igi)),
           std::move(subx_to_x_dofmap)};
 }
 

@@ -852,7 +852,6 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   {
     std::int32_t num_owned_cells
         = cells1_v.size() / num_cell_vertices - ghost_owners.size();
-    // std::int32_t num_owned = cells1_v.num_nodes() - ghost_owners.size();
     std::vector<std::int32_t> cell_offsets(num_owned_cells + 1, 0);
     for (std::size_t i = 1; i < cell_offsets.size(); ++i)
       cell_offsets[i] = cell_offsets[i - 1] + num_cell_vertices;
@@ -873,8 +872,6 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
         std::span(cells1_v.data(), remap.size() * num_cell_vertices), remap);
     impl::reorder_list(
         std::span(cells1.array().data(), remap.size() * num_cell_nodes), remap);
-    // cells1_v = reorder_list(cells1_v, remap);
-    // cells1 = reorder_list(cells1, remap);
     original_idx1 = _original_idx;
 
     // Boundary vertices are marked as 'unknown'
