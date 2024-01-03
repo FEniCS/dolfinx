@@ -111,9 +111,11 @@ UFL still runs on the year-based release scheme.
 4. In `python/setup.py` change the `VERSION` variable to e.g. `0.5.0` and
    update the depedency versions for `fenics-ffcx` and `fenics-ufl`.
 
-5. Commit and push.
+5. In `CITATION.md` change the line starting `version:` to e.g. `version: 0.5.0`. and
 
-6. Check `git diff origin/main` for obvious errors.
+6. Commit and push.
+
+7. Check `git diff origin/main` for obvious errors.
 
 ## Integration testing
 
