@@ -690,6 +690,7 @@ void declare_cmap(nb::module_& m, std::string type)
       .def("create_dof_layout",
            &dolfinx::fem::CoordinateElement<T>::create_dof_layout)
       .def_prop_ro("degree", &dolfinx::fem::CoordinateElement<T>::degree)
+      .def_prop_ro("dim", &dolfinx::fem::CoordinateElement<T>::dim)
       .def_prop_ro("variant", [](const dolfinx::fem::CoordinateElement<T>& self)
                    { return static_cast<int>(self.variant()); })
       .def(

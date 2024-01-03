@@ -357,22 +357,25 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
     else:
         raise RuntimeError(f"Unsupported mesh dtype: {x.dtype}")
 
+    gdim = x.shape[1]
     try:
         # UFL domain
         e_ufl = e.ufl_coordinate_element()
         cmap = _coordinate_element(e_ufl.sub_element.element, dtype=dtype)
         domain = e
+        assert domain.ufl_coordinate_element().value_shape == (gdim,)
     except AttributeError:
         try:
             # Basix 'UFL' element
             cmap = _coordinate_element(e.sub_element.element, dtype=dtype)
             domain = ufl.Mesh(e)
+            assert domain.ufl_coordinate_element().value_shape == (gdim,)
         except AttributeError:
             try:
                 # Basix element
                 cmap = _CoordinateElement(cmap_factory(e))
-                gdim = x.shape[1]
-                e_ufl = basix.ufl._BasixElement(e, gdim=x.shape[1])
+                # e_ufl = basix.ufl._BasixElement(e, gdim=x.shape[1])
+                e_ufl = basix.ufl._BasixElement(e)
                 _domain = basix.ufl.blocked_element(e_ufl, shape=(gdim,), gdim=gdim)
                 domain = ufl.Mesh(_domain)
             except TypeError:
