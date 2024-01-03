@@ -111,7 +111,8 @@ UFL still runs on the year-based release scheme.
 4. In `python/setup.py` change the `VERSION` variable to e.g. `0.5.0` and
    update the depedency versions for `fenics-ffcx` and `fenics-ufl`.
 
-5. In `CITATION.md` change the line starting `version:` to e.g. `version: 0.5.0`. and
+5. In `CITATION.md` change the line starting `version:` to e.g. `version: 0.5.0` and
+   update the line starting `date-released:` to e.g. `date-released: 2022-03-14`.
 
 6. Commit and push.
 

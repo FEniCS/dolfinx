@@ -1,5 +1,8 @@
 cff-version: 1.2.0
-message: "If you use this software, please cite it as below."
+title: "DOLFINx"
+version: 0.7.3
+date-released: 2023-12-30
+url: "https://github.com/FEniCS/dolfinx"
 authors:
 - family-names: "Baratta"
   given-names: "Igor A."
@@ -31,10 +34,6 @@ authors:
 - family-names: "Wells"
   given-names: "Garth N."
   orcid: "https://orcid.org/0000-0001-5291-7951"
-title: "DOLFINx"
-version: 0.7.3
-date-released: 2023-12-30
-url: "https://github.com/FEniCS/dolfinx"
 preferred-citation:
   type: article
   authors:
