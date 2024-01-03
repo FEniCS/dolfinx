@@ -440,7 +440,7 @@ int FiniteElement<T>::num_sub_elements() const noexcept
 template <std::floating_point T>
 bool FiniteElement<T>::is_mixed() const noexcept
 {
-  return !_sub_elements.empty() and _bs == 1;
+  return num_sub_elements() > 1;
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
