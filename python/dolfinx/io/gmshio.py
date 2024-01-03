@@ -58,7 +58,6 @@ def ufl_mesh(gmsh_cell: int, gdim: int) -> ufl.Mesh:
         print(f"Unknown cell type {gmsh_cell}.")
         raise e
     cell = ufl.Cell(shape, geometric_dimension=gdim)
-
     element = basix.ufl.element(basix.ElementFamily.P, cell.cellname(), degree,
                                 basix.LagrangeVariant.equispaced, shape=(gdim, ), gdim=gdim)
     return ufl.Mesh(element)

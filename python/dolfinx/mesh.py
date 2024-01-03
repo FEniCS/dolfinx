@@ -19,6 +19,8 @@ import basix.ufl
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
+from dolfinx.fem import coordinate_element as _coordinate_element
+from dolfinx.fem import CoordinateElement as _CoordinateElement
 from dolfinx.cpp.mesh import (CellType, DiagonalType, GhostMode,
                               build_dual_graph, cell_dim,
                               create_cell_partitioner, exterior_facet_indices,
@@ -51,7 +53,8 @@ class Mesh:
         """
         self._cpp_object = mesh
         self._ufl_domain = domain
-        self._ufl_domain._ufl_cargo = self._cpp_object
+        if domain is not None:
+            self._ufl_domain._ufl_cargo = self._cpp_object
 
     @property
     def comm(self):
@@ -344,28 +347,46 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
     if partitioner is None and comm.size > 1:
         partitioner = _cpp.mesh.create_cell_partitioner(GhostMode.none)
 
-    ufl_element = domain.ufl_coordinate_element()
-    cell_shape = ufl_element.cell.cellname()
-    cell_degree = ufl_element.degree
-    try:
-        variant = int(ufl_element.lagrange_variant)
-    except AttributeError:
-        variant = int(basix.LagrangeVariant.unset)
-
     x = np.asarray(x, order='C')
     if x.dtype == np.float32:
-        cmap = _cpp.fem.CoordinateElement_float32(_uflcell_to_dolfinxcell[cell_shape], cell_degree, variant)
+        dtype = np.float32
+        cmap_factory = _cpp.fem.CoordinateElement_float32
     elif x.dtype == np.float64:
-        cmap = _cpp.fem.CoordinateElement_float64(_uflcell_to_dolfinxcell[cell_shape], cell_degree, variant)
+        dtype = np.float64
+        cmap_factory = _cpp.fem.CoordinateElement_float64
     else:
         raise RuntimeError(f"Unsupported mesh dtype: {x.dtype}")
 
     try:
-        mesh = _cpp.mesh.create_mesh(comm, cells, cmap, x, partitioner)
+        # UFL domain
+        ufl_element = domain.ufl_coordinate_element()
+        cell_shape = ufl_element.cell.cellname()
+        cell_degree = ufl_element.degree
+        try:
+            variant = int(ufl_element.lagrange_variant)
+        except AttributeError:
+            variant = int(basix.LagrangeVariant.unset)
+        cmap = _coordinate_element(_uflcell_to_dolfinxcell[cell_shape], cell_degree, dtype, variant)
+        _domain = domain
+    except AttributeError:
+        try:
+            # Basix 'UFL' element or Coordinate element
+            cmap = _CoordinateElement(cmap_factory(domain.sub_element.element))
+            _domain = domain
+        except AttributeError:
+            # Basix element or CoordinateElement
+            cmap = _CoordinateElement(cmap_factory(domain))
+            _domain = None
+
+    try:
+        mesh = _cpp.mesh.create_mesh(comm, cells, cmap._cpp_object, x, partitioner)
     except TypeError:
         mesh = _cpp.mesh.create_mesh(comm, _cpp.graph.AdjacencyList_int64(np.cast['int64'](cells)),
-                                     cmap, x, partitioner)
-    return Mesh(mesh, domain)
+                                    cmap._cpp_object, x, partitioner)
+
+    if _domain is not None:
+        _domain = ufl.Mesh(_domain)
+    return Mesh(mesh, _domain)
 
 
 def create_submesh(msh, dim, entities):
