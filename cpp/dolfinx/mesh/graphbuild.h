@@ -23,7 +23,7 @@ namespace dolfinx::mesh
 /// @brief Compute the local part of the dual graph (cell-cell
 /// connections via facets) and facet with only one attached cell.
 ///
-/// @param[in] cells Array for cell vertices adjacency list
+/// @param[in] cells Cell vertices adjacency list
 /// @param[in] offsets Adjacency list offsets, i.e. index of the first
 /// entry of cell `i` in `cell_vertices` `is offsets[i]`
 /// @param[in] tdim The topological dimension of the cells

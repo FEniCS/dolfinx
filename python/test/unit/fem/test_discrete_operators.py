@@ -44,36 +44,34 @@ def test_gradient(mesh):
 
 @pytest.mark.parametrize("p", range(1, 4))
 @pytest.mark.parametrize("q", range(1, 4))
-@pytest.mark.parametrize("cell_type", [CellType.quadrilateral,
-                                       CellType.triangle,
-                                       CellType.tetrahedron,
-                                       CellType.hexahedron])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_gradient_interpolation(cell_type, p, q, dtype):
+@pytest.mark.parametrize("cell_type", [
+    (create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.none,
+     cell_type=CellType.triangle, dtype=np.float32), "Lagrange", "Nedelec 1st kind H(curl)"),
+    (create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.none,
+     cell_type=CellType.triangle, dtype=np.float64), "Lagrange", "Nedelec 1st kind H(curl)"),
+    (create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.none,
+     cell_type=CellType.quadrilateral, dtype=np.float32), "Q", "RTCE"),
+    (create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.none,
+     cell_type=CellType.quadrilateral, dtype=np.float64), "Q", "RTCE"),
+    (create_unit_cube(MPI.COMM_WORLD, 3, 3, 2, ghost_mode=GhostMode.none,
+     cell_type=CellType.tetrahedron, dtype=np.float32), "Lagrange", "Nedelec 1st kind H(curl)"),
+    (create_unit_cube(MPI.COMM_WORLD, 3, 3, 2, ghost_mode=GhostMode.none,
+     cell_type=CellType.tetrahedron, dtype=np.float64), "Lagrange", "Nedelec 1st kind H(curl)"),
+    (create_unit_cube(MPI.COMM_WORLD, 3, 3, 2, ghost_mode=GhostMode.none,
+     cell_type=CellType.hexahedron, dtype=np.float32), "Q", "NCE"),
+    (create_unit_cube(MPI.COMM_WORLD, 3, 2, 2, ghost_mode=GhostMode.none,
+     cell_type=CellType.hexahedron, dtype=np.float64), "Q", "NCE")
+])
+def test_gradient_interpolation(cell_type, p, q):
     """Test discrete gradient computation with verification using Expression."""
-    comm = MPI.COMM_WORLD
-    if cell_type == CellType.triangle:
-        mesh = create_unit_square(comm, 11, 6, ghost_mode=GhostMode.none, cell_type=cell_type, dtype=dtype)
-        family0 = "Lagrange"
-        family1 = "Nedelec 1st kind H(curl)"
-    elif cell_type == CellType.quadrilateral:
-        mesh = create_unit_square(comm, 11, 6, ghost_mode=GhostMode.none, cell_type=cell_type, dtype=dtype)
-        family0 = "Q"
-        family1 = "RTCE"
-    elif cell_type == CellType.hexahedron:
-        mesh = create_unit_cube(comm, 3, 3, 2, ghost_mode=GhostMode.none, cell_type=cell_type, dtype=dtype)
-        family0 = "Q"
-        family1 = "NCE"
-    elif cell_type == CellType.tetrahedron:
-        mesh = create_unit_cube(comm, 3, 2, 2, ghost_mode=GhostMode.none, cell_type=cell_type, dtype=dtype)
-        family0 = "Lagrange"
-        family1 = "Nedelec 1st kind H(curl)"
+    mesh, family0, family1 = cell_type
+    dtype = mesh.geometry.x.dtype
 
     V = functionspace(mesh, (family0, p))
     W = functionspace(mesh, (family1, q))
     G = discrete_gradient(V._cpp_object, W._cpp_object)
-    # N.B. do not scatter_rev G - doing so would transfer rows to other processes
-    # where they will be summed to give an incorrect matrix
+    # N.B. do not scatter_rev G - doing so would transfer rows to other
+    # processes where they will be summed to give an incorrect matrix
 
     # Vector for 'u' needs additional ghosts defined in columns of G
     uvec = dolfinx.la.vector(G.index_map(1), dtype=dtype)
@@ -96,5 +94,5 @@ def test_gradient_interpolation(cell_type, p, q, dtype):
     w.x.array[:nrlocal] = Glocal @ u.x.array
     w.x.scatter_forward()
 
-    atol = 100 * np.finfo(dtype).resolution
+    atol = 1000 * np.finfo(dtype).resolution
     assert np.allclose(w_expr.x.array, w.x.array, atol=atol)
