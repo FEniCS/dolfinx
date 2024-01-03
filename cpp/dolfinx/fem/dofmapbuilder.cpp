@@ -496,9 +496,8 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     auto map = topology.index_map(d);
     if (map)
     {
-      const std::vector<int>& src = map->src();
-      const std::vector<int>& dest = map->dest();
-
+      std::span src = map->src();
+      std::span dest = map->dest();
       MPI_Dist_graph_create_adjacent(
           map->comm(), src.size(), src.data(), MPI_UNWEIGHTED, dest.size(),
           dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm[d]);
@@ -550,7 +549,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     MPI_Waitany(requests_dim.size(), requests.data(), &idx, MPI_STATUS_IGNORE);
     d = requests_dim[idx];
 
-    const std::vector<int>& src = topology.index_map(d)->src();
+    std::span src = topology.index_map(d)->src();
 
     // Build (global old, global new) map for dofs of dimension d
     std::vector<std::pair<std::int64_t, std::pair<int64_t, int>>>

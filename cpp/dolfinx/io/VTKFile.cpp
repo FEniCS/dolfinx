@@ -274,7 +274,7 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
   max_idx -= 1;
   if (!cellmap.ghosts().empty())
   {
-    auto& ghosts = cellmap.ghosts();
+    std::span ghosts = cellmap.ghosts();
     auto minmax = std::minmax_element(ghosts.begin(), ghosts.end());
     min_idx = std::min(min_idx, *minmax.first);
     max_idx = std::max(max_idx, *minmax.second);

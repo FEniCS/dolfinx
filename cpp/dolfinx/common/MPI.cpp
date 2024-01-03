@@ -85,10 +85,8 @@ void dolfinx::MPI::check_error(MPI_Comm comm, int code)
     std::string error_string(MPI_MAX_ERROR_STRING, ' ');
     MPI_Error_string(code, error_string.data(), &len);
     error_string.resize(len);
-
     std::cerr << error_string << std::endl;
     MPI_Abort(comm, code);
-
     std::abort();
   }
 }

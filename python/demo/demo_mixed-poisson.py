@@ -95,29 +95,29 @@ from dolfinx.fem.petsc import LinearProblem
 from ufl import (Measure, SpatialCoordinate, TestFunctions, TrialFunctions,
                  div, exp, inner)
 
-domain = mesh.create_unit_square(MPI.COMM_WORLD, 32, 32, mesh.CellType.quadrilateral)
+msh = mesh.create_unit_square(MPI.COMM_WORLD, 32, 32, mesh.CellType.quadrilateral)
 
 k = 1
-Q_el = element("BDMCF", domain.basix_cell(), k)
-P_el = element("DG", domain.basix_cell(), k - 1)
+Q_el = element("BDMCF", msh.basix_cell(), k)
+P_el = element("DG", msh.basix_cell(), k - 1)
 V_el = mixed_element([Q_el, P_el])
-V = fem.functionspace(domain, V_el)
+V = fem.functionspace(msh, V_el)
 
 (sigma, u) = TrialFunctions(V)
 (tau, v) = TestFunctions(V)
 
-x = SpatialCoordinate(domain)
+x = SpatialCoordinate(msh)
 f = 10.0 * exp(-((x[0] - 0.5) * (x[0] - 0.5) + (x[1] - 0.5) * (x[1] - 0.5)) / 0.02)
 
-dx = Measure("dx", domain)
+dx = Measure("dx", msh)
 a = inner(sigma, tau) * dx + inner(u, div(tau)) * dx + inner(div(sigma), v) * dx
 L = -inner(f, v) * dx
 
 # Get subspace of V
 V0 = V.sub(0)
 
-fdim = domain.topology.dim - 1
-facets_top = mesh.locate_entities_boundary(domain, fdim, lambda x: np.isclose(x[1], 1.0))
+fdim = msh.topology.dim - 1
+facets_top = mesh.locate_entities_boundary(msh, fdim, lambda x: np.isclose(x[1], 1.0))
 Q, _ = V0.collapse()
 dofs_top = fem.locate_dofs_topological((V0, Q), fdim, facets_top)
 
@@ -133,7 +133,7 @@ f_h1.interpolate(f1)
 bc_top = fem.dirichletbc(f_h1, dofs_top, V0)
 
 
-facets_bottom = mesh.locate_entities_boundary(domain, fdim, lambda x: np.isclose(x[1], 0.0))
+facets_bottom = mesh.locate_entities_boundary(msh, fdim, lambda x: np.isclose(x[1], 0.0))
 dofs_bottom = fem.locate_dofs_topological((V0, Q), fdim, facets_bottom)
 
 
@@ -164,6 +164,6 @@ except PETSc.Error as e:  # type: ignore
 
 sigma_h, u_h = w_h.split()
 
-with io.XDMFFile(domain.comm, "out_mixed_poisson/u.xdmf", "w") as file:
-    file.write_mesh(domain)
+with io.XDMFFile(msh.comm, "out_mixed_poisson/u.xdmf", "w") as file:
+    file.write_mesh(msh)
     file.write_function(u_h)
