@@ -296,9 +296,9 @@ class Function(ufl.Coefficient):
                 raise NotImplementedError(f"Type {dtype} not supported.")
 
         if x is not None:
-            self._cpp_object = functiontype(dtype)(V._cpp_object, x._cpp_object)
+            self._cpp_object = functiontype(dtype)(V._cpp_object, x._cpp_object)  # type: ignore
         else:
-            self._cpp_object = functiontype(dtype)(V._cpp_object)
+            self._cpp_object = functiontype(dtype)(V._cpp_object)  # type: ignore
 
         # Initialize the ufl.FunctionSpace
         super().__init__(V.ufl_function_space())
@@ -483,7 +483,8 @@ class Function(ufl.Coefficient):
 
     def collapse(self) -> Function:
         u_collapsed = self._cpp_object.collapse()
-        V_collapsed = FunctionSpace(self.function_space._mesh, self.ufl_element(), u_collapsed.function_space)
+        V_collapsed = FunctionSpace(self.function_space._mesh, self.ufl_element(),  # type: ignore
+                                    u_collapsed.function_space)
         return Function(V_collapsed, la.Vector(u_collapsed.x))
 
 
