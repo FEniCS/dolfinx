@@ -126,6 +126,7 @@ FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
       _value_shape(e.value_shape, e.value_shape + e.value_rank),
       _bs(e.block_size)
 {
+  _is_mixed = e.element_type == ufcx_mixed_element;
   const ufcx_shape _shape = e.cell_shape;
   switch (_shape)
   {
@@ -440,7 +441,7 @@ int FiniteElement<T>::num_sub_elements() const noexcept
 template <std::floating_point T>
 bool FiniteElement<T>::is_mixed() const noexcept
 {
-  return num_sub_elements() > 1;
+  return _is_mixed;
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>

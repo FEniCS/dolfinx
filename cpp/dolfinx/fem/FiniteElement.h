@@ -686,6 +686,9 @@ private:
   // number of DOFs co-located at each dof 'point'.
   int _bs;
 
+  // Indicate whether this is a mixed element
+  bool _is_mixed;
+
   // Indicate whether the element needs permutations or transformations
   bool _needs_dof_permutations;
   bool _needs_dof_transformations;
