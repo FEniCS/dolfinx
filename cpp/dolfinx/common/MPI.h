@@ -229,7 +229,7 @@ distribute_to_postoffice(MPI_Comm comm, const U& x,
 /// @param[in] shape The global shape of `x`.
 /// @param[in] rank_offset The rank offset such that global index of
 /// local row `i` in `x` is `rank_offset + i`. It is usually computed
-/// using `MPI_Exscan` on `comm1`.
+/// using `MPI_Exscan` on `comm1` from MPI::distribute_data.
 /// @return The data for each index in `indices` (row-major storage).
 /// @pre `shape1 > 0`.
 template <typename U>

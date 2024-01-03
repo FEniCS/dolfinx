@@ -48,7 +48,6 @@ def process():
             # images
             code = demo.read_text()
             if "savefig" in code:
-                print("DDDD:", demo)
                 demo = demo.resolve()
                 here = os.getcwd()
                 os.chdir(demo_dir)

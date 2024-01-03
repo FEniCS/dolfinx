@@ -1119,7 +1119,7 @@ graph::AdjacencyList<int> IndexMap::index_to_dest_ranks() const
   std::transform(idx_to_rank.begin(), idx_to_rank.end(), data.begin(),
                  [&dest](auto x) { return dest[x.second]; });
 
-  return graph::AdjacencyList<int>(std::move(data), std::move(offsets));
+  return graph::AdjacencyList(std::move(data), std::move(offsets));
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int32_t> IndexMap::shared_indices() const

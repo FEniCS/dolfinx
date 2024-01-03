@@ -504,7 +504,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     SCOTCH_dgraphExit(&dgrafdat);
     SCOTCH_stratExit(&strat);
 
-    return graph::AdjacencyList<int>(std::move(dests), std::move(offsets));
+    return graph::AdjacencyList(std::move(dests), std::move(offsets));
   };
 }
 #endif

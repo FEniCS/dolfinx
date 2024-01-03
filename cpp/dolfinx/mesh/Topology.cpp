@@ -272,7 +272,7 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
     }
   }
 
-  return graph::AdjacencyList<int>(std::move(data), std::move(graph_offsets));
+  return graph::AdjacencyList(std::move(data), std::move(graph_offsets));
 }
 
 /// @brief Build ownership 'groups' (owned/undetermined/non-owned) of
