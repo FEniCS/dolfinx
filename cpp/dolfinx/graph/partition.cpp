@@ -386,8 +386,7 @@ graph::build::compute_local_to_global(std::span<const std::int64_t> global,
   if (global.size() != local.size())
     throw std::runtime_error("Data size mismatch.");
 
-  const std::int32_t max_local_idx
-      = *std::max_element(local.begin(), local.end());
+  std::int32_t max_local_idx = *std::max_element(local.begin(), local.end());
   std::vector<std::int64_t> local_to_global_list(max_local_idx + 1, -1);
   for (std::size_t i = 0; i < local.size(); ++i)
   {

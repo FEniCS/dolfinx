@@ -58,7 +58,7 @@ graph::AdjacencyList<int> create_adj_list(U& data, std::int32_t size)
     it = it1;
   }
 
-  return graph::AdjacencyList<int>(std::move(array), std::move(offsets));
+  return graph::AdjacencyList(std::move(array), std::move(offsets));
 }
 
 //-----------------------------------------------------------------------------

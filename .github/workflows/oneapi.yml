@@ -52,7 +52,7 @@ jobs:
       - name: Configure DOLFINx C++
         run: |
           . /opt/intel/oneapi/setvars.sh
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -DDOLFINX_ENABLE_SCOTCH=off -DDOLFINX_ENABLE_KAHIP=on -DDOLFINX_UFCX_PYTHON=off -B build -S cpp/
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -DDOLFINX_ENABLE_SCOTCH=on -DDOLFINX_ENABLE_KAHIP=on -DDOLFINX_UFCX_PYTHON=off -B build -S cpp/
 
       - name: Build and install DOLFINx C++ library
         run: |
@@ -107,4 +107,4 @@ jobs:
       - name: Run DOLFINx Python unit tests (MPI, np=2)
         run: |
           . /opt/intel/oneapi/setvars.sh
-          mpiexec -n 2 pytest -vs python/test/unit
+          mpiexec -n 2 pytest python/test/unit

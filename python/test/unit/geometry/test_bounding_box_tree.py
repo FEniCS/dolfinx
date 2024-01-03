@@ -379,7 +379,7 @@ def test_surface_bbtree(dtype):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_sub_bbtree(dtype):
+def test_sub_bbtree_codim1(dtype):
     """Testing point collision with a BoundingBoxTree of sub entities"""
     mesh = create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, cell_type=CellType.hexahedron, dtype=dtype)
     tdim = mesh.topology.dim

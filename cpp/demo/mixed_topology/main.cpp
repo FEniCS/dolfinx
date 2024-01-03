@@ -129,8 +129,8 @@ int main(int argc, char* argv[])
       std::cout << "]\n";
     }
 
-    auto geom = mesh::create_geometry(MPI_COMM_WORLD, *topo, elements,
-                                      cells_list, x, 2);
+    mesh::Geometry geom = mesh::create_geometry(MPI_COMM_WORLD, *topo, elements,
+                                                cells_list, x, 2);
 
     mesh::Mesh<double> mesh(MPI_COMM_WORLD, topo, geom);
     std::cout << "num cells = " << mesh.topology()->index_map(2)->size_local()
