@@ -47,8 +47,9 @@ public:
   /// `map` that will be scattered/gathered.
   /// @param[in] alloc The memory allocator for indices.
   Scatterer(const IndexMap& map, int bs, const Allocator& alloc = Allocator())
-      : _bs(bs), _remote_inds(0, alloc), _local_inds(0, alloc), _src(map.src()),
-        _dest(map.dest())
+      : _bs(bs), _remote_inds(0, alloc), _local_inds(0, alloc),
+        _src(map.src().begin(), map.src().end()),
+        _dest(map.dest().begin(), map.dest().end())
   {
     if (map.overlapped())
     {
@@ -72,14 +73,14 @@ public:
       _comm1 = dolfinx::MPI::Comm(comm1, false);
 
       // Build permutation array that sorts ghost indices by owning rank
-      const std::vector<int>& owners = map.owners();
+      std::span owners = map.owners();
       std::vector<std::int32_t> perm(owners.size());
       std::iota(perm.begin(), perm.end(), 0);
       dolfinx::argsort_radix<std::int32_t>(owners, perm);
 
       // Sort (i) ghost indices and (ii) ghost index owners by rank
       // (using perm array)
-      const std::vector<std::int64_t>& ghosts = map.ghosts();
+      std::span ghosts = map.ghosts();
       std::vector<int> owners_sorted(owners.size());
       std::vector<std::int64_t> ghosts_sorted(owners.size());
       std::transform(perm.begin(), perm.end(), owners_sorted.begin(),

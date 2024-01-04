@@ -32,8 +32,7 @@ def assemble(mesh, space, k):
     dofs = fem.locate_dofs_topological(V, facet_dim, facets)
 
     bc_func = fem.Function(V)
-    # TODO Interpolate when issue #2126 has been resolved
-    bc_func.x.array[:] = 1.0
+    bc_func.interpolate(lambda x: np.sin(x[0]))
 
     bc = fem.dirichletbc(bc_func, dofs)
 

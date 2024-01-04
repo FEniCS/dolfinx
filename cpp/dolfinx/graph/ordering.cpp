@@ -116,8 +116,8 @@ create_level_structure(const graph::AdjacencyList<int>& graph, int s)
     ++l;
   }
 
-  return graph::AdjacencyList<int>(std::move(level_structure),
-                                   std::move(level_offsets));
+  return graph::AdjacencyList(std::move(level_structure),
+                              std::move(level_offsets));
 }
 
 //-----------------------------------------------------------------------------

@@ -26,7 +26,7 @@ from dolfinx.mesh import (CellType, GhostMode, create_mesh, create_unit_cube,
                                   create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.shared_facet),
                                   create_unit_cube(MPI.COMM_WORLD, 4, 3, 7, ghost_mode=GhostMode.none),
                                   create_unit_cube(MPI.COMM_WORLD, 4, 3, 7, ghost_mode=GhostMode.shared_facet)])
-def test_gradient(mesh):
+def test_gradient_petsc(mesh):
     """Test discrete gradient computation for lowest order elements."""
     V = functionspace(mesh, ("Lagrange", 1))
     W = functionspace(mesh, ("Nedelec 1st kind H(curl)", 1))
@@ -47,7 +47,7 @@ def test_gradient(mesh):
                                        CellType.triangle,
                                        CellType.tetrahedron,
                                        CellType.hexahedron])
-def test_gradient_interpolation(cell_type, p, q):
+def test_gradient_interpolation_petsc(cell_type, p, q):
     """Test discrete gradient computation with verification using Expression."""
     comm = MPI.COMM_WORLD
     if cell_type == CellType.triangle:
@@ -102,7 +102,7 @@ def test_gradient_interpolation(cell_type, p, q):
     CellType.tetrahedron,
     CellType.hexahedron
 ])
-def test_interpolation_matrix(cell_type, p, q, from_lagrange):
+def test_interpolation_matrix_petsc(cell_type, p, q, from_lagrange):
     """Test that discrete interpolation matrix yields the same result as interpolation."""
     comm = MPI.COMM_WORLD
     if cell_type == CellType.triangle:
@@ -157,7 +157,7 @@ def test_interpolation_matrix(cell_type, p, q, from_lagrange):
 
 
 @pytest.mark.skip_in_parallel
-def test_nonaffine_discrete_operator():
+def test_nonaffine_discrete_operator_petsc():
     """Check that discrete operator is consistent with normal
     interpolation between non-matching maps on non-affine geometries"""
     points = np.array([[0, 0, 0], [1, 0, 0], [0, 2, 0], [1, 2, 0],
