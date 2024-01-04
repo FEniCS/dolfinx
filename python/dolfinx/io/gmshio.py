@@ -38,7 +38,7 @@ _gmsh_to_cells = {1: ("interval", 1), 2: ("triangle", 1),
                   92: ("hexahedron", 3)}
 
 
-def ufl_mesh(gmsh_cell: int, gdim: int) -> ufl.Mesh:
+def ufl_mesh(gmsh_cell: int, gdim: int, dtype=npt.DTypeLike) -> ufl.Mesh:
     """Create a UFL mesh from a Gmsh cell identifier and geometric dimension.
 
     See https://gmsh.info//doc/texinfo/gmsh.html#MSH-file-format.
@@ -59,7 +59,8 @@ def ufl_mesh(gmsh_cell: int, gdim: int) -> ufl.Mesh:
         raise e
     cell = ufl.Cell(shape, geometric_dimension=gdim)
     element = basix.ufl.element(basix.ElementFamily.P, cell.cellname(), degree,
-                                basix.LagrangeVariant.equispaced, shape=(gdim, ), gdim=gdim)
+                                basix.LagrangeVariant.equispaced, shape=(gdim,),
+                                gdim=gdim, dtype=dtype)
     return ufl.Mesh(element)
 
 
