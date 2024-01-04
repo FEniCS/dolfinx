@@ -464,7 +464,7 @@ def test_interpolation_non_affine_nonmatching_maps():
                        [0.5, 1, 0], [0.5, -0.1, 1.5], [0, 1, 1.5], [1, 1, 1.5],
                        [0.5, 2, 1.5], [0.5, 1, 3], [0.5, 1, 1.5]], dtype=default_real_type)
     cells = np.array([range(len(points))], dtype=np.int32)
-    domain = ufl.Mesh(element("Lagrange", "hexahedron", 2, shape=(3,)))
+    domain = ufl.Mesh(element("Lagrange", "hexahedron", 2, shape=(3,), dtype=default_real_type))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     gdim = mesh.geometry.dim
     W = functionspace(mesh, ("DG", 1, (gdim,)))
