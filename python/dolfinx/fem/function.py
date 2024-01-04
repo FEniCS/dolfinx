@@ -671,7 +671,10 @@ class FunctionSpace(ufl.FunctionSpace):
         return self
 
     @property
-    def element(self):
+    def element(self) -> typing.Union[
+        _cpp.fem.FiniteElement_float64,
+        _cpp.fem.FiniteElement_float32
+    ]:
         """Function space finite element."""
         return self._cpp_object.element
 
