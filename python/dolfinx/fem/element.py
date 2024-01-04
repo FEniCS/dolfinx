@@ -65,8 +65,8 @@ def _(celltype: basix.CellType, degree: int,
         raise RuntimeError("Unsupported dtype.")
 
 
-@coordinate_element.register(basix._basixcpp.FiniteElement)
-def _(e: basix._basixcpp.FiniteElement, dtype: typing.Optional[npt.DTypeLike] = np.float64):
+@coordinate_element.register(basix.finite_element.FiniteElement)
+def _(e: basix.finite_element.FiniteElement):
     """Create a Lagrange CoordinateElement from a Basix finite element.
 
     Coordinate elements are typically used when creating meshes.
@@ -78,9 +78,9 @@ def _(e: basix._basixcpp.FiniteElement, dtype: typing.Optional[npt.DTypeLike] = 
     Returns:
         A coordinate element.
     """
-    if dtype == np.float32:
-        return CoordinateElement(_cpp.fem.CoordinateElement_float32(e))
-    elif dtype == np.float64:
-        return CoordinateElement(_cpp.fem.CoordinateElement_float64(e))
+    if e.dtype == np.float32:
+        return CoordinateElement(_cpp.fem.CoordinateElement_float32(e._e))
+    elif e.dtype == np.float64:
+        return CoordinateElement(_cpp.fem.CoordinateElement_float64(e._e))
     else:
         raise RuntimeError("Unsupported dtype.")

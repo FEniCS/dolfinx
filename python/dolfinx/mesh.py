@@ -361,24 +361,24 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
     try:
         # UFL domain
         e_ufl = e.ufl_coordinate_element()
-        cmap = _coordinate_element(e_ufl.sub_element.element, dtype=dtype)  # type: ignore
+        cmap = _coordinate_element(e_ufl.basix_element)  # type: ignore
         domain = e
         # assert domain.ufl_coordinate_element().value_shape == (gdim,)
     except AttributeError:
         try:
             # Basix 'UFL' element
-            cmap = _coordinate_element(e.sub_element.element, dtype=dtype)  # type: ignore
+            cmap = _coordinate_element(e.basix_element)  # type: ignore
             domain = ufl.Mesh(e)
             # assert domain.ufl_coordinate_element().value_shape == (gdim,)
         except AttributeError:
             try:
                 # Basix element
-                cmap = _CoordinateElement(cmap_factory(e))
+                cmap = _CoordinateElement(cmap_factory(e._e))
                 # e_ufl = basix.ufl._BasixElement(e, gdim=x.shape[1])
                 e_ufl = basix.ufl._BasixElement(e)
                 e_ufl = basix.ufl.blocked_element(e_ufl, shape=(gdim,), gdim=gdim)
                 domain = ufl.Mesh(e_ufl)
-            except TypeError:
+            except (AttributeError, TypeError):
                 # CoordinateElement
                 cmap = e
                 domain = None
