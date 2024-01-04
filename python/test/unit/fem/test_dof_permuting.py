@@ -28,7 +28,7 @@ def randomly_ordered_mesh(cell_type):
     elif cell_type == "tetrahedron" or cell_type == "hexahedron":
         gdim = 3
 
-    domain = ufl.Mesh(element("Lagrange", cell_type, 1, shape=(gdim,)))
+    domain = ufl.Mesh(element("Lagrange", cell_type, 1, shape=(gdim,), dtype=default_real_type))
     # Create a mesh
     if MPI.COMM_WORLD.rank == 0:
         N = 6
@@ -39,7 +39,7 @@ def randomly_ordered_mesh(cell_type):
 
         order = [i for i, j in enumerate(temp_points)]
         random.shuffle(order)
-        points = np.zeros(temp_points.shape)
+        points = np.zeros(temp_points.shape, dtype=default_real_type)
         for i, j in enumerate(order):
             points[j] = temp_points[i]
 
@@ -159,7 +159,7 @@ def random_evaluation_mesh(cell_type):
     elif cell_type == "tetrahedron" or cell_type == "hexahedron":
         gdim = 3
 
-    domain = ufl.Mesh(element("Lagrange", cell_type, 1, shape=(gdim,)))
+    domain = ufl.Mesh(element("Lagrange", cell_type, 1, shape=(gdim,), dtype=default_real_type))
     if cell_type == "triangle":
         temp_points = np.array([[-1., -1.], [0., 0.], [1., 0.], [0., 1.]], dtype=default_real_type)
         temp_cells = [[0, 1, 3], [1, 2, 3]]
