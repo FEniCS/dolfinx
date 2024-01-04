@@ -668,7 +668,7 @@ class FunctionSpace(ufl.FunctionSpace):
     @property
     def element(self):
         """Function space finite element."""
-        return self._cpp_object.element
+        return basix.finite_element.FiniteElement(self._cpp_object.element)
 
     @property
     def dofmap(self) -> dofmap.DofMap:
