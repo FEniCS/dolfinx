@@ -25,7 +25,7 @@ if typing.TYPE_CHECKING:
 class Form:
     _cpp_object: typing.Tuple[_cpp.fem.Form_complex64, _cpp.fem.Form_complex128,
                               _cpp.fem.Form_float32, _cpp.fem.Form_float64]
-    _code: typing.Optional[str]
+    _code: typing.Optional[str] = None
 
     def __init__(self, form: typing.Tuple[_cpp.fem.Form_complex64, _cpp.fem.Form_complex128,
                                           _cpp.fem.Form_float32, _cpp.fem.Form_float64],
@@ -89,7 +89,7 @@ _ufl_to_dolfinx_domain = {"cell": IntegralType.cell,
 
 
 def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]],
-         dtype: typing.Optional[npt.DTypeLike] = default_scalar_type,
+         dtype: npt.DTypeLike = default_scalar_type,
          form_compiler_options: typing.Optional[dict] = None,
          jit_options: typing.Optional[dict] = None):
     """Create a Form or an array of Forms.

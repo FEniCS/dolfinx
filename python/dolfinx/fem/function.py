@@ -260,7 +260,7 @@ class Function(ufl.Coefficient):
                               _cpp.fem.Function_float32, _cpp.fem.Function_float64]
 
     def __init__(self, V: FunctionSpace, x: typing.Optional[la.Vector] = None,
-                 name: typing.Optional[str] = None, dtype: typing.Optional[npt.DTypeLike] = None):
+                 name: typing.Optional[str] = None, dtype: npt.DTypeLike = None):
         """Initialize a finite element Function.
 
         Args:
@@ -671,12 +671,9 @@ class FunctionSpace(ufl.FunctionSpace):
         return self
 
     @property
-    def element(self) -> typing.Union[
-        _cpp.fem.FiniteElement_float64,
-        _cpp.fem.FiniteElement_float32
-    ]:
+    def element(self) -> typing.Union[_cpp.fem.FiniteElement_float32, _cpp.fem.FiniteElement_float64]:
         """Function space finite element."""
-        return self._cpp_object.element
+        return self._cpp_object.element  # type: ignore
 
     @property
     def dofmap(self) -> dofmap.DofMap:

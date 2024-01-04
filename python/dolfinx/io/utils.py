@@ -52,7 +52,7 @@ if _cpp.common.has_adios2:
 
         def __init__(self, comm: _MPI.Comm, filename: typing.Union[str, Path],
                      output: typing.Union[Mesh, Function, typing.List[Function]],
-                     engine: typing.Optional[str] = "BPFile"):
+                     engine: str = "BPFile"):
             """Initialize a writer for outputting data in the VTX format.
 
             Args:
@@ -118,8 +118,7 @@ if _cpp.common.has_adios2:
 
         def __init__(self, comm: _MPI.Comm, filename: typing.Union[str, Path],
                      output: typing.Union[Mesh, typing.List[Function], Function],
-                     engine: typing.Optional[str] = "BPFile",
-                     mesh_policy: typing.Optional[FidesMeshPolicy] = FidesMeshPolicy.update):
+                     engine: str = "BPFile", mesh_policy: FidesMeshPolicy = FidesMeshPolicy.update):
             """Initialize a writer for outputting a mesh, a single Lagrange
             function or list of Lagrange functions sharing the same
             element family and degree

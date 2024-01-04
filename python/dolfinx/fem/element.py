@@ -37,14 +37,13 @@ class CoordinateElement:
 @singledispatch
 def coordinate_element(celltype: typing.Any, degree: int,
                        variant=int(basix.LagrangeVariant.unset),
-                       dtype: typing.Optional[npt.DTypeLike] = np.float64):
+                       dtype: npt.DTypeLike = np.float64):
     raise NotImplementedError(f"No overload available for type {type(celltype)}")
 
 
 @coordinate_element.register(basix.CellType)
-def _(celltype: basix.CellType, degree: int,
-      variant=int(basix.LagrangeVariant.unset),
-      dtype: typing.Optional[npt.DTypeLike] = np.float64,):
+def _(celltype: basix.CellType, degree: int, variant=int(basix.LagrangeVariant.unset),
+      dtype: npt.DTypeLike = np.float64):
     """Create a Lagrange CoordinateElement form element metadata.
 
     Coordinate elements are typically used when creating meshes.
