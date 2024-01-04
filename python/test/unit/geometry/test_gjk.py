@@ -170,7 +170,7 @@ def test_cube_distance(delta, scale, dtype):
 def test_collision_2nd_order_triangle(dtype):
     points = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [0.65, 0.65], [0.0, 0.5], [0.5, 0.0]], dtype=dtype)
     cells = np.array([[0, 1, 2, 3, 4, 5]])
-    domain = ufl.Mesh(element("Lagrange", "triangle", 2, gdim=2, shape=(2,)))
+    domain = ufl.Mesh(element("Lagrange", "triangle", 2, gdim=2, sshape=(2,), dtype=dtype))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
 
     # Sample points along an interior line of the domain. The last point
