@@ -1,0 +1,47 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "DOLFINx"
+version: 0.7.3
+date-released: 2023-12-30
+url: "https://github.com/FEniCS/dolfinx"
+doi: "10.5281/zenodo.10047760"
+authors:
+- family-names: "FEniCS Project Developers"
+  given-names: "The"
+preferred-citation:
+  type: article
+  authors:
+  - family-names: "Baratta"
+    given-names: "Igor A."
+    orcid: "https://orcid.org/0000-0003-4298-2973"
+  - family-names: "Dean"
+    given-names: "Joseph P."
+    orcid: "https://orcid.org/0000-0001-7499-3373"
+  - family-names: "Dokken"
+    given-names: "Jørgen S."
+    orcid: "https://orcid.org/0000-0001-6489-8858"
+  - family-names: "Habera"
+    given-names: "Michal"
+    orcid: "https://orcid.org/0000-0003-0604-8884"
+  - family-names: "Hale"
+    given-names: "Jack S."
+    orcid: "https://orcid.org/0000-0001-7216-861X"
+  - family-names: "Richardson"
+    given-names: "Chris N."
+    orcid: "https://orcid.org/0000-0003-3137-1392"
+  - family-names: "Rognes"
+    given-names: "Marie E."
+    orcid: "https://orcid.org/0000-0002-6872-3710"
+  - family-names: "Scroggs"
+    given-names: "Matthew W."
+    orcid: "https://orcid.org/0000-0002-4658-2443"
+  - family-names: "Sime"
+    given-names: "Nathan"
+    orcid: "https://orcid.org/0000-0002-2319-048X"
+  - family-names: "Wells"
+    given-names: "Garth N."
+    orcid: "https://orcid.org/0000-0001-5291-7951"
+  doi: "10.5281/zenodo.10447666"
+  journal: "preprint"
+  title: "DOLFINx: the next generation FEniCS problem solving environment"
+  year: 2023
