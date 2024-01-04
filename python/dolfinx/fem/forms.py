@@ -20,7 +20,6 @@ from dolfinx.fem.function import FunctionSpace
 
 if typing.TYPE_CHECKING:
     from dolfinx.fem import function
-    from dolfinx.mesh import Mesh
 
 
 class Form:
