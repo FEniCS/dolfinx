@@ -17,7 +17,9 @@ import basix
 class CoordinateElement:
     """Coordinate element describing the geometry map for mesh cells"""
 
-    def __init__(self, cmap, dtype=None):
+    _cpp_object: typing.Union[_cpp.fem.CoordinateElement_float32, _cpp.fem.CoordinateElement_float64]
+
+    def __init__(self, cmap):
         """Create a coordinate map element.
 
         Note:
@@ -34,15 +36,15 @@ class CoordinateElement:
 
 @singledispatch
 def coordinate_element(celltype: typing.Any, degree: int,
-                       dtype: typing.Optional[npt.DTypeLike] = np.float64,
-                       variant=int(basix.LagrangeVariant.unset)):
+                       variant=int(basix.LagrangeVariant.unset),
+                       dtype: typing.Optional[npt.DTypeLike] = np.float64):
     raise NotImplementedError(f"No overload available for type {type(celltype)}")
 
 
 @coordinate_element.register(basix.CellType)
 def _(celltype: basix.CellType, degree: int,
-      dtype: typing.Optional[npt.DTypeLike] = np.float64,
-      variant=int(basix.LagrangeVariant.unset)):
+      variant=int(basix.LagrangeVariant.unset),
+      dtype: typing.Optional[npt.DTypeLike] = np.float64,):
     """Create a Lagrange CoordinateElement form element metadata.
 
     Coordinate elements are typically used when creating meshes.

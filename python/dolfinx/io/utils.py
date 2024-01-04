@@ -48,7 +48,6 @@ if _cpp.common.has_adios2:
         Lagrange finite elements for Functions.
 
         The files can be displayed by Paraview.
-
         """
 
         def __init__(self, comm: _MPI.Comm, filename: typing.Union[str, Path],
