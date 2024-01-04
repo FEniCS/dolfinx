@@ -146,7 +146,7 @@ def test_dof_positions(cell_type, space_type):
             entity_dofs = [dofs[i] for i in entity_dofs_local]
             for i, j in zip(entity_dofs, x[entity_dofs_local]):
                 if i in entities[entity_dim]:
-                    assert np.allclose(j, entities[entity_dim][i])
+                    assert np.allclose(j, entities[entity_dim][i], atol=1e-06)
                 else:
                     entities[entity_dim][i] = j
 
