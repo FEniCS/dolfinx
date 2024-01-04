@@ -27,7 +27,6 @@ class CoordinateElement:
 
         Args:
             cmap: A C++ CoordinateElement.
-
         """
         assert isinstance(cmap, (_cpp.fem.CoordinateElement_float32, _cpp.fem.CoordinateElement_float64))
         self._cpp_object = cmap
@@ -73,7 +72,6 @@ def _(e: basix.finite_element.FiniteElement):
 
     Args:
         e: Basix finite element
-        dtype: Scalar type
 
     Returns:
         A coordinate element.

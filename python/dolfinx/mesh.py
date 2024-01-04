@@ -349,10 +349,8 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
 
     x = np.asarray(x, order='C')
     if x.dtype == np.float32:
-        dtype = np.float32
         cmap_factory = _cpp.fem.CoordinateElement_float32
     elif x.dtype == np.float64:
-        dtype = np.float64  # type: ignore
         cmap_factory = _cpp.fem.CoordinateElement_float64
     else:
         raise RuntimeError(f"Unsupported mesh dtype: {x.dtype}")
