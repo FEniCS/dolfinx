@@ -89,7 +89,8 @@ if _cpp.common.has_adios2:
                 self._cpp_object = _vtxwriter(comm, filename, output._cpp_object, engine)  # type: ignore[union-attr]
             except (NotImplementedError, TypeError, AttributeError):
                 # Input is a single function or a list of functions
-                self._cpp_object = _vtxwriter(comm, filename, _extract_cpp_functions(output), engine)   # type: ignore[arg-type]
+                self._cpp_object = _vtxwriter(comm, filename, _extract_cpp_functions(
+                    output), engine)   # type: ignore[arg-type]
 
         def __enter__(self):
             return self
@@ -112,8 +113,9 @@ if _cpp.common.has_adios2:
         to be of the same element family and same order.
 
         The files can be displayed by Paraview.
-
         """
+
+        _cpp_object: typing.Union[_cpp.io.FidesWriter_float32, _cpp.io.FidesWriter_float64]
 
         def __init__(self, comm: _MPI.Comm, filename: typing.Union[str, Path],
                      output: typing.Union[Mesh, typing.List[Function], Function],
@@ -134,9 +136,7 @@ if _cpp.common.has_adios2:
                     written to file, or is re-written (updated) at each
                     time step. Has an effect only for ``Function``
                     output.
-
             """
-
             # Get geometry type
             try:
                 dtype = output.geometry.x.dtype  # type: ignore
@@ -152,8 +152,7 @@ if _cpp.common.has_adios2:
                 _fides_writer = _cpp.io.FidesWriter_float64
 
             try:
-                self._cpp_object = _fides_writer(
-                    comm, filename, output._cpp_object, engine)  # type: ignore
+                self._cpp_object = _fides_writer(comm, filename, output._cpp_object, engine)  # type: ignore
             except (NotImplementedError, TypeError, AttributeError):
                 self._cpp_object = _fides_writer(comm, filename, _extract_cpp_functions(
                     output), engine, mesh_policy)  # type: ignore[arg-type]
@@ -223,15 +222,14 @@ class XDMFFile(_cpp.io.XDMFFile):
 
         Args:
             u: Function to write to file.
-            t: Time associated with Function output .
+            t: Time associated with Function output.
             mesh_xpath: Path to mesh associated with the Function in the
                 XDMFFile.
-
         """
         super().write_function(getattr(u, "_cpp_object", u), t, mesh_xpath)
 
     def read_mesh(self, ghost_mode=GhostMode.shared_facet, name="mesh", xpath="/Xdmf/Domain") -> Mesh:
-        """Read mesh data from file"""
+        """Read mesh data from file."""
         cell_shape, cell_degree = super().read_cell_type(name, xpath)
         cells = super().read_topology_data(name, xpath)
         x = super().read_geometry_data(name, xpath)
