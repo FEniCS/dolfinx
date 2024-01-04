@@ -29,6 +29,7 @@ from dolfinx.cpp import __version__
 _cpp.common.init_logging(sys.argv)
 del _cpp, sys
 
+
 def get_include(user=False):
     import os
     d = os.path.dirname(__file__)
@@ -40,6 +41,15 @@ def get_include(user=False):
         return os.path.join(os.path.dirname(d), "src")
 
 
+__citation__ = """
+@article{Baratta_DOLFINx_the_next_2023,
+    author = {Baratta, Igor A. and Dean, Joseph P. and Dokken, J{\\o}rgen S. and Habera, Michal and Hale, Jack S. and Richardson, Chris N. and Rognes, Marie E. and Scroggs, Matthew W. and Sime, Nathan and Wells, Garth N.},
+    doi = {10.5281/zenodo.10447666},
+    journal = {preprint},
+    title = {{DOLFINx}: the next generation {FEniCS} problem solving environment},
+    year = {2023}
+}
+"""
 
 __all__ = [
     "fem", "common", "geometry", "graph", "io", "jit", "la", "log", "mesh", "nls", "plot",
