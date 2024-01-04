@@ -259,7 +259,7 @@ def model_to_mesh(model, comm: _MPI.Comm, rank: int, gdim: int = 3,
             facet_values = np.empty((0,), dtype=np.int32)
 
     # Create distributed mesh
-    ufl_domain = ufl_mesh(cell_id, gdim)
+    ufl_domain = ufl_mesh(cell_id, gdim, dtype=dtype)
     gmsh_cell_perm = cell_perm_array(_cpp.mesh.to_type(str(ufl_domain.ufl_cell())), num_nodes)
     cells = cells[:, gmsh_cell_perm].copy()
     mesh = create_mesh(comm, cells, x[:, :gdim].astype(dtype, copy=False), ufl_domain, partitioner)
