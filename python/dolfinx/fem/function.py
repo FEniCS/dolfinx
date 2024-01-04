@@ -295,11 +295,10 @@ class Function(ufl.Coefficient):
             else:
                 raise NotImplementedError(f"Type {dtype} not supported.")
 
-        fn = functiontype(dtype)
         if x is not None:
-            self._cpp_object = fn(V._cpp_object, x._cpp_object)  # type: ignore
+            self._cpp_object = functiontype(dtype)(V._cpp_object, x._cpp_object)
         else:
-            self._cpp_object = fn(dtype)(V._cpp_object)  # type: ignore
+            self._cpp_object = functiontype(dtype)(V._cpp_object)
 
         # Initialize the ufl.FunctionSpace
         super().__init__(V.ufl_function_space())
@@ -484,8 +483,7 @@ class Function(ufl.Coefficient):
 
     def collapse(self) -> Function:
         u_collapsed = self._cpp_object.collapse()
-        V_collapsed = FunctionSpace(self.function_space._mesh, self.ufl_element(),
-                                    u_collapsed.function_space)
+        V_collapsed = FunctionSpace(self.function_space._mesh, self.ufl_element(), u_collapsed.function_space)
         return Function(V_collapsed, la.Vector(u_collapsed.x))
 
 
@@ -586,7 +584,7 @@ class FunctionSpace(ufl.FunctionSpace):
             raise RuntimeError("Meshes do not match in function space initialisation.")
         ufl_domain = mesh.ufl_domain()
         self._cpp_object = cppV
-        self._mesh: Mesh = mesh
+        self._mesh = mesh
         super().__init__(ufl_domain, element)
 
     def clone(self) -> FunctionSpace:
