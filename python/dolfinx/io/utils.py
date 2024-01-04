@@ -47,8 +47,10 @@ if _cpp.common.has_adios2:
         geometry description and arbitrary order (discontinuous)
         Lagrange finite elements for Functions.
 
-        The files can be displayed by Paraview.
+        The files can be viewed using Paraview.
         """
+
+        _cpp_object: typing.Union[_cpp.io.VTXWriter_float32, _cpp.io.VTXWriter_float64]
 
         def __init__(self, comm: _MPI.Comm, filename: typing.Union[str, Path],
                      output: typing.Union[Mesh, Function, typing.List[Function]],
@@ -67,9 +69,7 @@ if _cpp.common.has_adios2:
             Note:
                 All Functions for output must share the same mesh and
                 have the same element type.
-
             """
-
             # Get geometry type
             try:
                 dtype = output.geometry.x.dtype  # type: ignore
@@ -89,8 +89,7 @@ if _cpp.common.has_adios2:
                 self._cpp_object = _vtxwriter(comm, filename, output._cpp_object, engine)  # type: ignore[union-attr]
             except (NotImplementedError, TypeError, AttributeError):
                 # Input is a single function or a list of functions
-                self._cpp_object = _vtxwriter(comm, filename, _extract_cpp_functions(
-                    output), engine)   # type: ignore[arg-type]
+                self._cpp_object = _vtxwriter(comm, filename, _extract_cpp_functions(output), engine)   # type: ignore[arg-type]
 
         def __enter__(self):
             return self
