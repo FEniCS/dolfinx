@@ -60,8 +60,9 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   std::vector<std::int32_t> sub_imap_to_imap;
   if (bs_view == 1)
   {
-    auto [_index_map, _sub_imap_to_imap] = dolfinx::common::create_sub_index_map(
-        *dofmap_view.index_map, dofs_view);
+    auto [_index_map, _sub_imap_to_imap]
+        = dolfinx::common::create_sub_index_map(*dofmap_view.index_map,
+                                                dofs_view);
     index_map = std::make_shared<common::IndexMap>(std::move(_index_map));
     sub_imap_to_imap = std::move(_sub_imap_to_imap);
   }
@@ -73,7 +74,8 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
                    std::back_inserter(indices),
                    [bs_view](auto idx) { return idx / bs_view; });
     auto [_index_map, _sub_imap_to_imap]
-        = dolfinx::common::create_sub_index_map(*dofmap_view.index_map, indices);
+        = dolfinx::common::create_sub_index_map(*dofmap_view.index_map,
+                                                indices);
     index_map = std::make_shared<common::IndexMap>(std::move(_index_map));
     sub_imap_to_imap = std::move(_sub_imap_to_imap);
   }
@@ -223,8 +225,8 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
       // Create new element dof layout and reset parent
       ElementDofLayout collapsed_dof_layout = layout.copy();
 
-      auto [_index_map, bs, dofmap] = build_dofmap_data(
-          comm, topology, {collapsed_dof_layout}, reorder_fn);
+      auto [_index_map, bs, dofmap]
+          = build_dofmap_data(comm, topology, collapsed_dof_layout, reorder_fn);
       auto index_map
           = std::make_shared<common::IndexMap>(std::move(_index_map));
       return DofMap(layout, index_map, bs, std::move(dofmap), bs);

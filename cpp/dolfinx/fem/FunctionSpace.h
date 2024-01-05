@@ -214,9 +214,7 @@ public:
     const auto [X, Xshape] = _element->interpolation_points();
 
     // Get coordinate map
-    if (_mesh->geometry().cmaps().size() > 1)
-      throw std::runtime_error("Mixed topology not supported");
-    const CoordinateElement<geometry_type>& cmap = _mesh->geometry().cmaps()[0];
+    const CoordinateElement<geometry_type>& cmap = _mesh->geometry().cmap();
 
     // Prepare cell geometry
     auto x_dofmap = _mesh->geometry().dofmap();

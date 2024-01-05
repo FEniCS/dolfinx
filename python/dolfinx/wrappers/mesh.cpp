@@ -175,8 +175,8 @@ void declare_mesh(nb::module_& m, std::string type)
           nb::rv_policy::reference_internal,
           "Return coordinates of all geometry points. Each row is the "
           "coordinate of a point.")
-      .def_prop_ro("cmaps", &dolfinx::mesh::Geometry<T>::cmaps,
-                   "The coordinate maps")
+      .def_prop_ro("cmap", &dolfinx::mesh::Geometry<T>::cmap,
+                   "The coordinate map")
       .def_prop_ro("input_global_indices",
                    &dolfinx::mesh::Geometry<T>::input_global_indices);
 
@@ -248,7 +248,7 @@ void declare_mesh(nb::module_& m, std::string type)
   m.def(
       "create_mesh",
       [](MPICommWrapper comm,
-         const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
+         nb::ndarray<const std::int64_t, nb::ndim<2>, nb::c_contig> cells,
          const dolfinx::fem::CoordinateElement<T>& element,
          nb::ndarray<const T, nb::c_contig> x,
          const PythonPartitioningFunction& p)
@@ -261,14 +261,16 @@ void declare_mesh(nb::module_& m, std::string type)
                     const dolfinx::graph::AdjacencyList<std::int64_t>& cells)
           { return p(MPICommWrapper(comm), n, tdim, cells); };
           return dolfinx::mesh::create_mesh(
-              comm.get(), comm.get(), cells, {element}, comm.get(),
-              std::span(x.data(), x.size()), {x.shape(0), shape1}, p_wrap);
+              comm.get(), comm.get(), std::span(cells.data(), cells.size()),
+              element, comm.get(), std::span(x.data(), x.size()),
+              {x.shape(0), shape1}, p_wrap);
         }
         else
         {
           return dolfinx::mesh::create_mesh(
-              comm.get(), comm.get(), cells, {element}, comm.get(),
-              std::span(x.data(), x.size()), {x.shape(0), shape1}, p);
+              comm.get(), comm.get(), std::span(cells.data(), cells.size()),
+              element, comm.get(), std::span(x.data(), x.size()),
+              {x.shape(0), shape1}, p);
         }
       },
       nb::arg("comm"), nb::arg("cells"), nb::arg("element"),
@@ -367,9 +369,7 @@ void declare_mesh(nb::module_& m, std::string type)
 
         auto topology = mesh.topology();
         assert(topology);
-        if (topology->cell_types().size() > 1)
-          throw std::runtime_error("Multiple cell type not supported.");
-        dolfinx::mesh::CellType cell_type = topology->cell_types()[0];
+        dolfinx::mesh::CellType cell_type = topology->cell_type();
         std::size_t num_vertices = dolfinx::mesh::num_cell_vertices(
             cell_entity_type(cell_type, dim, 0));
         return as_nbarray(std::move(idx), {entities.size(), num_vertices});
@@ -436,11 +436,9 @@ void mesh(nb::module_& m)
       .def(
           "__init__",
           [](dolfinx::mesh::Topology* t, MPICommWrapper comm,
-             const std::vector<dolfinx::mesh::CellType> cell_type)
+             dolfinx::mesh::CellType cell_type)
           { new (t) dolfinx::mesh::Topology(comm.get(), cell_type); },
           nb::arg("comm"), nb::arg("cell_type"))
-      .def("entity_group_offsets",
-           &dolfinx::mesh::Topology::entity_group_offsets)
       .def("set_connectivity", &dolfinx::mesh::Topology::set_connectivity,
            nb::arg("c"), nb::arg("d0"), nb::arg("d1"))
       .def("set_index_map", &dolfinx::mesh::Topology::set_index_map,
@@ -486,14 +484,9 @@ void mesh(nb::module_& m)
                                        nb::const_),
            nb::arg("d0"), nb::arg("d1"))
       .def("index_map", &dolfinx::mesh::Topology::index_map, nb::arg("dim"))
-      .def_prop_ro("cell_types", &dolfinx::mesh::Topology::cell_types)
-      .def("cell_name",
-           [](const dolfinx::mesh::Topology& self)
-           {
-             if (self.cell_types().size() > 1)
-               throw std::runtime_error("Multiple cell types not supported");
-             return dolfinx::mesh::to_string(self.cell_types()[0]);
-           })
+      .def_prop_ro("cell_type", &dolfinx::mesh::Topology::cell_type)
+      .def("cell_name", [](const dolfinx::mesh::Topology& self)
+           { return dolfinx::mesh::to_string(self.cell_type()); })
       .def("interprocess_facets", &dolfinx::mesh::Topology::interprocess_facets)
       .def_prop_ro(
           "comm",

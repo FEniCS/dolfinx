@@ -426,8 +426,8 @@ void assemble_matrix(
         = coefficients.at({IntegralType::exterior_facet, i});
     impl::assemble_exterior_facets(
         mat_set, x_dofmap, x, a.domain(IntegralType::exterior_facet, i),
-        pre_dof_transform, dofs0, bs0, post_dof_transform, dofs1, bs1, bc0,
-        bc1, fn, coeffs, cstride, constants, cell_info);
+        pre_dof_transform, dofs0, bs0, post_dof_transform, dofs1, bs1, bc0, bc1,
+        fn, coeffs, cstride, constants, cell_info);
   }
 
   if (a.num_integrals(IntegralType::interior_facet) > 0)
@@ -443,11 +443,9 @@ void assemble_matrix(
     else
       get_perm = [](std::size_t) { return 0; };
 
-    auto cell_types = mesh->topology()->cell_types();
-    if (cell_types.size() > 1)
-      throw std::runtime_error("Multiple cell types in the assembler.");
-    int num_cell_facets = mesh::cell_num_entities(cell_types.back(),
-                                                  mesh->topology()->dim() - 1);
+    mesh::CellType cell_type = mesh->topology()->cell_type();
+    int num_cell_facets
+        = mesh::cell_num_entities(cell_type, mesh->topology()->dim() - 1);
     const std::vector<int> c_offsets = a.coefficient_offsets();
     for (int i : a.integral_ids(IntegralType::interior_facet))
     {
@@ -457,9 +455,9 @@ void assemble_matrix(
           = coefficients.at({IntegralType::interior_facet, i});
       impl::assemble_interior_facets(
           mat_set, x_dofmap, x, num_cell_facets,
-          a.domain(IntegralType::interior_facet, i), pre_dof_transform, *dofmap0,
-          bs0, post_dof_transform, *dofmap1, bs1, bc0, bc1, fn, coeffs,
-          cstride, c_offsets, constants, cell_info, get_perm);
+          a.domain(IntegralType::interior_facet, i), pre_dof_transform,
+          *dofmap0, bs0, post_dof_transform, *dofmap1, bs1, bc0, bc1, fn,
+          coeffs, cstride, c_offsets, constants, cell_info, get_perm);
     }
   }
 }

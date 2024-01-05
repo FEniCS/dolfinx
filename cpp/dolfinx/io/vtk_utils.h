@@ -85,7 +85,7 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
   // Get the dof coordinates on the reference element and the  mesh
   // coordinate map
   const auto [X, Xshape] = element->interpolation_points();
-  const fem::CoordinateElement<T>& cmap = mesh->geometry().cmaps()[0];
+  const fem::CoordinateElement<T>& cmap = mesh->geometry().cmap();
 
   // Prepare cell geometry
   auto dofmap_x = mesh->geometry().dofmap();
@@ -209,7 +209,7 @@ vtk_mesh_from_space(const fem::FunctionSpace<T>& V)
   const std::uint32_t num_nodes
       = V.element()->space_dimension() / element_block_size;
   const std::vector<std::uint8_t> vtkmap = io::cells::transpose(
-      io::cells::perm_vtk(topology->cell_types()[0], num_nodes));
+      io::cells::perm_vtk(topology->cell_type(), num_nodes));
 
   // Extract topology for all local cells as
   // [v0_0, ...., v0_N0, v1_0, ...., v1_N1, ....]

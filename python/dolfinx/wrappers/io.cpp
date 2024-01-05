@@ -203,13 +203,13 @@ void declare_real_types(nb::module_& m)
             entities_values = dolfinx::io::xdmf_utils::distribute_entity_data(
                 *mesh.topology(), mesh.geometry().input_global_indices(),
                 mesh.geometry().index_map()->size_global(),
-                mesh.geometry().cmaps()[0].create_dof_layout(),
+                mesh.geometry().cmap().create_dof_layout(),
                 mesh.geometry().dofmap(), entity_dim, entities_span,
                 std::span(values.data(), values.size()));
 
         std::size_t num_vert_per_entity = dolfinx::mesh::cell_num_entities(
-            dolfinx::mesh::cell_entity_type(
-                mesh.topology()->cell_types().back(), entity_dim, 0),
+            dolfinx::mesh::cell_entity_type(mesh.topology()->cell_type(),
+                                            entity_dim, 0),
             0);
         return std::pair(
             as_nbarray(std::move(entities_values.first),

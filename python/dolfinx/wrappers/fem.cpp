@@ -802,8 +802,7 @@ void declare_real_functions(nb::module_& m)
         ufcx_dofmap* p = reinterpret_cast<ufcx_dofmap*>(dofmap);
         assert(p);
         dolfinx::fem::ElementDofLayout layout
-            = dolfinx::fem::create_element_dof_layout(
-                *p, topology.cell_types().back());
+            = dolfinx::fem::create_element_dof_layout(*p, topology.cell_type());
 
         std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
             unpermute_dofs = nullptr;
@@ -983,7 +982,7 @@ void fem(nb::module_& m)
          const dolfinx::fem::ElementDofLayout& layout)
       {
         auto [map, bs, dofmap] = dolfinx::fem::build_dofmap_data(
-            comm.get(), topology, {layout},
+            comm.get(), topology, layout,
             [](const dolfinx::graph::AdjacencyList<std::int32_t>& g)
             { return dolfinx::graph::reorder_gps(g); });
         return std::tuple(std::move(map), bs, std::move(dofmap));

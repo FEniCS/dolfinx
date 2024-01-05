@@ -44,7 +44,7 @@ class Topology
 {
 public:
   /// Create empty mesh topology
-  Topology(MPI_Comm comm, std::vector<CellType> type);
+  Topology(MPI_Comm comm, CellType cell_type);
 
   /// Copy constructor
   Topology(const Topology& topology) = default;
@@ -63,26 +63,6 @@ public:
 
   /// @brief Return the topological dimension of the mesh.
   int dim() const noexcept;
-
-  /// @brief Set the offsets for each group of entities of a particular
-  /// dimension. See `entity_group_offsets`.
-  /// @param dim Dimension of the entities
-  /// @param offsets The offsets
-  void set_entity_group_offsets(int dim,
-                                const std::vector<std::int32_t>& offsets);
-
-  /// @brief Get the offsets for each group of entities of a particular
-  /// dimension.
-  ///
-  /// The topology may consist of more than one cell type or facet type.
-  /// In that case, the cells of the same types are grouped together in
-  /// blocks, firstly for regular cells, then repeated for ghost cells.
-  /// For example, a mesh with two triangles, three quads and no ghosts
-  /// would have offsets: 0, 2, 5, 5, 5. A mesh with twenty tetrahedra
-  /// and two ghost tetrahedra has offsets: 0, 20, 22.
-  /// @param dim Dimension of the entities
-  /// @return The offsets
-  const std::vector<std::int32_t>& entity_group_offsets(int dim) const;
 
   /// @todo Merge with set_connectivity
   ///
@@ -132,8 +112,8 @@ public:
   const std::vector<std::uint8_t>& get_facet_permutations() const;
 
   /// @brief Cell type
-  /// @return Cell types that the topology is for
-  std::vector<CellType> cell_types() const noexcept;
+  /// @return Cell type that the topology is for
+  CellType cell_type() const noexcept;
 
   /// @brief Create entities of given topological dimension.
   /// @param[in] dim Topological dimension
@@ -165,11 +145,8 @@ private:
   // MPI communicator
   dolfinx::MPI::Comm _comm;
 
-  // Cell types
-  std::vector<CellType> _cell_types;
-
-  // Entity group offsets
-  std::array<std::vector<std::int32_t>, 4> _entity_group_offsets;
+  // Cell type
+  CellType _cell_type;
 
   // Parallel layout of entities for each dimension
   std::array<std::shared_ptr<const common::IndexMap>, 4> _index_map;
@@ -210,18 +187,13 @@ private:
 /// @param[in] ghost_owners Owning rank of each ghost cell (ghost cells
 /// are always at the end of the list of `cells`).
 /// @param[in] cell_type A vector with cell shapes.
-/// @param[in] cell_group_offsets vector with each group offset, including
-/// ghosts.
 /// @param[in] boundary_vertices Vertices on the 'exterior' (boundary)
 /// of the local topology. These vertices might appear on other
 /// processes.
 /// @return A distributed mesh topology
-Topology create_topology(MPI_Comm comm,
-                         const graph::AdjacencyList<std::int64_t>& cells,
+Topology create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
                          std::span<const std::int64_t> original_cell_index,
-                         std::span<const int> ghost_owners,
-                         const std::vector<CellType>& cell_type,
-                         const std::vector<std::int32_t>& cell_group_offsets,
+                         std::span<const int> ghost_owners, CellType cell_type,
                          std::span<const std::int64_t> boundary_vertices);
 
 /// @brief Create a topology for a subset of entities of a given
@@ -251,5 +223,5 @@ create_subtopology(const Topology& topology, int dim,
 /// the index.
 std::vector<std::int32_t>
 entities_to_index(const Topology& topology, int dim,
-                  const graph::AdjacencyList<std::int32_t>& entities);
+                  std::span<const std::int32_t> entities);
 } // namespace dolfinx::mesh

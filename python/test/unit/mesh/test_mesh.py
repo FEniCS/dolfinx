@@ -511,10 +511,9 @@ def test_empty_rank_mesh(dtype):
 
     if comm.rank == 0:
         cells = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.int64)
-        cells = graph.adjacencylist(cells)
         x = np.array([[0., 0.], [1., 0.], [1., 1.], [0., 1.]], dtype=dtype)
     else:
-        cells = graph.adjacencylist(np.empty((0, 3), dtype=np.int64))
+        cells = np.empty((0, 3), dtype=np.int64)
         x = np.empty((0, 2), dtype=dtype)
 
     mesh = _mesh.create_mesh(comm, cells, x, domain, partitioner)
@@ -528,7 +527,7 @@ def test_empty_rank_mesh(dtype):
 
     # Check number of cells
     cmap = topology.index_map(tdim)
-    assert cmap.size_local == cells.num_nodes
+    assert cmap.size_local == cells.shape[0]
     assert cmap.num_ghosts == 0
 
     # Check number of edges
@@ -644,20 +643,20 @@ def test_mesh_create_cmap(dtype):
     # ufl.Mesh case
     domain = ufl.Mesh(element("Lagrange", shape, degree, gdim=gdim, shape=(2, ), dtype=dtype))
     msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, x, domain)
-    assert msh.geometry.cmaps[0].dim == 3
+    assert msh.geometry.cmap.dim == 3
     assert msh.ufl_domain().ufl_coordinate_element().value_shape == (2,)
 
     # basix.ufl.element
     domain = element("Lagrange", shape, degree, gdim=gdim, shape=(2, ), dtype=dtype)
     msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, x, domain)
-    assert msh.geometry.cmaps[0].dim == 3
+    assert msh.geometry.cmap.dim == 3
     assert msh.ufl_domain().ufl_coordinate_element().value_shape == (2,)
 
     # basix.finite_element
     domain = basix.create_element(basix.ElementFamily.P,
                                   basix.cell.string_to_type(shape), degree, dtype=dtype)
     msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, x, domain)
-    assert msh.geometry.cmaps[0].dim == 3
+    assert msh.geometry.cmap.dim == 3
     assert msh.ufl_domain().ufl_coordinate_element().value_shape == (2,)
 
     # cpp.fem.CoordinateElement
@@ -665,5 +664,5 @@ def test_mesh_create_cmap(dtype):
                              degree, dtype=dtype)
     domain = coordinate_element(e)
     msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, x, domain)
-    assert msh.geometry.cmaps[0].dim == 3
+    assert msh.geometry.cmap.dim == 3
     assert msh.ufl_domain() is None

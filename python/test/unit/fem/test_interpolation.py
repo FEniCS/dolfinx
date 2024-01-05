@@ -62,8 +62,7 @@ def random_point_in_reference(cell_type):
 
 
 def random_point_in_cell(mesh):
-    assert len(mesh.topology.cell_types) == 1
-    cell_type = mesh.topology.cell_types[0]
+    cell_type = mesh.topology.cell_type
     point = random_point_in_reference(cell_type)
 
     if cell_type == CellType.interval:
@@ -107,7 +106,6 @@ def one_cell_mesh(cell_type):
     for i, j in enumerate(order):
         ordered_points[j] = points[i]
     cells = np.array([order])
-
     domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, shape=(ordered_points.shape[1],),
                               dtype=default_real_type))
     return create_mesh(MPI.COMM_WORLD, cells, ordered_points, domain)

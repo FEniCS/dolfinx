@@ -95,11 +95,9 @@ def randomly_ordered_mesh(cell_type):
 
         # On process 0, input mesh data and distribute to other
         # processes
-        print("Call mesh 0")
         return create_mesh(MPI.COMM_WORLD, cells, points, domain)
     else:
         if cell_type == "triangle":
-            print("Call mesh 1")
             return create_mesh(MPI.COMM_WORLD, np.ndarray((0, 3)),
                                np.ndarray((0, 2), dtype=default_real_type), domain)
         elif cell_type == "quadrilateral":
@@ -133,8 +131,7 @@ def test_dof_positions(cell_type, space_type):
     # for each global dof number
     coord_dofs = mesh.geometry.dofmap
     x_g = mesh.geometry.x
-    assert len(mesh.geometry.cmaps) == 1
-    cmap = mesh.geometry.cmaps[0]
+    cmap = mesh.geometry.cmap
     tdim = mesh.topology.dim
 
     V = functionspace(mesh, space_type)
@@ -218,7 +215,7 @@ def random_evaluation_mesh(cell_type):
                 cell_order += [c + diff for c in cell_order]
 
         cells.append([order[cell[i]] for i in cell_order])
-    return create_mesh(MPI.COMM_WORLD, cells, points, domain)
+    return create_mesh(MPI.COMM_WORLD, np.array(cells), points, domain)
 
 
 @pytest.mark.skip_in_parallel

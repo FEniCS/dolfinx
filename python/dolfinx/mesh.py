@@ -319,9 +319,7 @@ def refine_plaza(mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistri
     return Mesh(mesh1, mesh._ufl_domain), cells, facets
 
 
-def create_mesh(comm: _MPI.Comm, cells: typing.Union[npt.NDArray[np.int64],
-                                                     _cpp.graph.AdjacencyList_int64],
-                x: npt.NDArray[np.floating],
+def create_mesh(comm: _MPI.Comm, cells: npt.NDArray[np.int64], x: npt.NDArray[np.floating],
                 e: typing.Union[ufl.Mesh, basix.finite_element.FiniteElement,
                                 basix.ufl._BasixElement, _CoordinateElement,],
                 partitioner: typing.Optional[typing.Callable] = None) -> Mesh:
@@ -384,7 +382,8 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[npt.NDArray[np.int64],
                 domain = None
                 dtype = cmap.dtype
 
-    x = np.asarray(x, dtype=dtype)
+    x = np.asarray(x, dtype=dtype, order='C')
+    cells = np.asarray(cells, dtype=np.int64, order='C')
     try:
         mesh = _cpp.mesh.create_mesh(comm, cells, cmap._cpp_object, x, partitioner)
     except TypeError:
@@ -396,11 +395,10 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[npt.NDArray[np.int64],
 
 def create_submesh(msh, dim, entities):
     submsh, entity_map, vertex_map, geom_map = _cpp.mesh.create_submesh(msh._cpp_object, dim, entities)
-    assert len(submsh.geometry.cmaps) == 1
     submsh_ufl_cell = ufl.Cell(submsh.topology.cell_name(), geometric_dimension=submsh.geometry.dim)
     submsh_domain = ufl.Mesh(basix.ufl.element("Lagrange", submsh_ufl_cell.cellname(),
-                                               submsh.geometry.cmaps[0].degree,
-                                               basix.LagrangeVariant(submsh.geometry.cmaps[0].variant),
+                                               submsh.geometry.cmap.degree,
+                                               basix.LagrangeVariant(submsh.geometry.cmap.variant),
                                                shape=(submsh.geometry.dim,),
                                                gdim=submsh.geometry.dim, dtype=submsh.geometry.x.dtype))
     return (Mesh(submsh, submsh_domain), entity_map, vertex_map, geom_map)
