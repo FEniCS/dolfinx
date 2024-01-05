@@ -3,12 +3,12 @@
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
-
 #include "IndexMap.h"
 #include "sort.h"
 #include <algorithm>
 #include <cstdint>
 #include <functional>
+#include <iostream>
 #include <numeric>
 #include <span>
 #include <utility>
@@ -872,9 +872,6 @@ void IndexMap::global_to_local(std::span<const std::int64_t> global,
                  {
                    if (index >= range[0] and index < range[1])
                      return index - range[0];
-                   else if (index < global_to_local.front().first
-                            or index > global_to_local.back().first)
-                     return -1;
                    else
                    {
                      auto it = std::lower_bound(
