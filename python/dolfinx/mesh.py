@@ -19,6 +19,7 @@ import basix.ufl
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
+from dolfinx.fem import CoordinateElement as _CoordinateElement
 from dolfinx.fem import coordinate_element as _coordinate_element
 from dolfinx.cpp.mesh import (CellType, DiagonalType, GhostMode,
                               build_dual_graph, cell_dim,
@@ -325,13 +326,17 @@ def refine_plaza(mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistri
     return Mesh(mesh1, domain), cells, facets
 
 
-def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.AdjacencyList_int64],
-                x: np.ndarray, e: ufl.Mesh, partitioner=None) -> Mesh:
+def create_mesh(comm: _MPI.Comm, cells: typing.Union[npt.NDArray[np.int64],
+                                                     _cpp.graph.AdjacencyList_int64],
+                x: npt.NDArray[np.floating],
+                e: typing.Union[ufl.Mesh, basix.finite_element.FiniteElement,
+                                basix.ufl._BasixElement, _CoordinateElement,],
+                partitioner=None) -> Mesh:
     """Create a mesh from topology and geometry arrays.
 
     Args:
         comm: MPI communicator to define the mesh on.
-        cells: Cells of the mesh. ``cells[i]`` is the 'nodes' of cell ``i``.
+        cells: Cells of the mesh. ``cells[i]`` are the 'nodes' of cell ``i``.
         x: Mesh geometry ('node' coordinates), with shape ``(num_nodes, gdim)``.
         e: UFL mesh. The mesh scalar type is determined by the scalar
             type of ``e``.
