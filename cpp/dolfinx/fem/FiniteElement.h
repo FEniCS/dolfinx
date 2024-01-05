@@ -146,7 +146,7 @@ public:
   /// @brief Check if element is a mixed element.
   ///
   /// A mixed element i composed of two or more elements of different
-  /// types (a block element, e.g. a Lagrange element with block size >
+  /// types (a block element, e.g. a Lagrange element with block size >=
   /// 1 is not considered mixed).
   ///
   /// @return True if element is mixed.
