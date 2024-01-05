@@ -20,7 +20,6 @@ import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
 from dolfinx.fem import coordinate_element as _coordinate_element
-from dolfinx.fem import CoordinateElement as _CoordinateElement
 from dolfinx.cpp.mesh import (CellType, DiagonalType, GhostMode,
                               build_dual_graph, cell_dim,
                               create_cell_partitioner, exterior_facet_indices,
@@ -346,7 +345,6 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
         partitioner = _cpp.mesh.create_cell_partitioner(GhostMode.none)
 
     x = np.asarray(x, order='C')
-    gdim = x.shape[1]
     try:
         # e is a UFL domain
         e_ufl = e.ufl_coordinate_element()
@@ -360,8 +358,9 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
         except AttributeError:
             try:
                 # e is a Basix element
-                cmap = _coordinate_element(e)
+                cmap = _coordinate_element(e)  # type: ignore
                 e_ufl = basix.ufl._BasixElement(e)
+                gdim = x.shape[1]
                 e_ufl = basix.ufl.blocked_element(e_ufl, shape=(gdim,), gdim=gdim)
                 domain = ufl.Mesh(e_ufl)
             except (AttributeError, TypeError):
@@ -369,8 +368,7 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
                 cmap = e
                 domain = None
 
-    assert cmap.dtype == x.dtype
-
+    x = np.asarray(x, dtype=cmap.dtype)
     try:
         mesh = _cpp.mesh.create_mesh(comm, cells, cmap._cpp_object, x, partitioner)
     except TypeError:
