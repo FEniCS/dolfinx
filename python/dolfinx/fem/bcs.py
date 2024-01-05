@@ -87,6 +87,9 @@ def locate_dofs_topological(V: typing.Union[dolfinx.fem.FunctionSpace,
 
 
 class DirichletBC:
+    _cpp_object: typing.Union[_cpp.fem.DirichletBC_complex64, _cpp.fem.DirichletBC_complex128,
+                              _cpp.fem.DirichletBC_float32, _cpp.fem.DirichletBC_float64]
+
     def __init__(self, bc):
         """Representation of Dirichlet boundary condition which is imposed on
         a linear system.

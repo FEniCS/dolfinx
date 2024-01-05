@@ -28,7 +28,8 @@ def randomly_ordered_mesh(cell_type):
     elif cell_type == "tetrahedron" or cell_type == "hexahedron":
         gdim = 3
 
-    domain = ufl.Mesh(element("Lagrange", cell_type, 1, shape=(gdim,)))
+    domain = ufl.Mesh(element("Lagrange", cell_type, 1, shape=(gdim,),
+                              dtype=default_real_type))
     # Create a mesh
     if MPI.COMM_WORLD.rank == 0:
         N = 6
@@ -39,7 +40,7 @@ def randomly_ordered_mesh(cell_type):
 
         order = [i for i, j in enumerate(temp_points)]
         random.shuffle(order)
-        points = np.zeros(temp_points.shape)
+        points = np.zeros(temp_points.shape, dtype=default_real_type)
         for i, j in enumerate(order):
             points[j] = temp_points[i]
 
@@ -94,20 +95,25 @@ def randomly_ordered_mesh(cell_type):
 
         # On process 0, input mesh data and distribute to other
         # processes
-        return create_mesh(MPI.COMM_WORLD, np.array(cells), points, domain)
+        return create_mesh(MPI.COMM_WORLD, cells, points, domain)
     else:
         if cell_type == "triangle":
-            return create_mesh(MPI.COMM_WORLD, np.ndarray((0, 3)), np.ndarray((0, 2)), domain)
+            return create_mesh(MPI.COMM_WORLD, np.ndarray((0, 3)),
+                               np.ndarray((0, 2), dtype=default_real_type), domain)
         elif cell_type == "quadrilateral":
-            return create_mesh(MPI.COMM_WORLD, np.ndarray((0, 4)), np.ndarray((0, 2)), domain)
+            return create_mesh(MPI.COMM_WORLD, np.ndarray((0, 4)),
+                               np.ndarray((0, 2), dtype=default_real_type), domain)
         elif cell_type == "tetrahedron":
-            return create_mesh(MPI.COMM_WORLD, np.ndarray((0, 4)), np.ndarray((0, 3)), domain)
+            return create_mesh(MPI.COMM_WORLD, np.ndarray((0, 4)),
+                               np.ndarray((0, 3), dtype=default_real_type), domain)
         elif cell_type == "hexahedron":
-            return create_mesh(MPI.COMM_WORLD, np.ndarray((0, 8)), np.ndarray((0, 3)), domain)
+            return create_mesh(MPI.COMM_WORLD, np.ndarray((0, 8)),
+                               np.ndarray((0, 3), dtype=default_real_type), domain)
 
 
 @pytest.mark.parametrize('space_type', [("P", 1), ("P", 2), ("P", 3), ("P", 4)])
-@pytest.mark.parametrize('cell_type', ["triangle", "tetrahedron", "quadrilateral", "hexahedron"])
+@pytest.mark.parametrize('cell_type', ["triangle", "tetrahedron",
+                                       "quadrilateral", "hexahedron"])
 def test_dof_positions(cell_type, space_type):
     """Checks that dofs on shared triangle edges match up"""
     mesh = randomly_ordered_mesh(cell_type)
@@ -145,7 +151,7 @@ def test_dof_positions(cell_type, space_type):
             entity_dofs = [dofs[i] for i in entity_dofs_local]
             for i, j in zip(entity_dofs, x[entity_dofs_local]):
                 if i in entities[entity_dim]:
-                    assert np.allclose(j, entities[entity_dim][i])
+                    assert np.allclose(j, entities[entity_dim][i], atol=1e-06)
                 else:
                     entities[entity_dim][i] = j
 
@@ -158,7 +164,7 @@ def random_evaluation_mesh(cell_type):
     elif cell_type == "tetrahedron" or cell_type == "hexahedron":
         gdim = 3
 
-    domain = ufl.Mesh(element("Lagrange", cell_type, 1, shape=(gdim,)))
+    domain = ufl.Mesh(element("Lagrange", cell_type, 1, shape=(gdim,), dtype=default_real_type))
     if cell_type == "triangle":
         temp_points = np.array([[-1., -1.], [0., 0.], [1., 0.], [0., 1.]], dtype=default_real_type)
         temp_cells = [[0, 1, 3], [1, 2, 3]]

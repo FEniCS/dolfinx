@@ -130,7 +130,7 @@ def test_save_2d_vector_CG2(tempdir):
                        [1, 2], [0.5, 2], [1, 1]], dtype=default_real_type)
     cells = np.array([[0, 1, 2, 3, 4, 5],
                       [1, 6, 2, 7, 3, 8]])
-    domain = ufl.Mesh(element("Lagrange", "triangle", 2, shape=(2,)))
+    domain = ufl.Mesh(element("Lagrange", "triangle", 2, shape=(2,), dtype=default_real_type))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     gdim = mesh.geometry.dim
     u = Function(functionspace(mesh, ("Lagrange", 2, (gdim,))))
