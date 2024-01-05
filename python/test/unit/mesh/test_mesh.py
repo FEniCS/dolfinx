@@ -643,20 +643,20 @@ def test_mesh_create_cmap(dtype):
     # ufl.Mesh case
     domain = ufl.Mesh(element("Lagrange", shape, degree, gdim=gdim, shape=(2, ), dtype=dtype))
     msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, x, domain)
-    assert msh.geometry.cmaps[0].dim == 3
+    assert msh.geometry.cmap.dim == 3
     assert msh.ufl_domain().ufl_coordinate_element().value_shape == (2,)
 
     # basix.ufl.element
     domain = element("Lagrange", shape, degree, gdim=gdim, shape=(2, ), dtype=dtype)
     msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, x, domain)
-    assert msh.geometry.cmaps[0].dim == 3
+    assert msh.geometry.cmap.dim == 3
     assert msh.ufl_domain().ufl_coordinate_element().value_shape == (2,)
 
     # basix.finite_element
     domain = basix.create_element(basix.ElementFamily.P,
                                   basix.cell.string_to_type(shape), degree, dtype=dtype)
     msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, x, domain)
-    assert msh.geometry.cmaps[0].dim == 3
+    assert msh.geometry.cmap.dim == 3
     assert msh.ufl_domain().ufl_coordinate_element().value_shape == (2,)
 
     # cpp.fem.CoordinateElement
@@ -664,5 +664,5 @@ def test_mesh_create_cmap(dtype):
                              degree, dtype=dtype)
     domain = coordinate_element(e)
     msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, x, domain)
-    assert msh.geometry.cmaps[0].dim == 3
+    assert msh.geometry.cmap.dim == 3
     assert msh.ufl_domain() is None
