@@ -120,7 +120,7 @@ public:
   DofMap& operator=(DofMap&& dofmap) = default;
 
   /// @brief Equality operator
-  /// @return Returns true if the data for the two dofmaps is equal
+  /// @return Returns true if the data for the two dofmaps are equal
   bool operator==(const DofMap& map) const;
 
   /// @brief Local-to-global mapping of dofs on a cell
