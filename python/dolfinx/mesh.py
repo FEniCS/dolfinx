@@ -316,8 +316,6 @@ def refine_plaza(mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistri
 
     Returns:
        Refined mesh, list of parent cell for each refine cell, and list
-       of parent facets.
-
     """
     if edges is None:
         mesh1, cells, facets = _cpp.refinement.refine_plaza(mesh._cpp_object, redistribute)
@@ -336,50 +334,42 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
         comm: MPI communicator to define the mesh on.
         cells: Cells of the mesh. ``cells[i]`` is the 'nodes' of cell ``i``.
         x: Mesh geometry ('node' coordinates), with shape ``(num_nodes, gdim)``.
-        e: UFL mesh.
+        e: UFL mesh. The mesh scalar type is determined by the scalar
+            type of ``e``.
         partitioner: Function that computes the parallel distribution of
             cells across MPI ranks.
 
     Returns:
         A mesh.
-
     """
     if partitioner is None and comm.size > 1:
         partitioner = _cpp.mesh.create_cell_partitioner(GhostMode.none)
 
     x = np.asarray(x, order='C')
-    if x.dtype == np.float32:
-        cmap_factory = _cpp.fem.CoordinateElement_float32
-    elif x.dtype == np.float64:
-        cmap_factory = _cpp.fem.CoordinateElement_float64
-    else:
-        raise RuntimeError(f"Unsupported mesh dtype: {x.dtype}")
-
     gdim = x.shape[1]
     try:
-        # UFL domain
+        # e is a UFL domain
         e_ufl = e.ufl_coordinate_element()
         cmap = _coordinate_element(e_ufl.basix_element)  # type: ignore
         domain = e
-        # assert domain.ufl_coordinate_element().value_shape == (gdim,)
     except AttributeError:
         try:
-            # Basix 'UFL' element
+            # e is a Basix 'UFL' element
             cmap = _coordinate_element(e.basix_element)  # type: ignore
             domain = ufl.Mesh(e)
-            # assert domain.ufl_coordinate_element().value_shape == (gdim,)
         except AttributeError:
             try:
-                # Basix element
-                cmap = _CoordinateElement(cmap_factory(e._e))
-                # e_ufl = basix.ufl._BasixElement(e, gdim=x.shape[1])
+                # e is a Basix element
+                cmap = _coordinate_element(e)
                 e_ufl = basix.ufl._BasixElement(e)
                 e_ufl = basix.ufl.blocked_element(e_ufl, shape=(gdim,), gdim=gdim)
                 domain = ufl.Mesh(e_ufl)
             except (AttributeError, TypeError):
-                # CoordinateElement
+                # e is a CoordinateElement
                 cmap = e
                 domain = None
+
+    assert cmap.dtype == x.dtype
 
     try:
         mesh = _cpp.mesh.create_mesh(comm, cells, cmap._cpp_object, x, partitioner)

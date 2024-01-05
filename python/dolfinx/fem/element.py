@@ -33,6 +33,16 @@ class CoordinateElement:
         assert isinstance(cmap, (_cpp.fem.CoordinateElement_float32, _cpp.fem.CoordinateElement_float64))
         self._cpp_object = cmap
 
+    @property
+    def dtype(self) -> npt.DTypeLike:
+        """Scalar type for the coordinate element."""
+        if isinstance(self._cpp_object, _cpp.fem.CoordinateElement_float32):
+            return np.float32
+        elif isinstance(self._cpp_object, _cpp.fem.CoordinateElement_float64):
+            return np.float64
+        else:
+            raise RuntimeError("Unable to determine CoordinateElement scalar type.")
+
 
 @singledispatch
 def coordinate_element(celltype: typing.Any, degree: int,
@@ -57,9 +67,9 @@ def _(celltype: basix.CellType, degree: int, variant=int(basix.LagrangeVariant.u
     Returns:
         A coordinate element.
     """
-    if dtype == np.float32:
+    try:
         return CoordinateElement(_cpp.fem.CoordinateElement_float32(celltype, degree, variant))
-    elif dtype == np.float64:
+    except TypeError:
         return CoordinateElement(_cpp.fem.CoordinateElement_float64(celltype, degree, variant))
     else:
         raise RuntimeError("Unsupported dtype.")
@@ -77,9 +87,7 @@ def _(e: basix.finite_element.FiniteElement):
     Returns:
         A coordinate element.
     """
-    if e.dtype == np.float32:
+    try:
         return CoordinateElement(_cpp.fem.CoordinateElement_float32(e._e))
-    elif e.dtype == np.float64:
+    except TypeError:
         return CoordinateElement(_cpp.fem.CoordinateElement_float64(e._e))
-    else:
-        raise RuntimeError("Unsupported dtype.")
