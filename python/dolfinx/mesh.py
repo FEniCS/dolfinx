@@ -358,11 +358,11 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[npt.NDArray[np.int64],
     dtype = None
     try:
         # e is a UFL domain
-        e_ufl = e.ufl_coordinate_element()
+        e_ufl = e.ufl_coordinate_element()  # type: ignore
         cmap = _coordinate_element(e_ufl.basix_element)  # type: ignore
         domain = e
         dtype = cmap.dtype
-        # TODO: resolve UFL vs Basix geometric dimension issue
+        # TODO: Resolve UFL vs Basix geometric dimension issue
         # assert domain.geometric_dimension() == gdim
     except AttributeError:
         try:
@@ -374,8 +374,9 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[npt.NDArray[np.int64],
         except AttributeError:
             try:
                 # e is a Basix element
+                # TODO: Resolve geometric dimension vs shape for manifolds
                 cmap = _coordinate_element(e)  # type: ignore
-                e_ufl = basix.ufl._BasixElement(e)
+                e_ufl = basix.ufl._BasixElement(e)  # type: ignore
                 e_ufl = basix.ufl.blocked_element(e_ufl, shape=(gdim,), gdim=gdim)
                 domain = ufl.Mesh(e_ufl)
                 dtype = cmap.dtype
