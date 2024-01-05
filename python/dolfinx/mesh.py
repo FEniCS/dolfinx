@@ -345,26 +345,30 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[np.ndarray, _cpp.graph.Adja
         partitioner = _cpp.mesh.create_cell_partitioner(GhostMode.none)
 
     x = np.asarray(x, order='C')
+    if x.ndim == 1:
+        gdim = 1
+    else:
+        gdim = x.shape[1]
     try:
         # e is a UFL domain
         e_ufl = e.ufl_coordinate_element()
         cmap = _coordinate_element(e_ufl.basix_element)  # type: ignore
         domain = e
+        assert domain.geometric_dimension() == gdim
     except AttributeError:
         try:
             # e is a Basix 'UFL' element
             cmap = _coordinate_element(e.basix_element)  # type: ignore
             domain = ufl.Mesh(e)
-            gdim = domain.geometric_dimension()
+            assert domain.geometric_dimension() == gdim
         except AttributeError:
             try:
                 # e is a Basix element
                 cmap = _coordinate_element(e)  # type: ignore
                 e_ufl = basix.ufl._BasixElement(e)
-                gdim = x.shape[1]
                 e_ufl = basix.ufl.blocked_element(e_ufl, shape=(gdim,), gdim=gdim)
                 domain = ufl.Mesh(e_ufl)
-                gdim = domain.geometric_dimension()
+                assert domain.geometric_dimension() == gdim
             except (AttributeError, TypeError):
                 # e is a CoordinateElement
                 cmap = e
