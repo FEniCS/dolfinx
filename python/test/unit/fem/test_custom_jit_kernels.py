@@ -22,19 +22,15 @@ from dolfinx import (default_real_type, default_scalar_type, fem, la,
 from dolfinx.fem import Form, Function, IntegralType, functionspace
 from dolfinx.mesh import create_unit_square
 
+from ffcx.codegeneration.ufcx import create_numba_tabulate_tensor_signature
+
 numba = pytest.importorskip("numba")
 
 # Add current directory - required for some Python versions to find cffi
 # compiled modules
 sys.path.append(os.getcwd())
 
-c_signature = numba.types.void(
-    numba.types.CPointer(numba.typeof(default_scalar_type())),
-    numba.types.CPointer(numba.typeof(default_scalar_type())),
-    numba.types.CPointer(numba.typeof(default_scalar_type())),
-    numba.types.CPointer(numba.typeof(default_real_type())),
-    numba.types.CPointer(numba.types.int32),
-    numba.types.CPointer(numba.types.int32))
+c_signature = create_numba_tabulate_tensor_signature(default_scalar_type(), default_real_type())
 
 
 @numba.cfunc(c_signature, nopython=True)
@@ -155,10 +151,10 @@ def test_cffi_assembly():
         ffibuilder.set_source("_cffi_kernelA", r"""
         #include <math.h>
         void tabulate_tensor_poissonA(double* restrict A, const double* w,
-                                    const double* c,
-                                    const double* restrict coordinate_dofs,
-                                    const int* entity_local_index,
-                                    const int* cell_orientation)
+                                      const double* c,
+                                      const double* restrict coordinate_dofs,
+                                      const int* entity_local_index,
+                                      const int* cell_orientation)
         {
         // Precomputed values of basis functions and precomputations
         // FE* dimensions: [entities][points][dofs]
