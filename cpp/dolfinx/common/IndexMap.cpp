@@ -865,8 +865,7 @@ void IndexMap::global_to_local(std::span<const std::int64_t> global,
   for (std::size_t i = 0; i < _ghosts.size(); ++i)
     global_to_local[i] = {_ghosts[i], i + local_size};
 
-  std::sort(global_to_local.begin(), global_to_local.end(),
-            [](auto a, auto b) { return a.first < b.first; });
+  std::sort(global_to_local.begin(), global_to_local.end());
   std::transform(global.begin(), global.end(), local.begin(),
                  [range = _local_range,
                   &global_to_local](std::int64_t index) -> std::int32_t
