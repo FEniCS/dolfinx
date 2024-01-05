@@ -344,7 +344,6 @@ def create_mesh(comm: _MPI.Comm, cells: npt.NDArray[np.int64], x: npt.NDArray[np
     if partitioner is None and comm.size > 1:
         partitioner = _cpp.mesh.create_cell_partitioner(GhostMode.none)
 
-    cells = np.asarray(cells, dtype=np.int64, order='C')
     x = np.asarray(x, order='C')
     if x.ndim == 1:
         gdim = 1
@@ -383,7 +382,8 @@ def create_mesh(comm: _MPI.Comm, cells: npt.NDArray[np.int64], x: npt.NDArray[np
                 domain = None
                 dtype = cmap.dtype
 
-    x = np.asarray(x, dtype=dtype)
+    x = np.asarray(x, dtype=dtype, order='C')
+    cells = np.asarray(cells, dtype=np.int64, order='C')
     try:
         mesh = _cpp.mesh.create_mesh(comm, cells, cmap._cpp_object, x, partitioner)
     except TypeError:
