@@ -139,17 +139,20 @@ public:
   tabulate(std::span<const geometry_type> X, std::array<std::size_t, 2> shape,
            int order) const;
 
-  /// @brief Number of sub elements (for a mixed or blocked element)
+  /// @brief Number of sub elements (for a mixed or blocked element).
   /// @return The number of sub elements
   int num_sub_elements() const noexcept;
 
-  /// Check if element is a mixed element, i.e. composed of two or more
-  /// elements of different types. A block element, e.g. a Lagrange
-  /// element with block size > 1 is not considered mixed.
-  /// @return True is element is mixed.
+  /// @brief Check if element is a mixed element.
+  ///
+  /// A mixed element i composed of two or more elements of different
+  /// types (a block element, e.g. a Lagrange element with block size >=
+  /// 1 is not considered mixed).
+  ///
+  /// @return True if element is mixed.
   bool is_mixed() const noexcept;
 
-  /// Subelements (if any)
+  /// Get subelements (if any)
   const std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>&
   sub_elements() const noexcept;
 
@@ -685,6 +688,9 @@ private:
   // Block size for BlockedElements. This gives the
   // number of DOFs co-located at each dof 'point'.
   int _bs;
+
+  // Indicate whether this is a mixed element
+  bool _is_mixed;
 
   // Indicate whether the element needs permutations or transformations
   bool _needs_dof_permutations;
