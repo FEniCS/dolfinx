@@ -19,13 +19,13 @@ import basix.ufl
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
-from dolfinx.fem import CoordinateElement as _CoordinateElement
-from dolfinx.fem import coordinate_element as _coordinate_element
 from dolfinx.cpp.mesh import (CellType, DiagonalType, GhostMode,
                               build_dual_graph, cell_dim,
                               create_cell_partitioner, exterior_facet_indices,
                               to_string, to_type)
 from dolfinx.cpp.refinement import RefinementOption
+from dolfinx.fem import CoordinateElement as _CoordinateElement
+from dolfinx.fem import coordinate_element as _coordinate_element
 
 __all__ = ["meshtags_from_entities", "locate_entities", "locate_entities_boundary",
            "refine", "create_mesh", "Mesh", "MeshTags", "meshtags", "CellType",
@@ -37,7 +37,7 @@ __all__ = ["meshtags_from_entities", "locate_entities", "locate_entities_boundar
 
 
 class Mesh:
-    """A class for representing meshes."""
+    """A mesh."""
 
     _mesh: typing.Union[_cpp.mesh.Mesh_float32, _cpp.mesh.Mesh_float64]
     _ufl_domain: typing.Optional[ufl.Mesh]
@@ -50,12 +50,12 @@ class Mesh:
             domain: A UFL domain.
 
         Note:
-            Mesh objects should not usually be created using this class
-            directly.
+            Mesh objects should not usually be created using this
+            initializer directly.
         """
         self._cpp_object = mesh
         self._ufl_domain = domain
-        if domain is not None:
+        if self._ufl_domain is not None:
             self._ufl_domain._ufl_cargo = self._cpp_object  # type: ignore
 
     @property
@@ -324,7 +324,7 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[npt.NDArray[np.int64],
                 x: npt.NDArray[np.floating],
                 e: typing.Union[ufl.Mesh, basix.finite_element.FiniteElement,
                                 basix.ufl._BasixElement, _CoordinateElement,],
-                partitioner=None) -> Mesh:
+                partitioner: typing.Optional[typing.Callable] = None) -> Mesh:
     """Create a mesh from topology and geometry arrays.
 
     Args:
@@ -335,6 +335,10 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[npt.NDArray[np.int64],
             type of ``e``.
         partitioner: Function that computes the parallel distribution of
             cells across MPI ranks.
+
+    Note:
+        If required, the coordinates ``x`` will be cast to the same type
+        as the domain/element ``e``.
 
     Returns:
         A mesh.

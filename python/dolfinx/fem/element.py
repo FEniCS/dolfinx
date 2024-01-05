@@ -7,11 +7,12 @@
 
 import typing
 from functools import singledispatch
+
+import numpy as np
 import numpy.typing as npt
 
-from dolfinx import cpp as _cpp
-import numpy as np
 import basix
+from dolfinx import cpp as _cpp
 
 
 class CoordinateElement:
@@ -19,7 +20,8 @@ class CoordinateElement:
 
     _cpp_object: typing.Union[_cpp.fem.CoordinateElement_float32, _cpp.fem.CoordinateElement_float64]
 
-    def __init__(self, cmap):
+    def __init__(self, cmap: typing.Union[_cpp.fem.CoordinateElement_float32,
+                                          _cpp.fem.CoordinateElement_float64]):
         """Create a coordinate map element.
 
         Note:
@@ -45,7 +47,7 @@ class CoordinateElement:
 
 
 @singledispatch
-def coordinate_element(celltype: typing.Any, degree: int,
+def coordinate_element(celltype: _cpp.mesh.CellType, degree: int,
                        variant=int(basix.LagrangeVariant.unset),
                        dtype: npt.DTypeLike = np.float64):
     """Create a Lagrange CoordinateElement from element metadata.
