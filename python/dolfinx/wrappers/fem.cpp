@@ -676,6 +676,8 @@ void declare_cmap(nb::module_& m, std::string type)
                                                  "Coordinate map element")
       .def(nb::init<dolfinx::mesh::CellType, int>(), nb::arg("celltype"),
            nb::arg("degree"))
+      .def(nb::init<std::shared_ptr<const basix::FiniteElement<T>>>(),
+           nb::arg("element"))
       .def(
           "__init__",
           [](dolfinx::fem::CoordinateElement<T>* cm, dolfinx::mesh::CellType ct,
@@ -688,6 +690,7 @@ void declare_cmap(nb::module_& m, std::string type)
       .def("create_dof_layout",
            &dolfinx::fem::CoordinateElement<T>::create_dof_layout)
       .def_prop_ro("degree", &dolfinx::fem::CoordinateElement<T>::degree)
+      .def_prop_ro("dim", &dolfinx::fem::CoordinateElement<T>::dim)
       .def_prop_ro("variant", [](const dolfinx::fem::CoordinateElement<T>& self)
                    { return static_cast<int>(self.variant()); })
       .def(

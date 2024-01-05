@@ -20,11 +20,16 @@ from dolfinx.fem.function import FunctionSpace
 
 if typing.TYPE_CHECKING:
     from dolfinx.fem import function
-    from dolfinx.mesh import Mesh
 
 
 class Form:
-    def __init__(self, form, ufcx_form=None, code: typing.Optional[str] = None):
+    _cpp_object: typing.Tuple[_cpp.fem.Form_complex64, _cpp.fem.Form_complex128,
+                              _cpp.fem.Form_float32, _cpp.fem.Form_float64]
+    _code: typing.Optional[str] = None
+
+    def __init__(self, form: typing.Tuple[_cpp.fem.Form_complex64, _cpp.fem.Form_complex128,
+                                          _cpp.fem.Form_float32, _cpp.fem.Form_float64],
+                 ufcx_form=None, code: typing.Optional[str] = None):
         """A finite element form
 
         Note:
@@ -37,9 +42,7 @@ class Form:
             form: Compiled form object.
             ufcx_form: UFCx form
             code: Form C++ code
-
         """
-
         self._code = code
         self._ufcx_form = ufcx_form
         self._cpp_object = form
@@ -56,22 +59,22 @@ class Form:
 
     @property
     def rank(self) -> int:
-        return self._cpp_object.rank
+        return self._cpp_object.rank  # type: ignore
 
     @property
     def function_spaces(self) -> typing.List[FunctionSpace]:
         """Function spaces on which this form is defined"""
-        return self._cpp_object.function_spaces
+        return self._cpp_object.function_spaces  # type: ignore
 
     @property
     def dtype(self) -> np.dtype:
         """Scalar type of this form"""
-        return self._cpp_object.dtype
+        return self._cpp_object.dtype  # type: ignore
 
     @property
-    def mesh(self) -> Mesh:
+    def mesh(self) -> typing.Tuple[_cpp.fem.Mesh_float32, _cpp.fem.Mesh_float64]:
         """Mesh on which this form is defined"""
-        return self._cpp_object.mesh
+        return self._cpp_object.mesh  # type: ignore
 
     @property
     def integral_types(self):
@@ -86,7 +89,7 @@ _ufl_to_dolfinx_domain = {"cell": IntegralType.cell,
 
 
 def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]],
-         dtype: typing.Optional[npt.DTypeLike] = default_scalar_type,
+         dtype: npt.DTypeLike = default_scalar_type,
          form_compiler_options: typing.Optional[dict] = None,
          jit_options: typing.Optional[dict] = None):
     """Create a Form or an array of Forms.

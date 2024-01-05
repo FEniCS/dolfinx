@@ -57,6 +57,9 @@ wheel.license-files = ["../COPYING*"]
 [tool.pytest]
 junit_family = "xunit2"
 
+[tool.isort]
+line_length = 120
+
 [tool.mypy]
 # Suggested at https://blog.wolt.com/engineering/2021/09/30/professional-grade-mypy-configuration/
 # Goal would be to make all of the below True long-term
@@ -68,3 +71,4 @@ warn_return_any = false
 warn_unused_ignores = false
 show_error_codes = true
 ignore_missing_imports = true
+
