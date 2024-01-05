@@ -46,6 +46,9 @@ public:
   /// Create empty mesh topology
   Topology(MPI_Comm comm, CellType cell_type);
 
+  /// Create empty mesh topology with multiple cell types
+  Topology(MPI_Comm comm, std::vector<CellType>& cell_type);
+
   /// Copy constructor
   Topology(const Topology& topology) = default;
 
@@ -113,7 +116,7 @@ public:
 
   /// @brief Cell type
   /// @return Cell type that the topology is for
-  CellType cell_type() const noexcept;
+  CellType cell_type() const;
 
   /// @brief Create entities of given topological dimension.
   /// @param[in] dim Topological dimension
@@ -146,7 +149,10 @@ private:
   dolfinx::MPI::Comm _comm;
 
   // Cell type
-  CellType _cell_type;
+  std::vector<CellType> _cell_type;
+
+  // Facet type
+  std::vector<CellType> _facet_type;
 
   // Parallel layout of entities for each dimension and cell type
   std::vector<std::shared_ptr<const common::IndexMap>> _index_map;
@@ -205,17 +211,18 @@ Topology create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
 /// @param cell_type List of cell types
 /// @param cells Lists of cells, using vertex indices, flattened, for each cell
 /// type.
-/// @param original_cell_index Input cell index
+/// @param original_cell_index Input cell index for each cell type
 /// @param ghost_owners Owning rank for ghost cells (at end of each list of
 /// cells).
 /// @param boundary_vertices Vertices of undetermined ownership on external or
 /// inter-process boundary.
 /// @return
-Topology create_topology(MPI_Comm comm, const std::vector<CellType>& cell_type,
-                         std::vector<std::span<const std::int64_t>> cells,
-                         std::span<const std::int64_t> original_cell_index,
-                         std::vector<std::span<const int>> ghost_owners,
-                         std::span<const std::int64_t> boundary_vertices);
+Topology
+create_topology(MPI_Comm comm, const std::vector<CellType>& cell_type,
+                std::vector<std::span<const std::int64_t>> cells,
+                std::vector<std::span<const std::int64_t>> original_cell_index,
+                std::vector<std::span<const int>> ghost_owners,
+                std::span<const std::int64_t> boundary_vertices);
 
 /// @brief Create a topology for a subset of entities of a given
 /// topological dimension.
