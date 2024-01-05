@@ -319,9 +319,7 @@ def refine_plaza(mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistri
     return Mesh(mesh1, mesh._ufl_domain), cells, facets
 
 
-def create_mesh(comm: _MPI.Comm, cells: typing.Union[npt.NDArray[np.int64],
-                                                     _cpp.graph.AdjacencyList_int64],
-                x: npt.NDArray[np.floating],
+def create_mesh(comm: _MPI.Comm, cells: npt.NDArray[np.int64], x: npt.NDArray[np.floating],
                 e: typing.Union[ufl.Mesh, basix.finite_element.FiniteElement,
                                 basix.ufl._BasixElement, _CoordinateElement,],
                 partitioner: typing.Optional[typing.Callable] = None) -> Mesh:
@@ -346,6 +344,7 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[npt.NDArray[np.int64],
     if partitioner is None and comm.size > 1:
         partitioner = _cpp.mesh.create_cell_partitioner(GhostMode.none)
 
+    cells = np.asarray(cells, dtype=np.int64, order='C')
     x = np.asarray(x, order='C')
     if x.ndim == 1:
         gdim = 1
