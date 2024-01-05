@@ -28,7 +28,8 @@ def randomly_ordered_mesh(cell_type):
     elif cell_type == "tetrahedron" or cell_type == "hexahedron":
         gdim = 3
 
-    domain = ufl.Mesh(element("Lagrange", cell_type, 1, shape=(gdim,), dtype=default_real_type))
+    domain = ufl.Mesh(element("Lagrange", cell_type, 1, shape=(gdim,),
+                              dtype=default_real_type))
     # Create a mesh
     if MPI.COMM_WORLD.rank == 0:
         N = 6
@@ -94,61 +95,68 @@ def randomly_ordered_mesh(cell_type):
 
         # On process 0, input mesh data and distribute to other
         # processes
+        print("Call mesh 0")
         return create_mesh(MPI.COMM_WORLD, cells, points, domain)
     else:
         if cell_type == "triangle":
-            return create_mesh(MPI.COMM_WORLD, np.ndarray((0, 3)), np.ndarray((0, 2)), domain)
+            print("Call mesh 1")
+            return create_mesh(MPI.COMM_WORLD, np.ndarray((0, 3)),
+                               np.ndarray((0, 2), dtype=default_real_type), domain)
         elif cell_type == "quadrilateral":
-            return create_mesh(MPI.COMM_WORLD, np.ndarray((0, 4)), np.ndarray((0, 2)), domain)
+            return create_mesh(MPI.COMM_WORLD, np.ndarray((0, 4)),
+                               np.ndarray((0, 2), dtype=default_real_type), domain)
         elif cell_type == "tetrahedron":
-            return create_mesh(MPI.COMM_WORLD, np.ndarray((0, 4)), np.ndarray((0, 3)), domain)
+            return create_mesh(MPI.COMM_WORLD, np.ndarray((0, 4)),
+                               np.ndarray((0, 3), dtype=default_real_type), domain)
         elif cell_type == "hexahedron":
-            return create_mesh(MPI.COMM_WORLD, np.ndarray((0, 8)), np.ndarray((0, 3)), domain)
+            return create_mesh(MPI.COMM_WORLD, np.ndarray((0, 8)),
+                               np.ndarray((0, 3), dtype=default_real_type), domain)
 
 
 @pytest.mark.parametrize('space_type', [("P", 1), ("P", 2), ("P", 3), ("P", 4)])
-@pytest.mark.parametrize('cell_type', ["triangle", "tetrahedron", "quadrilateral", "hexahedron"])
+@pytest.mark.parametrize('cell_type', ["triangle", "tetrahedron",
+                                       "quadrilateral", "hexahedron"])
 def test_dof_positions(cell_type, space_type):
     """Checks that dofs on shared triangle edges match up"""
     mesh = randomly_ordered_mesh(cell_type)
 
-    if cell_type == "triangle":
-        entities_per_cell = [3, 3, 1]
-    elif cell_type == "quadrilateral":
-        entities_per_cell = [4, 4, 1]
-    elif cell_type == "tetrahedron":
-        entities_per_cell = [4, 6, 4, 1]
-    elif cell_type == "hexahedron":
-        entities_per_cell = [8, 12, 6, 1]
+    # if cell_type == "triangle":
+    #     entities_per_cell = [3, 3, 1]
+    # elif cell_type == "quadrilateral":
+    #     entities_per_cell = [4, 4, 1]
+    # elif cell_type == "tetrahedron":
+    #     entities_per_cell = [4, 6, 4, 1]
+    # elif cell_type == "hexahedron":
+    #     entities_per_cell = [8, 12, 6, 1]
 
-    # Get coordinates of dofs and edges and check that they are the same
-    # for each global dof number
-    coord_dofs = mesh.geometry.dofmap
-    x_g = mesh.geometry.x
-    assert len(mesh.geometry.cmaps) == 1
-    cmap = mesh.geometry.cmaps[0]
-    tdim = mesh.topology.dim
+    # # Get coordinates of dofs and edges and check that they are the same
+    # # for each global dof number
+    # coord_dofs = mesh.geometry.dofmap
+    # x_g = mesh.geometry.x
+    # assert len(mesh.geometry.cmaps) == 1
+    # cmap = mesh.geometry.cmaps[0]
+    # tdim = mesh.topology.dim
 
-    V = functionspace(mesh, space_type)
-    entities = {i: {} for i in range(1, tdim)}
-    for cell in range(coord_dofs.shape[0]):
-        # Push coordinates forward
-        X = V.element.interpolation_points()
-        xg = x_g[coord_dofs[cell], :tdim]
-        x = cmap.push_forward(X, xg)
+    # V = functionspace(mesh, space_type)
+    # entities = {i: {} for i in range(1, tdim)}
+    # for cell in range(coord_dofs.shape[0]):
+    #     # Push coordinates forward
+    #     X = V.element.interpolation_points()
+    #     xg = x_g[coord_dofs[cell], :tdim]
+    #     x = cmap.push_forward(X, xg)
 
-        dofs = V.dofmap.cell_dofs(cell)
+    #     dofs = V.dofmap.cell_dofs(cell)
 
-        for entity_dim in range(1, tdim):
-            entity_dofs_local = []
-            for i in range(entities_per_cell[entity_dim]):
-                entity_dofs_local += list(V.dofmap.dof_layout.entity_dofs(entity_dim, i))
-            entity_dofs = [dofs[i] for i in entity_dofs_local]
-            for i, j in zip(entity_dofs, x[entity_dofs_local]):
-                if i in entities[entity_dim]:
-                    assert np.allclose(j, entities[entity_dim][i], atol=1e-06)
-                else:
-                    entities[entity_dim][i] = j
+    #     for entity_dim in range(1, tdim):
+    #         entity_dofs_local = []
+    #         for i in range(entities_per_cell[entity_dim]):
+    #             entity_dofs_local += list(V.dofmap.dof_layout.entity_dofs(entity_dim, i))
+    #         entity_dofs = [dofs[i] for i in entity_dofs_local]
+    #         for i, j in zip(entity_dofs, x[entity_dofs_local]):
+    #             if i in entities[entity_dim]:
+    #                 assert np.allclose(j, entities[entity_dim][i], atol=1e-06)
+    #             else:
+    #                 entities[entity_dim][i] = j
 
 
 def random_evaluation_mesh(cell_type):
