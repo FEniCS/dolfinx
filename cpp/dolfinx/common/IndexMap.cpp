@@ -877,7 +877,9 @@ void IndexMap::global_to_local(std::span<const std::int64_t> global,
                      auto it = std::lower_bound(
                          global_to_local.begin(), global_to_local.end(), index,
                          [](auto a, auto b) { return a.first < b; });
-                     return it != global_to_local.end() ? it->second : -1;
+                     return (it != global_to_local.end() and it->first == index)
+                                ? it->second
+                                : -1;
                    }
                  });
 }
