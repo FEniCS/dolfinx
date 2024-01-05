@@ -39,22 +39,24 @@ __all__ = ["meshtags_from_entities", "locate_entities", "locate_entities_boundar
 class Mesh:
     """A class for representing meshes."""
 
-    def __init__(self, mesh, domain: ufl.Mesh):
+    _mesh: typing.Union[_cpp.mesh.Mesh_float32, _cpp.mesh.Mesh_float64]
+    _ufl_domain: typing.Optional[ufl.Mesh]
+
+    def __init__(self, mesh, domain: typing.Optional[ufl.Mesh]):
         """Initialize mesh from a C++ mesh.
 
         Args:
-            mesh: The C++ mesh object.
-            domain: The UFL domain.
+            mesh: A C++ mesh object.
+            domain: A UFL domain.
 
         Note:
             Mesh objects should not usually be created using this class
             directly.
-
         """
         self._cpp_object = mesh
         self._ufl_domain = domain
         if domain is not None:
-            self._ufl_domain._ufl_cargo = self._cpp_object
+            self._ufl_domain._ufl_cargo = self._cpp_object  # type: ignore
 
     @property
     def comm(self):
@@ -71,16 +73,18 @@ class Mesh:
     def ufl_cell(self) -> ufl.Cell:
         """Return the UFL cell type.
 
-        Note: This method is required for UFL compatibility.
-
+        Note:
+            This method is required for UFL compatibility.
         """
         return ufl.Cell(self.topology.cell_name(), geometric_dimension=self.geometry.dim)
 
     def ufl_domain(self) -> ufl.Mesh:
         """Return the ufl domain corresponding to the mesh.
 
-        Note: This method is required for UFL compatibility.
+        Domain is ``None`` if it has not been set.
 
+        Note:
+            This method is required for UFL compatibility.
         """
         return self._ufl_domain
 
@@ -99,7 +103,6 @@ class Mesh:
 
         Returns:
             Size measure for each requested entity.
-
         """
         return _cpp.mesh.h(self._cpp_object, dim, entities)
 
@@ -132,7 +135,6 @@ class MeshTags:
             associated with the C + + ``meshtags`` object. If `mesh` is
             passed, ``mesh`` and ``meshtags`` must share the same C + +
             mesh.
-
         """
         self._cpp_object = meshtags
 
@@ -177,7 +179,6 @@ class MeshTags:
 
         Returns:
             Indices of entities with tag ``value``.
-
         """
         return self._cpp_object.find(value)
 
@@ -203,7 +204,6 @@ def locate_entities(mesh: Mesh, dim: int, marker: typing.Callable) -> np.ndarray
 
     Returns:
         Indices (local to the process) of marked mesh entities.
-
     """
     return _cpp.mesh.locate_entities(mesh._cpp_object, dim, marker)
 
@@ -217,9 +217,9 @@ def locate_entities_boundary(mesh: Mesh, dim: int, marker: typing.Callable) -> n
     example, it is possible for a process to have a vertex that lies on
     the boundary without any of the attached facets being a boundary
     facet. When used to find degrees-of-freedom, e.g. using
-    :func:`dolfinx.fem.locate_dofs_topological`, the function that uses the data
-    returned by this function must typically perform some parallel
-    communication.
+    :func:`dolfinx.fem.locate_dofs_topological`, the function that uses
+    the data returned by this function must typically perform some
+    parallel communication.
 
     Args:
         mesh: Mesh to locate boundary entities on.
@@ -231,7 +231,6 @@ def locate_entities_boundary(mesh: Mesh, dim: int, marker: typing.Callable) -> n
 
     Returns:
         Indices (local to the process) of marked mesh entities.
-
     """
     return _cpp.mesh.locate_entities_boundary(mesh._cpp_object, dim, marker)
 
@@ -264,7 +263,6 @@ def transfer_meshtag(meshtag: MeshTags, mesh1: Mesh, parent_cell: npt.NDArray[np
 
         Returns:
             Mesh tags on the refined mesh.
-
     """
     if meshtag.dim == meshtag.topology.dim:
         mt = _cpp.refinement.transfer_cell_meshtag(meshtag._cpp_object, mesh1.topology, parent_cell)
@@ -289,15 +287,12 @@ def refine(mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistribute: 
 
     Returns:
        Refined mesh.
-
     """
     if edges is None:
         mesh1 = _cpp.refinement.refine(mesh._cpp_object, redistribute)
     else:
         mesh1 = _cpp.refinement.refine(mesh._cpp_object, edges, redistribute)
-    element = mesh._ufl_domain.ufl_coordinate_element()
-    domain = ufl.Mesh(element)
-    return Mesh(mesh1, domain)
+    return Mesh(mesh1, mesh._ufl_domain)
 
 
 def refine_plaza(mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistribute: bool = True,
@@ -321,9 +316,7 @@ def refine_plaza(mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistri
         mesh1, cells, facets = _cpp.refinement.refine_plaza(mesh._cpp_object, redistribute)
     else:
         mesh1, cells, facets = _cpp.refinement.refine_plaza(mesh._cpp_object, edges, redistribute)
-    element = mesh._ufl_domain.ufl_coordinate_element()
-    domain = ufl.Mesh(element)
-    return Mesh(mesh1, domain), cells, facets
+    return Mesh(mesh1, mesh._ufl_domain), cells, facets
 
 
 def create_mesh(comm: _MPI.Comm, cells: typing.Union[npt.NDArray[np.int64],
@@ -470,7 +463,6 @@ def meshtags_from_entities(mesh: Mesh, dim: int, entities: _cpp.graph.AdjacencyL
     Note:
         The type of the returned MeshTags is inferred from the type of
         ``values``.
-
     """
 
     if isinstance(values, int):
@@ -531,7 +523,6 @@ def create_unit_interval(comm: _MPI.Comm, nx: int, dtype: npt.DTypeLike = defaul
 
     Returns:
         A unit interval mesh with end points at 0 and 1.
-
     """
     return create_interval(comm, nx, [0.0, 1.0], dtype, ghost_mode, partitioner)
 
@@ -559,7 +550,6 @@ def create_rectangle(comm: _MPI.Comm, points: npt.ArrayLike, n: npt.ArrayLike,
 
     Returns:
         A mesh of a rectangle.
-
     """
     if partitioner is None and comm.size > 1:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
@@ -594,7 +584,6 @@ def create_unit_square(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.tri
 
     Returns:
         A mesh of a square with corners at (0, 0) and (1, 1).
-
     """
     return create_rectangle(comm, [np.array([0.0, 0.0]), np.array([1.0, 1.0])],
                             [nx, ny], cell_type, dtype, ghost_mode,
@@ -620,7 +609,6 @@ def create_box(comm: _MPI.Comm, points: typing.List[npt.ArrayLike], n: list,
 
     Returns:
         A mesh of a box domain.
-
     """
     if partitioner is None and comm.size > 1:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
@@ -654,7 +642,6 @@ def create_unit_cube(comm: _MPI.Comm, nx: int, ny: int, nz: int, cell_type=CellT
     Returns:
         A mesh of an axis-aligned unit cube with corners at ``(0, 0, 0)``
             and ``(1, 1, 1)``.
-
     """
     return create_box(comm, [np.array([0.0, 0.0, 0.0]), np.array([1.0, 1.0, 1.0])],
                       [nx, ny, nz], cell_type, dtype, ghost_mode, partitioner)

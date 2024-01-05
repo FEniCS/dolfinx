@@ -48,28 +48,22 @@ class CoordinateElement:
 def coordinate_element(celltype: typing.Any, degree: int,
                        variant=int(basix.LagrangeVariant.unset),
                        dtype: npt.DTypeLike = np.float64):
-    raise NotImplementedError(f"No overload available for type {type(celltype)}")
+    """Create a Lagrange CoordinateElement from element metadata.
 
-
-@coordinate_element.register(basix.CellType)
-def _(celltype: basix.CellType, degree: int, variant=int(basix.LagrangeVariant.unset),
-      dtype: npt.DTypeLike = np.float64):
-    """Create a Lagrange CoordinateElement form element metadata.
-
-    Coordinate elements are typically used when creating meshes.
+    Coordinate elements are typically used to create meshes.
 
     Args:
         celltype: Cell shape
-        degree: Polynomial degree of the element map
-        dtype: Scalar type
-        variant: Basix Lagrange variant (affects node placement)
+        degree: Polynomial degree of the coordinate element map.
+        variant: Basix Lagrange variant (affects node placement).
+        dtype: Scalar type for the coordinate element.
 
     Returns:
         A coordinate element.
     """
-    try:
+    if dtype == np.float32:
         return CoordinateElement(_cpp.fem.CoordinateElement_float32(celltype, degree, variant))
-    except TypeError:
+    elif dtype == np.float64:
         return CoordinateElement(_cpp.fem.CoordinateElement_float64(celltype, degree, variant))
     else:
         raise RuntimeError("Unsupported dtype.")
@@ -82,7 +76,7 @@ def _(e: basix.finite_element.FiniteElement):
     Coordinate elements are typically used when creating meshes.
 
     Args:
-        e: Basix finite element
+        e: Basix finite element.
 
     Returns:
         A coordinate element.
