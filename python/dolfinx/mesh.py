@@ -319,23 +319,12 @@ def refine_plaza(mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistri
     return Mesh(mesh1, mesh._ufl_domain), cells, facets
 
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-def create_mesh(comm: _MPI.Comm, cells: np.ndarray,
-                x: np.ndarray, domain: ufl.Mesh, partitioner=None) -> Mesh:
-=======
-=======
->>>>>>> origin/main
 def create_mesh(comm: _MPI.Comm, cells: typing.Union[npt.NDArray[np.int64],
                                                      _cpp.graph.AdjacencyList_int64],
                 x: npt.NDArray[np.floating],
                 e: typing.Union[ufl.Mesh, basix.finite_element.FiniteElement,
                                 basix.ufl._BasixElement, _CoordinateElement,],
                 partitioner: typing.Optional[typing.Callable] = None) -> Mesh:
-<<<<<<< HEAD
->>>>>>> garth/pymesh-domains
-=======
->>>>>>> origin/main
     """Create a mesh from topology and geometry arrays.
 
     Args:
@@ -363,12 +352,6 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[npt.NDArray[np.int64],
     else:
         gdim = x.shape[1]
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-    mesh = _cpp.mesh.create_mesh(comm, cells, cmap, x, partitioner)
-=======
-=======
->>>>>>> origin/main
     dtype = None
     try:
         # e is a UFL domain
@@ -408,10 +391,6 @@ def create_mesh(comm: _MPI.Comm, cells: typing.Union[npt.NDArray[np.int64],
         mesh = _cpp.mesh.create_mesh(comm, _cpp.graph.AdjacencyList_int64(np.cast['int64'](cells)),
                                      cmap._cpp_object, x, partitioner)
 
-<<<<<<< HEAD
->>>>>>> garth/pymesh-domains
-=======
->>>>>>> origin/main
     return Mesh(mesh, domain)
 
 
