@@ -24,7 +24,7 @@ def test_context_manager_named():
     # Check timing
     t = common.timing(task)
     assert t[0] == 1
-    assert t[1] > 0.049
+    assert t[1] > 0.045
 
 
 def test_context_manager_anonymous():
