@@ -883,6 +883,133 @@ std::vector<mesh::CellType> Topology::cell_types() const noexcept
 //-----------------------------------------------------------------------------
 MPI_Comm Topology::comm() const { return _comm.comm(); }
 //-----------------------------------------------------------------------------
+Topology
+mesh::create_topology(MPI_Comm comm, const std::vector<CellType>& cell_type,
+                      std::vector<std::span<const std::int64_t>> cells,
+                      std::span<const std::int64_t> original_cell_index,
+                      std::vector<std::span<const int>> ghost_owners,
+                      std::span<const std::int64_t> boundary_vertices)
+{
+  common::Timer timer("Topology: create (mixed)");
+
+  assert(cell_type.size() == cells.size());
+  assert(ghost_owners.size() == cells.size());
+
+  LOG(INFO) << "Create topology";
+  // Check cell data consistency
+  std::vector<std::int32_t> num_local_cells(cell_type.size());
+  for (std::size_t i = 0; i < cell_type.size(); i++)
+  {
+    int num_vertices = num_cell_vertices(cell_type[i]);
+    if (cells[i].size() % num_vertices != 0)
+    {
+      throw std::runtime_error("Inconsistent number of cell vertices. Got "
+                               + std::to_string(cells[i].size())
+                               + ", expected multiple of "
+                               + std::to_string(num_vertices) + ".");
+    }
+    num_local_cells[i] = cells[i].size() / num_vertices;
+    num_local_cells[i] -= ghost_owners[i].size();
+  }
+
+  // Create sets of owned and unowned vertices from the cell ownership
+  // and the list of boundary vertices - FIXME
+  auto [owned_vertices, unowned_vertices]
+      = vertex_ownership_groups(cells, num_local_cells, boundary_vertices);
+
+  // For each vertex whose ownership needs determining, find the sharing
+  // ranks. The first index in the list of ranks for a vertex is the
+  // owner (as determined by determine_sharing_ranks).
+  const graph::AdjacencyList<int> global_vertex_to_ranks
+      = determine_sharing_ranks(comm, boundary_vertices);
+
+  // Iterate over vertices that have 'unknown' ownership, and if flagged
+  // as owned by determine_sharing_ranks update ownership status
+  {
+    const int mpi_rank = dolfinx::MPI::rank(comm);
+    std::vector<std::int64_t> owned_shared_vertices;
+    for (std::size_t i = 0; i < boundary_vertices.size(); ++i)
+    {
+      // Vertex is shared and owned by this rank if the first sharing
+      // rank is my rank
+      auto ranks = global_vertex_to_ranks.links(i);
+      assert(!ranks.empty());
+      if (std::int64_t global_index = boundary_vertices[i];
+          ranks.front() == mpi_rank)
+      {
+        owned_shared_vertices.push_back(global_index);
+      }
+      else
+        unowned_vertices.push_back(global_index);
+    }
+    dolfinx::radix_sort(std::span(unowned_vertices));
+
+    // Add owned but shared vertices to owned_vertices, and sort
+    owned_vertices.insert(owned_vertices.end(), owned_shared_vertices.begin(),
+                          owned_shared_vertices.end());
+    dolfinx::radix_sort(std::span(owned_vertices));
+  }
+
+  // Number all owned vertices, iterating over vertices cell-wise
+  std::vector<std::int32_t> local_vertex_indices(owned_vertices.size(), -1);
+  {
+    std::int32_t v = 0;
+    for (std::size_t i = 0; i < cells.size(); ++i)
+    {
+      for (auto vtx : cells[i])
+      {
+        auto it = std::lower_bound(owned_vertices.begin(), owned_vertices.end(),
+                                   vtx);
+        if (it != owned_vertices.end() and *it == vtx)
+        {
+          std::size_t pos = std::distance(owned_vertices.begin(), it);
+          if (local_vertex_indices[pos] < 0)
+            local_vertex_indices[pos] = v++;
+        }
+      }
+    }
+  }
+
+  // Compute the global offset for owned (local) vertex indices
+  std::int64_t global_offset_v = 0;
+  {
+    const std::int64_t nlocal = owned_vertices.size();
+    MPI_Exscan(&nlocal, &global_offset_v, 1, MPI_INT64_T, MPI_SUM, comm);
+  }
+
+  // FIXME - Get global indices of ghost cells
+  std::vector<std::vector<std::int64_t>> cell_ghost_indices;
+  for (std::size_t i = 0; i < cells.size(); ++i)
+  {
+    std::span cell_idx(original_cell_index);
+    std::int32_t num_vertices = num_cell_vertices(cell_type[i]);
+    cell_ghost_indices.push_back(graph::build::compute_ghost_indices(
+        comm,
+        cell_idx.first(cells[i].size() / num_vertices - ghost_owners[i].size()),
+        std::span(original_cell_index).last(ghost_owners.size()),
+        ghost_owners[i]));
+  }
+  // Create index maps for each cell type
+  std::vector<std::shared_ptr<common::IndexMap>> index_map_c;
+  for (std::size_t i = 0; i < cells.size(); ++i)
+  {
+    std::int32_t num_vertices = num_cell_vertices(cell_type[i]);
+    std::int32_t num_local_cells_i
+        = cells[i].size() / num_vertices - ghost_owners[i].size();
+    index_map_c.push_back(std::make_shared<common::IndexMap>(
+        comm, num_local_cells_i, cell_ghost_indices[i], ghost_owners[i]));
+  }
+
+  // Send and receive  ((input vertex index) -> (new global index, owner
+  // rank)) data with neighbours (for vertices on 'true domain
+  // boundary')
+  const std::vector<std::int64_t> unowned_vertex_data = exchange_indexing(
+      comm, boundary_vertices, global_vertex_to_ranks, global_offset_v,
+      owned_vertices, local_vertex_indices);
+
+  assert(unowned_vertex_data.size() % 3 == 0);
+}
+//-----------------------------------------------------------------------------
 Topology mesh::create_topology(
     MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
     std::span<const std::int64_t> original_cell_index,

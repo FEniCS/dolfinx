@@ -171,10 +171,14 @@ private:
   // Entity group offsets
   std::array<std::vector<std::int32_t>, 4> _entity_group_offsets;
 
-  // Parallel layout of entities for each dimension
-  std::array<std::shared_ptr<const common::IndexMap>, 4> _index_map;
+  // Parallel layout of entities for each dimension and cell type
+  std::vector<std::shared_ptr<const common::IndexMap>> _index_map;
 
-  // AdjacencyList for pairs [d0][d1] == d0 -> d1 connectivity
+  // Connectivity between entity dimensions and cell types, arranged as
+  // a 2D array. Indexing is 0=vertex, 1=edge, followed by [facet types], [cell
+  // types]. e.g. for a 3D mesh with tets, pyramid and hex: 0=vertex, 1=edge,
+  // 2=triangle, 3=quad, 4=tet, 5=pyr, 6=hex. Connectivity between different
+  // cell types of same dimension will be nullptr.
   std::vector<std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>>
       _connectivity;
 
@@ -222,6 +226,23 @@ Topology create_topology(MPI_Comm comm,
                          std::span<const int> ghost_owners,
                          const std::vector<CellType>& cell_type,
                          const std::vector<std::int32_t>& cell_group_offsets,
+                         std::span<const std::int64_t> boundary_vertices);
+
+/// @brief Create a topology of mixed cell type
+/// @param comm MPI Communicator
+/// @param cell_type List of cell types
+/// @param cells Lists of cells, using vertex indices, flattened, for each cell
+/// type.
+/// @param original_cell_index Input cell index
+/// @param ghost_owners Owning rank for ghost cells (at end of each list of
+/// cells).
+/// @param boundary_vertices Vertices of undetermined ownership on external or
+/// inter-process boundary.
+/// @return
+Topology create_topology(MPI_Comm comm, const std::vector<CellType>& cell_type,
+                         std::vector<std::span<const std::int64_t>> cells,
+                         std::span<const std::int64_t> original_cell_index,
+                         std::vector<std::span<const int>> ghost_owners,
                          std::span<const std::int64_t> boundary_vertices);
 
 /// @brief Create a topology for a subset of entities of a given
