@@ -27,6 +27,9 @@ __all__ = ["BoundingBoxTree", "bb_tree", "compute_colliding_cells", "squared_dis
 class BoundingBoxTree:
     """Bounding box trees used in collision detection."""
 
+    _cpp_object: typing.Union[_cpp.geometry.BoundingBoxTree_float32,
+                              _cpp.geometry.BoundingBoxTree_float64]
+
     def __init__(self, tree):
         """Wrap a C++ BoundingBoxTree.
 

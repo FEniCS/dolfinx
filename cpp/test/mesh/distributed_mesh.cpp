@@ -125,7 +125,7 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   std::vector<T> x;
   std::array<std::size_t, 2> xshape = {0, 2};
   std::array<std::size_t, 2> cshape = {0, 3};
-  graph::AdjacencyList<std::int64_t> cells(0);
+  std::vector<std::int64_t> cells;
   if (subset_comm != MPI_COMM_NULL)
   {
     io::XDMFFile infile(subset_comm, "mesh.xdmf", "r");
@@ -133,12 +133,12 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
     auto [_x, _xshape] = infile.read_geometry_data("mesh");
     assert(_cshape[1] == cshape[1]);
     x = std::move(std::get<std::vector<T>>(_x));
-    cells = graph::regular_adjacency_list(std::move(_cells), cshape[1]);
+    cells = std::move(_cells);
   }
   CHECK(xshape[1] == 2);
 
   // Build mesh
-  mesh::Mesh mesh = mesh::create_mesh(comm, subset_comm, cells, {cmap}, comm, x,
+  mesh::Mesh mesh = mesh::create_mesh(comm, subset_comm, cells, cmap, comm, x,
                                       xshape, partitioner);
   auto t = mesh.topology();
   int tdim = t->dim();

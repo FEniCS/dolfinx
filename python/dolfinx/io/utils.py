@@ -47,13 +47,14 @@ if _cpp.common.has_adios2:
         geometry description and arbitrary order (discontinuous)
         Lagrange finite elements for Functions.
 
-        The files can be displayed by Paraview.
-
+        The files can be viewed using Paraview.
         """
+
+        _cpp_object: typing.Union[_cpp.io.VTXWriter_float32, _cpp.io.VTXWriter_float64]
 
         def __init__(self, comm: _MPI.Comm, filename: typing.Union[str, Path],
                      output: typing.Union[Mesh, Function, typing.List[Function]],
-                     engine: typing.Optional[str] = "BPFile"):
+                     engine: str = "BPFile"):
             """Initialize a writer for outputting data in the VTX format.
 
             Args:
@@ -68,9 +69,7 @@ if _cpp.common.has_adios2:
             Note:
                 All Functions for output must share the same mesh and
                 have the same element type.
-
             """
-
             # Get geometry type
             try:
                 dtype = output.geometry.x.dtype  # type: ignore
@@ -114,13 +113,13 @@ if _cpp.common.has_adios2:
         to be of the same element family and same order.
 
         The files can be displayed by Paraview.
-
         """
+
+        _cpp_object: typing.Union[_cpp.io.FidesWriter_float32, _cpp.io.FidesWriter_float64]
 
         def __init__(self, comm: _MPI.Comm, filename: typing.Union[str, Path],
                      output: typing.Union[Mesh, typing.List[Function], Function],
-                     engine: typing.Optional[str] = "BPFile",
-                     mesh_policy: typing.Optional[FidesMeshPolicy] = FidesMeshPolicy.update):
+                     engine: str = "BPFile", mesh_policy: FidesMeshPolicy = FidesMeshPolicy.update):
             """Initialize a writer for outputting a mesh, a single Lagrange
             function or list of Lagrange functions sharing the same
             element family and degree
@@ -137,9 +136,7 @@ if _cpp.common.has_adios2:
                     written to file, or is re-written (updated) at each
                     time step. Has an effect only for ``Function``
                     output.
-
             """
-
             # Get geometry type
             try:
                 dtype = output.geometry.x.dtype  # type: ignore
@@ -155,8 +152,7 @@ if _cpp.common.has_adios2:
                 _fides_writer = _cpp.io.FidesWriter_float64
 
             try:
-                self._cpp_object = _fides_writer(
-                    comm, filename, output._cpp_object, engine)  # type: ignore
+                self._cpp_object = _fides_writer(comm, filename, output._cpp_object, engine)  # type: ignore
             except (NotImplementedError, TypeError, AttributeError):
                 self._cpp_object = _fides_writer(comm, filename, _extract_cpp_functions(
                     output), engine, mesh_policy)  # type: ignore[arg-type]
@@ -226,25 +222,23 @@ class XDMFFile(_cpp.io.XDMFFile):
 
         Args:
             u: Function to write to file.
-            t: Time associated with Function output .
+            t: Time associated with Function output.
             mesh_xpath: Path to mesh associated with the Function in the
                 XDMFFile.
-
         """
         super().write_function(getattr(u, "_cpp_object", u), t, mesh_xpath)
 
     def read_mesh(self, ghost_mode=GhostMode.shared_facet, name="mesh", xpath="/Xdmf/Domain") -> Mesh:
-        """Read mesh data from file"""
+        """Read mesh data from file."""
         cell_shape, cell_degree = super().read_cell_type(name, xpath)
         cells = super().read_topology_data(name, xpath)
         x = super().read_geometry_data(name, xpath)
 
         # Build the mesh
         cmap = _cpp.fem.CoordinateElement_float64(cell_shape, cell_degree)
-        msh = _cpp.mesh.create_mesh(self.comm, _cpp.graph.AdjacencyList_int64(cells),
+        msh = _cpp.mesh.create_mesh(self.comm, cells,
                                     cmap, x, _cpp.mesh.create_cell_partitioner(ghost_mode))
         msh.name = name
-
         domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_shape.name, cell_degree,
                                             basix.LagrangeVariant.equispaced, shape=(x.shape[1], ), gdim=x.shape[1]))
         return Mesh(msh, domain)

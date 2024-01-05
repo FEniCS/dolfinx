@@ -20,7 +20,7 @@ from dolfinx import graph
 from dolfinx import mesh as _mesh
 from dolfinx.cpp.mesh import (create_cell_partitioner, entities_to_geometry,
                               is_simplex)
-from dolfinx.fem import assemble_scalar, form
+from dolfinx.fem import assemble_scalar, form, coordinate_element
 from dolfinx.mesh import (CellType, DiagonalType, GhostMode, create_box,
                           create_interval, create_rectangle, create_submesh,
                           create_unit_cube, create_unit_interval,
@@ -502,7 +502,7 @@ def test_empty_rank_mesh(dtype):
     comm = MPI.COMM_WORLD
     cell_type = CellType.triangle
     tdim = 2
-    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, shape=(2,)))
+    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, shape=(2,), dtype=dtype))
 
     def partitioner(comm, nparts, local_graph, num_ghost_nodes):
         """Leave cells on the curent rank"""
@@ -511,10 +511,9 @@ def test_empty_rank_mesh(dtype):
 
     if comm.rank == 0:
         cells = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.int64)
-        cells = graph.adjacencylist(cells)
         x = np.array([[0., 0.], [1., 0.], [1., 1.], [0., 1.]], dtype=dtype)
     else:
-        cells = graph.adjacencylist(np.empty((0, 3), dtype=np.int64))
+        cells = np.empty((0, 3), dtype=np.int64)
         x = np.empty((0, 2), dtype=dtype)
 
     mesh = _mesh.create_mesh(comm, cells, x, domain, partitioner)
@@ -528,7 +527,7 @@ def test_empty_rank_mesh(dtype):
 
     # Check number of cells
     cmap = topology.index_map(tdim)
-    assert cmap.size_local == cells.num_nodes
+    assert cmap.size_local == cells.shape[0]
     assert cmap.num_ghosts == 0
 
     # Check number of edges
@@ -631,3 +630,39 @@ def test_submesh_codim_1_boundary_facets(n, ghost_mode, dtype):
     submesh = create_submesh(mesh, edim, entities)[0]
     expected_num_boundary_facets = 4 * n
     assert compute_num_boundary_facets(submesh) == expected_num_boundary_facets
+
+
+@pytest.mark.skip_in_parallel
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_mesh_create_cmap(dtype):
+    gdim, shape, degree = 2, "triangle", 1
+
+    x = np.array([[0., 0.], [0., 1.], [1., 1.]], dtype=dtype)
+    cells = [[0, 1, 2]]
+
+    # ufl.Mesh case
+    domain = ufl.Mesh(element("Lagrange", shape, degree, gdim=gdim, shape=(2, ), dtype=dtype))
+    msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, x, domain)
+    assert msh.geometry.cmap.dim == 3
+    assert msh.ufl_domain().ufl_coordinate_element().value_shape == (2,)
+
+    # basix.ufl.element
+    domain = element("Lagrange", shape, degree, gdim=gdim, shape=(2, ), dtype=dtype)
+    msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, x, domain)
+    assert msh.geometry.cmap.dim == 3
+    assert msh.ufl_domain().ufl_coordinate_element().value_shape == (2,)
+
+    # basix.finite_element
+    domain = basix.create_element(basix.ElementFamily.P,
+                                  basix.cell.string_to_type(shape), degree, dtype=dtype)
+    msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, x, domain)
+    assert msh.geometry.cmap.dim == 3
+    assert msh.ufl_domain().ufl_coordinate_element().value_shape == (2,)
+
+    # cpp.fem.CoordinateElement
+    e = basix.create_element(basix.ElementFamily.P, basix.cell.string_to_type(shape),
+                             degree, dtype=dtype)
+    domain = coordinate_element(e)
+    msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, x, domain)
+    assert msh.geometry.cmap.dim == 3
+    assert msh.ufl_domain() is None

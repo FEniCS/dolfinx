@@ -735,10 +735,7 @@ FunctionSpace<T> create_functionspace(
   assert(ufcx_element);
 
   const auto& geometry = mesh->geometry();
-  if (geometry.cmaps().size() > 1)
-    throw std::runtime_error("Not supported for Mixed Topology");
-
-  const auto& cmap = geometry.cmaps()[0];
+  auto& cmap = geometry.cmap();
   if (space->geometry_degree != cmap.degree()
       or static_cast<basix::cell::type>(space->geometry_basix_cell)
              != mesh::cell_type_to_basix_type(cmap.cell_shape())
@@ -756,7 +753,7 @@ FunctionSpace<T> create_functionspace(
   const auto topology = mesh->topology();
   assert(topology);
   ElementDofLayout layout
-      = create_element_dof_layout(*ufcx_map, topology->cell_types()[0]);
+      = create_element_dof_layout(*ufcx_map, topology->cell_type());
 
   std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
       unpermute_dofs;

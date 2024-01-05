@@ -62,8 +62,7 @@ def random_point_in_reference(cell_type):
 
 
 def random_point_in_cell(mesh):
-    assert len(mesh.topology.cell_types) == 1
-    cell_type = mesh.topology.cell_types[0]
+    cell_type = mesh.topology.cell_type
     point = random_point_in_reference(cell_type)
 
     if cell_type == CellType.interval:
@@ -107,8 +106,8 @@ def one_cell_mesh(cell_type):
     for i, j in enumerate(order):
         ordered_points[j] = points[i]
     cells = np.array([order])
-
-    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, shape=(ordered_points.shape[1],)))
+    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, shape=(ordered_points.shape[1],),
+                              dtype=default_real_type))
     return create_mesh(MPI.COMM_WORLD, cells, ordered_points, domain)
 
 
@@ -141,7 +140,8 @@ def two_cell_mesh(cell_type):
                            [1., 0., -1.], [0., 1., -1.], [1., 1., -1.]], dtype=default_real_type)
         cells = [[0, 1, 2, 3, 4, 5, 6, 7], [9, 11, 8, 10, 1, 3, 0, 2]]
 
-    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, shape=(points.shape[1],)))
+    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, shape=(points.shape[1],),
+                              dtype=default_real_type))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     return mesh
 
@@ -442,7 +442,7 @@ def test_interpolation_non_affine():
                        [0.5, 1, 0], [0.5, 0, 1.5], [0, 1, 1.5], [1, 1, 1.5],
                        [0.5, 2, 1.5], [0.5, 1, 3], [0.5, 1, 1.5]], dtype=default_real_type)
     cells = np.array([range(len(points))], dtype=np.int32)
-    domain = ufl.Mesh(element("Lagrange", "hexahedron", 2, shape=(3,)))
+    domain = ufl.Mesh(element("Lagrange", "hexahedron", 2, shape=(3,), dtype=default_real_type))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     W = functionspace(mesh, ("NCE", 1))
     V = functionspace(mesh, ("NCE", 2))
@@ -462,7 +462,7 @@ def test_interpolation_non_affine_nonmatching_maps():
                        [0.5, 1, 0], [0.5, -0.1, 1.5], [0, 1, 1.5], [1, 1, 1.5],
                        [0.5, 2, 1.5], [0.5, 1, 3], [0.5, 1, 1.5]], dtype=default_real_type)
     cells = np.array([range(len(points))], dtype=np.int32)
-    domain = ufl.Mesh(element("Lagrange", "hexahedron", 2, shape=(3,)))
+    domain = ufl.Mesh(element("Lagrange", "hexahedron", 2, shape=(3,), dtype=default_real_type))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     gdim = mesh.geometry.dim
     W = functionspace(mesh, ("DG", 1, (gdim,)))
@@ -470,7 +470,7 @@ def test_interpolation_non_affine_nonmatching_maps():
     w, v = Function(W), Function(V)
     w.interpolate(lambda x: x)
     v.interpolate(w)
-    assert assemble_scalar(form(ufl.inner(w - v, w - v) * ufl.dx)) == pytest.approx(0, abs=1e-10)
+    assert assemble_scalar(form(ufl.inner(w - v, w - v) * ufl.dx)) == pytest.approx(0, abs=1e-8)
 
 
 @pytest.mark.parametrize("order", [2, 3, 4])

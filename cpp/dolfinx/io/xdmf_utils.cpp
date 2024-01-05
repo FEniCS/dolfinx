@@ -242,13 +242,11 @@ xdmf_utils::distribute_entity_data(
 {
   assert(entities.extent(0) == data.size());
   LOG(INFO) << "XDMF distribute entity data";
-  auto cell_types = topology.cell_types();
-  if (cell_types.size() > 1)
-    throw std::runtime_error("cell type IO");
+  mesh::CellType cell_type = topology.cell_type();
 
   // Get layout of dofs on 0th cell entity of dimension entity_dim
   std::vector<int> cell_vertex_dofs;
-  for (int i = 0; i < mesh::cell_num_entities(cell_types.back(), 0); ++i)
+  for (int i = 0; i < mesh::cell_num_entities(cell_type, 0); ++i)
   {
     const std::vector<int>& local_index = cmap_dof_layout.entity_dofs(0, i);
     assert(local_index.size() == 1);
@@ -291,9 +289,8 @@ xdmf_utils::distribute_entity_data(
     std::array shape{entities.extent(0), num_vert_per_e};
     return std::pair(std::move(entities_v), shape);
   };
-  const auto [entities_v_b, shapev]
-      = to_vertex_entities(cmap_dof_layout, entity_dim, cell_vertex_dofs,
-                           cell_types.back(), entities);
+  const auto [entities_v_b, shapev] = to_vertex_entities(
+      cmap_dof_layout, entity_dim, cell_vertex_dofs, cell_type, entities);
   mdspan_t<const std::int64_t, 2> entities_v(entities_v_b.data(), shapev);
 
   MPI_Comm comm = topology.comm();

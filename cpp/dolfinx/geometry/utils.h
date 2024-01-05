@@ -39,8 +39,6 @@ std::vector<T> shortest_vector(const mesh::Mesh<T>& mesh, int dim,
 {
   const int tdim = mesh.topology()->dim();
   const mesh::Geometry<T>& geometry = mesh.geometry();
-  if (geometry.cmaps().size() > 1)
-    throw std::runtime_error("Mixed topology not supported");
 
   std::span<const T> geom_dofs = geometry.x();
   auto x_dofmap = geometry.dofmap();
@@ -97,7 +95,7 @@ std::vector<T> shortest_vector(const mesh::Mesh<T>& mesh, int dim,
           MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
               x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
       const std::vector<int> entity_dofs
-          = geometry.cmaps()[0].create_dof_layout().entity_closure_dofs(
+          = geometry.cmap().create_dof_layout().entity_closure_dofs(
               dim, local_cell_entity);
       std::vector<T> nodes(3 * entity_dofs.size());
       for (std::size_t i = 0; i < entity_dofs.size(); i++)
@@ -510,9 +508,6 @@ std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
                                           std::span<const std::int32_t> cells,
                                           std::array<T, 3> point, T tol)
 {
-  if (mesh.geometry().cmaps().size() > 1)
-    throw std::runtime_error("Mixed topology not supported");
-
   if (cells.empty())
     return -1;
   else
@@ -770,8 +765,6 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
 
   // Get mesh geometry for closest entity
   const mesh::Geometry<T>& geometry = mesh.geometry();
-  if (geometry.cmaps().size() > 1)
-    throw std::runtime_error("Mixed topology not supported");
   std::span<const T> geom_dofs = geometry.x();
   auto x_dofmap = geometry.dofmap();
 

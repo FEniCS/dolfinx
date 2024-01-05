@@ -38,7 +38,7 @@ _gmsh_to_cells = {1: ("interval", 1), 2: ("triangle", 1),
                   92: ("hexahedron", 3)}
 
 
-def ufl_mesh(gmsh_cell: int, gdim: int) -> ufl.Mesh:
+def ufl_mesh(gmsh_cell: int, gdim: int, dtype=npt.DTypeLike) -> ufl.Mesh:
     """Create a UFL mesh from a Gmsh cell identifier and geometric dimension.
 
     See https://gmsh.info//doc/texinfo/gmsh.html#MSH-file-format.
@@ -58,9 +58,9 @@ def ufl_mesh(gmsh_cell: int, gdim: int) -> ufl.Mesh:
         print(f"Unknown cell type {gmsh_cell}.")
         raise e
     cell = ufl.Cell(shape, geometric_dimension=gdim)
-
     element = basix.ufl.element(basix.ElementFamily.P, cell.cellname(), degree,
-                                basix.LagrangeVariant.equispaced, shape=(gdim, ), gdim=gdim)
+                                basix.LagrangeVariant.equispaced, shape=(gdim,),
+                                gdim=gdim, dtype=dtype)
     return ufl.Mesh(element)
 
 
@@ -259,7 +259,7 @@ def model_to_mesh(model, comm: _MPI.Comm, rank: int, gdim: int = 3,
             facet_values = np.empty((0,), dtype=np.int32)
 
     # Create distributed mesh
-    ufl_domain = ufl_mesh(cell_id, gdim)
+    ufl_domain = ufl_mesh(cell_id, gdim, dtype=dtype)
     gmsh_cell_perm = cell_perm_array(_cpp.mesh.to_type(str(ufl_domain.ufl_cell())), num_nodes)
     cells = cells[:, gmsh_cell_perm].copy()
     mesh = create_mesh(comm, cells, x[:, :gdim].astype(dtype, copy=False), ufl_domain, partitioner)
@@ -278,8 +278,8 @@ def model_to_mesh(model, comm: _MPI.Comm, rank: int, gdim: int = 3,
     if has_facet_data:
         # Permute facets from MSH to DOLFINx ordering
         # FIXME: This does not work for prism meshes
-        if topology.cell_types[0] == CellType.prism or topology.cell_types[0] == CellType.pyramid:
-            raise RuntimeError(f"Unsupported cell type {topology.cell_types[0]}")
+        if topology.cell_type == CellType.prism or topology.cell_type == CellType.pyramid:
+            raise RuntimeError(f"Unsupported cell type {topology.cell_type}")
 
         facet_type = _cpp.mesh.cell_entity_type(_cpp.mesh.to_type(str(ufl_domain.ufl_cell())), tdim - 1, 0)
         gmsh_facet_perm = cell_perm_array(facet_type, num_facet_nodes)
