@@ -64,6 +64,8 @@ class Timer:
         list_timings(comm, [TimingType.wall, TimingType.user])
     """
 
+    _cpp_object: _cpp.common.Timer
+
     def __init__(self, name: typing.Optional[str] = None):
         if name is None:
             self._cpp_object = _cpp.common.Timer()

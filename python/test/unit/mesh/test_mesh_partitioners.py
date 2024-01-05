@@ -121,9 +121,9 @@ def test_asymmetric_partitioner():
 
     # Dummy geometry
     if r == 0:
-        x = np.zeros((11 * (n + 1), 3), dtype=np.float64)
+        x = np.zeros((11 * (n + 1), 2), dtype=np.float64)
     else:
-        x = np.zeros((0, 3), dtype=np.float64)
+        x = np.zeros((0, 2), dtype=np.float64)
 
     # Send cells to self, and if on process 1, also send to process 0.
     def partitioner(comm, n, m, topo):

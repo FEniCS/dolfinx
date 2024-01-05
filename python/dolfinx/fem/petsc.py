@@ -553,7 +553,9 @@ def set_bc_nest(b: PETSc.Vec, bcs: typing.List[typing.List[DirichletBC]],
 
 
 class LinearProblem:
-    """Class for solving a linear variational problem of the form :math:`a(u, v) = L(v) \\,  \\forall v \\in V`
+    """Class for solving a linear variational problem.
+
+    Solves of the form :math:`a(u, v) = L(v) \\,  \\forall v \\in V`
     using PETSc as a linear algebra backend.
 
     """
@@ -685,9 +687,10 @@ class LinearProblem:
 
 
 class NonlinearProblem:
-    """Nonlinear problem class for solving the non-linear problem
-    :math:`F(u, v) = 0 \\ \\forall v \\in V` using PETSc as the linear algebra
-    backend.
+    """Nonlinear problem class for solving the non-linear problems.
+
+    Solves problems of the form :math:`F(u, v) = 0 \\ \\forall v \\in V` using
+    PETSc as the linear algebra backend.
 
     """
 
@@ -714,8 +717,7 @@ class NonlinearProblem:
             problem = LinearProblem(F, u, [bc0, bc1])
 
         """
-        self._L = _create_form(F, form_compiler_options=form_compiler_options,
-                               jit_options=jit_options)
+        self._L = _create_form(F, form_compiler_options=form_compiler_options, jit_options=jit_options)
 
         # Create the Jacobian matrix, dF/du
         if J is None:
@@ -723,8 +725,7 @@ class NonlinearProblem:
             du = ufl.TrialFunction(V)
             J = ufl.derivative(F, u, du)
 
-        self._a = _create_form(J, form_compiler_options=form_compiler_options,
-                               jit_options=jit_options)
+        self._a = _create_form(J, form_compiler_options=form_compiler_options, jit_options=jit_options)
         self.bcs = bcs
 
     @property
