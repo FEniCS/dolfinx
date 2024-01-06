@@ -25,9 +25,9 @@ import dolfinx.pkgconfig
 import ufl
 from dolfinx.fem import Function, form, functionspace
 from dolfinx.fem.petsc import assemble_matrix
-from dolfinx.fem.petsc import numba_utils as petsc_numba
-from dolfinx.fem.petsc import ctypes_utils as petsc_ctypes
 from dolfinx.fem.petsc import cffi_utils as petsc_cffi
+from dolfinx.fem.petsc import ctypes_utils as petsc_ctypes
+from dolfinx.fem.petsc import numba_utils as petsc_numba
 from dolfinx.mesh import create_unit_square
 
 numba = pytest.importorskip("numba")

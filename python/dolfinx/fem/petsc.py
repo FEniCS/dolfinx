@@ -16,8 +16,8 @@ from __future__ import annotations
 import contextlib
 import functools
 import os
-import typing
 import pathlib
+import typing
 
 import petsc4py
 import petsc4py.lib
@@ -840,8 +840,8 @@ class numba_utils:
 
     """
     pass
-    import numba as _numba
     import llvmlite as _llvmlite
+    import numba as _numba
     _llvmlite.binding.load_library_permanently(str(get_petsc_lib()))
 
     error_code = _numba.core.types.intc
