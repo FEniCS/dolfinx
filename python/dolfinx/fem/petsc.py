@@ -844,10 +844,10 @@ class numba_utils:
 
             import numpy as np
             import numpy.typing as npt
-            def set_vals_numba(A: int,
-                               m: int, rows: npt.NDArray[PETSc.IntType],
-                               n: int, cols: npt.NDArray[PETSc.IntType],
-                               data: npt.NDArray[PETSc.ScalarTYpe], mode: int):
+            def set_vals(A: int,
+                         m: int, rows: npt.NDArray[PETSc.IntType],
+                         n: int, cols: npt.NDArray[PETSc.IntType],
+                         data: npt.NDArray[PETSc.ScalarTYpe], mode: int):
                 MatSetValuesLocal(A, m, rows.ctypes, n, cols.ctypes, data.ctypes, mode)
     """
     try:
@@ -887,32 +887,32 @@ class ctypes_utils:
 
             import numpy as np
             import numpy.typing as npt
-            def set_vals_cffi(A: int,
-                              m: int, rows: npt.NDArray[PETSc.IntType],
-                              n: int, cols: npt.NDArray[PETSc.IntType],
-                              data: npt.NDArray[PETSc.ScalarTYpe], mode: int):
+            def set_vals(A: int,
+                         m: int, rows: npt.NDArray[PETSc.IntType],
+                         n: int, cols: npt.NDArray[PETSc.IntType],
+                         data: npt.NDArray[PETSc.ScalarTYpe], mode: int):
                 MatSetValuesLocal(A, m, rows.ctypes, n, cols.ctypes, data.ctypes, mode)
     """
-    import ctypes
-    _lib_ctypes = load_petsc_lib(ctypes.cdll.LoadLibrary)
+    import ctypes as _ctypes
+    _lib_ctypes = load_petsc_lib(_ctypes.cdll.LoadLibrary)
 
     # Note: ctypes does not have complex types, hence we use void* for
     # scalar data
     _int = np.ctypeslib.as_ctypes_type(PETSc.IntType)
+
     MatSetValuesLocal = _lib_ctypes.MatSetValuesLocal
     """See PETSc `MatSetValuesLocal
     <https://petsc.org/release/manualpages/Mat/MatSetValuesLocal>`_
     documentation."""
-
-    MatSetValuesLocal.argtypes = [ctypes.c_void_p, _int, ctypes.POINTER(_int), _int,
-                                  ctypes.POINTER(_int), ctypes.c_void_p, ctypes.c_int]
+    MatSetValuesLocal.argtypes = [_ctypes.c_void_p, _int, _ctypes.POINTER(_int), _int,
+                                  _ctypes.POINTER(_int), _ctypes.c_void_p, _ctypes.c_int]
 
     MatSetValuesBlockedLocal = _lib_ctypes.MatSetValuesBlockedLocal
     """See PETSc `MatSetValuesBlockedLocal
     <https://petsc.org/release/manualpages/Mat/MatSetValuesBlockedLocal>`_
     documentation."""
-    MatSetValuesBlockedLocal.argtypes = [ctypes.c_void_p, _int, ctypes.POINTER(_int), _int,
-                                         ctypes.POINTER(_int), ctypes.c_void_p, ctypes.c_int]
+    MatSetValuesBlockedLocal.argtypes = [_ctypes.c_void_p, _int, _ctypes.POINTER(_int), _int,
+                                         _ctypes.POINTER(_int), _ctypes.c_void_p, _ctypes.c_int]
 
 
 class cffi_utils:
@@ -931,10 +931,10 @@ class cffi_utils:
 
             import numpy as np
             import numpy.typing as npt
-            def set_vals_cffi(A: int,
-                            m: int, rows: npt.NDArray[PETSc.IntType],
-                            n: int, cols: npt.NDArray[PETSc.IntType],
-                            data: npt.NDArray[PETSc.ScalarTYpe], mode: int):
+            def set_vals(A: int,
+                         m: int, rows: npt.NDArray[PETSc.IntType],
+                         n: int, cols: npt.NDArray[PETSc.IntType],
+                         data: npt.NDArray[PETSc.ScalarTYpe], mode: int):
                 MatSetValuesLocal(A, m, ffi.from_buffer(rows), n, ffi.from_buffer(cols),
                                 ffi.from_buffer(rows(data), mode)
     """
