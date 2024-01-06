@@ -256,7 +256,7 @@ class Function(ufl.Coefficient):
     (domain, element and dofmap) and a vector holding the
     degrees-of-freedom."""
 
-    _cpp_object: typing.Tuple[_cpp.fem.Function_complex64, _cpp.fem.Function_complex128,
+    _cpp_object: typing.Union[_cpp.fem.Function_complex64, _cpp.fem.Function_complex128,
                               _cpp.fem.Function_float32, _cpp.fem.Function_float64]
 
     def __init__(self, V: FunctionSpace, x: typing.Optional[la.Vector] = None,
@@ -568,7 +568,7 @@ def functionspace(mesh: Mesh,
 
 class FunctionSpace(ufl.FunctionSpace):
     """A space on which Functions (fields) can be defined."""
-    _cpp_object: typing.Tuple[_cpp.fem.FunctionSpace_float32, _cpp.fem.FunctionSpace_float64]
+    _cpp_object: typing.Union[_cpp.fem.FunctionSpace_float32, _cpp.fem.FunctionSpace_float64]
     _mesh: Mesh
 
     def __init__(self, mesh: Mesh, element: ufl.FiniteElementBase,
