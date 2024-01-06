@@ -832,9 +832,15 @@ def load_petsc_lib(loader: typing.Callable[[str], typing.Any]) -> typing.Any:
 class numba_utils:
     """Utility attributes for working with Numba and PETSc.
 
+    These attributes are convenience functions for calling PETSc C
+    functions from within Numba functions.
+
+    The module ``Numba <https://numba.pydata.org/>`_ must be available
+    to use these utilities.
+
     Attributes:
-        MatSetValuesLocal:
-        MatSetValuesBlockedLocal:
+        MatSetValuesLocal: Interface to PETSc MatSetValuesLocal
+        MatSetValuesBlockedLocal:  Interface to PETSc MatSetValuesBlockedLocal
     """
     import numba
     import llvmlite
@@ -857,6 +863,9 @@ class numba_utils:
 class ctypes_utils:
     """Utility attributes for working with ctypes and PETSc.
 
+    These attributes are convenience functions for calling PETSc C
+    functions, typically from within Numba functions.
+
     Attributes:
         MatSetValuesLocal:
         MatSetValuesBlockedLocal:
@@ -877,7 +886,13 @@ class ctypes_utils:
 
 
 class cffi_utils:
-    """Utility attributes for working with CFFI and PETSc.
+    """Utility attributes for working with CFFI (ABI mode) and PETSc.
+
+    These attributes are convenience functions for calling PETSc C
+    functions, typically from within Numba functions.
+
+    The module ``CFFI <https://cffi.readthedocs.io/>`_ must be available
+    to use these utilities.
 
     Attributes:
         MatSetValuesLocal:
@@ -894,7 +909,7 @@ class cffi_utils:
 
     _lib_cffi = load_petsc_lib(ffi.dlopen)
 
-    def petsc_c_types() -> str:
+    def _petsc_c_types() -> str:
         assert PETSc.IntType == np.int32 or PETSc.IntType == np.int64
         if PETSc.IntType == np.int32:
             c_int_t = "int32_t"
@@ -913,13 +928,22 @@ class cffi_utils:
             c_scalar_t = "double _Complex"
         return c_int_t, c_scalar_t
 
-    # ABI mode
-    c_int_t, c_scalar_t = petsc_c_types()
-    ffi.cdef(f"""int MatSetValuesLocal(void* mat, {c_int_t} nrow, const {c_int_t}* irow,
+    c_int_t, c_scalar_t = _petsc_c_types()
+    # ffi.cdef(f"""int MatSetValuesLocal(void* mat, {c_int_t} nrow, const {c_int_t}* irow,
+    #                               {c_int_t} ncol, const {c_int_t}* icol,
+    #                               const {c_scalar_t}* y, int addv);""")
+    # MatSetValuesLocal_abi = _lib_cffi.MatSetValuesLocal
+    # ffi.cdef(f"""int MatSetValuesBlockedLocal(void* mat, {c_int_t} nrow, const {c_int_t}* irow,
+    #                               {c_int_t} ncol, const {c_int_t}* icol,
+    #                               const {c_scalar_t}* y, int addv);""")
+    # MatSetValuesBlockedLocal = _lib_cffi.MatSetValuesBlockedLocal
+    ffi.cdef(f"""
+             int MatSetValuesLocal(void* mat, {c_int_t} nrow, const {c_int_t}* irow,
                                   {c_int_t} ncol, const {c_int_t}* icol,
-                                  const {c_scalar_t}* y, int addv);""")
-    MatSetValuesLocal_abi = _lib_cffi.MatSetValuesLocal
-    ffi.cdef(f"""int MatSetValuesBlockedLocal(void* mat, {c_int_t} nrow, const {c_int_t}* irow,
+                                  const {c_scalar_t}* y, int addv);
+             int MatSetValuesBlockedLocal(void* mat, {c_int_t} nrow, const {c_int_t}* irow,
                                   {c_int_t} ncol, const {c_int_t}* icol,
-                                  const {c_scalar_t}* y, int addv);""")
+                                  const {c_scalar_t}* y, int addv);
+                                  """)
+    MatSetValuesLocal = _lib_cffi.MatSetValuesLocal
     MatSetValuesBlockedLocal = _lib_cffi.MatSetValuesBlockedLocal

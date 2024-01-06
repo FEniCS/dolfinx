@@ -33,15 +33,28 @@ from dolfinx.mesh import create_unit_square
 numba = pytest.importorskip("numba")
 cffi_support = pytest.importorskip("numba.core.typing.cffi_utils")
 
-
+# Get PETSc MatSetValuesLocal interfaces
 MatSetValuesLocal = petsc_numba.MatSetValuesLocal
 MatSetValuesLocal_ctypes = petsc_ctypes.MatSetValuesLocal
-MatSetValuesLocal_abi = petsc_cffi.MatSetValuesLocal_abi
+MatSetValuesLocal_abi = petsc_cffi.MatSetValuesLocal
+
+
+@numba.njit
+def set_vals_numba(A, m, rows, n, cols, data, mode):
+    MatSetValuesLocal(A, 3, rows.ctypes, 3, cols.ctypes, data.ctypes, mode)
+
+
+@numba.njit
+def set_vals_cffi(A, m, rows, n, cols, data, mode):
+    MatSetValuesLocal_abi(A, m, ffi.from_buffer(rows), n, ffi.from_buffer(cols), ffi.from_buffer(data), mode)
+
+
+@numba.njit
+def set_vals_ctypes(A, m, rows, n, cols, data, mode):
+    MatSetValuesLocal_ctypes(A, m, rows.ctypes, n, cols.ctypes, data.ctypes, mode)
 
 
 ffi = cffi.FFI()
-cffi_support.register_type(ffi.typeof('float _Complex'), numba.types.complex64)
-cffi_support.register_type(ffi.typeof('double _Complex'), numba.types.complex128)
 
 
 def get_matsetvalues_cffi_api():
@@ -54,6 +67,9 @@ def get_matsetvalues_cffi_api():
         dolfinx_pc = dolfinx.pkgconfig.parse("dolfinx")
     else:
         raise RuntimeError("Could not find DOLFINx pkgconfig file")
+
+    cffi_support.register_type(ffi.typeof('float _Complex'), numba.types.complex64)
+    cffi_support.register_type(ffi.typeof('double _Complex'), numba.types.complex128)
 
     petsc_dir = PETSc_get_config()['PETSC_DIR']
     petsc_arch = petsc4py.lib.getPathArchPETSc()[1]
@@ -158,21 +174,6 @@ def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells, dtype):
                ffi.from_buffer(perm))
         for j in range(3):
             b[dofmap[cell, j]] += b_local[j]
-
-
-@numba.njit
-def set_vals_numba(A, m, rows, n, cols, data, mode):
-    MatSetValuesLocal(A, 3, rows.ctypes, 3, cols.ctypes, data.ctypes, mode)
-
-
-@numba.njit
-def set_vals_cffi(A, m, rows, n, cols, data, mode):
-    MatSetValuesLocal_abi(A, m, ffi.from_buffer(rows), n, ffi.from_buffer(cols), ffi.from_buffer(data), mode)
-
-
-@numba.njit
-def set_vals_ctypes(A, m, rows, n, cols, data, mode):
-    MatSetValuesLocal_ctypes(A, m, rows.ctypes, n, cols.ctypes, data.ctypes, mode)
 
 
 @numba.njit(fastmath=True)
