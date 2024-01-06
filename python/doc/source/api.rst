@@ -10,7 +10,6 @@ Public user interface
 
 .. autosummary::
    :toctree: generated
-   :recursive:
 
    dolfinx.common
    dolfinx.fem
