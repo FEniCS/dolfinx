@@ -72,9 +72,9 @@ class Form:
         return self._cpp_object.dtype  # type: ignore
 
     @property
-    def mesh(self) -> typing.Union[_cpp.fem.Mesh_float32, _cpp.fem.Mesh_float64]:
-        """Mesh on which this form is defined"""
-        return self._cpp_object.mesh  # type: ignore
+    def mesh(self) -> typing.Union[_cpp.mesh.Mesh_float32, _cpp.mesh.Mesh_float64]:
+        """Mesh on which this form is defined."""
+        return self._cpp_object.mesh
 
     @property
     def integral_types(self):
