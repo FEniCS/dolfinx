@@ -874,15 +874,15 @@ class ctypes_utils:
     _lib_ctypes = load_petsc_lib(ctypes.cdll.LoadLibrary)
 
     _int = np.ctypeslib.as_ctypes_type(PETSc.IntType)
-    _scalar = np.ctypeslib.as_ctypes_type(PETSc.ScalarType)
+    # _scalar = np.ctypeslib.as_ctypes_type(PETSc.ScalarType)
 
     MatSetValuesLocal = _lib_ctypes.MatSetValuesLocal
     MatSetValuesLocal.argtypes = [ctypes.c_void_p, _int, ctypes.POINTER(_int), _int,
-                                  ctypes.POINTER(_int), ctypes.POINTER(_scalar), ctypes.c_int]
+                                  ctypes.POINTER(_int), ctypes.c_void_p, ctypes.c_int]
 
     MatSetValuesBlockedLocal = _lib_ctypes.MatSetValuesBlockedLocal
     MatSetValuesBlockedLocal.argtypes = [ctypes.c_void_p, _int, ctypes.POINTER(_int), _int,
-                                         ctypes.POINTER(_int), ctypes.POINTER(_scalar), ctypes.c_int]
+                                         ctypes.POINTER(_int), ctypes.c_void_p, ctypes.c_int]
 
 
 class cffi_utils:
