@@ -38,7 +38,6 @@ from dolfinx.fem.forms import extract_function_spaces as _extract_spaces
 from dolfinx.fem.forms import form as _create_form
 from dolfinx.fem.function import Function as _Function
 from dolfinx.la import create_petsc_vector
-import dolfinx.pkgconfig
 
 __all__ = ["create_vector", "create_vector_block", "create_vector_nest",
            "create_matrix", "create_matrix_block", "create_matrix_nest",
@@ -849,8 +848,8 @@ class numba_utils:
     _real_ptr = numba.core.types.CPointer(_real)
     _scalar_ptr = numba.core.types.CPointer(_scalar)
 
-    _MatSetValues_sig = numba.core.typing.signature(
-        numba.core.types.intc, numba.core.types.uintp, _int, _int_ptr, _int, _int_ptr, _scalar_ptr, numba.core.types.intc)
+    _MatSetValues_sig = numba.core.typing.signature(numba.core.types.intc, numba.core.types.uintp, _int, _int_ptr,
+                                                    _int, _int_ptr, _scalar_ptr, numba.core.types.intc)
     MatSetValuesLocal = numba.core.types.ExternalFunction("MatSetValuesLocal", _MatSetValues_sig)
     MatSetValuesBlockedLocal = numba.core.types.ExternalFunction("MatSetValuesBlockedLocal", _MatSetValues_sig)
 

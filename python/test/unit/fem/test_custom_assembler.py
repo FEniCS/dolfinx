@@ -45,7 +45,11 @@ cffi_support.register_type(ffi.typeof('double _Complex'), numba.types.complex128
 
 
 def get_matsetvalues_cffi_api():
-    """Make MatSetValuesLocal from PETSc available via cffi in API mode."""
+    """Make MatSetValuesLocal from PETSc available via cffi in API mode.
+
+    This function is not (yet) in the DOLFINx module because it is complicated
+    by needing to compile code.
+    """
     if dolfinx.pkgconfig.exists("dolfinx"):
         dolfinx_pc = dolfinx.pkgconfig.parse("dolfinx")
     else:
