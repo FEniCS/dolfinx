@@ -299,6 +299,7 @@ def test_custom_mesh_loop_rank1(dtype):
 
 @pytest.mark.parametrize("set_vals,backend",
                          [
+                             (set_vals_numba, "numba"),
                              (set_vals_ctypes, "ctypes"),
                              (set_vals_cffi, "cffi_abi"),
                          ])
