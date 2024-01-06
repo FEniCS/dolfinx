@@ -17,6 +17,7 @@ import contextlib
 import functools
 import os
 import typing
+import pathlib
 
 import petsc4py
 import petsc4py.lib
@@ -37,13 +38,14 @@ from dolfinx.fem.forms import extract_function_spaces as _extract_spaces
 from dolfinx.fem.forms import form as _create_form
 from dolfinx.fem.function import Function as _Function
 from dolfinx.la import create_petsc_vector
+import dolfinx.pkgconfig
 
 __all__ = ["create_vector", "create_vector_block", "create_vector_nest",
            "create_matrix", "create_matrix_block", "create_matrix_nest",
            "assemble_vector", "assemble_vector_nest", "assemble_vector_block",
            "assemble_matrix", "assemble_matrix_nest", "assemble_matrix_block",
            "apply_lifting", "apply_lifting_nest", "set_bc", "set_bc_nest",
-           "LinearProblem", "NonlinearProblem"]
+           "LinearProblem", "NonlinearProblem", "numba_utils"]
 
 
 def _extract_function_spaces(a: typing.List[typing.List[Form]]):
@@ -778,6 +780,34 @@ class NonlinearProblem:
         A.assemble()
 
 
+def get_petsc_lib() -> pathlib.Path:
+    """Determine path and name of the PETSc library.
+
+    Returns:
+        Full path to the PETSc shared library.
+
+    Raises:
+        RuntimeError: If PETSc library cannot be found for if more than
+            one library is found.
+    """
+    petsc_dir = petsc4py.get_config()['PETSC_DIR']
+    petsc_arch = petsc4py.lib.getPathArchPETSc()[1]
+    candidate_paths = [os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"),
+                       os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib")]
+    exists_paths = []
+    for candidate_path in candidate_paths:
+        print(candidate_path)
+        if os.path.exists(candidate_path):
+            exists_paths.append(candidate_path)
+
+    if len(exists_paths) == 0:
+        raise RuntimeError("Could not find a PETSc shared library.")
+    elif len(exists_paths) > 1:
+        raise RuntimeError("More than one PETSc shared library found.")
+
+    return pathlib.Path(exists_paths[0])
+
+
 def load_petsc_lib(loader: typing.Callable[[str], typing.Any]) -> typing.Any:
     """Load PETSc shared library using loader callable, e.g. ctypes.CDLL.
 
@@ -786,32 +816,111 @@ def load_petsc_lib(loader: typing.Callable[[str], typing.Any]) -> typing.Any:
 
     Returns:
         A wrapped library of the type returned by the callable.
-
     """
-    petsc_lib = None
-
-    petsc_dir = petsc4py.get_config()['PETSC_DIR']
-    petsc_arch = petsc4py.lib.getPathArchPETSc()[1]
-
-    candidate_paths = [os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"),
-                       os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib")]
-
-    exists_paths = []
-    for candidate_path in candidate_paths:
-        if os.path.exists(candidate_path):
-            exists_paths.append(candidate_path)
-
-    if len(exists_paths) == 0:
-        raise RuntimeError("Could not find a PETSc shared library.")
-
-    for exists_path in exists_paths:
+    lib_path = get_petsc_lib()
+    try:
         try:
-            petsc_lib = loader(exists_path)
-        except OSError:
-            print(f"Failed to load shared library found at {exists_path}.")
-            continue
-
-    if petsc_lib is None:
-        raise RuntimeError("Failed to load a PETSc shared library.")
+            petsc_lib = loader(lib_path)
+        except TypeError:
+            petsc_lib = loader(str(lib_path))
+    except OSError as e:
+        print(f"Failed to load shared library found at {lib_path}.")
+        raise e
 
     return petsc_lib
+
+
+class numba_utils:
+    """Utility attributes for working with Numba and PETSc.
+
+    Attributes:
+        MatSetValuesLocal:
+        MatSetValuesBlockedLocal:
+    """
+    import numba
+    import llvmlite
+    llvmlite.binding.load_library_permanently(str(get_petsc_lib()))
+
+    _error_code = numba.core.types.intc
+    _int = numba.from_dtype(PETSc.IntType)
+    _scalar = numba.from_dtype(PETSc.ScalarType)
+    _real = numba.from_dtype(PETSc.RealType)
+    _int_ptr = numba.core.types.CPointer(_int)
+    _real_ptr = numba.core.types.CPointer(_real)
+    _scalar_ptr = numba.core.types.CPointer(_scalar)
+
+    _MatSetValues_sig = numba.core.typing.signature(
+        numba.core.types.intc, numba.core.types.uintp, _int, _int_ptr, _int, _int_ptr, _scalar_ptr, numba.core.types.intc)
+    MatSetValuesLocal = numba.core.types.ExternalFunction("MatSetValuesLocal", _MatSetValues_sig)
+    MatSetValuesBlockedLocal = numba.core.types.ExternalFunction("MatSetValuesBlockedLocal", _MatSetValues_sig)
+
+
+class ctypes_utils:
+    """Utility attributes for working with ctypes and PETSc.
+
+    Attributes:
+        MatSetValuesLocal:
+        MatSetValuesBlockedLocal:
+    """
+    import ctypes
+    _lib_ctypes = load_petsc_lib(ctypes.cdll.LoadLibrary)
+
+    _int = np.ctypeslib.as_ctypes_type(PETSc.IntType)
+    _scalar = np.ctypeslib.as_ctypes_type(PETSc.ScalarType)
+
+    MatSetValuesLocal = _lib_ctypes.MatSetValuesLocal
+    MatSetValuesLocal.argtypes = [ctypes.c_void_p, _int, ctypes.POINTER(_int), _int,
+                                  ctypes.POINTER(_int), ctypes.POINTER(_scalar), ctypes.c_int]
+
+    MatSetValuesBlockedLocal = _lib_ctypes.MatSetValuesBlockedLocal
+    MatSetValuesBlockedLocal.argtypes = [ctypes.c_void_p, _int, ctypes.POINTER(_int), _int,
+                                         ctypes.POINTER(_int), ctypes.POINTER(_scalar), ctypes.c_int]
+
+
+class cffi_utils:
+    """Utility attributes for working with CFFI and PETSc.
+
+    Attributes:
+        MatSetValuesLocal:
+        MatSetValuesBlockedLocal:
+    """
+    import cffi
+    import numba
+    import numba.core.typing.cffi_utils as cffi_support
+
+    # Register complex types
+    ffi = cffi.FFI()
+    cffi_support.register_type(ffi.typeof('float _Complex'), numba.types.complex64)
+    cffi_support.register_type(ffi.typeof('double _Complex'), numba.types.complex128)
+
+    _lib_cffi = load_petsc_lib(ffi.dlopen)
+
+    def petsc_c_types() -> str:
+        assert PETSc.IntType == np.int32 or PETSc.IntType == np.int64
+        if PETSc.IntType == np.int32:
+            c_int_t = "int32_t"
+        elif PETSc.IntType == np.int64:
+            c_int_t = "int64_t"
+
+        scalar_t = PETSc.ScalarType
+        assert scalar_t == np.float32 or scalar_t == np.float64 or scalar_t == np.complex64 or scalar_t == np.complex128
+        if scalar_t == np.float32:
+            c_scalar_t = "float"
+        elif scalar_t == np.float64:
+            c_scalar_t = "double"
+        elif scalar_t == np.complex64:
+            c_scalar_t = "float _Complex"
+        elif scalar_t == np.complex128:
+            c_scalar_t = "double _Complex"
+        return c_int_t, c_scalar_t
+
+    # ABI mode
+    c_int_t, c_scalar_t = petsc_c_types()
+    ffi.cdef(f"""int MatSetValuesLocal(void* mat, {c_int_t} nrow, const {c_int_t}* irow,
+                                  {c_int_t} ncol, const {c_int_t}* icol,
+                                  const {c_scalar_t}* y, int addv);""")
+    MatSetValuesLocal_abi = _lib_cffi.MatSetValuesLocal
+    ffi.cdef(f"""int MatSetValuesBlockedLocal(void* mat, {c_int_t} nrow, const {c_int_t}* irow,
+                                  {c_int_t} ncol, const {c_int_t}* icol,
+                                  const {c_scalar_t}* y, int addv);""")
+    MatSetValuesBlockedLocal = _lib_cffi.MatSetValuesBlockedLocal
