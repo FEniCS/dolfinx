@@ -44,7 +44,8 @@ __all__ = ["create_vector", "create_vector_block", "create_vector_nest",
            "assemble_vector", "assemble_vector_nest", "assemble_vector_block",
            "assemble_matrix", "assemble_matrix_nest", "assemble_matrix_block",
            "apply_lifting", "apply_lifting_nest", "set_bc", "set_bc_nest",
-           "LinearProblem", "NonlinearProblem", "numba_utils"]
+           "LinearProblem", "NonlinearProblem",
+           "cffi_utils", "numba_utils", "ctypes_utils"]
 
 
 def _extract_function_spaces(a: typing.List[typing.List[Form]]):
@@ -795,7 +796,6 @@ def get_petsc_lib() -> pathlib.Path:
                        os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib")]
     exists_paths = []
     for candidate_path in candidate_paths:
-        print(candidate_path)
         if os.path.exists(candidate_path):
             exists_paths.append(candidate_path)
 
@@ -835,29 +835,27 @@ class numba_utils:
     These attributes are convenience functions for calling PETSc C
     functions from within Numba functions.
 
-    The module ``Numba <https://numba.pydata.org/>`_ must be available
+    `Numba <https://numba.pydata.org/>`_ must be available
     to use these utilities.
 
-    Attributes:
-        MatSetValuesLocal: Interface to PETSc MatSetValuesLocal
-        MatSetValuesBlockedLocal:  Interface to PETSc MatSetValuesBlockedLocal
     """
-    import numba
-    import llvmlite
-    llvmlite.binding.load_library_permanently(str(get_petsc_lib()))
+    pass
+    import numba as _numba
+    import llvmlite as _llvmlite
+    _llvmlite.binding.load_library_permanently(str(get_petsc_lib()))
 
-    _error_code = numba.core.types.intc
-    _int = numba.from_dtype(PETSc.IntType)
-    _scalar = numba.from_dtype(PETSc.ScalarType)
-    _real = numba.from_dtype(PETSc.RealType)
-    _int_ptr = numba.core.types.CPointer(_int)
-    _real_ptr = numba.core.types.CPointer(_real)
-    _scalar_ptr = numba.core.types.CPointer(_scalar)
+    error_code = _numba.core.types.intc
+    _int = _numba.from_dtype(PETSc.IntType)
+    _scalar = _numba.from_dtype(PETSc.ScalarType)
+    _real = _numba.from_dtype(PETSc.RealType)
+    _int_ptr = _numba.core.types.CPointer(_int)
+    _real_ptr = _numba.core.types.CPointer(_real)
+    _scalar_ptr = _numba.core.types.CPointer(_scalar)
 
-    _MatSetValues_sig = numba.core.typing.signature(numba.core.types.intc, numba.core.types.uintp, _int, _int_ptr,
-                                                    _int, _int_ptr, _scalar_ptr, numba.core.types.intc)
-    MatSetValuesLocal = numba.core.types.ExternalFunction("MatSetValuesLocal", _MatSetValues_sig)
-    MatSetValuesBlockedLocal = numba.core.types.ExternalFunction("MatSetValuesBlockedLocal", _MatSetValues_sig)
+    _MatSetValues_sig = _numba.core.typing.signature(_numba.core.types.intc, _numba.core.types.uintp, _int, _int_ptr,
+                                                     _int, _int_ptr, _scalar_ptr, _numba.core.types.intc)
+    MatSetValuesLocal = _numba.core.types.ExternalFunction("MatSetValuesLocal", _MatSetValues_sig)
+    MatSetValuesBlockedLocal = _numba.core.types.ExternalFunction("MatSetValuesBlockedLocal", _MatSetValues_sig)
 
 
 class ctypes_utils:
@@ -866,16 +864,16 @@ class ctypes_utils:
     These attributes are convenience functions for calling PETSc C
     functions, typically from within Numba functions.
 
-    Attributes:
-        MatSetValuesLocal:
-        MatSetValuesBlockedLocal:
     """
+    # Attributes:
+    #     MatSetValuesLocal: See https://petsc.org/release/manualpages/Mat/MatSetValuesLocal/
+    #     MatSetValuesBlockedLocal: See https://petsc.org/release/manualpages/Mat/MatSetValuesBlockedLocal/
     import ctypes
     _lib_ctypes = load_petsc_lib(ctypes.cdll.LoadLibrary)
 
+    # Note: ctypes does not have complex types, hence we use void* for
+    # scalar data
     _int = np.ctypeslib.as_ctypes_type(PETSc.IntType)
-    # _scalar = np.ctypeslib.as_ctypes_type(PETSc.ScalarType)
-
     MatSetValuesLocal = _lib_ctypes.MatSetValuesLocal
     MatSetValuesLocal.argtypes = [ctypes.c_void_p, _int, ctypes.POINTER(_int), _int,
                                   ctypes.POINTER(_int), ctypes.c_void_p, ctypes.c_int]
@@ -891,13 +889,10 @@ class cffi_utils:
     These attributes are convenience functions for calling PETSc C
     functions, typically from within Numba functions.
 
-    The module ``CFFI <https://cffi.readthedocs.io/>`_ must be available
-    to use these utilities.
-
-    Attributes:
-        MatSetValuesLocal:
-        MatSetValuesBlockedLocal:
     """
+    # Attributes:
+    #     MatSetValuesLocal: See https://petsc.org/release/manualpages/Mat/MatSetValuesLocal/
+    #     MatSetValuesBlockedLocal: See https://petsc.org/release/manualpages/Mat/MatSetValuesBlockedLocal/
     import cffi
     import numba
     import numba.core.typing.cffi_utils as cffi_support
@@ -929,14 +924,6 @@ class cffi_utils:
         return c_int_t, c_scalar_t
 
     c_int_t, c_scalar_t = _petsc_c_types()
-    # ffi.cdef(f"""int MatSetValuesLocal(void* mat, {c_int_t} nrow, const {c_int_t}* irow,
-    #                               {c_int_t} ncol, const {c_int_t}* icol,
-    #                               const {c_scalar_t}* y, int addv);""")
-    # MatSetValuesLocal_abi = _lib_cffi.MatSetValuesLocal
-    # ffi.cdef(f"""int MatSetValuesBlockedLocal(void* mat, {c_int_t} nrow, const {c_int_t}* irow,
-    #                               {c_int_t} ncol, const {c_int_t}* icol,
-    #                               const {c_scalar_t}* y, int addv);""")
-    # MatSetValuesBlockedLocal = _lib_cffi.MatSetValuesBlockedLocal
     ffi.cdef(f"""
              int MatSetValuesLocal(void* mat, {c_int_t} nrow, const {c_int_t}* irow,
                                   {c_int_t} ncol, const {c_int_t}* icol,
