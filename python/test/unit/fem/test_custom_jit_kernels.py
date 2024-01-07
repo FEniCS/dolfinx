@@ -15,6 +15,7 @@ import numpy as np
 import pytest
 
 import dolfinx
+import dolfinx.utils
 from dolfinx import TimingType
 from dolfinx import cpp as _cpp
 from dolfinx import fem, la, list_timings
@@ -22,31 +23,13 @@ from dolfinx.fem import Form, Function, IntegralType, functionspace
 from dolfinx.mesh import create_unit_square
 
 numba = pytest.importorskip("numba")
+ufcx_signature = dolfinx.utils.numba_ufcx_kernel_signature
 
-# Add current directory - required for some Python versions to find cffi
-# compiled modules
 sys.path.append(os.getcwd())
 
 
-def c_signature(dtype, xdtype):
-    foo = numba.types.void(numba.types.CPointer(numba.from_dtype(dtype)),
-                           numba.types.CPointer(numba.from_dtype(dtype)),
-                           numba.types.CPointer(numba.from_dtype(dtype)),
-                           numba.types.CPointer(numba.from_dtype(xdtype)),
-                           numba.types.CPointer(numba.types.int32),
-                           numba.types.CPointer(numba.types.int32))
-    print("TTTT:", type(foo))
-
-    return numba.types.void(numba.types.CPointer(numba.from_dtype(dtype)),
-                            numba.types.CPointer(numba.from_dtype(dtype)),
-                            numba.types.CPointer(numba.from_dtype(dtype)),
-                            numba.types.CPointer(numba.from_dtype(xdtype)),
-                            numba.types.CPointer(numba.types.int32),
-                            numba.types.CPointer(numba.types.int32))
-
-
 def tabulate_rank2(dtype, xdtype):
-    @numba.cfunc(c_signature(dtype, xdtype), nopython=True)
+    @numba.cfunc(ufcx_signature(dtype, xdtype), nopython=True)
     def tabulate(A_, w_, c_, coords_, entity_local_index, cell_orientation):
         A = numba.carray(A_, (3, 3), dtype=dtype)
         coordinate_dofs = numba.carray(coords_, (3, 3), dtype=xdtype)
@@ -64,7 +47,7 @@ def tabulate_rank2(dtype, xdtype):
 
 
 def tabulate_rank1(dtype, xdtype):
-    @numba.cfunc(c_signature(dtype, xdtype), nopython=True)
+    @numba.cfunc(ufcx_signature(dtype, xdtype), nopython=True)
     def tabulate(b_, w_, c_, coords_, local_index, orientation):
         b = numba.carray(b_, (3), dtype=dtype)
         coordinate_dofs = numba.carray(coords_, (3, 3), dtype=xdtype)
@@ -79,7 +62,7 @@ def tabulate_rank1(dtype, xdtype):
 
 
 def tabulate_rank1_coeff(dtype, xdtype):
-    @numba.cfunc(c_signature(dtype, xdtype), nopython=True)
+    @numba.cfunc(ufcx_signature(dtype, xdtype), nopython=True)
     def tabulate(b_, w_, c_, coords_, local_index, orientation):
         b = numba.carray(b_, (3), dtype=dtype)
         w = numba.carray(w_, (1), dtype=dtype)

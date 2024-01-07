@@ -15,7 +15,7 @@ import pathlib
 import numpy as _np
 import numpy.typing as _npt
 
-__all__ = ["cffi_utils", "numba_utils", "ctypes_utils"]
+__all__ = ["cffi_utils", "numba_utils", "ctypes_utils", "numba_ufcx_kernel_signature"]
 
 
 def get_petsc_lib() -> pathlib.Path:
@@ -160,11 +160,10 @@ class cffi_utils:
                                 ffi.from_buffer(rows(data), mode)
     """
     try:
-        from petsc4py import PETSc as _PETSc
-
         import cffi as _cffi
         import numba as _numba
         import numba.core.typing.cffi_utils as _cffi_support
+        from petsc4py import PETSc as _PETSc
 
         # Register complex types
         _ffi = _cffi.FFI()
@@ -213,7 +212,7 @@ class cffi_utils:
         pass
 
 
-def numba_ufx_kernel_signature(dtype: _npt.DTypeLike, xdtype: _npt.DTypeLike):
+def numba_ufcx_kernel_signature(dtype: _npt.DTypeLike, xdtype: _npt.DTypeLike):
     """Return a Numba C signature for the UFCx ``tabulate_tensor`` interface.
 
     Args:
@@ -221,19 +220,16 @@ def numba_ufx_kernel_signature(dtype: _npt.DTypeLike, xdtype: _npt.DTypeLike):
         xdtype: The geometry float type.
 
     Returns:
-        Numba
+        A Numba signature (``numba.core.typing.templates.Signature``).
 
     Raises:
-        ImportError: If ``numba`` cannot be imoprted.
+        ImportError: If ``numba`` cannot be imported.
     """
     try:
-        import numba
+        from numba import from_dtype
         import numba.types as types
-        return types.void(types.CPointer(numba.from_dtype(dtype)),
-                          types.CPointer(numba.from_dtype(dtype)),
-                          types.CPointer(numba.from_dtype(dtype)),
-                          types.CPointer(numba.from_dtype(xdtype)),
-                          types.CPointer(types.int32),
-                          types.CPointer(types.int32))
+        return types.void(types.CPointer(from_dtype(dtype)), types.CPointer(from_dtype(dtype)),
+                          types.CPointer(from_dtype(dtype)), types.CPointer(from_dtype(xdtype)),
+                          types.CPointer(types.int32), types.CPointer(types.int32))
     except ImportError as e:
         raise e
