@@ -260,7 +260,7 @@ class Function(ufl.Coefficient):
                               _cpp.fem.Function_float32, _cpp.fem.Function_float64]
 
     def __init__(self, V: FunctionSpace, x: typing.Optional[la.Vector] = None,
-                 name: typing.Optional[str] = None, dtype: npt.DTypeLike = None):
+                 name: typing.Optional[str] = None, dtype: typing.Optional[npt.DTypeLike] = None):
         """Initialize a finite element Function.
 
         Args:
