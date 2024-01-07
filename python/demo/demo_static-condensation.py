@@ -42,7 +42,6 @@ from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
 from dolfinx.io import XDMFFile
 from dolfinx.jit import ffcx_jit
 from dolfinx.mesh import locate_entities_boundary, meshtags
-
 from dolfinx.utils import numba_ufcx_kernel_signature as ufcx_signature
 
 if default_real_type == np.float32:
@@ -56,15 +55,12 @@ msh = infile.read_mesh(name="Grid")
 infile.close()
 
 # Stress (Se) and displacement (Ue) elements
-Se = element("DG", msh.basix_cell(), 1, shape=(2, 2), symmetry=True, dtype=PETSc.RealType)
-Ue = element("Lagrange", msh.basix_cell(), 2, shape=(2,), dtype=PETSc.RealType)
+Se = element("DG", msh.basix_cell(), 1, shape=(2, 2), symmetry=True, dtype=PETSc.RealType)  # type: ignore
+Ue = element("Lagrange", msh.basix_cell(), 2, shape=(2,), dtype=PETSc.RealType)  # type: ignore
 
 S = functionspace(msh, Se)
 U = functionspace(msh, Ue)
 
-# Get local dofmap sizes for later local tensor tabulations
-Ssize = S.element.space_dimension
-Usize = U.element.space_dimension
 
 sigma, tau = ufl.TrialFunction(S), ufl.TestFunction(S)
 u, v = ufl.TrialFunction(U), ufl.TestFunction(U)
@@ -101,7 +97,7 @@ a10 = - ufl.inner(sigma, ufl.grad(v)) * ufl.dx
 a01 = - ufl.inner(sigma_u(u), tau) * ufl.dx
 
 f = ufl.as_vector([0.0, 1.0 / 16])
-b1 = form(- ufl.inner(f, v) * ds(1), dtype=PETSc.ScalarType)
+b1 = form(- ufl.inner(f, v) * ds(1), dtype=PETSc.ScalarType)  # type: ignore
 
 # JIT compile individual blocks tabulation kernels
 nptype, ffcxtype = None, None
@@ -116,22 +112,27 @@ elif PETSc.ScalarType == np.complex128:  # type: ignore
 else:
     raise RuntimeError(f"Unsupported scalar type {PETSc.ScalarType}.")  # type: ignore
 
-ufcx_form00, _, _ = ffcx_jit(msh.comm, a00, form_compiler_options={"scalar_type": ffcxtype})
-kernel00 = getattr(ufcx_form00.form_integrals[0], f"tabulate_tensor_{np.dtype(PETSc.ScalarType).name}")
+ufcx00, _, _ = ffcx_jit(msh.comm, a00, form_compiler_options={"scalar_type": ffcxtype})
+kernel00 = getattr(ufcx00.form_integrals[0], f"tabulate_tensor_{np.dtype(PETSc.ScalarType).name}")  # type: ignore
 
-ufcx_form01, _, _ = ffcx_jit(msh.comm, a01, form_compiler_options={"scalar_type": ffcxtype})
-kernel01 = getattr(ufcx_form01.form_integrals[0], f"tabulate_tensor_{np.dtype(PETSc.ScalarType).name}")
+ufcx01, _, _ = ffcx_jit(msh.comm, a01, form_compiler_options={"scalar_type": ffcxtype})
+kernel01 = getattr(ufcx01.form_integrals[0], f"tabulate_tensor_{np.dtype(PETSc.ScalarType).name}")  # type: ignore
 
-ufcx_form10, _, _ = ffcx_jit(msh.comm, a10, form_compiler_options={"scalar_type": ffcxtype})
-kernel10 = getattr(ufcx_form10.form_integrals[0], f"tabulate_tensor_{np.dtype(PETSc.ScalarType).name}")
+ufcx10, _, _ = ffcx_jit(msh.comm, a10, form_compiler_options={"scalar_type": ffcxtype})
+kernel10 = getattr(ufcx10.form_integrals[0], f"tabulate_tensor_{np.dtype(PETSc.ScalarType).name}")  # type: ignore
 
 ffi = cffi.FFI()
 cffi_support.register_type(ffi.typeof('double _Complex'), numba.types.complex128)
 
+# Get local dofmap sizes for later local tensor tabulations
+Ssize = S.element.space_dimension
+Usize = U.element.space_dimension
 
-@numba.cfunc(ufcx_signature(PETSc.ScalarType, PETSc.RealType), nopython=True)
+
+@numba.cfunc(ufcx_signature(PETSc.ScalarType, PETSc.RealType), nopython=True)  # type: ignore
 def tabulate_A(A_, w_, c_, coords_, entity_local_index, permutation=ffi.NULL):
     """Element kernel that applies static condensation."""
+
     # Prepare target condensed local element tensor
     A = numba.carray(A_, (Usize, Usize), dtype=PETSc.ScalarType)
 
