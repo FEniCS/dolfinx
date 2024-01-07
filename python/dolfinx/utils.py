@@ -11,7 +11,6 @@ from __future__ import annotations
 import ctypes as _ctypes
 import os
 import pathlib
-import typing
 
 import numpy as _np
 import numpy.typing as _npt
@@ -48,28 +47,6 @@ def get_petsc_lib() -> pathlib.Path:
     return pathlib.Path(exists_paths[0])
 
 
-def load_petsc_lib(loader: typing.Callable[[str], typing.Any]) -> typing.Any:
-    """Load PETSc shared library using loader callable, e.g. ctypes.CDLL.
-
-    Args:
-        loader: A callable that accepts a library path and returns a wrapped library.
-
-    Returns:
-        A wrapped library of the type returned by the callable.
-    """
-    lib_path = get_petsc_lib()
-    try:
-        try:
-            petsc_lib = loader(lib_path)
-        except TypeError:
-            petsc_lib = loader(str(lib_path))
-    except OSError as e:
-        print(f"Failed to load shared library found at {lib_path}.")
-        raise e
-
-    return petsc_lib
-
-
 class numba_utils:
     """Utility attributes for working with Numba and PETSc.
 
@@ -98,9 +75,10 @@ class numba_utils:
         import numba as _numba
         _llvmlite.binding.load_library_permanently(str(get_petsc_lib()))
 
-        _int = _numba.from_dtype(_PETSc.IntType)
-        _scalar = _numba.from_dtype(_PETSc.ScalarType)
-        _real = _numba.from_dtype(_PETSc.RealType)
+        _int = _numba.from_dtype(_PETSc.IntType)  # type: ignore
+        _scalar = _numba.from_dtype(_PETSc.ScalarType)  # type: ignore
+        _real = _numba.from_dtype(_PETSc.RealType)  # type: ignore
+        print(type(_int))
         _int_ptr = _numba.core.types.CPointer(_int)
         _scalar_ptr = _numba.core.types.CPointer(_scalar)
         _MatSetValues_sig = _numba.core.typing.signature(_numba.core.types.intc,
@@ -137,11 +115,11 @@ class ctypes_utils:
                 MatSetValuesLocal(A, m, rows.ctypes, n, cols.ctypes, data.ctypes, mode)
     """
     import petsc4py.PETSc as _PETSc
-    _lib_ctypes = load_petsc_lib(_ctypes.cdll.LoadLibrary)
+    _lib_ctypes = _ctypes.cdll.LoadLibrary(str(get_petsc_lib()))
 
     # Note: ctypes does not have complex types, hence we use void* for
     # scalar data
-    _int = _np.ctypeslib.as_ctypes_type(_PETSc.IntType)
+    _int = _np.ctypeslib.as_ctypes_type(_PETSc.IntType)  # type: ignore
 
     MatSetValuesLocal = _lib_ctypes.MatSetValuesLocal
     """See PETSc `MatSetValuesLocal
@@ -193,30 +171,26 @@ class cffi_utils:
         _cffi_support.register_type(_ffi.typeof('float _Complex'), _numba.types.complex64)
         _cffi_support.register_type(_ffi.typeof('double _Complex'), _numba.types.complex128)
 
-        _lib_cffi = load_petsc_lib(_ffi.dlopen)
+        _lib_cffi = _ffi.dlopen(str(get_petsc_lib()))
 
-        def _petsc_c_types() -> str:
-            from petsc4py import PETSc as _PETSc
-            assert _PETSc.IntType == _np.int32 or _PETSc.IntType == _np.int64
-            if _PETSc.IntType == _np.int32:
-                c_int_t = "int32_t"
-            elif _PETSc.IntType == _np.int64:
-                c_int_t = "int64_t"
+        assert _PETSc.IntType == _np.int32 or _PETSc.IntType == _np.int64  # type: ignore
+        if _PETSc.IntType == _np.int32:  # type: ignore
+            _c_int_t = "int32_t"
+        elif _PETSc.IntType == _np.int64:  # type: ignore
+            _c_int_t = "int64_t"
 
-            scalar_t = _PETSc.ScalarType
-            assert scalar_t == _np.float32 or scalar_t == _np.float64 \
-                or scalar_t == _np.complex64 or scalar_t == _np.complex128
-            if scalar_t == _np.float32:
-                c_scalar_t = "float"
-            elif scalar_t == _np.float64:
-                c_scalar_t = "double"
-            elif scalar_t == _np.complex64:
-                c_scalar_t = "float _Complex"
-            elif scalar_t == _np.complex128:
-                c_scalar_t = "double _Complex"
-            return c_int_t, c_scalar_t
+        _scalar_t = _PETSc.ScalarType  # type: ignore
+        assert _scalar_t == _np.float32 or _scalar_t == _np.float64 \
+            or _scalar_t == _np.complex64 or _scalar_t == _np.complex128
+        if _scalar_t == _np.float32:
+            _c_scalar_t = "float"
+        elif _scalar_t == _np.float64:
+            _c_scalar_t = "double"
+        elif _scalar_t == _np.complex64:
+            _c_scalar_t = "float _Complex"
+        elif _scalar_t == _np.complex128:
+            _c_scalar_t = "double _Complex"
 
-        _c_int_t, _c_scalar_t = _petsc_c_types()
         _ffi.cdef(f"""
                 int MatSetValuesLocal(void* mat, {_c_int_t} nrow, const {_c_int_t}* irow,
                                     {_c_int_t} ncol, const {_c_int_t}* icol,
