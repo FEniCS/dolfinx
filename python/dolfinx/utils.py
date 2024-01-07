@@ -70,7 +70,6 @@ class numba_utils:
     """
     try:
         import petsc4py.PETSc as _PETSc
-
         import llvmlite as _llvmlite
         import numba as _numba
         _llvmlite.binding.load_library_permanently(str(get_petsc_lib()))
@@ -78,7 +77,6 @@ class numba_utils:
         _int = _numba.from_dtype(_PETSc.IntType)  # type: ignore
         _scalar = _numba.from_dtype(_PETSc.ScalarType)  # type: ignore
         _real = _numba.from_dtype(_PETSc.RealType)  # type: ignore
-        print(type(_int))
         _int_ptr = _numba.core.types.CPointer(_int)
         _scalar_ptr = _numba.core.types.CPointer(_scalar)
         _MatSetValues_sig = _numba.core.typing.signature(_numba.core.types.intc,

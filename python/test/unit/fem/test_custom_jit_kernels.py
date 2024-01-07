@@ -124,7 +124,7 @@ def test_coefficient(dtype, formtype):
     V = functionspace(mesh, ("Lagrange", 1))
     DG0 = functionspace(mesh, ("DG", 0))
     vals = Function(DG0, dtype=dtype)
-    vals.x.array[:] = 2
+    vals.x.array[:vals.x.index_map.size_local] = 2
 
     tdim = mesh.topology.dim
     num_cells = mesh.topology.index_map(tdim).size_local + mesh.topology.index_map(tdim).num_ghosts
