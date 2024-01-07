@@ -3,7 +3,7 @@
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Tests for custom Python assemblers"""
+"""Tests for custom Python assemblers."""
 
 import importlib
 import math
@@ -16,7 +16,6 @@ from mpi4py import MPI
 from petsc4py import PETSc
 from petsc4py import get_config as PETSc_get_config
 
-import cffi
 import numpy as np
 import pytest
 
@@ -25,13 +24,14 @@ import dolfinx.pkgconfig
 import ufl
 from dolfinx.fem import Function, form, functionspace
 from dolfinx.fem.petsc import assemble_matrix
-from dolfinx.fem.petsc import cffi_utils as petsc_cffi
-from dolfinx.fem.petsc import ctypes_utils as petsc_ctypes
-from dolfinx.fem.petsc import numba_utils as petsc_numba
 from dolfinx.mesh import create_unit_square
+from dolfinx.utils import cffi_utils as petsc_cffi
+from dolfinx.utils import ctypes_utils as petsc_ctypes
+from dolfinx.utils import numba_utils as petsc_numba
 
-numba = pytest.importorskip("numba")
+cffi = pytest.importorskip("cffi")
 cffi_support = pytest.importorskip("numba.core.typing.cffi_utils")
+numba = pytest.importorskip("numba")
 
 # Get PETSc MatSetValuesLocal interfaces
 MatSetValuesLocal = petsc_numba.MatSetValuesLocal
