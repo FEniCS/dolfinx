@@ -23,11 +23,11 @@ if typing.TYPE_CHECKING:
 
 
 class Form:
-    _cpp_object: typing.Tuple[_cpp.fem.Form_complex64, _cpp.fem.Form_complex128,
+    _cpp_object: typing.Union[_cpp.fem.Form_complex64, _cpp.fem.Form_complex128,
                               _cpp.fem.Form_float32, _cpp.fem.Form_float64]
-    _code: typing.Optional[str] = None
+    _code: typing.Optional[str]
 
-    def __init__(self, form: typing.Tuple[_cpp.fem.Form_complex64, _cpp.fem.Form_complex128,
+    def __init__(self, form: typing.Union[_cpp.fem.Form_complex64, _cpp.fem.Form_complex128,
                                           _cpp.fem.Form_float32, _cpp.fem.Form_float64],
                  ufcx_form=None, code: typing.Optional[str] = None):
         """A finite element form
@@ -72,9 +72,9 @@ class Form:
         return self._cpp_object.dtype  # type: ignore
 
     @property
-    def mesh(self) -> typing.Tuple[_cpp.fem.Mesh_float32, _cpp.fem.Mesh_float64]:
-        """Mesh on which this form is defined"""
-        return self._cpp_object.mesh  # type: ignore
+    def mesh(self) -> typing.Union[_cpp.mesh.Mesh_float32, _cpp.mesh.Mesh_float64]:
+        """Mesh on which this form is defined."""
+        return self._cpp_object.mesh
 
     @property
     def integral_types(self):
