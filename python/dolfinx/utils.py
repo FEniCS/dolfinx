@@ -228,6 +228,6 @@ def numba_ufcx_kernel_signature(dtype: _npt.DTypeLike, xdtype: _npt.DTypeLike):
         import numba.types as types
         return types.void(types.CPointer(from_dtype(dtype)), types.CPointer(from_dtype(dtype)),
                           types.CPointer(from_dtype(dtype)), types.CPointer(from_dtype(xdtype)),
-                          types.CPointer(types.int32), types.CPointer(types.int32))
+                          types.CPointer(types.intc), types.CPointer(types.uint8))
     except ImportError as e:
         raise e

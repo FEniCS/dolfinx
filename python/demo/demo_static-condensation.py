@@ -43,6 +43,8 @@ from dolfinx.io import XDMFFile
 from dolfinx.jit import ffcx_jit
 from dolfinx.mesh import locate_entities_boundary, meshtags
 
+from dolfinx.utils import numba_ufcx_kernel_signature as ufcx_signature
+
 if default_real_type == np.float32:
     print("float32 not yet supported for this demo.")
     exit(0)
@@ -54,8 +56,8 @@ msh = infile.read_mesh(name="Grid")
 infile.close()
 
 # Stress (Se) and displacement (Ue) elements
-Se = element("DG", msh.basix_cell(), 1, shape=(2, 2), symmetry=True)
-Ue = element("Lagrange", msh.basix_cell(), 2, shape=(2,))
+Se = element("DG", msh.basix_cell(), 1, shape=(2, 2), symmetry=True, dtype=PETSc.RealType)
+Ue = element("Lagrange", msh.basix_cell(), 2, shape=(2,), dtype=PETSc.RealType)
 
 S = functionspace(msh, Se)
 U = functionspace(msh, Ue)
@@ -76,7 +78,7 @@ ds = ufl.Measure("ds", subdomain_data=mt)
 
 # Homogeneous boundary condition in displacement
 u_bc = Function(U)
-u_bc.x.array[:] = 0.0
+u_bc.x.array[:] = 0
 
 # Displacement BC is applied to the left side
 left_facets = locate_entities_boundary(msh, 1, lambda x: np.isclose(x[0], 0.0))
@@ -99,45 +101,37 @@ a10 = - ufl.inner(sigma, ufl.grad(v)) * ufl.dx
 a01 = - ufl.inner(sigma_u(u), tau) * ufl.dx
 
 f = ufl.as_vector([0.0, 1.0 / 16])
-b1 = form(- ufl.inner(f, v) * ds(1))
+b1 = form(- ufl.inner(f, v) * ds(1), dtype=PETSc.ScalarType)
 
 # JIT compile individual blocks tabulation kernels
 nptype, ffcxtype = None, None
 if PETSc.ScalarType == np.float32:  # type: ignore
-    nptype = "float32"
     ffcxtype = "float"
 elif PETSc.ScalarType == np.float64:  # type: ignore
-    nptype = "float64"
     ffcxtype = "double"
 elif PETSc.ScalarType == np.complex64:  # type: ignore
-    nptype = "complex64"
     ffcxtype = "float _Complex"
 elif PETSc.ScalarType == np.complex128:  # type: ignore
-    nptype = "complex128"
     ffcxtype = "double _Complex"
 else:
     raise RuntimeError(f"Unsupported scalar type {PETSc.ScalarType}.")  # type: ignore
 
 ufcx_form00, _, _ = ffcx_jit(msh.comm, a00, form_compiler_options={"scalar_type": ffcxtype})
-kernel00 = getattr(ufcx_form00.form_integrals[0], f"tabulate_tensor_{nptype}")
+kernel00 = getattr(ufcx_form00.form_integrals[0], f"tabulate_tensor_{np.dtype(PETSc.ScalarType).name}")
+
 ufcx_form01, _, _ = ffcx_jit(msh.comm, a01, form_compiler_options={"scalar_type": ffcxtype})
-kernel01 = getattr(ufcx_form01.form_integrals[0], f"tabulate_tensor_{nptype}")
+kernel01 = getattr(ufcx_form01.form_integrals[0], f"tabulate_tensor_{np.dtype(PETSc.ScalarType).name}")
+
 ufcx_form10, _, _ = ffcx_jit(msh.comm, a10, form_compiler_options={"scalar_type": ffcxtype})
-kernel10 = getattr(ufcx_form10.form_integrals[0], f"tabulate_tensor_{nptype}")
+kernel10 = getattr(ufcx_form10.form_integrals[0], f"tabulate_tensor_{np.dtype(PETSc.ScalarType).name}")
 
 ffi = cffi.FFI()
 cffi_support.register_type(ffi.typeof('double _Complex'), numba.types.complex128)
-c_signature = numba.types.void(
-    numba.types.CPointer(numba.typeof(PETSc.ScalarType())),  # type: ignore
-    numba.types.CPointer(numba.typeof(PETSc.ScalarType())),  # type: ignore
-    numba.types.CPointer(numba.typeof(PETSc.ScalarType())),  # type: ignore
-    numba.types.CPointer(numba.typeof(PETSc.RealType())),  # type: ignore
-    numba.types.CPointer(numba.types.int32),
-    numba.types.CPointer(numba.types.uint8))
 
 
-@numba.cfunc(c_signature, nopython=True)
-def tabulate_condensed_tensor_A(A_, w_, c_, coords_, entity_local_index, permutation=ffi.NULL):
+@numba.cfunc(ufcx_signature(PETSc.ScalarType, PETSc.RealType), nopython=True)
+def tabulate_A(A_, w_, c_, coords_, entity_local_index, permutation=ffi.NULL):
+    """Element kernel that applies static condensation."""
     # Prepare target condensed local element tensor
     A = numba.carray(A_, (Usize, Usize), dtype=PETSc.ScalarType)
 
@@ -169,7 +163,7 @@ else:
     raise RuntimeError(f"Unsupported PETSc ScalarType '{PETSc.ScalarType}'.")  # type: ignore
 
 cells = np.arange(msh.topology.index_map(msh.topology.dim).size_local)
-integrals = {IntegralType.cell: [(-1, tabulate_condensed_tensor_A.address, cells)]}
+integrals = {IntegralType.cell: [(-1, tabulate_A.address, cells)]}
 a_cond = Form(formtype([U._cpp_object, U._cpp_object], integrals, [], [], False, None))
 
 A_cond = assemble_matrix(a_cond, bcs=[bc])
