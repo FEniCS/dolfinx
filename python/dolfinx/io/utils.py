@@ -249,5 +249,6 @@ class XDMFFile(_cpp.io.XDMFFile):
 
 
 def distribute_entity_data(mesh: Mesh, entity_dim: int, entities: npt.NDArray[np.int64],
-                           values: npt.NDArray[np.int32]) -> typing.Tuple[npt.NDArray[np.int64], npt.NDArray[np.int32]]:
+                           values: npt.NDArray[np.int32]) -> typing.Tuple[npt.NDArray[np.int64],
+                                                                          npt.NDArray[np.int32]]:
     return _cpp.io.distribute_entity_data(mesh._cpp_object, entity_dim, entities, values)
