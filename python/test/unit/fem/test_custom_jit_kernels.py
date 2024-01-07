@@ -1,6 +1,6 @@
-"""Unit tests for assembly with a numba kernel"""
+"""Unit tests for assembly with Numba and CFFI kernels."""
 
-# Copyright (C) 2018-2019 Chris N. Richardson and Michal Habera
+# Copyright (C) 2018-2014 Chris N. Richardson, Michal Habera and Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -84,7 +84,6 @@ def tabulate_rank1_coeff(dtype, xdtype):
     (np.complex128, _cpp.fem.Form_complex128)
 ])
 def test_numba_assembly(dtype, formtype):
-
     xdtype = np.real(dtype(0)).dtype
     k2 = tabulate_rank2(dtype, xdtype)
     k1 = tabulate_rank1(dtype, xdtype)
@@ -95,7 +94,6 @@ def test_numba_assembly(dtype, formtype):
                                      (12, k2.address, np.arange(0)),
                                      (2, k2.address, np.arange(0))]}
     a = Form(formtype([V._cpp_object, V._cpp_object], integrals, [], [], False, None))
-
     integrals = {IntegralType.cell: [(-1, k1.address, cells)]}
     L = Form(formtype([V._cpp_object], integrals, [], [], False, None))
 
@@ -141,6 +139,7 @@ def test_coefficient(dtype, formtype):
 
 @pytest.mark.skip_in_parallel
 def test_cffi_assembly():
+    pytest.importorskip("cffi")
     mesh = create_unit_square(MPI.COMM_WORLD, 13, 13, dtype=np.float64)
     V = functionspace(mesh, ("Lagrange", 1))
     if mesh.comm.rank == 0:
@@ -198,10 +197,10 @@ def test_cffi_assembly():
         }
 
         void tabulate_tensor_poissonL(double* restrict A, const double* w,
-                                     const double* c,
-                                     const double* restrict coordinate_dofs,
-                                     const int* entity_local_index,
-                                     const int* cell_orientation)
+                                      const double* c,
+                                      const double* restrict coordinate_dofs,
+                                      const int* entity_local_index,
+                                      const int* cell_orientation)
         {
         // Precomputed values of basis functions and precomputations
         // FE* dimensions: [entities][points][dofs]
