@@ -15,7 +15,7 @@ import pathlib
 import numpy as _np
 import numpy.typing as _npt
 
-__all__ = ["cffi_utils", "numba_utils", "ctypes_utils", "numba_ufcx_kernel_signature"]
+__all__ = ["cffi_utils", "numba_utils", "ctypes_utils"]
 
 
 def get_petsc_lib() -> pathlib.Path:
@@ -206,28 +206,5 @@ class cffi_utils:
         """See PETSc `MatSetValuesBlockedLocal
         <https://petsc.org/release/manualpages/Mat/MatSetValuesBlockedLocal>`_
         documentation."""
-    except ImportError:
-        pass
-
-
-def numba_ufcx_kernel_signature(dtype: _npt.DTypeLike, xdtype: _npt.DTypeLike):
-    """Return a Numba C signature for the UFCx ``tabulate_tensor`` interface.
-
-    Args:
-        dtype: The scalar type for the finite element data.
-        xdtype: The geometry float type.
-
-    Returns:
-        A Numba signature (``numba.core.typing.templates.Signature``).
-
-    Raises:
-        ImportError: If ``numba`` cannot be imported.
-    """
-    try:
-        from numba import from_dtype
-        import numba.types as types
-        return types.void(types.CPointer(from_dtype(dtype)), types.CPointer(from_dtype(dtype)),
-                          types.CPointer(from_dtype(dtype)), types.CPointer(from_dtype(xdtype)),
-                          types.CPointer(types.intc), types.CPointer(types.uint8))
     except ImportError as e:
-        raise e
+        pass
