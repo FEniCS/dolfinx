@@ -62,7 +62,7 @@ def unit_cell(cell_type, dtype, random_order=True):
         ordered_points[j] = points[i]
     cells = np.array([order])
 
-    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, shape=(ordered_points.shape[1],)))
+    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, shape=(ordered_points.shape[1],), dtype=dtype))
     mesh = create_mesh(MPI.COMM_WORLD, cells, ordered_points, domain)
     return mesh
 
@@ -122,7 +122,7 @@ def two_unit_cells(cell_type, dtype, agree=False, random_order=True, return_orde
         ordered_points[j] = points[i]
     ordered_cells = np.array([[order[i] for i in c] for c in cells])
 
-    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, shape=(ordered_points.shape[1],)))
+    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, shape=(ordered_points.shape[1],), dtype=dtype))
     mesh = create_mesh(MPI.COMM_WORLD, ordered_cells, ordered_points, domain)
     if return_order:
         return mesh, order
@@ -439,7 +439,7 @@ def test_curl(space_type, order, dtype):
     # Assemble vector on 5 randomly numbered cells
     for i in range(5):
         random.shuffle(cell)
-        domain = ufl.Mesh(element("Lagrange", "tetrahedron", 1, shape=(3,)))
+        domain = ufl.Mesh(element("Lagrange", "tetrahedron", 1, shape=(3,), dtype=dtype))
         mesh = create_mesh(MPI.COMM_WORLD, [cell], points, domain)
         V = functionspace(mesh, (space_type, order))
         v = ufl.TestFunction(V)
@@ -487,7 +487,7 @@ def create_quad_mesh(offset, dtype):
                   [0, 0.5 + offset],
                   [1, 0.5 - offset]], dtype=dtype)
     cells = np.array([[0, 1, 2, 3]])
-    ufl_mesh = ufl.Mesh(element("Lagrange", "quadrilateral", 1, shape=(2,)))
+    ufl_mesh = ufl.Mesh(element("Lagrange", "quadrilateral", 1, shape=(2,), dtype=dtype))
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh)
     return mesh
 

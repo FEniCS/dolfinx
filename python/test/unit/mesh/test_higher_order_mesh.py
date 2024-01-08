@@ -25,7 +25,7 @@ from dolfinx.mesh import CellType, create_mesh, create_submesh
 from ufl import dx
 
 
-def check_cell_volume(points, cell, domain, volume):
+def check_cell_volume(points, cell, domain, volume, dtype):
     random.seed(13)
 
     point_order = [i for i, _ in enumerate(points)]
@@ -38,15 +38,16 @@ def check_cell_volume(points, cell, domain, volume):
             ordered_points[j] = points[i]
         ordered_cell = [point_order[i] for i in cell]
 
-        ordered_points = np.array(ordered_points, dtype=default_real_type)
+        ordered_points = np.array(ordered_points, dtype=dtype)
         mesh = create_mesh(MPI.COMM_WORLD, [ordered_cell], ordered_points, domain)
-        area = assemble_scalar(form(1 * dx(mesh)))
+        area = assemble_scalar(form(1 * dx(mesh), dtype=dtype))
         assert np.isclose(area, volume)
 
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('order', range(1, 5))
-def test_submesh(order):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_submesh(order, dtype):
     # Generate a single cell higher order mesh
     points = []
     points += [[i / order, j / order, 0] for j in range(order + 1) for i in range(order + 1 - j)]
@@ -97,8 +98,9 @@ def test_submesh(order):
                     cell.append(coord_to_vertex(i, j, k))
 
     domain = ufl.Mesh(element("Lagrange", "tetrahedron", order, gdim=3,
-                      lagrange_variant=basix.LagrangeVariant.equispaced, shape=(3, )))
-    points = np.array(points, dtype=default_real_type)
+                      lagrange_variant=basix.LagrangeVariant.equispaced, shape=(3,),
+                      dtype=dtype))
+    points = np.array(points, dtype=dtype)
     mesh = create_mesh(MPI.COMM_WORLD, [cell], points, domain)
     for i in range(mesh.topology.dim):
         mesh.topology.create_entities(i)
@@ -111,16 +113,17 @@ def test_submesh(order):
     # Gives the correct computation of: volume (case 1) or surface area (case 2)
     for dim, dC in zip(dimensions, measures):
         # Integrate on original mesh
-        value = assemble_scalar(form(1 * dC))
+        value = assemble_scalar(form(1 * dC, dtype=dtype))
         num_local_entities = mesh.topology.index_map(dim).size_local
         submesh, _, _, _ = create_submesh(mesh, dim, np.arange(num_local_entities, dtype=np.int32))
-        submesh_area = assemble_scalar(form(1 * ufl.dx(submesh, metadata=md)))
+        submesh_area = assemble_scalar(form(1 * ufl.dx(submesh, metadata=md), dtype=dtype))
         assert np.isclose(value, submesh_area)
 
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('order', range(1, 5))
-def test_triangle_mesh(order):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_triangle_mesh(order, dtype):
     points = []
     points += [[i / order, 0] for i in range(order + 1)]
     for j in range(1, order):
@@ -144,15 +147,16 @@ def test_triangle_mesh(order):
             for i in range(1, order - j):
                 cell.append(coord_to_vertex(i, j))
 
-    domain = ufl.Mesh(element(
-        "Lagrange", "triangle", order, gdim=2, lagrange_variant=basix.LagrangeVariant.equispaced, shape=(2, )))
-
-    check_cell_volume(points, cell, domain, 0.5)
+    domain = ufl.Mesh(element("Lagrange", "triangle", order, gdim=2,
+                              lagrange_variant=basix.LagrangeVariant.equispaced, shape=(2, ),
+                              dtype=dtype))
+    check_cell_volume(points, cell, domain, 0.5, dtype=dtype)
 
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('order', range(1, 5))
-def test_tetrahedron_mesh(order):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_tetrahedron_mesh(order, dtype):
     points = []
     points += [[i / order, j / order, 0] for j in range(order + 1) for i in range(order + 1 - j)]
     for k in range(1, order):
@@ -202,13 +206,15 @@ def test_tetrahedron_mesh(order):
                     cell.append(coord_to_vertex(i, j, k))
 
     domain = ufl.Mesh(element(
-        "Lagrange", "tetrahedron", order, gdim=3, lagrange_variant=basix.LagrangeVariant.equispaced, shape=(3, )))
-    check_cell_volume(points, cell, domain, 1 / 6)
+        "Lagrange", "tetrahedron", order, gdim=3, lagrange_variant=basix.LagrangeVariant.equispaced,
+        shape=(3, ), dtype=dtype))
+    check_cell_volume(points, cell, domain, 1 / 6, dtype=dtype)
 
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('order', [1, 2, 3, 4])
-def test_quadrilateral_mesh(order):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_quadrilateral_mesh(order, dtype):
     random.seed(13)
 
     points = []
@@ -237,15 +243,16 @@ def test_quadrilateral_mesh(order):
                 cell.append(coord_to_vertex(i, j))
 
     domain = ufl.Mesh(element("Q", "quadrilateral", order, gdim=2,
-                      lagrange_variant=basix.LagrangeVariant.equispaced, shape=(2, )))
-    check_cell_volume(points, cell, domain, 1)
+                      lagrange_variant=basix.LagrangeVariant.equispaced, shape=(2, ),
+                      dtype=dtype))
+    check_cell_volume(points, cell, domain, 1, dtype=dtype)
 
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('order', [1, 2, 3, 4])
-def test_hexahedron_mesh(order):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_hexahedron_mesh(order, dtype):
     random.seed(13)
-
     points = []
     points += [[i / order, j / order, 0] for j in range(order + 1) for i in range(order + 1)]
     for k in range(1, order):
@@ -313,13 +320,14 @@ def test_hexahedron_mesh(order):
                     cell.append(coord_to_vertex(i, j, k))
 
     domain = ufl.Mesh(element("Q", "hexahedron", order, gdim=3,
-                      lagrange_variant=basix.LagrangeVariant.equispaced, shape=(3, )))
-    check_cell_volume(points, cell, domain, 1)
+                      lagrange_variant=basix.LagrangeVariant.equispaced, shape=(3, ), dtype=dtype))
+    check_cell_volume(points, cell, domain, 1, dtype=dtype)
 
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('order', range(1, 5))
-def test_triangle_mesh_vtk(order):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_triangle_mesh_vtk(order, dtype):
     points = []
     points += [[i / order, 0] for i in range(order + 1)]
     for j in range(1, order):
@@ -351,13 +359,15 @@ def test_triangle_mesh_vtk(order):
 
     cell = np.array(cell)[perm_vtk(CellType.triangle, len(cell))]
     domain = ufl.Mesh(element("Lagrange", "triangle", order, gdim=2,
-                      lagrange_variant=basix.LagrangeVariant.equispaced, shape=(2, )))
-    check_cell_volume(points, cell, domain, 0.5)
+                      lagrange_variant=basix.LagrangeVariant.equispaced, shape=(2,),
+                      dtype=dtype))
+    check_cell_volume(points, cell, domain, 0.5, dtype=dtype)
 
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('order', range(1, 5))
-def test_tetrahedron_mesh_vtk(order):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_tetrahedron_mesh_vtk(order, dtype):
     if order > 3:
         pytest.xfail("VTK permutation for order > 3 tetrahedra not implemented in DOLFINx.")
     points = []
@@ -442,14 +452,16 @@ def test_tetrahedron_mesh_vtk(order):
                         cell.append(coord_to_vertex(i, j, k))
 
     cell = np.array(cell)[perm_vtk(CellType.tetrahedron, len(cell))]
-    domain = ufl.Mesh(element(
-        "Lagrange", "tetrahedron", order, gdim=3, lagrange_variant=basix.LagrangeVariant.equispaced, shape=(3, )))
-    check_cell_volume(points, cell, domain, 1 / 6)
+    domain = ufl.Mesh(element("Lagrange", "tetrahedron", order, gdim=3,
+                              lagrange_variant=basix.LagrangeVariant.equispaced,
+                              shape=(3,), dtype=dtype))
+    check_cell_volume(points, cell, domain, 1 / 6, dtype=dtype)
 
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('order', [1, 2, 3, 4])
-def test_quadrilateral_mesh_vtk(order):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_quadrilateral_mesh_vtk(order, dtype):
     random.seed(13)
 
     points = []
@@ -481,13 +493,14 @@ def test_quadrilateral_mesh_vtk(order):
 
     cell = np.array(cell)[perm_vtk(CellType.quadrilateral, len(cell))]
     domain = ufl.Mesh(element("Q", "quadrilateral", order, gdim=2,
-                      lagrange_variant=basix.LagrangeVariant.equispaced, shape=(2, )))
-    check_cell_volume(points, cell, domain, 1)
+                      lagrange_variant=basix.LagrangeVariant.equispaced, shape=(2, ), dtype=dtype))
+    check_cell_volume(points, cell, domain, 1, dtype=dtype)
 
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('order', [1, 2, 3, 4])
-def test_hexahedron_mesh_vtk(order):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_hexahedron_mesh_vtk(order, dtype):
     if order > 2:
         pytest.xfail("VTK permutation for order > 2 hexahedra not implemented in DOLFINx.")
     random.seed(13)
@@ -564,8 +577,9 @@ def test_hexahedron_mesh_vtk(order):
 
     cell = np.array(cell)[perm_vtk(CellType.hexahedron, len(cell))]
     domain = ufl.Mesh(element(
-        "Q", "hexahedron", order, gdim=3, lagrange_variant=basix.LagrangeVariant.equispaced, shape=(3, )))
-    check_cell_volume(points, cell, domain, 1)
+        "Q", "hexahedron", order, gdim=3, lagrange_variant=basix.LagrangeVariant.equispaced, shape=(3,),
+        dtype=dtype))
+    check_cell_volume(points, cell, domain, 1, dtype=dtype)
 
 
 @pytest.mark.skip_in_parallel
@@ -574,7 +588,8 @@ def test_hexahedron_mesh_vtk(order):
     ([0, 1, 2, 3], [0, 1, 3, 2], CellType.quadrilateral),
     ([0, 1, 2, 3, 4, 5, 6, 7], [0, 1, 3, 2, 4, 5, 7, 6], CellType.hexahedron)
 ])
-def test_map_vtk_to_dolfin(vtk, dolfin, cell_type):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_map_vtk_to_dolfin(vtk, dolfin, cell_type, dtype):
     p = perm_vtk(cell_type, len(vtk))
     cell_p = np.array(vtk)[p]
     assert (cell_p == dolfin).all()
@@ -586,17 +601,19 @@ def test_map_vtk_to_dolfin(vtk, dolfin, cell_type):
 
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
 @pytest.mark.skip_in_parallel
-def test_xdmf_input_tri(datadir):
+@pytest.mark.parametrize("dtype", [np.float64])
+def test_xdmf_input_tri(datadir, dtype):
     with XDMFFile(MPI.COMM_WORLD, Path(datadir, "mesh.xdmf"), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
         mesh = xdmf.read_mesh(name="Grid")
-    surface = assemble_scalar(form(1 * dx(mesh)))
+    surface = assemble_scalar(form(1 * dx(mesh), dtype=dtype))
     assert mesh.comm.allreduce(surface, op=MPI.SUM) == pytest.approx(4 * np.pi, rel=1e-4)
 
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('order', range(1, 4))
 @pytest.mark.parametrize('cell_type', [CellType.triangle, CellType.quadrilateral])
-def test_gmsh_input_2d(order, cell_type):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_gmsh_input_2d(order, cell_type, dtype):
     try:
         import gmsh
     except ImportError:
@@ -637,9 +654,9 @@ def test_gmsh_input_2d(order, cell_type):
     gmsh.finalize()
 
     cells = cells[:, cell_perm_array(cell_type, cells.shape[1])].copy()
-    x = x.astype(default_real_type)
-    mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh(gmsh_cell_id, x.shape[1]))
-    surface = assemble_scalar(form(1 * dx(mesh)))
+    x = x.astype(dtype)
+    mesh = create_mesh(MPI.COMM_WORLD, cells, x, ufl_mesh(gmsh_cell_id, x.shape[1], dtype=dtype))
+    surface = assemble_scalar(form(1 * dx(mesh), dtype=dtype))
 
     assert mesh.comm.allreduce(surface, op=MPI.SUM) == pytest.approx(4 * np.pi, rel=10 ** (-1 - order))
 
@@ -647,7 +664,8 @@ def test_gmsh_input_2d(order, cell_type):
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize('order', range(1, 4))
 @pytest.mark.parametrize('cell_type', [CellType.tetrahedron, CellType.hexahedron])
-def test_gmsh_input_3d(order, cell_type):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_gmsh_input_3d(order, cell_type, dtype):
     try:
         import gmsh
     except ImportError:
@@ -694,17 +712,18 @@ def test_gmsh_input_3d(order, cell_type):
     gmsh.finalize()
 
     # Permute the mesh topology from Gmsh ordering to DOLFINx ordering
-    domain = ufl_mesh(gmsh_cell_id, 3)
+    domain = ufl_mesh(gmsh_cell_id, 3, dtype=dtype)
     cells = cells[:, cell_perm_array(cell_type, cells.shape[1])].copy()
 
-    x = x.astype(default_real_type)
+    x = x.astype(dtype)
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
-    volume = assemble_scalar(form(1 * dx(mesh)))
+    volume = assemble_scalar(form(1 * dx(mesh), dtype=dtype))
     assert mesh.comm.allreduce(volume, op=MPI.SUM) == pytest.approx(np.pi, rel=10 ** (-1 - order))
 
 
 @pytest.mark.skip_in_parallel
-def test_quadrilateral_cell_order_3():
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_quadrilateral_cell_order_3(dtype):
     points = [
         [0., 0.], [1., 0.], [0., 1.], [1., 1.],
         [1 / 3, 2 / 9], [2 / 3, 2 / 9],
@@ -714,8 +733,8 @@ def test_quadrilateral_cell_order_3():
         [1 / 3, 13 / 27], [2 / 3, 13 / 27],
         [1 / 3, 20 / 27], [2 / 3, 20 / 27]
     ]
-
     cell = list(range(16))
     domain = ufl.Mesh(element(
-        "Q", "quadrilateral", 3, gdim=2, lagrange_variant=basix.LagrangeVariant.equispaced, shape=(2, )))
-    check_cell_volume(points, cell, domain, 5 / 6)
+        "Q", "quadrilateral", 3, gdim=2, lagrange_variant=basix.LagrangeVariant.equispaced,
+        shape=(2,), dtype=dtype))
+    check_cell_volume(points, cell, domain, 5 / 6, dtype=dtype)

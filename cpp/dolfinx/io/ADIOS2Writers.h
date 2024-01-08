@@ -237,8 +237,7 @@ std::vector<T> pack_function_data(const fem::Function<T, U>& u)
 
   // The Function and the mesh must have identical element_dof_layouts
   // (up to the block size)
-  assert(dofmap->element_dof_layout()
-         == geometry.cmaps()[0].create_dof_layout());
+  assert(dofmap->element_dof_layout() == geometry.cmap().create_dof_layout());
 
   int tdim = topology->dim();
   auto cell_map = topology->index_map(tdim);
@@ -384,9 +383,9 @@ void write_mesh(adios2::IO& io, adios2::Engine& engine,
   // cell, and compute 'VTK' connectivity
   int tdim = topology->dim();
   std::int32_t num_cells = topology->index_map(tdim)->size_local();
-  int num_nodes = geometry.cmaps()[0].dim();
+  int num_nodes = geometry.cmap().dim();
   auto [cells, shape] = io::extract_vtk_connectivity(mesh.geometry().dofmap(),
-                                                     topology->cell_types()[0]);
+                                                     topology->cell_type());
 
   // "Put" topology data in the result in the ADIOS2 file
   adios2::Variable local_topology = impl_adios2::define_variable<std::int64_t>(
@@ -430,8 +429,8 @@ public:
     assert(mesh);
     auto topology = mesh->topology();
     assert(topology);
-    mesh::CellType type = topology->cell_types()[0];
-    if (mesh->geometry().cmaps()[0].dim() != mesh::cell_num_entities(type, 0))
+    mesh::CellType type = topology->cell_type();
+    if (mesh->geometry().cmap().dim() != mesh::cell_num_entities(type, 0))
       throw std::runtime_error("Fides only supports lowest-order meshes.");
     impl_fides::initialize_mesh_attributes(*_io, type);
   }
@@ -439,9 +438,11 @@ public:
   /// @brief Create Fides writer for list of functions
   /// @param[in] comm The MPI communicator
   /// @param[in] filename Name of output file
-  /// @param[in] u List of functions. The functions must (1) share the
-  /// same mesh (degree 1) and (2) be degree 1 Lagrange. @note All
-  /// functions in `u` must share the same Mesh
+  /// @param[in] u List of functions. The functions must (i) share the
+  /// same mesh (degree 1) and (ii) be degree 1 Lagrange.
+  /// @note All functions in `u` must share the same Mesh. The element
+  /// family and degree, and degree-of-freedom map (up to the blocksize)
+  /// must be the same for all functions.
   /// @param[in] engine ADIOS2 engine type. See
   /// https://adios2.readthedocs.io/en/latest/engines/engines.html.
   /// @param[in] mesh_policy Controls if the mesh is written to file at
@@ -457,15 +458,15 @@ public:
     if (u.empty())
       throw std::runtime_error("FidesWriter fem::Function list is empty");
 
-    // Extract Mesh from first function
-    auto mesh = std::visit([](auto& u) { return u->function_space()->mesh(); },
-                           u.front());
+    // Extract space and mesh from first function
+    auto V0 = std::visit([](auto& u) { return u->function_space().get(); },
+                         u.front());
+    assert(V0);
+    auto mesh = V0->mesh().get();
     assert(mesh);
 
     // Extract element from first function
-    auto element0 = std::visit([](auto& e)
-                               { return e->function_space()->element().get(); },
-                               u.front());
+    auto element0 = V0->element().get();
     assert(element0);
 
     // Check if function is mixed
@@ -483,7 +484,7 @@ public:
                                "Interpolate Functions before output.");
     }
 
-    // Check if function is DG 0
+    // Raise exception if element is DG 0
     if (element0->space_dimension() / element0->block_size() == 1)
     {
       throw std::runtime_error(
@@ -491,14 +492,12 @@ public:
     }
 
     // Check that all functions are first order Lagrange
-    auto cell_types = mesh->topology()->cell_types();
-    if (cell_types.size() > 1)
-      throw std::runtime_error("Multiple cell types in IO.");
-    int num_vertices_per_cell = mesh::cell_num_entities(cell_types.back(), 0);
+    mesh::CellType cell_type = mesh->topology()->cell_type();
+    int num_vertices_per_cell = mesh::cell_num_entities(cell_type, 0);
     for (auto& v : _u)
     {
       std::visit(
-          [num_vertices_per_cell, element0](auto&& u)
+          [V0, num_vertices_per_cell, element0](auto&& u)
           {
             auto element = u->function_space()->element();
             assert(element);
@@ -516,14 +515,27 @@ public:
               throw std::runtime_error("Only first order Lagrange spaces are "
                                        "supported by FidesWriter");
             }
+
+#ifndef NDEBUG
+            auto dmap0 = V0->dofmap()->map();
+            auto dmap = u->function_space()->dofmap()->map();
+            if (dmap0.size() != dmap.size()
+                or !std::equal(dmap0.data_handle(),
+                               dmap0.data_handle() + dmap0.size(),
+                               dmap.data_handle()))
+            {
+              throw std::runtime_error(
+                  "All functions must have the same dofmap for FideWriter.");
+            }
+#endif
           },
           v);
     }
 
     auto topology = mesh->topology();
     assert(topology);
-    mesh::CellType type = topology->cell_types()[0];
-    if (mesh->geometry().cmaps()[0].dim() != mesh::cell_num_entities(type, 0))
+    mesh::CellType type = topology->cell_type();
+    if (mesh->geometry().cmap().dim() != mesh::cell_num_entities(type, 0))
       throw std::runtime_error("Fides only supports lowest-order meshes.");
     impl_fides::initialize_mesh_attributes(*_io, type);
     impl_fides::initialize_function_attributes<T>(*_io, u);
@@ -718,8 +730,8 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
       io, "NumberOfNodes", {adios2::LocalValueDim});
   engine.Put<std::uint32_t>(vertices, num_vertices);
 
-  auto [vtkcells, shape] = io::extract_vtk_connectivity(
-      geometry.dofmap(), topology->cell_types()[0]);
+  auto [vtkcells, shape]
+      = io::extract_vtk_connectivity(geometry.dofmap(), topology->cell_type());
 
   // Add cell metadata
   int tdim = topology->dim();
@@ -729,7 +741,7 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   adios2::Variable celltype_var
       = impl_adios2::define_variable<std::uint32_t>(io, "types");
   engine.Put<std::uint32_t>(
-      celltype_var, cells::get_vtk_cell_type(topology->cell_types()[0], tdim));
+      celltype_var, cells::get_vtk_cell_type(topology->cell_type(), tdim));
 
   // Pack mesh 'nodes'. Output is written as [N0, v0_0,...., v0_N0, N1,
   // v1_0,...., v1_N1,....], where N is the number of cell nodes and v0,
@@ -815,7 +827,7 @@ vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   engine.Put<std::uint32_t>(vertices, num_dofs);
   engine.Put<std::uint32_t>(elements, vtkshape[0]);
   engine.Put<std::uint32_t>(
-      cell_type, cells::get_vtk_cell_type(topology->cell_types()[0], tdim));
+      cell_type, cells::get_vtk_cell_type(topology->cell_type(), tdim));
   engine.Put(local_geometry, x.data());
   engine.Put(local_topology, cells.data());
 
@@ -879,7 +891,8 @@ public:
   /// @param[in] filename Name of output file
   /// @param[in] u List of functions. The functions must (1) share the
   /// same mesh and (2) be (discontinuous) Lagrange functions. The
-  /// element family and degree must be the same for all functions.
+  /// element family and degree, and degree-of-freedom map (up to the
+  /// blocksize) must be the same for all functions.
   /// @param[in] engine ADIOS2 engine type.
   /// @param[in] mesh_policy Controls if the mesh is written to file at
   /// the first time step only or is re-written (updated) at each time
@@ -895,10 +908,11 @@ public:
     if (u.empty())
       throw std::runtime_error("VTXWriter fem::Function list is empty.");
 
-    // Extract element from first function
-    auto element0 = std::visit([](auto& u)
-                               { return u->function_space()->element().get(); },
-                               u.front());
+    // Extract space from first function
+    auto V0 = std::visit([](auto& u) { return u->function_space().get(); },
+                         u.front());
+    assert(V0);
+    auto element0 = V0->element().get();
     assert(element0);
 
     // Check if function is mixed
@@ -930,15 +944,27 @@ public:
     for (auto& v : _u)
     {
       std::visit(
-          [element0](auto& u)
+          [V0](auto& u)
           {
             auto element = u->function_space()->element();
             assert(element);
-            if (*element != *element0)
+            if (*element != *V0->element().get())
             {
               throw std::runtime_error("All functions in VTXWriter must have "
                                        "the same element type.");
             }
+#ifndef NDEBUG
+            auto dmap0 = V0->dofmap()->map();
+            auto dmap = u->function_space()->dofmap()->map();
+            if (dmap0.size() != dmap.size()
+                or !std::equal(dmap0.data_handle(),
+                               dmap0.data_handle() + dmap0.size(),
+                               dmap.data_handle()))
+            {
+              throw std::runtime_error(
+                  "All functions must have the same dofmap for VTXWriter.");
+            }
+#endif
           },
           v);
     }

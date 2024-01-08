@@ -246,15 +246,13 @@ Mesh<T> create_interval(MPI_Comm comm, std::size_t nx, std::array<double, 2> p,
       for (std::size_t j = 0; j < 2; ++j)
         cells[2 * ix + j] = ix + j;
 
-    return create_mesh(comm, MPI_COMM_SELF,
-                       graph::regular_adjacency_list(std::move(cells), 2),
-                       {element}, MPI_COMM_SELF, x, {x.size(), 1}, partitioner);
+    return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
+                       {x.size(), 1}, partitioner);
   }
   else
   {
-    return create_mesh(comm, MPI_COMM_NULL,
-                       graph::regular_adjacency_list(std::move(cells), 2),
-                       {element}, MPI_COMM_NULL, x, {x.size(), 1}, partitioner);
+    return create_mesh(comm, MPI_COMM_NULL, {}, element, MPI_COMM_NULL, x,
+                       {x.size(), 1}, partitioner);
   }
 }
 
@@ -372,9 +370,8 @@ Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
   }
 
   fem::CoordinateElement<T> element(CellType::tetrahedron, 1);
-  return create_mesh(comm, subcomm,
-                     graph::regular_adjacency_list(std::move(cells), 4),
-                     {element}, subcomm, x, {x.size() / 3, 3}, partitioner);
+  return create_mesh(comm, subcomm, cells, element, subcomm, x,
+                     {x.size() / 3, 3}, partitioner);
 }
 
 template <std::floating_point T>
@@ -418,9 +415,8 @@ mesh::Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
   }
 
   fem::CoordinateElement<T> element(CellType::hexahedron, 1);
-  return create_mesh(comm, subcomm,
-                     graph::regular_adjacency_list(std::move(cells), 8),
-                     {element}, subcomm, x, {x.size() / 3, 3}, partitioner);
+  return create_mesh(comm, subcomm, cells, element, subcomm, x,
+                     {x.size() / 3, 3}, partitioner);
 }
 
 template <std::floating_point T>
@@ -467,9 +463,8 @@ Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
   }
 
   fem::CoordinateElement<T> element(CellType::prism, 1);
-  return create_mesh(comm, subcomm,
-                     graph::regular_adjacency_list(std::move(cells), 6),
-                     {element}, subcomm, x, {x.size() / 3, 3}, partitioner);
+  return create_mesh(comm, subcomm, cells, element, subcomm, x,
+                     {x.size() / 3, 3}, partitioner);
 }
 
 template <std::floating_point T>
@@ -636,15 +631,13 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
     }
     }
 
-    return create_mesh(
-        comm, MPI_COMM_SELF, graph::regular_adjacency_list(std::move(cells), 3),
-        {element}, MPI_COMM_SELF, x, {x.size() / 2, 2}, partitioner);
+    return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
+                       {x.size() / 2, 2}, partitioner);
   }
   else
   {
-    return create_mesh(
-        comm, MPI_COMM_NULL, graph::regular_adjacency_list(std::move(cells), 3),
-        {element}, MPI_COMM_NULL, x, {x.size() / 2, 2}, partitioner);
+    return create_mesh(comm, MPI_COMM_NULL, cells, element, MPI_COMM_NULL, x,
+                       {x.size() / 2, 2}, partitioner);
   }
 }
 
@@ -689,15 +682,13 @@ Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
       }
     }
 
-    return create_mesh(
-        comm, MPI_COMM_SELF, graph::regular_adjacency_list(std::move(cells), 4),
-        {element}, MPI_COMM_SELF, x, {x.size() / 2, 2}, partitioner);
+    return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
+                       {x.size() / 2, 2}, partitioner);
   }
   else
   {
-    return create_mesh(
-        comm, MPI_COMM_NULL, graph::regular_adjacency_list(std::move(cells), 4),
-        {element}, MPI_COMM_NULL, x, {x.size() / 2, 2}, partitioner);
+    return create_mesh(comm, MPI_COMM_NULL, cells, element, MPI_COMM_NULL, x,
+                       {x.size() / 2, 2}, partitioner);
   }
 }
 } // namespace impl

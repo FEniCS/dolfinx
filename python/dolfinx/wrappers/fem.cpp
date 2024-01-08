@@ -676,6 +676,8 @@ void declare_cmap(nb::module_& m, std::string type)
                                                  "Coordinate map element")
       .def(nb::init<dolfinx::mesh::CellType, int>(), nb::arg("celltype"),
            nb::arg("degree"))
+      .def(nb::init<std::shared_ptr<const basix::FiniteElement<T>>>(),
+           nb::arg("element"))
       .def(
           "__init__",
           [](dolfinx::fem::CoordinateElement<T>* cm, dolfinx::mesh::CellType ct,
@@ -688,6 +690,7 @@ void declare_cmap(nb::module_& m, std::string type)
       .def("create_dof_layout",
            &dolfinx::fem::CoordinateElement<T>::create_dof_layout)
       .def_prop_ro("degree", &dolfinx::fem::CoordinateElement<T>::degree)
+      .def_prop_ro("dim", &dolfinx::fem::CoordinateElement<T>::dim)
       .def_prop_ro("variant", [](const dolfinx::fem::CoordinateElement<T>& self)
                    { return static_cast<int>(self.variant()); })
       .def(
@@ -799,8 +802,7 @@ void declare_real_functions(nb::module_& m)
         ufcx_dofmap* p = reinterpret_cast<ufcx_dofmap*>(dofmap);
         assert(p);
         dolfinx::fem::ElementDofLayout layout
-            = dolfinx::fem::create_element_dof_layout(
-                *p, topology.cell_types().back());
+            = dolfinx::fem::create_element_dof_layout(*p, topology.cell_type());
 
         std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
             unpermute_dofs = nullptr;
@@ -980,7 +982,7 @@ void fem(nb::module_& m)
          const dolfinx::fem::ElementDofLayout& layout)
       {
         auto [map, bs, dofmap] = dolfinx::fem::build_dofmap_data(
-            comm.get(), topology, {layout},
+            comm.get(), topology, layout,
             [](const dolfinx::graph::AdjacencyList<std::int32_t>& g)
             { return dolfinx::graph::reorder_gps(g); });
         return std::tuple(std::move(map), bs, std::move(dofmap));

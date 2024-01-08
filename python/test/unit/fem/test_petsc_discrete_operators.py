@@ -170,7 +170,7 @@ def test_nonaffine_discrete_operator_petsc():
 
     cells = np.array([range(len(points))], dtype=np.int32)
     cell_type = CellType.hexahedron
-    domain = ufl.Mesh(element("Lagrange", cell_type.name, 2, shape=(3,)))
+    domain = ufl.Mesh(element("Lagrange", cell_type.name, 2, shape=(3,), dtype=default_real_type))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     gdim = mesh.geometry.dim
     W = functionspace(mesh, ("DG", 1, (gdim,)))

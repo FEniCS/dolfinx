@@ -841,11 +841,9 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
     else
       get_perm = [](std::size_t) { return 0; };
 
-    auto cell_types = mesh->topology()->cell_types();
-    if (cell_types.size() > 1)
-      throw std::runtime_error("Multiple cell types in the assembler");
-    int num_cell_facets = mesh::cell_num_entities(cell_types.back(),
-                                                  mesh->topology()->dim() - 1);
+    mesh::CellType cell_type = mesh->topology()->cell_type();
+    int num_cell_facets
+        = mesh::cell_num_entities(cell_type, mesh->topology()->dim() - 1);
     for (int i : a.integral_ids(IntegralType::interior_facet))
     {
       auto kernel = a.kernel(IntegralType::interior_facet, i);
@@ -1049,11 +1047,9 @@ void assemble_vector(
     else
       get_perm = [](std::size_t) { return 0; };
 
-    auto cell_types = mesh->topology()->cell_types();
-    if (cell_types.size() > 1)
-      throw std::runtime_error("Multiple cell types in the assembler");
-    int num_cell_facets = mesh::cell_num_entities(cell_types.back(),
-                                                  mesh->topology()->dim() - 1);
+    mesh::CellType cell_type = mesh->topology()->cell_type();
+    int num_cell_facets
+        = mesh::cell_num_entities(cell_type, mesh->topology()->dim() - 1);
     for (int i : L.integral_ids(IntegralType::interior_facet))
     {
       auto fn = L.kernel(IntegralType::interior_facet, i);

@@ -38,40 +38,26 @@ enum class GhostMode : int
   shared_vertex
 };
 
-namespace
-{
-/// Re-order an adjacency list
-template <typename T>
-graph::AdjacencyList<T> reorder_list(const graph::AdjacencyList<T>& list,
-                                     std::span<const std::int32_t> nodemap)
-{
-  // Copy existing data to keep ghost values (not reordered)
-  std::vector<T> data(list.array());
-  std::vector<std::int32_t> offsets(list.offsets().size());
-
-  // Compute new offsets (owned and ghost)
-  offsets[0] = 0;
-  for (std::size_t n = 0; n < nodemap.size(); ++n)
-    offsets[nodemap[n] + 1] = list.num_links(n);
-  for (std::size_t n = nodemap.size(); n < (std::size_t)list.num_nodes(); ++n)
-    offsets[n + 1] = list.num_links(n);
-  std::partial_sum(offsets.begin(), offsets.end(), offsets.begin());
-  graph::AdjacencyList<T> list_new(std::move(data), std::move(offsets));
-
-  for (std::size_t n = 0; n < nodemap.size(); ++n)
-  {
-    auto links_old = list.links(n);
-    auto links_new = list_new.links(nodemap[n]);
-    assert(links_old.size() == links_new.size());
-    std::copy(links_old.begin(), links_old.end(), links_new.begin());
-  }
-
-  return list_new;
-}
-} // namespace
-
 namespace impl
 {
+/// Re-order an adjacency list of fixed degree
+template <typename T>
+void reorder_list(std::span<T> list, std::span<const std::int32_t> nodemap)
+{
+  if (nodemap.empty())
+    return;
+
+  assert(list.size() % nodemap.size() == 0);
+  int degree = list.size() / nodemap.size();
+  const std::vector<T> orig(list.begin(), list.end());
+  for (std::size_t n = 0; n < nodemap.size(); ++n)
+  {
+    auto links_old = std::span(orig.data() + n * degree, degree);
+    auto links_new = list.subspan(nodemap[n] * degree, degree);
+    std::copy(links_old.begin(), links_old.end(), links_new.begin());
+  }
+}
+
 /// @brief The coordinates of 'vertices' for for entities of a give
 /// dimension that are attached to specified facets.
 ///
@@ -203,9 +189,9 @@ using CellPartitionFunction = std::function<graph::AdjacencyList<std::int32_t>(
 /// @return Cell topology. The global indices will, in general, have
 /// 'gaps' due to mid-side and other higher-order nodes being removed
 /// from the input `cell`.
-graph::AdjacencyList<std::int64_t>
-extract_topology(const CellType& cell_type, const fem::ElementDofLayout& layout,
-                 const graph::AdjacencyList<std::int64_t>& cells);
+std::vector<std::int64_t> extract_topology(CellType cell_type,
+                                           const fem::ElementDofLayout& layout,
+                                           std::span<const std::int64_t> cells);
 
 /// @brief Compute greatest distance between any two vertices of the
 /// mesh entities (`h`).
@@ -279,20 +265,18 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
   if (entities.empty())
     return std::vector<T>();
 
-  if (topology->cell_types().size() > 1)
-    throw std::runtime_error("Mixed topology not supported");
-  if (topology->cell_types()[0] == CellType::prism and dim == 2)
+  if (topology->cell_type() == CellType::prism and dim == 2)
     throw std::runtime_error("More work needed for prism cell");
 
   const int gdim = mesh.geometry().dim();
-  const CellType type = cell_entity_type(topology->cell_types()[0], dim, 0);
+  const CellType type = cell_entity_type(topology->cell_type(), dim, 0);
 
   // Find geometry nodes for topology entities
   std::span<const T> x = mesh.geometry().x();
 
   // Orient cells if they are tetrahedron
   bool orient = false;
-  if (topology->cell_types()[0] == CellType::tetrahedron)
+  if (topology->cell_type() == CellType::tetrahedron)
     orient = true;
 
   std::vector<std::int32_t> geometry_entities
@@ -652,9 +636,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   auto topology = mesh.topology();
   assert(topology);
 
-  if (topology->cell_types().size() > 1)
-    throw std::runtime_error("Mixed topology not supported");
-  CellType cell_type = topology->cell_types()[0];
+  CellType cell_type = topology->cell_type();
   if (cell_type == CellType::prism and dim == 2)
     throw std::runtime_error("More work needed for prism cells");
   if (orient and (cell_type != CellType::tetrahedron or dim != 2))
@@ -791,7 +773,7 @@ compute_incident_entities(const Topology& topology,
 /// will be just the cell vertices. For higher-order cells, other cells
 /// 'nodes' will be included. See dolfinx::io::cells for examples of the
 /// Basix ordering.
-/// @param[in] elements Coordinate elements for the cells.
+/// @param[in] element Coordinate element for the cells.
 /// @param[in] commg
 /// @param[in] x Geometry data ('node' coordinates). Row-major storage.
 /// The global index of the `i`th node (row) in `x` is taken as `i` plus
@@ -803,16 +785,18 @@ compute_incident_entities(const Topology& topology,
 /// @return A mesh distributed on the communicator `comm`.
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
-    MPI_Comm comm, MPI_Comm commt,
-    const graph::AdjacencyList<std::int64_t>& cells,
-    const std::vector<fem::CoordinateElement<
-        typename std::remove_reference_t<typename U::value_type>>>& elements,
+    MPI_Comm comm, MPI_Comm commt, std::span<const std::int64_t> cells,
+    const fem::CoordinateElement<
+        typename std::remove_reference_t<typename U::value_type>>& element,
     MPI_Comm commg, const U& x, std::array<std::size_t, 2> xshape,
     const CellPartitionFunction& partitioner)
 {
-  CellType celltype = elements[0].cell_shape();
+  CellType celltype = element.cell_shape();
   int tdim = cell_dim(celltype);
-  const fem::ElementDofLayout doflayout = elements[0].create_dof_layout();
+  const fem::ElementDofLayout doflayout = element.create_dof_layout();
+
+  const int num_cell_vertices = mesh::num_cell_vertices(element.cell_shape());
+  const int num_cell_nodes = doflayout.num_dofs();
 
   // Note: `extract_topology` extracts topology data, i.e. just the
   // vertices. For P1 geometry this should just be the identity
@@ -823,6 +807,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 
   // -- Partition topology across ranks of comm
   graph::AdjacencyList<std::int64_t> cells1(0);
+  // std::vector<std::int64_t> cells1;
   std::vector<std::int64_t> original_idx1;
   std::vector<int> ghost_owners;
   if (partitioner)
@@ -831,20 +816,25 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     if (commt != MPI_COMM_NULL)
     {
       int size = dolfinx::MPI::size(comm);
-      dest = partitioner(commt, size, tdim,
-                         extract_topology(celltype, doflayout, cells));
+      auto t = graph::regular_adjacency_list(
+          extract_topology(element.cell_shape(), doflayout, cells),
+          num_cell_vertices);
+      dest = partitioner(commt, size, tdim, t);
     }
 
     // Distribute cells (topology, includes higher-order 'nodes') to
     // destination rank
     std::vector<int> src;
+    auto _cells = graph::regular_adjacency_list(
+        std::vector(cells.begin(), cells.end()), num_cell_nodes);
     std::tie(cells1, src, original_idx1, ghost_owners)
-        = graph::build::distribute(comm, cells, dest);
+        = graph::build::distribute(comm, _cells, dest);
   }
   else
   {
-    cells1 = cells;
-    std::int64_t offset(0), num_owned(cells.num_nodes());
+    cells1 = graph::regular_adjacency_list(
+        std::vector(cells.begin(), cells.end()), num_cell_nodes);
+    std::int64_t offset(0), num_owned(cells1.num_nodes());
     MPI_Exscan(&num_owned, &offset, 1, MPI_INT64_T, MPI_SUM, comm);
     original_idx1.resize(cells1.num_nodes());
     std::iota(original_idx1.begin(), original_idx1.end(), offset);
@@ -852,30 +842,36 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 
   // Extract cell 'topology', i.e. extract the vertices for each cell
   // and discard any 'higher-order' nodes
-  graph::AdjacencyList<std::int64_t> cells1_v
-      = extract_topology(celltype, doflayout, cells1);
+  std::vector<std::int64_t> cells1_v
+      = extract_topology(celltype, doflayout, cells1.array());
 
   // Build local dual graph for owned cells to (i) get list of vertices
   // on the process boundary and (ii) and apply re-ordering to cells for
   // locality
   std::vector<std::int64_t> boundary_v;
   {
-    std::int32_t num_owned = cells1_v.num_nodes() - ghost_owners.size();
+    std::int32_t num_owned_cells
+        = cells1_v.size() / num_cell_vertices - ghost_owners.size();
+    std::vector<std::int32_t> cell_offsets(num_owned_cells + 1, 0);
+    for (std::size_t i = 1; i < cell_offsets.size(); ++i)
+      cell_offsets[i] = cell_offsets[i - 1] + num_cell_vertices;
     auto [graph, unmatched_facets, max_v, facet_attached_cells]
         = build_local_dual_graph(
-            std::span(cells1_v.array().data(), cells1_v.offsets()[num_owned]),
-            std::span(cells1_v.offsets().data(), num_owned + 1), tdim);
+            std::span(cells1_v.data(), num_owned_cells * num_cell_vertices),
+            cell_offsets, tdim);
     const std::vector<int> remap = graph::reorder_gps(graph);
 
     // Create re-ordered cell lists (leaves ghosts unchanged)
     std::vector<std::int64_t> _original_idx(original_idx1.size());
     for (std::size_t i = 0; i < remap.size(); ++i)
       _original_idx[remap[i]] = original_idx1[i];
-    std::copy_n(std::next(original_idx1.cbegin(), num_owned),
+    std::copy_n(std::next(original_idx1.cbegin(), num_owned_cells),
                 ghost_owners.size(),
-                std::next(_original_idx.begin(), num_owned));
-    cells1_v = reorder_list(cells1_v, remap);
-    cells1 = reorder_list(cells1, remap);
+                std::next(_original_idx.begin(), num_owned_cells));
+    impl::reorder_list(
+        std::span(cells1_v.data(), remap.size() * num_cell_vertices), remap);
+    impl::reorder_list(
+        std::span(cells1.array().data(), remap.size() * num_cell_nodes), remap);
     original_idx1 = _original_idx;
 
     // Boundary vertices are marked as 'unknown'
@@ -891,19 +887,15 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   }
 
   // Create Topology
-  std::vector<std::int32_t> cell_group_offsets
-      = {0, std::int32_t(cells1_v.num_nodes() - ghost_owners.size()),
-         cells1_v.num_nodes()};
-  Topology topology
-      = create_topology(comm, cells1_v, original_idx1, ghost_owners, {celltype},
-                        cell_group_offsets, boundary_v);
+  Topology topology = create_topology(comm, cells1_v, original_idx1,
+                                      ghost_owners, celltype, boundary_v);
 
   // Create connectivities required higher-order geometries for creating
   // a Geometry object
   for (int e = 1; e < topology.dim(); ++e)
     if (doflayout.num_entity_dofs(e) > 0)
       topology.create_entities(e);
-  if (elements[0].needs_dof_permutations())
+  if (element.needs_dof_permutations())
     topology.create_entity_permutations();
 
   // Build list of unique (global) node indices from cells1 and
@@ -915,8 +907,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
       = dolfinx::MPI::distribute_data(comm, nodes1, commg, x, xshape[1]);
 
   // Create geometry object
-  Geometry geometry = create_geometry(topology, elements, nodes1,
-                                      cells1.array(), coords, xshape[1]);
+  Geometry geometry = create_geometry(topology, element, nodes1, cells1.array(),
+                                      coords, xshape[1]);
 
   return Mesh(comm, std::make_shared<Topology>(std::move(topology)),
               std::move(geometry));
@@ -942,9 +934,9 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 /// @return A mesh distributed on the communicator `comm`.
 template <typename U>
 Mesh<typename std::remove_reference_t<typename U::value_type>>
-create_mesh(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
-            const std::vector<fem::CoordinateElement<
-                std::remove_reference_t<typename U::value_type>>>& elements,
+create_mesh(MPI_Comm comm, std::span<const std::int64_t> cells,
+            const fem::CoordinateElement<
+                std::remove_reference_t<typename U::value_type>>& elements,
             const U& x, std::array<std::size_t, 2> xshape, GhostMode ghost_mode)
 {
   if (dolfinx::MPI::size(comm) == 1)

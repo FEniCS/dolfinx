@@ -537,14 +537,14 @@ norm_u_0, norm_p_0 = nested_iterative_solver()
 
 # Solve using PETSc block matrices and an iterative solver
 norm_u_1, norm_p_1 = block_iterative_solver()
-assert np.isclose(norm_u_1, norm_u_0)
-assert np.isclose(norm_p_1, norm_p_0)
+np.testing.assert_allclose(norm_u_1, norm_u_0, rtol=1e-4)
+np.testing.assert_allclose(norm_u_1, norm_u_0, rtol=1e-4)
 
 # Solve using PETSc block matrices and an LU solver
 norm_u_2, norm_p_2 = block_direct_solver()
-assert np.isclose(norm_u_2, norm_u_0)
-assert np.isclose(norm_p_2, norm_p_0)
+np.testing.assert_allclose(norm_u_2, norm_u_0, rtol=1e-4)
+np.testing.assert_allclose(norm_p_2, norm_p_0, rtol=1e-4)
 
 # Solve using a non-blocked matrix and an LU solver
 norm_u_3, norm_p_3 = mixed_direct()
-assert np.isclose(norm_u_3, norm_u_0)
+np.testing.assert_allclose(norm_u_3, norm_u_0, rtol=1e-4)

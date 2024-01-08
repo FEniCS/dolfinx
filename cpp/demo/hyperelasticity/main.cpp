@@ -225,7 +225,7 @@ int main(int argc, char* argv[])
     // stress.
     constexpr auto family = basix::element::family::P;
     const auto cell_type
-        = mesh::cell_type_to_basix_type(mesh->topology()->cell_types()[0]);
+        = mesh::cell_type_to_basix_type(mesh->topology()->cell_type());
     constexpr int k = 0;
     constexpr bool discontinuous = true;
 

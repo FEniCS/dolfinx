@@ -231,7 +231,8 @@ def test_petsc_assemble_manifold():
                        [0.6, 0.0], [0.8, 0.0], [1.0, 0.0]], dtype=default_real_type)
     cells = np.array([[0, 1], [1, 2], [2, 3], [3, 4], [4, 5]], dtype=np.int32)
     domain = ufl.Mesh(element(
-        basix.ElementFamily.P, basix.CellType.interval, 1, gdim=points.shape[1], shape=(points.shape[1], )))
+        basix.ElementFamily.P, basix.CellType.interval, 1, gdim=points.shape[1], shape=(points.shape[1],),
+        dtype=default_real_type))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     assert mesh.geometry.dim == 2
     assert mesh.topology.dim == 1
@@ -946,7 +947,7 @@ def test_assemble_empty_rank_mesh():
     """Assembly on mesh where some ranks are empty"""
     comm = MPI.COMM_WORLD
     cell_type = CellType.triangle
-    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, shape=(2,)))
+    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, shape=(2,), dtype=default_real_type))
 
     def partitioner(comm, nparts, local_graph, num_ghost_nodes):
         """Leave cells on the curent rank"""
@@ -956,11 +957,10 @@ def test_assemble_empty_rank_mesh():
     if comm.rank == 0:
         # Put cells on rank 0
         cells = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.int64)
-        cells = graph.adjacencylist(cells)
         x = np.array([[0., 0.], [1., 0.], [1., 1.], [0., 1.]], dtype=default_real_type)
     else:
         # No cells on other ranks
-        cells = graph.adjacencylist(np.empty((0, 3), dtype=np.int64))
+        cells = np.empty((0, 3), dtype=np.int64)
         x = np.empty((0, 2), dtype=default_real_type)
 
     mesh = create_mesh(comm, cells, x, domain, partitioner)

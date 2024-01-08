@@ -5,6 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Linear algebra functionality"""
 
+import typing
 
 import numpy as np
 import numpy.typing as npt
@@ -18,6 +19,10 @@ __all__ = ["orthonormalize", "is_orthonormal", "matrix_csr", "vector",
 
 
 class MatrixCSR:
+
+    _cpp_object: typing.Union[_cpp.la.MatrixCSR_float32, _cpp.la.MatrixCSR_float64,
+                              _cpp.la.MatrixCSR_complex64, _cpp.la.MatrixCSR_complex128]
+
     def __init__(self, A):
         """A distributed sparse matrix that uses compressed sparse row storage.
 
@@ -27,7 +32,6 @@ class MatrixCSR:
             Objects of this type should be created using
             :func:`matrix_csr` and not created using the class
             initialiser.
-
         """
         self._cpp_object = A
 
@@ -36,7 +40,6 @@ class MatrixCSR:
 
         Args:
             i: 0 for row map, 1 for column map.
-
         """
         return self._cpp_object.index_map(i)
 
@@ -133,7 +136,7 @@ class MatrixCSR:
             return _bsr((data.reshape(-1, bs0, bs1), indices, indptr), shape=(bs0 * nrows, bs1 * ncols))
 
 
-def matrix_csr(sp, block_mode=BlockMode.compact, dtype=np.float64) -> MatrixCSR:
+def matrix_csr(sp: _cpp.la.SparsityPattern, block_mode=BlockMode.compact, dtype=np.float64) -> MatrixCSR:
     """Create a distributed sparse matrix.
 
     The matrix uses compressed sparse row storage.
@@ -162,6 +165,10 @@ def matrix_csr(sp, block_mode=BlockMode.compact, dtype=np.float64) -> MatrixCSR:
 
 
 class Vector:
+
+    _cpp_object: typing.Union[_cpp.la.Vector_float32, _cpp.la.Vector_float64,
+                              _cpp.la.Vector_complex64, _cpp.la.Vector_complex128]
+
     def __init__(self, x):
         """A distributed vector object.
 
@@ -172,7 +179,6 @@ class Vector:
         Note:
             Objects of this type should be created using :func:`vector`
             and not created using the class initialiser.
-
         """
         self._cpp_object = x
 
