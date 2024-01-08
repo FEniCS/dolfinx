@@ -147,7 +147,7 @@ def test_vector_element(shape):
     q_ = ufl.TestFunction(Quad)
     dq = ufl.TrialFunction(Quad)
     one = dolfinx.fem.Function(Quad)
-    one.vector.set(1.0)
+    one.x.array[:] = 1.0
     mass_L_form = dolfinx.fem.form(ufl.inner(one, q_) * dx_m)
     mass_v = dolfinx.fem.assemble_vector(mass_L_form)
     mass_a_form = dolfinx.fem.form(ufl.inner(dq, q_) * dx_m)

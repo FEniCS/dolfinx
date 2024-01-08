@@ -165,9 +165,9 @@ def test_interpolation_rank1(W):
 
     w = Function(W)
     w.interpolate(f)
-    x = w.vector
-    assert x.max()[1] == 3.0  # /NOSONAR
-    assert x.min()[1] == 1.0  # /NOSONAR
+    x = w.x.array
+    assert x.max() == 3.0  # /NOSONAR
+    assert x.min() == 1.0  # /NOSONAR
 
     num_vertices = W.mesh.topology.index_map(0).size_global
     assert round(w.x.norm(la.Norm.l1) - 6 * num_vertices, 7) == 0
