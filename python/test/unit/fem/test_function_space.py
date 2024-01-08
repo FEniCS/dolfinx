@@ -177,7 +177,7 @@ def test_collapse(W, V):
 
     f_0 = Function(Ws[0][0])
     f_1 = Function(V)
-    assert f_0.vector.getSize() == f_1.vector.getSize()
+    assert f_0.x.index_map.size_global == f_1.x.index_map.size_global
 
 
 def test_argument_equality(mesh, V, V2, W, W2):
