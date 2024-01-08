@@ -182,5 +182,5 @@ def test_create_submap_owner_change():
         assert np.array_equal(sub_imap.owners, [comm.rank + 1])
         assert np.array_equal(sub_imap_to_imap, [0, 2, 3])
     global_indices = np.empty(sub_imap.size_local + sub_imap.num_ghosts, dtype=np.int64)
-    sub_imap.local_to_global(np.arange(sub_imap.size_local + sub_imap.num_ghosts, dtype=np.int32))
+    sub_imap.local_to_global(np.arange(sub_imap.size_local + sub_imap.num_ghosts, dtype=np.int32), global_indices)
     assert np.array_equal(global_indices, np.arange(comm.rank * 2, comm.rank * 2 + 3))
