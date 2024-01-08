@@ -13,7 +13,6 @@ import os
 import pathlib
 
 import numpy as _np
-import numpy.typing as _npt
 
 __all__ = ["cffi_utils", "numba_utils", "ctypes_utils"]
 
@@ -206,5 +205,5 @@ class cffi_utils:
         """See PETSc `MatSetValuesBlockedLocal
         <https://petsc.org/release/manualpages/Mat/MatSetValuesBlockedLocal>`_
         documentation."""
-    except ImportError as e:
+    except ImportError:
         pass
