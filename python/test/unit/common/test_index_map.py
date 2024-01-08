@@ -91,6 +91,20 @@ def test_index_map_ghost_lifetime():
     map = dolfinx.common.IndexMap(comm, local_size, [dest, src], map_ghosts, src)
     assert map.size_global == local_size * comm.size
 
+    # Test global to local map
+    local_indices = np.empty(map.size_global, dtype=np.int32)
+    global_indices = np.arange(map.size_global, dtype=np.int64)
+    map.global_to_local(global_indices, local_indices)
+    for i, ghost in enumerate(map_ghosts):
+        assert local_indices[ghost] == local_size + i
+
+    # Create marker for all indices that are on process (local or ghost)
+    on_process = np.zeros(map.size_global, dtype=bool)
+    on_process[map.local_range[0]:map.local_range[1]] = True
+    on_process[map.ghosts] = True
+    assert (local_indices[on_process] >= 0).all()
+    assert np.allclose(local_indices[np.invert(on_process)], -1)
+
     # Test lifetime management
     ghosts = map.ghosts
     assert np.array_equal(ghosts, map_ghosts)
@@ -167,6 +181,6 @@ def test_create_submap_owner_change():
         assert np.array_equal(sub_imap.ghosts, [2 * (comm.rank + 1)])
         assert np.array_equal(sub_imap.owners, [comm.rank + 1])
         assert np.array_equal(sub_imap_to_imap, [0, 2, 3])
-
-    global_indices = sub_imap.local_to_global(np.arange(sub_imap.size_local + sub_imap.num_ghosts, dtype=np.int32))
+    global_indices = np.empty(sub_imap.size_local + sub_imap.num_ghosts, dtype=np.int64)
+    sub_imap.local_to_global(np.arange(sub_imap.size_local + sub_imap.num_ghosts, dtype=np.int32))
     assert np.array_equal(global_indices, np.arange(comm.rank * 2, comm.rank * 2 + 3))
