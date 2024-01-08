@@ -20,7 +20,7 @@ except ImportError:
 
 from dolfinx import common
 from dolfinx import cpp as _cpp
-from dolfinx import fem, geometry, graph, io, jit, la, log, mesh, nls, plot
+from dolfinx import fem, geometry, graph, io, jit, la, log, mesh, nls, plot, utils
 # Initialise logging
 from dolfinx.common import (TimingType, git_commit_hash, has_debug, has_kahip,
                             has_parmetis, list_timings, timing)
@@ -42,7 +42,7 @@ def get_include(user=False):
 
 
 __all__ = [
-    "fem", "common", "geometry", "graph", "io", "jit", "la", "log", "mesh", "nls", "plot",
+    "fem", "common", "geometry", "graph", "io", "jit", "la", "log", "mesh", "nls", "plot", "utils",
     "TimingType", "git_commit_hash", "has_debug", "has_kahip", "has_parmetis", "list_timings",
     "timing"
 ]
