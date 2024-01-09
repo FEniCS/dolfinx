@@ -15,10 +15,7 @@ DOLFINx is a new version of DOLFIN and is being actively developed.
 
 ## Documentation
 
-Documentation can be viewed at:
-
-- <https://docs.fenicsproject.org/dolfinx/main/cpp/>
-- <https://docs.fenicsproject.org/dolfinx/main/python/>
+Documentation can be viewed at <https://docs.fenicsproject.org>.
 
 ## Installation
 
