@@ -99,10 +99,13 @@ def test_eval(V, W, Q, mesh):
     assert np.allclose(u3.eval(x0, first_cell)[:3], u2.eval(x0, first_cell), rtol=1e-15, atol=1e-15)
 
 
-@ pytest.mark.skip_in_parallel
+@pytest.mark.skip_in_parallel
 def test_eval_manifold():
     # Simple two-triangle surface in 3d
-    vertices = np.array([(0.0, 0.0, 1.0), (1.0, 1.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0)], dtype=default_real_type)
+    vertices = np.array([(0.0, 0.0, 1.0),
+                         (1.0, 1.0, 1.0),
+                         (1.0, 0.0, 0.0),
+                         (0.0, 1.0, 0.0)], dtype=default_real_type)
     cells = [(0, 1, 2), (0, 1, 3)]
     domain = ufl.Mesh(element("Lagrange", "triangle", 1, gdim=3, shape=(2,), dtype=default_real_type))
     mesh = create_mesh(MPI.COMM_WORLD, cells, vertices, domain)
@@ -173,10 +176,7 @@ def test_interpolation_rank1(W):
     assert round(w.x.norm(la.Norm.l1) - 6 * num_vertices, 7) == 0
 
 
-@ pytest.mark.parametrize("types", [
-    (np.float32, "float"),
-    (np.float64, "double")
-])
+@pytest.mark.parametrize("dtype,cdtype", [(np.float32, "float"), (np.float64, "double")])
 def test_cffi_expression(dtype, cdtype):
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, dtype=dtype)
     V = functionspace(mesh, ('Lagrange', 1))
