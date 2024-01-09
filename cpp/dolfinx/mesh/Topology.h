@@ -47,7 +47,7 @@ public:
   Topology(MPI_Comm comm, CellType cell_type);
 
   /// Create empty mesh topology with multiple cell types
-  Topology(MPI_Comm comm, std::vector<CellType>& cell_type);
+  Topology(MPI_Comm comm, const std::vector<CellType>& cell_type);
 
   /// Copy constructor
   Topology(const Topology& topology) = default;
@@ -73,6 +73,16 @@ public:
   /// @warning This is experimental and likely to change
   void set_index_map(int dim, std::shared_ptr<const common::IndexMap> map);
 
+  /// @todo Merge with set_connectivity
+  ///
+  /// @brief Set the IndexMap for dimension dim
+  /// @warning This is experimental and likely to change
+  /// @param dim Topological dimension
+  /// @param i Index of celltype within dimension `dim`.
+  /// @param map Map to set
+  void set_index_map(int dim, int i,
+                     std::shared_ptr<const common::IndexMap> map);
+
   /// @brief Get the IndexMap that described the parallel distribution
   /// of the mesh entities.
   ///
@@ -96,6 +106,11 @@ public:
   /// @brief Set connectivity for given pair of topological dimensions.
   void set_connectivity(std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
                         int d0, int d1);
+
+  /// @brief Set connectivity for given pair of entity types, defined by
+  /// dimension and index, as listed in _entity_types.
+  void set_connectivity(std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
+                        int d0, int i0, int d1, int i1);
 
   /// @brief Returns the permutation information
   const std::vector<std::uint32_t>& get_cell_permutation_info() const;
@@ -148,13 +163,18 @@ private:
   // MPI communicator
   dolfinx::MPI::Comm _comm;
 
-  // Cell type
-  std::vector<CellType> _cell_type;
-
-  // Facet type
-  std::vector<CellType> _facet_type;
+  // Cell types for entites in Topology, as follows:
+  // [CellType::point, edge_types..., facet_types..., cell_types...]
+  // Only one type is expected for vertices, (and usually edges), but facets
+  // and cells can be a list of multiple types, e.g. [quadrilateral, triangle]
+  // for facets.
+  // Offsets are position in the list for each entity dimension, in
+  // AdjacencyList style.
+  std::vector<CellType> _entity_types;
+  std::vector<int> _entity_type_offsets;
 
   // Parallel layout of entities for each dimension and cell type
+  // flattened in the same layout as _entity_types above.
   std::vector<std::shared_ptr<const common::IndexMap>> _index_map;
 
   // Connectivity between entity dimensions and cell types, arranged as

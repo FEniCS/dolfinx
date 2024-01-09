@@ -712,38 +712,67 @@ std::vector<std::int32_t> convert_to_local_indexing(
 
 //-----------------------------------------------------------------------------
 Topology::Topology(MPI_Comm comm, CellType cell_type)
-    : _comm(comm), _cell_type({cell_type}),
+    : _comm(comm), _index_map(cell_dim(cell_type) + 1, {nullptr}),
       _connectivity(
           cell_dim(cell_type) + 1,
           std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>(
               cell_dim(cell_type) + 1))
 {
-  // Do nothing
+  int tdim = cell_dim(cell_type);
+  _entity_type_offsets.resize(tdim + 2);
+  for (int i = 0; i < tdim + 2; ++i)
+    _entity_type_offsets[i] = i;
+
+  _entity_types = {CellType::point, CellType::interval};
+  if (tdim == 2)
+    _entity_types.push_back(cell_type);
+  else if (tdim == 3)
+  {
+    _entity_types.push_back(cell_facet_type(cell_type, 0));
+    _entity_types.push_back(cell_type);
+  }
 }
 //-----------------------------------------------------------------------------
-Topology::Topology(MPI_Comm comm, std::vector<CellType>& cell_type)
-    : _comm(comm), _cell_type(cell_type)
+Topology::Topology(MPI_Comm comm, const std::vector<CellType>& cell_types)
+    : _comm(comm), _entity_types({mesh::CellType::point}),
+      _entity_type_offsets({0, 1})
 {
-  assert(cell_type.size() > 0);
-  int tdim = cell_dim(cell_type[0]);
+  assert(cell_types.size() > 0);
+  int tdim = cell_dim(cell_types[0]);
 
-  // Find all unique facet types
-  for (auto c : cell_type)
+  if (tdim > 1)
   {
-    assert(cell_dim(c) == tdim);
-    int nf = cell_num_entities(c, tdim - 1);
-    for (int i = 0; i < nf; ++i)
-      _facet_type.push_back(cell_facet_type(c, i));
-  }
-  std::sort(_facet_type.begin(), _facet_type.end());
-  _facet_type.erase(std::unique(_facet_type.begin(), _facet_type.end()),
-                    _facet_type.end());
+    // In 2D, the facet is an interval
+    _entity_types.push_back(CellType::interval);
+    _entity_type_offsets.push_back(_entity_types.size());
 
-  // Vertex + edge + cell types
-  int conn_size = 2 + cell_type.size();
-  // In 3D add facets
-  if (tdim == 3)
-    conn_size += _facet_type.size();
+    if (tdim == 3)
+    {
+      // Find all facet types
+      std::vector<mesh::CellType> facet_types;
+      for (auto c : cell_types)
+      {
+        assert(cell_dim(c) == tdim);
+        int nf = cell_num_entities(c, tdim - 1);
+        for (int i = 0; i < nf; ++i)
+          facet_types.push_back(cell_facet_type(c, i));
+      }
+      std::sort(facet_types.begin(), facet_types.end());
+      facet_types.erase(std::unique(facet_types.begin(), facet_types.end()),
+                        facet_types.end());
+      _entity_types.insert(_entity_types.end(), facet_types.begin(),
+                           facet_types.end());
+
+      _entity_type_offsets.push_back(_entity_types.size());
+    }
+  }
+
+  // Cell Types
+  _entity_types.insert(_entity_types.end(), cell_types.begin(),
+                       cell_types.end());
+  _entity_type_offsets.push_back(_entity_types.size());
+
+  int conn_size = _entity_type_offsets.back();
 
   // Create square list of lists
   _connectivity.resize(conn_size);
@@ -751,19 +780,28 @@ Topology::Topology(MPI_Comm comm, std::vector<CellType>& cell_type)
     c.resize(conn_size);
 }
 //-----------------------------------------------------------------------------
-int Topology::dim() const noexcept { return _connectivity.size() - 1; }
+int Topology::dim() const noexcept { return _entity_types.size() - 1; }
 //-----------------------------------------------------------------------------
 void Topology::set_index_map(int dim,
                              std::shared_ptr<const common::IndexMap> map)
 {
-  assert(dim < (int)_index_map.size());
-  _index_map[dim] = map;
+  assert(dim < (int)_entity_type_offsets.size() - 1);
+  _index_map[_entity_type_offsets[dim]] = map;
+}
+//-----------------------------------------------------------------------------
+void Topology::set_index_map(int dim, int i,
+                             std::shared_ptr<const common::IndexMap> map)
+{
+  assert(dim < (int)_entity_type_offsets.size() - 1);
+  assert(i < (_entity_type_offsets[dim + 1] - _entity_type_offsets[dim]));
+
+  _index_map[_entity_type_offsets[dim] + i] = map;
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
 {
-  assert(dim < (int)_index_map.size());
-  return _index_map[dim];
+  assert(dim < (int)_entity_type_offsets.size() - 1);
+  return _index_map[_entity_type_offsets[dim]];
 }
 //-----------------------------------------------------------------------------
 std::int32_t Topology::create_entities(int dim)
@@ -863,6 +901,19 @@ void Topology::set_connectivity(
   _connectivity[d0][d1] = c;
 }
 //-----------------------------------------------------------------------------
+void Topology::set_connectivity(
+    std::shared_ptr<graph::AdjacencyList<std::int32_t>> c, int d0, int i0,
+    int d1, int i1)
+{
+  assert(d0 < (int)_entity_type_offsets.size() - 1);
+  assert(i0 < (_entity_type_offsets[d0 + 1] - _entity_type_offsets[d0]));
+  assert(d1 < (int)_entity_type_offsets.size() - 1);
+  assert(i1 < (_entity_type_offsets[d1 + 1] - _entity_type_offsets[d1]));
+
+  _connectivity[_entity_type_offsets[d0] + i0][_entity_type_offsets[d1] + i1]
+      = c;
+}
+//-----------------------------------------------------------------------------
 const std::vector<std::uint32_t>& Topology::get_cell_permutation_info() const
 {
   // Check if this process owns or ghosts any cells
@@ -897,7 +948,7 @@ const std::vector<std::int32_t>& Topology::interprocess_facets() const
   return _interprocess_facets;
 }
 //-----------------------------------------------------------------------------
-mesh::CellType Topology::cell_type() const { return _cell_type[0]; }
+mesh::CellType Topology::cell_type() const { return _entity_types.back(); }
 //-----------------------------------------------------------------------------
 MPI_Comm Topology::comm() const { return _comm.comm(); }
 //-----------------------------------------------------------------------------
@@ -914,7 +965,7 @@ Topology mesh::create_topology(
   assert(ghost_owners.size() == cells.size());
 
   LOG(INFO) << "Create topology";
-  // Check cell data consistency
+  // Check cell data consistency and compile spans of owned and ghost cells
   std::vector<std::int32_t> num_local_cells(cell_type.size());
   std::vector<std::span<const std::int64_t>> owned_cells;
   std::vector<std::span<const std::int64_t>> ghost_cells;
@@ -999,36 +1050,196 @@ Topology mesh::create_topology(
     MPI_Exscan(&nlocal, &global_offset_v, 1, MPI_INT64_T, MPI_SUM, comm);
   }
 
-  // FIXME - Get global indices of ghost cells
+  // Get global indices of ghost cells
   std::vector<std::vector<std::int64_t>> cell_ghost_indices;
+  std::vector<std::shared_ptr<common::IndexMap>> index_map_c;
   for (std::size_t i = 0; i < cells.size(); ++i)
   {
-    std::span cell_idx(original_cell_index);
+    std::span cell_idx(original_cell_index[i]);
     cell_ghost_indices.push_back(graph::build::compute_ghost_indices(
-        comm, owned_cells[i], ghost_cells[i], ghost_owners[i]));
+        comm, cell_idx.first(num_local_cells[i]),
+        cell_idx.last(ghost_owners[i].size()), ghost_owners[i]));
+
+    // Create index maps for each cell type
+    index_map_c.push_back(std::make_shared<common::IndexMap>(
+        comm, num_local_cells[i], cell_ghost_indices[i], ghost_owners[i]));
   }
 
-  // // Create index maps for each cell type
-  // std::vector<std::shared_ptr<common::IndexMap>> index_map_c;
-  // for (std::size_t i = 0; i < cells.size(); ++i)
-  // {
-  //   std::int32_t num_vertices = num_cell_vertices(cell_type[i]);
-  //   std::int32_t num_local_cells_i
-  //       = cells[i].size() / num_vertices - ghost_owners[i].size();
-  //   index_map_c.push_back(std::make_shared<common::IndexMap>(
-  //       comm, num_local_cells_i, cell_ghost_indices[i], ghost_owners[i]));
-  // }
+  // Send and receive  ((input vertex index) -> (new global index, owner
+  // rank)) data with neighbours (for vertices on 'true domain
+  // boundary')
+  const std::vector<std::int64_t> unowned_vertex_data = exchange_indexing(
+      comm, boundary_vertices, global_vertex_to_ranks, global_offset_v,
+      owned_vertices, local_vertex_indices);
 
-  // // Send and receive  ((input vertex index) -> (new global index, owner
-  // // rank)) data with neighbours (for vertices on 'true domain
-  // // boundary')
-  // const std::vector<std::int64_t> unowned_vertex_data = exchange_indexing(
-  //     comm, boundary_vertices, global_vertex_to_ranks, global_offset_v,
-  //     owned_vertices, local_vertex_indices);
+  assert(unowned_vertex_data.size() % 3 == 0);
+
+  // Unpack received data and build array of ghost vertices and owners
+  // of the ghost vertices
+  std::vector<std::int64_t> ghost_vertices;
+  std::vector<int> ghost_vertex_owners;
+  std::vector<std::int32_t> local_vertex_indices_unowned(
+      unowned_vertices.size(), -1);
+  {
+    std::int32_t v = owned_vertices.size();
+    for (std::size_t i = 0; i < unowned_vertex_data.size(); i += 3)
+    {
+      const std::int64_t idx_global = unowned_vertex_data[i];
+      auto it = std::lower_bound(unowned_vertices.begin(),
+                                 unowned_vertices.end(), idx_global);
+      assert(it != unowned_vertices.end() and *it == idx_global);
+      std::size_t pos = std::distance(unowned_vertices.begin(), it);
+      assert(local_vertex_indices_unowned[pos] < 0);
+      local_vertex_indices_unowned[pos] = v++;
+      ghost_vertices.push_back(unowned_vertex_data[i + 1]); // New global index
+      ghost_vertex_owners.push_back(unowned_vertex_data[i + 2]); // Owning rank
+    }
+
+    {
+      // TODO: avoid building global_to_local_vertices
+      std::vector<std::pair<std::int64_t, std::int32_t>>
+          global_to_local_vertices;
+      global_to_local_vertices.reserve(owned_vertices.size()
+                                       + unowned_vertices.size());
+      std::transform(owned_vertices.begin(), owned_vertices.end(),
+                     local_vertex_indices.begin(),
+                     std::back_inserter(global_to_local_vertices),
+                     [](auto idx0, auto idx1) {
+                       return std::pair<std::int64_t, std::int32_t>(idx0, idx1);
+                     });
+      std::transform(unowned_vertices.begin(), unowned_vertices.end(),
+                     local_vertex_indices_unowned.begin(),
+                     std::back_inserter(global_to_local_vertices),
+                     [](auto idx0, auto idx1) {
+                       return std::pair<std::int64_t, std::int32_t>(idx0, idx1);
+                     });
+      std::sort(global_to_local_vertices.begin(),
+                global_to_local_vertices.end());
+
+      // Send (from the ghost cell owner) and receive global indices for
+      // ghost vertices that are not on the process boundary. Data is
+      // communicated via ghost cells. Note that the ghost cell owner
+      // (who we get the vertex index from) is not necessarily the
+      // vertex owner.
+      std::vector<std::array<std::int64_t, 3>> recv_data;
+      // Repeat for each cell type
+      for (std::size_t i = 0; i < cells.size(); ++i)
+      {
+        int num_cell_vertices = mesh::num_cell_vertices(cell_type[i]);
+        auto recv_data_i = exchange_ghost_indexing(
+            *index_map_c[i], cells[i], num_cell_vertices, owned_vertices.size(),
+            global_offset_v, global_to_local_vertices, ghost_vertices,
+            ghost_vertex_owners);
+        recv_data.insert(recv_data.end(), recv_data_i.begin(),
+                         recv_data_i.end());
+      }
+
+      // Unpack received data and add to arrays of ghost indices and ghost
+      // owners
+      for (auto& data : recv_data)
+      {
+        std::int64_t global_idx_old = data[0];
+        auto it0 = std::lower_bound(unowned_vertices.begin(),
+                                    unowned_vertices.end(), global_idx_old);
+        if (it0 != unowned_vertices.end() and *it0 == global_idx_old)
+        {
+          if (std::size_t pos = std::distance(unowned_vertices.begin(), it0);
+              local_vertex_indices_unowned[pos] < 0)
+          {
+            local_vertex_indices_unowned[pos] = v++;
+            ghost_vertices.push_back(data[1]);
+            ghost_vertex_owners.push_back(data[2]);
+          }
+        }
+      }
+    }
+  }
+
+  // TODO: avoid building global_to_local_vertices
+
+  // Convert input cell topology to local vertex indexing
+  std::vector<std::pair<std::int64_t, std::int32_t>> global_to_local_vertices;
+  global_to_local_vertices.reserve(owned_vertices.size()
+                                   + unowned_vertices.size());
+  std::transform(
+      owned_vertices.begin(), owned_vertices.end(),
+      local_vertex_indices.begin(),
+      std::back_inserter(global_to_local_vertices),
+      [](auto idx0, auto idx1) -> std::pair<std::int64_t, std::int32_t> {
+        return {idx0, idx1};
+      });
+  std::transform(
+      unowned_vertices.begin(), unowned_vertices.end(),
+      local_vertex_indices_unowned.begin(),
+      std::back_inserter(global_to_local_vertices),
+      [](auto idx0, auto idx1) -> std::pair<std::int64_t, std::int32_t> {
+        return {idx0, idx1};
+      });
+  std::sort(global_to_local_vertices.begin(), global_to_local_vertices.end());
+
+  std::vector<std::vector<std::int32_t>> _cells_local_idx;
+  for (std::size_t i = 0; i < cells.size(); ++i)
+    _cells_local_idx.push_back(
+        convert_to_local_indexing(cells[i], global_to_local_vertices));
+
+  // -- Create Topology object
+
+  // Determine which ranks ghost vertices that are owned by this rank.
   //
-  // assert(unowned_vertex_data.size() % 3 == 0);
-  Topology t(comm, cell_type[0]);
-  return t;
+  // Note: Other ranks can ghost vertices that lie inside the 'true'
+  // boundary on this process. When we got vertex owner indices via
+  // exchange_ghost_indexing, we received data from the ghost cell owner
+  // and not necessarily from the vertex owner; therefore, we cannot
+  // simply 'transpose' the communication graph to find out who ghosts
+  // vertices owned by this rank.
+  //
+  // TODO: Find a away to get the 'dest' without using
+  // compute_graph_edges_nbx. Maybe transpose the
+  // exchange_ghost_indexing step, followed by another communication
+  // round to the owner?
+  //
+  // Note: This step is required only for meshes with ghost cells and
+  // could be skipped when the mesh is not ghosted.
+  std::vector<int> dest;
+  {
+    // Build list of ranks that own vertices that are ghosted by this
+    // rank (out edges)
+    std::vector<int> src = ghost_vertex_owners;
+    dolfinx::radix_sort(std::span(src));
+    src.erase(std::unique(src.begin(), src.end()), src.end());
+    dest = dolfinx::MPI::compute_graph_edges_nbx(comm, src);
+  }
+
+  Topology topology(comm, cell_type);
+  const int tdim = topology.dim();
+
+  // Create index map for vertices
+  auto index_map_v = std::make_shared<common::IndexMap>(
+      comm, owned_vertices.size(), ghost_vertices, ghost_vertex_owners);
+  auto c0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+      index_map_v->size_local() + index_map_v->num_ghosts());
+
+  // Set vertex index map and 'connectivity'
+  topology.set_index_map(0, index_map_v);
+  topology.set_connectivity(c0, 0, 0);
+
+  // Set cell index map and connectivity
+  for (std::size_t i = 0; i < cells.size(); ++i)
+  {
+    int num_cell_vertices = mesh::num_cell_vertices(cell_type[i]);
+    auto cells_local_idx = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+        graph::regular_adjacency_list(std::move(_cells_local_idx[i]),
+                                      num_cell_vertices));
+    topology.set_index_map(tdim, i, index_map_c[i]);
+    topology.set_connectivity(cells_local_idx, tdim, i, 0, 0);
+  }
+
+  // Save original cell index
+  // topology.original_cell_index.assign(
+  //     original_cell_index.begin(),
+  //     std::next(original_cell_index.begin(), num_cells));
+
+  return topology;
 }
 //-----------------------------------------------------------------------------
 Topology
