@@ -91,6 +91,11 @@ public:
   /// `nullptr` if index map has not been set.
   std::shared_ptr<const common::IndexMap> index_map(int dim) const;
 
+  /// @param dim Topological dimension
+  /// @return List of index maps, one for each cell type
+  std::vector<std::shared_ptr<const common::IndexMap>>
+  index_maps(int dim) const;
+
   /// @brief Return connectivity from entities of dimension d0 to
   /// entities of dimension d1.
   ///

@@ -15,7 +15,6 @@
 #include <dolfinx/common/sort.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/partition.h>
-#include <iostream>
 #include <numeric>
 #include <random>
 
@@ -741,8 +740,6 @@ Topology::Topology(MPI_Comm comm, const std::vector<CellType>& cell_types)
   assert(cell_types.size() > 0);
   int tdim = cell_dim(cell_types[0]);
 
-  std::cout << "tdim = " << tdim << "\n";
-
   if (tdim > 1)
   {
     // In 2D, the facet is an interval
@@ -796,11 +793,6 @@ void Topology::set_index_map(int dim,
 void Topology::set_index_map(int dim, int i,
                              std::shared_ptr<const common::IndexMap> map)
 {
-  std::cout << "Entity offsets: ";
-  for (auto q : _entity_type_offsets)
-    std::cout << q << " ";
-  std::cout << "\n";
-
   assert(dim < (int)_entity_type_offsets.size() - 1);
   assert(i < (_entity_type_offsets[dim + 1] - _entity_type_offsets[dim]));
 
@@ -811,6 +803,16 @@ std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
 {
   assert(dim < (int)_entity_type_offsets.size() - 1);
   return _index_map[_entity_type_offsets[dim]];
+}
+//-----------------------------------------------------------------------------
+std::vector<std::shared_ptr<const common::IndexMap>>
+Topology::index_maps(int dim) const
+{
+  assert(dim < (int)_entity_type_offsets.size() - 1);
+  std::vector maps(
+      std::next(_index_map.begin(), _entity_type_offsets[dim]),
+      std::next(_index_map.begin(), _entity_type_offsets[dim + 1]));
+  return maps;
 }
 //-----------------------------------------------------------------------------
 std::int32_t Topology::create_entities(int dim)
