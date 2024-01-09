@@ -537,15 +537,7 @@ def functionspace(mesh: Mesh,
 
     # Compile dofmap and element and create DOLFIN objects
     dtype = mesh.geometry.x.dtype
-    if form_compiler_options is None:
-        form_compiler_options = dict()
-    if dtype == np.float32:
-        form_compiler_options["scalar_type"] = "float32"
-    elif dtype == np.float64:
-        form_compiler_options["scalar_type"] = "float64"
-    else:
-        raise RuntimeError("Unsupported geometry type. Must be float32 or float64.")
-
+    form_compiler_options["scalar_type"] = mesh.geometry.x.dtype
     (ufcx_element, ufcx_dofmap), module, code = jit.ffcx_jit(mesh.comm, ufl_e,
                                                              form_compiler_options=form_compiler_options,
                                                              jit_options=jit_options)
