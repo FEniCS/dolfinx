@@ -20,7 +20,7 @@ from dolfinx import graph
 from dolfinx import mesh as _mesh
 from dolfinx.cpp.mesh import (create_cell_partitioner, entities_to_geometry,
                               is_simplex)
-from dolfinx.fem import assemble_scalar, form, coordinate_element
+from dolfinx.fem import assemble_scalar, coordinate_element, form
 from dolfinx.mesh import (CellType, DiagonalType, GhostMode, create_box,
                           create_interval, create_rectangle, create_submesh,
                           create_unit_cube, create_unit_interval,
