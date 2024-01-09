@@ -136,17 +136,7 @@ class Expression:
         # Compile UFL expression with JIT
         if form_compiler_options is None:
             form_compiler_options = dict()
-        if dtype == np.float32:
-            form_compiler_options["scalar_type"] = "float32"
-        elif dtype == np.float64:
-            form_compiler_options["scalar_type"] = "float64"
-        elif dtype == np.complex64:
-            form_compiler_options["scalar_type"] = "complex64"
-        elif dtype == np.complex128:
-            form_compiler_options["scalar_type"] = "complex128"
-        else:
-            raise RuntimeError(f"Unsupported scalar type {dtype} for Expression.")
-
+        form_compiler_options["scalar_type"] = dtype
         self._ufcx_expression, module, self._code = jit.ffcx_jit(comm, (e, _X),
                                                                  form_compiler_options=form_compiler_options,
                                                                  jit_options=jit_options)
