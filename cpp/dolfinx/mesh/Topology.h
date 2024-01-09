@@ -138,6 +138,11 @@ public:
   /// @return Cell type that the topology is for
   CellType cell_type() const;
 
+  /// @brief  Get the entity types in the topology for a given dimension
+  /// @param dim Topological dimension
+  /// @return List of entity types
+  std::span<const CellType> entity_types(int dim) const;
+
   /// @brief Create entities of given topological dimension.
   /// @param[in] dim Topological dimension
   /// @return Number of newly created entities, returns -1 if entities
