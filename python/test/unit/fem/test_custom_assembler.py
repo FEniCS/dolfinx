@@ -267,13 +267,13 @@ def test_custom_mesh_loop_rank1(dtype):
     # Assemble using generated tabulate_tensor kernel and Numba
     # assembler
     if dtype == np.float32:
-        ffcxtype = "float"
+        ffcxtype = "float32"
     elif dtype == np.float64:
-        ffcxtype = "double"
+        ffcxtype = "float64"
     elif dtype == np.complex64:
-        ffcxtype = "float _Complex"
+        ffcxtype = "complex64"
     elif dtype == np.complex128:
-        ffcxtype = "double _Complex"
+        ffcxtype = "complex128"
     else:
         raise RuntimeError("Unknown scalar type")
 

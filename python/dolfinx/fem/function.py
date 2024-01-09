@@ -137,13 +137,13 @@ class Expression:
         if form_compiler_options is None:
             form_compiler_options = dict()
         if dtype == np.float32:
-            form_compiler_options["scalar_type"] = "float"
+            form_compiler_options["scalar_type"] = "float32"
         elif dtype == np.float64:
-            form_compiler_options["scalar_type"] = "double"
+            form_compiler_options["scalar_type"] = "float64"
         elif dtype == np.complex64:
-            form_compiler_options["scalar_type"] = "float _Complex"
+            form_compiler_options["scalar_type"] = "complex64"
         elif dtype == np.complex128:
-            form_compiler_options["scalar_type"] = "double _Complex"
+            form_compiler_options["scalar_type"] = "complex128"
         else:
             raise RuntimeError(f"Unsupported scalar type {dtype} for Expression.")
 

@@ -102,13 +102,13 @@ b1 = form(- ufl.inner(f, v) * ds(1), dtype=PETSc.ScalarType)  # type: ignore
 # JIT compile individual blocks tabulation kernels
 nptype, ffcxtype = None, None
 if PETSc.ScalarType == np.float32:  # type: ignore
-    ffcxtype = "float"
+    ffcxtype = "float32"
 elif PETSc.ScalarType == np.float64:  # type: ignore
-    ffcxtype = "double"
+    ffcxtype = "float64"
 elif PETSc.ScalarType == np.complex64:  # type: ignore
-    ffcxtype = "float _Complex"
+    ffcxtype = "complex64"
 elif PETSc.ScalarType == np.complex128:  # type: ignore
-    ffcxtype = "double _Complex"
+    ffcxtype = "complex128"
 else:
     raise RuntimeError(f"Unsupported scalar type {PETSc.ScalarType}.")  # type: ignore
 
