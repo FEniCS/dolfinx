@@ -6,8 +6,9 @@
 """Tools for assembling and manipulating finite element forms."""
 
 from dolfinx.cpp.fem import (IntegralType,
-                             create_nonmatching_meshes_interpolation_data, transpose_dofmap)
+                             create_nonmatching_meshes_interpolation_data)
 from dolfinx.cpp.fem import create_sparsity_pattern as _create_sparsity_pattern
+from dolfinx.cpp.fem import transpose_dofmap
 from dolfinx.fem.assemble import (apply_lifting, assemble_matrix,
                                   assemble_scalar, assemble_vector,
                                   create_matrix, create_vector, set_bc)
