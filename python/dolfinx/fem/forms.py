@@ -115,6 +115,16 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]],
         form_compiler_options = dict()
 
     form_compiler_options["scalar_type"] = dtype
+    if dtype == np.float32:
+        ftype = _cpp.fem.Form_float32
+    elif dtype == np.float64:
+        ftype = _cpp.fem.Form_float64
+    elif dtype == np.complex64:
+        ftype = _cpp.fem.Form_complex64
+    elif dtype == np.complex128:
+        ftype = _cpp.fem.Form_complex128
+    else:
+        raise NotImplementedError(f"Type {dtype} not supported.")
 
     def _form(form):
         """Compile a single UFL form"""
