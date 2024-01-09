@@ -439,10 +439,18 @@ void mesh(nb::module_& m)
              dolfinx::mesh::CellType cell_type)
           { new (t) dolfinx::mesh::Topology(comm.get(), cell_type); },
           nb::arg("comm"), nb::arg("cell_type"))
-      .def("set_connectivity", &dolfinx::mesh::Topology::set_connectivity,
-           nb::arg("c"), nb::arg("d0"), nb::arg("d1"))
-      .def("set_index_map", &dolfinx::mesh::Topology::set_index_map,
-           nb::arg("dim"), nb::arg("map"))
+      .def(
+          "set_connectivity",
+          [](dolfinx::mesh::Topology& self,
+             std::shared_ptr<dolfinx::graph::AdjacencyList<std::int32_t>> conn,
+             int d0, int d1) { self.set_connectivity(conn, d0, d1); },
+          nb::arg("c"), nb::arg("d0"), nb::arg("d1"))
+      .def(
+          "set_index_map",
+          [](dolfinx::mesh::Topology& self, int dim,
+             std::shared_ptr<const dolfinx::common::IndexMap> map)
+          { self.set_index_map(dim, map); },
+          nb::arg("dim"), nb::arg("map"))
       .def("create_entities", &dolfinx::mesh::Topology::create_entities,
            nb::arg("dim"))
       .def("create_entity_permutations",
@@ -493,6 +501,19 @@ void mesh(nb::module_& m)
           [](dolfinx::mesh::Topology& self)
           { return MPICommWrapper(self.comm()); },
           nb::keep_alive<0, 1>());
+
+  m.def("create_topology",
+        [](MPICommWrapper comm,
+           const std::vector<dolfinx::mesh::CellType>& cell_type,
+           std::vector<std::span<const std::int64_t>> cells,
+           std::vector<std::span<const std::int64_t>> original_cell_index,
+           std::vector<std::span<const int>> ghost_owners,
+           std::span<const std::int64_t> boundary_vertices)
+        {
+          return dolfinx::mesh::create_topology(
+              comm.get(), cell_type, cells, original_cell_index, ghost_owners,
+              boundary_vertices);
+        });
 
   // dolfinx::mesh::MeshTags
 
