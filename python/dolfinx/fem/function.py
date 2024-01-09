@@ -537,7 +537,9 @@ def functionspace(mesh: Mesh,
 
     # Compile dofmap and element and create DOLFIN objects
     dtype = mesh.geometry.x.dtype
-    form_compiler_options["scalar_type"] = mesh.geometry.x.dtype  # type: ignore
+    if form_compiler_options is None:
+        form_compiler_options = dict()
+    form_compiler_options["scalar_type"] = dtype
     (ufcx_element, ufcx_dofmap), module, code = jit.ffcx_jit(mesh.comm, ufl_e,
                                                              form_compiler_options=form_compiler_options,
                                                              jit_options=jit_options)
