@@ -21,9 +21,9 @@ from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
                           create_unit_square)
 
 try:
-    from dolfinx.io import FidesWriter, VTXWriter
+    from dolfinx.io import FidesWriter, VTXWriter, VTXMeshPolicy
 except ImportError:
-    pytest.skip("Test require ADIOS2", allow_module_level=True)
+    pytest.skip("Tests require ADIOS2", allow_module_level=True)
 
 
 def generate_mesh(dim: int, simplex: bool, N: int = 5, dtype=None):
@@ -85,7 +85,7 @@ def test_two_fides_functions(tempdir, dim, simplex):
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
 @pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("simplex", [True, False])
-def test_findes_single_function(tempdir, dim, simplex):
+def test_fides_single_function(tempdir, dim, simplex):
     "Test saving a single first order Lagrange functions"
     mesh = generate_mesh(dim, simplex)
     v = Function(functionspace(mesh, ("Lagrange", 1)))
@@ -289,3 +289,18 @@ def test_empty_rank_mesh(tempdir):
     filename = Path(tempdir, "empty_rank_mesh.bp")
     with VTXWriter(comm, filename, u) as f:
         f.write(0.0)
+
+
+@pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
+@pytest.mark.parametrize("dim", [2, 3])
+@pytest.mark.parametrize("simplex", [True, False])
+def test_vtx_reuse_mesh(tempdir, dim, simplex):
+    "Test saving a single first order Lagrange functions"
+    mesh = generate_mesh(dim, simplex)
+    v = Function(functionspace(mesh, ("Lagrange", 1)))
+    filename = Path(tempdir, "v.bp")
+    writer = VTXWriter(mesh.comm, filename, v, "BPFile", VTXMeshPolicy.reuse)
+    writer.write(0)
+    v.interpolate(lambda x: 0.5 * x[0])
+    writer.write(1)
+    writer.close()
