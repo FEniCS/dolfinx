@@ -177,12 +177,11 @@ def test_interpolation_rank1(W):
     (np.float32, "float"),
     (np.float64, "double")
 ])
-def test_cffi_expression(types):
-    vtype, xtype = types
-    mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, dtype=vtype)
+def test_cffi_expression(dtype, cdtype):
+    mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, dtype=dtype)
     V = functionspace(mesh, ('Lagrange', 1))
 
-    code_h = f"void eval({xtype}* values, int num_points, int value_size, const {xtype}* x);"
+    code_h = f"void eval({cdtype}* values, int num_points, int value_size, const {cdtype}* x);"
     code_c = """
         void eval(xtype* values, int num_points, int value_size, const xtype* x)
         {
@@ -191,10 +190,10 @@ def test_cffi_expression(types):
           values[i] = x[i] + x[i + num_points];
         }
     """
-    code_c = code_c.replace("xtype", xtype)
+    code_c = code_c.replace("xtype", cdtype)
 
     # Build the kernel
-    module = "_expr_eval" + xtype + str(MPI.COMM_WORLD.rank)
+    module = "_expr_eval" + cdtype + str(MPI.COMM_WORLD.rank)
     ffi = cffi.FFI()
     ffi.set_source(module, code_c)
     ffi.cdef(code_h)
@@ -208,10 +207,10 @@ def test_cffi_expression(types):
     eval_ptr = ffi.cast("uintptr_t", ffi.addressof(lib, "eval"))
 
     # Handle C func address by hand
-    f1 = Function(V, dtype=vtype)
+    f1 = Function(V, dtype=dtype)
     f1.interpolate(int(eval_ptr))
 
-    f2 = Function(V, dtype=vtype)
+    f2 = Function(V, dtype=dtype)
     f2.interpolate(lambda x: x[0] + x[1])
 
     f1.x.array[:] -= f2.x.array

@@ -540,9 +540,9 @@ def functionspace(mesh: Mesh,
     if form_compiler_options is None:
         form_compiler_options = dict()
     if dtype == np.float32:
-        form_compiler_options["scalar_type"] = "float"
+        form_compiler_options["scalar_type"] = "float32"
     elif dtype == np.float64:
-        form_compiler_options["scalar_type"] = "double"
+        form_compiler_options["scalar_type"] = "float64"
     else:
         raise RuntimeError("Unsupported geometry type. Must be float32 or float64.")
 
