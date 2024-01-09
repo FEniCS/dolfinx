@@ -17,6 +17,7 @@
 #
 # We begin this demo by importing the required modules.
 
+import typing
 from mpi4py import MPI
 
 # +
@@ -25,7 +26,7 @@ import numpy as np
 
 import basix
 import basix.ufl
-import ufl
+import ufl   # type: ignore
 from dolfinx import default_scalar_type, fem, mesh
 from dolfinx.fem.petsc import LinearProblem
 from ufl import ds, dx, grad, inner
@@ -55,11 +56,11 @@ from ufl import ds, dx, grad, inner
 # +
 element = basix.create_element(basix.ElementFamily.P, basix.CellType.interval, 10,
                                basix.LagrangeVariant.equispaced)
-pts = basix.create_lattice(basix.CellType.interval, 200, basix.LatticeType.equispaced, True)
-values = element.tabulate(0, pts)[0, :, :, 0]
+lattice = basix.create_lattice(basix.CellType.interval, 200, basix.LatticeType.equispaced, True)
+values = element.tabulate(0, lattice)[0, :, :, 0]
 if MPI.COMM_WORLD.size == 1:
     for i in range(values.shape[1]):
-        plt.plot(pts, values[:, i])
+        plt.plot(lattice, values[:, i])
     plt.plot(element.points, [0 for _ in element.points], "ko")
     plt.ylim([-1, 6])
     plt.savefig("demo_lagrange_variants_equispaced_10.png")
@@ -83,10 +84,10 @@ if MPI.COMM_WORLD.size == 1:
 # +
 element = basix.create_element(basix.ElementFamily.P, basix.CellType.interval, 10,
                                basix.LagrangeVariant.gll_warped)
-values = element.tabulate(0, pts)[0, :, :, 0]
+values = element.tabulate(0, lattice)[0, :, :, 0]
 if MPI.COMM_WORLD.size == 1:  # Skip this plotting in parallel
     for i in range(values.shape[1]):
-        plt.plot(pts, values[:, i])
+        plt.plot(lattice, values[:, i])
     plt.plot(element.points, [0 for _ in element.points], "ko")
     plt.ylim([-1, 6])
     plt.savefig("demo_lagrange_variants_gll_10.png")
@@ -164,8 +165,8 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
     uh = fem.Function(V)
     uh.interpolate(lambda x: saw_tooth(x[0]))
     if MPI.COMM_WORLD.size == 1:  # Skip this plotting in parallel
-        pts = []
-        cells = []
+        pts: typing.List[typing.List[float]] = []
+        cells: typing.List[int] = []
         for cell in range(10):
             for i in range(51):
                 pts.append([cell / 10 + i / 50 / 10, 0, 0])
