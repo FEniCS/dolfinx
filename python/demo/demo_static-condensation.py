@@ -100,25 +100,13 @@ f = ufl.as_vector([0.0, 1.0 / 16])
 b1 = form(- ufl.inner(f, v) * ds(1), dtype=PETSc.ScalarType)  # type: ignore
 
 # JIT compile individual blocks tabulation kernels
-nptype, ffcxtype = None, None
-if PETSc.ScalarType == np.float32:  # type: ignore
-    ffcxtype = "float"
-elif PETSc.ScalarType == np.float64:  # type: ignore
-    ffcxtype = "double"
-elif PETSc.ScalarType == np.complex64:  # type: ignore
-    ffcxtype = "float _Complex"
-elif PETSc.ScalarType == np.complex128:  # type: ignore
-    ffcxtype = "double _Complex"
-else:
-    raise RuntimeError(f"Unsupported scalar type {PETSc.ScalarType}.")  # type: ignore
-
-ufcx00, _, _ = ffcx_jit(msh.comm, a00, form_compiler_options={"scalar_type": ffcxtype})
+ufcx00, _, _ = ffcx_jit(msh.comm, a00, form_compiler_options={"scalar_type": PETSc.ScalarType})  # type: ignore
 kernel00 = getattr(ufcx00.form_integrals[0], f"tabulate_tensor_{np.dtype(PETSc.ScalarType).name}")  # type: ignore
 
-ufcx01, _, _ = ffcx_jit(msh.comm, a01, form_compiler_options={"scalar_type": ffcxtype})
+ufcx01, _, _ = ffcx_jit(msh.comm, a01, form_compiler_options={"scalar_type": PETSc.ScalarType})  # type: ignore
 kernel01 = getattr(ufcx01.form_integrals[0], f"tabulate_tensor_{np.dtype(PETSc.ScalarType).name}")  # type: ignore
 
-ufcx10, _, _ = ffcx_jit(msh.comm, a10, form_compiler_options={"scalar_type": ffcxtype})
+ufcx10, _, _ = ffcx_jit(msh.comm, a10, form_compiler_options={"scalar_type": PETSc.ScalarType})  # type: ignore
 kernel10 = getattr(ufcx10.form_integrals[0], f"tabulate_tensor_{np.dtype(PETSc.ScalarType).name}")  # type: ignore
 
 ffi = cffi.FFI()
