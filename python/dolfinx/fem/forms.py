@@ -114,18 +114,15 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]],
     if form_compiler_options is None:
         form_compiler_options = dict()
 
+    form_compiler_options["scalar_type"] = dtype
     if dtype == np.float32:
         ftype = _cpp.fem.Form_float32
-        form_compiler_options["scalar_type"] = "float"
     elif dtype == np.float64:
         ftype = _cpp.fem.Form_float64
-        form_compiler_options["scalar_type"] = "double"
     elif dtype == np.complex64:
         ftype = _cpp.fem.Form_complex64
-        form_compiler_options["scalar_type"] = "float _Complex"
     elif dtype == np.complex128:
         ftype = _cpp.fem.Form_complex128
-        form_compiler_options["scalar_type"] = "double _Complex"
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
 

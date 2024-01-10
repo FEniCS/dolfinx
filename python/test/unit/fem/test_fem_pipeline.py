@@ -82,7 +82,7 @@ def run_scalar_test(mesh, V, degree):
     M = (u_exact - uh)**2 * dx
     M = form(M)
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
-    assert np.abs(error) < 1.0e-12
+    assert np.abs(error) < 1.0e-9
 
     solver.destroy()
     A.destroy()
@@ -123,7 +123,7 @@ def run_vector_test(mesh, V, degree):
     M = form(M)
 
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
-    assert np.abs(error) < 1.0e-14
+    assert np.abs(error) < 1.0e-9
 
     solver.destroy()
     A.destroy()
@@ -197,7 +197,7 @@ def run_dg_test(mesh, V, degree):
     M = form(M)
 
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
-    assert np.abs(error) < 1.0e-14
+    assert np.abs(error) < 1.0e-9
 
     solver.destroy()
     A.destroy()

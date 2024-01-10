@@ -321,7 +321,7 @@ def refine_plaza(mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistri
 
 def create_mesh(comm: _MPI.Comm, cells: npt.NDArray[np.int64], x: npt.NDArray[np.floating],
                 e: typing.Union[ufl.Mesh, basix.finite_element.FiniteElement,
-                                basix.ufl._BasixElement, _CoordinateElement,],
+                                basix.ufl._BasixElement, _CoordinateElement, ],
                 partitioner: typing.Optional[typing.Callable] = None) -> Mesh:
     """Create a mesh from topology and geometry arrays.
 
