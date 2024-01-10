@@ -294,13 +294,34 @@ def test_empty_rank_mesh(tempdir):
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
 @pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("simplex", [True, False])
-def test_vtx_reuse_mesh(tempdir, dim, simplex):
-    "Test saving a single first order Lagrange functions"
+@pytest.mark.parametrize("reuse", [True, False])
+def test_vtx_reuse_mesh(tempdir, dim, simplex, reuse):
+    "Test reusage of mesh by VTXWriter"
+    adios2 = pytest.importorskip("adios2")
+
     mesh = generate_mesh(dim, simplex)
     v = Function(functionspace(mesh, ("Lagrange", 1)))
     filename = Path(tempdir, "v.bp")
-    writer = VTXWriter(mesh.comm, filename, v, "BPFile", VTXMeshPolicy.reuse)
+    v.name = "v"
+    policy = VTXMeshPolicy.reuse if reuse else VTXMeshPolicy.update
+
+    # Save three steps
+    writer = VTXWriter(mesh.comm, filename, v, "BP4", policy)
     writer.write(0)
     v.interpolate(lambda x: 0.5 * x[0])
     writer.write(1)
+    v.interpolate(lambda x: x[1])
+    writer.write(2)
     writer.close()
+
+    reuse_variables = ["NumberOfEntities", "NumberOfNodes", "connectivity", "geometry", "types"]
+    target_all = 3  # For all other variables the step count is number of writes
+    target_mesh = 1 if reuse else 3  # For mesh variables the step count is 1 if reuse else number of writes
+
+    adios_file = adios2.open(str(filename), "r", comm=mesh.comm, engine_type="BP4")
+    for name, var in adios_file.available_variables().items():
+        if name in reuse_variables:
+            assert int(var["AvailableStepsCount"]) == target_mesh
+        else:
+            assert int(var["AvailableStepsCount"]) == target_all
+    adios_file.close()
