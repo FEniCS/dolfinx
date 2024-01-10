@@ -439,18 +439,16 @@ void mesh(nb::module_& m)
              dolfinx::mesh::CellType cell_type)
           { new (t) dolfinx::mesh::Topology(comm.get(), cell_type); },
           nb::arg("comm"), nb::arg("cell_type"))
-      .def(
-          "set_connectivity",
-          [](dolfinx::mesh::Topology& self,
-             std::shared_ptr<dolfinx::graph::AdjacencyList<std::int32_t>> conn,
-             int d0, int d1) { self.set_connectivity(conn, d0, d1); },
-          nb::arg("c"), nb::arg("d0"), nb::arg("d1"))
-      .def(
-          "set_index_map",
-          [](dolfinx::mesh::Topology& self, int dim,
-             std::shared_ptr<const dolfinx::common::IndexMap> map)
-          { self.set_index_map(dim, map); },
-          nb::arg("dim"), nb::arg("map"))
+      .def("set_connectivity",
+           nb::overload_cast<
+               std::shared_ptr<dolfinx::graph::AdjacencyList<std::int32_t>>,
+               int, int>(&dolfinx::mesh::Topology::set_connectivity),
+           nb::arg("c"), nb::arg("d0"), nb::arg("d1"))
+      .def("set_index_map",
+           nb::overload_cast<int,
+                             std::shared_ptr<const dolfinx::common::IndexMap>>(
+               &dolfinx::mesh::Topology::set_index_map),
+           nb::arg("dim"), nb::arg("map"))
       .def("create_entities", &dolfinx::mesh::Topology::create_entities,
            nb::arg("dim"))
       .def("create_entity_permutations",
