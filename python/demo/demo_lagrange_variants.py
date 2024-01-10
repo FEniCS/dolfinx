@@ -164,15 +164,15 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
     uh = fem.Function(V)
     uh.interpolate(lambda x: saw_tooth(x[0]))
     if MPI.COMM_WORLD.size == 1:  # Skip this plotting in parallel
-        pts = []
+        points = []
         cells = []
         for cell in range(10):
             for i in range(51):
-                pts.append([cell / 10 + i / 50 / 10, 0, 0])
+                points.append([cell / 10 + i / 50 / 10, 0, 0])
                 cells.append(cell)
-        values = uh.eval(pts, cells)
-        plt.plot(pts, [saw_tooth(i[0]) for i in pts], "k--")
-        plt.plot(pts, values, "r-")
+        values = uh.eval(points, cells)
+        plt.plot(points, [saw_tooth(i[0]) for i in points], "k--")
+        plt.plot(points, values, "r-")
         plt.legend(["function", "approximation"])
         plt.ylim([-0.1, 0.4])
         plt.title(variant.name)
