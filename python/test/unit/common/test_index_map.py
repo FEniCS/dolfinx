@@ -92,9 +92,8 @@ def test_index_map_ghost_lifetime():
     assert map.size_global == local_size * comm.size
 
     # Test global to local map
-    local_indices = np.empty(map.size_global, dtype=np.int32)
     global_indices = np.arange(map.size_global, dtype=np.int64)
-    map.global_to_local(global_indices, local_indices)
+    local_indices = map.global_to_local(global_indices)
     for i, ghost in enumerate(map_ghosts):
         assert local_indices[ghost] == local_size + i
 
@@ -181,6 +180,5 @@ def test_create_submap_owner_change():
         assert np.array_equal(sub_imap.ghosts, [2 * (comm.rank + 1)])
         assert np.array_equal(sub_imap.owners, [comm.rank + 1])
         assert np.array_equal(sub_imap_to_imap, [0, 2, 3])
-    global_indices = np.empty(sub_imap.size_local + sub_imap.num_ghosts, dtype=np.int64)
-    sub_imap.local_to_global(np.arange(sub_imap.size_local + sub_imap.num_ghosts, dtype=np.int32), global_indices)
+    global_indices = sub_imap.local_to_global(np.arange(sub_imap.size_local + sub_imap.num_ghosts, dtype=np.int32))
     assert np.array_equal(global_indices, np.arange(comm.rank * 2, comm.rank * 2 + 3))

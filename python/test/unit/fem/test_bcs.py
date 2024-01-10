@@ -39,10 +39,8 @@ def test_locate_dofs_geometrical():
     dofs = locate_dofs_geometrical((W.sub(0), V), lambda x: np.isclose(x.T, [0, 0, 0]).all(axis=1))
 
     # Collect dofs (global indices) from all processes
-    dofs0_global = np.empty_like(dofs[0], dtype=np.int64)
-    W.sub(0).dofmap.index_map.local_to_global(dofs[0], dofs0_global)
-    dofs1_global = np.empty_like(dofs[1], dtype=np.int64)
-    V.dofmap.index_map.local_to_global(dofs[1], dofs1_global)
+    dofs0_global = W.sub(0).dofmap.index_map.local_to_global(dofs[0])
+    dofs1_global = V.dofmap.index_map.local_to_global(dofs[1])
     all_dofs0 = set(np.concatenate(MPI.COMM_WORLD.allgather(dofs0_global)))
     all_dofs1 = set(np.concatenate(MPI.COMM_WORLD.allgather(dofs1_global)))
 
