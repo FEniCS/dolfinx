@@ -1283,8 +1283,6 @@ mesh::create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
                       std::span<const int> ghost_owners, CellType cell_type,
                       std::span<const std::int64_t> boundary_vertices)
 {
-  // common::Timer timer("Topology: create");
-
   LOG(INFO) << "Create topology (single cell type)";
 
   return create_topology(comm, {cell_type}, {cells}, {original_cell_index},
