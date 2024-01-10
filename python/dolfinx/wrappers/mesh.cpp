@@ -493,6 +493,10 @@ void mesh(nb::module_& m)
            nb::overload_cast<int, int>(&dolfinx::mesh::Topology::connectivity,
                                        nb::const_),
            nb::arg("d0"), nb::arg("d1"))
+      .def("connectivity",
+           nb::overload_cast<int, int, int, int>(
+               &dolfinx::mesh::Topology::connectivity, nb::const_),
+           nb::arg("d0"), nb::arg("i0"), nb::arg("d1"), nb::arg("i1"))
       .def("index_map", &dolfinx::mesh::Topology::index_map, nb::arg("dim"))
       .def("index_maps", &dolfinx::mesh::Topology::index_maps, nb::arg("dim"))
       .def_prop_ro("cell_type", &dolfinx::mesh::Topology::cell_type)

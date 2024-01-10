@@ -905,6 +905,17 @@ Topology::connectivity(int d0, int d1) const
   return _connectivity[_entity_type_offsets[d0]][_entity_type_offsets[d1]];
 }
 //-----------------------------------------------------------------------------
+std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
+Topology::connectivity(int d0, int i0, int d1, int i1) const
+{
+  assert(d0 < (int)_entity_type_offsets.size() - 1);
+  assert(i0 < (_entity_type_offsets[d0 + 1] - _entity_type_offsets[d0]));
+  assert(d1 < (int)_entity_type_offsets.size() - 1);
+  assert(i1 < (_entity_type_offsets[d1 + 1] - _entity_type_offsets[d1]));
+  return _connectivity[_entity_type_offsets[d0] + i0]
+                      [_entity_type_offsets[d1] + i1];
+}
+//-----------------------------------------------------------------------------
 void Topology::set_connectivity(
     std::shared_ptr<graph::AdjacencyList<std::int32_t>> c, int d0, int d1)
 {

@@ -108,6 +108,18 @@ public:
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
   connectivity(int d0, int d1) const;
 
+  /// @brief Return the connectivity between entities of dimensions d0 and d1,
+  /// with indexes i0 and i1, as found in `entity_types()`. For a single
+  /// celltype mesh i0==i1==0.
+  /// @param d0 Topological dimension of entities
+  /// @param i0 Index of entity type within topological dimension
+  /// @param d1 Topological dimension of indicent entities
+  /// @param i1 Index of incident entity type within topological dimension
+  /// @return AdjacencyList of connectivity from each entity of dimension d0 to
+  /// entities of dimension d1, or nullptr if not yet computed.
+  std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
+  connectivity(int d0, int i0, int d1, int i1) const;
+
   /// @todo Merge with set_index_map
   /// @brief Set connectivity for given pair of topological dimensions. Simple
   /// version for compatibility, assumes only one celltype per dimension.
