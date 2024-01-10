@@ -136,17 +136,7 @@ class Expression:
         # Compile UFL expression with JIT
         if form_compiler_options is None:
             form_compiler_options = dict()
-        if dtype == np.float32:
-            form_compiler_options["scalar_type"] = "float"
-        elif dtype == np.float64:
-            form_compiler_options["scalar_type"] = "double"
-        elif dtype == np.complex64:
-            form_compiler_options["scalar_type"] = "float _Complex"
-        elif dtype == np.complex128:
-            form_compiler_options["scalar_type"] = "double _Complex"
-        else:
-            raise RuntimeError(f"Unsupported scalar type {dtype} for Expression.")
-
+        form_compiler_options["scalar_type"] = dtype
         self._ufcx_expression, module, self._code = jit.ffcx_jit(comm, (e, _X),
                                                                  form_compiler_options=form_compiler_options,
                                                                  jit_options=jit_options)
@@ -539,13 +529,7 @@ def functionspace(mesh: Mesh,
     dtype = mesh.geometry.x.dtype
     if form_compiler_options is None:
         form_compiler_options = dict()
-    if dtype == np.float32:
-        form_compiler_options["scalar_type"] = "float"
-    elif dtype == np.float64:
-        form_compiler_options["scalar_type"] = "double"
-    else:
-        raise RuntimeError("Unsupported geometry type. Must be float32 or float64.")
-
+    form_compiler_options["scalar_type"] = dtype
     (ufcx_element, ufcx_dofmap), module, code = jit.ffcx_jit(mesh.comm, ufl_e,
                                                              form_compiler_options=form_compiler_options,
                                                              jit_options=jit_options)
