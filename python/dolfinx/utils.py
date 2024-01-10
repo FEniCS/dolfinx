@@ -169,24 +169,11 @@ class cffi_utils:
 
         _lib_cffi = _ffi.dlopen(str(get_petsc_lib()))
 
-        assert _PETSc.IntType == _np.int32 or _PETSc.IntType == _np.int64  # type: ignore
-        if _PETSc.IntType == _np.int32:  # type: ignore
-            _c_int_t = "int32_t"
-        elif _PETSc.IntType == _np.int64:  # type: ignore
-            _c_int_t = "int64_t"
-
-        _scalar_t = _PETSc.ScalarType  # type: ignore
-        assert _scalar_t == _np.float32 or _scalar_t == _np.float64 \
-            or _scalar_t == _np.complex64 or _scalar_t == _np.complex128
-        if _scalar_t == _np.float32:
-            _c_scalar_t = "float"
-        elif _scalar_t == _np.float64:
-            _c_scalar_t = "double"
-        elif _scalar_t == _np.complex64:
-            _c_scalar_t = "float _Complex"
-        elif _scalar_t == _np.complex128:
-            _c_scalar_t = "double _Complex"
-
+        _CTYPES = {_np.int32: "int32_t", _np.int64: "int64_t",
+                   _np.float32: "float", _np.float64: "double",
+                   _np.complex64: "float _Complex", _np.complex128: "double _Complex"}
+        _c_int_t = _CTYPES[_PETSc.IntType]  # type: ignore
+        _c_scalar_t = _CTYPES[_PETSc.ScalarType]  # type: ignore
         _ffi.cdef(f"""
                 int MatSetValuesLocal(void* mat, {_c_int_t} nrow, const {_c_int_t}* irow,
                                     {_c_int_t} ncol, const {_c_int_t}* icol,

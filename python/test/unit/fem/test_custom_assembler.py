@@ -266,19 +266,8 @@ def test_custom_mesh_loop_rank1(dtype):
 
     # Assemble using generated tabulate_tensor kernel and Numba
     # assembler
-    if dtype == np.float32:
-        ffcxtype = "float"
-    elif dtype == np.float64:
-        ffcxtype = "double"
-    elif dtype == np.complex64:
-        ffcxtype = "float _Complex"
-    elif dtype == np.complex128:
-        ffcxtype = "double _Complex"
-    else:
-        raise RuntimeError("Unknown scalar type")
-
     b3 = Function(V, dtype=dtype)
-    ufcx_form, module, code = dolfinx.jit.ffcx_jit(mesh.comm, L, form_compiler_options={"scalar_type": ffcxtype})
+    ufcx_form, module, code = dolfinx.jit.ffcx_jit(mesh.comm, L, form_compiler_options={"scalar_type": dtype})
 
     # Get the one and only kernel
     kernel = getattr(ufcx_form.form_integrals[0], f"tabulate_tensor_{np.dtype(dtype).name}")
