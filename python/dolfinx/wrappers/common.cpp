@@ -128,8 +128,7 @@ void common(nb::module_& m)
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> local)
           {
             std::vector<std::int64_t> global(local.size());
-            self.local_to_global(std::span(local.data(), local.size()),
-                                 std::span(global.data(), global.size()));
+            self.local_to_global(std::span(local.data(), local.size()), global);
             return dolfinx_wrappers::as_nbarray(std::move(global));
           },
           nb::arg("local"))
@@ -140,7 +139,7 @@ void common(nb::module_& m)
           {
             std::vector<std::int32_t> local(global.size());
             self.global_to_local(std::span(global.data(), global.size()),
-                                 std::span(local.data(), local.size()));
+                                 local);
             return dolfinx_wrappers::as_nbarray(std::move(local));
           },
           nb::arg("global"));
