@@ -482,9 +482,11 @@ void mesh(nb::module_& m)
           "original_cell_index",
           [](const dolfinx::mesh::Topology& self)
           {
+            if (self.original_cell_index.size() != 1)
+              throw std::runtime_error("Mixed topology unsupported");
             return nb::ndarray<const std::int64_t, nb::numpy>(
-                self.original_cell_index.data(),
-                {self.original_cell_index.size()});
+                self.original_cell_index[0].data(),
+                {self.original_cell_index[0].size()});
           },
           nb::rv_policy::reference_internal)
       .def("connectivity",

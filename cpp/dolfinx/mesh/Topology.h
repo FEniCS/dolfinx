@@ -97,7 +97,8 @@ public:
   index_maps(int dim) const;
 
   /// @brief Return connectivity from entities of dimension d0 to
-  /// entities of dimension d1.
+  /// entities of dimension d1. Simple version for compatibility, assumes only
+  /// one celltype per dimension.
   ///
   /// @param[in] d0
   /// @param[in] d1
@@ -108,12 +109,14 @@ public:
   connectivity(int d0, int d1) const;
 
   /// @todo Merge with set_index_map
-  /// @brief Set connectivity for given pair of topological dimensions.
+  /// @brief Set connectivity for given pair of topological dimensions. Simple
+  /// version for compatibility, assumes only one celltype per dimension.
   void set_connectivity(std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
                         int d0, int d1);
 
   /// @brief Set connectivity for given pair of entity types, defined by
-  /// dimension and index, as listed in _entity_types.
+  /// dimension and index, as listed in _entity_types. General version for mixed
+  /// topology.
   void set_connectivity(std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
                         int d0, int i0, int d1, int i1);
 
@@ -162,8 +165,8 @@ public:
   /// computed.
   const std::vector<std::int32_t>& interprocess_facets() const;
 
-  /// Original cell index
-  std::vector<std::int64_t> original_cell_index;
+  /// Original cell index for each cell type
+  std::vector<std::vector<std::int64_t>> original_cell_index;
 
   /// Mesh MPI communicator
   /// @return The communicator on which the topology is distributed
