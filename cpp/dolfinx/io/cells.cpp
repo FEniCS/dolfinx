@@ -247,17 +247,48 @@ std::vector<std::uint8_t> vtk_quadrilateral(int num_nodes)
 //-----------------------------------------------------------------------------
 std::vector<std::uint8_t> vtk_hexahedron(int num_nodes)
 {
-  switch (num_nodes)
+  int n = 0;
+  while (n * n * n < num_nodes)
+    ++n;
+  assert(n * n * n == num_nodes);
+
+  std::vector<std::uint8_t> map(num_nodes);
+
+  // Vertices
+  map[0] = 0;
+  map[1] = 1;
+  map[2] = 3;
+  map[3] = 2;
+  map[4] = 4;
+  map[5] = 5;
+  map[6] = 7;
+  map[7] = 6;
+
+  // Edges
+  int j = 8;
+  int base = 8;
+  const int edge_nodes = n - 2;
+  const std::vector<int> edges = {0, 3, 5, 1, 8, 10, 11, 9, 2, 4, 7, 6};
+  for (int e : edges)
   {
-  case 8:
-    return {0, 1, 3, 2, 4, 5, 7, 6};
-  case 27:
-    // This is the documented VTK ordering
-    return {0,  1,  3,  2,  4,  5,  7,  6,  8,  11, 13, 9,  16, 18,
-            19, 17, 10, 12, 15, 14, 22, 23, 21, 24, 20, 25, 26};
-  default:
-    throw std::runtime_error("Higher order hexahedron not supported.");
+    for (int i = 0; i < edge_nodes; ++i)
+      map[j++] = base + edge_nodes * e + i;
   }
+  base += 12 * edge_nodes;
+
+  const int face_nodes = edge_nodes * edge_nodes;
+  const std::vector<int> faces = {0, 3, 5, 1, 8, 10, 11, 9, 2, 4, 7, 6};
+  for (int f : faces)
+  {
+    for (int i = 0; i < face_nodes; ++i)
+      map[j++] = base + face_nodes * f + i;
+  }
+  base += 6 * face_nodes;
+
+  const int volume_nodes = face_nodes * edge_nodes;
+  for (int i = 0; i < volume_nodes; ++i)
+    map[j++] = base + i;
+  return map;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::uint8_t> gmsh_triangle(int num_nodes)
