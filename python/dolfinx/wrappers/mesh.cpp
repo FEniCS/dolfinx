@@ -27,6 +27,7 @@
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
 #include <nanobind/stl/function.h>
+#include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/tuple.h>
@@ -492,9 +493,9 @@ void mesh(nb::module_& m)
                                        nb::const_),
            nb::arg("d0"), nb::arg("d1"))
       .def("connectivity",
-           nb::overload_cast<int, int, int, int>(
+           nb::overload_cast<std::pair<int, int>, std::pair<int, int>>(
                &dolfinx::mesh::Topology::connectivity, nb::const_),
-           nb::arg("d0"), nb::arg("i0"), nb::arg("d1"), nb::arg("i1"))
+           nb::arg("d0"), nb::arg("d1"))
       .def("index_map", &dolfinx::mesh::Topology::index_map, nb::arg("dim"))
       .def("index_maps", &dolfinx::mesh::Topology::index_maps, nb::arg("dim"))
       .def_prop_ro("cell_type", &dolfinx::mesh::Topology::cell_type)
@@ -504,8 +505,7 @@ void mesh(nb::module_& m)
           {
             std::vector<std::vector<dolfinx::mesh::CellType>> entity_types;
             for (int i = 0; i <= self.dim(); ++i)
-              entity_types.push_back(std::vector(self.entity_types(i).begin(),
-                                                 self.entity_types(i).end()));
+              entity_types.push_back(self.entity_types(i));
             return entity_types;
           })
       .def("cell_name", [](const dolfinx::mesh::Topology& self)

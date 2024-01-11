@@ -43,10 +43,15 @@ enum class CellType;
 class Topology
 {
 public:
-  /// Create empty mesh topology
+  /// @brief Empty Topology constructor
+  /// @param comm MPI communicator
+  /// @param cell_type Type of cell
   Topology(MPI_Comm comm, CellType cell_type);
 
-  /// Create empty mesh topology with multiple cell types
+  /// @brief Create empty mesh topology with multiple cell types
+  /// @param comm MPI communicator
+  /// @param cell_type List of cell types
+  /// @warning Experimental
   Topology(MPI_Comm comm, const std::vector<CellType>& cell_type);
 
   /// Copy constructor
@@ -75,10 +80,11 @@ public:
 
   /// @todo Merge with set_connectivity
   ///
-  /// @brief Set the IndexMap for dimension dim
+  /// @brief Set the IndexMap for the `i`th celltype of dimension dim
   /// @warning This is experimental and likely to change
   /// @param dim Topological dimension
-  /// @param i Index of celltype within dimension `dim`.
+  /// @param i Index of cell type within dimension `dim`. Cell types for each
+  /// dimension can be obtained with `entity_types(dim)`.
   /// @param map Map to set
   void set_index_map(int dim, int i,
                      std::shared_ptr<const common::IndexMap> map);
@@ -92,6 +98,7 @@ public:
   std::shared_ptr<const common::IndexMap> index_map(int dim) const;
 
   /// @param dim Topological dimension
+  /// @warning Experimental
   /// @return List of index maps, one for each cell type
   std::vector<std::shared_ptr<const common::IndexMap>>
   index_maps(int dim) const;
@@ -108,27 +115,33 @@ public:
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
   connectivity(int d0, int d1) const;
 
-  /// @brief Return the connectivity between entities of dimensions d0 and d1,
-  /// with indexes i0 and i1, as found in `entity_types()`. For a single
-  /// celltype mesh i0==i1==0.
-  /// @param d0 Topological dimension of entities
-  /// @param i0 Index of entity type within topological dimension
-  /// @param d1 Topological dimension of indicent entities
-  /// @param i1 Index of incident entity type within topological dimension
-  /// @return AdjacencyList of connectivity from each entity of dimension d0 to
-  /// entities of dimension d1, or nullptr if not yet computed.
+  /// @brief Return the connectivity from entities of topological
+  /// dimension d0 to dimension d1. The entity type, and incident entity type
+  /// are each described by a pair (dim, index). The index within a topological
+  /// dimension `dim`, is that of the cell type given in `entity_types(dim)`.
+  /// @param d0 Pair of (topological dimension of entities,
+  ///                    index of "entity type" within topological dimension)
+  /// @param d1 Pair of (topological dimension of indicent entities,
+  ///                    index of incident "entity type" within topological
+  ///                    dimension)
+  /// @return AdjacencyList of connectivity from entity type in d0 to
+  /// entity types in d1, or nullptr if not yet computed.
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
-  connectivity(int d0, int i0, int d1, int i1) const;
+  connectivity(std::pair<int, int> d0, std::pair<int, int> d1) const;
 
   /// @todo Merge with set_index_map
-  /// @brief Set connectivity for given pair of topological dimensions. Simple
-  /// version for compatibility, assumes only one celltype per dimension.
+  /// @brief Set connectivity for given pair of topological dimensions.
   void set_connectivity(std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
                         int d0, int d1);
 
   /// @brief Set connectivity for given pair of entity types, defined by
-  /// dimension and index, as listed in _entity_types. General version for mixed
-  /// topology.
+  /// dimension and index, as listed in `entity_types()`. General version for
+  /// mixed topology. Connectivity from d0 to d1.
+  /// @param d0 Topological dimension of entities
+  /// @param i0 Index of cell type within dimension d0
+  /// @param d1 Topological dimension of indicent entities
+  /// @param i1 Index of cell type within dimension d1
+  /// @warning Experimental
   void set_connectivity(std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
                         int d0, int i0, int d1, int i1);
 
@@ -156,7 +169,7 @@ public:
   /// @brief  Get the entity types in the topology for a given dimension
   /// @param dim Topological dimension
   /// @return List of entity types
-  std::span<const CellType> entity_types(int dim) const;
+  std::vector<const CellType> entity_types(int dim) const;
 
   /// @brief Create entities of given topological dimension.
   /// @param[in] dim Topological dimension

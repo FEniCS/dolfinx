@@ -906,14 +906,18 @@ Topology::connectivity(int d0, int d1) const
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
-Topology::connectivity(int d0, int i0, int d1, int i1) const
+Topology::connectivity(std::pair<int, int> d0, std::pair<int, int> d1) const
 {
-  assert(d0 < (int)_entity_type_offsets.size() - 1);
-  assert(i0 < (_entity_type_offsets[d0 + 1] - _entity_type_offsets[d0]));
-  assert(d1 < (int)_entity_type_offsets.size() - 1);
-  assert(i1 < (_entity_type_offsets[d1 + 1] - _entity_type_offsets[d1]));
-  return _connectivity[_entity_type_offsets[d0] + i0]
-                      [_entity_type_offsets[d1] + i1];
+  int dim0 = d0.first;
+  int dim1 = d1.first;
+  assert(dim0 < (int)_entity_type_offsets.size() - 1);
+  assert(d0.second
+         < (_entity_type_offsets[dim0 + 1] - _entity_type_offsets[dim0]));
+  assert(dim1 < (int)_entity_type_offsets.size() - 1);
+  assert(d1.second
+         < (_entity_type_offsets[dim1 + 1] - _entity_type_offsets[dim1]));
+  return _connectivity[_entity_type_offsets[dim0] + d0.second]
+                      [_entity_type_offsets[dim1] + d1.second];
 }
 //-----------------------------------------------------------------------------
 void Topology::set_connectivity(
@@ -974,10 +978,10 @@ const std::vector<std::int32_t>& Topology::interprocess_facets() const
 //-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const { return _entity_types.back(); }
 //-----------------------------------------------------------------------------
-std::span<const CellType> Topology::entity_types(int dim) const
+std::vector<const CellType> Topology::entity_types(int dim) const
 {
   assert(dim < (int)_entity_type_offsets.size() - 1 and dim >= 0);
-  return std::span<const CellType>(
+  return std::vector<const CellType>(
       std::next(_entity_types.begin(), _entity_type_offsets[dim]),
       std::next(_entity_types.begin(), _entity_type_offsets[dim + 1]));
 }
@@ -995,6 +999,7 @@ Topology mesh::create_topology(
 
   assert(cell_type.size() == cells.size());
   assert(ghost_owners.size() == cells.size());
+  assert(original_cell_index.size() == cells.size());
 
   LOG(INFO) << "Create topology (generalised)";
   // Check cell data consistency and compile spans of owned and ghost cells
