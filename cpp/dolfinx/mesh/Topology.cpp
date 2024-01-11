@@ -978,10 +978,10 @@ const std::vector<std::int32_t>& Topology::interprocess_facets() const
 //-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const { return _entity_types.back(); }
 //-----------------------------------------------------------------------------
-std::vector<const CellType> Topology::entity_types(int dim) const
+std::vector<CellType> Topology::entity_types(int dim) const
 {
   assert(dim < (int)_entity_type_offsets.size() - 1 and dim >= 0);
-  return std::vector<const CellType>(
+  return std::vector<CellType>(
       std::next(_entity_types.begin(), _entity_type_offsets[dim]),
       std::next(_entity_types.begin(), _entity_type_offsets[dim + 1]));
 }
