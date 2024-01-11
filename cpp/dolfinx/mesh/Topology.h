@@ -137,6 +137,7 @@ public:
   /// @brief Set connectivity for given pair of entity types, defined by
   /// dimension and index, as listed in `entity_types()`. General version for
   /// mixed topology. Connectivity from d0 to d1.
+  /// @param c Connectivity AdjacencyList
   /// @param d0 Topological dimension of entities
   /// @param i0 Index of cell type within dimension d0
   /// @param d1 Topological dimension of indicent entities
