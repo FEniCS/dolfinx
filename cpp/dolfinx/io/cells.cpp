@@ -277,7 +277,7 @@ std::vector<std::uint8_t> vtk_hexahedron(int num_nodes)
   base += 12 * edge_nodes;
 
   const int face_nodes = edge_nodes * edge_nodes;
-  const std::vector<int> faces = {0, 3, 5, 1, 8, 10, 11, 9, 2, 4, 7, 6};
+  const std::vector<int> faces = {2, 3, 1, 4, 0, 5};
   for (int f : faces)
   {
     for (int i = 0; i < face_nodes; ++i)
@@ -288,6 +288,7 @@ std::vector<std::uint8_t> vtk_hexahedron(int num_nodes)
   const int volume_nodes = face_nodes * edge_nodes;
   for (int i = 0; i < volume_nodes; ++i)
     map[j++] = base + i;
+
   return map;
 }
 //-----------------------------------------------------------------------------
