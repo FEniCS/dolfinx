@@ -4,6 +4,7 @@
 #include <basix/finite-element.h>
 #include <cmath>
 #include <dolfinx.h>
+#include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <utility>
 #include <vector>
@@ -38,7 +39,8 @@ int main(int argc, char* argv[])
         fem::create_functionspace(mesh, e));
 
     // Create default domain integral on all local cells
-    std::int32_t size_local = mesh->topology()->index_map(2)->size_local();
+    std::int32_t size_local
+        = mesh->topology()->index_map(mesh->topology()->dim())->size_local();
     std::vector<std::int32_t> cells(size_local);
     std::iota(cells.begin(), cells.end(), 0);
 
@@ -61,11 +63,17 @@ int main(int argc, char* argv[])
     auto a = std::make_shared<fem::Form<T>>(
         fem::Form<T>({V, V}, integrals, {}, {}, false, mesh));
 
-    auto sparsity = std::make_shared<la::SparsityPattern>(la::SparsityPattern(
+    auto sparsity = la::SparsityPattern(
         MPI_COMM_WORLD, {V->dofmap()->index_map, V->dofmap()->index_map},
-        {1, 1}));
-    // auto A = la::
+        {V->dofmap()->bs(), V->dofmap()->bs()});
+    sparsity.finalize();
+    auto A = la::MatrixCSR<double>(sparsity);
+
+    auto mat_add_values = A.mat_add_values();
+    assemble_matrix(mat_add_values, *a, {});
+    A.scatter_rev();
   }
 
+  MPI_Finalize();
   return 0;
 }
