@@ -65,7 +65,8 @@ int main(int argc, char* argv[])
 
     auto sparsity = la::SparsityPattern(
         MPI_COMM_WORLD, {V->dofmap()->index_map, V->dofmap()->index_map},
-        {V->dofmap()->bs(), V->dofmap()->bs()});
+        {V->dofmap()->index_map_bs(), V->dofmap()->index_map_bs()});
+    fem::sparsitybuild::cells(sparsity, cells, {*V->dofmap(), *V->dofmap()});
     sparsity.finalize();
     auto A = la::MatrixCSR<double>(sparsity);
 
