@@ -906,7 +906,8 @@ Topology::connectivity(int d0, int d1) const
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
-Topology::connectivity(std::pair<int, int> d0, std::pair<int, int> d1) const
+Topology::connectivity(std::pair<std::int8_t, std::int8_t> d0,
+                       std::pair<std::int8_t, std::int8_t> d1) const
 {
   int dim0 = d0.first;
   int dim1 = d1.first;
@@ -930,15 +931,19 @@ void Topology::set_connectivity(
 }
 //-----------------------------------------------------------------------------
 void Topology::set_connectivity(
-    std::shared_ptr<graph::AdjacencyList<std::int32_t>> c, int d0, int i0,
-    int d1, int i1)
+    std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
+    std::pair<std::int8_t, std::int8_t> d0,
+    std::pair<std::int8_t, std::int8_t> d1)
 {
-  assert(d0 < (int)_entity_type_offsets.size() - 1);
-  assert(i0 < (_entity_type_offsets[d0 + 1] - _entity_type_offsets[d0]));
-  assert(d1 < (int)_entity_type_offsets.size() - 1);
-  assert(i1 < (_entity_type_offsets[d1 + 1] - _entity_type_offsets[d1]));
+  auto [dim0, i0] = d0;
+  auto [dim1, i1] = d1;
+  assert(dim0 < (int)_entity_type_offsets.size() - 1);
+  assert(i0 < (_entity_type_offsets[dim0 + 1] - _entity_type_offsets[dim0]));
+  assert(dim1 < (int)_entity_type_offsets.size() - 1);
+  assert(i1 < (_entity_type_offsets[dim1 + 1] - _entity_type_offsets[dim1]));
 
-  _connectivity[_entity_type_offsets[d0] + i0][_entity_type_offsets[d1] + i1]
+  _connectivity[_entity_type_offsets[dim0] + i0]
+               [_entity_type_offsets[dim1] + i1]
       = c;
 }
 //-----------------------------------------------------------------------------
@@ -978,7 +983,7 @@ const std::vector<std::int32_t>& Topology::interprocess_facets() const
 //-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const { return _entity_types.back(); }
 //-----------------------------------------------------------------------------
-std::vector<CellType> Topology::entity_types(int dim) const
+std::vector<CellType> Topology::entity_types(std::int8_t dim) const
 {
   assert(dim < (int)_entity_type_offsets.size() - 1 and dim >= 0);
   return std::vector<CellType>(
@@ -1268,7 +1273,7 @@ Topology mesh::create_topology(
         graph::regular_adjacency_list(std::move(_cells_local_idx[i]),
                                       num_cell_vertices));
     topology.set_index_map(tdim, i, index_map_c[i]);
-    topology.set_connectivity(cells_local_idx, tdim, i, 0, 0);
+    topology.set_connectivity(cells_local_idx, {tdim, i}, {0, 0});
   }
 
   // Save original cell index
