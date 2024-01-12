@@ -86,7 +86,7 @@ public:
   /// @param i Index of cell type within dimension `dim`. Cell types for each
   /// dimension can be obtained with `entity_types(dim)`.
   /// @param map Map to set
-  void set_index_map(int dim, int i,
+  void set_index_map(std::int8_t dim, std::int8_t i,
                      std::shared_ptr<const common::IndexMap> map);
 
   /// @brief Get the IndexMap that described the parallel distribution
@@ -101,7 +101,7 @@ public:
   /// @warning Experimental
   /// @return List of index maps, one for each cell type
   std::vector<std::shared_ptr<const common::IndexMap>>
-  index_maps(int dim) const;
+  index_maps(std::int8_t dim) const;
 
   /// @brief Return connectivity from entities of dimension d0 to
   /// entities of dimension d1. Simple version for compatibility, assumes only
@@ -213,7 +213,7 @@ private:
   // Offsets are position in the list for each entity dimension, in
   // AdjacencyList style.
   std::vector<CellType> _entity_types;
-  std::vector<int> _entity_type_offsets;
+  std::vector<std::int8_t> _entity_type_offsets;
 
   // Parallel layout of entities for each dimension and cell type
   // flattened in the same layout as _entity_types above.
