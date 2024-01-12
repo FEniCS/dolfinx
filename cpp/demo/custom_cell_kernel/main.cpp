@@ -58,11 +58,13 @@ int main(int argc, char* argv[])
 
     // Define form from integral
     // NOTE: Cannot be done through create_form which is recommended in docs.
-    auto a = std::make_shared<fem::Form<T>>(fem::Form<T>({V, V}, integrals, {}, {}, false, mesh));
-    
-    auto sparsity = std::make_shared<la::SparsityPattern>(la::SparsityPattern(MPI_COMM_WORLD, {V->dofmap()->index_map, V->dofmap()->index_map}, {1, 1}));
-    //auto A = la::
+    auto a = std::make_shared<fem::Form<T>>(
+        fem::Form<T>({V, V}, integrals, {}, {}, false, mesh));
 
+    auto sparsity = std::make_shared<la::SparsityPattern>(la::SparsityPattern(
+        MPI_COMM_WORLD, {V->dofmap()->index_map, V->dofmap()->index_map},
+        {1, 1}));
+    // auto A = la::
   }
 
   return 0;
