@@ -23,32 +23,15 @@ int cell_degree(mesh::CellType type, int num_nodes)
   case mesh::CellType::interval:
     return num_nodes - 1;
   case mesh::CellType::triangle:
-    switch (num_nodes)
+  {
+    const int n = (std::sqrt(1 + 8 * num_nodes) - 1) / 2;
+    if (2 * num_nodes != n * (n + 1))
     {
-    case 3:
-      return 1;
-    case 6:
-      return 2;
-    case 10:
-      return 3;
-    case 15:
-      return 4;
-    case 21:
-      return 5;
-    case 28:
-      return 6;
-    case 36:
-      return 7;
-    case 45:
-      LOG(WARNING) << "8th order mesh is untested";
-      return 8;
-    case 55:
-      LOG(WARNING) << "9th order mesh is untested";
-      return 9;
-    default:
-      throw std::runtime_error("Unknown triangle layout. Number of nodes: "
-                               + std::to_string(num_nodes));
+      throw std::runtime_error("Triangle of order " + std::to_string(num_nodes)
+                               + " not supported");
     }
+    return n - 1;
+  }
   case mesh::CellType::tetrahedron:
     switch (num_nodes)
     {
@@ -72,15 +55,15 @@ int cell_degree(mesh::CellType type, int num_nodes)
     return n - 1;
   }
   case mesh::CellType::hexahedron:
-    switch (num_nodes)
+  {
+    const int n = std::cbrt(num_nodes);
+    if (num_nodes != n * n * n)
     {
-    case 8:
-      return 1;
-    case 27:
-      return 2;
-    default:
-      throw std::runtime_error("Unsupported hexahedron layout");
+      throw std::runtime_error("Hexahedron of order "
+                               + std::to_string(num_nodes) + " not supported");
     }
+    return n - 1;
+  }
   case mesh::CellType::prism:
     switch (num_nodes)
     {
