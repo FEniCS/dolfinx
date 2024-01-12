@@ -230,9 +230,7 @@ std::vector<std::uint8_t> vtk_quadrilateral(int num_nodes)
 //-----------------------------------------------------------------------------
 std::vector<std::uint8_t> vtk_hexahedron(int num_nodes)
 {
-  int n = 0;
-  while (n * n * n < num_nodes)
-    ++n;
+  const int n = std::cbrt(num_nodes);
   assert(n * n * n == num_nodes);
 
   std::vector<std::uint8_t> map(num_nodes);
