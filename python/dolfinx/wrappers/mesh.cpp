@@ -493,7 +493,8 @@ void mesh(nb::module_& m)
                                        nb::const_),
            nb::arg("d0"), nb::arg("d1"))
       .def("connectivity",
-           nb::overload_cast<std::pair<int, int>, std::pair<int, int>>(
+           nb::overload_cast<std::pair<std::int8_t, std::int8_t>,
+                             std::pair<std::int8_t, std::int8_t>>(
                &dolfinx::mesh::Topology::connectivity, nb::const_),
            nb::arg("d0"), nb::arg("d1"))
       .def("index_map", &dolfinx::mesh::Topology::index_map, nb::arg("dim"))

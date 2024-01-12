@@ -718,9 +718,9 @@ Topology::Topology(MPI_Comm comm, CellType cell_type)
           std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>(
               cell_dim(cell_type) + 1))
 {
-  int tdim = cell_dim(cell_type);
+  std::int8_t tdim = cell_dim(cell_type);
   _entity_type_offsets.resize(tdim + 2);
-  for (int i = 0; i < tdim + 2; ++i)
+  for (std::int8_t i = 0; i < tdim + 2; ++i)
     _entity_type_offsets[i] = i;
 
   _entity_types = {CellType::point, CellType::interval};
@@ -738,7 +738,7 @@ Topology::Topology(MPI_Comm comm, const std::vector<CellType>& cell_types)
       _entity_type_offsets({0, 1})
 {
   assert(cell_types.size() > 0);
-  int tdim = cell_dim(cell_types[0]);
+  std::int8_t tdim = cell_dim(cell_types[0]);
 
   if (tdim > 1)
   {
@@ -753,8 +753,8 @@ Topology::Topology(MPI_Comm comm, const std::vector<CellType>& cell_types)
       for (auto c : cell_types)
       {
         assert(cell_dim(c) == tdim);
-        int nf = cell_num_entities(c, tdim - 1);
-        for (int i = 0; i < nf; ++i)
+        std::int8_t nf = cell_num_entities(c, tdim - 1);
+        for (std::int8_t i = 0; i < nf; ++i)
           facet_types.push_back(cell_facet_type(c, i));
       }
       std::sort(facet_types.begin(), facet_types.end());
@@ -772,7 +772,7 @@ Topology::Topology(MPI_Comm comm, const std::vector<CellType>& cell_types)
                        cell_types.end());
   _entity_type_offsets.push_back(_entity_types.size());
 
-  int conn_size = _entity_type_offsets.back();
+  std::int8_t conn_size = _entity_type_offsets.back();
   _index_map.resize(conn_size);
 
   // Create square list of lists
@@ -790,7 +790,7 @@ void Topology::set_index_map(int dim,
   _index_map[_entity_type_offsets[dim]] = map;
 }
 //-----------------------------------------------------------------------------
-void Topology::set_index_map(int dim, int i,
+void Topology::set_index_map(std::int8_t dim, std::int8_t i,
                              std::shared_ptr<const common::IndexMap> map)
 {
   assert(dim < (int)_entity_type_offsets.size() - 1);
@@ -806,7 +806,7 @@ std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
 }
 //-----------------------------------------------------------------------------
 std::vector<std::shared_ptr<const common::IndexMap>>
-Topology::index_maps(int dim) const
+Topology::index_maps(std::int8_t dim) const
 {
   assert(dim < (int)_entity_type_offsets.size() - 1);
   std::vector maps(
@@ -906,7 +906,8 @@ Topology::connectivity(int d0, int d1) const
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
-Topology::connectivity(std::pair<int, int> d0, std::pair<int, int> d1) const
+Topology::connectivity(std::pair<std::int8_t, std::int8_t> d0,
+                       std::pair<std::int8_t, std::int8_t> d1) const
 {
   int dim0 = d0.first;
   int dim1 = d1.first;
@@ -930,15 +931,19 @@ void Topology::set_connectivity(
 }
 //-----------------------------------------------------------------------------
 void Topology::set_connectivity(
-    std::shared_ptr<graph::AdjacencyList<std::int32_t>> c, int d0, int i0,
-    int d1, int i1)
+    std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
+    std::pair<std::int8_t, std::int8_t> d0,
+    std::pair<std::int8_t, std::int8_t> d1)
 {
-  assert(d0 < (int)_entity_type_offsets.size() - 1);
-  assert(i0 < (_entity_type_offsets[d0 + 1] - _entity_type_offsets[d0]));
-  assert(d1 < (int)_entity_type_offsets.size() - 1);
-  assert(i1 < (_entity_type_offsets[d1 + 1] - _entity_type_offsets[d1]));
+  auto [dim0, i0] = d0;
+  auto [dim1, i1] = d1;
+  assert(dim0 < (int)_entity_type_offsets.size() - 1);
+  assert(i0 < (_entity_type_offsets[dim0 + 1] - _entity_type_offsets[dim0]));
+  assert(dim1 < (int)_entity_type_offsets.size() - 1);
+  assert(i1 < (_entity_type_offsets[dim1 + 1] - _entity_type_offsets[dim1]));
 
-  _connectivity[_entity_type_offsets[d0] + i0][_entity_type_offsets[d1] + i1]
+  _connectivity[_entity_type_offsets[dim0] + i0]
+               [_entity_type_offsets[dim1] + i1]
       = c;
 }
 //-----------------------------------------------------------------------------
@@ -978,7 +983,7 @@ const std::vector<std::int32_t>& Topology::interprocess_facets() const
 //-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const { return _entity_types.back(); }
 //-----------------------------------------------------------------------------
-std::vector<CellType> Topology::entity_types(int dim) const
+std::vector<CellType> Topology::entity_types(std::int8_t dim) const
 {
   assert(dim < (int)_entity_type_offsets.size() - 1 and dim >= 0);
   return std::vector<CellType>(
@@ -1268,7 +1273,7 @@ Topology mesh::create_topology(
         graph::regular_adjacency_list(std::move(_cells_local_idx[i]),
                                       num_cell_vertices));
     topology.set_index_map(tdim, i, index_map_c[i]);
-    topology.set_connectivity(cells_local_idx, tdim, i, 0, 0);
+    topology.set_connectivity(cells_local_idx, {tdim, i}, {0, 0});
   }
 
   // Save original cell index

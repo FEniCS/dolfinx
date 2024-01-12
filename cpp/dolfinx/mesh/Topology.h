@@ -86,7 +86,7 @@ public:
   /// @param i Index of cell type within dimension `dim`. Cell types for each
   /// dimension can be obtained with `entity_types(dim)`.
   /// @param map Map to set
-  void set_index_map(int dim, int i,
+  void set_index_map(std::int8_t dim, std::int8_t i,
                      std::shared_ptr<const common::IndexMap> map);
 
   /// @brief Get the IndexMap that described the parallel distribution
@@ -101,7 +101,7 @@ public:
   /// @warning Experimental
   /// @return List of index maps, one for each cell type
   std::vector<std::shared_ptr<const common::IndexMap>>
-  index_maps(int dim) const;
+  index_maps(std::int8_t dim) const;
 
   /// @brief Return connectivity from entities of dimension d0 to
   /// entities of dimension d1. Simple version for compatibility, assumes only
@@ -127,7 +127,8 @@ public:
   /// @return AdjacencyList of connectivity from entity type in d0 to
   /// entity types in d1, or nullptr if not yet computed.
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
-  connectivity(std::pair<int, int> d0, std::pair<int, int> d1) const;
+  connectivity(std::pair<std::int8_t, std::int8_t> d0,
+               std::pair<std::int8_t, std::int8_t> d1) const;
 
   /// @todo Merge with set_index_map
   /// @brief Set connectivity for given pair of topological dimensions.
@@ -138,13 +139,15 @@ public:
   /// dimension and index, as listed in `entity_types()`. General version for
   /// mixed topology. Connectivity from d0 to d1.
   /// @param c Connectivity AdjacencyList
-  /// @param d0 Topological dimension of entities
-  /// @param i0 Index of cell type within dimension d0
-  /// @param d1 Topological dimension of indicent entities
-  /// @param i1 Index of cell type within dimension d1
+  /// @param d0 Pair of (topological dimension of entities,
+  ///                    index of "entity type" within topological dimension)
+  /// @param d1 Pair of (topological dimension of indicent entities,
+  ///                    index of incident "entity type" within topological
+  ///                    dimension)
   /// @warning Experimental
   void set_connectivity(std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
-                        int d0, int i0, int d1, int i1);
+                        std::pair<std::int8_t, std::int8_t> d0,
+                        std::pair<std::int8_t, std::int8_t> d1);
 
   /// @brief Returns the permutation information
   const std::vector<std::uint32_t>& get_cell_permutation_info() const;
@@ -170,7 +173,7 @@ public:
   /// @brief  Get the entity types in the topology for a given dimension
   /// @param dim Topological dimension
   /// @return List of entity types
-  std::vector<CellType> entity_types(int dim) const;
+  std::vector<CellType> entity_types(std::int8_t dim) const;
 
   /// @brief Create entities of given topological dimension.
   /// @param[in] dim Topological dimension
@@ -210,7 +213,7 @@ private:
   // Offsets are position in the list for each entity dimension, in
   // AdjacencyList style.
   std::vector<CellType> _entity_types;
-  std::vector<int> _entity_type_offsets;
+  std::vector<std::int8_t> _entity_type_offsets;
 
   // Parallel layout of entities for each dimension and cell type
   // flattened in the same layout as _entity_types above.
