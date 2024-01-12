@@ -27,12 +27,14 @@ int cell_degree(mesh::CellType type, int num_nodes)
     const int n = (std::sqrt(1 + 8 * num_nodes) - 1) / 2;
     if (2 * num_nodes != n * (n + 1))
     {
-      throw std::runtime_error("Triangle of order " + std::to_string(num_nodes)
-                               + " not supported");
+      throw std::runtime_error("Unknown triangle layout. Number of nodes: "
+                               + std::to_string(num_nodes));
     }
     return n - 1;
   }
   case mesh::CellType::tetrahedron:
+    // n * (n + 1) * (n + 2) = 6*A
+    // return n - 1;
     switch (num_nodes)
     {
     case 4:
@@ -42,15 +44,16 @@ int cell_degree(mesh::CellType type, int num_nodes)
     case 20:
       return 3;
     default:
-      throw std::runtime_error("Unknown tetrahedron layout.");
+      throw std::runtime_error("Unknown tetrahedron layout. Number of nodes: "
+                               + std::to_string(num_nodes));
     }
   case mesh::CellType::quadrilateral:
   {
     const int n = std::sqrt(num_nodes);
     if (num_nodes != n * n)
     {
-      throw std::runtime_error("Quadrilateral of order "
-                               + std::to_string(num_nodes) + " not supported");
+      throw std::runtime_error("Unknown quadrilateral layout. Number of nodes: "
+                               + std::to_string(num_nodes));
     }
     return n - 1;
   }
@@ -59,8 +62,8 @@ int cell_degree(mesh::CellType type, int num_nodes)
     const int n = std::cbrt(num_nodes);
     if (num_nodes != n * n * n)
     {
-      throw std::runtime_error("Hexahedron of order "
-                               + std::to_string(num_nodes) + " not supported");
+      throw std::runtime_error("Unknown hexahedron layout. Number of nodes: "
+                               + std::to_string(num_nodes));
     }
     return n - 1;
   }
@@ -72,7 +75,8 @@ int cell_degree(mesh::CellType type, int num_nodes)
     case 15:
       return 2;
     default:
-      throw std::runtime_error("Unsupported prism layout");
+      throw std::runtime_error("Unknown prism layout. Number of nodes: "
+                               + std::to_string(num_nodes));
     }
   case mesh::CellType::pyramid:
     switch (num_nodes)
@@ -82,7 +86,8 @@ int cell_degree(mesh::CellType type, int num_nodes)
     case 13:
       return 2;
     default:
-      throw std::runtime_error("Unsupported pyramid layout");
+      throw std::runtime_error("Unknown pyramid layout. Number of nodes: "
+                               + std::to_string(num_nodes));
     }
   default:
     throw std::runtime_error("Unknown cell type.");
