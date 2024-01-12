@@ -484,7 +484,8 @@ std::tuple<graph::AdjacencyList<std::int32_t>,
 compute_entities_by_key_matching(
     MPI_Comm comm, const graph::AdjacencyList<std::int32_t>& cells,
     const common::IndexMap& vertex_index_map,
-    const common::IndexMap& cell_index_map, mesh::CellType cell_type, int dim)
+    const common::IndexMap& cell_index_map, mesh::CellType cell_type,
+    mesh::CellType entity_type, int dim)
 {
   if (dim == 0)
   {
@@ -492,78 +493,81 @@ compute_entities_by_key_matching(
         "Cannot create vertices for topology. Should already exist.");
   }
 
+  assert(cell_dim(entity_type) == dim);
+
   // Start timer
   common::Timer timer("Compute entities of dim = " + std::to_string(dim));
 
-  // Initialize local array of entities
-  const std::int8_t num_entities_per_cell = cell_num_entities(cell_type, dim);
-
-  // For some cells, the num_vertices varies per facet (3 or 4)
-  int max_vertices_per_entity = 0;
-  for (int i = 0; i < num_entities_per_cell; ++i)
+  // Get indices of desired entities within cell. Usually this will be all
+  // entities, but for prism or pyramid facets, we will just pick out triangle
+  // or quad facets.
+  std::vector<std::int32_t> cell_type_entities;
+  for (int i = 0; i < cell_num_entities(cell_type, dim); ++i)
   {
-    max_vertices_per_entity
-        = std::max(max_vertices_per_entity,
-                   num_cell_vertices(cell_entity_type(cell_type, dim, i)));
+    if (cell_entity_type(cell_type, dim, i) == entity_type)
+      cell_type_entities.push_back(i);
   }
+  assert(cell_type_entities.size() > 0);
+  const std::int8_t num_entities_per_cell = cell_type_entities.size();
+
+  const std::size_t num_cells = cells.num_nodes();
+  int num_vertices_per_entity = num_cell_vertices(entity_type);
+  std::vector<std::int32_t> entity_list(num_cells * num_entities_per_cell
+                                        * num_vertices_per_entity);
 
   // Create map from cell vertices to entity vertices
   auto e_vertices = get_entity_vertices(cell_type, dim);
 
-  // List of vertices for each entity in each cell
-  const std::size_t num_cells = cells.num_nodes();
-  const std::size_t entity_list_shape0 = num_cells * num_entities_per_cell;
-  const std::size_t entity_list_shape1 = max_vertices_per_entity;
-  std::vector<std::int32_t> entity_list(entity_list_shape0 * entity_list_shape1,
-                                        -1);
   for (std::size_t c = 0; c < num_cells; ++c)
   {
-    // Get vertices from cell
+    // Get vertices from each cell
     auto vertices = cells.links(c);
 
     for (int i = 0; i < num_entities_per_cell; ++i)
     {
       const std::int32_t idx = c * num_entities_per_cell + i;
-      auto ev = e_vertices.links(i);
+      auto ev = e_vertices.links(cell_type_entities[i]);
 
       // Get entity vertices. Padded with -1 if fewer than
       // max_vertices_per_entity
       for (std::size_t j = 0; j < ev.size(); ++j)
-        entity_list[idx * entity_list_shape1 + j] = vertices[ev[j]];
+        entity_list[idx * num_vertices_per_entity + j] = vertices[ev[j]];
     }
   }
 
-  std::vector<std::int32_t> entity_index(entity_list_shape0, -1);
+  std::vector<std::int32_t> entity_index(num_cells * num_entities_per_cell);
+
   std::int32_t entity_count = 0;
   {
     // Copy list and sort vertices of each entity into (reverse) order
     std::vector<std::int32_t> entity_list_sorted = entity_list;
-    for (std::size_t i = 0; i < entity_list_shape0; ++i)
+    for (std::size_t j = 0; j < entity_index.size(); ++j)
     {
-      auto it = std::next(entity_list_sorted.begin(), i * entity_list_shape1);
-      std::sort(it, std::next(it, entity_list_shape1), std::less<>());
+      auto it
+          = std::next(entity_list_sorted.begin(), j * num_vertices_per_entity);
+      std::sort(it, std::next(it, num_vertices_per_entity), std::less<>());
     }
 
     // Sort the list and label uniquely
     const std::vector<std::int32_t> sort_order
         = dolfinx::sort_by_perm<std::int32_t>(entity_list_sorted,
-                                              entity_list_shape1);
+                                              num_vertices_per_entity);
 
-    std::vector<std::int32_t> entity(max_vertices_per_entity),
-        entity0(max_vertices_per_entity);
+    std::vector<std::int32_t> entity(num_vertices_per_entity),
+        entity0(num_vertices_per_entity);
     auto it = sort_order.begin();
     while (it != sort_order.end())
     {
       // First entity in new index range
-      std::size_t offset = (*it) * max_vertices_per_entity;
-      std::span e0(entity_list_sorted.data() + offset, max_vertices_per_entity);
+      std::size_t offset = (*it) * num_vertices_per_entity;
+      std::span e0(entity_list_sorted.data() + offset, num_vertices_per_entity);
 
       // Find iterator to next entity
       auto it1 = std::find_if_not(
           it, sort_order.end(),
-          [e0, &entity_list_sorted, max_vertices_per_entity](auto idx) -> bool
+          [e0, &entity_list_sorted, num_vertices_per_entity](auto idx) -> bool
           {
-            std::size_t offset = idx * max_vertices_per_entity;
+            std::size_t offset = idx * num_vertices_per_entity;
             return std::equal(e0.begin(), e0.end(),
                               std::next(entity_list_sorted.begin(), offset));
           });
@@ -578,48 +582,19 @@ compute_entities_by_key_matching(
       ++entity_count;
     }
   }
-
   // Communicate with other processes to find out which entities are
   // ghosted and shared. Remap the numbering so that ghosts are at the
   // end.
   auto [local_index, index_map, interprocess_entities] = get_local_indexing(
       comm, cell_index_map, vertex_index_map, entity_list,
-      max_vertices_per_entity, num_entities_per_cell, entity_index);
+      num_vertices_per_entity, num_entities_per_cell, entity_index);
 
   // Entity-vertex connectivity
-  std::vector<std::int32_t> offsets_ev(entity_count + 1, 0);
-  std::vector<int> size_ev(entity_count);
-  for (std::size_t i = 0; i < entity_list_shape0; ++i)
-  {
-    if (entity_list[i * entity_list_shape1 + entity_list_shape1 - 1] == -1)
-      size_ev[local_index[i]] = max_vertices_per_entity - 1;
-    else
-      size_ev[local_index[i]] = max_vertices_per_entity;
-  }
+  graph::AdjacencyList ev
+      = graph::regular_adjacency_list(entity_list, num_vertices_per_entity);
 
-  std::transform(size_ev.cbegin(), size_ev.cend(), offsets_ev.cbegin(),
-                 std::next(offsets_ev.begin()),
-                 [](auto a, auto b) { return a + b; });
-
-  graph::AdjacencyList ev(std::vector<std::int32_t>(offsets_ev.back()),
-                          std::move(offsets_ev));
-  for (std::size_t i = 0; i < entity_list_shape0; ++i)
-  {
-    auto _ev = ev.links(local_index[i]);
-    std::copy_n(std::next(entity_list.begin(), i * entity_list_shape1),
-                _ev.size(), _ev.begin());
-  }
-
-  // NOTE: Cell-entity connectivity comes after ev creation because
-  // below we use std::move(local_index)
-
-  // Cell-entity connectivity
-  std::vector<std::int32_t> offsets_ce(num_cells + 1, 0);
-  std::transform(offsets_ce.cbegin(), std::prev(offsets_ce.cend()),
-                 std::next(offsets_ce.begin()),
-                 [num_entities_per_cell](auto x)
-                 { return x + num_entities_per_cell; });
-  graph::AdjacencyList ce(std::move(local_index), std::move(offsets_ce));
+  graph::AdjacencyList ce
+      = graph::regular_adjacency_list(local_index, num_entities_per_cell);
 
   return {std::move(ce), std::move(ev), std::move(index_map),
           std::move(interprocess_entities)};
@@ -761,8 +736,11 @@ mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim)
   auto cell_map = topology.index_map(tdim);
   assert(cell_map);
 
+  CellType entity_type = cell_entity_type(topology.cell_type(), dim, 0);
+
   auto [d0, d1, im, interprocess_facets] = compute_entities_by_key_matching(
-      comm, *cells, *vertex_map, *cell_map, topology.cell_type(), dim);
+      comm, *cells, *vertex_map, *cell_map, topology.cell_type(), entity_type,
+      dim);
 
   return {std::make_shared<graph::AdjacencyList<std::int32_t>>(std::move(d0)),
           std::make_shared<graph::AdjacencyList<std::int32_t>>(std::move(d1)),
