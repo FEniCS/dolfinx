@@ -80,7 +80,6 @@ int get_ownership(const U& processes, const V& vertices)
   return owner;
 }
 //-----------------------------------------------------------------------------
-
 /// Communicate with sharing processes to find out which entities are
 /// ghosts and return a map (vector) to move these local indices to the
 /// end of the local range. Also returns the index map, and shared
@@ -97,10 +96,10 @@ int get_ownership(const U& processes, const V& vertices)
 /// entity_list
 /// @returns Local indices and index map
 std::tuple<std::vector<int>, common::IndexMap, std::vector<std::int32_t>>
-get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
-                   const common::IndexMap& vertex_map,
+get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
                    std::span<const std::int32_t> entity_list,
-                   int num_vertices_per_e, int num_entities_per_cell,
+                   int num_vertices_per_e,
+                   const std::vector<std::int8_t>& ghost_status,
                    std::span<const std::int32_t> entity_index)
 {
   // entity_list contains all the entities for all the cells, listed as
@@ -119,22 +118,6 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& cell_map,
       mx != entity_index.end())
   {
     entity_count = *mx + 1;
-  }
-
-  //---------
-  // Set ghost status array values
-  // 0 = entities that are only in ghost cells (i.e. definitely not owned)
-  // 1 = entities with local ownership or ownership that needs deciding
-  std::vector<std::int8_t> ghost_status(entity_count, 0);
-
-  const std::int32_t ghost_offset
-      = cell_map.size_local() * num_entities_per_cell;
-
-  // Tag all entities in local cells with 1
-  for (int i = 0; i < ghost_offset; ++i)
-  {
-    const std::int32_t idx = entity_index[i];
-    ghost_status[idx] = 1;
   }
 
   //---------
@@ -491,13 +474,8 @@ compute_entities_by_key_matching(
     const common::IndexMap& vertex_index_map, mesh::CellType entity_type,
     int dim)
 {
-
   // FIXME
   assert(cell_lists.size() == 1);
-
-  auto cell_type = std::get<0>(cell_lists[0]);
-  auto cells = std::get<1>(cell_lists[0]);
-  auto cell_index_map = std::get<2>(cell_lists[0]);
 
   if (dim == 0)
   {
@@ -510,44 +488,63 @@ compute_entities_by_key_matching(
   // Start timer
   common::Timer timer("Compute entities of dim = " + std::to_string(dim));
 
-  // Get indices of desired entities within cell. Usually this will be all
-  // entities, but for prism or pyramid facets, we will just pick out triangle
-  // or quad facets.
-  std::vector<std::int32_t> cell_type_entities;
-  for (int i = 0; i < cell_num_entities(cell_type, dim); ++i)
+  std::vector<std::vector<std::int32_t>> cell_type_entities(cell_lists.size());
+  std::vector<std::int32_t> cell_type_offsets = {0};
+  for (std::size_t k = 0; k < cell_lists.size(); ++k)
   {
-    if (cell_entity_type(cell_type, dim, i) == entity_type)
-      cell_type_entities.push_back(i);
-  }
-  assert(cell_type_entities.size() > 0);
-  const std::int8_t num_entities_per_cell = cell_type_entities.size();
+    mesh::CellType cell_type = std::get<0>(cell_lists[k]);
+    auto cells = std::get<1>(cell_lists[k]);
+    const std::size_t num_cells = cells->num_nodes();
 
-  const std::size_t num_cells = cells->num_nodes();
+    for (int i = 0; i < cell_num_entities(cell_type, dim); ++i)
+    {
+      if (cell_entity_type(cell_type, dim, i) == entity_type)
+        cell_type_entities[k].push_back(i);
+    }
+    cell_type_offsets.push_back(num_cells * cell_type_entities[k].size());
+  }
+
   int num_vertices_per_entity = num_cell_vertices(entity_type);
-  std::vector<std::int32_t> entity_list(num_cells * num_entities_per_cell
+  std::vector<std::int32_t> entity_list(cell_type_offsets.back()
                                         * num_vertices_per_entity);
 
-  // Create map from cell vertices to entity vertices
-  auto e_vertices = get_entity_vertices(cell_type, dim);
-
-  for (std::size_t c = 0; c < num_cells; ++c)
+  for (std::size_t k = 0; k < cell_lists.size(); ++k)
   {
-    // Get vertices from each cell
-    auto vertices = cells->links(c);
+    auto cell_type = std::get<0>(cell_lists[k]);
+    auto cells = std::get<1>(cell_lists[k]);
+    auto cell_index_map = std::get<2>(cell_lists[k]);
 
-    for (int i = 0; i < num_entities_per_cell; ++i)
+    // Get indices of desired entities within cell. Usually this will be all
+    // entities, but for prism or pyramid facets, we will just pick out
+    // triangle or quad facets.
+
+    // Create map from cell vertices to entity vertices
+    auto e_vertices = get_entity_vertices(cell_type, dim);
+
+    const std::size_t num_cells = cells->num_nodes();
+    int num_entities_per_cell = cell_type_entities[k].size();
+    for (std::size_t c = 0; c < num_cells; ++c)
     {
-      const std::int32_t idx = c * num_entities_per_cell + i;
-      auto ev = e_vertices.links(cell_type_entities[i]);
+      // Get vertices from each cell
+      auto vertices = cells->links(c);
 
-      // Get entity vertices. Padded with -1 if fewer than
-      // max_vertices_per_entity
-      for (std::size_t j = 0; j < ev.size(); ++j)
-        entity_list[idx * num_vertices_per_entity + j] = vertices[ev[j]];
+      for (int i = 0; i < num_entities_per_cell; ++i)
+      {
+        const std::int32_t idx = c * num_entities_per_cell + i;
+        auto ev = e_vertices.links(cell_type_entities[k][i]);
+
+        // Get entity vertices. Padded with -1 if fewer than
+        // max_vertices_per_entity
+        for (std::size_t j = 0; j < ev.size(); ++j)
+          entity_list[(cell_type_offsets[k] + idx) * num_vertices_per_entity
+                      + j]
+              = vertices[ev[j]];
+      }
     }
   }
 
-  std::vector<std::int32_t> entity_index(num_cells * num_entities_per_cell);
+  // Start numbering entities
+  std::vector<std::int32_t> entity_index(cell_type_offsets.back());
 
   std::int32_t entity_count = 0;
   {
@@ -594,19 +591,51 @@ compute_entities_by_key_matching(
       ++entity_count;
     }
   }
+
+  //---------
+  // Set ghost status array values
+  // 0 = entities that are only in ghost cells (i.e. definitely not owned)
+  // 1 = entities with local ownership or ownership that needs deciding
+  std::vector<std::int8_t> ghost_status(entity_count, 0);
+  for (std::size_t k = 0; k < cell_lists.size(); ++k)
+  {
+    auto cells = std::get<1>(cell_lists[k]);
+    const std::size_t num_cells = cells->num_nodes();
+    auto cell_map = std::get<2>(cell_lists[k]);
+    int num_entities_per_cell = cell_type_entities[k].size();
+    assert(cell_map->size_local() + cell_map->num_ghosts() == (int)num_cells);
+
+    const std::int32_t ghost_offset = cell_map->size_local();
+
+    // Tag all entities in local cells with 1
+    for (std::size_t i = ghost_offset * num_entities_per_cell;
+         i < num_cells * num_entities_per_cell; ++i)
+    {
+      const std::int32_t idx = entity_index[i + cell_type_offsets[k]];
+      ghost_status[idx] = 1;
+    }
+  }
+
   // Communicate with other processes to find out which entities are
   // ghosted and shared. Remap the numbering so that ghosts are at the
   // end.
-  auto [local_index, index_map, interprocess_entities] = get_local_indexing(
-      comm, *cell_index_map, vertex_index_map, entity_list,
-      num_vertices_per_entity, num_entities_per_cell, entity_index);
+
+  auto [local_index, index_map, interprocess_entities]
+      = get_local_indexing(comm, vertex_index_map, entity_list,
+                           num_vertices_per_entity, ghost_status, entity_index);
 
   // Entity-vertex connectivity
-  graph::AdjacencyList ev
-      = graph::regular_adjacency_list(entity_list, num_vertices_per_entity);
+  std::vector<std::int32_t> ev_array(entity_count * num_vertices_per_entity);
+  graph::AdjacencyList ev = graph::regular_adjacency_list(
+      std::move(ev_array), num_vertices_per_entity);
+  for (std::int32_t i = 0; i < cell_type_offsets.back(); ++i)
+  {
+    std::copy_n(std::next(entity_list.begin(), i * num_vertices_per_entity),
+                num_vertices_per_entity, ev.links(local_index[i]).begin());
+  }
 
-  graph::AdjacencyList ce
-      = graph::regular_adjacency_list(local_index, num_entities_per_cell);
+  graph::AdjacencyList ce = graph::regular_adjacency_list(
+      local_index, cell_type_entities[0].size());
 
   return {std::move(ce), std::move(ev), std::move(index_map),
           std::move(interprocess_entities)};
