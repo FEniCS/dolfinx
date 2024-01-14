@@ -51,7 +51,7 @@
 # In this demo we consider:
 #
 # - $\Omega = [0,2] \times [0,1]$ (a rectangle)
-# - $\Gamma_{D} = \{(0, y) \cup (1, y) \subset \partial \Omega\}$
+# - $\Gamma_{D} = \{(0, y) \cup (2, y) \subset \partial \Omega\}$
 # - $\Gamma_{N} = \{(x, 0) \cup (x, 1) \subset \partial \Omega\}$
 # - $g = \sin(5x)$
 # - $f = 10\exp(-((x - 0.5)^2 + (y - 0.5)^2) / 0.02)$
@@ -132,7 +132,7 @@ L = inner(f, v) * dx + inner(g, v) * ds
 # A {py:class}`LinearProblem <dolfinx.fem.petsc.LinearProblem>` object is
 # created that brings together the variational problem, the Dirichlet
 # boundary condition, and which specifies the linear solver. In this
-# case an LU solver us sued. The {py:func}`solve
+# case an LU solver is used. The {py:func}`solve
 # <dolfinx.fem.petsc.LinearProblem.solve>` computes the solution.
 
 # +
