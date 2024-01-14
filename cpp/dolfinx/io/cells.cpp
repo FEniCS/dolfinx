@@ -33,20 +33,18 @@ int cell_degree(mesh::CellType type, int num_nodes)
     return n - 1;
   }
   case mesh::CellType::tetrahedron:
-    // n * (n + 1) * (n + 2) = 6*A
-    // return n - 1;
-    switch (num_nodes)
+  {
+    int n = 0;
+    while (n * (n + 1) * (n + 2) < 6 * num_nodes)
+      ++n;
+  }
+    if (n * (n + 1) * (n + 2) != 6 * num_nodes)
     {
-    case 4:
-      return 1;
-    case 10:
-      return 2;
-    case 20:
-      return 3;
-    default:
       throw std::runtime_error("Unknown tetrahedron layout. Number of nodes: "
                                + std::to_string(num_nodes));
     }
+    return n - 1;
+  }
   case mesh::CellType::quadrilateral:
   {
     const int n = std::sqrt(num_nodes);
@@ -123,32 +121,31 @@ std::vector<std::uint16_t> vtk_triangle(int num_nodes)
   // Interior VTK is ordered as a lower order triangle, while FEniCS
   // orders them lexicographically.
   std::vector<std::uint16_t> remainders(num_nodes - j);
-  std::iota(remainders.begin(), remainders.end(), 0);
-  const std::uint16_t base = 3 * degree;
+  std::iota(remainders.begin(), remainders.end(), 3 * degree);
 
   while (remainders.size() > 0)
   {
     if (remainders.size() == 1)
     {
-      map[j++] = base + vec_pop(remainders, 0);
+      map[j++] = vec_pop(remainders, 0);
       break;
     }
 
     degree = cell_degree(mesh::CellType::triangle, remainders.size());
 
-    map[j++] = base + vec_pop(remainders, 0);
-    map[j++] = base + vec_pop(remainders, degree - 1);
-    map[j++] = base + vec_pop(remainders, -1);
+    map[j++] = vec_pop(remainders, 0);
+    map[j++] = vec_pop(remainders, degree - 1);
+    map[j++] = vec_pop(remainders, -1);
 
     for (int i = 0; i < degree - 1; ++i)
-      map[j++] = base + vec_pop(remainders, 0);
+      map[j++] = vec_pop(remainders, 0);
 
     for (int i = 1, k = degree * (degree - 1) / 2; i < degree;
          k -= degree - i, ++i)
-      map[j++] = base + vec_pop(remainders, -k);
+      map[j++] = vec_pop(remainders, -k);
 
     for (int i = 1, k = 1; i < degree; k += i, ++i)
-      map[j++] = base + vec_pop(remainders, -k);
+      map[j++] = vec_pop(remainders, -k);
   }
 
   return map;
@@ -156,7 +153,8 @@ std::vector<std::uint16_t> vtk_triangle(int num_nodes)
 //-----------------------------------------------------------------------------
 std::vector<std::uint16_t> vtk_tetrahedron(int num_nodes)
 {
-  switch (num_nodes)
+  const int n
+      = cell_degree(mesh::CellType::tetrahedron, num_nodes) switch (num_nodes)
   {
   case 4:
     return {0, 1, 2, 3};
@@ -198,14 +196,9 @@ std::vector<std::uint16_t> vtk_pyramid(int num_nodes)
 //-----------------------------------------------------------------------------
 std::vector<std::uint16_t> vtk_quadrilateral(int num_nodes)
 {
-  // Check that num_nodes is a square integer (since quadrilaterals are
-  // tensor products of intervals, the number of nodes for each interval
-  // should be an integer)
-  assert((std::sqrt(num_nodes) - std::floor(std::sqrt(num_nodes))) == 0);
-
-  // Number of nodes in each direction
-  const int n = sqrt(num_nodes);
-  std::vector<std::uint16_t> map(num_nodes);
+  const int n = cell_degree(mesh::CellType::quadrilateral, num_nodes)
+      std::vector<std::uint16_t>
+          map(num_nodes);
 
   // Vertices
   map[0] = 0;
@@ -235,8 +228,7 @@ std::vector<std::uint16_t> vtk_quadrilateral(int num_nodes)
 //-----------------------------------------------------------------------------
 std::vector<std::uint16_t> vtk_hexahedron(int num_nodes)
 {
-  const int n = std::cbrt(num_nodes);
-  assert(n * n * n == num_nodes);
+  std::uint16_t degree = cell_degree(mesh::CellType::hexahedron, num_nodes);
 
   std::vector<std::uint16_t> map(num_nodes);
 
