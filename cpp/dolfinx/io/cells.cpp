@@ -370,9 +370,6 @@ std::vector<std::uint16_t> vtk_tetrahedron(int num_nodes)
 
   base += 4 * n_face_dofs;
 
-  for (auto i : map)
-    std::cout << i << " ";
-  std::cout << "\n";
   if (degree < 4)
     return map;
 
