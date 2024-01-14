@@ -37,7 +37,6 @@ int cell_degree(mesh::CellType type, int num_nodes)
     int n = 0;
     while (n * (n + 1) * (n + 2) < 6 * num_nodes)
       ++n;
-  }
     if (n * (n + 1) * (n + 2) != 6 * num_nodes)
     {
       throw std::runtime_error("Unknown tetrahedron layout. Number of nodes: "
@@ -100,29 +99,12 @@ std::uint16_t vec_pop(std::vector<std::uint16_t>& v, int i)
   return value;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint16_t> vtk_triangle(int num_nodes)
+std::vector<std::uint16_t>
+vtk_triangle_remainders(std::vector<std::uint16_t> remainders)
 {
-  // Vertices
-  std::vector<std::uint16_t> map(num_nodes);
-  std::iota(map.begin(), map.begin() + 3, 0);
-
-  int j = 3;
-  std::uint16_t degree = cell_degree(mesh::CellType::triangle, num_nodes);
-  for (int k = 1; k < degree; ++k)
-    map[j++] = 3 + 2 * (degree - 1) + k - 1;
-  for (int k = 1; k < degree; ++k)
-    map[j++] = 3 + k - 1;
-  for (int k = 1; k < degree; ++k)
-    map[j++] = 2 * degree - (k - 1);
-
-  if (degree < 3)
-    return map;
-
-  // Interior VTK is ordered as a lower order triangle, while FEniCS
-  // orders them lexicographically.
-  std::vector<std::uint16_t> remainders(num_nodes - j);
-  std::iota(remainders.begin(), remainders.end(), 3 * degree);
-
+  std::vector<std::uint16_t> map(remainders.size());
+  std::size_t j = 0;
+  int degree;
   while (remainders.size() > 0)
   {
     if (remainders.size() == 1)
@@ -151,21 +133,258 @@ std::vector<std::uint16_t> vtk_triangle(int num_nodes)
   return map;
 }
 //-----------------------------------------------------------------------------
+std::vector<std::uint16_t> vtk_triangle(int num_nodes)
+{
+  std::vector<std::uint16_t> map(num_nodes);
+  // Vertices
+  std::iota(map.begin(), map.begin() + 3, 0);
+
+  int j = 3;
+  std::uint16_t degree = cell_degree(mesh::CellType::triangle, num_nodes);
+  for (int k = 1; k < degree; ++k)
+    map[j++] = 3 + 2 * (degree - 1) + k - 1;
+  for (int k = 1; k < degree; ++k)
+    map[j++] = 3 + k - 1;
+  for (int k = 1; k < degree; ++k)
+    map[j++] = 2 * degree - (k - 1);
+
+  if (degree < 3)
+    return map;
+
+  // Interior VTK is ordered as a lower order triangle, while FEniCS
+  // orders them lexicographically.
+  std::vector<std::uint16_t> remainders(num_nodes - j);
+  std::iota(remainders.begin(), remainders.end(), 3 * degree);
+
+  for (std::uint16_t r : vtk_triangle_remainders(remainders))
+  {
+    map[j++] = r;
+  }
+  return map;
+}
+//-----------------------------------------------------------------------------
+std::vector<std::uint16_t>
+vtk_tetrahedron_remainders(std::vector<std::uint16_t> remainders)
+{
+  std::vector<std::uint16_t> map(remainders.size());
+  std::size_t j = 0;
+
+  while (remainders.size() > 0)
+  {
+    if (remainders.size() == 1)
+    {
+      map[j++] = vec_pop(remainders, 0);
+      break;
+    }
+
+    const int deg = cell_degree(mesh::CellType::tetrahedron, remainders.size());
+
+    map[j++] = vec_pop(remainders, 0);
+    map[j++] = vec_pop(remainders, deg - 2);
+    map[j++] = vec_pop(remainders, deg * (deg + 1));
+
+    if (deg > 2)
+    {
+      for (int i = 0; i < deg - 2; ++i)
+        map[j++] = vec_pop(remainders, 0);
+      int d = deg - 2;
+      for (int i = 0; i < deg - 2; ++i)
+      {
+        map[j++] = vec_pop(remainders, d);
+        d += deg - 3 - i;
+      }
+      d = (deg - 2) * (deg - 1) / 2 - 1;
+      for (int i = 0; i < deg - 2; ++i)
+      {
+        map[j++] = vec_pop(remainders, d);
+        d -= 2 + i;
+      }
+      d = (deg - 3) * (deg - 2) / 2;
+      for (int i = 0; i < deg - 2; ++i)
+      {
+        map[j++] = vec_pop(remainders, d);
+        d += (deg - i) * (deg - i - 1) / 2 - 1;
+      }
+      d = (deg - 3) * (deg - 2) / 2 + deg - 3;
+      for (int i = 0; i < deg - 2; ++i)
+      {
+        map[j++] = vec_pop(remainders, d);
+        d += (deg - 2 - i) * (deg - 1 - i) / 2 + deg - 4 - i;
+      }
+      d = (deg - 3) * (deg - 2) / 2 + deg - 3 + (deg - 2) * (deg - 1) / 2 - 1;
+      for (int i = 0; i < deg - 2; ++i)
+      {
+        map[j++] = vec_pop(remainders, d);
+        d += (deg - 3 - i) * (deg - 2 - i) / 2 + deg - i - 5;
+      }
+    }
+    if (deg > 3)
+    {
+      std::vector<std::uint16_t> dofs((deg - 3) * (deg - 2) / 2);
+      int di = 0;
+      int d = (deg - 3) * (deg - 2) / 2;
+      for (int i = 0; i < deg - 3; ++i)
+      {
+        for (int ii = 0; ii < deg - 3 - i; ++ii)
+          dofs[di++] = vec_pop(remainders, d);
+        d += (deg - 2 - i) * (deg - 1 - i) / 2 - 1;
+      }
+      for (std::uint16_t r : vtk_triangle_remainders(dofs))
+        map[j++] = r;
+
+      di = 0;
+      int start = deg * deg - 4 * deg + 2;
+      int sub_i_start = deg - 3;
+      for (int i = 0; i < deg - 3; ++i)
+      {
+        d = start;
+        int sub_i = sub_i_start;
+        for (int ii = 0; ii < deg - 3 - i; ++ii)
+        {
+          dofs[di++] = vec_pop(remainders, d);
+          d += sub_i * (sub_i + 1) / 2 - 2 - i;
+          sub_i -= 1;
+        }
+        start -= 2 + i;
+      }
+      for (std::uint16_t r : vtk_triangle_remainders(dofs))
+        map[j++] = r;
+
+      di = 0;
+      start = (deg - 3) * (deg - 2) / 2;
+      sub_i_start = deg - 3;
+      for (int i = 0; i < deg - 3; ++i)
+      {
+        d = start;
+        int sub_i = sub_i_start;
+        for (int ii = 0; ii < deg - 3 - i; ++ii)
+        {
+          dofs[di++] = vec_pop(remainders, d);
+          d += sub_i * (sub_i + 1) / 2 - 1 - 2 * i;
+          sub_i -= 1;
+        }
+        start += deg - 4 - i;
+      }
+      for (std::uint16_t r : vtk_triangle_remainders(dofs))
+        map[j++] = r;
+
+      di = 0;
+      int add_start = deg - 4;
+      for (int i = 0; i < deg - 3; ++i)
+      {
+        d = 0;
+        int add = add_start;
+        for (int ii = 0; ii < deg - 3 - i; ++ii)
+        {
+          dofs[di++] = vec_pop(remainders, d);
+          d += add;
+          add -= 1;
+        }
+        add_start -= 1;
+      }
+      for (std::uint16_t r : vtk_triangle_remainders(dofs))
+        map[j++] = r;
+    }
+  }
+  return map;
+}
+//-----------------------------------------------------------------------------
 std::vector<std::uint16_t> vtk_tetrahedron(int num_nodes)
 {
-  const int n
-      = cell_degree(mesh::CellType::tetrahedron, num_nodes) switch (num_nodes)
+  const int degree = cell_degree(mesh::CellType::tetrahedron, num_nodes);
+
+  std::vector<std::uint16_t> map(num_nodes);
+  // Vertices
+  std::iota(map.begin(), map.begin() + 4, 0);
+
+  if (degree < 2)
+    return map;
+
+  int base = 4;
+  int j = 4;
+  const int edge_dofs = degree - 1;
+  for (int edge : std::vector<int>({5, 2, 4, 3, 1, 0}))
   {
-  case 4:
-    return {0, 1, 2, 3};
-  case 10:
-    return {0, 1, 2, 3, 9, 6, 8, 7, 5, 4};
-  case 20:
-    return {0,  1,  2, 3, 14, 15, 8,  9,  13, 12,
-            10, 11, 6, 7, 4,  5,  18, 16, 17, 19};
-  default:
-    throw std::runtime_error("Unknown tetrahedron layout");
+    if (edge == 4)
+    {
+      for (int i = 0; i < edge_dofs; ++i)
+      {
+        map[j++] = base + edge_dofs * (edge + 1) - 1 - i;
+      }
+    }
+    else
+    {
+      for (int i = 0; i < edge_dofs; ++i)
+      {
+        map[j++] = base + edge_dofs * edge + i;
+      }
+    }
   }
+  base += 6 * edge_dofs;
+
+  if (degree < 3)
+    return map;
+
+  const int n_face_dofs = (degree - 1) * (degree - 2) / 2;
+
+  for (int face : std::vector<int>({2, 0, 1, 3}))
+  {
+    std::vector<std::uint16_t> face_dofs(n_face_dofs);
+    std::size_t fj = 0;
+    if (face == 2)
+    {
+      for (int i = 0; i < n_face_dofs; ++i)
+      {
+        face_dofs[fj++] = base + n_face_dofs * face + i;
+      }
+    }
+    else if (face == 0)
+    {
+      for (int i = degree - 3; i >= 0; --i)
+      {
+        int d = i;
+        for (int ii = 0; ii <= i; ++ii)
+        {
+          face_dofs[fj++] = base + n_face_dofs * face + d;
+          d += degree - 3 - ii;
+        }
+      }
+    }
+    else
+    {
+      for (int i = 0; i < degree - 2; ++i)
+      {
+        int d = i;
+        for (int ii = 0; ii <= degree - 2 - i; ++ii)
+        {
+          face_dofs[fj++] = base + n_face_dofs * face + d;
+          d += degree - 2 - ii;
+        }
+      }
+    }
+    for (std::uint16_t r : vtk_triangle_remainders(face_dofs))
+    {
+      map[j++] = r;
+    }
+  }
+
+  base += 4 * n_face_dofs;
+
+  for (auto i : map)
+    std::cout << i << " ";
+  std::cout << "\n";
+  if (degree < 4)
+    return map;
+
+  std::vector<std::uint16_t> remainders((degree - 1) * (degree - 2)
+                                        * (degree - 3) / 6);
+  std::iota(remainders.begin(), remainders.end(), base);
+
+  for (std::uint16_t r : vtk_tetrahedron_remainders(remainders))
+  {
+    map[j++] = r;
+  }
+  return map;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::uint16_t> vtk_wedge(int num_nodes)
@@ -196,9 +415,8 @@ std::vector<std::uint16_t> vtk_pyramid(int num_nodes)
 //-----------------------------------------------------------------------------
 std::vector<std::uint16_t> vtk_quadrilateral(int num_nodes)
 {
-  const int n = cell_degree(mesh::CellType::quadrilateral, num_nodes)
-      std::vector<std::uint16_t>
-          map(num_nodes);
+  const int n = cell_degree(mesh::CellType::quadrilateral, num_nodes);
+  std::vector<std::uint16_t> map(num_nodes);
 
   // Vertices
   map[0] = 0;
@@ -208,7 +426,7 @@ std::vector<std::uint16_t> vtk_quadrilateral(int num_nodes)
 
   int j = 4;
 
-  const int edge_nodes = n - 2;
+  const int edge_nodes = n - 1;
 
   // Edges
   for (int k = 0; k < edge_nodes; ++k)
@@ -228,7 +446,7 @@ std::vector<std::uint16_t> vtk_quadrilateral(int num_nodes)
 //-----------------------------------------------------------------------------
 std::vector<std::uint16_t> vtk_hexahedron(int num_nodes)
 {
-  std::uint16_t degree = cell_degree(mesh::CellType::hexahedron, num_nodes);
+  std::uint16_t n = cell_degree(mesh::CellType::hexahedron, num_nodes);
 
   std::vector<std::uint16_t> map(num_nodes);
 
@@ -245,7 +463,7 @@ std::vector<std::uint16_t> vtk_hexahedron(int num_nodes)
   // Edges
   int j = 8;
   int base = 8;
-  const int edge_nodes = n - 2;
+  const int edge_nodes = n - 1;
   const std::vector<int> edges = {0, 3, 5, 1, 8, 10, 11, 9, 2, 4, 7, 6};
   for (int e : edges)
   {
