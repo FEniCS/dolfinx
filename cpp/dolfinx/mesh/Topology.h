@@ -220,10 +220,11 @@ private:
   std::vector<std::shared_ptr<const common::IndexMap>> _index_map;
 
   // Connectivity between entity dimensions and cell types, arranged as
-  // a 2D array. Indexing is 0=vertex, 1=edge, followed by [facet types], [cell
-  // types]. e.g. for a 3D mesh with tets, pyramid and hex: 0=vertex, 1=edge,
-  // 2=triangle, 3=quad, 4=tet, 5=pyr, 6=hex. Connectivity between different
-  // cell types of same dimension will be nullptr.
+  // a 2D array. The indexing follows the order in _entity_types, i.e.
+  // increasing in topological dimension. There may be multiple types in each
+  // dimension, e.g. triangle and quadrilateral facets.
+  // Connectivity between different entity types of same dimension will always
+  // be nullptr.
   std::vector<std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>>
       _connectivity;
 

@@ -88,14 +88,7 @@ def test_parallel_mixed_mesh():
 
     assert topology.entity_types[2][0] == CellType.triangle
     assert topology.entity_types[2][1] == CellType.quadrilateral
-    print(topology.connectivity((2, 0), (0, 0)))
-    print(topology.connectivity((2, 1), (0, 0)))
-
-    w = topology.index_map(0)
-    print(w.local_to_global(np.arange(6, dtype=int)))
-
+   
     size = MPI.COMM_WORLD.Get_size()
     assert topology.index_maps(2)[0].size_global == size * 2
     assert topology.index_maps(2)[1].size_global == size
-
-    print(topology.index_maps(2)[0].size_global)

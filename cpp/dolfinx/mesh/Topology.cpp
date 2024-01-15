@@ -17,6 +17,7 @@
 #include <dolfinx/graph/partition.h>
 #include <numeric>
 #include <random>
+#include <set>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;
@@ -719,6 +720,9 @@ Topology::Topology(MPI_Comm comm, CellType cell_type)
               cell_dim(cell_type) + 1))
 {
   std::int8_t tdim = cell_dim(cell_type);
+
+  // Create all the entity types in mesh, one per dimension for a single cell
+  // type mesh.
   _entity_type_offsets.resize(tdim + 2);
   for (std::int8_t i = 0; i < tdim + 2; ++i)
     _entity_type_offsets[i] = i;
@@ -740,6 +744,7 @@ Topology::Topology(MPI_Comm comm, const std::vector<CellType>& cell_types)
   assert(cell_types.size() > 0);
   std::int8_t tdim = cell_dim(cell_types[0]);
 
+  // Create all the entity types in the mesh
   if (tdim > 1)
   {
     // In 2D, the facet is an interval
@@ -749,16 +754,13 @@ Topology::Topology(MPI_Comm comm, const std::vector<CellType>& cell_types)
     if (tdim == 3)
     {
       // Find all facet types
-      std::vector<mesh::CellType> facet_types;
+      std::set<mesh::CellType> facet_types;
       for (auto c : cell_types)
       {
         assert(cell_dim(c) == tdim);
         for (std::int8_t i = 0; i < cell_num_entities(c, tdim - 1); ++i)
-          facet_types.push_back(cell_facet_type(c, i));
+          facet_types.insert(cell_facet_type(c, i));
       }
-      std::sort(facet_types.begin(), facet_types.end());
-      facet_types.erase(std::unique(facet_types.begin(), facet_types.end()),
-                        facet_types.end());
       _entity_types.insert(_entity_types.end(), facet_types.begin(),
                            facet_types.end());
 
@@ -786,6 +788,9 @@ void Topology::set_index_map(int dim,
                              std::shared_ptr<const common::IndexMap> map)
 {
   assert(dim < (int)_entity_type_offsets.size() - 1);
+  // Check there is only one index map in this dimension
+  if (_entity_type_offsets[dim + 1] - _entity_type_offsets[dim] != 1)
+    throw std::runtime_error("Cannot set IndexMap on mixed topology mesh");
   _index_map[_entity_type_offsets[dim]] = map;
 }
 //-----------------------------------------------------------------------------
