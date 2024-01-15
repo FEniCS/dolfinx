@@ -104,8 +104,7 @@ public:
   index_maps(std::int8_t dim) const;
 
   /// @brief Return connectivity from entities of dimension d0 to
-  /// entities of dimension d1. Simple version for compatibility, assumes only
-  /// one celltype per dimension.
+  /// entities of dimension d1. Assumes only one entity type per dimension.
   ///
   /// @param[in] d0
   /// @param[in] d1
@@ -170,7 +169,7 @@ public:
   /// @return Cell type that the topology is for
   CellType cell_type() const;
 
-  /// @brief  Get the entity types in the topology for a given dimension
+  /// @brief Get the entity types in the topology for a given dimension
   /// @param dim Topological dimension
   /// @return List of entity types
   std::vector<CellType> entity_types(std::int8_t dim) const;
@@ -220,10 +219,11 @@ private:
   std::vector<std::shared_ptr<const common::IndexMap>> _index_map;
 
   // Connectivity between entity dimensions and cell types, arranged as
-  // a 2D array. Indexing is 0=vertex, 1=edge, followed by [facet types], [cell
-  // types]. e.g. for a 3D mesh with tets, pyramid and hex: 0=vertex, 1=edge,
-  // 2=triangle, 3=quad, 4=tet, 5=pyr, 6=hex. Connectivity between different
-  // cell types of same dimension will be nullptr.
+  // a 2D array. The indexing follows the order in _entity_types, i.e.
+  // increasing in topological dimension. There may be multiple types in each
+  // dimension, e.g. triangle and quadrilateral facets.
+  // Connectivity between different entity types of same dimension will always
+  // be nullptr.
   std::vector<std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>>
       _connectivity;
 

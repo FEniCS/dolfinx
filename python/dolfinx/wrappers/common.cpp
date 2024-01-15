@@ -131,8 +131,18 @@ void common(nb::module_& m)
             self.local_to_global(std::span(local.data(), local.size()), global);
             return dolfinx_wrappers::as_nbarray(std::move(global));
           },
-          nb::arg("local"));
-
+          nb::arg("local"))
+      .def(
+          "global_to_local",
+          [](const dolfinx::common::IndexMap& self,
+             nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig> global)
+          {
+            std::vector<std::int32_t> local(global.size());
+            self.global_to_local(std::span(global.data(), global.size()),
+                                 local);
+            return dolfinx_wrappers::as_nbarray(std::move(local));
+          },
+          nb::arg("global"));
   // dolfinx::common::Timer
   nb::class_<dolfinx::common::Timer>(m, "Timer", "Timer class")
       .def(nb::init<>())
