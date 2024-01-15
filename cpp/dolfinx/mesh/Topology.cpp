@@ -802,7 +802,7 @@ void Topology::set_index_map(int dim,
 void Topology::set_index_map(std::int8_t dim, std::int8_t i,
                              std::shared_ptr<const common::IndexMap> map)
 {
-  assert(dim < (int)_entity_type_offsets.size() - 1);
+  assert(dim < (std::int8_t)_entity_type_offsets.size() - 1);
   assert(i < (_entity_type_offsets[dim + 1] - _entity_type_offsets[dim]));
 
   _index_map[_entity_type_offsets[dim] + i] = map;
