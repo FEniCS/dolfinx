@@ -208,7 +208,7 @@ vtk_mesh_from_space(const fem::FunctionSpace<T>& V)
   const int element_block_size = V.element()->block_size();
   const std::uint32_t num_nodes
       = V.element()->space_dimension() / element_block_size;
-  const std::vector<std::uint8_t> vtkmap = io::cells::transpose(
+  const std::vector<std::uint16_t> vtkmap = io::cells::transpose(
       io::cells::perm_vtk(topology->cell_type(), num_nodes));
 
   // Extract topology for all local cells as
