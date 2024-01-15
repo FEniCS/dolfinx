@@ -34,6 +34,7 @@ class Topology;
 /// @param[in] comm MPI Communicator
 /// @param[in] topology Mesh topology
 /// @param[in] dim The dimension of the entities to create
+/// @param[in] index Index of entity in dimension `dim`
 /// @return Tuple of (cell-entity connectivity, entity-vertex
 /// connectivity, index map, list of interprocess entities).
 /// Interprocess entities lie on the "true" boundary between owned cells of each
@@ -42,7 +43,7 @@ class Topology;
 std::tuple<std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<common::IndexMap>, std::vector<std::int32_t>>
-compute_entities(MPI_Comm comm, const Topology& topology, int dim);
+compute_entities(MPI_Comm comm, const Topology& topology, int dim, int index);
 
 /// @brief Compute connectivity (d0 -> d1) for given pair of topological
 /// dimensions.

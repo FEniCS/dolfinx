@@ -751,7 +751,8 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
 std::tuple<std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<common::IndexMap>, std::vector<std::int32_t>>
-mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim)
+mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim,
+                       int index)
 {
   LOG(INFO) << "Computing mesh entities of dimension " << dim;
   const int tdim = topology.dim();
@@ -761,17 +762,8 @@ mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim)
     return {std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>(),
             nullptr, nullptr, std::vector<std::int32_t>()};
 
-  if (topology.connectivity(dim, 0))
+  if (topology.connectivity({dim, index}, {0, 0}))
   {
-    // Make sure we really have the connectivity
-    if (!topology.connectivity(tdim, dim))
-    {
-      throw std::runtime_error(
-          "Cannot compute topological entities. Entities of topological "
-          "dimension "
-          + std::to_string(dim)
-          + " exist but cell-dim connectivity is missing.");
-    }
     return {std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>(),
             nullptr, nullptr, std::vector<std::int32_t>()};
   }
@@ -779,7 +771,7 @@ mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim)
   auto vertex_map = topology.index_map(0);
   assert(vertex_map);
 
-  CellType entity_type = cell_entity_type(topology.cell_type(), dim, 0);
+  CellType entity_type = topology.entity_types(dim)[index];
 
   // Lists of all cells by cell type
   std::vector<std::tuple<

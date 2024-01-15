@@ -824,30 +824,33 @@ std::int32_t Topology::create_entities(int dim)
   if (connectivity(dim, 0))
     return -1;
 
-  // Create local entities
-  auto [cell_entity, entity_vertex, index_map, interprocess_entities]
-      = compute_entities(_comm.comm(), *this, dim);
-
-  for (std::size_t k = 0; k < cell_entity.size(); ++k)
+  for (std::size_t index = 0; index < this->entity_types(dim).size(); ++index)
   {
-    set_connectivity(cell_entity[k], {this->dim(), k}, {dim, 0});
+    // Create local entities
+    auto [cell_entity, entity_vertex, index_map, interprocess_entities]
+        = compute_entities(_comm.comm(), *this, dim, index);
+
+    for (std::size_t k = 0; k < cell_entity.size(); ++k)
+    {
+      std::cout << "k = " << k << ", " << cell_entity[k]->num_nodes() << "\n";
+      set_connectivity(cell_entity[k], {this->dim(), k}, {dim, index});
+    }
+
+    // TODO: is this check necessary? Seems redundant after the "skip check"
+    if (entity_vertex)
+      set_connectivity(entity_vertex, {dim, index}, {0, 0});
+
+    assert(index_map);
+    this->set_index_map(dim, index, index_map);
+
+    // Store boundary facets
+    if (dim == this->dim() - 1)
+    {
+      _interprocess_facets = std::move(interprocess_entities);
+      std::sort(_interprocess_facets.begin(), _interprocess_facets.end());
+    }
   }
-
-  // TODO: is this check necessary? Seems redundant after the "skip check"
-  if (entity_vertex)
-    set_connectivity(entity_vertex, dim, 0);
-
-  assert(index_map);
-  this->set_index_map(dim, index_map);
-
-  // Store boundary facets
-  if (dim == this->dim() - 1)
-  {
-    _interprocess_facets = std::move(interprocess_entities);
-    std::sort(_interprocess_facets.begin(), _interprocess_facets.end());
-  }
-
-  return index_map->size_local();
+  return this->index_maps(dim)[0]->size_local();
 }
 //-----------------------------------------------------------------------------
 void Topology::create_connectivity(int d0, int d1)
