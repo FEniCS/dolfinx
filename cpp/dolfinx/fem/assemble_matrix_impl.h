@@ -394,7 +394,8 @@ void assemble_matrix(
   const std::function<void(const std::span<T>&,
                            const std::span<const std::uint32_t>&, std::int32_t,
                            int)>& post_dof_transform
-      = element1->template get_post_dof_transformation_function<T>(false, true);
+      = element1->template get_post_dof_transformation_function<T>(
+          transformation_type::transpose);
 
   const bool needs_transformation_data
       = element0->needs_dof_transformations()

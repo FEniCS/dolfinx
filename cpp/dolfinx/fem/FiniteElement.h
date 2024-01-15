@@ -21,6 +21,15 @@ struct ufcx_finite_element;
 
 namespace dolfinx::fem
 {
+
+enum class transformation_type
+{
+  standard = 0,
+  transpose = 1,
+  inverse = 2,
+  inverse_transpose = 3,
+};
+
 /// Finite Element, containing the dof layout on a reference element,
 /// and various methods for evaluating and transforming the basis.
 template <std::floating_point T>
@@ -271,8 +280,8 @@ public:
   template <typename U>
   std::function<void(const std::span<U>&, const std::span<const std::uint32_t>&,
                      std::int32_t, int)>
-  get_pre_dof_transformation_function(bool inverse = false,
-                                      bool transpose = false,
+  get_pre_dof_transformation_function(transformation_type ttype
+                                      = transformation_type::standard,
                                       bool scalar_element = false) const
   {
     if (!needs_dof_transformations())
@@ -287,7 +296,7 @@ public:
 
     if (_sub_elements.size() != 0)
     {
-      if (_bs == 1)
+      if (_is_mixed)
       {
         // Mixed element
         std::vector<std::function<void(const std::span<U>&,
@@ -299,7 +308,7 @@ public:
         {
           sub_element_functions.push_back(
               _sub_elements[i]->template get_pre_dof_transformation_function<U>(
-                  inverse, transpose));
+                  ttype));
           dims.push_back(_sub_elements[i]->space_dimension());
         }
 
@@ -326,7 +335,7 @@ public:
                                  std::int32_t, int)>
             sub_function
             = _sub_elements[0]->template get_pre_dof_transformation_function<U>(
-                inverse, transpose);
+                ttype);
         const int ebs = _bs;
         return
             [ebs, sub_function](const std::span<U>& data,
@@ -335,49 +344,38 @@ public:
         { sub_function(data, cell_info, cell, ebs * data_block_size); };
       }
     }
-    if (transpose)
+    switch (ttype)
     {
-      if (inverse)
+    case transformation_type::inverse_transpose:
+      return [this](const std::span<U>& data,
+                    const std::span<const std::uint32_t>& cell_info,
+                    std::int32_t cell, int block_size)
       {
-        return [this](const std::span<U>& data,
-                      const std::span<const std::uint32_t>& cell_info,
-                      std::int32_t cell, int block_size)
-        {
-          pre_apply_inverse_transpose_dof_transformation(data, cell_info[cell],
-                                                         block_size);
-        };
-      }
-      else
-      {
-        return [this](const std::span<U>& data,
-                      const std::span<const std::uint32_t>& cell_info,
-                      std::int32_t cell, int block_size) {
-          pre_apply_transpose_dof_transformation(data, cell_info[cell],
-                                                 block_size);
-        };
-      }
-    }
-    else
-    {
-      if (inverse)
-      {
-        return [this](const std::span<U>& data,
-                      const std::span<const std::uint32_t>& cell_info,
-                      std::int32_t cell, int block_size) {
-          pre_apply_inverse_dof_transformation(data, cell_info[cell],
+        pre_apply_inverse_transpose_dof_transformation(data, cell_info[cell],
+                                                       block_size);
+      };
+    case transformation_type::transpose:
+      return [this](const std::span<U>& data,
+                    const std::span<const std::uint32_t>& cell_info,
+                    std::int32_t cell, int block_size) {
+        pre_apply_transpose_dof_transformation(data, cell_info[cell],
                                                block_size);
-        };
-      }
-      else
-      {
-        return [this](const std::span<U>& data,
-                      const std::span<const std::uint32_t>& cell_info,
-                      std::int32_t cell, int block_size)
-        { pre_apply_dof_transformation(data, cell_info[cell], block_size); };
-      }
+      };
+    case transformation_type::inverse:
+      return [this](const std::span<U>& data,
+                    const std::span<const std::uint32_t>& cell_info,
+                    std::int32_t cell, int block_size) {
+        pre_apply_inverse_dof_transformation(data, cell_info[cell], block_size);
+      };
+    case transformation_type::standard:
+      return [this](const std::span<U>& data,
+                    const std::span<const std::uint32_t>& cell_info,
+                    std::int32_t cell, int block_size)
+      { pre_apply_dof_transformation(data, cell_info[cell], block_size); };
+    default:
+      throw std::runtime_error("Unknown transformation type");
     }
   }
-
   /// Return a function that applies DOF transformation to some
   /// transposed data
   ///
@@ -399,8 +397,8 @@ public:
   template <typename U>
   std::function<void(const std::span<U>&, const std::span<const std::uint32_t>&,
                      std::int32_t, int)>
-  get_post_dof_transformation_function(bool inverse = false,
-                                       bool transpose = false,
+  get_post_dof_transformation_function(transformation_type ttype
+                                       = transformation_type::standard,
                                        bool scalar_element = false) const
   {
     if (!needs_dof_transformations())
@@ -414,7 +412,7 @@ public:
     }
     else if (_sub_elements.size() != 0)
     {
-      if (_bs == 1)
+      if (_is_mixed)
       {
         // Mixed element
         std::vector<std::function<void(const std::span<U>&,
@@ -425,8 +423,7 @@ public:
         {
           sub_element_functions.push_back(
               _sub_elements[i]
-                  ->template get_post_dof_transformation_function<U>(
-                      inverse, transpose));
+                  ->template get_post_dof_transformation_function<U>(ttype));
         }
 
         return [this, sub_element_functions](
@@ -451,7 +448,7 @@ public:
                                  std::int32_t, int)>
             sub_function
             = _sub_elements[0]->template get_pre_dof_transformation_function<U>(
-                inverse, transpose);
+                ttype);
         return [this,
                 sub_function](const std::span<U>& data,
                               const std::span<const std::uint32_t>& cell_info,
@@ -468,46 +465,37 @@ public:
       }
     }
 
-    if (transpose)
+    switch (ttype)
     {
-      if (inverse)
+    case transformation_type::inverse_transpose:
+      return [this](const std::span<U>& data,
+                    const std::span<const std::uint32_t>& cell_info,
+                    std::int32_t cell, int block_size)
       {
-        return [this](const std::span<U>& data,
-                      const std::span<const std::uint32_t>& cell_info,
-                      std::int32_t cell, int block_size)
-        {
-          post_apply_inverse_transpose_dof_transformation(data, cell_info[cell],
-                                                          block_size);
-        };
-      }
-      else
-      {
-        return [this](const std::span<U>& data,
-                      const std::span<const std::uint32_t>& cell_info,
-                      std::int32_t cell, int block_size) {
-          post_apply_transpose_dof_transformation(data, cell_info[cell],
-                                                  block_size);
-        };
-      }
-    }
-    else
-    {
-      if (inverse)
-      {
-        return [this](const std::span<U>& data,
-                      const std::span<const std::uint32_t>& cell_info,
-                      std::int32_t cell, int block_size) {
-          post_apply_inverse_dof_transformation(data, cell_info[cell],
+        post_apply_inverse_transpose_dof_transformation(data, cell_info[cell],
+                                                        block_size);
+      };
+    case transformation_type::transpose:
+      return [this](const std::span<U>& data,
+                    const std::span<const std::uint32_t>& cell_info,
+                    std::int32_t cell, int block_size) {
+        post_apply_transpose_dof_transformation(data, cell_info[cell],
                                                 block_size);
-        };
-      }
-      else
-      {
-        return [this](const std::span<U>& data,
-                      const std::span<const std::uint32_t>& cell_info,
-                      std::int32_t cell, int block_size)
-        { post_apply_dof_transformation(data, cell_info[cell], block_size); };
-      }
+      };
+    case transformation_type::inverse:
+      return [this](const std::span<U>& data,
+                    const std::span<const std::uint32_t>& cell_info,
+                    std::int32_t cell, int block_size) {
+        post_apply_inverse_dof_transformation(data, cell_info[cell],
+                                              block_size);
+      };
+    case transformation_type::standard:
+      return [this](const std::span<U>& data,
+                    const std::span<const std::uint32_t>& cell_info,
+                    std::int32_t cell, int block_size)
+      { post_apply_dof_transformation(data, cell_info[cell], block_size); };
+    default:
+      throw std::runtime_error("Unknown transformation type");
     }
   }
 
