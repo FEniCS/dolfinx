@@ -104,8 +104,7 @@ public:
   index_maps(std::int8_t dim) const;
 
   /// @brief Return connectivity from entities of dimension d0 to
-  /// entities of dimension d1. Simple version for compatibility, assumes only
-  /// one celltype per dimension.
+  /// entities of dimension d1. Assumes only one entity type per dimension.
   ///
   /// @param[in] d0
   /// @param[in] d1

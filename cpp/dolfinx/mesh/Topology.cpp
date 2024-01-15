@@ -994,7 +994,7 @@ mesh::CellType Topology::cell_type() const { return _entity_types.back(); }
 //-----------------------------------------------------------------------------
 std::vector<CellType> Topology::entity_types(std::int8_t dim) const
 {
-  assert(dim < (int)_entity_type_offsets.size() - 1 and dim >= 0);
+  assert(dim < (std::int8_t)_entity_type_offsets.size() - 1 and dim >= 0);
   return std::vector<CellType>(
       std::next(_entity_types.begin(), _entity_type_offsets[dim]),
       std::next(_entity_types.begin(), _entity_type_offsets[dim + 1]));
@@ -1102,18 +1102,18 @@ Topology mesh::create_topology(
   }
 
   // Get global indices of ghost cells
-  std::vector<std::vector<std::int64_t>> cell_ghost_indices;
-  std::vector<std::shared_ptr<common::IndexMap>> index_map_c;
+  std::vector<std::vector<std::int64_t>> cell_ghost_indices(cell_type.size());
+  std::vector<std::shared_ptr<common::IndexMap>> index_map_c(cell_type.size());
   for (std::size_t i = 0; i < cell_type.size(); ++i)
   {
     std::span cell_idx(original_cell_index[i]);
-    cell_ghost_indices.push_back(graph::build::compute_ghost_indices(
+    cell_ghost_indices[i] = graph::build::compute_ghost_indices(
         comm, cell_idx.first(num_local_cells[i]),
-        cell_idx.last(ghost_owners[i].size()), ghost_owners[i]));
+        cell_idx.last(ghost_owners[i].size()), ghost_owners[i]);
 
     // Create index maps for each cell type
-    index_map_c.push_back(std::make_shared<common::IndexMap>(
-        comm, num_local_cells[i], cell_ghost_indices[i], ghost_owners[i]));
+    index_map_c[i] = std::make_shared<common::IndexMap>(
+        comm, num_local_cells[i], cell_ghost_indices[i], ghost_owners[i]);
   }
 
   // Send and receive  ((input vertex index) -> (new global index, owner
@@ -1122,7 +1122,6 @@ Topology mesh::create_topology(
   const std::vector<std::int64_t> unowned_vertex_data = exchange_indexing(
       comm, boundary_vertices, global_vertex_to_ranks, global_offset_v,
       owned_vertices, local_vertex_indices);
-
   assert(unowned_vertex_data.size() % 3 == 0);
 
   // Unpack received data and build array of ghost vertices and owners
@@ -1228,10 +1227,12 @@ Topology mesh::create_topology(
       });
   std::sort(global_to_local_vertices.begin(), global_to_local_vertices.end());
 
-  std::vector<std::vector<std::int32_t>> _cells_local_idx;
+  std::vector<std::vector<std::int32_t>> _cells_local_idx(cells.size());
   for (std::size_t i = 0; i < cell_type.size(); ++i)
-    _cells_local_idx.push_back(
-        convert_to_local_indexing(cells[i], global_to_local_vertices));
+  {
+    _cells_local_idx[i]
+        = convert_to_local_indexing(cells[i], global_to_local_vertices);
+  }
 
   // -- Create Topology object
 
