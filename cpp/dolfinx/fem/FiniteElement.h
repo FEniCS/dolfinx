@@ -271,10 +271,7 @@ public:
   /// - [in] cell The cell number
   /// - [in] block_size The block_size of the input data
   ///
-  /// @param[in] inverse Indicates whether the inverse transformations
-  /// should be returned
-  /// @param[in] transpose Indicates whether the transpose
-  /// transformations should be returned
+  /// @param[in] ttype The transformation type
   /// @param[in] scalar_element Indicates whether the scalar
   /// transformations should be returned for a vector element
   template <typename U>
@@ -388,10 +385,7 @@ public:
   /// - [in] cell The cell number
   /// - [in] block_size The block_size of the input data
   ///
-  /// @param[in] inverse Indicates whether the inverse transformations
-  /// should be returned
-  /// @param[in] transpose Indicates whether the transpose
-  /// transformations should be returned
+  /// @param[in] ttype The transformation type
   /// @param[in] scalar_element Indicated whether the scalar
   /// transformations should be returned for a vector element
   template <typename U>
