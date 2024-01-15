@@ -63,6 +63,8 @@ def test_prism():
     topology = create_topology(MPI.COMM_SELF, [CellType.prism], cells, orig_index, ghost_owners, boundary_vertices)
     assert len(topology.entity_types[2]) == 2
 
+    topology.create_entities(2)
+
 
 def test_parallel_mixed_mesh():
     rank = MPI.COMM_WORLD.Get_rank()
