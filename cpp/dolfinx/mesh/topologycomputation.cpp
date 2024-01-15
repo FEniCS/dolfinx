@@ -186,7 +186,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
           entity_to_local_idx.push_back(*entity_idx);
 
           // Only send entities that are not known to be ghosts
-          if (ghost_status[*entity_idx] != 0)
+          if (ghost_status[*entity_idx] != 1)
           {
             auto itr_local = std::lower_bound(ranks.begin(), ranks.end(), *it);
             assert(itr_local != ranks.end() and *itr_local == *it);
@@ -340,7 +340,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
     for (int i = 0; i < entity_count; ++i)
     {
       // Definitely ghost
-      if (ghost_status[i] == 0)
+      if (ghost_status[i] == 1)
         continue;
 
       if (auto ranks = shared_entities.links(i); ranks.empty())
@@ -377,7 +377,6 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
 
   //---------
   // Communicate global indices to other processes
-
   std::vector<int> ghost_owners(entity_count - num_local, -1);
   std::vector<std::int64_t> ghost_indices(entity_count - num_local, -1);
   {
@@ -596,7 +595,7 @@ compute_entities_by_key_matching(
   // Set ghost status array values
   // 0 = entities that are only in ghost cells (i.e. definitely not owned)
   // 1 = entities with local ownership or ownership that needs deciding
-  std::vector<std::int8_t> ghost_status(entity_count, 0);
+  std::vector<std::int8_t> ghost_status(entity_count, 1);
   for (std::size_t k = 0; k < cell_lists.size(); ++k)
   {
     auto cells = std::get<1>(cell_lists[k]);
@@ -606,13 +605,12 @@ compute_entities_by_key_matching(
     assert(cell_map->size_local() + cell_map->num_ghosts() == (int)num_cells);
 
     const std::int32_t ghost_offset = cell_map->size_local();
-
-    // Tag all entities in local cells with 1
-    for (std::size_t i = ghost_offset * num_entities_per_cell;
-         i < num_cells * num_entities_per_cell; ++i)
+    // Tag all entities in local cells with 0, leaving entities which only
+    // appear in ghost cells tagged.
+    for (std::int32_t i = 0; i < ghost_offset * num_entities_per_cell; ++i)
     {
       const std::int32_t idx = entity_index[i + cell_type_offsets[k]];
-      ghost_status[idx] = 1;
+      ghost_status[idx] = 0;
     }
   }
 
