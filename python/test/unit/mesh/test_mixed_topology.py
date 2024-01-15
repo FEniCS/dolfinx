@@ -1,5 +1,6 @@
 from mpi4py import MPI
-from dolfinx.cpp.mesh import create_topology, CellType
+from dolfinx.cpp.mesh import create_topology
+from dolfinx.mesh import CellType, create_unit_cube, GhostMode
 import numpy as np
 
 
@@ -99,3 +100,34 @@ def test_parallel_mixed_mesh():
     assert topology.index_maps(2)[1].size_global == size
 
     print(topology.index_maps(2)[0].size_global)
+
+
+def test_create_entities():
+    mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, CellType.prism, ghost_mode=GhostMode.none)
+
+    print('ncells = ', mesh.topology.index_map(3).size_local)
+
+    # Make triangle and quadrilateral facets
+    mesh.topology.create_entities(2)
+
+    assert mesh.topology.entity_types[2][0] == CellType.quadrilateral
+    assert mesh.topology.entity_types[2][1] == CellType.triangle
+
+    cell_quad = mesh.topology.connectivity((3, 0), (2, 0))
+    cell_tri = mesh.topology.connectivity((3, 0), (2, 1))
+
+    assert MPI.COMM_WORLD.allreduce(cell_quad.num_nodes) == 16
+    assert len(cell_quad.links(0)) == 3
+    assert MPI.COMM_WORLD.allreduce(cell_tri.num_nodes) == 16
+    assert len(cell_tri.links(0)) == 2
+
+    quad_v = mesh.topology.connectivity((2, 0), (0, 0))
+    tri_v = mesh.topology.connectivity((2, 1), (0, 0))
+    ims = mesh.topology.index_maps(2)
+    assert ims[0].size_global == 32
+    assert len(quad_v.links(0)) == 4
+    assert ims[1].size_global == 24
+    assert len(tri_v.links(0)) == 3
+
+    mesh.topology.create_entities(1)
+    print(mesh.topology.connectivity(3, 1))
