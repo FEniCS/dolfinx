@@ -21,7 +21,7 @@ struct ufcx_finite_element;
 
 namespace dolfinx::fem
 {
-
+/// DOF transformation type
 enum class transformation_type
 {
   standard = 0,
