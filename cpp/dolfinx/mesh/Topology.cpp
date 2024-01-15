@@ -828,8 +828,10 @@ std::int32_t Topology::create_entities(int dim)
   auto [cell_entity, entity_vertex, index_map, interprocess_entities]
       = compute_entities(_comm.comm(), *this, dim);
 
-  if (cell_entity)
-    set_connectivity(cell_entity, this->dim(), dim);
+  for (std::size_t k = 0; k < cell_entity.size(); ++k)
+  {
+    set_connectivity(cell_entity[k], {this->dim(), k}, {dim, 0});
+  }
 
   // TODO: is this check necessary? Seems redundant after the "skip check"
   if (entity_vertex)

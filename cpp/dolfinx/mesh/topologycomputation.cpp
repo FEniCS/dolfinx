@@ -460,7 +460,7 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
 /// @return Returns the (cell-entity connectivity, entity-vertex
 /// connectivity, index map for the entity distribution across
 /// processes, shared entities)
-std::tuple<graph::AdjacencyList<std::int32_t>,
+std::tuple<std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>,
            graph::AdjacencyList<std::int32_t>, common::IndexMap,
            std::vector<std::int32_t>>
 compute_entities_by_key_matching(
@@ -632,10 +632,18 @@ compute_entities_by_key_matching(
                 num_vertices_per_entity, ev.links(local_index[i]).begin());
   }
 
-  graph::AdjacencyList ce = graph::regular_adjacency_list(
-      local_index, cell_type_entities[0].size());
+  std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>> ce;
+  for (std::size_t k = 0; k < cell_lists.size(); ++k)
+  {
+    std::vector tmp(std::next(local_index.begin(), cell_type_offsets[k]),
+                    std::next(local_index.begin(), cell_type_offsets[k + 1]));
+    auto ce_k = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+        graph::regular_adjacency_list(std::move(tmp),
+                                      cell_type_entities[k].size()));
+    ce.push_back(ce_k);
+  }
 
-  return {std::move(ce), std::move(ev), std::move(index_map),
+  return {ce, std::move(ev), std::move(index_map),
           std::move(interprocess_entities)};
 }
 //-----------------------------------------------------------------------------
@@ -740,7 +748,7 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
+std::tuple<std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<common::IndexMap>, std::vector<std::int32_t>>
 mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim)
@@ -750,7 +758,8 @@ mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim)
 
   // Vertices must always exist
   if (dim == 0)
-    return {nullptr, nullptr, nullptr, std::vector<std::int32_t>()};
+    return {std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>(),
+            nullptr, nullptr, std::vector<std::int32_t>()};
 
   if (topology.connectivity(dim, 0))
   {
@@ -763,7 +772,8 @@ mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim)
           + std::to_string(dim)
           + " exist but cell-dim connectivity is missing.");
     }
-    return {nullptr, nullptr, nullptr, std::vector<std::int32_t>()};
+    return {std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>(),
+            nullptr, nullptr, std::vector<std::int32_t>()};
   }
 
   auto vertex_map = topology.index_map(0);
@@ -792,7 +802,7 @@ mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim)
   auto [d0, d1, im, interprocess_facets] = compute_entities_by_key_matching(
       comm, cell_lists, *vertex_map, entity_type, dim);
 
-  return {std::make_shared<graph::AdjacencyList<std::int32_t>>(std::move(d0)),
+  return {d0,
           std::make_shared<graph::AdjacencyList<std::int32_t>>(std::move(d1)),
           std::make_shared<common::IndexMap>(std::move(im)),
           std::move(interprocess_facets)};

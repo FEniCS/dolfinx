@@ -39,7 +39,7 @@ class Topology;
 /// Interprocess entities lie on the "true" boundary between owned cells of each
 /// process. If the entities already exist, then {nullptr, nullptr, nullptr,
 /// std::vector()} is returned.
-std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
+std::tuple<std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<common::IndexMap>, std::vector<std::int32_t>>
 compute_entities(MPI_Comm comm, const Topology& topology, int dim);
