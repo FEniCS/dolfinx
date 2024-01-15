@@ -23,33 +23,18 @@ int cell_degree(mesh::CellType type, int num_nodes)
   case mesh::CellType::interval:
     return num_nodes - 1;
   case mesh::CellType::triangle:
-    switch (num_nodes)
+  {
+    const int n = (std::sqrt(1 + 8 * num_nodes) - 1) / 2;
+    if (2 * num_nodes != n * (n + 1))
     {
-    case 3:
-      return 1;
-    case 6:
-      return 2;
-    case 10:
-      return 3;
-    case 15:
-      return 4;
-    case 21:
-      return 5;
-    case 28:
-      return 6;
-    case 36:
-      return 7;
-    case 45:
-      LOG(WARNING) << "8th order mesh is untested";
-      return 8;
-    case 55:
-      LOG(WARNING) << "9th order mesh is untested";
-      return 9;
-    default:
       throw std::runtime_error("Unknown triangle layout. Number of nodes: "
                                + std::to_string(num_nodes));
     }
+    return n - 1;
+  }
   case mesh::CellType::tetrahedron:
+    // n * (n + 1) * (n + 2) = 6*A
+    // return n - 1;
     switch (num_nodes)
     {
     case 4:
@@ -59,28 +44,29 @@ int cell_degree(mesh::CellType type, int num_nodes)
     case 20:
       return 3;
     default:
-      throw std::runtime_error("Unknown tetrahedron layout.");
+      throw std::runtime_error("Unknown tetrahedron layout. Number of nodes: "
+                               + std::to_string(num_nodes));
     }
   case mesh::CellType::quadrilateral:
   {
     const int n = std::sqrt(num_nodes);
     if (num_nodes != n * n)
     {
-      throw std::runtime_error("Quadrilateral of order "
-                               + std::to_string(num_nodes) + " not supported");
+      throw std::runtime_error("Unknown quadrilateral layout. Number of nodes: "
+                               + std::to_string(num_nodes));
     }
     return n - 1;
   }
   case mesh::CellType::hexahedron:
-    switch (num_nodes)
+  {
+    const int n = std::cbrt(num_nodes);
+    if (num_nodes != n * n * n)
     {
-    case 8:
-      return 1;
-    case 27:
-      return 2;
-    default:
-      throw std::runtime_error("Unsupported hexahedron layout");
+      throw std::runtime_error("Unknown hexahedron layout. Number of nodes: "
+                               + std::to_string(num_nodes));
     }
+    return n - 1;
+  }
   case mesh::CellType::prism:
     switch (num_nodes)
     {
@@ -89,7 +75,8 @@ int cell_degree(mesh::CellType type, int num_nodes)
     case 15:
       return 2;
     default:
-      throw std::runtime_error("Unsupported prism layout");
+      throw std::runtime_error("Unknown prism layout. Number of nodes: "
+                               + std::to_string(num_nodes));
     }
   case mesh::CellType::pyramid:
     switch (num_nodes)
@@ -99,29 +86,30 @@ int cell_degree(mesh::CellType type, int num_nodes)
     case 13:
       return 2;
     default:
-      throw std::runtime_error("Unsupported pyramid layout");
+      throw std::runtime_error("Unknown pyramid layout. Number of nodes: "
+                               + std::to_string(num_nodes));
     }
   default:
     throw std::runtime_error("Unknown cell type.");
   }
 }
 
-std::uint8_t vec_pop(std::vector<std::uint8_t>& v, int i)
+std::uint16_t vec_pop(std::vector<std::uint16_t>& v, int i)
 {
   auto pos = (i < 0) ? v.end() + i : v.begin() + i;
-  std::uint8_t value = *pos;
+  std::uint16_t value = *pos;
   v.erase(pos);
   return value;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> vtk_triangle(int num_nodes)
+std::vector<std::uint16_t> vtk_triangle(int num_nodes)
 {
   // Vertices
-  std::vector<std::uint8_t> map(num_nodes);
+  std::vector<std::uint16_t> map(num_nodes);
   std::iota(map.begin(), map.begin() + 3, 0);
 
   int j = 3;
-  std::uint8_t degree = cell_degree(mesh::CellType::triangle, num_nodes);
+  std::uint16_t degree = cell_degree(mesh::CellType::triangle, num_nodes);
   for (int k = 1; k < degree; ++k)
     map[j++] = 3 + 2 * (degree - 1) + k - 1;
   for (int k = 1; k < degree; ++k)
@@ -134,9 +122,9 @@ std::vector<std::uint8_t> vtk_triangle(int num_nodes)
 
   // Interior VTK is ordered as a lower order triangle, while FEniCS
   // orders them lexicographically.
-  std::vector<std::uint8_t> remainders(num_nodes - j);
+  std::vector<std::uint16_t> remainders(num_nodes - j);
   std::iota(remainders.begin(), remainders.end(), 0);
-  const std::uint8_t base = 3 * degree;
+  const std::uint16_t base = 3 * degree;
 
   while (remainders.size() > 0)
   {
@@ -166,7 +154,7 @@ std::vector<std::uint8_t> vtk_triangle(int num_nodes)
   return map;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> vtk_tetrahedron(int num_nodes)
+std::vector<std::uint16_t> vtk_tetrahedron(int num_nodes)
 {
   switch (num_nodes)
   {
@@ -182,7 +170,7 @@ std::vector<std::uint8_t> vtk_tetrahedron(int num_nodes)
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> vtk_wedge(int num_nodes)
+std::vector<std::uint16_t> vtk_wedge(int num_nodes)
 {
   switch (num_nodes)
   {
@@ -195,7 +183,7 @@ std::vector<std::uint8_t> vtk_wedge(int num_nodes)
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> vtk_pyramid(int num_nodes)
+std::vector<std::uint16_t> vtk_pyramid(int num_nodes)
 {
   switch (num_nodes)
   {
@@ -208,7 +196,7 @@ std::vector<std::uint8_t> vtk_pyramid(int num_nodes)
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> vtk_quadrilateral(int num_nodes)
+std::vector<std::uint16_t> vtk_quadrilateral(int num_nodes)
 {
   // Check that num_nodes is a square integer (since quadrilaterals are
   // tensor products of intervals, the number of nodes for each interval
@@ -217,7 +205,7 @@ std::vector<std::uint8_t> vtk_quadrilateral(int num_nodes)
 
   // Number of nodes in each direction
   const int n = sqrt(num_nodes);
-  std::vector<std::uint8_t> map(num_nodes);
+  std::vector<std::uint16_t> map(num_nodes);
 
   // Vertices
   map[0] = 0;
@@ -245,22 +233,52 @@ std::vector<std::uint8_t> vtk_quadrilateral(int num_nodes)
   return map;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> vtk_hexahedron(int num_nodes)
+std::vector<std::uint16_t> vtk_hexahedron(int num_nodes)
 {
-  switch (num_nodes)
+  const int n = std::cbrt(num_nodes);
+  assert(n * n * n == num_nodes);
+
+  std::vector<std::uint16_t> map(num_nodes);
+
+  // Vertices
+  map[0] = 0;
+  map[1] = 1;
+  map[2] = 3;
+  map[3] = 2;
+  map[4] = 4;
+  map[5] = 5;
+  map[6] = 7;
+  map[7] = 6;
+
+  // Edges
+  int j = 8;
+  int base = 8;
+  const int edge_nodes = n - 2;
+  const std::vector<int> edges = {0, 3, 5, 1, 8, 10, 11, 9, 2, 4, 7, 6};
+  for (int e : edges)
   {
-  case 8:
-    return {0, 1, 3, 2, 4, 5, 7, 6};
-  case 27:
-    // This is the documented VTK ordering
-    return {0,  1,  3,  2,  4,  5,  7,  6,  8,  11, 13, 9,  16, 18,
-            19, 17, 10, 12, 15, 14, 22, 23, 21, 24, 20, 25, 26};
-  default:
-    throw std::runtime_error("Higher order hexahedron not supported.");
+    for (int i = 0; i < edge_nodes; ++i)
+      map[j++] = base + edge_nodes * e + i;
   }
+  base += 12 * edge_nodes;
+
+  const int face_nodes = edge_nodes * edge_nodes;
+  const std::vector<int> faces = {2, 3, 1, 4, 0, 5};
+  for (int f : faces)
+  {
+    for (int i = 0; i < face_nodes; ++i)
+      map[j++] = base + face_nodes * f + i;
+  }
+  base += 6 * face_nodes;
+
+  const int volume_nodes = face_nodes * edge_nodes;
+  for (int i = 0; i < volume_nodes; ++i)
+    map[j++] = base + i;
+
+  return map;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> gmsh_triangle(int num_nodes)
+std::vector<std::uint16_t> gmsh_triangle(int num_nodes)
 {
   switch (num_nodes)
   {
@@ -275,7 +293,7 @@ std::vector<std::uint8_t> gmsh_triangle(int num_nodes)
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> gmsh_tetrahedron(int num_nodes)
+std::vector<std::uint16_t> gmsh_tetrahedron(int num_nodes)
 {
   switch (num_nodes)
   {
@@ -291,7 +309,7 @@ std::vector<std::uint8_t> gmsh_tetrahedron(int num_nodes)
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> gmsh_hexahedron(int num_nodes)
+std::vector<std::uint16_t> gmsh_hexahedron(int num_nodes)
 {
   switch (num_nodes)
   {
@@ -305,7 +323,7 @@ std::vector<std::uint8_t> gmsh_hexahedron(int num_nodes)
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> gmsh_quadrilateral(int num_nodes)
+std::vector<std::uint16_t> gmsh_quadrilateral(int num_nodes)
 {
   switch (num_nodes)
   {
@@ -320,7 +338,7 @@ std::vector<std::uint8_t> gmsh_quadrilateral(int num_nodes)
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> gmsh_prism(int num_nodes)
+std::vector<std::uint16_t> gmsh_prism(int num_nodes)
 {
   switch (num_nodes)
   {
@@ -333,7 +351,7 @@ std::vector<std::uint8_t> gmsh_prism(int num_nodes)
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> gmsh_pyramid(int num_nodes)
+std::vector<std::uint16_t> gmsh_pyramid(int num_nodes)
 {
   switch (num_nodes)
   {
@@ -347,10 +365,10 @@ std::vector<std::uint8_t> gmsh_pyramid(int num_nodes)
 }
 } // namespace
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> io::cells::perm_vtk(mesh::CellType type,
-                                              int num_nodes)
+std::vector<std::uint16_t> io::cells::perm_vtk(mesh::CellType type,
+                                               int num_nodes)
 {
-  std::vector<std::uint8_t> map;
+  std::vector<std::uint16_t> map;
   switch (type)
   {
   case mesh::CellType::point:
@@ -385,10 +403,10 @@ std::vector<std::uint8_t> io::cells::perm_vtk(mesh::CellType type,
   return io::cells::transpose(map);
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> io::cells::perm_gmsh(mesh::CellType type,
-                                               int num_nodes)
+std::vector<std::uint16_t> io::cells::perm_gmsh(mesh::CellType type,
+                                                int num_nodes)
 {
-  std::vector<std::uint8_t> map;
+  std::vector<std::uint16_t> map;
   switch (type)
   {
   case mesh::CellType::point:
@@ -423,10 +441,10 @@ std::vector<std::uint8_t> io::cells::perm_gmsh(mesh::CellType type,
   return io::cells::transpose(map);
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t>
-io::cells::transpose(std::span<const std::uint8_t> map)
+std::vector<std::uint16_t>
+io::cells::transpose(std::span<const std::uint16_t> map)
 {
-  std::vector<std::uint8_t> transpose(map.size());
+  std::vector<std::uint16_t> transpose(map.size());
   for (std::size_t i = 0; i < map.size(); ++i)
     transpose[map[i]] = i;
   return transpose;
@@ -435,7 +453,7 @@ io::cells::transpose(std::span<const std::uint8_t> map)
 std::vector<std::int64_t>
 io::cells::apply_permutation(std::span<const std::int64_t> cells,
                              std::array<std::size_t, 2> shape,
-                             std::span<const std::uint8_t> p)
+                             std::span<const std::uint16_t> p)
 {
   assert(cells.size() == shape[0] * shape[1]);
   assert(shape[1] == p.size());
