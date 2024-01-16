@@ -16,14 +16,6 @@ if(NOT TARGET dolfinx)
   find_package(DOLFINX REQUIRED)
 endif()
 
-#add_custom_command(
-#  OUTPUT poisson.c
-#  COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/poisson.py ${SCALAR_TYPE}
-#  VERBATIM
-#  DEPENDS poisson.py
-#  COMMENT "Compile poisson.py using FFCx"
-#)
-
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 add_executable(${PROJECT_NAME} main.cpp)

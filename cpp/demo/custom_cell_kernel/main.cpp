@@ -2,6 +2,7 @@
 // .. code-block:: cpp
 
 #include <basix/finite-element.h>
+#include <basix/mdspan.hpp>
 #include <cmath>
 #include <dolfinx.h>
 #include <dolfinx/la/MatrixCSR.h>
@@ -13,6 +14,10 @@ using namespace dolfinx;
 
 using T = double; // field scalar type
 using U = double; // geometry scalar type
+
+template <typename T, std::size_t ndim>
+using mdspan_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+    const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, ndim>>;
 
 // .. code-block:: cpp
 
@@ -27,9 +32,9 @@ int main(int argc, char* argv[])
         mesh::create_rectangle<U>(MPI_COMM_WORLD, {{{0.0, 0.0}, {2.0, 1.0}}},
                                   {32, 16}, mesh::CellType::triangle, part));
 
-    // Create basix element. This will be used to construct basis functions
-    // inside the custom cell kernel.
-    basix::FiniteElement e = basix::create_element<U>(
+    // Create basix element for the field u. This will be used to construct
+    // basis functions inside the custom cell kernel.
+    basix::FiniteElement e = basix::create_element<T>(
         basix::element::family::P,
         mesh::cell_type_to_basix_type(mesh::CellType::triangle), 1,
         basix::element::lagrange_variant::unset,
@@ -45,13 +50,19 @@ int main(int argc, char* argv[])
     std::vector<std::int32_t> cells(size_local);
     std::iota(cells.begin(), cells.end(), 0);
 
+    // Basis element tabulation exploration
+    auto tabulate_shape = e.tabulate_shape(0, 3);
+    auto length
+        = std::accumulate(std::begin(tabulate_shape), std::end(tabulate_shape),
+                          0, std::multiplies<>{});
+    std::vector<T> basis(length);
+    mdspan_t<T, 4> basis_span(basis.data(), tabulate_shape);
+
     // Define element kernel
     std::function<void(T*, const T*, const T*, const U*, const int*,
                        const u_int8_t*)>
         mass_cell_kernel
-        = [](T*, const T*, const T*, const U*, const int*, const u_int8_t*) {
-
-          };
+        = [e](T*, const T*, const T*, const U*, const int*, const u_int8_t*) {};
     std::map integrals{
         std::pair{fem::IntegralType::cell,
                   std::vector{std::tuple{-1, mass_cell_kernel, cells}}}};
