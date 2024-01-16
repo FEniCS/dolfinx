@@ -3,6 +3,7 @@
 
 #include <basix/finite-element.h>
 #include <basix/mdspan.hpp>
+#include <basix/quadrature.h>
 #include <cmath>
 #include <dolfinx.h>
 #include <dolfinx/la/MatrixCSR.h>
@@ -27,7 +28,8 @@ int main(int argc, char* argv[])
   MPI_Init(&argc, &argv);
   {
     // Create mesh and function space
-    const auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
+    const auto part
+        = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
     auto mesh = std::make_shared<mesh::Mesh<U>>(
         mesh::create_rectangle<U>(MPI_COMM_WORLD, {{{0.0, 0.0}, {2.0, 1.0}}},
                                   {32, 16}, mesh::CellType::triangle, part));
@@ -39,6 +41,13 @@ int main(int argc, char* argv[])
         mesh::cell_type_to_basix_type(mesh::CellType::triangle), 1,
         basix::element::lagrange_variant::unset,
         basix::element::dpc_variant::unset, false);
+
+    const int max_degree = 2;
+    auto quadrature_type = basix::quadrature::get_default_rule(
+        basix::cell::type::triangle, max_degree);
+    auto [points, weights] = basix::quadrature::make_quadrature<T>(
+        quadrature_type, basix::cell::type::triangle,
+        basix::polyset::type::standard, max_degree);
 
     // Create a scalar function space
     auto V = std::make_shared<fem::FunctionSpace<U>>(
@@ -58,13 +67,11 @@ int main(int argc, char* argv[])
     std::vector<T> basis(length);
     mdspan_t<T, 4> basis_span(basis.data(), tabulate_shape);
 
-
     // Define element kernel
     std::function<void(T*, const T*, const T*, const U*, const int*,
                        const u_int8_t*)>
         mass_cell_kernel
-        = [](T*, const T*, const T*, const U*, const int*, const u_int8_t*) {
-	};
+        = [](T*, const T*, const T*, const U*, const int*, const u_int8_t*) {};
     const std::map integrals{
         std::pair{fem::IntegralType::cell,
                   std::vector{std::tuple{-1, mass_cell_kernel, cells}}}};
