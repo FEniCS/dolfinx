@@ -753,8 +753,7 @@ Topology::Topology(MPI_Comm comm, const std::vector<CellType>& cell_types)
       for (auto c : cell_types)
       {
         assert(cell_dim(c) == tdim);
-        std::int8_t nf = cell_num_entities(c, tdim - 1);
-        for (std::int8_t i = 0; i < nf; ++i)
+        for (std::int8_t i = 0; i < cell_num_entities(c, tdim - 1); ++i)
           facet_types.push_back(cell_facet_type(c, i));
       }
       std::sort(facet_types.begin(), facet_types.end());

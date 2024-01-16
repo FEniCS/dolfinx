@@ -170,7 +170,7 @@ public:
   /// @return Cell type that the topology is for
   CellType cell_type() const;
 
-  /// @brief  Get the entity types in the topology for a given dimension
+  /// @brief Get the entity types in the topology for a given dimension
   /// @param dim Topological dimension
   /// @return List of entity types
   std::vector<CellType> entity_types(std::int8_t dim) const;
