@@ -11,8 +11,8 @@
 
 using namespace dolfinx;
 
-using T = double;
-using U = typename dolfinx::scalar_value_type_t<T>;
+using T = double; // field scalar type
+using U = double; // geometry scalar type
 
 // .. code-block:: cpp
 
@@ -46,12 +46,12 @@ int main(int argc, char* argv[])
     std::iota(cells.begin(), cells.end(), 0);
 
     // Define element kernel
-    std::function<void(double*, const double*, const double*, const double*,
-                       const int*, const u_int8_t*)>
-        mass_cell_kernel = [](double*, const double*, const double*,
-                              const double*, const int*, const u_int8_t*) {
+    std::function<void(T*, const T*, const T*, const U*, const int*,
+                       const u_int8_t*)>
+        mass_cell_kernel
+        = [](T*, const T*, const T*, const U*, const int*, const u_int8_t*) {
 
-        };
+          };
     std::map integrals{
         std::pair{fem::IntegralType::cell,
                   std::vector{std::tuple{-1, mass_cell_kernel, cells}}}};
