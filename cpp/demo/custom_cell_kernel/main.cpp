@@ -1,6 +1,8 @@
 // Custom cell kernel (C++)
 // .. code-block:: cpp
 
+#include <iostream>
+
 #include <basix/finite-element.h>
 #include <basix/mdspan.hpp>
 #include <basix/quadrature.h>
@@ -43,11 +45,18 @@ int main(int argc, char* argv[])
         basix::element::dpc_variant::unset, false);
 
     const int max_degree = 2;
-    auto quadrature_type = basix::quadrature::get_default_rule(
+    const auto quadrature_type = basix::quadrature::get_default_rule(
         basix::cell::type::triangle, max_degree);
-    auto [points, weights] = basix::quadrature::make_quadrature<T>(
+    const auto [points, weights] = basix::quadrature::make_quadrature<T>(
         quadrature_type, basix::cell::type::triangle,
         basix::polyset::type::standard, max_degree);
+    mdspan_t<T, 2> points_span(points.data(), weights.size(), 2);
+
+    for (T i: points)
+      std::cout << i << ' ';
+    std::cout << std::endl;
+    for (T i: weights)
+      std::cout << i << ' ';
 
     // Create a scalar function space
     auto V = std::make_shared<fem::FunctionSpace<U>>(
@@ -66,6 +75,9 @@ int main(int argc, char* argv[])
                           0, std::multiplies<>{});
     std::vector<T> basis(length);
     mdspan_t<T, 4> basis_span(basis.data(), tabulate_shape);
+
+    // Tabulate basis functions
+    e.tabulate(0, points_span, basis_span);  
 
     // Define element kernel
     std::function<void(T*, const T*, const T*, const U*, const int*,
