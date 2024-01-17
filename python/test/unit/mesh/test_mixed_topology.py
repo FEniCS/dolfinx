@@ -180,3 +180,7 @@ def test_create_entities():
 
     mesh.topology.create_entities(1)
     print(mesh.topology.connectivity(3, 1))
+
+    mesh.topology.create_connectivity(2, 3)
+    print(mesh.topology.connectivity((2, 0), (3, 0)))
+    print(mesh.topology.connectivity((2, 1), (3, 0)))
