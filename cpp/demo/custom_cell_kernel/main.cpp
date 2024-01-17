@@ -50,13 +50,8 @@ int main(int argc, char* argv[])
     const auto [points, weights] = basix::quadrature::make_quadrature<T>(
         quadrature_type, basix::cell::type::triangle,
         basix::polyset::type::standard, max_degree);
-    mdspan_t<T, 2> points_span(points.data(), weights.size(), 2);
-
-    for (T i: points)
-      std::cout << i << ' ';
-    std::cout << std::endl;
-    for (T i: weights)
-      std::cout << i << ' ';
+    const int num_points = weights.size();
+    mdspan_t<const T, 2> points_span(points.data(), num_points, 2);
 
     // Create a scalar function space
     auto V = std::make_shared<fem::FunctionSpace<U>>(
@@ -69,7 +64,7 @@ int main(int argc, char* argv[])
     std::iota(cells.begin(), cells.end(), 0);
 
     // Basis element tabulation exploration
-    const auto tabulate_shape = e.tabulate_shape(0, 3);
+    const auto tabulate_shape = e.tabulate_shape(0, num_points);
     const auto length
         = std::accumulate(std::begin(tabulate_shape), std::end(tabulate_shape),
                           0, std::multiplies<>{});
@@ -77,7 +72,7 @@ int main(int argc, char* argv[])
     mdspan_t<T, 4> basis_span(basis.data(), tabulate_shape);
 
     // Tabulate basis functions
-    e.tabulate(0, points_span, basis_span);  
+    e.tabulate(0, points_span, basis_span); 
 
     // Define element kernel
     std::function<void(T*, const T*, const T*, const U*, const int*,
