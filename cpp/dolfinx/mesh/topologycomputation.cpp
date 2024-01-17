@@ -770,7 +770,7 @@ mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim,
   std::vector<std::tuple<
       mesh::CellType, std::shared_ptr<const graph::AdjacencyList<std::int32_t>>,
       std::shared_ptr<const common::IndexMap>>>
-      cell_lists;
+      cell_lists(cell_types.size());
 
   std::vector<CellType> cell_types = topology.entity_types(tdim);
   auto cell_index_maps = topology.index_maps(tdim);
@@ -781,7 +781,7 @@ mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim,
     auto cells = topology.connectivity({tdim, i}, {0, 0});
     if (!cells)
       throw std::runtime_error("Cell connectivity missing.");
-    cell_lists.push_back({cell_types[i], cells, cell_map});
+    cell_lists[i] = {cell_types[i], cells, cell_map};
   }
 
   auto [d0, d1, im, interprocess_facets] = compute_entities_by_key_matching(
@@ -798,14 +798,29 @@ mesh::compute_connectivity(const Topology& topology,
                            std::pair<std::int8_t, std::int8_t> d0,
                            std::pair<std::int8_t, std::int8_t> d1)
 {
-  LOG(INFO) << "Requesting connectivity (" << d0.first << "," << d0.second
-            << ") - (" << d1.first << "," << d1.second << ")";
+  LOG(INFO) << "Requesting connectivity (" << std::to_string(d0.first) << ","
+            << std::to_string(d0.second) << ") - (" << std::to_string(d1.first)
+            << "," << std::to_string(d1.second) << ")";
 
   // Return if connectivity has already been computed
   if (topology.connectivity(d0, d1))
     return {nullptr, nullptr};
 
-  // Get entities exist
+  // Return if no connectivity is possible
+  if (d0.first == d1.first and d0.second != d1.second)
+    return {nullptr, nullptr};
+
+  // No connectivity between these cell types
+  CellType c0 = topology.entity_types(d0.first)[d0.second];
+  CellType c1 = topology.entity_types(d1.first)[d1.second];
+  if ((c0 == CellType::hexahedron and c1 == CellType::triangle)
+      or (c0 == CellType::triangle and c1 == CellType::hexahedron))
+    return {nullptr, nullptr};
+  if ((c0 == CellType::tetrahedron and c1 == CellType::quadrilateral)
+      or (c0 == CellType::quadrilateral and c1 == CellType::tetrahedron))
+    return {nullptr, nullptr};
+
+  // Get entities if they exist
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c_d0_0
       = topology.connectivity(d0, {0, 0});
   if (d0.first > 0 and !topology.connectivity(d0, {0, 0}))
@@ -854,8 +869,8 @@ mesh::compute_connectivity(const Topology& topology,
       assert(c_d0_0);
       assert(topology.connectivity(d1, d0));
 
-      LOG(INFO) << "Computing mesh connectivity " << d0.first << " - "
-                << d1.first << " from transpose.";
+      LOG(INFO) << "Computing mesh connectivity " << std::to_string(d0.first)
+                << " - " << std::to_string(d1.first) << " from transpose.";
       auto c_d0_d1 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
           compute_from_transpose(*topology.connectivity(d1, d0),
                                  c_d0_0->num_nodes()));

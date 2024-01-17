@@ -102,6 +102,27 @@ def test_mixed_mesh_3d():
     assert t.num_nodes == 8
     assert len(t.links(0)) == 3
 
+    topology.create_connectivity(2, 3)
+    # Quad -> prism
+    t = topology.connectivity((2, 0), (3, 1))
+    assert t.num_nodes == 8
+    assert t.array.size == 3
+
+    # Quad -> hex
+    t = topology.connectivity((2, 0), (3, 2))
+    assert t.num_nodes == 8
+    assert t.array.size == 6
+
+    # Tri -> tet
+    t = topology.connectivity((2, 1), (3, 0))
+    assert t.num_nodes == 8
+    assert t.array.size == 8
+
+    # Tri -> prism
+    t = topology.connectivity((2, 1), (3, 1))
+    assert t.num_nodes == 8
+    assert t.array.size == 2
+
 
 def test_parallel_mixed_mesh():
     rank = MPI.COMM_WORLD.Get_rank()
