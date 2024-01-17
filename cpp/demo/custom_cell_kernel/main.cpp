@@ -65,9 +65,8 @@ int main(int argc, char* argv[])
 
     // Basis element tabulation exploration
     const auto tabulate_shape = e.tabulate_shape(0, num_points);
-    const auto length
-        = std::accumulate(std::begin(tabulate_shape), std::end(tabulate_shape),
-                          1, std::multiplies<>{});
+    const auto length = std::accumulate(
+        tabulate_shape.begin(), tabulate_shape.end(), 1, std::multiplies<>{});
     std::vector<T> basis(length);
     mdspan_t<T, 4> basis_span(basis.data(), tabulate_shape);
 
@@ -75,7 +74,8 @@ int main(int argc, char* argv[])
     e.tabulate(0, points_span, basis_span);
 
     // Calculate mass matrix on reference cell
-    std::vector<T> A_hat(2 * e.dim());
+    const auto e_dim = e.dim();
+    std::vector<T> A_hat(e_dim * e_dim);
     mdspan_t<T, 2> A_hat_span(A_hat.data(), e.dim(), e.dim());
 
     // einsum k,ki,kj->ij on weights, basis_span, basis_span
