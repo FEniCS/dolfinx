@@ -177,7 +177,7 @@ std::array<std::vector<std::int32_t>, 2> refinement::transfer_facet_meshtag(
   // Get global index for each refined cell, before reordering in Mesh
   // construction
   const std::vector<std::int64_t>& original_cell_index
-      = topology1.original_cell_index;
+      = topology1.original_cell_index[0];
   assert(original_cell_index.size() == cell.size());
   std::int64_t global_offset = topology1.index_map(tdim)->local_range()[0];
 
@@ -297,7 +297,7 @@ refinement::transfer_cell_meshtag(const mesh::MeshTags<std::int32_t>& tags0,
   // Get global index for each refined cell, before reordering in Mesh
   // construction
   const std::vector<std::int64_t>& original_cell_index
-      = topology1.original_cell_index;
+      = topology1.original_cell_index[0];
   assert(original_cell_index.size() == cell.size());
   std::int64_t global_offset = topology1.index_map(tdim)->local_range()[0];
 
