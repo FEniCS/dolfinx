@@ -660,10 +660,8 @@ compute_entities_by_key_matching(
 /// of dimension d1.
 graph::AdjacencyList<std::int32_t>
 compute_from_transpose(const graph::AdjacencyList<std::int32_t>& c_d1_d0,
-                       const int num_entities_d0, int d0, int d1)
+                       const int num_entities_d0)
 {
-  LOG(INFO) << "Computing mesh connectivity " << d0 << " - " << d1
-            << " from transpose.";
 
   // Compute number of connections for each e0
   std::vector<std::int32_t> num_connections(num_entities_d0, 0);
@@ -692,17 +690,11 @@ compute_from_transpose(const graph::AdjacencyList<std::int32_t>& c_d1_d0,
 /// @param[in] c_d0_0 The d0 -> 0 (entity (d0) to vertex) connectivity
 /// @param[in] c_d0_0 The d1 -> 0 (entity (d1) to vertex) connectivity
 /// @param[in] cell_type_d0 The cell type for entities of dimension d0
-/// @param[in] d0 Topological dimension
-/// @param[in] d1 Topological dimension
 /// @return The d0 -> d1 connectivity
 graph::AdjacencyList<std::int32_t>
 compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
-                 const graph::AdjacencyList<std::int32_t>& c_d1_0, int d0,
-                 int d1)
+                 const graph::AdjacencyList<std::int32_t>& c_d1_0)
 {
-  // Only possible case is facet->edge
-  assert(d0 == 2 and d1 == 1);
-
   // Make a map from the sorted edge vertices to the edge index
   boost::unordered_map<std::array<std::int32_t, 2>, std::int32_t> edge_to_index;
   edge_to_index.reserve(c_d1_0.num_nodes());
@@ -742,7 +734,6 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
       connections.push_back(it->second);
     }
   }
-
   connections.shrink_to_fit();
   return graph::AdjacencyList(std::move(connections), std::move(offsets));
 }
@@ -803,9 +794,12 @@ mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim,
 }
 //-----------------------------------------------------------------------------
 std::array<std::shared_ptr<graph::AdjacencyList<std::int32_t>>, 2>
-mesh::compute_connectivity(const Topology& topology, int d0, int d1)
+mesh::compute_connectivity(const Topology& topology,
+                           std::pair<std::int8_t, std::int8_t> d0,
+                           std::pair<std::int8_t, std::int8_t> d1)
 {
-  LOG(INFO) << "Requesting connectivity " << d0 << " - " << d1;
+  LOG(INFO) << "Requesting connectivity (" << d0.first << "," << d0.second
+            << ") - (" << d1.first << "," << d1.second << ")";
 
   // Return if connectivity has already been computed
   if (topology.connectivity(d0, d1))
@@ -813,24 +807,24 @@ mesh::compute_connectivity(const Topology& topology, int d0, int d1)
 
   // Get entities exist
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c_d0_0
-      = topology.connectivity(d0, 0);
-  if (d0 > 0 and !topology.connectivity(d0, 0))
+      = topology.connectivity(d0, {0, 0});
+  if (d0.first > 0 and !topology.connectivity(d0, {0, 0}))
   {
     throw std::runtime_error("Missing entities of dimension "
-                             + std::to_string(d0) + ".");
+                             + std::to_string(d0.first) + ".");
   }
 
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c_d1_0
-      = topology.connectivity(d1, 0);
-  if (d1 > 0 and !topology.connectivity(d1, 0))
+      = topology.connectivity(d1, {0, 0});
+  if (d1.first > 0 and !topology.connectivity(d1, {0, 0}))
   {
     throw std::runtime_error("Missing entities of dimension "
-                             + std::to_string(d1) + ".");
+                             + std::to_string(d1.first) + ".");
   }
 
   // Start timer
-  common::Timer timer("Compute connectivity " + std::to_string(d0) + "-"
-                      + std::to_string(d1));
+  common::Timer timer("Compute connectivity " + std::to_string(d0.first) + "-"
+                      + std::to_string(d1.second));
 
   // Decide how to compute the connectivity
   if (d0 == d1)
@@ -839,33 +833,44 @@ mesh::compute_connectivity(const Topology& topology, int d0, int d1)
                 c_d0_0->num_nodes()),
             nullptr};
   }
-  else if (d0 < d1)
+  else if (d0.first < d1.first)
   {
     // Compute connectivity d1 - d0 (if needed), and take transpose
     if (!topology.connectivity(d1, d0))
     {
+      // Only possible case is edge->facet
+      assert(d0.first == 1 and d1.first == 2);
       auto c_d1_d0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
-          compute_from_map(*c_d1_0, *c_d0_0, d1, d0));
+          compute_from_map(*c_d1_0, *c_d0_0));
+
+      LOG(INFO) << "Computing mesh connectivity " << d0.first << " - "
+                << d1.first << " from transpose.";
       auto c_d0_d1 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
-          compute_from_transpose(*c_d1_d0, c_d0_0->num_nodes(), d0, d1));
+          compute_from_transpose(*c_d1_d0, c_d0_0->num_nodes()));
       return {c_d0_d1, c_d1_d0};
     }
     else
     {
       assert(c_d0_0);
       assert(topology.connectivity(d1, d0));
+
+      LOG(INFO) << "Computing mesh connectivity " << d0.first << " - "
+                << d1.first << " from transpose.";
       auto c_d0_d1 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
           compute_from_transpose(*topology.connectivity(d1, d0),
-                                 c_d0_0->num_nodes(), d0, d1));
+                                 c_d0_0->num_nodes()));
       return {c_d0_d1, nullptr};
     }
   }
-  else if (d0 > d1)
+  else if (d0.first > d1.first)
   {
     // Compute by mapping vertices from a lower dimension entity to
     // those of a higher dimension entity
+
+    // Only possible case is facet->edge
+    assert(d0.first == 2 and d1.first == 1);
     auto c_d0_d1 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
-        compute_from_map(*c_d0_0, *c_d1_0, d0, d1));
+        compute_from_map(*c_d0_0, *c_d1_0));
     return {c_d0_d1, nullptr};
   }
   else

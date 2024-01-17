@@ -90,6 +90,18 @@ def test_mixed_mesh_3d():
     assert t.num_nodes == 8
     assert len(t.links(0)) == 3
 
+    topology.create_connectivity(2, 1)
+
+    # Quad -> edge
+    t = topology.connectivity((2, 0), (1, 0))
+    assert t.num_nodes == 8
+    assert len(t.links(0)) == 4
+
+    # Tri -> edge
+    t = topology.connectivity((2, 1), (1, 0))
+    assert t.num_nodes == 8
+    assert len(t.links(0)) == 3
+
 
 def test_parallel_mixed_mesh():
     rank = MPI.COMM_WORLD.Get_rank()

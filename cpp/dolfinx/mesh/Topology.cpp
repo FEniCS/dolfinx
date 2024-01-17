@@ -868,26 +868,38 @@ void Topology::create_connectivity(int d0, int d1)
   create_entities(d0);
   create_entities(d1);
 
-  // Compute connectivity
-  const auto [c_d0_d1, c_d1_d0] = compute_connectivity(*this, d0, d1);
+  // Get the number of different entity types in each dimension
+  std::int32_t num_d0 = this->entity_types(d0).size();
+  std::int32_t num_d1 = this->entity_types(d1).size();
 
-  // NOTE: that to compute the (d0, d1) connections is it sometimes
-  // necessary to compute the (d1, d0) connections. We store the (d1,
-  // d0) for possible later use, but there is a memory overhead if they
-  // are not required. It may be better to not automatically store
-  // connectivity that was not requested, but advise in a docstring the
-  // most efficient order in which to call this function if several
-  // connectivities are needed.
+  // Create all connectivities between the two entity dimensions
+  for (std::int8_t i0 = 0; i0 < num_d0; ++i0)
+  {
+    for (std::int8_t i1 = 0; i1 < num_d1; ++i1)
+    {
+      // Compute connectivity
+      const auto [c_d0_d1, c_d1_d0]
+          = compute_connectivity(*this, {d0, i0}, {d1, i1});
 
-  // TODO: Caching policy/strategy.
-  // Concerning the note above: Provide an overload
-  // create_connectivity(std::vector<std::pair<int, int>>)?
+      // NOTE: that to compute the (d0, d1) connections is it sometimes
+      // necessary to compute the (d1, d0) connections. We store the (d1,
+      // d0) for possible later use, but there is a memory overhead if they
+      // are not required. It may be better to not automatically store
+      // connectivity that was not requested, but advise in a docstring the
+      // most efficient order in which to call this function if several
+      // connectivities are needed.
 
-  // Attach connectivities
-  if (c_d0_d1)
-    set_connectivity(c_d0_d1, d0, d1);
-  if (c_d1_d0)
-    set_connectivity(c_d1_d0, d1, d0);
+      // TODO: Caching policy/strategy.
+      // Concerning the note above: Provide an overload
+      // create_connectivity(std::vector<std::pair<int, int>>)?
+
+      // Attach connectivities
+      if (c_d0_d1)
+        set_connectivity(c_d0_d1, {d0, i0}, {d1, i1});
+      if (c_d1_d0)
+        set_connectivity(c_d1_d0, {d1, i1}, {d0, i0});
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 void Topology::create_entity_permutations()
