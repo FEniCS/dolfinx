@@ -126,7 +126,7 @@ namespace dolfinx::io::cells
 /// DOLFINx ordering, i.e. `a_dolfin[i] = a_vtk[p[i]]
 /// @details If `p = [0, 2, 1, 3]` and `a = [10, 3, 4, 7]`, then `a_p
 /// =[a[p[0]], a[p[1]], a[p[2]], a[p[3]]] = [10, 4, 3, 7]`
-std::vector<std::uint8_t> perm_vtk(mesh::CellType type, int num_nodes);
+std::vector<std::uint16_t> perm_vtk(mesh::CellType type, int num_nodes);
 
 /// Permutation array to map from Gmsh to DOLFINx node ordering
 ///
@@ -136,14 +136,14 @@ std::vector<std::uint8_t> perm_vtk(mesh::CellType type, int num_nodes);
 /// DOLFINx ordering, i.e. `a_dolfin[i] = a_gmsh[p[i]]
 /// @details If `p = [0, 2, 1, 3]` and `a = [10, 3, 4, 7]`, then `a_p
 /// =[a[p[0]], a[p[1]], a[p[2]], a[p[3]]] = [10, 4, 3, 7]`
-std::vector<std::uint8_t> perm_gmsh(mesh::CellType type, int num_nodes);
+std::vector<std::uint16_t> perm_gmsh(mesh::CellType type, int num_nodes);
 
 /// Compute the transpose of a re-ordering map
 ///
 /// @param[in] map A re-ordering map
 /// @return Transpose of the `map`. E.g., is `map = {1, 2, 3, 0}`, the
 /// transpose will be `{3 , 0, 1, 2 }`.
-std::vector<std::uint8_t> transpose(std::span<const std::uint8_t> map);
+std::vector<std::uint16_t> transpose(std::span<const std::uint16_t> map);
 
 /// Permute cell topology by applying a permutation array for each cell
 /// @param[in] cells Array of cell topologies, with each row
@@ -156,7 +156,7 @@ std::vector<std::uint8_t> transpose(std::span<const std::uint8_t> map);
 /// as `cells`.
 std::vector<std::int64_t> apply_permutation(std::span<const std::int64_t> cells,
                                             std::array<std::size_t, 2> shape,
-                                            std::span<const std::uint8_t> p);
+                                            std::span<const std::uint16_t> p);
 
 /// Get VTK cell identifier
 /// @param[in] cell The cell type
