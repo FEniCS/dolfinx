@@ -177,16 +177,20 @@ vtk_tetrahedron_remainders(std::vector<std::uint16_t> remainders)
       break;
     }
 
-    const int deg = cell_degree(mesh::CellType::tetrahedron, remainders.size());
+    const int deg
+        = cell_degree(mesh::CellType::tetrahedron, remainders.size()) + 1;
 
     map[j++] = vec_pop(remainders, 0);
     map[j++] = vec_pop(remainders, deg - 2);
-    map[j++] = vec_pop(remainders, deg * (deg + 1));
+    map[j++] = vec_pop(remainders, deg * (deg + 1) / 2 - 3);
+    map[j++] = vec_pop(remainders, -1);
 
     if (deg > 2)
     {
       for (int i = 0; i < deg - 2; ++i)
+      {
         map[j++] = vec_pop(remainders, 0);
+      }
       int d = deg - 2;
       for (int i = 0; i < deg - 2; ++i)
       {
@@ -355,7 +359,7 @@ std::vector<std::uint16_t> vtk_tetrahedron(int num_nodes)
       for (int i = 0; i < degree - 2; ++i)
       {
         int d = i;
-        for (int ii = 0; ii <= degree - 2 - i; ++ii)
+        for (int ii = 0; ii < degree - 2 - i; ++ii)
         {
           face_dofs[fj++] = base + n_face_dofs * face + d;
           d += degree - 2 - ii;
@@ -381,6 +385,7 @@ std::vector<std::uint16_t> vtk_tetrahedron(int num_nodes)
   {
     map[j++] = r;
   }
+
   return map;
 }
 //-----------------------------------------------------------------------------
