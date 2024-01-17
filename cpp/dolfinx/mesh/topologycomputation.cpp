@@ -767,12 +767,12 @@ mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim,
   CellType entity_type = topology.entity_types(dim)[index];
 
   // Lists of all cells by cell type
+  std::vector<CellType> cell_types = topology.entity_types(tdim);
   std::vector<std::tuple<
       mesh::CellType, std::shared_ptr<const graph::AdjacencyList<std::int32_t>>,
       std::shared_ptr<const common::IndexMap>>>
       cell_lists(cell_types.size());
 
-  std::vector<CellType> cell_types = topology.entity_types(tdim);
   auto cell_index_maps = topology.index_maps(tdim);
   for (std::size_t i = 0; i < cell_types.size(); ++i)
   {
