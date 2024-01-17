@@ -1,7 +1,6 @@
 from mpi4py import MPI
 from dolfinx.cpp.mesh import create_topology
 from dolfinx.mesh import CellType, create_unit_cube, GhostMode
-import numpy as np
 
 
 def test_triquad():
@@ -111,11 +110,6 @@ def test_parallel_mixed_mesh():
 
     assert topology.entity_types[2][0] == CellType.triangle
     assert topology.entity_types[2][1] == CellType.quadrilateral
-    print(topology.connectivity((2, 0), (0, 0)))
-    print(topology.connectivity((2, 1), (0, 0)))
-
-    w = topology.index_map(0)
-    print(w.local_to_global(np.arange(6, dtype=int)))
 
     size = MPI.COMM_WORLD.Get_size()
     assert topology.index_maps(2)[0].size_global == size * 2
