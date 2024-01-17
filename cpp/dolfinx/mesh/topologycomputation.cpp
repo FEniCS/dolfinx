@@ -473,9 +473,6 @@ compute_entities_by_key_matching(
     const common::IndexMap& vertex_index_map, mesh::CellType entity_type,
     int dim)
 {
-  // FIXME
-  assert(cell_lists.size() == 1);
-
   if (dim == 0)
   {
     throw std::runtime_error(
@@ -500,7 +497,8 @@ compute_entities_by_key_matching(
       if (cell_entity_type(cell_type, dim, i) == entity_type)
         cell_type_entities[k].push_back(i);
     }
-    cell_type_offsets.push_back(num_cells * cell_type_entities[k].size());
+    cell_type_offsets.push_back(cell_type_offsets.back()
+                                + num_cells * cell_type_entities[k].size());
   }
 
   int num_vertices_per_entity = num_cell_vertices(entity_type);
@@ -632,15 +630,19 @@ compute_entities_by_key_matching(
                 num_vertices_per_entity, ev.links(local_index[i]).begin());
   }
 
-  std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>> ce;
+  std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>> ce(
+      cell_lists.size());
   for (std::size_t k = 0; k < cell_lists.size(); ++k)
   {
-    std::vector tmp(std::next(local_index.begin(), cell_type_offsets[k]),
-                    std::next(local_index.begin(), cell_type_offsets[k + 1]));
-    auto ce_k = std::make_shared<graph::AdjacencyList<std::int32_t>>(
-        graph::regular_adjacency_list(std::move(tmp),
-                                      cell_type_entities[k].size()));
-    ce.push_back(ce_k);
+
+    if (cell_type_entities[k].size() > 0)
+    {
+      std::vector tmp(std::next(local_index.begin(), cell_type_offsets[k]),
+                      std::next(local_index.begin(), cell_type_offsets[k + 1]));
+      ce[k] = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+          graph::regular_adjacency_list(std::move(tmp),
+                                        cell_type_entities[k].size()));
+    }
   }
 
   return {ce, std::move(ev), std::move(index_map),

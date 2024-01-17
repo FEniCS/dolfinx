@@ -38,6 +38,7 @@ def test_triquad():
 
 
 def test_mixed_mesh_3d():
+    # Mesh = 2 tets, 1 prism, 1 hex, joined.
     cells = [[0, 1, 2, 3, 1, 2, 3, 4], [2, 3, 4, 5, 6, 7], [3, 4, 6, 7, 8, 9, 10, 11]]
     orig_index = [[0, 1], [2], [3]]
     ghost_owners = [[], [], []]
@@ -51,23 +52,44 @@ def test_mixed_mesh_3d():
     assert len(entity_types[1]) == 1
     assert len(entity_types[2]) == 2
     assert len(entity_types[3]) == 3
-    assert CellType.triangle in entity_types[2]
-    assert CellType.quadrilateral in entity_types[2]
+    assert CellType.triangle == entity_types[2][1]
+    assert CellType.quadrilateral == entity_types[2][0]
 
-
-def test_prism():
-    cells = [[0, 1, 2, 3, 4, 5]]
-    orig_index = [[0]]
-    ghost_owners = [[]]
-    boundary_vertices = []
-
-    topology = create_topology(MPI.COMM_SELF, [CellType.prism], cells, orig_index, ghost_owners, boundary_vertices)
-
+    # Create triangle and quadrilateral facets
     topology.create_entities(2)
 
-    print(topology.connectivity(2, 0))
-    print(topology.connectivity(3, 2))
-    print(topology.entity_types)
+    # Tet -> quad
+    assert topology.connectivity((3, 0), (2, 0)) is None
+    # Tet -> triangle
+    t = topology.connectivity((3, 0), (2, 1))
+    assert t.num_nodes == 2
+    assert len(t.links(0)) == 4
+
+    # Prism -> quad
+    t = topology.connectivity((3, 1), (2, 0))
+    assert t.num_nodes == 1
+    assert len(t.links(0)) == 3
+    # Prism -> triangle
+    t = topology.connectivity((3, 1), (2, 1))
+    assert t.num_nodes == 1
+    assert len(t.links(0)) == 2
+
+    # Hex -> quad
+    t = topology.connectivity((3, 2), (2, 0))
+    assert t.num_nodes == 1
+    assert len(t.links(0)) == 6
+    # Hex -> triangle
+    assert topology.connectivity((3, 2), (2, 1)) is None
+
+    # Quad -> vertex
+    t = topology.connectivity((2, 0), (0, 0))
+    assert t.num_nodes == 8
+    assert len(t.links(0)) == 4
+
+    # Triangle -> vertex
+    t = topology.connectivity((2, 1), (0, 0))
+    assert t.num_nodes == 8
+    assert len(t.links(0)) == 3
 
 
 def test_parallel_mixed_mesh():

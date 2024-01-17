@@ -832,8 +832,8 @@ std::int32_t Topology::create_entities(int dim)
 
     for (std::size_t k = 0; k < cell_entity.size(); ++k)
     {
-      std::cout << "k = " << k << ", " << cell_entity[k]->num_nodes() << "\n";
-      set_connectivity(cell_entity[k], {this->dim(), k}, {dim, index});
+      if (cell_entity[k])
+        set_connectivity(cell_entity[k], {this->dim(), k}, {dim, index});
     }
 
     // TODO: is this check necessary? Seems redundant after the "skip check"
