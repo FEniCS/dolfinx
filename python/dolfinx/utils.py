@@ -192,5 +192,5 @@ class cffi_utils:
         """See PETSc `MatSetValuesBlockedLocal
         <https://petsc.org/release/manualpages/Mat/MatSetValuesBlockedLocal>`_
         documentation."""
-    except ImportError:
+    except (ImportError, KeyError):
         pass
