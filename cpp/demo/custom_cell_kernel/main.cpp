@@ -97,6 +97,7 @@ int main(int argc, char* argv[])
         mass_cell_kernel = [&A_hat_span](T* A_cell, const T*, const T*,
                                          const U*, const int*, const u_int8_t*)
     {
+      // TODO: Calculate detJ and scale
       for (std::size_t i = 0; i < A_hat_span.extent(0); ++i)
       {
         for (std::size_t j = 0; j < A_hat_span.extent(1); ++j)
