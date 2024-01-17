@@ -43,8 +43,16 @@ enum class CellType;
 class Topology
 {
 public:
-  /// Create empty mesh topology
+  /// @brief Empty Topology constructor
+  /// @param comm MPI communicator
+  /// @param cell_type Type of cell
   Topology(MPI_Comm comm, CellType cell_type);
+
+  /// @brief Create empty mesh topology with multiple cell types
+  /// @param comm MPI communicator
+  /// @param cell_type List of cell types
+  /// @warning Experimental
+  Topology(MPI_Comm comm, const std::vector<CellType>& cell_type);
 
   /// Copy constructor
   Topology(const Topology& topology) = default;
@@ -70,6 +78,17 @@ public:
   /// @warning This is experimental and likely to change
   void set_index_map(int dim, std::shared_ptr<const common::IndexMap> map);
 
+  /// @todo Merge with set_connectivity
+  ///
+  /// @brief Set the IndexMap for the `i`th celltype of dimension dim
+  /// @warning This is experimental and likely to change
+  /// @param dim Topological dimension
+  /// @param i Index of cell type within dimension `dim`. Cell types for each
+  /// dimension can be obtained with `entity_types(dim)`.
+  /// @param map Map to set
+  void set_index_map(std::int8_t dim, std::int8_t i,
+                     std::shared_ptr<const common::IndexMap> map);
+
   /// @brief Get the IndexMap that described the parallel distribution
   /// of the mesh entities.
   ///
@@ -78,8 +97,14 @@ public:
   /// `nullptr` if index map has not been set.
   std::shared_ptr<const common::IndexMap> index_map(int dim) const;
 
+  /// @param dim Topological dimension
+  /// @warning Experimental
+  /// @return List of index maps, one for each cell type
+  std::vector<std::shared_ptr<const common::IndexMap>>
+  index_maps(std::int8_t dim) const;
+
   /// @brief Return connectivity from entities of dimension d0 to
-  /// entities of dimension d1.
+  /// entities of dimension d1. Assumes only one entity type per dimension.
   ///
   /// @param[in] d0
   /// @param[in] d1
@@ -89,10 +114,39 @@ public:
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
   connectivity(int d0, int d1) const;
 
+  /// @brief Return the connectivity from entities of topological
+  /// dimension d0 to dimension d1. The entity type, and incident entity type
+  /// are each described by a pair (dim, index). The index within a topological
+  /// dimension `dim`, is that of the cell type given in `entity_types(dim)`.
+  /// @param d0 Pair of (topological dimension of entities,
+  ///                    index of "entity type" within topological dimension)
+  /// @param d1 Pair of (topological dimension of indicent entities,
+  ///                    index of incident "entity type" within topological
+  ///                    dimension)
+  /// @return AdjacencyList of connectivity from entity type in d0 to
+  /// entity types in d1, or nullptr if not yet computed.
+  std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
+  connectivity(std::pair<std::int8_t, std::int8_t> d0,
+               std::pair<std::int8_t, std::int8_t> d1) const;
+
   /// @todo Merge with set_index_map
   /// @brief Set connectivity for given pair of topological dimensions.
   void set_connectivity(std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
                         int d0, int d1);
+
+  /// @brief Set connectivity for given pair of entity types, defined by
+  /// dimension and index, as listed in `entity_types()`. General version for
+  /// mixed topology. Connectivity from d0 to d1.
+  /// @param c Connectivity AdjacencyList
+  /// @param d0 Pair of (topological dimension of entities,
+  ///                    index of "entity type" within topological dimension)
+  /// @param d1 Pair of (topological dimension of indicent entities,
+  ///                    index of incident "entity type" within topological
+  ///                    dimension)
+  /// @warning Experimental
+  void set_connectivity(std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
+                        std::pair<std::int8_t, std::int8_t> d0,
+                        std::pair<std::int8_t, std::int8_t> d1);
 
   /// @brief Returns the permutation information
   const std::vector<std::uint32_t>& get_cell_permutation_info() const;
@@ -113,7 +167,12 @@ public:
 
   /// @brief Cell type
   /// @return Cell type that the topology is for
-  CellType cell_type() const noexcept;
+  CellType cell_type() const;
+
+  /// @brief Get the entity types in the topology for a given dimension
+  /// @param dim Topological dimension
+  /// @return List of entity types
+  std::vector<CellType> entity_types(std::int8_t dim) const;
 
   /// @brief Create entities of given topological dimension.
   /// @param[in] dim Topological dimension
@@ -134,8 +193,8 @@ public:
   /// computed.
   const std::vector<std::int32_t>& interprocess_facets() const;
 
-  /// Original cell index
-  std::vector<std::int64_t> original_cell_index;
+  /// Original cell index for each cell type
+  std::vector<std::vector<std::int64_t>> original_cell_index;
 
   /// Mesh MPI communicator
   /// @return The communicator on which the topology is distributed
@@ -145,13 +204,26 @@ private:
   // MPI communicator
   dolfinx::MPI::Comm _comm;
 
-  // Cell type
-  CellType _cell_type;
+  // Cell types for entites in Topology, as follows:
+  // [CellType::point, edge_types..., facet_types..., cell_types...]
+  // Only one type is expected for vertices, (and usually edges), but facets
+  // and cells can be a list of multiple types, e.g. [quadrilateral, triangle]
+  // for facets.
+  // Offsets are position in the list for each entity dimension, in
+  // AdjacencyList style.
+  std::vector<CellType> _entity_types;
+  std::vector<std::int8_t> _entity_type_offsets;
 
-  // Parallel layout of entities for each dimension
-  std::array<std::shared_ptr<const common::IndexMap>, 4> _index_map;
+  // Parallel layout of entities for each dimension and cell type
+  // flattened in the same layout as _entity_types above.
+  std::vector<std::shared_ptr<const common::IndexMap>> _index_map;
 
-  // AdjacencyList for pairs [d0][d1] == d0 -> d1 connectivity
+  // Connectivity between entity dimensions and cell types, arranged as
+  // a 2D array. The indexing follows the order in _entity_types, i.e.
+  // increasing in topological dimension. There may be multiple types in each
+  // dimension, e.g. triangle and quadrilateral facets.
+  // Connectivity between different entity types of same dimension will always
+  // be nullptr.
   std::vector<std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>>
       _connectivity;
 
@@ -195,6 +267,24 @@ Topology create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
                          std::span<const std::int64_t> original_cell_index,
                          std::span<const int> ghost_owners, CellType cell_type,
                          std::span<const std::int64_t> boundary_vertices);
+
+/// @brief Create a topology of mixed cell type
+/// @param comm MPI Communicator
+/// @param cell_type List of cell types
+/// @param cells Lists of cells, using vertex indices, flattened, for each cell
+/// type.
+/// @param original_cell_index Input cell index for each cell type
+/// @param ghost_owners Owning rank for ghost cells (at end of each list of
+/// cells).
+/// @param boundary_vertices Vertices of undetermined ownership on external or
+/// inter-process boundary.
+/// @return
+Topology
+create_topology(MPI_Comm comm, const std::vector<CellType>& cell_type,
+                std::vector<std::span<const std::int64_t>> cells,
+                std::vector<std::span<const std::int64_t>> original_cell_index,
+                std::vector<std::span<const int>> ghost_owners,
+                std::span<const std::int64_t> boundary_vertices);
 
 /// @brief Create a topology for a subset of entities of a given
 /// topological dimension.
