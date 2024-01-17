@@ -67,18 +67,44 @@ int main(int argc, char* argv[])
     const auto tabulate_shape = e.tabulate_shape(0, num_points);
     const auto length
         = std::accumulate(std::begin(tabulate_shape), std::end(tabulate_shape),
-                          0, std::multiplies<>{});
+                          1, std::multiplies<>{});
     std::vector<T> basis(length);
     mdspan_t<T, 4> basis_span(basis.data(), tabulate_shape);
 
     // Tabulate basis functions
-    e.tabulate(0, points_span, basis_span); 
+    e.tabulate(0, points_span, basis_span);
+
+    // Calculate mass matrix on reference cell
+    std::vector<T> A_hat(2 * e.dim());
+    mdspan_t<T, 2> A_hat_span(A_hat.data(), e.dim(), e.dim());
+
+    // einsum k,ki,kj->ij on weights, basis_span, basis_span
+    for (std::size_t k = 0; k < weights.size(); ++k)
+    {
+      for (std::size_t i = 0; i < A_hat_span.extent(0); ++i)
+      {
+        for (std::size_t j = 0; j < A_hat_span.extent(1); ++j)
+        {
+          A_hat_span(i, j)
+              += weights[k] * basis_span(0, k, i, 0) * basis_span(0, k, j, 0);
+        }
+      }
+    }
 
     // Define element kernel
     std::function<void(T*, const T*, const T*, const U*, const int*,
                        const u_int8_t*)>
-        mass_cell_kernel
-        = [](T*, const T*, const T*, const U*, const int*, const u_int8_t*) {};
+        mass_cell_kernel = [&A_hat_span](T* A_cell, const T*, const T*,
+                                         const U*, const int*, const u_int8_t*)
+    {
+      for (std::size_t i = 0; i < A_hat_span.extent(0); ++i)
+      {
+        for (std::size_t j = 0; j < A_hat_span.extent(1); ++j)
+        {
+          A_cell[i * A_hat_span.extent(0) + j] = A_hat_span(i, j);
+        }
+      }
+    };
     const std::map integrals{
         std::pair{fem::IntegralType::cell,
                   std::vector{std::tuple{-1, mass_cell_kernel, cells}}}};
@@ -92,7 +118,7 @@ int main(int argc, char* argv[])
         {V->dofmap()->index_map_bs(), V->dofmap()->index_map_bs()});
     fem::sparsitybuild::cells(sparsity, cells, {*V->dofmap(), *V->dofmap()});
     sparsity.finalize();
-    auto A = la::MatrixCSR<double>(sparsity);
+    auto A = la::MatrixCSR<T>(sparsity);
 
     auto mat_add_values = A.mat_add_values();
     assemble_matrix(mat_add_values, *a, {});
