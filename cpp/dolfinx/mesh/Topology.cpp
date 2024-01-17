@@ -737,6 +737,8 @@ Topology::Topology(MPI_Comm comm, CellType cell_type)
     _entity_types.push_back(cell_facet_type(cell_type, 0));
     _entity_types.push_back(cell_type);
   }
+  // One facet type
+  _interprocess_facets.resize(1);
 }
 //-----------------------------------------------------------------------------
 Topology::Topology(MPI_Comm comm, const std::vector<CellType>& cell_types)
@@ -748,6 +750,7 @@ Topology::Topology(MPI_Comm comm, const std::vector<CellType>& cell_types)
   assert(tdim > 0);
   for (auto ct : cell_types)
     assert(cell_dim(ct) == tdim);
+  _interprocess_facets.resize(1);
 
   // Create all the entity types in the mesh
   if (tdim > 1)
@@ -768,7 +771,7 @@ Topology::Topology(MPI_Comm comm, const std::vector<CellType>& cell_types)
       }
       _entity_types.insert(_entity_types.end(), facet_types.begin(),
                            facet_types.end());
-
+      _interprocess_facets.resize(facet_types.size());
       _entity_type_offsets.push_back(_entity_types.size());
     }
   }
@@ -855,8 +858,9 @@ std::int32_t Topology::create_entities(int dim)
     // Store boundary facets
     if (dim == this->dim() - 1)
     {
-      _interprocess_facets = std::move(interprocess_entities);
-      std::sort(_interprocess_facets.begin(), _interprocess_facets.end());
+      std::sort(interprocess_entities.begin(), interprocess_entities.end());
+      assert(index < _interprocess_facets.size());
+      _interprocess_facets[index] = std::move(interprocess_entities);
     }
   }
   return this->index_maps(dim)[0]->size_local();
@@ -1004,7 +1008,13 @@ const std::vector<std::uint8_t>& Topology::get_facet_permutations() const
 //-----------------------------------------------------------------------------
 const std::vector<std::int32_t>& Topology::interprocess_facets() const
 {
-  return _interprocess_facets;
+  return _interprocess_facets[0];
+}
+//-----------------------------------------------------------------------------
+const std::vector<std::int32_t>&
+Topology::interprocess_facets(std::int8_t index) const
+{
+  return _interprocess_facets.at(index);
 }
 //-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const { return _entity_types.back(); }
