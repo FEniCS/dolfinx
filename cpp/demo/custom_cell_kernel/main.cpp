@@ -40,7 +40,7 @@ int main(int argc, char* argv[])
     // Create basix element for the field u. This will be used to construct
     // basis functions inside the custom cell kernel.
     constexpr int order = 1;
-    const basix::FiniteElement e = basix::create_element<T>(
+    basix::FiniteElement e = basix::create_element<T>(
         basix::element::family::P,
         mesh::cell_type_to_basix_type(mesh::CellType::triangle), order,
         basix::element::lagrange_variant::unset,
@@ -48,9 +48,9 @@ int main(int argc, char* argv[])
 
     // Construct quadrature rule
     constexpr int max_degree = 2 * order;
-    const auto quadrature_type = basix::quadrature::get_default_rule(
+    auto quadrature_type = basix::quadrature::get_default_rule(
         basix::cell::type::triangle, max_degree);
-    const auto [points, weights] = basix::quadrature::make_quadrature<T>(
+    auto [points, weights] = basix::quadrature::make_quadrature<T>(
         quadrature_type, basix::cell::type::triangle,
         basix::polyset::type::standard, max_degree);
     const auto num_points = static_cast<std::size_t>(weights.size());
@@ -67,8 +67,8 @@ int main(int argc, char* argv[])
     std::iota(cells.begin(), cells.end(), 0);
 
     // Tabulate basis functions
-    const auto tabulate_shape = e.tabulate_shape(0, num_points);
-    const auto length = std::accumulate(
+    auto tabulate_shape = e.tabulate_shape(0, num_points);
+    const std::size_t length = std::accumulate(
         tabulate_shape.begin(), tabulate_shape.end(), 1, std::multiplies<>{});
     std::vector<T> basis(length);
     mdspan_t<T, 4> basis_span(basis.data(), tabulate_shape);
