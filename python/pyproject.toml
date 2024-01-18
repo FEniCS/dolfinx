@@ -88,4 +88,4 @@ select = [
     # "SIM",
     # "PL",
 ]
-ignore = ["UP007"]
+ignore = ["UP007", "RUF012"]
