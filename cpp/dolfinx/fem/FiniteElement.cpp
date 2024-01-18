@@ -123,7 +123,8 @@ _extract_sub_element(const FiniteElement<T>& finite_element,
 template <std::floating_point T>
 FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
     : _signature(e.signature), _space_dim(e.space_dimension),
-      _value_shape(e.value_shape, e.value_shape + e.value_rank),
+      _value_shape(e.reference_value_shape,
+                   e.reference_value_shape + e.reference_value_rank),
       _bs(e.block_size), _is_mixed(e.element_type == ufcx_mixed_element)
 {
   const ufcx_shape _shape = e.cell_shape;

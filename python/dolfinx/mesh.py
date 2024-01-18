@@ -372,7 +372,7 @@ def create_mesh(comm: _MPI.Comm, cells: npt.NDArray[np.int64], x: npt.NDArray[np
                 # TODO: Resolve geometric dimension vs shape for manifolds
                 cmap = _coordinate_element(e)  # type: ignore
                 e_ufl = basix.ufl._BasixElement(e)  # type: ignore
-                e_ufl = basix.ufl.blocked_element(e_ufl, shape=(gdim,), gdim=gdim)
+                e_ufl = basix.ufl.blocked_element(e_ufl, shape=(gdim,))
                 domain = ufl.Mesh(e_ufl)
                 dtype = cmap.dtype
                 assert domain.geometric_dimension() == gdim

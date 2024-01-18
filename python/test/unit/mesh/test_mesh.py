@@ -641,13 +641,13 @@ def test_mesh_create_cmap(dtype):
     cells = [[0, 1, 2]]
 
     # ufl.Mesh case
-    domain = ufl.Mesh(element("Lagrange", shape, degree, gdim=gdim, shape=(2, ), dtype=dtype))
+    domain = ufl.Mesh(element("Lagrange", shape, degree, shape=(2, ), dtype=dtype))
     msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, x, domain)
     assert msh.geometry.cmap.dim == 3
     assert msh.ufl_domain().ufl_coordinate_element().value_shape == (2,)
 
     # basix.ufl.element
-    domain = element("Lagrange", shape, degree, gdim=gdim, shape=(2, ), dtype=dtype)
+    domain = element("Lagrange", shape, degree, shape=(2, ), dtype=dtype)
     msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, x, domain)
     assert msh.geometry.cmap.dim == 3
     assert msh.ufl_domain().ufl_coordinate_element().value_shape == (2,)

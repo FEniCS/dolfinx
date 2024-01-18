@@ -257,8 +257,8 @@ def test_vector_function_space_cell_type():
     gdim = 2
 
     # Create a mesh containing a single interval living in 2D
-    cell = Cell("interval", geometric_dimension=gdim)
-    domain = Mesh(element("Lagrange", "interval", 1, gdim=gdim, shape=(1,)))
+    cell = Cell("interval")
+    domain = Mesh(element("Lagrange", "interval", 1, shape=(1,)))
     cells = np.array([[0, 1]], dtype=np.int64)
     x = np.array([[0., 0.], [1., 1.]])
     mesh = create_mesh(comm, cells, x, domain)
@@ -275,7 +275,7 @@ def test_manifold_spaces():
         (0.0, 0.0, 1.0), (1.0, 1.0, 1.0),
         (1.0, 0.0, 0.0), (0.0, 1.0, 0.0)], dtype=default_real_type)
     cells = [(0, 1, 2), (0, 1, 3)]
-    domain = Mesh(element("Lagrange", "triangle", 1, gdim=3, shape=(2,), dtype=default_real_type))
+    domain = Mesh(element("Lagrange", "triangle", 1, shape=(2,), dtype=default_real_type))
     mesh = create_mesh(MPI.COMM_WORLD, cells, vertices, domain)
     gdim = mesh.geometry.dim
     QV = functionspace(mesh, ("Lagrange", 1, (gdim,)))
