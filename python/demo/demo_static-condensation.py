@@ -34,7 +34,7 @@ import ufl
 from basix.ufl import element
 from dolfinx import geometry
 from dolfinx.fem import (Form, Function, IntegralType, dirichletbc, form,
-                         functionspace, locate_dofs_topological)
+                         functionspace, locate_dofs_topological, form_cpp_class)
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                set_bc)
 from dolfinx.io import XDMFFile
@@ -138,7 +138,7 @@ def tabulate_A(A_, w_, c_, coords_, entity_local_index, permutation=ffi.NULL):
 
 
 # Prepare a Form with a condensed tabulation kernel
-formtype = Form.cpp_class(PETSc.ScalarType)  # type: ignore
+formtype = form_cpp_class(PETSc.ScalarType)  # type: ignore
 cells = np.arange(msh.topology.index_map(msh.topology.dim).size_local)
 integrals = {IntegralType.cell: [(-1, tabulate_A.address, cells)]}
 a_cond = Form(formtype([U._cpp_object, U._cpp_object], integrals, [], [], False, None))

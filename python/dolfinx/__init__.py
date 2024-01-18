@@ -20,7 +20,8 @@ except ImportError:
 
 from dolfinx import common
 from dolfinx import cpp as _cpp
-from dolfinx import fem, geometry, graph, io, jit, la, log, mesh, nls, plot, utils
+from dolfinx import (fem, geometry, graph, io, jit, la, log, mesh, nls, plot,
+                     utils)
 # Initialise logging
 from dolfinx.common import (TimingType, git_commit_hash, has_debug, has_kahip,
                             has_parmetis, list_timings, timing)

@@ -46,4 +46,4 @@ __all__ = [
     "form", "IntegralType", "create_vector",
     "locate_dofs_geometrical", "locate_dofs_topological",
     "extract_function_spaces", "transpose_dofmap", "create_nonmatching_meshes_interpolation_data",
-    "CoordinateElement", "coordinate_element"]
+    "CoordinateElement", "coordinate_element", "form_cpp_class"]

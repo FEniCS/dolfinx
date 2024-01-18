@@ -19,7 +19,7 @@ import dolfinx.utils
 from dolfinx import TimingType
 from dolfinx import cpp as _cpp
 from dolfinx import fem, la, list_timings
-from dolfinx.fem import Form, Function, IntegralType, functionspace
+from dolfinx.fem import Form, Function, IntegralType, functionspace, form_cpp_class
 from dolfinx.mesh import create_unit_square
 import ffcx.codegeneration.utils
 
@@ -90,7 +90,7 @@ def test_numba_assembly(dtype):
     integrals = {IntegralType.cell: [(-1, k2.address, cells),
                                      (12, k2.address, np.arange(0)),
                                      (2, k2.address, np.arange(0))]}
-    formtype = Form.cpp_class(dtype)
+    formtype = form_cpp_class(dtype)
     a = Form(formtype([V._cpp_object, V._cpp_object], integrals, [], [], False, None))
     integrals = {IntegralType.cell: [(-1, k1.address, cells)]}
     L = Form(formtype([V._cpp_object], integrals, [], [], False, None))
@@ -123,7 +123,7 @@ def test_coefficient(dtype):
     tdim = mesh.topology.dim
     num_cells = mesh.topology.index_map(tdim).size_local + mesh.topology.index_map(tdim).num_ghosts
     integrals = {IntegralType.cell: [(1, k1.address, np.arange(num_cells, dtype=np.int32))]}
-    formtype = Form.cpp_class(dtype)
+    formtype = form_cpp_class(dtype)
     L = Form(formtype([V._cpp_object], integrals, [vals._cpp_object], [], False, None))
 
     b = dolfinx.fem.assemble_vector(L)

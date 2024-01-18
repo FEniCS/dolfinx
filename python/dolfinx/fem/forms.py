@@ -81,29 +81,33 @@ class Form:
         """Integral types in the form"""
         return self._cpp_object.integral_types
 
-    @staticmethod
-    def cpp_class(dtype: npt.DTypeLike) -> typing.Union[_cpp.fem.Form_complex64,
-                                                        _cpp.fem.Form_complex128,
-                                                        _cpp.fem.Form_float32,
-                                                        _cpp.fem.Form_float64]:
-        """Return the wrapped C++ class of a variational form of a specific scalar type.
 
-        Args:
-            dtype: Scalar type of the required form class.
+def form_cpp_class(dtype: npt.DTypeLike) -> typing.Union[_cpp.fem.Form_float32,
+                                                         _cpp.fem.Form_float64,
+                                                         _cpp.fem.Form_complex64,
+                                                         _cpp.fem.Form_complex128]:
+    """Return the wrapped C++ class of a variational form of a specific scalar type.
 
-        Returns:
-            Wrapped C++ form class of the requested type.
-        """
-        if dtype == np.float32:
-            return _cpp.fem.Form_float32
-        elif dtype == np.float64:
-            return _cpp.fem.Form_float64
-        elif dtype == np.complex64:
-            return _cpp.fem.Form_complex64
-        elif dtype == np.complex128:
-            return _cpp.fem.Form_complex128
-        else:
-            raise NotImplementedError(f"Type {dtype} not supported.")
+    Args:
+        dtype: Scalar type of the required form class.
+
+    Returns:
+        Wrapped C++ form class of the requested type.
+
+    Note:
+        This function is for advanced usage, typically when writing
+        custom kernels using Numba or C.
+    """
+    if dtype == np.float32:
+        return _cpp.fem.Form_float32
+    elif dtype == np.float64:
+        return _cpp.fem.Form_float64
+    elif dtype == np.complex64:
+        return _cpp.fem.Form_complex64
+    elif dtype == np.complex128:
+        return _cpp.fem.Form_complex128
+    else:
+        raise NotImplementedError(f"Type {dtype} not supported.")
 
 
 _ufl_to_dolfinx_domain = {"cell": IntegralType.cell,
@@ -139,7 +143,7 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]],
         form_compiler_options = dict()
 
     form_compiler_options["scalar_type"] = dtype
-    ftype = Form.cpp_class(dtype)
+    ftype = form_cpp_class(dtype)
 
     def _form(form):
         """Compile a single UFL form"""
