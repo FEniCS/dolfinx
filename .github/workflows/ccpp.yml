@@ -60,25 +60,14 @@ jobs:
           python3 -m pip install git+https://github.com/FEniCS/basix.git@${{ github.event.inputs.basix_ref }}
           python3 -m pip install git+https://github.com/FEniCS/ffcx.git@${{ github.event.inputs.ffcx_ref }}
 
-      - name: Flake8 checks
+      - name: ruff C++ .py file checks
         run: |
           cd cpp/
-          python3 -m flake8 cmake
-          python3 -m flake8 demo
-          python3 -m flake8 test
-          cd ..
-          cd python/
-          python3 -m flake8 dolfinx
-          python3 -m flake8 demo
-          python3 -m flake8 test
-      - name: isort checks (non-blocking)
-        continue-on-error: true
+          ruff check .
+      - name: ruff Python interface checks
         run: |
-          cd cpp/
-          python3 -m isort --check .
-          cd ..
           cd python/
-          python3 -m isort --check .
+          ruff check .
       - name: mypy checks
         run: |
           cd python/

@@ -4,7 +4,7 @@
 # pip install -r build-requirements.txt
 [build-system]
 requires = [
-      "scikit-build-core[pyproject]>=0.5",
+      "scikit-build-core[pyproject]",
       "nanobind>=1.8.0",
       "petsc4py",
       "mpi4py",
@@ -27,7 +27,6 @@ dependencies = [
       "cffi",
       "petsc4py",
       "mpi4py",
-      "fenics-basix>=0.8.0.dev0,<0.9.0",
       "fenics-ffcx>=0.8.0.dev0,<0.9.0",
       "fenics-ufl>=2023.3.0.dev0,<2023.4.0",
 ]
@@ -57,9 +56,6 @@ wheel.license-files = ["../COPYING*"]
 [tool.pytest]
 junit_family = "xunit2"
 
-[tool.isort]
-line_length = 120
-
 [tool.mypy]
 # Suggested at https://blog.wolt.com/engineering/2021/09/30/professional-grade-mypy-configuration/
 # Goal would be to make all of the below True long-term
@@ -71,3 +67,36 @@ warn_return_any = false
 warn_unused_ignores = false
 show_error_codes = true
 ignore_missing_imports = true
+
+[tool.black]
+line-length = 120
+
+[tool.ruff]
+line-length = 120
+indent-width = 4
+allowed-confusables = ["σ"]
+
+[tool.ruff.lint]
+select = [
+    # "B",
+    # "D", # pydocstyle
+    "E",   # pycodestyle
+    "W",   # pycodestyle
+    "F",   # pyflakes
+    "I",   # isort
+    "RUF", # Ruff-specific rules
+    "UP",  # pyupgrade
+    # "ANN",
+    "ICN",
+    # "SIM",
+    # "PL",
+]
+ignore = []
+
+[tool.ruff.lint.isort]
+known-first-party = ["basix", "dolfinx", "ffcx", "ufl"]
+known-third-party = ["gmsh", "numba", "numpy", "pytest", "pyvista"]
+section-order = ["future", "standard-library", "mpi", "third-party", "first-party", "local-folder"]
+
+[tool.ruff.lint.isort.sections]
+"mpi" = ["mpi4py", "petsc4py"]
