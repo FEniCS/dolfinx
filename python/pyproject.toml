@@ -16,7 +16,7 @@ name = "fenics-dolfinx"
 version = "0.8.0.dev0"
 description = "DOLFINx Python interface"
 readme = "../README.md"
-requires-python = ">=3.8.0"
+requires-python = ">=3.9.0"
 license = { file = "../COPYING.LESSER" }
 authors = [
       { email = "fenics-steering-council@googlegroups.com" },
