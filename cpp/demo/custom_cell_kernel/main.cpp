@@ -120,7 +120,7 @@ int main(int argc, char* argv[])
                   std::vector{std::tuple{-1, mass_cell_kernel, cells}}}};
 
     // Define form from integral
-    const auto a = std::make_shared<fem::Form<T>>(
+    auto a = std::make_shared<fem::Form<T>>(
         fem::Form<T>({V, V}, integrals, {}, {}, false, mesh));
 
     auto sparsity = la::SparsityPattern(
