@@ -87,5 +87,6 @@ select = [
     "ICN",
     # "SIM",
     # "PL",
+    "NPY",
 ]
 ignore = ["UP007", "RUF012"]
