@@ -27,7 +27,7 @@ __all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk",
            "distribute_entity_data"]
 
 
-def _extract_cpp_functions(functions: typing.Union[typing.List[Function], Function]):
+def _extract_cpp_functions(functions: typing.Union[list[Function], Function]):
     """Extract C++ object for a single function or a list of functions"""
     if isinstance(functions, (list, tuple)):
         return [getattr(u, "_cpp_object", u) for u in functions]
@@ -53,7 +53,7 @@ if _cpp.common.has_adios2:
         _cpp_object: typing.Union[_cpp.io.VTXWriter_float32, _cpp.io.VTXWriter_float64]
 
         def __init__(self, comm: _MPI.Comm, filename: typing.Union[str, Path],
-                     output: typing.Union[Mesh, Function, typing.List[Function]],
+                     output: typing.Union[Mesh, Function, list[Function]],
                      engine: str = "BPFile"):
             """Initialize a writer for outputting data in the VTX format.
 
@@ -118,7 +118,7 @@ if _cpp.common.has_adios2:
         _cpp_object: typing.Union[_cpp.io.FidesWriter_float32, _cpp.io.FidesWriter_float64]
 
         def __init__(self, comm: _MPI.Comm, filename: typing.Union[str, Path],
-                     output: typing.Union[Mesh, typing.List[Function], Function],
+                     output: typing.Union[Mesh, list[Function], Function],
                      engine: str = "BPFile", mesh_policy: FidesMeshPolicy = FidesMeshPolicy.update):
             """Initialize a writer for outputting a mesh, a single Lagrange
             function or list of Lagrange functions sharing the same
@@ -189,7 +189,7 @@ class VTKFile(_cpp.io.VTKFile):
         """Write mesh to file for a given time (default 0.0)"""
         self.write(mesh._cpp_object, t)
 
-    def write_function(self, u: typing.Union[typing.List[Function], Function], t: float = 0.0) -> None:
+    def write_function(self, u: typing.Union[list[Function], Function], t: float = 0.0) -> None:
         """Write a single function or a list of functions to file for a given time (default 0.0)"""
         super().write(_extract_cpp_functions(u), t)
 
@@ -249,6 +249,6 @@ class XDMFFile(_cpp.io.XDMFFile):
 
 
 def distribute_entity_data(mesh: Mesh, entity_dim: int, entities: npt.NDArray[np.int64],
-                           values: npt.NDArray[np.int32]) -> typing.Tuple[npt.NDArray[np.int64],
+                           values: npt.NDArray[np.int32]) -> tuple[npt.NDArray[np.int64],
                                                                           npt.NDArray[np.int32]]:
     return _cpp.io.distribute_entity_data(mesh._cpp_object, entity_dim, entities, values)

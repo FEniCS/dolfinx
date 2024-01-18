@@ -64,7 +64,7 @@ def ufl_mesh(gmsh_cell: int, gdim: int, dtype: npt.DTypeLike) -> ufl.Mesh:
     return ufl.Mesh(element)
 
 
-def cell_perm_array(cell_type: CellType, num_nodes: int) -> typing.List[int]:
+def cell_perm_array(cell_type: CellType, num_nodes: int) -> list[int]:
     """The permutation array for permuting Gmsh ordering to DOLFINx ordering.
 
     Args:
@@ -104,7 +104,7 @@ def extract_topology_and_markers(model, name: typing.Optional[str] = None):
     # Get the physical groups from gmsh in the form [(dim1, tag1),
     # (dim1, tag2), (dim2, tag3),...]
     phys_grps = model.getPhysicalGroups()
-    topologies: typing.Dict[int, typing.Dict[str, npt.NDArray[typing.Any]]] = {}
+    topologies: dict[int, dict[str, npt.NDArray[typing.Any]]] = {}
     for dim, tag in phys_grps:
         # Get the entities of dimension `dim`, dim=0 -> Points, dim=1 -
         # >Lines, dim=2 -> Triangles/Quadrilaterals, etc.
@@ -180,7 +180,7 @@ def extract_geometry(model, name: typing.Optional[str] = None) -> npt.NDArray[np
 def model_to_mesh(model, comm: _MPI.Comm, rank: int, gdim: int = 3,
                   partitioner: typing.Optional[typing.Callable[
                       [_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32]] = None,
-                  dtype=default_real_type) -> typing.Tuple[
+                  dtype=default_real_type) -> tuple[
         Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
     """Create a Mesh from a Gmsh model.
 
@@ -299,7 +299,7 @@ def model_to_mesh(model, comm: _MPI.Comm, rank: int, gdim: int = 3,
 
 def read_from_msh(filename: str, comm: _MPI.Comm, rank: int = 0, gdim: int = 3,
                   partitioner: typing.Optional[typing.Callable[
-                      [_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32]] = None) -> typing.Tuple[
+                      [_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32]] = None) -> tuple[
         Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
     """Read a Gmsh .msh file and return a distributed :class:`dolfinx.mesh.Mesh` and and cell facet markers.
 
