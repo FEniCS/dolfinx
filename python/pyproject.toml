@@ -68,9 +68,6 @@ warn_unused_ignores = false
 show_error_codes = true
 ignore_missing_imports = true
 
-[tool.black]
-line-length = 120
-
 [tool.ruff]
 line-length = 120
 indent-width = 4
@@ -83,7 +80,7 @@ select = [
     "E",   # pycodestyle
     "W",   # pycodestyle
     "F",   # pyflakes
-    "I",   # isort
+    # "I",   # isort
     "RUF", # Ruff-specific rules
     "UP",  # pyupgrade
     # "ANN",
@@ -92,11 +89,3 @@ select = [
     # "PL",
 ]
 ignore = ["UP007"]
-
-[tool.ruff.lint.isort]
-known-first-party = ["basix", "dolfinx", "ffcx", "ufl"]
-known-third-party = ["gmsh", "numba", "numpy", "pytest", "pyvista"]
-section-order = ["future", "standard-library", "mpi", "third-party", "first-party", "local-folder"]
-
-[tool.ruff.lint.isort.sections]
-"mpi" = ["mpi4py", "petsc4py"]
