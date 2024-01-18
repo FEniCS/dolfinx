@@ -340,7 +340,7 @@ class Function(ufl.Coefficient):
 
         # Allocate memory for return value if not provided
         if u is None:
-            value_size = ufl.product(self.ufl_element().value_shape(self._V.mesh.domain))
+            value_size = ufl.product(self.ufl_element().value_shape(self._V.mesh.ufl_domain()))
             u = np.empty((num_points, value_size), self.dtype)
 
         self._cpp_object.eval(_x, _cells, u)  # type: ignore
