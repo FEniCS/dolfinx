@@ -27,6 +27,7 @@
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
 #include <nanobind/stl/function.h>
+#include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/tuple.h>
@@ -439,9 +440,15 @@ void mesh(nb::module_& m)
              dolfinx::mesh::CellType cell_type)
           { new (t) dolfinx::mesh::Topology(comm.get(), cell_type); },
           nb::arg("comm"), nb::arg("cell_type"))
-      .def("set_connectivity", &dolfinx::mesh::Topology::set_connectivity,
+      .def("set_connectivity",
+           nb::overload_cast<
+               std::shared_ptr<dolfinx::graph::AdjacencyList<std::int32_t>>,
+               int, int>(&dolfinx::mesh::Topology::set_connectivity),
            nb::arg("c"), nb::arg("d0"), nb::arg("d1"))
-      .def("set_index_map", &dolfinx::mesh::Topology::set_index_map,
+      .def("set_index_map",
+           nb::overload_cast<int,
+                             std::shared_ptr<const dolfinx::common::IndexMap>>(
+               &dolfinx::mesh::Topology::set_index_map),
            nb::arg("dim"), nb::arg("map"))
       .def("create_entities", &dolfinx::mesh::Topology::create_entities,
            nb::arg("dim"))
@@ -474,17 +481,34 @@ void mesh(nb::module_& m)
           "original_cell_index",
           [](const dolfinx::mesh::Topology& self)
           {
+            if (self.original_cell_index.size() != 1)
+              throw std::runtime_error("Mixed topology unsupported");
             return nb::ndarray<const std::int64_t, nb::numpy>(
-                self.original_cell_index.data(),
-                {self.original_cell_index.size()});
+                self.original_cell_index[0].data(),
+                {self.original_cell_index[0].size()});
           },
           nb::rv_policy::reference_internal)
       .def("connectivity",
            nb::overload_cast<int, int>(&dolfinx::mesh::Topology::connectivity,
                                        nb::const_),
            nb::arg("d0"), nb::arg("d1"))
+      .def("connectivity",
+           nb::overload_cast<std::pair<std::int8_t, std::int8_t>,
+                             std::pair<std::int8_t, std::int8_t>>(
+               &dolfinx::mesh::Topology::connectivity, nb::const_),
+           nb::arg("d0"), nb::arg("d1"))
       .def("index_map", &dolfinx::mesh::Topology::index_map, nb::arg("dim"))
+      .def("index_maps", &dolfinx::mesh::Topology::index_maps, nb::arg("dim"))
       .def_prop_ro("cell_type", &dolfinx::mesh::Topology::cell_type)
+      .def_prop_ro(
+          "entity_types",
+          [](const dolfinx::mesh::Topology& self)
+          {
+            std::vector<std::vector<dolfinx::mesh::CellType>> entity_types;
+            for (int i = 0; i <= self.dim(); ++i)
+              entity_types.push_back(self.entity_types(i));
+            return entity_types;
+          })
       .def("cell_name", [](const dolfinx::mesh::Topology& self)
            { return dolfinx::mesh::to_string(self.cell_type()); })
       .def("interprocess_facets", &dolfinx::mesh::Topology::interprocess_facets)
@@ -493,6 +517,28 @@ void mesh(nb::module_& m)
           [](dolfinx::mesh::Topology& self)
           { return MPICommWrapper(self.comm()); },
           nb::keep_alive<0, 1>());
+
+  m.def("create_topology",
+        [](MPICommWrapper comm,
+           const std::vector<dolfinx::mesh::CellType>& cell_type,
+           const std::vector<std::vector<std::int64_t>>& cells,
+           const std::vector<std::vector<std::int64_t>>& original_cell_index,
+           const std::vector<std::vector<int>>& ghost_owners,
+           const std::vector<std::int64_t>& boundary_vertices)
+        {
+          std::vector<std::span<const std::int64_t>> cells_span(cells.begin(),
+                                                                cells.end());
+          std::vector<std::span<const std::int64_t>> original_cell_index_span(
+              original_cell_index.begin(), original_cell_index.end());
+          std::vector<std::span<const int>> ghost_owners_span(
+              ghost_owners.begin(), ghost_owners.end());
+          std::span<const std::int64_t> boundary_vertices_span(
+              boundary_vertices.begin(), boundary_vertices.end());
+
+          return dolfinx::mesh::create_topology(
+              comm.get(), cell_type, cells_span, original_cell_index_span,
+              ghost_owners_span, boundary_vertices_span);
+        });
 
   // dolfinx::mesh::MeshTags
 
