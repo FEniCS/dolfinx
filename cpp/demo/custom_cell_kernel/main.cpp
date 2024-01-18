@@ -5,8 +5,6 @@
 //
 // .. code-block:: cpp
 
-#include <iostream>
-
 #include <basix/finite-element.h>
 #include <basix/mdspan.hpp>
 #include <basix/quadrature.h>
@@ -20,7 +18,8 @@
 using namespace dolfinx;
 
 using T = double; // field scalar type
-using U = double; // geometry scalar type
+using U = typename dolfinx::scalar_value_type_t<T>;
+; // geometry scalar type
 
 template <typename T, std::size_t ndim>
 using mdspan_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
@@ -34,28 +33,27 @@ int main(int argc, char* argv[])
   MPI_Init(&argc, &argv);
   {
     // Create mesh and function space
-    const auto part
-        = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
     auto mesh = std::make_shared<mesh::Mesh<U>>(
         mesh::create_rectangle<U>(MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}},
-                                  {10, 10}, mesh::CellType::triangle, part));
+                                  {10, 10}, mesh::CellType::triangle));
 
     // Create basix element for the field u. This will be used to construct
     // basis functions inside the custom cell kernel.
-    const int order = 1;
+    constexpr int order = 1;
     const basix::FiniteElement e = basix::create_element<T>(
         basix::element::family::P,
         mesh::cell_type_to_basix_type(mesh::CellType::triangle), order,
         basix::element::lagrange_variant::unset,
         basix::element::dpc_variant::unset, false);
 
-    const int max_degree = 2 * order;
+    // Construct quadrature rule
+    constexpr int max_degree = 2 * order;
     const auto quadrature_type = basix::quadrature::get_default_rule(
         basix::cell::type::triangle, max_degree);
     const auto [points, weights] = basix::quadrature::make_quadrature<T>(
         quadrature_type, basix::cell::type::triangle,
         basix::polyset::type::standard, max_degree);
-    const int num_points = weights.size();
+    const auto num_points = static_cast<std::size_t>(weights.size());
     mdspan_t<const T, 2> points_span(points.data(), num_points, 2);
 
     // Create a scalar function space
@@ -68,27 +66,28 @@ int main(int argc, char* argv[])
     std::vector<std::int32_t> cells(size_local);
     std::iota(cells.begin(), cells.end(), 0);
 
-    // Basis element tabulation exploration
+    // Tabulate basis functions
     const auto tabulate_shape = e.tabulate_shape(0, num_points);
     const auto length = std::accumulate(
         tabulate_shape.begin(), tabulate_shape.end(), 1, std::multiplies<>{});
     std::vector<T> basis(length);
     mdspan_t<T, 4> basis_span(basis.data(), tabulate_shape);
 
-    // Tabulate basis functions
     e.tabulate(0, points_span, basis_span);
 
     // Calculate mass matrix on reference cell
-    const auto e_dim = e.dim();
+    const int e_dim = e.dim();
     std::vector<T> A_hat(e_dim * e_dim);
     mdspan_t<T, 2> A_hat_span(A_hat.data(), e.dim(), e.dim());
 
     // einsum k,ki,kj->ij on weights, basis_span, basis_span
-    for (std::size_t k = 0; k < weights.size(); ++k)
+    const std::size_t extent_0 = A_hat_span.extent(0);
+    const std::size_t extent_1 = A_hat_span.extent(1);
+    for (std::size_t k = 0; k < num_points; ++k)
     {
-      for (std::size_t i = 0; i < A_hat_span.extent(0); ++i)
+      for (std::size_t i = 0; i < extent_0; ++i)
       {
-        for (std::size_t j = 0; j < A_hat_span.extent(1); ++j)
+        for (std::size_t j = 0; j < extent_1; ++j)
         {
           A_hat_span(i, j)
               += weights[k] * basis_span(0, k, i, 0) * basis_span(0, k, j, 0);
@@ -100,14 +99,15 @@ int main(int argc, char* argv[])
     std::function<void(T*, const T*, const T*, const U*, const int*,
                        const u_int8_t*)>
         mass_cell_kernel
-        = [&A_hat_span](T* A_cell, const T*, const T*, const U* cdofs,
-                        const int*, const u_int8_t*)
+        = [A_hat_span, extent_0, extent_1](T* A_cell, const T*, const T*,
+                                           const U* cdofs, const int*,
+                                           const u_int8_t*)
     {
-      T detJ = abs((cdofs[0] - cdofs[3]) * (cdofs[7] - cdofs[4])
+      U detJ = abs((cdofs[0] - cdofs[3]) * (cdofs[7] - cdofs[4])
                    - (cdofs[1] - cdofs[4]) * (cdofs[6] - cdofs[3]));
-      for (std::size_t i = 0; i < A_hat_span.extent(0); ++i)
+      for (std::size_t i = 0; i < extent_0; ++i)
       {
-        for (std::size_t j = 0; j < A_hat_span.extent(1); ++j)
+        for (std::size_t j = 0; j < extent_1; ++j)
         {
           A_cell[i * A_hat_span.extent(0) + j] = detJ * A_hat_span(i, j);
         }
