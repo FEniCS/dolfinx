@@ -42,7 +42,6 @@ def test_distance_triangle():
 
 @pytest.mark.skip_in_parallel
 def test_distance_tetrahedron():
-    gdim = 3
     shape = "tetrahedron"
     degree = 1
     domain = ufl.Mesh(element("Lagrange", shape, degree, shape=(3,), dtype=np.float64))

@@ -635,7 +635,8 @@ def test_submesh_codim_1_boundary_facets(n, ghost_mode, dtype):
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_mesh_create_cmap(dtype):
-    gdim, shape, degree = 2, "triangle", 1
+    shape = "triangle"
+    degree = 1
 
     x = np.array([[0., 0.], [0., 1.], [1., 1.]], dtype=dtype)
     cells = [[0, 1, 2]]
