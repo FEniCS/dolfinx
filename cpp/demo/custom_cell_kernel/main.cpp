@@ -38,13 +38,14 @@ int main(int argc, char* argv[])
 
     // Create basix element for the field u. This will be used to construct
     // basis functions inside the custom cell kernel.
+    const int order = 1;
     const basix::FiniteElement e = basix::create_element<T>(
         basix::element::family::P,
-        mesh::cell_type_to_basix_type(mesh::CellType::triangle), 1,
+        mesh::cell_type_to_basix_type(mesh::CellType::triangle), order,
         basix::element::lagrange_variant::unset,
         basix::element::dpc_variant::unset, false);
 
-    const int max_degree = 2;
+    const int max_degree = order * order;
     const auto quadrature_type = basix::quadrature::get_default_rule(
         basix::cell::type::triangle, max_degree);
     const auto [points, weights] = basix::quadrature::make_quadrature<T>(
