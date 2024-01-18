@@ -18,8 +18,8 @@ import basix
 import basix.ufl
 import ufl
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh  # noqa F401
-from dolfinx.cpp.io import perm_vtk as cell_perm_vtk  # noqa F401
+from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh  # F401
+from dolfinx.cpp.io import perm_vtk as cell_perm_vtk  # F401
 from dolfinx.fem import Function
 from dolfinx.mesh import GhostMode, Mesh, MeshTags
 
@@ -37,7 +37,7 @@ def _extract_cpp_functions(functions: typing.Union[typing.List[Function], Functi
 
 # FidesWriter and VTXWriter require ADIOS2
 if _cpp.common.has_adios2:
-    from dolfinx.cpp.io import FidesMeshPolicy  # noqa F401
+    from dolfinx.cpp.io import FidesMeshPolicy  # F401
     __all__ = __all__ + ["FidesWriter", "VTXWriter", "FidesMeshPolicy"]
 
     class VTXWriter:

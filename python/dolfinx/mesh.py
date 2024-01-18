@@ -592,7 +592,7 @@ def create_unit_square(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.tri
                             partitioner, diagonal)
 
 
-def create_box(comm: _MPI.Comm, points: typing.List[npt.ArrayLike], n: list,
+def create_box(comm: _MPI.Comm, points: list[npt.ArrayLike], n: list,
                cell_type=CellType.tetrahedron, dtype: npt.DTypeLike = default_real_type,
                ghost_mode=GhostMode.shared_facet, partitioner=None) -> Mesh:
     """Create a box mesh.

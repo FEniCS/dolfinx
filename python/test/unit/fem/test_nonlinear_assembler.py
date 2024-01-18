@@ -182,7 +182,7 @@ def test_matrix_assembly_block_nl():
     assert bnorm2 == pytest.approx(bnorm0, 1.0e-6)
 
 
-class NonlinearPDE_SNESProblem():
+class NonlinearPDE_SNESProblem:
     def __init__(self, F, J, soln_vars, bcs, P=None):
         self.L = F
         self.a = J

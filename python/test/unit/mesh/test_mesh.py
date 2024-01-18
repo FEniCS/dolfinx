@@ -362,7 +362,7 @@ def xfail_ghosted_quads_hexes(mesh_factory, ghost_mode):
     Needs implementing."""
     if mesh_factory in [create_unit_square, create_unit_cube]:
         if ghost_mode == GhostMode.shared_vertex:
-            pytest.xfail(reason="Missing functionality in \'{}\' with \'{}\' mode".format(mesh_factory, ghost_mode))
+            pytest.xfail(reason=f"Missing functionality in \'{mesh_factory}\' with \'{ghost_mode}\' mode")
 
 
 @pytest.mark.parametrize("ghost_mode",

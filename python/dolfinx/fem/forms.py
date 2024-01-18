@@ -62,7 +62,7 @@ class Form:
         return self._cpp_object.rank  # type: ignore
 
     @property
-    def function_spaces(self) -> typing.List[FunctionSpace]:
+    def function_spaces(self) -> list[FunctionSpace]:
         """Function spaces on which this form is defined"""
         return self._cpp_object.function_spaces  # type: ignore
 
