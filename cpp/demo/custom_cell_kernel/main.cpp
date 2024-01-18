@@ -38,7 +38,7 @@ int main(int argc, char* argv[])
         = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
     auto mesh = std::make_shared<mesh::Mesh<U>>(
         mesh::create_rectangle<U>(MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}},
-                                  {1, 1}, mesh::CellType::triangle, part));
+                                  {10, 10}, mesh::CellType::triangle, part));
 
     // Create basix element for the field u. This will be used to construct
     // basis functions inside the custom cell kernel.
@@ -131,10 +131,6 @@ int main(int argc, char* argv[])
     auto mat_add_values = A.mat_add_values();
     assemble_matrix(mat_add_values, *a, {});
     A.scatter_rev();
-
-    std::vector<T> A_dense = A.to_dense();
-    for (T a : A_dense)
-      std::cout << a << ' ';
   }
 
   MPI_Finalize();
