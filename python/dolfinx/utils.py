@@ -12,7 +12,7 @@ import ctypes as _ctypes
 import os
 import pathlib
 
-import numpy as _np
+import numpy as np
 
 __all__ = ["cffi_utils", "numba_utils", "ctypes_utils"]
 
@@ -117,7 +117,7 @@ class ctypes_utils:
 
     # Note: ctypes does not have complex types, hence we use void* for
     # scalar data
-    _int = _np.ctypeslib.as_ctypes_type(_PETSc.IntType)  # type: ignore
+    _int = np.ctypeslib.as_ctypes_type(_PETSc.IntType)  # type: ignore
 
     MatSetValuesLocal = _lib_ctypes.MatSetValuesLocal
     """See PETSc `MatSetValuesLocal
@@ -171,9 +171,9 @@ class cffi_utils:
 
         _lib_cffi = _ffi.dlopen(str(get_petsc_lib()))
 
-        _CTYPES = {_np.int32: "int32_t", _np.int64: "int64_t",
-                   _np.float32: "float", _np.float64: "double",
-                   _np.complex64: "float _Complex", _np.complex128: "double _Complex"}
+        _CTYPES = {np.int32: "int32_t", np.int64: "int64_t",
+                   np.float32: "float", np.float64: "double",
+                   np.complex64: "float _Complex", np.complex128: "double _Complex"}
         _c_int_t = _CTYPES[_PETSc.IntType]  # type: ignore
         _c_scalar_t = _CTYPES[_PETSc.ScalarType]  # type: ignore
         _ffi.cdef(f"""

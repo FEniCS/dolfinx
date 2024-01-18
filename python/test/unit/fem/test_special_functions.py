@@ -7,7 +7,7 @@
 
 from mpi4py import MPI
 
-import numpy
+import numpy as np
 import pytest
 
 import ufl
@@ -27,8 +27,8 @@ def test_facet_area1D():
     ds = ufl.Measure("ds", domain=mesh)
     a0 = mesh.comm.allreduce(assemble_scalar(form(c * ds)), op=MPI.SUM)
     a = mesh.comm.allreduce(assemble_scalar(form(c0 * ds)), op=MPI.SUM)
-    assert numpy.isclose(a.real, 2)
-    assert numpy.isclose(a0.real, 2)
+    assert np.isclose(a.real, 2)
+    assert np.isclose(a0.real, 2)
 
 
 @pytest.mark.parametrize('mesh_factory', [(create_unit_square, (MPI.COMM_WORLD, 3, 3), 1. / 3),
@@ -52,5 +52,5 @@ def test_facet_area(mesh_factory):
     ds = ufl.Measure("ds", domain=mesh)
     a = mesh.comm.allreduce(assemble_scalar(form(c * ds)), op=MPI.SUM)
     a0 = mesh.comm.allreduce(assemble_scalar(form(c0 * ds)), op=MPI.SUM)
-    assert numpy.isclose(a.real, num_faces)
-    assert numpy.isclose(a0.real, num_faces * exact_area)
+    assert np.isclose(a.real, num_faces)
+    assert np.isclose(a0.real, num_faces * exact_area)
