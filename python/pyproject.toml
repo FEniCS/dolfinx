@@ -33,7 +33,7 @@ dependencies = [
 
 [project.optional-dependencies]
 docs = ["markdown", "pyyaml", "sphinx", "sphinx_rtd_theme"]
-lint = ["flake8", "pydocstyle"]
+lint = ["ruff", "isort"]
 optional = ["numba"]
 test = ["pytest", "sympy", "scipy", "matplotlib", "fenics-dolfinx[optional]"]
 ci = [
@@ -80,7 +80,7 @@ select = [
     "E",   # pycodestyle
     "W",   # pycodestyle
     "F",   # pyflakes
-    # "I",   # isort
+    # "I",   # isort - use standalone isort
     "RUF", # Ruff-specific rules
     "UP",  # pyupgrade
     # "ANN",
