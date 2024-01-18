@@ -2,6 +2,7 @@ Authors/contributors in alphabetical order:
 
   Ido Akkerman          <I.Akkerman@tudelft.nl>             (-)
   Martin Sandve Alnæs   <martinal@simula.no>                (C)
+  Francesco Ballarin    <francesco.ballarin@unicatt.it>     (C)
   Igor Baratta          <ia397@cam.ac.uk>                   (-)
   Fredrik Bengzon       <bengzon@math.chalmers.se>          (-)
   Aslak Bergersen       <aslak.bergersen@gmail.com>         (C)
@@ -80,4 +81,4 @@ Authors/contributors in alphabetical order:
 (-) = minor change, copyright form not signed
 
 Missing credits? Tell us and we will fix it.
-Send an email to fenics-dev@googlegroups.com
+Send an email to fenics-steering-council@googlegroups.com
