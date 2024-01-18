@@ -91,7 +91,7 @@ select = [
     # "SIM",
     # "PL",
 ]
-ignore = []
+ignore = ["UP007"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["basix", "dolfinx", "ffcx", "ufl"]
