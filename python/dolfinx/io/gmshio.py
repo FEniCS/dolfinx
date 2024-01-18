@@ -57,7 +57,7 @@ def ufl_mesh(gmsh_cell: int, gdim: int, dtype: npt.DTypeLike) -> ufl.Mesh:
     except KeyError as e:
         print(f"Unknown cell type {gmsh_cell}.")
         raise e
-    cell = ufl.Cell(shape, geometric_dimension=gdim)
+    cell = ufl.Cell(shape)
     element = basix.ufl.element(basix.ElementFamily.P, cell.cellname(), degree,
                                 basix.LagrangeVariant.equispaced, shape=(gdim,),
                                 dtype=dtype)  # type: ignore[arg-type]
