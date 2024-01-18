@@ -103,8 +103,8 @@ int main(int argc, char* argv[])
                                            const U* cdofs, const int*,
                                            const u_int8_t*)
     {
-      U detJ = abs((cdofs[0] - cdofs[3]) * (cdofs[7] - cdofs[4])
-                   - (cdofs[1] - cdofs[4]) * (cdofs[6] - cdofs[3]));
+      U detJ = std::abs((cdofs[0] - cdofs[3]) * (cdofs[7] - cdofs[4])
+                        - (cdofs[1] - cdofs[4]) * (cdofs[6] - cdofs[3]));
       for (std::size_t i = 0; i < extent_0; ++i)
       {
         for (std::size_t j = 0; j < extent_1; ++j)
@@ -113,6 +113,8 @@ int main(int argc, char* argv[])
         }
       }
     };
+
+    // Construct default domain integral
     const std::map integrals{
         std::pair{fem::IntegralType::cell,
                   std::vector{std::tuple{-1, mass_cell_kernel, cells}}}};
