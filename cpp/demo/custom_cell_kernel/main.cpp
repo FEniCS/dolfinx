@@ -44,6 +44,17 @@ A_ref(mdspan_t<const V, 4> basis, std::span<const V> weights)
   return {A_b, shape};
 }
 
+template <typename V>
+std::vector<V> b_ref(mdspan_t<const V, 4> basis, std::span<const V> weights)
+{
+  std::size_t dim = basis.extent(2);
+  std::vector<T> b(dim);
+  for (std::size_t k = 0; k < basis.extent(1); ++k)
+    for (std::size_t i = 0; i < b.size(); ++i)
+      b[i] += weights[k] * basis(0, k, i, 0);
+  return b;
+}
+
 template <typename T>
 void assemble0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
                const std::vector<std::int32_t>& cells)
@@ -75,6 +86,31 @@ void assemble0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
 }
 
 template <typename T>
+void assemble_vector0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
+                      const std::vector<std::int32_t>& cells)
+{
+  // Define form from integral
+  using KernelFn = std::function<void(T*, const T*, const T*, const T*,
+                                      const int*, const u_int8_t*)>;
+  std::map integrals{
+      std::pair{fem::IntegralType::cell,
+                std::vector{std::tuple{-1, KernelFn(kernel), cells}}}};
+
+  std::shared_ptr<const mesh::Mesh<U>> mesh = V->mesh();
+  fem::Form<T> L({V}, integrals, {}, {}, false, mesh);
+
+  auto dofmap = V->dofmap();
+  la::Vector<T> b(dofmap->index_map, 1);
+  {
+    common::Timer timer("Assembler_vector0");
+    for (int i = 0; i < 100; ++i)
+      fem::assemble_vector<T>(b.mutable_array(), L);
+    b.scatter_rev(std::plus<T>());
+  }
+  // std::cout << "Norm vector (0): " << b.norm() << std::endl;
+}
+
+template <typename T>
 void assemble1(const fem::FunctionSpace<T>& V, auto kernel,
                std::span<const std::int32_t> cells)
 {
@@ -96,6 +132,27 @@ void assemble1(const fem::FunctionSpace<T>& V, auto kernel,
                               {}, {}, kernel, std::span<const T>(), 0, {}, {});
   A.scatter_rev();
   std::cout << "Norm (1): " << A.squared_norm() << std::endl;
+}
+
+template <typename T>
+void assemble_vector1(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
+                      const std::vector<std::int32_t>& cells)
+{
+  auto mesh = V.mesh();
+  auto dofmap = V.dofmap();
+  la::Vector<T> b(dofmap->index_map, 1);
+
+  auto ident = [](auto, auto, auto, auto) {};
+  const mesh::Geometry<U>& g = mesh->geometry();
+  common::Timer timer("Assembler1");
+  for (int i = 0; i < 100; ++i)
+    fem::impl::assemble_cells(ident, b.mutable_array(), g.dofmap(), g.x(),
+                              cells, dofmap->map(), 1, kernel,
+                              std::span<const T>(), std::span<const T>(), 0,
+                              std::span<const std::uint32_t>());
+
+  // b.scatter_rev();
+  // std::cout << "Norm (1): " << b.squared_norm() << std::endl;
 }
 
 int main(int argc, char* argv[])
@@ -158,8 +215,20 @@ int main(int argc, char* argv[])
           A[i * A_hat.extent(0) + j] = detJ * A_hat(i, j);
     };
 
+    auto b_hat = b_ref<U>(basis, weights);
+    auto mass_cell_kernel_rhs = [b_hat](T* A, const T*, const T*, const U* x,
+                                        const int*, const u_int8_t*)
+    {
+      U detJ = std::abs((x[0] - x[3]) * (x[7] - x[4])
+                        - (x[1] - x[4]) * (x[6] - x[3]));
+      for (std::size_t i = 0; i < b_hat.size(); ++i)
+        A[i] = detJ * b_hat[i];
+    };
+
     assemble0<T>(V, mass_cell_kernel, cells);
-    assemble1<T>(*V, mass_cell_kernel, cells);
+    assemble_vector0<T>(V, mass_cell_kernel, cells);
+
+    assemble1<T>(*V, mass_cell_kernel_rhs, cells);
   }
 
   list_timings(MPI_COMM_WORLD, {TimingType::wall});
