@@ -76,7 +76,7 @@ class Mesh:
         Note:
             This method is required for UFL compatibility.
         """
-        return ufl.Cell(self.topology.cell_name(), geometric_dimension=self.geometry.dim)
+        return ufl.Cell(self.topology.cell_name())
 
     def ufl_domain(self) -> ufl.Mesh:
         """Return the ufl domain corresponding to the mesh.
@@ -395,12 +395,12 @@ def create_mesh(comm: _MPI.Comm, cells: npt.NDArray[np.int64], x: npt.NDArray[np
 
 def create_submesh(msh, dim, entities):
     submsh, entity_map, vertex_map, geom_map = _cpp.mesh.create_submesh(msh._cpp_object, dim, entities)
-    submsh_ufl_cell = ufl.Cell(submsh.topology.cell_name(), geometric_dimension=submsh.geometry.dim)
+    submsh_ufl_cell = ufl.Cell(submsh.topology.cell_name())
     submsh_domain = ufl.Mesh(basix.ufl.element("Lagrange", submsh_ufl_cell.cellname(),
                                                submsh.geometry.cmap.degree,
                                                basix.LagrangeVariant(submsh.geometry.cmap.variant),
                                                shape=(submsh.geometry.dim,),
-                                               gdim=submsh.geometry.dim, dtype=submsh.geometry.x.dtype))
+                                               dtype=submsh.geometry.x.dtype))
     return (Mesh(submsh, submsh_domain), entity_map, vertex_map, geom_map)
 
 
