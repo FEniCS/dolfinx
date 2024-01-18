@@ -1,4 +1,8 @@
 // Custom cell kernel (C++)
+//
+// This demo shows how to define a custom cell kernel in C++ and have it
+// assembled into a dolfinx::la::MatrixCSR.
+//
 // .. code-block:: cpp
 
 #include <iostream>
@@ -33,8 +37,8 @@ int main(int argc, char* argv[])
     const auto part
         = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
     auto mesh = std::make_shared<mesh::Mesh<U>>(
-        mesh::create_rectangle<U>(MPI_COMM_WORLD, {{{0.0, 0.0}, {2.0, 1.0}}},
-                                  {32, 16}, mesh::CellType::triangle, part));
+        mesh::create_rectangle<U>(MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}},
+                                  {1, 1}, mesh::CellType::triangle, part));
 
     // Create basix element for the field u. This will be used to construct
     // basis functions inside the custom cell kernel.
@@ -45,7 +49,7 @@ int main(int argc, char* argv[])
         basix::element::lagrange_variant::unset,
         basix::element::dpc_variant::unset, false);
 
-    const int max_degree = order * order;
+    const int max_degree = 2 * order;
     const auto quadrature_type = basix::quadrature::get_default_rule(
         basix::cell::type::triangle, max_degree);
     const auto [points, weights] = basix::quadrature::make_quadrature<T>(
@@ -92,15 +96,15 @@ int main(int argc, char* argv[])
       }
     }
 
-    // Define element kernel
+    // Define finite element mass kernel.
     std::function<void(T*, const T*, const T*, const U*, const int*,
                        const u_int8_t*)>
         mass_cell_kernel
         = [&A_hat_span](T* A_cell, const T*, const T*, const U* cdofs,
                         const int*, const u_int8_t*)
     {
-      T detJ = abs((cdofs[0] - cdofs[2]) * (cdofs[5] - cdofs[3])
-                   - (cdofs[1] - cdofs[3]) * (cdofs[4] - cdofs[2]));
+      T detJ = abs((cdofs[0] - cdofs[3]) * (cdofs[7] - cdofs[4])
+                   - (cdofs[1] - cdofs[4]) * (cdofs[6] - cdofs[3]));
       for (std::size_t i = 0; i < A_hat_span.extent(0); ++i)
       {
         for (std::size_t j = 0; j < A_hat_span.extent(1); ++j)
@@ -127,6 +131,10 @@ int main(int argc, char* argv[])
     auto mat_add_values = A.mat_add_values();
     assemble_matrix(mat_add_values, *a, {});
     A.scatter_rev();
+
+    std::vector<T> A_dense = A.to_dense();
+    for (T a : A_dense)
+      std::cout << a << ' ';
   }
 
   MPI_Finalize();
