@@ -68,6 +68,9 @@ warn_unused_ignores = false
 show_error_codes = true
 ignore_missing_imports = true
 
+[tool.isort]
+line_length = 120
+
 [tool.ruff]
 line-length = 120
 indent-width = 4
