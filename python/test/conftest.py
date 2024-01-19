@@ -141,14 +141,12 @@ def tempdir(request):
     return _create_tempdir(request)
 
 
-def _global_dot(comm, v0, v1, n):
-    local_dot = np.dot(v0[:n], v1[:n])
-    return comm.allreduce(local_dot, MPI.SUM)
-
-
 def _cg(comm, A, b, x):
     kmax = 500
     rtol = 1e-8
+
+    def _global_dot(comm, v0, v1):
+        return comm.allreduce(np.dot(v0, v1), MPI.SUM)
 
     A_op = A.to_scipy()
     nr = A_op.shape[0]
@@ -161,7 +159,7 @@ def _cg(comm, A, b, x):
     p.array[:nr] = r
 
     # Iterations of CG
-    rnorm0 = _global_dot(comm, r, r, nr)
+    rnorm0 = _global_dot(comm, r, r)
     rtol2 = rtol * rtol
     rnorm = rnorm0
     k = 0
@@ -169,10 +167,10 @@ def _cg(comm, A, b, x):
         k += 1
         p.scatter_forward()
         y = A_op @ p.array
-        alpha = rnorm / _global_dot(comm, p.array, y, nr)
+        alpha = rnorm / _global_dot(comm, p.array[:nr], y)
         x.array[:] += alpha * p.array
         r -= alpha * y
-        rnorm_new = _global_dot(comm, r, r, nr)
+        rnorm_new = _global_dot(comm, r, r)
         beta = rnorm_new / rnorm
         rnorm = rnorm_new
         if (rnorm / rnorm0 < rtol2):
