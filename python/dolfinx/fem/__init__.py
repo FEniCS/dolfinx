@@ -16,7 +16,8 @@ from dolfinx.fem.bcs import (DirichletBC, bcs_by_block, dirichletbc,
                              locate_dofs_geometrical, locate_dofs_topological)
 from dolfinx.fem.dofmap import DofMap
 from dolfinx.fem.element import CoordinateElement, coordinate_element
-from dolfinx.fem.forms import Form, extract_function_spaces, form
+from dolfinx.fem.forms import (Form, extract_function_spaces, form,
+                               form_cpp_class)
 from dolfinx.fem.function import (Constant, ElementMetaData, Expression,
                                   Function, FunctionSpace, functionspace)
 
@@ -46,4 +47,4 @@ __all__ = [
     "form", "IntegralType", "create_vector",
     "locate_dofs_geometrical", "locate_dofs_topological",
     "extract_function_spaces", "transpose_dofmap", "create_nonmatching_meshes_interpolation_data",
-    "CoordinateElement", "coordinate_element"]
+    "CoordinateElement", "coordinate_element", "form_cpp_class"]

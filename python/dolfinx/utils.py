@@ -69,6 +69,7 @@ class numba_utils:
     """
     try:
         import petsc4py.PETSc as _PETSc
+
         import llvmlite as _llvmlite
         import numba as _numba
         _llvmlite.binding.load_library_permanently(str(get_petsc_lib()))
@@ -157,10 +158,11 @@ class cffi_utils:
                                 ffi.from_buffer(rows(data), mode)
     """
     try:
+        from petsc4py import PETSc as _PETSc
+
         import cffi as _cffi
         import numba as _numba
         import numba.core.typing.cffi_utils as _cffi_support
-        from petsc4py import PETSc as _PETSc
 
         # Register complex types
         _ffi = _cffi.FFI()
@@ -171,7 +173,8 @@ class cffi_utils:
 
         _CTYPES = {_np.int32: "int32_t", _np.int64: "int64_t",
                    _np.float32: "float", _np.float64: "double",
-                   _np.complex64: "float _Complex", _np.complex128: "double _Complex"}
+                   _np.complex64: "float _Complex", _np.complex128: "double _Complex",
+                   _np.longlong: "long long"}
         _c_int_t = _CTYPES[_PETSc.IntType]  # type: ignore
         _c_scalar_t = _CTYPES[_PETSc.ScalarType]  # type: ignore
         _ffi.cdef(f"""
@@ -192,5 +195,5 @@ class cffi_utils:
         """See PETSc `MatSetValuesBlockedLocal
         <https://petsc.org/release/manualpages/Mat/MatSetValuesBlockedLocal>`_
         documentation."""
-    except ImportError:
+    except (ImportError, KeyError):
         pass
