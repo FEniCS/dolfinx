@@ -179,8 +179,9 @@ def test_create_entities():
     assert len(tri_v.links(0)) == 3
 
     mesh.topology.create_entities(1)
-    print(mesh.topology.connectivity(3, 1))
+    # 9 edges on each prism
+    cell_edge = mesh.topology.connectivity((3, 0), (1, 0))
+    assert cell_edge.links(0).size == 9
 
+    # Triangle and quad to prism (facet->cell)
     mesh.topology.create_connectivity(2, 3)
-    print(mesh.topology.connectivity((2, 0), (3, 0)))
-    print(mesh.topology.connectivity((2, 1), (3, 0)))
