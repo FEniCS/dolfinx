@@ -302,22 +302,29 @@ void assemble_interior_facets(
     kernel(Ae.data(), coeffs.data() + index / 2 * cstride, constants.data(),
            coordinate_dofs.data(), local_facet.data(), perm.data());
 
+    // Local element layout is a 2x2 block matrix with structure
+    //
+    //   cell0cell0  |  cell0cell1
+    //   cell1cell0  |  cell1cell1
+    //
+    // where each block is element tensor of size (dmap0, dmap1).
+
     std::span<T> _Ae(Ae);
     std::span<T> sub_Ae0 = _Ae.subspan(bs0 * dmap0_cell0.size() * num_cols,
                                        bs0 * dmap0_cell1.size() * num_cols);
-    std::span<T> sub_Ae1
-        = _Ae.subspan(bs1 * dmap1_cell0.size(),
-                      num_rows * num_cols - bs1 * dmap1_cell0.size());
-
-    // Need to apply DOF transformations for parts of the matrix due to cell 0
-    // and cell 1. For example, if the space has 3 DOFs, then Ae will be 6 by 6
-    // (3 rows/columns for each cell). Subspans are used to offset to the right
-    // blocks of the matrix
 
     pre_dof_transform(_Ae, cell_info, cells[0], num_cols);
     pre_dof_transform(sub_Ae0, cell_info, cells[1], num_cols);
     post_dof_transform(_Ae, cell_info, cells[0], num_rows);
-    post_dof_transform(sub_Ae1, cell_info, cells[1], num_rows);
+
+    for (int row = 0; row < num_rows; ++row)
+    {
+      // DOFs for dmap1 and cell1 are not stored contiguously in
+      // the block matrix, so each row needs a separate span access
+      std::span<T> sub_Ae1 = _Ae.subspan(
+          row * num_cols + bs1 * dmap1_cell0.size(), bs1 * dmap1_cell1.size());
+      post_dof_transform(sub_Ae1, cell_info, cells[1], 1);
+    }
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())
