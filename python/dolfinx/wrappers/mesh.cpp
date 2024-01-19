@@ -514,7 +514,12 @@ void mesh(nb::module_& m)
           })
       .def("cell_name", [](const dolfinx::mesh::Topology& self)
            { return dolfinx::mesh::to_string(self.cell_type()); })
-      .def("interprocess_facets", &dolfinx::mesh::Topology::interprocess_facets)
+      .def("interprocess_facets",
+           nb::overload_cast<>(&dolfinx::mesh::Topology::interprocess_facets,
+                               nb::const_))
+      .def("interprocess_facets",
+           nb::overload_cast<std::int8_t>(
+               &dolfinx::mesh::Topology::interprocess_facets, nb::const_))
       .def_prop_ro(
           "comm",
           [](dolfinx::mesh::Topology& self)
