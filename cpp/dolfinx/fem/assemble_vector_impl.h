@@ -442,7 +442,7 @@ void _lift_bc_interior_facets(
       // the block matrix, so each row needs a separate span access
       std::span<T> sub_Ae1 = _Ae.subspan(
           row * num_cols + bs1 * dmap1_cell0.size(), bs1 * dmap1_cell1.size());
-      post_dof_transform(sub_Ae1, cell_info, cells[1], 1);
+      post_dof_transpose(sub_Ae1, cell_info, cells[1], 1);
     }
 
     be.resize(num_rows);
