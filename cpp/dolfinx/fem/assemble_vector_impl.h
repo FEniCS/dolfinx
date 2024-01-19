@@ -438,7 +438,15 @@ void _lift_bc_interior_facets(
     pre_dof_transform(_Ae, cell_info, cells[0], num_cols);
     pre_dof_transform(sub_Ae0, cell_info, cells[1], num_cols);
     post_dof_transpose(_Ae, cell_info, cells[0], num_rows);
-    post_dof_transpose(sub_Ae1, cell_info, cells[1], num_rows);
+
+    for (int row = 0; row < num_rows; ++row)
+    {
+      // DOFs for dmap1 and cell1 are not stored contiguously in
+      // the block matrix, so each row needs a separate span access
+      std::span<T> sub_Ae1 = _Ae.subspan(
+          row * num_cols + bs1 * dmap1_cell0.size(), bs1 * dmap1_cell1.size());
+      post_dof_transform(sub_Ae1, cell_info, cells[1], 1);
+    }
 
     be.resize(num_rows);
     std::fill(be.begin(), be.end(), 0);
