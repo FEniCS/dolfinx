@@ -173,7 +173,8 @@ class cffi_utils:
 
         _CTYPES = {_np.int32: "int32_t", _np.int64: "int64_t",
                    _np.float32: "float", _np.float64: "double",
-                   _np.complex64: "float _Complex", _np.complex128: "double _Complex"}
+                   _np.complex64: "float _Complex", _np.complex128: "double _Complex",
+                   _np.longlong: "long long"}
         _c_int_t = _CTYPES[_PETSc.IntType]  # type: ignore
         _c_scalar_t = _CTYPES[_PETSc.ScalarType]  # type: ignore
         _ffi.cdef(f"""
@@ -194,5 +195,5 @@ class cffi_utils:
         """See PETSc `MatSetValuesBlockedLocal
         <https://petsc.org/release/manualpages/Mat/MatSetValuesBlockedLocal>`_
         documentation."""
-    except ImportError:
+    except (ImportError, KeyError):
         pass
