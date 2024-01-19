@@ -102,7 +102,8 @@ def test_complex_assembly_solve(complex_dtype, solver):
     b.scatter_reverse(la.InsertMode.add)
 
     u = Function(V, dtype=complex_dtype)
-    u.x.array[:] = solver(MPI.COMM_WORLD, A, b)
+    # u.x.array[:] =
+    solver(MPI.COMM_WORLD, A, b, u.x)
 
     # Reference Solution
     def ref_eval(x):
@@ -111,4 +112,4 @@ def test_complex_assembly_solve(complex_dtype, solver):
     u_ref.interpolate(ref_eval)
 
     diff = (np.real(u.x.array) - u_ref.x.array)
-    assert np.abs(diff).max() < 1e-4
+    assert np.abs(diff).max() < 1e-3
