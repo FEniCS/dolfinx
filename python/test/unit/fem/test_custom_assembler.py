@@ -36,7 +36,10 @@ numba = pytest.importorskip("numba")
 # Get PETSc MatSetValuesLocal interfaces
 MatSetValuesLocal = petsc_numba.MatSetValuesLocal
 MatSetValuesLocal_ctypes = petsc_ctypes.MatSetValuesLocal
-MatSetValuesLocal_abi = petsc_cffi.MatSetValuesLocal
+try:
+    MatSetValuesLocal_abi = petsc_cffi.MatSetValuesLocal
+except AttributeError:
+    MatSetValuesLocal_abi = None
 
 
 @numba.njit

@@ -31,7 +31,7 @@ ARG OPENMPI_PATCH=0
 ########################################
 
 FROM ubuntu:22.04 as dev-env
-LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
+LABEL maintainer="FEniCS Steering Council <fenics-steering-council@googlegroups.com>"
 LABEL description="FEniCS testing and development environment with PETSc real, complex, 32-bit and 64-bit modes"
 
 ARG DOXYGEN_VERSION
