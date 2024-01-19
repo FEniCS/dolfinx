@@ -69,6 +69,7 @@ class numba_utils:
     """
     try:
         import petsc4py.PETSc as _PETSc
+
         import llvmlite as _llvmlite
         import numba as _numba
         _llvmlite.binding.load_library_permanently(str(get_petsc_lib()))
@@ -157,10 +158,11 @@ class cffi_utils:
                                 ffi.from_buffer(rows(data), mode)
     """
     try:
+        from petsc4py import PETSc as _PETSc
+
         import cffi as _cffi
         import numba as _numba
         import numba.core.typing.cffi_utils as _cffi_support
-        from petsc4py import PETSc as _PETSc
 
         # Register complex types
         _ffi = _cffi.FFI()
