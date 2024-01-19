@@ -154,7 +154,6 @@ def test_parallel_mixed_mesh():
 def test_create_entities():
     mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, CellType.prism, ghost_mode=GhostMode.none)
 
-
     # Make triangle and quadrilateral facets
     mesh.topology.create_entities(2)
 
