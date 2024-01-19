@@ -17,23 +17,31 @@
 
 using namespace dolfinx;
 
-using T = double;                                   // field scalar type
-using U = typename dolfinx::scalar_value_type_t<T>; // geometry scalar type
+using T = double;
 
 template <typename T, std::size_t ndim>
 using mdspan_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
     T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, ndim>>;
 
+template <typename T>
+using mdspan3x3_t
+    = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<T,
+                                             std::extents<std::size_t, 3, 3>>;
+
 // .. code-block:: cpp
 
+/// @brief Compute an element matrix on the reference cell.
+/// @tparam V Scalar type
+/// @param basis Basis functions
+/// @param weights Integration weights
+/// @return Element reference matrix (data, shape)
 template <typename V>
 std::pair<std::vector<V>, std::array<std::size_t, 2>>
 A_ref(mdspan_t<const V, 4> basis, std::span<const V> weights)
 {
   std::size_t dim = basis.extent(2);
-  std::array shape = {dim, dim};
-  std::vector<T> A_b(shape[0] * shape[1]);
-  mdspan_t<T, 2> A(A_b.data(), shape);
+  std::vector<T> A_b(dim * dim);
+  mdspan_t<T, 2> A(A_b.data(), std::array{dim, dim});
 
   // einsum k,ki,kj->ij on weights, basis_span, basis_span
   for (std::size_t k = 0; k < basis.extent(1); ++k)
@@ -41,9 +49,14 @@ A_ref(mdspan_t<const V, 4> basis, std::span<const V> weights)
       for (std::size_t j = 0; j < A.extent(1); ++j)
         A(i, j) += weights[k] * basis(0, k, i, 0) * basis(0, k, j, 0);
 
-  return {A_b, shape};
+  return {A_b, {dim, dim}};
 }
 
+/// @brief Compute a RHS vector on the reference cell
+/// @tparam V Scalar type
+/// @param basis Basis functions
+/// @param weights Integration weights
+/// @return RHS reference vector
 template <typename V>
 std::vector<V> b_ref(mdspan_t<const V, 4> basis, std::span<const V> weights)
 {
@@ -55,9 +68,14 @@ std::vector<V> b_ref(mdspan_t<const V, 4> basis, std::span<const V> weights)
   return b;
 }
 
+/// @brief Assemble a RHS vector using a std::function kernel function.
+/// @tparam T Scalar type
+/// @param V Function space
+/// @param kernel Element kernel to execute
+/// @param cells Cells to execute the kernel over
 template <typename T>
-void assemble0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
-               const std::vector<std::int32_t>& cells)
+void assemble_matrix0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
+                      const std::vector<std::int32_t>& cells)
 {
   // Define form from integral
   using KernelFn = std::function<void(T*, const T*, const T*, const T*,
@@ -65,8 +83,7 @@ void assemble0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
   std::map integrals{
       std::pair{fem::IntegralType::cell,
                 std::vector{std::tuple{-1, KernelFn(kernel), cells}}}};
-
-  std::shared_ptr<const mesh::Mesh<U>> mesh = V->mesh();
+  std::shared_ptr<const mesh::Mesh<T>> mesh = V->mesh();
   fem::Form<T> a({V, V}, integrals, {}, {}, false, mesh);
 
   auto dofmap = V->dofmap();
@@ -77,44 +94,51 @@ void assemble0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
   sparsity.finalize();
   auto A = la::MatrixCSR<T>(sparsity);
   {
-    common::Timer timer("Assembler0");
+    common::Timer timer("Assembler0 (matrix)");
     for (int i = 0; i < 100; ++i)
       assemble_matrix(A.mat_add_values(), a, {});
     A.scatter_rev();
   }
-  std::cout << "Norm (0): " << A.squared_norm() << std::endl;
+  std::cout << "A-morm (0): " << A.squared_norm() << std::endl;
 }
 
+/// @brief Assemble a RHS vector using a std::function kernel function.
+/// @tparam T Scalar type
+/// @param V Function space
+/// @param kernel Element kernel to execute
+/// @param cells Cells to execute the kernel over
 template <typename T>
 void assemble_vector0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
                       const std::vector<std::int32_t>& cells)
 {
-  // Define form from integral
   using KernelFn = std::function<void(T*, const T*, const T*, const T*,
                                       const int*, const u_int8_t*)>;
   std::map integrals{
       std::pair{fem::IntegralType::cell,
                 std::vector{std::tuple{-1, KernelFn(kernel), cells}}}};
-
-  std::shared_ptr<const mesh::Mesh<U>> mesh = V->mesh();
+  auto mesh = V->mesh();
   fem::Form<T> L({V}, integrals, {}, {}, false, mesh);
 
   auto dofmap = V->dofmap();
   la::Vector<T> b(dofmap->index_map, 1);
   {
-    common::Timer timer("Assembler_vector0");
+    common::Timer timer("Assembler0 (vector)");
     for (int i = 0; i < 100; ++i)
-      fem::assemble_vector<T>(b.mutable_array(), L);
+      fem::assemble_vector(b.mutable_array(), L);
     b.scatter_rev(std::plus<T>());
   }
-  // std::cout << "Norm vector (0): " << b.norm() << std::endl;
+  std::cout << "b-norm (0): " << la::squared_norm(b) << std::endl;
 }
 
+/// @brief Assemble a matrix operator using an inlined kernel function.
+/// @tparam T Scalar type
+/// @param V Function space
+/// @param kernel Element kernel to execute
+/// @param cells Cells to execute the kernel over
 template <typename T>
-void assemble1(const fem::FunctionSpace<T>& V, auto kernel,
-               std::span<const std::int32_t> cells)
+void assemble_matrix1(const fem::FunctionSpace<T>& V, auto kernel,
+                      std::span<const std::int32_t> cells)
 {
-  auto mesh = V.mesh();
   auto dofmap = V.dofmap();
   auto sparsity = la::SparsityPattern(
       MPI_COMM_WORLD, {dofmap->index_map, dofmap->index_map},
@@ -124,35 +148,36 @@ void assemble1(const fem::FunctionSpace<T>& V, auto kernel,
   auto A = la::MatrixCSR<T>(sparsity);
 
   auto ident = [](auto, auto, auto, auto) {};
-  const mesh::Geometry<U>& g = mesh->geometry();
-  common::Timer timer("Assembler1");
+  const mesh::Geometry<T>& g = V.mesh()->geometry();
+  common::Timer timer("Assembler1 (matrix)");
   for (int i = 0; i < 100; ++i)
     fem::impl::assemble_cells(A.mat_add_values(), g.dofmap(), g.x(), cells,
                               ident, dofmap->map(), 1, ident, dofmap->map(), 1,
                               {}, {}, kernel, std::span<const T>(), 0, {}, {});
   A.scatter_rev();
-  std::cout << "Norm (1): " << A.squared_norm() << std::endl;
+  std::cout << "A-norm (1): " << A.squared_norm() << std::endl;
 }
 
+/// @brief Assemble a RHS vector using an inlined kernel function.
+/// @tparam T Scalar type
+/// @param V Function space
+/// @param kernel Element kernel to execute
+/// @param cells Cells to execute the kernel over
 template <typename T>
-void assemble_vector1(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
+void assemble_vector1(const fem::FunctionSpace<T>& V, auto kernel,
                       const std::vector<std::int32_t>& cells)
 {
-  auto mesh = V.mesh();
   auto dofmap = V.dofmap();
   la::Vector<T> b(dofmap->index_map, 1);
 
-  auto ident = [](auto, auto, auto, auto) {};
-  const mesh::Geometry<U>& g = mesh->geometry();
-  common::Timer timer("Assembler1");
+  const mesh::Geometry<T>& g = V.mesh()->geometry();
+  common::Timer timer("Assembler1 (vector)");
   for (int i = 0; i < 100; ++i)
-    fem::impl::assemble_cells(ident, b.mutable_array(), g.dofmap(), g.x(),
-                              cells, dofmap->map(), 1, kernel,
-                              std::span<const T>(), std::span<const T>(), 0,
-                              std::span<const std::uint32_t>());
-
-  // b.scatter_rev();
-  // std::cout << "Norm (1): " << b.squared_norm() << std::endl;
+    fem::impl::assemble_cells<T, 1>([](auto, auto, auto, auto) {},
+                                    b.mutable_array(), g.dofmap(), g.x(), cells,
+                                    dofmap->map(), 1, kernel, {}, {}, 0, {});
+  b.scatter_rev(std::plus<T>());
+  std::cout << "b-norm (1): " << la::squared_norm(b) << std::endl;
 }
 
 int main(int argc, char* argv[])
@@ -161,8 +186,8 @@ int main(int argc, char* argv[])
   MPI_Init(&argc, &argv);
   {
     // Create mesh and function space
-    auto mesh = std::make_shared<mesh::Mesh<U>>(
-        mesh::create_rectangle<U>(MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}},
+    auto mesh = std::make_shared<mesh::Mesh<T>>(
+        mesh::create_rectangle<T>(MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}},
                                   {64, 64}, mesh::CellType::triangle));
 
     // Create Basix element for the field u. This will be used to construct
@@ -185,7 +210,7 @@ int main(int argc, char* argv[])
     mdspan_t<const T, 2> X(X_b.data(), num_points, 2);
 
     // Create a scalar function space
-    auto V = std::make_shared<fem::FunctionSpace<U>>(
+    auto V = std::make_shared<fem::FunctionSpace<T>>(
         fem::create_functionspace(mesh, e));
 
     // Create default domain integral on all local cells
@@ -203,32 +228,36 @@ int main(int argc, char* argv[])
     e.tabulate(0, X, basis);
 
     // Define finite element mass kernel.
-    auto [A_hat_b, A_shape] = A_ref<U>(basis, weights);
-    mdspan_t<T, 2> A_hat(A_hat_b.data(), A_shape);
-    auto mass_cell_kernel = [A_hat](T* A, const T*, const T*, const U* x,
-                                    const int*, const u_int8_t*)
+    auto [A_hat_b, A_shape] = A_ref<T>(basis, weights);
+    auto mass_kernel_a
+        = [A_hat = mdspan3x3_t<T>(A_hat_b.data())](
+              T* A, const T*, const T*, const T* x, const int*, const u_int8_t*)
     {
-      U detJ = std::abs((x[0] - x[3]) * (x[7] - x[4])
+      T detJ = std::abs((x[0] - x[3]) * (x[7] - x[4])
                         - (x[1] - x[4]) * (x[6] - x[3]));
+      mdspan3x3_t<T> _A(A);
       for (std::size_t i = 0; i < A_hat.extent(0); ++i)
         for (std::size_t j = 0; j < A_hat.extent(1); ++j)
-          A[i * A_hat.extent(0) + j] = detJ * A_hat(i, j);
+          _A(i, j) = detJ * A_hat(i, j);
     };
 
-    auto b_hat = b_ref<U>(basis, weights);
-    auto mass_cell_kernel_rhs = [b_hat](T* A, const T*, const T*, const U* x,
-                                        const int*, const u_int8_t*)
+    auto mass_kernel_L
+        = [b_hat = b_ref<T>(basis, weights)](
+              T* A, const T*, const T*, const T* x, const int*, const u_int8_t*)
     {
-      U detJ = std::abs((x[0] - x[3]) * (x[7] - x[4])
+      T detJ = std::abs((x[0] - x[3]) * (x[7] - x[4])
                         - (x[1] - x[4]) * (x[6] - x[3]));
-      for (std::size_t i = 0; i < b_hat.size(); ++i)
+      for (std::size_t i = 0; i < 3; ++i)
         A[i] = detJ * b_hat[i];
     };
 
-    assemble0<T>(V, mass_cell_kernel, cells);
-    assemble_vector0<T>(V, mass_cell_kernel, cells);
+    // Assemble using std::function kernel
+    assemble_matrix0<T>(V, mass_kernel_a, cells);
+    assemble_vector0<T>(V, mass_kernel_L, cells);
 
-    assemble1<T>(*V, mass_cell_kernel_rhs, cells);
+    // Assemble using lambda kernel
+    assemble_matrix1<T>(*V, mass_kernel_a, cells);
+    assemble_vector1<T>(*V, mass_kernel_L, cells);
   }
 
   list_timings(MPI_COMM_WORLD, {TimingType::wall});

@@ -496,7 +496,6 @@ void assemble_cells(fem::DofTransformKernel<T> auto dof_transform,
   if (cells.empty())
     return;
 
-  // FIXME: Add proper interface for num_dofs
   // Create data structures used in assembly
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * x_dofmap.extent(1));
   std::vector<T> be(bs * dofmap.extent(1));
