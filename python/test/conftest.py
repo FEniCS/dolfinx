@@ -3,6 +3,9 @@ import os
 import shutil
 import time
 from collections import defaultdict
+from scipy.sparse.linalg import spsolve
+from dolfinx.la import vector as dolfinx_vector
+import numpy as np
 
 from mpi4py import MPI
 
@@ -136,3 +139,61 @@ def tempdir(request):
 
     """
     return _create_tempdir(request)
+
+
+def _global_dot(comm, v0, v1, n):
+    local_dot = np.dot(v0[:n], v1[:n])
+    return comm.allreduce(local_dot, MPI.SUM)
+
+
+def _cg(comm, A0, b, x):
+    kmax = 500
+    rtol = 1e-8
+
+    A = A0.to_scipy()
+    nr = A.shape[0]
+    assert nr == A0.index_map(0).size_local
+
+    x.scatter_forward()
+    y = A @ x.array
+    r = b[:nr] - y
+    p = dolfinx_vector(A0.index_map(1), dtype=x.array.dtype)
+    p.array[:nr] = r
+
+    # Iterations of CG
+    rnorm0 = _global_dot(comm, r, r, nr)
+    rtol2 = rtol * rtol
+    rnorm = rnorm0
+    k = 0
+    while (k < kmax):
+        k += 1
+        p.scatter_forward()
+        y = A @ p.array
+        alpha = rnorm / _global_dot(comm, p.array, y, nr)
+        x.array[:] += alpha * p.array
+        r -= alpha * y
+        rnorm_new = _global_dot(comm, r, r, nr)
+        beta = rnorm_new / rnorm
+        rnorm = rnorm_new
+        if (rnorm / rnorm0 < rtol2):
+            break
+        p.array[:nr] = beta * p.array[:nr] + r
+
+    return k, x
+
+
+@pytest.fixture(scope="function")
+def solver():
+
+    def _solve(comm, A, b):
+        if comm.size == 1:
+            AA = A.to_scipy()
+            bb = b.array
+            return spsolve(AA, bb)
+        else:
+            x = dolfinx_vector(A.index_map(1), dtype=b.array.dtype)
+            x.array[:] = 0.0
+            _cg(comm, A, b.array, x)
+            return x.array[:len(b.array)]
+
+    return _solve
