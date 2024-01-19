@@ -184,6 +184,8 @@ def _cg(comm, A0, b, x):
 
 @pytest.fixture(scope="function")
 def solver():
+    """Simple solver which can work in serial or parallel for testing use.
+       Not suitable for large problems."""
 
     def _solve(comm, A, b):
         if comm.size == 1:
