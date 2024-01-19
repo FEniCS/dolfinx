@@ -23,7 +23,8 @@ from ufl import dx, grad, inner
 def test_complex_assembly(complex_dtype):
     """Test assembly of complex matrices and vectors"""
 
-    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
+    real_dtype = np.real(complex_dtype(1.0)).dtype
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, dtype=real_dtype)
     P2 = element("Lagrange", mesh.basix_cell(), 2)
     V = functionspace(mesh, P2)
     u = ufl.TrialFunction(V)
@@ -59,7 +60,7 @@ def test_complex_assembly(complex_dtype):
 
     a_complex = form((1 + 1j) * inner(u, v) * dx, dtype=complex_dtype)
     f = ufl.sin(2 * np.pi * x[0])
-    L2 = form(inner(f, v) * dx)
+    L2 = form(inner(f, v) * dx, dtype=complex_dtype)
     A = assemble_matrix(a_complex)
     A.scatter_reverse()
     A2_norm = A.squared_norm()
@@ -75,9 +76,8 @@ def test_complex_assembly_solve(complex_dtype, solver):
     """Solve a positive definite helmholtz problem and verify solution
     with the method of manufactured solutions"""
 
-    real_dtype = np.real(complex_dtype(1.0)).dtype
-
     degree = 3
+    real_dtype = np.real(complex_dtype(1.0)).dtype
     mesh = create_unit_square(MPI.COMM_WORLD, 20, 20, dtype=real_dtype)
     P = element("Lagrange", mesh.basix_cell(), degree)
     V = functionspace(mesh, P)
@@ -111,5 +111,4 @@ def test_complex_assembly_solve(complex_dtype, solver):
     u_ref.interpolate(ref_eval)
 
     diff = (np.real(u.x.array) - u_ref.x.array)
-    print(np.abs(diff).max())
     assert np.abs(diff).max() < 1e-4
