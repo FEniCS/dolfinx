@@ -146,18 +146,18 @@ def _global_dot(comm, v0, v1, n):
     return comm.allreduce(local_dot, MPI.SUM)
 
 
-def _cg(comm, A0, b, x):
+def _cg(comm, A, b, x):
     kmax = 500
     rtol = 1e-8
 
-    A = A0.to_scipy()
-    nr = A.shape[0]
-    assert nr == A0.index_map(0).size_local
+    A_op = A.to_scipy()
+    nr = A_op.shape[0]
+    assert nr == A.index_map(0).size_local
 
     x.scatter_forward()
-    y = A @ x.array
-    r = b[:nr] - y
-    p = dolfinx_vector(A0.index_map(1), dtype=x.array.dtype)
+    y = A_op @ x.array
+    r = b.array[:nr] - y
+    p = dolfinx_vector(A.index_map(1), dtype=x.array.dtype)
     p.array[:nr] = r
 
     # Iterations of CG
@@ -168,7 +168,7 @@ def _cg(comm, A0, b, x):
     while (k < kmax):
         k += 1
         p.scatter_forward()
-        y = A @ p.array
+        y = A_op @ p.array
         alpha = rnorm / _global_dot(comm, p.array, y, nr)
         x.array[:] += alpha * p.array
         r -= alpha * y
@@ -195,7 +195,10 @@ def solver():
         else:
             x = dolfinx_vector(A.index_map(1), dtype=b.array.dtype)
             x.array[:] = 0.0
-            _cg(comm, A, b.array, x)
-            return x.array[:len(b.array)]
+            _cg(comm, A, b, x)
+            nr = b.index_map.size_local + b.index_map.num_ghosts
+            assert nr <= len(x.array)
+            x.array[nr:] = 0.0
+            return x.array[:nr]
 
     return _solve

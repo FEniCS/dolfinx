@@ -29,7 +29,6 @@ def test_complex_assembly(complex_dtype):
     u = ufl.TrialFunction(V)
     v = ufl.TestFunction(V)
     g = -2 + 3.0j
-    j = 1.0j
 
     a_real = form(inner(u, v) * dx, dtype=complex_dtype)
     L1 = form(inner(g, v) * dx, dtype=complex_dtype)
@@ -46,7 +45,7 @@ def test_complex_assembly(complex_dtype):
 
     x = ufl.SpatialCoordinate(mesh)
 
-    a_imag = form(j * inner(u, v) * dx, dtype=complex_dtype)
+    a_imag = form(1j * inner(u, v) * dx, dtype=complex_dtype)
     f = 1j * ufl.sin(2 * np.pi * x[0])
     L0 = form(inner(f, v) * dx, dtype=complex_dtype)
     A = assemble_matrix(a_imag)
@@ -58,7 +57,7 @@ def test_complex_assembly(complex_dtype):
     b.scatter_reverse(la.InsertMode.add)
     b1_norm = b.norm()
 
-    a_complex = form((1 + j) * inner(u, v) * dx, dtype=complex_dtype)
+    a_complex = form((1 + 1j) * inner(u, v) * dx, dtype=complex_dtype)
     f = ufl.sin(2 * np.pi * x[0])
     L2 = form(inner(f, v) * dx)
     A = assemble_matrix(a_complex)
