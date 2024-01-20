@@ -4,7 +4,7 @@
 #
 cmake_minimum_required(VERSION 3.19)
 
-set(PROJECT_NAME demo_custom_cell_kernel)
+set(PROJECT_NAME demo_custom_kernel)
 project(${PROJECT_NAME} LANGUAGES C CXX)
 
 # Set C++20 standard
