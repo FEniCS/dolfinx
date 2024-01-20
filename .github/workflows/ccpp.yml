@@ -71,14 +71,11 @@ jobs:
           python3 -m flake8 dolfinx
           python3 -m flake8 demo
           python3 -m flake8 test
-      - name: isort checks (non-blocking)
-        continue-on-error: true
+      - name: isort check
         run: |
-          cd cpp/
-          python3 -m isort --check .
-          cd ..
           cd python/
           python3 -m isort --check .
+          python3 -m isort --check ../cpp
       - name: mypy checks
         run: |
           cd python/
