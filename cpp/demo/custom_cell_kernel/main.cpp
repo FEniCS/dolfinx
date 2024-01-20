@@ -172,12 +172,9 @@ double assemble_vector1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
 template <typename T>
 void assemble_vector2(std::shared_ptr<const fem::FunctionSpace<T>> V)
 {
-  auto f = std::make_shared<fem::Function<T>>(V);
-  auto L = std::make_shared<fem::Form<T>>(fem::create_form<T>(*form_mass_L, {V},
-                                                              {
-                                                                  {"f", f},
-                                                              },
-                                                              {}, {}));
+  auto L = std::make_shared<fem::Form<T>>(fem::create_form<T>(
+      *form_mass_L, {V},
+      std::vector<std::shared_ptr<const fem::Function<T, T>>>(), {}, {}));
   common::Timer timer("Assembler3 (vector)");
   la::Vector<T> b(V->dofmap()->index_map, 1);
   fem::assemble_vector(b.mutable_array(), *L);
@@ -223,9 +220,9 @@ void assemble(MPI_Comm comm)
   auto e_shape = e.tabulate_shape(0, weights.size());
   std::size_t length
       = std::accumulate(e_shape.begin(), e_shape.end(), 1, std::multiplies<>{});
-  std::vector<T> basis_b(length);
-  mdspan_t<T, 4> basis(basis_b.data(), e_shape);
-  e.tabulate(0, X, basis);
+  std::vector<T> phi_b(length);
+  mdspan_t<T, 4> phi(phi_b.data(), e_shape);
+  e.tabulate(0, X, phi);
 
   // Utility function to compute det(J) for an affine triangle cell
   // (geometry is 3D)
@@ -236,7 +233,7 @@ void assemble(MPI_Comm comm)
   };
 
   // Finite element mass matrix kernel function
-  std::array<T, 9> A_hat_b = A_ref<T>(basis, weights);
+  std::array<T, 9> A_hat_b = A_ref<T>(phi, weights);
   auto kernel_a
       = [A_hat = mdspan3x3_t<T>(A_hat_b.data()),
          detJ](T* A, const T*, const T*, const T* x, const int*, const uint8_t*)
@@ -250,7 +247,7 @@ void assemble(MPI_Comm comm)
 
   // Finite element RHD (f=1_ kernel function
   auto kernel_L
-      = [b_hat = b_ref<T>(basis, weights),
+      = [b_hat = b_ref<T>(phi, weights),
          detJ](T* b, const T*, const T*, const T* x, const int*, const uint8_t*)
   {
     T scale = detJ(std::span<const T, 9>(x, 9));
@@ -267,7 +264,8 @@ void assemble(MPI_Comm comm)
   assemble_matrix1<T>(mesh->geometry(), *V->dofmap(), kernel_a, cells);
   assemble_vector1<T>(mesh->geometry(), *V->dofmap(), kernel_L, cells);
 
-  assemble_vector2<T>(V);
+  if constexpr (std::is_same_v<T, PetscScalar>)
+    assemble_vector2<T>(V);
 
   list_timings(comm, {TimingType::wall});
 }
@@ -277,7 +275,7 @@ int main(int argc, char* argv[])
   dolfinx::init_logging(argc, argv);
   MPI_Init(&argc, &argv);
   assemble<float>(MPI_COMM_WORLD);
-  // assemble<double>(MPI_COMM_WORLD);
+  assemble<double>(MPI_COMM_WORLD);
   MPI_Finalize();
   return 0;
 }
