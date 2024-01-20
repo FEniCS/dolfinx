@@ -91,7 +91,7 @@ public:
                           std::function<void(T*, const T*, const T*,
                                              const scalar_value_type_t<T>*,
                                              const int*, const std::uint8_t*)>,
-                          std::span<const std::int32_t>>>>& integrals,
+                          std::vector<std::int32_t>>>>& integrals,
        const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients,
        const std::vector<std::shared_ptr<const Constant<T>>>& constants,
        bool needs_facet_permutations,
@@ -113,9 +113,9 @@ public:
     // Store kernels, looping over integrals by domain type (dimension)
     for (auto& [type, kernels] : integrals)
     {
-      auto& itg = _integrals[static_cast<std::size_t>(type)];
+      auto& integrals = _integrals[static_cast<std::size_t>(type)];
       for (auto& [id, kern, e] : kernels)
-        itg.insert({id, {kern, std::vector(e.begin(), e.end())}});
+        integrals.insert({id, {kern, std::vector(e.begin(), e.end())}});
     }
   }
 
@@ -148,7 +148,7 @@ public:
   /// @brief Get the kernel function for integral i on given domain
   /// type.
   /// @param[in] type Integral type
-  /// @param[in] i Domain identifier (index)
+  /// @param[in] i Domain index
   /// @return Function to call for tabulate_tensor
   std::function<void(T*, const T*, const T*, const scalar_value_type_t<T>*,
                      const int*, const std::uint8_t*)>
@@ -257,9 +257,9 @@ public:
   }
 
 private:
-  using kern_t = std::function<void(T*, const T*, const T*,
-                                    const scalar_value_type_t<T>*, const int*,
-                                    const std::uint8_t*)>;
+  using kern = std::function<void(T*, const T*, const T*,
+                                  const scalar_value_type_t<T>*, const int*,
+                                  const std::uint8_t*)>;
 
   // Function spaces (one for each argument)
   std::vector<std::shared_ptr<const FunctionSpace<U>>> _function_spaces;
@@ -275,7 +275,7 @@ private:
 
   // Integrals. Array index is
   // static_cast<std::size_t(IntegralType::foo)
-  std::array<std::map<int, std::pair<kern_t, std::vector<std::int32_t>>>, 4>
+  std::array<std::map<int, std::pair<kern, std::vector<std::int32_t>>>, 4>
       _integrals;
 
   // True if permutation data needs to be passed into these integrals

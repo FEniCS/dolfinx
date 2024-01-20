@@ -283,7 +283,7 @@ Form<T, U> create_form(
     const std::vector<std::shared_ptr<const Constant<T>>>& constants,
     const std::map<
         IntegralType,
-        std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>&
+        std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>&
         subdomains,
     std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
 {
@@ -351,13 +351,12 @@ Form<T, U> create_form(
       T*, const T*, const T*, const typename scalar_value_type<T>::value_type*,
       const int*, const std::uint8_t*)>;
   std::map<IntegralType,
-           std::vector<std::tuple<int, kern, std::span<const std::int32_t>>>>
+           std::vector<std::tuple<int, kern, std::vector<std::int32_t>>>>
       integral_data;
 
   bool needs_facet_permutations = false;
 
   // Attach cell kernels
-  std::vector<std::int32_t> default_cells;
   {
     std::span<const int> ids(ufcx_form.form_integral_ids
                                  + integral_offsets[cell],
@@ -392,14 +391,15 @@ Form<T, U> create_form(
       }
       assert(k);
 
-      // Build list of entities to assemble over
+      // Build list of entities to assembler over
       if (id == -1)
       {
         // Default kernel, operates on all (owned) cells
         assert(topology->index_map(tdim));
-        default_cells.resize(topology->index_map(tdim)->size_local(), 0);
-        std::iota(default_cells.begin(), default_cells.end(), 0);
-        itg.first->second.emplace_back(id, k, default_cells);
+        std::vector<std::int32_t> e;
+        e.resize(topology->index_map(tdim)->size_local(), 0);
+        std::iota(e.begin(), e.end(), 0);
+        itg.first->second.emplace_back(id, k, std::move(e));
       }
       else if (sd != subdomains.end())
       {
@@ -417,7 +417,6 @@ Form<T, U> create_form(
   }
 
   // Attach exterior facet kernels
-  std::vector<std::int32_t> default_facets_ext;
   {
     std::span<const int> ids(ufcx_form.form_integral_ids
                                  + integral_offsets[exterior_facet],
@@ -461,16 +460,16 @@ Form<T, U> create_form(
       if (id == -1)
       {
         // Default kernel, operates on all (owned) exterior facets
-        default_facets_ext.reserve(2 * bfacets.size());
+        std::vector<std::int32_t> e;
+        e.reserve(2 * bfacets.size());
         for (std::int32_t f : bfacets)
         {
           // There will only be one pair for an exterior facet integral
           auto pair
               = impl::get_cell_facet_pairs<1>(f, f_to_c->links(f), *c_to_f);
-          default_facets_ext.insert(default_facets_ext.end(), pair.begin(),
-                                    pair.end());
+          e.insert(e.end(), pair.begin(), pair.end());
         }
-        itg.first->second.emplace_back(id, k, default_facets_ext);
+        itg.first->second.emplace_back(id, k, std::move(e));
       }
       else if (sd != subdomains.end())
       {
@@ -488,7 +487,6 @@ Form<T, U> create_form(
   }
 
   // Attach interior facet kernels
-  std::vector<std::int32_t> default_facets_int;
   {
     std::span<const int> ids(ufcx_form.form_integral_ids
                                  + integral_offsets[interior_facet],
@@ -531,20 +529,20 @@ Form<T, U> create_form(
       if (id == -1)
       {
         // Default kernel, operates on all (owned) interior facets
+        std::vector<std::int32_t> e;
         assert(topology->index_map(tdim - 1));
         std::int32_t num_facets = topology->index_map(tdim - 1)->size_local();
-        default_facets_int.reserve(4 * num_facets);
+        e.reserve(4 * num_facets);
         for (std::int32_t f = 0; f < num_facets; ++f)
         {
           if (f_to_c->num_links(f) == 2)
           {
             auto pairs
                 = impl::get_cell_facet_pairs<2>(f, f_to_c->links(f), *c_to_f);
-            default_facets_int.insert(default_facets_int.end(), pairs.begin(),
-                                      pairs.end());
+            e.insert(e.end(), pairs.begin(), pairs.end());
           }
         }
-        itg.first->second.emplace_back(id, k, default_facets_int);
+        itg.first->second.emplace_back(id, k, std::move(e));
       }
       else if (sd != subdomains.end())
       {
@@ -594,7 +592,7 @@ Form<T, U> create_form(
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
     const std::map<
         IntegralType,
-        std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>&
+        std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>&
         subdomains,
     std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
 {
@@ -645,7 +643,7 @@ Form<T, U> create_form(
     const std::map<std::string, std::shared_ptr<const Constant<T>>>& constants,
     const std::map<
         IntegralType,
-        std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>&
+        std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>&
         subdomains,
     std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
 {

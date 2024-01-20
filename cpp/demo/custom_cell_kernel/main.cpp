@@ -19,8 +19,6 @@
 
 using namespace dolfinx;
 
-using T = double;
-
 template <typename T, std::size_t ndim>
 using mdspan_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
     T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, ndim>>;
@@ -28,7 +26,9 @@ template <typename T>
 using mdspan3x3_t
     = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<T,
                                              std::extents<std::size_t, 3, 3>>;
-using KernelFn = std::function<void(T*, const T*, const T*, const T*,
+
+template <typename T>
+using kernel_t = std::function<void(T*, const T*, const T*, const T*,
                                     const int*, const uint8_t*)>;
 
 // .. code-block:: cpp
@@ -74,10 +74,10 @@ std::array<T, 3> b_ref(mdspan_t<const T, 4> basis, std::span<const T> weights)
 /// @return Frobenius norm squared of the matrix.
 template <typename T>
 double assemble_matrix0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
-                        std::span<const std::int32_t> cells)
+                        std::vector<std::int32_t> cells)
 {
   // Kernel data (ID, kernel function, cell indices to execute over)
-  std::vector kernal_data{std::tuple{-1, KernelFn(kernel), cells}};
+  std::vector kernal_data{std::tuple{-1, kernel_t<T>(kernel), cells}};
 
   // Associate kernel with cells (as opposed to facets, etc)
   std::map integrals{std::pair{fem::IntegralType::cell, kernal_data}};
@@ -104,9 +104,9 @@ double assemble_matrix0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
 /// @return l2 norm squared of the vector.
 template <typename T>
 double assemble_vector0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
-                        std::span<const std::int32_t> cells)
+                        std::vector<std::int32_t> cells)
 {
-  std::vector kernal_data{std::tuple{-1, KernelFn(kernel), cells}};
+  std::vector kernal_data{std::tuple{-1, kernel_t<T>(kernel), cells}};
   std::map integrals{std::pair{fem::IntegralType::cell, kernal_data}};
 
   auto mesh = V->mesh();
@@ -130,7 +130,7 @@ double assemble_vector0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
 /// @return Frobenius norm squared of the matrix.
 template <typename T>
 double assemble_matrix1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
-                        auto kernel, std::span<const std::int32_t> cells)
+                        auto kernel, std::vector<std::int32_t> cells)
 {
   auto sp = la::SparsityPattern(dofmap.index_map->comm(),
                                 {dofmap.index_map, dofmap.index_map},
@@ -173,7 +173,6 @@ template <typename T>
 void assemble_vector2(std::shared_ptr<const fem::FunctionSpace<T>> V)
 {
   auto f = std::make_shared<fem::Function<T>>(V);
-  auto g = std::make_shared<fem::Function<T>>(V);
   auto L = std::make_shared<fem::Form<T>>(fem::create_form<T>(*form_mass_L, {V},
                                                               {
                                                                   {"f", f},
@@ -184,98 +183,101 @@ void assemble_vector2(std::shared_ptr<const fem::FunctionSpace<T>> V)
   fem::assemble_vector(b.mutable_array(), *L);
 }
 
+template <typename T>
+void assemble(MPI_Comm comm)
+{
+  // Create mesh
+  auto mesh = std::make_shared<mesh::Mesh<T>>(mesh::create_rectangle<T>(
+      comm, {{{0, 0}, {1, 1}}}, {516, 116}, mesh::CellType::triangle));
+
+  // Create Basix P1 Lagrange element. This will be used to construct
+  // basis functions inside the custom cell kernel.
+  constexpr int order = 1;
+  basix::FiniteElement e = basix::create_element<T>(
+      basix::element::family::P,
+      mesh::cell_type_to_basix_type(mesh::CellType::triangle), order,
+      basix::element::lagrange_variant::unset,
+      basix::element::dpc_variant::unset, false);
+
+  // Construct quadrature rule
+  constexpr int max_degree = 2 * order;
+  auto quadrature_type = basix::quadrature::get_default_rule(
+      basix::cell::type::triangle, max_degree);
+  auto [X_b, weights] = basix::quadrature::make_quadrature<T>(
+      quadrature_type, basix::cell::type::triangle,
+      basix::polyset::type::standard, max_degree);
+  mdspan_t<const T, 2> X(X_b.data(), weights.size(), 2);
+
+  // Create a scalar function space
+  auto V = std::make_shared<fem::FunctionSpace<T>>(
+      fem::create_functionspace(mesh, e));
+
+  // Build list of cells to assembler over (all cells owned by this
+  // rank)
+  std::int32_t size_local
+      = mesh->topology()->index_map(mesh->topology()->dim())->size_local();
+  std::vector<std::int32_t> cells(size_local);
+  std::iota(cells.begin(), cells.end(), 0);
+
+  // Tabulate basis functions at quadrature points
+  auto e_shape = e.tabulate_shape(0, weights.size());
+  std::size_t length
+      = std::accumulate(e_shape.begin(), e_shape.end(), 1, std::multiplies<>{});
+  std::vector<T> basis_b(length);
+  mdspan_t<T, 4> basis(basis_b.data(), e_shape);
+  e.tabulate(0, X, basis);
+
+  // Utility function to compute det(J) for an affine triangle cell
+  // (geometry is 3D)
+  auto detJ = [](std::span<const T, 9> x)
+  {
+    return std::abs((x[0] - x[3]) * (x[7] - x[4])
+                    - (x[1] - x[4]) * (x[6] - x[3]));
+  };
+
+  // Finite element mass matrix kernel function
+  std::array<T, 9> A_hat_b = A_ref<T>(basis, weights);
+  auto kernel_a
+      = [A_hat = mdspan3x3_t<T>(A_hat_b.data()),
+         detJ](T* A, const T*, const T*, const T* x, const int*, const uint8_t*)
+  {
+    T scale = detJ(std::span<const T, 9>(x, 9));
+    mdspan3x3_t<T> _A(A);
+    for (std::size_t i = 0; i < A_hat.extent(0); ++i)
+      for (std::size_t j = 0; j < A_hat.extent(1); ++j)
+        _A(i, j) = scale * A_hat(i, j);
+  };
+
+  // Finite element RHD (f=1_ kernel function
+  auto kernel_L
+      = [b_hat = b_ref<T>(basis, weights),
+         detJ](T* b, const T*, const T*, const T* x, const int*, const uint8_t*)
+  {
+    T scale = detJ(std::span<const T, 9>(x, 9));
+    for (std::size_t i = 0; i < 3; ++i)
+      b[i] = scale * b_hat[i];
+  };
+
+  // Assemble matrix and vector using std::function kernel
+  assemble_matrix0<T>(V, kernel_a, cells);
+  assemble_vector0<T>(V, kernel_L, cells);
+
+  // Assemble matrix and vector using lambda kernel. This version
+  // supports efficient inlining of the kernel.
+  assemble_matrix1<T>(mesh->geometry(), *V->dofmap(), kernel_a, cells);
+  assemble_vector1<T>(mesh->geometry(), *V->dofmap(), kernel_L, cells);
+
+  assemble_vector2<T>(V);
+
+  list_timings(comm, {TimingType::wall});
+}
+
 int main(int argc, char* argv[])
 {
   dolfinx::init_logging(argc, argv);
   MPI_Init(&argc, &argv);
-  {
-    // Create mesh
-    auto mesh = std::make_shared<mesh::Mesh<T>>(
-        mesh::create_rectangle<T>(MPI_COMM_WORLD, {{{0, 0}, {1, 1}}},
-                                  {516, 116}, mesh::CellType::triangle));
-
-    // Create Basix P1 Lagrange element. This will be used to construct
-    // basis functions inside the custom cell kernel.
-    constexpr int order = 1;
-    basix::FiniteElement e = basix::create_element<T>(
-        basix::element::family::P,
-        mesh::cell_type_to_basix_type(mesh::CellType::triangle), order,
-        basix::element::lagrange_variant::unset,
-        basix::element::dpc_variant::unset, false);
-
-    // Construct quadrature rule
-    constexpr int max_degree = 2 * order;
-    auto quadrature_type = basix::quadrature::get_default_rule(
-        basix::cell::type::triangle, max_degree);
-    auto [X_b, weights] = basix::quadrature::make_quadrature<T>(
-        quadrature_type, basix::cell::type::triangle,
-        basix::polyset::type::standard, max_degree);
-    mdspan_t<const T, 2> X(X_b.data(), weights.size(), 2);
-
-    // Create a scalar function space
-    auto V = std::make_shared<fem::FunctionSpace<T>>(
-        fem::create_functionspace(mesh, e));
-
-    // Build list of cells to assembler over (all cells owned by this
-    // rank)
-    std::int32_t size_local
-        = mesh->topology()->index_map(mesh->topology()->dim())->size_local();
-    std::vector<std::int32_t> cells(size_local);
-    std::iota(cells.begin(), cells.end(), 0);
-
-    // Tabulate basis functions at quadrature points
-    auto e_shape = e.tabulate_shape(0, weights.size());
-    std::size_t length = std::accumulate(e_shape.begin(), e_shape.end(), 1,
-                                         std::multiplies<>{});
-    std::vector<T> basis_b(length);
-    mdspan_t<T, 4> basis(basis_b.data(), e_shape);
-    e.tabulate(0, X, basis);
-
-    // Utility function to compute det(J) for an affine triangle cell
-    // (geometry is 3D)
-    auto detJ = [](std::span<const T, 9> x)
-    {
-      return std::abs((x[0] - x[3]) * (x[7] - x[4])
-                      - (x[1] - x[4]) * (x[6] - x[3]));
-    };
-
-    // Finite element mass matrix kernel function
-    std::array<T, 9> A_hat_b = A_ref<T>(basis, weights);
-    auto kernel_a
-        = [A_hat = mdspan3x3_t<T>(A_hat_b.data()), detJ](
-              T* A, const T*, const T*, const T* x, const int*, const uint8_t*)
-    {
-      T scale = detJ(std::span<const T, 9>(x, 9));
-      mdspan3x3_t<T> _A(A);
-      for (std::size_t i = 0; i < A_hat.extent(0); ++i)
-        for (std::size_t j = 0; j < A_hat.extent(1); ++j)
-          _A(i, j) = scale * A_hat(i, j);
-    };
-
-    // Finite element RHD (f=1_ kernel function
-    auto kernel_L
-        = [b_hat = b_ref<T>(basis, weights), detJ](
-              T* b, const T*, const T*, const T* x, const int*, const uint8_t*)
-    {
-      T scale = detJ(std::span<const T, 9>(x, 9));
-      for (std::size_t i = 0; i < 3; ++i)
-        b[i] = scale * b_hat[i];
-    };
-
-    // Assemble matrix and vector using std::function kernel
-    assemble_matrix0<T>(V, kernel_a, cells);
-    assemble_vector0<T>(V, kernel_L, cells);
-
-    // Assemble matrix and vector using lambda kernel. This version
-    // supports efficient inlining of the kernel.
-    assemble_matrix1<T>(mesh->geometry(), *V->dofmap(), kernel_a, cells);
-    assemble_vector1<T>(mesh->geometry(), *V->dofmap(), kernel_L, cells);
-
-    assemble_vector2<T>(V);
-  }
-
-  list_timings(MPI_COMM_WORLD, {TimingType::wall});
-
+  assemble<float>(MPI_COMM_WORLD);
+  // assemble<double>(MPI_COMM_WORLD);
   MPI_Finalize();
   return 0;
 }
