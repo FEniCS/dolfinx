@@ -730,6 +730,42 @@ def test_basic_interior_facet_assembly():
     b.destroy()
 
 
+@pytest.mark.parametrize("mesh", [
+    create_unit_square(MPI.COMM_WORLD, 5, 5, ghost_mode=GhostMode.shared_facet),
+    create_unit_cube(MPI.COMM_WORLD, 5, 5, 5, ghost_mode=GhostMode.shared_facet)])
+def test_symmetry_interior_facet_assembly(mesh):
+    V0 = functionspace(mesh, ("N2curl", 1))
+    V1 = functionspace(mesh, ("N2curl", 2))
+    u0, v0 = ufl.TrialFunction(V0), ufl.TestFunction(V0)
+    u1, v1 = ufl.TrialFunction(V1), ufl.TestFunction(V1)
+    a00 = None
+    a11 = None
+    a01 = ufl.inner(ufl.avg(v0), ufl.avg(u1)) * ufl.dS
+    a10 = ufl.inner(ufl.avg(v1), ufl.avg(u0)) * ufl.dS
+    a = form([[a00, a01], [a10, a11]])
+    A = petsc_assemble_matrix_block(a)
+    A.assemble()
+    assert isinstance(A, PETSc.Mat)
+    assert A.isSymmetric(tol=1.0e-8)
+    A.destroy()
+
+    V0 = functionspace(mesh, ("N2curl", 1))
+    V1 = functionspace(mesh, ("Regge", 1))
+    u0, v0 = ufl.TrialFunction(V0), ufl.TestFunction(V0)
+    u1, v1 = ufl.TrialFunction(V1), ufl.TestFunction(V1)
+    n = ufl.FacetNormal(mesh)
+    a00 = None
+    a11 = None
+    a01 = ufl.inner(ufl.avg(v0), ufl.dot(ufl.avg(u1), n('+'))) * ufl.dS
+    a10 = ufl.inner(ufl.dot(ufl.avg(v1), n('+')), ufl.avg(u0)) * ufl.dS
+    a = form([[a00, a01], [a10, a11]])
+    A = petsc_assemble_matrix_block(a)
+    A.assemble()
+    assert isinstance(A, PETSc.Mat)
+    assert A.isSymmetric(tol=1.0e-8)
+    A.destroy()
+
+
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 def test_basic_assembly_constant(mode, dtype):
