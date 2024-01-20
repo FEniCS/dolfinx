@@ -111,7 +111,7 @@ fem::DofMap fem::create_dofmap(
   }
 
   auto [_index_map, bs, dofmap]
-      = build_dofmap_data(comm, topology, layout, reorder_fn);
+      = build_dofmap_data(comm, topology, {layout}, reorder_fn);
   auto index_map = std::make_shared<common::IndexMap>(std::move(_index_map));
 
   // If the element's DOF transformations are permutations, permute the

@@ -55,38 +55,6 @@ public:
                                            std::vector<std::int64_t>>
   Geometry(
       std::shared_ptr<const common::IndexMap> index_map, U&& dofmap,
-      const fem::CoordinateElement<
-          typename std::remove_reference_t<typename V::value_type>>& element,
-      V&& x, int dim, W&& input_global_indices)
-      : _dim(dim), _dofmap(std::forward<U>(dofmap)), _index_map(index_map),
-        _cmaps({element}), _x(std::forward<V>(x)),
-        _input_global_indices(std::forward<W>(input_global_indices))
-  {
-    assert(_x.size() % 3 == 0);
-    if (_x.size() / 3 != _input_global_indices.size())
-      throw std::runtime_error("Geometry size mis-match");
-  }
-
-  /// @brief Constructor of object that holds mesh geometry data.
-  ///
-  /// @param[in] index_map Index map associated with the geometry dofmap
-  /// @param[in] dofmap The geometry (point) dofmap. For a cell, it
-  /// gives the position in the point array of each local geometry node
-  /// @param[in] element Element that describes the cell geometry map.
-  /// @param[in] x The point coordinates. The shape is `(num_points, 3)`
-  /// and the storage is row-major.
-  /// @param[in] dim The geometric dimension (`0 < dim <= 3`).
-  /// @param[in] input_global_indices The 'global' input index of each
-  /// point, commonly from a mesh input file.
-  template <typename U, typename V, typename W>
-    requires std::is_convertible_v<std::remove_cvref_t<U>,
-                                   std::vector<std::int32_t>>
-                 and std::is_convertible_v<std::remove_cvref_t<V>,
-                                           std::vector<T>>
-                 and std::is_convertible_v<std::remove_cvref_t<W>,
-                                           std::vector<std::int64_t>>
-  Geometry(
-      std::shared_ptr<const common::IndexMap> index_map, U&& dofmap,
       const std::vector<fem::CoordinateElement<
           typename std::remove_reference_t<typename V::value_type>>>& elements,
       V&& x, int dim, W&& input_global_indices)
@@ -248,7 +216,7 @@ create_geometry(
   //  Build 'geometry' dofmap on the topology
   auto [_dof_index_map, bs, dofmap]
       = fem::build_dofmap_data(topology.index_map(topology.dim())->comm(),
-                               topology, dof_layouts[0], reorder_fn);
+                               topology, dof_layouts, reorder_fn);
   auto dof_index_map
       = std::make_shared<common::IndexMap>(std::move(_dof_index_map));
 
@@ -338,7 +306,7 @@ create_geometry(
   //  Build 'geometry' dofmap on the topology
   auto [_dof_index_map, bs, dofmap]
       = fem::build_dofmap_data(topology.index_map(topology.dim())->comm(),
-                               topology, dof_layout, reorder_fn);
+                               topology, {dof_layout}, reorder_fn);
   auto dof_index_map
       = std::make_shared<common::IndexMap>(std::move(_dof_index_map));
 
@@ -381,8 +349,8 @@ create_geometry(
                 std::next(xg.begin(), 3 * i));
   }
 
-  return Geometry(dof_index_map, std::move(dofmap), element, std::move(xg), dim,
-                  std::move(igi));
+  return Geometry(dof_index_map, std::move(dofmap), {element}, std::move(xg),
+                  dim, std::move(igi));
 }
 
 /// @brief Create a sub-geometry for a subset of entities.
@@ -496,7 +464,7 @@ create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
                  [&igi](std::int32_t sub_x_dof) { return igi[sub_x_dof]; });
 
   // Create geometry
-  return {Geometry(sub_x_dof_index_map, std::move(sub_x_dofmap), sub_cmap,
+  return {Geometry(sub_x_dof_index_map, std::move(sub_x_dofmap), {sub_cmap},
                    std::move(sub_x), geometry.dim(), std::move(sub_igi)),
           std::move(subx_to_x_dofmap)};
 }
