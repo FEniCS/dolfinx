@@ -74,7 +74,7 @@ std::array<T, 3> b_ref(mdspan_t<const T, 4> basis, std::span<const T> weights)
 /// @return Frobenius norm squared of the matrix.
 template <typename T>
 double assemble_matrix0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
-                        std::vector<std::int32_t> cells)
+                        std::span<const std::int32_t> cells)
 {
   // Kernel data (ID, kernel function, cell indices to execute over)
   std::vector kernal_data{std::tuple{-1, kernel_t<T>(kernel), cells}};
@@ -104,7 +104,7 @@ double assemble_matrix0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
 /// @return l2 norm squared of the vector.
 template <typename T>
 double assemble_vector0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
-                        std::vector<std::int32_t> cells)
+                        std::span<const std::int32_t> cells)
 {
   std::vector kernal_data{std::tuple{-1, kernel_t<T>(kernel), cells}};
   std::map integrals{std::pair{fem::IntegralType::cell, kernal_data}};
@@ -130,7 +130,7 @@ double assemble_vector0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
 /// @return Frobenius norm squared of the matrix.
 template <typename T>
 double assemble_matrix1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
-                        auto kernel, std::vector<std::int32_t> cells)
+                        auto kernel, std::span<const std::int32_t> cells)
 {
   auto sp = la::SparsityPattern(dofmap.index_map->comm(),
                                 {dofmap.index_map, dofmap.index_map},
