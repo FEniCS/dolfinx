@@ -20,12 +20,12 @@
 using namespace dolfinx;
 
 template <typename T, std::size_t ndim>
-using mdspan_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+using mdspand_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
     T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, ndim>>;
-template <typename T>
-using mdspan3x3_t
+template <typename T, std::size_t n0, std::size_t n1>
+using mdspan2_t
     = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<T,
-                                             std::extents<std::size_t, 3, 3>>;
+                                             std::extents<std::size_t, n0, n1>>;
 
 template <typename T>
 using kernel_t = std::function<void(T*, const T*, const T*, const T*,
@@ -39,10 +39,10 @@ using kernel_t = std::function<void(T*, const T*, const T*, const T*,
 /// @param weights Integration weights.
 /// @return Element reference matrix (row-major storage)
 template <typename T>
-std::array<T, 9> A_ref(mdspan_t<const T, 4> basis, std::span<const T> weights)
+std::array<T, 9> A_ref(mdspand_t<const T, 4> basis, std::span<const T> weights)
 {
   std::array<T, 9> A_b{};
-  mdspan3x3_t<T> A(A_b.data());
+  mdspan2_t<T, 3, 3> A(A_b.data());
   for (std::size_t k = 0; k < basis.extent(1); ++k) // quadrature point
     for (std::size_t i = 0; i < A.extent(0); ++i)   // row i
       for (std::size_t j = 0; j < A.extent(1); ++j) // column j
@@ -56,7 +56,7 @@ std::array<T, 9> A_ref(mdspan_t<const T, 4> basis, std::span<const T> weights)
 /// @param weights Integration weights.
 /// @return RHS reference vector.
 template <typename T>
-std::array<T, 3> b_ref(mdspan_t<const T, 4> basis, std::span<const T> weights)
+std::array<T, 3> b_ref(mdspand_t<const T, 4> basis, std::span<const T> weights)
 {
   std::array<T, 3> b{};
   for (std::size_t k = 0; k < basis.extent(1); ++k) // quadrature point
@@ -203,7 +203,7 @@ void assemble(MPI_Comm comm)
   auto [X_b, weights] = basix::quadrature::make_quadrature<T>(
       quadrature_type, basix::cell::type::triangle,
       basix::polyset::type::standard, max_degree);
-  mdspan_t<const T, 2> X(X_b.data(), weights.size(), 2);
+  mdspand_t<const T, 2> X(X_b.data(), weights.size(), 2);
 
   // Create a scalar function space
   auto V = std::make_shared<fem::FunctionSpace<T>>(
@@ -221,36 +221,36 @@ void assemble(MPI_Comm comm)
   std::size_t length
       = std::accumulate(e_shape.begin(), e_shape.end(), 1, std::multiplies<>{});
   std::vector<T> phi_b(length);
-  mdspan_t<T, 4> phi(phi_b.data(), e_shape);
+  mdspand_t<T, 4> phi(phi_b.data(), e_shape);
   e.tabulate(0, X, phi);
 
   // Utility function to compute det(J) for an affine triangle cell
   // (geometry is 3D)
-  auto detJ = [](std::span<const T, 9> x)
+  auto detJ = [](mdspan2_t<const T, 3, 3> x)
   {
-    return std::abs((x[0] - x[3]) * (x[7] - x[4])
-                    - (x[1] - x[4]) * (x[6] - x[3]));
+    return std::abs((x(0, 0) - x(1, 0)) * (x(2, 1) - x(1, 1))
+                    - (x(0, 1) - x(1, 1)) * (x(2, 0) - x(1, 0)));
   };
 
   // Finite element mass matrix kernel function
   std::array<T, 9> A_hat_b = A_ref<T>(phi, weights);
   auto kernel_a
-      = [A_hat = mdspan3x3_t<T>(A_hat_b.data()),
+      = [A_hat = mdspan2_t<T, 3, 3>(A_hat_b.data()),
          detJ](T* A, const T*, const T*, const T* x, const int*, const uint8_t*)
   {
-    T scale = detJ(std::span<const T, 9>(x, 9));
-    mdspan3x3_t<T> _A(A);
+    T scale = detJ(mdspan2_t<const T, 3, 3>(x));
+    mdspan2_t<T, 3, 3> _A(A);
     for (std::size_t i = 0; i < A_hat.extent(0); ++i)
       for (std::size_t j = 0; j < A_hat.extent(1); ++j)
         _A(i, j) = scale * A_hat(i, j);
   };
 
-  // Finite element RHD (f=1_ kernel function
+  // Finite element RHS (f=1) kernel function
   auto kernel_L
       = [b_hat = b_ref<T>(phi, weights),
          detJ](T* b, const T*, const T*, const T* x, const int*, const uint8_t*)
   {
-    T scale = detJ(std::span<const T, 9>(x, 9));
+    T scale = detJ(mdspan2_t<const T, 3, 3>(x));
     for (std::size_t i = 0; i < 3; ++i)
       b[i] = scale * b_hat[i];
   };

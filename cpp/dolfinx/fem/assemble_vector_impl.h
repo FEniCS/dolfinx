@@ -518,7 +518,6 @@ void assemble_cells(fem::DofTransformKernel<T> auto dof_transform,
 
     // Tabulate vector for cell
     std::fill(be.begin(), be.end(), 0);
-    std::cout << "Strides: " << cstride << std::endl;
     kernel(be.data(), coeffs.data() + index * cstride, constants.data(),
            coordinate_dofs.data(), nullptr, nullptr);
     dof_transform(_be, cell_info, c, 1);
