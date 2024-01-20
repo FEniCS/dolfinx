@@ -122,6 +122,7 @@ double assemble_vector0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
 ///
 /// The lambda function can be inlined in the assembly code, which can
 /// be important for performance for lightweight kernels.
+///
 /// @tparam T Scalar type.
 /// @param V Function space.
 /// @param kernel Element kernel to execute.
@@ -150,6 +151,7 @@ double assemble_matrix1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
 ///
 /// The lambda function can be inlined in the assembly code, which can
 /// be important for performance for lightweight kernels.
+///
 /// @tparam T Scalar type.
 /// @param V Function space.
 /// @param kernel Element kernel to execute.
@@ -168,9 +170,14 @@ double assemble_vector1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
   return la::squared_norm(b);
 }
 
-/// @brief
-/// @tparam T Scalar type
-/// @param comm MPI communicator
+/// @brief Assemble P1 mass matrix and a RHS vector using element kernel
+/// approaches.
+///
+/// Function demonstrates how hand-coded element kernels can be executed
+/// in assembly over cells.
+///
+/// @tparam T Scalar type.
+/// @param comm MPI communicator to assembler over.
 template <std::floating_point T>
 void assemble(MPI_Comm comm)
 {
