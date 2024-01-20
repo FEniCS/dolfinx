@@ -5,14 +5,15 @@
 //
 // .. code-block:: cpp
 
-#include "mass.h"
 #include <basix/finite-element.h>
 #include <basix/mdspan.hpp>
 #include <basix/quadrature.h>
 #include <cmath>
+#include <concepts>
 #include <dolfinx.h>
 #include <dolfinx/la/MatrixCSR.h>
 #include <dolfinx/la/SparsityPattern.h>
+#include <functional>
 #include <stdint.h>
 #include <utility>
 #include <vector>
@@ -26,7 +27,6 @@ template <typename T, std::size_t n0, std::size_t n1>
 using mdspan2_t
     = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<T,
                                              std::extents<std::size_t, n0, n1>>;
-
 template <typename T>
 using kernel_t = std::function<void(T*, const T*, const T*, const T*,
                                     const int*, const uint8_t*)>;
@@ -35,33 +35,33 @@ using kernel_t = std::function<void(T*, const T*, const T*, const T*,
 
 /// @brief Compute the P1 element mass matrix on the reference cell.
 /// @tparam V Scalar type.
-/// @param basis Basis functions.
-/// @param weights Integration weights.
-/// @return Element reference matrix (row-major storage)
+/// @param phi Basis functions.
+/// @param w Integration weights.
+/// @return Element reference matrix (row-major storage).
 template <typename T>
-std::array<T, 9> A_ref(mdspand_t<const T, 4> basis, std::span<const T> weights)
+std::array<T, 9> A_ref(mdspand_t<const T, 4> phi, std::span<const T> w)
 {
   std::array<T, 9> A_b{};
   mdspan2_t<T, 3, 3> A(A_b.data());
-  for (std::size_t k = 0; k < basis.extent(1); ++k) // quadrature point
+  for (std::size_t k = 0; k < phi.extent(1); ++k)   // quadrature point
     for (std::size_t i = 0; i < A.extent(0); ++i)   // row i
       for (std::size_t j = 0; j < A.extent(1); ++j) // column j
-        A(i, j) += weights[k] * basis(0, k, i, 0) * basis(0, k, j, 0);
+        A(i, j) += w[k] * phi(0, k, i, 0) * phi(0, k, j, 0);
   return A_b;
 }
 
 /// @brief Compute the P1 RHS vector for f=1 on the reference cell.
 /// @tparam V Scalar type.
-/// @param basis Basis functions.
-/// @param weights Integration weights.
+/// @param phi Basis functions.
+/// @param w Integration weights.
 /// @return RHS reference vector.
 template <typename T>
-std::array<T, 3> b_ref(mdspand_t<const T, 4> basis, std::span<const T> weights)
+std::array<T, 3> b_ref(mdspand_t<const T, 4> phi, std::span<const T> w)
 {
   std::array<T, 3> b{};
-  for (std::size_t k = 0; k < basis.extent(1); ++k) // quadrature point
-    for (std::size_t i = 0; i < b.size(); ++i)      // row i
-      b[i] += weights[k] * basis(0, k, i, 0);
+  for (std::size_t k = 0; k < phi.extent(1); ++k) // quadrature point
+    for (std::size_t i = 0; i < b.size(); ++i)    // row i
+      b[i] += w[k] * phi(0, k, i, 0);
   return b;
 }
 
@@ -72,7 +72,7 @@ std::array<T, 3> b_ref(mdspand_t<const T, 4> basis, std::span<const T> weights)
 /// @param kernel Element kernel to execute.
 /// @param cells Cells to execute the kernel over.
 /// @return Frobenius norm squared of the matrix.
-template <typename T>
+template <std::floating_point T>
 double assemble_matrix0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
                         std::span<const std::int32_t> cells)
 {
@@ -102,14 +102,13 @@ double assemble_matrix0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
 /// @param kernel Element kernel to execute.
 /// @param cells Cells to execute the kernel over.
 /// @return l2 norm squared of the vector.
-template <typename T>
+template <std::floating_point T>
 double assemble_vector0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
                         std::span<const std::int32_t> cells)
 {
+  auto mesh = V->mesh();
   std::vector kernal_data{std::tuple{-1, kernel_t<T>(kernel), cells}};
   std::map integrals{std::pair{fem::IntegralType::cell, kernal_data}};
-
-  auto mesh = V->mesh();
   fem::Form<T> L({V}, integrals, {}, {}, false, mesh);
   auto dofmap = V->dofmap();
   la::Vector<T> b(dofmap->index_map, 1);
@@ -128,7 +127,7 @@ double assemble_vector0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
 /// @param kernel Element kernel to execute.
 /// @param cells Cells to execute the kernel over.
 /// @return Frobenius norm squared of the matrix.
-template <typename T>
+template <std::floating_point T>
 double assemble_matrix1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
                         auto kernel, std::span<const std::int32_t> cells)
 {
@@ -156,7 +155,7 @@ double assemble_matrix1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
 /// @param kernel Element kernel to execute.
 /// @param cells Cells to execute the kernel over.
 /// @return l2 norm squared of the vector.
-template <typename T>
+template <std::floating_point T>
 double assemble_vector1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
                         auto kernel, const std::vector<std::int32_t>& cells)
 {
@@ -169,18 +168,10 @@ double assemble_vector1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
   return la::squared_norm(b);
 }
 
-template <typename T>
-void assemble_vector2(std::shared_ptr<const fem::FunctionSpace<T>> V)
-{
-  auto L = std::make_shared<fem::Form<T>>(fem::create_form<T>(
-      *form_mass_L, {V},
-      std::vector<std::shared_ptr<const fem::Function<T, T>>>(), {}, {}));
-  common::Timer timer("Assembler3 (vector)");
-  la::Vector<T> b(V->dofmap()->index_map, 1);
-  fem::assemble_vector(b.mutable_array(), *L);
-}
-
-template <typename T>
+/// @brief
+/// @tparam T Scalar type
+/// @param comm MPI communicator
+template <std::floating_point T>
 void assemble(MPI_Comm comm)
 {
   // Create mesh
@@ -260,20 +251,19 @@ void assemble(MPI_Comm comm)
   assemble_vector0<T>(V, kernel_L, cells);
 
   // Assemble matrix and vector using lambda kernel. This version
-  // supports efficient inlining of the kernel.
+  // supports efficient inlining of the kernel in the assembler. This
+  // can give a significant performance improvement for lightweight
+  // kernels.
   assemble_matrix1<T>(mesh->geometry(), *V->dofmap(), kernel_a, cells);
   assemble_vector1<T>(mesh->geometry(), *V->dofmap(), kernel_L, cells);
-
-  if constexpr (std::is_same_v<T, PetscScalar>)
-    assemble_vector2<T>(V);
 
   list_timings(comm, {TimingType::wall});
 }
 
 int main(int argc, char* argv[])
 {
-  dolfinx::init_logging(argc, argv);
   MPI_Init(&argc, &argv);
+  dolfinx::init_logging(argc, argv);
   assemble<float>(MPI_COMM_WORLD);
   assemble<double>(MPI_COMM_WORLD);
   MPI_Finalize();
