@@ -72,7 +72,7 @@ def test_complex_assembly(complex_dtype):
 
 
 @pytest.mark.parametrize("complex_dtype", [np.complex64, np.complex128])
-def test_complex_assembly_solve(complex_dtype, solver):
+def test_complex_assembly_solve(complex_dtype, cg_solver):
     """Solve a positive definite helmholtz problem and verify solution
     with the method of manufactured solutions"""
 
@@ -102,8 +102,7 @@ def test_complex_assembly_solve(complex_dtype, solver):
     b.scatter_reverse(la.InsertMode.add)
 
     u = Function(V, dtype=complex_dtype)
-    # u.x.array[:] =
-    solver(MPI.COMM_WORLD, A, b, u.x)
+    cg_solver(MPI.COMM_WORLD, A, b, u.x)
 
     # Reference Solution
     def ref_eval(x):
