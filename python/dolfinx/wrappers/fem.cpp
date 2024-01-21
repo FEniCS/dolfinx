@@ -522,9 +522,9 @@ void declare_form(nb::module_& m, std::string type)
                 = std::function<void(T*, const T*, const T*,
                                      const typename geom_type<T>::value_type*,
                                      const int*, const std::uint8_t*)>;
-            std::map<
-                dolfinx::fem::IntegralType,
-                std::vector<std::tuple<int, kern, std::vector<std::int32_t>>>>
+            std::map<dolfinx::fem::IntegralType,
+                     std::vector<
+                         std::tuple<int, kern, std::span<const std::int32_t>>>>
                 _integrals;
 
             // Loop over kernel for each entity type
@@ -538,7 +538,7 @@ void declare_form(nb::module_& m, std::string type)
                                 const int*, const std::uint8_t*))ptr;
                 _integrals[type].emplace_back(
                     id, kn_ptr,
-                    std::vector<std::int32_t>(e.data(), e.data() + e.size()));
+                    std::span<const std::int32_t>(e.data(), e.size()));
               }
             }
 
@@ -565,15 +565,17 @@ void declare_form(nb::module_& m, std::string type)
                                                nb::c_contig>>>>& subdomains,
              std::shared_ptr<const dolfinx::mesh::Mesh<U>> mesh)
           {
-            std::map<
-                dolfinx::fem::IntegralType,
-                std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>
+            std::map<dolfinx::fem::IntegralType,
+                     std::vector<std::pair<std::int32_t,
+                                           std::span<const std::int32_t>>>>
                 sd;
             for (auto& [itg, data] : subdomains)
             {
-              std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>> x;
+              std::vector<
+                  std::pair<std::int32_t, std::span<const std::int32_t>>>
+                  x;
               for (auto& [id, e] : data)
-                x.emplace_back(id, std::vector(e.data(), e.data() + e.size()));
+                x.emplace_back(id, std::span(e.data(), e.size()));
               sd.insert({itg, std::move(x)});
             }
 
@@ -643,16 +645,13 @@ void declare_form(nb::module_& m, std::string type)
       {
         std::map<
             dolfinx::fem::IntegralType,
-            std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>>
+            std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>
             sd;
         for (auto& [itg, data] : subdomains)
         {
-          std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>> x;
+          std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>> x;
           for (auto& [id, idx] : data)
-          {
-            x.emplace_back(id,
-                           std::vector(idx.data(), idx.data() + idx.size()));
-          }
+            x.emplace_back(id, std::span(idx.data(), idx.size()));
           sd.insert({itg, std::move(x)});
         }
 

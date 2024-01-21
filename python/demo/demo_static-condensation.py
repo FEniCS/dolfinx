@@ -34,7 +34,8 @@ import ufl
 from basix.ufl import element
 from dolfinx import geometry
 from dolfinx.fem import (Form, Function, IntegralType, dirichletbc, form,
-                         functionspace, locate_dofs_topological, form_cpp_class)
+                         form_cpp_class, functionspace,
+                         locate_dofs_topological)
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                set_bc)
 from dolfinx.io import XDMFFile
