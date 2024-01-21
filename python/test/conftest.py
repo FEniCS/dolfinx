@@ -140,50 +140,6 @@ def tempdir(request):
     return _create_tempdir(request)
 
 
-# Basic Conjugate Gradient solver
-def _cg(comm, A, b, x):
-    kmax = 500
-    rtol2 = 10 * np.finfo(x.array.dtype).eps
-
-    def _global_dot(comm, v0, v1):
-        return comm.allreduce(np.dot(v0, v1), MPI.SUM)
-
-    A_op = A.to_scipy()
-    nr = A_op.shape[0]
-    assert nr == A.index_map(0).size_local
-
-    # Create larger ghosted vector based on matrix column space
-    # and get initial y = A.x
-    p = dolfinx_vector(A.index_map(1), dtype=x.array.dtype)
-    p.array[:nr] = x.array[:nr]
-    p.scatter_forward()
-    y = A_op @ p.array
-
-    # Copy residual to p
-    r = b.array[:nr] - y
-    p.array[:nr] = r
-
-    # Iterations of CG
-    rnorm0 = _global_dot(comm, r, r)
-    rnorm = rnorm0
-    k = 0
-    while (k < kmax):
-        k += 1
-        p.scatter_forward()
-        y = A_op @ p.array
-        alpha = rnorm / _global_dot(comm, p.array[:nr], y)
-        x.array[:nr] += alpha * p.array[:nr]
-        r -= alpha * y
-        rnorm_new = _global_dot(comm, r, r)
-        beta = rnorm_new / rnorm
-        rnorm = rnorm_new
-        if (rnorm / rnorm0 < rtol2):
-            return
-        p.array[:nr] = beta * p.array[:nr] + r
-
-    raise RuntimeError(f"Solver exceeded max iterations ({kmax}).")
-
-
 @pytest.fixture(scope="function")
 def cg_solver():
     """Simple Conjugate Gradient solver for SPD problems,
