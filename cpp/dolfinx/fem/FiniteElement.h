@@ -21,6 +21,14 @@ struct ufcx_finite_element;
 
 namespace dolfinx::fem
 {
+
+/// @brief DOF transform kernel concept.
+template <class U, class T>
+concept DofTransformKernel
+    = std::is_invocable_v<U, const std::span<T>&,
+                          const std::span<const std::uint32_t>&, std::int32_t,
+                          int>;
+
 /// Finite Element, containing the dof layout on a reference element,
 /// and various methods for evaluating and transforming the basis.
 template <std::floating_point T>
