@@ -18,8 +18,8 @@ import basix
 import basix.ufl
 import ufl
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh  # F401
-from dolfinx.cpp.io import perm_vtk as cell_perm_vtk  # F401
+from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh
+from dolfinx.cpp.io import perm_vtk as cell_perm_vtk
 from dolfinx.fem import Function
 from dolfinx.mesh import GhostMode, Mesh, MeshTags
 
@@ -250,5 +250,5 @@ class XDMFFile(_cpp.io.XDMFFile):
 
 def distribute_entity_data(mesh: Mesh, entity_dim: int, entities: npt.NDArray[np.int64],
                            values: npt.NDArray[np.int32]) -> tuple[npt.NDArray[np.int64],
-                                                                          npt.NDArray[np.int32]]:
+                                                                   npt.NDArray[np.int32]]:
     return _cpp.io.distribute_entity_data(mesh._cpp_object, entity_dim, entities, values)
