@@ -107,8 +107,8 @@ double assemble_vector0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
                         std::span<const std::int32_t> cells)
 {
   auto mesh = V->mesh();
-  std::vector kernal_data{std::tuple{-1, kernel_t<T>(kernel), cells}};
-  std::map integrals{std::pair{fem::IntegralType::cell, kernal_data}};
+  std::vector kernel_data{std::tuple{-1, kernel_t<T>(kernel), cells}};
+  std::map integrals{std::pair{fem::IntegralType::cell, kernel_data}};
   fem::Form<T> L({V}, integrals, {}, {}, false, mesh);
   auto dofmap = V->dofmap();
   la::Vector<T> b(dofmap->index_map, 1);
