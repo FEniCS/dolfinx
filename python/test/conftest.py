@@ -147,12 +147,11 @@ def cg_solver():
        Not suitable for large problems."""
 
     # Basic Conjugate Gradient solver
-    def _cg(comm, A, b, x):
-        kmax = 500
-        rtol2 = 10 * np.finfo(x.array.dtype).eps
+    def _cg(comm, A, b, x, maxit=500, rtol=None):
+        rtol2 = 10 * np.finfo(x.array.dtype).eps if rtol is None else rtol**2
 
         def _global_dot(comm, v0, v1):
-            return comm.allreduce(np.dot(v0, v1), MPI.SUM)
+            return comm.allreduce(np.vdot(v0, v1), MPI.SUM)
 
         A_op = A.to_scipy()
         nr = A_op.shape[0]
@@ -173,7 +172,7 @@ def cg_solver():
         rnorm0 = _global_dot(comm, r, r)
         rnorm = rnorm0
         k = 0
-        while (k < kmax):
+        while (k < maxit):
             k += 1
             p.scatter_forward()
             y = A_op @ p.array
@@ -188,6 +187,6 @@ def cg_solver():
                 return
             p.array[:nr] = beta * p.array[:nr] + r
 
-        raise RuntimeError(f"Solver exceeded max iterations ({kmax}).")
+        raise RuntimeError(f"Solver exceeded max iterations ({maxit}).")
 
     return _cg

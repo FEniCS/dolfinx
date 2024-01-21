@@ -102,7 +102,7 @@ def test_complex_assembly_solve(complex_dtype, cg_solver):
     b.scatter_reverse(la.InsertMode.add)
 
     u = Function(V, dtype=complex_dtype)
-    cg_solver(MPI.COMM_WORLD, A, b, u.x)
+    cg_solver(mesh.comm, A, b, u.x)
 
     # Reference Solution
     def ref_eval(x):
