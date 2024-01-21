@@ -77,10 +77,10 @@ double assemble_matrix0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
                         std::span<const std::int32_t> cells)
 {
   // Kernel data (ID, kernel function, cell indices to execute over)
-  std::vector kernal_data{std::tuple{-1, kernel_t<T>(kernel), cells}};
+  std::vector kernel_data{std::tuple{-1, kernel_t<T>(kernel), cells}};
 
   // Associate kernel with cells (as opposed to facets, etc)
-  std::map integrals{std::pair{fem::IntegralType::cell, kernal_data}};
+  std::map integrals{std::pair{fem::IntegralType::cell, kernel_data}};
 
   fem::Form<T> a({V, V}, integrals, {}, {}, false, V->mesh());
   auto dofmap = V->dofmap();
@@ -90,7 +90,7 @@ double assemble_matrix0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
   fem::sparsitybuild::cells(sp, cells, {*dofmap, *dofmap});
   sp.finalize();
   la::MatrixCSR<T> A(sp);
-  common::Timer timer("Assembler0 (matrix)");
+  common::Timer timer("Assembler0 std::function (matrix)");
   assemble_matrix(A.mat_add_values(), a, {});
   A.scatter_rev();
   return A.squared_norm();
@@ -112,7 +112,7 @@ double assemble_vector0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
   fem::Form<T> L({V}, integrals, {}, {}, false, mesh);
   auto dofmap = V->dofmap();
   la::Vector<T> b(dofmap->index_map, 1);
-  common::Timer timer("Assembler0 (vector)");
+  common::Timer timer("Assembler0 std::function (vector)");
   fem::assemble_vector(b.mutable_array(), L);
   b.scatter_rev(std::plus<T>());
   return la::squared_norm(b);
@@ -139,7 +139,7 @@ double assemble_matrix1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
   sp.finalize();
   la::MatrixCSR<T> A(sp);
   auto ident = [](auto, auto, auto, auto) {}; // DOF permutation not required
-  common::Timer timer("Assembler1 (matrix)");
+  common::Timer timer("Assembler1 lambda (matrix)");
   fem::impl::assemble_cells(A.mat_add_values(), g.dofmap(), g.x(), cells, ident,
                             dofmap.map(), 1, ident, dofmap.map(), 1, {}, {},
                             kernel, std::span<const T>(), 0, {}, {});
@@ -162,7 +162,7 @@ double assemble_vector1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
                         auto kernel, const std::vector<std::int32_t>& cells)
 {
   la::Vector<T> b(dofmap.index_map, 1);
-  common::Timer timer("Assembler1 (vector)");
+  common::Timer timer("Assembler1 lambda (vector)");
   fem::impl::assemble_cells<T, 1>([](auto, auto, auto, auto) {},
                                   b.mutable_array(), g.dofmap(), g.x(), cells,
                                   dofmap.map(), 1, kernel, {}, {}, 0, {});
