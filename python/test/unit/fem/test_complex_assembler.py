@@ -110,5 +110,4 @@ def test_complex_assembly_solve(complex_dtype, cg_solver):
     u_ref = Function(V, dtype=real_dtype)
     u_ref.interpolate(ref_eval)
 
-    diff = (np.real(u.x.array) - u_ref.x.array)
-    assert np.abs(diff).max() < 1e-3
+    assert np.allclose(np.real(u.x.array), u_ref.x.array, atol=1e-3)
