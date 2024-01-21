@@ -18,8 +18,7 @@ from dolfinx import default_real_type
 from dolfinx.fem import Function, functionspace
 from dolfinx.io import VTKFile
 from dolfinx.io.utils import cell_perm_vtk  # F401
-from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
-                          create_unit_interval, create_unit_square)
+from dolfinx.mesh import CellType, create_mesh, create_unit_cube, create_unit_interval, create_unit_square
 from dolfinx.plot import vtk_mesh
 
 cell_types_2D = [CellType.triangle, CellType.quadrilateral]

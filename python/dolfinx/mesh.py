@@ -19,10 +19,8 @@ import basix.ufl
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
-from dolfinx.cpp.mesh import (CellType, DiagonalType, GhostMode,
-                              build_dual_graph, cell_dim,
-                              create_cell_partitioner, exterior_facet_indices,
-                              to_string, to_type)
+from dolfinx.cpp.mesh import (CellType, DiagonalType, GhostMode, build_dual_graph, cell_dim, create_cell_partitioner,
+                              exterior_facet_indices, to_string, to_type)
 from dolfinx.cpp.refinement import RefinementOption
 from dolfinx.fem import CoordinateElement as _CoordinateElement
 from dolfinx.fem import coordinate_element as _coordinate_element

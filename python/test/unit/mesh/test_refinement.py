@@ -12,11 +12,9 @@ from numpy import isclose, logical_and
 
 import ufl
 from dolfinx.fem import assemble_matrix, form, functionspace
-from dolfinx.mesh import (CellType, DiagonalType, GhostMode, RefinementOption,
-                          compute_incident_entities, create_unit_cube,
-                          create_unit_square, locate_entities,
-                          locate_entities_boundary, meshtags, refine,
-                          refine_plaza, transfer_meshtag)
+from dolfinx.mesh import (CellType, DiagonalType, GhostMode, RefinementOption, compute_incident_entities,
+                          create_unit_cube, create_unit_square, locate_entities, locate_entities_boundary, meshtags,
+                          refine, refine_plaza, transfer_meshtag)
 
 
 def test_Refinecreate_unit_square():
