@@ -1,7 +1,7 @@
 // Custom cell kernel assembly (C++)
 //
-// This demo shows how to define a custom cell kernel in C++ and have it
-// assembled into a dolfinx::la::MatrixCSR.
+// This demo shows various methods to define custom cell kernels in C++ and
+// have them assembled into DOLFINx linear algebra data structures.
 //
 // .. code-block:: cpp
 
