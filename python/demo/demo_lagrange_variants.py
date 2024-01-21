@@ -17,6 +17,7 @@
 #
 # We begin this demo by importing the required modules.
 
+import typing
 
 from mpi4py import MPI
 
@@ -165,8 +166,8 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
     uh = fem.Function(V)
     uh.interpolate(lambda x: saw_tooth(x[0]))
     if MPI.COMM_WORLD.size == 1:  # Skip this plotting in parallel
-        pts: list[list[float]] = []
-        cells: list[int] = []
+        pts: typing.List[typing.List[float]] = []
+        cells: typing.List[int] = []
         for cell in range(10):
             for i in range(51):
                 pts.append([cell / 10 + i / 50 / 10, 0, 0])

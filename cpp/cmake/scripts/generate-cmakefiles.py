@@ -78,9 +78,9 @@ if(PETSC_SCALAR_COMPLEX EQUAL 1)
 else()
   check_symbol_exists(PETSC_USE_REAL_DOUBLE petscsystypes.h PETSC_REAL_DOUBLE)
   if(PETSC_REAL_DOUBLE EQUAL 1)
-    set(SCALAR_TYPE "--scalar_type=double")
+    set(SCALAR_TYPE "--scalar_type=float64")
   else()
-    set(SCALAR_TYPE "--scalar_type=float")
+    set(SCALAR_TYPE "--scalar_type=float32")
   endif()
 
   # Add target to compile UFL files
