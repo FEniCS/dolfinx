@@ -24,13 +24,22 @@ using namespace dolfinx::refinement;
 namespace
 {
 //-----------------------------------------------------------------------------
-// 2D version of subdivision allowing for uniform subdivision (flag)
+/// 2D version of subdivision allowing for uniform subdivision (flag)
+/// @param[in] indices Vector of size (num_vertices + num_edges) containing the
+/// global indices for the original vertices and potential new vertices at each
+/// edge. If an edge is not refined its corresponding entry is -1.
+/// @param[in] longest_edge Vector indicating the longest edge for each
+///   triangle. For tdim=2, one entry, for tdim=3, four entries. The entry
+///   relates to the local index of the last num_edges entries of indices.
+/// @returns Local indices for each sub-divived triangle
 std::vector<std::int32_t> get_triangles(std::span<const std::int64_t> indices,
                                         const std::int32_t longest_edge,
                                         bool uniform)
 {
-  // v0 and v1 are at ends of longest_edge (e2) opposite vertex has same
-  // index as longest_edge
+  // NOTE: The assumption below is based on the UFC ordering of a triangle, i.e.
+  // that the N-th edge of a triangle is the edge where the N-th vertex is not
+  // part of the set. v0 and v1 are at ends of longest_edge (e2) opposite vertex
+  // has same index as longest_edge
   const std::int32_t v0 = (longest_edge + 1) % 3;
   const std::int32_t v1 = (longest_edge + 2) % 3;
   const std::int32_t v2 = longest_edge;

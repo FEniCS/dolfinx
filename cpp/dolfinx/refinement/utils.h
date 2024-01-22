@@ -46,9 +46,12 @@ std::int64_t local_to_global(std::int32_t local_index,
 /// Create geometric points of new Mesh, from current Mesh and a
 /// edge_to_vertex map listing the new local points (midpoints of those
 /// edges)
-/// @param mesh
-/// @param local_edge_to_new_vertex
-/// @return array of points
+///
+/// @param mesh Current mesh
+/// @param local_edge_to_new_vertex A map from a local edge to the new
+/// global vertex index that will be inserted at its midpoint
+/// @return (1) Array of new (flattened) mesh geometry and (2) its
+/// multi-dimensional shape
 template <std::floating_point T>
 std::pair<std::vector<T>, std::array<std::size_t, 2>> create_new_geometry(
     const mesh::Mesh<T>& mesh,
@@ -135,12 +138,14 @@ void update_logical_edgefunction(
 /// Communicate new vertices with MPI to all affected processes.
 ///
 /// @param[in] comm MPI Communicator for neighborhood
-/// @param[in] shared_edges
+/// @param[in] shared_edges For each local edge on a process map to ghost
+/// processes
 /// @param[in] mesh Existing mesh
-/// @param[in] marked_edges
-/// @return (0) map from local edge index to new vertex global index,
-/// (1) the coordinates of the new vertices (row-major storage) and (2)
-/// the shape of the new coordinates.
+/// @param[in] marked_edges A marker for all edges on the process (local +
+/// ghosts) indicating if an edge should be refined
+/// @return (0) map from local edge index to new vertex global index, (1) the
+/// coordinates of the new vertices (row-major storage) and (2) the shape of the
+/// new coordinates.
 template <std::floating_point T>
 std::tuple<std::map<std::int32_t, std::int64_t>, std::vector<T>,
            std::array<std::size_t, 2>>
@@ -153,7 +158,8 @@ create_new_vertices(MPI_Comm comm,
   std::shared_ptr<const common::IndexMap> edge_index_map
       = mesh.topology()->index_map(1);
 
-  // Add new edge midpoints to list of vertices
+  // Add new edge midpoints to list of vertices. The new vertex will be owned by
+  // the process owning the edge.
   int n = 0;
   std::map<std::int32_t, std::int64_t> local_edge_to_new_vertex;
   for (int local_i = 0; local_i < edge_index_map->size_local(); ++local_i)
