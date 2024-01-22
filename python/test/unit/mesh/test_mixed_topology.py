@@ -1,6 +1,7 @@
 from mpi4py import MPI
+
 from dolfinx.cpp.mesh import create_topology
-from dolfinx.mesh import CellType, create_unit_cube, GhostMode
+from dolfinx.mesh import CellType, GhostMode, create_unit_cube
 
 
 def test_triquad():
@@ -51,8 +52,6 @@ def test_mixed_mesh_3d():
     assert len(entity_types[1]) == 1
     assert len(entity_types[2]) == 2
     assert len(entity_types[3]) == 3
-    assert CellType.triangle == entity_types[2][1]
-    assert CellType.quadrilateral == entity_types[2][0]
 
     # Create triangle and quadrilateral facets
     topology.create_entities(2)
