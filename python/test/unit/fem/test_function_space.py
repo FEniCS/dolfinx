@@ -95,6 +95,7 @@ def test_equality(V, V2, W, W2):
 
 
 def test_sub(Q, W):
+    gdim = 3
     X = Q.sub(0)
 
     assert W.dofmap.dof_layout.num_dofs == X.dofmap.dof_layout.num_dofs
@@ -114,7 +115,7 @@ def test_sub(Q, W):
 
     assert W.element.num_sub_elements == X.element.num_sub_elements
     assert W.element.space_dimension == X.element.space_dimension
-    assert W.element.value_shape == X.element.value_shape
+    assert W.element.value_shape(gdim) == X.element.value_shape(gdim)
     assert W.element.interpolation_points().shape == X.element.interpolation_points().shape
     assert W.element == X.element
 

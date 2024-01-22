@@ -120,7 +120,7 @@ void declare_function_space(nb::module_& m, std::string type)
                      &dolfinx::fem::FiniteElement<T>::interpolation_ident)
         .def_prop_ro("space_dimension",
                      &dolfinx::fem::FiniteElement<T>::space_dimension)
-        .def_prop_ro(
+        .def(
             "value_shape",
             [](const dolfinx::fem::FiniteElement<T>& self, int gdim)
             {
