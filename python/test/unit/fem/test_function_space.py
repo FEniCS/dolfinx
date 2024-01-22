@@ -241,7 +241,7 @@ def test_cell_mismatch(mesh):
 def test_basix_element(V, W, Q, V2):
     for V_ in (V, W, V2):
         e = V_.element.basix_element
-        assert isinstance(e, basix._basixcpp.FiniteElement_float64 | basix._basixcpp.FiniteElement_float32)
+        assert isinstance(e, (basix._basixcpp.FiniteElement_float64, basix._basixcpp.FiniteElement_float32))
 
     # Mixed spaces do not yet return a basix element
     with pytest.raises(RuntimeError):
