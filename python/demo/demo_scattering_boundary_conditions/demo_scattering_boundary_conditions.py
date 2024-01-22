@@ -329,13 +329,16 @@ eps.x.scatter_forward()
 # integrate the terms over the corresponding domains:
 #
 # $$
+# \begin{align}
 # & \int_{\Omega}-\nabla \times( \nabla \times \mathbf{E}_s) \cdot
 # \bar{\mathbf{v}}+\varepsilon_{r} k_{0}^{2} \mathbf{E}_s \cdot
 # \bar{\mathbf{v}}+k_{0}^{2}\left(\varepsilon_{r}-\varepsilon_b\right)
-# \mathbf{E}_b \cdot \bar{\mathbf{v}}~\mathrm{d}x \\ +& \int_{\partial \Omega}
+# \mathbf{E}_b \cdot \bar{\mathbf{v}}~\mathrm{d}x \\
+# +& \int_{\partial \Omega}
 # (\mathbf{n} \times \nabla \times \mathbf{E}_s) \cdot \bar{\mathbf{v}}
 # +\left(j n_bk_{0}+\frac{1}{2r}\right) (\mathbf{n} \times \mathbf{E}_s
 # \times \mathbf{n}) \cdot \bar{\mathbf{v}}~\mathrm{d}s=0
+# \end{align}
 # $$
 #
 # By using $(\nabla \times \mathbf{A}) \cdot \mathbf{B}=\mathbf{A}
@@ -343,14 +346,17 @@ eps.x.scatter_forward()
 # \mathbf{B}),$ we can change the first term into:
 #
 # $$
+# \begin{align}
 # & \int_{\Omega}-\nabla \cdot(\nabla\times\mathbf{E}_s \times
 # \bar{\mathbf{v}})-\nabla \times \mathbf{E}_s \cdot \nabla
 # \times\bar{\mathbf{v}}+\varepsilon_{r} k_{0}^{2} \mathbf{E}_s
 # \cdot \bar{\mathbf{v}}+k_{0}^{2}\left(\varepsilon_{r}-\varepsilon_b\right)
-# \mathbf{E}_b \cdot \bar{\mathbf{v}}~\mathrm{dx} \\ +&\int_{\partial \Omega}
+# \mathbf{E}_b \cdot \bar{\mathbf{v}}~\mathrm{dx} \\
+# +&\int_{\partial \Omega}
 # (\mathbf{n} \times \nabla \times \mathbf{E}_s) \cdot \bar{\mathbf{v}}
 # +\left(j n_bk_{0}+\frac{1}{2r}\right) (\mathbf{n} \times \mathbf{E}_s
 # \times \mathbf{n}) \cdot \bar{\mathbf{v}}~\mathrm{d}s=0,
+# \end{align}
 # $$
 #
 # using the divergence theorem
@@ -358,14 +364,17 @@ eps.x.scatter_forward()
 # \mathbf{F}\cdot\mathbf{n}~\mathrm{d}s$, we can write:
 #
 # $$
+# \begin{align}
 # & \int_{\Omega}-(\nabla \times \mathbf{E}_s) \cdot (\nabla \times
 # \bar{\mathbf{v}})+\varepsilon_{r} k_{0}^{2} \mathbf{E}_s \cdot
 # \bar{\mathbf{v}}+k_{0}^{2}\left(\varepsilon_{r}-\varepsilon_b\right)
-# \mathbf{E}_b \cdot \bar{\mathbf{v}}~\mathrm{d}x \\ +&\int_{\partial \Omega}
+# \mathbf{E}_b \cdot \bar{\mathbf{v}}~\mathrm{d}x \\
+# +&\int_{\partial \Omega}
 # -(\nabla\times\mathbf{E}_s \times \bar{\mathbf{v}})\cdot\mathbf{n}
 # + (\mathbf{n} \times \nabla \times \mathbf{E}_s) \cdot \bar{\mathbf{v}}
 # +\left(j n_bk_{0}+\frac{1}{2r}\right) (\mathbf{n} \times \mathbf{E}_s
 # \times \mathbf{n}) \cdot \bar{\mathbf{v}}~\mathrm{d}s=0.
+# \end{align}
 # $$
 #
 # Cancelling $-(\nabla\times\mathbf{E}_s \times \bar{\mathbf{V}})
@@ -377,12 +386,15 @@ eps.x.scatter_forward()
 # \mathbf{A})=\mathbf{C} \cdot(\mathbf{A} \times \mathbf{B})$, we get:
 #
 # $$
+# \begin{align}
 # & \int_{\Omega}-(\nabla \times \mathbf{E}_s) \cdot (\nabla \times
 # \bar{\mathbf{v}})+\varepsilon_{r} k_{0}^{2} \mathbf{E}_s \cdot
 # \bar{\mathbf{v}}+k_{0}^{2}\left(\varepsilon_{r}-\varepsilon_b\right)
-# \mathbf{E}_b \cdot \bar{\mathbf{v}}~\mathrm{d}x \\ +&\int_{\partial \Omega}
+# \mathbf{E}_b \cdot \bar{\mathbf{v}}~\mathrm{d}x \\
+# +&\int_{\partial \Omega}
 # \left(j n_bk_{0}+\frac{1}{2r}\right)( \mathbf{n} \times \mathbf{E}_s \times
 # \mathbf{n}) \cdot \bar{\mathbf{v}} ~\mathrm{d} s = 0.
+# \end{align}
 # $$
 #
 # We use the [UFL](https://github.com/FEniCS/ufl/) to implement the
@@ -471,6 +483,7 @@ q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
 # absorption, scattering and extinction are:
 #
 # $$
+# \begin{align}
 # & Q_{abs} = \operatorname{Re}\left(\int_{\Omega_{m}} \frac{1}{2}
 #   \frac{\operatorname{Im}(\varepsilon_m)k_0}{Z_0n_b}
 #   \mathbf{E}\cdot\hat{\mathbf{E}}dx\right) \\
@@ -478,6 +491,7 @@ q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
 #   \left(\mathbf{E}_s\times\bar{\mathbf{H}}_s\right)
 #   \cdot\mathbf{n}ds\right)\\ \\
 # & Q_{ext} = Q_{abs} + Q_{sca},
+# \end{align}
 # $$
 #
 # with $Z_0 = \sqrt{\frac{\mu_0}{\varepsilon_0}}$ being the vacuum
@@ -488,9 +502,11 @@ q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
 # of the wire, $\sigma_{gcs} = 2r_w$:
 #
 # $$
+# \begin{align}
 # & q_{abs} = \frac{Q_{abs}}{I_0\sigma_{gcs}} \\
 # & q_{sca} = \frac{Q_{sca}}{I_0\sigma_{gcs}} \\
 # & q_{ext} = q_{abs} + q_{sca}.
+# \end{align}
 # $$
 #
 # We can calculate these values in the following way:
