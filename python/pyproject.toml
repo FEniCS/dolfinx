@@ -80,7 +80,6 @@ sections= ["FUTURE", "STDLIB", "MPI", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
 line-length = 120
 indent-width = 4
 allowed-confusables = ["σ"]
-target-version = "py310"
 
 [tool.ruff.lint]
 select = [
