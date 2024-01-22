@@ -734,16 +734,26 @@ def test_basic_interior_facet_assembly():
     create_unit_square(MPI.COMM_WORLD, 5, 5, ghost_mode=GhostMode.shared_facet),
     create_unit_cube(MPI.COMM_WORLD, 5, 5, 5, ghost_mode=GhostMode.shared_facet)])
 def test_symmetry_interior_facet_assembly(mesh):
+
+    def bcs(V):
+        facetdim = mesh.topology.dim - 1
+        bndry_facets = locate_entities_boundary(mesh, facetdim, lambda x: np.isclose(x[0], 0.0))
+        bdofsV = locate_dofs_topological(V, facetdim, bndry_facets)
+        u_bc = Function(V)
+        return dirichletbc(u_bc, bdofsV)
+
+    zero = Constant(mesh, PETSc.ScalarType(0.0))
+
     V0 = functionspace(mesh, ("N2curl", 1))
     V1 = functionspace(mesh, ("N2curl", 2))
     u0, v0 = ufl.TrialFunction(V0), ufl.TestFunction(V0)
     u1, v1 = ufl.TrialFunction(V1), ufl.TestFunction(V1)
-    a00 = None
-    a11 = None
+    a00 = zero * ufl.inner(v0, u0) * ufl.dx
+    a11 = zero * ufl.inner(v1, u1) * ufl.dx
     a01 = ufl.inner(ufl.avg(v0), ufl.avg(u1)) * ufl.dS
     a10 = ufl.inner(ufl.avg(v1), ufl.avg(u0)) * ufl.dS
     a = form([[a00, a01], [a10, a11]])
-    A = petsc_assemble_matrix_block(a)
+    A = petsc_assemble_matrix_block(a, bcs=[bcs(V0), bcs(V1)])
     A.assemble()
     assert isinstance(A, PETSc.Mat)
     assert A.isSymmetric(tol=1.0e-8)
@@ -754,12 +764,12 @@ def test_symmetry_interior_facet_assembly(mesh):
     u0, v0 = ufl.TrialFunction(V0), ufl.TestFunction(V0)
     u1, v1 = ufl.TrialFunction(V1), ufl.TestFunction(V1)
     n = ufl.FacetNormal(mesh)
-    a00 = None
-    a11 = None
+    a00 = zero * ufl.inner(v0, u0) * ufl.dx
+    a11 = zero * ufl.inner(v1, u1) * ufl.dx
     a01 = ufl.inner(ufl.avg(v0), ufl.dot(ufl.avg(u1), n('+'))) * ufl.dS
     a10 = ufl.inner(ufl.dot(ufl.avg(v1), n('+')), ufl.avg(u0)) * ufl.dS
     a = form([[a00, a01], [a10, a11]])
-    A = petsc_assemble_matrix_block(a)
+    A = petsc_assemble_matrix_block(a, bcs=[bcs(V0), bcs(V1)])
     A.assemble()
     assert isinstance(A, PETSc.Mat)
     assert A.isSymmetric(tol=1.0e-8)
