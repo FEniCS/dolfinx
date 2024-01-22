@@ -16,6 +16,7 @@ macro(add_demo_subdirectory subdir)
 endmacro(add_demo_subdirectory)
 
 # Add demos
+add_demo_subdirectory(custom_kernel)
 add_demo_subdirectory(poisson)
 add_demo_subdirectory(poisson_matrix_free)
 add_demo_subdirectory(hyperelasticity)

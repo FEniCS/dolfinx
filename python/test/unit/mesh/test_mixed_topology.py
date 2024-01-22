@@ -1,5 +1,6 @@
 from mpi4py import MPI
-from dolfinx.cpp.mesh import create_topology, CellType
+
+from dolfinx.cpp.mesh import CellType, create_topology
 
 
 def test_triquad():

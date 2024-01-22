@@ -30,21 +30,18 @@ using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
 
 /// Execute kernel over cells and accumulate result in matrix
 template <dolfinx::scalar T>
-void assemble_cells(
-    la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
-    std::span<const scalar_value_type_t<T>> x,
-    std::span<const std::int32_t> cells,
-    const std::function<void(const std::span<T>&,
-                             const std::span<const std::uint32_t>&,
-                             std::int32_t, int)>& pre_dof_transform,
-    mdspan2_t dofmap0, int bs0,
-    const std::function<void(const std::span<T>&,
-                             const std::span<const std::uint32_t>&,
-                             std::int32_t, int)>& post_dof_transform,
-    mdspan2_t dofmap1, int bs1, std::span<const std::int8_t> bc0,
-    std::span<const std::int8_t> bc1, FEkernel<T> auto kernel,
-    std::span<const T> coeffs, int cstride, std::span<const T> constants,
-    std::span<const std::uint32_t> cell_info)
+void assemble_cells(la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
+                    std::span<const scalar_value_type_t<T>> x,
+                    std::span<const std::int32_t> cells,
+                    fem::DofTransformKernel<T> auto pre_dof_transform,
+                    mdspan2_t dofmap0, int bs0,
+                    fem::DofTransformKernel<T> auto post_dof_transform,
+                    mdspan2_t dofmap1, int bs1,
+                    std::span<const std::int8_t> bc0,
+                    std::span<const std::int8_t> bc1, FEkernel<T> auto kernel,
+                    std::span<const T> coeffs, int cstride,
+                    std::span<const T> constants,
+                    std::span<const std::uint32_t> cell_info)
 {
   if (cells.empty())
     return;
@@ -128,13 +125,8 @@ void assemble_exterior_facets(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     std::span<const scalar_value_type_t<T>> x,
     std::span<const std::int32_t> facets,
-    const std::function<void(const std::span<T>&,
-                             const std::span<const std::uint32_t>&,
-                             std::int32_t, int)>& pre_dof_transform,
-    mdspan2_t dofmap0, int bs0,
-    const std::function<void(const std::span<T>&,
-                             const std::span<const std::uint32_t>&,
-                             std::int32_t, int)>& post_dof_transform,
+    fem::DofTransformKernel<T> auto pre_dof_transform, mdspan2_t dofmap0,
+    int bs0, fem::DofTransformKernel<T> auto post_dof_transform,
     mdspan2_t dofmap1, int bs1, std::span<const std::int8_t> bc0,
     std::span<const std::int8_t> bc1, FEkernel<T> auto kernel,
     std::span<const T> coeffs, int cstride, std::span<const T> constants,
@@ -220,13 +212,8 @@ void assemble_interior_facets(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     std::span<const scalar_value_type_t<T>> x, int num_cell_facets,
     std::span<const std::int32_t> facets,
-    const std::function<void(const std::span<T>&,
-                             const std::span<const std::uint32_t>&,
-                             std::int32_t, int)>& pre_dof_transform,
-    const DofMap& dofmap0, int bs0,
-    const std::function<void(const std::span<T>&,
-                             const std::span<const std::uint32_t>&,
-                             std::int32_t, int)>& post_dof_transform,
+    fem::DofTransformKernel<T> auto pre_dof_transform, const DofMap& dofmap0,
+    int bs0, fem::DofTransformKernel<T> auto post_dof_transform,
     const DofMap& dofmap1, int bs1, std::span<const std::int8_t> bc0,
     std::span<const std::int8_t> bc1, FEkernel<T> auto kernel,
     std::span<const T> coeffs, int cstride, std::span<const int> offsets,
@@ -387,21 +374,14 @@ void assemble_matrix(
   assert(element0);
   auto element1 = a.function_spaces().at(1)->element();
   assert(element1);
-  const std::function<void(const std::span<T>&,
-                           const std::span<const std::uint32_t>&, std::int32_t,
-                           int)>& pre_dof_transform
+  fem::DofTransformKernel<T> auto pre_dof_transform
       = element0->template get_pre_dof_transformation_function<T>();
-  const std::function<void(const std::span<T>&,
-                           const std::span<const std::uint32_t>&, std::int32_t,
-                           int)>& post_dof_transform
+  fem::DofTransformKernel<T> auto post_dof_transform
       = element1->template get_post_dof_transformation_function<T>(false, true);
 
-  const bool needs_transformation_data
-      = element0->needs_dof_transformations()
-        or element1->needs_dof_transformations()
-        or a.needs_facet_permutations();
   std::span<const std::uint32_t> cell_info;
-  if (needs_transformation_data)
+  if (element0->needs_dof_transformations()
+      or element1->needs_dof_transformations() or a.needs_facet_permutations())
   {
     mesh->topology_mutable()->create_entity_permutations();
     cell_info = std::span(mesh->topology()->get_cell_permutation_info());
