@@ -268,6 +268,11 @@ face_long_edge(const mesh::Mesh<T>& mesh)
 
 /// @brief Convenient interface for both uniform and marker refinement
 ///
+/// @note The parent facet map gives you the map from a cell given by parent
+/// cell map to the local index (relative to the cell), e.g. the i-th entry of
+/// parent facets relates to the local facet index of the i-th entry parent
+/// cell.
+///
 /// @param[in] comm Neighbourhood communciator scattering owned edges to
 /// processes with ghosts
 /// @param[in] marked_edges A marker for all edges on the process (local +
@@ -285,7 +290,6 @@ face_long_edge(const mesh::Mesh<T>& mesh)
 /// @returns (0) The new mesh topology, (1) the new flattened mesh geometry, (3)
 /// Shape of the new geometry_shape, (4) Map from new cells to parent cells
 /// and (5) map from refined facets to parent facets.
-/// @todo Document what parent facet is
 template <std::floating_point T>
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<T>,
            std::array<std::size_t, 2>, std::vector<std::int32_t>,
@@ -426,7 +430,9 @@ compute_refinement(MPI_Comm neighbor_comm,
 
       // Convert from cell local index to mesh index and add to cells
       for (std::int32_t v : simplex_set)
-        cell_topology.push_back(indices[v]);
+        cell_topology.push_back(
+
+            [v]);
     }
   }
 
