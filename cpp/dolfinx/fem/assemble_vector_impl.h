@@ -369,7 +369,7 @@ void _lift_bc_interior_facets(
     auto dmap0_cell0
         = std::span(dofmap0.data_handle() + cells[0] * num_dofs0, num_dofs0);
     auto dmap0_cell1
-        = std::span(dofmap1.data_handle() + cells[1] * num_dofs1, num_dofs1);
+        = std::span(dofmap0.data_handle() + cells[1] * num_dofs0, num_dofs0);
 
     dmapjoint0.resize(dmap0_cell0.size() + dmap0_cell1.size());
     std::copy(dmap0_cell0.begin(), dmap0_cell0.end(), dmapjoint0.begin());
