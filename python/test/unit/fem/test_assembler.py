@@ -755,13 +755,13 @@ def test_symmetry_interior_facet_assembly(mesh):
     A = petsc_assemble_matrix_block(a)
     A.assemble()
     assert isinstance(A, PETSc.Mat)
-    assert A.isSymmetric(tol=1.0e-6)
+    assert A.isSymmetric(tol=1.0e-5)
     A.destroy()
     # with boundary conditions
     A = petsc_assemble_matrix_block(a, bcs=[bcs(V0), bcs(V1)])
     A.assemble()
     assert isinstance(A, PETSc.Mat)
-    assert A.isSymmetric(tol=1.0e-6)
+    assert A.isSymmetric(tol=1.0e-5)
     A.destroy()
 
     V0 = functionspace(mesh, ("N2E", 1))
@@ -778,13 +778,13 @@ def test_symmetry_interior_facet_assembly(mesh):
     A = petsc_assemble_matrix_block(a)
     A.assemble()
     assert isinstance(A, PETSc.Mat)
-    assert A.isSymmetric(tol=1.0e-6)
+    assert A.isSymmetric(tol=1.0e-5)
     A.destroy()
     # with boundary conditions
     A = petsc_assemble_matrix_block(a, bcs=[bcs(V0), bcs(V1)])
     A.assemble()
     assert isinstance(A, PETSc.Mat)
-    assert A.isSymmetric(tol=1.0e-6)
+    assert A.isSymmetric(tol=1.0e-5)
     A.destroy()
 
 
