@@ -29,7 +29,7 @@ __all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk",
 
 def _extract_cpp_functions(functions: typing.Union[list[Function], Function]):
     """Extract C++ object for a single function or a list of functions"""
-    if isinstance(functions, (list, tuple)):
+    if isinstance(functions, list | tuple):
         return [getattr(u, "_cpp_object", u) for u in functions]
     else:
         return [getattr(functions, "_cpp_object", functions)]

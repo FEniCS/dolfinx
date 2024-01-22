@@ -32,7 +32,7 @@ class CoordinateElement:
         Args:
             cmap: A C++ CoordinateElement.
         """
-        assert isinstance(cmap, (_cpp.fem.CoordinateElement_float32, _cpp.fem.CoordinateElement_float64))
+        assert isinstance(cmap, _cpp.fem.CoordinateElement_float32 | _cpp.fem.CoordinateElement_float64)
         self._cpp_object = cmap
 
     @property

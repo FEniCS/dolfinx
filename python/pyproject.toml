@@ -16,7 +16,7 @@ name = "fenics-dolfinx"
 version = "0.8.0.dev0"
 description = "DOLFINx Python interface"
 readme = "../README.md"
-requires-python = ">=3.9.0"
+requires-python = ">=3.10.0"
 license = { file = "../COPYING.LESSER" }
 authors = [
       { email = "fenics-steering-council@googlegroups.com" },
@@ -80,21 +80,18 @@ sections= ["FUTURE", "STDLIB", "MPI", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
 line-length = 120
 indent-width = 4
 allowed-confusables = ["σ"]
+target-version = "py310"
 
 [tool.ruff.lint]
 select = [
-    # "B",
-    # "D", # pydocstyle
     "E",   # pycodestyle
     "W",   # pycodestyle
     "F",   # pyflakes
     # "I",   # isort - use standalone isort
     "RUF", # Ruff-specific rules
     "UP",  # pyupgrade
-    # "ANN",
-    "ICN",
-    # "SIM",
-    # "PL",
-    "NPY",
+    "ICN", # flake8-import-conventions
+    "NPY", # numpy-specific rules
+    "FLY", # use f-string not static joins
 ]
 ignore = ["UP007", "RUF012"]
