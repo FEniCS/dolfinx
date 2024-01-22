@@ -31,7 +31,6 @@
 
 # +
 import sys
-from typing import Tuple
 
 from mpi4py import MPI
 
@@ -115,7 +114,7 @@ class BackgroundElectricField:
         self.k0 = k0  # vacuum wavevector
         self.n_bkg = n_bkg  # background refractive index
 
-    def eval(self, x: np.typing.NDArray[np.float64]) -> Tuple[np.typing.NDArray[np.complex128],
+    def eval(self, x: np.typing.NDArray[np.float64]) -> tuple[np.typing.NDArray[np.complex128],
                                                               np.typing.NDArray[np.complex128]]:
         kx = self.n_bkg * self.k0 * np.cos(self.theta)
         ky = self.n_bkg * self.k0 * np.sin(self.theta)

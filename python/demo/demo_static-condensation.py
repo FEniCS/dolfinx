@@ -33,16 +33,13 @@ import numpy as np
 import ufl
 from basix.ufl import element
 from dolfinx import geometry
-from dolfinx.fem import (Form, Function, IntegralType, dirichletbc, form,
-                         form_cpp_class, functionspace,
+from dolfinx.fem import (Form, Function, IntegralType, dirichletbc, form, form_cpp_class, functionspace,
                          locate_dofs_topological)
-from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
-                               set_bc)
+from dolfinx.fem.petsc import apply_lifting, assemble_matrix, assemble_vector, set_bc
 from dolfinx.io import XDMFFile
 from dolfinx.jit import ffcx_jit
 from dolfinx.mesh import locate_entities_boundary, meshtags
-from ffcx.codegeneration.utils import \
-    numba_ufcx_kernel_signature as ufcx_signature
+from ffcx.codegeneration.utils import numba_ufcx_kernel_signature as ufcx_signature
 
 if PETSc.RealType == np.float32:  # type: ignore
     print("float32 not yet supported for this demo.")

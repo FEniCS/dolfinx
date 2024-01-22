@@ -50,8 +50,7 @@ import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_scalar_type, fem, io, plot
 from dolfinx.fem.petsc import assemble_matrix
-from dolfinx.mesh import (CellType, create_rectangle, exterior_facet_indices,
-                          locate_entities)
+from dolfinx.mesh import CellType, create_rectangle, exterior_facet_indices, locate_entities
 
 try:
     import pyvista

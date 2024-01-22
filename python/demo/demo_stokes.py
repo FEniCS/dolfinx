@@ -93,8 +93,7 @@ import numpy as np
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import fem, la
-from dolfinx.fem import (Constant, Function, dirichletbc,
-                         extract_function_spaces, form, functionspace,
+from dolfinx.fem import (Constant, Function, dirichletbc, extract_function_spaces, form, functionspace,
                          locate_dofs_topological)
 from dolfinx.fem.petsc import assemble_matrix_block, assemble_vector_block
 from dolfinx.io import XDMFFile

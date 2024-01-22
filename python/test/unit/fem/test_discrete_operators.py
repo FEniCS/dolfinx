@@ -15,8 +15,7 @@ import dolfinx.la
 import ufl
 from dolfinx.cpp.fem import discrete_gradient
 from dolfinx.fem import Expression, Function, functionspace
-from dolfinx.mesh import (CellType, GhostMode, create_unit_cube,
-                          create_unit_square)
+from dolfinx.mesh import CellType, GhostMode, create_unit_cube, create_unit_square
 
 
 @pytest.mark.parametrize("mesh", [create_unit_square(MPI.COMM_WORLD, 11, 6,

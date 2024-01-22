@@ -16,7 +16,7 @@ name = "fenics-dolfinx"
 version = "0.8.0.dev0"
 description = "DOLFINx Python interface"
 readme = "../README.md"
-requires-python = ">=3.8.0"
+requires-python = ">=3.9.0"
 license = { file = "../COPYING.LESSER" }
 authors = [
       { email = "fenics-steering-council@googlegroups.com" },
@@ -34,7 +34,7 @@ dependencies = [
 
 [project.optional-dependencies]
 docs = ["markdown", "pyyaml", "sphinx", "sphinx_rtd_theme"]
-lint = ["flake8", "pydocstyle"]
+lint = ["ruff", "isort"]
 optional = ["numba"]
 test = ["pytest", "sympy", "scipy", "matplotlib", "fenics-dolfinx[optional]"]
 ci = [
@@ -57,9 +57,6 @@ wheel.license-files = ["../COPYING*"]
 [tool.pytest]
 junit_family = "xunit2"
 
-[tool.isort]
-line_length = 120
-
 [tool.mypy]
 # Suggested at https://blog.wolt.com/engineering/2021/09/30/professional-grade-mypy-configuration/
 # Goal would be to make all of the below True long-term
@@ -71,3 +68,30 @@ warn_return_any = false
 warn_unused_ignores = false
 show_error_codes = true
 ignore_missing_imports = true
+
+[tool.isort]
+line_length = 120
+src_paths = ["demo", "dolfinx" , "test"]
+known_first_party = ["basix", "dolfinx", "ffcx", "ufl"]
+known_third_party = ["gmsh", "numba", "numpy", "pytest", "pyvista"]
+known_mpi = ["mpi4py", "petsc4py"]
+sections= ["FUTURE", "STDLIB", "MPI", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
+
+[tool.ruff]
+line-length = 120
+indent-width = 4
+allowed-confusables = ["σ"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle
+    "W",   # pycodestyle
+    "F",   # pyflakes
+    # "I",   # isort - use standalone isort
+    "RUF", # Ruff-specific rules
+    "UP",  # pyupgrade
+    "ICN", # flake8-import-conventions
+    "NPY", # numpy-specific rules
+    "FLY", # use f-string not static joins
+]
+ignore = ["UP007", "RUF012"]
