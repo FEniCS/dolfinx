@@ -16,8 +16,13 @@
 # * Use mixed and non-continuous finite element spaces.
 # * Set essential boundary conditions for subspaces and $H(\mathrm{div})$ spaces.
 #
-# {download}`Python script <./demo_mixed-poisson.py>`.\
-# {download}`Jupyter notebook <./demo_mixed-poisson.ipynb>`.
+
+# ```{admonition} Download sources
+# :class: download
+#
+# * {download}`Python script <./demo_mixed-poisson.py>`
+# * {download}`Jupyter notebook <./demo_mixed-poisson.ipynb>`
+# ```
 #
 # ## Equation and problem definition
 #
@@ -27,8 +32,10 @@
 # then read
 #
 # $$
+# \begin{align}
 #   \sigma - \nabla u &= 0 \quad {\rm in} \ \Omega, \\
 #   \nabla \cdot \sigma &= - f \quad {\rm in} \ \Omega,
+# \end{align}
 # $$
 # with boundary conditions
 #
@@ -55,11 +62,13 @@
 # where the variational forms $a$ and $L$ are defined as
 #
 # $$
+# \begin{align}
 #   a((\sigma, u), (\tau, v)) &=
 #     \int_{\Omega} \sigma \cdot \tau + \nabla \cdot \tau \ u
 #   + \nabla \cdot \sigma \ v \ {\rm d} x, \\
 #   L((\tau, v)) &= - \int_{\Omega} f v \ {\rm d} x
 #   + \int_{\Gamma_D} u_0 \tau \cdot n  \ {\rm d} s,
+# \end{align}
 # $$
 # and $\Sigma_g = \{ \tau \in H({\rm div})$ such that $\tau \cdot n|_{\Gamma_N}
 # = g \}$ and $V = L^2(\Omega)$.
