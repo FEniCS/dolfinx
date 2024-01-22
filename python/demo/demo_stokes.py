@@ -19,18 +19,20 @@
 # ### Strong formulation
 #
 # $$
-# - \nabla \cdot (\nabla u + p I) &= f \quad {\rm in} \ \Omega,
-#
-# \nabla \cdot u &= 0 \quad {\rm in} \ \Omega.
+# \begin{align}
+#   - \nabla \cdot (\nabla u + p I) &= f \quad {\rm in} \ \Omega,\\
+#   \nabla \cdot u &= 0 \quad {\rm in} \ \Omega.
+# \end{align}
 # $$
 #
 # with conditions on the boundary $\partial \Omega = \Gamma_{D} \cup
 # \Gamma_{N}$ of the form:
 #
 # $$
-# u &= u_0 \quad {\rm on} \ \Gamma_{D},
-#
-# \nabla u \cdot n + p n &= g \,   \quad\;\; {\rm on} \ \Gamma_{N}.
+# \begin{align}
+#   u &= u_0 \quad {\rm on} \ \Gamma_{D},\\
+#   \nabla u \cdot n + p n &= g \,   \quad\;\; {\rm on} \ \Gamma_{N}.
+# \end{align}
 # $$
 #
 # ```{note}
@@ -50,11 +52,12 @@
 # where
 #
 # $$
-# a((u, p), (v, q)) &:= \int_{\Omega} \nabla u \cdot \nabla v -
+# \begin{align}
+#   a((u, p), (v, q)) &:= \int_{\Omega} \nabla u \cdot \nabla v -
 #            \nabla \cdot v \ p + \nabla \cdot u \ q \, {\rm d} x,
-#
-# L((v, q)) &:= \int_{\Omega} f \cdot v \, {\rm d} x + \int_{\partial
+#   L((v, q)) &:= \int_{\Omega} f \cdot v \, {\rm d} x + \int_{\partial
 #            \Omega_N} g \cdot v \, {\rm d} s.
+# \end{align}
 # $$
 #
 # ### Domain and boundary conditions

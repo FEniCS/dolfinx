@@ -208,11 +208,13 @@ if have_pyvista:
 # specified here below:
 #
 # $$
-# \text{PML}_\text{corners} \rightarrow \mathbf{r}^\prime & = (x^\prime, y^\prime) \\
+# \begin{align}
+# \text{PML}_\text{corners} \rightarrow \mathbf{r}^\prime &= (x^\prime, y^\prime) \\
 # \text{PML}_\text{rectangles along x} \rightarrow
-#                                       \mathbf{r}^\prime & = (x^\prime, y) \\
+#                                       \mathbf{r}^\prime &= (x^\prime, y) \\
 # \text{PML}_\text{rectangles along y} \rightarrow
-#                                       \mathbf{r}^\prime & = (x, y^\prime).
+#                                       \mathbf{r}^\prime &= (x, y^\prime).
+# \end{align}
 # $$
 #
 # Now we define some other problem specific parameters:
@@ -335,10 +337,12 @@ y_pml = ufl.as_vector((x[0], pml_coordinates(x[1], alpha, k0, l_dom, l_pml)))
 # https://www.tandfonline.com/doi/abs/10.1080/09500349608232782):
 #
 # $$
+# \begin{align}
 # {\boldsymbol{\varepsilon}_{pml}} &=
 # A^{-1} \mathbf{A} {\boldsymbol{\varepsilon}_b}\mathbf{A}^{T},\\
 # {\boldsymbol{\mu}_{pml}} &=
 # A^{-1} \mathbf{A} {\boldsymbol{\mu}_b}\mathbf{A}^{T},
+# \end{align}
 # $$
 #
 # with $A^{-1}=\operatorname{det}(\mathbf{J})$.
@@ -388,7 +392,7 @@ eps_xy, mu_xy = create_eps_mu(xy_pml, eps_bkg, 1)
 # while in the rest of the domain is:
 #
 # $$
-# & \int_{\Omega_m\cup\Omega_b}-(\nabla \times \mathbf{E}_s)
+# \int_{\Omega_m\cup\Omega_b}-(\nabla \times \mathbf{E}_s)
 # \cdot (\nabla \times \bar{\mathbf{v}})+\varepsilon_{r} k_{0}^{2}
 # \mathbf{E}_s \cdot \bar{\mathbf{v}}+k_{0}^{2}\left(\varepsilon_{r}
 # -\varepsilon_b\right)\mathbf{E}_b \cdot \bar{\mathbf{v}}~\mathrm{d}x.

@@ -16,12 +16,13 @@ import pytest
 
 import dolfinx
 import dolfinx.utils
+import ffcx.codegeneration.utils
 from dolfinx import TimingType
 from dolfinx import cpp as _cpp
 from dolfinx import fem, la, list_timings
-from dolfinx.fem import Form, Function, IntegralType, functionspace
+from dolfinx.fem import (Form, Function, IntegralType, form_cpp_class,
+                         functionspace)
 from dolfinx.mesh import create_unit_square
-import ffcx.codegeneration.utils
 
 numba = pytest.importorskip("numba")
 ufcx_signature = ffcx.codegeneration.utils.numba_ufcx_kernel_signature
@@ -78,13 +79,8 @@ def tabulate_rank1_coeff(dtype, xdtype):
     return tabulate
 
 
-@pytest.mark.parametrize("dtype,formtype", [
-    (np.float32, _cpp.fem.Form_float32),
-    (np.float64, _cpp.fem.Form_float64),
-    (np.complex64, _cpp.fem.Form_complex64),
-    (np.complex128, _cpp.fem.Form_complex128)
-])
-def test_numba_assembly(dtype, formtype):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_numba_assembly(dtype):
     xdtype = np.real(dtype(0)).dtype
     k2 = tabulate_rank2(dtype, xdtype)
     k1 = tabulate_rank1(dtype, xdtype)
@@ -94,6 +90,7 @@ def test_numba_assembly(dtype, formtype):
     integrals = {IntegralType.cell: [(-1, k2.address, cells),
                                      (12, k2.address, np.arange(0)),
                                      (2, k2.address, np.arange(0))]}
+    formtype = form_cpp_class(dtype)
     a = Form(formtype([V._cpp_object, V._cpp_object], integrals, [], [], False, None))
     integrals = {IntegralType.cell: [(-1, k1.address, cells)]}
     L = Form(formtype([V._cpp_object], integrals, [], [], False, None))
@@ -111,13 +108,8 @@ def test_numba_assembly(dtype, formtype):
     list_timings(MPI.COMM_WORLD, [TimingType.wall])
 
 
-@pytest.mark.parametrize("dtype,formtype", [
-    (np.float32, _cpp.fem.Form_float32),
-    (np.float64, _cpp.fem.Form_float64),
-    (np.complex64, _cpp.fem.Form_complex64),
-    (np.complex128, _cpp.fem.Form_complex128)
-])
-def test_coefficient(dtype, formtype):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_coefficient(dtype):
     xdtype = np.real(dtype(0)).dtype
     k1 = tabulate_rank1_coeff(dtype, xdtype)
 
@@ -130,6 +122,7 @@ def test_coefficient(dtype, formtype):
     tdim = mesh.topology.dim
     num_cells = mesh.topology.index_map(tdim).size_local + mesh.topology.index_map(tdim).num_ghosts
     integrals = {IntegralType.cell: [(1, k1.address, np.arange(num_cells, dtype=np.int32))]}
+    formtype = form_cpp_class(dtype)
     L = Form(formtype([V._cpp_object], integrals, [vals._cpp_object], [], False, None))
 
     b = dolfinx.fem.assemble_vector(L)
