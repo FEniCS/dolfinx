@@ -193,6 +193,12 @@ public:
   /// computed.
   const std::vector<std::int32_t>& interprocess_facets() const;
 
+  /// @brief List of inter-process facets, if facet topology has been
+  /// computed, for the facet type in `Topology::entity_types` identified by
+  /// index
+  /// @param index Index of facet type
+  const std::vector<std::int32_t>& interprocess_facets(std::int8_t index) const;
+
   /// Original cell index for each cell type
   std::vector<std::vector<std::int64_t>> original_cell_index;
 
@@ -236,8 +242,8 @@ private:
   // get_cell_permutation_info for documentation of how this is encoded.
   std::vector<std::uint32_t> _cell_permutations;
 
-  // List of facets that are on the inter-process boundary
-  std::vector<std::int32_t> _interprocess_facets;
+  // List of facets that are on the inter-process boundary for each facet type
+  std::vector<std::vector<std::int32_t>> _interprocess_facets;
 };
 
 /// @brief Create a mesh topology.
