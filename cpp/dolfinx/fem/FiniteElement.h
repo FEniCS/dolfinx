@@ -105,10 +105,11 @@ public:
   /// The value size, e.g. 1 for a scalar function, 2 for a 2D vector, 9
   /// for a second-order tensor in 3D.
   /// @note The return value of this function is equivalent to
-  /// `std::accumulate(value_shape().begin(), value_shape().end(), 1,
+  /// `std::accumulate(value_shape(gdim).begin(), value_shape(gdim).end(), 1,
   /// std::multiplies{})`.
+  /// @param[in] gdim The geometric dimension of the physical cell
   /// @return The value size
-  int value_size() const;
+  int value_size(int gdim) const;
 
   /// The value size, e.g. 1 for a scalar function, 2 for a 2D vector, 9
   /// for a second-order tensor in 3D, for the reference element
@@ -117,7 +118,8 @@ public:
 
   /// Shape of the value space. The rank is the size of the
   /// `value_shape`.
-  std::span<const std::size_t> value_shape() const noexcept;
+  /// @param[in] gdim The geometric dimension of the physical cell
+  std::span<const std::size_t> value_shape(int gdim) const noexcept;
 
   /// @brief Evaluate derivatives of the basis functions up to given order
   /// at points in the reference cell.
@@ -691,7 +693,11 @@ private:
       _sub_elements;
 
   // Dimension of each value space
-  std::vector<std::size_t> _value_shape;
+  std::vector<std::size_t> _reference_value_shape;
+  std::vector<std::size_t> _value_shape_0;
+  std::vector<std::size_t> _value_shape_1;
+  std::vector<std::size_t> _value_shape_2;
+  std::vector<std::size_t> _value_shape_3;
 
   // Block size for BlockedElements. This gives the
   // number of DOFs co-located at each dof 'point'.

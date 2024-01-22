@@ -123,8 +123,12 @@ _extract_sub_element(const FiniteElement<T>& finite_element,
 template <std::floating_point T>
 FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
     : _signature(e.signature), _space_dim(e.space_dimension),
-      _value_shape(e.reference_value_shape,
-                   e.reference_value_shape + e.reference_value_rank),
+      _reference_value_shape(e.reference_value_shape,
+                             e.reference_value_shape + e.reference_value_rank),
+      _value_shape_0(e.value_shape[0], e.value_shape[0] + e.value_rank),
+      _value_shape_1(e.value_shape[1], e.value_shape[1] + e.value_rank),
+      _value_shape_2(e.value_shape[2], e.value_shape[2] + e.value_rank),
+      _value_shape_3(e.value_shape[3], e.value_shape[3] + e.value_rank),
       _bs(e.block_size), _is_mixed(e.element_type == ufcx_mixed_element)
 {
   const ufcx_shape _shape = e.cell_shape;
@@ -294,9 +298,13 @@ FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
 template <std::floating_point T>
 FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
                                 const std::vector<std::size_t>& value_shape)
-    : _value_shape(element.value_shape()), _is_mixed(false)
+    : _reference_value_shape(element.value_shape()),
+      _value_shape_0(element.value_shape()),
+      _value_shape_1(element.value_shape()),
+      _value_shape_2(element.value_shape()),
+      _value_shape_3(element.value_shape()), _is_mixed(false)
 {
-  if (!_value_shape.empty() and !value_shape.empty())
+  if (!_value_shape_3.empty() and !value_shape.empty())
   {
     throw std::runtime_error(
         "Cannot specify value shape for non-scalar base element.");
@@ -304,7 +312,12 @@ FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
 
   // Set block size
   if (!value_shape.empty())
-    _value_shape = value_shape;
+  {
+    _value_shape_0 = value_shape;
+    _value_shape_1 = value_shape;
+    _value_shape_2 = value_shape;
+    _value_shape_3 = value_shape;
+  }
 
   // Set block size
   if (!value_shape.empty())
@@ -389,17 +402,32 @@ int FiniteElement<T>::space_dimension() const noexcept
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-int FiniteElement<T>::value_size() const
+int FiniteElement<T>::value_size(int dim) const
 {
-  return std::accumulate(_value_shape.begin(), _value_shape.end(), 1,
-                         std::multiplies{});
+  switch (dim)
+  {
+  case 0:
+    return std::accumulate(_value_shape_0.begin(), _value_shape_0.end(), 1,
+                           std::multiplies{});
+  case 1:
+    return std::accumulate(_value_shape_1.begin(), _value_shape_1.end(), 1,
+                           std::multiplies{});
+  case 2:
+    return std::accumulate(_value_shape_2.begin(), _value_shape_2.end(), 1,
+                           std::multiplies{});
+  case 3:
+    return std::accumulate(_value_shape_3.begin(), _value_shape_3.end(), 1,
+                           std::multiplies{});
+  default:
+    return 0;
+  }
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
 int FiniteElement<T>::reference_value_size() const
 {
-  return std::accumulate(_value_shape.begin(), _value_shape.end(), 1,
-                         std::multiplies{});
+  return std::accumulate(_reference_value_shape.begin(),
+                         _reference_value_shape.end(), 1, std::multiplies{});
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -409,9 +437,22 @@ int FiniteElement<T>::block_size() const noexcept
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-std::span<const std::size_t> FiniteElement<T>::value_shape() const noexcept
+std::span<const std::size_t>
+FiniteElement<T>::value_shape(int dim) const noexcept
 {
-  return _value_shape;
+  switch (dim)
+  {
+  case 0:
+    return _value_shape_0;
+  case 1:
+    return _value_shape_1;
+  case 2:
+    return _value_shape_2;
+  case 3:
+    return _value_shape_3;
+  default:
+    return {};
+  }
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>

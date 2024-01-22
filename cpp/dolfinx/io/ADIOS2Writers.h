@@ -240,6 +240,7 @@ std::vector<T> pack_function_data(const fem::Function<T, U>& u)
   assert(dofmap->element_dof_layout() == geometry.cmap().create_dof_layout());
 
   int tdim = topology->dim();
+  int gdim = geometry.dim();
   auto cell_map = topology->index_map(tdim);
   assert(cell_map);
   std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
@@ -249,7 +250,7 @@ std::vector<T> pack_function_data(const fem::Function<T, U>& u)
   std::uint32_t num_vertices
       = vertex_map->size_local() + vertex_map->num_ghosts();
 
-  int rank = V->element()->value_shape().size();
+  int rank = V->element()->value_shape(gdim).size();
   std::uint32_t num_components = std::pow(3, rank);
 
   // Get dof array and pack into array (padded where appropriate)
@@ -293,7 +294,7 @@ void write_data(adios2::IO& io, adios2::Engine& engine,
   const int gdim = mesh->geometry().dim();
 
   // Vectors and tensor need padding in gdim < 3
-  int rank = V->element()->value_shape().size();
+  int rank = V->element()->value_shape(gdim).size();
   bool need_padding = rank > 0 and gdim != 3 ? true : false;
 
   // Get vertex data. If the mesh and function dofmaps are the same we
@@ -658,7 +659,7 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
   // Get function data array and information about layout
   assert(u.x());
   std::span<const T> u_vector = u.x()->array();
-  int rank = u.function_space()->element()->value_shape().size();
+  int rank = u.function_space()->element()->value_shape(3).size();
   std::uint32_t num_comp = std::pow(3, rank);
   std::shared_ptr<const fem::DofMap> dofmap = u.function_space()->dofmap();
   assert(dofmap);

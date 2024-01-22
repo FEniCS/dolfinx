@@ -335,7 +335,8 @@ public:
   {
     assert(g);
     assert(V);
-    if (g->shape.size() != V->element()->value_shape().size())
+    const int gdim = V->mesh()->geometry().dim();
+    if (g->shape.size() != V->element()->value_shape(gdim).size())
     {
       throw std::runtime_error(
           "Rank mis-match between Constant and function space in DirichletBC");

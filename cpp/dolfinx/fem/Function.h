@@ -216,9 +216,11 @@ public:
             std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>
         _x(x.data(), 3, x.size() / 3);
 
+    const int gdim = _function_space->mesh()->geometry().dim();
+
     const auto [fx, fshape] = f(_x);
     assert(fshape.size() <= 2);
-    if (int vs = _function_space->element()->value_size();
+    if (int vs = _function_space->element()->value_size(gdim);
         vs == 1 and fshape.size() == 1)
     {
       // Check for scalar-valued functions
@@ -288,11 +290,12 @@ public:
     // Check that spaces are compatible
     assert(_function_space);
     assert(_function_space->element());
+    const int gdim = _function_space->mesh()->geometry().dim();
     std::size_t value_size = e.value_size();
     if (e.argument_function_space())
       throw std::runtime_error("Cannot interpolate Expression with Argument");
 
-    if (value_size != _function_space->element()->value_size())
+    if (value_size != _function_space->element()->value_size(gdim))
     {
       throw std::runtime_error(
           "Function value size not equal to Expression value size");
@@ -428,7 +431,7 @@ public:
     const int bs_element = element->block_size();
     const std::size_t reference_value_size
         = element->reference_value_size() / bs_element;
-    const std::size_t value_size = element->value_size() / bs_element;
+    const std::size_t value_size = element->value_size(gdim) / bs_element;
     const std::size_t space_dimension = element->space_dimension() / bs_element;
 
     // If the space has sub elements, concatenate the evaluations on the

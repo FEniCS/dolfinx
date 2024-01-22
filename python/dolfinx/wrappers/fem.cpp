@@ -122,9 +122,9 @@ void declare_function_space(nb::module_& m, std::string type)
                      &dolfinx::fem::FiniteElement<T>::space_dimension)
         .def_prop_ro(
             "value_shape",
-            [](const dolfinx::fem::FiniteElement<T>& self)
+            [](const dolfinx::fem::FiniteElement<T>& self, int gdim)
             {
-              std::span<const std::size_t> vshape = self.value_shape();
+              std::span<const std::size_t> vshape = self.value_shape(gdim);
               return nb::ndarray<const std::size_t, nb::numpy>(vshape.data(),
                                                                {vshape.size()});
             },
@@ -340,15 +340,17 @@ void declare_objects(nb::module_& m, const std::string& type)
             auto element = self.function_space()->element();
             assert(element);
 
-            // Compute value size
-            auto vshape = element->value_shape();
-            std::size_t value_size = std::reduce(vshape.begin(), vshape.end(),
-                                                 1, std::multiplies{});
-
             assert(self.function_space()->mesh());
             const std::vector<U> x = dolfinx::fem::interpolation_coords(
                 *element, self.function_space()->mesh()->geometry(),
                 std::span(cells.data(), cells.size()));
+
+            const int gdim = self.function_space()->mesh()->geometry().dim();
+
+            // Compute value size
+            auto vshape = element->value_shape(gdim);
+            std::size_t value_size = std::reduce(vshape.begin(), vshape.end(),
+                                                 1, std::multiplies{});
 
             std::array<std::size_t, 2> shape{value_size, x.size() / 3};
             std::vector<T> values(shape[0] * shape[1]);
