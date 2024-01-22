@@ -313,6 +313,7 @@ FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
   // Set block size
   if (!value_shape.empty())
   {
+    _reference_value_shape = value_shape;
     _value_shape_0 = value_shape;
     _value_shape_1 = value_shape;
     _value_shape_2 = value_shape;
