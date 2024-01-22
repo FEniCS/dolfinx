@@ -217,9 +217,9 @@ class Expression:
         return self._ufl_expression
 
     @property
-    def value_size(self) -> int:
+    def value_size(self, dim: int) -> int:
         """Value size of the expression"""
-        return self._cpp_object.value_size
+        return self._cpp_object.value_size(dim)
 
     @property
     def argument_function_space(self) -> typing.Optional[FunctionSpace]:
