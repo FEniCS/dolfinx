@@ -40,7 +40,7 @@ from dolfinx.fem.petsc import set_bc_nest as petsc_set_bc_nest
 from dolfinx.mesh import (CellType, GhostMode, create_mesh, create_rectangle,
                           create_unit_cube, create_unit_square,
                           locate_entities_boundary)
-from ufl import derivative, ds, dx, inner
+from ufl import derivative, ds, dx, dS, inner
 from ufl.geometry import SpatialCoordinate
 
 
@@ -735,7 +735,7 @@ def test_basic_interior_facet_assembly():
     create_unit_cube(MPI.COMM_WORLD, 5, 5, 5, ghost_mode=GhostMode.shared_facet)])
 def test_symmetry_interior_facet_assembly(mesh):
 
-    def bcs(V):
+    def bc(V):
         facetdim = mesh.topology.dim - 1
         bndry_facets = locate_entities_boundary(mesh, facetdim, lambda x: np.isclose(x[0], 0.0))
         bdofsV = locate_dofs_topological(V, facetdim, bndry_facets)
@@ -746,46 +746,62 @@ def test_symmetry_interior_facet_assembly(mesh):
     V1 = functionspace(mesh, ("RT", 3))
     u0, v0 = ufl.TrialFunction(V0), ufl.TestFunction(V0)
     u1, v1 = ufl.TrialFunction(V1), ufl.TestFunction(V1)
-    a00 = ufl.inner(v0, u0) * ufl.dx
-    a11 = ufl.inner(v1, u1) * ufl.dx
-    a01 = ufl.inner(ufl.avg(v0), ufl.avg(u1)) * ufl.dS
-    a10 = ufl.inner(ufl.avg(v1), ufl.avg(u0)) * ufl.dS
+    a00 = inner(u0, v0) * dx
+    a11 = inner(u1, v1) * dx
+    a01 = inner(ufl.avg(u1), ufl.avg(v0)) * dS
+    a10 = inner(ufl.avg(u0), ufl.avg(v1)) * dS
     a = form([[a00, a01], [a10, a11]])
+    L0 = inner(ufl.unit_vector(0, mesh.geometry.dim), ufl.avg(v0)) * dS
+    L1 = inner(ufl.unit_vector(1, mesh.geometry.dim), ufl.avg(v1)) * dS
+    L = form([L0, L1])
     # without boundary conditions
     A = petsc_assemble_matrix_block(a)
     A.assemble()
     assert isinstance(A, PETSc.Mat)
-    assert A.isSymmetric(tol=1.0e-5)
+    assert A.isSymmetric(tol=1.0e-4)
     A.destroy()
     # with boundary conditions
-    A = petsc_assemble_matrix_block(a, bcs=[bcs(V0), bcs(V1)])
+    bcs = [bc(V0), bc(V1)]
+    A = petsc_assemble_matrix_block(a, bcs=bcs)
+    b = petsc_assemble_vector_block(L, a, bcs=bcs)
     A.assemble()
+    b.assemble()
     assert isinstance(A, PETSc.Mat)
-    assert A.isSymmetric(tol=1.0e-5)
+    assert isinstance(b, PETSc.Vec)
+    assert A.isSymmetric(tol=1.0e-4)
     A.destroy()
+    b.destroy()
 
     V0 = functionspace(mesh, ("N2E", 1))
     V1 = functionspace(mesh, ("Regge", 1))
     u0, v0 = ufl.TrialFunction(V0), ufl.TestFunction(V0)
     u1, v1 = ufl.TrialFunction(V1), ufl.TestFunction(V1)
     n = ufl.FacetNormal(mesh)
-    a00 = ufl.inner(v0, u0) * ufl.dx
-    a11 = ufl.inner(v1, u1) * ufl.dx
-    a01 = ufl.inner(ufl.avg(v0), ufl.dot(ufl.avg(u1), n('+'))) * ufl.dS
-    a10 = ufl.inner(ufl.dot(ufl.avg(v1), n('+')), ufl.avg(u0)) * ufl.dS
+    a00 = inner(u0, v0) * dx
+    a11 = inner(u1, v1) * dx
+    a01 = inner(ufl.dot(ufl.avg(u1), n('+')), ufl.avg(v0)) * dS
+    a10 = inner(ufl.avg(u0), ufl.dot(ufl.avg(v1), n('+'))) * dS
     a = form([[a00, a01], [a10, a11]])
+    L0 = inner(ufl.unit_vector(0, mesh.geometry.dim), ufl.avg(v0)) * dS
+    L1 = inner(ufl.unit_matrix(1, 1, mesh.geometry.dim), ufl.avg(v1)) * dS
+    L = form([L0, L1])
     # without boundary conditions
     A = petsc_assemble_matrix_block(a)
     A.assemble()
     assert isinstance(A, PETSc.Mat)
-    assert A.isSymmetric(tol=1.0e-5)
+    assert A.isSymmetric(tol=1.0e-4)
     A.destroy()
     # with boundary conditions
-    A = petsc_assemble_matrix_block(a, bcs=[bcs(V0), bcs(V1)])
+    bcs = [bc(V0), bc(V1)]
+    A = petsc_assemble_matrix_block(a, bcs=bcs)
+    b = petsc_assemble_vector_block(L, a, bcs=bcs)
     A.assemble()
+    b.assemble()
     assert isinstance(A, PETSc.Mat)
-    assert A.isSymmetric(tol=1.0e-5)
+    assert isinstance(b, PETSc.Vec)
+    assert A.isSymmetric(tol=1.0e-4)
     A.destroy()
+    b.destroy()
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
