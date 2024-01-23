@@ -303,10 +303,7 @@ mesh::Mesh<T> partition(const mesh::Mesh<T>& old_mesh,
   }
 }
 
-/// @todo Fix docstring. It is unclear.
-///
 /// @brief Add indices to account for extra n values on this process.
-///
 /// This is a utility to help add new topological vertices on each
 /// process into the space of the index map.
 ///
