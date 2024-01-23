@@ -114,9 +114,11 @@ UFL still runs on the year-based release scheme.
 5. In `CITATION.md` change the line starting `version:` to e.g. `version: 0.5.0` and
    update the line starting `date-released:` to e.g. `date-released: 2022-03-14`.
 
-6. Commit and push.
+6. In `.github/ISSUE_TEMPLATE/bug_report.yml` add a new option to the version dropdown.
 
-7. Check `git diff origin/main` for obvious errors.
+7. Commit and push.
+
+8. Check `git diff origin/main` for obvious errors.
 
 ## Integration testing
 
