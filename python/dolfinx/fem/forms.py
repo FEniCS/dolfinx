@@ -119,7 +119,8 @@ _ufl_to_dolfinx_domain = {"cell": IntegralType.cell,
 def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]],
          dtype: npt.DTypeLike = default_scalar_type,
          form_compiler_options: typing.Optional[dict] = None,
-         jit_options: typing.Optional[dict] = None):
+         jit_options: typing.Optional[dict] = None,
+         entity_maps: list[np.typing.NDArray[np.int32]] = []):
     """Create a Form or an array of Forms.
 
     Args:
@@ -127,6 +128,7 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]],
         dtype: Scalar type to use for the compiled form.
         form_compiler_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
         jit_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`.
+        entity_maps: The entity maps required to assemble the form.
 
     Returns:
         Compiled finite element Form.
@@ -193,7 +195,7 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]],
             _ufl_to_dolfinx_domain[key], subdomain_data[0]) for (key, subdomain_data) in sd.get(domain).items()}
 
         f = ftype(module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)), V, coeffs,
-                  constants, subdomains, mesh)
+                  constants, subdomains, mesh, entity_maps)
         return Form(f, ufcx_form, code)
 
     def _create_form(form):

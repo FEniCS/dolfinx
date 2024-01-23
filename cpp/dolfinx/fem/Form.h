@@ -95,18 +95,20 @@ public:
        const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients,
        const std::vector<std::shared_ptr<const Constant<T>>>& constants,
        bool needs_facet_permutations,
-       std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
+       std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr,
+       const std::vector<std::span<const std::int32_t>>& entity_maps = {})
       : _function_spaces(V), _coefficients(coefficients), _constants(constants),
         _mesh(mesh), _needs_facet_permutations(needs_facet_permutations)
   {
     // Extract _mesh from FunctionSpace, and check they are the same
     if (!_mesh and !V.empty())
       _mesh = V[0]->mesh();
-    for (auto& space : V)
-    {
-      if (_mesh != space->mesh())
-        throw std::runtime_error("Incompatible mesh");
-    }
+    // TODO Update and enable
+    // for (auto& space : V)
+    // {
+    //   if (_mesh != space->mesh())
+    //     throw std::runtime_error("Incompatible mesh");
+    // }
     if (!_mesh)
       throw std::runtime_error("No mesh could be associated with the Form.");
 
