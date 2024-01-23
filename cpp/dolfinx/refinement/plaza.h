@@ -273,8 +273,8 @@ face_long_edge(const mesh::Mesh<T>& mesh)
 /// parent facets relates to the local facet index of the i-th entry parent
 /// cell.
 ///
-/// @param[in] comm Neighbourhood communciator scattering owned edges to
-/// processes with ghosts
+/// @param[in] neighbor_comm Neighbourhood communciator scattering owned edges
+/// to processes with ghosts
 /// @param[in] marked_edges A marker for all edges on the process (local +
 /// ghosts) indicating if an edge should be refined
 /// @param[in] shared_edges For each local edge on a process map to ghost

@@ -98,22 +98,10 @@ void refinement::update_logical_edgefunction(
   }
 }
 //-----------------------------------------------------------------------------
-/// @brief Given an index map, add "n" extra indices at the end of local range
-///
-/// @note The returned global indices (local and ghosts) are adjust for the
-/// addition of new local indices.
-///
-/// @param[in] map Index map
-/// @param[in] n Number of new local indices
-/// @returns New global indices for both owned and ghosted indices in input
-/// index map.
 std::vector<std::int64_t>
 refinement::adjust_indices(const common::IndexMap& map, std::int32_t n)
 {
   // NOTE: Is this effectively concatenating index maps?
-
-  // Add in an extra "n" indices at the end of the current local_range
-  // of "index_map", and adjust existing indices to match.
 
   // Get offset for 'n' for this process
   const std::int64_t num_local = n;
