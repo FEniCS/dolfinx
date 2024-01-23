@@ -286,7 +286,9 @@ Form<T, U> create_form(
         std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>&
         subdomains,
     std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr,
-    const std::vector<std::span<const std::int32_t>>& entity_maps = {})
+    const std::map<std::shared_ptr<const mesh::Mesh<U>>,
+                   std::span<const std::int32_t>>& entity_maps
+    = {})
 {
   if (ufcx_form.rank != (int)spaces.size())
     throw std::runtime_error("Wrong number of argument spaces for Form.");
@@ -320,12 +322,12 @@ Form<T, U> create_form(
   // Extract mesh from FunctionSpace, and check they are the same
   if (!mesh and !spaces.empty())
     mesh = spaces[0]->mesh();
-  // TODO Update and enable
-  // for (auto& V : spaces)
-  // {
-  //   if (mesh != V->mesh())
-  //     throw std::runtime_error("Incompatible mesh");
-  // }
+  for (auto& V : spaces)
+  {
+    if (mesh != V->mesh() and entity_maps.find(V->mesh()) == entity_maps.end())
+      throw std::runtime_error(
+          "Incompatible mesh. entity_maps must be provided.");
+  }
   if (!mesh)
     throw std::runtime_error("No mesh could be associated with the Form.");
 
