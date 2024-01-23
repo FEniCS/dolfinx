@@ -40,7 +40,7 @@ from dolfinx.fem.petsc import set_bc_nest as petsc_set_bc_nest
 from dolfinx.mesh import (CellType, GhostMode, create_mesh, create_rectangle,
                           create_unit_cube, create_unit_square,
                           locate_entities_boundary)
-from ufl import derivative, ds, dx, dS, inner
+from ufl import derivative, ds, dS, dx, inner
 from ufl.geometry import SpatialCoordinate
 
 
