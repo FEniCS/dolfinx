@@ -455,7 +455,7 @@ class Function(ufl.Coefficient):
             returned `Function` should be stored by the caller to avoid
             repeated re-computation of the subspac.
         """
-        return Function(self._V.sub(i), self.x, name=f"{str(self)}_{i}")
+        return Function(self._V.sub(i), self.x, name=f"{self!s}_{i}")
 
     def split(self) -> tuple[Function, ...]:
         """Extract (any) sub-functions.
@@ -492,13 +492,13 @@ class ElementMetaData(typing.NamedTuple):
     """
     family: str
     degree: int
-    shape: typing.Optional[typing.Tuple[int, ...]] = None
+    shape: typing.Optional[tuple[int, ...]] = None
     symmetry: typing.Optional[bool] = None
 
 
 def functionspace(mesh: Mesh,
                   element: typing.Union[ufl.FiniteElementBase, ElementMetaData,
-                                        typing.Tuple[str, int, typing.Tuple, bool]],
+                                        tuple[str, int, tuple, bool]],
                   form_compiler_options: typing.Optional[dict[str, typing.Any]] = None,
                   jit_options: typing.Optional[dict[str, typing.Any]] = None) -> FunctionSpace:
     """Create a finite element function space.

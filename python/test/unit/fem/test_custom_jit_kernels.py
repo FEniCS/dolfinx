@@ -16,12 +16,12 @@ import pytest
 
 import dolfinx
 import dolfinx.utils
+import ffcx.codegeneration.utils
 from dolfinx import TimingType
 from dolfinx import cpp as _cpp
 from dolfinx import fem, la, list_timings
-from dolfinx.fem import Form, Function, IntegralType, functionspace, form_cpp_class
+from dolfinx.fem import Form, Function, IntegralType, form_cpp_class, functionspace
 from dolfinx.mesh import create_unit_square
-import ffcx.codegeneration.utils
 
 numba = pytest.importorskip("numba")
 ufcx_signature = ffcx.codegeneration.utils.numba_ufcx_kernel_signature

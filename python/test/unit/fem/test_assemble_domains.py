@@ -13,10 +13,8 @@ import pytest
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, fem, la
-from dolfinx.fem import (Constant, Function, assemble_scalar, dirichletbc,
-                         form, functionspace)
-from dolfinx.mesh import (GhostMode, Mesh, create_unit_square, locate_entities,
-                          locate_entities_boundary, meshtags,
+from dolfinx.fem import Constant, Function, assemble_scalar, dirichletbc, form, functionspace
+from dolfinx.mesh import (GhostMode, Mesh, create_unit_square, locate_entities, locate_entities_boundary, meshtags,
                           meshtags_from_entities)
 
 

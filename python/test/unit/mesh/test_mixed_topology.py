@@ -1,6 +1,7 @@
 from mpi4py import MPI
+
 from dolfinx.cpp.mesh import create_topology
-from dolfinx.mesh import CellType, create_unit_cube, GhostMode
+from dolfinx.mesh import CellType, GhostMode, create_unit_cube
 
 
 def test_triquad():
@@ -51,75 +52,76 @@ def test_mixed_mesh_3d():
     assert len(entity_types[1]) == 1
     assert len(entity_types[2]) == 2
     assert len(entity_types[3]) == 3
-    assert CellType.triangle == entity_types[2][1]
-    assert CellType.quadrilateral == entity_types[2][0]
 
     # Create triangle and quadrilateral facets
     topology.create_entities(2)
 
+    qi = topology.entity_types[2].index(CellType.quadrilateral)
+    ti = topology.entity_types[2].index(CellType.triangle)
+
     # Tet -> quad
-    assert topology.connectivity((3, 0), (2, 0)) is None
+    assert topology.connectivity((3, 0), (2, qi)) is None
     # Tet -> triangle
-    t = topology.connectivity((3, 0), (2, 1))
+    t = topology.connectivity((3, 0), (2, ti))
     assert t.num_nodes == 2
     assert len(t.links(0)) == 4
 
     # Prism -> quad
-    t = topology.connectivity((3, 1), (2, 0))
+    t = topology.connectivity((3, 1), (2, qi))
     assert t.num_nodes == 1
     assert len(t.links(0)) == 3
     # Prism -> triangle
-    t = topology.connectivity((3, 1), (2, 1))
+    t = topology.connectivity((3, 1), (2, ti))
     assert t.num_nodes == 1
     assert len(t.links(0)) == 2
 
     # Hex -> quad
-    t = topology.connectivity((3, 2), (2, 0))
+    t = topology.connectivity((3, 2), (2, qi))
     assert t.num_nodes == 1
     assert len(t.links(0)) == 6
     # Hex -> triangle
-    assert topology.connectivity((3, 2), (2, 1)) is None
+    assert topology.connectivity((3, 2), (2, ti)) is None
 
     # Quad -> vertex
-    t = topology.connectivity((2, 0), (0, 0))
+    t = topology.connectivity((2, qi), (0, 0))
     assert t.num_nodes == 8
     assert len(t.links(0)) == 4
 
     # Triangle -> vertex
-    t = topology.connectivity((2, 1), (0, 0))
+    t = topology.connectivity((2, ti), (0, 0))
     assert t.num_nodes == 8
     assert len(t.links(0)) == 3
 
     topology.create_connectivity(2, 1)
 
     # Quad -> edge
-    t = topology.connectivity((2, 0), (1, 0))
+    t = topology.connectivity((2, qi), (1, 0))
     assert t.num_nodes == 8
     assert len(t.links(0)) == 4
 
     # Tri -> edge
-    t = topology.connectivity((2, 1), (1, 0))
+    t = topology.connectivity((2, ti), (1, 0))
     assert t.num_nodes == 8
     assert len(t.links(0)) == 3
 
     topology.create_connectivity(2, 3)
     # Quad -> prism
-    t = topology.connectivity((2, 0), (3, 1))
+    t = topology.connectivity((2, qi), (3, 1))
     assert t.num_nodes == 8
     assert t.array.size == 3
 
     # Quad -> hex
-    t = topology.connectivity((2, 0), (3, 2))
+    t = topology.connectivity((2, qi), (3, 2))
     assert t.num_nodes == 8
     assert t.array.size == 6
 
     # Tri -> tet
-    t = topology.connectivity((2, 1), (3, 0))
+    t = topology.connectivity((2, ti), (3, 0))
     assert t.num_nodes == 8
     assert t.array.size == 8
 
     # Tri -> prism
-    t = topology.connectivity((2, 1), (3, 1))
+    t = topology.connectivity((2, ti), (3, 1))
     assert t.num_nodes == 8
     assert t.array.size == 2
 
@@ -141,6 +143,7 @@ def test_parallel_mixed_mesh():
     topology = create_topology(MPI.COMM_WORLD, [CellType.triangle, CellType.quadrilateral],
                                cells, orig_index, ghost_owners, boundary_vertices)
 
+    # Cell types appear in order as in create_topology
     assert topology.entity_types[2][0] == CellType.triangle
     assert topology.entity_types[2][1] == CellType.quadrilateral
 
@@ -148,34 +151,33 @@ def test_parallel_mixed_mesh():
     assert topology.index_maps(2)[0].size_global == size * 2
     assert topology.index_maps(2)[1].size_global == size
 
-    print(topology.index_maps(2)[0].size_global)
-
 
 def test_create_entities():
     mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, CellType.prism, ghost_mode=GhostMode.none)
 
-    print('ncells = ', mesh.topology.index_map(3).size_local)
-
     # Make triangle and quadrilateral facets
     mesh.topology.create_entities(2)
 
-    assert mesh.topology.entity_types[2][0] == CellType.quadrilateral
-    assert mesh.topology.entity_types[2][1] == CellType.triangle
+    assert len(mesh.topology.entity_types[2]) == 2
+    qi = mesh.topology.entity_types[2].index(CellType.quadrilateral)
+    ti = mesh.topology.entity_types[2].index(CellType.triangle)
+    assert qi != ti
 
-    cell_quad = mesh.topology.connectivity((3, 0), (2, 0))
-    cell_tri = mesh.topology.connectivity((3, 0), (2, 1))
+    cell_quad = mesh.topology.connectivity((3, 0), (2, qi))
+    cell_tri = mesh.topology.connectivity((3, 0), (2, ti))
 
     assert MPI.COMM_WORLD.allreduce(cell_quad.num_nodes) == 16
     assert len(cell_quad.links(0)) == 3
     assert MPI.COMM_WORLD.allreduce(cell_tri.num_nodes) == 16
     assert len(cell_tri.links(0)) == 2
 
-    quad_v = mesh.topology.connectivity((2, 0), (0, 0))
-    tri_v = mesh.topology.connectivity((2, 1), (0, 0))
+    quad_v = mesh.topology.connectivity((2, qi), (0, 0))
+    tri_v = mesh.topology.connectivity((2, ti), (0, 0))
     ims = mesh.topology.index_maps(2)
-    assert ims[0].size_global == 32
+    assert len(ims) == 2
+    assert ims[qi].size_global == 32
     assert len(quad_v.links(0)) == 4
-    assert ims[1].size_global == 24
+    assert ims[ti].size_global == 24
     assert len(tri_v.links(0)) == 3
 
     mesh.topology.create_entities(1)

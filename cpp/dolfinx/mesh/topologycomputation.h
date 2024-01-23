@@ -34,7 +34,8 @@ class Topology;
 /// @param[in] comm MPI Communicator
 /// @param[in] topology Mesh topology
 /// @param[in] dim The dimension of the entities to create
-/// @param[in] index Index of entity in dimension `dim`
+/// @param[in] index Index of entity in dimension `dim` as listed in
+/// `Topology::entity_types(dim)`.
 /// @return Tuple of (cell-entity connectivity, entity-vertex
 /// connectivity, index map, list of interprocess entities).
 /// Interprocess entities lie on the "true" boundary between owned cells of each
