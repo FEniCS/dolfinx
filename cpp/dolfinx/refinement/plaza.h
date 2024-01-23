@@ -116,9 +116,9 @@ compute_parent_facets(std::span<const std::int32_t> simplex_set)
 /// (cell local indexing). A flag indicates if a uniform subdivision is
 /// preferable in 2D.
 ///
-/// @param[in] indices Vector of size (num_vertices + num_edges) containing the
-/// global indices for the original vertices and potential new vertices at each
-/// edge.
+/// @param[in] indices Vector containing the global indices for the original
+/// vertices and potential new vertices at each edge. Size (num_vertices +
+/// num_edges).
 //// If an edge is not refined its corresponding entry is -1
 /// @param[in] longest_edge Vector indicating the longest edge for each
 ///   triangle. For tdim=2, one entry, for tdim=3, four entries. The entry

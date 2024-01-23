@@ -28,9 +28,9 @@ namespace
 /// @param[in] indices Vector of size (num_vertices + num_edges) containing the
 /// global indices for the original vertices and potential new vertices at each
 /// edge. If an edge is not refined its corresponding entry is -1.
-/// @param[in] longest_edge Vector indicating the longest edge for each
-///   triangle. For tdim=2, one entry, for tdim=3, four entries. The entry
-///   relates to the local index of the last num_edges entries of indices.
+/// @param[in] longest_edge Local index of the longest edge in the triangle.
+/// @param[in] uniform If true, the triangle is subdivided into four
+/// sub-triangles.
 /// @returns Local indices for each sub-divived triangle
 std::vector<std::int32_t> get_triangles(std::span<const std::int64_t> indices,
                                         const std::int32_t longest_edge,
