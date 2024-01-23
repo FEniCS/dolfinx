@@ -30,7 +30,6 @@
 
 import sys
 from functools import reduce
-from typing import List
 
 import numpy.typing
 
@@ -117,7 +116,7 @@ def generate_mesh_wire(radius_wire: float, radius_scatt: float, l_dom: float, l_
     gmsh.model.addPhysicalGroup(dim, y_group, tag=pml_tag + 2)
 
     # Marker interior surface in bkg group
-    boundaries: List[numpy.typing.NDArray[numpy.int32]] = []
+    boundaries: list[numpy.typing.NDArray[numpy.int32]] = []
     for tag in bkg_group:
         boundary_pairs = gmsh.model.get_boundary([(dim, tag)], oriented=False)
         boundaries.append(numpy.asarray([pair[1] for pair in boundary_pairs], dtype=numpy.int32))

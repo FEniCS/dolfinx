@@ -10,11 +10,10 @@ from mpi4py import MPI
 import numpy as np
 import pytest
 
+import dolfinx.la as la
 import ufl
 from basix.ufl import element
-from dolfinx.fem import Function, form, functionspace
-from dolfinx.fem import assemble_matrix, assemble_vector
-import dolfinx.la as la
+from dolfinx.fem import Function, assemble_matrix, assemble_vector, form, functionspace
 from dolfinx.mesh import create_unit_square
 from ufl import dx, grad, inner
 

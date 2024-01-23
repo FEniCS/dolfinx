@@ -50,8 +50,7 @@ import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_scalar_type, fem, io, plot
 from dolfinx.fem.petsc import assemble_matrix
-from dolfinx.mesh import (CellType, create_rectangle, exterior_facet_indices,
-                          locate_entities)
+from dolfinx.mesh import CellType, create_rectangle, exterior_facet_indices, locate_entities
 
 try:
     import pyvista
@@ -114,9 +113,11 @@ eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=default_scalar_type)
 # waveguide wall:
 #
 # $$
+# \begin{align}
 # &\nabla \times \frac{1}{\mu_{r}} \nabla \times \mathbf{E}-k_{o}^{2}
 # \epsilon_{r} \mathbf{E}=0 \quad &\text { in } \Omega\\
 # &\hat{n}\times\mathbf{E} = 0 &\text { on } \Gamma
+# \end{align}
 # $$
 #
 # with $k_0$ and $\lambda_0 = 2\pi/k_0$ being the wavevector and the
@@ -139,8 +140,10 @@ eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=default_scalar_type)
 # the following substitution:
 #
 # $$
+# \begin{align}
 # & \mathbf{e}_t = k_z\mathbf{E}_t\\
 # & e_z = -jE_z
+# \end{align}
 # $$
 #
 # The final weak form can be written as:

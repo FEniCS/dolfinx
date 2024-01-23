@@ -185,7 +185,7 @@ def dirichletbc(value: typing.Union[Function, Constant, np.ndarray],
 
 
 def bcs_by_block(spaces: typing.Iterable[typing.Union[dolfinx.fem.FunctionSpace, None]],
-                 bcs: typing.Iterable[DirichletBC]) -> typing.List[typing.List[DirichletBC]]:
+                 bcs: typing.Iterable[DirichletBC]) -> list[list[DirichletBC]]:
     """Arrange Dirichlet boundary conditions by the function space that
     they constrain.
 

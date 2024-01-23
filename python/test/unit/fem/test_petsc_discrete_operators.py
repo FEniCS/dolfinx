@@ -15,10 +15,8 @@ import ufl
 from basix.ufl import element
 from dolfinx import default_real_type
 from dolfinx.cpp.fem.petsc import discrete_gradient, interpolation_matrix
-from dolfinx.fem import (Expression, Function, assemble_scalar, form,
-                         functionspace)
-from dolfinx.mesh import (CellType, GhostMode, create_mesh, create_unit_cube,
-                          create_unit_square)
+from dolfinx.fem import Expression, Function, assemble_scalar, form, functionspace
+from dolfinx.mesh import CellType, GhostMode, create_mesh, create_unit_cube, create_unit_square
 
 
 @pytest.mark.skip_in_parallel

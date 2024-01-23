@@ -13,8 +13,7 @@ import pytest
 
 import ufl
 from dolfinx import default_scalar_type, fem, la
-from dolfinx.mesh import (GhostMode, create_box, create_rectangle,
-                          create_submesh, create_unit_cube, create_unit_square,
+from dolfinx.mesh import (GhostMode, create_box, create_rectangle, create_submesh, create_unit_cube, create_unit_square,
                           locate_entities, locate_entities_boundary)
 
 

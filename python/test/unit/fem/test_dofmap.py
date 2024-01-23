@@ -16,8 +16,7 @@ import dolfinx
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx.fem import functionspace
-from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
-                          create_unit_interval, create_unit_square)
+from dolfinx.mesh import CellType, create_mesh, create_unit_cube, create_unit_interval, create_unit_square
 
 xfail = pytest.mark.xfail(strict=True)
 

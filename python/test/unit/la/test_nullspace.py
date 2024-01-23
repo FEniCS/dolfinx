@@ -18,8 +18,7 @@ from dolfinx import la
 from dolfinx.fem import form, functionspace
 from dolfinx.fem.petsc import assemble_matrix
 from dolfinx.la import create_petsc_vector
-from dolfinx.mesh import (CellType, GhostMode, create_box, create_unit_cube,
-                          create_unit_square)
+from dolfinx.mesh import CellType, GhostMode, create_box, create_unit_cube, create_unit_square
 from ufl import TestFunction, TrialFunction, dx, grad, inner
 
 
