@@ -25,9 +25,10 @@ namespace
 {
 //-----------------------------------------------------------------------------
 /// 2D version of subdivision allowing for uniform subdivision (flag)
-/// @param[in] indices Vector of size (num_vertices + num_edges) containing the
+/// @param[in] indices Vector containing the
 /// global indices for the original vertices and potential new vertices at each
-/// edge. If an edge is not refined its corresponding entry is -1.
+/// edge. If an edge is not refined its corresponding entry is -1. Size
+/// `num_vertices + num_edges`
 /// @param[in] longest_edge Local index of the longest edge in the triangle.
 /// @param[in] uniform If true, the triangle is subdivided into four
 /// sub-triangles.
