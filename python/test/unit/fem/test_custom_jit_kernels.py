@@ -20,8 +20,7 @@ import ffcx.codegeneration.utils
 from dolfinx import TimingType
 from dolfinx import cpp as _cpp
 from dolfinx import fem, la, list_timings
-from dolfinx.fem import (Form, Function, IntegralType, form_cpp_class,
-                         functionspace)
+from dolfinx.fem import Form, Function, IntegralType, form_cpp_class, functionspace
 from dolfinx.mesh import create_unit_square
 
 numba = pytest.importorskip("numba")

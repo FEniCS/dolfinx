@@ -23,7 +23,7 @@
 from mpi4py import MPI
 
 # +
-import matplotlib
+import matplotlib as mpl
 import matplotlib.pylab as plt
 import numpy as np
 
@@ -31,10 +31,9 @@ import basix
 import basix.ufl
 from dolfinx import fem, mesh
 from dolfinx.fem.petsc import LinearProblem
-from ufl import (SpatialCoordinate, TestFunction, TrialFunction, cos, div, dx,
-                 grad, inner, sin)
+from ufl import SpatialCoordinate, TestFunction, TrialFunction, cos, div, dx, grad, inner, sin
 
-matplotlib.use('agg')
+mpl.use('agg')
 # -
 
 # ## Defining a degree 1 TNT element

@@ -31,13 +31,10 @@ import numpy as np
 import dolfinx
 import ufl
 from dolfinx import la
-from dolfinx.fem import (Expression, Function, FunctionSpace, dirichletbc,
-                         form, functionspace, locate_dofs_topological)
-from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
-                               set_bc)
+from dolfinx.fem import Expression, Function, FunctionSpace, dirichletbc, form, functionspace, locate_dofs_topological
+from dolfinx.fem.petsc import apply_lifting, assemble_matrix, assemble_vector, set_bc
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import (CellType, GhostMode, create_box,
-                          locate_entities_boundary)
+from dolfinx.mesh import CellType, GhostMode, create_box, locate_entities_boundary
 from ufl import dx, grad, inner
 
 dtype = PETSc.ScalarType  # type: ignore

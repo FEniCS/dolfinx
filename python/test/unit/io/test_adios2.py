@@ -17,8 +17,7 @@ from dolfinx import default_real_type, default_scalar_type
 from dolfinx.common import has_adios2
 from dolfinx.fem import Function, functionspace
 from dolfinx.graph import adjacencylist
-from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
-                          create_unit_square)
+from dolfinx.mesh import CellType, create_mesh, create_unit_cube, create_unit_square
 
 try:
     from dolfinx.io import FidesWriter, VTXWriter, VTXMeshPolicy

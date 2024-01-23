@@ -202,7 +202,8 @@ c0, mu0 = ufl.split(u0)
 u.x.array[:] = 0.0
 
 # Interpolate initial condition
-u.sub(0).interpolate(lambda x: 0.63 + 0.02 * (0.5 - np.random.rand(x.shape[1])))
+rng = np.random.default_rng(42)
+u.sub(0).interpolate(lambda x: 0.63 + 0.02 * (0.5 - rng.random(x.shape[1])))
 u.x.scatter_forward()
 # -
 

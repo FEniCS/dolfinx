@@ -19,26 +19,19 @@ import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type, fem, graph, la
-from dolfinx.fem import (Constant, Function, assemble_scalar, bcs_by_block,
-                         dirichletbc, extract_function_spaces, form,
-                         functionspace, locate_dofs_geometrical,
-                         locate_dofs_topological)
+from dolfinx.fem import (Constant, Function, assemble_scalar, bcs_by_block, dirichletbc, extract_function_spaces, form,
+                         functionspace, locate_dofs_geometrical, locate_dofs_topological)
 from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
 from dolfinx.fem.petsc import apply_lifting_nest as petsc_apply_lifting_nest
 from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
-from dolfinx.fem.petsc import \
-    assemble_matrix_block as petsc_assemble_matrix_block
-from dolfinx.fem.petsc import \
-    assemble_matrix_nest as petsc_assemble_matrix_nest
+from dolfinx.fem.petsc import assemble_matrix_block as petsc_assemble_matrix_block
+from dolfinx.fem.petsc import assemble_matrix_nest as petsc_assemble_matrix_nest
 from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
-from dolfinx.fem.petsc import \
-    assemble_vector_block as petsc_assemble_vector_block
-from dolfinx.fem.petsc import \
-    assemble_vector_nest as petsc_assemble_vector_nest
+from dolfinx.fem.petsc import assemble_vector_block as petsc_assemble_vector_block
+from dolfinx.fem.petsc import assemble_vector_nest as petsc_assemble_vector_nest
 from dolfinx.fem.petsc import set_bc as petsc_set_bc
 from dolfinx.fem.petsc import set_bc_nest as petsc_set_bc_nest
-from dolfinx.mesh import (CellType, GhostMode, create_mesh, create_rectangle,
-                          create_unit_cube, create_unit_square,
+from dolfinx.mesh import (CellType, GhostMode, create_mesh, create_rectangle, create_unit_cube, create_unit_square,
                           locate_entities_boundary)
 from ufl import derivative, ds, dx, inner
 from ufl.geometry import SpatialCoordinate

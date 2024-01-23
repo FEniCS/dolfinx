@@ -16,16 +16,13 @@ import basix
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type
-from dolfinx.fem import (Function, assemble_scalar, dirichletbc, form,
-                         functionspace, locate_dofs_topological)
-from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
-                               set_bc)
+from dolfinx.fem import Function, assemble_scalar, dirichletbc, form, functionspace, locate_dofs_topological
+from dolfinx.fem.petsc import apply_lifting, assemble_matrix, assemble_vector, set_bc
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import (CellType, create_rectangle, create_unit_cube,
-                          create_unit_square, exterior_facet_indices,
+from dolfinx.mesh import (CellType, create_rectangle, create_unit_cube, create_unit_square, exterior_facet_indices,
                           locate_entities_boundary)
-from ufl import (CellDiameter, FacetNormal, SpatialCoordinate, TestFunction,
-                 TrialFunction, avg, div, ds, dS, dx, grad, inner, jump)
+from ufl import (CellDiameter, FacetNormal, SpatialCoordinate, TestFunction, TrialFunction, avg, div, ds, dS, dx, grad,
+                 inner, jump)
 
 
 def run_scalar_test(mesh, V, degree):

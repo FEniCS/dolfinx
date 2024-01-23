@@ -3,12 +3,13 @@ import os
 import shutil
 import time
 from collections import defaultdict
-from dolfinx.la import vector as dolfinx_vector
-import numpy as np
 
 from mpi4py import MPI
 
+import numpy as np
 import pytest
+
+from dolfinx.la import vector as dolfinx_vector
 
 
 def pytest_runtest_teardown(item):
