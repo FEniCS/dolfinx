@@ -209,6 +209,12 @@ create_geometry(
   assert(std::is_sorted(nodes.begin(), nodes.end()));
   using T = typename std::remove_reference_t<typename U::value_type>;
 
+  // Check elements match cell types in topology
+  const int tdim = topology.dim();
+  const std::size_t num_cell_types = topology.entity_types(tdim).size();
+  if (elements.size() != num_cell_types)
+    throw std::runtime_error("Mismatch between topology and geometry.");
+
   std::vector<fem::ElementDofLayout> dof_layouts;
   for (const auto& el : elements)
     dof_layouts.push_back(el.create_dof_layout());
