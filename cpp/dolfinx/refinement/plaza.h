@@ -430,7 +430,7 @@ compute_refinement(MPI_Comm neighbor_comm,
 
       // Convert from cell local index to mesh index and add to cells
       for (std::int32_t v : simplex_set)
-        cell_topology.push_back([v]);
+        cell_topology.push_back(indices[v]);
     }
   }
 
