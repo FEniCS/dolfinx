@@ -23,7 +23,8 @@ void sparsitybuild::cells(
   const DofMap& map0 = dofmaps[0].get();
   const DofMap& map1 = dofmaps[1].get();
   for (auto c : cells)
-    pattern.insert(map0.cell_dofs(c), map1.cell_dofs(c));
+    pattern.insert(map0.cell_dofs(cell_maps[0](c)),
+                   map1.cell_dofs(cell_maps[1](c)));
 }
 //-----------------------------------------------------------------------------
 void sparsitybuild::interior_facets(
