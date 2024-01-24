@@ -20,7 +20,7 @@ from dolfinx.graph import adjacencylist
 from dolfinx.mesh import CellType, create_mesh, create_unit_cube, create_unit_square
 
 try:
-    from dolfinx.io import FidesWriter, VTXWriter, VTXMeshPolicy
+    from dolfinx.io import FidesWriter, VTXMeshPolicy, VTXWriter
 except ImportError:
     pytest.skip("Tests require ADIOS2", allow_module_level=True)
 
