@@ -41,7 +41,9 @@ void assemble_cells(la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
                     std::span<const std::int8_t> bc1, FEkernel<T> auto kernel,
                     std::span<const T> coeffs, int cstride,
                     std::span<const T> constants,
-                    std::span<const std::uint32_t> cell_info)
+                    std::span<const std::uint32_t> cell_info,
+                    const std::function<std::int32_t(std::int32_t)>& cell_map0,
+                    const std::function<std::int32_t(std::int32_t)>& cell_map1)
 {
   if (cells.empty())
     return;
@@ -59,6 +61,12 @@ void assemble_cells(la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
   for (std::size_t index = 0; index < cells.size(); ++index)
   {
     std::int32_t c = cells[index];
+
+    // Map the cell in the integration domain to the cell in the mesh
+    // each function space is defined over
+    // TODO Add assert?
+    std::int32_t c_0 = cell_map0(c);
+    std::int32_t c_1 = cell_map1(c);
 
     // Get cell coordinates/geometry
     auto x_dofs
@@ -79,8 +87,8 @@ void assemble_cells(la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     post_dof_transform(_Ae, cell_info, c, ndim0);
 
     // Zero rows/columns for essential bcs
-    auto dofs0 = std::span(dofmap0.data_handle() + c * num_dofs0, num_dofs0);
-    auto dofs1 = std::span(dofmap1.data_handle() + c * num_dofs1, num_dofs1);
+    auto dofs0 = std::span(dofmap0.data_handle() + c_0 * num_dofs0, num_dofs0);
+    auto dofs1 = std::span(dofmap1.data_handle() + c_1 * num_dofs1, num_dofs1);
 
     if (!bc0.empty())
     {
@@ -370,6 +378,11 @@ void assemble_matrix(
   auto dofs1 = dofmap1->map();
   const int bs1 = dofmap1->bs();
 
+  std::function<std::int32_t(std::int32_t)> entity_map0 =
+    a.entity_maps(a.function_spaces().at(0)->mesh());
+  std::function<std::int32_t(std::int32_t)> entity_map1 =
+    a.entity_maps(a.function_spaces().at(1)->mesh());
+
   auto element0 = a.function_spaces().at(0)->element();
   assert(element0);
   auto element1 = a.function_spaces().at(1)->element();
@@ -395,7 +408,7 @@ void assemble_matrix(
     impl::assemble_cells(mat_set, x_dofmap, x, a.domain(IntegralType::cell, i),
                          pre_dof_transform, dofs0, bs0, post_dof_transform,
                          dofs1, bs1, bc0, bc1, fn, coeffs, cstride, constants,
-                         cell_info);
+                         cell_info, entity_map0, entity_map1);
   }
 
   for (int i : a.integral_ids(IntegralType::exterior_facet))
