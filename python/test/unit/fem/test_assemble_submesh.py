@@ -13,8 +13,9 @@ import pytest
 
 import ufl
 from dolfinx import default_scalar_type, fem, la
+import dolfinx.fem.petsc
 from dolfinx.mesh import (GhostMode, create_box, create_rectangle, create_submesh, create_unit_cube, create_unit_square,
-                          locate_entities, locate_entities_boundary)
+                          locate_entities, locate_entities_boundary, meshtags)
 
 
 def assemble(mesh, space, k):
@@ -100,3 +101,59 @@ def test_submesh_facet_assembly(n, k, space, ghost_mode):
     assert A_submesh.squared_norm() == pytest.approx(A_square_mesh.squared_norm(), rel=1.0e-5, abs=1.0e-5)
     assert b_submesh.norm() == pytest.approx(b_square_mesh.norm())
     assert np.isclose(s_submesh, s_square_mesh)
+
+
+@pytest.mark.parametrize("n", [2, 6])
+@pytest.mark.parametrize("k", [1, 4])
+@pytest.mark.parametrize("space", ["Lagrange", "Discontinuous Lagrange"])
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
+def test_mixed_dom_codim_0(n, k, space, ghost_mode):
+    """Test assembling a form where the trial and test functions
+    are defined on different meshes"""
+
+    msh = create_rectangle(
+        MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
+        ghost_mode=ghost_mode)
+
+    # Locate cells in left half of mesh and create mesh tags
+    tdim = msh.topology.dim
+    cells = locate_entities(msh, tdim, lambda x: x[0] <= 1.0)
+    perm = np.argsort(cells)
+    values = np.ones_like(cells, dtype=np.intc)
+    ct = meshtags(msh, tdim, cells[perm], values[perm])
+
+    # Create integration measure on the mesh
+    dx_msh = ufl.Measure("dx", domain=msh, subdomain_data=ct)
+
+    # Create a submesh of the left half of the mesh
+    smsh, smhs_to_msh = create_submesh(msh, tdim, cells)[:2]
+
+    # Define function spaces over the mesh and submesh
+    V_msh = fem.functionspace(msh, (space, k))
+    V_smsh = fem.functionspace(smsh, (space, k))
+
+    # Trial and test functions on the mesh
+    u, v = ufl.TrialFunction(V_msh), ufl.TestFunction(V_msh)
+
+    # Test function on the submesh
+    w = ufl.TestFunction(V_smsh)
+
+    # Create entity maps, define form, and assemble
+    entity_maps = {msh._cpp_object: np.array(smhs_to_msh, dtype=np.int32)}
+    a_0 = fem.form(ufl.inner(u, w) * ufl.dx(smsh), entity_maps=entity_maps)
+    A_0 = fem.petsc.assemble_matrix(a_0)
+    A_0.assemble()
+
+    # Define form to compare to and assemble
+    a_1 = fem.form(ufl.inner(u, v) * dx_msh(1))
+    A_1 = fem.petsc.assemble_matrix(a_1)
+    A_1.assemble()
+
+    assert np.isclose(A_0.norm(), A_1.norm())
+
+    # TODO
+    # cell_imap = msh.topology.index_map(tdim)
+    # num_cells = cell_imap.size_local + cell_imap.num_ghosts
+    # msh_to_smsh = np.full(num_cells, -1)
+    # msh_to_smsh[smhs_to_msh] = np.arange(len(smhs_to_msh))
+    # entity_maps = {smsh: msh_to_smsh}
