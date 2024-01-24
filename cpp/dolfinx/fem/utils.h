@@ -709,8 +709,8 @@ FunctionSpace<T> create_functionspace(
 
 /// @brief Create a FunctionSpace from UFC data.
 /// @param[in] fptr Pointer to a ufcx_function_space_create function.
-/// @param[in] function_name Name of a function whose function space to
-/// create. Function name is the name of Python variable for
+/// @param[in] function_name Name of a function whose function space is to
+/// create. Function name is the name of the Python variable for
 /// ufl.Coefficient, ufl.TrialFunction or ufl.TestFunction as defined in
 /// the UFL file.
 /// @param[in] mesh Mesh
