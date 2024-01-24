@@ -172,6 +172,10 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
   std::shared_ptr mesh = a.mesh();
   assert(mesh);
 
+  std::array<std::function<std::int32_t(std::int32_t)>, 2> entity_maps{
+      a.entity_maps(a.function_spaces().at(0)->mesh()),
+      a.entity_maps(a.function_spaces().at(1)->mesh())};
+
   const std::set<IntegralType> types = a.integral_types();
   if (types.find(IntegralType::interior_facet) != types.end()
       or types.find(IntegralType::exterior_facet) != types.end())
@@ -201,7 +205,7 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
       for (int id : ids)
       {
         sparsitybuild::cells(pattern, a.domain(type, id),
-                             {{dofmaps[0], dofmaps[1]}});
+                             {{dofmaps[0], dofmaps[1]}}, entity_maps);
       }
       break;
     case IntegralType::interior_facet:
@@ -223,7 +227,8 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
         cells.reserve(facets.size() / 2);
         for (std::size_t i = 0; i < facets.size(); i += 2)
           cells.push_back(facets[i]);
-        sparsitybuild::cells(pattern, cells, {{dofmaps[0], dofmaps[1]}});
+        sparsitybuild::cells(pattern, cells, {{dofmaps[0], dofmaps[1]}},
+                             entity_maps);
       }
       break;
     default:

@@ -282,7 +282,7 @@ public:
       return [](std::int32_t e) { return e; };
     else
     {
-      std::span<std::int32_t> map = _entity_maps.at(msh);
+      std::span<const std::int32_t> map = _entity_maps.at(msh);
       return [map](std::int32_t e){ return map[e]; };
     }
   }

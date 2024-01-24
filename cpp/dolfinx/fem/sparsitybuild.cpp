@@ -17,7 +17,8 @@ using namespace dolfinx::fem;
 //-----------------------------------------------------------------------------
 void sparsitybuild::cells(
     la::SparsityPattern& pattern, std::span<const std::int32_t> cells,
-    std::array<std::reference_wrapper<const DofMap>, 2> dofmaps)
+    std::array<std::reference_wrapper<const DofMap>, 2> dofmaps,
+    const std::array<std::function<std::int32_t(std::int32_t)>, 2>& cell_maps)
 {
   const DofMap& map0 = dofmaps[0].get();
   const DofMap& map1 = dofmaps[1].get();
