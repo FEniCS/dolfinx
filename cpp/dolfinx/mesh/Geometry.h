@@ -40,7 +40,7 @@ public:
   /// @param[in] index_map Index map associated with the geometry dofmap
   /// @param[in] dofmap The geometry (point) dofmap. For a cell, it
   /// gives the position in the point array of each local geometry node
-  /// @param[in] element Element that describes the cell geometry map.
+  /// @param[in] elements Elements that describes the cell geometry maps.
   /// @param[in] x The point coordinates. The shape is `(num_points, 3)`
   /// and the storage is row-major.
   /// @param[in] dim The geometric dimension (`0 < dim <= 3`).
