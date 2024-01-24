@@ -275,6 +275,7 @@ std::vector<std::string> get_constant_names(const ufcx_form& ufcx_form);
 /// @param[in] subdomains Subdomain markers
 /// @pre Each value in `subdomains` must be sorted by domain id
 /// @param[in] mesh The mesh of the domain
+/// @param[in] entity_maps The entity maps for the form
 template <dolfinx::scalar T, typename U = dolfinx::scalar_value_type_t<T>>
 Form<T, U> create_form(
     const ufcx_form& ufcx_form,

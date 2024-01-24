@@ -84,6 +84,12 @@ public:
   /// @param[in] mesh Mesh of the domain. This is required when there
   /// are no argument functions from which the mesh can be extracted,
   /// e.g. for functionals.
+  /// @param[in] entity_maps If any trial functions, test functions, or
+  /// coefficients in the form are not defined over the same mesh as the
+  /// integration domain, `entity_maps` must be supplied. For each key
+  /// (a mesh, different to the integration domain mesh) a map should
+  /// be provided relating the entities in the integration domain mesh
+  /// to the entities in the key mesh.
   Form(const std::vector<std::shared_ptr<const FunctionSpace<U>>>& V,
        const std::map<IntegralType,
                       std::vector<std::tuple<
