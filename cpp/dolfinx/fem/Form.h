@@ -274,10 +274,17 @@ public:
   }
 
   /// Access entity maps
-  const std::span<const std::int32_t> entity_maps(
-    std::shared_ptr<const mesh::Mesh<U>> mesh) const
+  // TODO See if it's better to pass entity maps as lambda to begin with
+  std::function<std::int32_t(std::int32_t)>
+  entity_maps(std::shared_ptr<const mesh::Mesh<U>> msh) const
   {
-    return _entity_maps.at(mesh);
+    if (msh == _mesh)
+      return [](std::int32_t e) { return e; };
+    else
+    {
+      std::span<std::int32_t> map = _entity_maps.at(msh);
+      return [map](std::int32_t e){ return map[e]; };
+    }
   }
 
 private:
@@ -305,7 +312,7 @@ private:
   // True if permutation data needs to be passed into these integrals
   bool _needs_facet_permutations;
 
-  std::map<std::shared_ptr<const mesh::Mesh<U>>,
-           std::vector<std::int32_t>> _entity_maps;
+  std::map<std::shared_ptr<const mesh::Mesh<U>>, std::vector<std::int32_t>>
+      _entity_maps;
 };
 } // namespace dolfinx::fem
