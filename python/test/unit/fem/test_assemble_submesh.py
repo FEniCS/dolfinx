@@ -13,9 +13,10 @@ import pytest
 
 import ufl
 from dolfinx import default_scalar_type, fem, la
-import dolfinx.fem.petsc
-from dolfinx.mesh import (GhostMode, create_box, create_rectangle, create_submesh, create_unit_cube, create_unit_square,
-                          locate_entities, locate_entities_boundary, meshtags)
+from dolfinx.fem.petsc import assemble_matrix
+from dolfinx.mesh import (GhostMode, create_box, create_rectangle, create_submesh,
+                          create_unit_cube, create_unit_square, locate_entities,
+                          locate_entities_boundary, meshtags)
 
 
 def assemble(mesh, space, k):
@@ -141,12 +142,12 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
     # Create entity maps, define form, and assemble
     entity_maps = {msh._cpp_object: np.array(smhs_to_msh, dtype=np.int32)}
     a_0 = fem.form(ufl.inner(u, w) * ufl.dx(smsh), entity_maps=entity_maps)
-    A_0 = fem.petsc.assemble_matrix(a_0)
+    A_0 = assemble_matrix(a_0)
     A_0.assemble()
 
     # Define form to compare to and assemble
     a_1 = fem.form(ufl.inner(u, v) * dx_msh(1))
-    A_1 = fem.petsc.assemble_matrix(a_1)
+    A_1 = assemble_matrix(a_1)
     A_1.assemble()
 
     assert np.isclose(A_0.norm(), A_1.norm())
