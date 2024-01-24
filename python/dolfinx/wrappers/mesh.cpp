@@ -526,6 +526,17 @@ void mesh(nb::module_& m)
           { return MPICommWrapper(self.comm()); },
           nb::keep_alive<0, 1>());
 
+  m.def("create_geometry",
+        [](const dolfinx::mesh::Topology& topology,
+           const std::vector<dolfinx::fem::CoordinateElement<double>>& elements,
+           std::span<const std::int64_t> nodes,
+           std::span<const std::int64_t> xdofs, const std::vector<double>& x,
+           int dim)
+        {
+          return dolfinx::mesh::create_geometry(topology, elements, nodes,
+                                                xdofs, x, dim);
+        });
+
   m.def("create_topology",
         [](MPICommWrapper comm,
            const std::vector<dolfinx::mesh::CellType>& cell_type,

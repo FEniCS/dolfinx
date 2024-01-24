@@ -165,8 +165,8 @@ private:
 /// Template type deduction
 template <typename U, typename V, typename W>
 Geometry(std::shared_ptr<const common::IndexMap>, U,
-         const fem::CoordinateElement<
-             typename std::remove_reference_t<typename V::value_type>>&,
+         const std::vector<fem::CoordinateElement<
+             typename std::remove_reference_t<typename V::value_type>>>&,
          V, int, W)
     -> Geometry<typename std::remove_cvref_t<typename V::value_type>>;
 /// @endcond
