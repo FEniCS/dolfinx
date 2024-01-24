@@ -122,6 +122,12 @@ public:
       for (auto& [id, kern, e] : kernels)
         itg.insert({id, {kern, std::vector(e.begin(), e.end())}});
     }
+
+    // Store entity maps
+    for (auto [msh, map] : entity_maps)
+    {
+      _entity_maps.insert({msh, std::vector(map.begin(), map.end())});
+    }
   }
 
   /// Copy constructor
@@ -261,6 +267,13 @@ public:
     return _constants;
   }
 
+  /// Access entity maps
+  const std::span<const std::int32_t> entity_maps(
+    std::shared_ptr<const mesh::Mesh<U>> mesh) const
+  {
+    return _entity_maps.at(mesh);
+  }
+
 private:
   using kern_t = std::function<void(T*, const T*, const T*,
                                     const scalar_value_type_t<T>*, const int*,
@@ -285,5 +298,8 @@ private:
 
   // True if permutation data needs to be passed into these integrals
   bool _needs_facet_permutations;
+
+  std::map<std::shared_ptr<const mesh::Mesh<U>>,
+           std::vector<std::int32_t>> _entity_maps;
 };
 } // namespace dolfinx::fem
