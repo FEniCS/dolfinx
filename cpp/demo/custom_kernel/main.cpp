@@ -87,7 +87,9 @@ double assemble_matrix0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
   auto sp = la::SparsityPattern(
       V->mesh()->comm(), {dofmap->index_map, dofmap->index_map},
       {dofmap->index_map_bs(), dofmap->index_map_bs()});
-  fem::sparsitybuild::cells(sp, cells, {*dofmap, *dofmap});
+  auto identity = [](std::int32_t c) { return c; };
+  fem::sparsitybuild::cells(sp, cells, {*dofmap, *dofmap},
+                            {identity, identity});
   sp.finalize();
   la::MatrixCSR<T> A(sp);
   common::Timer timer("Assembler0 std::function (matrix)");
@@ -135,11 +137,13 @@ double assemble_matrix1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
   auto sp = la::SparsityPattern(dofmap.index_map->comm(),
                                 {dofmap.index_map, dofmap.index_map},
                                 {dofmap.index_map_bs(), dofmap.index_map_bs()});
-  fem::sparsitybuild::cells(sp, cells, {dofmap, dofmap});
+  auto ident_map
+      = [](std::int32_t c) { return c; }; // Entity map is the identity
+  fem::sparsitybuild::cells(sp, cells, {dofmap, dofmap},
+                            {ident_map, ident_map});
   sp.finalize();
   la::MatrixCSR<T> A(sp);
   auto ident = [](auto, auto, auto, auto) {}; // DOF permutation not required
-  auto ident_map = [](std::int32_t c){ return c; };  // Entity map is the identity
   common::Timer timer("Assembler1 lambda (matrix)");
   fem::impl::assemble_cells(A.mat_add_values(), g.dofmap(), g.x(), cells, ident,
                             dofmap.map(), 1, ident, dofmap.map(), 1, {}, {},

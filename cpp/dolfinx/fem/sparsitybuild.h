@@ -11,11 +11,6 @@
 #include <functional>
 #include <span>
 
-namespace
-{
-std::int32_t identity_map(std::int32_t e) { return e; }
-} // namespace
-
 namespace dolfinx::la
 {
 class SparsityPattern;
@@ -43,8 +38,7 @@ namespace sparsitybuild
 void cells(
     la::SparsityPattern& pattern, std::span<const std::int32_t> cells,
     std::array<std::reference_wrapper<const DofMap>, 2> dofmaps,
-    const std::array<std::function<std::int32_t(std::int32_t)>, 2>& cell_maps
-    = {identity_map, identity_map});
+    const std::array<std::function<std::int32_t(std::int32_t)>, 2>& cell_maps);
 
 /// @brief Iterate over interior facets and insert entries into sparsity
 /// pattern.
