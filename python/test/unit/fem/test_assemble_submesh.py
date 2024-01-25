@@ -115,7 +115,8 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
     tdim = msh.topology.dim
     cells = locate_entities(msh, tdim, lambda x: x[0] <= 1.0)
     perm = np.argsort(cells)
-    values = np.ones_like(cells, dtype=np.intc)
+    tag = 1
+    values = np.full_like(cells, tag, dtype=np.intc)
     ct = meshtags(msh, tdim, cells[perm], values[perm])
 
     # Create integration measure on the mesh
@@ -134,8 +135,11 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
     # Test function on the submesh
     w = ufl.TestFunction(V_smsh)
 
+    def ufl_form(u, v, dx):
+        return ufl.inner(u, v) * dx
+
     # Define form to compare to and assemble
-    a = fem.form(ufl.inner(u, v) * dx_msh(1))
+    a = fem.form(ufl_form(u, v, dx_msh(tag)))
     A = assemble_matrix(a)
     A.assemble()
 
@@ -143,7 +147,7 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
     # Entity maps must take cells in smsh (the integration domain mesh) to
     # cells in msh
     entity_maps = {msh._cpp_object: np.array(smhs_to_msh, dtype=np.int32)}
-    a_0 = fem.form(ufl.inner(u, w) * ufl.dx(smsh), entity_maps=entity_maps)
+    a_0 = fem.form(ufl_form(u, w, ufl.dx(smsh)), entity_maps=entity_maps)
     A_0 = assemble_matrix(a_0)
     A_0.assemble()
     assert np.isclose(A_0.norm(), A.norm())
@@ -157,7 +161,7 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
     msh_to_smsh[smhs_to_msh] = np.arange(len(smhs_to_msh))
     entity_maps = {smsh._cpp_object: np.array(msh_to_smsh, dtype=np.int32)}
 
-    a_1 = fem.form(ufl.inner(u, w) * dx_msh(1), entity_maps=entity_maps)
+    a_1 = fem.form(ufl_form(u, w, dx_msh(tag)), entity_maps=entity_maps)
     A_1 = assemble_matrix(a_1)
     A_1.assemble()
     assert np.isclose(A_1.norm(), A.norm())
