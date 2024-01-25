@@ -147,9 +147,15 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
 
     assert np.isclose(A_0.norm(), A_1.norm())
 
-    # TODO
-    # cell_imap = msh.topology.index_map(tdim)
-    # num_cells = cell_imap.size_local + cell_imap.num_ghosts
-    # msh_to_smsh = np.full(num_cells, -1)
-    # msh_to_smsh[smhs_to_msh] = np.arange(len(smhs_to_msh))
-    # entity_maps = {smsh: msh_to_smsh}
+    # Now assemble using msh as integration domain
+    cell_imap = msh.topology.index_map(tdim)
+    num_cells = cell_imap.size_local + cell_imap.num_ghosts
+    msh_to_smsh = np.full(num_cells, -1)
+    msh_to_smsh[smhs_to_msh] = np.arange(len(smhs_to_msh))
+    entity_maps = {smsh._cpp_object: np.array(msh_to_smsh, dtype=np.int32)}
+
+    a_2 = fem.form(ufl.inner(u, w) * dx_msh(1), entity_maps=entity_maps)
+    A_2 = assemble_matrix(a_2)
+    A_2.assemble()
+
+    assert np.isclose(A_2.norm(), A_1.norm())
