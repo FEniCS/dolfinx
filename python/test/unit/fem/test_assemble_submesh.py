@@ -14,9 +14,17 @@ import pytest
 import ufl
 from dolfinx import default_scalar_type, fem, la
 from dolfinx.fem.petsc import assemble_matrix
-from dolfinx.mesh import (GhostMode, create_box, create_rectangle, create_submesh,
-                          create_unit_cube, create_unit_square, locate_entities,
-                          locate_entities_boundary, meshtags)
+from dolfinx.mesh import (
+    GhostMode,
+    create_box,
+    create_rectangle,
+    create_submesh,
+    create_unit_cube,
+    create_unit_square,
+    locate_entities,
+    locate_entities_boundary,
+    meshtags,
+)
 
 
 def assemble(mesh, space, k):
@@ -56,8 +64,7 @@ def assemble(mesh, space, k):
 @pytest.mark.parametrize("n", [2, 6])
 @pytest.mark.parametrize("k", [1, 4])
 @pytest.mark.parametrize("space", ["Lagrange", "Discontinuous Lagrange"])
-@pytest.mark.parametrize("ghost_mode", [GhostMode.none,
-                                        GhostMode.shared_facet])
+@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 def test_submesh_cell_assembly(d, n, k, space, ghost_mode):
     """Check that assembling a form over a unit square gives the same
     result as assembling over half of a 2x1 rectangle with the same
@@ -67,8 +74,7 @@ def test_submesh_cell_assembly(d, n, k, space, ghost_mode):
         mesh_1 = create_rectangle(MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n), ghost_mode=ghost_mode)
     else:
         mesh_0 = create_unit_cube(MPI.COMM_WORLD, n, n, n, ghost_mode=ghost_mode)
-        mesh_1 = create_box(MPI.COMM_WORLD, ((0.0, 0.0, 0.0), (2.0, 1.0, 1.0)),
-                            (2 * n, n, n), ghost_mode=ghost_mode)
+        mesh_1 = create_box(MPI.COMM_WORLD, ((0.0, 0.0, 0.0), (2.0, 1.0, 1.0)), (2 * n, n, n), ghost_mode=ghost_mode)
 
     A_mesh_0, b_mesh_0, s_mesh_0 = assemble(mesh_0, space, k)
 
@@ -112,9 +118,7 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
     """Test assembling a form where the trial and test functions
     are defined on different meshes"""
 
-    msh = create_rectangle(
-        MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n),
-        ghost_mode=ghost_mode)
+    msh = create_rectangle(MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n), ghost_mode=ghost_mode)
 
     # Locate cells in left half of mesh and create mesh tags
     tdim = msh.topology.dim
