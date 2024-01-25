@@ -311,18 +311,17 @@ build_basic_dofmap(
 std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
     mdspan2_t<const std::int32_t> dofmap,
     const std::vector<std::pair<std::int8_t, std::int32_t>>& dof_entity,
-    const mesh::Topology& topology,
+    const std::vector<std::shared_ptr<const common::IndexMap>>& index_maps,
     const std::function<std::vector<int>(
         const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
   common::Timer t0("Compute dof reordering map");
 
   // Get mesh entity ownership offset for each topological dimension
-  const int D = topology.dim();
-  std::vector<std::int32_t> offset(D + 1, -1);
+  std::vector<std::int32_t> offset(index_maps.size(), -1);
   for (std::size_t d = 0; d < offset.size(); ++d)
   {
-    auto map = topology.index_map(d);
+    auto map = index_maps[d];
     if (map)
       offset[d] = map->size_local();
   }
@@ -402,22 +401,21 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
 /// @returns The (0) global indices for unowned dofs, (1) owner rank of
 /// each unowned dof
 std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
-    const mesh::Topology& topology, const std::int32_t num_owned,
-    const std::int64_t process_offset,
+    const std::vector<std::shared_ptr<const common::IndexMap>>& index_maps,
+    const std::int32_t num_owned, const std::int64_t process_offset,
     const std::vector<std::int64_t>& global_indices_old,
     const std::vector<std::int32_t>& old_to_new,
     const std::vector<std::pair<std::int8_t, std::int32_t>>& dof_entity)
 {
   assert(dof_entity.size() == global_indices_old.size());
 
-  const int D = topology.dim();
-
   // Build list of flags for owned mesh entities that are shared, i.e.
   // are a ghost on a neighbor
-  std::vector<std::vector<std::int8_t>> shared_entity(D + 1);
-  for (std::size_t d = 0; d < shared_entity.size(); ++d)
+  const int num_index_maps = index_maps.size();
+  std::vector<std::vector<std::int8_t>> shared_entity(num_index_maps);
+  for (int d = 0; d < num_index_maps; ++d)
   {
-    auto map = topology.index_map(d);
+    auto map = index_maps[d];
     if (map)
     {
       shared_entity[d] = std::vector<std::int8_t>(map->size_local(), false);
@@ -430,9 +428,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 
   // Build list of (global old, global new) index pairs for dofs that
   // are ghosted on other processes
-  std::vector<std::vector<std::int64_t>> global(D + 1);
-
-  // Loop over all dofs
+  std::vector<std::vector<std::int64_t>> global(num_index_maps);
   for (std::size_t i = 0; i < dof_entity.size(); ++i)
   {
     // Topological dimension of mesh entity that dof is associated with
@@ -448,14 +444,14 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
   }
 
   std::vector<int> requests_dim;
-  std::vector<MPI_Request> requests(D + 1);
-  std::vector<MPI_Comm> comm(D + 1, MPI_COMM_NULL);
-  std::vector<std::vector<std::int64_t>> all_dofs_received(D + 1);
-  std::vector<std::vector<int>> disp_recv(D + 1);
-  for (int d = 0; d <= D; ++d)
+  std::vector<MPI_Request> requests(num_index_maps);
+  std::vector<MPI_Comm> comm(num_index_maps, MPI_COMM_NULL);
+  std::vector<std::vector<std::int64_t>> all_dofs_received(num_index_maps);
+  std::vector<std::vector<int>> disp_recv(num_index_maps);
+  for (int d = 0; d < num_index_maps; ++d)
   {
     // FIXME: This should check which dimension are needed by the dofmap
-    auto map = topology.index_map(d);
+    auto map = index_maps[d];
     if (map)
     {
       std::span src = map->src();
@@ -491,7 +487,8 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 
   // Build  [local_new - num_owned] -> global old array  broken down by
   // dimension
-  std::vector<std::vector<std::int64_t>> local_new_to_global_old(D + 1);
+  std::vector<std::vector<std::int64_t>> local_new_to_global_old(
+      num_index_maps);
   for (std::size_t i = 0; i < global_indices_old.size(); ++i)
   {
     const int d = dof_entity[i].first;
@@ -511,7 +508,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     MPI_Waitany(requests_dim.size(), requests.data(), &idx, MPI_STATUS_IGNORE);
     d = requests_dim[idx];
 
-    std::span src = topology.index_map(d)->src();
+    std::span src = index_maps[d]->src();
 
     // Build (global old, global new) map for dofs of dimension d
     std::vector<std::pair<std::int64_t, std::pair<int64_t, int>>>
@@ -565,8 +562,6 @@ fem::build_dofmap_data(
 {
   common::Timer t0("Build dofmap data");
 
-  const int D = topology.dim();
-
   // Build a simple dofmap based on mesh entity numbering, returning (i)
   // a local dofmap, (ii) local-to-global map for dof indices, and (iii)
   // pair {dimension, mesh entity index} giving the mesh entity that dof
@@ -574,14 +569,18 @@ fem::build_dofmap_data(
   const auto [node_graph0, local_to_global0, dof_entity0]
       = build_basic_dofmap(topology, element_dof_layouts);
 
+  std::vector<std::shared_ptr<const common::IndexMap>> topo_index_maps;
+  for (int d = 0; d <= topology.dim(); ++d)
+    topo_index_maps.push_back(topology.index_map(d));
+
   // Compute global dofmap offset
   std::int64_t offset = 0;
-  for (int d = 0; d <= D; ++d)
+  for (std::size_t d = 0; d < topo_index_maps.size(); ++d)
   {
     if (element_dof_layouts[0].num_entity_dofs(d) > 0)
     {
-      assert(topology.index_map(d));
-      offset += topology.index_map(d)->local_range()[0]
+      assert(topo_index_maps[d]);
+      offset += topo_index_maps[d]->local_range()[0]
                 * element_dof_layouts[0].num_entity_dofs(d);
     }
   }
@@ -592,12 +591,12 @@ fem::build_dofmap_data(
       node_graph0.data(),
       node_graph0.size() / element_dof_layouts[0].num_dofs(),
       element_dof_layouts[0].num_dofs());
-  const auto [old_to_new, num_owned]
-      = compute_reordering_map(_node_graph0, dof_entity0, topology, reorder_fn);
+  const auto [old_to_new, num_owned] = compute_reordering_map(
+      _node_graph0, dof_entity0, topo_index_maps, reorder_fn);
 
   // Get global indices for unowned dofs
   const auto [local_to_global_unowned, local_to_global_owner]
-      = get_global_indices(topology, num_owned, offset, local_to_global0,
+      = get_global_indices(topo_index_maps, num_owned, offset, local_to_global0,
                            old_to_new, dof_entity0);
   assert(local_to_global_unowned.size() == local_to_global_owner.size());
 
