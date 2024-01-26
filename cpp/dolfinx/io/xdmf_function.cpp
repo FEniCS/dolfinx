@@ -51,7 +51,6 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
 
   assert(u.function_space());
   auto mesh = u.function_space()->mesh();
-  const int gdim = mesh->geometry().dim();
   assert(mesh);
   std::shared_ptr<const fem::FiniteElement<U>> element
       = u.function_space()->element();
@@ -76,7 +75,7 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
   assert(dofmap);
   const int bs = dofmap->bs();
 
-  std::span<const std::size_t> value_shape = element->value_shape(gdim);
+  std::span<const std::size_t> value_shape = u.function_space()->value_shape();
   int num_components = std::reduce(value_shape.begin(), value_shape.end(), 1,
                                    std::multiplies{});
 

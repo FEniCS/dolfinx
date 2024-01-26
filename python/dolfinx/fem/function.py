@@ -526,6 +526,8 @@ def functionspace(mesh: Mesh,
     if ufl_e.cell != mesh.ufl_domain().ufl_cell():
         raise ValueError("Non-matching UFL cell and mesh cell shapes.")
 
+    value_shape = ufl_e.value_shape(mesh.ufl_domain())
+
     # Compile dofmap and element and create DOLFIN objects
     dtype = mesh.geometry.x.dtype
     if form_compiler_options is None:
@@ -544,9 +546,9 @@ def functionspace(mesh: Mesh,
 
     # Initialize the cpp.FunctionSpace
     try:
-        cppV = _cpp.fem.FunctionSpace_float64(mesh._cpp_object, cpp_element, cpp_dofmap)
+        cppV = _cpp.fem.FunctionSpace_float64(mesh._cpp_object, cpp_element, cpp_dofmap, value_shape)
     except TypeError:
-        cppV = _cpp.fem.FunctionSpace_float32(mesh._cpp_object, cpp_element, cpp_dofmap)
+        cppV = _cpp.fem.FunctionSpace_float32(mesh._cpp_object, cpp_element, cpp_dofmap, value_shape)
 
     return FunctionSpace(mesh, ufl_e, cppV)
 
@@ -596,16 +598,23 @@ class FunctionSpace(ufl.FunctionSpace):
         """
         try:
             Vcpp = _cpp.fem.FunctionSpace_float64(
-                self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap)  # type: ignore
+                self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap,
+                self._cpp_object.value_shape)  # type: ignore
         except TypeError:
             Vcpp = _cpp.fem.FunctionSpace_float32(
-                self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap)  # type: ignore
+                self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap,
+                self._cpp_object.value_shape)  # type: ignore
         return FunctionSpace(self._mesh, self.ufl_element(), Vcpp)
 
     @property
     def num_sub_spaces(self) -> int:
         """Number of sub spaces."""
         return self.element.num_sub_elements
+
+    @property
+    def value_shape(self) -> typing.Tuple[int]:
+        """Value shape."""
+        return self._cpp_object.value_shape
 
     def sub(self, i: int) -> FunctionSpace:
         """Return the i-th sub space.

@@ -22,6 +22,37 @@
 #include <memory>
 #include <vector>
 
+namespace
+{
+// TODO: do subspaces properly then remove this reverse engineering
+template <std::floating_point T>
+std::vector<std::size_t> compute_value_shape(
+    std::shared_ptr<const dolfinx::mesh::Mesh<T>> mesh,
+    std::shared_ptr<const dolfinx::fem::FiniteElement<T>> element)
+{
+  auto rvs = element->reference_value_shape();
+  std::vector<std::size_t> value_shape(rvs.size());
+  if (element->block_size() > 1)
+  {
+    for (std::size_t i = 0; i < rvs.size(); ++i)
+      value_shape[i] = rvs[i];
+  }
+  else
+  {
+    const std::size_t tdim = mesh->topology().dim();
+    const std::size_t gdim = mesh->geometry().dim();
+    for (std::size_t i = 0; i < rvs.size(); ++i)
+    {
+      if (rvs[i] == tdim)
+        value_shape[i] = gdim;
+      else
+        value_shape[i] = rvs[i];
+    }
+  }
+  return value_shape;
+}
+} // namespace
+
 namespace dolfinx::fem
 {
 
@@ -43,9 +74,11 @@ public:
   /// @param[in] dofmap Degree-of-freedom map for the space.
   FunctionSpace(std::shared_ptr<const mesh::Mesh<geometry_type>> mesh,
                 std::shared_ptr<const FiniteElement<geometry_type>> element,
-                std::shared_ptr<const DofMap> dofmap)
+                std::shared_ptr<const DofMap> dofmap,
+                std::vector<std::size_t> value_shape)
       : _mesh(mesh), _element(element), _dofmap(dofmap),
-        _id(boost::uuids::random_generator()()), _root_space_id(_id)
+        _id(boost::uuids::random_generator()()), _root_space_id(_id),
+        _value_shape(value_shape)
   {
     // Do nothing
   }
@@ -91,7 +124,8 @@ public:
         = std::make_shared<DofMap>(_dofmap->extract_sub_dofmap(component));
 
     // Create new sub space
-    FunctionSpace sub_space(_mesh, element, dofmap);
+    FunctionSpace sub_space(_mesh, element, dofmap,
+                            compute_value_shape(_mesh, element));
 
     // Set root space id and component w.r.t. root
     sub_space._root_space_id = _root_space_id;
@@ -150,7 +184,8 @@ public:
     auto collapsed_dofmap
         = std::make_shared<DofMap>(std::move(_collapsed_dofmap));
 
-    return {FunctionSpace(_mesh, _element, collapsed_dofmap),
+    return {FunctionSpace(_mesh, _element, collapsed_dofmap,
+                          compute_value_shape(_mesh, _element)),
             std::move(collapsed_dofs)};
   }
 
@@ -316,6 +351,23 @@ public:
   /// The dofmap
   std::shared_ptr<const DofMap> dofmap() const { return _dofmap; }
 
+  /// The shape of the value space
+  std::span<const std::size_t> value_shape() const noexcept
+  {
+    return _value_shape;
+  }
+
+  /// The value size, e.g. 1 for a scalar-valued function, 2 for a 2D vector, 9
+  /// for a second-order tensor in 3D.
+  /// @note The return value of this function is equivalent to
+  /// `std::accumulate(value_shape().begin(), value_shape().end(), 1,
+  /// std::multiplies{})`.
+  int value_size() const
+  {
+    return std::accumulate(_value_shape.begin(), _value_shape.end(), 1,
+                           std::multiplies{});
+  }
+
 private:
   // The mesh
   std::shared_ptr<const mesh::Mesh<geometry_type>> _mesh;
@@ -332,6 +384,8 @@ private:
   // Unique identifier for the space and for its root space
   boost::uuids::uuid _id;
   boost::uuids::uuid _root_space_id;
+
+  std::vector<std::size_t> _value_shape;
 };
 
 /// Extract FunctionSpaces for (0) rows blocks and (1) columns blocks

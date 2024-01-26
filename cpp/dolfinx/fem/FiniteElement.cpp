@@ -125,10 +125,6 @@ FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
     : _signature(e.signature), _space_dim(e.space_dimension),
       _reference_value_shape(e.reference_value_shape,
                              e.reference_value_shape + e.reference_value_rank),
-      _value_shape_0(e.value_shape[0], e.value_shape[0] + e.value_rank),
-      _value_shape_1(e.value_shape[1], e.value_shape[1] + e.value_rank),
-      _value_shape_2(e.value_shape[2], e.value_shape[2] + e.value_rank),
-      _value_shape_3(e.value_shape[3], e.value_shape[3] + e.value_rank),
       _bs(e.block_size), _is_mixed(e.element_type == ufcx_mixed_element)
 {
   const ufcx_shape _shape = e.cell_shape;
@@ -297,38 +293,10 @@ FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
 FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
-                                const std::vector<std::size_t>& value_shape)
-    : _reference_value_shape(element.value_shape()),
-      _value_shape_0(element.value_shape()),
-      _value_shape_1(element.value_shape()),
-      _value_shape_2(element.value_shape()),
-      _value_shape_3(element.value_shape()), _is_mixed(false)
+                                const std::size_t block_size)
+    : _reference_value_shape(element.value_shape()), _bs(block_size),
+      _is_mixed(false)
 {
-  if (!_value_shape_3.empty() and !value_shape.empty())
-  {
-    throw std::runtime_error(
-        "Cannot specify value shape for non-scalar base element.");
-  }
-
-  // Set block size
-  if (!value_shape.empty())
-  {
-    _reference_value_shape = value_shape;
-    _value_shape_0 = value_shape;
-    _value_shape_1 = value_shape;
-    _value_shape_2 = value_shape;
-    _value_shape_3 = value_shape;
-  }
-
-  // Set block size
-  if (!value_shape.empty())
-  {
-    _bs = std::accumulate(value_shape.begin(), value_shape.end(), 1,
-                          std::multiplies{});
-  }
-  else
-    _bs = 1;
-
   _space_dim = _bs * element.dim();
 
   // Create all sub-elements
@@ -336,8 +304,7 @@ FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
   {
     for (int i = 0; i < _bs; ++i)
     {
-      _sub_elements.push_back(std::make_shared<FiniteElement<T>>(
-          element, std::vector<std::size_t>{}));
+      _sub_elements.push_back(std::make_shared<FiniteElement<T>>(element, 1));
     }
   }
 
@@ -403,25 +370,9 @@ int FiniteElement<T>::space_dimension() const noexcept
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-int FiniteElement<T>::value_size(int dim) const
+std::span<const std::size_t> FiniteElement<T>::reference_value_shape() const
 {
-  switch (dim)
-  {
-  case 0:
-    return std::accumulate(_value_shape_0.begin(), _value_shape_0.end(), 1,
-                           std::multiplies{});
-  case 1:
-    return std::accumulate(_value_shape_1.begin(), _value_shape_1.end(), 1,
-                           std::multiplies{});
-  case 2:
-    return std::accumulate(_value_shape_2.begin(), _value_shape_2.end(), 1,
-                           std::multiplies{});
-  case 3:
-    return std::accumulate(_value_shape_3.begin(), _value_shape_3.end(), 1,
-                           std::multiplies{});
-  default:
-    return 0;
-  }
+  return _reference_value_shape;
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -435,25 +386,6 @@ template <std::floating_point T>
 int FiniteElement<T>::block_size() const noexcept
 {
   return _bs;
-}
-//-----------------------------------------------------------------------------
-template <std::floating_point T>
-std::span<const std::size_t>
-FiniteElement<T>::value_shape(int dim) const noexcept
-{
-  switch (dim)
-  {
-  case 0:
-    return _value_shape_0;
-  case 1:
-    return _value_shape_1;
-  case 2:
-    return _value_shape_2;
-  case 3:
-    return _value_shape_3;
-  default:
-    return {};
-  }
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
