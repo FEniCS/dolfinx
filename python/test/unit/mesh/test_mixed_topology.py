@@ -1,9 +1,11 @@
 from mpi4py import MPI
 
-from dolfinx.cpp.mesh import create_topology, create_geometry
+from dolfinx.cpp.mesh import create_geometry, create_topology
 from dolfinx.fem import coordinate_element
+from dolfinx.log import LogLevel, set_log_level
+from dolfinx.cpp.log import set_thread_name
 from dolfinx.mesh import CellType, GhostMode, create_unit_cube
-from dolfinx.log import set_log_level, LogLevel
+import numpy as np
 
 
 def test_triquad():
@@ -49,8 +51,9 @@ def test_triquad():
     geom = create_geometry(topology, [tri._cpp_object, quad._cpp_object], nodes, xdofs, x, 2)
     print(geom.x)
     print(geom.index_map().size_local)
-    print(geom.dofmap(0))
-    print(geom.dofmap(1))
+    print(geom.dofmaps(0))
+    print(geom.dofmaps(1))
+    set_log_level(LogLevel.WARNING)
 
 
 def test_mixed_mesh_3d():
@@ -166,6 +169,22 @@ def test_parallel_mixed_mesh():
     size = MPI.COMM_WORLD.Get_size()
     assert topology.index_maps(2)[0].size_global == size * 2
     assert topology.index_maps(2)[1].size_global == size
+
+    # Create dofmaps for Geometry
+    tri = coordinate_element(CellType.triangle, 1)
+    quad = coordinate_element(CellType.quadrilateral, 1)
+    nodes = [3 * rank + i for i in range(6)]
+    xdofs = np.array([0, 1, 2, 1, 2, 3, 2, 3, 4, 5], dtype=int) + 3 * rank
+    x = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]], dtype=np.float64)
+    x[:, 1] += 1.0 * rank
+    set_log_level(LogLevel.INFO)
+    set_thread_name(str(rank))
+    geom = create_geometry(topology, [tri._cpp_object, quad._cpp_object], nodes, xdofs, x.flatten(), 2)
+    print(geom.x)
+    print(geom.index_map().size_local)
+    print(geom.dofmaps(0))
+    print(geom.dofmaps(1))
+    set_log_level(LogLevel.WARNING)
 
 
 def test_create_entities():

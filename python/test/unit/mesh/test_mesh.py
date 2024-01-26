@@ -63,7 +63,7 @@ def submesh_geometry_test(mesh, submesh, entity_map, geom_map, entity_dim):
 
         e_to_g = entities_to_geometry(mesh._cpp_object, entity_dim, np.array(entity_map), False)
         for submesh_entity in range(len(entity_map)):
-            submesh_x_dofs = submesh.geometry.dofmap()[submesh_entity]
+            submesh_x_dofs = submesh.geometry.dofmap[submesh_entity]
             # e_to_g[i] gets the mesh x_dofs of entities[i], which should
             # correspond to the x_dofs of cell i in the submesh
             mesh_x_dofs = e_to_g[submesh_entity]
