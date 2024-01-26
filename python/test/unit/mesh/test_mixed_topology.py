@@ -3,7 +3,7 @@ from mpi4py import MPI
 import numpy as np
 
 from dolfinx.cpp.log import set_thread_name
-from dolfinx.cpp.mesh import create_geometry, create_topology
+from dolfinx.cpp.mesh import Mesh_float64, create_geometry, create_topology
 from dolfinx.fem import coordinate_element
 from dolfinx.log import LogLevel, set_log_level
 from dolfinx.mesh import CellType, GhostMode, create_unit_cube
@@ -185,6 +185,12 @@ def test_parallel_mixed_mesh():
     print(geom.index_map().size_local)
     print(geom.dofmaps(0))
     print(geom.dofmaps(1))
+
+    mesh = Mesh_float64(MPI.COMM_WORLD, topology, geom)
+    print(mesh.topology.connectivity((2, 0), (0, 0)))
+    print(mesh.topology.connectivity((2, 1), (0, 0)))
+    print(mesh.geometry.dim)
+
     set_log_level(LogLevel.WARNING)
 
 

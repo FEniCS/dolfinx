@@ -617,12 +617,12 @@ fem::build_dofmap_data(
                            old_to_new, dof_entity0);
   assert(local_to_global_unowned.size() == local_to_global_owner.size());
 
-  LOG(INFO) << "num_owned = " << num_owned << ", l2g(unowned):";
-  for (auto q : local_to_global_unowned)
-    LOG(INFO) << q;
-  LOG(INFO) << "l2g(owner):";
-  for (auto q : local_to_global_owner)
-    LOG(INFO) << q;
+  std::stringstream s;
+  s << "num_owned = " << num_owned << " l2g(unowned, owner):";
+  for (std::size_t i = 0; i < local_to_global_unowned.size(); ++i)
+    s << "(" << local_to_global_unowned[i] << ", " << local_to_global_owner[i]
+      << ") ";
+  LOG(INFO) << s.str();
 
   // Create IndexMap for dofs range on this process
   common::IndexMap index_map(comm, num_owned, local_to_global_unowned,
