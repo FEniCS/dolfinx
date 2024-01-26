@@ -39,7 +39,7 @@ std::vector<std::size_t> compute_value_shape(
   }
   else
   {
-    const std::size_t tdim = mesh->topology().dim();
+    const std::size_t tdim = mesh->topology()->dim();
     const std::size_t gdim = mesh->geometry().dim();
     for (std::size_t i = 0; i < rvs.size(); ++i)
     {
