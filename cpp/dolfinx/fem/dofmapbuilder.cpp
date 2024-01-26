@@ -604,19 +604,10 @@ fem::build_dofmap_data(
 
   // Build re-ordered dofmap
   std::vector<std::int32_t> dofmap(node_graph0[0].size());
-  int width = element_dof_layouts[0].num_dofs();
-  std::size_t num_cells = node_graph0.size() / width;
-  for (std::size_t cell = 0; cell < num_cells; ++cell)
+  for (std::size_t j = 0; j < node_graph0[0].size(); ++j)
   {
-    // Get dof order on this cell
-    std::span<const std::int32_t> old_nodes(
-        node_graph0[0].data() + cell * width, width);
-    std::span<std::int32_t> dofs(dofmap.data() + cell * width, width);
-    for (std::int32_t j = 0; j < width; ++j)
-    {
-      std::int32_t old_node = old_nodes[j];
-      dofs[j] = old_to_new[old_node];
-    }
+    std::int32_t old_node = node_graph0[0][j];
+    dofmap[j] = old_to_new[old_node];
   }
 
   return {std::move(index_map), element_dof_layouts[0].block_size(),
