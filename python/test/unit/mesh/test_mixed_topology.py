@@ -1,9 +1,9 @@
 from mpi4py import MPI
 
-from dolfinx.cpp.mesh import create_topology, create_geometry
+from dolfinx.cpp.mesh import create_geometry, create_topology
 from dolfinx.fem import coordinate_element
+from dolfinx.log import LogLevel, set_log_level
 from dolfinx.mesh import CellType, GhostMode, create_unit_cube
-from dolfinx.log import set_log_level, LogLevel
 
 
 def test_triquad():
