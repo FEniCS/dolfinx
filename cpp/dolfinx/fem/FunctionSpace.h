@@ -448,8 +448,8 @@ common_function_spaces(
 }
 
 /// Type deduction
-template <typename U, typename V, typename W>
-FunctionSpace(U mesh, V element, W dofmap)
+template <typename U, typename V, typename W, typename X>
+FunctionSpace(U mesh, V element, W dofmap, X value_shape)
     -> FunctionSpace<typename std::remove_cvref<
         typename U::element_type>::type::geometry_type::value_type>;
 
