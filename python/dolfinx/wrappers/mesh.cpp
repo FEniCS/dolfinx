@@ -529,12 +529,13 @@ void mesh(nb::module_& m)
   m.def("create_geometry",
         [](const dolfinx::mesh::Topology& topology,
            const std::vector<dolfinx::fem::CoordinateElement<double>>& elements,
-           std::span<const std::int64_t> nodes,
-           std::span<const std::int64_t> xdofs, const std::vector<double>& x,
+           const std::vector<std::int64_t>& nodes,
+           const std::vector<std::int64_t>& xdofs, const std::vector<double>& x,
            int dim)
         {
-          return dolfinx::mesh::create_geometry(topology, elements, nodes,
-                                                xdofs, x, dim);
+          return dolfinx::mesh::create_geometry(
+              topology, elements, std::span<const std::int64_t>(nodes),
+              std::span<const std::int64_t>(xdofs), x, dim);
         });
 
   m.def("create_topology",

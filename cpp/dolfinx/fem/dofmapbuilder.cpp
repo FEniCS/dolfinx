@@ -7,7 +7,6 @@
 #include "dofmapbuilder.h"
 #include "ElementDofLayout.h"
 #include <algorithm>
-#include <basix/mdspan.hpp>
 #include <cstdint>
 #include <cstdlib>
 #include <dolfinx/common/IndexMap.h>
@@ -27,10 +26,6 @@ using namespace dolfinx;
 
 namespace
 {
-template <typename T>
-using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-    T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-
 //-----------------------------------------------------------------------------
 
 /// Build a graph for owned dofs and apply graph reordering function
@@ -145,6 +140,8 @@ build_basic_dofmaps(
   const std::size_t D = topology.dim();
   const std::size_t num_cell_types = topology.entity_types(D).size();
 
+  LOG(INFO) << "Checking required entities per dimension";
+
   // Check that required mesh entities have been created, count
   // the number mesh mesh entities (that are required), and
   // and compute number of dofs on this process
@@ -187,33 +184,28 @@ build_basic_dofmaps(
     }
   }
 
-  // Allocate dofmap memory
-  std::int32_t num_cells = 0;
-  std::int32_t num_dofs = 0;
-  for (std::size_t i = 0; i < num_cell_types; ++i)
-  {
-    const std::int32_t n = topology.index_maps(D)[i]->size_local()
-                           + topology.index_maps(D)[i]->num_ghosts();
-    num_cells += n;
-    num_dofs += n * element_dof_layouts[i].num_dofs();
-  }
+  LOG(INFO) << "Local size = " << local_size;
 
   std::vector<std::vector<std::int32_t>> dofs(num_cell_types);
-  dofs[0].resize(num_dofs);
-  std::int32_t dofmap_offset = 0;
-
   for (std::size_t i = 0; i < num_cell_types; ++i)
   {
     // Loop over cells and build dofmap
+    const std::int32_t num_cells = topology.index_maps(D)[i]->size_local()
+                                   + topology.index_maps(D)[i]->num_ghosts();
+    const int dofmap_width = element_dof_layouts[i].num_dofs();
+    const std::int32_t num_dofs = num_cells * dofmap_width;
     const std::vector<std::vector<std::vector<int>>> entity_dofs
         = element_dof_layouts[i].entity_dofs_all();
     assert(entity_dofs.size() == D + 1);
-    const int dofmap_width = element_dof_layouts[i].num_dofs();
+    dofs[i].resize(num_dofs);
+    std::int32_t dofmap_offset = 0;
+
+    LOG(INFO) << "num dofs [" << i << "] =" << num_dofs;
 
     for (std::int32_t c = 0; c < num_cells; ++c)
     {
       // Wrap dofs for cell c
-      std::span<std::int32_t> dofs_c(dofs[0].data() + dofmap_offset,
+      std::span<std::int32_t> dofs_c(dofs[i].data() + dofmap_offset,
                                      dofmap_width);
       dofmap_offset += dofmap_width;
 
@@ -240,11 +232,11 @@ build_basic_dofmaps(
             // d: topological dimension
             // e: local entity index
             // dof_local: local index of dof at (d, e)
-            for (std::size_t i = 0; i < num_entity_dofs; ++i)
+            for (std::size_t j = 0; j < num_entity_dofs; ++j)
             {
-              int dof_local = e_dofs_d[e][i];
+              int dof_local = e_dofs_d[e][j];
               dofs_c[dof_local]
-                  = offset_local + num_entity_dofs * e_index_local + i;
+                  = offset_local + num_entity_dofs * e_index_local + j;
             }
           }
           offset_local += num_entity_dofs * num_entities[d];
@@ -252,6 +244,18 @@ build_basic_dofmaps(
       }
     }
   }
+
+  std::stringstream s;
+  for (int i = 0; i < num_cell_types; ++i)
+  {
+    s << "dofmap[" << i << "] = [";
+    for (auto q : dofs[i])
+      s << q << " ";
+    s << "]\n";
+  }
+  LOG(INFO) << s.str();
+
+  LOG(INFO) << "Going to global index computation";
 
   // TODO: Put Global index computations in separate function
   // Global index computations
@@ -584,10 +588,6 @@ fem::build_dofmap_data(
 
   // Build re-ordering map for data locality and get number of owned
   // nodes
-  // mdspan2_t<const std::int32_t> _node_graph0(
-  //     node_graph0[0].data(),
-  //     node_graph0[0].size() / element_dof_layouts[0].num_dofs(),
-  //     element_dof_layouts[0].num_dofs());
   const auto [old_to_new, num_owned] = compute_reordering_map(
       node_graph0[0], element_dof_layouts[0].num_dofs(), dof_entity0,
       topo_index_maps, reorder_fn);
@@ -602,15 +602,19 @@ fem::build_dofmap_data(
   common::IndexMap index_map(comm, num_owned, local_to_global_unowned,
                              local_to_global_owner);
 
-  // Build re-ordered dofmap
-  std::vector<std::int32_t> dofmap(node_graph0[0].size());
-  for (std::size_t j = 0; j < node_graph0[0].size(); ++j)
+  // Build re-ordered dofmaps
+  std::vector<std::vector<std::int32_t>> dofmaps(node_graph0.size());
+  for (std::size_t i = 0; i < dofmaps.size(); ++i)
   {
-    std::int32_t old_node = node_graph0[0][j];
-    dofmap[j] = old_to_new[old_node];
+    dofmaps[0].resize(node_graph0[i].size());
+    for (std::size_t j = 0; j < node_graph0[i].size(); ++j)
+    {
+      std::int32_t old_node = node_graph0[i][j];
+      dofmaps[i][j] = old_to_new[old_node];
+    }
   }
 
   return {std::move(index_map), element_dof_layouts[0].block_size(),
-          std::move(dofmap)};
+          std::move(dofmaps[0])};
 }
 //-----------------------------------------------------------------------------

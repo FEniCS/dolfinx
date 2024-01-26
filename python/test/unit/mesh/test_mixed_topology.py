@@ -1,10 +1,14 @@
 from mpi4py import MPI
 
-from dolfinx.cpp.mesh import create_topology
+from dolfinx.cpp.mesh import create_topology, create_geometry
+from dolfinx.fem import coordinate_element
 from dolfinx.mesh import CellType, GhostMode, create_unit_cube
+from dolfinx.log import set_log_level, LogLevel
 
 
 def test_triquad():
+    set_log_level(LogLevel.INFO)
+
     cells = [[0, 1, 2, 1, 2, 3], [2, 3, 4, 5]]
     orig_index = [[0, 1], [2]]
     ghost_owners = [[], []]
@@ -35,6 +39,14 @@ def test_triquad():
     # One quadrlilateral cell
     assert entity_types[2][1] == CellType.quadrilateral
     assert topology.connectivity((2, 1), (0, 0)).num_nodes == 1
+
+    tri = coordinate_element(CellType.triangle, 1)
+    quad = coordinate_element(CellType.quadrilateral, 1)
+    nodes = [0, 1, 2, 3, 4, 5]
+    xdofs = [0, 1, 2, 1, 2, 3, 2, 3, 4, 5]
+    x = [0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2.0, 1.0, 2.0, 0.0]
+    geom = create_geometry(topology, [tri._cpp_object, quad._cpp_object], nodes, xdofs, x, 2)
+    assert geom
 
 
 def test_mixed_mesh_3d():

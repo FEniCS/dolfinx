@@ -206,6 +206,8 @@ create_geometry(
         reorder_fn
     = nullptr)
 {
+  LOG(INFO) << "Create Geometry (multiple)";
+
   assert(std::is_sorted(nodes.begin(), nodes.end()));
   using T = typename std::remove_reference_t<typename U::value_type>;
 
@@ -218,6 +220,8 @@ create_geometry(
   std::vector<fem::ElementDofLayout> dof_layouts;
   for (const auto& el : elements)
     dof_layouts.push_back(el.create_dof_layout());
+
+  LOG(INFO) << "Got " << dof_layouts.size() << " dof layouts";
 
   //  Build 'geometry' dofmap on the topology
   auto [_dof_index_map, bs, dofmap]
