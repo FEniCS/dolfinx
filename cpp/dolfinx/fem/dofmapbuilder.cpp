@@ -296,6 +296,17 @@ build_basic_dofmaps(
     }
   }
 
+  LOG(INFO) << local_to_global.size() << ", " << dof_entity.size();
+
+  s.str("l2g:");
+  for (auto q : local_to_global)
+    s << q << " ";
+  s << "\n dof_entity=";
+  for (auto q : dof_entity)
+    s << "(" << (int)q.first << ", " << (int)q.second << ") ";
+  s << "\n";
+  LOG(INFO) << s.str();
+
   return {std::move(dofs), std::move(local_to_global), std::move(dof_entity)};
 }
 //-----------------------------------------------------------------------------
@@ -554,7 +565,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::tuple<common::IndexMap, int, std::vector<std::int32_t>>
+std::tuple<common::IndexMap, int, std::vector<std::vector<std::int32_t>>>
 fem::build_dofmap_data(
     MPI_Comm comm, const mesh::Topology& topology,
     const std::vector<ElementDofLayout>& element_dof_layouts,
@@ -567,12 +578,14 @@ fem::build_dofmap_data(
   // a local dofmap, (ii) local-to-global map for dof indices, and (iii)
   // pair {dimension, mesh entity index} giving the mesh entity that dof
   // i is associated with.
-  const auto [node_graph0, local_to_global0, dof_entity0]
+  const auto [node_graphs, local_to_global0, dof_entity0]
       = build_basic_dofmaps(topology, element_dof_layouts);
 
   std::vector<std::shared_ptr<const common::IndexMap>> topo_index_maps;
   for (int d = 0; d <= topology.dim(); ++d)
     topo_index_maps.push_back(topology.index_map(d));
+
+  LOG(INFO) << "Got " << topo_index_maps.size() << " index_maps";
 
   // Compute global dofmap offset
   std::int64_t offset = 0;
@@ -586,11 +599,17 @@ fem::build_dofmap_data(
     }
   }
 
+  LOG(INFO) << "offset = " << offset;
+
   // Build re-ordering map for data locality and get number of owned
   // nodes
   const auto [old_to_new, num_owned] = compute_reordering_map(
-      node_graph0[0], element_dof_layouts[0].num_dofs(), dof_entity0,
+      node_graphs[0], element_dof_layouts[0].num_dofs(), dof_entity0,
       topo_index_maps, reorder_fn);
+
+  LOG(INFO) << old_to_new.size() << ": " << num_owned;
+
+  LOG(INFO) << "Get global indices";
 
   // Get global indices for unowned dofs
   const auto [local_to_global_unowned, local_to_global_owner]
@@ -598,23 +617,32 @@ fem::build_dofmap_data(
                            old_to_new, dof_entity0);
   assert(local_to_global_unowned.size() == local_to_global_owner.size());
 
+  LOG(INFO) << "num_owned = " << num_owned << ", l2g(unowned):";
+  for (auto q : local_to_global_unowned)
+    LOG(INFO) << q;
+  LOG(INFO) << "l2g(owner):";
+  for (auto q : local_to_global_owner)
+    LOG(INFO) << q;
+
   // Create IndexMap for dofs range on this process
   common::IndexMap index_map(comm, num_owned, local_to_global_unowned,
                              local_to_global_owner);
 
+  LOG(INFO) << "Got dofmap IndexMap OK";
+
   // Build re-ordered dofmaps
-  std::vector<std::vector<std::int32_t>> dofmaps(node_graph0.size());
+  std::vector<std::vector<std::int32_t>> dofmaps(node_graphs.size());
   for (std::size_t i = 0; i < dofmaps.size(); ++i)
   {
-    dofmaps[0].resize(node_graph0[i].size());
-    for (std::size_t j = 0; j < node_graph0[i].size(); ++j)
+    dofmaps[i].resize(node_graphs[i].size());
+    for (std::size_t j = 0; j < node_graphs[i].size(); ++j)
     {
-      std::int32_t old_node = node_graph0[i][j];
+      std::int32_t old_node = node_graphs[i][j];
       dofmaps[i][j] = old_to_new[old_node];
     }
   }
 
   return {std::move(index_map), element_dof_layouts[0].block_size(),
-          std::move(dofmaps[0])};
+          std::move(dofmaps)};
 }
 //-----------------------------------------------------------------------------

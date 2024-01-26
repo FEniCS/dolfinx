@@ -156,11 +156,20 @@ void declare_mesh(nb::module_& m, std::string type)
                                          "Geometry object")
       .def_prop_ro("dim", &dolfinx::mesh::Geometry<T>::dim,
                    "Geometric dimension")
-      .def_prop_ro(
+      .def(
           "dofmap",
           [](dolfinx::mesh::Geometry<T>& self)
           {
             auto dofs = self.dofmap();
+            return nb::ndarray<const std::int32_t, nb::numpy>(
+                dofs.data_handle(), {dofs.extent(0), dofs.extent(1)});
+          },
+          nb::rv_policy::reference_internal)
+      .def(
+          "dofmap",
+          [](dolfinx::mesh::Geometry<T>& self, int i)
+          {
+            auto dofs = self.dofmap(i);
             return nb::ndarray<const std::int32_t, nb::numpy>(
                 dofs.data_handle(), {dofs.extent(0), dofs.extent(1)});
           },

@@ -58,8 +58,38 @@ public:
       const std::vector<fem::CoordinateElement<
           typename std::remove_reference_t<typename V::value_type>>>& elements,
       V&& x, int dim, W&& input_global_indices)
-      : _dim(dim), _dofmap(std::forward<U>(dofmap)), _index_map(index_map),
-        _cmaps(elements), _x(std::forward<V>(x)),
+      : _dim(dim), _dofmaps({dofmap}), _index_map(index_map), _cmaps(elements),
+        _x(std::forward<V>(x)),
+        _input_global_indices(std::forward<W>(input_global_indices))
+  {
+    assert(_x.size() % 3 == 0);
+    if (_x.size() / 3 != _input_global_indices.size())
+      throw std::runtime_error("Geometry size mis-match");
+  }
+
+  /// @brief Constructor of object that holds mesh geometry data.
+  ///
+  /// @param[in] index_map Index map associated with the geometry dofmap
+  /// @param[in] dofmaps The geometry (point) dofmaps. For a cell, it
+  /// gives the position in the point array of each local geometry node
+  /// @param[in] elements Elements that describes the cell geometry maps.
+  /// @param[in] x The point coordinates. The shape is `(num_points, 3)`
+  /// and the storage is row-major.
+  /// @param[in] dim The geometric dimension (`0 < dim <= 3`).
+  /// @param[in] input_global_indices The 'global' input index of each
+  /// point, commonly from a mesh input file.
+  template <typename V, typename W>
+    requires std::is_convertible_v<std::remove_cvref_t<V>, std::vector<T>>
+                 and std::is_convertible_v<std::remove_cvref_t<W>,
+                                           std::vector<std::int64_t>>
+  Geometry(
+      std::shared_ptr<const common::IndexMap> index_map,
+      const std::vector<std::vector<std::int32_t>>& dofmaps,
+      const std::vector<fem::CoordinateElement<
+          typename std::remove_reference_t<typename V::value_type>>>& elements,
+      V&& x, int dim, W&& input_global_indices)
+      : _dim(dim), _dofmaps(dofmaps), _index_map(index_map), _cmaps(elements),
+        _x(std::forward<V>(x)),
         _input_global_indices(std::forward<W>(input_global_indices))
   {
     assert(_x.size() % 3 == 0);
@@ -96,7 +126,26 @@ public:
     return MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
         const std::int32_t,
         MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>(
-        _dofmap.data(), _dofmap.size() / ndofs, ndofs);
+        _dofmaps[0].data(), _dofmaps[0].size() / ndofs, ndofs);
+  }
+
+  /// DOF map
+  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      const std::int32_t,
+      MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+  dofmap(int i) const
+  {
+    LOG(INFO) << "Get dofmap " << i << " " << _cmaps.size() << " "
+              << _dofmaps.size();
+
+    assert(i < _cmaps.size());
+    int ndofs = _cmaps[i].dim();
+    LOG(INFO) << ndofs << " << ";
+
+    return MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        const std::int32_t,
+        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>(
+        _dofmaps[i].data(), _dofmaps[i].size() / ndofs, ndofs);
   }
 
   /// Index map
@@ -144,8 +193,8 @@ private:
   // Geometric dimension
   int _dim;
 
-  // Map per cell for extracting coordinate data
-  std::vector<std::int32_t> _dofmap;
+  // Map per cell for extracting coordinate data for each cmap
+  std::vector<std::vector<std::int32_t>> _dofmaps;
 
   // IndexMap for geometry 'dofmap'
   std::shared_ptr<const common::IndexMap> _index_map;
@@ -224,7 +273,7 @@ create_geometry(
   LOG(INFO) << "Got " << dof_layouts.size() << " dof layouts";
 
   //  Build 'geometry' dofmap on the topology
-  auto [_dof_index_map, bs, dofmap]
+  auto [_dof_index_map, bs, dofmaps]
       = fem::build_dofmap_data(topology.index_map(topology.dim())->comm(),
                                topology, dof_layouts, reorder_fn);
   auto dof_index_map
@@ -240,18 +289,32 @@ create_geometry(
     int d = elements[0].dim();
     for (std::int32_t cell = 0; cell < num_cells; ++cell)
     {
-      std::span dofs(dofmap.data() + cell * d, d);
+      std::span dofs(dofmaps[0].data() + cell * d, d);
       elements[0].unpermute_dofs(dofs, cell_info[cell]);
     }
   }
 
+  LOG(INFO) << "Calling compute_local_to_global";
   // Compute local-to-global map from local indices in dofmap to the
   // corresponding global indices in cells, and pass to function to
   // compute local (dof) to local (position in coords) map from (i)
   // local-to-global for dofs and (ii) local-to-global for entries in
   // coords
+
+  LOG(INFO) << "xdofs.size = " << xdofs.size();
+  std::vector<std::int32_t> all_dofmaps;
+  std::stringstream s;
+  for (auto q : dofmaps)
+  {
+    s << q.size() << " ";
+    all_dofmaps.insert(all_dofmaps.end(), q.begin(), q.end());
+  }
+  LOG(INFO) << "dofmap sizes = " << s.str();
+  LOG(INFO) << "all_dofmaps.size = " << all_dofmaps.size();
+  LOG(INFO) << "nodes.size = " << nodes.size();
+
   const std::vector<std::int32_t> l2l = graph::build::compute_local_to_local(
-      graph::build::compute_local_to_global(xdofs, dofmap), nodes);
+      graph::build::compute_local_to_global(xdofs, all_dofmaps), nodes);
 
   // Allocate space for input global indices and copy data
   std::vector<std::int64_t> igi(nodes.size());
@@ -269,7 +332,9 @@ create_geometry(
                 std::next(xg.begin(), 3 * i));
   }
 
-  return Geometry(dof_index_map, std::move(dofmap), elements, std::move(xg),
+  LOG(INFO) << "Creating geometry with " << dofmaps.size() << " dofmaps";
+
+  return Geometry(dof_index_map, std::move(dofmaps), elements, std::move(xg),
                   dim, std::move(igi));
 }
 
@@ -314,7 +379,7 @@ create_geometry(
   fem::ElementDofLayout dof_layout = element.create_dof_layout();
 
   //  Build 'geometry' dofmap on the topology
-  auto [_dof_index_map, bs, dofmap]
+  auto [_dof_index_map, bs, dofmaps]
       = fem::build_dofmap_data(topology.index_map(topology.dim())->comm(),
                                topology, {dof_layout}, reorder_fn);
   auto dof_index_map
@@ -330,7 +395,7 @@ create_geometry(
     int d = element.dim();
     for (std::int32_t cell = 0; cell < num_cells; ++cell)
     {
-      std::span dofs(dofmap.data() + cell * d, d);
+      std::span dofs(dofmaps[0].data() + cell * d, d);
       element.unpermute_dofs(dofs, cell_info[cell]);
     }
   }
@@ -341,7 +406,7 @@ create_geometry(
   // local-to-global for dofs and (ii) local-to-global for entries in
   // coords
   const std::vector<std::int32_t> l2l = graph::build::compute_local_to_local(
-      graph::build::compute_local_to_global(xdofs, dofmap), nodes);
+      graph::build::compute_local_to_global(xdofs, dofmaps[0]), nodes);
 
   // Allocate space for input global indices and copy data
   std::vector<std::int64_t> igi(nodes.size());
@@ -359,8 +424,8 @@ create_geometry(
                 std::next(xg.begin(), 3 * i));
   }
 
-  return Geometry(dof_index_map, std::move(dofmap), {element}, std::move(xg),
-                  dim, std::move(igi));
+  return Geometry(dof_index_map, std::move(dofmaps[0]), {element},
+                  std::move(xg), dim, std::move(igi));
 }
 
 /// @brief Create a sub-geometry for a subset of entities.

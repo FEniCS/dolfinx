@@ -40,13 +40,17 @@ def test_triquad():
     assert entity_types[2][1] == CellType.quadrilateral
     assert topology.connectivity((2, 1), (0, 0)).num_nodes == 1
 
+    # Create dofmaps for Geometry
     tri = coordinate_element(CellType.triangle, 1)
     quad = coordinate_element(CellType.quadrilateral, 1)
     nodes = [0, 1, 2, 3, 4, 5]
     xdofs = [0, 1, 2, 1, 2, 3, 2, 3, 4, 5]
     x = [0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2.0, 1.0, 2.0, 0.0]
     geom = create_geometry(topology, [tri._cpp_object, quad._cpp_object], nodes, xdofs, x, 2)
-    assert geom
+    print(geom.x)
+    print(geom.index_map().size_local)
+    print(geom.dofmap(0))
+    print(geom.dofmap(1))
 
 
 def test_mixed_mesh_3d():
