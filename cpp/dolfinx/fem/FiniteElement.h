@@ -44,7 +44,7 @@ public:
 
   /// @brief Create finite element from a Basix finite element.
   /// @param[in] element Basix finite element
-  /// @param[in] blosk_size The block size for the element
+  /// @param[in] block_size The block size for the element
   FiniteElement(const basix::FiniteElement<geometry_type>& element,
                 const std::size_t block_size);
 
