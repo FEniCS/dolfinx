@@ -317,8 +317,11 @@ Form<T, U> create_form_factory(
     if (std::string(ufcx_element->signature)
         != spaces[i]->element()->signature())
     {
-      throw std::runtime_error(
-          "Cannot create form. Wrong type of function space for argument.");
+      throw std::runtime_error("Cannot create form. Wrong type of function "
+                               "space for argument. ufcx_signature= '"
+                               + std::string(ufcx_element->signature)
+                               + "', but expecting: '"
+                               + spaces[i]->element()->signature() + "'");
     }
   }
 #endif
