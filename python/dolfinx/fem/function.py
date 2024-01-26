@@ -612,7 +612,7 @@ class FunctionSpace(ufl.FunctionSpace):
         return self.element.num_sub_elements
 
     @property
-    def value_shape(self) -> typing.Tuple[int]:
+    def value_shape(self) -> tuple[int]:
         """Value shape."""
         return self._cpp_object.value_shape
 
