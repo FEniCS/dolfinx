@@ -1,11 +1,12 @@
 from mpi4py import MPI
 
+import numpy as np
+
+from dolfinx.cpp.log import set_thread_name
 from dolfinx.cpp.mesh import create_geometry, create_topology
 from dolfinx.fem import coordinate_element
 from dolfinx.log import LogLevel, set_log_level
-from dolfinx.cpp.log import set_thread_name
 from dolfinx.mesh import CellType, GhostMode, create_unit_cube
-import numpy as np
 
 
 def test_triquad():
