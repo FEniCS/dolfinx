@@ -246,7 +246,7 @@ build_basic_dofmaps(
   }
 
   std::stringstream s;
-  for (int i = 0; i < num_cell_types; ++i)
+  for (std::size_t i = 0; i < num_cell_types; ++i)
   {
     s << "dofmap[" << i << "] = [";
     for (auto q : dofs[i])
