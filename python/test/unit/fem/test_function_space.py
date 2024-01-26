@@ -95,7 +95,6 @@ def test_equality(V, V2, W, W2):
 
 
 def test_sub(Q, W):
-    gdim = 3
     X = Q.sub(0)
 
     assert W.dofmap.dof_layout.num_dofs == X.dofmap.dof_layout.num_dofs
