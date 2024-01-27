@@ -17,7 +17,7 @@ from dolfinx.mesh import (CellType, DiagonalType, GhostMode, RefinementOption, c
                           refine, refine_plaza, transfer_meshtag)
 
 
-def test_Refinecreate_unit_square():
+def test_refine_create_unit_square():
     """Refine mesh of unit square."""
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 7, ghost_mode=GhostMode.none)
     mesh.topology.create_entities(1)
@@ -26,7 +26,7 @@ def test_Refinecreate_unit_square():
     assert mesh.topology.index_map(2).size_global == 280
 
 
-def test_Refinecreate_unit_cube_repartition():
+def test_refine_create_unit_cube_repartition():
     """Refine mesh of unit cube."""
     mesh = create_unit_cube(MPI.COMM_WORLD, 5, 7, 9, ghost_mode=GhostMode.none)
     mesh.topology.create_entities(1)
@@ -44,7 +44,7 @@ def test_Refinecreate_unit_cube_repartition():
     assert Q
 
 
-def test_Refinecreate_unit_cube_keep_partition():
+def test_refine_create_unit_cube_keep_partition():
     """Refine mesh of unit cube."""
     mesh = create_unit_cube(MPI.COMM_WORLD, 5, 7, 9, ghost_mode=GhostMode.none)
     mesh.topology.create_entities(1)
@@ -134,7 +134,7 @@ def test_refine_facet_meshtag(tdim):
     meshtag = meshtags(mesh, tdim - 1, np.array(facet_indices, dtype=np.int32),
                        np.arange(len(facet_indices), dtype=np.int32))
 
-    fine_mesh, parent_cell, parent_facet = refine_plaza(mesh, False, RefinementOption.parent_cell_and_facet)
+    fine_mesh, parent_cell, parent_facet = refine_plaza(mesh, None, False, RefinementOption.parent_cell_and_facet)
     fine_mesh.topology.create_entities(tdim - 1)
     new_meshtag = transfer_meshtag(meshtag, fine_mesh, parent_cell, parent_facet)
     assert len(new_meshtag.indices) == (tdim * 2 - 2) * len(meshtag.indices)
@@ -165,7 +165,7 @@ def test_refine_cell_meshtag(tdim):
     meshtag = meshtags(mesh, tdim, np.array(cell_indices, dtype=np.int32),
                        np.arange(len(cell_indices), dtype=np.int32))
 
-    fine_mesh, parent_cell, _ = refine_plaza(mesh, False, RefinementOption.parent_cell_and_facet)
+    fine_mesh, parent_cell, _ = refine_plaza(mesh, None, False, RefinementOption.parent_cell_and_facet)
     new_meshtag = transfer_meshtag(meshtag, fine_mesh, parent_cell)
     assert sum(new_meshtag.values) == (tdim * 4 - 4) * sum(meshtag.values)
     assert len(new_meshtag.indices) == (tdim * 4 - 4) * len(meshtag.indices)
