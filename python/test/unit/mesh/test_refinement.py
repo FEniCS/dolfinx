@@ -118,7 +118,12 @@ def test_refine_from_cells():
 
 
 @pytest.mark.parametrize("tdim", [2, 3])
-def test_refine_facet_meshtag(tdim):
+@pytest.mark.parametrize("refine_plaza_wrapper", [
+    lambda mesh: refine_plaza(mesh, None, False, RefinementOption.parent_cell_and_facet),
+    lambda mesh: refine_plaza(
+        mesh, np.arange(mesh.topology.index_map(1).size_local), False, RefinementOption.parent_cell_and_facet)
+])
+def test_refine_facet_meshtag(tdim, refine_plaza_wrapper):
     if tdim == 3:
         mesh = create_unit_cube(MPI.COMM_WORLD, 2, 3, 5, CellType.tetrahedron, ghost_mode=GhostMode.none)
     else:
@@ -134,7 +139,7 @@ def test_refine_facet_meshtag(tdim):
     meshtag = meshtags(mesh, tdim - 1, np.array(facet_indices, dtype=np.int32),
                        np.arange(len(facet_indices), dtype=np.int32))
 
-    fine_mesh, parent_cell, parent_facet = refine_plaza(mesh, None, False, RefinementOption.parent_cell_and_facet)
+    fine_mesh, parent_cell, parent_facet = refine_plaza_wrapper(mesh)
     fine_mesh.topology.create_entities(tdim - 1)
     new_meshtag = transfer_meshtag(meshtag, fine_mesh, parent_cell, parent_facet)
     assert len(new_meshtag.indices) == (tdim * 2 - 2) * len(meshtag.indices)
@@ -154,7 +159,12 @@ def test_refine_facet_meshtag(tdim):
 
 
 @pytest.mark.parametrize("tdim", [2, 3])
-def test_refine_cell_meshtag(tdim):
+@pytest.mark.parametrize("refine_plaza_wrapper", [
+    lambda mesh: refine_plaza(mesh, None, False, RefinementOption.parent_cell_and_facet),
+    lambda mesh: refine_plaza(
+        mesh, np.arange(mesh.topology.index_map(1).size_local), False, RefinementOption.parent_cell_and_facet)
+])
+def test_refine_cell_meshtag(tdim, refine_plaza_wrapper):
     if tdim == 3:
         mesh = create_unit_cube(MPI.COMM_WORLD, 2, 3, 5, CellType.tetrahedron, ghost_mode=GhostMode.none)
     else:
@@ -165,7 +175,8 @@ def test_refine_cell_meshtag(tdim):
     meshtag = meshtags(mesh, tdim, np.array(cell_indices, dtype=np.int32),
                        np.arange(len(cell_indices), dtype=np.int32))
 
-    fine_mesh, parent_cell, _ = refine_plaza(mesh, None, False, RefinementOption.parent_cell_and_facet)
+    mesh.topology.create_entities(tdim - 1)
+    fine_mesh, parent_cell, _ = refine_plaza_wrapper(mesh)
     new_meshtag = transfer_meshtag(meshtag, fine_mesh, parent_cell)
     assert sum(new_meshtag.values) == (tdim * 4 - 4) * sum(meshtag.values)
     assert len(new_meshtag.indices) == (tdim * 4 - 4) * len(meshtag.indices)
