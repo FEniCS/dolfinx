@@ -175,7 +175,6 @@ def test_refine_cell_meshtag(tdim, refine_plaza_wrapper):
     meshtag = meshtags(mesh, tdim, np.array(cell_indices, dtype=np.int32),
                        np.arange(len(cell_indices), dtype=np.int32))
 
-    mesh.topology.create_entities(tdim - 1)
     fine_mesh, parent_cell, _ = refine_plaza_wrapper(mesh)
     new_meshtag = transfer_meshtag(meshtag, fine_mesh, parent_cell)
     assert sum(new_meshtag.values) == (tdim * 4 - 4) * sum(meshtag.values)
