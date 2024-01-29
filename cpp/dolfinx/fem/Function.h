@@ -216,8 +216,6 @@ public:
             std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>
         _x(x.data(), 3, x.size() / 3);
 
-    const int gdim = _function_space->mesh()->geometry().dim();
-
     const auto [fx, fshape] = f(_x);
     assert(fshape.size() <= 2);
     if (int vs = _function_space->value_size(); vs == 1 and fshape.size() == 1)
@@ -289,7 +287,6 @@ public:
     // Check that spaces are compatible
     assert(_function_space);
     assert(_function_space->element());
-    const int gdim = _function_space->mesh()->geometry().dim();
     std::size_t value_size = e.value_size();
     if (e.argument_function_space())
       throw std::runtime_error("Cannot interpolate Expression with Argument");
