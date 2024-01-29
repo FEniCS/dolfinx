@@ -341,7 +341,7 @@ class Function(ufl.Coefficient):
 
         # Allocate memory for return value if not provided
         if u is None:
-            value_size = ufl.product(self.ufl_element().value_shape(self._V.mesh.ufl_domain()))
+            value_size = self._V.value_size
             u = np.empty((num_points, value_size), self.dtype)
 
         self._cpp_object.eval(_x, _cells, u)  # type: ignore
@@ -526,7 +526,8 @@ def functionspace(mesh: Mesh,
     if ufl_e.cell != mesh.ufl_domain().ufl_cell():
         raise ValueError("Non-matching UFL cell and mesh cell shapes.")
 
-    value_shape = ufl_e.value_shape(mesh.ufl_domain())
+    ufl_space = ufl.FunctionSpace(mesh.ufl_domain(), ufl_e)
+    value_shape = ufl_space.value_shape
 
     # Compile dofmap and element and create DOLFIN objects
     dtype = mesh.geometry.x.dtype
