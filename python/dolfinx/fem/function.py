@@ -615,7 +615,7 @@ class FunctionSpace(ufl.FunctionSpace):
     @property
     def value_shape(self) -> tuple[int]:
         """Value shape."""
-        return self._cpp_object.value_shape
+        return tuple(self._cpp_object.value_shape)
 
     def sub(self, i: int) -> FunctionSpace:
         """Return the i-th sub space.
