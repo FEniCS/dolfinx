@@ -104,7 +104,7 @@ def _(V: fem.FunctionSpace, entities=None):
         Topology, type for each cell, and geometry in VTK-ready format.
 
     """
-    if not (V.ufl_element().family_name in ['Discontinuous Lagrange', "Lagrange", "DQ", "Q", "DP", "P"]):
+    if V.ufl_element().family_name not in ['Discontinuous Lagrange', "Lagrange", "DQ", "Q", "DP", "P"]:
         raise RuntimeError("Can only create meshes from continuous or discontinuous Lagrange spaces")
 
     degree = V.ufl_element().degree

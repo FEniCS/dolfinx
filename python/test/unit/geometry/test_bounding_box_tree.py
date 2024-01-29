@@ -11,15 +11,10 @@ import numpy as np
 import pytest
 
 from dolfinx import cpp as _cpp
-from dolfinx.geometry import (bb_tree, compute_closest_entity,
-                              compute_colliding_cells,
-                              compute_collisions_points,
-                              compute_collisions_trees, compute_distance_gjk,
-                              create_midpoint_tree)
-from dolfinx.mesh import (CellType, create_box, create_unit_cube,
-                          create_unit_interval, create_unit_square,
-                          exterior_facet_indices, locate_entities,
-                          locate_entities_boundary)
+from dolfinx.geometry import (bb_tree, compute_closest_entity, compute_colliding_cells, compute_collisions_points,
+                              compute_collisions_trees, compute_distance_gjk, create_midpoint_tree)
+from dolfinx.mesh import (CellType, create_box, create_unit_cube, create_unit_interval, create_unit_square,
+                          exterior_facet_indices, locate_entities, locate_entities_boundary)
 
 
 def extract_geometricial_data(mesh, dim, entities):

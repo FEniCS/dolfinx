@@ -130,12 +130,13 @@ void declare_vtx_writer(nb::module_& m, std::string type)
                        const dolfinx::fem::Function<std::complex<float>, T>>,
                    std::shared_ptr<const dolfinx::fem::Function<
                        std::complex<double>, T>>>>& u,
-               std::string engine) {
+               std::string engine, dolfinx::io::VTXMeshPolicy policy) {
               new (self)
-                  dolfinx::io::VTXWriter<T>(comm.get(), filename, u, engine);
+                  dolfinx::io::VTXWriter<T>(comm.get(), filename, u, engine, policy);
             },
             nb::arg("comm"), nb::arg("filename"), nb::arg("u"),
-            nb::arg("engine"))
+            nb::arg("engine") = "BPFile",
+            nb::arg("policy") = dolfinx::io::VTXMeshPolicy::update)
         .def("close", [](dolfinx::io::VTXWriter<T>& self) { self.close(); })
         .def(
             "write",
@@ -338,6 +339,10 @@ void io(nb::module_& m)
   nb::enum_<dolfinx::io::FidesMeshPolicy>(m, "FidesMeshPolicy")
       .value("update", dolfinx::io::FidesMeshPolicy::update)
       .value("reuse", dolfinx::io::FidesMeshPolicy::reuse);
+
+  nb::enum_<dolfinx::io::VTXMeshPolicy>(m, "VTXMeshPolicy")
+      .value("update", dolfinx::io::VTXMeshPolicy::update)
+      .value("reuse", dolfinx::io::VTXMeshPolicy::reuse);
 #endif
 
   declare_vtx_writer<float>(m, "float32");
