@@ -257,6 +257,14 @@ DofMap create_dofmap(
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
         reorder_fn);
 
+/// @brief Create a set of dofmaps on mesh
+/// @param[in] comm MPI communicator
+/// @param[in] layouts Dof layout on each element type
+/// @param[in] topology Mesh topology
+/// @param[in] unpermute_dofs Function to un-permute dofs. `nullptr`
+/// when transformation is not required.
+/// @param[in] reorder_fn Graph reordering function called on the dofmap
+/// @return A new dof map
 std::vector<DofMap> create_dofmaps(
     MPI_Comm comm, const std::vector<ElementDofLayout>& layouts,
     mesh::Topology& topology,
