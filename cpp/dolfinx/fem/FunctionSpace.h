@@ -29,9 +29,9 @@ namespace dolfinx::fem
 /// @param[in] element The element
 /// @return Physical valus shape
 template <std::floating_point T>
-std::vector<std::size_t>
-compute_value_shape(std::shared_ptr<dolfinx::mesh::Mesh<T>> mesh,
-                    std::shared_ptr<dolfinx::fem::FiniteElement<T>> element)
+std::vector<std::size_t> compute_value_shape(
+    const std::shared_ptr<const dolfinx::mesh::Mesh<T>> mesh,
+    const std::shared_ptr<const dolfinx::fem::FiniteElement<T>> element)
 {
   auto rvs = element->reference_value_shape();
   std::vector<std::size_t> value_shape(rvs.size());

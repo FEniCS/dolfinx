@@ -668,7 +668,7 @@ Form<T, U> create_form(
 /// @return The created function space
 template <std::floating_point T>
 FunctionSpace<T> create_functionspace(
-    std::shared_ptr<mesh::Mesh<T>> mesh, const basix::FiniteElement<T>& e,
+    std::shared_ptr<const mesh::Mesh<T>> mesh, const basix::FiniteElement<T>& e,
     const std::vector<std::size_t>& value_shape = {},
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
         reorder_fn
@@ -686,7 +686,7 @@ FunctionSpace<T> create_functionspace(
                                          1, std::multiplies{});
 
   // Create a DOLFINx element
-  auto _e = std::make_shared<FiniteElement<T>>(e, bs);
+  auto _e = std::make_shared<const FiniteElement<T>>(e, bs);
   assert(_e);
 
   const std::vector<std::size_t> _value_shape
