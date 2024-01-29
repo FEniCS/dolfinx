@@ -240,7 +240,6 @@ std::vector<T> pack_function_data(const fem::Function<T, U>& u)
   assert(dofmap->element_dof_layout() == geometry.cmap().create_dof_layout());
 
   int tdim = topology->dim();
-  int gdim = geometry.dim();
   auto cell_map = topology->index_map(tdim);
   assert(cell_map);
   std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
