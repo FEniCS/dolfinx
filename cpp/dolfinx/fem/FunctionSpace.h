@@ -22,13 +22,16 @@
 #include <memory>
 #include <vector>
 
-namespace
+namespace dolfinx::fem
 {
-// TODO: do subspaces properly then remove this reverse engineering
+/// @brief Compute the physical value shape of an element for a mesh
+/// @param[in] mesh The mesh
+/// @param[in] element The element
+/// @return Physical valus shape
 template <std::floating_point T>
-std::vector<std::size_t> compute_value_shape(
-    std::shared_ptr<const dolfinx::mesh::Mesh<T>> mesh,
-    std::shared_ptr<const dolfinx::fem::FiniteElement<T>> element)
+std::vector<std::size_t>
+compute_value_shape(std::shared_ptr<dolfinx::mesh::Mesh<T>> mesh,
+                    std::shared_ptr<dolfinx::fem::FiniteElement<T>> element)
 {
   auto rvs = element->reference_value_shape();
   std::vector<std::size_t> value_shape(rvs.size());
@@ -51,10 +54,6 @@ std::vector<std::size_t> compute_value_shape(
   }
   return value_shape;
 }
-} // namespace
-
-namespace dolfinx::fem
-{
 
 /// @brief This class represents a finite element function space defined
 /// by a mesh, a finite element, and a local-to-global map of the
