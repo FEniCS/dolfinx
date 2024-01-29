@@ -426,7 +426,7 @@ public:
     assert(element);
     const int bs_element = element->block_size();
     const std::size_t reference_value_size
-        = element->reference_value_size();
+        = element->reference_value_size() / bs_element;
     const std::size_t value_size = _function_space->value_size() / bs_element;
     const std::size_t space_dimension = element->space_dimension() / bs_element;
 

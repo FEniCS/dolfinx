@@ -306,6 +306,7 @@ FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
     {
       _sub_elements.push_back(std::make_shared<FiniteElement<T>>(element, 1));
     }
+    _reference_value_shape = {block_size};
   }
 
   _element = std::make_unique<basix::FiniteElement<T>>(element);

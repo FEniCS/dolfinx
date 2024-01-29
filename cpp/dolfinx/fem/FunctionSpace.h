@@ -434,8 +434,8 @@ std::vector<std::size_t> compute_value_shape(
   std::vector<std::size_t> value_shape(rvs.size());
   if (element->block_size() > 1)
   {
-    for (std::size_t i = 0; i < rvs.size(); ++i)
-      value_shape[i] = rvs[i];
+    assert(rvs.empty());
+    value_shape = {element->block_size()};
   }
   else
   {

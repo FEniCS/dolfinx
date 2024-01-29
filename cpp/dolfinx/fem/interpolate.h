@@ -460,7 +460,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
 
   // Get sizes of elements
   const std::size_t dim0 = element0->space_dimension() / bs0;
-  const std::size_t value_size_ref0 = element0->reference_value_size();
+  const std::size_t value_size_ref0 = element0->reference_value_size() / bs0;
   const std::size_t value_size0 = V0->value_size() / bs0;
 
   const CoordinateElement<U>& cmap = mesh->geometry().cmap();
