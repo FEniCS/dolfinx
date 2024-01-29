@@ -750,12 +750,8 @@ FunctionSpace<T> create_functionspace(
 
   ufcx_finite_element* ufcx_element = space->finite_element;
   assert(ufcx_element);
-  std::vector<std::size_t> value_shape;
-  if (space->value_rank > 0)
-  {
-    value_shape = std::vector<std::size_t>(
-        space->value_shape, space->value_shape + space->value_rank);
-  }
+  std::vector<std::size_t> value_shape(space->value_shape,
+                                       space->value_shape + space->value_rank);
 
   const auto& geometry = mesh->geometry();
   auto& cmap = geometry.cmap();
