@@ -679,8 +679,6 @@ void interpolate_nonmatching_meshes(
   assert(mesh);
   MPI_Comm comm = mesh->comm();
 
-  const int gdim = mesh->geometry().dim();
-
   {
     auto mesh_v = v.function_space()->mesh();
     assert(mesh_v);
@@ -1138,7 +1136,6 @@ void interpolate(
   assert(v.function_space());
   auto mesh = u.function_space()->mesh();
   assert(mesh);
-  const int gdim = mesh->geometry().dim();
 
   auto cell_map0 = mesh->topology()->index_map(mesh->topology()->dim());
   assert(cell_map0);
