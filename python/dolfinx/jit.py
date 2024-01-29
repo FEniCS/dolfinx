@@ -96,7 +96,7 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
     return mpi_jit
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _load_options():
     """Loads options from JSON files."""
     user_config_file = os.getenv("XDG_CONFIG_HOME", default=Path.home().joinpath(".config")) \

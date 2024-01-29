@@ -11,8 +11,7 @@ import pytest
 
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.mesh import cell_normals
-from dolfinx.mesh import (create_unit_cube, create_unit_square,
-                          locate_entities_boundary)
+from dolfinx.mesh import create_unit_cube, create_unit_square, locate_entities_boundary
 
 
 @pytest.fixture

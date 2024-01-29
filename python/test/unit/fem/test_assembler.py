@@ -19,28 +19,21 @@ import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type, fem, graph, la
-from dolfinx.fem import (Constant, Function, assemble_scalar, bcs_by_block,
-                         dirichletbc, extract_function_spaces, form,
-                         functionspace, locate_dofs_geometrical,
-                         locate_dofs_topological)
+from dolfinx.fem import (Constant, Function, assemble_scalar, bcs_by_block, dirichletbc, extract_function_spaces, form,
+                         functionspace, locate_dofs_geometrical, locate_dofs_topological)
 from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
 from dolfinx.fem.petsc import apply_lifting_nest as petsc_apply_lifting_nest
 from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
-from dolfinx.fem.petsc import \
-    assemble_matrix_block as petsc_assemble_matrix_block
-from dolfinx.fem.petsc import \
-    assemble_matrix_nest as petsc_assemble_matrix_nest
+from dolfinx.fem.petsc import assemble_matrix_block as petsc_assemble_matrix_block
+from dolfinx.fem.petsc import assemble_matrix_nest as petsc_assemble_matrix_nest
 from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
-from dolfinx.fem.petsc import \
-    assemble_vector_block as petsc_assemble_vector_block
-from dolfinx.fem.petsc import \
-    assemble_vector_nest as petsc_assemble_vector_nest
+from dolfinx.fem.petsc import assemble_vector_block as petsc_assemble_vector_block
+from dolfinx.fem.petsc import assemble_vector_nest as petsc_assemble_vector_nest
 from dolfinx.fem.petsc import set_bc as petsc_set_bc
 from dolfinx.fem.petsc import set_bc_nest as petsc_set_bc_nest
-from dolfinx.mesh import (CellType, GhostMode, create_mesh, create_rectangle,
-                          create_unit_cube, create_unit_square,
+from dolfinx.mesh import (CellType, GhostMode, create_mesh, create_rectangle, create_unit_cube, create_unit_square,
                           locate_entities_boundary)
-from ufl import derivative, ds, dx, inner
+from ufl import derivative, ds, dS, dx, inner
 from ufl.geometry import SpatialCoordinate
 
 
@@ -726,6 +719,80 @@ def test_basic_interior_facet_assembly():
     b = petsc_assemble_vector(L)
     b.assemble()
     assert isinstance(b, PETSc.Vec)
+    A.destroy()
+    b.destroy()
+
+
+@pytest.mark.parametrize("mesh", [
+    create_unit_square(MPI.COMM_WORLD, 5, 5, ghost_mode=GhostMode.shared_facet),
+    create_unit_cube(MPI.COMM_WORLD, 5, 5, 5, ghost_mode=GhostMode.shared_facet)])
+def test_symmetry_interior_facet_assembly(mesh):
+
+    def bc(V):
+        facetdim = mesh.topology.dim - 1
+        bndry_facets = locate_entities_boundary(mesh, facetdim, lambda x: np.isclose(x[0], 0.0))
+        bdofsV = locate_dofs_topological(V, facetdim, bndry_facets)
+        u_bc = Function(V)
+        return dirichletbc(u_bc, bdofsV)
+
+    V0 = functionspace(mesh, ("N2E", 2))
+    V1 = functionspace(mesh, ("RT", 3))
+    u0, v0 = ufl.TrialFunction(V0), ufl.TestFunction(V0)
+    u1, v1 = ufl.TrialFunction(V1), ufl.TestFunction(V1)
+    a00 = inner(u0, v0) * dx
+    a11 = inner(u1, v1) * dx
+    a01 = inner(ufl.avg(u1), ufl.avg(v0)) * dS
+    a10 = inner(ufl.avg(u0), ufl.avg(v1)) * dS
+    a = form([[a00, a01], [a10, a11]])
+    L0 = inner(ufl.unit_vector(0, mesh.geometry.dim), ufl.avg(v0)) * dS
+    L1 = inner(ufl.unit_vector(1, mesh.geometry.dim), ufl.avg(v1)) * dS
+    L = form([L0, L1])
+    # without boundary conditions
+    A = petsc_assemble_matrix_block(a)
+    A.assemble()
+    assert isinstance(A, PETSc.Mat)
+    assert A.isSymmetric(tol=1.0e-4)
+    A.destroy()
+    # with boundary conditions
+    bcs = [bc(V0), bc(V1)]
+    A = petsc_assemble_matrix_block(a, bcs=bcs)
+    b = petsc_assemble_vector_block(L, a, bcs=bcs)
+    A.assemble()
+    b.assemble()
+    assert isinstance(A, PETSc.Mat)
+    assert isinstance(b, PETSc.Vec)
+    assert A.isSymmetric(tol=1.0e-4)
+    A.destroy()
+    b.destroy()
+
+    V0 = functionspace(mesh, ("N2E", 1))
+    V1 = functionspace(mesh, ("Regge", 1))
+    u0, v0 = ufl.TrialFunction(V0), ufl.TestFunction(V0)
+    u1, v1 = ufl.TrialFunction(V1), ufl.TestFunction(V1)
+    n = ufl.FacetNormal(mesh)
+    a00 = inner(u0, v0) * dx
+    a11 = inner(u1, v1) * dx
+    a01 = inner(ufl.dot(ufl.avg(u1), n('+')), ufl.avg(v0)) * dS
+    a10 = inner(ufl.avg(u0), ufl.dot(ufl.avg(v1), n('+'))) * dS
+    a = form([[a00, a01], [a10, a11]])
+    L0 = inner(ufl.unit_vector(0, mesh.geometry.dim), ufl.avg(v0)) * dS
+    L1 = inner(ufl.unit_matrix(1, 1, mesh.geometry.dim), ufl.avg(v1)) * dS
+    L = form([L0, L1])
+    # without boundary conditions
+    A = petsc_assemble_matrix_block(a)
+    A.assemble()
+    assert isinstance(A, PETSc.Mat)
+    assert A.isSymmetric(tol=1.0e-4)
+    A.destroy()
+    # with boundary conditions
+    bcs = [bc(V0), bc(V1)]
+    A = petsc_assemble_matrix_block(a, bcs=bcs)
+    b = petsc_assemble_vector_block(L, a, bcs=bcs)
+    A.assemble()
+    b.assemble()
+    assert isinstance(A, PETSc.Mat)
+    assert isinstance(b, PETSc.Vec)
+    assert A.isSymmetric(tol=1.0e-4)
     A.destroy()
     b.destroy()
 

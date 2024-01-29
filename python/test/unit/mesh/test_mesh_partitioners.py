@@ -17,8 +17,7 @@ import ufl
 from basix.ufl import element
 from dolfinx import default_real_type
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import (CellType, GhostMode, compute_midpoints, create_box,
-                          create_cell_partitioner, create_mesh)
+from dolfinx.mesh import CellType, GhostMode, compute_midpoints, create_box, create_cell_partitioner, create_mesh
 
 partitioners = [dolfinx.graph.partitioner()]
 try:

@@ -213,7 +213,7 @@ def _assemble_vector_array(b: np.ndarray, L: Form, constants=None, coeffs=None):
 
 
 @functools.singledispatch
-def assemble_matrix(a: typing.Any, bcs: typing.Optional[typing.List[DirichletBC]] = None,
+def assemble_matrix(a: typing.Any, bcs: typing.Optional[list[DirichletBC]] = None,
                     diagonal: float = 1.0, constants=None, coeffs=None,
                     block_mode: typing.Optional[la.BlockMode] = None):
     """Assemble bilinear form into a matrix.
@@ -246,7 +246,7 @@ def assemble_matrix(a: typing.Any, bcs: typing.Optional[typing.List[DirichletBC]
 
 
 @assemble_matrix.register
-def _assemble_matrix_csr(A: la.MatrixCSR, a: Form, bcs: typing.Optional[typing.List[DirichletBC]] = None,
+def _assemble_matrix_csr(A: la.MatrixCSR, a: Form, bcs: typing.Optional[list[DirichletBC]] = None,
                          diagonal: float = 1.0, constants=None, coeffs=None) -> la.MatrixCSR:
     """Assemble bilinear form into a matrix.
 
@@ -284,9 +284,9 @@ def _assemble_matrix_csr(A: la.MatrixCSR, a: Form, bcs: typing.Optional[typing.L
 # -- Modifiers for Dirichlet conditions ---------------------------------------
 
 
-def apply_lifting(b: np.ndarray, a: typing.List[Form],
-                  bcs: typing.List[typing.List[DirichletBC]],
-                  x0: typing.Optional[typing.List[np.ndarray]] = None,
+def apply_lifting(b: np.ndarray, a: list[Form],
+                  bcs: list[list[DirichletBC]],
+                  x0: typing.Optional[list[np.ndarray]] = None,
                   scale: float = 1.0, constants=None, coeffs=None) -> None:
     """Modify RHS vector b for lifting of Dirichlet boundary conditions.
 
@@ -316,7 +316,7 @@ def apply_lifting(b: np.ndarray, a: typing.List[Form],
     _cpp.fem.apply_lifting(b, _a, constants, coeffs, _bcs, x0, scale)
 
 
-def set_bc(b: np.ndarray, bcs: typing.List[DirichletBC],
+def set_bc(b: np.ndarray, bcs: list[DirichletBC],
            x0: typing.Optional[np.ndarray] = None, scale: float = 1.0) -> None:
     """Insert boundary condition values into vector.
 

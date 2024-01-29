@@ -18,14 +18,11 @@ from basix.ufl import element
 from dolfinx import cpp as _cpp
 from dolfinx import graph
 from dolfinx import mesh as _mesh
-from dolfinx.cpp.mesh import (create_cell_partitioner, entities_to_geometry,
-                              is_simplex)
+from dolfinx.cpp.mesh import create_cell_partitioner, entities_to_geometry, is_simplex
 from dolfinx.fem import assemble_scalar, coordinate_element, form
-from dolfinx.mesh import (CellType, DiagonalType, GhostMode, create_box,
-                          create_interval, create_rectangle, create_submesh,
-                          create_unit_cube, create_unit_interval,
-                          create_unit_square, exterior_facet_indices,
-                          locate_entities, locate_entities_boundary)
+from dolfinx.mesh import (CellType, DiagonalType, GhostMode, create_box, create_interval, create_rectangle,
+                          create_submesh, create_unit_cube, create_unit_interval, create_unit_square,
+                          exterior_facet_indices, locate_entities, locate_entities_boundary)
 
 
 def submesh_topology_test(mesh, submesh, entity_map, vertex_map, entity_dim):
@@ -362,7 +359,7 @@ def xfail_ghosted_quads_hexes(mesh_factory, ghost_mode):
     Needs implementing."""
     if mesh_factory in [create_unit_square, create_unit_cube]:
         if ghost_mode == GhostMode.shared_vertex:
-            pytest.xfail(reason="Missing functionality in \'{}\' with \'{}\' mode".format(mesh_factory, ghost_mode))
+            pytest.xfail(reason=f"Missing functionality in \'{mesh_factory}\' with \'{ghost_mode}\' mode")
 
 
 @pytest.mark.parametrize("ghost_mode",
