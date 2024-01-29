@@ -96,7 +96,7 @@ public:
     FunctionSpace sub_space(_mesh, element, dofmap,
                             compute_value_shape(element,
                                                 _mesh->topology()->dim(),
-                                                _mesh->geometry()->dim()));
+                                                _mesh->geometry().dim()));
 
     // Set root space id and component w.r.t. root
     sub_space._root_space_id = _root_space_id;
@@ -158,7 +158,7 @@ public:
     return {
         FunctionSpace(_mesh, _element, collapsed_dofmap,
                       compute_value_shape(_element, _mesh->topology()->dim(),
-                                          _mesh->geometry()->dim())),
+                                          _mesh->geometry().dim())),
         std::move(collapsed_dofs)};
   }
 
