@@ -257,6 +257,14 @@ DofMap create_dofmap(
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
         reorder_fn);
 
+std::vector<DofMap> create_dofmaps(
+    MPI_Comm comm, const std::vector<ElementDofLayout>& layouts,
+    mesh::Topology& topology,
+    std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
+        unpermute_dofs,
+    std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
+        reorder_fn);
+
 /// Get the name of each coefficient in a UFC form
 /// @param[in] ufcx_form The UFC form
 /// @return The name of each coefficient
