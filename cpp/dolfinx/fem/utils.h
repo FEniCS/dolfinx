@@ -754,7 +754,7 @@ FunctionSpace<T> create_functionspace(
   if (space->value_rank > 0)
   {
     value_shape = std::vector<std::size_t>(
-        space->value_shape[0], space->value_shape[0] + space->value_rank);
+        space->value_shape, space->value_shape + space->value_rank);
   }
 
   const auto& geometry = mesh->geometry();
