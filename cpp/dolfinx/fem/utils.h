@@ -686,12 +686,13 @@ FunctionSpace<T> create_functionspace(
                                          1, std::multiplies{});
 
   // Create a DOLFINx element
-  auto _e = std::make_shared<FiniteElement<T>>(e, bs);
+  auto _e = std::make_shared<const FiniteElement<T>>(e, bs);
   assert(_e);
 
   const std::vector<std::size_t> _value_shape
       = (value_shape.empty() and !e.value_shape().empty())
-            ? fem::compute_value_shape(mesh, _e)
+            ? fem::compute_value_shape(_e, mesh->topology()->dim(),
+                                       mesh->geometry().dim())
             : value_shape;
 
   // Create UFC subdofmaps and compute offset
