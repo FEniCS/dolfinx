@@ -6,8 +6,8 @@ import basix
 import ufl
 from dolfinx.cpp.fem import CoordinateElement_float64
 from dolfinx.cpp.mesh import create_quad_rectangle_float64
-from dolfinx.fem import CoordinateElement
 from dolfinx.io import XDMFFile
+from dolfinx.log import LogLevel, set_log_level
 from dolfinx.mesh import Mesh
 
 
@@ -24,9 +24,12 @@ def create_tensor_product_element(cell_type, degree, variant):
 
 
 def test_quad_rect():
+    set_log_level(LogLevel.INFO)
+    # ref = basix.create_element(basix.ElementFamily.P, basix.CellType.quadrilateral, 1,
+    #                            basix.LagrangeVariant.gll_warped)
     element = create_tensor_product_element(basix.CellType.quadrilateral, 1, basix.LagrangeVariant.gll_warped)
-    cmap = CoordinateElement(CoordinateElement_float64(element._e))
-    _mesh = create_quad_rectangle_float64(MPI.COMM_SELF, [[0.0, 0.0], [1.0, 1.0]], [20, 20], cmap._cpp_object, None)
+    cmap = CoordinateElement_float64(element._e)
+    _mesh = create_quad_rectangle_float64(MPI.COMM_SELF, [[0.0, 0.0], [1.0, 1.0]], [20, 20], cmap, None)
 
     e_ufl = basix.ufl._BasixElement(element)
     e_ufl = basix.ufl.blocked_element(e_ufl, shape=(2,), gdim=2)
