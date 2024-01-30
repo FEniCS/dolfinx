@@ -18,8 +18,8 @@ import basix
 import basix.ufl
 import ufl
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh  # noqa F401
-from dolfinx.cpp.io import perm_vtk as cell_perm_vtk  # noqa F401
+from dolfinx.cpp.io import perm_gmsh as cell_perm_gmsh
+from dolfinx.cpp.io import perm_vtk as cell_perm_vtk
 from dolfinx.fem import Function
 from dolfinx.mesh import GhostMode, Mesh, MeshTags
 
@@ -27,7 +27,7 @@ __all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk",
            "distribute_entity_data"]
 
 
-def _extract_cpp_functions(functions: typing.Union[typing.List[Function], Function]):
+def _extract_cpp_functions(functions: typing.Union[list[Function], Function]):
     """Extract C++ object for a single function or a list of functions"""
     if isinstance(functions, (list, tuple)):
         return [getattr(u, "_cpp_object", u) for u in functions]
@@ -37,8 +37,9 @@ def _extract_cpp_functions(functions: typing.Union[typing.List[Function], Functi
 
 # FidesWriter and VTXWriter require ADIOS2
 if _cpp.common.has_adios2:
-    from dolfinx.cpp.io import FidesMeshPolicy  # noqa F401
-    __all__ = __all__ + ["FidesWriter", "VTXWriter", "FidesMeshPolicy"]
+    from dolfinx.cpp.io import FidesMeshPolicy, VTXMeshPolicy  # F401
+    __all__ = [*__all__, "FidesWriter", "VTXWriter", "FidesMeshPolicy",
+                         "VTXMeshPolicy"]
 
     class VTXWriter:
         """Writer for VTX files, using ADIOS2 to create the files.
@@ -53,8 +54,9 @@ if _cpp.common.has_adios2:
         _cpp_object: typing.Union[_cpp.io.VTXWriter_float32, _cpp.io.VTXWriter_float64]
 
         def __init__(self, comm: _MPI.Comm, filename: typing.Union[str, Path],
-                     output: typing.Union[Mesh, Function, typing.List[Function]],
-                     engine: str = "BPFile"):
+                     output: typing.Union[Mesh, Function, list[Function]],
+                     engine: str = "BPFile",
+                     mesh_policy: VTXMeshPolicy = VTXMeshPolicy.update):
             """Initialize a writer for outputting data in the VTX format.
 
             Args:
@@ -65,6 +67,11 @@ if _cpp.common.has_adios2:
                     (discontinuous Lagrange Functions.
                 engine: ADIOS2 engine to use for output. See
                     ADIOS2 documentation for options.
+                mesh_policy: Controls if the mesh is written to file at
+                    the first time step only when a ``Function`` is
+                    written to file, or is re-written (updated) at each
+                    time step. Has an effect only for ``Function``
+                    output.
 
             Note:
                 All Functions for output must share the same mesh and
@@ -90,7 +97,7 @@ if _cpp.common.has_adios2:
             except (NotImplementedError, TypeError, AttributeError):
                 # Input is a single function or a list of functions
                 self._cpp_object = _vtxwriter(comm, filename, _extract_cpp_functions(
-                    output), engine)   # type: ignore[arg-type]
+                    output), engine, mesh_policy)   # type: ignore[arg-type]
 
         def __enter__(self):
             return self
@@ -118,7 +125,7 @@ if _cpp.common.has_adios2:
         _cpp_object: typing.Union[_cpp.io.FidesWriter_float32, _cpp.io.FidesWriter_float64]
 
         def __init__(self, comm: _MPI.Comm, filename: typing.Union[str, Path],
-                     output: typing.Union[Mesh, typing.List[Function], Function],
+                     output: typing.Union[Mesh, list[Function], Function],
                      engine: str = "BPFile", mesh_policy: FidesMeshPolicy = FidesMeshPolicy.update):
             """Initialize a writer for outputting a mesh, a single Lagrange
             function or list of Lagrange functions sharing the same
@@ -189,7 +196,7 @@ class VTKFile(_cpp.io.VTKFile):
         """Write mesh to file for a given time (default 0.0)"""
         self.write(mesh._cpp_object, t)
 
-    def write_function(self, u: typing.Union[typing.List[Function], Function], t: float = 0.0) -> None:
+    def write_function(self, u: typing.Union[list[Function], Function], t: float = 0.0) -> None:
         """Write a single function or a list of functions to file for a given time (default 0.0)"""
         super().write(_extract_cpp_functions(u), t)
 
@@ -249,6 +256,6 @@ class XDMFFile(_cpp.io.XDMFFile):
 
 
 def distribute_entity_data(mesh: Mesh, entity_dim: int, entities: npt.NDArray[np.int64],
-                           values: npt.NDArray[np.int32]) -> typing.Tuple[npt.NDArray[np.int64],
-                                                                          npt.NDArray[np.int32]]:
+                           values: npt.NDArray[np.int32]) -> tuple[npt.NDArray[np.int64],
+                                                                   npt.NDArray[np.int32]]:
     return _cpp.io.distribute_entity_data(mesh._cpp_object, entity_dim, entities, values)

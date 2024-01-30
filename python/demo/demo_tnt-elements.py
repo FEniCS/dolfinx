@@ -23,7 +23,7 @@
 from mpi4py import MPI
 
 # +
-import matplotlib
+import matplotlib as mpl
 import matplotlib.pylab as plt
 import numpy as np
 
@@ -31,10 +31,9 @@ import basix
 import basix.ufl
 from dolfinx import fem, mesh
 from dolfinx.fem.petsc import LinearProblem
-from ufl import (SpatialCoordinate, TestFunction, TrialFunction, cos, div, dx,
-                 grad, inner, sin)
+from ufl import SpatialCoordinate, TestFunction, TrialFunction, cos, div, dx, grad, inner, sin
 
-matplotlib.use('agg')
+mpl.use('agg')
 # -
 
 # ## Defining a degree 1 TNT element
@@ -67,11 +66,9 @@ wcoeffs = np.eye(8, 9)
 # $f_i\in\operatorname{span}\{q_1, q_2,\dots\}$ (as $\{f_0, f_1,\dots\}$ is a
 # basis of the polynomial space for our element). Using the properties of
 # orthonormal polynomials, we see that
-# \[f_i = \sum_j\left(\int_R f_iq_j\,\mathrm{d}\mathbf{x}\right)q_j,\]
+# $f_i = \sum_j\left(\int_R f_iq_j\,\mathrm{d}\mathbf{x}\right)q_j$,
 # and so the coefficients are given by
-# \[
-#   a_{ij}=\int_R f_iq_j\,\mathrm{d}\mathbf{x}.
-# \]
+# $a_{ij}=\int_R f_iq_j\,\mathrm{d}\mathbf{x}$.
 # Hence we could compute `wcoeffs` as follows:
 
 # +

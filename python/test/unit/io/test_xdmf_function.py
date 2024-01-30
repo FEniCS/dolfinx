@@ -14,8 +14,7 @@ import pytest
 import basix
 from dolfinx.fem import Function, functionspace
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import (CellType, create_unit_cube, create_unit_interval,
-                          create_unit_square)
+from dolfinx.mesh import CellType, create_unit_cube, create_unit_interval, create_unit_square
 
 # Supported XDMF file encoding
 if MPI.COMM_WORLD.size > 1:

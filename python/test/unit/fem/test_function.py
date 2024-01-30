@@ -17,8 +17,7 @@ import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type, la
 from dolfinx.fem import Function, functionspace
-from dolfinx.geometry import (bb_tree, compute_colliding_cells,
-                              compute_collisions_points)
+from dolfinx.geometry import bb_tree, compute_colliding_cells, compute_collisions_points
 from dolfinx.mesh import create_mesh, create_unit_cube
 
 
