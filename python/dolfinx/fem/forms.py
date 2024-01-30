@@ -128,8 +128,12 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]],
         dtype: Scalar type to use for the compiled form.
         form_compiler_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
         jit_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`.
-        entity_maps: The entity maps required to assemble the form.
-
+        entity_maps: If any trial functions, test functions, or coefficients in
+                     the form are not defined over the same mesh as the integration
+                     domain, `entity_maps` must be supplied. For each key (a mesh,
+                     different to the integration domain mesh) a map should be
+                     provided relating the entities in the integration domain mesh
+                     to the entities in the key mesh.
     Returns:
         Compiled finite element Form.
 
