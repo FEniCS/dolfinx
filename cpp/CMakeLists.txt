@@ -94,7 +94,7 @@ option(DOLFINX_ENABLE_SCOTCH "Compile with support for SCOTCH." ON)
 option(DOLFINX_ENABLE_SLEPC "Compile with support for SLEPc." ON)
 option(DOLFINX_ENABLE_KAHIP "Compile with support for KaHIP." OFF)
 option(DOLFINX_REQUIRE_OPTIONAL_PACKAGES
-       "Optional packages are required. For package maintainers." OFF
+       "Optional packages marked ON are required. For package maintainers." OFF
 )
 
 # ------------------------------------------------------------------------------
@@ -374,7 +374,7 @@ if(NOT SCOTCH_FOUND
 endif()
 
 # If DOLFINX_REQUIRE_OPTIONAL_PACKAGES is yes, then require all optional
-# packages marked yes were found.
+# packages marked ON were found.
 if(DOLFINX_REQUIRE_OPTIONAL_PACKAGES
    AND ((NOT ADIOS2_FOUND AND DOLFINX_ENABLE_ADIOS2)
         OR (NOT PARMETIS_FOUND AND DOLFINX_ENABLE_PARMETIS)
@@ -385,7 +385,7 @@ if(DOLFINX_REQUIRE_OPTIONAL_PACKAGES
 )
   message(
     FATAL_ERROR
-      "An optional package marked yes was not found, see feature summary."
+      "An optional package marked ON was not found, see feature summary."
   )
 endif()
 
