@@ -93,6 +93,7 @@ option(DOLFINX_ENABLE_PARMETIS "Compile with support for ParMETIS." ON)
 option(DOLFINX_ENABLE_SCOTCH "Compile with support for SCOTCH." ON)
 option(DOLFINX_ENABLE_SLEPC "Compile with support for SLEPc." ON)
 option(DOLFINX_ENABLE_KAHIP "Compile with support for KaHIP." OFF)
+option(DOLFINX_REQUIRE_OPTIONAL_PACKAGES "Optional packages are required. For package maintainers." OFF)
 
 # ------------------------------------------------------------------------------
 # Check for MPI
