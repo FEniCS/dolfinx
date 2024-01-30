@@ -373,14 +373,14 @@ endif()
 
 # If REQUIRE_OPTIONAL_PACKAGES is yes, then require all optional packages with
 # marked yes were found.
-if(REQUIRE_OPTIONAL_PACKAGES
-   AND NOT (ADIOS2_FOUND AND DOLFINX_ENABLE_ADIOS2)
-   AND NOT (PARMETIS_FOUND AND DOLFINX_ENABLE_PARMETIS)
-   AND NOT (SCOTCH_FOUND AND DOLFINX_ENABLE_SCOTCH)
-   AND NOT (SLEPC_FOUND AND DOLFINX_ENABLE_SLEPC)
-   AND NOT (KAHIP_FOUND AND DOLFINX_ENABLE_KAHIP)
+if(DOLFINX_REQUIRE_OPTIONAL_PACKAGE
+   AND ((NOT ADIOS2_FOUND AND DOLFINX_ENABLE_ADIOS2)
+   OR (NOT PARMETIS_FOUND AND DOLFINX_ENABLE_PARMETIS)
+   OR (NOT SCOTCH_FOUND AND DOLFINX_ENABLE_SCOTCH)
+   OR (NOT SLEPC_FOUND AND DOLFINX_ENABLE_SLEPC)
+   OR (NOT KAHIP_FOUND AND DOLFINX_ENABLE_KAHIP))
 )
-  message(FATAL_ERROR "An optional dependency was not found, see feature summary.")
+  message(FATAL_ERROR "An optional package marked yes was not found, see feature summary.")
 endif()
 
 # ------------------------------------------------------------------------------
