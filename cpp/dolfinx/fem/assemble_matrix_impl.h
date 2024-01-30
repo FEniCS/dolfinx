@@ -68,6 +68,9 @@ void assemble_cells(la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     // TODO Add assert?
     std::int32_t c_0 = cell_map0(c);
     std::int32_t c_1 = cell_map1(c);
+    // TODO Also check upper limit?
+    assert(c_0 >= 0);
+    assert(c_1 >= 0);
 
     // Get cell coordinates/geometry
     auto x_dofs

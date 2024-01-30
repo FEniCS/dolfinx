@@ -23,8 +23,15 @@ void sparsitybuild::cells(
   const DofMap& map0 = dofmaps[0].get();
   const DofMap& map1 = dofmaps[1].get();
   for (auto c : cells)
-    pattern.insert(map0.cell_dofs(cell_maps[0](c)),
-                   map1.cell_dofs(cell_maps[1](c)));
+  {
+    std::int32_t c_0 = cell_maps[0](c);
+    std::int32_t c_1 = cell_maps[1](c);
+    // TODO Also check upper limit?
+    assert(c_0 >= 0);
+    assert(c_1 >= 0);
+    pattern.insert(map0.cell_dofs(c_0),
+                   map1.cell_dofs(c_1));
+  }
 }
 //-----------------------------------------------------------------------------
 void sparsitybuild::interior_facets(
