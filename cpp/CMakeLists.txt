@@ -88,18 +88,11 @@ add_feature_info(
 # Enable or disable optional packages
 
 # List optional packages
-option(DOLFINX_ENABLE_ADIOS2 "Compile with support for ADIOS2." OFF)
-option(DOLFINX_ENABLE_PARMETIS "Compile with support for ParMETIS." OFF)
-option(DOLFINX_ENABLE_SCOTCH "Compile with support for SCOTCH." OFF)
-option(DOLFINX_ENABLE_SLEPC "Compile with support for SLEPc." OFF)
+option(DOLFINX_ENABLE_ADIOS2 "Compile with support for ADIOS2." ON)
+option(DOLFINX_ENABLE_PARMETIS "Compile with support for ParMETIS." ON)
+option(DOLFINX_ENABLE_SCOTCH "Compile with support for SCOTCH." ON)
+option(DOLFINX_ENABLE_SLEPC "Compile with support for SLEPc." ON)
 option(DOLFINX_ENABLE_KAHIP "Compile with support for KaHIP." OFF)
-
-if(NOT DOLFINX_ENABLE_PARMETIS OR DOLFINX_ENABLE_SCOTCH OR DOLFINX_ENABLE_KAHIP)
-  message(
-    FATAL_ERROR
-    "One of ParMETIS, SCOTCH or KaHIP partitioners must be enabled."
-  )
-endif()
 
 # ------------------------------------------------------------------------------
 # Check for MPI
@@ -261,7 +254,7 @@ set_package_properties(
 # which method UFCx was found
 if(NOT DOLFINX_UFCX_PYTHON)
   # Check in CONFIG mode, i.e. look for installed ufcxConfig.cmake
-  find_package(ufcx 0.8 REQUIRED CONFIG)
+  find_package(ufcx 0.7 REQUIRED CONFIG)
 else()
   # Check in MODULE mode (using FindUFCX.cmake)
   find_package(
@@ -269,7 +262,7 @@ else()
     COMPONENTS Interpreter
     REQUIRED
   )
-  find_package(UFCx 0.8 REQUIRED MODULE)
+  find_package(UFCx 0.7 REQUIRED MODULE)
 endif()
 
 set_package_properties(
@@ -282,7 +275,7 @@ set_package_properties(
 # ------------------------------------------------------------------------------
 # Find optional packages
 if(DOLFINX_ENABLE_ADIOS2)
-  find_package(ADIOS2 2.8.1 REQUIRED)
+  find_package(ADIOS2 2.8.1)
 endif()
 
 set_package_properties(
@@ -326,7 +319,7 @@ set_package_properties(
 )
 
 if(DOLFINX_ENABLE_SCOTCH)
-  find_package(SCOTCH REQUIRED)
+  find_package(SCOTCH)
 endif()
 
 set_package_properties(
@@ -339,7 +332,7 @@ set_package_properties(
 )
 
 if(DOLFINX_ENABLE_PARMETIS)
-  find_package(ParMETIS 4.0.2 REQUIRED)
+  find_package(ParMETIS 4.0.2)
 endif()
 
 set_package_properties(
@@ -351,7 +344,7 @@ set_package_properties(
 )
 
 if(DOLFINX_ENABLE_KAHIP)
-  find_package(KaHIP REQUIRED)
+  find_package(KaHIP)
 endif()
 
 set_package_properties(
@@ -361,6 +354,10 @@ set_package_properties(
   URL "https://kahip.github.io/"
   PURPOSE "Parallel graph partitioning"
 )
+
+# ------------------------------------------------------------------------------
+# Print summary of found and not found optional packages
+feature_summary(WHAT ALL)
 
 # Check that at least one graph partitioner has been found
 if(NOT SCOTCH_FOUND
@@ -373,9 +370,17 @@ if(NOT SCOTCH_FOUND
   )
 endif()
 
-# ------------------------------------------------------------------------------
-# Print summary of found and not found optional packages
-feature_summary(WHAT ALL)
+# If REQUIRE_OPTIONAL_PACKAGES is yes, then require all optional packages with
+# marked yes were found.
+if(REQUIRE_OPTIONAL_PACKAGES
+   AND NOT (ADIOS2_FOUND AND DOLFINX_ENABLE_ADIOS2)
+   AND NOT (PARMETIS_FOUND AND DOLFINX_ENABLE_PARMETIS)
+   AND NOT (SCOTCH_FOUND AND DOLFINX_ENABLE_SCOTCH)
+   AND NOT (SLEPC_FOUND AND DOLFINX_ENABLE_SLEPC)
+   AND NOT (KAHIP_FOUND AND DOLFINX_ENABLE_KAHIP)
+)
+  message(FATAL_ERROR "An optional dependency was not found, see feature summary.")
+endif()
 
 # ------------------------------------------------------------------------------
 # Installation of DOLFINx library
