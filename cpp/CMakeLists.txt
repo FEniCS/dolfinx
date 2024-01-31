@@ -87,7 +87,7 @@ add_feature_info(
 # ------------------------------------------------------------------------------
 # Enable or disable optional packages
 
-if (DOLFINX_ENABLE_ADIOS2)
+if(DOLFINX_ENABLE_ADIOS2)
   set(_REQUIRE_ADIOS2 TRUE)
 endif()
 option(DOLFINX_ENABLE_ADIOS2 "Compile with support for ADIOS2." ON)
@@ -99,7 +99,7 @@ set_package_properties(
   PURPOSE "IO, including in parallel"
 )
 
-if (DOLFINX_ENABLE_PARMETIS)
+if(DOLFINX_ENABLE_PARMETIS)
   set(_REQUIRE_PARMETIS TRUE)
 endif()
 option(DOLFINX_ENABLE_PARMETIS "Compile with support for ParMETIS." ON)
@@ -111,7 +111,7 @@ set_package_properties(
   PURPOSE "Parallel graph partitioning"
 )
 
-if (DOLFINX_ENABLE_SCOTCH)
+if(DOLFINX_ENABLE_SCOTCH)
   set(_REQUIRE_SCOTCH TRUE)
 endif()
 option(DOLFINX_ENABLE_SCOTCH "Compile with support for SCOTCH." ON)
@@ -124,7 +124,7 @@ set_package_properties(
   PURPOSE "Parallel graph partitioning"
 )
 
-if (DOLFINX_ENABLE_SLEPC)
+if(DOLFINX_ENABLE_SLEPC)
   set(_REQUIRE_SLEPC TRUE)
 endif()
 option(DOLFINX_ENABLE_SLEPC "Compile with support for SLEPc." ON)
@@ -136,7 +136,7 @@ set_package_properties(
   PURPOSE "Eigenvalue computation"
 )
 
-if (DOLFINX_ENABLE_KAHIP)
+if(DOLFINX_ENABLE_KAHIP)
   set(_REQUIRE_KAHIP TRUE)
 endif()
 option(DOLFINX_ENABLE_KAHIP "Compile with support for KaHIP." OFF)
@@ -346,7 +346,7 @@ if(DOLFINX_ENABLE_SLEPC)
   set(ENV{PKG_CONFIG_PATH}
       "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}:$ENV{PETSC_DIR}:$ENV{PKG_CONFIG_PATH}"
   )
-  if (_REQUIRE_SLEPC)
+  if(_REQUIRE_SLEPC)
     pkg_search_module(SLEPC REQUIRED IMPORTED_TARGET slepc>=3.15)
   else()
     pkg_search_module(SLEPC IMPORTED_TARGET slepc>=3.15)
@@ -386,7 +386,10 @@ endif()
 feature_summary(WHAT ALL)
 
 # Check that at least one graph partitioner has been found
-if(NOT SCOTCH_FOUND AND NOT PARMETIS_FOUND AND NOT KAHIP_FOUND)
+if(NOT SCOTCH_FOUND
+   AND NOT PARMETIS_FOUND
+   AND NOT KAHIP_FOUND
+)
   message(
     FATAL_ERROR
       "No graph partitioner found. SCOTCH, ParMETIS or KaHIP is required."
