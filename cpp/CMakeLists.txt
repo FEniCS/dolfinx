@@ -373,7 +373,7 @@ if(NOT SCOTCH_FOUND
   )
 endif()
 
-# If DOLFINX_REQUIRE_OPTIONAL_PACKAGES is yes, then require all optional
+# If DOLFINX_REQUIRE_OPTIONAL_PACKAGES is ON, then require all optional
 # packages marked ON were found.
 if(DOLFINX_REQUIRE_OPTIONAL_PACKAGES
    AND ((NOT ADIOS2_FOUND AND DOLFINX_ENABLE_ADIOS2)
