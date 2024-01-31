@@ -514,12 +514,15 @@ def functionspace(mesh: Mesh,
 
     """
     # Create UFL element
+    basix_element = None
     try:
         e = ElementMetaData(*element)
         ufl_e = basix.ufl.element(e.family, mesh.basix_cell(), e.degree, shape=e.shape,
                                   symmetry=e.symmetry, gdim=mesh.ufl_cell().geometric_dimension())
     except TypeError:
         ufl_e = element  # type: ignore
+        basix_element = ufl_e.basix_element
+        value_shape = ufl_e.value_shape
 
     # Check that element and mesh cell types match
     if ufl_e.cell != mesh.ufl_domain().ufl_cell():
@@ -534,10 +537,17 @@ def functionspace(mesh: Mesh,
                                                              form_compiler_options=form_compiler_options,
                                                              jit_options=jit_options)
     ffi = module.ffi
-    if dtype == np.float32:
-        cpp_element = _cpp.fem.FiniteElement_float32(ffi.cast("uintptr_t", ffi.addressof(ufcx_element)))
-    elif dtype == np.float64:
-        cpp_element = _cpp.fem.FiniteElement_float64(ffi.cast("uintptr_t", ffi.addressof(ufcx_element)))
+    if not basix_element:
+        if dtype == np.float32:
+            cpp_element = _cpp.fem.FiniteElement_float32(ffi.cast("uintptr_t", ffi.addressof(ufcx_element)))
+        elif dtype == np.float64:
+            cpp_element = _cpp.fem.FiniteElement_float64(ffi.cast("uintptr_t", ffi.addressof(ufcx_element)))
+    else:
+        if dtype == np.float32:
+            cpp_element = _cpp.fem.FiniteElement_float32(basix_element._e, value_shape)
+        elif dtype == np.float64:
+            cpp_element = _cpp.fem.FiniteElement_float64(basix_element._e, value_shape)
+
     cpp_dofmap = _cpp.fem.create_dofmap(mesh.comm, ffi.cast(
         "uintptr_t", ffi.addressof(ufcx_dofmap)), mesh.topology, cpp_element)
 

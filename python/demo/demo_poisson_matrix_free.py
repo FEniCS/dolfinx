@@ -97,7 +97,6 @@ from mpi4py import MPI
 dtype = np.float64  # Currently only float64 is supported
 
 ffcx_options = {"sum_factorization": True}
-set_log_level(LogLevel.INFO)
 
 # We begin by using {py:func}`create_rectangle
 # <dolfinx.mesh.create_rectangle>` to create a rectangular
@@ -111,18 +110,18 @@ def create_tensor_product_element(cell_type, degree, variant):
     family = basix.ElementFamily.P
     ref = basix.create_element(family, cell_type, degree, variant)
     factors = ref.get_tensor_product_representation()
-    # perm = factors[0][1]
-    # dof_ordering = np.argsort(perm)
-    # element = basix.create_element(family, cell_type, degree, variant,
-    #                                dof_ordering=dof_ordering)
-    return ref
+    perm = factors[0][1]
+    dof_ordering = np.argsort(perm)
+    element = basix.create_element(family, cell_type, degree, variant,
+                                   dof_ordering=dof_ordering)
+    return element
 
 
 comm = MPI.COMM_WORLD
 element = create_tensor_product_element(basix.CellType.quadrilateral, 1, basix.LagrangeVariant.gll_warped)
 cmap_cpp = CoordinateElement_float64(element._e)
 
-mesh_cpp = create_quad_rectangle_float64(comm, [[0.0, 0.0], [1.0, 1.0]], [1, 1], cmap_cpp, None)
+mesh_cpp = create_quad_rectangle_float64(comm, [[0.0, 0.0], [1.0, 1.0]], [10, 10], cmap_cpp, None)
 
 e_ufl = basix.ufl._BasixElement(element)
 e_ufl = basix.ufl.blocked_element(e_ufl, shape=(2,), gdim=2)
@@ -168,12 +167,9 @@ dofs = fem.locate_dofs_topological(V=V, entity_dim=tdim - 1, entities=facets)
 # interpolating the expression $u_{\rm D}$ onto the finite element space $V$.
 
 uD = fem.Function(V, dtype=dtype)
-uD.interpolate(lambda x: x[0])
+uD.interpolate(lambda x: 1 + x[0]**2 + 2 * x[1]**2)
 
-print(uD.x.array)
-
-exit()
-# bc = fem.dirichletbc(value=uD, dofs=dofs)
+bc = fem.dirichletbc(value=uD, dofs=dofs)
 
 # Next, we express the variational problem using UFL.
 

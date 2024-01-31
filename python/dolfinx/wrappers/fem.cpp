@@ -103,6 +103,13 @@ void declare_function_space(nb::module_& m, std::string type)
               new (self) dolfinx::fem::FiniteElement<T>(*p);
             },
             nb::arg("ufcx_element"))
+        .def(
+            "__init__",
+            [](dolfinx::fem::FiniteElement<T>* self,
+               const basix::FiniteElement<T>& element,
+               const std::vector<std::size_t>& value_shape)
+            { new (self) dolfinx::fem::FiniteElement<T>(element, value_shape); },
+            nb::arg("element"), nb::arg("value_shape"))
         .def("__eq__", &dolfinx::fem::FiniteElement<T>::operator==)
         .def_prop_ro("basix_element",
                      &dolfinx::fem::FiniteElement<T>::basix_element,
