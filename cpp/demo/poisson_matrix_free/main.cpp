@@ -9,7 +9,7 @@
 // =====================================
 //
 // This demo illustrates how to:
-// * Solve a linear partial differential equation using a matrix free CG solver
+// * Solve a linear partial differential equation using a matrix-free CG solver
 // * Create and apply Dirichlet boundary conditions
 // * Compute errors
 //
@@ -17,14 +17,14 @@
 //    - \nabla^{2} u &= f \quad {\rm in} \ \Omega, \\
 //      u &= u_D \quad {\rm on} \ \Gamma_{D}
 //
-//  Where
+//  where
 // .. math::
 //    u_D &= 1 + x^2 + 2y^2, \\
 //    f = -6
 //
-// .. note:: This demo illustrates the use of a matrix-free conjugate
-//           gradient solver. Many practical problems will also require
-//           a preconditioner to create and efficient solver.
+// .. note:: This demo illustrates the use of a matrix-free Conjugate
+//           Gradient solver. Many practical problems will also require
+//           a preconditioner to create an efficient solver.
 
 #include "poisson.h"
 #include <cmath>
@@ -56,7 +56,7 @@ void axpy(auto& r, auto alpha, const auto& x, const auto& y)
 /// @param[in] action Function that provides the action of the linear operator
 /// @param[in] kmax Maximum number of iterations
 /// @param[in] rtol Relative tolerances for convergence
-/// @return The number if iterations
+/// @return The number of iterations
 /// @pre It is required that the ghost values of `x` and `b` have been
 /// updated before this function is called
 template <typename ApplyFunction>
@@ -149,7 +149,7 @@ int main(int argc, char* argv[])
         {
           std::vector<T> f;
           for (std::size_t p = 0; p < x.extent(1); ++p)
-            f.push_back(1 + x(0, p) * x(0, p) + +2 * x(1, p) * x(1, p));
+            f.push_back(1 + x(0, p) * x(0, p) + 2 * x(1, p) * x(1, p));
           return {f, {f.size()}};
         });
 
@@ -206,7 +206,7 @@ int main(int argc, char* argv[])
       y.scatter_fwd();
     };
 
-    // Compute solution using the conjugate gradient method
+    // Compute solution using the Conjugate Gradient method
     auto u = std::make_shared<fem::Function<T>>(V);
     int num_it = linalg::cg(*u->x(), b, action, 200, 1e-6);
 
