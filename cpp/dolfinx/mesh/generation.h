@@ -44,6 +44,12 @@ Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
                    const CellPartitionFunction& partitioner);
 
 template <std::floating_point T>
+Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
+                   std::array<std::size_t, 2> n,
+                   const fem::CoordinateElement<T>& cmap,
+                   const CellPartitionFunction& partitioner);
+
+template <std::floating_point T>
 std::vector<T> create_geom(MPI_Comm comm,
                            std::array<std::array<double, 3>, 2> p,
                            std::array<std::size_t, 3> n);
@@ -167,6 +173,36 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
   default:
     throw std::runtime_error("Generate rectangle mesh. Wrong cell type");
   }
+}
+
+template <std::floating_point T = double>
+Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
+                         std::array<std::size_t, 2> n,
+                         const fem::CoordinateElement<T>& coordinate_element,
+                         CellPartitionFunction partitioner)
+{
+  if (!partitioner and dolfinx::MPI::size(comm) > 1)
+    partitioner = create_cell_partitioner();
+
+  LOG(INFO) << "Create rectangle";
+  auto layout = coordinate_element.create_dof_layout();
+  auto entity_dofs = layout.entity_dofs_all();
+  std::stringstream s;
+  for (auto q : entity_dofs)
+  {
+    s << "[";
+    for (auto r : q)
+    {
+      s << "[";
+      for (auto w : r)
+        s << w << " ";
+      s << "]";
+    }
+    s << "]";
+  }
+  LOG(INFO) << s.str();
+
+  return impl::build_quad<T>(comm, p, n, coordinate_element, partitioner);
 }
 
 /// @brief Create a uniform mesh::Mesh over the rectangle spanned by the
@@ -644,9 +680,9 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
 template <std::floating_point T>
 Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
                    std::array<std::size_t, 2> n,
+                   const fem::CoordinateElement<T>& element,
                    const CellPartitionFunction& partitioner)
 {
-  fem::CoordinateElement<T> element(CellType::quadrilateral, 1);
   std::vector<std::int64_t> cells;
   std::vector<T> x;
   if (dolfinx::MPI::rank(comm) == 0)
@@ -691,5 +727,15 @@ Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
                        {x.size() / 2, 2}, partitioner);
   }
 }
+
+template <std::floating_point T>
+Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
+                   std::array<std::size_t, 2> n,
+                   const CellPartitionFunction& partitioner)
+{
+  fem::CoordinateElement<T> element(CellType::quadrilateral, 1);
+  return build_quad(comm, p, n, element, partitioner);
+}
+
 } // namespace impl
 } // namespace dolfinx::mesh

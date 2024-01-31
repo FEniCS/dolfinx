@@ -233,6 +233,19 @@ void declare_mesh(nb::module_& m, std::string type)
       nb::arg("comm"), nb::arg("p"), nb::arg("n"), nb::arg("celltype"),
       nb::arg("partitioner").none(), nb::arg("diagonal"));
 
+  std::string create_quad_rectangle("create_quad_rectangle_" + type);
+  m.def(
+      create_quad_rectangle.c_str(),
+      [](MPICommWrapper comm, std::array<std::array<double, 2>, 2> p,
+         std::array<std::size_t, 2> n, dolfinx::fem::CoordinateElement<T> cmap,
+         const PythonCellPartitionFunction& part)
+      {
+        return dolfinx::mesh::create_rectangle<T>(
+            comm.get(), p, n, cmap, create_cell_partitioner_cpp(part));
+      },
+      nb::arg("comm"), nb::arg("p"), nb::arg("n"), nb::arg("cmap"),
+      nb::arg("partitioner").none());
+
   std::string create_box("create_box_" + type);
   m.def(
       create_box.c_str(),
