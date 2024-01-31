@@ -381,6 +381,10 @@ elseif(DOLFINX_ENABLE_KAHIP)
   find_package(KaHIP)
 endif()
 
+# ------------------------------------------------------------------------------
+# Print summary of found and not found optional packages
+feature_summary(WHAT ALL)
+
 # Check that at least one graph partitioner has been found
 if(NOT SCOTCH_FOUND AND NOT PARMETIS_FOUND AND NOT KAHIP_FOUND)
   message(
@@ -388,10 +392,6 @@ if(NOT SCOTCH_FOUND AND NOT PARMETIS_FOUND AND NOT KAHIP_FOUND)
       "No graph partitioner found. SCOTCH, ParMETIS or KaHIP is required."
   )
 endif()
-
-# ------------------------------------------------------------------------------
-# Print summary of found and not found optional packages
-feature_summary(WHAT ALL)
 
 # ------------------------------------------------------------------------------
 # Installation of DOLFINx library
