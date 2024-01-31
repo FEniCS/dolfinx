@@ -82,13 +82,22 @@
 
 import numpy as np
 
+import basix
 import ufl
-from dolfinx import fem, mesh
+from dolfinx import fem
+from dolfinx.fem import petsc as fem_petsc
+import dolfinx
 from ufl import action, dx, grad, inner
+from dolfinx.log import LogLevel, set_log_level
+from dolfinx.cpp.fem import CoordinateElement_float64
+from dolfinx.cpp.mesh import create_quad_rectangle_float64
 
 from mpi4py import MPI
-from petsc4py import PETSc
-from petsc4py.PETSc import ScalarType
+
+dtype = np.float64  # Currently only float64 is supported
+
+ffcx_options = {"sum_factorization": True}
+set_log_level(LogLevel.INFO)
 
 # We begin by using {py:func}`create_rectangle
 # <dolfinx.mesh.create_rectangle>` to create a rectangular
@@ -96,15 +105,39 @@ from petsc4py.PETSc import ScalarType
 # finite element {py:class}`FunctionSpace <dolfinx.fem.FunctionSpace>`
 # $V$ on the mesh.
 
-# msh = mesh.create_rectangle(comm=MPI.COMM_WORLD,
-#                             points=((0.0, 0.0), (1.0, 1.0)), n=(10, 10),
-#                             cell_type=mesh.CellType.triangle,
-#                             ghost_mode=mesh.GhostMode.none)
-# V = fem.FunctionSpace(msh, ("Lagrange", 2))
+
+def create_tensor_product_element(cell_type, degree, variant):
+    """Create tensor product element."""
+    family = basix.ElementFamily.P
+    ref = basix.create_element(family, cell_type, degree, variant)
+    factors = ref.get_tensor_product_representation()
+    # perm = factors[0][1]
+    # dof_ordering = np.argsort(perm)
+    # element = basix.create_element(family, cell_type, degree, variant,
+    #                                dof_ordering=dof_ordering)
+    return ref
 
 
+comm = MPI.COMM_WORLD
+element = create_tensor_product_element(basix.CellType.quadrilateral, 1, basix.LagrangeVariant.gll_warped)
+cmap_cpp = CoordinateElement_float64(element._e)
 
-exit()
+mesh_cpp = create_quad_rectangle_float64(comm, [[0.0, 0.0], [1.0, 1.0]], [1, 1], cmap_cpp, None)
+
+e_ufl = basix.ufl._BasixElement(element)
+e_ufl = basix.ufl.blocked_element(e_ufl, shape=(2,), gdim=2)
+
+# Create mesh with tensor product ordering
+mesh = dolfinx.mesh.Mesh(mesh_cpp, ufl.Mesh(e_ufl))
+
+# Create function space
+degree = 1
+element = create_tensor_product_element(basix.CellType.quadrilateral, degree, basix.LagrangeVariant.gll_warped)
+e_ufl = basix.ufl._BasixElement(element)
+V = fem.functionspace(mesh, e_ufl)
+
+# +
+
 # The second argument to {py:class}`FunctionSpace
 # <dolfinx.fem.FunctionSpace>` is a tuple consisting of `(family,
 # degree)`, where `family` is the finite element family, and `degree`
@@ -118,14 +151,15 @@ exit()
 # facets on the boundary using
 # {py:func}`exterior_facet_indices <dolfinx.mesh.exterior_facet_indices>`.
 
-msh.topology.create_connectivity(1, msh.topology.dim)
-facets = mesh.exterior_facet_indices(msh.topology)
+tdim = mesh.topology.dim
+mesh.topology.create_connectivity(tdim - 1, tdim)
+facets = dolfinx.mesh.exterior_facet_indices(mesh.topology)
 
 # We now find the degrees-of-freedom that are associated with the
 # boundary facets using {py:func}`locate_dofs_topological
 # <dolfinx.fem.locate_dofs_topological>`
 
-dofs = fem.locate_dofs_topological(V=V, entity_dim=1, entities=facets)
+dofs = fem.locate_dofs_topological(V=V, entity_dim=tdim - 1, entities=facets)
 
 # and use {py:func}`dirichletbc <dolfinx.fem.dirichletbc>` to create a
 # {py:class}`DirichletBCMetaClass <dolfinx.fem.DirichletBCMetaClass>`
@@ -133,16 +167,20 @@ dofs = fem.locate_dofs_topological(V=V, entity_dim=1, entities=facets)
 # the {py:class}`Function <dolfinx.fem.Function>` `uD`, which is obtained by
 # interpolating the expression $u_{\rm D}$ onto the finite element space $V$.
 
-uD = fem.Function(V, dtype=ScalarType)
-uD.interpolate(lambda x: 1 + x[0]**2 + 2 * x[1]**2)
-bc = fem.dirichletbc(value=uD, dofs=dofs)
+uD = fem.Function(V, dtype=dtype)
+uD.interpolate(lambda x: x[0])
+
+print(uD.x.array)
+
+exit()
+# bc = fem.dirichletbc(value=uD, dofs=dofs)
 
 # Next, we express the variational problem using UFL.
 
-x = ufl.SpatialCoordinate(msh)
+x = ufl.SpatialCoordinate(mesh)
 u = ufl.TrialFunction(V)
 v = ufl.TestFunction(V)
-f = fem.Constant(msh, ScalarType(-6))
+f = fem.Constant(mesh, dtype(-6))
 a = inner(grad(u), grad(v)) * dx
 L = inner(f, v) * dx
 L_fem = fem.form(L)
@@ -158,17 +196,19 @@ L_fem = fem.form(L)
 
 ui = fem.Function(V)
 M = action(a, ui)
-M_fem = fem.form(M)
+M_fem = fem.form(M, form_compiler_options=ffcx_options)
+
 
 # ### Direct solver using the assembled matrix
 #
 # To validate the results of the matrix-free solvers, we first compute the
 # solution with a direct solver using the assembled matrix.
-
 problem = fem.petsc.LinearProblem(a, L, bcs=[bc],
                                   petsc_options={"ksp_type": "preonly",
                                                  "pc_type": "lu"})
 uh_lu = problem.solve()
+
+# The exact solution $u_{\rm D}$ is interpolated onto the finite element
 
 
 # The error of the finite element solution `uh_lu` compared to the exact
@@ -176,17 +216,17 @@ uh_lu = problem.solve()
 
 # +
 def L2Norm(u):
-    return np.sqrt(msh.comm.allreduce(
-        fem.assemble_scalar(fem.form(inner(u, u) * dx)),
-        op=MPI.SUM))
+    val = fem.assemble_scalar(fem.form(inner(u, u) * dx))
+    return np.sqrt(comm.allreduce(val, op=MPI.SUM))
 
 
 error_L2_lu = L2Norm(uh_lu - uD)
-if msh.comm.rank == 0:
+if comm.rank == 0:
     print("Direct solver using the assembled matrix:")
     print(f"L2-error against exact solution:  {error_L2_lu:.4e}")
 # -
 
+exit()
 # ### Matrix-free Conjugate Gradient solvers
 #
 # For the matrix-free solvers, the RHS vector $b$ is first assembled based
