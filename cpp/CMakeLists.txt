@@ -88,7 +88,11 @@ add_feature_info(
 # Enable or disable optional packages
 
 # List optional packages
+if (DOLFINX_ENABLE_ADIOS2)
+  set(_REQUIRE_ADIOS2 TRUE)
+endif()
 option(DOLFINX_ENABLE_ADIOS2 "Compile with support for ADIOS2." ON)
+
 option(DOLFINX_ENABLE_PARMETIS "Compile with support for ParMETIS." ON)
 option(DOLFINX_ENABLE_SCOTCH "Compile with support for SCOTCH." ON)
 option(DOLFINX_ENABLE_SLEPC "Compile with support for SLEPc." ON)
@@ -274,8 +278,13 @@ set_package_properties(
 
 # ------------------------------------------------------------------------------
 # Find optional packages
+
 if(DOLFINX_ENABLE_ADIOS2)
-  find_package(ADIOS2 2.8.1)
+  if (_REQUIRE_ADIOS2)
+    find_package(ADIOS2 2.8.1 REQUIRED)
+  else()
+    find_package(ADIOS2 2.8.1)
+  endif()
 endif()
 
 set_package_properties(
