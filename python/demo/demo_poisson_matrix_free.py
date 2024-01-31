@@ -96,12 +96,15 @@ from petsc4py.PETSc import ScalarType
 # finite element {py:class}`FunctionSpace <dolfinx.fem.FunctionSpace>`
 # $V$ on the mesh.
 
-msh = mesh.create_rectangle(comm=MPI.COMM_WORLD,
-                            points=((0.0, 0.0), (1.0, 1.0)), n=(10, 10),
-                            cell_type=mesh.CellType.triangle,
-                            ghost_mode=mesh.GhostMode.none)
-V = fem.FunctionSpace(msh, ("Lagrange", 2))
+# msh = mesh.create_rectangle(comm=MPI.COMM_WORLD,
+#                             points=((0.0, 0.0), (1.0, 1.0)), n=(10, 10),
+#                             cell_type=mesh.CellType.triangle,
+#                             ghost_mode=mesh.GhostMode.none)
+# V = fem.FunctionSpace(msh, ("Lagrange", 2))
 
+
+
+exit()
 # The second argument to {py:class}`FunctionSpace
 # <dolfinx.fem.FunctionSpace>` is a tuple consisting of `(family,
 # degree)`, where `family` is the finite element family, and `degree`
