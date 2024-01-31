@@ -354,7 +354,7 @@ void _lift_bc_interior_facets(
     auto dmap0_cell0
         = std::span(dofmap0.data_handle() + cells[0] * num_dofs0, num_dofs0);
     auto dmap0_cell1
-        = std::span(dofmap1.data_handle() + cells[1] * num_dofs1, num_dofs1);
+        = std::span(dofmap0.data_handle() + cells[1] * num_dofs0, num_dofs0);
 
     dmapjoint0.resize(dmap0_cell0.size() + dmap0_cell1.size());
     std::copy(dmap0_cell0.begin(), dmap0_cell0.end(), dmapjoint0.begin());
@@ -416,14 +416,19 @@ void _lift_bc_interior_facets(
     std::span<T> _Ae(Ae);
     std::span<T> sub_Ae0 = _Ae.subspan(bs0 * dmap0_cell0.size() * num_cols,
                                        bs0 * dmap0_cell1.size() * num_cols);
-    std::span<T> sub_Ae1
-        = _Ae.subspan(bs1 * dmap1_cell0.size(),
-                      num_rows * num_cols - bs1 * dmap1_cell0.size());
 
     pre_dof_transform(_Ae, cell_info, cells[0], num_cols);
     pre_dof_transform(sub_Ae0, cell_info, cells[1], num_cols);
     post_dof_transpose(_Ae, cell_info, cells[0], num_rows);
-    post_dof_transpose(sub_Ae1, cell_info, cells[1], num_rows);
+
+    for (int row = 0; row < num_rows; ++row)
+    {
+      // DOFs for dmap1 and cell1 are not stored contiguously in
+      // the block matrix, so each row needs a separate span access
+      std::span<T> sub_Ae1 = _Ae.subspan(
+          row * num_cols + bs1 * dmap1_cell0.size(), bs1 * dmap1_cell1.size());
+      post_dof_transpose(sub_Ae1, cell_info, cells[1], 1);
+    }
 
     be.resize(num_rows);
     std::fill(be.begin(), be.end(), 0);

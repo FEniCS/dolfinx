@@ -65,7 +65,7 @@ void interpolate_scalar(std::shared_ptr<mesh::Mesh<U>> mesh,
 #endif
 }
 
-// This function interpolations a function is a H(curl) finite element
+// This function interpolates a function in a H(curl) finite element
 // space. To visualise the function, it interpolates the H(curl) finite
 // element function in a discontinuous Lagrange space and outputs the
 // Lagrange finite element function to a VTX file for visualisation.

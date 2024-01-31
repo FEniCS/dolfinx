@@ -37,8 +37,9 @@ def _extract_cpp_functions(functions: typing.Union[list[Function], Function]):
 
 # FidesWriter and VTXWriter require ADIOS2
 if _cpp.common.has_adios2:
-    from dolfinx.cpp.io import FidesMeshPolicy  # F401
-    __all__ = [*__all__, "FidesWriter", "VTXWriter", "FidesMeshPolicy"]
+    from dolfinx.cpp.io import FidesMeshPolicy, VTXMeshPolicy  # F401
+    __all__ = [*__all__, "FidesWriter", "VTXWriter", "FidesMeshPolicy",
+                         "VTXMeshPolicy"]
 
     class VTXWriter:
         """Writer for VTX files, using ADIOS2 to create the files.
@@ -54,7 +55,8 @@ if _cpp.common.has_adios2:
 
         def __init__(self, comm: _MPI.Comm, filename: typing.Union[str, Path],
                      output: typing.Union[Mesh, Function, list[Function]],
-                     engine: str = "BPFile"):
+                     engine: str = "BPFile",
+                     mesh_policy: VTXMeshPolicy = VTXMeshPolicy.update):
             """Initialize a writer for outputting data in the VTX format.
 
             Args:
@@ -65,6 +67,11 @@ if _cpp.common.has_adios2:
                     (discontinuous Lagrange Functions.
                 engine: ADIOS2 engine to use for output. See
                     ADIOS2 documentation for options.
+                mesh_policy: Controls if the mesh is written to file at
+                    the first time step only when a ``Function`` is
+                    written to file, or is re-written (updated) at each
+                    time step. Has an effect only for ``Function``
+                    output.
 
             Note:
                 All Functions for output must share the same mesh and
@@ -90,7 +97,7 @@ if _cpp.common.has_adios2:
             except (NotImplementedError, TypeError, AttributeError):
                 # Input is a single function or a list of functions
                 self._cpp_object = _vtxwriter(comm, filename, _extract_cpp_functions(
-                    output), engine)   # type: ignore[arg-type]
+                    output), engine, mesh_policy)   # type: ignore[arg-type]
 
         def __enter__(self):
             return self
