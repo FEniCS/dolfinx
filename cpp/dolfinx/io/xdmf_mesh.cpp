@@ -43,23 +43,6 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   const fem::ElementDofLayout cmap_dof_layout
       = geometry.cmap().create_dof_layout();
 
-  auto layout = cmap_dof_layout.entity_dofs_all();
-  std::stringstream s;
-  for (auto q : layout)
-  {
-    s << "[";
-    for (auto r : q)
-    {
-      s << "[";
-      for (auto w : r)
-        s << w << " ";
-      s << "]";
-    }
-    s << "]";
-  }
-
-  LOG(INFO) << "XDMF dof layout: " << s.str();
-
   // Get number of nodes per entity
   const int num_nodes_per_entity = cmap_dof_layout.num_entity_closure_dofs(dim);
 

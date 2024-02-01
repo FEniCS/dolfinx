@@ -185,23 +185,8 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
     partitioner = create_cell_partitioner();
 
   LOG(INFO) << "Create rectangle";
-  auto layout = coordinate_element.create_dof_layout();
-  auto entity_dofs = layout.entity_dofs_all();
-  std::stringstream s;
-  for (auto q : entity_dofs)
-  {
-    s << "[";
-    for (auto r : q)
-    {
-      s << "[";
-      for (auto w : r)
-        s << w << " ";
-      s << "]";
-    }
-    s << "]";
-  }
-  LOG(INFO) << s.str();
-
+  if (coordinate_element.cell_shape() != CellType::quadrilateral)
+    throw std::runtime_error("This method only supports quadrilateral cells.");
   return impl::build_quad<T>(comm, p, n, coordinate_element, partitioner);
 }
 
