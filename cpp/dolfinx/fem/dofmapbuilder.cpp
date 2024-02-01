@@ -404,12 +404,8 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
 
   // Get mesh entity ownership offset for each IndexMap
   std::vector<std::int32_t> offset(index_maps.size(), -1);
-  for (std::size_t d = 0; d < offset.size(); ++d)
-  {
-    auto map = index_maps[d];
-    if (map)
-      offset[d] = map->size_local();
-  }
+  std::transform(index_maps.begin(), index_maps.end(), offset.begin(),
+                 [](const auto& im) { return im->size_local(); });
 
   // Compute the number of dofs 'owned' by this process
   const std::int32_t owned_size = std::accumulate(
@@ -492,19 +488,18 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 
   // Build list of flags for owned mesh entities that are shared, i.e.
   // are a ghost on a neighbor
-  const int num_index_maps = index_maps.size();
+  const std::size_t num_index_maps = index_maps.size();
   std::vector<std::vector<std::int8_t>> shared_entity(num_index_maps);
-  for (int d = 0; d < num_index_maps; ++d)
+  for (std::size_t d = 0; d < num_index_maps; ++d)
   {
     auto map = index_maps[d];
-    if (map)
-    {
-      shared_entity[d] = std::vector<std::int8_t>(map->size_local(), false);
-      const std::vector<std::int32_t> forward_indices = map->shared_indices();
-      std::for_each(forward_indices.begin(), forward_indices.end(),
-                    [&entities = shared_entity[d]](auto idx)
-                    { entities[idx] = true; });
-    }
+    assert(map);
+
+    shared_entity[d] = std::vector<std::int8_t>(map->size_local(), false);
+    const std::vector<std::int32_t> forward_indices = map->shared_indices();
+    std::for_each(forward_indices.begin(), forward_indices.end(),
+                  [&entities = shared_entity[d]](auto idx)
+                  { entities[idx] = true; });
   }
 
   // Build list of (global old, global new) index pairs for dofs that
@@ -529,41 +524,40 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
   std::vector<MPI_Comm> comm(num_index_maps, MPI_COMM_NULL);
   std::vector<std::vector<std::int64_t>> all_dofs_received(num_index_maps);
   std::vector<std::vector<int>> disp_recv(num_index_maps);
-  for (int d = 0; d < num_index_maps; ++d)
+  for (std::size_t d = 0; d < num_index_maps; ++d)
   {
     // FIXME: This should check which dimension are needed by the dofmap
     auto map = index_maps[d];
-    if (map)
-    {
-      std::span src = map->src();
-      std::span dest = map->dest();
-      MPI_Dist_graph_create_adjacent(
-          map->comm(), src.size(), src.data(), MPI_UNWEIGHTED, dest.size(),
-          dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm[d]);
+    assert(map);
 
-      // Number and values to send and receive
-      const int num_indices = global[d].size();
-      std::vector<int> size_recv;
-      size_recv.reserve(1); // ensure data is not a nullptr
-      size_recv.resize(src.size());
-      MPI_Neighbor_allgather(&num_indices, 1, MPI_INT, size_recv.data(), 1,
-                             MPI_INT, comm[d]);
+    std::span src = map->src();
+    std::span dest = map->dest();
+    MPI_Dist_graph_create_adjacent(
+        map->comm(), src.size(), src.data(), MPI_UNWEIGHTED, dest.size(),
+        dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm[d]);
 
-      // Compute displacements for data to receive. Last entry has total
-      // number of received items.
-      disp_recv[d].resize(src.size() + 1);
-      std::partial_sum(size_recv.begin(), size_recv.begin() + src.size(),
-                       disp_recv[d].begin() + 1);
+    // Number and values to send and receive
+    const int num_indices = global[d].size();
+    std::vector<int> size_recv;
+    size_recv.reserve(1); // ensure data is not a nullptr
+    size_recv.resize(src.size());
+    MPI_Neighbor_allgather(&num_indices, 1, MPI_INT, size_recv.data(), 1,
+                           MPI_INT, comm[d]);
 
-      // TODO: use MPI_Ineighbor_alltoallv
-      // Send global index of dofs to neighbors
-      all_dofs_received[d].resize(disp_recv[d].back());
-      MPI_Ineighbor_allgatherv(global[d].data(), global[d].size(), MPI_INT64_T,
-                               all_dofs_received[d].data(), size_recv.data(),
-                               disp_recv[d].data(), MPI_INT64_T, comm[d],
-                               &requests[requests_dim.size()]);
-      requests_dim.push_back(d);
-    }
+    // Compute displacements for data to receive. Last entry has total
+    // number of received items.
+    disp_recv[d].resize(src.size() + 1);
+    std::partial_sum(size_recv.begin(), size_recv.begin() + src.size(),
+                     disp_recv[d].begin() + 1);
+
+    // TODO: use MPI_Ineighbor_alltoallv
+    // Send global index of dofs to neighbors
+    all_dofs_received[d].resize(disp_recv[d].back());
+    MPI_Ineighbor_allgatherv(global[d].data(), global[d].size(), MPI_INT64_T,
+                             all_dofs_received[d].data(), size_recv.data(),
+                             disp_recv[d].data(), MPI_INT64_T, comm[d],
+                             &requests[requests_dim.size()]);
+    requests_dim.push_back(d);
   }
 
   // Build  [local_new - num_owned] -> global old array  broken down by
@@ -622,10 +616,10 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     }
   }
 
-  for (std::size_t i = 0; i < comm.size(); ++i)
+  for (MPI_Comm& c : comm)
   {
-    if (comm[i] != MPI_COMM_NULL)
-      MPI_Comm_free(&comm[i]);
+    assert(c != MPI_COMM_NULL);
+    MPI_Comm_free(&c);
   }
 
   return {std::move(local_to_global_new), std::move(local_to_global_new_owner)};
