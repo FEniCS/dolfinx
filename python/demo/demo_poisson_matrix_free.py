@@ -173,7 +173,7 @@ bc = fem.dirichletbc(value=uD, dofs=dofs)
 x = ufl.SpatialCoordinate(mesh)
 u = ufl.TrialFunction(V)
 v = ufl.TestFunction(V)
-f = fem.Constant(mesh, dtype(-6))
+f = fem.Constant(mesh, -6)
 a = inner(grad(u), grad(v)) * dx
 L = inner(f, v) * dx
 L_fem = fem.form(L)
