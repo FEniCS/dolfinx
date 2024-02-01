@@ -43,7 +43,7 @@ using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
 /// @return Map from original_to_contiguous[i] to new index after
 /// reordering
 std::vector<int>
-reorder_owned(const std::vector<mdspan2_t<const std::int32_t>> dofmaps,
+reorder_owned(const std::vector<mdspan2_t<const std::int32_t>>& dofmaps,
               std::int32_t owned_size,
               const std::vector<int>& original_to_contiguous,
               const std::function<std::vector<int>(
@@ -384,8 +384,8 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
 /// @returns The (0) global indices for unowned dofs, (1) owner rank of
 /// each unowned dof
 std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
-    std::vector<std::shared_ptr<const common::IndexMap>>& index_maps,
-    const std::int32_t num_owned, const std::int64_t process_offset,
+    const std::vector<std::shared_ptr<const common::IndexMap>>& index_maps,
+    std::int32_t num_owned, std::int64_t process_offset,
     const std::vector<std::int64_t>& global_indices_old,
     const std::vector<std::int32_t>& old_to_new,
     const std::vector<std::pair<std::int8_t, std::int32_t>>& dof_entity)
