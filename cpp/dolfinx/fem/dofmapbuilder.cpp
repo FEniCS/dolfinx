@@ -34,7 +34,7 @@ using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
 //-----------------------------------------------------------------------------
 
 /// Build a graph for owned dofs and apply graph reordering function
-/// @param[in] dofmap The local dofmap (cell -> dofs)
+/// @param[in] dofmaps The local dofmaps (cell -> dofs)
 /// @param[in] owned_size Number of dofs owned by this process
 /// @param[in] original_to_contiguous Map from dof indices in @p dofmap
 /// to new indices that are ordered such that owned indices are [0,
@@ -43,7 +43,8 @@ using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
 /// @return Map from original_to_contiguous[i] to new index after
 /// reordering
 std::vector<int>
-reorder_owned(mdspan2_t<const std::int32_t> dofmap, std::int32_t owned_size,
+reorder_owned(const std::vector<mdspan2_t<const std::int32_t>> dofmaps,
+              std::int32_t owned_size,
               const std::vector<int>& original_to_contiguous,
               const std::function<std::vector<int>(
                   const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
@@ -52,21 +53,24 @@ reorder_owned(mdspan2_t<const std::int32_t> dofmap, std::int32_t owned_size,
 
   // Compute maximum number of graph out edges edges per dof
   std::vector<int> num_edges(owned_size);
-  for (std::size_t cell = 0; cell < dofmap.extent(0); ++cell)
+  for (const auto& dofmap : dofmaps)
   {
-    std::span<const std::int32_t> nodes(
-        dofmap.data_handle() + cell * dofmap.extent(1), dofmap.extent(1));
-    for (auto n0 : nodes)
+    for (std::size_t cell = 0; cell < dofmap.extent(0); ++cell)
     {
-      const std::int32_t node_0 = original_to_contiguous[n0];
-
-      // Skip unowned node
-      if (node_0 >= owned_size)
-        continue;
-      for (auto n1 : nodes)
+      std::span<const std::int32_t> nodes(
+          dofmap.data_handle() + cell * dofmap.extent(1), dofmap.extent(1));
+      for (auto n0 : nodes)
       {
-        if (n0 != n1 and original_to_contiguous[n1] < owned_size)
-          ++num_edges[node_0];
+        const std::int32_t node_0 = original_to_contiguous[n0];
+
+        // Skip unowned node
+        if (node_0 >= owned_size)
+          continue;
+        for (auto n1 : nodes)
+        {
+          if (n0 != n1 and original_to_contiguous[n1] < owned_size)
+            ++num_edges[node_0];
+        }
       }
     }
   }
@@ -76,21 +80,24 @@ reorder_owned(mdspan2_t<const std::int32_t> dofmap, std::int32_t owned_size,
   std::partial_sum(num_edges.begin(), num_edges.end(),
                    std::next(offsets.begin(), 1));
   std::vector<std::int32_t> edges(offsets.back());
-  for (std::size_t cell = 0; cell < dofmap.extent(0); ++cell)
+  for (const auto& dofmap : dofmaps)
   {
-    std::span<const std::int32_t> nodes(
-        dofmap.data_handle() + cell * dofmap.extent(1), dofmap.extent(1));
-    for (auto n0 : nodes)
+    for (std::size_t cell = 0; cell < dofmap.extent(0); ++cell)
     {
-      const std::int32_t node_0 = original_to_contiguous[n0];
-      if (node_0 >= owned_size)
-        continue;
-      for (auto n1 : nodes)
+      std::span<const std::int32_t> nodes(
+          dofmap.data_handle() + cell * dofmap.extent(1), dofmap.extent(1));
+      for (auto n0 : nodes)
       {
-        if (const std::int32_t node_1 = original_to_contiguous[n1];
-            n0 != n1 and node_1 < owned_size)
+        const std::int32_t node_0 = original_to_contiguous[n0];
+        if (node_0 >= owned_size)
+          continue;
+        for (auto n1 : nodes)
         {
-          edges[offsets[node_0]++] = node_1;
+          if (const std::int32_t node_1 = original_to_contiguous[n1];
+              n0 != n1 and node_1 < owned_size)
+          {
+            edges[offsets[node_0]++] = node_1;
+          }
         }
       }
     }
@@ -347,8 +354,8 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
     // Re-order using graph ordering
 
     // Apply graph reordering to owned dofs
-    const std::vector<int> node_remap
-        = reorder_owned(dofmap, owned_size, original_to_contiguous, reorder_fn);
+    const std::vector<int> node_remap = reorder_owned(
+        {dofmap}, owned_size, original_to_contiguous, reorder_fn);
     std::transform(original_to_contiguous.begin(), original_to_contiguous.end(),
                    original_to_contiguous.begin(),
                    [&node_remap, owned_size](auto index)
