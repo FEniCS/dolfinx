@@ -275,7 +275,7 @@ build_basic_dofmap(const mesh::Topology& topology,
 /// @param [in] dofmap The basic dofmap data
 /// @param [in] dof_entity Map from dof index to (dim, entity_index),
 /// where entity_index is the process-wise mesh entity index
-/// @param [in] topology The mesh topology
+/// @param [in] index_maps The set of index maps referring to dofs in dof_entity
 /// @param [in] reorder_fn Graph reordering function that is applied for
 /// dof re-ordering
 /// @return The pair (old-to-new local index map, M), where M is the
@@ -283,18 +283,17 @@ build_basic_dofmap(const mesh::Topology& topology,
 std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
     mdspan2_t<const std::int32_t> dofmap,
     const std::vector<std::pair<std::int8_t, std::int32_t>>& dof_entity,
-    const mesh::Topology& topology,
+    const std::vector<std::shared_ptr<const common::IndexMap>>& index_maps,
     const std::function<std::vector<int>(
         const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
   common::Timer t0("Compute dof reordering map");
 
   // Get mesh entity ownership offset for each topological dimension
-  const int D = topology.dim();
-  std::vector<std::int32_t> offset(D + 1, -1);
+  std::vector<std::int32_t> offset(index_maps.size(), -1);
   for (std::size_t d = 0; d < offset.size(); ++d)
   {
-    auto map = topology.index_map(d);
+    auto map = index_maps[d];
     if (map)
       offset[d] = map->size_local();
   }
@@ -361,7 +360,7 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
 //-----------------------------------------------------------------------------
 
 /// Get global indices for unowned dofs
-/// @param [in] topology The mesh topology
+/// @param [in] index_maps Set of index maps corresponding to dofs in dof_entity
 /// @param [in] num_owned The number of nodes owned by this process
 /// @param [in] process_offset The node offset for this process, i.e.
 /// the global index of owned node i is i + process_offset
@@ -374,22 +373,21 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
 /// @returns The (0) global indices for unowned dofs, (1) owner rank of
 /// each unowned dof
 std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
-    const mesh::Topology& topology, const std::int32_t num_owned,
-    const std::int64_t process_offset,
+    std::vector<std::shared_ptr<const common::IndexMap>>& index_maps,
+    const std::int32_t num_owned, const std::int64_t process_offset,
     const std::vector<std::int64_t>& global_indices_old,
     const std::vector<std::int32_t>& old_to_new,
     const std::vector<std::pair<std::int8_t, std::int32_t>>& dof_entity)
 {
   assert(dof_entity.size() == global_indices_old.size());
 
-  const int D = topology.dim();
-
   // Build list of flags for owned mesh entities that are shared, i.e.
   // are a ghost on a neighbor
-  std::vector<std::vector<std::int8_t>> shared_entity(D + 1);
+  std::size_t num_index_maps = index_maps.size();
+  std::vector<std::vector<std::int8_t>> shared_entity(num_index_maps);
   for (std::size_t d = 0; d < shared_entity.size(); ++d)
   {
-    auto map = topology.index_map(d);
+    auto map = index_maps[d];
     if (map)
     {
       shared_entity[d] = std::vector<std::int8_t>(map->size_local(), false);
@@ -402,9 +400,9 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 
   // Build list of (global old, global new) index pairs for dofs that
   // are ghosted on other processes
-  std::vector<std::vector<std::int64_t>> global(D + 1);
 
   // Loop over all dofs
+  std::vector<std::vector<std::int64_t>> global(num_index_maps);
   for (std::size_t i = 0; i < dof_entity.size(); ++i)
   {
     // Topological dimension of mesh entity that dof is associated with
@@ -420,14 +418,14 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
   }
 
   std::vector<int> requests_dim;
-  std::vector<MPI_Request> requests(D + 1);
-  std::vector<MPI_Comm> comm(D + 1, MPI_COMM_NULL);
-  std::vector<std::vector<std::int64_t>> all_dofs_received(D + 1);
-  std::vector<std::vector<int>> disp_recv(D + 1);
-  for (int d = 0; d <= D; ++d)
+  std::vector<MPI_Request> requests(num_index_maps);
+  std::vector<MPI_Comm> comm(num_index_maps, MPI_COMM_NULL);
+  std::vector<std::vector<std::int64_t>> all_dofs_received(num_index_maps);
+  std::vector<std::vector<int>> disp_recv(num_index_maps);
+  for (std::size_t d = 0; d < num_index_maps; ++d)
   {
     // FIXME: This should check which dimension are needed by the dofmap
-    auto map = topology.index_map(d);
+    auto map = index_maps[d];
     if (map)
     {
       std::span src = map->src();
@@ -463,7 +461,8 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 
   // Build  [local_new - num_owned] -> global old array  broken down by
   // dimension
-  std::vector<std::vector<std::int64_t>> local_new_to_global_old(D + 1);
+  std::vector<std::vector<std::int64_t>> local_new_to_global_old(
+      num_index_maps);
   for (std::size_t i = 0; i < global_indices_old.size(); ++i)
   {
     const int d = dof_entity[i].first;
@@ -483,7 +482,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     MPI_Waitany(requests_dim.size(), requests.data(), &idx, MPI_STATUS_IGNORE);
     d = requests_dim[idx];
 
-    std::span src = topology.index_map(d)->src();
+    std::span src = index_maps[d]->src();
 
     // Build (global old, global new) map for dofs of dimension d
     std::vector<std::pair<std::int64_t, std::pair<int64_t, int>>>
@@ -516,10 +515,10 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
     }
   }
 
-  for (std::size_t i = 0; i < comm.size(); ++i)
+  for (MPI_Comm& c : comm)
   {
-    if (comm[i] != MPI_COMM_NULL)
-      MPI_Comm_free(&comm[i]);
+    if (c != MPI_COMM_NULL)
+      MPI_Comm_free(&c);
   }
 
   return {std::move(local_to_global_new), std::move(local_to_global_new_owner)};
@@ -546,15 +545,13 @@ fem::build_dofmap_data(
   const auto [node_graph0, local_to_global0, dof_entity0]
       = build_basic_dofmap(topology, element_dof_layout);
 
-  // Compute global dofmap offset
-  std::int64_t offset = 0;
+  std::vector<std::shared_ptr<const common::IndexMap>> index_maps(D + 1);
   for (int d = 0; d <= D; ++d)
   {
     if (element_dof_layout.num_entity_dofs(d) > 0)
     {
       assert(topology.index_map(d));
-      offset += topology.index_map(d)->local_range()[0]
-                * element_dof_layout.num_entity_dofs(d);
+      index_maps[d] = topology.index_map(d);
     }
   }
 
@@ -563,12 +560,23 @@ fem::build_dofmap_data(
   mdspan2_t<const std::int32_t> _node_graph0(
       node_graph0.data(), node_graph0.size() / element_dof_layout.num_dofs(),
       element_dof_layout.num_dofs());
-  const auto [old_to_new, num_owned]
-      = compute_reordering_map(_node_graph0, dof_entity0, topology, reorder_fn);
+  const auto [old_to_new, num_owned] = compute_reordering_map(
+      _node_graph0, dof_entity0, index_maps, reorder_fn);
+
+  // Compute global dofmap offset
+  std::int64_t offset = 0;
+  for (int d = 0; d <= D; ++d)
+  {
+    if (element_dof_layout.num_entity_dofs(d) > 0)
+    {
+      offset += index_maps[d]->local_range()[0]
+                * element_dof_layout.num_entity_dofs(d);
+    }
+  }
 
   // Get global indices for unowned dofs
   const auto [local_to_global_unowned, local_to_global_owner]
-      = get_global_indices(topology, num_owned, offset, local_to_global0,
+      = get_global_indices(index_maps, num_owned, offset, local_to_global0,
                            old_to_new, dof_entity0);
   assert(local_to_global_unowned.size() == local_to_global_owner.size());
 
@@ -578,20 +586,8 @@ fem::build_dofmap_data(
 
   // Build re-ordered dofmap
   std::vector<std::int32_t> dofmap(node_graph0.size());
-  for (std::size_t cell = 0; cell < _node_graph0.extent(0); ++cell)
-  {
-    // Get dof order on this cell
-    auto old_nodes = MDSPAN_IMPL_STANDARD_NAMESPACE::
-        MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
-            _node_graph0, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
-    const std::int32_t local_dim0 = old_nodes.size();
-    std::span<std::int32_t> dofs(dofmap.data() + cell * local_dim0, local_dim0);
-    for (std::int32_t j = 0; j < local_dim0; ++j)
-    {
-      std::int32_t old_node = old_nodes[j];
-      dofs[j] = old_to_new[old_node];
-    }
-  }
+  for (std::size_t i = 0; i < dofmap.size(); ++i)
+    dofmap[i] = old_to_new[node_graph0[i]];
 
   return {std::move(index_map), element_dof_layout.block_size(),
           std::move(dofmap)};
