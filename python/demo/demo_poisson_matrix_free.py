@@ -253,6 +253,7 @@ print(np.linalg.norm(b.array))
 # function `action_A` with which the matrix-vector product $y = A x$
 # is computed.
 
+
 def action_A():
     # Update coefficient ui of the linear form M
     ui.x.scatter_forward()
@@ -313,12 +314,10 @@ def cg(comm, action_A, b, max_iter=200, rtol=1e-6):
     raise RuntimeError(f"Solver exceeded max iterations ({max_iter}).")
 
 
-
 # This matrix-free solver is now used to compute the finite element solution.
 # After that, the error against the exact solution in the $L_2$-norm and the
 # error of the coefficients against the solution obtained by the direct
 # solver is computed.
-
 # +
 rtol = 1e-12
 iter_cg1 = cg(mesh.comm, action_A, b, max_iter=200, rtol=rtol)

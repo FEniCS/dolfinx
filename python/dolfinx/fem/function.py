@@ -514,15 +514,20 @@ def functionspace(mesh: Mesh,
 
     """
     # Create UFL element
-    basix_element = None
     try:
         e = ElementMetaData(*element)
-        ufl_e = basix.ufl.element(e.family, mesh.basix_cell(), e.degree, shape=e.shape,
-                                  symmetry=e.symmetry, gdim=mesh.ufl_cell().geometric_dimension())
+        ufl_e = basix.ufl.element(e.family, mesh.basix_cell(), e.degree,
+                                  shape=e.shape, symmetry=e.symmetry,
+                                  gdim=mesh.ufl_cell().geometric_dimension())
     except TypeError:
         ufl_e = element  # type: ignore
+
+    try:
         basix_element = ufl_e.basix_element
         value_shape = ufl_e.value_shape
+    except NotImplementedError:
+        value_shape = None
+        basix_element = None
 
     # Check that element and mesh cell types match
     if ufl_e.cell != mesh.ufl_domain().ufl_cell():
