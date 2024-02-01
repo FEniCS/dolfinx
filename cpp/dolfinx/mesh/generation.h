@@ -187,7 +187,7 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
 /// @param[in] p Bottom-left and top-right corners of the rectangle.
 /// @param[in] n Number of cells in each direction.
 /// @param[in] coordinate_element Coordinate element for the mesh.
-/// @param[in] diagonal Direction of diagonals
+/// @param[in] partitioner Partitioning function for distributing cells
 /// @return Mesh
 template <std::floating_point T = double>
 Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
