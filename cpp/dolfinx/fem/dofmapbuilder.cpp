@@ -29,7 +29,7 @@ namespace
 //-----------------------------------------------------------------------------
 
 /// Build a graph for owned dofs and apply graph reordering function
-/// @param[in] dofmap The local dofmap (cell -> dofs)
+/// @param[in] dofmap The local dofmap (cell -> dofs) as (width, [dofs])
 /// @param[in] owned_size Number of dofs owned by this process
 /// @param[in] original_to_contiguous Map from dof indices in @p dofmap
 /// to new indices that are ordered such that owned indices are [0,
@@ -129,17 +129,19 @@ std::vector<int> reorder_owned(
 }
 
 //-----------------------------------------------------------------------------
-
 /// Build a simple dofmap from ElementDofmap based on mesh entity
 /// indices (local and global)
 ///
 /// @param [in] mesh The mesh to build the dofmap on
 /// @param [in] topology The mesh topology
 /// @param [in] element_dof_layout The layout of dofs on each cell type
-/// @return Returns: * dofmaps for each element type (local to the process)
+/// @return Returns: * dofmaps for each cell type (local to the process) as
+/// (width, [dofs])
 ///                  * local-to-global map for each local dof
 ///                  * local-to-entity map for each local dof
-/// Entities are represented as {dimension, mesh entity index}.
+///                  * index maps for each entity type in dofmaps
+///                  * global offset for dofs on this process
+/// Entities are represented as {index_map number, mesh entity index}.
 std::tuple<std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>,
            std::vector<std::int64_t>,
            std::vector<std::pair<std::int8_t, std::int32_t>>,
@@ -174,10 +176,8 @@ build_basic_dofmaps(
     {
       const std::vector<std::vector<int>>& edd = entity_dofs[d];
       auto entity_types_d = topology.entity_types(d);
-      LOG(INFO) << "dim = " << d << " num entities= " << edd.size() << "\n";
       for (std::size_t e = 0; e < edd.size(); ++e)
       {
-        LOG(INFO) << index << ":" << edd[e].size() << "\n";
         if (edd[e].size() > 0)
         {
           // There is a dof on this entity... find entity type index
@@ -224,12 +224,8 @@ build_basic_dofmaps(
   s << "Required entities:";
   for (std::size_t i = 0; i < required_dim_et.size(); ++i)
     s << "(" << (int)required_dim_et[i].first << ", "
-      << (int)required_dim_et[i].second << ") -> " << num_entity_dofs_et[i]
-      << ", ";
+      << (int)required_dim_et[i].second << ")=" << num_entity_dofs_et[i] << " ";
   LOG(INFO) << s.str();
-
-  std::int32_t local_size = local_entity_offsets.back();
-  LOG(INFO) << "Local size = " << local_size;
 
   // Dofmaps on each cell type as (width, [cell_dofs])
   std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>> dofs(
@@ -249,7 +245,7 @@ build_basic_dofmaps(
     dofs[i].first = dofmap_width;
     const std::int32_t num_dofs = num_cells * dofmap_width;
     dofs[i].second.resize(num_dofs);
-    LOG(INFO) << "Cell type:" << i << ", num cells:" << num_cells << "x"
+    LOG(INFO) << "Cell type:" << i << ", dofmap:" << num_cells << "x"
               << dofmap_width;
 
     std::int32_t dofmap_offset = 0;
@@ -291,8 +287,6 @@ build_basic_dofmaps(
               = ((std::size_t)d == D)
                     ? 1
                     : topology.connectivity({D, i}, {d, et})->links(c).size();
-          LOG(INFO) << "{d, et}=" << d << "," << et << "/" << num_entries;
-          LOG(INFO) << "e = " << w << " e_index_local = " << e_index_local;
 
           // Loop over dofs belonging to entity e of dimension d (d, e)
           // d: topological dimension
@@ -301,7 +295,6 @@ build_basic_dofmaps(
           for (std::size_t j = 0; j < num_entity_dofs; ++j)
           {
             int dof_local = e_dofs_d[e][j];
-            LOG(INFO) << "dof_local = " << dof_local;
             dofs_c[dof_local]
                 = local_entity_offsets[k] + num_entity_dofs * e_index_local + j;
           }
@@ -332,6 +325,7 @@ build_basic_dofmaps(
   // may have vertices that don't belong to a cell on that process.
 
   // Dof -> (index_map number, entity index) marker
+  std::int32_t local_size = local_entity_offsets.back();
   std::vector<std::pair<std::int8_t, std::int32_t>> dof_entity(local_size);
 
   // Storage for local-to-global map
