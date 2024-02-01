@@ -84,11 +84,10 @@ import numpy as np
 
 import basix
 import ufl
-from dolfinx import fem
+from dolfinx import fem, la
 from dolfinx.fem import petsc as fem_petsc
 import dolfinx
 from ufl import action, dx, grad, inner
-from dolfinx.log import LogLevel, set_log_level
 from dolfinx.cpp.fem import CoordinateElement_float64
 from dolfinx.cpp.mesh import create_quad_rectangle_float64
 
@@ -222,7 +221,6 @@ if comm.rank == 0:
     print(f"L2-error against exact solution:  {error_L2_lu:.4e}")
 # -
 
-exit()
 # ### Matrix-free Conjugate Gradient solvers
 #
 # For the matrix-free solvers, the RHS vector $b$ is first assembled based
@@ -231,19 +229,20 @@ exit()
 # Since we want to avoid assembling the matrix `A`, we compute the necessary
 # matrix-vector product using the linear form `M` implicitly.
 
-b = fem.petsc.assemble_vector(L_fem)
+b = fem.assemble_vector(L_fem)
 # Apply lifting: b <- b - A * x_bc
-fem.set_bc(ui.x.array, [bc], scale=-1)
-fem.petsc.assemble_vector(b, M_fem)
-b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-fem.petsc.set_bc(b, [bc], scale=0.0)
-b.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+# fem.set_bc(b.array, [bc], scale=-1.)
+# fem.assemble_vector(b.array, M_fem)
+# b.scatter_reverse(la.InsertMode.add)
+# fem.set_bc(b, [bc], scale=0.0)
+# b.scatter_forward()
 
 # In the following, different variants are presented in which the posed
 # Poisson problem is solved using matrix-free CG solvers. In each case
 # we want to achieve convergence up to a relative tolerence `rtol = 1e-6`
 # within `max_iter = 200` iterations.
 
+exit()
 rtol = 1e-6
 max_iter = 200
 
