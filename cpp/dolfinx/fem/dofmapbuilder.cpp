@@ -143,7 +143,7 @@ std::vector<int> reorder_owned(
 std::tuple<std::vector<std::pair<std::int32_t, std::vector<std::int32_t>>>,
            std::vector<std::int64_t>,
            std::vector<std::pair<std::int8_t, std::int32_t>>,
-           std::vector<std::shared_ptr<const common::IndexMap>>>
+           std::vector<std::shared_ptr<const common::IndexMap>>, std::int64_t>
 build_basic_dofmaps(
     const mesh::Topology& topology,
     const std::vector<fem::ElementDofLayout>& element_dof_layouts)
@@ -338,6 +338,7 @@ build_basic_dofmaps(
   std::vector<std::int64_t> local_to_global(local_size);
 
   std::int64_t global_entity_offsets = 0;
+  std::int64_t global_start = 0;
   for (std::size_t k = 0; k < required_dim_et.size(); ++k)
   {
     const int num_entity_dofs = num_entity_dofs_et[k];
@@ -358,9 +359,8 @@ build_basic_dofmaps(
       }
     }
     global_entity_offsets += num_entity_dofs * map->size_global();
+    global_start += num_entity_dofs * map->local_range()[0];
   }
-
-  LOG(INFO) << local_to_global.size() << ", " << dof_entity.size();
 
   // Debug
   s.str("");
@@ -374,7 +374,7 @@ build_basic_dofmaps(
   LOG(INFO) << s.str();
 
   return {std::move(dofs), std::move(local_to_global), std::move(dof_entity),
-          std::move(topo_index_maps)};
+          std::move(topo_index_maps), global_start};
 }
 //-----------------------------------------------------------------------------
 
@@ -420,6 +420,7 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
   std::vector<int> original_to_contiguous(dof_entity.size(), -1);
   std::int32_t counter_owned(0), counter_unowned(owned_size);
   for (auto dofmap : dofmaps)
+  {
     for (std::int32_t dof : dofmap.second)
     {
       if (original_to_contiguous[dof] == -1)
@@ -431,6 +432,7 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
           original_to_contiguous[dof] = counter_unowned++;
       }
     }
+  }
 
   // Check for any -1's remaining in `original_to_contiguous` due to vertices
   // on the process that don't belong to a cell. Determine if the dof is owned
@@ -641,24 +643,12 @@ fem::build_dofmap_data(
   // a local dofmap, (ii) local-to-global map for dof indices, and (iii)
   // pair {dimension, mesh entity index} giving the mesh entity that dof
   // i is associated with.
-  const auto [node_graphs, local_to_global0, dof_entity0, topo_index_maps]
+  const auto [node_graphs, local_to_global0, dof_entity0, topo_index_maps,
+              offset]
       = build_basic_dofmaps(topology, element_dof_layouts);
 
   LOG(INFO) << "Got " << topo_index_maps.size() << " index_maps";
-
-  // Compute global dofmap offset
-  std::int64_t offset = 0;
-  for (std::size_t d = 0; d < topo_index_maps.size(); ++d)
-  {
-    if (element_dof_layouts[0].num_entity_dofs(d) > 0)
-    {
-      assert(topo_index_maps[d]);
-      offset += topo_index_maps[d]->local_range()[0]
-                * element_dof_layouts[0].num_entity_dofs(d);
-    }
-  }
-
-  LOG(INFO) << "offset = " << offset;
+  LOG(INFO) << "Global start=" << offset;
 
   // Build re-ordering map for data locality and get number of owned
   // nodes
