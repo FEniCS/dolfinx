@@ -175,6 +175,20 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
   }
 }
 
+/// @brief Create a uniform mesh::Mesh over the rectangle spanned by the
+/// two points `p`.
+///
+/// The order of the two points is not important in terms of minimum and
+/// maximum coordinates. The total number of vertices will be `(n[0] +
+/// 1)*(n[1] + 1)`. For triangles there will be  will be `2*n[0]*n[1]`
+/// cells. For quadrilaterals the number of cells will be `n[0]*n[1]`.
+///
+/// @param[in] comm MPI communicator to build the mesh on.
+/// @param[in] p Bottom-left and top-right corners of the rectangle.
+/// @param[in] n Number of cells in each direction.
+/// @param[in] coordinate_element Coordinate element for the mesh.
+/// @param[in] diagonal Direction of diagonals
+/// @return Mesh
 template <std::floating_point T = double>
 Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
                          std::array<std::size_t, 2> n,
