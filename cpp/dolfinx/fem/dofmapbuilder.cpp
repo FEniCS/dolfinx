@@ -283,10 +283,6 @@ build_basic_dofmaps(
           std::size_t num_entity_dofs = e_dofs_d[e].size();
           assert((int)num_entity_dofs == num_entity_dofs_et[k]);
           std::int32_t e_index_local = ((std::size_t)d == D) ? c : c_to_e[w];
-          std::int32_t num_entries
-              = ((std::size_t)d == D)
-                    ? 1
-                    : topology.connectivity({D, i}, {d, et})->links(c).size();
 
           // Loop over dofs belonging to entity e of dimension d (d, e)
           // d: topological dimension
