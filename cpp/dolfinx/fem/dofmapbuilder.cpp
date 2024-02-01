@@ -356,8 +356,8 @@ build_basic_dofmaps(
             = global_entity_offsets + num_entity_dofs * e_index_global + count;
         dof_entity[dof] = {k, e_index};
       }
-      global_entity_offsets += num_entity_dofs * map->size_global();
     }
+    global_entity_offsets += num_entity_dofs * map->size_global();
   }
 
   LOG(INFO) << local_to_global.size() << ", " << dof_entity.size();
