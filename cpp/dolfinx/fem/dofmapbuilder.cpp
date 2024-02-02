@@ -199,7 +199,6 @@ build_basic_dofmap(const mesh::Topology& topology,
       = element_dof_layout.entity_dofs_all();
   assert(entity_dofs.size() == D + 1);
 
-  // for (int c = group_offsets[i]; c < group_offsets[i + 1]; ++c)
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     // Wrap dofs for cell c
@@ -247,7 +246,7 @@ build_basic_dofmap(const mesh::Topology& topology,
   std::int32_t offset_local = 0;
   std::int64_t offset_global = 0;
 
-  // Dof -> (dim, entity index) marker
+  // Dof -> (index_map, entity index) marker
   std::vector<std::pair<std::int8_t, std::int32_t>> dof_entity(local_size);
 
   // Storage for local-to-global map
