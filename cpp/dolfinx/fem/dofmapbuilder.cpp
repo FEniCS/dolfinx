@@ -331,8 +331,7 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
     {
       if (original_to_contiguous[dof] == -1)
       {
-        if (std::pair<std::int8_t, std::int32_t>& e = dof_entity[dof];
-            e.second < offset[e.first])
+        if (auto e = dof_entity[dof]; e.second < offset[e.first])
           original_to_contiguous[dof] = counter_owned++;
         else
           original_to_contiguous[dof] = counter_unowned++;
