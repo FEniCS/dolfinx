@@ -89,8 +89,6 @@ import dolfinx
 import dolfinx.fem.petsc
 import ufl
 from dolfinx import fem, la
-from dolfinx.cpp.fem import CoordinateElement_float64
-from dolfinx.cpp.mesh import create_quad_rectangle_float64
 from ufl import action, dx, grad, inner
 
 dtype = np.float64  # Currently only float64 is supported
