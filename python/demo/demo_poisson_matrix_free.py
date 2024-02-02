@@ -86,6 +86,7 @@ import numpy as np
 
 import basix
 import dolfinx
+import dolfinx.fem.petsc
 import ufl
 from dolfinx import fem, la
 from dolfinx.cpp.fem import CoordinateElement_float64
@@ -173,7 +174,7 @@ bc = fem.dirichletbc(value=uD, dofs=dofs)
 x = ufl.SpatialCoordinate(mesh)
 u = ufl.TrialFunction(V)
 v = ufl.TestFunction(V)
-f = fem.Constant(mesh, -6)
+f = fem.Constant(mesh, dtype(-6))
 a = inner(grad(u), grad(v)) * dx
 L = inner(f, v) * dx
 L_fem = fem.form(L)
@@ -265,8 +266,6 @@ def action_A():
     # Set BC dofs to zero (effectively zeroes rows of A)
     fem.set_bc(y.array, [bc], scale=0.0)
 
-    y.scatter_reverse(la.InsertMode.add)
-
     return y.array
 
 
@@ -277,10 +276,10 @@ def action_A():
 def cg(comm, action_A, b, max_iter=200, rtol=1e-6):
     rtol2 = rtol**2
 
-    def _global_dot(comm, v0, v1):
-        return comm.allreduce(np.vdot(v0, v1), MPI.SUM)
 
-    nr = len(b.array)
+    nr = b.index_map.size_local
+    def _global_dot(comm, v0, v1):
+        return comm.allreduce(np.vdot(v0[:nr], v1[:nr]), MPI.SUM)
 
     # Get initial y = A.x (using u_i.x)
     x = ui.x.array.copy()
@@ -288,9 +287,9 @@ def cg(comm, action_A, b, max_iter=200, rtol=1e-6):
 
     # Copy residual to p
     print('bnorm = ', np.linalg.norm(b.array))
-    r = b.array[:nr] - y
+    r = b.array - y
     p = ui.x
-    p.array[:nr] = r
+    p.array[:] = r
 
     # Iterations of CG
     rnorm0 = _global_dot(comm, r, r)
@@ -298,18 +297,19 @@ def cg(comm, action_A, b, max_iter=200, rtol=1e-6):
     for k in range(max_iter):
 
         y = action_A()
-        alpha = rnorm / _global_dot(comm, p.array[:nr], y)
-        x[:nr] += alpha * p.array[:nr]
+        alpha = rnorm / _global_dot(comm, p.array, y)
+
+        x += alpha * p.array
         r -= alpha * y
         rnorm_new = _global_dot(comm, r, r)
         beta = rnorm_new / rnorm
         rnorm = rnorm_new
         print(k, rnorm)
         if (rnorm / rnorm0 < rtol2):
-            print(np.linalg.norm(x))
             ui.x.array[:] = x[:]
+            ui.x.scatter_forward()
             return k
-        p.array[:nr] = beta * p.array[:nr] + r
+        p.array[:] = beta * p.array + r
 
     raise RuntimeError(f"Solver exceeded max iterations ({max_iter}).")
 
@@ -323,7 +323,6 @@ rtol = 1e-12
 iter_cg1 = cg(mesh.comm, action_A, b, max_iter=200, rtol=rtol)
 
 # Set BC values in the solution vectors
-ui.x.scatter_forward()
 fem.set_bc(ui.x.array, [bc], scale=1.0)
 
 # Print CG iteration number and errors
