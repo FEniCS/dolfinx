@@ -513,18 +513,18 @@ def functionspace(mesh: Mesh,
         A function space.
 
     """
+    dtype = mesh.geometry.x.dtype
     # Create UFL element
     try:
         e = ElementMetaData(*element)
         ufl_e = basix.ufl.element(e.family, mesh.basix_cell(), e.degree,
                                   shape=e.shape, symmetry=e.symmetry,
                                   gdim=mesh.ufl_cell().geometric_dimension(),
-                                  dtype=mesh.geometry.x.dtype)
+                                  dtype=dtype)
     except TypeError:
         ufl_e = element  # type: ignore
         basix_element = ufl_e.basix_element
         value_shape = ufl_e.value_shape
-
     try:
         basix_element = ufl_e.basix_element
         value_shape = ufl_e.value_shape
@@ -537,7 +537,6 @@ def functionspace(mesh: Mesh,
         raise ValueError("Non-matching UFL cell and mesh cell shapes.")
 
     # Compile dofmap and element and create DOLFIN objects
-    dtype = mesh.geometry.x.dtype
     if form_compiler_options is None:
         form_compiler_options = dict()
     form_compiler_options["scalar_type"] = dtype

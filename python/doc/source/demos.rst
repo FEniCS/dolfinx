@@ -34,6 +34,8 @@ PDEs (advanced)
    demos/demo_static-condensation.md
    demos/demo_biharmonic.md
    demos/demo_types.md
+   demos/demo_poisson_matrix_free.md
+   
 
 
 Nonlinear problems
