@@ -29,7 +29,7 @@ namespace
 /// @brief dofmap as a flattened 2D array
 /// The number of cells is array.size() / width
 /// and therefore array.size() must be a multiple of width
-using dofmap_t = struct dofmap_t
+struct dofmap_t
 {
   std::int32_t width;
   std::vector<std::int32_t> array;
