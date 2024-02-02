@@ -103,33 +103,14 @@ ffcx_options = {"sum_factorization": True}
 # $V$ on the mesh.
 
 
-def create_tensor_product_element(cell_type, degree, variant):
-    """Create tensor product element."""
-    family = basix.ElementFamily.P
-    ref = basix.create_element(family, cell_type, degree, variant)
-    factors = ref.get_tensor_product_representation()
-    perm = factors[0][1]
-    dof_ordering = np.argsort(perm)
-    element = basix.create_element(family, cell_type, degree, variant,
-                                   dof_ordering=dof_ordering)
-    return element
-
-
-comm = MPI.COMM_WORLD
-element = create_tensor_product_element(basix.CellType.quadrilateral, 1, basix.LagrangeVariant.gll_warped)
-
-cmap_cpp = CoordinateElement_float64(element._e)
-mesh_cpp = create_quad_rectangle_float64(comm, [[0.0, 0.0], [1.0, 1.0]], [10, 10], cmap_cpp, None)
-
-e_ufl = basix.ufl._BasixElement(element)
-e_ufl = basix.ufl.blocked_element(e_ufl, shape=(2,), gdim=2)
-
 # Create mesh with tensor product ordering
-mesh = dolfinx.mesh.Mesh(mesh_cpp, ufl.Mesh(e_ufl))
+comm = MPI.COMM_WORLD
+mesh = dolfinx.mesh.create_tp_rectangle(comm, [[0.0, 0.0], [1.0, 1.0]], [10, 10])
 
 # Create function space
 degree = 3
-element = create_tensor_product_element(basix.CellType.quadrilateral, degree, basix.LagrangeVariant.gll_warped)
+element = basix.create_tp_element(basix.ElementFamily.P, basix.CellType.quadrilateral,
+                                  degree, basix.LagrangeVariant.gll_warped)
 e_ufl = basix.ufl._BasixElement(element)
 V = fem.functionspace(mesh, e_ufl)
 
@@ -302,7 +283,7 @@ def cg(comm, action_A, x0, b, max_iter=200, rtol=1e-6):
         beta = rnorm_new / rnorm
         rnorm = rnorm_new
         if comm.rank == 0:
-            print(k, np.sqrt(rnorm/rnorm0))
+            print(k, np.sqrt(rnorm / rnorm0))
         if rnorm / rnorm0 < rtol2:
             ui.x.array[:] = x[:]
             ui.x.scatter_forward()

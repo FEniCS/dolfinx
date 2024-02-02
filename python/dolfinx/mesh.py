@@ -24,6 +24,7 @@ from dolfinx.cpp.mesh import (CellType, DiagonalType, GhostMode, build_dual_grap
 from dolfinx.cpp.refinement import RefinementOption
 from dolfinx.fem import CoordinateElement as _CoordinateElement
 from dolfinx.fem import coordinate_element as _coordinate_element
+from dolfinx.cpp.fem import CoordinateElement_float64, CoordinateElement_float32
 
 __all__ = ["meshtags_from_entities", "locate_entities", "locate_entities_boundary",
            "refine", "create_mesh", "Mesh", "MeshTags", "meshtags", "CellType",
@@ -558,6 +559,47 @@ def create_rectangle(comm: _MPI.Comm, points: npt.ArrayLike, n: npt.ArrayLike,
         mesh = _cpp.mesh.create_rectangle_float32(comm, points, n, cell_type, partitioner, diagonal)
     elif dtype == np.float64:
         mesh = _cpp.mesh.create_rectangle_float64(comm, points, n, cell_type, partitioner, diagonal)
+    else:
+        raise RuntimeError(f"Unsupported mesh geometry float type: {dtype}")
+    return Mesh(mesh, domain)
+
+
+def create_tp_rectangle(comm: _MPI.Comm, points: npt.ArrayLike, n: npt.ArrayLike,
+                        dtype: npt.DTypeLike = default_real_type,
+                        ghost_mode=GhostMode.shared_facet,
+                        partitioner=None) -> Mesh:
+    """Create a rectangle mesh.
+
+    Args:
+        comm: MPI communicator.
+        points: Coordinates of the lower - left and upper - right corners of
+            the rectangle.
+        n: Number of cells in each direction.
+        cell_type: Mesh cell type.
+        dtype: Float type for the mesh geometry(``numpy.float32``
+            or ``numpy.float64``)
+        ghost_mode: Ghost mode used in the mesh partitioning.
+        partitioner: Function that computes the parallel distribution of
+            cells across MPI ranks.
+        diagonal: Direction of diagonal of triangular meshes. The
+            options are ``left``, ``right``, ``crossed``, ``left / right``,
+            ``right / left``.
+
+    Returns:
+        A mesh of a rectangle.
+    """
+    if partitioner is None and comm.size > 1:
+        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
+    element = basix.create_tp_element(basix.ElementFamily.P, basix.CellType.quadrilateral, 1, dtype=dtype)
+    e_ufl = basix.ufl._BasixElement(element)
+    e_ufl = basix.ufl.blocked_element(e_ufl, shape=(2,), gdim=2)
+    domain = ufl.Mesh(e_ufl)
+    if dtype == np.float32:
+        cmap_cpp = CoordinateElement_float32(element._e)
+        mesh = _cpp.mesh.create_quad_rectangle_float32(comm, points, n, cmap_cpp, partitioner)
+    elif dtype == np.float64:
+        cmap_cpp = CoordinateElement_float64(element._e)
+        mesh = _cpp.mesh.create_quad_rectangle_float64(comm, points, n, cmap_cpp, partitioner)
     else:
         raise RuntimeError(f"Unsupported mesh geometry float type: {dtype}")
     return Mesh(mesh, domain)
