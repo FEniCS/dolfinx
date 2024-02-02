@@ -89,20 +89,23 @@ reorder_owned(const std::vector<dofmap_t>& dofmaps, std::int32_t owned_size,
 
     for (std::size_t cell = 0; cell < num_cells; ++cell)
     {
-      std::span nodes(dofmap.array.data() + cell * dofmap.width, dofmap.width);
-      for (auto n0 : nodes)
+      node_temp.clear();
+      for (std::int32_t i = 0; i < dofmap.width; ++i)
       {
-        const std::int32_t node_0 = original_to_contiguous[n0];
-        if (node_0 < owned_size)
+        std::int32_t node
+            = original_to_contiguous[dofmap.array[cell * dofmap.width + i]];
+        if (node < owned_size)
+          node_temp.push_back(node);
+      }
+
+      for (std::size_t i = 0; i < node_temp.size(); ++i)
+      {
+        std::int32_t node_0 = node_temp[i];
+        for (std::size_t j = i + 1; j < node_temp.size(); ++j)
         {
-          for (auto n1 : nodes)
-          {
-            if (std::int32_t node_1 = original_to_contiguous[n1];
-                n0 != n1 and node_1 < owned_size)
-            {
-              edges[offsets[node_0]++] = node_1;
-            }
-          }
+          std::int32_t node_1 = node_temp[j];
+          edges[offsets[node_0]++] = node_1;
+          edges[offsets[node_1]++] = node_0;
         }
       }
     }
