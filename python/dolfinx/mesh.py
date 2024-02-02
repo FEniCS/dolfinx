@@ -19,12 +19,12 @@ import basix.ufl
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
+from dolfinx.cpp.fem import CoordinateElement_float32, CoordinateElement_float64
 from dolfinx.cpp.mesh import (CellType, DiagonalType, GhostMode, build_dual_graph, cell_dim, create_cell_partitioner,
                               exterior_facet_indices, to_string, to_type)
 from dolfinx.cpp.refinement import RefinementOption
 from dolfinx.fem import CoordinateElement as _CoordinateElement
 from dolfinx.fem import coordinate_element as _coordinate_element
-from dolfinx.cpp.fem import CoordinateElement_float64, CoordinateElement_float32
 
 __all__ = ["meshtags_from_entities", "locate_entities", "locate_entities_boundary",
            "refine", "create_mesh", "Mesh", "MeshTags", "meshtags", "CellType",
