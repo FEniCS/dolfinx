@@ -231,9 +231,6 @@ b = fem.assemble_vector(L_fem)
 # Apply lifting: b <- b - A * x_bc
 ui.x.array[:] = 0.0
 fem.set_bc(ui.x.array, [bc], scale=-1.)
-print(ui.x.array)
-print(ui._cpp_object, M_fem._cpp_object.coefficients[0])
-print(np.linalg.norm(b.array))
 fem.assemble_vector(b.array, M_fem)
 b.scatter_reverse(la.InsertMode.add)
 
@@ -241,7 +238,6 @@ b.scatter_reverse(la.InsertMode.add)
 fem.set_bc(b.array, [bc], scale=0.0)
 fem.set_bc(ui.x.array, [bc], scale=0.0)
 b.scatter_forward()
-print(np.linalg.norm(b.array))
 
 # In the following, different variants are presented in which the posed
 # Poisson problem is solved using matrix-free CG solvers. In each case
@@ -255,7 +251,9 @@ print(np.linalg.norm(b.array))
 # is computed.
 
 
-def action_A(y=None):
+def action_A(x, y):
+    ui.x.array[:] = x.array
+
     # Update coefficient ui of the linear form M
     ui.x.scatter_forward()
 
@@ -267,11 +265,9 @@ def action_A(y=None):
     # Set BC dofs to zero (effectively zeroes rows of A)
     fem.set_bc(y.array, [bc], scale=0.0)
 
-    return
-
 
 # Basic Conjugate Gradient solver
-def cg(comm, action_A, b, max_iter=200, rtol=1e-6):
+def cg(comm, action_A, x0, b, max_iter=200, rtol=1e-6):
     rtol2 = rtol**2
 
     nr = b.index_map.size_local
@@ -282,14 +278,14 @@ def cg(comm, action_A, b, max_iter=200, rtol=1e-6):
 
     # Get initial y = A.x (using u_i.x)
     y = la.vector(b.index_map, 1, dtype)
-    action_A(y)
+    action_A(x0, y)
 
     # Copy ui.x to x
-    x = ui.x.array.copy()
+    x = x0.array.copy()
 
     # Copy residual to p
     r = b.array - y.array
-    p = ui.x
+    p = la.vector(b.index_map, 1, dtype)
     p.array[:] = r
 
     # Iterations of CG
@@ -297,7 +293,7 @@ def cg(comm, action_A, b, max_iter=200, rtol=1e-6):
     rnorm = rnorm0
     for k in range(max_iter):
 
-        action_A(y)
+        action_A(p, y)
         alpha = rnorm / _global_dot(comm, p.array, y.array)
 
         x += alpha * p.array
@@ -305,8 +301,9 @@ def cg(comm, action_A, b, max_iter=200, rtol=1e-6):
         rnorm_new = _global_dot(comm, r, r)
         beta = rnorm_new / rnorm
         rnorm = rnorm_new
-        print(k, rnorm)
-        if (rnorm / rnorm0 < rtol2):
+        if comm.rank == 0:
+            print(k, rnorm)
+        if rnorm / rnorm0 < rtol2:
             ui.x.array[:] = x[:]
             ui.x.scatter_forward()
             return k
@@ -321,7 +318,7 @@ def cg(comm, action_A, b, max_iter=200, rtol=1e-6):
 # solver is computed.
 # +
 rtol = 1e-12
-iter_cg1 = cg(mesh.comm, action_A, b, max_iter=200, rtol=rtol)
+iter_cg1 = cg(mesh.comm, action_A, ui.x, b, max_iter=200, rtol=rtol)
 
 # Set BC values in the solution vectors
 fem.set_bc(ui.x.array, [bc], scale=1.0)
