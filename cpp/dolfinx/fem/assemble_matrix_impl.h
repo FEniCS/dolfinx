@@ -384,7 +384,8 @@ void assemble_matrix(
   fem::DofTransformKernel<T> auto pre_dof_transform
       = element0->template get_pre_dof_transformation_function<T>();
   fem::DofTransformKernel<T> auto post_dof_transform
-      = element1->template get_post_dof_transformation_function<T>(doftransformation::transpose);
+      = element1->template get_post_dof_transformation_function<T>(
+          FiniteElement<U>::doftransform::transpose);
 
   std::span<const std::uint32_t> cell_info;
   if (element0->needs_dof_transformations()
