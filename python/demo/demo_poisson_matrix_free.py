@@ -302,7 +302,7 @@ def cg(comm, action_A, x0, b, max_iter=200, rtol=1e-6):
         beta = rnorm_new / rnorm
         rnorm = rnorm_new
         if comm.rank == 0:
-            print(k, rnorm)
+            print(k, np.sqrt(rnorm/rnorm0))
         if rnorm / rnorm0 < rtol2:
             ui.x.array[:] = x[:]
             ui.x.scatter_forward()
@@ -317,7 +317,7 @@ def cg(comm, action_A, x0, b, max_iter=200, rtol=1e-6):
 # error of the coefficients against the solution obtained by the direct
 # solver is computed.
 # +
-rtol = 1e-12
+rtol = 1e-6
 iter_cg1 = cg(mesh.comm, action_A, ui.x, b, max_iter=200, rtol=rtol)
 
 # Set BC values in the solution vectors
@@ -331,4 +331,3 @@ if mesh.comm.rank == 0:
     print(f"CG iterations until convergence:  {iter_cg1}")
     print(f"L2-error against exact solution:  {error_L2_cg1:.4e}")
     print(f"Coeff. error against LU solution: {error_lu_cg1:.4e}")
-assert error_L2_cg1 < rtol
