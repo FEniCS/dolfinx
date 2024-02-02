@@ -13,8 +13,7 @@ import dolfinx
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx.fem import form, functionspace
-from dolfinx.mesh import (CellType, GhostMode, create_unit_cube,
-                          create_unit_square)
+from dolfinx.mesh import CellType, GhostMode, create_unit_cube, create_unit_square
 
 
 @pytest.mark.skip_in_parallel

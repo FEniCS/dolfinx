@@ -65,8 +65,10 @@
 # and considering the boundary conditions
 #
 # $$
+# \begin{align}
 # u &= 0 \quad {\rm on} \ \partial\Omega, \\
 # \nabla^{2} u &= 0 \quad {\rm on} \ \partial\Omega,
+# \end{align}
 # $$
 #
 # a weak formulation of the biharmonic problem reads: find $u \in V$ such that
@@ -118,8 +120,7 @@ import ufl
 from dolfinx import fem, io, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
 from dolfinx.mesh import CellType, GhostMode
-from ufl import (CellDiameter, FacetNormal, avg, div, dS, dx, grad, inner,
-                 jump, pi, sin)
+from ufl import CellDiameter, FacetNormal, avg, div, dS, dx, grad, inner, jump, pi, sin
 
 # -
 

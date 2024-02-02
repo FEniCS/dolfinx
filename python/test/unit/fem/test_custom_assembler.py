@@ -36,7 +36,10 @@ numba = pytest.importorskip("numba")
 # Get PETSc MatSetValuesLocal interfaces
 MatSetValuesLocal = petsc_numba.MatSetValuesLocal
 MatSetValuesLocal_ctypes = petsc_ctypes.MatSetValuesLocal
-MatSetValuesLocal_abi = petsc_cffi.MatSetValuesLocal
+try:
+    MatSetValuesLocal_abi = petsc_cffi.MatSetValuesLocal
+except AttributeError:
+    MatSetValuesLocal_abi = None
 
 
 @numba.njit
@@ -226,7 +229,7 @@ def test_custom_mesh_loop_rank1(dtype):
         start = time.time()
         assemble_vector(b, (x_dofs, x), dofmap, num_owned_cells)
         end = time.time()
-        print("Time (numba, pass {}): {}".format(i, end - start))
+        print(f"Time (numba, pass {i}): {end - start}")
     b0.x.scatter_reverse(dolfinx.la.InsertMode.add)
     b0sum = np.sum(b0.x.array[:b0.x.index_map.size_local * b0.x.block_size])
     assert mesh.comm.allreduce(b0sum, op=MPI.SUM) == pytest.approx(1.0)
@@ -277,7 +280,7 @@ def test_custom_mesh_loop_rank1(dtype):
         start = time.time()
         assemble_vector_ufc(b, kernel, (x_dofs, x), dofmap, num_owned_cells, dtype)
         end = time.time()
-        print("Time (numba/cffi, pass {}): {}".format(i, end - start))
+        print(f"Time (numba/cffi, pass {i}): {end - start}")
     b3.x.scatter_reverse(dolfinx.la.InsertMode.add)
     assert np.linalg.norm(b3.x.array - b0.x.array) == pytest.approx(0.0, abs=1e-8)
 

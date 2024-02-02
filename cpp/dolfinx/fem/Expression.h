@@ -195,7 +195,7 @@ public:
         post_dof_transform
             = element
                   ->template get_post_dof_transformation_function<scalar_type>(
-                      transformation_type::transpose);
+                      doftransformation::transpose);
       }
     }
 

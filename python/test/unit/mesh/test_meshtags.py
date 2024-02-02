@@ -10,8 +10,7 @@ import numpy as np
 import pytest
 
 from dolfinx.graph import adjacencylist
-from dolfinx.mesh import (CellType, create_unit_cube, locate_entities,
-                          meshtags_from_entities)
+from dolfinx.mesh import CellType, create_unit_cube, locate_entities, meshtags_from_entities
 from ufl import Measure
 
 celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]

@@ -103,7 +103,7 @@ void discrete_gradient(mesh::Topology& topology,
   // Get inverse DOF transform function
   auto apply_inverse_dof_transform
       = e1.template get_pre_dof_transformation_function<T>(
-          transformation_type::inverse_transpose, false);
+          doftransformation::inverse_transpose, false);
 
   // Generate cell permutations
   topology.create_entity_permutations();
@@ -187,10 +187,10 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   const int bs1 = e1->block_size();
   auto apply_dof_transformation0
       = e0->template get_pre_dof_transformation_function<U>(
-          transformation_type::standard, false);
+          doftransformation::standard, false);
   auto apply_inverse_dof_transform1
       = e1->template get_pre_dof_transformation_function<T>(
-          transformation_type::inverse_transpose, false);
+          doftransformation::inverse_transpose, false);
 
   // Get sizes of elements
   const std::size_t space_dim0 = e0->space_dimension();

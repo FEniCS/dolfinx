@@ -737,6 +737,8 @@ Topology::Topology(MPI_Comm comm, CellType cell_type)
     _entity_types.push_back(cell_facet_type(cell_type, 0));
     _entity_types.push_back(cell_type);
   }
+  // One facet type
+  _interprocess_facets.resize(1);
 }
 //-----------------------------------------------------------------------------
 Topology::Topology(MPI_Comm comm, const std::vector<CellType>& cell_types)
@@ -748,6 +750,7 @@ Topology::Topology(MPI_Comm comm, const std::vector<CellType>& cell_types)
   assert(tdim > 0);
   for (auto ct : cell_types)
     assert(cell_dim(ct) == tdim);
+  _interprocess_facets.resize(1);
 
   // Create all the entity types in the mesh
   if (tdim > 1)
@@ -768,7 +771,7 @@ Topology::Topology(MPI_Comm comm, const std::vector<CellType>& cell_types)
       }
       _entity_types.insert(_entity_types.end(), facet_types.begin(),
                            facet_types.end());
-
+      _interprocess_facets.resize(facet_types.size());
       _entity_type_offsets.push_back(_entity_types.size());
     }
   }
@@ -833,28 +836,34 @@ std::int32_t Topology::create_entities(int dim)
   if (connectivity(dim, 0))
     return -1;
 
-  // Create local entities
-  auto [cell_entity, entity_vertex, index_map, interprocess_entities]
-      = compute_entities(_comm.comm(), *this, dim);
-
-  if (cell_entity)
-    set_connectivity(cell_entity, this->dim(), dim);
-
-  // TODO: is this check necessary? Seems redundant after the "skip check"
-  if (entity_vertex)
-    set_connectivity(entity_vertex, dim, 0);
-
-  assert(index_map);
-  this->set_index_map(dim, index_map);
-
-  // Store boundary facets
-  if (dim == this->dim() - 1)
+  for (std::size_t index = 0; index < this->entity_types(dim).size(); ++index)
   {
-    _interprocess_facets = std::move(interprocess_entities);
-    std::sort(_interprocess_facets.begin(), _interprocess_facets.end());
-  }
+    // Create local entities
+    auto [cell_entity, entity_vertex, index_map, interprocess_entities]
+        = compute_entities(_comm.comm(), *this, dim, index);
 
-  return index_map->size_local();
+    for (std::size_t k = 0; k < cell_entity.size(); ++k)
+    {
+      if (cell_entity[k])
+        set_connectivity(cell_entity[k], {this->dim(), k}, {dim, index});
+    }
+
+    // TODO: is this check necessary? Seems redundant after the "skip check"
+    if (entity_vertex)
+      set_connectivity(entity_vertex, {dim, index}, {0, 0});
+
+    assert(index_map);
+    this->set_index_map(dim, index, index_map);
+
+    // Store boundary facets
+    if (dim == this->dim() - 1)
+    {
+      std::sort(interprocess_entities.begin(), interprocess_entities.end());
+      assert(index < _interprocess_facets.size());
+      _interprocess_facets[index] = std::move(interprocess_entities);
+    }
+  }
+  return this->index_maps(dim)[0]->size_local();
 }
 //-----------------------------------------------------------------------------
 void Topology::create_connectivity(int d0, int d1)
@@ -863,26 +872,38 @@ void Topology::create_connectivity(int d0, int d1)
   create_entities(d0);
   create_entities(d1);
 
-  // Compute connectivity
-  const auto [c_d0_d1, c_d1_d0] = compute_connectivity(*this, d0, d1);
+  // Get the number of different entity types in each dimension
+  std::int32_t num_d0 = this->entity_types(d0).size();
+  std::int32_t num_d1 = this->entity_types(d1).size();
 
-  // NOTE: that to compute the (d0, d1) connections is it sometimes
-  // necessary to compute the (d1, d0) connections. We store the (d1,
-  // d0) for possible later use, but there is a memory overhead if they
-  // are not required. It may be better to not automatically store
-  // connectivity that was not requested, but advise in a docstring the
-  // most efficient order in which to call this function if several
-  // connectivities are needed.
+  // Create all connectivities between the two entity dimensions
+  for (std::int8_t i0 = 0; i0 < num_d0; ++i0)
+  {
+    for (std::int8_t i1 = 0; i1 < num_d1; ++i1)
+    {
+      // Compute connectivity
+      const auto [c_d0_d1, c_d1_d0]
+          = compute_connectivity(*this, {d0, i0}, {d1, i1});
 
-  // TODO: Caching policy/strategy.
-  // Concerning the note above: Provide an overload
-  // create_connectivity(std::vector<std::pair<int, int>>)?
+      // NOTE: that to compute the (d0, d1) connections is it sometimes
+      // necessary to compute the (d1, d0) connections. We store the (d1,
+      // d0) for possible later use, but there is a memory overhead if they
+      // are not required. It may be better to not automatically store
+      // connectivity that was not requested, but advise in a docstring the
+      // most efficient order in which to call this function if several
+      // connectivities are needed.
 
-  // Attach connectivities
-  if (c_d0_d1)
-    set_connectivity(c_d0_d1, d0, d1);
-  if (c_d1_d0)
-    set_connectivity(c_d1_d0, d1, d0);
+      // TODO: Caching policy/strategy.
+      // Concerning the note above: Provide an overload
+      // create_connectivity(std::vector<std::pair<int, int>>)?
+
+      // Attach connectivities
+      if (c_d0_d1)
+        set_connectivity(c_d0_d1, {d0, i0}, {d1, i1});
+      if (c_d1_d0)
+        set_connectivity(c_d1_d0, {d1, i1}, {d0, i0});
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 void Topology::create_entity_permutations()
@@ -987,7 +1008,13 @@ const std::vector<std::uint8_t>& Topology::get_facet_permutations() const
 //-----------------------------------------------------------------------------
 const std::vector<std::int32_t>& Topology::interprocess_facets() const
 {
-  return _interprocess_facets;
+  return _interprocess_facets[0];
+}
+//-----------------------------------------------------------------------------
+const std::vector<std::int32_t>&
+Topology::interprocess_facets(std::int8_t index) const
+{
+  return _interprocess_facets.at(index);
 }
 //-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const { return _entity_types.back(); }

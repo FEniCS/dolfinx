@@ -425,9 +425,12 @@ void mesh(nb::module_& m)
   // dolfinx::mesh::TopologyComputation
   m.def(
       "compute_entities",
-      [](MPICommWrapper comm, const dolfinx::mesh::Topology& topology, int dim)
-      { return dolfinx::mesh::compute_entities(comm.get(), topology, dim); },
-      nb::arg("comm"), nb::arg("topology"), nb::arg("dim"));
+      [](MPICommWrapper comm, const dolfinx::mesh::Topology& topology, int dim,
+         int index) {
+        return dolfinx::mesh::compute_entities(comm.get(), topology, dim,
+                                               index);
+      },
+      nb::arg("comm"), nb::arg("topology"), nb::arg("dim"), nb::arg("index"));
   m.def("compute_connectivity", &dolfinx::mesh::compute_connectivity,
         nb::arg("topology"), nb::arg("d0"), nb::arg("d1"));
 
@@ -511,7 +514,12 @@ void mesh(nb::module_& m)
           })
       .def("cell_name", [](const dolfinx::mesh::Topology& self)
            { return dolfinx::mesh::to_string(self.cell_type()); })
-      .def("interprocess_facets", &dolfinx::mesh::Topology::interprocess_facets)
+      .def("interprocess_facets",
+           nb::overload_cast<>(&dolfinx::mesh::Topology::interprocess_facets,
+                               nb::const_))
+      .def("interprocess_facets",
+           nb::overload_cast<std::int8_t>(
+               &dolfinx::mesh::Topology::interprocess_facets, nb::const_))
       .def_prop_ro(
           "comm",
           [](dolfinx::mesh::Topology& self)
