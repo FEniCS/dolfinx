@@ -26,6 +26,9 @@ using namespace dolfinx;
 
 namespace
 {
+/// @brief dofmap as a flattened 2D array
+/// The number of cells is array.size() / width
+/// and therefore array.size() must be a multiple of width
 using dofmap_t = struct dofmap_t
 {
   std::int32_t width;
@@ -33,7 +36,10 @@ using dofmap_t = struct dofmap_t
 };
 //-----------------------------------------------------------------------------
 
-/// Build a graph for owned dofs and apply graph reordering function
+/// Build a graph for owned dofs and apply graph reordering function with
+/// multiple dofmaps. The dofmaps are 2D arrays, of fixed width, stored in
+/// `dofmap_t` format. The dofmaps all refer to dof indices in the same range
+/// [0:owned_size).
 /// @param[in] dofmaps The local dofmaps (cell -> dofs)
 /// @param[in] owned_size Number of dofs owned by this process
 /// @param[in] original_to_contiguous Map from dof indices in @p dofmap
@@ -55,24 +61,19 @@ reorder_owned(const std::vector<dofmap_t>& dofmaps, std::int32_t owned_size,
   for (const auto& dofmap : dofmaps)
   {
     std::size_t num_cells = dofmap.array.size() / dofmap.width;
+    std::vector<std::int32_t> node_temp;
     for (std::size_t cell = 0; cell < num_cells; ++cell)
     {
-      std::span<const std::int32_t> nodes(
-          dofmap.array.data() + cell * dofmap.width, dofmap.width);
-      for (auto n0 : nodes)
+      node_temp.clear();
+      for (std::int32_t i = 0; i < dofmap.width; ++i)
       {
-        const std::int32_t node_0 = original_to_contiguous[n0];
-
-        // Skip unowned node
-        if (node_0 < owned_size)
-        {
-          for (auto n1 : nodes)
-          {
-            if (n0 != n1 and original_to_contiguous[n1] < owned_size)
-              ++num_edges[node_0];
-          }
-        }
+        std::int32_t node
+            = original_to_contiguous[dofmap.array[cell * dofmap.width + i]];
+        if (node < owned_size)
+          node_temp.push_back(node);
       }
+      for (std::int32_t node : node_temp)
+        num_edges[node] += node_temp.size() - 1;
     }
   }
 
@@ -84,11 +85,11 @@ reorder_owned(const std::vector<dofmap_t>& dofmaps, std::int32_t owned_size,
   for (const auto& dofmap : dofmaps)
   {
     std::size_t num_cells = dofmap.array.size() / dofmap.width;
+    std::vector<std::int32_t> node_temp;
 
     for (std::size_t cell = 0; cell < num_cells; ++cell)
     {
-      std::span<const std::int32_t> nodes(
-          dofmap.array.data() + cell * dofmap.width, dofmap.width);
+      std::span nodes(dofmap.array.data() + cell * dofmap.width, dofmap.width);
       for (auto n0 : nodes)
       {
         const std::int32_t node_0 = original_to_contiguous[n0];
@@ -96,7 +97,7 @@ reorder_owned(const std::vector<dofmap_t>& dofmaps, std::int32_t owned_size,
         {
           for (auto n1 : nodes)
           {
-            if (const std::int32_t node_1 = original_to_contiguous[n1];
+            if (std::int32_t node_1 = original_to_contiguous[n1];
                 n0 != n1 and node_1 < owned_size)
             {
               edges[offsets[node_0]++] = node_1;
@@ -188,7 +189,7 @@ build_basic_dofmap(const mesh::Topology& topology,
                                  + topology.index_map(D)->num_ghosts();
   dofmap_t dofs;
   dofs.width = element_dof_layout.num_dofs();
-  dofs.array.resize(element_dof_layout.num_dofs() * num_cells);
+  dofs.array.resize(dofs.width * num_cells);
 
   // Loop over cells and build dofmap
   const std::vector<std::vector<std::vector<int>>> entity_dofs
@@ -283,10 +284,13 @@ build_basic_dofmap(const mesh::Topology& topology,
 /// the end, i.e. in the positions [M, ..., N), where N is the total
 /// number of dofs on this process.
 ///
-/// @param [in] dofmap The basic dofmap data
-/// @param [in] dof_entity Map from dof index to (dim, entity_index),
-/// where entity_index is the process-wise mesh entity index
-/// @param [in] index_maps The set of index maps referring to dofs in dof_entity
+/// @param [in] dofmaps The basic dofmap data in multiple dofmaps sharing the
+/// same range
+/// @param [in] dof_entity Map from dof index to (index_map, entity_index),
+/// where entity_index is the local mesh entity index in the given index_map
+/// @param [in] index_maps The set of IndexMaps, one for each topological
+/// entity type used in the dofmap. The location in this array is referred to by
+/// the first item in each entry of @p dof_entity
 /// @param [in] reorder_fn Graph reordering function that is applied for
 /// dof re-ordering
 /// @return The pair (old-to-new local index map, M), where M is the
@@ -327,8 +331,8 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
     {
       if (original_to_contiguous[dof] == -1)
       {
-        const std::pair<std::int8_t, std::int32_t>& e = dof_entity[dof];
-        if (e.second < offset[e.first])
+        if (std::pair<std::int8_t, std::int32_t>& e = dof_entity[dof];
+            e.second < offset[e.first])
           original_to_contiguous[dof] = counter_owned++;
         else
           original_to_contiguous[dof] = counter_unowned++;
@@ -369,16 +373,17 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
 //-----------------------------------------------------------------------------
 
 /// Get global indices for unowned dofs
-/// @param [in] index_maps Set of index maps corresponding to dofs in dof_entity
+/// @param [in] index_maps Set of index maps corresponding to dofs in @p
+/// dof_entity, below.
 /// @param [in] num_owned The number of nodes owned by this process
 /// @param [in] process_offset The node offset for this process, i.e.
 /// the global index of owned node i is i + process_offset
 /// @param [in] global_indices_old The old global index of the old local
 /// node i
 /// @param [in] old_to_new The old local index to new local index map
-/// @param [in] dof_entity The ith entry gives (topological dim, local
+/// @param [in] dof_entity The ith entry gives (index_map, local
 /// index) of the mesh entity to which node i (old local index) is
-/// associated
+/// associated.
 /// @returns The (0) global indices for unowned dofs, (1) owner rank of
 /// each unowned dof
 std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
@@ -392,8 +397,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 
   // Build list of flags for owned mesh entities that are shared, i.e.
   // are a ghost on a neighbor
-  std::size_t num_index_maps = index_maps.size();
-  std::vector<std::vector<std::int8_t>> shared_entity(num_index_maps);
+  std::vector<std::vector<std::int8_t>> shared_entity(index_maps.size());
   for (std::size_t d = 0; d < shared_entity.size(); ++d)
   {
     auto map = index_maps[d];
@@ -411,7 +415,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
   // are ghosted on other processes
 
   // Loop over all dofs
-  std::vector<std::vector<std::int64_t>> global(num_index_maps);
+  std::vector<std::vector<std::int64_t>> global(index_maps.size());
   for (std::size_t i = 0; i < dof_entity.size(); ++i)
   {
     // Topological dimension of mesh entity that dof is associated with
@@ -427,11 +431,11 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
   }
 
   std::vector<int> requests_dim;
-  std::vector<MPI_Request> requests(num_index_maps);
-  std::vector<MPI_Comm> comm(num_index_maps, MPI_COMM_NULL);
-  std::vector<std::vector<std::int64_t>> all_dofs_received(num_index_maps);
-  std::vector<std::vector<int>> disp_recv(num_index_maps);
-  for (std::size_t d = 0; d < num_index_maps; ++d)
+  std::vector<MPI_Request> requests(index_maps.size());
+  std::vector<MPI_Comm> comm(index_maps.size(), MPI_COMM_NULL);
+  std::vector<std::vector<std::int64_t>> all_dofs_received(index_maps.size());
+  std::vector<std::vector<int>> disp_recv(index_maps.size());
+  for (std::size_t d = 0; d < index_maps.size(); ++d)
   {
     // FIXME: This should check which dimension are needed by the dofmap
     auto map = index_maps[d];
@@ -471,7 +475,7 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
   // Build  [local_new - num_owned] -> global old array  broken down by
   // dimension
   std::vector<std::vector<std::int64_t>> local_new_to_global_old(
-      num_index_maps);
+      index_maps.size());
   for (std::size_t i = 0; i < global_indices_old.size(); ++i)
   {
     const int d = dof_entity[i].first;
