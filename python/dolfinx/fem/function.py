@@ -518,9 +518,12 @@ def functionspace(mesh: Mesh,
         e = ElementMetaData(*element)
         ufl_e = basix.ufl.element(e.family, mesh.basix_cell(), e.degree,
                                   shape=e.shape, symmetry=e.symmetry,
-                                  gdim=mesh.ufl_cell().geometric_dimension())
+                                  gdim=mesh.ufl_cell().geometric_dimension(),
+                                  dtype=mesh.geometry.x.dtype)
     except TypeError:
         ufl_e = element  # type: ignore
+        basix_element = ufl_e.basix_element
+        value_shape = ufl_e.value_shape
 
     try:
         basix_element = ufl_e.basix_element
