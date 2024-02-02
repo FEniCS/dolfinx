@@ -9,9 +9,8 @@
 
 DOLFINx is the computational environment of
 [FEniCSx](https://fenicsproject.org) and implements the FEniCS Problem
-Solving Environment in C++ and Python.
-
-DOLFINx is a new version of DOLFIN and is being actively developed.
+Solving Environment in C++ and Python. DOLFINx is a new version of
+DOLFIN and is actively developed.
 
 ## Documentation
 
@@ -23,7 +22,7 @@ Documentation can be viewed at <https://docs.fenicsproject.org>.
 
 #### C++ core
 
-To build and install the C++ core, in the ``cpp/`` directory, run::
+To build and install the C++ core, in the `cpp/` directory, run:
 
 ```shell
 mkdir build
@@ -34,8 +33,8 @@ make install
 
 #### Python interface
 
-To install the Python interface, first install the C++ core, and then
-in the ``python/`` directory run::
+To install the Python interface, first install the C++ core, and then in
+the `python/` directory run:
 
 ```shell
 pip install -r build-requirements.txt
@@ -47,10 +46,9 @@ For detailed instructions, see
 
 ### Spack
 
-Spack automates the installation from source and is recommended for
-building DOLFINx on HPC systems. To build the most recent release using
-[Spack](https://spack.readthedocs.io/) (assuming a bash-compatible
-shell):
+Spack is recommended for building DOLFINx on HPC systems. To build the
+most recent release using [Spack](https://spack.readthedocs.io/)
+(assuming a bash-compatible shell):
 
 ```shell
 git clone https://github.com/spack/spack.git
@@ -78,8 +76,8 @@ comprehensive instructions.
 
 #### conda
 
-To install the latest stable release of the Python interface, with
-pyvista support for visualisation, using [conda](https://conda.io):
+To install the latest release of the Python interface, with pyvista
+support for visualisation, using [conda](https://conda.io):
 
 ```shell
 conda create -n fenicsx-env
@@ -88,8 +86,8 @@ conda install -c conda-forge fenics-dolfinx mpich pyvista
 ```
 
 conda is distributed with [Anaconda](https://www.anaconda.com/) and
-[Miniconda](https://docs.conda.io/en/latest/miniconda.html). The conda
-recipe is hosted on
+[Miniconda](https://docs.conda.io/en/latest/miniconda.html). The recipe
+is hosted on
 [conda-forge](https://github.com/conda-forge/fenics-dolfinx-feedstock).
 
 | Name | Downloads | Version | Platforms |
@@ -104,7 +102,7 @@ recipe is hosted on
 
 The [Ubuntu
 PPA](https://launchpad.net/~fenics-packages/+archive/ubuntu/fenics)
-contains binary packages of the FEniCSx components. To install:
+provides FEniCSx packages. To install:
 
 ```shell
 add-apt-repository ppa:fenics-packages/fenics
@@ -112,9 +110,9 @@ apt update
 apt install fenicsx
 ```
 
-When a version of DOLFINx is released we aim to provide a build for the
-latest stable version of Ubuntu. All other versions are provided on a
-best-effort basis.
+When a version of DOLFINx is released we aim to provide a package for
+the most recent LTS version of Ubuntu. All other versions are provided
+on a best-effort basis.
 
 #### Debian packages
 
@@ -125,7 +123,7 @@ of Debian. Install with `apt-get install fenicsx`.
 
 #### Docker images
 
-A Docker image with the latest stable release of DOLFINx:
+To run a Docker image with the latest release of DOLFINx:
 
 ```shell
 docker run -ti dolfinx/dolfinx:stable
@@ -138,7 +136,7 @@ source /usr/local/bin/dolfinx-complex-mode
 source /usr/local/bin/dolfinx-real-mode
 ```
 
-A Jupyter Lab environment with the latest stable release of DOLFINx:
+A Jupyter Lab environment with the latest release of DOLFINx:
 
 ```shell
 docker run --init -ti -p 8888:8888 dolfinx/lab:stable  # Access at http://localhost:8888
@@ -150,8 +148,8 @@ A Docker image with DOLFINx built nightly:
 docker run -ti dolfinx/dolfinx:nightly
 ```
 
-A development image with all of the dependencies required
-to build the latest stable release of the FEniCSx components:
+A development image with all of the dependencies required to build the
+latest release of the FEniCSx components:
 
 ```shell
 docker run -ti dolfinx/dev-env:stable
@@ -164,9 +162,8 @@ to build the `main` branch of the FEniCSx components:
 docker run -ti dolfinx/dev-env:current
 ```
 
-All Docker images support arm64 and amd64 architectures.
-
-For a full list of tags, including versioned images, see
+The Docker images support arm64 and amd64 architectures. For a full list
+of tags, including versioned images, see
 <https://hub.docker.com/u/dolfinx>
 
 ## Contributing
