@@ -255,39 +255,40 @@ print(np.linalg.norm(b.array))
 # is computed.
 
 
-def action_A():
+def action_A(y=None):
     # Update coefficient ui of the linear form M
     ui.x.scatter_forward()
 
     # Compute action of A on ui using the linear form M
-    y = fem.assemble_vector(M_fem)
+    y.array[:] = 0.0
+    fem.assemble_vector(y.array, M_fem)
     y.scatter_reverse(la.InsertMode.add)
 
     # Set BC dofs to zero (effectively zeroes rows of A)
     fem.set_bc(y.array, [bc], scale=0.0)
 
-    return y.array
+    return
 
-
-# This function can be used to replace the matrix-vector product in the
-# plain Conjugate Gradient method by Hestenes and Stiefel.
 
 # Basic Conjugate Gradient solver
 def cg(comm, action_A, b, max_iter=200, rtol=1e-6):
     rtol2 = rtol**2
 
-
     nr = b.index_map.size_local
+
     def _global_dot(comm, v0, v1):
+        # Only use the owned dofs in vector (up to nr)
         return comm.allreduce(np.vdot(v0[:nr], v1[:nr]), MPI.SUM)
 
     # Get initial y = A.x (using u_i.x)
+    y = la.vector(b.index_map, 1, dtype)
+    action_A(y)
+
+    # Copy ui.x to x
     x = ui.x.array.copy()
-    y = action_A()
 
     # Copy residual to p
-    print('bnorm = ', np.linalg.norm(b.array))
-    r = b.array - y
+    r = b.array - y.array
     p = ui.x
     p.array[:] = r
 
@@ -296,11 +297,11 @@ def cg(comm, action_A, b, max_iter=200, rtol=1e-6):
     rnorm = rnorm0
     for k in range(max_iter):
 
-        y = action_A()
-        alpha = rnorm / _global_dot(comm, p.array, y)
+        action_A(y)
+        alpha = rnorm / _global_dot(comm, p.array, y.array)
 
         x += alpha * p.array
-        r -= alpha * y
+        r -= alpha * y.array
         rnorm_new = _global_dot(comm, r, r)
         beta = rnorm_new / rnorm
         rnorm = rnorm_new
