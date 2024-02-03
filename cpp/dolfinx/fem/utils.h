@@ -267,16 +267,23 @@ std::vector<std::string> get_coefficient_names(const ufcx_form& ufcx_form);
 /// @return The name of each constant
 std::vector<std::string> get_constant_names(const ufcx_form& ufcx_form);
 
-/// @brief Create a Form from UFC input
-/// @param[in] ufcx_form The UFC form
-/// @param[in] spaces Vector of function spaces
-/// @param[in] coefficients Coefficient fields in the form
-/// @param[in] constants Spatial constants in the form
-/// @param[in] subdomains Subdomain markers
-/// @pre Each value in `subdomains` must be sorted by domain id
+/// @brief Create a Form from UFCx input with coefficients and constants
+/// passed in the required order.
+///
+/// Use fem::create_form to create a fem::Form with coefficients and
+/// constants associated with the name/string.
+///
+/// @param[in] ufcx_form The UFCx form.
+/// @param[in] spaces Vector of function spaces. The number of spaces is
+/// equal to the rank of the form.
+/// @param[in] coefficients Coefficient fields in the form.
+/// @param[in] constants Spatial constants in the form.
+/// @param[in] subdomains Subdomain markers.
 /// @param[in] mesh The mesh of the domain
+///
+/// @pre Each value in `subdomains` must be sorted by domain id.
 template <dolfinx::scalar T, typename U = dolfinx::scalar_value_type_t<T>>
-Form<T, U> create_form(
+Form<T, U> create_form_factory(
     const ufcx_form& ufcx_form,
     const std::vector<std::shared_ptr<const FunctionSpace<U>>>& spaces,
     const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients,
@@ -575,7 +582,8 @@ Form<T, U> create_form(
                     needs_facet_permutations, mesh);
 }
 
-/// @brief Create a Form from UFC input.
+/// @brief Create a Form from UFC input with coefficients and constants
+/// resolved by name.
 /// @param[in] ufcx_form UFC form
 /// @param[in] spaces Function spaces for the Form arguments.
 /// @param[in] coefficients Coefficient fields in the form (by name).
@@ -621,11 +629,15 @@ Form<T, U> create_form(
       throw std::runtime_error("Form constant \"" + name + "\" not provided.");
   }
 
-  return create_form(ufcx_form, spaces, coeff_map, const_map, subdomains, mesh);
+  return create_form_factory(ufcx_form, spaces, coeff_map, const_map,
+                             subdomains, mesh);
 }
 
 /// @brief Create a Form using a factory function that returns a pointer
-/// to a ufcx_form.
+/// to a `ufcx_form`.
+///
+/// Coefficients and constants are resolved by name/string.
+///
 /// @param[in] fptr Pointer to a function returning a pointer to
 /// ufcx_form.
 /// @param[in] spaces Function spaces for the Form arguments.
@@ -709,8 +721,8 @@ FunctionSpace<T> create_functionspace(
 
 /// @brief Create a FunctionSpace from UFC data.
 /// @param[in] fptr Pointer to a ufcx_function_space_create function.
-/// @param[in] function_name Name of a function whose function space to
-/// create. Function name is the name of Python variable for
+/// @param[in] function_name Name of a function whose function space is to
+/// create. Function name is the name of the Python variable for
 /// ufl.Coefficient, ufl.TrialFunction or ufl.TestFunction as defined in
 /// the UFL file.
 /// @param[in] mesh Mesh
