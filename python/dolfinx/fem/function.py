@@ -514,6 +514,7 @@ def functionspace(mesh: Mesh,
 
     """
     dtype = mesh.geometry.x.dtype
+
     # Create UFL element
     try:
         e = ElementMetaData(*element)
@@ -523,8 +524,7 @@ def functionspace(mesh: Mesh,
                                   dtype=dtype)
     except TypeError:
         ufl_e = element  # type: ignore
-        basix_element = ufl_e.basix_element
-        value_shape = ufl_e.value_shape
+
     try:
         basix_element = ufl_e.basix_element
         value_shape = ufl_e.value_shape
