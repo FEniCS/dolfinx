@@ -263,8 +263,8 @@ DofMap create_dofmap(
 /// @param[in] topology Mesh topology
 /// @param[in] unpermute_dofs Function to un-permute dofs. `nullptr`
 /// when transformation is not required.
-/// @param[in] reorder_fn Graph reordering function called on the dofmap
-/// @return A new dof map
+/// @param[in] reorder_fn Graph reordering function called on the dofmaps
+/// @return The list of new dof maps
 std::vector<DofMap> create_dofmaps(
     MPI_Comm comm, const std::vector<ElementDofLayout>& layouts,
     mesh::Topology& topology,
