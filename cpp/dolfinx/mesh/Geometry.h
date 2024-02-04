@@ -40,7 +40,7 @@ public:
   /// @param[in] index_map Index map associated with the geometry dofmap
   /// @param[in] dofmap The geometry (point) dofmap. For a cell, it
   /// gives the position in the point array of each local geometry node
-  /// @param[in] elements Elements that describes the cell geometry maps.
+  /// @param[in] element Element that describes the cell geometry map.
   /// @param[in] x The point coordinates. The shape is `(num_points, 3)`
   /// and the storage is row-major.
   /// @param[in] dim The geometric dimension (`0 < dim <= 3`).
@@ -55,10 +55,10 @@ public:
                                            std::vector<std::int64_t>>
   Geometry(
       std::shared_ptr<const common::IndexMap> index_map, U&& dofmap,
-      const std::vector<fem::CoordinateElement<
-          typename std::remove_reference_t<typename V::value_type>>>& elements,
+      const fem::CoordinateElement<
+          typename std::remove_reference_t<typename V::value_type>>& element,
       V&& x, int dim, W&& input_global_indices)
-      : _dim(dim), _dofmaps({dofmap}), _index_map(index_map), _cmaps(elements),
+      : _dim(dim), _dofmaps({dofmap}), _index_map(index_map), _cmaps({element}),
         _x(std::forward<V>(x)),
         _input_global_indices(std::forward<W>(input_global_indices))
   {
@@ -121,7 +121,9 @@ public:
       MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
   dofmap() const
   {
-    assert(_cmaps.size() == 1);
+    if (_dofmaps.size() != 1)
+      throw std::runtime_error("Multiple dofmaps");
+
     int ndofs = _cmaps[0].dim();
     return MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
         const std::int32_t,
@@ -133,14 +135,14 @@ public:
   MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
       const std::int32_t,
       MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
-  dofmap(int i) const
+  dofmap(std::int32_t i) const
   {
-    LOG(INFO) << "Get dofmap " << i << " " << _cmaps.size() << " "
-              << _dofmaps.size();
-
-    assert(i < _cmaps.size());
+    if (i < 0 or i > (int)_dofmaps.size())
+    {
+      throw std::out_of_range("Cannot get dofmap:" + std::to_string(i)
+                              + " out of range");
+    }
     int ndofs = _cmaps[i].dim();
-    LOG(INFO) << ndofs << " << ";
 
     return MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
         const std::int32_t,
@@ -172,14 +174,21 @@ public:
   /// @return The coordinate/geometry element
   const fem::CoordinateElement<value_type>& cmap() const
   {
-    assert(_cmaps.size() == 1);
+    if (_cmaps.size() != 1)
+      throw std::runtime_error("Multiple cmaps");
     return _cmaps[0];
   }
 
   /// @brief The elements that describe the geometry maps.
   /// @return List of coordinate elements
-  const std::vector<fem::CoordinateElement<value_type>>& cmaps() const
+  const std::vector<fem::CoordinateElement<value_type>>&
+  cmaps(std::int32_t i) const
   {
+    if (i < 0 or i > (int)_cmaps.size())
+    {
+      throw std::out_of_range("Cannot get cmap:" + std::to_string(i)
+                              + " out of range");
+    }
     return _cmaps;
   }
 
