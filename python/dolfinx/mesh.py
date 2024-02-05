@@ -386,7 +386,7 @@ def create_mesh(comm: _MPI.Comm, cells: npt.NDArray[np.int64], x: npt.NDArray[np
     try:
         mesh = _cpp.mesh.create_mesh(comm, cells, cmap._cpp_object, x, partitioner)
     except TypeError:
-        mesh = _cpp.mesh.create_mesh(comm, _cpp.graph.AdjacencyList_int64(np.cast['int64'](cells)),
+        mesh = _cpp.mesh.create_mesh(comm, _cpp.graph.AdjacencyList_int64(np.asarray(cells, dtype=np.int64)),
                                      cmap._cpp_object, x, partitioner)
 
     return Mesh(mesh, domain)
