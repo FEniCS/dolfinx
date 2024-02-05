@@ -257,6 +257,7 @@ Geometry(std::shared_ptr<const common::IndexMap>, U,
 /// @param[in] dim Geometric dimension (1, 2, or 3).
 /// @param[in] reorder_fn Function for re-ordering the degree-of-freedom
 /// map associated with the geometry data.
+/// @note Experimental new interface for multiple cmap/dofmap
 /// @return A mesh geometry.
 template <typename U>
 Geometry<typename std::remove_reference_t<typename U::value_type>>
