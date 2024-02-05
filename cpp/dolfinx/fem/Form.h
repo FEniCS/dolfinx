@@ -37,6 +37,8 @@ enum class IntegralType : std::int8_t
   vertex = 3          ///< Vertex
 };
 
+/// @brief Represents integral data, containing the integral
+/// ID, the kernel, and a list of entities to integrate over
 template <dolfinx::scalar T>
 struct integral_data
 {
