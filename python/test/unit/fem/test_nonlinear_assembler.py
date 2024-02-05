@@ -564,9 +564,9 @@ def test_assembly_solve_taylor_hood_nl(mesh):
         Jnorm = nest_matrix_norm(Jmat)
         Fnorm = Fvec.norm()
         xnorm = x.norm()
-        Jmat.destroy()
-        Fvec.destroy()
+        Jmat.destroy(), Fvec.destroy()
         x.destroy()
+        Pmat.destroy()
         return Jnorm, Fnorm, xnorm
 
     def monolithic():
