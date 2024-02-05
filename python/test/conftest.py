@@ -33,7 +33,7 @@ def pytest_runtest_teardown(item):
 def pytest_runtest_setup(item):
     marker = item.get_closest_marker("skip_in_parallel")
     if marker and MPI.COMM_WORLD.size > 1:
-        pytest.skip("This test should only be run in serial")
+        pytest.skip("This test should be run in serial only.")
 
 
 @pytest.fixture(scope="module")
