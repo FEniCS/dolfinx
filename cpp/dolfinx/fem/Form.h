@@ -42,7 +42,7 @@ enum class IntegralType : std::int8_t
 template <dolfinx::scalar T>
 struct integral_data
 {
-  // The kernel type
+  /// The finite element kernel type
   using kern = std::function<void(T*, const T*, const T*,
                                   const scalar_value_type_t<T>*, const int*,
                                   const std::uint8_t*)>;
@@ -56,13 +56,13 @@ struct integral_data
   {
   }
 
-  // Integral ID
+  /// Integral ID
   int id;
 
-  // The integration kernel
+  /// The integration kernel
   kern kernel;
 
-  // The entities to integrate over
+  /// The entities to integrate over
   std::span<const std::int32_t> entities;
 };
 
