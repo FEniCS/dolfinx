@@ -26,8 +26,8 @@ import ufl
 from dolfinx import la
 from dolfinx.cpp.fem import pack_coefficients as _pack_coefficients
 from dolfinx.cpp.fem import pack_constants as _pack_constants
-from dolfinx.cpp.petsc import discrete_gradient as _discrete_gradient
-from dolfinx.cpp.petsc import interpolation_matrix as _interpolation_matrix
+from dolfinx.cpp.fem.petsc import discrete_gradient as _discrete_gradient
+from dolfinx.cpp.fem.petsc import interpolation_matrix as _interpolation_matrix
 from dolfinx.fem import assemble as _assemble
 from dolfinx.fem.bcs import DirichletBC
 from dolfinx.fem.bcs import bcs_by_block as _bcs_by_block
@@ -789,6 +789,9 @@ def discrete_gradient(space0: _FunctionSpace, space1: _FunctionSpace) -> PETSc.M
     Args:
         space0: Lagrange space to interpolate the gradient from
         space1: Nedelec space to interpolate into
+
+    Returns:
+        Discrete gradient operator
     """
     return _discrete_gradient(space0._cpp_object, space1._cpp_object)
 
@@ -799,5 +802,7 @@ def interpolation_matrix(space0: _FunctionSpace, space1: _FunctionSpace) -> PETS
     Args:
         space0: Space to interpolate from
         space1: Space to interpolate into
+    Returns:
+        Interpolation matrix
     """
     return _interpolation_matrix(space0._cpp_object, space1._cpp_object)

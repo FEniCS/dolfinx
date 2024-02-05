@@ -46,6 +46,9 @@ def discrete_gradient(space0: FunctionSpace, space1: FunctionSpace) -> _MatrixCS
     Args:
         space0: Lagrange space to interpolate the gradient from
         space1: Nedelec space to interpolate into
+
+    Returns:
+        Discrete gradient operator
     """
     return _discrete_gradient(space0._cpp_object, space1._cpp_object)
 
