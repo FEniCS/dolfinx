@@ -14,8 +14,8 @@ import pytest
 import ufl
 from basix.ufl import element
 from dolfinx import default_real_type
-from dolfinx.fem import (Expression, Function, assemble_scalar, discrete_gradient, form, functionspace,
-                         interpolation_matrix)
+from dolfinx.fem import Expression, Function, assemble_scalar, form, functionspace
+from dolfinx.fem.petsc import discrete_gradient, interpolation_matrix
 from dolfinx.mesh import CellType, GhostMode, create_mesh, create_unit_cube, create_unit_square
 
 
