@@ -58,11 +58,11 @@ def create_nonmatching_meshes_interpolation_data(
         padding: Absolute padding of bounding boxes of all entities on mesh_to
     """
     if cells is None:
-        assert isinstance(mesh_to, Mesh)
+        assert isinstance(mesh_to, _Mesh)
         _create_nonmatching_meshes_interpolation_data(
             mesh_to._cpp_object, element, mesh_from._cpp_onject, padding)
     else:
-        assert isinstance(mesh_to, Geometry)
+        assert isinstance(mesh_to, _Geometry)
         _create_nonmatching_meshes_interpolation_data(
             mesh_to._cpp_object, element, mesh_from._cpp_object, cells, padding)
 
