@@ -272,8 +272,7 @@ def test_higher_order_coordinate_map(points, celltype, order):
 
 
 @pytest.mark.skip_in_parallel
-# @pytest.mark.parametrize("order", [1, 2, 3])
-@pytest.mark.parametrize("order", [1, 2])
+@pytest.mark.parametrize("order", [1, 2, 3])
 def test_higher_order_tetra_coordinate_map(order):
     """Computes physical coordinates of a cell, based on the coordinate map."""
     celltype = CellType.tetrahedron
