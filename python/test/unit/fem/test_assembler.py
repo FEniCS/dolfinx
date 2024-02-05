@@ -594,7 +594,6 @@ def test_assembly_solve_taylor_hood(mesh):
         ksp_p.setType("preonly")
 
         def monitor(ksp, its, rnorm):
-            # print("Num it, rnorm:", it s, rnorm)
             pass
 
         ksp.setTolerances(rtol=1.0e-8, max_it=50)
@@ -607,7 +606,6 @@ def test_assembly_solve_taylor_hood(mesh):
         pc.destroy(), ksp.destroy()
         A.destroy()
         b.destroy(), x.destroy()
-        # P.destroy()
         return norms
 
     def blocked_solve():
