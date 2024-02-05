@@ -43,7 +43,8 @@ __all__ = ["create_vector", "create_vector_block", "create_vector_nest",
            "assemble_vector", "assemble_vector_nest", "assemble_vector_block",
            "assemble_matrix", "assemble_matrix_nest", "assemble_matrix_block",
            "apply_lifting", "apply_lifting_nest", "set_bc", "set_bc_nest",
-           "LinearProblem", "NonlinearProblem"]
+           "LinearProblem", "NonlinearProblem", "discrete_gradient",
+           "interpolation_matrix"]
 
 
 def _extract_function_spaces(a: list[list[Form]]):
