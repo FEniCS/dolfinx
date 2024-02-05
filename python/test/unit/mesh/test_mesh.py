@@ -22,7 +22,7 @@ from dolfinx.cpp.mesh import create_cell_partitioner, is_simplex
 from dolfinx.fem import assemble_scalar, coordinate_element, form
 from dolfinx.mesh import (CellType, DiagonalType, GhostMode, create_box, create_interval, create_rectangle,
                           create_submesh, create_unit_cube, create_unit_interval, create_unit_square,
-                          exterior_facet_indices, locate_entities, locate_entities_boundary, entities_to_geometry)
+                          entities_to_geometry, exterior_facet_indices, locate_entities, locate_entities_boundary)
 
 
 def submesh_topology_test(mesh, submesh, entity_map, vertex_map, entity_dim):
