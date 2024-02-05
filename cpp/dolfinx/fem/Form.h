@@ -37,6 +37,16 @@ enum class IntegralType : std::int8_t
   vertex = 3          ///< Vertex
 };
 
+template <dolfinx::scalar T>
+struct integral_data
+{
+  int id;
+  std::function<void(T*, const T*, const T*, const scalar_value_type_t<T>*,
+                     const int*, const std::uint8_t*)>
+      kernel;
+  std::span<const std::int32_t> entities;
+};
+
 /// @brief A representation of finite element variational forms.
 ///
 /// A note on the order of trial and test spaces: FEniCS numbers
@@ -85,13 +95,7 @@ public:
   /// are no argument functions from which the mesh can be extracted,
   /// e.g. for functionals.
   Form(const std::vector<std::shared_ptr<const FunctionSpace<U>>>& V,
-       const std::map<IntegralType,
-                      std::vector<std::tuple<
-                          int,
-                          std::function<void(T*, const T*, const T*,
-                                             const scalar_value_type_t<T>*,
-                                             const int*, const std::uint8_t*)>,
-                          std::span<const std::int32_t>>>>& integrals,
+       const std::map<IntegralType, std::vector<integral_data<T>>>& integrals,
        const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients,
        const std::vector<std::shared_ptr<const Constant<T>>>& constants,
        bool needs_facet_permutations,
@@ -111,10 +115,10 @@ public:
       throw std::runtime_error("No mesh could be associated with the Form.");
 
     // Store kernels, looping over integrals by domain type (dimension)
-    for (auto& [type, kernels] : integrals)
+    for (auto& [type, data] : integrals)
     {
       auto& itg = _integrals[static_cast<std::size_t>(type)];
-      for (auto& [id, kern, e] : kernels)
+      for (auto& [id, kern, e] : data)
         itg.insert({id, {kern, std::vector(e.begin(), e.end())}});
     }
   }

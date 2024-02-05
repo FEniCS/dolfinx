@@ -523,8 +523,7 @@ void declare_form(nb::module_& m, std::string type)
                                      const typename geom_type<T>::value_type*,
                                      const int*, const std::uint8_t*)>;
             std::map<dolfinx::fem::IntegralType,
-                     std::vector<
-                         std::tuple<int, kern, std::span<const std::int32_t>>>>
+                     std::vector<dolfinx::fem::integral_data<T>>>
                 _integrals;
 
             // Loop over kernel for each entity type
@@ -536,9 +535,8 @@ void declare_form(nb::module_& m, std::string type)
                     = (void (*)(T*, const T*, const T*,
                                 const typename geom_type<T>::value_type*,
                                 const int*, const std::uint8_t*))ptr;
-                _integrals[type].emplace_back(
-                    id, kn_ptr,
-                    std::span<const std::int32_t>(e.data(), e.size()));
+                dolfinx::fem::integral_data<T> d {id, kn_ptr, std::span<const std::int32_t>(e.data(), e.size())};
+                _integrals[type].emplace_back(d);
               }
             }
 
