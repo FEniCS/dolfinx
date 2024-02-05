@@ -404,8 +404,7 @@ Form<T, U> create_form_factory(
         assert(topology->index_map(tdim));
         default_cells.resize(topology->index_map(tdim)->size_local(), 0);
         std::iota(default_cells.begin(), default_cells.end(), 0);
-        integral_data<T> d{id, k, default_cells};
-        itg.first->second.emplace_back(d);
+        itg.first->second.emplace_back(id, k, default_cells);
       }
       else if (sd != subdomains.end())
       {
@@ -414,10 +413,7 @@ Form<T, U> create_form_factory(
                                    [](auto& pair, auto val)
                                    { return pair.first < val; });
         if (it != sd->second.end() and it->first == id)
-        {
-          integral_data<T> d{id, k, it->second};
-          itg.first->second.emplace_back(d);
-        }
+          itg.first->second.emplace_back(id, k, it->second);
       }
 
       if (integral->needs_facet_permutations)
@@ -479,8 +475,7 @@ Form<T, U> create_form_factory(
           default_facets_ext.insert(default_facets_ext.end(), pair.begin(),
                                     pair.end());
         }
-        integral_data<T> d{id, k, default_facets_ext};
-        itg.first->second.emplace_back(d);
+        itg.first->second.emplace_back(id, k, default_facets_ext);
       }
       else if (sd != subdomains.end())
       {
@@ -489,10 +484,7 @@ Form<T, U> create_form_factory(
                                    [](auto& pair, auto val)
                                    { return pair.first < val; });
         if (it != sd->second.end() and it->first == id)
-        {
-          integral_data<T> d{id, k, it->second};
-          itg.first->second.emplace_back(d);
-        }
+          itg.first->second.emplace_back(id, k, it->second);
       }
 
       if (integral->needs_facet_permutations)
@@ -557,8 +549,7 @@ Form<T, U> create_form_factory(
                                       pairs.end());
           }
         }
-        integral_data<T> d{id, k, default_facets_int};
-        itg.first->second.emplace_back(d);
+        itg.first->second.emplace_back(id, k, default_facets_int);
       }
       else if (sd != subdomains.end())
       {
@@ -567,8 +558,7 @@ Form<T, U> create_form_factory(
                                    { return pair.first < val; });
         if (it != sd->second.end() and it->first == id)
         {
-          integral_data<T> d{id, k, it->second};
-          itg.first->second.emplace_back(d);
+          itg.first->second.emplace_back(id, k, it->second);
         }
       }
 
