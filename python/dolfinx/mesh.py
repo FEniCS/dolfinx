@@ -645,3 +645,20 @@ def create_unit_cube(comm: _MPI.Comm, nx: int, ny: int, nz: int, cell_type=CellT
     """
     return create_box(comm, [np.array([0.0, 0.0, 0.0]), np.array([1.0, 1.0, 1.0])],
                       [nx, ny, nz], cell_type, dtype, ghost_mode, partitioner)
+
+
+def entities_to_geometry(
+    mesh: Mesh, dim: int, entities: np.NDArray[np.int32], orient: bool
+) -> np.NDArray[np.int32]:
+    """Determine the indices in the geometry data for each vertex of the given mesh entities.
+
+    Args:
+        mesh: The mesh
+        dim: Topological dimension of the entities of interest
+        entities: Entity indices (local) to compute the vertex geometry indices for
+        orient: If true, in 3D, reorients facets to have consistent normal direction
+
+    Returns:
+        Indices in the geometry array for the entity vertices
+    """
+    return _entities_to_geometry(mesh, dim, entities, orient)
