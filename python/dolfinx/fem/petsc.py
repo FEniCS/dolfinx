@@ -778,7 +778,7 @@ class NonlinearProblem:
         A.assemble()
 
 
-def discrete_gradient(space0: _FunctionSpace, space1: _FunctionSpace) -> PETSC.Mat:
+def discrete_gradient(space0: _FunctionSpace, space1: _FunctionSpace) -> PETSc.Mat:
     """Assemble a discrete gradient operator.
 
     The discrete gradient operator A interpolates the gradient of
@@ -792,7 +792,7 @@ def discrete_gradient(space0: _FunctionSpace, space1: _FunctionSpace) -> PETSC.M
     return _discrete_gradient(space0._cpp_object, space1._cpp_object)
 
 
-def interpolation_matrix(space0: _FunctionSpace, space1: _FunctionSpace) -> PETSC.Mat:
+def interpolation_matrix(space0: _FunctionSpace, space1: _FunctionSpace) -> PETSc.Mat:
     """Assemble an interpolation operator matrix.
 
     Args:
