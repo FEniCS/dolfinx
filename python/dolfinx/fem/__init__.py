@@ -60,7 +60,7 @@ def create_nonmatching_meshes_interpolation_data(
     if cells is None:
         assert isinstance(mesh_to, _Mesh)
         _create_nonmatching_meshes_interpolation_data(
-            mesh_to._cpp_object, element, mesh_from._cpp_onject, padding)
+            mesh_to._cpp_object, element, mesh_from._cpp_object, padding)
     else:
         assert isinstance(mesh_to, _Geometry)
         _create_nonmatching_meshes_interpolation_data(
