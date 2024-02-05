@@ -5,8 +5,15 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Tools for assembling and manipulating finite element forms."""
 
+import typing
+
+import numpy as np
+import numpy.typing as npt
+
+from dolfinx.cpp.fem import FiniteElement as _FiniteElement
 from dolfinx.cpp.fem import IntegralType
-from dolfinx.cpp.fem import create_nonmatching_meshes_interpolation_data as _create_nonmatching_meshes_interpolation_data
+from dolfinx.cpp.fem import \
+    create_nonmatching_meshes_interpolation_data as _create_nonmatching_meshes_interpolation_data
 from dolfinx.cpp.fem import create_sparsity_pattern as _create_sparsity_pattern
 from dolfinx.cpp.fem import transpose_dofmap
 from dolfinx.fem.assemble import (apply_lifting, assemble_matrix, assemble_scalar, assemble_vector, create_matrix,
@@ -16,6 +23,8 @@ from dolfinx.fem.dofmap import DofMap
 from dolfinx.fem.element import CoordinateElement, coordinate_element
 from dolfinx.fem.forms import Form, extract_function_spaces, form, form_cpp_class
 from dolfinx.fem.function import Constant, ElementMetaData, Expression, Function, FunctionSpace, functionspace
+from dolfinx.mesh import Geometry as _Geometry
+from dolfinx.mesh import Mesh as _Mesh
 
 
 def create_sparsity_pattern(a: Form):
@@ -36,7 +45,7 @@ def create_sparsity_pattern(a: Form):
 
 
 def create_nonmatching_meshes_interpolation_data(
-    mesh_to: typing.Union(Mesh, Geometry), element: FiniteElement, mesh_from: Mesh,
+    mesh_to: typing.Union(_Mesh, _Geometry), element: _FiniteElement, mesh_from: _Mesh,
     cells: typing.Optional[npt.NDArray[np.int32]] = None, padding: float = 1e-14
 ):
     """Generate data needed to interpolate discrete functions across different meshes.
