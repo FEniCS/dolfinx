@@ -121,8 +121,7 @@ compute_parent_facets(std::span<const std::int32_t> simplex_set)
 /// num_edges).
 //// If an edge is not refined its corresponding entry is -1
 /// @param[in] longest_edge Vector indicating the longest edge for each
-///   triangle. For tdim=2, one entry, for tdim=3, four entries. The entry
-///   relates to the local index of the last num_edges entries of indices.
+///   triangle in the cell. For triangular cells (2D) there is only one value, and for tetrahedra (3D) there are four values, one for each facet. The values give the local edge indices of the cell.
 /// @param[in] tdim Topological dimension (2 or 3)
 /// @param[in] uniform Make a "uniform" subdivision with all triangles
 ///   being similar shape
