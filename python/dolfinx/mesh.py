@@ -648,8 +648,8 @@ def create_unit_cube(comm: _MPI.Comm, nx: int, ny: int, nz: int, cell_type=CellT
 
 
 def entities_to_geometry(
-    mesh: Mesh, dim: int, entities: np.NDArray[np.int32], orient: bool
-) -> np.NDArray[np.int32]:
+    mesh: Mesh, dim: int, entities: npt.NDArray[np.int32], orient: bool
+) -> npt.NDArray[np.int32]:
     """Determine the indices in the geometry data for each vertex of the given mesh entities.
 
     Args:
