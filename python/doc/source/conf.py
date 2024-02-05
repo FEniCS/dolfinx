@@ -10,7 +10,7 @@ import dolfinx
 
 sys.path.insert(0, os.path.abspath("."))
 
-import jupytext_process  # noqa
+import jupytext_process
 
 myst_heading_anchors = 3
 
