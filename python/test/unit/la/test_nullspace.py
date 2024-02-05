@@ -103,6 +103,8 @@ def test_nullspace_orthogonal(mesh, degree):
     assert not la.is_orthonormal(nullspace, eps=1.0e-4)
     la.orthonormalize(nullspace)
     assert la.is_orthonormal(nullspace, eps=1.0e-3)
+    for x in nullspace:
+        x.destroy()
 
 
 @pytest.mark.parametrize("mesh", [
@@ -144,3 +146,6 @@ def test_nullspace_check(mesh, degree):
     la.orthonormalize(nullspace)
     ns = PETSc.NullSpace().create(vectors=nullspace)
     assert not ns.test(A)
+
+    for x in ns:
+        x.destroy()

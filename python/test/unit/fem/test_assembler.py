@@ -594,7 +594,7 @@ def test_assembly_solve_taylor_hood(mesh):
         ksp_p.setType("preonly")
 
         def monitor(ksp, its, rnorm):
-            # print("Num it, rnorm:", its, rnorm)
+            # print("Num it, rnorm:", it s, rnorm)
             pass
 
         ksp.setTolerances(rtol=1.0e-8, max_it=50)
@@ -603,8 +603,12 @@ def test_assembly_solve_taylor_hood(mesh):
         x = b.copy()
         ksp.solve(b, x)
         assert ksp.getConvergedReason() > 0
-        ksp.destroy()
-        return b.norm(), x.norm(), nest_matrix_norm(A), nest_matrix_norm(P)
+        norms = (b.norm(), x.norm(), nest_matrix_norm(A), nest_matrix_norm(P))
+        pc.destroy(), ksp.destroy()
+        A.destroy()
+        b.destroy(), x.destroy()
+        # P.destroy()
+        return norms
 
     def blocked_solve():
         """Blocked (monolithic) solver"""
@@ -800,11 +804,10 @@ def test_symmetry_interior_facet_assembly(mesh):
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 def test_basic_assembly_constant(mode, dtype):
-    """Tests assembly with Constant
+    """Tests assembly with Constant.
 
     The following test should be sensitive to order of flattening the
     matrix-valued constant.
-
     """
     xtype = dtype(0).real.dtype
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, ghost_mode=mode, dtype=xtype)
@@ -867,7 +870,7 @@ def test_lambda_assembler():
 
 
 def test_pack_coefficients():
-    """Test packing of form coefficients ahead of main assembly call"""
+    """Test packing of form coefficients ahead of main assembly call."""
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 15)
     V = functionspace(mesh, ("Lagrange", 1))
 
