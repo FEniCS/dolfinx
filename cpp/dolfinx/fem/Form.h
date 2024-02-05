@@ -45,14 +45,24 @@ struct integral_data
   using kern = std::function<void(T*, const T*, const T*,
                                   const scalar_value_type_t<T>*, const int*,
                                   const std::uint8_t*)>;
-  int id;
-  kern kernel;
-  std::span<const std::int32_t> entities;
 
+  /// @brief Create a container to hold integral data
+  /// @param id The domain ID
+  /// @param kernel The integration kernel
+  /// @param entities The entities to integrate over
   integral_data(int id, kern kernel, std::span<const std::int32_t> entities)
       : id(id), kernel(kernel), entities(entities)
   {
   }
+
+  // Integral ID
+  int id;
+
+  // The integration kernel
+  kern kernel;
+
+  // The entities to integrate over
+  std::span<const std::int32_t> entities;
 };
 
 /// @brief A representation of finite element variational forms.
