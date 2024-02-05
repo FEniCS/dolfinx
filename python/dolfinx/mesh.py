@@ -31,7 +31,7 @@ __all__ = ["meshtags_from_entities", "locate_entities", "locate_entities_boundar
            "exterior_facet_indices", "compute_incident_entities", "create_cell_partitioner",
            "create_interval", "create_unit_interval", "create_rectangle", "create_unit_square",
            "create_box", "create_unit_cube", "to_type", "to_string", "refine_plaza",
-           "transfer_meshtag"]
+           "transfer_meshtag", "entities_to_geometry"]
 
 
 class Mesh:
@@ -661,4 +661,4 @@ def entities_to_geometry(
     Returns:
         Indices in the geometry array for the entity vertices
     """
-    return _entities_to_geometry(mesh, dim, entities, orient)
+    return _cpp.mesh.entities_to_geometry(mesh._cpp_object, dim, entities, orient)
