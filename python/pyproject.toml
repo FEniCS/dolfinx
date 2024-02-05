@@ -90,7 +90,6 @@ sections = [
 [tool.ruff]
 line-length = 120
 indent-width = 4
-allowed-confusables = ["σ"]
 
 [tool.ruff.lint]
 select = [
@@ -105,3 +104,4 @@ select = [
       "FLY", # use f-string not static joins
 ]
 ignore = ["UP007", "RUF012"]
+allowed-confusables = ["σ"]
