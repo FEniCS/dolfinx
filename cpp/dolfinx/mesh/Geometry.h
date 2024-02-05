@@ -115,7 +115,8 @@ public:
   /// Return Euclidean dimension of coordinate system
   int dim() const { return _dim; }
 
-  /// DOF map
+  /// @brief  DofMap for the geometry
+  /// @return A 2D array with shape [num_cells, dofs_per_cell]
   MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
       const std::int32_t,
       MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
@@ -131,7 +132,10 @@ public:
         _dofmaps[0].data(), _dofmaps[0].size() / ndofs, ndofs);
   }
 
-  /// DOF map
+  /// @brief The dofmap associated with the `i`th coordinate map in the
+  /// geometry.
+  /// @param i Index
+  /// @return A 2D array with shape [num_cells, dofs_per_cell]
   MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
       const std::int32_t,
       MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
@@ -150,7 +154,8 @@ public:
         _dofmaps[i].data(), _dofmaps[i].size() / ndofs, ndofs);
   }
 
-  /// Index map
+  /// @brief Index map
+  /// @return The index map for the geometry dofs
   std::shared_ptr<const common::IndexMap> index_map() const
   {
     return _index_map;
@@ -179,8 +184,9 @@ public:
     return _cmaps[0];
   }
 
-  /// @brief The elements that describe the geometry maps.
-  /// @return List of coordinate elements
+  /// @brief The element that describe the `i`th geometry map
+  /// @param i Index of the coordinate element
+  /// @return Coordinate element
   const std::vector<fem::CoordinateElement<value_type>>&
   cmaps(std::int32_t i) const
   {
