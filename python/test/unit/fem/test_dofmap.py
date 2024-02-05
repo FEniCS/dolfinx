@@ -272,10 +272,9 @@ def test_higher_order_coordinate_map(points, celltype, order):
 
 
 @pytest.mark.skip_in_parallel
-# @pytest.mark.parametrize("order", [1, 2, 3])
 @pytest.mark.parametrize("order", [1, 2])
 def test_higher_order_tetra_coordinate_map(order):
-    """Computes physical coordinates of a cell, based on the coordinate map."""
+    """Compute physical coordinates of a cell from the coordinate map."""
     celltype = CellType.tetrahedron
     points = np.array([[0, 0, 0], [1, 0, 0], [0, 2, 0], [0, 0, 3],
                        [0, 4 / 3, 1], [0, 2 / 3, 2],
@@ -285,8 +284,9 @@ def test_higher_order_tetra_coordinate_map(order):
                        [0, 2 / 3, 0], [0, 4 / 3, 0],
                        [1 / 3, 0, 0], [2 / 3, 0, 0],
                        [1 / 3, 2 / 3, 1], [0, 2 / 3, 1],
-                       [1 / 3, 0, 1], [1 / 3, 2 / 3, 0]])
+                       [1 / 3, 0, 1], [1 / 3, 2 / 3, 0]], dtype=np.float64)
 
+    assert order <= 2
     if order == 1:
         points = np.array([points[0, :], points[1, :], points[2, :], points[3, :]])
     elif order == 2:
@@ -298,18 +298,14 @@ def test_higher_order_tetra_coordinate_map(order):
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     V = functionspace(mesh, ("Lagrange", order))
     X = V.element.interpolation_points()
-    coord_dofs = mesh.geometry.dofmap
+    x_dofs = mesh.geometry.dofmap
     x_g = mesh.geometry.x
 
-    cmap = mesh.geometry.cmap
     x_coord_new = np.zeros([len(points), mesh.geometry.dim])
+    for node in range(points.shape[0]):
+        x_coord_new[node] = x_g[x_dofs[0, node], :mesh.geometry.dim]
 
-    i = 0
-    for node in range(len(points)):
-        x_coord_new[i] = x_g[coord_dofs[0, node], :mesh.geometry.dim]
-        i += 1
-
-    x = cmap.push_forward(X, x_coord_new)
+    x = mesh.geometry.cmap.push_forward(X, x_coord_new)
     assert np.allclose(x[:, 0], X[:, 0])
     assert np.allclose(x[:, 1], 2 * X[:, 1])
     assert np.allclose(x[:, 2], 3 * X[:, 2])
