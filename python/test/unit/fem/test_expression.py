@@ -300,7 +300,7 @@ def test_expression_eval_cells_subset(dtype):
 
     cells_imap = mesh.topology.index_map(mesh.topology.dim)
     all_cells = np.arange(cells_imap.size_local + cells_imap.num_ghosts, dtype=np.int32)
-    cells_to_dofs = np.fromiter(map(V.dofmap.cell_dofs, all_cells), dtype=np.int32)
+    cells_to_dofs = np.array([V.dofmap.cell_dofs(i)[0] for i in all_cells], dtype=np.int32)
     dofs_to_cells = np.argsort(cells_to_dofs)
 
     u = dolfinx.fem.Function(V, dtype=dtype)

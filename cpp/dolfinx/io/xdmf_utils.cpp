@@ -600,6 +600,8 @@ xdmf_utils::distribute_entity_data(
     return std::pair(std::move(entities), std::move(data));
   };
 
+  MPI_Type_free(&compound_type);
+
   return select_entities(topology, xdofmap, nodes_g, cell_vertex_dofs,
                          entities_data);
 }
