@@ -10,7 +10,8 @@ import typing
 import numpy as np
 import numpy.typing as npt
 
-from dolfinx.cpp.fem import FiniteElement as _FiniteElement
+from dolfinx.cpp.fem import FiniteElement_float32 as _FiniteElement_float32
+from dolfinx.cpp.fem import FiniteElement_float64 as _FiniteElement_float64
 from dolfinx.cpp.fem import IntegralType
 from dolfinx.cpp.fem import \
     create_nonmatching_meshes_interpolation_data as _create_nonmatching_meshes_interpolation_data
@@ -45,8 +46,8 @@ def create_sparsity_pattern(a: Form):
 
 
 def create_nonmatching_meshes_interpolation_data(
-    mesh_to: typing.Union[_Mesh, _Geometry], element: _FiniteElement, mesh_from: _Mesh,
-    cells: typing.Optional[npt.NDArray[np.int32]] = None, padding: float = 1e-14
+    mesh_to: typing.Union[_Mesh, _Geometry], element: typing.Union[_FiniteElement_float32, _FiniteElement_float64],
+    mesh_from: _Mesh, cells: typing.Optional[npt.NDArray[np.int32]] = None, padding: float = 1e-14
 ):
     """Generate data needed to interpolate discrete functions across different meshes.
 
