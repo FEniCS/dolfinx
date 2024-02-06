@@ -138,7 +138,11 @@ public:
     {
       auto& itg = _integrals[static_cast<std::size_t>(type)];
       for (auto& [id, kern, e] : data)
-        itg.insert({id, {kern, std::vector(e.begin(), e.end())}});
+        itg.push_back({id, kern, std::vector(e.begin(), e.end())});
+      // TODO Check. Assume this is sorted?
+      std::sort(itg.begin(), itg.end(),
+                [](const integral_data<T>& i, const integral_data<T>& j)
+                { return i.id < j.id; });
     }
   }
 
@@ -178,10 +182,13 @@ public:
   kernel(IntegralType type, int i) const
   {
     auto integrals = _integrals[static_cast<std::size_t>(type)];
-    if (auto it = integrals.find(i); it != integrals.end())
-      return it->second.first;
+    auto it = std::lower_bound(integrals.begin(), integrals.end(), i,
+                               [](const integral_data<T>& itg_data, int i)
+                               { return itg_data.id < i; });
+    if (it != integrals.end() and it->id == i)
+      return it->kernel;
     else
-      throw std::runtime_error("No kernel for requested domain index.");
+      throw std::runtime_error("No kernel for requested domain index."); 
   }
 
   /// @brief Get types of integrals in the form.
@@ -217,7 +224,7 @@ public:
     std::vector<int> ids;
     auto& integrals = _integrals[static_cast<std::size_t>(type)];
     std::transform(integrals.begin(), integrals.end(), std::back_inserter(ids),
-                   [](auto& integral) { return integral.first; });
+                   [](const integral_data<T>& integral) { return integral.id; });
     return ids;
   }
 
@@ -240,9 +247,12 @@ public:
   /// @return List of active cell entities for the given integral (kernel)
   std::span<const std::int32_t> domain(IntegralType type, int i) const
   {
-    auto& integral = _integrals[static_cast<std::size_t>(type)];
-    if (auto it = integral.find(i); it != integral.end())
-      return it->second.second;
+    auto& integrals = _integrals[static_cast<std::size_t>(type)];
+    auto it = std::lower_bound(integrals.begin(), integrals.end(), i,
+                               [](const integral_data<T>& itg_data, int i)
+                               { return itg_data.id < i; });
+    if (it != integrals.end() and it->id == i)
+      return it->entities;
     else
       throw std::runtime_error("No mesh entities for requested domain index.");
   }
@@ -298,8 +308,7 @@ private:
 
   // Integrals. Array index is
   // static_cast<std::size_t(IntegralType::foo)
-  std::array<std::map<int, std::pair<kern_t, std::vector<std::int32_t>>>, 4>
-      _integrals;
+  std::array<std::vector<integral_data<T>>, 4> _integrals;
 
   // True if permutation data needs to be passed into these integrals
   bool _needs_facet_permutations;
