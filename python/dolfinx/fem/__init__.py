@@ -17,7 +17,8 @@ from dolfinx.cpp.fem import \
     create_nonmatching_meshes_interpolation_data as _create_nonmatching_meshes_interpolation_data
 from dolfinx.cpp.fem import create_sparsity_pattern as _create_sparsity_pattern
 from dolfinx.cpp.fem import transpose_dofmap
-from dolfinx.cpp.mesh import Geometry as _Geometry
+from dolfinx.cpp.mesh import Geometry_float32 as _Geometry_float32
+from dolfinx.cpp.mesh import Geometry_float64 as _Geometry_float64
 from dolfinx.fem.assemble import (apply_lifting, assemble_matrix, assemble_scalar, assemble_vector, create_matrix,
                                   create_vector, set_bc)
 from dolfinx.fem.bcs import DirichletBC, bcs_by_block, dirichletbc, locate_dofs_geometrical, locate_dofs_topological
@@ -46,7 +47,8 @@ def create_sparsity_pattern(a: Form):
 
 
 def create_nonmatching_meshes_interpolation_data(
-    mesh_to: typing.Union[_Mesh, _Geometry], element: typing.Union[_FiniteElement_float32, _FiniteElement_float64],
+    mesh_to: typing.Union[_Mesh, typing.Union[_Geometry_float64, _Geometry_float32],
+    element: typing.Union[_FiniteElement_float32, _FiniteElement_float64],
     mesh_from: _Mesh, cells: typing.Optional[npt.NDArray[np.int32]] = None, padding: float = 1e-14
 ):
     """Generate data needed to interpolate discrete functions across different meshes.
@@ -63,7 +65,7 @@ def create_nonmatching_meshes_interpolation_data(
         _create_nonmatching_meshes_interpolation_data(
             mesh_to._cpp_object, element, mesh_from._cpp_object, padding)
     else:
-        assert isinstance(mesh_to, _Geometry)
+        assert isinstance(mesh_to, (_Geometry_float64, _Geometry_float32))
         _create_nonmatching_meshes_interpolation_data(
             mesh_to, element, mesh_from._cpp_object, cells, padding)
 
