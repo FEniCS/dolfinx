@@ -134,11 +134,12 @@ public:
       throw std::runtime_error("No mesh could be associated with the Form.");
 
     // Store kernels, looping over integrals by domain type (dimension)
+    // FIXME Simplify
     for (auto& [type, data] : integrals)
     {
       auto& itg = _integrals[static_cast<std::size_t>(type)];
       for (auto& [id, kern, e] : data)
-        itg.push_back({id, kern, std::vector(e.begin(), e.end())});
+        itg.emplace_back(id, kern, e);
       // TODO Check. Assume this is sorted?
       std::sort(itg.begin(), itg.end(),
                 [](const integral_data<T>& i, const integral_data<T>& j)
@@ -188,7 +189,7 @@ public:
     if (it != integrals.end() and it->id == i)
       return it->kernel;
     else
-      throw std::runtime_error("No kernel for requested domain index."); 
+      throw std::runtime_error("No kernel for requested domain index.");
   }
 
   /// @brief Get types of integrals in the form.
@@ -224,7 +225,8 @@ public:
     std::vector<int> ids;
     auto& integrals = _integrals[static_cast<std::size_t>(type)];
     std::transform(integrals.begin(), integrals.end(), std::back_inserter(ids),
-                   [](const integral_data<T>& integral) { return integral.id; });
+                   [](const integral_data<T>& integral)
+                   { return integral.id; });
     return ids;
   }
 
