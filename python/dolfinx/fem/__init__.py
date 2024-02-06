@@ -47,7 +47,7 @@ def create_sparsity_pattern(a: Form):
 
 
 def create_nonmatching_meshes_interpolation_data(
-    mesh_to: typing.Union[_Mesh, typing.Union[_Geometry_float64, _Geometry_float32],
+    mesh_to: typing.Union[_Mesh, typing.Union[_Geometry_float64, _Geometry_float32]],
     element: typing.Union[_FiniteElement_float32, _FiniteElement_float64],
     mesh_from: _Mesh, cells: typing.Optional[npt.NDArray[np.int32]] = None, padding: float = 1e-14
 ):
