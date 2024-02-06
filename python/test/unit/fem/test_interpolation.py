@@ -808,7 +808,7 @@ def test_nonmatching_mesh_single_cell_overlap_interpolation(xtype):
     u2.x.scatter_forward()
     padding = 1e-14
     u2_2_u1_nmm_data = create_nonmatching_meshes_interpolation_data(
-            u1.function_space.mesh, u1.function_space.element, u2.function_space.mesh, padding)
+            u1.function_space.mesh, u1.function_space.element, u2.function_space.mesh, padding=padding)
 
     u1.interpolate(u2, nmm_interpolation_data=u2_2_u1_nmm_data)
     u1.x.scatter_forward()
