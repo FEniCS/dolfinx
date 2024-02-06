@@ -52,9 +52,9 @@ build_local_dual_graph(CellType cell_type, std::span<const std::int64_t> cells);
 /// @note Collective function
 ///
 /// @param[in] comm The MPI communicator
+/// @param[in] cell_type The cell type
 /// @param[in] cells Collection of cells, defined by the cell vertices
 /// from which to build the dual graph
-/// @param[in] tdim The topological dimension of the cells
 /// @return The dual graph
 graph::AdjacencyList<std::int64_t>
 build_dual_graph(const MPI_Comm comm, CellType cell_type,
