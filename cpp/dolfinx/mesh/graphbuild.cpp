@@ -351,17 +351,36 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
            std::size_t, std::vector<std::int32_t>>
 mesh::build_local_dual_graph(
-    std::pair<CellType, std::span<const std::int64_t>> cells)
+    const std::vector<std::pair<CellType, std::span<const std::int64_t>>>&
+        cells)
 {
   LOG(INFO) << "Build local part of mesh dual graph";
   common::Timer timer("Compute local part of mesh dual graph");
 
-  CellType cell_type = cells.first;
-  std::span cell_vertices = cells.second;
-  int tdim = mesh::cell_dim(cell_type);
-  int num_cell_vertices = mesh::cell_num_entities(cell_type, 0);
+  std::int32_t tdim = -1;
+  std::int32_t num_cells = 0;
+  std::int32_t num_facets = 0;
+  std::int32_t max_vertices_per_facet = 0;
+  for (auto c : cells)
+  {
+    if (tdim == -1)
+      tdim = mesh::cell_dim(c.first);
+    else if (tdim != mesh::cell_dim(c.first))
+      throw std::runtime_error("Incompatible cell types");
 
-  const std::int32_t num_cells = cell_vertices.size() / num_cell_vertices;
+    int num_cell_vertices = mesh::cell_num_entities(c.first, 0);
+    int num_cell_facets = mesh::cell_num_entities(c.first, tdim - 1);
+    num_cells += c.second.size() / num_cell_vertices;
+    num_facets += c.second.size() / num_cell_vertices * num_cell_facets;
+
+    for (int i = 0; i < mesh::cell_num_entities(c.first, tdim - 1); ++i)
+    {
+      max_vertices_per_facet = std::max(
+          max_vertices_per_facet,
+          mesh::cell_num_entities(mesh::cell_facet_type(c.first, i), 0));
+    }
+  }
+
   if (num_cells == 0)
   {
     // Empty mesh on this process
@@ -369,40 +388,45 @@ mesh::build_local_dual_graph(
             0, std::vector<std::int32_t>()};
   }
 
-  // Note: only meshes with a single cell type are supported
-  const graph::AdjacencyList<int> cell_facets
-      = mesh::get_entity_vertices(cell_type, tdim - 1);
-
-  // Determine maximum number of vertices for facet
-  int max_vertices_per_facet = 0;
-  for (int i = 0; i < cell_facets.num_nodes(); ++i)
-  {
-    max_vertices_per_facet
-        = std::max(max_vertices_per_facet, cell_facets.num_links(i));
-  }
-
   const int shape1 = max_vertices_per_facet + 1;
-
   // Build a list of facets, defined by sorted vertices, with the connected
   // cell index after the vertices
   std::vector<std::int64_t> facets;
-  facets.reserve(num_cells * cell_facets.num_nodes() * shape1);
-  for (std::int32_t c = 0; c < num_cells; ++c)
-  {
-    auto v = cell_vertices.subspan(num_cell_vertices * c, num_cell_vertices);
+  facets.reserve(num_facets * shape1);
 
-    // Loop over cell facets
-    for (int f = 0; f < cell_facets.num_nodes(); ++f)
+  // Cell indices for each cell type are stacked. This is the offset for the
+  // current cell type.
+  std::int32_t cell_offset = 0;
+  for (std::size_t k = 0; k < cells.size(); ++k)
+  {
+    CellType cell_type = cells[k].first;
+    std::span cell_vertices = cells[k].second;
+    std::int32_t num_cell_vertices = mesh::cell_num_entities(cells[k].first, 0);
+    std::int32_t num_cells_k = cells[k].second.size() / num_cell_vertices;
+
+    // Note: only meshes with a single cell type are supported
+    const graph::AdjacencyList<int> cell_facets
+        = mesh::get_entity_vertices(cell_type, tdim - 1);
+
+    for (std::int32_t c = 0; c < num_cells_k; ++c)
     {
-      auto facet_vertices = cell_facets.links(f);
-      std::transform(facet_vertices.begin(), facet_vertices.end(),
-                     std::back_inserter(facets),
-                     [v](auto idx) { return v[idx]; });
-      std::sort(std::prev(facets.end(), facet_vertices.size()), facets.end());
-      facets.insert(facets.end(),
-                    max_vertices_per_facet - facet_vertices.size(), -1);
-      facets.push_back(c);
+      auto v = cell_vertices.subspan(num_cell_vertices * c, num_cell_vertices);
+
+      // Loop over cell facets
+      for (int f = 0; f < cell_facets.num_nodes(); ++f)
+      {
+        auto facet_vertices = cell_facets.links(f);
+        std::transform(facet_vertices.begin(), facet_vertices.end(),
+                       std::back_inserter(facets),
+                       [v](auto idx) { return v[idx]; });
+        std::sort(std::prev(facets.end(), facet_vertices.size()), facets.end());
+        // Pad with -1, e.g. for triangles in list also containing quads.
+        facets.insert(facets.end(),
+                      max_vertices_per_facet - facet_vertices.size(), -1);
+        facets.push_back(c + cell_offset);
+      }
     }
+    cell_offset += num_cells_k;
   }
 
   // Sort facets by vertex key
@@ -496,7 +520,7 @@ mesh::build_dual_graph(const MPI_Comm comm, CellType cell_type,
   // Compute local part of dual graph (cells are graph nodes, and edges
   // are connections by facet)
   auto [local_graph, facets, shape1, fcells]
-      = mesh::build_local_dual_graph({cell_type, cells.array()});
+      = mesh::build_local_dual_graph({{cell_type, cells.array()}});
   assert(local_graph.num_nodes() == cells.num_nodes());
 
   // Extend with nonlocal edges and convert to global indices
