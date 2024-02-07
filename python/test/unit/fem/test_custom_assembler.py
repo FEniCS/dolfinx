@@ -88,7 +88,8 @@ def get_matsetvalues_cffi_api():
                            typedef ... PetscScalar;
                            typedef int... InsertMode;
                            int MatSetValuesLocal(void* mat, PetscInt nrow, const PetscInt* irow,
-                                PetscInt ncol, const PetscInt* icol, const PetscScalar* y, InsertMode addv);"""
+                                PetscInt ncol, const PetscInt* icol,
+                                const PetscScalar* y, InsertMode addv);"""
         )
         ffibuilder.set_source(
             module_name,

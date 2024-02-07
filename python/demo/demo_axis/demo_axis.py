@@ -626,7 +626,7 @@ q_ext_fenics = q_abs_fenics + q_sca_fenics
 
 # The quantities `P` and `Q` have an additional `2` factor for `m != 0`
 # due to parity.
-
+#
 # We now compare the numerical and analytical efficiencies (he latter
 # were obtained with the following routine provided by the
 # [`scattnlay`](https://github.com/ovidiopr/scattnlay) library):
@@ -637,7 +637,8 @@ q_ext_fenics = q_abs_fenics + q_sca_fenics
 # m = np.sqrt(eps_au)/n_bkg
 # x = 2*np.pi*radius_sph/wl0*n_bkg
 #
-# q_sca_analyt, q_abs_analyt = scattnlay(np.array([x], dtype=np.complex128), np.array([m], dtype=np.complex128))[2:4]
+# q_sca_analyt, q_abs_analyt = scattnlay(np.array([x], dtype=np.complex128),
+#                                        np.array([m], dtype=np.complex128))[2:4]
 # ```
 #
 # The numerical values are reported here below:

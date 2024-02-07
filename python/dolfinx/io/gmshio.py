@@ -340,7 +340,7 @@ def read_from_msh(
         typing.Callable[[_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32]
     ] = None,
 ) -> tuple[Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
-    """Read a Gmsh .msh file and return a distributed :class:`dolfinx.mesh.Mesh` and and cell facet markers.
+    """Read a Gmsh .msh file and return a :class:`dolfinx.mesh.Mesh` and cell facet markers.
 
     Note:
         This function requires the Gmsh Python module.

@@ -130,7 +130,8 @@ class Expression:
                 comm = mesh.comm
             except AttributeError:
                 print(
-                    "Could not extract MPI communicator for Expression. Maybe you need to pass a communicator?"
+                    "Could not extract MPI communicator for Expression. "
+                    + "Maybe you need to pass a communicator?"
                 )
                 raise
 

@@ -914,7 +914,8 @@ def test_nonmatching_mesh_interpolation(xtype, cell_type0, cell_type1):
         ),
     )
 
-    # Check that function values over facets of 3D mesh of the twice interpolated property is preserved
+    # Check that function values over facets of 3D mesh of the twice
+    # interpolated property is preserved
     def locate_bottom_facets(x):
         return np.isclose(x[2], 0)
 

@@ -177,7 +177,7 @@ def create_matrix_block(a: list[list[Form]]) -> PETSc.Mat:
 
 
 def create_matrix_nest(a: list[list[Form]]) -> PETSc.Mat:
-    """Create a PETSc matrix (``MatNest``) that is compatible with a rectangular array of bilinear forms.
+    """Create a PETSc matrix (``MatNest``) that is compatible with an array of bilinear forms.
 
     Args:
         a: Rectangular array of bilinear forms.
@@ -528,7 +528,8 @@ def _assemble_matrix_nest_mat(
                     assert len(row_forms) > 0
                     if row_forms[0].function_spaces[0].contains(bc.function_space):
                         raise RuntimeError(
-                            f"Diagonal sub-block ({i}, {j}) cannot be 'None' and have DirichletBC applied."
+                            f"Diagonal sub-block ({i}, {j}) cannot be 'None'"
+                            " and have DirichletBC applied."
                             " Consider assembling a zero block."
                         )
     return A
@@ -605,7 +606,8 @@ def _assemble_matrix_block_mat(
                     assert len(row_forms) > 0
                     if row_forms[0].function_spaces[0].contains(bc.function_space):
                         raise RuntimeError(
-                            f"Diagonal sub-block ({i}, {j}) cannot be 'None' and have DirichletBC applied."
+                            f"Diagonal sub-block ({i}, {j}) cannot be 'None' "
+                            " and have DirichletBC applied."
                             " Consider assembling a zero block."
                         )
 
@@ -653,7 +655,8 @@ def apply_lifting_nest(
     constants=None,
     coeffs=None,
 ) -> PETSc.Vec:
-    """Apply the function :func:`dolfinx.fem.apply_lifting` to each sub-vector in a nested PETSc Vector."""
+    """Apply the function :func:`dolfinx.fem.apply_lifting` to each sub-vector
+    in a nested PETSc Vector."""
 
     x0 = [] if x0 is None else x0.getNestSubVecs()
     bcs1 = _bcs_by_block(_extract_spaces(a, 1), bcs)
@@ -748,7 +751,8 @@ class LinearProblem:
 
             problem = LinearProblem(a, L, [bc0, bc1], petsc_options={"ksp_type": "preonly",
                                                                      "pc_type": "lu",
-                                                                     "pc_factor_mat_solver_type": "mumps"})
+                                                                     "pc_factor_mat_solver_type":
+                                                                       "mumps"})
         """
         self._a = _create_form(
             a, form_compiler_options=form_compiler_options, jit_options=jit_options
@@ -865,7 +869,7 @@ class NonlinearProblem:
         form_compiler_options: typing.Optional[dict] = None,
         jit_options: typing.Optional[dict] = None,
     ):
-        """Initialize solver for solving a non-linear problem using Newton's method, :math:`(dF/du)(u) du = -F(u)`.
+        """Initialize solver for solving a non-linear problem using Newton's method`.
 
         Args:
             F: The PDE residual F(u, v)

@@ -494,7 +494,7 @@ def test_plus_minus_matrix(cell_type, pm1, pm2, dtype):
 
 
 @pytest.mark.skip(
-    reason="This test relies on the mesh constructor not re-ordering the mesh points. Needs replacing."
+    reason="Test needs replacing because it assumes the mesh constructor doesn't re-order points."
 )
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("order", [1, 2])

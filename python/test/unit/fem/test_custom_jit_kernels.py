@@ -163,10 +163,14 @@ def test_cffi_assembly():
         // PM* dimensions: [entities][dofs][dofs]
         static const double FE3_C0_D01_Q1[1][1][2] = { { { -1.0, 1.0 } } };
         // Unstructured piecewise computations
-        const double J_c0 = coordinate_dofs[0] * FE3_C0_D01_Q1[0][0][0] + coordinate_dofs[3] * FE3_C0_D01_Q1[0][0][1];
-        const double J_c3 = coordinate_dofs[1] * FE3_C0_D01_Q1[0][0][0] + coordinate_dofs[7] * FE3_C0_D01_Q1[0][0][1];
-        const double J_c1 = coordinate_dofs[0] * FE3_C0_D01_Q1[0][0][0] + coordinate_dofs[6] * FE3_C0_D01_Q1[0][0][1];
-        const double J_c2 = coordinate_dofs[1] * FE3_C0_D01_Q1[0][0][0] + coordinate_dofs[4] * FE3_C0_D01_Q1[0][0][1];
+        const double J_c0 = coordinate_dofs[0] * FE3_C0_D01_Q1[0][0][0]
+          + coordinate_dofs[3] * FE3_C0_D01_Q1[0][0][1];
+        const double J_c3 = coordinate_dofs[1] * FE3_C0_D01_Q1[0][0][0]
+          + coordinate_dofs[7] * FE3_C0_D01_Q1[0][0][1];
+        const double J_c1 = coordinate_dofs[0] * FE3_C0_D01_Q1[0][0][0]
+          + coordinate_dofs[6] * FE3_C0_D01_Q1[0][0][1];
+        const double J_c2 = coordinate_dofs[1] * FE3_C0_D01_Q1[0][0][0]
+          + coordinate_dofs[4] * FE3_C0_D01_Q1[0][0][1];
         double sp[20];
         sp[0] = J_c0 * J_c3;
         sp[1] = J_c1 * J_c2;
@@ -212,10 +216,14 @@ def test_cffi_assembly():
         // PM* dimensions: [entities][dofs][dofs]
         static const double FE4_C0_D01_Q1[1][1][2] = { { { -1.0, 1.0 } } };
         // Unstructured piecewise computations
-        const double J_c0 = coordinate_dofs[0] * FE4_C0_D01_Q1[0][0][0] + coordinate_dofs[3] * FE4_C0_D01_Q1[0][0][1];
-        const double J_c3 = coordinate_dofs[1] * FE4_C0_D01_Q1[0][0][0] + coordinate_dofs[7] * FE4_C0_D01_Q1[0][0][1];
-        const double J_c1 = coordinate_dofs[0] * FE4_C0_D01_Q1[0][0][0] + coordinate_dofs[6] * FE4_C0_D01_Q1[0][0][1];
-        const double J_c2 = coordinate_dofs[1] * FE4_C0_D01_Q1[0][0][0] + coordinate_dofs[4] * FE4_C0_D01_Q1[0][0][1];
+        const double J_c0 = coordinate_dofs[0] * FE4_C0_D01_Q1[0][0][0]
+          + coordinate_dofs[3] * FE4_C0_D01_Q1[0][0][1];
+        const double J_c3 = coordinate_dofs[1] * FE4_C0_D01_Q1[0][0][0]
+          + coordinate_dofs[7] * FE4_C0_D01_Q1[0][0][1];
+        const double J_c1 = coordinate_dofs[0] * FE4_C0_D01_Q1[0][0][0]
+          + coordinate_dofs[6] * FE4_C0_D01_Q1[0][0][1];
+        const double J_c2 = coordinate_dofs[1] * FE4_C0_D01_Q1[0][0][0]
+          + coordinate_dofs[4] * FE4_C0_D01_Q1[0][0][1];
         double sp[4];
         sp[0] = J_c0 * J_c3;
         sp[1] = J_c1 * J_c2;
