@@ -216,7 +216,6 @@ b = fem.assemble_vector(L_fem)
 # Apply lifting: b <- b - A * x_bc
 ui.x.array[:] = 0.0
 fem.set_bc(ui.x.array, [bc], scale=-1.0)
-fem.assemble_vector(b.array, L_fem)
 b.scatter_reverse(la.InsertMode.add)
 
 # Set BC dofs to zero on RHS (effectively zeros column in A)
