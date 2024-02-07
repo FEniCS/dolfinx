@@ -1,4 +1,3 @@
-
 from mpi4py import MPI
 
 import numpy as np
@@ -23,7 +22,7 @@ def test_dgrsph_1d():
     size = MPI.COMM_WORLD.Get_size()
     n0 = rank * 3
     x = n0 + 3
-    if (rank == size - 1):
+    if rank == size - 1:
         x = 0
     # Circular chain of interval cells
     cells = [[n0, n0 + 1], [n0 + 1, n0 + 2], [n0 + 2, x]]

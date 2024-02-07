@@ -10,8 +10,14 @@ def test_triquad():
     ghost_owners = [[], []]
     boundary_vertices = []
 
-    topology = create_topology(MPI.COMM_SELF, [CellType.triangle, CellType.quadrilateral],
-                               cells, orig_index, ghost_owners, boundary_vertices)
+    topology = create_topology(
+        MPI.COMM_SELF,
+        [CellType.triangle, CellType.quadrilateral],
+        cells,
+        orig_index,
+        ghost_owners,
+        boundary_vertices,
+    )
 
     maps = topology.index_maps(topology.dim)
     assert len(maps) == 2
@@ -44,8 +50,14 @@ def test_mixed_mesh_3d():
     ghost_owners = [[], [], []]
     boundary_vertices = []
 
-    topology = create_topology(MPI.COMM_SELF, [CellType.tetrahedron, CellType.prism, CellType.hexahedron],
-                               cells, orig_index, ghost_owners, boundary_vertices)
+    topology = create_topology(
+        MPI.COMM_SELF,
+        [CellType.tetrahedron, CellType.prism, CellType.hexahedron],
+        cells,
+        orig_index,
+        ghost_owners,
+        boundary_vertices,
+    )
 
     entity_types = topology.entity_types
     assert len(entity_types[0]) == 1
@@ -140,8 +152,14 @@ def test_parallel_mixed_mesh():
     # All vertices are on boundary
     boundary_vertices = [3 * rank + i for i in range(6)]
 
-    topology = create_topology(MPI.COMM_WORLD, [CellType.triangle, CellType.quadrilateral],
-                               cells, orig_index, ghost_owners, boundary_vertices)
+    topology = create_topology(
+        MPI.COMM_WORLD,
+        [CellType.triangle, CellType.quadrilateral],
+        cells,
+        orig_index,
+        ghost_owners,
+        boundary_vertices,
+    )
 
     # Cell types appear in order as in create_topology
     assert topology.entity_types[2][0] == CellType.triangle

@@ -9,8 +9,8 @@ import sys
 import dolfinx
 
 sys.path.insert(0, os.path.abspath("."))
+import jupytext_process  # isort:skip
 
-import jupytext_process
 
 myst_heading_anchors = 3
 
