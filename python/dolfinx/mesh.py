@@ -433,16 +433,7 @@ def create_mesh(
 
     x = np.asarray(x, dtype=dtype, order="C")
     cells = np.asarray(cells, dtype=np.int64, order="C")
-    try:
-        mesh = _cpp.mesh.create_mesh(comm, cells, cmap._cpp_object, x, partitioner)
-    except TypeError:
-        mesh = _cpp.mesh.create_mesh(
-            comm,
-            _cpp.graph.AdjacencyList_int64(np.asarray(cells, dtype=np.int64)),
-            cmap._cpp_object,
-            x,
-            partitioner,
-        )
+    mesh = _cpp.mesh.create_mesh(comm, cells, cmap._cpp_object, x, partitioner)
 
     return Mesh(mesh, domain)
 
