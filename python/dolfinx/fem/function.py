@@ -272,8 +272,11 @@ class Function(ufl.Coefficient):
                 dtype = default_scalar_type
 
         element_type = np.dtype(type(V.element).__name__.split("_")[1])
-        dtype_real = dtype(0).real.dtype
-        assert element_type in [dtype, dtype_real], "Incompatible FunctionSpace and dtype"
+        to_real = {np.complex128: np.real64, np.complex64: np.real32}
+        if dtype in to_real:
+            assert element_type in [dtype, to_real[dtype]], "Incompatible FunctionSpace and dtype"
+        else:
+            assert element_type == dtype, "Incompatible FunctionSpace and dtype"
 
         # PETSc Vec wrapper around the C++ function data (constructed
         # when first requested)
