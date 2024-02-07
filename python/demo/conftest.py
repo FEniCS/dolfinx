@@ -2,10 +2,13 @@ import pytest
 
 
 def pytest_addoption(parser):
-    parser.addoption("--mpiexec", action="store", default="mpirun",
-                     help="Name of program to run MPI, e.g. mpiexec")
-    parser.addoption("--num-proc", action="store", default=1,
-                     help="Number of MPI processes to use")
+    parser.addoption(
+        "--mpiexec",
+        action="store",
+        default="mpirun",
+        help="Name of program to run MPI, e.g. mpiexec",
+    )
+    parser.addoption("--num-proc", action="store", default=1, help="Number of MPI processes to use")
 
 
 @pytest.fixture

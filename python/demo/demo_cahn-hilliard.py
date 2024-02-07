@@ -139,6 +139,7 @@ from ufl import dx, grad, inner
 try:
     import pyvista as pv
     import pyvistaqt as pvqt
+
     have_pyvista = True
     if pv.OFF_SCREEN:
         pv.start_xvfb(wait=0.5)
@@ -221,7 +222,7 @@ u.x.scatter_forward()
 
 # Compute the chemical potential df/dc
 c = ufl.variable(c)
-f = 100 * c**2 * (1 - c)**2
+f = 100 * c**2 * (1 - c) ** 2
 dfdc = ufl.diff(f, c)
 
 # The first line declares that `c` is a variable that some function can
@@ -319,7 +320,7 @@ if have_pyvista:
 
 c = u.sub(0)
 u0.x.array[:] = u.x.array
-while (t < T):
+while t < T:
     t += dt
     r = solver.solve(u)
     print(f"Step {int(t / dt)}: num iterations: {r[0]}")
