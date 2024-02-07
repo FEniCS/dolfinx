@@ -262,7 +262,6 @@ class Function(ufl.Coefficient):
                 type is used.
 
         """
-        element_type = np.dtype(type(V.element).__name__.split("_")[1])
         if x is not None:
             assert x.array.dtype == element_type, "Incompatible Vector and FunctionSpace"
             if dtype is None:
@@ -271,9 +270,11 @@ class Function(ufl.Coefficient):
                 assert x.array.dtype == dtype, "Incompatible Vector and dtype."
         else:
             if dtype is None:
-                dtype = element_type
-            else:
-                assert element_type == dtype, "Incompatible FunctionSpace and dtype"
+                dtype = default_scalar_type
+
+        element_type = np.dtype(type(V.element).__name__.split("_")[1])
+        dtype_real = dtype(0).real.dtype
+        assert element_type in [dtype, dtype_real], "Incompatible FunctionSpace and dtype"
 
         # PETSc Vec wrapper around the C++ function data (constructed
         # when first requested)
