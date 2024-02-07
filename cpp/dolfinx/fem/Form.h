@@ -113,6 +113,8 @@ public:
   /// @param[in] mesh Mesh of the domain. This is required when there
   /// are no argument functions from which the mesh can be extracted,
   /// e.g. for functionals.
+  ///
+  /// @pre The integral data in integrals must be sorted by domain
   Form(const std::vector<std::shared_ptr<const FunctionSpace<U>>>& V,
        const std::map<IntegralType,
                       std::vector<integral_data<T, std::span<const int32_t>>>>&
@@ -135,15 +137,14 @@ public:
     if (!_mesh)
       throw std::runtime_error("No mesh could be associated with the Form.");
 
+    // TODO Check integrals is sorted by ID?
+
     // Store kernels, looping over integrals by domain type (dimension)
     for (auto& [type, data] : integrals)
     {
       auto& itg = _integrals[static_cast<std::size_t>(type)];
       for (auto& [id, kern, e] : data)
         itg.emplace_back(id, kern, std::vector(e.begin(), e.end()));
-      // TODO Check. Assume this is sorted?
-      std::sort(itg.begin(), itg.end(),
-                [](const auto& i, const auto& j) { return i.id < j.id; });
     }
   }
 
