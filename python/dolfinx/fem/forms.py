@@ -288,5 +288,5 @@ def extract_function_spaces(
             return list(unique_spaces(V))
         elif index == 1:
             return list(unique_spaces(V.transpose()))
-    else:
-        raise RuntimeError("Unsupported array of forms")
+
+    raise RuntimeError("Unsupported array of forms")

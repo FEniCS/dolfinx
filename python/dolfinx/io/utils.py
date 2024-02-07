@@ -23,11 +23,13 @@ from dolfinx.cpp.io import perm_vtk as cell_perm_vtk
 from dolfinx.fem import Function
 from dolfinx.mesh import GhostMode, Mesh, MeshTags
 
+from collections.abc import Iterable
+
 __all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk", "distribute_entity_data"]
 
 
-def _extract_cpp_functions(functions: typing.Union[list[Function], Function]):
-    """Extract C++ object for a single function or a list of functions"""
+def _extract_cpp_objects(functions: typing.Union[Mesh, Function, tuple[Function], list[Function]]):
+    """Extract C++ objects"""
     if isinstance(functions, (list, tuple)):
         return [getattr(u, "_cpp_object", u) for u in functions]
     else:
@@ -56,7 +58,7 @@ if _cpp.common.has_adios2:
             self,
             comm: _MPI.Comm,
             filename: typing.Union[str, Path],
-            output: typing.Union[Mesh, Function, list[Function]],
+            output: typing.Union[Mesh, Function, list[Function], tuple[Function]],
             engine: str = "BPFile",
             mesh_policy: VTXMeshPolicy = VTXMeshPolicy.update,
         ):
@@ -67,7 +69,7 @@ if _cpp.common.has_adios2:
                 filename: The output filename
                 output: The data to output. Either a mesh, a single
                     (discontinuous) Lagrange Function or list of
-                    (discontinuous Lagrange Functions.
+                    (discontinuous) Lagrange Functions.
                 engine: ADIOS2 engine to use for output. See
                     ADIOS2 documentation for options.
                 mesh_policy: Controls if the mesh is written to file at
@@ -100,7 +102,7 @@ if _cpp.common.has_adios2:
             except (NotImplementedError, TypeError, AttributeError):
                 # Input is a single function or a list of functions
                 self._cpp_object = _vtxwriter(
-                    comm, filename, _extract_cpp_functions(output), engine, mesh_policy
+                    comm, filename, _extract_cpp_objects(output), engine, mesh_policy
                 )  # type: ignore[arg-type]
 
         def __enter__(self):
@@ -171,7 +173,7 @@ if _cpp.common.has_adios2:
                 self._cpp_object = _fides_writer(comm, filename, output._cpp_object, engine)  # type: ignore
             except (NotImplementedError, TypeError, AttributeError):
                 self._cpp_object = _fides_writer(
-                    comm, filename, _extract_cpp_functions(output), engine, mesh_policy
+                    comm, filename, _extract_cpp_objects(output), engine, mesh_policy
                 )  # type: ignore[arg-type]
 
         def __enter__(self):
@@ -208,7 +210,7 @@ class VTKFile(_cpp.io.VTKFile):
 
     def write_function(self, u: typing.Union[list[Function], Function], t: float = 0.0) -> None:
         """Write a single function or a list of functions to file for a given time (default 0.0)"""
-        super().write(_extract_cpp_functions(u), t)
+        super().write(_extract_cpp_objects(u), t)
 
 
 class XDMFFile(_cpp.io.XDMFFile):
