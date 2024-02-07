@@ -91,7 +91,6 @@ import ufl
 from dolfinx import fem, la
 from ufl import action, dx, grad, inner
 
-dtype = np.float64  # Currently only float64 is supported
 ffcx_options = {"sum_factorization": True}
 
 # We begin by using {py:func}`create_rectangle
@@ -104,11 +103,16 @@ ffcx_options = {"sum_factorization": True}
 # Create mesh with tensor product ordering
 comm = MPI.COMM_WORLD
 mesh = dolfinx.mesh.create_tp_rectangle(comm, [[0.0, 0.0], [1.0, 1.0]], [10, 10])
+dtype = mesh.geometry.x.dtype
 
 # Create function space
 degree = 3
 element = basix.create_tp_element(
-    basix.ElementFamily.P, basix.CellType.quadrilateral, degree, basix.LagrangeVariant.gll_warped
+    basix.ElementFamily.P,
+    basix.CellType.quadrilateral,
+    degree,
+    basix.LagrangeVariant.gll_warped,
+    dtype=dtype,
 )
 e_ufl = basix.ufl._BasixElement(element)
 V = fem.functionspace(mesh, e_ufl)
@@ -157,7 +161,7 @@ v = ufl.TestFunction(V)
 f = fem.Constant(mesh, -6.0)
 a = inner(grad(u), grad(v)) * dx
 L = inner(f, v) * dx
-L_fem = fem.form(L)
+L_fem = fem.form(L, dtype=dtype, form_compiler_options=ffcx_options)
 
 # For the matrix-free solvers we also define a second linear form `M` as
 # the {py:class}`action <ufl.action>` of the bilinear form $a$ onto an
@@ -170,7 +174,7 @@ L_fem = fem.form(L)
 
 ui = fem.Function(V)
 M = action(a, ui)
-M_fem = fem.form(M, form_compiler_options=ffcx_options)
+M_fem = fem.form(M, dtype=dtype, form_compiler_options=ffcx_options)
 
 # ### Direct solver using the assembled matrix
 #
@@ -212,7 +216,7 @@ b = fem.assemble_vector(L_fem)
 # Apply lifting: b <- b - A * x_bc
 ui.x.array[:] = 0.0
 fem.set_bc(ui.x.array, [bc], scale=-1.0)
-fem.assemble_vector(b.array, M_fem)
+fem.assemble_vector(b.array, L_fem)
 b.scatter_reverse(la.InsertMode.add)
 
 # Set BC dofs to zero on RHS (effectively zeros column in A)
