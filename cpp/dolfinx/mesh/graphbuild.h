@@ -25,8 +25,7 @@ enum class CellType;
 /// @brief Compute the local part of the dual graph (cell-cell
 /// connections via facets) and facet with only one attached cell.
 ///
-/// @param[in] cell_type
-/// @param[in] cells Cell vertices
+/// @param[in] cells Pair of cell type and cell vertices as a flattened list
 /// @return
 /// 1. Local dual graph
 /// 2. Facets, defined by their vertices, that are shared by only one
