@@ -263,7 +263,6 @@ class Function(ufl.Coefficient):
 
         """
         if x is not None:
-            assert x.array.dtype == element_type, "Incompatible Vector and FunctionSpace"
             if dtype is None:
                 dtype = x.array.dtype
             else:
