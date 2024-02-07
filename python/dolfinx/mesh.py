@@ -649,10 +649,14 @@ def create_rectangle(
     return Mesh(mesh, domain)
 
 
-def create_tp_rectangle(comm: _MPI.Comm, points: npt.ArrayLike, n: npt.ArrayLike,
-                        dtype: npt.DTypeLike = default_real_type,
-                        ghost_mode=GhostMode.shared_facet,
-                        partitioner=None) -> Mesh:
+def create_tp_rectangle(
+    comm: _MPI.Comm,
+    points: npt.ArrayLike,
+    n: npt.ArrayLike,
+    dtype: npt.DTypeLike = default_real_type,
+    ghost_mode=GhostMode.shared_facet,
+    partitioner=None,
+) -> Mesh:
     """Create a rectangle mesh.
 
     Args:
@@ -675,7 +679,9 @@ def create_tp_rectangle(comm: _MPI.Comm, points: npt.ArrayLike, n: npt.ArrayLike
     """
     if partitioner is None and comm.size > 1:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
-    element = basix.create_tp_element(basix.ElementFamily.P, basix.CellType.quadrilateral, 1, dtype=dtype)
+    element = basix.create_tp_element(
+        basix.ElementFamily.P, basix.CellType.quadrilateral, 1, dtype=dtype
+    )
     e_ufl = basix.ufl._BasixElement(element)
     e_ufl = basix.ufl.blocked_element(e_ufl, shape=(2,), gdim=2)
     domain = ufl.Mesh(e_ufl)
