@@ -274,7 +274,7 @@ class Function(ufl.Coefficient):
         element_type = np.dtype(type(V.element).__name__.split("_")[1])
         if dtype == np.complex128:
             assert element_type in [dtype, np.float64], "Incompatible FunctionSpace and dtype"
-        elif dtype == np.complex84:
+        elif dtype == np.complex64:
             assert element_type in [dtype, np.float32], "Incompatible FunctionSpace and dtype"
         else:
             assert element_type == dtype, "Incompatible FunctionSpace and dtype"
