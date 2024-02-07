@@ -30,7 +30,7 @@ namespace
 /// before this function is called.
 ///
 /// @param[in] comm MPI communicator
-/// @param[in] facets Facets on this rank that are shared by only on
+/// @param[in] facets Facets on this rank that are shared by only one
 /// cell on this rank, i.e. candidates for possibly residing on other
 /// processes. Each row in `facets` corresponds to a facet, and the row
 /// data has the form [v0, ..., v_{n-1}, x, x], where `v_i` are the
@@ -41,8 +41,8 @@ namespace
 /// @param[in] cells Attached cell (local index) for each facet in
 /// `facet`.
 /// @param[in] local_graph The dual graph for cells on this MPI rank
-/// @return (0) Extended dual graph to include ghost edges (edges to
-/// off-procss cells) and (1) the number of ghost edges
+/// @return Extended dual graph to include ghost edges (edges to
+/// off-process cells)
 graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
     const MPI_Comm comm, std::span<const std::int64_t> facets,
     std::size_t shape1, std::span<const std::int32_t> cells,
