@@ -187,8 +187,7 @@ public:
   /// @brief The element that describe the `i`th geometry map
   /// @param i Index of the coordinate element
   /// @return Coordinate element
-  fem::CoordinateElement<value_type>
-  cmap(std::int32_t i) const
+  const fem::CoordinateElement<value_type>& cmap(std::int32_t i) const
   {
     if (i < 0 or i >= (int)_cmaps.size())
     {
