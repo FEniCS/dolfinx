@@ -107,8 +107,9 @@ mesh = dolfinx.mesh.create_tp_rectangle(comm, [[0.0, 0.0], [1.0, 1.0]], [10, 10]
 
 # Create function space
 degree = 3
-element = basix.create_tp_element(basix.ElementFamily.P, basix.CellType.quadrilateral,
-                                  degree, basix.LagrangeVariant.gll_warped)
+element = basix.create_tp_element(
+    basix.ElementFamily.P, basix.CellType.quadrilateral, degree, basix.LagrangeVariant.gll_warped
+)
 e_ufl = basix.ufl._BasixElement(element)
 V = fem.functionspace(mesh, e_ufl)
 
@@ -144,7 +145,7 @@ dofs = fem.locate_dofs_topological(V=V, entity_dim=tdim - 1, entities=facets)
 # interpolating the expression $u_{\rm D}$ onto the finite element space $V$.
 
 uD = fem.Function(V, dtype=dtype)
-uD.interpolate(lambda x: 1 + x[0]**2 + 2 * x[1]**2)
+uD.interpolate(lambda x: 1 + x[0] ** 2 + 2 * x[1] ** 2)
 
 bc = fem.dirichletbc(value=uD, dofs=dofs)
 
@@ -175,9 +176,9 @@ M_fem = fem.form(M, form_compiler_options=ffcx_options)
 #
 # To validate the results of the matrix-free solvers, we first compute the
 # solution with a direct solver using the assembled matrix.
-problem = fem.petsc.LinearProblem(a, L, bcs=[bc],
-                                  petsc_options={"ksp_type": "preonly",
-                                                 "pc_type": "lu"})
+problem = fem.petsc.LinearProblem(
+    a, L, bcs=[bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"}
+)
 uh_lu = problem.solve()
 
 # The exact solution $u_{\rm D}$ is interpolated onto the finite element
@@ -185,6 +186,7 @@ uh_lu = problem.solve()
 
 # The error of the finite element solution `uh_lu` compared to the exact
 # solution $u_{\rm D}$ is calculated below in the $L_2$-norm.
+
 
 # +
 def L2Norm(u):
@@ -209,7 +211,7 @@ if comm.rank == 0:
 b = fem.assemble_vector(L_fem)
 # Apply lifting: b <- b - A * x_bc
 ui.x.array[:] = 0.0
-fem.set_bc(ui.x.array, [bc], scale=-1.)
+fem.set_bc(ui.x.array, [bc], scale=-1.0)
 fem.assemble_vector(b.array, M_fem)
 b.scatter_reverse(la.InsertMode.add)
 
@@ -271,7 +273,6 @@ def cg(comm, action_A, x0, b, max_iter=200, rtol=1e-6):
     rnorm0 = _global_dot(comm, r, r)
     rnorm = rnorm0
     for k in range(max_iter):
-
         action_A(p, y)
         alpha = rnorm / _global_dot(comm, p.array, y.array)
 
