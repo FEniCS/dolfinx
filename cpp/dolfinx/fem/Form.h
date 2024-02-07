@@ -139,10 +139,10 @@ public:
     {
       auto& itg = _integrals[static_cast<std::size_t>(type)];
       for (auto& [id, kern, e] : data)
-        itg.emplace_back(id, kern, e);
+        itg.emplace_back(id, kern, std::vector(e.begin(), e.end()));
       // TODO Check. Assume this is sorted?
       std::sort(itg.begin(), itg.end(),
-                [](const integral_data<T>& i, const integral_data<T>& j)
+                [](const _integral_data& i, const _integral_data& j)
                 { return i.id < j.id; });
     }
   }
@@ -184,7 +184,7 @@ public:
   {
     auto integrals = _integrals[static_cast<std::size_t>(type)];
     auto it = std::lower_bound(integrals.begin(), integrals.end(), i,
-                               [](const integral_data<T>& itg_data, int i)
+                               [](const _integral_data& itg_data, int i)
                                { return itg_data.id < i; });
     if (it != integrals.end() and it->id == i)
       return it->kernel;
@@ -225,7 +225,7 @@ public:
     std::vector<int> ids;
     auto& integrals = _integrals[static_cast<std::size_t>(type)];
     std::transform(integrals.begin(), integrals.end(), std::back_inserter(ids),
-                   [](const integral_data<T>& integral)
+                   [](const _integral_data& integral)
                    { return integral.id; });
     return ids;
   }
@@ -251,7 +251,7 @@ public:
   {
     auto& integrals = _integrals[static_cast<std::size_t>(type)];
     auto it = std::lower_bound(integrals.begin(), integrals.end(), i,
-                               [](const integral_data<T>& itg_data, int i)
+                               [](const _integral_data& itg_data, int i)
                                { return itg_data.id < i; });
     if (it != integrals.end() and it->id == i)
       return it->entities;
@@ -292,9 +292,28 @@ public:
   }
 
 private:
+  struct _integral_data
+  {
+    // FIXME Avoid duplication with templating?
+
   using kern_t = std::function<void(T*, const T*, const T*,
-                                    const scalar_value_type_t<T>*, const int*,
-                                    const std::uint8_t*)>;
+                                const scalar_value_type_t<T>*, const int*,
+                                const std::uint8_t*)>;
+
+  _integral_data(int id, kern_t kernel, std::vector<std::int32_t> entities)
+      : id(id), kernel(kernel), entities(entities)
+  {
+  }
+
+    // Integral ID
+    int id;
+
+    // The integration kernel
+    kern_t kernel;
+
+    // The entities to integrate over
+    std::vector<std::int32_t> entities;
+  };
 
   // Function spaces (one for each argument)
   std::vector<std::shared_ptr<const FunctionSpace<U>>> _function_spaces;
@@ -310,7 +329,7 @@ private:
 
   // Integrals. Array index is
   // static_cast<std::size_t(IntegralType::foo)
-  std::array<std::vector<integral_data<T>>, 4> _integrals;
+  std::array<std::vector<_integral_data>, 4> _integrals;
 
   // True if permutation data needs to be passed into these integrals
   bool _needs_facet_permutations;
