@@ -137,11 +137,14 @@ public:
     if (!_mesh)
       throw std::runtime_error("No mesh could be associated with the Form.");
 
-    // TODO Check integrals is sorted by ID?
-
     // Store kernels, looping over integrals by domain type (dimension)
     for (auto& [type, data] : integrals)
     {
+      if (!std::is_sorted(data.begin(), data.end(),
+                          [](const auto& a, const auto& b)
+                          { return a.id < b.id; }))
+        throw std::runtime_error("Integral IDs not sorted");
+
       auto& itg = _integrals[static_cast<std::size_t>(type)];
       for (auto& [id, kern, e] : data)
         itg.emplace_back(id, kern, std::vector(e.begin(), e.end()));
