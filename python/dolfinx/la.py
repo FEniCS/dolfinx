@@ -14,17 +14,36 @@ from dolfinx import cpp as _cpp
 from dolfinx.cpp.common import IndexMap
 from dolfinx.cpp.la import BlockMode, InsertMode, Norm
 
-__all__ = ["orthonormalize", "is_orthonormal", "matrix_csr", "vector",
-           "MatrixCSR", "Norm", "InsertMode", "Vector", "create_petsc_vector"]
+__all__ = [
+    "orthonormalize",
+    "is_orthonormal",
+    "matrix_csr",
+    "vector",
+    "MatrixCSR",
+    "Norm",
+    "InsertMode",
+    "Vector",
+    "create_petsc_vector",
+]
 
 
 class MatrixCSR:
+    _cpp_object: typing.Union[
+        _cpp.la.MatrixCSR_float32,
+        _cpp.la.MatrixCSR_float64,
+        _cpp.la.MatrixCSR_complex64,
+        _cpp.la.MatrixCSR_complex128,
+    ]
 
-    _cpp_object: typing.Union[_cpp.la.MatrixCSR_float32, _cpp.la.MatrixCSR_float64,
-                              _cpp.la.MatrixCSR_complex64, _cpp.la.MatrixCSR_complex128]
-
-    def __init__(self, A: typing.Union[_cpp.la.MatrixCSR_float32, _cpp.la.MatrixCSR_float64,
-                                       _cpp.la.MatrixCSR_complex64, _cpp.la.MatrixCSR_complex128]):
+    def __init__(
+        self,
+        A: typing.Union[
+            _cpp.la.MatrixCSR_float32,
+            _cpp.la.MatrixCSR_float64,
+            _cpp.la.MatrixCSR_complex64,
+            _cpp.la.MatrixCSR_complex128,
+        ],
+    ):
         """A distributed sparse matrix that uses compressed sparse row storage.
 
         Note:
@@ -49,13 +68,23 @@ class MatrixCSR:
         """Block sizes for the matrix."""
         return self._cpp_object.bs
 
-    def add(self, x: npt.NDArray[np.floating], rows: npt.NDArray[np.int32],
-            cols: npt.NDArray[np.int32], bs: int = 1) -> None:
+    def add(
+        self,
+        x: npt.NDArray[np.floating],
+        rows: npt.NDArray[np.int32],
+        cols: npt.NDArray[np.int32],
+        bs: int = 1,
+    ) -> None:
         """Add a block of values in the matrix."""
         self._cpp_object.add(x, rows, cols, bs)
 
-    def set(self, x: npt.NDArray[np.floating], rows: npt.NDArray[np.int32],
-            cols: npt.NDArray[np.int32], bs: int = 1) -> None:
+    def set(
+        self,
+        x: npt.NDArray[np.floating],
+        rows: npt.NDArray[np.int32],
+        cols: npt.NDArray[np.int32],
+        bs: int = 1,
+    ) -> None:
         """Set a block of values in the matrix."""
         self._cpp_object.set(x, rows, cols, bs)
 
@@ -126,17 +155,27 @@ class MatrixCSR:
         else:
             nrows = self.index_map(0).size_local
             nnzlocal = self.indptr[nrows]
-            data, indices, indptr = self.data[:(bs0 * bs1) * nnzlocal], self.indices[:nnzlocal], self.indptr[:nrows + 1]
+            data, indices, indptr = (
+                self.data[: (bs0 * bs1) * nnzlocal],
+                self.indices[:nnzlocal],
+                self.indptr[: nrows + 1],
+            )
 
         if bs0 == 1 and bs1 == 1:
             from scipy.sparse import csr_matrix as _csr
+
             return _csr((data, indices, indptr), shape=(nrows, ncols))
         else:
             from scipy.sparse import bsr_matrix as _bsr
-            return _bsr((data.reshape(-1, bs0, bs1), indices, indptr), shape=(bs0 * nrows, bs1 * ncols))
+
+            return _bsr(
+                (data.reshape(-1, bs0, bs1), indices, indptr), shape=(bs0 * nrows, bs1 * ncols)
+            )
 
 
-def matrix_csr(sp: _cpp.la.SparsityPattern, block_mode=BlockMode.compact, dtype=np.float64) -> MatrixCSR:
+def matrix_csr(
+    sp: _cpp.la.SparsityPattern, block_mode=BlockMode.compact, dtype=np.float64
+) -> MatrixCSR:
     """Create a distributed sparse matrix.
 
     The matrix uses compressed sparse row storage.
@@ -164,12 +203,22 @@ def matrix_csr(sp: _cpp.la.SparsityPattern, block_mode=BlockMode.compact, dtype=
 
 
 class Vector:
+    _cpp_object: typing.Union[
+        _cpp.la.Vector_float32,
+        _cpp.la.Vector_float64,
+        _cpp.la.Vector_complex64,
+        _cpp.la.Vector_complex128,
+    ]
 
-    _cpp_object: typing.Union[_cpp.la.Vector_float32, _cpp.la.Vector_float64,
-                              _cpp.la.Vector_complex64, _cpp.la.Vector_complex128]
-
-    def __init__(self, x: typing.Union[_cpp.la.Vector_float32, _cpp.la.Vector_float64,
-                                       _cpp.la.Vector_complex64, _cpp.la.Vector_complex128]):
+    def __init__(
+        self,
+        x: typing.Union[
+            _cpp.la.Vector_float32,
+            _cpp.la.Vector_float64,
+            _cpp.la.Vector_complex64,
+            _cpp.la.Vector_complex128,
+        ],
+    ):
         """A distributed vector object.
 
         Args:
@@ -261,6 +310,7 @@ def create_petsc_vector_wrap(x: Vector):
         object.
     """
     from petsc4py import PETSc
+
     map = x.index_map
     ghosts = map.ghosts.astype(PETSc.IntType)  # type: ignore
     bs = x.block_size
@@ -280,6 +330,7 @@ def create_petsc_vector(map, bs: int):
         PETSc Vec object.
     """
     from petsc4py import PETSc
+
     ghosts = map.ghosts.astype(PETSc.IntType)  # type: ignore
     size = (map.size_local * bs, map.size_global * bs)
     return PETSc.Vec().createGhost(ghosts, size=size, bsize=bs, comm=map.comm)  # type: ignore
@@ -300,7 +351,7 @@ def is_orthonormal(basis, eps: float = 1.0e-12) -> bool:
         if abs(x.norm() - 1.0) > eps:
             return False
     for i, x in enumerate(basis[:-1]):
-        for y in basis[i + 1:]:
+        for y in basis[i + 1 :]:
             if abs(x.dot(y)) > eps:
                 return False
     return True
