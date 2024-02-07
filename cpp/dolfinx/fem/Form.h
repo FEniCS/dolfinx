@@ -39,7 +39,7 @@ enum class IntegralType : std::int8_t
 
 /// @brief Represents integral data, containing the integral
 /// ID, the kernel, and a list of entities to integrate over
-template <dolfinx::scalar T>
+template <dolfinx::scalar T, typename cont>
 struct integral_data
 {
   /// The finite element kernel type
@@ -51,7 +51,7 @@ struct integral_data
   /// @param id The domain ID
   /// @param kernel The integration kernel
   /// @param entities The entities to integrate over
-  integral_data(int id, kern kernel, std::span<const std::int32_t> entities)
+  integral_data(int id, kern kernel, cont entities)
       : id(id), kernel(kernel), entities(entities)
   {
   }
@@ -63,7 +63,7 @@ struct integral_data
   kern kernel;
 
   /// The entities to integrate over
-  std::span<const std::int32_t> entities;
+  cont entities;
 };
 
 /// @brief A representation of finite element variational forms.
@@ -114,7 +114,7 @@ public:
   /// are no argument functions from which the mesh can be extracted,
   /// e.g. for functionals.
   Form(const std::vector<std::shared_ptr<const FunctionSpace<U>>>& V,
-       const std::map<IntegralType, std::vector<integral_data<T>>>& integrals,
+       const std::map<IntegralType, std::vector<integral_data<T, std::span<const int32_t>>>>& integrals,
        const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients,
        const std::vector<std::shared_ptr<const Constant<T>>>& constants,
        bool needs_facet_permutations,
@@ -142,7 +142,7 @@ public:
         itg.emplace_back(id, kern, std::vector(e.begin(), e.end()));
       // TODO Check. Assume this is sorted?
       std::sort(itg.begin(), itg.end(),
-                [](const _integral_data& i, const _integral_data& j)
+                [](const auto& i, const auto& j)
                 { return i.id < j.id; });
     }
   }
@@ -184,7 +184,7 @@ public:
   {
     auto integrals = _integrals[static_cast<std::size_t>(type)];
     auto it = std::lower_bound(integrals.begin(), integrals.end(), i,
-                               [](const _integral_data& itg_data, int i)
+                               [](const auto& itg_data, int i)
                                { return itg_data.id < i; });
     if (it != integrals.end() and it->id == i)
       return it->kernel;
@@ -225,7 +225,7 @@ public:
     std::vector<int> ids;
     auto& integrals = _integrals[static_cast<std::size_t>(type)];
     std::transform(integrals.begin(), integrals.end(), std::back_inserter(ids),
-                   [](const _integral_data& integral)
+                   [](const auto& integral)
                    { return integral.id; });
     return ids;
   }
@@ -251,7 +251,7 @@ public:
   {
     auto& integrals = _integrals[static_cast<std::size_t>(type)];
     auto it = std::lower_bound(integrals.begin(), integrals.end(), i,
-                               [](const _integral_data& itg_data, int i)
+                               [](const auto& itg_data, int i)
                                { return itg_data.id < i; });
     if (it != integrals.end() and it->id == i)
       return it->entities;
@@ -292,29 +292,6 @@ public:
   }
 
 private:
-  struct _integral_data
-  {
-    // FIXME Avoid duplication with templating?
-
-  using kern_t = std::function<void(T*, const T*, const T*,
-                                const scalar_value_type_t<T>*, const int*,
-                                const std::uint8_t*)>;
-
-  _integral_data(int id, kern_t kernel, std::vector<std::int32_t> entities)
-      : id(id), kernel(kernel), entities(entities)
-  {
-  }
-
-    // Integral ID
-    int id;
-
-    // The integration kernel
-    kern_t kernel;
-
-    // The entities to integrate over
-    std::vector<std::int32_t> entities;
-  };
-
   // Function spaces (one for each argument)
   std::vector<std::shared_ptr<const FunctionSpace<U>>> _function_spaces;
 
@@ -329,7 +306,7 @@ private:
 
   // Integrals. Array index is
   // static_cast<std::size_t(IntegralType::foo)
-  std::array<std::vector<_integral_data>, 4> _integrals;
+  std::array<std::vector<integral_data<T, std::vector<std::int32_t>>>, 4> _integrals;
 
   // True if permutation data needs to be passed into these integrals
   bool _needs_facet_permutations;
