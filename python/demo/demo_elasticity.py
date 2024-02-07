@@ -90,8 +90,9 @@ def build_nullspace(V: FunctionSpace):
     assert dolfinx.cpp.la.is_orthonormal(_basis)
 
     basis_petsc = [
-        PETSc.Vec().createWithArray(x[: bs * length0], bsize=3, comm=V.mesh.comm) for x in b
-    ]  # type: ignore
+        PETSc.Vec().createWithArray(x[: bs * length0], bsize=3, comm=V.mesh.comm)
+        for x in b  # type: ignore
+    ]
     return PETSc.NullSpace().create(vectors=basis_petsc)  # type: ignore
 
 
