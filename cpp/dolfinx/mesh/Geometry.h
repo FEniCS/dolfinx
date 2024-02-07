@@ -141,7 +141,7 @@ public:
       MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
   dofmap(std::int32_t i) const
   {
-    if (i < 0 or i > (int)_dofmaps.size())
+    if (i < 0 or i >= (int)_dofmaps.size())
     {
       throw std::out_of_range("Cannot get dofmap:" + std::to_string(i)
                               + " out of range");
@@ -187,15 +187,15 @@ public:
   /// @brief The element that describe the `i`th geometry map
   /// @param i Index of the coordinate element
   /// @return Coordinate element
-  const std::vector<fem::CoordinateElement<value_type>>&
-  cmaps(std::int32_t i) const
+  fem::CoordinateElement<value_type>
+  cmap(std::int32_t i) const
   {
-    if (i < 0 or i > (int)_cmaps.size())
+    if (i < 0 or i >= (int)_cmaps.size())
     {
       throw std::out_of_range("Cannot get cmap:" + std::to_string(i)
                               + " out of range");
     }
-    return _cmaps;
+    return _cmaps[i];
   }
 
   /// Global user indices
@@ -245,7 +245,7 @@ Geometry(std::shared_ptr<const common::IndexMap>, U,
 /// @param[in] elements List of elements that defines the geometry map for
 /// each cell type.
 /// @param[in] nodes Geometry node global indices for cells on this
-/// process. Must be sorted.
+/// process. @pre Must be sorted.
 /// @param[in] xdofs Geometry degree-of-freedom map (using global
 /// indices) for cells on this process. `nodes` is a sorted and unique
 /// list of the indices in `xdofs`.
