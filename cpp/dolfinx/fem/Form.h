@@ -51,7 +51,7 @@ struct integral_data
   /// @param id The domain ID
   /// @param kernel The integration kernel
   /// @param entities The entities to integrate over
-  integral_data(int id, kern kernel, std::vector<std::int32_t> entities)
+  integral_data(int id, kern kernel, std::span<const std::int32_t> entities)
       : id(id), kernel(kernel), entities(entities)
   {
   }
@@ -63,7 +63,7 @@ struct integral_data
   kern kernel;
 
   /// The entities to integrate over
-  std::vector<std::int32_t> entities;
+  std::span<const std::int32_t> entities;
 };
 
 /// @brief A representation of finite element variational forms.
