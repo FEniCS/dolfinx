@@ -274,6 +274,7 @@ class Function(ufl.Coefficient):
         element_type = np.dtype(type(V.element).__name__.split("_")[1])
         to_real = {np.complex128: np.float64, np.complex64: np.float32}
         if dtype in to_real:
+            assert isinstance(dtype, np.dtype)
             assert element_type in [dtype, to_real[dtype]], "Incompatible FunctionSpace and dtype"
         else:
             assert element_type == dtype, "Incompatible FunctionSpace and dtype"
