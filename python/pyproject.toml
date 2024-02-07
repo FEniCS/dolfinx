@@ -34,7 +34,7 @@ dependencies = [
 
 [project.optional-dependencies]
 docs = ["markdown", "pyyaml", "sphinx", "sphinx_rtd_theme"]
-lint = ["ruff", "isort"]
+lint = ["ruff"]
 optional = ["numba"]
 test = ["pytest", "sympy", "scipy", "matplotlib", "fenics-dolfinx[optional]"]
 ci = [
