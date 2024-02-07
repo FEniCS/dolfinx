@@ -120,7 +120,7 @@ def test_rank1_hdiv(dtype):
 
     # Interpolate RT1 into vdP1 (compiled, mat-vec interpolation)
     h2 = Function(vdP1, dtype=dtype)
-    h2.x.array[:A1.shape[0]] += A1 @ g.x.array
+    h2.x.array[: A1.shape[0]] += A1 @ g.x.array
     h2.x.scatter_forward()
     assert np.linalg.norm(h2.x.array - h.x.array) == pytest.approx(0.0, abs=1.0e-4)
 
@@ -232,7 +232,7 @@ def test_assembly_into_quadrature_function(dtype):
     quadrature_degree = 2
     quadrature_points, _ = basix.make_quadrature(basix.CellType.triangle, quadrature_degree)
     quadrature_points = quadrature_points.astype(xtype)
-    Q_element = quadrature_element("triangle", (2, ), degree=quadrature_degree, scheme="default")
+    Q_element = quadrature_element("triangle", (2,), degree=quadrature_degree, scheme="default")
     Q = functionspace(mesh, Q_element)
     P2 = functionspace(mesh, ("P", 2))
 
@@ -282,7 +282,9 @@ def test_assembly_into_quadrature_function(dtype):
 
     bs = Q.dofmap.bs
     Q_dofs_unrolled = bs * np.repeat(Q_dofs, bs).reshape(-1, bs) + np.arange(bs)
-    Q_dofs_unrolled = Q_dofs_unrolled.reshape(-1, bs * quadrature_points.shape[0]).astype(Q_dofs.dtype)
+    Q_dofs_unrolled = Q_dofs_unrolled.reshape(-1, bs * quadrature_points.shape[0]).astype(
+        Q_dofs.dtype
+    )
     local = e_Q.x.array
     e_exact_eval = np.zeros_like(local)
     for cell in range(num_cells):
