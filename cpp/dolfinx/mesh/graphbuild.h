@@ -42,7 +42,8 @@ enum class CellType;
 /// topology meshes.
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
            std::size_t, std::vector<std::int32_t>>
-build_local_dual_graph(CellType cell_type, std::span<const std::int64_t> cells);
+build_local_dual_graph(
+    std::pair<CellType, std::span<const std::int64_t>> cells);
 
 /// @brief Build distributed mesh dual graph (cell-cell connections via
 /// facets) from minimal mesh data.

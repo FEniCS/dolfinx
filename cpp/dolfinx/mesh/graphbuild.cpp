@@ -350,12 +350,14 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 //-----------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
            std::size_t, std::vector<std::int32_t>>
-mesh::build_local_dual_graph(CellType cell_type,
-                             std::span<const std::int64_t> cell_vertices)
+mesh::build_local_dual_graph(
+    std::pair<CellType, std::span<const std::int64_t>> cells)
 {
   LOG(INFO) << "Build local part of mesh dual graph";
   common::Timer timer("Compute local part of mesh dual graph");
 
+  CellType cell_type = cells.first;
+  std::span cell_vertices = cells.second;
   int tdim = mesh::cell_dim(cell_type);
   int num_cell_vertices = mesh::cell_num_entities(cell_type, 0);
 
@@ -419,7 +421,7 @@ mesh::build_local_dual_graph(CellType cell_type,
   // cell lead to a graph edge to be added. Facets that are not shared
   // are stored as these might be shared by a cell on another process.
   std::vector<std::int64_t> unmatched_facets;
-  std::vector<std::int32_t> cells;
+  std::vector<std::int32_t> local_cells;
   std::vector<std::array<std::int32_t, 2>> edges;
   {
     auto it = perm.begin();
@@ -451,7 +453,7 @@ mesh::build_local_dual_graph(CellType cell_type,
       {
         unmatched_facets.insert(unmatched_facets.end(), f0.begin(),
                                 std::prev(f0.end()));
-        cells.push_back(cell0);
+        local_cells.push_back(cell0);
       }
 
       // Update iterator
@@ -482,7 +484,7 @@ mesh::build_local_dual_graph(CellType cell_type,
 
   return {graph::AdjacencyList(std::move(data), std::move(offsets)),
           std::move(unmatched_facets), max_vertices_per_facet,
-          std::move(cells)};
+          std::move(local_cells)};
 }
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int64_t>
@@ -494,7 +496,7 @@ mesh::build_dual_graph(const MPI_Comm comm, CellType cell_type,
   // Compute local part of dual graph (cells are graph nodes, and edges
   // are connections by facet)
   auto [local_graph, facets, shape1, fcells]
-      = mesh::build_local_dual_graph(cell_type, cells.array());
+      = mesh::build_local_dual_graph({cell_type, cells.array()});
   assert(local_graph.num_nodes() == cells.num_nodes());
 
   // Extend with nonlocal edges and convert to global indices
