@@ -59,6 +59,6 @@ build_local_dual_graph(
 /// @return The dual graph
 graph::AdjacencyList<std::int64_t>
 build_dual_graph(const MPI_Comm comm, CellType cell_type,
-                 const graph::AdjacencyList<std::int64_t>& cells);
+                 const std::vector<std::int64_t>& cells);
 
 } // namespace dolfinx::mesh

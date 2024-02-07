@@ -88,7 +88,7 @@ mesh::create_cell_partitioner(mesh::GhostMode ghost_mode,
                               const graph::partition_fn& partfn)
 {
   return [partfn, ghost_mode](MPI_Comm comm, int nparts, CellType cell_type,
-                              const graph::AdjacencyList<std::int64_t>& cells)
+                              const std::vector<std::int64_t>& cells)
              -> graph::AdjacencyList<std::int32_t>
   {
     LOG(INFO) << "Compute partition of cells across ranks";

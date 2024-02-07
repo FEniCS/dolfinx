@@ -513,15 +513,16 @@ mesh::build_local_dual_graph(
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int64_t>
 mesh::build_dual_graph(const MPI_Comm comm, CellType cell_type,
-                       const graph::AdjacencyList<std::int64_t>& cells)
+                       const std::vector<std::int64_t>& cells)
 {
   LOG(INFO) << "Building mesh dual graph";
 
   // Compute local part of dual graph (cells are graph nodes, and edges
   // are connections by facet)
   auto [local_graph, facets, shape1, fcells]
-      = mesh::build_local_dual_graph({{cell_type, cells.array()}});
-  assert(local_graph.num_nodes() == cells.num_nodes());
+      = mesh::build_local_dual_graph({{cell_type, cells}});
+  int num_cell_vertices = mesh::cell_num_entities(cell_type, 0);
+  assert(local_graph.num_nodes() == (int)cells.size() / num_cell_vertices);
 
   // Extend with nonlocal edges and convert to global indices
   graph::AdjacencyList graph
