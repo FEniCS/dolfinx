@@ -23,8 +23,6 @@ from dolfinx.cpp.io import perm_vtk as cell_perm_vtk
 from dolfinx.fem import Function
 from dolfinx.mesh import GhostMode, Mesh, MeshTags
 
-from collections.abc import Iterable
-
 __all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk", "distribute_entity_data"]
 
 

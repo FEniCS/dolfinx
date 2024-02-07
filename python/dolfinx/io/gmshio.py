@@ -79,7 +79,7 @@ def ufl_mesh(gmsh_cell: int, gdim: int, dtype: npt.DTypeLike) -> ufl.Mesh:
         basix.LagrangeVariant.equispaced,
         shape=(gdim,),
         gdim=gdim,
-        dtype=dtype, # type: ignore[arg-type]
+        dtype=dtype,  # type: ignore[arg-type]
     )
     return ufl.Mesh(element)
 
