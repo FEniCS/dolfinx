@@ -29,23 +29,20 @@ def test_extract_forms():
     v2, u2 = TestFunction(V2), TrialFunction(V2)
     v3, u3 = TestFunction(V3), TrialFunction(V3)
 
-    a = form([[inner(u0, v0) * dx, inner(u1, v1) * dx],
-              [inner(u2, v2) * dx, inner(u3, v3) * dx]])
+    a = form([[inner(u0, v0) * dx, inner(u1, v1) * dx], [inner(u2, v2) * dx, inner(u3, v3) * dx]])
     with pytest.raises(AssertionError):
         extract_function_spaces(a, 0)
     with pytest.raises(AssertionError):
         extract_function_spaces(a, 1)
 
-    a = form([[inner(u0, v0) * dx, inner(u2, v1) * dx],
-              [inner(u0, v2) * dx, inner(u2, v2) * dx]])
+    a = form([[inner(u0, v0) * dx, inner(u2, v1) * dx], [inner(u0, v2) * dx, inner(u2, v2) * dx]])
     with pytest.raises(AssertionError):
         extract_function_spaces(a, 0)
     Vc = extract_function_spaces(a, 1)
     assert Vc[0] is V0._cpp_object
     assert Vc[1] is V2._cpp_object
 
-    a = form([[inner(u0, v0) * dx, inner(u1, v0) * dx],
-              [inner(u2, v1) * dx, inner(u3, v1) * dx]])
+    a = form([[inner(u0, v0) * dx, inner(u1, v0) * dx], [inner(u2, v1) * dx, inner(u3, v1) * dx]])
     Vr = extract_function_spaces(a, 0)
     assert Vr[0] is V0._cpp_object
     assert Vr[1] is V1._cpp_object

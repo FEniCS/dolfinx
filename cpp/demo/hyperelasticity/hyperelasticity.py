@@ -9,9 +9,22 @@
 # dimensions, so first we need the appropriate finite element space and
 # trial and test functions on this space::
 from basix.ufl import element
-from ufl import (Coefficient, FunctionSpace, Identity, Mesh, TestFunction,
-                 TrialFunction, derivative, det, diff, dx, grad, ln, tr,
-                 variable)
+from ufl import (
+    Coefficient,
+    FunctionSpace,
+    Identity,
+    Mesh,
+    TestFunction,
+    TrialFunction,
+    derivative,
+    det,
+    diff,
+    dx,
+    grad,
+    ln,
+    tr,
+    variable,
+)
 
 # Function spaces
 e = element("Lagrange", "tetrahedron", 1, shape=(3,))
@@ -19,8 +32,8 @@ mesh = Mesh(e)
 V = FunctionSpace(mesh, e)
 
 # Trial and test functions
-du = TrialFunction(V)     # Incremental displacement
-v = TestFunction(V)      # Test function
+du = TrialFunction(V)  # Incremental displacement
+v = TestFunction(V)  # Test function
 
 # Note that ``element`` with `shape=(3,)` creates a finite element space
 # of vector fields.
@@ -29,7 +42,7 @@ v = TestFunction(V)      # Test function
 # traction ``T`` and the displacement solution itself ``u``::
 
 # Functions
-u = Coefficient(V)        # Displacement from previous iteration
+u = Coefficient(V)  # Displacement from previous iteration
 # B = Coefficient(element)        # Body force per unit volume
 # T = Coefficient(element)        # Traction force on the boundary
 
@@ -37,9 +50,9 @@ u = Coefficient(V)        # Displacement from previous iteration
 
 # Kinematics
 d = len(u)
-I = Identity(d)         # Identity tensor  # noqa: E741
-F = variable(I + grad(u))         # Deformation gradient
-C = F.T * F               # Right Cauchy-Green tensor
+I = Identity(d)  # Identity tensor  # noqa: E741
+F = variable(I + grad(u))  # Deformation gradient
+C = F.T * F  # Right Cauchy-Green tensor
 
 # Invariants of deformation tensors
 Ic = tr(C)
@@ -60,7 +73,7 @@ lmbda = E * nu / ((1 + nu) * (1 - 2 * nu))
 # ``derivative``::
 
 # Stored strain energy density (compressible neo-Hookean model)
-psi = (mu / 2) * (Ic - 3) - mu * ln(J) + (lmbda / 2) * (ln(J))**2
+psi = (mu / 2) * (Ic - 3) - mu * ln(J) + (lmbda / 2) * (ln(J)) ** 2
 
 # Total potential energy
 Pi = psi * dx  # - inner(B, u) * dx - inner(T, u) * ds

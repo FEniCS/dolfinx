@@ -51,6 +51,7 @@ import numpy as np
 
 try:
     import pyvista
+
     have_pyvista = True
 except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
@@ -107,15 +108,16 @@ if not np.issubdtype(default_scalar_type, np.complexfloating):
 
 # +
 
-class BackgroundElectricField:
 
+class BackgroundElectricField:
     def __init__(self, theta: float, n_bkg: float, k0: complex):
         self.theta = theta  # incident angle
         self.k0 = k0  # vacuum wavevector
         self.n_bkg = n_bkg  # background refractive index
 
-    def eval(self, x: np.typing.NDArray[np.float64]) -> tuple[np.typing.NDArray[np.complex128],
-                                                              np.typing.NDArray[np.complex128]]:
+    def eval(
+        self, x: np.typing.NDArray[np.float64]
+    ) -> tuple[np.typing.NDArray[np.complex128], np.typing.NDArray[np.complex128]]:
         kx = self.n_bkg * self.k0 * np.cos(self.theta)
         ky = self.n_bkg * self.k0 * np.sin(self.theta)
         phi = kx * x[0] + ky * x[1]
@@ -177,15 +179,17 @@ class BackgroundElectricField:
 # 2D vector (in UFL syntax) is defined below.
 #
 
+
 # +
 def radial_distance(x: ufl.SpatialCoordinate):
     """Returns the radial distance from the origin"""
-    return ufl.sqrt(x[0]**2 + x[1]**2)
+    return ufl.sqrt(x[0] ** 2 + x[1] ** 2)
 
 
 def curl_2d(f: fem.Function):
     """Returns the curl of two 2D vectors as a 3D vector"""
     return ufl.as_vector((0, 0, f[1].dx(0) - f[0].dx(1)))
+
 
 # -
 
@@ -218,9 +222,9 @@ bkg_size = mesh_factor * 60.0e-3
 boundary_size = mesh_factor * 30.0e-3
 
 # Tags for the subdomains
-au_tag = 1          # gold wire
-bkg_tag = 2         # background
-boundary_tag = 3    # boundary
+au_tag = 1  # gold wire
+bkg_tag = 2  # background
+boundary_tag = 3  # boundary
 # -
 
 # We generate the mesh using GMSH and convert it to a
@@ -230,8 +234,17 @@ boundary_tag = 3    # boundary
 model = None
 gmsh.initialize(sys.argv)
 if MPI.COMM_WORLD.rank == 0:
-    model = generate_mesh_wire(radius_wire, radius_dom, in_wire_size, on_wire_size, bkg_size,
-                               boundary_size, au_tag, bkg_tag, boundary_tag)
+    model = generate_mesh_wire(
+        radius_wire,
+        radius_dom,
+        in_wire_size,
+        on_wire_size,
+        bkg_size,
+        boundary_size,
+        au_tag,
+        bkg_tag,
+        boundary_tag,
+    )
 
 model = MPI.COMM_WORLD.bcast(model, root=0)
 domain, cell_tags, facet_tags = io.gmshio.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2)
@@ -401,11 +414,14 @@ eps.x.scatter_forward()
 # residual
 
 # Weak form
-F = - ufl.inner(ufl.curl(Es), ufl.curl(v)) * dDom \
-    + eps * (k0**2) * ufl.inner(Es, v) * dDom \
-    + (k0**2) * (eps - eps_bkg) * ufl.inner(Eb, v) * dDom \
-    + (1j * k0 * n_bkg + 1 / (2 * r)) \
-    * ufl.inner(ufl.cross(Es_3d, n_3d), ufl.cross(v_3d, n_3d)) * dsbc
+F = (
+    -ufl.inner(ufl.curl(Es), ufl.curl(v)) * dDom
+    + eps * (k0**2) * ufl.inner(Es, v) * dDom
+    + (k0**2) * (eps - eps_bkg) * ufl.inner(Eb, v) * dDom
+    + (1j * k0 * n_bkg + 1 / (2 * r))
+    * ufl.inner(ufl.cross(Es_3d, n_3d), ufl.cross(v_3d, n_3d))
+    * dsbc
+)
 
 # We split the residual into a sesquilinear (lhs) and linear (rhs) form
 # and solve the problem. We store the scattered field $\mathbf{E}_s$ as
@@ -441,7 +457,9 @@ if have_pyvista:
     V_cells, V_types, V_x = plot.vtk_mesh(V_dg)
     V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
     Esh_values = np.zeros((V_x.shape[0], 3), dtype=np.float64)
-    Esh_values[:, : domain.topology.dim] = Esh_dg.x.array.reshape(V_x.shape[0], domain.topology.dim).real
+    Esh_values[:, : domain.topology.dim] = Esh_dg.x.array.reshape(
+        V_x.shape[0], domain.topology.dim
+    ).real
 
     V_grid.point_data["u"] = Esh_values
 
@@ -477,7 +495,8 @@ with io.VTXWriter(domain.comm, "E.bp", E_dg) as vtx:
 
 # Calculation of analytical efficiencies
 q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
-    eps_au, n_bkg, wl0, radius_wire)
+    eps_au, n_bkg, wl0, radius_wire
+)
 
 # Now we can calculate the numerical efficiencies. The formula for the
 # absorption, scattering and extinction are:

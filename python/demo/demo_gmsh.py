@@ -26,6 +26,7 @@ try:
     import gmsh  # type: ignore
 except ImportError:
     import sys
+
     print("This demo requires gmsh to be installed")
     sys.exit(0)
 # -
@@ -143,6 +144,8 @@ def gmsh_ring(model: gmsh.model, name: str) -> gmsh.model:
     model.addPhysicalGroup(3, volume_entities, tag=1)
     model.setPhysicalName(3, 1, "Mesh volume")
     return model
+
+
 # -
 
 # ## DOLFINx mesh creation and file output
@@ -172,8 +175,14 @@ def create_mesh(comm: MPI.Comm, model: gmsh.model, name: str, filename: str, mod
     with XDMFFile(msh.comm, filename, mode) as file:
         msh.topology.create_connectivity(2, 3)
         file.write_mesh(msh)
-        file.write_meshtags(ct, msh.geometry, geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{msh.name}']/Geometry")
-        file.write_meshtags(ft, msh.geometry, geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{msh.name}']/Geometry")
+        file.write_meshtags(
+            ct, msh.geometry, geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{msh.name}']/Geometry"
+        )
+        file.write_meshtags(
+            ft, msh.geometry, geometry_xpath=f"/Xdmf/Domain/Grid[@Name='{msh.name}']/Geometry"
+        )
+
+
 # -
 
 # ## Generate meshes

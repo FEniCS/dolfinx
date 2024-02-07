@@ -9,11 +9,20 @@ except ModuleNotFoundError:
 from numpy import pi
 
 
-def generate_mesh_sphere_axis(radius_sph: float, radius_scatt: float, radius_dom: float,
-                              radius_pml: float, in_sph_size: float, on_sph_size: float,
-                              scatt_size: float, pml_size: float, au_tag: int, bkg_tag: int,
-                              pml_tag: int, scatt_tag: int):
-
+def generate_mesh_sphere_axis(
+    radius_sph: float,
+    radius_scatt: float,
+    radius_dom: float,
+    radius_pml: float,
+    in_sph_size: float,
+    on_sph_size: float,
+    scatt_size: float,
+    pml_size: float,
+    au_tag: int,
+    bkg_tag: int,
+    pml_tag: int,
+    scatt_tag: int,
+):
     gmsh.model.add("geometry")
 
     gmsh.model.occ.addCircle(0, 0, 0, radius_sph * 0.5, angle1=-pi / 2, angle2=pi / 2, tag=1)

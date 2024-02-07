@@ -29,7 +29,7 @@ def test_distance_interval():
 def test_distance_triangle():
     shape, degree = "triangle", 1
     domain = basix.create_element(basix.ElementFamily.P, basix.cell.string_to_type(shape), degree)
-    x = np.array([[0., 0., 0.], [0., 1., 0.], [1., 1., 0.]], dtype=np.float64)
+    x = np.array([[0.0, 0.0, 0.0], [0.0, 1.0, 0.0], [1.0, 1.0, 0.0]], dtype=np.float64)
     cells = [[0, 1, 2]]
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
     d = np.array([-1.0, -1.0, 0.0])
@@ -46,7 +46,7 @@ def test_distance_tetrahedron():
     shape = "tetrahedron"
     degree = 1
     domain = ufl.Mesh(element("Lagrange", shape, degree, gdim=gdim, shape=(3,), dtype=np.float64))
-    x = np.array([[0., 0., 0.], [0., 1., 0.], [0., 1., 1.], [1, 1., 1]], dtype=np.float64)
+    x = np.array([[0.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 1.0, 1.0], [1, 1.0, 1]], dtype=np.float64)
     cells = [[0, 1, 2, 3]]
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
     d = np.array([-1.0, -1.0, -1.0])

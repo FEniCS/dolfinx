@@ -18,7 +18,7 @@ body:
   - type: textarea
     id: code-block
     attributes:
-      label: Suggestion user interface
+      label: Suggested user interface
       description: Please create a minimal (Python) code that shows how you would like the feature to work.
       render: python3
       placeholder: No 3x``` encapsulation of code required

@@ -17,8 +17,11 @@ def test_add_diagonal():
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
     gdim = mesh.geometry.dim
     V = functionspace(mesh, ("Lagrange", 1, (gdim,)))
-    pattern = SparsityPattern(mesh.comm, [V.dofmap.index_map, V.dofmap.index_map],
-                              [V.dofmap.index_map_bs, V.dofmap.index_map_bs])
+    pattern = SparsityPattern(
+        mesh.comm,
+        [V.dofmap.index_map, V.dofmap.index_map],
+        [V.dofmap.index_map_bs, V.dofmap.index_map_bs],
+    )
     mesh.topology.create_connectivity(mesh.topology.dim - 1, mesh.topology.dim)
     facets = exterior_facet_indices(mesh.topology)
     blocks = locate_dofs_topological(V, mesh.topology.dim - 1, facets)

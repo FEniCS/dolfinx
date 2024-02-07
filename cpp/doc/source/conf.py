@@ -17,12 +17,12 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'DOLFINx'
-copyright = '2022, FEniCS Project'
-author = 'FEniCS Project'
+project = "DOLFINx"
+copyright = "2022, FEniCS Project"
+author = "FEniCS Project"
 
 # The full version, including alpha/beta/rc tags
-release = '0.3.1'
+release = "0.3.1"
 
 
 # -- General configuration ---------------------------------------------------
@@ -30,12 +30,13 @@ release = '0.3.1'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.mathjax',
-              'breathe',
-              ]
+extensions = [
+    "sphinx.ext.mathjax",
+    "breathe",
+]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -61,10 +62,10 @@ html_static_path = []
 
 breathe_projects = {"DOLFINx": "../xml/"}
 breathe_default_project = "DOLFINx"
-breathe_implementation_filename_extensions = ['.c', '.cc', '.cpp']
+breathe_implementation_filename_extensions = [".c", ".cc", ".cpp"]
 
 # Tell sphinx what the primary language being documented is.
-primary_domain = 'cpp'
+primary_domain = "cpp"
 
 # Tell sphinx what the pygments highlight language should be.
-highlight_language = 'cpp'
+highlight_language = "cpp"

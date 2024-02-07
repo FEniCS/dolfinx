@@ -80,14 +80,19 @@ def test_3d(tempdir, cell_type, encoding):
         file.write_meshtags(mt_in, mesh_in.geometry)
 
     # Check number of owned and marked entities
-    lines_local = comm.allreduce((mt_lines.indices < mesh.topology.index_map(1).size_local).sum(), op=MPI.SUM)
+    lines_local = comm.allreduce(
+        (mt_lines.indices < mesh.topology.index_map(1).size_local).sum(), op=MPI.SUM
+    )
     lines_local_in = comm.allreduce(
-        (mt_lines_in.indices < mesh_in.topology.index_map(1).size_local).sum(), op=MPI.SUM)
+        (mt_lines_in.indices < mesh_in.topology.index_map(1).size_local).sum(), op=MPI.SUM
+    )
 
     assert lines_local == lines_local_in
 
     # Check that only owned data is written to file
-    facets_local = comm.allreduce((mt.indices < mesh.topology.index_map(2).size_local).sum(), op=MPI.SUM)
+    facets_local = comm.allreduce(
+        (mt.indices < mesh.topology.index_map(2).size_local).sum(), op=MPI.SUM
+    )
     parser = ElementTree.XMLParser()
     tree = ElementTree.parse(Path(tempdir, "meshtags_3d_out.xdmf"), parser)
     num_lines = int(tree.findall(".//Grid[@Name='lines']/Topology")[0].get("NumberOfElements"))

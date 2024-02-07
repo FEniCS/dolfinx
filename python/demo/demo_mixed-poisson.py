@@ -158,8 +158,12 @@ bc_bottom = fem.dirichletbc(f_h2, dofs_bottom, V0)
 
 bcs = [bc_top, bc_bottom]
 
-problem = LinearProblem(a, L, bcs=bcs, petsc_options={"ksp_type": "preonly", "pc_type": "lu",
-                                                      "pc_factor_mat_solver_type": "mumps"})
+problem = LinearProblem(
+    a,
+    L,
+    bcs=bcs,
+    petsc_options={"ksp_type": "preonly", "pc_type": "lu", "pc_factor_mat_solver_type": "mumps"},
+)
 try:
     w_h = problem.solve()
 except PETSc.Error as e:  # type: ignore

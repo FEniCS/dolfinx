@@ -106,6 +106,7 @@ def test_complex_assembly_solve(complex_dtype, cg_solver):
     # Reference Solution
     def ref_eval(x):
         return np.cos(2 * np.pi * x[0]) * np.cos(2 * np.pi * x[1])
+
     u_ref = Function(V, dtype=real_dtype)
     u_ref.interpolate(ref_eval)
 

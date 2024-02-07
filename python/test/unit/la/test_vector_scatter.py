@@ -17,11 +17,10 @@ from dolfinx.fem import Function, functionspace
 from dolfinx.mesh import create_unit_square
 
 
-@pytest.mark.parametrize("e", [
-    element("Lagrange", "triangle", 1),
-    element("Lagrange", "triangle", 1, shape=(2,))])
+@pytest.mark.parametrize(
+    "e", [element("Lagrange", "triangle", 1), element("Lagrange", "triangle", 1, shape=(2,))]
+)
 def test_scatter_forward(e):
-
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
     V = functionspace(mesh, e)
     u = Function(V)
@@ -47,11 +46,10 @@ def test_scatter_forward(e):
     assert np.allclose(u.x.array[local_size:], ghost_owners)
 
 
-@pytest.mark.parametrize("e", [
-    element("Lagrange", "triangle", 1),
-    element("Lagrange", "triangle", 1, shape=(2, ))])
+@pytest.mark.parametrize(
+    "e", [element("Lagrange", "triangle", 1), element("Lagrange", "triangle", 1, shape=(2,))]
+)
 def test_scatter_reverse(e):
-
     comm = MPI.COMM_WORLD
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
     V = functionspace(mesh, e)

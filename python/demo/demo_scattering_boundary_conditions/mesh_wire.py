@@ -37,10 +37,17 @@ except ModuleNotFoundError:
 from numpy import pi
 
 
-def generate_mesh_wire(radius_wire: float, radius_dom: float, in_wire_size: float,
-                       on_wire_size: float, bkg_size: float, boundary_size: float,
-                       au_tag: int, bkg_tag: int, boundary_tag: int):
-
+def generate_mesh_wire(
+    radius_wire: float,
+    radius_dom: float,
+    in_wire_size: float,
+    on_wire_size: float,
+    bkg_size: float,
+    boundary_size: float,
+    au_tag: int,
+    bkg_tag: int,
+    boundary_tag: int,
+):
     gmsh.model.add("wire")
 
     # A dummy boundary is added for setting a finer mesh
