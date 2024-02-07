@@ -39,7 +39,7 @@ enum class IntegralType : std::int8_t
 
 /// @brief Represents integral data, containing the integral
 /// ID, the kernel, and a list of entities to integrate over
-template <dolfinx::scalar T, typename cont>
+template <dolfinx::scalar T, typename container>
 struct integral_data
 {
   /// The finite element kernel type
@@ -51,7 +51,7 @@ struct integral_data
   /// @param id The domain ID
   /// @param kernel The integration kernel
   /// @param entities The entities to integrate over
-  integral_data(int id, kern kernel, cont entities)
+  integral_data(int id, kern kernel, container entities)
       : id(id), kernel(kernel), entities(entities)
   {
   }
@@ -63,7 +63,7 @@ struct integral_data
   kern kernel;
 
   /// The entities to integrate over
-  cont entities;
+  container entities;
 };
 
 /// @brief A representation of finite element variational forms.
@@ -114,7 +114,9 @@ public:
   /// are no argument functions from which the mesh can be extracted,
   /// e.g. for functionals.
   Form(const std::vector<std::shared_ptr<const FunctionSpace<U>>>& V,
-       const std::map<IntegralType, std::vector<integral_data<T, std::span<const int32_t>>>>& integrals,
+       const std::map<IntegralType,
+                      std::vector<integral_data<T, std::span<const int32_t>>>>&
+           integrals,
        const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients,
        const std::vector<std::shared_ptr<const Constant<T>>>& constants,
        bool needs_facet_permutations,
@@ -134,7 +136,6 @@ public:
       throw std::runtime_error("No mesh could be associated with the Form.");
 
     // Store kernels, looping over integrals by domain type (dimension)
-    // FIXME Simplify
     for (auto& [type, data] : integrals)
     {
       auto& itg = _integrals[static_cast<std::size_t>(type)];
@@ -142,8 +143,7 @@ public:
         itg.emplace_back(id, kern, std::vector(e.begin(), e.end()));
       // TODO Check. Assume this is sorted?
       std::sort(itg.begin(), itg.end(),
-                [](const auto& i, const auto& j)
-                { return i.id < j.id; });
+                [](const auto& i, const auto& j) { return i.id < j.id; });
     }
   }
 
@@ -225,8 +225,7 @@ public:
     std::vector<int> ids;
     auto& integrals = _integrals[static_cast<std::size_t>(type)];
     std::transform(integrals.begin(), integrals.end(), std::back_inserter(ids),
-                   [](const auto& integral)
-                   { return integral.id; });
+                   [](const auto& integral) { return integral.id; });
     return ids;
   }
 
@@ -306,7 +305,8 @@ private:
 
   // Integrals. Array index is
   // static_cast<std::size_t(IntegralType::foo)
-  std::array<std::vector<integral_data<T, std::vector<std::int32_t>>>, 4> _integrals;
+  std::array<std::vector<integral_data<T, std::vector<std::int32_t>>>, 4>
+      _integrals;
 
   // True if permutation data needs to be passed into these integrals
   bool _needs_facet_permutations;
