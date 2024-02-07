@@ -404,6 +404,7 @@ Form<T, U> create_form_factory(
         assert(topology->index_map(tdim));
         default_cells.resize(topology->index_map(tdim)->size_local(), 0);
         std::iota(default_cells.begin(), default_cells.end(), 0);
+        // TODO std::move
         itg.first->second.emplace_back(id, k, default_cells);
       }
       else if (sd != subdomains.end())
@@ -413,7 +414,9 @@ Form<T, U> create_form_factory(
                                    [](auto& pair, auto val)
                                    { return pair.first < val; });
         if (it != sd->second.end() and it->first == id)
-          itg.first->second.emplace_back(id, k, it->second);
+          itg.first->second.emplace_back(
+              id, k,
+              std::vector<std::int32_t>(it->second.begin(), it->second.end()));
       }
 
       if (integral->needs_facet_permutations)
@@ -484,7 +487,9 @@ Form<T, U> create_form_factory(
                                    [](auto& pair, auto val)
                                    { return pair.first < val; });
         if (it != sd->second.end() and it->first == id)
-          itg.first->second.emplace_back(id, k, it->second);
+          itg.first->second.emplace_back(
+              id, k,
+              std::vector<std::int32_t>(it->second.begin(), it->second.end()));
       }
 
       if (integral->needs_facet_permutations)
@@ -558,7 +563,9 @@ Form<T, U> create_form_factory(
                                    { return pair.first < val; });
         if (it != sd->second.end() and it->first == id)
         {
-          itg.first->second.emplace_back(id, k, it->second);
+          itg.first->second.emplace_back(
+              id, k,
+              std::vector<std::int32_t>(it->second.begin(), it->second.end()));
         }
       }
 
