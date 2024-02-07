@@ -6,11 +6,10 @@ import datetime
 import os
 import sys
 
-import jupytext_process
-
 import dolfinx
 
 sys.path.insert(0, os.path.abspath("."))
+import jupytext_process  # isort:skip
 
 
 myst_heading_anchors = 3
