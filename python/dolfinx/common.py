@@ -9,7 +9,9 @@ import functools
 import typing
 
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.common import IndexMap, git_commit_hash, has_adios2, has_debug, has_kahip, has_parmetis  # noqa
+from dolfinx.cpp.common import (
+    IndexMap,
+)
 
 __all__ = ["IndexMap", "Timer", "timed"]
 
