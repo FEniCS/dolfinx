@@ -115,8 +115,9 @@ element = basix.create_tp_element(
     basix.LagrangeVariant.gll_warped,
     dtype=dtype,
 )
-e_ufl = basix.ufl._BasixElement(element)
-V = fem.functionspace(mesh, e_ufl)
+
+# Create function space with basix element
+V = fem.functionspace(mesh, element)
 
 # +
 

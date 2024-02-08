@@ -87,6 +87,20 @@ void declare_function_space(nb::module_& m, std::string type)
                return dolfinx_wrappers::as_nbarray(std::move(x),
                                                    {x.size() / 3, 3});
              });
+
+    // create function space from basix element and shape
+    std::string pymethod_fuction_space_from_basix_element
+        = std::string("create_function_space_") + type;
+    m.def(
+        pymethod_fuction_space_from_basix_element.c_str(),
+        [](std::shared_ptr<dolfinx::mesh::Mesh<T>> mesh,
+           const basix::FiniteElement<T>& element,
+           const std::vector<std::size_t>& value_shape) {
+          return dolfinx::fem::create_functionspace<T>(mesh, element,
+                                                       value_shape);
+        },
+        nb::arg("mesh"), nb::arg("element"), nb::arg("value_shape"),
+        "Create a FunctionSpace from a basix element and value shape");
   }
 
   {
@@ -107,8 +121,9 @@ void declare_function_space(nb::module_& m, std::string type)
             "__init__",
             [](dolfinx::fem::FiniteElement<T>* self,
                const basix::FiniteElement<T>& element,
-               const std::vector<std::size_t>& value_shape)
-            { new (self) dolfinx::fem::FiniteElement<T>(element, value_shape); },
+               const std::vector<std::size_t>& value_shape) {
+              new (self) dolfinx::fem::FiniteElement<T>(element, value_shape);
+            },
             nb::arg("element"), nb::arg("value_shape"))
         .def("__eq__", &dolfinx::fem::FiniteElement<T>::operator==)
         .def_prop_ro("basix_element",
