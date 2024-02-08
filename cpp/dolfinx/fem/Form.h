@@ -144,7 +144,9 @@ public:
       if (!std::is_sorted(data.begin(), data.end(),
                           [](const auto& a, const auto& b)
                           { return a.id < b.id; }))
+      {
         throw std::runtime_error("Integral IDs not sorted");
+      }
 
       auto& itg = _integrals[static_cast<std::size_t>(type)];
       for (auto& [id, kern, e] : data)
