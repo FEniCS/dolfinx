@@ -569,7 +569,7 @@ def functionspace(
             shape=e.shape,
             symmetry=e.symmetry,
             gdim=mesh.ufl_cell().geometric_dimension(),
-            dtype=mesh.geometry.x.dtype,
+            dtype=dtype,
         )
     except TypeError:
         ufl_e = element  # type: ignore
