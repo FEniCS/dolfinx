@@ -39,9 +39,11 @@ enum class IntegralType : std::int8_t
 
 /// @brief Represents integral data, containing the integral
 /// ID, the kernel, and a list of entities to integrate over
-template <dolfinx::scalar T, typename container>
+template <dolfinx::scalar T, typename U>
 struct integral_data
 {
+  using container_t = U;
+
   /// The finite element kernel type
   using kern = std::function<void(T*, const T*, const T*,
                                   const scalar_value_type_t<T>*, const int*,
@@ -51,7 +53,7 @@ struct integral_data
   /// @param id The domain ID
   /// @param kernel The integration kernel
   /// @param entities The entities to integrate over
-  integral_data(int id, kern kernel, container entities)
+  integral_data(int id, kern kernel, container_t entities)
       : id(id), kernel(kernel), entities(entities)
   {
   }
@@ -63,7 +65,7 @@ struct integral_data
   kern kernel;
 
   /// The entities to integrate over
-  container entities;
+  container_t entities;
 };
 
 /// @brief A representation of finite element variational forms.
