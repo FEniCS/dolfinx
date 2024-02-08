@@ -233,7 +233,7 @@ public:
     std::vector<int> ids;
     const auto& integrals = _integrals[static_cast<std::size_t>(type)];
     std::transform(integrals.begin(), integrals.end(), std::back_inserter(ids),
-                   [](const auto& integral) { return integral.id; });
+                   [](auto& integral) { return integral.id; });
     return ids;
   }
 
