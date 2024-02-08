@@ -105,9 +105,8 @@ public:
   /// rather using this interface directly.
   ///
   /// @param[in] V Function spaces for the form arguments
-  /// @param[in] integrals Integrals in the form. For each integral
-  /// type, there is a list of integral data, which contains the ID,
-  /// integration kernel, and a list of entities to integrate over.
+  /// @param[in] integrals The integrals in the form. For each
+  /// integral type, there is a list of integral data
   /// @param[in] coefficients
   /// @param[in] constants Constants in the Form
   /// @param[in] needs_facet_permutations Set to true is any of the
