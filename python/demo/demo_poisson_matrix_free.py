@@ -99,11 +99,12 @@ ffcx_options = {"sum_factorization": True}
 # finite element {py:class}`FunctionSpace <dolfinx.fem.FunctionSpace>`
 # $V$ on the mesh.
 
+dtype = np.float64
 
 # Create mesh with tensor product ordering
 comm = MPI.COMM_WORLD
-mesh = dolfinx.mesh.create_tp_rectangle(comm, [[0.0, 0.0], [1.0, 1.0]], [10, 10])
-dtype = mesh.geometry.x.dtype
+mesh = dolfinx.mesh.create_tp_rectangle(comm, [[0.0, 0.0], [1.0, 1.0]], [10, 10], dtype=dtype)
+
 
 # Create function space
 degree = 3
@@ -147,7 +148,6 @@ dofs = fem.locate_dofs_topological(V=V, entity_dim=tdim - 1, entities=facets)
 # class that represents the boundary condition. On the boundary we prescribe
 # the {py:class}`Function <dolfinx.fem.Function>` `uD`, which is obtained by
 # interpolating the expression $u_{\rm D}$ onto the finite element space $V$.
-
 uD = fem.Function(V, dtype=dtype)
 uD.interpolate(lambda x: 1 + x[0] ** 2 + 2 * x[1] ** 2)
 
@@ -172,18 +172,9 @@ L_fem = fem.form(L, dtype=dtype, form_compiler_options=ffcx_options)
 # M(v) = a(u_i, v) \quad \text{for} \; \ u_i \in V.
 # $$
 
-ui = fem.Function(V)
+ui = fem.Function(V, dtype=dtype)
 M = action(a, ui)
 M_fem = fem.form(M, dtype=dtype, form_compiler_options=ffcx_options)
-
-# ### Direct solver using the assembled matrix
-#
-# To validate the results of the matrix-free solvers, we first compute the
-# solution with a direct solver using the assembled matrix.
-problem = fem.petsc.LinearProblem(
-    a, L, bcs=[bc], petsc_options={"ksp_type": "preonly", "pc_type": "lu"}
-)
-uh_lu = problem.solve()
 
 # The exact solution $u_{\rm D}$ is interpolated onto the finite element
 
@@ -194,14 +185,10 @@ uh_lu = problem.solve()
 
 # +
 def L2Norm(u):
-    val = fem.assemble_scalar(fem.form(inner(u, u) * dx))
+    val = fem.assemble_scalar(fem.form(inner(u, u) * dx, dtype=dtype))
     return np.sqrt(comm.allreduce(val, op=MPI.SUM))
 
 
-error_L2_lu = L2Norm(uh_lu - uD)
-if comm.rank == 0:
-    print("Direct solver using the assembled matrix:")
-    print(f"L2-error against exact solution:  {error_L2_lu:.4e}")
 # -
 
 # ### Matrix-free Conjugate Gradient solvers
@@ -236,7 +223,7 @@ b.scatter_forward()
 
 
 def action_A(x, y):
-    ui.x.array[:] = x.array
+    ui.x.array[:] = x.array  # Set coefficient vector of the linear form M
 
     # Update coefficient ui of the linear form M
     ui.x.scatter_forward()
@@ -308,9 +295,7 @@ fem.set_bc(ui.x.array, [bc], scale=1.0)
 
 # Print CG iteration number and errors
 error_L2_cg1 = L2Norm(ui - uD)
-error_lu_cg1 = np.linalg.norm(ui.x.array - uh_lu.x.array)
 if mesh.comm.rank == 0:
     print("Matrix-free CG solver using DOLFINx vectors:")
     print(f"CG iterations until convergence:  {iter_cg1}")
     print(f"L2-error against exact solution:  {error_L2_cg1:.4e}")
-    print(f"Coeff. error against LU solution: {error_lu_cg1:.4e}")
