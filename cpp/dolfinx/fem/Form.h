@@ -189,9 +189,9 @@ public:
                      const int*, const std::uint8_t*)>
   kernel(IntegralType type, int i) const
   {
-    auto integrals = _integrals[static_cast<std::size_t>(type)];
+    const auto& integrals = _integrals[static_cast<std::size_t>(type)];
     auto it = std::lower_bound(integrals.begin(), integrals.end(), i,
-                               [](const auto& itg_data, int i)
+                               [](auto& itg_data, int i)
                                { return itg_data.id < i; });
     if (it != integrals.end() and it->id == i)
       return it->kernel;
@@ -230,7 +230,7 @@ public:
   std::vector<int> integral_ids(IntegralType type) const
   {
     std::vector<int> ids;
-    auto& integrals = _integrals[static_cast<std::size_t>(type)];
+    const auto& integrals = _integrals[static_cast<std::size_t>(type)];
     std::transform(integrals.begin(), integrals.end(), std::back_inserter(ids),
                    [](const auto& integral) { return integral.id; });
     return ids;
@@ -255,9 +255,9 @@ public:
   /// @return List of active cell entities for the given integral (kernel)
   std::span<const std::int32_t> domain(IntegralType type, int i) const
   {
-    auto& integrals = _integrals[static_cast<std::size_t>(type)];
+    const auto& integrals = _integrals[static_cast<std::size_t>(type)];
     auto it = std::lower_bound(integrals.begin(), integrals.end(), i,
-                               [](const auto& itg_data, int i)
+                               [](auto& itg_data, int i)
                                { return itg_data.id < i; });
     if (it != integrals.end() and it->id == i)
       return it->entities;
