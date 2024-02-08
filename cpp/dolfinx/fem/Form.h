@@ -42,6 +42,7 @@ enum class IntegralType : std::int8_t
 template <dolfinx::scalar T, typename U>
 struct integral_data
 {
+  /// The container type
   using container_t = U;
 
   /// The finite element kernel type
