@@ -18,3 +18,11 @@ def test_create_adj2d(dtype):
     assert np.array_equal(
         adj.offsets, np.arange(0, num_nodes * num_links + num_links, num_links, dtype=np.int32)
     )
+
+    data = np.arange(20, dtype=dtype)
+    offsets = np.array([0, 5, 15, 20], dtype=np.int32)
+    adj = adjacencylist(data, offsets)
+    assert adj.num_nodes == 3
+    assert len(adj.links(0)) == 5
+    assert len(adj.links(1)) == 10
+    assert len(adj.links(2)) == 5
