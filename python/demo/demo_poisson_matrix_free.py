@@ -99,7 +99,7 @@ ffcx_options = {"sum_factorization": True}
 # finite element {py:class}`FunctionSpace <dolfinx.fem.FunctionSpace>`
 # $V$ on the mesh.
 
-dtype = np.float64
+dtype = dolfinx.default_scalar_type
 
 # Create mesh with tensor product ordering
 comm = MPI.COMM_WORLD
