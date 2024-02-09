@@ -9,8 +9,8 @@
 #include "assemble_matrix_impl.h"
 #include "assemble_scalar_impl.h"
 #include "assemble_vector_impl.h"
+#include "traits.h"
 #include "utils.h"
-#include <concepts>
 #include <cstdint>
 #include <dolfinx/common/types.h>
 #include <memory>
@@ -21,7 +21,7 @@ namespace dolfinx::fem
 {
 template <dolfinx::scalar T, std::floating_point U>
 class DirichletBC;
-template <dolfinx::scalar T, std::floating_point U>
+template <dolfinx::scalar T, std::floating_point U, FEkernel<T> Kern>
 class Form;
 template <std::floating_point T>
 class FunctionSpace;

@@ -7,6 +7,7 @@
 #pragma once
 
 #include "FunctionSpace.h"
+#include "traits.h"
 #include <algorithm>
 #include <array>
 #include <concepts>
@@ -39,22 +40,23 @@ enum class IntegralType : std::int8_t
 
 /// @brief Represents integral data, containing the integral
 /// ID, the kernel, and a list of entities to integrate over
-template <dolfinx::scalar T, typename U>
+template <dolfinx::scalar T, typename U,
+          FEkernel<T> Kern = std::function<void(
+              T*, const T*, const T*, const scalar_value_type_t<T>*, const int*,
+              const std::uint8_t*)>>
 struct integral_data
 {
   /// The container type
   using container_t = U;
 
-  /// The finite element kernel type
-  using kern = std::function<void(T*, const T*, const T*,
-                                  const scalar_value_type_t<T>*, const int*,
-                                  const std::uint8_t*)>;
+  /// @brief Kernel type
+  using kern_t = Kern;
 
   /// @brief Create a container to hold integral data
   /// @param id The domain ID
   /// @param kernel The integration kernel
   /// @param entities The entities to integrate over
-  integral_data(int id, kern kernel, container_t entities)
+  integral_data(int id, kern_t kernel, container_t entities)
       : id(id), kernel(kernel), entities(entities)
   {
   }
@@ -63,7 +65,7 @@ struct integral_data
   int id;
 
   /// The integration kernel
-  kern kernel;
+  kern_t kernel;
 
   /// The entities to integrate over
   container_t entities;
@@ -92,10 +94,15 @@ struct integral_data
 /// (the variable `function_spaces` in the constructors below), the list
 /// of spaces should start with space number 0 (the test space) and then
 /// space number 1 (the trial space).
-template <dolfinx::scalar T,
-          std::floating_point U = dolfinx::scalar_value_type_t<T>>
+template <
+    dolfinx::scalar T, std::floating_point U = dolfinx::scalar_value_type_t<T>,
+    FEkernel<T> Kern
+    = std::function<void(T*, const T*, const T*, const scalar_value_type_t<T>*,
+                         const int*, const std::uint8_t*)>>
 class Form
 {
+  using kern_t = Kern;
+
 public:
   /// Scalar type
   using scalar_type = T;
@@ -118,8 +125,9 @@ public:
   ///
   /// @pre The integral data in integrals must be sorted by domain
   Form(const std::vector<std::shared_ptr<const FunctionSpace<U>>>& V,
-       const std::map<IntegralType,
-                      std::vector<integral_data<T, std::span<const int32_t>>>>&
+       const std::map<
+           IntegralType,
+           std::vector<integral_data<T, std::span<const int32_t>, kern_t>>>&
            integrals,
        const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients,
        const std::vector<std::shared_ptr<const Constant<T>>>& constants,
@@ -186,9 +194,7 @@ public:
   /// @param[in] type Integral type
   /// @param[in] i Domain identifier (index)
   /// @return Function to call for tabulate_tensor
-  std::function<void(T*, const T*, const T*, const scalar_value_type_t<T>*,
-                     const int*, const std::uint8_t*)>
-  kernel(IntegralType type, int i) const
+  kern_t kernel(IntegralType type, int i) const
   {
     const auto& integrals = _integrals[static_cast<std::size_t>(type)];
     auto it = std::lower_bound(integrals.begin(), integrals.end(), i,
@@ -313,7 +319,8 @@ private:
 
   // Integrals. Array index is
   // static_cast<std::size_t(IntegralType::foo)
-  std::array<std::vector<integral_data<T, std::vector<std::int32_t>>>, 4>
+  std::array<std::vector<integral_data<T, std::vector<std::int32_t>, kern_t>>,
+             4>
       _integrals;
 
   // True if permutation data needs to be passed into these integrals

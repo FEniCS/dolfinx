@@ -114,15 +114,6 @@ compute_integration_domains(IntegralType integral_type,
                             std::span<const std::int32_t> entities, int dim,
                             std::span<const int> values);
 
-/// @brief Finite element cell kernel concept.
-///
-/// Kernel functions that can be passed to an assembler for execution
-/// must satisfy this concept.
-template <class U, class T>
-concept FEkernel = std::is_invocable_v<U, T*, const T*, const T*,
-                                       const scalar_value_type_t<T>*,
-                                       const int*, const std::uint8_t*>;
-
 /// @brief Extract test (0) and trial (1) function spaces pairs for each
 /// bilinear form for a rectangular array of forms.
 ///
