@@ -99,7 +99,7 @@ ffcx_options = {"sum_factorization": True}
 # finite element {py:class}`FunctionSpace <dolfinx.fem.FunctionSpace>`
 # $V$ on the mesh.
 
-dtype = dolfinx.default_scalar_type
+dtype = np.float32
 
 # Create mesh with tensor product ordering
 comm = MPI.COMM_WORLD
@@ -159,7 +159,7 @@ bc = fem.dirichletbc(value=uD, dofs=dofs)
 x = ufl.SpatialCoordinate(mesh)
 u = ufl.TrialFunction(V)
 v = ufl.TestFunction(V)
-f = fem.Constant(mesh, -6.0)
+f = fem.Constant(mesh, dtype(-6.0))
 a = inner(grad(u), grad(v)) * dx
 L = inner(f, v) * dx
 L_fem = fem.form(L, dtype=dtype, form_compiler_options=ffcx_options)
