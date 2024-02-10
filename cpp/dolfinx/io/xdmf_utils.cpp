@@ -34,21 +34,6 @@ namespace
 template <typename T, std::size_t ndim>
 using mdspan_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
     T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, ndim>>;
-
-/// Get data width - normally the same as u.value_size(), but expand for
-/// 2D vector/tensor because XDMF presents everything as 3D
-template <std::floating_point U>
-std::int64_t get_padded_width(const fem::FiniteElement<U>& e)
-{
-  const int width = e.value_size();
-  const int rank = e.value_shape().size();
-  if (rank == 1 and width == 2)
-    return 3;
-  else if (rank == 2 and width == 4)
-    return 9;
-  else
-    return width;
-}
 } // namespace
 
 //----------------------------------------------------------------------------

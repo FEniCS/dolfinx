@@ -362,11 +362,11 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
   const int bs1 = dofmap1->bs();
   const int bs0 = dofmap0->bs();
   auto apply_dof_transformation
-      = element0->template get_pre_dof_transformation_function<T>(false, true,
-                                                                  false);
+      = element0->template get_pre_dof_transformation_function<T>(
+          FiniteElement<U>::doftransform::transpose, false);
   auto apply_inverse_dof_transform
-      = element1->template get_pre_dof_transformation_function<T>(true, true,
-                                                                  false);
+      = element1->template get_pre_dof_transformation_function<T>(
+          FiniteElement<U>::doftransform::inverse_transpose, false);
 
   // Create working array
   std::vector<T> local0(element0->space_dimension());
@@ -452,16 +452,16 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
   const int bs0 = element0->block_size();
   const int bs1 = element1->block_size();
   auto apply_dof_transformation0
-      = element0->template get_pre_dof_transformation_function<U>(false, false,
-                                                                  false);
+      = element0->template get_pre_dof_transformation_function<U>(
+          FiniteElement<U>::doftransform::standard, false);
   auto apply_inverse_dof_transform1
-      = element1->template get_pre_dof_transformation_function<T>(true, true,
-                                                                  false);
+      = element1->template get_pre_dof_transformation_function<T>(
+          FiniteElement<U>::doftransform::inverse_transpose, false);
 
   // Get sizes of elements
   const std::size_t dim0 = element0->space_dimension() / bs0;
   const std::size_t value_size_ref0 = element0->reference_value_size() / bs0;
-  const std::size_t value_size0 = element0->value_size() / bs0;
+  const std::size_t value_size0 = V0->value_size() / bs0;
 
   const CoordinateElement<U>& cmap = mesh->geometry().cmap();
   auto x_dofmap = mesh->geometry().dofmap();
@@ -493,13 +493,13 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
   impl::mdspan_t<U, 3> basis_reference0(basis_reference0_b.data(), Xshape[0],
                                         dim0, value_size_ref0);
 
-  std::vector<T> values0_b(Xshape[0] * 1 * element1->value_size());
+  std::vector<T> values0_b(Xshape[0] * 1 * V1->value_size());
   impl::mdspan_t<T, 3> values0(values0_b.data(), Xshape[0], 1,
-                               element1->value_size());
+                               V1->value_size());
 
-  std::vector<T> mapped_values_b(Xshape[0] * 1 * element1->value_size());
+  std::vector<T> mapped_values_b(Xshape[0] * 1 * V1->value_size());
   impl::mdspan_t<T, 3> mapped_values0(mapped_values_b.data(), Xshape[0], 1,
-                                      element1->value_size());
+                                      V1->value_size());
 
   std::vector<U> coord_dofs_b(num_dofs_g * gdim);
   impl::mdspan_t<U, 2> coord_dofs(coord_dofs_b.data(), num_dofs_g, gdim);
@@ -697,7 +697,7 @@ void interpolate_nonmatching_meshes(
 
   auto element_u = u.function_space()->element();
   assert(element_u);
-  const std::size_t value_size = element_u->value_size();
+  const std::size_t value_size = u.function_space()->value_size();
 
   const auto& [dest_ranks, src_ranks, recv_points, evaluation_cells]
       = nmm_interpolation_data;
@@ -757,9 +757,6 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
                              "Interpolate into subspaces.");
   }
 
-  if (fshape[0] != (std::size_t)element->value_size())
-    throw std::runtime_error("Interpolation data has the wrong shape/size.");
-
   // Get mesh
   assert(u.function_space());
   auto mesh = u.function_space()->mesh();
@@ -768,6 +765,9 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
   const int gdim = mesh->geometry().dim();
   const int tdim = mesh->topology()->dim();
 
+  if (fshape[0] != (std::size_t)u.function_space()->value_size())
+    throw std::runtime_error("Interpolation data has the wrong shape/size.");
+
   std::span<const std::uint32_t> cell_info;
   if (element->needs_dof_transformations())
   {
@@ -775,7 +775,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
     cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
 
-  const std::size_t f_shape1 = f.size() / element->value_size();
+  const std::size_t f_shape1 = f.size() / u.function_space()->value_size();
   MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
       const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
       _f(f.data(), fshape);
@@ -787,7 +787,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 
   // Loop over cells and compute interpolation dofs
   const int num_scalar_dofs = element->space_dimension() / element_bs;
-  const int value_size = element->value_size() / element_bs;
+  const int value_size = u.function_space()->value_size() / element_bs;
 
   std::span<T> coeffs = u.x()->mutable_array();
   std::vector<T> _coeffs(num_scalar_dofs);
@@ -800,8 +800,8 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
     // e.g. not Piola mapped
 
     auto apply_inv_transpose_dof_transformation
-        = element->template get_pre_dof_transformation_function<T>(true, true,
-                                                                   true);
+        = element->template get_pre_dof_transformation_function<T>(
+            FiniteElement<U>::doftransform::inverse_transpose, true);
 
     // Loop over cells
     for (std::size_t c = 0; c < cells.size(); ++c)
@@ -829,7 +829,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
     // Not a point evaluation, but the geometric map is the identity,
     // e.g. not Piola mapped
 
-    const int element_vs = element->value_size() / element_bs;
+    const int element_vs = u.function_space()->value_size() / element_bs;
 
     if (element_vs > 1 && element_bs > 1)
     {
@@ -844,8 +844,8 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
     assert(Pi.extent(0) == num_scalar_dofs);
 
     auto apply_inv_transpose_dof_transformation
-        = element->template get_pre_dof_transformation_function<T>(true, true,
-                                                                   true);
+        = element->template get_pre_dof_transformation_function<T>(
+            FiniteElement<U>::doftransform::inverse_transpose, true);
 
     // Loop over cells
     std::vector<T> ref_data_b(num_interp_points);
@@ -937,7 +937,8 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
                              const std::span<const std::uint32_t>&,
                              std::int32_t, int)>
         apply_inverse_transpose_dof_transformation
-        = element->template get_pre_dof_transformation_function<T>(true, true);
+        = element->template get_pre_dof_transformation_function<T>(
+            FiniteElement<U>::doftransform::inverse_transpose);
 
     // Get interpolation operator
     const auto [_Pi, pi_shape] = element->interpolation_operator();
@@ -1159,14 +1160,15 @@ void interpolate(
     {
 
       // Get elements and check value shape
-      auto element0 = v.function_space()->element();
+      auto fs0 = v.function_space();
+      auto element0 = fs0->element();
       assert(element0);
-      auto element1 = u.function_space()->element();
+      auto fs1 = u.function_space();
+      auto element1 = fs1->element();
       assert(element1);
-      if (element0->value_shape().size() != element1->value_shape().size()
-          or !std::equal(element0->value_shape().begin(),
-                         element0->value_shape().end(),
-                         element1->value_shape().begin()))
+      if (fs0->value_shape().size() != fs1->value_shape().size()
+          or !std::equal(fs0->value_shape().begin(), fs0->value_shape().end(),
+                         fs1->value_shape().begin()))
       {
         throw std::runtime_error(
             "Interpolation: elements have different value dimensions");

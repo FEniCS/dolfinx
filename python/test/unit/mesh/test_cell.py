@@ -42,10 +42,9 @@ def test_distance_triangle():
 
 @pytest.mark.skip_in_parallel
 def test_distance_tetrahedron():
-    gdim = 3
     shape = "tetrahedron"
     degree = 1
-    domain = ufl.Mesh(element("Lagrange", shape, degree, gdim=gdim, shape=(3,), dtype=np.float64))
+    domain = ufl.Mesh(element("Lagrange", shape, degree, shape=(3,), dtype=np.float64))
     x = np.array([[0.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 1.0, 1.0], [1, 1.0, 1]], dtype=np.float64)
     cells = [[0, 1, 2, 3]]
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)

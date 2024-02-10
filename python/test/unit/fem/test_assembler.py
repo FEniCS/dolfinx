@@ -249,7 +249,6 @@ def test_petsc_assemble_manifold():
             basix.ElementFamily.P,
             basix.CellType.interval,
             1,
-            gdim=points.shape[1],
             shape=(points.shape[1],),
             dtype=default_real_type,
         )

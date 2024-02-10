@@ -444,7 +444,6 @@ void write_function(
 
   // FIXME
   mesh::CellType cell_type = topology0->cell_type();
-
   // Add mesh data to "Piece" node
   int tdim = topology0->dim();
   add_mesh<U>(x, xshape, x_id, x_ghost, cells, cshape,
@@ -464,7 +463,7 @@ void write_function(
     if (piece_node.child(data_type).empty())
       piece_node.append_child(data_type);
 
-    const int rank = e->value_shape().size();
+    const int rank = _u.get().function_space()->value_shape().size();
     pugi::xml_node data_node = piece_node.child(data_type);
     if (data_node.attribute(tensor_str[rank]).empty())
       data_node.append_attribute(tensor_str[rank]);
@@ -478,7 +477,7 @@ void write_function(
     auto V = _u.get().function_space();
     auto e = V->element();
     assert(e);
-    int rank = e->value_shape().size();
+    int rank = V->value_shape().size();
     std::int32_t num_comp = std::pow(3, rank);
     if (is_cellwise(*e))
     {
@@ -641,7 +640,7 @@ void write_function(
       assert(e);
       std::string d_type = is_cellwise(*e) ? "PCellData" : "PPointData";
       pugi::xml_node data_pnode = grid_node.child(d_type.c_str());
-      const int rank = e->value_shape().size();
+      const int rank = V->value_shape().size();
       constexpr std::array ncomps = {0, 3, 9};
 
       auto add_field = [&](const std::string& name, int size)
