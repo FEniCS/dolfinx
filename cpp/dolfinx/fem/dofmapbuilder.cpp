@@ -597,11 +597,11 @@ fem::build_dofmap_data(
 
   // Build re-ordered dofmap
   std::vector<std::vector<std::int32_t>> dofmaps(1);
-  dofmaps[0].resize(node_graph0.array.size());
-  for (std::size_t i = 0; i < dofmaps[0].size(); ++i)
-    dofmaps[0][i] = old_to_new[node_graph0.array[i]];
+  dofmaps.front().resize(node_graph0.array.size());
+  for (std::size_t i = 0; i < dofmaps.front().size(); ++i)
+    dofmaps.front()[i] = old_to_new[node_graph0.array[i]];
 
-  return {std::move(index_map), element_dof_layouts[0].block_size(),
+  return {std::move(index_map), element_dof_layouts.front().block_size(),
           std::move(dofmaps)};
 }
 //-----------------------------------------------------------------------------

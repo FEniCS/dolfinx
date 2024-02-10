@@ -129,7 +129,7 @@ public:
     return MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
         const std::int32_t,
         MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>(
-        _dofmaps[0].data(), _dofmaps[0].size() / ndofs, ndofs);
+        _dofmaps.front().data(), _dofmaps.front().size() / ndofs, ndofs);
   }
 
   /// @brief The dofmap associated with the `i`th coordinate map in the
@@ -304,7 +304,7 @@ create_geometry(
     int d = elements[0].dim();
     for (std::int32_t cell = 0; cell < num_cells; ++cell)
     {
-      std::span dofs(dofmaps[0].data() + cell * d, d);
+      std::span dofs(dofmaps.front().data() + cell * d, d);
       elements[0].unpermute_dofs(dofs, cell_info[cell]);
     }
   }
@@ -410,7 +410,7 @@ create_geometry(
     int d = element.dim();
     for (std::int32_t cell = 0; cell < num_cells; ++cell)
     {
-      std::span dofs(dofmaps[0].data() + cell * d, d);
+      std::span dofs(dofmaps.front().data() + cell * d, d);
       element.unpermute_dofs(dofs, cell_info[cell]);
     }
   }
@@ -421,7 +421,7 @@ create_geometry(
   // local-to-global for dofs and (ii) local-to-global for entries in
   // coords
   const std::vector<std::int32_t> l2l = graph::build::compute_local_to_local(
-      graph::build::compute_local_to_global(xdofs, dofmaps[0]), nodes);
+      graph::build::compute_local_to_global(xdofs, dofmaps.front()), nodes);
 
   // Allocate space for input global indices and copy data
   std::vector<std::int64_t> igi(nodes.size());
@@ -439,7 +439,7 @@ create_geometry(
                 std::next(xg.begin(), 3 * i));
   }
 
-  return Geometry(dof_index_map, std::move(dofmaps[0]), {element},
+  return Geometry(dof_index_map, std::move(dofmaps.front()), {element},
                   std::move(xg), dim, std::move(igi));
 }
 
