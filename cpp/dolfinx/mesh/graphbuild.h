@@ -25,7 +25,8 @@ enum class CellType;
 /// @brief Compute the local part of the dual graph (cell-cell
 /// connections via facets) and facet with only one attached cell.
 ///
-/// @param[in] cells Pair of cell type and cell vertices as a flattened list
+/// @param[in] celltype Cell type.
+/// @param[in] cells Cell vertices (stored as as a flattened list).
 /// @return
 /// 1. Local dual graph
 /// 2. Facets, defined by their vertices, that are shared by only one
@@ -41,8 +42,7 @@ enum class CellType;
 /// topology meshes.
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
            std::size_t, std::vector<std::int32_t>>
-build_local_dual_graph(
-    std::pair<CellType, std::span<const std::int64_t>> cells);
+build_local_dual_graph(CellType celltype, std::span<const std::int64_t> cells);
 
 /// @brief Build distributed mesh dual graph (cell-cell connections via
 /// facets) from minimal mesh data.
@@ -52,12 +52,12 @@ build_local_dual_graph(
 /// @note Collective function
 ///
 /// @param[in] comm The MPI communicator
-/// @param[in] cell_type The cell type
+/// @param[in] celltype The cell type
 /// @param[in] cells Collection of cells, defined by the cell vertices
 /// from which to build the dual graph
 /// @return The dual graph
 graph::AdjacencyList<std::int64_t>
-build_dual_graph(const MPI_Comm comm, CellType cell_type,
+build_dual_graph(MPI_Comm comm, CellType celltype,
                  const graph::AdjacencyList<std::int64_t>& cells);
 
 } // namespace dolfinx::mesh

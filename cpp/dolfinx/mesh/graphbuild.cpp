@@ -350,28 +350,26 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 //-----------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
            std::size_t, std::vector<std::int32_t>>
-mesh::build_local_dual_graph(
-    std::pair<CellType, std::span<const std::int64_t>> cells)
+mesh::build_local_dual_graph(CellType celltype,
+                             std::span<const std::int64_t> cells)
 {
   LOG(INFO) << "Build local part of mesh dual graph";
   common::Timer timer("Compute local part of mesh dual graph");
 
-  CellType cell_type = cells.first;
-  std::span cell_vertices = cells.second;
-  int tdim = mesh::cell_dim(cell_type);
-  int num_cell_vertices = mesh::cell_num_entities(cell_type, 0);
-
-  const std::int32_t num_cells = cell_vertices.size() / num_cell_vertices;
-  if (num_cells == 0)
+  if (cells.empty())
   {
     // Empty mesh on this process
     return {graph::AdjacencyList<std::int32_t>(0), std::vector<std::int64_t>(),
             0, std::vector<std::int32_t>()};
   }
 
+  int tdim = mesh::cell_dim(celltype);
+  int num_cell_vertices = mesh::cell_num_entities(celltype, 0);
+  const std::int32_t num_cells = cells.size() / num_cell_vertices;
+
   // Note: only meshes with a single cell type are supported
   const graph::AdjacencyList<int> cell_facets
-      = mesh::get_entity_vertices(cell_type, tdim - 1);
+      = mesh::get_entity_vertices(celltype, tdim - 1);
 
   // Determine maximum number of vertices for facet
   int max_vertices_per_facet = 0;
@@ -389,9 +387,8 @@ mesh::build_local_dual_graph(
   facets.reserve(num_cells * cell_facets.num_nodes() * shape1);
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
-    auto v = cell_vertices.subspan(num_cell_vertices * c, num_cell_vertices);
-
     // Loop over cell facets
+    auto v = cells.subspan(num_cell_vertices * c, num_cell_vertices);
     for (int f = 0; f < cell_facets.num_nodes(); ++f)
     {
       auto facet_vertices = cell_facets.links(f);
@@ -488,7 +485,7 @@ mesh::build_local_dual_graph(
 }
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int64_t>
-mesh::build_dual_graph(const MPI_Comm comm, CellType cell_type,
+mesh::build_dual_graph(MPI_Comm comm, CellType celltype,
                        const graph::AdjacencyList<std::int64_t>& cells)
 {
   LOG(INFO) << "Building mesh dual graph";
@@ -496,7 +493,7 @@ mesh::build_dual_graph(const MPI_Comm comm, CellType cell_type,
   // Compute local part of dual graph (cells are graph nodes, and edges
   // are connections by facet)
   auto [local_graph, facets, shape1, fcells]
-      = mesh::build_local_dual_graph({cell_type, cells.array()});
+      = mesh::build_local_dual_graph(celltype, cells.array());
   assert(local_graph.num_nodes() == cells.num_nodes());
 
   // Extend with nonlocal edges and convert to global indices
