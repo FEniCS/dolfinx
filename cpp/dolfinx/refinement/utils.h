@@ -285,7 +285,7 @@ mesh::Mesh<T> partition(const mesh::Mesh<T>& old_mesh,
   else
   {
     auto partitioner
-        = [](MPI_Comm comm, int, int,
+        = [](MPI_Comm comm, int, mesh::CellType,
              const graph::AdjacencyList<std::int64_t>& cell_topology)
     {
       const int mpi_rank = MPI::rank(comm);

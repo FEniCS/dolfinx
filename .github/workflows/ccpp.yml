@@ -60,16 +60,16 @@ jobs:
           python3 -m pip install git+https://github.com/FEniCS/basix.git@${{ github.event.inputs.basix_ref }}
           python3 -m pip install git+https://github.com/FEniCS/ffcx.git@${{ github.event.inputs.ffcx_ref }}
 
-      - name: ruff and isort C++ .py file checks
+      - name: ruff C++ .py file checks
         run: |
           cd cpp/
           ruff check .
-          python3 -m isort --check .
-      - name: ruff and isort Python interface checks
+          ruff format --check .
+      - name: ruff Python interface checks
         run: |
           cd python/
           ruff check .
-          python3 -m isort --check .
+          ruff format --check .
       - name: mypy checks
         run: |
           cd python/
