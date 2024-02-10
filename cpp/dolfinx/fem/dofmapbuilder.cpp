@@ -557,12 +557,12 @@ fem::build_dofmap_data(
   // pair {dimension, mesh entity index} giving the mesh entity that dof
   // i is associated with.
   const auto [node_graph0, local_to_global0, dof_entity0]
-      = build_basic_dofmap(topology, element_dof_layouts[0]);
+      = build_basic_dofmap(topology, element_dof_layouts.front());
 
   std::vector<std::shared_ptr<const common::IndexMap>> index_maps(D + 1);
   for (int d = 0; d <= D; ++d)
   {
-    if (element_dof_layouts[0].num_entity_dofs(d) > 0)
+    if (element_dof_layouts.front().num_entity_dofs(d) > 0)
     {
       assert(topology.index_map(d));
       index_maps[d] = topology.index_map(d);
@@ -578,10 +578,10 @@ fem::build_dofmap_data(
   std::int64_t offset = 0;
   for (int d = 0; d <= D; ++d)
   {
-    if (element_dof_layouts[0].num_entity_dofs(d) > 0)
+    if (element_dof_layouts.front().num_entity_dofs(d) > 0)
     {
       offset += index_maps[d]->local_range()[0]
-                * element_dof_layouts[0].num_entity_dofs(d);
+                * element_dof_layouts.front().num_entity_dofs(d);
     }
   }
 
