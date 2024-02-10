@@ -681,22 +681,23 @@ def test_submesh_codim_1_boundary_facets(n, ghost_mode, dtype):
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_mesh_create_cmap(dtype):
-    gdim, shape, degree = 2, "triangle", 1
+    shape = "triangle"
+    degree = 1
 
     x = np.array([[0.0, 0.0], [0.0, 1.0], [1.0, 1.0]], dtype=dtype)
     cells = [[0, 1, 2]]
 
     # ufl.Mesh case
-    domain = ufl.Mesh(element("Lagrange", shape, degree, gdim=gdim, shape=(2,), dtype=dtype))
+    domain = ufl.Mesh(element("Lagrange", shape, degree, shape=(2,), dtype=dtype))
     msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, x, domain)
     assert msh.geometry.cmap.dim == 3
-    assert msh.ufl_domain().ufl_coordinate_element().value_shape == (2,)
+    assert msh.ufl_domain().ufl_coordinate_element().reference_value_shape == (2,)
 
     # basix.ufl.element
-    domain = element("Lagrange", shape, degree, gdim=gdim, shape=(2,), dtype=dtype)
+    domain = element("Lagrange", shape, degree, shape=(2,), dtype=dtype)
     msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, x, domain)
     assert msh.geometry.cmap.dim == 3
-    assert msh.ufl_domain().ufl_coordinate_element().value_shape == (2,)
+    assert msh.ufl_domain().ufl_coordinate_element().reference_value_shape == (2,)
 
     # basix.finite_element
     domain = basix.create_element(
@@ -704,7 +705,7 @@ def test_mesh_create_cmap(dtype):
     )
     msh = _mesh.create_mesh(MPI.COMM_WORLD, cells, x, domain)
     assert msh.geometry.cmap.dim == 3
-    assert msh.ufl_domain().ufl_coordinate_element().value_shape == (2,)
+    assert msh.ufl_domain().ufl_coordinate_element().reference_value_shape == (2,)
 
     # cpp.fem.CoordinateElement
     e = basix.create_element(
