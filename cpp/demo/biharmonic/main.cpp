@@ -120,6 +120,7 @@
 //
 // .. code-block:: cpp
 
+//![include:beg]
 #include "biharmonic.h"
 #include <cmath>
 #include <dolfinx.h>
@@ -133,6 +134,8 @@
 using namespace dolfinx;
 using T = PetscScalar;
 using U = typename dolfinx::scalar_value_type_t<T>;
+
+//![include:end]
 
 // Inside the ``main`` function, we begin by defining a mesh of the
 // domain. As the unit square is a very standard domain, we can use a
@@ -160,15 +163,17 @@ int main(int argc, char* argv[])
     //
     // .. code-block:: cpp
 
+    //![funcspace:beg]
     // Create function space
     auto V = std::make_shared<fem::FunctionSpace<U>>(
         fem::create_functionspace(functionspace_form_biharmonic_a, "u", mesh));
+    //![funcspace:end]
 
     // The source function ::math:`f` and the penalty term
     // ::math:`\alpha` are declared:
     //
-    // .. code-block:: cpp
 
+    //![data:beg]
     auto f = std::make_shared<fem::Function<T>>(V);
     f->interpolate(
         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
@@ -183,12 +188,15 @@ int main(int argc, char* argv[])
           return {f, {f.size()}};
         });
     auto alpha = std::make_shared<fem::Constant<T>>(8.0);
+    //![data:end]
 
     // Define variational forms
+    //![forms:beg]
     auto a = std::make_shared<fem::Form<T>>(fem::create_form<T>(
         *form_biharmonic_a, {V, V}, {}, {{"alpha", alpha}}, {}));
     auto L = std::make_shared<fem::Form<T>>(
         fem::create_form<T>(*form_biharmonic_L, {V}, {{"f", f}}, {}, {}));
+    //![forms:end]
 
     // Now, the Dirichlet boundary condition (:math:`u = 0`) can be
     // created using the class :cpp:class:`DirichletBC`. A
@@ -203,6 +211,7 @@ int main(int argc, char* argv[])
     //
     // .. code-block:: cpp
 
+    //![bc:beg]
     // Define boundary condition
     auto facets = mesh::locate_entities_boundary(
         *mesh, 1,
@@ -224,6 +233,7 @@ int main(int argc, char* argv[])
     const auto bdofs = fem::locate_dofs_topological(
         *V->mesh()->topology_mutable(), *V->dofmap(), 1, facets);
     auto bc = std::make_shared<const fem::DirichletBC<T>>(0.0, bdofs, V);
+    //![bc:end]
 
     // Now, we have specified the variational forms and can consider the
     // solution of the variational problem. First, we need to define a
@@ -234,6 +244,7 @@ int main(int argc, char* argv[])
     //
     // .. code-block:: cpp
 
+    //![solution:beg]
     // Compute solution
     fem::Function<T> u(V);
     auto A = la::petsc::Matrix(fem::petsc::create_matrix(*a), false);
@@ -268,6 +279,7 @@ int main(int argc, char* argv[])
 
     // Update ghost values before output
     u.x()->scatter_fwd();
+    //![solution:end]
 
     // The function ``u`` will be modified during the call to solve. A
     // :cpp:class:`Function` can be saved to a file. Here, we output the
@@ -276,6 +288,7 @@ int main(int argc, char* argv[])
     //
     // .. code-block:: cpp
 
+    //![save:beg]
     // Save solution in VTK format
     io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
     file.write<T>({u}, 0.0);
@@ -285,3 +298,4 @@ int main(int argc, char* argv[])
 
   return 0;
 }
+    //![save:end]

@@ -1,10 +1,10 @@
-.. DOLFINx demos
+.. DOLFINx C++ demos
 
 Demos
 =====
 
-These demos illustrate DOLFINx usage. Starting with :doc:`Poisson
-equation <demos/demo_poisson>` is recommended.
+These demos illustrate DOLFINx usage. Starting with :doc:`Biharmonic
+equation <demo/main>` is recommended.
 
 
 PDEs (introductory)
@@ -13,4 +13,4 @@ PDEs (introductory)
 .. toctree::
    :maxdepth: 1
 
-   demo/demo_poisson.md
+   demo/biharmonic
