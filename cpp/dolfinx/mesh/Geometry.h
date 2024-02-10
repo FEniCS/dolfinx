@@ -125,7 +125,7 @@ public:
     if (_dofmaps.size() != 1)
       throw std::runtime_error("Multiple dofmaps");
 
-    int ndofs = _cmaps[0].dim();
+    int ndofs = _cmaps.front().dim();
     return MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
         const std::int32_t,
         MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>(
@@ -180,8 +180,8 @@ public:
   const fem::CoordinateElement<value_type>& cmap() const
   {
     if (_cmaps.size() != 1)
-      throw std::runtime_error("Multiple cmaps");
-    return _cmaps[0];
+      throw std::runtime_error("Multiple cmaps.");
+    return _cmaps.front();
   }
 
   /// @brief The element that describe the `i`th geometry map
@@ -295,17 +295,17 @@ create_geometry(
       = std::make_shared<common::IndexMap>(std::move(_dof_index_map));
 
   // If the mesh has higher order geometry, permute the dofmap
-  if (elements[0].needs_dof_permutations())
+  if (elements.first().needs_dof_permutations())
   {
     const std::int32_t num_cells
         = topology.connectivity(topology.dim(), 0)->num_nodes();
     const std::vector<std::uint32_t>& cell_info
         = topology.get_cell_permutation_info();
-    int d = elements[0].dim();
+    int d = elements.front().dim();
     for (std::int32_t cell = 0; cell < num_cells; ++cell)
     {
       std::span dofs(dofmaps.front().data() + cell * d, d);
-      elements[0].unpermute_dofs(dofs, cell_info[cell]);
+      elements.front().unpermute_dofs(dofs, cell_info[cell]);
     }
   }
 
