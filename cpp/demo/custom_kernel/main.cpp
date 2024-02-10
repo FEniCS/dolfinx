@@ -34,7 +34,7 @@ using kernel_t = std::function<void(T*, const T*, const T*, const T*,
 // .. code-block:: cpp
 
 /// @brief Compute the P1 element mass matrix on the reference cell.
-/// @tparam V Scalar type.
+/// @tparam T Scalar type.
 /// @param phi Basis functions.
 /// @param w Integration weights.
 /// @return Element reference matrix (row-major storage).
@@ -51,7 +51,7 @@ std::array<T, 9> A_ref(mdspand_t<const T, 4> phi, std::span<const T> w)
 }
 
 /// @brief Compute the P1 RHS vector for f=1 on the reference cell.
-/// @tparam V Scalar type.
+/// @tparam T Scalar type.
 /// @param phi Basis functions.
 /// @param w Integration weights.
 /// @return RHS reference vector.
@@ -124,7 +124,8 @@ double assemble_vector0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
 /// be important for performance for lightweight kernels.
 ///
 /// @tparam T Scalar type.
-/// @param V Function space.
+/// @param g mesh geometry.
+/// @param dofmap dofmap.
 /// @param kernel Element kernel to execute.
 /// @param cells Cells to execute the kernel over.
 /// @return Frobenius norm squared of the matrix.
@@ -153,7 +154,8 @@ double assemble_matrix1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
 /// be important for performance for lightweight kernels.
 ///
 /// @tparam T Scalar type.
-/// @param V Function space.
+/// @param g mesh geometry.
+/// @param dofmap dofmap.
 /// @param kernel Element kernel to execute.
 /// @param cells Cells to execute the kernel over.
 /// @return l2 norm squared of the vector.

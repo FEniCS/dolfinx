@@ -1,3 +1,7 @@
+// Hyperelasticity (C++)
+// =========================
+// .. code-block:: cpp
+
 #include "hyperelasticity.h"
 #include <basix/finite-element.h>
 #include <climits>
