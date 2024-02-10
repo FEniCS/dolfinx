@@ -104,7 +104,7 @@ class Mesh:
         Note:
             This method is required for UFL compatibility.
         """
-        return ufl.Cell(self.topology.cell_name(), geometric_dimension=self.geometry.dim)
+        return ufl.Cell(self.topology.cell_name())
 
     def ufl_domain(self) -> ufl.Mesh:
         """Return the ufl domain corresponding to the mesh.
@@ -421,7 +421,7 @@ def create_mesh(
                 # TODO: Resolve geometric dimension vs shape for manifolds
                 cmap = _coordinate_element(e)  # type: ignore
                 e_ufl = basix.ufl._BasixElement(e)  # type: ignore
-                e_ufl = basix.ufl.blocked_element(e_ufl, shape=(gdim,), gdim=gdim)
+                e_ufl = basix.ufl.blocked_element(e_ufl, shape=(gdim,))
                 domain = ufl.Mesh(e_ufl)
                 dtype = cmap.dtype
                 assert domain.geometric_dimension() == gdim
@@ -442,7 +442,7 @@ def create_submesh(msh, dim, entities):
     submsh, entity_map, vertex_map, geom_map = _cpp.mesh.create_submesh(
         msh._cpp_object, dim, entities
     )
-    submsh_ufl_cell = ufl.Cell(submsh.topology.cell_name(), geometric_dimension=submsh.geometry.dim)
+    submsh_ufl_cell = ufl.Cell(submsh.topology.cell_name())
     submsh_domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
@@ -450,7 +450,6 @@ def create_submesh(msh, dim, entities):
             submsh.geometry.cmap.degree,
             basix.LagrangeVariant(submsh.geometry.cmap.variant),
             shape=(submsh.geometry.dim,),
-            gdim=submsh.geometry.dim,
             dtype=submsh.geometry.x.dtype,
         )
     )
