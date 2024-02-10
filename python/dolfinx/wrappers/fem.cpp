@@ -518,13 +518,12 @@ void declare_form(nb::module_& m, std::string type)
              bool needs_permutation_data,
              std::shared_ptr<const dolfinx::mesh::Mesh<U>> mesh)
           {
-            using kern
+            using kern_t
                 = std::function<void(T*, const T*, const T*,
                                      const typename geom_type<T>::value_type*,
                                      const int*, const std::uint8_t*)>;
             std::map<dolfinx::fem::IntegralType,
-                     std::vector<dolfinx::fem::integral_data<
-                         T, std::span<const std::int32_t>>>>
+                     std::vector<dolfinx::fem::integral_data<T, kern_t>>>
                 _integrals;
 
             // Loop over kernel for each entity type
@@ -542,7 +541,7 @@ void declare_form(nb::module_& m, std::string type)
               }
             }
 
-            new (fp) dolfinx::fem::Form<T, U>(spaces, _integrals, coefficients,
+            new (fp) dolfinx::fem::Form<T, U>(spaces, std::move(_integrals), coefficients,
                                               constants, needs_permutation_data,
                                               mesh);
           },

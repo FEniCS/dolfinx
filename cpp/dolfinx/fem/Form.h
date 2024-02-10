@@ -38,26 +38,31 @@ enum class IntegralType : std::int8_t
   vertex = 3          ///< Vertex
 };
 
-/// @brief Represents integral data, containing the integral
-/// ID, the kernel, and a list of entities to integrate over
-template <dolfinx::scalar T, typename U,
-          FEkernel<T> Kern = std::function<void(
-              T*, const T*, const T*, const scalar_value_type_t<T>*, const int*,
-              const std::uint8_t*)>>
+/// @brief Represents integral data, containing the integral ID, the
+/// kernel, and a list of entities to integrate over.
+template <dolfinx::scalar T, FEkernel<T> Kern>
 struct integral_data
 {
-  /// The container type
-  using container_t = U;
-
   /// @brief Kernel type
   using kern_t = Kern;
 
-  /// @brief Create a container to hold integral data
-  /// @param id The domain ID
-  /// @param kernel The integration kernel
-  /// @param entities The entities to integrate over
-  integral_data(int id, kern_t kernel, container_t entities)
-      : id(id), kernel(kernel), entities(entities)
+  /// @brief Create a structure to hold integral data.
+  /// @tparam U `std::vector<std::int32_t>` holding entity indices.
+  /// @param id Domain ID.
+  /// @param kernel Integration kernel.
+  /// @param entities Entities to integrate over.
+  template <typename U>
+  integral_data(int id, kern_t kernel, U&& entities)
+      : id(id), kernel(kernel), entities(std::forward<U>(entities))
+  {
+  }
+
+  /// @brief Create a structure to hold integral data.
+  /// @param id Domain ID
+  /// @param kernel Integration kernel.
+  /// @param e Entities to integrate over.
+  integral_data(int id, kern_t kernel, std::span<const std::int32_t> e)
+      : id(id), kernel(kernel), entities(e.begin(), e.end())
   {
   }
 
@@ -68,7 +73,7 @@ struct integral_data
   kern_t kernel;
 
   /// The entities to integrate over
-  container_t entities;
+  std::vector<std::int32_t> entities;
 };
 
 /// @brief A representation of finite element variational forms.
@@ -125,12 +130,13 @@ public:
   ///
   /// @pre The integral data in integrals must be sorted by domain
   Form(const std::vector<std::shared_ptr<const FunctionSpace<U>>>& V,
-       const std::map<
-           IntegralType,
-           std::vector<integral_data<T, std::span<const int32_t>, kern_t>>>&
+       const std::map<IntegralType,
+                      std::vector<integral_data<scalar_type, kern_t>>>&
            integrals,
-       const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients,
-       const std::vector<std::shared_ptr<const Constant<T>>>& constants,
+       const std::vector<std::shared_ptr<const Function<scalar_type, U>>>&
+           coefficients,
+       const std::vector<std::shared_ptr<const Constant<scalar_type>>>&
+           constants,
        bool needs_facet_permutations,
        std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
       : _function_spaces(V), _coefficients(coefficients), _constants(constants),
@@ -151,8 +157,7 @@ public:
     for (auto& [type, data] : integrals)
     {
       if (!std::is_sorted(data.begin(), data.end(),
-                          [](const auto& a, const auto& b)
-                          { return a.id < b.id; }))
+                          [](auto& a, auto& b) { return a.id < b.id; }))
       {
         throw std::runtime_error("Integral IDs not sorted");
       }
@@ -319,9 +324,7 @@ private:
 
   // Integrals. Array index is
   // static_cast<std::size_t(IntegralType::foo)
-  std::array<std::vector<integral_data<T, std::vector<std::int32_t>, kern_t>>,
-             4>
-      _integrals;
+  std::array<std::vector<integral_data<T, kern_t>>, 4> _integrals;
 
   // True if permutation data needs to be passed into these integrals
   bool _needs_facet_permutations;

@@ -348,9 +348,7 @@ Form<T, U> create_form_factory(
   using kern = std::function<void(
       T*, const T*, const T*, const typename scalar_value_type<T>::value_type*,
       const int*, const std::uint8_t*)>;
-  std::map<IntegralType,
-           std::vector<integral_data<T, std::span<const std::int32_t>>>>
-      integrals;
+  std::map<IntegralType, std::vector<integral_data<T, kern>>> integrals;
 
   bool needs_facet_permutations = false;
 
