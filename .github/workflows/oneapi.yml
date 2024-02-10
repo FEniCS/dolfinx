@@ -34,14 +34,14 @@ jobs:
       - name: Install Basix
         run: |
           . /opt/intel/oneapi/setvars.sh
-          pip install git+https://github.com/FEniCS/basix.git@mscroggs/remove-gdim
+          pip install git+https://github.com/FEniCS/basix.git
 
       - name: Clone FFCx
         uses: actions/checkout@v4
         with:
           path: ./ffcx
           repository: FEniCS/ffcx
-          ref: mscroggs/gdim
+          ref: main
       - name: Install FFCx C interface
         run: |
           . /opt/intel/oneapi/setvars.sh
@@ -63,7 +63,7 @@ jobs:
       - name: Install UFL and FFCx modules
         run: |
           . /opt/intel/oneapi/setvars.sh
-          pip install git+https://github.com/FEniCS/ufl.git@mscroggs/gdim
+          pip install git+https://github.com/FEniCS/ufl.git
           pip install ffcx/
 
       - name: Build and run DOLFINx C++ unit tests (serial and MPI)
