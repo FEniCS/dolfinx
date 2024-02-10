@@ -33,7 +33,7 @@ def pytest_runtest_teardown(item):
 def pytest_runtest_setup(item):
     marker = item.get_closest_marker("skip_in_parallel")
     if marker and MPI.COMM_WORLD.size > 1:
-        pytest.skip("This test should only be run in serial")
+        pytest.skip("This test should be run in serial only.")
 
 
 @pytest.fixture(scope="module")
@@ -144,8 +144,8 @@ def tempdir(request):
 @pytest.fixture(scope="function")
 def cg_solver():
     """Simple Conjugate Gradient solver for SPD problems,
-       which can work in serial or parallel for testing use.
-       Not suitable for large problems."""
+    which can work in serial or parallel for testing use.
+    Not suitable for large problems."""
 
     # Basic Conjugate Gradient solver
     def _cg(comm, A, b, x, maxit=500, rtol=None):
@@ -173,7 +173,7 @@ def cg_solver():
         rnorm0 = _global_dot(comm, r, r)
         rnorm = rnorm0
         k = 0
-        while (k < maxit):
+        while k < maxit:
             k += 1
             p.scatter_forward()
             y = A_op @ p.array
@@ -183,7 +183,7 @@ def cg_solver():
             rnorm_new = _global_dot(comm, r, r)
             beta = rnorm_new / rnorm
             rnorm = rnorm_new
-            if (rnorm / rnorm0 < rtol2):
+            if rnorm / rnorm0 < rtol2:
                 x.scatter_forward()
                 return
             p.array[:nr] = beta * p.array[:nr] + r

@@ -5,9 +5,23 @@
 # the variational problem in UFL terms in a separate form file
 # :download:`biharmonic.py`.  We begin by defining the finite element::
 from basix.ufl import element
-from ufl import (CellDiameter, Coefficient, Constant, FacetNormal,
-                 FunctionSpace, Mesh, TestFunction, TrialFunction, avg, div,
-                 dS, dx, grad, inner, jump)
+from ufl import (
+    CellDiameter,
+    Coefficient,
+    Constant,
+    FacetNormal,
+    FunctionSpace,
+    Mesh,
+    TestFunction,
+    TrialFunction,
+    avg,
+    div,
+    dS,
+    dx,
+    grad,
+    inner,
+    jump,
+)
 
 e = element("Lagrange", "triangle", 2)
 
@@ -41,7 +55,7 @@ f = Coefficient(V)
 # Normal component, mesh size and right-hand side
 n = FacetNormal(mesh)
 h = CellDiameter(mesh)
-h_avg = (h('+') + h('-')) / 2
+h_avg = (h("+") + h("-")) / 2
 alpha = Constant(mesh)
 
 # Finally, we define the bilinear and linear forms according to the
@@ -49,10 +63,12 @@ alpha = Constant(mesh)
 # internal facets are indicated by ``*dS``. ::
 
 # Bilinear form
-a = inner(div(grad(u)), div(grad(v))) * dx \
-    - inner(avg(div(grad(u))), jump(grad(v), n)) * dS \
-    - inner(jump(grad(u), n), avg(div(grad(v)))) * dS \
+a = (
+    inner(div(grad(u)), div(grad(v))) * dx
+    - inner(avg(div(grad(u))), jump(grad(v), n)) * dS
+    - inner(jump(grad(u), n), avg(div(grad(v)))) * dS
     + alpha / h_avg * inner(jump(grad(u), n), jump(grad(v), n)) * dS
+)
 
 # Linear form
 L = inner(f, v) * dx
