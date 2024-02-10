@@ -284,12 +284,13 @@ mesh::Mesh<T> partition(const mesh::Mesh<T>& old_mesh,
   }
   else
   {
-    auto partitioner = [](MPI_Comm comm, int, mesh::CellType cell_type,
-                          const std::vector<std::int64_t>& cell_topology)
+    auto partitioner
+        = [](MPI_Comm comm, int,
+             const std::pair<mesh::CellType, std::vector<std::int64_t>>& cells)
     {
       const int mpi_rank = MPI::rank(comm);
-      const int num_cell_vertices = mesh::num_cell_vertices(cell_type);
-      const int num_cells = cell_topology.size() / num_cell_vertices;
+      const int num_cell_vertices = mesh::num_cell_vertices(cells.first);
+      const int num_cells = cells.second.size() / num_cell_vertices;
       std::vector<std::int32_t> destinations(num_cells, mpi_rank);
       std::vector<std::int32_t> dest_offsets(num_cells + 1);
       std::iota(dest_offsets.begin(), dest_offsets.end(), 0);

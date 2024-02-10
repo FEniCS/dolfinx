@@ -149,7 +149,8 @@ def test_asymmetric_partitioner():
         x = np.zeros((0, 2), dtype=np.float64)
 
     # Send cells to self, and if on process 1, also send to process 0.
-    def partitioner(comm, n, cell_type, topo):
+    def partitioner(comm, n, cells):
+        cell_type, topo = cells
         num_vertices = dolfinx.cpp.mesh.cell_num_vertices(cell_type)
         num_cells = len(topo) // num_vertices
         r = comm.Get_rank()
