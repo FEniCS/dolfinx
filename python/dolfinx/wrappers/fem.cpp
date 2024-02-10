@@ -541,9 +541,9 @@ void declare_form(nb::module_& m, std::string type)
               }
             }
 
-            new (fp) dolfinx::fem::Form<T, U>(spaces, std::move(_integrals), coefficients,
-                                              constants, needs_permutation_data,
-                                              mesh);
+            new (fp) dolfinx::fem::Form<T, U>(spaces, std::move(_integrals),
+                                              coefficients, constants,
+                                              needs_permutation_data, mesh);
           },
           nb::arg("spaces"), nb::arg("integrals"), nb::arg("coefficients"),
           nb::arg("constants"), nb::arg("need_permutation_data"),

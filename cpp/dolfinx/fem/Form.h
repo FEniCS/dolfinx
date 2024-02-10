@@ -129,10 +129,12 @@ public:
   /// e.g. for functionals.
   ///
   /// @pre The integral data in integrals must be sorted by domain
+  template <typename X>
   Form(const std::vector<std::shared_ptr<const FunctionSpace<U>>>& V,
-       const std::map<IntegralType,
-                      std::vector<integral_data<scalar_type, kern_t>>>&
-           integrals,
+       X&& integrals,
+       //  const std::map<IntegralType,
+       //                 std::vector<integral_data<scalar_type, kern_t>>>&
+       //      integrals,
        const std::vector<std::shared_ptr<const Function<scalar_type, U>>>&
            coefficients,
        const std::vector<std::shared_ptr<const Constant<scalar_type>>>&
@@ -146,15 +148,13 @@ public:
     if (!_mesh and !V.empty())
       _mesh = V[0]->mesh();
     for (auto& space : V)
-    {
       if (_mesh != space->mesh())
         throw std::runtime_error("Incompatible mesh");
-    }
     if (!_mesh)
       throw std::runtime_error("No mesh could be associated with the Form.");
 
     // Store kernels, looping over integrals by domain type (dimension)
-    for (auto& [type, data] : integrals)
+    for (auto&& [domain_type, data] : integrals)
     {
       if (!std::is_sorted(data.begin(), data.end(),
                           [](auto& a, auto& b) { return a.id < b.id; }))
@@ -162,9 +162,10 @@ public:
         throw std::runtime_error("Integral IDs not sorted");
       }
 
-      auto& itg = _integrals[static_cast<std::size_t>(type)];
-      for (auto& [id, kern, e] : data)
-        itg.emplace_back(id, kern, std::vector(e.begin(), e.end()));
+      std::vector<integral_data<T, kern_t>>& itg
+          = _integrals[static_cast<std::size_t>(domain_type)];
+      for (auto&& [id, kern, e] : data)
+        itg.emplace_back(id, kern, std::move(e));
     }
   }
 
@@ -313,6 +314,10 @@ private:
   // Function spaces (one for each argument)
   std::vector<std::shared_ptr<const FunctionSpace<U>>> _function_spaces;
 
+  // Integrals. Array index is
+  // static_cast<std::size_t(IntegralType::foo)
+  std::array<std::vector<integral_data<T, kern_t>>, 4> _integrals;
+
   // Form coefficients
   std::vector<std::shared_ptr<const Function<T, U>>> _coefficients;
 
@@ -321,10 +326,6 @@ private:
 
   // The mesh
   std::shared_ptr<const mesh::Mesh<U>> _mesh;
-
-  // Integrals. Array index is
-  // static_cast<std::size_t(IntegralType::foo)
-  std::array<std::vector<integral_data<T, kern_t>>, 4> _integrals;
 
   // True if permutation data needs to be passed into these integrals
   bool _needs_facet_permutations;
