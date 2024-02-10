@@ -412,8 +412,9 @@ void mesh(nb::module_& m)
   m.def(
       "build_dual_graph",
       [](const MPICommWrapper comm, dolfinx::mesh::CellType cell_type,
-         const std::vector<std::int64_t>& cells)
-      { return dolfinx::mesh::build_dual_graph(comm.get(), cell_type, cells); },
+         const std::vector<std::int64_t>& cells) {
+        return dolfinx::mesh::build_dual_graph(comm.get(), {cell_type, cells});
+      },
       nb::arg("comm"), nb::arg("cell_type"), nb::arg("cells"),
       "Build dual graph for cells");
 
