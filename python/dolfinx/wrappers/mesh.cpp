@@ -61,11 +61,6 @@ auto create_cell_partitioner_py(Functor p)
               cells) { return p(comm.get(), n, cells); };
 }
 
-// using PythonPartitioningFunction
-//     = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
-//         dolfinx_wrappers::MPICommWrapper, int, dolfinx::mesh::CellType,
-//         const std::vector<std::int64_t>&)>;
-
 using PythonCellPartitionFunction
     = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
         dolfinx_wrappers::MPICommWrapper, int,
