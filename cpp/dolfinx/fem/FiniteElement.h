@@ -52,13 +52,9 @@ public:
 
   /// @brief Create finite element from a Basix finite element.
   /// @param[in] element Basix finite element
-  /// @param[in] value_shape Value shape for 'blocked' elements, e.g.
-  /// vector-valued Lagrange elements where each component for the
-  /// vector field is a Lagrange element. For example, a vector-valued
-  /// element in 3D will have `value_shape` equal to `{3}`, and for a
-  /// second-order tensor element in 2D `value_shape` equal to `{2, 2}`.
+  /// @param[in] block_size The block size for the element
   FiniteElement(const basix::FiniteElement<geometry_type>& element,
-                const std::vector<std::size_t>& value_shape);
+                const std::size_t block_size);
 
   /// Copy constructor
   FiniteElement(const FiniteElement& element) = delete;
@@ -111,21 +107,12 @@ public:
   int block_size() const noexcept;
 
   /// The value size, e.g. 1 for a scalar function, 2 for a 2D vector, 9
-  /// for a second-order tensor in 3D.
-  /// @note The return value of this function is equivalent to
-  /// `std::accumulate(value_shape().begin(), value_shape().end(), 1,
-  /// std::multiplies{})`.
-  /// @return The value size
-  int value_size() const;
-
-  /// The value size, e.g. 1 for a scalar function, 2 for a 2D vector, 9
   /// for a second-order tensor in 3D, for the reference element
   /// @return The value size for the reference element
   int reference_value_size() const;
 
-  /// Shape of the value space. The rank is the size of the
-  /// `value_shape`.
-  std::span<const std::size_t> value_shape() const noexcept;
+  /// The reference value shape
+  std::span<const std::size_t> reference_value_shape() const;
 
   /// @brief Evaluate derivatives of the basis functions up to given order
   /// at points in the reference cell.
@@ -672,7 +659,7 @@ private:
       _sub_elements;
 
   // Dimension of each value space
-  std::vector<std::size_t> _value_shape;
+  std::vector<std::size_t> _reference_value_shape;
 
   // Block size for BlockedElements. This gives the
   // number of DOFs co-located at each dof 'point'.
