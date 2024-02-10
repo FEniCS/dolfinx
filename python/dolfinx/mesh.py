@@ -650,15 +650,21 @@ def create_unit_cube(comm: _MPI.Comm, nx: int, ny: int, nz: int, cell_type=CellT
 def entities_to_geometry(
     mesh: Mesh, dim: int, entities: npt.NDArray[np.int32], orient: bool
 ) -> npt.NDArray[np.int32]:
-    """Determine the indices in the geometry data for each vertex of the given mesh entities.
+    """Indices in the geometry data for each vertex of the given mesh entities.
+
+    Warning:
+        This function should not be used unless there is no alternative.
+        It may be removed in the future.
 
     Args:
-        mesh: The mesh
-        dim: Topological dimension of the entities of interest
-        entities: Entity indices (local) to compute the vertex geometry indices for
-        orient: If true, in 3D, reorients facets to have consistent normal direction
+        mesh: The mesh.
+        dim: Topological dimension of the entities of interest.
+        entities: Entity indices (local to the process) to determine the
+            vertex geometry indices for.
+        orient: If ``True``, in 3D, re-orients facets to have consistent
+            normal direction.
 
     Returns:
-        Indices in the geometry array for the entity vertices
+        Indices in the geometry array for the entity vertices.
     """
     return _cpp.mesh.entities_to_geometry(mesh._cpp_object, dim, entities, orient)
