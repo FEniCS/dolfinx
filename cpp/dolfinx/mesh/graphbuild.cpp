@@ -350,9 +350,8 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 //-----------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
            std::size_t, std::vector<std::int32_t>>
-mesh::build_local_dual_graph(
-    const std::vector<std::pair<CellType, std::span<const std::int64_t>>>&
-        cells)
+mesh::build_local_dual_graph(const std::vector<CellType>& cell_types,
+                             std::vector<std::span<const std::int64_t>> cells)
 {
   LOG(INFO) << "Build local part of mesh dual graph";
   common::Timer timer("Compute local part of mesh dual graph");
@@ -361,23 +360,23 @@ mesh::build_local_dual_graph(
   std::int32_t num_cells = 0;
   std::int32_t num_facets = 0;
   std::int32_t max_vertices_per_facet = 0;
-  for (auto c : cells)
+  for (std::size_t c = 0; c < cells.size(); ++c)
   {
     if (tdim == -1)
-      tdim = mesh::cell_dim(c.first);
-    else if (tdim != mesh::cell_dim(c.first))
+      tdim = mesh::cell_dim(cell_types[c]);
+    else if (tdim != mesh::cell_dim(cell_types[c]))
       throw std::runtime_error("Incompatible cell types");
 
-    int num_cell_vertices = mesh::cell_num_entities(c.first, 0);
-    int num_cell_facets = mesh::cell_num_entities(c.first, tdim - 1);
-    num_cells += c.second.size() / num_cell_vertices;
-    num_facets += c.second.size() / num_cell_vertices * num_cell_facets;
+    int num_cell_vertices = mesh::cell_num_entities(cell_types[c], 0);
+    int num_cell_facets = mesh::cell_num_entities(cell_types[c], tdim - 1);
+    num_cells += cells[c].size() / num_cell_vertices;
+    num_facets += cells[c].size() / num_cell_vertices * num_cell_facets;
 
-    for (int i = 0; i < mesh::cell_num_entities(c.first, tdim - 1); ++i)
+    for (int i = 0; i < mesh::cell_num_entities(cell_types[c], tdim - 1); ++i)
     {
       max_vertices_per_facet = std::max(
           max_vertices_per_facet,
-          mesh::cell_num_entities(mesh::cell_facet_type(c.first, i), 0));
+          mesh::cell_num_entities(mesh::cell_facet_type(cell_types[c], i), 0));
     }
   }
 
@@ -399,10 +398,10 @@ mesh::build_local_dual_graph(
   std::int32_t cell_offset = 0;
   for (std::size_t k = 0; k < cells.size(); ++k)
   {
-    CellType cell_type = cells[k].first;
-    std::span cell_vertices = cells[k].second;
-    std::int32_t num_cell_vertices = mesh::cell_num_entities(cells[k].first, 0);
-    std::int32_t num_cells_k = cells[k].second.size() / num_cell_vertices;
+    CellType cell_type = cell_types[k];
+    std::span cell_vertices = cells[k];
+    std::int32_t num_cell_vertices = mesh::cell_num_entities(cell_type, 0);
+    std::int32_t num_cells_k = cell_vertices.size() / num_cell_vertices;
 
     // Note: only meshes with a single cell type are supported
     const graph::AdjacencyList<int> cell_facets
@@ -511,20 +510,30 @@ mesh::build_local_dual_graph(
           std::move(local_cells)};
 }
 //-----------------------------------------------------------------------------
-graph::AdjacencyList<std::int64_t> mesh::build_dual_graph(
-    const MPI_Comm comm,
-    const std::pair<CellType, std::vector<std::int64_t>>& cells)
+graph::AdjacencyList<std::int64_t>
+mesh::build_dual_graph(const MPI_Comm comm,
+                       const std::vector<CellType>& cell_types,
+                       const std::vector<std::vector<std::int64_t>>& cells)
 {
   LOG(INFO) << "Building mesh dual graph";
 
+  if (cell_types.size() != cells.size())
+  {
+    throw std::runtime_error("Mismatch cell_types and cells size");
+  }
+
   // Compute local part of dual graph (cells are graph nodes, and edges
   // are connections by facet)
+  std::vector<std::span<const std::int64_t>> cells_span;
+  for (const auto& c : cells)
+    cells_span.push_back(std::span<const std::int64_t>(c.data(), c.size()));
   auto [local_graph, facets, shape1, fcells]
-      = mesh::build_local_dual_graph({cells});
-  CellType cell_type = cells.first;
+      = mesh::build_local_dual_graph(cell_types, cells_span);
+
+  assert(cell_types.size() == 1);
+  CellType cell_type = cell_types[0];
   int num_cell_vertices = mesh::cell_num_entities(cell_type, 0);
-  assert(local_graph.num_nodes()
-         == (int)cells.second.size() / num_cell_vertices);
+  assert(local_graph.num_nodes() == (int)cells[0].size() / num_cell_vertices);
 
   // Extend with nonlocal edges and convert to global indices
   graph::AdjacencyList graph
