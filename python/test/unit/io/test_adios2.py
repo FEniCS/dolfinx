@@ -131,11 +131,7 @@ def test_second_order_vtx(tempdir):
     filename = Path(tempdir, "mesh_fides.bp")
     points = np.array([[0, 0, 0], [1, 0, 0], [0.5, 0, 0]], dtype=default_real_type)
     cells = np.array([[0, 1, 2]], dtype=np.int32)
-    domain = ufl.Mesh(
-        element(
-            "Lagrange", "interval", 2, gdim=points.shape[1], shape=(1,), dtype=default_real_type
-        )
-    )
+    domain = ufl.Mesh(element("Lagrange", "interval", 2, shape=(1,), dtype=default_real_type))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     with VTXWriter(mesh.comm, filename, mesh) as f:
         f.write(0.0)

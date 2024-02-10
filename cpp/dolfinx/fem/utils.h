@@ -35,7 +35,6 @@
 
 /// @file utils.h
 /// @brief Functions supporting finite element method operations
-
 namespace basix
 {
 template <std::floating_point T>
@@ -687,9 +686,26 @@ FunctionSpace<T> create_functionspace(
         reorder_fn
     = nullptr)
 {
+  if (!e.value_shape().empty() and !value_shape.empty())
+  {
+    throw std::runtime_error(
+        "Cannot specify value shape for non-scalar base element.");
+  }
+
+  std::size_t bs = value_shape.empty()
+                       ? 1
+                       : std::accumulate(value_shape.begin(), value_shape.end(),
+                                         1, std::multiplies{});
+
   // Create a DOLFINx element
-  auto _e = std::make_shared<FiniteElement<T>>(e, value_shape);
+  auto _e = std::make_shared<const FiniteElement<T>>(e, bs);
   assert(_e);
+
+  const std::vector<std::size_t> _value_shape
+      = (value_shape.empty() and !e.value_shape().empty())
+            ? fem::compute_value_shape(_e, mesh->topology()->dim(),
+                                       mesh->geometry().dim())
+            : value_shape;
 
   // Create UFC subdofmaps and compute offset
   const int num_sub_elements = _e->num_sub_elements();
@@ -716,7 +732,7 @@ FunctionSpace<T> create_functionspace(
   assert(mesh->topology());
   auto dofmap = std::make_shared<const DofMap>(create_dofmap(
       mesh->comm(), layout, *mesh->topology(), unpermute_dofs, reorder_fn));
-  return FunctionSpace(mesh, _e, dofmap);
+  return FunctionSpace(mesh, _e, dofmap, _value_shape);
 }
 
 /// @brief Create a FunctionSpace from UFC data.
@@ -747,6 +763,8 @@ FunctionSpace<T> create_functionspace(
 
   ufcx_finite_element* ufcx_element = space->finite_element;
   assert(ufcx_element);
+  std::vector<std::size_t> value_shape(space->value_shape,
+                                       space->value_shape + space->value_rank);
 
   const auto& geometry = mesh->geometry();
   auto& cmap = geometry.cmap();
@@ -776,7 +794,8 @@ FunctionSpace<T> create_functionspace(
   return FunctionSpace(
       mesh, element,
       std::make_shared<DofMap>(create_dofmap(mesh->comm(), layout, *topology,
-                                             unpermute_dofs, reorder_fn)));
+                                             unpermute_dofs, reorder_fn)),
+      value_shape);
 }
 
 /// @private
