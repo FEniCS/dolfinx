@@ -96,11 +96,12 @@ from ufl import action, dx, grad, inner
 # finite element {py:class}`FunctionSpace <dolfinx.fem.FunctionSpace>`
 # $V$ on the mesh.
 
-dtype = np.float32
+dtype = dolfinx.default_scalar_type
+real_type = np.real(dtype(0.0)).dtype
 
 # Create mesh with tensor product ordering
 comm = MPI.COMM_WORLD
-mesh = dolfinx.mesh.create_rectangle(comm, [[0.0, 0.0], [1.0, 1.0]], [10, 10], dtype=dtype)
+mesh = dolfinx.mesh.create_rectangle(comm, [[0.0, 0.0], [1.0, 1.0]], [10, 10], dtype=real_type)
 
 
 # Create function space
