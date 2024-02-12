@@ -28,8 +28,10 @@
 # $(0, \infty)$, given by
 #
 # $$
-# \partial_t u - \nu \Delta u + (u \cdot \nabla)u + \nabla p &= f \textnormal{ in } \Omega_t, \\
-# \nabla \cdot u &= 0 \textnormal{ in } \Omega_t,
+# \begin{align}
+# \partial_t u - \nu \Delta u + (u \cdot \nabla)u + \nabla p &= f \text{ in } \Omega_t, \\
+# \nabla \cdot u &= 0 \text{ in } \Omega_t,
+# \end{align}
 # $$
 #
 # where $u: \Omega_t \to \mathbb{R}^d$ is the velocity field,
@@ -40,13 +42,13 @@
 # The problem is supplemented with the initial condition
 #
 # $$
-#     u(x, 0) = u_0(x) \textnormal{ in } \Omega
+#     u(x, 0) = u_0(x) \text{ in } \Omega
 # $$
 #
 # and boundary condition
 #
 # $$
-#     u = u_D \textnormal{ on } \partial \Omega \times (0, \infty),
+#     u = u_D \text{ on } \partial \Omega \times (0, \infty),
 # $$
 #
 # where $u_0: \Omega \to \mathbb{R}^d$ is a prescribed initial velocity field
@@ -64,11 +66,13 @@
 # We begin by introducing the function spaces
 #
 # $$
-#     V_h^g &:= \left\{v \in H(\textnormal{div}; \Omega);
+# \begin{align}
+#     V_h^g &:= \left\{v \in H(\text{div}; \Omega);
 #     v|_K \in V_h(K) \; \forall K \in \mathcal{T}, v \cdot n = g \cdot n
-#     \textnormal{ on } \partial \Omega \right\} \\
+#     \text{ on } \partial \Omega \right\} \\
 #     Q_h &:= \left\{q \in L^2_0(\Omega);
 #     q|_K \in Q_h(K) \; \forall K \in \mathcal{T} \right\}.
+# \end{align}
 # $$
 #
 # The local spaces $V_h(K)$ and $Q_h(K)$ should satisfy
@@ -80,14 +84,14 @@
 # affine simplex cells include
 #
 # $$
-#     V_h(K) := \mathbb{RT}_k(K) \textnormal{ and }
+#     V_h(K) := \mathbb{RT}_k(K) \text{ and }
 #     Q_h(K) := \mathbb{P}_k(K),
 # $$
 #
 # or
 #
 # $$
-#     V_h(K) := \mathbb{BDM}_k(K) \textnormal{ and }
+#     V_h(K) := \mathbb{BDM}_k(K) \text{ and }
 #     Q_h(K) := \mathbb{P}_{k-1}(K).
 # $$
 #
@@ -127,10 +131,12 @@
 # $(u_h, p_h) \in V_h^{u_D} \times Q_h$ such that
 #
 # $$
-#     \int_\Omega \partial_t u_h \cdot v + a_h(u_h, v_h) + c_h(u_h; u_h, v_h)
-#     + b_h(v_h, p_h) &= \int_\Omega f \cdot v_h + L_{a_h}(v_h) + L_{c_h}(v_h)
-#      \quad \forall v_h \in V_h^0, \\
-#     b_h(u_h, q_h) &= 0 \quad \forall q_h \in Q_h,
+# \begin{align}
+#   \int_\Omega \partial_t u_h \cdot v + a_h(u_h, v_h) + c_h(u_h; u_h, v_h)
+#   + b_h(v_h, p_h) &= \int_\Omega f \cdot v_h + L_{a_h}(v_h) + L_{c_h}(v_h)
+#   \quad \forall v_h \in V_h^0, \\
+#   b_h(u_h, q_h) &= 0 \quad \forall q_h \in Q_h,
+# \end{align}
 # $$
 #
 # where
@@ -138,16 +144,18 @@
 # $\renewcommand{\sumF}[0]{\sum_{F \in \mathcal{F}_h}}$
 #
 # $$
-#     a_h(u, v) &= Re^{-1} \left(\sumK \int_K \nabla u : \nabla v
-#     - \sumF \int_F \avg{\nabla u} : \jump{v}
-#     - \sumF \int_F \avg{\nabla v} : \jump{u} \\
-#     + \sumF \int_F \frac{\alpha}{h_K} \jump{u} : \jump{v}\right), \\
-#     c_h(w; u, v) &= - \sumK \int_K u \cdot \nabla \cdot (v \otimes w)
-#     + \sumK \int_{\partial_K} w \cdot n \hat{u}^{w} \cdot v, \\
-#     L_{a_h}(v_h) &= Re^{-1} \left(- \int_{\partial \Omega} u_D \otimes n :
-#     \nabla_h v_h + \frac{\alpha}{h} u_D \otimes n : v_h \otimes n \right), \\
-#     L_{c_h}(v_h) &= - \int_{\partial \Omega} u_D \cdot n \hat{u}_D \cdot v_h, \\
-#     b_h(v, q) &= - \int_K \nabla \cdot v q.
+# \begin{align}
+#   a_h(u, v) &= Re^{-1} \left(\sumK \int_K \nabla u : \nabla v
+#   - \sumF \int_F \avg{\nabla u} : \jump{v}
+#   - \sumF \int_F \avg{\nabla v} : \jump{u} \\
+#   + \sumF \int_F \frac{\alpha}{h_K} \jump{u} : \jump{v}\right), \\
+#   c_h(w; u, v) &= - \sumK \int_K u \cdot \nabla \cdot (v \otimes w)
+#   + \sumK \int_{\partial_K} w \cdot n \hat{u}^{w} \cdot v, \\
+#   L_{a_h}(v_h) &= Re^{-1} \left(- \int_{\partial \Omega} u_D \otimes n :
+#   \nabla_h v_h + \frac{\alpha}{h} u_D \otimes n : v_h \otimes n \right), \\
+#   L_{c_h}(v_h) &= - \int_{\partial \Omega} u_D \cdot n \hat{u}_D \cdot v_h, \\
+#   b_h(v, q) &= - \int_K \nabla \cdot v q.
+# \end{align}
 # $$
 #
 #
@@ -163,8 +171,23 @@ import numpy as np
 
 from dolfinx import default_real_type, fem, io, mesh
 from dolfinx.fem.petsc import assemble_matrix_block, assemble_vector_block
-from ufl import (CellDiameter, FacetNormal, TestFunction, TrialFunction, avg,
-                 conditional, div, dot, dS, ds, dx, grad, gt, inner, outer)
+from ufl import (
+    CellDiameter,
+    FacetNormal,
+    TestFunction,
+    TrialFunction,
+    avg,
+    conditional,
+    div,
+    dot,
+    dS,
+    ds,
+    dx,
+    grad,
+    gt,
+    inner,
+    outer,
+)
 
 if np.issubdtype(PETSc.ScalarType, np.complexfloating):  # type: ignore
     print("Demo should only be executed with DOLFINx real mode")
@@ -183,17 +206,25 @@ def norm_L2(comm, v):
 
 def domain_average(msh, v):
     """Compute the average of a function over the domain"""
-    vol = msh.comm.allreduce(fem.assemble_scalar(fem.form(fem.Constant(msh, default_real_type(1.0)) * dx)), op=MPI.SUM)
+    vol = msh.comm.allreduce(
+        fem.assemble_scalar(fem.form(fem.Constant(msh, default_real_type(1.0)) * dx)), op=MPI.SUM
+    )
     return (1 / vol) * msh.comm.allreduce(fem.assemble_scalar(fem.form(v * dx)), op=MPI.SUM)
 
 
 def u_e_expr(x):
     """Expression for the exact velocity solution to Kovasznay flow"""
-    return np.vstack((1 - np.exp(
-        (Re / 2 - np.sqrt(Re**2 / 4 + 4 * np.pi**2)) * x[0]) * np.cos(2 * np.pi * x[1]),
-        (Re / 2 - np.sqrt(Re**2 / 4 + 4 * np.pi**2)) / (2 * np.pi) * np.exp(
-            (Re / 2 - np.sqrt(Re**2 / 4 + 4 * np.pi**2)) * x[0])
-        * np.sin(2 * np.pi * x[1])))
+    return np.vstack(
+        (
+            1
+            - np.exp((Re / 2 - np.sqrt(Re**2 / 4 + 4 * np.pi**2)) * x[0])
+            * np.cos(2 * np.pi * x[1]),
+            (Re / 2 - np.sqrt(Re**2 / 4 + 4 * np.pi**2))
+            / (2 * np.pi)
+            * np.exp((Re / 2 - np.sqrt(Re**2 / 4 + 4 * np.pi**2)) * x[0])
+            * np.sin(2 * np.pi * x[1]),
+        )
+    )
 
 
 def p_e_expr(x):
@@ -207,7 +238,14 @@ def f_expr(x):
 
 
 def boundary_marker(x):
-    return np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0) | np.isclose(x[1], 0.0) | np.isclose(x[1], 1.0)
+    return (
+        np.isclose(x[0], 0.0)
+        | np.isclose(x[0], 1.0)
+        | np.isclose(x[1], 0.0)
+        | np.isclose(x[1], 1.0)
+    )
+
+
 # -
 
 # We define some simulation parameters
@@ -220,7 +258,7 @@ Re = 25  # Reynolds Number
 k = 1  # Polynomial degree
 
 # Next, we create a mesh and the required functions spaces over it.
-# Since the velocity uses an $H(\textnormal{div})$-conforming function
+# Since the velocity uses an $H(\text{div})$-conforming function
 # space, we also create a vector valued discontinuous Lagrange space to
 # interpolate into for artifact free visualisation.
 
@@ -249,6 +287,8 @@ n = FacetNormal(msh)
 
 def jump(phi, n):
     return outer(phi("+"), n("+")) + outer(phi("-"), n("-"))
+
+
 # -
 
 # We solve the Stokes problem for the initial condition, omitting the
@@ -256,24 +296,26 @@ def jump(phi, n):
 
 
 # +
-a_00 = (1.0 / Re) * (inner(grad(u), grad(v)) * dx
-                     - inner(avg(grad(u)), jump(v, n)) * dS
-                     - inner(jump(u, n), avg(grad(v))) * dS
-                     + (alpha / avg(h)) * inner(jump(u, n), jump(v, n)) * dS
-                     - inner(grad(u), outer(v, n)) * ds
-                     - inner(outer(u, n), grad(v)) * ds
-                     + (alpha / h) * inner(outer(u, n), outer(v, n)) * ds)
-a_01 = - inner(p, div(v)) * dx
-a_10 = - inner(div(u), q) * dx
+a_00 = (1.0 / Re) * (
+    inner(grad(u), grad(v)) * dx
+    - inner(avg(grad(u)), jump(v, n)) * dS
+    - inner(jump(u, n), avg(grad(v))) * dS
+    + (alpha / avg(h)) * inner(jump(u, n), jump(v, n)) * dS
+    - inner(grad(u), outer(v, n)) * ds
+    - inner(outer(u, n), grad(v)) * ds
+    + (alpha / h) * inner(outer(u, n), outer(v, n)) * ds
+)
+a_01 = -inner(p, div(v)) * dx
+a_10 = -inner(div(u), q) * dx
 
-a = fem.form([[a_00, a_01],
-              [a_10, None]])
+a = fem.form([[a_00, a_01], [a_10, None]])
 
 f = fem.Function(W)
 u_D = fem.Function(V)
 u_D.interpolate(u_e_expr)
-L_0 = inner(f, v) * dx + (1 / Re) * (- inner(outer(u_D, n), grad(v)) * ds
-                                     + (alpha / h) * inner(outer(u_D, n), outer(v, n)) * ds)
+L_0 = inner(f, v) * dx + (1 / Re) * (
+    -inner(outer(u_D, n), grad(v)) * ds + (alpha / h) * inner(outer(u_D, n), outer(v, n)) * ds
+)
 L_1 = inner(fem.Constant(msh, default_real_type(0.0)), q) * dx
 L = fem.form([L_0, L_1])
 
@@ -321,7 +363,7 @@ p_h.name = "p"
 offset = V.dofmap.index_map.size_local * V.dofmap.index_map_bs
 u_h.x.array[:offset] = x.array_r[:offset]
 u_h.x.scatter_forward()
-p_h.x.array[:(len(x.array_r) - offset)] = x.array_r[offset:]
+p_h.x.array[: (len(x.array_r) - offset)] = x.array_r[offset:]
 p_h.x.scatter_forward()
 # Subtract the average of the pressure since it is only determined up to
 # a constant
@@ -334,8 +376,8 @@ u_vis.interpolate(u_h)
 # Write initial condition to file
 t = 0.0
 try:
-    u_file = io.VTXWriter(msh.comm, "u.bp", [u_vis._cpp_object])
-    p_file = io.VTXWriter(msh.comm, "p.bp", [p_h._cpp_object])
+    u_file = io.VTXWriter(msh.comm, "u.bp", u_vis)
+    p_file = io.VTXWriter(msh.comm, "p.bp", p_h)
     u_file.write(t)
     p_file.write(t)
 except AttributeError:
@@ -351,13 +393,14 @@ u_n.x.array[:] = u_h.x.array
 # +
 lmbda = conditional(gt(dot(u_n, n), 0), 1, 0)
 u_uw = lmbda("+") * u("+") + lmbda("-") * u("-")
-a_00 += inner(u / delta_t, v) * dx - \
-    inner(u, div(outer(v, u_n))) * dx + \
-    inner((dot(u_n, n))("+") * u_uw, v("+")) * dS + \
-    inner((dot(u_n, n))("-") * u_uw, v("-")) * dS + \
-    inner(dot(u_n, n) * lmbda * u, v) * ds
-a = fem.form([[a_00, a_01],
-              [a_10, None]])
+a_00 += (
+    inner(u / delta_t, v) * dx
+    - inner(u, div(outer(v, u_n))) * dx
+    + inner((dot(u_n, n))("+") * u_uw, v("+")) * dS
+    + inner((dot(u_n, n))("-") * u_uw, v("-")) * dS
+    + inner(dot(u_n, n) * lmbda * u, v) * ds
+)
+a = fem.form([[a_00, a_01], [a_10, None]])
 
 L_0 += inner(u_n / delta_t, v) * dx - inner(dot(u_n, n) * (1 - lmbda) * u_D, v) * ds
 L = fem.form([L_0, L_1])
@@ -379,7 +422,7 @@ for n in range(num_time_steps):
 
     u_h.x.array[:offset] = x.array_r[:offset]
     u_h.x.scatter_forward()
-    p_h.x.array[:(len(x.array_r) - offset)] = x.array_r[offset:]
+    p_h.x.array[: (len(x.array_r) - offset)] = x.array_r[offset:]
     p_h.x.scatter_forward()
     p_h.x.array[:] -= domain_average(msh, p_h)
 

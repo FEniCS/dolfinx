@@ -12,11 +12,10 @@ import pytest
 import basix
 import dolfinx.cpp
 import ufl
-from basix.ufl import blocked_element
+from basix.ufl import quadrature_element
 from dolfinx import fem, la
 from dolfinx.fem import Constant, Expression, Function, form, functionspace
 from dolfinx.mesh import create_unit_square
-from ffcx.element_interface import QuadratureElement
 
 dolfinx.cpp.common.init_logging(["-v"])
 
@@ -121,7 +120,7 @@ def test_rank1_hdiv(dtype):
 
     # Interpolate RT1 into vdP1 (compiled, mat-vec interpolation)
     h2 = Function(vdP1, dtype=dtype)
-    h2.x.array[:A1.shape[0]] += A1 @ g.x.array
+    h2.x.array[: A1.shape[0]] += A1 @ g.x.array
     h2.x.scatter_forward()
     assert np.linalg.norm(h2.x.array - h.x.array) == pytest.approx(0.0, abs=1.0e-4)
 
@@ -233,8 +232,7 @@ def test_assembly_into_quadrature_function(dtype):
     quadrature_degree = 2
     quadrature_points, _ = basix.make_quadrature(basix.CellType.triangle, quadrature_degree)
     quadrature_points = quadrature_points.astype(xtype)
-    Q_element = blocked_element(QuadratureElement(
-        "triangle", (), degree=quadrature_degree, scheme="default"), shape=(2, ))
+    Q_element = quadrature_element("triangle", (2,), degree=quadrature_degree, scheme="default")
     Q = functionspace(mesh, Q_element)
     P2 = functionspace(mesh, ("P", 2))
 
@@ -284,13 +282,14 @@ def test_assembly_into_quadrature_function(dtype):
 
     bs = Q.dofmap.bs
     Q_dofs_unrolled = bs * np.repeat(Q_dofs, bs).reshape(-1, bs) + np.arange(bs)
-    Q_dofs_unrolled = Q_dofs_unrolled.reshape(-1, bs * quadrature_points.shape[0]).astype(Q_dofs.dtype)
-    assert len(mesh.geometry.cmaps) == 1
+    Q_dofs_unrolled = Q_dofs_unrolled.reshape(-1, bs * quadrature_points.shape[0]).astype(
+        Q_dofs.dtype
+    )
     local = e_Q.x.array
     e_exact_eval = np.zeros_like(local)
     for cell in range(num_cells):
         xg = x_g[coord_dofs[cell], :tdim]
-        x = mesh.geometry.cmaps[0].push_forward(quadrature_points, xg)
+        x = mesh.geometry.cmap.push_forward(quadrature_points, xg)
         e_exact_eval[Q_dofs_unrolled[cell]] = e_exact(x.T).T.flatten()
     assert np.allclose(local, e_exact_eval)
 
@@ -303,7 +302,7 @@ def test_expression_eval_cells_subset(dtype):
 
     cells_imap = mesh.topology.index_map(mesh.topology.dim)
     all_cells = np.arange(cells_imap.size_local + cells_imap.num_ghosts, dtype=np.int32)
-    cells_to_dofs = np.fromiter(map(V.dofmap.cell_dofs, all_cells), dtype=np.int32)
+    cells_to_dofs = np.array([V.dofmap.cell_dofs(i)[0] for i in all_cells], dtype=np.int32)
     dofs_to_cells = np.argsort(cells_to_dofs)
 
     u = dolfinx.fem.Function(V, dtype=dtype)

@@ -147,7 +147,7 @@ get_remote_dofs(MPI_Comm comm, const common::IndexMap& map, int bs_map,
   // Build vector of local dof indices that have been marked by another
   // process
   const std::array<std::int64_t, 2> range = map.local_range();
-  const std::vector<std::int64_t>& ghosts = map.ghosts();
+  std::span ghosts = map.ghosts();
 
   // Build map from ghost global index to local position
   // NOTE: Should we use map here or just one vector with ghosts and
@@ -187,15 +187,11 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
     const mesh::Topology& topology, const DofMap& dofmap, int dim,
     std::span<const std::int32_t> entities, bool remote)
 {
-  auto cell_types = topology.cell_types();
-  if (cell_types.size() > 1)
-  {
-    throw std::runtime_error("Multiple cell types in DirichletBC");
-  }
+  mesh::CellType cell_type = topology.cell_type();
 
   // Prepare an element - local dof layout for dofs on entities of the
   // entity_dim
-  const int num_cell_entities = mesh::cell_num_entities(cell_types.back(), dim);
+  const int num_cell_entities = mesh::cell_num_entities(cell_type, dim);
   std::vector<std::vector<int>> entity_dofs;
   for (int i = 0; i < num_cell_entities; ++i)
   {
@@ -265,14 +261,12 @@ std::vector<std::int32_t> fem::locate_dofs_topological(
     // Create 'symmetric' neighbourhood communicator
     MPI_Comm comm;
     {
-      const std::vector<int>& src = map->src();
-      const std::vector<int>& dest = map->dest();
-
+      std::span src = map->src();
+      std::span dest = map->dest();
       std::vector<int> ranks;
       std::set_union(src.begin(), src.end(), dest.begin(), dest.end(),
                      std::back_inserter(ranks));
       ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
-
       MPI_Dist_graph_create_adjacent(
           map->comm(), ranks.size(), ranks.data(), MPI_UNWEIGHTED, ranks.size(),
           ranks.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
@@ -308,13 +302,10 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
   // Check that dof layouts are the same
   assert(dofmap0.element_dof_layout() == dofmap1.element_dof_layout());
 
-  auto cell_types = topology.cell_types();
-  if (cell_types.size() > 1)
-  {
-    throw std::runtime_error("Multiple cell types in DirichletBC");
-  }
+  mesh::CellType cell_type = topology.cell_type();
+
   // Build vector of local dofs for each cell entity
-  const int num_cell_entities = mesh::cell_num_entities(cell_types.back(), dim);
+  const int num_cell_entities = mesh::cell_num_entities(cell_type, dim);
   std::vector<std::vector<int>> entity_dofs;
   for (int i = 0; i < num_cell_entities; ++i)
   {
@@ -389,14 +380,12 @@ std::array<std::vector<std::int32_t>, 2> fem::locate_dofs_topological(
     // Create 'symmetric' neighbourhood communicator
     MPI_Comm comm;
     {
-      const std::vector<int>& src = map0->src();
-      const std::vector<int>& dest = map0->dest();
-
+      std::span src = map0->src();
+      std::span dest = map0->dest();
       std::vector<int> ranks;
       std::set_union(src.begin(), src.end(), dest.begin(), dest.end(),
                      std::back_inserter(ranks));
       ranks.erase(std::unique(ranks.begin(), ranks.end()), ranks.end());
-
       MPI_Dist_graph_create_adjacent(map0->comm(), ranks.size(), ranks.data(),
                                      MPI_UNWEIGHTED, ranks.size(), ranks.data(),
                                      MPI_UNWEIGHTED, MPI_INFO_NULL, false,

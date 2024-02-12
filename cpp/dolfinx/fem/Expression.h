@@ -161,10 +161,9 @@ public:
     auto x_dofmap = mesh.geometry().dofmap();
 
     // Get geometry data
-    auto cmaps = mesh.geometry().cmaps();
-    assert(cmaps.size() == 1);
+    auto& cmap = mesh.geometry().cmap();
 
-    const std::size_t num_dofs_g = cmaps.back().dim();
+    const std::size_t num_dofs_g = cmap.dim();
     auto x_g = mesh.geometry().x();
 
     // Create data structures used in evaluation
@@ -196,7 +195,7 @@ public:
         post_dof_transform
             = element
                   ->template get_post_dof_transformation_function<scalar_type>(
-                      false, true);
+                      FiniteElement<geometry_type>::doftransform::transpose);
       }
     }
 

@@ -13,7 +13,9 @@
 #include "FunctionSpace.h"
 #include "utils.h"
 #include <algorithm>
+#include <basix/mdspan.hpp>
 #include <concepts>
+#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -25,11 +27,12 @@
 
 namespace dolfinx::fem::impl
 {
+
+/// @cond
 using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
     const std::int32_t,
     MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-
-/// Implementation of vector assembly
+/// @endcond
 
 /// @brief Implementation of bc application
 /// @tparam T The scalar type
@@ -43,13 +46,8 @@ void _lift_bc_cells(
     std::span<T> b, mdspan2_t x_dofmap,
     std::span<const scalar_value_type_t<T>> x, FEkernel<T> auto kernel,
     std::span<const std::int32_t> cells,
-    const std::function<void(const std::span<T>&,
-                             const std::span<const std::uint32_t>&,
-                             std::int32_t, int)>& pre_dof_transform,
-    mdspan2_t dofmap0, int bs0,
-    const std::function<void(const std::span<T>&,
-                             const std::span<const std::uint32_t>&,
-                             std::int32_t, int)>& post_dof_transpose,
+    fem::DofTransformKernel<T> auto pre_dof_transform, mdspan2_t dofmap0,
+    int bs0, fem::DofTransformKernel<T> auto post_dof_transpose,
     mdspan2_t dofmap1, int bs1, std::span<const T> constants,
     std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info, std::span<const T> bc_values1,
@@ -199,13 +197,8 @@ void _lift_bc_exterior_facets(
     std::span<T> b, mdspan2_t x_dofmap,
     std::span<const scalar_value_type_t<T>> x, FEkernel<T> auto kernel,
     std::span<const std::int32_t> facets,
-    const std::function<void(const std::span<T>&,
-                             const std::span<const std::uint32_t>&,
-                             std::int32_t, int)>& pre_dof_transform,
-    mdspan2_t dofmap0, int bs0,
-    const std::function<void(const std::span<T>&,
-                             const std::span<const std::uint32_t>&,
-                             std::int32_t, int)>& post_dof_transpose,
+    fem::DofTransformKernel<T> auto pre_dof_transform, mdspan2_t dofmap0,
+    int bs0, fem::DofTransformKernel<T> auto post_dof_transpose,
     mdspan2_t dofmap1, int bs1, std::span<const T> constants,
     std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info, std::span<const T> bc_values1,
@@ -307,13 +300,8 @@ void _lift_bc_interior_facets(
     std::span<T> b, mdspan2_t x_dofmap,
     std::span<const scalar_value_type_t<T>> x, int num_cell_facets,
     FEkernel<T> auto kernel, std::span<const std::int32_t> facets,
-    const std::function<void(const std::span<T>&,
-                             const std::span<const std::uint32_t>&,
-                             std::int32_t, int)>& pre_dof_transform,
-    mdspan2_t dofmap0, int bs0,
-    const std::function<void(const std::span<T>&,
-                             const std::span<const std::uint32_t>&,
-                             std::int32_t, int)>& post_dof_transpose,
+    fem::DofTransformKernel<T> auto pre_dof_transform, mdspan2_t dofmap0,
+    int bs0, fem::DofTransformKernel<T> auto post_dof_transpose,
     mdspan2_t dofmap1, int bs1, std::span<const T> constants,
     std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info,
@@ -366,7 +354,7 @@ void _lift_bc_interior_facets(
     auto dmap0_cell0
         = std::span(dofmap0.data_handle() + cells[0] * num_dofs0, num_dofs0);
     auto dmap0_cell1
-        = std::span(dofmap1.data_handle() + cells[1] * num_dofs1, num_dofs1);
+        = std::span(dofmap0.data_handle() + cells[1] * num_dofs0, num_dofs0);
 
     dmapjoint0.resize(dmap0_cell0.size() + dmap0_cell1.size());
     std::copy(dmap0_cell0.begin(), dmap0_cell0.end(), dmapjoint0.begin());
@@ -428,14 +416,19 @@ void _lift_bc_interior_facets(
     std::span<T> _Ae(Ae);
     std::span<T> sub_Ae0 = _Ae.subspan(bs0 * dmap0_cell0.size() * num_cols,
                                        bs0 * dmap0_cell1.size() * num_cols);
-    std::span<T> sub_Ae1
-        = _Ae.subspan(bs1 * dmap1_cell0.size(),
-                      num_rows * num_cols - bs1 * dmap1_cell0.size());
 
     pre_dof_transform(_Ae, cell_info, cells[0], num_cols);
     pre_dof_transform(sub_Ae0, cell_info, cells[1], num_cols);
     post_dof_transpose(_Ae, cell_info, cells[0], num_rows);
-    post_dof_transpose(sub_Ae1, cell_info, cells[1], num_rows);
+
+    for (int row = 0; row < num_rows; ++row)
+    {
+      // DOFs for dmap1 and cell1 are not stored contiguously in
+      // the block matrix, so each row needs a separate span access
+      std::span<T> sub_Ae1 = _Ae.subspan(
+          row * num_cols + bs1 * dmap1_cell0.size(), bs1 * dmap1_cell1.size());
+      post_dof_transpose(sub_Ae1, cell_info, cells[1], 1);
+    }
 
     be.resize(num_rows);
     std::fill(be.begin(), be.end(), 0);
@@ -495,23 +488,19 @@ void _lift_bc_interior_facets(
 /// positive the block size is used as a compile-time constant, which
 /// has performance benefits.
 template <dolfinx::scalar T, int _bs = -1>
-void assemble_cells(
-    const std::function<void(const std::span<T>&,
-                             const std::span<const std::uint32_t>&,
-                             std::int32_t, int)>& dof_transform,
-    std::span<T> b, mdspan2_t x_dofmap,
-    std::span<const scalar_value_type_t<T>> x,
-    std::span<const std::int32_t> cells, mdspan2_t dofmap, int bs,
-    FEkernel<T> auto kernel, std::span<const T> constants,
-    std::span<const T> coeffs, int cstride,
-    std::span<const std::uint32_t> cell_info)
+void assemble_cells(fem::DofTransformKernel<T> auto dof_transform,
+                    std::span<T> b, mdspan2_t x_dofmap,
+                    std::span<const scalar_value_type_t<T>> x,
+                    std::span<const std::int32_t> cells, mdspan2_t dofmap,
+                    int bs, FEkernel<T> auto kernel,
+                    std::span<const T> constants, std::span<const T> coeffs,
+                    int cstride, std::span<const std::uint32_t> cell_info)
 {
   assert(_bs < 0 or _bs == bs);
 
   if (cells.empty())
     return;
 
-  // FIXME: Add proper interface for num_dofs
   // Create data structures used in assembly
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * x_dofmap.extent(1));
   std::vector<T> be(bs * dofmap.extent(1));
@@ -563,16 +552,14 @@ void assemble_cells(
 /// positive the block size is used as a compile-time constant, which
 /// has performance benefits.
 template <dolfinx::scalar T, int _bs = -1>
-void assemble_exterior_facets(
-    const std::function<void(const std::span<T>&,
-                             const std::span<const std::uint32_t>&,
-                             std::int32_t, int)>& dof_transform,
-    std::span<T> b, mdspan2_t x_dofmap,
-    std::span<const scalar_value_type_t<T>> x,
-    std::span<const std::int32_t> facets, mdspan2_t dofmap, int bs,
-    FEkernel<T> auto fn, std::span<const T> constants,
-    std::span<const T> coeffs, int cstride,
-    std::span<const std::uint32_t> cell_info)
+void assemble_exterior_facets(fem::DofTransformKernel<T> auto dof_transform,
+                              std::span<T> b, mdspan2_t x_dofmap,
+                              std::span<const scalar_value_type_t<T>> x,
+                              std::span<const std::int32_t> facets,
+                              mdspan2_t dofmap, int bs, FEkernel<T> auto fn,
+                              std::span<const T> constants,
+                              std::span<const T> coeffs, int cstride,
+                              std::span<const std::uint32_t> cell_info)
 {
   assert(_bs < 0 or _bs == bs);
 
@@ -634,14 +621,11 @@ void assemble_exterior_facets(
 /// has performance benefits.
 template <dolfinx::scalar T, int _bs = -1>
 void assemble_interior_facets(
-    const std::function<void(const std::span<T>&,
-                             const std::span<const std::uint32_t>&,
-                             std::int32_t, int)>& dof_transform,
-    std::span<T> b, mdspan2_t x_dofmap,
-    std::span<const scalar_value_type_t<T>> x, int num_cell_facets,
-    std::span<const std::int32_t> facets, const fem::DofMap& dofmap,
-    FEkernel<T> auto fn, std::span<const T> constants,
-    std::span<const T> coeffs, int cstride,
+    fem::DofTransformKernel<T> auto dof_transform, std::span<T> b,
+    mdspan2_t x_dofmap, std::span<const scalar_value_type_t<T>> x,
+    int num_cell_facets, std::span<const std::int32_t> facets,
+    const fem::DofMap& dofmap, FEkernel<T> auto fn,
+    std::span<const T> constants, std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info,
     const std::function<std::uint8_t(std::size_t)>& get_perm)
 {
@@ -761,28 +745,19 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
   auto element1 = a.function_spaces()[1]->element();
   assert(element0);
 
-  const bool needs_transformation_data
-      = element0->needs_dof_transformations()
-        or element1->needs_dof_transformations()
-        or a.needs_facet_permutations();
-
   std::span<const std::uint32_t> cell_info;
-  if (needs_transformation_data)
+  if (element0->needs_dof_transformations()
+      or element1->needs_dof_transformations() or a.needs_facet_permutations())
   {
     mesh->topology_mutable()->create_entity_permutations();
     cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
 
-  const std::function<void(const std::span<T>&,
-                           const std::span<const std::uint32_t>&, std::int32_t,
-                           int)>
-      pre_dof_transform
+  fem::DofTransformKernel<T> auto pre_dof_transform
       = element0->template get_pre_dof_transformation_function<T>();
-  const std::function<void(const std::span<T>&,
-                           const std::span<const std::uint32_t>&, std::int32_t,
-                           int)>
-      post_dof_transpose
-      = element1->template get_post_dof_transformation_function<T>(false, true);
+  fem::DofTransformKernel<T> auto post_dof_transpose
+      = element1->template get_post_dof_transformation_function<T>(
+          FiniteElement<U>::doftransform::transpose);
 
   for (int i : a.integral_ids(IntegralType::cell))
   {
@@ -806,8 +781,8 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
     }
     else
     {
-      _lift_bc_cells(b, x_dofmap, x, kernel, cells, pre_dof_transform, dofmap0, bs0,
-                     post_dof_transpose, dofmap1, bs1, constants, coeffs,
+      _lift_bc_cells(b, x_dofmap, x, kernel, cells, pre_dof_transform, dofmap0,
+                     bs0, post_dof_transpose, dofmap1, bs1, constants, coeffs,
                      cstride, cell_info, bc_values1, bc_markers1, x0, scale);
     }
   }
@@ -818,11 +793,11 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
     assert(kernel);
     auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
-    _lift_bc_exterior_facets(b, x_dofmap, x, kernel,
-                             a.domain(IntegralType::exterior_facet, i),
-                             pre_dof_transform, dofmap0, bs0, post_dof_transpose,
-                             dofmap1, bs1, constants, coeffs, cstride,
-                             cell_info, bc_values1, bc_markers1, x0, scale);
+    _lift_bc_exterior_facets(
+        b, x_dofmap, x, kernel, a.domain(IntegralType::exterior_facet, i),
+        pre_dof_transform, dofmap0, bs0, post_dof_transpose, dofmap1, bs1,
+        constants, coeffs, cstride, cell_info, bc_values1, bc_markers1, x0,
+        scale);
   }
 
   if (a.num_integrals(IntegralType::interior_facet) > 0)
@@ -838,11 +813,9 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
     else
       get_perm = [](std::size_t) { return 0; };
 
-    auto cell_types = mesh->topology()->cell_types();
-    if (cell_types.size() > 1)
-      throw std::runtime_error("Multiple cell types in the assembler");
-    int num_cell_facets = mesh::cell_num_entities(cell_types.back(),
-                                                  mesh->topology()->dim() - 1);
+    mesh::CellType cell_type = mesh->topology()->cell_type();
+    int num_cell_facets
+        = mesh::cell_num_entities(cell_type, mesh->topology()->dim() - 1);
     for (int i : a.integral_ids(IntegralType::interior_facet))
     {
       auto kernel = a.kernel(IntegralType::interior_facet, i);
@@ -967,16 +940,11 @@ void assemble_vector(
   auto dofs = dofmap->map();
   const int bs = dofmap->bs();
 
-  const std::function<void(const std::span<T>&,
-                           const std::span<const std::uint32_t>&, std::int32_t,
-                           int)>
-      dof_transform
+  fem::DofTransformKernel<T> auto dof_transform
       = element->template get_pre_dof_transformation_function<T>();
 
-  const bool needs_transformation_data
-      = element->needs_dof_transformations() or L.needs_facet_permutations();
   std::span<const std::uint32_t> cell_info;
-  if (needs_transformation_data)
+  if (element->needs_dof_transformations() or L.needs_facet_permutations())
   {
     mesh->topology_mutable()->create_entity_permutations();
     cell_info = std::span(mesh->topology()->get_cell_permutation_info());
@@ -1046,11 +1014,9 @@ void assemble_vector(
     else
       get_perm = [](std::size_t) { return 0; };
 
-    auto cell_types = mesh->topology()->cell_types();
-    if (cell_types.size() > 1)
-      throw std::runtime_error("Multiple cell types in the assembler");
-    int num_cell_facets = mesh::cell_num_entities(cell_types.back(),
-                                                  mesh->topology()->dim() - 1);
+    mesh::CellType cell_type = mesh->topology()->cell_type();
+    int num_cell_facets
+        = mesh::cell_num_entities(cell_type, mesh->topology()->dim() - 1);
     for (int i : L.integral_ids(IntegralType::interior_facet))
     {
       auto fn = L.kernel(IntegralType::interior_facet, i);

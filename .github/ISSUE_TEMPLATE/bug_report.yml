@@ -7,6 +7,13 @@ body:
   - type: textarea
     id: description
     attributes:
+      label: Summarize the issue
+      description: Summarize the issue you are having, including expected and observed behavior
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
       label: How to reproduce the bug
       description: Explain how to reproduce the issue you are having
       placeholder: I ran a demo or test that failed. The name of the demo is `demo_something.py`
@@ -38,7 +45,7 @@ body:
           AttributeError: module 'dolfinx.mesh' has no attribute 'UnitSquareMesh'
     validations:
       required: false
-  
+
   - type: dropdown
     id: version
     attributes:
@@ -46,6 +53,10 @@ body:
       description: What version of DOLFINx are you running?
       options:
         - main branch
+        - 0.7.3
+        - 0.7.2
+        - 0.7.1
+        - 0.7.0
         - 0.6.0
         - 0.5.2
         - 0.5.1
@@ -68,7 +79,7 @@ body:
       placeholder: i.e. "I used the Docker images on a Windows 11" or "I installed DOLFINx from source on a MacBook Air with the M1 chip. Here are the steps to reproduce my installation ..."
   - type: textarea
     id: extra
-    attributes: 
+    attributes:
       label: Additional information
       description: If you have any additional information, please add it here.
       placeholder: You can drag and drop files here to attach them

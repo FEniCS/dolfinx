@@ -230,7 +230,7 @@ void la::petsc::scatter_local_vectors(
 }
 //-----------------------------------------------------------------------------
 Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
-                             const std::string& type)
+                             std::string type)
 {
   PetscErrorCode ierr;
   Mat A;
@@ -559,7 +559,7 @@ Mat petsc::Operator::mat() const { return _matA; }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 petsc::Matrix::Matrix(MPI_Comm comm, const SparsityPattern& sp,
-                      const std::string& type)
+                      std::string type)
     : Operator(petsc::create_matrix(comm, sp, type), false)
 {
   // Do nothing
@@ -574,7 +574,7 @@ double petsc::Matrix::norm(Norm norm_type) const
 {
   assert(_matA);
   PetscErrorCode ierr;
-  PetscReal value = 0.0;
+  PetscReal value = 0;
   switch (norm_type)
   {
   case Norm::l1:

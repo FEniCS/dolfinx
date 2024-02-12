@@ -9,6 +9,7 @@
 #include <array>
 #include <basix/finite-element.h>
 #include <concepts>
+#include <cstdint>
 #include <dolfinx/mesh/cell_types.h>
 #include <functional>
 #include <memory>
@@ -20,25 +21,40 @@ struct ufcx_finite_element;
 
 namespace dolfinx::fem
 {
+/// @brief DOF transform kernel concept.
+template <class U, class T>
+concept DofTransformKernel
+    = std::is_invocable_v<U, const std::span<T>&,
+                          const std::span<const std::uint32_t>&, std::int32_t,
+                          int>;
+
 /// Finite Element, containing the dof layout on a reference element,
 /// and various methods for evaluating and transforming the basis.
 template <std::floating_point T>
 class FiniteElement
 {
 public:
+  /// DOF transformation type
+  enum class doftransform
+  {
+    standard = 0,
+    transpose = 1,
+    inverse = 2,
+    inverse_transpose = 3,
+  };
+
+  /// Geometry type of the Mesh that the FunctionSpace is defined on.
+  using geometry_type = T;
+
   /// @brief Create finite element from UFC finite element.
   /// @param[in] e UFC finite element.
   explicit FiniteElement(const ufcx_finite_element& e);
 
   /// @brief Create finite element from a Basix finite element.
   /// @param[in] element Basix finite element
-  /// @param[in] value_shape Value shape for 'blocked' elements, e.g.
-  /// vector-valued Lagrange elements where each component for the
-  /// vector field is a Lagrange element. For example, a vector-valued
-  /// element in 3D will have `value_shape` equal to `{3}`, and for a
-  /// second-order tensor element in 2D `value_shape` equal to `{2, 2}`.
-  FiniteElement(const basix::FiniteElement<T>& element,
-                const std::vector<std::size_t>& value_shape);
+  /// @param[in] block_size The block size for the element
+  FiniteElement(const basix::FiniteElement<geometry_type>& element,
+                const std::size_t block_size);
 
   /// Copy constructor
   FiniteElement(const FiniteElement& element) = delete;
@@ -91,21 +107,12 @@ public:
   int block_size() const noexcept;
 
   /// The value size, e.g. 1 for a scalar function, 2 for a 2D vector, 9
-  /// for a second-order tensor in 3D.
-  /// @note The return value of this function is equivalent to
-  /// `std::accumulate(value_shape().begin(), value_shape().end(), 1,
-  /// std::multiplies{})`.
-  /// @return The value size
-  int value_size() const;
-
-  /// The value size, e.g. 1 for a scalar function, 2 for a 2D vector, 9
   /// for a second-order tensor in 3D, for the reference element
   /// @return The value size for the reference element
   int reference_value_size() const;
 
-  /// Shape of the value space. The rank is the size of the
-  /// `value_shape`.
-  std::span<const std::size_t> value_shape() const noexcept;
+  /// The reference value shape
+  std::span<const std::size_t> reference_value_shape() const;
 
   /// @brief Evaluate derivatives of the basis functions up to given order
   /// at points in the reference cell.
@@ -118,7 +125,8 @@ public:
   /// @param[in] shape The shape of `X`
   /// @param[in] order The number of derivatives (up to and including
   /// this order) to tabulate for
-  void tabulate(std::span<T> values, std::span<const T> X,
+  void tabulate(std::span<geometry_type> values,
+                std::span<const geometry_type> X,
                 std::array<std::size_t, 2> shape, int order) const;
 
   /// Evaluate all derivatives of the basis functions up to given order
@@ -130,30 +138,33 @@ public:
   /// @param[in] order The number of derivatives (up to and including
   /// this order) to tabulate for
   /// @return Basis function values and array shape (row-major storage)
-  std::pair<std::vector<T>, std::array<std::size_t, 4>>
-  tabulate(std::span<const T> X, std::array<std::size_t, 2> shape,
+  std::pair<std::vector<geometry_type>, std::array<std::size_t, 4>>
+  tabulate(std::span<const geometry_type> X, std::array<std::size_t, 2> shape,
            int order) const;
 
-  /// @brief Number of sub elements (for a mixed or blocked element)
+  /// @brief Number of sub elements (for a mixed or blocked element).
   /// @return The number of sub elements
   int num_sub_elements() const noexcept;
 
-  /// Check if element is a mixed element, i.e. composed of two or more
-  /// elements of different types. A block element, e.g. a Lagrange
-  /// element with block size > 1 is not considered mixed.
-  /// @return True is element is mixed.
+  /// @brief Check if element is a mixed element.
+  ///
+  /// A mixed element i composed of two or more elements of different
+  /// types (a block element, e.g. a Lagrange element with block size >=
+  /// 1 is not considered mixed).
+  ///
+  /// @return True if element is mixed.
   bool is_mixed() const noexcept;
 
-  /// Subelements (if any)
-  const std::vector<std::shared_ptr<const FiniteElement<T>>>&
+  /// Get subelements (if any)
+  const std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>&
   sub_elements() const noexcept;
 
   /// Extract sub finite element for component
-  std::shared_ptr<const FiniteElement<T>>
+  std::shared_ptr<const FiniteElement<geometry_type>>
   extract_sub_element(const std::vector<int>& component) const;
 
   /// Return underlying basix element (if it exists)
-  const basix::FiniteElement<T>& basix_element() const;
+  const basix::FiniteElement<geometry_type>& basix_element() const;
 
   /// Get the map type used by the element
   basix::maps::type map_type() const;
@@ -182,7 +193,7 @@ public:
   /// @return Interpolation point coordinates on the reference cell,
   /// returning the (0) coordinates data (row-major) storage and (1) the
   /// shape `(num_points, tdim)`.
-  std::pair<std::vector<T>, std::array<std::size_t, 2>>
+  std::pair<std::vector<geometry_type>, std::array<std::size_t, 2>>
   interpolation_points() const;
 
   /// Interpolation operator (matrix) `Pi` that maps a function
@@ -194,7 +205,7 @@ public:
   /// @return The interpolation operator `Pi`, returning the data for
   /// `Pi` (row-major storage) and the shape `(num_dofs, num_points *
   /// value_size)`
-  std::pair<std::vector<T>, std::array<std::size_t, 2>>
+  std::pair<std::vector<geometry_type>, std::array<std::size_t, 2>>
   interpolation_operator() const;
 
   /// @brief Create a matrix that maps degrees of freedom from one
@@ -209,7 +220,7 @@ public:
   /// @pre The two elements must use the same mapping between the
   /// reference and physical cells
   /// @note Does not support mixed elements
-  std::pair<std::vector<T>, std::array<std::size_t, 2>>
+  std::pair<std::vector<geometry_type>, std::array<std::size_t, 2>>
   create_interpolation_operator(const FiniteElement& from) const;
 
   /// @brief Check if DOF transformations are needed for this element.
@@ -254,17 +265,14 @@ public:
   /// - [in] cell The cell number
   /// - [in] block_size The block_size of the input data
   ///
-  /// @param[in] inverse Indicates whether the inverse transformations
-  /// should be returned
-  /// @param[in] transpose Indicates whether the transpose
-  /// transformations should be returned
+  /// @param[in] ttype The transformation type
   /// @param[in] scalar_element Indicates whether the scalar
   /// transformations should be returned for a vector element
   template <typename U>
   std::function<void(const std::span<U>&, const std::span<const std::uint32_t>&,
                      std::int32_t, int)>
-  get_pre_dof_transformation_function(bool inverse = false,
-                                      bool transpose = false,
+  get_pre_dof_transformation_function(doftransform ttype
+                                      = doftransform::standard,
                                       bool scalar_element = false) const
   {
     if (!needs_dof_transformations())
@@ -279,7 +287,7 @@ public:
 
     if (_sub_elements.size() != 0)
     {
-      if (_bs == 1)
+      if (_is_mixed)
       {
         // Mixed element
         std::vector<std::function<void(const std::span<U>&,
@@ -291,7 +299,7 @@ public:
         {
           sub_element_functions.push_back(
               _sub_elements[i]->template get_pre_dof_transformation_function<U>(
-                  inverse, transpose));
+                  ttype));
           dims.push_back(_sub_elements[i]->space_dimension());
         }
 
@@ -318,7 +326,7 @@ public:
                                  std::int32_t, int)>
             sub_function
             = _sub_elements[0]->template get_pre_dof_transformation_function<U>(
-                inverse, transpose);
+                ttype);
         const int ebs = _bs;
         return
             [ebs, sub_function](const std::span<U>& data,
@@ -327,49 +335,38 @@ public:
         { sub_function(data, cell_info, cell, ebs * data_block_size); };
       }
     }
-    if (transpose)
+    switch (ttype)
     {
-      if (inverse)
+    case doftransform::inverse_transpose:
+      return [this](const std::span<U>& data,
+                    const std::span<const std::uint32_t>& cell_info,
+                    std::int32_t cell, int block_size)
       {
-        return [this](const std::span<U>& data,
-                      const std::span<const std::uint32_t>& cell_info,
-                      std::int32_t cell, int block_size)
-        {
-          pre_apply_inverse_transpose_dof_transformation(data, cell_info[cell],
-                                                         block_size);
-        };
-      }
-      else
-      {
-        return [this](const std::span<U>& data,
-                      const std::span<const std::uint32_t>& cell_info,
-                      std::int32_t cell, int block_size) {
-          pre_apply_transpose_dof_transformation(data, cell_info[cell],
-                                                 block_size);
-        };
-      }
-    }
-    else
-    {
-      if (inverse)
-      {
-        return [this](const std::span<U>& data,
-                      const std::span<const std::uint32_t>& cell_info,
-                      std::int32_t cell, int block_size) {
-          pre_apply_inverse_dof_transformation(data, cell_info[cell],
+        pre_apply_inverse_transpose_dof_transformation(data, cell_info[cell],
+                                                       block_size);
+      };
+    case doftransform::transpose:
+      return [this](const std::span<U>& data,
+                    const std::span<const std::uint32_t>& cell_info,
+                    std::int32_t cell, int block_size) {
+        pre_apply_transpose_dof_transformation(data, cell_info[cell],
                                                block_size);
-        };
-      }
-      else
-      {
-        return [this](const std::span<U>& data,
-                      const std::span<const std::uint32_t>& cell_info,
-                      std::int32_t cell, int block_size)
-        { pre_apply_dof_transformation(data, cell_info[cell], block_size); };
-      }
+      };
+    case doftransform::inverse:
+      return [this](const std::span<U>& data,
+                    const std::span<const std::uint32_t>& cell_info,
+                    std::int32_t cell, int block_size) {
+        pre_apply_inverse_dof_transformation(data, cell_info[cell], block_size);
+      };
+    case doftransform::standard:
+      return [this](const std::span<U>& data,
+                    const std::span<const std::uint32_t>& cell_info,
+                    std::int32_t cell, int block_size)
+      { pre_apply_dof_transformation(data, cell_info[cell], block_size); };
+    default:
+      throw std::runtime_error("Unknown transformation type");
     }
   }
-
   /// Return a function that applies DOF transformation to some
   /// transposed data
   ///
@@ -382,17 +379,14 @@ public:
   /// - [in] cell The cell number
   /// - [in] block_size The block_size of the input data
   ///
-  /// @param[in] inverse Indicates whether the inverse transformations
-  /// should be returned
-  /// @param[in] transpose Indicates whether the transpose
-  /// transformations should be returned
+  /// @param[in] ttype The transformation type
   /// @param[in] scalar_element Indicated whether the scalar
   /// transformations should be returned for a vector element
   template <typename U>
   std::function<void(const std::span<U>&, const std::span<const std::uint32_t>&,
                      std::int32_t, int)>
-  get_post_dof_transformation_function(bool inverse = false,
-                                       bool transpose = false,
+  get_post_dof_transformation_function(doftransform ttype
+                                       = doftransform::standard,
                                        bool scalar_element = false) const
   {
     if (!needs_dof_transformations())
@@ -406,7 +400,7 @@ public:
     }
     else if (_sub_elements.size() != 0)
     {
-      if (_bs == 1)
+      if (_is_mixed)
       {
         // Mixed element
         std::vector<std::function<void(const std::span<U>&,
@@ -417,8 +411,7 @@ public:
         {
           sub_element_functions.push_back(
               _sub_elements[i]
-                  ->template get_post_dof_transformation_function<U>(
-                      inverse, transpose));
+                  ->template get_post_dof_transformation_function<U>(ttype));
         }
 
         return [this, sub_element_functions](
@@ -443,7 +436,7 @@ public:
                                  std::int32_t, int)>
             sub_function
             = _sub_elements[0]->template get_pre_dof_transformation_function<U>(
-                inverse, transpose);
+                ttype);
         return [this,
                 sub_function](const std::span<U>& data,
                               const std::span<const std::uint32_t>& cell_info,
@@ -460,46 +453,37 @@ public:
       }
     }
 
-    if (transpose)
+    switch (ttype)
     {
-      if (inverse)
+    case doftransform::inverse_transpose:
+      return [this](const std::span<U>& data,
+                    const std::span<const std::uint32_t>& cell_info,
+                    std::int32_t cell, int block_size)
       {
-        return [this](const std::span<U>& data,
-                      const std::span<const std::uint32_t>& cell_info,
-                      std::int32_t cell, int block_size)
-        {
-          post_apply_inverse_transpose_dof_transformation(data, cell_info[cell],
-                                                          block_size);
-        };
-      }
-      else
-      {
-        return [this](const std::span<U>& data,
-                      const std::span<const std::uint32_t>& cell_info,
-                      std::int32_t cell, int block_size) {
-          post_apply_transpose_dof_transformation(data, cell_info[cell],
-                                                  block_size);
-        };
-      }
-    }
-    else
-    {
-      if (inverse)
-      {
-        return [this](const std::span<U>& data,
-                      const std::span<const std::uint32_t>& cell_info,
-                      std::int32_t cell, int block_size) {
-          post_apply_inverse_dof_transformation(data, cell_info[cell],
+        post_apply_inverse_transpose_dof_transformation(data, cell_info[cell],
+                                                        block_size);
+      };
+    case doftransform::transpose:
+      return [this](const std::span<U>& data,
+                    const std::span<const std::uint32_t>& cell_info,
+                    std::int32_t cell, int block_size) {
+        post_apply_transpose_dof_transformation(data, cell_info[cell],
                                                 block_size);
-        };
-      }
-      else
-      {
-        return [this](const std::span<U>& data,
-                      const std::span<const std::uint32_t>& cell_info,
-                      std::int32_t cell, int block_size)
-        { post_apply_dof_transformation(data, cell_info[cell], block_size); };
-      }
+      };
+    case doftransform::inverse:
+      return [this](const std::span<U>& data,
+                    const std::span<const std::uint32_t>& cell_info,
+                    std::int32_t cell, int block_size) {
+        post_apply_inverse_dof_transformation(data, cell_info[cell],
+                                              block_size);
+      };
+    case doftransform::standard:
+      return [this](const std::span<U>& data,
+                    const std::span<const std::uint32_t>& cell_info,
+                    std::int32_t cell, int block_size)
+      { post_apply_dof_transformation(data, cell_info[cell], block_size); };
+    default:
+      throw std::runtime_error("Unknown transformation type");
     }
   }
 
@@ -671,24 +655,28 @@ private:
   int _space_dim;
 
   // List of sub-elements (if any)
-  std::vector<std::shared_ptr<const FiniteElement<T>>> _sub_elements;
+  std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>
+      _sub_elements;
 
   // Dimension of each value space
-  std::vector<std::size_t> _value_shape;
+  std::vector<std::size_t> _reference_value_shape;
 
   // Block size for BlockedElements. This gives the
   // number of DOFs co-located at each dof 'point'.
   int _bs;
+
+  // Indicate whether this is a mixed element
+  bool _is_mixed;
 
   // Indicate whether the element needs permutations or transformations
   bool _needs_dof_permutations;
   bool _needs_dof_transformations;
 
   // Basix Element (nullptr for mixed elements)
-  std::unique_ptr<basix::FiniteElement<T>> _element;
+  std::unique_ptr<basix::FiniteElement<geometry_type>> _element;
 
   // Quadrature points of a quadrature element (0 dimensional array for
   // all elements except quadrature elements)
-  std::pair<std::vector<T>, std::array<std::size_t, 2>> _points;
+  std::pair<std::vector<geometry_type>, std::array<std::size_t, 2>> _points;
 };
 } // namespace dolfinx::fem

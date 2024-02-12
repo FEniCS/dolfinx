@@ -196,11 +196,9 @@ T assemble_scalar(
     mesh->topology_mutable()->create_entity_permutations();
     const std::vector<std::uint8_t>& perms
         = mesh->topology()->get_facet_permutations();
-    auto cell_types = mesh->topology()->cell_types();
-    if (cell_types.size() > 1)
-      throw std::runtime_error("Multiple cell types in the assembler");
-    int num_cell_facets = mesh::cell_num_entities(cell_types.back(),
-                                                  mesh->topology()->dim() - 1);
+    mesh::CellType cell_type = mesh->topology()->cell_type();
+    int num_cell_facets
+        = mesh::cell_num_entities(cell_type, mesh->topology()->dim() - 1);
     const std::vector<int> c_offsets = M.coefficient_offsets();
     for (int i : M.integral_ids(IntegralType::interior_facet))
     {

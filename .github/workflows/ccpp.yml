@@ -60,25 +60,16 @@ jobs:
           python3 -m pip install git+https://github.com/FEniCS/basix.git@${{ github.event.inputs.basix_ref }}
           python3 -m pip install git+https://github.com/FEniCS/ffcx.git@${{ github.event.inputs.ffcx_ref }}
 
-      - name: Flake8 checks
+      - name: ruff C++ .py file checks
         run: |
           cd cpp/
-          python3 -m flake8 cmake
-          python3 -m flake8 demo
-          python3 -m flake8 test
-          cd ..
-          cd python/
-          python3 -m flake8 dolfinx
-          python3 -m flake8 demo
-          python3 -m flake8 test
-      - name: isort checks (non-blocking)
-        continue-on-error: true
+          ruff check .
+          ruff format --check .
+      - name: ruff Python interface checks
         run: |
-          cd cpp/
-          python3 -m isort --check .
-          cd ..
           cd python/
-          python3 -m isort --check .
+          ruff check .
+          ruff format --check .
       - name: mypy checks
         run: |
           cd python/
@@ -100,7 +91,7 @@ jobs:
       - name: cmake-format (non-blocking)
         continue-on-error: true
         run: |
-          find . -type f \( -name "*.cmake" -o -name "*.cmake.in" \) | xargs cmake-format --check
+          find . -type f \( -name "*.cmake" -o -name "*.cmake.in" -o -name "CMakeLists.txt" \) | xargs cmake-format --check
 
       - name: Configure C++
         run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
@@ -144,7 +135,7 @@ jobs:
       - name: Build Python interface documentation
         run: |
           cd python/doc
-          make html
+          python3 -m sphinx -W -b html source/ build/html/
 
       - name: Set default DOLFINx JIT options
         run: |
@@ -162,7 +153,7 @@ jobs:
         run: mpirun -np 2 python3 -m pytest python/test/unit/
 
       - name: Upload C++ documentation artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: doc-cpp-${{ matrix.petsc_arch }}
           path: |
@@ -172,7 +163,7 @@ jobs:
           if-no-files-found: error
 
       - name: Upload Python documentation artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: doc-python-${{ matrix.petsc_arch }}
           path: |
@@ -210,5 +201,5 @@ jobs:
           git config --global user.email "fenics@github.com"
           git config --global user.name "FEniCS GitHub Actions"
           git add --all
-          git commit --allow-empty -m "C++ FEniCS/dolfinx@${{ github.sha }}"
+          git commit --allow-empty -m "C++/Python FEniCS/dolfinx@${{ github.sha }}"
           git push

@@ -111,9 +111,14 @@ UFL still runs on the year-based release scheme.
 4. In `python/setup.py` change the `VERSION` variable to e.g. `0.5.0` and
    update the depedency versions for `fenics-ffcx` and `fenics-ufl`.
 
-5. Commit and push.
+5. In `CITATION.md` change the line starting `version:` to e.g. `version: 0.5.0` and
+   update the line starting `date-released:` to e.g. `date-released: 2022-03-14`.
 
-6. Check `git diff origin/main` for obvious errors.
+6. In `.github/ISSUE_TEMPLATE/bug_report.yml` add a new option to the version dropdown.
+
+7. Commit and push.
+
+8. Check `git diff origin/main` for obvious errors.
 
 ## Integration testing
 
@@ -123,15 +128,13 @@ and mistakes before they reach tagged versions.
 At each of the following links run the GitHub Action Workflow manually using
 the `release` branch in all fields. *Only proceed to tagging once all tests pass.*
 
-### Basix integration
-
 Basix with FFCx: https://github.com/FEniCS/basix/actions/workflows/ffcx-tests.yml
 
-Basix with DOLFINx: https://github.com/FEniCS/basix/actions/workflows/dolfin-tests.yml
+Basix with DOLFINx: https://github.com/FEniCS/basix/actions/workflows/dolfinx-tests.yml
 
-UFL with FEniCSx (TODO): https://github.com/FEniCS/ufl/actions/workflows/fenicsx-tests.yml
+UFL with FEniCSx: https://github.com/FEniCS/ufl/actions/workflows/fenicsx-tests.yml
 
-FFCx with DOLFINx: https://github.com/FEniCS/ffcx/actions/workflows/dolfin-tests.yml
+FFCx with DOLFINx: https://github.com/FEniCS/ffcx/actions/workflows/dolfinx-tests.yml
 
 Full stack: https://github.com/FEniCS/dolfinx/actions/workflows/ccpp.yml
 
@@ -153,7 +156,7 @@ of tags. You will need to manually update the `README.md`.
 
 Run the workflow at https://github.com/FEniCS/dolfinx/actions/workflows/docker.yml
 
-Tag prefix should be the same as the DOLFINx release e.g. `v0.5.0`. 
+Tag prefix should be the same as the DOLFINx release e.g. `v0.5.0`.
 Git refs should be appropriate tags for each component.
 
 Tagged Docker images will be pushed to Dockerhub.

@@ -75,7 +75,7 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
   assert(dofmap);
   const int bs = dofmap->bs();
 
-  std::span<const std::size_t> value_shape = element->value_shape();
+  std::span<const std::size_t> value_shape = u.function_space()->value_shape();
   int num_components = std::reduce(value_shape.begin(), value_shape.end(), 1,
                                    std::multiplies{});
 
@@ -103,7 +103,7 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
   {
     // Get number of geometry nodes per cell
     const auto& geometry = mesh->geometry();
-    auto& cmap = geometry.cmaps()[0];
+    auto& cmap = geometry.cmap();
     int cmap_dim = cmap.dim();
     int cell_dim = element->space_dimension() / element->block_size();
     if (cmap_dim != cell_dim)

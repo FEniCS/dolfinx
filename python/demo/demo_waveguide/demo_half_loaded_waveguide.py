@@ -50,11 +50,11 @@ import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_scalar_type, fem, io, plot
 from dolfinx.fem.petsc import assemble_matrix
-from dolfinx.mesh import (CellType, create_rectangle, exterior_facet_indices,
-                          locate_entities)
+from dolfinx.mesh import CellType, create_rectangle, exterior_facet_indices, locate_entities
 
 try:
     import pyvista
+
     have_pyvista = True
 except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
@@ -78,7 +78,9 @@ d = 0.5 * h
 nx = 300
 ny = int(0.4 * nx)
 
-msh = create_rectangle(MPI.COMM_WORLD, np.array([[0, 0], [w, h]]), np.array([nx, ny]), CellType.quadrilateral)
+msh = create_rectangle(
+    MPI.COMM_WORLD, np.array([[0, 0], [w, h]]), np.array([nx, ny]), CellType.quadrilateral
+)
 msh.topology.create_connectivity(msh.topology.dim - 1, msh.topology.dim)
 # -
 
@@ -114,9 +116,11 @@ eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=default_scalar_type)
 # waveguide wall:
 #
 # $$
+# \begin{align}
 # &\nabla \times \frac{1}{\mu_{r}} \nabla \times \mathbf{E}-k_{o}^{2}
 # \epsilon_{r} \mathbf{E}=0 \quad &\text { in } \Omega\\
 # &\hat{n}\times\mathbf{E} = 0 &\text { on } \Gamma
+# \end{align}
 # $$
 #
 # with $k_0$ and $\lambda_0 = 2\pi/k_0$ being the wavevector and the
@@ -139,8 +143,10 @@ eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=default_scalar_type)
 # the following substitution:
 #
 # $$
+# \begin{align}
 # & \mathbf{e}_t = k_z\mathbf{E}_t\\
 # & e_z = -jE_z
+# \end{align}
 # $$
 #
 # The final weak form can be written as:
@@ -302,7 +308,7 @@ eps.setWhichEigenpairs(SLEPc.EPS.Which.TARGET_REAL)
 # that $k_z$ will be quite close to $k_0$ in value, for instance $k_z =
 # 0.5k_0^2$. Therefore, we can set a target value of $-(0.5k_0^2)$:
 
-eps.setTarget(-(0.5 * k0)**2)
+eps.setTarget(-((0.5 * k0) ** 2))
 
 # Then, we need to define the number of eigenvalues we want to
 # calculate. We can do this with the `setDimensions` function, where we
@@ -380,7 +386,9 @@ for i, kz in vals:
             V_cells, V_types, V_x = plot.vtk_mesh(V_dg)
             V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
             Et_values = np.zeros((V_x.shape[0], 3), dtype=np.float64)
-            Et_values[:, : msh.topology.dim] = Et_dg.x.array.reshape(V_x.shape[0], msh.topology.dim).real
+            Et_values[:, : msh.topology.dim] = Et_dg.x.array.reshape(
+                V_x.shape[0], msh.topology.dim
+            ).real
 
             V_grid.point_data["u"] = Et_values
 

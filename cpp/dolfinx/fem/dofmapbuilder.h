@@ -10,6 +10,7 @@
 #include <functional>
 #include <mpi.h>
 #include <tuple>
+#include <vector>
 
 namespace dolfinx::common
 {
@@ -31,15 +32,15 @@ namespace dolfinx::fem
 {
 class ElementDofLayout;
 
-/// Build dofmap data for an element on a mesh topology
+/// Build dofmap data for elements on a mesh topology
 /// @param[in] comm MPI communicator
 /// @param[in] topology The mesh topology
-/// @param[in] element_dof_layouts The element dof layouts for the
-/// function space
+/// @param[in] element_dof_layouts The element dof layouts for each cell type in
+/// @p topology
 /// @param[in] reorder_fn Graph reordering function that is applied to
-/// the dofmap
-/// @return The index map and local to global DOF data for the DOF map
-std::tuple<common::IndexMap, int, std::vector<std::int32_t>>
+/// the dofmaps
+/// @return The index map, block size, and dofmaps for each element type
+std::tuple<common::IndexMap, int, std::vector<std::vector<std::int32_t>>>
 build_dofmap_data(MPI_Comm comm, const mesh::Topology& topology,
                   const std::vector<ElementDofLayout>& element_dof_layouts,
                   const std::function<std::vector<int>(

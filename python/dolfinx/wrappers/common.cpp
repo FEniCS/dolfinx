@@ -100,15 +100,15 @@ void common(nb::module_& m)
       .def_prop_ro("num_ghosts", &dolfinx::common::IndexMap::num_ghosts)
       .def_prop_ro("local_range", &dolfinx::common::IndexMap::local_range,
                    "Range of indices owned by this map")
-      .def_prop_ro("index_to_dest_ranks",
-                   &dolfinx::common::IndexMap::index_to_dest_ranks)
-      .def_prop_ro("imbalance", &dolfinx::common::IndexMap::imbalance,
-                   "Imbalance of the current IndexMap.")
+      .def("index_to_dest_ranks",
+           &dolfinx::common::IndexMap::index_to_dest_ranks)
+      .def("imbalance", &dolfinx::common::IndexMap::imbalance,
+           "Imbalance of the current IndexMap.")
       .def_prop_ro(
           "ghosts",
           [](const dolfinx::common::IndexMap& self)
           {
-            const std::vector<std::int64_t>& ghosts = self.ghosts();
+            std::span ghosts = self.ghosts();
             return nb::ndarray<const std::int64_t, nb::numpy>(ghosts.data(),
                                                               {ghosts.size()});
           },
@@ -117,7 +117,7 @@ void common(nb::module_& m)
           "owners",
           [](const dolfinx::common::IndexMap& self)
           {
-            const std::vector<int>& owners = self.owners();
+            std::span owners = self.owners();
             return nb::ndarray<nb::numpy, const int, nb::ndim<1>>(
                 owners.data(), {owners.size()});
           },
@@ -128,25 +128,21 @@ void common(nb::module_& m)
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> local)
           {
             std::vector<std::int64_t> global(local.size());
-            self.local_to_global(
-                std::span(local.data(), local.size()),
-                std::span<std::int64_t>(global.data(), global.size()));
-            return global;
+            self.local_to_global(std::span(local.data(), local.size()), global);
+            return dolfinx_wrappers::as_nbarray(std::move(global));
           },
           nb::arg("local"))
       .def(
-          "create_submap",
+          "global_to_local",
           [](const dolfinx::common::IndexMap& self,
-             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>
-                 entities)
+             nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig> global)
           {
-            auto [map, ghosts] = self.create_submap(
-                std::span(entities.data(), entities.size()));
-            return std::pair(std::move(map),
-                             dolfinx_wrappers::as_nbarray(std::move(ghosts)));
+            std::vector<std::int32_t> local(global.size());
+            self.global_to_local(std::span(global.data(), global.size()),
+                                 local);
+            return dolfinx_wrappers::as_nbarray(std::move(local));
           },
-          nb::arg("entities"));
-
+          nb::arg("global"));
   // dolfinx::common::Timer
   nb::class_<dolfinx::common::Timer>(m, "Timer", "Timer class")
       .def(nb::init<>())
@@ -184,5 +180,19 @@ void common(nb::module_& m)
         dolfinx::init_logging(args.size(), argv.data());
       },
       nb::arg("args"));
+
+  m.def(
+      "create_sub_index_map",
+      [](const dolfinx::common::IndexMap& imap,
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> indices,
+         bool allow_owner_change)
+      {
+        auto [map, submap_to_map] = dolfinx::common::create_sub_index_map(
+            imap, std::span(indices.data(), indices.size()),
+            allow_owner_change);
+        return std::pair(std::move(map), dolfinx_wrappers::as_nbarray(
+                                             std::move(submap_to_map)));
+      },
+      nb::arg("index_map"), nb::arg("indices"), nb::arg("allow_owner_change"));
 }
 } // namespace dolfinx_wrappers

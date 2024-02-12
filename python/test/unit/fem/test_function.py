@@ -17,8 +17,7 @@ import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type, la
 from dolfinx.fem import Function, functionspace
-from dolfinx.geometry import (bb_tree, compute_colliding_cells,
-                              compute_collisions_points)
+from dolfinx.geometry import bb_tree, compute_colliding_cells, compute_collisions_points
 from dolfinx.mesh import create_mesh, create_unit_cube
 
 
@@ -29,19 +28,19 @@ def mesh():
 
 @pytest.fixture
 def V(mesh):
-    return functionspace(mesh, ('Lagrange', 1))
+    return functionspace(mesh, ("Lagrange", 1))
 
 
 @pytest.fixture
 def W(mesh):
     gdim = mesh.geometry.dim
-    return functionspace(mesh, ('Lagrange', 1, (gdim,)))
+    return functionspace(mesh, ("Lagrange", 1, (gdim,)))
 
 
 @pytest.fixture
 def Q(mesh):
     gdim = mesh.geometry.dim
-    return functionspace(mesh, ('Lagrange', 1, (gdim, gdim)))
+    return functionspace(mesh, ("Lagrange", 1, (gdim, gdim)))
 
 
 def test_name_argument(W):
@@ -99,12 +98,15 @@ def test_eval(V, W, Q, mesh):
     assert np.allclose(u3.eval(x0, first_cell)[:3], u2.eval(x0, first_cell), rtol=1e-15, atol=1e-15)
 
 
-@ pytest.mark.skip_in_parallel
+@pytest.mark.skip_in_parallel
 def test_eval_manifold():
     # Simple two-triangle surface in 3d
-    vertices = np.array([(0.0, 0.0, 1.0), (1.0, 1.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0)], dtype=default_real_type)
+    vertices = np.array(
+        [(0.0, 0.0, 1.0), (1.0, 1.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0)],
+        dtype=default_real_type,
+    )
     cells = [(0, 1, 2), (0, 1, 3)]
-    domain = ufl.Mesh(element("Lagrange", "triangle", 1, gdim=3, shape=(2,)))
+    domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(2,), dtype=default_real_type))
     mesh = create_mesh(MPI.COMM_WORLD, cells, vertices, domain)
     Q = functionspace(mesh, ("Lagrange", 1))
     u = Function(Q)
@@ -165,24 +167,20 @@ def test_interpolation_rank1(W):
 
     w = Function(W)
     w.interpolate(f)
-    x = w.vector
-    assert x.max()[1] == 3.0  # /NOSONAR
-    assert x.min()[1] == 1.0  # /NOSONAR
+    x = w.x.array
+    assert x.max() == 3.0  # /NOSONAR
+    assert x.min() == 1.0  # /NOSONAR
 
     num_vertices = W.mesh.topology.index_map(0).size_global
     assert round(w.x.norm(la.Norm.l1) - 6 * num_vertices, 7) == 0
 
 
-@ pytest.mark.parametrize("types", [
-    (np.float32, "float"),
-    (np.float64, "double")
-])
-def test_cffi_expression(types):
-    vtype, xtype = types
-    mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, dtype=vtype)
-    V = functionspace(mesh, ('Lagrange', 1))
+@pytest.mark.parametrize("dtype,cdtype", [(np.float32, "float"), (np.float64, "double")])
+def test_cffi_expression(dtype, cdtype):
+    mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, dtype=dtype)
+    V = functionspace(mesh, ("Lagrange", 1))
 
-    code_h = f"void eval({xtype}* values, int num_points, int value_size, const {xtype}* x);"
+    code_h = f"void eval({cdtype}* values, int num_points, int value_size, const {cdtype}* x);"
     code_c = """
         void eval(xtype* values, int num_points, int value_size, const xtype* x)
         {
@@ -191,10 +189,10 @@ def test_cffi_expression(types):
           values[i] = x[i] + x[i + num_points];
         }
     """
-    code_c = code_c.replace("xtype", xtype)
+    code_c = code_c.replace("xtype", cdtype)
 
     # Build the kernel
-    module = "_expr_eval" + xtype + str(MPI.COMM_WORLD.rank)
+    module = "_expr_eval" + cdtype + str(MPI.COMM_WORLD.rank)
     ffi = cffi.FFI()
     ffi.set_source(module, code_c)
     ffi.cdef(code_h)
@@ -208,10 +206,10 @@ def test_cffi_expression(types):
     eval_ptr = ffi.cast("uintptr_t", ffi.addressof(lib, "eval"))
 
     # Handle C func address by hand
-    f1 = Function(V, dtype=vtype)
+    f1 = Function(V, dtype=dtype)
     f1.interpolate(int(eval_ptr))
 
-    f2 = Function(V, dtype=vtype)
+    f2 = Function(V, dtype=dtype)
     f2.interpolate(lambda x: x[0] + x[1])
 
     f1.x.array[:] -= f2.x.array

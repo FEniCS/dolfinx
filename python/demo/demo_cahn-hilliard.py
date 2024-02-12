@@ -35,6 +35,7 @@
 # derivatives.  The equation reads:
 #
 # $$
+# \begin{align}
 # \frac{\partial c}{\partial t} -
 #   \nabla \cdot M \left(\nabla\left(\frac{d f}{dc}
 #   - \lambda \nabla^{2}c\right)\right) &= 0 \quad {\rm in} \ \Omega, \\
@@ -42,6 +43,7 @@
 #   \lambda \nabla^{2}c\right)\right) \cdot n
 #   &= 0 \quad {\rm on} \ \partial\Omega, \\
 # M \lambda \nabla c \cdot n &= 0 \quad {\rm on} \ \partial\Omega.
+# \end{align}
 # $$
 #
 # where $c$ is the unknown field, the function $f$ is usually non-convex
@@ -57,21 +59,25 @@
 # as two coupled second-order equations:
 #
 # $$
+# \begin{align}
 # \frac{\partial c}{\partial t} - \nabla \cdot M \nabla\mu
 #     &= 0 \quad {\rm in} \ \Omega, \\
 # \mu -  \frac{d f}{d c} + \lambda \nabla^{2}c &= 0 \quad {\rm in} \ \Omega.
+# \end{align}
 # $$
 #
 # The unknown fields are now $c$ and $\mu$. The weak (variational) form
 # of the problem reads: find $(c, \mu) \in V \times V$ such that
 #
 # $$
+# \begin{align}
 # \int_{\Omega} \frac{\partial c}{\partial t} q \, {\rm d} x +
 #     \int_{\Omega} M \nabla\mu \cdot \nabla q \, {\rm d} x
 #     &= 0 \quad \forall \ q \in V,  \\
 # \int_{\Omega} \mu v \, {\rm d} x - \int_{\Omega} \frac{d f}{d c} v \, {\rm d} x
 #   - \int_{\Omega} \lambda \nabla c \cdot \nabla v \, {\rm d} x
 #    &= 0 \quad \forall \ v \in V.
+# \end{align}
 # $$
 #
 # ### Time discretisation
@@ -81,12 +87,14 @@
 # equation:
 #
 # $$
+# \begin{align}
 # \int_{\Omega} \frac{c_{n+1} - c_{n}}{dt} q \, {\rm d} x
 # + \int_{\Omega} M \nabla \mu_{n+\theta} \cdot \nabla q \, {\rm d} x
 #        &= 0 \quad \forall \ q \in V  \\
 # \int_{\Omega} \mu_{n+1} v  \, {\rm d} x - \int_{\Omega} \frac{d f_{n+1}}{d c} v  \, {\rm d} x
 # - \int_{\Omega} \lambda \nabla c_{n+1} \cdot \nabla v \, {\rm d} x
 #        &= 0 \quad \forall \ v \in V
+# \end{align}
 # $$
 #
 # where $dt = t_{n+1} - t_{n}$ and $\mu_{n+\theta} = (1-\theta) \mu_{n} + \theta \mu_{n+1}$.
@@ -131,6 +139,7 @@ from ufl import dx, grad, inner
 try:
     import pyvista as pv
     import pyvistaqt as pvqt
+
     have_pyvista = True
     if pv.OFF_SCREEN:
         pv.start_xvfb(wait=0.5)
@@ -194,7 +203,8 @@ c0, mu0 = ufl.split(u0)
 u.x.array[:] = 0.0
 
 # Interpolate initial condition
-u.sub(0).interpolate(lambda x: 0.63 + 0.02 * (0.5 - np.random.rand(x.shape[1])))
+rng = np.random.default_rng(42)
+u.sub(0).interpolate(lambda x: 0.63 + 0.02 * (0.5 - rng.random(x.shape[1])))
 u.x.scatter_forward()
 # -
 
@@ -212,7 +222,7 @@ u.x.scatter_forward()
 
 # Compute the chemical potential df/dc
 c = ufl.variable(c)
-f = 100 * c**2 * (1 - c)**2
+f = 100 * c**2 * (1 - c) ** 2
 dfdc = ufl.diff(f, c)
 
 # The first line declares that `c` is a variable that some function can
@@ -310,7 +320,7 @@ if have_pyvista:
 
 c = u.sub(0)
 u0.x.array[:] = u.x.array
-while (t < T):
+while t < T:
     t += dt
     r = solver.solve(u)
     print(f"Step {int(t / dt)}: num iterations: {r[0]}")

@@ -82,7 +82,7 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 /// @param[in] num_nodes_g Global number of geometry nodes, as returned
 /// by `Geometry::index_map()->size_global()`.
 /// @param[in] cmap_dof_layout Coordinate element dof layout, computed
-/// using `Geometry::cmaps()[0].create_dof_layout()`.
+/// using `Geometry::cmap().create_dof_layout()`.
 /// @param[in] xdofmap Dofmap for the mesh geometry (Geometry::dofmap).
 /// @param[in] entity_dim Topological dimension of entities to extract
 /// @param[in] entities Mesh entities defined using global input indices

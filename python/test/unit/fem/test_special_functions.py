@@ -7,14 +7,13 @@
 
 from mpi4py import MPI
 
-import numpy
+import numpy as np
 import pytest
 
 import ufl
 from dolfinx import default_scalar_type
 from dolfinx.fem import Constant, assemble_scalar, form
-from dolfinx.mesh import (create_unit_cube, create_unit_interval,
-                          create_unit_square)
+from dolfinx.mesh import create_unit_cube, create_unit_interval, create_unit_square
 
 
 def test_facet_area1D():
@@ -27,17 +26,21 @@ def test_facet_area1D():
     ds = ufl.Measure("ds", domain=mesh)
     a0 = mesh.comm.allreduce(assemble_scalar(form(c * ds)), op=MPI.SUM)
     a = mesh.comm.allreduce(assemble_scalar(form(c0 * ds)), op=MPI.SUM)
-    assert numpy.isclose(a.real, 2)
-    assert numpy.isclose(a0.real, 2)
+    assert np.isclose(a.real, 2)
+    assert np.isclose(a0.real, 2)
 
 
-@pytest.mark.parametrize('mesh_factory', [(create_unit_square, (MPI.COMM_WORLD, 3, 3), 1. / 3),
-                                          #   (create_unit_square,
-                                          #   (MPI.COMM_WORLD, 3, 3, CellType.quadrilateral), 1. / 3),
-                                          (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3), 1 / 18.),
-                                          #   (create_unit_cube,
-                                          #   (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron), 1. / 9)
-                                          ])
+@pytest.mark.parametrize(
+    "mesh_factory",
+    [
+        (create_unit_square, (MPI.COMM_WORLD, 3, 3), 1.0 / 3),
+        #   (create_unit_square,
+        #   (MPI.COMM_WORLD, 3, 3, CellType.quadrilateral), 1. / 3),
+        (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3), 1 / 18.0),
+        #   (create_unit_cube,
+        #   (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron), 1. / 9)
+    ],
+)
 def test_facet_area(mesh_factory):
     """Compute facet area of cell. UFL currently only supports affine
     cells for this computation"""
@@ -52,5 +55,5 @@ def test_facet_area(mesh_factory):
     ds = ufl.Measure("ds", domain=mesh)
     a = mesh.comm.allreduce(assemble_scalar(form(c * ds)), op=MPI.SUM)
     a0 = mesh.comm.allreduce(assemble_scalar(form(c0 * ds)), op=MPI.SUM)
-    assert numpy.isclose(a.real, num_faces)
-    assert numpy.isclose(a0.real, num_faces * exact_area)
+    assert np.isclose(a.real, num_faces)
+    assert np.isclose(a0.real, num_faces * exact_area)

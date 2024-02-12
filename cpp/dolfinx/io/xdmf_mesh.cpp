@@ -31,22 +31,17 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   const int tdim = topology.dim();
 
   // FIXME
-  auto cell_types = topology.cell_types();
-  if (cell_types.size() > 1)
-    throw std::runtime_error("cell type IO");
+  mesh::CellType cell_type = topology.cell_type();
 
-  if (tdim == 2 and cell_types.back() == mesh::CellType::prism)
+  if (tdim == 2 and cell_type == mesh::CellType::prism)
     throw std::runtime_error("More work needed for prism cell");
 
   // Get entity 'cell' type
   const mesh::CellType entity_cell_type
-      = mesh::cell_entity_type(cell_types.back(), dim, 0);
+      = mesh::cell_entity_type(cell_type, dim, 0);
 
-  if (geometry.cmaps().size() > 1)
-    throw std::runtime_error(
-        "XDMF I/O with multiple geometry maps not implemented.");
   const fem::ElementDofLayout cmap_dof_layout
-      = geometry.cmaps()[0].create_dof_layout();
+      = geometry.cmap().create_dof_layout();
 
   // Get number of nodes per entity
   const int num_nodes_per_entity = cmap_dof_layout.num_entity_closure_dofs(dim);
@@ -68,7 +63,7 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   assert(map_g);
   const std::int64_t offset_g = map_g->local_range()[0];
 
-  const std::vector<std::int64_t>& ghosts = map_g->ghosts();
+  std::span ghosts = map_g->ghosts();
   const std::vector vtk_map = io::cells::transpose(
       io::cells::perm_vtk(entity_cell_type, num_nodes_per_entity));
   auto map_e = topology.index_map(dim);
@@ -101,13 +96,11 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
     if (!c_to_e)
       throw std::runtime_error("Mesh is missing cell-entity connectivity.");
 
-    auto cell_types = topology.cell_types();
-    if (cell_types.size() > 1)
-      throw std::runtime_error("cell type IO");
+    mesh::CellType cell_type = topology.cell_type();
 
     // Tabulate geometry dofs for local entities
     std::vector<std::vector<int>> entity_dofs;
-    for (int e = 0; e < mesh::cell_num_entities(cell_types.back(), dim); ++e)
+    for (int e = 0; e < mesh::cell_num_entities(cell_type, dim); ++e)
       entity_dofs.push_back(cmap_dof_layout.entity_closure_dofs(dim, e));
 
     for (std::int32_t e : entities)

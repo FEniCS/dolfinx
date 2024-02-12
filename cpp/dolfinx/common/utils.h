@@ -13,10 +13,9 @@
 #include <utility>
 #include <vector>
 
-/// @namespace Generic tools
+/// Generic tools
 namespace dolfinx::common
 {
-
 /// Sort two arrays based on the values in array `indices`. Any
 /// duplicate indices and the corresponding value are removed. In the
 /// case of duplicates, the entry with the smallest value is retained.

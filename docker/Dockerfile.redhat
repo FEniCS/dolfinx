@@ -8,9 +8,9 @@ FROM rockylinux/rockylinux:9
 ARG BUILD_NP=3
 
 ARG HDF5_SERIES=1.14
-ARG HDF5_PATCH=2
+ARG HDF5_PATCH=3
 ARG HDF5_FIX=
-ARG PETSC_VERSION=3.20.1
+ARG PETSC_VERSION=3.20.4
 ARG MPICH_VERSION=4.1.2
 
 WORKDIR /tmp
@@ -67,7 +67,7 @@ RUN curl -L -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES
 # - Second set of dependencies for running DOLFINx tests
 RUN python3 -m pip install --no-cache-dir --upgrade pip setuptools && \
     python3 -m pip install --no-cache-dir cffi numba mpi4py nanobind scikit-build-core[pyproject] wheel && \
-    python3 -m pip install --no-cache-dir cppimport pytest pytest-xdist scipy matplotlib
+    python3 -m pip install --no-cache-dir pytest pytest-xdist scipy matplotlib
 
 # Build PETSc
 RUN git clone -b v${PETSC_VERSION}  https://gitlab.com/petsc/petsc.git && \

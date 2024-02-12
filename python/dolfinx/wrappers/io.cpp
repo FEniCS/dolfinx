@@ -130,12 +130,13 @@ void declare_vtx_writer(nb::module_& m, std::string type)
                        const dolfinx::fem::Function<std::complex<float>, T>>,
                    std::shared_ptr<const dolfinx::fem::Function<
                        std::complex<double>, T>>>>& u,
-               std::string engine) {
+               std::string engine, dolfinx::io::VTXMeshPolicy policy) {
               new (self)
-                  dolfinx::io::VTXWriter<T>(comm.get(), filename, u, engine);
+                  dolfinx::io::VTXWriter<T>(comm.get(), filename, u, engine, policy);
             },
             nb::arg("comm"), nb::arg("filename"), nb::arg("u"),
-            nb::arg("engine"))
+            nb::arg("engine") = "BPFile",
+            nb::arg("policy") = dolfinx::io::VTXMeshPolicy::update)
         .def("close", [](dolfinx::io::VTXWriter<T>& self) { self.close(); })
         .def(
             "write",
@@ -203,13 +204,13 @@ void declare_real_types(nb::module_& m)
             entities_values = dolfinx::io::xdmf_utils::distribute_entity_data(
                 *mesh.topology(), mesh.geometry().input_global_indices(),
                 mesh.geometry().index_map()->size_global(),
-                mesh.geometry().cmaps()[0].create_dof_layout(),
+                mesh.geometry().cmap().create_dof_layout(),
                 mesh.geometry().dofmap(), entity_dim, entities_span,
                 std::span(values.data(), values.size()));
 
         std::size_t num_vert_per_entity = dolfinx::mesh::cell_num_entities(
-            dolfinx::mesh::cell_entity_type(
-                mesh.topology()->cell_types().back(), entity_dim, 0),
+            dolfinx::mesh::cell_entity_type(mesh.topology()->cell_type(),
+                                            entity_dim, 0),
             0);
         return std::pair(
             as_nbarray(std::move(entities_values.first),
@@ -338,6 +339,10 @@ void io(nb::module_& m)
   nb::enum_<dolfinx::io::FidesMeshPolicy>(m, "FidesMeshPolicy")
       .value("update", dolfinx::io::FidesMeshPolicy::update)
       .value("reuse", dolfinx::io::FidesMeshPolicy::reuse);
+
+  nb::enum_<dolfinx::io::VTXMeshPolicy>(m, "VTXMeshPolicy")
+      .value("update", dolfinx::io::VTXMeshPolicy::update)
+      .value("reuse", dolfinx::io::VTXMeshPolicy::reuse);
 #endif
 
   declare_vtx_writer<float>(m, "float32");

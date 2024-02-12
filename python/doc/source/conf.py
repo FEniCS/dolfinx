@@ -9,8 +9,8 @@ import sys
 import dolfinx
 
 sys.path.insert(0, os.path.abspath("."))
+import jupytext_process  # isort:skip
 
-import jupytext_process  # noqa
 
 myst_heading_anchors = 3
 
@@ -143,6 +143,7 @@ autodoc_default_options = {
     "undoc-members": True,
 }
 autosummary_generate = True
+autosummary_ignore_module_all = False
 autoclass_content = "both"
 
 napoleon_google_docstring = True
