@@ -25,7 +25,8 @@ enum class CellType;
 /// @brief Compute the local part of the dual graph (cell-cell
 /// connections via facets) and facet with only one attached cell.
 ///
-/// @param[in] cells Pair of cell type and cell vertices as a flattened list
+/// @param[in] cell_types List of cell types
+/// @param[in] cells Cell vertices as flattened lists, for each cell type
 /// @return
 /// 1. Local dual graph
 /// 2. Facets, defined by their vertices, that are shared by only one
@@ -52,9 +53,9 @@ build_local_dual_graph(const std::vector<CellType>& cell_types,
 /// @note Collective function
 ///
 /// @param[in] comm The MPI communicator
-/// @param[in] cell_type The cell type
+/// @param[in] cell_types The cell types
 /// @param[in] cells Collection of cells, defined by the cell vertices
-/// from which to build the dual graph
+/// from which to build the dual graph, one list per cell type.
 /// @return The dual graph
 graph::AdjacencyList<std::int64_t>
 build_dual_graph(const MPI_Comm comm, const std::vector<CellType>& cell_types,
