@@ -541,10 +541,10 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::tuple<common::IndexMap, int, std::vector<std::int32_t>>
+std::tuple<common::IndexMap, int, std::vector<std::vector<std::int32_t>>>
 fem::build_dofmap_data(
     MPI_Comm comm, const mesh::Topology& topology,
-    const ElementDofLayout& element_dof_layout,
+    const std::vector<ElementDofLayout>& element_dof_layouts,
     const std::function<std::vector<int>(
         const graph::AdjacencyList<std::int32_t>&)>& reorder_fn)
 {
@@ -557,12 +557,12 @@ fem::build_dofmap_data(
   // pair {dimension, mesh entity index} giving the mesh entity that dof
   // i is associated with.
   const auto [node_graph0, local_to_global0, dof_entity0]
-      = build_basic_dofmap(topology, element_dof_layout);
+      = build_basic_dofmap(topology, element_dof_layouts.front());
 
   std::vector<std::shared_ptr<const common::IndexMap>> index_maps(D + 1);
   for (int d = 0; d <= D; ++d)
   {
-    if (element_dof_layout.num_entity_dofs(d) > 0)
+    if (element_dof_layouts.front().num_entity_dofs(d) > 0)
     {
       assert(topology.index_map(d));
       index_maps[d] = topology.index_map(d);
@@ -578,10 +578,10 @@ fem::build_dofmap_data(
   std::int64_t offset = 0;
   for (int d = 0; d <= D; ++d)
   {
-    if (element_dof_layout.num_entity_dofs(d) > 0)
+    if (element_dof_layouts.front().num_entity_dofs(d) > 0)
     {
       offset += index_maps[d]->local_range()[0]
-                * element_dof_layout.num_entity_dofs(d);
+                * element_dof_layouts.front().num_entity_dofs(d);
     }
   }
 
@@ -596,11 +596,12 @@ fem::build_dofmap_data(
                              local_to_global_owner);
 
   // Build re-ordered dofmap
-  std::vector<std::int32_t> dofmap(node_graph0.array.size());
-  for (std::size_t i = 0; i < dofmap.size(); ++i)
-    dofmap[i] = old_to_new[node_graph0.array[i]];
+  std::vector<std::vector<std::int32_t>> dofmaps(1);
+  dofmaps.front().resize(node_graph0.array.size());
+  for (std::size_t i = 0; i < dofmaps.front().size(); ++i)
+    dofmaps.front()[i] = old_to_new[node_graph0.array[i]];
 
-  return {std::move(index_map), element_dof_layout.block_size(),
-          std::move(dofmap)};
+  return {std::move(index_map), element_dof_layouts.front().block_size(),
+          std::move(dofmaps)};
 }
 //-----------------------------------------------------------------------------
