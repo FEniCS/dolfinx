@@ -115,6 +115,8 @@ void declare_function_space(nb::module_& m, std::string type)
             },
             nb::arg("ufcx_element"))
         .def("__eq__", &dolfinx::fem::FiniteElement<T>::operator==)
+        .def_prop_ro("dtype", [](const dolfinx::fem::FiniteElement<T>& self)
+                     { return numpy_dtype_char<T>(); })
         .def_prop_ro("basix_element",
                      &dolfinx::fem::FiniteElement<T>::basix_element,
                      nb::rv_policy::reference_internal)

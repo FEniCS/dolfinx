@@ -20,3 +20,16 @@ nb::object numpy_dtype()
     dtype = np.attr("complex64");
   return dtype;
 }
+
+template <typename T>
+constexpr char numpy_dtype_char()
+{
+  if constexpr (std::is_same_v<T, float>)
+    return 'f';
+  else if constexpr (std::is_same_v<T, double>)
+    return 'd';
+  else if constexpr (std::is_same_v<T, std::complex<double>>)
+    return 'D';
+  else if constexpr (std::is_same_v<T, std::complex<float>>)
+    return 'F';
+}
