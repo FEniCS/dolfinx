@@ -84,14 +84,11 @@ from mpi4py import MPI
 
 import numpy as np
 
-import basix
 import dolfinx
 import dolfinx.fem.petsc
 import ufl
 from dolfinx import fem, la
 from ufl import action, dx, grad, inner
-
-ffcx_options = {"sum_factorization": True}
 
 # We begin by using {py:func}`create_rectangle
 # <dolfinx.mesh.create_rectangle>` to create a rectangular
@@ -103,21 +100,13 @@ dtype = np.float32
 
 # Create mesh with tensor product ordering
 comm = MPI.COMM_WORLD
-mesh = dolfinx.mesh.create_tp_rectangle(comm, [[0.0, 0.0], [1.0, 1.0]], [10, 10], dtype=dtype)
+mesh = dolfinx.mesh.create_rectangle(comm, [[0.0, 0.0], [1.0, 1.0]], [10, 10], dtype=dtype)
 
 
 # Create function space
 degree = 3
-element = basix.create_tp_element(
-    basix.ElementFamily.P,
-    basix.CellType.quadrilateral,
-    degree,
-    basix.LagrangeVariant.gll_warped,
-    dtype=dtype,
-)
-
 # Create function space with basix element
-V = fem.functionspace(mesh, element)
+V = fem.functionspace(mesh, ("Lagrange", degree))
 
 # +
 
@@ -162,7 +151,7 @@ v = ufl.TestFunction(V)
 f = fem.Constant(mesh, dtype(-6.0))
 a = inner(grad(u), grad(v)) * dx
 L = inner(f, v) * dx
-L_fem = fem.form(L, dtype=dtype, form_compiler_options=ffcx_options)
+L_fem = fem.form(L, dtype=dtype)
 
 # For the matrix-free solvers we also define a second linear form `M` as
 # the {py:class}`action <ufl.action>` of the bilinear form $a$ onto an
@@ -175,7 +164,7 @@ L_fem = fem.form(L, dtype=dtype, form_compiler_options=ffcx_options)
 
 ui = fem.Function(V, dtype=dtype)
 M = action(a, ui)
-M_fem = fem.form(M, dtype=dtype, form_compiler_options=ffcx_options)
+M_fem = fem.form(M, dtype=dtype)
 
 # The exact solution $u_{\rm D}$ is interpolated onto the finite element
 

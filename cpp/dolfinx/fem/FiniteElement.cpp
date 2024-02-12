@@ -123,7 +123,8 @@ _extract_sub_element(const FiniteElement<T>& finite_element,
 template <std::floating_point T>
 FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
     : _signature(e.signature), _space_dim(e.space_dimension),
-      _value_shape(e.value_shape, e.value_shape + e.value_rank),
+      _reference_value_shape(e.reference_value_shape,
+                             e.reference_value_shape + e.reference_value_rank),
       _bs(e.block_size), _is_mixed(e.element_type == ufcx_mixed_element)
 {
   const ufcx_shape _shape = e.cell_shape;
@@ -292,28 +293,10 @@ FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
 FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
-                                const std::vector<std::size_t>& value_shape)
-    : _value_shape(element.value_shape()), _is_mixed(false)
+                                const std::size_t block_size)
+    : _reference_value_shape(element.value_shape()), _bs(block_size),
+      _is_mixed(false)
 {
-  if (!_value_shape.empty() and !value_shape.empty())
-  {
-    throw std::runtime_error(
-        "Cannot specify value shape for non-scalar base element.");
-  }
-
-  // Set block size
-  if (!value_shape.empty())
-    _value_shape = value_shape;
-
-  // Set block size
-  if (!value_shape.empty())
-  {
-    _bs = std::accumulate(value_shape.begin(), value_shape.end(), 1,
-                          std::multiplies{});
-  }
-  else
-    _bs = 1;
-
   _space_dim = _bs * element.dim();
 
   // Create all sub-elements
@@ -321,9 +304,9 @@ FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
   {
     for (int i = 0; i < _bs; ++i)
     {
-      _sub_elements.push_back(std::make_shared<FiniteElement<T>>(
-          element, std::vector<std::size_t>{}));
+      _sub_elements.push_back(std::make_shared<FiniteElement<T>>(element, 1));
     }
+    _reference_value_shape = {block_size};
   }
 
   _element = std::make_unique<basix::FiniteElement<T>>(element);
@@ -388,29 +371,22 @@ int FiniteElement<T>::space_dimension() const noexcept
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-int FiniteElement<T>::value_size() const
+std::span<const std::size_t> FiniteElement<T>::reference_value_shape() const
 {
-  return std::accumulate(_value_shape.begin(), _value_shape.end(), 1,
-                         std::multiplies{});
+  return _reference_value_shape;
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
 int FiniteElement<T>::reference_value_size() const
 {
-  return std::accumulate(_value_shape.begin(), _value_shape.end(), 1,
-                         std::multiplies{});
+  return std::accumulate(_reference_value_shape.begin(),
+                         _reference_value_shape.end(), 1, std::multiplies{});
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
 int FiniteElement<T>::block_size() const noexcept
 {
   return _bs;
-}
-//-----------------------------------------------------------------------------
-template <std::floating_point T>
-std::span<const std::size_t> FiniteElement<T>::value_shape() const noexcept
-{
-  return _value_shape;
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>

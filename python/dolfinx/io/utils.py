@@ -272,7 +272,6 @@ class XDMFFile(_cpp.io.XDMFFile):
                 cell_degree,
                 basix.LagrangeVariant.equispaced,
                 shape=(x.shape[1],),
-                gdim=x.shape[1],
             )
         )
         return Mesh(msh, domain)

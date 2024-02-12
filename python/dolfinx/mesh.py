@@ -19,7 +19,6 @@ import basix.ufl
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
-from dolfinx.cpp.fem import CoordinateElement_float32, CoordinateElement_float64
 from dolfinx.cpp.mesh import (
     CellType,
     DiagonalType,
@@ -105,7 +104,7 @@ class Mesh:
         Note:
             This method is required for UFL compatibility.
         """
-        return ufl.Cell(self.topology.cell_name(), geometric_dimension=self.geometry.dim)
+        return ufl.Cell(self.topology.cell_name())
 
     def ufl_domain(self) -> ufl.Mesh:
         """Return the ufl domain corresponding to the mesh.
@@ -422,7 +421,7 @@ def create_mesh(
                 # TODO: Resolve geometric dimension vs shape for manifolds
                 cmap = _coordinate_element(e)  # type: ignore
                 e_ufl = basix.ufl._BasixElement(e)  # type: ignore
-                e_ufl = basix.ufl.blocked_element(e_ufl, shape=(gdim,), gdim=gdim)
+                e_ufl = basix.ufl.blocked_element(e_ufl, shape=(gdim,))
                 domain = ufl.Mesh(e_ufl)
                 dtype = cmap.dtype
                 assert domain.geometric_dimension() == gdim
@@ -443,7 +442,7 @@ def create_submesh(msh, dim, entities):
     submsh, entity_map, vertex_map, geom_map = _cpp.mesh.create_submesh(
         msh._cpp_object, dim, entities
     )
-    submsh_ufl_cell = ufl.Cell(submsh.topology.cell_name(), geometric_dimension=submsh.geometry.dim)
+    submsh_ufl_cell = ufl.Cell(submsh.topology.cell_name())
     submsh_domain = ufl.Mesh(
         basix.ufl.element(
             "Lagrange",
@@ -451,7 +450,6 @@ def create_submesh(msh, dim, entities):
             submsh.geometry.cmap.degree,
             basix.LagrangeVariant(submsh.geometry.cmap.variant),
             shape=(submsh.geometry.dim,),
-            gdim=submsh.geometry.dim,
             dtype=submsh.geometry.x.dtype,
         )
     )
@@ -635,53 +633,6 @@ def create_rectangle(
         mesh = _cpp.mesh.create_rectangle_float32(comm, points, n, cell_type, partitioner, diagonal)
     elif dtype == np.float64:
         mesh = _cpp.mesh.create_rectangle_float64(comm, points, n, cell_type, partitioner, diagonal)
-    else:
-        raise RuntimeError(f"Unsupported mesh geometry float type: {dtype}")
-    return Mesh(mesh, domain)
-
-
-def create_tp_rectangle(
-    comm: _MPI.Comm,
-    points: npt.ArrayLike,
-    n: npt.ArrayLike,
-    dtype: npt.DTypeLike = default_real_type,
-    ghost_mode=GhostMode.shared_facet,
-    partitioner=None,
-) -> Mesh:
-    """Create a rectangle mesh.
-
-    Args:
-        comm: MPI communicator.
-        points: Coordinates of the lower - left and upper - right corners of
-            the rectangle.
-        n: Number of cells in each direction.
-        cell_type: Mesh cell type.
-        dtype: Float type for the mesh geometry(``numpy.float32``
-            or ``numpy.float64``)
-        ghost_mode: Ghost mode used in the mesh partitioning.
-        partitioner: Function that computes the parallel distribution of
-            cells across MPI ranks.
-        diagonal: Direction of diagonal of triangular meshes. The
-            options are ``left``, ``right``, ``crossed``, ``left / right``,
-            ``right / left``.
-
-    Returns:
-        A mesh of a rectangle.
-    """
-    if partitioner is None and comm.size > 1:
-        partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
-    element = basix.create_tp_element(
-        basix.ElementFamily.P, basix.CellType.quadrilateral, 1, dtype=dtype
-    )
-    e_ufl = basix.ufl._BasixElement(element)
-    e_ufl = basix.ufl.blocked_element(e_ufl, shape=(2,), gdim=2)
-    domain = ufl.Mesh(e_ufl)
-    if dtype == np.float32:
-        cmap_cpp = CoordinateElement_float32(element._e)
-        mesh = _cpp.mesh.create_quad_rectangle_float32(comm, points, n, cmap_cpp, partitioner)
-    elif dtype == np.float64:
-        cmap_cpp = CoordinateElement_float64(element._e)
-        mesh = _cpp.mesh.create_quad_rectangle_float64(comm, points, n, cmap_cpp, partitioner)
     else:
         raise RuntimeError(f"Unsupported mesh geometry float type: {dtype}")
     return Mesh(mesh, domain)

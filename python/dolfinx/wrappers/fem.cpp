@@ -70,8 +70,10 @@ void declare_function_space(nb::module_& m, std::string type)
                                                "Finite element function space")
         .def(nb::init<std::shared_ptr<const dolfinx::mesh::Mesh<T>>,
                       std::shared_ptr<const dolfinx::fem::FiniteElement<T>>,
-                      std::shared_ptr<const dolfinx::fem::DofMap>>(),
-             nb::arg("mesh"), nb::arg("element"), nb::arg("dofmap"))
+                      std::shared_ptr<const dolfinx::fem::DofMap>,
+                      std::vector<std::size_t>>(),
+             nb::arg("mesh"), nb::arg("element"), nb::arg("dofmap"),
+             nb::arg("value_shape"))
         .def("collapse", &dolfinx::fem::FunctionSpace<T>::collapse)
         .def("component", &dolfinx::fem::FunctionSpace<T>::component)
         .def("contains", &dolfinx::fem::FunctionSpace<T>::contains,
@@ -79,6 +81,15 @@ void declare_function_space(nb::module_& m, std::string type)
         .def_prop_ro("element", &dolfinx::fem::FunctionSpace<T>::element)
         .def_prop_ro("mesh", &dolfinx::fem::FunctionSpace<T>::mesh)
         .def_prop_ro("dofmap", &dolfinx::fem::FunctionSpace<T>::dofmap)
+        .def_prop_ro(
+            "value_shape",
+            [](const dolfinx::fem::FunctionSpace<T>& self)
+            {
+              std::span<const std::size_t> vshape = self.value_shape();
+              return nb::ndarray<const std::size_t, nb::numpy>(vshape.data(),
+                                                               {vshape.size()});
+            },
+            nb::rv_policy::reference_internal)
         .def("sub", &dolfinx::fem::FunctionSpace<T>::sub, nb::arg("component"))
         .def("tabulate_dof_coordinates",
              [](const dolfinx::fem::FunctionSpace<T>& self)
@@ -87,20 +98,6 @@ void declare_function_space(nb::module_& m, std::string type)
                return dolfinx_wrappers::as_nbarray(std::move(x),
                                                    {x.size() / 3, 3});
              });
-
-    // create function space from basix element and shape
-    std::string pymethod_fuction_space_from_basix_element
-        = std::string("create_function_space_") + type;
-    m.def(
-        pymethod_fuction_space_from_basix_element.c_str(),
-        [](std::shared_ptr<dolfinx::mesh::Mesh<T>> mesh,
-           const basix::FiniteElement<T>& element,
-           const std::vector<std::size_t>& value_shape) {
-          return dolfinx::fem::create_functionspace<T>(mesh, element,
-                                                       value_shape);
-        },
-        nb::arg("mesh"), nb::arg("element"), nb::arg("value_shape"),
-        "Create a FunctionSpace from a basix element and value shape");
   }
 
   {
@@ -117,14 +114,6 @@ void declare_function_space(nb::module_& m, std::string type)
               new (self) dolfinx::fem::FiniteElement<T>(*p);
             },
             nb::arg("ufcx_element"))
-        .def(
-            "__init__",
-            [](dolfinx::fem::FiniteElement<T>* self,
-               const basix::FiniteElement<T>& element,
-               const std::vector<std::size_t>& value_shape) {
-              new (self) dolfinx::fem::FiniteElement<T>(element, value_shape);
-            },
-            nb::arg("element"), nb::arg("value_shape"))
         .def("__eq__", &dolfinx::fem::FiniteElement<T>::operator==)
         .def_prop_ro("basix_element",
                      &dolfinx::fem::FiniteElement<T>::basix_element,
@@ -142,15 +131,6 @@ void declare_function_space(nb::module_& m, std::string type)
                      &dolfinx::fem::FiniteElement<T>::interpolation_ident)
         .def_prop_ro("space_dimension",
                      &dolfinx::fem::FiniteElement<T>::space_dimension)
-        .def_prop_ro(
-            "value_shape",
-            [](const dolfinx::fem::FiniteElement<T>& self)
-            {
-              std::span<const std::size_t> vshape = self.value_shape();
-              return nb::ndarray<const std::size_t, nb::numpy>(vshape.data(),
-                                                               {vshape.size()});
-            },
-            nb::rv_policy::reference_internal)
         .def(
             "pre_apply_dof_transformation",
             [](const dolfinx::fem::FiniteElement<T>& self,
@@ -362,15 +342,17 @@ void declare_objects(nb::module_& m, const std::string& type)
             auto element = self.function_space()->element();
             assert(element);
 
-            // Compute value size
-            auto vshape = element->value_shape();
-            std::size_t value_size = std::reduce(vshape.begin(), vshape.end(),
-                                                 1, std::multiplies{});
-
             assert(self.function_space()->mesh());
             const std::vector<U> x = dolfinx::fem::interpolation_coords(
                 *element, self.function_space()->mesh()->geometry(),
                 std::span(cells.data(), cells.size()));
+
+            const int gdim = self.function_space()->mesh()->geometry().dim();
+
+            // Compute value size
+            auto vshape = self.function_space()->value_shape();
+            std::size_t value_size = std::reduce(vshape.begin(), vshape.end(),
+                                                 1, std::multiplies{});
 
             std::array<std::size_t, 2> shape{value_size, x.size() / 3};
             std::vector<T> values(shape[0] * shape[1]);
@@ -1003,8 +985,9 @@ void fem(nb::module_& m)
       [](MPICommWrapper comm, const dolfinx::mesh::Topology& topology,
          const dolfinx::fem::ElementDofLayout& layout)
       {
+        assert(topology.entity_types(topology.dim()).size() == 1);
         auto [map, bs, dofmap] = dolfinx::fem::build_dofmap_data(
-            comm.get(), topology, layout,
+            comm.get(), topology, {layout},
             [](const dolfinx::graph::AdjacencyList<std::int32_t>& g)
             { return dolfinx::graph::reorder_gps(g); });
         return std::tuple(std::move(map), bs, std::move(dofmap));

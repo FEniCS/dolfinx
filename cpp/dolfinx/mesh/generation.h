@@ -44,12 +44,6 @@ Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
                    const CellPartitionFunction& partitioner);
 
 template <std::floating_point T>
-Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
-                   std::array<std::size_t, 2> n,
-                   const fem::CoordinateElement<T>& cmap,
-                   const CellPartitionFunction& partitioner);
-
-template <std::floating_point T>
 std::vector<T> create_geom(MPI_Comm comm,
                            std::array<std::array<double, 3>, 2> p,
                            std::array<std::size_t, 3> n);
@@ -173,35 +167,6 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
   default:
     throw std::runtime_error("Generate rectangle mesh. Wrong cell type");
   }
-}
-
-/// @brief Create a uniform mesh::Mesh over the rectangle spanned by the
-/// two points `p`.
-///
-/// The order of the two points is not important in terms of minimum and
-/// maximum coordinates. The total number of vertices will be `(n[0] +
-/// 1)*(n[1] + 1)`. For triangles there will be  will be `2*n[0]*n[1]`
-/// cells. For quadrilaterals the number of cells will be `n[0]*n[1]`.
-///
-/// @param[in] comm MPI communicator to build the mesh on.
-/// @param[in] p Bottom-left and top-right corners of the rectangle.
-/// @param[in] n Number of cells in each direction.
-/// @param[in] coordinate_element Coordinate element for the mesh.
-/// @param[in] partitioner Partitioning function for distributing cells
-/// @return Mesh
-template <std::floating_point T = double>
-Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
-                         std::array<std::size_t, 2> n,
-                         const fem::CoordinateElement<T>& coordinate_element,
-                         CellPartitionFunction partitioner)
-{
-  if (!partitioner and dolfinx::MPI::size(comm) > 1)
-    partitioner = create_cell_partitioner();
-
-  LOG(INFO) << "Create rectangle";
-  if (coordinate_element.cell_shape() != CellType::quadrilateral)
-    throw std::runtime_error("This method only supports quadrilateral cells.");
-  return impl::build_quad<T>(comm, p, n, coordinate_element, partitioner);
 }
 
 /// @brief Create a uniform mesh::Mesh over the rectangle spanned by the
@@ -679,9 +644,9 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
 template <std::floating_point T>
 Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
                    std::array<std::size_t, 2> n,
-                   const fem::CoordinateElement<T>& element,
                    const CellPartitionFunction& partitioner)
 {
+  fem::CoordinateElement<T> element(CellType::quadrilateral, 1);
   std::vector<std::int64_t> cells;
   std::vector<T> x;
   if (dolfinx::MPI::rank(comm) == 0)
@@ -726,15 +691,5 @@ Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
                        {x.size() / 2, 2}, partitioner);
   }
 }
-
-template <std::floating_point T>
-Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
-                   std::array<std::size_t, 2> n,
-                   const CellPartitionFunction& partitioner)
-{
-  fem::CoordinateElement<T> element(CellType::quadrilateral, 1);
-  return build_quad(comm, p, n, element, partitioner);
-}
-
 } // namespace impl
 } // namespace dolfinx::mesh

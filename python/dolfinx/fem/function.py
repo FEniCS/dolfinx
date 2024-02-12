@@ -373,7 +373,7 @@ class Function(ufl.Coefficient):
 
         # Allocate memory for return value if not provided
         if u is None:
-            value_size = ufl.product(self.ufl_element().value_shape)
+            value_size = self._V.value_size
             u = np.empty((num_points, value_size), self.dtype)
 
         self._cpp_object.eval(_x, _cells, u)  # type: ignore
@@ -558,68 +558,56 @@ def functionspace(
         A function space.
 
     """
-    # Get dtype from mesh
+    # Create UFL element
+    try:
+        e = ElementMetaData(*element)
+        ufl_e = basix.ufl.element(
+            e.family,
+            mesh.basix_cell(),
+            e.degree,
+            shape=e.shape,
+            symmetry=e.symmetry,
+        )
+    except TypeError:
+        ufl_e = element  # type: ignore
+
+    # Check that element and mesh cell types match
+    if ufl_e.cell != mesh.ufl_domain().ufl_cell():
+        raise ValueError("Non-matching UFL cell and mesh cell shapes.")
+
+    ufl_space = ufl.FunctionSpace(mesh.ufl_domain(), ufl_e)
+    value_shape = ufl_space.value_shape
+
+    # Compile dofmap and element and create DOLFIN objects
     dtype = mesh.geometry.x.dtype
-
-    # If element is abasix element, create a DOLFINx function space directly
-    # and avoid JIT compilation
-    if isinstance(element, basix.finite_element.FiniteElement):
-        ufl_e = basix.ufl._BasixElement(element)
-
-        shape = ufl_e.value_shape
-        # Check that element and mesh cell types match
-        if ufl_e.cell != mesh.ufl_domain().ufl_cell():
-            raise ValueError("Non-matching UFL cell and mesh cell shapes.")
-
-        if dtype == np.float32:
-            cppV = _cpp.fem.create_function_space_float32(mesh._cpp_object, element._e, shape)
-        elif dtype == np.float64:
-            cppV = _cpp.fem.create_function_space_float64(mesh._cpp_object, element._e, shape)
-
-    else:
-        # Create UFL element
-        try:
-            e = ElementMetaData(*element)
-            ufl_e = basix.ufl.element(
-                e.family,
-                mesh.basix_cell(),
-                e.degree,
-                shape=e.shape,
-                symmetry=e.symmetry,
-                gdim=mesh.ufl_cell().geometric_dimension(),
-            )
-        except TypeError:
-            ufl_e = element  # type: ignore
-
-        # Check that element and mesh cell types match
-        if ufl_e.cell != mesh.ufl_domain().ufl_cell():
-            raise ValueError("Non-matching UFL cell and mesh cell shapes.")
-
-        # Compile dofmap and element and create DOLFIN objects
-        if form_compiler_options is None:
-            form_compiler_options = dict()
-        form_compiler_options["scalar_type"] = dtype
-        (ufcx_element, ufcx_dofmap), module, code = jit.ffcx_jit(
-            mesh.comm, ufl_e, form_compiler_options=form_compiler_options, jit_options=jit_options
+    if form_compiler_options is None:
+        form_compiler_options = dict()
+    form_compiler_options["scalar_type"] = dtype
+    (ufcx_element, ufcx_dofmap), module, code = jit.ffcx_jit(
+        mesh.comm, ufl_e, form_compiler_options=form_compiler_options, jit_options=jit_options
+    )
+    ffi = module.ffi
+    if dtype == np.float32:
+        cpp_element = _cpp.fem.FiniteElement_float32(
+            ffi.cast("uintptr_t", ffi.addressof(ufcx_element))
         )
-        ffi = module.ffi
-        if dtype == np.float32:
-            cpp_element = _cpp.fem.FiniteElement_float32(
-                ffi.cast("uintptr_t", ffi.addressof(ufcx_element))
-            )
-        elif dtype == np.float64:
-            cpp_element = _cpp.fem.FiniteElement_float64(
-                ffi.cast("uintptr_t", ffi.addressof(ufcx_element))
-            )
-        cpp_dofmap = _cpp.fem.create_dofmap(
-            mesh.comm, ffi.cast("uintptr_t", ffi.addressof(ufcx_dofmap)), mesh.topology, cpp_element
+    elif dtype == np.float64:
+        cpp_element = _cpp.fem.FiniteElement_float64(
+            ffi.cast("uintptr_t", ffi.addressof(ufcx_element))
         )
+    cpp_dofmap = _cpp.fem.create_dofmap(
+        mesh.comm, ffi.cast("uintptr_t", ffi.addressof(ufcx_dofmap)), mesh.topology, cpp_element
+    )
 
-        # Initialize the cpp.FunctionSpace
-        try:
-            cppV = _cpp.fem.FunctionSpace_float64(mesh._cpp_object, cpp_element, cpp_dofmap)
-        except TypeError:
-            cppV = _cpp.fem.FunctionSpace_float32(mesh._cpp_object, cpp_element, cpp_dofmap)
+    # Initialize the cpp.FunctionSpace
+    try:
+        cppV = _cpp.fem.FunctionSpace_float64(
+            mesh._cpp_object, cpp_element, cpp_dofmap, value_shape
+        )
+    except TypeError:
+        cppV = _cpp.fem.FunctionSpace_float32(
+            mesh._cpp_object, cpp_element, cpp_dofmap, value_shape
+        )
 
     return FunctionSpace(mesh, ufl_e, cppV)
 
@@ -674,11 +662,17 @@ class FunctionSpace(ufl.FunctionSpace):
         """
         try:
             Vcpp = _cpp.fem.FunctionSpace_float64(
-                self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap
+                self._cpp_object.mesh,
+                self._cpp_object.element,
+                self._cpp_object.dofmap,
+                self._cpp_object.value_shape,
             )  # type: ignore
         except TypeError:
             Vcpp = _cpp.fem.FunctionSpace_float32(
-                self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap
+                self._cpp_object.mesh,
+                self._cpp_object.element,
+                self._cpp_object.dofmap,
+                self._cpp_object.value_shape,
             )  # type: ignore
         return FunctionSpace(self._mesh, self.ufl_element(), Vcpp)
 
@@ -686,6 +680,11 @@ class FunctionSpace(ufl.FunctionSpace):
     def num_sub_spaces(self) -> int:
         """Number of sub spaces."""
         return self.element.num_sub_elements
+
+    @property
+    def value_shape(self) -> tuple[int, ...]:
+        """Value shape."""
+        return tuple(int(i) for i in self._cpp_object.value_shape)
 
     def sub(self, i: int) -> FunctionSpace:
         """Return the i-th sub space.
