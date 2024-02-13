@@ -19,19 +19,49 @@ import basix.ufl
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
-from dolfinx.cpp.mesh import (CellType, DiagonalType, GhostMode, build_dual_graph, cell_dim, create_cell_partitioner,
-                              exterior_facet_indices, to_string, to_type)
+from dolfinx.cpp.mesh import (
+    CellType,
+    DiagonalType,
+    GhostMode,
+    build_dual_graph,
+    cell_dim,
+    create_cell_partitioner,
+    exterior_facet_indices,
+    to_string,
+    to_type,
+)
 from dolfinx.cpp.refinement import RefinementOption
 from dolfinx.fem import CoordinateElement as _CoordinateElement
 from dolfinx.fem import coordinate_element as _coordinate_element
 
-__all__ = ["meshtags_from_entities", "locate_entities", "locate_entities_boundary",
-           "refine", "create_mesh", "Mesh", "MeshTags", "meshtags", "CellType",
-           "GhostMode", "build_dual_graph", "cell_dim", "compute_midpoints",
-           "exterior_facet_indices", "compute_incident_entities", "create_cell_partitioner",
-           "create_interval", "create_unit_interval", "create_rectangle", "create_unit_square",
-           "create_box", "create_unit_cube", "to_type", "to_string", "refine_plaza",
-           "transfer_meshtag"]
+__all__ = [
+    "meshtags_from_entities",
+    "locate_entities",
+    "locate_entities_boundary",
+    "refine",
+    "create_mesh",
+    "Mesh",
+    "MeshTags",
+    "meshtags",
+    "CellType",
+    "GhostMode",
+    "build_dual_graph",
+    "cell_dim",
+    "compute_midpoints",
+    "exterior_facet_indices",
+    "compute_incident_entities",
+    "create_cell_partitioner",
+    "create_interval",
+    "create_unit_interval",
+    "create_rectangle",
+    "create_unit_square",
+    "create_box",
+    "create_unit_cube",
+    "to_type",
+    "to_string",
+    "refine_plaza",
+    "transfer_meshtag",
+]
 
 
 class Mesh:
@@ -74,7 +104,7 @@ class Mesh:
         Note:
             This method is required for UFL compatibility.
         """
-        return ufl.Cell(self.topology.cell_name(), geometric_dimension=self.geometry.dim)
+        return ufl.Cell(self.topology.cell_name())
 
     def ufl_domain(self) -> ufl.Mesh:
         """Return the ufl domain corresponding to the mesh.
@@ -242,38 +272,46 @@ _uflcell_to_dolfinxcell = {
     "quadrilateral": CellType.quadrilateral,
     "quadrilateral3D": CellType.quadrilateral,
     "tetrahedron": CellType.tetrahedron,
-    "hexahedron": CellType.hexahedron
+    "hexahedron": CellType.hexahedron,
 }
 
 
-def transfer_meshtag(meshtag: MeshTags, mesh1: Mesh, parent_cell: npt.NDArray[np.int32],
-                     parent_facet: typing.Optional[npt.NDArray[np.int8]] = None) -> MeshTags:
+def transfer_meshtag(
+    meshtag: MeshTags,
+    mesh1: Mesh,
+    parent_cell: npt.NDArray[np.int32],
+    parent_facet: typing.Optional[npt.NDArray[np.int8]] = None,
+) -> MeshTags:
     """Generate cell mesh tags on a refined mesh from the mesh tags on the coarse parent mesh.
 
-        Args:
-            meshtag: Mesh tags on the coarse, parent mesh.
-            mesh1: The refined mesh.
-            parent_cell: Index of the parent cell for each cell in the
-                refined mesh.
-            parent_facet: Index of the local parent facet for each cell
-                in the refined mesh. Only required for transfer tags on
-                facets.
+    Args:
+        meshtag: Mesh tags on the coarse, parent mesh.
+        mesh1: The refined mesh.
+        parent_cell: Index of the parent cell for each cell in the
+            refined mesh.
+        parent_facet: Index of the local parent facet for each cell
+            in the refined mesh. Only required for transfer tags on
+            facets.
 
-        Returns:
-            Mesh tags on the refined mesh.
+    Returns:
+        Mesh tags on the refined mesh.
     """
     if meshtag.dim == meshtag.topology.dim:
         mt = _cpp.refinement.transfer_cell_meshtag(meshtag._cpp_object, mesh1.topology, parent_cell)
         return MeshTags(mt)
     elif meshtag.dim == meshtag.topology.dim - 1:
         assert parent_facet is not None
-        mt = _cpp.refinement.transfer_facet_meshtag(meshtag._cpp_object, mesh1.topology, parent_cell, parent_facet)
+        mt = _cpp.refinement.transfer_facet_meshtag(
+            meshtag._cpp_object, mesh1.topology, parent_cell, parent_facet
+        )
         return MeshTags(mt)
     else:
         raise RuntimeError("MeshTag transfer is supported on on cells or facets.")
 
 
-def refine(mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistribute: bool = True) -> Mesh:
+def refine(
+    mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistribute: bool = True
+) -> Mesh:
     """Refine a mesh.
 
     Args:
@@ -293,9 +331,12 @@ def refine(mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistribute: 
     return Mesh(mesh1, mesh._ufl_domain)
 
 
-def refine_plaza(mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistribute: bool = True,
-                 option: RefinementOption = RefinementOption.none) -> tuple[Mesh, npt.NDArray[np.int32],
-                                                                            npt.NDArray[np.int32]]:
+def refine_plaza(
+    mesh: Mesh,
+    edges: typing.Optional[np.ndarray] = None,
+    redistribute: bool = True,
+    option: RefinementOption = RefinementOption.none,
+) -> tuple[Mesh, npt.NDArray[np.int32], npt.NDArray[np.int32]]:
     """Refine a mesh.
 
     Args:
@@ -313,14 +354,24 @@ def refine_plaza(mesh: Mesh, edges: typing.Optional[np.ndarray] = None, redistri
     if edges is None:
         mesh1, cells, facets = _cpp.refinement.refine_plaza(mesh._cpp_object, redistribute, option)
     else:
-        mesh1, cells, facets = _cpp.refinement.refine_plaza(mesh._cpp_object, edges, redistribute, option)
+        mesh1, cells, facets = _cpp.refinement.refine_plaza(
+            mesh._cpp_object, edges, redistribute, option
+        )
     return Mesh(mesh1, mesh._ufl_domain), cells, facets
 
 
-def create_mesh(comm: _MPI.Comm, cells: npt.NDArray[np.int64], x: npt.NDArray[np.floating],
-                e: typing.Union[ufl.Mesh, basix.finite_element.FiniteElement,
-                                basix.ufl._BasixElement, _CoordinateElement, ],
-                partitioner: typing.Optional[typing.Callable] = None) -> Mesh:
+def create_mesh(
+    comm: _MPI.Comm,
+    cells: npt.NDArray[np.int64],
+    x: npt.NDArray[np.floating],
+    e: typing.Union[
+        ufl.Mesh,
+        basix.finite_element.FiniteElement,
+        basix.ufl._BasixElement,
+        _CoordinateElement,
+    ],
+    partitioner: typing.Optional[typing.Callable] = None,
+) -> Mesh:
     """Create a mesh from topology and geometry arrays.
 
     Args:
@@ -342,7 +393,7 @@ def create_mesh(comm: _MPI.Comm, cells: npt.NDArray[np.int64], x: npt.NDArray[np
     if partitioner is None and comm.size > 1:
         partitioner = _cpp.mesh.create_cell_partitioner(GhostMode.none)
 
-    x = np.asarray(x, order='C')
+    x = np.asarray(x, order="C")
     if x.ndim == 1:
         gdim = 1
     else:
@@ -370,7 +421,7 @@ def create_mesh(comm: _MPI.Comm, cells: npt.NDArray[np.int64], x: npt.NDArray[np
                 # TODO: Resolve geometric dimension vs shape for manifolds
                 cmap = _coordinate_element(e)  # type: ignore
                 e_ufl = basix.ufl._BasixElement(e)  # type: ignore
-                e_ufl = basix.ufl.blocked_element(e_ufl, shape=(gdim,), gdim=gdim)
+                e_ufl = basix.ufl.blocked_element(e_ufl, shape=(gdim,))
                 domain = ufl.Mesh(e_ufl)
                 dtype = cmap.dtype
                 assert domain.geometric_dimension() == gdim
@@ -380,30 +431,37 @@ def create_mesh(comm: _MPI.Comm, cells: npt.NDArray[np.int64], x: npt.NDArray[np
                 domain = None
                 dtype = cmap.dtype
 
-    x = np.asarray(x, dtype=dtype, order='C')
-    cells = np.asarray(cells, dtype=np.int64, order='C')
-    try:
-        mesh = _cpp.mesh.create_mesh(comm, cells, cmap._cpp_object, x, partitioner)
-    except TypeError:
-        mesh = _cpp.mesh.create_mesh(comm, _cpp.graph.AdjacencyList_int64(np.asarray(cells, dtype=np.int64)),
-                                     cmap._cpp_object, x, partitioner)
+    x = np.asarray(x, dtype=dtype, order="C")
+    cells = np.asarray(cells, dtype=np.int64, order="C")
+    mesh = _cpp.mesh.create_mesh(comm, cells, cmap._cpp_object, x, partitioner)
 
     return Mesh(mesh, domain)
 
 
 def create_submesh(msh, dim, entities):
-    submsh, entity_map, vertex_map, geom_map = _cpp.mesh.create_submesh(msh._cpp_object, dim, entities)
-    submsh_ufl_cell = ufl.Cell(submsh.topology.cell_name(), geometric_dimension=submsh.geometry.dim)
-    submsh_domain = ufl.Mesh(basix.ufl.element("Lagrange", submsh_ufl_cell.cellname(),
-                                               submsh.geometry.cmap.degree,
-                                               basix.LagrangeVariant(submsh.geometry.cmap.variant),
-                                               shape=(submsh.geometry.dim,),
-                                               gdim=submsh.geometry.dim, dtype=submsh.geometry.x.dtype))
+    submsh, entity_map, vertex_map, geom_map = _cpp.mesh.create_submesh(
+        msh._cpp_object, dim, entities
+    )
+    submsh_ufl_cell = ufl.Cell(submsh.topology.cell_name())
+    submsh_domain = ufl.Mesh(
+        basix.ufl.element(
+            "Lagrange",
+            submsh_ufl_cell.cellname(),
+            submsh.geometry.cmap.degree,
+            basix.LagrangeVariant(submsh.geometry.cmap.variant),
+            shape=(submsh.geometry.dim,),
+            dtype=submsh.geometry.x.dtype,
+        )
+    )
     return (Mesh(submsh, submsh_domain), entity_map, vertex_map, geom_map)
 
 
-def meshtags(mesh: Mesh, dim: int, entities: npt.NDArray[np.int32],
-             values: typing.Union[np.ndarray, int, float]) -> MeshTags:
+def meshtags(
+    mesh: Mesh,
+    dim: int,
+    entities: npt.NDArray[np.int32],
+    values: typing.Union[np.ndarray, int, float],
+) -> MeshTags:
     """Create a MeshTags object that associates data with a subset of mesh entities.
 
     Args:
@@ -444,8 +502,9 @@ def meshtags(mesh: Mesh, dim: int, entities: npt.NDArray[np.int32],
     return MeshTags(ftype(mesh.topology, dim, np.asarray(entities, dtype=np.int32), values))
 
 
-def meshtags_from_entities(mesh: Mesh, dim: int, entities: _cpp.graph.AdjacencyList_int32,
-                           values: npt.NDArray[typing.Any]):
+def meshtags_from_entities(
+    mesh: Mesh, dim: int, entities: _cpp.graph.AdjacencyList_int32, values: npt.NDArray[typing.Any]
+):
     """Create a :class:dolfinx.mesh.MeshTags` object that associates
     data with a subset of mesh entities, where the entities are defined
     by their vertices.
@@ -474,9 +533,14 @@ def meshtags_from_entities(mesh: Mesh, dim: int, entities: _cpp.graph.AdjacencyL
     return MeshTags(_cpp.mesh.create_meshtags(mesh.topology, dim, entities, values))
 
 
-def create_interval(comm: _MPI.Comm, nx: int, points: npt.ArrayLike,
-                    dtype: npt.DTypeLike = default_real_type,
-                    ghost_mode=GhostMode.shared_facet, partitioner=None) -> Mesh:
+def create_interval(
+    comm: _MPI.Comm,
+    nx: int,
+    points: npt.ArrayLike,
+    dtype: npt.DTypeLike = default_real_type,
+    ghost_mode=GhostMode.shared_facet,
+    partitioner=None,
+) -> Mesh:
     """Create an interval mesh.
 
     Args:
@@ -506,8 +570,13 @@ def create_interval(comm: _MPI.Comm, nx: int, points: npt.ArrayLike,
     return Mesh(mesh, domain)
 
 
-def create_unit_interval(comm: _MPI.Comm, nx: int, dtype: npt.DTypeLike = default_real_type,
-                         ghost_mode=GhostMode.shared_facet, partitioner=None) -> Mesh:
+def create_unit_interval(
+    comm: _MPI.Comm,
+    nx: int,
+    dtype: npt.DTypeLike = default_real_type,
+    ghost_mode=GhostMode.shared_facet,
+    partitioner=None,
+) -> Mesh:
     """Create a mesh on the unit interval.
 
     Args:
@@ -527,10 +596,16 @@ def create_unit_interval(comm: _MPI.Comm, nx: int, dtype: npt.DTypeLike = defaul
     return create_interval(comm, nx, [0.0, 1.0], dtype, ghost_mode, partitioner)
 
 
-def create_rectangle(comm: _MPI.Comm, points: npt.ArrayLike, n: npt.ArrayLike,
-                     cell_type=CellType.triangle, dtype: npt.DTypeLike = default_real_type,
-                     ghost_mode=GhostMode.shared_facet,
-                     partitioner=None, diagonal: DiagonalType = DiagonalType.right) -> Mesh:
+def create_rectangle(
+    comm: _MPI.Comm,
+    points: npt.ArrayLike,
+    n: npt.ArrayLike,
+    cell_type=CellType.triangle,
+    dtype: npt.DTypeLike = default_real_type,
+    ghost_mode=GhostMode.shared_facet,
+    partitioner=None,
+    diagonal: DiagonalType = DiagonalType.right,
+) -> Mesh:
     """Create a rectangle mesh.
 
     Args:
@@ -563,10 +638,16 @@ def create_rectangle(comm: _MPI.Comm, points: npt.ArrayLike, n: npt.ArrayLike,
     return Mesh(mesh, domain)
 
 
-def create_unit_square(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.triangle,
-                       dtype: npt.DTypeLike = default_real_type,
-                       ghost_mode=GhostMode.shared_facet, partitioner=None,
-                       diagonal: DiagonalType = DiagonalType.right) -> Mesh:
+def create_unit_square(
+    comm: _MPI.Comm,
+    nx: int,
+    ny: int,
+    cell_type=CellType.triangle,
+    dtype: npt.DTypeLike = default_real_type,
+    ghost_mode=GhostMode.shared_facet,
+    partitioner=None,
+    diagonal: DiagonalType = DiagonalType.right,
+) -> Mesh:
     """Create a mesh of a unit square.
 
     Args:
@@ -585,14 +666,27 @@ def create_unit_square(comm: _MPI.Comm, nx: int, ny: int, cell_type=CellType.tri
     Returns:
         A mesh of a square with corners at (0, 0) and (1, 1).
     """
-    return create_rectangle(comm, [np.array([0.0, 0.0]), np.array([1.0, 1.0])],
-                            [nx, ny], cell_type, dtype, ghost_mode,
-                            partitioner, diagonal)
+    return create_rectangle(
+        comm,
+        [np.array([0.0, 0.0]), np.array([1.0, 1.0])],
+        [nx, ny],
+        cell_type,
+        dtype,
+        ghost_mode,
+        partitioner,
+        diagonal,
+    )
 
 
-def create_box(comm: _MPI.Comm, points: list[npt.ArrayLike], n: list,
-               cell_type=CellType.tetrahedron, dtype: npt.DTypeLike = default_real_type,
-               ghost_mode=GhostMode.shared_facet, partitioner=None) -> Mesh:
+def create_box(
+    comm: _MPI.Comm,
+    points: list[npt.ArrayLike],
+    n: list,
+    cell_type=CellType.tetrahedron,
+    dtype: npt.DTypeLike = default_real_type,
+    ghost_mode=GhostMode.shared_facet,
+    partitioner=None,
+) -> Mesh:
     """Create a box mesh.
 
     Args:
@@ -622,9 +716,16 @@ def create_box(comm: _MPI.Comm, points: list[npt.ArrayLike], n: list,
     return Mesh(mesh, domain)
 
 
-def create_unit_cube(comm: _MPI.Comm, nx: int, ny: int, nz: int, cell_type=CellType.tetrahedron,
-                     dtype: npt.DTypeLike = default_real_type,
-                     ghost_mode=GhostMode.shared_facet, partitioner=None) -> Mesh:
+def create_unit_cube(
+    comm: _MPI.Comm,
+    nx: int,
+    ny: int,
+    nz: int,
+    cell_type=CellType.tetrahedron,
+    dtype: npt.DTypeLike = default_real_type,
+    ghost_mode=GhostMode.shared_facet,
+    partitioner=None,
+) -> Mesh:
     """Create a mesh of a unit cube.
 
     Args:
@@ -643,5 +744,12 @@ def create_unit_cube(comm: _MPI.Comm, nx: int, ny: int, nz: int, cell_type=CellT
         A mesh of an axis-aligned unit cube with corners at ``(0, 0, 0)``
             and ``(1, 1, 1)``.
     """
-    return create_box(comm, [np.array([0.0, 0.0, 0.0]), np.array([1.0, 1.0, 1.0])],
-                      [nx, ny, nz], cell_type, dtype, ghost_mode, partitioner)
+    return create_box(
+        comm,
+        [np.array([0.0, 0.0, 0.0]), np.array([1.0, 1.0, 1.0])],
+        [nx, ny, nz],
+        cell_type,
+        dtype,
+        ghost_mode,
+        partitioner,
+    )
