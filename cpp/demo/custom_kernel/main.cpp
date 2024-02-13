@@ -27,9 +27,6 @@ template <typename T, std::size_t n0, std::size_t n1>
 using mdspan2_t
     = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<T,
                                              std::extents<std::size_t, n0, n1>>;
-template <typename T>
-using kernel_t = std::function<void(T*, const T*, const T*, const T*,
-                                    const int*, const uint8_t*)>;
 
 // .. code-block:: cpp
 
@@ -77,7 +74,7 @@ double assemble_matrix0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
                         std::span<const std::int32_t> cells)
 {
   // Kernel data (ID, kernel function, cell indices to execute over)
-  std::vector kernel_data{std::tuple{-1, kernel_t<T>(kernel), cells}};
+  std::vector kernel_data{fem::integral_data<T>(-1, kernel, cells)};
 
   // Associate kernel with cells (as opposed to facets, etc)
   std::map integrals{std::pair{fem::IntegralType::cell, kernel_data}};
@@ -107,7 +104,7 @@ double assemble_vector0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
                         std::span<const std::int32_t> cells)
 {
   auto mesh = V->mesh();
-  std::vector kernal_data{std::tuple{-1, kernel_t<T>(kernel), cells}};
+  std::vector kernal_data{fem::integral_data<T>(-1, kernel, cells)};
   std::map integrals{std::pair{fem::IntegralType::cell, kernal_data}};
   fem::Form<T> L({V}, integrals, {}, {}, false, mesh);
   auto dofmap = V->dofmap();

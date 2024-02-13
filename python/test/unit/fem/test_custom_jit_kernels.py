@@ -93,8 +93,8 @@ def test_numba_assembly(dtype):
     integrals = {
         IntegralType.cell: [
             (-1, k2.address, cells),
-            (12, k2.address, np.arange(0)),
             (2, k2.address, np.arange(0)),
+            (12, k2.address, np.arange(0)),
         ]
     }
     formtype = form_cpp_class(dtype)
