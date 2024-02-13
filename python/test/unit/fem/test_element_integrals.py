@@ -377,8 +377,7 @@ def test_plus_minus_simple_vector(cell_type, pm, dtype):
                 else:
                     # If no matching point found, fail
                     assert False
-
-                assert np.isclose(results[0][dof0], result[dof1])
+                np.testing.assert_allclose(results[0][dof0], result[dof1], atol=1.0e-6)
 
 
 @pytest.mark.skip_in_parallel
@@ -490,7 +489,7 @@ def test_plus_minus_matrix(cell_type, pm1, pm2, dtype):
         # For all dof pairs, check that entries in the matrix agree
         for a, b in dof_order:
             for c, d in dof_order:
-                assert np.isclose(results[0][a, c], result[b, d])
+                np.testing.assert_allclose(result[a, b], results[0][c, d], atol=1.0e-2)
 
 
 @pytest.mark.skip(

@@ -556,6 +556,9 @@ def functionspace(
         A function space.
 
     """
+    # Get dtype from mesh geometry
+    dtype = mesh.geometry.x.dtype
+
     # Create UFL element
     try:
         e = ElementMetaData(*element)
@@ -565,6 +568,7 @@ def functionspace(
             e.degree,
             shape=e.shape,
             symmetry=e.symmetry,
+            dtype=dtype,
         )
     except TypeError:
         ufl_e = element  # type: ignore
@@ -577,7 +581,6 @@ def functionspace(
     value_shape = ufl_space.value_shape
 
     # Compile dofmap and element and create DOLFIN objects
-    dtype = mesh.geometry.x.dtype
     if form_compiler_options is None:
         form_compiler_options = dict()
     form_compiler_options["scalar_type"] = dtype
