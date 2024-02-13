@@ -1,15 +1,13 @@
 // ---
 // jupyter:
 //   jupytext:
+//     cell_metadata_filter: -all
+//     formats: cpp:light
 //     text_representation:
 //       extension: .cpp
 //       format_name: light
 //       format_version: '1.5'
 //       jupytext_version: 1.16.1
-//   kernelspec:
-//     display_name: C++17
-//     language: C++17
-//     name: xcpp17
 // ---
 
 // # Biharmonic equation (C++)
@@ -136,7 +134,7 @@
 //
 // ```{note}
 // Alternately, dump the whole file:
-//      ```{include} demos/biharmonic.py
+//      ```{include} demo_biharmonic/biharmonic.py
 //      ```
 // ```
 // ````{note}

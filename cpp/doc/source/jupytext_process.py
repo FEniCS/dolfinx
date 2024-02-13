@@ -4,17 +4,15 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import os
 import pathlib
-import runpy
 import shutil
 
 import jupytext
 
 
 def process():
-    """Convert Python demos in the Jupytext 'light' format into MyST
-    flavoured markdown and ipynb using Jupytext. These files can then be
+    """Convert C++ demos in the Jupytext 'light' format into MyST
+    flavoured markdown (and ipynb?) using Jupytext. These files can then be
     included in Sphinx documentation.
 
     """
@@ -48,7 +46,8 @@ def process():
                 python_demo = jupytext.read(pydemo_file)
                 python_myst_text = jupytext.writes(python_demo, fmt="myst")
                 python_myst_text = python_myst_text.replace("{code-cell}", "python")
-                cpp_myst_text = cpp_myst_text.replace("![ufl-code]", python_myst_text)
+                cpp_myst_text = cpp_myst_text.replace("![ufl-code]",
+                                                       "````" + python_myst_text + "````")
 
             for cmake_file in demo_subdir.glob("CMakeLists.txt"):
                 shutil.copy(cmake_file, demo_doc_subdir)
