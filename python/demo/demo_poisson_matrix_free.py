@@ -169,8 +169,8 @@ M_fem = fem.form(M, dtype=dtype)
 # Since we want to avoid assembling the matrix `A`, we compute the necessary
 # matrix-vector product using the linear form `M` implicitly.
 
-b = fem.assemble_vector(L_fem)
 # Apply lifting: b <- b - A * x_bc
+b = fem.assemble_vector(L_fem)
 ui.x.array[:] = 0.0
 fem.set_bc(ui.x.array, [bc], scale=-1.0)
 fem.assemble_vector(b.array, M_fem)
@@ -178,7 +178,6 @@ b.scatter_reverse(la.InsertMode.add)
 
 # Set BC dofs to zero on RHS (effectively zeros column in A)
 fem.set_bc(b.array, [bc], scale=0.0)
-fem.set_bc(ui.x.array, [bc], scale=0.0)
 b.scatter_forward()
 
 # To implement the matrix-free CG solver using *DOLFINx* vectors, we define the
@@ -186,9 +185,9 @@ b.scatter_forward()
 # is computed.
 
 def action_A(x, y):
-    ui.x.array[:] = x.array  # Set coefficient vector of the linear form M
-
-    # Update coefficient ui of the linear form M
+    # Set coefficient vector of the linear form M
+    # and ensure it is updated across processes
+    ui.x.array[:] = x.array
     ui.x.scatter_forward()
 
     # Compute action of A on ui using the linear form M
@@ -201,7 +200,7 @@ def action_A(x, y):
 
 
 # Basic Conjugate Gradient solver
-def cg(comm, action_A, x0, b, max_iter=200, rtol=1e-6):
+def cg(comm, action_A, x, b, max_iter=200, rtol=1e-6):
     rtol2 = rtol**2
 
     nr = b.index_map.size_local
@@ -210,12 +209,9 @@ def cg(comm, action_A, x0, b, max_iter=200, rtol=1e-6):
         # Only use the owned dofs in vector (up to nr)
         return comm.allreduce(np.vdot(v0[:nr], v1[:nr]), MPI.SUM)
 
-    # Get initial y = A.x (using u_i.x)
+    # Get initial y = A.x
     y = la.vector(b.index_map, 1, dtype)
-    action_A(x0, y)
-
-    # Copy ui.x to x
-    x = x0.array.copy()
+    action_A(x, y)
 
     # Copy residual to p
     r = b.array - y.array
@@ -229,7 +225,7 @@ def cg(comm, action_A, x0, b, max_iter=200, rtol=1e-6):
         action_A(p, y)
         alpha = rnorm / _global_dot(comm, p.array, y.array)
 
-        x += alpha * p.array
+        x.array[:] += alpha * p.array
         r -= alpha * y.array
         rnorm_new = _global_dot(comm, r, r)
         beta = rnorm_new / rnorm
@@ -237,8 +233,7 @@ def cg(comm, action_A, x0, b, max_iter=200, rtol=1e-6):
         if comm.rank == 0:
             print(k, np.sqrt(rnorm / rnorm0))
         if rnorm / rnorm0 < rtol2:
-            ui.x.array[:] = x[:]
-            ui.x.scatter_forward()
+            x.scatter_forward()
             return k
         p.array[:] = beta * p.array + r
 
@@ -249,12 +244,13 @@ def cg(comm, action_A, x0, b, max_iter=200, rtol=1e-6):
 # After that, the error against the exact solution in the $L_2$-norm and the
 # error of the coefficients against the solution obtained by the direct
 # solver is computed.
-# +
-rtol = 1e-6
-iter_cg1 = cg(mesh.comm, action_A, ui.x, b, max_iter=200, rtol=rtol)
 
-# Set BC values in the solution vectors
-fem.set_bc(ui.x.array, [bc], scale=1.0)
+rtol = 1e-6
+u = fem.Function(V)
+iter_cg1 = cg(mesh.comm, action_A, u.x, b, max_iter=200, rtol=rtol)
+
+# Set BC values in the solution vector
+fem.set_bc(u.x.array, [bc], scale=1.0)
 
 # The error of the finite element solution `uh_lu` compared to the exact
 # solution $u_{\rm D}$ is calculated below in the $L_2$-norm.
@@ -266,7 +262,7 @@ def L2Norm(u):
 # -
 
 # Print CG iteration number and errors
-error_L2_cg1 = L2Norm(ui - uD)
+error_L2_cg1 = L2Norm(u - uD)
 if mesh.comm.rank == 0:
     print("Matrix-free CG solver using DOLFINx vectors:")
     print(f"CG iterations until convergence:  {iter_cg1}")
