@@ -34,10 +34,12 @@ def process():
             if demo_subdir == biharmonic_demo:
                 print("found")
                 print(fname.name)
+                demo_doc_subdir = demo_doc_dir/fname.name
+                demo_doc_subdir.mkdir(parents=True, exist_ok=True)
                 # Process each demo using jupytext/myst
                 for demo_file in demo_subdir.glob("main.cpp"):
                     # Copy demo files into documentation demo directory
-                    shutil.copy(demo_file, demo_doc_dir)
+                    shutil.copy(demo_file, demo_doc_subdir)
                     cpp_demo = jupytext.read(demo_file)
                     cpp_myst_text = jupytext.writes(cpp_demo, fmt="myst")
 
@@ -46,11 +48,14 @@ def process():
 
                 # Similarly for python file, dump python myst text in cpp myst
                 for pydemo_file in demo_subdir.glob("*.py"):
-                    shutil.copy(pydemo_file, demo_doc_dir)
+                    shutil.copy(pydemo_file, demo_doc_subdir)
                     python_demo = jupytext.read(pydemo_file)
                     python_myst_text = jupytext.writes(python_demo, fmt="myst")
                     python_myst_text = python_myst_text.replace("{code-cell}", "python")
                     cpp_myst_text = cpp_myst_text.replace("![ufl-code]", python_myst_text)
+
+                for cmake_file in demo_subdir.glob("CMakeLists.txt"):
+                    shutil.copy(cmake_file, demo_doc_subdir)
 
                 myst_file = (demo_doc_dir / fname.name).with_suffix(".md")
                 with open(myst_file, "w") as fw:

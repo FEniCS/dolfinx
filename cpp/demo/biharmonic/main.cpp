@@ -120,12 +120,12 @@
 // definition of the variational forms expressed in UFL and a C++ file
 // containing the actual solver.
 //
-// Running this demo requires the files: {download}`main.cpp`,
-// {download}`biharmonic.py` and {download}`CMakeLists.txt`.
+// Running this demo requires the files: {download}`demo_biharmonic/main.cpp`,
+// {download}`demo_biharmonic/biharmonic.py` and {download}`demo_biharmonic/CMakeLists.txt`.
 //
 // ### UFL form file
 //
-// The UFL file is implemented in {download}`biharmonic.py`, and the
+// The UFL file is implemented in {download}`demo_biharmonic/biharmonic.py`, and the
 // explanation of the UFL file can be found at :doc:`here
 // <biharmonic.py>`.
 // ```python
@@ -150,7 +150,7 @@
 //
 // ### C++ program
 //
-// The main solver is implemented in the {download}`main.cpp` file.
+// The main solver is implemented in the {download}`demo_biharmonic/main.cpp` file.
 //
 // At the top we include the DOLFINx header file and the generated
 // header file "biharmonic.h" containing the variational forms for the
