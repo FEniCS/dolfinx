@@ -184,6 +184,7 @@ b.scatter_forward()
 # function `action_A` with which the matrix-vector product $y = A x$
 # is computed.
 
+
 def action_A(x, y):
     # Set coefficient vector of the linear form M
     # and ensure it is updated across processes
@@ -255,10 +256,13 @@ fem.set_bc(u.x.array, [bc], scale=1.0)
 # The error of the finite element solution `uh_lu` compared to the exact
 # solution $u_{\rm D}$ is calculated below in the $L_2$-norm.
 
+
 # +
 def L2Norm(u):
     val = fem.assemble_scalar(fem.form(inner(u, u) * dx, dtype=dtype))
     return np.sqrt(comm.allreduce(val, op=MPI.SUM))
+
+
 # -
 
 # Print CG iteration number and errors
