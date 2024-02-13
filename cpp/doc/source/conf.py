@@ -154,14 +154,12 @@ myst_enable_extensions = [
     "dollarmath",
 ]
 
+breathe_projects = {"DOLFINx": "../xml/"}
+breathe_default_project = "DOLFINx"
+breathe_implementation_filename_extensions = [".c", ".cc", ".cpp"]
 
-# def skip_member(app, what, name, obj, skip, opts):
-#     # Skip @entries from nanobind enums
-#     if name == "@entries":
-#         return True
-#     else:
-#         return skip
+# Tell sphinx what the primary language being documented is.
+primary_domain = "cpp"
 
-
-# def setup(app):
-#     app.connect("autodoc-skip-member", skip_member)
+# Tell sphinx what the pygments highlight language should be.
+highlight_language = "cpp"
