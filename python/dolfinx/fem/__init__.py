@@ -12,7 +12,6 @@ from dolfinx.cpp.fem import (
 )
 from dolfinx.cpp.fem import create_sparsity_pattern as _create_sparsity_pattern
 from dolfinx.cpp.fem import discrete_gradient as _discrete_gradient
-from dolfinx.cpp.fem import transpose_dofmap
 from dolfinx.fem.assemble import (
     apply_lifting,
     assemble_matrix,
