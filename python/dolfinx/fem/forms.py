@@ -11,8 +11,8 @@ import typing
 
 import numpy as np
 import numpy.typing as npt
-import ufl
 
+import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit
 from dolfinx.fem import IntegralType

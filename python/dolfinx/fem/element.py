@@ -8,10 +8,10 @@
 import typing
 from functools import singledispatch
 
-import basix
 import numpy as np
 import numpy.typing as npt
 
+import basix
 from dolfinx import cpp as _cpp
 
 
