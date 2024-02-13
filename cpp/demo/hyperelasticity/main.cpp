@@ -1,6 +1,19 @@
-// Hyperelasticity (C++)
-// =========================
-// .. code-block:: cpp
+// ---
+// jupyter:
+//   jupytext:
+//     text_representation:
+//       extension: .cpp
+//       format_name: light
+//       format_version: '1.5'
+//       jupytext_version: 1.16.1
+//   kernelspec:
+//     display_name: C++17
+//     language: C++17
+//     name: xcpp17
+// ---
+
+// # Hyperelasticity (C++)
+//
 
 #include "hyperelasticity.h"
 #include <basix/finite-element.h>

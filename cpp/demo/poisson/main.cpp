@@ -1,5 +1,18 @@
-// Poisson equation (C++)
-// ======================
+// ---
+// jupyter:
+//   jupytext:
+//     text_representation:
+//       extension: .cpp
+//       format_name: light
+//       format_version: '1.5'
+//       jupytext_version: 1.16.1
+//   kernelspec:
+//     display_name: C++17
+//     language: C++17
+//     name: xcpp17
+// ---
+
+// # Poisson equation (C++)
 //
 // This demo illustrates how to:
 //

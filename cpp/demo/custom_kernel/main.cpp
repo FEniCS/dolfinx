@@ -1,9 +1,22 @@
-// Custom cell kernel assembly (C++)
+// ---
+// jupyter:
+//   jupytext:
+//     text_representation:
+//       extension: .cpp
+//       format_name: light
+//       format_version: '1.5'
+//       jupytext_version: 1.16.1
+//   kernelspec:
+//     display_name: C++17
+//     language: C++17
+//     name: xcpp17
+// ---
+
+// # Custom cell kernel assembly (C++)
 //
 // This demo shows various methods to define custom cell kernels in C++ and
 // have them assembled into DOLFINx linear algebra data structures.
 //
-// .. code-block:: cpp
 
 #include <basix/finite-element.h>
 #include <basix/mdspan.hpp>
@@ -27,8 +40,6 @@ template <typename T, std::size_t n0, std::size_t n1>
 using mdspan2_t
     = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<T,
                                              std::extents<std::size_t, n0, n1>>;
-
-// .. code-block:: cpp
 
 /// @brief Compute the P1 element mass matrix on the reference cell.
 /// @tparam T Scalar type.
