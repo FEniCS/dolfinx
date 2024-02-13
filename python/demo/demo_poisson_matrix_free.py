@@ -98,24 +98,18 @@ from ufl import action, dx, grad, inner
 
 dtype = dolfinx.default_scalar_type
 real_type = np.real(dtype(0.0)).dtype
-
-# Create mesh with tensor product ordering
 comm = MPI.COMM_WORLD
 mesh = dolfinx.mesh.create_rectangle(comm, [[0.0, 0.0], [1.0, 1.0]], [10, 10], dtype=real_type)
 
-
 # Create function space
 degree = 3
-# Create function space with basix element
 V = fem.functionspace(mesh, ("Lagrange", degree))
 
-# +
-
-# The second argument to {py:class}`FunctionSpace
-# <dolfinx.fem.FunctionSpace>` is a tuple consisting of `(family,
+# The second argument to {py:class}`functionspace
+# <dolfinx.fem.functionspace>` is a tuple consisting of `(family,
 # degree)`, where `family` is the finite element family, and `degree`
 # specifies the polynomial degree. In this case `V` consists of
-# second-order, continuous Lagrange finite element functions.
+# third-order, continuous Lagrange finite element functions.
 #
 # Next, we locate the mesh facets that lie on the
 # domain boundary $\partial\Omega$.
@@ -139,9 +133,9 @@ dofs = fem.locate_dofs_topological(V=V, entity_dim=tdim - 1, entities=facets)
 # class that represents the boundary condition. On the boundary we prescribe
 # the {py:class}`Function <dolfinx.fem.Function>` `uD`, which is obtained by
 # interpolating the expression $u_{\rm D}$ onto the finite element space $V$.
+
 uD = fem.Function(V, dtype=dtype)
 uD.interpolate(lambda x: 1 + x[0] ** 2 + 2 * x[1] ** 2)
-
 bc = fem.dirichletbc(value=uD, dofs=dofs)
 
 # Next, we express the variational problem using UFL.
@@ -166,21 +160,6 @@ L_fem = fem.form(L, dtype=dtype)
 ui = fem.Function(V, dtype=dtype)
 M = action(a, ui)
 M_fem = fem.form(M, dtype=dtype)
-
-# The exact solution $u_{\rm D}$ is interpolated onto the finite element
-
-
-# The error of the finite element solution `uh_lu` compared to the exact
-# solution $u_{\rm D}$ is calculated below in the $L_2$-norm.
-
-
-# +
-def L2Norm(u):
-    val = fem.assemble_scalar(fem.form(inner(u, u) * dx, dtype=dtype))
-    return np.sqrt(comm.allreduce(val, op=MPI.SUM))
-
-
-# -
 
 # ### Matrix-free Conjugate Gradient solvers
 #
@@ -283,6 +262,15 @@ iter_cg1 = cg(mesh.comm, action_A, ui.x, b, max_iter=200, rtol=rtol)
 
 # Set BC values in the solution vectors
 fem.set_bc(ui.x.array, [bc], scale=1.0)
+
+# The error of the finite element solution `uh_lu` compared to the exact
+# solution $u_{\rm D}$ is calculated below in the $L_2$-norm.
+
+# +
+def L2Norm(u):
+    val = fem.assemble_scalar(fem.form(inner(u, u) * dx, dtype=dtype))
+    return np.sqrt(comm.allreduce(val, op=MPI.SUM))
+# -
 
 # Print CG iteration number and errors
 error_L2_cg1 = L2Norm(ui - uD)
