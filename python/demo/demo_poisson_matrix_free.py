@@ -246,30 +246,22 @@ def cg(comm, action_A, x: la.Vector, b: la.Vector, max_iter=200, rtol=1e-6):
 
 
 # This matrix-free solver is now used to compute the finite element solution.
-# After that, the error against the exact solution in the $L_2$-norm and the
-# error of the coefficients against the solution obtained by the direct
-# solver is computed.
+# After that, the error against the exact solution in the $L_2$-norm is computed.
 
 rtol = 1e-6
-u = fem.Function(V)
+u = fem.Function(V, dtype=dtype)
 iter_cg1 = cg(mesh.comm, action_A, u.x, b, max_iter=200, rtol=rtol)
 
 # Set BC values in the solution vector
 fem.set_bc(u.x.array, [bc], scale=1.0)
 
-# The error of the finite element solution `u` compared to the exact
-# solution $u_{\rm D}$ is calculated below in the $L_2$-norm.
 
-
-# +
 def L2Norm(u):
     val = fem.assemble_scalar(fem.form(inner(u, u) * dx, dtype=dtype))
     return np.sqrt(comm.allreduce(val, op=MPI.SUM))
 
 
-# -
-
-# Print CG iteration number and errors
+# Print CG iteration number and error
 error_L2_cg1 = L2Norm(u - uD)
 if mesh.comm.rank == 0:
     print("Matrix-free CG solver using DOLFINx vectors:")
