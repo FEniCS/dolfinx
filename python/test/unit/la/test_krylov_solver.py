@@ -22,7 +22,6 @@ from ufl import Identity, TestFunction, TrialFunction, dot, dx, grad, inner, sym
 
 
 def test_krylov_solver_lu():
-
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12)
     V = functionspace(mesh, ("Lagrange", 1))
     u, v = TrialFunction(V), TestFunction(V)
@@ -89,13 +88,12 @@ def test_krylov_samg_solver_elasticity():
 
         # Stress computation
         def sigma(v):
-            return 2.0 * mu * sym(grad(v)) + lmbda * tr(sym(
-                grad(v))) * Identity(2)
+            return 2.0 * mu * sym(grad(v)) + lmbda * tr(sym(grad(v))) * Identity(2)
 
         # Define problem
         mesh = create_unit_square(MPI.COMM_WORLD, N, N)
         gdim = mesh.geometry.dim
-        V = functionspace(mesh, ('Lagrange', 1, (gdim,)))
+        V = functionspace(mesh, ("Lagrange", 1, (gdim,)))
         u = TrialFunction(V)
         v = TestFunction(V)
 

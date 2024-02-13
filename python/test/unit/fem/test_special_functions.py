@@ -30,13 +30,17 @@ def test_facet_area1D():
     assert np.isclose(a0.real, 2)
 
 
-@pytest.mark.parametrize('mesh_factory', [(create_unit_square, (MPI.COMM_WORLD, 3, 3), 1. / 3),
-                                          #   (create_unit_square,
-                                          #   (MPI.COMM_WORLD, 3, 3, CellType.quadrilateral), 1. / 3),
-                                          (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3), 1 / 18.),
-                                          #   (create_unit_cube,
-                                          #   (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron), 1. / 9)
-                                          ])
+@pytest.mark.parametrize(
+    "mesh_factory",
+    [
+        (create_unit_square, (MPI.COMM_WORLD, 3, 3), 1.0 / 3),
+        #   (create_unit_square,
+        #   (MPI.COMM_WORLD, 3, 3, CellType.quadrilateral), 1. / 3),
+        (create_unit_cube, (MPI.COMM_WORLD, 3, 3, 3), 1 / 18.0),
+        #   (create_unit_cube,
+        #   (MPI.COMM_WORLD, 3, 3, 3, CellType.hexahedron), 1. / 9)
+    ],
+)
 def test_facet_area(mesh_factory):
     """Compute facet area of cell. UFL currently only supports affine
     cells for this computation"""

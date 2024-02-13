@@ -46,6 +46,7 @@ def display_scalar(u, name, filter=np.real):
     """Plot the solution using pyvista"""
     try:
         import pyvista
+
         cells, types, x = plot.vtk_mesh(u.function_space)
         grid = pyvista.UnstructuredGrid(cells, types, x)
         grid.point_data["u"] = filter(u.x.array)
@@ -67,10 +68,13 @@ def display_vector(u, name, filter=np.real):
     """Plot the solution using pyvista"""
     try:
         import pyvista
+
         V = u.function_space
         cells, types, x = plot.vtk_mesh(V)
         grid = pyvista.UnstructuredGrid(cells, types, x)
-        grid.point_data["u"] = filter(np.insert(u.x.array.reshape(x.shape[0], V.dofmap.index_map_bs), 2, 0, axis=1))
+        grid.point_data["u"] = filter(
+            np.insert(u.x.array.reshape(x.shape[0], V.dofmap.index_map_bs), 2, 0, axis=1)
+        )
         plotter = pyvista.Plotter()
         plotter.add_mesh(grid.warp_by_scalar(), show_edges=True)
         plotter.add_title(f"{name}: real" if filter is np.real else f"{name}: imag")
@@ -93,11 +97,16 @@ def poisson(dtype):
     """
 
     # Create a mesh and locate facets by a geometric condition
-    msh = mesh.create_rectangle(comm=comm, points=((0.0, 0.0), (2.0, 1.0)), n=(32, 16),
-                                cell_type=mesh.CellType.triangle, dtype=np.real(dtype(0)).dtype)
-    facets = mesh.locate_entities_boundary(msh, dim=1,
-                                           marker=lambda x: np.logical_or(np.isclose(x[0], 0.0),
-                                                                          np.isclose(x[0], 2.0)))
+    msh = mesh.create_rectangle(
+        comm=comm,
+        points=((0.0, 0.0), (2.0, 1.0)),
+        n=(32, 16),
+        cell_type=mesh.CellType.triangle,
+        dtype=np.real(dtype(0)).dtype,
+    )
+    facets = mesh.locate_entities_boundary(
+        msh, dim=1, marker=lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 2.0))
+    )
 
     # Define a variational problem.
     V = fem.functionspace(msh, ("Lagrange", 1))
@@ -145,15 +154,21 @@ def poisson(dtype):
 # different precision float and complex scalar types for the finite
 # element solution.
 
+
 def elasticity(dtype) -> fem.Function:
     """Linearised elasticity problem solver."""
 
     # Create a mesh and locate facets by a geometric condition
-    msh = mesh.create_rectangle(comm=comm, points=((0.0, 0.0), (2.0, 1.0)), n=(32, 16),
-                                cell_type=mesh.CellType.triangle, dtype=np.real(dtype(0)).dtype)
-    facets = mesh.locate_entities_boundary(msh, dim=1,
-                                           marker=lambda x: np.logical_or(np.isclose(x[0], 0.0),
-                                                                          np.isclose(x[0], 2.0)))
+    msh = mesh.create_rectangle(
+        comm=comm,
+        points=((0.0, 0.0), (2.0, 1.0)),
+        n=(32, 16),
+        cell_type=mesh.CellType.triangle,
+        dtype=np.real(dtype(0)).dtype,
+    )
+    facets = mesh.locate_entities_boundary(
+        msh, dim=1, marker=lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 2.0))
+    )
 
     # Define the variational problem.
     gdim = msh.geometry.dim
@@ -167,7 +182,9 @@ def elasticity(dtype) -> fem.Function:
 
     def σ(v):
         """Return an expression for the stress σ given a displacement field"""
-        return 2.0 * μ * ufl.sym(ufl.grad(v)) + λ * ufl.tr(ufl.sym(ufl.grad(v))) * ufl.Identity(len(v))
+        return 2.0 * μ * ufl.sym(ufl.grad(v)) + λ * ufl.tr(ufl.sym(ufl.grad(v))) * ufl.Identity(
+            len(v)
+        )
 
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = ufl.inner(σ(u), ufl.grad(v)) * ufl.dx
@@ -197,6 +214,7 @@ def elasticity(dtype) -> fem.Function:
     uh.x.array[:] = scipy.sparse.linalg.spsolve(As, b.array)
 
     return uh
+
 
 # Solve problems for different types
 
