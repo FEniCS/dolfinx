@@ -161,7 +161,7 @@ ui = fem.Function(V, dtype=dtype)
 M = action(a, ui)
 M_fem = fem.form(M, dtype=dtype)
 
-# ### Matrix-free Conjugate Gradient solvers
+# ### Matrix-free Conjugate Gradient solver
 #
 # For the matrix-free solvers, the RHS vector $b$ is first assembled based
 # on the linear form $L$.  To account for the Dirichlet boundary conditions
@@ -173,6 +173,7 @@ b = fem.assemble_vector(L_fem)
 # Apply lifting: b <- b - A * x_bc
 ui.x.array[:] = 0.0
 fem.set_bc(ui.x.array, [bc], scale=-1.0)
+fem.assemble_vector(b.array, M_fem)
 b.scatter_reverse(la.InsertMode.add)
 
 # Set BC dofs to zero on RHS (effectively zeros column in A)
@@ -180,17 +181,9 @@ fem.set_bc(b.array, [bc], scale=0.0)
 fem.set_bc(ui.x.array, [bc], scale=0.0)
 b.scatter_forward()
 
-# In the following, different variants are presented in which the posed
-# Poisson problem is solved using matrix-free CG solvers. In each case
-# we want to achieve convergence up to a relative tolerence `rtol = 1e-6`
-# within `max_iter = 200` iterations.
-
-# #### 1. Implementation using DOLFINx vectors
-
 # To implement the matrix-free CG solver using *DOLFINx* vectors, we define the
 # function `action_A` with which the matrix-vector product $y = A x$
 # is computed.
-
 
 def action_A(x, y):
     ui.x.array[:] = x.array  # Set coefficient vector of the linear form M
