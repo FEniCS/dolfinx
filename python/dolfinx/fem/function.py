@@ -10,11 +10,11 @@ from __future__ import annotations
 import typing
 from functools import singledispatch
 
+import basix
 import numpy as np
 import numpy.typing as npt
-
-import basix
 import ufl
+
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit, la
 from dolfinx.fem import dofmap

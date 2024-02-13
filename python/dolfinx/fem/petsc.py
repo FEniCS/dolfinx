@@ -17,12 +17,11 @@ import contextlib
 import functools
 import typing
 
+import numpy as np
+import ufl
 from petsc4py import PETSc
 
-import numpy as np
-
 import dolfinx.cpp as _cpp
-import ufl
 from dolfinx import la
 from dolfinx.cpp.fem import pack_coefficients as _pack_coefficients
 from dolfinx.cpp.fem import pack_constants as _pack_constants
