@@ -26,10 +26,10 @@ jupytext_process.process()
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    "sphinx.ext.autodoc",
-    "sphinx.ext.autosummary",
+    # "sphinx.ext.autodoc",
+    # "sphinx.ext.autosummary",
     "sphinx.ext.mathjax",
-    "sphinx.ext.napoleon",
+    # "sphinx.ext.napoleon",
     "sphinx.ext.todo",
     "sphinx.ext.viewcode",
     "myst_parser",
@@ -155,13 +155,13 @@ myst_enable_extensions = [
 ]
 
 
-def skip_member(app, what, name, obj, skip, opts):
-    # Skip @entries from nanobind enums
-    if name == "@entries":
-        return True
-    else:
-        return skip
+# def skip_member(app, what, name, obj, skip, opts):
+#     # Skip @entries from nanobind enums
+#     if name == "@entries":
+#         return True
+#     else:
+#         return skip
 
 
-def setup(app):
-    app.connect("autodoc-skip-member", skip_member)
+# def setup(app):
+#     app.connect("autodoc-skip-member", skip_member)
