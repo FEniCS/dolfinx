@@ -963,12 +963,11 @@ def discrete_gradient(space0: _FunctionSpace, space1: _FunctionSpace) -> PETSc.M
     """Assemble a discrete gradient operator.
 
     The discrete gradient operator A interpolates the gradient of
-    a Lagrange finite element function into a Nedelec (first kind)
-    space.
+    a Lagrange finite element function into a H(curl) space.
 
     Args:
         space0: Lagrange space to interpolate the gradient from
-        space1: Nedelec space to interpolate into
+        space1: H(curl) space to interpolate into
 
     Returns:
         Discrete gradient operator
