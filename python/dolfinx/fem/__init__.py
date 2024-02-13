@@ -72,15 +72,18 @@ def create_nonmatching_meshes_interpolation_data(
     mesh_from: _Mesh,
     cells: typing.Optional[npt.NDArray[np.int32]] = None,
     padding: float = 1e-14,
-):
+) -> tuple[list[np.int32], list[np.int32], list[np.floating], list[np.int32]]:
     """Generate data needed to interpolate discrete functions across different meshes.
 
     Args:
         mesh_to: Mesh or geometry of the mesh of the function space to interpolate into
         element: Element of the function space to interpolate into
-        mesh_from: Mesh of the function to interpolate from
+        mesh_from: Mesh that the function to interpolate from is defined on
         cells: Indices of the cells in the destination mesh on which to interpolate.
         padding: Absolute padding of bounding boxes of all entities on mesh_to
+
+    Returns:
+        Data needed to interpolation functions defined on function spaces on the meshes
     """
     if cells is None:
         return _create_nonmatching_meshes_interpolation_data(
