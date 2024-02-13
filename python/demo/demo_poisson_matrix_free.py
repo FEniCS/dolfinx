@@ -85,7 +85,6 @@ from mpi4py import MPI
 import numpy as np
 
 import dolfinx
-import dolfinx.fem.petsc
 import ufl
 from dolfinx import fem, la
 from ufl import action, dx, grad, inner
@@ -181,8 +180,7 @@ fem.set_bc(b.array, [bc], scale=0.0)
 b.scatter_forward()
 
 # To implement the matrix-free CG solver using *DOLFINx* vectors, we define the
-# function `action_A` with which the matrix-vector product $y = A x$
-# is computed.
+# function `action_A` to compute the matrix-vector product $y = A x$.
 
 
 def action_A(x, y):
@@ -200,8 +198,14 @@ def action_A(x, y):
     fem.set_bc(y.array, [bc], scale=0.0)
 
 
-# Basic Conjugate Gradient solver
-def cg(comm, action_A, x, b, max_iter=200, rtol=1e-6):
+# ### Basic Conjugate Gradient solver
+# Solves the problem `A.x=b` in parallel, using the function `action_A` as the operator,
+# `x` as an initial guess to the solution, and `b` as the RHS vector.
+# `comm` is the MPI Communicator.
+# Maximum number of iterations: `max_iter`, relative tolerance: `rtol`.
+
+
+def cg(comm, action_A, x: la.Vector, b: la.Vector, max_iter=200, rtol=1e-6):
     rtol2 = rtol**2
 
     nr = b.index_map.size_local
@@ -253,7 +257,7 @@ iter_cg1 = cg(mesh.comm, action_A, u.x, b, max_iter=200, rtol=rtol)
 # Set BC values in the solution vector
 fem.set_bc(u.x.array, [bc], scale=1.0)
 
-# The error of the finite element solution `uh_lu` compared to the exact
+# The error of the finite element solution `u` compared to the exact
 # solution $u_{\rm D}$ is calculated below in the $L_2$-norm.
 
 
