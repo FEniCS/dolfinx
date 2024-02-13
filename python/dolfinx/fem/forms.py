@@ -23,13 +23,25 @@ if typing.TYPE_CHECKING:
 
 
 class Form:
-    _cpp_object: typing.Union[_cpp.fem.Form_complex64, _cpp.fem.Form_complex128,
-                              _cpp.fem.Form_float32, _cpp.fem.Form_float64]
+    _cpp_object: typing.Union[
+        _cpp.fem.Form_complex64,
+        _cpp.fem.Form_complex128,
+        _cpp.fem.Form_float32,
+        _cpp.fem.Form_float64,
+    ]
     _code: typing.Optional[str]
 
-    def __init__(self, form: typing.Union[_cpp.fem.Form_complex64, _cpp.fem.Form_complex128,
-                                          _cpp.fem.Form_float32, _cpp.fem.Form_float64],
-                 ufcx_form=None, code: typing.Optional[str] = None):
+    def __init__(
+        self,
+        form: typing.Union[
+            _cpp.fem.Form_complex64,
+            _cpp.fem.Form_complex128,
+            _cpp.fem.Form_float32,
+            _cpp.fem.Form_float64,
+        ],
+        ufcx_form=None,
+        code: typing.Optional[str] = None,
+    ):
         """A finite element form
 
         Note:
@@ -82,10 +94,11 @@ class Form:
         return self._cpp_object.integral_types
 
 
-def form_cpp_class(dtype: npt.DTypeLike) -> typing.Union[_cpp.fem.Form_float32,
-                                                         _cpp.fem.Form_float64,
-                                                         _cpp.fem.Form_complex64,
-                                                         _cpp.fem.Form_complex128]:
+def form_cpp_class(
+    dtype: npt.DTypeLike,
+) -> typing.Union[
+    _cpp.fem.Form_float32, _cpp.fem.Form_float64, _cpp.fem.Form_complex64, _cpp.fem.Form_complex128
+]:
     """Return the wrapped C++ class of a variational form of a specific scalar type.
 
     Args:
@@ -110,16 +123,20 @@ def form_cpp_class(dtype: npt.DTypeLike) -> typing.Union[_cpp.fem.Form_float32,
         raise NotImplementedError(f"Type {dtype} not supported.")
 
 
-_ufl_to_dolfinx_domain = {"cell": IntegralType.cell,
-                          "exterior_facet": IntegralType.exterior_facet,
-                          "interior_facet": IntegralType.interior_facet,
-                          "vertex": IntegralType.vertex}
+_ufl_to_dolfinx_domain = {
+    "cell": IntegralType.cell,
+    "exterior_facet": IntegralType.exterior_facet,
+    "interior_facet": IntegralType.interior_facet,
+    "vertex": IntegralType.vertex,
+}
 
 
-def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]],
-         dtype: npt.DTypeLike = default_scalar_type,
-         form_compiler_options: typing.Optional[dict] = None,
-         jit_options: typing.Optional[dict] = None):
+def form(
+    form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]],
+    dtype: npt.DTypeLike = default_scalar_type,
+    form_compiler_options: typing.Optional[dict] = None,
+    jit_options: typing.Optional[dict] = None,
+):
     """Create a Form or an array of Forms.
 
     Args:
@@ -149,7 +166,7 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]],
         """Compile a single UFL form"""
         # Extract subdomain data from UFL form
         sd = form.subdomain_data()
-        domain, = list(sd.keys())  # Assuming single domain
+        (domain,) = list(sd.keys())  # Assuming single domain
         # Check that subdomain data for each integral type is the same
         for data in sd.get(domain).values():
             assert all([d is data[0] for d in data])
@@ -157,9 +174,9 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]],
         mesh = domain.ufl_cargo()
         if mesh is None:
             raise RuntimeError("Expecting to find a Mesh in the form.")
-        ufcx_form, module, code = jit.ffcx_jit(mesh.comm, form,
-                                               form_compiler_options=form_compiler_options,
-                                               jit_options=jit_options)
+        ufcx_form, module, code = jit.ffcx_jit(
+            mesh.comm, form, form_compiler_options=form_compiler_options, jit_options=jit_options
+        )
 
         # For each argument in form extract its function space
         V = [arg.ufl_function_space()._cpp_object for arg in form.arguments()]
@@ -167,8 +184,10 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]],
         # Prepare coefficients data. For every coefficient in form take
         # its C++ object.
         original_coeffs = form.coefficients()
-        coeffs = [original_coeffs[ufcx_form.original_coefficient_position[i]
-                                  ]._cpp_object for i in range(ufcx_form.num_coefficients)]
+        coeffs = [
+            original_coeffs[ufcx_form.original_coefficient_position[i]]._cpp_object
+            for i in range(ufcx_form.num_coefficients)
+        ]
         constants = [c._cpp_object for c in form.constants()]
 
         # NOTE Could remove this and let the user convert meshtags by
@@ -183,17 +202,29 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]],
                         tdim = subdomain.topology.dim
                         subdomain._cpp_object.topology.create_connectivity(tdim - 1, tdim)
                         subdomain._cpp_object.topology.create_connectivity(tdim, tdim - 1)
-                    domains = _cpp.fem.compute_integration_domains(integral_type, subdomain._cpp_object)
+                    domains = _cpp.fem.compute_integration_domains(
+                        integral_type, subdomain._cpp_object
+                    )
                     return [(s[0], np.array(s[1])) for s in domains]
                 except AttributeError:
                     return [(s[0], np.array(s[1])) for s in subdomain]
 
         # Subdomain markers (possibly empty list for some integral types)
-        subdomains = {_ufl_to_dolfinx_domain[key]: get_integration_domains(
-            _ufl_to_dolfinx_domain[key], subdomain_data[0]) for (key, subdomain_data) in sd.get(domain).items()}
+        subdomains = {
+            _ufl_to_dolfinx_domain[key]: get_integration_domains(
+                _ufl_to_dolfinx_domain[key], subdomain_data[0]
+            )
+            for (key, subdomain_data) in sd.get(domain).items()
+        }
 
-        f = ftype(module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)), V, coeffs,
-                  constants, subdomains, mesh)
+        f = ftype(
+            module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)),
+            V,
+            coeffs,
+            constants,
+            subdomains,
+            mesh,
+        )
         return Form(f, ufcx_form, code)
 
     def _create_form(form):
@@ -208,9 +239,13 @@ def form(form: typing.Union[ufl.Form, typing.Iterable[ufl.Form]],
     return _create_form(form)
 
 
-def extract_function_spaces(forms: typing.Union[typing.Iterable[Form],  # type: ignore [return]
-                                                typing.Iterable[typing.Iterable[Form]]],
-                            index: int = 0) -> typing.Iterable[typing.Union[None, function.FunctionSpace]]:
+def extract_function_spaces(
+    forms: typing.Union[
+        typing.Iterable[Form],  # type: ignore [return]
+        typing.Iterable[typing.Iterable[Form]],
+    ],
+    index: int = 0,
+) -> typing.Iterable[typing.Union[None, function.FunctionSpace]]:
     """Extract common function spaces from an array of forms. If `forms`
     is a list of linear form, this function returns of list of the
     corresponding test functions. If `forms` is a 2D array of bilinear
@@ -228,7 +263,9 @@ def extract_function_spaces(forms: typing.Union[typing.Iterable[Form],  # type: 
         return [form.function_spaces[0] if form is not None else None for form in forms]  # type: ignore[union-attr]
     elif _forms.ndim == 2:
         assert index == 0 or index == 1
-        extract_spaces = np.vectorize(lambda form: form.function_spaces[index] if form is not None else None)
+        extract_spaces = np.vectorize(
+            lambda form: form.function_spaces[index] if form is not None else None
+        )
         V = extract_spaces(_forms)
 
         def unique_spaces(V):
@@ -251,5 +288,5 @@ def extract_function_spaces(forms: typing.Union[typing.Iterable[Form],  # type: 
             return list(unique_spaces(V))
         elif index == 1:
             return list(unique_spaces(V.transpose()))
-    else:
-        raise RuntimeError("Unsupported array of forms")
+
+    raise RuntimeError("Unsupported array of forms")
