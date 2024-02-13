@@ -12,12 +12,11 @@ import numpy.typing as npt
 
 from dolfinx.cpp.fem import FiniteElement_float32 as _FiniteElement_float32
 from dolfinx.cpp.fem import FiniteElement_float64 as _FiniteElement_float64
-from dolfinx.cpp.fem import IntegralType
+from dolfinx.cpp.fem import IntegralType, transpose_dofmap
 from dolfinx.cpp.fem import (
     create_nonmatching_meshes_interpolation_data as _create_nonmatching_meshes_interpolation_data,
 )
 from dolfinx.cpp.fem import create_sparsity_pattern as _create_sparsity_pattern
-from dolfinx.cpp.fem import transpose_dofmap
 from dolfinx.cpp.mesh import Geometry_float32 as _Geometry_float32
 from dolfinx.cpp.mesh import Geometry_float64 as _Geometry_float64
 from dolfinx.fem.assemble import (
@@ -68,7 +67,7 @@ def create_sparsity_pattern(a: Form):
 
 
 def create_nonmatching_meshes_interpolation_data(
-    mesh_to: typing.Union[_Mesh, typing.Union[_Geometry_float64, _Geometry_float32]],
+    mesh_to: typing.Union[_Mesh, _Geometry_float64, _Geometry_float32],
     element: typing.Union[_FiniteElement_float32, _FiniteElement_float64],
     mesh_from: _Mesh,
     cells: typing.Optional[npt.NDArray[np.int32]] = None,
@@ -77,19 +76,17 @@ def create_nonmatching_meshes_interpolation_data(
     """Generate data needed to interpolate discrete functions across different meshes.
 
     Args:
-        mesh_to: Mesh or geometry to interpolate into
-        element: Element of the space to interpolate into
+        mesh_to: Mesh or geometry of the mesh of the function space to interpolate into
+        element: Element of the function space to interpolate into
         mesh_from: Mesh of the function to interpolate from
         cells: Indices of the cells in the destination mesh on which to interpolate.
         padding: Absolute padding of bounding boxes of all entities on mesh_to
     """
     if cells is None:
-        assert isinstance(mesh_to, _Mesh)
         return _create_nonmatching_meshes_interpolation_data(
             mesh_to._cpp_object, element, mesh_from._cpp_object, padding
         )
     else:
-        assert isinstance(mesh_to, (_Geometry_float64, _Geometry_float32))
         return _create_nonmatching_meshes_interpolation_data(
             mesh_to, element, mesh_from._cpp_object, cells, padding
         )
