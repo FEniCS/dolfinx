@@ -770,8 +770,8 @@ def entities_to_geometry(
         dim: Topological dimension of the entities of interest.
         entities: Entity indices (local to the process) to determine the
             vertex geometry indices for.
-        orient: If ``True``, in 3D, re-orients facets to have consistent
-            normal direction.
+        orient: If True, the triangular facets of a 3D mesh will be reordered
+            so that they have a consistent normal direction.
 
     Returns:
         Indices in the geometry array for the entity vertices.
