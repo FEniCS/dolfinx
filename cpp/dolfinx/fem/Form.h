@@ -40,7 +40,9 @@ enum class IntegralType : std::int8_t
 
 /// @brief Represents integral data, containing the integral ID, the
 /// kernel, and a list of entities to integrate over.
-template <dolfinx::scalar T, FEkernel<T> Kern>
+template <dolfinx::scalar T,
+          FEkernel<T> Kern = std::function<void(
+              T*, const T*, const T*, const T*, const int*, const uint8_t*)>>
 struct integral_data
 {
   /// @brief Kernel type
@@ -132,9 +134,6 @@ public:
   template <typename X>
   Form(const std::vector<std::shared_ptr<const FunctionSpace<U>>>& V,
        X&& integrals,
-       //  const std::map<IntegralType,
-       //                 std::vector<integral_data<scalar_type, kern_t>>>&
-       //      integrals,
        const std::vector<std::shared_ptr<const Function<scalar_type, U>>>&
            coefficients,
        const std::vector<std::shared_ptr<const Constant<scalar_type>>>&
