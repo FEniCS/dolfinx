@@ -229,7 +229,7 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
           comm, topology, {collapsed_dof_layout}, reorder_fn);
       auto index_map
           = std::make_shared<common::IndexMap>(std::move(_index_map));
-      return DofMap(layout, index_map, bs, std::move(dofmaps[0]), bs);
+      return DofMap(layout, index_map, bs, std::move(dofmaps.front()), bs);
     }
     else
     {

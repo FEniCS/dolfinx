@@ -126,12 +126,12 @@ fem::DofMap fem::create_dofmap(
     int dim = layout.num_dofs();
     for (std::int32_t cell = 0; cell < num_cells; ++cell)
     {
-      std::span<std::int32_t> dofs(dofmaps[0].data() + cell * dim, dim);
+      std::span<std::int32_t> dofs(dofmaps.front().data() + cell * dim, dim);
       unpermute_dofs(dofs, cell_info[cell]);
     }
   }
 
-  return DofMap(layout, index_map, bs, std::move(dofmaps[0]), bs);
+  return DofMap(layout, index_map, bs, std::move(dofmaps.front()), bs);
 }
 //-----------------------------------------------------------------------------
 std::vector<fem::DofMap> fem::create_dofmaps(

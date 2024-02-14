@@ -34,7 +34,7 @@ dependencies = [
 
 [project.optional-dependencies]
 docs = ["markdown", "pyyaml", "sphinx", "sphinx_rtd_theme"]
-lint = ["ruff", "isort"]
+lint = ["ruff"]
 optional = ["numba"]
 test = ["pytest", "sympy", "scipy", "matplotlib", "fenics-dolfinx[optional]"]
 ci = [
@@ -57,6 +57,9 @@ wheel.license-files = ["../COPYING*"]
 [tool.pytest]
 junit_family = "xunit2"
 
+[tool.pytest.ini_options]
+markers = ["skip_in_parallel: marks tests that should be run in serial only."]
+
 [tool.mypy]
 # Suggested at https://blog.wolt.com/engineering/2021/09/30/professional-grade-mypy-configuration/
 # Goal would be to make all of the below True long-term
@@ -69,29 +72,37 @@ warn_unused_ignores = false
 show_error_codes = true
 ignore_missing_imports = true
 
-[tool.isort]
-line_length = 120
-src_paths = ["demo", "dolfinx" , "test"]
-known_first_party = ["basix", "dolfinx", "ffcx", "ufl"]
-known_third_party = ["gmsh", "numba", "numpy", "pytest", "pyvista"]
-known_mpi = ["mpi4py", "petsc4py"]
-sections= ["FUTURE", "STDLIB", "MPI", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
 
 [tool.ruff]
-line-length = 120
+line-length = 100
 indent-width = 4
-allowed-confusables = ["σ"]
 
 [tool.ruff.lint]
 select = [
-    "E",   # pycodestyle
-    "W",   # pycodestyle
-    "F",   # pyflakes
-    # "I",   # isort - use standalone isort
-    "RUF", # Ruff-specific rules
-    "UP",  # pyupgrade
-    "ICN", # flake8-import-conventions
-    "NPY", # numpy-specific rules
-    "FLY", # use f-string not static joins
+      "E", # pycodestyle
+      "W", # pycodestyle
+      "F", # pyflakes
+      "I",   # isort - use standalone isort
+      "RUF", # Ruff-specific rules
+      "UP",  # pyupgrade
+      "ICN", # flake8-import-conventions
+      "NPY", # numpy-specific rules
+      "FLY", # use f-string not static joins
 ]
 ignore = ["UP007", "RUF012"]
+allowed-confusables = ["σ"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["basix", "dolfinx", "ffcx", "ufl"]
+known-third-party = ["gmsh", "numba", "numpy", "pytest", "pyvista"]
+section-order = [
+      "future",
+      "standard-library",
+      "mpi",
+      "third-party",
+      "first-party",
+      "local-folder",
+]
+
+[tool.ruff.lint.isort.sections]
+"mpi" = ["mpi4py", "petsc4py"]

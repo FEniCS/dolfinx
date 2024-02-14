@@ -4,16 +4,18 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import pkg_resources
+from importlib.metadata import version
 
 import dolfinx
 
 
 def test_version():
-    """Test that installed Python version matches c++ version"""
-    version = pkg_resources.get_distribution("fenics-dolfinx").version
+    """Test that installed Python version matches C++ version."""
+    py_version = version("fenics-dolfinx")
     # Change any final '.dev0' to '.0'
-    version = version.replace('dev', '')
+    py_version = py_version.replace("dev", "")
     cpp_version = dolfinx.__version__
-    if version != cpp_version:
-        raise RuntimeError(f"Incorrect versions. Python version: {version}, Core version: {cpp_version}")
+    if py_version != cpp_version:
+        raise RuntimeError(
+            f"Incorrect versions. Python version: {py_version}, Core version: {cpp_version}"
+        )

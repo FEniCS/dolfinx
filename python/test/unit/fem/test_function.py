@@ -28,19 +28,19 @@ def mesh():
 
 @pytest.fixture
 def V(mesh):
-    return functionspace(mesh, ('Lagrange', 1))
+    return functionspace(mesh, ("Lagrange", 1))
 
 
 @pytest.fixture
 def W(mesh):
     gdim = mesh.geometry.dim
-    return functionspace(mesh, ('Lagrange', 1, (gdim,)))
+    return functionspace(mesh, ("Lagrange", 1, (gdim,)))
 
 
 @pytest.fixture
 def Q(mesh):
     gdim = mesh.geometry.dim
-    return functionspace(mesh, ('Lagrange', 1, (gdim, gdim)))
+    return functionspace(mesh, ("Lagrange", 1, (gdim, gdim)))
 
 
 def test_name_argument(W):
@@ -101,12 +101,12 @@ def test_eval(V, W, Q, mesh):
 @pytest.mark.skip_in_parallel
 def test_eval_manifold():
     # Simple two-triangle surface in 3d
-    vertices = np.array([(0.0, 0.0, 1.0),
-                         (1.0, 1.0, 1.0),
-                         (1.0, 0.0, 0.0),
-                         (0.0, 1.0, 0.0)], dtype=default_real_type)
+    vertices = np.array(
+        [(0.0, 0.0, 1.0), (1.0, 1.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0)],
+        dtype=default_real_type,
+    )
     cells = [(0, 1, 2), (0, 1, 3)]
-    domain = ufl.Mesh(element("Lagrange", "triangle", 1, gdim=3, shape=(2,), dtype=default_real_type))
+    domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(2,), dtype=default_real_type))
     mesh = create_mesh(MPI.COMM_WORLD, cells, vertices, domain)
     Q = functionspace(mesh, ("Lagrange", 1))
     u = Function(Q)
@@ -178,7 +178,7 @@ def test_interpolation_rank1(W):
 @pytest.mark.parametrize("dtype,cdtype", [(np.float32, "float"), (np.float64, "double")])
 def test_cffi_expression(dtype, cdtype):
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3, dtype=dtype)
-    V = functionspace(mesh, ('Lagrange', 1))
+    V = functionspace(mesh, ("Lagrange", 1))
 
     code_h = f"void eval({cdtype}* values, int num_points, int value_size, const {cdtype}* x);"
     code_c = """

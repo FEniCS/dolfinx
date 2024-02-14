@@ -177,7 +177,7 @@ std::vector<std::int32_t> exterior_facet_indices(const Topology& topology);
 /// shared_facet or shared_vertex
 /// @return Destination ranks for each cell on this process
 using CellPartitionFunction = std::function<graph::AdjacencyList<std::int32_t>(
-    MPI_Comm comm, int nparts, int tdim,
+    MPI_Comm comm, int nparts, CellType cell_type,
     const graph::AdjacencyList<std::int64_t>& cells)>;
 
 /// @brief Extract topology from cell data, i.e. extract cell vertices.
@@ -792,7 +792,6 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     const CellPartitionFunction& partitioner)
 {
   CellType celltype = element.cell_shape();
-  int tdim = cell_dim(celltype);
   const fem::ElementDofLayout doflayout = element.create_dof_layout();
 
   const int num_cell_vertices = mesh::num_cell_vertices(element.cell_shape());
@@ -819,7 +818,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
       auto t = graph::regular_adjacency_list(
           extract_topology(element.cell_shape(), doflayout, cells),
           num_cell_vertices);
-      dest = partitioner(commt, size, tdim, t);
+      dest = partitioner(commt, size, celltype, t);
     }
 
     // Distribute cells (topology, includes higher-order 'nodes') to
@@ -857,8 +856,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
       cell_offsets[i] = cell_offsets[i - 1] + num_cell_vertices;
     auto [graph, unmatched_facets, max_v, facet_attached_cells]
         = build_local_dual_graph(
-            std::span(cells1_v.data(), num_owned_cells * num_cell_vertices),
-            cell_offsets, tdim);
+            celltype,
+            std::span(cells1_v.data(), num_owned_cells * num_cell_vertices));
     const std::vector<int> remap = graph::reorder_gps(graph);
 
     // Create re-ordered cell lists (leaves ghosts unchanged)
