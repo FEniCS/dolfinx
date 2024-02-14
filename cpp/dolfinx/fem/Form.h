@@ -292,6 +292,35 @@ public:
       throw std::runtime_error("No mesh entities for requested domain index.");
   }
 
+  /// @brief TODO
+  /// @param type TODO
+  /// @param i TODO
+  /// @param mesh TODO
+  /// @return TODO
+  std::vector<std::int32_t>
+  domain(IntegralType type, int i,
+         std::shared_ptr<const mesh::Mesh<U>> mesh) const
+  {
+    const auto& integrals = _integrals[static_cast<std::size_t>(type)];
+    auto it = std::lower_bound(integrals.begin(), integrals.end(), i,
+                               [](auto& itg_data, int i)
+                               { return itg_data.id < i; });
+    if (it != integrals.end() and it->id == i)
+    {
+      std::span<const std::int32_t> entities = it->entities;
+      std::span<const std::int32_t> entity_map = _entity_maps.at(mesh);
+
+      std::vector<std::int32_t> mapped_entities(entities.size(), -1);
+      // TODO Use std::transform
+      for (std::size_t i = 0; i < entities.size(); ++i)
+        mapped_entities[i] = entity_map[entities[i]];
+      // TODO Check all mapped correctly
+      return mapped_entities;
+    }
+    else
+      throw std::runtime_error("No mesh entities for requested domain index.");
+  }
+
   /// Access coefficients
   const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients() const
   {
