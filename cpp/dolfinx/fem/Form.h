@@ -129,6 +129,12 @@ public:
   /// @param[in] mesh Mesh of the domain. This is required when there
   /// are no argument functions from which the mesh can be extracted,
   /// e.g. for functionals.
+  /// @param[in] entity_maps If any trial functions, test functions, or
+  /// coefficients in the form are not defined over the same mesh as the
+  /// integration domain, `entity_maps` must be supplied. For each key
+  /// (a mesh, different to the integration domain mesh) a map should
+  /// be provided relating the entities in the integration domain mesh
+  /// to the entities in the key mesh.
   ///
   /// @pre The integral data in integrals must be sorted by domain
   template <typename X>
@@ -139,7 +145,10 @@ public:
        const std::vector<std::shared_ptr<const Constant<scalar_type>>>&
            constants,
        bool needs_facet_permutations,
-       std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
+       std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr,
+       const std::map<std::shared_ptr<const mesh::Mesh<U>>,
+                      std::span<const std::int32_t>>& entity_maps
+       = {})
       : _function_spaces(V), _coefficients(coefficients), _constants(constants),
         _mesh(mesh), _needs_facet_permutations(needs_facet_permutations)
   {
@@ -147,8 +156,10 @@ public:
     if (!_mesh and !V.empty())
       _mesh = V[0]->mesh();
     for (auto& space : V)
-      if (_mesh != space->mesh())
-        throw std::runtime_error("Incompatible mesh");
+      if (_mesh != space->mesh()
+          and entity_maps.find(space->mesh()) == entity_maps.end())
+        throw std::runtime_error(
+            "Incompatible mesh. entity_maps must be provided.");
     if (!_mesh)
       throw std::runtime_error("No mesh could be associated with the Form.");
 
@@ -166,6 +177,10 @@ public:
       for (auto&& [id, kern, e] : data)
         itg.emplace_back(id, kern, std::move(e));
     }
+
+    // Store entity maps
+    for (auto [msh, map] : entity_maps)
+      _entity_maps.insert({msh, std::vector(map.begin(), map.end())});
   }
 
   /// Copy constructor
@@ -328,5 +343,9 @@ private:
 
   // True if permutation data needs to be passed into these integrals
   bool _needs_facet_permutations;
+
+  // Entity maps
+  std::map<std::shared_ptr<const mesh::Mesh<U>>, std::vector<std::int32_t>>
+      _entity_maps;
 };
 } // namespace dolfinx::fem
