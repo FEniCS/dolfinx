@@ -96,7 +96,7 @@ comm = MPI.COMM_WORLD
 mesh = dolfinx.mesh.create_rectangle(comm, [[0.0, 0.0], [1.0, 1.0]], [10, 10], dtype=real_type)
 
 # Create function space
-degree = 3
+degree = 2
 V = fem.functionspace(mesh, ("Lagrange", degree))
 
 # The second argument to {py:class}`functionspace
