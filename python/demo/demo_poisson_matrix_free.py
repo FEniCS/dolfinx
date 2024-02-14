@@ -21,8 +21,7 @@
 # - Solve a linear partial differential equation using a matrix-free
 # Conjugate Gradient (CG) solver
 # - Create and apply Dirichlet boundary conditions
-# - Compute errors against the exact solution and against a
-# direct solver for the assembled matrix
+# - Compute errors against the exact solution.
 #
 # {download}`Python script <./demo_poisson_matrix_free.py>`\
 # {download}`Jupyter notebook <./demo_poisson_matrix_free.ipynb>`
