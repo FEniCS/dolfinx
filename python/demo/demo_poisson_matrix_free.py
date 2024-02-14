@@ -199,8 +199,7 @@ def action_A(x, y):
 # iterations, `rtol` is the relative tolerance.
 
 
-def cg(comm, action_A, x: la.Vector, b: la.Vector, max_iter: int=200,
-       rtol: float=1e-6):
+def cg(comm, action_A, x: la.Vector, b: la.Vector, max_iter: int = 200, rtol: float = 1e-6):
     rtol2 = rtol**2
 
     nr = b.index_map.size_local
