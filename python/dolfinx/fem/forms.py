@@ -136,6 +136,7 @@ def form(
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: typing.Optional[dict] = None,
     jit_options: typing.Optional[dict] = None,
+    entity_maps: dict[_cpp.mesh.Mesh, np.typing.NDArray[np.int32]] = {},
 ):
     """Create a Form or an array of Forms.
 
@@ -144,6 +145,12 @@ def form(
         dtype: Scalar type to use for the compiled form.
         form_compiler_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
         jit_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`.
+        entity_maps: If any trial functions, test functions, or coefficients in
+                     the form are not defined over the same mesh as the integration
+                     domain, `entity_maps` must be supplied. For each key (a mesh,
+                     different to the integration domain mesh) a map should be
+                     provided relating the entities in the integration domain mesh
+                     to the entities in the key mesh.
 
     Returns:
         Compiled finite element Form.
@@ -224,6 +231,7 @@ def form(
             constants,
             subdomains,
             mesh,
+            entity_maps,
         )
         return Form(f, ufcx_form, code)
 
