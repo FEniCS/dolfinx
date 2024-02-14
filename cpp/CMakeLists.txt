@@ -151,12 +151,12 @@ set_package_properties(
 if(DOLFINX_ENABLE_SLEPC)
   set(_REQUIRE_SLEPC
       TRUE
-      CACHE BOOL "Is SLEPc required?"
+      CACHE BOOL "Is SLEPc REQUIRED?"
   )
 else()
   set(_REQUIRE_SLEPC
       FALSE
-      CACHE BOOL "Is SLEPc required?"
+      CACHE BOOL "Is SLEPc REQUIRED?"
   )
 endif()
 option(DOLFINX_ENABLE_SLEPC "Compile with support for SLEPc." ON)
