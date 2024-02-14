@@ -270,6 +270,7 @@ std::vector<std::string> get_constant_names(const ufcx_form& ufcx_form);
 /// @param[in] constants Spatial constants in the form.
 /// @param[in] subdomains Subdomain markers.
 /// @param[in] mesh The mesh of the domain
+/// @param[in] entity_maps The entity maps for the form
 ///
 /// @pre Each value in `subdomains` must be sorted by domain id.
 template <dolfinx::scalar T, typename U = dolfinx::scalar_value_type_t<T>>
@@ -282,7 +283,10 @@ Form<T, U> create_form_factory(
         IntegralType,
         std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>&
         subdomains,
-    std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
+    std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr,
+    const std::map<std::shared_ptr<const mesh::Mesh<U>>,
+                   std::span<const std::int32_t>>& entity_maps
+    = {})
 {
   if (ufcx_form.rank != (int)spaces.size())
     throw std::runtime_error("Wrong number of argument spaces for Form.");
@@ -318,8 +322,9 @@ Form<T, U> create_form_factory(
     mesh = spaces[0]->mesh();
   for (auto& V : spaces)
   {
-    if (mesh != V->mesh())
-      throw std::runtime_error("Incompatible mesh");
+    if (mesh != V->mesh() and entity_maps.find(V->mesh()) == entity_maps.end())
+      throw std::runtime_error(
+          "Incompatible mesh. entity_maps must be provided.");
   }
   if (!mesh)
     throw std::runtime_error("No mesh could be associated with the Form.");
@@ -567,7 +572,7 @@ Form<T, U> create_form_factory(
   }
 
   return Form<T, U>(spaces, integrals, coefficients, constants,
-                    needs_facet_permutations, mesh);
+                    needs_facet_permutations, mesh, entity_maps);
 }
 
 /// @brief Create a Form from UFC input with coefficients and constants
