@@ -1,15 +1,3 @@
-// ---
-// jupyter:
-//   jupytext:
-//     cell_metadata_filter: -all
-//     formats: cpp:light
-//     text_representation:
-//       extension: .cpp
-//       format_name: light
-//       format_version: '1.5'
-//       jupytext_version: 1.16.1
-// ---
-
 // Copyright (C) 2022 Igor A. Baratta
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
@@ -23,18 +11,35 @@
 // * Create and apply Dirichlet boundary conditions
 // * Compute errors
 //
-// .. math::
+// \begin{align*}
 //    - \nabla^{2} u &= f \quad {\rm in} \ \Omega, \\
 //      u &= u_D \quad {\rm on} \ \Gamma_{D}
+// \end{align*}
 //
 //  Where
-// .. math::
+// \begin{align*}
 //    u_D &= 1 + x^2 + 2y^2, \\
 //    f = -6
+// \end{align*}
 //
-// .. note:: This demo illustrates the use of a matrix-free conjugate
-//           gradient solver. Many practical problems will also require
-//           a preconditioner to create and efficient solver.
+// ```{note}
+// This demo illustrates the use of a matrix-free conjugate
+// gradient solver. Many practical problems will also require
+// a preconditioner to create and efficient solver.
+// ```
+//
+
+// ### UFL form file
+//
+// The UFL file is implemented in {download}`demo_poisson_matrix_free/poisson.py`.
+// ````{admonition} UFL form implemented in python
+// :class: dropdown
+// ![ufl-code]
+// ````
+//
+// ### C++ program
+//
+
 
 #include "poisson.h"
 #include <cmath>

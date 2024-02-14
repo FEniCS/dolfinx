@@ -1,15 +1,3 @@
-// ---
-// jupyter:
-//   jupytext:
-//     cell_metadata_filter: -all
-//     formats: cpp:light
-//     text_representation:
-//       extension: .cpp
-//       format_name: light
-//       format_version: '1.5'
-//       jupytext_version: 1.16.1
-// ---
-
 // # Custom cell kernel assembly (C++)
 //
 // This demo shows various methods to define custom cell kernels in C++ and

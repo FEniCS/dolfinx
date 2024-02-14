@@ -1,15 +1,3 @@
-// ---
-// jupyter:
-//   jupytext:
-//     cell_metadata_filter: -all
-//     formats: cpp:light
-//     text_representation:
-//       extension: .cpp
-//       format_name: light
-//       format_version: '1.5'
-//       jupytext_version: 1.16.1
-// ---
-
 // # Biharmonic equation (C++)
 //
 // This demo illustrates how to:

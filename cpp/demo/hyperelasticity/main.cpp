@@ -1,16 +1,15 @@
-// ---
-// jupyter:
-//   jupytext:
-//     cell_metadata_filter: -all
-//     formats: cpp:light
-//     text_representation:
-//       extension: .cpp
-//       format_name: light
-//       format_version: '1.5'
-//       jupytext_version: 1.16.1
-// ---
-
 // # Hyperelasticity (C++)
+//
+
+// ### UFL form file
+//
+// The UFL file is implemented in {download}`demo_hyperelasticity/hyperelasticity.py`.
+// ````{admonition} UFL form implemented in python
+// :class: dropdown
+// ![ufl-code]
+// ````
+//
+// ### C++ program
 //
 
 #include "hyperelasticity.h"
@@ -140,7 +139,6 @@ int main(int argc, char* argv[])
     // mesh, we initialize the (finite element) function space defined by the
     // generated code.
     //
-    // .. code-block:: cpp
 
     // Create mesh and define function space
     auto mesh = std::make_shared<mesh::Mesh<U>>(mesh::create_box<U>(
