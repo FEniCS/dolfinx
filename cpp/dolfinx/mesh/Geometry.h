@@ -293,7 +293,7 @@ create_geometry(
       = std::make_shared<common::IndexMap>(std::move(_dof_index_map));
 
   // If the mesh has higher order geometry, permute the dofmap
-  if (elements.first().needs_dof_permutations())
+  if (elements.front().needs_dof_permutations())
   {
     const std::int32_t num_cells
         = topology.connectivity(topology.dim(), 0)->num_nodes();
