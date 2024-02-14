@@ -171,12 +171,12 @@ set_package_properties(
 if(DOLFINX_ENABLE_KAHIP)
   set(_REQUIRE_KAHIP
       TRUE
-      CACHE BOOL "Is KaHIP required?"
+      CACHE BOOL "Is KaHIP REQUIRED?"
   )
 else()
   set(_REQUIRE_KAHIP
       FALSE
-      CACHE BOOL "Is KaHIP required?"
+      CACHE BOOL "Is KaHIP REQUIRED?"
   )
 endif()
 option(DOLFINX_ENABLE_KAHIP "Compile with support for KaHIP." OFF)
