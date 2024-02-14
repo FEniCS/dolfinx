@@ -88,7 +88,15 @@ add_feature_info(
 # Enable or disable optional packages
 
 if(DOLFINX_ENABLE_ADIOS2)
-  set(_REQUIRE_ADIOS2 TRUE)
+  set(_REQUIRE_ADIOS2
+      TRUE
+      CACHE BOOL "Is ADIOS2 REQUIRED?"
+  )
+else()
+  set(_REQUIRE_ADIOS2
+      FALSE
+      CACHE BOOL "Is ADIOS2 REQUIRED?"
+  )
 endif()
 option(DOLFINX_ENABLE_ADIOS2 "Compile with support for ADIOS2." ON)
 set_package_properties(
@@ -100,7 +108,15 @@ set_package_properties(
 )
 
 if(DOLFINX_ENABLE_PARMETIS)
-  set(_REQUIRE_PARMETIS TRUE)
+  set(_REQUIRE_PARMETIS
+      TRUE
+      CACHE BOOL "Is Parmetis REQUIRED?"
+  )
+else()
+  set(_REQUIRE_PARMETIS
+      FALSE
+      CACHE BOOL "Is Parmetis REQUIRED?"
+  )
 endif()
 option(DOLFINX_ENABLE_PARMETIS "Compile with support for ParMETIS." ON)
 set_package_properties(
@@ -112,7 +128,15 @@ set_package_properties(
 )
 
 if(DOLFINX_ENABLE_SCOTCH)
-  set(_REQUIRE_SCOTCH TRUE)
+  set(_REQUIRE_SCOTCH
+      TRUE
+      CACHE BOOL "Is SCOTCH REQUIRED?"
+  )
+else()
+  set(_REQUIRE_SCOTCH
+      FALSE
+      CACHE BOOL "Is SCOTCH REQUIRED?"
+  )
 endif()
 option(DOLFINX_ENABLE_SCOTCH "Compile with support for SCOTCH." ON)
 set_package_properties(
@@ -125,7 +149,15 @@ set_package_properties(
 )
 
 if(DOLFINX_ENABLE_SLEPC)
-  set(_REQUIRE_SLEPC TRUE)
+  set(_REQUIRE_SLEPC
+      TRUE
+      CACHE BOOL "Is SLEPc required?"
+  )
+else()
+  set(_REQUIRE_SLEPC
+      FALSE
+      CACHE BOOL "Is SLEPc required?"
+  )
 endif()
 option(DOLFINX_ENABLE_SLEPC "Compile with support for SLEPc." ON)
 set_package_properties(
@@ -137,7 +169,15 @@ set_package_properties(
 )
 
 if(DOLFINX_ENABLE_KAHIP)
-  set(_REQUIRE_KAHIP TRUE)
+  set(_REQUIRE_KAHIP
+      TRUE
+      CACHE BOOL "Is KaHIP required?"
+  )
+else()
+  set(_REQUIRE_KAHIP
+      FALSE
+      CACHE BOOL "Is KaHIP required?"
+  )
 endif()
 option(DOLFINX_ENABLE_KAHIP "Compile with support for KaHIP." OFF)
 set_package_properties(
@@ -363,6 +403,8 @@ if(DOLFINX_ENABLE_SLEPC)
   endif()
 endif()
 
+message(STATUS "${DOLFINX_ENABLE_SCOTCH}")
+message(STATUS "${_REQUIRE_SCOTCH}")
 if(DOLFINX_ENABLE_SCOTCH AND _REQUIRE_SCOTCH)
   find_package(SCOTCH REQUIRED)
 elseif(DOLFINX_ENABLE_SCOTCH)
