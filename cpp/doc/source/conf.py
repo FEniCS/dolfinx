@@ -26,10 +26,7 @@ jupytext_process.process()
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    # "sphinx.ext.autodoc",
-    # "sphinx.ext.autosummary",
     "sphinx.ext.mathjax",
-    # "sphinx.ext.napoleon",
     "sphinx.ext.todo",
     "sphinx.ext.viewcode",
     "myst_parser",
@@ -137,21 +134,9 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [(master_doc, "dolfinx", "DOLFINx Documentation", [author], 1)]
 
-autodoc_default_options = {
-    "members": True,
-    "show-inheritance": True,
-    "imported-members": True,
-    "undoc-members": True,
-}
-autosummary_generate = True
-autosummary_ignore_module_all = False
-autoclass_content = "both"
-
-napoleon_google_docstring = True
-napoleon_use_admonition_for_notes = False
-
 myst_enable_extensions = [
     "dollarmath",
+    "amsmath",
 ]
 
 breathe_projects = {"DOLFINx": "../xml/"}

@@ -68,12 +68,10 @@
 //
 // and considering the boundary conditions
 //
-// $$
 // \begin{align}
 // u &= 0 \quad {\rm on} \ \partial\Omega, \\
 // \nabla^{2} u &= 0 \quad {\rm on} \ \partial\Omega,
 // \end{align}
-// $$
 //
 // a weak formulation of the biharmonic problem reads: find $u \in V$ such that
 //
@@ -83,15 +81,15 @@
 //
 // where the bilinear form is
 //
-// $$
-// a(u, v) =
-// \sum_{K \in \mathcal{T}} \int_{K} \nabla^{2} u \nabla^{2} v \, {\rm d}x \
-// +\sum_{E \in \mathcal{E}_h^{\rm int}}\left(\int_{E} \frac{\alpha}{h_E}
+// \begin{align*}
+// a(u, v) &=
+// \sum_{K \in \mathcal{T}} \int_{K} \nabla^{2} u \nabla^{2} v \, {\rm d}x \\
+// &\qquad+\sum_{E \in \mathcal{E}_h^{\rm int}}\left(\int_{E} \frac{\alpha}{h_E}
 // [\!\![ \nabla u ]\!\!] [\!\![ \nabla v ]\!\!] \, {\rm d}s
 // - \int_{E} \left<\nabla^{2} u \right>[\!\![ \nabla v ]\!\!]  \, {\rm d}s
 // - \int_{E} [\!\![ \nabla u ]\!\!] \left<\nabla^{2} v \right> \,
 // {\rm d}s\right)
-// $$
+// \end{align*}
 //
 // and the linear form is
 //
@@ -123,20 +121,12 @@
 //
 // ### UFL form file
 //
-// The UFL file is implemented in {download}`demo_biharmonic/biharmonic.py`, and the
-// explanation of the UFL file can be found at :doc:`here
-// <biharmonic.py>`.
-// ```python
-// :name: biharmonic.py
-// :caption: python code defining the varional form using ufl
-// ```
+// The UFL file is implemented in {download}`demo_biharmonic/biharmonic.py`.
+// ````{admonition} UFL form implemented in python
+// :class: dropdown
 // ![ufl-code]
+// ````
 //
-// ```{note}
-// Alternately, dump the whole file:
-//      ```{include} demo_biharmonic/biharmonic.py
-//      ```
-// ```
 // ````{note}
 // TODO: explanation on how to run cmake and/or shell commands for ffcx
 // To compile biharmonic.py using FFCx with an option 
@@ -223,7 +213,7 @@ int main(int argc, char* argv[])
     auto L = std::make_shared<fem::Form<T>>(
         fem::create_form<T>(*form_biharmonic_L, {V}, {{"f", f}}, {}, {}));
 
-//  Now, the Dirichlet boundary condition (:math:`u = 0`) can be
+//  Now, the Dirichlet boundary condition ($u = 0$) can be
 //  created using the class {cpp:class}`DirichletBC`. A
 //  {cpp:class}`DirichletBC` takes two arguments: the value of the
 //  boundary condition, and the part of the boundary on which the
