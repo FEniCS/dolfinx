@@ -520,7 +520,10 @@ void declare_form(nb::module_& m, std::string type)
              const std::vector<
                  std::shared_ptr<const dolfinx::fem::Constant<T>>>& constants,
              bool needs_permutation_data,
-             std::shared_ptr<const dolfinx::mesh::Mesh<U>> mesh)
+             std::shared_ptr<const dolfinx::mesh::Mesh<U>> mesh,
+             const std::map<std::shared_ptr<const dolfinx::mesh::Mesh<U>>,
+                            nb::ndarray<const std::int32_t, nb::ndim<1>,
+                                        nb::c_contig>>& entity_maps)
           {
             using kern_t
                 = std::function<void(T*, const T*, const T*,
@@ -545,13 +548,22 @@ void declare_form(nb::module_& m, std::string type)
               }
             }
 
-            new (fp) dolfinx::fem::Form<T, U>(spaces, std::move(_integrals),
-                                              coefficients, constants,
-                                              needs_permutation_data, mesh);
+            std::map<std::shared_ptr<const dolfinx::mesh::Mesh<U>>,
+                     std::span<const int32_t>>
+                _entity_maps;
+            for (auto& [msh, map] : entity_maps)
+            {
+              _entity_maps[msh]
+                  = std::span<const int32_t>(map.data(), map.size());
+            }
+
+            new (fp) dolfinx::fem::Form<T, U>(
+                spaces, std::move(_integrals), coefficients, constants,
+                needs_permutation_data, mesh, _entity_maps);
           },
           nb::arg("spaces"), nb::arg("integrals"), nb::arg("coefficients"),
           nb::arg("constants"), nb::arg("need_permutation_data"),
-          nb::arg("mesh").none())
+          nb::arg("mesh").none(), nb::arg("entity_maps"))
       .def(
           "__init__",
           [](dolfinx::fem::Form<T, U>* fp, std::uintptr_t form,
@@ -566,7 +578,10 @@ void declare_form(nb::module_& m, std::string type)
                  std::vector<std::pair<
                      std::int32_t, nb::ndarray<const std::int32_t, nb::ndim<1>,
                                                nb::c_contig>>>>& subdomains,
-             std::shared_ptr<const dolfinx::mesh::Mesh<U>> mesh)
+             std::shared_ptr<const dolfinx::mesh::Mesh<U>> mesh,
+             const std::map<std::shared_ptr<const dolfinx::mesh::Mesh<U>>,
+                            nb::ndarray<const std::int32_t, nb::ndim<1>,
+                                        nb::c_contig>>& entity_maps)
           {
             std::map<dolfinx::fem::IntegralType,
                      std::vector<std::pair<std::int32_t,
@@ -582,14 +597,24 @@ void declare_form(nb::module_& m, std::string type)
               sd.insert({itg, std::move(x)});
             }
 
+            std::map<std::shared_ptr<const dolfinx::mesh::Mesh<U>>,
+                     std::span<const int32_t>>
+                _entity_maps;
+            for (auto& [msh, map] : entity_maps)
+            {
+              _entity_maps[msh]
+                  = std::span<const int32_t>(map.data(), map.size());
+            }
+
             ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
             new (fp)
                 dolfinx::fem::Form<T, U>(dolfinx::fem::create_form_factory<T>(
-                    *p, spaces, coefficients, constants, sd, mesh));
+                    *p, spaces, coefficients, constants, sd, mesh,
+                    _entity_maps));
           },
           nb::arg("form"), nb::arg("spaces"), nb::arg("coefficients"),
           nb::arg("constants"), nb::arg("subdomains"), nb::arg("mesh").none(),
-          "Create a Form from a pointer to a ufcx_form")
+          nb::arg("entity_maps"), "Create a Form from a pointer to a ufcx_form")
       .def_prop_ro("dtype", [dtype](const dolfinx::fem::Form<T, U>& self)
                    { return dtype; })
       .def_prop_ro("coefficients", &dolfinx::fem::Form<T, U>::coefficients)
