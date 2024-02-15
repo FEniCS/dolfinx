@@ -33,7 +33,9 @@ class Constant(ufl.Constant):
         _cpp.fem.Constant_float64,
     ]
 
-    def __init__(self, domain, c: typing.Union[np.ndarray, typing.Sequence, float, complex]):
+    def __init__(
+        self, domain, c: typing.Union[np.ndarray, typing.Sequence, np.floating, np.complexfloating]
+    ):
         """A constant with respect to a domain.
 
         Args:
