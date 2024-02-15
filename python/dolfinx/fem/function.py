@@ -604,7 +604,9 @@ def functionspace(
         mesh.comm, ffi.cast("uintptr_t", ffi.addressof(ufcx_dofmap)), mesh.topology, cpp_element
     )
 
-    assert mesh.geometry.x.dtype == cpp_element.dtype, "Mesh and element dtype are not compatible."
+    assert np.issubdtype(
+        mesh.geometry.x.dtype, cpp_element.dtype
+    ), "Mesh and element dtype are not compatible."
 
     # Initialize the cpp.FunctionSpace
     try:
