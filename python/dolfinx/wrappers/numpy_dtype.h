@@ -1,35 +1,36 @@
 
+// Copyright (C) 2024 Chris Richardson and Garth N. Wells
+//
+// This file is part of DOLFINx (https://www.fenicsproject.org)
+//
+// SPDX-License-Identifier:    LGPL-3.0-or-later
+
 #include <complex>
-#include <nanobind/nanobind.h>
+#include <cstdint>
+#include <type_traits>
 
 #pragma once
 
-template <typename T>
-nb::object numpy_dtype()
+namespace dolfinx_wrappers
 {
-  auto np = nb::module_::import_("numpy");
-  nb::object dtype;
 
-  if constexpr (std::is_same_v<T, double>)
-    dtype = np.attr("float64");
-  else if constexpr (std::is_same_v<T, float>)
-    dtype = np.attr("float32");
-  else if constexpr (std::is_same_v<T, std::complex<double>>)
-    dtype = np.attr("complex128");
-  else if constexpr (std::is_same_v<T, std::complex<float>>)
-    dtype = np.attr("complex64");
-  return dtype;
-}
-
+/// @brief Return NumPy dtype char type for a C++ type
+/// @tparam T C++ type
+/// @return NumPy dtype
 template <typename T>
-constexpr char numpy_dtype_char()
+constexpr char numpy_dtype()
 {
   if constexpr (std::is_same_v<T, float>)
     return 'f';
   else if constexpr (std::is_same_v<T, double>)
     return 'd';
-  else if constexpr (std::is_same_v<T, std::complex<double>>)
-    return 'D';
   else if constexpr (std::is_same_v<T, std::complex<float>>)
     return 'F';
+  else if constexpr (std::is_same_v<T, std::complex<double>>)
+    return 'D';
+  else if constexpr (std::is_same_v<T, std::int8_t>)
+    return 'b';
+  else if constexpr (std::is_same_v<T, std::uint8_t>)
+    return 'B';
 }
+} // namespace dolfinx_wrappers
