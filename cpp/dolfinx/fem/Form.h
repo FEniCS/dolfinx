@@ -316,14 +316,12 @@ public:
         return std::vector(entities.begin(), entities.end());
       else
       {
-        // TODO Handle out of range exception
         std::span<const std::int32_t> entity_map = _entity_maps.at(mesh);
-
-        std::vector<std::int32_t> mapped_entities(entities.size(), -1);
-        // TODO Use std::transform
-        for (std::size_t i = 0; i < entities.size(); ++i)
-          mapped_entities[i] = entity_map[entities[i]];
-        // TODO Check all mapped correctly
+        std::vector<std::int32_t> mapped_entities;
+        mapped_entities.reserve(entities.size());
+        std::transform(entities.begin(), entities.end(),
+                       std::back_inserter(mapped_entities),
+                       [&entity_map](auto e) { return entity_map[e]; });
         return mapped_entities;
       }
     }
