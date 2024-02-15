@@ -263,8 +263,8 @@ public:
     return ids;
   }
 
-  /// @brief Get the list of cell indices for the ith integral (kernel)
-  /// for the cell domain type.
+  /// @brief Get the list of entity indices for the ith integral (kernel)
+  /// of a given type.
   ///
   /// For IntegralType::cell, returns a list of cell indices.
   ///
@@ -279,7 +279,7 @@ public:
   ///
   /// @param[in] type Integral domain type
   /// @param[in] i Integral ID, i.e. (sub)domain index
-  /// @return List of active cell entities for the given integral (kernel)
+  /// @return List of active entities for the given integral (kernel)
   std::span<const std::int32_t> domain(IntegralType type, int i) const
   {
     const auto& integrals = _integrals[static_cast<std::size_t>(type)];
@@ -292,11 +292,14 @@ public:
       throw std::runtime_error("No mesh entities for requested domain index.");
   }
 
-  /// @brief TODO
-  /// @param type TODO
-  /// @param i TODO
-  /// @param mesh TODO
-  /// @return TODO
+  /// @brief Compute the list of entity indices for the ith integral (kernel)
+  /// of a given type. The indices are mapped from the integration domain mesh
+  /// to the mesh `mesh`.
+  ///
+  /// @param type Integral type
+  /// @param i Integral ID, i.e. (sub)domain index
+  /// @param mesh The mesh to map the entities to
+  /// @return List of active entities in `mesh` for the given integral
   std::vector<std::int32_t>
   domain(IntegralType type, int i,
          std::shared_ptr<const mesh::Mesh<U>> mesh) const

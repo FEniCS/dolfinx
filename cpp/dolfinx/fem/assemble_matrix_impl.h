@@ -60,8 +60,11 @@ void assemble_cells(
   assert(cells_1.size() == cells.size());
   for (std::size_t index = 0; index < cells.size(); ++index)
   {
+    // Cell in integration domain mesh
     std::int32_t c = cells[index];
+    // Corresponding cell in test function mesh
     std::int32_t c_0 = cells_0[index];
+    // Corresponding cell in trial function mesh
     std::int32_t c_1 = cells_1[index];
 
     // Get cell coordinates/geometry
@@ -386,10 +389,13 @@ void assemble_matrix(
                    std::pair<std::span<const T>, int>>& coefficients,
     std::span<const std::int8_t> bc0, std::span<const std::int8_t> bc1)
 {
+  // Integration domain mesh
   std::shared_ptr<const mesh::Mesh<U>> mesh = a.mesh();
   assert(mesh);
+  // Test function mesh
   auto mesh0 = a.function_spaces().at(0)->mesh();
   assert(mesh0);
+  // Trial function mesh
   auto mesh1 = a.function_spaces().at(1)->mesh();
   assert(mesh1);
 
