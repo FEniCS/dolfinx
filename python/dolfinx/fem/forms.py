@@ -117,7 +117,7 @@ def form_cpp_class(
         return _cpp.fem.Form_float64
     elif np.issubdtype(dtype, np.complex64):
         return _cpp.fem.Form_complex64
-    elif np.issubdtype(dtype, np.float128):
+    elif np.issubdtype(dtype, np.complex128):
         return _cpp.fem.Form_complex128
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
