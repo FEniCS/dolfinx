@@ -94,7 +94,7 @@ class Expression:
         jit_options: typing.Optional[dict] = None,
         dtype: typing.Optional[npt.DTypeLike] = None,
     ):
-        """Create DOLFINx Expression.
+        """Create a DOLFINx Expression.
 
         Represents a mathematical expression evaluated at a pre-defined
         set of points on the reference cell. This class closely follows
@@ -304,13 +304,9 @@ class Function(ufl.Coefficient):
             if dtype is None:
                 dtype = default_scalar_type
 
-        element_type = np.dtype(type(V.element).__name__.split("_")[1])
-        if dtype == np.complex128:
-            assert element_type in [dtype, np.float64], "Incompatible FunctionSpace and dtype"
-        elif dtype == np.complex64:
-            assert element_type in [dtype, np.float32], "Incompatible FunctionSpace and dtype"
-        else:
-            assert element_type == dtype, "Incompatible FunctionSpace and dtype"
+        assert (
+            V.element.dtype == dtype(0).real.dtype
+        ), "Incompatible FunctionSpace dtype and requested dtype."
 
         # PETSc Vec wrapper around the C++ function data (constructed
         # when first requested)
