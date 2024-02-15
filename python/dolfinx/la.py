@@ -353,7 +353,7 @@ def is_orthonormal(basis, eps: float = 1.0e-12) -> bool:
         if abs(x.norm() - 1.0) > eps:
             return False
     for i, x in enumerate(basis[:-1]):
-        for y in basis[i + 1:]:
+        for y in basis[i + 1 :]:
             if abs(x.dot(y)) > eps:
                 return False
     return True
