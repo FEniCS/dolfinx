@@ -130,9 +130,10 @@ void declare_vtx_writer(nb::module_& m, std::string type)
                        const dolfinx::fem::Function<std::complex<float>, T>>,
                    std::shared_ptr<const dolfinx::fem::Function<
                        std::complex<double>, T>>>>& u,
-               std::string engine, dolfinx::io::VTXMeshPolicy policy) {
-              new (self)
-                  dolfinx::io::VTXWriter<T>(comm.get(), filename, u, engine, policy);
+               std::string engine, dolfinx::io::VTXMeshPolicy policy)
+            {
+              new (self) dolfinx::io::VTXWriter<T>(comm.get(), filename, u,
+                                                   engine, policy);
             },
             nb::arg("comm"), nb::arg("filename"), nb::arg("u"),
             nb::arg("engine") = "BPFile",
