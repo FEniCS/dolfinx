@@ -388,6 +388,10 @@ void assemble_matrix(
 {
   std::shared_ptr<const mesh::Mesh<U>> mesh = a.mesh();
   assert(mesh);
+  auto mesh0 = a.function_spaces().at(0)->mesh();
+  assert(mesh0);
+  auto mesh1 = a.function_spaces().at(1)->mesh();
+  assert(mesh1);
 
   // Get dofmap data
   std::shared_ptr<const fem::DofMap> dofmap0
@@ -411,12 +415,15 @@ void assemble_matrix(
       = element1->template get_post_dof_transformation_function<T>(
           FiniteElement<U>::doftransform::transpose);
 
-  std::span<const std::uint32_t> cell_info;
+  std::span<const std::uint32_t> cell_info0;
+  std::span<const std::uint32_t> cell_info1;
   if (element0->needs_dof_transformations()
       or element1->needs_dof_transformations() or a.needs_facet_permutations())
   {
-    mesh->topology_mutable()->create_entity_permutations();
-    cell_info = std::span(mesh->topology()->get_cell_permutation_info());
+    mesh0->topology_mutable()->create_entity_permutations();
+    mesh1->topology_mutable()->create_entity_permutations();
+    cell_info0 = std::span(mesh0->topology()->get_cell_permutation_info());
+    cell_info1 = std::span(mesh1->topology()->get_cell_permutation_info());
   }
 
   for (int i : a.integral_ids(IntegralType::cell))
@@ -425,9 +432,11 @@ void assemble_matrix(
     assert(fn);
     auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
     impl::assemble_cells(mat_set, x_dofmap, x, a.domain(IntegralType::cell, i),
+                         a.domain(IntegralType::cell, i, mesh0),
+                         a.domain(IntegralType::cell, i, mesh1),
                          pre_dof_transform, dofs0, bs0, post_dof_transform,
                          dofs1, bs1, bc0, bc1, fn, coeffs, cstride, constants,
-                         cell_info);
+                         cell_info0, cell_info1);
   }
 
   for (int i : a.integral_ids(IntegralType::exterior_facet))
@@ -439,7 +448,7 @@ void assemble_matrix(
     impl::assemble_exterior_facets(
         mat_set, x_dofmap, x, a.domain(IntegralType::exterior_facet, i),
         pre_dof_transform, dofs0, bs0, post_dof_transform, dofs1, bs1, bc0, bc1,
-        fn, coeffs, cstride, constants, cell_info);
+        fn, coeffs, cstride, constants, cell_info0);
   }
 
   if (a.num_integrals(IntegralType::interior_facet) > 0)
@@ -469,7 +478,7 @@ void assemble_matrix(
           mat_set, x_dofmap, x, num_cell_facets,
           a.domain(IntegralType::interior_facet, i), pre_dof_transform,
           *dofmap0, bs0, post_dof_transform, *dofmap1, bs1, bc0, bc1, fn,
-          coeffs, cstride, c_offsets, constants, cell_info, get_perm);
+          coeffs, cstride, c_offsets, constants, cell_info0, get_perm);
     }
   }
 }
