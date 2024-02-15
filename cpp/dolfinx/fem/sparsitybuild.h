@@ -37,6 +37,15 @@ namespace sparsitybuild
 void cells(la::SparsityPattern& pattern, std::span<const std::int32_t> cells,
            std::array<std::reference_wrapper<const DofMap>, 2> dofmaps);
 
+/// @brief TODO
+/// @param pattern TODO
+/// @param cells_0 TODO
+/// @param cells_1 TODO
+/// @param dofmaps TODO
+void cells(la::SparsityPattern& pattern, std::span<const std::int32_t> cells_0,
+           std::span<const std::int32_t> cells_1,
+           std::array<std::reference_wrapper<const DofMap>, 2> dofmaps);
+
 /// @brief Iterate over interior facets and insert entries into sparsity
 /// pattern.
 ///

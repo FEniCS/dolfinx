@@ -308,6 +308,7 @@ public:
     if (it != integrals.end() and it->id == i)
     {
       std::span<const std::int32_t> entities = it->entities;
+      // TODO Handle out of range exception
       std::span<const std::int32_t> entity_map = _entity_maps.at(mesh);
 
       std::vector<std::int32_t> mapped_entities(entities.size(), -1);
