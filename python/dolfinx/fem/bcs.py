@@ -166,7 +166,7 @@ def dirichletbc(
             bctype = _cpp.fem.DirichletBC_float64
         elif np.issubdtype(dtype, np.complex64):
             bctype = _cpp.fem.DirichletBC_complex64
-        elif dtype == np.issubdtype(dtype, np.complex128):
+        elif np.issubdtype(dtype, np.complex128):
             bctype = _cpp.fem.DirichletBC_complex128
         else:
             raise NotImplementedError(f"Type {value.dtype} not supported.")
