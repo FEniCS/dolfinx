@@ -115,6 +115,8 @@ void declare_function_space(nb::module_& m, std::string type)
             },
             nb::arg("ufcx_element"))
         .def("__eq__", &dolfinx::fem::FiniteElement<T>::operator==)
+        .def_prop_ro("dtype",
+                     []() { return dolfinx_wrappers::numpy_dtype<T>(); })
         .def_prop_ro("basix_element",
                      &dolfinx::fem::FiniteElement<T>::basix_element,
                      nb::rv_policy::reference_internal)
@@ -206,8 +208,6 @@ void declare_objects(nb::module_& m, const std::string& type)
 {
   using U = typename dolfinx::scalar_value_type_t<T>;
 
-  auto dtype = numpy_dtype<T>();
-
   // dolfinx::fem::DirichletBC
   std::string pyclass_name = std::string("DirichletBC_") + type;
   nb::class_<dolfinx::fem::DirichletBC<T, U>> dirichletbc(
@@ -270,8 +270,7 @@ void declare_objects(nb::module_& m, const std::string& type)
           },
           nb::arg("g").noconvert(), nb::arg("dofs").noconvert(),
           nb::arg("V").noconvert())
-      .def_prop_ro("dtype", [dtype](const dolfinx::fem::Form<T, U>& self)
-                   { return dtype; })
+      .def_prop_ro("dtype", []() { return dolfinx_wrappers::numpy_dtype<T>(); })
       .def("dof_indices",
            [](const dolfinx::fem::DirichletBC<T, U>& self)
            {
@@ -409,8 +408,7 @@ void declare_objects(nb::module_& m, const std::string& type)
                 dolfinx::fem::Constant<T>(std::span(c.data(), c.size()), shape);
           },
           nb::arg("c").noconvert(), "Create a constant from a value array")
-      .def_prop_ro("dtype", [dtype](const dolfinx::fem::Constant<T>& self)
-                   { return dtype; })
+      .def_prop_ro("dtype", []() { return dolfinx_wrappers::numpy_dtype<T>(); })
       .def_prop_ro(
           "value",
           [](dolfinx::fem::Constant<T>& self)
@@ -467,8 +465,7 @@ void declare_objects(nb::module_& m, const std::string& type)
              return dolfinx_wrappers::as_nbarray(std::move(X), shape.size(),
                                                  shape.data());
            })
-      .def_prop_ro("dtype", [dtype](const dolfinx::fem::Expression<T, U>& self)
-                   { return dtype; })
+      .def_prop_ro("dtype", []() { return dolfinx_wrappers::numpy_dtype<T>(); })
       .def_prop_ro("value_size", &dolfinx::fem::Expression<T, U>::value_size)
       .def_prop_ro("value_shape", &dolfinx::fem::Expression<T, U>::value_shape);
 
@@ -498,8 +495,6 @@ template <typename T>
 void declare_form(nb::module_& m, std::string type)
 {
   using U = typename dolfinx::scalar_value_type_t<T>;
-
-  auto dtype = numpy_dtype<T>();
 
   // dolfinx::fem::Form
   std::string pyclass_name_form = std::string("Form_") + type;
@@ -590,8 +585,7 @@ void declare_form(nb::module_& m, std::string type)
           nb::arg("form"), nb::arg("spaces"), nb::arg("coefficients"),
           nb::arg("constants"), nb::arg("subdomains"), nb::arg("mesh").none(),
           "Create a Form from a pointer to a ufcx_form")
-      .def_prop_ro("dtype", [dtype](const dolfinx::fem::Form<T, U>& self)
-                   { return dtype; })
+      .def_prop_ro("dtype", []() { return dolfinx_wrappers::numpy_dtype<T>(); })
       .def_prop_ro("coefficients", &dolfinx::fem::Form<T, U>::coefficients)
       .def_prop_ro("rank", &dolfinx::fem::Form<T, U>::rank)
       .def_prop_ro("mesh", &dolfinx::fem::Form<T, U>::mesh)
