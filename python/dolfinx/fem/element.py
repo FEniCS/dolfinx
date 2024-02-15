@@ -67,9 +67,9 @@ def coordinate_element(
     Returns:
         A coordinate element.
     """
-    if dtype == np.float32:
+    if np.issubdtype(dtype, np.float32):
         return CoordinateElement(_cpp.fem.CoordinateElement_float32(celltype, degree, variant))
-    elif dtype == np.float64:
+    elif np.issubdtype(dtype, np.float64):
         return CoordinateElement(_cpp.fem.CoordinateElement_float64(celltype, degree, variant))
     else:
         raise RuntimeError("Unsupported dtype.")

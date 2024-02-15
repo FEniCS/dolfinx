@@ -45,13 +45,13 @@ class Constant(ufl.Constant):
         c = np.asarray(c)
         super().__init__(domain, c.shape)
         try:
-            if c.dtype == np.complex64:
+            if np.issubdtype(c.dtype, np.complex64):
                 self._cpp_object = _cpp.fem.Constant_complex64(c)
-            elif c.dtype == np.complex128:
+            elif np.issubdtype(c.dtype, np.complex128):
                 self._cpp_object = _cpp.fem.Constant_complex128(c)
-            elif c.dtype == np.float32:
+            elif np.issubdtype(c.dtype, np.float32):
                 self._cpp_object = _cpp.fem.Constant_float32(c)
-            elif c.dtype == np.float64:
+            elif np.issubdtype(c.dtype, np.float64):
                 self._cpp_object = _cpp.fem.Constant_float64(c)
             else:
                 raise RuntimeError("Unsupported dtype")
@@ -173,13 +173,13 @@ class Expression:
             raise RuntimeError("Expressions with more that one Argument not allowed.")
 
         def _create_expression(dtype):
-            if dtype == np.float32:
+            if np.issubdtype(dtype, np.float32):
                 return _cpp.fem.create_expression_float32
-            elif dtype == np.float64:
+            elif np.issubdtype(dtype, np.float64):
                 return _cpp.fem.create_expression_float64
-            elif dtype == np.complex64:
+            elif np.issubdtype(dtype, np.complex64):
                 return _cpp.fem.create_expression_complex64
-            elif dtype == np.complex128:
+            elif np.issubdtype(dtype, np.complex128):
                 return _cpp.fem.create_expression_complex128
             else:
                 raise NotImplementedError(f"Type {dtype} not supported.")
@@ -591,11 +591,11 @@ def functionspace(
     )
 
     ffi = module.ffi
-    if dtype == np.float32:
+    if np.issubdtype(dtype, np.float32):
         cpp_element = _cpp.fem.FiniteElement_float32(
             ffi.cast("uintptr_t", ffi.addressof(ufcx_element))
         )
-    elif dtype == np.float64:
+    elif np.issubdtype(dtype, np.float64):
         cpp_element = _cpp.fem.FiniteElement_float64(
             ffi.cast("uintptr_t", ffi.addressof(ufcx_element))
         )
