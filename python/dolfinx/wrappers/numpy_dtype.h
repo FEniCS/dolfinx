@@ -32,5 +32,13 @@ constexpr char numpy_dtype()
     return 'b';
   else if constexpr (std::is_same_v<T, std::uint8_t>)
     return 'B';
+  else if constexpr (std::is_same_v<T, std::int32_t>)
+    return 'i';
+  else if constexpr (std::is_same_v<T, std::int32_t>)
+    return 'I';
+  else if constexpr (std::is_same_v<T, std::int64_t>)
+    return 'l';
+  else if constexpr (std::is_same_v<T, std::int64_t>)
+    return 'L';
 }
 } // namespace dolfinx_wrappers
