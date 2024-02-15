@@ -44,12 +44,7 @@ class CoordinateElement:
     @property
     def dtype(self) -> np.dtype:
         """Scalar type for the coordinate element."""
-        if isinstance(self._cpp_object, _cpp.fem.CoordinateElement_float32):
-            return np.float32
-        elif isinstance(self._cpp_object, _cpp.fem.CoordinateElement_float64):
-            return np.float64
-        else:
-            raise RuntimeError("Unable to determine CoordinateElement scalar type.")
+        return np.dtype(self._cpp_object.dtype)
 
 
 @singledispatch

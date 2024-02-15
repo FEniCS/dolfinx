@@ -688,6 +688,8 @@ void declare_cmap(nb::module_& m, std::string type)
                 ct, d, static_cast<basix::element::lagrange_variant>(var));
           },
           nb::arg("celltype"), nb::arg("degree"), nb::arg("variant"))
+      .def_prop_ro("dtype", [](const dolfinx::fem::CoordinateElement<T>&)
+                   { return dolfinx_wrappers::numpy_dtype<T>(); })
       .def("create_dof_layout",
            &dolfinx::fem::CoordinateElement<T>::create_dof_layout)
       .def_prop_ro("degree", &dolfinx::fem::CoordinateElement<T>::degree)
