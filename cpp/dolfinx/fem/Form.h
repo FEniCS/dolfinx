@@ -308,15 +308,21 @@ public:
     if (it != integrals.end() and it->id == i)
     {
       std::span<const std::int32_t> entities = it->entities;
-      // TODO Handle out of range exception
-      std::span<const std::int32_t> entity_map = _entity_maps.at(mesh);
 
-      std::vector<std::int32_t> mapped_entities(entities.size(), -1);
-      // TODO Use std::transform
-      for (std::size_t i = 0; i < entities.size(); ++i)
-        mapped_entities[i] = entity_map[entities[i]];
-      // TODO Check all mapped correctly
-      return mapped_entities;
+      if (mesh == _mesh)
+        return std::vector(entities.begin(), entities.end());
+      else
+      {
+        // TODO Handle out of range exception
+        std::span<const std::int32_t> entity_map = _entity_maps.at(mesh);
+
+        std::vector<std::int32_t> mapped_entities(entities.size(), -1);
+        // TODO Use std::transform
+        for (std::size_t i = 0; i < entities.size(); ++i)
+          mapped_entities[i] = entity_map[entities[i]];
+        // TODO Check all mapped correctly
+        return mapped_entities;
+      }
     }
     else
       throw std::runtime_error("No mesh entities for requested domain index.");
