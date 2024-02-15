@@ -45,13 +45,13 @@ class Constant(ufl.Constant):
         c = np.asarray(c)
         super().__init__(domain, c.shape)
         try:
-            if c.dtype == np.complex64:
+            if np.issubdtype(c.dtype, np.complex64):
                 self._cpp_object = _cpp.fem.Constant_complex64(c)
-            elif c.dtype == np.complex128:
+            elif np.issubdtype(c.dtype, np.complex128):
                 self._cpp_object = _cpp.fem.Constant_complex128(c)
-            elif c.dtype == np.float32:
+            elif np.issubdtype(c.dtype, np.float32):
                 self._cpp_object = _cpp.fem.Constant_float32(c)
-            elif c.dtype == np.float64:
+            elif np.issubdtype(c.dtype, np.float64):
                 self._cpp_object = _cpp.fem.Constant_float64(c)
             else:
                 raise RuntimeError("Unsupported dtype")
@@ -69,7 +69,7 @@ class Constant(ufl.Constant):
 
     @property
     def dtype(self) -> np.dtype:
-        return self._cpp_object.dtype
+        return np.dtype(self._cpp_object.dtype)
 
     def __float__(self):
         if self.ufl_shape or self.ufl_free_indices:
@@ -94,7 +94,7 @@ class Expression:
         jit_options: typing.Optional[dict] = None,
         dtype: typing.Optional[npt.DTypeLike] = None,
     ):
-        """Create DOLFINx Expression.
+        """Create a DOLFINx Expression.
 
         Represents a mathematical expression evaluated at a pre-defined
         set of points on the reference cell. This class closely follows
@@ -173,13 +173,13 @@ class Expression:
             raise RuntimeError("Expressions with more that one Argument not allowed.")
 
         def _create_expression(dtype):
-            if dtype == np.float32:
+            if np.issubdtype(dtype, np.float32):
                 return _cpp.fem.create_expression_float32
-            elif dtype == np.float64:
+            elif np.issubdtype(dtype, np.float64):
                 return _cpp.fem.create_expression_float64
-            elif dtype == np.complex64:
+            elif np.issubdtype(dtype, np.complex64):
                 return _cpp.fem.create_expression_complex64
-            elif dtype == np.complex128:
+            elif np.issubdtype(dtype, np.complex128):
                 return _cpp.fem.create_expression_complex128
             else:
                 raise NotImplementedError(f"Type {dtype} not supported.")
@@ -262,7 +262,7 @@ class Expression:
 
     @property
     def dtype(self) -> np.dtype:
-        return self._cpp_object.dtype
+        return np.dtype(self._cpp_object.dtype)
 
 
 class Function(ufl.Coefficient):
@@ -293,7 +293,6 @@ class Function(ufl.Coefficient):
             name: Function name.
             dtype: Scalar type. Is not set, the DOLFINx default scalar
                 type is used.
-
         """
         if x is not None:
             if dtype is None:
@@ -304,19 +303,23 @@ class Function(ufl.Coefficient):
             if dtype is None:
                 dtype = default_scalar_type
 
+        assert np.issubdtype(
+            V.element.dtype, np.dtype(dtype).type(0).real.dtype
+        ), "Incompatible FunctionSpace dtype and requested dtype."
+
         # PETSc Vec wrapper around the C++ function data (constructed
         # when first requested)
         self._petsc_x = None
 
         # Create cpp Function
         def functiontype(dtype):
-            if dtype == np.dtype(np.float32):
+            if np.issubdtype(dtype, np.float32):
                 return _cpp.fem.Function_float32
-            elif dtype == np.dtype(np.float64):
+            elif np.issubdtype(dtype, np.float64):
                 return _cpp.fem.Function_float64
-            elif dtype == np.dtype(np.complex64):
+            elif np.issubdtype(dtype, np.complex64):
                 return _cpp.fem.Function_complex64
-            elif dtype == np.dtype(np.complex128):
+            elif np.issubdtype(dtype, np.complex128):
                 return _cpp.fem.Function_complex128
             else:
                 raise NotImplementedError(f"Type {dtype} not supported.")
@@ -463,7 +466,7 @@ class Function(ufl.Coefficient):
 
     @property
     def dtype(self) -> np.dtype:
-        return self._cpp_object.x.array.dtype  # type: ignore
+        return np.dtype(self._cpp_object.x.array.dtype)
 
     @property
     def name(self) -> str:
@@ -578,7 +581,7 @@ def functionspace(
     ufl_space = ufl.FunctionSpace(mesh.ufl_domain(), ufl_e)
     value_shape = ufl_space.value_shape
 
-    # Compile dofmap and element and create DOLFIN objects
+    # Compile dofmap and element and create DOLFINx objects
     dtype = mesh.geometry.x.dtype
     if form_compiler_options is None:
         form_compiler_options = dict()
@@ -586,18 +589,24 @@ def functionspace(
     (ufcx_element, ufcx_dofmap), module, code = jit.ffcx_jit(
         mesh.comm, ufl_e, form_compiler_options=form_compiler_options, jit_options=jit_options
     )
+
     ffi = module.ffi
-    if dtype == np.float32:
+    if np.issubdtype(dtype, np.float32):
         cpp_element = _cpp.fem.FiniteElement_float32(
             ffi.cast("uintptr_t", ffi.addressof(ufcx_element))
         )
-    elif dtype == np.float64:
+    elif np.issubdtype(dtype, np.float64):
         cpp_element = _cpp.fem.FiniteElement_float64(
             ffi.cast("uintptr_t", ffi.addressof(ufcx_element))
         )
+
     cpp_dofmap = _cpp.fem.create_dofmap(
         mesh.comm, ffi.cast("uintptr_t", ffi.addressof(ufcx_dofmap)), mesh.topology, cpp_element
     )
+
+    assert np.issubdtype(
+        mesh.geometry.x.dtype, cpp_element.dtype
+    ), "Mesh and element dtype are not compatible."
 
     # Initialize the cpp.FunctionSpace
     try:
