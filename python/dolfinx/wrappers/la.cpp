@@ -45,7 +45,8 @@ void declare_objects(nb::module_& m, const std::string& type)
       .def(nb::init<std::shared_ptr<const dolfinx::common::IndexMap>, int>(),
            nb::arg("map"), nb::arg("bs"))
       .def(nb::init<const dolfinx::la::Vector<T>&>(), nb::arg("vec"))
-      .def_prop_ro("dtype", []() { return dolfinx_wrappers::numpy_dtype<T>(); })
+      .def_prop_ro("dtype", [](const dolfinx::la::Vector<T>&)
+                   { return dolfinx_wrappers::numpy_dtype<T>(); })
       .def(
           "norm",
           [](const dolfinx::la::Vector<T>& self, dolfinx::la::Norm type)
@@ -88,7 +89,8 @@ void declare_objects(nb::module_& m, const std::string& type)
                     dolfinx::la::BlockMode>(),
            nb::arg("p"),
            nb::arg("block_mode") = dolfinx::la::BlockMode::compact)
-      .def_prop_ro("dtype", []() { return dolfinx_wrappers::numpy_dtype<T>(); })
+      .def_prop_ro("dtype", [](const dolfinx::la::MatrixCSR<T>&)
+                   { return dolfinx_wrappers::numpy_dtype<T>(); })
       .def_prop_ro("bs", &dolfinx::la::MatrixCSR<T>::block_size)
       .def("squared_norm", &dolfinx::la::MatrixCSR<T>::squared_norm)
       .def("index_map", &dolfinx::la::MatrixCSR<T>::index_map)

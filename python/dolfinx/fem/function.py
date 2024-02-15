@@ -293,7 +293,6 @@ class Function(ufl.Coefficient):
             name: Function name.
             dtype: Scalar type. Is not set, the DOLFINx default scalar
                 type is used.
-
         """
         if x is not None:
             if dtype is None:
@@ -582,7 +581,7 @@ def functionspace(
     ufl_space = ufl.FunctionSpace(mesh.ufl_domain(), ufl_e)
     value_shape = ufl_space.value_shape
 
-    # Compile dofmap and element and create DOLFIN objects
+    # Compile dofmap and element and create DOLFINx objects
     dtype = mesh.geometry.x.dtype
     if form_compiler_options is None:
         form_compiler_options = dict()
@@ -590,6 +589,7 @@ def functionspace(
     (ufcx_element, ufcx_dofmap), module, code = jit.ffcx_jit(
         mesh.comm, ufl_e, form_compiler_options=form_compiler_options, jit_options=jit_options
     )
+
     ffi = module.ffi
     if dtype == np.float32:
         cpp_element = _cpp.fem.FiniteElement_float32(
@@ -599,9 +599,12 @@ def functionspace(
         cpp_element = _cpp.fem.FiniteElement_float64(
             ffi.cast("uintptr_t", ffi.addressof(ufcx_element))
         )
+
     cpp_dofmap = _cpp.fem.create_dofmap(
         mesh.comm, ffi.cast("uintptr_t", ffi.addressof(ufcx_dofmap)), mesh.topology, cpp_element
     )
+
+    assert mesh.geometry.x.dtype == cpp_element.dtype, "Mesh and element dtype are not compatible."
 
     # Initialize the cpp.FunctionSpace
     try:

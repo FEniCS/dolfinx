@@ -174,7 +174,7 @@ class MatrixCSR:
 
 
 def matrix_csr(
-    sp: _cpp.la.SparsityPattern, block_mode=BlockMode.compact, dtype=np.float64
+    sp: _cpp.la.SparsityPattern, block_mode=BlockMode.compact, dtype: npt.DTypeLike = np.float64
 ) -> MatrixCSR:
     """Create a distributed sparse matrix.
 
@@ -188,16 +188,17 @@ def matrix_csr(
     Returns:
         A sparse matrix.
     """
-    if dtype == np.float32:
+    _dtype = np.dtype(dtype)
+    if _dtype == np.float32:
         ftype = _cpp.la.MatrixCSR_float32
-    elif dtype == np.float64:
+    elif _dtype == np.float64:
         ftype = _cpp.la.MatrixCSR_float64
-    elif dtype == np.complex64:
+    elif _dtype == np.complex64:
         ftype = _cpp.la.MatrixCSR_complex64
-    elif dtype == np.complex128:
+    elif _dtype == np.complex128:
         ftype = _cpp.la.MatrixCSR_complex128
     else:
-        raise NotImplementedError(f"Type {dtype} not supported.")
+        raise NotImplementedError(f"Type {_dtype} not supported.")
 
     return MatrixCSR(ftype(sp, block_mode))
 
@@ -282,16 +283,17 @@ def vector(map, bs=1, dtype: npt.DTypeLike = np.float64) -> Vector:
     Returns:
         A distributed vector.
     """
-    if dtype == np.float32:
+    _dtype = np.dtype(dtype)
+    if _dtype == np.float32:
         vtype = _cpp.la.Vector_float32
-    elif dtype == np.float64:
+    elif _dtype == np.float64:
         vtype = _cpp.la.Vector_float64
-    elif dtype == np.complex64:
+    elif _dtype == np.complex64:
         vtype = _cpp.la.Vector_complex64
-    elif dtype == np.complex128:
+    elif _dtype == np.complex128:
         vtype = _cpp.la.Vector_complex128
     else:
-        raise NotImplementedError(f"Type {dtype} not supported.")
+        raise NotImplementedError(f"Type {_dtype} not supported.")
 
     return Vector(vtype(map, bs))
 
@@ -351,7 +353,7 @@ def is_orthonormal(basis, eps: float = 1.0e-12) -> bool:
         if abs(x.norm() - 1.0) > eps:
             return False
     for i, x in enumerate(basis[:-1]):
-        for y in basis[i + 1 :]:
+        for y in basis[i + 1:]:
             if abs(x.dot(y)) > eps:
                 return False
     return True
