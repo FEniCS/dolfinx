@@ -39,6 +39,7 @@ import numpy as np
 
 try:
     import pyvista
+
     have_pyvista = True
 except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
@@ -92,14 +93,15 @@ if not np.issubdtype(default_scalar_type, np.complexfloating):
 # The function `background_field` below implements this analytical
 # formula:
 
-# +
-def background_field(theta: float, n_b: float, k0: complex,
-                     x: np.typing.NDArray[np.float64]):
 
+# +
+def background_field(theta: float, n_b: float, k0: complex, x: np.typing.NDArray[np.float64]):
     kx = n_b * k0 * np.cos(theta)
     ky = n_b * k0 * np.sin(theta)
     phi = kx * x[0] + ky * x[1]
     return (-np.sin(theta) * np.exp(1j * phi), np.cos(theta) * np.exp(1j * phi))
+
+
 # -
 
 # For convenience, we define the $\nabla\times$ operator for a 2D vector
@@ -127,7 +129,7 @@ def curl_2d(a: fem.Function):
 
 
 def pml_coordinates(x: ufl.indexed.Indexed, alpha: float, k0: complex, l_dom: float, l_pml: float):
-    return (x + 1j * alpha / k0 * x * (ufl.algebra.Abs(x) - l_dom / 2) / (l_pml / 2 - l_dom / 2)**2)
+    return x + 1j * alpha / k0 * x * (ufl.algebra.Abs(x) - l_dom / 2) / (l_pml / 2 - l_dom / 2) ** 2
 
 
 # We use the following domain specific parameters.
@@ -172,9 +174,20 @@ pml_tag = 4
 model = None
 gmsh.initialize(sys.argv)
 if MPI.COMM_WORLD.rank == 0:
-    model = generate_mesh_wire(radius_wire, radius_scatt, l_dom, l_pml,
-                               in_wire_size, on_wire_size, scatt_size, pml_size,
-                               au_tag, bkg_tag, scatt_tag, pml_tag)
+    model = generate_mesh_wire(
+        radius_wire,
+        radius_scatt,
+        l_dom,
+        l_pml,
+        in_wire_size,
+        on_wire_size,
+        scatt_size,
+        pml_size,
+        au_tag,
+        bkg_tag,
+        scatt_tag,
+        pml_tag,
+    )
 model = MPI.COMM_WORLD.bcast(model, root=0)
 msh, cell_tags, facet_tags = gmshio.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2)
 
@@ -289,8 +302,9 @@ x = ufl.SpatialCoordinate(msh)
 alpha = 1
 
 # PML corners
-xy_pml = ufl.as_vector((pml_coordinates(x[0], alpha, k0, l_dom, l_pml),
-                        pml_coordinates(x[1], alpha, k0, l_dom, l_pml)))
+xy_pml = ufl.as_vector(
+    (pml_coordinates(x[0], alpha, k0, l_dom, l_pml), pml_coordinates(x[1], alpha, k0, l_dom, l_pml))
+)
 
 # PML rectangles along x
 x_pml = ufl.as_vector((pml_coordinates(x[0], alpha, k0, l_dom, l_pml), x[1]))
@@ -356,16 +370,15 @@ y_pml = ufl.as_vector((x[0], pml_coordinates(x[1], alpha, k0, l_dom, l_pml)))
 # +
 
 
-def create_eps_mu(pml: ufl.tensors.ListTensor,
-                  eps_bkg: Union[float, ufl.tensors.ListTensor],
-                  mu_bkg: Union[float, ufl.tensors.ListTensor]) -> tuple[ufl.tensors.ComponentTensor,
-                                                                         ufl.tensors.ComponentTensor]:
+def create_eps_mu(
+    pml: ufl.tensors.ListTensor,
+    eps_bkg: Union[float, ufl.tensors.ListTensor],
+    mu_bkg: Union[float, ufl.tensors.ListTensor],
+) -> tuple[ufl.tensors.ComponentTensor, ufl.tensors.ComponentTensor]:
     J = ufl.grad(pml)
 
     # Transform the 2x2 Jacobian into a 3x3 matrix.
-    J = ufl.as_matrix(((J[0, 0], 0, 0),
-                       (0, J[1, 1], 0),
-                       (0, 0, 1)))
+    J = ufl.as_matrix(((J[0, 0], 0, 0), (0, J[1, 1], 0), (0, 0, 1)))
 
     A = ufl.inv(J)
     eps_pml = ufl.det(J) * A * eps_bkg * ufl.transpose(A)
@@ -403,15 +416,17 @@ eps_xy, mu_xy = create_eps_mu(xy_pml, eps_bkg, 1)
 
 # +
 # Definition of the weak form
-F = - ufl.inner(curl_2d(Es), curl_2d(v)) * dDom \
-    + eps * (k0**2) * ufl.inner(Es, v) * dDom \
-    + (k0**2) * (eps - eps_bkg) * ufl.inner(Eb, v) * dDom \
-    - ufl.inner(ufl.inv(mu_x) * curl_2d(Es), curl_2d(v)) * dPml_x \
-    - ufl.inner(ufl.inv(mu_y) * curl_2d(Es), curl_2d(v)) * dPml_y \
-    - ufl.inner(ufl.inv(mu_xy) * curl_2d(Es), curl_2d(v)) * dPml_xy \
-    + (k0**2) * ufl.inner(eps_x * Es_3d, v_3d) * dPml_x \
-    + (k0**2) * ufl.inner(eps_y * Es_3d, v_3d) * dPml_y \
+F = (
+    -ufl.inner(curl_2d(Es), curl_2d(v)) * dDom
+    + eps * (k0**2) * ufl.inner(Es, v) * dDom
+    + (k0**2) * (eps - eps_bkg) * ufl.inner(Eb, v) * dDom
+    - ufl.inner(ufl.inv(mu_x) * curl_2d(Es), curl_2d(v)) * dPml_x
+    - ufl.inner(ufl.inv(mu_y) * curl_2d(Es), curl_2d(v)) * dPml_y
+    - ufl.inner(ufl.inv(mu_xy) * curl_2d(Es), curl_2d(v)) * dPml_xy
+    + (k0**2) * ufl.inner(eps_x * Es_3d, v_3d) * dPml_x
+    + (k0**2) * ufl.inner(eps_y * Es_3d, v_3d) * dPml_y
     + (k0**2) * ufl.inner(eps_xy * Es_3d, v_3d) * dPml_xy
+)
 
 a, L = ufl.lhs(F), ufl.rhs(F)
 
@@ -442,7 +457,7 @@ if have_pyvista:
     V_cells, V_types, V_x = plot.vtk_mesh(V_dg)
     V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
     Esh_values = np.zeros((V_x.shape[0], 3), dtype=np.float64)
-    Esh_values[:, :msh.topology.dim] = Esh_dg.x.array.reshape(V_x.shape[0], msh.topology.dim).real
+    Esh_values[:, : msh.topology.dim] = Esh_dg.x.array.reshape(V_x.shape[0], msh.topology.dim).real
     V_grid.point_data["u"] = Esh_values
 
     plotter = pyvista.Plotter()
@@ -480,7 +495,9 @@ with VTXWriter(msh.comm, "E.bp", E_dg) as vtx:
 # `calculate_analytical_efficiencies` function defined in a separate
 # file:
 
-q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(eps_au, n_bkg, wl0, radius_wire)
+q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
+    eps_au, n_bkg, wl0, radius_wire
+)
 
 # We calculate the numerical efficiencies in the same way as done in
 # `demo_scattering_boundary_conditions.py`, with the only difference
@@ -511,11 +528,12 @@ n_3d = ufl.as_vector((n[0], n[1], 0))
 # efficiency
 marker = fem.Function(D)
 scatt_facets = facet_tags.find(scatt_tag)
-incident_cells = mesh.compute_incident_entities(msh.topology, scatt_facets, msh.topology.dim - 1,
-                                                msh.topology.dim)
+incident_cells = mesh.compute_incident_entities(
+    msh.topology, scatt_facets, msh.topology.dim - 1, msh.topology.dim
+)
 
 midpoints = mesh.compute_midpoints(msh, msh.topology.dim, incident_cells)
-inner_cells = incident_cells[(midpoints[:, 0]**2 + midpoints[:, 1]**2) < (radius_scatt)**2]
+inner_cells = incident_cells[(midpoints[:, 0] ** 2 + midpoints[:, 1] ** 2) < (radius_scatt) ** 2]
 
 marker.x.array[inner_cells] = 1
 
@@ -535,7 +553,9 @@ q_abs_fenics_proc = (fem.assemble_scalar(fem.form(Q * dAu)) / (gcs * I0)).real
 q_abs_fenics = msh.comm.allreduce(q_abs_fenics_proc, op=MPI.SUM)
 
 # Normalized scattering efficiency
-q_sca_fenics_proc = (fem.assemble_scalar(fem.form((P('+') + P('-')) * dS(scatt_tag))) / (gcs * I0)).real
+q_sca_fenics_proc = (
+    fem.assemble_scalar(fem.form((P("+") + P("-")) * dS(scatt_tag))) / (gcs * I0)
+).real
 
 # Sum results from all MPI processes
 q_sca_fenics = msh.comm.allreduce(q_sca_fenics_proc, op=MPI.SUM)

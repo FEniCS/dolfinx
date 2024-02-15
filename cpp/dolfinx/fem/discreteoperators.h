@@ -102,7 +102,8 @@ void discrete_gradient(mesh::Topology& topology,
 
   // Get inverse DOF transform function
   auto apply_inverse_dof_transform
-      = e1.template get_pre_dof_transformation_function<T>(true, true, false);
+      = e1.template get_pre_dof_transformation_function<T>(
+          FiniteElement<U>::doftransform::inverse_transpose, false);
 
   // Generate cell permutations
   topology.create_entity_permutations();
@@ -185,18 +186,19 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   const int bs0 = e0->block_size();
   const int bs1 = e1->block_size();
   auto apply_dof_transformation0
-      = e0->template get_pre_dof_transformation_function<U>(false, false,
-                                                            false);
+      = e0->template get_pre_dof_transformation_function<U>(
+          FiniteElement<U>::doftransform::standard, false);
   auto apply_inverse_dof_transform1
-      = e1->template get_pre_dof_transformation_function<T>(true, true, false);
+      = e1->template get_pre_dof_transformation_function<T>(
+          FiniteElement<U>::doftransform::inverse_transpose, false);
 
   // Get sizes of elements
   const std::size_t space_dim0 = e0->space_dimension();
   const std::size_t space_dim1 = e1->space_dimension();
   const std::size_t dim0 = space_dim0 / bs0;
   const std::size_t value_size_ref0 = e0->reference_value_size() / bs0;
-  const std::size_t value_size0 = e0->value_size() / bs0;
-  const std::size_t value_size1 = e1->value_size() / bs1;
+  const std::size_t value_size0 = V0.value_size() / bs0;
+  const std::size_t value_size1 = V1.value_size() / bs1;
 
   // Get geometry data
   const CoordinateElement<U>& cmap = mesh->geometry().cmap();
@@ -269,12 +271,12 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
 
   // Basis values of Lagrange space unrolled for block size
   // (num_quadrature_points, Lagrange dof, value_size)
-  std::vector<U> basis_values_b(Xshape[0] * bs0 * dim0 * e1->value_size());
+  std::vector<U> basis_values_b(Xshape[0] * bs0 * dim0 * V1.value_size());
   mdspan3_t basis_values(basis_values_b.data(), Xshape[0], bs0 * dim0,
-                         e1->value_size());
-  std::vector<U> mapped_values_b(Xshape[0] * bs0 * dim0 * e1->value_size());
+                         V1.value_size());
+  std::vector<U> mapped_values_b(Xshape[0] * bs0 * dim0 * V1.value_size());
   mdspan3_t mapped_values(mapped_values_b.data(), Xshape[0], bs0 * dim0,
-                          e1->value_size());
+                          V1.value_size());
 
   auto pull_back_fn1
       = e1->basix_element().template map_fn<u_t, U_t, K_t, J_t>();
@@ -389,7 +391,7 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
     {
       MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
           T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 3>>
-          A(Ab.data(), Xshape[0], e1->value_size(), space_dim0);
+          A(Ab.data(), Xshape[0], V1.value_size(), space_dim0);
       for (std::size_t i = 0; i < mapped_values.extent(0); ++i)
         for (std::size_t j = 0; j < mapped_values.extent(1); ++j)
           for (std::size_t k = 0; k < mapped_values.extent(2); ++k)

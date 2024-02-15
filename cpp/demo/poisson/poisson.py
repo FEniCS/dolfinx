@@ -5,8 +5,18 @@
 # the variational problem in UFL terms in a separate form file
 # :download:`poisson.py`.  We begin by defining the finite element::
 from basix.ufl import element
-from ufl import (Coefficient, Constant, FunctionSpace, Mesh, TestFunction,
-                 TrialFunction, ds, dx, grad, inner)
+from ufl import (
+    Coefficient,
+    Constant,
+    FunctionSpace,
+    Mesh,
+    TestFunction,
+    TrialFunction,
+    ds,
+    dx,
+    grad,
+    inner,
+)
 
 e = element("Lagrange", "triangle", 1)
 

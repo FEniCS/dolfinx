@@ -55,24 +55,25 @@ auto create_partitioner_cpp(Functor p)
 template <typename Functor>
 auto create_cell_partitioner_py(Functor p)
 {
-  return [p](dolfinx_wrappers::MPICommWrapper comm, int n, int tdim,
+  return [p](dolfinx_wrappers::MPICommWrapper comm, int n,
+             dolfinx::mesh::CellType cell_type,
              const dolfinx::graph::AdjacencyList<std::int64_t>& cells)
-  { return p(comm.get(), n, tdim, cells); };
+  { return p(comm.get(), n, cell_type, cells); };
 }
 
 using PythonPartitioningFunction
     = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
-        dolfinx_wrappers::MPICommWrapper, int, int,
+        dolfinx_wrappers::MPICommWrapper, int, dolfinx::mesh::CellType,
         const dolfinx::graph::AdjacencyList<std::int64_t>&)>;
 
 using PythonCellPartitionFunction
     = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
-        dolfinx_wrappers::MPICommWrapper, int, int,
+        dolfinx_wrappers::MPICommWrapper, int, dolfinx::mesh::CellType,
         const dolfinx::graph::AdjacencyList<std::int64_t>&)>;
 
 using CppCellPartitionFunction
     = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
-        MPI_Comm, int, int,
+        MPI_Comm, int, dolfinx::mesh::CellType,
         const dolfinx::graph::AdjacencyList<std::int64_t>&)>;
 
 /// Wrap a Python cell graph partitioning function as a C++ function
@@ -81,9 +82,9 @@ create_cell_partitioner_cpp(const PythonCellPartitionFunction& p)
 {
   if (p)
   {
-    return [p](MPI_Comm comm, int n, int tdim,
+    return [p](MPI_Comm comm, int n, dolfinx::mesh::CellType cell_type,
                const dolfinx::graph::AdjacencyList<std::int64_t>& cells)
-    { return p(dolfinx_wrappers::MPICommWrapper(comm), n, tdim, cells); };
+    { return p(dolfinx_wrappers::MPICommWrapper(comm), n, cell_type, cells); };
   }
   else
     return nullptr;
@@ -176,8 +177,9 @@ void declare_mesh(nb::module_& m, std::string type)
           nb::rv_policy::reference_internal,
           "Return coordinates of all geometry points. Each row is the "
           "coordinate of a point.")
-      .def_prop_ro("cmap", &dolfinx::mesh::Geometry<T>::cmap,
-                   "The coordinate map")
+      .def_prop_ro(
+          "cmap", [](dolfinx::mesh::Geometry<T>& self) { return self.cmap(); },
+          "The coordinate map")
       .def_prop_ro("input_global_indices",
                    &dolfinx::mesh::Geometry<T>::input_global_indices);
 
@@ -258,9 +260,9 @@ void declare_mesh(nb::module_& m, std::string type)
         if (p)
         {
           auto p_wrap
-              = [p](MPI_Comm comm, int n, int tdim,
+              = [p](MPI_Comm comm, int n, dolfinx::mesh::CellType cell_type,
                     const dolfinx::graph::AdjacencyList<std::int64_t>& cells)
-          { return p(MPICommWrapper(comm), n, tdim, cells); };
+          { return p(MPICommWrapper(comm), n, cell_type, cells); };
           return dolfinx::mesh::create_mesh(
               comm.get(), comm.get(), std::span(cells.data(), cells.size()),
               element, comm.get(), std::span(x.data(), x.size()),
@@ -410,10 +412,10 @@ void mesh(nb::module_& m)
 
   m.def(
       "build_dual_graph",
-      [](const MPICommWrapper comm,
-         const dolfinx::graph::AdjacencyList<std::int64_t>& cells, int tdim)
-      { return dolfinx::mesh::build_dual_graph(comm.get(), cells, tdim); },
-      nb::arg("comm"), nb::arg("cells"), nb::arg("tdim"),
+      [](const MPICommWrapper comm, dolfinx::mesh::CellType cell_type,
+         const dolfinx::graph::AdjacencyList<std::int64_t>& cells)
+      { return dolfinx::mesh::build_dual_graph(comm.get(), cell_type, cells); },
+      nb::arg("comm"), nb::arg("cell_type"), nb::arg("cells"),
       "Build dual graph for cells");
 
   // dolfinx::mesh::GhostMode enums

@@ -20,10 +20,15 @@ from dolfinx.mesh import CellType, GhostMode, create_mesh, create_unit_cube, cre
 
 
 @pytest.mark.skip_in_parallel
-@pytest.mark.parametrize("mesh", [create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.none),
-                                  create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.shared_facet),
-                                  create_unit_cube(MPI.COMM_WORLD, 4, 3, 7, ghost_mode=GhostMode.none),
-                                  create_unit_cube(MPI.COMM_WORLD, 4, 3, 7, ghost_mode=GhostMode.shared_facet)])
+@pytest.mark.parametrize(
+    "mesh",
+    [
+        create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.none),
+        create_unit_square(MPI.COMM_WORLD, 11, 6, ghost_mode=GhostMode.shared_facet),
+        create_unit_cube(MPI.COMM_WORLD, 4, 3, 7, ghost_mode=GhostMode.none),
+        create_unit_cube(MPI.COMM_WORLD, 4, 3, 7, ghost_mode=GhostMode.shared_facet),
+    ],
+)
 def test_gradient_petsc(mesh):
     """Test discrete gradient computation for lowest order elements."""
     V = functionspace(mesh, ("Lagrange", 1))
@@ -41,27 +46,35 @@ def test_gradient_petsc(mesh):
 
 @pytest.mark.parametrize("p", range(1, 4))
 @pytest.mark.parametrize("q", range(1, 4))
-@pytest.mark.parametrize("cell_type", [CellType.quadrilateral,
-                                       CellType.triangle,
-                                       CellType.tetrahedron,
-                                       CellType.hexahedron])
+@pytest.mark.parametrize(
+    "cell_type",
+    [CellType.quadrilateral, CellType.triangle, CellType.tetrahedron, CellType.hexahedron],
+)
 def test_gradient_interpolation_petsc(cell_type, p, q):
     """Test discrete gradient computation with verification using Expression."""
     comm = MPI.COMM_WORLD
     if cell_type == CellType.triangle:
-        mesh = create_unit_square(comm, 11, 6, ghost_mode=GhostMode.none, cell_type=cell_type, dtype=default_real_type)
+        mesh = create_unit_square(
+            comm, 11, 6, ghost_mode=GhostMode.none, cell_type=cell_type, dtype=default_real_type
+        )
         family0 = "Lagrange"
         family1 = "Nedelec 1st kind H(curl)"
     elif cell_type == CellType.quadrilateral:
-        mesh = create_unit_square(comm, 11, 6, ghost_mode=GhostMode.none, cell_type=cell_type, dtype=default_real_type)
+        mesh = create_unit_square(
+            comm, 11, 6, ghost_mode=GhostMode.none, cell_type=cell_type, dtype=default_real_type
+        )
         family0 = "Q"
         family1 = "RTCE"
     elif cell_type == CellType.hexahedron:
-        mesh = create_unit_cube(comm, 3, 3, 2, ghost_mode=GhostMode.none, cell_type=cell_type, dtype=default_real_type)
+        mesh = create_unit_cube(
+            comm, 3, 3, 2, ghost_mode=GhostMode.none, cell_type=cell_type, dtype=default_real_type
+        )
         family0 = "Q"
         family1 = "NCE"
     elif cell_type == CellType.tetrahedron:
-        mesh = create_unit_cube(comm, 3, 2, 2, ghost_mode=GhostMode.none, cell_type=cell_type, dtype=default_real_type)
+        mesh = create_unit_cube(
+            comm, 3, 2, 2, ghost_mode=GhostMode.none, cell_type=cell_type, dtype=default_real_type
+        )
         family0 = "Lagrange"
         family1 = "Nedelec 1st kind H(curl)"
 
@@ -71,7 +84,7 @@ def test_gradient_interpolation_petsc(cell_type, p, q):
     G.assemble()
 
     u = Function(V)
-    u.interpolate(lambda x: 2 * x[0]**p + 3 * x[1]**p)
+    u.interpolate(lambda x: 2 * x[0] ** p + 3 * x[1] ** p)
 
     grad_u = Expression(ufl.grad(u), W.element.interpolation_points())
     w_expr = Function(W)
@@ -89,17 +102,11 @@ def test_gradient_interpolation_petsc(cell_type, p, q):
 
 @pytest.mark.parametrize("p", range(1, 4))
 @pytest.mark.parametrize("q", range(1, 4))
-@pytest.mark.parametrize("from_lagrange",
-                         [
-                             True,
-                             False
-                         ])
-@pytest.mark.parametrize("cell_type", [
-    CellType.quadrilateral,
-    CellType.triangle,
-    CellType.tetrahedron,
-    CellType.hexahedron
-])
+@pytest.mark.parametrize("from_lagrange", [True, False])
+@pytest.mark.parametrize(
+    "cell_type",
+    [CellType.quadrilateral, CellType.triangle, CellType.tetrahedron, CellType.hexahedron],
+)
 def test_interpolation_matrix_petsc(cell_type, p, q, from_lagrange):
     """Test that discrete interpolation matrix yields the same result as interpolation."""
     comm = MPI.COMM_WORLD
@@ -137,9 +144,10 @@ def test_interpolation_matrix_petsc(cell_type, p, q, from_lagrange):
 
     def f(x):
         if mesh.geometry.dim == 2:
-            return (x[1]**p, x[0]**p)
+            return (x[1] ** p, x[0] ** p)
         else:
-            return (x[0]**p, x[2]**p, x[1]**p)
+            return (x[0] ** p, x[2] ** p, x[1] ** p)
+
     u.interpolate(f)
     w_vec = Function(W)
     w_vec.interpolate(u)
@@ -158,13 +166,38 @@ def test_interpolation_matrix_petsc(cell_type, p, q, from_lagrange):
 def test_nonaffine_discrete_operator_petsc():
     """Check that discrete operator is consistent with normal
     interpolation between non-matching maps on non-affine geometries"""
-    points = np.array([[0, 0, 0], [1, 0, 0], [0, 2, 0], [1, 2, 0],
-                       [0, 0, 3], [1, 0, 3], [0, 2, 3], [1, 2, 3],
-                       [0.5, 0, 0], [0, 1, 0], [0, 0, 1.5], [1, 1, 0],
-                       [1, 0, 1.5], [0.5, 2, 0], [0, 2, 1.5], [1, 2, 1.5],
-                       [0.5, 0, 3], [0, 1, 3], [1, 1, 3], [0.5, 2, 3],
-                       [0.5, 1, 0], [0.5, -0.1, 1.5], [0, 1, 1.5], [1, 1, 1.5],
-                       [0.5, 2, 1.5], [0.5, 1, 3], [0.5, 1, 1.5]], dtype=default_real_type)
+    points = np.array(
+        [
+            [0, 0, 0],
+            [1, 0, 0],
+            [0, 2, 0],
+            [1, 2, 0],
+            [0, 0, 3],
+            [1, 0, 3],
+            [0, 2, 3],
+            [1, 2, 3],
+            [0.5, 0, 0],
+            [0, 1, 0],
+            [0, 0, 1.5],
+            [1, 1, 0],
+            [1, 0, 1.5],
+            [0.5, 2, 0],
+            [0, 2, 1.5],
+            [1, 2, 1.5],
+            [0.5, 0, 3],
+            [0, 1, 3],
+            [1, 1, 3],
+            [0.5, 2, 3],
+            [0.5, 1, 0],
+            [0.5, -0.1, 1.5],
+            [0, 1, 1.5],
+            [1, 1, 1.5],
+            [0.5, 2, 1.5],
+            [0.5, 1, 3],
+            [0.5, 1, 1.5],
+        ],
+        dtype=default_real_type,
+    )
 
     cells = np.array([range(len(points))], dtype=np.int32)
     cell_type = CellType.hexahedron

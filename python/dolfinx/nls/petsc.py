@@ -10,9 +10,10 @@ from __future__ import annotations
 import typing
 
 if typing.TYPE_CHECKING:
-    from dolfinx.fem.problem import NonlinearProblem
     from mpi4py import MPI
     from petsc4py import PETSc
+
+    from dolfinx.fem.problem import NonlinearProblem
 
 import types
 

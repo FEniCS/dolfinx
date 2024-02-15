@@ -18,10 +18,14 @@ from dolfinx import cpp as _cpp
 class CoordinateElement:
     """Coordinate element describing the geometry map for mesh cells"""
 
-    _cpp_object: typing.Union[_cpp.fem.CoordinateElement_float32, _cpp.fem.CoordinateElement_float64]
+    _cpp_object: typing.Union[
+        _cpp.fem.CoordinateElement_float32, _cpp.fem.CoordinateElement_float64
+    ]
 
-    def __init__(self, cmap: typing.Union[_cpp.fem.CoordinateElement_float32,
-                                          _cpp.fem.CoordinateElement_float64]):
+    def __init__(
+        self,
+        cmap: typing.Union[_cpp.fem.CoordinateElement_float32, _cpp.fem.CoordinateElement_float64],
+    ):
         """Create a coordinate map element.
 
         Note:
@@ -32,7 +36,9 @@ class CoordinateElement:
         Args:
             cmap: A C++ CoordinateElement.
         """
-        assert isinstance(cmap, (_cpp.fem.CoordinateElement_float32, _cpp.fem.CoordinateElement_float64))
+        assert isinstance(
+            cmap, (_cpp.fem.CoordinateElement_float32, _cpp.fem.CoordinateElement_float64)
+        )
         self._cpp_object = cmap
 
     @property
@@ -47,9 +53,12 @@ class CoordinateElement:
 
 
 @singledispatch
-def coordinate_element(celltype: _cpp.mesh.CellType, degree: int,
-                       variant=int(basix.LagrangeVariant.unset),
-                       dtype: npt.DTypeLike = np.float64):
+def coordinate_element(
+    celltype: _cpp.mesh.CellType,
+    degree: int,
+    variant=int(basix.LagrangeVariant.unset),
+    dtype: npt.DTypeLike = np.float64,
+):
     """Create a Lagrange CoordinateElement from element metadata.
 
     Coordinate elements are typically used to create meshes.

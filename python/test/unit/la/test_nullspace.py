@@ -90,15 +90,15 @@ def build_broken_elastic_nullspace(V):
     return ns
 
 
-@pytest.mark.parametrize("mesh", [
-    create_unit_square(MPI.COMM_WORLD, 12, 13),
-    create_unit_cube(MPI.COMM_WORLD, 12, 18, 15)
-])
+@pytest.mark.parametrize(
+    "mesh",
+    [create_unit_square(MPI.COMM_WORLD, 12, 13), create_unit_cube(MPI.COMM_WORLD, 12, 18, 15)],
+)
 @pytest.mark.parametrize("degree", [1, 2])
 def test_nullspace_orthogonal(mesh, degree):
     """Test that null spaces orthogonalisation"""
     gdim = mesh.geometry.dim
-    V = functionspace(mesh, ('Lagrange', degree, (gdim,)))
+    V = functionspace(mesh, ("Lagrange", degree, (gdim,)))
     nullspace = build_elastic_nullspace(V)
     assert not la.is_orthonormal(nullspace, eps=1.0e-4)
     la.orthonormalize(nullspace)
@@ -107,18 +107,23 @@ def test_nullspace_orthogonal(mesh, degree):
         x.destroy()
 
 
-@pytest.mark.parametrize("mesh", [
-    create_unit_square(MPI.COMM_WORLD, 12, 13),
-    create_box(MPI.COMM_WORLD,
-               [np.array([0.8, -0.2, 1.2]),
-                np.array([3.0, 11.0, -5.0])], [12, 18, 25],
-               cell_type=CellType.tetrahedron,
-               ghost_mode=GhostMode.none),
-])
+@pytest.mark.parametrize(
+    "mesh",
+    [
+        create_unit_square(MPI.COMM_WORLD, 12, 13),
+        create_box(
+            MPI.COMM_WORLD,
+            [np.array([0.8, -0.2, 1.2]), np.array([3.0, 11.0, -5.0])],
+            [12, 18, 25],
+            cell_type=CellType.tetrahedron,
+            ghost_mode=GhostMode.none,
+        ),
+    ],
+)
 @pytest.mark.parametrize("degree", [1, 2])
 def test_nullspace_check(mesh, degree):
     gdim = mesh.geometry.dim
-    V = functionspace(mesh, ('Lagrange', degree, (gdim,)))
+    V = functionspace(mesh, ("Lagrange", degree, (gdim,)))
     u, v = TrialFunction(V), TestFunction(V)
 
     E, nu = 2.0e2, 0.3
@@ -126,8 +131,7 @@ def test_nullspace_check(mesh, degree):
     lmbda = E * nu / ((1.0 + nu) * (1.0 - 2.0 * nu))
 
     def sigma(w, gdim):
-        return 2.0 * mu * ufl.sym(grad(w)) + lmbda * ufl.tr(
-            grad(w)) * ufl.Identity(gdim)
+        return 2.0 * mu * ufl.sym(grad(w)) + lmbda * ufl.tr(grad(w)) * ufl.Identity(gdim)
 
     a = form(inner(sigma(u, mesh.geometry.dim), grad(v)) * dx)
 

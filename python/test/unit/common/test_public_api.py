@@ -12,10 +12,10 @@ import pytest
 
 def collect_pkg_modules_recursive(name):
     module = importlib.import_module(name)
-    submodules = list(a.name for a in pkgutil.iter_modules(
-        module.__path__, prefix=f"{name}."))
-    subpackages = list(a.name for a in pkgutil.iter_modules(
-        module.__path__, prefix=f"{name}.") if a.ispkg)
+    submodules = list(a.name for a in pkgutil.iter_modules(module.__path__, prefix=f"{name}."))
+    subpackages = list(
+        a.name for a in pkgutil.iter_modules(module.__path__, prefix=f"{name}.") if a.ispkg
+    )
     for subpackage in subpackages:
         pkg_submodules = collect_pkg_modules_recursive(subpackage)
         submodules.extend(pkg_submodules)

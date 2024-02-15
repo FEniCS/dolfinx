@@ -35,7 +35,6 @@
 
 /// @file utils.h
 /// @brief Functions supporting finite element method operations
-
 namespace basix
 {
 template <std::floating_point T>
@@ -113,15 +112,6 @@ compute_integration_domains(IntegralType integral_type,
                             const mesh::Topology& topology,
                             std::span<const std::int32_t> entities, int dim,
                             std::span<const int> values);
-
-/// @brief Finite element cell kernel concept.
-///
-/// Kernel functions that can be passed to an assembler for execution
-/// must satisfy this concept.
-template <class U, class T>
-concept FEkernel = std::is_invocable_v<U, T*, const T*, const T*,
-                                       const scalar_value_type_t<T>*,
-                                       const int*, const std::uint8_t*>;
 
 /// @brief Extract test (0) and trial (1) function spaces pairs for each
 /// bilinear form for a rectangular array of forms.
@@ -357,9 +347,7 @@ Form<T, U> create_form_factory(
   using kern = std::function<void(
       T*, const T*, const T*, const typename scalar_value_type<T>::value_type*,
       const int*, const std::uint8_t*)>;
-  std::map<IntegralType,
-           std::vector<std::tuple<int, kern, std::span<const std::int32_t>>>>
-      integral_data;
+  std::map<IntegralType, std::vector<integral_data<T, kern>>> integrals;
 
   bool needs_facet_permutations = false;
 
@@ -369,7 +357,7 @@ Form<T, U> create_form_factory(
     std::span<const int> ids(ufcx_form.form_integral_ids
                                  + integral_offsets[cell],
                              num_integrals_type[cell]);
-    auto itg = integral_data.insert({IntegralType::cell, {}});
+    auto itg = integrals.insert({IntegralType::cell, {}});
     auto sd = subdomains.find(IntegralType::cell);
     for (int i = 0; i < num_integrals_type[cell]; ++i)
     {
@@ -429,7 +417,7 @@ Form<T, U> create_form_factory(
     std::span<const int> ids(ufcx_form.form_integral_ids
                                  + integral_offsets[exterior_facet],
                              num_integrals_type[exterior_facet]);
-    auto itg = integral_data.insert({IntegralType::exterior_facet, {}});
+    auto itg = integrals.insert({IntegralType::exterior_facet, {}});
     auto sd = subdomains.find(IntegralType::exterior_facet);
     for (int i = 0; i < num_integrals_type[exterior_facet]; ++i)
     {
@@ -500,7 +488,7 @@ Form<T, U> create_form_factory(
     std::span<const int> ids(ufcx_form.form_integral_ids
                                  + integral_offsets[interior_facet],
                              num_integrals_type[interior_facet]);
-    auto itg = integral_data.insert({IntegralType::interior_facet, {}});
+    auto itg = integrals.insert({IntegralType::interior_facet, {}});
     auto sd = subdomains.find(IntegralType::interior_facet);
     for (int i = 0; i < num_integrals_type[interior_facet]; ++i)
     {
@@ -578,7 +566,7 @@ Form<T, U> create_form_factory(
     sd.insert({itg, std::move(x)});
   }
 
-  return Form<T, U>(spaces, integral_data, coefficients, constants,
+  return Form<T, U>(spaces, integrals, coefficients, constants,
                     needs_facet_permutations, mesh);
 }
 
@@ -687,9 +675,26 @@ FunctionSpace<T> create_functionspace(
         reorder_fn
     = nullptr)
 {
+  if (!e.value_shape().empty() and !value_shape.empty())
+  {
+    throw std::runtime_error(
+        "Cannot specify value shape for non-scalar base element.");
+  }
+
+  std::size_t bs = value_shape.empty()
+                       ? 1
+                       : std::accumulate(value_shape.begin(), value_shape.end(),
+                                         1, std::multiplies{});
+
   // Create a DOLFINx element
-  auto _e = std::make_shared<FiniteElement<T>>(e, value_shape);
+  auto _e = std::make_shared<const FiniteElement<T>>(e, bs);
   assert(_e);
+
+  const std::vector<std::size_t> _value_shape
+      = (value_shape.empty() and !e.value_shape().empty())
+            ? fem::compute_value_shape(_e, mesh->topology()->dim(),
+                                       mesh->geometry().dim())
+            : value_shape;
 
   // Create UFC subdofmaps and compute offset
   const int num_sub_elements = _e->num_sub_elements();
@@ -716,7 +721,7 @@ FunctionSpace<T> create_functionspace(
   assert(mesh->topology());
   auto dofmap = std::make_shared<const DofMap>(create_dofmap(
       mesh->comm(), layout, *mesh->topology(), unpermute_dofs, reorder_fn));
-  return FunctionSpace(mesh, _e, dofmap);
+  return FunctionSpace(mesh, _e, dofmap, _value_shape);
 }
 
 /// @brief Create a FunctionSpace from UFC data.
@@ -747,6 +752,8 @@ FunctionSpace<T> create_functionspace(
 
   ufcx_finite_element* ufcx_element = space->finite_element;
   assert(ufcx_element);
+  std::vector<std::size_t> value_shape(space->value_shape,
+                                       space->value_shape + space->value_rank);
 
   const auto& geometry = mesh->geometry();
   auto& cmap = geometry.cmap();
@@ -776,7 +783,8 @@ FunctionSpace<T> create_functionspace(
   return FunctionSpace(
       mesh, element,
       std::make_shared<DofMap>(create_dofmap(mesh->comm(), layout, *topology,
-                                             unpermute_dofs, reorder_fn)));
+                                             unpermute_dofs, reorder_fn)),
+      value_shape);
 }
 
 /// @private
@@ -875,7 +883,8 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
   assert(element);
   int space_dim = element->space_dimension();
   auto transformation
-      = element->template get_pre_dof_transformation_function<T>(false, true);
+      = element->template get_pre_dof_transformation_function<T>(
+          FiniteElement<U>::doftransform::transpose);
   const int bs = dofmap.bs();
   switch (bs)
   {

@@ -17,9 +17,8 @@ import pytest
 import dolfinx
 import dolfinx.utils
 import ffcx.codegeneration.utils
-from dolfinx import TimingType
+from dolfinx import TimingType, fem, la, list_timings
 from dolfinx import cpp as _cpp
-from dolfinx import fem, la, list_timings
 from dolfinx.fem import Form, Function, IntegralType, form_cpp_class, functionspace
 from dolfinx.mesh import create_unit_square
 
@@ -42,8 +41,11 @@ def tabulate_rank2(dtype, xdtype):
 
         # 2x Element area Ae
         Ae = abs((x0 - x1) * (y2 - y1) - (y0 - y1) * (x2 - x1))
-        B = np.array([y1 - y2, y2 - y0, y0 - y1, x2 - x1, x0 - x2, x1 - x0], dtype=dtype).reshape(2, 3)
+        B = np.array([y1 - y2, y2 - y0, y0 - y1, x2 - x1, x0 - x2, x1 - x0], dtype=dtype).reshape(
+            2, 3
+        )
         A[:, :] = np.dot(B.T, B) / (2 * Ae)
+
     return tabulate
 
 
@@ -59,6 +61,7 @@ def tabulate_rank1(dtype, xdtype):
         # 2x Element area Ae
         Ae = abs((x0 - x1) * (y2 - y1) - (y0 - y1) * (x2 - x1))
         b[:] = Ae / 6.0
+
     return tabulate
 
 
@@ -75,6 +78,7 @@ def tabulate_rank1_coeff(dtype, xdtype):
         # 2x Element area Ae
         Ae = abs((x0 - x1) * (y2 - y1) - (y0 - y1) * (x2 - x1))
         b[:] = w[0] * Ae / 6.0
+
     return tabulate
 
 
@@ -86,9 +90,13 @@ def test_numba_assembly(dtype):
     mesh = create_unit_square(MPI.COMM_WORLD, 13, 13, dtype=xdtype)
     V = functionspace(mesh, ("Lagrange", 1))
     cells = np.arange(mesh.topology.index_map(mesh.topology.dim).size_local, dtype=np.int32)
-    integrals = {IntegralType.cell: [(-1, k2.address, cells),
-                                     (12, k2.address, np.arange(0)),
-                                     (2, k2.address, np.arange(0))]}
+    integrals = {
+        IntegralType.cell: [
+            (-1, k2.address, cells),
+            (2, k2.address, np.arange(0)),
+            (12, k2.address, np.arange(0)),
+        ]
+    }
     formtype = form_cpp_class(dtype)
     a = Form(formtype([V._cpp_object, V._cpp_object], integrals, [], [], False, None))
     integrals = {IntegralType.cell: [(-1, k1.address, cells)]}
@@ -116,7 +124,7 @@ def test_coefficient(dtype):
     V = functionspace(mesh, ("Lagrange", 1))
     DG0 = functionspace(mesh, ("DG", 0))
     vals = Function(DG0, dtype=dtype)
-    vals.x.array[:vals.x.index_map.size_local] = 2
+    vals.x.array[: vals.x.index_map.size_local] = 2
 
     tdim = mesh.topology.dim
     num_cells = mesh.topology.index_map(tdim).size_local + mesh.topology.index_map(tdim).num_ghosts
@@ -137,8 +145,11 @@ def test_cffi_assembly():
     V = functionspace(mesh, ("Lagrange", 1))
     if mesh.comm.rank == 0:
         from cffi import FFI
+
         ffibuilder = FFI()
-        ffibuilder.set_source("_cffi_kernelA", r"""
+        ffibuilder.set_source(
+            "_cffi_kernelA",
+            r"""
         #include <math.h>
         void tabulate_tensor_poissonA(double* restrict A, const double* w,
                                     const double* c,
@@ -152,10 +163,14 @@ def test_cffi_assembly():
         // PM* dimensions: [entities][dofs][dofs]
         static const double FE3_C0_D01_Q1[1][1][2] = { { { -1.0, 1.0 } } };
         // Unstructured piecewise computations
-        const double J_c0 = coordinate_dofs[0] * FE3_C0_D01_Q1[0][0][0] + coordinate_dofs[3] * FE3_C0_D01_Q1[0][0][1];
-        const double J_c3 = coordinate_dofs[1] * FE3_C0_D01_Q1[0][0][0] + coordinate_dofs[7] * FE3_C0_D01_Q1[0][0][1];
-        const double J_c1 = coordinate_dofs[0] * FE3_C0_D01_Q1[0][0][0] + coordinate_dofs[6] * FE3_C0_D01_Q1[0][0][1];
-        const double J_c2 = coordinate_dofs[1] * FE3_C0_D01_Q1[0][0][0] + coordinate_dofs[4] * FE3_C0_D01_Q1[0][0][1];
+        const double J_c0 = coordinate_dofs[0] * FE3_C0_D01_Q1[0][0][0]
+          + coordinate_dofs[3] * FE3_C0_D01_Q1[0][0][1];
+        const double J_c3 = coordinate_dofs[1] * FE3_C0_D01_Q1[0][0][0]
+          + coordinate_dofs[7] * FE3_C0_D01_Q1[0][0][1];
+        const double J_c1 = coordinate_dofs[0] * FE3_C0_D01_Q1[0][0][0]
+          + coordinate_dofs[6] * FE3_C0_D01_Q1[0][0][1];
+        const double J_c2 = coordinate_dofs[1] * FE3_C0_D01_Q1[0][0][0]
+          + coordinate_dofs[4] * FE3_C0_D01_Q1[0][0][1];
         double sp[20];
         sp[0] = J_c0 * J_c3;
         sp[1] = J_c1 * J_c2;
@@ -201,10 +216,14 @@ def test_cffi_assembly():
         // PM* dimensions: [entities][dofs][dofs]
         static const double FE4_C0_D01_Q1[1][1][2] = { { { -1.0, 1.0 } } };
         // Unstructured piecewise computations
-        const double J_c0 = coordinate_dofs[0] * FE4_C0_D01_Q1[0][0][0] + coordinate_dofs[3] * FE4_C0_D01_Q1[0][0][1];
-        const double J_c3 = coordinate_dofs[1] * FE4_C0_D01_Q1[0][0][0] + coordinate_dofs[7] * FE4_C0_D01_Q1[0][0][1];
-        const double J_c1 = coordinate_dofs[0] * FE4_C0_D01_Q1[0][0][0] + coordinate_dofs[6] * FE4_C0_D01_Q1[0][0][1];
-        const double J_c2 = coordinate_dofs[1] * FE4_C0_D01_Q1[0][0][0] + coordinate_dofs[4] * FE4_C0_D01_Q1[0][0][1];
+        const double J_c0 = coordinate_dofs[0] * FE4_C0_D01_Q1[0][0][0]
+          + coordinate_dofs[3] * FE4_C0_D01_Q1[0][0][1];
+        const double J_c3 = coordinate_dofs[1] * FE4_C0_D01_Q1[0][0][0]
+          + coordinate_dofs[7] * FE4_C0_D01_Q1[0][0][1];
+        const double J_c1 = coordinate_dofs[0] * FE4_C0_D01_Q1[0][0][0]
+          + coordinate_dofs[6] * FE4_C0_D01_Q1[0][0][1];
+        const double J_c2 = coordinate_dofs[1] * FE4_C0_D01_Q1[0][0][0]
+          + coordinate_dofs[4] * FE4_C0_D01_Q1[0][0][1];
         double sp[4];
         sp[0] = J_c0 * J_c3;
         sp[1] = J_c1 * J_c2;
@@ -214,8 +233,10 @@ def test_cffi_assembly():
         A[1] = 0.1666666666666667 * sp[3];
         A[2] = 0.1666666666666667 * sp[3];
         }
-        """)
-        ffibuilder.cdef("""
+        """,
+        )
+        ffibuilder.cdef(
+            """
         void tabulate_tensor_poissonA(double* restrict A, const double* w,
                                     const double* c,
                                     const double* restrict coordinate_dofs,
@@ -226,7 +247,8 @@ def test_cffi_assembly():
                                     const double* restrict coordinate_dofs,
                                     const int* entity_local_index,
                                     const int* cell_orientation);
-        """)
+        """
+        )
 
         ffibuilder.compile(verbose=True)
 
