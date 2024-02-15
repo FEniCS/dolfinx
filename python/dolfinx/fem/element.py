@@ -42,7 +42,7 @@ class CoordinateElement:
         self._cpp_object = cmap
 
     @property
-    def dtype(self) -> npt.DTypeLike:
+    def dtype(self) -> np.dtype:
         """Scalar type for the coordinate element."""
         if isinstance(self._cpp_object, _cpp.fem.CoordinateElement_float32):
             return np.float32

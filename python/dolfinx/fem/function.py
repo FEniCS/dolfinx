@@ -69,7 +69,7 @@ class Constant(ufl.Constant):
 
     @property
     def dtype(self) -> np.dtype:
-        return self._cpp_object.dtype
+        return np.dtype(self._cpp_object.dtype)
 
     def __float__(self):
         if self.ufl_shape or self.ufl_free_indices:
@@ -262,7 +262,7 @@ class Expression:
 
     @property
     def dtype(self) -> np.dtype:
-        return self._cpp_object.dtype
+        return np.dtype(self._cpp_object.dtype)
 
 
 class Function(ufl.Coefficient):
@@ -303,8 +303,8 @@ class Function(ufl.Coefficient):
             if dtype is None:
                 dtype = default_scalar_type
 
-        assert (
-            V.element.dtype == dtype(0).real.dtype
+        assert np.issubdtype(
+            V.element.dtype, np.dtype(dtype).type(0).real.dtype
         ), "Incompatible FunctionSpace dtype and requested dtype."
 
         # PETSc Vec wrapper around the C++ function data (constructed
@@ -313,13 +313,13 @@ class Function(ufl.Coefficient):
 
         # Create cpp Function
         def functiontype(dtype):
-            if dtype == np.dtype(np.float32):
+            if np.issubdtype(dtype, np.float32):
                 return _cpp.fem.Function_float32
-            elif dtype == np.dtype(np.float64):
+            elif np.issubdtype(dtype, np.float64):
                 return _cpp.fem.Function_float64
-            elif dtype == np.dtype(np.complex64):
+            elif np.issubdtype(dtype, np.complex64):
                 return _cpp.fem.Function_complex64
-            elif dtype == np.dtype(np.complex128):
+            elif np.issubdtype(dtype, np.complex128):
                 return _cpp.fem.Function_complex128
             else:
                 raise NotImplementedError(f"Type {dtype} not supported.")
@@ -466,7 +466,7 @@ class Function(ufl.Coefficient):
 
     @property
     def dtype(self) -> np.dtype:
-        return self._cpp_object.x.array.dtype  # type: ignore
+        return np.dtype(self._cpp_object.x.array.dtype)
 
     @property
     def name(self) -> str:
