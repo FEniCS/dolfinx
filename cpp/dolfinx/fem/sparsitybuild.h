@@ -28,7 +28,8 @@ class DofMap;
 /// Support for building sparsity patterns from degree-of-freedom maps.
 namespace sparsitybuild
 {
-/// @brief Iterate over cells and insert entries into sparsity pattern.
+/// @brief Iterate over cells and insert entries into sparsity pattern (single
+/// domain).
 ///
 /// @param[in,out] pattern The sparsity pattern to insert into
 /// @param[in] cells The cell indices
@@ -37,11 +38,13 @@ namespace sparsitybuild
 void cells(la::SparsityPattern& pattern, std::span<const std::int32_t> cells,
            std::array<std::reference_wrapper<const DofMap>, 2> dofmaps);
 
-/// @brief TODO
-/// @param pattern TODO
-/// @param cells_0 TODO
-/// @param cells_1 TODO
-/// @param dofmaps TODO
+/// @brief Iterate over cells and insert entries into sparsity pattern (mixed
+/// domain).
+/// @param pattern The sparsity pattern to insert into
+/// @param cells_0 Cell indices in the test function mesh
+/// @param cells_1 Cell indices in the trial function mesh
+/// @param dofmaps Dofmaps to used in building the sparsity pattern
+/// @note The sparsity pattern is not finalised
 void cells(la::SparsityPattern& pattern, std::span<const std::int32_t> cells_0,
            std::span<const std::int32_t> cells_1,
            std::array<std::reference_wrapper<const DofMap>, 2> dofmaps);
