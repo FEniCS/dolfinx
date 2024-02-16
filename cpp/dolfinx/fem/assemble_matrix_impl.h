@@ -33,15 +33,15 @@ template <dolfinx::scalar T>
 void assemble_cells(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     std::span<const scalar_value_type_t<T>> x,
-    std::span<const std::int32_t> cells, std::span<const std::int32_t> cells_0,
-    std::span<const std::int32_t> cells_1,
+    std::span<const std::int32_t> cells, std::span<const std::int32_t> cells0,
+    std::span<const std::int32_t> cells1,
     fem::DofTransformKernel<T> auto pre_dof_transform, mdspan2_t dofmap0,
     int bs0, fem::DofTransformKernel<T> auto post_dof_transform,
     mdspan2_t dofmap1, int bs1, std::span<const std::int8_t> bc0,
     std::span<const std::int8_t> bc1, FEkernel<T> auto kernel,
     std::span<const T> coeffs, int cstride, std::span<const T> constants,
-    std::span<const std::uint32_t> cell_info_0,
-    std::span<const std::uint32_t> cell_info_1)
+    std::span<const std::uint32_t> cell_info0,
+    std::span<const std::uint32_t> cell_info1)
 {
   if (cells.empty())
     return;
@@ -56,16 +56,16 @@ void assemble_cells(
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * x_dofmap.extent(1));
 
   // Iterate over active cells
-  assert(cells_0.size() == cells.size());
-  assert(cells_1.size() == cells.size());
+  assert(cells0.size() == cells.size());
+  assert(cells1.size() == cells.size());
   for (std::size_t index = 0; index < cells.size(); ++index)
   {
     // Cell in integration domain mesh
     std::int32_t c = cells[index];
     // Corresponding cell in test function mesh
-    std::int32_t c_0 = cells_0[index];
+    std::int32_t c0 = cells0[index];
     // Corresponding cell in trial function mesh
-    std::int32_t c_1 = cells_1[index];
+    std::int32_t c1 = cells1[index];
 
     // Get cell coordinates/geometry
     auto x_dofs
@@ -82,12 +82,12 @@ void assemble_cells(
     kernel(Ae.data(), coeffs.data() + index * cstride, constants.data(),
            coordinate_dofs.data(), nullptr, nullptr);
 
-    pre_dof_transform(_Ae, cell_info_1, c_1, ndim1);
-    post_dof_transform(_Ae, cell_info_0, c_0, ndim0);
+    pre_dof_transform(_Ae, cell_info1, c1, ndim1);
+    post_dof_transform(_Ae, cell_info0, c0, ndim0);
 
     // Zero rows/columns for essential bcs
-    auto dofs0 = std::span(dofmap0.data_handle() + c_0 * num_dofs0, num_dofs0);
-    auto dofs1 = std::span(dofmap1.data_handle() + c_1 * num_dofs1, num_dofs1);
+    auto dofs0 = std::span(dofmap0.data_handle() + c0 * num_dofs0, num_dofs0);
+    auto dofs1 = std::span(dofmap1.data_handle() + c1 * num_dofs1, num_dofs1);
 
     if (!bc0.empty())
     {
