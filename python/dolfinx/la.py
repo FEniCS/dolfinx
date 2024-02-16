@@ -174,7 +174,7 @@ class MatrixCSR:
 
 
 def matrix_csr(
-    sp: _cpp.la.SparsityPattern, block_mode=BlockMode.compact, dtype=np.float64
+    sp: _cpp.la.SparsityPattern, block_mode=BlockMode.compact, dtype: npt.DTypeLike = np.float64
 ) -> MatrixCSR:
     """Create a distributed sparse matrix.
 
@@ -188,13 +188,13 @@ def matrix_csr(
     Returns:
         A sparse matrix.
     """
-    if dtype == np.float32:
+    if np.issubdtype(dtype, np.float32):
         ftype = _cpp.la.MatrixCSR_float32
-    elif dtype == np.float64:
+    elif np.issubdtype(dtype, np.float64):
         ftype = _cpp.la.MatrixCSR_float64
-    elif dtype == np.complex64:
+    elif np.issubdtype(dtype, np.complex64):
         ftype = _cpp.la.MatrixCSR_complex64
-    elif dtype == np.complex128:
+    elif np.issubdtype(dtype, np.complex128):
         ftype = _cpp.la.MatrixCSR_complex128
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
@@ -282,13 +282,13 @@ def vector(map, bs=1, dtype: npt.DTypeLike = np.float64) -> Vector:
     Returns:
         A distributed vector.
     """
-    if dtype == np.float32:
+    if np.issubdtype(dtype, np.float32):
         vtype = _cpp.la.Vector_float32
-    elif dtype == np.float64:
+    elif np.issubdtype(dtype, np.float64):
         vtype = _cpp.la.Vector_float64
-    elif dtype == np.complex64:
+    elif np.issubdtype(dtype, np.complex64):
         vtype = _cpp.la.Vector_complex64
-    elif dtype == np.complex128:
+    elif np.issubdtype(dtype, np.complex128):
         vtype = _cpp.la.Vector_complex128
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
