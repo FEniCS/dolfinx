@@ -297,8 +297,8 @@ public:
   }
 
   /// @brief Compute the list of entity indices for the ith integral (kernel)
-  /// of a given type. The indices are mapped from the integration domain mesh
-  /// to the mesh `mesh`.
+  /// of a given type (i.e. cell, exterior facet, or interior facet). The
+  /// indices are mapped from the integration domain mesh to the mesh `mesh`.
   ///
   /// @param type Integral type
   /// @param i Integral ID, i.e. (sub)domain index
