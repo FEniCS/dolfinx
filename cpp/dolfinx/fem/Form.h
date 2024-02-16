@@ -156,12 +156,14 @@ public:
     if (!_mesh and !V.empty())
       _mesh = V[0]->mesh();
     for (auto& space : V)
+    {
       if (_mesh != space->mesh()
           and entity_maps.find(space->mesh()) == entity_maps.end())
       {
         throw std::runtime_error(
             "Incompatible mesh. entity_maps must be provided.");
       }
+    }
     if (!_mesh)
       throw std::runtime_error("No mesh could be associated with the Form.");
 
