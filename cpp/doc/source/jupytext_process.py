@@ -26,8 +26,8 @@ def process():
     # Iterate over subdirectories containing demos
     for demo_subdir in demo_dirs.iterdir():
         if demo_subdir.is_dir():
-            fname = pathlib.Path("/demo_"+demo_subdir.name)
-            demo_doc_subdir = demo_doc_dir/fname.name
+            fname = pathlib.Path("/demo_" + demo_subdir.name)
+            demo_doc_subdir = demo_doc_dir / fname.name
             demo_doc_subdir.mkdir(parents=True, exist_ok=True)
             # Process each demo using jupytext/myst
             for demo_file in demo_subdir.glob("main.cpp"):
@@ -45,8 +45,7 @@ def process():
                 python_demo = jupytext.read(pydemo_file)
                 python_myst_text = jupytext.writes(python_demo, fmt="myst")
                 python_myst_text = python_myst_text.replace("{code-cell}", "python")
-                cpp_myst_text = cpp_myst_text.replace("![ufl-code]",
-                                                       python_myst_text)
+                cpp_myst_text = cpp_myst_text.replace("![ufl-code]", python_myst_text)
 
             for cmake_file in demo_subdir.glob("CMakeLists.txt"):
                 shutil.copy(cmake_file, demo_doc_subdir)
@@ -58,6 +57,7 @@ def process():
             # There is a posibility to use jupyter-notebooks with C++/C kernels
             # ipynb_file = (demo_doc_dir / fname.name).with_suffix(".ipynb")
             # jupytext.write(cpp_demo, ipynb_file, fmt="ipynb")
+
 
 if __name__ == "__main__":
     process()
