@@ -114,7 +114,7 @@ public:
   /// Scalar type
   using scalar_type = T;
 
-  /// @brief Create a finite element form.
+  /// @brief Create a finite element form (mixed domain).
   ///
   /// @note User applications will normally call a builder function
   /// rather using this interface directly.
@@ -126,15 +126,15 @@ public:
   /// @param[in] constants Constants in the Form
   /// @param[in] needs_facet_permutations Set to true is any of the
   /// integration kernels require cell permutation data
-  /// @param[in] mesh Mesh of the domain. This is required when there
-  /// are no argument functions from which the mesh can be extracted,
-  /// e.g. for functionals.
   /// @param[in] entity_maps If any trial functions, test functions, or
   /// coefficients in the form are not defined over the same mesh as the
   /// integration domain, `entity_maps` must be supplied. For each key
   /// (a mesh, different to the integration domain mesh) a map should
   /// be provided relating the entities in the integration domain mesh
   /// to the entities in the key mesh.
+  /// @param[in] mesh Mesh of the domain. This is required when there
+  /// are no argument functions from which the mesh can be extracted,
+  /// e.g. for functionals.
   ///
   /// @pre The integral data in integrals must be sorted by domain
   template <typename X>
@@ -145,10 +145,9 @@ public:
        const std::vector<std::shared_ptr<const Constant<scalar_type>>>&
            constants,
        bool needs_facet_permutations,
-       std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr,
        const std::map<std::shared_ptr<const mesh::Mesh<U>>,
-                      std::span<const std::int32_t>>& entity_maps
-       = {})
+                      std::span<const std::int32_t>>& entity_maps,
+       std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
       : _function_spaces(V), _coefficients(coefficients), _constants(constants),
         _mesh(mesh), _needs_facet_permutations(needs_facet_permutations)
   {
@@ -185,6 +184,37 @@ public:
     // Store entity maps
     for (auto [msh, map] : entity_maps)
       _entity_maps.insert({msh, std::vector(map.begin(), map.end())});
+  }
+
+  // @brief Create a finite element form (single domain).
+  ///
+  /// @note User applications will normally call a builder function
+  /// rather using this interface directly.
+  ///
+  /// @param[in] V Function spaces for the form arguments
+  /// @param[in] integrals The integrals in the form. For each
+  /// integral type, there is a list of integral data
+  /// @param[in] coefficients
+  /// @param[in] constants Constants in the Form
+  /// @param[in] needs_facet_permutations Set to true is any of the
+  /// integration kernels require cell permutation data
+  /// @param[in] mesh Mesh of the domain. This is required when there
+  /// are no argument functions from which the mesh can be extracted,
+  /// e.g. for functionals.
+  ///
+  /// @pre The integral data in integrals must be sorted by domain
+  template <typename X>
+  Form(const std::vector<std::shared_ptr<const FunctionSpace<U>>>& V,
+       X&& integrals,
+       const std::vector<std::shared_ptr<const Function<scalar_type, U>>>&
+           coefficients,
+       const std::vector<std::shared_ptr<const Constant<scalar_type>>>&
+           constants,
+       bool needs_facet_permutations,
+       std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
+      : Form(V, integrals, coefficients, constants, needs_facet_permutations,
+             {}, mesh)
+  {
   }
 
   /// Copy constructor

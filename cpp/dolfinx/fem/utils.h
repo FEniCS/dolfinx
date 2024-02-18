@@ -275,8 +275,8 @@ std::vector<std::string> get_constant_names(const ufcx_form& ufcx_form);
 /// @param[in] coefficients Coefficient fields in the form.
 /// @param[in] constants Spatial constants in the form.
 /// @param[in] subdomains Subdomain markers.
-/// @param[in] mesh The mesh of the domain
 /// @param[in] entity_maps The entity maps for the form
+/// @param[in] mesh The mesh of the domain
 ///
 /// @pre Each value in `subdomains` must be sorted by domain id.
 template <dolfinx::scalar T, typename U = dolfinx::scalar_value_type_t<T>>
@@ -289,10 +289,9 @@ Form<T, U> create_form_factory(
         IntegralType,
         std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>&
         subdomains,
-    std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr,
     const std::map<std::shared_ptr<const mesh::Mesh<U>>,
-                   std::span<const std::int32_t>>& entity_maps
-    = {})
+                   std::span<const std::int32_t>>& entity_maps,
+    std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
 {
   if (ufcx_form.rank != (int)spaces.size())
     throw std::runtime_error("Wrong number of argument spaces for Form.");
@@ -581,7 +580,38 @@ Form<T, U> create_form_factory(
   }
 
   return Form<T, U>(spaces, integrals, coefficients, constants,
-                    needs_facet_permutations, mesh, entity_maps);
+                    needs_facet_permutations, entity_maps, mesh);
+}
+
+/// @brief Create a Form from UFCx input with coefficients and constants
+/// passed in the required order.
+///
+/// Use fem::create_form to create a fem::Form with coefficients and
+/// constants associated with the name/string.
+///
+/// @param[in] ufcx_form The UFCx form.
+/// @param[in] spaces Vector of function spaces. The number of spaces is
+/// equal to the rank of the form.
+/// @param[in] coefficients Coefficient fields in the form.
+/// @param[in] constants Spatial constants in the form.
+/// @param[in] subdomains Subdomain markers.
+/// @param[in] mesh The mesh of the domain
+///
+/// @pre Each value in `subdomains` must be sorted by domain id.
+template <dolfinx::scalar T, typename U = dolfinx::scalar_value_type_t<T>>
+Form<T, U> create_form_factory(
+    const ufcx_form& ufcx_form,
+    const std::vector<std::shared_ptr<const FunctionSpace<U>>>& spaces,
+    const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients,
+    const std::vector<std::shared_ptr<const Constant<T>>>& constants,
+    const std::map<
+        IntegralType,
+        std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>&
+        subdomains,
+    std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
+{
+  return create_form_factory(ufcx_form, spaces, coefficients, constants,
+                             subdomains, {}, mesh);
 }
 
 /// @brief Create a Form from UFC input with coefficients and constants

@@ -230,8 +230,8 @@ def form(
             coeffs,
             constants,
             subdomains,
-            mesh,
             entity_maps,
+            mesh,
         )
         return Form(f, ufcx_form, code)
 
