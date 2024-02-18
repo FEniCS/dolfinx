@@ -195,9 +195,9 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
     case IntegralType::cell:
       for (int id : ids)
       {
-        sparsitybuild::cells(pattern, a.domain(type, id, mesh_0),
-                             a.domain(type, id, mesh_1),
-                             {{dofmaps[0], dofmaps[1]}});
+        sparsitybuild::cells(
+            pattern, {a.domain(type, id, mesh_0), a.domain(type, id, mesh_1)},
+            {{dofmaps[0], dofmaps[1]}});
       }
       break;
     case IntegralType::interior_facet:

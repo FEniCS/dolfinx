@@ -41,12 +41,14 @@ void cells(la::SparsityPattern& pattern, std::span<const std::int32_t> cells,
 /// @brief Iterate over cells and insert entries into sparsity pattern (mixed
 /// domain).
 /// @param pattern The sparsity pattern to insert into
-/// @param cells_0 Cell indices in the test function mesh
-/// @param cells_1 Cell indices in the trial function mesh
+/// @param cells Two lists of cells, the first numbered with respect to the
+/// test function mesh, and the seconded numbered with respect to the trial
+/// function mesh. cells[0][i] (in the test function) must correspond to
+/// cells[1][i] in the trial function mesh for all i.
 /// @param dofmaps Dofmaps to used in building the sparsity pattern
 /// @note The sparsity pattern is not finalised
-void cells(la::SparsityPattern& pattern, std::span<const std::int32_t> cells_0,
-           std::span<const std::int32_t> cells_1,
+void cells(la::SparsityPattern& pattern,
+           std::array<std::span<const std::int32_t>, 2> cells,
            std::array<std::reference_wrapper<const DofMap>, 2> dofmaps);
 
 /// @brief Iterate over interior facets and insert entries into sparsity
