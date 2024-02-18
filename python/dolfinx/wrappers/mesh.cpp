@@ -96,8 +96,6 @@ namespace dolfinx_wrappers
 template <typename T>
 void declare_meshtags(nb::module_& m, std::string type)
 {
-  auto dtype = numpy_dtype<T>();
-
   std::string pyclass_name = std::string("MeshTags_") + type;
   nb::class_<dolfinx::mesh::MeshTags<T>>(m, pyclass_name.c_str(),
                                          "MeshTags object")
@@ -115,8 +113,8 @@ void declare_meshtags(nb::module_& m, std::string type)
             new (self) dolfinx::mesh::MeshTags<T>(
                 topology, dim, std::move(indices_vec), std::move(values_vec));
           })
-      .def_prop_ro("dtype", [dtype](const dolfinx::mesh::MeshTags<T>& self)
-                   { return dtype; })
+      .def_prop_ro("dtype", [](const dolfinx::mesh::MeshTags<T>&)
+                   { return dolfinx_wrappers::numpy_dtype<T>(); })
       .def_rw("name", &dolfinx::mesh::MeshTags<T>::name)
       .def_prop_ro("dim", &dolfinx::mesh::MeshTags<T>::dim)
       .def_prop_ro("topology", &dolfinx::mesh::MeshTags<T>::topology)

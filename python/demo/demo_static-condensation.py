@@ -49,7 +49,7 @@ from dolfinx.jit import ffcx_jit
 from dolfinx.mesh import locate_entities_boundary, meshtags
 from ffcx.codegeneration.utils import numba_ufcx_kernel_signature as ufcx_signature
 
-if PETSc.RealType == np.float32:  # type: ignore
+if np.issubdtype(PETSc.RealType, np.float32):  # type: ignore
     print("float32 not yet supported for this demo.")
     exit(0)
 

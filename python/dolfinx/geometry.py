@@ -97,11 +97,11 @@ def bb_tree(
         entities = np.arange(map.size_local + map.num_ghosts, dtype=np.int32)
 
     dtype = mesh.geometry.x.dtype
-    if dtype == np.float32:
+    if np.issubdtype(dtype, np.float32):
         return BoundingBoxTree(
             _cpp.geometry.BoundingBoxTree_float32(mesh._cpp_object, dim, entities, padding)
         )
-    elif dtype == np.float64:
+    elif np.issubdtype(dtype, np.float64):
         return BoundingBoxTree(
             _cpp.geometry.BoundingBoxTree_float64(mesh._cpp_object, dim, entities, padding)
         )

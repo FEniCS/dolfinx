@@ -355,14 +355,13 @@ Form<T, U> create_form_factory(
 
   // Get list of integral IDs, and load tabulate tensor into memory for
   // each
-  using kern = std::function<void(
+  using kern_t = std::function<void(
       T*, const T*, const T*, const typename scalar_value_type<T>::value_type*,
       const int*, const std::uint8_t*)>;
-  std::map<IntegralType, std::vector<integral_data<T, kern>>> integrals;
-
-  bool needs_facet_permutations = false;
+  std::map<IntegralType, std::vector<integral_data<T, kern_t>>> integrals;
 
   // Attach cell kernels
+  bool needs_facet_permutations = false;
   std::vector<std::int32_t> default_cells;
   {
     std::span<const int> ids(ufcx_form.form_integral_ids
@@ -377,7 +376,7 @@ Form<T, U> create_form_factory(
           = ufcx_form.form_integrals[integral_offsets[cell] + i];
       assert(integral);
 
-      kern k = nullptr;
+      kern_t k = nullptr;
       if constexpr (std::is_same_v<T, float>)
         k = integral->tabulate_tensor_float32;
       else if constexpr (std::is_same_v<T, std::complex<float>>)
@@ -396,7 +395,11 @@ Form<T, U> create_form_factory(
             const typename scalar_value_type<T>::value_type*, const int*,
             const unsigned char*)>(integral->tabulate_tensor_complex128);
       }
-      assert(k);
+      if (!k)
+      {
+        throw std::runtime_error(
+            "UFCx kernel function is NULL. Check requested types.");
+      }
 
       // Build list of entities to assemble over
       if (id == -1)
@@ -437,7 +440,7 @@ Form<T, U> create_form_factory(
           = ufcx_form.form_integrals[integral_offsets[exterior_facet] + i];
       assert(integral);
 
-      kern k = nullptr;
+      kern_t k = nullptr;
       if constexpr (std::is_same_v<T, float>)
         k = integral->tabulate_tensor_float32;
       else if constexpr (std::is_same_v<T, std::complex<float>>)
@@ -508,7 +511,7 @@ Form<T, U> create_form_factory(
           = ufcx_form.form_integrals[integral_offsets[interior_facet] + i];
       assert(integral);
 
-      kern k = nullptr;
+      kern_t k = nullptr;
       if constexpr (std::is_same_v<T, float>)
         k = integral->tabulate_tensor_float32;
       else if constexpr (std::is_same_v<T, std::complex<float>>)
