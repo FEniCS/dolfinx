@@ -115,6 +115,8 @@ void declare_function_space(nb::module_& m, std::string type)
             },
             nb::arg("ufcx_element"))
         .def("__eq__", &dolfinx::fem::FiniteElement<T>::operator==)
+        .def_prop_ro("dtype", [](const dolfinx::fem::FiniteElement<T>&)
+                     { return dolfinx_wrappers::numpy_dtype<T>(); })
         .def_prop_ro("basix_element",
                      &dolfinx::fem::FiniteElement<T>::basix_element,
                      nb::rv_policy::reference_internal)
@@ -206,8 +208,6 @@ void declare_objects(nb::module_& m, const std::string& type)
 {
   using U = typename dolfinx::scalar_value_type_t<T>;
 
-  auto dtype = numpy_dtype<T>();
-
   // dolfinx::fem::DirichletBC
   std::string pyclass_name = std::string("DirichletBC_") + type;
   nb::class_<dolfinx::fem::DirichletBC<T, U>> dirichletbc(
@@ -270,8 +270,8 @@ void declare_objects(nb::module_& m, const std::string& type)
           },
           nb::arg("g").noconvert(), nb::arg("dofs").noconvert(),
           nb::arg("V").noconvert())
-      .def_prop_ro("dtype", [dtype](const dolfinx::fem::Form<T, U>& self)
-                   { return dtype; })
+      .def_prop_ro("dtype", [](const dolfinx::fem::Function<T, U>&)
+                   { return dolfinx_wrappers::numpy_dtype<T>(); })
       .def("dof_indices",
            [](const dolfinx::fem::DirichletBC<T, U>& self)
            {
@@ -409,8 +409,8 @@ void declare_objects(nb::module_& m, const std::string& type)
                 dolfinx::fem::Constant<T>(std::span(c.data(), c.size()), shape);
           },
           nb::arg("c").noconvert(), "Create a constant from a value array")
-      .def_prop_ro("dtype", [dtype](const dolfinx::fem::Constant<T>& self)
-                   { return dtype; })
+      .def_prop_ro("dtype", [](const dolfinx::fem::Constant<T>)
+                   { return dolfinx_wrappers::numpy_dtype<T>(); })
       .def_prop_ro(
           "value",
           [](dolfinx::fem::Constant<T>& self)
@@ -467,8 +467,8 @@ void declare_objects(nb::module_& m, const std::string& type)
              return dolfinx_wrappers::as_nbarray(std::move(X), shape.size(),
                                                  shape.data());
            })
-      .def_prop_ro("dtype", [dtype](const dolfinx::fem::Expression<T, U>& self)
-                   { return dtype; })
+      .def_prop_ro("dtype", [](const dolfinx::fem::Expression<T, U>&)
+                   { return dolfinx_wrappers::numpy_dtype<T>(); })
       .def_prop_ro("value_size", &dolfinx::fem::Expression<T, U>::value_size)
       .def_prop_ro("value_shape", &dolfinx::fem::Expression<T, U>::value_shape);
 
@@ -499,8 +499,6 @@ void declare_form(nb::module_& m, std::string type)
 {
   using U = typename dolfinx::scalar_value_type_t<T>;
 
-  auto dtype = numpy_dtype<T>();
-
   // dolfinx::fem::Form
   std::string pyclass_name_form = std::string("Form_") + type;
   nb::class_<dolfinx::fem::Form<T, U>>(m, pyclass_name_form.c_str(),
@@ -522,13 +520,12 @@ void declare_form(nb::module_& m, std::string type)
              bool needs_permutation_data,
              std::shared_ptr<const dolfinx::mesh::Mesh<U>> mesh)
           {
-            using kern
+            using kern_t
                 = std::function<void(T*, const T*, const T*,
                                      const typename geom_type<T>::value_type*,
                                      const int*, const std::uint8_t*)>;
             std::map<dolfinx::fem::IntegralType,
-                     std::vector<
-                         std::tuple<int, kern, std::span<const std::int32_t>>>>
+                     std::vector<dolfinx::fem::integral_data<T, kern_t>>>
                 _integrals;
 
             // Loop over kernel for each entity type
@@ -546,9 +543,9 @@ void declare_form(nb::module_& m, std::string type)
               }
             }
 
-            new (fp) dolfinx::fem::Form<T, U>(spaces, _integrals, coefficients,
-                                              constants, needs_permutation_data,
-                                              mesh);
+            new (fp) dolfinx::fem::Form<T, U>(spaces, std::move(_integrals),
+                                              coefficients, constants,
+                                              needs_permutation_data, mesh);
           },
           nb::arg("spaces"), nb::arg("integrals"), nb::arg("coefficients"),
           nb::arg("constants"), nb::arg("need_permutation_data"),
@@ -591,8 +588,8 @@ void declare_form(nb::module_& m, std::string type)
           nb::arg("form"), nb::arg("spaces"), nb::arg("coefficients"),
           nb::arg("constants"), nb::arg("subdomains"), nb::arg("mesh").none(),
           "Create a Form from a pointer to a ufcx_form")
-      .def_prop_ro("dtype", [dtype](const dolfinx::fem::Form<T, U>& self)
-                   { return dtype; })
+      .def_prop_ro("dtype", [](const dolfinx::fem::Form<T, U>&)
+                   { return dolfinx_wrappers::numpy_dtype<T>(); })
       .def_prop_ro("coefficients", &dolfinx::fem::Form<T, U>::coefficients)
       .def_prop_ro("rank", &dolfinx::fem::Form<T, U>::rank)
       .def_prop_ro("mesh", &dolfinx::fem::Form<T, U>::mesh)
@@ -691,6 +688,8 @@ void declare_cmap(nb::module_& m, std::string type)
                 ct, d, static_cast<basix::element::lagrange_variant>(var));
           },
           nb::arg("celltype"), nb::arg("degree"), nb::arg("variant"))
+      .def_prop_ro("dtype", [](const dolfinx::fem::CoordinateElement<T>&)
+                   { return dolfinx_wrappers::numpy_dtype<T>(); })
       .def("create_dof_layout",
            &dolfinx::fem::CoordinateElement<T>::create_dof_layout)
       .def_prop_ro("degree", &dolfinx::fem::CoordinateElement<T>::degree)
