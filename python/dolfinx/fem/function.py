@@ -417,11 +417,11 @@ class Function(ufl.Coefficient):
         """
         if nmm_interpolation_data is None:
             x_dtype = self.function_space.mesh.geometry.x.dtype
-            nmm_interpolation_data = (
-                np.empty(0, dtype=np.int32),
-                np.empty(0, dtype=np.int32),
-                np.empty(0, dtype=x_dtype),
-                np.empty(0, dtype=np.int32),
+            nmm_interpolation_data = PointOwnerShipData(
+                src_owner=np.empty(0, dtype=np.int32),
+                dest_owners=np.empty(0, dtype=np.int32),
+                dest_points=np.empty(0, dtype=x_dtype),
+                dest_cells=np.empty(0, dtype=np.int32),
             )
 
         @singledispatch
