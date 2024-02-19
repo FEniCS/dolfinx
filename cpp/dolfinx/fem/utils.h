@@ -59,7 +59,7 @@ namespace impl
 /// @return Vector of (cell, local_facet) pairs
 template <int num_cells>
 std::array<std::int32_t, 2 * num_cells>
-get_cell_facet_pairs(std::int32_t f, std::span<std::int32_t> cells,
+get_cell_facet_pairs(std::int32_t f, std::span<const std::int32_t> cells,
                      const graph::AdjacencyList<std::int32_t>& c_to_f)
 {
   // Loop over cells sharing facet
