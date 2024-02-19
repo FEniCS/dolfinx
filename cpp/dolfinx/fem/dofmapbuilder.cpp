@@ -245,12 +245,11 @@ build_basic_dofmaps(
     assert(entity_dofs.size() == D + 1);
 
     // Loop over cells of this type, and build dofmap
-    const std::int32_t num_cells = topology.index_maps(D)[i]->size_local()
-                                   + topology.index_maps(D)[i]->num_ghosts();
-    const std::int32_t dofmap_width = element_dof_layouts[i].num_dofs();
+    std::int32_t num_cells = topology.index_maps(D)[i]->size_local()
+                             + topology.index_maps(D)[i]->num_ghosts();
+    std::int32_t dofmap_width = element_dof_layouts[i].num_dofs();
     dofs[i].width = dofmap_width;
-    const std::int32_t num_dofs = num_cells * dofmap_width;
-    dofs[i].array.resize(num_dofs);
+    dofs[i].array.resize(num_cells * dofmap_width);
     LOG(INFO) << "Cell type:" << i << ", dofmap:" << num_cells << "x"
               << dofmap_width;
 
@@ -267,6 +266,7 @@ build_basic_dofmaps(
       {
         std::size_t d = required_dim_et[k].first;
         std::size_t et = required_dim_et[k].second;
+        mesh::CellType e_type = topology.entity_types(d)[et];
 
         const std::vector<std::vector<int>>& e_dofs_d = entity_dofs[d];
 
@@ -279,28 +279,27 @@ build_basic_dofmaps(
         int w = 0;
         for (std::size_t e = 0; e < e_dofs_d.size(); ++e)
         {
-          // Skip entities of wrong type (e.g. facets of prism)
+          // Skip entities of wrong type (e.g. for facets of prism)
           // Use separate connectivity index 'w' which only advances for
           // correct entities
-          if (topology.entity_types(d)[et]
-              != mesh::cell_entity_type(cell_type, d, e))
-            continue;
-
-          std::size_t num_entity_dofs = e_dofs_d[e].size();
-          assert((int)num_entity_dofs == num_entity_dofs_et[k]);
-          std::int32_t e_index_local = ((std::size_t)d == D) ? c : c_to_e[w];
-
-          // Loop over dofs belonging to entity e of dimension d (d, e)
-          // d: topological dimension
-          // e: local entity index
-          // dof_local: local index of dof at (d, e)
-          for (std::size_t j = 0; j < num_entity_dofs; ++j)
+          if (mesh::cell_entity_type(cell_type, d, e) == e_type)
           {
-            int dof_local = e_dofs_d[e][j];
-            dofs_c[dof_local]
-                = local_entity_offsets[k] + num_entity_dofs * e_index_local + j;
+            std::size_t num_entity_dofs = e_dofs_d[e].size();
+            assert((int)num_entity_dofs == num_entity_dofs_et[k]);
+            std::int32_t e_index_local = ((std::size_t)d == D) ? c : c_to_e[w];
+            ++w;
+
+            // Loop over dofs belonging to entity e of dimension d (d, e)
+            // d: topological dimension
+            // e: local entity index
+            // dof_local: local index of dof at (d, e)
+            for (std::size_t j = 0; j < num_entity_dofs; ++j)
+            {
+              int dof_local = e_dofs_d[e][j];
+              dofs_c[dof_local] = local_entity_offsets[k]
+                                  + num_entity_dofs * e_index_local + j;
+            }
           }
-          ++w;
         }
       }
     }
