@@ -115,7 +115,8 @@ public:
   /// Return Euclidean dimension of coordinate system
   int dim() const { return _dim; }
 
-  /// DOF map
+  /// @brief  DofMap for the geometry
+  /// @return A 2D array with shape [num_cells, dofs_per_cell]
   MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
       const std::int32_t,
       MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
@@ -129,18 +130,21 @@ public:
         _dofmaps[0].data(), _dofmaps[0].size() / ndofs, ndofs);
   }
 
-  /// DOF map
+  /// @brief The dofmap associated with the `i`th coordinate map in the
+  /// geometry.
+  /// @param i Index
+  /// @return A 2D array with shape [num_cells, dofs_per_cell]
   MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
       const std::int32_t,
       MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
-  dofmap(int i) const
+  dofmap(std::int32_t i) const
   {
-    LOG(INFO) << "Get dofmap " << i << " " << _cmaps.size() << " "
-              << _dofmaps.size();
-
-    assert(i < _cmaps.size());
+    if (i < 0 or i >= (int)_dofmaps.size())
+    {
+      throw std::out_of_range("Cannot get dofmap:" + std::to_string(i)
+                              + " out of range");
+    }
     int ndofs = _cmaps[i].dim();
-    LOG(INFO) << ndofs << " << ";
 
     return MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
         const std::int32_t,
@@ -148,7 +152,8 @@ public:
         _dofmaps[i].data(), _dofmaps[i].size() / ndofs, ndofs);
   }
 
-  /// Index map
+  /// @brief Index map
+  /// @return The index map for the geometry dofs
   std::shared_ptr<const common::IndexMap> index_map() const
   {
     return _index_map;
@@ -172,15 +177,22 @@ public:
   /// @return The coordinate/geometry element
   const fem::CoordinateElement<value_type>& cmap() const
   {
-    assert(_cmaps.size() == 1);
-    return _cmaps[0];
+    if (_cmaps.size() != 1)
+      throw std::runtime_error("Multiple cmaps.");
+    return _cmaps.front();
   }
 
-  /// @brief The elements that describe the geometry maps.
-  /// @return List of coordinate elements
-  const std::vector<fem::CoordinateElement<value_type>>& cmaps() const
+  /// @brief The element that describe the `i`th geometry map
+  /// @param i Index of the coordinate element
+  /// @return Coordinate element
+  const fem::CoordinateElement<value_type>& cmap(std::int32_t i) const
   {
-    return _cmaps;
+    if (i < 0 or i >= (int)_cmaps.size())
+    {
+      throw std::out_of_range("Cannot get cmap:" + std::to_string(i)
+                              + " out of range");
+    }
+    return _cmaps[i];
   }
 
   /// Global user indices
@@ -230,7 +242,7 @@ Geometry(std::shared_ptr<const common::IndexMap>, U,
 /// @param[in] elements List of elements that defines the geometry map for
 /// each cell type.
 /// @param[in] nodes Geometry node global indices for cells on this
-/// process. Must be sorted.
+/// process. @pre Must be sorted.
 /// @param[in] xdofs Geometry degree-of-freedom map (using global
 /// indices) for cells on this process. `nodes` is a sorted and unique
 /// list of the indices in `xdofs`.
@@ -242,6 +254,7 @@ Geometry(std::shared_ptr<const common::IndexMap>, U,
 /// @param[in] dim Geometric dimension (1, 2, or 3).
 /// @param[in] reorder_fn Function for re-ordering the degree-of-freedom
 /// map associated with the geometry data.
+/// @note Experimental new interface for multiple cmap/dofmap
 /// @return A mesh geometry.
 template <typename U>
 Geometry<typename std::remove_reference_t<typename U::value_type>>
@@ -280,17 +293,17 @@ create_geometry(
       = std::make_shared<common::IndexMap>(std::move(_dof_index_map));
 
   // If the mesh has higher order geometry, permute the dofmap
-  if (elements[0].needs_dof_permutations())
+  if (elements.front().needs_dof_permutations())
   {
     const std::int32_t num_cells
         = topology.connectivity(topology.dim(), 0)->num_nodes();
     const std::vector<std::uint32_t>& cell_info
         = topology.get_cell_permutation_info();
-    int d = elements[0].dim();
+    int d = elements.front().dim();
     for (std::int32_t cell = 0; cell < num_cells; ++cell)
     {
-      std::span dofs(dofmaps[0].data() + cell * d, d);
-      elements[0].unpermute_dofs(dofs, cell_info[cell]);
+      std::span dofs(dofmaps.front().data() + cell * d, d);
+      elements.front().unpermute_dofs(dofs, cell_info[cell]);
     }
   }
 
@@ -395,7 +408,7 @@ create_geometry(
     int d = element.dim();
     for (std::int32_t cell = 0; cell < num_cells; ++cell)
     {
-      std::span dofs(dofmaps[0].data() + cell * d, d);
+      std::span dofs(dofmaps.front().data() + cell * d, d);
       element.unpermute_dofs(dofs, cell_info[cell]);
     }
   }
@@ -406,7 +419,7 @@ create_geometry(
   // local-to-global for dofs and (ii) local-to-global for entries in
   // coords
   const std::vector<std::int32_t> l2l = graph::build::compute_local_to_local(
-      graph::build::compute_local_to_global(xdofs, dofmaps[0]), nodes);
+      graph::build::compute_local_to_global(xdofs, dofmaps.front()), nodes);
 
   // Allocate space for input global indices and copy data
   std::vector<std::int64_t> igi(nodes.size());
@@ -424,7 +437,7 @@ create_geometry(
                 std::next(xg.begin(), 3 * i));
   }
 
-  return Geometry(dof_index_map, std::move(dofmaps[0]), {element},
+  return Geometry(dof_index_map, std::move(dofmaps.front()), {element},
                   std::move(xg), dim, std::move(igi));
 }
 

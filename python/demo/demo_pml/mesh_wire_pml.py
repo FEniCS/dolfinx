@@ -41,11 +41,20 @@ except ModuleNotFoundError:
 from numpy import intersect1d, pi
 
 
-def generate_mesh_wire(radius_wire: float, radius_scatt: float, l_dom: float, l_pml: float,
-                       in_wire_size: float, on_wire_size: float, scatt_size: float,
-                       pml_size: float, au_tag: int, bkg_tag: int, scatt_tag: int,
-                       pml_tag: int):
-
+def generate_mesh_wire(
+    radius_wire: float,
+    radius_scatt: float,
+    l_dom: float,
+    l_pml: float,
+    in_wire_size: float,
+    on_wire_size: float,
+    scatt_size: float,
+    pml_size: float,
+    au_tag: int,
+    bkg_tag: int,
+    scatt_tag: int,
+    pml_tag: int,
+):
     gmsh.model.add("nanowire")
     dim = 2
     # A dummy circle for setting a finer mesh
@@ -71,10 +80,12 @@ def generate_mesh_wire(radius_wire: float, radius_scatt: float, l_dom: float, l_
     separate_rectangle, _ = gmsh.model.occ.cut(inclusive_rectangle, wire, removeTool=False)
     _, physical_domain = gmsh.model.occ.fragment(separate_rectangle, wire)
 
-    bkg_tags = [tag[0] for tag in physical_domain[:len(separate_rectangle)]]
+    bkg_tags = [tag[0] for tag in physical_domain[: len(separate_rectangle)]]
 
-    wire_tags = [tag[0] for tag in physical_domain[len(separate_rectangle):
-                                                   len(inclusive_rectangle) + len(wire)]]
+    wire_tags = [
+        tag[0]
+        for tag in physical_domain[len(separate_rectangle) : len(inclusive_rectangle) + len(wire)]
+    ]
 
     # Corner PMLS
     pml1 = gmsh.model.occ.addRectangle(-l_pml / 2, l_dom / 2, 0, delta_pml, delta_pml)
@@ -96,22 +107,37 @@ def generate_mesh_wire(radius_wire: float, radius_scatt: float, l_dom: float, l_
 
     gmsh.model.occ.synchronize()
 
-    bkg_group = [tag[0][1] for tag in surface_map[:len(bkg_tags)]]
+    bkg_group = [tag[0][1] for tag in surface_map[: len(bkg_tags)]]
     gmsh.model.addPhysicalGroup(dim, bkg_group, tag=bkg_tag)
-    wire_group = [tag[0][1] for tag in surface_map[len(bkg_tags):len(bkg_tags + wire_tags)]]
+    wire_group = [tag[0][1] for tag in surface_map[len(bkg_tags) : len(bkg_tags + wire_tags)]]
 
     gmsh.model.addPhysicalGroup(dim, wire_group, tag=au_tag)
 
-    corner_group = [tag[0][1] for tag in surface_map[len(bkg_tags + wire_tags):len(bkg_tags + wire_tags + corner_pmls)]]
+    corner_group = [
+        tag[0][1]
+        for tag in surface_map[len(bkg_tags + wire_tags) : len(bkg_tags + wire_tags + corner_pmls)]
+    ]
     gmsh.model.addPhysicalGroup(dim, corner_group, tag=pml_tag)
 
-    x_group = [tag[0][1] for tag in surface_map[len(
-        bkg_tags + wire_tags + corner_pmls):len(bkg_tags + wire_tags + corner_pmls + x_pmls)]]
+    x_group = [
+        tag[0][1]
+        for tag in surface_map[
+            len(bkg_tags + wire_tags + corner_pmls) : len(
+                bkg_tags + wire_tags + corner_pmls + x_pmls
+            )
+        ]
+    ]
 
     gmsh.model.addPhysicalGroup(dim, x_group, tag=pml_tag + 1)
 
-    y_group = [tag[0][1] for tag in surface_map[len(
-        bkg_tags + wire_tags + corner_pmls + x_pmls):len(bkg_tags + wire_tags + corner_pmls + x_pmls + y_pmls)]]
+    y_group = [
+        tag[0][1]
+        for tag in surface_map[
+            len(bkg_tags + wire_tags + corner_pmls + x_pmls) : len(
+                bkg_tags + wire_tags + corner_pmls + x_pmls + y_pmls
+            )
+        ]
+    ]
 
     gmsh.model.addPhysicalGroup(dim, y_group, tag=pml_tag + 2)
 

@@ -75,7 +75,7 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
   assert(dofmap);
   const int bs = dofmap->bs();
 
-  std::span<const std::size_t> value_shape = element->value_shape();
+  std::span<const std::size_t> value_shape = u.function_space()->value_shape();
   int num_components = std::reduce(value_shape.begin(), value_shape.end(), 1,
                                    std::multiplies{});
 

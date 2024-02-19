@@ -24,11 +24,11 @@ def process():
     # Iterate over subdirectories containing demos
     for subdir in subdirs:
         # Make demo doc directory
-        demo_dir = pathlib.Path('./demos')
+        demo_dir = pathlib.Path("./demos")
         demo_dir.mkdir(parents=True, exist_ok=True)
 
         # Process each demo using jupytext/myst
-        for demo in subdir.glob('**/demo*.py'):
+        for demo in subdir.glob("**/demo*.py"):
             python_demo = jupytext.read(demo)
             myst_text = jupytext.writes(python_demo, fmt="myst")
 
