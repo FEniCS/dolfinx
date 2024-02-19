@@ -23,12 +23,14 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ec3d37beef125f1805e6a8a70ce8ee505c780d53
 
       - name: Install FEniCS Python components
         run: |
-          python3 -m pip install git+https://github.com/FEniCS/ufl.git
+          python3 -m pip install git+https://github.com/FEniCS/ufl.git@109aa7d35ddaa7b1cccbf069831266c2cbe10856
           python3 -m pip install git+https://github.com/FEniCS/basix.git@239c834129ea4dd8739fa59e485bbc19c21df0fc
-          python3 -m pip install git+https://github.com/FEniCS/ffcx.git
+          python3 -m pip install git+https://github.com/FEniCS/ffcx.git@ef6c390ffef3580788acebd7dde4e3600b873778
 
       - name: Configure C++
         run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
