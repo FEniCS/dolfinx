@@ -12,10 +12,10 @@ from dolfinx.log import LogLevel, set_log_level
 from dolfinx.mesh import CellType
 
 
-def create_element_dofmap(mesh):
+def create_element_dofmap(mesh, cell_types):
     cpp_elements = []
     dofmaps = []
-    for cell_type in [basix.CellType.triangle, basix.CellType.quadrilateral]:
+    for cell_type in cell_types:
         ufl_e = basix.ufl.element("P", cell_type, 2)
         form_compiler_options = {"scalar_type": np.float64}
         (ufcx_element, ufcx_dofmap), module, code = jit.ffcx_jit(
@@ -72,7 +72,7 @@ def test_el_dm():
     )
     mesh = Mesh_float64(MPI.COMM_WORLD, topology, geom)
 
-    el, dm = create_element_dofmap(mesh)
+    el, dm = create_element_dofmap(mesh, [basix.CellType.triangle, basix.CellType.quadrilateral])
     print()
     for e, d in zip(el, dm):
         print(e.basix_element.cell_type.name)
@@ -83,7 +83,7 @@ def test_el_dm():
 
 
 def test_el_dm_prism():
-    # Two triangles and one quadrilateral
+    # Prism mesh
     cells = [[0, 1, 2, 3, 4, 5]]
     # cells with global indexing
     orig_index = [[0, 1, 2, 3, 4, 5]]
@@ -130,11 +130,11 @@ def test_el_dm_prism():
     q = DofMap(cpp_dofmap[0])
     print(q.list)
 
-    # el, dm = create_element_dofmap(mesh)
-    # print()
-    # for e,d in zip(el, dm):
-    #     print(e.basix_element.cell_type.name)
-    #     q = DofMap(d)
-    #     print(q.index_map.size_local)
-    #     print(q.list)
-    #     print(q.dof_layout.entity_dofs(2, 0))
+    el, dm = create_element_dofmap(mesh, [basix.CellType.prism])
+    print()
+    for e, d in zip(el, dm):
+        print(e.basix_element.cell_type.name)
+        q = DofMap(d)
+        print(q.index_map.size_local)
+        print(q.list)
+        print(q.dof_layout.entity_dofs(2, 1))
