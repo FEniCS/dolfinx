@@ -671,9 +671,9 @@ template <dolfinx::scalar T, std::floating_point U>
 void interpolate_nonmatching_meshes(
     Function<T, U>& u, const Function<T, U>& v,
     std::span<const std::int32_t> cells,
-    const std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
-                     std::vector<U>, std::vector<std::int32_t>>&
-        nmm_interpolation_data)
+    const std::tuple<std::span<const std::int32_t>,
+                     std::span<const std::int32_t>, std::span<const U>,
+                     std::span<const std::int32_t>>& nmm_interpolation_data)
 {
   auto mesh = u.function_space()->mesh();
   assert(mesh);
@@ -1128,9 +1128,9 @@ template <dolfinx::scalar T, std::floating_point U>
 void interpolate(
     Function<T, U>& u, const Function<T, U>& v,
     std::span<const std::int32_t> cells,
-    const std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
-                     std::vector<U>, std::vector<std::int32_t>>&
-        nmm_interpolation_data
+    const std::tuple<std::span<const std::int32_t>,
+                     std::span<const std::int32_t>, std::span<const U>,
+                     std::span<const std::int32_t>>& nmm_interpolation_data
     = {})
 {
   assert(u.function_space());

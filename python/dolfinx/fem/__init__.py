@@ -49,6 +49,23 @@ from dolfinx.fem.function import (
 from dolfinx.mesh import Mesh as _Mesh
 
 
+class PointOwnerShipData(typing.NamedTuple):
+    """
+    Convenience class for storing data related to the ownership of points.
+
+    Attributes:
+        src_owner: Ranks owning each point sent into ownership determination for current process
+        dest_owners: Ranks that sent `dest_points` to current process
+        dest_points: Points owned by current rank
+        dest_cells: Cell indices (local to process) where each entry of `dest_points` is located
+    """
+
+    src_owner: npt.NDArray[np.int32]
+    dest_owners: npt.NDArray[np.int32]
+    dest_points: npt.NDArray[np.floating]
+    dest_cells: npt.NDArray[np.int32]
+
+
 def create_sparsity_pattern(a: Form):
     """Create a sparsity pattern from a bilinear form.
 
@@ -72,7 +89,7 @@ def create_nonmatching_meshes_interpolation_data(
     mesh_from: _Mesh,
     cells: typing.Optional[npt.NDArray[np.int32]] = None,
     padding: float = 1e-14,
-) -> tuple[list[np.int32], list[np.int32], list[np.floating], list[np.int32]]:
+) -> PointOwnerShipData:
     """Generate data needed to interpolate discrete functions across different meshes.
 
     Args:
@@ -83,15 +100,19 @@ def create_nonmatching_meshes_interpolation_data(
         padding: Absolute padding of bounding boxes of all entities on mesh_to
 
     Returns:
-        Data needed to interpolation functions defined on function spaces on the meshes
+        Data needed to interpolation functions defined on function spaces on the meshes.
     """
     if cells is None:
-        return _create_nonmatching_meshes_interpolation_data(
-            mesh_to._cpp_object, element, mesh_from._cpp_object, padding
+        return PointOwnerShipData(
+            *_create_nonmatching_meshes_interpolation_data(
+                mesh_to._cpp_object, element, mesh_from._cpp_object, padding
+            )
         )
     else:
-        return _create_nonmatching_meshes_interpolation_data(
-            mesh_to, element, mesh_from._cpp_object, cells, padding
+        return PointOwnerShipData(
+            *_create_nonmatching_meshes_interpolation_data(
+                mesh_to, element, mesh_from._cpp_object, cells, padding
+            )
         )
 
 
