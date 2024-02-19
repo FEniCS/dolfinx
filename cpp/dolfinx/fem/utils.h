@@ -59,7 +59,7 @@ namespace impl
 /// @return Vector of (cell, local_facet) pairs
 template <int num_cells>
 std::array<std::int32_t, 2 * num_cells>
-get_cell_facet_pairs(std::int32_t f, const std::span<const std::int32_t>& cells,
+get_cell_facet_pairs(std::int32_t f, std::span<std::int32_t> cells,
                      const graph::AdjacencyList<std::int32_t>& c_to_f)
 {
   // Loop over cells sharing facet
@@ -242,8 +242,7 @@ ElementDofLayout create_element_dof_layout(const ufcx_dofmap& dofmap,
 /// @return A new dof map
 DofMap create_dofmap(
     MPI_Comm comm, const ElementDofLayout& layout, mesh::Topology& topology,
-    std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
-        unpermute_dofs,
+    std::function<void(std::span<std::int32_t>, std::uint32_t)> unpermute_dofs,
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
         reorder_fn);
 
@@ -716,8 +715,8 @@ FunctionSpace<T> create_functionspace(
   // Create a dofmap
   ElementDofLayout layout(_e->block_size(), e.entity_dofs(),
                           e.entity_closure_dofs(), {}, sub_doflayout);
-  std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
-      unpermute_dofs = nullptr;
+  std::function<void(std::span<std::int32_t>, std::uint32_t)> unpermute_dofs
+      = nullptr;
   if (_e->needs_dof_permutations())
     unpermute_dofs = _e->get_dof_permutation_function(true, true);
   assert(mesh);
@@ -779,8 +778,7 @@ FunctionSpace<T> create_functionspace(
   ElementDofLayout layout
       = create_element_dof_layout(*ufcx_map, topology->cell_type());
 
-  std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
-      unpermute_dofs;
+  std::function<void(std::span<std::int32_t>, std::uint32_t)> unpermute_dofs;
   if (element->needs_dof_permutations())
     unpermute_dofs = element->get_dof_permutation_function(true, true);
   return FunctionSpace(
