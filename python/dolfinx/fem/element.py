@@ -42,14 +42,9 @@ class CoordinateElement:
         self._cpp_object = cmap
 
     @property
-    def dtype(self) -> npt.DTypeLike:
+    def dtype(self) -> np.dtype:
         """Scalar type for the coordinate element."""
-        if isinstance(self._cpp_object, _cpp.fem.CoordinateElement_float32):
-            return np.float32
-        elif isinstance(self._cpp_object, _cpp.fem.CoordinateElement_float64):
-            return np.float64
-        else:
-            raise RuntimeError("Unable to determine CoordinateElement scalar type.")
+        return np.dtype(self._cpp_object.dtype)
 
 
 @singledispatch
@@ -72,9 +67,9 @@ def coordinate_element(
     Returns:
         A coordinate element.
     """
-    if dtype == np.float32:
+    if np.issubdtype(dtype, np.float32):
         return CoordinateElement(_cpp.fem.CoordinateElement_float32(celltype, degree, variant))
-    elif dtype == np.float64:
+    elif np.issubdtype(dtype, np.float64):
         return CoordinateElement(_cpp.fem.CoordinateElement_float64(celltype, degree, variant))
     else:
         raise RuntimeError("Unsupported dtype.")
