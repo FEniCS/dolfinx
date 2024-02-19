@@ -27,7 +27,7 @@ jobs:
       - name: Install FEniCS Python components
         run: |
           python3 -m pip install git+https://github.com/FEniCS/ufl.git
-          python3 -m pip install git+https://github.com/FEniCS/basix.git
+          python3 -m pip install git+https://github.com/FEniCS/basix.git@e795acbded6142a6b51b2ae54bae085b707a880d
           python3 -m pip install git+https://github.com/FEniCS/ffcx.git
 
       - name: Configure C++
