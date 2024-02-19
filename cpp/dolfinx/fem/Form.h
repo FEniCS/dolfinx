@@ -338,29 +338,20 @@ public:
   domain(IntegralType type, int i,
          std::shared_ptr<const mesh::Mesh<U>> mesh) const
   {
-    const auto& integrals = _integrals[static_cast<std::size_t>(type)];
-    auto it = std::lower_bound(integrals.begin(), integrals.end(), i,
-                               [](auto& itg_data, int i)
-                               { return itg_data.id < i; });
-    if (it != integrals.end() and it->id == i)
-    {
-      std::span<const std::int32_t> entities = it->entities;
+    std::span<const std::int32_t> entities = domain(type, i);
 
-      if (mesh == _mesh)
-        return std::vector(entities.begin(), entities.end());
-      else
-      {
-        std::span<const std::int32_t> entity_map = _entity_maps.at(mesh);
-        std::vector<std::int32_t> mapped_entities;
-        mapped_entities.reserve(entities.size());
-        std::transform(entities.begin(), entities.end(),
-                       std::back_inserter(mapped_entities),
-                       [&entity_map](auto e) { return entity_map[e]; });
-        return mapped_entities;
-      }
-    }
+    if (mesh == _mesh)
+      return std::vector(entities.begin(), entities.end());
     else
-      throw std::runtime_error("No mesh entities for requested domain index.");
+    {
+      std::span<const std::int32_t> entity_map = _entity_maps.at(mesh);
+      std::vector<std::int32_t> mapped_entities;
+      mapped_entities.reserve(entities.size());
+      std::transform(entities.begin(), entities.end(),
+                     std::back_inserter(mapped_entities),
+                     [&entity_map](auto e) { return entity_map[e]; });
+      return mapped_entities;
+    }
   }
 
   /// Access coefficients
