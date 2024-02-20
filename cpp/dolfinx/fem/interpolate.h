@@ -933,8 +933,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
                   MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
                   MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
 
-    const std::function<void(const std::span<T>&,
-                             const std::span<const std::uint32_t>&,
+    const std::function<void(std::span<T>, std::span<const std::uint32_t>,
                              std::int32_t, int)>
         apply_inverse_transpose_dof_transformation
         = element->template get_pre_dof_transformation_function<T>(
