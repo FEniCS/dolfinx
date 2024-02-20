@@ -17,9 +17,9 @@ from dolfinx.cpp.fem import (
     create_nonmatching_meshes_interpolation_data as _create_nonmatching_meshes_interpolation_data,
 )
 from dolfinx.cpp.fem import create_sparsity_pattern as _create_sparsity_pattern
+from dolfinx.cpp.fem import discrete_gradient as _discrete_gradient
 from dolfinx.cpp.mesh import Geometry_float32 as _Geometry_float32
 from dolfinx.cpp.mesh import Geometry_float64 as _Geometry_float64
-from dolfinx.cpp.fem import discrete_gradient as _discrete_gradient
 from dolfinx.fem.assemble import (
     apply_lifting,
     assemble_matrix,
@@ -48,8 +48,8 @@ from dolfinx.fem.function import (
     PointOwnershipData,
     functionspace,
 )
-from dolfinx.mesh import Mesh as _Mesh
 from dolfinx.la import MatrixCSR as _MatrixCSR
+from dolfinx.mesh import Mesh as _Mesh
 
 
 def create_sparsity_pattern(a: Form):
