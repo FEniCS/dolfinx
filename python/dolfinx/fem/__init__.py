@@ -19,6 +19,7 @@ from dolfinx.cpp.fem import (
 from dolfinx.cpp.fem import create_sparsity_pattern as _create_sparsity_pattern
 from dolfinx.cpp.mesh import Geometry_float32 as _Geometry_float32
 from dolfinx.cpp.mesh import Geometry_float64 as _Geometry_float64
+from dolfinx.cpp.fem import discrete_gradient as _discrete_gradient
 from dolfinx.fem.assemble import (
     apply_lifting,
     assemble_matrix,
@@ -48,6 +49,7 @@ from dolfinx.fem.function import (
     functionspace,
 )
 from dolfinx.mesh import Mesh as _Mesh
+from dolfinx.la import MatrixCSR as _MatrixCSR
 
 
 def create_sparsity_pattern(a: Form):
@@ -100,6 +102,23 @@ def create_nonmatching_meshes_interpolation_data(
         )
 
 
+def discrete_gradient(space0: FunctionSpace, space1: FunctionSpace) -> _MatrixCSR:
+    """Assemble a discrete gradient operator.
+
+    The discrete gradient operator interpolates the gradient of
+    a H1 finite element function into a H(curl) space. It is assumed that
+    the H1 space uses an identity map and the H(curl) space uses a covariant Piola map.
+
+    Args:
+        space0: H1 space to interpolate the gradient from
+        space1: H(curl) space to interpolate into
+
+    Returns:
+        Discrete gradient operator
+    """
+    return _discrete_gradient(space0._cpp_object, space1._cpp_object)
+
+
 __all__ = [
     "Constant",
     "Expression",
@@ -109,6 +128,7 @@ __all__ = [
     "functionspace",
     "FunctionSpace",
     "create_sparsity_pattern",
+    "discrete_gradient",
     "assemble_scalar",
     "assemble_matrix",
     "assemble_vector",

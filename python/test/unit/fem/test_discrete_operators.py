@@ -13,8 +13,7 @@ import scipy
 
 import dolfinx.la
 import ufl
-from dolfinx.cpp.fem import discrete_gradient
-from dolfinx.fem import Expression, Function, functionspace
+from dolfinx.fem import Expression, Function, discrete_gradient, functionspace
 from dolfinx.mesh import CellType, GhostMode, create_unit_cube, create_unit_square
 
 
@@ -35,7 +34,7 @@ def test_gradient(mesh):
     """Test discrete gradient computation for lowest order elements."""
     V = functionspace(mesh, ("Lagrange", 1))
     W = functionspace(mesh, ("Nedelec 1st kind H(curl)", 1))
-    G = discrete_gradient(V._cpp_object, W._cpp_object)
+    G = discrete_gradient(V, W)
     # N.B. do not scatter_rev G - doing so would transfer rows to other processes
     # where they will be summed to give an incorrect matrix
 
@@ -160,7 +159,7 @@ def test_gradient_interpolation(cell_type, p, q):
 
     V = functionspace(mesh, (family0, p))
     W = functionspace(mesh, (family1, q))
-    G = discrete_gradient(V._cpp_object, W._cpp_object)
+    G = discrete_gradient(V, W)
     # N.B. do not scatter_rev G - doing so would transfer rows to other
     # processes where they will be summed to give an incorrect matrix
 
