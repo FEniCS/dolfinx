@@ -140,8 +140,8 @@ SparsityPattern::SparsityPattern(
   }
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::insert(const std::span<const std::int32_t>& rows,
-                             const std::span<const std::int32_t>& cols)
+void SparsityPattern::insert(std::span<const std::int32_t> rows,
+                             std::span<const std::int32_t> cols)
 {
   if (!_offsets.empty())
   {
