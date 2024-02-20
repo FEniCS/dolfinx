@@ -60,9 +60,9 @@ def test_el_dm():
     tri = coordinate_element(CellType.triangle, 1)
     quad = coordinate_element(CellType.quadrilateral, 1)
     nodes = [3 * rank + i for i in range(6)]
-    xdofs = np.array([0, 1, 2, 1, 2, 3, 2, 3, 4, 5], dtype=int) + 3 * rank
+    xdofs = np.array([0, 1, 4, 0, 3, 4, 1, 4, 2, 5], dtype=int) + 3 * rank
     x = np.array(
-        [[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]], dtype=np.float64
+        [[0.0, 0.0], [1.0, 0.0], [2.0, 0.0], [0.0, 1.0], [1.0, 1.0], [2.0, 1.0]], dtype=np.float64
     )
     x[:, 1] += 1.0 * rank
 
@@ -71,6 +71,8 @@ def test_el_dm():
         topology, [tri._cpp_object, quad._cpp_object], nodes, xdofs, x.flatten(), 2
     )
     mesh = Mesh_float64(MPI.COMM_WORLD, topology, geom)
+
+    print(mesh.geometry.x)
 
     el, dm = create_element_dofmap(mesh, [basix.CellType.triangle, basix.CellType.quadrilateral])
     print()
