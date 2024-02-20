@@ -962,11 +962,12 @@ class NonlinearProblem:
 def discrete_gradient(space0: _FunctionSpace, space1: _FunctionSpace) -> PETSc.Mat:
     """Assemble a discrete gradient operator.
 
-    The discrete gradient operator A interpolates the gradient of
-    a Lagrange finite element function into a H(curl) space.
+    The discrete gradient operator interpolates the gradient of
+    a H1 finite element function into a H(curl) space. It is assumed that
+    the H1 space uses an identity map and the H(curl) space uses a covariant Piola map.
 
     Args:
-        space0: Lagrange space to interpolate the gradient from
+        space0: H1 space to interpolate the gradient from
         space1: H(curl) space to interpolate into
 
     Returns:

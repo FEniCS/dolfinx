@@ -62,11 +62,12 @@ def create_sparsity_pattern(a: Form):
 def discrete_gradient(space0: FunctionSpace, space1: FunctionSpace) -> _MatrixCSR:
     """Assemble a discrete gradient operator.
 
-    The discrete gradient operator A interpolates the gradient of
-    a Lagrange finite element function into a H(curl) space.
+    The discrete gradient operator interpolates the gradient of
+    a h1 finite element function into a H(curl) space. It is assumed that
+    the H(curl) space uses a covariant Piola map.
 
     Args:
-        space0: Lagrange space to interpolate the gradient from
+        space0: h1 space to interpolate the gradient from
         space1: H(curl) space to interpolate into
 
     Returns:
