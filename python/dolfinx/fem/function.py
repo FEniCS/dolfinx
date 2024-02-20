@@ -25,9 +25,8 @@ if typing.TYPE_CHECKING:
     from dolfinx.mesh import Mesh
 
 
-class PointOwnerShipData(typing.NamedTuple):
-    """
-    Convenience class for storing data related to the ownership of points.
+class PointOwnershipData(typing.NamedTuple):
+    """Convenience class for storing data related to the ownership of points.
 
     Attributes:
         src_owner: Ranks owning each point sent into ownership determination for current process
@@ -405,7 +404,7 @@ class Function(ufl.Coefficient):
         self,
         u: typing.Union[typing.Callable, Expression, Function],
         cells: typing.Optional[np.ndarray] = None,
-        nmm_interpolation_data: typing.Optional[PointOwnerShipData] = None,
+        nmm_interpolation_data: typing.Optional[PointOwnershipData] = None,
     ) -> None:
         """Interpolate an expression
 
@@ -417,7 +416,7 @@ class Function(ufl.Coefficient):
         """
         if nmm_interpolation_data is None:
             x_dtype = self.function_space.mesh.geometry.x.dtype
-            nmm_interpolation_data = PointOwnerShipData(
+            nmm_interpolation_data = PointOwnershipData(
                 src_owner=np.empty(0, dtype=np.int32),
                 dest_owners=np.empty(0, dtype=np.int32),
                 dest_points=np.empty(0, dtype=x_dtype),
