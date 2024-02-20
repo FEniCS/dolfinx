@@ -866,7 +866,7 @@ WARN_NO_PARAMDOC       = NO
 # Possible values are: NO, YES and FAIL_ON_WARNINGS.
 # The default value is: NO.
 
-WARN_AS_ERROR          = NO
+WARN_AS_ERROR          = YES
 
 # The WARN_FORMAT tag determines the format of the warning messages that doxygen
 # can produce. The string should contain the $file, $line, and $text tags, which
@@ -1010,10 +1010,6 @@ EXCLUDE                = ../dolfinx/io/pugixml.hpp \
                          ../dolfinx/io/pugiconfig.hpp \
                          ../dolfinx/common/loguru.hpp \
                          ../dolfinx/common/loguru.cpp \
-                        # TODO: resolve Doxygen parsing in:
-                        #  ../dolfinx/fem/interpolate.h \
-                        #  ../dolfinx/graph/AdjacencyList.h \
-                        #  ../dolfinx/la/matrix_csr_impl.h
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded
