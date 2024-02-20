@@ -771,7 +771,8 @@ def entities_to_geometry(
         entities: Entity indices (local to the process) to determine the
             vertex geometry indices for.
         orient: If True, the triangular facets of a 3D mesh will be reordered
-            so that they have a consistent normal direction.
+            so that they have a consistent normal direction. This option is likely
+            to be removed in the future.
 
     Returns:
         Indices in the geometry array for the entity vertices.
