@@ -50,8 +50,6 @@ from dolfinx.fem.function import (
 from dolfinx.mesh import Mesh as _Mesh
 
 
-
-
 def create_sparsity_pattern(a: Form):
     """Create a sparsity pattern from a bilinear form.
 
