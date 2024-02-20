@@ -7,6 +7,7 @@
 #pragma once
 
 #include "FunctionSpace.h"
+#include "traits.h"
 #include <algorithm>
 #include <array>
 #include <concepts>
@@ -37,6 +38,46 @@ enum class IntegralType : std::int8_t
   vertex = 3          ///< Vertex
 };
 
+/// @brief Represents integral data, containing the integral ID, the
+/// kernel, and a list of entities to integrate over.
+template <dolfinx::scalar T,
+          FEkernel<T> Kern = std::function<void(
+              T*, const T*, const T*, const T*, const int*, const uint8_t*)>>
+struct integral_data
+{
+  /// @brief Kernel type
+  using kern_t = Kern;
+
+  /// @brief Create a structure to hold integral data.
+  /// @tparam U `std::vector<std::int32_t>` holding entity indices.
+  /// @param id Domain ID.
+  /// @param kernel Integration kernel.
+  /// @param entities Entities to integrate over.
+  template <typename U>
+  integral_data(int id, kern_t kernel, U&& entities)
+      : id(id), kernel(kernel), entities(std::forward<U>(entities))
+  {
+  }
+
+  /// @brief Create a structure to hold integral data.
+  /// @param id Domain ID
+  /// @param kernel Integration kernel.
+  /// @param e Entities to integrate over.
+  integral_data(int id, kern_t kernel, std::span<const std::int32_t> e)
+      : id(id), kernel(kernel), entities(e.begin(), e.end())
+  {
+  }
+
+  /// Integral ID
+  int id;
+
+  /// The integration kernel
+  kern_t kernel;
+
+  /// The entities to integrate over
+  std::vector<std::int32_t> entities;
+};
+
 /// @brief A representation of finite element variational forms.
 ///
 /// A note on the order of trial and test spaces: FEniCS numbers
@@ -60,10 +101,15 @@ enum class IntegralType : std::int8_t
 /// (the variable `function_spaces` in the constructors below), the list
 /// of spaces should start with space number 0 (the test space) and then
 /// space number 1 (the trial space).
-template <dolfinx::scalar T,
-          std::floating_point U = dolfinx::scalar_value_type_t<T>>
+template <
+    dolfinx::scalar T, std::floating_point U = dolfinx::scalar_value_type_t<T>,
+    FEkernel<T> Kern
+    = std::function<void(T*, const T*, const T*, const scalar_value_type_t<T>*,
+                         const int*, const std::uint8_t*)>>
 class Form
 {
+  using kern_t = Kern;
+
 public:
   /// Scalar type
   using scalar_type = T;
@@ -74,9 +120,8 @@ public:
   /// rather using this interface directly.
   ///
   /// @param[in] V Function spaces for the form arguments
-  /// @param[in] integrals Integrals in the form. The first key is the
-  /// domain type. For each key there is a list of tuples (domain id,
-  /// integration kernel, entities).
+  /// @param[in] integrals The integrals in the form. For each
+  /// integral type, there is a list of integral data
   /// @param[in] coefficients
   /// @param[in] constants Constants in the Form
   /// @param[in] needs_facet_permutations Set to true is any of the
@@ -84,16 +129,15 @@ public:
   /// @param[in] mesh Mesh of the domain. This is required when there
   /// are no argument functions from which the mesh can be extracted,
   /// e.g. for functionals.
+  ///
+  /// @pre The integral data in integrals must be sorted by domain
+  template <typename X>
   Form(const std::vector<std::shared_ptr<const FunctionSpace<U>>>& V,
-       const std::map<IntegralType,
-                      std::vector<std::tuple<
-                          int,
-                          std::function<void(T*, const T*, const T*,
-                                             const scalar_value_type_t<T>*,
-                                             const int*, const std::uint8_t*)>,
-                          std::span<const std::int32_t>>>>& integrals,
-       const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients,
-       const std::vector<std::shared_ptr<const Constant<T>>>& constants,
+       X&& integrals,
+       const std::vector<std::shared_ptr<const Function<scalar_type, U>>>&
+           coefficients,
+       const std::vector<std::shared_ptr<const Constant<scalar_type>>>&
+           constants,
        bool needs_facet_permutations,
        std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
       : _function_spaces(V), _coefficients(coefficients), _constants(constants),
@@ -103,19 +147,24 @@ public:
     if (!_mesh and !V.empty())
       _mesh = V[0]->mesh();
     for (auto& space : V)
-    {
       if (_mesh != space->mesh())
         throw std::runtime_error("Incompatible mesh");
-    }
     if (!_mesh)
       throw std::runtime_error("No mesh could be associated with the Form.");
 
     // Store kernels, looping over integrals by domain type (dimension)
-    for (auto& [type, kernels] : integrals)
+    for (auto&& [domain_type, data] : integrals)
     {
-      auto& itg = _integrals[static_cast<std::size_t>(type)];
-      for (auto& [id, kern, e] : kernels)
-        itg.insert({id, {kern, std::vector(e.begin(), e.end())}});
+      if (!std::is_sorted(data.begin(), data.end(),
+                          [](auto& a, auto& b) { return a.id < b.id; }))
+      {
+        throw std::runtime_error("Integral IDs not sorted");
+      }
+
+      std::vector<integral_data<T, kern_t>>& itg
+          = _integrals[static_cast<std::size_t>(domain_type)];
+      for (auto&& [id, kern, e] : data)
+        itg.emplace_back(id, kern, std::move(e));
     }
   }
 
@@ -150,13 +199,14 @@ public:
   /// @param[in] type Integral type
   /// @param[in] i Domain identifier (index)
   /// @return Function to call for tabulate_tensor
-  std::function<void(T*, const T*, const T*, const scalar_value_type_t<T>*,
-                     const int*, const std::uint8_t*)>
-  kernel(IntegralType type, int i) const
+  kern_t kernel(IntegralType type, int i) const
   {
-    auto integrals = _integrals[static_cast<std::size_t>(type)];
-    if (auto it = integrals.find(i); it != integrals.end())
-      return it->second.first;
+    const auto& integrals = _integrals[static_cast<std::size_t>(type)];
+    auto it = std::lower_bound(integrals.begin(), integrals.end(), i,
+                               [](auto& itg_data, int i)
+                               { return itg_data.id < i; });
+    if (it != integrals.end() and it->id == i)
+      return it->kernel;
     else
       throw std::runtime_error("No kernel for requested domain index.");
   }
@@ -192,9 +242,9 @@ public:
   std::vector<int> integral_ids(IntegralType type) const
   {
     std::vector<int> ids;
-    auto& integrals = _integrals[static_cast<std::size_t>(type)];
+    const auto& integrals = _integrals[static_cast<std::size_t>(type)];
     std::transform(integrals.begin(), integrals.end(), std::back_inserter(ids),
-                   [](auto& integral) { return integral.first; });
+                   [](auto& integral) { return integral.id; });
     return ids;
   }
 
@@ -217,9 +267,12 @@ public:
   /// @return List of active cell entities for the given integral (kernel)
   std::span<const std::int32_t> domain(IntegralType type, int i) const
   {
-    auto& integral = _integrals[static_cast<std::size_t>(type)];
-    if (auto it = integral.find(i); it != integral.end())
-      return it->second.second;
+    const auto& integrals = _integrals[static_cast<std::size_t>(type)];
+    auto it = std::lower_bound(integrals.begin(), integrals.end(), i,
+                               [](auto& itg_data, int i)
+                               { return itg_data.id < i; });
+    if (it != integrals.end() and it->id == i)
+      return it->entities;
     else
       throw std::runtime_error("No mesh entities for requested domain index.");
   }
@@ -257,12 +310,12 @@ public:
   }
 
 private:
-  using kern_t = std::function<void(T*, const T*, const T*,
-                                    const scalar_value_type_t<T>*, const int*,
-                                    const std::uint8_t*)>;
-
   // Function spaces (one for each argument)
   std::vector<std::shared_ptr<const FunctionSpace<U>>> _function_spaces;
+
+  // Integrals. Array index is
+  // static_cast<std::size_t(IntegralType::foo)
+  std::array<std::vector<integral_data<T, kern_t>>, 4> _integrals;
 
   // Form coefficients
   std::vector<std::shared_ptr<const Function<T, U>>> _coefficients;
@@ -272,11 +325,6 @@ private:
 
   // The mesh
   std::shared_ptr<const mesh::Mesh<U>> _mesh;
-
-  // Integrals. Array index is
-  // static_cast<std::size_t(IntegralType::foo)
-  std::array<std::map<int, std::pair<kern_t, std::vector<std::int32_t>>>, 4>
-      _integrals;
 
   // True if permutation data needs to be passed into these integrals
   bool _needs_facet_permutations;

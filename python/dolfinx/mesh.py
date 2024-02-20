@@ -562,9 +562,9 @@ def create_interval(
     if partitioner is None and comm.size > 1:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     domain = ufl.Mesh(basix.ufl.element("Lagrange", "interval", 1, shape=(1,), dtype=dtype))  # type: ignore
-    if dtype == np.float32:
+    if np.issubdtype(dtype, np.float32):
         mesh = _cpp.mesh.create_interval_float32(comm, nx, points, ghost_mode, partitioner)
-    elif dtype == np.float64:
+    elif np.issubdtype(dtype, np.float64):
         mesh = _cpp.mesh.create_interval_float64(comm, nx, points, ghost_mode, partitioner)
     else:
         raise RuntimeError(f"Unsupported mesh geometry float type: {dtype}")
@@ -630,9 +630,9 @@ def create_rectangle(
     if partitioner is None and comm.size > 1:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_type.name, 1, shape=(2,), dtype=dtype))  # type: ignore
-    if dtype == np.float32:
+    if np.issubdtype(dtype, np.float32):
         mesh = _cpp.mesh.create_rectangle_float32(comm, points, n, cell_type, partitioner, diagonal)
-    elif dtype == np.float64:
+    elif np.issubdtype(dtype, np.float64):
         mesh = _cpp.mesh.create_rectangle_float64(comm, points, n, cell_type, partitioner, diagonal)
     else:
         raise RuntimeError(f"Unsupported mesh geometry float type: {dtype}")
@@ -708,9 +708,9 @@ def create_box(
     if partitioner is None and comm.size > 1:
         partitioner = _cpp.mesh.create_cell_partitioner(ghost_mode)
     domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_type.name, 1, shape=(3,), dtype=dtype))  # type: ignore
-    if dtype == np.float32:
+    if np.issubdtype(dtype, np.float32):
         mesh = _cpp.mesh.create_box_float32(comm, points, n, cell_type, partitioner)
-    elif dtype == np.float64:
+    elif np.issubdtype(dtype, np.float64):
         mesh = _cpp.mesh.create_box_float64(comm, points, n, cell_type, partitioner)
     else:
         raise RuntimeError(f"Unsupported mesh geometry float type: {dtype}")

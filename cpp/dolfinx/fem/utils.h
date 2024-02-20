@@ -59,7 +59,7 @@ namespace impl
 /// @return Vector of (cell, local_facet) pairs
 template <int num_cells>
 std::array<std::int32_t, 2 * num_cells>
-get_cell_facet_pairs(std::int32_t f, const std::span<const std::int32_t>& cells,
+get_cell_facet_pairs(std::int32_t f, std::span<const std::int32_t> cells,
                      const graph::AdjacencyList<std::int32_t>& c_to_f)
 {
   // Loop over cells sharing facet
@@ -112,15 +112,6 @@ compute_integration_domains(IntegralType integral_type,
                             const mesh::Topology& topology,
                             std::span<const std::int32_t> entities, int dim,
                             std::span<const int> values);
-
-/// @brief Finite element cell kernel concept.
-///
-/// Kernel functions that can be passed to an assembler for execution
-/// must satisfy this concept.
-template <class U, class T>
-concept FEkernel = std::is_invocable_v<U, T*, const T*, const T*,
-                                       const scalar_value_type_t<T>*,
-                                       const int*, const std::uint8_t*>;
 
 /// @brief Extract test (0) and trial (1) function spaces pairs for each
 /// bilinear form for a rectangular array of forms.
@@ -251,8 +242,7 @@ ElementDofLayout create_element_dof_layout(const ufcx_dofmap& dofmap,
 /// @return A new dof map
 DofMap create_dofmap(
     MPI_Comm comm, const ElementDofLayout& layout, mesh::Topology& topology,
-    std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
-        unpermute_dofs,
+    std::function<void(std::span<std::int32_t>, std::uint32_t)> unpermute_dofs,
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
         reorder_fn);
 
@@ -353,22 +343,19 @@ Form<T, U> create_form_factory(
 
   // Get list of integral IDs, and load tabulate tensor into memory for
   // each
-  using kern = std::function<void(
+  using kern_t = std::function<void(
       T*, const T*, const T*, const typename scalar_value_type<T>::value_type*,
       const int*, const std::uint8_t*)>;
-  std::map<IntegralType,
-           std::vector<std::tuple<int, kern, std::span<const std::int32_t>>>>
-      integral_data;
-
-  bool needs_facet_permutations = false;
+  std::map<IntegralType, std::vector<integral_data<T, kern_t>>> integrals;
 
   // Attach cell kernels
+  bool needs_facet_permutations = false;
   std::vector<std::int32_t> default_cells;
   {
     std::span<const int> ids(ufcx_form.form_integral_ids
                                  + integral_offsets[cell],
                              num_integrals_type[cell]);
-    auto itg = integral_data.insert({IntegralType::cell, {}});
+    auto itg = integrals.insert({IntegralType::cell, {}});
     auto sd = subdomains.find(IntegralType::cell);
     for (int i = 0; i < num_integrals_type[cell]; ++i)
     {
@@ -377,7 +364,7 @@ Form<T, U> create_form_factory(
           = ufcx_form.form_integrals[integral_offsets[cell] + i];
       assert(integral);
 
-      kern k = nullptr;
+      kern_t k = nullptr;
       if constexpr (std::is_same_v<T, float>)
         k = integral->tabulate_tensor_float32;
       else if constexpr (std::is_same_v<T, std::complex<float>>)
@@ -396,7 +383,11 @@ Form<T, U> create_form_factory(
             const typename scalar_value_type<T>::value_type*, const int*,
             const unsigned char*)>(integral->tabulate_tensor_complex128);
       }
-      assert(k);
+      if (!k)
+      {
+        throw std::runtime_error(
+            "UFCx kernel function is NULL. Check requested types.");
+      }
 
       // Build list of entities to assemble over
       if (id == -1)
@@ -428,7 +419,7 @@ Form<T, U> create_form_factory(
     std::span<const int> ids(ufcx_form.form_integral_ids
                                  + integral_offsets[exterior_facet],
                              num_integrals_type[exterior_facet]);
-    auto itg = integral_data.insert({IntegralType::exterior_facet, {}});
+    auto itg = integrals.insert({IntegralType::exterior_facet, {}});
     auto sd = subdomains.find(IntegralType::exterior_facet);
     for (int i = 0; i < num_integrals_type[exterior_facet]; ++i)
     {
@@ -437,7 +428,7 @@ Form<T, U> create_form_factory(
           = ufcx_form.form_integrals[integral_offsets[exterior_facet] + i];
       assert(integral);
 
-      kern k = nullptr;
+      kern_t k = nullptr;
       if constexpr (std::is_same_v<T, float>)
         k = integral->tabulate_tensor_float32;
       else if constexpr (std::is_same_v<T, std::complex<float>>)
@@ -499,7 +490,7 @@ Form<T, U> create_form_factory(
     std::span<const int> ids(ufcx_form.form_integral_ids
                                  + integral_offsets[interior_facet],
                              num_integrals_type[interior_facet]);
-    auto itg = integral_data.insert({IntegralType::interior_facet, {}});
+    auto itg = integrals.insert({IntegralType::interior_facet, {}});
     auto sd = subdomains.find(IntegralType::interior_facet);
     for (int i = 0; i < num_integrals_type[interior_facet]; ++i)
     {
@@ -508,7 +499,7 @@ Form<T, U> create_form_factory(
           = ufcx_form.form_integrals[integral_offsets[interior_facet] + i];
       assert(integral);
 
-      kern k = nullptr;
+      kern_t k = nullptr;
       if constexpr (std::is_same_v<T, float>)
         k = integral->tabulate_tensor_float32;
       else if constexpr (std::is_same_v<T, std::complex<float>>)
@@ -577,7 +568,7 @@ Form<T, U> create_form_factory(
     sd.insert({itg, std::move(x)});
   }
 
-  return Form<T, U>(spaces, integral_data, coefficients, constants,
+  return Form<T, U>(spaces, integrals, coefficients, constants,
                     needs_facet_permutations, mesh);
 }
 
@@ -724,8 +715,8 @@ FunctionSpace<T> create_functionspace(
   // Create a dofmap
   ElementDofLayout layout(_e->block_size(), e.entity_dofs(),
                           e.entity_closure_dofs(), {}, sub_doflayout);
-  std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
-      unpermute_dofs = nullptr;
+  std::function<void(std::span<std::int32_t>, std::uint32_t)> unpermute_dofs
+      = nullptr;
   if (_e->needs_dof_permutations())
     unpermute_dofs = _e->get_dof_permutation_function(true, true);
   assert(mesh);
@@ -787,8 +778,7 @@ FunctionSpace<T> create_functionspace(
   ElementDofLayout layout
       = create_element_dof_layout(*ufcx_map, topology->cell_type());
 
-  std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
-      unpermute_dofs;
+  std::function<void(std::span<std::int32_t>, std::uint32_t)> unpermute_dofs;
   if (element->needs_dof_permutations())
     unpermute_dofs = element->get_dof_permutation_function(true, true);
   return FunctionSpace(

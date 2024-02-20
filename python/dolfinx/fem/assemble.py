@@ -186,7 +186,7 @@ def _assemble_vector_form(L: Form, constants=None, coeffs=None) -> la.Vector:
 
 @assemble_vector.register(np.ndarray)
 def _assemble_vector_array(b: np.ndarray, L: Form, constants=None, coeffs=None):
-    """Assemble linear form into a new Vector.
+    """Assemble linear form into an existing array.
 
     Args:
         b: The array to assemble the contribution from the calling MPI

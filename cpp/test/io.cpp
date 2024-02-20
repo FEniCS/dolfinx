@@ -99,8 +99,8 @@ void test_vtx_reuse_mesh()
   auto u = std::make_shared<fem::Function<T>>(V);
   auto v = std::make_shared<fem::Function<std::complex<T>>>(V);
 
-  std::filesystem::path f = "test_vtx_reuse_mesh" + std::to_string(sizeof(T))
-                            + ".bp";
+  std::filesystem::path f
+      = "test_vtx_reuse_mesh" + std::to_string(sizeof(T)) + ".bp";
   io::VTXWriter<T> writer(mesh->comm(), f, {u, v}, "BPFile",
                           io::VTXMeshPolicy::reuse);
   writer.write(0);
@@ -108,7 +108,6 @@ void test_vtx_reuse_mesh()
   std::fill(u->x()->mutable_array().begin(), u->x()->mutable_array().end(), 1);
 
   writer.write(1);
-
 }
 } // namespace
 
