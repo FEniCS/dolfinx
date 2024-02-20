@@ -757,7 +757,7 @@ def create_unit_cube(
 
 
 def entities_to_geometry(
-    mesh: Mesh, dim: int, entities: npt.NDArray[np.int32], orient: bool
+    mesh: Mesh, dim: int, entities: npt.NDArray[np.int32], orient: bool = False
 ) -> npt.NDArray[np.int32]:
     """Indices in the geometry data for each vertex of the given mesh entities.
 
