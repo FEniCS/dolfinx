@@ -97,8 +97,7 @@ fem::create_element_dof_layout(const ufcx_dofmap& dofmap,
 //-----------------------------------------------------------------------------
 fem::DofMap fem::create_dofmap(
     MPI_Comm comm, const ElementDofLayout& layout, mesh::Topology& topology,
-    std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
-        unpermute_dofs,
+    std::function<void(std::span<std::int32_t>, std::uint32_t)> unpermute_dofs,
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
         reorder_fn)
 {

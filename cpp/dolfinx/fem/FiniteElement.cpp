@@ -566,14 +566,14 @@ bool FiniteElement<T>::needs_dof_permutations() const noexcept
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-void FiniteElement<T>::permute_dofs(const std::span<std::int32_t>& doflist,
+void FiniteElement<T>::permute_dofs(std::span<std::int32_t> doflist,
                                     std::uint32_t cell_permutation) const
 {
   _element->permute_dofs(doflist, cell_permutation);
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-void FiniteElement<T>::unpermute_dofs(const std::span<std::int32_t>& doflist,
+void FiniteElement<T>::unpermute_dofs(std::span<std::int32_t> doflist,
                                       std::uint32_t cell_permutation) const
 {
   _element->unpermute_dofs(doflist, cell_permutation);
@@ -581,21 +581,20 @@ void FiniteElement<T>::unpermute_dofs(const std::span<std::int32_t>& doflist,
 //-----------------------------------------------------------------------------
 /// @cond
 template <std::floating_point T>
-std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
+std::function<void(std::span<std::int32_t>, std::uint32_t)>
 FiniteElement<T>::get_dof_permutation_function(bool inverse,
                                                bool scalar_element) const
 /// @endcond
 {
   if (!needs_dof_permutations())
-    return [](const std::span<std::int32_t>&, std::uint32_t) {};
+    return [](std::span<std::int32_t>, std::uint32_t) {};
 
   if (!_sub_elements.empty())
   {
     if (_bs == 1)
     {
       // Mixed element
-      std::vector<
-          std::function<void(const std::span<std::int32_t>&, std::uint32_t)>>
+      std::vector<std::function<void(std::span<std::int32_t>, std::uint32_t)>>
           sub_element_functions;
       std::vector<int> dims;
       for (std::size_t i = 0; i < _sub_elements.size(); ++i)
@@ -605,9 +604,8 @@ FiniteElement<T>::get_dof_permutation_function(bool inverse,
         dims.push_back(_sub_elements[i]->space_dimension());
       }
 
-      return
-          [dims, sub_element_functions](const std::span<std::int32_t>& doflist,
-                                        std::uint32_t cell_permutation)
+      return [dims, sub_element_functions](std::span<std::int32_t> doflist,
+                                           std::uint32_t cell_permutation)
       {
         std::size_t start = 0;
         for (std::size_t e = 0; e < sub_element_functions.size(); ++e)
@@ -621,14 +619,14 @@ FiniteElement<T>::get_dof_permutation_function(bool inverse,
     else if (!scalar_element)
     {
       // Vector element
-      std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
+      std::function<void(std::span<std::int32_t>, std::uint32_t)>
           sub_element_function
           = _sub_elements[0]->get_dof_permutation_function(inverse);
       int dim = _sub_elements[0]->space_dimension();
       int bs = _bs;
       return
           [sub_element_function, bs, subdofs = std::vector<std::int32_t>(dim)](
-              const std::span<std::int32_t>& doflist,
+              std::span<std::int32_t> doflist,
               std::uint32_t cell_permutation) mutable
       {
         for (int k = 0; k < bs; ++k)
@@ -645,14 +643,14 @@ FiniteElement<T>::get_dof_permutation_function(bool inverse,
 
   if (inverse)
   {
-    return [this](const std::span<std::int32_t>& doflist,
-                  std::uint32_t cell_permutation)
+    return
+        [this](std::span<std::int32_t> doflist, std::uint32_t cell_permutation)
     { unpermute_dofs(doflist, cell_permutation); };
   }
   else
   {
-    return [this](const std::span<std::int32_t>& doflist,
-                  std::uint32_t cell_permutation)
+    return
+        [this](std::span<std::int32_t> doflist, std::uint32_t cell_permutation)
     { permute_dofs(doflist, cell_permutation); };
   }
 }
