@@ -26,6 +26,8 @@ import ufl
 from dolfinx import la
 from dolfinx.cpp.fem import pack_coefficients as _pack_coefficients
 from dolfinx.cpp.fem import pack_constants as _pack_constants
+from dolfinx.cpp.fem.petsc import discrete_gradient as _discrete_gradient
+from dolfinx.cpp.fem.petsc import interpolation_matrix as _interpolation_matrix
 from dolfinx.fem import assemble as _assemble
 from dolfinx.fem.bcs import DirichletBC
 from dolfinx.fem.bcs import bcs_by_block as _bcs_by_block
@@ -33,6 +35,7 @@ from dolfinx.fem.forms import Form
 from dolfinx.fem.forms import extract_function_spaces as _extract_spaces
 from dolfinx.fem.forms import form as _create_form
 from dolfinx.fem.function import Function as _Function
+from dolfinx.fem.function import FunctionSpace as _FunctionSpace
 from dolfinx.la import create_petsc_vector
 
 __all__ = [
@@ -54,6 +57,8 @@ __all__ = [
     "set_bc_nest",
     "LinearProblem",
     "NonlinearProblem",
+    "discrete_gradient",
+    "interpolation_matrix",
 ]
 
 
@@ -952,3 +957,32 @@ class NonlinearProblem:
         A.zeroEntries()
         assemble_matrix_mat(A, self._a, self.bcs)
         A.assemble()
+
+
+def discrete_gradient(space0: _FunctionSpace, space1: _FunctionSpace) -> PETSc.Mat:
+    """Assemble a discrete gradient operator.
+
+    The discrete gradient operator interpolates the gradient of
+    a H1 finite element function into a H(curl) space. It is assumed that
+    the H1 space uses an identity map and the H(curl) space uses a covariant Piola map.
+
+    Args:
+        space0: H1 space to interpolate the gradient from
+        space1: H(curl) space to interpolate into
+
+    Returns:
+        Discrete gradient operator
+    """
+    return _discrete_gradient(space0._cpp_object, space1._cpp_object)
+
+
+def interpolation_matrix(space0: _FunctionSpace, space1: _FunctionSpace) -> PETSc.Mat:
+    """Assemble an interpolation operator matrix.
+
+    Args:
+        space0: Space to interpolate from
+        space1: Space to interpolate into
+    Returns:
+        Interpolation matrix
+    """
+    return _interpolation_matrix(space0._cpp_object, space1._cpp_object)
