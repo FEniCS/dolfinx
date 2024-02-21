@@ -400,12 +400,13 @@ def test_facet_expression(dtype):
     w.sub(1).interpolate(lambda x: 2*(x[1]+x[0]))
     u, p = ufl.split(w)
     n = ufl.FacetNormal(mesh)
-
-    facet_expression = dolfinx.fem.Expression(p*ufl.dot(ufl.grad(u), n), np.array([[0.5]], dtype=dtype),
+    mixed_expr = p*ufl.dot(ufl.grad(u), n)
+    facet_expression = dolfinx.fem.Expression(mixed_expr, np.array([[0.5]], dtype=dtype),
                                                 dtype=dtype)
     subset_values = facet_expression.eval(mesh, boundary_entities)
     for values, midpoint in zip(subset_values, facet_midpoints):
-        grad_u = np.array([[6*midpoint[0], 2*midpoint[1]], [-14*midpoint[0],-10*midpoint[1]]], dtype=dtype)
+        grad_u = np.array([[6*midpoint[0], 2*midpoint[1]],
+                           [-14*midpoint[0],-10*midpoint[1]]], dtype=dtype)
         if np.isclose(midpoint[0], 0, atol=atol):
             exact_n = [-1, 0]
         elif np.isclose(midpoint[0], 1,atol=atol):
