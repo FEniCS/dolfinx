@@ -214,6 +214,19 @@ public:
       }
     }
 
+    // Create get entity index function
+    std::function<const std::int32_t*(std::span<const std::int32_t>,
+                                      std::size_t)>
+        get_entity_index
+        = [](std::span<const std::int32_t> entities, std::size_t idx)
+    { return nullptr; };
+    if (estride == 2)
+    {
+      get_entity_index
+          = [](std::span<const std::int32_t> entities, std::size_t idx)
+      { return entities.data() + 2 * idx + 1; };
+    }
+
     // Iterate over cells and 'assemble' into values
     const int size0 = _x_ref.second[0] * value_size();
     std::vector<scalar_type> values_local(size0 * num_argument_dofs, 0);
@@ -230,9 +243,7 @@ public:
       }
 
       const scalar_type* coeff_cell = coeffs.data() + e * cstride;
-      const int* entity_index = nullptr;
-      if (estride == 2)
-        entity_index = entities.data() + e * estride + 1;
+      const int* entity_index = get_entity_index(entities, e);
 
       std::fill(values_local.begin(), values_local.end(), 0);
       _fn(values_local.data(), coeff_cell, constant_data.data(),
