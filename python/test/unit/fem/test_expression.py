@@ -336,23 +336,22 @@ def test_expression_comm(dtype):
     Expression(v, u.function_space.element.interpolation_points(), comm=MPI.COMM_SELF)
 
 
-
 def compute_exterior_facet_entities(mesh, facets):
     """Helper function to compute (cell, local_facet_index) pairs for exterior facets"""
     tdim = mesh.topology.dim
-    mesh.topology.create_connectivity(tdim-1, tdim)
-    mesh.topology.create_connectivity(tdim, tdim-1)
-    c_to_f = mesh.topology.connectivity(tdim, tdim-1)
-    f_to_c = mesh.topology.connectivity(tdim-1, tdim)
-    integration_entities = np.empty(2*len(facets), dtype=np.int32)
+    mesh.topology.create_connectivity(tdim - 1, tdim)
+    mesh.topology.create_connectivity(tdim, tdim - 1)
+    c_to_f = mesh.topology.connectivity(tdim, tdim - 1)
+    f_to_c = mesh.topology.connectivity(tdim - 1, tdim)
+    integration_entities = np.empty(2 * len(facets), dtype=np.int32)
     for i, facet in enumerate(facets):
         cells = f_to_c.links(facet)
         assert len(cells) == 1
         cell = cells[0]
         local_facets = c_to_f.links(cell)
-        local_pos = np.flatnonzero(local_facets==facet)
-        integration_entities[2*i] = cell
-        integration_entities[2*i+1] = local_pos[0]
+        local_pos = np.flatnonzero(local_facets == facet)
+        integration_entities[2 * i] = cell
+        integration_entities[2 * i + 1] = local_pos[0]
     return integration_entities
 
 
@@ -363,25 +362,28 @@ def test_facet_expression(dtype):
     n = ufl.FacetNormal(mesh)
 
     tdim = mesh.topology.dim
-    mesh.topology.create_connectivity(tdim-1, tdim)
+    mesh.topology.create_connectivity(tdim - 1, tdim)
     facets = dolfinx.mesh.exterior_facet_indices(mesh.topology)
 
     boundary_entities = compute_exterior_facet_entities(mesh, facets)
 
     # Compute facet normal at midpoint of facet
-    reference_midpoint, _ =  basix.quadrature.make_quadrature(basix.cell.CellType.interval, 1,
-                                                              basix.quadrature.QuadratureType.Default,
-                                                              basix.quadrature.PolysetType.standard)
+    reference_midpoint, _ = basix.quadrature.make_quadrature(
+        basix.cell.CellType.interval,
+        1,
+        basix.quadrature.QuadratureType.Default,
+        basix.quadrature.PolysetType.standard,
+    )
     normal_expr = Expression(n, reference_midpoint, dtype=dtype)
     facet_normals = normal_expr.eval(mesh, boundary_entities)
 
     # Check facet normal by using midpoint to determine what exterior cell we are at
-    facet_midpoints = dolfinx.mesh.compute_midpoints(mesh, tdim-1, facets)
-    atol= 100 * np.finfo(dtype).resolution
+    facet_midpoints = dolfinx.mesh.compute_midpoints(mesh, tdim - 1, facets)
+    atol = 100 * np.finfo(dtype).resolution
     for midpoint, normal in zip(facet_midpoints, facet_normals):
         if np.isclose(midpoint[0], 0, atol=atol):
             assert np.allclose(normal, [-1, 0])
-        elif np.isclose(midpoint[0], 1,atol=atol):
+        elif np.isclose(midpoint[0], 1, atol=atol):
             assert np.allclose(normal, [1, 0], atol=atol)
         elif np.isclose(midpoint[1], 0):
             assert np.allclose(normal, [0, -1], atol=atol)
@@ -391,30 +393,33 @@ def test_facet_expression(dtype):
             raise ValueError("Invalid midpoint")
 
     # Check expression with coefficients from mixed space
-    el_v = basix.ufl.element("Lagrange", "triangle", 2, shape=(2, ), dtype=xtype)
+    el_v = basix.ufl.element("Lagrange", "triangle", 2, shape=(2,), dtype=xtype)
     el_p = basix.ufl.element("Lagrange", "triangle", 1, dtype=xtype)
     mixed_el = basix.ufl.mixed_element([el_v, el_p])
     W = dolfinx.fem.functionspace(mesh, mixed_el)
     w = dolfinx.fem.Function(W, dtype=dtype)
-    w.sub(0).interpolate(lambda x: (x[1]**2 + 3*x[0]**2, -5*x[1]**2 - 7*x[0]**2))
-    w.sub(1).interpolate(lambda x: 2*(x[1]+x[0]))
+    w.sub(0).interpolate(lambda x: (x[1] ** 2 + 3 * x[0] ** 2, -5 * x[1] ** 2 - 7 * x[0] ** 2))
+    w.sub(1).interpolate(lambda x: 2 * (x[1] + x[0]))
     u, p = ufl.split(w)
     n = ufl.FacetNormal(mesh)
-    mixed_expr = p*ufl.dot(ufl.grad(u), n)
-    facet_expression = dolfinx.fem.Expression(mixed_expr, np.array([[0.5]], dtype=dtype),
-                                                dtype=dtype)
+    mixed_expr = p * ufl.dot(ufl.grad(u), n)
+    facet_expression = dolfinx.fem.Expression(
+        mixed_expr, np.array([[0.5]], dtype=dtype), dtype=dtype
+    )
     subset_values = facet_expression.eval(mesh, boundary_entities)
     for values, midpoint in zip(subset_values, facet_midpoints):
-        grad_u = np.array([[6*midpoint[0], 2*midpoint[1]],
-                           [-14*midpoint[0],-10*midpoint[1]]], dtype=dtype)
+        grad_u = np.array(
+            [[6 * midpoint[0], 2 * midpoint[1]], [-14 * midpoint[0], -10 * midpoint[1]]],
+            dtype=dtype,
+        )
         if np.isclose(midpoint[0], 0, atol=atol):
             exact_n = [-1, 0]
-        elif np.isclose(midpoint[0], 1,atol=atol):
+        elif np.isclose(midpoint[0], 1, atol=atol):
             exact_n = [1, 0]
         elif np.isclose(midpoint[1], 0):
             exact_n = [0, -1]
         elif np.isclose(midpoint[1], 1, atol=atol):
             exact_n = [0, 1]
 
-        exact_expr = 2*(midpoint[1]+midpoint[0])*np.dot(grad_u, exact_n)
+        exact_expr = 2 * (midpoint[1] + midpoint[0]) * np.dot(grad_u, exact_n)
         assert np.allclose(values, exact_expr, atol=atol)
