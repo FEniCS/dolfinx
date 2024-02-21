@@ -438,8 +438,8 @@ void assemble_matrix(
     assert(fn);
     auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
     impl::assemble_cells(mat_set, x_dofmap, x, a.domain(IntegralType::cell, i),
-                         a.domain(IntegralType::cell, i, mesh0),
-                         a.domain(IntegralType::cell, i, mesh1),
+                         a.domain(IntegralType::cell, i, *mesh0),
+                         a.domain(IntegralType::cell, i, *mesh1),
                          pre_dof_transform, dofs0, bs0, post_dof_transform,
                          dofs1, bs1, bc0, bc1, fn, coeffs, cstride, constants,
                          cell_info0, cell_info1);

@@ -196,7 +196,7 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
       for (int id : ids)
       {
         sparsitybuild::cells(
-            pattern, {a.domain(type, id, mesh_0), a.domain(type, id, mesh_1)},
+            pattern, {a.domain(type, id, *mesh_0), a.domain(type, id, *mesh_1)},
             {{dofmaps[0], dofmaps[1]}});
       }
       break;
