@@ -218,8 +218,8 @@ public:
     std::function<const std::int32_t*(std::span<const std::int32_t>,
                                       std::size_t)>
         get_entity_index
-        = [](std::span<const std::int32_t> entities, std::size_t idx)
-    { return nullptr; };
+        = []([[maybe_unused]] std::span<const std::int32_t> entities,
+             [[maybe_unused]] std::size_t idx) { return nullptr; };
     if (estride == 2)
     {
       get_entity_index
