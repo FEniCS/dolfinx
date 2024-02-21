@@ -357,7 +357,7 @@ def compute_exterior_facet_entities(mesh, facets):
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
-def test_expression_facet_normal(dtype):
+def test_facet_expression(dtype):
     xtype = dtype(0).real.dtype
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 3, dtype=xtype)
     n = ufl.FacetNormal(mesh)
