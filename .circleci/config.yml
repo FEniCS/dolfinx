@@ -9,7 +9,7 @@ install-python-components: &install-python-components
     cmake --install build-dir
     pip3 install ./basix/python
     pip3 install git+https://github.com/FEniCS/ufl.git
-    pip3 install git+https://github.com/FEniCS/ffcx.git
+    pip3 install git+https://github.com/FEniCS/ffcx.git@dokken/facet-expressions
 
 ruff-isort-python-code: &ruff-isort-python-code
   name: ruff checks on Python code
