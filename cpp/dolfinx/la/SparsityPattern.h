@@ -65,9 +65,10 @@ public:
   /// Move assignment
   SparsityPattern& operator=(SparsityPattern&& pattern) = default;
 
-  /// @brief Insert non-zero locations using local (process-wise) indices
-  void insert(const std::span<const std::int32_t>& rows,
-              const std::span<const std::int32_t>& cols);
+  /// @brief Insert non-zero locations using local (process-wise)
+  /// indices.
+  void insert(std::span<const std::int32_t> rows,
+              std::span<const std::int32_t> cols);
 
   /// @brief Insert non-zero locations on the diagonal
   /// @param[in] rows Rows in local (process-wise) indices. The indices

@@ -671,9 +671,9 @@ template <dolfinx::scalar T, std::floating_point U>
 void interpolate_nonmatching_meshes(
     Function<T, U>& u, const Function<T, U>& v,
     std::span<const std::int32_t> cells,
-    const std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
-                     std::vector<U>, std::vector<std::int32_t>>&
-        nmm_interpolation_data)
+    const std::tuple<std::span<const std::int32_t>,
+                     std::span<const std::int32_t>, std::span<const U>,
+                     std::span<const std::int32_t>>& nmm_interpolation_data)
 {
   auto mesh = u.function_space()->mesh();
   assert(mesh);
@@ -933,8 +933,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
                   MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
                   MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
 
-    const std::function<void(const std::span<T>&,
-                             const std::span<const std::uint32_t>&,
+    const std::function<void(std::span<T>, std::span<const std::uint32_t>,
                              std::int32_t, int)>
         apply_inverse_transpose_dof_transformation
         = element->template get_pre_dof_transformation_function<T>(
@@ -1128,9 +1127,9 @@ template <dolfinx::scalar T, std::floating_point U>
 void interpolate(
     Function<T, U>& u, const Function<T, U>& v,
     std::span<const std::int32_t> cells,
-    const std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
-                     std::vector<U>, std::vector<std::int32_t>>&
-        nmm_interpolation_data
+    const std::tuple<std::span<const std::int32_t>,
+                     std::span<const std::int32_t>, std::span<const U>,
+                     std::span<const std::int32_t>>& nmm_interpolation_data
     = {})
 {
   assert(u.function_space());

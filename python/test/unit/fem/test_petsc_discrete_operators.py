@@ -14,8 +14,8 @@ import pytest
 import ufl
 from basix.ufl import element
 from dolfinx import default_real_type
-from dolfinx.cpp.fem.petsc import discrete_gradient, interpolation_matrix
 from dolfinx.fem import Expression, Function, assemble_scalar, form, functionspace
+from dolfinx.fem.petsc import discrete_gradient, interpolation_matrix
 from dolfinx.mesh import CellType, GhostMode, create_mesh, create_unit_cube, create_unit_square
 
 
@@ -33,7 +33,7 @@ def test_gradient_petsc(mesh):
     """Test discrete gradient computation for lowest order elements."""
     V = functionspace(mesh, ("Lagrange", 1))
     W = functionspace(mesh, ("Nedelec 1st kind H(curl)", 1))
-    G = discrete_gradient(V._cpp_object, W._cpp_object)
+    G = discrete_gradient(V, W)
     assert G.getRefCount() == 1
     num_edges = mesh.topology.index_map(1).size_global
     m, n = G.getSize()
@@ -80,7 +80,7 @@ def test_gradient_interpolation_petsc(cell_type, p, q):
 
     V = functionspace(mesh, (family0, p))
     W = functionspace(mesh, (family1, q))
-    G = discrete_gradient(V._cpp_object, W._cpp_object)
+    G = discrete_gradient(V, W)
     G.assemble()
 
     u = Function(V)
@@ -137,7 +137,7 @@ def test_interpolation_matrix_petsc(cell_type, p, q, from_lagrange):
 
     V = functionspace(mesh, el0)
     W = functionspace(mesh, el1)
-    G = interpolation_matrix(V._cpp_object, W._cpp_object)
+    G = interpolation_matrix(V, W)
     G.assemble()
 
     u = Function(V)
@@ -210,7 +210,7 @@ def test_nonaffine_discrete_operator_petsc():
     w.interpolate(lambda x: x)
     v.interpolate(w)
 
-    G = interpolation_matrix(W._cpp_object, V._cpp_object)
+    G = interpolation_matrix(W, V)
     G.assemble()
 
     # Compute global matrix vector product

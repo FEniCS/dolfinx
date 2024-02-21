@@ -187,12 +187,11 @@ public:
 
     int num_argument_dofs = 1;
     std::span<const std::uint32_t> cell_info;
-    std::function<void(const std::span<scalar_type>&,
-                       const std::span<const std::uint32_t>&, std::int32_t,
-                       int)>
+    std::function<void(std::span<scalar_type>, std::span<const std::uint32_t>,
+                       std::int32_t, int)>
         post_dof_transform
-        = [](const std::span<scalar_type>&,
-             const std::span<const std::uint32_t>&, std::int32_t, int)
+        = [](std::span<scalar_type>, std::span<const std::uint32_t>,
+             std::int32_t, int)
     {
       // Do nothing
     };
