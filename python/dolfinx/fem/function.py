@@ -223,8 +223,8 @@ class Expression:
 
         Args:
             mesh: Mesh to evaluate Expression on.
-            entities: Either an array of cells (index local to process) or an array of integral tuples (cell index, local facet index).
-                The array is flattened.
+            entities: Either an array of cells (index local to process) or an array of
+                integral tuples (cell index, local facet index). The array is flattened.
             values: Array to fill with evaluated values. If ``None``,
                 storage will be allocated. Otherwise must have shape
                 ``(num_entities, num_points * value_size *
