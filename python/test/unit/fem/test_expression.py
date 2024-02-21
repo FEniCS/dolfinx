@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Michal Habera
+# Copyright (C) 2019-2024 Michal Habera and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -334,3 +334,51 @@ def test_expression_comm(dtype):
     u = Function(functionspace(mesh, ("Lagrange", 1)), dtype=dtype)
     Expression(v, u.function_space.element.interpolation_points(), comm=MPI.COMM_WORLD)
     Expression(v, u.function_space.element.interpolation_points(), comm=MPI.COMM_SELF)
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_expression_facet_normal(dtype):
+    xtype = dtype(0).real.dtype
+    mesh = create_unit_square(MPI.COMM_WORLD, 4, 3, dtype=xtype)
+    n = ufl.FacetNormal(mesh)
+
+    tdim = mesh.topology.dim
+    mesh.topology.create_connectivity(tdim-1, tdim)
+    facets = dolfinx.mesh.exterior_facet_indices(mesh.topology)
+
+
+    # Compute cell, local_facet_index pairs
+    mesh.topology.create_connectivity(tdim, tdim-1)
+    c_to_f = mesh.topology.connectivity(tdim, tdim-1)
+    f_to_c = mesh.topology.connectivity(tdim-1, tdim)
+    integration_entities = np.empty(2*len(facets), dtype=np.int32)
+    for i, facet in enumerate(facets):
+        cells = f_to_c.links(facet)
+        assert len(cells) == 1
+        cell = cells[0]
+        local_facets = c_to_f.links(cell)
+        local_pos = np.flatnonzero(local_facets==facet)
+        integration_entities[2*i] = cell
+        integration_entities[2*i+1] = local_pos[0]
+
+    # Compute facet normal at midpoint of facet
+    reference_midpoint, _ =  basix.quadrature.make_quadrature(basix.cell.CellType.interval, 1,
+                                                              basix.quadrature.QuadratureType.Default,
+                                                              basix.quadrature.PolysetType.standard)
+    normal_expr = Expression(n, reference_midpoint, dtype=dtype)
+    facet_normals = normal_expr.eval(mesh, integration_entities)
+
+    # Check facet normal by using midpoint to determine what exterior cell we are at
+    facet_midpoints = dolfinx.mesh.compute_midpoints(mesh, tdim-1, facets)
+    atol= 100 * np.finfo(dtype).resolution
+    for midpoint, normal in zip(facet_midpoints, facet_normals):
+        if np.isclose(midpoint[0], 0, atol=atol):
+            assert np.allclose(normal, [-1, 0])
+        elif np.isclose(midpoint[0], 1,atol=atol):
+            assert np.allclose(normal, [1, 0], atol=atol)
+        elif np.isclose(midpoint[1], 0):
+            assert np.allclose(normal, [0, -1], atol=atol)
+        elif np.isclose(midpoint[1], 1, atol=atol):
+            assert np.allclose(normal, [0, 1])
+        else:
+            raise ValueError("Invalid midpoint")
