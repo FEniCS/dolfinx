@@ -25,6 +25,22 @@ if typing.TYPE_CHECKING:
     from dolfinx.mesh import Mesh
 
 
+class PointOwnershipData(typing.NamedTuple):
+    """Convenience class for storing data related to the ownership of points.
+
+    Attributes:
+        src_owner: Ranks owning each point sent into ownership determination for current process
+        dest_owners: Ranks that sent `dest_points` to current process
+        dest_points: Points owned by current rank
+        dest_cells: Cell indices (local to process) where each entry of `dest_points` is located
+    """
+
+    src_owner: npt.NDArray[np.int32]
+    dest_owners: npt.NDArray[np.int32]
+    dest_points: npt.NDArray[np.floating]
+    dest_cells: npt.NDArray[np.int32]
+
+
 class Constant(ufl.Constant):
     _cpp_object: typing.Union[
         _cpp.fem.Constant_complex64,
@@ -388,7 +404,7 @@ class Function(ufl.Coefficient):
         self,
         u: typing.Union[typing.Callable, Expression, Function],
         cells: typing.Optional[np.ndarray] = None,
-        nmm_interpolation_data=((), (), (), ()),
+        nmm_interpolation_data: typing.Optional[PointOwnershipData] = None,
     ) -> None:
         """Interpolate an expression
 
@@ -396,7 +412,16 @@ class Function(ufl.Coefficient):
             u: The function, Expression or Function to interpolate.
             cells: The cells to interpolate over. If `None` then all
                 cells are interpolated over.
+            nmm_interpolation_data: Data needed to interpolate functions defined on other meshes
         """
+        if nmm_interpolation_data is None:
+            x_dtype = self.function_space.mesh.geometry.x.dtype
+            nmm_interpolation_data = PointOwnershipData(
+                src_owner=np.empty(0, dtype=np.int32),
+                dest_owners=np.empty(0, dtype=np.int32),
+                dest_points=np.empty(0, dtype=x_dtype),
+                dest_cells=np.empty(0, dtype=np.int32),
+            )
 
         @singledispatch
         def _interpolate(u, cells: typing.Optional[np.ndarray] = None):

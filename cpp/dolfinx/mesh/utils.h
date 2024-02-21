@@ -618,12 +618,12 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
 /// @warning This function should not be used unless there is no
 /// alternative. It may be removed in the future.
 ///
-/// @param[in] mesh The mesh
-/// @param[in] dim Topological dimension of the entities of interest
+/// @param[in] mesh The mesh.
+/// @param[in] dim Topological dimension of the entities of interest.
 /// @param[in] entities Entity indices (local) to compute the vertex
-/// geometry indices for
+/// geometry indices for.
 /// @param[in] orient If true, in 3D, reorients facets to have
-/// consistent normal direction
+/// consistent normal direction.
 /// @return Indices in the geometry array for the entity vertices. The
 /// shape is `(num_entities, num_vertices_per_entity)` and the storage
 /// is row-major. The index `indices[i, j]` is the position in the

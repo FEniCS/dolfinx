@@ -887,9 +887,9 @@ def test_nonmatching_mesh_interpolation(xtype, cell_type0, cell_type1):
     u1.interpolate(
         u0,
         nmm_interpolation_data=create_nonmatching_meshes_interpolation_data(
-            u1.function_space.mesh._cpp_object,
+            u1.function_space.mesh,
             u1.function_space.element,
-            u0.function_space.mesh._cpp_object,
+            u0.function_space.mesh,
             padding=padding,
         ),
     )
@@ -907,9 +907,9 @@ def test_nonmatching_mesh_interpolation(xtype, cell_type0, cell_type1):
     u0_2.interpolate(
         u1,
         nmm_interpolation_data=create_nonmatching_meshes_interpolation_data(
-            u0_2.function_space.mesh._cpp_object,
+            u0_2.function_space.mesh,
             u0_2.function_space.element,
-            u1.function_space.mesh._cpp_object,
+            u1.function_space.mesh,
             padding=padding,
         ),
     )
@@ -964,10 +964,7 @@ def test_nonmatching_mesh_single_cell_overlap_interpolation(xtype):
     u1.x.scatter_forward()
     padding = 1e-14
     u1_2_u2_nmm_data = create_nonmatching_meshes_interpolation_data(
-        u2.function_space.mesh._cpp_object,
-        u2.function_space.element,
-        u1.function_space.mesh._cpp_object,
-        padding=padding,
+        u2.function_space.mesh, u2.function_space.element, u1.function_space.mesh, padding=padding
     )
 
     u2.interpolate(u1, nmm_interpolation_data=u1_2_u2_nmm_data)
@@ -992,10 +989,7 @@ def test_nonmatching_mesh_single_cell_overlap_interpolation(xtype):
     u2.x.scatter_forward()
     padding = 1e-14
     u2_2_u1_nmm_data = create_nonmatching_meshes_interpolation_data(
-        u1.function_space.mesh._cpp_object,
-        u1.function_space.element,
-        u2.function_space.mesh._cpp_object,
-        padding,
+        u1.function_space.mesh, u1.function_space.element, u2.function_space.mesh, padding=padding
     )
 
     u1.interpolate(u2, nmm_interpolation_data=u2_2_u1_nmm_data)
