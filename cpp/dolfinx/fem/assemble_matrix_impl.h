@@ -119,6 +119,7 @@ void assemble_cells(
     // Zero rows/columns for essential bcs
     auto dofs0 = std::span(dmap0.data_handle() + c0 * num_dofs0, num_dofs0);
     auto dofs1 = std::span(dmap1.data_handle() + c1 * num_dofs1, num_dofs1);
+
     if (!bc0.empty())
     {
       for (int i = 0; i < num_dofs0; ++i)
@@ -129,7 +130,7 @@ void assemble_cells(
           {
             // Zero row bs0 * i + k
             const int row = bs0 * i + k;
-            std::fill_n(std::next(Ae.begin(), ndim1 * row), ndim1, 0.0);
+            std::fill_n(std::next(Ae.begin(), ndim1 * row), ndim1, 0);
           }
         }
       }
@@ -146,7 +147,7 @@ void assemble_cells(
             // Zero column bs1 * j + k
             const int col = bs1 * j + k;
             for (int row = 0; row < ndim0; ++row)
-              Ae[row * ndim1 + col] = 0.0;
+              Ae[row * ndim1 + col] = 0;
           }
         }
       }
@@ -216,7 +217,7 @@ void assemble_exterior_facets(
           {
             // Zero row bs0 * i + k
             const int row = bs0 * i + k;
-            std::fill_n(std::next(Ae.begin(), ndim1 * row), ndim1, 0.0);
+            std::fill_n(std::next(Ae.begin(), ndim1 * row), ndim1, 0);
           }
         }
       }
@@ -232,7 +233,7 @@ void assemble_exterior_facets(
             // Zero column bs1 * j + k
             const int col = bs1 * j + k;
             for (int row = 0; row < ndim0; ++row)
-              Ae[row * ndim1 + col] = 0.0;
+              Ae[row * ndim1 + col] = 0;
           }
         }
       }
@@ -359,7 +360,7 @@ void assemble_interior_facets(
           {
             // Zero row bs0 * i + k
             std::fill_n(std::next(Ae.begin(), num_cols * (bs0 * i + k)),
-                        num_cols, 0.0);
+                        num_cols, 0);
           }
         }
       }
@@ -374,7 +375,7 @@ void assemble_interior_facets(
           {
             // Zero column bs1 * j + k
             for (int m = 0; m < num_rows; ++m)
-              Ae[m * num_cols + bs1 * j + k] = 0.0;
+              Ae[m * num_cols + bs1 * j + k] = 0;
           }
         }
       }
