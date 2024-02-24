@@ -120,16 +120,16 @@ public:
 
   /// @brief Create a finite element form.
   ///
-  /// @note User applications will normally call a builder function
+  /// @note User applications will normally call a factory function
   /// rather using this interface directly.
   ///
-  /// @param[in] V Function spaces for the form arguments
-  /// @param[in] integrals The integrals in the form. For each
-  /// integral type, there is a list of integral data
-  /// @param[in] coefficients
-  /// @param[in] constants Constants in the Form
-  /// @param[in] needs_facet_permutations Set to true is any of the
-  /// integration kernels require cell permutation data
+  /// @param[in] V Function spaces for the form arguments.
+  /// @param[in] integrals The integrals in the form. For each integral
+  /// type, there is a list of integral data.
+  /// @param[in] coefficients Coefficients in the form.
+  /// @param[in] constants Constants in the form.
+  /// @param[in] needs_facet_permutations Set to `true` is any of the
+  /// integration kernels require cell permutation data.
   /// @param[in] entity_maps If any trial functions, test functions, or
   /// coefficients in the form are not defined over the same mesh as the
   /// integration domain, `entity_maps` must be supplied. For each key
@@ -140,7 +140,10 @@ public:
   /// are no argument functions from which the mesh can be extracted,
   /// e.g. for functionals.
   ///
+  /// @note For the single domain case, pass an empty `entity_maps`.
+  ///
   /// @pre The integral data in integrals must be sorted by domain
+  /// (domain id).
   template <typename X>
     requires std::is_convertible_v<
                  std::remove_cvref_t<X>,
@@ -203,24 +206,26 @@ public:
   /// Destructor
   virtual ~Form() = default;
 
-  /// Rank of the form (bilinear form = 2, linear form = 1, functional =
-  /// 0, etc)
+  /// @brief Rank of the form.
+  ///
+  /// bilinear form = 2, linear form = 1, functional = 0, etc.
+  ///
   /// @return The rank of the form
   int rank() const { return _function_spaces.size(); }
 
-  /// Extract common mesh for the form
-  /// @return The mesh
+  /// @brief Extract common mesh for the form.
+  /// @return The mesh.
   std::shared_ptr<const mesh::Mesh<U>> mesh() const { return _mesh; }
 
-  /// Return function spaces for all arguments
-  /// @return Function spaces
+  /// @brief Function spaces for all arguments.
+  /// @return Function spaces.
   const std::vector<std::shared_ptr<const FunctionSpace<U>>>&
   function_spaces() const
   {
     return _function_spaces;
   }
 
-  /// @brief Get the kernel function for integral i on given domain
+  /// @brief Get the kernel function for integral `i` on given domain
   /// type.
   /// @param[in] type Integral type
   /// @param[in] i Domain identifier (index)
@@ -259,12 +264,13 @@ public:
     return _integrals[static_cast<std::size_t>(type)].size();
   }
 
-  /// Get the IDs for integrals (kernels) for given integral type. The
-  /// IDs correspond to the domain IDs which the integrals are defined
-  /// for in the form. ID=-1 is the default integral over the whole
-  /// domain.
-  /// @param[in] type Integral type
-  /// @return List of IDs for given integral type
+  /// @brief Get the IDs for integrals (kernels) for given integral type.
+  ///
+  /// The IDs correspond to the domain IDs which the integrals are
+  /// defined for in the form. `ID=-1` is the default integral over the
+  /// whole domain.
+  /// @param[in] type Integral type.
+  /// @return List of IDs for given integral type.
   std::vector<int> integral_ids(IntegralType type) const
   {
     std::vector<int> ids;
@@ -274,8 +280,8 @@ public:
     return ids;
   }
 
-  /// @brief Get the list of entity indices for the ith integral (kernel)
-  /// of a given type.
+  /// @brief Get the list of entity indices for the ith integral
+  /// (kernel) of a given type.
   ///
   /// For IntegralType::cell, returns a list of cell indices.
   ///
@@ -288,9 +294,9 @@ public:
   /// local_facet_index_1)`. Data is flattened with row-major layout,
   /// `shape=(num_facets, 4)`.
   ///
-  /// @param[in] type Integral domain type
-  /// @param[in] i Integral ID, i.e. (sub)domain index
-  /// @return List of active entities for the given integral (kernel)
+  /// @param[in] type Integral domain type.
+  /// @param[in] i Integral ID, i.e. (sub)domain index.
+  /// @return List of active entities for the given integral (kernel).
   std::span<const std::int32_t> domain(IntegralType type, int i) const
   {
     const auto& integrals = _integrals[static_cast<std::size_t>(type)];
@@ -334,20 +340,21 @@ public:
     }
   }
 
-  /// Access coefficients
+  /// @brief Access coefficients.
   const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients() const
   {
     return _coefficients;
   }
 
-  /// Get bool indicating whether permutation data needs to be passed
-  /// into these integrals
+  /// @brief Get bool indicating whether permutation data needs to be
+  /// passed into these integrals.
   /// @return True if cell permutation data is required
   bool needs_facet_permutations() const { return _needs_facet_permutations; }
 
-  /// Offset for each coefficient expansion array on a cell. Used to
-  /// pack data for multiple coefficients in a flat array. The last
-  /// entry is the size required to store all coefficients.
+  /// @brief Offset for each coefficient expansion array on a cell.
+  ///
+  /// Used to pack data for multiple coefficients in a flat array. The
+  /// last entry is the size required to store all coefficients.
   std::vector<int> coefficient_offsets() const
   {
     std::vector<int> n = {0};
@@ -360,7 +367,7 @@ public:
     return n;
   }
 
-  /// Access constants
+  /// @brief Access constants.
   const std::vector<std::shared_ptr<const Constant<T>>>& constants() const
   {
     return _constants;
