@@ -28,7 +28,7 @@ using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
     const std::int32_t,
     MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
 
-/// Execute kernel over cells and accumulate result in matrix (mixed-domain)
+/// Execute kernel over cells and accumulate result in matrix.
 template <dolfinx::scalar T>
 void assemble_cells(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
@@ -60,11 +60,10 @@ void assemble_cells(
   assert(cells1.size() == cells.size());
   for (std::size_t index = 0; index < cells.size(); ++index)
   {
-    // Cell in integration domain mesh
+    // Cell index in integration domain mesh (c), test function mesh
+    // (c0) and trial function mesh (c1)
     std::int32_t c = cells[index];
-    // Corresponding cell in test function mesh
     std::int32_t c0 = cells0[index];
-    // Corresponding cell in trial function mesh
     std::int32_t c1 = cells1[index];
 
     // Get cell coordinates/geometry
@@ -124,26 +123,6 @@ void assemble_cells(
 
     mat_set(dofs0, dofs1, Ae);
   }
-}
-
-/// Execute kernel over cells and accumulate result in matrix (single domain)
-template <dolfinx::scalar T>
-void assemble_cells(la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
-                    std::span<const scalar_value_type_t<T>> x,
-                    std::span<const std::int32_t> cells,
-                    fem::DofTransformKernel<T> auto pre_dof_transform,
-                    mdspan2_t dofmap0, int bs0,
-                    fem::DofTransformKernel<T> auto post_dof_transform,
-                    mdspan2_t dofmap1, int bs1,
-                    std::span<const std::int8_t> bc0,
-                    std::span<const std::int8_t> bc1, FEkernel<T> auto kernel,
-                    std::span<const T> coeffs, int cstride,
-                    std::span<const T> constants,
-                    std::span<const std::uint32_t> cell_info)
-{
-  assemble_cells(mat_set, x_dofmap, x, cells, cells, cells, pre_dof_transform,
-                 dofmap0, bs0, post_dof_transform, dofmap1, bs1, bc0, bc1,
-                 kernel, coeffs, cstride, constants, cell_info, cell_info);
 }
 
 /// Execute kernel over exterior facets and  accumulate result in Mat
