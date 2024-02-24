@@ -103,7 +103,7 @@ struct integral_data
 /// space number 1 (the trial space).
 ///
 /// @tparam T Scalar type in the form.
-/// @tparam U Real scalar type used for the finite element and geometry.
+/// @tparam U Float (real) type used for the finite element and geometry.
 /// @tparam Kern Element kernel.
 template <
     dolfinx::scalar T, std::floating_point U = dolfinx::scalar_value_type_t<T>,
@@ -280,7 +280,7 @@ public:
     return ids;
   }
 
-  /// @brief Get the list of entity indices for the ith integral
+  /// @brief Get the list of mesh entity indices for the ith integral
   /// (kernel) of a given type.
   ///
   /// For IntegralType::cell, returns a list of cell indices.
@@ -311,8 +311,10 @@ public:
 
   /// @brief Compute the list of entity indices for the ith integral
   /// (kernel) of a given type (i.e. cell, exterior facet, or interior
-  /// facet). The indices are mapped from the integration domain mesh to
-  /// the mesh `mesh`.
+  /// facet).
+  ///
+  /// The indices are mapped from the integration domain mesh to the
+  /// mesh `mesh`.
   ///
   /// @param type Integral type.
   /// @param i Integral ID, i.e. the (sub)domain index.
