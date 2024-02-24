@@ -16,11 +16,6 @@ namespace dolfinx::la
 class SparsityPattern;
 }
 
-namespace dolfinx::mesh
-{
-class Topology;
-}
-
 namespace dolfinx::fem
 {
 class DofMap;
@@ -28,25 +23,16 @@ class DofMap;
 /// Support for building sparsity patterns from degree-of-freedom maps.
 namespace sparsitybuild
 {
-/// @brief Iterate over cells and insert entries into sparsity pattern (single
-/// domain).
+/// @brief Iterate over cells and insert entries into sparsity pattern.
 ///
-/// @param[in,out] pattern The sparsity pattern to insert into
-/// @param[in] cells The cell indices
-/// @param[in] dofmaps Dofmaps to used in building the sparsity pattern
-/// @note The sparsity pattern is not finalised
-void cells(la::SparsityPattern& pattern, std::span<const std::int32_t> cells,
-           std::array<std::reference_wrapper<const DofMap>, 2> dofmaps);
-
-/// @brief Iterate over cells and insert entries into sparsity pattern (mixed
-/// domain).
-/// @param pattern The sparsity pattern to insert into
-/// @param cells Two lists of cells, the first numbered with respect to the
-/// test function mesh, and the seconded numbered with respect to the trial
-/// function mesh. cells[0][i] (in the test function) must correspond to
-/// cells[1][i] in the trial function mesh for all i.
-/// @param dofmaps Dofmaps to used in building the sparsity pattern
-/// @note The sparsity pattern is not finalised
+///  Inserts the rectangular block of indices `dofmap[0][cells[0][i]] x
+///  dofmap[1][cells[1][i]]` into the sparsity pattern.
+///
+/// @param pattern Sparsity pattern to insert into.
+/// @param cells Lists of cells to iterate over. `cells[0]` and
+/// `cells[1]` must have the same size.
+/// @param dofmaps Dofmaps to used in building the sparsity pattern.
+/// @note The sparsity pattern is not finalised.
 void cells(la::SparsityPattern& pattern,
            std::array<std::span<const std::int32_t>, 2> cells,
            std::array<std::reference_wrapper<const DofMap>, 2> dofmaps);

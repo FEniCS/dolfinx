@@ -219,7 +219,8 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
         cells.reserve(facets.size() / 2);
         for (std::size_t i = 0; i < facets.size(); i += 2)
           cells.push_back(facets[i]);
-        sparsitybuild::cells(pattern, cells, {{dofmaps[0], dofmaps[1]}});
+        sparsitybuild::cells(pattern, {cells, cells},
+                             {{dofmaps[0], dofmaps[1]}});
       }
       break;
     default:

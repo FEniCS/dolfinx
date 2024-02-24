@@ -6,21 +6,11 @@
 
 #include "sparsitybuild.h"
 #include "DofMap.h"
-#include <dolfinx/common/IndexMap.h>
-#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/la/SparsityPattern.h>
-#include <dolfinx/mesh/Topology.h>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
 
-//-----------------------------------------------------------------------------
-void sparsitybuild::cells(
-    la::SparsityPattern& pattern, std::span<const std::int32_t> cells,
-    std::array<std::reference_wrapper<const DofMap>, 2> dofmaps)
-{
-  sparsitybuild::cells(pattern, {cells, cells}, dofmaps);
-}
 //-----------------------------------------------------------------------------
 void sparsitybuild::cells(
     la::SparsityPattern& pattern,
