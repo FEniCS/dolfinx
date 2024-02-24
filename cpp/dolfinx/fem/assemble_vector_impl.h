@@ -11,6 +11,7 @@
 #include "DofMap.h"
 #include "Form.h"
 #include "FunctionSpace.h"
+#include "traits.h"
 #include "utils.h"
 #include <algorithm>
 #include <basix/mdspan.hpp>

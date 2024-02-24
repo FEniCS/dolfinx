@@ -534,8 +534,8 @@ std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
 /// owned boundary facet and evaluate to true for the provided geometric
 /// marking function.
 ///
-/// An entity is considered marked if the marker function evaluates to true
-/// for all of its vertices.
+/// An entity is considered marked if the marker function evaluates to
+/// true for all of its vertices.
 ///
 /// @note For vertices and edges, in parallel this function will not
 /// necessarily mark all entities that are on the exterior boundary. For

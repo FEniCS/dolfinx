@@ -19,6 +19,7 @@
 #include <functional>
 #include <iterator>
 #include <span>
+#include <tuple>
 #include <vector>
 
 namespace dolfinx::fem::impl
@@ -28,27 +29,55 @@ using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
     const std::int32_t,
     MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
 
-/// Execute kernel over cells and accumulate result in matrix.
+/// @brief Execute kernel over cells and accumulate result in matrix.
+/// @tparam T Matrix/form scalar type.
+/// @param mat_set Function that accumulates computed entries into a
+/// matrix.
+/// @param x_dofmap Dofmap for the mesh geometry.
+/// @param x Mesh geometry (coordinates).
+/// @param cells Cells indices to execute the kernel over. `cells[0]`
+/// are the 'integration' domain cells, `cells[1][i]` is the index into
+/// he test space dofmap associated with `cells[0][i]` and `cells[2][i]`
+/// is the index into he trial space dofmap associated with
+/// `cells[0][i]`.
+/// @param dofmap0 Test function (row) degree-of-freedom data holding
+/// the (0) dofmap, (1) dofmap block size and (2) dofmap cell indices.
+/// @param pre_transform
+/// @param dofmap0 Trial function (column) degree-of-freedom data
+/// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
+/// indices.
+/// @param post_transform
+/// @param bc0
+/// @param bc1
+/// @param kernel Kernel function to execute over each cell.
+/// @param coeffs
+/// @param cstride
+/// @param constants
+/// @param cell_info0
+/// @param cell_info1
 template <dolfinx::scalar T>
 void assemble_cells(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     std::span<const scalar_value_type_t<T>> x,
-    std::span<const std::int32_t> cells, std::span<const std::int32_t> cells0,
-    std::span<const std::int32_t> cells1,
-    fem::DofTransformKernel<T> auto pre_dof_transform, mdspan2_t dofmap0,
-    int bs0, fem::DofTransformKernel<T> auto post_dof_transform,
-    mdspan2_t dofmap1, int bs1, std::span<const std::int8_t> bc0,
-    std::span<const std::int8_t> bc1, FEkernel<T> auto kernel,
-    std::span<const T> coeffs, int cstride, std::span<const T> constants,
-    std::span<const std::uint32_t> cell_info0,
+    std::span<const std::int32_t> cells,
+    std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap0,
+    fem::DofTransformKernel<T> auto pre_transform,
+    std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap1,
+    fem::DofTransformKernel<T> auto post_transform,
+    std::span<const std::int8_t> bc0, std::span<const std::int8_t> bc1,
+    FEkernel<T> auto kernel, std::span<const T> coeffs, int cstride,
+    std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
     std::span<const std::uint32_t> cell_info1)
 {
   if (cells.empty())
     return;
 
+  const auto [dmap0, bs0, cells0] = dofmap0;
+  const auto [dmap1, bs1, cells1] = dofmap1;
+
   // Iterate over active cells
-  const int num_dofs0 = dofmap0.extent(1);
-  const int num_dofs1 = dofmap1.extent(1);
+  const int num_dofs0 = dmap0.extent(1);
+  const int num_dofs1 = dmap1.extent(1);
   const int ndim0 = bs0 * num_dofs0;
   const int ndim1 = bs1 * num_dofs1;
   std::vector<T> Ae(ndim0 * ndim1);
@@ -81,12 +110,12 @@ void assemble_cells(
     kernel(Ae.data(), coeffs.data() + index * cstride, constants.data(),
            coordinate_dofs.data(), nullptr, nullptr);
 
-    pre_dof_transform(_Ae, cell_info1, c1, ndim1);
-    post_dof_transform(_Ae, cell_info0, c0, ndim0);
+    pre_transform(_Ae, cell_info1, c1, ndim1);
+    post_transform(_Ae, cell_info0, c0, ndim0);
 
     // Zero rows/columns for essential bcs
-    auto dofs0 = std::span(dofmap0.data_handle() + c0 * num_dofs0, num_dofs0);
-    auto dofs1 = std::span(dofmap1.data_handle() + c1 * num_dofs1, num_dofs1);
+    auto dofs0 = std::span(dmap0.data_handle() + c0 * num_dofs0, num_dofs0);
+    auto dofs1 = std::span(dmap1.data_handle() + c1 * num_dofs1, num_dofs1);
 
     if (!bc0.empty())
     {
@@ -131,12 +160,11 @@ void assemble_exterior_facets(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     std::span<const scalar_value_type_t<T>> x,
     std::span<const std::int32_t> facets,
-    fem::DofTransformKernel<T> auto pre_dof_transform, mdspan2_t dofmap0,
-    int bs0, fem::DofTransformKernel<T> auto post_dof_transform,
-    mdspan2_t dofmap1, int bs1, std::span<const std::int8_t> bc0,
-    std::span<const std::int8_t> bc1, FEkernel<T> auto kernel,
-    std::span<const T> coeffs, int cstride, std::span<const T> constants,
-    std::span<const std::uint32_t> cell_info)
+    fem::DofTransformKernel<T> auto pre_transform, mdspan2_t dofmap0, int bs0,
+    fem::DofTransformKernel<T> auto post_transform, mdspan2_t dofmap1, int bs1,
+    std::span<const std::int8_t> bc0, std::span<const std::int8_t> bc1,
+    FEkernel<T> auto kernel, std::span<const T> coeffs, int cstride,
+    std::span<const T> constants, std::span<const std::uint32_t> cell_info)
 {
   if (facets.empty())
     return;
@@ -170,8 +198,8 @@ void assemble_exterior_facets(
     kernel(Ae.data(), coeffs.data() + index / 2 * cstride, constants.data(),
            coordinate_dofs.data(), &local_facet, nullptr);
 
-    pre_dof_transform(_Ae, cell_info, cell, ndim1);
-    post_dof_transform(_Ae, cell_info, cell, ndim0);
+    pre_transform(_Ae, cell_info, cell, ndim1);
+    post_transform(_Ae, cell_info, cell, ndim0);
 
     // Zero rows/columns for essential bcs
     auto dofs0 = std::span(dofmap0.data_handle() + cell * num_dofs0, num_dofs0);
@@ -218,8 +246,8 @@ void assemble_interior_facets(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     std::span<const scalar_value_type_t<T>> x, int num_cell_facets,
     std::span<const std::int32_t> facets,
-    fem::DofTransformKernel<T> auto pre_dof_transform, const DofMap& dofmap0,
-    int bs0, fem::DofTransformKernel<T> auto post_dof_transform,
+    fem::DofTransformKernel<T> auto pre_transform, const DofMap& dofmap0,
+    int bs0, fem::DofTransformKernel<T> auto post_transform,
     const DofMap& dofmap1, int bs1, std::span<const std::int8_t> bc0,
     std::span<const std::int8_t> bc1, FEkernel<T> auto kernel,
     std::span<const T> coeffs, int cstride, std::span<const int> offsets,
@@ -306,9 +334,9 @@ void assemble_interior_facets(
     std::span<T> sub_Ae0 = _Ae.subspan(bs0 * dmap0_cell0.size() * num_cols,
                                        bs0 * dmap0_cell1.size() * num_cols);
 
-    pre_dof_transform(_Ae, cell_info, cells[0], num_cols);
-    pre_dof_transform(sub_Ae0, cell_info, cells[1], num_cols);
-    post_dof_transform(_Ae, cell_info, cells[0], num_rows);
+    pre_transform(_Ae, cell_info, cells[0], num_cols);
+    pre_transform(sub_Ae0, cell_info, cells[1], num_cols);
+    post_transform(_Ae, cell_info, cells[0], num_rows);
 
     for (int row = 0; row < num_rows; ++row)
     {
@@ -316,7 +344,7 @@ void assemble_interior_facets(
       // the block matrix, so each row needs a separate span access
       std::span<T> sub_Ae1 = _Ae.subspan(
           row * num_cols + bs1 * dmap1_cell0.size(), bs1 * dmap1_cell1.size());
-      post_dof_transform(sub_Ae1, cell_info, cells[1], 1);
+      post_transform(sub_Ae1, cell_info, cells[1], 1);
     }
 
     // Zero rows/columns for essential bcs
@@ -394,9 +422,9 @@ void assemble_matrix(
   assert(element0);
   auto element1 = a.function_spaces().at(1)->element();
   assert(element1);
-  fem::DofTransformKernel<T> auto pre_dof_transform
+  fem::DofTransformKernel<T> auto pre_transform
       = element0->template get_pre_dof_transformation_function<T>();
-  fem::DofTransformKernel<T> auto post_dof_transform
+  fem::DofTransformKernel<T> auto post_transform
       = element1->template get_post_dof_transformation_function<T>(
           FiniteElement<U>::doftransform::transpose);
 
@@ -416,12 +444,11 @@ void assemble_matrix(
     auto fn = a.kernel(IntegralType::cell, i);
     assert(fn);
     auto& [coeffs, cstride] = coefficients.at({IntegralType::cell, i});
-    impl::assemble_cells(mat_set, x_dofmap, x, a.domain(IntegralType::cell, i),
-                         a.domain(IntegralType::cell, i, *mesh0),
-                         a.domain(IntegralType::cell, i, *mesh1),
-                         pre_dof_transform, dofs0, bs0, post_dof_transform,
-                         dofs1, bs1, bc0, bc1, fn, coeffs, cstride, constants,
-                         cell_info0, cell_info1);
+    impl::assemble_cells(
+        mat_set, x_dofmap, x, a.domain(IntegralType::cell, i),
+        {dofs0, bs0, a.domain(IntegralType::cell, i, *mesh0)}, pre_transform,
+        {dofs1, bs1, a.domain(IntegralType::cell, i, *mesh1)}, post_transform,
+        bc0, bc1, fn, coeffs, cstride, constants, cell_info0, cell_info1);
   }
 
   for (int i : a.integral_ids(IntegralType::exterior_facet))
@@ -432,8 +459,8 @@ void assemble_matrix(
         = coefficients.at({IntegralType::exterior_facet, i});
     impl::assemble_exterior_facets(
         mat_set, x_dofmap, x, a.domain(IntegralType::exterior_facet, i),
-        pre_dof_transform, dofs0, bs0, post_dof_transform, dofs1, bs1, bc0, bc1,
-        fn, coeffs, cstride, constants, cell_info0);
+        pre_transform, dofs0, bs0, post_transform, dofs1, bs1, bc0, bc1, fn,
+        coeffs, cstride, constants, cell_info0);
   }
 
   if (a.num_integrals(IntegralType::interior_facet) > 0)
@@ -461,9 +488,9 @@ void assemble_matrix(
           = coefficients.at({IntegralType::interior_facet, i});
       impl::assemble_interior_facets(
           mat_set, x_dofmap, x, num_cell_facets,
-          a.domain(IntegralType::interior_facet, i), pre_dof_transform,
-          *dofmap0, bs0, post_dof_transform, *dofmap1, bs1, bc0, bc1, fn,
-          coeffs, cstride, c_offsets, constants, cell_info0, get_perm);
+          a.domain(IntegralType::interior_facet, i), pre_transform, *dofmap0,
+          bs0, post_transform, *dofmap1, bs1, bc0, bc1, fn, coeffs, cstride,
+          c_offsets, constants, cell_info0, get_perm);
     }
   }
 }
