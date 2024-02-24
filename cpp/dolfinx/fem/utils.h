@@ -162,10 +162,10 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
   std::shared_ptr mesh = a.mesh();
   assert(mesh);
 
-  std::shared_ptr mesh_0 = a.function_spaces().at(0)->mesh();
-  assert(mesh_0);
-  std::shared_ptr mesh_1 = a.function_spaces().at(1)->mesh();
-  assert(mesh_1);
+  std::shared_ptr mesh0 = a.function_spaces().at(0)->mesh();
+  assert(mesh0);
+  std::shared_ptr mesh1 = a.function_spaces().at(1)->mesh();
+  assert(mesh1);
 
   const std::set<IntegralType> types = a.integral_types();
   if (types.find(IntegralType::interior_facet) != types.end()
@@ -196,7 +196,7 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
       for (int id : ids)
       {
         sparsitybuild::cells(
-            pattern, {a.domain(type, id, *mesh_0), a.domain(type, id, *mesh_1)},
+            pattern, {a.domain(type, id, *mesh0), a.domain(type, id, *mesh1)},
             {{dofmaps[0], dofmaps[1]}});
       }
       break;

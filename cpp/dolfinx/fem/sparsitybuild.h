@@ -25,7 +25,7 @@ namespace sparsitybuild
 {
 /// @brief Iterate over cells and insert entries into sparsity pattern.
 ///
-///  Inserts the rectangular block of indices `dofmap[0][cells[0][i]] x
+///  Inserts the rectangular blocks of indices `dofmap[0][cells[0][i]] x
 ///  dofmap[1][cells[1][i]]` into the sparsity pattern.
 ///
 /// @param pattern Sparsity pattern to insert into.

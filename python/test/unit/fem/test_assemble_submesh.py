@@ -13,7 +13,6 @@ import pytest
 
 import ufl
 from dolfinx import default_scalar_type, fem, la
-from dolfinx.fem.petsc import assemble_matrix
 from dolfinx.mesh import (
     GhostMode,
     create_box,
@@ -42,7 +41,6 @@ def assemble(mesh, space, k):
 
     bc_func = fem.Function(V)
     bc_func.interpolate(lambda x: np.sin(x[0]))
-
     bc = fem.dirichletbc(bc_func, dofs)
 
     A = fem.assemble_matrix(a, bcs=[bc])
@@ -161,17 +159,20 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
 
     # Define form to compare to and assemble
     a = fem.form(ufl_form(u, v, dx_msh(tag)))
-    A = assemble_matrix(a)
-    A.assemble()
+    A = fem.assemble_matrix(a)
+    A.scatter_reverse()
+
+    # A = assemble_matrix(a)
+    # A.assemble()
 
     # Assemble a mixed domain form, taking smsh to be the integration domain
     # Entity maps must take cells in smsh (the integration domain mesh) to
     # cells in msh
     entity_maps = {msh._cpp_object: np.array(smhs_to_msh, dtype=np.int32)}
-    a_0 = fem.form(ufl_form(u, w, ufl.dx(smsh)), entity_maps=entity_maps)
-    A_0 = assemble_matrix(a_0)
-    A_0.assemble()
-    assert np.isclose(A_0.norm(), A.norm())
+    a0 = fem.form(ufl_form(u, w, ufl.dx(smsh)), entity_maps=entity_maps)
+    A0 = fem.assemble_matrix(a0)
+    A0.scatter_reverse()
+    assert np.isclose(A0.squared_norm(), A.squared_norm())
 
     # Now assemble a mixed domain form using msh as integration domain
     # Entity maps must take cells in msh (the integration domain mesh) to
@@ -182,7 +183,7 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
     msh_to_smsh[smhs_to_msh] = np.arange(len(smhs_to_msh))
     entity_maps = {smsh._cpp_object: np.array(msh_to_smsh, dtype=np.int32)}
 
-    a_1 = fem.form(ufl_form(u, w, dx_msh(tag)), entity_maps=entity_maps)
-    A_1 = assemble_matrix(a_1)
-    A_1.assemble()
-    assert np.isclose(A_1.norm(), A.norm())
+    a1 = fem.form(ufl_form(u, w, dx_msh(tag)), entity_maps=entity_maps)
+    A1 = fem.assemble_matrix(a1)
+    A1.scatter_reverse()
+    assert np.isclose(A1.squared_norm(), A.squared_norm())

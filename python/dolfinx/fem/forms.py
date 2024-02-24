@@ -145,12 +145,12 @@ def form(
         dtype: Scalar type to use for the compiled form.
         form_compiler_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
         jit_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`.
-        entity_maps: If any trial functions, test functions, or coefficients in
-                     the form are not defined over the same mesh as the integration
-                     domain, `entity_maps` must be supplied. For each key (a mesh,
-                     different to the integration domain mesh) a map should be
-                     provided relating the entities in the integration domain mesh
-                     to the entities in the key mesh.
+        entity_maps: If any trial functions, test functions, or
+            coefficients in the form are not defined over the same mesh
+            as the integration domain, `entity_maps` must be supplied.
+            For each key (a mesh, different to the integration domain
+            mesh) a map should be provided relating the entities in the
+            integration domain mesh to the entities in the key mesh.
 
     Returns:
         Compiled finite element Form.
@@ -161,7 +161,6 @@ def form(
         data to the underlying C++ form. It dynamically create a
         :class:`Form` instance with an appropriate base class for the
         scalar type, e.g. :func:`_cpp.fem.Form_float64`.
-
     """
     if form_compiler_options is None:
         form_compiler_options = dict()
