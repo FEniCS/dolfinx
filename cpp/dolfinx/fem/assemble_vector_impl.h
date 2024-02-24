@@ -15,7 +15,6 @@
 #include "utils.h"
 #include <algorithm>
 #include <basix/mdspan.hpp>
-#include <concepts>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/mesh/Geometry.h>
