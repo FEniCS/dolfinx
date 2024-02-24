@@ -101,6 +101,10 @@ struct integral_data
 /// (the variable `function_spaces` in the constructors below), the list
 /// of spaces should start with space number 0 (the test space) and then
 /// space number 1 (the trial space).
+///
+/// @tparam T Scalar type in the form.
+/// @tparam U Real scalar type used for the finite element and geometry.
+/// @tparam Kern Element kernel.
 template <
     dolfinx::scalar T, std::floating_point U = dolfinx::scalar_value_type_t<T>,
     FEkernel<T> Kern
@@ -114,7 +118,7 @@ public:
   /// Scalar type
   using scalar_type = T;
 
-  /// @brief Create a finite element form (mixed domain).
+  /// @brief Create a finite element form.
   ///
   /// @note User applications will normally call a builder function
   /// rather using this interface directly.
@@ -138,6 +142,10 @@ public:
   ///
   /// @pre The integral data in integrals must be sorted by domain
   template <typename X>
+    requires std::is_convertible_v<
+                 std::remove_cvref_t<X>,
+                 std::map<IntegralType,
+                          std::vector<integral_data<scalar_type, kern_t>>>>
   Form(const std::vector<std::shared_ptr<const FunctionSpace<U>>>& V,
        X&& integrals,
        const std::vector<std::shared_ptr<const Function<scalar_type, U>>>&
@@ -184,37 +192,6 @@ public:
     // Store entity maps
     for (auto [msh, map] : entity_maps)
       _entity_maps.insert({msh, std::vector(map.begin(), map.end())});
-  }
-
-  // @brief Create a finite element form (single domain).
-  ///
-  /// @note User applications will normally call a builder function
-  /// rather using this interface directly.
-  ///
-  /// @param[in] V Function spaces for the form arguments
-  /// @param[in] integrals The integrals in the form. For each
-  /// integral type, there is a list of integral data
-  /// @param[in] coefficients
-  /// @param[in] constants Constants in the Form
-  /// @param[in] needs_facet_permutations Set to true is any of the
-  /// integration kernels require cell permutation data
-  /// @param[in] mesh Mesh of the domain. This is required when there
-  /// are no argument functions from which the mesh can be extracted,
-  /// e.g. for functionals.
-  ///
-  /// @pre The integral data in integrals must be sorted by domain
-  template <typename X>
-  Form(const std::vector<std::shared_ptr<const FunctionSpace<U>>>& V,
-       X&& integrals,
-       const std::vector<std::shared_ptr<const Function<scalar_type, U>>>&
-           coefficients,
-       const std::vector<std::shared_ptr<const Constant<scalar_type>>>&
-           constants,
-       bool needs_facet_permutations,
-       std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
-      : Form(V, integrals, coefficients, constants, needs_facet_permutations,
-             {}, mesh)
-  {
   }
 
   /// Copy constructor

@@ -79,7 +79,7 @@ double assemble_matrix0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
   // Associate kernel with cells (as opposed to facets, etc)
   std::map integrals{std::pair{fem::IntegralType::cell, kernel_data}};
 
-  fem::Form<T> a({V, V}, integrals, {}, {}, false, V->mesh());
+  fem::Form<T> a({V, V}, integrals, {}, {}, false, {}, V->mesh());
   auto dofmap = V->dofmap();
   auto sp = la::SparsityPattern(
       V->mesh()->comm(), {dofmap->index_map, dofmap->index_map},
@@ -106,7 +106,7 @@ double assemble_vector0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
   auto mesh = V->mesh();
   std::vector kernal_data{fem::integral_data<T>(-1, kernel, cells)};
   std::map integrals{std::pair{fem::IntegralType::cell, kernal_data}};
-  fem::Form<T> L({V}, integrals, {}, {}, false, mesh);
+  fem::Form<T> L({V}, integrals, {}, {}, false, {}, mesh);
   auto dofmap = V->dofmap();
   la::Vector<T> b(dofmap->index_map, 1);
   common::Timer timer("Assembler0 std::function (vector)");
