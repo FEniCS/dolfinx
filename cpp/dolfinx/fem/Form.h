@@ -313,19 +313,18 @@ public:
   /// of a given type (i.e. cell, exterior facet, or interior facet). The
   /// indices are mapped from the integration domain mesh to the mesh `mesh`.
   ///
-  /// @param type Integral type
-  /// @param i Integral ID, i.e. (sub)domain index
-  /// @param mesh The mesh to map the entities to
-  /// @return List of active entities in `mesh` for the given integral
+  /// @param type Integral type.
+  /// @param i Integral ID, i.e. the (sub)domain index.
+  /// @param mesh Mesh to map the entities to.
+  /// @return List of active entities in `mesh` for the given integral.
   std::vector<std::int32_t> domain(IntegralType type, int i,
                                    const mesh::Mesh<U>& mesh) const
   {
-    // Horrible hack to avoid passing shared pointer to this function
-    auto msh_ptr = std::shared_ptr<const mesh::Mesh<U>>(
-        &mesh, [](const mesh::Mesh<U>*) {});
+    // Hack to avoid passing shared pointer to this function
+    std::shared_ptr<const mesh::Mesh<U>> msh_ptr(&mesh,
+                                                 [](const mesh::Mesh<U>*) {});
 
     std::span<const std::int32_t> entities = domain(type, i);
-
     if (msh_ptr == _mesh)
       return std::vector(entities.begin(), entities.end());
     else
