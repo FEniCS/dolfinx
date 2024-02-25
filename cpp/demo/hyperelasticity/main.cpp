@@ -2,7 +2,6 @@
 //
 // Solve a compressible neo-Hookean model in 3D.
 
-
 // ## UFL form file
 //
 // The UFL file is implemented in
@@ -33,9 +32,11 @@ using namespace dolfinx;
 using T = PetscScalar;
 using U = typename dolfinx::scalar_value_type_t<T>;
 
+/// Hyperelastic problem class
 class HyperElasticProblem
 {
 public:
+  /// Constructor
   HyperElasticProblem(
       std::shared_ptr<fem::Form<T>> L, std::shared_ptr<fem::Form<T>> J,
       std::vector<std::shared_ptr<const fem::DirichletBC<T>>> bcs)
@@ -62,6 +63,8 @@ public:
       VecDestroy(&_b_petsc);
   }
 
+  /// @brief  Form
+  /// @return
   auto form()
   {
     return [](Vec x)
@@ -112,8 +115,10 @@ public:
     };
   }
 
+  /// RHS vector
   Vec vector() { return _b_petsc; }
 
+  /// Jacobian matrix
   Mat matrix() { return _matA.mat(); }
 
 private:
