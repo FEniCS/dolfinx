@@ -1,9 +1,7 @@
-# UFL input for the Biharmonic equation
-# =====================================
-#
 # The first step is to define the variational problem at hand. We define
-# the variational problem in UFL terms in a separate form file
-# :download:`biharmonic.py`.  We begin by defining the finite element::
+# the variational problem in UFL terms in a separate form file.
+# We begin by defining the finite element::
+
 from basix.ufl import element
 from ufl import (
     CellDiameter,

@@ -1,13 +1,9 @@
-# UFL input for hyperleasticity
-# =============================
-#
-# The first step is to define the variational problem at hand. We define
-# the variational problem in UFL terms in a separate form file
-# :download:`hyperElasticity.py`.
+# The first step is to define the variational problem at hand.
 #
 # We are interested in solving for a discrete vector field in three
 # dimensions, so first we need the appropriate finite element space and
 # trial and test functions on this space::
+
 from basix.ufl import element
 from ufl import (
     Coefficient,
