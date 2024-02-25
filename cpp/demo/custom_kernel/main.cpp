@@ -1,3 +1,9 @@
+// ```
+// Copyright (C) 2024 Jack S. Hale and Garth N. Wells
+// This file is part of DOLFINx (https://www.fenicsproject.org)
+// SPDX-License-Identifier:    LGPL-3.0-or-later
+// ```
+
 // # Custom cell kernel assembly
 //
 // This demo shows various methods to define custom cell kernels in C++

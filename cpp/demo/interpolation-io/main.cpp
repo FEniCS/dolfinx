@@ -1,10 +1,10 @@
-// # Interpolation and IO
-//
+// ```
 // Copyright (C) 2022-2023 Garth N. Wells
-//
 // This file is part of DOLFINx (https://www.fenicsproject.org)
-//
 // SPDX-License-Identifier:    LGPL-3.0-or-later
+// ```
+
+// # Interpolation and IO
 
 #include <basix/finite-element.h>
 #include <cmath>
