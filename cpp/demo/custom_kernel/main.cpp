@@ -89,7 +89,8 @@ double assemble_matrix0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
   return A.squared_norm();
 }
 
-/// @brief Assemble a RHS vector using a `std::function` kernel function.
+/// @brief Assemble a RHS vector using a `std::function` kernel
+/// function.
 /// @tparam T Scalar type.
 /// @param V Function space.
 /// @param kernel Element kernel to execute.
