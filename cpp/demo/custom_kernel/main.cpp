@@ -1,8 +1,7 @@
-// # Custom cell kernel assembly (C++)
+// # Custom cell kernel assembly
 //
-// This demo shows various methods to define custom cell kernels in C++ and
-// have them assembled into DOLFINx linear algebra data structures.
-//
+// This demo shows various methods to define custom cell kernels in C++
+// and have them assembled into DOLFINx linear algebra data structures.
 
 #include <basix/finite-element.h>
 #include <basix/mdspan.hpp>

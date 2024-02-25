@@ -1,5 +1,6 @@
-// # Mixed topology (C++)
+// # Mixed topology
 //
+// Experimental demo.
 
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>

@@ -1,4 +1,4 @@
-// # Interpolation-io (C++)
+// # Interpolation and IO
 //
 // Copyright (C) 2022-2023 Garth N. Wells
 //

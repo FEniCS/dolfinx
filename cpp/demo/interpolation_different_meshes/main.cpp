@@ -1,4 +1,4 @@
-// # Interpolation different meshes (C++)
+// # Interpolation different meshes
 //
 // Copyright (C) 2022 Igor A. Baratta and Massimiliano Leoni
 //
@@ -21,7 +21,7 @@ int main(int argc, char* argv[])
   init_logging(argc, argv);
   MPI_Init(&argc, &argv);
   {
-    MPI_Comm comm{MPI_COMM_WORLD};
+    MPI_Comm comm = MPI_COMM_WORLD;
 
     // Create a tetrahedral mesh
     auto mesh_tet = std::make_shared<mesh::Mesh<double>>(

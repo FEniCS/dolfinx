@@ -31,11 +31,11 @@ V = FunctionSpace(mesh, e)
 du = TrialFunction(V)  # Incremental displacement
 v = TestFunction(V)  # Test function
 
-# Note that ``element`` with `shape=(3,)` creates a finite element space
+# Note that `element` with `shape=(3,)` creates a finite element space
 # of vector fields.
 #
-# Next, we will be needing functions for the boundary source ``B``, the
-# traction ``T`` and the displacement solution itself ``u``::
+# Next, we will be needing functions for the boundary source `B`, the
+# traction `T` and the displacement solution itself `u`:
 
 # Functions
 u = Coefficient(V)  # Displacement from previous iteration
@@ -66,7 +66,7 @@ lmbda = E * nu / ((1 + nu) * (1 - 2 * nu))
 
 # Both the first variation of the potential energy, and the Jacobian of
 # the variation, can be automatically computed by a call to
-# ``derivative``::
+# `derivative`:
 
 # Stored strain energy density (compressible neo-Hookean model)
 psi = (mu / 2) * (Ic - 3) - mu * ln(J) + (lmbda / 2) * (ln(J)) ** 2
@@ -74,7 +74,8 @@ psi = (mu / 2) * (Ic - 3) - mu * ln(J) + (lmbda / 2) * (ln(J)) ** 2
 # Total potential energy
 Pi = psi * dx  # - inner(B, u) * dx - inner(T, u) * ds
 
-# First variation of Pi (directional derivative about u in the direction of v)
+# First variation of Pi (directional derivative about u in the direction
+# of v)
 F_form = derivative(Pi, u, v)
 
 # Compute Jacobian of F

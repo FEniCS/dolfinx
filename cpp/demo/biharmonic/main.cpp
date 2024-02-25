@@ -1,4 +1,4 @@
-// # Biharmonic equation (C++)
+// # Biharmonic equation
 //
 // This demo illustrates how to:
 //
@@ -6,29 +6,21 @@
 // * Use a discontinuous Galerkin method
 // * Solve a fourth-order differential equation
 //
-// The solution for $u$ in this demo will look as follows:
-//
-// ```{figure} ../biharmonic_u.png
-// :scale: 75 %
-// :alt: biharmonic
-// solution
-// ```
-//
 // ## Equation and problem definition
 //
 // ### Strong formulation
 //
-// The biharmonic equation is a fourth-order elliptic equation.
-// On the domain $\Omega \subset \mathbb{R}^{d}$, $1 \le d \le 3$, it reads
+// The biharmonic equation is a fourth-order elliptic equation. On the
+// domain $\Omega \subset \mathbb{R}^{d}$, $1 \le d \le 3$, it reads
 //
 // $$
 // \nabla^{4} u = f \quad {\rm in} \ \Omega,
 // $$
 //
-// where $\nabla^{4} \equiv \nabla^{2} \nabla^{2}$ is the biharmonic operator
-// and $f$ is a prescribed source term.
-// To formulate a complete boundary value problem, the biharmonic equation
-// must be complemented by suitable boundary conditions.
+// where $\nabla^{4} \equiv \nabla^{2} \nabla^{2}$ is the biharmonic
+// operator and $f$ is a prescribed source term. To formulate a complete
+// boundary value problem, the biharmonic equation must be complemented
+// by suitable boundary conditions.
 //
 // ### Weak formulation
 //
@@ -117,7 +109,7 @@
 //
 // ````{note}
 // TODO: explanation on how to run cmake and/or shell commands for ffcx
-// To compile biharmonic.py using FFCx with an option 
+// To compile biharmonic.py using FFCx with an option
 // for PETSc scalar type `float64` one woud execute the command
 // ```bash
 // ffcx biharmonic.py --scalar_type=float64

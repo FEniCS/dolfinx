@@ -4,10 +4,11 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-// # Matrix-free Conjugate Gradient solver
+// # Matrix-free conjugate gradient (CG) solver
 //
 // This demo illustrates how to:
-// * Solve a linear partial differential equation using a matrix-free CG solver
+// * Solve a linear partial differential equation using a matrix-free CG
+//   solver
 // * Create and apply Dirichlet boundary conditions
 // * Compute errors
 //
@@ -29,17 +30,16 @@
 // ```
 //
 
-// ### UFL form file
+// ## UFL form file
 //
-// The UFL file is implemented in {download}`demo_poisson_matrix_free/poisson.py`.
+// The UFL file is implemented in
+// {download}`demo_poisson_matrix_free/poisson.py`.
 // ````{admonition} UFL form implemented in python
 // :class: dropdown
 // ![ufl-code]
 // ````
 //
-// ### C++ program
-//
-
+// ## C++ program
 
 #include "poisson.h"
 #include <cmath>
@@ -68,7 +68,8 @@ void axpy(auto& r, auto alpha, const auto& x, const auto& y)
 /// @tparam ApplyFunction Type of the function object "action"
 /// @param[in, out] x Solution vector, may be set to an initial guess
 /// @param[in] b RHS Vector
-/// @param[in] action Function that provides the action of the linear operator
+/// @param[in] action Function that provides the action of the linear
+/// operator
 /// @param[in] kmax Maximum number of iterations
 /// @param[in] rtol Relative tolerances for convergence
 /// @return The number of iterations
@@ -131,7 +132,6 @@ int main(int argc, char* argv[])
 {
   init_logging(argc, argv);
   MPI_Init(&argc, &argv);
-
   {
     using T = PetscScalar;
     using U = typename dolfinx::scalar_value_type_t<T>;
@@ -240,7 +240,6 @@ int main(int argc, char* argv[])
                 << std::abs(error) << std::endl;
     }
   }
-
   MPI_Finalize();
 
   return 0;
