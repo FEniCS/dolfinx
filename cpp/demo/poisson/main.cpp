@@ -53,7 +53,7 @@
 //
 // ## Implementation
 //
-// The implementation is split in two files: a form file containing the
+// The implementation is split in two files: a file containing the
 // definition of the variational forms expressed in UFL and a C++ file
 // containing the actual solver.
 //
@@ -61,17 +61,18 @@
 // {download}`demo_poisson/poisson.py` and
 // {download}`demo_poisson/CMakeLists.txt`.
 //
-// ### UFL form file
+// ### UFL code
 //
-// The UFL file is implemented in {download}`demo_poisson/poisson.py`.
-// ````{admonition} UFL form implemented in python
+// The UFL code is implemented in {download}`demo_poisson/poisson.py`.
+// ````{admonition} UFL code implemented in Python
 // :class: dropdown
 // ![ufl-code]
 // ````
 //
 // ### C++ program
 //
-// The main solver is implemented in the {download}`demo_poisson/main.cpp` file.
+// The main solver is implemented in the
+// {download}`demo_poisson/main.cpp` file.
 //
 // At the top we include the DOLFINx header file and the generated
 // header file "Poisson.h" containing the variational forms for the

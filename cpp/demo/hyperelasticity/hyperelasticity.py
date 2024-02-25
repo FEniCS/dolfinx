@@ -2,7 +2,7 @@
 #
 # We are interested in solving for a discrete vector field in three
 # dimensions, so first we need the appropriate finite element space and
-# trial and test functions on this space::
+# trial and test functions on this space:
 
 from basix.ufl import element
 from ufl import (
@@ -42,7 +42,7 @@ u = Coefficient(V)  # Displacement from previous iteration
 # B = Coefficient(element)        # Body force per unit volume
 # T = Coefficient(element)        # Traction force on the boundary
 
-# Now, we can define the kinematic quantities involved in the model::
+# Now, we can define the kinematic quantities involved in the model:
 
 # Kinematics
 d = len(u)
@@ -56,7 +56,7 @@ J = det(F)
 
 # Before defining the energy density and thus the total potential
 # energy, it only remains to specify constants for the elasticity
-# parameters::
+# parameters:
 
 # Elasticity parameters
 E = 10.0
