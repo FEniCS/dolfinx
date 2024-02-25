@@ -1080,10 +1080,10 @@ Expression<T, U> create_expression(
                              "function space was provided.");
   }
 
-  std::vector<U> X(e.points, e.points + e.num_points * e.point_dimension);
+  std::vector<U> X(e.points, e.points + e.num_points * e.entity_dimension);
   std::array<std::size_t, 2> Xshape
       = {static_cast<std::size_t>(e.num_points),
-         static_cast<std::size_t>(e.point_dimension)};
+         static_cast<std::size_t>(e.entity_dimension)};
   std::vector<int> value_shape(e.value_shape, e.value_shape + e.num_components);
   std::function<void(T*, const T*, const T*,
                      const typename scalar_value_type<T>::value_type*,
