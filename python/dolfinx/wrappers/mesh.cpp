@@ -178,8 +178,16 @@ void declare_mesh(nb::module_& m, std::string type)
       .def_prop_ro(
           "cmap", [](dolfinx::mesh::Geometry<T>& self) { return self.cmap(); },
           "The coordinate map")
-      .def_prop_ro("input_global_indices",
-                   &dolfinx::mesh::Geometry<T>::input_global_indices);
+      .def_prop_ro(
+          "input_global_indices",
+          [](const dolfinx::mesh::Geometry<T>& self)
+          {
+            const std::vector<std::int64_t>& id_to_global
+                = self.input_global_indices();
+            return nb::ndarray<const std::int64_t, nb::numpy>(
+                id_to_global.data(), {id_to_global.size()});
+          },
+          nb::rv_policy::reference_internal);
 
   std::string pyclass_mesh_name = std::string("Mesh_") + type;
   nb::class_<dolfinx::mesh::Mesh<T>>(m, pyclass_mesh_name.c_str(),
