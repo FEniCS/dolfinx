@@ -1228,7 +1228,7 @@ pack_coefficients(const Expression<T, U>& e,
   return {std::move(c), cstride};
 }
 
-/// @brief Pack constants of u into a sigle array ready for assembly.
+/// @brief Pack constants of u into a single array ready for assembly.
 /// @warning This function is subject to change.
 template <typename U>
 std::vector<typename U::scalar_type> pack_constants(const U& u)
