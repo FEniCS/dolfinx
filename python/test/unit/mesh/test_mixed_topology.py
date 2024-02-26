@@ -193,25 +193,30 @@ def test_parallel_mixed_mesh():
     tri = coordinate_element(CellType.triangle, 1)
     quad = coordinate_element(CellType.quadrilateral, 1)
     nodes = [3 * rank + i for i in range(6)]
-    xdofs = np.array([0, 1, 2, 1, 2, 3, 2, 3, 4, 5], dtype=int) + 3 * rank
+    xdofs = np.array([0, 1, 4, 0, 3, 4, 1, 4, 2, 5], dtype=int) + 3 * rank
     x = np.array(
-        [[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0], [2.0, 1.0], [2.0, 0.0]], dtype=np.float64
+        [[0.0, 0.0], [1.0, 0.0], [2.0, 0.0], [0.0, 1.0], [1.0, 1.0], [2.0, 1.0]], dtype=np.float64
     )
     x[:, 1] += 1.0 * rank
+
     set_log_level(LogLevel.INFO)
     set_thread_name(str(rank))
     geom = create_geometry(
         topology, [tri._cpp_object, quad._cpp_object], nodes, xdofs, x.flatten(), 2
     )
-    print(geom.x)
-    print(geom.index_map().size_local)
-    print(geom.dofmaps(0))
-    print(geom.dofmaps(1))
+
+    assert len(geom.dofmaps(0)) == 2
+    assert len(geom.dofmaps(1)) == 1
 
     mesh = Mesh_float64(MPI.COMM_WORLD, topology, geom)
-    print(mesh.topology.connectivity((2, 0), (0, 0)))
-    print(mesh.topology.connectivity((2, 1), (0, 0)))
-    print(mesh.geometry.dim)
+    tri = mesh.topology.connectivity((2, 0), (0, 0))
+    quad = mesh.topology.connectivity((2, 1), (0, 0))
+    assert len(tri.array) == 6
+    assert len(quad.array) == 4
+    w = list(tri.array) + list(quad.array)
+    assert max(w) == 5
+    assert min(w) == 0
+    print(tri.array, quad.array)
 
     set_log_level(LogLevel.WARNING)
 
