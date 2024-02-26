@@ -280,7 +280,7 @@ std::vector<std::string> get_constant_names(const ufcx_form& ufcx_form);
 /// @param[in] mesh The mesh of the domain.
 ///
 /// @pre Each value in `subdomains` must be sorted by domain id.
-template <dolfinx::scalar T, typename U = dolfinx::scalar_value_type_t<T>>
+template <dolfinx::scalar T, std::floating_point U = scalar_value_type_t<T>>
 Form<T, U> create_form_factory(
     const ufcx_form& ufcx_form,
     const std::vector<std::shared_ptr<const FunctionSpace<U>>>& spaces,
@@ -594,7 +594,7 @@ Form<T, U> create_form_factory(
 /// @param[in] mesh Mesh of the domain. This is required if the form has
 /// no arguments, e.g. a functional.
 /// @return A Form
-template <dolfinx::scalar T, typename U = dolfinx::scalar_value_type_t<T>>
+template <dolfinx::scalar T, std::floating_point U = scalar_value_type_t<T>>
 Form<T, U> create_form(
     const ufcx_form& ufcx_form,
     const std::vector<std::shared_ptr<const FunctionSpace<U>>>& spaces,
@@ -649,7 +649,7 @@ Form<T, U> create_form(
 /// @param[in] mesh Mesh of the domain. This is required if the form has
 /// no arguments, e.g. a functional.
 /// @return A Form
-template <dolfinx::scalar T, typename U = dolfinx::scalar_value_type_t<T>>
+template <dolfinx::scalar T, std::floating_point U = scalar_value_type_t<T>>
 Form<T, U> create_form(
     ufcx_form* (*fptr)(),
     const std::vector<std::shared_ptr<const FunctionSpace<U>>>& spaces,
@@ -1078,7 +1078,7 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
 }
 
 /// @brief Create Expression from UFC
-template <dolfinx::scalar T, typename U = dolfinx::scalar_value_type_t<T>>
+template <dolfinx::scalar T, std::floating_point U = scalar_value_type_t<T>>
 Expression<T, U> create_expression(
     const ufcx_expression& e,
     const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients,
@@ -1128,7 +1128,7 @@ Expression<T, U> create_expression(
 
 /// @brief Create Expression from UFC input (with named coefficients and
 /// constants).
-template <dolfinx::scalar T, typename U = dolfinx::scalar_value_type_t<T>>
+template <dolfinx::scalar T, std::floating_point U = scalar_value_type_t<T>>
 Expression<T, U> create_expression(
     const ufcx_expression& e,
     const std::map<std::string, std::shared_ptr<const Function<T, U>>>&
