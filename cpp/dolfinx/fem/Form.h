@@ -135,7 +135,9 @@ public:
   /// integration domain, `entity_maps` must be supplied. For each key
   /// (a mesh, different to the integration domain mesh) a map should
   /// be provided relating the entities in the integration domain mesh
-  /// to the entities in the key mesh.
+  /// to the entities in the key mesh e.g. for a pair (msh, emap) in
+  /// `entity_maps`, `emap[i]` is the entity in `msh` corresponding to entity
+  /// `i` in the integration domain mesh.
   /// @param[in] mesh Mesh of the domain. This is required when there
   /// are no argument functions from which the mesh can be extracted,
   /// e.g. for functionals.
@@ -309,16 +311,13 @@ public:
       throw std::runtime_error("No mesh entities for requested domain index.");
   }
 
-  /// @brief Compute the list of entity indices for the ith integral
-  /// (kernel) of a given type (i.e. cell, exterior facet, or interior
-  /// facet).
-  ///
-  /// The indices are mapped from the integration domain mesh to the
-  /// mesh `mesh`.
+  /// @brief Compute the list of entity indices in `mesh` for the
+  /// ith integral (kernel) of a given type (i.e. cell, exterior facet, or
+  /// interior facet).
   ///
   /// @param type Integral type.
   /// @param i Integral ID, i.e. the (sub)domain index.
-  /// @param mesh Mesh to map the entities to.
+  /// @param mesh The mesh the entities are numbered with respect to.
   /// @return List of active entities in `mesh` for the given integral.
   std::vector<std::int32_t> domain(IntegralType type, int i,
                                    const mesh::Mesh<U>& mesh) const
@@ -395,7 +394,7 @@ private:
   // True if permutation data needs to be passed into these integrals
   bool _needs_facet_permutations;
 
-  // Entity maps
+  // Entity maps (see Form documentation)
   std::map<std::shared_ptr<const mesh::Mesh<U>>, std::vector<std::int32_t>>
       _entity_maps;
 };
