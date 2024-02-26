@@ -857,7 +857,8 @@ void declare_real_functions(nb::module_& m)
                                             nullptr, nullptr);
       },
       nb::arg("comm"), nb::arg("dofmap"), nb::arg("topology"),
-      "Create DofMap objects from pointers to ufcx_dofmaps.");
+      "Create DofMap objects on a mixed topology mesh from pointers to "
+      "ufcx_dofmaps.");
 
   m.def(
       "locate_dofs_topological",
