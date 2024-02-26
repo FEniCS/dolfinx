@@ -12,11 +12,11 @@ from dolfinx.log import LogLevel, set_log_level
 from dolfinx.mesh import CellType
 
 
-def create_element_dofmap(mesh, cell_types):
+def create_element_dofmap(mesh, cell_types, degree):
     cpp_elements = []
     dofmaps = []
     for cell_type in cell_types:
-        ufl_e = basix.ufl.element("P", cell_type, 2)
+        ufl_e = basix.ufl.element("P", cell_type, degree)
         form_compiler_options = {"scalar_type": np.float64}
         (ufcx_element, ufcx_dofmap), module, code = jit.ffcx_jit(
             mesh.comm, ufl_e, form_compiler_options=form_compiler_options
@@ -72,16 +72,27 @@ def test_el_dm():
     )
     mesh = Mesh_float64(MPI.COMM_WORLD, topology, geom)
 
-    print(mesh.geometry.x)
+    assert mesh.geometry.x.shape == (6, 3)
 
-    el, dm = create_element_dofmap(mesh, [basix.CellType.triangle, basix.CellType.quadrilateral])
-    print()
-    for e, d in zip(el, dm):
-        print(e.basix_element.cell_type.name)
-        q = DofMap(d)
-        print(q.index_map.size_local)
-        print(q.list)
-        print(q.dof_layout.entity_dofs(2, 0))
+    # Second order dofmap on mixed mesh
+    el, dm = create_element_dofmap(mesh, [basix.CellType.triangle, basix.CellType.quadrilateral], 2)
+
+    assert len(el) == 2
+    assert el[0].basix_element.cell_type.name == "triangle"
+    assert el[1].basix_element.cell_type.name == "quadrilateral"
+
+    assert len(dm) == 2
+    q0 = DofMap(dm[0])
+    q1 = DofMap(dm[1])
+    assert q0.index_map.size_local == q1.index_map.size_local
+    # Triangles
+    print(q0.list)
+    assert q0.list.shape == (2, 6)
+    assert len(q0.dof_layout.entity_dofs(2, 0)) == 0
+    # Quadrilaterals
+    print(q1.list)
+    assert q1.list.shape == (1, 9)
+    assert len(q1.dof_layout.entity_dofs(2, 0)) == 1
 
 
 def test_el_dm_prism():
@@ -119,24 +130,14 @@ def test_el_dm_prism():
     geom = create_geometry(topology, [prism._cpp_object], nodes, xdofs, x.flatten(), 3)
     mesh = Mesh_float64(MPI.COMM_WORLD, topology, geom)
 
-    ufl_e = basix.ufl.element("P", basix.CellType.prism, 2)
-    form_compiler_options = {"scalar_type": np.float64}
-    (ufcx_element, ufcx_dofmap), module, code = jit.ffcx_jit(
-        mesh.comm, ufl_e, form_compiler_options=form_compiler_options
-    )
-    ffi = module.ffi
-    cpp_dofmap = _cpp.fem.create_dofmaps(
-        mesh.comm, [ffi.cast("uintptr_t", ffi.addressof(ufcx_dofmap))], mesh.topology
-    )
-
-    q = DofMap(cpp_dofmap[0])
-    print(q.list)
-
-    el, dm = create_element_dofmap(mesh, [basix.CellType.prism])
+    el, dm = create_element_dofmap(mesh, [basix.CellType.prism], 2)
     print()
-    for e, d in zip(el, dm):
-        print(e.basix_element.cell_type.name)
-        q = DofMap(d)
-        print(q.index_map.size_local)
-        print(q.list)
-        print(q.dof_layout.entity_dofs(2, 1))
+    assert len(el) == 1
+    assert len(dm) == 1
+    q = DofMap(dm[0])
+    assert q.index_map.size_local == 18
+    print(q.list)
+    facet_dofs = []
+    for j in range(5):
+        facet_dofs += q.dof_layout.entity_dofs(2, j)
+    assert len(facet_dofs) == 3

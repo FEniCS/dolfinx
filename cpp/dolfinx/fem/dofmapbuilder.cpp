@@ -226,13 +226,18 @@ build_basic_dofmaps(
     }
   }
 
-  // Debug output
-  std::stringstream s;
-  s << "Required entities:";
-  for (std::size_t i = 0; i < required_dim_et.size(); ++i)
-    s << "(" << (int)required_dim_et[i].first << ", "
-      << (int)required_dim_et[i].second << ")=" << num_entity_dofs_et[i] << " ";
-  LOG(INFO) << s.str();
+#ifndef NDEBUG
+  {
+    // Debug output
+    std::stringstream s;
+    s << "Required entities:";
+    for (std::size_t i = 0; i < required_dim_et.size(); ++i)
+      s << "(" << (int)required_dim_et[i].first << ", "
+        << (int)required_dim_et[i].second << ")=" << num_entity_dofs_et[i]
+        << " ";
+    LOG(INFO) << s.str();
+  }
+#endif
 
   // Dofmaps on each cell type as (width, [cell_dofs])
   std::vector<dofmap_t> dofs(num_cell_types);
@@ -305,18 +310,7 @@ build_basic_dofmaps(
     }
   }
 
-  // Debug
-  s.str("");
-  for (std::size_t i = 0; i < num_cell_types; ++i)
-  {
-    s << "dofmap[" << i << "] = [";
-    for (auto q : dofs[i].array)
-      s << q << " ";
-    s << "]\n";
-  }
-  LOG(INFO) << s.str();
-
-  LOG(INFO) << "Going to global index computation";
+  LOG(INFO) << "Global index computation";
 
   // TODO: Put Global index computations in separate function
   // Global index computations
@@ -356,17 +350,6 @@ build_basic_dofmaps(
     global_entity_offsets += num_entity_dofs * map->size_global();
     global_start += num_entity_dofs * map->local_range()[0];
   }
-
-  // Debug
-  s.str("");
-  s << "l2g:";
-  for (auto q : local_to_global)
-    s << q << " ";
-  s << "\n dof_entity=";
-  for (auto q : dof_entity)
-    s << "(" << (int)q.first << ", " << (int)q.second << ") ";
-  s << "\n";
-  LOG(INFO) << s.str();
 
   return {std::move(dofs), std::move(local_to_global), std::move(dof_entity),
           std::move(topo_index_maps), global_start};
@@ -645,14 +628,11 @@ fem::build_dofmap_data(
       = build_basic_dofmaps(topology, element_dof_layouts);
 
   LOG(INFO) << "Got " << topo_index_maps.size() << " index_maps";
-  LOG(INFO) << "Global start=" << offset;
 
   // Build re-ordering map for data locality and get number of owned
   // nodes
   const auto [old_to_new, num_owned] = compute_reordering_map(
       node_graphs, dof_entity0, topo_index_maps, reorder_fn);
-
-  LOG(INFO) << old_to_new.size() << ": " << num_owned;
 
   LOG(INFO) << "Get global indices";
 
@@ -662,18 +642,9 @@ fem::build_dofmap_data(
                            old_to_new, dof_entity0);
   assert(local_to_global_unowned.size() == local_to_global_owner.size());
 
-  std::stringstream s;
-  s << "num_owned = " << num_owned << " l2g(unowned, owner):";
-  for (std::size_t i = 0; i < local_to_global_unowned.size(); ++i)
-    s << "(" << local_to_global_unowned[i] << ", " << local_to_global_owner[i]
-      << ") ";
-  LOG(INFO) << s.str();
-
   // Create IndexMap for dofs range on this process
   common::IndexMap index_map(comm, num_owned, local_to_global_unowned,
                              local_to_global_owner);
-
-  LOG(INFO) << "Got dofmap IndexMap OK";
 
   // Build re-ordered dofmaps
   std::vector<std::vector<std::int32_t>> dofmaps(node_graphs.size());
@@ -687,7 +658,7 @@ fem::build_dofmap_data(
     }
   }
 
-  return {std::move(index_map), element_dof_layouts[0].block_size(),
+  return {std::move(index_map), element_dof_layouts.front().block_size(),
           std::move(dofmaps)};
 }
 //-----------------------------------------------------------------------------
