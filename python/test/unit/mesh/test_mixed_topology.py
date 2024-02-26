@@ -192,8 +192,8 @@ def test_parallel_mixed_mesh():
     # Create dofmaps for Geometry
     tri = coordinate_element(CellType.triangle, 1)
     quad = coordinate_element(CellType.quadrilateral, 1)
-    nodes = [3 * rank + i for i in range(6)]
-    xdofs = np.array([0, 1, 4, 0, 3, 4, 1, 4, 2, 5], dtype=np.int32) + 3 * rank
+    nodes = np.arange(6, dtype=np.int64) + 3 * rank
+    xdofs = np.array([0, 1, 4, 0, 3, 4, 1, 4, 2, 5], dtype=np.int64) + 3 * rank
     x = np.array(
         [[0.0, 0.0], [1.0, 0.0], [2.0, 0.0], [0.0, 1.0], [1.0, 1.0], [2.0, 1.0]], dtype=np.float64
     )

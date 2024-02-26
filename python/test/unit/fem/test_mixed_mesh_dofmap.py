@@ -59,8 +59,8 @@ def test_el_dm():
     # Create dofmaps for Geometry
     tri = coordinate_element(CellType.triangle, 1)
     quad = coordinate_element(CellType.quadrilateral, 1)
-    nodes = [3 * rank + i for i in range(6)]
-    xdofs = np.array([0, 1, 4, 0, 3, 4, 1, 4, 2, 5], dtype=np.int32) + 3 * rank
+    nodes = np.arange(6, dtype=np.int64) + 3 * rank
+    xdofs = np.array([0, 1, 4, 0, 3, 4, 1, 4, 2, 5], dtype=np.int64) + 3 * rank
     x = np.array(
         [[0.0, 0.0], [1.0, 0.0], [2.0, 0.0], [0.0, 1.0], [1.0, 1.0], [2.0, 1.0]], dtype=np.float64
     )
@@ -112,8 +112,8 @@ def test_el_dm_prism():
 
     # Create dofmaps for Geometry
     prism = coordinate_element(CellType.prism, 1)
-    nodes = [0, 1, 2, 3, 4, 5]
-    xdofs = np.array([0, 1, 2, 3, 4, 5], dtype=np.int32)
+    nodes = np.array([0, 1, 2, 3, 4, 5], dtype=np.int64)
+    xdofs = np.array([0, 1, 2, 3, 4, 5], dtype=np.int64)
     x = np.array(
         [
             [0.0, 0.0, 0.0],
