@@ -18,7 +18,7 @@ from basix.ufl import element
 from dolfinx import cpp as _cpp
 from dolfinx import graph
 from dolfinx import mesh as _mesh
-from dolfinx.cpp.mesh import create_cell_partitioner, entities_to_geometry, is_simplex
+from dolfinx.cpp.mesh import create_cell_partitioner, is_simplex
 from dolfinx.fem import assemble_scalar, coordinate_element, form
 from dolfinx.mesh import (
     CellType,
@@ -31,6 +31,7 @@ from dolfinx.mesh import (
     create_unit_cube,
     create_unit_interval,
     create_unit_square,
+    entities_to_geometry,
     exterior_facet_indices,
     locate_entities,
     locate_entities_boundary,
@@ -76,7 +77,7 @@ def submesh_geometry_test(mesh, submesh, entity_map, geom_map, entity_dim):
     if len(entity_map) > 0:
         assert mesh.geometry.dim == submesh.geometry.dim
 
-        e_to_g = entities_to_geometry(mesh._cpp_object, entity_dim, np.array(entity_map), False)
+        e_to_g = entities_to_geometry(mesh, entity_dim, np.array(entity_map), False)
         for submesh_entity in range(len(entity_map)):
             submesh_x_dofs = submesh.geometry.dofmap[submesh_entity]
             # e_to_g[i] gets the mesh x_dofs of entities[i], which should

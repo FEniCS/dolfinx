@@ -159,9 +159,10 @@ public:
   void interpolate(
       const Function<value_type, geometry_type>& v,
       std::span<const std::int32_t> cells,
-      const std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
-                       std::vector<geometry_type>, std::vector<std::int32_t>>&
-          nmm_interpolation_data
+      const std::tuple<std::span<const std::int32_t>,
+                       std::span<const std::int32_t>,
+                       std::span<const geometry_type>,
+                       std::span<const std::int32_t>>& nmm_interpolation_data
       = {})
   {
     fem::interpolate(*this, v, cells, nmm_interpolation_data);
@@ -174,9 +175,10 @@ public:
   /// generate_nonmatching_meshes_interpolation_data (optional).
   void interpolate(
       const Function<value_type, geometry_type>& v,
-      const std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
-                       std::vector<geometry_type>, std::vector<std::int32_t>>&
-          nmm_interpolation_data
+      const std::tuple<std::span<const std::int32_t>,
+                       std::span<const std::int32_t>,
+                       std::span<const geometry_type>,
+                       std::span<const std::int32_t>>& nmm_interpolation_data
       = {})
   {
     assert(_function_space);

@@ -4,27 +4,42 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-// =====================================
-// Matrix-free Conjugate Gradient solver
-// =====================================
+// # Matrix-free Conjugate Gradient solver
 //
 // This demo illustrates how to:
 // * Solve a linear partial differential equation using a matrix-free CG solver
 // * Create and apply Dirichlet boundary conditions
 // * Compute errors
 //
-// .. math::
+// \begin{align*}
 //    - \nabla^{2} u &= f \quad {\rm in} \ \Omega, \\
 //      u &= u_D \quad {\rm on} \ \Gamma_{D}
+// \end{align*}
 //
 //  where
-// .. math::
+// \begin{align*}
 //    u_D &= 1 + x^2 + 2y^2, \\
 //    f = -6
+// \end{align*}
 //
-// .. note:: This demo illustrates the use of a matrix-free Conjugate
-//           Gradient solver. Many practical problems will also require
-//           a preconditioner to create an efficient solver.
+// ```{note}
+// This demo illustrates the use of a matrix-free Conjugate
+// Gradient solver. Many practical problems will also require
+// a preconditioner to create an efficient solver.
+// ```
+//
+
+// ### UFL form file
+//
+// The UFL file is implemented in {download}`demo_poisson_matrix_free/poisson.py`.
+// ````{admonition} UFL form implemented in python
+// :class: dropdown
+// ![ufl-code]
+// ````
+//
+// ### C++ program
+//
+
 
 #include "poisson.h"
 #include <cmath>

@@ -909,7 +909,6 @@ WARN_LOGFILE           =
 # Note: If this tag is empty the current directory is searched.
 
 INPUT                  = ../dolfinx
-
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
 # libiconv (or the iconv built into libc) for the transcoding. See the libiconv
@@ -1010,7 +1009,7 @@ EXCLUDE                = ../dolfinx/io/pugixml.hpp \
                          ../dolfinx/io/pugixml.cpp \
                          ../dolfinx/io/pugiconfig.hpp \
                          ../dolfinx/common/loguru.hpp \
-                         ../dolfinx/common/loguru.cpp
+                         ../dolfinx/common/loguru.cpp \
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded
