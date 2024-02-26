@@ -40,7 +40,7 @@ public:
   /// @param[in] index_map Index map associated with the geometry dofmap
   /// @param[in] dofmap The geometry (point) dofmap. For a cell, it
   /// gives the position in the point array of each local geometry node
-  /// @param[in] elements Elements that describes the cell geometry maps.
+  /// @param[in] element Element that describes the cell geometry map.
   /// @param[in] x The point coordinates. The shape is `(num_points, 3)`
   /// and the storage is row-major.
   /// @param[in] dim The geometric dimension (`0 < dim <= 3`).
@@ -55,10 +55,10 @@ public:
                                            std::vector<std::int64_t>>
   Geometry(
       std::shared_ptr<const common::IndexMap> index_map, U&& dofmap,
-      const std::vector<fem::CoordinateElement<
-          typename std::remove_reference_t<typename V::value_type>>>& elements,
+      const fem::CoordinateElement<
+          typename std::remove_reference_t<typename V::value_type>>& element,
       V&& x, int dim, W&& input_global_indices)
-      : _dim(dim), _dofmaps({dofmap}), _index_map(index_map), _cmaps(elements),
+      : _dim(dim), _dofmaps({dofmap}), _index_map(index_map), _cmaps({element}),
         _x(std::forward<V>(x)),
         _input_global_indices(std::forward<W>(input_global_indices))
   {
@@ -122,12 +122,14 @@ public:
       MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
   dofmap() const
   {
-    assert(_cmaps.size() == 1);
-    int ndofs = _cmaps[0].dim();
+    if (_dofmaps.size() != 1)
+      throw std::runtime_error("Multiple dofmaps");
+
+    int ndofs = _cmaps.front().dim();
     return MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
         const std::int32_t,
         MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>(
-        _dofmaps[0].data(), _dofmaps[0].size() / ndofs, ndofs);
+        _dofmaps.front().data(), _dofmaps.front().size() / ndofs, ndofs);
   }
 
   /// @brief The dofmap associated with the `i`th coordinate map in the
