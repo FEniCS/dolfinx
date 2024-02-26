@@ -145,7 +145,7 @@ std::vector<fem::DofMap> fem::create_dofmaps(
   const int D = topology.dim();
   for (int d = 0; d < D; ++d)
   {
-    if (layouts[0].num_entity_dofs(d) > 0)
+    if (layouts.front().num_entity_dofs(d) > 0)
       topology.create_entities(d);
   }
 
@@ -157,24 +157,27 @@ std::vector<fem::DofMap> fem::create_dofmaps(
   // DOF numbering on each cell
   if (unpermute_dofs)
   {
+    if (layouts.size() != 1)
+    {
+      throw std::runtime_error(
+          "DOF transformations not yet supported in mixed topology.");
+    }
     const int D = topology.dim();
     const int num_cells = topology.connectivity(D, 0)->num_nodes();
     topology.create_entity_permutations();
     const std::vector<std::uint32_t>& cell_info
         = topology.get_cell_permutation_info();
-    int dim = layouts[0].num_dofs();
+    int dim = layouts.front().num_dofs();
     for (std::int32_t cell = 0; cell < num_cells; ++cell)
     {
-      std::span<std::int32_t> dofs(dofmaps[0].data() + cell * dim, dim);
+      std::span<std::int32_t> dofs(dofmaps.front().data() + cell * dim, dim);
       unpermute_dofs(dofs, cell_info[cell]);
     }
   }
 
   std::vector<DofMap> dms;
   for (std::size_t i = 0; i < dofmaps.size(); ++i)
-  {
-    dms.push_back(DofMap(layouts[i], index_map, bs, std::move(dofmaps[i]), bs));
-  }
+    dms.emplace_back(layouts[i], index_map, bs, std::move(dofmaps[i]), bs);
 
   return dms;
 }
