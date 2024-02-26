@@ -150,7 +150,10 @@ def form(
             as the integration domain, `entity_maps` must be supplied.
             For each key (a mesh, different to the integration domain
             mesh) a map should be provided relating the entities in the
-            integration domain mesh to the entities in the key mesh.
+            integration domain mesh to the entities in the key mesh e.g.
+            for a key-value pair (msh, emap) in `entity_maps`, `emap[i]`
+            is the entity in `msh` corresponding to entity `i` in the
+            integration domain mesh.
 
     Returns:
         Compiled finite element Form.

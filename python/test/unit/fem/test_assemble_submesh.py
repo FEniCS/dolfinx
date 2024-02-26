@@ -142,7 +142,7 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
     dx_msh = ufl.Measure("dx", domain=msh, subdomain_data=ct)
 
     # Create a submesh of the left half of the mesh
-    smsh, smhs_to_msh = create_submesh(msh, tdim, cells)[:2]
+    smsh, smsh_to_msh = create_submesh(msh, tdim, cells)[:2]
 
     # Define function spaces over the mesh and submesh
     V_msh = fem.functionspace(msh, (space, k))
@@ -162,25 +162,22 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
     A = fem.assemble_matrix(a)
     A.scatter_reverse()
 
-    # A = assemble_matrix(a)
-    # A.assemble()
-
-    # Assemble a mixed domain form, taking smsh to be the integration domain
-    # Entity maps must take cells in smsh (the integration domain mesh) to
+    # Assemble a mixed-domain form, taking smsh to be the integration domain
+    # Entity maps must map cells in smsh (the integration domain mesh) to
     # cells in msh
-    entity_maps = {msh._cpp_object: np.array(smhs_to_msh, dtype=np.int32)}
+    entity_maps = {msh._cpp_object: np.array(smsh_to_msh, dtype=np.int32)}
     a0 = fem.form(ufl_form(u, w, ufl.dx(smsh)), entity_maps=entity_maps)
     A0 = fem.assemble_matrix(a0)
     A0.scatter_reverse()
     assert np.isclose(A0.squared_norm(), A.squared_norm())
 
-    # Now assemble a mixed domain form using msh as integration domain
-    # Entity maps must take cells in msh (the integration domain mesh) to
+    # Now assemble a mixed-domain form using msh as integration domain
+    # Entity maps must map cells in msh (the integration domain mesh) to
     # cells in smsh
     cell_imap = msh.topology.index_map(tdim)
     num_cells = cell_imap.size_local + cell_imap.num_ghosts
     msh_to_smsh = np.full(num_cells, -1)
-    msh_to_smsh[smhs_to_msh] = np.arange(len(smhs_to_msh))
+    msh_to_smsh[smsh_to_msh] = np.arange(len(smsh_to_msh))
     entity_maps = {smsh._cpp_object: np.array(msh_to_smsh, dtype=np.int32)}
 
     a1 = fem.form(ufl_form(u, w, dx_msh(tag)), entity_maps=entity_maps)
