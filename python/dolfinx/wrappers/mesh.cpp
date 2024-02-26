@@ -165,7 +165,7 @@ void declare_mesh(nb::module_& m, std::string type)
           },
           nb::rv_policy::reference_internal)
       .def(
-          "dofmap",
+          "dofmaps",
           [](dolfinx::mesh::Geometry<T>& self, int i)
           {
             auto dofs = self.dofmap(i);
