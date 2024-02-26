@@ -40,22 +40,23 @@ enum class IntegralType : std::int8_t
 
 /// @brief Represents integral data, containing the integral ID, the
 /// kernel, and a list of entities to integrate over.
-template <dolfinx::scalar T,
-          FEkernel<T> Kern = std::function<void(
-              T*, const T*, const T*, const T*, const int*, const uint8_t*)>>
+template <dolfinx::scalar T, std::floating_point U = scalar_value_type_t<T>>
 struct integral_data
 {
-  /// @brief Kernel type
-  using kern_t = Kern;
-
   /// @brief Create a structure to hold integral data.
-  /// @tparam U `std::vector<std::int32_t>` holding entity indices.
+  /// @tparam U Entity indices type.
   /// @param id Domain ID.
   /// @param kernel Integration kernel.
   /// @param entities Entities to integrate over.
-  template <typename U>
-  integral_data(int id, kern_t kernel, U&& entities)
-      : id(id), kernel(kernel), entities(std::forward<U>(entities))
+  template <typename V>
+    requires std::is_convertible_v<std::remove_cvref_t<V>,
+                                   std::vector<std::int32_t>>
+  integral_data(int id,
+                std::function<void(T*, const T*, const T*, const U*, const int*,
+                                   const uint8_t*)>
+                    kernel,
+                V&& entities)
+      : id(id), kernel(kernel), entities(std::forward<V>(entities))
   {
   }
 
@@ -63,7 +64,11 @@ struct integral_data
   /// @param id Domain ID
   /// @param kernel Integration kernel.
   /// @param e Entities to integrate over.
-  integral_data(int id, kern_t kernel, std::span<const std::int32_t> e)
+  integral_data(int id,
+                std::function<void(T*, const T*, const T*, const U*, const int*,
+                                   const uint8_t*)>
+                    kernel,
+                std::span<const std::int32_t> e)
       : id(id), kernel(kernel), entities(e.begin(), e.end())
   {
   }
@@ -72,7 +77,9 @@ struct integral_data
   int id;
 
   /// The integration kernel
-  kern_t kernel;
+  std::function<void(T*, const T*, const T*, const U*, const int*,
+                     const uint8_t*)>
+      kernel;
 
   /// The entities to integrate over
   std::vector<std::int32_t> entities;
@@ -105,15 +112,10 @@ struct integral_data
 /// @tparam T Scalar type in the form.
 /// @tparam U Float (real) type used for the finite element and geometry.
 /// @tparam Kern Element kernel.
-template <
-    dolfinx::scalar T, std::floating_point U = dolfinx::scalar_value_type_t<T>,
-    FEkernel<T> Kern
-    = std::function<void(T*, const T*, const T*, const scalar_value_type_t<T>*,
-                         const int*, const std::uint8_t*)>>
+template <dolfinx::scalar T,
+          std::floating_point U = dolfinx::scalar_value_type_t<T>>
 class Form
 {
-  using kern_t = Kern;
-
 public:
   /// Scalar type
   using scalar_type = T;
@@ -149,8 +151,7 @@ public:
   template <typename X>
     requires std::is_convertible_v<
                  std::remove_cvref_t<X>,
-                 std::map<IntegralType,
-                          std::vector<integral_data<scalar_type, kern_t>>>>
+                 std::map<IntegralType, std::vector<integral_data<T, U>>>>
   Form(const std::vector<std::shared_ptr<const FunctionSpace<U>>>& V,
        X&& integrals,
        const std::vector<std::shared_ptr<const Function<scalar_type, U>>>&
@@ -188,7 +189,7 @@ public:
         throw std::runtime_error("Integral IDs not sorted");
       }
 
-      std::vector<integral_data<T, kern_t>>& itg
+      std::vector<integral_data<T, U>>& itg
           = _integrals[static_cast<std::size_t>(domain_type)];
       for (auto&& [id, kern, e] : data)
         itg.emplace_back(id, kern, std::move(e));
@@ -232,7 +233,9 @@ public:
   /// @param[in] type Integral type
   /// @param[in] i Domain identifier (index)
   /// @return Function to call for tabulate_tensor
-  kern_t kernel(IntegralType type, int i) const
+  std::function<void(T*, const T*, const T*, const U*, const int*,
+                     const uint8_t*)>
+  kernel(IntegralType type, int i) const
   {
     const auto& integrals = _integrals[static_cast<std::size_t>(type)];
     auto it = std::lower_bound(integrals.begin(), integrals.end(), i,
@@ -380,7 +383,7 @@ private:
 
   // Integrals. Array index is
   // static_cast<std::size_t(IntegralType::foo)
-  std::array<std::vector<integral_data<T, kern_t>>, 4> _integrals;
+  std::array<std::vector<integral_data<T, U>>, 4> _integrals;
 
   // Form coefficients
   std::vector<std::shared_ptr<const Function<T, U>>> _coefficients;
@@ -397,5 +400,5 @@ private:
   // Entity maps (see Form documentation)
   std::map<std::shared_ptr<const mesh::Mesh<U>>, std::vector<std::int32_t>>
       _entity_maps;
-};
+}; // namespace dolfinx::fem
 } // namespace dolfinx::fem

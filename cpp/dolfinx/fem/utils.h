@@ -355,10 +355,9 @@ Form<T, U> create_form_factory(
 
   // Get list of integral IDs, and load tabulate tensor into memory for
   // each
-  using kern_t = std::function<void(
-      T*, const T*, const T*, const typename scalar_value_type<T>::value_type*,
-      const int*, const std::uint8_t*)>;
-  std::map<IntegralType, std::vector<integral_data<T, kern_t>>> integrals;
+  using kern_t = std::function<void(T*, const T*, const T*, const U*,
+                                    const int*, const std::uint8_t*)>;
+  std::map<IntegralType, std::vector<integral_data<T, U>>> integrals;
 
   // Attach cell kernels
   bool needs_facet_permutations = false;
