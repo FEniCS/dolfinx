@@ -48,15 +48,16 @@ struct integral_data
   /// @param id Domain ID.
   /// @param kernel Integration kernel.
   /// @param entities Entities to integrate over.
-  template <typename V>
-    requires std::is_convertible_v<std::remove_cvref_t<V>,
-                                   std::vector<std::int32_t>>
-  integral_data(int id,
-                std::function<void(T*, const T*, const T*, const U*, const int*,
-                                   const uint8_t*)>
-                    kernel,
-                V&& entities)
-      : id(id), kernel(kernel), entities(std::forward<V>(entities))
+  template <typename K, typename V>
+    requires std::is_convertible_v<
+                 std::remove_cvref_t<K>,
+                 std::function<void(T*, const T*, const T*, const U*,
+                                    const int*, const uint8_t*)>>
+                 and std::is_convertible_v<std::remove_cvref_t<V>,
+                                           std::vector<std::int32_t>>
+  integral_data(int id, K&& kernel, V&& entities)
+      : id(id), kernel(std::forward<K>(kernel)),
+        entities(std::forward<V>(entities))
   {
   }
 
@@ -64,12 +65,13 @@ struct integral_data
   /// @param id Domain ID
   /// @param kernel Integration kernel.
   /// @param e Entities to integrate over.
-  integral_data(int id,
-                std::function<void(T*, const T*, const T*, const U*, const int*,
-                                   const uint8_t*)>
-                    kernel,
-                std::span<const std::int32_t> e)
-      : id(id), kernel(kernel), entities(e.begin(), e.end())
+  template <typename K>
+    requires std::is_convertible_v<
+                 std::remove_cvref_t<K>,
+                 std::function<void(T*, const T*, const T*, const U*,
+                                    const int*, const uint8_t*)>>
+  integral_data(int id, K&& kernel, std::span<const std::int32_t> e)
+      : id(id), kernel(std::forward<K>(kernel)), entities(e.begin(), e.end())
   {
   }
 
@@ -135,11 +137,11 @@ public:
   /// @param[in] entity_maps If any trial functions, test functions, or
   /// coefficients in the form are not defined over the same mesh as the
   /// integration domain, `entity_maps` must be supplied. For each key
-  /// (a mesh, different to the integration domain mesh) a map should
-  /// be provided relating the entities in the integration domain mesh
-  /// to the entities in the key mesh e.g. for a pair (msh, emap) in
-  /// `entity_maps`, `emap[i]` is the entity in `msh` corresponding to entity
-  /// `i` in the integration domain mesh.
+  /// (a mesh, different to the integration domain mesh) a map should be
+  /// provided relating the entities in the integration domain mesh to
+  /// the entities in the key mesh e.g. for a pair (msh, emap) in
+  /// `entity_maps`, `emap[i]` is the entity in `msh` corresponding to
+  /// entity `i` in the integration domain mesh.
   /// @param[in] mesh Mesh of the domain. This is required when there
   /// are no argument functions from which the mesh can be extracted,
   /// e.g. for functionals.
