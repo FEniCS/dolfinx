@@ -564,11 +564,7 @@ void declare_form(nb::module_& m, std::string type)
                      std::span<const int32_t>>
                 _entity_maps;
             for (auto& [msh, map] : entity_maps)
-            {
-              _entity_maps[msh]
-                  = std::span<const int32_t>(map.data(), map.size());
-            }
-
+              _entity_maps.emplace(msh, std::span(map.data(), map.size()));
             new (fp) dolfinx::fem::Form<T, U>(
                 spaces, std::move(_integrals), coefficients, constants,
                 needs_permutation_data, _entity_maps, mesh);
@@ -613,11 +609,7 @@ void declare_form(nb::module_& m, std::string type)
                      std::span<const int32_t>>
                 _entity_maps;
             for (auto& [msh, map] : entity_maps)
-            {
-              _entity_maps[msh]
-                  = std::span<const int32_t>(map.data(), map.size());
-            }
-
+              _entity_maps.emplace(msh, std::span(map.data(), map.size()));
             ufcx_form* p = reinterpret_cast<ufcx_form*>(form);
             new (fp)
                 dolfinx::fem::Form<T, U>(dolfinx::fem::create_form_factory<T>(
