@@ -465,9 +465,9 @@ void assemble_matrix(
         = coefficients.at({IntegralType::exterior_facet, i});
     impl::assemble_exterior_facets(
         mat_set, x_dofmap, x, a.domain(IntegralType::exterior_facet, i), P0,
-        {dofs0, bs0, a.domain(IntegralType::exterior_facet, i)}, P1T,
-        {dofs1, bs1, a.domain(IntegralType::exterior_facet, i)}, bc0, bc1, fn,
-        coeffs, cstride, constants, cell_info0);
+        {dofs0, bs0, a.domain(IntegralType::exterior_facet, i, *mesh0)}, P1T,
+        {dofs1, bs1, a.domain(IntegralType::exterior_facet, i, *mesh1)}, bc0,
+        bc1, fn, coeffs, cstride, constants, cell_info0);
   }
 
   if (a.num_integrals(IntegralType::interior_facet) > 0)
