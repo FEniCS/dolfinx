@@ -1,5 +1,4 @@
-// Biharmonic equation (C++)
-// =========================
+// # Biharmonic equation (C++)
 //
 // This demo illustrates how to:
 //
@@ -7,118 +6,133 @@
 // * Use a discontinuous Galerkin method
 // * Solve a fourth-order differential equation
 //
-// The solution for :math:`u` in this demo will look as follows:
+// The solution for $u$ in this demo will look as follows:
 //
-// .. image:: ../biharmonic_u.png
-//     :scale: 75 %
+// ```{figure} ../biharmonic_u.png
+// :scale: 75 %
+// :alt: biharmonic
+// solution
+// ```
 //
-// Equation and problem definition
-// -------------------------------
+// ## Equation and problem definition
 //
-// The biharmonic equation is a fourth-order elliptic equation. On the
-// domain :math:`\Omega \subset \mathbb{R}^{d}`, :math:`1 \le d \le 3`,
-// it reads
+// ### Strong formulation
 //
-// .. math::
-//    \nabla^{4} u = f \quad {\rm in} \ \Omega,
+// The biharmonic equation is a fourth-order elliptic equation.
+// On the domain $\Omega \subset \mathbb{R}^{d}$, $1 \le d \le 3$, it reads
 //
-// where :math:`\nabla^{4} \equiv \nabla^{2} \nabla^{2}` is the
-// biharmonic operator and :math:`f` is a prescribed source term. To
-// formulate a complete boundary value problem, the biharmonic equation
+// $$
+// \nabla^{4} u = f \quad {\rm in} \ \Omega,
+// $$
+//
+// where $\nabla^{4} \equiv \nabla^{2} \nabla^{2}$ is the biharmonic operator
+// and $f$ is a prescribed source term.
+// To formulate a complete boundary value problem, the biharmonic equation
 // must be complemented by suitable boundary conditions.
 //
+// ### Weak formulation
+//
 // Multiplying the biharmonic equation by a test function and integrating
-// by parts twice leads to a problem second-order derivatives, which
-// would requires :math:`H^{2}` conforming (roughly :math:`C^{1}`
-// continuous) basis functions.  To solve the biharmonic equation using
-// Lagrange finite element basis functions, the biharmonic equation can
-// be split into two second-order equations (see the Mixed Poisson demo
-// for a mixed method for the Poisson equation), or a variational
-// formulation can be constructed that imposes weak continuity of normal
-// derivatives between finite element cells.  The demo uses a
-// discontinuous Galerkin approach to impose continuity of the normal
-// derivative weakly.
+// by parts twice leads to a problem of second-order derivatives, which would
+// require $H^{2}$ conforming (roughly $C^{1}$ continuous) basis functions.
+// To solve the biharmonic equation using Lagrange finite element basis
+// functions, the biharmonic equation can be split into two second-order
+// equations (see the Mixed Poisson demo for a mixed method for the Poisson
+// equation), or a variational formulation can be constructed that imposes
+// weak continuity of normal derivatives between finite element cells.
+// This demo uses a discontinuous Galerkin approach to impose continuity
+// of the normal derivative weakly.
 //
-// Consider a triangulation :math:`\mathcal{T}` of the domain
-// :math:`\Omega`, where the set of interior facets is denoted by
-// :math:`\mathcal{E}_h^{\rm int}`.  Functions evaluated on opposite
-// sides of a facet are indicated by the subscripts ':math:`+`' and
-// ':math:`-`'.  Using the standard continuous Lagrange finite element
-// space
+// Consider a triangulation $\mathcal{T}$ of the domain $\Omega$, where
+// the set of interior facets is denoted by $\mathcal{E}_h^{\rm int}$.
+// Functions evaluated on opposite sides of a facet are indicated by the
+// subscripts $+$ and $-$.
+// Using the standard continuous Lagrange finite element space
 //
-// .. math::
-//     V = \left\{v \in H^{1}_{0}(\Omega)\,:\, v \in P_{k}(K) \ \forall \ K \in
-//     \mathcal{T} \right\}
+// $$
+// V = \left\{v \in H^{1}_{0}(\Omega)\,:\, v \in P_{k}(K) \
+// \forall \ K \in \mathcal{T} \right\}
+// $$
 //
 // and considering the boundary conditions
 //
-// .. math::
-//    u            &= 0 \quad {\rm on} \ \partial\Omega \\
-//    \nabla^{2} u &= 0 \quad {\rm on} \ \partial\Omega
+// \begin{align}
+// u &= 0 \quad {\rm on} \ \partial\Omega, \\
+// \nabla^{2} u &= 0 \quad {\rm on} \ \partial\Omega,
+// \end{align}
 //
-// a weak formulation of the biharmonic problem reads: find :math:`u \in
-// V` such that
+// a weak formulation of the biharmonic problem reads: find $u \in V$ such that
 //
-// .. math::
-//   a(u,v)=L(v) \quad \forall \ v \in V,
+// $$
+// a(u,v)=L(v) \quad \forall \ v \in V,
+// $$
 //
 // where the bilinear form is
 //
-// .. math::
-//    a(u, v) = \sum_{K \in \mathcal{T}} \int_{K} \nabla^{2} u \nabla^{2} v \,
-//    {\rm d}x \
-//   +\sum_{E \in \mathcal{E}_h^{\rm int}}\left(\int_{E} \frac{\alpha}{h_E}
-//   [\!\![ \nabla u ]\!\!] [\!\![ \nabla v ]\!\!] \, {\rm d}s
-//   - \int_{E} \left<\nabla^{2} u \right>[\!\![ \nabla v ]\!\!]  \, {\rm d}s
-//   - \int_{E} [\!\![ \nabla u ]\!\!]  \left<\nabla^{2} v \right>  \, {\rm
-//   d}s\right)
+// \begin{align*}
+// a(u, v) &=
+// \sum_{K \in \mathcal{T}} \int_{K} \nabla^{2} u \nabla^{2} v \, {\rm d}x \\
+// &\qquad+\sum_{E \in \mathcal{E}_h^{\rm int}}\left(\int_{E} \frac{\alpha}{h_E}
+// [\!\![ \nabla u ]\!\!] [\!\![ \nabla v ]\!\!] \, {\rm d}s
+// - \int_{E} \left<\nabla^{2} u \right>[\!\![ \nabla v ]\!\!]  \, {\rm d}s
+// - \int_{E} [\!\![ \nabla u ]\!\!] \left<\nabla^{2} v \right> \,
+// {\rm d}s\right)
+// \end{align*}
 //
 // and the linear form is
 //
-// .. math::
-//   L(v) = \int_{\Omega} fv \, {\rm d}x
+// $$
+// L(v) = \int_{\Omega} fv \, {\rm d}x.
+// $$
 //
-// Furthermore, :math:`\left< u \right> = \frac{1}{2} (u_{+} + u_{-})`,
-// :math:`[\!\![ w ]\!\!]  = w_{+} \cdot n_{+} + w_{-} \cdot n_{-}`,
-// :math:`\alpha \ge 0` is a penalty parameter and :math:`h_E` is a measure of
-// the cell size.
+// Furthermore, $\left< u \right> = \frac{1}{2} (u_{+} + u_{-})$,
+// $[\!\![ w ]\!\!]  = w_{+} \cdot n_{+} + w_{-} \cdot n_{-}$,
+// $\alpha \ge 0$ is a penalty parameter and
+// $h_E$ is a measure of the cell size.
 //
 // The input parameters for this demo are defined as follows:
 //
-// * :math:`\Omega = [0,1] \times [0,1]` (a unit square)
-// * :math:`\alpha = 8.0` (penalty parameter)
-// * :math:`f = 4.0 \pi^4\sin(\pi x)\sin(\pi y)` (source term)
+// - $\Omega = [0,1] \times [0,1]$ (a unit square)
+// - $\alpha = 8.0$ (penalty parameter)
+// - $f = 4.0 \pi^4\sin(\pi x)\sin(\pi y)$ (source term)
 //
 //
-// Implementation
-// --------------
+//
+// ## Implementation
 //
 // The implementation is split in two files: a form file containing the
 // definition of the variational forms expressed in UFL and a C++ file
 // containing the actual solver.
 //
-// Running this demo requires the files: :download:`main.cpp`,
-// :download:`biharmonic.py` and :download:`CMakeLists.txt`.
+// Running this demo requires the files: {download}`demo_biharmonic/main.cpp`,
+// {download}`demo_biharmonic/biharmonic.py` and {download}`demo_biharmonic/CMakeLists.txt`.
 //
-// UFL form file
-// ^^^^^^^^^^^^^
+// ### UFL form file
 //
-// The UFL file is implemented in :download:`biharmonic.py`, and the
-// explanation of the UFL file can be found at :doc:`here
-// <biharmonic.py>`.
+// The UFL file is implemented in {download}`demo_biharmonic/biharmonic.py`.
+// ````{admonition} UFL form implemented in python
+// :class: dropdown
+// ![ufl-code]
+// ````
 //
+// ````{note}
+// TODO: explanation on how to run cmake and/or shell commands for ffcx
+// To compile biharmonic.py using FFCx with an option 
+// for PETSc scalar type `float64` one woud execute the command
+// ```bash
+// ffcx biharmonic.py --scalar_type=float64
+// ```
+// ````
 //
-// C++ program
-// ^^^^^^^^^^^
+// ### C++ program
 //
-// The main solver is implemented in the :download:`main.cpp` file.
+// The main solver is implemented in the {download}`demo_biharmonic/main.cpp` file.
 //
 // At the top we include the DOLFINx header file and the generated
 // header file "biharmonic.h" containing the variational forms for the
 // Biharmonic equation, which are defined in the UFL form file. For
 // convenience we also include the DOLFINx namespace.
 //
-// .. code-block:: cpp
 
 #include "biharmonic.h"
 #include <cmath>
@@ -136,12 +150,10 @@ using U = typename dolfinx::scalar_value_type_t<T>;
 
 // Inside the ``main`` function, we begin by defining a mesh of the
 // domain. As the unit square is a very standard domain, we can use a
-// built-in mesh provided by the :cpp:class:`UnitSquareMesh` factory. In
+// built-in mesh provided by the {cpp:class}`UnitSquareMesh` factory. In
 // order to create a mesh consisting of 32 x 32 squares with each square
 // divided into two triangles, and the finite element space (specified
 // in the form file) defined relative to this mesh, we do as follows
-//
-// .. code-block:: cpp
 
 int main(int argc, char* argv[])
 {
@@ -149,25 +161,22 @@ int main(int argc, char* argv[])
   PetscInitialize(&argc, &argv, nullptr, nullptr);
 
   {
-    // Create mesh
+//  Create mesh
     auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
     auto mesh = std::make_shared<mesh::Mesh<U>>(
         mesh::create_rectangle<U>(MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}},
                                   {32, 32}, mesh::CellType::triangle, part));
 
-    // A function space object, which is defined in the generated code,
-    // is created:
-    //
-    // .. code-block:: cpp
+//    A function space object, which is defined in the generated code,
+//    is created:
+//
 
-    // Create function space
+//  Create function space
     auto V = std::make_shared<fem::FunctionSpace<U>>(
         fem::create_functionspace(functionspace_form_biharmonic_a, "u", mesh));
 
-    // The source function ::math:`f` and the penalty term
-    // ::math:`\alpha` are declared:
-    //
-    // .. code-block:: cpp
+//    The source function $f$ and the penalty term
+//    $\alpha$ are declared:
 
     auto f = std::make_shared<fem::Function<T>>(V);
     f->interpolate(
@@ -184,26 +193,26 @@ int main(int argc, char* argv[])
         });
     auto alpha = std::make_shared<fem::Constant<T>>(8.0);
 
-    // Define variational forms
+//  Define variational forms
+//
+
     auto a = std::make_shared<fem::Form<T>>(fem::create_form<T>(
         *form_biharmonic_a, {V, V}, {}, {{"alpha", alpha}}, {}));
     auto L = std::make_shared<fem::Form<T>>(
         fem::create_form<T>(*form_biharmonic_L, {V}, {{"f", f}}, {}, {}));
 
-    // Now, the Dirichlet boundary condition (:math:`u = 0`) can be
-    // created using the class :cpp:class:`DirichletBC`. A
-    // :cpp:class:`DirichletBC` takes two arguments: the value of the
-    // boundary condition, and the part of the boundary on which the
-    // condition applies. In our example, the value of the boundary
-    // condition (0.0) can represented using a :cpp:class:`Function`,
-    // and the Dirichlet boundary is defined by the indices of degrees
-    // of freedom to which the boundary condition applies. The
-    // definition of the Dirichlet boundary condition then looks as
-    // follows:
-    //
-    // .. code-block:: cpp
+//  Now, the Dirichlet boundary condition ($u = 0$) can be
+//  created using the class {cpp:class}`DirichletBC`. A
+//  {cpp:class}`DirichletBC` takes two arguments: the value of the
+//  boundary condition, and the part of the boundary on which the
+//  condition applies. In our example, the value of the boundary
+//  condition (0.0) can represented using a {cpp:class}`Function`,
+//  and the Dirichlet boundary is defined by the indices of degrees
+//  of freedom to which the boundary condition applies. The
+//  definition of the Dirichlet boundary condition then looks as
+//  follows:
 
-    // Define boundary condition
+//  Define boundary condition
     auto facets = mesh::locate_entities_boundary(
         *mesh, 1,
         [](auto x)
@@ -225,16 +234,14 @@ int main(int argc, char* argv[])
         *V->mesh()->topology_mutable(), *V->dofmap(), 1, facets);
     auto bc = std::make_shared<const fem::DirichletBC<T>>(0.0, bdofs, V);
 
-    // Now, we have specified the variational forms and can consider the
-    // solution of the variational problem. First, we need to define a
-    // :cpp:class:`Function` ``u`` to store the solution. (Upon
-    // initialization, it is simply set to the zero function.) Next, we
-    // can call the ``solve`` function with the arguments ``a == L``,
-    // ``u`` and ``bc`` as follows:
-    //
-    // .. code-block:: cpp
+//  Now, we have specified the variational forms and can consider the
+//  solution of the variational problem. First, we need to define a
+//  {cpp:class}`Function` ``u`` to store the solution. (Upon
+//  initialization, it is simply set to the zero function.) Next, we
+//  can call the ``solve`` function with the arguments ``a == L``,
+//  ``u`` and ``bc`` as follows:
 
-    // Compute solution
+//  Compute solution
     fem::Function<T> u(V);
     auto A = la::petsc::Matrix(fem::petsc::create_matrix(*a), false);
     la::Vector<T> b(L->function_spaces()[0]->dofmap()->index_map,
@@ -266,17 +273,17 @@ int main(int argc, char* argv[])
     la::petsc::Vector _b(la::petsc::create_vector_wrap(b), false);
     lu.solve(_u.vec(), _b.vec());
 
-    // Update ghost values before output
+//  Update ghost values before output
+//
     u.x()->scatter_fwd();
 
-    // The function ``u`` will be modified during the call to solve. A
-    // :cpp:class:`Function` can be saved to a file. Here, we output the
-    // solution to a ``VTK`` file (specified using the suffix ``.pvd``)
-    // for visualisation in an external program such as Paraview.
-    //
-    // .. code-block:: cpp
+//  The function ``u`` will be modified during the call to solve. A
+//  {cpp:class}`Function` can be saved to a file. Here, we output the
+//  solution to a ``VTK`` file (specified using the suffix ``.pvd``)
+//  for visualisation in an external program such as Paraview.
 
-    // Save solution in VTK format
+//  Save solution in VTK format
+//
     io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
     file.write<T>({u}, 0.0);
   }

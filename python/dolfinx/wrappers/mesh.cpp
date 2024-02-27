@@ -178,8 +178,16 @@ void declare_mesh(nb::module_& m, std::string type)
       .def_prop_ro(
           "cmap", [](dolfinx::mesh::Geometry<T>& self) { return self.cmap(); },
           "The coordinate map")
-      .def_prop_ro("input_global_indices",
-                   &dolfinx::mesh::Geometry<T>::input_global_indices);
+      .def_prop_ro(
+          "input_global_indices",
+          [](const dolfinx::mesh::Geometry<T>& self)
+          {
+            const std::vector<std::int64_t>& id_to_global
+                = self.input_global_indices();
+            return nb::ndarray<const std::int64_t, nb::numpy>(
+                id_to_global.data(), {id_to_global.size()});
+          },
+          nb::rv_policy::reference_internal);
 
   std::string pyclass_mesh_name = std::string("Mesh_") + type;
   nb::class_<dolfinx::mesh::Mesh<T>>(m, pyclass_mesh_name.c_str(),
@@ -405,8 +413,16 @@ void mesh(nb::module_& m)
         nb::arg("type"));
   m.def("get_entity_vertices", &dolfinx::mesh::get_entity_vertices,
         nb::arg("type"), nb::arg("dim"));
-  m.def("extract_topology", &dolfinx::mesh::extract_topology,
-        nb::arg("cell_type"), nb::arg("layout"), nb::arg("cells"));
+  m.def(
+      "extract_topology",
+      [](dolfinx::mesh::CellType cell_type,
+         const dolfinx::fem::ElementDofLayout& layout,
+         nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig> cells)
+      {
+        return dolfinx_wrappers::as_nbarray(dolfinx::mesh::extract_topology(
+            cell_type, layout, std::span(cells.data(), cells.size())));
+      },
+      nb::arg("cell_type"), nb::arg("layout"), nb::arg("cells"));
 
   m.def(
       "build_dual_graph",

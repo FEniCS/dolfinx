@@ -1,5 +1,5 @@
 # UFL input for the Matrix-free Poisson Demo
-# ==================================
+
 from basix.ufl import element
 from ufl import (
     Coefficient,

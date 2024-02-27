@@ -1,9 +1,8 @@
-// Custom cell kernel assembly (C++)
+// # Custom cell kernel assembly (C++)
 //
 // This demo shows various methods to define custom cell kernels in C++ and
 // have them assembled into DOLFINx linear algebra data structures.
 //
-// .. code-block:: cpp
 
 #include <basix/finite-element.h>
 #include <basix/mdspan.hpp>
@@ -28,10 +27,8 @@ using mdspan2_t
     = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<T,
                                              std::extents<std::size_t, n0, n1>>;
 
-// .. code-block:: cpp
-
 /// @brief Compute the P1 element mass matrix on the reference cell.
-/// @tparam V Scalar type.
+/// @tparam T Scalar type.
 /// @param phi Basis functions.
 /// @param w Integration weights.
 /// @return Element reference matrix (row-major storage).
@@ -48,7 +45,7 @@ std::array<T, 9> A_ref(mdspand_t<const T, 4> phi, std::span<const T> w)
 }
 
 /// @brief Compute the P1 RHS vector for f=1 on the reference cell.
-/// @tparam V Scalar type.
+/// @tparam T Scalar type.
 /// @param phi Basis functions.
 /// @param w Integration weights.
 /// @return RHS reference vector.
@@ -79,12 +76,12 @@ double assemble_matrix0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
   // Associate kernel with cells (as opposed to facets, etc)
   std::map integrals{std::pair{fem::IntegralType::cell, kernel_data}};
 
-  fem::Form<T> a({V, V}, integrals, {}, {}, false, V->mesh());
+  fem::Form<T> a({V, V}, integrals, {}, {}, false, {}, V->mesh());
   auto dofmap = V->dofmap();
   auto sp = la::SparsityPattern(
       V->mesh()->comm(), {dofmap->index_map, dofmap->index_map},
       {dofmap->index_map_bs(), dofmap->index_map_bs()});
-  fem::sparsitybuild::cells(sp, cells, {*dofmap, *dofmap});
+  fem::sparsitybuild::cells(sp, {cells, cells}, {*dofmap, *dofmap});
   sp.finalize();
   la::MatrixCSR<T> A(sp);
   common::Timer timer("Assembler0 std::function (matrix)");
@@ -106,7 +103,7 @@ double assemble_vector0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
   auto mesh = V->mesh();
   std::vector kernal_data{fem::integral_data<T>(-1, kernel, cells)};
   std::map integrals{std::pair{fem::IntegralType::cell, kernal_data}};
-  fem::Form<T> L({V}, integrals, {}, {}, false, mesh);
+  fem::Form<T> L({V}, integrals, {}, {}, false, {}, mesh);
   auto dofmap = V->dofmap();
   la::Vector<T> b(dofmap->index_map, 1);
   common::Timer timer("Assembler0 std::function (vector)");
@@ -121,7 +118,8 @@ double assemble_vector0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
 /// be important for performance for lightweight kernels.
 ///
 /// @tparam T Scalar type.
-/// @param V Function space.
+/// @param g mesh geometry.
+/// @param dofmap dofmap.
 /// @param kernel Element kernel to execute.
 /// @param cells Cells to execute the kernel over.
 /// @return Frobenius norm squared of the matrix.
@@ -132,14 +130,15 @@ double assemble_matrix1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
   auto sp = la::SparsityPattern(dofmap.index_map->comm(),
                                 {dofmap.index_map, dofmap.index_map},
                                 {dofmap.index_map_bs(), dofmap.index_map_bs()});
-  fem::sparsitybuild::cells(sp, cells, {dofmap, dofmap});
+  fem::sparsitybuild::cells(sp, {cells, cells}, {dofmap, dofmap});
   sp.finalize();
   la::MatrixCSR<T> A(sp);
   auto ident = [](auto, auto, auto, auto) {}; // DOF permutation not required
   common::Timer timer("Assembler1 lambda (matrix)");
-  fem::impl::assemble_cells(A.mat_add_values(), g.dofmap(), g.x(), cells, ident,
-                            dofmap.map(), 1, ident, dofmap.map(), 1, {}, {},
-                            kernel, std::span<const T>(), 0, {}, {});
+  fem::impl::assemble_cells(A.mat_add_values(), g.dofmap(), g.x(), cells,
+                            {dofmap.map(), 1, cells}, ident,
+                            {dofmap.map(), 1, cells}, ident, {}, {}, kernel,
+                            std::span<const T>(), 0, {}, {}, {});
   A.scatter_rev();
   return A.squared_norm();
 }
@@ -150,7 +149,8 @@ double assemble_matrix1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
 /// be important for performance for lightweight kernels.
 ///
 /// @tparam T Scalar type.
-/// @param V Function space.
+/// @param g mesh geometry.
+/// @param dofmap dofmap.
 /// @param kernel Element kernel to execute.
 /// @param cells Cells to execute the kernel over.
 /// @return l2 norm squared of the vector.
