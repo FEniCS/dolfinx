@@ -395,6 +395,20 @@ void declare_mesh(nb::module_& m, std::string type)
         return as_nbarray(std::move(idx), {entities.size(), num_vertices});
       },
       nb::arg("mesh"), nb::arg("dim"), nb::arg("entities"), nb::arg("orient"));
+
+  m.def("create_geometry",
+        [](const dolfinx::mesh::Topology& topology,
+           const std::vector<dolfinx::fem::CoordinateElement<T>>& elements,
+           nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig> nodes,
+           nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig> xdofs,
+           nb::ndarray<const T, nb::ndim<1>, nb::c_contig> x, int dim)
+        {
+          return dolfinx::mesh::create_geometry(
+              topology, elements,
+              std::span<const std::int64_t>(nodes.data(), nodes.size()),
+              std::span<const std::int64_t>(xdofs.data(), xdofs.size()),
+              std::span<const T>(x.data(), x.size()), dim);
+        });
 }
 
 void mesh(nb::module_& m)
@@ -544,18 +558,6 @@ void mesh(nb::module_& m)
           [](dolfinx::mesh::Topology& self)
           { return MPICommWrapper(self.comm()); },
           nb::keep_alive<0, 1>());
-
-  m.def("create_geometry",
-        [](const dolfinx::mesh::Topology& topology,
-           const std::vector<dolfinx::fem::CoordinateElement<double>>& elements,
-           const std::vector<std::int64_t>& nodes,
-           const std::vector<std::int64_t>& xdofs, const std::vector<double>& x,
-           int dim)
-        {
-          return dolfinx::mesh::create_geometry(
-              topology, elements, std::span<const std::int64_t>(nodes),
-              std::span<const std::int64_t>(xdofs), x, dim);
-        });
 
   m.def("create_topology",
         [](MPICommWrapper comm,
