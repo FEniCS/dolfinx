@@ -166,16 +166,15 @@ std::vector<std::int32_t> exterior_facet_indices(const Topology& topology);
 ///
 /// @param[in] comm MPI Communicator
 /// @param[in] nparts Number of partitions
-/// @param[in] tdim Topological dimension
+/// @param[in] cell_type Type of cell in mesh
 /// @param[in] cells Cells on this process. The ith entry in list
 /// contains the global indices for the cell vertices. Each cell can
 /// appear only once across all processes. The cell vertex indices are
 /// not necessarily contiguous globally, i.e. the maximum index across
 /// all processes can be greater than the number of vertices. High-order
 /// 'nodes', e.g. mid-side points, should not be included.
-/// @param[in] ghost_mode How to overlap the cell partitioning: none,
-/// shared_facet or shared_vertex
 /// @return Destination ranks for each cell on this process
+/// @note Cells can have multiple destination ranks, when ghosted.
 using CellPartitionFunction = std::function<graph::AdjacencyList<std::int32_t>(
     MPI_Comm comm, int nparts, CellType cell_type,
     const graph::AdjacencyList<std::int64_t>& cells)>;
