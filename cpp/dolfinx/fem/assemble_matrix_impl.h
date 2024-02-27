@@ -163,19 +163,23 @@ void assemble_exterior_facets(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     std::span<const scalar_value_type_t<T>> x,
     std::span<const std::int32_t> facets, fem::DofTransformKernel<T> auto P0,
-    mdspan2_t dofmap0, int bs0, fem::DofTransformKernel<T> auto P1T,
-    mdspan2_t dofmap1, int bs1, std::span<const std::int8_t> bc0,
-    std::span<const std::int8_t> bc1, FEkernel<T> auto kernel,
-    std::span<const T> coeffs, int cstride, std::span<const T> constants,
-    std::span<const std::uint32_t> cell_info)
+    std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap0,
+    fem::DofTransformKernel<T> auto P1T,
+    std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap1,
+    std::span<const std::int8_t> bc0, std::span<const std::int8_t> bc1,
+    FEkernel<T> auto kernel, std::span<const T> coeffs, int cstride,
+    std::span<const T> constants, std::span<const std::uint32_t> cell_info)
 {
   if (facets.empty())
     return;
 
+  const auto [dmap0, bs0, facets0] = dofmap0;
+  const auto [dmap1, bs1, facets1] = dofmap1;
+
   // Data structures used in assembly
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * x_dofmap.extent(1));
-  const int num_dofs0 = dofmap0.extent(1);
-  const int num_dofs1 = dofmap1.extent(1);
+  const int num_dofs0 = dmap0.extent(1);
+  const int num_dofs1 = dmap1.extent(1);
   const int ndim0 = bs0 * num_dofs0;
   const int ndim1 = bs1 * num_dofs1;
   std::vector<T> Ae(ndim0 * ndim1);
@@ -205,8 +209,8 @@ void assemble_exterior_facets(
     P1T(_Ae, cell_info, cell, ndim0);
 
     // Zero rows/columns for essential bcs
-    auto dofs0 = std::span(dofmap0.data_handle() + cell * num_dofs0, num_dofs0);
-    auto dofs1 = std::span(dofmap1.data_handle() + cell * num_dofs1, num_dofs1);
+    auto dofs0 = std::span(dmap0.data_handle() + cell * num_dofs0, num_dofs0);
+    auto dofs1 = std::span(dmap1.data_handle() + cell * num_dofs1, num_dofs1);
     if (!bc0.empty())
     {
       for (int i = 0; i < num_dofs0; ++i)
@@ -459,10 +463,11 @@ void assemble_matrix(
     assert(fn);
     auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
-    impl::assemble_exterior_facets(mat_set, x_dofmap, x,
-                                   a.domain(IntegralType::exterior_facet, i),
-                                   P0, dofs0, bs0, P1T, dofs1, bs1, bc0, bc1,
-                                   fn, coeffs, cstride, constants, cell_info0);
+    impl::assemble_exterior_facets(
+        mat_set, x_dofmap, x, a.domain(IntegralType::exterior_facet, i), P0,
+        {dofs0, bs0, a.domain(IntegralType::exterior_facet, i)}, P1T,
+        {dofs1, bs1, a.domain(IntegralType::exterior_facet, i)}, bc0, bc1, fn,
+        coeffs, cstride, constants, cell_info0);
   }
 
   if (a.num_integrals(IntegralType::interior_facet) > 0)
