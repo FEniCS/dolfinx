@@ -413,8 +413,16 @@ void mesh(nb::module_& m)
         nb::arg("type"));
   m.def("get_entity_vertices", &dolfinx::mesh::get_entity_vertices,
         nb::arg("type"), nb::arg("dim"));
-  m.def("extract_topology", &dolfinx::mesh::extract_topology,
-        nb::arg("cell_type"), nb::arg("layout"), nb::arg("cells"));
+  m.def(
+      "extract_topology",
+      [](dolfinx::mesh::CellType cell_type,
+         const dolfinx::fem::ElementDofLayout& layout,
+         nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig> cells)
+      {
+        return dolfinx_wrappers::as_nbarray(dolfinx::mesh::extract_topology(
+            cell_type, layout, std::span(cells.data(), cells.size())));
+      },
+      nb::arg("cell_type"), nb::arg("layout"), nb::arg("cells"));
 
   m.def(
       "build_dual_graph",
