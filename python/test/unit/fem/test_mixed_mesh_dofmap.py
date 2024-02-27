@@ -34,7 +34,7 @@ def create_element_dofmap(mesh, cell_types, degree):
     return (cpp_elements, cpp_dofmaps)
 
 
-def test_el_dm():
+def test_dofmap_mixed_topology():
     rank = MPI.COMM_WORLD.Get_rank()
 
     # Two triangles and one quadrilateral
@@ -75,15 +75,17 @@ def test_el_dm():
     assert mesh.geometry.x.shape == (6, 3)
 
     # Second order dofmap on mixed mesh
-    el, dm = create_element_dofmap(mesh, [basix.CellType.triangle, basix.CellType.quadrilateral], 2)
+    elements, dofmaps = create_element_dofmap(
+        mesh, [basix.CellType.triangle, basix.CellType.quadrilateral], 2
+    )
 
-    assert len(el) == 2
-    assert el[0].basix_element.cell_type.name == "triangle"
-    assert el[1].basix_element.cell_type.name == "quadrilateral"
+    assert len(elements) == 2
+    assert elements[0].basix_element.cell_type.name == "triangle"
+    assert elements[1].basix_element.cell_type.name == "quadrilateral"
 
-    assert len(dm) == 2
-    q0 = DofMap(dm[0])
-    q1 = DofMap(dm[1])
+    assert len(dofmaps) == 2
+    q0 = DofMap(dofmaps[0])
+    q1 = DofMap(dofmaps[1])
     assert q0.index_map.size_local == q1.index_map.size_local
     # Triangles
     print(q0.list)
@@ -95,7 +97,7 @@ def test_el_dm():
     assert len(q1.dof_layout.entity_dofs(2, 0)) == 1
 
 
-def test_el_dm_prism():
+def test_dofmap_prism_mesh():
     # Prism mesh
     cells = [[0, 1, 2, 3, 4, 5]]
     # cells with global indexing
@@ -130,11 +132,11 @@ def test_el_dm_prism():
     geom = create_geometry(topology, [prism._cpp_object], nodes, xdofs, x.flatten(), 3)
     mesh = Mesh_float64(MPI.COMM_WORLD, topology, geom)
 
-    el, dm = create_element_dofmap(mesh, [basix.CellType.prism], 2)
+    elements, dofmaps = create_element_dofmap(mesh, [basix.CellType.prism], 2)
     print()
-    assert len(el) == 1
-    assert len(dm) == 1
-    q = DofMap(dm[0])
+    assert len(elements) == 1
+    assert len(dofmaps) == 1
+    q = DofMap(dofmaps[0])
     assert q.index_map.size_local == 18
     print(q.list)
     facet_dofs = []

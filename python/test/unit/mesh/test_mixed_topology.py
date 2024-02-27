@@ -9,7 +9,7 @@ from dolfinx.log import LogLevel, set_log_level
 from dolfinx.mesh import CellType, GhostMode, create_unit_cube
 
 
-def test_triquad():
+def test_mixed_topology_mesh():
     set_log_level(LogLevel.INFO)
 
     cells = [[0, 1, 2, 1, 2, 3], [2, 3, 4, 5]]
@@ -63,7 +63,7 @@ def test_triquad():
     set_log_level(LogLevel.WARNING)
 
 
-def test_mixed_mesh_3d():
+def test_mixed_topology_mesh_3d():
     # Mesh = 2 tets, 1 prism, 1 hex, joined.
     cells = [[0, 1, 2, 3, 1, 2, 3, 4], [2, 3, 4, 5, 6, 7], [3, 4, 6, 7, 8, 9, 10, 11]]
     orig_index = [[0, 1], [2], [3]]
