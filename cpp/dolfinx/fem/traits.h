@@ -8,10 +8,17 @@
 #include <concepts>
 #include <cstdint>
 #include <dolfinx/common/types.h>
+#include <span>
 #include <type_traits>
 
 namespace dolfinx::fem
 {
+
+/// @brief DOF transform kernel concept.
+template <class U, class T>
+concept DofTransformKernel
+    = std::is_invocable_v<U, std::span<T>, std::span<const std::uint32_t>,
+                          std::int32_t, int>;
 
 /// @brief Finite element cell kernel concept.
 ///
