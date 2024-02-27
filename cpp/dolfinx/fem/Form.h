@@ -339,9 +339,23 @@ public:
       std::span<const std::int32_t> entity_map = _entity_maps.at(msh_ptr);
       std::vector<std::int32_t> mapped_entities;
       mapped_entities.reserve(entities.size());
-      std::transform(entities.begin(), entities.end(),
-                     std::back_inserter(mapped_entities),
-                     [&entity_map](auto e) { return entity_map[e]; });
+      switch (type)
+      {
+      case IntegralType::cell:
+      {
+        std::transform(entities.begin(), entities.end(),
+                       std::back_inserter(mapped_entities),
+                       [&entity_map](auto e) { return entity_map[e]; });
+        break;
+      }
+      case IntegralType::exterior_facet:
+      {
+        // TODO
+        break;
+      }
+      default:
+        throw std::runtime_error("Integral type not supported.");
+      }
       return mapped_entities;
     }
   }
