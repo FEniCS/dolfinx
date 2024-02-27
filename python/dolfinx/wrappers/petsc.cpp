@@ -70,7 +70,7 @@ void declare_petsc_discrete_operators(nb::module_& m)
         assert(map);
         std::vector<std::int32_t> c(map->size_local(), 0);
         std::iota(c.begin(), c.end(), 0);
-        dolfinx::fem::sparsitybuild::cells(sp, c, {*dofmap1, *dofmap0});
+        dolfinx::fem::sparsitybuild::cells(sp, {c, c}, {*dofmap1, *dofmap0});
         sp.finalize();
 
         // Build operator
@@ -111,7 +111,7 @@ void declare_petsc_discrete_operators(nb::module_& m)
         assert(map);
         std::vector<std::int32_t> c(map->size_local(), 0);
         std::iota(c.begin(), c.end(), 0);
-        dolfinx::fem::sparsitybuild::cells(sp, c, {*dofmap1, *dofmap0});
+        dolfinx::fem::sparsitybuild::cells(sp, {c, c}, {*dofmap1, *dofmap0});
         sp.finalize();
 
         // Build operator
