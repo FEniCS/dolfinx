@@ -350,7 +350,13 @@ public:
       }
       case IntegralType::exterior_facet:
       {
-        // TODO
+        for (std::size_t i = 0; i < entities.size(); i += 2)
+        {
+          // Map the cell
+          mapped_entities.push_back(entity_map[entities[i]]);
+          // Add the local facet
+          mapped_entities.push_back(entities[i + 1]);
+        }
         break;
       }
       default:
