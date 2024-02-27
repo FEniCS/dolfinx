@@ -168,7 +168,8 @@ void assemble_exterior_facets(
     std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap1,
     std::span<const std::int8_t> bc0, std::span<const std::int8_t> bc1,
     FEkernel<T> auto kernel, std::span<const T> coeffs, int cstride,
-    std::span<const T> constants, std::span<const std::uint32_t> cell_info)
+    std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
+    std::span<const std::uint32_t> cell_info1)
 {
   if (facets.empty())
     return;
@@ -185,9 +186,13 @@ void assemble_exterior_facets(
   std::vector<T> Ae(ndim0 * ndim1);
   std::span<T> _Ae(Ae);
   assert(facets.size() % 2 == 0);
+  assert(facets0.size() == facets.size());
+  assert(facets1.size() == facets.size());
   for (std::size_t index = 0; index < facets.size(); index += 2)
   {
     std::int32_t cell = facets[index];
+    std::int32_t cell0 = facets0[index];
+    std::int32_t cell1 = facets1[index];
     std::int32_t local_facet = facets[index + 1];
 
     // Get cell coordinates/geometry
@@ -205,12 +210,12 @@ void assemble_exterior_facets(
     kernel(Ae.data(), coeffs.data() + index / 2 * cstride, constants.data(),
            coordinate_dofs.data(), &local_facet, nullptr);
 
-    P0(_Ae, cell_info, cell, ndim1);
-    P1T(_Ae, cell_info, cell, ndim0);
+    P0(_Ae, cell_info1, cell1, ndim1);
+    P1T(_Ae, cell_info0, cell0, ndim0);
 
     // Zero rows/columns for essential bcs
-    auto dofs0 = std::span(dmap0.data_handle() + cell * num_dofs0, num_dofs0);
-    auto dofs1 = std::span(dmap1.data_handle() + cell * num_dofs1, num_dofs1);
+    auto dofs0 = std::span(dmap0.data_handle() + cell0 * num_dofs0, num_dofs0);
+    auto dofs1 = std::span(dmap1.data_handle() + cell1 * num_dofs1, num_dofs1);
     if (!bc0.empty())
     {
       for (int i = 0; i < num_dofs0; ++i)
@@ -467,7 +472,7 @@ void assemble_matrix(
         mat_set, x_dofmap, x, a.domain(IntegralType::exterior_facet, i), P0,
         {dofs0, bs0, a.domain(IntegralType::exterior_facet, i, *mesh0)}, P1T,
         {dofs1, bs1, a.domain(IntegralType::exterior_facet, i, *mesh1)}, bc0,
-        bc1, fn, coeffs, cstride, constants, cell_info0);
+        bc1, fn, coeffs, cstride, constants, cell_info0, cell_info1);
   }
 
   if (a.num_integrals(IntegralType::interior_facet) > 0)
