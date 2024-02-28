@@ -162,13 +162,20 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
     # Test function on the submesh
     w = ufl.TestFunction(V_smsh)
 
-    def ufl_form(u, v, dx, ds):
+    def ufl_form_a(u, v, dx, ds):
         return ufl.inner(u, v) * dx + ufl.inner(u, v) * ds
 
+    def ufl_form_L(v, dx, ds):
+        return ufl.inner(2.5, v) * dx
+
     # Define form to compare to and assemble
-    a = fem.form(ufl_form(u, v, dx_msh(tag), ds_msh(tag)))
+    a = fem.form(ufl_form_a(u, v, dx_msh(tag), ds_msh(tag)))
     A = fem.assemble_matrix(a)
     A.scatter_reverse()
+
+    L = fem.form(ufl_form_L(v, dx_msh(tag), ds_msh(tag)))
+    b = fem.assemble_vector(L)
+    b.scatter_reverse(la.InsertMode.add)
 
     # Assemble a mixed-domain form, taking smsh to be the integration domain
     # Entity maps must map cells in smsh (the integration domain mesh) to
@@ -180,7 +187,7 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
     ds_smsh = ufl.Measure("ds", domain=smsh, subdomain_data=ft_sm)
 
     entity_maps = {msh._cpp_object: np.array(smsh_to_msh, dtype=np.int32)}
-    a0 = fem.form(ufl_form(u, w, ufl.dx(smsh), ds_smsh(tag)), entity_maps=entity_maps)
+    a0 = fem.form(ufl_form_a(u, w, ufl.dx(smsh), ds_smsh(tag)), entity_maps=entity_maps)
     A0 = fem.assemble_matrix(a0)
     A0.scatter_reverse()
     assert np.isclose(A0.squared_norm(), A.squared_norm())
@@ -194,7 +201,12 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
     msh_to_smsh[smsh_to_msh] = np.arange(len(smsh_to_msh))
     entity_maps = {smsh._cpp_object: np.array(msh_to_smsh, dtype=np.int32)}
 
-    a1 = fem.form(ufl_form(u, w, dx_msh(tag), ds_msh(tag)), entity_maps=entity_maps)
+    a1 = fem.form(ufl_form_a(u, w, dx_msh(tag), ds_msh(tag)), entity_maps=entity_maps)
     A1 = fem.assemble_matrix(a1)
     A1.scatter_reverse()
     assert np.isclose(A1.squared_norm(), A.squared_norm())
+
+    L1 = fem.form(ufl_form_L(w, dx_msh(tag), ds_msh(tag)), entity_maps=entity_maps)
+    b1 = fem.assemble_vector(L1)
+    b1.scatter_reverse(la.InsertMode.add)
+    assert np.isclose(b1.norm(), b.norm())

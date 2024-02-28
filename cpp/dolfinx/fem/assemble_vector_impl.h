@@ -511,7 +511,10 @@ void assemble_cells(
   // Iterate over active cells
   for (std::size_t index = 0; index < cells.size(); ++index)
   {
+    // Integration domain cell
     std::int32_t c = cells[index];
+    // Test function cell
+    std::int32_t c0 = cells0[index];
 
     // Get cell coordinates/geometry
     auto x_dofs
@@ -527,11 +530,11 @@ void assemble_cells(
     std::fill(be.begin(), be.end(), 0);
     kernel(be.data(), coeffs.data() + index * cstride, constants.data(),
            coordinate_dofs.data(), nullptr, nullptr);
-    dof_transform(_be, cell_info, c, 1);
+    dof_transform(_be, cell_info, c0, 1);
 
     // Scatter cell vector to 'global' vector array
     auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
-        submdspan(dmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+        submdspan(dmap, c0, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     if constexpr (_bs > 0)
     {
       for (std::size_t i = 0; i < dofs.size(); ++i)
