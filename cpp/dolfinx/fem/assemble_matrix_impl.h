@@ -162,13 +162,14 @@ template <dolfinx::scalar T>
 void assemble_exterior_facets(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     std::span<const scalar_value_type_t<T>> x,
-    std::span<const std::int32_t> facets, fem::DofTransformKernel<T> auto P0,
+    std::span<const std::int32_t> facets,
     std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap0,
-    fem::DofTransformKernel<T> auto P1T,
+    fem::DofTransformKernel<T> auto P0,
     std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap1,
-    std::span<const std::int8_t> bc0, std::span<const std::int8_t> bc1,
-    FEkernel<T> auto kernel, std::span<const T> coeffs, int cstride,
-    std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
+    fem::DofTransformKernel<T> auto P1T, std::span<const std::int8_t> bc0,
+    std::span<const std::int8_t> bc1, FEkernel<T> auto kernel,
+    std::span<const T> coeffs, int cstride, std::span<const T> constants,
+    std::span<const std::uint32_t> cell_info0,
     std::span<const std::uint32_t> cell_info1)
 {
   if (facets.empty())
@@ -472,10 +473,10 @@ void assemble_matrix(
     auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
     impl::assemble_exterior_facets(
-        mat_set, x_dofmap, x, a.domain(IntegralType::exterior_facet, i), P0,
-        {dofs0, bs0, a.domain(IntegralType::exterior_facet, i, *mesh0)}, P1T,
-        {dofs1, bs1, a.domain(IntegralType::exterior_facet, i, *mesh1)}, bc0,
-        bc1, fn, coeffs, cstride, constants, cell_info0, cell_info1);
+        mat_set, x_dofmap, x, a.domain(IntegralType::exterior_facet, i),
+        {dofs0, bs0, a.domain(IntegralType::exterior_facet, i, *mesh0)}, P0,
+        {dofs1, bs1, a.domain(IntegralType::exterior_facet, i, *mesh1)}, P1T,
+        bc0, bc1, fn, coeffs, cstride, constants, cell_info0, cell_info1);
   }
 
   if (a.num_integrals(IntegralType::interior_facet) > 0)
