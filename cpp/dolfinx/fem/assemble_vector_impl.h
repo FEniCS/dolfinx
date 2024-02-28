@@ -488,21 +488,24 @@ void _lift_bc_interior_facets(
 /// positive the block size is used as a compile-time constant, which
 /// has performance benefits.
 template <dolfinx::scalar T, int _bs = -1>
-void assemble_cells(fem::DofTransformKernel<T> auto dof_transform,
-                    std::span<T> b, mdspan2_t x_dofmap,
-                    std::span<const scalar_value_type_t<T>> x,
-                    std::span<const std::int32_t> cells, mdspan2_t dofmap,
-                    int bs, FEkernel<T> auto kernel,
-                    std::span<const T> constants, std::span<const T> coeffs,
-                    int cstride, std::span<const std::uint32_t> cell_info)
+void assemble_cells(
+    fem::DofTransformKernel<T> auto dof_transform, std::span<T> b,
+    mdspan2_t x_dofmap, std::span<const scalar_value_type_t<T>> x,
+    std::span<const std::int32_t> cells,
+    std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap,
+    FEkernel<T> auto kernel, std::span<const T> constants,
+    std::span<const T> coeffs, int cstride,
+    std::span<const std::uint32_t> cell_info)
 {
+  const auto [dmap, bs, cells0] = dofmap;
+
   assert(_bs < 0 or _bs == bs);
   if (cells.empty())
     return;
 
   // Create data structures used in assembly
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * x_dofmap.extent(1));
-  std::vector<T> be(bs * dofmap.extent(1));
+  std::vector<T> be(bs * dmap.extent(1));
   std::span<T> _be(be);
 
   // Iterate over active cells
@@ -528,7 +531,7 @@ void assemble_cells(fem::DofTransformKernel<T> auto dof_transform,
 
     // Scatter cell vector to 'global' vector array
     auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
-        submdspan(dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+        submdspan(dmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     if constexpr (_bs > 0)
     {
       for (std::size_t i = 0; i < dofs.size(); ++i)
@@ -962,18 +965,21 @@ void assemble_vector(
     std::span<const std::int32_t> cells = L.domain(IntegralType::cell, i);
     if (bs == 1)
     {
-      impl::assemble_cells<T, 1>(dof_transform, b, x_dofmap, x, cells, dofs, bs,
-                                 fn, constants, coeffs, cstride, cell_info0);
+      impl::assemble_cells<T, 1>(dof_transform, b, x_dofmap, x, cells,
+                                 {dofs, bs, cells}, fn, constants, coeffs,
+                                 cstride, cell_info0);
     }
     else if (bs == 3)
     {
-      impl::assemble_cells<T, 3>(dof_transform, b, x_dofmap, x, cells, dofs, bs,
-                                 fn, constants, coeffs, cstride, cell_info0);
+      impl::assemble_cells<T, 3>(dof_transform, b, x_dofmap, x, cells,
+                                 {dofs, bs, cells}, fn, constants, coeffs,
+                                 cstride, cell_info0);
     }
     else
     {
-      impl::assemble_cells(dof_transform, b, x_dofmap, x, cells, dofs, bs, fn,
-                           constants, coeffs, cstride, cell_info0);
+      impl::assemble_cells(dof_transform, b, x_dofmap, x, cells,
+                           {dofs, bs, cells}, fn, constants, coeffs, cstride,
+                           cell_info0);
     }
   }
 
