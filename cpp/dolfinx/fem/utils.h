@@ -214,12 +214,16 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
     case IntegralType::exterior_facet:
       for (int id : ids)
       {
-        std::span<const std::int32_t> facets = a.domain(type, id);
-        std::vector<std::int32_t> cells;
-        cells.reserve(facets.size() / 2);
-        for (std::size_t i = 0; i < facets.size(); i += 2)
-          cells.push_back(facets[i]);
-        sparsitybuild::cells(pattern, {cells, cells},
+        std::array<std::vector<std::int32_t>, 2> facets
+            = {a.domain(type, id, *mesh0), a.domain(type, id, *mesh1)};
+        std::array<std::vector<std::int32_t>, 2> cells;
+        for (int i = 0; i < 2; ++i)
+        {
+          cells[i].reserve(facets[i].size() / 2);
+          for (std::size_t j = 0; j < facets[i].size(); j += 2)
+            cells[i].push_back(facets[i][j]);
+        }
+        sparsitybuild::cells(pattern, {cells[0], cells[1]},
                              {{dofmaps[0], dofmaps[1]}});
       }
       break;
