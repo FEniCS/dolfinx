@@ -965,21 +965,23 @@ void assemble_vector(
     std::span<const std::int32_t> cells = L.domain(IntegralType::cell, i);
     if (bs == 1)
     {
-      impl::assemble_cells<T, 1>(dof_transform, b, x_dofmap, x, cells,
-                                 {dofs, bs, cells}, fn, constants, coeffs,
-                                 cstride, cell_info0);
+      impl::assemble_cells<T, 1>(
+          dof_transform, b, x_dofmap, x, cells,
+          {dofs, bs, L.domain(IntegralType::cell, i, *mesh0)}, fn, constants,
+          coeffs, cstride, cell_info0);
     }
     else if (bs == 3)
     {
-      impl::assemble_cells<T, 3>(dof_transform, b, x_dofmap, x, cells,
-                                 {dofs, bs, cells}, fn, constants, coeffs,
-                                 cstride, cell_info0);
+      impl::assemble_cells<T, 3>(
+          dof_transform, b, x_dofmap, x, cells,
+          {dofs, bs, L.domain(IntegralType::cell, i, *mesh0)}, fn, constants,
+          coeffs, cstride, cell_info0);
     }
     else
     {
       impl::assemble_cells(dof_transform, b, x_dofmap, x, cells,
-                           {dofs, bs, cells}, fn, constants, coeffs, cstride,
-                           cell_info0);
+                           {dofs, bs, L.domain(IntegralType::cell, i, *mesh0)},
+                           fn, constants, coeffs, cstride, cell_info0);
     }
   }
 
