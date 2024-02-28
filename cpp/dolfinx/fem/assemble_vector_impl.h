@@ -926,8 +926,13 @@ void assemble_vector(
     const std::map<std::pair<IntegralType, int>,
                    std::pair<std::span<const T>, int>>& coefficients)
 {
+  // Integration domain mesh
   std::shared_ptr<const mesh::Mesh<U>> mesh = L.mesh();
   assert(mesh);
+
+  // Test function mesh
+  auto mesh0 = L.function_spaces().at(0)->mesh();
+  assert(mesh0);
 
   // Get dofmap data
   assert(L.function_spaces().at(0));
@@ -942,11 +947,11 @@ void assemble_vector(
   fem::DofTransformKernel<T> auto dof_transform
       = element->template get_pre_dof_transformation_function<T>();
 
-  std::span<const std::uint32_t> cell_info;
+  std::span<const std::uint32_t> cell_info0;
   if (element->needs_dof_transformations() or L.needs_facet_permutations())
   {
-    mesh->topology_mutable()->create_entity_permutations();
-    cell_info = std::span(mesh->topology()->get_cell_permutation_info());
+    mesh0->topology_mutable()->create_entity_permutations();
+    cell_info0 = std::span(mesh0->topology()->get_cell_permutation_info());
   }
 
   for (int i : L.integral_ids(IntegralType::cell))
@@ -958,17 +963,17 @@ void assemble_vector(
     if (bs == 1)
     {
       impl::assemble_cells<T, 1>(dof_transform, b, x_dofmap, x, cells, dofs, bs,
-                                 fn, constants, coeffs, cstride, cell_info);
+                                 fn, constants, coeffs, cstride, cell_info0);
     }
     else if (bs == 3)
     {
       impl::assemble_cells<T, 3>(dof_transform, b, x_dofmap, x, cells, dofs, bs,
-                                 fn, constants, coeffs, cstride, cell_info);
+                                 fn, constants, coeffs, cstride, cell_info0);
     }
     else
     {
       impl::assemble_cells(dof_transform, b, x_dofmap, x, cells, dofs, bs, fn,
-                           constants, coeffs, cstride, cell_info);
+                           constants, coeffs, cstride, cell_info0);
     }
   }
 
@@ -984,19 +989,19 @@ void assemble_vector(
     {
       impl::assemble_exterior_facets<T, 1>(dof_transform, b, x_dofmap, x,
                                            facets, dofs, bs, fn, constants,
-                                           coeffs, cstride, cell_info);
+                                           coeffs, cstride, cell_info0);
     }
     else if (bs == 3)
     {
       impl::assemble_exterior_facets<T, 3>(dof_transform, b, x_dofmap, x,
                                            facets, dofs, bs, fn, constants,
-                                           coeffs, cstride, cell_info);
+                                           coeffs, cstride, cell_info0);
     }
     else
     {
       impl::assemble_exterior_facets(dof_transform, b, x_dofmap, x, facets,
                                      dofs, bs, fn, constants, coeffs, cstride,
-                                     cell_info);
+                                     cell_info0);
     }
   }
 
@@ -1028,19 +1033,19 @@ void assemble_vector(
       {
         impl::assemble_interior_facets<T, 1>(
             dof_transform, b, x_dofmap, x, num_cell_facets, facets, *dofmap, fn,
-            constants, coeffs, cstride, cell_info, get_perm);
+            constants, coeffs, cstride, cell_info0, get_perm);
       }
       else if (bs == 3)
       {
         impl::assemble_interior_facets<T, 3>(
             dof_transform, b, x_dofmap, x, num_cell_facets, facets, *dofmap, fn,
-            constants, coeffs, cstride, cell_info, get_perm);
+            constants, coeffs, cstride, cell_info0, get_perm);
       }
       else
       {
         impl::assemble_interior_facets(
             dof_transform, b, x_dofmap, x, num_cell_facets, facets, *dofmap, fn,
-            constants, coeffs, cstride, cell_info, get_perm);
+            constants, coeffs, cstride, cell_info0, get_perm);
       }
     }
   }
