@@ -170,15 +170,20 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
     A = fem.assemble_matrix(a)
     A.scatter_reverse()
 
-    # TODO Update
-    # # Assemble a mixed-domain form, taking smsh to be the integration domain
-    # # Entity maps must map cells in smsh (the integration domain mesh) to
-    # # cells in msh
-    # entity_maps = {msh._cpp_object: np.array(smsh_to_msh, dtype=np.int32)}
-    # a0 = fem.form(ufl_form(u, w, ufl.dx(smsh)), entity_maps=entity_maps)
-    # A0 = fem.assemble_matrix(a0)
-    # A0.scatter_reverse()
-    # assert np.isclose(A0.squared_norm(), A.squared_norm())
+    # Assemble a mixed-domain form, taking smsh to be the integration domain
+    # Entity maps must map cells in smsh (the integration domain mesh) to
+    # cells in msh
+    facets_sm = locate_entities(smsh, fdim, lambda x: np.isclose(x[0], 0.0))
+    facet_perm_sm = np.argsort(facets_sm)
+    facet_values_sm = np.full_like(facets_sm, tag, dtype=np.intc)
+    ft_sm = meshtags(smsh, fdim, facets_sm[facet_perm_sm], facet_values_sm[facet_perm_sm])
+    ds_smsh = ufl.Measure("ds", domain=smsh, subdomain_data=ft_sm)
+
+    entity_maps = {msh._cpp_object: np.array(smsh_to_msh, dtype=np.int32)}
+    a0 = fem.form(ufl_form(u, w, ufl.dx(smsh), ds_smsh(tag)), entity_maps=entity_maps)
+    A0 = fem.assemble_matrix(a0)
+    A0.scatter_reverse()
+    assert np.isclose(A0.squared_norm(), A.squared_norm())
 
     # Now assemble a mixed-domain form using msh as integration domain
     # Entity maps must map cells in msh (the integration domain mesh) to
