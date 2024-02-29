@@ -297,7 +297,8 @@ void assemble_interior_facets(
     fem::DofTransformKernel<T> auto P1T, std::span<const std::int8_t> bc0,
     std::span<const std::int8_t> bc1, FEkernel<T> auto kernel,
     std::span<const T> coeffs, int cstride, std::span<const int> offsets,
-    std::span<const T> constants, std::span<const std::uint32_t> cell_info,
+    std::span<const T> constants, std::span<const std::uint32_t> cell_info0,
+    std::span<const std::uint32_t> cell_info1,
     const std::function<std::uint8_t(std::size_t)>& get_perm)
 {
   if (facets.empty())
@@ -320,9 +321,16 @@ void assemble_interior_facets(
   // Temporaries for joint dofmaps
   std::vector<std::int32_t> dmapjoint0, dmapjoint1;
   assert(facets.size() % 4 == 0);
+  assert(facets0.size() == facets.size());
+  assert(facets1.size() == facets.size());
   for (std::size_t index = 0; index < facets.size(); index += 4)
   {
+    // Cells in integration domain
     std::array<std::int32_t, 2> cells = {facets[index], facets[index + 2]};
+    // Cells in test function domain
+    std::array<std::int32_t, 2> cells0 = {facets0[index], facets0[index + 2]};
+    /// Cells in trial function domain
+    std::array<std::int32_t, 2> cells1 = {facets1[index], facets1[index + 2]};
     std::array<std::int32_t, 2> local_facet
         = {facets[index + 1], facets[index + 3]};
 
@@ -345,15 +353,15 @@ void assemble_interior_facets(
     }
 
     // Get dof maps for cells and pack
-    std::span<const std::int32_t> dmap0_cell0 = dmap0.cell_dofs(cells[0]);
-    std::span<const std::int32_t> dmap0_cell1 = dmap0.cell_dofs(cells[1]);
+    std::span<const std::int32_t> dmap0_cell0 = dmap0.cell_dofs(cells0[0]);
+    std::span<const std::int32_t> dmap0_cell1 = dmap0.cell_dofs(cells0[1]);
     dmapjoint0.resize(dmap0_cell0.size() + dmap0_cell1.size());
     std::copy(dmap0_cell0.begin(), dmap0_cell0.end(), dmapjoint0.begin());
     std::copy(dmap0_cell1.begin(), dmap0_cell1.end(),
               std::next(dmapjoint0.begin(), dmap0_cell0.size()));
 
-    std::span<const std::int32_t> dmap1_cell0 = dmap1.cell_dofs(cells[0]);
-    std::span<const std::int32_t> dmap1_cell1 = dmap1.cell_dofs(cells[1]);
+    std::span<const std::int32_t> dmap1_cell0 = dmap1.cell_dofs(cells1[0]);
+    std::span<const std::int32_t> dmap1_cell1 = dmap1.cell_dofs(cells1[1]);
     dmapjoint1.resize(dmap1_cell0.size() + dmap1_cell1.size());
     std::copy(dmap1_cell0.begin(), dmap1_cell0.end(), dmapjoint1.begin());
     std::copy(dmap1_cell1.begin(), dmap1_cell1.end(),
@@ -383,9 +391,9 @@ void assemble_interior_facets(
     std::span<T> sub_Ae0 = _Ae.subspan(bs0 * dmap0_cell0.size() * num_cols,
                                        bs0 * dmap0_cell1.size() * num_cols);
 
-    P0(_Ae, cell_info, cells[0], num_cols);
-    P0(sub_Ae0, cell_info, cells[1], num_cols);
-    P1T(_Ae, cell_info, cells[0], num_rows);
+    P0(_Ae, cell_info0, cells0[0], num_cols);
+    P0(sub_Ae0, cell_info0, cells0[1], num_cols);
+    P1T(_Ae, cell_info1, cells1[0], num_rows);
 
     for (int row = 0; row < num_rows; ++row)
     {
@@ -393,7 +401,7 @@ void assemble_interior_facets(
       // the block matrix, so each row needs a separate span access
       std::span<T> sub_Ae1 = _Ae.subspan(
           row * num_cols + bs1 * dmap1_cell0.size(), bs1 * dmap1_cell1.size());
-      P1T(sub_Ae1, cell_info, cells[1], 1);
+      P1T(sub_Ae1, cell_info1, cells1[1], 1);
     }
 
     // Zero rows/columns for essential bcs
@@ -543,7 +551,7 @@ void assemble_matrix(
           P0,
           {*dofmap1, bs1, a.domain(IntegralType::interior_facet, i, *mesh1)},
           P1T, bc0, bc1, fn, coeffs, cstride, c_offsets, constants, cell_info0,
-          get_perm);
+          cell_info1, get_perm);
     }
   }
 }
