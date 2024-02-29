@@ -130,13 +130,17 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
         MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n), ghost_mode=ghost_mode
     )
 
+    def create_meshtags(msh, dim, entities, tag):
+        perm = np.argsort(entities)
+        values = np.full_like(entities, tag, dtype=np.intc)
+        return meshtags(msh, dim, entities[perm], values[perm])
+
+
     # Locate cells in left half of mesh and create mesh tags
     tdim = msh.topology.dim
-    cells = locate_entities(msh, tdim, lambda x: x[0] <= 1.0)
-    perm = np.argsort(cells)
     tag = 1
-    values = np.full_like(cells, tag, dtype=np.intc)
-    ct = meshtags(msh, tdim, cells[perm], values[perm])
+    cells = locate_entities(msh, tdim, lambda x: x[0] <= 1.0)
+    ct = create_meshtags(msh, tdim, cells, tag)
 
     # Locate facets on left boundary and create mesh tags
     def boundary_marker(x):
@@ -144,9 +148,7 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
 
     fdim = tdim - 1
     facets = locate_entities_boundary(msh, fdim, boundary_marker)
-    facet_perm = np.argsort(facets)
-    facet_values = np.full_like(facets, tag, dtype=np.intc)
-    ft = meshtags(msh, fdim, facets[facet_perm], facet_values[facet_perm])
+    ft = create_meshtags(msh, fdim, facets, tag)
 
     # Locate some interior facets
     def int_facets_marker(x):
@@ -154,9 +156,7 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
         return (x[0] > dist) & (x[0] < 1 - dist) & (x[1] > dist) & (x[1] < 1 - dist)
 
     int_facets = locate_entities(msh, fdim, int_facets_marker)
-    int_facet_perm = np.argsort(int_facets)
-    int_facet_values = np.full_like(int_facets, tag, dtype=np.intc)
-    int_ft = meshtags(msh, fdim, int_facets[int_facet_perm], int_facet_values[int_facet_perm])
+    int_ft = create_meshtags(msh, fdim, int_facets, tag)
 
     # Create integration measures on the mesh
     dx_msh = ufl.Measure("dx", domain=msh, subdomain_data=ct)
@@ -188,20 +188,11 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
     # Entity maps must map cells in smsh (the integration domain mesh) to
     # cells in msh
     facets_smsh = locate_entities_boundary(smsh, fdim, boundary_marker)
-    facet_perm_smsh = np.argsort(facets_smsh)
-    facet_values_smsh = np.full_like(facets_smsh, tag, dtype=np.intc)
-    ft_smsh = meshtags(smsh, fdim, facets_smsh[facet_perm_smsh], facet_values_smsh[facet_perm_smsh])
+    ft_smsh = create_meshtags(smsh, fdim, facets_smsh, tag)
     ds_smsh = ufl.Measure("ds", domain=smsh, subdomain_data=ft_smsh)
 
     int_facets_smsh = locate_entities(smsh, fdim, int_facets_marker)
-    int_facets_perm_smsh = np.argsort(int_facets_smsh)
-    int_facets_values_smsh = np.full_like(int_facets_smsh, tag, dtype=np.intc)
-    int_ft_smsh = meshtags(
-        smsh,
-        fdim,
-        int_facets_smsh[int_facets_perm_smsh],
-        int_facets_values_smsh[int_facets_perm_smsh],
-    )
+    int_ft_smsh = create_meshtags(smsh, fdim, int_facets_smsh, tag)
     dS_smsh = ufl.Measure("dS", domain=smsh, subdomain_data=int_ft_smsh)
 
     entity_maps = {msh._cpp_object: np.array(smsh_to_msh, dtype=np.int32)}
