@@ -139,8 +139,10 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
     ct = meshtags(msh, tdim, cells[perm], values[perm])
 
     # Locate facets on left boundary and create mesh tags
+    def boundary_marker(x): return np.isclose(x[0], 0.0)
+
     fdim = tdim - 1
-    facets = locate_entities(msh, fdim, lambda x: np.isclose(x[0], 0.0))
+    facets = locate_entities(msh, fdim, boundary_marker)
     facet_perm = np.argsort(facets)
     facet_values = np.full_like(facets, tag, dtype=np.intc)
     ft = meshtags(msh, fdim, facets[facet_perm], facet_values[facet_perm])
@@ -173,7 +175,7 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
     # Assemble a mixed-domain form, taking smsh to be the integration domain
     # Entity maps must map cells in smsh (the integration domain mesh) to
     # cells in msh
-    facets_smsh = locate_entities(smsh, fdim, lambda x: np.isclose(x[0], 0.0))
+    facets_smsh = locate_entities(smsh, fdim, boundary_marker)
     facet_perm_smsh = np.argsort(facets_smsh)
     facet_values_smsh = np.full_like(facets_smsh, tag, dtype=np.intc)
     ft_smsh = meshtags(smsh, fdim, facets_smsh[facet_perm_smsh], facet_values_smsh[facet_perm_smsh])
