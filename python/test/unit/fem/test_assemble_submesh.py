@@ -173,11 +173,11 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
     # Assemble a mixed-domain form, taking smsh to be the integration domain
     # Entity maps must map cells in smsh (the integration domain mesh) to
     # cells in msh
-    facets_sm = locate_entities(smsh, fdim, lambda x: np.isclose(x[0], 0.0))
-    facet_perm_sm = np.argsort(facets_sm)
-    facet_values_sm = np.full_like(facets_sm, tag, dtype=np.intc)
-    ft_sm = meshtags(smsh, fdim, facets_sm[facet_perm_sm], facet_values_sm[facet_perm_sm])
-    ds_smsh = ufl.Measure("ds", domain=smsh, subdomain_data=ft_sm)
+    facets_smsh = locate_entities(smsh, fdim, lambda x: np.isclose(x[0], 0.0))
+    facet_perm_smsh = np.argsort(facets_smsh)
+    facet_values_smsh = np.full_like(facets_smsh, tag, dtype=np.intc)
+    ft_smsh = meshtags(smsh, fdim, facets_smsh[facet_perm_smsh], facet_values_smsh[facet_perm_smsh])
+    ds_smsh = ufl.Measure("ds", domain=smsh, subdomain_data=ft_smsh)
 
     entity_maps = {msh._cpp_object: np.array(smsh_to_msh, dtype=np.int32)}
     a0 = fem.form(ufl_form(u, w, ufl.dx(smsh), ds_smsh(tag)), entity_maps=entity_maps)
