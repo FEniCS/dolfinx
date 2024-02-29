@@ -25,16 +25,18 @@ void sparsitybuild::cells(
 }
 //-----------------------------------------------------------------------------
 void sparsitybuild::interior_facets(
-    la::SparsityPattern& pattern, std::span<const std::int32_t> facets,
+    la::SparsityPattern& pattern,
+    std::array<std::span<const std::int32_t>, 2> cells,
     std::array<std::reference_wrapper<const DofMap>, 2> dofmaps)
 {
   std::array<std::vector<std::int32_t>, 2> macro_dofs;
-  for (std::size_t index = 0; index < facets.size(); index += 2)
+  assert(cells[0].size() == cells[1].size());
+  for (std::size_t index = 0; index < cells[0].size(); index += 2)
   {
-    std::int32_t cell0 = facets[index];
-    std::int32_t cell1 = facets[index + 1];
     for (std::size_t i = 0; i < 2; ++i)
     {
+      std::int32_t cell0 = cells[i][index];
+      std::int32_t cell1 = cells[i][index + 1];
       auto cell_dofs0 = dofmaps[i].get().cell_dofs(cell0);
       auto cell_dofs1 = dofmaps[i].get().cell_dofs(cell1);
       macro_dofs[i].resize(cell_dofs0.size() + cell_dofs1.size());
