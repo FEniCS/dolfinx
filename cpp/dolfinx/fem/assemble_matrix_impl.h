@@ -157,7 +157,7 @@ void assemble_cells(
   }
 }
 
-/// @brief Execute kernel over exterior facets and  accumulate result in
+/// @brief Execute kernel over exterior facets and accumulate result in
 /// a matrix.
 /// @tparam T Matrix/form scalar type.
 /// @param mat_set Function that accumulates computed entries into a
@@ -284,7 +284,7 @@ void assemble_exterior_facets(
   }
 }
 
-/// @brief Execute kernel over interior facets and  accumulate result in a
+/// @brief Execute kernel over interior facets and accumulate result in a
 /// matrix.
 /// @tparam T Matrix/form scalar type.
 /// @param mat_set Function that accumulates computed entries into a
