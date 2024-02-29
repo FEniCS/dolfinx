@@ -118,7 +118,7 @@ def test_submesh_facet_assembly(n, k, space, ghost_mode):
     assert np.isclose(s_submesh, s_square_mesh)
 
 
-@pytest.mark.parametrize("n", [2, 6])
+@pytest.mark.parametrize("n", [4, 6])
 @pytest.mark.parametrize("k", [1, 4])
 @pytest.mark.parametrize("space", ["Lagrange", "Discontinuous Lagrange"])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
@@ -143,14 +143,25 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
         return np.isclose(x[0], 0.0)
 
     fdim = tdim - 1
-    facets = locate_entities(msh, fdim, boundary_marker)
+    facets = locate_entities_boundary(msh, fdim, boundary_marker)
     facet_perm = np.argsort(facets)
     facet_values = np.full_like(facets, tag, dtype=np.intc)
     ft = meshtags(msh, fdim, facets[facet_perm], facet_values[facet_perm])
 
+    # Locate some interior facets
+    def int_facets_marker(x):
+        dist = 1 / (2 * n)
+        return (x[0] > dist) & (x[0] < 1 - dist) & (x[1] > dist) & (x[1] < 1 - dist)
+
+    int_facets = locate_entities(msh, fdim, int_facets_marker)
+    int_facet_perm = np.argsort(int_facets)
+    int_facet_values = np.full_like(int_facets, tag, dtype=np.intc)
+    int_ft = meshtags(msh, fdim, int_facets[int_facet_perm], int_facet_values[int_facet_perm])
+
     # Create integration measures on the mesh
     dx_msh = ufl.Measure("dx", domain=msh, subdomain_data=ct)
     ds_msh = ufl.Measure("ds", domain=msh, subdomain_data=ft)
+    dS_msh = ufl.Measure("dS", domain=msh, subdomain_data=int_ft)
 
     # Create a submesh of the left half of the mesh
     smsh, smsh_to_msh = create_submesh(msh, tdim, cells)[:2]
@@ -165,25 +176,36 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
     # Test function on the submesh
     w = ufl.TestFunction(V_smsh)
 
-    def ufl_form(u, v, dx, ds):
-        return ufl.inner(u, v) * dx + ufl.inner(u, v) * ds
+    def ufl_form(u, v, dx, ds, dS):
+        return ufl.inner(u, v) * dx + ufl.inner(u, v) * ds + ufl.inner(u("+"), v("-")) * dS
 
     # Define form to compare to and assemble
-    a = fem.form(ufl_form(u, v, dx_msh(tag), ds_msh(tag)))
+    a = fem.form(ufl_form(u, v, dx_msh(tag), ds_msh(tag), dS_msh(tag)))
     A = fem.assemble_matrix(a)
     A.scatter_reverse()
 
     # Assemble a mixed-domain form, taking smsh to be the integration domain
     # Entity maps must map cells in smsh (the integration domain mesh) to
     # cells in msh
-    facets_smsh = locate_entities(smsh, fdim, boundary_marker)
+    facets_smsh = locate_entities_boundary(smsh, fdim, boundary_marker)
     facet_perm_smsh = np.argsort(facets_smsh)
     facet_values_smsh = np.full_like(facets_smsh, tag, dtype=np.intc)
     ft_smsh = meshtags(smsh, fdim, facets_smsh[facet_perm_smsh], facet_values_smsh[facet_perm_smsh])
     ds_smsh = ufl.Measure("ds", domain=smsh, subdomain_data=ft_smsh)
 
+    int_facets_smsh = locate_entities(smsh, fdim, int_facets_marker)
+    int_facets_perm_smsh = np.argsort(int_facets_smsh)
+    int_facets_values_smsh = np.full_like(int_facets_smsh, tag, dtype=np.intc)
+    int_ft_smsh = meshtags(
+        smsh,
+        fdim,
+        int_facets_smsh[int_facets_perm_smsh],
+        int_facets_values_smsh[int_facets_perm_smsh],
+    )
+    dS_smsh = ufl.Measure("dS", domain=smsh, subdomain_data=int_ft_smsh)
+
     entity_maps = {msh._cpp_object: np.array(smsh_to_msh, dtype=np.int32)}
-    a0 = fem.form(ufl_form(u, w, ufl.dx(smsh), ds_smsh(tag)), entity_maps=entity_maps)
+    a0 = fem.form(ufl_form(u, w, ufl.dx(smsh), ds_smsh(tag), dS_smsh(tag)), entity_maps=entity_maps)
     A0 = fem.assemble_matrix(a0)
     A0.scatter_reverse()
     assert np.isclose(A0.squared_norm(), A.squared_norm())
@@ -197,7 +219,7 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
     msh_to_smsh[smsh_to_msh] = np.arange(len(smsh_to_msh))
     entity_maps = {smsh._cpp_object: np.array(msh_to_smsh, dtype=np.int32)}
 
-    a1 = fem.form(ufl_form(u, w, dx_msh(tag), ds_msh(tag)), entity_maps=entity_maps)
+    a1 = fem.form(ufl_form(u, w, dx_msh(tag), ds_msh(tag), dS_msh(tag)), entity_maps=entity_maps)
     A1 = fem.assemble_matrix(a1)
     A1.scatter_reverse()
     assert np.isclose(A1.squared_norm(), A.squared_norm())
