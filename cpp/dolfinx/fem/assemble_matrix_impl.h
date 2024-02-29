@@ -291,11 +291,10 @@ void assemble_interior_facets(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     std::span<const scalar_value_type_t<T>> x, int num_cell_facets,
     std::span<const std::int32_t> facets,
-    const DofMap& dofmap0, int bs0,
+    std::tuple<const DofMap&, int, std::span<const std::int32_t>> dofmap0,
     fem::DofTransformKernel<T> auto P0,
-    const DofMap& dofmap1, int bs1,
-    fem::DofTransformKernel<T> auto P1T,
-    std::span<const std::int8_t> bc0,
+    std::tuple<const DofMap&, int, std::span<const std::int32_t>> dofmap1,
+    fem::DofTransformKernel<T> auto P1T, std::span<const std::int8_t> bc0,
     std::span<const std::int8_t> bc1, FEkernel<T> auto kernel,
     std::span<const T> coeffs, int cstride, std::span<const int> offsets,
     std::span<const T> constants, std::span<const std::uint32_t> cell_info,
@@ -303,6 +302,9 @@ void assemble_interior_facets(
 {
   if (facets.empty())
     return;
+
+  const auto [dmap0, bs0, facets0] = dofmap0;
+  const auto [dmap1, bs1, facets1] = dofmap1;
 
   // Data structures used in assembly
   using X = scalar_value_type_t<T>;
@@ -343,15 +345,15 @@ void assemble_interior_facets(
     }
 
     // Get dof maps for cells and pack
-    std::span<const std::int32_t> dmap0_cell0 = dofmap0.cell_dofs(cells[0]);
-    std::span<const std::int32_t> dmap0_cell1 = dofmap0.cell_dofs(cells[1]);
+    std::span<const std::int32_t> dmap0_cell0 = dmap0.cell_dofs(cells[0]);
+    std::span<const std::int32_t> dmap0_cell1 = dmap0.cell_dofs(cells[1]);
     dmapjoint0.resize(dmap0_cell0.size() + dmap0_cell1.size());
     std::copy(dmap0_cell0.begin(), dmap0_cell0.end(), dmapjoint0.begin());
     std::copy(dmap0_cell1.begin(), dmap0_cell1.end(),
               std::next(dmapjoint0.begin(), dmap0_cell0.size()));
 
-    std::span<const std::int32_t> dmap1_cell0 = dofmap1.cell_dofs(cells[0]);
-    std::span<const std::int32_t> dmap1_cell1 = dofmap1.cell_dofs(cells[1]);
+    std::span<const std::int32_t> dmap1_cell0 = dmap1.cell_dofs(cells[0]);
+    std::span<const std::int32_t> dmap1_cell1 = dmap1.cell_dofs(cells[1]);
     dmapjoint1.resize(dmap1_cell0.size() + dmap1_cell1.size());
     std::copy(dmap1_cell0.begin(), dmap1_cell0.end(), dmapjoint1.begin());
     std::copy(dmap1_cell1.begin(), dmap1_cell1.end(),
@@ -534,11 +536,14 @@ void assemble_matrix(
       assert(fn);
       auto& [coeffs, cstride]
           = coefficients.at({IntegralType::interior_facet, i});
-      impl::assemble_interior_facets(mat_set, x_dofmap, x, num_cell_facets,
-                                     a.domain(IntegralType::interior_facet, i),
-                                     *dofmap0, bs0, P0, *dofmap1, bs1, P1T, bc0,
-                                     bc1, fn, coeffs, cstride, c_offsets,
-                                     constants, cell_info0, get_perm);
+      impl::assemble_interior_facets(
+          mat_set, x_dofmap, x, num_cell_facets,
+          a.domain(IntegralType::interior_facet, i),
+          {*dofmap0, bs0, a.domain(IntegralType::interior_facet, i, *mesh0)},
+          P0,
+          {*dofmap1, bs1, a.domain(IntegralType::interior_facet, i, *mesh1)},
+          P1T, bc0, bc1, fn, coeffs, cstride, c_offsets, constants, cell_info0,
+          get_perm);
     }
   }
 }
