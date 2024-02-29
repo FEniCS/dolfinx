@@ -173,7 +173,7 @@ build_basic_dofmaps(
   std::vector<std::shared_ptr<const common::IndexMap>> topo_index_maps;
   std::vector<std::int32_t> local_entity_offsets = {0};
 
-  std::vector<std::vector<mesh::CellType>> entity_types;
+  std::vector<std::vector<mesh::CellType>> entity_types(D + 1);
   for (std::size_t d = 0; d <= D; ++d)
     entity_types[d] = topology.entity_types(d);
 
