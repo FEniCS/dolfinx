@@ -557,15 +557,17 @@ void assemble_cells(
 /// positive the block size is used as a compile-time constant, which
 /// has performance benefits.
 template <dolfinx::scalar T, int _bs = -1>
-void assemble_exterior_facets(fem::DofTransformKernel<T> auto dof_transform,
-                              std::span<T> b, mdspan2_t x_dofmap,
-                              std::span<const scalar_value_type_t<T>> x,
-                              std::span<const std::int32_t> facets,
-                              mdspan2_t dofmap, int bs, FEkernel<T> auto fn,
-                              std::span<const T> constants,
-                              std::span<const T> coeffs, int cstride,
-                              std::span<const std::uint32_t> cell_info)
+void assemble_exterior_facets(
+    fem::DofTransformKernel<T> auto dof_transform, std::span<T> b,
+    mdspan2_t x_dofmap, std::span<const scalar_value_type_t<T>> x,
+    std::span<const std::int32_t> facets,
+    std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap,
+    FEkernel<T> auto fn, std::span<const T> constants,
+    std::span<const T> coeffs, int cstride,
+    std::span<const std::uint32_t> cell_info)
 {
+  const auto [dmap, bs, facets0] = dofmap;
+
   assert(_bs < 0 or _bs == bs);
 
   if (facets.empty())
@@ -573,7 +575,7 @@ void assemble_exterior_facets(fem::DofTransformKernel<T> auto dof_transform,
 
   // FIXME: Add proper interface for num_dofs
   // Create data structures used in assembly
-  const int num_dofs = dofmap.extent(1);
+  const int num_dofs = dmap.extent(1);
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * x_dofmap.extent(1));
   std::vector<T> be(bs * num_dofs);
   std::span<T> _be(be);
@@ -602,7 +604,7 @@ void assemble_exterior_facets(fem::DofTransformKernel<T> auto dof_transform,
 
     // Add element vector to global vector
     auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
-        submdspan(dofmap, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+        submdspan(dmap, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     if constexpr (_bs > 0)
     {
       for (std::size_t i = 0; i < dofs.size(); ++i)
@@ -998,21 +1000,24 @@ void assemble_vector(
         = L.domain(IntegralType::exterior_facet, i);
     if (bs == 1)
     {
-      impl::assemble_exterior_facets<T, 1>(dof_transform, b, x_dofmap, x,
-                                           facets, dofs, bs, fn, constants,
-                                           coeffs, cstride, cell_info0);
+      impl::assemble_exterior_facets<T, 1>(
+          dof_transform, b, x_dofmap, x, facets,
+          {dofs, bs, L.domain(IntegralType::exterior_facet, i, *mesh0)}, fn,
+          constants, coeffs, cstride, cell_info0);
     }
     else if (bs == 3)
     {
-      impl::assemble_exterior_facets<T, 3>(dof_transform, b, x_dofmap, x,
-                                           facets, dofs, bs, fn, constants,
-                                           coeffs, cstride, cell_info0);
+      impl::assemble_exterior_facets<T, 3>(
+          dof_transform, b, x_dofmap, x, facets,
+          {dofs, bs, L.domain(IntegralType::exterior_facet, i, *mesh0)}, fn,
+          constants, coeffs, cstride, cell_info0);
     }
     else
     {
-      impl::assemble_exterior_facets(dof_transform, b, x_dofmap, x, facets,
-                                     dofs, bs, fn, constants, coeffs, cstride,
-                                     cell_info0);
+      impl::assemble_exterior_facets(
+          dof_transform, b, x_dofmap, x, facets,
+          {dofs, bs, L.domain(IntegralType::exterior_facet, i, *mesh0)}, fn,
+          constants, coeffs, cstride, cell_info0);
     }
   }
 
