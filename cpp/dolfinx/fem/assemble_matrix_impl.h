@@ -290,9 +290,12 @@ template <dolfinx::scalar T>
 void assemble_interior_facets(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
     std::span<const scalar_value_type_t<T>> x, int num_cell_facets,
-    std::span<const std::int32_t> facets, fem::DofTransformKernel<T> auto P0,
-    const DofMap& dofmap0, int bs0, fem::DofTransformKernel<T> auto P1T,
-    const DofMap& dofmap1, int bs1, std::span<const std::int8_t> bc0,
+    std::span<const std::int32_t> facets,
+    const DofMap& dofmap0, int bs0,
+    fem::DofTransformKernel<T> auto P0,
+    const DofMap& dofmap1, int bs1,
+    fem::DofTransformKernel<T> auto P1T,
+    std::span<const std::int8_t> bc0,
     std::span<const std::int8_t> bc1, FEkernel<T> auto kernel,
     std::span<const T> coeffs, int cstride, std::span<const int> offsets,
     std::span<const T> constants, std::span<const std::uint32_t> cell_info,
@@ -533,7 +536,7 @@ void assemble_matrix(
           = coefficients.at({IntegralType::interior_facet, i});
       impl::assemble_interior_facets(mat_set, x_dofmap, x, num_cell_facets,
                                      a.domain(IntegralType::interior_facet, i),
-                                     P0, *dofmap0, bs0, P1T, *dofmap1, bs1, bc0,
+                                     *dofmap0, bs0, P0, *dofmap1, bs1, P1T, bc0,
                                      bc1, fn, coeffs, cstride, c_offsets,
                                      constants, cell_info0, get_perm);
     }
