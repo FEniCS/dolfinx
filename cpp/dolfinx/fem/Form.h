@@ -349,6 +349,9 @@ public:
         break;
       }
       case IntegralType::exterior_facet:
+      // Intentional fallthrough (exterior and interior facets are treated the
+      // same)
+      case IntegralType::interior_facet:
       {
         for (std::size_t i = 0; i < entities.size(); i += 2)
         {

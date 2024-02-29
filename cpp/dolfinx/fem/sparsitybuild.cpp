@@ -30,7 +30,8 @@ void sparsitybuild::interior_facets(
     std::array<std::reference_wrapper<const DofMap>, 2> dofmaps)
 {
   std::array<std::vector<std::int32_t>, 2> macro_dofs;
-  for (std::size_t index = 0; index < cells.size(); index += 2)
+  assert(cells[0].size() == cells[1].size());
+  for (std::size_t index = 0; index < cells[0].size(); index += 2)
   {
     for (std::size_t i = 0; i < 2; ++i)
     {
