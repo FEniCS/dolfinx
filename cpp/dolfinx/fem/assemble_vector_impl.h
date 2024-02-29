@@ -580,9 +580,13 @@ void assemble_exterior_facets(
   std::vector<T> be(bs * num_dofs);
   std::span<T> _be(be);
   assert(facets.size() % 2 == 0);
+  assert(facets0.size() == facets.size());
   for (std::size_t index = 0; index < facets.size(); index += 2)
   {
+    // Cell in the integration domain
     std::int32_t cell = facets[index];
+    // Cell in the test function mesh
+    std::int32_t cell0 = facets0[index];
     std::int32_t local_facet = facets[index + 1];
 
     // Get cell coordinates/geometry
@@ -600,11 +604,11 @@ void assemble_exterior_facets(
     fn(be.data(), coeffs.data() + index / 2 * cstride, constants.data(),
        coordinate_dofs.data(), &local_facet, nullptr);
 
-    dof_transform(_be, cell_info, cell, 1);
+    dof_transform(_be, cell_info, cell0, 1);
 
     // Add element vector to global vector
     auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
-        submdspan(dmap, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+        submdspan(dmap, cell0, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     if constexpr (_bs > 0)
     {
       for (std::size_t i = 0; i < dofs.size(); ++i)
