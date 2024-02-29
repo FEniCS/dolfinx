@@ -189,7 +189,7 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
         return ufl.inner(u, v) * dx + ufl.inner(u, v) * ds + ufl.inner(u("+"), v("-")) * dS
 
     def ufl_form_L(v, dx, ds):
-        return ufl.inner(2.5, v) * dx
+        return ufl.inner(2.5, v) * dx + ufl.inner(0.5, v) * ds
 
     # Single-domain assembly over msh as a reference
     a = fem.form(ufl_form_a(u, v, dx_msh(tag), ds_msh(tag), dS_msh(tag)))
