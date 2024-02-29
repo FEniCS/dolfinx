@@ -217,7 +217,7 @@ build_basic_dofmaps(
           }
           else
           {
-            int k = std::distance(required_dim_et.begin(), find_dim_et);
+            std::size_t k = std::distance(required_dim_et.begin(), find_dim_et);
             if (num_entity_dofs_et[k] != (int)edd[e].size())
               throw std::runtime_error("Incompatible elements detected.");
           }
@@ -241,7 +241,6 @@ build_basic_dofmaps(
 
   // Dofmaps on each cell type as (width, [cell_dofs])
   std::vector<dofmap_t> dofs(num_cell_types);
-
   for (std::size_t i = 0; i < num_cell_types; ++i)
   {
     mesh::CellType cell_type = topology.entity_types(D)[i];
@@ -291,7 +290,7 @@ build_basic_dofmaps(
           {
             std::size_t num_entity_dofs = e_dofs_d[e].size();
             assert((int)num_entity_dofs == num_entity_dofs_et[k]);
-            std::int32_t e_index_local = ((std::size_t)d == D) ? c : c_to_e[w];
+            std::int32_t e_index_local = (std::size_t)d == D ? c : c_to_e[w];
             ++w;
 
             // Loop over dofs belonging to entity e of dimension d (d, e)
