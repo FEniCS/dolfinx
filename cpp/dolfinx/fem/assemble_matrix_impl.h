@@ -284,8 +284,38 @@ void assemble_exterior_facets(
   }
 }
 
-/// Execute kernel over interior facets and  accumulate result in a
+/// @brief Execute kernel over interior facets and  accumulate result in a
 /// matrix.
+/// @tparam T Matrix/form scalar type.
+/// @param mat_set Function that accumulates computed entries into a
+/// matrix.
+/// @param x_dofmap Dofmap for the mesh geometry.
+/// @param x Mesh geometry (coordinates).
+/// @param num_cell_facets Number of facets of a cell
+/// @param facets Facet indices (in the integration domain mesh) to
+/// execute the kernel over.
+/// @param dofmap0 Test function (row) degree-of-freedom data holding
+/// the (0) dofmap, (1) dofmap block size and (2) dofmap cell indices.
+/// @param P0 Function that applies transformation P0.A in-place to
+/// transform trial degrees-of-freedom.
+/// @param dofmap1 Trial function (column) degree-of-freedom data
+/// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
+/// indices.
+/// @param P1T Function that applies transformation A.P1^T in-place to
+/// transform trial degrees-of-freedom.
+/// @param bc0 Marker for rows with Dirichlet boundary conditions applied
+/// @param bc1 Marker for columns with Dirichlet boundary conditions applied
+/// @param kernel Kernel function to execute over each cell.
+/// @param coeffs  The coefficient data array of shape (cells.size(), cstride),
+/// flattened into row-major format.
+/// @param cstride The coefficient stride
+/// @param offsets The coefficient offsets
+/// @param constants The constant data
+/// @param cell_info0 The cell permutation information for the test function
+/// mesh
+/// @param cell_info1 The cell permutation information for the trial function
+/// mesh
+/// @param get_perm Function to apply facet permutations
 template <dolfinx::scalar T>
 void assemble_interior_facets(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
