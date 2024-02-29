@@ -113,8 +113,8 @@ void assemble_cells(
            coordinate_dofs.data(), nullptr, nullptr);
 
     // Compute A = P_0 \tilde{A} P_1^T (dof transformation)
-    P0(_Ae, cell_info1, c1, ndim1);  // B = P0 \tilde{A}
-    P1T(_Ae, cell_info0, c0, ndim0); // A =  B P1_T
+    P0(_Ae, cell_info0, c0, ndim1);  // B = P0 \tilde{A}
+    P1T(_Ae, cell_info1, c1, ndim0); // A =  B P1_T
 
     // Zero rows/columns for essential bcs
     auto dofs0 = std::span(dmap0.data_handle() + c0 * num_dofs0, num_dofs0);
@@ -242,8 +242,8 @@ void assemble_exterior_facets(
     kernel(Ae.data(), coeffs.data() + index / 2 * cstride, constants.data(),
            coordinate_dofs.data(), &local_facet, nullptr);
 
-    P0(_Ae, cell_info1, cell1, ndim1);
-    P1T(_Ae, cell_info0, cell0, ndim0);
+    P0(_Ae, cell_info0, cell0, ndim1);
+    P1T(_Ae, cell_info1, cell1, ndim0);
 
     // Zero rows/columns for essential bcs
     auto dofs0 = std::span(dmap0.data_handle() + cell0 * num_dofs0, num_dofs0);
