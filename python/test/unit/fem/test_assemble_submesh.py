@@ -204,7 +204,9 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
     # Entity maps must map cells in smsh (the integration domain mesh) to
     # cells in msh
     entity_maps = {msh._cpp_object: np.array(smsh_to_msh, dtype=np.int32)}
-    a0 = fem.form(ufl_form_a(u, w, ufl.dx(smsh), ds_smsh(tag), dS_smsh(tag)), entity_maps=entity_maps)
+    a0 = fem.form(
+        ufl_form_a(u, w, ufl.dx(smsh), ds_smsh(tag), dS_smsh(tag)), entity_maps=entity_maps
+    )
     A0 = fem.assemble_matrix(a0)
     A0.scatter_reverse()
     assert np.isclose(A0.squared_norm(), A.squared_norm())
