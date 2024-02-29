@@ -51,6 +51,12 @@ namespace dolfinx::fem
 
 namespace impl
 {
+/// @brief Helper function to extract the cells from a list of facets identified
+/// by (cell, local_facet) pairs
+/// @param facets List of (cell, local_facet) pairs
+/// @return List of cells
+std::vector<std::int32_t> extract_cells(std::span<const std::int32_t> facets);
+
 /// Helper function to get an array of of (cell, local_facet) pairs
 /// corresponding to a given facet index.
 /// @param[in] f Facet index
@@ -214,16 +220,9 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
     case IntegralType::exterior_facet:
       for (int id : ids)
       {
-        std::array<std::vector<std::int32_t>, 2> facets
-            = {a.domain(type, id, *mesh0), a.domain(type, id, *mesh1)};
-        std::array<std::vector<std::int32_t>, 2> cells;
-        for (int i = 0; i < 2; ++i)
-        {
-          cells[i].reserve(facets[i].size() / 2);
-          for (std::size_t j = 0; j < facets[i].size(); j += 2)
-            cells[i].push_back(facets[i][j]);
-        }
-        sparsitybuild::cells(pattern, {cells[0], cells[1]},
+        sparsitybuild::cells(pattern,
+                             {impl::extract_cells(a.domain(type, id, *mesh0)),
+                              impl::extract_cells(a.domain(type, id, *mesh1))},
                              {{dofmaps[0], dofmaps[1]}});
       }
       break;
