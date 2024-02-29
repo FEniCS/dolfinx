@@ -139,7 +139,8 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
     ct = meshtags(msh, tdim, cells[perm], values[perm])
 
     # Locate facets on left boundary and create mesh tags
-    def boundary_marker(x): return np.isclose(x[0], 0.0)
+    def boundary_marker(x):
+        return np.isclose(x[0], 0.0)
 
     fdim = tdim - 1
     facets = locate_entities(msh, fdim, boundary_marker)
