@@ -50,7 +50,9 @@ class Constant(ufl.Constant):
     ]
 
     def __init__(
-        self, domain, c: typing.Union[np.ndarray, typing.Sequence, np.floating, np.complexfloating]
+        self,
+        domain,
+        c: typing.Union[np.ndarray, typing.Sequence, np.floating, np.complexfloating],
     ):
         """A constant with respect to a domain.
 
@@ -165,7 +167,10 @@ class Expression:
             form_compiler_options = dict()
         form_compiler_options["scalar_type"] = dtype
         self._ufcx_expression, module, self._code = jit.ffcx_jit(
-            comm, (e, _X), form_compiler_options=form_compiler_options, jit_options=jit_options
+            comm,
+            (e, _X),
+            form_compiler_options=form_compiler_options,
+            jit_options=jit_options,
         )
         self._ufl_expression = e
 
@@ -209,31 +214,43 @@ class Expression:
         )
 
     def eval(
-        self, mesh: Mesh, cells: np.ndarray, values: typing.Optional[np.ndarray] = None
+        self,
+        mesh: Mesh,
+        entities: np.ndarray,
+        values: typing.Optional[np.ndarray] = None,
     ) -> np.ndarray:
-        """Evaluate Expression in cells.
+        """Evaluate Expression on entities.
 
         Args:
             mesh: Mesh to evaluate Expression on.
-            cells: Cells of `mesh`` to evaluate Expression on.
+            entities: Either an array of cells (index local to process) or an array of
+                integral tuples (cell index, local facet index). The array is flattened.
             values: Array to fill with evaluated values. If ``None``,
                 storage will be allocated. Otherwise must have shape
-                ``(len(cells), num_points * value_size *
+                ``(num_entities, num_points * value_size *
                 num_all_argument_dofs)``
 
         Returns:
-            Expression evaluated at points for `cells``.
+            Expression evaluated at points for `entities`.
 
         """
-        _cells = np.asarray(cells, dtype=np.int32)
+        _entities = np.asarray(entities, dtype=np.int32)
         if self.argument_function_space is None:
             argument_space_dimension = 1
         else:
             argument_space_dimension = self.argument_function_space.element.space_dimension
-        values_shape = (
-            _cells.shape[0],
-            self.X().shape[0] * self.value_size * argument_space_dimension,
-        )
+        if (tdim := mesh.topology.dim) != (expr_dim := self._cpp_object.X().shape[1]):
+            assert expr_dim == tdim - 1
+            assert _entities.shape[0] % 2 == 0
+            values_shape = (
+                _entities.shape[0] // 2,
+                self.X().shape[0] * self.value_size * argument_space_dimension,
+            )
+        else:
+            values_shape = (
+                _entities.shape[0],
+                self.X().shape[0] * self.value_size * argument_space_dimension,
+            )
 
         # Allocate memory for result if u was not provided
         if values is None:
@@ -243,8 +260,7 @@ class Expression:
                 raise TypeError("Passed array values does not have correct shape.")
             if values.dtype != self.dtype:
                 raise TypeError("Passed array values does not have correct dtype.")
-
-        self._cpp_object.eval(mesh._cpp_object, cells, values)
+        self._cpp_object.eval(mesh._cpp_object, _entities, values)
         return values
 
     def X(self) -> np.ndarray:
@@ -612,7 +628,10 @@ def functionspace(
         form_compiler_options = dict()
     form_compiler_options["scalar_type"] = dtype
     (ufcx_element, ufcx_dofmap), module, code = jit.ffcx_jit(
-        mesh.comm, ufl_e, form_compiler_options=form_compiler_options, jit_options=jit_options
+        mesh.comm,
+        ufl_e,
+        form_compiler_options=form_compiler_options,
+        jit_options=jit_options,
     )
 
     ffi = module.ffi
@@ -626,7 +645,10 @@ def functionspace(
         )
 
     cpp_dofmap = _cpp.fem.create_dofmap(
-        mesh.comm, ffi.cast("uintptr_t", ffi.addressof(ufcx_dofmap)), mesh.topology, cpp_element
+        mesh.comm,
+        ffi.cast("uintptr_t", ffi.addressof(ufcx_dofmap)),
+        mesh.topology,
+        cpp_element,
     )
 
     assert np.issubdtype(
