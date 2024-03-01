@@ -141,7 +141,7 @@ public:
     return n;
   }
 
-  /// @brief Evaluate Expression on cells.
+  /// @brief Evaluate Expression on cells or facets.
   /// @param[in] mesh Cells on which to evaluate the Expression.
   /// @param[in] entities List of entities to evaluate the expression on. This
   /// could be either a list of cells or a list of (cell, local facet index)
