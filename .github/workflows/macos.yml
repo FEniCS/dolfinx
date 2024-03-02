@@ -22,8 +22,7 @@ jobs:
 
       - name: Install Homebrew dependencies
         run: |
-          # brew install adios2 boost cmake hdf5-mpi ninja open-mpi pkg-config pugixml python # FEniCS
-          brew install boost cmake hdf5-mpi make ninja open-mpi pkg-config pugixml # FEniCS
+          brew install adios2 boost cmake hdf5-mpi make ninja open-mpi pkg-config pugixml # FEniCS
           brew install bison flex # PETSc
 
       - name: Install Python dependencies
@@ -62,7 +61,7 @@ jobs:
         run: |
           cmake -G Ninja -B build -S dolfinx/cpp/
           cmake --build build
-          cmake --install build
+          sudo cmake --install build
 
       - name: Build and install DOLFINx Python interface
         env:
