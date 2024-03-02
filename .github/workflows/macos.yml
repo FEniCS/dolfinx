@@ -46,6 +46,7 @@ jobs:
           make all
           cd src/binding/petsc4py
           PETSC_DIR=$GITHUB_WORKSPACE/petsc PETSC_ARCH=arch-darwin-c-opt arch -arm64 python -m pip install --no-build-isolation --no-cache-dir -v .
+          echo "PYTHONPATH=${{ github.workspace }}/petsc/${{ env.PETSC_ARCH }}/lib:${{ env.PYTHONPATH }}" >> $GITHUB_ENV
 
       - name: Install FEniCSx dependencies
         run: |
@@ -54,24 +55,33 @@ jobs:
           python -m pip install git+https://github.com/FEniCS/ffcx.git
 
       - uses: actions/checkout@v4
-        with:
-          path: dolfinx
 
       - name: Build and install DOLFINx C++ library
         run: |
-          cmake -G Ninja -B build -S dolfinx/cpp/
+          cmake -G Ninja -B build -S cpp/
           cmake --build build
           sudo cmake --install build
 
       - name: Build and install DOLFINx Python interface
-        env:
-          PYTHONPATH: ${{ github.workspace }}/petsc/${{ env.PETSC_ARCH }}/lib:${{ env.PYTHONPATH }}
         run: |
-          python -m pip install -r dolfinx/python/build-requirements.txt
-          python -m pip install --check-build-dependencies --no-build-isolation dolfinx/python/
+          python -m pip install -r python/build-requirements.txt
+          python -m pip install --check-build-dependencies --no-build-isolation python/
+      
       - name: Basic test
-        env:
-          PYTHONPATH: ${{ github.workspace }}/petsc/${{ env.PETSC_ARCH }}/lib:${{ env.PYTHONPATH }}
         run: |
           python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
           mpirun -np 2 python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
+      
+      - name: Run C++ unit tests (serial)
+        run: |
+          cd build/test
+          ctest -V --output-on-failure -R unittests
+      - name: Run C++ unit tests (MPI)
+        run: |
+          cd build/test
+          mpiexec -np 2 ctest -V --output-on-failure -R unittests
+
+      - name: Run Python unit tests (serial)
+        run: python3 -m pytest -n=auto --durations=50 python/test/unit/
+      - name: Run Python unit tests (MPI, np=2)
+        run: mpirun -np 2 python3 -m pytest python/test/unit/
