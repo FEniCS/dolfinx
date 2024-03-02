@@ -84,6 +84,16 @@ create_sub_index_map(const IndexMap& imap,
 class IndexMap
 {
 public:
+  /// @brief Create an non-overlapping index map.
+  ///
+  /// @note Collective
+  ///
+  /// @param[in] comm MPI communicator that the index map is distributed
+  /// across.
+  /// @param[in] local_size Local size of the index map, i.e. the number
+  /// of owned entries.
+  IndexMap(MPI_Comm comm, std::int32_t local_size);
+
   /// @brief Create an overlapping (ghosted) index map.
   ///
   /// This constructor uses a 'consensus' algorithm to determine the
@@ -252,5 +262,8 @@ private:
 
   // Set of ranks ghost owned indices
   std::vector<int> _dest;
+
+  // True if map has overlaps (ghosts)
+  bool _overlapping;
 };
 } // namespace dolfinx::common

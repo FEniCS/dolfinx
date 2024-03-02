@@ -10,10 +10,12 @@
 #include "MPI.h"
 #include "sort.h"
 #include <algorithm>
+#include <functional>
 #include <memory>
 #include <mpi.h>
 #include <numeric>
 #include <span>
+#include <type_traits>
 #include <vector>
 
 using namespace dolfinx;
@@ -273,6 +275,8 @@ public:
   /// @param[in] type The type of MPI communication pattern used by the
   /// Scatterer, either Scatterer::type::neighbor or Scatterer::type::p2p.
   template <typename T, typename Functor>
+    requires std::is_invocable_v<Functor, std::span<const T>,
+                                 std::span<const std::int32_t>, std::span<T>>
   void scatter_fwd_begin(std::span<const T> local_data,
                          std::span<T> local_buffer, std::span<T> remote_buffer,
                          Functor pack_fn, std::span<MPI_Request> requests,
@@ -308,6 +312,9 @@ public:
   void scatter_fwd_end(std::span<const T> remote_buffer,
                        std::span<T> remote_data, Functor unpack_fn,
                        std::span<MPI_Request> requests) const
+    requires std::is_invocable_v<Functor, std::span<const T>,
+                                 std::span<const std::int32_t>, std::span<T>,
+                                 std::function<T(T, T)>>
   {
     assert(remote_buffer.size() == _remote_inds.size());
     assert(remote_data.size() == _remote_inds.size());
@@ -334,7 +341,7 @@ public:
     std::vector<MPI_Request> requests(1, MPI_REQUEST_NULL);
     std::vector<T> local_buffer(local_buffer_size(), 0);
     std::vector<T> remote_buffer(remote_buffer_size(), 0);
-    auto pack_fn = [](const auto& in, const auto& idx, auto& out)
+    auto pack_fn = [](auto&& in, auto&& idx, auto&& out)
     {
       for (std::size_t i = 0; i < idx.size(); ++i)
         out[i] = in[idx[i]];
@@ -343,7 +350,7 @@ public:
                       std::span<T>(remote_buffer), pack_fn,
                       std::span<MPI_Request>(requests));
 
-    auto unpack_fn = [](const auto& in, const auto& idx, auto& out, auto op)
+    auto unpack_fn = [](auto&& in, auto&& idx, auto&& out, auto op)
     {
       for (std::size_t i = 0; i < idx.size(); ++i)
         out[idx[i]] = op(out[idx[i]], in[i]);
@@ -476,6 +483,8 @@ public:
   /// @param[in] type The type of MPI communication pattern used by the
   /// Scatterer, either Scatterer::type::neighbor or Scatterer::type::p2p.
   template <typename T, typename Functor>
+    requires std::is_invocable_v<Functor, std::span<const T>,
+                                 std::span<const std::int32_t>, std::span<T>>
   void scatter_rev_begin(std::span<const T> remote_data,
                          std::span<T> remote_buffer, std::span<T> local_buffer,
                          Functor pack_fn, std::span<MPI_Request> request,
@@ -511,6 +520,10 @@ public:
   void scatter_rev_end(std::span<const T> local_buffer, std::span<T> local_data,
                        Functor unpack_fn, BinaryOp op,
                        std::span<MPI_Request> request)
+    requires std::is_invocable_v<Functor, std::span<const T>,
+                                 std::span<const std::int32_t>, std::span<T>,
+                                 BinaryOp>
+             and std::is_invocable_r_v<T, BinaryOp, T, T>
   {
     assert(local_buffer.size() == _local_inds.size());
     if (_local_inds.size() > 0)
@@ -528,12 +541,12 @@ public:
   {
     std::vector<T> local_buffer(local_buffer_size(), 0);
     std::vector<T> remote_buffer(remote_buffer_size(), 0);
-    auto pack_fn = [](const auto& in, const auto& idx, auto& out)
+    auto pack_fn = [](auto&& in, auto&& idx, auto&& out)
     {
       for (std::size_t i = 0; i < idx.size(); ++i)
         out[i] = in[idx[i]];
     };
-    auto unpack_fn = [](const auto& in, const auto& idx, auto& out, auto op)
+    auto unpack_fn = [](auto&& in, auto&& idx, auto&& out, auto op)
     {
       for (std::size_t i = 0; i < idx.size(); ++i)
         out[idx[i]] = op(out[idx[i]], in[i]);
