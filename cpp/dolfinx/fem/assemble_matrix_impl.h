@@ -355,14 +355,14 @@ void assemble_interior_facets(
   assert(facets1.size() == facets.size());
   for (std::size_t index = 0; index < facets.size(); index += 4)
   {
-    // Cells in integration domain
-    std::array<std::int32_t, 2> cells = {facets[index], facets[index + 2]};
-    // Cells in test function domain
-    std::array<std::int32_t, 2> cells0 = {facets0[index], facets0[index + 2]};
-    /// Cells in trial function domain
-    std::array<std::int32_t, 2> cells1 = {facets1[index], facets1[index + 2]};
-    std::array<std::int32_t, 2> local_facet
-        = {facets[index + 1], facets[index + 3]};
+    // Cells in integration domain,  test function domain and trial
+    // function domain
+    std::array cells{facets[index], facets[index + 2]};
+    std::array cells0{facets0[index], facets0[index + 2]};
+    std::array cells1{facets1[index], facets1[index + 2]};
+
+    // Local facets indices
+    std::array local_facet{facets[index + 1], facets[index + 3]};
 
     // Get cell geometry
     auto x_dofs0 = MDSPAN_IMPL_STANDARD_NAMESPACE::
