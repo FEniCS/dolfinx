@@ -64,16 +64,11 @@ jobs:
           cmake --build build
           sudo cmake --install build
 
-      - name: Build and install DOLFINx Python interface
+      - name: Build C++ unit tests
         working-directory: dolfinx
         run: |
-          python -m pip install -r python/build-requirements.txt
-          python -m pip install --check-build-dependencies --no-build-isolation python/
-      
-      - name: Basic test
-        run: |
-          python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
-          mpirun -np 2 python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
+          cmake --build build/test --parallel 3
       
       - name: Run C++ unit tests (serial)
         working-directory: dolfinx
@@ -85,6 +80,17 @@ jobs:
         run: |
           cd build/test
           mpiexec -np 3 ctest -V --output-on-failure -R unittests
+
+      - name: Build and install DOLFINx Python interface
+        working-directory: dolfinx
+        run: |
+          python -m pip install -r python/build-requirements.txt
+          python -m pip install --check-build-dependencies --no-build-isolation python/
+      
+      - name: Basic test
+        run: |
+          python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
+          mpirun -np 2 python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
 
       - name: Run Python unit tests (serial)
         working-directory: dolfinx
