@@ -262,8 +262,5 @@ private:
 
   // Set of ranks ghost owned indices
   std::vector<int> _dest;
-
-  // True if map has overlaps (ghosts)
-  bool _overlapping;
 };
 } // namespace dolfinx::common

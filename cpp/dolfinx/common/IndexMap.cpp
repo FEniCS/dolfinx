@@ -19,9 +19,19 @@ using namespace dolfinx::common;
 
 namespace
 {
+
+/// @brief Given source ranks (ranks that own indices ghosted by the
+/// calling rank), compute ranks that ghost indices owned by the calling
+/// rank.
+/// @param comm MPI communicator.
+/// @param owners List of ranks that own each ghost index.
+/// @return (src ranks, destination ranks).
 std::array<std::vector<int>, 2> build_src_dest(MPI_Comm comm,
                                                std::span<const int> owners)
 {
+  if (dolfinx::MPI::size(comm) == 1)
+    return std::array<std::vector<int>, 2>();
+
   std::vector<int> src(owners.begin(), owners.end());
   std::sort(src.begin(), src.end());
   src.erase(std::unique(src.begin(), src.end()), src.end());
@@ -748,8 +758,7 @@ common::create_sub_index_map(const IndexMap& imap,
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size)
-    : _comm(comm, true), _overlapping(false)
+IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size) : _comm(comm, true)
 {
   // Get global offset (index), using partial exclusive reduction
   std::int64_t offset = 0;
@@ -788,7 +797,7 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
                    std::span<const int> owners)
     : _comm(comm, true), _ghosts(ghosts.begin(), ghosts.end()),
       _owners(owners.begin(), owners.end()), _src(src_dest[0]),
-      _dest(src_dest[1]), _overlapping(dolfinx::MPI::size(comm) > 1)
+      _dest(src_dest[1])
 {
   assert(ghosts.size() == owners.size());
   assert(std::is_sorted(src_dest[0].begin(), src_dest[0].end()));
