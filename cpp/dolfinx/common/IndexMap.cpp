@@ -30,7 +30,10 @@ std::array<std::vector<int>, 2> build_src_dest(MPI_Comm comm,
                                                std::span<const int> owners)
 {
   if (dolfinx::MPI::size(comm) == 1)
+  {
+    assert(owners.empty());
     return std::array<std::vector<int>, 2>();
+  }
 
   std::vector<int> src(owners.begin(), owners.end());
   std::sort(src.begin(), src.end());
