@@ -21,7 +21,7 @@ namespace dolfinx::fem
 {
 template <dolfinx::scalar T, std::floating_point U>
 class DirichletBC;
-template <dolfinx::scalar T, std::floating_point U, FEkernel<T> Kern>
+template <dolfinx::scalar T, std::floating_point U>
 class Form;
 template <std::floating_point T>
 class FunctionSpace;

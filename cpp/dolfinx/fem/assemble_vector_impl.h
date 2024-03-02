@@ -11,10 +11,10 @@
 #include "DofMap.h"
 #include "Form.h"
 #include "FunctionSpace.h"
+#include "traits.h"
 #include "utils.h"
 #include <algorithm>
 #include <basix/mdspan.hpp>
-#include <concepts>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/mesh/Geometry.h>
@@ -144,8 +144,8 @@ void _lift_bc_cells(
           if (bc_markers1[jj])
           {
             const T bc = bc_values1[jj];
-            const T _x0 = x0.empty() ? 0.0 : x0[jj];
-            // const T _x0 = 0.0;
+            const T _x0 = x0.empty() ? 0 : x0[jj];
+            // const T _x0 = 0;
             // be -= Ae.col(bs1 * j + k) * scale * (bc - _x0);
             for (int m = 0; m < num_rows; ++m)
               be[m] -= Ae[m * num_cols + _bs1 * j + k] * scale * (bc - _x0);
@@ -161,7 +161,7 @@ void _lift_bc_cells(
           if (bc_markers1[jj])
           {
             const T bc = bc_values1[jj];
-            const T _x0 = x0.empty() ? 0.0 : x0[jj];
+            const T _x0 = x0.empty() ? 0 : x0[jj];
             // be -= Ae.col(bs1 * j + k) * scale * (bc - _x0);
             for (int m = 0; m < num_rows; ++m)
               be[m] -= Ae[m * num_cols + bs1 * j + k] * scale * (bc - _x0);
@@ -275,7 +275,7 @@ void _lift_bc_exterior_facets(
         if (bc_markers1[jj])
         {
           const T bc = bc_values1[jj];
-          const T _x0 = x0.empty() ? 0.0 : x0[jj];
+          const T _x0 = x0.empty() ? 0 : x0[jj];
           // be -= Ae.col(bs1 * j + k) * scale * (bc - _x0);
           for (int m = 0; m < num_rows; ++m)
             be[m] -= Ae[m * num_cols + bs1 * j + k] * scale * (bc - _x0);
@@ -442,7 +442,7 @@ void _lift_bc_interior_facets(
         if (bc_markers1[jj])
         {
           const T bc = bc_values1[jj];
-          const T _x0 = x0.empty() ? 0.0 : x0[jj];
+          const T _x0 = x0.empty() ? 0 : x0[jj];
           // be -= Ae.col(bs1 * j + k) * scale * (bc - _x0);
           for (int m = 0; m < num_rows; ++m)
             be[m] -= Ae[m * num_cols + bs1 * j + k] * scale * (bc - _x0);
@@ -460,7 +460,7 @@ void _lift_bc_interior_facets(
         if (bc_markers1[jj])
         {
           const T bc = bc_values1[jj];
-          const T _x0 = x0.empty() ? 0.0 : x0[jj];
+          const T _x0 = x0.empty() ? 0 : x0[jj];
           // be -= Ae.col(offset + bs1 * j + k) * scale * (bc - x0[jj]);
           for (int m = 0; m < num_rows; ++m)
           {
@@ -497,7 +497,6 @@ void assemble_cells(fem::DofTransformKernel<T> auto dof_transform,
                     int cstride, std::span<const std::uint32_t> cell_info)
 {
   assert(_bs < 0 or _bs == bs);
-
   if (cells.empty())
     return;
 
@@ -891,7 +890,7 @@ void apply_lifting(
       assert(map1);
       const int crange = bs1 * (map1->size_local() + map1->num_ghosts());
       bc_markers1.assign(crange, false);
-      bc_values1.assign(crange, 0.0);
+      bc_values1.assign(crange, 0);
       for (const std::shared_ptr<const DirichletBC<T, U>>& bc : bcs1[j])
       {
         bc->mark_dofs(bc_markers1);
