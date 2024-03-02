@@ -39,20 +39,17 @@ void sparsitybuild::interior_facets(
   std::vector<std::int32_t> macro_dofs0, macro_dofs1;
   for (std::size_t f = 0; f < cells[0].size(); f += 2)
   {
-    std::int32_t cell0 = cells0[f];
-    std::int32_t cell1 = cells1[f + 1];
-
     // Test function dofs (sparsity pattern rows)
-    auto dofs00 = dofmap0.cell_dofs(cell0);
-    auto dofs01 = dofmap0.cell_dofs(cell1);
+    auto dofs00 = dofmap0.cell_dofs(cells0[f]);
+    auto dofs01 = dofmap0.cell_dofs(cells0[f + 1]);
     macro_dofs0.resize(dofs00.size() + dofs01.size());
     std::copy(dofs00.begin(), dofs00.end(), macro_dofs0.begin());
     std::copy(dofs01.begin(), dofs01.end(),
               std::next(macro_dofs0.begin(), dofs00.size()));
 
-    // Trial function dofs (sparsity pattern rows)
-    auto dofs10 = dofmap1.cell_dofs(cell0);
-    auto dofs11 = dofmap1.cell_dofs(cell1);
+    // Trial function dofs (sparsity pattern columns)
+    auto dofs10 = dofmap1.cell_dofs(cells1[f]);
+    auto dofs11 = dofmap1.cell_dofs(cells1[f + 1]);
     macro_dofs1.resize(dofs10.size() + dofs11.size());
     std::copy(dofs10.begin(), dofs10.end(), macro_dofs1.begin());
     std::copy(dofs11.begin(), dofs11.end(),
