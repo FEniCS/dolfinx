@@ -9,7 +9,7 @@ on:
 jobs:
   mac-os-build:
     name: macOS Homebrew install and test
-    runs-on: macos-13
+    runs-on: macos-14
     env:
       PETSC_ARCH: arch-darwin-c-opt
       PETSC_DIR: ${{ github.workspace }}/petsc

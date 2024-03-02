@@ -136,6 +136,7 @@ def form(
     dtype: npt.DTypeLike = default_scalar_type,
     form_compiler_options: typing.Optional[dict] = None,
     jit_options: typing.Optional[dict] = None,
+    entity_maps: dict[_cpp.mesh.Mesh, np.typing.NDArray[np.int32]] = {},
 ):
     """Create a Form or an array of Forms.
 
@@ -144,6 +145,15 @@ def form(
         dtype: Scalar type to use for the compiled form.
         form_compiler_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`
         jit_options: See :func:`ffcx_jit <dolfinx.jit.ffcx_jit>`.
+        entity_maps: If any trial functions, test functions, or
+            coefficients in the form are not defined over the same mesh
+            as the integration domain, `entity_maps` must be supplied.
+            For each key (a mesh, different to the integration domain
+            mesh) a map should be provided relating the entities in the
+            integration domain mesh to the entities in the key mesh e.g.
+            for a key-value pair (msh, emap) in `entity_maps`, `emap[i]`
+            is the entity in `msh` corresponding to entity `i` in the
+            integration domain mesh.
 
     Returns:
         Compiled finite element Form.
@@ -154,7 +164,6 @@ def form(
         data to the underlying C++ form. It dynamically create a
         :class:`Form` instance with an appropriate base class for the
         scalar type, e.g. :func:`_cpp.fem.Form_float64`.
-
     """
     if form_compiler_options is None:
         form_compiler_options = dict()
@@ -223,6 +232,7 @@ def form(
             coeffs,
             constants,
             subdomains,
+            entity_maps,
             mesh,
         )
         return Form(f, ufcx_form, code)
