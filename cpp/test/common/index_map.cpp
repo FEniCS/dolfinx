@@ -107,7 +107,7 @@ void test_scatter_rev()
   std::vector<MPI_Request> requests(num_requests, MPI_REQUEST_NULL);
   std::vector<std::int64_t> local_buffer(sct.local_buffer_size(), 0);
   std::vector<std::int64_t> remote_buffer(sct.remote_buffer_size(), 0);
-  auto pack_fn = [](const auto& in, const auto& idx, auto&& out)
+  auto pack_fn = [](auto&& in, auto&& idx, auto&& out)
   {
     for (std::size_t i = 0; i < idx.size(); ++i)
       out[i] = in[idx[i]];

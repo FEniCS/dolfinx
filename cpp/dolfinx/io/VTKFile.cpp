@@ -508,7 +508,7 @@ void write_function(
 
       // Function to pack data to 3D with 'zero' padding, typically when
       // a Function is 2D
-      auto pad_data = [num_comp](const auto& V, auto u)
+      auto pad_data = [num_comp](auto&& V, auto u)
       {
         auto dofmap = V.dofmap();
         int bs = dofmap->bs();
