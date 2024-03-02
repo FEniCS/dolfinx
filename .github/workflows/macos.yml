@@ -28,7 +28,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip setuptools wheel
-          python -m pip install cython numpy mpi4py
+          python -m pip install cppimport cython numba numpy mpi4py pytest pytest-xdist
 
       - name: Install minimal PETSc and petsc4py
         run: |
