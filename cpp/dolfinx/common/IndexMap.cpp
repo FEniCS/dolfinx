@@ -25,7 +25,7 @@ namespace
 /// rank.
 /// @param comm MPI communicator.
 /// @param owners List of ranks that own each ghost index.
-/// @return (src ranks, destination ranks).
+/// @return (src ranks, destination ranks). Both lists are sorted.
 std::array<std::vector<int>, 2> build_src_dest(MPI_Comm comm,
                                                std::span<const int> owners)
 {
@@ -41,10 +41,13 @@ std::array<std::vector<int>, 2> build_src_dest(MPI_Comm comm,
   return {std::move(src), std::move(dest)};
 }
 
-/// This helper function sends ghost indices on a given process to their
-/// owning rank, and receives indices owned by this process that are
-/// ghosts on other processes. It also returns the data structures used
-/// in this common communication pattern.
+/// @brief Helper function that sends ghost indices on a given process
+/// to their owning rank, and receives indices owned by this process
+/// that are ghosts on other processes.
+///
+/// It also returns the data structures used in this common
+/// communication pattern.
+///
 /// @param[in] comm The communicator (global).
 /// @param[in] src Source ranks on `comm`.
 /// @param[in] dest Destination ranks on `comm`.
