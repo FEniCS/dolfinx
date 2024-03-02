@@ -53,6 +53,12 @@ void common(nb::module_& m)
       .def(
           "__init__",
           [](dolfinx::common::IndexMap* self, MPICommWrapper comm,
+             std::int32_t local_size)
+          { new (self) dolfinx::common::IndexMap(comm.get(), local_size); },
+          nb::arg("comm"), nb::arg("local_size"))
+      .def(
+          "__init__",
+          [](dolfinx::common::IndexMap* self, MPICommWrapper comm,
              std::int32_t local_size,
              nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig> ghosts,
              nb::ndarray<const int, nb::ndim<1>, nb::c_contig> ghost_owners)
