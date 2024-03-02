@@ -13,8 +13,6 @@
 #include <set>
 #include <vector>
 
-#include <iostream>
-
 using namespace dolfinx;
 
 namespace
