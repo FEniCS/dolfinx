@@ -45,16 +45,18 @@ void sparsitybuild::interior_facets(
     // Test function dofs (sparsity pattern rows)
     auto dofs00 = dofmap0.cell_dofs(cell0);
     auto dofs01 = dofmap0.cell_dofs(cell1);
-    macro_dofs0.insert(macro_dofs0.begin(), dofs00.begin(), dofs00.end());
-    macro_dofs0.insert(std::next(macro_dofs0.begin(), dofs00.size()),
-                       dofs01.begin(), dofs01.end());
+    macro_dofs0.resize(dofs00.size() + dofs01.size());
+    std::copy(dofs00.begin(), dofs00.end(), macro_dofs0.begin());
+    std::copy(dofs01.begin(), dofs01.end(),
+              std::next(macro_dofs0.begin(), dofs00.size()));
 
     // Trial function dofs (sparsity pattern rows)
     auto dofs10 = dofmap1.cell_dofs(cell0);
     auto dofs11 = dofmap1.cell_dofs(cell1);
-    macro_dofs1.insert(macro_dofs1.begin(), dofs10.begin(), dofs10.end());
-    macro_dofs1.insert(std::next(macro_dofs1.begin(), dofs10.size()),
-                       dofs11.begin(), dofs11.end());
+    macro_dofs1.resize(dofs10.size() + dofs11.size());
+    std::copy(dofs10.begin(), dofs10.end(), macro_dofs1.begin());
+    std::copy(dofs11.begin(), dofs11.end(),
+              std::next(macro_dofs1.begin(), dofs10.size()));
 
     pattern.insert(macro_dofs0, macro_dofs1);
   }
