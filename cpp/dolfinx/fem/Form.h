@@ -365,7 +365,7 @@ public:
         throw std::runtime_error("Integral type not supported.");
       }
 
-s      return mapped_entities;
+      return mapped_entities;
     }
   }
 
