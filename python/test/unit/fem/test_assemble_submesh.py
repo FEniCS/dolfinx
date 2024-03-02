@@ -118,7 +118,7 @@ def test_submesh_facet_assembly(n, k, space, ghost_mode):
     assert np.isclose(s_submesh, s_square_mesh)
 
 
-@pytest.mark.parametrize("n", [2, 6])
+@pytest.mark.parametrize("n", [4, 6])
 @pytest.mark.parametrize("k", [1, 4])
 @pytest.mark.parametrize("space", ["Lagrange", "Discontinuous Lagrange"])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
@@ -126,23 +126,53 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
     """Test assembling a form where the trial and test functions
     are defined on different meshes"""
 
+    def create_meshtags(msh, dim, entities, tag):
+        perm = np.argsort(entities)
+        values = np.full_like(entities, tag, dtype=np.intc)
+        return meshtags(msh, dim, entities[perm], values[perm])
+
     msh = create_rectangle(
         MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n), ghost_mode=ghost_mode
     )
 
     # Locate cells in left half of mesh and create mesh tags
     tdim = msh.topology.dim
-    cells = locate_entities(msh, tdim, lambda x: x[0] <= 1.0)
-    perm = np.argsort(cells)
     tag = 1
-    values = np.full_like(cells, tag, dtype=np.intc)
-    ct = meshtags(msh, tdim, cells[perm], values[perm])
+    cells = locate_entities(msh, tdim, lambda x: x[0] <= 1.0)
+    ct = create_meshtags(msh, tdim, cells, tag)
 
-    # Create integration measure on the mesh
+    # Locate facets on left boundary and create mesh tags
+    def boundary_marker(x):
+        return np.isclose(x[0], 0.0)
+
+    fdim = tdim - 1
+    facets = locate_entities_boundary(msh, fdim, boundary_marker)
+    ft = create_meshtags(msh, fdim, facets, tag)
+
+    # Locate some interior facets and create mesh tags
+    def int_facets_marker(x):
+        dist = 1 / (2 * n)
+        return (x[0] > dist) & (x[0] < 1 - dist) & (x[1] > dist) & (x[1] < 1 - dist)
+
+    int_facets = locate_entities(msh, fdim, int_facets_marker)
+    int_ft = create_meshtags(msh, fdim, int_facets, tag)
+
+    # Create integration measures on the mesh
     dx_msh = ufl.Measure("dx", domain=msh, subdomain_data=ct)
+    ds_msh = ufl.Measure("ds", domain=msh, subdomain_data=ft)
+    dS_msh = ufl.Measure("dS", domain=msh, subdomain_data=int_ft)
 
     # Create a submesh of the left half of the mesh
     smsh, smsh_to_msh = create_submesh(msh, tdim, cells)[:2]
+
+    # Create some integration measures on the submesh
+    facets_smsh = locate_entities_boundary(smsh, fdim, boundary_marker)
+    ft_smsh = create_meshtags(smsh, fdim, facets_smsh, tag)
+    ds_smsh = ufl.Measure("ds", domain=smsh, subdomain_data=ft_smsh)
+
+    int_facets_smsh = locate_entities(smsh, fdim, int_facets_marker)
+    int_ft_smsh = create_meshtags(smsh, fdim, int_facets_smsh, tag)
+    dS_smsh = ufl.Measure("dS", domain=smsh, subdomain_data=int_ft_smsh)
 
     # Define function spaces over the mesh and submesh
     V_msh = fem.functionspace(msh, (space, k))
@@ -154,11 +184,12 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
     # Test function on the submesh
     w = ufl.TestFunction(V_smsh)
 
-    def ufl_form(u, v, dx):
-        return ufl.inner(u, v) * dx
+    # Define a UFL form
+    def ufl_form(u, v, dx, ds, dS):
+        return ufl.inner(u, v) * dx + ufl.inner(u, v) * ds + ufl.inner(u("+"), v("-")) * dS
 
-    # Define form to compare to and assemble
-    a = fem.form(ufl_form(u, v, dx_msh(tag)))
+    # Single-domain assembly over msh as a reference
+    a = fem.form(ufl_form(u, v, dx_msh(tag), ds_msh(tag), dS_msh(tag)))
     A = fem.assemble_matrix(a)
     A.scatter_reverse()
 
@@ -166,7 +197,7 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
     # Entity maps must map cells in smsh (the integration domain mesh) to
     # cells in msh
     entity_maps = {msh._cpp_object: np.array(smsh_to_msh, dtype=np.int32)}
-    a0 = fem.form(ufl_form(u, w, ufl.dx(smsh)), entity_maps=entity_maps)
+    a0 = fem.form(ufl_form(u, w, ufl.dx(smsh), ds_smsh(tag), dS_smsh(tag)), entity_maps=entity_maps)
     A0 = fem.assemble_matrix(a0)
     A0.scatter_reverse()
     assert np.isclose(A0.squared_norm(), A.squared_norm())
@@ -180,7 +211,7 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
     msh_to_smsh[smsh_to_msh] = np.arange(len(smsh_to_msh))
     entity_maps = {smsh._cpp_object: np.array(msh_to_smsh, dtype=np.int32)}
 
-    a1 = fem.form(ufl_form(u, w, dx_msh(tag)), entity_maps=entity_maps)
+    a1 = fem.form(ufl_form(u, w, dx_msh(tag), ds_msh(tag), dS_msh(tag)), entity_maps=entity_maps)
     A1 = fem.assemble_matrix(a1)
     A1.scatter_reverse()
     assert np.isclose(A1.squared_norm(), A.squared_norm())

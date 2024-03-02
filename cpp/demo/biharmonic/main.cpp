@@ -1,4 +1,4 @@
-// # Biharmonic equation (C++)
+// # Biharmonic equation
 //
 // This demo illustrates how to:
 //
@@ -6,29 +6,21 @@
 // * Use a discontinuous Galerkin method
 // * Solve a fourth-order differential equation
 //
-// The solution for $u$ in this demo will look as follows:
-//
-// ```{figure} ../biharmonic_u.png
-// :scale: 75 %
-// :alt: biharmonic
-// solution
-// ```
-//
 // ## Equation and problem definition
 //
 // ### Strong formulation
 //
-// The biharmonic equation is a fourth-order elliptic equation.
-// On the domain $\Omega \subset \mathbb{R}^{d}$, $1 \le d \le 3$, it reads
+// The biharmonic equation is a fourth-order elliptic equation. On the
+// domain $\Omega \subset \mathbb{R}^{d}$, $1 \le d \le 3$, it reads
 //
 // $$
 // \nabla^{4} u = f \quad {\rm in} \ \Omega,
 // $$
 //
-// where $\nabla^{4} \equiv \nabla^{2} \nabla^{2}$ is the biharmonic operator
-// and $f$ is a prescribed source term.
-// To formulate a complete boundary value problem, the biharmonic equation
-// must be complemented by suitable boundary conditions.
+// where $\nabla^{4} \equiv \nabla^{2} \nabla^{2}$ is the biharmonic
+// operator and $f$ is a prescribed source term. To formulate a complete
+// boundary value problem, the biharmonic equation must be complemented
+// by suitable boundary conditions.
 //
 // ### Weak formulation
 //
@@ -100,12 +92,13 @@
 //
 // ## Implementation
 //
-// The implementation is split in two files: a form file containing the
+// The implementation is in two files: a form file containing the
 // definition of the variational forms expressed in UFL and a C++ file
 // containing the actual solver.
 //
 // Running this demo requires the files: {download}`demo_biharmonic/main.cpp`,
-// {download}`demo_biharmonic/biharmonic.py` and {download}`demo_biharmonic/CMakeLists.txt`.
+// {download}`demo_biharmonic/biharmonic.py` and
+// {download}`demo_biharmonic/CMakeLists.txt`.
 //
 // ### UFL form file
 //
@@ -116,9 +109,9 @@
 // ````
 //
 // ````{note}
-// TODO: explanation on how to run cmake and/or shell commands for ffcx
-// To compile biharmonic.py using FFCx with an option 
-// for PETSc scalar type `float64` one woud execute the command
+// TODO: explanation on how to run cmake and/or shell commands for `ffcx`.
+// To compile biharmonic.py using FFCx with an option
+// for PETSc scalar type `float64` one would execute the command
 // ```bash
 // ffcx biharmonic.py --scalar_type=float64
 // ```
@@ -126,13 +119,13 @@
 //
 // ### C++ program
 //
-// The main solver is implemented in the {download}`demo_biharmonic/main.cpp` file.
+// The main solver is implemented in the {download}`demo_biharmonic/main.cpp`
+// file.
 //
 // At the top we include the DOLFINx header file and the generated
 // header file "biharmonic.h" containing the variational forms for the
 // Biharmonic equation, which are defined in the UFL form file. For
 // convenience we also include the DOLFINx namespace.
-//
 
 #include "biharmonic.h"
 #include <cmath>
@@ -148,7 +141,7 @@ using namespace dolfinx;
 using T = PetscScalar;
 using U = typename dolfinx::scalar_value_type_t<T>;
 
-// Inside the ``main`` function, we begin by defining a mesh of the
+// Inside the `main` function, we begin by defining a mesh of the
 // domain. As the unit square is a very standard domain, we can use a
 // built-in mesh provided by the {cpp:class}`UnitSquareMesh` factory. In
 // order to create a mesh consisting of 32 x 32 squares with each square
@@ -159,25 +152,22 @@ int main(int argc, char* argv[])
 {
   dolfinx::init_logging(argc, argv);
   PetscInitialize(&argc, &argv, nullptr, nullptr);
-
   {
-//  Create mesh
+    //  Create mesh
     auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
     auto mesh = std::make_shared<mesh::Mesh<U>>(
         mesh::create_rectangle<U>(MPI_COMM_WORLD, {{{0.0, 0.0}, {1.0, 1.0}}},
                                   {32, 32}, mesh::CellType::triangle, part));
 
-//    A function space object, which is defined in the generated code,
-//    is created:
-//
+    //    A function space object, which is defined in the generated code,
+    //    is created:
 
-//  Create function space
+    //  Create function space
     auto V = std::make_shared<fem::FunctionSpace<U>>(
         fem::create_functionspace(functionspace_form_biharmonic_a, "u", mesh));
 
-//    The source function $f$ and the penalty term
-//    $\alpha$ are declared:
-
+    // The source function $f$ and the penalty term $\alpha$ are
+    // declared:
     auto f = std::make_shared<fem::Function<T>>(V);
     f->interpolate(
         [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
@@ -193,26 +183,24 @@ int main(int argc, char* argv[])
         });
     auto alpha = std::make_shared<fem::Constant<T>>(8.0);
 
-//  Define variational forms
-//
-
+    //  Define variational forms
     auto a = std::make_shared<fem::Form<T>>(fem::create_form<T>(
         *form_biharmonic_a, {V, V}, {}, {{"alpha", alpha}}, {}));
     auto L = std::make_shared<fem::Form<T>>(
         fem::create_form<T>(*form_biharmonic_L, {V}, {{"f", f}}, {}, {}));
 
-//  Now, the Dirichlet boundary condition ($u = 0$) can be
-//  created using the class {cpp:class}`DirichletBC`. A
-//  {cpp:class}`DirichletBC` takes two arguments: the value of the
-//  boundary condition, and the part of the boundary on which the
-//  condition applies. In our example, the value of the boundary
-//  condition (0.0) can represented using a {cpp:class}`Function`,
-//  and the Dirichlet boundary is defined by the indices of degrees
-//  of freedom to which the boundary condition applies. The
-//  definition of the Dirichlet boundary condition then looks as
-//  follows:
+    //  Now, the Dirichlet boundary condition ($u = 0$) can be
+    //  created using the class {cpp:class}`DirichletBC`. A
+    //  {cpp:class}`DirichletBC` takes two arguments: the value of the
+    //  boundary condition, and the part of the boundary on which the
+    //  condition applies. In our example, the value of the boundary
+    //  condition (0.0) can represented using a {cpp:class}`Function`,
+    //  and the Dirichlet boundary is defined by the indices of degrees
+    //  of freedom to which the boundary condition applies. The
+    //  definition of the Dirichlet boundary condition then looks as
+    //  follows:
 
-//  Define boundary condition
+    //  Define boundary condition
     auto facets = mesh::locate_entities_boundary(
         *mesh, 1,
         [](auto x)
@@ -234,14 +222,14 @@ int main(int argc, char* argv[])
         *V->mesh()->topology_mutable(), *V->dofmap(), 1, facets);
     auto bc = std::make_shared<const fem::DirichletBC<T>>(0.0, bdofs, V);
 
-//  Now, we have specified the variational forms and can consider the
-//  solution of the variational problem. First, we need to define a
-//  {cpp:class}`Function` ``u`` to store the solution. (Upon
-//  initialization, it is simply set to the zero function.) Next, we
-//  can call the ``solve`` function with the arguments ``a == L``,
-//  ``u`` and ``bc`` as follows:
+    //  Now, we have specified the variational forms and can consider
+    //  the solution of the variational problem. First, we need to
+    //  define a {cpp:class}`Function` `u` to store the solution. (Upon
+    //  initialization, it is simply set to the zero function.) Next, we
+    //  can call the `solve` function with the arguments `a == L`, `u`
+    //  and `bc` as follows:
 
-//  Compute solution
+    //  Compute solution
     fem::Function<T> u(V);
     auto A = la::petsc::Matrix(fem::petsc::create_matrix(*a), false);
     la::Vector<T> b(L->function_spaces()[0]->dofmap()->index_map,
@@ -273,22 +261,19 @@ int main(int argc, char* argv[])
     la::petsc::Vector _b(la::petsc::create_vector_wrap(b), false);
     lu.solve(_u.vec(), _b.vec());
 
-//  Update ghost values before output
-//
+    //  Update ghost values before output
     u.x()->scatter_fwd();
 
-//  The function ``u`` will be modified during the call to solve. A
-//  {cpp:class}`Function` can be saved to a file. Here, we output the
-//  solution to a ``VTK`` file (specified using the suffix ``.pvd``)
-//  for visualisation in an external program such as Paraview.
+    // The function `u` will be modified during the call to solve. A
+    // {cpp:class}`Function` can be saved to a file. Here, we output the
+    // solution to a `VTK` file (specified using the suffix `.pvd`) for
+    // visualisation in an external program such as Paraview.
 
-//  Save solution in VTK format
-//
+    //  Save solution in VTK format
     io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
     file.write<T>({u}, 0.0);
   }
 
   PetscFinalize();
-
   return 0;
 }

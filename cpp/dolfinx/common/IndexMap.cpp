@@ -788,7 +788,7 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
                    std::span<const int> owners)
     : _comm(comm, true), _ghosts(ghosts.begin(), ghosts.end()),
       _owners(owners.begin(), owners.end()), _src(src_dest[0]),
-      _dest(src_dest[1]), _overlapping(true)
+      _dest(src_dest[1]), _overlapping(dolfinx::MPI::size(comm) > 1)
 {
   assert(ghosts.size() == owners.size());
   assert(std::is_sorted(src_dest[0].begin(), src_dest[0].end()));

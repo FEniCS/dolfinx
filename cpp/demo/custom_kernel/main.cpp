@@ -1,8 +1,13 @@
-// # Custom cell kernel assembly (C++)
+// ```text
+// Copyright (C) 2024 Jack S. Hale and Garth N. Wells
+// This file is part of DOLFINx (https://www.fenicsproject.org)
+// SPDX-License-Identifier:    LGPL-3.0-or-later
+// ```
+
+// # Custom cell kernel assembly
 //
-// This demo shows various methods to define custom cell kernels in C++ and
-// have them assembled into DOLFINx linear algebra data structures.
-//
+// This demo shows various methods to define custom cell kernels in C++
+// and have them assembled into DOLFINx linear algebra data structures.
 
 #include <basix/finite-element.h>
 #include <basix/mdspan.hpp>
@@ -90,7 +95,8 @@ double assemble_matrix0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
   return A.squared_norm();
 }
 
-/// @brief Assemble a RHS vector using a `std::function` kernel function.
+/// @brief Assemble a RHS vector using a `std::function` kernel
+/// function.
 /// @tparam T Scalar type.
 /// @param V Function space.
 /// @param kernel Element kernel to execute.

@@ -185,6 +185,16 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
   const std::array bs
       = {dofmaps[0].get().index_map_bs(), dofmaps[1].get().index_map_bs()};
 
+  auto extract_cells = [](std::span<const std::int32_t> facets)
+  {
+    assert(facets.size() % 2 == 0);
+    std::vector<std::int32_t> cells;
+    cells.reserve(facets.size() / 2);
+    for (std::size_t i = 0; i < facets.size(); i += 2)
+      cells.push_back(facets[i]);
+    return cells;
+  };
+
   // Create and build sparsity pattern
   la::SparsityPattern pattern(mesh->comm(), index_maps, bs);
   for (auto type : types)
@@ -203,23 +213,19 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
     case IntegralType::interior_facet:
       for (int id : ids)
       {
-        std::span<const std::int32_t> facets = a.domain(type, id);
-        std::vector<std::int32_t> f;
-        f.reserve(facets.size() / 2);
-        for (std::size_t i = 0; i < facets.size(); i += 4)
-          f.insert(f.end(), {facets[i], facets[i + 2]});
-        sparsitybuild::interior_facets(pattern, f, {{dofmaps[0], dofmaps[1]}});
+        sparsitybuild::interior_facets(
+            pattern,
+            {extract_cells(a.domain(type, id, *mesh0)),
+             extract_cells(a.domain(type, id, *mesh1))},
+            {{dofmaps[0], dofmaps[1]}});
       }
       break;
     case IntegralType::exterior_facet:
       for (int id : ids)
       {
-        std::span<const std::int32_t> facets = a.domain(type, id);
-        std::vector<std::int32_t> cells;
-        cells.reserve(facets.size() / 2);
-        for (std::size_t i = 0; i < facets.size(); i += 2)
-          cells.push_back(facets[i]);
-        sparsitybuild::cells(pattern, {cells, cells},
+        sparsitybuild::cells(pattern,
+                             {extract_cells(a.domain(type, id, *mesh0)),
+                              extract_cells(a.domain(type, id, *mesh1))},
                              {{dofmaps[0], dofmaps[1]}});
       }
       break;
@@ -1108,10 +1114,10 @@ Expression<T, U> create_expression(
                              "function space was provided.");
   }
 
-  std::vector<U> X(e.points, e.points + e.num_points * e.topological_dimension);
+  std::vector<U> X(e.points, e.points + e.num_points * e.entity_dimension);
   std::array<std::size_t, 2> Xshape
       = {static_cast<std::size_t>(e.num_points),
-         static_cast<std::size_t>(e.topological_dimension)};
+         static_cast<std::size_t>(e.entity_dimension)};
   std::vector<int> value_shape(e.value_shape, e.value_shape + e.num_components);
   std::function<void(T*, const T*, const T*,
                      const typename scalar_value_type<T>::value_type*,
@@ -1210,15 +1216,17 @@ void pack_coefficients(const Form<T, U>& form,
 }
 
 /// @brief Pack coefficients of a Expression u for a give list of active
-/// cells.
+/// entities.
 ///
 /// @param[in] e The Expression
-/// @param[in] cells A list of active cells
+/// @param[in] entities A list of active entities
+/// @param[in] estride Stride for each entity in active entities (1 for cells, 2
+/// for facets)
 /// @return A pair of the form (coeffs, cstride)
 template <dolfinx::scalar T, std::floating_point U>
 std::pair<std::vector<T>, int>
 pack_coefficients(const Expression<T, U>& e,
-                  std::span<const std::int32_t> cells)
+                  std::span<const std::int32_t> entities, std::size_t estride)
 {
   // Get form coefficient offsets and dofmaps
   const std::vector<std::shared_ptr<const Function<T, U>>>& coeffs
@@ -1227,7 +1235,7 @@ pack_coefficients(const Expression<T, U>& e,
 
   // Copy data into coefficient array
   const int cstride = offsets.back();
-  std::vector<T> c(cells.size() * offsets.back());
+  std::vector<T> c(entities.size() / estride * offsets.back());
   if (!coeffs.empty())
   {
     std::span<const std::uint32_t> cell_info
@@ -1237,7 +1245,7 @@ pack_coefficients(const Expression<T, U>& e,
     for (std::size_t coeff = 0; coeff < coeffs.size(); ++coeff)
     {
       impl::pack_coefficient_entity(
-          std::span(c), cstride, *coeffs[coeff], cell_info, cells, 1,
+          std::span(c), cstride, *coeffs[coeff], cell_info, entities, estride,
           [](auto entity) { return entity[0]; }, offsets[coeff]);
     }
   }
