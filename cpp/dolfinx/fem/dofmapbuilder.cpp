@@ -196,10 +196,10 @@ build_basic_dofmaps(
           assert(et_it != entity_types[d].end());
           int et_index = std::distance(entity_types[d].begin(), et_it);
 
-          auto find_dim_et
+          auto required_entity_it
               = std::find(required_dim_et.begin(), required_dim_et.end(),
                           std::pair<std::int8_t, std::int8_t>{d, et_index});
-          if (find_dim_et == required_dim_et.end())
+          if (required_entity_it == required_dim_et.end())
           {
             // Save information for this (d, et) combination
             required_dim_et.push_back({d, et_index});
@@ -221,7 +221,8 @@ build_basic_dofmaps(
           }
           else
           {
-            std::size_t k = std::distance(required_dim_et.begin(), find_dim_et);
+            std::size_t k
+                = std::distance(required_dim_et.begin(), required_entity_it);
             if (num_entity_dofs_et[k] != (int)entity_dofs_d[e].size())
               throw std::runtime_error("Incompatible elements detected.");
           }
@@ -236,9 +237,11 @@ build_basic_dofmaps(
     std::stringstream s;
     s << "Required entities:";
     for (std::size_t i = 0; i < required_dim_et.size(); ++i)
+    {
       s << "(" << (int)required_dim_et[i].first << ", "
         << (int)required_dim_et[i].second << ")=" << num_entity_dofs_et[i]
         << " ";
+    }
     LOG(INFO) << s.str();
   }
 #endif
