@@ -53,6 +53,9 @@ public:
         _src(map.src().begin(), map.src().end()),
         _dest(map.dest().begin(), map.dest().end())
   {
+    if (dolfinx.MPI::size(map.comm()) == 1)
+      return;
+
     // Check that src and dest ranks are unique and sorted
     assert(std::is_sorted(_src.begin(), _src.end()));
     assert(std::is_sorted(_dest.begin(), _dest.end()));
