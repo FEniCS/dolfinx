@@ -277,12 +277,12 @@ public:
   /// of the send
   /// @param[in] type The type of MPI communication pattern used by the
   /// Scatterer, either Scatterer::type::neighbor or Scatterer::type::p2p.
-  template <typename T, typename Functor>
-    requires std::is_invocable_v<Functor, std::span<const T>,
+  template <typename T, typename F>
+    requires std::is_invocable_v<F, std::span<const T>,
                                  std::span<const std::int32_t>, std::span<T>>
   void scatter_fwd_begin(std::span<const T> local_data,
                          std::span<T> local_buffer, std::span<T> remote_buffer,
-                         Functor pack_fn, std::span<MPI_Request> requests,
+                         F pack_fn, std::span<MPI_Request> requests,
                          Scatterer::type type = type::neighbor) const
   {
     assert(local_buffer.size() == _local_inds.size());
@@ -311,13 +311,13 @@ public:
   /// CUDA/device-aware MPI.
   /// @param[in] requests The MPI request handle for tracking the status
   /// of the send
-  template <typename T, typename Functor>
-  void scatter_fwd_end(std::span<const T> remote_buffer,
-                       std::span<T> remote_data, Functor unpack_fn,
-                       std::span<MPI_Request> requests) const
-    requires std::is_invocable_v<Functor, std::span<const T>,
+  template <typename T, typename F>
+    requires std::is_invocable_v<F, std::span<const T>,
                                  std::span<const std::int32_t>, std::span<T>,
                                  std::function<T(T, T)>>
+  void scatter_fwd_end(std::span<const T> remote_buffer,
+                       std::span<T> remote_data, F unpack_fn,
+                       std::span<MPI_Request> requests) const
   {
     assert(remote_buffer.size() == _remote_inds.size());
     assert(remote_data.size() == _remote_inds.size());
@@ -463,34 +463,30 @@ public:
   /// particular when using CUDA/device-aware MPI.
   ///
   /// @tparam T The data type to send
-  /// @tparam BinaryOp The reduction to perform when reducing data
-  /// received from ghosting ranks to the value associated with the
-  /// index on the owner
-  /// @tparam Functor1 The pack function
-  /// @tparam Functor2 The unpack function
-  ///
+  /// @tparam F The pack function
   /// @param[in] remote_data Received data associated with the ghost
   /// indices. The order follows the order of the ghost indices in the
   /// IndexMap used to create the scatterer. The size equal to the
   /// number of ghosts in the index map multiplied by the block size.
   /// The data for each index is blocked.
-  /// @param[out] local_buffer Working buffer. The requires size is given
-  /// by Scatterer::local_buffer_size.
   /// @param[out] remote_buffer Working buffer. The requires size is
   /// given by Scatterer::remote_buffer_size.
+  /// @param[out] local_buffer Working buffer. The requires size is
+  /// given by Scatterer::local_buffer_size.
   /// @param[in] pack_fn Function to pack data from `local_data` into
   /// the send buffer. It is passed as an argument to support
   /// CUDA/device-aware MPI.
-  /// @param request The MPI request handle for tracking the status of
-  /// the non-blocking communication
-  /// @param[in] type The type of MPI communication pattern used by the
-  /// Scatterer, either Scatterer::type::neighbor or Scatterer::type::p2p.
-  template <typename T, typename Functor>
-    requires std::is_invocable_v<Functor, std::span<const T>,
+  /// @param request MPI request handles for tracking the status of the
+  /// non-blocking communication.
+  /// @param[in] type Type of MPI communication pattern used by the
+  /// Scatterer, either Scatterer::type::neighbor or
+  /// Scatterer::type::p2p.
+  template <typename T, typename F>
+    requires std::is_invocable_v<F, std::span<const T>,
                                  std::span<const std::int32_t>, std::span<T>>
   void scatter_rev_begin(std::span<const T> remote_data,
                          std::span<T> remote_buffer, std::span<T> local_buffer,
-                         Functor pack_fn, std::span<MPI_Request> request,
+                         F pack_fn, std::span<MPI_Request> request,
                          Scatterer::type type = type::neighbor) const
   {
     assert(local_buffer.size() == _local_inds.size());
@@ -519,14 +515,13 @@ public:
   /// values. To add the received values use `std::plus<T>()`.
   /// @param[in] request The handle used when calling
   /// Scatterer::scatter_rev_begin
-  template <typename T, typename Functor, typename BinaryOp>
-  void scatter_rev_end(std::span<const T> local_buffer, std::span<T> local_data,
-                       Functor unpack_fn, BinaryOp op,
-                       std::span<MPI_Request> request)
-    requires std::is_invocable_v<Functor, std::span<const T>,
+  template <typename T, typename F, typename BinaryOp>
+    requires std::is_invocable_v<F, std::span<const T>,
                                  std::span<const std::int32_t>, std::span<T>,
                                  BinaryOp>
              and std::is_invocable_r_v<T, BinaryOp, T, T>
+  void scatter_rev_end(std::span<const T> local_buffer, std::span<T> local_data,
+                       F unpack_fn, BinaryOp op, std::span<MPI_Request> request)
   {
     assert(local_buffer.size() == _local_inds.size());
     if (_local_inds.size() > 0)
