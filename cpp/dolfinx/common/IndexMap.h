@@ -84,16 +84,6 @@ create_sub_index_map(const IndexMap& imap,
 class IndexMap
 {
 public:
-  /// @brief Create an non-overlapping index map.
-  ///
-  /// @note Collective
-  ///
-  /// @param[in] comm MPI communicator that the index map is distributed
-  /// across.
-  /// @param[in] local_size Local size of the index map, i.e. the number
-  /// of owned entries.
-  IndexMap(MPI_Comm comm, std::int32_t local_size);
-
   /// @brief Create an overlapping (ghosted) index map.
   ///
   /// This constructor uses a 'consensus' algorithm to determine the
@@ -225,15 +215,6 @@ public:
   /// and sorted.
   std::span<const int> dest() const noexcept;
 
-  /// @brief Check if index map has overlaps (ghosts on any rank).
-  ///
-  /// The return value of this function is determined by which
-  /// constructor was used to create the index map.
-  ///
-  /// @return True if index map has overlaps on any ranks, otherwise
-  /// false.
-  bool overlapped() const noexcept;
-
   /// @brief Returns the imbalance of the current IndexMap.
   ///
   /// The imbalance is a measure of load balancing across all processes, defined
@@ -271,8 +252,5 @@ private:
 
   // Set of ranks ghost owned indices
   std::vector<int> _dest;
-
-  // True if map has overlaps (ghosts)
-  bool _overlapping;
 };
 } // namespace dolfinx::common

@@ -748,32 +748,6 @@ common::create_sub_index_map(const IndexMap& imap,
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size)
-    : _comm(comm, true), _overlapping(false)
-{
-  // Get global offset (index), using partial exclusive reduction
-  std::int64_t offset = 0;
-  const std::int64_t local_size_tmp = local_size;
-  MPI_Request request_scan;
-  int ierr = MPI_Iexscan(&local_size_tmp, &offset, 1, MPI_INT64_T, MPI_SUM,
-                         _comm.comm(), &request_scan);
-  dolfinx::MPI::check_error(_comm.comm(), ierr);
-
-  // Send local size to sum reduction to get global size
-  MPI_Request request;
-  ierr = MPI_Iallreduce(&local_size_tmp, &_size_global, 1, MPI_INT64_T, MPI_SUM,
-                        comm, &request);
-  dolfinx::MPI::check_error(_comm.comm(), ierr);
-
-  ierr = MPI_Wait(&request_scan, MPI_STATUS_IGNORE);
-  dolfinx::MPI::check_error(_comm.comm(), ierr);
-  _local_range = {offset, offset + local_size};
-
-  // Wait for the MPI_Iallreduce to complete
-  ierr = MPI_Wait(&request, MPI_STATUS_IGNORE);
-  dolfinx::MPI::check_error(_comm.comm(), ierr);
-}
-//-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
                    std::span<const std::int64_t> ghosts,
                    std::span<const int> owners)
@@ -788,7 +762,7 @@ IndexMap::IndexMap(MPI_Comm comm, std::int32_t local_size,
                    std::span<const int> owners)
     : _comm(comm, true), _ghosts(ghosts.begin(), ghosts.end()),
       _owners(owners.begin(), owners.end()), _src(src_dest[0]),
-      _dest(src_dest[1]), _overlapping(true)
+      _dest(src_dest[1])
 {
   assert(ghosts.size() == owners.size());
   assert(std::is_sorted(src_dest[0].begin(), src_dest[0].end()));
@@ -1198,8 +1172,6 @@ std::vector<std::int32_t> IndexMap::shared_indices() const
 std::span<const int> IndexMap::src() const noexcept { return _src; }
 //-----------------------------------------------------------------------------
 std::span<const int> IndexMap::dest() const noexcept { return _dest; }
-//-----------------------------------------------------------------------------
-bool IndexMap::overlapped() const noexcept { return _overlapping; }
 //-----------------------------------------------------------------------------
 std::array<double, 2> IndexMap::imbalance() const
 {
