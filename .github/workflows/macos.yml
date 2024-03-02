@@ -46,7 +46,7 @@ jobs:
             --download-ptscotch
           make all
           cd src/binding/petsc4py
-          PETSC_DIR=$GITHUB_WORKSPACE/petsc PETSC_ARCH=arch-darwin-c-opt arch -x86_64 python -m pip install --no-cache-dir -v .
+          PETSC_DIR=$GITHUB_WORKSPACE/petsc PETSC_ARCH=arch-darwin-c-opt arch -x86_64 python -m pip install --no-build-isolation --no-cache-dir -v .
 
       - name: Install FEniCSx dependencies
         run: |
