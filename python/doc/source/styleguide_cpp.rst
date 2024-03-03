@@ -123,7 +123,7 @@ Capitalize the first letter of a comment and don't use punctuation
 .. code-block:: c++
 
     // Check if connectivity has already been computed
-    if (connectivity.size() > 0)
+    if (!connectivity.empty())
       return;
 
     // Invalidate ordering
@@ -136,7 +136,7 @@ Capitalize the first letter of a comment and don't use punctuation
       compute_entities(mesh, d1);
 
     // Check if connectivity still needs to be computed
-    if (connectivity.size() > 0)
+    if (!connectivity.empty())
       return;
 
     ...

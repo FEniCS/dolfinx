@@ -242,7 +242,8 @@ xdmf_utils::distribute_entity_data(
   // by 'vertex nodes'
   auto to_vertex_entities
       = [](const fem::ElementDofLayout& cmap_dof_layout, int entity_dim,
-           std::span<const int> cell_vertex_dofs, auto cell_type, auto entities)
+           std::span<const int> cell_vertex_dofs, mesh::CellType cell_type,
+           auto entities)
   {
     // Use ElementDofLayout of the cell to get vertex dof indices (local
     // to a cell), i.e. build a map from local vertex index to associated

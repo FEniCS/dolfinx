@@ -524,9 +524,11 @@ public:
                        F unpack_fn, BinaryOp op, std::span<MPI_Request> request)
   {
     assert(local_buffer.size() == _local_inds.size());
-    if (_local_inds.size() > 0)
+    if (!_local_inds.empty())
+    {
       assert(*std::max_element(_local_inds.begin(), _local_inds.end())
              < std::int32_t(local_data.size()));
+    }
     scatter_rev_end(request);
     unpack_fn(local_buffer, _local_inds, local_data, op);
   }

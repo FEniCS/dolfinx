@@ -105,7 +105,7 @@ vtk_triangle_remainders(std::vector<std::uint16_t> remainders)
   std::vector<std::uint16_t> map(remainders.size());
   std::size_t j = 0;
   int degree;
-  while (remainders.size() > 0)
+  while (!remainders.empty())
   {
     if (remainders.size() == 1)
     {
@@ -168,8 +168,7 @@ vtk_tetrahedron_remainders(std::vector<std::uint16_t> remainders)
 {
   std::vector<std::uint16_t> map(remainders.size());
   std::size_t j = 0;
-
-  while (remainders.size() > 0)
+  while (!remainders.empty())
   {
     if (remainders.size() == 1)
     {
@@ -179,7 +178,6 @@ vtk_tetrahedron_remainders(std::vector<std::uint16_t> remainders)
 
     const int deg
         = cell_degree(mesh::CellType::tetrahedron, remainders.size()) + 1;
-
     map[j++] = vec_pop(remainders, 0);
     map[j++] = vec_pop(remainders, deg - 2);
     map[j++] = vec_pop(remainders, deg * (deg + 1) / 2 - 3);
@@ -188,9 +186,7 @@ vtk_tetrahedron_remainders(std::vector<std::uint16_t> remainders)
     if (deg > 2)
     {
       for (int i = 0; i < deg - 2; ++i)
-      {
         map[j++] = vec_pop(remainders, 0);
-      }
       int d = deg - 2;
       for (int i = 0; i < deg - 2; ++i)
       {
@@ -290,6 +286,7 @@ vtk_tetrahedron_remainders(std::vector<std::uint16_t> remainders)
         map[j++] = r;
     }
   }
+
   return map;
 }
 //-----------------------------------------------------------------------------
