@@ -59,7 +59,7 @@ namespace linalg
 /// @param[in] alpha
 /// @param[in] x
 /// @param[in] y
-void axpy(auto& r, auto alpha, const auto& x, const auto& y)
+void axpy(auto&& r, auto alpha, auto&& x, auto&& y)
 {
   std::transform(x.array().begin(), x.array().end(), y.array().begin(),
                  r.mutable_array().begin(),

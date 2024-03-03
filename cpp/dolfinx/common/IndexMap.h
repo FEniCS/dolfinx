@@ -225,15 +225,6 @@ public:
   /// and sorted.
   std::span<const int> dest() const noexcept;
 
-  /// @brief Check if index map has overlaps (ghosts on any rank).
-  ///
-  /// The return value of this function is determined by which
-  /// constructor was used to create the index map.
-  ///
-  /// @return True if index map has overlaps on any ranks, otherwise
-  /// false.
-  bool overlapped() const noexcept;
-
   /// @brief Returns the imbalance of the current IndexMap.
   ///
   /// The imbalance is a measure of load balancing across all processes, defined
@@ -271,8 +262,5 @@ private:
 
   // Set of ranks ghost owned indices
   std::vector<int> _dest;
-
-  // True if map has overlaps (ghosts)
-  bool _overlapping;
 };
 } // namespace dolfinx::common

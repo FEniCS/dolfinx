@@ -109,11 +109,14 @@ def test_set_blocked(dtype):
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 def test_distributed_csr(dtype):
+    size = MPI.COMM_WORLD.size
+    rank = MPI.COMM_WORLD.rank
+    if size == 1:
+        return
+
     # global size N
     N = 36
     nghost = 3
-    size = MPI.COMM_WORLD.size
-    rank = MPI.COMM_WORLD.rank
     nbr = (rank + 1) % size
     n = int(N / size)
     ghosts = np.array(range(n * nbr, n * nbr + nghost), dtype=np.int64)
