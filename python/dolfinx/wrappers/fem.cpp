@@ -749,10 +749,9 @@ void declare_cmap(nb::module_& m, std::string type)
                                              1, std::multiplies{}));
             cmdspan4_t phi_full(phi_b.data(), phi_shape);
             self.tabulate(0, std::span(X.data(), X.size()), Xshape, phi_b);
-            auto phi = MDSPAN_IMPL_STANDARD_NAMESPACE::
-                MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
-                    phi_full, 0, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
-                    MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
+            auto phi = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+                phi_full, 0, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
+                MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
 
             std::array<std::size_t, 2> shape = {X.shape(0), cell_x.shape(1)};
             std::vector<T> xb(shape[0] * shape[1]);
@@ -803,10 +802,9 @@ void declare_cmap(nb::module_& m, std::string type)
               cmdspan4_t phi(phi_b.data(), phi_shape);
 
               self.tabulate(1, std::vector<T>(tdim), {1, tdim}, phi_b);
-              auto dphi = MDSPAN_IMPL_STANDARD_NAMESPACE::
-                  MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
-                      phi, std::pair(1, tdim + 1), 0,
-                      MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
+              auto dphi = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+                  phi, std::pair(1, tdim + 1), 0,
+                  MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
 
               self.compute_jacobian(dphi, g, J);
               self.compute_jacobian_inverse(J, K);
