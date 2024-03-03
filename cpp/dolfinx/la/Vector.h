@@ -87,7 +87,7 @@ public:
     const std::int32_t local_size = _bs * _map->size_local();
     std::span<const value_type> x_local(_x.data(), local_size);
 
-    auto pack = [](const auto& in, const auto& idx, auto& out)
+    auto pack = [](auto&& in, auto&& idx, auto&& out)
     {
       for (std::size_t i = 0; i < idx.size(); ++i)
         out[i] = in[idx[i]];
@@ -108,7 +108,7 @@ public:
     std::span<value_type> x_remote(_x.data() + local_size, num_ghosts);
     _scatterer->scatter_fwd_end(std::span<MPI_Request>(_request));
 
-    auto unpack = [](const auto& in, const auto& idx, auto& out, auto op)
+    auto unpack = [](auto&& in, auto&& idx, auto&& out, auto op)
     {
       for (std::size_t i = 0; i < idx.size(); ++i)
         out[idx[i]] = op(out[idx[i]], in[i]);
@@ -134,7 +134,7 @@ public:
     const std::int32_t num_ghosts = _bs * _map->num_ghosts();
     std::span<value_type> x_remote(_x.data() + local_size, num_ghosts);
 
-    auto pack = [](const auto& in, const auto& idx, auto& out)
+    auto pack = [](auto&& in, auto&& idx, auto&& out)
     {
       for (std::size_t i = 0; i < idx.size(); ++i)
         out[i] = in[idx[i]];
@@ -159,7 +159,7 @@ public:
     std::span<value_type> x_local(_x.data(), local_size);
     _scatterer->scatter_rev_end(_request);
 
-    auto unpack = [](const auto& in, const auto& idx, auto& out, auto op)
+    auto unpack = [](auto&& in, auto&& idx, auto&& out, auto op)
     {
       for (std::size_t i = 0; i < idx.size(); ++i)
         out[idx[i]] = op(out[idx[i]], in[i]);

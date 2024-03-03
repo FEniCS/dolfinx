@@ -5,7 +5,6 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Utility functions for calling PETSc C functions from Numba functions."""
 
-
 from __future__ import annotations
 
 import ctypes as _ctypes

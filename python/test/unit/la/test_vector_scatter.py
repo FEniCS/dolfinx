@@ -5,7 +5,6 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the KrylovSolver interface"""
 
-
 from mpi4py import MPI
 
 import numpy as np
