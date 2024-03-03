@@ -259,6 +259,23 @@ DofMap create_dofmap(
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
         reorder_fn);
 
+/// @brief Create a set of dofmaps on a given topology
+/// @param[in] comm MPI communicator
+/// @param[in] layouts Dof layout on each element type
+/// @param[in] topology Mesh topology
+/// @param[in] unpermute_dofs Function to un-permute dofs. `nullptr`
+/// when transformation is not required.
+/// @param[in] reorder_fn Graph reordering function called on the dofmaps
+/// @return The list of new dof maps
+/// @note The number of layouts must match the number of cell types in the
+/// topology
+std::vector<DofMap> create_dofmaps(
+    MPI_Comm comm, const std::vector<ElementDofLayout>& layouts,
+    mesh::Topology& topology,
+    std::function<void(std::span<std::int32_t>, std::uint32_t)> unpermute_dofs,
+    std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
+        reorder_fn);
+
 /// Get the name of each coefficient in a UFC form
 /// @param[in] ufcx_form The UFC form
 /// @return The name of each coefficient
