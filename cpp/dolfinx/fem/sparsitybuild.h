@@ -46,7 +46,7 @@ void cells(la::SparsityPattern& pattern,
 /// dofmap[0][cell1]] x [dofmap[1][cell0] + dofmap[1][cell1]]` where
 /// `cell0` and `cell1` are the two cells attached to a facet.
 ///
-/// @param[in,out] pattern Sparsity pattern to insert into
+/// @param[in,out] pattern Sparsity pattern to insert into.
 /// @param[in] cells Cells to index into each dofmap. `cells[i]` is a
 /// list of `(cell0, cell1)` pairs for each interior facet to index into
 /// `dofmap[i]`. `cells[0]` and `cells[1]` must have the same size.

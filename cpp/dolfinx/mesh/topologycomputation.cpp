@@ -635,7 +635,7 @@ compute_entities_by_key_matching(
   for (std::size_t k = 0; k < cell_lists.size(); ++k)
   {
 
-    if (cell_type_entities[k].size() > 0)
+    if (!cell_type_entities[k].empty())
     {
       std::vector tmp(std::next(local_index.begin(), cell_type_offsets[k]),
                       std::next(local_index.begin(), cell_type_offsets[k + 1]));

@@ -219,7 +219,7 @@ std::vector<T> h(const Mesh<T>& mesh, std::span<const std::int32_t> entities,
   std::span<const T> x = mesh.geometry().x();
 
   // Function to compute the length of (p0 - p1)
-  auto delta_norm = [](const auto& p0, const auto& p1)
+  auto delta_norm = [](auto&& p0, auto&& p1)
   {
     T norm = 0;
     for (std::size_t i = 0; i < 3; ++i)

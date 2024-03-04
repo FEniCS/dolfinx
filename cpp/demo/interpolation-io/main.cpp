@@ -1,10 +1,10 @@
-// # Interpolation-io (C++)
-//
+// ```text
 // Copyright (C) 2022-2023 Garth N. Wells
-//
 // This file is part of DOLFINx (https://www.fenicsproject.org)
-//
 // SPDX-License-Identifier:    LGPL-3.0-or-later
+// ```
+
+// # Interpolation and IO
 
 #include <basix/finite-element.h>
 #include <cmath>
@@ -25,9 +25,17 @@
 
 using namespace dolfinx;
 
-// This function interpolations a function is a finite element space and
-// outputs the finite element function to a VTK file for visualisation.
-// It also shows how to create a finite element using Basix.
+/// @brief Interpolate a function into a Lagrange finite element space
+/// and outputs the finite element function to a VTX file for
+/// visualisation.
+///
+/// Also shows how to create a finite element using Basix.
+///
+/// @tparam T Scalar type of the finite element function.
+/// @tparam U Float type for the finite element basis and the mesh.
+/// @param mesh Mesh.
+/// @param filename Output filename. File output requires DOLFINX to be
+/// configured with ADIOS2.
 template <typename T, std::floating_point U>
 void interpolate_scalar(std::shared_ptr<mesh::Mesh<U>> mesh,
                         [[maybe_unused]] std::filesystem::path filename)
@@ -67,10 +75,18 @@ void interpolate_scalar(std::shared_ptr<mesh::Mesh<U>> mesh,
 #endif
 }
 
-// This function interpolates a function in a H(curl) finite element
-// space. To visualise the function, it interpolates the H(curl) finite
-// element function in a discontinuous Lagrange space and outputs the
-// Lagrange finite element function to a VTX file for visualisation.
+/// @brief Interpolate a function into a H(curl) finite element space.
+///
+/// To visualise the function, the H(curl) finite element function is
+/// interpolated in a discontinuous Lagrange space, which is written to
+/// a VTX file for visualisation. This allows exact visualisation of a
+/// function in H(curl).
+///
+/// @tparam T Scalar type of the finite element function.
+/// @tparam U Float type for the finite element basis and the mesh.
+/// @param mesh Mesh.
+/// @param filename Output filename. File output requires DOLFINX to be
+/// configured with ADIOS2.
 template <typename T, std::floating_point U>
 void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
                          [[maybe_unused]] std::filesystem::path filename)
@@ -90,14 +106,14 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
   // Create a Nedelec finite element Function
   auto u = std::make_shared<fem::Function<T>>(V);
 
-// Interpolate the vector field
-//  u = [x[0], x[1]]  if x[0] < 0.5
-//      [x[0] + 1, x[1]]  if x[0] >= 0.5
-// in the Nedelec space.
-//
-// Note that the x1 component of this field is continuous, and the x0
-// component is discontinuous across x0 = 0.5. This function lies in
-// the Nedelec space when there are cell edges aligned to x0 = 0.5.
+  // Interpolate the vector field
+  //  u = [x[0], x[1]]  if x[0] < 0.5
+  //      [x[0] + 1, x[1]]  if x[0] >= 0.5
+  // in the Nedelec space.
+  //
+  // Note that the x1 component of this field is continuous, and the x0
+  // component is discontinuous across x0 = 0.5. This function lies in
+  // the Nedelec space when there are cell edges aligned to x0 = 0.5.
 
   // Find cells with all vertices satisfying (0) x0 <= 0.5 and (1) x0 >= 0.5
   auto cells0
@@ -139,11 +155,11 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
       },
       cells1);
 
-// Nedelec spaces are not generally supported by visualisation tools.
-// Simply evaluating a Nedelec function at cell vertices can
-// mis-represent the function. However, we can represented a Nedelec
-// function exactly in a discontinuous Lagrange space which we can
-// then visualise. We do this here.
+  // Nedelec spaces are not generally supported by visualisation tools.
+  // Simply evaluating a Nedelec function at cell vertices can
+  // mis-represent the function. However, we can represented a Nedelec
+  // function exactly in a discontinuous Lagrange space which we can
+  // then visualise. We do this here.
 
   // First create a degree 2 vector-valued discontinuous Lagrange space
   // (which contains the N2 space):
@@ -163,11 +179,10 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
   // space:
   u_l->interpolate(*u);
 
-// Output the discontinuous Lagrange space in VTX format. When
-// plotting the x0 component the field will appear discontinuous at x0
-// = 0.5 (jump in the normal component between cells) and the x1
-// component will appear continuous (continuous tangent component
-// between cells).
+// Output the discontinuous Lagrange space in VTX format. When plotting
+// the x0 component the field will appear discontinuous at x0 = 0.5
+// (jump in the normal component between cells) and the x1 component
+// will appear continuous (continuous tangent component between cells).
 #ifdef HAS_ADIOS2
   io::VTXWriter<U> outfile(mesh->comm(), filename.replace_extension("bp"),
                            {u_l}, "BP4");
@@ -176,19 +191,19 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
 #endif
 }
 
-/// This program shows how to create finite element spaces without FFCx
-/// generated code
+/// @brief This program shows how to create finite element spaces without FFCx
+/// generated code.
 int main(int argc, char* argv[])
 {
   dolfinx::init_logging(argc, argv);
   MPI_Init(&argc, &argv);
 
-//  The main body of the function is scoped to ensure that all objects
-//  that depend on an MPI communicator are destroyed before MPI is
-//  finalised at the end of this function.
+  // The main body of the function is scoped to ensure that all objects
+  // that depend on an MPI communicator are destroyed before MPI is
+  // finalised at the end of this function.
   {
-//  Create meshes. For what comes later in this demo we need to
-//  ensure that a boundary between cells is located at x0=0.5
+    //  Create meshes. For what comes later in this demo we need to
+    //  ensure that a boundary between cells is located at x0=0.5
 
     // Create mesh using float for geometry coordinates
     auto mesh0
@@ -205,16 +220,16 @@ int main(int argc, char* argv[])
             mesh::CellType::triangle,
             mesh::create_cell_partitioner(mesh::GhostMode::none)));
 
-//  Interpolate a function in a scalar Lagrange space and output the
-//  result to file for visualisation using different types
+    // Interpolate a function in a scalar Lagrange space and output the
+    // result to file for visualisation using different types
     interpolate_scalar<float>(mesh0, "u32");
     interpolate_scalar<double>(mesh1, "u64");
     interpolate_scalar<std::complex<float>>(mesh0, "u_complex64");
     interpolate_scalar<std::complex<double>>(mesh1, "u_complex128");
 
-//  Interpolate a function in a H(curl) finite element space, and
-//  then interpolate the H(curl) function in a discontinuous Lagrange
-//  space for visualisation using different types
+    // Interpolate a function in a H(curl) finite element space, and
+    // then interpolate the H(curl) function in a discontinuous Lagrange
+    // space for visualisation using different types
     interpolate_nedelec<float>(mesh0, "u_nedelec32");
     interpolate_nedelec<double>(mesh1, "u_nedelec64");
     interpolate_nedelec<std::complex<float>>(mesh0, "u_nedelec_complex64");
@@ -222,6 +237,5 @@ int main(int argc, char* argv[])
   }
 
   MPI_Finalize();
-
   return 0;
 }

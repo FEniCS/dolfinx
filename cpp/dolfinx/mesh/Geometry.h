@@ -343,7 +343,7 @@ create_geometry(
   std::vector<T> xg(3 * shape0, 0);
   for (std::size_t i = 0; i < shape0; ++i)
   {
-    std::copy_n(std::next(x.cbegin(), shape1 * l2l[i]), shape1,
+    std::copy_n(std::next(x.begin(), shape1 * l2l[i]), shape1,
                 std::next(xg.begin(), 3 * i));
   }
 

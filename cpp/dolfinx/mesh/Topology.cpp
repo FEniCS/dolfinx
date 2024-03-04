@@ -745,7 +745,7 @@ Topology::Topology(MPI_Comm comm, const std::vector<CellType>& cell_types)
     : _comm(comm), _entity_types({mesh::CellType::point}),
       _entity_type_offsets({0, 1})
 {
-  assert(cell_types.size() > 0);
+  assert(!cell_types.empty());
   std::int8_t tdim = cell_dim(cell_types[0]);
   assert(tdim > 0);
   for (auto ct : cell_types)

@@ -1,10 +1,10 @@
-// # Interpolation different meshes (C++)
-//
+// ```text
 // Copyright (C) 2022 Igor A. Baratta and Massimiliano Leoni
-//
 // This file is part of DOLFINx (https://www.fenicsproject.org)
-//
 // SPDX-License-Identifier:    LGPL-3.0-or-later
+// ```
+
+// # Interpolation different meshes
 
 #include <basix/e-lagrange.h>
 #include <dolfinx/fem/dolfinx_fem.h>
@@ -13,7 +13,6 @@
 #include <memory>
 
 using namespace dolfinx;
-
 using T = double;
 
 int main(int argc, char* argv[])
@@ -21,7 +20,7 @@ int main(int argc, char* argv[])
   init_logging(argc, argv);
   MPI_Init(&argc, &argv);
   {
-    MPI_Comm comm{MPI_COMM_WORLD};
+    MPI_Comm comm = MPI_COMM_WORLD;
 
     // Create a tetrahedral mesh
     auto mesh_tet = std::make_shared<mesh::Mesh<double>>(

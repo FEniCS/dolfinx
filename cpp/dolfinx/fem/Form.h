@@ -316,8 +316,8 @@ public:
       throw std::runtime_error("No mesh entities for requested domain index.");
   }
 
-  /// @brief Compute the list of entity indices in `mesh` for the
-  /// ith integral (kernel) of a given type (i.e. cell, exterior facet, or
+  /// @brief Compute the list of entity indices in `mesh` for the ith
+  /// integral (kernel) of a given type (i.e. cell, exterior facet, or
   /// interior facet).
   ///
   /// @param type Integral type.
@@ -349,8 +349,8 @@ public:
         break;
       }
       case IntegralType::exterior_facet:
-      // Intentional fallthrough (exterior and interior facets are treated the
-      // same)
+        // Exterior and interior facets are treated the same
+        [[fallthrough]];
       case IntegralType::interior_facet:
       {
         for (std::size_t i = 0; i < entities.size(); i += 2)
@@ -364,6 +364,7 @@ public:
       default:
         throw std::runtime_error("Integral type not supported.");
       }
+
       return mapped_entities;
     }
   }
