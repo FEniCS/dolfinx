@@ -181,13 +181,17 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
     smsh, smsh_to_msh = create_submesh(msh, tdim, cells)[:2]
 
     # Create some integration measures on the submesh
-    facets_smsh = locate_entities_boundary(smsh, fdim, boundary_marker)
-    ft_smsh = create_meshtags(smsh, fdim, facets_smsh, tag)
-    ds_smsh = ufl.Measure("ds", domain=smsh, subdomain_data=ft_smsh)
-
+    neumann_facets_smsh = locate_entities_boundary(smsh, fdim, boundary_marker)
+    dirichlet_facets_smsh = locate_entities_boundary(smsh, fdim, dirichlet_boundary_marker)
     int_facets_smsh = locate_entities(smsh, fdim, int_facets_marker)
-    int_ft_smsh = create_meshtags(smsh, fdim, int_facets_smsh, tag)
-    dS_smsh = ufl.Measure("dS", domain=smsh, subdomain_data=int_ft_smsh)
+
+    facets_smsh = np.hstack((neumann_facets_smsh, dirichlet_facets_smsh, int_facets_smsh))
+    perm_smsh = np.argsort(facets_smsh)
+
+    ft_smsh = meshtags(smsh, fdim, facets_smsh[perm_smsh], facet_values[perm_smsh])
+
+    ds_smsh = ufl.Measure("ds", domain=smsh, subdomain_data=ft_smsh)
+    dS_smsh = ufl.Measure("dS", domain=smsh, subdomain_data=ft_smsh)
 
     # Define function spaces over the mesh and submesh
     V_msh = fem.functionspace(msh, (space, k))
@@ -207,11 +211,19 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
         return ufl.inner(2.5, v) * dx + ufl.inner(0.5, v) * ds + ufl.inner(0.1, v("-")) * dS
 
     # Single-domain assembly over msh as a reference
-    a = fem.form(ufl_form_a(u, v, dx_msh(tag), ds_msh(boundary_tags["neumann"]), dS_msh(boundary_tags["interior"])))
+    a = fem.form(
+        ufl_form_a(
+            u, v, dx_msh(tag), ds_msh(boundary_tags["neumann"]), dS_msh(boundary_tags["interior"])
+        )
+    )
     A = fem.assemble_matrix(a)
     A.scatter_reverse()
 
-    L = fem.form(ufl_form_L(v, dx_msh(tag), ds_msh(boundary_tags["neumann"]), dS_msh(boundary_tags["interior"])))
+    L = fem.form(
+        ufl_form_L(
+            v, dx_msh(tag), ds_msh(boundary_tags["neumann"]), dS_msh(boundary_tags["interior"])
+        )
+    )
     b = fem.assemble_vector(L)
     b.scatter_reverse(la.InsertMode.add)
 
@@ -220,7 +232,14 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
     # cells in msh
     entity_maps = {msh._cpp_object: np.array(smsh_to_msh, dtype=np.int32)}
     a0 = fem.form(
-        ufl_form_a(u, w, ufl.dx(smsh), ds_smsh(tag), dS_smsh(tag)), entity_maps=entity_maps
+        ufl_form_a(
+            u,
+            w,
+            ufl.dx(smsh),
+            ds_smsh(boundary_tags["neumann"]),
+            dS_smsh(boundary_tags["interior"]),
+        ),
+        entity_maps=entity_maps,
     )
     A0 = fem.assemble_matrix(a0)
     A0.scatter_reverse()
@@ -236,7 +255,9 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
     entity_maps = {smsh._cpp_object: np.array(msh_to_smsh, dtype=np.int32)}
 
     a1 = fem.form(
-        ufl_form_a(u, w, dx_msh(tag), ds_msh(boundary_tags["neumann"]), dS_msh(boundary_tags["interior"])),
+        ufl_form_a(
+            u, w, dx_msh(tag), ds_msh(boundary_tags["neumann"]), dS_msh(boundary_tags["interior"])
+        ),
         entity_maps=entity_maps,
     )
     A1 = fem.assemble_matrix(a1)
@@ -244,7 +265,9 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
     assert np.isclose(A1.squared_norm(), A.squared_norm())
 
     L1 = fem.form(
-        ufl_form_L(w, dx_msh(tag), ds_msh(boundary_tags["neumann"]), dS_msh(boundary_tags["interior"])),
+        ufl_form_L(
+            w, dx_msh(tag), ds_msh(boundary_tags["neumann"]), dS_msh(boundary_tags["interior"])
+        ),
         entity_maps=entity_maps,
     )
     b1 = fem.assemble_vector(L1)
