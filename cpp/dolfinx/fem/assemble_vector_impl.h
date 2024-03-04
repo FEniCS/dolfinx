@@ -45,18 +45,22 @@ template <dolfinx::scalar T, int _bs0 = -1, int _bs1 = -1>
 void _lift_bc_cells(
     std::span<T> b, mdspan2_t x_dofmap,
     std::span<const scalar_value_type_t<T>> x, FEkernel<T> auto kernel,
-    std::span<const std::int32_t> cells, mdspan2_t dofmap0, int bs0,
-    fem::DofTransformKernel<T> auto P0, mdspan2_t dofmap1, int bs1,
+    std::span<const std::int32_t> cells,
+    std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap0,
+    fem::DofTransformKernel<T> auto P0,
+    std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap1,
     fem::DofTransformKernel<T> auto P1T, std::span<const T> constants,
     std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info, std::span<const T> bc_values1,
     std::span<const std::int8_t> bc_markers1, std::span<const T> x0, T scale)
 {
-  assert(_bs0 < 0 or _bs0 == bs0);
-  assert(_bs1 < 0 or _bs1 == bs1);
-
   if (cells.empty())
     return;
+
+  const auto [dmap0, bs0, cells0] = dofmap0;
+  const auto [dmap1, bs1, cells1] = dofmap1;
+  assert(_bs0 < 0 or _bs0 == bs0);
+  assert(_bs1 < 0 or _bs1 == bs1);
 
   // Data structures used in bc application
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * x_dofmap.extent(1));
@@ -66,19 +70,19 @@ void _lift_bc_cells(
     std::int32_t c = cells[index];
 
     // Get dof maps for cell
-    auto dmap1 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        dofmap1, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto dofs1 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+        dmap1, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
 
     // Check if bc is applied to cell
     bool has_bc = false;
-    for (std::size_t j = 0; j < dmap1.size(); ++j)
+    for (std::size_t j = 0; j < dofs1.size(); ++j)
     {
       if constexpr (_bs1 > 0)
       {
         for (int k = 0; k < _bs1; ++k)
         {
-          assert(_bs1 * dmap1[j] + k < (int)bc_markers1.size());
-          if (bc_markers1[_bs1 * dmap1[j] + k])
+          assert(_bs1 * dofs1[j] + k < (int)bc_markers1.size());
+          if (bc_markers1[_bs1 * dofs1[j] + k])
           {
             has_bc = true;
             break;
@@ -89,8 +93,8 @@ void _lift_bc_cells(
       {
         for (int k = 0; k < bs1; ++k)
         {
-          assert(bs1 * dmap1[j] + k < (int)bc_markers1.size());
-          if (bc_markers1[bs1 * dmap1[j] + k])
+          assert(bs1 * dofs1[j] + k < (int)bc_markers1.size());
+          if (bc_markers1[bs1 * dofs1[j] + k])
           {
             has_bc = true;
             break;
@@ -112,11 +116,11 @@ void _lift_bc_cells(
     }
 
     // Size data structure for assembly
-    auto dmap0 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        dofmap0, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto dofs0 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+        dmap0, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
 
-    const int num_rows = bs0 * dmap0.size();
-    const int num_cols = bs1 * dmap1.size();
+    const int num_rows = bs0 * dofs0.size();
+    const int num_cols = bs1 * dofs1.size();
 
     const T* coeff_array = coeffs.data() + index * cstride;
     Ae.resize(num_rows * num_cols);
@@ -129,13 +133,13 @@ void _lift_bc_cells(
     // Size data structure for assembly
     be.resize(num_rows);
     std::fill(be.begin(), be.end(), 0);
-    for (std::size_t j = 0; j < dmap1.size(); ++j)
+    for (std::size_t j = 0; j < dofs1.size(); ++j)
     {
       if constexpr (_bs1 > 0)
       {
         for (int k = 0; k < _bs1; ++k)
         {
-          const std::int32_t jj = _bs1 * dmap1[j] + k;
+          const std::int32_t jj = _bs1 * dofs1[j] + k;
           assert(jj < (int)bc_markers1.size());
           if (bc_markers1[jj])
           {
@@ -152,7 +156,7 @@ void _lift_bc_cells(
       {
         for (int k = 0; k < bs1; ++k)
         {
-          const std::int32_t jj = bs1 * dmap1[j] + k;
+          const std::int32_t jj = bs1 * dofs1[j] + k;
           assert(jj < (int)bc_markers1.size());
           if (bc_markers1[jj])
           {
@@ -166,17 +170,17 @@ void _lift_bc_cells(
       }
     }
 
-    for (std::size_t i = 0; i < dmap0.size(); ++i)
+    for (std::size_t i = 0; i < dofs0.size(); ++i)
     {
       if constexpr (_bs0 > 0)
       {
         for (int k = 0; k < _bs0; ++k)
-          b[_bs0 * dmap0[i] + k] += be[_bs0 * i + k];
+          b[_bs0 * dofs0[i] + k] += be[_bs0 * i + k];
       }
       else
       {
         for (int k = 0; k < bs0; ++k)
-          b[bs0 * dmap0[i] + k] += be[bs0 * i + k];
+          b[bs0 * dofs0[i] + k] += be[bs0 * i + k];
       }
     }
   }
@@ -783,21 +787,23 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
     std::span<const std::int32_t> cells = a.domain(IntegralType::cell, i);
     if (bs0 == 1 and bs1 == 1)
     {
-      _lift_bc_cells<T, 1, 1>(b, x_dofmap, x, kernel, cells, dofmap0, bs0, P0,
-                              dofmap1, bs1, P1T, constants, coeffs, cstride,
-                              cell_info0, bc_values1, bc_markers1, x0, scale);
+      _lift_bc_cells<T, 1, 1>(b, x_dofmap, x, kernel, cells,
+                              {dofmap0, bs0, cells}, P0, {dofmap1, bs1, cells},
+                              P1T, constants, coeffs, cstride, cell_info0,
+                              bc_values1, bc_markers1, x0, scale);
     }
     else if (bs0 == 3 and bs1 == 3)
     {
-      _lift_bc_cells<T, 3, 3>(b, x_dofmap, x, kernel, cells, dofmap0, bs0, P0,
-                              dofmap1, bs1, P1T, constants, coeffs, cstride,
-                              cell_info0, bc_values1, bc_markers1, x0, scale);
+      _lift_bc_cells<T, 3, 3>(b, x_dofmap, x, kernel, cells,
+                              {dofmap0, bs0, cells}, P0, {dofmap1, bs1, cells},
+                              P1T, constants, coeffs, cstride, cell_info0,
+                              bc_values1, bc_markers1, x0, scale);
     }
     else
     {
-      _lift_bc_cells(b, x_dofmap, x, kernel, cells, dofmap0, bs0, P0, dofmap1,
-                     bs1, P1T, constants, coeffs, cstride, cell_info0,
-                     bc_values1, bc_markers1, x0, scale);
+      _lift_bc_cells(b, x_dofmap, x, kernel, cells, {dofmap0, bs0, cells}, P0,
+                     {dofmap1, bs1, cells}, P1T, constants, coeffs, cstride,
+                     cell_info0, bc_values1, bc_markers1, x0, scale);
     }
   }
 
