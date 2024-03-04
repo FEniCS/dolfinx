@@ -180,7 +180,7 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
   common::Timer t0("Build sparsity");
 
   // Get common::IndexMaps for each dimension
-  const std::array index_maps{dofmaps[0].get(). index_map,
+  const std::array index_maps{dofmaps[0].get().index_map,
                               dofmaps[1].get().index_map};
   const std::array bs
       = {dofmaps[0].get().index_map_bs(), dofmaps[1].get().index_map_bs()};
