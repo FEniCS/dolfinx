@@ -193,10 +193,8 @@ face_long_edge(const mesh::Mesh<T>& mesh)
     assert(it1 != cell_vertices.end());
     const std::size_t local1 = std::distance(cell_vertices.begin(), it1);
 
-    auto x_dofs
-        = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
-            submdspan(x_dofmap, cells.front(),
-                      MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+        x_dofmap, cells.front(), MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     std::span<const T, 3> x0(mesh.geometry().x().data() + 3 * x_dofs[local0],
                              3);
     std::span<const T, 3> x1(mesh.geometry().x().data() + 3 * x_dofs[local1],

@@ -135,9 +135,8 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
     for (std::int32_t c = 0; c < num_cells; ++c)
     {
       auto dofs = dofmap->cell_dofs(c);
-      auto dofs_x = MDSPAN_IMPL_STANDARD_NAMESPACE::
-          MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
-              dofmap_x, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto dofs_x = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+          dofmap_x, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
       assert(dofs.size() == dofs_x.size());
       for (std::size_t i = 0; i < dofs.size(); ++i)
       {

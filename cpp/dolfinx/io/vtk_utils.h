@@ -113,9 +113,9 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
       std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
   cmdspan4_t phi_full(phi_b.data(), phi_shape);
   cmap.tabulate(0, X, Xshape, phi_b);
-  auto phi = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
-      submdspan(phi_full, 0, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
-                MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
+  auto phi = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+      phi_full, 0, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
+      MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
 
   // Loop over cells and tabulate dofs
   auto map = topology->index_map(tdim);
