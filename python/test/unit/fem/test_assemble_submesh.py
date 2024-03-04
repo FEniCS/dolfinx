@@ -127,7 +127,7 @@ def test_mixed_dom_codim_0(n, k, space):
 
     def create_meshtags(msh, dim, tagged_entities):
         values = []
-        for (tag, entities) in tagged_entities.items():
+        for tag, entities in tagged_entities.items():
             values.append(np.full_like(entities, tag, dtype=np.intc))
         # TODO see if can remove list comp
         entities = np.hstack([entities for entities in tagged_entities.values()])
@@ -216,13 +216,17 @@ def test_mixed_dom_codim_0(n, k, space):
 
     # Single-domain assembly over msh as a reference
     a = fem.form(
-        ufl_form_a(u, v, dx_msh(markers["cells"]), ds_msh(markers["neumann"]), dS_msh(markers["interior"]))
+        ufl_form_a(
+            u, v, dx_msh(markers["cells"]), ds_msh(markers["neumann"]), dS_msh(markers["interior"])
+        )
     )
     A = fem.assemble_matrix(a)
     A.scatter_reverse()
 
     L = fem.form(
-        ufl_form_L(v, dx_msh(markers["cells"]), ds_msh(markers["neumann"]), dS_msh(markers["interior"]))
+        ufl_form_L(
+            v, dx_msh(markers["cells"]), ds_msh(markers["neumann"]), dS_msh(markers["interior"])
+        )
     )
     b = fem.assemble_vector(L)
     b.scatter_reverse(la.InsertMode.add)
@@ -255,7 +259,9 @@ def test_mixed_dom_codim_0(n, k, space):
     entity_maps = {smsh._cpp_object: np.array(msh_to_smsh, dtype=np.int32)}
 
     a1 = fem.form(
-        ufl_form_a(u, w, dx_msh(markers["cells"]), ds_msh(markers["neumann"]), dS_msh(markers["interior"])),
+        ufl_form_a(
+            u, w, dx_msh(markers["cells"]), ds_msh(markers["neumann"]), dS_msh(markers["interior"])
+        ),
         entity_maps=entity_maps,
     )
     A1 = fem.assemble_matrix(a1)
@@ -263,7 +269,9 @@ def test_mixed_dom_codim_0(n, k, space):
     assert np.isclose(A1.squared_norm(), A.squared_norm())
 
     L1 = fem.form(
-        ufl_form_L(w, dx_msh(markers["cells"]), ds_msh(markers["neumann"]), dS_msh(markers["interior"])),
+        ufl_form_L(
+            w, dx_msh(markers["cells"]), ds_msh(markers["neumann"]), dS_msh(markers["interior"])
+        ),
         entity_maps=entity_maps,
     )
     b1 = fem.assemble_vector(L1)
