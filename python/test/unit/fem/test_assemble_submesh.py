@@ -129,7 +129,6 @@ def test_mixed_dom_codim_0(n, k, space):
         values = []
         for tag, entities in tagged_entities.items():
             values.append(np.full_like(entities, tag, dtype=np.intc))
-        # TODO see if can remove list comp
         entities = np.hstack([entities for entities in tagged_entities.values()])
         perm = np.argsort(entities)
         values = np.hstack(values)
@@ -160,21 +159,12 @@ def test_mixed_dom_codim_0(n, k, space):
         return (x[0] > dist) & (x[0] < 1 - dist) & (x[1] > dist) & (x[1] < 1 - dist)
 
     fdim = tdim - 1
-    neumann_facets = locate_entities_boundary(msh, fdim, boundary_marker)
-    neumann_vals = np.full_like(neumann_facets, markers["neumann"], dtype=np.intc)
-
-    dirichlet_facets = locate_entities_boundary(msh, fdim, dirichlet_boundary_marker)
-    dirichlet_vals = np.full_like(dirichlet_facets, markers["dirichlet"], dtype=np.intc)
-
-    int_facets = locate_entities(msh, fdim, int_facets_marker)
-    interior_vals = np.full_like(int_facets, markers["interior"], dtype=np.intc)
-
-    facets = np.hstack((neumann_facets, dirichlet_facets, int_facets))
-    facet_values = np.hstack((neumann_vals, dirichlet_vals, interior_vals))
-
-    perm = np.argsort(facets)
-
-    ft = meshtags(msh, fdim, facets[perm], facet_values[perm])
+    tagged_facets = {
+        markers["neumann"]: locate_entities_boundary(msh, fdim, boundary_marker),
+        markers["dirichlet"]: locate_entities_boundary(msh, fdim, dirichlet_boundary_marker),
+        markers["interior"]: locate_entities(msh, fdim, int_facets_marker),
+    }
+    ft = create_meshtags(msh, fdim, tagged_facets)
 
     # Create integration measures on the mesh
     dx_msh = ufl.Measure("dx", domain=msh, subdomain_data=ct)
@@ -185,14 +175,12 @@ def test_mixed_dom_codim_0(n, k, space):
     smsh, smsh_to_msh = create_submesh(msh, tdim, cells)[:2]
 
     # Create some integration measures on the submesh
-    neumann_facets_smsh = locate_entities_boundary(smsh, fdim, boundary_marker)
-    dirichlet_facets_smsh = locate_entities_boundary(smsh, fdim, dirichlet_boundary_marker)
-    int_facets_smsh = locate_entities(smsh, fdim, int_facets_marker)
-
-    facets_smsh = np.hstack((neumann_facets_smsh, dirichlet_facets_smsh, int_facets_smsh))
-    perm_smsh = np.argsort(facets_smsh)
-
-    ft_smsh = meshtags(smsh, fdim, facets_smsh[perm_smsh], facet_values[perm_smsh])
+    tagged_facets_smsh = {
+        markers["neumann"]: locate_entities_boundary(smsh, fdim, boundary_marker),
+        markers["dirichlet"]: locate_entities_boundary(smsh, fdim, dirichlet_boundary_marker),
+        markers["interior"]: locate_entities(smsh, fdim, int_facets_marker),
+    }
+    ft_smsh = create_meshtags(smsh, fdim, tagged_facets_smsh)
 
     ds_smsh = ufl.Measure("ds", domain=smsh, subdomain_data=ft_smsh)
     dS_smsh = ufl.Measure("dS", domain=smsh, subdomain_data=ft_smsh)
