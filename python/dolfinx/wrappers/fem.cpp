@@ -848,6 +848,30 @@ void declare_real_functions(nb::module_& m)
       "Create DofMap object from a pointer to ufcx_dofmap.");
 
   m.def(
+      "create_dofmaps",
+      [](const dolfinx_wrappers::MPICommWrapper comm,
+         std::vector<std::uintptr_t> ufcx_dofmaps,
+         dolfinx::mesh::Topology& topology)
+      {
+        std::vector<dolfinx::fem::ElementDofLayout> layouts;
+        int D = topology.dim();
+        assert(ufcx_dofmaps.size() == topology.entity_types(D).size());
+        for (std::size_t i = 0; i < ufcx_dofmaps.size(); ++i)
+        {
+          ufcx_dofmap* p = reinterpret_cast<ufcx_dofmap*>(ufcx_dofmaps[i]);
+          assert(p);
+          layouts.push_back(dolfinx::fem::create_element_dof_layout(
+              *p, topology.entity_types(D)[i]));
+        }
+
+        return dolfinx::fem::create_dofmaps(comm.get(), layouts, topology,
+                                            nullptr, nullptr);
+      },
+      nb::arg("comm"), nb::arg("dofmap"), nb::arg("topology"),
+      "Create DofMap objects on a mixed topology mesh from pointers to "
+      "ufcx_dofmaps.");
+
+  m.def(
       "locate_dofs_topological",
       [](const std::vector<
              std::shared_ptr<const dolfinx::fem::FunctionSpace<T>>>& V,
