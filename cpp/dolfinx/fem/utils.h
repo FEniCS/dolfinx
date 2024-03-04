@@ -51,12 +51,6 @@ namespace dolfinx::fem
 
 namespace impl
 {
-/// @brief Helper function to extract the cells from a list of facets identified
-/// by (cell, local_facet) pairs
-/// @param facets List of (cell, local_facet) pairs
-/// @return List of cells
-std::vector<std::int32_t> extract_cells(std::span<const std::int32_t> facets);
-
 /// Helper function to get an array of of (cell, local_facet) pairs
 /// corresponding to a given facet index.
 /// @param[in] f Facet index
@@ -186,7 +180,7 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
   common::Timer t0("Build sparsity");
 
   // Get common::IndexMaps for each dimension
-  const std::array index_maps{dofmaps[0].get().index_map,
+  const std::array index_maps{dofmaps[0].get(). index_map,
                               dofmaps[1].get().index_map};
   const std::array bs
       = {dofmaps[0].get().index_map_bs(), dofmaps[1].get().index_map_bs()};

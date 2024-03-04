@@ -323,14 +323,3 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
   return integrals;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int32_t>
-fem::impl::extract_cells(std::span<const std::int32_t> facets)
-{
-  assert(facets.size() % 2 == 0);
-  std::vector<std::int32_t> cells;
-  cells.reserve(facets.size() / 2);
-  for (std::size_t i = 0; i < facets.size(); i += 2)
-    cells.push_back(facets[i]);
-  return cells;
-}
-//-----------------------------------------------------------------------------
