@@ -323,7 +323,8 @@ void _lift_bc_interior_facets(
     std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap1,
     fem::DofTransformKernel<T> auto P1T, std::span<const T> constants,
     std::span<const T> coeffs, int cstride,
-    std::span<const std::uint32_t> cell_info,
+    std::span<const std::uint32_t> cell_info0,
+    std::span<const std::uint32_t> cell_info1,
     const std::function<std::uint8_t(std::size_t)>& get_perm,
     std::span<const T> bc_values1, std::span<const std::int8_t> bc_markers1,
     std::span<const T> x0, T scale)
@@ -348,9 +349,17 @@ void _lift_bc_interior_facets(
 
   const int num_dofs0 = dmap0.extent(1);
   const int num_dofs1 = dmap1.extent(1);
+  assert(facets0.size() == facets.size());
+  assert(facets1.size() == facets.size());
   for (std::size_t index = 0; index < facets.size(); index += 4)
   {
-    std::array<std::int32_t, 2> cells = {facets[index], facets[index + 2]};
+    // Cells in integration domain, test function domain and trial
+    // function domain meshes
+    std::array cells{facets[index], facets[index + 2]};
+    std::array cells0{facets0[index], facets0[index + 2]};
+    std::array cells1{facets1[index], facets1[index + 2]};
+
+    // Local facet indices
     std::array<std::int32_t, 2> local_facet
         = {facets[index + 1], facets[index + 3]};
 
@@ -372,9 +381,9 @@ void _lift_bc_interior_facets(
 
     // Get dof maps for cells and pack
     auto dmap0_cell0
-        = std::span(dmap0.data_handle() + cells[0] * num_dofs0, num_dofs0);
+        = std::span(dmap0.data_handle() + cells0[0] * num_dofs0, num_dofs0);
     auto dmap0_cell1
-        = std::span(dmap0.data_handle() + cells[1] * num_dofs0, num_dofs0);
+        = std::span(dmap0.data_handle() + cells0[1] * num_dofs0, num_dofs0);
 
     dmapjoint0.resize(dmap0_cell0.size() + dmap0_cell1.size());
     std::copy(dmap0_cell0.begin(), dmap0_cell0.end(), dmapjoint0.begin());
@@ -382,9 +391,9 @@ void _lift_bc_interior_facets(
               std::next(dmapjoint0.begin(), dmap0_cell0.size()));
 
     auto dmap1_cell0
-        = std::span(dmap1.data_handle() + cells[0] * num_dofs1, num_dofs1);
+        = std::span(dmap1.data_handle() + cells1[0] * num_dofs1, num_dofs1);
     auto dmap1_cell1
-        = std::span(dmap1.data_handle() + cells[1] * num_dofs1, num_dofs1);
+        = std::span(dmap1.data_handle() + cells1[1] * num_dofs1, num_dofs1);
 
     dmapjoint1.resize(dmap1_cell0.size() + dmap1_cell1.size());
     std::copy(dmap1_cell0.begin(), dmap1_cell0.end(), dmapjoint1.begin());
@@ -437,9 +446,9 @@ void _lift_bc_interior_facets(
     std::span<T> sub_Ae0 = _Ae.subspan(bs0 * dmap0_cell0.size() * num_cols,
                                        bs0 * dmap0_cell1.size() * num_cols);
 
-    P0(_Ae, cell_info, cells[0], num_cols);
-    P0(sub_Ae0, cell_info, cells[1], num_cols);
-    P1T(_Ae, cell_info, cells[0], num_rows);
+    P0(_Ae, cell_info0, cells0[0], num_cols);
+    P0(sub_Ae0, cell_info0, cells0[1], num_cols);
+    P1T(_Ae, cell_info1, cells1[0], num_rows);
 
     for (int row = 0; row < num_rows; ++row)
     {
@@ -447,7 +456,7 @@ void _lift_bc_interior_facets(
       // the block matrix, so each row needs a separate span access
       std::span<T> sub_Ae1 = _Ae.subspan(
           row * num_cols + bs1 * dmap1_cell0.size(), bs1 * dmap1_cell1.size());
-      P1T(sub_Ae1, cell_info, cells[1], 1);
+      P1T(sub_Ae1, cell_info1, cells1[1], 1);
     }
 
     be.resize(num_rows);
@@ -882,8 +891,8 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
           a.domain(IntegralType::interior_facet, i),
           {dofmap0, bs0, a.domain(IntegralType::interior_facet, i, *mesh0)}, P0,
           {dofmap1, bs1, a.domain(IntegralType::interior_facet, i, *mesh1)},
-          P1T, constants, coeffs, cstride, cell_info0, get_perm, bc_values1,
-          bc_markers1, x0, scale);
+          P1T, constants, coeffs, cstride, cell_info0, cell_info1, get_perm,
+          bc_values1, bc_markers1, x0, scale);
     }
   }
 }
