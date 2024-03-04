@@ -192,7 +192,7 @@ def test_mixed_dom_codim_0(n, k, space):
     dS_smsh = ufl.Measure("dS", domain=smsh, subdomain_data=ft_smsh)
 
     # Define function spaces over the mesh and submesh
-    V = fem.functionspace(msh, (space, k))  # TODO RT
+    V = fem.functionspace(msh, (space, k))
     W = fem.functionspace(msh, (space, k))
     Q = fem.functionspace(smsh, (space, k))
 
@@ -230,7 +230,9 @@ def test_mixed_dom_codim_0(n, k, space):
         )
     )
     b = fem.assemble_vector(L)
+    # fem.apply_lifting(b.array, [a], bcs=[[bc]])
     b.scatter_reverse(la.InsertMode.add)
+    # set_bc(b, [bc])
 
     # Assemble a mixed-domain form, taking smsh to be the integration domain
     # Entity maps must map cells in smsh (the integration domain mesh) to
@@ -276,5 +278,6 @@ def test_mixed_dom_codim_0(n, k, space):
         entity_maps=entity_maps,
     )
     b1 = fem.assemble_vector(L1)
+    # fem.apply_lifting(b.array, [a], bcs=[[bc]])
     b1.scatter_reverse(la.InsertMode.add)
     assert np.isclose(b1.norm(), b.norm())
