@@ -210,10 +210,10 @@ def test_mixed_dom_codim_0(n, k, space):
 
     # Define a UFL form
     def ufl_form_a(u, v, dx, ds, dS):
-        return ufl.inner(u, v) * dx # + ufl.inner(u, v) * ds + ufl.inner(u("+"), v("-")) * dS
+        return ufl.inner(u, v) * dx  # + ufl.inner(u, v) * ds + ufl.inner(u("+"), v("-")) * dS
 
     def ufl_form_L(v, dx, ds, dS):
-        return ufl.inner(2.5, v) * dx # + ufl.inner(0.5, v) * ds + ufl.inner(0.1, v("-")) * dS
+        return ufl.inner(2.5, v) * dx  # + ufl.inner(0.5, v) * ds + ufl.inner(0.1, v("-")) * dS
 
     # Single-domain assembly over msh as a reference
     a = fem.form(
