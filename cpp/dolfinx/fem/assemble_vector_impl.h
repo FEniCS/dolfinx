@@ -203,9 +203,12 @@ template <dolfinx::scalar T, int _bs = -1>
 void _lift_bc_exterior_facets(
     std::span<T> b, mdspan2_t x_dofmap,
     std::span<const scalar_value_type_t<T>> x, FEkernel<T> auto kernel,
-    std::span<const std::int32_t> facets, fem::DofTransformKernel<T> auto P0,
-    mdspan2_t dofmap0, int bs0, fem::DofTransformKernel<T> auto P1T,
-    mdspan2_t dofmap1, int bs1, std::span<const T> constants,
+    std::span<const std::int32_t> facets,
+    mdspan2_t dofmap0, int bs0,
+    fem::DofTransformKernel<T> auto P0,
+    mdspan2_t dofmap1, int bs1,
+    fem::DofTransformKernel<T> auto P1T,
+    std::span<const T> constants,
     std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info, std::span<const T> bc_values1,
     std::span<const std::int8_t> bc_markers1, std::span<const T> x0, T scale)
@@ -828,8 +831,8 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
     auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
     _lift_bc_exterior_facets(
-        b, x_dofmap, x, kernel, a.domain(IntegralType::exterior_facet, i), P0,
-        dofmap0, bs0, P1T, dofmap1, bs1, constants, coeffs, cstride, cell_info0,
+        b, x_dofmap, x, kernel, a.domain(IntegralType::exterior_facet, i),
+        dofmap0, bs0, P0, dofmap1, bs1, P1T, constants, coeffs, cstride, cell_info0,
         bc_values1, bc_markers1, x0, scale);
   }
 
