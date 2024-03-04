@@ -119,7 +119,7 @@ def test_submesh_facet_assembly(n, k, space, ghost_mode):
 
 
 @pytest.mark.parametrize("n", [4, 6])
-@pytest.mark.parametrize("k", [1, 4])
+@pytest.mark.parametrize("k", [1, 3])
 @pytest.mark.parametrize("space", ["Lagrange", "Discontinuous Lagrange"])
 def test_mixed_dom_codim_0(n, k, space):
     """Test assembling a form where the trial and test functions
@@ -192,14 +192,21 @@ def test_mixed_dom_codim_0(n, k, space):
     dS_smsh = ufl.Measure("dS", domain=smsh, subdomain_data=ft_smsh)
 
     # Define function spaces over the mesh and submesh
-    V_msh = fem.functionspace(msh, (space, k))
-    V_smsh = fem.functionspace(smsh, (space, k))
+    V = fem.functionspace(msh, (space, k))  # TODO RT
+    W = fem.functionspace(msh, (space, k))
+    Q = fem.functionspace(smsh, (space, k))
 
     # Trial and test functions on the mesh
-    u, v = ufl.TrialFunction(V_msh), ufl.TestFunction(V_msh)
+    u = ufl.TrialFunction(V)
+    w = ufl.TestFunction(W)
 
     # Test function on the submesh
-    w = ufl.TestFunction(V_smsh)
+    q = ufl.TestFunction(Q)
+
+    u_bc = fem.Function(V)
+    u_bc.interpolate(lambda x: np.sin(np.pi * x[0]))
+    dirichlet_dofs = fem.locate_dofs_topological(V, fdim, ft.find(markers["dirichlet"]))
+    bc = fem.dirichletbc(u_bc, dirichlet_dofs)
 
     # Define a UFL form
     def ufl_form_a(u, v, dx, ds, dS):
@@ -211,15 +218,15 @@ def test_mixed_dom_codim_0(n, k, space):
     # Single-domain assembly over msh as a reference
     a = fem.form(
         ufl_form_a(
-            u, v, dx_msh(markers["cells"]), ds_msh(markers["neumann"]), dS_msh(markers["interior"])
+            u, w, dx_msh(markers["cells"]), ds_msh(markers["neumann"]), dS_msh(markers["interior"])
         )
     )
-    A = fem.assemble_matrix(a)
+    A = fem.assemble_matrix(a, bcs=[bc])
     A.scatter_reverse()
 
     L = fem.form(
         ufl_form_L(
-            v, dx_msh(markers["cells"]), ds_msh(markers["neumann"]), dS_msh(markers["interior"])
+            w, dx_msh(markers["cells"]), ds_msh(markers["neumann"]), dS_msh(markers["interior"])
         )
     )
     b = fem.assemble_vector(L)
@@ -232,14 +239,14 @@ def test_mixed_dom_codim_0(n, k, space):
     a0 = fem.form(
         ufl_form_a(
             u,
-            w,
+            q,
             ufl.dx(smsh),
             ds_smsh(markers["neumann"]),
             dS_smsh(markers["interior"]),
         ),
         entity_maps=entity_maps,
     )
-    A0 = fem.assemble_matrix(a0)
+    A0 = fem.assemble_matrix(a0, bcs=[bc])
     A0.scatter_reverse()
     assert np.isclose(A0.squared_norm(), A.squared_norm())
 
@@ -254,17 +261,17 @@ def test_mixed_dom_codim_0(n, k, space):
 
     a1 = fem.form(
         ufl_form_a(
-            u, w, dx_msh(markers["cells"]), ds_msh(markers["neumann"]), dS_msh(markers["interior"])
+            u, q, dx_msh(markers["cells"]), ds_msh(markers["neumann"]), dS_msh(markers["interior"])
         ),
         entity_maps=entity_maps,
     )
-    A1 = fem.assemble_matrix(a1)
+    A1 = fem.assemble_matrix(a1, bcs=[bc])
     A1.scatter_reverse()
     assert np.isclose(A1.squared_norm(), A.squared_norm())
 
     L1 = fem.form(
         ufl_form_L(
-            w, dx_msh(markers["cells"]), ds_msh(markers["neumann"]), dS_msh(markers["interior"])
+            q, dx_msh(markers["cells"]), ds_msh(markers["neumann"]), dS_msh(markers["interior"])
         ),
         entity_maps=entity_maps,
     )
