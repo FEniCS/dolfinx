@@ -204,11 +204,10 @@ void _lift_bc_exterior_facets(
     std::span<T> b, mdspan2_t x_dofmap,
     std::span<const scalar_value_type_t<T>> x, FEkernel<T> auto kernel,
     std::span<const std::int32_t> facets,
-    mdspan2_t dofmap0, int bs0,
+    std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap0,
     fem::DofTransformKernel<T> auto P0,
-    mdspan2_t dofmap1, int bs1,
-    fem::DofTransformKernel<T> auto P1T,
-    std::span<const T> constants,
+    std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap1,
+    fem::DofTransformKernel<T> auto P1T, std::span<const T> constants,
     std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info, std::span<const T> bc_values1,
     std::span<const std::int8_t> bc_markers1, std::span<const T> x0, T scale)
@@ -216,26 +215,31 @@ void _lift_bc_exterior_facets(
   if (facets.empty())
     return;
 
+  const auto [dmap0, bs0, facets0] = dofmap0;
+  const auto [dmap1, bs1, facets1] = dofmap1;
+
   // Data structures used in bc application
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * x_dofmap.extent(1));
   std::vector<T> Ae, be;
   assert(facets.size() % 2 == 0);
+  assert(facets0.size() == facets.size());
+  assert(facets1.size() == facets.size());
   for (std::size_t index = 0; index < facets.size(); index += 2)
   {
     std::int32_t cell = facets[index];
     std::int32_t local_facet = facets[index + 1];
 
     // Get dof maps for cell
-    auto dmap1 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        dofmap1, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto dofs1 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+        dmap1, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
 
     // Check if bc is applied to cell
     bool has_bc = false;
-    for (std::size_t j = 0; j < dmap1.size(); ++j)
+    for (std::size_t j = 0; j < dofs1.size(); ++j)
     {
       for (int k = 0; k < bs1; ++k)
       {
-        if (bc_markers1[bs1 * dmap1[j] + k])
+        if (bc_markers1[bs1 * dofs1[j] + k])
         {
           has_bc = true;
           break;
@@ -256,11 +260,11 @@ void _lift_bc_exterior_facets(
     }
 
     // Size data structure for assembly
-    auto dmap0 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        dofmap0, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto dofs0 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+        dmap0, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
 
-    const int num_rows = bs0 * dmap0.size();
-    const int num_cols = bs1 * dmap1.size();
+    const int num_rows = bs0 * dofs0.size();
+    const int num_cols = bs1 * dofs1.size();
 
     const T* coeff_array = coeffs.data() + index / 2 * cstride;
     Ae.resize(num_rows * num_cols);
@@ -273,11 +277,11 @@ void _lift_bc_exterior_facets(
     // Size data structure for assembly
     be.resize(num_rows);
     std::fill(be.begin(), be.end(), 0);
-    for (std::size_t j = 0; j < dmap1.size(); ++j)
+    for (std::size_t j = 0; j < dofs1.size(); ++j)
     {
       for (int k = 0; k < bs1; ++k)
       {
-        const std::int32_t jj = bs1 * dmap1[j] + k;
+        const std::int32_t jj = bs1 * dofs1[j] + k;
         if (bc_markers1[jj])
         {
           const T bc = bc_values1[jj];
@@ -289,9 +293,9 @@ void _lift_bc_exterior_facets(
       }
     }
 
-    for (std::size_t i = 0; i < dmap0.size(); ++i)
+    for (std::size_t i = 0; i < dofs0.size(); ++i)
       for (int k = 0; k < bs0; ++k)
-        b[bs0 * dmap0[i] + k] += be[bs0 * i + k];
+        b[bs0 * dofs0[i] + k] += be[bs0 * i + k];
   }
 }
 
@@ -832,8 +836,10 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
         = coefficients.at({IntegralType::exterior_facet, i});
     _lift_bc_exterior_facets(
         b, x_dofmap, x, kernel, a.domain(IntegralType::exterior_facet, i),
-        dofmap0, bs0, P0, dofmap1, bs1, P1T, constants, coeffs, cstride, cell_info0,
-        bc_values1, bc_markers1, x0, scale);
+        {dofmap0, bs0, a.domain(IntegralType::exterior_facet, i, *mesh0)}, P0,
+        {dofmap1, bs1, a.domain(IntegralType::exterior_facet, i, *mesh1)}, P1T,
+        constants, coeffs, cstride, cell_info0, bc_values1, bc_markers1, x0,
+        scale);
   }
 
   if (a.num_integrals(IntegralType::interior_facet) > 0)
