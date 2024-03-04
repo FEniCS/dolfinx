@@ -142,9 +142,9 @@ def test_mixed_dom_codim_0(n, k, space):
 
     # Locate cells in left half of mesh and create mesh tags
     tdim = msh.topology.dim
-    cells = locate_entities(msh, tdim, lambda x: x[0] <= 1.0)
-    tagged_cells = {markers["cells"]: cells}
-    ct = create_meshtags(msh, tdim, tagged_cells)
+    ct = create_meshtags(
+        msh, tdim, {markers["cells"]: locate_entities(msh, tdim, lambda x: x[0] <= 1.0)}
+    )
 
     # Locate facets on left boundary and create mesh tags
     def boundary_marker(x):
@@ -159,12 +159,15 @@ def test_mixed_dom_codim_0(n, k, space):
         return (x[0] > dist) & (x[0] < 1 - dist) & (x[1] > dist) & (x[1] < 1 - dist)
 
     fdim = tdim - 1
-    tagged_facets = {
-        markers["neumann"]: locate_entities_boundary(msh, fdim, boundary_marker),
-        markers["dirichlet"]: locate_entities_boundary(msh, fdim, dirichlet_boundary_marker),
-        markers["interior"]: locate_entities(msh, fdim, int_facets_marker),
-    }
-    ft = create_meshtags(msh, fdim, tagged_facets)
+    ft = create_meshtags(
+        msh,
+        fdim,
+        {
+            markers["neumann"]: locate_entities_boundary(msh, fdim, boundary_marker),
+            markers["dirichlet"]: locate_entities_boundary(msh, fdim, dirichlet_boundary_marker),
+            markers["interior"]: locate_entities(msh, fdim, int_facets_marker),
+        },
+    )
 
     # Create integration measures on the mesh
     dx_msh = ufl.Measure("dx", domain=msh, subdomain_data=ct)
@@ -172,15 +175,18 @@ def test_mixed_dom_codim_0(n, k, space):
     dS_msh = ufl.Measure("dS", domain=msh, subdomain_data=ft)
 
     # Create a submesh of the left half of the mesh
-    smsh, smsh_to_msh = create_submesh(msh, tdim, cells)[:2]
+    smsh, smsh_to_msh = create_submesh(msh, tdim, ct.find(markers["cells"]))[:2]
 
     # Create some integration measures on the submesh
-    tagged_facets_smsh = {
-        markers["neumann"]: locate_entities_boundary(smsh, fdim, boundary_marker),
-        markers["dirichlet"]: locate_entities_boundary(smsh, fdim, dirichlet_boundary_marker),
-        markers["interior"]: locate_entities(smsh, fdim, int_facets_marker),
-    }
-    ft_smsh = create_meshtags(smsh, fdim, tagged_facets_smsh)
+    ft_smsh = create_meshtags(
+        smsh,
+        fdim,
+        {
+            markers["neumann"]: locate_entities_boundary(smsh, fdim, boundary_marker),
+            markers["dirichlet"]: locate_entities_boundary(smsh, fdim, dirichlet_boundary_marker),
+            markers["interior"]: locate_entities(smsh, fdim, int_facets_marker),
+        },
+    )
 
     ds_smsh = ufl.Measure("ds", domain=smsh, subdomain_data=ft_smsh)
     dS_smsh = ufl.Measure("dS", domain=smsh, subdomain_data=ft_smsh)
@@ -265,6 +271,3 @@ def test_mixed_dom_codim_0(n, k, space):
     b1 = fem.assemble_vector(L1)
     b1.scatter_reverse(la.InsertMode.add)
     assert np.isclose(b1.norm(), b.norm())
-
-
-test_mixed_dom_codim_0(4, 1, "Lagrange")
