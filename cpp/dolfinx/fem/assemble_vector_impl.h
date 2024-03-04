@@ -209,7 +209,8 @@ void _lift_bc_exterior_facets(
     std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap1,
     fem::DofTransformKernel<T> auto P1T, std::span<const T> constants,
     std::span<const T> coeffs, int cstride,
-    std::span<const std::uint32_t> cell_info, std::span<const T> bc_values1,
+    std::span<const std::uint32_t> cell_info0,
+    std::span<const std::uint32_t> cell_info1, std::span<const T> bc_values1,
     std::span<const std::int8_t> bc_markers1, std::span<const T> x0, T scale)
 {
   if (facets.empty())
@@ -226,12 +227,19 @@ void _lift_bc_exterior_facets(
   assert(facets1.size() == facets.size());
   for (std::size_t index = 0; index < facets.size(); index += 2)
   {
+    // Cell in integration domain mesh
     std::int32_t cell = facets[index];
+    // Cell in test fuction mesh
+    std::int32_t cell0 = facets0[index];
+    // Cell in trial function mesh
+    std::int32_t cell1 = facets1[index];
+
+    // Local facet index
     std::int32_t local_facet = facets[index + 1];
 
     // Get dof maps for cell
     auto dofs1 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        dmap1, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+        dmap1, cell1, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
 
     // Check if bc is applied to cell
     bool has_bc = false;
@@ -261,7 +269,7 @@ void _lift_bc_exterior_facets(
 
     // Size data structure for assembly
     auto dofs0 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        dmap0, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+        dmap0, cell0, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
 
     const int num_rows = bs0 * dofs0.size();
     const int num_cols = bs1 * dofs1.size();
@@ -271,8 +279,8 @@ void _lift_bc_exterior_facets(
     std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeff_array, constants.data(), coordinate_dofs.data(),
            &local_facet, nullptr);
-    P0(Ae, cell_info, cell, num_cols);
-    P1T(Ae, cell_info, cell, num_rows);
+    P0(Ae, cell_info0, cell0, num_cols);
+    P1T(Ae, cell_info1, cell1, num_rows);
 
     // Size data structure for assembly
     be.resize(num_rows);
@@ -838,8 +846,8 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
         b, x_dofmap, x, kernel, a.domain(IntegralType::exterior_facet, i),
         {dofmap0, bs0, a.domain(IntegralType::exterior_facet, i, *mesh0)}, P0,
         {dofmap1, bs1, a.domain(IntegralType::exterior_facet, i, *mesh1)}, P1T,
-        constants, coeffs, cstride, cell_info0, bc_values1, bc_markers1, x0,
-        scale);
+        constants, coeffs, cstride, cell_info0, cell_info1, bc_values1,
+        bc_markers1, x0, scale);
   }
 
   if (a.num_integrals(IntegralType::interior_facet) > 0)
