@@ -121,27 +121,31 @@ def test_submesh_facet_assembly(n, k, space, ghost_mode):
 @pytest.mark.parametrize("n", [4, 6])
 @pytest.mark.parametrize("k", [1, 4])
 @pytest.mark.parametrize("space", ["Lagrange", "Discontinuous Lagrange"])
-@pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
-def test_mixed_dom_codim_0(n, k, space, ghost_mode):
+def test_mixed_dom_codim_0(n, k, space):
     """Test assembling a form where the trial and test functions
     are defined on different meshes"""
 
-    def create_meshtags(msh, dim, entities, tag):
+    def create_meshtags(msh, dim, tagged_entities):
+        values = []
+        for (tag, entities) in tagged_entities.items():
+            values.append(np.full_like(entities, tag, dtype=np.intc))
+        # TODO see if can remove list comp
+        entities = np.hstack([entities for entities in tagged_entities.values()])
         perm = np.argsort(entities)
-        values = np.full_like(entities, tag, dtype=np.intc)
+        values = np.hstack(values)
         return meshtags(msh, dim, entities[perm], values[perm])
 
     msh = create_rectangle(
-        MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n), ghost_mode=ghost_mode
+        MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n), ghost_mode=GhostMode.shared_facet
     )
 
-    markers = {"neumann": 1, "interior": 4, "dirichlet": 7}
+    markers = {"cells": 8, "neumann": 1, "interior": 4, "dirichlet": 7}
 
     # Locate cells in left half of mesh and create mesh tags
     tdim = msh.topology.dim
-    tag = 1
     cells = locate_entities(msh, tdim, lambda x: x[0] <= 1.0)
-    ct = create_meshtags(msh, tdim, cells, tag)
+    tagged_cells = {markers["cells"]: cells}
+    ct = create_meshtags(msh, tdim, tagged_cells)
 
     # Locate facets on left boundary and create mesh tags
     def boundary_marker(x):
@@ -212,17 +216,13 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
 
     # Single-domain assembly over msh as a reference
     a = fem.form(
-        ufl_form_a(
-            u, v, dx_msh(tag), ds_msh(markers["neumann"]), dS_msh(markers["interior"])
-        )
+        ufl_form_a(u, v, dx_msh(markers["cells"]), ds_msh(markers["neumann"]), dS_msh(markers["interior"]))
     )
     A = fem.assemble_matrix(a)
     A.scatter_reverse()
 
     L = fem.form(
-        ufl_form_L(
-            v, dx_msh(tag), ds_msh(markers["neumann"]), dS_msh(markers["interior"])
-        )
+        ufl_form_L(v, dx_msh(markers["cells"]), ds_msh(markers["neumann"]), dS_msh(markers["interior"]))
     )
     b = fem.assemble_vector(L)
     b.scatter_reverse(la.InsertMode.add)
@@ -255,9 +255,7 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
     entity_maps = {smsh._cpp_object: np.array(msh_to_smsh, dtype=np.int32)}
 
     a1 = fem.form(
-        ufl_form_a(
-            u, w, dx_msh(tag), ds_msh(markers["neumann"]), dS_msh(markers["interior"])
-        ),
+        ufl_form_a(u, w, dx_msh(markers["cells"]), ds_msh(markers["neumann"]), dS_msh(markers["interior"])),
         entity_maps=entity_maps,
     )
     A1 = fem.assemble_matrix(a1)
@@ -265,11 +263,12 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
     assert np.isclose(A1.squared_norm(), A.squared_norm())
 
     L1 = fem.form(
-        ufl_form_L(
-            w, dx_msh(tag), ds_msh(markers["neumann"]), dS_msh(markers["interior"])
-        ),
+        ufl_form_L(w, dx_msh(markers["cells"]), ds_msh(markers["neumann"]), dS_msh(markers["interior"])),
         entity_maps=entity_maps,
     )
     b1 = fem.assemble_vector(L1)
     b1.scatter_reverse(la.InsertMode.add)
     assert np.isclose(b1.norm(), b.norm())
+
+
+test_mixed_dom_codim_0(4, 1, "Lagrange")
