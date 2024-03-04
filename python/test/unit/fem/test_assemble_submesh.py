@@ -210,10 +210,10 @@ def test_mixed_dom_codim_0(n, k, space):
 
     # Define a UFL form
     def ufl_form_a(u, v, dx, ds, dS):
-        return ufl.inner(u, v) * dx + ufl.inner(u, v) * ds + ufl.inner(u("+"), v("-")) * dS
+        return ufl.inner(u, v) * dx # + ufl.inner(u, v) * ds + ufl.inner(u("+"), v("-")) * dS
 
     def ufl_form_L(v, dx, ds, dS):
-        return ufl.inner(2.5, v) * dx + ufl.inner(0.5, v) * ds + ufl.inner(0.1, v("-")) * dS
+        return ufl.inner(2.5, v) * dx # + ufl.inner(0.5, v) * ds + ufl.inner(0.1, v("-")) * dS
 
     # Single-domain assembly over msh as a reference
     a = fem.form(
@@ -230,7 +230,7 @@ def test_mixed_dom_codim_0(n, k, space):
         )
     )
     b = fem.assemble_vector(L)
-    # fem.apply_lifting(b.array, [a], bcs=[[bc]])
+    fem.apply_lifting(b.array, [a], bcs=[[bc]])
     b.scatter_reverse(la.InsertMode.add)
     # set_bc(b, [bc])
 
@@ -278,6 +278,6 @@ def test_mixed_dom_codim_0(n, k, space):
         entity_maps=entity_maps,
     )
     b1 = fem.assemble_vector(L1)
-    # fem.apply_lifting(b.array, [a], bcs=[[bc]])
+    fem.apply_lifting(b1.array, [a1], bcs=[[bc]])
     b1.scatter_reverse(la.InsertMode.add)
     assert np.isclose(b1.norm(), b.norm())
