@@ -188,15 +188,15 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
     def ufl_form_a(u, v, dx, ds, dS):
         return ufl.inner(u, v) * dx + ufl.inner(u, v) * ds + ufl.inner(u("+"), v("-")) * dS
 
-    def ufl_form_L(v, dx, ds):
-        return ufl.inner(2.5, v) * dx + ufl.inner(0.5, v) * ds
+    def ufl_form_L(v, dx, ds, dS):
+        return ufl.inner(2.5, v) * dx + ufl.inner(0.5, v) * ds + ufl.inner(0.1, v("-")) * dS
 
     # Single-domain assembly over msh as a reference
     a = fem.form(ufl_form_a(u, v, dx_msh(tag), ds_msh(tag), dS_msh(tag)))
     A = fem.assemble_matrix(a)
     A.scatter_reverse()
 
-    L = fem.form(ufl_form_L(v, dx_msh(tag), ds_msh(tag)))
+    L = fem.form(ufl_form_L(v, dx_msh(tag), ds_msh(tag), dS_msh(tag)))
     b = fem.assemble_vector(L)
     b.scatter_reverse(la.InsertMode.add)
 
@@ -225,7 +225,7 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
     A1.scatter_reverse()
     assert np.isclose(A1.squared_norm(), A.squared_norm())
 
-    L1 = fem.form(ufl_form_L(w, dx_msh(tag), ds_msh(tag)), entity_maps=entity_maps)
+    L1 = fem.form(ufl_form_L(w, dx_msh(tag), ds_msh(tag), dS_msh(tag)), entity_maps=entity_maps)
     b1 = fem.assemble_vector(L1)
     b1.scatter_reverse(la.InsertMode.add)
     assert np.isclose(b1.norm(), b.norm())
