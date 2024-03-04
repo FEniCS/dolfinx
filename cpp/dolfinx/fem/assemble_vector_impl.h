@@ -751,8 +751,15 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
              std::span<const std::int8_t> bc_markers1, std::span<const T> x0,
              T scale)
 {
+  // Integration domain mesh
   std::shared_ptr<const mesh::Mesh<U>> mesh = a.mesh();
   assert(mesh);
+  // Test function mesh
+  auto mesh0 = a.function_spaces().at(0)->mesh();
+  assert(mesh0);
+  // Trial function mesh
+  auto mesh1 = a.function_spaces().at(1)->mesh();
+  assert(mesh1);
 
   // Get dofmap for columns and rows of a
   assert(a.function_spaces().at(0));
@@ -765,12 +772,16 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
   auto element1 = a.function_spaces()[1]->element();
   assert(element0);
 
-  std::span<const std::uint32_t> cell_info;
+  std::span<const std::uint32_t> cell_info0;
+  std::span<const std::uint32_t> cell_info1;
+  // TODO Check for each element instead
   if (element0->needs_dof_transformations()
       or element1->needs_dof_transformations() or a.needs_facet_permutations())
   {
-    mesh->topology_mutable()->create_entity_permutations();
-    cell_info = std::span(mesh->topology()->get_cell_permutation_info());
+    mesh0->topology_mutable()->create_entity_permutations();
+    mesh1->topology_mutable()->create_entity_permutations();
+    cell_info0 = std::span(mesh0->topology()->get_cell_permutation_info());
+    cell_info1 = std::span(mesh1->topology()->get_cell_permutation_info());
   }
 
   fem::DofTransformKernel<T> auto pre_dof_transform
@@ -789,21 +800,21 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
     {
       _lift_bc_cells<T, 1, 1>(b, x_dofmap, x, kernel, cells, pre_dof_transform,
                               dofmap0, bs0, post_dof_transpose, dofmap1, bs1,
-                              constants, coeffs, cstride, cell_info, bc_values1,
+                              constants, coeffs, cstride, cell_info0, bc_values1,
                               bc_markers1, x0, scale);
     }
     else if (bs0 == 3 and bs1 == 3)
     {
       _lift_bc_cells<T, 3, 3>(b, x_dofmap, x, kernel, cells, pre_dof_transform,
                               dofmap0, bs0, post_dof_transpose, dofmap1, bs1,
-                              constants, coeffs, cstride, cell_info, bc_values1,
+                              constants, coeffs, cstride, cell_info0, bc_values1,
                               bc_markers1, x0, scale);
     }
     else
     {
       _lift_bc_cells(b, x_dofmap, x, kernel, cells, pre_dof_transform, dofmap0,
                      bs0, post_dof_transpose, dofmap1, bs1, constants, coeffs,
-                     cstride, cell_info, bc_values1, bc_markers1, x0, scale);
+                     cstride, cell_info0, bc_values1, bc_markers1, x0, scale);
     }
   }
 
@@ -816,7 +827,7 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
     _lift_bc_exterior_facets(
         b, x_dofmap, x, kernel, a.domain(IntegralType::exterior_facet, i),
         pre_dof_transform, dofmap0, bs0, post_dof_transpose, dofmap1, bs1,
-        constants, coeffs, cstride, cell_info, bc_values1, bc_markers1, x0,
+        constants, coeffs, cstride, cell_info0, bc_values1, bc_markers1, x0,
         scale);
   }
 
@@ -846,7 +857,7 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
           b, x_dofmap, x, num_cell_facets, kernel,
           a.domain(IntegralType::interior_facet, i), pre_dof_transform, dofmap0,
           bs0, post_dof_transpose, dofmap1, bs1, constants, coeffs, cstride,
-          cell_info, get_perm, bc_values1, bc_markers1, x0, scale);
+          cell_info0, get_perm, bc_values1, bc_markers1, x0, scale);
     }
   }
 }
