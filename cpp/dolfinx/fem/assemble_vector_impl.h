@@ -51,7 +51,8 @@ void _lift_bc_cells(
     std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap1,
     fem::DofTransformKernel<T> auto P1T, std::span<const T> constants,
     std::span<const T> coeffs, int cstride,
-    std::span<const std::uint32_t> cell_info, std::span<const T> bc_values1,
+    std::span<const std::uint32_t> cell_info0,
+    std::span<const std::uint32_t> cell_info1, std::span<const T> bc_values1,
     std::span<const std::int8_t> bc_markers1, std::span<const T> x0, T scale)
 {
   if (cells.empty())
@@ -65,13 +66,19 @@ void _lift_bc_cells(
   // Data structures used in bc application
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * x_dofmap.extent(1));
   std::vector<T> Ae, be;
+  assert(cells0.size() == cells.size());
+  assert(cells1.size() == cells.size());
   for (std::size_t index = 0; index < cells.size(); ++index)
   {
+    // Cell index in integration domain mesh, test function mesh, and trial
+    // function mesh
     std::int32_t c = cells[index];
+    std::int32_t c0 = cells0[index];
+    std::int32_t c1 = cells1[index];
 
     // Get dof maps for cell
     auto dofs1 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        dmap1, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+        dmap1, c1, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
 
     // Check if bc is applied to cell
     bool has_bc = false;
@@ -117,7 +124,7 @@ void _lift_bc_cells(
 
     // Size data structure for assembly
     auto dofs0 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        dmap0, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+        dmap0, c0, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
 
     const int num_rows = bs0 * dofs0.size();
     const int num_cols = bs1 * dofs1.size();
@@ -127,8 +134,8 @@ void _lift_bc_cells(
     std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeff_array, constants.data(), coordinate_dofs.data(),
            nullptr, nullptr);
-    P0(Ae, cell_info, c, num_cols);
-    P1T(Ae, cell_info, c, num_rows);
+    P0(Ae, cell_info0, c0, num_cols);
+    P1T(Ae, cell_info1, c1, num_rows);
 
     // Size data structure for assembly
     be.resize(num_rows);
@@ -787,23 +794,30 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
     std::span<const std::int32_t> cells = a.domain(IntegralType::cell, i);
     if (bs0 == 1 and bs1 == 1)
     {
-      _lift_bc_cells<T, 1, 1>(b, x_dofmap, x, kernel, cells,
-                              {dofmap0, bs0, cells}, P0, {dofmap1, bs1, cells},
-                              P1T, constants, coeffs, cstride, cell_info0,
-                              bc_values1, bc_markers1, x0, scale);
+      _lift_bc_cells<T, 1, 1>(
+          b, x_dofmap, x, kernel, cells,
+          {dofmap0, bs0, a.domain(IntegralType::cell, i, *mesh0)}, P0,
+          {dofmap1, bs1, a.domain(IntegralType::cell, i, *mesh1)}, P1T,
+          constants, coeffs, cstride, cell_info0, cell_info1, bc_values1,
+          bc_markers1, x0, scale);
     }
     else if (bs0 == 3 and bs1 == 3)
     {
-      _lift_bc_cells<T, 3, 3>(b, x_dofmap, x, kernel, cells,
-                              {dofmap0, bs0, cells}, P0, {dofmap1, bs1, cells},
-                              P1T, constants, coeffs, cstride, cell_info0,
-                              bc_values1, bc_markers1, x0, scale);
+      _lift_bc_cells<T, 3, 3>(
+          b, x_dofmap, x, kernel, cells,
+          {dofmap0, bs0, a.domain(IntegralType::cell, i, *mesh0)}, P0,
+          {dofmap1, bs1, a.domain(IntegralType::cell, i, *mesh1)}, P1T,
+          constants, coeffs, cstride, cell_info0, cell_info1, bc_values1,
+          bc_markers1, x0, scale);
     }
     else
     {
-      _lift_bc_cells(b, x_dofmap, x, kernel, cells, {dofmap0, bs0, cells}, P0,
-                     {dofmap1, bs1, cells}, P1T, constants, coeffs, cstride,
-                     cell_info0, bc_values1, bc_markers1, x0, scale);
+      _lift_bc_cells(b, x_dofmap, x, kernel, cells,
+                     {dofmap0, bs0, a.domain(IntegralType::cell, i, *mesh0)},
+                     P0,
+                     {dofmap1, bs1, a.domain(IntegralType::cell, i, *mesh1)},
+                     P1T, constants, coeffs, cstride, cell_info0, cell_info1,
+                     bc_values1, bc_markers1, x0, scale);
     }
   }
 
