@@ -497,11 +497,11 @@ void assemble_cells(
     std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info)
 {
-  const auto [dmap, bs, cells0] = dofmap;
-
-  assert(_bs < 0 or _bs == bs);
   if (cells.empty())
     return;
+
+  const auto [dmap, bs, cells0] = dofmap;
+  assert(_bs < 0 or _bs == bs);
 
   // Create data structures used in assembly
   std::vector<scalar_value_type_t<T>> coordinate_dofs(3 * x_dofmap.extent(1));
@@ -566,12 +566,11 @@ void assemble_exterior_facets(
     std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info)
 {
-  const auto [dmap, bs, facets0] = dofmap;
-
-  assert(_bs < 0 or _bs == bs);
-
   if (facets.empty())
     return;
+
+  const auto [dmap, bs, facets0] = dofmap;
+  assert(_bs < 0 or _bs == bs);
 
   // FIXME: Add proper interface for num_dofs
   // Create data structures used in assembly
@@ -635,11 +634,18 @@ void assemble_interior_facets(
     fem::DofTransformKernel<T> auto dof_transform, std::span<T> b,
     mdspan2_t x_dofmap, std::span<const scalar_value_type_t<T>> x,
     int num_cell_facets, std::span<const std::int32_t> facets,
-    const fem::DofMap& dofmap, FEkernel<T> auto fn,
-    std::span<const T> constants, std::span<const T> coeffs, int cstride,
+    std::tuple<const DofMap&, int, std::span<const std::int32_t>> dofmap,
+    FEkernel<T> auto fn, std::span<const T> constants,
+    std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info,
     const std::function<std::uint8_t(std::size_t)>& get_perm)
 {
+  if (facets.empty())
+    return;
+
+  const auto [dmap, bs, cells0] = dofmap;
+  assert(_bs < 0 or _bs == bs);
+
   // Create data structures used in assembly
   using X = scalar_value_type_t<T>;
   std::vector<X> coordinate_dofs(2 * x_dofmap.extent(1) * 3);
@@ -648,8 +654,6 @@ void assemble_interior_facets(
                       x_dofmap.extent(1) * 3);
   std::vector<T> be;
 
-  const int bs = dofmap.bs();
-  assert(_bs < 0 or _bs == bs);
   assert(facets.size() % 4 == 0);
   for (std::size_t index = 0; index < facets.size(); index += 4)
   {
@@ -676,8 +680,8 @@ void assemble_interior_facets(
     }
 
     // Get dofmaps for cells
-    std::span<const std::int32_t> dmap0 = dofmap.cell_dofs(cells[0]);
-    std::span<const std::int32_t> dmap1 = dofmap.cell_dofs(cells[1]);
+    std::span<const std::int32_t> dmap0 = dmap.cell_dofs(cells[0]);
+    std::span<const std::int32_t> dmap1 = dmap.cell_dofs(cells[1]);
 
     // Tabulate element vector
     be.resize(bs * (dmap0.size() + dmap1.size()));
@@ -1052,20 +1056,23 @@ void assemble_vector(
       if (bs == 1)
       {
         impl::assemble_interior_facets<T, 1>(
-            dof_transform, b, x_dofmap, x, num_cell_facets, facets, *dofmap, fn,
-            constants, coeffs, cstride, cell_info0, get_perm);
+            dof_transform, b, x_dofmap, x, num_cell_facets, facets,
+            {*dofmap, bs, facets}, fn, constants, coeffs, cstride, cell_info0,
+            get_perm);
       }
       else if (bs == 3)
       {
         impl::assemble_interior_facets<T, 3>(
-            dof_transform, b, x_dofmap, x, num_cell_facets, facets, *dofmap, fn,
-            constants, coeffs, cstride, cell_info0, get_perm);
+            dof_transform, b, x_dofmap, x, num_cell_facets, facets,
+            {*dofmap, bs, facets}, fn, constants, coeffs, cstride, cell_info0,
+            get_perm);
       }
       else
       {
-        impl::assemble_interior_facets(
-            dof_transform, b, x_dofmap, x, num_cell_facets, facets, *dofmap, fn,
-            constants, coeffs, cstride, cell_info0, get_perm);
+        impl::assemble_interior_facets(dof_transform, b, x_dofmap, x,
+                                       num_cell_facets, facets,
+                                       {*dofmap, bs, facets}, fn, constants,
+                                       coeffs, cstride, cell_info0, get_perm);
       }
     }
   }
