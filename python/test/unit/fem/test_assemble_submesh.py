@@ -135,6 +135,8 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
         MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n), ghost_mode=ghost_mode
     )
 
+    boundary_tags = {"neumann": 1, "interior": 4, "dirichlet": 7}
+
     # Locate cells in left half of mesh and create mesh tags
     tdim = msh.topology.dim
     tag = 1
@@ -145,22 +147,35 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
     def boundary_marker(x):
         return np.isclose(x[0], 0.0)
 
-    fdim = tdim - 1
-    facets = locate_entities_boundary(msh, fdim, boundary_marker)
-    ft = create_meshtags(msh, fdim, facets, tag)
+    def dirichlet_boundary_marker(x):
+        return np.isclose(x[1], 0.0) & (x[0] <= 1.0)
 
     # Locate some interior facets and create mesh tags
     def int_facets_marker(x):
         dist = 1 / (2 * n)
         return (x[0] > dist) & (x[0] < 1 - dist) & (x[1] > dist) & (x[1] < 1 - dist)
 
+    fdim = tdim - 1
+    neumann_facets = locate_entities_boundary(msh, fdim, boundary_marker)
+    neumann_vals = np.full_like(neumann_facets, boundary_tags["neumann"], dtype=np.intc)
+
+    dirichlet_facets = locate_entities_boundary(msh, fdim, dirichlet_boundary_marker)
+    dirichlet_vals = np.full_like(dirichlet_facets, boundary_tags["dirichlet"], dtype=np.intc)
+
     int_facets = locate_entities(msh, fdim, int_facets_marker)
-    int_ft = create_meshtags(msh, fdim, int_facets, tag)
+    interior_vals = np.full_like(int_facets, boundary_tags["interior"], dtype=np.intc)
+
+    facets = np.hstack((neumann_facets, dirichlet_facets, int_facets))
+    facet_values = np.hstack((neumann_vals, dirichlet_vals, interior_vals))
+
+    perm = np.argsort(facets)
+
+    ft = meshtags(msh, fdim, facets[perm], facet_values[perm])
 
     # Create integration measures on the mesh
     dx_msh = ufl.Measure("dx", domain=msh, subdomain_data=ct)
     ds_msh = ufl.Measure("ds", domain=msh, subdomain_data=ft)
-    dS_msh = ufl.Measure("dS", domain=msh, subdomain_data=int_ft)
+    dS_msh = ufl.Measure("dS", domain=msh, subdomain_data=ft)
 
     # Create a submesh of the left half of the mesh
     smsh, smsh_to_msh = create_submesh(msh, tdim, cells)[:2]
@@ -192,11 +207,11 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
         return ufl.inner(2.5, v) * dx + ufl.inner(0.5, v) * ds + ufl.inner(0.1, v("-")) * dS
 
     # Single-domain assembly over msh as a reference
-    a = fem.form(ufl_form_a(u, v, dx_msh(tag), ds_msh(tag), dS_msh(tag)))
+    a = fem.form(ufl_form_a(u, v, dx_msh(tag), ds_msh(boundary_tags["neumann"]), dS_msh(boundary_tags["interior"])))
     A = fem.assemble_matrix(a)
     A.scatter_reverse()
 
-    L = fem.form(ufl_form_L(v, dx_msh(tag), ds_msh(tag), dS_msh(tag)))
+    L = fem.form(ufl_form_L(v, dx_msh(tag), ds_msh(boundary_tags["neumann"]), dS_msh(boundary_tags["interior"])))
     b = fem.assemble_vector(L)
     b.scatter_reverse(la.InsertMode.add)
 
@@ -220,12 +235,18 @@ def test_mixed_dom_codim_0(n, k, space, ghost_mode):
     msh_to_smsh[smsh_to_msh] = np.arange(len(smsh_to_msh))
     entity_maps = {smsh._cpp_object: np.array(msh_to_smsh, dtype=np.int32)}
 
-    a1 = fem.form(ufl_form_a(u, w, dx_msh(tag), ds_msh(tag), dS_msh(tag)), entity_maps=entity_maps)
+    a1 = fem.form(
+        ufl_form_a(u, w, dx_msh(tag), ds_msh(boundary_tags["neumann"]), dS_msh(boundary_tags["interior"])),
+        entity_maps=entity_maps,
+    )
     A1 = fem.assemble_matrix(a1)
     A1.scatter_reverse()
     assert np.isclose(A1.squared_norm(), A.squared_norm())
 
-    L1 = fem.form(ufl_form_L(w, dx_msh(tag), ds_msh(tag), dS_msh(tag)), entity_maps=entity_maps)
+    L1 = fem.form(
+        ufl_form_L(w, dx_msh(tag), ds_msh(boundary_tags["neumann"]), dS_msh(boundary_tags["interior"])),
+        entity_maps=entity_maps,
+    )
     b1 = fem.assemble_vector(L1)
     b1.scatter_reverse(la.InsertMode.add)
     assert np.isclose(b1.norm(), b.norm())
