@@ -46,8 +46,8 @@ void _lift_bc_cells(
     std::span<T> b, mdspan2_t x_dofmap,
     std::span<const scalar_value_type_t<T>> x, FEkernel<T> auto kernel,
     std::span<const std::int32_t> cells,
-    fem::DofTransformKernel<T> auto pre_dof_transform, mdspan2_t dofmap0,
-    int bs0, fem::DofTransformKernel<T> auto post_dof_transpose,
+    fem::DofTransformKernel<T> auto P0, mdspan2_t dofmap0,
+    int bs0, fem::DofTransformKernel<T> auto P1T,
     mdspan2_t dofmap1, int bs1, std::span<const T> constants,
     std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info, std::span<const T> bc_values1,
@@ -124,8 +124,8 @@ void _lift_bc_cells(
     std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeff_array, constants.data(), coordinate_dofs.data(),
            nullptr, nullptr);
-    pre_dof_transform(Ae, cell_info, c, num_cols);
-    post_dof_transpose(Ae, cell_info, c, num_rows);
+    P0(Ae, cell_info, c, num_cols);
+    P1T(Ae, cell_info, c, num_rows);
 
     // Size data structure for assembly
     be.resize(num_rows);
@@ -194,8 +194,8 @@ void _lift_bc_exterior_facets(
     std::span<T> b, mdspan2_t x_dofmap,
     std::span<const scalar_value_type_t<T>> x, FEkernel<T> auto kernel,
     std::span<const std::int32_t> facets,
-    fem::DofTransformKernel<T> auto pre_dof_transform, mdspan2_t dofmap0,
-    int bs0, fem::DofTransformKernel<T> auto post_dof_transpose,
+    fem::DofTransformKernel<T> auto P0, mdspan2_t dofmap0,
+    int bs0, fem::DofTransformKernel<T> auto P1T,
     mdspan2_t dofmap1, int bs1, std::span<const T> constants,
     std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info, std::span<const T> bc_values1,
@@ -255,8 +255,8 @@ void _lift_bc_exterior_facets(
     std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeff_array, constants.data(), coordinate_dofs.data(),
            &local_facet, nullptr);
-    pre_dof_transform(Ae, cell_info, cell, num_cols);
-    post_dof_transpose(Ae, cell_info, cell, num_rows);
+    P0(Ae, cell_info, cell, num_cols);
+    P1T(Ae, cell_info, cell, num_rows);
 
     // Size data structure for assembly
     be.resize(num_rows);
@@ -294,8 +294,8 @@ void _lift_bc_interior_facets(
     std::span<T> b, mdspan2_t x_dofmap,
     std::span<const scalar_value_type_t<T>> x, int num_cell_facets,
     FEkernel<T> auto kernel, std::span<const std::int32_t> facets,
-    fem::DofTransformKernel<T> auto pre_dof_transform, mdspan2_t dofmap0,
-    int bs0, fem::DofTransformKernel<T> auto post_dof_transpose,
+    fem::DofTransformKernel<T> auto P0, mdspan2_t dofmap0,
+    int bs0, fem::DofTransformKernel<T> auto P1T,
     mdspan2_t dofmap1, int bs1, std::span<const T> constants,
     std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info,
@@ -409,9 +409,9 @@ void _lift_bc_interior_facets(
     std::span<T> sub_Ae0 = _Ae.subspan(bs0 * dmap0_cell0.size() * num_cols,
                                        bs0 * dmap0_cell1.size() * num_cols);
 
-    pre_dof_transform(_Ae, cell_info, cells[0], num_cols);
-    pre_dof_transform(sub_Ae0, cell_info, cells[1], num_cols);
-    post_dof_transpose(_Ae, cell_info, cells[0], num_rows);
+    P0(_Ae, cell_info, cells[0], num_cols);
+    P0(sub_Ae0, cell_info, cells[1], num_cols);
+    P1T(_Ae, cell_info, cells[0], num_rows);
 
     for (int row = 0; row < num_rows; ++row)
     {
@@ -419,7 +419,7 @@ void _lift_bc_interior_facets(
       // the block matrix, so each row needs a separate span access
       std::span<T> sub_Ae1 = _Ae.subspan(
           row * num_cols + bs1 * dmap1_cell0.size(), bs1 * dmap1_cell1.size());
-      post_dof_transpose(sub_Ae1, cell_info, cells[1], 1);
+      P1T(sub_Ae1, cell_info, cells[1], 1);
     }
 
     be.resize(num_rows);
@@ -772,9 +772,9 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
     cell_info1 = std::span(mesh1->topology()->get_cell_permutation_info());
   }
 
-  fem::DofTransformKernel<T> auto pre_dof_transform
+  fem::DofTransformKernel<T> auto P0
       = element0->template get_pre_dof_transformation_function<T>();
-  fem::DofTransformKernel<T> auto post_dof_transpose
+  fem::DofTransformKernel<T> auto P1T
       = element1->template get_post_dof_transformation_function<T>(
           FiniteElement<U>::doftransform::transpose);
 
@@ -786,22 +786,22 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
     std::span<const std::int32_t> cells = a.domain(IntegralType::cell, i);
     if (bs0 == 1 and bs1 == 1)
     {
-      _lift_bc_cells<T, 1, 1>(b, x_dofmap, x, kernel, cells, pre_dof_transform,
-                              dofmap0, bs0, post_dof_transpose, dofmap1, bs1,
+      _lift_bc_cells<T, 1, 1>(b, x_dofmap, x, kernel, cells, P0,
+                              dofmap0, bs0, P1T, dofmap1, bs1,
                               constants, coeffs, cstride, cell_info0, bc_values1,
                               bc_markers1, x0, scale);
     }
     else if (bs0 == 3 and bs1 == 3)
     {
-      _lift_bc_cells<T, 3, 3>(b, x_dofmap, x, kernel, cells, pre_dof_transform,
-                              dofmap0, bs0, post_dof_transpose, dofmap1, bs1,
+      _lift_bc_cells<T, 3, 3>(b, x_dofmap, x, kernel, cells, P0,
+                              dofmap0, bs0, P1T, dofmap1, bs1,
                               constants, coeffs, cstride, cell_info0, bc_values1,
                               bc_markers1, x0, scale);
     }
     else
     {
-      _lift_bc_cells(b, x_dofmap, x, kernel, cells, pre_dof_transform, dofmap0,
-                     bs0, post_dof_transpose, dofmap1, bs1, constants, coeffs,
+      _lift_bc_cells(b, x_dofmap, x, kernel, cells, P0, dofmap0,
+                     bs0, P1T, dofmap1, bs1, constants, coeffs,
                      cstride, cell_info0, bc_values1, bc_markers1, x0, scale);
     }
   }
@@ -814,7 +814,7 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
         = coefficients.at({IntegralType::exterior_facet, i});
     _lift_bc_exterior_facets(
         b, x_dofmap, x, kernel, a.domain(IntegralType::exterior_facet, i),
-        pre_dof_transform, dofmap0, bs0, post_dof_transpose, dofmap1, bs1,
+        P0, dofmap0, bs0, P1T, dofmap1, bs1,
         constants, coeffs, cstride, cell_info0, bc_values1, bc_markers1, x0,
         scale);
   }
@@ -843,8 +843,8 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
           = coefficients.at({IntegralType::interior_facet, i});
       _lift_bc_interior_facets(
           b, x_dofmap, x, num_cell_facets, kernel,
-          a.domain(IntegralType::interior_facet, i), pre_dof_transform, dofmap0,
-          bs0, post_dof_transpose, dofmap1, bs1, constants, coeffs, cstride,
+          a.domain(IntegralType::interior_facet, i), P0, dofmap0,
+          bs0, P1T, dofmap1, bs1, constants, coeffs, cstride,
           cell_info0, get_perm, bc_values1, bc_markers1, x0, scale);
     }
   }
