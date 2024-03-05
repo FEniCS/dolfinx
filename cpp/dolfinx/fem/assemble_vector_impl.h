@@ -229,7 +229,7 @@ void _lift_bc_exterior_facets(
   {
     // Cell in integration domain mesh
     std::int32_t cell = facets[index];
-    // Cell in test fuction mesh
+    // Cell in test function mesh
     std::int32_t cell0 = facets0[index];
     // Cell in trial function mesh
     std::int32_t cell1 = facets1[index];
