@@ -524,7 +524,7 @@ void assemble_cells(
     std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap,
     FEkernel<T> auto kernel, std::span<const T> constants,
     std::span<const T> coeffs, int cstride,
-    std::span<const std::uint32_t> cell_info)
+    std::span<const std::uint32_t> cell_info0)
 {
   if (cells.empty())
     return;
@@ -558,7 +558,7 @@ void assemble_cells(
     std::fill(be.begin(), be.end(), 0);
     kernel(be.data(), coeffs.data() + index * cstride, constants.data(),
            coordinate_dofs.data(), nullptr, nullptr);
-    dof_transform(_be, cell_info, c0, 1);
+    dof_transform(_be, cell_info0, c0, 1);
 
     // Scatter cell vector to 'global' vector array
     auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
@@ -592,7 +592,7 @@ void assemble_exterior_facets(
     std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap,
     FEkernel<T> auto fn, std::span<const T> constants,
     std::span<const T> coeffs, int cstride,
-    std::span<const std::uint32_t> cell_info)
+    std::span<const std::uint32_t> cell_info0)
 {
   if (facets.empty())
     return;
@@ -630,7 +630,7 @@ void assemble_exterior_facets(
     fn(be.data(), coeffs.data() + index / 2 * cstride, constants.data(),
        coordinate_dofs.data(), &local_facet, nullptr);
 
-    dof_transform(_be, cell_info, cell0, 1);
+    dof_transform(_be, cell_info0, cell0, 1);
 
     // Add element vector to global vector
     auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
@@ -664,7 +664,7 @@ void assemble_interior_facets(
     std::tuple<const DofMap&, int, std::span<const std::int32_t>> dofmap,
     FEkernel<T> auto fn, std::span<const T> constants,
     std::span<const T> coeffs, int cstride,
-    std::span<const std::uint32_t> cell_info,
+    std::span<const std::uint32_t> cell_info0,
     const std::function<std::uint8_t(std::size_t)>& get_perm)
 {
   if (facets.empty())
@@ -725,8 +725,8 @@ void assemble_interior_facets(
     std::span<T> _be(be);
     std::span<T> sub_be = _be.subspan(bs * dmap0.size(), bs * dmap1.size());
 
-    dof_transform(be, cell_info, cells0[0], 1);
-    dof_transform(sub_be, cell_info, cells0[1], 1);
+    dof_transform(be, cell_info0, cells0[0], 1);
+    dof_transform(sub_be, cell_info0, cells0[1], 1);
 
     // Add element vector to global vector
     if constexpr (_bs > 0)
