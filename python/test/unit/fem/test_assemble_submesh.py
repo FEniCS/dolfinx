@@ -230,19 +230,26 @@ def create_measure(msh, integral_type):
 
 
 def a_ufl(u, v, measure):
-    if measure.integral_type() == "cell":
+    if measure.integral_type() == "cell" or measure.integral_type() == "exterior_facet":
         return ufl.inner(0.3 * u, v) * measure
+    else:
+        assert measure.integral_type() == "interior_facet"
+        return ufl.inner(2.3 * u("+"), v("-")) * measure
 
 
 def L_ufl(v, measure):
-    if measure.integral_type() == "cell":
+    if measure.integral_type() == "cell" or measure.integral_type() == "exterior_facet":
         return ufl.inner(0.5, v) * measure
+    else:
+        assert measure.integral_type() == "interior_facet"
+        return ufl.inner(2.3, v("-")) * measure
 
 
 @pytest.mark.parametrize("n", [4, 6])
 @pytest.mark.parametrize("k", [1, 3])
 @pytest.mark.parametrize("space", ["Lagrange", "Discontinuous Lagrange"])
-def test_mixed_dom_codim_0(n, k, space):
+@pytest.mark.parametrize("integral_type", ["dx", "ds", "dS"])
+def test_mixed_dom_codim_0(n, k, space, integral_type):
     msh, ct, ft, smsh, smsh_to_msh, msh_to_smsh, ft_smsh, markers = create_meshes(n)
 
     # Define function spaces over the mesh and submesh
@@ -257,7 +264,7 @@ def test_mixed_dom_codim_0(n, k, space):
     # Test function on the submesh
     q = ufl.TestFunction(Q)
 
-    measure_msh = create_measure(msh, "dx")
+    measure_msh = create_measure(msh, integral_type)
 
     # Create a Dirichlet boundary condition
     u_bc = fem.Function(V)
@@ -280,7 +287,7 @@ def test_mixed_dom_codim_0(n, k, space):
     # Assemble a mixed-domain form, taking smsh to be the integration domain
     # Entity maps must map cells in smsh (the integration domain mesh) to
     # cells in msh
-    measure_smsh = create_measure(smsh, "dx")
+    measure_smsh = create_measure(smsh, integral_type)
     entity_maps = {msh._cpp_object: np.array(smsh_to_msh, dtype=np.int32)}
     a0 = fem.form(
         a_ufl(u, q, measure_smsh),
@@ -293,7 +300,6 @@ def test_mixed_dom_codim_0(n, k, space):
     # Now assemble a mixed-domain form using msh as integration domain
     # Entity maps must map cells in msh (the integration domain mesh) to
     # cells in smsh
-
     entity_maps = {smsh._cpp_object: np.array(msh_to_smsh, dtype=np.int32)}
     a1 = fem.form(
         a_ufl(u, q, measure_msh),
@@ -311,114 +317,3 @@ def test_mixed_dom_codim_0(n, k, space):
     fem.apply_lifting(b1.array, [a1], bcs=[[bc]])
     b1.scatter_reverse(la.InsertMode.add)
     assert np.isclose(b1.norm(), b.norm())
-
-
-test_mixed_dom_codim_0(6, 1, "Lagrange")
-
-# @pytest.mark.parametrize("n", [4, 6])
-# @pytest.mark.parametrize("k", [1, 3])
-# @pytest.mark.parametrize("space", ["Lagrange", "Discontinuous Lagrange"])
-# def test_mixed_dom_codim_0(n, k, space):
-#     """Test assembling a form where the trial and test functions
-#     are defined on different meshes"""
-
-#     msh, ct, ft, smsh, smsh_to_msh, msh_to_smsh, ft_smsh, markers = create_meshes(n)
-
-#     # Create integration measures on the mesh
-#     dx_msh = ufl.Measure("dx", domain=msh, subdomain_data=ct)
-#     ds_msh = ufl.Measure("ds", domain=msh, subdomain_data=ft)
-#     dS_msh = ufl.Measure("dS", domain=msh, subdomain_data=ft)
-
-#     # Integration measures on the submesh
-#     ds_smsh = ufl.Measure("ds", domain=smsh, subdomain_data=ft_smsh)
-#     dS_smsh = ufl.Measure("dS", domain=smsh, subdomain_data=ft_smsh)
-
-#     # Define function spaces over the mesh and submesh
-#     V = fem.functionspace(msh, (space, k))
-#     W = fem.functionspace(msh, (space, k))
-#     Q = fem.functionspace(smsh, (space, k))
-
-#     # Trial and test functions on the mesh
-#     u = ufl.TrialFunction(V)
-#     w = ufl.TestFunction(W)
-
-#     # Test function on the submesh
-#     q = ufl.TestFunction(Q)
-
-#     # Create a Dirichlet boundary condition
-#     u_bc = fem.Function(V)
-#     u_bc.interpolate(lambda x: np.sin(np.pi * x[0]))
-#     dirichlet_dofs = fem.locate_dofs_topological(
-#         V, msh.topology.dim - 1, ft.find(markers["bndry_0"])
-#     )
-#     bc = fem.dirichletbc(u_bc, dirichlet_dofs)
-
-#     # Define UFL forms
-#     def ufl_form_a(u, v, dx, ds, dS):
-#         return ufl.inner(u, v) * dx + ufl.inner(u, v) * ds + ufl.inner(u("+"), v("-")) * dS
-
-#     def ufl_form_L(v, dx, ds, dS):
-#         return ufl.inner(2.5, v) * dx + ufl.inner(0.5, v) * ds + ufl.inner(0.1, v("-")) * dS
-
-#     # Single-domain assembly over msh as a reference
-#     a = fem.form(
-#         ufl_form_a(
-#             u, w, dx_msh(markers["cells"]), ds_msh(markers["bndry_0"]), dS_msh(markers["interior"])
-#         )
-#     )
-#     A = fem.assemble_matrix(a, bcs=[bc])
-#     A.scatter_reverse()
-
-#     L = fem.form(
-#         ufl_form_L(
-#             w, dx_msh(markers["cells"]), ds_msh(markers["bndry_0"]), dS_msh(markers["interior"])
-#         )
-#     )
-#     b = fem.assemble_vector(L)
-#     fem.apply_lifting(b.array, [a], bcs=[[bc]])
-#     b.scatter_reverse(la.InsertMode.add)
-
-#     # Assemble a mixed-domain form, taking smsh to be the integration domain
-#     # Entity maps must map cells in smsh (the integration domain mesh) to
-#     # cells in msh
-#     entity_maps = {msh._cpp_object: np.array(smsh_to_msh, dtype=np.int32)}
-#     a0 = fem.form(
-#         ufl_form_a(
-#             u,
-#             q,
-#             ufl.dx(smsh),
-#             ds_smsh(markers["bndry_0"]),
-#             dS_smsh(markers["interior"]),
-#         ),
-#         entity_maps=entity_maps,
-#     )
-#     A0 = fem.assemble_matrix(a0, bcs=[bc])
-#     A0.scatter_reverse()
-#     assert np.isclose(A0.squared_norm(), A.squared_norm())
-
-#     # Now assemble a mixed-domain form using msh as integration domain
-#     # Entity maps must map cells in msh (the integration domain mesh) to
-#     # cells in smsh
-
-#     entity_maps = {smsh._cpp_object: np.array(msh_to_smsh, dtype=np.int32)}
-
-#     a1 = fem.form(
-#         ufl_form_a(
-#             u, q, dx_msh(markers["cells"]), ds_msh(markers["bndry_0"]), dS_msh(markers["interior"])
-#         ),
-#         entity_maps=entity_maps,
-#     )
-#     A1 = fem.assemble_matrix(a1, bcs=[bc])
-#     A1.scatter_reverse()
-#     assert np.isclose(A1.squared_norm(), A.squared_norm())
-
-#     L1 = fem.form(
-#         ufl_form_L(
-#             q, dx_msh(markers["cells"]), ds_msh(markers["bndry_0"]), dS_msh(markers["interior"])
-#         ),
-#         entity_maps=entity_maps,
-#     )
-#     b1 = fem.assemble_vector(L1)
-#     fem.apply_lifting(b1.array, [a1], bcs=[[bc]])
-#     b1.scatter_reverse(la.InsertMode.add)
-#     assert np.isclose(b1.norm(), b.norm())
