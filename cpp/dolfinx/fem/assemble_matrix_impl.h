@@ -40,7 +40,7 @@ using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
 /// @param dofmap0 Test function (row) degree-of-freedom data holding
 /// the (0) dofmap, (1) dofmap block size and (2) dofmap cell indices.
 /// @param P0 Function that applies transformation P_0 A in-place to
-/// transform trial degrees-of-freedom.
+/// transform test degrees-of-freedom.
 /// @param dofmap1 Trial function (column) degree-of-freedom data
 /// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
 /// indices.
@@ -168,7 +168,7 @@ void assemble_cells(
 /// @param dofmap0 Test function (row) degree-of-freedom data holding
 /// the (0) dofmap, (1) dofmap block size and (2) dofmap cell indices.
 /// @param P0 Function that applies transformation P0.A in-place to
-/// transform trial degrees-of-freedom.
+/// transform test degrees-of-freedom.
 /// @param dofmap1 Trial function (column) degree-of-freedom data
 /// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
 /// indices.
@@ -295,7 +295,7 @@ void assemble_exterior_facets(
 /// @param dofmap0 Test function (row) degree-of-freedom data holding
 /// the (0) dofmap, (1) dofmap block size and (2) dofmap cell indices.
 /// @param P0 Function that applies transformation P0.A in-place to
-/// transform trial degrees-of-freedom.
+/// transform test degrees-of-freedom.
 /// @param dofmap1 Trial function (column) degree-of-freedom data
 /// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
 /// indices.
