@@ -146,7 +146,7 @@ void declare_function_space(nb::module_& m, std::string type)
                   std::span(cell_permutations.data(), cell_permutations.size()),
                   dim);
             },
-            nb::arg("x"), nb::arg("cell_permutation"), nb::arg("dim"))
+            nb::arg("x"), nb::arg("cell_permutations"), nb::arg("dim"))
         .def(
             "pre_apply_transpose_dof_transformation",
             [](const dolfinx::fem::FiniteElement<T>& self,
@@ -160,7 +160,7 @@ void declare_function_space(nb::module_& m, std::string type)
                   std::span(cell_permutations.data(), cell_permutations.size()),
                   dim);
             },
-            nb::arg("x"), nb::arg("cell_permutation"), nb::arg("dim"))
+            nb::arg("x"), nb::arg("cell_permutations"), nb::arg("dim"))
         .def(
             "pre_apply_inverse_transpose_dof_transformation",
             [](const dolfinx::fem::FiniteElement<T>& self,
@@ -174,7 +174,7 @@ void declare_function_space(nb::module_& m, std::string type)
                   std::span(cell_permutations.data(), cell_permutations.size()),
                   dim);
             },
-            nb::arg("x"), nb::arg("cell_permutation"), nb::arg("dim"))
+            nb::arg("x"), nb::arg("cell_permutations"), nb::arg("dim"))
         .def(
             "pre_apply_dof_transformation",
             [](const dolfinx::fem::FiniteElement<T>& self,
@@ -188,7 +188,7 @@ void declare_function_space(nb::module_& m, std::string type)
                   std::span(cell_permutations.data(), cell_permutations.size()),
                   dim);
             },
-            nb::arg("x"), nb::arg("cell_permutation"), nb::arg("dim"))
+            nb::arg("x"), nb::arg("cell_permutations"), nb::arg("dim"))
         .def(
             "pre_apply_transpose_dof_transformation",
             [](const dolfinx::fem::FiniteElement<T>& self,
@@ -202,7 +202,7 @@ void declare_function_space(nb::module_& m, std::string type)
                   std::span(cell_permutations.data(), cell_permutations.size()),
                   dim);
             },
-            nb::arg("x"), nb::arg("cell_permutation"), nb::arg("dim"))
+            nb::arg("x"), nb::arg("cell_permutations"), nb::arg("dim"))
         .def(
             "pre_apply_inverse_transpose_dof_transformation",
             [](const dolfinx::fem::FiniteElement<T>& self,
@@ -216,7 +216,7 @@ void declare_function_space(nb::module_& m, std::string type)
                   std::span(cell_permutations.data(), cell_permutations.size()),
                   dim);
             },
-            nb::arg("x"), nb::arg("cell_permutation"), nb::arg("dim"))
+            nb::arg("x"), nb::arg("cell_permutations"), nb::arg("dim"))
         .def_prop_ro("needs_dof_transformations",
                      &dolfinx::fem::FiniteElement<T>::needs_dof_transformations)
         .def("signature", &dolfinx::fem::FiniteElement<T>::signature);
