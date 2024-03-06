@@ -118,13 +118,7 @@ def test_submesh_facet_assembly(n, k, space, ghost_mode):
     assert np.isclose(s_submesh, s_square_mesh)
 
 
-@pytest.mark.parametrize("n", [4, 6])
-@pytest.mark.parametrize("k", [1, 3])
-@pytest.mark.parametrize("space", ["Lagrange", "Discontinuous Lagrange"])
-def test_mixed_dom_codim_0(n, k, space):
-    """Test assembling a form where the trial and test functions
-    are defined on different meshes"""
-
+def create_meshes(n):
     def create_meshtags(msh, dim, tagged_entities):
         values = []
         for tag, entities in tagged_entities.items():
@@ -170,11 +164,6 @@ def test_mixed_dom_codim_0(n, k, space):
         },
     )
 
-    # Create integration measures on the mesh
-    dx_msh = ufl.Measure("dx", domain=msh, subdomain_data=ct)
-    ds_msh = ufl.Measure("ds", domain=msh, subdomain_data=ft)
-    dS_msh = ufl.Measure("dS", domain=msh, subdomain_data=ft)
-
     # Create a submesh of the left half of the mesh
     smsh, smsh_to_msh = create_submesh(msh, tdim, ct.find(markers["cells"]))[:2]
 
@@ -188,6 +177,28 @@ def test_mixed_dom_codim_0(n, k, space):
             markers["interior"]: locate_entities(smsh, fdim, interior_marker),
         },
     )
+
+    cell_imap = msh.topology.index_map(tdim)
+    num_cells = cell_imap.size_local + cell_imap.num_ghosts
+    msh_to_smsh = np.full(num_cells, -1)
+    msh_to_smsh[smsh_to_msh] = np.arange(len(smsh_to_msh))
+
+    return msh, ct, ft, smsh, smsh_to_msh, msh_to_smsh, ft_smsh, markers
+
+
+@pytest.mark.parametrize("n", [4, 6])
+@pytest.mark.parametrize("k", [1, 3])
+@pytest.mark.parametrize("space", ["Lagrange", "Discontinuous Lagrange"])
+def test_mixed_dom_codim_0(n, k, space):
+    """Test assembling a form where the trial and test functions
+    are defined on different meshes"""
+
+    msh, ct, ft, smsh, smsh_to_msh, msh_to_smsh, ft_smsh, markers = create_meshes(n)
+
+    # Create integration measures on the mesh
+    dx_msh = ufl.Measure("dx", domain=msh, subdomain_data=ct)
+    ds_msh = ufl.Measure("ds", domain=msh, subdomain_data=ft)
+    dS_msh = ufl.Measure("dS", domain=msh, subdomain_data=ft)
 
     # Integration measures on the submesh
     ds_smsh = ufl.Measure("ds", domain=smsh, subdomain_data=ft_smsh)
@@ -208,7 +219,7 @@ def test_mixed_dom_codim_0(n, k, space):
     # Create a Dirichlet boundary condition
     u_bc = fem.Function(V)
     u_bc.interpolate(lambda x: np.sin(np.pi * x[0]))
-    dirichlet_dofs = fem.locate_dofs_topological(V, fdim, ft.find(markers["bndry_0"]))
+    dirichlet_dofs = fem.locate_dofs_topological(V, msh.topology.dim - 1, ft.find(markers["bndry_0"]))
     bc = fem.dirichletbc(u_bc, dirichlet_dofs)
 
     # Define UFL forms
@@ -257,10 +268,7 @@ def test_mixed_dom_codim_0(n, k, space):
     # Now assemble a mixed-domain form using msh as integration domain
     # Entity maps must map cells in msh (the integration domain mesh) to
     # cells in smsh
-    cell_imap = msh.topology.index_map(tdim)
-    num_cells = cell_imap.size_local + cell_imap.num_ghosts
-    msh_to_smsh = np.full(num_cells, -1)
-    msh_to_smsh[smsh_to_msh] = np.arange(len(smsh_to_msh))
+    
     entity_maps = {smsh._cpp_object: np.array(msh_to_smsh, dtype=np.int32)}
 
     a1 = fem.form(
