@@ -118,88 +118,6 @@ def test_submesh_facet_assembly(n, k, space, ghost_mode):
     assert np.isclose(s_submesh, s_square_mesh)
 
 
-def create_meshes(n):
-    def create_meshtags(msh, dim, tagged_entities):
-        values = []
-        for tag, entities in tagged_entities.items():
-            values.append(np.full_like(entities, tag, dtype=np.intc))
-        entities = np.hstack([entities for entities in tagged_entities.values()])
-        perm = np.argsort(entities)
-        values = np.hstack(values)
-        return meshtags(msh, dim, entities[perm], values[perm])
-
-    # Define some boundary markers
-    def boundary_0_marker(x):
-        return np.isclose(x[0], 0.0)
-
-    def boundary_1_marker(x):
-        return np.isclose(x[1], 0.0) & (x[0] <= 1.0)
-
-    def interior_marker(x):
-        dist = 1 / (2 * n)
-        return (x[0] > dist) & (x[0] < 1 - dist) & (x[1] > dist) & (x[1] < 1 - dist)
-
-    msh = create_rectangle(
-        MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n), ghost_mode=GhostMode.shared_facet
-    )
-
-    # Dictionary for tags
-    markers = {"cells": 8, "bndry_0": 1, "interior": 4, "bndry_1": 7}
-
-    # Locate cells in left half of mesh and create mesh tags
-    tdim = msh.topology.dim
-    ct = create_meshtags(
-        msh, tdim, {markers["cells"]: locate_entities(msh, tdim, lambda x: x[0] <= 1.0)}
-    )
-
-    # Create mesh tags for facets
-    fdim = tdim - 1
-    ft = create_meshtags(
-        msh,
-        fdim,
-        {
-            markers["bndry_0"]: locate_entities_boundary(msh, fdim, boundary_0_marker),
-            markers["bndry_1"]: locate_entities_boundary(msh, fdim, boundary_1_marker),
-            markers["interior"]: locate_entities(msh, fdim, interior_marker),
-        },
-    )
-
-    # Create a submesh of the left half of the mesh
-    smsh, smsh_to_msh = create_submesh(msh, tdim, ct.find(markers["cells"]))[:2]
-
-    # Create some integration measures on the submesh
-    ft_smsh = create_meshtags(
-        smsh,
-        fdim,
-        {
-            markers["bndry_0"]: locate_entities_boundary(smsh, fdim, boundary_0_marker),
-            markers["bndry_1"]: locate_entities_boundary(smsh, fdim, boundary_1_marker),
-            markers["interior"]: locate_entities(smsh, fdim, interior_marker),
-        },
-    )
-
-    cell_imap = msh.topology.index_map(tdim)
-    num_cells = cell_imap.size_local + cell_imap.num_ghosts
-    msh_to_smsh = np.full(num_cells, -1)
-    msh_to_smsh[smsh_to_msh] = np.arange(len(smsh_to_msh))
-
-    return msh, ct, ft, smsh, smsh_to_msh, msh_to_smsh, ft_smsh, markers
-
-
-# def a_ufl(msh, u, v, integral_type):
-#     def create_meshtags(msh, dim, entities):
-#         values = np.full_like(entities, 1, dtype=np.intc)
-#         perm = np.argsort(entities)
-#         return meshtags(msh, dim, entities[perm], values[perm])
-
-#     if integral_type == "dx":
-#         cells = locate_entities(msh, msh.topology.dim, lambda x: x[0] <= 0.5)
-#     return ufl.inner(0.3 * u, v) * dx
-
-# def L_ufl(v, dx):
-#     return ufl.inner(2.5, v) * dx
-
-
 def create_measure(msh, integral_type):
     def create_meshtags(msh, dim, entities):
         values = np.full_like(entities, 1, dtype=np.intc)
@@ -250,7 +168,19 @@ def L_ufl(v, measure):
 @pytest.mark.parametrize("space", ["Lagrange", "Discontinuous Lagrange"])
 @pytest.mark.parametrize("integral_type", ["dx", "ds", "dS"])
 def test_mixed_dom_codim_0(n, k, space, integral_type):
-    msh, ct, ft, smsh, smsh_to_msh, msh_to_smsh, ft_smsh, markers = create_meshes(n)
+    msh = create_rectangle(
+        MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n), ghost_mode=GhostMode.shared_facet
+    )
+
+    # Create a submesh of the left half of the mesh
+    tdim = msh.topology.dim
+    cells = locate_entities(msh, tdim, lambda x: x[0] <= 1.0)
+    smsh, smsh_to_msh = create_submesh(msh, tdim, cells)[:2]
+
+    cell_imap = msh.topology.index_map(tdim)
+    num_cells = cell_imap.size_local + cell_imap.num_ghosts
+    msh_to_smsh = np.full(num_cells, -1)
+    msh_to_smsh[smsh_to_msh] = np.arange(len(smsh_to_msh))
 
     # Define function spaces over the mesh and submesh
     V = fem.functionspace(msh, (space, k))
@@ -269,9 +199,10 @@ def test_mixed_dom_codim_0(n, k, space, integral_type):
     # Create a Dirichlet boundary condition
     u_bc = fem.Function(V)
     u_bc.interpolate(lambda x: np.sin(np.pi * x[0]))
-    dirichlet_dofs = fem.locate_dofs_topological(
-        V, msh.topology.dim - 1, ft.find(markers["bndry_0"])
+    dirichlet_facets = locate_entities_boundary(
+        msh, msh.topology.dim - 1, lambda x: np.isclose(x[0], 0.0)
     )
+    dirichlet_dofs = fem.locate_dofs_topological(V, msh.topology.dim - 1, dirichlet_facets)
     bc = fem.dirichletbc(u_bc, dirichlet_dofs)
 
     # Single-domain assembly over msh as a reference
