@@ -683,12 +683,30 @@ void assemble_exterior_facets(
   }
 }
 
-/// Assemble linear form interior facet integrals into an vector
+/// @brief Assemble linear form interior facet integrals into an vector
 /// @tparam T The scalar type
 /// @tparam _bs The block size of the form test function dof map. If
 /// less than zero the block size is determined at runtime. If `_bs` is
 /// positive the block size is used as a compile-time constant, which
 /// has performance benefits.
+/// @param P0 Function that applies transformation P0.A in-place to
+/// transform trial degrees-of-freedom.
+/// @param b The vector to accumulate into
+/// @param x_dofmap Dofmap for the mesh geometry.
+/// @param x Mesh geometry (coordinates).
+/// @param num_cell_facets Number of facets of a cell
+/// @param facets Facets (in the integration domain mesh) to
+/// execute the kernel over.
+/// @param dofmap Test function (row) degree-of-freedom data holding
+/// the (0) dofmap, (1) dofmap block size and (2) dofmap cell indices.
+/// @param fn Kernel function to execute over each cell.
+/// @param constants The constant data
+/// @param coeffs The coefficient data array of shape (cells.size(), cstride),
+/// flattened into row-major format.
+/// @param cstride The coefficient stride
+/// @param cell_info0 The cell permutation information for the test function
+/// mesh
+/// @param get_perm Function to apply facet permutations
 template <dolfinx::scalar T, int _bs = -1>
 void assemble_interior_facets(
     fem::DofTransformKernel<T> auto P0, std::span<T> b, mdspan2_t x_dofmap,
