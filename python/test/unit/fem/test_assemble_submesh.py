@@ -119,6 +119,8 @@ def test_submesh_facet_assembly(n, k, space, ghost_mode):
 
 
 def create_measure(msh, integral_type):
+    """Helper function to create an integration measure of type `integral_type`
+    over domain `msh`"""
     def create_meshtags(msh, dim, entities):
         values = np.full_like(entities, 1, dtype=np.intc)
         perm = np.argsort(entities)
@@ -148,6 +150,7 @@ def create_measure(msh, integral_type):
 
 
 def a_ufl(u, v, measure):
+    "Helper function to create a UFL bilinear form. The form depends on the integral type"
     if measure.integral_type() == "cell" or measure.integral_type() == "exterior_facet":
         return ufl.inner(0.3 * u, v) * measure
     else:
@@ -156,6 +159,7 @@ def a_ufl(u, v, measure):
 
 
 def L_ufl(v, measure):
+    "Helper function to create a UFL linear form. The form depends on the integral type"
     if measure.integral_type() == "cell" or measure.integral_type() == "exterior_facet":
         return ufl.inner(0.5, v) * measure
     else:
@@ -168,6 +172,7 @@ def L_ufl(v, measure):
 @pytest.mark.parametrize("space", ["Lagrange", "Discontinuous Lagrange"])
 @pytest.mark.parametrize("integral_type", ["dx", "ds", "dS"])
 def test_mixed_dom_codim_0(n, k, space, integral_type):
+    # Create a mesh
     msh = create_rectangle(
         MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n), ghost_mode=GhostMode.shared_facet
     )
@@ -176,11 +181,6 @@ def test_mixed_dom_codim_0(n, k, space, integral_type):
     tdim = msh.topology.dim
     cells = locate_entities(msh, tdim, lambda x: x[0] <= 1.0)
     smsh, smsh_to_msh = create_submesh(msh, tdim, cells)[:2]
-
-    cell_imap = msh.topology.index_map(tdim)
-    num_cells = cell_imap.size_local + cell_imap.num_ghosts
-    msh_to_smsh = np.full(num_cells, -1)
-    msh_to_smsh[smsh_to_msh] = np.arange(len(smsh_to_msh))
 
     # Define function spaces over the mesh and submesh
     V = fem.functionspace(msh, (space, k))
@@ -194,6 +194,7 @@ def test_mixed_dom_codim_0(n, k, space, integral_type):
     # Test function on the submesh
     q = ufl.TestFunction(Q)
 
+    # Create an integration measure defined over msh
     measure_msh = create_measure(msh, integral_type)
 
     # Create a Dirichlet boundary condition
@@ -205,7 +206,7 @@ def test_mixed_dom_codim_0(n, k, space, integral_type):
     dirichlet_dofs = fem.locate_dofs_topological(V, msh.topology.dim - 1, dirichlet_facets)
     bc = fem.dirichletbc(u_bc, dirichlet_dofs)
 
-    # Single-domain assembly over msh as a reference
+    # Single-domain assembly over msh as a reference to check against
     a = fem.form(a_ufl(u, w, measure_msh))
     A = fem.assemble_matrix(a, bcs=[bc])
     A.scatter_reverse()
@@ -215,22 +216,13 @@ def test_mixed_dom_codim_0(n, k, space, integral_type):
     fem.apply_lifting(b.array, [a], bcs=[[bc]])
     b.scatter_reverse(la.InsertMode.add)
 
-    # Assemble a mixed-domain form, taking smsh to be the integration domain
-    # Entity maps must map cells in smsh (the integration domain mesh) to
-    # cells in msh
-    measure_smsh = create_measure(smsh, integral_type)
-    entity_maps = {msh._cpp_object: np.array(smsh_to_msh, dtype=np.int32)}
-    a0 = fem.form(
-        a_ufl(u, q, measure_smsh),
-        entity_maps=entity_maps,
-    )
-    A0 = fem.assemble_matrix(a0, bcs=[bc])
-    A0.scatter_reverse()
-    assert np.isclose(A0.squared_norm(), A.squared_norm())
-
-    # Now assemble a mixed-domain form using msh as integration domain
-    # Entity maps must map cells in msh (the integration domain mesh) to
-    # cells in smsh
+    # Assemble a mixed-domain form using msh as integration domain.
+    # Entity maps must map cells in msh (the integration domain mesh, defined by
+    # the integration measure) to cells in smsh
+    cell_imap = msh.topology.index_map(tdim)
+    num_cells = cell_imap.size_local + cell_imap.num_ghosts
+    msh_to_smsh = np.full(num_cells, -1)
+    msh_to_smsh[smsh_to_msh] = np.arange(len(smsh_to_msh))
     entity_maps = {smsh._cpp_object: np.array(msh_to_smsh, dtype=np.int32)}
     a1 = fem.form(
         a_ufl(u, q, measure_msh),
@@ -248,3 +240,19 @@ def test_mixed_dom_codim_0(n, k, space, integral_type):
     fem.apply_lifting(b1.array, [a1], bcs=[[bc]])
     b1.scatter_reverse(la.InsertMode.add)
     assert np.isclose(b1.norm(), b.norm())
+
+    # Now assemble a mixed-domain form taking smsh to be the integration domain.
+
+    # Create the measure
+    measure_smsh = create_measure(smsh, integral_type)
+
+    # Entity maps must map cells in smsh (the integration domain mesh) to
+    # cells in msh
+    entity_maps = {msh._cpp_object: np.array(smsh_to_msh, dtype=np.int32)}
+    a0 = fem.form(
+        a_ufl(u, q, measure_smsh),
+        entity_maps=entity_maps,
+    )
+    A0 = fem.assemble_matrix(a0, bcs=[bc])
+    A0.scatter_reverse()
+    assert np.isclose(A0.squared_norm(), A.squared_norm())
