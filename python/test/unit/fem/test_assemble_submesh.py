@@ -173,6 +173,9 @@ def L_ufl(v, measure):
 @pytest.mark.parametrize("space", ["Lagrange", "Discontinuous Lagrange"])
 @pytest.mark.parametrize("integral_type", ["dx", "ds", "dS"])
 def test_mixed_dom_codim_0(n, k, space, integral_type):
+    """Test assembling forms where the trial and test functions
+    are defined over different meshes"""
+
     # Create a mesh
     msh = create_rectangle(
         MPI.COMM_WORLD, ((0.0, 0.0), (2.0, 1.0)), (2 * n, n), ghost_mode=GhostMode.shared_facet
