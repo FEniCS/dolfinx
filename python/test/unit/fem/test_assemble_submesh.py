@@ -121,6 +121,7 @@ def test_submesh_facet_assembly(n, k, space, ghost_mode):
 def create_measure(msh, integral_type):
     """Helper function to create an integration measure of type `integral_type`
     over domain `msh`"""
+
     def create_meshtags(msh, dim, entities):
         values = np.full_like(entities, 1, dtype=np.intc)
         perm = np.argsort(entities)
@@ -243,7 +244,7 @@ def test_mixed_dom_codim_0(n, k, space, integral_type):
 
     # Now assemble a mixed-domain form taking smsh to be the integration domain.
 
-    # Create the measure
+    # Create the measure (this time defined over the submesh)
     measure_smsh = create_measure(smsh, integral_type)
 
     # Entity maps must map cells in smsh (the integration domain mesh) to
