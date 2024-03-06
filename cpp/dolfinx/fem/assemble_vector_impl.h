@@ -34,7 +34,7 @@ using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
     MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
 /// @endcond
 
-/// @brief Implementation of bc application
+/// @brief Apply lifting for cell integrals
 /// @tparam T The scalar type
 /// @tparam _bs0 The block size of the form test function dof map. If
 /// less than zero the block size is determined at runtime. If `_bs0` is
@@ -221,12 +221,37 @@ void _lift_bc_cells(
   }
 }
 
+/// @brief Apply lifting for exterior facet integrals
 /// @tparam T The scalar type
-/// @tparam _bs0 The block size of the form test function dof map. If
-/// less than zero the block size is determined at runtime. If `_bs0` is
-/// positive the block size is used as a compile-time constant, which
-/// has performance benefits.
-/// @tparam _bs1 The block size of the trial function dof map.
+/// @tparam _bs FIXME This is unused
+/// @param b The vector to modify
+/// @param x_dofmap Dofmap for the mesh geometry.
+/// @param x Mesh geometry (coordinates).
+/// @param kernel Kernel function to execute over each cell.
+/// @param facets Facet indices (in the integration domain mesh) to
+/// execute the kernel over.
+/// @param dofmap0 Test function (row) degree-of-freedom data holding
+/// the (0) dofmap, (1) dofmap block size and (2) dofmap cell indices.
+/// @param P0 Function that applies transformation P_0 A in-place to
+/// transform test degrees-of-freedom.
+/// @param dofmap1 Trial function (column) degree-of-freedom data
+/// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
+/// indices.
+/// @param P1T Function that applies transformation A P_1^T in-place to
+/// transform trial degrees-of-freedom.
+/// @param constants The constant data
+/// @param coeffs The coefficient data array of shape (cells.size(), cstride),
+/// flattened into row-major format.
+/// @param cstride The coefficient stride
+/// @param cell_info0 The cell permutation information for the test function
+/// mesh
+/// @param cell_info1 The cell permutation information for the trial function
+/// mesh
+/// @param bc_values1 The value for entries with an applied boundary condition
+/// @param bc_markers1 Marker to identify which DOFs have boundary conditions
+/// applied
+/// @param x0 The vector used in the lifting
+/// @param scale The scaling to apply
 template <dolfinx::scalar T, int _bs = -1>
 void _lift_bc_exterior_facets(
     std::span<T> b, mdspan2_t x_dofmap,
