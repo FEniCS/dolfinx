@@ -219,7 +219,9 @@ def test_mixed_dom_codim_0(n, k, space):
     # Create a Dirichlet boundary condition
     u_bc = fem.Function(V)
     u_bc.interpolate(lambda x: np.sin(np.pi * x[0]))
-    dirichlet_dofs = fem.locate_dofs_topological(V, msh.topology.dim - 1, ft.find(markers["bndry_0"]))
+    dirichlet_dofs = fem.locate_dofs_topological(
+        V, msh.topology.dim - 1, ft.find(markers["bndry_0"])
+    )
     bc = fem.dirichletbc(u_bc, dirichlet_dofs)
 
     # Define UFL forms
@@ -268,7 +270,7 @@ def test_mixed_dom_codim_0(n, k, space):
     # Now assemble a mixed-domain form using msh as integration domain
     # Entity maps must map cells in msh (the integration domain mesh) to
     # cells in smsh
-    
+
     entity_maps = {smsh._cpp_object: np.array(msh_to_smsh, dtype=np.int32)}
 
     a1 = fem.form(
