@@ -1376,7 +1376,7 @@ mesh::create_subtopology(const Topology& topology, int dim,
     std::pair<common::IndexMap, std::vector<int32_t>> map_data
         = common::create_sub_index_map(
             *map0, compute_incident_entities(topology, subentities, dim, 0),
-            true);
+            common::IndexMapSort::nosort, true);
     submap0 = std::make_shared<common::IndexMap>(std::move(map_data.first));
     subvertices0 = std::move(map_data.second);
   }

@@ -19,6 +19,12 @@ namespace dolfinx::common
 // Forward declaration
 class IndexMap;
 
+enum class IndexMapSort : bool
+{
+  sort = true,
+  nosort = false
+};
+
 /// @brief Given a sorted vector of indices (local numbering, owned or
 /// ghost) and an index map, this function returns the indices owned by
 /// this process, including indices that might have been in the list of
@@ -60,6 +66,7 @@ stack_index_maps(
 /// @param[in] imap Parent map to create a new sub-map from.
 /// @param[in] indices Local indices in `imap` (owned and ghost) to
 /// include in the new index map.
+/// @param[in] sort_ghosts
 /// @param[in] allow_owner_change If `true`, indices that are not
 /// included in `indices` by their owning process can be included in
 /// `indices` by processes that ghost the indices to be included in the
@@ -73,6 +80,7 @@ stack_index_maps(
 std::pair<IndexMap, std::vector<std::int32_t>>
 create_sub_index_map(const IndexMap& imap,
                      std::span<const std::int32_t> indices,
+                     IndexMapSort sort_ghosts = IndexMapSort::nosort,
                      bool allow_owner_change = false);
 
 /// This class represents the distribution index arrays across
@@ -136,6 +144,7 @@ public:
            const std::array<std::vector<int>, 2>& src_dest,
            std::span<const std::int64_t> ghosts, std::span<const int> owners);
 
+public:
   // Copy constructor
   IndexMap(const IndexMap& map) = delete;
 
@@ -227,18 +236,19 @@ public:
 
   /// @brief Returns the imbalance of the current IndexMap.
   ///
-  /// The imbalance is a measure of load balancing across all processes, defined
-  /// as the maximum number of indices on any process divided by the average
-  /// number of indices per process. This function calculates the imbalance
-  /// separately for owned indices and ghost indices and returns them as a
-  /// std::array<double, 2>. If the total number of owned or ghost indices is
-  /// zero, the respective entry in the array is set to -1.
+  /// The imbalance is a measure of load balancing across all processes,
+  /// defined as the maximum number of indices on any process divided by
+  /// the average number of indices per process. This function
+  /// calculates the imbalance separately for owned indices and ghost
+  /// indices and returns them as a std::array<double, 2>. If the total
+  /// number of owned or ghost indices is zero, the respective entry in
+  /// the array is set to -1.
   ///
-  /// @note This is a collective operation and must be called by all processes
-  /// in the communicator associated with the IndexMap.
+  /// @note This is a collective operation and must be called by all
+  /// processes in the communicator associated with the IndexMap.
   ///
-  /// @return An array containing the imbalance in owned indices
-  /// (first element) and the imbalance in ghost indices (second element).
+  /// @return An array containing the imbalance in owned indices (first
+  /// element) and the imbalance in ghost indices (second element).
   std::array<double, 2> imbalance() const;
 
 private:
