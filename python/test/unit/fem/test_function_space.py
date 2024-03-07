@@ -168,6 +168,8 @@ def test_collapse(W, V):
         Function(W.sub(1))
 
     Ws = [W.sub(i).collapse() for i in range(W.num_sub_spaces)]
+    for Wi, _ in Ws:
+        assert np.allclose(Wi.dofmap.index_map.ghosts, W.dofmap.index_map.ghosts)
 
     msh = W.mesh
     cell_imap = msh.topology.index_map(msh.topology.dim)
@@ -181,9 +183,9 @@ def test_collapse(W, V):
                 new_to_old = Ws[k][1]
                 assert dof * bs + k == new_to_old[new_dof]
 
-    f_0 = Function(Ws[0][0])
-    f_1 = Function(V)
-    assert f_0.x.index_map.size_global == f_1.x.index_map.size_global
+    f0 = Function(Ws[0][0])
+    f1 = Function(V)
+    assert f0.x.index_map.size_global == f1.x.index_map.size_global
 
 
 def test_argument_equality(mesh, V, V2, W, W2):
