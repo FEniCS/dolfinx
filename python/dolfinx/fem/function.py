@@ -369,7 +369,7 @@ class Function(ufl.Coefficient):
         # Store DOLFINx FunctionSpace object
         self._V = V
 
-        # Store casting to la.Vector
+        # Store Python wrapper around the underlying Vector
         self._x = la.Vector(self._cpp_object.x)
 
     @property
