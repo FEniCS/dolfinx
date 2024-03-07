@@ -164,6 +164,8 @@ communicate_ghosts_to_owners(MPI_Comm comm, std::span<const int> src,
 /// @param[in] imap An index map.
 /// @param[in] indices List of entity indices (indices local to the
 /// process).
+/// @param[in] order Control the order in which ghost indices appear in
+/// the new map.
 /// @param[in] allow_owner_change Allows indices that are not included
 /// by their owning process but included on sharing processes to be
 /// included in the submap. These indices will be owned by one of the
@@ -176,7 +178,7 @@ std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>,
            std::vector<int>, std::vector<int>, std::vector<int>>
 compute_submap_indices(const IndexMap& imap,
                        std::span<const std::int32_t> indices,
-                       bool allow_owner_change)
+                       IndexMapOrder order, bool allow_owner_change)
 {
   std::span<const int> src = imap.src();
   std::span<const int> dest = imap.dest();
@@ -349,6 +351,31 @@ compute_submap_indices(const IndexMap& imap,
   submap_src.erase(std::unique(submap_src.begin(), submap_src.end()),
                    submap_src.end());
   submap_src.shrink_to_fit();
+
+  // If required, preserve the order of the ghost indices
+  if (order == IndexMapOrder::preserve)
+  {
+    // Build (old postion, new position) list for ghosts and sort
+    std::vector<std::pair<std::int32_t, std::int32_t>> pos;
+    pos.reserve(submap_ghost.size());
+    for (std::int32_t idx : submap_ghost)
+      pos.emplace_back(idx, pos.size());
+    std::sort(pos.begin(), pos.end());
+
+    // Order ghosts in the sub-map by their position in the parent map
+    std::vector<int> submap_ghost_owners1;
+    submap_ghost_owners1.reserve(submap_ghost_owners.size());
+    std::vector<std::int32_t> submap_ghost1;
+    submap_ghost1.reserve(submap_ghost.size());
+    for (auto [_, idx] : pos)
+    {
+      submap_ghost_owners1.push_back(submap_ghost_owners[idx]);
+      submap_ghost1.push_back(submap_ghost[idx]);
+    }
+
+    submap_ghost_owners = std::move(submap_ghost_owners1);
+    submap_ghost = std::move(submap_ghost1);
+  }
 
   return {std::move(submap_owned), std::move(submap_ghost),
           std::move(submap_ghost_owners), std::move(submap_src),
@@ -732,7 +759,7 @@ common::create_sub_index_map(const IndexMap& imap,
   // index map
   auto [submap_owned, submap_ghost, submap_ghost_owners, submap_src,
         submap_dest]
-      = compute_submap_indices(imap, indices, allow_owner_change);
+      = compute_submap_indices(imap, indices, order, allow_owner_change);
 
   // Compute submap offset for this rank
   std::int64_t submap_local_size = submap_owned.size();
@@ -747,35 +774,6 @@ common::create_sub_index_map(const IndexMap& imap,
   std::vector<std::int64_t> submap_ghost_gidxs = compute_submap_ghost_indices(
       submap_src, submap_dest, submap_owned, submap_ghost_global,
       submap_ghost_owners, submap_offset, imap);
-
-  // If required, preserve the order of the ghost indices
-  if (order == IndexMapOrder::preserve)
-  {
-    // Build (old postion, new position) list for ghosts and sort
-    std::vector<std::pair<std::int32_t, std::int32_t>> pos;
-    pos.reserve(submap_ghost.size());
-    for (std::int32_t idx : submap_ghost)
-      pos.emplace_back(idx, pos.size());
-    std::sort(pos.begin(), pos.end());
-
-    // Order ghosts in the sub-map by their position in the parent map
-    std::vector<std::int64_t> submap_ghost_gidxs1;
-    submap_ghost_gidxs1.reserve(submap_ghost_gidxs.size());
-    std::vector<int> submap_ghost_owners1;
-    submap_ghost_owners1.reserve(submap_ghost_owners.size());
-    std::vector<std::int32_t> submap_ghost1;
-    submap_ghost1.reserve(submap_ghost.size());
-    for (auto [_, idx] : pos)
-    {
-      submap_ghost_gidxs1.push_back(submap_ghost_gidxs[idx]);
-      submap_ghost_owners1.push_back(submap_ghost_owners[idx]);
-      submap_ghost1.push_back(submap_ghost[idx]);
-    }
-
-    submap_ghost_gidxs = std::move(submap_ghost_gidxs1);
-    submap_ghost_owners = std::move(submap_ghost_owners1);
-    submap_ghost = std::move(submap_ghost1);
-  }
 
   // Create a map from (local) indices in the submap to the corresponding
   // (local) index in the original map
