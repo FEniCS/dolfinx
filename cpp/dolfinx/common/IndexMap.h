@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2022 Chris Richardson, Garth N. Wells and Igor Baratta
+// Copyright (C) 2015-2024 Chris Richardson, Garth N. Wells and Igor Baratta
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -68,7 +68,8 @@ stack_index_maps(
 /// @param[in] imap Parent map to create a new sub-map from.
 /// @param[in] indices Local indices in `imap` (owned and ghost) to
 /// include in the new index map.
-/// @param[in] order
+/// @param[in] order Control the order in which ghost indices appear in
+/// the new map.
 /// @param[in] allow_owner_change If `true`, indices that are not
 /// included in `indices` by their owning process can be included in
 /// `indices` by processes that ghost the indices to be included in the
