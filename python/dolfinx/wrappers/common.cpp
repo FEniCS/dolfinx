@@ -189,7 +189,7 @@ void common(nb::module_& m)
       {
         auto [map, submap_to_map] = dolfinx::common::create_sub_index_map(
             imap, std::span(indices.data(), indices.size()),
-            dolfinx::common::IndexMapSort::nosort, allow_owner_change);
+            dolfinx::common::IndexMapOrder::any, allow_owner_change);
         return std::pair(std::move(map), dolfinx_wrappers::as_nbarray(
                                              std::move(submap_to_map)));
       },

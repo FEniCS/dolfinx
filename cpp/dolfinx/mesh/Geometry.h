@@ -506,7 +506,7 @@ create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
   std::vector<std::int32_t> subx_to_x_dofmap;
   {
     auto [map, new_to_old] = common::create_sub_index_map(
-        *x_index_map, sub_x_dofs, common::IndexMapSort::nosort, true);
+        *x_index_map, sub_x_dofs, common::IndexMapOrder::any, true);
     sub_x_dof_index_map = std::make_shared<common::IndexMap>(std::move(map));
     subx_to_x_dofmap = std::move(new_to_old);
   }

@@ -725,7 +725,7 @@ common::stack_index_maps(
 std::pair<IndexMap, std::vector<std::int32_t>>
 common::create_sub_index_map(const IndexMap& imap,
                              std::span<const std::int32_t> indices,
-                             IndexMapSort sort_ghosts, bool allow_owner_change)
+                             IndexMapOrder order, bool allow_owner_change)
 {
   // Compute the owned, ghost, and ghost owners of submap indices.
   // NOTE: All indices are local and numbered w.r.t. the original (imap)
@@ -748,7 +748,8 @@ common::create_sub_index_map(const IndexMap& imap,
       submap_src, submap_dest, submap_owned, submap_ghost_global,
       submap_ghost_owners, submap_offset, imap);
 
-  if (sort_ghosts == IndexMapSort::sort)
+  // If required, preserve the order of the ghost indices
+  if (order == IndexMapOrder::preserve)
   {
     // Build (old postion, new position) list for ghosts and sort
     std::vector<std::pair<std::int32_t, std::int32_t>> pos;
@@ -757,17 +758,18 @@ common::create_sub_index_map(const IndexMap& imap,
       pos.emplace_back(idx, pos.size());
     std::sort(pos.begin(), pos.end());
 
-    // Sort ghosts by their original ordering in _ghosts
-    std::vector<std::int64_t> submap_ghost_gidxs1(submap_ghost_gidxs.size());
-    std::vector<int> submap_ghost_owners1(submap_ghost_owners.size());
-    std::vector<std::int32_t> submap_ghost1(submap_ghost.size());
-    for (std::size_t i = 0; i < pos.size(); ++i)
+    // Order ghosts in the sub-map by their position in the parent map
+    std::vector<std::int64_t> submap_ghost_gidxs1;
+    submap_ghost_gidxs1.reserve(submap_ghost_gidxs.size());
+    std::vector<int> submap_ghost_owners1;
+    submap_ghost_owners1.reserve(submap_ghost_owners.size());
+    std::vector<std::int32_t> submap_ghost1;
+    submap_ghost1.reserve(submap_ghost.size());
+    for (auto [_, idx] : pos)
     {
-      // std::int32_t idx0 = pos[i].first;  // old position
-      std::int32_t idx1 = pos[i].second; // new position
-      submap_ghost_gidxs1[i] = submap_ghost_gidxs[idx1];
-      submap_ghost_owners1[i] = submap_ghost_owners[idx1];
-      submap_ghost1[i] = submap_ghost[idx1];
+      submap_ghost_gidxs1.push_back(submap_ghost_gidxs[idx]);
+      submap_ghost_owners1.push_back(submap_ghost_owners[idx]);
+      submap_ghost1.push_back(submap_ghost[idx]);
     }
 
     submap_ghost_gidxs = std::move(submap_ghost_gidxs1);

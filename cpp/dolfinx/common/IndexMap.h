@@ -21,10 +21,10 @@ class IndexMap;
 
 /// Enum to control preservation of ghost index ordering in
 /// sub-IndexMaps.
-enum class IndexMapSort : bool
+enum class IndexMapOrder : bool
 {
-  sort = true,
-  nosort = false
+  preserve = true, ///< Preserve the ordering of ghost indices
+  any = false      ///< Allow arbitrary ordering of ghost indices in sub-maps
 };
 
 /// @brief Given a sorted vector of indices (local numbering, owned or
@@ -68,7 +68,7 @@ stack_index_maps(
 /// @param[in] imap Parent map to create a new sub-map from.
 /// @param[in] indices Local indices in `imap` (owned and ghost) to
 /// include in the new index map.
-/// @param[in] sort_ghosts
+/// @param[in] order
 /// @param[in] allow_owner_change If `true`, indices that are not
 /// included in `indices` by their owning process can be included in
 /// `indices` by processes that ghost the indices to be included in the
@@ -79,11 +79,9 @@ stack_index_maps(
 /// @return The (i) new index map and (ii) a map from local indices in
 /// the submap to local indices in the original (this) map.
 /// @pre `indices` must be sorted and must not contain duplicates.
-std::pair<IndexMap, std::vector<std::int32_t>>
-create_sub_index_map(const IndexMap& imap,
-                     std::span<const std::int32_t> indices,
-                     IndexMapSort sort_ghosts = IndexMapSort::nosort,
-                     bool allow_owner_change = false);
+std::pair<IndexMap, std::vector<std::int32_t>> create_sub_index_map(
+    const IndexMap& imap, std::span<const std::int32_t> indices,
+    IndexMapOrder order = IndexMapOrder::any, bool allow_owner_change = false);
 
 /// This class represents the distribution index arrays across
 /// processes. An index array is a contiguous collection of `N+1`
