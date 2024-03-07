@@ -19,6 +19,8 @@ namespace dolfinx::common
 // Forward declaration
 class IndexMap;
 
+/// Enum to control preservation of ghost index ordering in
+/// sub-IndexMaps.
 enum class IndexMapSort : bool
 {
   sort = true,
