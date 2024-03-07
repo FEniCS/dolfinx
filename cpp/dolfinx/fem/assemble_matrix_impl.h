@@ -40,7 +40,7 @@ using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
 /// @param dofmap0 Test function (row) degree-of-freedom data holding
 /// the (0) dofmap, (1) dofmap block size and (2) dofmap cell indices.
 /// @param P0 Function that applies transformation P_0 A in-place to
-/// transform trial degrees-of-freedom.
+/// transform test degrees-of-freedom.
 /// @param dofmap1 Trial function (column) degree-of-freedom data
 /// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
 /// indices.
@@ -168,7 +168,7 @@ void assemble_cells(
 /// @param dofmap0 Test function (row) degree-of-freedom data holding
 /// the (0) dofmap, (1) dofmap block size and (2) dofmap cell indices.
 /// @param P0 Function that applies transformation P0.A in-place to
-/// transform trial degrees-of-freedom.
+/// transform test degrees-of-freedom.
 /// @param dofmap1 Trial function (column) degree-of-freedom data
 /// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
 /// indices.
@@ -218,13 +218,13 @@ void assemble_exterior_facets(
   assert(facets1.size() == facets.size());
   for (std::size_t index = 0; index < facets.size(); index += 2)
   {
-    // Cell in the integration domain
+    // Cell in the integration domain, local facet index relative to the
+    // integration domain cell, and cells in the test and trial function
+    // meshes
     std::int32_t cell = facets[index];
-    // Cell in the test function mesh
-    std::int32_t cell0 = facets0[index];
-    // Cell in the trial function mesh
-    std::int32_t cell1 = facets1[index];
     std::int32_t local_facet = facets[index + 1];
+    std::int32_t cell0 = facets0[index];
+    std::int32_t cell1 = facets1[index];
 
     // Get cell coordinates/geometry
     auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
@@ -295,7 +295,7 @@ void assemble_exterior_facets(
 /// @param dofmap0 Test function (row) degree-of-freedom data holding
 /// the (0) dofmap, (1) dofmap block size and (2) dofmap cell indices.
 /// @param P0 Function that applies transformation P0.A in-place to
-/// transform trial degrees-of-freedom.
+/// transform test degrees-of-freedom.
 /// @param dofmap1 Trial function (column) degree-of-freedom data
 /// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
 /// indices.
