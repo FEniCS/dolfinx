@@ -141,10 +141,17 @@ void declare_function_space(nb::module_& m, std::string type)
                    cell_permutations,
                int dim)
             {
-              self.pre_apply_dof_transformation(
-                  std::span(x.data(), x.size()),
-                  std::span(cell_permutations.data(), cell_permutations.size()),
-                  dim);
+              const std::size_t data_per_cell
+                  = x.size() / cell_permutations.size();
+              std::span<T> x_span(x.data(), x.size());
+              std::span<const std::uint32_t> perm_span(
+                  cell_permutations.data(), cell_permutations.size());
+              for (std::size_t i = 0; i < cell_permutations.size(); i++)
+              {
+                self.pre_apply_dof_transformation(
+                    x_span.subspan(i * data_per_cell, data_per_cell),
+                    perm_span[i], dim);
+              }
             },
             nb::arg("x"), nb::arg("cell_permutations"), nb::arg("dim"))
         .def(
@@ -155,10 +162,17 @@ void declare_function_space(nb::module_& m, std::string type)
                    cell_permutations,
                int dim)
             {
-              self.pre_apply_transpose_dof_transformation(
-                  std::span(x.data(), x.size()),
-                  std::span(cell_permutations.data(), cell_permutations.size()),
-                  dim);
+              const std::size_t data_per_cell
+                  = x.size() / cell_permutations.size();
+              std::span<T> x_span(x.data(), x.size());
+              std::span<const std::uint32_t> perm_span(
+                  cell_permutations.data(), cell_permutations.size());
+              for (std::size_t i = 0; i < cell_permutations.size(); i++)
+              {
+                self.pre_apply_transpose_dof_transformation(
+                    x_span.subspan(i * data_per_cell, data_per_cell),
+                    perm_span[i], dim);
+              }
             },
             nb::arg("x"), nb::arg("cell_permutations"), nb::arg("dim"))
         .def(
@@ -169,10 +183,18 @@ void declare_function_space(nb::module_& m, std::string type)
                    cell_permutations,
                int dim)
             {
-              self.pre_apply_inverse_transpose_dof_transformation(
-                  std::span(x.data(), x.size()),
-                  std::span(cell_permutations.data(), cell_permutations.size()),
-                  dim);
+              const std::size_t data_per_cell
+                  = x.size() / cell_permutations.size();
+              std::span<T> x_span(x.data(), x.size());
+              std::span<const std::uint32_t> perm_span(
+                  cell_permutations.data(), cell_permutations.size());
+
+              for (std::size_t i = 0; i < cell_permutations.size(); i++)
+              {
+                self.pre_apply_inverse_transpose_dof_transformation(
+                    x_span.subspan(i * data_per_cell, data_per_cell),
+                    perm_span[i], dim);
+              }
             },
             nb::arg("x"), nb::arg("cell_permutations"), nb::arg("dim"))
         .def(
@@ -183,10 +205,18 @@ void declare_function_space(nb::module_& m, std::string type)
                    cell_permutations,
                int dim)
             {
-              self.pre_apply_dof_transformation(
-                  std::span((std::complex<T>*)x.data(), x.size()),
-                  std::span(cell_permutations.data(), cell_permutations.size()),
-                  dim);
+              const std::size_t data_per_cell
+                  = x.size() / cell_permutations.size();
+              std::span<std::complex<T>> x_span(x.data(), x.size());
+              std::span<const std::uint32_t> perm_span(
+                  cell_permutations.data(), cell_permutations.size());
+
+              for (std::size_t i = 0; i < cell_permutations.size(); i++)
+              {
+                self.pre_apply_dof_transformation(
+                    x_span.subspan(i * data_per_cell, data_per_cell),
+                    perm_span[i], dim);
+              }
             },
             nb::arg("x"), nb::arg("cell_permutations"), nb::arg("dim"))
         .def(
@@ -197,10 +227,18 @@ void declare_function_space(nb::module_& m, std::string type)
                    cell_permutations,
                int dim)
             {
-              self.pre_apply_transpose_dof_transformation(
-                  std::span((std::complex<T>*)x.data(), x.size()),
-                  std::span(cell_permutations.data(), cell_permutations.size()),
-                  dim);
+              const std::size_t data_per_cell
+                  = x.size() / cell_permutations.size();
+              std::span<std::complex<T>> x_span(x.data(), x.size());
+              std::span<const std::uint32_t> perm_span(
+                  cell_permutations.data(), cell_permutations.size());
+
+              for (std::size_t i = 0; i < cell_permutations.size(); i++)
+              {
+                self.pre_apply_transpose_dof_transformation(
+                    x_span.subspan(i * data_per_cell, data_per_cell),
+                    perm_span[i], dim);
+              }
             },
             nb::arg("x"), nb::arg("cell_permutations"), nb::arg("dim"))
         .def(
@@ -211,10 +249,18 @@ void declare_function_space(nb::module_& m, std::string type)
                    cell_permutations,
                int dim)
             {
-              self.pre_apply_inverse_transpose_dof_transformation(
-                  std::span(x.data(), x.shape(0) * x.shape(1)),
-                  std::span(cell_permutations.data(), cell_permutations.size()),
-                  dim);
+              const std::size_t data_per_cell
+                  = x.size() / cell_permutations.size();
+              std::span<std::complex<T>> x_span(x.data(), x.size());
+              std::span<const std::uint32_t> perm_span(
+                  cell_permutations.data(), cell_permutations.size());
+
+              for (std::size_t i = 0; i < cell_permutations.size(); i++)
+              {
+                self.pre_apply_inverse_transpose_dof_transformation(
+                    x_span.subspan(i * data_per_cell, data_per_cell),
+                    perm_span[i], dim);
+              }
             },
             nb::arg("x"), nb::arg("cell_permutations"), nb::arg("dim"))
         .def_prop_ro("needs_dof_transformations",
