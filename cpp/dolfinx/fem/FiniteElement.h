@@ -468,7 +468,7 @@ public:
   /// @param[in,out] data The data to be transformed. This data is flattened
   /// with row-major layout, shape=(num_dofs, block_size)
   /// @param[in] cell_permutation Permutation data for the cell
-  /// @param[in] block_size The block_size of the input data per cell
+  /// @param[in] block_size The block_size of the input data
   template <typename U>
   void pre_apply_dof_transformation(std::span<U> data,
                                     std::uint32_t cell_permutation,
@@ -533,7 +533,7 @@ public:
   ///
   /// @param[in,out] data The data to be transformed. This data is flattened
   /// with row-major layout, shape=(num_dofs, block_size)
-  /// @param[in] cell_permutation Permutation data for the cells
+  /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename U>
   void post_apply_dof_transformation(std::span<U> data,
@@ -548,7 +548,7 @@ public:
   ///
   /// @param[in,out] data The data to be transformed. This data is flattened
   /// with row-major layout, shape=(num_dofs, block_size)
-  /// @param[in] cell_permutation Permutation data for the cells
+  /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename U>
   void post_apply_inverse_dof_transformation(std::span<U> data,
@@ -565,7 +565,7 @@ public:
   /// @param[in,out] data The data to be transformed. This data is flattened
   /// with row-major layout, shape=(num_dofs, block_size)
   /// @param[in] cell_permutation Permutation data for the cell
-  /// @param[in] block_size The block_size of the input datas
+  /// @param[in] block_size The block_size of the input data
   template <typename U>
   void post_apply_transpose_dof_transformation(std::span<U> data,
                                                std::uint32_t cell_permutation,
@@ -580,7 +580,7 @@ public:
   ///
   /// @param[in,out] data The data to be transformed. This data is flattened
   /// with row-major layout, shape=(num_dofs, block_size)
-  /// @param[in] cell_permutation Permutation data for the cells
+  /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] block_size The block_size of the input data
   template <typename U>
   void post_apply_inverse_transpose_dof_transformation(
