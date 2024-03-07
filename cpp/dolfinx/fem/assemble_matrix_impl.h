@@ -218,13 +218,13 @@ void assemble_exterior_facets(
   assert(facets1.size() == facets.size());
   for (std::size_t index = 0; index < facets.size(); index += 2)
   {
-    // Cell in the integration domain
+    // Cell in the integration domain, local facet index relative to the
+    // integration domain cell, and cells in the test and trial function
+    // meshes
     std::int32_t cell = facets[index];
-    // Cell in the test function mesh
-    std::int32_t cell0 = facets0[index];
-    // Cell in the trial function mesh
-    std::int32_t cell1 = facets1[index];
     std::int32_t local_facet = facets[index + 1];
+    std::int32_t cell0 = facets0[index];
+    std::int32_t cell1 = facets1[index];
 
     // Get cell coordinates/geometry
     auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(

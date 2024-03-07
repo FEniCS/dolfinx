@@ -34,41 +34,43 @@ using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
     MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
 /// @endcond
 
-/// @brief Apply lifting for cell integrals
-/// @tparam T The scalar type
+/// @brief Apply boundary condition lifting for cell integrals.
+/// @tparam T The scalar type.
 /// @tparam _bs0 The block size of the form test function dof map. If
 /// less than zero the block size is determined at runtime. If `_bs0` is
 /// positive the block size is used as a compile-time constant, which
 /// has performance benefits.
 /// @tparam _bs1 The block size of the trial function dof map.
-/// @param b The vector to modify
+/// @param[in,out] b Vector to modify.
 /// @param x_dofmap Dofmap for the mesh geometry.
-/// @param x Mesh geometry (coordinates).
-/// @param kernel Kernel function to execute over each cell.
-/// @param cells Cell indices (in the integration domain mesh) to execute
-/// the kernel over. These are the indices into the geometry dofmap.
-/// @param dofmap0 Test function (row) degree-of-freedom data holding
+/// @param[in] x Mesh geometry (coordinates).
+/// @param[in] kernel Kernel function to execute over each cell.
+/// @param[in] cells Cell indices (in the integration domain mesh) to
+/// execute the kernel over. These are the indices into the geometry
+/// dofmap.
+/// @param[in] dofmap0 Test function (row) degree-of-freedom data holding
 /// the (0) dofmap, (1) dofmap block size and (2) dofmap cell indices.
-/// @param P0 Function that applies transformation P_0 A in-place to
+/// @param[in] P0 Function that applies transformation P_0 A in-place to
 /// transform test degrees-of-freedom.
-/// @param dofmap1 Trial function (column) degree-of-freedom data
+/// @param[in] dofmap1 Trial function (column) degree-of-freedom data
 /// holding the (0) dofmap, (1) dofmap block size and (2) dofmap cell
 /// indices.
-/// @param P1T Function that applies transformation A P_1^T in-place to
-/// transform trial degrees-of-freedom.
-/// @param constants The constant data
-/// @param coeffs The coefficient data array of shape (cells.size(), cstride),
-/// flattened into row-major format.
-/// @param cstride The coefficient stride
-/// @param cell_info0 The cell permutation information for the test function
-/// mesh
-/// @param cell_info1 The cell permutation information for the trial function
-/// mesh
-/// @param bc_values1 The value for entries with an applied boundary condition
-/// @param bc_markers1 Marker to identify which DOFs have boundary conditions
-/// applied
-/// @param x0 The vector used in the lifting
-/// @param scale The scaling to apply
+/// @param[in] P1T Function that applies transformation A P_1^T in-place
+/// to transform trial degrees-of-freedom.
+/// @param[in] constants Constants data.
+/// @param[in] coeffs The coefficient data array with shape
+/// `(cells.size(), cstride)` flattened into row-major format.
+/// @param[in] cstride The coefficient stride.
+/// @param[in] cell_info0 The cell permutation information for the test
+/// function mesh.
+/// @param[in] cell_info1 The cell permutation information for the trial
+/// function mesh.
+/// @param[in] bc_values1 The value for entries with an applied boundary
+/// condition.
+/// @param[in] bc_markers1 Marker to identify which DOFs have boundary
+/// conditions applied.
+/// @param[in] x0 Vector used in the lifting.
+/// @param[in] scale Scaling to apply.
 template <dolfinx::scalar T, int _bs0 = -1, int _bs1 = -1>
 void _lift_bc_cells(
     std::span<T> b, mdspan2_t x_dofmap,
@@ -637,9 +639,8 @@ void assemble_cells(
   // Iterate over active cells
   for (std::size_t index = 0; index < cells.size(); ++index)
   {
-    // Integration domain cell
+    // Integration domain celland test function cell
     std::int32_t c = cells[index];
-    // Test function cell
     std::int32_t c0 = cells0[index];
 
     // Get cell coordinates/geometry
@@ -723,11 +724,11 @@ void assemble_exterior_facets(
   assert(facets0.size() == facets.size());
   for (std::size_t index = 0; index < facets.size(); index += 2)
   {
-    // Cell in the integration domain
+    // Cell in the integration domain, local facet index relative to the
+    // integration domain cell, and cell in the test function mesh
     std::int32_t cell = facets[index];
-    // Cell in the test function mesh
-    std::int32_t cell0 = facets0[index];
     std::int32_t local_facet = facets[index + 1];
+    std::int32_t cell0 = facets0[index];
 
     // Get cell coordinates/geometry
     auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
@@ -930,7 +931,7 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
 
   std::span<const std::uint32_t> cell_info0;
   std::span<const std::uint32_t> cell_info1;
-  // TODO Check for each element instead
+  // TODO: Check for each element instead
   if (element0->needs_dof_transformations()
       or element1->needs_dof_transformations() or a.needs_facet_permutations())
   {

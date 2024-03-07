@@ -221,31 +221,26 @@ def test_mixed_dom_codim_0(n, k, space, integral_type):
     b.scatter_reverse(la.InsertMode.add)
 
     # Assemble a mixed-domain form using msh as integration domain.
-    # Entity maps must map cells in msh (the integration domain mesh, defined by
-    # the integration measure) to cells in smsh
+    # Entity maps must map cells in msh (the integration domain mesh,
+    # defined by the integration measure) to cells in smsh.
     cell_imap = msh.topology.index_map(tdim)
     num_cells = cell_imap.size_local + cell_imap.num_ghosts
     msh_to_smsh = np.full(num_cells, -1)
     msh_to_smsh[smsh_to_msh] = np.arange(len(smsh_to_msh))
     entity_maps = {smsh._cpp_object: np.array(msh_to_smsh, dtype=np.int32)}
-    a1 = fem.form(
-        a_ufl(u, q, measure_msh),
-        entity_maps=entity_maps,
-    )
+    a1 = fem.form(a_ufl(u, q, measure_msh), entity_maps=entity_maps)
     A1 = fem.assemble_matrix(a1, bcs=[bc])
     A1.scatter_reverse()
     assert np.isclose(A1.squared_norm(), A.squared_norm())
 
-    L1 = fem.form(
-        L_ufl(q, measure_msh),
-        entity_maps=entity_maps,
-    )
+    L1 = fem.form(L_ufl(q, measure_msh), entity_maps=entity_maps)
     b1 = fem.assemble_vector(L1)
     fem.apply_lifting(b1.array, [a1], bcs=[[bc]])
     b1.scatter_reverse(la.InsertMode.add)
     assert np.isclose(b1.norm(), b.norm())
 
-    # Now assemble a mixed-domain form taking smsh to be the integration domain.
+    # Now assemble a mixed-domain form taking smsh to be the integration
+    # domain.
 
     # Create the measure (this time defined over the submesh)
     measure_smsh = create_measure(smsh, integral_type)
@@ -253,10 +248,7 @@ def test_mixed_dom_codim_0(n, k, space, integral_type):
     # Entity maps must map cells in smsh (the integration domain mesh) to
     # cells in msh
     entity_maps = {msh._cpp_object: np.array(smsh_to_msh, dtype=np.int32)}
-    a0 = fem.form(
-        a_ufl(u, q, measure_smsh),
-        entity_maps=entity_maps,
-    )
+    a0 = fem.form(a_ufl(u, q, measure_smsh), entity_maps=entity_maps)
     A0 = fem.assemble_matrix(a0, bcs=[bc])
     A0.scatter_reverse()
     assert np.isclose(A0.squared_norm(), A.squared_norm())
