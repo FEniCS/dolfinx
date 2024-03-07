@@ -168,7 +168,7 @@ double assemble_vector1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
   common::Timer timer("Assembler1 lambda (vector)");
   fem::impl::assemble_cells<T, 1>([](auto, auto, auto, auto) {},
                                   b.mutable_array(), g.dofmap(), g.x(), cells,
-                                  dofmap.map(), 1, kernel, {}, {}, 0, {});
+                                  {dofmap.map(), 1, cells}, kernel, {}, {}, 0, {});
   b.scatter_rev(std::plus<T>());
   return la::squared_norm(b);
 }
