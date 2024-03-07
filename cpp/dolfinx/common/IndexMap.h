@@ -145,7 +145,6 @@ public:
            const std::array<std::vector<int>, 2>& src_dest,
            std::span<const std::int64_t> ghosts, std::span<const int> owners);
 
-public:
   // Copy constructor
   IndexMap(const IndexMap& map) = delete;
 
