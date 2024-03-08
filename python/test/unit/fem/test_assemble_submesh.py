@@ -240,16 +240,16 @@ def test_mixed_dom_codim_0(n, k, space, integral_type):
     msh_to_smsh = np.full(num_cells, -1)
     msh_to_smsh[smsh_to_msh] = np.arange(len(smsh_to_msh))
     entity_maps = {smsh._cpp_object: np.array(msh_to_smsh, dtype=np.int32)}
-    a1 = fem.form(a_ufl(u, q, f, g, measure_msh), entity_maps=entity_maps)
-    A1 = fem.assemble_matrix(a1, bcs=[bc])
-    A1.scatter_reverse()
-    assert np.isclose(A1.squared_norm(), A.squared_norm())
+    a0 = fem.form(a_ufl(u, q, f, g, measure_msh), entity_maps=entity_maps)
+    A0 = fem.assemble_matrix(a0, bcs=[bc])
+    A0.scatter_reverse()
+    assert np.isclose(A0.squared_norm(), A.squared_norm())
 
-    L1 = fem.form(L_ufl(q, f, g, measure_msh), entity_maps=entity_maps)
-    b1 = fem.assemble_vector(L1)
-    fem.apply_lifting(b1.array, [a1], bcs=[[bc]])
-    b1.scatter_reverse(la.InsertMode.add)
-    assert np.isclose(b1.norm(), b.norm())
+    L0 = fem.form(L_ufl(q, f, g, measure_msh), entity_maps=entity_maps)
+    b0 = fem.assemble_vector(L0)
+    fem.apply_lifting(b0.array, [a0], bcs=[[bc]])
+    b0.scatter_reverse(la.InsertMode.add)
+    assert np.isclose(b0.norm(), b.norm())
 
     # Now assemble a mixed-domain form taking smsh to be the integration
     # domain.
@@ -260,16 +260,15 @@ def test_mixed_dom_codim_0(n, k, space, integral_type):
     # Entity maps must map cells in smsh (the integration domain mesh) to
     # cells in msh
     entity_maps = {msh._cpp_object: np.array(smsh_to_msh, dtype=np.int32)}
-    a0 = fem.form(a_ufl(u, q, f, g, measure_smsh), entity_maps=entity_maps)
-    A0 = fem.assemble_matrix(a0, bcs=[bc])
-    A0.scatter_reverse()
-    assert np.isclose(A0.squared_norm(), A.squared_norm())
+    a1 = fem.form(a_ufl(u, q, f, g, measure_smsh), entity_maps=entity_maps)
+    A1 = fem.assemble_matrix(a1, bcs=[bc])
+    A1.scatter_reverse()
+    assert np.isclose(A1.squared_norm(), A.squared_norm())
 
-    L0 = fem.form(L_ufl(q, f, g, measure_smsh), entity_maps=entity_maps)
-    b0 = fem.assemble_vector(L0)
-    fem.apply_lifting(b0.array, [a0], bcs=[[bc]])
-    b0.scatter_reverse(la.InsertMode.add)
-    assert np.isclose(b0.norm(), b.norm())
+    L1 = fem.form(L_ufl(q, f, g, measure_smsh), entity_maps=entity_maps)
+    b1 = fem.assemble_vector(L1)
+    fem.apply_lifting(b1.array, [a1], bcs=[[bc]])
+    b1.scatter_reverse(la.InsertMode.add)
+    assert np.isclose(b1.norm(), b.norm())
 
-    # TODO Rename
     # TODO Scalar
