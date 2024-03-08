@@ -168,6 +168,14 @@ def L_ufl(v, f, g, measure):
         return ufl.inner(f("+") * g("+"), v("+") + v("-")) * measure
 
 
+def M_ufl(f, g, measure):
+    if measure.integral_type() == "cell" or measure.integral_type() == "exterior_facet":
+        return f * g * measure
+    else:
+        assert measure.integral_type() == "interior_facet"
+        return (f("+") + f("-")) * (g("+") + g("-")) * measure
+
+
 @pytest.mark.parametrize("n", [4, 6])
 @pytest.mark.parametrize("k", [1, 3])
 @pytest.mark.parametrize("space", ["Lagrange", "Discontinuous Lagrange"])
@@ -232,6 +240,9 @@ def test_mixed_dom_codim_0(n, k, space, integral_type):
     fem.apply_lifting(b.array, [a], bcs=[[bc]])
     b.scatter_reverse(la.InsertMode.add)
 
+    M = fem.form(M_ufl(f, f, measure_msh))
+    c = msh.comm.allreduce(fem.assemble_scalar(M), op=MPI.SUM)
+
     # Assemble a mixed-domain form using msh as integration domain.
     # Entity maps must map cells in msh (the integration domain mesh,
     # defined by the integration measure) to cells in smsh.
@@ -250,6 +261,10 @@ def test_mixed_dom_codim_0(n, k, space, integral_type):
     fem.apply_lifting(b0.array, [a0], bcs=[[bc]])
     b0.scatter_reverse(la.InsertMode.add)
     assert np.isclose(b0.norm(), b.norm())
+
+    M0 = fem.form(M_ufl(f, g, measure_msh), entity_maps=entity_maps)
+    c0 = msh.comm.allreduce(fem.assemble_scalar(M0), op=MPI.SUM)
+    assert np.isclose(c0, c)
 
     # Now assemble a mixed-domain form taking smsh to be the integration
     # domain.
@@ -271,4 +286,6 @@ def test_mixed_dom_codim_0(n, k, space, integral_type):
     b1.scatter_reverse(la.InsertMode.add)
     assert np.isclose(b1.norm(), b.norm())
 
-    # TODO Scalar
+    M1 = fem.form(M_ufl(f, g, measure_smsh), entity_maps=entity_maps)
+    c1 = msh.comm.allreduce(fem.assemble_scalar(M1), op=MPI.SUM)
+    assert np.isclose(c1, c)
