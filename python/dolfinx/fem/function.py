@@ -480,7 +480,7 @@ class Function(ufl.Coefficient):
     @property
     def x(self) -> la.Vector:
         """Vector holding the degrees-of-freedom."""
-        return self._x  # type: ignore
+        return self._x
 
     @property
     def vector(self):
