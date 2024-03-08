@@ -1030,27 +1030,23 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
     {
     case IntegralType::cell:
     {
-      auto fetch_cell = [](auto entity) { return entity.front(); };
-
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
         auto mesh = coefficients[coeff]->function_space()->mesh();
+        assert(mesh);
         std::vector<std::int32_t> cells
             = form.domain(IntegralType::cell, id, *mesh);
         std::span<const std::uint32_t> cell_info
             = impl::get_cell_orientation_info(*coefficients[coeff]);
-        impl::pack_coefficient_entity(c, cstride, *coefficients[coeff],
-                                      cell_info, cells, 1, fetch_cell,
-                                      offsets[coeff]);
+        impl::pack_coefficient_entity(
+            c, cstride, *coefficients[coeff], cell_info, cells, 1,
+            [](auto entity) { return entity.front(); }, offsets[coeff]);
       }
       break;
     }
     case IntegralType::exterior_facet:
     {
-      // Function to fetch cell index from exterior facet entity
-      auto fetch_cell = [](auto entity) { return entity.front(); };
-
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
@@ -1059,18 +1055,14 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
             = form.domain(IntegralType::exterior_facet, id, *mesh);
         std::span<const std::uint32_t> cell_info
             = impl::get_cell_orientation_info(*coefficients[coeff]);
-        impl::pack_coefficient_entity(c, cstride, *coefficients[coeff],
-                                      cell_info, facets, 2, fetch_cell,
-                                      offsets[coeff]);
+        impl::pack_coefficient_entity(
+            c, cstride, *coefficients[coeff], cell_info, facets, 2,
+            [](auto entity) { return entity.front(); }, offsets[coeff]);
       }
       break;
     }
     case IntegralType::interior_facet:
     {
-      // Functions to fetch cell indices from interior facet entity
-      auto fetch_cell0 = [](auto entity) { return entity[0]; };
-      auto fetch_cell1 = [](auto entity) { return entity[2]; };
-
       // Iterate over coefficients
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
@@ -1081,13 +1073,14 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
             = impl::get_cell_orientation_info(*coefficients[coeff]);
 
         // Pack coefficient ['+']
-        impl::pack_coefficient_entity(c, 2 * cstride, *coefficients[coeff],
-                                      cell_info, facets, 4, fetch_cell0,
-                                      2 * offsets[coeff]);
+        impl::pack_coefficient_entity(
+            c, 2 * cstride, *coefficients[coeff], cell_info, facets, 4,
+            [](auto entity) { return entity[0]; }, 2 * offsets[coeff]);
         // Pack coefficient ['-']
-        impl::pack_coefficient_entity(c, 2 * cstride, *coefficients[coeff],
-                                      cell_info, facets, 4, fetch_cell1,
-                                      offsets[coeff] + offsets[coeff + 1]);
+        impl::pack_coefficient_entity(
+            c, 2 * cstride, *coefficients[coeff], cell_info, facets, 4,
+            [](auto entity) { return entity[2]; },
+            offsets[coeff] + offsets[coeff + 1]);
       }
       break;
     }
