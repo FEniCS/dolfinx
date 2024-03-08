@@ -156,7 +156,7 @@ def a_ufl(u, v, f, g, measure):
         return ufl.inner(f * g * u, v) * measure
     else:
         assert measure.integral_type() == "interior_facet"
-        return ufl.inner(f("-") * g("-") * u("+"), v("-")) * measure
+        return ufl.inner(f("-") * g("-") * (u("+") + u("-")), v("+") + v("-")) * measure
 
 
 def L_ufl(v, f, g, measure):
@@ -165,7 +165,7 @@ def L_ufl(v, f, g, measure):
         return ufl.inner(f * g, v) * measure
     else:
         assert measure.integral_type() == "interior_facet"
-        return ufl.inner(f("+") * g("+"), v("-")) * measure
+        return ufl.inner(f("+") * g("+"), v("+") + v("-")) * measure
 
 
 @pytest.mark.parametrize("n", [4, 6])
@@ -265,5 +265,11 @@ def test_mixed_dom_codim_0(n, k, space, integral_type):
     A0.scatter_reverse()
     assert np.isclose(A0.squared_norm(), A.squared_norm())
 
-    # TODO L0
+    L0 = fem.form(L_ufl(q, f, g, measure_smsh), entity_maps=entity_maps)
+    b0 = fem.assemble_vector(L0)
+    fem.apply_lifting(b0.array, [a0], bcs=[[bc]])
+    b0.scatter_reverse(la.InsertMode.add)
+    assert np.isclose(b0.norm(), b.norm())
+
     # TODO Rename
+    # TODO Scalar
