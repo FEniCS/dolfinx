@@ -227,6 +227,7 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
         // All sends have completed, start non-blocking barrier
         int err = MPI_Ibarrier(comm, &barrier_request);
         dolfinx::MPI::check_error(comm, err);
+        LOG(INFO) << "NBX activating barrier";
         barrier_active = true;
       }
     }
