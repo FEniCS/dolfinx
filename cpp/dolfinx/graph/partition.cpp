@@ -263,7 +263,7 @@ graph::build::compute_ghost_indices(MPI_Comm comm,
 
   MPI_Comm neighbor_comm_fwd, neighbor_comm_rev;
 
-  std::vector<int> in_edges = MPI::compute_graph_edges_pcx(comm, neighbors);
+  std::vector<int> in_edges = MPI::compute_graph_edges_nbx(comm, neighbors);
   MPI_Dist_graph_create_adjacent(comm, in_edges.size(), in_edges.data(),
                                  MPI_UNWEIGHTED, neighbors.size(),
                                  neighbors.data(), MPI_UNWEIGHTED,

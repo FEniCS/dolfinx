@@ -119,7 +119,7 @@ graph::AdjacencyList<int> compute_destination_ranks(
   // non-scalable neighbourhood detection (which might be faster for
   // small rank counts).
   const std::vector<int> src
-      = dolfinx::MPI::compute_graph_edges_pcx(comm, dest);
+      = dolfinx::MPI::compute_graph_edges_nbx(comm, dest);
 
   // Create neighbourhood communicator
   MPI_Comm neigh_comm;
