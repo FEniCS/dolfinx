@@ -324,6 +324,7 @@ public:
         { sub_function(data, cell_info, cell, ebs * data_block_size); };
       }
     }
+
     switch (ttype)
     {
     case doftransform::inverse_transpose:
@@ -475,7 +476,7 @@ public:
                                     int block_size) const
   {
     assert(_element);
-    _element->M(data, block_size, cell_permutation);
+    _element->M_apply(data, block_size, cell_permutation);
   }
 
   /// Apply inverse transpose transformation to some data. For
@@ -491,7 +492,7 @@ public:
       std::span<U> data, std::uint32_t cell_permutation, int block_size) const
   {
     assert(_element);
-    _element->Mt_inv(data, block_size, cell_permutation);
+    _element->Mt_inv_apply(data, block_size, cell_permutation);
   }
 
   /// Apply transpose transformation to some data. For VectorElements,
@@ -507,7 +508,7 @@ public:
                                               int block_size) const
   {
     assert(_element);
-    _element->Mt(data, block_size, cell_permutation);
+    _element->Mt_apply(data, block_size, cell_permutation);
   }
 
   /// Apply inverse transformation to some data. For VectorElements,
@@ -523,7 +524,7 @@ public:
                                             int block_size) const
   {
     assert(_element);
-    _element->Minv(data, block_size, cell_permutation);
+    _element->Minv_apply(data, block_size, cell_permutation);
   }
 
   /// Apply DOF transformation to some transposed data
@@ -538,7 +539,7 @@ public:
                                      int block_size) const
   {
     assert(_element);
-    _element->M_post(data, block_size, cell_permutation);
+    _element->M_post_apply(data, block_size, cell_permutation);
   }
 
   /// Apply inverse of DOF transformation to some transposed data.
@@ -553,7 +554,7 @@ public:
                                              int block_size) const
   {
     assert(_element);
-    _element->Minv_post(data, block_size, cell_permutation);
+    _element->Minv_post_apply(data, block_size, cell_permutation);
   }
 
   /// Apply transpose of transformation to some transposed data.
@@ -568,7 +569,7 @@ public:
                                                int block_size) const
   {
     assert(_element);
-    _element->Mt_post(data, block_size, cell_permutation);
+    _element->Mt_post_apply(data, block_size, cell_permutation);
   }
 
   /// Apply inverse transpose transformation to some transposed data
@@ -582,7 +583,7 @@ public:
       std::span<U> data, std::uint32_t cell_permutation, int block_size) const
   {
     assert(_element);
-    _element->Mt_inv_post(data, block_size, cell_permutation);
+    _element->Mt_inv_post_apply(data, block_size, cell_permutation);
   }
 
   /// Permute the DOFs of the element
