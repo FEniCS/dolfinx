@@ -569,14 +569,14 @@ template <std::floating_point T>
 void FiniteElement<T>::permute_dofs(std::span<std::int32_t> doflist,
                                     std::uint32_t cell_permutation) const
 {
-  _element->permute_dofs(doflist, cell_permutation);
+  _element->permute(doflist, cell_permutation);
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
 void FiniteElement<T>::unpermute_dofs(std::span<std::int32_t> doflist,
                                       std::uint32_t cell_permutation) const
 {
-  _element->unpermute_dofs(doflist, cell_permutation);
+  _element->permute_inv(doflist, cell_permutation);
 }
 //-----------------------------------------------------------------------------
 /// @cond
