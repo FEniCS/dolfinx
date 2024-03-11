@@ -64,7 +64,7 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
     dest_to_index.reserve(indices.size());
     for (auto idx : indices)
     {
-      int dest = dolfinx::MPI::index_owner(size, idx, global_range);
+      int dest = dolfinx::MPI::index_owner(size, idx, global_range) / 32;
       dest_to_index.push_back({dest, static_cast<int>(dest_to_index.size())});
     }
     std::sort(dest_to_index.begin(), dest_to_index.end());
