@@ -42,6 +42,7 @@ graph::AdjacencyList<int>
 determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
 {
   common::Timer timer("Topology: determine shared index ownership");
+  LOG(INFO) << "Determine sharing ranks";
 
   const int size = dolfinx::MPI::size(comm);
 
@@ -54,6 +55,8 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
     MPI_Allreduce(&max_index, &global_range, 1, MPI_INT64_T, MPI_MAX, comm);
     global_range += 1;
   }
+
+  LOG(INFO) << "Global range = " << global_range;
 
   // Build {dest, pos} list, and sort
   std::vector<std::array<int, 2>> dest_to_index;
@@ -88,6 +91,10 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
       it = it1;
     }
   }
+
+  LOG(INFO) << "Before barrier";
+  MPI_Barrier(comm);
+  LOG(INFO) << "After barrier";
 
   // Determine src ranks. Sort ranks so that ownership determination is
   // deterministic for a given number of ranks.
@@ -297,6 +304,7 @@ std::array<std::vector<std::int64_t>, 2> vertex_ownership_groups(
   common::Timer timer("Topology: determine vertex ownership groups (owned, "
                       "undetermined, unowned)");
 
+  LOG(INFO) << "Compute vertex ownership groups";
   // Build set of 'local' cell vertices (attached to an owned cell)
   std::vector<std::int64_t> local_vertex_set;
   local_vertex_set.reserve(
