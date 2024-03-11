@@ -58,13 +58,23 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
 
   LOG(INFO) << "Global range = " << global_range;
 
+  // Find out how many cores share memory on a node
+  MPI_Comm shm_comm;
+  MPI_Comm_split_type(comm, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL,
+                      &shm_comm);
+  int shm_comm_size = dolfinx::MPI::size(shm_comm);
+  MPI_Comm_free(&shm_comm);
+
+  LOG(INFO) << "SHM comm size = " << shm_comm_size;
+
   // Build {dest, pos} list, and sort
   std::vector<std::array<int, 2>> dest_to_index;
   {
     dest_to_index.reserve(indices.size());
     for (auto idx : indices)
     {
-      int dest = dolfinx::MPI::index_owner(size, idx, global_range) / 32;
+      int dest = dolfinx::MPI::index_owner(size, idx, global_range);
+      dest -= dest % shm_comm_size;
       dest_to_index.push_back({dest, static_cast<int>(dest_to_index.size())});
     }
     std::sort(dest_to_index.begin(), dest_to_index.end());
