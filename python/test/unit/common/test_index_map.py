@@ -203,26 +203,35 @@ def test_sub_index_map_multiple_possible_owners():
         return
 
     # Create an index map with an index on process 2 that is ghosted by processes 0 and 1
-    if comm.rank == 0 or comm.rank == 1:
+    if comm.rank == 0:
         local_size = 1
         ghosts = np.array([2], dtype=np.int64)
         owners = np.array([2], dtype=np.int32)
         submap_indices = np.array([0, 1], dtype=np.int32)
-        submap_local_size_expected = 1
+        # NOTE: This assumes that the lowest ranking process takes ownership of the index
+        # in the submap
+        submap_size_local_expected = 2
+        submap_num_ghosts_expected = 0
+    elif comm.rank == 1:
+        local_size = 1
+        ghosts = np.array([2], dtype=np.int64)
+        owners = np.array([2], dtype=np.int32)
+        submap_indices = np.array([0, 1], dtype=np.int32)
+        submap_size_local_expected = 1
         submap_num_ghosts_expected = 1
     elif comm.rank == 2:
         local_size = 1
         ghosts = np.array([], dtype=np.int64)
         owners = np.array([], dtype=np.int32)
         submap_indices = np.array([], dtype=np.int32)
-        submap_local_size_expected = 0
+        submap_size_local_expected = 0
         submap_num_ghosts_expected = 0
     else:
         local_size = 0
         ghosts = np.array([], dtype=np.int64)
         owners = np.array([], dtype=np.int32)
         submap_indices = np.array([], dtype=np.int32)
-        submap_local_size_expected = 0
+        submap_size_local_expected = 0
         submap_num_ghosts_expected = 0
 
     imap = dolfinx.common.IndexMap(comm, local_size, ghosts, owners)
@@ -232,5 +241,5 @@ def test_sub_index_map_multiple_possible_owners():
     sub_imap = _cpp.common.create_sub_index_map(imap, submap_indices, True)[0]
 
     assert sub_imap.size_global == 3
-    assert sub_imap.local_size == submap_local_size_expected
+    assert sub_imap.size_local == submap_size_local_expected
     assert sub_imap.num_ghosts == submap_num_ghosts_expected
