@@ -9,11 +9,11 @@ import math
 from mpi4py import MPI
 
 import numpy as np
+import pytest
 
 import dolfinx
 from dolfinx import cpp as _cpp
 from dolfinx.mesh import GhostMode, create_unit_square
-import pytest
 
 
 def test_sub_index_map():
