@@ -166,72 +166,115 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
          "of input edges: "
       << edges.size();
 
-  // Start non-blocking synchronised send
-  std::vector<MPI_Request> send_requests(edges.size());
-  std::byte send_buffer;
-  for (std::size_t e = 0; e < edges.size(); ++e)
-  {
-    int err = MPI_Issend(&send_buffer, 1, MPI_BYTE, edges[e],
-                         static_cast<int>(tag::consensus_pex), comm,
-                         &send_requests[e]);
-    dolfinx::MPI::check_error(comm, err);
-  }
+  // Create a sub-communicator on node
+  MPI_Comm shm_comm;
+  MPI_Comm_split_type(comm, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &shm_comm);
+  int local_rank = dolfinx::MPI::rank(shm_comm);
+
+  // Create a comm across nodes, using rank 0 of the local comm on each node
+  MPI_Comm sub_comm;
+  int color = (local_rank == 0) ? 0 : MPI_UNDEFINED;
+  MPI_Comm_split(comm, color, 0, &sub_comm);
+
+  // Collect all local input edges on rank 0 of shm_comm
+  int local_size = dolfinx::MPI::size(shm_comm);
+  int num_edges = edges.size();
+  std::vector<int> edges_count_node;
+  edges_count_node.reserve(1);
+  if (local_rank == 0)
+    edges_count_node.resize(local_size);
+  MPI_Gather(&num_edges, 1, MPI_INT, edges_count_node.data(), 1, MPI_INT, 0,
+             shm_comm);
+  std::vector<int> edges_offset_node = {0};
+  for (int n : edges_count_node)
+    edges_offset_node.push_back(edges_offset_node.back() + n);
+
+  std::vector<int> edges_node;
+  edges_node.reserve(1);
+  edges_node.resize(edges_offset_node.back());
+  MPI_Gatherv(edges.data(), edges.size(), MPI_INT, edges_node.data(),
+              edges_count_node.data(), edges_offset_node.data(), MPI_INT, 0,
+              shm_comm);
 
   // Vector to hold ranks that send data to this rank
   std::vector<int> other_ranks;
 
-  // Start sending/receiving
-  MPI_Request barrier_request;
-  bool comm_complete = false;
-  bool barrier_active = false;
-  while (!comm_complete)
+  if (local_rank == 0)
   {
-    // Check for message
-    int request_pending;
-    MPI_Status status;
-    int err = MPI_Iprobe(MPI_ANY_SOURCE, static_cast<int>(tag::consensus_pex),
-                         comm, &request_pending, &status);
-    dolfinx::MPI::check_error(comm, err);
-
-    // Check if message is waiting to be processed
-    if (request_pending)
+    // Start non-blocking synchronised send on sub_comm
+    int rank = dolfinx::MPI::rank(comm);
+    std::vector<MPI_Request> send_requests(edges_node.size());
+    std::array<int, 2> src_dest;
+    for (int i = 0; i < local_size; ++i)
     {
-      // Receive it
-      int other_rank = status.MPI_SOURCE;
-      std::byte buffer_recv;
-      int err = MPI_Recv(&buffer_recv, 1, MPI_BYTE, other_rank,
-                         static_cast<int>(tag::consensus_pex), comm,
-                         MPI_STATUS_IGNORE);
-      dolfinx::MPI::check_error(comm, err);
-      other_ranks.push_back(other_rank);
-    }
-
-    if (barrier_active)
-    {
-      // Check for barrier completion
-      int flag = 0;
-      int err = MPI_Test(&barrier_request, &flag, MPI_STATUS_IGNORE);
-      dolfinx::MPI::check_error(comm, err);
-      if (flag)
-        comm_complete = true;
-    }
-    else
-    {
-      // Check if all sends have completed
-      int flag = 0;
-      int err = MPI_Testall(send_requests.size(), send_requests.data(), &flag,
-                            MPI_STATUSES_IGNORE);
-      dolfinx::MPI::check_error(comm, err);
-      if (flag)
+      src_dest[0] = rank + i;
+      for (int e = edges_offset_node[i]; e < edges_offset_node[i + 1]; ++e)
       {
-        // All sends have completed, start non-blocking barrier
-        int err = MPI_Ibarrier(comm, &barrier_request);
-        dolfinx::MPI::check_error(comm, err);
-        LOG(INFO) << "NBX activating barrier";
-        barrier_active = true;
+        src_dest[1] = edges_node[e];
+        int dest = edges_node[e] / local_size;
+        int err = MPI_Issend(src_dest.data(), 2, MPI_INT, dest,
+                             static_cast<int>(tag::consensus_pex), sub_comm,
+                             &send_requests[e]);
+        dolfinx::MPI::check_error(sub_comm, err);
+      }
+    }
+
+    // Start sending/receiving
+    MPI_Request barrier_request;
+    bool comm_complete = false;
+    bool barrier_active = false;
+    while (!comm_complete)
+    {
+      // Check for message
+      int request_pending;
+      MPI_Status status;
+      int err = MPI_Iprobe(MPI_ANY_SOURCE, static_cast<int>(tag::consensus_pex),
+                           sub_comm, &request_pending, &status);
+      dolfinx::MPI::check_error(sub_comm, err);
+
+      // Check if message is waiting to be processed
+      if (request_pending)
+      {
+        // Receive it
+        int other_rank = status.MPI_SOURCE;
+        std::array<int, 2> buffer_recv;
+        int err = MPI_Recv(buffer_recv.data(), 2, MPI_INT, other_rank,
+                           static_cast<int>(tag::consensus_pex), sub_comm,
+                           MPI_STATUS_IGNORE);
+        dolfinx::MPI::check_error(sub_comm, err);
+        other_ranks.push_back(buffer_recv[0]);
+        other_ranks.push_back(buffer_recv[1]);
+      }
+
+      if (barrier_active)
+      {
+        // Check for barrier completion
+        int flag = 0;
+        int err = MPI_Test(&barrier_request, &flag, MPI_STATUS_IGNORE);
+        dolfinx::MPI::check_error(sub_comm, err);
+        if (flag)
+          comm_complete = true;
+      }
+      else
+      {
+        // Check if all sends have completed
+        int flag = 0;
+        int err = MPI_Testall(send_requests.size(), send_requests.data(), &flag,
+                              MPI_STATUSES_IGNORE);
+        dolfinx::MPI::check_error(sub_comm, err);
+        if (flag)
+        {
+          // All sends have completed, start non-blocking barrier
+          int err = MPI_Ibarrier(sub_comm, &barrier_request);
+          dolfinx::MPI::check_error(sub_comm, err);
+          LOG(INFO) << "NBX activating barrier";
+          barrier_active = true;
+        }
       }
     }
   }
+
+  // Distribute back to all processes on this node
 
   LOG(INFO) << "Finished graph edge discovery using NBX algorithm. Number "
                "of discovered edges "
