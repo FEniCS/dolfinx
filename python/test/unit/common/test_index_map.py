@@ -13,6 +13,7 @@ import numpy as np
 import dolfinx
 from dolfinx import cpp as _cpp
 from dolfinx.mesh import GhostMode, create_unit_square
+import pytest
 
 
 def test_sub_index_map():
@@ -200,7 +201,7 @@ def test_sub_index_map_multiple_possible_owners():
     comm = MPI.COMM_WORLD
 
     if comm.size < 3:
-        return
+        pytest.skip("Test requires 3 or more processes")
 
     # Create an index map with an index on process 2 that is ghosted by processes 0 and 1
     if comm.rank == 0:
