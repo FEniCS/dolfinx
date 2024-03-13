@@ -5,8 +5,10 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "MPI.h"
+#include <chrono>
 #include <dolfinx/common/log.h>
 #include <iostream>
+#include <thread>
 
 //-----------------------------------------------------------------------------
 dolfinx::MPI::Comm::Comm(MPI_Comm comm, bool duplicate)
@@ -212,9 +214,11 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
   bool comm_complete = false;
   bool barrier_active = false;
   int nspin = 0;
+  int dt = 100;
   while (!comm_complete)
   {
     ++nspin;
+    std::this_thread::sleep_for(std::chrono::milliseconds(dt));
 
     // Check for message
     int request_pending;
