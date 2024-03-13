@@ -166,9 +166,23 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
          "of input edges: "
       << edges.size();
 
-  LOG(INFO) << "NBX: barrier";
+  LOG(INFO) << "DEBUG: barrier";
   MPI_Barrier(comm);
-  LOG(INFO) << "NBX: barrier done";
+  LOG(INFO) << "DEBUG: barrier done";
+
+  int num_edges = edges.size();
+  int comm_size = dolfinx::MPI::size(comm);
+  int comm_rank = dolfinx::MPI::rank(comm);
+  std::vector<int> num_edges_all;
+  num_edges_all.reserve(1);
+  if (comm_rank == 0)
+    num_edges_all.resize(comm_size);
+  MPI_Gather(&num_edges, 1, MPI_INT, num_edges_all.data(), 1, MPI_INT, 0, comm);
+  std::stringstream s;
+  s << "IN_EDGES:";
+  for (auto q : num_edges_all)
+    s << q << " ";
+  LOG(INFO) << s.str();
 
   // Start non-blocking synchronised send
   std::vector<MPI_Request> send_requests(edges.size());
@@ -240,6 +254,14 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
   LOG(INFO) << "Finished graph edge discovery using NBX algorithm. Number "
                "of discovered edges "
             << other_ranks.size();
+
+  num_edges = other_ranks.size();
+  MPI_Gather(&num_edges, 1, MPI_INT, num_edges_all.data(), 1, MPI_INT, 0, comm);
+  s.str("");
+  s << "OUT_EDGES:";
+  for (auto q : num_edges_all)
+    s << q << " ";
+  LOG(INFO) << s.str();
 
   return other_ranks;
 }
