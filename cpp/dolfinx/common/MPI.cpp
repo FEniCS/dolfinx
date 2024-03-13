@@ -196,8 +196,8 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
               edges_count_node.data(), edges_offset_node.data(), MPI_INT, 0,
               shm_comm);
 
-  // Vector to hold ranks that send data to this rank
-  std::vector<int> other_ranks;
+  // Vector to hold data from other ranks
+  std::vector<std::array<int, 2>> other_rank_data;
 
   if (local_rank == 0)
   {
@@ -207,10 +207,10 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
     std::array<int, 2> src_dest;
     for (int i = 0; i < local_size; ++i)
     {
-      src_dest[0] = rank + i;
+      src_dest[1] = rank + i;
       for (int e = edges_offset_node[i]; e < edges_offset_node[i + 1]; ++e)
       {
-        src_dest[1] = edges_node[e];
+        src_dest[0] = edges_node[e];
         int dest = edges_node[e] / local_size;
         int err = MPI_Issend(src_dest.data(), 2, MPI_INT, dest,
                              static_cast<int>(tag::consensus_pex), sub_comm,
@@ -242,8 +242,7 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
                            static_cast<int>(tag::consensus_pex), sub_comm,
                            MPI_STATUS_IGNORE);
         dolfinx::MPI::check_error(sub_comm, err);
-        other_ranks.push_back(buffer_recv[0]);
-        other_ranks.push_back(buffer_recv[1]);
+        other_rank_data.push_back(buffer_recv);
       }
 
       if (barrier_active)
@@ -275,6 +274,9 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
   }
 
   // Distribute back to all processes on this node
+  for (std::size_t i = 0; i < other_rank_data.size(); ++i)
+    other_rank_data[i][0] = other_rank_data[i][0] % local_size;
+  std::sort(other_rank_data.begin(), other_rank_data.end());
 
   LOG(INFO) << "Finished graph edge discovery using NBX algorithm. Number "
                "of discovered edges "
