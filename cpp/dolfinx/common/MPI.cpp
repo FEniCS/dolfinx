@@ -168,6 +168,7 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
          "of input edges: "
       << edges.size();
 
+#ifdef DEBUG_NBX
   LOG(INFO) << "DEBUG: barrier";
   MPI_Barrier(comm);
   LOG(INFO) << "DEBUG: barrier done";
@@ -193,6 +194,7 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
   for (auto q : num_edges_all)
     s << q << " ";
   LOG(INFO) << s.str();
+#endif
 
   // Start non-blocking synchronised send
   std::vector<MPI_Request> send_requests(edges.size());
@@ -210,7 +212,9 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
 
   // Start sending/receiving
   MPI_Request barrier_request;
+#ifdef DEBUG_NBX
   double wtime_t1;
+#endif
   bool comm_complete = false;
   bool barrier_active = false;
   int nspin = 0;
@@ -262,7 +266,9 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
         int err = MPI_Ibarrier(comm, &barrier_request);
         dolfinx::MPI::check_error(comm, err);
         LOG(INFO) << "NBX activating barrier";
+#ifdef DEBUG_NBX
         wtime_t1 = MPI_Wtime();
+#endif
         barrier_active = true;
       }
     }
@@ -274,6 +280,7 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
                "of discovered edges "
             << other_ranks.size();
 
+#ifdef DEBUG_NBX
   num_edges = other_ranks.size();
   std::vector<double> wtime_t1_all;
   wtime_t1_all.reserve(1);
@@ -292,6 +299,7 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
     s << wtime_t1_all[i] - wtime_t0_all[i] << " ";
   }
   LOG(INFO) << s.str();
+#endif
 
   return other_ranks;
 }
