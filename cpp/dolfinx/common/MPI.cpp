@@ -171,13 +171,21 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
   LOG(INFO) << "DEBUG: barrier done";
 
   int num_edges = edges.size();
+  double wtime_t0 = MPI_Wtime();
   int comm_size = dolfinx::MPI::size(comm);
   int comm_rank = dolfinx::MPI::rank(comm);
   std::vector<int> num_edges_all;
+  std::vector<double> wtime_t0_all;
   num_edges_all.reserve(1);
+  wtime_t0_all.reserve(1);
   if (comm_rank == 0)
+  {
     num_edges_all.resize(comm_size);
+    wtime_t0_all.resize(comm_size);
+  }
   MPI_Gather(&num_edges, 1, MPI_INT, num_edges_all.data(), 1, MPI_INT, 0, comm);
+  MPI_Gather(&wtime_t0, 1, MPI_DOUBLE, wtime_t0_all.data(), 1, MPI_DOUBLE, 0,
+             comm);
   std::stringstream s;
   s << "IN_EDGES:";
   for (auto q : num_edges_all)
@@ -200,6 +208,7 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
 
   // Start sending/receiving
   MPI_Request barrier_request;
+  double wtime_t1;
   bool comm_complete = false;
   bool barrier_active = false;
   while (!comm_complete)
@@ -246,6 +255,7 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
         int err = MPI_Ibarrier(comm, &barrier_request);
         dolfinx::MPI::check_error(comm, err);
         LOG(INFO) << "NBX activating barrier";
+        wtime_t1 = MPI_Wtime();
         barrier_active = true;
       }
     }
@@ -256,11 +266,22 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
             << other_ranks.size();
 
   num_edges = other_ranks.size();
+  std::vector<double> wtime_t1_all;
+  wtime_t1_all.reserve(1);
+  if (comm_rank == 0)
+    wtime_t1_all.resize(comm_size);
   MPI_Gather(&num_edges, 1, MPI_INT, num_edges_all.data(), 1, MPI_INT, 0, comm);
+  MPI_Gather(&wtime_t1, 1, MPI_DOUBLE, wtime_t1_all.data(), 1, MPI_DOUBLE, 0,
+             comm);
   s.str("");
   s << "OUT_EDGES:";
   for (auto q : num_edges_all)
     s << q << " ";
+  s << "\nTIME:";
+  for (std::size_t i = 0; i < wtime_t1_all.size(); ++i)
+  {
+    s << wtime_t1_all[i] - wtime_t0_all[i] << " ";
+  }
   LOG(INFO) << s.str();
 
   return other_ranks;
