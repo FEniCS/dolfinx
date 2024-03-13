@@ -166,6 +166,10 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
          "of input edges: "
       << edges.size();
 
+  LOG(INFO) << "NBX: barrier";
+  MPI_Barrier(comm);
+  LOG(INFO) << "NBX: barrier done";
+
   // Start non-blocking synchronised send
   std::vector<MPI_Request> send_requests(edges.size());
   std::byte send_buffer;
