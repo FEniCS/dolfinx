@@ -170,14 +170,17 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
   MPI_Comm shm_comm;
   MPI_Comm_split_type(comm, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &shm_comm);
   int local_rank = dolfinx::MPI::rank(shm_comm);
+  int local_size = dolfinx::MPI::size(shm_comm);
+  LOG(INFO) << "Created shm_comm of size " << local_size;
 
   // Create a comm across nodes, using rank 0 of the local comm on each node
   MPI_Comm sub_comm;
   int color = (local_rank == 0) ? 0 : MPI_UNDEFINED;
   MPI_Comm_split(comm, color, 0, &sub_comm);
 
+  LOG(INFO) << "Created sub_comm of size " << dolfinx::MPI::size(sub_comm);
+
   // Collect all local input edges on rank 0 of shm_comm
-  int local_size = dolfinx::MPI::size(shm_comm);
   int num_edges = edges.size();
   std::vector<int> edges_count_node;
   edges_count_node.reserve(1);
@@ -204,19 +207,23 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
     // Start non-blocking synchronised send on sub_comm
     int rank = dolfinx::MPI::rank(comm);
     std::vector<MPI_Request> send_requests(edges_node.size());
-    std::array<int, 2> src_dest;
+    std::vector<int> src_dest;
     for (int i = 0; i < local_size; ++i)
     {
-      src_dest[1] = rank + i;
       for (int e = edges_offset_node[i]; e < edges_offset_node[i + 1]; ++e)
       {
-        src_dest[0] = edges_node[e];
-        int dest = edges_node[e] / local_size;
-        int err = MPI_Issend(src_dest.data(), 2, MPI_INT, dest,
-                             static_cast<int>(tag::consensus_pex), sub_comm,
-                             &send_requests[e]);
-        dolfinx::MPI::check_error(sub_comm, err);
+        src_dest.push_back(edges_node[e]);
+        src_dest.push_back(rank + i);
       }
+    }
+
+    for (std::size_t i = 0; i < src_dest.size() / 2; ++i)
+    {
+      int dest = src_dest[i * 2] / local_size;
+      int err = MPI_Issend(src_dest.data() + 2 * i, 2, MPI_INT, dest,
+                           static_cast<int>(tag::consensus_pex), sub_comm,
+                           &send_requests[i]);
+      dolfinx::MPI::check_error(sub_comm, err);
     }
 
     // Start sending/receiving
@@ -273,10 +280,33 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
     }
   }
 
+  MPI_Comm_free(&sub_comm);
+
   // Distribute back to all processes on this node
+  std::vector<int> local_count(local_size, 0);
   for (std::size_t i = 0; i < other_rank_data.size(); ++i)
-    other_rank_data[i][0] = other_rank_data[i][0] % local_size;
+  {
+    int local_proc = other_rank_data[i][0] % local_size;
+    other_rank_data[i][0] = local_proc;
+    local_count[local_proc]++;
+  }
   std::sort(other_rank_data.begin(), other_rank_data.end());
+  std::vector<int> other_rank_extracted;
+  for (auto q : other_rank_data)
+    other_rank_extracted.push_back(q[1]);
+  std::vector<int> local_offset = {0};
+  for (int q : local_count)
+    local_offset.push_back(local_offset.back() + q);
+
+  int num_other_ranks;
+  MPI_Scatter(local_count.data(), 1, MPI_INT, &num_other_ranks, 1, MPI_INT, 0,
+              shm_comm);
+  std::vector<int> other_ranks(num_other_ranks);
+  MPI_Scatterv(other_rank_extracted.data(), local_count.data(),
+               local_offset.data(), MPI_INT, other_ranks.data(),
+               other_ranks.size(), MPI_INT, 0, shm_comm);
+
+  MPI_Comm_free(&shm_comm);
 
   LOG(INFO) << "Finished graph edge discovery using NBX algorithm. Number "
                "of discovered edges "
