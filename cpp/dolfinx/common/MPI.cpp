@@ -278,9 +278,8 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
         }
       }
     }
+    MPI_Comm_free(&sub_comm);
   }
-
-  MPI_Comm_free(&sub_comm);
 
   // Distribute back to all processes on this node
   std::vector<int> local_count(local_size, 0);
