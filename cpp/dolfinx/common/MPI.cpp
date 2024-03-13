@@ -211,8 +211,11 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
   double wtime_t1;
   bool comm_complete = false;
   bool barrier_active = false;
+  int nspin = 0;
   while (!comm_complete)
   {
+    ++nspin;
+
     // Check for message
     int request_pending;
     MPI_Status status;
@@ -260,6 +263,8 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
       }
     }
   }
+
+  LOG(INFO) << "nspin = " << nspin;
 
   LOG(INFO) << "Finished graph edge discovery using NBX algorithm. Number "
                "of discovered edges "
