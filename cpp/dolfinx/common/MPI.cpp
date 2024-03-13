@@ -168,6 +168,31 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
          "of input edges: "
       << edges.size();
 
+  int rank = dolfinx::MPI::rank(comm);
+  int num_edges = edges.size();
+
+  MPI_Comm comm_dist_graph;
+  MPI_Dist_graph_create(comm, 1, &rank, &num_edges, edges.data(),
+                        MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm_dist_graph);
+
+  int incount, outcount, weighted;
+  MPI_Dist_graph_neighbors_count(comm_dist_graph, &incount, &outcount,
+                                 &weighted);
+  std::vector<int> in(incount);
+  std::vector<int> sourceweights(incount);
+  std::vector<int> out(outcount);
+  std::vector<int> destweights(outcount);
+  MPI_Dist_graph_neighbors(comm_dist_graph, incount, in.data(),
+                           sourceweights.data(), outcount, out.data(),
+                           destweights.data());
+  MPI_Comm_free(&comm_dist_graph);
+
+  LOG(INFO) << "Finished graph edge discovery. Number "
+               "of discovered edges: "
+            << in.size();
+
+  return in;
+
 #ifdef DEBUG_NBX
   LOG(INFO) << "DEBUG: barrier";
   MPI_Barrier(comm);
