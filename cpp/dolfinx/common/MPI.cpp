@@ -166,14 +166,14 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
          "of input edges: "
       << edges.size();
 
-  // Start non-blocking synchronised send
+  // Start non-blocking send
   std::vector<MPI_Request> send_requests(edges.size());
-  std::byte send_buffer;
+  std::vector<std::byte> send_buffer(edges.size());
   for (std::size_t e = 0; e < edges.size(); ++e)
   {
-    int err = MPI_Issend(&send_buffer, 1, MPI_BYTE, edges[e],
-                         static_cast<int>(tag::consensus_pex), comm,
-                         &send_requests[e]);
+    int err = MPI_Isend(&send_buffer[e], 1, MPI_BYTE, edges[e],
+                        static_cast<int>(tag::consensus_pex), comm,
+                        &send_requests[e]);
     dolfinx::MPI::check_error(comm, err);
   }
 
