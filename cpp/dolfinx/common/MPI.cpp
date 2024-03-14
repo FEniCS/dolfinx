@@ -166,7 +166,7 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
          "of input edges: "
       << edges.size();
 
-  // Start non-blocking send
+  // Start non-blocking synchronised send
   std::vector<MPI_Request> send_requests(edges.size());
   std::vector<std::byte> send_buffer(edges.size());
   for (std::size_t e = 0; e < edges.size(); ++e)
