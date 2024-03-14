@@ -116,11 +116,10 @@ dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm, std::span<const int> edges)
   dolfinx::MPI::check_error(comm, err);
 
   std::vector<MPI_Request> send_requests(edges.size());
-  // std::vector<std::byte> send_buffer(edges.size());
-  std::byte send_buffer;
+  std::vector<std::byte> send_buffer(edges.size());
   for (std::size_t e = 0; e < edges.size(); ++e)
   {
-    int err = MPI_Isend(&send_buffer, 1, MPI_BYTE, edges[e],
+    int err = MPI_Isend(send_buffer.data() + e, 1, MPI_BYTE, edges[e],
                         static_cast<int>(tag::consensus_pcx), comm,
                         &send_requests[e]);
     dolfinx::MPI::check_error(comm, err);
