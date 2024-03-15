@@ -164,7 +164,7 @@ std::vector<int>
 dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
 {
   LOG(INFO)
-      << "Computing communication graph edges (using NBX algorithm). Number "
+      << "Computing communication graph edges (using MPI_Dist_graph). Number "
          "of input edges: "
       << edges.size();
 
@@ -194,7 +194,7 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
   // Debugging: set barrier to get consistent timing across processes
   MPI_Barrier(comm);
 
-  LOG(INFO) << "Finished graph edge discovery. Number "
+  LOG(INFO) << "Finished MPI_Dist_graph graph edge discovery. Number "
                "of discovered edges: "
             << in.size();
 
