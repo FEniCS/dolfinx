@@ -103,9 +103,6 @@ refinement::adjust_indices(const common::IndexMap& map, std::int32_t n)
 {
   // NOTE: Is this effectively concatenating index maps?
 
-  // Add in an extra "n" indices at the end of the current local_range
-  // of "index_map", and adjust existing indices to match.
-
   // Get offset for 'n' for this process
   const std::int64_t num_local = n;
   std::int64_t global_offset = 0;
