@@ -179,13 +179,20 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
   MPI_Dist_graph_neighbors_count(comm_dist_graph, &incount, &outcount,
                                  &weighted);
   std::vector<int> in(incount);
+  in.reserve(1);
   std::vector<int> sourceweights(incount);
+  sourceweights.reserve(1);
   std::vector<int> out(outcount);
+  out.reserve(1);
   std::vector<int> destweights(outcount);
+  destweights.reserve(1);
   MPI_Dist_graph_neighbors(comm_dist_graph, incount, in.data(),
                            sourceweights.data(), outcount, out.data(),
                            destweights.data());
   MPI_Comm_free(&comm_dist_graph);
+
+  // Debugging: set barrier to get consistent timing across processes
+  MPI_Barrier(comm);
 
   LOG(INFO) << "Finished graph edge discovery. Number "
                "of discovered edges: "
