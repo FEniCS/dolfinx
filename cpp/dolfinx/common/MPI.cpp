@@ -173,7 +173,7 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
 
   MPI_Comm comm_dist_graph;
   MPI_Dist_graph_create(comm, 1, &rank, &num_edges, edges.data(),
-                        MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm_dist_graph);
+                        MPI_UNWEIGHTED, MPI_INFO_NULL, 0, &comm_dist_graph);
 
   int incount, outcount, weighted;
   MPI_Dist_graph_neighbors_count(comm_dist_graph, &incount, &outcount,
