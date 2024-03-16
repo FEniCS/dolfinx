@@ -191,6 +191,7 @@ transpose_src_dest(std::vector<int>& dests, std::vector<int>& dest_offsets)
 std::vector<int>
 dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
 {
+  LOG(INFO) << "Start Graph Edge computation (ScatterGather)";
   int rank = dolfinx::MPI::rank(comm);
   int size = dolfinx::MPI::size(comm);
   int num_edges = edges.size();
@@ -221,6 +222,8 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
   std::vector<int> out_edges(num_edges);
   MPI_Scatterv(reply_node.data(), reply_count.data(), reply_offset_node.data(),
                MPI_INT, out_edges.data(), num_edges, MPI_INT, 0, comm);
+
+  LOG(INFO) << "End Graph Edge computation (ScatterGather)";
 
   return out_edges;
 }
