@@ -168,8 +168,8 @@ transpose_src_dest(std::vector<int>& dests, std::vector<int>& dest_offsets)
   for (int d : dests)
     ++source_count[d];
   std::vector<int> source_offsets = {0};
-  for (int c : source_count)
-    source_offsets.push_back(source_offsets.back() + c);
+  std::partial_sum(source_count.begin(), source_count.end(),
+                   std::back_inserter(source_offsets));
   std::vector<int> sources(source_offsets.back());
   for (std::size_t i = 0; i < dest_offsets.size() - 1; ++i)
   {
@@ -182,50 +182,56 @@ transpose_src_dest(std::vector<int>& dests, std::vector<int>& dest_offsets)
   }
   // Reset offsets
   source_offsets = {0};
-  for (int c : source_count)
-    source_offsets.push_back(source_offsets.back() + c);
+  std::partial_sum(source_count.begin(), source_count.end(),
+                   std::back_inserter(source_offsets));
 
   return {std::move(sources), std::move(source_offsets)};
 }
 //-----------------------------------------------------------------------------
 std::vector<int>
-dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
+dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm,
+                                      std::span<const int> in_edges_local)
 {
-  LOG(INFO) << "Start Graph Edge computation (ScatterGather)";
+  LOG(INFO) << "Start Graph Edge computation (ScatterGather): "
+            << in_edges_local.size();
   int rank = dolfinx::MPI::rank(comm);
   int size = dolfinx::MPI::size(comm);
-  int num_edges = edges.size();
-  std::vector<int> edges_count_node;
-  edges_count_node.reserve(1);
+  int num_in_edges = in_edges_local.size();
+  std::vector<int> in_edges_count;
+  in_edges_count.reserve(1);
   if (rank == 0)
-    edges_count_node.resize(size);
-  MPI_Gather(&num_edges, 1, MPI_INT, edges_count_node.data(), 1, MPI_INT, 0,
+    in_edges_count.resize(size);
+  MPI_Gather(&num_in_edges, 1, MPI_INT, in_edges_count.data(), 1, MPI_INT, 0,
              comm);
-  std::vector<int> edges_offset_node = {0};
-  for (int n : edges_count_node)
-    edges_offset_node.push_back(edges_offset_node.back() + n);
+  std::vector<int> in_edges_offset = {0};
+  std::partial_sum(in_edges_count.begin(), in_edges_count.end(),
+                   std::back_inserter(in_edges_offset));
 
-  std::vector<int> edges_node;
-  edges_node.reserve(1);
-  edges_node.resize(edges_offset_node.back());
-  MPI_Gatherv(edges.data(), edges.size(), MPI_INT, edges_node.data(),
-              edges_count_node.data(), edges_offset_node.data(), MPI_INT, 0,
+  std::vector<int> in_edges;
+  in_edges.reserve(1);
+  in_edges.resize(in_edges_offset.back());
+  MPI_Gatherv(in_edges_local.data(), in_edges_local.size(), MPI_INT,
+              in_edges.data(), in_edges_count.data(), in_edges_offset.data(),
+              MPI_INT, 0, comm);
+
+  auto [out_edges, out_edges_offset]
+      = transpose_src_dest(in_edges, in_edges_offset);
+
+  std::vector<int> out_edges_count(out_edges_offset.size() - 1);
+  for (std::size_t i = 0; i < out_edges_count.size(); ++i)
+    out_edges_count[i] = out_edges_offset[i + 1] - out_edges_offset[i];
+  int num_out_edges;
+  MPI_Scatter(out_edges_count.data(), 1, MPI_INT, &num_out_edges, 1, MPI_INT, 0,
               comm);
+  std::vector<int> out_edges_local(num_out_edges);
+  MPI_Scatterv(out_edges.data(), out_edges_count.data(),
+               out_edges_offset.data(), MPI_INT, out_edges_local.data(),
+               num_out_edges, MPI_INT, 0, comm);
 
-  auto [reply_node, reply_offset_node]
-      = transpose_src_dest(edges_node, edges_offset_node);
+  LOG(INFO) << "End Graph Edge computation (Gather-Scatter): "
+            << out_edges_local.size();
 
-  std::vector<int> reply_count(reply_offset_node.size() - 1);
-  for (std::size_t i = 0; i < reply_count.size(); ++i)
-    reply_count[i] = reply_offset_node[i + 1] - reply_offset_node[i];
-  MPI_Scatter(reply_count.data(), 1, MPI_INT, &num_edges, 1, MPI_INT, 0, comm);
-  std::vector<int> out_edges(num_edges);
-  MPI_Scatterv(reply_node.data(), reply_count.data(), reply_offset_node.data(),
-               MPI_INT, out_edges.data(), num_edges, MPI_INT, 0, comm);
-
-  LOG(INFO) << "End Graph Edge computation (ScatterGather)";
-
-  return out_edges;
+  return out_edges_local;
 }
 //-----------------------------------------------------------------------------
 // std::vector<int>
