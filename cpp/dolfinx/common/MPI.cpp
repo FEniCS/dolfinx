@@ -239,3 +239,8 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
   return other_ranks;
 }
 //-----------------------------------------------------------------------------
+std::vector<int> dolfinx::MPI::compute_graph_edges(MPI_Comm comm,
+                                                   std::span<const int> edges)
+{
+  return compute_graph_edges_nbx(comm, edges);
+}

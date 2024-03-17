@@ -185,6 +185,17 @@ std::vector<int> compute_graph_edges_pcx(MPI_Comm comm,
 std::vector<int> compute_graph_edges_nbx(MPI_Comm comm,
                                          std::span<const int> edges);
 
+/// @brief Determine incoming graph edges to this rank.
+///
+/// Given a list of outgoing edges (destination ranks) from this rank,
+/// this function returns the incoming edges (source ranks) to this rank.
+/// @note Collective.
+///
+/// @param[in] comm MPI communicator
+/// @param[in] edges Edges (ranks) from this rank (the caller).
+/// @return Ranks that have defined edges from them to this rank.
+std::vector<int> compute_graph_edges(MPI_Comm comm, std::span<const int> edges);
+
 /// @brief Distribute row data to 'post office' ranks.
 ///
 /// This function takes row-wise data that is distributed across
