@@ -185,6 +185,20 @@ std::vector<int> compute_graph_edges_pcx(MPI_Comm comm,
 std::vector<int> compute_graph_edges_nbx(MPI_Comm comm,
                                          std::span<const int> edges);
 
+/// @brief Determine incoming graph edges to this rank, by gathering on root
+/// process and scattering back out.
+///
+/// Given a list of outgoing edges (destination ranks) from this rank,
+/// this function returns the incoming edges (source ranks) to this rank.
+/// @note Collective.
+///
+/// @param[in] comm MPI communicator
+/// @param[in] edges Edges (ranks) from this rank (the caller).
+/// @return Ranks that have defined edges from them to this
+/// rank.
+std::vector<int> compute_graph_edges_gather(MPI_Comm comm,
+                                            std::span<const int> edges);
+
 /// @brief Determine incoming graph edges to this rank.
 ///
 /// Given a list of outgoing edges (destination ranks) from this rank,
@@ -384,7 +398,7 @@ distribute_to_postoffice(MPI_Comm comm, const U& x,
   }
 
   // Determine source ranks
-  const std::vector<int> src = MPI::compute_graph_edges_nbx(comm, dest);
+  const std::vector<int> src = MPI::compute_graph_edges(comm, dest);
   LOG(INFO)
       << "Number of neighbourhood source ranks in distribute_to_postoffice: "
       << src.size();
@@ -524,8 +538,7 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
 
   // Determine 'delivery' destination ranks (ranks that want data from
   // me)
-  const std::vector<int> dest
-      = dolfinx::MPI::compute_graph_edges_nbx(comm, src);
+  const std::vector<int> dest = dolfinx::MPI::compute_graph_edges(comm, src);
   LOG(INFO) << "Neighbourhood destination ranks from post office in "
                "distribute_data (rank, num dests, num dests/mpi_size): "
             << rank << ", " << dest.size() << ", "

@@ -160,8 +160,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   }
 
   // Determine source ranks
-  const std::vector<int> src
-      = dolfinx::MPI::compute_graph_edges_nbx(comm, dest);
+  const std::vector<int> src = dolfinx::MPI::compute_graph_edges(comm, dest);
   LOG(INFO) << "Number of destination and source ranks in non-local dual graph "
                "construction, and ratio to total number of ranks: "
             << dest.size() << ", " << src.size() << ", "

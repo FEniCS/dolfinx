@@ -91,7 +91,7 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
 
   // Determine src ranks. Sort ranks so that ownership determination is
   // deterministic for a given number of ranks.
-  std::vector<int> src = dolfinx::MPI::compute_graph_edges_nbx(comm, dest);
+  std::vector<int> src = dolfinx::MPI::compute_graph_edges(comm, dest);
   std::sort(src.begin(), src.end());
 
   // Create neighbourhood communicator for sending data to post offices
@@ -1273,7 +1273,7 @@ Topology mesh::create_topology(
   // vertices owned by this rank.
   //
   // TODO: Find a away to get the 'dest' without using
-  // compute_graph_edges_nbx. Maybe transpose the
+  // compute_graph_edges. Maybe transpose the
   // exchange_ghost_indexing step, followed by another communication
   // round to the owner?
   //
@@ -1286,7 +1286,7 @@ Topology mesh::create_topology(
     std::vector<int> src = ghost_vertex_owners;
     dolfinx::radix_sort(std::span(src));
     src.erase(std::unique(src.begin(), src.end()), src.end());
-    dest = dolfinx::MPI::compute_graph_edges_nbx(comm, src);
+    dest = dolfinx::MPI::compute_graph_edges(comm, src);
   }
 
   Topology topology(comm, cell_type);

@@ -328,7 +328,7 @@ xdmf_utils::distribute_entity_data(
 
     // Determine src ranks. Sort ranks so that ownership determination is
     // deterministic for a given number of ranks.
-    std::vector<int> src = dolfinx::MPI::compute_graph_edges_nbx(comm, dest);
+    std::vector<int> src = dolfinx::MPI::compute_graph_edges(comm, dest);
     std::sort(src.begin(), src.end());
 
     // Create neighbourhood communicator for sending data to post
@@ -418,7 +418,7 @@ xdmf_utils::distribute_entity_data(
 
     // Determine src ranks. Sort ranks so that ownership determination is
     // deterministic for a given number of ranks.
-    std::vector<int> src = dolfinx::MPI::compute_graph_edges_nbx(comm, dest);
+    std::vector<int> src = dolfinx::MPI::compute_graph_edges(comm, dest);
     std::sort(src.begin(), src.end());
 
     // Create neighbourhood communicator for sending data to post offices

@@ -696,7 +696,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
   out_ranks.erase(std::unique(out_ranks.begin(), out_ranks.end()),
                   out_ranks.end());
   // Compute incoming edges (source processes)
-  std::vector in_ranks = dolfinx::MPI::compute_graph_edges_nbx(comm, out_ranks);
+  std::vector in_ranks = dolfinx::MPI::compute_graph_edges(comm, out_ranks);
   std::sort(in_ranks.begin(), in_ranks.end());
 
   // Create neighborhood communicator in forward direction

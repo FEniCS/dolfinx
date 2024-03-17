@@ -39,7 +39,7 @@ std::array<std::vector<int>, 2> build_src_dest(MPI_Comm comm,
   std::sort(src.begin(), src.end());
   src.erase(std::unique(src.begin(), src.end()), src.end());
   src.shrink_to_fit();
-  std::vector<int> dest = dolfinx::MPI::compute_graph_edges_nbx(comm, src);
+  std::vector<int> dest = dolfinx::MPI::compute_graph_edges(comm, src);
   std::sort(dest.begin(), dest.end());
   return {std::move(src), std::move(dest)};
 }
@@ -372,7 +372,7 @@ compute_submap_indices(const IndexMap& imap,
   // Compute submap destination ranks
   // FIXME Remove call to NBX
   std::vector<int> submap_dest
-      = dolfinx::MPI::compute_graph_edges_nbx(imap.comm(), submap_src);
+      = dolfinx::MPI::compute_graph_edges(imap.comm(), submap_src);
   std::sort(submap_dest.begin(), submap_dest.end());
 
   return {std::move(submap_owned), std::move(submap_ghost),
@@ -947,7 +947,7 @@ graph::AdjacencyList<int> IndexMap::index_to_dest_ranks() const
   std::vector<int> src = _owners;
   std::sort(src.begin(), src.end());
   src.erase(std::unique(src.begin(), src.end()), src.end());
-  auto dest = dolfinx::MPI::compute_graph_edges_nbx(_comm.comm(), src);
+  auto dest = dolfinx::MPI::compute_graph_edges(_comm.comm(), src);
   std::sort(dest.begin(), dest.end());
 
   // Array (local idx, ghosting rank) pairs for owned indices
