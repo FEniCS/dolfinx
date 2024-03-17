@@ -114,12 +114,7 @@ graph::AdjacencyList<int> compute_destination_ranks(
   std::partial_sum(send_sizes.begin(), send_sizes.end(),
                    std::next(send_disp.begin()));
 
-  // Discover src ranks. ParMETIS/KaHIP are not scalable (holding an
-  // array of size equal to the comm size), so no extra harm in using
-  // non-scalable neighbourhood detection (which might be faster for
-  // small rank counts).
-  const std::vector<int> src
-      = dolfinx::MPI::compute_graph_edges_pcx(comm, dest);
+  const std::vector<int> src = dolfinx::MPI::compute_graph_edges(comm, dest);
 
   // Create neighbourhood communicator
   MPI_Comm neigh_comm;
