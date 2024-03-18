@@ -318,6 +318,12 @@ dolfinx::MPI::compute_graph_edges_gather(MPI_Comm comm,
   return out_edges_local;
 }
 //-----------------------------------------------------------------------------
+std::vector<int>
+dolfinx::MPI::compute_graph_edges_distgraph(MPI_Comm comm,
+                                            std::span<const int> in_edges_local)
+{
+}
+//-----------------------------------------------------------------------------
 std::vector<int> dolfinx::MPI::compute_graph_edges(MPI_Comm comm,
                                                    std::span<const int> edges)
 {
