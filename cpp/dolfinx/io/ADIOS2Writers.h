@@ -933,12 +933,7 @@ public:
 
     // Check if function is DG 0
     if (element0->space_dimension() / element0->block_size() == 1)
-    {
       _is_piecewise_constant = true;
-      // throw std::runtime_error(
-      //     "VTK does not support cell-wise fields. See "
-      //     "https://gitlab.kitware.com/vtk/vtk/-/issues/18458.");
-    }
 
     // Check that all functions come from same element type
 
