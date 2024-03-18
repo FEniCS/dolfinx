@@ -936,7 +936,6 @@ public:
       _is_piecewise_constant = true;
 
     // Check that all functions come from same element type
-
     for (auto& v : _u)
     {
       std::visit(
