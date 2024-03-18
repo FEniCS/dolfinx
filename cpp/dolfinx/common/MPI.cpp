@@ -312,7 +312,7 @@ dolfinx::MPI::compute_graph_edges_gather(MPI_Comm comm,
                out_edges_offset.data(), MPI_INT, out_edges_local.data(),
                num_out_edges, MPI_INT, 0, comm);
 
-  LOG(INFO) << "End Graph Edge computation (Gather-Scatter): "
+  LOG(INFO) << "Finish Graph Edge computation (Gather-Scatter): "
             << out_edges_local.size();
 
   return out_edges_local;
@@ -320,8 +320,27 @@ dolfinx::MPI::compute_graph_edges_gather(MPI_Comm comm,
 //-----------------------------------------------------------------------------
 std::vector<int>
 dolfinx::MPI::compute_graph_edges_distgraph(MPI_Comm comm,
-                                            std::span<const int> in_edges_local)
+                                            std::span<const int> edges)
 {
+  LOG(INFO) << "Start compute graph edged (DistGraph)";
+  MPI_Comm new_comm;
+  int rank = dolfinx::MPI::rank(comm);
+  int num_edges = edges.size();
+  MPI_Dist_graph_create(comm, 1, &rank, &num_edges, edges.data(),
+                        MPI_UNWEIGHTED, MPI_INFO_NULL, 0, &new_comm);
+
+  int num_sources, num_dests, weighted;
+  MPI_Dist_graph_neighbors_count(new_comm, &num_sources, &num_dests, &weighted);
+  std::vector<int> sources(num_sources);
+  std::vector<int> dests(num_dests);
+  MPI_Dist_graph_neighbors(new_comm, num_sources, sources.data(), NULL,
+                           num_dests, dests.data(), NULL);
+
+  MPI_Comm_free(&new_comm);
+  MPI_Barrier(comm); // for timing comparison
+
+  LOG(INFO) << "Finish compute graph edged (DistGraph)";
+  return sources;
 }
 //-----------------------------------------------------------------------------
 std::vector<int> dolfinx::MPI::compute_graph_edges(MPI_Comm comm,
@@ -331,6 +350,8 @@ std::vector<int> dolfinx::MPI::compute_graph_edges(MPI_Comm comm,
   return compute_graph_edges_nbx(comm, edges);
 #elif defined(USE_PCX)
   return compute_graph_edges_pcx(comm, edges);
+#elif defined(USE_DISTGRAPH)
+  return compute_graph_edges_distgraph(comm, edges);
 #else
   return compute_graph_edges_gather(comm, edges);
 #endif

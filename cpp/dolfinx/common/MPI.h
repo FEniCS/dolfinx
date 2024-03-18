@@ -185,6 +185,9 @@ std::vector<int> compute_graph_edges_pcx(MPI_Comm comm,
 std::vector<int> compute_graph_edges_nbx(MPI_Comm comm,
                                          std::span<const int> edges);
 
+std::vector<int> compute_graph_edges_distgraph(MPI_Comm comm,
+                                               std::span<const int> edges);
+
 /// @brief Determine incoming graph edges to this rank, by gathering on root
 /// process and scattering back out.
 ///
