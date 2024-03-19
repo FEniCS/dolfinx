@@ -108,7 +108,7 @@ def test_numba_assembly(dtype):
     b.scatter_reverse(dolfinx.la.InsertMode.add)
 
     Anorm = np.sqrt(A.squared_norm())
-    bnorm = b.norm()
+    bnorm = la.norm(b)
     assert np.isclose(Anorm, 56.124860801609124)
     assert np.isclose(bnorm, 0.0739710713711999)
 
@@ -134,7 +134,7 @@ def test_coefficient(dtype):
 
     b = dolfinx.fem.assemble_vector(L)
     b.scatter_reverse(la.InsertMode.add)
-    bnorm = b.norm()
+    bnorm = la.norm(b)
     assert np.isclose(bnorm, 2.0 * 0.0739710713711999)
 
 
@@ -273,4 +273,4 @@ def test_cffi_assembly():
 
     b = fem.assemble_vector(L)
     b.scatter_reverse(la.InsertMode.add)
-    assert np.isclose(b.norm(), 0.0739710713711999)
+    assert np.isclose(la.norm(b), 0.0739710713711999)

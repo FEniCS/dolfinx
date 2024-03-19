@@ -266,7 +266,7 @@ with XDMFFile(msh.comm, "out_elasticity/von_mises_stress.xdmf", "w") as file:
 # be called from all MPI ranks), but we print the norm only on rank 0.
 
 # +
-unorm = uh.x.norm()
+unorm = la.norm(uh.x)
 if msh.comm.rank == 0:
     print("Solution vector norm:", unorm)
 # -
