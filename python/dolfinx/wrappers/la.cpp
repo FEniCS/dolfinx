@@ -48,11 +48,6 @@ void declare_objects(nb::module_& m, const std::string& type)
       .def(nb::init<const dolfinx::la::Vector<T>&>(), nb::arg("vec"))
       .def_prop_ro("dtype", [](const dolfinx::la::Vector<T>&)
                    { return dolfinx_wrappers::numpy_dtype<T>(); })
-      .def(
-          "norm",
-          [](const dolfinx::la::Vector<T>& self, dolfinx::la::Norm type)
-          { return dolfinx::la::norm(self, type); },
-          "type"_a = dolfinx::la::Norm::l2)
       .def_prop_ro("index_map", &dolfinx::la::Vector<T>::index_map)
       .def_prop_ro("bs", &dolfinx::la::Vector<T>::bs)
       .def_prop_ro(
@@ -179,6 +174,11 @@ template <typename T>
 void declare_functions(nb::module_& m)
 {
   m.def(
+        "norm",
+        [](const dolfinx::la::Vector<T>& x, dolfinx::la::Norm type)
+        { return dolfinx::la::norm(x, type); },
+        "vector"_a, "type"_a = dolfinx::la::Norm::l2);
+  m.def(
       "inner_product",
       [](const dolfinx::la::Vector<T>& x, const dolfinx::la::Vector<T>& y)
       { return dolfinx::la::inner_product(x, y); },
@@ -285,6 +285,11 @@ void la(nb::module_& m)
           nb::rv_policy::reference_internal);
 
   // Declare objects that are templated over type
+  declare_objects<std::int8_t>(m, "int8");
+  declare_objects<std::int32_t>(m, "int32");
+  declare_objects<std::uint32_t>(m, "uint32");
+  declare_objects<std::int64_t>(m, "int64");
+  declare_objects<std::uint64_t>(m, "uint64");
   declare_objects<float>(m, "float32");
   declare_objects<double>(m, "float64");
   declare_objects<std::complex<float>>(m, "complex64");

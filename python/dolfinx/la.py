@@ -12,7 +12,7 @@ import numpy.typing as npt
 
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.common import IndexMap
-from dolfinx.cpp.la import BlockMode, InsertMode, Norm
+from dolfinx.cpp.la import BlockMode, InsertMode, Norm, norm
 
 __all__ = [
     "orthonormalize",
@@ -267,7 +267,7 @@ class Vector:
         Returns:
             Computed norm.
         """
-        return self._cpp_object.norm(type)
+        return norm(self._cpp_object, type)
 
 
 def vector(map, bs=1, dtype: npt.DTypeLike = np.float64) -> Vector:
