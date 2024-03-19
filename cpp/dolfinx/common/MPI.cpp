@@ -312,6 +312,8 @@ dolfinx::MPI::compute_graph_edges_gather(MPI_Comm comm,
                out_edges_offset.data(), MPI_INT, out_edges_local.data(),
                num_out_edges, MPI_INT, 0, comm);
 
+  MPI_Barrier(comm); // Timing barrier
+
   LOG(INFO) << "Finish Graph Edge computation (Gather-Scatter): "
             << out_edges_local.size();
 
