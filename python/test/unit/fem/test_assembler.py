@@ -151,17 +151,17 @@ def test_basic_assembly(mode, dtype):
     A.scatter_reverse()
     assert isinstance(A, la.MatrixCSR)
     assert normA == pytest.approx(A.squared_norm())
-    normb = b.norm()
+    normb = la.norm(b)
     b.array[:] = 0
     fem.assemble_vector(b.array, L)
     b.scatter_reverse(la.InsertMode.add)
-    assert normb == pytest.approx(b.norm())
+    assert normb == pytest.approx(la.norm(b))
 
     # Vector re-assembly - no zeroing (but need to zero ghost entries)
     b.array[b.index_map.size_local * b.block_size :] = 0
     fem.assemble_vector(b.array, L)
     b.scatter_reverse(la.InsertMode.add)
-    assert 2 * normb == pytest.approx(b.norm())
+    assert 2 * normb == pytest.approx(la.norm(b))
 
     # Matrix re-assembly (no zeroing)
     fem.assemble_matrix(A, a)

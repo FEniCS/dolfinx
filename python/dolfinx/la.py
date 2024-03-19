@@ -258,17 +258,6 @@ class Vector:
         """
         self._cpp_object.scatter_reverse(mode)
 
-    def norm(self, type: _cpp.la.Norm = _cpp.la.Norm.l2) -> np.floating:
-        """Compute a norm of the vector.
-
-        Args:
-            type: Norm type to compute.
-
-        Returns:
-            Computed norm.
-        """
-        return norm(self._cpp_object, type)
-
 
 def vector(map, bs=1, dtype: npt.DTypeLike = np.float64) -> Vector:
     """Create a distributed vector.
@@ -355,3 +344,16 @@ def is_orthonormal(basis, eps: float = 1.0e-12) -> bool:
             if abs(x.dot(y)) > eps:
                 return False
     return True
+
+
+def norm(x: Vector, type: _cpp.la.Norm = _cpp.la.Norm.l2) -> np.floating:
+    """Compute a norm of the vector.
+
+    Args:
+        x: Vector to measure.
+        type: Norm type to compute.
+
+    Returns:
+        Computed norm.
+    """
+    return _cpp.la.norm(x._cpp_object, type)
