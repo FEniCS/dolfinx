@@ -107,8 +107,7 @@ def xfail_norm_of_integral_type_vector(dtype):
         ),
     ],
 )
-def test_create_vector_norm(dtype, norm_type):
-    """Test creation of a distributed vector"""
+def test_vector_norm(dtype, norm_type):
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
     im = mesh.topology.index_map(0)
     x = la.vector(im, dtype=dtype)
