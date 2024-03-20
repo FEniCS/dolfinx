@@ -882,17 +882,27 @@ def test_nonmatching_mesh_interpolation(xtype, cell_type0, cell_type1):
     u0.interpolate(f)
     u0.x.scatter_forward()
     padding = 1e-14
+
+    # Check that both interfaces of create nonmatching meshes interpolation data returns the same
+    fine_mesh_cell_map = mesh1.topology.index_map(mesh1.topology.dim)
+    num_cells_on_proc = fine_mesh_cell_map.size_local + fine_mesh_cell_map.num_ghosts
+    cells = np.arange(num_cells_on_proc, dtype=np.int32)
+    interpolation_data = create_nonmatching_meshes_interpolation_data(
+        V1.mesh.geometry, V1.element, V0.mesh, cells, padding=padding
+    )
+    other_interpolation_data = create_nonmatching_meshes_interpolation_data(
+        V1.mesh,
+        V1.element,
+        V0.mesh,
+        padding=padding,
+    )
+    for data_0, data_1 in zip(interpolation_data, other_interpolation_data):
+        np.testing.assert_allclose(data_0, data_1)
+
     # Interpolate 3D->2D
     u1 = Function(V1, dtype=xtype)
-    u1.interpolate(
-        u0,
-        nmm_interpolation_data=create_nonmatching_meshes_interpolation_data(
-            u1.function_space.mesh,
-            u1.function_space.element,
-            u0.function_space.mesh,
-            padding=padding,
-        ),
-    )
+
+    u1.interpolate(u0, nmm_interpolation_data=interpolation_data)
     u1.x.scatter_forward()
 
     # Exact interpolation on 2D mesh
