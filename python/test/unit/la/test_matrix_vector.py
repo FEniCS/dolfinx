@@ -4,8 +4,9 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for MatrixCSR"""
-
+import dolfinx.common
 from mpi4py import MPI
+import pytest
 
 import numpy as np
 
@@ -46,26 +47,26 @@ def test_create_matrix_csr():
     assert np.allclose(A.to_dense(), zero)
 
 
-def test_create_vector():
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        np.complex64,
+        np.complex128,
+        np.int8,
+        np.int32,
+        np.uint32,
+        np.int64,
+        np.uint64,
+    ],
+)
+def test_create_vector2(dtype):
     """Test creation of a distributed vector"""
-    mesh = create_unit_square(MPI.COMM_WORLD, 10, 11)
-    V = functionspace(mesh, ("Lagrange", 1))
-    map = V.dofmap.index_map
-    bs = V.dofmap.index_map_bs
+    mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
+    im = mesh.topology.index_map(0)
 
-    x = la.vector(map)
-    assert x.array.dtype == np.float64
-    x = la.vector(map, bs=bs, dtype=np.float64)
-    assert x.array.dtype == np.float64
-
-    x = la.vector(map, dtype=np.float32)
-    assert x.array.dtype == np.float32
-    x = la.vector(map, dtype=np.complex64)
-    assert x.array.dtype == np.complex64
-    x = la.vector(map, dtype=np.complex128)
-    assert x.array.dtype == np.complex128
-
-    x0 = la.vector(map, dtype=np.complex128)
-    x1 = la.vector(map, bs=1, dtype=np.complex128)
-    x2 = la.vector(map, bs=4, dtype=np.complex128)
-    assert 4 * x0.array.shape[0] == 4 * x1.array.shape[0] == x2.array.shape[0]
+    for bs in range(1, 4):
+        x = la.vector(im, bs=bs, dtype=dtype)
+        assert x.array.dtype == dtype
+        assert x.array.size == bs * (im.size_local + im.num_ghosts)
