@@ -70,3 +70,48 @@ def test_create_vector(dtype):
         x = la.vector(im, bs=bs, dtype=dtype)
         assert x.array.dtype == dtype
         assert x.array.size == bs * (im.size_local + im.num_ghosts)
+
+
+def xfail_norm_of_integral_type_vector(dtype):
+    return pytest.param(
+        dtype,
+        marks=pytest.mark.xfail(
+            reason="Norm of vector of integers not implemented", strict=True, raises=TypeError
+        ),
+    )
+
+
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        np.complex64,
+        np.complex128,
+        xfail_norm_of_integral_type_vector(np.int8),
+        xfail_norm_of_integral_type_vector(np.int32),
+        xfail_norm_of_integral_type_vector(np.uint32),
+        xfail_norm_of_integral_type_vector(np.int64),
+        xfail_norm_of_integral_type_vector(np.uint64),
+    ],
+)
+@pytest.mark.parametrize(
+    "norm_type",
+    [
+        la.Norm.l1,
+        la.Norm.l2,
+        la.Norm.linf,
+        pytest.param(
+            la.Norm.frobenius,
+            marks=pytest.mark.xfail(reason="Norm type not supported for vector", strict=True),
+        ),
+    ],
+)
+def test_create_vector_norm(dtype, norm_type):
+    """Test creation of a distributed vector"""
+    mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
+    im = mesh.topology.index_map(0)
+    x = la.vector(im, dtype=dtype)
+    x.array[:] = 0.0
+    normed_value = la.norm(x, norm_type)
+    assert np.isclose(normed_value, 0.0)
