@@ -12,7 +12,7 @@ import numpy.typing as npt
 
 from dolfinx import cpp as _cpp
 from dolfinx.cpp.common import IndexMap
-from dolfinx.cpp.la import BlockMode, InsertMode, Norm, norm
+from dolfinx.cpp.la import BlockMode, InsertMode, Norm
 
 __all__ = [
     "orthonormalize",
@@ -208,6 +208,11 @@ class Vector:
         _cpp.la.Vector_float64,
         _cpp.la.Vector_complex64,
         _cpp.la.Vector_complex128,
+        _cpp.la.Vector_int8,
+        _cpp.la.Vector_int32,
+        _cpp.la.Vector_int64,
+        _cpp.la.Vector_uint32,
+        _cpp.la.Vector_uint64,
     ]
 
     def __init__(
@@ -217,6 +222,11 @@ class Vector:
             _cpp.la.Vector_float64,
             _cpp.la.Vector_complex64,
             _cpp.la.Vector_complex128,
+            _cpp.la.Vector_int8,
+            _cpp.la.Vector_int32,
+            _cpp.la.Vector_int64,
+            _cpp.la.Vector_uint32,
+            _cpp.la.Vector_uint64,
         ],
     ):
         """A distributed vector object.
@@ -279,6 +289,16 @@ def vector(map, bs=1, dtype: npt.DTypeLike = np.float64) -> Vector:
         vtype = _cpp.la.Vector_complex64
     elif np.issubdtype(dtype, np.complex128):
         vtype = _cpp.la.Vector_complex128
+    elif np.issubdtype(dtype, np.int8):
+        vtype = _cpp.la.Vector_int8
+    elif np.issubdtype(dtype, np.int32):
+        vtype = _cpp.la.Vector_int32
+    elif np.issubdtype(dtype, np.int64):
+        vtype = _cpp.la.Vector_int64
+    elif np.issubdtype(dtype, np.uint32):
+        vtype = _cpp.la.Vector_uint32
+    elif np.issubdtype(dtype, np.uint64):
+        vtype = _cpp.la.Vector_uint64
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
 
