@@ -61,7 +61,7 @@ def test_create_matrix_csr():
         np.uint64,
     ],
 )
-def test_create_vector2(dtype):
+def test_create_vector(dtype):
     """Test creation of a distributed vector"""
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
     im = mesh.topology.index_map(0)
