@@ -664,7 +664,7 @@ graph::AdjacencyList<std::int32_t> compute_colliding_cells(
 /// 3)`
 /// @note Only looks through cells owned by the process
 /// @note A large padding value can increase the runtime of the function by
-/// orders of magnitude, because that for non-colliding cells
+/// orders of magnitude, because for non-colliding cells
 /// one has to determine the closest cell among all processes with an
 /// intersecting bounding box, which is an expensive operation to perform.
 template <std::floating_point T>
@@ -687,7 +687,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
   BoundingBoxTree global_bbtree = bb.create_global_tree(comm);
 
   // Compute collisions:
-  // For each point in `x` get the processes it should be sent to
+  // For each point in `points` get the processes it should be sent to
   graph::AdjacencyList collisions = compute_collisions(global_bbtree, points);
 
   // Get unique list of outgoing ranks
@@ -769,7 +769,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
       = compute_collisions(bb, std::span<const T>(received_points.data(),
                                                   received_points.size()));
 
-  // Each process checks which points collides with a cell on the process
+  // Each process checks which points collide with a cell on the process
   const int rank = dolfinx::MPI::rank(comm);
   std::vector<std::int32_t> cell_indicator(received_points.size() / 3);
   std::vector<std::int32_t> closest_cells(received_points.size() / 3);
@@ -777,7 +777,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
   {
     std::array<T, 3> point;
     std::copy_n(std::next(received_points.begin(), p), 3, point.begin());
-    // Find first collding cell among the cells with colliding bounding boxes
+    // Find first colliding cell among the cells with colliding bounding boxes
     const int colliding_cell = geometry::compute_first_colliding_cell(
         mesh, candidate_collisions.links(p / 3), point,
         10 * std::numeric_limits<T>::epsilon());
