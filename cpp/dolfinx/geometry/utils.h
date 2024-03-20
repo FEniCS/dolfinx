@@ -897,7 +897,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
       recv_offsets.data(), dolfinx::MPI::mpi_type<T>(), reverse_comm);
 
   // Update point ownership with extrapolation information
-  std::vector<T> closest_distance(unpack_map.size(),
+  std::vector<T> closest_distance(point_owners.size(),
                                   std::numeric_limits<T>::max());
   for (std::size_t i = 0; i < out_ranks.size(); i++)
   {
