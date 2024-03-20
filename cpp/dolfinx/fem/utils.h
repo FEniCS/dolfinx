@@ -827,24 +827,14 @@ namespace impl
 {
 /// @private
 template <dolfinx::scalar T, std::floating_point U>
-std::span<const std::uint32_t> get_cell_orientation_info(
-    const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients)
+std::span<const std::uint32_t>
+get_cell_orientation_info(const Function<T, U>& coefficient)
 {
-  bool needs_dof_transformations = false;
-  for (auto coeff : coefficients)
-  {
-    auto element = coeff->function_space()->element();
-    if (element->needs_dof_transformations())
-    {
-      needs_dof_transformations = true;
-      break;
-    }
-  }
-
   std::span<const std::uint32_t> cell_info;
-  if (needs_dof_transformations)
+  auto element = coefficient.function_space()->element();
+  if (element->needs_dof_transformations())
   {
-    auto mesh = coefficients.front()->function_space()->mesh();
+    auto mesh = coefficient.function_space()->mesh();
     mesh->topology_mutable()->create_entity_permutations();
     cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
@@ -1036,60 +1026,61 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
 
   if (!coefficients.empty())
   {
-    std::span<const std::uint32_t> cell_info
-        = impl::get_cell_orientation_info(coefficients);
-
     switch (integral_type)
     {
     case IntegralType::cell:
     {
-      auto fetch_cell = [](auto entity) { return entity.front(); };
-
       // Iterate over coefficients
-      std::span<const std::int32_t> cells = form.domain(IntegralType::cell, id);
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
-        impl::pack_coefficient_entity(c, cstride, *coefficients[coeff],
-                                      cell_info, cells, 1, fetch_cell,
-                                      offsets[coeff]);
+        auto mesh = coefficients[coeff]->function_space()->mesh();
+        assert(mesh);
+        std::vector<std::int32_t> cells
+            = form.domain(IntegralType::cell, id, *mesh);
+        std::span<const std::uint32_t> cell_info
+            = impl::get_cell_orientation_info(*coefficients[coeff]);
+        impl::pack_coefficient_entity(
+            c, cstride, *coefficients[coeff], cell_info, cells, 1,
+            [](auto entity) { return entity.front(); }, offsets[coeff]);
       }
       break;
     }
     case IntegralType::exterior_facet:
     {
-      // Function to fetch cell index from exterior facet entity
-      auto fetch_cell = [](auto entity) { return entity.front(); };
-
       // Iterate over coefficients
-      std::span<const std::int32_t> facets
-          = form.domain(IntegralType::exterior_facet, id);
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
-        impl::pack_coefficient_entity(c, cstride, *coefficients[coeff],
-                                      cell_info, facets, 2, fetch_cell,
-                                      offsets[coeff]);
+        auto mesh = coefficients[coeff]->function_space()->mesh();
+        std::vector<std::int32_t> facets
+            = form.domain(IntegralType::exterior_facet, id, *mesh);
+        std::span<const std::uint32_t> cell_info
+            = impl::get_cell_orientation_info(*coefficients[coeff]);
+        impl::pack_coefficient_entity(
+            c, cstride, *coefficients[coeff], cell_info, facets, 2,
+            [](auto entity) { return entity.front(); }, offsets[coeff]);
       }
       break;
     }
     case IntegralType::interior_facet:
     {
-      // Functions to fetch cell indices from interior facet entity
-      auto fetch_cell0 = [](auto entity) { return entity[0]; };
-      auto fetch_cell1 = [](auto entity) { return entity[2]; };
-
       // Iterate over coefficients
-      std::span<const std::int32_t> facets
-          = form.domain(IntegralType::interior_facet, id);
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
+        auto mesh = coefficients[coeff]->function_space()->mesh();
+        std::vector<std::int32_t> facets
+            = form.domain(IntegralType::interior_facet, id, *mesh);
+        std::span<const std::uint32_t> cell_info
+            = impl::get_cell_orientation_info(*coefficients[coeff]);
+
         // Pack coefficient ['+']
-        impl::pack_coefficient_entity(c, 2 * cstride, *coefficients[coeff],
-                                      cell_info, facets, 4, fetch_cell0,
-                                      2 * offsets[coeff]);
+        impl::pack_coefficient_entity(
+            c, 2 * cstride, *coefficients[coeff], cell_info, facets, 4,
+            [](auto entity) { return entity[0]; }, 2 * offsets[coeff]);
         // Pack coefficient ['-']
-        impl::pack_coefficient_entity(c, 2 * cstride, *coefficients[coeff],
-                                      cell_info, facets, 4, fetch_cell1,
-                                      offsets[coeff] + offsets[coeff + 1]);
+        impl::pack_coefficient_entity(
+            c, 2 * cstride, *coefficients[coeff], cell_info, facets, 4,
+            [](auto entity) { return entity[2]; },
+            offsets[coeff] + offsets[coeff + 1]);
       }
       break;
     }
@@ -1238,12 +1229,12 @@ pack_coefficients(const Expression<T, U>& e,
   std::vector<T> c(entities.size() / estride * offsets.back());
   if (!coeffs.empty())
   {
-    std::span<const std::uint32_t> cell_info
-        = impl::get_cell_orientation_info(coeffs);
-
     // Iterate over coefficients
     for (std::size_t coeff = 0; coeff < coeffs.size(); ++coeff)
     {
+      std::span<const std::uint32_t> cell_info
+          = impl::get_cell_orientation_info(*coeffs[coeff]);
+
       impl::pack_coefficient_entity(
           std::span(c), cstride, *coeffs[coeff], cell_info, entities, estride,
           [](auto entity) { return entity[0]; }, offsets[coeff]);
