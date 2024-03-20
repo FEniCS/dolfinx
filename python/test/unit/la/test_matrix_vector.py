@@ -4,11 +4,11 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for MatrixCSR"""
-import dolfinx.common
+
 from mpi4py import MPI
-import pytest
 
 import numpy as np
+import pytest
 
 from dolfinx import cpp as _cpp
 from dolfinx import la
