@@ -626,7 +626,6 @@ def functionspace(
     value_shape = ufl_space.value_shape
 
     # Compile dofmap and element and create DOLFINx objects
-    dtype = mesh.geometry.x.dtype
     if form_compiler_options is None:
         form_compiler_options = dict()
     form_compiler_options["scalar_type"] = dtype
