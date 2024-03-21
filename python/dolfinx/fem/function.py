@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import typing
+import warnings
 from functools import singledispatch
 
 import numpy as np
@@ -635,14 +636,26 @@ def functionspace(
     )
 
     ffi = module.ffi
-    if np.issubdtype(dtype, np.float32):
-        cpp_element = _cpp.fem.LegacyFiniteElement_float32(
-            ffi.cast("uintptr_t", ffi.addressof(ufcx_element))
+
+    try:
+        basix_e = ufl_e.basix_element._e
+        if np.issubdtype(dtype, np.float32):
+            cpp_element = _cpp.fem.FiniteElement_float32(basix_e, ufl_e.block_size)
+        elif np.issubdtype(dtype, np.float64):
+            cpp_element = _cpp.fem.FiniteElement_float64(basix_e, ufl_e.block_size)
+    except NotImplementedError:
+        warnings.warn(
+            "Creation of elements from generated code is deprecated",
+            FutureWarning,
         )
-    elif np.issubdtype(dtype, np.float64):
-        cpp_element = _cpp.fem.LegacyFiniteElement_float64(
-            ffi.cast("uintptr_t", ffi.addressof(ufcx_element))
-        )
+        if np.issubdtype(dtype, np.float32):
+            cpp_element = _cpp.fem.FiniteElement_float32(
+                ffi.cast("uintptr_t", ffi.addressof(ufcx_element))
+            )
+        elif np.issubdtype(dtype, np.float64):
+            cpp_element = _cpp.fem.FiniteElement_float64(
+                ffi.cast("uintptr_t", ffi.addressof(ufcx_element))
+            )
 
     cpp_dofmap = _cpp.fem.create_dofmap(
         mesh.comm,
