@@ -114,6 +114,12 @@ void declare_function_space(nb::module_& m, std::string type)
               new (self) dolfinx::fem::FiniteElement<T>(*p);
             },
             nb::arg("ufcx_element"))
+        .def(
+            "__init__",
+            [](dolfinx::fem::FiniteElement<T>* self,
+               basix::FiniteElement<T>& element, std::size_t block_size)
+            { new (self) dolfinx::fem::FiniteElement<T>(element, block_size); },
+            nb::arg("element"), nb::arg("block_size"))
         .def("__eq__", &dolfinx::fem::FiniteElement<T>::operator==)
         .def_prop_ro("dtype", [](const dolfinx::fem::FiniteElement<T>&)
                      { return dolfinx_wrappers::numpy_dtype<T>(); })
