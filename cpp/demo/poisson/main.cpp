@@ -80,6 +80,7 @@
 // namespace.
 
 #include "poisson.h"
+#include <basix/finite-element.h>
 #include <cmath>
 #include <dolfinx.h>
 #include <dolfinx/fem/Constant.h>
@@ -114,8 +115,13 @@ int main(int argc, char* argv[])
         mesh::create_rectangle<U>(MPI_COMM_WORLD, {{{0.0, 0.0}, {2.0, 1.0}}},
                                   {32, 16}, mesh::CellType::triangle, part));
 
+    auto element = basix::create_element<U>(
+        basix::element::family::P, basix::cell::type::triangle, 1,
+        basix::element::lagrange_variant::unset,
+        basix::element::dpc_variant::unset, false);
+
     auto V = std::make_shared<fem::FunctionSpace<U>>(
-        fem::create_functionspace(functionspace_form_poisson_a, "u", mesh));
+        fem::create_functionspace(mesh, element, {}));
 
     //  Next, we define the variational formulation by initializing the
     //  bilinear and linear forms ($a$, $L$) using the previously
