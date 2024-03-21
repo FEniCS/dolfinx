@@ -97,7 +97,7 @@ def create_nonmatching_meshes_interpolation_data(
     else:
         return PointOwnershipData(
             *_create_nonmatching_meshes_interpolation_data(
-                mesh_to._cpp_object, element, mesh_from._cpp_object, cells, padding
+                mesh_to, element, mesh_from._cpp_object, cells, padding
             )
         )
 

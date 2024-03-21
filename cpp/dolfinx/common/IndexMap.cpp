@@ -205,7 +205,7 @@ compute_submap_indices(const IndexMap& imap,
   // `recv_indices` will necessarily be in `indices` on this process, and thus
   // other processes must own them in the submap.
 
-  std::vector<int> recv_owners(send_disp.back()), submap_dest;
+  std::vector<int> recv_owners(send_disp.back());
   const int rank = dolfinx::MPI::rank(imap.comm());
   {
     // Flag to track if the owner of any indices have changed in the submap
@@ -233,11 +233,7 @@ compute_submap_indices(const IndexMap& imap,
           // this process remains its owner in the submap. Otherwise,
           // add the process that sent it to the list of possible owners.
           if (is_in_submap[idx_local])
-          {
             global_idx_to_possible_owner.push_back({idx, rank});
-            // Add the sending process as a destination rank in the submap
-            submap_dest.push_back(dest[i]);
-          }
           else
           {
             owners_changed = true;
@@ -252,10 +248,6 @@ compute_submap_indices(const IndexMap& imap,
 
     std::sort(global_idx_to_possible_owner.begin(),
               global_idx_to_possible_owner.end());
-    std::sort(submap_dest.begin(), submap_dest.end());
-    submap_dest.erase(std::unique(submap_dest.begin(), submap_dest.end()),
-                      submap_dest.end());
-    submap_dest.shrink_to_fit();
 
     // Choose the submap owner for each index in `recv_indices`
     std::vector<int> send_owners;
@@ -376,6 +368,12 @@ compute_submap_indices(const IndexMap& imap,
     submap_ghost_owners = std::move(submap_ghost_owners1);
     submap_ghost = std::move(submap_ghost1);
   }
+
+  // Compute submap destination ranks
+  // FIXME Remove call to NBX
+  std::vector<int> submap_dest
+      = dolfinx::MPI::compute_graph_edges_nbx(imap.comm(), submap_src);
+  std::sort(submap_dest.begin(), submap_dest.end());
 
   return {std::move(submap_owned), std::move(submap_ghost),
           std::move(submap_ghost_owners), std::move(submap_src),

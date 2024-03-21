@@ -78,6 +78,10 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
   std::span<const std::size_t> value_shape = u.function_space()->value_shape();
   int num_components = std::reduce(value_shape.begin(), value_shape.end(), 1,
                                    std::multiplies{});
+  // Pad to 3D if vector is 1 or 2D, to ensure that we can visualize them
+  // correctly in Paraview
+  if (value_shape.size() == 1 && value_shape.front() < 3)
+    num_components = 3;
 
   // Get fem::Function data values and shape
   std::vector<T> data_values;

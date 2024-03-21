@@ -757,7 +757,7 @@ compute_incident_entities(const Topology& topology,
 /// distribution of the mesh.
 ///
 /// From mesh input data that is distributed across processes, a
-/// distributed a mesh::Mesh is created. If the partitioning function is
+/// distributed mesh::Mesh is created. If the partitioning function is
 /// not callable, i.e. it does not store a callable function, no
 /// re-distribution of cells is done.
 ///
@@ -843,7 +843,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
       = extract_topology(celltype, doflayout, cells1.array());
 
   // Build local dual graph for owned cells to (i) get list of vertices
-  // on the process boundary and (ii) and apply re-ordering to cells for
+  // on the process boundary and (ii) apply re-ordering to cells for
   // locality
   std::vector<std::int64_t> boundary_v;
   {
