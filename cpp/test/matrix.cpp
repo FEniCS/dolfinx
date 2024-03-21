@@ -111,7 +111,7 @@ la::MatrixCSR<double> create_operator(MPI_Comm comm)
   auto mesh = std::make_shared<mesh::Mesh<double>>(
       mesh::create_box(comm, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {12, 12, 12},
                        mesh::CellType::tetrahedron, part));
-  auto element = basix::create_element(
+  auto element = basix::create_element<double>(
       basix::element::family::P, basix::cell::type::tetrahedron, 2,
       basix::element::lagrange_variant::unset,
       basix::element::dpc_variant::unset, false);

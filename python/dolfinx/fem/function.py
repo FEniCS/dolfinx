@@ -636,11 +636,11 @@ def functionspace(
 
     ffi = module.ffi
     if np.issubdtype(dtype, np.float32):
-        cpp_element = _cpp.fem.FiniteElement_float32(
+        cpp_element = _cpp.fem.LegacyFiniteElement_float32(
             ffi.cast("uintptr_t", ffi.addressof(ufcx_element))
         )
     elif np.issubdtype(dtype, np.float64):
-        cpp_element = _cpp.fem.FiniteElement_float64(
+        cpp_element = _cpp.fem.LegacyFiniteElement_float64(
             ffi.cast("uintptr_t", ffi.addressof(ufcx_element))
         )
 
