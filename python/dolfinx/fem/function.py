@@ -604,6 +604,7 @@ def functionspace(
 
     """
     # Create UFL element
+    dtype = mesh.geometry.x.dtype
     try:
         e = ElementMetaData(*element)
         ufl_e = basix.ufl.element(
@@ -612,6 +613,7 @@ def functionspace(
             e.degree,
             shape=e.shape,
             symmetry=e.symmetry,
+            dtype=dtype,
         )
     except TypeError:
         ufl_e = element  # type: ignore
