@@ -262,7 +262,8 @@ auto squared_norm(const V& a)
 /// Compute the norm of the vector
 /// @note Collective MPI operation
 /// @param x A vector
-/// @param type Norm type (supported types are \f$L^2\f$ and \f$L^\infty\f$)
+/// @param type Norm type (supported types are \f$L^1\f$, \f$L^2\f$
+/// and \f$L^\infty\f$)
 template <class V>
 auto norm(const V& x, Norm type = Norm::l2)
 {
