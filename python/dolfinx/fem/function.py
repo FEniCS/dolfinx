@@ -420,6 +420,7 @@ class Function(ufl.Coefficient):
         self,
         u: typing.Union[typing.Callable, Expression, Function],
         cells: typing.Optional[np.ndarray] = None,
+        cell_map: typing.Optional[np.ndarray] = None,
         nmm_interpolation_data: typing.Optional[PointOwnershipData] = None,
     ) -> None:
         """Interpolate an expression
@@ -428,6 +429,7 @@ class Function(ufl.Coefficient):
             u: The function, Expression or Function to interpolate.
             cells: The cells to interpolate over. If `None` then all
                 cells are interpolated over.
+            cell_map: Mapping from cells in receiving mesh to cells in `u` mesh
             nmm_interpolation_data: Data needed to interpolate functions defined on other meshes
         """
         if nmm_interpolation_data is None:
@@ -438,6 +440,8 @@ class Function(ufl.Coefficient):
                 dest_points=np.empty(0, dtype=x_dtype),
                 dest_cells=np.empty(0, dtype=np.int32),
             )
+        if cell_map is None:
+            cell_map = np.empty(0, dtype=np.int32)
 
         @singledispatch
         def _interpolate(u, cells: typing.Optional[np.ndarray] = None):

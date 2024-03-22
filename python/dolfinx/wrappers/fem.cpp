@@ -391,6 +391,8 @@ void declare_objects(nb::module_& m, const std::string& type)
           [](dolfinx::fem::Function<T, U>& self,
              dolfinx::fem::Function<T, U>& u,
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells,
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>
+                 cell_map,
              const std::tuple<
                  nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>,
                  nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>,
@@ -414,6 +416,7 @@ void declare_objects(nb::module_& m, const std::string& type)
                         std::get<3>(interpolation_data).data(),
                         std::get<3>(interpolation_data).size()));
             self.interpolate(u, std::span(cells.data(), cells.size()),
+                             std::span(cell_map.data(), cell_map.size()),
                              _interpolation_data);
           },
           nb::arg("u"), nb::arg("cells"), nb::arg("nmm_interpolation_data"),
@@ -453,8 +456,14 @@ void declare_objects(nb::module_& m, const std::string& type)
           "interpolate",
           [](dolfinx::fem::Function<T, U>& self,
              const dolfinx::fem::Expression<T, U>& expr,
-             nb::ndarray<const std::int32_t, nb::c_contig> cells)
-          { self.interpolate(expr, std::span(cells.data(), cells.size())); },
+             nb::ndarray<const std::int32_t, nb::c_contig> cells,
+             const dolfinx::mesh::Mesh<U>& expr_mesh,
+             nb::ndarray<const std::int32_t, nb::c_contig> cell_map)
+          {
+            self.interpolate(expr, std::span(cells.data(), cells.size()),
+                             expr_mesh,
+                             std::span(cell_map.data(), cell_map.size()));
+          },
           nb::arg("expr"), nb::arg("cells"),
           "Interpolate an Expression on a set of cells")
       .def_prop_ro(
