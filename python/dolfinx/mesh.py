@@ -40,6 +40,7 @@ __all__ = [
     "locate_entities_boundary",
     "refine",
     "create_mesh",
+    "create_submesh",
     "Mesh",
     "MeshTags",
     "meshtags",
@@ -439,7 +440,20 @@ def create_mesh(
     return Mesh(mesh, domain)
 
 
-def create_submesh(msh, dim, entities):
+def create_submesh(msh: Mesh, dim: int, entities: npt.NDArray[np.int32]):
+    """
+    Create a mesh based on a subset of entities from an existing mesh.
+
+    Args:
+        mesh: Input mesh
+        dim: Topological dimension of the entities to extract
+        entities: Indices of entities to extract
+    Returns:
+        A quadrulet containing the submesh, a map from the cells of the submesh
+        to entities of the input mesh, a map from the vertices of the submesh
+        to vertices of the input mesh, and a map from the submesh geometry to
+        the submesh to the geometry of the input mesh.
+    """
     submsh, entity_map, vertex_map, geom_map = _cpp.mesh.create_submesh(
         msh._cpp_object, dim, entities
     )
