@@ -84,7 +84,7 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 /// @param[in] cmap_dof_layout Coordinate element dof layout, computed
 /// using `Geometry::cmap().create_dof_layout()`.
 /// @param[in] xdofmap Dofmap for the mesh geometry (Geometry::dofmap).
-/// @param[in] entity_dim Topological dimension of entities to extract
+/// @param[in] entity_dim Topological dimension of entities to extract.
 /// @param[in] entities Mesh entities defined using global input indices
 /// ('nodes'), typically from an input mesh file, e.g. [gi0, gi1, gi2]
 /// for a triangle. Let [v0, v1, v2] be the vertex indices of some
@@ -199,11 +199,11 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
                            hid_t h5_id,
                            std::array<std::int64_t, 2> range = {0, 0})
 {
-  // FIXME: Need to sort out datasset dimensions - can't depend on HDF5
+  // FIXME: Need to sort out dataset dimensions - can't depend on HDF5
   // shape, and a Topology data item is not required to have a
   // 'Dimensions' attribute since the dimensions can be determined from
   // the number of cells and the cell type (for topology, one must
-  // supply cell type + (number of cells or dimensions).
+  // supply cell type + (number of cells or dimensions)).
   //
   // A geometry data item must have 'Dimensions' attribute.
 
