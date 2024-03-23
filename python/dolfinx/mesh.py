@@ -447,7 +447,7 @@ def create_submesh(msh: Mesh, dim: int, entities: npt.NDArray[np.int32]):
     Args:
         mesh: Input mesh
         dim: Topological dimension of the entities to extract
-        entities: Indices of entities to extract
+        entities: Indices of entities in ``mesh`` to extract
     Returns:
         A quadrulet containing the submesh, a map from the cells of the submesh
         to entities of the input mesh, a map from the vertices of the submesh
