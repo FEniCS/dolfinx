@@ -178,7 +178,7 @@ public:
   /// generate_nonmatching_meshes_interpolation_data (optional).
   void interpolate(
       const Function<value_type, geometry_type>& v,
-      std::span<const std::int32_t> cell_map,
+      std::span<const std::int32_t> cell_map = std::span<const std::int32_t>(),
       const std::tuple<std::span<const std::int32_t>,
                        std::span<const std::int32_t>,
                        std::span<const geometry_type>,
