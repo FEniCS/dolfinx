@@ -473,8 +473,10 @@ class Function(ufl.Coefficient):
                 cells: The cells to interpolate over. If `None` then all
                     cells are interpolated over.
             """
+            assert cell_map is not None
             if len(cell_map) == 0:
                 # If cell map is not provided create identity map
+                assert cells is not None
                 expr_cell_map = np.arange(len(cells), dtype=np.int32)
                 assert expr_mesh is None
                 mapping_mesh = self.function_space.mesh._cpp_object
