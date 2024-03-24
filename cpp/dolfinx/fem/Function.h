@@ -292,7 +292,8 @@ public:
   void interpolate(const Expression<value_type, geometry_type>& e,
                    std::span<const std::int32_t> cells,
                    const dolfinx::mesh::Mesh<geometry_type>& expr_mesh,
-                   std::span<const std::int32_t> cell_map)
+                   std::span<const std::int32_t> cell_map
+                   = std::span<const std::int32_t>())
   {
     // Check that spaces are compatible
     assert(_function_space);
@@ -389,7 +390,8 @@ public:
   /// receiving function is defined on a different mesh than the expression
   void interpolate(const Expression<value_type, geometry_type>& e,
                    const dolfinx::mesh::Mesh<geometry_type>& expr_mesh,
-                   std::span<const std::int32_t> cell_map)
+                   std::span<const std::int32_t> cell_map
+                   = std::span<const std::int32_t>())
   {
     assert(_function_space);
     assert(_function_space->mesh());
