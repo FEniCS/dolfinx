@@ -386,7 +386,8 @@ public:
   /// Interpolate an Expression (based on UFL) on all cells
   /// @param[in] e The function to be interpolated
   /// @param[in] expr_mesh Mesh expression is defined on
-  /// @param[in] cell_map Map from `cells` to cells in expression
+  /// @param[in] cell_map Map from `cells` to cells in expression if
+  /// receiving function is defined on a different mesh than the expression
   void interpolate(const Expression<value_type, geometry_type>& e,
                    const dolfinx::mesh::Mesh<geometry_type>& expr_mesh,
                    std::span<const std::int32_t> cell_map)
@@ -399,8 +400,11 @@ public:
     std::int32_t num_cells = cell_imap->size_local() + cell_imap->num_ghosts();
     std::vector<std::int32_t> cells(num_cells, 0);
     std::iota(cells.begin(), cells.end(), 0);
-    interpolate(e, cells, expr_mesh,
-                std::span(cell_map.data(), cell_map.size()));
+
+    if (cell_map.size() == 0)
+      interpolate(e, cells, expr_mesh, cell_map);
+    else
+      interpolate(e, cells, expr_mesh, std::span(cells.data(), cells.size()));
   }
 
   /// @brief Evaluate the Function at points.

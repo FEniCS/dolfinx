@@ -448,11 +448,7 @@ class Function(ufl.Coefficient):
             cells = np.arange(map.size_local + map.num_ghosts, dtype=np.int32)
 
         if cell_map is None:
-            # If cell map is not provided create identity map
-            cell_map = np.arange(len(cells), dtype=np.int32)
-            assert expr_mesh is None
-            expr_mesh = self.function_space.mesh
-
+            cell_map = np.empty(0, dtype=np.int32)
 
         @singledispatch
         def _interpolate(u, cells: typing.Optional[np.ndarray] = None):
@@ -479,7 +475,19 @@ class Function(ufl.Coefficient):
                 cells: The cells to interpolate over. If `None` then all
                     cells are interpolated over.
             """
-            self._cpp_object.interpolate(expr._cpp_object, cells, expr_mesh, cell_map)  # type: ignore
+            if len(cell_map) == 0:
+                # If cell map is not provided create identity map
+                expr_cell_map = np.arange(len(cells), dtype=np.int32)
+                assert expr_mesh is None
+                mapping_mesh = self.function_space.mesh._cpp_object
+            else:
+                # If cell map is provided check that there is a mesh
+                # associated with the expression
+                expr_cell_map = cell_map
+                assert expr_mesh is not None
+                mapping_mesh = expr_mesh._cpp_object
+            self._cpp_object.interpolate(expr._cpp_object, cells,
+                                         mapping_mesh, expr_cell_map)  # type: ignore
 
         try:
             # u is a Function or Expression (or pointer to one)
