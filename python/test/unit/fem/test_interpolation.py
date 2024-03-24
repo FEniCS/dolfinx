@@ -15,7 +15,7 @@ import pytest
 import basix
 import ufl
 from basix.ufl import blocked_element, custom_element, element, enriched_element, mixed_element
-from dolfinx import default_real_type
+from dolfinx import default_real_type, default_scalar_type
 from dolfinx.fem import (
     Expression,
     Function,
@@ -29,6 +29,7 @@ from dolfinx.mesh import (
     CellType,
     create_mesh,
     create_rectangle,
+    create_submesh,
     create_unit_cube,
     create_unit_square,
     locate_entities,
@@ -1025,3 +1026,110 @@ def test_nonmatching_mesh_single_cell_overlap_interpolation(xtype):
 
     l2_error = assemble_scalar(form((u1 - u1_exact) ** 2 * dx_cell(cell_label), dtype=xtype))
     assert np.isclose(l2_error, 0.0, rtol=np.finfo(xtype).eps, atol=np.finfo(xtype).eps)
+
+
+def test_submesh_interpolation():
+    mesh = create_unit_square(MPI.COMM_WORLD, 6, 7)
+
+    def left_locator(x):
+        return x[0] <= 0.5 + 1e-14
+
+    def ref_func(x):
+        return x[0] + x[1] ** 2
+
+    tdim = mesh.topology.dim
+    cells = locate_entities(mesh, tdim, left_locator)
+    submesh, sub_to_parent, _, _ = create_submesh(mesh, tdim, cells)
+
+    V = functionspace(mesh, ("Lagrange", 2))
+    u = Function(V)
+    u.interpolate(ref_func)
+
+    V_sub = functionspace(submesh, ("DG", 3))
+    u_sub = Function(V_sub)
+
+    # Map from parent to sub mesh
+    u_sub.interpolate(u, cell_map=sub_to_parent)
+
+    u_sub_exact = Function(V_sub)
+    u_sub_exact.interpolate(ref_func)
+
+    np.testing.assert_allclose(u_sub_exact.x.array, u_sub.x.array, atol=1e-14)
+
+    # Map from sub to parent
+    W = functionspace(mesh, ("DG", 4))
+    w = Function(W)
+
+    cell_imap = mesh.topology.index_map(tdim)
+    num_cells = cell_imap.size_local + cell_imap.num_ghosts
+    parent_to_sub = np.full(num_cells, -1, dtype=np.int32)
+    parent_to_sub[sub_to_parent] = np.arange(len(sub_to_parent))
+
+    # Mapping back needs to be restricted to the subset of cells in the submesh
+    w.interpolate(u_sub, cells=sub_to_parent, cell_map=parent_to_sub)
+
+    w_exact = Function(W)
+    w_exact.interpolate(ref_func, cells=cells)
+
+    np.testing.assert_allclose(w.x.array, w_exact.x.array, atol=1e-14)
+
+
+def test_submesh_expression_interpolation():
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 8, cell_type=CellType.quadrilateral)
+
+    def left_locator(x):
+        return x[0] <= 0.5 + 1e-14
+
+    def ref_func(x):
+        return -3 * x[0] ** 2 + x[1] ** 2
+
+    def grad_ref_func(x):
+        values = np.zeros((2, x.shape[1]), dtype=default_scalar_type)
+        values[0] = -6 * x[0]
+        values[1] = 2 * x[1]
+        return values
+
+    def grad_squared(x):
+        grad = grad_ref_func(x)
+        return grad[0] ** 2 + grad[1] ** 2
+
+    tdim = mesh.topology.dim
+    cells = locate_entities(mesh, tdim, left_locator)
+    submesh, sub_to_parent, _, _ = create_submesh(mesh, tdim, cells)
+
+    V = functionspace(mesh, ("Lagrange", 2))
+    u = Function(V)
+    u.interpolate(ref_func)
+
+    V_sub = functionspace(submesh, ("N2curl", 1))
+    u_sub = Function(V_sub)
+
+    parent_expr = Expression(ufl.grad(u), V_sub.element.interpolation_points())
+
+    # Map from parent to sub mesh
+
+    u_sub.interpolate(parent_expr, expr_mesh=mesh, cell_map=sub_to_parent)
+
+    u_sub_exact = Function(V_sub)
+    u_sub_exact.interpolate(grad_ref_func)
+
+    np.testing.assert_allclose(u_sub_exact.x.array, u_sub.x.array, atol=1e-14)
+
+    # Map from sub to parent
+    W = functionspace(mesh, ("DQ", 2))
+    w = Function(W)
+
+    cell_imap = mesh.topology.index_map(tdim)
+    num_cells = cell_imap.size_local + cell_imap.num_ghosts
+    parent_to_sub = np.full(num_cells, -1, dtype=np.int32)
+    parent_to_sub[sub_to_parent] = np.arange(len(sub_to_parent))
+
+    sub_expr = Expression(ufl.dot(u_sub, u_sub), W.element.interpolation_points())
+
+    # Mapping back needs to be restricted to the subset of cells in the submesh
+    w.interpolate(sub_expr, cells=sub_to_parent, expr_mesh=submesh, cell_map=parent_to_sub)
+
+    w_exact = Function(W)
+    w_exact.interpolate(grad_squared, cells=cells)
+
+    np.testing.assert_allclose(w.x.array, w_exact.x.array, atol=1e-14)

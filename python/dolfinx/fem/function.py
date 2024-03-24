@@ -466,9 +466,7 @@ class Function(ufl.Coefficient):
             self._cpp_object.interpolate_ptr(u_ptr, cells)  # type: ignore
 
         @_interpolate.register(Expression)
-        def _(expr: Expression,
-              cells: typing.Optional[np.ndarray] = None
-              ):
+        def _(expr: Expression, cells: typing.Optional[np.ndarray] = None):
             """Interpolate Expression from a given mesh onto the set of cells
             Args:
                 expr: Expression to interpolate
@@ -486,8 +484,7 @@ class Function(ufl.Coefficient):
                 expr_cell_map = cell_map
                 assert expr_mesh is not None
                 mapping_mesh = expr_mesh._cpp_object
-            self._cpp_object.interpolate(expr._cpp_object, cells,
-                                         mapping_mesh, expr_cell_map)  # type: ignore
+            self._cpp_object.interpolate(expr._cpp_object, cells, mapping_mesh, expr_cell_map)  # type: ignore
 
         try:
             # u is a Function or Expression (or pointer to one)

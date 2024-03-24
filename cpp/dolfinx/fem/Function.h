@@ -360,8 +360,7 @@ public:
       std::runtime_error("Meshes are different and no cell map is provided");
     }
 
-    e.eval(*_function_space->mesh(), cells_expr, fdata,
-           {num_cells, num_points * value_size});
+    e.eval(expr_mesh, cells_expr, fdata, {num_cells, num_points * value_size});
 
     // Reshape evaluated data to fit interpolate
     // Expression returns matrix of shape (num_cells, num_points *
