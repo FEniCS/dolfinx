@@ -1124,7 +1124,7 @@ def test_submesh_expression_interpolation():
     parent_to_sub = np.full(num_cells, -1, dtype=np.int32)
     parent_to_sub[sub_to_parent] = np.arange(len(sub_to_parent))
 
-    sub_expr = Expression(ufl.dot(u_sub, u_sub), W.element.interpolation_points())
+    sub_expr = Expression(ufl.dot(u_sub_exact, u_sub_exact), W.element.interpolation_points())
 
     # Mapping back needs to be restricted to the subset of cells in the submesh
     w.interpolate(sub_expr, cells=sub_to_parent, expr_mesh=submesh, cell_map=parent_to_sub)
