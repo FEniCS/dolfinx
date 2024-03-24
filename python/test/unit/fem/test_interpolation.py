@@ -1066,7 +1066,7 @@ def test_submesh_interpolation():
     parent_to_sub[sub_to_parent] = np.arange(len(sub_to_parent))
 
     # Mapping back needs to be restricted to the subset of cells in the submesh
-    w.interpolate(u_sub, cells=sub_to_parent, cell_map=parent_to_sub)
+    w.interpolate(u_sub_exact, cells=sub_to_parent, cell_map=parent_to_sub)
 
     w_exact = Function(W)
     w_exact.interpolate(ref_func, cells=cells)
