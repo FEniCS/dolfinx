@@ -1053,8 +1053,8 @@ def test_submesh_interpolation():
 
     u_sub_exact = Function(V_sub)
     u_sub_exact.interpolate(ref_func)
-
-    np.testing.assert_allclose(u_sub_exact.x.array, u_sub.x.array, atol=1e-14)
+    atol = 5 * np.finfo(default_scalar_type).resolution
+    np.testing.assert_allclose(u_sub_exact.x.array, u_sub.x.array, atol=atol)
 
     # Map from sub to parent
     W = functionspace(mesh, ("DG", 4))
@@ -1071,7 +1071,7 @@ def test_submesh_interpolation():
     w_exact = Function(W)
     w_exact.interpolate(ref_func, cells=cells)
 
-    np.testing.assert_allclose(w.x.array, w_exact.x.array, atol=1e-14)
+    np.testing.assert_allclose(w.x.array, w_exact.x.array, atol=atol)
 
 
 def test_submesh_expression_interpolation():
@@ -1112,8 +1112,8 @@ def test_submesh_expression_interpolation():
 
     u_sub_exact = Function(V_sub)
     u_sub_exact.interpolate(grad_ref_func)
-
-    np.testing.assert_allclose(u_sub_exact.x.array, u_sub.x.array, atol=1e-14)
+    atol = 5 * np.finfo(default_scalar_type).resolution
+    np.testing.assert_allclose(u_sub_exact.x.array, u_sub.x.array, atol=atol)
 
     # Map from sub to parent
     W = functionspace(mesh, ("DQ", 2))
@@ -1131,5 +1131,4 @@ def test_submesh_expression_interpolation():
 
     w_exact = Function(W)
     w_exact.interpolate(grad_squared, cells=cells)
-
-    np.testing.assert_allclose(w.x.array, w_exact.x.array, atol=1e-14)
+    np.testing.assert_allclose(w.x.array, w_exact.x.array, atol=atol)
