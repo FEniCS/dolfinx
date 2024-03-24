@@ -419,7 +419,8 @@ void declare_objects(nb::module_& m, const std::string& type)
                              std::span(cell_map.data(), cell_map.size()),
                              _interpolation_data);
           },
-          nb::arg("u"), nb::arg("cells"), nb::arg("nmm_interpolation_data"),
+          nb::arg("u"), nb::arg("cells"), nb::arg("cell_map"),
+          nb::arg("nmm_interpolation_data"),
           "Interpolate a finite element function")
       .def(
           "interpolate_ptr",
@@ -464,8 +465,8 @@ void declare_objects(nb::module_& m, const std::string& type)
                              expr_mesh,
                              std::span(cell_map.data(), cell_map.size()));
           },
-          nb::arg("expr"), nb::arg("cells"),
-          "Interpolate an Expression on a set of cells")
+          nb::arg("expr"), nb::arg("cells"), nb::arg("expr_mesh"),
+          nb::arg("cell_map"), "Interpolate an Expression on a set of cells")
       .def_prop_ro(
           "x", nb::overload_cast<>(&dolfinx::fem::Function<T, U>::x),
           "Return the vector associated with the finite element Function")

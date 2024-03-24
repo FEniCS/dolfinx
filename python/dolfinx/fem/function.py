@@ -421,6 +421,7 @@ class Function(ufl.Coefficient):
         u: typing.Union[typing.Callable, Expression, Function],
         cells: typing.Optional[np.ndarray] = None,
         cell_map: typing.Optional[np.ndarray] = None,
+        expr_mesh: typing.Optional[Mesh] = None,
         nmm_interpolation_data: typing.Optional[PointOwnershipData] = None,
     ) -> None:
         """Interpolate an expression
@@ -440,8 +441,18 @@ class Function(ufl.Coefficient):
                 dest_points=np.empty(0, dtype=x_dtype),
                 dest_cells=np.empty(0, dtype=np.int32),
             )
+
+        if cells is None:
+            mesh = self.function_space.mesh
+            map = mesh.topology.index_map(mesh.topology.dim)
+            cells = np.arange(map.size_local + map.num_ghosts, dtype=np.int32)
+
         if cell_map is None:
-            cell_map = np.empty(0, dtype=np.int32)
+            # If cell map is not provided create identity map
+            cell_map = np.arange(len(cells), dtype=np.int32)
+            assert expr_mesh is None
+            expr_mesh = self.function_space.mesh
+
 
         @singledispatch
         def _interpolate(u, cells: typing.Optional[np.ndarray] = None):
@@ -451,7 +462,7 @@ class Function(ufl.Coefficient):
         @_interpolate.register(Function)
         def _(u: Function, cells: typing.Optional[np.ndarray] = None):
             """Interpolate a fem.Function"""
-            self._cpp_object.interpolate(u._cpp_object, cells, nmm_interpolation_data)  # type: ignore
+            self._cpp_object.interpolate(u._cpp_object, cells, cell_map, nmm_interpolation_data)  # type: ignore
 
         @_interpolate.register(int)
         def _(u_ptr: int, cells: typing.Optional[np.ndarray] = None):
@@ -459,14 +470,16 @@ class Function(ufl.Coefficient):
             self._cpp_object.interpolate_ptr(u_ptr, cells)  # type: ignore
 
         @_interpolate.register(Expression)
-        def _(expr: Expression, cells: typing.Optional[np.ndarray] = None):
-            """Interpolate Expression for the set of cells"""
-            self._cpp_object.interpolate(expr._cpp_object, cells)  # type: ignore
-
-        if cells is None:
-            mesh = self.function_space.mesh
-            map = mesh.topology.index_map(mesh.topology.dim)
-            cells = np.arange(map.size_local + map.num_ghosts, dtype=np.int32)
+        def _(expr: Expression,
+              cells: typing.Optional[np.ndarray] = None
+              ):
+            """Interpolate Expression from a given mesh onto the set of cells
+            Args:
+                expr: Expression to interpolate
+                cells: The cells to interpolate over. If `None` then all
+                    cells are interpolated over.
+            """
+            self._cpp_object.interpolate(expr._cpp_object, cells, expr_mesh, cell_map)  # type: ignore
 
         try:
             # u is a Function or Expression (or pointer to one)

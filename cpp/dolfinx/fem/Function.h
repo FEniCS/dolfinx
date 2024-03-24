@@ -291,7 +291,7 @@ public:
   /// @param[in] cell_map Map from `cells` to cells in expression
   void interpolate(const Expression<value_type, geometry_type>& e,
                    std::span<const std::int32_t> cells,
-                   const dolfinx::mesh::Mesh& expr_mesh,
+                   const dolfinx::mesh::Mesh<geometry_type>& expr_mesh,
                    std::span<const std::int32_t> cell_map)
   {
     // Check that spaces are compatible
@@ -344,20 +344,20 @@ public:
     std::vector<std::int32_t> cells_expr;
     cells_expr.reserve(num_cells);
     // Get mesh and check if mesh is shared
-    if (auto mesh_v = _function_space()->mesh(); expr_mesh == mesh_v)
+    if (auto mesh_v = _function_space->mesh();
+        expr_mesh.topology() == mesh_v->topology())
     {
-      cells_epxr.insert(cells_epxr.end(), cells_u.begin(), cells_u.end());
+      cells_expr.insert(cells_expr.end(), cells.begin(), cells.end());
     }
     // If meshes are different and input mapping is given
     else if (cell_map.size() > 0)
     {
-      std::transform(cells_u.begin(), cells_u.end(),
-                     std::back_inserter(cells_epxr),
+      std::transform(cells.begin(), cells.end(), std::back_inserter(cells_expr),
                      [&cell_map](std::int32_t c) { return cell_map[c]; });
     }
     else
     {
-      std::runtime_error("Meshes are different and no cell map is provided")
+      std::runtime_error("Meshes are different and no cell map is provided");
     }
 
     e.eval(*_function_space->mesh(), cells_expr, fdata,
@@ -388,18 +388,19 @@ public:
   /// @param[in] expr_mesh Mesh expression is defined on
   /// @param[in] cell_map Map from `cells` to cells in expression
   void interpolate(const Expression<value_type, geometry_type>& e,
-                   const dolfinx::mesh::Mesh& expr_mesh,
+                   const dolfinx::mesh::Mesh<geometry_type>& expr_mesh,
                    std::span<const std::int32_t> cell_map)
   {
     assert(_function_space);
     assert(_function_space->mesh());
     const int tdim = _function_space->mesh()->topology()->dim();
-    auto cell_map = _function_space->mesh()->topology()->index_map(tdim);
-    assert(cell_map);
-    std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
+    auto cell_imap = _function_space->mesh()->topology()->index_map(tdim);
+    assert(cell_imap);
+    std::int32_t num_cells = cell_imap->size_local() + cell_imap->num_ghosts();
     std::vector<std::int32_t> cells(num_cells, 0);
     std::iota(cells.begin(), cells.end(), 0);
-    interpolate(e, cells, expr_mesh, cell_map);
+    interpolate(e, cells, expr_mesh,
+                std::span(cell_map.data(), cell_map.size()));
   }
 
   /// @brief Evaluate the Function at points.
