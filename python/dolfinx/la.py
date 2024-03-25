@@ -211,8 +211,6 @@ class Vector:
         _cpp.la.Vector_int8,
         _cpp.la.Vector_int32,
         _cpp.la.Vector_int64,
-        _cpp.la.Vector_uint32,
-        _cpp.la.Vector_uint64,
     ]
 
     def __init__(
@@ -225,8 +223,6 @@ class Vector:
             _cpp.la.Vector_int8,
             _cpp.la.Vector_int32,
             _cpp.la.Vector_int64,
-            _cpp.la.Vector_uint32,
-            _cpp.la.Vector_uint64,
         ],
     ):
         """A distributed vector object.

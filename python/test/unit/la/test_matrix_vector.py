@@ -56,9 +56,7 @@ def test_create_matrix_csr():
         np.complex128,
         np.int8,
         np.int32,
-        np.uint32,
         np.int64,
-        np.uint64,
     ],
 )
 def test_create_vector(dtype):
@@ -90,9 +88,7 @@ def xfail_norm_of_integral_type_vector(dtype):
         np.complex128,
         xfail_norm_of_integral_type_vector(np.int8),
         xfail_norm_of_integral_type_vector(np.int32),
-        xfail_norm_of_integral_type_vector(np.uint32),
         xfail_norm_of_integral_type_vector(np.int64),
-        xfail_norm_of_integral_type_vector(np.uint64),
     ],
 )
 @pytest.mark.parametrize(

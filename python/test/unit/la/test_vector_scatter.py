@@ -87,9 +87,7 @@ def test_scatter_reverse(e):
         np.complex128,
         np.int8,
         np.int32,
-        np.uint32,
         np.int64,
-        np.uint64,
     ],
 )
 def test_vector_from_index_map_scatter_forward(dtype):

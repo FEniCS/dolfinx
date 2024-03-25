@@ -177,7 +177,7 @@ void declare_functions(nb::module_& m)
         "norm",
         [](const dolfinx::la::Vector<T>& x, dolfinx::la::Norm type)
         { return dolfinx::la::norm(x, type); },
-        "vector"_a, "type"_a = dolfinx::la::Norm::l2);
+        "vector"_a, "type"_a);
   m.def(
       "inner_product",
       [](const dolfinx::la::Vector<T>& x, const dolfinx::la::Vector<T>& y)
@@ -287,9 +287,7 @@ void la(nb::module_& m)
   // Declare objects that are templated over type
   declare_objects<std::int8_t>(m, "int8");
   declare_objects<std::int32_t>(m, "int32");
-  declare_objects<std::uint32_t>(m, "uint32");
   declare_objects<std::int64_t>(m, "int64");
-  declare_objects<std::uint64_t>(m, "uint64");
   declare_objects<float>(m, "float32");
   declare_objects<double>(m, "float64");
   declare_objects<std::complex<float>>(m, "complex64");
