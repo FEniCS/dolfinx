@@ -291,10 +291,6 @@ def vector(map, bs=1, dtype: npt.DTypeLike = np.float64) -> Vector:
         vtype = _cpp.la.Vector_int32
     elif np.issubdtype(dtype, np.int64):
         vtype = _cpp.la.Vector_int64
-    elif np.issubdtype(dtype, np.uint32):
-        vtype = _cpp.la.Vector_uint32
-    elif np.issubdtype(dtype, np.uint64):
-        vtype = _cpp.la.Vector_uint64
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
 
