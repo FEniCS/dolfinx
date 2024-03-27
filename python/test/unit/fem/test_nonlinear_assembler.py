@@ -83,7 +83,7 @@ def test_matrix_assembly_block_nl():
 
     facetdim = mesh.topology.dim - 1
     bndry_facets = locate_entities_boundary(
-        mesh, facetdim, lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 1.0))
+        mesh, facetdim, lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0)
     )
 
     u_bc = Function(V1)
@@ -330,7 +330,7 @@ def test_assembly_solve_block_nl():
 
     facetdim = mesh.topology.dim - 1
     bndry_facets = locate_entities_boundary(
-        mesh, facetdim, lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 1.0))
+        mesh, facetdim, lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0)
     )
 
     u_bc0 = Function(V0)

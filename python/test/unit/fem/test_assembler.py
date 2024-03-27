@@ -208,7 +208,7 @@ def test_assembly_bcs(mode):
     L = form(inner(1.0, v) * dx)
 
     bdofsV = locate_dofs_geometrical(
-        V, lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 1.0))
+        V, lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0)
     )
     bc = dirichletbc(PETSc.ScalarType(1), bdofsV, V)
 
@@ -295,7 +295,7 @@ def test_matrix_assembly_block(mode):
     # Locate facets on boundary
     facetdim = mesh.topology.dim - 1
     bndry_facets = locate_entities_boundary(
-        mesh, facetdim, lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 1.0))
+        mesh, facetdim, lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0)
     )
     bdofsV1 = locate_dofs_topological(V1, facetdim, bndry_facets)
     u_bc = PETSc.ScalarType(50.0)
@@ -419,7 +419,7 @@ def test_assembly_solve_block(mode):
     # Locate facets on boundary
     facetdim = mesh.topology.dim - 1
     bndry_facets = locate_entities_boundary(
-        mesh, facetdim, lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 1.0))
+        mesh, facetdim, lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0)
     )
 
     bdofsV0 = locate_dofs_topological(V0, facetdim, bndry_facets)
