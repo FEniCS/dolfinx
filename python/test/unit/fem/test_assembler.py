@@ -207,9 +207,7 @@ def test_assembly_bcs(mode):
     a = form(inner(u, v) * dx + inner(u, v) * ds)
     L = form(inner(1.0, v) * dx)
 
-    bdofsV = locate_dofs_geometrical(
-        V, lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0)
-    )
+    bdofsV = locate_dofs_geometrical(V, lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0))
     bc = dirichletbc(PETSc.ScalarType(1), bdofsV, V)
 
     # Assemble and apply 'global' lifting of bcs
