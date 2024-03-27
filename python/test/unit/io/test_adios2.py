@@ -251,10 +251,9 @@ def test_save_vtkx_cell_point(tempdir):
     u.name = "A"
 
     filename = Path(tempdir, "v.bp")
-    with pytest.raises(RuntimeError):
-        f = VTXWriter(mesh.comm, filename, [u])
-        f.write(0)
-        f.close()
+    f = VTXWriter(mesh.comm, filename, [u])
+    f.write(0)
+    f.close()
 
 
 def test_empty_rank_mesh(tempdir):
