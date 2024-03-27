@@ -8,7 +8,7 @@ from mpi4py import MPI
 
 import numpy as np
 import pytest
-from numpy import isclose, logical_and
+from numpy import isclose
 
 import ufl
 from dolfinx.fem import assemble_matrix, form, functionspace
@@ -98,7 +98,7 @@ def test_sub_refine():
     mesh.topology.create_entities(1)
 
     def left_corner_edge(x, tol=1e-7):
-        return logical_and(isclose(x[0], 0), x[1] < 1 / 4 + tol)
+        return isclose(x[0], 0) & (x[1] < 1 / 4 + tol)
 
     edges = locate_entities_boundary(mesh, 1, left_corner_edge)
     if MPI.COMM_WORLD.size == 0:

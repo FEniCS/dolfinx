@@ -485,17 +485,17 @@ def test_unit_hex_mesh_assemble():
 
 
 def boundary_0(x):
-    lr = np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 1.0))
-    tb = np.logical_or(np.isclose(x[1], 0.0), np.isclose(x[1], 1.0))
-    return np.logical_or(lr, tb)
+    lr = np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0)
+    tb = np.isclose(x[1], 0.0) | np.isclose(x[1], 1.0)
+    return lr | tb
 
 
 def boundary_1(x):
-    return np.logical_or(np.isclose(x[0], 1.0), np.isclose(x[1], 1.0))
+    return np.isclose(x[0], 1.0) | np.isclose(x[1], 1.0)
 
 
 def boundary_2(x):
-    return np.logical_and(np.isclose(x[1], 1), x[0] >= 0.5)
+    return np.isclose(x[1], 1) & (x[0] >= 0.5)
 
 
 # TODO Test that submesh of full mesh is a copy of the mesh

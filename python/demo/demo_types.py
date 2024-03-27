@@ -105,7 +105,7 @@ def poisson(dtype):
         dtype=np.real(dtype(0)).dtype,
     )
     facets = mesh.locate_entities_boundary(
-        msh, dim=1, marker=lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 2.0))
+        msh, dim=1, marker=lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 2.0)
     )
 
     # Define a variational problem.
@@ -167,7 +167,7 @@ def elasticity(dtype) -> fem.Function:
         dtype=np.real(dtype(0)).dtype,
     )
     facets = mesh.locate_entities_boundary(
-        msh, dim=1, marker=lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 2.0))
+        msh, dim=1, marker=lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 2.0)
     )
 
     # Define the variational problem.

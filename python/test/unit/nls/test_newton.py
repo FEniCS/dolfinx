@@ -103,9 +103,7 @@ def test_linear_pde():
 
     bc = dirichletbc(
         PETSc.ScalarType(1.0),
-        locate_dofs_geometrical(
-            V, lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 1.0))
-        ),
+        locate_dofs_geometrical(V, lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0)),
         V,
     )
 
@@ -144,9 +142,7 @@ def test_nonlinear_pde():
 
     bc = dirichletbc(
         PETSc.ScalarType(1.0),
-        locate_dofs_geometrical(
-            V, lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 1.0))
-        ),
+        locate_dofs_geometrical(V, lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0)),
         V,
     )
 
@@ -184,9 +180,7 @@ def test_nonlinear_pde_snes():
     u_bc.x.array[:] = 1.0
     bc = dirichletbc(
         u_bc,
-        locate_dofs_geometrical(
-            V, lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 1.0))
-        ),
+        locate_dofs_geometrical(V, lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0)),
     )
 
     # Create nonlinear problem

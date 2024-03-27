@@ -111,7 +111,7 @@ V = fem.functionspace(msh, ("Lagrange", 1))
 facets = mesh.locate_entities_boundary(
     msh,
     dim=(msh.topology.dim - 1),
-    marker=lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 2.0)),
+    marker=lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 2.0),
 )
 
 # We now find the degrees-of-freedom that are associated with the
