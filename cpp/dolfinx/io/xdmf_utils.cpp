@@ -33,7 +33,7 @@ namespace
 {
 template <typename T, std::size_t ndim>
 using mdspan_t = dolfinx::mdspan<
-    T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, ndim>>;
+    T, dolfinx::dextents<std::size_t, ndim>>;
 } // namespace
 
 //----------------------------------------------------------------------------
@@ -216,12 +216,12 @@ xdmf_utils::distribute_entity_data(
     std::int64_t num_nodes_g, const fem::ElementDofLayout& cmap_dof_layout,
     dolfinx::mdspan<
         const std::int32_t,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+        dolfinx::dextents<std::size_t, 2>>
         xdofmap,
     int entity_dim,
     dolfinx::mdspan<
         const std::int64_t,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+        dolfinx::dextents<std::size_t, 2>>
         entities,
     std::span<const std::int32_t> data)
 {

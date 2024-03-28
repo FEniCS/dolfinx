@@ -38,7 +38,7 @@ namespace
 {
 template <typename T, std::size_t ndim>
 using mdspan_t = dolfinx::mdspan<
-    const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, ndim>>;
+    const T, dolfinx::dextents<std::size_t, ndim>>;
 
 template <typename T>
 void xdmf_real_fn(auto&& m)

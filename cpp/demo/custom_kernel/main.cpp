@@ -26,7 +26,7 @@ using namespace dolfinx;
 
 template <typename T, std::size_t ndim>
 using mdspand_t = dolfinx::mdspan<
-    T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, ndim>>;
+    T, dolfinx::dextents<std::size_t, ndim>>;
 template <typename T, std::size_t n0, std::size_t n1>
 using mdspan2_t
     = dolfinx::mdspan<T,

@@ -30,9 +30,7 @@ namespace dolfinx::fem::impl
 {
 
 /// @cond
-using mdspan2_t = dolfinx::mdspan<
-    const std::int32_t,
-    MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+using mdspan2_t = dolfinx::mdspan<const std::int32_t, dolfinx::dextents<std::size_t, 2>>;
 /// @endcond
 
 /// @brief Apply boundary condition lifting for cell integrals.

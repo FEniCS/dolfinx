@@ -230,9 +230,9 @@ FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
     }
 
     using cmdspan2_t = dolfinx::mdspan<
-        const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+        const T, dolfinx::dextents<std::size_t, 2>>;
     using cmdspan4_t = dolfinx::mdspan<
-        const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
+        const T, dolfinx::dextents<std::size_t, 4>>;
 
     std::array<std::vector<cmdspan2_t>, 4> _x;
     for (std::size_t i = 0; i < x.size(); ++i)

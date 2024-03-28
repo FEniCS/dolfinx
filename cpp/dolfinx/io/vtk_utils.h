@@ -102,9 +102,9 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
       = element->template get_pre_dof_transformation_function<T>();
 
   using mdspan2_t = dolfinx::mdspan<
-      T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+      T, dolfinx::dextents<std::size_t, 2>>;
   using cmdspan4_t = dolfinx::mdspan<
-      T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
+      T, dolfinx::dextents<std::size_t, 4>>;
 
   // Tabulate basis functions at node reference coordinates
   const std::array<std::size_t, 4> phi_shape
@@ -248,7 +248,7 @@ std::pair<std::vector<std::int64_t>, std::array<std::size_t, 2>>
 extract_vtk_connectivity(
     dolfinx::mdspan<
         const std::int32_t,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+        dolfinx::dextents<std::size_t, 2>>
         dofmap_x,
     mesh::CellType cell_type);
 } // namespace io

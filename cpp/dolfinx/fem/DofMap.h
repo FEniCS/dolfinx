@@ -63,7 +63,7 @@ namespace dolfinx::fem
 graph::AdjacencyList<std::int32_t>
 transpose_dofmap(dolfinx::mdspan<
                      const std::int32_t,
-                     MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+                     dolfinx::dextents<std::size_t, 2>>
                      dofmap,
                  std::int32_t num_cells);
 
@@ -158,7 +158,7 @@ public:
   /// @return The adjacency list with dof indices for each cell
   dolfinx::mdspan<
       const std::int32_t,
-      MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+      dolfinx::dextents<std::size_t, 2>>
   map() const;
 
   /// Layout of dofs on an element

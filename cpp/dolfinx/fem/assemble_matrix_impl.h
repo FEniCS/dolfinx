@@ -25,9 +25,7 @@
 namespace dolfinx::fem::impl
 {
 
-using mdspan2_t = dolfinx::mdspan<
-    const std::int32_t,
-    MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+using mdspan2_t = dolfinx::mdspan<const std::int32_t, dolfinx::dextents<std::size_t, 2>>;
 
 /// @brief Execute kernel over cells and accumulate result in matrix.
 /// @tparam T Matrix/form scalar type.

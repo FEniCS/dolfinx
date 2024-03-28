@@ -118,7 +118,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
 graph::AdjacencyList<std::int32_t> fem::transpose_dofmap(
     dolfinx::mdspan<
         const std::int32_t,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+        dolfinx::dextents<std::size_t, 2>>
         dofmap,
     std::int32_t num_cells)
 {
@@ -270,12 +270,12 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
 //-----------------------------------------------------------------------------
 dolfinx::mdspan<
     const std::int32_t,
-    MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+    dolfinx::dextents<std::size_t, 2>>
 DofMap::map() const
 {
   return dolfinx::mdspan<
       const std::int32_t,
-      MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>(
+      dolfinx::dextents<std::size_t, 2>>(
       _dofmap.data(), _dofmap.size() / _shape1, _shape1);
 }
 //-----------------------------------------------------------------------------

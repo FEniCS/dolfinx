@@ -178,7 +178,7 @@ int main(int argc, char* argv[])
 
           // New coordinates
           std::vector<U> fdata(3 * x.extent(1), 0.0);
-          MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+          dolfinx::mdspan<
               U, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
                      std::size_t, 3,
                      MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>

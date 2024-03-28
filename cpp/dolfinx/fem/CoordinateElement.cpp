@@ -99,7 +99,7 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
   mdspan2_t<T> K(K_b.data(), tdim, gdim);
 
   using mdspan4_t = dolfinx::mdspan<
-      T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
+      T, dolfinx::dextents<std::size_t, 4>>;
 
   const std::array<std::size_t, 4> bsize = _element->tabulate_shape(1, 1);
   std::vector<T> basis_b(

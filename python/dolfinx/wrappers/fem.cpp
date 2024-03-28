@@ -801,13 +801,13 @@ void declare_cmap(nb::module_& m, std::string type)
              nb::ndarray<const T, nb::ndim<2>, nb::c_contig> cell_x)
           {
             using mdspan2_t = dolfinx::mdspan<
-                T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+                T, dolfinx::dextents<std::size_t, 2>>;
             using cmdspan2_t = dolfinx::mdspan<
                 const T,
-                MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+                dolfinx::dextents<std::size_t, 2>>;
             using cmdspan4_t = dolfinx::mdspan<
                 const T,
-                MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
+                dolfinx::dextents<std::size_t, 4>>;
 
             std::array<std::size_t, 2> Xshape{X.shape(0), X.shape(1)};
             std::array<std::size_t, 4> phi_shape
@@ -842,13 +842,13 @@ void declare_cmap(nb::module_& m, std::string type)
             std::size_t tdim = dolfinx::mesh::cell_dim(self.cell_shape());
 
             using mdspan2_t = dolfinx::mdspan<
-                T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+                T, dolfinx::dextents<std::size_t, 2>>;
             using cmdspan2_t = dolfinx::mdspan<
                 const T,
-                MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+                dolfinx::dextents<std::size_t, 2>>;
             using cmdspan4_t = dolfinx::mdspan<
                 const T,
-                MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
+                dolfinx::dextents<std::size_t, 4>>;
 
             std::vector<T> Xb(num_points * tdim);
             mdspan2_t X(Xb.data(), num_points, tdim);
@@ -1130,7 +1130,7 @@ void fem(nb::module_& m)
       {
         dolfinx::mdspan<
             const std::int32_t,
-            MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+            dolfinx::dextents<std::size_t, 2>>
             _dofmap(dofmap.data(), dofmap.shape(0), dofmap.shape(1));
         return dolfinx::fem::transpose_dofmap(_dofmap, num_cells);
       },

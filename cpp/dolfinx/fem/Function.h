@@ -326,7 +326,7 @@ public:
     std::vector<value_type> fdata(num_cells * num_points * value_size);
     dolfinx::mdspan<
         const value_type,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 3>>
+        dolfinx::dextents<std::size_t, 3>>
         f(fdata.data(), num_cells, num_points, value_size);
 
     // Evaluate Expression at points
@@ -341,7 +341,7 @@ public:
     // points of each cell, i.e. (value_size, num_cells*num_points)
     std::vector<value_type> fdata1(num_cells * num_points * value_size);
     dolfinx::mdspan<
-        value_type, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 3>>
+        value_type, dolfinx::dextents<std::size_t, 3>>
         f1(fdata1.data(), value_size, num_cells, num_points);
     for (std::size_t i = 0; i < f.extent(0); ++i)
       for (std::size_t j = 0; j < f.extent(1); ++j)

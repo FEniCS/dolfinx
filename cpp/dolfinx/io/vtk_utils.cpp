@@ -23,7 +23,7 @@ std::pair<std::vector<std::int64_t>, std::array<std::size_t, 2>>
 io::extract_vtk_connectivity(
     dolfinx::mdspan<
         const std::int32_t,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+        dolfinx::dextents<std::size_t, 2>>
         dofmap_x,
     mesh::CellType cell_type)
 {

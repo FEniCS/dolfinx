@@ -119,7 +119,7 @@ public:
   /// @return A 2D array with shape [num_cells, dofs_per_cell]
   dolfinx::mdspan<
       const std::int32_t,
-      MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+      dolfinx::dextents<std::size_t, 2>>
   dofmap() const
   {
     if (_dofmaps.size() != 1)
@@ -128,7 +128,7 @@ public:
     int ndofs = _cmaps.front().dim();
     return dolfinx::mdspan<
         const std::int32_t,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>(
+        dolfinx::dextents<std::size_t, 2>>(
         _dofmaps.front().data(), _dofmaps.front().size() / ndofs, ndofs);
   }
 
@@ -138,7 +138,7 @@ public:
   /// @return A 2D array with shape [num_cells, dofs_per_cell]
   dolfinx::mdspan<
       const std::int32_t,
-      MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+      dolfinx::dextents<std::size_t, 2>>
   dofmap(std::int32_t i) const
   {
     if (i < 0 or i >= (int)_dofmaps.size())
@@ -150,7 +150,7 @@ public:
 
     return dolfinx::mdspan<
         const std::int32_t,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>(
+        dolfinx::dextents<std::size_t, 2>>(
         _dofmaps[i].data(), _dofmaps[i].size() / ndofs, ndofs);
   }
 
