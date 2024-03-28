@@ -178,8 +178,8 @@ int main(int argc, char* argv[])
 
           // New coordinates
           std::vector<U> fdata(3 * x.extent(1), 0.0);
-          MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-              U, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+          dolfinx::mdspan<
+              U, dolfinx::extents<
                      std::size_t, 3,
                      MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>
               f(fdata.data(), 3, x.extent(1));

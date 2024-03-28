@@ -234,12 +234,12 @@ public:
     const std::size_t shape_c1 = transpose ? num_dofs : 3;
     std::vector<geometry_type> coords(shape_c0 * shape_c1, 0);
 
-    using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+    using mdspan2_t = dolfinx::mdspan<
         geometry_type,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-    using cmdspan4_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        dolfinx::dextents<std::size_t, 2>>;
+    using cmdspan4_t = dolfinx::mdspan<
         const geometry_type,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
+        dolfinx::dextents<std::size_t, 4>>;
 
     // Loop over cells and tabulate dofs
     std::vector<geometry_type> x_b(scalar_dofs * gdim);

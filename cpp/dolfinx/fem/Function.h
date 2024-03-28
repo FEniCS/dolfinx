@@ -198,9 +198,9 @@ public:
   void interpolate(
       const std::function<
           std::pair<std::vector<value_type>, std::vector<std::size_t>>(
-              MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+              dolfinx::mdspan<
                   const geometry_type,
-                  MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+                  dolfinx::extents<
                       std::size_t, 3,
                       MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>)>& f,
       std::span<const std::int32_t> cells)
@@ -212,9 +212,9 @@ public:
         = fem::interpolation_coords<geometry_type>(
             *_function_space->element(), _function_space->mesh()->geometry(),
             cells);
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+    dolfinx::mdspan<
         const geometry_type,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+        dolfinx::extents<
             std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>
         _x(x.data(), 3, x.size() / 3);
 
@@ -260,9 +260,9 @@ public:
   void
   interpolate(const std::function<
               std::pair<std::vector<value_type>, std::vector<std::size_t>>(
-                  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+                  dolfinx::mdspan<
                       const geometry_type,
-                      MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+                      dolfinx::extents<
                           std::size_t, 3,
                           MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>)>& f)
   {
@@ -324,9 +324,9 @@ public:
     std::size_t num_cells = cells.size();
     std::size_t num_points = e.X().second[0];
     std::vector<value_type> fdata(num_cells * num_points * value_size);
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+    dolfinx::mdspan<
         const value_type,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 3>>
+        dolfinx::dextents<std::size_t, 3>>
         f(fdata.data(), num_cells, num_points, value_size);
 
     // Evaluate Expression at points
@@ -340,8 +340,8 @@ public:
     // point. The interpolation uses xxyyzz input, ordered for all
     // points of each cell, i.e. (value_size, num_cells*num_points)
     std::vector<value_type> fdata1(num_cells * num_points * value_size);
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        value_type, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 3>>
+    dolfinx::mdspan<
+        value_type, dolfinx::dextents<std::size_t, 3>>
         f1(fdata1.data(), value_size, num_cells, num_points);
     for (std::size_t i = 0; i < f.extent(0); ++i)
       for (std::size_t j = 0; j < f.extent(1); ++j)
@@ -530,9 +530,9 @@ public:
           MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
 
       std::array<geometry_type, 3> Xpb = {0, 0, 0};
-      MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      dolfinx::mdspan<
           geometry_type,
-          MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+          dolfinx::extents<
               std::size_t, 1, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>
           Xp(Xpb.data(), 1, tdim);
 

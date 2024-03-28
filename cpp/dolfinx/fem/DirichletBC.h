@@ -14,6 +14,7 @@
 #include <array>
 #include <concepts>
 #include <dolfinx/common/types.h>
+#include <dolfinx/common/mdspan.h>
 #include <functional>
 #include <memory>
 #include <span>
@@ -115,9 +116,9 @@ std::vector<std::int32_t> locate_dofs_geometrical(const FunctionSpace<T>& V,
   // Compute dof coordinates
   const std::vector<T> dof_coordinates = V.tabulate_dof_coordinates(true);
 
-  using cmdspan3x_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+  using cmdspan3x_t = dolfinx::mdspan<
       const T,
-      MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+      dolfinx::extents<
           std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>;
 
   // Compute marker for each dof coordinate
@@ -177,9 +178,9 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
   // Compute dof coordinates
   const std::vector<T> dof_coordinates = V1.tabulate_dof_coordinates(true);
 
-  using cmdspan3x_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+  using cmdspan3x_t = dolfinx::mdspan<
       const T,
-      MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+      dolfinx::extents<
           std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>;
 
   // Evaluate marker for each dof coordinate

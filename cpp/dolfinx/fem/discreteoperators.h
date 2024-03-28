@@ -63,12 +63,12 @@ void discrete_gradient(mesh::Topology& topology,
   auto& e1 = V1.first.get();
   const DofMap& dofmap1 = V1.second.get();
 
-  using cmdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      const U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-  using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-  using cmdspan4_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      const U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
+  using cmdspan2_t = dolfinx::mdspan<
+      const U, dolfinx::dextents<std::size_t, 2>>;
+  using mdspan2_t = dolfinx::mdspan<
+      U, dolfinx::dextents<std::size_t, 2>>;
+  using cmdspan4_t = dolfinx::mdspan<
+      const U, dolfinx::dextents<std::size_t, 4>>;
 
   // Check elements
   if (e0.map_type() != basix::maps::type::identity)
@@ -115,8 +115,8 @@ void discrete_gradient(mesh::Topology& topology,
   // Build the element interpolation matrix
   std::vector<T> Ab(e1.space_dimension() * ndofs0);
   {
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+    dolfinx::mdspan<
+        T, dolfinx::dextents<std::size_t, 2>>
         A(Ab.data(), e1.space_dimension(), ndofs0);
     const auto [Pi, shape] = e1.interpolation_operator();
     cmdspan2_t _Pi(Pi.data(), shape);
@@ -206,16 +206,16 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   const std::size_t num_dofs_g = cmap.dim();
   std::span<const U> x_g = mesh->geometry().x();
 
-  using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-  using cmdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      const U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-  using cmdspan3_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      const U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 3>>;
-  using cmdspan4_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      const U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
-  using mdspan3_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 3>>;
+  using mdspan2_t = dolfinx::mdspan<
+      U, dolfinx::dextents<std::size_t, 2>>;
+  using cmdspan2_t = dolfinx::mdspan<
+      const U, dolfinx::dextents<std::size_t, 2>>;
+  using cmdspan3_t = dolfinx::mdspan<
+      const U, dolfinx::dextents<std::size_t, 3>>;
+  using cmdspan4_t = dolfinx::mdspan<
+      const U, dolfinx::dextents<std::size_t, 4>>;
+  using mdspan3_t = dolfinx::mdspan<
+      U, dolfinx::dextents<std::size_t, 3>>;
 
   // Evaluate coordinate map basis at reference interpolation points
   const auto [X, Xshape] = e1->interpolation_points();
@@ -258,14 +258,14 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
 
   bool interpolation_ident = e1->interpolation_ident();
 
-  using u_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-  using U_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      const U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-  using J_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      const U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-  using K_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      const U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+  using u_t = dolfinx::mdspan<
+      U, dolfinx::dextents<std::size_t, 2>>;
+  using U_t = dolfinx::mdspan<
+      const U, dolfinx::dextents<std::size_t, 2>>;
+  using J_t = dolfinx::mdspan<
+      const U, dolfinx::dextents<std::size_t, 2>>;
+  using K_t = dolfinx::mdspan<
+      const U, dolfinx::dextents<std::size_t, 2>>;
   auto push_forward_fn0
       = e0->basix_element().template map_fn<u_t, U_t, J_t, K_t>();
 
@@ -384,8 +384,8 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
     // interpolation points of V1
     if (interpolation_ident)
     {
-      MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-          T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 3>>
+      dolfinx::mdspan<
+          T, dolfinx::dextents<std::size_t, 3>>
           A(Ab.data(), Xshape[0], V1.value_size(), space_dim0);
       for (std::size_t i = 0; i < mapped_values.extent(0); ++i)
         for (std::size_t j = 0; j < mapped_values.extent(1); ++j)
