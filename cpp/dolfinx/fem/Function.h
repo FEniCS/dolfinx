@@ -200,7 +200,7 @@ public:
           std::pair<std::vector<value_type>, std::vector<std::size_t>>(
               dolfinx::mdspan<
                   const geometry_type,
-                  MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+                  dolfinx::extents<
                       std::size_t, 3,
                       MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>)>& f,
       std::span<const std::int32_t> cells)
@@ -214,7 +214,7 @@ public:
             cells);
     dolfinx::mdspan<
         const geometry_type,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+        dolfinx::extents<
             std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>
         _x(x.data(), 3, x.size() / 3);
 
@@ -262,7 +262,7 @@ public:
               std::pair<std::vector<value_type>, std::vector<std::size_t>>(
                   dolfinx::mdspan<
                       const geometry_type,
-                      MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+                      dolfinx::extents<
                           std::size_t, 3,
                           MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>)>& f)
   {
@@ -532,7 +532,7 @@ public:
       std::array<geometry_type, 3> Xpb = {0, 0, 0};
       dolfinx::mdspan<
           geometry_type,
-          MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+          dolfinx::extents<
               std::size_t, 1, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>
           Xp(Xpb.data(), 1, tdim);
 

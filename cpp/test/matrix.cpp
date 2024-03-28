@@ -205,12 +205,12 @@ void test_matrix()
   const std::vector Adense0 = A.to_dense();
 
   dolfinx::mdspan<
-      const T, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<std::size_t, 8, 8>>
+      const T, dolfinx::extents<std::size_t, 8, 8>>
       Adense(Adense0.data(), 8, 8);
 
   std::vector<T> Aref_data(8 * 8, 0);
   dolfinx::mdspan<
-      T, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<std::size_t, 8, 8>>
+      T, dolfinx::extents<std::size_t, 8, 8>>
       Aref(Aref_data.data(), 8, 8);
   Aref(0, 0) = 1;
   Aref(4, 5) = 2.3;

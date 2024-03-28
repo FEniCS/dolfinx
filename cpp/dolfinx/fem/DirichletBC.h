@@ -118,7 +118,7 @@ std::vector<std::int32_t> locate_dofs_geometrical(const FunctionSpace<T>& V,
 
   using cmdspan3x_t = dolfinx::mdspan<
       const T,
-      MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+      dolfinx::extents<
           std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>;
 
   // Compute marker for each dof coordinate
@@ -180,7 +180,7 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
 
   using cmdspan3x_t = dolfinx::mdspan<
       const T,
-      MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+      dolfinx::extents<
           std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>;
 
   // Evaluate marker for each dof coordinate

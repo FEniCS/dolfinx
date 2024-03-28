@@ -461,7 +461,7 @@ template <typename Fn, typename T>
 concept MarkerFn = std::is_invocable_r<
     std::vector<std::int8_t>, Fn,
     dolfinx::mdspan<
-        const T, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+        const T, dolfinx::extents<
                      std::size_t, 3,
                      MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>>::value;
 
@@ -484,7 +484,7 @@ std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
 {
   using cmdspan3x_t = dolfinx::mdspan<
       const T,
-      MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+      dolfinx::extents<
           std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>;
 
   // Run marker function on vertex coordinates
@@ -572,7 +572,7 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
 
   using cmdspan3x_t = dolfinx::mdspan<
       const T,
-      MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+      dolfinx::extents<
           std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>;
 
   // Run marker function on the vertex coordinates

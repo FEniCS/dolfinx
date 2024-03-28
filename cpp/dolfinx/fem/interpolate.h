@@ -839,7 +839,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
     // Loop over cells
     std::vector<T> ref_data_b(num_interp_points);
     dolfinx::mdspan<
-        T, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+        T, dolfinx::extents<
                std::size_t, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent, 1>>
         ref_data(ref_data_b.data(), num_interp_points, 1);
     for (std::size_t c = 0; c < cells.size(); ++c)
