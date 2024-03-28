@@ -70,7 +70,7 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
   std::array<std::size_t, 4> phi_shape = cmap.tabulate_shape(0, Xshape[0]);
   std::vector<T> phi_b(
       std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
-  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+  dolfinx::mdspan<
       const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>
       phi_full(phi_b.data(), phi_shape);
   cmap.tabulate(0, X, Xshape, phi_b);
@@ -132,7 +132,7 @@ namespace impl
 {
 /// @brief Convenience typdef
 template <typename T, std::size_t D>
-using mdspan_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+using mdspan_t = dolfinx::mdspan<
     T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, D>>;
 
 /// @brief Scatter data into non-contiguous memory.
@@ -158,7 +158,7 @@ template <dolfinx::scalar T>
 void scatter_values(
     MPI_Comm comm, std::span<const std::int32_t> src_ranks,
     std::span<const std::int32_t> dest_ranks,
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+    dolfinx::mdspan<
         const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
         send_values,
     std::span<T> recv_values)
@@ -517,18 +517,18 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
   impl::mdspan_t<const U, 2> Pi_1(_Pi_1.data(), pi_shape);
 
   using u_t = impl::mdspan_t<U, 2>;
-  using U_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+  using U_t = dolfinx::mdspan<
       const U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-  using J_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+  using J_t = dolfinx::mdspan<
       const U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-  using K_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+  using K_t = dolfinx::mdspan<
       const U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
   auto push_forward_fn0
       = element0->basix_element().template map_fn<u_t, U_t, J_t, K_t>();
 
-  using v_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+  using v_t = dolfinx::mdspan<
       const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-  using V_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+  using V_t = dolfinx::mdspan<
       T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
   auto pull_back_fn1
       = element1->basix_element().template map_fn<V_t, v_t, K_t, J_t>();
@@ -698,18 +698,18 @@ void interpolate_nonmatching_meshes(
 
   // Send values back to owning process
   std::vector<T> values_b(dest_ranks.size() * value_size);
-  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+  dolfinx::mdspan<
       const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
       _send_values(send_values.data(), src_ranks.size(), value_size);
   impl::scatter_values(comm, src_ranks, dest_ranks, _send_values,
                        std::span(values_b));
 
   // Transpose received data
-  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+  dolfinx::mdspan<
       const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
       values(values_b.data(), dest_ranks.size(), value_size);
   std::vector<T> valuesT_b(value_size * dest_ranks.size());
-  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+  dolfinx::mdspan<
       T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
       valuesT(valuesT_b.data(), value_size, dest_ranks.size());
   for (std::size_t i = 0; i < values.extent(0); ++i)
@@ -728,13 +728,13 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
                  std::array<std::size_t, 2> fshape,
                  std::span<const std::int32_t> cells)
 {
-  using cmdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+  using cmdspan2_t = dolfinx::mdspan<
       const U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-  using cmdspan4_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+  using cmdspan4_t = dolfinx::mdspan<
       const U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
-  using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+  using mdspan2_t = dolfinx::mdspan<
       U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-  using mdspan3_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+  using mdspan3_t = dolfinx::mdspan<
       U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 3>>;
   auto element = u.function_space()->element();
   assert(element);
@@ -765,7 +765,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
   }
 
   const std::size_t f_shape1 = f.size() / u.function_space()->value_size();
-  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+  dolfinx::mdspan<
       const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
       _f(f.data(), fshape);
 
@@ -838,7 +838,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 
     // Loop over cells
     std::vector<T> ref_data_b(num_interp_points);
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+    dolfinx::mdspan<
         T, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
                std::size_t, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent, 1>>
         ref_data(ref_data_b.data(), num_interp_points, 1);
@@ -901,12 +901,12 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
     mdspan2_t coord_dofs(coord_dofs_b.data(), num_dofs_g, gdim);
 
     std::vector<T> ref_data_b(Xshape[0] * 1 * value_size);
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+    dolfinx::mdspan<
         T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 3>>
         ref_data(ref_data_b.data(), Xshape[0], 1, value_size);
 
     std::vector<T> _vals_b(Xshape[0] * 1 * value_size);
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+    dolfinx::mdspan<
         T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 3>>
         _vals(_vals_b.data(), Xshape[0], 1, value_size);
 
@@ -932,13 +932,13 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
     const auto [_Pi, pi_shape] = element->interpolation_operator();
     cmdspan2_t Pi(_Pi.data(), pi_shape);
 
-    using u_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+    using u_t = dolfinx::mdspan<
         const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-    using U_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+    using U_t = dolfinx::mdspan<
         T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-    using J_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+    using J_t = dolfinx::mdspan<
         const U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-    using K_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+    using K_t = dolfinx::mdspan<
         const U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
     auto pull_back_fn
         = element->basix_element().template map_fn<U_t, u_t, J_t, K_t>();

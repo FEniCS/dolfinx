@@ -8,6 +8,7 @@
 #include <basix/finite-element.h>
 #include <cmath>
 #include <dolfinx/common/math.h>
+#include <dolfinx/common/mdspan.h>
 #include <dolfinx/mesh/cell_types.h>
 
 using namespace dolfinx;
@@ -97,7 +98,7 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
   std::vector<T> K_b(tdim * gdim);
   mdspan2_t<T> K(K_b.data(), tdim, gdim);
 
-  using mdspan4_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+  using mdspan4_t = dolfinx::mdspan<
       T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
 
   const std::array<std::size_t, 4> bsize = _element->tabulate_shape(1, 1);

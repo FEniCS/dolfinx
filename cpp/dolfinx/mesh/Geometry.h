@@ -117,7 +117,7 @@ public:
 
   /// @brief  DofMap for the geometry
   /// @return A 2D array with shape [num_cells, dofs_per_cell]
-  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+  dolfinx::mdspan<
       const std::int32_t,
       MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
   dofmap() const
@@ -126,7 +126,7 @@ public:
       throw std::runtime_error("Multiple dofmaps");
 
     int ndofs = _cmaps.front().dim();
-    return MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+    return dolfinx::mdspan<
         const std::int32_t,
         MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>(
         _dofmaps.front().data(), _dofmaps.front().size() / ndofs, ndofs);
@@ -136,7 +136,7 @@ public:
   /// geometry.
   /// @param i Index
   /// @return A 2D array with shape [num_cells, dofs_per_cell]
-  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+  dolfinx::mdspan<
       const std::int32_t,
       MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
   dofmap(std::int32_t i) const
@@ -148,7 +148,7 @@ public:
     }
     int ndofs = _cmaps[i].dim();
 
-    return MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+    return dolfinx::mdspan<
         const std::int32_t,
         MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>(
         _dofmaps[i].data(), _dofmaps[i].size() / ndofs, ndofs);

@@ -21,7 +21,7 @@ using namespace dolfinx;
 //-----------------------------------------------------------------------------
 std::pair<std::vector<std::int64_t>, std::array<std::size_t, 2>>
 io::extract_vtk_connectivity(
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+    dolfinx::mdspan<
         const std::int32_t,
         MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
         dofmap_x,

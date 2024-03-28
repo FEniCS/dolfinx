@@ -800,12 +800,12 @@ void declare_cmap(nb::module_& m, std::string type)
              nb::ndarray<const T, nb::ndim<2>, nb::c_contig> X,
              nb::ndarray<const T, nb::ndim<2>, nb::c_contig> cell_x)
           {
-            using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+            using mdspan2_t = dolfinx::mdspan<
                 T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-            using cmdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+            using cmdspan2_t = dolfinx::mdspan<
                 const T,
                 MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-            using cmdspan4_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+            using cmdspan4_t = dolfinx::mdspan<
                 const T,
                 MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
 
@@ -841,12 +841,12 @@ void declare_cmap(nb::module_& m, std::string type)
             std::size_t gdim = x.shape(1);
             std::size_t tdim = dolfinx::mesh::cell_dim(self.cell_shape());
 
-            using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+            using mdspan2_t = dolfinx::mdspan<
                 T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-            using cmdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+            using cmdspan2_t = dolfinx::mdspan<
                 const T,
                 MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-            using cmdspan4_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+            using cmdspan4_t = dolfinx::mdspan<
                 const T,
                 MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
 
@@ -1128,7 +1128,7 @@ void fem(nb::module_& m)
       [](nb::ndarray<const std::int32_t, nb::ndim<2>, nb::c_contig> dofmap,
          int num_cells)
       {
-        MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        dolfinx::mdspan<
             const std::int32_t,
             MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
             _dofmap(dofmap.data(), dofmap.shape(0), dofmap.shape(1));

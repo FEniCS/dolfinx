@@ -25,7 +25,7 @@
 namespace dolfinx::fem::impl
 {
 
-using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+using mdspan2_t = dolfinx::mdspan<
     const std::int32_t,
     MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
 

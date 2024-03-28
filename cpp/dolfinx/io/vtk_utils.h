@@ -101,9 +101,9 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
   auto apply_dof_transformation
       = element->template get_pre_dof_transformation_function<T>();
 
-  using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+  using mdspan2_t = dolfinx::mdspan<
       T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-  using cmdspan4_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+  using cmdspan4_t = dolfinx::mdspan<
       T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
 
   // Tabulate basis functions at node reference coordinates
@@ -246,7 +246,7 @@ vtk_mesh_from_space(const fem::FunctionSpace<T>& V)
 /// require int64 as local input.
 std::pair<std::vector<std::int64_t>, std::array<std::size_t, 2>>
 extract_vtk_connectivity(
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+    dolfinx::mdspan<
         const std::int32_t,
         MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
         dofmap_x,

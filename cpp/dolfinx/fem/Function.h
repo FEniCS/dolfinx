@@ -198,7 +198,7 @@ public:
   void interpolate(
       const std::function<
           std::pair<std::vector<value_type>, std::vector<std::size_t>>(
-              MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+              dolfinx::mdspan<
                   const geometry_type,
                   MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
                       std::size_t, 3,
@@ -212,7 +212,7 @@ public:
         = fem::interpolation_coords<geometry_type>(
             *_function_space->element(), _function_space->mesh()->geometry(),
             cells);
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+    dolfinx::mdspan<
         const geometry_type,
         MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
             std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>
@@ -260,7 +260,7 @@ public:
   void
   interpolate(const std::function<
               std::pair<std::vector<value_type>, std::vector<std::size_t>>(
-                  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+                  dolfinx::mdspan<
                       const geometry_type,
                       MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
                           std::size_t, 3,
@@ -324,7 +324,7 @@ public:
     std::size_t num_cells = cells.size();
     std::size_t num_points = e.X().second[0];
     std::vector<value_type> fdata(num_cells * num_points * value_size);
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+    dolfinx::mdspan<
         const value_type,
         MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 3>>
         f(fdata.data(), num_cells, num_points, value_size);
@@ -340,7 +340,7 @@ public:
     // point. The interpolation uses xxyyzz input, ordered for all
     // points of each cell, i.e. (value_size, num_cells*num_points)
     std::vector<value_type> fdata1(num_cells * num_points * value_size);
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+    dolfinx::mdspan<
         value_type, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 3>>
         f1(fdata1.data(), value_size, num_cells, num_points);
     for (std::size_t i = 0; i < f.extent(0); ++i)
@@ -530,7 +530,7 @@ public:
           MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
 
       std::array<geometry_type, 3> Xpb = {0, 0, 0};
-      MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      dolfinx::mdspan<
           geometry_type,
           MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
               std::size_t, 1, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>

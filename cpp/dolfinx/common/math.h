@@ -7,6 +7,8 @@
 #pragma once
 
 #include "types.h"
+#include "dolfinx/common/mdspan.h"
+
 #include <array>
 #include <basix/mdspan.hpp>
 #include <cmath>
@@ -221,13 +223,13 @@ void pinv(U A, V P)
   {
     std::array<T, 6> ATb;
     std::array<T, 4> ATAb, Invb;
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+    dolfinx::mdspan<
         T, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<std::size_t, 2, 3>>
         AT(ATb.data(), 2, 3);
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+    dolfinx::mdspan<
         T, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<std::size_t, 2, 2>>
         ATA(ATAb.data(), 2, 2);
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+    dolfinx::mdspan<
         T, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<std::size_t, 2, 2>>
         Inv(Invb.data(), 2, 2);
 
