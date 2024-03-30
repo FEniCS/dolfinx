@@ -349,8 +349,35 @@ public:
         break;
       }
       case IntegralType::exterior_facet:
-        // Exterior and interior facets are treated the same
-        [[fallthrough]];
+      {
+        const int tdim = _mesh->topology()->dim();
+        const int codim = tdim - mesh.topology()->dim();
+
+        if (codim == 0)
+        {
+          for (std::size_t i = 0; i < entities.size(); i += 2)
+          {
+            // Add cell and the local facet index
+            mapped_entities.insert(mapped_entities.end(),
+                                   {entity_map[entities[i]], entities[i + 1]});
+          }
+        }
+        else
+        {
+          assert(codim == 1);
+          auto c_to_f = _mesh->topology()->connectivity(tdim, tdim - 1);
+          for (std::size_t i = 0; i < entities.size(); i += 2)
+          {
+            // Add cell and the local facet index
+            mapped_entities.insert(
+                mapped_entities.end(),
+                {entity_map[c_to_f->links(entities[i])[entities[i + 1]]],
+                 entities[i + 1]});
+          }
+        }
+
+        break;
+      }
       case IntegralType::interior_facet:
       {
         for (std::size_t i = 0; i < entities.size(); i += 2)
