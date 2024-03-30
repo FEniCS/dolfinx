@@ -151,6 +151,11 @@ public:
   /// @brief Returns the permutation information
   const std::vector<std::uint32_t>& get_cell_permutation_info() const;
 
+
+  /// @brief TODO
+  /// @return TODO
+  const std::vector<std::uint8_t>& get_full_cell_permutations() const;
+
   /// @brief Get the permutation number to apply to a facet.
   ///
   /// The permutations are numbered so that:
@@ -188,6 +193,9 @@ public:
 
   /// @brief Compute entity permutations and reflections.
   void create_entity_permutations();
+
+  /// @brief
+  void create_full_cell_permutations();
 
   /// @brief List of inter-process facets, if facet topology has been
   /// computed.
@@ -241,6 +249,16 @@ private:
   // Cell permutation info. See the documentation for
   // get_cell_permutation_info for documentation of how this is encoded.
   std::vector<std::uint32_t> _cell_permutations;
+
+  /// @brief TODO
+  std::vector<std::uint8_t> _full_cell_permutations;
+
+  /// @brief TODO
+  // create_full_cell_perms involves communication so can't simply
+  // check length of array to decide if to return on mesh where a
+  // a rank has no cells
+  // FIXME Remove
+  bool _full_cell_perms_created;
 
   // List of facets that are on the inter-process boundary for each facet type
   std::vector<std::vector<std::int32_t>> _interprocess_facets;

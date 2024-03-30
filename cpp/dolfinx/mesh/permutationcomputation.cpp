@@ -11,6 +11,7 @@
 #include <bitset>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/common/Scatterer.h>
 
 namespace
 {
@@ -367,5 +368,72 @@ mesh::compute_entity_permutations(const mesh::Topology& topology)
   assert(used_bits < _BITSETSIZE);
 
   return {std::move(facet_permutations), std::move(cell_permutation_info)};
+}
+//-----------------------------------------------------------------------------
+std::vector<std::uint8_t>
+mesh::compute_cell_permutations(const mesh::Topology& topology)
+{
+  // TODO See if above functions can be called instead
+  const int tdim = topology.dim();
+  const int fdim = tdim - 1;
+
+  if (fdim == 3)
+    throw std::runtime_error("Cannot compute cell permutations of a 3D mesh.");
+
+  const std::int32_t num_facets = topology.index_map(fdim)->size_local()
+                                  + topology.index_map(fdim)->num_ghosts();
+
+  std::vector<std::uint8_t> cell_permutations(num_facets);
+
+  if (fdim == 0)
+    return cell_permutations;
+
+  dolfinx::graph::AdjacencyList<int32_t> _v_to_v = *topology.connectivity(0, 0);
+  dolfinx::graph::AdjacencyList<int32_t> _f_to_v
+      = *topology.connectivity(fdim, 0);
+
+  // ???
+  auto v_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+      std::move(_v_to_v));
+  auto f_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+      std::move(_f_to_v));
+
+  const mesh::CellType facet_cell_type
+      = mesh::cell_entity_type(topology.cell_type(), fdim, 0);
+
+  // TODO Avoid
+  Topology facet_topology(topology.comm(), facet_cell_type);
+  facet_topology.set_index_map(0, topology.index_map(0));
+  facet_topology.set_index_map(fdim, topology.index_map(fdim));
+  facet_topology.set_connectivity(v_to_v, 0, 0);
+  facet_topology.set_connectivity(f_to_v, fdim, 0);
+  facet_topology.create_connectivity(fdim, fdim);
+
+  if (fdim == 2)
+  {
+    const auto perms = compute_face_permutations<_BITSETSIZE>(facet_topology);
+    for (int c = 0; c < num_facets; ++c)
+      cell_permutations[c] = perms[c].to_ulong() & 7;
+  }
+  else if (fdim == 1)
+  {
+    const auto perms = compute_edge_reflections<_BITSETSIZE>(facet_topology);
+    for (int c = 0; c < num_facets; ++c)
+      cell_permutations[c] = perms[c].to_ulong() & 1;
+  }
+
+  // TODO Avoid
+  auto facet_map = topology.index_map(fdim);
+  assert(facet_map);
+  common::Scatterer scatterer(*facet_map, 1);
+  scatterer.scatter_fwd(
+      std::span<const std::uint8_t>(cell_permutations.begin(),
+                                    cell_permutations.begin()
+                                        + facet_map->size_local()),
+      std::span<std::uint8_t>(cell_permutations.begin()
+                                  + facet_map->size_local(),
+                              cell_permutations.end()));
+
+  return cell_permutations;
 }
 //-----------------------------------------------------------------------------

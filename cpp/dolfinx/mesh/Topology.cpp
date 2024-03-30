@@ -926,6 +926,22 @@ void Topology::create_entity_permutations()
   _cell_permutations = std::move(cell_permutations);
 }
 //-----------------------------------------------------------------------------
+void Topology::create_full_cell_permutations()
+{
+  if (_full_cell_perms_created)
+    return;
+
+  const int tdim = this->dim();
+  create_entities(tdim);
+  create_connectivity(tdim, tdim);
+
+  auto perms = mesh::compute_cell_permutations(*this);
+  _full_cell_permutations = std::move(perms);
+
+  // FIXME Avoid
+  _full_cell_perms_created = true;
+}
+//-----------------------------------------------------------------------------
 std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
 Topology::connectivity(int d0, int d1) const
 {
@@ -990,6 +1006,19 @@ const std::vector<std::uint32_t>& Topology::get_cell_permutation_info() const
   }
 
   return _cell_permutations;
+}
+//-----------------------------------------------------------------------------
+const std::vector<std::uint8_t>& Topology::get_full_cell_permutations() const
+{
+  if (auto i_map = this->index_map(this->dim() - 1);
+      !i_map
+      or (_full_cell_permutations.empty()
+          and i_map->size_local() + i_map->num_ghosts() > 0))
+  {
+    throw std::runtime_error(
+        "create_full_cell_permutations must be called before using this data.");
+  }
+  return _full_cell_permutations;
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::uint8_t>& Topology::get_facet_permutations() const

@@ -298,6 +298,8 @@ constexpr MPI_Datatype mpi_type()
     return MPI_C_BOOL;
   else if constexpr (std::is_same_v<T, std::int8_t>)
     return MPI_INT8_T;
+  else if constexpr (std::is_same_v<T, std::uint8_t>)
+    return MPI_UINT8_T;
   else
     // Issue compile time error
     static_assert(!std::is_same_v<T, T>);
