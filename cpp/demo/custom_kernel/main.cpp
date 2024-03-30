@@ -25,12 +25,11 @@
 using namespace dolfinx;
 
 template <typename T, std::size_t ndim>
-using mdspand_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-    T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, ndim>>;
+using mdspand_t = dolfinx::common::mdspan::mdspan<
+    T, dolfinx::common::mdspan::dextents<std::size_t, ndim>>;
 template <typename T, std::size_t n0, std::size_t n1>
 using mdspan2_t
-    = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<T,
-                                             std::extents<std::size_t, n0, n1>>;
+    = dolfinx::common::mdspan::mdspan<T, std::extents<std::size_t, n0, n1>>;
 
 /// @brief Compute the P1 element mass matrix on the reference cell.
 /// @tparam T Scalar type.

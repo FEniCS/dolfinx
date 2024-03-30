@@ -11,6 +11,7 @@
 #include <basix/interpolation.h>
 #include <basix/polyset.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/common/mdspan.h>
 #include <functional>
 #include <numeric>
 #include <ufcx.h>
@@ -228,10 +229,10 @@ FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
       }
     }
 
-    using cmdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-    using cmdspan4_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
+    using cmdspan2_t = dolfinx::common::mdspan::mdspan<
+        const T, dolfinx::common::mdspan::dextents<std::size_t, 2>>;
+    using cmdspan4_t = dolfinx::common::mdspan::mdspan<
+        const T, dolfinx::common::mdspan::dextents<std::size_t, 4>>;
 
     std::array<std::vector<cmdspan2_t>, 4> _x;
     for (std::size_t i = 0; i < x.size(); ++i)

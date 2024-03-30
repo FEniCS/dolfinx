@@ -101,10 +101,10 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
   auto apply_dof_transformation
       = element->template get_pre_dof_transformation_function<T>();
 
-  using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-  using cmdspan4_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
+  using mdspan2_t = dolfinx::common::mdspan::mdspan<
+      T, dolfinx::common::mdspan::dextents<std::size_t, 2>>;
+  using cmdspan4_t = dolfinx::common::mdspan::mdspan<
+      T, dolfinx::common::mdspan::dextents<std::size_t, 4>>;
 
   // Tabulate basis functions at node reference coordinates
   const std::array<std::size_t, 4> phi_shape
@@ -114,8 +114,8 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
   cmdspan4_t phi_full(phi_b.data(), phi_shape);
   cmap.tabulate(0, X, Xshape, phi_b);
   auto phi = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-      phi_full, 0, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
-      MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
+      phi_full, 0, dolfinx::common::mdspan::full_extent,
+      dolfinx::common::mdspan::full_extent, 0);
 
   // Loop over cells and tabulate dofs
   auto map = topology->index_map(tdim);
@@ -246,9 +246,8 @@ vtk_mesh_from_space(const fem::FunctionSpace<T>& V)
 /// require int64 as local input.
 std::pair<std::vector<std::int64_t>, std::array<std::size_t, 2>>
 extract_vtk_connectivity(
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const std::int32_t,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+    dolfinx::common::mdspan::mdspan<
+        const std::int32_t, dolfinx::common::mdspan::dextents<std::size_t, 2>>
         dofmap_x,
     mesh::CellType cell_type);
 } // namespace io

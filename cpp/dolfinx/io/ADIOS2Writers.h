@@ -261,7 +261,7 @@ std::vector<T> pack_function_data(const fem::Function<T, U>& u)
   {
     auto dofs = dofmap->cell_dofs(c);
     auto dofs_x = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        dofmap_x, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+        dofmap_x, c, dolfinx::common::mdspan::full_extent);
     assert(dofs.size() == dofs_x.size());
     for (std::size_t i = 0; i < dofs.size(); ++i)
       for (int j = 0; j < bs; ++j)

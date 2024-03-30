@@ -800,14 +800,12 @@ void declare_cmap(nb::module_& m, std::string type)
              nb::ndarray<const T, nb::ndim<2>, nb::c_contig> X,
              nb::ndarray<const T, nb::ndim<2>, nb::c_contig> cell_x)
           {
-            using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-                T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-            using cmdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-                const T,
-                MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-            using cmdspan4_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-                const T,
-                MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
+            using mdspan2_t = dolfinx::common::mdspan::mdspan<
+                T, dolfinx::common::mdspan::dextents<std::size_t, 2>>;
+            using cmdspan2_t = dolfinx::common::mdspan::mdspan<
+                const T, dolfinx::common::mdspan::dextents<std::size_t, 2>>;
+            using cmdspan4_t = dolfinx::common::mdspan::mdspan<
+                const T, dolfinx::common::mdspan::dextents<std::size_t, 4>>;
 
             std::array<std::size_t, 2> Xshape{X.shape(0), X.shape(1)};
             std::array<std::size_t, 4> phi_shape
@@ -817,8 +815,8 @@ void declare_cmap(nb::module_& m, std::string type)
             cmdspan4_t phi_full(phi_b.data(), phi_shape);
             self.tabulate(0, std::span(X.data(), X.size()), Xshape, phi_b);
             auto phi = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-                phi_full, 0, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
-                MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
+                phi_full, 0, dolfinx::common::mdspan::full_extent,
+                dolfinx::common::mdspan::full_extent, 0);
 
             std::array<std::size_t, 2> shape = {X.shape(0), cell_x.shape(1)};
             std::vector<T> xb(shape[0] * shape[1]);
@@ -841,14 +839,12 @@ void declare_cmap(nb::module_& m, std::string type)
             std::size_t gdim = x.shape(1);
             std::size_t tdim = dolfinx::mesh::cell_dim(self.cell_shape());
 
-            using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-                T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-            using cmdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-                const T,
-                MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-            using cmdspan4_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-                const T,
-                MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
+            using mdspan2_t = dolfinx::common::mdspan::mdspan<
+                T, dolfinx::common::mdspan::dextents<std::size_t, 2>>;
+            using cmdspan2_t = dolfinx::common::mdspan::mdspan<
+                const T, dolfinx::common::mdspan::dextents<std::size_t, 2>>;
+            using cmdspan4_t = dolfinx::common::mdspan::mdspan<
+                const T, dolfinx::common::mdspan::dextents<std::size_t, 4>>;
 
             std::vector<T> Xb(num_points * tdim);
             mdspan2_t X(Xb.data(), num_points, tdim);
@@ -869,9 +865,9 @@ void declare_cmap(nb::module_& m, std::string type)
               cmdspan4_t phi(phi_b.data(), phi_shape);
 
               self.tabulate(1, std::vector<T>(tdim), {1, tdim}, phi_b);
-              auto dphi = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+              auto dphi = dolfinx::common::mdspan::submdspan(
                   phi, std::pair(1, tdim + 1), 0,
-                  MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
+                  dolfinx::common::mdspan::full_extent, 0);
 
               self.compute_jacobian(dphi, g, J);
               self.compute_jacobian_inverse(J, K);
@@ -1128,9 +1124,9 @@ void fem(nb::module_& m)
       [](nb::ndarray<const std::int32_t, nb::ndim<2>, nb::c_contig> dofmap,
          int num_cells)
       {
-        MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        dolfinx::common::mdspan::mdspan<
             const std::int32_t,
-            MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+            dolfinx::common::mdspan::dextents<std::size_t, 2>>
             _dofmap(dofmap.data(), dofmap.shape(0), dofmap.shape(1));
         return dolfinx::fem::transpose_dofmap(_dofmap, num_cells);
       },

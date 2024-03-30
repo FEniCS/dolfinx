@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/mdspan.h>
 #include <dolfinx/common/sort.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Topology.h>
@@ -116,9 +117,8 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
 
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t> fem::transpose_dofmap(
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const std::int32_t,
-        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+    dolfinx::common::mdspan::mdspan<
+        const std::int32_t, dolfinx::common::mdspan::dextents<std::size_t, 2>>
         dofmap,
     std::int32_t num_cells)
 {
@@ -131,7 +131,7 @@ graph::AdjacencyList<std::int32_t> fem::transpose_dofmap(
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+        dofmap, c, dolfinx::common::mdspan::full_extent);
     for (std::size_t d = 0; d < dofmap.extent(1); ++d)
       num_local_contributions[dofs[d]]++;
   }
@@ -147,7 +147,7 @@ graph::AdjacencyList<std::int32_t> fem::transpose_dofmap(
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+        dofmap, c, dolfinx::common::mdspan::full_extent);
     for (std::size_t d = 0; d < dofmap.extent(1); ++d)
       data[pos[dofs[d]]++] = cell_offset++;
   }
@@ -268,14 +268,12 @@ std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
   return {std::move(dofmap_new), std::move(collapsed_map)};
 }
 //-----------------------------------------------------------------------------
-MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-    const std::int32_t,
-    MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+dolfinx::common::mdspan::mdspan<
+    const std::int32_t, dolfinx::common::mdspan::dextents<std::size_t, 2>>
 DofMap::map() const
 {
-  return MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      const std::int32_t,
-      MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>(
+  return dolfinx::common::mdspan::mdspan<
+      const std::int32_t, dolfinx::common::mdspan::dextents<std::size_t, 2>>(
       _dofmap.data(), _dofmap.size() / _shape1, _shape1);
 }
 //-----------------------------------------------------------------------------

@@ -136,7 +136,7 @@ compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
     const int local_pos = std::distance(cell_vertices.begin(), it);
 
     auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+        x_dofmap, c, dolfinx::common::mdspan::full_extent);
     for (std::size_t j = 0; j < 3; ++j)
       x_vertices[j * vertices.size() + i] = x_nodes[3 * dofs[local_pos] + j];
     vertex_to_pos[v] = i;
@@ -435,7 +435,7 @@ compute_vertex_coords(const mesh::Mesh<T>& mesh)
   for (int c = 0; c < c_to_v->num_nodes(); ++c)
   {
     auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+        x_dofmap, c, dolfinx::common::mdspan::full_extent);
     auto vertices = c_to_v->links(c);
     for (std::size_t i = 0; i < vertices.size(); ++i)
       vertex_to_node[vertices[i]] = x_dofs[i];
@@ -460,10 +460,10 @@ compute_vertex_coords(const mesh::Mesh<T>& mesh)
 template <typename Fn, typename T>
 concept MarkerFn = std::is_invocable_r<
     std::vector<std::int8_t>, Fn,
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const T, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
-                     std::size_t, 3,
-                     MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>>::value;
+    dolfinx::common::mdspan::mdspan<
+        const T,
+        dolfinx::common::mdspan::extents<
+            std::size_t, 3, dolfinx::common::mdspan::dynamic_extent>>>::value;
 
 /// @brief Compute indices of all mesh entities that evaluate to true
 /// for the provided geometric marking function.
@@ -482,10 +482,9 @@ template <std::floating_point T, MarkerFn<T> U>
 std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
                                           U marker)
 {
-  using cmdspan3x_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      const T,
-      MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
-          std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>;
+  using cmdspan3x_t = dolfinx::common::mdspan::mdspan<
+      const T, dolfinx::common::mdspan::extents<
+                   std::size_t, 3, dolfinx::common::mdspan::dynamic_extent>>;
 
   // Run marker function on vertex coordinates
   const auto [xdata, xshape] = impl::compute_vertex_coords(mesh);
@@ -570,10 +569,9 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
   const std::vector<std::int32_t> boundary_facets
       = exterior_facet_indices(*topology);
 
-  using cmdspan3x_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      const T,
-      MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
-          std::size_t, 3, MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>;
+  using cmdspan3x_t = dolfinx::common::mdspan::mdspan<
+      const T, dolfinx::common::mdspan::extents<
+                   std::size_t, 3, dolfinx::common::mdspan::dynamic_extent>>;
 
   // Run marker function on the vertex coordinates
   const auto [facet_entities, xdata, vertex_to_pos]

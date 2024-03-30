@@ -14,6 +14,7 @@
 #include <concepts>
 #include <cstdlib>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/mdspan.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/ordering.h>
 #include <functional>
@@ -59,12 +60,11 @@ namespace dolfinx::fem
 /// typically used to exclude ghost cell contributions.
 /// @return Map from global (process-wise) index to positions in an
 /// unaassembled array. The links for each node are sorted.
-graph::AdjacencyList<std::int32_t>
-transpose_dofmap(MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-                     const std::int32_t,
-                     MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
-                     dofmap,
-                 std::int32_t num_cells);
+graph::AdjacencyList<std::int32_t> transpose_dofmap(
+    dolfinx::common::mdspan::mdspan<
+        const std::int32_t, dolfinx::common::mdspan::dextents<std::size_t, 2>>
+        dofmap,
+    std::int32_t num_cells);
 
 /// @brief Degree-of-freedom map.
 ///
@@ -155,9 +155,8 @@ public:
 
   /// @brief Get dofmap data
   /// @return The adjacency list with dof indices for each cell
-  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      const std::int32_t,
-      MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+  dolfinx::common::mdspan::mdspan<
+      const std::int32_t, dolfinx::common::mdspan::dextents<std::size_t, 2>>
   map() const;
 
   /// Layout of dofs on an element

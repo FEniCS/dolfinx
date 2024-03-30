@@ -6,9 +6,10 @@
 
 #pragma once
 
+#include "mdspan.h"
 #include "types.h"
+
 #include <array>
-#include <basix/mdspan.hpp>
 #include <cmath>
 #include <string>
 #include <type_traits>
@@ -221,14 +222,14 @@ void pinv(U A, V P)
   {
     std::array<T, 6> ATb;
     std::array<T, 4> ATAb, Invb;
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        T, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<std::size_t, 2, 3>>
+    dolfinx::common::mdspan::mdspan<
+        T, dolfinx::common::mdspan::extents<std::size_t, 2, 3>>
         AT(ATb.data(), 2, 3);
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        T, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<std::size_t, 2, 2>>
+    dolfinx::common::mdspan::mdspan<
+        T, dolfinx::common::mdspan::extents<std::size_t, 2, 2>>
         ATA(ATAb.data(), 2, 2);
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        T, MDSPAN_IMPL_STANDARD_NAMESPACE::extents<std::size_t, 2, 2>>
+    dolfinx::common::mdspan::mdspan<
+        T, dolfinx::common::mdspan::extents<std::size_t, 2, 2>>
         Inv(Invb.data(), 2, 2);
 
     for (std::size_t i = 0; i < AT.extent(0); ++i)
