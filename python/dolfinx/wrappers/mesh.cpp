@@ -498,6 +498,8 @@ void mesh(nb::module_& m)
            nb::arg("dim"))
       .def("create_entity_permutations",
            &dolfinx::mesh::Topology::create_entity_permutations)
+      .def("create_full_cell_permutations",
+           &dolfinx::mesh::Topology::create_full_cell_permutations)
       .def("create_connectivity", &dolfinx::mesh::Topology::create_connectivity,
            nb::arg("d0"), nb::arg("d1"))
       .def(
@@ -517,6 +519,16 @@ void mesh(nb::module_& m)
                 = self.get_cell_permutation_info();
             return nb::ndarray<const std::uint32_t, nb::numpy>(p.data(),
                                                                {p.size()});
+          },
+          nb::rv_policy::reference_internal)
+      .def(
+          "get_full_cell_permutations",
+          [](const dolfinx::mesh::Topology& self)
+          {
+            const std::vector<std::uint8_t>& p
+                = self.get_full_cell_permutations();
+            return nb::ndarray<const std::uint8_t, nb::numpy>(p.data(),
+                                                              {p.size()});
           },
           nb::rv_policy::reference_internal)
       .def_prop_ro("dim", &dolfinx::mesh::Topology::dim,
