@@ -367,3 +367,11 @@ def test_mixed_dom_codim_1(n, k):
     b1.scatter_reverse(la.InsertMode.add)
 
     assert np.isclose(la.norm(b), la.norm(b1))
+
+    M = fem.form(f * f * ds)
+    c = msh.comm.allreduce(fem.assemble_scalar(M), op=MPI.SUM)
+
+    M1 = fem.form(f * g * ds, entity_maps=entity_maps)
+    c1 = msh.comm.allreduce(fem.assemble_scalar(M1), op=MPI.SUM)
+
+    assert np.isclose(c, c1)
