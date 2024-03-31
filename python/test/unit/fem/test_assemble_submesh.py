@@ -316,6 +316,7 @@ def test_mixed_dom_codim_1(n, k):
     vbar = ufl.TestFunction(Vbar)
 
     ds = ufl.Measure("ds", domain=msh)
+    # TODO Reuse a_ufl
     a = fem.form(ufl.inner(u, v) * ds)
     A = fem.assemble_matrix(a)
     A.scatter_reverse()
@@ -332,3 +333,14 @@ def test_mixed_dom_codim_1(n, k):
     A1.scatter_reverse()
 
     assert np.isclose(A.squared_norm(), A1.squared_norm())
+
+    L = fem.form(v * ds)
+    b = fem.assemble_vector(L)
+    # fem.apply_lifting(b.array, [a], bcs=[[bc]])
+    b.scatter_reverse(la.InsertMode.add)
+
+    L1 = fem.form(vbar * ds, entity_maps=entity_maps)
+    b1 = fem.assemble_vector(L1)
+    b1.scatter_reverse(la.InsertMode.add)
+
+    assert np.isclose(la.norm(b), la.norm(b1))
