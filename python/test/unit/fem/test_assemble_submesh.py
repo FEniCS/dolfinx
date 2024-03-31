@@ -289,3 +289,50 @@ def test_mixed_dom_codim_0(n, k, space, integral_type):
     M1 = fem.form(M_ufl(f, g, measure_smsh), entity_maps=entity_maps)
     c1 = msh.comm.allreduce(fem.assemble_scalar(M1), op=MPI.SUM)
     assert np.isclose(c1, c)
+
+
+@pytest.mark.parametrize("n", [4, 6])
+@pytest.mark.parametrize("k", [1, 3])
+def test_mixed_dom_codim_1(n, k):
+    msh = create_unit_square(MPI.COMM_WORLD, n, n)
+
+    tdim = msh.topology.dim
+    boundary_facets = locate_entities_boundary(
+        msh,
+        tdim - 1,
+        lambda x: np.isclose(x[0], 0.0)
+        | np.isclose(x[0], 1.0)
+        | np.isclose(x[1], 0.0)
+        | np.isclose(x[1], 1.0),
+    )
+
+    smsh, smsh_to_msh = create_submesh(msh, tdim - 1, boundary_facets)[:2]
+
+    V = fem.functionspace(msh, ("Lagrange", k))
+    Vbar = fem.functionspace(smsh, ("Lagrange", k))
+
+    u = ufl.TrialFunction(V)
+    v = ufl.TestFunction(V)
+    vbar = ufl.TestFunction(Vbar)
+
+    ds = ufl.Measure("ds", domain=msh)
+    a = fem.form(ufl.inner(u, v) * ds)
+    A = fem.assemble_matrix(a)
+    A.scatter_reverse()
+
+    facet_imap = msh.topology.index_map(tdim - 1)
+    num_facets = facet_imap.size_local + facet_imap.num_ghosts
+    msh_to_smsh = np.full(num_facets, -1)
+    msh_to_smsh[smsh_to_msh] = np.arange(len(smsh_to_msh))
+    entity_maps = {smsh._cpp_object: msh_to_smsh}
+
+    a1 = fem.form(ufl.inner(u, vbar) * ds, entity_maps=entity_maps)
+
+    A1 = fem.assemble_matrix(a1)
+    A1.scatter_reverse()
+
+    assert np.isclose(A.squared_norm(), A1.squared_norm())
+
+
+# TODO
+# Fix submesh creation in parallel
