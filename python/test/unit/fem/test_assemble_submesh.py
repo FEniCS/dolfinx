@@ -223,7 +223,7 @@ def test_mixed_dom_codim_0(n, k, space, integral_type):
 
     # Create a Dirichlet boundary condition
     u_bc = fem.Function(V)
-    u_bc.interpolate(lambda x: np.sin(np.pi * x[0]))
+    u_bc.interpolate(lambda x: np.sin(np.pi * x[1]))
     dirichlet_facets = locate_entities_boundary(
         msh, msh.topology.dim - 1, lambda x: np.isclose(x[0], 0.0)
     )
