@@ -257,7 +257,9 @@ void _lift_bc_cells(
 template <dolfinx::scalar T, int _bs = -1>
 void _lift_bc_exterior_facets(
     std::span<T> b, mdspan2_t x_dofmap,
-    std::span<const scalar_value_type_t<T>> x, FEkernel<T> auto kernel,
+    std::span<const scalar_value_type_t<T>> x,
+    int num_cell_facets,
+    FEkernel<T> auto kernel,
     std::span<const std::int32_t> facets,
     std::tuple<mdspan2_t, int, std::span<const std::int32_t>> dofmap0,
     fem::DofTransformKernel<T> auto P0,
@@ -266,7 +268,9 @@ void _lift_bc_exterior_facets(
     std::span<const T> coeffs, int cstride,
     std::span<const std::uint32_t> cell_info0,
     std::span<const std::uint32_t> cell_info1, std::span<const T> bc_values1,
-    std::span<const std::int8_t> bc_markers1, std::span<const T> x0, T scale)
+    std::span<const std::int8_t> bc_markers1, std::span<const T> x0, T scale,
+    const std::function<std::uint8_t(std::size_t)>& get_perm,
+    const std::function<std::uint8_t(std::size_t, std::size_t)>& get_facet_perm)
 {
   if (facets.empty())
     return;
@@ -329,11 +333,15 @@ void _lift_bc_exterior_facets(
     const int num_rows = bs0 * dofs0.size();
     const int num_cols = bs1 * dofs1.size();
 
+    const std::array<std::uint8_t, 2> perm{
+        get_perm(cell * num_cell_facets + local_facet),
+        get_facet_perm(cell, local_facet)};
+
     const T* coeff_array = coeffs.data() + index / 2 * cstride;
     Ae.resize(num_rows * num_cols);
     std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeff_array, constants.data(), coordinate_dofs.data(),
-           &local_facet, nullptr);
+           &local_facet, perm.data());
     P0(Ae, cell_info0, cell0, num_cols);
     P1T(Ae, cell_info1, cell1, num_rows);
 
@@ -990,16 +998,49 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
 
   for (int i : a.integral_ids(IntegralType::exterior_facet))
   {
+    // TODO Remove duplicated code for int facet
+    std::function<std::uint8_t(std::size_t)> get_perm;
+    std::function<std::uint8_t(std::int32_t, std::int32_t)> get_facet_perm;
+    if (a.needs_facet_permutations())
+    {
+      mesh->topology_mutable()->create_entity_permutations();
+      const std::vector<std::uint8_t>& perms
+          = mesh->topology()->get_facet_permutations();
+      get_perm = [&perms](std::size_t i) { return perms[i]; };
+
+      mesh->topology_mutable()->create_connectivity(
+          mesh->topology()->dim(), mesh->topology()->dim() - 1);
+      // TODO Package as (cell, local_facet) pairs in
+      // create_full_cell_permutations?
+      auto c_to_f = mesh->topology()->connectivity(mesh->topology()->dim(),
+                                                   mesh->topology()->dim() - 1);
+      assert(c_to_f);
+      mesh->topology_mutable()->create_full_cell_permutations();
+      const std::vector<std::uint8_t>& facet_perms
+          = mesh->topology()->get_full_cell_permutations();
+      get_facet_perm
+          = [&facet_perms, c_to_f](std::int32_t c, std::int32_t local_f)
+      { return facet_perms[c_to_f->links(c)[local_f]]; };
+    }
+    else
+    {
+      get_perm = [](std::size_t) { return 0; };
+      get_facet_perm = [](std::int32_t, std::int32_t) { return 0; };
+    }
+
     auto kernel = a.kernel(IntegralType::exterior_facet, i);
     assert(kernel);
     auto& [coeffs, cstride]
         = coefficients.at({IntegralType::exterior_facet, i});
+    mesh::CellType cell_type = mesh->topology()->cell_type();
+    int num_cell_facets
+        = mesh::cell_num_entities(cell_type, mesh->topology()->dim() - 1);
     _lift_bc_exterior_facets(
-        b, x_dofmap, x, kernel, a.domain(IntegralType::exterior_facet, i),
+        b, x_dofmap, x, num_cell_facets, kernel, a.domain(IntegralType::exterior_facet, i),
         {dofmap0, bs0, a.domain(IntegralType::exterior_facet, i, *mesh0)}, P0,
         {dofmap1, bs1, a.domain(IntegralType::exterior_facet, i, *mesh1)}, P1T,
         constants, coeffs, cstride, cell_info0, cell_info1, bc_values1,
-        bc_markers1, x0, scale);
+        bc_markers1, x0, scale, get_perm, get_facet_perm);
   }
 
   if (a.num_integrals(IntegralType::interior_facet) > 0)

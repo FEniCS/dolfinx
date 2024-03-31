@@ -309,16 +309,26 @@ def test_mixed_dom_codim_1(n, k):
     smsh, smsh_to_msh = create_submesh(msh, tdim - 1, boundary_facets)[:2]
 
     V = fem.functionspace(msh, ("Lagrange", k))
+    W = fem.functionspace(msh, ("Lagrange", k))
     Vbar = fem.functionspace(smsh, ("Lagrange", k))
 
+    # Create a Dirichlet boundary condition
+    u_bc = fem.Function(V)
+    u_bc.interpolate(lambda x: np.sin(np.pi * x[1]))
+    dirichlet_facets = locate_entities_boundary(
+        msh, msh.topology.dim - 1, lambda x: np.isclose(x[0], 0.0)
+    )
+    dirichlet_dofs = fem.locate_dofs_topological(V, msh.topology.dim - 1, dirichlet_facets)
+    bc = fem.dirichletbc(u_bc, dirichlet_dofs)
+
     u = ufl.TrialFunction(V)
-    v = ufl.TestFunction(V)
+    v = ufl.TestFunction(W)
     vbar = ufl.TestFunction(Vbar)
 
     ds = ufl.Measure("ds", domain=msh)
     # TODO Reuse a_ufl
     a = fem.form(ufl.inner(u, v) * ds)
-    A = fem.assemble_matrix(a)
+    A = fem.assemble_matrix(a, bcs=[bc])
     A.scatter_reverse()
 
     facet_imap = msh.topology.index_map(tdim - 1)
@@ -329,18 +339,19 @@ def test_mixed_dom_codim_1(n, k):
 
     a1 = fem.form(ufl.inner(u, vbar) * ds, entity_maps=entity_maps)
 
-    A1 = fem.assemble_matrix(a1)
+    A1 = fem.assemble_matrix(a1, bcs=[bc])
     A1.scatter_reverse()
 
     assert np.isclose(A.squared_norm(), A1.squared_norm())
 
     L = fem.form(v * ds)
     b = fem.assemble_vector(L)
-    # fem.apply_lifting(b.array, [a], bcs=[[bc]])
+    fem.apply_lifting(b.array, [a], bcs=[[bc]])
     b.scatter_reverse(la.InsertMode.add)
 
     L1 = fem.form(vbar * ds, entity_maps=entity_maps)
     b1 = fem.assemble_vector(L1)
+    fem.apply_lifting(b1.array, [a1], bcs=[[bc]])
     b1.scatter_reverse(la.InsertMode.add)
 
     assert np.isclose(la.norm(b), la.norm(b1))
