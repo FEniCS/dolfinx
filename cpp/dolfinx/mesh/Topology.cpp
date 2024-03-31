@@ -10,6 +10,7 @@
 #include "topologycomputation.h"
 #include "utils.h"
 #include <algorithm>
+#include <common/Scatterer.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
@@ -1442,6 +1443,37 @@ mesh::create_subtopology(const Topology& topology, int dim,
       sub_e_to_v_vec.push_back(v_sub);
     }
     sub_e_to_v_offsets.push_back(sub_e_to_v_vec.size());
+  }
+
+  // If codim != 0, the process owning the entities should send the
+  // entity to vertex map to process ghosting the entities to ensure
+  // that the submesh ghost cells are orientated consistently. If
+  // codim = 0, the mesh should have been created so that this is the
+  // case (TODO double check this)
+  if (!(topology.dim() == dim))
+  {
+    // Convert sub_e_to_v_vec from local to global vertex numbering
+    std::vector<std::int64_t> sub_e_to_global_v_vec(sub_e_to_v_vec.size(), 0);
+    submap0->local_to_global(sub_e_to_v_vec, sub_e_to_global_v_vec);
+
+    // Scatter forward to send global vertices of owned entity vertices
+    // to ghost entities
+    common::Scatterer scatterer(*submap, num_vertices_per_entity);
+    std::vector<std::int64_t> ghost_vertices(
+        num_vertices_per_entity * submap->num_ghosts(), 0);
+    scatterer.scatter_fwd(
+        std::span<const std::int64_t>(sub_e_to_global_v_vec.begin(),
+                                      sub_e_to_global_v_vec.begin()
+                                          + num_vertices_per_entity
+                                                * submap->size_local()),
+        std::span<std::int64_t>(ghost_vertices));
+
+    // Convert received global vertices back to local numbering and overwrite
+    // ghosts in sub_e_to_v_vec
+    std::span<std::int32_t> ghost_vertices_local(
+        sub_e_to_v_vec.begin() + num_vertices_per_entity * submap->size_local(),
+        sub_e_to_v_vec.end());
+    submap0->global_to_local(ghost_vertices, ghost_vertices_local);
   }
 
   auto sub_e_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(

@@ -332,7 +332,3 @@ def test_mixed_dom_codim_1(n, k):
     A1.scatter_reverse()
 
     assert np.isclose(A.squared_norm(), A1.squared_norm())
-
-
-# TODO
-# Fix submesh creation in parallel
