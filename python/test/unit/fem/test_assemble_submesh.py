@@ -325,9 +325,21 @@ def test_mixed_dom_codim_1(n, k):
     v = ufl.TestFunction(W)
     vbar = ufl.TestFunction(Vbar)
 
+    # Coefficients
+    def coeff_expr(x):
+        return np.sin(np.pi * x[0])
+
+    # Coefficient defined over the mesh
+    f = fem.Function(V)
+    f.interpolate(coeff_expr)
+
+    # Coefficient defined over the submesh
+    g = fem.Function(Vbar)
+    g.interpolate(coeff_expr)
+
     ds = ufl.Measure("ds", domain=msh)
     # TODO Reuse a_ufl
-    a = fem.form(ufl.inner(u, v) * ds)
+    a = fem.form(ufl.inner(f * f * u, v) * ds)
     A = fem.assemble_matrix(a, bcs=[bc])
     A.scatter_reverse()
 
@@ -337,19 +349,19 @@ def test_mixed_dom_codim_1(n, k):
     msh_to_smsh[smsh_to_msh] = np.arange(len(smsh_to_msh))
     entity_maps = {smsh._cpp_object: msh_to_smsh}
 
-    a1 = fem.form(ufl.inner(u, vbar) * ds, entity_maps=entity_maps)
+    a1 = fem.form(ufl.inner(f * g * u, vbar) * ds, entity_maps=entity_maps)
 
     A1 = fem.assemble_matrix(a1, bcs=[bc])
     A1.scatter_reverse()
 
     assert np.isclose(A.squared_norm(), A1.squared_norm())
 
-    L = fem.form(v * ds)
+    L = fem.form(f * f * v * ds)
     b = fem.assemble_vector(L)
     fem.apply_lifting(b.array, [a], bcs=[[bc]])
     b.scatter_reverse(la.InsertMode.add)
 
-    L1 = fem.form(vbar * ds, entity_maps=entity_maps)
+    L1 = fem.form(f * g * vbar * ds, entity_maps=entity_maps)
     b1 = fem.assemble_vector(L1)
     fem.apply_lifting(b1.array, [a1], bcs=[[bc]])
     b1.scatter_reverse(la.InsertMode.add)
