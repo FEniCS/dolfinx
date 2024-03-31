@@ -375,3 +375,6 @@ def test_mixed_dom_codim_1(n, k):
     c1 = msh.comm.allreduce(fem.assemble_scalar(M1), op=MPI.SUM)
 
     assert np.isclose(c, c1)
+
+
+# TODO Test random mesh and interior facets
