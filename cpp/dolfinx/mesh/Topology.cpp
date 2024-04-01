@@ -937,7 +937,26 @@ void Topology::create_full_cell_permutations()
   create_connectivity(tdim, tdim);
 
   auto perms = mesh::compute_cell_permutations(*this);
-  _full_cell_permutations = std::move(perms);
+
+  // Repackage so permutations can be accessed from (cell, local_facet) pairs
+  // FIXME Should this be done in another function? It makes more sense to
+  // access them by facet number, but they are currently only used in the
+  // assembler, where they need to be accessed by (cell, local_facet) pairs.
+  mesh::CellType cell_type = this->cell_type();
+  int num_cell_facets = mesh::cell_num_entities(cell_type, tdim - 1);
+  auto cell_imap = this->index_map(tdim);
+  const int num_cells = cell_imap->size_local() + cell_imap->num_ghosts();
+  _full_cell_permutations
+      = std::vector<std::uint8_t>(num_cells * num_cell_facets);
+  this->create_connectivity(tdim, tdim - 1);
+  auto c_to_f = this->connectivity(tdim, tdim - 1);
+  for (std::size_t c = 0; c < num_cells; ++c)
+  {
+    for (std::size_t lf = 0; lf < num_cell_facets; ++lf)
+    {
+      _full_cell_permutations[c * num_cell_facets + lf] = perms[c_to_f->links(c)[lf]];
+    }
+  }
 
   // FIXME Avoid
   _full_cell_perms_created = true;
