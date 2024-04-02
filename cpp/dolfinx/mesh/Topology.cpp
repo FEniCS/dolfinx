@@ -935,10 +935,6 @@ void Topology::create_full_cell_permutations()
 
   const int tdim = this->dim();
 
-  // FIXME Are these needed?
-  create_entities(tdim);
-  create_connectivity(tdim, tdim);
-
   // Create a topology for the facets
   // FIXME Can this be avoided?
   const int fdim = tdim - 1;
