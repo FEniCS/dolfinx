@@ -294,8 +294,12 @@ def test_mixed_dom_codim_0(n, k, space, integral_type):
 @pytest.mark.parametrize("n", [4, 6])
 @pytest.mark.parametrize("k", [1, 3])
 def test_mixed_dom_codim_1(n, k):
+    """Test assembling forms where the trial functions, test functions
+    and coefficients are defined over different meshes of different topological
+    dimension."""
     msh = create_unit_square(MPI.COMM_WORLD, n, n)
 
+    # Create a submesh of the boundary
     tdim = msh.topology.dim
     boundary_facets = locate_entities_boundary(
         msh,
@@ -308,6 +312,7 @@ def test_mixed_dom_codim_1(n, k):
 
     smsh, smsh_to_msh = create_submesh(msh, tdim - 1, boundary_facets)[:2]
 
+    # Define function spaces over the mesh and submesh
     V = fem.functionspace(msh, ("Lagrange", k))
     W = fem.functionspace(msh, ("Lagrange", k))
     Vbar = fem.functionspace(smsh, ("Lagrange", k))
@@ -321,6 +326,7 @@ def test_mixed_dom_codim_1(n, k):
     dirichlet_dofs = fem.locate_dofs_topological(V, msh.topology.dim - 1, dirichlet_facets)
     bc = fem.dirichletbc(u_bc, dirichlet_dofs)
 
+    # Trial and test functions
     u = ufl.TrialFunction(V)
     v = ufl.TestFunction(W)
     vbar = ufl.TestFunction(Vbar)
@@ -337,29 +343,37 @@ def test_mixed_dom_codim_1(n, k):
     g = fem.Function(Vbar)
     g.interpolate(coeff_expr)
 
+    # Create the integration measure. Mixed-dimensional forms use the
+    # higher-dimensional domain as the integration domain
     ds = ufl.Measure("ds", domain=msh)
-    # TODO Reuse a_ufl
+
+    # Create reference forms to compare to
     a = fem.form(a_ufl(u, v, f, f, ds))
     A = fem.assemble_matrix(a, bcs=[bc])
     A.scatter_reverse()
 
+    L = fem.form(L_ufl(v, f, f, ds))
+    b = fem.assemble_vector(L)
+    fem.apply_lifting(b.array, [a], bcs=[[bc]])
+    b.scatter_reverse(la.InsertMode.add)
+
+    M = fem.form(M_ufl(f, f, ds))
+    c = msh.comm.allreduce(fem.assemble_scalar(M), op=MPI.SUM)
+
+    # Since msh is the integration domain, we must pass entity maps taking
+    # facets in msh to cells in smsh. This is simply the inverse of smsh_to_msh.
     facet_imap = msh.topology.index_map(tdim - 1)
     num_facets = facet_imap.size_local + facet_imap.num_ghosts
     msh_to_smsh = np.full(num_facets, -1)
     msh_to_smsh[smsh_to_msh] = np.arange(len(smsh_to_msh))
     entity_maps = {smsh._cpp_object: msh_to_smsh}
 
+    # Create forms and compare
     a1 = fem.form(a_ufl(u, vbar, f, g, ds), entity_maps=entity_maps)
-
     A1 = fem.assemble_matrix(a1, bcs=[bc])
     A1.scatter_reverse()
 
     assert np.isclose(A.squared_norm(), A1.squared_norm())
-
-    L = fem.form(L_ufl(v, f, f, ds))
-    b = fem.assemble_vector(L)
-    fem.apply_lifting(b.array, [a], bcs=[[bc]])
-    b.scatter_reverse(la.InsertMode.add)
 
     L1 = fem.form(L_ufl(vbar, f, g, ds), entity_maps=entity_maps)
     b1 = fem.assemble_vector(L1)
@@ -367,9 +381,6 @@ def test_mixed_dom_codim_1(n, k):
     b1.scatter_reverse(la.InsertMode.add)
 
     assert np.isclose(la.norm(b), la.norm(b1))
-
-    M = fem.form(M_ufl(f, f, ds))
-    c = msh.comm.allreduce(fem.assemble_scalar(M), op=MPI.SUM)
 
     M1 = fem.form(M_ufl(f, g, ds), entity_maps=entity_maps)
     c1 = msh.comm.allreduce(fem.assemble_scalar(M1), op=MPI.SUM)
