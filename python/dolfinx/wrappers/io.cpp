@@ -220,7 +220,36 @@ void declare_real_types(nb::module_& m)
             as_nbarray(std::move(entities_values.second)));
       },
       nb::arg("mesh"), nb::arg("entity_dim"), nb::arg("entities"),
-      nb::arg("values"));
+      nb::arg("values").noconvert());
+  m.def(
+      "distribute_entity_data",
+      [](const dolfinx::mesh::Mesh<T>& mesh, int entity_dim,
+         nb::ndarray<const std::int64_t, nb::ndim<2>, nb::c_contig> entities,
+         nb::ndarray<const double, nb::ndim<1>, nb::c_contig> values)
+      {
+        assert(entities.shape(0) == values.size());
+        mdspan_t<const std::int64_t, 2> entities_span(
+            entities.data(), entities.shape(0), entities.shape(1));
+        std::pair<std::vector<std::int32_t>, std::vector<double>>
+            entities_values = dolfinx::io::xdmf_utils::distribute_entity_data(
+                *mesh.topology(), mesh.geometry().input_global_indices(),
+                mesh.geometry().index_map()->size_global(),
+                mesh.geometry().cmap().create_dof_layout(),
+                mesh.geometry().dofmap(), entity_dim, entities_span,
+                std::span(values.data(), values.size()));
+
+        std::size_t num_vert_per_entity = dolfinx::mesh::cell_num_entities(
+            dolfinx::mesh::cell_entity_type(mesh.topology()->cell_type(),
+                                            entity_dim, 0),
+            0);
+        return std::pair(
+            as_nbarray(std::move(entities_values.first),
+                       {entities_values.first.size() / num_vert_per_entity,
+                        num_vert_per_entity}),
+            as_nbarray(std::move(entities_values.second)));
+      },
+      nb::arg("mesh"), nb::arg("entity_dim"), nb::arg("entities"),
+      nb::arg("values").noconvert());
 }
 
 } // namespace
