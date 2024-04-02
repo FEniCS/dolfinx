@@ -350,6 +350,7 @@ public:
       }
       case IntegralType::exterior_facet:
       {
+        // Get the codimension of the mesh
         const int tdim = _mesh->topology()->dim();
         const int codim = tdim - mesh.topology()->dim();
 
@@ -365,17 +366,21 @@ public:
         else
         {
           assert(codim == 1);
+          // In this case, the entity maps take facets in (`_mesh`) to cells in
+          // `mesh`, so we need to get the facet number from the (cell,
+          // local_facet pair) first.
           auto c_to_f = _mesh->topology()->connectivity(tdim, tdim - 1);
+          assert(c_to_f);
           for (std::size_t i = 0; i < entities.size(); i += 2)
           {
+            // Get the facet index
+            const std::int32_t facet
+                = c_to_f->links(entities[i])[entities[i + 1]];
             // Add cell and the local facet index
-            mapped_entities.insert(
-                mapped_entities.end(),
-                {entity_map[c_to_f->links(entities[i])[entities[i + 1]]],
-                 entities[i + 1]});
+            mapped_entities.insert(mapped_entities.end(),
+                                   {entity_map[facet], entities[i + 1]});
           }
         }
-
         break;
       }
       case IntegralType::interior_facet:
