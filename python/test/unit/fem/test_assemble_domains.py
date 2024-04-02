@@ -89,7 +89,7 @@ def test_assembly_dx_domains(mode, meshtags_factory):
     A2.scatter_reverse()
     assert np.allclose(A.data, A2.data)
 
-    bc = dirichletbc(Function(V),np.arange(V.dofmap.index_map.size_local // 2, dtype=np.int32))
+    bc = dirichletbc(Function(V), np.arange(V.dofmap.index_map.size_local // 2, dtype=np.int32))
 
     # Assemble vector
     L = form(ufl.inner(w, v) * (dx(1) + dx(2) + dx(3)))
