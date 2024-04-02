@@ -10,7 +10,6 @@
 #include <algorithm>
 #include <bitset>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/Scatterer.h>
 #include <dolfinx/graph/AdjacencyList.h>
 
 namespace
@@ -398,19 +397,6 @@ mesh::compute_cell_permutations(const mesh::Topology& topology)
     for (int c = 0; c < num_cells; ++c)
       cell_permutations[c] = perms[c].to_ulong() & 1;
   }
-
-  // TODO Move?
-  // FIXME Can this be avoided?
-  auto imap = topology.index_map(tdim);
-  assert(imap);
-  common::Scatterer scatterer(*imap, 1);
-  scatterer.scatter_fwd(
-      std::span<const std::uint8_t>(cell_permutations.begin(),
-                                    cell_permutations.begin()
-                                        + imap->size_local()),
-      std::span<std::uint8_t>(cell_permutations.begin()
-                                  + imap->size_local(),
-                              cell_permutations.end()));
 
   return cell_permutations;
 }

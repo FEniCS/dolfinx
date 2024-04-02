@@ -955,6 +955,16 @@ void Topology::create_full_cell_permutations()
 
   auto perms = mesh::compute_cell_permutations(facet_topology);
 
+  // FIXME Can this be avoided?
+  auto facet_imap = this->index_map(fdim);
+  assert(facet_imap);
+  common::Scatterer scatterer(*facet_imap, 1);
+  scatterer.scatter_fwd(
+      std::span<const std::uint8_t>(perms.begin(),
+                                    perms.begin() + facet_imap->size_local()),
+      std::span<std::uint8_t>(perms.begin() + facet_imap->size_local(),
+                              perms.end()));
+
   // Repackage so permutations can be accessed from (cell, local_facet) pairs
   // FIXME Should this be done in another function? It makes more sense to
   // access them by facet number, but they are currently only used in the
