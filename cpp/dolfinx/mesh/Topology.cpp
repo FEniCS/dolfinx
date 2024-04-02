@@ -927,34 +927,56 @@ void Topology::create_entity_permutations()
   _cell_permutations = std::move(cell_permutations);
 }
 //-----------------------------------------------------------------------------
+// TODO Rename create_cell_perms_for_facets
 void Topology::create_full_cell_permutations()
 {
   if (_full_cell_perms_created)
     return;
 
   const int tdim = this->dim();
+
+  // FIXME Are these needed?
   create_entities(tdim);
   create_connectivity(tdim, tdim);
 
-  auto perms = mesh::compute_cell_permutations(*this);
+  // Create a topology for the facets
+  // FIXME Can this be avoided?
+  const int fdim = tdim - 1;
+  const mesh::CellType facet_cell_type
+      = mesh::cell_entity_type(this->cell_type(), fdim, 0);
+  Topology facet_topology(this->comm(), facet_cell_type);
+  facet_topology.set_index_map(0, this->index_map(0));
+  facet_topology.set_index_map(fdim, this->index_map(fdim));
+  facet_topology.set_connectivity(
+      std::make_shared<graph::AdjacencyList<std::int32_t>>(
+          *this->connectivity(0, 0)),
+      0, 0);
+  facet_topology.set_connectivity(
+      std::make_shared<graph::AdjacencyList<std::int32_t>>(
+          *this->connectivity(fdim, 0)),
+      fdim, 0);
+  facet_topology.create_connectivity(fdim, fdim);
+
+  auto perms = mesh::compute_cell_permutations(facet_topology);
 
   // Repackage so permutations can be accessed from (cell, local_facet) pairs
   // FIXME Should this be done in another function? It makes more sense to
   // access them by facet number, but they are currently only used in the
   // assembler, where they need to be accessed by (cell, local_facet) pairs.
   mesh::CellType cell_type = this->cell_type();
-  int num_cell_facets = mesh::cell_num_entities(cell_type, tdim - 1);
+  int num_cell_facets = mesh::cell_num_entities(cell_type, fdim);
   auto cell_imap = this->index_map(tdim);
   const int num_cells = cell_imap->size_local() + cell_imap->num_ghosts();
   _full_cell_permutations
       = std::vector<std::uint8_t>(num_cells * num_cell_facets);
-  this->create_connectivity(tdim, tdim - 1);
-  auto c_to_f = this->connectivity(tdim, tdim - 1);
+  this->create_connectivity(tdim, fdim);
+  auto c_to_f = this->connectivity(tdim, fdim);
   for (std::size_t c = 0; c < num_cells; ++c)
   {
     for (std::size_t lf = 0; lf < num_cell_facets; ++lf)
     {
-      _full_cell_permutations[c * num_cell_facets + lf] = perms[c_to_f->links(c)[lf]];
+      _full_cell_permutations[c * num_cell_facets + lf]
+          = perms[c_to_f->links(c)[lf]];
     }
   }
 

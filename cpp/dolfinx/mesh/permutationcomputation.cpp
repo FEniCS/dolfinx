@@ -375,59 +375,41 @@ mesh::compute_cell_permutations(const mesh::Topology& topology)
 {
   // TODO See if above functions can be called instead
   const int tdim = topology.dim();
-  const int fdim = tdim - 1;
 
-  if (fdim == 3)
+  if (tdim == 3)
     throw std::runtime_error("Cannot compute cell permutations of a 3D mesh.");
 
-  const std::int32_t num_facets = topology.index_map(fdim)->size_local()
-                                  + topology.index_map(fdim)->num_ghosts();
-  std::vector<std::uint8_t> cell_permutations(num_facets);
+  const std::int32_t num_cells = topology.index_map(tdim)->size_local()
+                                 + topology.index_map(tdim)->num_ghosts();
+  std::vector<std::uint8_t> cell_permutations(num_cells);
 
-  if (fdim == 0)
+  if (tdim == 0)
     return cell_permutations;
 
-  const mesh::CellType facet_cell_type
-      = mesh::cell_entity_type(topology.cell_type(), fdim, 0);
-
-  // Create a topology for the facets
-  // FIXME Can this be avoided?
-  Topology facet_topology(topology.comm(), facet_cell_type);
-  facet_topology.set_index_map(0, topology.index_map(0));
-  facet_topology.set_index_map(fdim, topology.index_map(fdim));
-  facet_topology.set_connectivity(
-      std::make_shared<graph::AdjacencyList<std::int32_t>>(
-          *topology.connectivity(0, 0)),
-      0, 0);
-  facet_topology.set_connectivity(
-      std::make_shared<graph::AdjacencyList<std::int32_t>>(
-          *topology.connectivity(fdim, 0)),
-      fdim, 0);
-  facet_topology.create_connectivity(fdim, fdim);
-
-  if (fdim == 2)
+  if (tdim == 2)
   {
-    const auto perms = compute_face_permutations<_BITSETSIZE>(facet_topology);
-    for (int c = 0; c < num_facets; ++c)
+    const auto perms = compute_face_permutations<_BITSETSIZE>(topology);
+    for (int c = 0; c < num_cells; ++c)
       cell_permutations[c] = perms[c].to_ulong() & 7;
   }
-  else if (fdim == 1)
+  else if (tdim == 1)
   {
-    const auto perms = compute_edge_reflections<_BITSETSIZE>(facet_topology);
-    for (int c = 0; c < num_facets; ++c)
+    const auto perms = compute_edge_reflections<_BITSETSIZE>(topology);
+    for (int c = 0; c < num_cells; ++c)
       cell_permutations[c] = perms[c].to_ulong() & 1;
   }
 
+  // TODO Move?
   // FIXME Can this be avoided?
-  auto facet_map = topology.index_map(fdim);
-  assert(facet_map);
-  common::Scatterer scatterer(*facet_map, 1);
+  auto imap = topology.index_map(tdim);
+  assert(imap);
+  common::Scatterer scatterer(*imap, 1);
   scatterer.scatter_fwd(
       std::span<const std::uint8_t>(cell_permutations.begin(),
                                     cell_permutations.begin()
-                                        + facet_map->size_local()),
+                                        + imap->size_local()),
       std::span<std::uint8_t>(cell_permutations.begin()
-                                  + facet_map->size_local(),
+                                  + imap->size_local(),
                               cell_permutations.end()));
 
   return cell_permutations;
