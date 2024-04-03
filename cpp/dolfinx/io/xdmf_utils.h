@@ -1,4 +1,4 @@
-// Copyright (C) 2012 Chris N. Richardson
+// Copyright (C) 2012-2024 Chris N. Richardson, Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
