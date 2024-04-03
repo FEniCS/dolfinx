@@ -361,7 +361,7 @@ void io(nb::module_& m)
   declare_vtx_writer<double>(m, "float64");
 
   declare_data_types<std::int32_t>(m);
-  // declare_data_types<float>(m);
+  declare_data_types<float>(m);
   declare_data_types<std::complex<float>>(m);
   declare_data_types<double>(m);
   declare_data_types<std::complex<double>>(m);
