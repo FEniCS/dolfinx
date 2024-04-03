@@ -15,8 +15,6 @@
 #include <concepts>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/types.h>
-#include <dolfinx/fem/ElementDofLayout.h>
-#include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <filesystem>
 #include <numeric>
