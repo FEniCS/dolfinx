@@ -89,7 +89,7 @@ def test_assembly_dx_domains(mode, meshtags_factory):
     A2.scatter_reverse()
     assert np.allclose(A.data, A2.data)
 
-    bc = dirichletbc(Function(V), np.arange(30))
+    bc = dirichletbc(Function(V), np.arange(V.dofmap.index_map.size_local // 2, dtype=np.int32))
 
     # Assemble vector
     L = form(ufl.inner(w, v) * (dx(1) + dx(2) + dx(3)))
@@ -158,7 +158,7 @@ def test_assembly_ds_domains(mode):
     w = Function(V)
     w.x.array[:] = 0.5
 
-    bc = dirichletbc(Function(V), np.arange(30))
+    bc = dirichletbc(Function(V), np.arange(V.dofmap.index_map.size_local // 2, dtype=np.int32))
 
     # Assemble matrix
     a = form(w * ufl.inner(u, v) * (ds(1) + ds(2) + ds(3) + ds(6)))
