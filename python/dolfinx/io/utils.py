@@ -290,7 +290,7 @@ def distribute_entity_data(
     using the original input ordering.
 
     Returns:
-        Entities owned by the process (and their local indices) and the corresponding values.
+        Entities owned by the process (and their local entity-to-vertex indices) and the corresponding values.
     """
     return _cpp.io.distribute_entity_data(
         mesh.topology,
