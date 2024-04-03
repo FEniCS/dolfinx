@@ -18,8 +18,8 @@ import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
 from dolfinx.cpp.graph import AdjacencyList_int32
-from dolfinx.mesh import CellType, Mesh, create_mesh, meshtags, meshtags_from_entities
 from dolfinx.io.utils import distribute_entity_data
+from dolfinx.mesh import CellType, Mesh, create_mesh, meshtags, meshtags_from_entities
 
 __all__ = [
     "cell_perm_array",
