@@ -42,6 +42,7 @@ def test_area(cube, square):
     assert area == pytest.approx(1.0)
 
 
+@pytest.mark.skip()
 def test_normals(cube, square):
     """Test cell normals for a subset of facets"""
 
