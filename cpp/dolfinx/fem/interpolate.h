@@ -1112,17 +1112,19 @@ create_nonmatching_meshes_interpolation_data(const mesh::Mesh<T>& mesh0,
 }
 
 /// @brief Interpolate from one finite element Function to another one.
-/// @param[out] u The function to interpolate into
-/// @param[in] v The function to be interpolated
-/// @param[in] cells_u List of cell indices to interpolate on
-/// @param[in] cell_map Mapping from cells in `u` to cells in `v`
+/// @param[out] u1 The function to interpolate into
+/// @param[in] u0 The function to be interpolated
+/// @param[in] cells1 List of cell indices associated with the mesh of `u1` that
+/// will be interpolated onto
+/// @param[in] cell_map Mapping of cells in mesh associated with `u1` to cells
+/// associated with `u0`
 /// @param[in] nmm_interpolation_data Auxiliary data to interpolate on
 /// nonmatching meshes. This data can be generated with
 /// create_nonmatching_meshes_interpolation_data (optional).
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate(
-    Function<T, U>& u, const Function<T, U>& v,
-    std::span<const std::int32_t> cells_u,
+    Function<T, U>& u1, const Function<T, U>& u0,
+    std::span<const std::int32_t> cells1,
     std::span<const std::int32_t> cell_map,
     const std::tuple<std::span<const std::int32_t>,
                      std::span<const std::int32_t>, std::span<const U>,
@@ -1130,49 +1132,49 @@ void interpolate(
     = {})
 {
   assert(u.function_space());
-  assert(v.function_space());
-  auto mesh = u.function_space()->mesh();
+  assert(u0.function_space());
+  auto mesh = u1.function_space()->mesh();
   assert(mesh);
 
   auto cell_map0 = mesh->topology()->index_map(mesh->topology()->dim());
   assert(cell_map0);
   std::size_t num_cells0 = cell_map0->size_local() + cell_map0->num_ghosts();
-  if (u.function_space() == v.function_space() and cells_u.size() == num_cells0)
+  if (u1.function_space() == u0.function_space()
+      and cells1.size() == num_cells0)
   {
     // Same function spaces and on whole mesh
-    std::span<T> u1_array = u.x()->mutable_array();
-    std::span<const T> u0_array = v.x()->array();
+    std::span<T> u1_array = u1.x()->mutable_array();
+    std::span<const T> u0_array = u0.x()->array();
     std::copy(u0_array.begin(), u0_array.end(), u1_array.begin());
   }
   else
   {
-    std::vector<std::int32_t> cells_v;
-    cells_v.reserve(cells_u.size());
+    std::vector<std::int32_t> cells0;
+    cells0.reserve(cells1.size());
     // Get mesh and check that functions share the same mesh
-    if (auto mesh_v = v.function_space()->mesh(); mesh == mesh_v)
+    if (auto mesh_v = u0.function_space()->mesh(); mesh == mesh_v)
     {
-      cells_v.insert(cells_v.end(), cells_u.begin(), cells_u.end());
+      cells0.insert(cells0.end(), cells1.begin(), cells1.end());
     }
     // If meshes are different and input mapping is given
     else if (cell_map.size() > 0)
     {
-      std::transform(cells_u.begin(), cells_u.end(),
-                     std::back_inserter(cells_v),
+      std::transform(cells1.begin(), cells1.end(), std::back_inserter(cells0),
                      [&cell_map](std::int32_t c) { return cell_map[c]; });
     }
     // Non-matching meshes
-    if (cells_v.empty())
+    if (cells0.empty())
     {
-      impl::interpolate_nonmatching_meshes(u, v, cells_u,
+      impl::interpolate_nonmatching_meshes(u, u0, cells1,
                                            nmm_interpolation_data);
       return;
     }
 
     // Get elements and check value shape
-    auto fs0 = v.function_space();
+    auto fs0 = u0.function_space();
     auto element0 = fs0->element();
     assert(element0);
-    auto fs1 = u.function_space();
+    auto fs1 = u1.function_space();
     auto element1 = fs1->element();
     assert(element1);
     if (fs0->value_shape().size() != fs1->value_shape().size()
@@ -1194,9 +1196,9 @@ void interpolate(
       assert(element1->block_size() == element0->block_size());
 
       // Get dofmaps
-      std::shared_ptr<const DofMap> dofmap0 = v.function_space()->dofmap();
+      std::shared_ptr<const DofMap> dofmap0 = u0.function_space()->dofmap();
       assert(dofmap0);
-      std::shared_ptr<const DofMap> dofmap1 = u.function_space()->dofmap();
+      std::shared_ptr<const DofMap> dofmap1 = u1.function_space()->dofmap();
       assert(dofmap1);
 
       std::span<T> u1_array = u.x()->mutable_array();
@@ -1205,10 +1207,10 @@ void interpolate(
       // Iterate over mesh and interpolate on each cell
       const int bs0 = dofmap0->bs();
       const int bs1 = dofmap1->bs();
-      for (std::size_t c = 0; c < cells_u.size(); ++c)
+      for (std::size_t c = 0; c < cells1.size(); ++c)
       {
-        std::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(cells_v[c]);
-        std::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(cells_u[c]);
+        std::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(cells0[c]);
+        std::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(cells1[c]);
         assert(bs0 * dofs0.size() == bs1 * dofs1.size());
         for (std::size_t i = 0; i < dofs0.size(); ++i)
         {
@@ -1225,12 +1227,12 @@ void interpolate(
     else if (element1->map_type() == element0->map_type())
     {
       // Different elements, same basis function map type
-      impl::interpolate_same_map(u, v, cells_u, cells_v);
+      impl::interpolate_same_map(u1, u0, cells1, cells0);
     }
     else
     {
       //  Different elements with different maps for basis functions
-      impl::interpolate_nonmatching_maps(u, v, cells_u, cells_v);
+      impl::interpolate_nonmatching_maps(u1, u0, cells1, cells0);
     }
   }
 }
