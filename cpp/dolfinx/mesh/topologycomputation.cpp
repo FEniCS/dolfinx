@@ -532,6 +532,8 @@ compute_entities_by_key_matching(
 
         // Get entity vertices. Padded with -1 if fewer than
         // max_vertices_per_entity
+        // FIXME This might be better below when the entity to vertex
+        // connectivity is computed
         std::vector<std::int32_t> entity_vertices(ev.size());
         for (std::size_t j = 0; j < ev.size(); ++j)
           entity_vertices[j] = vertices[ev[j]];
@@ -539,19 +541,18 @@ compute_entities_by_key_matching(
         std::vector<std::int64_t> global_vertices(entity_vertices.size());
         vertex_index_map.local_to_global(entity_vertices, global_vertices);
 
-        // FIXME Prisms and Pyramids
         std::vector<std::size_t> perm(global_vertices.size());
         std::iota(perm.begin(), perm.end(), 0);
+        std::sort(perm.begin(), perm.end(),
+                  [&global_vertices](std::size_t i0, std::size_t i1)
+                  { return global_vertices[i0] < global_vertices[i1]; });
         if (entity_type == mesh::CellType::quadrilateral)
         {
-          // TODO
-        }
-        else
-        {
-          // Simplices
-          std::sort(perm.begin(), perm.end(),
-                    [&global_vertices](std::size_t i0, std::size_t i1)
-                    { return global_vertices[i0] < global_vertices[i1]; });
+          std::size_t min_vertex_idx = perm[0];
+          std::size_t opposite_vertex_index = 3 - min_vertex_idx;
+          auto it = std::find(perm.begin(), perm.end(), opposite_vertex_index);
+          assert(it != perm.end());
+          std::rotate(it, it + 1, perm.end());
         }
 
         for (std::size_t j = 0; j < ev.size(); ++j)
