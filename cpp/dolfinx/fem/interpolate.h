@@ -1165,7 +1165,7 @@ void interpolate(
     // Non-matching meshes
     if (cells0.empty())
     {
-      impl::interpolate_nonmatching_meshes(u, u0, cells1,
+      impl::interpolate_nonmatching_meshes(u1, u0, cells1,
                                            nmm_interpolation_data);
       return;
     }
@@ -1201,8 +1201,8 @@ void interpolate(
       std::shared_ptr<const DofMap> dofmap1 = u1.function_space()->dofmap();
       assert(dofmap1);
 
-      std::span<T> u1_array = u.x()->mutable_array();
-      std::span<const T> u0_array = v.x()->array();
+      std::span<T> u1_array = u1.x()->mutable_array();
+      std::span<const T> u0_array = u0.x()->array();
 
       // Iterate over mesh and interpolate on each cell
       const int bs0 = dofmap0->bs();
