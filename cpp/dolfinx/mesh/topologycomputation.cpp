@@ -532,10 +532,32 @@ compute_entities_by_key_matching(
 
         // Get entity vertices. Padded with -1 if fewer than
         // max_vertices_per_entity
+        std::vector<std::int32_t> entity_vertices(ev.size());
+        for (std::size_t j = 0; j < ev.size(); ++j)
+          entity_vertices[j] = vertices[ev[j]];
+
+        std::vector<std::int64_t> global_vertices(entity_vertices.size());
+        vertex_index_map.local_to_global(entity_vertices, global_vertices);
+
+        // FIXME Prisms and Pyramids
+        std::vector<std::size_t> perm(global_vertices.size());
+        std::iota(perm.begin(), perm.end(), 0);
+        if (entity_type == mesh::CellType::quadrilateral)
+        {
+          // TODO
+        }
+        else
+        {
+          // Simplices
+          std::sort(perm.begin(), perm.end(),
+                    [&global_vertices](std::size_t i0, std::size_t i1)
+                    { return global_vertices[i0] < global_vertices[i1]; });
+        }
+
         for (std::size_t j = 0; j < ev.size(); ++j)
           entity_list[(cell_type_offsets[k] + idx) * num_vertices_per_entity
                       + j]
-              = vertices[ev[j]];
+              = entity_vertices[perm[j]];
       }
     }
   }
