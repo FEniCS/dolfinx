@@ -1131,7 +1131,7 @@ void interpolate(
                      std::span<const std::int32_t>>& nmm_interpolation_data
     = {})
 {
-  assert(u.function_space());
+  assert(u1.function_space());
   assert(u0.function_space());
   auto mesh = u1.function_space()->mesh();
   assert(mesh);
