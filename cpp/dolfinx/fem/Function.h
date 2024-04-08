@@ -384,7 +384,7 @@ public:
 
   /// Interpolate an Expression (based on UFL) on all cells
   /// @param[in] e The function to be interpolated
-  /// @param[in] mesh Mesh the Expression `e` is defined on.
+  /// @param[in] expr_mesh Mesh the Expression `e` is defined on.
   /// @param[in] cell_map Map from `cells` to cells in expression if
   /// receiving function is defined on a different mesh than the expression
   void interpolate(const Expression<value_type, geometry_type>& e,
