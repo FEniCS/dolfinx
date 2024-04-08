@@ -321,15 +321,15 @@ void interpolation_apply(U&& Pi, V&& data, std::span<T> coeffs, int bs)
 /// map.
 /// @param[out] u1 The function to interpolate to
 /// @param[in] u0 The function to interpolate from
-/// @param[in] cells_u1 The cells to interpolate on
-/// @param[in] cells_u0 Equivalent cell in u0 for each cell in u1
+/// @param[in] cells1 The cells to interpolate on
+/// @param[in] cells0 Equivalent cell in u0 for each cell in u1
 /// @pre The functions `u1` and `u0` must share the same mesh and the
 /// elements must share the same basis function map. Neither is checked
 /// by the function.
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
-                          std::span<const std::int32_t> cells_u1,
-                          std::span<const std::int32_t> cells_u0)
+                          std::span<const std::int32_t> cells1,
+                          std::span<const std::int32_t> cells0)
 {
   auto V0 = u0.function_space();
   assert(V0);
@@ -346,6 +346,7 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
   auto element1 = V1->element();
   assert(element1);
 
+  assert(mesh0->topology()->dim());
   const int tdim = mesh0->topology()->dim();
   auto map = mesh0->topology()->index_map(tdim);
   assert(map);
@@ -387,14 +388,14 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
 
   // Iterate over mesh and interpolate on each cell
   using X = typename dolfinx::scalar_value_type_t<T>;
-  for (std::size_t c = 0; c < cells_u0.size(); c++)
+  for (std::size_t c = 0; c < cells0.size(); c++)
   {
-    std::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(cells_u0[c]);
+    std::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(cells0[c]);
     for (std::size_t i = 0; i < dofs0.size(); ++i)
       for (int k = 0; k < bs0; ++k)
         local0[bs0 * i + k] = u0_array[bs0 * dofs0[i] + k];
 
-    apply_dof_transformation(local0, cell_info0, cells_u0[c], 1);
+    apply_dof_transformation(local0, cell_info0, cells0[c], 1);
 
     // FIXME: Get compile-time ranges from Basix
     // Apply interpolation operator
@@ -403,8 +404,8 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
       for (std::size_t j = 0; j < im_shape[1]; ++j)
         local1[i] += static_cast<X>(i_m[im_shape[1] * i + j]) * local0[j];
 
-    apply_inverse_dof_transform(local1, cell_info1, cells_u1[c], 1);
-    std::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(cells_u1[c]);
+    apply_inverse_dof_transform(local1, cell_info1, cells1[c], 1);
+    std::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(cells1[c]);
     for (std::size_t i = 0; i < dofs1.size(); ++i)
       for (int k = 0; k < bs1; ++k)
         u1_array[bs1 * dofs1[i] + k] = local1[bs1 * i + k];
@@ -418,14 +419,14 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
 /// standard isoparametric mapping.
 /// @param[out] u1 The function to interpolate to
 /// @param[in] u0 The function to interpolate from
-/// @param[in] cells_u1 The cells to interpolate on
-/// @param[in] cells_u0 Equivalent cell in u0 for each cell in u1
+/// @param[in] cells1 The cells to interpolate on
+/// @param[in] cells0 Equivalent cell in u0 for each cell in u1
 /// @pre The functions `u1` and `u0` must share the same mesh. This is
 /// not checked by the function.
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
-                                  std::span<const std::int32_t> cells_u1,
-                                  std::span<const std::int32_t> cells_u0)
+                                  std::span<const std::int32_t> cells1,
+                                  std::span<const std::int32_t> cells0)
 {
   // Get mesh
   auto V0 = u0.function_space();
@@ -552,11 +553,11 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
   // Iterate over mesh and interpolate on each cell
   std::span<const T> array0 = u0.x()->array();
   std::span<T> array1 = u1.x()->mutable_array();
-  for (std::size_t c = 0; c < cells_u0.size(); c++)
+  for (std::size_t c = 0; c < cells0.size(); c++)
   {
     // Get cell geometry (coordinate dofs)
     auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-        x_dofmap, cells_u0[c], MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+        x_dofmap, cells0[c], MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     for (std::size_t i = 0; i < num_dofs_g; ++i)
     {
       const int pos = 3 * x_dofs[i];
@@ -596,7 +597,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
       apply_dof_transformation0(
           std::span(basis_reference0_b.data() + p * dim0 * value_size_ref0,
                     dim0 * value_size_ref0),
-          cell_info0, cells_u0[c], value_size_ref0);
+          cell_info0, cells0[c], value_size_ref0);
     }
 
     for (std::size_t i = 0; i < basis0.extent(0); ++i)
@@ -618,7 +619,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
 
     // Copy expansion coefficients for v into local array
     const int dof_bs0 = dofmap0->bs();
-    std::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(cells_u0[c]);
+    std::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(cells0[c]);
     for (std::size_t i = 0; i < dofs0.size(); ++i)
       for (int k = 0; k < dof_bs0; ++k)
         coeffs0[dof_bs0 * i + k] = array0[dof_bs0 * dofs0[i] + k];
@@ -661,7 +662,7 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
         mapped_values0, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0,
         MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     interpolation_apply(Pi_1, values, std::span(local1), bs1);
-    apply_inverse_dof_transform1(local1, cell_info1, cells_u1[c], 1);
+    apply_inverse_dof_transform1(local1, cell_info1, cells1[c], 1);
 
     // Copy local coefficients to the correct position in u dof array
     const int dof_bs1 = dofmap1->bs();

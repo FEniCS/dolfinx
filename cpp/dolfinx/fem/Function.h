@@ -178,7 +178,8 @@ public:
   /// generate_nonmatching_meshes_interpolation_data (optional).
   void interpolate(
       const Function<value_type, geometry_type>& v,
-      std::span<const std::int32_t> cell_map = std::span<const std::int32_t>(),
+      std::span<const std::int32_t> cell_map = std::span<const std::int32_t>()
+      = {},
       const std::tuple<std::span<const std::int32_t>,
                        std::span<const std::int32_t>,
                        std::span<const geometry_type>,
@@ -357,9 +358,7 @@ public:
                      [&cell_map](std::int32_t c) { return cell_map[c]; });
     }
     else
-    {
       std::runtime_error("Meshes are different and no cell map is provided");
-    }
 
     e.eval(expr_mesh, cells_expr, fdata, {num_cells, num_points * value_size});
 
@@ -391,7 +390,7 @@ public:
   void interpolate(const Expression<value_type, geometry_type>& e,
                    const dolfinx::mesh::Mesh<geometry_type>& expr_mesh,
                    std::span<const std::int32_t> cell_map
-                   = std::span<const std::int32_t>())
+                   = std::span<const std::int32_t>() = {})
   {
     assert(_function_space);
     assert(_function_space->mesh());

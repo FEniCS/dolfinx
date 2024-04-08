@@ -1029,6 +1029,7 @@ def test_nonmatching_mesh_single_cell_overlap_interpolation(xtype):
 
 
 def test_submesh_interpolation():
+    """Test interpolation of a function between a submesh and its parent"""
     mesh = create_unit_square(MPI.COMM_WORLD, 6, 7)
 
     def left_locator(x):
@@ -1075,6 +1076,7 @@ def test_submesh_interpolation():
 
 
 def test_submesh_expression_interpolation():
+    """Test interpolation of an expression between a submesh and its parent"""
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 8, cell_type=CellType.quadrilateral)
 
     def left_locator(x):
