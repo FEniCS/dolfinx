@@ -1160,7 +1160,7 @@ void interpolate(
                      [&cell_map](std::int32_t c) { return cell_map[c]; });
     }
     // Non-matching meshes
-    if (cells_v.size() == 0)
+    if (cells_v.empty())
     {
       impl::interpolate_nonmatching_meshes(u, v, cells_u,
                                            nmm_interpolation_data);

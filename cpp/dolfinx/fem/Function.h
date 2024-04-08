@@ -351,7 +351,7 @@ public:
       cells_expr.insert(cells_expr.end(), cells.begin(), cells.end());
     }
     // If meshes are different and input mapping is given
-    else if (cell_map.size() > 0)
+    else if (!cell_map.empty())
     {
       std::transform(cells.begin(), cells.end(), std::back_inserter(cells_expr),
                      [&cell_map](std::int32_t c) { return cell_map[c]; });
@@ -385,7 +385,7 @@ public:
 
   /// Interpolate an Expression (based on UFL) on all cells
   /// @param[in] e The function to be interpolated
-  /// @param[in] expr_mesh Mesh expression is defined on
+  /// @param[in] mesh Mesh the Expression `e` is defined on.
   /// @param[in] cell_map Map from `cells` to cells in expression if
   /// receiving function is defined on a different mesh than the expression
   void interpolate(const Expression<value_type, geometry_type>& e,
