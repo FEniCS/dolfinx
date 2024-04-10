@@ -342,7 +342,6 @@ public:
     // Evaluate Expression at points
     assert(_function_space->mesh());
 
-    //
     std::vector<std::int32_t> cells_expr;
     cells_expr.reserve(num_cells);
     // Get mesh and check if mesh is shared
