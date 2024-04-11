@@ -255,7 +255,9 @@ class NonlinearPDE_SNESProblem:
         for var in self.soln_vars:
             size_local = var.x.petsc_vec.getLocalSize()
             var.x.petsc_vec.array[:] = x_array[offset : offset + size_local]
-            var.x.petsc_vec.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+            var.x.petsc_vec.ghostUpdate(
+                addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD
+                )
             offset += size_local
 
         assemble_vector_block(F, self.L, self.a, bcs=self.bcs, x0=x, scale=-1.0)
