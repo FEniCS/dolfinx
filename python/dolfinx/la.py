@@ -251,7 +251,7 @@ class Vector:
         return self._cpp_object.array
 
     @property
-    def vector(self):
+    def petsc_vec(self):
         """PETSc vector holding the entries of the vector.
 
         Upon first call, this function creates a PETSc ``Vec`` object

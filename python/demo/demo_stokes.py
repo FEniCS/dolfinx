@@ -524,7 +524,7 @@ def mixed_direct():
     # Compute the solution
     U = Function(W)
     try:
-        ksp.solve(b, U.vector)
+        ksp.solve(b, U.x.petsc_vec)
     except PETSc.Error as e:
         if e.ierr == 92:
             print("The required PETSc solver/preconditioner is not available. Exiting.")

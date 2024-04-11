@@ -494,7 +494,10 @@ class Function(ufl.Coefficient):
             Prefer :func`x` where possible.
 
         """
-        return self.x.vector
+        warnings.warn("dlx.fem.Function.vector is deprecated.\n"
+                      "Please use dlx.fem.Function.x.petsc_vec "
+                      "to access the underlining petsc4py wrapper")
+        return self.x.petsc_vec
 
     @property
     def dtype(self) -> np.dtype:

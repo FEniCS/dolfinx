@@ -118,7 +118,7 @@ def test_matrix_assembly_block_nl():
         x = create_vector_block(L_block)
         scatter_local_vectors(
             x,
-            [u.vector.array_r, p.vector.array_r],
+            [u.x.petsc_vec.array_r, p.x.petsc_vec.array_r],
             [
                 (u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
                 (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs),
@@ -144,10 +144,10 @@ def test_matrix_assembly_block_nl():
         x = create_vector_nest(L_block)
         for x1_soln_pair in zip(x.getNestSubVecs(), (u, p)):
             x1_sub, soln_sub = x1_soln_pair
-            soln_sub.vector.ghostUpdate(
+            soln_sub.x.petsc_vec.ghostUpdate(
                 addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD
             )
-            soln_sub.vector.copy(result=x1_sub)
+            soln_sub.x.petsc_vec.copy(result=x1_sub)
             x1_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
         A = assemble_matrix_nest(a_block, bcs=[bc])
@@ -195,9 +195,9 @@ def test_matrix_assembly_block_nl():
         A = assemble_matrix(J, bcs=[bc])
         A.assemble()
         b = assemble_vector(F)
-        apply_lifting(b, [J], bcs=[[bc]], x0=[U.vector], scale=-1.0)
+        apply_lifting(b, [J], bcs=[[bc]], x0=[U.x.petsc_vec], scale=-1.0)
         b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-        set_bc(b, [bc], x0=U.vector, scale=-1.0)
+        set_bc(b, [bc], x0=U.x.petsc_vec, scale=-1.0)
         assert A.getType() != "nest"
         Anorm = A.norm()
         bnorm = b.norm()
@@ -253,9 +253,9 @@ class NonlinearPDE_SNESProblem:
         offset = 0
         x_array = x.getArray(readonly=True)
         for var in self.soln_vars:
-            size_local = var.vector.getLocalSize()
-            var.vector.array[:] = x_array[offset : offset + size_local]
-            var.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+            size_local = var.x.petsc_vec.getLocalSize()
+            var.x.petsc_vec.array[:] = x_array[offset : offset + size_local]
+            var.x.petsc_vec.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
             offset += size_local
 
         assemble_vector_block(F, self.L, self.a, bcs=self.bcs, x0=x, scale=-1.0)
@@ -373,7 +373,7 @@ def test_assembly_solve_block_nl():
         x = create_vector_block(F)
         scatter_local_vectors(
             x,
-            [u.vector.array_r, p.vector.array_r],
+            [u.x.petsc_vec.array_r, p.x.petsc_vec.array_r],
             [
                 (u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
                 (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs),
@@ -415,10 +415,10 @@ def test_assembly_solve_block_nl():
         assert x.getType() == "nest"
         for x_soln_pair in zip(x.getNestSubVecs(), (u, p)):
             x_sub, soln_sub = x_soln_pair
-            soln_sub.vector.ghostUpdate(
+            soln_sub.x.petsc_vec.ghostUpdate(
                 addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD
             )
-            soln_sub.vector.copy(result=x_sub)
+            soln_sub.x.petsc_vec.copy(result=x_sub)
             x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
         snes.solve(None, x)
@@ -471,7 +471,7 @@ def test_assembly_solve_block_nl():
         U.sub(1).interpolate(initial_guess_p)
 
         x = create_vector(F)
-        x.array[:] = U.vector.array_r
+        x.array[:] = U.x.petsc_vec.array_r
 
         snes.solve(None, x)
         assert snes.getKSP().getConvergedReason() > 0
@@ -574,7 +574,7 @@ def test_assembly_solve_taylor_hood_nl(mesh):
         u.interpolate(initial_guess_u)
         p.interpolate(initial_guess_p)
         x = create_vector_block(F)
-        with u.vector.localForm() as _u, p.vector.localForm() as _p:
+        with u.x.petsc_vec.localForm() as _u, p.x.petsc_vec.localForm() as _p:
             scatter_local_vectors(
                 x,
                 [_u.array_r, _p.array_r],
@@ -619,10 +619,10 @@ def test_assembly_solve_taylor_hood_nl(mesh):
         x = create_vector_nest(F)
         for x1_soln_pair in zip(x.getNestSubVecs(), (u, p)):
             x1_sub, soln_sub = x1_soln_pair
-            soln_sub.vector.ghostUpdate(
+            soln_sub.x.petsc_vec.ghostUpdate(
                 addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD
             )
-            soln_sub.vector.copy(result=x1_sub)
+            soln_sub.x.petsc_vec.copy(result=x1_sub)
             x1_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
         x.set(0.0)
@@ -681,7 +681,7 @@ def test_assembly_solve_taylor_hood_nl(mesh):
         U.sub(1).interpolate(initial_guess_p)
 
         x = create_vector(F)
-        x.array[:] = U.vector.array_r
+        x.array[:] = U.x.petsc_vec.array_r
 
         snes.solve(None, x)
         assert snes.getConvergedReason() > 0
