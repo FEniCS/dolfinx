@@ -875,7 +875,7 @@ public:
             std::shared_ptr<const mesh::Mesh<T>> mesh,
             std::string engine = "BPFile")
       : ADIOS2Writer(comm, filename, "VTX mesh writer", engine), _mesh(mesh),
-        _mesh_reuse_policy(VTXMeshPolicy::update)
+        _mesh_reuse_policy(VTXMeshPolicy::update), _is_piecewise_constant(false)
   {
     // Define VTK scheme attribute for mesh
     std::string vtk_scheme = impl_vtx::create_vtk_schema({}, {}).str();
@@ -902,7 +902,7 @@ public:
             VTXMeshPolicy mesh_policy = VTXMeshPolicy::update)
       : ADIOS2Writer(comm, filename, "VTX function writer", engine),
         _mesh(impl_adios2::extract_common_mesh<T>(u)),
-        _mesh_reuse_policy(mesh_policy), _u(u)
+        _mesh_reuse_policy(mesh_policy), _u(u), _is_piecewise_constant(false)
   {
     if (u.empty())
       throw std::runtime_error("VTXWriter fem::Function list is empty.");
@@ -933,11 +933,7 @@ public:
 
     // Check if function is DG 0
     if (element0->space_dimension() / element0->block_size() == 1)
-    {
-      throw std::runtime_error(
-          "VTK does not support cell-wise fields. See "
-          "https://gitlab.kitware.com/vtk/vtk/-/issues/18458.");
-    }
+      _is_piecewise_constant = true;
 
     // Check that all functions come from same element type
     for (auto& v : _u)
@@ -970,7 +966,12 @@ public:
 
     // Define VTK scheme attribute for set of functions
     std::vector<std::string> names = impl_vtx::extract_function_names<T>(u);
-    std::string vtk_scheme = impl_vtx::create_vtk_schema(names, {}).str();
+    std::string vtk_scheme;
+    if (_is_piecewise_constant)
+      vtk_scheme = impl_vtx::create_vtk_schema({}, names).str();
+    else
+      vtk_scheme = impl_vtx::create_vtk_schema(names, {}).str();
+
     impl_adios2::define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
   }
 
@@ -1022,9 +1023,20 @@ public:
     _engine->BeginStep();
     _engine->template Put<double>(var_step, t);
 
-    // If we have no functions write the mesh to file
-    if (_u.empty())
+    // If we have no functions or DG functions write the mesh to file
+    if (_is_piecewise_constant or _u.empty())
+    {
       impl_vtx::vtx_write_mesh(*_io, *_engine, *_mesh);
+      if (_is_piecewise_constant)
+      {
+        for (auto& v : _u)
+        {
+          std::visit([&](auto& u)
+                     { impl_vtx::vtx_write_data(*_io, *_engine, *u); },
+                     v);
+        }
+      }
+    }
     else
     {
       if (_mesh_reuse_policy == VTXMeshPolicy::update
@@ -1072,6 +1084,9 @@ private:
   VTXMeshPolicy _mesh_reuse_policy;
   std::vector<std::int64_t> _x_id;
   std::vector<std::uint8_t> _x_ghost;
+
+  // Special handling of piecewise constant functions
+  bool _is_piecewise_constant;
 };
 
 /// Type deduction
