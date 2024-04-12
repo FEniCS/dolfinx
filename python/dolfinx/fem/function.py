@@ -499,7 +499,7 @@ class Function(ufl.Coefficient):
             "dlx.fem.Function.vector is deprecated.\n"
             "Please use dlx.fem.Function.x.petsc_vec "
             "to access the underlying petsc4py wrapper",
-            DeprecationWarning
+            DeprecationWarning,
         )
         return self.x.petsc_vec
 
