@@ -235,6 +235,11 @@ class Vector:
             User code should call :func:`vector` to create a vector object.
         """
         self._cpp_object = x
+        self._petsc_x = None
+
+    def __del__(self):
+        if self._petsc_x is not None:
+            self._petsc_x.destroy()
 
     @property
     def index_map(self) -> IndexMap:
@@ -250,6 +255,18 @@ class Vector:
     def array(self) -> np.ndarray:
         """Local representation of the vector."""
         return self._cpp_object.array
+
+    @property
+    def petsc_vec(self):
+        """PETSc vector holding the entries of the vector.
+
+        Upon first call, this function creates a PETSc ``Vec`` object
+        that wraps the degree-of-freedom data. The ``Vec`` object is
+        cached and the cached ``Vec`` is returned upon subsequent calls.
+        """
+        if self._petsc_x is None:
+            self._petsc_x = create_petsc_vector_wrap(self)
+        return self._petsc_x
 
     def scatter_forward(self) -> None:
         """Update ghost entries."""
