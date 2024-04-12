@@ -135,8 +135,8 @@ compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
     assert(it != cell_vertices.end());
     const int local_pos = std::distance(cell_vertices.begin(), it);
 
-    auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
-        submdspan(x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+        x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     for (std::size_t j = 0; j < 3; ++j)
       x_vertices[j * vertices.size() + i] = x_nodes[3 * dofs[local_pos] + j];
     vertex_to_pos[v] = i;
@@ -166,16 +166,15 @@ std::vector<std::int32_t> exterior_facet_indices(const Topology& topology);
 ///
 /// @param[in] comm MPI Communicator
 /// @param[in] nparts Number of partitions
-/// @param[in] tdim Topological dimension
+/// @param[in] cell_type Type of cell in mesh
 /// @param[in] cells Cells on this process. The ith entry in list
 /// contains the global indices for the cell vertices. Each cell can
 /// appear only once across all processes. The cell vertex indices are
 /// not necessarily contiguous globally, i.e. the maximum index across
 /// all processes can be greater than the number of vertices. High-order
 /// 'nodes', e.g. mid-side points, should not be included.
-/// @param[in] ghost_mode How to overlap the cell partitioning: none,
-/// shared_facet or shared_vertex
 /// @return Destination ranks for each cell on this process
+/// @note Cells can have multiple destination ranks, when ghosted.
 using CellPartitionFunction = std::function<graph::AdjacencyList<std::int32_t>(
     MPI_Comm comm, int nparts, CellType cell_type,
     const graph::AdjacencyList<std::int64_t>& cells)>;
@@ -220,7 +219,7 @@ std::vector<T> h(const Mesh<T>& mesh, std::span<const std::int32_t> entities,
   std::span<const T> x = mesh.geometry().x();
 
   // Function to compute the length of (p0 - p1)
-  auto delta_norm = [](const auto& p0, const auto& p1)
+  auto delta_norm = [](auto&& p0, auto&& p1)
   {
     T norm = 0;
     for (std::size_t i = 0; i < 3; ++i)
@@ -435,9 +434,8 @@ compute_vertex_coords(const mesh::Mesh<T>& mesh)
   std::vector<std::int32_t> vertex_to_node(num_vertices);
   for (int c = 0; c < c_to_v->num_nodes(); ++c)
   {
-    auto x_dofs
-        = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
-            submdspan(x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+        x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     auto vertices = c_to_v->links(c);
     for (std::size_t i = 0; i < vertices.size(); ++i)
       vertex_to_node[vertices[i]] = x_dofs[i];
@@ -534,8 +532,8 @@ std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
 /// owned boundary facet and evaluate to true for the provided geometric
 /// marking function.
 ///
-/// An entity is considered marked if the marker function evaluates to true
-/// for all of its vertices.
+/// An entity is considered marked if the marker function evaluates to
+/// true for all of its vertices.
 ///
 /// @note For vertices and edges, in parallel this function will not
 /// necessarily mark all entities that are on the exterior boundary. For
@@ -618,12 +616,12 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
 /// @warning This function should not be used unless there is no
 /// alternative. It may be removed in the future.
 ///
-/// @param[in] mesh The mesh
-/// @param[in] dim Topological dimension of the entities of interest
+/// @param[in] mesh The mesh.
+/// @param[in] dim Topological dimension of the entities of interest.
 /// @param[in] entities Entity indices (local) to compute the vertex
-/// geometry indices for
+/// geometry indices for.
 /// @param[in] orient If true, in 3D, reorients facets to have
-/// consistent normal direction
+/// consistent normal direction.
 /// @return Indices in the geometry array for the entity vertices. The
 /// shape is `(num_entities, num_vertices_per_entity)` and the storage
 /// is row-major. The index `indices[i, j]` is the position in the
@@ -759,7 +757,7 @@ compute_incident_entities(const Topology& topology,
 /// distribution of the mesh.
 ///
 /// From mesh input data that is distributed across processes, a
-/// distributed a mesh::Mesh is created. If the partitioning function is
+/// distributed mesh::Mesh is created. If the partitioning function is
 /// not callable, i.e. it does not store a callable function, no
 /// re-distribution of cells is done.
 ///
@@ -845,7 +843,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
       = extract_topology(celltype, doflayout, cells1.array());
 
   // Build local dual graph for owned cells to (i) get list of vertices
-  // on the process boundary and (ii) and apply re-ordering to cells for
+  // on the process boundary and (ii) apply re-ordering to cells for
   // locality
   std::vector<std::int64_t> boundary_v;
   {

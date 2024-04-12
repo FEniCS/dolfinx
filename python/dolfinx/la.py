@@ -174,7 +174,7 @@ class MatrixCSR:
 
 
 def matrix_csr(
-    sp: _cpp.la.SparsityPattern, block_mode=BlockMode.compact, dtype=np.float64
+    sp: _cpp.la.SparsityPattern, block_mode=BlockMode.compact, dtype: npt.DTypeLike = np.float64
 ) -> MatrixCSR:
     """Create a distributed sparse matrix.
 
@@ -188,13 +188,13 @@ def matrix_csr(
     Returns:
         A sparse matrix.
     """
-    if dtype == np.float32:
+    if np.issubdtype(dtype, np.float32):
         ftype = _cpp.la.MatrixCSR_float32
-    elif dtype == np.float64:
+    elif np.issubdtype(dtype, np.float64):
         ftype = _cpp.la.MatrixCSR_float64
-    elif dtype == np.complex64:
+    elif np.issubdtype(dtype, np.complex64):
         ftype = _cpp.la.MatrixCSR_complex64
-    elif dtype == np.complex128:
+    elif np.issubdtype(dtype, np.complex128):
         ftype = _cpp.la.MatrixCSR_complex128
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
@@ -208,6 +208,9 @@ class Vector:
         _cpp.la.Vector_float64,
         _cpp.la.Vector_complex64,
         _cpp.la.Vector_complex128,
+        _cpp.la.Vector_int8,
+        _cpp.la.Vector_int32,
+        _cpp.la.Vector_int64,
     ]
 
     def __init__(
@@ -217,6 +220,9 @@ class Vector:
             _cpp.la.Vector_float64,
             _cpp.la.Vector_complex64,
             _cpp.la.Vector_complex128,
+            _cpp.la.Vector_int8,
+            _cpp.la.Vector_int32,
+            _cpp.la.Vector_int64,
         ],
     ):
         """A distributed vector object.
@@ -258,17 +264,6 @@ class Vector:
         """
         self._cpp_object.scatter_reverse(mode)
 
-    def norm(self, type: _cpp.la.Norm = _cpp.la.Norm.l2) -> np.floating:
-        """Compute a norm of the vector.
-
-        Args:
-            type: Norm type to compute.
-
-        Returns:
-            Computed norm.
-        """
-        return self._cpp_object.norm(type)
-
 
 def vector(map, bs=1, dtype: npt.DTypeLike = np.float64) -> Vector:
     """Create a distributed vector.
@@ -282,14 +277,20 @@ def vector(map, bs=1, dtype: npt.DTypeLike = np.float64) -> Vector:
     Returns:
         A distributed vector.
     """
-    if dtype == np.float32:
+    if np.issubdtype(dtype, np.float32):
         vtype = _cpp.la.Vector_float32
-    elif dtype == np.float64:
+    elif np.issubdtype(dtype, np.float64):
         vtype = _cpp.la.Vector_float64
-    elif dtype == np.complex64:
+    elif np.issubdtype(dtype, np.complex64):
         vtype = _cpp.la.Vector_complex64
-    elif dtype == np.complex128:
+    elif np.issubdtype(dtype, np.complex128):
         vtype = _cpp.la.Vector_complex128
+    elif np.issubdtype(dtype, np.int8):
+        vtype = _cpp.la.Vector_int8
+    elif np.issubdtype(dtype, np.int32):
+        vtype = _cpp.la.Vector_int32
+    elif np.issubdtype(dtype, np.int64):
+        vtype = _cpp.la.Vector_int64
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
 
@@ -355,3 +356,16 @@ def is_orthonormal(basis, eps: float = 1.0e-12) -> bool:
             if abs(x.dot(y)) > eps:
                 return False
     return True
+
+
+def norm(x: Vector, type: _cpp.la.Norm = _cpp.la.Norm.l2) -> np.floating:
+    """Compute a norm of the vector.
+
+    Args:
+        x: Vector to measure.
+        type: Norm type to compute.
+
+    Returns:
+        Computed norm.
+    """
+    return _cpp.la.norm(x._cpp_object, type)

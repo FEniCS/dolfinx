@@ -1,9 +1,13 @@
-// Custom cell kernel assembly (C++)
+// ```text
+// Copyright (C) 2024 Jack S. Hale and Garth N. Wells
+// This file is part of DOLFINx (https://www.fenicsproject.org)
+// SPDX-License-Identifier:    LGPL-3.0-or-later
+// ```
+
+// # Custom cell kernel assembly
 //
-// This demo shows various methods to define custom cell kernels in C++ and
-// have them assembled into DOLFINx linear algebra data structures.
-//
-// .. code-block:: cpp
+// This demo shows various methods to define custom cell kernels in C++
+// and have them assembled into DOLFINx linear algebra data structures.
 
 #include <basix/finite-element.h>
 #include <basix/mdspan.hpp>
@@ -27,14 +31,9 @@ template <typename T, std::size_t n0, std::size_t n1>
 using mdspan2_t
     = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<T,
                                              std::extents<std::size_t, n0, n1>>;
-template <typename T>
-using kernel_t = std::function<void(T*, const T*, const T*, const T*,
-                                    const int*, const uint8_t*)>;
-
-// .. code-block:: cpp
 
 /// @brief Compute the P1 element mass matrix on the reference cell.
-/// @tparam V Scalar type.
+/// @tparam T Scalar type.
 /// @param phi Basis functions.
 /// @param w Integration weights.
 /// @return Element reference matrix (row-major storage).
@@ -51,7 +50,7 @@ std::array<T, 9> A_ref(mdspand_t<const T, 4> phi, std::span<const T> w)
 }
 
 /// @brief Compute the P1 RHS vector for f=1 on the reference cell.
-/// @tparam V Scalar type.
+/// @tparam T Scalar type.
 /// @param phi Basis functions.
 /// @param w Integration weights.
 /// @return RHS reference vector.
@@ -77,17 +76,17 @@ double assemble_matrix0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
                         std::span<const std::int32_t> cells)
 {
   // Kernel data (ID, kernel function, cell indices to execute over)
-  std::vector kernel_data{std::tuple{-1, kernel_t<T>(kernel), cells}};
+  std::vector kernel_data{fem::integral_data<T>(-1, kernel, cells)};
 
   // Associate kernel with cells (as opposed to facets, etc)
   std::map integrals{std::pair{fem::IntegralType::cell, kernel_data}};
 
-  fem::Form<T> a({V, V}, integrals, {}, {}, false, V->mesh());
+  fem::Form<T> a({V, V}, integrals, {}, {}, false, {}, V->mesh());
   auto dofmap = V->dofmap();
   auto sp = la::SparsityPattern(
       V->mesh()->comm(), {dofmap->index_map, dofmap->index_map},
       {dofmap->index_map_bs(), dofmap->index_map_bs()});
-  fem::sparsitybuild::cells(sp, cells, {*dofmap, *dofmap});
+  fem::sparsitybuild::cells(sp, {cells, cells}, {*dofmap, *dofmap});
   sp.finalize();
   la::MatrixCSR<T> A(sp);
   common::Timer timer("Assembler0 std::function (matrix)");
@@ -96,7 +95,8 @@ double assemble_matrix0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
   return A.squared_norm();
 }
 
-/// @brief Assemble a RHS vector using a `std::function` kernel function.
+/// @brief Assemble a RHS vector using a `std::function` kernel
+/// function.
 /// @tparam T Scalar type.
 /// @param V Function space.
 /// @param kernel Element kernel to execute.
@@ -107,9 +107,9 @@ double assemble_vector0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
                         std::span<const std::int32_t> cells)
 {
   auto mesh = V->mesh();
-  std::vector kernal_data{std::tuple{-1, kernel_t<T>(kernel), cells}};
+  std::vector kernal_data{fem::integral_data<T>(-1, kernel, cells)};
   std::map integrals{std::pair{fem::IntegralType::cell, kernal_data}};
-  fem::Form<T> L({V}, integrals, {}, {}, false, mesh);
+  fem::Form<T> L({V}, integrals, {}, {}, false, {}, mesh);
   auto dofmap = V->dofmap();
   la::Vector<T> b(dofmap->index_map, 1);
   common::Timer timer("Assembler0 std::function (vector)");
@@ -124,7 +124,8 @@ double assemble_vector0(std::shared_ptr<fem::FunctionSpace<T>> V, auto kernel,
 /// be important for performance for lightweight kernels.
 ///
 /// @tparam T Scalar type.
-/// @param V Function space.
+/// @param g mesh geometry.
+/// @param dofmap dofmap.
 /// @param kernel Element kernel to execute.
 /// @param cells Cells to execute the kernel over.
 /// @return Frobenius norm squared of the matrix.
@@ -135,14 +136,15 @@ double assemble_matrix1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
   auto sp = la::SparsityPattern(dofmap.index_map->comm(),
                                 {dofmap.index_map, dofmap.index_map},
                                 {dofmap.index_map_bs(), dofmap.index_map_bs()});
-  fem::sparsitybuild::cells(sp, cells, {dofmap, dofmap});
+  fem::sparsitybuild::cells(sp, {cells, cells}, {dofmap, dofmap});
   sp.finalize();
   la::MatrixCSR<T> A(sp);
   auto ident = [](auto, auto, auto, auto) {}; // DOF permutation not required
   common::Timer timer("Assembler1 lambda (matrix)");
-  fem::impl::assemble_cells(A.mat_add_values(), g.dofmap(), g.x(), cells, ident,
-                            dofmap.map(), 1, ident, dofmap.map(), 1, {}, {},
-                            kernel, std::span<const T>(), 0, {}, {});
+  fem::impl::assemble_cells(A.mat_add_values(), g.dofmap(), g.x(), cells,
+                            {dofmap.map(), 1, cells}, ident,
+                            {dofmap.map(), 1, cells}, ident, {}, {}, kernel,
+                            std::span<const T>(), 0, {}, {}, {});
   A.scatter_rev();
   return A.squared_norm();
 }
@@ -153,7 +155,8 @@ double assemble_matrix1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
 /// be important for performance for lightweight kernels.
 ///
 /// @tparam T Scalar type.
-/// @param V Function space.
+/// @param g mesh geometry.
+/// @param dofmap dofmap.
 /// @param kernel Element kernel to execute.
 /// @param cells Cells to execute the kernel over.
 /// @return l2 norm squared of the vector.
@@ -165,7 +168,7 @@ double assemble_vector1(const mesh::Geometry<T>& g, const fem::DofMap& dofmap,
   common::Timer timer("Assembler1 lambda (vector)");
   fem::impl::assemble_cells<T, 1>([](auto, auto, auto, auto) {},
                                   b.mutable_array(), g.dofmap(), g.x(), cells,
-                                  dofmap.map(), 1, kernel, {}, {}, 0, {});
+                                  {dofmap.map(), 1, cells}, kernel, {}, {}, 0, {});
   b.scatter_rev(std::plus<T>());
   return la::squared_norm(b);
 }

@@ -1,3 +1,19 @@
+// # Hyperelasticity
+//
+// Solve a compressible neo-Hookean model in 3D.
+
+// ## UFL form file
+//
+// The UFL file is implemented in
+// {download}`demo_hyperelasticity/hyperelasticity.py`.
+// ````{admonition} UFL form implemented in python
+// :class: dropdown
+// ![ufl-code]
+// ````
+//
+
+// ## C++ program
+
 #include "hyperelasticity.h"
 #include <basix/finite-element.h>
 #include <climits>
@@ -16,9 +32,11 @@ using namespace dolfinx;
 using T = PetscScalar;
 using U = typename dolfinx::scalar_value_type_t<T>;
 
+/// Hyperelastic problem class
 class HyperElasticProblem
 {
 public:
+  /// Constructor
   HyperElasticProblem(
       std::shared_ptr<fem::Form<T>> L, std::shared_ptr<fem::Form<T>> J,
       std::vector<std::shared_ptr<const fem::DirichletBC<T>>> bcs)
@@ -45,6 +63,8 @@ public:
       VecDestroy(&_b_petsc);
   }
 
+  /// @brief  Form
+  /// @return
   auto form()
   {
     return [](Vec x)
@@ -95,8 +115,10 @@ public:
     };
   }
 
+  /// RHS vector
   Vec vector() { return _b_petsc; }
 
+  /// Jacobian matrix
   Mat matrix() { return _matA.mat(); }
 
 private:
@@ -118,14 +140,12 @@ int main(int argc, char* argv[])
   std::string thread_name = "RANK " + std::to_string(mpi_rank);
   loguru::set_thread_name(thread_name.c_str());
   {
-    // Inside the ``main`` function, we begin by defining a tetrahedral mesh
-    // of the domain and the function space on this mesh. Here, we choose to
-    // create a unit cube mesh with 25 ( = 24 + 1) vertices in one direction
-    // and 17 ( = 16 + 1) vertices in the other two directions. With this
-    // mesh, we initialize the (finite element) function space defined by the
-    // generated code.
-    //
-    // .. code-block:: cpp
+    // Inside the `main` function, we begin by defining a tetrahedral
+    // mesh of the domain and the function space on this mesh. Here, we
+    // choose to create a unit cube mesh with 25 ( = 24 + 1) vertices in
+    // one direction and 17 ( = 16 + 1) vertices in the other two
+    // directions. With this mesh, we initialize the (finite element)
+    // function space defined by the generated code.
 
     // Create mesh and define function space
     auto mesh = std::make_shared<mesh::Mesh<U>>(mesh::create_box<U>(
@@ -224,17 +244,15 @@ int main(int argc, char* argv[])
     // Compute Cauchy stress. Construct appropriate Basix element for
     // stress.
     constexpr auto family = basix::element::family::P;
-    const auto cell_type
+    auto cell_type
         = mesh::cell_type_to_basix_type(mesh->topology()->cell_type());
     constexpr int k = 0;
     constexpr bool discontinuous = true;
-
     basix::FiniteElement S_element = basix::create_element<U>(
         family, cell_type, k, basix::element::lagrange_variant::unset,
         basix::element::dpc_variant::unset, discontinuous);
     auto S = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace(
         mesh, S_element, std::vector<std::size_t>{3, 3}));
-
     auto sigma_expression = fem::create_expression<T, U>(
         *expression_hyperelasticity_sigma, {{"u", u}}, {});
 

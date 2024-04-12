@@ -93,14 +93,14 @@ def test_numba_assembly(dtype):
     integrals = {
         IntegralType.cell: [
             (-1, k2.address, cells),
-            (12, k2.address, np.arange(0)),
             (2, k2.address, np.arange(0)),
+            (12, k2.address, np.arange(0)),
         ]
     }
     formtype = form_cpp_class(dtype)
-    a = Form(formtype([V._cpp_object, V._cpp_object], integrals, [], [], False, None))
+    a = Form(formtype([V._cpp_object, V._cpp_object], integrals, [], [], False, {}, None))
     integrals = {IntegralType.cell: [(-1, k1.address, cells)]}
-    L = Form(formtype([V._cpp_object], integrals, [], [], False, None))
+    L = Form(formtype([V._cpp_object], integrals, [], [], False, {}, None))
 
     A = dolfinx.fem.assemble_matrix(a)
     A.scatter_reverse()
@@ -108,7 +108,7 @@ def test_numba_assembly(dtype):
     b.scatter_reverse(dolfinx.la.InsertMode.add)
 
     Anorm = np.sqrt(A.squared_norm())
-    bnorm = b.norm()
+    bnorm = la.norm(b)
     assert np.isclose(Anorm, 56.124860801609124)
     assert np.isclose(bnorm, 0.0739710713711999)
 
@@ -130,11 +130,11 @@ def test_coefficient(dtype):
     num_cells = mesh.topology.index_map(tdim).size_local + mesh.topology.index_map(tdim).num_ghosts
     integrals = {IntegralType.cell: [(1, k1.address, np.arange(num_cells, dtype=np.int32))]}
     formtype = form_cpp_class(dtype)
-    L = Form(formtype([V._cpp_object], integrals, [vals._cpp_object], [], False, None))
+    L = Form(formtype([V._cpp_object], integrals, [vals._cpp_object], [], False, {}, None))
 
     b = dolfinx.fem.assemble_vector(L)
     b.scatter_reverse(la.InsertMode.add)
-    bnorm = b.norm()
+    bnorm = la.norm(b)
     assert np.isclose(bnorm, 2.0 * 0.0739710713711999)
 
 
@@ -259,11 +259,13 @@ def test_cffi_assembly():
 
     ptrA = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonA"))
     integrals = {IntegralType.cell: [(-1, ptrA, cells)]}
-    a = Form(_cpp.fem.Form_float64([V._cpp_object, V._cpp_object], integrals, [], [], False, None))
+    a = Form(
+        _cpp.fem.Form_float64([V._cpp_object, V._cpp_object], integrals, [], [], False, {}, None)
+    )
 
     ptrL = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonL"))
     integrals = {IntegralType.cell: [(-1, ptrL, cells)]}
-    L = Form(_cpp.fem.Form_float64([V._cpp_object], integrals, [], [], False, None))
+    L = Form(_cpp.fem.Form_float64([V._cpp_object], integrals, [], [], False, {}, None))
 
     A = fem.assemble_matrix(a)
     A.scatter_reverse()
@@ -271,4 +273,4 @@ def test_cffi_assembly():
 
     b = fem.assemble_vector(L)
     b.scatter_reverse(la.InsertMode.add)
-    assert np.isclose(b.norm(), 0.0739710713711999)
+    assert np.isclose(la.norm(b), 0.0739710713711999)

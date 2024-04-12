@@ -150,7 +150,7 @@ def test_interpolation_rank0(V):
     assert (w.x.array[:] == 1.0).all()  # /NOSONAR
 
     num_vertices = V.mesh.topology.index_map(0).size_global
-    assert np.isclose(w.x.norm(la.Norm.l1) - num_vertices, 0)
+    assert np.isclose(la.norm(w.x, la.Norm.l1) - num_vertices, 0)
 
     f.t = 2.0
     w.interpolate(f.eval)
@@ -172,7 +172,7 @@ def test_interpolation_rank1(W):
     assert x.min() == 1.0  # /NOSONAR
 
     num_vertices = W.mesh.topology.index_map(0).size_global
-    assert round(w.x.norm(la.Norm.l1) - 6 * num_vertices, 7) == 0
+    assert round(la.norm(w.x, la.Norm.l1) - 6 * num_vertices, 7) == 0
 
 
 @pytest.mark.parametrize("dtype,cdtype", [(np.float32, "float"), (np.float64, "double")])
@@ -213,7 +213,7 @@ def test_cffi_expression(dtype, cdtype):
     f2.interpolate(lambda x: x[0] + x[1])
 
     f1.x.array[:] -= f2.x.array
-    assert f1.x.norm() < 1.0e-12
+    assert la.norm(f1.x) < 1.0e-12
 
 
 def test_interpolation_function(mesh):

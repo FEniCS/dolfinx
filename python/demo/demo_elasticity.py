@@ -146,7 +146,7 @@ L = form(inner(f, v) * dx)
 # a Dirichlet boundary condition object.
 
 facets = locate_entities_boundary(
-    msh, dim=2, marker=lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[1], 1.0))
+    msh, dim=2, marker=lambda x: np.isclose(x[0], 0.0) | np.isclose(x[1], 1.0)
 )
 bc = dirichletbc(
     np.zeros(3, dtype=dtype), locate_dofs_topological(V, entity_dim=2, entities=facets), V=V
@@ -266,7 +266,7 @@ with XDMFFile(msh.comm, "out_elasticity/von_mises_stress.xdmf", "w") as file:
 # be called from all MPI ranks), but we print the norm only on rank 0.
 
 # +
-unorm = uh.x.norm()
+unorm = la.norm(uh.x)
 if msh.comm.rank == 0:
     print("Solution vector norm:", unorm)
 # -

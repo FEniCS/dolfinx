@@ -508,7 +508,7 @@ void write_function(
 
       // Function to pack data to 3D with 'zero' padding, typically when
       // a Function is 2D
-      auto pad_data = [num_comp](const auto& V, auto u)
+      auto pad_data = [num_comp](auto&& V, auto u)
       {
         auto dofmap = V.dofmap();
         int bs = dofmap->bs();
@@ -663,14 +663,14 @@ void write_function(
         add_field(_u.get().name + field_ext[0], size);
         add_field(_u.get().name + field_ext[1], size);
       }
+    }
 
-      // Add data for each process to the PVTU object
-      for (int r = 0; r < mpi_size; ++r)
-      {
-        std::filesystem::path vtu = create_vtu_path(r);
-        pugi::xml_node piece_node = grid_node.append_child("Piece");
-        piece_node.append_attribute("Source") = vtu.filename().c_str();
-      }
+    // Add data for each process to the PVTU object
+    for (int r = 0; r < mpi_size; ++r)
+    {
+      std::filesystem::path vtu = create_vtu_path(r);
+      pugi::xml_node piece_node = grid_node.append_child("Piece");
+      piece_node.append_attribute("Source") = vtu.filename().c_str();
     }
 
     // Write PVTU file

@@ -71,8 +71,8 @@ std::pair<std::vector<T>, std::array<std::size_t, 2>> create_new_geometry(
   for (int c = 0; c < map_c->size_local() + map_c->num_ghosts(); ++c)
   {
     auto vertices = c_to_v->links(c);
-    auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
-        submdspan(x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+        x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     for (std::size_t i = 0; i < vertices.size(); ++i)
     {
       auto vertex_pos = entity_dofs_all[0][i][0];

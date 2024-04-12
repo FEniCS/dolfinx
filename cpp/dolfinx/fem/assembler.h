@@ -9,8 +9,8 @@
 #include "assemble_matrix_impl.h"
 #include "assemble_scalar_impl.h"
 #include "assemble_vector_impl.h"
+#include "traits.h"
 #include "utils.h"
-#include <concepts>
 #include <cstdint>
 #include <dolfinx/common/types.h>
 #include <memory>

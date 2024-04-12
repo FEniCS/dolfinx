@@ -745,7 +745,7 @@ Topology::Topology(MPI_Comm comm, const std::vector<CellType>& cell_types)
     : _comm(comm), _entity_types({mesh::CellType::point}),
       _entity_type_offsets({0, 1})
 {
-  assert(cell_types.size() > 0);
+  assert(!cell_types.empty());
   std::int8_t tdim = cell_dim(cell_types[0]);
   assert(tdim > 0);
   for (auto ct : cell_types)
@@ -1376,7 +1376,7 @@ mesh::create_subtopology(const Topology& topology, int dim,
     std::pair<common::IndexMap, std::vector<int32_t>> map_data
         = common::create_sub_index_map(
             *map0, compute_incident_entities(topology, subentities, dim, 0),
-            true);
+            common::IndexMapOrder::any, true);
     submap0 = std::make_shared<common::IndexMap>(std::move(map_data.first));
     subvertices0 = std::move(map_data.second);
   }

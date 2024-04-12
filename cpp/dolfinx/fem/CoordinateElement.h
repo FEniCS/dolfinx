@@ -223,11 +223,11 @@ public:
                            double tol = 1.0e-6, int maxit = 15) const;
 
   /// @brief Permute a list of DOF numbers on a cell.
-  void permute_dofs(const std::span<std::int32_t>& dofs,
+  void permute_dofs(std::span<std::int32_t> dofs,
                     std::uint32_t cell_perm) const;
 
   /// @brief Reverses a DOF permutation
-  void unpermute_dofs(const std::span<std::int32_t>& dofs,
+  void unpermute_dofs(std::span<std::int32_t> dofs,
                       std::uint32_t cell_perm) const;
 
   /// @brief Indicates whether the geometry DOF numbers on each cell

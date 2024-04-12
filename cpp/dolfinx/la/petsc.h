@@ -323,9 +323,9 @@ public:
   static auto set_block_fn(Mat A, InsertMode mode)
   {
     return [A, mode, cache = std::vector<PetscInt>()](
-               const std::span<const std::int32_t>& rows,
-               const std::span<const std::int32_t>& cols,
-               const std::span<const PetscScalar>& vals) mutable -> int
+               std::span<const std::int32_t> rows,
+               std::span<const std::int32_t> cols,
+               std::span<const PetscScalar> vals) mutable -> int
     {
       PetscErrorCode ierr;
 #ifdef PETSC_USE_64BIT_INDICES
@@ -362,9 +362,9 @@ public:
   {
     return [A, bs0, bs1, mode, cache0 = std::vector<PetscInt>(),
             cache1 = std::vector<PetscInt>()](
-               const std::span<const std::int32_t>& rows,
-               const std::span<const std::int32_t>& cols,
-               const std::span<const PetscScalar>& vals) mutable -> int
+               std::span<const std::int32_t> rows,
+               std::span<const std::int32_t> cols,
+               std::span<const PetscScalar> vals) mutable -> int
     {
       PetscErrorCode ierr;
       cache0.resize(bs0 * rows.size());

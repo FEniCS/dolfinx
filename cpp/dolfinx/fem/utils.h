@@ -59,7 +59,7 @@ namespace impl
 /// @return Vector of (cell, local_facet) pairs
 template <int num_cells>
 std::array<std::int32_t, 2 * num_cells>
-get_cell_facet_pairs(std::int32_t f, const std::span<const std::int32_t>& cells,
+get_cell_facet_pairs(std::int32_t f, std::span<const std::int32_t> cells,
                      const graph::AdjacencyList<std::int32_t>& c_to_f)
 {
   // Loop over cells sharing facet
@@ -113,15 +113,6 @@ compute_integration_domains(IntegralType integral_type,
                             std::span<const std::int32_t> entities, int dim,
                             std::span<const int> values);
 
-/// @brief Finite element cell kernel concept.
-///
-/// Kernel functions that can be passed to an assembler for execution
-/// must satisfy this concept.
-template <class U, class T>
-concept FEkernel = std::is_invocable_v<U, T*, const T*, const T*,
-                                       const scalar_value_type_t<T>*,
-                                       const int*, const std::uint8_t*>;
-
 /// @brief Extract test (0) and trial (1) function spaces pairs for each
 /// bilinear form for a rectangular array of forms.
 ///
@@ -171,6 +162,11 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
   std::shared_ptr mesh = a.mesh();
   assert(mesh);
 
+  std::shared_ptr mesh0 = a.function_spaces().at(0)->mesh();
+  assert(mesh0);
+  std::shared_ptr mesh1 = a.function_spaces().at(1)->mesh();
+  assert(mesh1);
+
   const std::set<IntegralType> types = a.integral_types();
   if (types.find(IntegralType::interior_facet) != types.end()
       or types.find(IntegralType::exterior_facet) != types.end())
@@ -189,6 +185,16 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
   const std::array bs
       = {dofmaps[0].get().index_map_bs(), dofmaps[1].get().index_map_bs()};
 
+  auto extract_cells = [](std::span<const std::int32_t> facets)
+  {
+    assert(facets.size() % 2 == 0);
+    std::vector<std::int32_t> cells;
+    cells.reserve(facets.size() / 2);
+    for (std::size_t i = 0; i < facets.size(); i += 2)
+      cells.push_back(facets[i]);
+    return cells;
+  };
+
   // Create and build sparsity pattern
   la::SparsityPattern pattern(mesh->comm(), index_maps, bs);
   for (auto type : types)
@@ -199,30 +205,28 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
     case IntegralType::cell:
       for (int id : ids)
       {
-        sparsitybuild::cells(pattern, a.domain(type, id),
-                             {{dofmaps[0], dofmaps[1]}});
+        sparsitybuild::cells(
+            pattern, {a.domain(type, id, *mesh0), a.domain(type, id, *mesh1)},
+            {{dofmaps[0], dofmaps[1]}});
       }
       break;
     case IntegralType::interior_facet:
       for (int id : ids)
       {
-        std::span<const std::int32_t> facets = a.domain(type, id);
-        std::vector<std::int32_t> f;
-        f.reserve(facets.size() / 2);
-        for (std::size_t i = 0; i < facets.size(); i += 4)
-          f.insert(f.end(), {facets[i], facets[i + 2]});
-        sparsitybuild::interior_facets(pattern, f, {{dofmaps[0], dofmaps[1]}});
+        sparsitybuild::interior_facets(
+            pattern,
+            {extract_cells(a.domain(type, id, *mesh0)),
+             extract_cells(a.domain(type, id, *mesh1))},
+            {{dofmaps[0], dofmaps[1]}});
       }
       break;
     case IntegralType::exterior_facet:
       for (int id : ids)
       {
-        std::span<const std::int32_t> facets = a.domain(type, id);
-        std::vector<std::int32_t> cells;
-        cells.reserve(facets.size() / 2);
-        for (std::size_t i = 0; i < facets.size(); i += 2)
-          cells.push_back(facets[i]);
-        sparsitybuild::cells(pattern, cells, {{dofmaps[0], dofmaps[1]}});
+        sparsitybuild::cells(pattern,
+                             {extract_cells(a.domain(type, id, *mesh0)),
+                              extract_cells(a.domain(type, id, *mesh1))},
+                             {{dofmaps[0], dofmaps[1]}});
       }
       break;
     default:
@@ -251,8 +255,24 @@ ElementDofLayout create_element_dof_layout(const ufcx_dofmap& dofmap,
 /// @return A new dof map
 DofMap create_dofmap(
     MPI_Comm comm, const ElementDofLayout& layout, mesh::Topology& topology,
-    std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
-        unpermute_dofs,
+    std::function<void(std::span<std::int32_t>, std::uint32_t)> unpermute_dofs,
+    std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
+        reorder_fn);
+
+/// @brief Create a set of dofmaps on a given topology
+/// @param[in] comm MPI communicator
+/// @param[in] layouts Dof layout on each element type
+/// @param[in] topology Mesh topology
+/// @param[in] unpermute_dofs Function to un-permute dofs. `nullptr`
+/// when transformation is not required.
+/// @param[in] reorder_fn Graph reordering function called on the dofmaps
+/// @return The list of new dof maps
+/// @note The number of layouts must match the number of cell types in the
+/// topology
+std::vector<DofMap> create_dofmaps(
+    MPI_Comm comm, const std::vector<ElementDofLayout>& layouts,
+    mesh::Topology& topology,
+    std::function<void(std::span<std::int32_t>, std::uint32_t)> unpermute_dofs,
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
         reorder_fn);
 
@@ -278,10 +298,12 @@ std::vector<std::string> get_constant_names(const ufcx_form& ufcx_form);
 /// @param[in] coefficients Coefficient fields in the form.
 /// @param[in] constants Spatial constants in the form.
 /// @param[in] subdomains Subdomain markers.
-/// @param[in] mesh The mesh of the domain
+/// @param[in] entity_maps The entity maps for the form. Empty for
+/// single domain problems.
+/// @param[in] mesh The mesh of the domain.
 ///
 /// @pre Each value in `subdomains` must be sorted by domain id.
-template <dolfinx::scalar T, typename U = dolfinx::scalar_value_type_t<T>>
+template <dolfinx::scalar T, std::floating_point U = scalar_value_type_t<T>>
 Form<T, U> create_form_factory(
     const ufcx_form& ufcx_form,
     const std::vector<std::shared_ptr<const FunctionSpace<U>>>& spaces,
@@ -291,6 +313,8 @@ Form<T, U> create_form_factory(
         IntegralType,
         std::vector<std::pair<std::int32_t, std::span<const std::int32_t>>>>&
         subdomains,
+    const std::map<std::shared_ptr<const mesh::Mesh<U>>,
+                   std::span<const std::int32_t>>& entity_maps,
     std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
 {
   if (ufcx_form.rank != (int)spaces.size())
@@ -327,8 +351,9 @@ Form<T, U> create_form_factory(
     mesh = spaces[0]->mesh();
   for (auto& V : spaces)
   {
-    if (mesh != V->mesh())
-      throw std::runtime_error("Incompatible mesh");
+    if (mesh != V->mesh() and entity_maps.find(V->mesh()) == entity_maps.end())
+      throw std::runtime_error(
+          "Incompatible mesh. entity_maps must be provided.");
   }
   if (!mesh)
     throw std::runtime_error("No mesh could be associated with the Form.");
@@ -353,22 +378,18 @@ Form<T, U> create_form_factory(
 
   // Get list of integral IDs, and load tabulate tensor into memory for
   // each
-  using kern = std::function<void(
-      T*, const T*, const T*, const typename scalar_value_type<T>::value_type*,
-      const int*, const std::uint8_t*)>;
-  std::map<IntegralType,
-           std::vector<std::tuple<int, kern, std::span<const std::int32_t>>>>
-      integral_data;
-
-  bool needs_facet_permutations = false;
+  using kern_t = std::function<void(T*, const T*, const T*, const U*,
+                                    const int*, const std::uint8_t*)>;
+  std::map<IntegralType, std::vector<integral_data<T, U>>> integrals;
 
   // Attach cell kernels
+  bool needs_facet_permutations = false;
   std::vector<std::int32_t> default_cells;
   {
     std::span<const int> ids(ufcx_form.form_integral_ids
                                  + integral_offsets[cell],
                              num_integrals_type[cell]);
-    auto itg = integral_data.insert({IntegralType::cell, {}});
+    auto itg = integrals.insert({IntegralType::cell, {}});
     auto sd = subdomains.find(IntegralType::cell);
     for (int i = 0; i < num_integrals_type[cell]; ++i)
     {
@@ -377,7 +398,7 @@ Form<T, U> create_form_factory(
           = ufcx_form.form_integrals[integral_offsets[cell] + i];
       assert(integral);
 
-      kern k = nullptr;
+      kern_t k = nullptr;
       if constexpr (std::is_same_v<T, float>)
         k = integral->tabulate_tensor_float32;
       else if constexpr (std::is_same_v<T, std::complex<float>>)
@@ -396,7 +417,11 @@ Form<T, U> create_form_factory(
             const typename scalar_value_type<T>::value_type*, const int*,
             const unsigned char*)>(integral->tabulate_tensor_complex128);
       }
-      assert(k);
+      if (!k)
+      {
+        throw std::runtime_error(
+            "UFCx kernel function is NULL. Check requested types.");
+      }
 
       // Build list of entities to assemble over
       if (id == -1)
@@ -428,7 +453,7 @@ Form<T, U> create_form_factory(
     std::span<const int> ids(ufcx_form.form_integral_ids
                                  + integral_offsets[exterior_facet],
                              num_integrals_type[exterior_facet]);
-    auto itg = integral_data.insert({IntegralType::exterior_facet, {}});
+    auto itg = integrals.insert({IntegralType::exterior_facet, {}});
     auto sd = subdomains.find(IntegralType::exterior_facet);
     for (int i = 0; i < num_integrals_type[exterior_facet]; ++i)
     {
@@ -437,7 +462,7 @@ Form<T, U> create_form_factory(
           = ufcx_form.form_integrals[integral_offsets[exterior_facet] + i];
       assert(integral);
 
-      kern k = nullptr;
+      kern_t k = nullptr;
       if constexpr (std::is_same_v<T, float>)
         k = integral->tabulate_tensor_float32;
       else if constexpr (std::is_same_v<T, std::complex<float>>)
@@ -499,7 +524,7 @@ Form<T, U> create_form_factory(
     std::span<const int> ids(ufcx_form.form_integral_ids
                                  + integral_offsets[interior_facet],
                              num_integrals_type[interior_facet]);
-    auto itg = integral_data.insert({IntegralType::interior_facet, {}});
+    auto itg = integrals.insert({IntegralType::interior_facet, {}});
     auto sd = subdomains.find(IntegralType::interior_facet);
     for (int i = 0; i < num_integrals_type[interior_facet]; ++i)
     {
@@ -508,7 +533,7 @@ Form<T, U> create_form_factory(
           = ufcx_form.form_integrals[integral_offsets[interior_facet] + i];
       assert(integral);
 
-      kern k = nullptr;
+      kern_t k = nullptr;
       if constexpr (std::is_same_v<T, float>)
         k = integral->tabulate_tensor_float32;
       else if constexpr (std::is_same_v<T, std::complex<float>>)
@@ -577,8 +602,8 @@ Form<T, U> create_form_factory(
     sd.insert({itg, std::move(x)});
   }
 
-  return Form<T, U>(spaces, integral_data, coefficients, constants,
-                    needs_facet_permutations, mesh);
+  return Form<T, U>(spaces, integrals, coefficients, constants,
+                    needs_facet_permutations, entity_maps, mesh);
 }
 
 /// @brief Create a Form from UFC input with coefficients and constants
@@ -592,7 +617,7 @@ Form<T, U> create_form_factory(
 /// @param[in] mesh Mesh of the domain. This is required if the form has
 /// no arguments, e.g. a functional.
 /// @return A Form
-template <dolfinx::scalar T, typename U = dolfinx::scalar_value_type_t<T>>
+template <dolfinx::scalar T, std::floating_point U = scalar_value_type_t<T>>
 Form<T, U> create_form(
     const ufcx_form& ufcx_form,
     const std::vector<std::shared_ptr<const FunctionSpace<U>>>& spaces,
@@ -629,7 +654,7 @@ Form<T, U> create_form(
   }
 
   return create_form_factory(ufcx_form, spaces, coeff_map, const_map,
-                             subdomains, mesh);
+                             subdomains, {}, mesh);
 }
 
 /// @brief Create a Form using a factory function that returns a pointer
@@ -647,7 +672,7 @@ Form<T, U> create_form(
 /// @param[in] mesh Mesh of the domain. This is required if the form has
 /// no arguments, e.g. a functional.
 /// @return A Form
-template <dolfinx::scalar T, typename U = dolfinx::scalar_value_type_t<T>>
+template <dolfinx::scalar T, std::floating_point U = scalar_value_type_t<T>>
 Form<T, U> create_form(
     ufcx_form* (*fptr)(),
     const std::vector<std::shared_ptr<const FunctionSpace<U>>>& spaces,
@@ -724,8 +749,8 @@ FunctionSpace<T> create_functionspace(
   // Create a dofmap
   ElementDofLayout layout(_e->block_size(), e.entity_dofs(),
                           e.entity_closure_dofs(), {}, sub_doflayout);
-  std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
-      unpermute_dofs = nullptr;
+  std::function<void(std::span<std::int32_t>, std::uint32_t)> unpermute_dofs
+      = nullptr;
   if (_e->needs_dof_permutations())
     unpermute_dofs = _e->get_dof_permutation_function(true, true);
   assert(mesh);
@@ -787,8 +812,7 @@ FunctionSpace<T> create_functionspace(
   ElementDofLayout layout
       = create_element_dof_layout(*ufcx_map, topology->cell_type());
 
-  std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
-      unpermute_dofs;
+  std::function<void(std::span<std::int32_t>, std::uint32_t)> unpermute_dofs;
   if (element->needs_dof_permutations())
     unpermute_dofs = element->get_dof_permutation_function(true, true);
   return FunctionSpace(
@@ -803,24 +827,14 @@ namespace impl
 {
 /// @private
 template <dolfinx::scalar T, std::floating_point U>
-std::span<const std::uint32_t> get_cell_orientation_info(
-    const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients)
+std::span<const std::uint32_t>
+get_cell_orientation_info(const Function<T, U>& coefficient)
 {
-  bool needs_dof_transformations = false;
-  for (auto coeff : coefficients)
-  {
-    auto element = coeff->function_space()->element();
-    if (element->needs_dof_transformations())
-    {
-      needs_dof_transformations = true;
-      break;
-    }
-  }
-
   std::span<const std::uint32_t> cell_info;
-  if (needs_dof_transformations)
+  auto element = coefficient.function_space()->element();
+  if (element->needs_dof_transformations())
   {
-    auto mesh = coefficients.front()->function_space()->mesh();
+    auto mesh = coefficient.function_space()->mesh();
     mesh->topology_mutable()->create_entity_permutations();
     cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
@@ -1012,60 +1026,61 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
 
   if (!coefficients.empty())
   {
-    std::span<const std::uint32_t> cell_info
-        = impl::get_cell_orientation_info(coefficients);
-
     switch (integral_type)
     {
     case IntegralType::cell:
     {
-      auto fetch_cell = [](auto entity) { return entity.front(); };
-
       // Iterate over coefficients
-      std::span<const std::int32_t> cells = form.domain(IntegralType::cell, id);
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
-        impl::pack_coefficient_entity(c, cstride, *coefficients[coeff],
-                                      cell_info, cells, 1, fetch_cell,
-                                      offsets[coeff]);
+        auto mesh = coefficients[coeff]->function_space()->mesh();
+        assert(mesh);
+        std::vector<std::int32_t> cells
+            = form.domain(IntegralType::cell, id, *mesh);
+        std::span<const std::uint32_t> cell_info
+            = impl::get_cell_orientation_info(*coefficients[coeff]);
+        impl::pack_coefficient_entity(
+            c, cstride, *coefficients[coeff], cell_info, cells, 1,
+            [](auto entity) { return entity.front(); }, offsets[coeff]);
       }
       break;
     }
     case IntegralType::exterior_facet:
     {
-      // Function to fetch cell index from exterior facet entity
-      auto fetch_cell = [](auto entity) { return entity.front(); };
-
       // Iterate over coefficients
-      std::span<const std::int32_t> facets
-          = form.domain(IntegralType::exterior_facet, id);
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
-        impl::pack_coefficient_entity(c, cstride, *coefficients[coeff],
-                                      cell_info, facets, 2, fetch_cell,
-                                      offsets[coeff]);
+        auto mesh = coefficients[coeff]->function_space()->mesh();
+        std::vector<std::int32_t> facets
+            = form.domain(IntegralType::exterior_facet, id, *mesh);
+        std::span<const std::uint32_t> cell_info
+            = impl::get_cell_orientation_info(*coefficients[coeff]);
+        impl::pack_coefficient_entity(
+            c, cstride, *coefficients[coeff], cell_info, facets, 2,
+            [](auto entity) { return entity.front(); }, offsets[coeff]);
       }
       break;
     }
     case IntegralType::interior_facet:
     {
-      // Functions to fetch cell indices from interior facet entity
-      auto fetch_cell0 = [](auto entity) { return entity[0]; };
-      auto fetch_cell1 = [](auto entity) { return entity[2]; };
-
       // Iterate over coefficients
-      std::span<const std::int32_t> facets
-          = form.domain(IntegralType::interior_facet, id);
       for (std::size_t coeff = 0; coeff < coefficients.size(); ++coeff)
       {
+        auto mesh = coefficients[coeff]->function_space()->mesh();
+        std::vector<std::int32_t> facets
+            = form.domain(IntegralType::interior_facet, id, *mesh);
+        std::span<const std::uint32_t> cell_info
+            = impl::get_cell_orientation_info(*coefficients[coeff]);
+
         // Pack coefficient ['+']
-        impl::pack_coefficient_entity(c, 2 * cstride, *coefficients[coeff],
-                                      cell_info, facets, 4, fetch_cell0,
-                                      2 * offsets[coeff]);
+        impl::pack_coefficient_entity(
+            c, 2 * cstride, *coefficients[coeff], cell_info, facets, 4,
+            [](auto entity) { return entity[0]; }, 2 * offsets[coeff]);
         // Pack coefficient ['-']
-        impl::pack_coefficient_entity(c, 2 * cstride, *coefficients[coeff],
-                                      cell_info, facets, 4, fetch_cell1,
-                                      offsets[coeff] + offsets[coeff + 1]);
+        impl::pack_coefficient_entity(
+            c, 2 * cstride, *coefficients[coeff], cell_info, facets, 4,
+            [](auto entity) { return entity[2]; },
+            offsets[coeff] + offsets[coeff + 1]);
       }
       break;
     }
@@ -1077,7 +1092,7 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
 }
 
 /// @brief Create Expression from UFC
-template <dolfinx::scalar T, typename U = dolfinx::scalar_value_type_t<T>>
+template <dolfinx::scalar T, std::floating_point U = scalar_value_type_t<T>>
 Expression<T, U> create_expression(
     const ufcx_expression& e,
     const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients,
@@ -1090,10 +1105,10 @@ Expression<T, U> create_expression(
                              "function space was provided.");
   }
 
-  std::vector<U> X(e.points, e.points + e.num_points * e.topological_dimension);
+  std::vector<U> X(e.points, e.points + e.num_points * e.entity_dimension);
   std::array<std::size_t, 2> Xshape
       = {static_cast<std::size_t>(e.num_points),
-         static_cast<std::size_t>(e.topological_dimension)};
+         static_cast<std::size_t>(e.entity_dimension)};
   std::vector<int> value_shape(e.value_shape, e.value_shape + e.num_components);
   std::function<void(T*, const T*, const T*,
                      const typename scalar_value_type<T>::value_type*,
@@ -1127,7 +1142,7 @@ Expression<T, U> create_expression(
 
 /// @brief Create Expression from UFC input (with named coefficients and
 /// constants).
-template <dolfinx::scalar T, typename U = dolfinx::scalar_value_type_t<T>>
+template <dolfinx::scalar T, std::floating_point U = scalar_value_type_t<T>>
 Expression<T, U> create_expression(
     const ufcx_expression& e,
     const std::map<std::string, std::shared_ptr<const Function<T, U>>>&
@@ -1192,15 +1207,17 @@ void pack_coefficients(const Form<T, U>& form,
 }
 
 /// @brief Pack coefficients of a Expression u for a give list of active
-/// cells.
+/// entities.
 ///
 /// @param[in] e The Expression
-/// @param[in] cells A list of active cells
+/// @param[in] entities A list of active entities
+/// @param[in] estride Stride for each entity in active entities (1 for cells, 2
+/// for facets)
 /// @return A pair of the form (coeffs, cstride)
 template <dolfinx::scalar T, std::floating_point U>
 std::pair<std::vector<T>, int>
 pack_coefficients(const Expression<T, U>& e,
-                  std::span<const std::int32_t> cells)
+                  std::span<const std::int32_t> entities, std::size_t estride)
 {
   // Get form coefficient offsets and dofmaps
   const std::vector<std::shared_ptr<const Function<T, U>>>& coeffs
@@ -1209,24 +1226,24 @@ pack_coefficients(const Expression<T, U>& e,
 
   // Copy data into coefficient array
   const int cstride = offsets.back();
-  std::vector<T> c(cells.size() * offsets.back());
+  std::vector<T> c(entities.size() / estride * offsets.back());
   if (!coeffs.empty())
   {
-    std::span<const std::uint32_t> cell_info
-        = impl::get_cell_orientation_info(coeffs);
-
     // Iterate over coefficients
     for (std::size_t coeff = 0; coeff < coeffs.size(); ++coeff)
     {
+      std::span<const std::uint32_t> cell_info
+          = impl::get_cell_orientation_info(*coeffs[coeff]);
+
       impl::pack_coefficient_entity(
-          std::span(c), cstride, *coeffs[coeff], cell_info, cells, 1,
+          std::span(c), cstride, *coeffs[coeff], cell_info, entities, estride,
           [](auto entity) { return entity[0]; }, offsets[coeff]);
     }
   }
   return {std::move(c), cstride};
 }
 
-/// @brief Pack constants of u into a sigle array ready for assembly.
+/// @brief Pack constants of u into a single array ready for assembly.
 /// @warning This function is subject to change.
 template <typename U>
 std::vector<typename U::scalar_type> pack_constants(const U& u)

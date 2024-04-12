@@ -120,9 +120,7 @@ msh = create_rectangle(
 
 # Function to mark x = 0, x = 1 and y = 0
 def noslip_boundary(x):
-    return np.logical_or(
-        np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 1.0)), np.isclose(x[1], 0.0)
-    )
+    return np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0) | np.isclose(x[1], 0.0)
 
 
 # Function to mark the lid (y = 1)
@@ -296,8 +294,8 @@ def nested_iterative_solver():
         pfile_xdmf.write_function(p)
 
     # Compute norms of the solution vectors
-    norm_u = u.x.norm()
-    norm_p = p.x.norm()
+    norm_u = la.norm(u.x)
+    norm_p = la.norm(p.x)
     if MPI.COMM_WORLD.rank == 0:
         print(f"(A) Norm of velocity coefficient vector (nested, iterative): {norm_u}")
         print(f"(A) Norm of pressure coefficient vector (nested, iterative): {norm_p}")
@@ -397,7 +395,7 @@ def block_iterative_solver():
     p.x.array[: (len(x.array_r) - offset)] = x.array_r[offset:]
 
     # Compute the $L^2$ norms of the solution vectors
-    norm_u, norm_p = u.x.norm(), p.x.norm()
+    norm_u, norm_p = la.norm(u.x), la.norm(p.x)
     if MPI.COMM_WORLD.rank == 0:
         print(f"(B) Norm of velocity coefficient vector (blocked, iterative): {norm_u}")
         print(f"(B) Norm of pressure coefficient vector (blocked, iterative): {norm_p}")
@@ -451,7 +449,7 @@ def block_direct_solver():
     p.x.array[: (len(x.array_r) - offset)] = x.array_r[offset:]
 
     # Compute the $L^2$ norms of the u and p vectors
-    norm_u, norm_p = u.x.norm(), p.x.norm()
+    norm_u, norm_p = la.norm(u.x), la.norm(p.x)
     if MPI.COMM_WORLD.rank == 0:
         print(f"(C) Norm of velocity coefficient vector (blocked, direct): {norm_u}")
         print(f"(C) Norm of pressure coefficient vector (blocked, direct): {norm_p}")
@@ -537,7 +535,7 @@ def mixed_direct():
     u, p = U.sub(0).collapse(), U.sub(1).collapse()
 
     # Compute norms
-    norm_u, norm_p = u.x.norm(), p.x.norm()
+    norm_u, norm_p = la.norm(u.x), la.norm(p.x)
     if MPI.COMM_WORLD.rank == 0:
         print(f"(D) Norm of velocity coefficient vector (monolithic, direct): {norm_u}")
         print(f"(D) Norm of pressure coefficient vector (monolithic, direct): {norm_p}")

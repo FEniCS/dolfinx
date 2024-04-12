@@ -1,13 +1,9 @@
-# UFL input for hyperleasticity
-# =============================
-#
-# The first step is to define the variational problem at hand. We define
-# the variational problem in UFL terms in a separate form file
-# :download:`hyperElasticity.py`.
+# The first step is to define the variational problem at hand.
 #
 # We are interested in solving for a discrete vector field in three
 # dimensions, so first we need the appropriate finite element space and
-# trial and test functions on this space::
+# trial and test functions on this space:
+
 from basix.ufl import element
 from ufl import (
     Coefficient,
@@ -35,18 +31,18 @@ V = FunctionSpace(mesh, e)
 du = TrialFunction(V)  # Incremental displacement
 v = TestFunction(V)  # Test function
 
-# Note that ``element`` with `shape=(3,)` creates a finite element space
+# Note that `element` with `shape=(3,)` creates a finite element space
 # of vector fields.
 #
-# Next, we will be needing functions for the boundary source ``B``, the
-# traction ``T`` and the displacement solution itself ``u``::
+# Next, we will be needing functions for the boundary source `B`, the
+# traction `T` and the displacement solution itself `u`:
 
 # Functions
 u = Coefficient(V)  # Displacement from previous iteration
 # B = Coefficient(element)        # Body force per unit volume
 # T = Coefficient(element)        # Traction force on the boundary
 
-# Now, we can define the kinematic quantities involved in the model::
+# Now, we can define the kinematic quantities involved in the model:
 
 # Kinematics
 d = len(u)
@@ -60,7 +56,7 @@ J = det(F)
 
 # Before defining the energy density and thus the total potential
 # energy, it only remains to specify constants for the elasticity
-# parameters::
+# parameters:
 
 # Elasticity parameters
 E = 10.0
@@ -70,7 +66,7 @@ lmbda = E * nu / ((1 + nu) * (1 - 2 * nu))
 
 # Both the first variation of the potential energy, and the Jacobian of
 # the variation, can be automatically computed by a call to
-# ``derivative``::
+# `derivative`:
 
 # Stored strain energy density (compressible neo-Hookean model)
 psi = (mu / 2) * (Ic - 3) - mu * ln(J) + (lmbda / 2) * (ln(J)) ** 2
@@ -78,7 +74,8 @@ psi = (mu / 2) * (Ic - 3) - mu * ln(J) + (lmbda / 2) * (ln(J)) ** 2
 # Total potential energy
 Pi = psi * dx  # - inner(B, u) * dx - inner(T, u) * ds
 
-# First variation of Pi (directional derivative about u in the direction of v)
+# First variation of Pi (directional derivative about u in the direction
+# of v)
 F_form = derivative(Pi, u, v)
 
 # Compute Jacobian of F
