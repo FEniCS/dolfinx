@@ -92,9 +92,6 @@ target_link_libraries(dolfinx PUBLIC Boost::timer)
 # MPI
 target_link_libraries(dolfinx PUBLIC MPI::MPI_CXX)
 
-# PETSc
-target_link_libraries(dolfinx PUBLIC PkgConfig::PETSC)
-
 # HDF5
 target_link_libraries(dolfinx PUBLIC hdf5::hdf5)
 
@@ -105,6 +102,12 @@ target_link_libraries(dolfinx PUBLIC hdf5::hdf5)
 if(ADIOS2_FOUND)
   target_compile_definitions(dolfinx PUBLIC HAS_ADIOS2)
   target_link_libraries(dolfinx PUBLIC adios2::cxx11_mpi)
+endif()
+
+# PETSc
+if(PETSC_FOUND)
+  target_compile_definitions(dolfinx PUBLIC HAS_PETSC)
+  target_link_libraries(dolfinx PUBLIC PkgConfig::PETSC)
 endif()
 
 # SLEPC

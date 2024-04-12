@@ -4,6 +4,8 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#ifdef HAS_PETSC
+
 #include "NewtonSolver.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/log.h>
@@ -284,3 +286,4 @@ double nls::petsc::NewtonSolver::residual0() const { return _residual0; }
 //-----------------------------------------------------------------------------
 MPI_Comm nls::petsc::NewtonSolver::comm() const { return _comm.comm(); }
 //-----------------------------------------------------------------------------
+#endif
