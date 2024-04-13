@@ -220,26 +220,30 @@ void declare_bbtree(nb::module_& m, std::string type)
                    [](const dolfinx::geometry::PointOwnershipData<T>& self)
                    {
                      return nb::ndarray<const int, nb::numpy>(
-                         self.src_owner.data(), {self.src_owner.size()});
+                         self.src_owner.data(), {self.src_owner.size()},
+                         nb::handle());
                    })
       .def_prop_ro("dest_owners",
                    [](const dolfinx::geometry::PointOwnershipData<T>& self)
                    {
                      return nb::ndarray<const int, nb::numpy>(
-                         self.dest_owners.data(), {self.dest_owners.size()});
+                         self.dest_owners.data(), {self.dest_owners.size()},
+                         nb::handle());
                    })
       .def_prop_ro("dest_points",
                    [](const dolfinx::geometry::PointOwnershipData<T>& self)
                    {
                      return nb::ndarray<const T, nb::numpy>(
                          self.dest_points.data(),
-                         {self.dest_points.size() / 3, 3});
+                         {self.dest_points.size() / 3, 3},
+                         nb::handle());
                    })
       .def_prop_ro("dest_cells",
                    [](const dolfinx::geometry::PointOwnershipData<T>& self)
                    {
                      return nb::ndarray<const std::int32_t, nb::numpy>(
-                         self.dest_cells.data(), {self.dest_cells.size()});
+                         self.dest_cells.data(), {self.dest_cells.size()},
+                         nb::handle());
                    });
 }
 } // namespace

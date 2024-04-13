@@ -87,7 +87,8 @@ void declare_function_space(nb::module_& m, std::string type)
             {
               std::span<const std::size_t> vshape = self.value_shape();
               return nb::ndarray<const std::size_t, nb::numpy>(vshape.data(),
-                                                               {vshape.size()});
+                                                               {vshape.size()},
+                                                               nb::handle());
             },
             nb::rv_policy::reference_internal)
         .def("sub", &dolfinx::fem::FunctionSpace<T>::sub, nb::arg("component"))
@@ -360,7 +361,7 @@ void declare_objects(nb::module_& m, const std::string& type)
            {
              auto [dofs, owned] = self.dof_indices();
              return std::pair(nb::ndarray<const std::int32_t, nb::numpy>(
-                                  dofs.data(), {dofs.size()}),
+                                  dofs.data(), {dofs.size()}, nb::handle()),
                               owned);
            })
       .def_prop_ro("function_space",
@@ -513,7 +514,7 @@ void declare_objects(nb::module_& m, const std::string& type)
           [](dolfinx::fem::Constant<T>& self)
           {
             return nb::ndarray<T, nb::numpy>(
-                self.value.data(), self.shape.size(), self.shape.data());
+                self.value.data(), self.shape.size(), self.shape.data(), nb::handle());
           },
           nb::rv_policy::reference_internal);
 
@@ -719,16 +720,17 @@ void declare_form(nb::module_& m, std::string type)
             {
             case dolfinx::fem::IntegralType::cell:
               return nb::ndarray<const std::int32_t, nb::numpy>(_d.data(),
-                                                                {_d.size()});
+                                                                {_d.size()},
+                                                                nb::handle());
             case dolfinx::fem::IntegralType::exterior_facet:
             {
               return nb::ndarray<const std::int32_t, nb::numpy>(
-                  _d.data(), {_d.size() / 2, 2});
+                  _d.data(), {_d.size() / 2, 2}, nb::handle());
             }
             case dolfinx::fem::IntegralType::interior_facet:
             {
               return nb::ndarray<const std::int32_t, nb::numpy>(
-                  _d.data(), {_d.size() / 4, 2, 2});
+                  _d.data(), {_d.size() / 4, 2, 2}, nb::handle());
             }
             default:
               throw ::std::runtime_error("Integral type unsupported.");
@@ -1000,7 +1002,7 @@ void declare_real_functions(nb::module_& m)
         auto _marker = [&marker](auto x)
         {
           nb::ndarray<const T, nb::ndim<2>, nb::numpy> x_view(
-              x.data_handle(), {x.extent(0), x.extent(1)});
+              x.data_handle(), {x.extent(0), x.extent(1)}, nb::handle());
           auto marked = marker(x_view);
           return std::vector<std::int8_t>(marked.data(),
                                           marked.data() + marked.size());
@@ -1023,7 +1025,7 @@ void declare_real_functions(nb::module_& m)
         auto _marker = [&marker](auto x)
         {
           nb::ndarray<const T, nb::ndim<2>, nb::numpy> x_view(
-              x.data_handle(), {x.extent(0), x.extent(1)});
+              x.data_handle(), {x.extent(0), x.extent(1)}, nb::handle());
           auto marked = marker(x_view);
           return std::vector<std::int8_t>(marked.data(),
                                           marked.data() + marked.size());
@@ -1168,7 +1170,8 @@ void fem(nb::module_& m)
           {
             std::span<const std::int32_t> dofs = self.cell_dofs(cell);
             return nb::ndarray<const std::int32_t, nb::numpy>(dofs.data(),
-                                                              {dofs.size()});
+                                                              {dofs.size()},
+                                                              nb::handle());
           },
           nb::rv_policy::reference_internal, nb::arg("cell"))
       .def_prop_ro("bs", &dolfinx::fem::DofMap::bs)
@@ -1178,7 +1181,7 @@ void fem(nb::module_& m)
           {
             auto dofs = self.map();
             return nb::ndarray<const std::int32_t, nb::numpy>(
-                dofs.data_handle(), {dofs.extent(0), dofs.extent(1)});
+                dofs.data_handle(), {dofs.extent(0), dofs.extent(1)}, nb::handle());
           },
           nb::rv_policy::reference_internal);
 
