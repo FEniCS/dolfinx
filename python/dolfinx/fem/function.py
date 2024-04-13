@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import typing
+import warnings
 from functools import singledispatch
 
 import numpy as np
@@ -339,10 +340,6 @@ class Function(ufl.Coefficient):
             V.element.dtype, np.dtype(dtype).type(0).real.dtype
         ), "Incompatible FunctionSpace dtype and requested dtype."
 
-        # PETSc Vec wrapper around the C++ function data (constructed
-        # when first requested)
-        self._petsc_x = None
-
         # Create cpp Function
         def functiontype(dtype):
             if np.issubdtype(dtype, np.float32):
@@ -373,9 +370,8 @@ class Function(ufl.Coefficient):
         # Store DOLFINx FunctionSpace object
         self._V = V
 
-    def __del__(self):
-        if self._petsc_x is not None:
-            self._petsc_x.destroy()
+        # Store Python wrapper around the underlying Vector
+        self._x = la.Vector(self._cpp_object.x)
 
     @property
     def function_space(self) -> FunctionSpace:
@@ -509,7 +505,7 @@ class Function(ufl.Coefficient):
     @property
     def x(self) -> la.Vector:
         """Vector holding the degrees-of-freedom."""
-        return la.Vector(self._cpp_object.x)  # type: ignore
+        return self._x
 
     @property
     def vector(self):
@@ -523,11 +519,13 @@ class Function(ufl.Coefficient):
             Prefer :func`x` where possible.
 
         """
-        if self._petsc_x is None:
-            from dolfinx.la import create_petsc_vector_wrap
-
-            self._petsc_x = create_petsc_vector_wrap(self.x)
-        return self._petsc_x
+        warnings.warn(
+            "dlx.fem.Function.vector is deprecated.\n"
+            "Please use dlx.fem.Function.x.petsc_vec "
+            "to access the underlying petsc4py wrapper",
+            DeprecationWarning,
+        )
+        return self.x.petsc_vec
 
     @property
     def dtype(self) -> np.dtype:

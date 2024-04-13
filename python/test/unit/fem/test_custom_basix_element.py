@@ -70,7 +70,7 @@ def run_scalar_test(V, degree):
     solver.setOperators(A)
 
     uh = Function(V)
-    solver.solve(b, uh.vector)
+    solver.solve(b, uh.x.petsc_vec)
     uh.x.scatter_forward()
 
     M = (u_exact - uh) ** 2 * dx

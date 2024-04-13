@@ -262,8 +262,8 @@ def test_custom_mesh_loop_rank1(dtype):
     #     assemble_vector_parallel(b, x_dofs, x, dofmap_t.array, dofmap_t.offsets, num_owned_cells)
     #     end = time.time()
     #     print("Time (numba parallel, pass {}): {}".format(i, end - start))
-    # btmp.vector.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    # assert (btmp.vector - b0.vector).norm() == pytest.approx(0.0)
+    # btmp.x.petsc_vec.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    # assert (btmp.x.petsc_vec - b0.x.petsc_vec).norm() == pytest.approx(0.0)
 
     # Test against generated code and general assembler
     v = ufl.TestFunction(V)

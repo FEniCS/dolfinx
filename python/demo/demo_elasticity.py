@@ -218,7 +218,7 @@ uh = Function(V)
 # Set a monitor, solve linear system, and display the solver
 # configuration
 solver.setMonitor(lambda _, its, rnorm: print(f"Iteration: {its}, rel. residual: {rnorm}"))
-solver.solve(b, uh.vector)
+solver.solve(b, uh.x.petsc_vec)
 solver.view()
 
 # Scatter forward the solution vector to update ghost values
