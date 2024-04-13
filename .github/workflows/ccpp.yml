@@ -93,6 +93,14 @@ jobs:
         run: |
           find . -type f \( -name "*.cmake" -o -name "*.cmake.in" -o -name "CMakeLists.txt" \) | xargs cmake-format --check
 
+      - name: Configure and build C++ (without PETSc)
+        run: |
+          export SCOTCH_ROOT=$PETSC_DIR/$PETSC_ARCH
+          unset PETSC_DIR
+          cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/opt/dolfinx-nopetsc -DCMAKE_BUILD_TYPE=Developer -B build-nopetsc -S cpp/
+          cmake --build build-nopetsc
+          cmake --install build-nopetsc
+
       - name: Configure C++
         run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
 
