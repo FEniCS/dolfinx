@@ -25,16 +25,31 @@ jobs:
     strategy:
       matrix:
         petsc_arch: [linux-gnu-real32-32, linux-gnu-real64-32, linux-gnu-complex128-32]
+      fail-fast: false
 
     name: oneAPI build and test (${{ matrix.petsc_arch }})
 
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install nanobind from source
+        run: |
+          . /opt/intel/oneapi/setvars.sh
+          git clone https://github.com/wjakob/nanobind.git /tmp/nanobind-src
+          cd /tmp/nanobind-src
+          git submodule update --init --recursive
+          cmake -D NB_TEST=off .
+          python3 -m pip install .
+          rm -rf /tmp/nanobind-src
+      - name: Install Python dependencies
+        run: |
+          . /opt/intel/oneapi/setvars.sh
+          python3 -m pip install mpi4py scikit-build-core[pyproject]
+
       - name: Install Basix
         run: |
           . /opt/intel/oneapi/setvars.sh
-          pip install git+https://github.com/FEniCS/basix.git
+          pip install --no-build-isolation git+https://github.com/FEniCS/basix.git
 
       - name: Clone FFCx
         uses: actions/checkout@v4
@@ -87,7 +102,6 @@ jobs:
       - name: Build DOLFINx Python interface
         run: |
           . /opt/intel/oneapi/setvars.sh
-          pip install mpi4py nanobind scikit-build-core[pyproject]
           pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" python/
       - name: Install Python test dependencies
         run: |

@@ -91,11 +91,22 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install nanobind from source
+        run: |
+          git clone https://github.com/wjakob/nanobind.git /tmp/nanobind-src
+          cd /tmp/nanobind-src
+          git submodule update --init --recursive
+          cmake -D NB_TEST=off .
+          python3 -m pip install .
+          rm -rf /tmp/nanobind-src
+      - name: Install Python build dependencies
+        run: pip install mpi4py scikit-build-core[pyproject]
+
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
         run: |
           pip install git+https://github.com/FEniCS/ufl.git
-          pip install git+https://github.com/FEniCS/basix.git
+          pip install --no-build-isolation git+https://github.com/FEniCS/basix.git
           pip install git+https://github.com/FEniCS/ffcx.git
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
@@ -124,8 +135,6 @@ jobs:
           cd build/test
           mpirun -n 3 ctest -V --output-on-failure -R unittests
 
-      - name: Install Python build dependencies
-        run: pip install mpi4py nanobind scikit-build-core[pyproject]
       - name: Build Python interface
         run: pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
 
@@ -152,6 +161,7 @@ jobs:
             petsc_arch: linux-gnu-real64-32
           - docker_image: "ghcr.io/fenics/test-env:current-mpich"
             petsc_arch: linux-gnu-complex128-32
+      fail-fast: false
     container: ${{ matrix.docker_image }}
     env:
       PETSC_ARCH: ${{ matrix.petsc_arch }}
@@ -163,11 +173,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install nanobind from source
+        run: |
+          git clone https://github.com/wjakob/nanobind.git /tmp/nanobind-src
+          cd /tmp/nanobind-src
+          git submodule update --init --recursive
+          cmake -D NB_TEST=off .
+          python3 -m pip install --break-system-packages .
+          rm -rf /tmp/nanobind-src
+
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
         run: |
           python3 -m pip install --break-system-packages git+https://github.com/FEniCS/ufl.git
-          python3 -m pip install --break-system-packages git+https://github.com/FEniCS/basix.git
+          python3 -m pip install --break-system-packages --no-build-isolation git+https://github.com/FEniCS/basix.git
           python3 -m pip install --break-system-packages git+https://github.com/FEniCS/ffcx.git
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
@@ -248,11 +267,21 @@ jobs:
     name: Publish docs
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install nanobind from source
+        run: |
+          git clone https://github.com/wjakob/nanobind.git /tmp/nanobind-src
+          cd /tmp/nanobind-src
+          git submodule update --init --recursive
+          cmake -D NB_TEST=off .
+          python3 -m pip install --break-system-packages .
+          rm -rf /tmp/nanobind-src
+
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
         run: |
           python3 -m pip install --break-system-packages git+https://github.com/FEniCS/ufl.git
-          python3 -m pip install --break-system-packages git+https://github.com/FEniCS/basix.git
+          python3 -m pip install --break-system-packages --no-build-isolation git+https://github.com/FEniCS/basix.git
           python3 -m pip install --break-system-packages git+https://github.com/FEniCS/ffcx.git
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
