@@ -496,8 +496,8 @@ class Function(ufl.Coefficient):
 
         """
         warnings.warn(
-            "dlx.fem.Function.vector is deprecated.\n"
-            "Please use dlx.fem.Function.x.petsc_vec "
+            "dolfinx.fem.Function.vector is deprecated.\n"
+            "Please use dolfinx.fem.Function.x.petsc_vec "
             "to access the underlying petsc4py wrapper",
             DeprecationWarning,
         )
