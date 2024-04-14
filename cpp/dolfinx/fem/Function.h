@@ -153,7 +153,7 @@ public:
   /// @brief Interpolate a provided Function.
   /// @param[in] v The function to be interpolated
   /// @param[in] cells The cells to interpolate on
-  /// @param[in] cell_map Map from indices in `cells` to cell indices in `v`
+  /// @param[in] cell_map A map from cells in the mesh associated with `this` function to cells in mesh associated with `v`
   /// @param[in] nmm_interpolation_data Auxiliary data to interpolate on
   /// nonmatching meshes. This data can be generated with
   /// generate_nonmatching_meshes_interpolation_data (optional).
@@ -288,7 +288,7 @@ public:
   /// `FiniteElement::interpolation_points()` for the element associated
   /// with `u`.
   /// @param[in] cells The cells to interpolate on
-  /// @param[in] expr_mesh Mesh expression is defined on
+  /// @param[in] expr_mesh The mesh to evaluate the expression on
   /// @param[in] cell_map Map from `cells` to cells in expression
   void interpolate(const Expression<value_type, geometry_type>& e,
                    std::span<const std::int32_t> cells,
