@@ -428,7 +428,7 @@ class Function(ufl.Coefficient):
                 cells are interpolated over.
             cell_map: Mapping from `cells` to to cells in the mesh that `u` is defined over.
             expr_mesh: If an Expression with coefficients or constants from another mesh
-                than the function is supplied, the mesh associated with this expression has 
+                than the function is supplied, the mesh associated with this expression has
                 to be provided, along with `cell_map.`
             nmm_interpolation_data: Data needed to interpolate functions defined on other meshes
         """
