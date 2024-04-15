@@ -99,7 +99,7 @@ jobs:
       - name: Build Python interface
         run: python3 -m pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
       - name: Test Python import
-        run: python3 -c "import dolfinx; print dolfinx.__version__"
+        run: python3 -c "import dolfinx; print(dolfinx.__version__)"
 
   build-with-petsc:
     if: "!(contains(github.event.head_commit.message, '[ci skip]') || contains(github.event.head_commit.message, '[skip ci]'))"
