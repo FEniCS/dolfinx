@@ -51,7 +51,6 @@ if(NOT TARGET hdf5::hdf5)
 endif()
 
 if(@PETSC_FOUND@)
-  set(PETSC_SCALAR_COMPLEX @HAVE_PETSC_SCALAR_COMPLEX@)
   if(NOT TARGET PkgConfig::PETSC)
     find_package(PkgConfig REQUIRED)
     set(ENV{PKG_CONFIG_PATH}
