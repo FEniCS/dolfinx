@@ -319,6 +319,7 @@ def test_vtx_reuse_mesh(tempdir, dim, simplex, reuse):
     except AttributeError:
         adios = adios2.Adios(comm=mesh.comm)
         io = adios.declare_io("TestData")
+        io.set_engine("BP4")
         adios_file = adios2.Stream(io, str(filename), "r", mesh.comm)
 
     for name, var in adios_file.available_variables().items():
