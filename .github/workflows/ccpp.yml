@@ -66,8 +66,6 @@ jobs:
         run: |
           find . -type f \( -name "*.cmake" -o -name "*.cmake.in" -o -name "CMakeLists.txt" \) | xargs cmake-format --check
 
-
-
   build:
     if: "!(contains(github.event.head_commit.message, '[ci skip]') || contains(github.event.head_commit.message, '[skip ci]'))"
     runs-on: ubuntu-latest
@@ -99,39 +97,6 @@ jobs:
           python3 -m pip install git+https://github.com/FEniCS/ufl.git@${{ github.event.inputs.ufl_ref }}
           python3 -m pip install git+https://github.com/FEniCS/basix.git@${{ github.event.inputs.basix_ref }}
           python3 -m pip install git+https://github.com/FEniCS/ffcx.git@${{ github.event.inputs.ffcx_ref }}
-
-      - name: ruff C++ .py file checks
-        run: |
-          cd cpp/
-          ruff check .
-          ruff format --check .
-      - name: ruff Python interface checks
-        run: |
-          cd python/
-          ruff check .
-          ruff format --check .
-      - name: mypy checks
-        run: |
-          cd python/
-          mypy dolfinx
-          mypy demo
-          mypy test
-      - name: clang-format C++ checks (non-blocking)
-        continue-on-error: true
-        run: |
-          cd cpp
-          clang-format --version
-          find . -type f \( -name "*.cpp" -o -name "*.h" \) ! -name "loguru.cpp" | xargs clang-format --dry-run --Werror
-      - name: clang-format Python binding checks (non-blocking)
-        continue-on-error: true
-        run: |
-          cd python/dolfinx/wrappers
-          clang-format --version
-          find . -type f \( -name "*.cpp" -o -name "*.h" \) | xargs clang-format --dry-run --Werror
-      - name: cmake-format (non-blocking)
-        continue-on-error: true
-        run: |
-          find . -type f \( -name "*.cmake" -o -name "*.cmake.in" -o -name "CMakeLists.txt" \) | xargs cmake-format --check
 
       - name: Configure C++
         run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
