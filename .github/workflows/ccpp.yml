@@ -73,7 +73,7 @@ jobs:
     env:
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
-      SCOTCH_ROOT: ${{env.PETSC_DIR}}/linux-gnu-real64-32
+      SCOTCH_ROOT: ${{ vars.PETSC_DIR }}/linux-gnu-real64-32
 
     steps:
       - name: Install FEniCS Python components (default branches/tags)
@@ -88,7 +88,6 @@ jobs:
           python3 -m pip install git+https://github.com/FEniCS/ufl.git@${{ github.event.inputs.ufl_ref }}
           python3 -m pip install git+https://github.com/FEniCS/basix.git@${{ github.event.inputs.basix_ref }}
           python3 -m pip install git+https://github.com/FEniCS/ffcx.git@${{ github.event.inputs.ffcx_ref }}
-
 
       - uses: actions/checkout@v4
       - name: Test arch
