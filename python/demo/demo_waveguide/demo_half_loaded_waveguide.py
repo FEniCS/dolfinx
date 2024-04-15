@@ -223,7 +223,7 @@ b = fem.form(b_tt + b_tz + b_zt + b_zz)
 bc_facets = exterior_facet_indices(msh.topology)
 bc_dofs = fem.locate_dofs_topological(V, msh.topology.dim - 1, bc_facets)
 u_bc = fem.Function(V)
-with u_bc.vector.localForm() as loc:
+with u_bc.x.petsc_vec.localForm() as loc:
     loc.set(0)
 bc = fem.dirichletbc(u_bc, bc_dofs)
 # -
@@ -343,7 +343,7 @@ kz_list = []
 
 for i, kz in vals:
     # Save eigenvector in eh
-    eps.getEigenpair(i, eh.vector)
+    eps.getEigenpair(i, eh.x.petsc_vec)
 
     # Compute error for i-th eigenvalue
     error = eps.computeError(i, SLEPc.EPS.ErrorType.RELATIVE)
