@@ -269,7 +269,7 @@ public:
   /// each entity by.
   BoundingBoxTree(const mesh::Mesh<T>& mesh, int tdim, T padding = 0)
       : BoundingBoxTree::BoundingBoxTree(
-          mesh, tdim, range(mesh.topology_mutable(), tdim), padding)
+            mesh, tdim, range(mesh.topology_mutable(), tdim), padding)
   {
     // Do nothing
   }
@@ -405,8 +405,7 @@ private:
       for (std::size_t k = 0; k < 3; ++k)
         s << _bbox_coordinates[6 * i + j * 3 + k] << " ";
       if (j == 0)
-        s << "]->"
-          << "[";
+        s << "]->" << "[";
     }
     s << "]\n";
 

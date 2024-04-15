@@ -590,8 +590,8 @@ public:
 
     for (auto& v : _u)
     {
-      std::visit(
-          [this](auto&& u) { impl_fides::write_data(*_io, *_engine, *u); }, v);
+      std::visit([this](auto&& u)
+                 { impl_fides::write_data(*_io, *_engine, *u); }, v);
     }
 
     _engine->EndStep();
@@ -1032,8 +1032,7 @@ public:
         for (auto& v : _u)
         {
           std::visit([&](auto& u)
-                     { impl_vtx::vtx_write_data(*_io, *_engine, *u); },
-                     v);
+                     { impl_vtx::vtx_write_data(*_io, *_engine, *u); }, v);
         }
       }
     }
@@ -1067,8 +1066,8 @@ public:
       // Write function data for each function to file
       for (auto& v : _u)
       {
-        std::visit(
-            [&](auto& u) { impl_vtx::vtx_write_data(*_io, *_engine, *u); }, v);
+        std::visit([&](auto& u)
+                   { impl_vtx::vtx_write_data(*_io, *_engine, *u); }, v);
       }
     }
 

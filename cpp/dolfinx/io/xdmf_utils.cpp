@@ -313,9 +313,9 @@ xdmf_utils::distribute_entity_data(
       while (it != perm.end())
       {
         dest.push_back(dest0[*it]);
-        auto it1 = std::find_if(it, perm.end(),
-                                [&dest0, r = dest.back()](auto idx)
-                                { return dest0[idx] != r; });
+        auto it1
+            = std::find_if(it, perm.end(), [&dest0, r = dest.back()](auto idx)
+                           { return dest0[idx] != r; });
         num_items_send.push_back(std::distance(it, it1));
         it = it1;
       }
@@ -403,9 +403,9 @@ xdmf_utils::distribute_entity_data(
       while (it != dest_to_index.end())
       {
         dest.push_back(it->first);
-        auto it1 = std::find_if(it, dest_to_index.end(),
-                                [r = dest.back()](auto idx)
-                                { return idx.first != r; });
+        auto it1
+            = std::find_if(it, dest_to_index.end(), [r = dest.back()](auto idx)
+                           { return idx.first != r; });
         num_items_send.push_back(std::distance(it, it1));
         it = it1;
       }
