@@ -73,17 +73,9 @@ jobs:
     env:
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
-      # SCOTCH_ROOT: ${{ vars.PETSC_DIR }}/linux-gnu-real64-32
+      SCOTCH_DIR: /usr/local/petsc/linux-gnu-real64-32
 
     steps:
-      - name: Set SCOTCH dir
-        run: |
-          export SCOTCH_DIR=${PETSC_DIR}/linux-gnu-real64-32
-      - name: Test arch (1)
-        run: |
-          echo "PETSC: ${PETSC_DIR}"
-          echo "SCOTCH-dir ${SCOTCH_DIR}"
-
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
         run: |
