@@ -38,11 +38,11 @@ jobs:
           cd cpp/
           ruff check .
           ruff format --check .
-          - name: ruff Python interface checks
-          run: |
-            cd python/
-            ruff check .
-            ruff format --check .
+      - name: ruff Python interface checks
+        run: |
+          cd python/
+          ruff check .
+          ruff format --check .
       - name: mypy checks
         run: |
           cd python/
