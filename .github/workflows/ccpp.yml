@@ -76,10 +76,11 @@ jobs:
       SCOTCH_ROOT: ${{ vars.PETSC_DIR }}/linux-gnu-real64-32
 
     steps:
-      - name: Test arch (0)
-        run: echo ${{ vars.PETSC_DIR }}
+      - name: Set SCOTCH dir
+        run: |
+          export SCOTCH_DIR=${PETSC_DIR}/linux-gnu-real64-32
       - name: Test arch (1)
-        run: echo $SCOTCH_ROOT
+        run: echo "SCOTCH-dir ${{ env.SCOTCH_ROOT }}"
 
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
