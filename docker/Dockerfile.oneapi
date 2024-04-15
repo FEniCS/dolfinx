@@ -32,7 +32,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libpugixml-dev \
     ninja-build \
     pkg-config \
-    catch2 \
     git \
     wget \
     zlib1g-dev && \
