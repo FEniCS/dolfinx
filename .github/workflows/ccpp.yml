@@ -73,6 +73,7 @@ jobs:
     env:
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
+      SCOTCH_ROOT: $PETSC_DIR/linux-gnu-real64-32
 
     steps:
       - name: Install FEniCS Python components (default branches/tags)
@@ -97,8 +98,7 @@ jobs:
           cmake --build build
           cmake --install build
       - name: Build Python interface
-        run: |
-          python3 -m pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
+        run: python3 -m pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
 
   build-with-petsc:
     if: "!(contains(github.event.head_commit.message, '[ci skip]') || contains(github.event.head_commit.message, '[skip ci]'))"
