@@ -370,8 +370,6 @@ if(DOLFINX_ENABLE_PETSC)
   set(ENV{PKG_CONFIG_PATH}
     "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}"
   )
-  pkg_search_module(PETSC OPTIONAL IMPORTED_TARGET PETSc>=3.15 petsc>=3.15)
-
   if(_REQUIRE_PETSC)
     pkg_search_module(PETSC REQUIRED IMPORTED_TARGET PETSc>=3.15 petsc>=3.15)
   else()
