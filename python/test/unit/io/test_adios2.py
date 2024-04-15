@@ -294,7 +294,6 @@ def test_vtx_reuse_mesh(tempdir, dim, simplex, reuse):
     if not adios2.is_built_with_mpi:
         pytest.skip("adios2 was not built against MPI")
 
-
     mesh = generate_mesh(dim, simplex)
     v = Function(functionspace(mesh, ("Lagrange", 1)))
     filename = Path(tempdir, "v.bp")
