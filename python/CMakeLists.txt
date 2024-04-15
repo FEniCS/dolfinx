@@ -43,6 +43,8 @@ if(DOLFINX_FOUND)
   message(STATUS "Found DOLFINx at ${DOLFINX_DIR}")
 endif()
 
+message("Test PETSc: ${PETSC_FOUND}")
+
 # Create the binding library nanobind handles its own calls to
 # target_link_libraries
 nanobind_add_module(

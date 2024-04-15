@@ -105,9 +105,9 @@ if(ADIOS2_FOUND)
 endif()
 
 # PETSc
-if(PETSC_FOUND)
-  target_compile_definitions(dolfinx PUBLIC HAS_PETSC)
+if(DOLFINX_ENABLE_PETSC AND PETSC_FOUND)
   target_link_libraries(dolfinx PUBLIC PkgConfig::PETSC)
+  target_compile_definitions(dolfinx PUBLIC HAS_PETSC)
 endif()
 
 # SLEPC

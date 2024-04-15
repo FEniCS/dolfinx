@@ -87,17 +87,6 @@ add_feature_info(
 # ------------------------------------------------------------------------------
 # Enable or disable optional packages
 
-if(DOLFINX_ENABLE_ADIOS2)
-  set(_REQUIRE_ADIOS2
-      TRUE
-      CACHE BOOL "Is ADIOS2 REQUIRED?"
-  )
-else()
-  set(_REQUIRE_ADIOS2
-      FALSE
-      CACHE BOOL "Is ADIOS2 REQUIRED?"
-  )
-endif()
 option(DOLFINX_ENABLE_ADIOS2 "Compile with support for ADIOS2." ON)
 set_package_properties(
   ADIOS2 PROPERTIES
@@ -106,17 +95,16 @@ set_package_properties(
   URL "https://adios2.readthedocs.io/en/latest/"
   PURPOSE "IO, including in parallel"
 )
+if(DOLFINX_ENABLE_ADIOS2)
+  set(_REQUIRE_ADIOS2 TRUE CACHE BOOL "Is ADIOS2 REQUIRED?")
+else()
+  set(_REQUIRE_ADIOS2 FALSE CACHE BOOL "Is ADIOS2 REQUIRED?")
+endif()
 
 if(DOLFINX_ENABLE_PARMETIS)
-  set(_REQUIRE_PARMETIS
-      TRUE
-      CACHE BOOL "Is Parmetis REQUIRED?"
-  )
+  set(_REQUIRE_PARMETIS TRUE CACHE BOOL "Is Parmetis REQUIRED?")
 else()
-  set(_REQUIRE_PARMETIS
-      FALSE
-      CACHE BOOL "Is Parmetis REQUIRED?"
-  )
+  set(_REQUIRE_PARMETIS FALSE CACHE BOOL "Is Parmetis REQUIRED?")
 endif()
 option(DOLFINX_ENABLE_PARMETIS "Compile with support for ParMETIS." ON)
 set_package_properties(
@@ -127,17 +115,6 @@ set_package_properties(
   PURPOSE "Parallel graph partitioning"
 )
 
-if(DOLFINX_ENABLE_SCOTCH)
-  set(_REQUIRE_SCOTCH
-      TRUE
-      CACHE BOOL "Is SCOTCH REQUIRED?"
-  )
-else()
-  set(_REQUIRE_SCOTCH
-      FALSE
-      CACHE BOOL "Is SCOTCH REQUIRED?"
-  )
-endif()
 option(DOLFINX_ENABLE_SCOTCH "Compile with support for SCOTCH." ON)
 set_package_properties(
   SCOTCH PROPERTIES
@@ -147,18 +124,26 @@ set_package_properties(
   URL "https://www.labri.fr/perso/pelegrin/scotch"
   PURPOSE "Parallel graph partitioning"
 )
-
-if(DOLFINX_ENABLE_SLEPC)
-  set(_REQUIRE_SLEPC
-      TRUE
-      CACHE BOOL "Is SLEPc REQUIRED?"
-  )
+if(DOLFINX_ENABLE_SCOTCH)
+  set(_REQUIRE_SCOTCH TRUE CACHE BOOL "Is SCOTCH REQUIRED?")
 else()
-  set(_REQUIRE_SLEPC
-      FALSE
-      CACHE BOOL "Is SLEPc REQUIRED?"
-  )
+  set(_REQUIRE_SCOTCH FALSE CACHE BOOL "Is SCOTCH REQUIRED?")
 endif()
+
+if(DOLFINX_ENABLE_PETSC)
+  set(_REQUIRE_PETSC TRUE CACHE BOOL "Is PETSc REQUIRED?")
+else()
+  set(_REQUIRE_PETSC FALSE CACHE BOOL "Is PETSc REQUIRED?")
+endif()
+option(DOLFINX_ENABLE_PETSC "Compile with support for PETSc." ON)
+set_package_properties(
+  PETSc PROPERTIES
+  TYPE RECOMMENDED
+  DESCRIPTION "Portable, Extensible Toolkit for Scientific Computation"
+  URL "https://petsc.org/"
+  PURPOSE "Linear and nonlinear solvers"
+)
+
 option(DOLFINX_ENABLE_SLEPC "Compile with support for SLEPc." ON)
 set_package_properties(
   SLEPc PROPERTIES
@@ -167,18 +152,12 @@ set_package_properties(
   URL "http://slepc.upv.es/"
   PURPOSE "Eigenvalue computation"
 )
-
-if(DOLFINX_ENABLE_KAHIP)
-  set(_REQUIRE_KAHIP
-      TRUE
-      CACHE BOOL "Is KaHIP REQUIRED?"
-  )
+if(DOLFINX_ENABLE_SLEPC)
+  set(_REQUIRE_SLEPC TRUE CACHE BOOL "Is SLEPc REQUIRED?")
 else()
-  set(_REQUIRE_KAHIP
-      FALSE
-      CACHE BOOL "Is KaHIP REQUIRED?"
-  )
+  set(_REQUIRE_SLEPC FALSE CACHE BOOL "Is SLEPc REQUIRED?")
 endif()
+
 option(DOLFINX_ENABLE_KAHIP "Compile with support for KaHIP." OFF)
 set_package_properties(
   KaHIP PROPERTIES
@@ -187,6 +166,11 @@ set_package_properties(
   URL "https://kahip.github.io/"
   PURPOSE "Parallel graph partitioning"
 )
+if(DOLFINX_ENABLE_KAHIP)
+  set(_REQUIRE_KAHIP TRUE CACHE BOOL "Is KaHIP REQUIRED?")
+else()
+  set(_REQUIRE_KAHIP FALSE CACHE BOOL "Is KaHIP REQUIRED?")
+endif()
 
 # ------------------------------------------------------------------------------
 # Check for MPI
@@ -263,8 +247,9 @@ find_package(
   QUIET
 )
 
-# Check for Basix Note: Basix may be installed as a standalone C++ library, or
-# in the Basix Python module tree
+# Check for Basix
+# Note: Basix may be installed as a standalone C++ library, or in the
+# Basix Python module tree
 if(Python3_Interpreter_FOUND)
   message(STATUS "Checking for basix hints with ${Python3_EXECUTABLE}")
   execute_process(
@@ -294,46 +279,16 @@ set_package_properties(
   URL "https://github.com/fenics/basix"
 )
 
-# Check for PETSc
-find_package(PkgConfig REQUIRED)
-set(ENV{PKG_CONFIG_PATH}
-    "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}"
-)
-pkg_search_module(PETSC OPTIONAL IMPORTED_TARGET PETSc>=3.15 petsc>=3.15)
-
-# Setting for FeatureSummary
-if(PETSC_FOUND)
-  message(STATUS "Found PETSc version ${PETSC_VERSION}, prefix: ${PETSC_PREFIX}")
-  # Check if PETSc build uses real or complex scalars (this is configured in
-  #   DOLFINxConfig.cmake.in)
-  include(CheckSymbolExists)
-  set(CMAKE_REQUIRED_INCLUDES ${PETSC_INCLUDE_DIRS})
-  check_symbol_exists(PETSC_USE_COMPLEX petscsystypes.h HAVE_PETSC_SCALAR_COMPLEX)
-  set_property(GLOBAL APPEND PROPERTY PACKAGES_FOUND PETSc)
-else()
-  set_property(GLOBAL APPEND PROPERTY PACKAGES_NOT_FOUND PETSc)
-endif()
-
-set_package_properties(
-  PETSc PROPERTIES
-  TYPE OPTIONAL
-  DESCRIPTION "Portable, Extensible Toolkit for Scientific Computation (PETSc)"
-  URL "https://www.mcs.anl.gov/petsc/"
-  PURPOSE "PETSc linear algebra backend"
-)
-
 # Check for HDF5
 set(HDF5_PREFER_PARALLEL TRUE)
 set(HDF5_FIND_DEBUG TRUE)
 find_package(HDF5 REQUIRED COMPONENTS C)
-
 if(NOT HDF5_IS_PARALLEL)
   message(
     FATAL_ERROR
       "Found serial HDF5 build, MPI HDF5 build required, try setting HDF5_DIR or HDF5_ROOT"
   )
 endif()
-
 set_package_properties(
   HDF5 PROPERTIES
   TYPE REQUIRED
@@ -355,7 +310,6 @@ else()
   )
   find_package(UFCx 0.7 REQUIRED MODULE)
 endif()
-
 set_package_properties(
   UFCx PROPERTIES
   TYPE REQUIRED
@@ -372,7 +326,33 @@ elseif(DOLFINX_ENABLE_ADIOS2)
   find_package(ADIOS2 2.8.1)
 endif()
 
-if(DOLFINX_ENABLE_SLEPC)
+if(DOLFINX_ENABLE_PETSC)
+  find_package(PkgConfig REQUIRED)
+  set(ENV{PKG_CONFIG_PATH}
+      "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}"
+  )
+  pkg_search_module(PETSC OPTIONAL IMPORTED_TARGET PETSc>=3.15 petsc>=3.15)
+  if(_REQUIRE_PETSC)
+    pkg_search_module(PETSC REQUIRED IMPORTED_TARGET PETSc>=3.15 petsc>=3.15)
+  else()
+    pkg_search_module(PETSC OPTIONAL IMPORTED_TARGET PETSc>=3.15 petsc>=3.15)
+  endif()
+
+  # Setting for FeatureSummary
+  if(PETSC_FOUND)
+    message(STATUS "Found PETSc version ${PETSC_VERSION}, prefix: ${PETSC_PREFIX}")
+    # Check if PETSc build uses real or complex scalars (this is
+    #  configured in DOLFINxConfig.cmake.in)
+    include(CheckSymbolExists)
+    set(CMAKE_REQUIRED_INCLUDES ${PETSC_INCLUDE_DIRS})
+    check_symbol_exists(PETSC_USE_COMPLEX petscsystypes.h HAVE_PETSC_SCALAR_COMPLEX)
+    set_property(GLOBAL APPEND PROPERTY PACKAGES_FOUND PETSc)
+  else()
+    set_property(GLOBAL APPEND PROPERTY PACKAGES_NOT_FOUND PETSc)
+  endif()
+endif()
+
+if(DOLFINX_ENABLE_SLEPC AND PETSC_FOUND)
   find_package(PkgConfig REQUIRED)
   set(ENV{PKG_CONFIG_PATH}
       "$ENV{SLEPC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{SLEPC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}"
@@ -391,9 +371,7 @@ if(DOLFINX_ENABLE_SLEPC)
 
   # Setting for FeatureSummary
   if(SLEPC_FOUND)
-    message(
-      STATUS "Found SLEPc version ${SLEPC_VERSION}, prefix: ${SLEPC_PREFIX}"
-    )
+    message(STATUS "Found SLEPc version ${SLEPC_VERSION}, prefix: ${SLEPC_PREFIX}")
     set_property(GLOBAL APPEND PROPERTY PACKAGES_FOUND SLEPc)
   else()
     set_property(GLOBAL APPEND PROPERTY PACKAGES_NOT_FOUND SLEPc)

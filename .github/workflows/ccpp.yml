@@ -96,8 +96,7 @@ jobs:
       - name: Configure and build C++ (without PETSc)
         run: |
           export SCOTCH_ROOT=$PETSC_DIR/$PETSC_ARCH
-          unset PETSC_DIR
-          cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/opt/dolfinx-nopetsc -DCMAKE_BUILD_TYPE=Developer -B build-nopetsc -S cpp/
+          cmake -G Ninja -DDOLFINX_ENABLE_PETSC=false -DCMAKE_INSTALL_PREFIX=/opt/dolfinx-nopetsc -DCMAKE_BUILD_TYPE=Developer -B build-nopetsc -S cpp/
           cmake --build build-nopetsc
           cmake --install build-nopetsc
 
