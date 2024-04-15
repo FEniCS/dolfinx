@@ -317,6 +317,7 @@ def test_vtx_reuse_mesh(tempdir, dim, simplex, reuse):
     try:
         adios_file = adios2.open(str(filename), "r", comm=mesh.comm, engine_type="BP4")
     except AttributeError:
+        # adios2 >= v2.10.0
         adios = adios2.Adios(comm=mesh.comm)
         io = adios.declare_io("TestData")
         io.set_engine("BP4")
