@@ -313,7 +313,14 @@ def test_vtx_reuse_mesh(tempdir, dim, simplex, reuse):
         1 if reuse else 3
     )  # For mesh variables the step count is 1 if reuse else number of writes
 
-    adios_file = adios2.open(str(filename), "r", comm=mesh.comm, engine_type="BP4")
+    # backwards compatibility adios2 < 2.10.0
+    try:
+        adios_file = adios2.open(str(filename), "r", comm=mesh.comm, engine_type="BP4")
+    except AttributeError:
+        adios = adios2.Adios(comm=mesh.comm)
+        io = adios.declare_io("TestData")
+        adios_file = adios2.Stream(io, str(filename), "r", mesh.comm)
+
     for name, var in adios_file.available_variables().items():
         if name in reuse_variables:
             assert int(var["AvailableStepsCount"]) == target_mesh

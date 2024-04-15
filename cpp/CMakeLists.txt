@@ -370,9 +370,9 @@ set_package_properties(
 # Find optional packages
 
 if(DOLFINX_ENABLE_ADIOS2 AND _REQUIRE_ADIOS2)
-  find_package(ADIOS2 2.8.1...<2.10 REQUIRED)
+  find_package(ADIOS2 2.8.1 REQUIRED)
 elseif(DOLFINX_ENABLE_ADIOS2)
-  find_package(ADIOS2 2.8.1...<2.10)
+  find_package(ADIOS2 2.8.1)
 endif()
 
 if(ADIOS2_FOUND AND NOT ADIOS2_HAVE_MPI)
