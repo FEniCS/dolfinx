@@ -92,7 +92,7 @@ def test_gradient_interpolation_petsc(cell_type, p, q):
 
     # Compute global matrix vector product
     w = Function(W)
-    G.mult(u.vector, w.vector)
+    G.mult(u.x.petsc_vec, w.x.petsc_vec)
     w.x.scatter_forward()
 
     atol = 100 * np.finfo(default_real_type).resolution
@@ -154,7 +154,7 @@ def test_interpolation_matrix_petsc(cell_type, p, q, from_lagrange):
 
     # Compute global matrix vector product
     w = Function(W)
-    G.mult(u.vector, w.vector)
+    G.mult(u.x.petsc_vec, w.x.petsc_vec)
     w.x.scatter_forward()
 
     atol = 100 * np.finfo(default_real_type).resolution
@@ -215,7 +215,7 @@ def test_nonaffine_discrete_operator_petsc():
 
     # Compute global matrix vector product
     v_vec = Function(V)
-    G.mult(w.vector, v_vec.vector)
+    G.mult(w.x.petsc_vec, v_vec.x.petsc_vec)
     v_vec.x.scatter_forward()
     atol = 10 * np.finfo(default_real_type).resolution
     assert np.allclose(v_vec.x.array, v.x.array, atol=atol)

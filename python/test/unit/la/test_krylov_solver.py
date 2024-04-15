@@ -117,7 +117,7 @@ def test_krylov_samg_solver_elasticity():
         u = Function(V)
 
         # Create near null space basis and orthonormalize
-        null_space = build_nullspace(V, u.vector)
+        null_space = build_nullspace(V, u.x.petsc_vec)
 
         # Attached near-null space to matrix
         A.set_near_nullspace(null_space)
@@ -134,7 +134,7 @@ def test_krylov_samg_solver_elasticity():
         solver.setOperators(A)
 
         # Compute solution and return number of iterations
-        return solver.solve(b, u.vector)
+        return solver.solve(b, u.x.petsc_vec)
 
     # Set some multigrid smoother parameters
     opts = PETSc.Options()
