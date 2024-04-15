@@ -594,9 +594,9 @@ std::pair<std::vector<std::int64_t>, std::vector<int>> get_global_indices(
       std::pair<std::int64_t, std::pair<int64_t, int>> idx_old
           = {local_new_to_global_old[d][i], {0, 0}};
 
-      auto it = std::lower_bound(
-          global_old_new.begin(), global_old_new.end(), idx_old,
-          [](auto& a, auto& b) { return a.first < b.first; });
+      auto it = std::lower_bound(global_old_new.begin(), global_old_new.end(),
+                                 idx_old, [](auto& a, auto& b)
+                                 { return a.first < b.first; });
       assert(it != global_old_new.end() and it->first == idx_old.first);
 
       local_to_global_new[local_new_to_global_old[d][i + 1]] = it->second.first;

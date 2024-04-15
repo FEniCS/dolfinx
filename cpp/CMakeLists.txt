@@ -358,6 +358,12 @@ if(DOLFINX_ENABLE_ADIOS2 AND _REQUIRE_ADIOS2)
 elseif(DOLFINX_ENABLE_ADIOS2)
   find_package(ADIOS2 2.8.1)
 endif()
+if(ADIOS2_FOUND AND NOT ADIOS2_HAVE_MPI)
+  message(
+    FATAL_ERROR
+      "Found serial ADIOS2 build, MPI ADIOS2 build required, try setting ADIOS2_DIR or ADIOS2_ROOT"
+  )
+endif()
 
 if(DOLFINX_ENABLE_PETSC)
   find_package(PkgConfig REQUIRED)
