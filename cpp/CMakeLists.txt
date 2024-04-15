@@ -417,6 +417,8 @@ if(DOLFINX_ENABLE_SLEPC AND PETSC_FOUND)
   else()
     set_property(GLOBAL APPEND PROPERTY PACKAGES_NOT_FOUND SLEPc)
   endif()
+elseif(_REQUIRE_SLEPC AND NOT PETSC_FOUND)
+  message(FATAL_ERROR "SLEPc requested, but no configured because PETSc was not found.")
 endif()
 
 if(DOLFINX_ENABLE_SCOTCH AND _REQUIRE_SCOTCH)

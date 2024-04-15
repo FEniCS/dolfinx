@@ -92,7 +92,7 @@ jobs:
 
       - uses: actions/checkout@v4
       - name: Test arch
-        run: echo SCOTCH_ROOT
+        run: echo $SCOTCH_ROOT
       - name: Configure C++
         run: cmake -G Ninja -DDOLFINX_ENABLE_PETSC=false -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
       - name: Build and install C++ library
