@@ -218,10 +218,8 @@ void declare_mesh(nb::module_& m, std::string type)
                    nb::overload_cast<>(&dolfinx::mesh::Mesh<T>::topology),
                    "Mesh topology")
       .def_prop_ro(
-          "comm",
-          [](dolfinx::mesh::Mesh<T>& self)
-          { return MPICommWrapper(self.comm()); },
-          nb::keep_alive<0, 1>())
+          "comm", [](dolfinx::mesh::Mesh<T>& self)
+          { return MPICommWrapper(self.comm()); }, nb::keep_alive<0, 1>())
       .def_rw("name", &dolfinx::mesh::Mesh<T>::name);
 
   std::string create_interval("create_interval_" + type);
@@ -562,10 +560,8 @@ void mesh(nb::module_& m)
            nb::overload_cast<std::int8_t>(
                &dolfinx::mesh::Topology::interprocess_facets, nb::const_))
       .def_prop_ro(
-          "comm",
-          [](dolfinx::mesh::Topology& self)
-          { return MPICommWrapper(self.comm()); },
-          nb::keep_alive<0, 1>());
+          "comm", [](dolfinx::mesh::Topology& self)
+          { return MPICommWrapper(self.comm()); }, nb::keep_alive<0, 1>());
 
   m.def("create_topology",
         [](MPICommWrapper comm,

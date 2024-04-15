@@ -91,10 +91,8 @@ void common(nb::module_& m)
           nb::arg("comm"), nb::arg("local_size"), nb::arg("dest_src"),
           nb::arg("ghosts"), nb::arg("ghost_owners"))
       .def_prop_ro(
-          "comm",
-          [](const dolfinx::common::IndexMap& self)
-          { return MPICommWrapper(self.comm()); },
-          nb::keep_alive<0, 1>())
+          "comm", [](const dolfinx::common::IndexMap& self)
+          { return MPICommWrapper(self.comm()); }, nb::keep_alive<0, 1>())
       .def_prop_ro("size_local", &dolfinx::common::IndexMap::size_local)
       .def_prop_ro("size_global", &dolfinx::common::IndexMap::size_global)
       .def_prop_ro("num_ghosts", &dolfinx::common::IndexMap::num_ghosts)

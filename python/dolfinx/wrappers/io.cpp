@@ -140,9 +140,8 @@ void declare_vtx_writer(nb::module_& m, std::string type)
             nb::arg("policy") = dolfinx::io::VTXMeshPolicy::update)
         .def("close", [](dolfinx::io::VTXWriter<T>& self) { self.close(); })
         .def(
-            "write",
-            [](dolfinx::io::VTXWriter<T>& self, double t) { self.write(t); },
-            nb::arg("t"));
+            "write", [](dolfinx::io::VTXWriter<T>& self, double t)
+            { self.write(t); }, nb::arg("t"));
   }
 
   {
@@ -181,9 +180,8 @@ void declare_vtx_writer(nb::module_& m, std::string type)
             nb::arg("policy") = dolfinx::io::FidesMeshPolicy::update)
         .def("close", [](dolfinx::io::FidesWriter<T>& self) { self.close(); })
         .def(
-            "write",
-            [](dolfinx::io::FidesWriter<T>& self, double t) { self.write(t); },
-            nb::arg("t"));
+            "write", [](dolfinx::io::FidesWriter<T>& self, double t)
+            { self.write(t); }, nb::arg("t"));
   }
 #endif
 }
@@ -306,10 +304,8 @@ void io(nb::module_& m)
       .def("read_information", &dolfinx::io::XDMFFile::read_information,
            nb::arg("name"), nb::arg("xpath") = "/Xdmf/Domain")
       .def_prop_ro(
-          "comm",
-          [](dolfinx::io::XDMFFile& self)
-          { return MPICommWrapper(self.comm()); },
-          nb::keep_alive<0, 1>());
+          "comm", [](dolfinx::io::XDMFFile& self)
+          { return MPICommWrapper(self.comm()); }, nb::keep_alive<0, 1>());
 
   xdmf_real_fn<float>(xdmf_file);
   xdmf_real_fn<double>(xdmf_file);
