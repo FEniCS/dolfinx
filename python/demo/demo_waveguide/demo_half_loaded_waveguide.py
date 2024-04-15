@@ -54,6 +54,7 @@ from dolfinx.mesh import CellType, create_rectangle, exterior_facet_indices, loc
 
 try:
     import pyvista
+
     have_pyvista = True
 except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
@@ -77,7 +78,9 @@ d = 0.5 * h
 nx = 300
 ny = int(0.4 * nx)
 
-msh = create_rectangle(MPI.COMM_WORLD, np.array([[0, 0], [w, h]]), np.array([nx, ny]), CellType.quadrilateral)
+msh = create_rectangle(
+    MPI.COMM_WORLD, np.array([[0, 0], [w, h]]), np.array([nx, ny]), CellType.quadrilateral
+)
 msh.topology.create_connectivity(msh.topology.dim - 1, msh.topology.dim)
 # -
 
@@ -220,7 +223,7 @@ b = fem.form(b_tt + b_tz + b_zt + b_zz)
 bc_facets = exterior_facet_indices(msh.topology)
 bc_dofs = fem.locate_dofs_topological(V, msh.topology.dim - 1, bc_facets)
 u_bc = fem.Function(V)
-with u_bc.vector.localForm() as loc:
+with u_bc.x.petsc_vec.localForm() as loc:
     loc.set(0)
 bc = fem.dirichletbc(u_bc, bc_dofs)
 # -
@@ -305,7 +308,7 @@ eps.setWhichEigenpairs(SLEPc.EPS.Which.TARGET_REAL)
 # that $k_z$ will be quite close to $k_0$ in value, for instance $k_z =
 # 0.5k_0^2$. Therefore, we can set a target value of $-(0.5k_0^2)$:
 
-eps.setTarget(-(0.5 * k0)**2)
+eps.setTarget(-((0.5 * k0) ** 2))
 
 # Then, we need to define the number of eigenvalues we want to
 # calculate. We can do this with the `setDimensions` function, where we
@@ -340,7 +343,7 @@ kz_list = []
 
 for i, kz in vals:
     # Save eigenvector in eh
-    eps.getEigenpair(i, eh.vector)
+    eps.getEigenpair(i, eh.x.petsc_vec)
 
     # Compute error for i-th eigenvalue
     error = eps.computeError(i, SLEPc.EPS.ErrorType.RELATIVE)
@@ -383,7 +386,9 @@ for i, kz in vals:
             V_cells, V_types, V_x = plot.vtk_mesh(V_dg)
             V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
             Et_values = np.zeros((V_x.shape[0], 3), dtype=np.float64)
-            Et_values[:, : msh.topology.dim] = Et_dg.x.array.reshape(V_x.shape[0], msh.topology.dim).real
+            Et_values[:, : msh.topology.dim] = Et_dg.x.array.reshape(
+                V_x.shape[0], msh.topology.dim
+            ).real
 
             V_grid.point_data["u"] = Et_values
 

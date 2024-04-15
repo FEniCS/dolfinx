@@ -4,6 +4,8 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#ifdef HAS_PETSC
+
 #include "array.h"
 #include "caster_mpi.h"
 #include "caster_petsc.h"
@@ -70,7 +72,7 @@ void declare_petsc_discrete_operators(nb::module_& m)
         assert(map);
         std::vector<std::int32_t> c(map->size_local(), 0);
         std::iota(c.begin(), c.end(), 0);
-        dolfinx::fem::sparsitybuild::cells(sp, c, {*dofmap1, *dofmap0});
+        dolfinx::fem::sparsitybuild::cells(sp, {c, c}, {*dofmap1, *dofmap0});
         sp.finalize();
 
         // Build operator
@@ -111,7 +113,7 @@ void declare_petsc_discrete_operators(nb::module_& m)
         assert(map);
         std::vector<std::int32_t> c(map->size_local(), 0);
         std::iota(c.begin(), c.end(), 0);
-        dolfinx::fem::sparsitybuild::cells(sp, c, {*dofmap1, *dofmap0});
+        dolfinx::fem::sparsitybuild::cells(sp, {c, c}, {*dofmap1, *dofmap0});
         sp.finalize();
 
         // Build operator
@@ -413,3 +415,4 @@ void petsc(nb::module_& m_fem, nb::module_& m_la, nb::module_& m_nls)
   petsc_nls_module(petsc_nls_mod);
 }
 } // namespace dolfinx_wrappers
+#endif

@@ -25,7 +25,9 @@ def test_default(degree):
     u = dolfinx.fem.Function(Quad)
     v = ufl.TrialFunction(CG2_vect)
 
-    dx_m = ufl.Measure("dx", domain=msh, metadata={"quadrature_degree": 1, "quadrature_scheme": "default"})
+    dx_m = ufl.Measure(
+        "dx", domain=msh, metadata={"quadrature_degree": 1, "quadrature_scheme": "default"}
+    )
     ds = ufl.Measure("ds", domain=msh)
 
     residual = u * v * dx_m
@@ -49,15 +51,19 @@ def test_points_and_weights():
 
     CG2_vect = dolfinx.fem.functionspace(msh, ("Lagrange", 1))
     Qe = basix.ufl.quadrature_element(
-        msh.topology.cell_name(), value_shape=(),
+        msh.topology.cell_name(),
+        value_shape=(),
         points=np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1 / 3, 1 / 3]]),
-        weights=np.array([0.2, 0.2, 0.2, 0.4]))
+        weights=np.array([0.2, 0.2, 0.2, 0.4]),
+    )
     Quad = dolfinx.fem.functionspace(msh, Qe)
 
     u = dolfinx.fem.Function(Quad)
     v = ufl.TrialFunction(CG2_vect)
 
-    dx_m = ufl.Measure("dx", domain=msh, metadata={"quadrature_degree": 1, "quadrature_scheme": "default"})
+    dx_m = ufl.Measure(
+        "dx", domain=msh, metadata={"quadrature_degree": 1, "quadrature_scheme": "default"}
+    )
     ds = ufl.Measure("ds", domain=msh)
 
     residual = u * v * dx_m
@@ -101,9 +107,9 @@ def test_interpolation(degree):
 def test_interpolation_blocked(degree):
     msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 10, 10)
 
-    e = basix.ufl.quadrature_element(msh.topology.cell_name(), value_shape=(2, ), degree=degree)
+    e = basix.ufl.quadrature_element(msh.topology.cell_name(), value_shape=(2,), degree=degree)
     space = dolfinx.fem.functionspace(msh, e)
-    p4 = dolfinx.fem.functionspace(msh, ("Lagrange", 4, (2, )))
+    p4 = dolfinx.fem.functionspace(msh, ("Lagrange", 4, (2,)))
 
     f_p4 = dolfinx.fem.Function(p4)
     f_p4.interpolate(lambda x: ([x[1] ** 4, x[0] ** 3]))
@@ -125,12 +131,12 @@ def extract_diagonal(mat):
         for i in range(start, end):
             if mat.indices[i] == row:
                 for block in range(bs):
-                    diag[bs * row + block] = mat.data[bs ** 2 * i + (bs + 1) * block]
+                    diag[bs * row + block] = mat.data[bs**2 * i + (bs + 1) * block]
     return diag
 
 
 @pytest.mark.skip_in_parallel
-@pytest.mark.parametrize("shape", [(), (1, ), (2, ), (3, ), (4, ), (2, 2), (3, 3)])
+@pytest.mark.parametrize("shape", [(), (1,), (2,), (3,), (4,), (2, 2), (3, 3)])
 def test_vector_element(shape):
     msh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 10, 10)
 

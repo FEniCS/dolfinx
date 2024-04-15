@@ -9,6 +9,7 @@ import math
 from mpi4py import MPI
 
 import numpy as np
+import pytest
 
 import dolfinx
 from dolfinx import cpp as _cpp
@@ -30,18 +31,24 @@ def test_sub_index_map():
     # 0, the second of rank 2 etc.
     # Ghost one index from from every other rank
     dest_ranks = np.delete(np.arange(0, comm.size, dtype=np.int32), my_rank)
-    map_ghosts = np.array([map_local_size * dest_ranks[r] + r %
-                          map_local_size for r in range(len(dest_ranks))], dtype=np.int64)
+    map_ghosts = np.array(
+        [map_local_size * dest_ranks[r] + r % map_local_size for r in range(len(dest_ranks))],
+        dtype=np.int64,
+    )
     src_ranks = dest_ranks
 
     # Create index map
-    map = dolfinx.common.IndexMap(comm, map_local_size, [dest_ranks, src_ranks], map_ghosts, src_ranks)
+    map = dolfinx.common.IndexMap(
+        comm, map_local_size, [dest_ranks, src_ranks], map_ghosts, src_ranks
+    )
     assert map.size_global == map_local_size * comm.size
 
     # Build list for each rank of the first (myrank + myrank % 2) local
     # indices
     submap_local_size = [int(rank + rank % 2) for rank in range(comm.size)]
-    local_indices = [np.arange(submap_local_size[rank], dtype=np.int32) for rank in range(comm.size)]
+    local_indices = [
+        np.arange(submap_local_size[rank], dtype=np.int32) for rank in range(comm.size)
+    ]
 
     # Create sub index map and a map from the ghost position in new map
     # to the position in old map
@@ -86,7 +93,9 @@ def test_index_map_ghost_lifetime():
     assert comm.size < n + 1
     local_size = math.factorial(n)
     dest = np.delete(np.arange(0, comm.size, dtype=np.int32), comm.rank)
-    map_ghosts = np.array([local_size * dest[r] + r % local_size for r in range(len(dest))], dtype=np.int64)
+    map_ghosts = np.array(
+        [local_size * dest[r] + r % local_size for r in range(len(dest))], dtype=np.int64
+    )
     src = dest
     map = dolfinx.common.IndexMap(comm, local_size, [dest, src], map_ghosts, src)
     assert map.size_global == local_size * comm.size
@@ -99,7 +108,7 @@ def test_index_map_ghost_lifetime():
 
     # Create marker for all indices that are on process (local or ghost)
     on_process = np.zeros(map.size_global, dtype=bool)
-    on_process[map.local_range[0]:map.local_range[1]] = True
+    on_process[map.local_range[0] : map.local_range[1]] = True
     on_process[map.ghosts] = True
     assert (local_indices[on_process] >= 0).all()
     assert np.allclose(local_indices[np.invert(on_process)], -1)
@@ -180,5 +189,58 @@ def test_create_submap_owner_change():
         assert np.array_equal(sub_imap.ghosts, [2 * (comm.rank + 1)])
         assert np.array_equal(sub_imap.owners, [comm.rank + 1])
         assert np.array_equal(sub_imap_to_imap, [0, 2, 3])
-    global_indices = sub_imap.local_to_global(np.arange(sub_imap.size_local + sub_imap.num_ghosts, dtype=np.int32))
+    global_indices = sub_imap.local_to_global(
+        np.arange(sub_imap.size_local + sub_imap.num_ghosts, dtype=np.int32)
+    )
     assert np.array_equal(global_indices, np.arange(comm.rank * 2, comm.rank * 2 + 3))
+
+
+def test_sub_index_map_multiple_possible_owners():
+    """Check that creating a submap doesn't crash when an index need to change owner and
+    there are multiple possible new owners"""
+    comm = MPI.COMM_WORLD
+
+    if comm.size < 3:
+        pytest.skip("Test requires 3 or more processes")
+
+    # Create an index map with an index on process 2 that is ghosted by processes 0 and 1
+    if comm.rank == 0:
+        local_size = 1
+        ghosts = np.array([2], dtype=np.int64)
+        owners = np.array([2], dtype=np.int32)
+        submap_indices = np.array([0, 1], dtype=np.int32)
+        # NOTE: This assumes that the lowest ranking process takes ownership of the index
+        # in the submap
+        submap_size_local_expected = 2
+        submap_num_ghosts_expected = 0
+    elif comm.rank == 1:
+        local_size = 1
+        ghosts = np.array([2], dtype=np.int64)
+        owners = np.array([2], dtype=np.int32)
+        submap_indices = np.array([0, 1], dtype=np.int32)
+        submap_size_local_expected = 1
+        submap_num_ghosts_expected = 1
+    elif comm.rank == 2:
+        local_size = 1
+        ghosts = np.array([], dtype=np.int64)
+        owners = np.array([], dtype=np.int32)
+        submap_indices = np.array([], dtype=np.int32)
+        submap_size_local_expected = 0
+        submap_num_ghosts_expected = 0
+    else:
+        local_size = 0
+        ghosts = np.array([], dtype=np.int64)
+        owners = np.array([], dtype=np.int32)
+        submap_indices = np.array([], dtype=np.int32)
+        submap_size_local_expected = 0
+        submap_num_ghosts_expected = 0
+
+    imap = dolfinx.common.IndexMap(comm, local_size, ghosts, owners)
+
+    # Create a submap where both processes 0 and 1 include the index on process 2,
+    # but process 2 does not include it
+    sub_imap = _cpp.common.create_sub_index_map(imap, submap_indices, True)[0]
+
+    assert sub_imap.size_global == 3
+    assert sub_imap.size_local == submap_size_local_expected
+    assert sub_imap.num_ghosts == submap_num_ghosts_expected

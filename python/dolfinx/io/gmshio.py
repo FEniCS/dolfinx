@@ -18,23 +18,39 @@ import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
 from dolfinx.cpp.graph import AdjacencyList_int32
+from dolfinx.io.utils import distribute_entity_data
 from dolfinx.mesh import CellType, Mesh, create_mesh, meshtags, meshtags_from_entities
 
-__all__ = ["cell_perm_array", "ufl_mesh", "extract_topology_and_markers",
-           "extract_geometry", "model_to_mesh", "read_from_msh"]
+__all__ = [
+    "cell_perm_array",
+    "ufl_mesh",
+    "extract_topology_and_markers",
+    "extract_geometry",
+    "model_to_mesh",
+    "read_from_msh",
+]
 
 
 # Map from Gmsh cell type identifier (integer) to DOLFINx cell type and
 # degree https://gmsh.info//doc/texinfo/gmsh.html#MSH-file-format
-_gmsh_to_cells = {1: ("interval", 1), 2: ("triangle", 1),
-                  3: ("quadrilateral", 1), 4: ("tetrahedron", 1),
-                  5: ("hexahedron", 1), 8: ("interval", 2),
-                  9: ("triangle", 2), 10: ("quadrilateral", 2),
-                  11: ("tetrahedron", 2), 12: ("hexahedron", 2),
-                  15: ("point", 0), 21: ("triangle", 3),
-                  26: ("interval", 3), 29: ("tetrahedron", 3),
-                  36: ("quadrilateral", 3),
-                  92: ("hexahedron", 3)}
+_gmsh_to_cells = {
+    1: ("interval", 1),
+    2: ("triangle", 1),
+    3: ("quadrilateral", 1),
+    4: ("tetrahedron", 1),
+    5: ("hexahedron", 1),
+    8: ("interval", 2),
+    9: ("triangle", 2),
+    10: ("quadrilateral", 2),
+    11: ("tetrahedron", 2),
+    12: ("hexahedron", 2),
+    15: ("point", 0),
+    21: ("triangle", 3),
+    26: ("interval", 3),
+    29: ("tetrahedron", 3),
+    36: ("quadrilateral", 3),
+    92: ("hexahedron", 3),
+}
 
 
 def ufl_mesh(gmsh_cell: int, gdim: int, dtype: npt.DTypeLike) -> ufl.Mesh:
@@ -56,10 +72,15 @@ def ufl_mesh(gmsh_cell: int, gdim: int, dtype: npt.DTypeLike) -> ufl.Mesh:
     except KeyError as e:
         print(f"Unknown cell type {gmsh_cell}.")
         raise e
-    cell = ufl.Cell(shape, geometric_dimension=gdim)
-    element = basix.ufl.element(basix.ElementFamily.P, cell.cellname(), degree,
-                                basix.LagrangeVariant.equispaced, shape=(gdim,),
-                                gdim=gdim, dtype=dtype)  # type: ignore[arg-type]
+    cell = ufl.Cell(shape)
+    element = basix.ufl.element(
+        basix.ElementFamily.P,
+        cell.cellname(),
+        degree,
+        basix.LagrangeVariant.equispaced,
+        shape=(gdim,),
+        dtype=dtype,  # type: ignore[arg-type]
+    )
     return ufl.Mesh(element)
 
 
@@ -134,8 +155,11 @@ def extract_topology_and_markers(model, name: typing.Optional[str] = None):
             entity_type = entity_types[0]
             if entity_type in topologies.keys():
                 topologies[entity_type]["topology"] = np.concatenate(
-                    (topologies[entity_type]["topology"], topology), axis=0)
-                topologies[entity_type]["cell_data"] = np.hstack([topologies[entity_type]["cell_data"], marker])
+                    (topologies[entity_type]["topology"], topology), axis=0
+                )
+                topologies[entity_type]["cell_data"] = np.hstack(
+                    [topologies[entity_type]["cell_data"], marker]
+                )
             else:
                 topologies[entity_type] = {"topology": topology, "cell_data": marker}
 
@@ -176,11 +200,16 @@ def extract_geometry(model, name: typing.Optional[str] = None) -> npt.NDArray[np
     return points[perm_sort]
 
 
-def model_to_mesh(model, comm: _MPI.Comm, rank: int, gdim: int = 3,
-                  partitioner: typing.Optional[typing.Callable[
-                      [_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32]] = None,
-                  dtype=default_real_type) -> tuple[
-        Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
+def model_to_mesh(
+    model,
+    comm: _MPI.Comm,
+    rank: int,
+    gdim: int = 3,
+    partitioner: typing.Optional[
+        typing.Callable[[_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32]
+    ] = None,
+    dtype=default_real_type,
+) -> tuple[Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
     """Create a Mesh from a Gmsh model.
 
     Creates a :class:`dolfinx.mesh.Mesh` from the physical entities of
@@ -264,11 +293,14 @@ def model_to_mesh(model, comm: _MPI.Comm, rank: int, gdim: int = 3,
     mesh = create_mesh(comm, cells, x[:, :gdim].astype(dtype, copy=False), ufl_domain, partitioner)
 
     # Create MeshTags for cells
-    local_entities, local_values = _cpp.io.distribute_entity_data(
-        mesh._cpp_object, mesh.topology.dim, cells, cell_values)
+    local_entities, local_values = distribute_entity_data(
+        mesh._cpp_object, mesh.topology.dim, cells, cell_values
+    )
     mesh.topology.create_connectivity(mesh.topology.dim, 0)
     adj = _cpp.graph.AdjacencyList_int32(local_entities)
-    ct = meshtags_from_entities(mesh, mesh.topology.dim, adj, local_values.astype(np.int32, copy=False))
+    ct = meshtags_from_entities(
+        mesh, mesh.topology.dim, adj, local_values.astype(np.int32, copy=False)
+    )
     ct.name = "Cell tags"
 
     # Create MeshTags for facets
@@ -280,12 +312,15 @@ def model_to_mesh(model, comm: _MPI.Comm, rank: int, gdim: int = 3,
         if topology.cell_type == CellType.prism or topology.cell_type == CellType.pyramid:
             raise RuntimeError(f"Unsupported cell type {topology.cell_type}")
 
-        facet_type = _cpp.mesh.cell_entity_type(_cpp.mesh.to_type(str(ufl_domain.ufl_cell())), tdim - 1, 0)
+        facet_type = _cpp.mesh.cell_entity_type(
+            _cpp.mesh.to_type(str(ufl_domain.ufl_cell())), tdim - 1, 0
+        )
         gmsh_facet_perm = cell_perm_array(facet_type, num_facet_nodes)
         marked_facets = marked_facets[:, gmsh_facet_perm]
 
-        local_entities, local_values = _cpp.io.distribute_entity_data(
-            mesh._cpp_object, tdim - 1, marked_facets, facet_values)
+        local_entities, local_values = distribute_entity_data(
+            mesh._cpp_object, tdim - 1, marked_facets, facet_values
+        )
         mesh.topology.create_connectivity(topology.dim - 1, tdim)
         adj = _cpp.graph.AdjacencyList_int32(local_entities)
         ft = meshtags_from_entities(mesh, tdim - 1, adj, local_values.astype(np.int32, copy=False))
@@ -296,11 +331,16 @@ def model_to_mesh(model, comm: _MPI.Comm, rank: int, gdim: int = 3,
     return (mesh, ct, ft)
 
 
-def read_from_msh(filename: str, comm: _MPI.Comm, rank: int = 0, gdim: int = 3,
-                  partitioner: typing.Optional[typing.Callable[
-                      [_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32]] = None) -> tuple[
-        Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
-    """Read a Gmsh .msh file and return a distributed :class:`dolfinx.mesh.Mesh` and and cell facet markers.
+def read_from_msh(
+    filename: str,
+    comm: _MPI.Comm,
+    rank: int = 0,
+    gdim: int = 3,
+    partitioner: typing.Optional[
+        typing.Callable[[_MPI.Comm, int, int, AdjacencyList_int32], AdjacencyList_int32]
+    ] = None,
+) -> tuple[Mesh, _cpp.mesh.MeshTags_int32, _cpp.mesh.MeshTags_int32]:
+    """Read a Gmsh .msh file and return a :class:`dolfinx.mesh.Mesh` and cell facet markers.
 
     Note:
         This function requires the Gmsh Python module.
@@ -322,7 +362,9 @@ def read_from_msh(filename: str, comm: _MPI.Comm, rank: int = 0, gdim: int = 3,
     except ModuleNotFoundError:
         # Python 3.11+ adds the add_note method to exceptions
         # e.add_note("Gmsh must be installed to import dolfinx.io.gmshio")
-        raise ModuleNotFoundError("No module named 'gmsh': dolfinx.io.gmshio.read_from_msh requires Gmsh.", name="gmsh")
+        raise ModuleNotFoundError(
+            "No module named 'gmsh': dolfinx.io.gmshio.read_from_msh requires Gmsh.", name="gmsh"
+        )
 
     if comm.rank == rank:
         gmsh.initialize()

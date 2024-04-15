@@ -11,9 +11,9 @@ ARG ADIOS2_VERSION=2.9.2
 ARG HDF5_SERIES=1.14
 ARG HDF5_PATCH=3
 ARG HDF5_FIX=
-ARG PETSC_VERSION=3.20.2
-ARG SLEPC_VERSION=3.20.1
-ARG NANOBIND_VERSION=1.8.0
+ARG PETSC_VERSION=3.21.0
+ARG SLEPC_VERSION=3.21.0
+ARG NANOBIND_VERSION=1.9.2
 ARG KAHIP_VERSION=3.16
 
 WORKDIR /tmp
@@ -41,7 +41,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 
 # Install oneAPI libraries (see https://oneapi-src.github.io/oneapi-ci/)
 RUN wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null && \
-    # echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | tee /etc/apt/sources.list.d/oneAPI.list && \
     echo "deb [trusted=yes] https://apt.repos.intel.com/oneapi all main" | tee /etc/apt/sources.list.d/oneAPI.list && \
     apt-get update && \
     apt-get install -y libstdc++-11-dev intel-oneapi-compiler-dpcpp-cpp intel-oneapi-mkl-devel intel-oneapi-mpi-devel intel-oneapi-python && \

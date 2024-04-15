@@ -86,9 +86,12 @@ from ufl import ds, dx, grad, inner
 # <dolfinx.fem.FunctionSpace>` $V$ on the mesh.
 
 # +
-msh = mesh.create_rectangle(comm=MPI.COMM_WORLD,
-                            points=((0.0, 0.0), (2.0, 1.0)), n=(32, 16),
-                            cell_type=mesh.CellType.triangle)
+msh = mesh.create_rectangle(
+    comm=MPI.COMM_WORLD,
+    points=((0.0, 0.0), (2.0, 1.0)),
+    n=(32, 16),
+    cell_type=mesh.CellType.triangle,
+)
 V = fem.functionspace(msh, ("Lagrange", 1))
 # -
 
@@ -105,9 +108,11 @@ V = fem.functionspace(msh, ("Lagrange", 1))
 # with a 'marker' function that returns `True` for points `x` on the
 # boundary and `False` otherwise.
 
-facets = mesh.locate_entities_boundary(msh, dim=(msh.topology.dim - 1),
-                                       marker=lambda x: np.logical_or(np.isclose(x[0], 0.0),
-                                                                      np.isclose(x[0], 2.0)))
+facets = mesh.locate_entities_boundary(
+    msh,
+    dim=(msh.topology.dim - 1),
+    marker=lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 2.0),
+)
 
 # We now find the degrees-of-freedom that are associated with the
 # boundary facets using {py:func}`locate_dofs_topological
@@ -158,6 +163,7 @@ with io.XDMFFile(msh.comm, "out_poisson/poisson.xdmf", "w") as file:
 # +
 try:
     import pyvista
+
     cells, types, x = plot.vtk_mesh(V)
     grid = pyvista.UnstructuredGrid(cells, types, x)
     grid.point_data["u"] = uh.x.array.real

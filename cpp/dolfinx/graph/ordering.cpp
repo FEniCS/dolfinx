@@ -368,7 +368,7 @@ graph::reorder_gps(const graph::AdjacencyList<std::int32_t>& graph)
   while (count < n)
   {
     rv = gps_reorder_unlabelled(graph, r);
-    assert(rv.size() > 0);
+    assert(!rv.empty());
 
     // Reverse permutation
     for (std::int32_t q : rv)

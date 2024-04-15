@@ -49,7 +49,9 @@ def set_vals_numba(A, m, rows, n, cols, data, mode):
 
 @numba.njit
 def set_vals_cffi(A, m, rows, n, cols, data, mode):
-    MatSetValuesLocal_abi(A, m, ffi.from_buffer(rows), n, ffi.from_buffer(cols), ffi.from_buffer(data), mode)
+    MatSetValuesLocal_abi(
+        A, m, ffi.from_buffer(rows), n, ffi.from_buffer(cols), ffi.from_buffer(data), mode
+    )
 
 
 @numba.njit
@@ -71,27 +73,36 @@ def get_matsetvalues_cffi_api():
     else:
         raise RuntimeError("Could not find DOLFINx pkgconfig file")
 
-    cffi_support.register_type(ffi.typeof('float _Complex'), numba.types.complex64)
-    cffi_support.register_type(ffi.typeof('double _Complex'), numba.types.complex128)
+    cffi_support.register_type(ffi.typeof("float _Complex"), numba.types.complex64)
+    cffi_support.register_type(ffi.typeof("double _Complex"), numba.types.complex128)
 
-    petsc_dir = PETSc_get_config()['PETSC_DIR']
+    petsc_dir = PETSc_get_config()["PETSC_DIR"]
     petsc_arch = petsc4py.lib.getPathArchPETSc()[1]
 
-    worker = os.getenv('PYTEST_XDIST_WORKER', None)
+    worker = os.getenv("PYTEST_XDIST_WORKER", None)
     module_name = f"_petsc_cffi_{worker}"
     if MPI.COMM_WORLD.Get_rank() == 0:
         ffibuilder = cffi.FFI()
-        ffibuilder.cdef("""typedef int... PetscInt;
+        ffibuilder.cdef(
+            """typedef int... PetscInt;
                            typedef ... PetscScalar;
                            typedef int... InsertMode;
                            int MatSetValuesLocal(void* mat, PetscInt nrow, const PetscInt* irow,
-                                PetscInt ncol, const PetscInt* icol, const PetscScalar* y, InsertMode addv);""")
-        ffibuilder.set_source(module_name, '#include "petscmat.h"',
-                              libraries=['petsc'],
-                              include_dirs=[os.path.join(petsc_dir, petsc_arch, 'include'),
-                                            os.path.join(petsc_dir, 'include')] + dolfinx_pc["include_dirs"],
-                              library_dirs=[os.path.join(petsc_dir, petsc_arch, 'lib')],
-                              extra_compile_args=[])
+                                PetscInt ncol, const PetscInt* icol,
+                                const PetscScalar* y, InsertMode addv);"""
+        )
+        ffibuilder.set_source(
+            module_name,
+            '#include "petscmat.h"',
+            libraries=["petsc"],
+            include_dirs=[
+                os.path.join(petsc_dir, petsc_arch, "include"),
+                os.path.join(petsc_dir, "include"),
+            ]
+            + dolfinx_pc["include_dirs"],
+            library_dirs=[os.path.join(petsc_dir, petsc_arch, "lib")],
+            extra_compile_args=[],
+        )
 
         # Build module in same directory as test file
         path = pathlib.Path(__file__).parent.absolute()
@@ -116,9 +127,9 @@ def sink(*args):
 @numba.njit(fastmath=True)
 def area(x0, x1, x2) -> float:
     """Compute the area of a triangle embedded in 2D from the three vertices"""
-    a = (x1[0] - x2[0])**2 + (x1[1] - x2[1])**2
-    b = (x0[0] - x2[0])**2 + (x0[1] - x2[1])**2
-    c = (x0[0] - x1[0])**2 + (x0[1] - x1[1])**2
+    a = (x1[0] - x2[0]) ** 2 + (x1[1] - x2[1]) ** 2
+    b = (x0[0] - x2[0]) ** 2 + (x0[1] - x2[1]) ** 2
+    c = (x0[0] - x1[0]) ** 2 + (x0[1] - x1[1]) ** 2
     return math.sqrt(2 * (a * b + a * c + b * c) - (a**2 + b**2 + c**2)) / 4.0
 
 
@@ -171,10 +182,14 @@ def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells, dtype):
         for j in range(3):
             geometry[j] = x[v[cell, j], :]
         b_local.fill(0.0)
-        kernel(ffi.from_buffer(b_local), ffi.from_buffer(coeffs),
-               ffi.from_buffer(constants),
-               ffi.from_buffer(geometry), ffi.from_buffer(entity_local_index),
-               ffi.from_buffer(perm))
+        kernel(
+            ffi.from_buffer(b_local),
+            ffi.from_buffer(coeffs),
+            ffi.from_buffer(constants),
+            ffi.from_buffer(geometry),
+            ffi.from_buffer(entity_local_index),
+            ffi.from_buffer(perm),
+        )
         for j in range(3):
             b[dofmap[cell, j]] += b_local[j]
 
@@ -231,7 +246,7 @@ def test_custom_mesh_loop_rank1(dtype):
         end = time.time()
         print(f"Time (numba, pass {i}): {end - start}")
     b0.x.scatter_reverse(dolfinx.la.InsertMode.add)
-    b0sum = np.sum(b0.x.array[:b0.x.index_map.size_local * b0.x.block_size])
+    b0sum = np.sum(b0.x.array[: b0.x.index_map.size_local * b0.x.block_size])
     assert mesh.comm.allreduce(b0sum, op=MPI.SUM) == pytest.approx(1.0)
 
     # NOTE: Parallel (threaded) Numba can cause problems with MPI
@@ -247,8 +262,8 @@ def test_custom_mesh_loop_rank1(dtype):
     #     assemble_vector_parallel(b, x_dofs, x, dofmap_t.array, dofmap_t.offsets, num_owned_cells)
     #     end = time.time()
     #     print("Time (numba parallel, pass {}): {}".format(i, end - start))
-    # btmp.vector.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    # assert (btmp.vector - b0.vector).norm() == pytest.approx(0.0)
+    # btmp.x.petsc_vec.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    # assert (btmp.x.petsc_vec - b0.x.petsc_vec).norm() == pytest.approx(0.0)
 
     # Test against generated code and general assembler
     v = ufl.TestFunction(V)
@@ -270,7 +285,9 @@ def test_custom_mesh_loop_rank1(dtype):
     # Assemble using generated tabulate_tensor kernel and Numba
     # assembler
     b3 = Function(V, dtype=dtype)
-    ufcx_form, module, code = dolfinx.jit.ffcx_jit(mesh.comm, L, form_compiler_options={"scalar_type": dtype})
+    ufcx_form, module, code = dolfinx.jit.ffcx_jit(
+        mesh.comm, L, form_compiler_options={"scalar_type": dtype}
+    )
 
     # Get the one and only kernel
     kernel = getattr(ufcx_form.form_integrals[0], f"tabulate_tensor_{np.dtype(dtype).name}")
@@ -285,12 +302,14 @@ def test_custom_mesh_loop_rank1(dtype):
     assert np.linalg.norm(b3.x.array - b0.x.array) == pytest.approx(0.0, abs=1e-8)
 
 
-@pytest.mark.parametrize("set_vals,backend",
-                         [
-                             (set_vals_numba, "numba"),
-                             (set_vals_ctypes, "ctypes"),
-                             (set_vals_cffi, "cffi_abi"),
-                         ])
+@pytest.mark.parametrize(
+    "set_vals,backend",
+    [
+        (set_vals_numba, "numba"),
+        (set_vals_ctypes, "ctypes"),
+        (set_vals_cffi, "cffi_abi"),
+    ],
+)
 def test_custom_mesh_loop_petsc_rank2(set_vals, backend):
     """Test numba assembler for a bilinear form."""
 
@@ -320,7 +339,9 @@ def test_custom_mesh_loop_petsc_rank2(set_vals, backend):
     for i in range(2):
         A1.zeroEntries()
         start = time.time()
-        assemble_petsc_matrix(A1.handle, (x_dofs, x), dofmap, num_owned_cells, set_vals, PETSc.InsertMode.ADD_VALUES)
+        assemble_petsc_matrix(
+            A1.handle, (x_dofs, x), dofmap, num_owned_cells, set_vals, PETSc.InsertMode.ADD_VALUES
+        )
         end = time.time()
         print(f"Time (Numba/{backend}, pass {i}): {end - start}")
         A1.assemble()

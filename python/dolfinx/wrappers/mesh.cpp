@@ -55,24 +55,25 @@ auto create_partitioner_cpp(Functor p)
 template <typename Functor>
 auto create_cell_partitioner_py(Functor p)
 {
-  return [p](dolfinx_wrappers::MPICommWrapper comm, int n, int tdim,
+  return [p](dolfinx_wrappers::MPICommWrapper comm, int n,
+             dolfinx::mesh::CellType cell_type,
              const dolfinx::graph::AdjacencyList<std::int64_t>& cells)
-  { return p(comm.get(), n, tdim, cells); };
+  { return p(comm.get(), n, cell_type, cells); };
 }
 
 using PythonPartitioningFunction
     = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
-        dolfinx_wrappers::MPICommWrapper, int, int,
+        dolfinx_wrappers::MPICommWrapper, int, dolfinx::mesh::CellType,
         const dolfinx::graph::AdjacencyList<std::int64_t>&)>;
 
 using PythonCellPartitionFunction
     = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
-        dolfinx_wrappers::MPICommWrapper, int, int,
+        dolfinx_wrappers::MPICommWrapper, int, dolfinx::mesh::CellType,
         const dolfinx::graph::AdjacencyList<std::int64_t>&)>;
 
 using CppCellPartitionFunction
     = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
-        MPI_Comm, int, int,
+        MPI_Comm, int, dolfinx::mesh::CellType,
         const dolfinx::graph::AdjacencyList<std::int64_t>&)>;
 
 /// Wrap a Python cell graph partitioning function as a C++ function
@@ -81,9 +82,9 @@ create_cell_partitioner_cpp(const PythonCellPartitionFunction& p)
 {
   if (p)
   {
-    return [p](MPI_Comm comm, int n, int tdim,
+    return [p](MPI_Comm comm, int n, dolfinx::mesh::CellType cell_type,
                const dolfinx::graph::AdjacencyList<std::int64_t>& cells)
-    { return p(dolfinx_wrappers::MPICommWrapper(comm), n, tdim, cells); };
+    { return p(dolfinx_wrappers::MPICommWrapper(comm), n, cell_type, cells); };
   }
   else
     return nullptr;
@@ -95,8 +96,6 @@ namespace dolfinx_wrappers
 template <typename T>
 void declare_meshtags(nb::module_& m, std::string type)
 {
-  auto dtype = numpy_dtype<T>();
-
   std::string pyclass_name = std::string("MeshTags_") + type;
   nb::class_<dolfinx::mesh::MeshTags<T>>(m, pyclass_name.c_str(),
                                          "MeshTags object")
@@ -114,8 +113,8 @@ void declare_meshtags(nb::module_& m, std::string type)
             new (self) dolfinx::mesh::MeshTags<T>(
                 topology, dim, std::move(indices_vec), std::move(values_vec));
           })
-      .def_prop_ro("dtype", [dtype](const dolfinx::mesh::MeshTags<T>& self)
-                   { return dtype; })
+      .def_prop_ro("dtype", [](const dolfinx::mesh::MeshTags<T>&)
+                   { return dolfinx_wrappers::numpy_dtype<T>(); })
       .def_rw("name", &dolfinx::mesh::MeshTags<T>::name)
       .def_prop_ro("dim", &dolfinx::mesh::MeshTags<T>::dim)
       .def_prop_ro("topology", &dolfinx::mesh::MeshTags<T>::topology)
@@ -165,6 +164,17 @@ void declare_mesh(nb::module_& m, std::string type)
                 dofs.data_handle(), {dofs.extent(0), dofs.extent(1)});
           },
           nb::rv_policy::reference_internal)
+      .def(
+          "dofmaps",
+          [](dolfinx::mesh::Geometry<T>& self, int i)
+          {
+            auto dofs = self.dofmap(i);
+            return nb::ndarray<const std::int32_t, nb::numpy>(
+                dofs.data_handle(), {dofs.extent(0), dofs.extent(1)});
+          },
+          nb::rv_policy::reference_internal, nb::arg("i"),
+          "Get the geometry dofmap associated with coordinate element i (mixed "
+          "topology)")
       .def("index_map", &dolfinx::mesh::Geometry<T>::index_map)
       .def_prop_ro(
           "x",
@@ -176,10 +186,19 @@ void declare_mesh(nb::module_& m, std::string type)
           nb::rv_policy::reference_internal,
           "Return coordinates of all geometry points. Each row is the "
           "coordinate of a point.")
-      .def_prop_ro("cmap", &dolfinx::mesh::Geometry<T>::cmap,
-                   "The coordinate map")
-      .def_prop_ro("input_global_indices",
-                   &dolfinx::mesh::Geometry<T>::input_global_indices);
+      .def_prop_ro(
+          "cmap", [](dolfinx::mesh::Geometry<T>& self) { return self.cmap(); },
+          "The coordinate map")
+      .def_prop_ro(
+          "input_global_indices",
+          [](const dolfinx::mesh::Geometry<T>& self)
+          {
+            const std::vector<std::int64_t>& id_to_global
+                = self.input_global_indices();
+            return nb::ndarray<const std::int64_t, nb::numpy>(
+                id_to_global.data(), {id_to_global.size()});
+          },
+          nb::rv_policy::reference_internal);
 
   std::string pyclass_mesh_name = std::string("Mesh_") + type;
   nb::class_<dolfinx::mesh::Mesh<T>>(m, pyclass_mesh_name.c_str(),
@@ -199,10 +218,8 @@ void declare_mesh(nb::module_& m, std::string type)
                    nb::overload_cast<>(&dolfinx::mesh::Mesh<T>::topology),
                    "Mesh topology")
       .def_prop_ro(
-          "comm",
-          [](dolfinx::mesh::Mesh<T>& self)
-          { return MPICommWrapper(self.comm()); },
-          nb::keep_alive<0, 1>())
+          "comm", [](dolfinx::mesh::Mesh<T>& self)
+          { return MPICommWrapper(self.comm()); }, nb::keep_alive<0, 1>())
       .def_rw("name", &dolfinx::mesh::Mesh<T>::name);
 
   std::string create_interval("create_interval_" + type);
@@ -258,9 +275,9 @@ void declare_mesh(nb::module_& m, std::string type)
         if (p)
         {
           auto p_wrap
-              = [p](MPI_Comm comm, int n, int tdim,
+              = [p](MPI_Comm comm, int n, dolfinx::mesh::CellType cell_type,
                     const dolfinx::graph::AdjacencyList<std::int64_t>& cells)
-          { return p(MPICommWrapper(comm), n, tdim, cells); };
+          { return p(MPICommWrapper(comm), n, cell_type, cells); };
           return dolfinx::mesh::create_mesh(
               comm.get(), comm.get(), std::span(cells.data(), cells.size()),
               element, comm.get(), std::span(x.data(), x.size()),
@@ -376,6 +393,20 @@ void declare_mesh(nb::module_& m, std::string type)
         return as_nbarray(std::move(idx), {entities.size(), num_vertices});
       },
       nb::arg("mesh"), nb::arg("dim"), nb::arg("entities"), nb::arg("orient"));
+
+  m.def("create_geometry",
+        [](const dolfinx::mesh::Topology& topology,
+           const std::vector<dolfinx::fem::CoordinateElement<T>>& elements,
+           nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig> nodes,
+           nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig> xdofs,
+           nb::ndarray<const T, nb::ndim<1>, nb::c_contig> x, int dim)
+        {
+          return dolfinx::mesh::create_geometry(
+              topology, elements,
+              std::span<const std::int64_t>(nodes.data(), nodes.size()),
+              std::span<const std::int64_t>(xdofs.data(), xdofs.size()),
+              std::span<const T>(x.data(), x.size()), dim);
+        });
 }
 
 void mesh(nb::module_& m)
@@ -405,15 +436,23 @@ void mesh(nb::module_& m)
         nb::arg("type"));
   m.def("get_entity_vertices", &dolfinx::mesh::get_entity_vertices,
         nb::arg("type"), nb::arg("dim"));
-  m.def("extract_topology", &dolfinx::mesh::extract_topology,
-        nb::arg("cell_type"), nb::arg("layout"), nb::arg("cells"));
+  m.def(
+      "extract_topology",
+      [](dolfinx::mesh::CellType cell_type,
+         const dolfinx::fem::ElementDofLayout& layout,
+         nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig> cells)
+      {
+        return dolfinx_wrappers::as_nbarray(dolfinx::mesh::extract_topology(
+            cell_type, layout, std::span(cells.data(), cells.size())));
+      },
+      nb::arg("cell_type"), nb::arg("layout"), nb::arg("cells"));
 
   m.def(
       "build_dual_graph",
-      [](const MPICommWrapper comm,
-         const dolfinx::graph::AdjacencyList<std::int64_t>& cells, int tdim)
-      { return dolfinx::mesh::build_dual_graph(comm.get(), cells, tdim); },
-      nb::arg("comm"), nb::arg("cells"), nb::arg("tdim"),
+      [](const MPICommWrapper comm, dolfinx::mesh::CellType cell_type,
+         const dolfinx::graph::AdjacencyList<std::int64_t>& cells)
+      { return dolfinx::mesh::build_dual_graph(comm.get(), cell_type, cells); },
+      nb::arg("comm"), nb::arg("cell_type"), nb::arg("cells"),
       "Build dual graph for cells");
 
   // dolfinx::mesh::GhostMode enums
@@ -521,10 +560,8 @@ void mesh(nb::module_& m)
            nb::overload_cast<std::int8_t>(
                &dolfinx::mesh::Topology::interprocess_facets, nb::const_))
       .def_prop_ro(
-          "comm",
-          [](dolfinx::mesh::Topology& self)
-          { return MPICommWrapper(self.comm()); },
-          nb::keep_alive<0, 1>());
+          "comm", [](dolfinx::mesh::Topology& self)
+          { return MPICommWrapper(self.comm()); }, nb::keep_alive<0, 1>());
 
   m.def("create_topology",
         [](MPICommWrapper comm,

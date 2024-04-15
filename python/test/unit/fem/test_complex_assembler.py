@@ -35,7 +35,7 @@ def test_complex_assembly(complex_dtype):
 
     b = assemble_vector(L1)
     b.scatter_reverse(la.InsertMode.add)
-    bnorm = b.norm(la.Norm.l1)
+    bnorm = la.norm(b, la.Norm.l1)
     b_norm_ref = abs(-2 + 3.0j)
     assert bnorm == pytest.approx(b_norm_ref, rel=1e-5)
 
@@ -55,7 +55,7 @@ def test_complex_assembly(complex_dtype):
 
     b = assemble_vector(L0)
     b.scatter_reverse(la.InsertMode.add)
-    b1_norm = b.norm()
+    b1_norm = la.norm(b)
 
     a_complex = form((1 + 1j) * inner(u, v) * dx, dtype=complex_dtype)
     f = ufl.sin(2 * np.pi * x[0])
@@ -66,7 +66,7 @@ def test_complex_assembly(complex_dtype):
     assert A1_norm == pytest.approx(A2_norm / 2)
     b = assemble_vector(L2)
     b.scatter_reverse(la.InsertMode.add)
-    b2_norm = b.norm(la.Norm.l2)
+    b2_norm = la.norm(b, la.Norm.l2)
     assert b2_norm == pytest.approx(b1_norm)
 
 
@@ -106,6 +106,7 @@ def test_complex_assembly_solve(complex_dtype, cg_solver):
     # Reference Solution
     def ref_eval(x):
         return np.cos(2 * np.pi * x[0]) * np.cos(2 * np.pi * x[1])
+
     u_ref = Function(V, dtype=real_dtype)
     u_ref.interpolate(ref_eval)
 

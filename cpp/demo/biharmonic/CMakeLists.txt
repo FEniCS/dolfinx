@@ -45,7 +45,9 @@ add_custom_command(
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-add_executable(${PROJECT_NAME} main.cpp ${CMAKE_CURRENT_BINARY_DIR}/biharmonic.c)
+add_executable(
+  ${PROJECT_NAME} main.cpp ${CMAKE_CURRENT_BINARY_DIR}/biharmonic.c
+)
 target_link_libraries(${PROJECT_NAME} dolfinx)
 
 # Do not throw error for 'multi-line comments' (these are typical in rst which

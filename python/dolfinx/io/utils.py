@@ -23,12 +23,11 @@ from dolfinx.cpp.io import perm_vtk as cell_perm_vtk
 from dolfinx.fem import Function
 from dolfinx.mesh import GhostMode, Mesh, MeshTags
 
-__all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk",
-           "distribute_entity_data"]
+__all__ = ["VTKFile", "XDMFFile", "cell_perm_gmsh", "cell_perm_vtk", "distribute_entity_data"]
 
 
-def _extract_cpp_functions(functions: typing.Union[list[Function], Function]):
-    """Extract C++ object for a single function or a list of functions"""
+def _extract_cpp_objects(functions: typing.Union[Mesh, Function, tuple[Function], list[Function]]):
+    """Extract C++ objects"""
     if isinstance(functions, (list, tuple)):
         return [getattr(u, "_cpp_object", u) for u in functions]
     else:
@@ -38,8 +37,8 @@ def _extract_cpp_functions(functions: typing.Union[list[Function], Function]):
 # FidesWriter and VTXWriter require ADIOS2
 if _cpp.common.has_adios2:
     from dolfinx.cpp.io import FidesMeshPolicy, VTXMeshPolicy  # F401
-    __all__ = [*__all__, "FidesWriter", "VTXWriter", "FidesMeshPolicy",
-                         "VTXMeshPolicy"]
+
+    __all__ = [*__all__, "FidesWriter", "VTXWriter", "FidesMeshPolicy", "VTXMeshPolicy"]
 
     class VTXWriter:
         """Writer for VTX files, using ADIOS2 to create the files.
@@ -53,10 +52,14 @@ if _cpp.common.has_adios2:
 
         _cpp_object: typing.Union[_cpp.io.VTXWriter_float32, _cpp.io.VTXWriter_float64]
 
-        def __init__(self, comm: _MPI.Comm, filename: typing.Union[str, Path],
-                     output: typing.Union[Mesh, Function, list[Function]],
-                     engine: str = "BPFile",
-                     mesh_policy: VTXMeshPolicy = VTXMeshPolicy.update):
+        def __init__(
+            self,
+            comm: _MPI.Comm,
+            filename: typing.Union[str, Path],
+            output: typing.Union[Mesh, Function, list[Function], tuple[Function]],
+            engine: str = "BPFile",
+            mesh_policy: VTXMeshPolicy = VTXMeshPolicy.update,
+        ):
             """Initialize a writer for outputting data in the VTX format.
 
             Args:
@@ -64,7 +67,7 @@ if _cpp.common.has_adios2:
                 filename: The output filename
                 output: The data to output. Either a mesh, a single
                     (discontinuous) Lagrange Function or list of
-                    (discontinuous Lagrange Functions.
+                    (discontinuous) Lagrange Functions.
                 engine: ADIOS2 engine to use for output. See
                     ADIOS2 documentation for options.
                 mesh_policy: Controls if the mesh is written to file at
@@ -86,9 +89,9 @@ if _cpp.common.has_adios2:
                 except AttributeError:
                     dtype = output[0].function_space.mesh.geometry.x.dtype  # type: ignore
 
-            if dtype == np.float32:
+            if np.issubdtype(dtype, np.float32):
                 _vtxwriter = _cpp.io.VTXWriter_float32
-            elif dtype == np.float64:
+            elif np.issubdtype(dtype, np.float64):
                 _vtxwriter = _cpp.io.VTXWriter_float64
 
             try:
@@ -96,8 +99,9 @@ if _cpp.common.has_adios2:
                 self._cpp_object = _vtxwriter(comm, filename, output._cpp_object, engine)  # type: ignore[union-attr]
             except (NotImplementedError, TypeError, AttributeError):
                 # Input is a single function or a list of functions
-                self._cpp_object = _vtxwriter(comm, filename, _extract_cpp_functions(
-                    output), engine, mesh_policy)   # type: ignore[arg-type]
+                self._cpp_object = _vtxwriter(
+                    comm, filename, _extract_cpp_objects(output), engine, mesh_policy
+                )  # type: ignore[arg-type]
 
         def __enter__(self):
             return self
@@ -124,9 +128,14 @@ if _cpp.common.has_adios2:
 
         _cpp_object: typing.Union[_cpp.io.FidesWriter_float32, _cpp.io.FidesWriter_float64]
 
-        def __init__(self, comm: _MPI.Comm, filename: typing.Union[str, Path],
-                     output: typing.Union[Mesh, list[Function], Function],
-                     engine: str = "BPFile", mesh_policy: FidesMeshPolicy = FidesMeshPolicy.update):
+        def __init__(
+            self,
+            comm: _MPI.Comm,
+            filename: typing.Union[str, Path],
+            output: typing.Union[Mesh, list[Function], Function],
+            engine: str = "BPFile",
+            mesh_policy: FidesMeshPolicy = FidesMeshPolicy.update,
+        ):
             """Initialize a writer for outputting a mesh, a single Lagrange
             function or list of Lagrange functions sharing the same
             element family and degree
@@ -151,18 +160,19 @@ if _cpp.common.has_adios2:
                 try:
                     dtype = output.function_space.mesh.geometry.x.dtype  # type: ignore
                 except AttributeError:
-                    dtype = output[0].function_space.mesh.geometry.x.dtype   # type: ignore
+                    dtype = output[0].function_space.mesh.geometry.x.dtype  # type: ignore
 
-            if dtype == np.float32:
+            if np.issubdtype(dtype, np.float32):
                 _fides_writer = _cpp.io.FidesWriter_float32
-            elif dtype == np.float64:
+            elif np.issubdtype(dtype, np.float64):
                 _fides_writer = _cpp.io.FidesWriter_float64
 
             try:
                 self._cpp_object = _fides_writer(comm, filename, output._cpp_object, engine)  # type: ignore
             except (NotImplementedError, TypeError, AttributeError):
-                self._cpp_object = _fides_writer(comm, filename, _extract_cpp_functions(
-                    output), engine, mesh_policy)  # type: ignore[arg-type]
+                self._cpp_object = _fides_writer(
+                    comm, filename, _extract_cpp_objects(output), engine, mesh_policy
+                )  # type: ignore[arg-type]
 
         def __enter__(self):
             return self
@@ -198,7 +208,7 @@ class VTKFile(_cpp.io.VTKFile):
 
     def write_function(self, u: typing.Union[list[Function], Function], t: float = 0.0) -> None:
         """Write a single function or a list of functions to file for a given time (default 0.0)"""
-        super().write(_extract_cpp_functions(u), t)
+        super().write(_extract_cpp_objects(u), t)
 
 
 class XDMFFile(_cpp.io.XDMFFile):
@@ -212,13 +222,19 @@ class XDMFFile(_cpp.io.XDMFFile):
         """Write mesh to file"""
         super().write_mesh(mesh._cpp_object, xpath)
 
-    def write_meshtags(self, tags: MeshTags, x: typing.Union[_cpp.mesh.Geometry_float32, _cpp.mesh.Geometry_float64],
-                       geometry_xpath: str = "/Xdmf/Domain/Grid/Geometry",
-                       xpath: str = "/Xdmf/Domain") -> None:
+    def write_meshtags(
+        self,
+        tags: MeshTags,
+        x: typing.Union[_cpp.mesh.Geometry_float32, _cpp.mesh.Geometry_float64],
+        geometry_xpath: str = "/Xdmf/Domain/Grid/Geometry",
+        xpath: str = "/Xdmf/Domain",
+    ) -> None:
         """Write mesh tags to file"""
         super().write_meshtags(tags._cpp_object, x, geometry_xpath, xpath)
 
-    def write_function(self, u: Function, t: float = 0.0, mesh_xpath="/Xdmf/Domain/Grid[@GridType='Uniform'][1]"):
+    def write_function(
+        self, u: Function, t: float = 0.0, mesh_xpath="/Xdmf/Domain/Grid[@GridType='Uniform'][1]"
+    ):
         """Write function to file for a given time.
 
         Note:
@@ -235,7 +251,9 @@ class XDMFFile(_cpp.io.XDMFFile):
         """
         super().write_function(getattr(u, "_cpp_object", u), t, mesh_xpath)
 
-    def read_mesh(self, ghost_mode=GhostMode.shared_facet, name="mesh", xpath="/Xdmf/Domain") -> Mesh:
+    def read_mesh(
+        self, ghost_mode=GhostMode.shared_facet, name="mesh", xpath="/Xdmf/Domain"
+    ) -> Mesh:
         """Read mesh data from file."""
         cell_shape, cell_degree = super().read_cell_type(name, xpath)
         cells = super().read_topology_data(name, xpath)
@@ -243,11 +261,19 @@ class XDMFFile(_cpp.io.XDMFFile):
 
         # Build the mesh
         cmap = _cpp.fem.CoordinateElement_float64(cell_shape, cell_degree)
-        msh = _cpp.mesh.create_mesh(self.comm, cells,
-                                    cmap, x, _cpp.mesh.create_cell_partitioner(ghost_mode))
+        msh = _cpp.mesh.create_mesh(
+            self.comm, cells, cmap, x, _cpp.mesh.create_cell_partitioner(ghost_mode)
+        )
         msh.name = name
-        domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_shape.name, cell_degree,
-                                            basix.LagrangeVariant.equispaced, shape=(x.shape[1], ), gdim=x.shape[1]))
+        domain = ufl.Mesh(
+            basix.ufl.element(
+                "Lagrange",
+                cell_shape.name,
+                cell_degree,
+                basix.LagrangeVariant.equispaced,
+                shape=(x.shape[1],),
+            )
+        )
         return Mesh(msh, domain)
 
     def read_meshtags(self, mesh, name, xpath="/Xdmf/Domain"):
@@ -255,7 +281,25 @@ class XDMFFile(_cpp.io.XDMFFile):
         return MeshTags(mt)
 
 
-def distribute_entity_data(mesh: Mesh, entity_dim: int, entities: npt.NDArray[np.int64],
-                           values: npt.NDArray[np.int32]) -> tuple[npt.NDArray[np.int64],
-                                                                   npt.NDArray[np.int32]]:
-    return _cpp.io.distribute_entity_data(mesh._cpp_object, entity_dim, entities, values)
+def distribute_entity_data(
+    mesh: Mesh, entity_dim: int, entities: npt.NDArray[np.int64], values: np.ndarray
+) -> tuple[npt.NDArray[np.int64], np.ndarray]:
+    """Given a set of mesh entities and values, distribute them to the process that owns the entity.
+
+    The entities are described by the global vertex indices of the mesh. These entity indices are
+    using the original input ordering.
+
+    Returns:
+        Entities owned by the process (and their local entity-to-vertex indices) and the
+        corresponding values.
+    """
+    return _cpp.io.distribute_entity_data(
+        mesh.topology,
+        mesh.geometry.input_global_indices,
+        mesh.geometry.index_map().size_global,
+        mesh.geometry.cmap.create_dof_layout(),
+        mesh.geometry.dofmap,
+        entity_dim,
+        entities,
+        values,
+    )

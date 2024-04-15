@@ -16,13 +16,39 @@ import basix
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type
-from dolfinx.fem import Function, assemble_scalar, dirichletbc, form, functionspace, locate_dofs_topological
+from dolfinx.fem import (
+    Function,
+    assemble_scalar,
+    dirichletbc,
+    form,
+    functionspace,
+    locate_dofs_topological,
+)
 from dolfinx.fem.petsc import apply_lifting, assemble_matrix, assemble_vector, set_bc
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import (CellType, create_rectangle, create_unit_cube, create_unit_square, exterior_facet_indices,
-                          locate_entities_boundary)
-from ufl import (CellDiameter, FacetNormal, SpatialCoordinate, TestFunction, TrialFunction, avg, div, ds, dS, dx, grad,
-                 inner, jump)
+from dolfinx.mesh import (
+    CellType,
+    create_rectangle,
+    create_unit_cube,
+    create_unit_square,
+    exterior_facet_indices,
+    locate_entities_boundary,
+)
+from ufl import (
+    CellDiameter,
+    FacetNormal,
+    SpatialCoordinate,
+    TestFunction,
+    TrialFunction,
+    avg,
+    div,
+    dS,
+    ds,
+    dx,
+    grad,
+    inner,
+    jump,
+)
 
 
 def run_scalar_test(mesh, V, degree):
@@ -35,21 +61,25 @@ def run_scalar_test(mesh, V, degree):
 
     # Get quadrature degree for bilinear form integrand (ignores effect of non-affine map)
     a = inner(grad(u), grad(v)) * dx(metadata={"quadrature_degree": -1})
-    a.integrals()[0].metadata()["quadrature_degree"] = ufl.algorithms.estimate_total_polynomial_degree(a)
+    a.integrals()[0].metadata()["quadrature_degree"] = (
+        ufl.algorithms.estimate_total_polynomial_degree(a)
+    )
     a = form(a)
 
     # Source term
     x = SpatialCoordinate(mesh)
-    u_exact = x[1]**degree
-    f = - div(grad(u_exact))
+    u_exact = x[1] ** degree
+    f = -div(grad(u_exact))
 
     # Set quadrature degree for linear form integrand (ignores effect of non-affine map)
     L = inner(f, v) * dx(metadata={"quadrature_degree": -1})
-    L.integrals()[0].metadata()["quadrature_degree"] = ufl.algorithms.estimate_total_polynomial_degree(L)
+    L.integrals()[0].metadata()["quadrature_degree"] = (
+        ufl.algorithms.estimate_total_polynomial_degree(L)
+    )
     L = form(L)
 
     u_bc = Function(V)
-    u_bc.interpolate(lambda x: x[1]**degree)
+    u_bc.interpolate(lambda x: x[1] ** degree)
 
     # Create Dirichlet boundary condition
     facetdim = mesh.topology.dim - 1
@@ -73,10 +103,10 @@ def run_scalar_test(mesh, V, degree):
     solver.setOperators(A)
 
     uh = Function(V)
-    solver.solve(b, uh.vector)
+    solver.solve(b, uh.x.petsc_vec)
     uh.x.scatter_forward()
 
-    M = (u_exact - uh)**2 * dx
+    M = (u_exact - uh) ** 2 * dx
     M = form(M)
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
     assert np.abs(error) < 1.0e-9
@@ -110,13 +140,13 @@ def run_vector_test(mesh, V, degree):
 
     # Solve
     uh = Function(V)
-    solver.solve(b, uh.vector)
+    solver.solve(b, uh.x.petsc_vec)
     uh.x.scatter_forward()
 
     # Calculate error
-    M = (u_exact - uh[0])**2 * dx
+    M = (u_exact - uh[0]) ** 2 * dx
     for i in range(1, mesh.topology.dim):
-        M += uh[i]**2 * dx
+        M += uh[i] ** 2 * dx
     M = form(M)
 
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
@@ -142,7 +172,7 @@ def run_dg_test(mesh, V, degree):
     k.x.array[:] = 2.0
 
     # Source term
-    f = - div(k * grad(u_exact))
+    f = -div(k * grad(u_exact))
 
     # Mesh normals and element size
     n = FacetNormal(mesh)
@@ -156,20 +186,29 @@ def run_dg_test(mesh, V, degree):
     ds_ = ds(metadata={"quadrature_degree": -1})
     dS_ = dS(metadata={"quadrature_degree": -1})
 
-    a = inner(k * grad(u), grad(v)) * dx_ \
-        - k("+") * inner(avg(grad(u)), jump(v, n)) * dS_ \
-        - k("+") * inner(jump(u, n), avg(grad(v))) * dS_ \
-        + k("+") * (alpha / h_avg) * inner(jump(u, n), jump(v, n)) * dS_ \
-        - inner(k * grad(u), v * n) * ds_ \
-        - inner(u * n, k * grad(v)) * ds_ \
+    a = (
+        inner(k * grad(u), grad(v)) * dx_
+        - k("+") * inner(avg(grad(u)), jump(v, n)) * dS_
+        - k("+") * inner(jump(u, n), avg(grad(v))) * dS_
+        + k("+") * (alpha / h_avg) * inner(jump(u, n), jump(v, n)) * dS_
+        - inner(k * grad(u), v * n) * ds_
+        - inner(u * n, k * grad(v)) * ds_
         + (alpha / h) * inner(k * u, v) * ds_
-    L = inner(f, v) * dx_ - inner(k * u_exact * n, grad(v)) * ds_ \
+    )
+    L = (
+        inner(f, v) * dx_
+        - inner(k * u_exact * n, grad(v)) * ds_
         + (alpha / h) * inner(k * u_exact, v) * ds_
+    )
 
     for integral in a.integrals():
-        integral.metadata()["quadrature_degree"] = ufl.algorithms.estimate_total_polynomial_degree(a)
+        integral.metadata()["quadrature_degree"] = ufl.algorithms.estimate_total_polynomial_degree(
+            a
+        )
     for integral in L.integrals():
-        integral.metadata()["quadrature_degree"] = ufl.algorithms.estimate_total_polynomial_degree(L)
+        integral.metadata()["quadrature_degree"] = ufl.algorithms.estimate_total_polynomial_degree(
+            L
+        )
 
     a, L = form(a), form(L)
 
@@ -186,11 +225,11 @@ def run_dg_test(mesh, V, degree):
 
     # Solve
     uh = Function(V)
-    solver.solve(b, uh.vector)
+    solver.solve(b, uh.x.petsc_vec)
     uh.x.scatter_forward()
 
     # Calculate error
-    M = (u_exact - uh)**2 * dx
+    M = (u_exact - uh) ** 2 * dx
     M = form(M)
 
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
@@ -212,8 +251,12 @@ def test_curl_curl_eigenvalue(family, order):
     slepc4py = pytest.importorskip("slepc4py")  # noqa: F841
     from slepc4py import SLEPc
 
-    mesh = create_rectangle(MPI.COMM_WORLD, [np.array([0.0, 0.0]),
-                                             np.array([np.pi, np.pi])], [24, 24], CellType.triangle)
+    mesh = create_rectangle(
+        MPI.COMM_WORLD,
+        [np.array([0.0, 0.0]), np.array([np.pi, np.pi])],
+        [24, 24],
+        CellType.triangle,
+    )
 
     e = element(family, basix.CellType.triangle, order)
     V = functionspace(mesh, e)
@@ -225,7 +268,8 @@ def test_curl_curl_eigenvalue(family, order):
     b = inner(u, v) * dx
 
     boundary_facets = locate_entities_boundary(
-        mesh, mesh.topology.dim - 1, lambda x: np.full(x.shape[1], True, dtype=bool))
+        mesh, mesh.topology.dim - 1, lambda x: np.full(x.shape[1], True, dtype=bool)
+    )
     boundary_dofs = locate_dofs_topological(V, mesh.topology.dim - 1, boundary_facets)
 
     zero_u = Function(V)
@@ -257,36 +301,50 @@ def test_curl_curl_eigenvalue(family, order):
 
     assert np.isclose(np.imag(eigenvalues_unsorted), 0.0).all()
     eigenvalues_sorted = np.sort(np.real(eigenvalues_unsorted))[:-1]
-    eigenvalues_sorted = eigenvalues_sorted[np.logical_not(eigenvalues_sorted < 1E-8)]
+    eigenvalues_sorted = eigenvalues_sorted[np.logical_not(eigenvalues_sorted < 1e-8)]
 
     eigenvalues_exact = np.array([1.0, 1.0, 2.0, 4.0, 4.0, 5.0, 5.0, 8.0, 9.0])
-    assert np.isclose(eigenvalues_sorted[0:eigenvalues_exact.shape[0]], eigenvalues_exact, rtol=1E-2).all()
+    assert np.isclose(
+        eigenvalues_sorted[0 : eigenvalues_exact.shape[0]], eigenvalues_exact, rtol=1e-2
+    ).all()
 
     eps.destroy()
     A.destroy()
     B.destroy()
 
 
-@pytest.mark.skipif(np.issubdtype(PETSc.ScalarType, np.complexfloating),  # type: ignore
-                    reason="This test does not work in complex mode.")
+@pytest.mark.skipif(
+    np.issubdtype(PETSc.ScalarType, np.complexfloating),  # type: ignore
+    reason="This test does not work in complex mode.",
+)
 @pytest.mark.parametrize("family", ["HHJ", "Regge"])
 def test_biharmonic(family):
     """Manufactured biharmonic problem.
 
     Solved using rotated Regge or the Hellan-Herrmann-Johnson (HHJ) mixed
     finite element method in two-dimensions."""
-    mesh = create_rectangle(MPI.COMM_WORLD, [np.array([0.0, 0.0]),
-                                             np.array([1.0, 1.0])], [16, 16], CellType.triangle)
+    mesh = create_rectangle(
+        MPI.COMM_WORLD, [np.array([0.0, 0.0]), np.array([1.0, 1.0])], [16, 16], CellType.triangle
+    )
 
-    e = mixed_element([element(family, basix.CellType.triangle, 1),
-                       element(basix.ElementFamily.P, basix.CellType.triangle, 2)])
+    e = mixed_element(
+        [
+            element(family, basix.CellType.triangle, 1),
+            element(basix.ElementFamily.P, basix.CellType.triangle, 2),
+        ]
+    )
 
     V = functionspace(mesh, e)
     sigma, u = ufl.TrialFunctions(V)
     tau, v = ufl.TestFunctions(V)
 
     x = ufl.SpatialCoordinate(mesh)
-    u_exact = ufl.sin(ufl.pi * x[0]) * ufl.sin(ufl.pi * x[0]) * ufl.sin(ufl.pi * x[1]) * ufl.sin(ufl.pi * x[1])
+    u_exact = (
+        ufl.sin(ufl.pi * x[0])
+        * ufl.sin(ufl.pi * x[0])
+        * ufl.sin(ufl.pi * x[1])
+        * ufl.sin(ufl.pi * x[1])
+    )
     f_exact = div(grad(div(grad(u_exact))))
     sigma_exact = grad(grad(u_exact))
 
@@ -313,9 +371,11 @@ def test_biharmonic(family):
     # Discrete duality inner product eq. 4.5 Lizao Li's PhD thesis
     def b(tau_S, v):
         n = FacetNormal(mesh)
-        return inner(tau_S, grad(grad(v))) * dx \
-            - ufl.dot(ufl.dot(tau_S('+'), n('+')), n('+')) * jump(grad(v), n) * dS \
+        return (
+            inner(tau_S, grad(grad(v))) * dx
+            - ufl.dot(ufl.dot(tau_S("+"), n("+")), n("+")) * jump(grad(v), n) * dS
             - ufl.dot(ufl.dot(tau_S, n), n) * ufl.dot(grad(v), n) * ds
+        )
 
     # Non-symmetric formulation
     a = form(inner(sigma_S, tau_S) * dx - b(tau_S, u) + b(sigma_S, v))
@@ -326,8 +386,9 @@ def test_biharmonic(family):
     zero_u.x.array[:] = 0
 
     # Strong (Dirichlet) boundary condition
-    boundary_facets = locate_entities_boundary(mesh, mesh.topology.dim - 1,
-                                               lambda x: np.full(x.shape[1], True, dtype=bool))
+    boundary_facets = locate_entities_boundary(
+        mesh, mesh.topology.dim - 1, lambda x: np.full(x.shape[1], True, dtype=bool)
+    )
     boundary_dofs = locate_dofs_topological((V.sub(1), V_1), mesh.topology.dim - 1, boundary_facets)
 
     bcs = [dirichletbc(zero_u, boundary_dofs, V.sub(1))]
@@ -345,14 +406,29 @@ def test_biharmonic(family):
     solver.setOperators(A)
 
     x_h = Function(V)
-    solver.solve(b, x_h.vector)
+    solver.solve(b, x_h.x.petsc_vec)
     x_h.x.scatter_forward()
 
     # Recall that x_h has flattened indices
-    u_error_numerator = np.sqrt(mesh.comm.allreduce(assemble_scalar(
-        form(inner(u_exact - x_h[4], u_exact - x_h[4]) * dx(mesh, metadata={"quadrature_degree": 6}))), op=MPI.SUM))
-    u_error_denominator = np.sqrt(mesh.comm.allreduce(assemble_scalar(
-        form(inner(u_exact, u_exact) * dx(mesh, metadata={"quadrature_degree": 6}))), op=MPI.SUM))
+    u_error_numerator = np.sqrt(
+        mesh.comm.allreduce(
+            assemble_scalar(
+                form(
+                    inner(u_exact - x_h[4], u_exact - x_h[4])
+                    * dx(mesh, metadata={"quadrature_degree": 6})
+                )
+            ),
+            op=MPI.SUM,
+        )
+    )
+    u_error_denominator = np.sqrt(
+        mesh.comm.allreduce(
+            assemble_scalar(
+                form(inner(u_exact, u_exact) * dx(mesh, metadata={"quadrature_degree": 6}))
+            ),
+            op=MPI.SUM,
+        )
+    )
     assert np.abs(u_error_numerator / u_error_denominator) < 0.05
 
     # Reconstruct tensor from flattened indices.
@@ -364,11 +440,25 @@ def test_biharmonic(family):
     else:
         raise ValueError(f"Family {family} not supported.")
 
-    sigma_error_numerator = np.sqrt(mesh.comm.allreduce(assemble_scalar(
-        form(inner(sigma_exact - sigma_h, sigma_exact - sigma_h) * dx(mesh, metadata={"quadrature_degree": 6}))),
-        op=MPI.SUM))
-    sigma_error_denominator = np.sqrt(mesh.comm.allreduce(assemble_scalar(
-        form(inner(sigma_exact, sigma_exact) * dx(mesh, metadata={"quadrature_degree": 6}))), op=MPI.SUM))
+    sigma_error_numerator = np.sqrt(
+        mesh.comm.allreduce(
+            assemble_scalar(
+                form(
+                    inner(sigma_exact - sigma_h, sigma_exact - sigma_h)
+                    * dx(mesh, metadata={"quadrature_degree": 6})
+                )
+            ),
+            op=MPI.SUM,
+        )
+    )
+    sigma_error_denominator = np.sqrt(
+        mesh.comm.allreduce(
+            assemble_scalar(
+                form(inner(sigma_exact, sigma_exact) * dx(mesh, metadata={"quadrature_degree": 6}))
+            ),
+            op=MPI.SUM,
+        )
+    )
     assert np.abs(sigma_error_numerator / sigma_error_denominator) < 0.05
 
     solver.destroy()
@@ -386,14 +476,22 @@ def get_mesh(cell_type, datadir):
         filename = "create_unit_cube_tetra.xdmf"
     elif cell_type == CellType.hexahedron:
         filename = "create_unit_cube_hexahedron.xdmf"
-    with XDMFFile(MPI.COMM_WORLD, Path(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
+    with XDMFFile(
+        MPI.COMM_WORLD, Path(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII
+    ) as xdmf:
         return xdmf.read_mesh(name="Grid")
 
 
 parametrize_cell_types = pytest.mark.parametrize(
-    "cell_type", [CellType.triangle, CellType.quadrilateral, CellType.tetrahedron, CellType.hexahedron])
-parametrize_cell_types_simplex = pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.tetrahedron])
-parametrize_cell_types_tp = pytest.mark.parametrize("cell_type", [CellType.quadrilateral, CellType.hexahedron])
+    "cell_type",
+    [CellType.triangle, CellType.quadrilateral, CellType.tetrahedron, CellType.hexahedron],
+)
+parametrize_cell_types_simplex = pytest.mark.parametrize(
+    "cell_type", [CellType.triangle, CellType.tetrahedron]
+)
+parametrize_cell_types_tp = pytest.mark.parametrize(
+    "cell_type", [CellType.quadrilateral, CellType.hexahedron]
+)
 parametrize_cell_types_quad = pytest.mark.parametrize("cell_type", [CellType.quadrilateral])
 parametrize_cell_types_hex = pytest.mark.parametrize("cell_type", [CellType.hexahedron])
 

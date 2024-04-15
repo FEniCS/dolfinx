@@ -309,9 +309,8 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
           std::transform(
               entity.begin(), entity.end(),
               std::back_inserter(shared_entity_to_global_vertices_data),
-              [idx](auto v) -> std::pair<std::int32_t, std::int64_t> {
-                return {idx, v};
-              });
+              [idx](auto v) -> std::pair<std::int32_t, std::int64_t>
+              { return {idx, v}; });
         }
         else
           recv_index.push_back(-1);
@@ -579,8 +578,7 @@ compute_entities_by_key_matching(
           });
 
       // Set entity unique index
-      std::for_each(it, it1,
-                    [&entity_index, entity_count](auto idx)
+      std::for_each(it, it1, [&entity_index, entity_count](auto idx)
                     { entity_index[idx] = entity_count; });
 
       // Advance iterator and increment entity
@@ -635,7 +633,7 @@ compute_entities_by_key_matching(
   for (std::size_t k = 0; k < cell_lists.size(); ++k)
   {
 
-    if (cell_type_entities[k].size() > 0)
+    if (!cell_type_entities[k].empty())
     {
       std::vector tmp(std::next(local_index.begin(), cell_type_offsets[k]),
                       std::next(local_index.begin(), cell_type_offsets[k + 1]));
