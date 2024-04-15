@@ -33,7 +33,7 @@ jobs:
     container: ghcr.io/fenics/test-env:current-openmpi
     steps:
       - uses: actions/checkout@v4
-      - name: ruff C++ .py file checks
+      - name: ruff .py files in C++ code
         run: |
           cd cpp/
           ruff check .
@@ -71,8 +71,6 @@ jobs:
     runs-on: ubuntu-latest
     container: ghcr.io/fenics/test-env:current-openmpi
     env:
-      OMPI_ALLOW_RUN_AS_ROOT: 1
-      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
       SCOTCH_DIR: /usr/local/petsc/linux-gnu-real64-32
 
     steps:
