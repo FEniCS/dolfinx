@@ -33,9 +33,7 @@ sort_unique(const U& indices, const V& values)
   using T = typename std::pair<typename U::value_type, typename V::value_type>;
   std::vector<T> data(indices.size());
   std::transform(indices.begin(), indices.end(), values.begin(), data.begin(),
-                 [](auto& idx, auto& v) -> T {
-                   return {idx, v};
-                 });
+                 [](auto& idx, auto& v) -> T { return {idx, v}; });
 
   // Sort make unique
   std::sort(data.begin(), data.end());
