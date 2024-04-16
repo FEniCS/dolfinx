@@ -315,7 +315,7 @@ mesh::Mesh<T> partition(const mesh::Mesh<T>& old_mesh,
 /// addition of new local indices.
 /// @param[in] map Index map
 /// @param[in] n Number of new local indices
-/// @returns New global indices for both owned and ghosted indices in input
+/// @return New global indices for both owned and ghosted indices in input
 /// index map.
 std::vector<std::int64_t> adjust_indices(const common::IndexMap& map,
                                          std::int32_t n);

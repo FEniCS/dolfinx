@@ -285,7 +285,7 @@ face_long_edge(const mesh::Mesh<T>& mesh)
 /// than sqrt(2)/2
 /// @param[in] option Option to compute additional information relating refined
 /// and original mesh entities
-/// @returns (0) The new mesh topology, (1) the new flattened mesh geometry, (3)
+/// @return (0) The new mesh topology, (1) the new flattened mesh geometry, (3)
 /// Shape of the new geometry_shape, (4) Map from new cells to parent cells
 /// and (5) map from refined facets to parent facets.
 template <std::floating_point T>
