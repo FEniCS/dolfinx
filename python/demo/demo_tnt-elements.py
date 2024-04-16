@@ -229,7 +229,7 @@ def create_tnt_quad(degree):
         False,
         degree,
         degree + 1,
-        dtype=PETSc.RealType,
+        dtype=PETSc.ScalarType,
     )
 
 

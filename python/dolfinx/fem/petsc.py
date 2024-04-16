@@ -761,14 +761,14 @@ class LinearProblem:
         """
         self._a = _create_form(
             a,
-            dtype=PETSc.RealType,
+            dtype=PETSc.ScalarType,
             form_compiler_options=form_compiler_options,
             jit_options=jit_options,
         )
         self._A = create_matrix(self._a)
         self._L = _create_form(
             L,
-            dtype=PETSc.RealType,
+            dtype=PETSc.ScalarType,
             form_compiler_options=form_compiler_options,
             jit_options=jit_options,
         )
