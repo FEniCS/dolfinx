@@ -18,12 +18,12 @@ import basix
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit, la
-from dolfinx.fem import FiniteElement, dofmap
+from dolfinx.fem import dofmap
 
 if typing.TYPE_CHECKING:
     from mpi4py import MPI as _MPI
-
     from dolfinx.mesh import Mesh
+    import cffi
 
 
 class PointOwnershipData(typing.NamedTuple):
@@ -583,13 +583,13 @@ class ElementMetaData(typing.NamedTuple):
 
 
 def _create_dolfinx_element(
-    comm,
+    comm: _MPI.Intracomm,
     ufl_e: ufl.FiniteElementBase,
-    dtype,
-    ffi,
+    dtype: np.dtype,
+    ffi: cffi.FFI,
     form_compiler_options: typing.Optional[dict[str, typing.Any]] = None,
     jit_options: typing.Optional[dict[str, typing.Any]] = None,
-) -> FiniteElement:
+) -> typing.Union[_cpp.fem.FiniteElement_float32, _cpp.fem.FiniteElement_float64]:
     # TODO: remove this function or move it to element.py?
     if np.issubdtype(dtype, np.float32):
         CppElement = _cpp.fem.FiniteElement_float32
