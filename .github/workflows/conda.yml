@@ -15,7 +15,7 @@ jobs:
     name: Conda install and test
     strategy:
       matrix:
-        os: [ubuntu-22.04, macos-12, macos-13]
+        os: [ubuntu-22.04, macos-13, macos-14]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
@@ -30,15 +30,6 @@ jobs:
         run: |
           conda update conda
 
-      - name: Install DOLFINx (py3-9)
-        run: |
-          conda create -n env3-9 -c conda-forge python=3.9 fenics-dolfinx mpich
-          conda env export -n env3-9
-      - name: Test (py3-9)
-        run: |
-          conda run -n env3-9 python -c "from mpi4py import MPI; import dolfinx; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
-          conda run -n env3-9 mpirun -np 2 python -c "from mpi4py import MPI; import dolfinx; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
-
       - name: Install DOLFINx (py3-10)
         run: |
           conda create -n env3-10 -c conda-forge python=3.10 fenics-dolfinx mpich
@@ -48,11 +39,29 @@ jobs:
           conda run -n env3-10 python -c "from mpi4py import MPI; import dolfinx; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
           conda run -n env3-10 mpirun -np 2 python -c "from mpi4py import MPI; import dolfinx; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
 
-      - name: Install DOLFINx (py3-10, petsc-complex)
+      - name: Install DOLFINx (py3-11)
         run: |
-          conda create -n env3-10-complex -c conda-forge python=3.10 fenics-dolfinx petsc=*=complex* mpich
-          conda env export -n env3-10-complex
-      - name: Test (py3-10-complex)
+          conda create -n env3-11 -c conda-forge python=3.11 fenics-dolfinx mpich
+          conda env export -n env3-11
+      - name: Test (py3-11)
         run: |
-          conda run -n env3-10-complex python -c "from mpi4py import MPI; import dolfinx; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
-          conda run -n env3-10-complex mpirun -np 2 python -c "from mpi4py import MPI; import dolfinx; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
+          conda run -n env3-11 python -c "from mpi4py import MPI; import dolfinx; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
+          conda run -n env3-11 mpirun -np 2 python -c "from mpi4py import MPI; import dolfinx; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
+
+      - name: Install DOLFINx (py3-12)
+        run: |
+          conda create -n env3-12 -c conda-forge python=3.12 fenics-dolfinx mpich
+          conda env export -n env3-12
+      - name: Test (py3-12)
+        run: |
+          conda run -n env3-12 python -c "from mpi4py import MPI; import dolfinx; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
+          conda run -n env3-12 mpirun -np 2 python -c "from mpi4py import MPI; import dolfinx; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
+
+      - name: Install DOLFINx (py3-12, petsc-complex)
+        run: |
+          conda create -n env3-12-complex -c conda-forge python=3.12 fenics-dolfinx petsc=*=complex* mpich
+          conda env export -n env3-12-complex
+      - name: Test (py3-12-complex)
+        run: |
+          conda run -n env3-12-complex python -c "from mpi4py import MPI; import dolfinx; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
+          conda run -n env3-12-complex mpirun -np 2 python -c "from mpi4py import MPI; import dolfinx; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"

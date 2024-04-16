@@ -90,7 +90,7 @@ def test_submesh_cell_assembly(d, n, k, space, ghost_mode):
     assert A_mesh_0.squared_norm() == pytest.approx(
         A_submesh.squared_norm(), rel=1.0e-4, abs=1.0e-4
     )
-    assert b_mesh_0.norm() == pytest.approx(b_submesh.norm(), rel=1.0e-4)
+    assert la.norm(b_mesh_0) == pytest.approx(la.norm(b_submesh), rel=1.0e-4)
     assert np.isclose(s_mesh_0, s_submesh)
 
 
@@ -114,7 +114,7 @@ def test_submesh_facet_assembly(n, k, space, ghost_mode):
     assert A_submesh.squared_norm() == pytest.approx(
         A_square_mesh.squared_norm(), rel=1.0e-5, abs=1.0e-5
     )
-    assert b_submesh.norm() == pytest.approx(b_square_mesh.norm())
+    assert la.norm(b_submesh) == pytest.approx(la.norm(b_square_mesh))
     assert np.isclose(s_submesh, s_square_mesh)
 
 
@@ -260,7 +260,7 @@ def test_mixed_dom_codim_0(n, k, space, integral_type):
     b0 = fem.assemble_vector(L0)
     fem.apply_lifting(b0.array, [a0], bcs=[[bc]])
     b0.scatter_reverse(la.InsertMode.add)
-    assert np.isclose(b0.norm(), b.norm())
+    assert np.isclose(la.norm(b0), la.norm(b))
 
     M0 = fem.form(M_ufl(f, g, measure_msh), entity_maps=entity_maps)
     c0 = msh.comm.allreduce(fem.assemble_scalar(M0), op=MPI.SUM)
@@ -284,7 +284,7 @@ def test_mixed_dom_codim_0(n, k, space, integral_type):
     b1 = fem.assemble_vector(L1)
     fem.apply_lifting(b1.array, [a1], bcs=[[bc]])
     b1.scatter_reverse(la.InsertMode.add)
-    assert np.isclose(b1.norm(), b.norm())
+    assert np.isclose(la.norm(b1), la.norm(b))
 
     M1 = fem.form(M_ufl(f, g, measure_smsh), entity_maps=entity_maps)
     c1 = msh.comm.allreduce(fem.assemble_scalar(M1), op=MPI.SUM)

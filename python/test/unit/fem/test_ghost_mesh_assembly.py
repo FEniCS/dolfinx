@@ -64,7 +64,7 @@ def test_ghost_mesh_assembly(mode, dx, ds):
     # Check that the norms are the same for all three modes
     normA = np.sqrt(A.squared_norm())
     assert normA == pytest.approx(0.6713621455570528, rel=1.0e-5, abs=1.0e-8)
-    normb = b.norm()
+    normb = la.norm(b)
     assert normb == pytest.approx(1.582294032953906, rel=1.0e-5, abs=1.0e-8)
 
 

@@ -124,7 +124,7 @@ msh = mesh.create_rectangle(
 )
 V = fem.functionspace(msh, ufl_element)
 facets = mesh.locate_entities_boundary(
-    msh, dim=1, marker=lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 2.0))
+    msh, dim=1, marker=lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 2.0)
 )
 dofs = fem.locate_dofs_topological(V=V, entity_dim=1, entities=facets)
 bc = fem.dirichletbc(value=default_scalar_type(0), dofs=dofs, V=V)
