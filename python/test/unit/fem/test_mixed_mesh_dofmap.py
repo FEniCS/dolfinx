@@ -23,7 +23,7 @@ def create_element_dofmap(mesh, cell_types, degree):
         )
         ffi = module.ffi
         cpp_elements += [
-            _cpp.fem.FiniteElement_float64(ffi.cast("uintptr_t", ffi.addressof(ufcx_element)))
+            _cpp.fem.FiniteElement_float64(ufl_e.basix_element._e, 1)
         ]
         dofmaps += [ufcx_dofmap]
 
