@@ -146,7 +146,7 @@ void enforce_rules(MPI_Comm comm, const graph::AdjacencyList<int>& shared_edges,
 /// 3D an empty array is returned
 ///
 /// @param[in] mesh The mesh
-/// @returns A tuple (longest edge, edge ratio ok) where longest edge gives the
+/// @return A tuple (longest edge, edge ratio ok) where longest edge gives the
 /// local index of the longest edge for each face.
 template <std::floating_point T>
 std::pair<std::vector<std::int32_t>, std::vector<std::int8_t>>
