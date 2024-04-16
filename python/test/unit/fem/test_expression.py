@@ -109,7 +109,7 @@ def test_rank1_hdiv(dtype):
     g = Function(RT1, gvec, name="g", dtype=dtype)
 
     # Interpolate a numpy expression into RT1
-    g.interpolate(lambda x: np.row_stack((np.sin(x[0]), np.cos(x[1]))))
+    g.interpolate(lambda x: np.vstack((np.sin(x[0]), np.cos(x[1]))))
 
     # Interpolate RT1 into vdP1 (non-compiled interpolation)
     h = Function(vdP1, dtype=dtype)
