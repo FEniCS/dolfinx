@@ -21,7 +21,6 @@
 # We begin this demo by importing the required modules.
 
 from mpi4py import MPI
-from petsc4py import PETSc
 
 # +
 import matplotlib as mpl
@@ -229,7 +228,6 @@ def create_tnt_quad(degree):
         False,
         degree,
         degree + 1,
-        dtype=PETSc.RealType,
     )
 
 
