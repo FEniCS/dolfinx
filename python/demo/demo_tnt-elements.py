@@ -31,6 +31,7 @@ import basix
 import basix.ufl
 from dolfinx import fem, mesh
 from dolfinx.fem.petsc import LinearProblem
+from petsc4py import PETSc
 from ufl import SpatialCoordinate, TestFunction, TrialFunction, cos, div, dx, grad, inner, sin
 
 mpl.use("agg")
@@ -228,6 +229,7 @@ def create_tnt_quad(degree):
         False,
         degree,
         degree + 1,
+        dtype=PETSc.RealType,
     )
 
 
