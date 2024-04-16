@@ -994,13 +994,17 @@ def test_coefficents_non_constant():
     F = form((ufl.inner(u, v) - ufl.inner(x[0] * x[1] ** 2, v)) * dx)
     b0 = petsc_assemble_vector(F)
     b0.assemble()
-    assert np.linalg.norm(b0.array) == pytest.approx(0.0, abs=1.0e-7)
+    assert np.linalg.norm(b0.array) == pytest.approx(
+        0.0, abs=np.sqrt(np.finfo(mesh.geometry.x.dtype).eps)
+    )
 
     # -- Exterior facet integral vector
     F = form((ufl.inner(u, v) - ufl.inner(x[0] * x[1] ** 2, v)) * ds)
     b0 = petsc_assemble_vector(F)
     b0.assemble()
-    assert np.linalg.norm(b0.array) == pytest.approx(0.0, abs=1.0e-7)
+    assert np.linalg.norm(b0.array) == pytest.approx(
+        0.0, abs=np.sqrt(np.finfo(mesh.geometry.x.dtype).eps)
+    )
 
     # -- Interior facet integral vector
     V = functionspace(mesh, ("DG", 3))  # degree 3 so that interpolation is exact
@@ -1019,7 +1023,9 @@ def test_coefficents_non_constant():
     F = form(F)
     b0 = petsc_assemble_vector(F)
     b0.assemble()
-    assert np.linalg.norm(b0.array) == pytest.approx(0.0, abs=1.0e-7)
+    assert np.linalg.norm(b0.array) == pytest.approx(
+        0.0, abs=np.sqrt(np.finfo(mesh.geometry.x.dtype).eps)
+    )
 
     b0.destroy()
 
