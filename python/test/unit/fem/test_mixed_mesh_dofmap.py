@@ -22,9 +22,7 @@ def create_element_dofmap(mesh, cell_types, degree):
             mesh.comm, ufl_e, form_compiler_options=form_compiler_options
         )
         ffi = module.ffi
-        cpp_elements += [
-            _cpp.fem.FiniteElement_float64(ufl_e.basix_element._e, 1)
-        ]
+        cpp_elements += [_cpp.fem.FiniteElement_float64(ufl_e.basix_element._e, 1)]
         dofmaps += [ufcx_dofmap]
 
     cpp_dofmaps = _cpp.fem.create_dofmaps(

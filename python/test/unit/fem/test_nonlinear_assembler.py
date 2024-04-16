@@ -519,19 +519,19 @@ def test_assembly_solve_taylor_hood_nl(mesh):
         return np.isclose(x[0], 1.0)
 
     def initial_guess_u(x):
-        u_init = np.row_stack((np.sin(x[0]) * np.sin(x[1]), np.cos(x[0]) * np.cos(x[1])))
+        u_init = np.vstack((np.sin(x[0]) * np.sin(x[1]), np.cos(x[0]) * np.cos(x[1])))
         if gdim == 3:
-            u_init = np.row_stack((u_init, np.cos(x[2])))
+            u_init = np.vstack((u_init, np.cos(x[2])))
         return u_init
 
     def initial_guess_p(x):
         return -(x[0] ** 2) - x[1] ** 3
 
     u_bc_0 = Function(P2)
-    u_bc_0.interpolate(lambda x: np.row_stack(tuple(x[j] + float(j) for j in range(gdim))))
+    u_bc_0.interpolate(lambda x: np.vstack(tuple(x[j] + float(j) for j in range(gdim))))
 
     u_bc_1 = Function(P2)
-    u_bc_1.interpolate(lambda x: np.row_stack(tuple(np.sin(x[j]) for j in range(gdim))))
+    u_bc_1.interpolate(lambda x: np.vstack(tuple(np.sin(x[j]) for j in range(gdim))))
 
     facetdim = mesh.topology.dim - 1
     bndry_facets0 = locate_entities_boundary(mesh, facetdim, boundary0)

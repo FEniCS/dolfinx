@@ -50,6 +50,12 @@ public:
   FiniteElement(const basix::FiniteElement<geometry_type>& element,
                 const std::size_t block_size);
 
+  /// @brief Create mixed finite element from a list of finite elements.
+  /// @param[in] elements Basix finite elements
+  FiniteElement(
+      const std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>
+          elements);
+
   /// Copy constructor
   FiniteElement(const FiniteElement& element) = delete;
 

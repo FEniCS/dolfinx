@@ -8,7 +8,6 @@
 from __future__ import annotations
 
 import typing
-import warnings
 from functools import singledispatch
 
 import numpy as np
@@ -18,7 +17,7 @@ import basix
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit, la
-from dolfinx.fem import dofmap
+from dolfinx.fem import FiniteElement, dofmap
 
 if typing.TYPE_CHECKING:
     from mpi4py import MPI as _MPI
@@ -585,6 +584,50 @@ class ElementMetaData(typing.NamedTuple):
     symmetry: typing.Optional[bool] = None
 
 
+def _create_dolfinx_element(
+    comm,
+    ufl_e: ufl.FiniteElementBase,
+    dtype,
+    ffi,
+    form_compiler_options: typing.Optional[dict[str, typing.Any]] = None,
+    jit_options: typing.Optional[dict[str, typing.Any]] = None,
+) -> FiniteElement:
+    # TODO: remove this function or move it to element.py?
+    if np.issubdtype(dtype, np.float32):
+        CppElement = _cpp.fem.FiniteElement_float32
+    elif np.issubdtype(dtype, np.float64):
+        CppElement = _cpp.fem.FiniteElement_float64
+    else:
+        raise ValueError(f"Unsupported dtype: {dtype}")
+
+    if ufl_e.is_mixed:
+        elements = [
+            _create_dolfinx_element(
+                comm,
+                e,
+                dtype,
+                ffi,
+                form_compiler_options=form_compiler_options,
+                jit_options=jit_options,
+            )
+            for e in ufl_e.sub_elements
+        ]
+        return CppElement(elements)
+    try:
+        basix_e = ufl_e.basix_element._e
+        return CppElement(basix_e, ufl_e.block_size)
+    except NotImplementedError:
+        # This branch is currently only used for quadrature elements
+        # TODO: remove this branch
+        (ufcx_element, ufcx_dofmap), module, code = jit.ffcx_jit(
+            comm,
+            ufl_e,
+            form_compiler_options=form_compiler_options,
+            jit_options=jit_options,
+        )
+        return CppElement(ffi.cast("uintptr_t", ffi.addressof(ufcx_element)))
+
+
 def functionspace(
     mesh: Mesh,
     element: typing.Union[ufl.FiniteElementBase, ElementMetaData, tuple[str, int, tuple, bool]],
@@ -638,25 +681,14 @@ def functionspace(
 
     ffi = module.ffi
 
-    try:
-        basix_e = ufl_e.basix_element._e
-        if np.issubdtype(dtype, np.float32):
-            cpp_element = _cpp.fem.FiniteElement_float32(basix_e, ufl_e.block_size)
-        elif np.issubdtype(dtype, np.float64):
-            cpp_element = _cpp.fem.FiniteElement_float64(basix_e, ufl_e.block_size)
-    except NotImplementedError:
-        warnings.warn(
-            "Creation of elements from generated code is deprecated",
-            FutureWarning,
-        )
-        if np.issubdtype(dtype, np.float32):
-            cpp_element = _cpp.fem.FiniteElement_float32(
-                ffi.cast("uintptr_t", ffi.addressof(ufcx_element))
-            )
-        elif np.issubdtype(dtype, np.float64):
-            cpp_element = _cpp.fem.FiniteElement_float64(
-                ffi.cast("uintptr_t", ffi.addressof(ufcx_element))
-            )
+    cpp_element = _create_dolfinx_element(
+        mesh.comm,
+        ufl_e,
+        dtype,
+        ffi,
+        form_compiler_options=form_compiler_options,
+        jit_options=jit_options,
+    )
 
     cpp_dofmap = _cpp.fem.create_dofmap(
         mesh.comm,

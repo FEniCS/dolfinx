@@ -24,57 +24,6 @@ namespace
 {
 //-----------------------------------------------------------------------------
 
-/// Check if an element is a Basix element (or a blocked element
-/// containing a Basix element)
-bool is_basix_element(const ufcx_finite_element& element)
-{
-  if (element.element_type == ufcx_basix_element)
-    return true;
-  else if (element.block_size != 1)
-  {
-    // TODO: what should happen if the element is a blocked element
-    // containing a blocked element containing a Basix element?
-    return element.sub_elements[0]->element_type == ufcx_basix_element;
-  }
-  else
-    return false;
-}
-//-----------------------------------------------------------------------------
-
-/// Check if an element is a quadrature element (or a blocked element
-/// containing a quadrature element)
-bool is_quadrature_element(const ufcx_finite_element& element)
-{
-  if (element.element_type == ufcx_quadrature_element)
-    return true;
-  else if (element.block_size != 1)
-  {
-    // TODO: what should happen if the element is a blocked element
-    // containing a blocked element containing a quadrature element?
-    return element.sub_elements[0]->element_type == ufcx_quadrature_element;
-  }
-  else
-    return false;
-}
-//-----------------------------------------------------------------------------
-
-/// Check if an element is a custom Basix element (or a blocked element
-/// containing a custom Basix element)
-bool is_basix_custom_element(const ufcx_finite_element& element)
-{
-  if (element.element_type == ufcx_basix_custom_element)
-    return true;
-  else if (element.block_size != 1)
-  {
-    // TODO: what should happen if the element is a blocked element
-    // containing a blocked element containing a Basix element?
-    return element.sub_elements[0]->element_type == ufcx_basix_custom_element;
-  }
-  else
-    return false;
-}
-//-----------------------------------------------------------------------------
-
 /// Recursively extract sub finite element
 template <std::floating_point T>
 std::shared_ptr<const FiniteElement<T>>
@@ -161,126 +110,11 @@ FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
          {hexahedron, "hexahedron"}};
   const std::string cell_shape = ufcx_to_cell.at(e.cell_shape);
 
-  _needs_dof_transformations = false;
-  _needs_dof_permutations = false;
-  // Create all sub-elements
-  for (int i = 0; i < e.num_sub_elements; ++i)
+  if (e.element_type == ufcx_quadrature_element)
   {
-    ufcx_finite_element* ufcx_sub_element = e.sub_elements[i];
-    _sub_elements.push_back(
-        std::make_shared<FiniteElement<T>>(*ufcx_sub_element));
-    if (_sub_elements[i]->needs_dof_permutations())
-      _needs_dof_permutations = true;
-    if (_sub_elements[i]->needs_dof_transformations())
-      _needs_dof_transformations = true;
-  }
+    _needs_dof_transformations = false;
+    _needs_dof_permutations = false;
 
-  if (is_basix_custom_element(e))
-  {
-    // Recreate the custom Basix element using information written into
-    // the generated code
-    ufcx_basix_custom_finite_element* ce = e.custom_element;
-    const basix::cell::type cell_type
-        = static_cast<basix::cell::type>(ce->cell_type);
-
-    const std::vector<std::size_t> value_shape(
-        ce->value_shape, ce->value_shape + ce->value_shape_length);
-    const std::size_t value_size = std::reduce(
-        value_shape.begin(), value_shape.end(), 1, std::multiplies{});
-
-    const int nderivs = ce->interpolation_nderivs;
-    const std::size_t nderivs_dim = basix::polyset::nderivs(cell_type, nderivs);
-
-    using array2_t = std::pair<std::vector<T>, std::array<std::size_t, 2>>;
-    using array4_t = std::pair<std::vector<T>, std::array<std::size_t, 4>>;
-    std::array<std::vector<array2_t>, 4> x;
-    std::array<std::vector<array4_t>, 4> M;
-    { // scope
-      int pt_n = 0;
-      int p_e = 0;
-      int m_e = 0;
-      const std::size_t dim = static_cast<std::size_t>(
-          basix::cell::topological_dimension(cell_type));
-      for (std::size_t d = 0; d <= dim; ++d)
-      {
-        const int num_entities = basix::cell::num_sub_entities(cell_type, d);
-        for (int entity = 0; entity < num_entities; ++entity)
-        {
-          std::size_t npts = ce->npts[pt_n + entity];
-          std::size_t ndofs = ce->ndofs[pt_n + entity];
-
-          std::array pshape = {npts, dim};
-          auto& pts
-              = x[d].emplace_back(std::vector<T>(pshape[0] * pshape[1]), pshape)
-                    .first;
-          std::copy_n(ce->x + p_e, pts.size(), pts.begin());
-          p_e += pts.size();
-
-          std::array mshape = {ndofs, value_size, npts, nderivs_dim};
-          std::size_t msize
-              = std::reduce(mshape.begin(), mshape.end(), 1, std::multiplies{});
-          auto& mat = M[d].emplace_back(std::vector<T>(msize), mshape).first;
-          std::copy_n(ce->M + m_e, mat.size(), mat.begin());
-          m_e += mat.size();
-        }
-
-        pt_n += num_entities;
-      }
-    }
-
-    using cmdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-    using cmdspan4_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 4>>;
-
-    std::array<std::vector<cmdspan2_t>, 4> _x;
-    for (std::size_t i = 0; i < x.size(); ++i)
-      for (auto& [buffer, shape] : x[i])
-        _x[i].push_back(cmdspan2_t(buffer.data(), shape));
-
-    std::array<std::vector<cmdspan4_t>, 4> _M;
-    for (std::size_t i = 0; i < M.size(); ++i)
-      for (auto& [buffer, shape] : M[i])
-        _M[i].push_back(cmdspan4_t(buffer.data(), shape));
-
-    std::vector<T> wcoeffs_b(ce->wcoeffs_rows * ce->wcoeffs_cols);
-    cmdspan2_t wcoeffs(wcoeffs_b.data(), ce->wcoeffs_rows, ce->wcoeffs_cols);
-    std::copy_n(ce->wcoeffs, wcoeffs_b.size(), wcoeffs_b.begin());
-
-    _element = std::make_unique<basix::FiniteElement<T>>(
-        basix::create_custom_element(
-            cell_type, value_shape, wcoeffs, _x, _M, nderivs,
-            static_cast<basix::maps::type>(ce->map_type),
-            static_cast<basix::sobolev::space>(ce->sobolev_space),
-            ce->discontinuous, ce->embedded_subdegree, ce->embedded_superdegree,
-            static_cast<basix::polyset::type>(ce->polyset_type)));
-    _needs_dof_transformations
-        = !_element->dof_transformations_are_identity()
-          and !_element->dof_transformations_are_permutations();
-
-    _needs_dof_permutations
-        = !_element->dof_transformations_are_identity()
-          and _element->dof_transformations_are_permutations();
-  }
-  else if (is_basix_element(e))
-  {
-    _element
-        = std::make_unique<basix::FiniteElement<T>>(basix::create_element<T>(
-            static_cast<basix::element::family>(e.basix_family),
-            static_cast<basix::cell::type>(e.basix_cell), e.degree,
-            static_cast<basix::element::lagrange_variant>(e.lagrange_variant),
-            static_cast<basix::element::dpc_variant>(e.dpc_variant),
-            e.discontinuous));
-    _needs_dof_transformations
-        = !_element->dof_transformations_are_identity()
-          and !_element->dof_transformations_are_permutations();
-    _needs_dof_permutations
-        = !_element->dof_transformations_are_identity()
-          and _element->dof_transformations_are_permutations();
-  }
-
-  if (is_quadrature_element(e))
-  {
     assert(e.custom_quadrature);
     ufcx_quadrature_rule* qr = e.custom_quadrature;
     std::size_t npts = qr->npts;
@@ -288,6 +122,10 @@ FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
     std::array qshape = {npts, tdim};
     _points = std::make_pair(std::vector<T>(qshape[0] * qshape[1]), qshape);
     std::copy_n(qr->points, _points.first.size(), _points.first.begin());
+  }
+  else
+  {
+    throw std::runtime_error("Cannot create this element type using UFCx.");
   }
 }
 //-----------------------------------------------------------------------------
@@ -332,6 +170,32 @@ FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
   }
 
   _signature = "Basix element " + family + " " + std::to_string(_bs);
+}
+//-----------------------------------------------------------------------------
+template <std::floating_point T>
+FiniteElement<T>::FiniteElement(
+    const std::vector<std::shared_ptr<const FiniteElement<T>>> elements)
+    : _sub_elements(elements), _bs(1), _is_mixed(true)
+{
+  int vsize = 0;
+  _space_dim = 0;
+  _signature = "Mixed element (";
+  _needs_dof_transformations = false;
+  _needs_dof_permutations = false;
+  for (auto& e : elements)
+  {
+    vsize += e->reference_value_size();
+    _space_dim += e->space_dimension();
+    _signature += e->signature() + ", ";
+
+    if (e->needs_dof_permutations())
+      _needs_dof_permutations = true;
+    if (e->needs_dof_transformations())
+      _needs_dof_transformations = true;
+  }
+  _reference_value_shape = {static_cast<std::size_t>(vsize)};
+
+  _signature += ")";
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>

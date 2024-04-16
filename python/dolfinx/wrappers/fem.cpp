@@ -120,6 +120,14 @@ void declare_function_space(nb::module_& m, std::string type)
                basix::FiniteElement<T>& element, std::size_t block_size)
             { new (self) dolfinx::fem::FiniteElement<T>(element, block_size); },
             nb::arg("element"), nb::arg("block_size"))
+        .def(
+            "__init__",
+            [](dolfinx::fem::FiniteElement<T>* self,
+               std::vector<
+                   std::shared_ptr<const dolfinx::fem::FiniteElement<T>>>
+                   elements)
+            { new (self) dolfinx::fem::FiniteElement<T>(elements); },
+            nb::arg("elements"))
         .def("__eq__", &dolfinx::fem::FiniteElement<T>::operator==)
         .def_prop_ro("dtype", [](const dolfinx::fem::FiniteElement<T>&)
                      { return dolfinx_wrappers::numpy_dtype<T>(); })
