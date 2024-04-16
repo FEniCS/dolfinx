@@ -61,9 +61,9 @@ def run_scalar_test(mesh, V, degree):
 
     # Get quadrature degree for bilinear form integrand (ignores effect of non-affine map)
     a = inner(grad(u), grad(v)) * dx(metadata={"quadrature_degree": -1})
-    a.integrals()[0].metadata()["quadrature_degree"] = (
-        ufl.algorithms.estimate_total_polynomial_degree(a)
-    )
+    a.integrals()[0].metadata()[
+        "quadrature_degree"
+    ] = ufl.algorithms.estimate_total_polynomial_degree(a)
     a = form(a)
 
     # Source term
@@ -73,9 +73,9 @@ def run_scalar_test(mesh, V, degree):
 
     # Set quadrature degree for linear form integrand (ignores effect of non-affine map)
     L = inner(f, v) * dx(metadata={"quadrature_degree": -1})
-    L.integrals()[0].metadata()["quadrature_degree"] = (
-        ufl.algorithms.estimate_total_polynomial_degree(L)
-    )
+    L.integrals()[0].metadata()[
+        "quadrature_degree"
+    ] = ufl.algorithms.estimate_total_polynomial_degree(L)
     L = form(L)
 
     u_bc = Function(V)
