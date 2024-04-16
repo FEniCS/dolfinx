@@ -251,10 +251,9 @@ def test_save_vtkx_cell_point(tempdir):
     u.name = "A"
 
     filename = Path(tempdir, "v.bp")
-    with pytest.raises(RuntimeError):
-        f = VTXWriter(mesh.comm, filename, [u])
-        f.write(0)
-        f.close()
+    f = VTXWriter(mesh.comm, filename, [u])
+    f.write(0)
+    f.close()
 
 
 def test_empty_rank_mesh(tempdir):
@@ -314,7 +313,16 @@ def test_vtx_reuse_mesh(tempdir, dim, simplex, reuse):
         1 if reuse else 3
     )  # For mesh variables the step count is 1 if reuse else number of writes
 
-    adios_file = adios2.open(str(filename), "r", comm=mesh.comm, engine_type="BP4")
+    # backwards compatibility adios2 < 2.10.0
+    try:
+        adios_file = adios2.open(str(filename), "r", comm=mesh.comm, engine_type="BP4")
+    except AttributeError:
+        # adios2 >= v2.10.0
+        adios = adios2.Adios(comm=mesh.comm)
+        io = adios.declare_io("TestData")
+        io.set_engine("BP4")
+        adios_file = adios2.Stream(io, str(filename), "r", mesh.comm)
+
     for name, var in adios_file.available_variables().items():
         if name in reuse_variables:
             assert int(var["AvailableStepsCount"]) == target_mesh

@@ -663,14 +663,14 @@ void write_function(
         add_field(_u.get().name + field_ext[0], size);
         add_field(_u.get().name + field_ext[1], size);
       }
+    }
 
-      // Add data for each process to the PVTU object
-      for (int r = 0; r < mpi_size; ++r)
-      {
-        std::filesystem::path vtu = create_vtu_path(r);
-        pugi::xml_node piece_node = grid_node.append_child("Piece");
-        piece_node.append_attribute("Source") = vtu.filename().c_str();
-      }
+    // Add data for each process to the PVTU object
+    for (int r = 0; r < mpi_size; ++r)
+    {
+      std::filesystem::path vtu = create_vtu_path(r);
+      pugi::xml_node piece_node = grid_node.append_child("Piece");
+      piece_node.append_attribute("Source") = vtu.filename().c_str();
     }
 
     // Write PVTU file
