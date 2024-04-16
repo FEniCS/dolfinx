@@ -194,7 +194,7 @@ def form(
         # its C++ object.
         original_coeffs = form.coefficients()
         coeffs = [
-            original_coeffs[ufcx_form.original_coefficient_position[i]]._cpp_object
+            original_coeffs[ufcx_form.original_coefficient_positions[i]]._cpp_object
             for i in range(ufcx_form.num_coefficients)
         ]
         constants = [c._cpp_object for c in form.constants()]
