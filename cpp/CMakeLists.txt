@@ -379,12 +379,6 @@ if(DOLFINX_ENABLE_PETSC)
   # Setting for FeatureSummary
   if(PETSC_FOUND)
     message(STATUS "Found PETSc version ${PETSC_VERSION}, prefix: ${PETSC_PREFIX}")
-
-    # Check if PETSc build uses real or complex scalars (this is
-    # configured in DOLFINxConfig.cmake.in)
-    include(CheckSymbolExists)
-    set(CMAKE_REQUIRED_INCLUDES ${PETSC_INCLUDE_DIRS})
-    check_symbol_exists(PETSC_USE_COMPLEX petscsystypes.h HAVE_PETSC_SCALAR_COMPLEX)
     set_property(GLOBAL APPEND PROPERTY PACKAGES_FOUND PETSc)
   else()
     set_property(GLOBAL APPEND PROPERTY PACKAGES_NOT_FOUND PETSc)
