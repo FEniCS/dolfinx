@@ -4,6 +4,8 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#ifdef HAS_PETSC
+
 #include "petsc.h"
 #include <dolfinx/common/IndexMap.h>
 #include <functional>
@@ -79,3 +81,4 @@ Vec fem::petsc::create_vector_nest(
   return y;
 }
 //-----------------------------------------------------------------------------
+#endif

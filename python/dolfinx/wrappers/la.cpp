@@ -174,15 +174,12 @@ template <typename T>
 void declare_functions(nb::module_& m)
 {
   m.def(
-        "norm",
-        [](const dolfinx::la::Vector<T>& x, dolfinx::la::Norm type)
-        { return dolfinx::la::norm(x, type); },
-        "vector"_a, "type"_a);
+      "norm", [](const dolfinx::la::Vector<T>& x, dolfinx::la::Norm type)
+      { return dolfinx::la::norm(x, type); }, "vector"_a, "type"_a);
   m.def(
       "inner_product",
       [](const dolfinx::la::Vector<T>& x, const dolfinx::la::Vector<T>& y)
-      { return dolfinx::la::inner_product(x, y); },
-      nb::arg("x"), nb::arg("y"));
+      { return dolfinx::la::inner_product(x, y); }, nb::arg("x"), nb::arg("y"));
   m.def(
       "orthonormalize",
       [](std::vector<dolfinx::la::Vector<T>*> basis)

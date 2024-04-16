@@ -31,13 +31,9 @@ class Function;
 template <typename T>
 concept MDSpan = requires(T x, std::size_t idx) {
   x(idx, idx);
-  {
-    x.extent(0)
-  } -> std::integral;
+  { x.extent(0) } -> std::integral;
 
-  {
-    x.extent(1)
-  } -> std::integral;
+  { x.extent(1) } -> std::integral;
 };
 
 /// @brief Compute the evaluation points in the physical space at which

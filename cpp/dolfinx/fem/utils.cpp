@@ -286,8 +286,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
   // Build permutation that sorts by meshtag value
   std::vector<std::int32_t> perm(values1.size());
   std::iota(perm.begin(), perm.end(), 0);
-  std::stable_sort(perm.begin(), perm.end(),
-                   [&values1](auto p0, auto p1)
+  std::stable_sort(perm.begin(), perm.end(), [&values1](auto p0, auto p1)
                    { return values1[p0] < values1[p1]; });
 
   std::size_t shape = 1;
@@ -302,8 +301,7 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
     while (p0 != perm.end())
     {
       auto id0 = values1[*p0];
-      auto p1 = std::find_if_not(p0, perm.end(),
-                                 [id0, &values1](auto idx)
+      auto p1 = std::find_if_not(p0, perm.end(), [id0, &values1](auto idx)
                                  { return id0 == values1[idx]; });
 
       std::vector<std::int32_t> data;

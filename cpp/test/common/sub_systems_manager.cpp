@@ -5,6 +5,8 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <catch2/catch_test_macros.hpp>
+
+#ifdef HAS_PETSC
 #include <petscvec.h>
 
 namespace
@@ -23,3 +25,4 @@ void init_petsc()
 } // namespace
 
 TEST_CASE("Initialise PETSc", "[petsc_init]") { CHECK_NOTHROW(init_petsc()); }
+#endif
