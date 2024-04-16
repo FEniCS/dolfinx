@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import typing
+import warnings
 from functools import singledispatch
 
 import numpy as np
