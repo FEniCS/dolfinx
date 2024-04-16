@@ -22,8 +22,10 @@ from dolfinx.fem import dofmap
 
 if typing.TYPE_CHECKING:
     from mpi4py import MPI as _MPI
-    from dolfinx.mesh import Mesh
+
     import cffi
+
+    from dolfinx.mesh import Mesh
 
 
 class PointOwnershipData(typing.NamedTuple):
