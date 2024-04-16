@@ -208,6 +208,9 @@ class Vector:
         _cpp.la.Vector_float64,
         _cpp.la.Vector_complex64,
         _cpp.la.Vector_complex128,
+        _cpp.la.Vector_int8,
+        _cpp.la.Vector_int32,
+        _cpp.la.Vector_int64,
     ]
 
     def __init__(
@@ -217,6 +220,9 @@ class Vector:
             _cpp.la.Vector_float64,
             _cpp.la.Vector_complex64,
             _cpp.la.Vector_complex128,
+            _cpp.la.Vector_int8,
+            _cpp.la.Vector_int32,
+            _cpp.la.Vector_int64,
         ],
     ):
         """A distributed vector object.
@@ -229,6 +235,11 @@ class Vector:
             User code should call :func:`vector` to create a vector object.
         """
         self._cpp_object = x
+        self._petsc_x = None
+
+    def __del__(self):
+        if self._petsc_x is not None:
+            self._petsc_x.destroy()
 
     @property
     def index_map(self) -> IndexMap:
@@ -245,6 +256,18 @@ class Vector:
         """Local representation of the vector."""
         return self._cpp_object.array
 
+    @property
+    def petsc_vec(self):
+        """PETSc vector holding the entries of the vector.
+
+        Upon first call, this function creates a PETSc ``Vec`` object
+        that wraps the degree-of-freedom data. The ``Vec`` object is
+        cached and the cached ``Vec`` is returned upon subsequent calls.
+        """
+        if self._petsc_x is None:
+            self._petsc_x = create_petsc_vector_wrap(self)
+        return self._petsc_x
+
     def scatter_forward(self) -> None:
         """Update ghost entries."""
         self._cpp_object.scatter_forward()
@@ -257,17 +280,6 @@ class Vector:
                 owner.
         """
         self._cpp_object.scatter_reverse(mode)
-
-    def norm(self, type: _cpp.la.Norm = _cpp.la.Norm.l2) -> np.floating:
-        """Compute a norm of the vector.
-
-        Args:
-            type: Norm type to compute.
-
-        Returns:
-            Computed norm.
-        """
-        return self._cpp_object.norm(type)
 
 
 def vector(map, bs=1, dtype: npt.DTypeLike = np.float64) -> Vector:
@@ -290,6 +302,12 @@ def vector(map, bs=1, dtype: npt.DTypeLike = np.float64) -> Vector:
         vtype = _cpp.la.Vector_complex64
     elif np.issubdtype(dtype, np.complex128):
         vtype = _cpp.la.Vector_complex128
+    elif np.issubdtype(dtype, np.int8):
+        vtype = _cpp.la.Vector_int8
+    elif np.issubdtype(dtype, np.int32):
+        vtype = _cpp.la.Vector_int32
+    elif np.issubdtype(dtype, np.int64):
+        vtype = _cpp.la.Vector_int64
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
 
@@ -355,3 +373,16 @@ def is_orthonormal(basis, eps: float = 1.0e-12) -> bool:
             if abs(x.dot(y)) > eps:
                 return False
     return True
+
+
+def norm(x: Vector, type: _cpp.la.Norm = _cpp.la.Norm.l2) -> np.floating:
+    """Compute a norm of the vector.
+
+    Args:
+        x: Vector to measure.
+        type: Norm type to compute.
+
+    Returns:
+        Computed norm.
+    """
+    return _cpp.la.norm(x._cpp_object, type)

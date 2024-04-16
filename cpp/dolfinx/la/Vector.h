@@ -262,7 +262,7 @@ auto squared_norm(const V& a)
 /// Compute the norm of the vector
 /// @note Collective MPI operation
 /// @param x A vector
-/// @param type Norm type (supported types are \f$L^2\f$ and \f$L^\infty\f$)
+/// @param type Norm type
 template <class V>
 auto norm(const V& x, Norm type = Norm::l2)
 {
@@ -288,8 +288,7 @@ auto norm(const V& x, Norm type = Norm::l2)
   {
     std::int32_t size_local = x.bs() * x.index_map()->size_local();
     std::span<const T> data = x.array().subspan(0, size_local);
-    auto max_pos = std::max_element(data.begin(), data.end(),
-                                    [](T a, T b)
+    auto max_pos = std::max_element(data.begin(), data.end(), [](T a, T b)
                                     { return std::norm(a) < std::norm(b); });
     auto local_linf = std::abs(*max_pos);
     decltype(local_linf) linf = 0;

@@ -61,9 +61,9 @@ nearest_simplex(std::span<const T> s)
     auto c = s.template subspan<6, 3>();
     auto length = [](auto& x, auto& y)
     {
-      return std::transform_reduce(
-          x.begin(), x.end(), y.begin(), 0.0, std::plus{},
-          [](auto x, auto y) { return (x - y) * (x - y); });
+      return std::transform_reduce(x.begin(), x.end(), y.begin(), 0.0,
+                                   std::plus{}, [](auto x, auto y)
+                                   { return (x - y) * (x - y); });
     };
     const T ab2 = length(a, b);
     const T ac2 = length(a, c);

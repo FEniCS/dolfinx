@@ -15,7 +15,7 @@ def test_dof_coords_2d(degree):
     u.interpolate(lambda x: x[0])
     u.x.scatter_forward()
     x = V.tabulate_dof_coordinates()
-    val = u.vector.array
+    val = u.x.array
     for i in range(len(val)):
         assert np.isclose(x[i, 0], val[i], rtol=1e-3)
 
@@ -28,6 +28,6 @@ def test_dof_coords_3d(degree):
     u.interpolate(lambda x: x[0])
     u.x.scatter_forward()
     x = V.tabulate_dof_coordinates()
-    val = u.vector.array
+    val = u.x.array
     for i in range(len(val)):
         assert np.isclose(x[i, 0], val[i], rtol=1e-3)

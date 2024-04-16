@@ -18,6 +18,7 @@ import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
 from dolfinx.cpp.graph import AdjacencyList_int32
+from dolfinx.io.utils import distribute_entity_data
 from dolfinx.mesh import CellType, Mesh, create_mesh, meshtags, meshtags_from_entities
 
 __all__ = [
@@ -292,7 +293,7 @@ def model_to_mesh(
     mesh = create_mesh(comm, cells, x[:, :gdim].astype(dtype, copy=False), ufl_domain, partitioner)
 
     # Create MeshTags for cells
-    local_entities, local_values = _cpp.io.distribute_entity_data(
+    local_entities, local_values = distribute_entity_data(
         mesh._cpp_object, mesh.topology.dim, cells, cell_values
     )
     mesh.topology.create_connectivity(mesh.topology.dim, 0)
@@ -317,7 +318,7 @@ def model_to_mesh(
         gmsh_facet_perm = cell_perm_array(facet_type, num_facet_nodes)
         marked_facets = marked_facets[:, gmsh_facet_perm]
 
-        local_entities, local_values = _cpp.io.distribute_entity_data(
+        local_entities, local_values = distribute_entity_data(
             mesh._cpp_object, tdim - 1, marked_facets, facet_values
         )
         mesh.topology.create_connectivity(topology.dim - 1, tdim)

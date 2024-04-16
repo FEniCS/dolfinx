@@ -75,8 +75,8 @@ class NonlinearPDE_SNESProblem:
     def F(self, snes, x, F):
         """Assemble residual vector."""
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        x.copy(self.u.vector)
-        self.u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        x.copy(self.u.x.petsc_vec)
+        self.u.x.petsc_vec.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
         with F.localForm() as f_local:
             f_local.set(0.0)
@@ -103,9 +103,7 @@ def test_linear_pde():
 
     bc = dirichletbc(
         PETSc.ScalarType(1.0),
-        locate_dofs_geometrical(
-            V, lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 1.0))
-        ),
+        locate_dofs_geometrical(V, lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0)),
         V,
     )
 
@@ -123,13 +121,13 @@ def test_linear_pde():
     solver.set_update(update)
     solver.atol = 1.0e-8
     solver.rtol = 1.0e2 * np.finfo(default_real_type).eps
-    n, converged = solver.solve(u.vector)
+    n, converged = solver.solve(u.x.petsc_vec)
     assert converged
     assert n == 1
 
     # Increment boundary condition and solve again
     bc.g.value[...] = PETSc.ScalarType(2.0)
-    n, converged = solver.solve(u.vector)
+    n, converged = solver.solve(u.x.petsc_vec)
     assert converged
     assert n == 1
 
@@ -144,9 +142,7 @@ def test_nonlinear_pde():
 
     bc = dirichletbc(
         PETSc.ScalarType(1.0),
-        locate_dofs_geometrical(
-            V, lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 1.0))
-        ),
+        locate_dofs_geometrical(V, lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0)),
         V,
     )
 
@@ -161,13 +157,13 @@ def test_nonlinear_pde():
     solver.set_form(problem.form)
     solver.atol = 1.0e-8
     solver.rtol = 1.0e2 * np.finfo(default_real_type).eps
-    n, converged = solver.solve(u.vector)
+    n, converged = solver.solve(u.x.petsc_vec)
     assert converged
     assert n < 6
 
     # Modify boundary condition and solve again
     bc.g.value[...] = 0.5
-    n, converged = solver.solve(u.vector)
+    n, converged = solver.solve(u.x.petsc_vec)
     assert converged
     assert n > 0 and n < 6
 
@@ -184,9 +180,7 @@ def test_nonlinear_pde_snes():
     u_bc.x.array[:] = 1.0
     bc = dirichletbc(
         u_bc,
-        locate_dofs_geometrical(
-            V, lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 1.0))
-        ),
+        locate_dofs_geometrical(V, lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0)),
     )
 
     # Create nonlinear problem
@@ -206,13 +200,13 @@ def test_nonlinear_pde_snes():
     snes.getKSP().setTolerances(rtol=1.0e-9)
     snes.getKSP().getPC().setType("lu")
 
-    snes.solve(None, u.vector)
+    snes.solve(None, u.x.petsc_vec)
     assert snes.getConvergedReason() > 0
     assert snes.getIterationNumber() < 6
 
     # Modify boundary condition and solve again
     u_bc.x.array[:] = 0.6
-    snes.solve(None, u.vector)
+    snes.solve(None, u.x.petsc_vec)
     assert snes.getConvergedReason() > 0
     assert snes.getIterationNumber() < 6
     # print(snes.getIterationNumber())

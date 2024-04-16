@@ -6,6 +6,8 @@
 
 #pragma once
 
+#ifdef HAS_PETSC
+
 #include <nanobind/nanobind.h>
 #include <petsc4py/petsc4py.h>
 #include <petscmat.h>
@@ -79,3 +81,4 @@ namespace nanobind::detail
 PETSC_CASTER_MACRO(Mat, Mat, mat);
 PETSC_CASTER_MACRO(Vec, Vec, vec);
 } // namespace nanobind::detail
+#endif
