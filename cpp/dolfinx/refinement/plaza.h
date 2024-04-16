@@ -118,13 +118,14 @@ compute_parent_facets(std::span<const std::int32_t> simplex_set)
 ///
 /// @param[in] indices Vector containing the global indices for the original
 /// vertices and potential new vertices at each edge. Size (num_vertices +
-/// num_edges).
-//// If an edge is not refined its corresponding entry is -1
+/// num_edges). If an edge is not refined its corresponding entry is -1
 /// @param[in] longest_edge Vector indicating the longest edge for each
-///   triangle in the cell. For triangular cells (2D) there is only one value, and for tetrahedra (3D) there are four values, one for each facet. The values give the local edge indices of the cell.
+/// triangle in the cell. For triangular cells (2D) there is only one value,
+/// and for tetrahedra (3D) there are four values, one for each facet. The
+/// values give the local edge indices of the cell.
 /// @param[in] tdim Topological dimension (2 or 3)
-/// @param[in] uniform Make a "uniform" subdivision with all triangles
-///   being similar shape
+/// @param[in] uniform Make a "uniform" subdivision with all triangles being
+/// similar shape
 /// @return
 std::vector<std::int32_t>
 get_simplices(std::span<const std::int64_t> indices,
