@@ -21,6 +21,7 @@
 # We begin this demo by importing the required modules.
 
 from mpi4py import MPI
+from petsc4py import PETSc
 
 # +
 import matplotlib as mpl
@@ -31,7 +32,6 @@ import basix
 import basix.ufl
 from dolfinx import fem, mesh
 from dolfinx.fem.petsc import LinearProblem
-from petsc4py import PETSc
 from ufl import SpatialCoordinate, TestFunction, TrialFunction, cos, div, dx, grad, inner, sin
 
 mpl.use("agg")
