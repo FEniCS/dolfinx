@@ -446,7 +446,7 @@ def create_submesh(msh: Mesh, dim: int, entities: npt.NDArray[np.int32]):
     Args:
         mesh: Input mesh
         dim: Topological dimension of the entities to extract
-        entities: Indices of entities in ``mesh`` to extract
+        entities: Indices of entities in ``msh`` to extract
     Returns:
         A quadruplet containing the submesh and three maps from the submesh to the parent mesh.
         The first map is the entity map, the second map the vertex map (topology), and the third map
