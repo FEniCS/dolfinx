@@ -678,7 +678,7 @@ def test_de_rahm_2D(order):
     x = ufl.SpatialCoordinate(mesh)
     g_ex = ufl.as_vector((1 + x[1], 4 * x[1] + x[0]))
     assert np.abs(assemble_scalar(form(ufl.inner(q - g_ex, q - g_ex) * ufl.dx))) == pytest.approx(
-        0, abs=1e-10
+        0, abs=np.sqrt(np.finfo(mesh.geometry.x.dtype).eps)
     )
 
     V = functionspace(mesh, ("BDM", order - 1))
@@ -690,7 +690,7 @@ def test_de_rahm_2D(order):
     v.interpolate(Expression(curl2D(ufl.grad(w)), V.element.interpolation_points()))
     h_ex = ufl.as_vector((1, -1))
     assert np.abs(assemble_scalar(form(ufl.inner(v - h_ex, v - h_ex) * ufl.dx))) == pytest.approx(
-        0, abs=1.0e-6
+        0, abs=np.sqrt(np.finfo(mesh.geometry.x.dtype).eps)
     )
 
 
@@ -872,9 +872,9 @@ def test_nonmatching_mesh_interpolation(xtype, cell_type0, cell_type1):
     def f(x):
         return (7 * x[1], 3 * x[0], x[2] + 0.4)
 
-    el0 = element("Lagrange", mesh0.basix_cell(), 1, shape=(3,))
+    el0 = element("Lagrange", mesh0.basix_cell(), 1, shape=(3,), dtype=xtype)
     V0 = functionspace(mesh0, el0)
-    el1 = element("Lagrange", mesh1.basix_cell(), 1, shape=(3,))
+    el1 = element("Lagrange", mesh1.basix_cell(), 1, shape=(3,), dtype=xtype)
     V1 = functionspace(mesh1, el1)
 
     # Interpolate on 3D mesh
@@ -910,7 +910,12 @@ def test_nonmatching_mesh_interpolation(xtype, cell_type0, cell_type1):
     u1_ex.interpolate(f)
     u1_ex.x.scatter_forward()
 
-    assert np.allclose(u1_ex.x.array, u1.x.array, rtol=1.0e-4, atol=1.0e-6)
+    assert np.allclose(
+        u1_ex.x.array,
+        u1.x.array,
+        rtol=np.sqrt(np.finfo(xtype).eps),
+        atol=np.sqrt(np.finfo(xtype).eps),
+    )
 
     # Interpolate 2D->3D
     u0_2 = Function(V0, dtype=xtype)

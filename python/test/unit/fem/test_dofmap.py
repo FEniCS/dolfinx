@@ -333,11 +333,11 @@ def test_higher_order_coordinate_map(points, celltype, order):
         i += 1
     x = cmap.push_forward(X, x_coord_new)
 
-    assert np.allclose(x[:, 0], X[:, 0])
-    assert np.allclose(x[:, 1], 2 * X[:, 1])
+    assert np.allclose(x[:, 0], X[:, 0], atol=100 * np.finfo(mesh.geometry.x.dtype).eps)
+    assert np.allclose(x[:, 1], 2 * X[:, 1], atol=100 * np.finfo(mesh.geometry.x.dtype).eps)
 
     if mesh.geometry.dim == 3:
-        assert np.allclose(x[:, 2], 3 * X[:, 2])
+        assert np.allclose(x[:, 2], 3 * X[:, 2], atol=100 * np.finfo(mesh.geometry.x.dtype).eps)
 
 
 @pytest.mark.skip_in_parallel
@@ -402,9 +402,9 @@ def test_higher_order_tetra_coordinate_map(order):
         x_coord_new[node] = x_g[x_dofs[0, node], : mesh.geometry.dim]
 
     x = mesh.geometry.cmap.push_forward(X, x_coord_new)
-    assert np.allclose(x[:, 0], X[:, 0])
-    assert np.allclose(x[:, 1], 2 * X[:, 1])
-    assert np.allclose(x[:, 2], 3 * X[:, 2])
+    assert np.allclose(x[:, 0], X[:, 0], atol=100 * np.finfo(mesh.geometry.x.dtype).eps)
+    assert np.allclose(x[:, 1], 2 * X[:, 1], atol=100 * np.finfo(mesh.geometry.x.dtype).eps)
+    assert np.allclose(x[:, 2], 3 * X[:, 2], atol=100 * np.finfo(mesh.geometry.x.dtype).eps)
 
 
 @pytest.mark.skip_in_parallel
