@@ -15,6 +15,7 @@ def to_adj(cells, dtype):
     adj = graph.adjacencylist(np.array(cflat, dtype=dtype), np.array(coff, dtype=dtype))
     return adj
 
+
 def test_dgrsph_1d():
     rank = MPI.COMM_WORLD.Get_rank()
     size = MPI.COMM_WORLD.Get_size()
