@@ -23,8 +23,6 @@ from dolfinx.fem import dofmap
 if typing.TYPE_CHECKING:
     from mpi4py import MPI as _MPI
 
-    import cffi
-
     from dolfinx.mesh import Mesh
 
 
@@ -586,7 +584,7 @@ class ElementMetaData(typing.NamedTuple):
 
 def _create_dolfinx_element(
     comm: _MPI.Intracomm,
-    cell_type: CellType,
+    cell_type: _cpp.mesh.CellType,
     ufl_e: ufl.FiniteElementBase,
     dtype: np.dtype,
 ) -> typing.Union[_cpp.fem.FiniteElement_float32, _cpp.fem.FiniteElement_float64]:

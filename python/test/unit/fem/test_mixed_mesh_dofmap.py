@@ -4,7 +4,6 @@ import numpy as np
 
 import basix
 import dolfinx.cpp as _cpp
-from dolfinx import jit
 from dolfinx.cpp.mesh import Mesh_float64, create_geometry, create_topology
 from dolfinx.fem import coordinate_element
 from dolfinx.fem.dofmap import DofMap
@@ -14,7 +13,6 @@ from dolfinx.mesh import CellType
 
 def create_element_dofmap(mesh, cell_types, degree):
     cpp_elements = []
-    dofmaps = []
     for cell_type in cell_types:
         ufl_e = basix.ufl.element("P", cell_type, degree, dtype=np.float64)
         cpp_elements += [_cpp.fem.FiniteElement_float64(ufl_e.basix_element._e, 1)]

@@ -942,7 +942,7 @@ void declare_real_functions(nb::module_& m)
       {
         std::vector<dolfinx::fem::ElementDofLayout> layouts;
         int D = topology.dim();
-        assert(ufcx_dofmaps.size() == topology.entity_types(D).size());
+        assert(elements.size() == topology.entity_types(D).size());
         for (std::size_t i = 0; i < elements.size(); ++i)
         {
           layouts.push_back(
