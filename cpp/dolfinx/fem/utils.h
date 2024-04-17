@@ -248,27 +248,18 @@ ElementDofLayout create_element_dof_layout(const int element_block_size,
 
 /// Create an ElementDofLayout from a FiniteElement
 template <std::floating_point T>
-ElementDofLayout create_element_dof_layout(const ufcx_dofmap& dofmap,
-                                           const fem::FiniteElement<T>& element,
+ElementDofLayout create_element_dof_layout(const fem::FiniteElement<T>& element,
                                            const std::vector<int>& parent_map
                                            = {})
 {
-  // TODO: UFC dofmaps just use simple offset for each field but this
-  // could be different for custom dofmaps. This data should come
-  // directly from the UFC interface in place of the implicit
-  // assumption.
-
-  // Create UFC subdofmaps and compute offset
+  // Create subdofmaps and compute offset
   std::vector<int> offsets(1, 0);
   std::vector<dolfinx::fem::ElementDofLayout> sub_doflayout;
-  std::cout << dofmap.num_sub_dofmaps << " " << element.sub_elements().size()
-            << "\n";
 
   if (element.block_size() > 1)
   {
     for (int i = 0; i < element.num_sub_elements(); ++i)
     {
-      ufcx_dofmap* ufcx_sub_dofmap = dofmap.sub_dofmaps[i];
       std::shared_ptr<const fem::FiniteElement<T>> sub_e
           = element.sub_elements()[0];
       offsets.push_back(offsets.back() + 1);
@@ -276,15 +267,14 @@ ElementDofLayout create_element_dof_layout(const ufcx_dofmap& dofmap,
       for (std::size_t j = 0; j < parent_map_sub.size(); ++j)
         parent_map_sub[j] = offsets[i] + element.block_size() * j;
 
-      sub_doflayout.push_back(dolfinx::fem::create_element_dof_layout(
-          *ufcx_sub_dofmap, *sub_e, parent_map_sub));
+      sub_doflayout.push_back(
+          dolfinx::fem::create_element_dof_layout(*sub_e, parent_map_sub));
     }
   }
   else
   {
     for (int i = 0; i < element.num_sub_elements(); ++i)
     {
-      ufcx_dofmap* ufcx_sub_dofmap = dofmap.sub_dofmaps[i];
       std::shared_ptr<const fem::FiniteElement<T>> sub_e
           = element.sub_elements()[i];
       offsets.push_back(offsets.back() + sub_e->space_dimension());
@@ -292,8 +282,8 @@ ElementDofLayout create_element_dof_layout(const ufcx_dofmap& dofmap,
       for (std::size_t j = 0; j < parent_map_sub.size(); ++j)
         parent_map_sub[j] = offsets[i] + element.block_size() * j;
 
-      sub_doflayout.push_back(dolfinx::fem::create_element_dof_layout(
-          *ufcx_sub_dofmap, *sub_e, parent_map_sub));
+      sub_doflayout.push_back(
+          dolfinx::fem::create_element_dof_layout(*sub_e, parent_map_sub));
     }
   }
   return ElementDofLayout(element.block_size(), element.entity_dofs(),
