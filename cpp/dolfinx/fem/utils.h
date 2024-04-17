@@ -256,35 +256,19 @@ ElementDofLayout create_element_dof_layout(const fem::FiniteElement<T>& element,
   std::vector<int> offsets(1, 0);
   std::vector<dolfinx::fem::ElementDofLayout> sub_doflayout;
 
-  if (element.block_size() > 1)
+  for (int i = 0; i < element.num_sub_elements(); ++i)
   {
-    for (int i = 0; i < element.num_sub_elements(); ++i)
-    {
-      std::shared_ptr<const fem::FiniteElement<T>> sub_e
-          = element.sub_elements()[0];
-      offsets.push_back(offsets.back() + 1);
-      std::vector<int> parent_map_sub(sub_e->space_dimension());
-      for (std::size_t j = 0; j < parent_map_sub.size(); ++j)
-        parent_map_sub[j] = offsets[i] + element.block_size() * j;
+    std::shared_ptr<const fem::FiniteElement<T>> sub_e
+        = element.sub_elements()[element.block_size() > 1 ? 0 : i];
+    offsets.push_back(
+        offsets.back()
+        + (element.block_size() > 1 ? 1 : sub_e->space_dimension()));
+    std::vector<int> parent_map_sub(sub_e->space_dimension());
+    for (std::size_t j = 0; j < parent_map_sub.size(); ++j)
+      parent_map_sub[j] = offsets[i] + element.block_size() * j;
 
-      sub_doflayout.push_back(
-          dolfinx::fem::create_element_dof_layout(*sub_e, parent_map_sub));
-    }
-  }
-  else
-  {
-    for (int i = 0; i < element.num_sub_elements(); ++i)
-    {
-      std::shared_ptr<const fem::FiniteElement<T>> sub_e
-          = element.sub_elements()[i];
-      offsets.push_back(offsets.back() + sub_e->space_dimension());
-      std::vector<int> parent_map_sub(sub_e->space_dimension());
-      for (std::size_t j = 0; j < parent_map_sub.size(); ++j)
-        parent_map_sub[j] = offsets[i] + element.block_size() * j;
-
-      sub_doflayout.push_back(
-          dolfinx::fem::create_element_dof_layout(*sub_e, parent_map_sub));
-    }
+    sub_doflayout.push_back(
+        dolfinx::fem::create_element_dof_layout(*sub_e, parent_map_sub));
   }
   return ElementDofLayout(element.block_size(), element.entity_dofs(),
                           element.entity_closure_dofs(), parent_map,
