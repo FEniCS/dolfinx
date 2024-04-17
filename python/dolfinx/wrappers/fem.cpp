@@ -910,13 +910,10 @@ void declare_real_functions(nb::module_& m)
 {
   m.def(
       "create_dofmap",
-      [](const dolfinx_wrappers::MPICommWrapper comm, std::uintptr_t dofmap,
+      [](const dolfinx_wrappers::MPICommWrapper comm,
          dolfinx::mesh::Topology& topology,
          const dolfinx::fem::FiniteElement<T>& element)
       {
-        ufcx_dofmap* p = reinterpret_cast<ufcx_dofmap*>(dofmap);
-        assert(p);
-
         dolfinx::fem::ElementDofLayout layout
             = dolfinx::fem::create_element_dof_layout(element);
 
@@ -927,9 +924,8 @@ void declare_real_functions(nb::module_& m)
         return dolfinx::fem::create_dofmap(comm.get(), layout, topology,
                                            unpermute_dofs, nullptr);
       },
-      nb::arg("comm"), nb::arg("dofmap"), nb::arg("topology"),
-      nb::arg("element"),
-      "Create DofMap object from a pointer to ufcx_dofmap.");
+      nb::arg("comm"), nb::arg("topology"), nb::arg("element"),
+      "Create DofMap object from an element.");
 
   m.def(
       "create_dofmaps",

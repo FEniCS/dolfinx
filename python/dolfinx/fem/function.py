@@ -660,14 +660,6 @@ def functionspace(
     if form_compiler_options is None:
         form_compiler_options = dict()
     form_compiler_options["scalar_type"] = dtype
-    (ufcx_element, ufcx_dofmap), module, code = jit.ffcx_jit(
-        mesh.comm,
-        ufl_e,
-        form_compiler_options=form_compiler_options,
-        jit_options=jit_options,
-    )
-
-    ffi = module.ffi
 
     cpp_element = _create_dolfinx_element(
         mesh.comm,
@@ -678,7 +670,6 @@ def functionspace(
 
     cpp_dofmap = _cpp.fem.create_dofmap(
         mesh.comm,
-        ffi.cast("uintptr_t", ffi.addressof(ufcx_dofmap)),
         mesh.topology,
         cpp_element,
     )
