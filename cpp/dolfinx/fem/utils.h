@@ -249,7 +249,6 @@ ElementDofLayout create_element_dof_layout(const int element_block_size,
 /// Create an ElementDofLayout from a FiniteElement
 template <std::floating_point T>
 ElementDofLayout create_element_dof_layout(const ufcx_dofmap& dofmap,
-                                           const mesh::CellType cell_type,
                                            const fem::FiniteElement<T>& element,
                                            const std::vector<int>& parent_map
                                            = {})
@@ -264,36 +263,43 @@ ElementDofLayout create_element_dof_layout(const ufcx_dofmap& dofmap,
   std::vector<dolfinx::fem::ElementDofLayout> sub_doflayout;
   std::cout << dofmap.num_sub_dofmaps << " " << element.sub_elements().size()
             << "\n";
-  for (int i = 0; i < element.num_sub_elements(); ++i)
+
+  if (element.block_size() > 1)
   {
-    ufcx_dofmap* ufcx_sub_dofmap = dofmap.sub_dofmaps[i];
-    std::shared_ptr<const fem::FiniteElement<T>> sub_e;
-    if (element.block_size() == 1)
+    for (int i = 0; i < element.num_sub_elements(); ++i)
     {
+      ufcx_dofmap* ufcx_sub_dofmap = dofmap.sub_dofmaps[i];
+      std::shared_ptr<const fem::FiniteElement<T>> sub_e
+          = element.sub_elements()[0];
+      offsets.push_back(offsets.back() + 1);
+      std::vector<int> parent_map_sub(ufcx_sub_dofmap->num_element_support_dofs
+                                      * ufcx_sub_dofmap->block_size);
+      for (std::size_t j = 0; j < parent_map_sub.size(); ++j)
+        parent_map_sub[j] = offsets[i] + element.block_size() * j;
+
+      sub_doflayout.push_back(dolfinx::fem::create_element_dof_layout(
+          *ufcx_sub_dofmap, *sub_e, parent_map_sub));
+    }
+  }
+  else
+  {
+    for (int i = 0; i < element.num_sub_elements(); ++i)
+    {
+      ufcx_dofmap* ufcx_sub_dofmap = dofmap.sub_dofmaps[i];
+      std::shared_ptr<const fem::FiniteElement<T>> sub_e
+          = element.sub_elements()[i];
       offsets.push_back(offsets.back()
                         + ufcx_sub_dofmap->num_element_support_dofs
                               * ufcx_sub_dofmap->block_size);
-      if (element.sub_elements().size() == 1)
-        sub_e = element.sub_elements()[0];
-    }
-    else
-    {
-      offsets.push_back(offsets.back() + 1);
-      sub_e = element.sub_elements()[i];
-    }
-    std::vector<int> parent_map_sub(ufcx_sub_dofmap->num_element_support_dofs
-                                    * ufcx_sub_dofmap->block_size);
-    for (std::size_t j = 0; j < parent_map_sub.size(); ++j)
-      parent_map_sub[j] = offsets[i] + element.block_size() * j;
-    sub_doflayout.push_back(dolfinx::fem::create_element_dof_layout(
-        ufcx_sub_dofmap->block_size, *ufcx_sub_dofmap, cell_type,
-        parent_map_sub));
+      std::vector<int> parent_map_sub(ufcx_sub_dofmap->num_element_support_dofs
+                                      * ufcx_sub_dofmap->block_size);
+      for (std::size_t j = 0; j < parent_map_sub.size(); ++j)
+        parent_map_sub[j] = offsets[i] + element.block_size() * j;
 
-    //            sub_doflayout.push_back(
-    //                dolfinx::fem::create_element_dof_layout(*ufcx_sub_dofmap,
-    //                cell_type, *sub_e, parent_map_sub));
+      sub_doflayout.push_back(dolfinx::fem::create_element_dof_layout(
+          *ufcx_sub_dofmap, *sub_e, parent_map_sub));
+    }
   }
-
   return ElementDofLayout(element.block_size(), element.entity_dofs(),
                           element.entity_closure_dofs(), parent_map,
                           sub_doflayout);

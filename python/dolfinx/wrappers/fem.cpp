@@ -918,8 +918,7 @@ void declare_real_functions(nb::module_& m)
         assert(p);
 
         dolfinx::fem::ElementDofLayout layout
-            = dolfinx::fem::create_element_dof_layout(*p, topology.cell_type(),
-                                                      element);
+            = dolfinx::fem::create_element_dof_layout(*p, element);
 
         std::function<void(std::span<std::int32_t>, std::uint32_t)>
             unpermute_dofs = nullptr;
