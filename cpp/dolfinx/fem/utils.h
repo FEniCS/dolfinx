@@ -272,8 +272,7 @@ ElementDofLayout create_element_dof_layout(const ufcx_dofmap& dofmap,
       std::shared_ptr<const fem::FiniteElement<T>> sub_e
           = element.sub_elements()[0];
       offsets.push_back(offsets.back() + 1);
-      std::vector<int> parent_map_sub(ufcx_sub_dofmap->num_element_support_dofs
-                                      * ufcx_sub_dofmap->block_size);
+      std::vector<int> parent_map_sub(sub_e->space_dimension());
       for (std::size_t j = 0; j < parent_map_sub.size(); ++j)
         parent_map_sub[j] = offsets[i] + element.block_size() * j;
 
@@ -288,11 +287,8 @@ ElementDofLayout create_element_dof_layout(const ufcx_dofmap& dofmap,
       ufcx_dofmap* ufcx_sub_dofmap = dofmap.sub_dofmaps[i];
       std::shared_ptr<const fem::FiniteElement<T>> sub_e
           = element.sub_elements()[i];
-      offsets.push_back(offsets.back()
-                        + ufcx_sub_dofmap->num_element_support_dofs
-                              * ufcx_sub_dofmap->block_size);
-      std::vector<int> parent_map_sub(ufcx_sub_dofmap->num_element_support_dofs
-                                      * ufcx_sub_dofmap->block_size);
+      offsets.push_back(offsets.back() + sub_e->space_dimension());
+      std::vector<int> parent_map_sub(sub_e->space_dimension());
       for (std::size_t j = 0; j < parent_map_sub.size(); ++j)
         parent_map_sub[j] = offsets[i] + element.block_size() * j;
 
