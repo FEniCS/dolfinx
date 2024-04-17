@@ -2,9 +2,8 @@ from mpi4py import MPI
 
 import numpy as np
 
-from dolfinx import cpp as _cpp
 from dolfinx import mesh
-
+from dolfinx import graph
 
 def to_adj(cells):
     cflat = []
@@ -13,7 +12,7 @@ def to_adj(cells):
         cflat += c
         cc = coff[-1] + len(c)
         coff += [cc]
-    adj = _cpp.graph.AdjacencyList_int64(np.array(cflat), np.array(coff))
+    adj = graph.adjacencylist(np.array(cflat), np.array(coff))
     return adj
 
 
