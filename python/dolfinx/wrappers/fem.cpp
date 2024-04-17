@@ -107,16 +107,6 @@ void declare_function_space(nb::module_& m, std::string type)
         .def(
             "__init__",
             [](dolfinx::fem::FiniteElement<T>* self,
-               std::uintptr_t ufcx_element)
-            {
-              ufcx_finite_element* p
-                  = reinterpret_cast<ufcx_finite_element*>(ufcx_element);
-              new (self) dolfinx::fem::FiniteElement<T>(*p);
-            },
-            nb::arg("ufcx_element"))
-        .def(
-            "__init__",
-            [](dolfinx::fem::FiniteElement<T>* self,
                basix::FiniteElement<T>& element, std::size_t block_size)
             { new (self) dolfinx::fem::FiniteElement<T>(element, block_size); },
             nb::arg("element"), nb::arg("block_size"))
@@ -128,6 +118,17 @@ void declare_function_space(nb::module_& m, std::string type)
                    elements)
             { new (self) dolfinx::fem::FiniteElement<T>(elements); },
             nb::arg("elements"))
+        .def(
+            "__init__",
+            [](dolfinx::fem::FiniteElement<T>* self,
+               nb::ndarray<T, nb::ndim<2>, nb::numpy> points,
+               std::size_t block_size)
+            {
+              std::span<T> pdata(points.data(), points.size());
+              new (self) dolfinx::fem::FiniteElement<T>(
+                  pdata, {points.shape(0), points.shape(1)}, block_size);
+            },
+            nb::arg("points"), nb::arg("block_size"))
         .def("__eq__", &dolfinx::fem::FiniteElement<T>::operator==)
         .def_prop_ro("dtype", [](const dolfinx::fem::FiniteElement<T>&)
                      { return dolfinx_wrappers::numpy_dtype<T>(); })

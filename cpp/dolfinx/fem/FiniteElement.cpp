@@ -13,7 +13,6 @@
 #include <dolfinx/common/log.h>
 #include <functional>
 #include <numeric>
-#include <ufcx.h>
 #include <utility>
 #include <vector>
 
@@ -70,63 +69,20 @@ _extract_sub_element(const FiniteElement<T>& finite_element,
 
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
-    : _signature(e.signature), _space_dim(e.space_dimension),
-      _reference_value_shape(e.reference_value_shape,
-                             e.reference_value_shape + e.reference_value_rank),
-      _bs(e.block_size), _is_mixed(e.element_type == ufcx_mixed_element)
+FiniteElement<T>::FiniteElement(const std::span<geometry_type> points,
+                                const std::array<std::size_t, 2> pshape,
+                                const std::size_t block_size)
+    : _space_dim(pshape[0] * block_size), _reference_value_shape({}),
+      _bs(block_size), _is_mixed(false)
 {
-  const ufcx_shape _shape = e.cell_shape;
-  switch (_shape)
-  {
-  case interval:
-    _cell_shape = mesh::CellType::interval;
-    break;
-  case triangle:
-    _cell_shape = mesh::CellType::triangle;
-    break;
-  case quadrilateral:
-    _cell_shape = mesh::CellType::quadrilateral;
-    break;
-  case tetrahedron:
-    _cell_shape = mesh::CellType::tetrahedron;
-    break;
-  case prism:
-    _cell_shape = mesh::CellType::prism;
-    break;
-  case hexahedron:
-    _cell_shape = mesh::CellType::hexahedron;
-    break;
-  default:
-    throw std::runtime_error(
-        "Unknown UFC cell type when building FiniteElement.");
-  }
-  assert(mesh::cell_dim(_cell_shape) == e.topological_dimension);
+  _needs_dof_transformations = false;
+  _needs_dof_permutations = false;
 
-  static const std::map<ufcx_shape, std::string> ufcx_to_cell
-      = {{vertex, "point"},         {interval, "interval"},
-         {triangle, "triangle"},    {tetrahedron, "tetrahedron"},
-         {prism, "prism"},          {quadrilateral, "quadrilateral"},
-         {hexahedron, "hexahedron"}};
-  const std::string cell_shape = ufcx_to_cell.at(e.cell_shape);
+  _points = std::make_pair(std::vector<T>(pshape[0] * pshape[1]), pshape);
+  _points.first.assign(points.begin(), points.end());
 
-  if (e.element_type == ufcx_quadrature_element)
-  {
-    _needs_dof_transformations = false;
-    _needs_dof_permutations = false;
-
-    assert(e.custom_quadrature);
-    ufcx_quadrature_rule* qr = e.custom_quadrature;
-    std::size_t npts = qr->npts;
-    std::size_t tdim = qr->topological_dimension;
-    std::array qshape = {npts, tdim};
-    _points = std::make_pair(std::vector<T>(qshape[0] * qshape[1]), qshape);
-    std::copy_n(qr->points, _points.first.size(), _points.first.begin());
-  }
-  else
-  {
-    throw std::runtime_error("Cannot create this element type using UFCx.");
-  }
+  _signature = "Quadrature element " + std::to_string(pshape[0]) + " "
+               + std::to_string(_bs);
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>

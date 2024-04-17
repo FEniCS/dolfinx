@@ -613,19 +613,11 @@ def _create_dolfinx_element(
             for e in ufl_e.sub_elements
         ]
         return CppElement(elements)
-    try:
+    elif ufl_e.is_quadrature:
+        return CppElement(ufl_e.custom_quadrature()[0], ufl_e.block_size)
+    else:
         basix_e = ufl_e.basix_element._e
         return CppElement(basix_e, ufl_e.block_size)
-    except NotImplementedError:
-        # This branch is currently only used for quadrature elements
-        # TODO: remove this branch
-        (ufcx_element, ufcx_dofmap), module, code = jit.ffcx_jit(
-            comm,
-            ufl_e,
-            form_compiler_options=form_compiler_options,
-            jit_options=jit_options,
-        )
-        return CppElement(ffi.cast("uintptr_t", ffi.addressof(ufcx_element)))
 
 
 def functionspace(

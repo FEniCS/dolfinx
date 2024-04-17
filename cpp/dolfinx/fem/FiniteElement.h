@@ -18,8 +18,6 @@
 #include <utility>
 #include <vector>
 
-struct ufcx_finite_element;
-
 namespace dolfinx::fem
 {
 /// Finite Element, containing the dof layout on a reference element,
@@ -40,10 +38,6 @@ public:
   /// Geometry type of the Mesh that the FunctionSpace is defined on.
   using geometry_type = T;
 
-  /// @brief Create finite element from UFC finite element.
-  /// @param[in] e UFC finite element.
-  explicit FiniteElement(const ufcx_finite_element& e);
-
   /// @brief Create finite element from a Basix finite element.
   /// @param[in] element Basix finite element
   /// @param[in] block_size The block size for the element
@@ -55,6 +49,14 @@ public:
   FiniteElement(
       const std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>
           elements);
+
+  /// @brief Create a quadrature element
+  /// @param[in] points Quadrature points
+  /// @param[in] pshape Shape of points array
+  /// @param[in] block_size The block size for the element
+  FiniteElement(const std::span<geometry_type> points,
+                const std::array<std::size_t, 2> pshape,
+                const std::size_t block_size);
 
   /// Copy constructor
   FiniteElement(const FiniteElement& element) = delete;
