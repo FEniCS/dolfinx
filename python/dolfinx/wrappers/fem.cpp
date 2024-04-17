@@ -909,6 +909,13 @@ template <typename T>
 void declare_real_functions(nb::module_& m)
 {
   m.def(
+      "create_element_dof_layout",
+      [](const dolfinx::fem::FiniteElement<T>& element,
+         const std::vector<int>& parent_map)
+      { return dolfinx::fem::create_element_dof_layout(element, parent_map); },
+      nb::arg("element"), nb::arg("parent_map"),
+      "Create ElementDofLayout object from a ufc dofmap.");
+  m.def(
       "create_dofmap",
       [](const dolfinx_wrappers::MPICommWrapper comm,
          dolfinx::mesh::Topology& topology,
@@ -926,30 +933,28 @@ void declare_real_functions(nb::module_& m)
       },
       nb::arg("comm"), nb::arg("topology"), nb::arg("element"),
       "Create DofMap object from an element.");
-
   m.def(
       "create_dofmaps",
       [](const dolfinx_wrappers::MPICommWrapper comm,
-         std::vector<std::uintptr_t> ufcx_dofmaps,
-         dolfinx::mesh::Topology& topology)
+         dolfinx::mesh::Topology& topology,
+         std::vector<std::shared_ptr<const dolfinx::fem::FiniteElement<T>>>
+             elements)
       {
         std::vector<dolfinx::fem::ElementDofLayout> layouts;
         int D = topology.dim();
         assert(ufcx_dofmaps.size() == topology.entity_types(D).size());
-        for (std::size_t i = 0; i < ufcx_dofmaps.size(); ++i)
+        for (std::size_t i = 0; i < elements.size(); ++i)
         {
-          ufcx_dofmap* p = reinterpret_cast<ufcx_dofmap*>(ufcx_dofmaps[i]);
-          assert(p);
-          layouts.push_back(dolfinx::fem::create_element_dof_layout(
-              p->block_size, *p, topology.entity_types(D)[i]));
+          layouts.push_back(
+              dolfinx::fem::create_element_dof_layout(*elements[i]));
         }
 
         return dolfinx::fem::create_dofmaps(comm.get(), layouts, topology,
                                             nullptr, nullptr);
       },
-      nb::arg("comm"), nb::arg("dofmap"), nb::arg("topology"),
+      nb::arg("comm"), nb::arg("topology"), nb::arg("elements"),
       "Create DofMap objects on a mixed topology mesh from pointers to "
-      "ufcx_dofmaps.");
+      "FiniteElements.");
 
   m.def(
       "locate_dofs_topological",
@@ -1111,33 +1116,6 @@ void fem(nb::module_& m)
   declare_cmap<float>(m, "float32");
   declare_cmap<double>(m, "float64");
 
-  m.def(
-      "create_element_dof_layout",
-      [](std::uintptr_t dofmap, const dolfinx::mesh::CellType cell_type,
-         const std::vector<int>& parent_map)
-      {
-        ufcx_dofmap* p = reinterpret_cast<ufcx_dofmap*>(dofmap);
-        return dolfinx::fem::create_element_dof_layout(p->block_size, *p,
-                                                       cell_type, parent_map);
-      },
-      nb::arg("dofmap"), nb::arg("cell_type"), nb::arg("parent_map"),
-      "Create ElementDofLayout object from a ufc dofmap.");
-  m.def(
-      "create_element_dof_layout",
-      [](const int element_block_size,
-         const std::vector<std::vector<std::vector<int>>>& entity_dofs,
-         const std::vector<std::vector<std::vector<int>>>& entity_closure_dofs,
-         const std::vector<fem::ElementDofLayout> sub_doflayout,
-
-         const std::vector<int>& parent_map)
-      {
-        return dolfinx::fem::create_element_dof_layout(
-            element_block_size, entity_dofs, entity_closure_dofs, sub_doflayout,
-            parent_map);
-      },
-      nb::arg("element_block_size"), nb::arg("entity_dofs"),
-      nb::arg("entity_closure_dofs"), nb::arg("sub_doflayout"),
-      nb::arg("parent_map"), "Create ElementDofLayout object.");
   m.def(
       "build_dofmap",
       [](MPICommWrapper comm, const dolfinx::mesh::Topology& topology,

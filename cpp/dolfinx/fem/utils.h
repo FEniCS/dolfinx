@@ -239,13 +239,6 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
   return pattern;
 }
 
-/// Create an ElementDofLayout from a ufcx_dofmap
-ElementDofLayout create_element_dof_layout(const int element_block_size,
-                                           const ufcx_dofmap& dofmap,
-                                           const mesh::CellType cell_type,
-                                           const std::vector<int>& parent_map
-                                           = {});
-
 /// Create an ElementDofLayout from a FiniteElement
 template <std::floating_point T>
 ElementDofLayout create_element_dof_layout(const fem::FiniteElement<T>& element,
@@ -274,14 +267,6 @@ ElementDofLayout create_element_dof_layout(const fem::FiniteElement<T>& element,
                           element.entity_closure_dofs(), parent_map,
                           sub_doflayout);
 }
-
-/// Create an ElementDofLayout
-ElementDofLayout create_element_dof_layout(
-    const int element_block_size,
-    const std::vector<std::vector<std::vector<int>>>& entity_dofs,
-    const std::vector<std::vector<std::vector<int>>>& entity_closure_dofs,
-    const std::vector<ElementDofLayout> sub_doflayout,
-    const std::vector<int>& parent_map = {});
 
 /// @brief Create a dof map on mesh
 /// @param[in] comm MPI communicator

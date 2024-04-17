@@ -17,17 +17,9 @@ def create_element_dofmap(mesh, cell_types, degree):
     dofmaps = []
     for cell_type in cell_types:
         ufl_e = basix.ufl.element("P", cell_type, degree, dtype=np.float64)
-        form_compiler_options = {"scalar_type": np.float64}
-        (ufcx_element, ufcx_dofmap), module, code = jit.ffcx_jit(
-            mesh.comm, ufl_e, form_compiler_options=form_compiler_options
-        )
-        ffi = module.ffi
         cpp_elements += [_cpp.fem.FiniteElement_float64(ufl_e.basix_element._e, 1)]
-        dofmaps += [ufcx_dofmap]
 
-    cpp_dofmaps = _cpp.fem.create_dofmaps(
-        mesh.comm, [ffi.cast("uintptr_t", ffi.addressof(dm)) for dm in dofmaps], mesh.topology
-    )
+    cpp_dofmaps = _cpp.fem.create_dofmaps(mesh.comm, mesh.topology, cpp_elements)
 
     return (cpp_elements, cpp_dofmaps)
 
