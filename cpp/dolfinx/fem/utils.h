@@ -264,7 +264,7 @@ ElementDofLayout create_element_dof_layout(const ufcx_dofmap& dofmap,
   std::vector<dolfinx::fem::ElementDofLayout> sub_doflayout;
   std::cout << dofmap.num_sub_dofmaps << " " << element.sub_elements().size()
             << "\n";
-  for (int i = 0; i < dofmap.num_sub_dofmaps; ++i)
+  for (int i = 0; i < element.num_sub_elements(); ++i)
   {
     ufcx_dofmap* ufcx_sub_dofmap = dofmap.sub_dofmaps[i];
     std::shared_ptr<const fem::FiniteElement<T>> sub_e;
