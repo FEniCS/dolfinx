@@ -51,6 +51,7 @@ public:
           elements);
 
   /// @brief Create a quadrature element
+  /// @param[in] cell_type The cell type
   /// @param[in] points Quadrature points
   /// @param[in] pshape Shape of points array
   /// @param[in] block_size The block size for the element
