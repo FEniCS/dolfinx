@@ -13,7 +13,7 @@ def to_adj(cells):
         cflat += c
         cc = coff[-1] + len(c)
         coff += [cc]
-    adj = _cpp.graph.AdjacencyList_int64(np.array(cflat, dtype=np.int64), np.array(coff))
+    adj = _cpp.graph.AdjacencyList_int64(np.array(cflat, dtype=np.int64), np.array(coff, dtype=np.int64))
     return adj
 
 
