@@ -2,8 +2,8 @@ from mpi4py import MPI
 
 import numpy as np
 
-from dolfinx import mesh
-from dolfinx import graph
+from dolfinx import graph, mesh
+
 
 def to_adj(cells):
     cflat = []
