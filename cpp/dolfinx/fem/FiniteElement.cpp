@@ -69,7 +69,8 @@ _extract_sub_element(const FiniteElement<T>& finite_element,
 
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-FiniteElement<T>::FiniteElement(const std::span<geometry_type> points,
+FiniteElement<T>::FiniteElement(const mesh::CellType cell_type,
+                                const std::span<geometry_type> points,
                                 const std::array<std::size_t, 2> pshape,
                                 const std::size_t block_size)
     : _space_dim(pshape[0] * block_size), _reference_value_shape({}),
@@ -83,6 +84,22 @@ FiniteElement<T>::FiniteElement(const std::span<geometry_type> points,
 
   _signature = "Quadrature element " + std::to_string(pshape[0]) + " "
                + std::to_string(_bs);
+
+  const int tdim = mesh::cell_dim(cell_type);
+  _entity_dofs.resize(tdim + 1);
+  _entity_closure_dofs.resize(tdim + 1);
+  for (int d = 0; d <= tdim; ++d)
+  {
+    int num_entities = mesh::cell_num_entities(cell_type, d);
+    _entity_dofs[d].resize(num_entities);
+    _entity_closure_dofs[d].resize(num_entities);
+  }
+
+  for (std::size_t i = 0; i < pshape[0]; ++i)
+  {
+    _entity_dofs[tdim][0].push_back(i);
+    _entity_closure_dofs[tdim][0].push_back(i);
+  }
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -92,6 +109,24 @@ FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
       _is_mixed(false)
 {
   _space_dim = _bs * element.dim();
+
+  const std::vector<std::vector<std::vector<int>>> ed = element.entity_dofs();
+  const std::vector<std::vector<std::vector<int>>> ecd
+      = element.entity_closure_dofs();
+  _entity_dofs.resize(ed.size());
+  _entity_closure_dofs.resize(ed.size());
+  for (std::size_t i = 0; i < ed.size(); ++i)
+  {
+    _entity_dofs[i].resize(ed[i].size());
+    _entity_closure_dofs[i].resize(ed[i].size());
+    for (std::size_t j = 0; j < ed[i].size(); ++j)
+    {
+      for (std::size_t k : ed[i][j])
+        _entity_dofs[i][j].push_back(k);
+      for (std::size_t k : ecd[i][j])
+        _entity_closure_dofs[i][j].push_back(k);
+    }
+  }
 
   // Create all sub-elements
   if (_bs > 1)
@@ -138,19 +173,49 @@ FiniteElement<T>::FiniteElement(
   _signature = "Mixed element (";
   _needs_dof_transformations = false;
   _needs_dof_permutations = false;
+  const std::vector<std::vector<std::vector<int>>>& ed
+      = elements[0]->entity_dofs();
+  _entity_dofs.resize(ed.size());
+  _entity_closure_dofs.resize(ed.size());
+  for (std::size_t i = 0; i < ed.size(); ++i)
+  {
+    _entity_dofs[i].resize(ed[i].size());
+    _entity_closure_dofs[i].resize(ed[i].size());
+  }
+  int dof_offset = 0;
   for (auto& e : elements)
   {
     vsize += e->reference_value_size();
-    _space_dim += e->space_dimension();
     _signature += e->signature() + ", ";
 
     if (e->needs_dof_permutations())
       _needs_dof_permutations = true;
     if (e->needs_dof_transformations())
       _needs_dof_transformations = true;
-  }
-  _reference_value_shape = {static_cast<std::size_t>(vsize)};
 
+    const std::size_t sub_bs = e->block_size();
+    for (std::size_t i = 0; i < _entity_dofs.size(); ++i)
+    {
+      for (std::size_t j = 0; j < _entity_dofs[i].size(); ++j)
+      {
+        const std::vector<int> sub_ed = e->entity_dofs()[i][j];
+        const std::vector<int> sub_ecd = e->entity_closure_dofs()[i][j];
+        for (auto k : sub_ed)
+        {
+          for (std::size_t b = 0; b < sub_bs; ++b)
+            _entity_dofs[i][j].push_back(dof_offset + k * sub_bs + b);
+        }
+        for (auto k : sub_ecd)
+        {
+          for (std::size_t b = 0; b < sub_bs; ++b)
+            _entity_closure_dofs[i][j].push_back(dof_offset + k * sub_bs + b);
+        }
+      }
+    }
+    dof_offset += e->space_dimension();
+  }
+  _space_dim = dof_offset;
+  _reference_value_shape = {static_cast<std::size_t>(vsize)};
   _signature += ")";
 }
 //-----------------------------------------------------------------------------
@@ -176,12 +241,6 @@ template <std::floating_point T>
 std::string FiniteElement<T>::signature() const noexcept
 {
   return _signature;
-}
-//-----------------------------------------------------------------------------
-template <std::floating_point T>
-mesh::CellType FiniteElement<T>::cell_shape() const noexcept
-{
-  return _cell_shape;
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>

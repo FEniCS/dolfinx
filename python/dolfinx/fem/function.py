@@ -586,11 +586,9 @@ class ElementMetaData(typing.NamedTuple):
 
 def _create_dolfinx_element(
     comm: _MPI.Intracomm,
+    cell_type: CellType,
     ufl_e: ufl.FiniteElementBase,
     dtype: np.dtype,
-    ffi: cffi.FFI,
-    form_compiler_options: typing.Optional[dict[str, typing.Any]] = None,
-    jit_options: typing.Optional[dict[str, typing.Any]] = None,
 ) -> typing.Union[_cpp.fem.FiniteElement_float32, _cpp.fem.FiniteElement_float64]:
     # TODO: remove this function or move it to element.py?
     if np.issubdtype(dtype, np.float32):
@@ -604,17 +602,15 @@ def _create_dolfinx_element(
         elements = [
             _create_dolfinx_element(
                 comm,
+                cell_type,
                 e,
                 dtype,
-                ffi,
-                form_compiler_options=form_compiler_options,
-                jit_options=jit_options,
             )
             for e in ufl_e.sub_elements
         ]
         return CppElement(elements)
     elif ufl_e.is_quadrature:
-        return CppElement(ufl_e.custom_quadrature()[0], ufl_e.block_size)
+        return CppElement(cell_type, ufl_e.custom_quadrature()[0], ufl_e.block_size)
     else:
         basix_e = ufl_e.basix_element._e
         return CppElement(basix_e, ufl_e.block_size)
@@ -675,11 +671,9 @@ def functionspace(
 
     cpp_element = _create_dolfinx_element(
         mesh.comm,
+        mesh.topology.cell_type,
         ufl_e,
         dtype,
-        ffi,
-        form_compiler_options=form_compiler_options,
-        jit_options=jit_options,
     )
 
     cpp_dofmap = _cpp.fem.create_dofmap(

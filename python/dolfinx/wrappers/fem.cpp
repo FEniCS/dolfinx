@@ -120,15 +120,16 @@ void declare_function_space(nb::module_& m, std::string type)
             nb::arg("elements"))
         .def(
             "__init__",
-            [](dolfinx::fem::FiniteElement<T>* self,
+            [](dolfinx::fem::FiniteElement<T>* self, mesh::CellType cell_type,
                nb::ndarray<T, nb::ndim<2>, nb::numpy> points,
                std::size_t block_size)
             {
               std::span<T> pdata(points.data(), points.size());
               new (self) dolfinx::fem::FiniteElement<T>(
-                  pdata, {points.shape(0), points.shape(1)}, block_size);
+                  cell_type, pdata, {points.shape(0), points.shape(1)},
+                  block_size);
             },
-            nb::arg("points"), nb::arg("block_size"))
+            nb::arg("cell_type"), nb::arg("points"), nb::arg("block_size"))
         .def("__eq__", &dolfinx::fem::FiniteElement<T>::operator==)
         .def_prop_ro("dtype", [](const dolfinx::fem::FiniteElement<T>&)
                      { return dolfinx_wrappers::numpy_dtype<T>(); })
@@ -915,8 +916,10 @@ void declare_real_functions(nb::module_& m)
       {
         ufcx_dofmap* p = reinterpret_cast<ufcx_dofmap*>(dofmap);
         assert(p);
+
         dolfinx::fem::ElementDofLayout layout
-            = dolfinx::fem::create_element_dof_layout(*p, topology.cell_type());
+            = dolfinx::fem::create_element_dof_layout(*p, topology.cell_type(),
+                                                      element);
 
         std::function<void(std::span<std::int32_t>, std::uint32_t)>
             unpermute_dofs = nullptr;
@@ -943,7 +946,7 @@ void declare_real_functions(nb::module_& m)
           ufcx_dofmap* p = reinterpret_cast<ufcx_dofmap*>(ufcx_dofmaps[i]);
           assert(p);
           layouts.push_back(dolfinx::fem::create_element_dof_layout(
-              *p, topology.entity_types(D)[i]));
+              p->block_size, *p, topology.entity_types(D)[i]));
         }
 
         return dolfinx::fem::create_dofmaps(comm.get(), layouts, topology,
@@ -1119,11 +1122,27 @@ void fem(nb::module_& m)
          const std::vector<int>& parent_map)
       {
         ufcx_dofmap* p = reinterpret_cast<ufcx_dofmap*>(dofmap);
-        return dolfinx::fem::create_element_dof_layout(*p, cell_type,
-                                                       parent_map);
+        return dolfinx::fem::create_element_dof_layout(p->block_size, *p,
+                                                       cell_type, parent_map);
       },
       nb::arg("dofmap"), nb::arg("cell_type"), nb::arg("parent_map"),
       "Create ElementDofLayout object from a ufc dofmap.");
+  m.def(
+      "create_element_dof_layout",
+      [](const int element_block_size,
+         const std::vector<std::vector<std::vector<int>>>& entity_dofs,
+         const std::vector<std::vector<std::vector<int>>>& entity_closure_dofs,
+         const std::vector<fem::ElementDofLayout> sub_doflayout,
+
+         const std::vector<int>& parent_map)
+      {
+        return dolfinx::fem::create_element_dof_layout(
+            element_block_size, entity_dofs, entity_closure_dofs, sub_doflayout,
+            parent_map);
+      },
+      nb::arg("element_block_size"), nb::arg("entity_dofs"),
+      nb::arg("entity_closure_dofs"), nb::arg("sub_doflayout"),
+      nb::arg("parent_map"), "Create ElementDofLayout object.");
   m.def(
       "build_dofmap",
       [](MPICommWrapper comm, const dolfinx::mesh::Topology& topology,

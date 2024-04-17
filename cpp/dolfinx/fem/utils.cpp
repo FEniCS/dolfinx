@@ -29,12 +29,13 @@ using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
 fem::ElementDofLayout
-fem::create_element_dof_layout(const ufcx_dofmap& dofmap,
+fem::create_element_dof_layout(const int element_block_size,
+
+                               const ufcx_dofmap& dofmap,
+
                                const mesh::CellType cell_type,
                                const std::vector<int>& parent_map)
 {
-  const int element_block_size = dofmap.block_size;
-
   // Fill entity dof indices
   const int tdim = mesh::cell_dim(cell_type);
   std::vector<std::vector<std::vector<int>>> entity_dofs(tdim + 1);
@@ -86,11 +87,23 @@ fem::create_element_dof_layout(const ufcx_dofmap& dofmap,
     for (std::size_t j = 0; j < parent_map_sub.size(); ++j)
       parent_map_sub[j] = offsets[i] + element_block_size * j;
     sub_doflayout.push_back(
-        create_element_dof_layout(*ufcx_sub_dofmap, cell_type, parent_map_sub));
+        create_element_dof_layout(ufcx_sub_dofmap->block_size, *ufcx_sub_dofmap,
+                                  cell_type, parent_map_sub));
   }
 
-  // Check for "block structure". This should ultimately be replaced,
-  // but keep for now to mimic existing code.
+  return create_element_dof_layout(element_block_size, entity_dofs,
+                                   entity_closure_dofs, sub_doflayout,
+                                   parent_map);
+}
+//-----------------------------------------------------------------------------
+fem::ElementDofLayout fem::create_element_dof_layout(
+    const int element_block_size,
+    const std::vector<std::vector<std::vector<int>>>& entity_dofs,
+    const std::vector<std::vector<std::vector<int>>>& entity_closure_dofs,
+    const std::vector<fem::ElementDofLayout> sub_doflayout,
+
+    const std::vector<int>& parent_map)
+{
   return ElementDofLayout(element_block_size, entity_dofs, entity_closure_dofs,
                           parent_map, sub_doflayout);
 }

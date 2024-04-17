@@ -38,7 +38,7 @@ public:
   /// Geometry type of the Mesh that the FunctionSpace is defined on.
   using geometry_type = T;
 
-  /// @brief Create finite element from a Basix finite element.
+  /// @brief Create a finite element from a Basix finite element.
   /// @param[in] element Basix finite element
   /// @param[in] block_size The block size for the element
   FiniteElement(const basix::FiniteElement<geometry_type>& element,
@@ -54,7 +54,8 @@ public:
   /// @param[in] points Quadrature points
   /// @param[in] pshape Shape of points array
   /// @param[in] block_size The block size for the element
-  FiniteElement(const std::span<geometry_type> points,
+  FiniteElement(const mesh::CellType cell_type,
+                const std::span<geometry_type> points,
                 const std::array<std::size_t, 2> pshape,
                 const std::size_t block_size);
 
@@ -93,10 +94,6 @@ public:
   /// properties.
   std::string signature() const noexcept;
 
-  /// Cell shape
-  /// @return Element cell shape
-  mesh::CellType cell_shape() const noexcept;
-
   /// Dimension of the finite element function space (the number of
   /// degrees-of-freedom for the element)
   /// @return Dimension of the finite element space
@@ -115,6 +112,18 @@ public:
 
   /// The reference value shape
   std::span<const std::size_t> reference_value_shape() const;
+
+  /// The local DOFs associated with each subentity of the cell
+  std::vector<std::vector<std::vector<int>>> entity_dofs() const
+  {
+    return _entity_dofs;
+  }
+
+  /// The local DOFs associated with the closure of each subentity of the cell
+  std::vector<std::vector<std::vector<int>>> entity_closure_dofs() const
+  {
+    return _entity_closure_dofs;
+  }
 
   /// @brief Evaluate derivatives of the basis functions up to given order
   /// at points in the reference cell.
@@ -631,8 +640,6 @@ public:
 private:
   std::string _signature;
 
-  mesh::CellType _cell_shape;
-
   int _space_dim;
 
   // List of sub-elements (if any)
@@ -652,6 +659,9 @@ private:
   // Indicate whether the element needs permutations or transformations
   bool _needs_dof_permutations;
   bool _needs_dof_transformations;
+
+  std::vector<std::vector<std::vector<int>>> _entity_dofs;
+  std::vector<std::vector<std::vector<int>>> _entity_closure_dofs;
 
   // Basix Element (nullptr for mixed elements)
   std::unique_ptr<basix::FiniteElement<geometry_type>> _element;
