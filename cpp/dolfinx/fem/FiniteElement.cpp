@@ -70,7 +70,7 @@ _extract_sub_element(const FiniteElement<T>& finite_element,
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
 FiniteElement<T>::FiniteElement(const mesh::CellType cell_type,
-                                const std::span<geometry_type> points,
+                                std::span<const geometry_type> points,
                                 const std::array<std::size_t, 2> pshape,
                                 const std::size_t block_size)
     : _space_dim(pshape[0] * block_size), _reference_value_shape({}),
