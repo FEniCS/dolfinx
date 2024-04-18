@@ -56,7 +56,7 @@ public:
   /// @param[in] pshape Shape of points array
   /// @param[in] block_size The block size for the element
   FiniteElement(const mesh::CellType cell_type,
-                const std::span<geometry_type> points,
+                std::span<const geometry_type> points,
                 const std::array<std::size_t, 2> pshape,
                 const std::size_t block_size);
 
