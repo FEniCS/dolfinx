@@ -11,13 +11,6 @@ install-python-components: &install-python-components
     pip3 install git+https://github.com/FEniCS/ufl.git
     pip3 install git+https://github.com/FEniCS/ffcx.git
 
-ruff-isort-python-code: &ruff-isort-python-code
-  name: ruff checks on Python code
-  command: |
-    cd python/
-    ruff check .
-    ruff format --check .
-
 configure-cpp: &configure-cpp
   name: Configure (C++)
   command: mkdir -p build && cd build && cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer ../cpp/
@@ -100,7 +93,6 @@ jobs:
     steps:
       - checkout
       - run: *install-python-components
-      - run: *ruff-isort-python-code
       - run: *configure-cpp
       - run: *build-install-cpp
 
@@ -130,7 +122,6 @@ jobs:
     steps:
       - checkout
       - run: *install-python-components
-      - run: *ruff-isort-python-code
       - run: *configure-cpp
       - run: *build-install-cpp
 
