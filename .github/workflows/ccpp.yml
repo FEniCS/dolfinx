@@ -28,39 +28,12 @@ on:
         type: string
 
 jobs:
-  build:
-    if: "!(contains(github.event.head_commit.message, '[ci skip]') || contains(github.event.head_commit.message, '[skip ci]'))"
+  lint:
     runs-on: ubuntu-latest
     container: ghcr.io/fenics/test-env:current-openmpi
-
-    env:
-      PETSC_ARCH: ${{ matrix.petsc_arch }}
-      OMPI_ALLOW_RUN_AS_ROOT: 1
-      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
-
-    strategy:
-      matrix:
-        petsc_arch: [linux-gnu-real32-32, linux-gnu-real64-32, linux-gnu-complex64-32, linux-gnu-complex128-32, linux-gnu-real64-64, linux-gnu-complex128-64]
-
-    name: Build and test (${{ matrix.petsc_arch }})
-
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install FEniCS Python components (default branches/tags)
-        if: github.event_name != 'workflow_dispatch'
-        run: |
-          python3 -m pip install git+https://github.com/FEniCS/ufl.git
-          python3 -m pip install git+https://github.com/FEniCS/basix.git
-          python3 -m pip install git+https://github.com/FEniCS/ffcx.git
-      - name: Install FEniCS Python components
-        if: github.event_name == 'workflow_dispatch'
-        run: |
-          python3 -m pip install git+https://github.com/FEniCS/ufl.git@${{ github.event.inputs.ufl_ref }}
-          python3 -m pip install git+https://github.com/FEniCS/basix.git@${{ github.event.inputs.basix_ref }}
-          python3 -m pip install git+https://github.com/FEniCS/ffcx.git@${{ github.event.inputs.ffcx_ref }}
-
-      - name: ruff C++ .py file checks
+      - name: ruff .py files in C++ code
         run: |
           cd cpp/
           ruff check .
@@ -92,6 +65,68 @@ jobs:
         continue-on-error: true
         run: |
           find . -type f \( -name "*.cmake" -o -name "*.cmake.in" -o -name "CMakeLists.txt" \) | xargs cmake-format --check
+
+  build:
+    runs-on: ubuntu-latest
+    needs: lint
+    container: ghcr.io/fenics/test-env:current-openmpi
+    env:
+      SCOTCH_DIR: /usr/local/petsc/linux-gnu-real64-32
+
+    steps:
+      - name: Install FEniCS Python components (default branches/tags)
+        if: github.event_name != 'workflow_dispatch'
+        run: |
+          python3 -m pip install git+https://github.com/FEniCS/ufl.git
+          python3 -m pip install git+https://github.com/FEniCS/basix.git
+          python3 -m pip install git+https://github.com/FEniCS/ffcx.git
+      - name: Install FEniCS Python components
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          python3 -m pip install git+https://github.com/FEniCS/ufl.git@${{ github.event.inputs.ufl_ref }}
+          python3 -m pip install git+https://github.com/FEniCS/basix.git@${{ github.event.inputs.basix_ref }}
+          python3 -m pip install git+https://github.com/FEniCS/ffcx.git@${{ github.event.inputs.ffcx_ref }}
+
+      - uses: actions/checkout@v4
+      - name: Configure C++
+        run: cmake -G Ninja -DDOLFINX_ENABLE_PETSC=false -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
+      - name: Build and install C++ library
+        run: |
+          cmake --build build
+          cmake --install build
+      - name: Build Python interface
+        run: python3 -m pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
+      - name: Test Python import
+        run: python3 -c "import dolfinx; print(dolfinx.__version__)"
+
+  build-with-petsc:
+    runs-on: ubuntu-latest
+    needs: lint
+    container: ghcr.io/fenics/test-env:current-openmpi
+    env:
+      PETSC_ARCH: ${{ matrix.petsc_arch }}
+      OMPI_ALLOW_RUN_AS_ROOT: 1
+      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
+    strategy:
+      matrix:
+        petsc_arch: [linux-gnu-real32-32, linux-gnu-real64-32, linux-gnu-complex64-32, linux-gnu-complex128-32, linux-gnu-real64-64, linux-gnu-complex128-64]
+
+    name: Build and test (${{ matrix.petsc_arch }})
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install FEniCS Python components (default branches/tags)
+        if: github.event_name != 'workflow_dispatch'
+        run: |
+          python3 -m pip install git+https://github.com/FEniCS/ufl.git
+          python3 -m pip install git+https://github.com/FEniCS/basix.git
+          python3 -m pip install git+https://github.com/FEniCS/ffcx.git
+      - name: Install FEniCS Python components
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          python3 -m pip install git+https://github.com/FEniCS/ufl.git@${{ github.event.inputs.ufl_ref }}
+          python3 -m pip install git+https://github.com/FEniCS/basix.git@${{ github.event.inputs.basix_ref }}
+          python3 -m pip install git+https://github.com/FEniCS/ffcx.git@${{ github.event.inputs.ffcx_ref }}
 
       - name: Configure C++
         run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/

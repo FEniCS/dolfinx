@@ -103,8 +103,8 @@ private:
 /// @cond
 /// Template type deduction
 template <typename V>
-Mesh(MPI_Comm, std::shared_ptr<Topology>, V)
-    -> Mesh<typename std::remove_cvref_t<typename V::value_type>>;
+Mesh(MPI_Comm, std::shared_ptr<Topology>,
+     V) -> Mesh<typename std::remove_cvref_t<typename V::value_type>>;
 /// @endcond
 
 } // namespace dolfinx::mesh

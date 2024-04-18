@@ -120,9 +120,7 @@ msh = create_rectangle(
 
 # Function to mark x = 0, x = 1 and y = 0
 def noslip_boundary(x):
-    return np.logical_or(
-        np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 1.0)), np.isclose(x[1], 0.0)
-    )
+    return np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0) | np.isclose(x[1], 0.0)
 
 
 # Function to mark the lid (y = 1)
@@ -524,7 +522,7 @@ def mixed_direct():
     # Compute the solution
     U = Function(W)
     try:
-        ksp.solve(b, U.vector)
+        ksp.solve(b, U.x.petsc_vec)
     except PETSc.Error as e:
         if e.ierr == 92:
             print("The required PETSc solver/preconditioner is not available. Exiting.")
