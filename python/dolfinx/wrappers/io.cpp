@@ -22,12 +22,14 @@
 #include <memory>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
+#include <nanobind/stl/complex.h>
 #include <nanobind/stl/filesystem.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/variant.h>
 #include <nanobind/stl/vector.h>
+#include <span>
 #include <vector>
 
 namespace nb = nanobind;
@@ -187,29 +189,36 @@ void declare_vtx_writer(nb::module_& m, std::string type)
 }
 
 template <typename T>
-void declare_real_types(nb::module_& m)
+void declare_data_types(nb::module_& m)
 {
-  // TODO: Remove this template, pass lower level mesh data
   m.def(
       "distribute_entity_data",
-      [](const dolfinx::mesh::Mesh<T>& mesh, int entity_dim,
+      [](const dolfinx::mesh::Topology topology,
+         nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>
+             input_global_indices,
+         std::int64_t num_nodes_g, const fem::ElementDofLayout& cmap_dof_layout,
+         nb::ndarray<const std::int32_t, nb::ndim<2>, nb::c_contig> xdofmap,
+         int entity_dim,
          nb::ndarray<const std::int64_t, nb::ndim<2>, nb::c_contig> entities,
-         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> values)
+         nb::ndarray<const T, nb::ndim<1>, nb::c_contig> values)
       {
         assert(entities.shape(0) == values.size());
         mdspan_t<const std::int64_t, 2> entities_span(
             entities.data(), entities.shape(0), entities.shape(1));
-        std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
-            entities_values = dolfinx::io::xdmf_utils::distribute_entity_data(
-                *mesh.topology(), mesh.geometry().input_global_indices(),
-                mesh.geometry().index_map()->size_global(),
-                mesh.geometry().cmap().create_dof_layout(),
-                mesh.geometry().dofmap(), entity_dim, entities_span,
+        mdspan_t<const std::int32_t, 2> xdofmap_span(
+            xdofmap.data(), xdofmap.shape(0), xdofmap.shape(1));
+
+        std::span<const std::int64_t> input_global_indices_span(
+            input_global_indices.data(), input_global_indices.size());
+        std::pair<std::vector<std::int32_t>, std::vector<T>> entities_values
+            = dolfinx::io::xdmf_utils::distribute_entity_data<T>(
+                topology, input_global_indices_span, num_nodes_g,
+                cmap_dof_layout, xdofmap_span, entity_dim, entities_span,
                 std::span(values.data(), values.size()));
 
         std::size_t num_vert_per_entity = dolfinx::mesh::cell_num_entities(
-            dolfinx::mesh::cell_entity_type(mesh.topology()->cell_type(),
-                                            entity_dim, 0),
+            dolfinx::mesh::cell_entity_type(topology.cell_type(), entity_dim,
+                                            0),
             0);
         return std::pair(
             as_nbarray(std::move(entities_values.first),
@@ -217,8 +226,10 @@ void declare_real_types(nb::module_& m)
                         num_vert_per_entity}),
             as_nbarray(std::move(entities_values.second)));
       },
-      nb::arg("mesh"), nb::arg("entity_dim"), nb::arg("entities"),
-      nb::arg("values"));
+      nb::arg("topology"), nb::arg("input_global_indices"),
+      nb::arg("num_nodes_g"), nb::arg("cmap_dof_layout"), nb::arg("xdofmap"),
+      nb::arg("entity_dim"), nb::arg("entities"),
+      nb::arg("values").noconvert());
 }
 
 } // namespace
@@ -345,7 +356,10 @@ void io(nb::module_& m)
   declare_vtx_writer<float>(m, "float32");
   declare_vtx_writer<double>(m, "float64");
 
-  declare_real_types<float>(m);
-  declare_real_types<double>(m);
+  declare_data_types<std::int32_t>(m);
+  declare_data_types<float>(m);
+  declare_data_types<std::complex<float>>(m);
+  declare_data_types<double>(m);
+  declare_data_types<std::complex<double>>(m);
 }
 } // namespace dolfinx_wrappers

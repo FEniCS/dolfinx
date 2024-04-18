@@ -116,13 +116,16 @@ compute_parent_facets(std::span<const std::int32_t> simplex_set)
 /// (cell local indexing). A flag indicates if a uniform subdivision is
 /// preferable in 2D.
 ///
-/// @param[in] indices Vector indicating which edges are to be
-///   split (value >=0)
+/// @param[in] indices Vector containing the global indices for the original
+/// vertices and potential new vertices at each edge. Size (num_vertices +
+/// num_edges). If an edge is not refined its corresponding entry is -1
 /// @param[in] longest_edge Vector indicating the longest edge for each
-///   triangle. For tdim=2, one entry, for tdim=3, four entries.
+/// triangle in the cell. For triangular cells (2D) there is only one value,
+/// and for tetrahedra (3D) there are four values, one for each facet. The
+/// values give the local edge indices of the cell.
 /// @param[in] tdim Topological dimension (2 or 3)
-/// @param[in] uniform Make a "uniform" subdivision with all triangles
-///   being similar shape
+/// @param[in] uniform Make a "uniform" subdivision with all triangles being
+/// similar shape
 /// @return
 std::vector<std::int32_t>
 get_simplices(std::span<const std::int64_t> indices,
@@ -136,7 +139,15 @@ void enforce_rules(MPI_Comm comm, const graph::AdjacencyList<int>& shared_edges,
                    const mesh::Topology& topology,
                    std::span<const std::int32_t> long_edge);
 
-/// Get the longest edge of each face (using local mesh index)
+/// @brief Get the longest edge of each face (using local mesh index)
+///
+/// @note Edge ratio ok returns an array in 2D, where it checks if the ratio
+/// between the shortest and longest edge of a cell is bigger than sqrt(2)/2. In
+/// 3D an empty array is returned
+///
+/// @param[in] mesh The mesh
+/// @return A tuple (longest edge, edge ratio ok) where longest edge gives the
+/// local index of the longest edge for each face.
 template <std::floating_point T>
 std::pair<std::vector<std::int32_t>, std::vector<std::int8_t>>
 face_long_edge(const mesh::Mesh<T>& mesh)
@@ -253,7 +264,30 @@ face_long_edge(const mesh::Mesh<T>& mesh)
   return std::pair(std::move(long_edge), std::move(edge_ratio_ok));
 }
 
-/// Convenient interface for both uniform and marker refinement
+/// @brief Convenient interface for both uniform and marker refinement
+///
+/// @note The parent facet map gives you the map from a cell given by parent
+/// cell map to the local index (relative to the cell), e.g. the i-th entry of
+/// parent facets relates to the local facet index of the i-th entry parent
+/// cell.
+///
+/// @param[in] neighbor_comm Neighbourhood communciator scattering owned edges
+/// to processes with ghosts
+/// @param[in] marked_edges A marker for all edges on the process (local +
+/// ghosts) indicating if an edge should be refined
+/// @param[in] shared_edges For each local edge on a process map to ghost
+/// processes
+/// @param[in] mesh The mesh
+/// @param[in] long_edge A map from each face to its longest edge. Index is
+/// local to the process.
+/// @param[in] edge_ratio_ok For each face in a 2D mesh this error contains a
+/// marker indicating if the ratio between smallest and largest edge is bigger
+/// than sqrt(2)/2
+/// @param[in] option Option to compute additional information relating refined
+/// and original mesh entities
+/// @return (0) The new mesh topology, (1) the new flattened mesh geometry, (3)
+/// Shape of the new geometry_shape, (4) Map from new cells to parent cells
+/// and (5) map from refined facets to parent facets.
 template <std::floating_point T>
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<T>,
            std::array<std::size_t, 2>, std::vector<std::int32_t>,

@@ -6,6 +6,8 @@
 
 #pragma once
 
+#ifdef HAS_PETSC
+
 #include "Form.h"
 #include "assembler.h"
 #include "utils.h"
@@ -482,3 +484,5 @@ void set_bc(
 
 } // namespace petsc
 } // namespace dolfinx::fem
+
+#endif
