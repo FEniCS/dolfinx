@@ -590,8 +590,7 @@ public:
         = element->basix_element().template map_fn<xu_t, xU_t, xJ_t, xK_t>();
 
     auto apply_dof_transformation
-        = element
-              ->template dof_transformation_function<geometry_type>();
+        = element->template dof_transformation_function<geometry_type>();
     const std::size_t num_basis_values = space_dimension * reference_value_size;
 
     for (std::size_t p = 0; p < cells.size(); ++p)

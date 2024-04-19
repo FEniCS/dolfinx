@@ -27,10 +27,11 @@ CoordinateElement<T>::CoordinateElement(
 template <std::floating_point T>
 CoordinateElement<T>::CoordinateElement(mesh::CellType celltype, int degree,
                                         basix::element::lagrange_variant type)
-    : CoordinateElement(
-        std::make_shared<basix::FiniteElement<T>>(basix::create_element<T>(
-            basix::element::family::P, mesh::cell_type_to_basix_type(celltype),
-            degree, type, basix::element::dpc_variant::unset, false)))
+    : CoordinateElement(std::make_shared<basix::FiniteElement<T>>(
+          basix::create_element<T>(basix::element::family::P,
+                                   mesh::cell_type_to_basix_type(celltype),
+                                   degree, type,
+                                   basix::element::dpc_variant::unset, false)))
 {
   // Do nothing
 }
@@ -160,7 +161,7 @@ void CoordinateElement<T>::pull_back_nonaffine(mdspan2_t<T> X,
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
 void CoordinateElement<T>::permute(std::span<std::int32_t> dofs,
-                                        std::uint32_t cell_perm) const
+                                   std::uint32_t cell_perm) const
 {
   assert(_element);
   _element->permute(dofs, cell_perm);
@@ -168,7 +169,7 @@ void CoordinateElement<T>::permute(std::span<std::int32_t> dofs,
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
 void CoordinateElement<T>::permute_inv(std::span<std::int32_t> dofs,
-                                          std::uint32_t cell_perm) const
+                                       std::uint32_t cell_perm) const
 {
   assert(_element);
   _element->permute_inv(dofs, cell_perm);
