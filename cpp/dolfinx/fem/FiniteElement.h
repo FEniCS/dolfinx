@@ -252,7 +252,12 @@ public:
   bool needs_dof_permutations() const noexcept;
 
   /// @brief Return a function that applies DOF transformation operator
-  /// `T to some data.
+  /// `T to some data (see T_apply()).
+  ///
+  /// If the transformation for the (sub)element is a permutation only,
+  /// the returned function will do change the ordering for the
+  /// (sub)element as it is assumed that permutations are incorporated
+  /// into the degree-of-freedom map.
   ///
   /// See the documentation for T_apply() for a description of the
   /// transformation for a single element type. This function generates
@@ -329,6 +334,7 @@ public:
         { sub_function(data, cell_info, cell, ebs * data_block_size); };
       }
     }
+
     switch (ttype)
     {
     case doftransform::inverse_transpose:
@@ -353,7 +359,12 @@ public:
   }
 
   /// @brief Return a function that applies DOF transformation to some
-  /// transposed data.
+  /// transposed data (see T_apply_right()).
+  ///
+  /// If the transformation for the (sub)element is a permutation only,
+  /// the returned function will do change the ordering for the
+  /// (sub)element as it is assumed that permutations are incorporated
+  /// into the degree-of-freedom map.
   ///
   /// The signature of the returned function has four arguments:
   /// - [in,out] data The data to be transformed. This data is flattened
