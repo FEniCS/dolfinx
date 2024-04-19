@@ -591,7 +591,7 @@ public:
 
     auto apply_dof_transformation
         = element
-              ->template get_pre_dof_transformation_function<geometry_type>();
+              ->template dof_transformation_function<geometry_type>();
     const std::size_t num_basis_values = space_dimension * reference_value_size;
 
     for (std::size_t p = 0; p < cells.size(); ++p)
