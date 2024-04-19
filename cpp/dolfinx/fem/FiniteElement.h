@@ -22,8 +22,10 @@ struct ufcx_finite_element;
 
 namespace dolfinx::fem
 {
-/// Finite Element, containing the dof layout on a reference element,
-/// and various methods for evaluating and transforming the basis.
+/// @brief Mofel of a finite element.
+///
+/// Provides the dof layout on a reference element, and various methods
+/// for evaluating and transforming the basis.
 template <std::floating_point T>
 class FiniteElement
 {
@@ -494,10 +496,10 @@ public:
     _element->T_apply(data, n, cell_permutation);
   }
 
-  /// @brief Apply inverse transpose transformation to some data.
+  /// @brief Apply the inverse transpose of the operator applied by
+  /// T_apply().
   ///
-  /// For VectorElements, this applies the transformations for the
-  /// scalar subelement.
+  /// The transformation \f[ v = T^{-T} u \f] is performed in-place.
   ///
   /// @param[in,out] data The data to be transformed. This data is
   /// flattened with row-major layout, `shape=(num_dofs, block_size)`.
@@ -581,7 +583,7 @@ public:
   ///
   /// Computes \f[ v^{T} = u^{T} T^{T} \f] in-place.
   ///
-  /// @param[in,out] data Data to be transformed. This data is flattened
+  /// @param[in,out] data Data to be transformed. The data is flattened
   /// with row-major layout, `shape=(num_dofs, block_size)`.
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] n Block size of the input data.
@@ -623,15 +625,26 @@ public:
   /// consistent physical element degree-of-freedom ordering. The
   /// permutation is computed in-place.
   ///
-  /// @note This function is designed to be called at runtime, so its
-  /// performance is critical.
+  /// @note This function is called at runtime, so its performance is
+  /// critical.
   ///
   /// @param[in,out] doflist The numbers of the DOFs. Size=`num_dofs`.
   /// @param[in] cell_permutation Permutation data for the cell.
   void permute(std::span<std::int32_t> doflist,
                std::uint32_t cell_permutation) const;
 
-  /// @brief Unpermute the DOFs of the element.
+  /// @brief Perform the inverse of the operation applied by permute().
+  ///
+  /// Given an array \f$d\f$ that holds an integer associated with each
+  /// degree-of-freedom and following the globally consistent physical
+  /// element degree-of-freedom ordering, this function computes
+  /// \f[
+  ///  \tilde{d} = P^{T} d,
+  /// \f]
+  /// where \f$P^{T}\f$ is a permutation matrix and \f$\tilde{d}\f$
+  /// holds the integers in \f$d\f$ but permuted to follow the reference
+  /// element degree-of-freedom ordering. The permutation is computed
+  /// in-place.
   ///
   /// @param[in,out] doflist Numbers of the DOFs, a span of length
   /// `num_dofs`.
@@ -670,8 +683,8 @@ private:
   // Dimension of each value space
   std::vector<std::size_t> _reference_value_shape;
 
-  // Block size for BlockedElements. This gives the
-  // number of DOFs co-located at each dof 'point'.
+  // Block size for BlockedElements. This gives the number of DOFs
+  // co-located at each dof 'point'.
   int _bs;
 
   // Indicate whether this is a mixed element
