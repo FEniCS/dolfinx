@@ -433,22 +433,15 @@ public:
     case doftransform::inverse_transpose:
       return [this](std::span<U> data, std::span<const std::uint32_t> cell_info,
                     std::int32_t cell, int block_size)
-      {
-        post_apply_inverse_transpose_dof_transformation(data, cell_info[cell],
-                                                        block_size);
-      };
+      { Tt_inv_post_apply(data, cell_info[cell], block_size); };
     case doftransform::transpose:
       return [this](std::span<U> data, std::span<const std::uint32_t> cell_info,
-                    std::int32_t cell, int block_size) {
-        post_apply_transpose_dof_transformation(data, cell_info[cell],
-                                                block_size);
-      };
+                    std::int32_t cell, int block_size)
+      { Tt_post_apply(data, cell_info[cell], block_size); };
     case doftransform::inverse:
       return [this](std::span<U> data, std::span<const std::uint32_t> cell_info,
-                    std::int32_t cell, int block_size) {
-        post_apply_inverse_dof_transformation(data, cell_info[cell],
-                                              block_size);
-      };
+                    std::int32_t cell, int block_size)
+      { Tinv_post_apply(data, cell_info[cell], block_size); };
     case doftransform::standard:
       return [this](std::span<U> data, std::span<const std::uint32_t> cell_info,
                     std::int32_t cell, int block_size)
@@ -579,9 +572,8 @@ public:
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] n Block size of the input data
   template <typename U>
-  void post_apply_inverse_dof_transformation(std::span<U> data,
-                                             std::uint32_t cell_permutation,
-                                             int n) const
+  void Tinv_post_apply(std::span<U> data, std::uint32_t cell_permutation,
+                       int n) const
   {
     assert(_element);
     _element->Tinv_post_apply(data, n, cell_permutation);
@@ -594,9 +586,8 @@ public:
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] n Block size of the input data.
   template <typename U>
-  void post_apply_transpose_dof_transformation(std::span<U> data,
-                                               std::uint32_t cell_permutation,
-                                               int n) const
+  void Tt_post_apply(std::span<U> data, std::uint32_t cell_permutation,
+                     int n) const
   {
     assert(_element);
     _element->Tt_post_apply(data, n, cell_permutation);
@@ -610,8 +601,8 @@ public:
   /// @param[in] cell_permutation Permutation data for the cell.
   /// @param[in] n Block size of the input data.
   template <typename U>
-  void post_apply_inverse_transpose_dof_transformation(
-      std::span<U> data, std::uint32_t cell_permutation, int n) const
+  void Tt_inv_post_apply(std::span<U> data, std::uint32_t cell_permutation,
+                         int n) const
   {
     assert(_element);
     _element->Tt_inv_post_apply(data, n, cell_permutation);
@@ -622,16 +613,16 @@ public:
   /// @param[in,out] doflist The numbers of the DOFs, a span of length
   /// `num_dofs`.
   /// @param[in] cell_permutation Permutation data for the cell.
-  void permute_dofs(std::span<std::int32_t> doflist,
-                    std::uint32_t cell_permutation) const;
+  void permute(std::span<std::int32_t> doflist,
+               std::uint32_t cell_permutation) const;
 
   /// @brief Unpermute the DOFs of the element.
   ///
   /// @param[in,out] doflist Numbers of the DOFs, a span of length
   /// `num_dofs`.
   /// @param[in] cell_permutation Permutation data for the cell.
-  void unpermute_dofs(std::span<std::int32_t> doflist,
-                      std::uint32_t cell_permutation) const;
+  void permute_inv(std::span<std::int32_t> doflist,
+                   std::uint32_t cell_permutation) const;
 
   /// @brief Return a function that applies DOF permutation to some
   /// data.

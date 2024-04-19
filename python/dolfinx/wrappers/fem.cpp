@@ -904,11 +904,11 @@ void declare_real_functions(nb::module_& m)
             = dolfinx::fem::create_element_dof_layout(*p, topology.cell_type());
 
         std::function<void(std::span<std::int32_t>, std::uint32_t)>
-            unpermute_dofs = nullptr;
+            permute_inv = nullptr;
         if (element.needs_dof_permutations())
-          unpermute_dofs = element.get_dof_permutation_function(true, true);
+          permute_inv = element.get_dof_permutation_function(true, true);
         return dolfinx::fem::create_dofmap(comm.get(), layout, topology,
-                                           unpermute_dofs, nullptr);
+                                           permute_inv, nullptr);
       },
       nb::arg("comm"), nb::arg("dofmap"), nb::arg("topology"),
       nb::arg("element"),

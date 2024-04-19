@@ -566,15 +566,15 @@ bool FiniteElement<T>::needs_dof_permutations() const noexcept
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-void FiniteElement<T>::permute_dofs(std::span<std::int32_t> doflist,
-                                    std::uint32_t cell_permutation) const
+void FiniteElement<T>::permute(std::span<std::int32_t> doflist,
+                               std::uint32_t cell_permutation) const
 {
   _element->permute(doflist, cell_permutation);
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-void FiniteElement<T>::unpermute_dofs(std::span<std::int32_t> doflist,
-                                      std::uint32_t cell_permutation) const
+void FiniteElement<T>::permute_inv(std::span<std::int32_t> doflist,
+                                   std::uint32_t cell_permutation) const
 {
   _element->permute_inv(doflist, cell_permutation);
 }
@@ -645,13 +645,13 @@ FiniteElement<T>::get_dof_permutation_function(bool inverse,
   {
     return
         [this](std::span<std::int32_t> doflist, std::uint32_t cell_permutation)
-    { unpermute_dofs(doflist, cell_permutation); };
+    { permute_inv(doflist, cell_permutation); };
   }
   else
   {
     return
         [this](std::span<std::int32_t> doflist, std::uint32_t cell_permutation)
-    { permute_dofs(doflist, cell_permutation); };
+    { permute(doflist, cell_permutation); };
   }
 }
 //-----------------------------------------------------------------------------
