@@ -333,15 +333,12 @@ public:
       };
     case doftransform::transpose:
       return [this](std::span<U> data, std::span<const std::uint32_t> cell_info,
-                    std::int32_t cell, int block_size) {
-        pre_apply_transpose_dof_transformation(data, cell_info[cell],
-                                               block_size);
-      };
+                    std::int32_t cell, int block_size)
+      { Tt_apply(data, cell_info[cell], block_size); };
     case doftransform::inverse:
       return [this](std::span<U> data, std::span<const std::uint32_t> cell_info,
-                    std::int32_t cell, int block_size) {
-        pre_apply_inverse_dof_transformation(data, cell_info[cell], block_size);
-      };
+                    std::int32_t cell, int block_size)
+      { Tinv_apply(data, cell_info[cell], block_size); };
     case doftransform::standard:
       return [this](std::span<U> data, std::span<const std::uint32_t> cell_info,
                     std::int32_t cell, int block_size)
@@ -455,7 +452,7 @@ public:
     case doftransform::standard:
       return [this](std::span<U> data, std::span<const std::uint32_t> cell_info,
                     std::int32_t cell, int block_size)
-      { post_apply_dof_transformation(data, cell_info[cell], block_size); };
+      { T_post_apply(data, cell_info[cell], block_size); };
     default:
       throw std::runtime_error("Unknown transformation type");
     }
@@ -521,37 +518,40 @@ public:
     _element->Tt_inv_apply(data, n, cell_permutation);
   }
 
-  /// @brief Apply transpose transformation to some data.
+  /// @brief Apply the transpose of the operator applied by T_apply().
   ///
-  /// For VectorElements, this applies the transformations for the
-  /// scalar subelement.
+  /// The transformation
+  /// \f[
+  ///  v = T^{T} u
+  /// \f]
+  /// is performed in-place.
   ///
   /// @param[in,out] data The data to be transformed. This data is
   /// flattened with row-major layout, `shape=(num_dofs, block_size)`.
   /// @param[in] cell_permutation Permutation data for the cell.
-  /// @param[in] block_size The block size of the input data.
+  /// @param[in] n The block size of the input data.
   template <typename U>
-  void pre_apply_transpose_dof_transformation(std::span<U> data,
-                                              std::uint32_t cell_permutation,
-                                              int block_size) const
+  void Tt_apply(std::span<U> data, std::uint32_t cell_permutation, int n) const
   {
     assert(_element);
-    _element->Tt_apply(data, block_size, cell_permutation);
+    _element->Tt_apply(data, n, cell_permutation);
   }
 
-  /// @brief Apply inverse transformation to some data.
+  /// @brief Apply the inverse of the operator applied by T_apply().
   ///
-  /// For VectorElements, this applies the transformations for the
-  /// scalar subelement.
+  /// The transformation
+  /// \f[
+  ///  v = T^{-1} u
+  /// \f]
+  /// is performed in-place.
   ///
   /// @param[in,out] data The data to be transformed. This data is
   /// flattened with row-major layout, `shape=(num_dofs, block_size)`.
   /// @param[in] cell_permutation Permutation data for the cell.
   /// @param[in] n Block size of the input data.
   template <typename U>
-  void pre_apply_inverse_dof_transformation(std::span<U> data,
-                                            std::uint32_t cell_permutation,
-                                            int n) const
+  void Tinv_apply(std::span<U> data, std::uint32_t cell_permutation,
+                  int n) const
   {
     assert(_element);
     _element->Tinv_apply(data, n, cell_permutation);
@@ -564,9 +564,8 @@ public:
   /// @param[in] cell_permutation Permutation data for the cell
   /// @param[in] n Block size of the input data
   template <typename U>
-  void post_apply_dof_transformation(std::span<U> data,
-                                     std::uint32_t cell_permutation,
-                                     int n) const
+  void T_post_apply(std::span<U> data, std::uint32_t cell_permutation,
+                    int n) const
   {
     assert(_element);
     _element->T_post_apply(data, n, cell_permutation);
