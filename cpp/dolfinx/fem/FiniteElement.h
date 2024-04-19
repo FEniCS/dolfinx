@@ -606,7 +606,7 @@ public:
     _element->Tt_post_apply(data, n, cell_permutation);
   }
 
-  /// @brief Post(right)-apply the transpose inverse of the operator
+  /// @brief Right(post)-apply the transpose inverse of the operator
   /// applied by T_apply().
   ///
   /// Computes \f[ v^{T} = u^{T} T^{-T} \f] in-place.
