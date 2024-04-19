@@ -248,9 +248,10 @@ public:
   /// @return True if DOF transformations are required
   bool needs_dof_permutations() const noexcept;
 
-  /// Return a function that applies DOF transformation to some data.
+  /// @brief Return a function that applies DOF transformation operator
+  /// `T to some data.
   ///
-  /// The returned function will take four inputs:
+  /// The signature of the returned function has four arguments:
   /// - [in,out] data The data to be transformed. This data is flattened
   ///   with row-major layout, shape=(num_dofs, block_size)
   /// - [in] cell_info Permutation data for the cell. The size of this
@@ -265,9 +266,8 @@ public:
   template <typename U>
   std::function<void(std::span<U>, std::span<const std::uint32_t>, std::int32_t,
                      int)>
-  get_pre_dof_transformation_function(doftransform ttype
-                                      = doftransform::standard,
-                                      bool scalar_element = false) const
+  dof_transformation_function(doftransform ttype = doftransform::standard,
+                              bool scalar_element = false) const
   {
     if (!needs_dof_transformations())
     {
@@ -290,7 +290,7 @@ public:
         for (std::size_t i = 0; i < _sub_elements.size(); ++i)
         {
           sub_element_functions.push_back(
-              _sub_elements[i]->template get_pre_dof_transformation_function<U>(
+              _sub_elements[i]->template dof_transformation_function<U>(
                   ttype));
           dims.push_back(_sub_elements[i]->space_dimension());
         }
@@ -315,7 +315,7 @@ public:
         const std::function<void(std::span<U>, std::span<const std::uint32_t>,
                                  std::int32_t, int)>
             sub_function
-            = _sub_elements[0]->template get_pre_dof_transformation_function<U>(
+            = _sub_elements[0]->template dof_transformation_function<U>(
                 ttype);
         const int ebs = _bs;
         return [ebs, sub_function](std::span<U> data,
@@ -352,10 +352,11 @@ public:
       throw std::runtime_error("Unknown transformation type");
     }
   }
-  /// Return a function that applies DOF transformation to some
-  /// transposed data
+
+  /// @brief Return a function that applies DOF transformation to some
+  /// transposed data.
   ///
-  /// The returned function will take three inputs:
+  /// The signature of the returned function has four arguments:
   /// - [in,out] data The data to be transformed. This data is flattened
   ///   with row-major layout, shape=(num_dofs, block_size)
   /// - [in] cell_info Permutation data for the cell. The size of this
@@ -416,7 +417,7 @@ public:
         const std::function<void(std::span<U>, std::span<const std::uint32_t>,
                                  std::int32_t, int)>
             sub_function
-            = _sub_elements[0]->template get_pre_dof_transformation_function<U>(
+            = _sub_elements[0]->template dof_transformation_function<U>(
                 ttype);
         return [this, sub_function](std::span<U> data,
                                     std::span<const std::uint32_t> cell_info,
@@ -463,7 +464,7 @@ public:
     }
   }
 
-  /// Apply DOF transformation to some data
+  /// @brief Apply DOF transformation to some data.
   ///
   /// @param[in,out] data The data to be transformed. This data is flattened
   /// with row-major layout, shape=(num_dofs, block_size)
@@ -475,147 +476,151 @@ public:
                                     int block_size) const
   {
     assert(_element);
-    _element->pre_apply_dof_transformation(data, block_size, cell_permutation);
+    _element->T_apply(data, block_size, cell_permutation);
   }
 
-  /// Apply inverse transpose transformation to some data. For
-  /// VectorElements, this applies the transformations for the scalar
-  /// subelement.
+  /// @brief Apply inverse transpose transformation to some data.
   ///
-  /// @param[in,out] data The data to be transformed. This data is flattened
-  /// with row-major layout, shape=(num_dofs, block_size)
-  /// @param[in] cell_permutation Permutation data for the cell
-  /// @param[in] block_size The block_size of the input data
+  /// For VectorElements, this applies the transformations for the
+  /// scalar subelement.
+  ///
+  /// @param[in,out] data The data to be transformed. This data is
+  /// flattened with row-major layout, `shape=(num_dofs, block_size)`.
+  /// @param[in] cell_permutation Permutation data for the cell.
+  /// @param[in] n Block_size of the input data.
   template <typename U>
   void pre_apply_inverse_transpose_dof_transformation(
-      std::span<U> data, std::uint32_t cell_permutation, int block_size) const
+      std::span<U> data, std::uint32_t cell_permutation, int n) const
   {
     assert(_element);
-    _element->pre_apply_inverse_transpose_dof_transformation(data, block_size,
-                                                             cell_permutation);
+    _element->Tt_inv_apply(data, n, cell_permutation);
   }
 
-  /// Apply transpose transformation to some data. For VectorElements,
-  /// this applies the transformations for the scalar subelement.
+  /// @brief Apply transpose transformation to some data.
   ///
-  /// @param[in,out] data The data to be transformed. This data is flattened
-  /// with row-major layout, shape=(num_dofs, block_size)
-  /// @param[in] cell_permutation Permutation data for the cell
-  /// @param[in] block_size The block_size of the input data
+  /// For VectorElements, this applies the transformations for the
+  /// scalar subelement.
+  ///
+  /// @param[in,out] data The data to be transformed. This data is
+  /// flattened with row-major layout, `shape=(num_dofs, block_size)`.
+  /// @param[in] cell_permutation Permutation data for the cell.
+  /// @param[in] block_size The block size of the input data.
   template <typename U>
   void pre_apply_transpose_dof_transformation(std::span<U> data,
                                               std::uint32_t cell_permutation,
                                               int block_size) const
   {
     assert(_element);
-    _element->pre_apply_transpose_dof_transformation(data, block_size,
-                                                     cell_permutation);
+    _element->Tt_apply(data, block_size, cell_permutation);
   }
 
-  /// Apply inverse transformation to some data. For VectorElements,
-  /// this applies the transformations for the scalar subelement.
+  /// @brief Apply inverse transformation to some data.
   ///
-  /// @param[in,out] data The data to be transformed. This data is flattened
-  /// with row-major layout, shape=(num_dofs, block_size)
-  /// @param[in] cell_permutation Permutation data for the cell
-  /// @param[in] block_size The block_size of the input data
+  /// For VectorElements, this applies the transformations for the
+  /// scalar subelement.
+  ///
+  /// @param[in,out] data The data to be transformed. This data is
+  /// flattened with row-major layout, `shape=(num_dofs, block_size)`.
+  /// @param[in] cell_permutation Permutation data for the cell.
+  /// @param[in] n Block size of the input data.
   template <typename U>
   void pre_apply_inverse_dof_transformation(std::span<U> data,
                                             std::uint32_t cell_permutation,
-                                            int block_size) const
+                                            int n) const
   {
     assert(_element);
-    _element->pre_apply_inverse_dof_transformation(data, block_size,
-                                                   cell_permutation);
+    _element->Tinv_apply(data, n, cell_permutation);
   }
 
-  /// Apply DOF transformation to some transposed data
+  /// @brief Apply DOF transformation to some transposed data.
   ///
-  /// @param[in,out] data The data to be transformed. This data is flattened
-  /// with row-major layout, shape=(num_dofs, block_size)
+  /// @param[in,out] data The data to be transformed. This data is
+  /// flattened with row-major layout, `shape=(num_dofs, block_size)`.
   /// @param[in] cell_permutation Permutation data for the cell
-  /// @param[in] block_size The block_size of the input data
+  /// @param[in] n Block size of the input data
   template <typename U>
   void post_apply_dof_transformation(std::span<U> data,
                                      std::uint32_t cell_permutation,
-                                     int block_size) const
+                                     int n) const
   {
     assert(_element);
-    _element->post_apply_dof_transformation(data, block_size, cell_permutation);
+    _element->T_post_apply(data, n, cell_permutation);
   }
 
-  /// Apply inverse of DOF transformation to some transposed data.
+  /// @brief Apply inverse of DOF transformation to some transposed
+  /// data.
   ///
-  /// @param[in,out] data The data to be transformed. This data is flattened
-  /// with row-major layout, shape=(num_dofs, block_size)
+  /// @param[in,out] data Data to be transformed. This data is flattened
+  /// with row-major layout, `shape=(num_dofs, block_size)`/
   /// @param[in] cell_permutation Permutation data for the cell
-  /// @param[in] block_size The block_size of the input data
+  /// @param[in] n Block size of the input data
   template <typename U>
   void post_apply_inverse_dof_transformation(std::span<U> data,
                                              std::uint32_t cell_permutation,
-                                             int block_size) const
+                                             int n) const
   {
     assert(_element);
-    _element->post_apply_inverse_dof_transformation(data, block_size,
-                                                    cell_permutation);
+    _element->Tinv_post_apply(data, n, cell_permutation);
   }
 
-  /// Apply transpose of transformation to some transposed data.
+  /// @brief Apply transpose of transformation to some transposed data.
   ///
-  /// @param[in,out] data The data to be transformed. This data is flattened
-  /// with row-major layout, shape=(num_dofs, block_size)
+  /// @param[in,out] data Data to be transformed. This data is flattened
+  /// with row-major layout, `shape=(num_dofs, block_size)`.
   /// @param[in] cell_permutation Permutation data for the cell
-  /// @param[in] block_size The block_size of the input data
+  /// @param[in] n Block size of the input data.
   template <typename U>
   void post_apply_transpose_dof_transformation(std::span<U> data,
                                                std::uint32_t cell_permutation,
-                                               int block_size) const
+                                               int n) const
   {
     assert(_element);
-    _element->post_apply_transpose_dof_transformation(data, block_size,
-                                                      cell_permutation);
+    _element->Tt_post_apply(data, n, cell_permutation);
   }
 
-  /// Apply inverse transpose transformation to some transposed data
+  /// @brief Apply inverse transpose transformation to some transposed
+  /// data.
   ///
-  /// @param[in,out] data The data to be transformed. This data is flattened
-  /// with row-major layout, shape=(num_dofs, block_size)
-  /// @param[in] cell_permutation Permutation data for the cell
-  /// @param[in] block_size The block_size of the input data
+  /// @param[in,out] data Data to be transformed. This data is flattened
+  /// with row-major layout, `shape=(num_dofs, block_size)`.
+  /// @param[in] cell_permutation Permutation data for the cell.
+  /// @param[in] n Block size of the input data.
   template <typename U>
   void post_apply_inverse_transpose_dof_transformation(
-      std::span<U> data, std::uint32_t cell_permutation, int block_size) const
+      std::span<U> data, std::uint32_t cell_permutation, int n) const
   {
     assert(_element);
-    _element->post_apply_inverse_transpose_dof_transformation(data, block_size,
-                                                              cell_permutation);
+    _element->Tt_inv_post_apply(data, n, cell_permutation);
   }
 
-  /// Permute the DOFs of the element
+  /// @brief Permute the DOFs of the element.
   ///
-  /// @param[in,out] doflist The numbers of the DOFs, a span of length num_dofs
-  /// @param[in] cell_permutation Permutation data for the cell
+  /// @param[in,out] doflist The numbers of the DOFs, a span of length
+  /// `num_dofs`.
+  /// @param[in] cell_permutation Permutation data for the cell.
   void permute_dofs(std::span<std::int32_t> doflist,
                     std::uint32_t cell_permutation) const;
 
-  /// Unpermute the DOFs of the element
+  /// @brief Unpermute the DOFs of the element.
   ///
-  /// @param[in,out] doflist The numbers of the DOFs, a span of length num_dofs
-  /// @param[in] cell_permutation Permutation data for the cell
+  /// @param[in,out] doflist Numbers of the DOFs, a span of length
+  /// `num_dofs`.
+  /// @param[in] cell_permutation Permutation data for the cell.
   void unpermute_dofs(std::span<std::int32_t> doflist,
                       std::uint32_t cell_permutation) const;
 
-  /// Return a function that applies DOF permutation to some data
+  /// @brief Return a function that applies DOF permutation to some
+  /// data.
   ///
-  /// The returned function will take three inputs:
+  /// The signature of the returned function has three arguments:
   /// - [in,out] doflist The numbers of the DOFs, a span of length num_dofs
   /// - [in] cell_permutation Permutation data for the cell
   /// - [in] block_size The block_size of the input data
   ///
   /// @param[in] inverse Indicates whether the inverse transformations
-  /// should be returned
-  /// @param[in] scalar_element Indicated whether the scalar
-  /// transformations should be returned for a vector element
+  /// should be returned.
+  /// @param[in] scalar_element Indicates whether the scalar
+  /// transformations should be returned for a vector element.
   std::function<void(std::span<std::int32_t>, std::uint32_t)>
   get_dof_permutation_function(bool inverse = false,
                                bool scalar_element = false) const;
