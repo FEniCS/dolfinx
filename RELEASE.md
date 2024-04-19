@@ -60,7 +60,7 @@ UFL still runs on the year-based release scheme.
        git checkout --theirs main .
        git diff main
 
-2. Update the version number in `setup.cfg`, e.g. `2022.2.0`.
+2. Update the version number in `pyproject.toml`, e.g. `2022.2.0`.
 
 3. Commit and push.
 
@@ -76,9 +76,9 @@ UFL still runs on the year-based release scheme.
        git checkout --theirs main .
        git diff main
 
-2. Update the version number in `setup.cfg`, e.g. `0.5.0`.
+2. Update the version number in `pyproject.toml`, e.g. `0.5.0`.
 
-3. Update the dependency versions for `fenics-basix` and `fenics-ufl` in `setup.cfg`.
+3. Update the dependency versions for `fenics-basix` and `fenics-ufl` in `pyproject.toml`.
 
 4. If necessary, update the version number in `cmake/CMakeLists.txt`, e.g. `0.5.0`.
 
@@ -108,7 +108,7 @@ UFL still runs on the year-based release scheme.
    there is no need to change anything here. However, if they don't match, you
    need to manually specify the appropriate UFCx version.
 
-4. In `python/setup.py` change the `VERSION` variable to e.g. `0.5.0` and
+4. In `python/pyproject.toml` update the version to e.g. `0.5.0` and
    update the depedency versions for `fenics-ffcx` and `fenics-ufl`.
 
 5. In `CITATION.md` change the line starting `version:` to e.g. `version: 0.5.0` and
@@ -154,12 +154,19 @@ of tags. You will need to manually update the `README.md`.
 
 ### Docker containers
 
-Run the workflow at https://github.com/FEniCS/dolfinx/actions/workflows/docker.yml
+First create tagged development and test environment images:
 
-Tag prefix should be the same as the DOLFINx release e.g. `v0.5.0`.
+https://github.com/FEniCS/dolfinx/actions/workflows/docker-dev-test-env.yml
+
+Then create tagged end-user images setting the base image as the tagged
+development image:
+
+https://github.com/FEniCS/dolfinx/actions/workflows/docker-end-user.yml
+
+The tag prefix should be the same as the DOLFINx tag e.g. `v0.5.0`.
 Git refs should be appropriate tags for each component.
 
-Tagged Docker images will be pushed to Dockerhub.
+Tagged Docker images will be pushed to Dockerhub and GitHub.
 
     docker run -ti dolfinx/dolfinx:v0.5.0
 
