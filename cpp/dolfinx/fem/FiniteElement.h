@@ -569,7 +569,7 @@ public:
                      int n) const
   {
     assert(_element);
-    _element->T_post_apply(data, n, cell_permutation);
+    _element->T_apply_right(data, n, cell_permutation);
   }
 
   /// @brief Right(post)-apply the inverse of the operator applied by
@@ -586,7 +586,7 @@ public:
                         int n) const
   {
     assert(_element);
-    _element->Tinv_post_apply(data, n, cell_permutation);
+    _element->Tinv_apply_right(data, n, cell_permutation);
   }
 
   /// @brief Right(post)-apply the transpose of the operator applied by
@@ -603,7 +603,7 @@ public:
                       int n) const
   {
     assert(_element);
-    _element->Tt_post_apply(data, n, cell_permutation);
+    _element->Tt_apply_right(data, n, cell_permutation);
   }
 
   /// @brief Right(post)-apply the transpose inverse of the operator
@@ -620,7 +620,7 @@ public:
                           int n) const
   {
     assert(_element);
-    _element->Tt_inv_post_apply(data, n, cell_permutation);
+    _element->Tt_inv_apply_right(data, n, cell_permutation);
   }
 
   /// @brief Permute indices associated with degree-of-freedoms on the
@@ -636,10 +636,8 @@ public:
   /// consistent physical element degree-of-freedom ordering. The
   /// permutation is computed in-place.
   ///
-  /// @note This function is called at runtime, so its performance is
-  /// critical.
-  ///
-  /// @param[in,out] doflist The numbers of the DOFs. Size=`num_dofs`.
+  /// @param[in,out] doflist Indicies associated with the
+  /// degrees-of-freedom. Size=`num_dofs`.
   /// @param[in] cell_permutation Permutation data for the cell.
   void permute(std::span<std::int32_t> doflist,
                std::uint32_t cell_permutation) const;
@@ -657,14 +655,14 @@ public:
   /// element degree-of-freedom ordering. The permutation is computed
   /// in-place.
   ///
-  /// @param[in,out] doflist Numbers of the DOFs, a span of length
-  /// `num_dofs`.
+  /// @param[in,out] doflist Indicies associated with the
+  /// degrees-of-freedom. Size=`num_dofs`.
   /// @param[in] cell_permutation Permutation data for the cell.
   void permute_inv(std::span<std::int32_t> doflist,
                    std::uint32_t cell_permutation) const;
 
-  /// @brief Return a function that applies DOF permutation to some
-  /// data.
+  /// @brief Return a function that applies a degree-of-freedom
+  /// permutation to some data.
   ///
   /// The returned function can apply permute() to mixed-elements.
   ///
