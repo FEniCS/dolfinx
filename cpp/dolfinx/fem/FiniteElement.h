@@ -290,8 +290,7 @@ public:
         for (std::size_t i = 0; i < _sub_elements.size(); ++i)
         {
           sub_element_functions.push_back(
-              _sub_elements[i]->template dof_transformation_function<U>(
-                  ttype));
+              _sub_elements[i]->template dof_transformation_function<U>(ttype));
           dims.push_back(_sub_elements[i]->space_dimension());
         }
 
@@ -315,8 +314,7 @@ public:
         const std::function<void(std::span<U>, std::span<const std::uint32_t>,
                                  std::int32_t, int)>
             sub_function
-            = _sub_elements[0]->template dof_transformation_function<U>(
-                ttype);
+            = _sub_elements[0]->template dof_transformation_function<U>(ttype);
         const int ebs = _bs;
         return [ebs, sub_function](std::span<U> data,
                                    std::span<const std::uint32_t> cell_info,
@@ -347,7 +345,7 @@ public:
     case doftransform::standard:
       return [this](std::span<U> data, std::span<const std::uint32_t> cell_info,
                     std::int32_t cell, int block_size)
-      { pre_apply_dof_transformation(data, cell_info[cell], block_size); };
+      { T_apply(data, cell_info[cell], block_size); };
     default:
       throw std::runtime_error("Unknown transformation type");
     }
@@ -417,8 +415,7 @@ public:
         const std::function<void(std::span<U>, std::span<const std::uint32_t>,
                                  std::int32_t, int)>
             sub_function
-            = _sub_elements[0]->template dof_transformation_function<U>(
-                ttype);
+            = _sub_elements[0]->template dof_transformation_function<U>(ttype);
         return [this, sub_function](std::span<U> data,
                                     std::span<const std::uint32_t> cell_info,
                                     std::int32_t cell, int data_block_size)
@@ -464,19 +461,47 @@ public:
     }
   }
 
-  /// @brief Apply DOF transformation to some data.
+  /// @brief Transform basis functions from the reference element
+  /// ordering and orientation to the globally consistent physical
+  /// element ordering and orientation.
   ///
-  /// @param[in,out] data The data to be transformed. This data is flattened
-  /// with row-major layout, shape=(num_dofs, block_size)
+  /// Consider that the value of a finite element function \f$f_{h}\f$
+  /// at a point is given by
+  /// \f[
+  ///  f_{h} = \phi^{T} c,
+  /// \f]
+  /// where \f$f_{h}\f$ has shape \f$r \times 1\f$, \f$\phi\f$ has shape
+  /// \f$d \times r\f$ and holds the finite element basis functions,
+  /// and \f$c\f$ has shape \f$d \times 1\f$ and holds the
+  /// degrees-of-freedom. The basis functions and
+  /// degree-of-freedom are with respect to the physical element
+  /// orientation. If the degrees-of-freedom on the physical element
+  /// orientation are given by
+  /// \f[
+  /// \phi = T \tilde{\phi},
+  /// \f]
+  /// where \f$T\f$ is a \f$d \times d\f$ matrix, it follows from
+  /// \f$f_{h} = \phi^{T} c = \tilde{\phi}^{T} T^{T} c\f$ that
+  /// \f[
+  ///  \tilde{c} = T^{T} c.
+  /// \f]
+  ///
+  /// This function applies \f$T\f$ to data. The transformation is
+  /// performed in-place. The operator \f$T\f$ is orthogonal for many
+  /// elements, but not all.
+  ///
+  /// This function calls the corresponding Basix function.
+  ///
+  /// @param[in,out] data Data to transform. The shape is `(m, n)`,
+  /// where `m` is the number of dgerees-of-freedom and the storage is
+  /// row-major.
   /// @param[in] cell_permutation Permutation data for the cell
-  /// @param[in] block_size The block_size of the input data
+  /// @param[in] n Number of columns in `data`.
   template <typename U>
-  void pre_apply_dof_transformation(std::span<U> data,
-                                    std::uint32_t cell_permutation,
-                                    int block_size) const
+  void T_apply(std::span<U> data, std::uint32_t cell_permutation, int n) const
   {
     assert(_element);
-    _element->T_apply(data, block_size, cell_permutation);
+    _element->T_apply(data, n, cell_permutation);
   }
 
   /// @brief Apply inverse transpose transformation to some data.
