@@ -752,7 +752,7 @@ FunctionSpace<T> create_functionspace(
   std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv
       = nullptr;
   if (_e->needs_dof_permutations())
-    permute_inv = _e->get_dof_permutation_function(true, true);
+    permute_inv = _e->dof_permutation_fn(true, true);
   assert(mesh);
   assert(mesh->topology());
   auto dofmap = std::make_shared<const DofMap>(create_dofmap(
@@ -814,7 +814,7 @@ FunctionSpace<T> create_functionspace(
 
   std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv;
   if (element->needs_dof_permutations())
-    permute_inv = element->get_dof_permutation_function(true, true);
+    permute_inv = element->dof_permutation_fn(true, true);
   return FunctionSpace(
       mesh, element,
       std::make_shared<DofMap>(create_dofmap(mesh->comm(), layout, *topology,
@@ -905,7 +905,7 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
   auto element = u.function_space()->element();
   assert(element);
   int space_dim = element->space_dimension();
-  auto transformation = element->template dof_transformation_function<T>(
+  auto transformation = element->template dof_transformation_fn<T>(
       FiniteElement<U>::doftransform::transpose);
   const int bs = dofmap.bs();
   switch (bs)

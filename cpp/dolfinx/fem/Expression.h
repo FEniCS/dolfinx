@@ -208,9 +208,8 @@ public:
         mesh.topology_mutable()->create_entity_permutations();
         cell_info = std::span(mesh.topology()->get_cell_permutation_info());
         post_dof_transform
-            = element
-                  ->template get_post_dof_transformation_function<scalar_type>(
-                      FiniteElement<geometry_type>::doftransform::transpose);
+            = element->template dof_transformation_right_fn<scalar_type>(
+                FiniteElement<geometry_type>::doftransform::transpose);
       }
     }
 

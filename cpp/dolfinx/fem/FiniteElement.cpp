@@ -582,8 +582,7 @@ void FiniteElement<T>::permute_inv(std::span<std::int32_t> doflist,
 /// @cond
 template <std::floating_point T>
 std::function<void(std::span<std::int32_t>, std::uint32_t)>
-FiniteElement<T>::get_dof_permutation_function(bool inverse,
-                                               bool scalar_element) const
+FiniteElement<T>::dof_permutation_fn(bool inverse, bool scalar_element) const
 /// @endcond
 {
   if (!needs_dof_permutations())
@@ -600,7 +599,7 @@ FiniteElement<T>::get_dof_permutation_function(bool inverse,
       for (std::size_t i = 0; i < _sub_elements.size(); ++i)
       {
         sub_element_functions.push_back(
-            _sub_elements[i]->get_dof_permutation_function(inverse));
+            _sub_elements[i]->dof_permutation_fn(inverse));
         dims.push_back(_sub_elements[i]->space_dimension());
       }
 
@@ -620,8 +619,7 @@ FiniteElement<T>::get_dof_permutation_function(bool inverse,
     {
       // Vector element
       std::function<void(std::span<std::int32_t>, std::uint32_t)>
-          sub_element_function
-          = _sub_elements[0]->get_dof_permutation_function(inverse);
+          sub_element_function = _sub_elements[0]->dof_permutation_fn(inverse);
       int dim = _sub_elements[0]->space_dimension();
       int bs = _bs;
       return

@@ -942,9 +942,9 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
   }
 
   fem::DofTransformKernel<T> auto P0
-      = element0->template dof_transformation_function<T>();
+      = element0->template dof_transformation_fn<T>();
   fem::DofTransformKernel<T> auto P1T
-      = element1->template get_post_dof_transformation_function<T>(
+      = element1->template dof_transformation_right_fn<T>(
           FiniteElement<U>::doftransform::transpose);
 
   for (int i : a.integral_ids(IntegralType::cell))
@@ -1144,7 +1144,7 @@ void assemble_vector(
   const int bs = dofmap->bs();
 
   fem::DofTransformKernel<T> auto P0
-      = element->template dof_transformation_function<T>();
+      = element->template dof_transformation_fn<T>();
 
   std::span<const std::uint32_t> cell_info0;
   if (element->needs_dof_transformations() or L.needs_facet_permutations())

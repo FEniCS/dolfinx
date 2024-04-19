@@ -176,7 +176,7 @@ void declare_function_space(nb::module_& m, std::string type)
             },
             nb::arg("x"), nb::arg("cell_permutations"), nb::arg("dim"))
         .def(
-            "pre_apply_inverse_transpose_dof_transformation",
+            "Tt_inv_apply",
             [](const dolfinx::fem::FiniteElement<T>& self,
                nb::ndarray<T, nb::ndim<1>, nb::c_contig> x,
                nb::ndarray<const std::uint32_t, nb::ndim<1>, nb::c_contig>
@@ -191,7 +191,7 @@ void declare_function_space(nb::module_& m, std::string type)
 
               for (std::size_t i = 0; i < cell_permutations.size(); i++)
               {
-                self.pre_apply_inverse_transpose_dof_transformation(
+                self.Tt_inv_apply(
                     x_span.subspan(i * data_per_cell, data_per_cell),
                     perm_span[i], dim);
               }
@@ -242,7 +242,7 @@ void declare_function_space(nb::module_& m, std::string type)
             },
             nb::arg("x"), nb::arg("cell_permutations"), nb::arg("dim"))
         .def(
-            "pre_apply_inverse_transpose_dof_transformation",
+            "Tt_inv_apply",
             [](const dolfinx::fem::FiniteElement<T>& self,
                nb::ndarray<std::complex<T>, nb::ndim<1>, nb::c_contig> x,
                nb::ndarray<const std::uint32_t, nb::ndim<1>, nb::c_contig>
@@ -257,7 +257,7 @@ void declare_function_space(nb::module_& m, std::string type)
 
               for (std::size_t i = 0; i < cell_permutations.size(); i++)
               {
-                self.pre_apply_inverse_transpose_dof_transformation(
+                self.Tt_inv_apply(
                     x_span.subspan(i * data_per_cell, data_per_cell),
                     perm_span[i], dim);
               }
@@ -906,7 +906,7 @@ void declare_real_functions(nb::module_& m)
         std::function<void(std::span<std::int32_t>, std::uint32_t)>
             permute_inv = nullptr;
         if (element.needs_dof_permutations())
-          permute_inv = element.get_dof_permutation_function(true, true);
+          permute_inv = element.dof_permutation_fn(true, true);
         return dolfinx::fem::create_dofmap(comm.get(), layout, topology,
                                            permute_inv, nullptr);
       },
