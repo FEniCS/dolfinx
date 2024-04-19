@@ -244,7 +244,8 @@ int main(int argc, char* argv[])
     newton_solver.atol = 10 * std::numeric_limits<T>::epsilon();
 
     la::petsc::Vector _u(la::petsc::create_vector_wrap(*u->x()), false);
-    newton_solver.solve(_u.vec());
+    auto [niter, success] = newton_solver.solve(_u.vec());
+    std::cout << "Number of Newton iterations: " << niter << std::endl;
 
     // Compute Cauchy stress. Construct appropriate Basix element for
     // stress.
