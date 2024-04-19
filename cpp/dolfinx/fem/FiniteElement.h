@@ -290,8 +290,7 @@ public:
         for (std::size_t i = 0; i < _sub_elements.size(); ++i)
         {
           sub_element_functions.push_back(
-              _sub_elements[i]->template dof_transformation_function<U>(
-                  ttype));
+              _sub_elements[i]->template dof_transformation_function<U>(ttype));
           dims.push_back(_sub_elements[i]->space_dimension());
         }
 
@@ -315,8 +314,7 @@ public:
         const std::function<void(std::span<U>, std::span<const std::uint32_t>,
                                  std::int32_t, int)>
             sub_function
-            = _sub_elements[0]->template dof_transformation_function<U>(
-                ttype);
+            = _sub_elements[0]->template dof_transformation_function<U>(ttype);
         const int ebs = _bs;
         return [ebs, sub_function](std::span<U> data,
                                    std::span<const std::uint32_t> cell_info,
@@ -417,8 +415,7 @@ public:
         const std::function<void(std::span<U>, std::span<const std::uint32_t>,
                                  std::int32_t, int)>
             sub_function
-            = _sub_elements[0]->template dof_transformation_function<U>(
-                ttype);
+            = _sub_elements[0]->template dof_transformation_function<U>(ttype);
         return [this, sub_function](std::span<U> data,
                                     std::span<const std::uint32_t> cell_info,
                                     std::int32_t cell, int data_block_size)
