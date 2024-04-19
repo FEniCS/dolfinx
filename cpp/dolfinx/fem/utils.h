@@ -875,7 +875,9 @@ void pack(std::span<T> coeffs, std::int32_t cell, int bs, std::span<const T> v,
 template <typename F>
 concept FetchCells = requires(F&& f, std::span<const std::int32_t> v) {
   requires std::invocable<F, std::span<const std::int32_t>>;
-  { f(v) } -> std::convertible_to<std::int32_t>;
+  {
+    f(v)
+  } -> std::convertible_to<std::int32_t>;
 };
 
 /// @brief Pack a single coefficient for a set of active entities.
@@ -905,9 +907,8 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
   auto element = u.function_space()->element();
   assert(element);
   int space_dim = element->space_dimension();
-  auto transformation
-      = element->template get_pre_dof_transformation_function<T>(
-          FiniteElement<U>::doftransform::transpose);
+  auto transformation = element->template dof_transformation_function<T>(
+      FiniteElement<U>::doftransform::transpose);
   const int bs = dofmap.bs();
   switch (bs)
   {
