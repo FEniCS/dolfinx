@@ -22,7 +22,7 @@ struct ufcx_finite_element;
 
 namespace dolfinx::fem
 {
-/// @brief Mofel of a finite element.
+/// @brief Model of a finite element.
 ///
 /// Provides the dof layout on a reference element, and various methods
 /// for evaluating and transforming the basis.
