@@ -7,6 +7,7 @@
 from basix.ufl import element
 from ufl import (
     Coefficient,
+    Constant,
     FunctionSpace,
     Identity,
     Mesh,
@@ -41,8 +42,8 @@ v = TestFunction(V)  # Test function
 
 # Functions
 u = Coefficient(V)  # Displacement from previous iteration
-B = Coefficient(element)  # Body force per unit volume
-T = Coefficient(element)  # Traction force on the boundary
+B = Constant(mesh, shape=(3,))  # Body force per unit volume
+T = Constant(mesh, shape=(3,))  # Traction force on the boundary
 
 # Now, we can define the kinematic quantities involved in the model:
 
