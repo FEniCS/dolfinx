@@ -163,7 +163,7 @@ void CoordinateElement<T>::permute_dofs(std::span<std::int32_t> dofs,
                                         std::uint32_t cell_perm) const
 {
   assert(_element);
-  _element->permute_dofs(dofs, cell_perm);
+  _element->permute(dofs, cell_perm);
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -171,7 +171,7 @@ void CoordinateElement<T>::unpermute_dofs(std::span<std::int32_t> dofs,
                                           std::uint32_t cell_perm) const
 {
   assert(_element);
-  _element->unpermute_dofs(dofs, cell_perm);
+  _element->permute_inv(dofs, cell_perm);
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>

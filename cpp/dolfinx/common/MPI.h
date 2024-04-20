@@ -531,9 +531,9 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
     while (it != src_to_index.end())
     {
       src.push_back(std::get<0>(*it));
-      auto it1 = std::find_if(it, src_to_index.end(),
-                              [r = src.back()](auto& idx)
-                              { return std::get<0>(idx) != r; });
+      auto it1
+          = std::find_if(it, src_to_index.end(), [r = src.back()](auto& idx)
+                         { return std::get<0>(idx) != r; });
       num_items_per_src.push_back(std::distance(it, it1));
       it = it1;
     }

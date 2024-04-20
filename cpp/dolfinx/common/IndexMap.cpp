@@ -962,9 +962,8 @@ graph::AdjacencyList<int> IndexMap::index_to_dest_ranks() const
     std::vector<std::pair<int, std::int64_t>> owner_to_ghost;
     std::transform(_ghosts.begin(), _ghosts.end(), _owners.begin(),
                    std::back_inserter(owner_to_ghost),
-                   [](auto idx, auto r) -> std::pair<int, std::int64_t> {
-                     return {r, idx};
-                   });
+                   [](auto idx, auto r) -> std::pair<int, std::int64_t>
+                   { return {r, idx}; });
     std::sort(owner_to_ghost.begin(), owner_to_ghost.end());
 
     // Build send buffer (the second component of each pair in
@@ -1148,9 +1147,9 @@ graph::AdjacencyList<int> IndexMap::index_to_dest_ranks() const
       auto it = idxpos_to_rank.begin();
       for (std::size_t i = 0; i < _ghosts.size(); ++i)
       {
-        auto it1 = std::find_if(
-            it, idxpos_to_rank.end(),
-            [i](auto x) { return x.first != static_cast<std::int32_t>(i); });
+        auto it1
+            = std::find_if(it, idxpos_to_rank.end(), [i](auto x)
+                           { return x.first != static_cast<std::int32_t>(i); });
         offsets.push_back(offsets.back() + std::distance(it, it1));
         it = it1;
       }

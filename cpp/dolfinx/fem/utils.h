@@ -907,9 +907,8 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
   auto element = u.function_space()->element();
   assert(element);
   int space_dim = element->space_dimension();
-  auto transformation
-      = element->template get_pre_dof_transformation_function<T>(
-          FiniteElement<U>::doftransform::transpose);
+  auto transformation = element->template dof_transformation_function<T>(
+      FiniteElement<U>::doftransform::transpose);
   const int bs = dofmap.bs();
   switch (bs)
   {

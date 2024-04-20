@@ -151,17 +151,17 @@ def test_basic_assembly(mode, dtype):
     A.scatter_reverse()
     assert isinstance(A, la.MatrixCSR)
     assert normA == pytest.approx(A.squared_norm())
-    normb = b.norm()
+    normb = la.norm(b)
     b.array[:] = 0
     fem.assemble_vector(b.array, L)
     b.scatter_reverse(la.InsertMode.add)
-    assert normb == pytest.approx(b.norm())
+    assert normb == pytest.approx(la.norm(b))
 
     # Vector re-assembly - no zeroing (but need to zero ghost entries)
     b.array[b.index_map.size_local * b.block_size :] = 0
     fem.assemble_vector(b.array, L)
     b.scatter_reverse(la.InsertMode.add)
-    assert 2 * normb == pytest.approx(b.norm())
+    assert 2 * normb == pytest.approx(la.norm(b))
 
     # Matrix re-assembly (no zeroing)
     fem.assemble_matrix(A, a)
@@ -207,9 +207,7 @@ def test_assembly_bcs(mode):
     a = form(inner(u, v) * dx + inner(u, v) * ds)
     L = form(inner(1.0, v) * dx)
 
-    bdofsV = locate_dofs_geometrical(
-        V, lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 1.0))
-    )
+    bdofsV = locate_dofs_geometrical(V, lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0))
     bc = dirichletbc(PETSc.ScalarType(1), bdofsV, V)
 
     # Assemble and apply 'global' lifting of bcs
@@ -295,7 +293,7 @@ def test_matrix_assembly_block(mode):
     # Locate facets on boundary
     facetdim = mesh.topology.dim - 1
     bndry_facets = locate_entities_boundary(
-        mesh, facetdim, lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 1.0))
+        mesh, facetdim, lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0)
     )
     bdofsV1 = locate_dofs_topological(V1, facetdim, bndry_facets)
     u_bc = PETSc.ScalarType(50.0)
@@ -419,7 +417,7 @@ def test_assembly_solve_block(mode):
     # Locate facets on boundary
     facetdim = mesh.topology.dim - 1
     bndry_facets = locate_entities_boundary(
-        mesh, facetdim, lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 1.0))
+        mesh, facetdim, lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0)
     )
 
     bdofsV0 = locate_dofs_topological(V0, facetdim, bndry_facets)

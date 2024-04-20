@@ -120,8 +120,7 @@ void graph(nb::module_& m)
           MPICommWrapper, int,
           const dolfinx::graph::AdjacencyList<std::int64_t>&, bool)>;
   m.def(
-      "partitioner",
-      []() -> partition_fn
+      "partitioner", []() -> partition_fn
       { return create_partitioner_py(dolfinx::graph::partition_graph); },
       "Default graph partitioner");
 

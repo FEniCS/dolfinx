@@ -7,6 +7,8 @@
 
 #pragma once
 
+#ifdef HAS_PETSC
+
 #include "Vector.h"
 #include "utils.h"
 #include <boost/lexical_cast.hpp>
@@ -504,3 +506,5 @@ private:
 };
 } // namespace petsc
 } // namespace dolfinx::la
+
+#endif
