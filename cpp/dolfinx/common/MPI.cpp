@@ -348,13 +348,13 @@ dolfinx::MPI::compute_graph_edges_distgraph(MPI_Comm comm,
 std::vector<int> dolfinx::MPI::compute_graph_edges(MPI_Comm comm,
                                                    std::span<const int> edges)
 {
-#if defined(USE_NBX)
-  return compute_graph_edges_nbx(comm, edges);
+#if defined(USE_GATHER)
+  return compute_graph_edges_gather(comm, edges);
 #elif defined(USE_PCX)
   return compute_graph_edges_pcx(comm, edges);
 #elif defined(USE_DISTGRAPH)
   return compute_graph_edges_distgraph(comm, edges);
 #else
-  return compute_graph_edges_gather(comm, edges);
+  return compute_graph_edges_nbx(comm, edges);
 #endif
 }
