@@ -28,7 +28,7 @@ jobs:
           echo "/opt/homebrew/anaconda3/bin:/usr/local/anaconda3/bin" >> $GITHUB_PATH
       - name: Update conda
         run: |
-          conda -y update conda
+          conda update conda
 
       - name: Install DOLFINx (py3-10)
         run: |
