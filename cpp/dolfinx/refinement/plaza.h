@@ -135,7 +135,7 @@ get_simplices(std::span<const std::int64_t> indices,
 /// Propagate edge markers according to rules (longest edge of each
 /// face must be marked, if any edge of face is marked)
 void enforce_rules(MPI_Comm comm, const graph::AdjacencyList<int>& shared_edges,
-                   std::vector<std::int8_t>& marked_edges,
+                   std::span<std::int8_t> marked_edges,
                    const mesh::Topology& topology,
                    std::span<const std::int32_t> long_edge);
 
@@ -293,21 +293,20 @@ std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<T>,
            std::array<std::size_t, 2>, std::vector<std::int32_t>,
            std::vector<std::int8_t>>
 compute_refinement(MPI_Comm neighbor_comm,
-                   const std::vector<std::int8_t>& marked_edges,
+                   std::span<const std::int8_t> marked_edges,
                    const graph::AdjacencyList<int>& shared_edges,
                    const mesh::Mesh<T>& mesh,
-                   const std::vector<std::int32_t>& long_edge,
-                   const std::vector<std::int8_t>& edge_ratio_ok,
+                   std::span<const std::int32_t> long_edge,
+                   std::span<const std::int8_t> edge_ratio_ok,
                    plaza::Option option)
 {
   int tdim = mesh.topology()->dim();
   int num_cell_edges = tdim * 3 - 3;
   int num_cell_vertices = tdim + 1;
-  bool compute_facets = (option == plaza::Option::parent_facet
-                         or option == plaza::Option::parent_cell_and_facet);
-  bool compute_parent_cell
-      = (option == plaza::Option::parent_cell
-         or option == plaza::Option::parent_cell_and_facet);
+  bool compute_facets = option == plaza::Option::parent_facet
+                        or option == plaza::Option::parent_cell_and_facet;
+  bool compute_parent_cell = option == plaza::Option::parent_cell
+                             or option == plaza::Option::parent_cell_and_facet;
 
   // Make new vertices in parallel
   const auto [new_vertex_map, new_vertex_coords, xshape]
@@ -334,7 +333,7 @@ compute_refinement(MPI_Comm neighbor_comm,
   std::vector<std::int64_t> global_indices
       = adjust_indices(*mesh.topology()->index_map(0), num_new_vertices_local);
 
-  const int num_cells = map_c->size_local();
+  const std::int32_t num_cells = map_c->size_local();
 
   // Iterate over all cells, and refine if cell has a marked edge
   std::vector<std::int64_t> cell_topology;
@@ -688,5 +687,4 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
   return {std::move(cell_adj), std::move(new_vertex_coords), xshape,
           std::move(parent_cell), std::move(parent_facet)};
 }
-
 } // namespace dolfinx::refinement::plaza

@@ -179,7 +179,7 @@ get_tetrahedra(std::span<const std::int64_t> indices,
 //-----------------------------------------------------------------------------
 void plaza::impl::enforce_rules(MPI_Comm comm,
                                 const graph::AdjacencyList<int>& shared_edges,
-                                std::vector<std::int8_t>& marked_edges,
+                                std::span<std::int8_t> marked_edges,
                                 const mesh::Topology& topology,
                                 std::span<const std::int32_t> long_edge)
 {
