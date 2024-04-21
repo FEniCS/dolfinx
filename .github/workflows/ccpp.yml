@@ -72,6 +72,8 @@ jobs:
     container: ghcr.io/fenics/test-env:current-openmpi
     env:
       SCOTCH_DIR: /usr/local/petsc/linux-gnu-real64-32
+      OMPI_ALLOW_RUN_AS_ROOT: 1
+      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
 
     steps:
       - name: Install FEniCS Python components (default branches/tags)
