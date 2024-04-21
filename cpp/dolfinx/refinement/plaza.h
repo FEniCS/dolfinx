@@ -131,7 +131,7 @@ auto compute_parent_facets(std::span<const std::int32_t> simplex_set)
 /// @param[in] uniform Make a "uniform" subdivision with all triangles being
 /// similar shape
 /// @return
-std::vector<std::int32_t>
+std::pair<std::array<std::int32_t, 121>, std::size_t>
 get_simplices(std::span<const std::int64_t> indices,
               std::span<const std::int32_t> longest_edge, int tdim,
               bool uniform);
@@ -406,13 +406,13 @@ compute_refinement(MPI_Comm neighbor_comm,
       }
 
       const bool uniform = (tdim == 2) ? edge_ratio_ok[c] : false;
-
-      // FIXME: this has an expensive dynamic memory allocation
-      simplex_set = get_simplices(indices, longest_edge, tdim, uniform);
+      const auto [simplex_set_b, simplex_set_size]
+          = get_simplices(indices, longest_edge, tdim, uniform);
+      std::span<const std::int32_t> simplex_set(simplex_set_b.data(),
+                                                simplex_set_size);
 
       // Save parent index
       const std::int32_t ncells = simplex_set.size() / num_cell_vertices;
-
       if (compute_parent_cell)
       {
         for (std::int32_t i = 0; i < ncells; ++i)

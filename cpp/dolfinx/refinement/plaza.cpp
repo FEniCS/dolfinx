@@ -283,7 +283,7 @@ void plaza::impl::enforce_rules(MPI_Comm comm,
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int32_t>
+std::pair<std::array<std::int32_t, 121>, std::size_t>
 plaza::impl::get_simplices(std::span<const std::int64_t> indices,
                            std::span<const std::int32_t> longest_edge, int tdim,
                            bool uniform)
@@ -291,14 +291,15 @@ plaza::impl::get_simplices(std::span<const std::int64_t> indices,
   if (tdim == 2)
   {
     assert(longest_edge.size() == 1);
-    auto [d, size] = get_triangles(indices, longest_edge[0], uniform);
-    return std::vector(d.data(), d.data() + size);
+    auto [_d, size] = get_triangles(indices, longest_edge[0], uniform);
+    std::array<std::int32_t, 121> d;
+    std::copy_n(_d.begin(), size, d.begin());
+    return {d, size};
   }
   else if (tdim == 3)
   {
     assert(longest_edge.size() == 4);
-    auto [d, size] = get_tetrahedra(indices, longest_edge);
-    return std::vector(d.data(), d.data() + size);
+    return get_tetrahedra(indices, longest_edge);
   }
   else
     throw std::runtime_error("Topological dimension not supported");
