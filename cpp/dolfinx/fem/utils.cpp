@@ -30,7 +30,7 @@ using namespace dolfinx;
 //-----------------------------------------------------------------------------
 fem::DofMap fem::create_dofmap(
     MPI_Comm comm, const ElementDofLayout& layout, mesh::Topology& topology,
-    std::function<void(std::span<std::int32_t>, std::uint32_t)> unpermute_dofs,
+    std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv,
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
         reorder_fn)
 {
@@ -48,7 +48,7 @@ fem::DofMap fem::create_dofmap(
 
   // If the element's DOF transformations are permutations, permute the
   // DOF numbering on each cell
-  if (unpermute_dofs)
+  if (permute_inv)
   {
     const int num_cells = topology.connectivity(D, 0)->num_nodes();
     topology.create_entity_permutations();
@@ -58,7 +58,7 @@ fem::DofMap fem::create_dofmap(
     for (std::int32_t cell = 0; cell < num_cells; ++cell)
     {
       std::span<std::int32_t> dofs(dofmaps.front().data() + cell * dim, dim);
-      unpermute_dofs(dofs, cell_info[cell]);
+      permute_inv(dofs, cell_info[cell]);
     }
   }
 
@@ -68,7 +68,7 @@ fem::DofMap fem::create_dofmap(
 std::vector<fem::DofMap> fem::create_dofmaps(
     MPI_Comm comm, const std::vector<ElementDofLayout>& layouts,
     mesh::Topology& topology,
-    std::function<void(std::span<std::int32_t>, std::uint32_t)> unpermute_dofs,
+    std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv,
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
         reorder_fn)
 {
@@ -88,7 +88,7 @@ std::vector<fem::DofMap> fem::create_dofmaps(
 
   // If the element's DOF transformations are permutations, permute the
   // DOF numbering on each cell
-  if (unpermute_dofs)
+  if (permute_inv)
   {
     if (layouts.size() != 1)
     {
@@ -103,7 +103,7 @@ std::vector<fem::DofMap> fem::create_dofmaps(
     for (std::int32_t cell = 0; cell < num_cells; ++cell)
     {
       std::span<std::int32_t> dofs(dofmaps.front().data() + cell * dim, dim);
-      unpermute_dofs(dofs, cell_info[cell]);
+      permute_inv(dofs, cell_info[cell]);
     }
   }
 

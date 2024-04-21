@@ -72,6 +72,8 @@ jobs:
     container: ghcr.io/fenics/test-env:current-openmpi
     env:
       SCOTCH_DIR: /usr/local/petsc/linux-gnu-real64-32
+      OMPI_ALLOW_RUN_AS_ROOT: 1
+      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
 
     steps:
       - name: Install FEniCS Python components (default branches/tags)
@@ -94,6 +96,19 @@ jobs:
         run: |
           cmake --build build
           cmake --install build
+      - name: Build C++ unit tests
+        run: |
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
+          cmake --build build/test --parallel 3
+      - name: Run C++ unit tests (serial)
+        run: |
+          cd build/test
+          ctest -V --output-on-failure -R unittests
+      - name: Run C++ unit tests (MPI)
+        run: |
+          cd build/test
+          mpiexec -np 2 ctest -V --output-on-failure -R unittests
+
       - name: Build Python interface
         run: python3 -m pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
       - name: Test Python import

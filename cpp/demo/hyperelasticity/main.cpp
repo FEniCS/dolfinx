@@ -161,12 +161,17 @@ int main(int argc, char* argv[])
     auto V = std::make_shared<fem::FunctionSpace<U>>(
         fem::create_functionspace(mesh, element, {3}));
 
+    auto B = std::make_shared<fem::Constant<T>>(std::vector<T>{0, 0, 0});
+    auto traction = std::make_shared<fem::Constant<T>>(std::vector<T>{0, 0, 0});
+
     // Define solution function
     auto u = std::make_shared<fem::Function<T>>(V);
-    auto a = std::make_shared<fem::Form<T>>(fem::create_form<T>(
-        *form_hyperelasticity_J_form, {V, V}, {{"u", u}}, {}, {}));
-    auto L = std::make_shared<fem::Form<T>>(fem::create_form<T>(
-        *form_hyperelasticity_F_form, {V}, {{"u", u}}, {}, {}));
+    auto a = std::make_shared<fem::Form<T>>(
+        fem::create_form<T>(*form_hyperelasticity_J_form, {V, V}, {{"u", u}},
+                            {{"B", B}, {"T", traction}}, {}));
+    auto L = std::make_shared<fem::Form<T>>(
+        fem::create_form<T>(*form_hyperelasticity_F_form, {V}, {{"u", u}},
+                            {{"B", B}, {"T", traction}}, {}));
 
     auto u_rotation = std::make_shared<fem::Function<T>>(V);
     u_rotation->interpolate(
@@ -244,7 +249,8 @@ int main(int argc, char* argv[])
     newton_solver.atol = 10 * std::numeric_limits<T>::epsilon();
 
     la::petsc::Vector _u(la::petsc::create_vector_wrap(*u->x()), false);
-    newton_solver.solve(_u.vec());
+    auto [niter, success] = newton_solver.solve(_u.vec());
+    std::cout << "Number of Newton iterations: " << niter << std::endl;
 
     // Compute Cauchy stress. Construct appropriate Basix element for
     // stress.
