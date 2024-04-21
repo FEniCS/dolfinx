@@ -25,6 +25,7 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           brew install anaconda
+          echo "/opt/homebrew/anaconda3/bin:/usr/local/anaconda3/bin:$GITHUB_PATH" >> $GITHUB_PATH
       - name: Update conda
         run: |
           conda update conda
