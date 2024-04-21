@@ -375,6 +375,9 @@ public:
   /// @brief Return a function that applies DOF transformation to some
   /// transposed data (see T_apply_right()).
   ///
+  /// The transformation is applied from the right-hand side, i.e.
+  /// \f[ u^{t} \leftarrow u^{t} T. \f]
+  ///
   /// If the transformation for the (sub)element is a permutation only,
   /// the returned function will do change the ordering for the
   /// (sub)element as it is assumed that permutations are incorporated
@@ -389,9 +392,9 @@ public:
   /// - [in] cell The cell number
   /// - [in] block_size The block_size of the input data
   ///
-  /// @param[in] ttype The transformation type
-  /// @param[in] scalar_element Indicated whether the scalar
-  /// transformations should be returned for a vector element
+  /// @param[in] ttype Transformation type. See dof_transformation_fn().
+  /// @param[in] scalar_element Indicate if the scalar transformations
+  /// should be returned for a vector element.
   template <typename U>
   std::function<void(std::span<U>, std::span<const std::uint32_t>, std::int32_t,
                      int)>
@@ -685,10 +688,10 @@ public:
   /// - [in] cell_permutation Permutation data for the cell
   /// - [in] block_size The block_size of the input data
   ///
-  /// @param[in] inverse Indicates whether the inverse transformations
-  /// should be returned.
-  /// @param[in] scalar_element Indicates whether the scalar
-  /// transformations should be returned for a vector element.
+  /// @param[in] inverse Indicates if the inverse transformation should
+  /// be returned.
+  /// @param[in] scalar_element Indicates is the scalar transformations
+  /// should be returned for a vector element.
   std::function<void(std::span<std::int32_t>, std::uint32_t)>
   dof_permutation_fn(bool inverse = false, bool scalar_element = false) const;
 
