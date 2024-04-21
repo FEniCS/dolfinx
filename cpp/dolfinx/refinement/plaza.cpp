@@ -33,9 +33,9 @@ namespace
 /// @param[in] uniform If true, the triangle is subdivided into four similar
 /// sub-triangles.
 /// @returns Local indices for each sub-divived triangle
-std::vector<std::int32_t> get_triangles(std::span<const std::int64_t> indices,
-                                        const std::int32_t longest_edge,
-                                        bool uniform)
+std::pair<std::array<std::int32_t, 12>, std::size_t>
+get_triangles(std::span<const std::int64_t> indices,
+              const std::int32_t longest_edge, bool uniform)
 {
   // NOTE: The assumption below is based on the UFC ordering of a triangle, i.e.
   // that the N-th edge of a triangle is the edge where the N-th vertex is not
@@ -54,7 +54,7 @@ std::vector<std::int32_t> get_triangles(std::span<const std::int64_t> indices,
   // If all edges marked, consider uniform refinement
   if (uniform and indices[e0] >= 0 and indices[e1] >= 0)
   {
-    return {e0, e1, v2, e1, e2, v0, e2, e0, v1, e2, e1, e0};
+    return {{e0, e1, v2, e1, e2, v0, e2, e0, v1, e2, e1, e0}, 12};
   }
   else
   {
@@ -78,13 +78,11 @@ std::vector<std::int32_t> get_triangles(std::span<const std::int64_t> indices,
 
     if (indices[e1] >= 0)
     {
-      // tri_set.insert(tri_set.end(), {e2, v2, e1});
       std::array<std::int32_t, 3> tri_set0 = {e2, v2, e1};
       std::copy(tri_set0.begin(), tri_set0.end(),
                 std::next(tri_set.begin(), tri_set_size));
       tri_set_size += tri_set0.size();
 
-      // tri_set.insert(tri_set.end(), {e2, e1, v0});
       std::array<std::int32_t, 3> tri_set1 = {e2, e1, v0};
       std::copy(tri_set1.begin(), tri_set1.end(),
                 std::next(tri_set.begin(), tri_set_size));
@@ -92,19 +90,18 @@ std::vector<std::int32_t> get_triangles(std::span<const std::int64_t> indices,
     }
     else
     {
-      // tri_set.insert(tri_set.end(), {e2, v2, v0});
       std::array<std::int32_t, 3> tri_set0 = {e2, v2, v0};
       std::copy(tri_set0.begin(), tri_set0.end(),
                 std::next(tri_set.begin(), tri_set_size));
       tri_set_size += tri_set0.size();
     }
 
-    return std::vector(tri_set.data(), tri_set.data() + tri_set_size);
+    return {tri_set, tri_set_size};
   }
 }
 //-----------------------------------------------------------------------------
 // 3D version of subdivision
-std::vector<std::int32_t>
+std::pair<std::array<std::int32_t, 121>, std::size_t>
 get_tetrahedra(std::span<const std::int64_t> indices,
                std::span<const std::int32_t> longest_edge)
 {
@@ -213,8 +210,7 @@ get_tetrahedra(std::span<const std::int64_t> indices,
     }
   }
 
-  return std::vector<std::int32_t>(tet_set.data(),
-                                   tet_set.data() + tet_set_size);
+  return {std::move(tet_set), tet_set_size};
 }
 //-----------------------------------------------------------------------------
 } // namespace
@@ -293,12 +289,14 @@ plaza::impl::get_simplices(std::span<const std::int64_t> indices,
   if (tdim == 2)
   {
     assert(longest_edge.size() == 1);
-    return get_triangles(indices, longest_edge[0], uniform);
+    auto [d, size] = get_triangles(indices, longest_edge[0], uniform);
+    return std::vector(d.data(), d.data() + size);
   }
   else if (tdim == 3)
   {
     assert(longest_edge.size() == 4);
-    return get_tetrahedra(indices, longest_edge);
+    auto [d, size] = get_tetrahedra(indices, longest_edge);
+    return std::vector(d.data(), d.data() + size);
   }
   else
     throw std::runtime_error("Topological dimension not supported");
