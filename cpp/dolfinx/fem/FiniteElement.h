@@ -290,7 +290,7 @@ public:
       };
     }
 
-    if (_sub_elements.size() != 0)
+    if (!_sub_elements.empty())
     {
       if (_is_mixed)
       {
@@ -323,8 +323,8 @@ public:
       else if (!scalar_element)
       {
         // Vector element
-        const std::function<void(std::span<U>, std::span<const std::uint32_t>,
-                                 std::int32_t, int)>
+        std::function<void(std::span<U>, std::span<const std::uint32_t>,
+                           std::int32_t, int)>
             sub_function
             = _sub_elements[0]->template dof_transformation_fn<U>(ttype);
         const int ebs = _bs;
@@ -422,8 +422,8 @@ public:
       else if (!scalar_element)
       {
         // Vector element
-        const std::function<void(std::span<U>, std::span<const std::uint32_t>,
-                                 std::int32_t, int)>
+        std::function<void(std::span<U>, std::span<const std::uint32_t>,
+                           std::int32_t, int)>
             sub_function
             = _sub_elements[0]->template dof_transformation_fn<U>(ttype);
         return [this, sub_function](std::span<U> data,
