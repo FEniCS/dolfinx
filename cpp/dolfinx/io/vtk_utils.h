@@ -98,7 +98,8 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
     mesh->topology_mutable()->create_entity_permutations();
     cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
-  auto apply_dof_transformation = element->template dof_transformation_fn<T>();
+  auto apply_dof_transformation
+      = element->template dof_transformation_fn<T>(fem::doftransform::standard);
 
   using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
       T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;

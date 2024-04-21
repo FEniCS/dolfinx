@@ -278,8 +278,7 @@ public:
   template <typename U>
   std::function<void(std::span<U>, std::span<const std::uint32_t>, std::int32_t,
                      int)>
-  dof_transformation_fn(doftransform ttype = doftransform::standard,
-                        bool scalar_element = false) const
+  dof_transformation_fn(doftransform ttype, bool scalar_element = false) const
   {
     if (!needs_dof_transformations())
     {
@@ -381,7 +380,7 @@ public:
   template <typename U>
   std::function<void(std::span<U>, std::span<const std::uint32_t>, std::int32_t,
                      int)>
-  dof_transformation_right_fn(doftransform ttype = doftransform::standard,
+  dof_transformation_right_fn(doftransform ttype,
                               bool scalar_element = false) const
   {
     if (!needs_dof_transformations())
