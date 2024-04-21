@@ -79,13 +79,13 @@ get_tetrahedra(std::span<const std::int64_t> indices,
                std::span<const std::int32_t> longest_edge)
 {
   // Connectivity matrix for ten possible points (4 vertices + 6 edge
-  // midpoints) ordered {v0, v1, v2, v3, e0, e1, e2, e3, e4, e5} Only need
-  // upper triangle, but sometimes it is easier just to insert both entries
-  // (j,i) and (i,j).
+  // midpoints) ordered {v0, v1, v2, v3, e0, e1, e2, e3, e4, e5} Only
+  // need upper triangle, but sometimes it is easier just to insert both
+  // entries (j,i) and (i,j).
   bool conn[10][10] = {};
 
   // Edge connectivity to vertices (and by extension facets)
-  static const std::int32_t edges[6][2]
+  constexpr std::int32_t edges[6][2]
       = {{2, 3}, {1, 3}, {1, 2}, {0, 3}, {0, 2}, {0, 1}};
 
   // Iterate through cell edges
@@ -148,7 +148,9 @@ get_tetrahedra(std::span<const std::int64_t> indices,
   }
 
   // Iterate through all possible new vertices
-  std::vector<std::int32_t> facet_set, tet_set;
+  std::vector<std::int32_t> facet_set;
+  std::array<std::int32_t, 121> tet_set = {-1};
+  std::size_t tet_set_size = 0;
   for (std::int32_t i = 0; i < 10; ++i)
   {
     for (std::int32_t j = i + 1; j < 10; ++j)
@@ -162,8 +164,15 @@ get_tetrahedra(std::span<const std::int64_t> indices,
           {
             // Note that i < j < m < k
             for (const std::int32_t& m : facet_set)
+            {
               if (conn[m][k])
-                tet_set.insert(tet_set.end(), {i, j, m, k});
+              {
+                tet_set[tet_set_size++] = i;
+                tet_set[tet_set_size++] = j;
+                tet_set[tet_set_size++] = m;
+                tet_set[tet_set_size++] = k;
+              }
+            }
             facet_set.push_back(k);
           }
         }
@@ -171,7 +180,8 @@ get_tetrahedra(std::span<const std::int64_t> indices,
     }
   }
 
-  return tet_set;
+  return std::vector<std::int32_t>(tet_set.data(),
+                                   tet_set.data() + tet_set_size);
 }
 //-----------------------------------------------------------------------------
 } // namespace
