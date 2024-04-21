@@ -21,8 +21,6 @@ using namespace dolfinx::fem;
 
 namespace
 {
-//-----------------------------------------------------------------------------
-
 /// Recursively extract sub finite element
 template <std::floating_point T>
 std::shared_ptr<const FiniteElement<T>>
@@ -63,28 +61,21 @@ _extract_sub_element(const FiniteElement<T>& finite_element,
 
   return _extract_sub_element(*sub_element, sub_component);
 }
-//-----------------------------------------------------------------------------
-
 } // namespace
 
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-FiniteElement<T>::FiniteElement(const mesh::CellType cell_type,
+FiniteElement<T>::FiniteElement(mesh::CellType cell_type,
                                 std::span<const geometry_type> points,
-                                const std::array<std::size_t, 2> pshape,
-                                const std::size_t block_size)
-    : _space_dim(pshape[0] * block_size), _reference_value_shape({}),
-      _bs(block_size), _is_mixed(false)
+                                std::array<std::size_t, 2> pshape,
+                                std::size_t block_size)
+    : _signature("Quadrature element " + std::to_string(pshape[0]) + " "
+                 + std::to_string(block_size)),
+      _space_dim(pshape[0] * block_size), _reference_value_shape({}),
+      _bs(block_size), _is_mixed(false), _needs_dof_permutations(false),
+      _needs_dof_transformations(false),
+      _points(std::vector<T>(points.begin(), points.end()), pshape)
 {
-  _needs_dof_transformations = false;
-  _needs_dof_permutations = false;
-
-  _points = std::make_pair(std::vector<T>(pshape[0] * pshape[1]), pshape);
-  _points.first.assign(points.begin(), points.end());
-
-  _signature = "Quadrature element " + std::to_string(pshape[0]) + " "
-               + std::to_string(_bs);
-
   const int tdim = mesh::cell_dim(cell_type);
   _entity_dofs.resize(tdim + 1);
   _entity_closure_dofs.resize(tdim + 1);
@@ -104,12 +95,18 @@ FiniteElement<T>::FiniteElement(const mesh::CellType cell_type,
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
 FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
-                                const std::size_t block_size)
-    : _reference_value_shape(element.value_shape()), _bs(block_size),
-      _is_mixed(false)
+                                std::size_t block_size)
+    : _space_dim(block_size * element.dim()),
+      _reference_value_shape(element.value_shape()), _bs(block_size),
+      _is_mixed(false),
+      _element(std::make_unique<basix::FiniteElement<T>>(element)),
+      _needs_dof_permutations(
+          !_element->dof_transformations_are_identity()
+          and _element->dof_transformations_are_permutations()),
+      _needs_dof_transformations(
+          !_element->dof_transformations_are_identity()
+          and !_element->dof_transformations_are_permutations())
 {
-  _space_dim = _bs * element.dim();
-
   const std::vector<std::vector<std::vector<int>>> ed = element.entity_dofs();
   const std::vector<std::vector<std::vector<int>>> ecd
       = element.entity_closure_dofs();
@@ -131,21 +128,12 @@ FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
   // Create all sub-elements
   if (_bs > 1)
   {
-    for (int i = 0; i < _bs; ++i)
-    {
-      _sub_elements.push_back(std::make_shared<FiniteElement<T>>(element, 1));
-    }
+    _sub_elements
+        = std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>(
+            _bs, std::make_shared<FiniteElement<T>>(element, 1));
     _reference_value_shape = {block_size};
   }
 
-  _element = std::make_unique<basix::FiniteElement<T>>(element);
-  assert(_element);
-  _needs_dof_transformations
-      = !_element->dof_transformations_are_identity()
-        and !_element->dof_transformations_are_permutations();
-  _needs_dof_permutations
-      = !_element->dof_transformations_are_identity()
-        and _element->dof_transformations_are_permutations();
   std::string family;
   switch (_element->family())
   {
@@ -165,14 +153,13 @@ FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
 FiniteElement<T>::FiniteElement(
-    const std::vector<std::shared_ptr<const FiniteElement<T>>> elements)
-    : _sub_elements(elements), _bs(1), _is_mixed(true)
+    const std::vector<std::shared_ptr<const FiniteElement<T>>>& elements)
+    : _space_dim(0), _sub_elements(elements), _bs(1), _is_mixed(true),
+      _needs_dof_permutations(false), _needs_dof_transformations(false)
 {
-  int vsize = 0;
-  _space_dim = 0;
+  std::size_t vsize = 0;
   _signature = "Mixed element (";
-  _needs_dof_transformations = false;
-  _needs_dof_permutations = false;
+
   const std::vector<std::vector<std::vector<int>>>& ed
       = elements[0]->entity_dofs();
   _entity_dofs.resize(ed.size());
@@ -182,6 +169,7 @@ FiniteElement<T>::FiniteElement(
     _entity_dofs[i].resize(ed[i].size());
     _entity_closure_dofs[i].resize(ed[i].size());
   }
+
   int dof_offset = 0;
   for (auto& e : elements)
   {
@@ -212,10 +200,12 @@ FiniteElement<T>::FiniteElement(
         }
       }
     }
+
     dof_offset += e->space_dimension();
   }
+
   _space_dim = dof_offset;
-  _reference_value_shape = {static_cast<std::size_t>(vsize)};
+  _reference_value_shape = {vsize};
   _signature += ")";
 }
 //-----------------------------------------------------------------------------
@@ -250,13 +240,14 @@ int FiniteElement<T>::space_dimension() const noexcept
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-std::span<const std::size_t> FiniteElement<T>::reference_value_shape() const
+std::span<const std::size_t>
+FiniteElement<T>::reference_value_shape() const noexcept
 {
   return _reference_value_shape;
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-int FiniteElement<T>::reference_value_size() const
+int FiniteElement<T>::reference_value_size() const noexcept
 {
   return std::accumulate(_reference_value_shape.begin(),
                          _reference_value_shape.end(), 1, std::multiplies{});

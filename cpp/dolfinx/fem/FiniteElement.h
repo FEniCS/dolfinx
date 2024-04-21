@@ -44,12 +44,12 @@ public:
   /// @param[in] element Basix finite element
   /// @param[in] block_size The block size for the element
   FiniteElement(const basix::FiniteElement<geometry_type>& element,
-                const std::size_t block_size);
+                std::size_t block_size);
 
   /// @brief Create mixed finite element from a list of finite elements.
   /// @param[in] elements Basix finite elements
   FiniteElement(
-      const std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>
+      const std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>&
           elements);
 
   /// @brief Create a quadrature element
@@ -57,10 +57,8 @@ public:
   /// @param[in] points Quadrature points
   /// @param[in] pshape Shape of points array
   /// @param[in] block_size The block size for the element
-  FiniteElement(const mesh::CellType cell_type,
-                std::span<const geometry_type> points,
-                const std::array<std::size_t, 2> pshape,
-                const std::size_t block_size);
+  FiniteElement(mesh::CellType cell_type, std::span<const geometry_type> points,
+                std::array<std::size_t, 2> pshape, std::size_t block_size);
 
   /// Copy constructor
   FiniteElement(const FiniteElement& element) = delete;
@@ -111,10 +109,10 @@ public:
   /// The value size, e.g. 1 for a scalar function, 2 for a 2D vector, 9
   /// for a second-order tensor in 3D, for the reference element
   /// @return The value size for the reference element
-  int reference_value_size() const;
+  int reference_value_size() const noexcept;
 
   /// The reference value shape
-  std::span<const std::size_t> reference_value_shape() const;
+  std::span<const std::size_t> reference_value_shape() const noexcept;
 
   /// The local DOFs associated with each subentity of the cell
   std::vector<std::vector<std::vector<int>>> entity_dofs() const
@@ -714,15 +712,15 @@ private:
   // Indicate whether this is a mixed element
   bool _is_mixed;
 
+  // Basix Element (nullptr for mixed elements)
+  std::unique_ptr<basix::FiniteElement<geometry_type>> _element;
+
   // Indicate whether the element needs permutations or transformations
   bool _needs_dof_permutations;
   bool _needs_dof_transformations;
 
   std::vector<std::vector<std::vector<int>>> _entity_dofs;
   std::vector<std::vector<std::vector<int>>> _entity_closure_dofs;
-
-  // Basix Element (nullptr for mixed elements)
-  std::unique_ptr<basix::FiniteElement<geometry_type>> _element;
 
   // Quadrature points of a quadrature element (0 dimensional array for
   // all elements except quadrature elements)
