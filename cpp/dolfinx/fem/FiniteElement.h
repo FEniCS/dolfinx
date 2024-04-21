@@ -25,10 +25,10 @@ namespace dolfinx::fem
 /// DOF transformation type
 enum class doftransform
 {
-  standard = 0,
-  transpose = 1,
-  inverse = 2,
-  inverse_transpose = 3,
+  standard = 0,          ///< Standard
+  transpose = 1,         ///< Transpose
+  inverse = 2,           ///< Inverse
+  inverse_transpose = 3, ///< Transpose inverse
 };
 
 /// @brief Model of a finite element.
@@ -251,8 +251,11 @@ public:
   /// @return True if DOF transformations are required
   bool needs_dof_permutations() const noexcept;
 
-  /// @brief Return a function that applies DOF transformation operator
-  /// `T to some data (see T_apply()).
+  /// @brief Return a function that applies a DOF transformation
+  /// operator to some data (see T_apply()).
+  ///
+  /// The transformation is applied from the left-hand side, i.e.
+  /// \f[ u \leftarrow T u. \f]
   ///
   /// If the transformation for the (sub)element is a permutation only,
   /// the returned function will do change the ordering for the
@@ -272,7 +275,19 @@ public:
   /// - [in] cell The cell number.
   /// - [in] n The block_size of the input data.
   ///
-  /// @param[in] ttype The transformation type
+  /// @param[in] ttype The transformation type. Typical usage is:
+  /// - doftransform::standard Transforms *basis function data* from the
+  /// reference element to the conforming 'physical' element, e.g.
+  /// \f$\phi = T \tilde{\phi}\f$.
+  /// - doftransform::transpose Transforms *degree-of-freedom data* from
+  /// the conforming (physical) ordering to the reference ordering, e.g.
+  /// \f$\tilde{u} = T^{T} u\f$.
+  /// - doftransform::inverse: Transforms *basis function data* from the
+  /// the conforming (physical) ordering to the reference ordering, e.g.
+  /// \f$\tilde{\phi} = T^{-1} \phi\f$.
+  /// - doftransform::inverse_transpose: Transforms *degree-of-freedom
+  /// data* from the reference element to the conforming (physical)
+  /// ordering, e.g. \f$u = T^{-t} \tilde{u}\f$.
   /// @param[in] scalar_element Indicates whether the scalar
   /// transformations should be returned for a vector element
   template <typename U>
