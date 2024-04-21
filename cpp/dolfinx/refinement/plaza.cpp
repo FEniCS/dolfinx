@@ -59,7 +59,8 @@ get_triangles(std::span<const std::int64_t> indices,
   else
   {
     // Break each half of triangle into one or two sub-triangles
-    std::array<std::int32_t, 12> tri_set = {-1};
+    std::array<std::int32_t, 12> tri_set;
+    tri_set.fill(-1);
     std::size_t tri_set_size = 0;
     if (indices[e0] >= 0)
     {
@@ -175,7 +176,8 @@ get_tetrahedra(std::span<const std::int64_t> indices,
   }
 
   // Iterate through all possible new vertices
-  std::array<std::int32_t, 121> tet_set = {-1};
+  std::array<std::int32_t, 121> tet_set;
+  tet_set.fill(-1);
   std::size_t tet_set_size = 0;
   for (std::int32_t i = 0; i < 10; ++i)
   {
