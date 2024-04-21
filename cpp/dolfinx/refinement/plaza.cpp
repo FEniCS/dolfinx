@@ -185,17 +185,15 @@ get_tetrahedra(std::span<const std::int64_t> indices,
     {
       if (conn[i][j])
       {
-        std::array<std::int32_t, 10> facet_set;
-        std::size_t facet_set_size = 0;
+        std::array<std::int32_t, 10> facet_set_b;
+        std::span<std::int32_t> facet_set(facet_set_b.data(), 0);
         for (std::int32_t k = j + 1; k < 10; ++k)
         {
           if (conn[i][k] and conn[j][k])
           {
             // Note that i < j < m < k
-            // for (const std::int32_t& m : facet_set)
-            for (std::size_t idxm = 0; idxm < facet_set_size; ++idxm)
+            for (std::int32_t m : facet_set)
             {
-              std::int32_t m = facet_set[idxm];
               if (conn[m][k])
               {
                 assert(tet_set_size + 4 < tet_set.size());
@@ -205,7 +203,9 @@ get_tetrahedra(std::span<const std::int64_t> indices,
                 tet_set[tet_set_size++] = k;
               }
             }
-            facet_set[facet_set_size++] = k;
+
+            facet_set = std::span(facet_set.data(), facet_set.size() + 1);
+            facet_set.back() = k;
           }
         }
       }
