@@ -53,24 +53,54 @@ std::vector<std::int32_t> get_triangles(std::span<const std::int64_t> indices,
 
   // If all edges marked, consider uniform refinement
   if (uniform and indices[e0] >= 0 and indices[e1] >= 0)
-    return {e0, e1, v2, e1, e2, v0, e2, e0, v1, e2, e1, e0};
-
-  // Break each half of triangle into one or two sub-triangles
-  std::vector<std::int32_t> tri_set;
-  if (indices[e0] >= 0)
-    tri_set = {e2, v2, e0, e2, e0, v1};
-  else
-    tri_set = {e2, v2, v1};
-
-  if (indices[e1] >= 0)
   {
-    tri_set.insert(tri_set.end(), {e2, v2, e1});
-    tri_set.insert(tri_set.end(), {e2, e1, v0});
+    return {e0, e1, v2, e1, e2, v0, e2, e0, v1, e2, e1, e0};
   }
   else
-    tri_set.insert(tri_set.end(), {e2, v2, v0});
+  {
+    // Break each half of triangle into one or two sub-triangles
+    std::array<std::int32_t, 12> tri_set = {-1};
+    std::size_t tri_set_size = 0;
+    if (indices[e0] >= 0)
+    {
+      std::array<std::int32_t, 6> tri_set0 = {e2, v2, e0, e2, e0, v1};
+      std::copy(tri_set0.begin(), tri_set0.end(),
+                std::next(tri_set.begin(), tri_set_size));
+      tri_set_size += tri_set0.size();
+    }
+    else
+    {
+      std::array<std::int32_t, 3> tri_set0 = {e2, v2, v1};
+      std::copy(tri_set0.begin(), tri_set0.end(),
+                std::next(tri_set.begin(), tri_set_size));
+      tri_set_size += tri_set0.size();
+    }
 
-  return tri_set;
+    if (indices[e1] >= 0)
+    {
+      // tri_set.insert(tri_set.end(), {e2, v2, e1});
+      std::array<std::int32_t, 3> tri_set0 = {e2, v2, e1};
+      std::copy(tri_set0.begin(), tri_set0.end(),
+                std::next(tri_set.begin(), tri_set_size));
+      tri_set_size += tri_set0.size();
+
+      // tri_set.insert(tri_set.end(), {e2, e1, v0});
+      std::array<std::int32_t, 3> tri_set1 = {e2, e1, v0};
+      std::copy(tri_set1.begin(), tri_set1.end(),
+                std::next(tri_set.begin(), tri_set_size));
+      tri_set_size += tri_set1.size();
+    }
+    else
+    {
+      // tri_set.insert(tri_set.end(), {e2, v2, v0});
+      std::array<std::int32_t, 3> tri_set0 = {e2, v2, v0};
+      std::copy(tri_set0.begin(), tri_set0.end(),
+                std::next(tri_set.begin(), tri_set_size));
+      tri_set_size += tri_set0.size();
+    }
+
+    return std::vector(tri_set.data(), tri_set.data() + tri_set_size);
+  }
 }
 //-----------------------------------------------------------------------------
 // 3D version of subdivision
@@ -148,7 +178,6 @@ get_tetrahedra(std::span<const std::int64_t> indices,
   }
 
   // Iterate through all possible new vertices
-  // std::vector<std::int32_t> facet_set;
   std::array<std::int32_t, 121> tet_set = {-1};
   std::size_t tet_set_size = 0;
   for (std::int32_t i = 0; i < 10; ++i)
@@ -157,7 +186,6 @@ get_tetrahedra(std::span<const std::int64_t> indices,
     {
       if (conn[i][j])
       {
-        // facet_set.clear();
         std::array<std::int32_t, 10> facet_set;
         std::size_t facet_set_size = 0;
         for (std::int32_t k = j + 1; k < 10; ++k)
@@ -179,7 +207,6 @@ get_tetrahedra(std::span<const std::int64_t> indices,
               }
             }
             facet_set[facet_set_size++] = k;
-            // facet_set.push_back(k);
           }
         }
       }
