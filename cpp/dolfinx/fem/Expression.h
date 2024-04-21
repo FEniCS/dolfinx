@@ -209,7 +209,7 @@ public:
         cell_info = std::span(mesh.topology()->get_cell_permutation_info());
         post_dof_transform
             = element->template dof_transformation_right_fn<scalar_type>(
-                FiniteElement<geometry_type>::doftransform::transpose);
+                doftransform::transpose);
       }
     }
 

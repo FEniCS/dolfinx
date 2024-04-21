@@ -22,6 +22,15 @@ struct ufcx_finite_element;
 
 namespace dolfinx::fem
 {
+/// DOF transformation type
+enum class doftransform
+{
+  standard = 0,
+  transpose = 1,
+  inverse = 2,
+  inverse_transpose = 3,
+};
+
 /// @brief Model of a finite element.
 ///
 /// Provides the dof layout on a reference element, and various methods
@@ -30,15 +39,6 @@ template <std::floating_point T>
 class FiniteElement
 {
 public:
-  /// DOF transformation type
-  enum class doftransform
-  {
-    standard = 0,
-    transpose = 1,
-    inverse = 2,
-    inverse_transpose = 3,
-  };
-
   /// Geometry type of the Mesh that the FunctionSpace is defined on.
   using geometry_type = T;
 

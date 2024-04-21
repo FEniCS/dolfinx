@@ -509,7 +509,7 @@ void assemble_matrix(
       = element0->template dof_transformation_fn<T>();
   fem::DofTransformKernel<T> auto P1T
       = element1->template dof_transformation_right_fn<T>(
-          FiniteElement<U>::doftransform::transpose);
+          doftransform::transpose);
 
   std::span<const std::uint32_t> cell_info0;
   std::span<const std::uint32_t> cell_info1;

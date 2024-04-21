@@ -945,7 +945,7 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
       = element0->template dof_transformation_fn<T>();
   fem::DofTransformKernel<T> auto P1T
       = element1->template dof_transformation_right_fn<T>(
-          FiniteElement<U>::doftransform::transpose);
+          doftransform::transpose);
 
   for (int i : a.integral_ids(IntegralType::cell))
   {

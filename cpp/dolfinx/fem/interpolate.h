@@ -359,10 +359,10 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
   const int bs1 = dofmap1->bs();
   const int bs0 = dofmap0->bs();
   auto apply_dof_transformation = element0->template dof_transformation_fn<T>(
-      FiniteElement<U>::doftransform::transpose, false);
+      doftransform::transpose, false);
   auto apply_inverse_dof_transform
       = element1->template dof_transformation_fn<T>(
-          FiniteElement<U>::doftransform::inverse_transpose, false);
+          doftransform::inverse_transpose, false);
 
   // Create working array
   std::vector<T> local0(element0->space_dimension());
@@ -448,10 +448,10 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
   const int bs0 = element0->block_size();
   const int bs1 = element1->block_size();
   auto apply_dof_transformation0 = element0->template dof_transformation_fn<U>(
-      FiniteElement<U>::doftransform::standard, false);
+      doftransform::standard, false);
   auto apply_inverse_dof_transform1
       = element1->template dof_transformation_fn<T>(
-          FiniteElement<U>::doftransform::inverse_transpose, false);
+          doftransform::inverse_transpose, false);
 
   // Get sizes of elements
   const std::size_t dim0 = element0->space_dimension() / bs0;
@@ -784,7 +784,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 
     auto apply_inv_transpose_dof_transformation
         = element->template dof_transformation_fn<T>(
-            FiniteElement<U>::doftransform::inverse_transpose, true);
+            doftransform::inverse_transpose, true);
 
     // Loop over cells
     for (std::size_t c = 0; c < cells.size(); ++c)
@@ -828,7 +828,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 
     auto apply_inv_transpose_dof_transformation
         = element->template dof_transformation_fn<T>(
-            FiniteElement<U>::doftransform::inverse_transpose, true);
+            doftransform::inverse_transpose, true);
 
     // Loop over cells
     std::vector<T> ref_data_b(num_interp_points);
@@ -920,7 +920,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
                              std::int32_t, int)>
         apply_inverse_transpose_dof_transformation
         = element->template dof_transformation_fn<T>(
-            FiniteElement<U>::doftransform::inverse_transpose);
+            doftransform::inverse_transpose);
 
     // Get interpolation operator
     const auto [_Pi, pi_shape] = element->interpolation_operator();
