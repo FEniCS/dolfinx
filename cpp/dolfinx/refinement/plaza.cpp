@@ -148,7 +148,7 @@ get_tetrahedra(std::span<const std::int64_t> indices,
   }
 
   // Iterate through all possible new vertices
-  std::vector<std::int32_t> facet_set;
+  // std::vector<std::int32_t> facet_set;
   std::array<std::int32_t, 121> tet_set = {-1};
   std::size_t tet_set_size = 0;
   for (std::int32_t i = 0; i < 10; ++i)
@@ -157,23 +157,29 @@ get_tetrahedra(std::span<const std::int64_t> indices,
     {
       if (conn[i][j])
       {
-        facet_set.clear();
+        // facet_set.clear();
+        std::array<std::int32_t, 10> facet_set;
+        std::size_t facet_set_size = 0;
         for (std::int32_t k = j + 1; k < 10; ++k)
         {
           if (conn[i][k] and conn[j][k])
           {
             // Note that i < j < m < k
-            for (const std::int32_t& m : facet_set)
+            // for (const std::int32_t& m : facet_set)
+            for (std::size_t idxm = 0; idxm < facet_set_size; ++idxm)
             {
+              std::int32_t m = facet_set[idxm];
               if (conn[m][k])
               {
+                assert(tet_set_size + 4 < tet_set.size());
                 tet_set[tet_set_size++] = i;
                 tet_set[tet_set_size++] = j;
                 tet_set[tet_set_size++] = m;
                 tet_set[tet_set_size++] = k;
               }
             }
-            facet_set.push_back(k);
+            facet_set[facet_set_size++] = k;
+            // facet_set.push_back(k);
           }
         }
       }
