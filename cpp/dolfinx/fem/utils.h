@@ -249,13 +249,13 @@ ElementDofLayout create_element_dof_layout(const ufcx_dofmap& dofmap,
 /// @param[in] comm MPI communicator
 /// @param[in] layout Dof layout on an element
 /// @param[in] topology Mesh topology
-/// @param[in] unpermute_dofs Function to un-permute dofs. `nullptr`
+/// @param[in] permute_inv Function to un-permute dofs. `nullptr`
 /// when transformation is not required.
 /// @param[in] reorder_fn Graph reordering function called on the dofmap
 /// @return A new dof map
 DofMap create_dofmap(
     MPI_Comm comm, const ElementDofLayout& layout, mesh::Topology& topology,
-    std::function<void(std::span<std::int32_t>, std::uint32_t)> unpermute_dofs,
+    std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv,
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
         reorder_fn);
 
@@ -263,7 +263,7 @@ DofMap create_dofmap(
 /// @param[in] comm MPI communicator
 /// @param[in] layouts Dof layout on each element type
 /// @param[in] topology Mesh topology
-/// @param[in] unpermute_dofs Function to un-permute dofs. `nullptr`
+/// @param[in] permute_inv Function to un-permute dofs. `nullptr`
 /// when transformation is not required.
 /// @param[in] reorder_fn Graph reordering function called on the dofmaps
 /// @return The list of new dof maps
@@ -272,7 +272,7 @@ DofMap create_dofmap(
 std::vector<DofMap> create_dofmaps(
     MPI_Comm comm, const std::vector<ElementDofLayout>& layouts,
     mesh::Topology& topology,
-    std::function<void(std::span<std::int32_t>, std::uint32_t)> unpermute_dofs,
+    std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv,
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
         reorder_fn);
 
@@ -749,14 +749,14 @@ FunctionSpace<T> create_functionspace(
   // Create a dofmap
   ElementDofLayout layout(_e->block_size(), e.entity_dofs(),
                           e.entity_closure_dofs(), {}, sub_doflayout);
-  std::function<void(std::span<std::int32_t>, std::uint32_t)> unpermute_dofs
+  std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv
       = nullptr;
   if (_e->needs_dof_permutations())
-    unpermute_dofs = _e->get_dof_permutation_function(true, true);
+    permute_inv = _e->dof_permutation_fn(true, true);
   assert(mesh);
   assert(mesh->topology());
   auto dofmap = std::make_shared<const DofMap>(create_dofmap(
-      mesh->comm(), layout, *mesh->topology(), unpermute_dofs, reorder_fn));
+      mesh->comm(), layout, *mesh->topology(), permute_inv, reorder_fn));
   return FunctionSpace(mesh, _e, dofmap, _value_shape);
 }
 
@@ -812,13 +812,13 @@ FunctionSpace<T> create_functionspace(
   ElementDofLayout layout
       = create_element_dof_layout(*ufcx_map, topology->cell_type());
 
-  std::function<void(std::span<std::int32_t>, std::uint32_t)> unpermute_dofs;
+  std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv;
   if (element->needs_dof_permutations())
-    unpermute_dofs = element->get_dof_permutation_function(true, true);
+    permute_inv = element->dof_permutation_fn(true, true);
   return FunctionSpace(
       mesh, element,
       std::make_shared<DofMap>(create_dofmap(mesh->comm(), layout, *topology,
-                                             unpermute_dofs, reorder_fn)),
+                                             permute_inv, reorder_fn)),
       value_shape);
 }
 
@@ -875,9 +875,7 @@ void pack(std::span<T> coeffs, std::int32_t cell, int bs, std::span<const T> v,
 template <typename F>
 concept FetchCells = requires(F&& f, std::span<const std::int32_t> v) {
   requires std::invocable<F, std::span<const std::int32_t>>;
-  {
-    f(v)
-  } -> std::convertible_to<std::int32_t>;
+  { f(v) } -> std::convertible_to<std::int32_t>;
 };
 
 /// @brief Pack a single coefficient for a set of active entities.
@@ -907,8 +905,8 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
   auto element = u.function_space()->element();
   assert(element);
   int space_dim = element->space_dimension();
-  auto transformation = element->template dof_transformation_function<T>(
-      FiniteElement<U>::doftransform::transpose);
+  auto transformation
+      = element->template dof_transformation_fn<T>(doftransform::transpose);
   const int bs = dofmap.bs();
   switch (bs)
   {
