@@ -148,9 +148,8 @@ void declare_function_space(nb::module_& m, std::string type)
                   cell_permutations.data(), cell_permutations.size());
               for (std::size_t i = 0; i < cell_permutations.size(); i++)
               {
-                self.T_apply(
-                    x_span.subspan(i * data_per_cell, data_per_cell),
-                    perm_span[i], dim);
+                self.T_apply(x_span.subspan(i * data_per_cell, data_per_cell),
+                             perm_span[i], dim);
               }
             },
             nb::arg("x"), nb::arg("cell_permutations"), nb::arg("dim"))
@@ -169,9 +168,8 @@ void declare_function_space(nb::module_& m, std::string type)
                   cell_permutations.data(), cell_permutations.size());
               for (std::size_t i = 0; i < cell_permutations.size(); i++)
               {
-                self.Tt_apply(
-                    x_span.subspan(i * data_per_cell, data_per_cell),
-                    perm_span[i], dim);
+                self.Tt_apply(x_span.subspan(i * data_per_cell, data_per_cell),
+                              perm_span[i], dim);
               }
             },
             nb::arg("x"), nb::arg("cell_permutations"), nb::arg("dim"))
@@ -213,9 +211,8 @@ void declare_function_space(nb::module_& m, std::string type)
 
               for (std::size_t i = 0; i < cell_permutations.size(); i++)
               {
-                self.T_apply(
-                    x_span.subspan(i * data_per_cell, data_per_cell),
-                    perm_span[i], dim);
+                self.T_apply(x_span.subspan(i * data_per_cell, data_per_cell),
+                             perm_span[i], dim);
               }
             },
             nb::arg("x"), nb::arg("cell_permutations"), nb::arg("dim"))
@@ -235,9 +232,8 @@ void declare_function_space(nb::module_& m, std::string type)
 
               for (std::size_t i = 0; i < cell_permutations.size(); i++)
               {
-                self.Tt_apply(
-                    x_span.subspan(i * data_per_cell, data_per_cell),
-                    perm_span[i], dim);
+                self.Tt_apply(x_span.subspan(i * data_per_cell, data_per_cell),
+                              perm_span[i], dim);
               }
             },
             nb::arg("x"), nb::arg("cell_permutations"), nb::arg("dim"))
@@ -903,8 +899,8 @@ void declare_real_functions(nb::module_& m)
         dolfinx::fem::ElementDofLayout layout
             = dolfinx::fem::create_element_dof_layout(*p, topology.cell_type());
 
-        std::function<void(std::span<std::int32_t>, std::uint32_t)>
-            permute_inv = nullptr;
+        std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv
+            = nullptr;
         if (element.needs_dof_permutations())
           permute_inv = element.dof_permutation_fn(true, true);
         return dolfinx::fem::create_dofmap(comm.get(), layout, topology,
