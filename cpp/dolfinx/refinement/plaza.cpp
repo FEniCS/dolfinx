@@ -55,53 +55,18 @@ get_triangles(std::span<const std::int64_t> indices,
 
   // If all edges marked, consider uniform refinement
   if (uniform and indices[e0] >= 0 and indices[e1] >= 0)
-  {
     return {{e0, e1, v2, e1, e2, v0, e2, e0, v1, e2, e1, e0}, 12};
-  }
+
+  if (indices[e0] >= 0 and indices[e1] >= 0)
+    return {{e2, v2, e0, e2, e0, v1, e2, v2, e1, e2, e1, v0}, 12};
+  else if (indices[e0] >= 0 and indices[e1] < 0)
+    return {{e2, v2, e0, e2, e0, v1, e2, v2, v0}, 9};
+  else if (indices[e0] < 0 and indices[e1] >= 0)
+    return {{e2, v2, v1, e2, v2, e1, e2, e1, v0}, 9};
   else
-  {
-    // Break each half of triangle into one or two sub-triangles
-    std::array<std::int32_t, 12> tri_set;
-    tri_set.fill(-1);
-    std::size_t tri_set_size = 0;
-    if (indices[e0] >= 0)
-    {
-      std::array<std::int32_t, 6> tri_set0 = {e2, v2, e0, e2, e0, v1};
-      std::copy(tri_set0.begin(), tri_set0.end(),
-                std::next(tri_set.begin(), tri_set_size));
-      tri_set_size += tri_set0.size();
-    }
-    else
-    {
-      std::array<std::int32_t, 3> tri_set0 = {e2, v2, v1};
-      std::copy(tri_set0.begin(), tri_set0.end(),
-                std::next(tri_set.begin(), tri_set_size));
-      tri_set_size += tri_set0.size();
-    }
-
-    if (indices[e1] >= 0)
-    {
-      std::array<std::int32_t, 3> tri_set0 = {e2, v2, e1};
-      std::copy(tri_set0.begin(), tri_set0.end(),
-                std::next(tri_set.begin(), tri_set_size));
-      tri_set_size += tri_set0.size();
-
-      std::array<std::int32_t, 3> tri_set1 = {e2, e1, v0};
-      std::copy(tri_set1.begin(), tri_set1.end(),
-                std::next(tri_set.begin(), tri_set_size));
-      tri_set_size += tri_set1.size();
-    }
-    else
-    {
-      std::array<std::int32_t, 3> tri_set0 = {e2, v2, v0};
-      std::copy(tri_set0.begin(), tri_set0.end(),
-                std::next(tri_set.begin(), tri_set_size));
-      tri_set_size += tri_set0.size();
-    }
-
-    return {tri_set, tri_set_size};
-  }
+    return {{e2, v2, v1, e2, v2, v0}, 6};
 }
+
 //-----------------------------------------------------------------------------
 // 3D version of subdivision
 std::pair<std::array<std::int32_t, 32>, std::size_t>
