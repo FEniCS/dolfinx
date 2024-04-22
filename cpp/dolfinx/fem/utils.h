@@ -905,6 +905,9 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
   auto element = u.function_space()->element();
   assert(element);
   int space_dim = element->space_dimension();
+
+  // Transformation from conforming degrees-of-freedom to reference
+  // degrees-of-freedom
   auto transformation
       = element->template dof_transformation_fn<T>(doftransform::transpose);
   const int bs = dofmap.bs();
