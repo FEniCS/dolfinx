@@ -21,14 +21,13 @@
 from mpi4py import MPI
 
 import matplotlib.pylab as plt
-import numpy as np
 
 import basix
 import basix.ufl
 import ufl  # type: ignore
-from dolfinx import default_scalar_type, fem, mesh
-from dolfinx.fem.petsc import LinearProblem
-from ufl import ds, dx, grad, inner
+from dolfinx import fem, mesh
+from ufl import dx
+
 # -
 
 # ## Equispaced versus Gauss--Lobatto--Legendre (GLL) points
