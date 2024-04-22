@@ -98,6 +98,9 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
     mesh->topology_mutable()->create_entity_permutations();
     cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
+
+  // Transformation from reference element basis function data to
+  // conforming element basis function function
   auto apply_dof_transformation
       = element->template dof_transformation_fn<T>(fem::doftransform::standard);
 

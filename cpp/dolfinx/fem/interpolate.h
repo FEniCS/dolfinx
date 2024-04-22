@@ -31,9 +31,13 @@ class Function;
 template <typename T>
 concept MDSpan = requires(T x, std::size_t idx) {
   x(idx, idx);
-  { x.extent(0) } -> std::integral;
+  {
+    x.extent(0)
+  } -> std::integral;
 
-  { x.extent(1) } -> std::integral;
+  {
+    x.extent(1)
+  } -> std::integral;
 };
 
 /// @brief Compute the evaluation points in the physical space at which
@@ -385,6 +389,7 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
   using X = typename dolfinx::scalar_value_type_t<T>;
   for (std::size_t c = 0; c < cells0.size(); c++)
   {
+    // Pack and transform cell dofs to reference ordering
     std::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(cells0[c]);
     for (std::size_t i = 0; i < dofs0.size(); ++i)
       for (int k = 0; k < bs0; ++k)
