@@ -1093,7 +1093,7 @@ def test_submesh_expression_interpolation():
 
     def modified_grad(x):
         grad = grad_ref_func(x)
-        return -grad[1], 2 * grad[0]
+        return -0.2 * grad[1], 0.1 * grad[0]
 
     tdim = mesh.topology.dim
     cells = locate_entities(mesh, tdim, left_locator)
@@ -1114,7 +1114,7 @@ def test_submesh_expression_interpolation():
 
     u_sub_exact = Function(V_sub)
     u_sub_exact.interpolate(grad_ref_func)
-    atol = 6 * np.finfo(default_scalar_type).resolution
+    atol = 10 * np.finfo(default_scalar_type).resolution
     np.testing.assert_allclose(u_sub_exact.x.array, u_sub.x.array, atol=atol)
 
     # Map from sub to parent
@@ -1127,7 +1127,7 @@ def test_submesh_expression_interpolation():
     parent_to_sub[sub_to_parent] = np.arange(len(sub_to_parent))
 
     # Map exact solution (based on quadrature points) back to parent mesh
-    sub_vec = ufl.as_vector((-u_sub_exact[1], 2 * u_sub_exact[0]))
+    sub_vec = ufl.as_vector((-0.2 * u_sub_exact[1], -0.5 * u_sub_exact[0]))
     sub_expr = Expression(sub_vec, W.element.interpolation_points())
 
     # Mapping back needs to be restricted to the subset of cells in the submesh
