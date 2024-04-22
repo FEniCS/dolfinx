@@ -102,7 +102,7 @@ get_triangles(std::span<const std::int64_t> indices,
 }
 //-----------------------------------------------------------------------------
 // 3D version of subdivision
-std::pair<std::array<std::int32_t, 121>, std::size_t>
+std::pair<std::array<std::int32_t, 32>, std::size_t>
 get_tetrahedra(std::span<const std::int64_t> indices,
                std::span<const std::int32_t> longest_edge)
 {
@@ -176,7 +176,7 @@ get_tetrahedra(std::span<const std::int64_t> indices,
   }
 
   // Iterate through all possible new vertices
-  std::array<std::int32_t, 121> tet_set;
+  std::array<std::int32_t, 32> tet_set;
   tet_set.fill(-1);
   std::size_t tet_set_size = 0;
   for (std::int32_t i = 0; i < 10; ++i)
@@ -283,7 +283,7 @@ void plaza::impl::enforce_rules(MPI_Comm comm,
   }
 }
 //-----------------------------------------------------------------------------
-std::pair<std::array<std::int32_t, 121>, std::size_t>
+std::pair<std::array<std::int32_t, 32>, std::size_t>
 plaza::impl::get_simplices(std::span<const std::int64_t> indices,
                            std::span<const std::int32_t> longest_edge, int tdim,
                            bool uniform)
@@ -292,7 +292,7 @@ plaza::impl::get_simplices(std::span<const std::int64_t> indices,
   {
     assert(longest_edge.size() == 1);
     auto [_d, size] = get_triangles(indices, longest_edge[0], uniform);
-    std::array<std::int32_t, 121> d;
+    std::array<std::int32_t, 32> d;
     std::copy_n(_d.begin(), size, d.begin());
     return {d, size};
   }

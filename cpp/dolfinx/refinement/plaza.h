@@ -52,7 +52,7 @@ auto compute_parent_facets(std::span<const std::int32_t> simplex_set)
   assert(simplex_set.size() % (tdim + 1) == 0);
   using parent_facet_t
       = std::conditional<tdim == 2, std::array<std::int8_t, 12>,
-                         std::array<std::int8_t, 121>>::type;
+                         std::array<std::int8_t, 32>>::type;
   parent_facet_t parent_facet;
   parent_facet.fill(-1);
   assert(simplex_set.size() <= parent_facet.size());
@@ -131,7 +131,7 @@ auto compute_parent_facets(std::span<const std::int32_t> simplex_set)
 /// @param[in] uniform Make a "uniform" subdivision with all triangles being
 /// similar shape
 /// @return
-std::pair<std::array<std::int32_t, 121>, std::size_t>
+std::pair<std::array<std::int32_t, 32>, std::size_t>
 get_simplices(std::span<const std::int64_t> indices,
               std::span<const std::int32_t> longest_edge, int tdim,
               bool uniform);
