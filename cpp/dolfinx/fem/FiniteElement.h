@@ -343,7 +343,7 @@ public:
         std::function<void(std::span<U>, std::span<const std::uint32_t>,
                            std::int32_t, int)>
             sub_function
-            = _sub_elements[0]->template dof_transformation_right_fn<U>(ttype);
+            = _sub_elements[0]->template dof_transformation_fn<U>(ttype);
         const int ebs = _bs;
         return [ebs, sub_function](std::span<U> data,
                                    std::span<const std::uint32_t> cell_info,
