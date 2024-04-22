@@ -23,10 +23,10 @@ namespace dolfinx::fem
 /// DOF transformation type
 enum class doftransform
 {
-  standard = 0,
-  transpose = 1,
-  inverse = 2,
-  inverse_transpose = 3,
+  standard = 0,          ///< Standard
+  transpose = 1,         ///< Transpose
+  inverse = 2,           ///< Inverse
+  inverse_transpose = 3, ///< Transpose inverse
 };
 
 /// @brief Model of a finite element.
@@ -267,8 +267,11 @@ public:
   /// @return True if DOF transformations are required
   bool needs_dof_permutations() const noexcept;
 
-  /// @brief Return a function that applies DOF transformation operator
-  /// `T to some data (see T_apply()).
+  /// @brief Return a function that applies a DOF transformation
+  /// operator to some data (see T_apply()).
+  ///
+  /// The transformation is applied from the left-hand side, i.e.
+  /// \f[ u \leftarrow T u. \f]
   ///
   /// If the transformation for the (sub)element is a permutation only,
   /// the returned function will do change the ordering for the
@@ -288,7 +291,19 @@ public:
   /// - [in] cell The cell number.
   /// - [in] n The block_size of the input data.
   ///
-  /// @param[in] ttype The transformation type
+  /// @param[in] ttype The transformation type. Typical usage is:
+  /// - doftransform::standard Transforms *basis function data* from the
+  /// reference element to the conforming 'physical' element, e.g.
+  /// \f$\phi = T \tilde{\phi}\f$.
+  /// - doftransform::transpose Transforms *degree-of-freedom data* from
+  /// the conforming (physical) ordering to the reference ordering, e.g.
+  /// \f$\tilde{u} = T^{T} u\f$.
+  /// - doftransform::inverse: Transforms *basis function data* from the
+  /// the conforming (physical) ordering to the reference ordering, e.g.
+  /// \f$\tilde{\phi} = T^{-1} \phi\f$.
+  /// - doftransform::inverse_transpose: Transforms *degree-of-freedom
+  /// data* from the reference element to the conforming (physical)
+  /// ordering, e.g. \f$u = T^{-t} \tilde{u}\f$.
   /// @param[in] scalar_element Indicates whether the scalar
   /// transformations should be returned for a vector element
   template <typename U>
@@ -376,6 +391,9 @@ public:
   /// @brief Return a function that applies DOF transformation to some
   /// transposed data (see T_apply_right()).
   ///
+  /// The transformation is applied from the right-hand side, i.e.
+  /// \f[ u^{t} \leftarrow u^{t} T. \f]
+  ///
   /// If the transformation for the (sub)element is a permutation only,
   /// the returned function will do change the ordering for the
   /// (sub)element as it is assumed that permutations are incorporated
@@ -390,9 +408,9 @@ public:
   /// - [in] cell The cell number
   /// - [in] block_size The block_size of the input data
   ///
-  /// @param[in] ttype The transformation type
-  /// @param[in] scalar_element Indicated whether the scalar
-  /// transformations should be returned for a vector element
+  /// @param[in] ttype Transformation type. See dof_transformation_fn().
+  /// @param[in] scalar_element Indicate if the scalar transformations
+  /// should be returned for a vector element.
   template <typename U>
   std::function<void(std::span<U>, std::span<const std::uint32_t>, std::int32_t,
                      int)>
@@ -686,10 +704,10 @@ public:
   /// - [in] cell_permutation Permutation data for the cell
   /// - [in] block_size The block_size of the input data
   ///
-  /// @param[in] inverse Indicates whether the inverse transformations
-  /// should be returned.
-  /// @param[in] scalar_element Indicates whether the scalar
-  /// transformations should be returned for a vector element.
+  /// @param[in] inverse Indicates if the inverse transformation should
+  /// be returned.
+  /// @param[in] scalar_element Indicates is the scalar transformations
+  /// should be returned for a vector element.
   std::function<void(std::span<std::int32_t>, std::uint32_t)>
   dof_permutation_fn(bool inverse = false, bool scalar_element = false) const;
 
