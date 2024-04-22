@@ -22,13 +22,16 @@ template <dolfinx::scalar T>
 class Constant
 {
 public:
+  /// Field type
+  using value_type = T;
+
   /// @brief Create a rank-0 (scalar-valued) constant
   /// @param[in] c Value of the constant
-  explicit Constant(T c) : value({c}) {}
+  explicit Constant(value_type c) : value({c}) {}
 
   /// @brief Create a rank-1 (vector-valued) constant
   /// @param[in] c Value of the constant
-  explicit Constant(std::span<const T> c)
+  explicit Constant(std::span<const value_type> c)
       : Constant(c, std::vector<std::size_t>{c.size()})
   {
   }
@@ -36,13 +39,13 @@ public:
   /// @brief Create a rank-d constant
   /// @param[in] c Value of the Constant (row-majors storage)
   /// @param[in] shape Shape of the Constant
-  Constant(std::span<const T> c, std::span<const std::size_t> shape)
+  Constant(std::span<const value_type> c, std::span<const std::size_t> shape)
       : value(c.begin(), c.end()), shape(shape.begin(), shape.end())
   {
   }
 
   /// Values, stored as a row-major flattened array
-  std::vector<T> value;
+  std::vector<value_type> value;
 
   /// Shape
   std::vector<std::size_t> shape;

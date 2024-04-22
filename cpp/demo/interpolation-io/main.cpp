@@ -1,8 +1,10 @@
+// ```text
 // Copyright (C) 2022-2023 Garth N. Wells
-//
 // This file is part of DOLFINx (https://www.fenicsproject.org)
-//
 // SPDX-License-Identifier:    LGPL-3.0-or-later
+// ```
+
+// # Interpolation and IO
 
 #include <basix/finite-element.h>
 #include <cmath>
@@ -23,9 +25,17 @@
 
 using namespace dolfinx;
 
-// This function interpolations a function is a finite element space and
-// outputs the finite element function to a VTK file for visualisation.
-// It also shows how to create a finite element using Basix.
+/// @brief Interpolate a function into a Lagrange finite element space
+/// and outputs the finite element function to a VTX file for
+/// visualisation.
+///
+/// Also shows how to create a finite element using Basix.
+///
+/// @tparam T Scalar type of the finite element function.
+/// @tparam U Float type for the finite element basis and the mesh.
+/// @param mesh Mesh.
+/// @param filename Output filename. File output requires DOLFINX to be
+/// configured with ADIOS2.
 template <typename T, std::floating_point U>
 void interpolate_scalar(std::shared_ptr<mesh::Mesh<U>> mesh,
                         [[maybe_unused]] std::filesystem::path filename)
@@ -65,10 +75,18 @@ void interpolate_scalar(std::shared_ptr<mesh::Mesh<U>> mesh,
 #endif
 }
 
-// This function interpolations a function is a H(curl) finite element
-// space. To visualise the function, it interpolates the H(curl) finite
-// element function in a discontinuous Lagrange space and outputs the
-// Lagrange finite element function to a VTX file for visualisation.
+/// @brief Interpolate a function into a H(curl) finite element space.
+///
+/// To visualise the function, the H(curl) finite element function is
+/// interpolated in a discontinuous Lagrange space, which is written to
+/// a VTX file for visualisation. This allows exact visualisation of a
+/// function in H(curl).
+///
+/// @tparam T Scalar type of the finite element function.
+/// @tparam U Float type for the finite element basis and the mesh.
+/// @param mesh Mesh.
+/// @param filename Output filename. File output requires DOLFINX to be
+/// configured with ADIOS2.
 template <typename T, std::floating_point U>
 void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
                          [[maybe_unused]] std::filesystem::path filename)
@@ -161,11 +179,10 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
   // space:
   u_l->interpolate(*u);
 
-  // Output the discontinuous Lagrange space in VTX format. When
-  // plotting the x0 component the field will appear discontinuous at x0
-  // = 0.5 (jump in the normal component between cells) and the x1
-  // component will appear continuous (continuous tangent component
-  // between cells).
+// Output the discontinuous Lagrange space in VTX format. When plotting
+// the x0 component the field will appear discontinuous at x0 = 0.5
+// (jump in the normal component between cells) and the x1 component
+// will appear continuous (continuous tangent component between cells).
 #ifdef HAS_ADIOS2
   io::VTXWriter<U> outfile(mesh->comm(), filename.replace_extension("bp"),
                            {u_l}, "BP4");
@@ -174,8 +191,8 @@ void interpolate_nedelec(std::shared_ptr<mesh::Mesh<U>> mesh,
 #endif
 }
 
-/// This program shows how to create finite element spaces without FFCx
-/// generated code
+/// @brief This program shows how to create finite element spaces without FFCx
+/// generated code.
 int main(int argc, char* argv[])
 {
   dolfinx::init_logging(argc, argv);
@@ -185,8 +202,8 @@ int main(int argc, char* argv[])
   // that depend on an MPI communicator are destroyed before MPI is
   // finalised at the end of this function.
   {
-    // Create meshes. For what comes later in this demo we need to
-    // ensure that a boundary between cells is located at x0=0.5
+    //  Create meshes. For what comes later in this demo we need to
+    //  ensure that a boundary between cells is located at x0=0.5
 
     // Create mesh using float for geometry coordinates
     auto mesh0
@@ -220,6 +237,5 @@ int main(int argc, char* argv[])
   }
 
   MPI_Finalize();
-
   return 0;
 }

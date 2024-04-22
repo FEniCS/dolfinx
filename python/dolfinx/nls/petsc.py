@@ -10,9 +10,10 @@ from __future__ import annotations
 import typing
 
 if typing.TYPE_CHECKING:
-    from dolfinx.fem.problem import NonlinearProblem
     from mpi4py import MPI
     from petsc4py import PETSc
+
+    from dolfinx.fem.problem import NonlinearProblem
 
 import types
 
@@ -43,7 +44,7 @@ class NewtonSolver(_cpp.nls.petsc.NewtonSolver):
     def solve(self, u: fem.Function):
         """Solve non-linear problem into function u. Returns the number
         of iterations and if the solver converged."""
-        n, converged = super().solve(u.vector)
+        n, converged = super().solve(u.x.petsc_vec)
         u.x.scatter_forward()
         return n, converged
 

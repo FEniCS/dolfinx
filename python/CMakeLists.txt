@@ -1,57 +1,53 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.18)
 
-project(dolfinx_pybind11)
+project(dolfinx_nanobind)
 
-# Set C++ standard before finding pybind11
+# Set C++ standard
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Development component which includes both Development.Module and
-# Development.Embed is not required for building a Python module.  Correct
-# COMPONENT specification Development.Module added only in CMake 3.18 and above.
-if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.18.0")
-  find_package(
-    Python3
-    COMPONENTS Interpreter Development.Module
-    REQUIRED
-  )
-else()
-  find_package(
-    Python3
-    COMPONENTS Interpreter Development
-    REQUIRED
-  )
-endif()
-
 find_package(
-  pybind11
-  2.7.0
+  Python
+  COMPONENTS Interpreter Development
   REQUIRED
-  CONFIG
-  HINTS
-  ${PYBIND11_DIR}
-  ${PYBIND11_ROOT}
-  $ENV{PYBIND11_DIR}
-  $ENV{PYBIND11_ROOT}
 )
+
+# Detect the installed nanobind package and import it into CMake
+execute_process(
+  COMMAND "${Python_EXECUTABLE}" -m nanobind --cmake_dir
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  OUTPUT_VARIABLE NB_DIR
+)
+list(APPEND CMAKE_PREFIX_PATH "${NB_DIR}")
+find_package(nanobind CONFIG REQUIRED)
 
 execute_process(
   COMMAND
-  ${Python3_EXECUTABLE} -c "import basix, os, sys; sys.stdout.write(os.path.dirname(basix.__file__))"
+    ${Python3_EXECUTABLE} -c
+    "import os, sys, basix; sys.stdout.write(os.path.dirname(basix.__file__))"
   OUTPUT_VARIABLE BASIX_PY_DIR
   RESULT_VARIABLE BASIX_PY_COMMAND_RESULT
-  ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
+  ERROR_VARIABLE BASIX_ERROR_OUT
+  OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 find_package(Basix REQUIRED CONFIG HINTS ${BASIX_PY_DIR})
 
+if(Basix_FOUND)
+  message(STATUS "Found Basix at ${Basix_DIR}")
+endif()
+
 find_package(DOLFINX REQUIRED CONFIG)
 
-# Create the binding library pybind11 handles its own calls to
+if(DOLFINX_FOUND)
+  message(STATUS "Found DOLFINx at ${DOLFINX_DIR}")
+endif()
+
+# Create the binding library nanobind handles its own calls to
 # target_link_libraries
-pybind11_add_module(
+nanobind_add_module(
   cpp
-  MODULE
+  NOMINSIZE
   dolfinx/wrappers/dolfinx.cpp
   dolfinx/wrappers/assemble.cpp
   dolfinx/wrappers/common.cpp
@@ -66,27 +62,19 @@ pybind11_add_module(
   dolfinx/wrappers/refinement.cpp
 )
 
-# Add strict compiler flags
-include(CheckCXXCompilerFlag)
-check_cxx_compiler_flag("-Wall -Werror -pedantic" HAVE_PEDANTIC)
+# Add strict compiler flags include(CheckCXXCompilerFlag)
+# check_cxx_compiler_flag("-Wall -Werror -pedantic" HAVE_PEDANTIC)
 
-if(HAVE_PEDANTIC)
-  target_compile_options(cpp PRIVATE -Wall;-Werror;-pedantic)
-endif()
+# if(HAVE_PEDANTIC) # target_compile_options(cpp PRIVATE
+# -Wall;-Werror;-pedantic) endif()
 
-# In Debug mode override pybind11 symbols visibility Symbols must be visible to
-# backtrace_symbols() to produce nice logs
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  target_compile_options(cpp PRIVATE "-fvisibility=default")
-endif()
-
-# Add DOLFINx libraries.
+# Add DOLFINx libraries
 target_link_libraries(cpp PRIVATE dolfinx)
 
 # Check for petsc4py
 execute_process(
-  COMMAND ${Python3_EXECUTABLE} -c
-  "import petsc4py; print(petsc4py.get_include())"
+  COMMAND ${Python_EXECUTABLE} -c
+          "import petsc4py; print(petsc4py.get_include())"
   OUTPUT_VARIABLE PETSC4PY_INCLUDE_DIR
   RESULT_VARIABLE PETSC4PY_COMMAND_RESULT
   ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -101,8 +89,7 @@ endif()
 
 # Check for mpi4py
 execute_process(
-  COMMAND "${Python3_EXECUTABLE}" "-c"
-  "import mpi4py; print(mpi4py.get_include())"
+  COMMAND "${Python_EXECUTABLE}" -c "import mpi4py; print(mpi4py.get_include())"
   OUTPUT_VARIABLE MPI4PY_INCLUDE_DIR
   RESULT_VARIABLE MPI4PY_COMMAND_RESULT
   ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -114,3 +101,7 @@ if(NOT MPI4PY_COMMAND_RESULT)
 else()
   message(FATAL_ERROR "mpi4py could not be found.")
 endif()
+
+set_target_properties(cpp PROPERTIES INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+install(TARGETS cpp DESTINATION dolfinx)

@@ -7,14 +7,14 @@ FROM ubuntu:22.04
 
 ARG BUILD_NP=3
 
-ARG ADIOS2_VERSION=2.9.1
+ARG ADIOS2_VERSION=2.9.2
 ARG HDF5_SERIES=1.14
-ARG HDF5_PATCH=2
+ARG HDF5_PATCH=3
 ARG HDF5_FIX=
-ARG PETSC_VERSION=3.20.0
-ARG SLEPC_VERSION=3.20.0
-ARG PYBIND11_VERSION=2.11.1
-ARG KAHIP_VERSION=3.15
+ARG PETSC_VERSION=3.21.0
+ARG SLEPC_VERSION=3.21.0
+ARG NANOBIND_VERSION=1.9.2
+ARG KAHIP_VERSION=3.16
 
 WORKDIR /tmp
 
@@ -41,7 +41,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 
 # Install oneAPI libraries (see https://oneapi-src.github.io/oneapi-ci/)
 RUN wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null && \
-    # echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | tee /etc/apt/sources.list.d/oneAPI.list && \
     echo "deb [trusted=yes] https://apt.repos.intel.com/oneapi all main" | tee /etc/apt/sources.list.d/oneAPI.list && \
     apt-get update && \
     apt-get install -y libstdc++-11-dev intel-oneapi-compiler-dpcpp-cpp intel-oneapi-mkl-devel intel-oneapi-mpi-devel intel-oneapi-python && \
@@ -58,7 +57,7 @@ ENV CC=icx \
 
 # Install Python packages (via pip)
 RUN . /opt/intel/oneapi/setvars.sh && \
-    pip install --no-cache-dir cppimport mpi4py pybind11==${PYBIND11_VERSION} pytest pytest-xdist
+    pip install --no-cache-dir matplotlib mpi4py nanobind==${NANOBIND_VERSION} pytest pytest-xdist scikit-build-core[pyproject]
 
 # Install KaHIP
 RUN . /opt/intel/oneapi/setvars.sh && \
@@ -108,7 +107,8 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     --download-superlu_dist \
     --with-make-np=${BUILD_NP} \
     --with-scalar-type=real \
-    --with-precision=single && \
+    --with-precision=single \
+    --download-ptscotch && \
     make PETSC_ARCH=linux-gnu-real32-32 ${MAKEFLAGS} all && \
     # Complex64, 32-bit int
     ./configure \
@@ -119,7 +119,8 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     --download-superlu_dist \
     --with-make-np=${BUILD_NP} \
     --with-scalar-type=complex \
-    --with-precision=single && \
+    --with-precision=single \
+    --download-ptscotch && \
     make PETSC_ARCH=linux-gnu-complex64-32 ${MAKEFLAGS} all && \
     # Real64, 32-bit int
     ./configure \
@@ -129,7 +130,8 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     --with-shared-libraries \
     --download-superlu_dist \
     --with-make-np=${BUILD_NP} \
-    --with-scalar-type=real && \
+    --with-scalar-type=real \
+    --download-ptscotch && \
     make PETSC_ARCH=linux-gnu-real64-32 ${MAKEFLAGS} all && \
     # Complex128, 32-bit int
     ./configure \
@@ -139,7 +141,8 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     --with-shared-libraries \
     --download-superlu_dist \
     --with-make-np=${BUILD_NP} \
-    --with-scalar-type=complex && \
+    --with-scalar-type=complex \
+    --download-ptscotch && \
     make PETSC_ARCH=linux-gnu-complex128-32 ${MAKEFLAGS} all && \
     # Install petsc4py
     cd src/binding/petsc4py && \

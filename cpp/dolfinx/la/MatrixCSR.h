@@ -419,9 +419,10 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
     {
       const auto im = _index_maps[i];
       const int size_local = im->size_local() * _bs[i];
-      const std::vector<std::int64_t>& ghost_i = im->ghosts();
+      std::span ghost_i = im->ghosts();
       std::vector<std::int64_t> ghosts;
-      const std::vector<int> ghost_owner_i = im->owners();
+      const std::vector<int> ghost_owner_i(im->owners().begin(),
+                                           im->owners().end());
       std::vector<int> src_rank;
       for (std::size_t j = 0; j < ghost_i.size(); ++j)
       {
@@ -432,7 +433,10 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
         }
       }
       const std::array<std::vector<int>, 2> src_dest0
-          = {_index_maps[i]->src(), _index_maps[i]->dest()};
+          = {std::vector(_index_maps[i]->src().begin(),
+                         _index_maps[i]->src().end()),
+             std::vector(_index_maps[i]->dest().begin(),
+                         _index_maps[i]->dest().end())};
       _index_maps[i] = std::make_shared<common::IndexMap>(
           _index_maps[i]->comm(), size_local, src_dest0, ghosts, src_rank);
     }
@@ -444,7 +448,6 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
     rowptr_container_type new_row_ptr = {0};
     new_row_ptr.reserve(_row_ptr.size() * _bs[0]);
     std::span<const std::int32_t> num_diag_nnz = p.off_diagonal_offsets();
-
     for (std::size_t i = 0; i < _row_ptr.size() - 1; ++i)
     {
       // Repeat row _bs[0] times
@@ -479,11 +482,11 @@ MatrixCSR<U, V, W, X>::MatrixCSR(const SparsityPattern& p, BlockMode mode)
       = {_index_maps[0]->size_local(), _index_maps[1]->size_local()};
   const std::array local_range
       = {_index_maps[0]->local_range(), _index_maps[1]->local_range()};
-  const std::vector<std::int64_t>& ghosts1 = _index_maps[1]->ghosts();
+  std::span ghosts1 = _index_maps[1]->ghosts();
 
-  const std::vector<std::int64_t>& ghosts0 = _index_maps[0]->ghosts();
-  const std::vector<int>& src_ranks = _index_maps[0]->src();
-  const std::vector<int>& dest_ranks = _index_maps[0]->dest();
+  std::span ghosts0 = _index_maps[0]->ghosts();
+  std::span src_ranks = _index_maps[0]->src();
+  std::span dest_ranks = _index_maps[0]->dest();
 
   // Create neighbourhood communicator (owner <- ghost)
   MPI_Comm comm;

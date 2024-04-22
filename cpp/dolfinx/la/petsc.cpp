@@ -5,6 +5,8 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#ifdef HAS_PETSC
+
 #include "petsc.h"
 #include "SparsityPattern.h"
 #include "Vector.h"
@@ -131,8 +133,8 @@ std::vector<IS> la::petsc::create_index_sets(
   std::int64_t offset = 0;
   for (auto& map : maps)
   {
-    const int bs = map.second;
-    const std::int32_t size
+    int bs = map.second;
+    std::int32_t size
         = map.first.get().size_local() + map.first.get().num_ghosts();
     IS _is;
     ISCreateStride(PETSC_COMM_SELF, bs * size, offset, 1, &_is);
@@ -230,7 +232,7 @@ void la::petsc::scatter_local_vectors(
 }
 //-----------------------------------------------------------------------------
 Mat la::petsc::create_matrix(MPI_Comm comm, const SparsityPattern& sp,
-                             const std::string& type)
+                             std::string type)
 {
   PetscErrorCode ierr;
   Mat A;
@@ -559,7 +561,7 @@ Mat petsc::Operator::mat() const { return _matA; }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 petsc::Matrix::Matrix(MPI_Comm comm, const SparsityPattern& sp,
-                      const std::string& type)
+                      std::string type)
     : Operator(petsc::create_matrix(comm, sp, type), false)
 {
   // Do nothing
@@ -574,7 +576,7 @@ double petsc::Matrix::norm(Norm norm_type) const
 {
   assert(_matA);
   PetscErrorCode ierr;
-  PetscReal value = 0.0;
+  PetscReal value = 0;
   switch (norm_type)
   {
   case Norm::l1:
@@ -788,3 +790,5 @@ void petsc::KrylovSolver::set_from_options() const
 //-----------------------------------------------------------------------------
 KSP petsc::KrylovSolver::ksp() const { return _ksp; }
 //-----------------------------------------------------------------------------
+
+#endif

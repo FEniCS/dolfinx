@@ -65,10 +65,11 @@ Below are additional requirements for the Python interface.
 
 - Python
 - FFCx, UFL and Basix (https://github.com/FEniCS/).
-- pybind11 (https://github.com/pybind/pybind11)
+- nanobind (https://github.com/wjakob/nanobind)
 - NumPy (https://www.numpy.org)
 - mpi4py
 - petsc4py
+- scikit-build-core[pyproject] (https://scikit-build-core.readthedocs.io)
 
 .. rubric:: Suggested
 
@@ -101,15 +102,15 @@ Python
 After installation of the C++ core, from the ``python/`` directory the
 Python interface can be installed using::
 
-    pip install .
+    pip install -r build-requirements.txt
+    pip install --check-build-dependencies --no-build-isolation .
 
 
 .. rubric:: Footnotes
 
 .. [1] Its is recommended to configure with ParMETIS, PT-SCOTCH,
-       MUMPS and Hypre using the
+       MUMPS and Hypre using
        ``--download-parmetis --download-ptscotch --download-suitesparse
        --download-mumps --download-hypre``
 
 .. [2] PETSc can download and configure and build these libraries.
-

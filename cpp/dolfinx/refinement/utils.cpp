@@ -37,7 +37,7 @@ std::int64_t refinement::impl::local_to_global(std::int32_t local_index,
   }
   else
   {
-    const std::vector<std::int64_t>& ghosts = map.ghosts();
+    std::span ghosts = map.ghosts();
     assert((local_index - local_size) < (int)ghosts.size());
     return ghosts[local_index - local_size];
   }
@@ -103,17 +103,14 @@ refinement::adjust_indices(const common::IndexMap& map, std::int32_t n)
 {
   // NOTE: Is this effectively concatenating index maps?
 
-  // Add in an extra "n" indices at the end of the current local_range
-  // of "index_map", and adjust existing indices to match.
-
   // Get offset for 'n' for this process
   const std::int64_t num_local = n;
   std::int64_t global_offset = 0;
   MPI_Exscan(&num_local, &global_offset, 1, MPI_INT64_T, MPI_SUM, map.comm());
 
-  const std::vector<int>& owners = map.owners();
-  const std::vector<int>& src = map.src();
-  const std::vector<int>& dest = map.dest();
+  std::span owners = map.owners();
+  std::span src = map.src();
+  std::span dest = map.dest();
 
   MPI_Comm comm;
   MPI_Dist_graph_create_adjacent(map.comm(), src.size(), src.data(),
@@ -177,7 +174,7 @@ std::array<std::vector<std::int32_t>, 2> refinement::transfer_facet_meshtag(
   // Get global index for each refined cell, before reordering in Mesh
   // construction
   const std::vector<std::int64_t>& original_cell_index
-      = topology1.original_cell_index;
+      = topology1.original_cell_index[0];
   assert(original_cell_index.size() == cell.size());
   std::int64_t global_offset = topology1.index_map(tdim)->local_range()[0];
 
@@ -297,7 +294,7 @@ refinement::transfer_cell_meshtag(const mesh::MeshTags<std::int32_t>& tags0,
   // Get global index for each refined cell, before reordering in Mesh
   // construction
   const std::vector<std::int64_t>& original_cell_index
-      = topology1.original_cell_index;
+      = topology1.original_cell_index[0];
   assert(original_cell_index.size() == cell.size());
   std::int64_t global_offset = topology1.index_map(tdim)->local_range()[0];
 

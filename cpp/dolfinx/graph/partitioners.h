@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Garth N. Wells and Igor A. Baratta
+// Copyright (C) 2020-2023 Garth N. Wells and Igor A. Baratta
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -10,11 +10,9 @@
 
 namespace dolfinx::graph
 {
-
 namespace scotch
 {
 #ifdef HAS_PTSCOTCH
-
 /// @brief PT-SCOTCH partitioning strategies.
 ///
 /// See PT-SCOTCH documentation for details.
@@ -38,7 +36,6 @@ enum class strategy
 /// @return A graph partitioning function
 graph::partition_fn partitioner(scotch::strategy strategy = strategy::none,
                                 double imbalance = 0.025, int seed = 0);
-
 #endif
 
 } // namespace scotch
@@ -46,11 +43,15 @@ graph::partition_fn partitioner(scotch::strategy strategy = strategy::none,
 namespace parmetis
 {
 #ifdef HAS_PARMETIS
-
 /// @brief Create a graph partitioning function that uses ParMETIS.
 ///
+/// @note ParMETIS fails (crashes) if an MPI rank has no part of the
+/// graph. If necessary, the communicator should be split to avoid this
+/// situation.
+///
 /// @param[in] imbalance Imbalance tolerance. See ParMETIS manual for
-/// details.
+/// details
+/// (https://github.com/KarypisLab/ParMETIS/blob/main/manual/manual.pdf).
 /// @param[in] options The ParMETIS option. See ParMETIS manual for
 /// details.
 graph::partition_fn partitioner(double imbalance = 1.02,
@@ -75,7 +76,6 @@ namespace kahip
 graph::partition_fn partitioner(int mode = 1, int seed = 1,
                                 double imbalance = 0.03,
                                 bool suppress_output = true);
-
 #endif
 } // namespace kahip
 

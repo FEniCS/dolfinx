@@ -19,7 +19,7 @@ To contribute code DOLFINx, create a pull request. If you want to
 contribute, but are unsure where to start, have a look at the [issues
 labelled "good first
 issue"](https://github.com/FEniCS/dolfinx/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22).
-For substantial changes/contributions, please start with an Issue or
+For substantial changes/contributions, please start with an issue or
 start a discussion on Slack.
 
 On opening a pull request, unit tests will run on GitHub CI. You can

@@ -66,6 +66,7 @@ u0.interpolate(u)
 
 try:
     from dolfinx.io import VTXWriter
+
     with VTXWriter(msh.comm, "output_nedelec.bp", u0, "bp4") as f:
         f.write(0.0)
 except ImportError:
@@ -76,10 +77,11 @@ except ImportError:
 
 try:
     import pyvista
+
     cells, types, x = plot.vtk_mesh(V0)
     grid = pyvista.UnstructuredGrid(cells, types, x)
     values = np.zeros((x.shape[0], 3), dtype=np.float64)
-    values[:, :msh.topology.dim] = u0.x.array.reshape(x.shape[0], msh.topology.dim).real
+    values[:, : msh.topology.dim] = u0.x.array.reshape(x.shape[0], msh.topology.dim).real
     grid.point_data["u"] = values
 
     pl = pyvista.Plotter(shape=(2, 2))

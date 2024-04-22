@@ -6,7 +6,10 @@ from collections import defaultdict
 
 from mpi4py import MPI
 
+import numpy as np
 import pytest
+
+from dolfinx.la import vector as dolfinx_vector
 
 
 def pytest_runtest_teardown(item):
@@ -30,7 +33,7 @@ def pytest_runtest_teardown(item):
 def pytest_runtest_setup(item):
     marker = item.get_closest_marker("skip_in_parallel")
     if marker and MPI.COMM_WORLD.size > 1:
-        pytest.skip("This test should only be run in serial")
+        pytest.skip("This test should be run in serial only.")
 
 
 @pytest.fixture(scope="module")
@@ -136,3 +139,55 @@ def tempdir(request):
 
     """
     return _create_tempdir(request)
+
+
+@pytest.fixture(scope="function")
+def cg_solver():
+    """Simple Conjugate Gradient solver for SPD problems,
+    which can work in serial or parallel for testing use.
+    Not suitable for large problems."""
+
+    # Basic Conjugate Gradient solver
+    def _cg(comm, A, b, x, maxit=500, rtol=None):
+        rtol2 = 10 * np.finfo(x.array.dtype).eps if rtol is None else rtol**2
+
+        def _global_dot(comm, v0, v1):
+            return comm.allreduce(np.vdot(v0, v1), MPI.SUM)
+
+        A_op = A.to_scipy()
+        nr = A_op.shape[0]
+        assert nr == A.index_map(0).size_local
+
+        # Create larger ghosted vector based on matrix column space
+        # and get initial y = A.x
+        p = dolfinx_vector(A.index_map(1), dtype=x.array.dtype)
+        p.array[:nr] = x.array[:nr]
+        p.scatter_forward()
+        y = A_op @ p.array
+
+        # Copy residual to p
+        r = b.array[:nr] - y
+        p.array[:nr] = r
+
+        # Iterations of CG
+        rnorm0 = _global_dot(comm, r, r)
+        rnorm = rnorm0
+        k = 0
+        while k < maxit:
+            k += 1
+            p.scatter_forward()
+            y = A_op @ p.array
+            alpha = rnorm / _global_dot(comm, p.array[:nr], y)
+            x.array[:nr] += alpha * p.array[:nr]
+            r -= alpha * y
+            rnorm_new = _global_dot(comm, r, r)
+            beta = rnorm_new / rnorm
+            rnorm = rnorm_new
+            if rnorm / rnorm0 < rtol2:
+                x.scatter_forward()
+                return
+            p.array[:nr] = beta * p.array[:nr] + r
+
+        raise RuntimeError(f"Solver exceeded max iterations ({maxit}).")
+
+    return _cg

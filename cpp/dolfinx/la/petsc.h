@@ -7,6 +7,8 @@
 
 #pragma once
 
+#ifdef HAS_PETSC
+
 #include "Vector.h"
 #include "utils.h"
 #include <boost/lexical_cast.hpp>
@@ -115,7 +117,7 @@ void scatter_local_vectors(
 /// Create a PETSc Mat. Caller is responsible for destroying the
 /// returned object.
 Mat create_matrix(MPI_Comm comm, const SparsityPattern& sp,
-                  const std::string& type = std::string());
+                  std::string type = std::string());
 
 /// Create PETSc MatNullSpace. Caller is responsible for destruction
 /// returned object.
@@ -288,9 +290,9 @@ public:
   static auto set_fn(Mat A, InsertMode mode)
   {
     return [A, mode, cache = std::vector<PetscInt>()](
-               const std::span<const std::int32_t>& rows,
-               const std::span<const std::int32_t>& cols,
-               const std::span<const PetscScalar>& vals) mutable -> int
+               std::span<const std::int32_t> rows,
+               std::span<const std::int32_t> cols,
+               std::span<const PetscScalar> vals) mutable -> int
     {
       PetscErrorCode ierr;
 #ifdef PETSC_USE_64BIT_INDICES
@@ -323,9 +325,9 @@ public:
   static auto set_block_fn(Mat A, InsertMode mode)
   {
     return [A, mode, cache = std::vector<PetscInt>()](
-               const std::span<const std::int32_t>& rows,
-               const std::span<const std::int32_t>& cols,
-               const std::span<const PetscScalar>& vals) mutable -> int
+               std::span<const std::int32_t> rows,
+               std::span<const std::int32_t> cols,
+               std::span<const PetscScalar> vals) mutable -> int
     {
       PetscErrorCode ierr;
 #ifdef PETSC_USE_64BIT_INDICES
@@ -362,9 +364,9 @@ public:
   {
     return [A, bs0, bs1, mode, cache0 = std::vector<PetscInt>(),
             cache1 = std::vector<PetscInt>()](
-               const std::span<const std::int32_t>& rows,
-               const std::span<const std::int32_t>& cols,
-               const std::span<const PetscScalar>& vals) mutable -> int
+               std::span<const std::int32_t> rows,
+               std::span<const std::int32_t> cols,
+               std::span<const PetscScalar> vals) mutable -> int
     {
       PetscErrorCode ierr;
       cache0.resize(bs0 * rows.size());
@@ -389,7 +391,7 @@ public:
 
   /// Create holder for a PETSc Mat object from a sparsity pattern
   Matrix(MPI_Comm comm, const SparsityPattern& sp,
-         const std::string& type = std::string());
+         std::string type = std::string());
 
   /// Create holder of a PETSc Mat object/pointer. The Mat A object
   /// should already be created. If inc_ref_count is true, the reference
@@ -504,3 +506,5 @@ private:
 };
 } // namespace petsc
 } // namespace dolfinx::la
+
+#endif

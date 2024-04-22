@@ -353,9 +353,8 @@ graph::build::compute_ghost_indices(MPI_Comm comm,
   std::transform(send_data.begin(), send_data.end(), new_recv.begin(),
                  old_to_new1.begin(),
                  [](auto idx_old, auto idx_new) ->
-                 typename decltype(old_to_new1)::value_type {
-                   return {idx_old, idx_new};
-                 });
+                 typename decltype(old_to_new1)::value_type
+                 { return {idx_old, idx_new}; });
   std::sort(old_to_new1.begin(), old_to_new1.end());
 
   std::vector<std::int64_t> ghost_global_indices(ghost_indices.size());
@@ -386,8 +385,7 @@ graph::build::compute_local_to_global(std::span<const std::int64_t> global,
   if (global.size() != local.size())
     throw std::runtime_error("Data size mismatch.");
 
-  const std::int32_t max_local_idx
-      = *std::max_element(local.begin(), local.end());
+  std::int32_t max_local_idx = *std::max_element(local.begin(), local.end());
   std::vector<std::int64_t> local_to_global_list(max_local_idx + 1, -1);
   for (std::size_t i = 0; i < local.size(); ++i)
   {

@@ -1,8 +1,10 @@
+// ```text
 // Copyright (C) 2022 Igor A. Baratta and Massimiliano Leoni
-//
 // This file is part of DOLFINx (https://www.fenicsproject.org)
-//
 // SPDX-License-Identifier:    LGPL-3.0-or-later
+// ```
+
+// # Interpolation different meshes
 
 #include <basix/e-lagrange.h>
 #include <dolfinx/fem/dolfinx_fem.h>
@@ -11,7 +13,6 @@
 #include <memory>
 
 using namespace dolfinx;
-
 using T = double;
 
 int main(int argc, char* argv[])
@@ -19,7 +20,7 @@ int main(int argc, char* argv[])
   init_logging(argc, argv);
   MPI_Init(&argc, &argv);
   {
-    MPI_Comm comm{MPI_COMM_WORLD};
+    MPI_Comm comm = MPI_COMM_WORLD;
 
     // Create a tetrahedral mesh
     auto mesh_tet = std::make_shared<mesh::Mesh<double>>(
@@ -32,14 +33,14 @@ int main(int argc, char* argv[])
                          mesh::CellType::hexahedron));
 
     basix::FiniteElement element_tet = basix::element::create_lagrange<double>(
-        mesh::cell_type_to_basix_type(mesh_tet->topology()->cell_types()[0]), 1,
+        mesh::cell_type_to_basix_type(mesh_tet->topology()->cell_type()), 1,
         basix::element::lagrange_variant::equispaced, false);
     auto V_tet = std::make_shared<fem::FunctionSpace<double>>(
         fem::create_functionspace(mesh_tet, element_tet,
                                   std::vector<std::size_t>{3}));
 
     basix::FiniteElement element_hex = basix::element::create_lagrange<double>(
-        mesh::cell_type_to_basix_type(mesh_hex->topology()->cell_types()[0]), 2,
+        mesh::cell_type_to_basix_type(mesh_hex->topology()->cell_type()), 2,
         basix::element::lagrange_variant::equispaced, false);
     auto V_hex = std::make_shared<fem::FunctionSpace<double>>(
         fem::create_functionspace(mesh_hex, element_hex,

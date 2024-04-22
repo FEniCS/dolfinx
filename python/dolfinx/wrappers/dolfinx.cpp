@@ -1,76 +1,82 @@
-// Copyright (C) 2017 Chris N. Richardson and Garth N. Wells
+// Copyright (C) 2017-2023 Chris N. Richardson and Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <pybind11/pybind11.h>
+#include <nanobind/nanobind.h>
 
-namespace py = pybind11;
+namespace nb = nanobind;
 
 namespace dolfinx_wrappers
 {
-void common(py::module& m);
-void mpi(py::module& m);
+void common(nb::module_& m);
+void mpi(nb::module_& m);
 
-void petsc(py::module& m_fem, py::module& m_la, py::module& m_nls);
+void petsc(nb::module_& m_fem, nb::module_& m_la, nb::module_& m_nls);
 
-void log(py::module& m);
-void assemble(py::module& m);
-void fem(py::module& m);
-void geometry(py::module& m);
-void graph(py::module& m);
-void io(py::module& m);
-void la(py::module& m);
-void mesh(py::module& m);
-void nls(py::module& m);
-void refinement(py::module& m);
+void log(nb::module_& m);
+void assemble(nb::module_& m);
+void fem(nb::module_& m);
+void geometry(nb::module_& m);
+void graph(nb::module_& m);
+void io(nb::module_& m);
+void la(nb::module_& m);
+void mesh(nb::module_& m);
+void nls(nb::module_& m);
+void refinement(nb::module_& m);
 } // namespace dolfinx_wrappers
 
-PYBIND11_MODULE(cpp, m)
+NB_MODULE(cpp, m)
 {
   // Create module for C++ wrappers
   m.doc() = "DOLFINx Python interface";
   m.attr("__version__") = DOLFINX_VERSION;
 
+#ifdef NDEBUG
+  nanobind::set_leak_warnings(false);
+#endif
+
   // Create common submodule [common]
-  py::module common = m.def_submodule("common", "Common module");
+  nb::module_ common = m.def_submodule("common", "Common module");
   dolfinx_wrappers::common(common);
 
   // Create common submodule [log]
-  py::module log = m.def_submodule("log", "Logging module");
+  nb::module_ log = m.def_submodule("log", "Logging module");
   dolfinx_wrappers::log(log);
 
   // Create mesh submodule [mesh]
-  py::module mesh = m.def_submodule("mesh", "Mesh library module");
+  nb::module_ mesh = m.def_submodule("mesh", "Mesh library module");
   dolfinx_wrappers::mesh(mesh);
 
   // Create graph submodule [graph]
-  py::module graph = m.def_submodule("graph", "Graph module");
+  nb::module_ graph = m.def_submodule("graph", "Graph module");
   dolfinx_wrappers::graph(graph);
 
   // Create fem submodule [fem]
-  py::module fem = m.def_submodule("fem", "FEM module");
+  nb::module_ fem = m.def_submodule("fem", "FEM module");
   dolfinx_wrappers::assemble(fem);
   dolfinx_wrappers::fem(fem);
 
   // Create geometry submodule
-  py::module geometry = m.def_submodule("geometry", "Geometry module");
+  nb::module_ geometry = m.def_submodule("geometry", "Geometry module");
   dolfinx_wrappers::geometry(geometry);
 
   // Create io submodule
-  py::module io = m.def_submodule("io", "I/O module");
+  nb::module_ io = m.def_submodule("io", "I/O module");
   dolfinx_wrappers::io(io);
 
   // Create la submodule
-  py::module la = m.def_submodule("la", "Linear algebra module");
+  nb::module_ la = m.def_submodule("la", "Linear algebra module");
   dolfinx_wrappers::la(la);
 
   // Create refinement submodule
-  py::module refinement = m.def_submodule("refinement", "Refinement module");
+  nb::module_ refinement = m.def_submodule("refinement", "Refinement module");
   dolfinx_wrappers::refinement(refinement);
 
+#ifdef HAS_PETSC
   // PETSc-specific wrappers
-  py::module nls = m.def_submodule("nls", "Nonlinear solver module");
+  nb::module_ nls = m.def_submodule("nls", "Nonlinear solver module");
   dolfinx_wrappers::petsc(fem, la, nls);
+#endif
 }

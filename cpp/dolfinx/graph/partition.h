@@ -22,8 +22,6 @@ namespace dolfinx::graph
 
 /// @brief Signature of functions for computing the parallel
 /// partitioning of a distributed graph.
-// See https://github.com/doxygen/doxygen/issues/9552
-/// @cond
 /// @param[in] comm MPI Communicator that the graph is distributed
 /// across
 /// @param[in] nparts Number of partitions to divide graph nodes into
@@ -31,7 +29,6 @@ namespace dolfinx::graph
 /// @param[in] ghosting Flag to enable ghosting of the output node
 /// distribution
 /// @return Destination rank for each input node
-/// @endcond
 using partition_fn = std::function<graph::AdjacencyList<std::int32_t>(
     MPI_Comm, int, const AdjacencyList<std::int64_t>&, bool)>;
 
@@ -107,11 +104,11 @@ compute_ghost_indices(MPI_Comm comm,
 /// starting from zero, compute a local-to-global map for the links.
 /// Both adjacency lists must have the same shape.
 ///
-/// @param[in] global Adjacency list with global link indices
-/// @param[in] local Adjacency list with local, contiguous link indices
+/// @param[in] global Adjacency list with global link indices.
+/// @param[in] local Adjacency list with local, contiguous link indices.
 /// @return Map from local index to global index, which if applied to
 /// the local adjacency list indices would yield the global adjacency
-/// list
+/// list.
 std::vector<std::int64_t>
 compute_local_to_global(std::span<const std::int64_t> global,
                         std::span<const std::int32_t> local);

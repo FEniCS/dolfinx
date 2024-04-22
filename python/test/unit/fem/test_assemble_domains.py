@@ -13,11 +13,16 @@ import pytest
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, fem, la
-from dolfinx.fem import (Constant, Function, FunctionSpace, assemble_scalar,
-                         dirichletbc, form)
-from dolfinx.mesh import (GhostMode, Mesh, create_unit_square, locate_entities,
-                          locate_entities_boundary, meshtags,
-                          meshtags_from_entities)
+from dolfinx.fem import Constant, Function, assemble_scalar, dirichletbc, form, functionspace
+from dolfinx.mesh import (
+    GhostMode,
+    Mesh,
+    create_unit_square,
+    locate_entities,
+    locate_entities_boundary,
+    meshtags,
+    meshtags_from_entities,
+)
 
 
 @pytest.fixture
@@ -28,22 +33,37 @@ def mesh():
 def create_cell_meshtags_from_entities(mesh: Mesh, dim: int, cells: np.ndarray, values: np.ndarray):
     mesh.topology.create_connectivity(mesh.topology.dim, 0)
     cell_to_vertices = mesh.topology.connectivity(mesh.topology.dim, 0)
-    entities = _cpp.graph.AdjacencyList_int32([cell_to_vertices.links(cell) for cell in cells])
+    entities = _cpp.graph.AdjacencyList_int32(
+        np.array([cell_to_vertices.links(cell) for cell in cells])
+    )
     return meshtags_from_entities(mesh, dim, entities, values)
 
 
-parametrize_ghost_mode = pytest.mark.parametrize("mode", [
-    pytest.param(GhostMode.none, marks=pytest.mark.skipif(condition=MPI.COMM_WORLD.size > 1,
-                                                          reason="Unghosted interior facets fail in parallel")),
-    pytest.param(GhostMode.shared_facet, marks=pytest.mark.skipif(condition=MPI.COMM_WORLD.size == 1,
-                                                                  reason="Shared ghost modes fail in serial"))])
+parametrize_ghost_mode = pytest.mark.parametrize(
+    "mode",
+    [
+        pytest.param(
+            GhostMode.none,
+            marks=pytest.mark.skipif(
+                condition=MPI.COMM_WORLD.size > 1,
+                reason="Unghosted interior facets fail in parallel",
+            ),
+        ),
+        pytest.param(
+            GhostMode.shared_facet,
+            marks=pytest.mark.skipif(
+                condition=MPI.COMM_WORLD.size == 1, reason="Shared ghost modes fail in serial"
+            ),
+        ),
+    ],
+)
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 @pytest.mark.parametrize("meshtags_factory", [meshtags, create_cell_meshtags_from_entities])
 def test_assembly_dx_domains(mode, meshtags_factory):
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, ghost_mode=mode)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
     # Prepare a marking structures
@@ -56,7 +76,7 @@ def test_assembly_dx_domains(mode, meshtags_factory):
     values[0] = 1
     values[1] = 2
     marker = meshtags_factory(mesh, mesh.topology.dim, indices, values)
-    dx = ufl.Measure('dx', subdomain_data=marker, domain=mesh)
+    dx = ufl.Measure("dx", subdomain_data=marker, domain=mesh)
     w = Function(V)
     w.x.array[:] = 0.5
 
@@ -69,7 +89,7 @@ def test_assembly_dx_domains(mode, meshtags_factory):
     A2.scatter_reverse()
     assert np.allclose(A.data, A2.data)
 
-    bc = dirichletbc(Function(V), range(30))
+    bc = dirichletbc(Function(V), np.arange(V.dofmap.index_map.size_local // 2, dtype=np.int32))
 
     # Assemble vector
     L = form(ufl.inner(w, v) * (dx(1) + dx(2) + dx(3)))
@@ -100,7 +120,7 @@ def test_assembly_dx_domains(mode, meshtags_factory):
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_assembly_ds_domains(mode):
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, ghost_mode=mode)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
     def bottom(x):
@@ -133,12 +153,12 @@ def test_assembly_ds_domains(mode):
     indices, pos = np.unique(indices, return_index=True)
     marker = meshtags(mesh, mesh.topology.dim - 1, indices, values[pos])
 
-    ds = ufl.Measure('ds', subdomain_data=marker, domain=mesh)
+    ds = ufl.Measure("ds", subdomain_data=marker, domain=mesh)
 
     w = Function(V)
     w.x.array[:] = 0.5
 
-    bc = dirichletbc(Function(V), range(30))
+    bc = dirichletbc(Function(V), np.arange(V.dofmap.index_map.size_local // 2, dtype=np.int32))
 
     # Assemble matrix
     a = form(w * ufl.inner(u, v) * (ds(1) + ds(2) + ds(3) + ds(6)))
@@ -188,7 +208,7 @@ def test_assembly_dS_domains(mode):
 @parametrize_ghost_mode
 def test_additivity(mode):
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
 
     f1 = Function(V)
     f2 = Function(V)
@@ -225,7 +245,7 @@ def test_manual_integration_domains():
     n = 4
     msh = create_unit_square(MPI.COMM_WORLD, n, n)
 
-    V = FunctionSpace(msh, ("Lagrange", 1))
+    V = functionspace(msh, ("Lagrange", 1))
     u = ufl.TrialFunction(V)
     v = ufl.TestFunction(V)
 
@@ -259,10 +279,13 @@ def test_manual_integration_domains():
     dS_mt = ufl.Measure("dS", subdomain_data=mt_facets, domain=msh)
 
     g = Function(V)
-    g.interpolate(lambda x: x[1]**2)
+    g.interpolate(lambda x: x[1] ** 2)
 
     def create_forms(dx, ds, dS):
-        a = form(ufl.inner(g * u, v) * (dx(0) + dx(7) + ds(6)) + ufl.inner(g * u("+"), v("+") + v("-")) * dS(3))
+        a = form(
+            ufl.inner(g * u, v) * (dx(0) + dx(7) + ds(6))
+            + ufl.inner(g * u("+"), v("+") + v("-")) * dS(3)
+        )
         L = form(ufl.inner(g, v) * (dx(0) + dx(7) + ds(6)) + ufl.inner(g, v("+") + v("-")) * dS(3))
         return (a, L)
 
@@ -274,9 +297,10 @@ def test_manual_integration_domains():
 
     # Manually specify cells to integrate over (removing ghosts
     # to give same result as above)
-    cell_domains = [(domain_id, cell_indices[(cell_values == domain_id)
-                                             & (cell_indices < cell_map.size_local)])
-                    for domain_id in [0, 7]]
+    cell_domains = [
+        (domain_id, cell_indices[(cell_values == domain_id) & (cell_indices < cell_map.size_local)])
+        for domain_id in [0, 7]
+    ]
 
     # Manually specify exterior facets to integrate over as
     # (cell, local facet) pairs

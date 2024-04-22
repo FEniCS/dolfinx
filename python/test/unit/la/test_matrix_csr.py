@@ -25,14 +25,14 @@ def create_test_sparsity(n, bs):
     if bs == 1:
         for i in range(2):
             for j in range(2):
-                sp.insert(2 + i, 4 + j)
+                sp.insert(np.array([2 + i]), np.array([4 + j]))
     elif bs == 2:
-        sp.insert(1, 2)
+        sp.insert(np.array([1]), np.array([2]))
     sp.finalize()
     return sp
 
 
-@pytest.mark.parametrize('dtype', [np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 def test_add(dtype):
     # Regular CSR Matrix 6x6 with bs=1
     sp = create_test_sparsity(6, 1)
@@ -76,7 +76,7 @@ def test_add(dtype):
     assert mat3.squared_norm() == 0.0  # /NOSONAR
 
 
-@pytest.mark.parametrize('dtype', [np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 def test_set(dtype):
     mpi_size = MPI.COMM_WORLD.size
     # Regular CSR Matrix 6x6 with bs=1
@@ -86,7 +86,7 @@ def test_set(dtype):
     # Set a block with bs=1
     mat1.set([2.0, 3.0, 4.0, 5.0], [2, 3], [4, 5], 1)
     n1 = mat1.squared_norm()
-    assert (n1 == 54.0 * mpi_size)  # /NOSONAR
+    assert n1 == 54.0 * mpi_size  # /NOSONAR
 
     # Set same block with bs=2
     mat1.set([2.0, 3.0, 4.0, 5.0], [1], [2], 2)
@@ -94,7 +94,7 @@ def test_set(dtype):
     assert n1 == n2
 
 
-@pytest.mark.parametrize('dtype', [np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 def test_set_blocked(dtype):
     mpi_size = MPI.COMM_WORLD.size
     # Blocked CSR Matrix 3x3 with bs=2
@@ -104,16 +104,19 @@ def test_set_blocked(dtype):
     # Set a block with bs=1
     mat1.set([2.0, 3.0, 4.0, 5.0], [2, 3], [4, 5], 1)
     n1 = mat1.squared_norm()
-    assert (n1 == 54.0 * mpi_size)  # /NOSONAR
+    assert n1 == 54.0 * mpi_size  # /NOSONAR
 
 
-@pytest.mark.parametrize('dtype', [np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 def test_distributed_csr(dtype):
+    size = MPI.COMM_WORLD.size
+    rank = MPI.COMM_WORLD.rank
+    if size == 1:
+        return
+
     # global size N
     N = 36
     nghost = 3
-    size = MPI.COMM_WORLD.size
-    rank = MPI.COMM_WORLD.rank
     nbr = (rank + 1) % size
     n = int(N / size)
     ghosts = np.array(range(n * nbr, n * nbr + nghost), dtype=np.int64)
@@ -123,10 +126,10 @@ def test_distributed_csr(dtype):
     sp = SparsityPattern(MPI.COMM_WORLD, [im, im], [1, 1])
     for i in range(n):
         for j in range(n + nghost):
-            sp.insert(i, j)
+            sp.insert(np.array([i]), np.array([j]))
     for i in range(n, n + nghost):
         for j in range(n, n + nghost):
-            sp.insert(i, j)
+            sp.insert(np.array([i]), np.array([j]))
     sp.finalize()
 
     mat = matrix_csr(sp, dtype=dtype)
@@ -144,12 +147,25 @@ def test_distributed_csr(dtype):
     assert np.isclose(mat.data.sum(), pre_final_sum)
 
 
-@pytest.mark.parametrize('dtype', [np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_set_block_matrix(dtype):
+    mesh_dtype = np.real(dtype(0)).dtype
+    ghost_mode = GhostMode.shared_facet
+    mesh = create_unit_square(MPI.COMM_WORLD, 2, 4, ghost_mode=ghost_mode, dtype=mesh_dtype)
+    V = fem.functionspace(mesh, ("Lagrange", 1, (2,)))
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+    a = fem.form(ufl.inner(u, v) * ufl.dx, dtype=dtype)
+    A = fem.create_matrix(a)
+    As = A.to_scipy(ghosted=True)
+    assert As.blocksize == (2, 2)
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 def test_set_diagonal_distributed(dtype):
     mesh_dtype = np.real(dtype(0)).dtype
     ghost_mode = GhostMode.shared_facet
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, ghost_mode=ghost_mode, dtype=mesh_dtype)
-    V = fem.FunctionSpace(mesh, ("Lagrange", 1))
+    V = fem.functionspace(mesh, ("Lagrange", 1))
 
     tdim = mesh.topology.dim
     cellmap = mesh.topology.index_map(tdim)
@@ -190,7 +206,7 @@ def test_set_diagonal_distributed(dtype):
     nlocal = index_map.size_local
     assert (diag[nlocal:] == dtype(0.0)).all()
 
-    shared_dofs = index_map.index_to_dest_ranks
+    shared_dofs = index_map.index_to_dest_ranks()
     for dof in range(nlocal):
         owners = shared_dofs.links(dof)
         assert diag[dof] == len(owners) + 1
@@ -213,11 +229,11 @@ def test_set_diagonal_distributed(dtype):
     # Update matrix:
     # this will zero ghost rows and diagonal values are already zero.
     A.scatter_reverse()
-    assert (As.diagonal()[nlocal:] == dtype(0.)).all()
-    assert (As.diagonal()[:nlocal] == dtype(1.)).all()
+    assert (As.diagonal()[nlocal:] == dtype(0.0)).all()
+    assert (As.diagonal()[:nlocal] == dtype(1.0)).all()
 
 
-@pytest.mark.parametrize('dtype', [np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 def test_bad_entry(dtype):
     sp = create_test_sparsity(6, 1)
     mat1 = matrix_csr(sp, dtype=dtype)

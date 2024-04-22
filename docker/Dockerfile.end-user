@@ -34,13 +34,13 @@
 #    echo "FROM dolfinx/dolfinx-onbuild:nightly" | docker build -f- .
 #
 
-ARG PYVISTA_VERSION=0.42.2
+ARG PYVISTA_VERSION=0.43.5
 
 # Used to set the correct PYTHONPATH for the real and complex install of
 # DOLFINx
 ARG PYTHON_VERSION=3.10
 # Base image for end-user images
-ARG BASEIMAGE=docker.io/dolfinx/dev-env:current
+ARG BASEIMAGE=ghcr.io/fenics/dolfinx/dev-env:current
 
 FROM ${BASEIMAGE} as dolfinx-onbuild
 LABEL description="DOLFINx in 32-bit real and complex modes (onbuild)"
@@ -70,13 +70,11 @@ ONBUILD ADD dolfinx/docker/ffcx_options.json /root/.config/ffcx/ffcx_options.jso
 # The following ARGS are used in the DOLFINx layer.
 # They are safe defaults.
 # CMake build type for DOLFINx C++ build. See CMake documentation.
-ONBUILD ARG DOLFINX_CMAKE_BUILD_TYPE="RelWithDebInfo"
-# Extra CMake C++ compiler flags for DOLFINx C++ build.
-ONBUILD ARG DOLFINX_CMAKE_CXX_FLAGS
+ONBUILD ARG DOLFINX_CMAKE_BUILD_TYPE="Release"
 
 # The dolfinx-onbuild container expects to have folders basix/ ufl/
 # ffcx/ and dolfinx/ mounted/shared at /src.
-ONBUILD RUN cd basix && cmake -G Ninja -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFINX_CMAKE_CXX_FLAGS} -B build-dir -S ./cpp && \
+ONBUILD RUN cd basix && cmake -G Ninja -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -B build-dir -S ./cpp && \
     cmake --build build-dir && \
     cmake --install build-dir && \
     python3 -m pip install ./python && \
@@ -87,22 +85,27 @@ ONBUILD RUN cd basix && cmake -G Ninja -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_
 ONBUILD RUN cd dolfinx && \
     mkdir -p build-real && \
     cd build-real && \
-    PETSC_ARCH=linux-gnu-real64-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-real -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFINX_CMAKE_CXX_FLAGS} ../cpp && \
+    PETSC_ARCH=linux-gnu-real64-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-real -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} ../cpp && \
     ninja install && \
     cd ../python && \
-    CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-real64-32 pip3 install -v --target /usr/local/dolfinx-real/lib/python${PYTHON_VERSION}/dist-packages --no-dependencies --no-cache-dir . && \
+    PETSC_ARCH=linux-gnu-real64-32 pip3 install -v \
+      --config-settings=cmake.build-type="${DOLFINX_CMAKE_BUILD_TYPE}" --config-settings=install.strip=false --no-build-isolation --check-build-dependencies \
+      --target /usr/local/dolfinx-real/lib/python${PYTHON_VERSION}/dist-packages --no-dependencies --no-cache-dir . && \
     git clean -fdx && \
     cd ../ && \
     mkdir -p build-complex && \
     cd build-complex && \
-    PETSC_ARCH=linux-gnu-complex128-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-complex -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -DCMAKE_CXX_FLAGS=${DOLFIN_CMAKE_CXX_FLAGS} ../cpp && \
+    PETSC_ARCH=linux-gnu-complex128-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-complex -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} ../cpp && \
     ninja install && \
     . /usr/local/dolfinx-complex/lib/dolfinx/dolfinx.conf && \
     cd ../python && \
-    CXXFLAGS=${DOLFINX_CMAKE_CXX_FLAGS} PETSC_ARCH=linux-gnu-complex128-32 pip3 install -v --target /usr/local/dolfinx-complex/lib/python${PYTHON_VERSION}/dist-packages --no-dependencies --no-cache-dir .
+    PETSC_ARCH=linux-gnu-complex128-32 pip3 install -v \
+      --config-settings=cmake.build-type="${DOLFINX_CMAKE_BUILD_TYPE}" --config-settings=install.strip=false --no-build-isolation --check-build-dependencies \
+      --target /usr/local/dolfinx-complex/lib/python${PYTHON_VERSION}/dist-packages --no-dependencies --no-cache-dir .
 
 # Real by default.
 ONBUILD ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
+    CMAKE_PREFIX_PATH=/usr/local/dolfinx-real/lib/cmake:$CMAKE_PREFIX_PATH \
     PETSC_ARCH=linux-gnu-real64-32 \
     PYTHONPATH=/usr/local/dolfinx-real/lib/python${PYTHON_VERSION}/dist-packages:$PYTHONPATH \
     LD_LIBRARY_PATH=/usr/local/dolfinx-real/lib:$LD_LIBRARY_PATH

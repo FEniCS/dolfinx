@@ -19,7 +19,7 @@ on:
         required: true
 
       baseimage:
-        description: "tag prefix for docker images"
+        description: "base image"
         default: "docker.io/dolfinx/dev-env:current"
         type: string
         required: true
@@ -64,7 +64,7 @@ jobs:
           - arch_tag: amd64
             os: ubuntu-latest
           - arch_tag: arm64
-            os: buildjet-4vcpu-ubuntu-2204-arm
+            os: buildjet-8vcpu-ubuntu-2204-arm
     runs-on: ${{ matrix.os }}
     steps:
       - name: Create tag without image name
@@ -92,7 +92,7 @@ jobs:
       - name: Set baseimage
         run: |
           USER_INPUT=${{ github.event.inputs.baseimage }}
-          echo "BASEIMAGE=${USER_INPUT:-docker.io/dolfinx/dev-env:current}" >> $GITHUB_ENV
+          echo "BASEIMAGE=${USER_INPUT:-ghcr.io/fenics/dolfinx/dev-env:current}" >> $GITHUB_ENV
 
       - name: Checkout basix
         uses: actions/checkout@v4
@@ -126,12 +126,14 @@ jobs:
         run: |
           echo '{ "cffi_extra_compile_args" : ["-O2"] } ' > dolfinx/docker/dolfinx_jit_options.json
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Build dolfinx-onbuild
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
           build-args: |
-            DOLFINX_CMAKE_BUILD_TYPE=RelWithDebug
-            DOLFINX_CMAKE_CXX_FLAGS=-O2
+            DOLFINX_CMAKE_BUILD_TYPE=RelWithDebInfo
             BASEIMAGE=${{ env.BASEIMAGE }}
           context: .
           file: dolfinx/${{ env.DOCKERFILE }}
@@ -140,22 +142,19 @@ jobs:
           tags: docker.io/dolfinx/dolfinx-onbuild:${{ env.TAG }}
 
       - name: Build intermediate
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
           build-args: |
-            DOLFINX_CMAKE_BUILD_TYPE=RelWithDebug
-            DOLFINX_CMAKE_CXX_FLAGS=-O2
+            DOLFINX_CMAKE_BUILD_TYPE=RelWithDebInfo
             BASEIMAGE=${{ env.BASEIMAGE }}
           context: .
           file: dolfinx/${{ env.DOCKERFILE }}
           target: intermediate
 
       - name: Build dolfinx
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
           build-args: |
-            DOLFINX_CMAKE_BUILD_TYPE=RelWithDebug
-            DOLFINX_CMAKE_CXX_FLAGS=-O2
             BASEIMAGE=${{ env.BASEIMAGE }}
           context: .
           file: dolfinx/${{ env.DOCKERFILE }}
@@ -164,11 +163,9 @@ jobs:
           tags: docker.io/dolfinx/dolfinx:${{ env.TAG }}
 
       - name: Build lab
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
           build-args: |
-            DOLFINX_CMAKE_BUILD_TYPE=RelWithDebug
-            DOLFINX_CMAKE_CXX_FLAGS=-O2
             BASEIMAGE=${{ env.BASEIMAGE }}
           context: .
           file: dolfinx/${{ env.DOCKERFILE }}
@@ -180,9 +177,9 @@ jobs:
         if: ${{ !contains(github.event.inputs.dockerfile, 'dummy') }}
         run: |
           docker run --rm docker.io/dolfinx/dolfinx:${{ env.TAG }} \
-            python3 -c "import dolfinx; from dolfinx.fem import FunctionSpace; from dolfinx.mesh import create_unit_square; from mpi4py import MPI; mesh = create_unit_square(MPI.COMM_WORLD, 10, 10); V = FunctionSpace(mesh, ('Lagrange', 1));"
+            python3 -c "import dolfinx; from dolfinx.fem import functionspace; from dolfinx.mesh import create_unit_square; from mpi4py import MPI; mesh = create_unit_square(MPI.COMM_WORLD, 10, 10); V = functionspace(mesh, ('Lagrange', 1));"
           docker run --rm docker.io/dolfinx/dolfinx:${{ env.TAG }} \
-            /bin/bash -c "source /usr/local/bin/dolfinx-complex-mode && python3 -c $'import dolfinx; from dolfinx.fem import FunctionSpace; from dolfinx.mesh import create_unit_square; from mpi4py import MPI; mesh = create_unit_square(MPI.COMM_WORLD, 10, 10); V = FunctionSpace(mesh, (\"Lagrange\", 1));'"
+            /bin/bash -c "source /usr/local/bin/dolfinx-complex-mode && python3 -c $'import dolfinx; from dolfinx.fem import functionspace; from dolfinx.mesh import create_unit_square; from mpi4py import MPI; mesh = create_unit_square(MPI.COMM_WORLD, 10, 10); V = functionspace(mesh, (\"Lagrange\", 1));'"
 
       - name: Login to Docker Hub
         uses: docker/login-action@v2

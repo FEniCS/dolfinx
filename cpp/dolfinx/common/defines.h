@@ -25,6 +25,9 @@ std::string git_commit_hash();
 /// i.e., with assertions on
 bool has_debug();
 
+/// Return true if DOLFINx is compiled with PETSc
+bool has_petsc();
+
 /// Return true if DOLFINx is compiled with SLEPc
 bool has_slepc();
 

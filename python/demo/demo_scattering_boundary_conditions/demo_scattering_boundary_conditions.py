@@ -31,7 +31,6 @@
 
 # +
 import sys
-from typing import Tuple
 
 from mpi4py import MPI
 
@@ -52,6 +51,7 @@ import numpy as np
 
 try:
     import pyvista
+
     have_pyvista = True
 except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
@@ -108,15 +108,16 @@ if not np.issubdtype(default_scalar_type, np.complexfloating):
 
 # +
 
-class BackgroundElectricField:
 
+class BackgroundElectricField:
     def __init__(self, theta: float, n_bkg: float, k0: complex):
         self.theta = theta  # incident angle
         self.k0 = k0  # vacuum wavevector
         self.n_bkg = n_bkg  # background refractive index
 
-    def eval(self, x: np.typing.NDArray[np.float64]) -> Tuple[np.typing.NDArray[np.complex128],
-                                                              np.typing.NDArray[np.complex128]]:
+    def eval(
+        self, x: np.typing.NDArray[np.float64]
+    ) -> tuple[np.typing.NDArray[np.complex128], np.typing.NDArray[np.complex128]]:
         kx = self.n_bkg * self.k0 * np.cos(self.theta)
         ky = self.n_bkg * self.k0 * np.sin(self.theta)
         phi = kx * x[0] + ky * x[1]
@@ -178,15 +179,17 @@ class BackgroundElectricField:
 # 2D vector (in UFL syntax) is defined below.
 #
 
+
 # +
 def radial_distance(x: ufl.SpatialCoordinate):
     """Returns the radial distance from the origin"""
-    return ufl.sqrt(x[0]**2 + x[1]**2)
+    return ufl.sqrt(x[0] ** 2 + x[1] ** 2)
 
 
 def curl_2d(f: fem.Function):
     """Returns the curl of two 2D vectors as a 3D vector"""
     return ufl.as_vector((0, 0, f[1].dx(0) - f[0].dx(1)))
+
 
 # -
 
@@ -219,9 +222,9 @@ bkg_size = mesh_factor * 60.0e-3
 boundary_size = mesh_factor * 30.0e-3
 
 # Tags for the subdomains
-au_tag = 1          # gold wire
-bkg_tag = 2         # background
-boundary_tag = 3    # boundary
+au_tag = 1  # gold wire
+bkg_tag = 2  # background
+boundary_tag = 3  # boundary
 # -
 
 # We generate the mesh using GMSH and convert it to a
@@ -231,8 +234,17 @@ boundary_tag = 3    # boundary
 model = None
 gmsh.initialize(sys.argv)
 if MPI.COMM_WORLD.rank == 0:
-    model = generate_mesh_wire(radius_wire, radius_dom, in_wire_size, on_wire_size, bkg_size,
-                               boundary_size, au_tag, bkg_tag, boundary_tag)
+    model = generate_mesh_wire(
+        radius_wire,
+        radius_dom,
+        in_wire_size,
+        on_wire_size,
+        bkg_size,
+        boundary_size,
+        au_tag,
+        bkg_tag,
+        boundary_tag,
+    )
 
 model = MPI.COMM_WORLD.bcast(model, root=0)
 domain, cell_tags, facet_tags = io.gmshio.model_to_mesh(model, MPI.COMM_WORLD, 0, gdim=2)
@@ -330,13 +342,16 @@ eps.x.scatter_forward()
 # integrate the terms over the corresponding domains:
 #
 # $$
+# \begin{align}
 # & \int_{\Omega}-\nabla \times( \nabla \times \mathbf{E}_s) \cdot
 # \bar{\mathbf{v}}+\varepsilon_{r} k_{0}^{2} \mathbf{E}_s \cdot
 # \bar{\mathbf{v}}+k_{0}^{2}\left(\varepsilon_{r}-\varepsilon_b\right)
-# \mathbf{E}_b \cdot \bar{\mathbf{v}}~\mathrm{d}x \\ +& \int_{\partial \Omega}
+# \mathbf{E}_b \cdot \bar{\mathbf{v}}~\mathrm{d}x \\
+# +& \int_{\partial \Omega}
 # (\mathbf{n} \times \nabla \times \mathbf{E}_s) \cdot \bar{\mathbf{v}}
 # +\left(j n_bk_{0}+\frac{1}{2r}\right) (\mathbf{n} \times \mathbf{E}_s
 # \times \mathbf{n}) \cdot \bar{\mathbf{v}}~\mathrm{d}s=0
+# \end{align}
 # $$
 #
 # By using $(\nabla \times \mathbf{A}) \cdot \mathbf{B}=\mathbf{A}
@@ -344,14 +359,17 @@ eps.x.scatter_forward()
 # \mathbf{B}),$ we can change the first term into:
 #
 # $$
+# \begin{align}
 # & \int_{\Omega}-\nabla \cdot(\nabla\times\mathbf{E}_s \times
 # \bar{\mathbf{v}})-\nabla \times \mathbf{E}_s \cdot \nabla
 # \times\bar{\mathbf{v}}+\varepsilon_{r} k_{0}^{2} \mathbf{E}_s
 # \cdot \bar{\mathbf{v}}+k_{0}^{2}\left(\varepsilon_{r}-\varepsilon_b\right)
-# \mathbf{E}_b \cdot \bar{\mathbf{v}}~\mathrm{dx} \\ +&\int_{\partial \Omega}
+# \mathbf{E}_b \cdot \bar{\mathbf{v}}~\mathrm{dx} \\
+# +&\int_{\partial \Omega}
 # (\mathbf{n} \times \nabla \times \mathbf{E}_s) \cdot \bar{\mathbf{v}}
 # +\left(j n_bk_{0}+\frac{1}{2r}\right) (\mathbf{n} \times \mathbf{E}_s
 # \times \mathbf{n}) \cdot \bar{\mathbf{v}}~\mathrm{d}s=0,
+# \end{align}
 # $$
 #
 # using the divergence theorem
@@ -359,40 +377,51 @@ eps.x.scatter_forward()
 # \mathbf{F}\cdot\mathbf{n}~\mathrm{d}s$, we can write:
 #
 # $$
+# \begin{align}
 # & \int_{\Omega}-(\nabla \times \mathbf{E}_s) \cdot (\nabla \times
 # \bar{\mathbf{v}})+\varepsilon_{r} k_{0}^{2} \mathbf{E}_s \cdot
 # \bar{\mathbf{v}}+k_{0}^{2}\left(\varepsilon_{r}-\varepsilon_b\right)
-# \mathbf{E}_b \cdot \bar{\mathbf{v}}~\mathrm{d}x \\ +&\int_{\partial \Omega}
+# \mathbf{E}_b \cdot \bar{\mathbf{v}}~\mathrm{d}x \\
+# +&\int_{\partial \Omega}
 # -(\nabla\times\mathbf{E}_s \times \bar{\mathbf{v}})\cdot\mathbf{n}
 # + (\mathbf{n} \times \nabla \times \mathbf{E}_s) \cdot \bar{\mathbf{v}}
 # +\left(j n_bk_{0}+\frac{1}{2r}\right) (\mathbf{n} \times \mathbf{E}_s
 # \times \mathbf{n}) \cdot \bar{\mathbf{v}}~\mathrm{d}s=0.
+# \end{align}
 # $$
 #
 # Cancelling $-(\nabla\times\mathbf{E}_s \times \bar{\mathbf{V}})
 # \cdot\mathbf{n}$  and $\mathbf{n} \times \nabla \times \mathbf{E}_s
-# \cdot \bar{\mathbf{V}}$ using the triple product rule $\mathbf{A}
+# \cdot \bar{\mathbf{V}}$ and rearrange $\left((\mathbf{n} \times \mathbf{E}_s)
+# \times \mathbf{n}\right) \cdot \bar{\mathbf{v}}$ to $ (\mathbf{E}_s \times\mathbf{n})
+# \cdot (\bar{\mathbf{v}} \times \mathbf{n})$ using the triple product rule $\mathbf{A}
 # \cdot(\mathbf{B} \times \mathbf{C})=\mathbf{B} \cdot(\mathbf{C} \times
 # \mathbf{A})=\mathbf{C} \cdot(\mathbf{A} \times \mathbf{B})$, we get:
 #
 # $$
+# \begin{align}
 # & \int_{\Omega}-(\nabla \times \mathbf{E}_s) \cdot (\nabla \times
 # \bar{\mathbf{v}})+\varepsilon_{r} k_{0}^{2} \mathbf{E}_s \cdot
 # \bar{\mathbf{v}}+k_{0}^{2}\left(\varepsilon_{r}-\varepsilon_b\right)
-# \mathbf{E}_b \cdot \bar{\mathbf{v}}~\mathrm{d}x \\ +&\int_{\partial \Omega}
+# \mathbf{E}_b \cdot \bar{\mathbf{v}}~\mathrm{d}x \\
+# +&\int_{\partial \Omega}
 # \left(j n_bk_{0}+\frac{1}{2r}\right)( \mathbf{n} \times \mathbf{E}_s \times
 # \mathbf{n}) \cdot \bar{\mathbf{v}} ~\mathrm{d} s = 0.
+# \end{align}
 # $$
 #
 # We use the [UFL](https://github.com/FEniCS/ufl/) to implement the
 # residual
 
 # Weak form
-F = - ufl.inner(ufl.curl(Es), ufl.curl(v)) * dDom \
-    + eps * (k0**2) * ufl.inner(Es, v) * dDom \
-    + (k0**2) * (eps - eps_bkg) * ufl.inner(Eb, v) * dDom \
-    + (1j * k0 * n_bkg + 1 / (2 * r)) \
-    * ufl.inner(ufl.cross(Es_3d, n_3d), ufl.cross(v_3d, n_3d)) * dsbc
+F = (
+    -ufl.inner(ufl.curl(Es), ufl.curl(v)) * dDom
+    + eps * (k0**2) * ufl.inner(Es, v) * dDom
+    + (k0**2) * (eps - eps_bkg) * ufl.inner(Eb, v) * dDom
+    + (1j * k0 * n_bkg + 1 / (2 * r))
+    * ufl.inner(ufl.cross(Es_3d, n_3d), ufl.cross(v_3d, n_3d))
+    * dsbc
+)
 
 # We split the residual into a sesquilinear (lhs) and linear (rhs) form
 # and solve the problem. We store the scattered field $\mathbf{E}_s$ as
@@ -428,7 +457,9 @@ if have_pyvista:
     V_cells, V_types, V_x = plot.vtk_mesh(V_dg)
     V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
     Esh_values = np.zeros((V_x.shape[0], 3), dtype=np.float64)
-    Esh_values[:, : domain.topology.dim] = Esh_dg.x.array.reshape(V_x.shape[0], domain.topology.dim).real
+    Esh_values[:, : domain.topology.dim] = Esh_dg.x.array.reshape(
+        V_x.shape[0], domain.topology.dim
+    ).real
 
     V_grid.point_data["u"] = Esh_values
 
@@ -464,12 +495,14 @@ with io.VTXWriter(domain.comm, "E.bp", E_dg) as vtx:
 
 # Calculation of analytical efficiencies
 q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
-    eps_au, n_bkg, wl0, radius_wire)
+    eps_au, n_bkg, wl0, radius_wire
+)
 
 # Now we can calculate the numerical efficiencies. The formula for the
 # absorption, scattering and extinction are:
 #
 # $$
+# \begin{align}
 # & Q_{abs} = \operatorname{Re}\left(\int_{\Omega_{m}} \frac{1}{2}
 #   \frac{\operatorname{Im}(\varepsilon_m)k_0}{Z_0n_b}
 #   \mathbf{E}\cdot\hat{\mathbf{E}}dx\right) \\
@@ -477,6 +510,7 @@ q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
 #   \left(\mathbf{E}_s\times\bar{\mathbf{H}}_s\right)
 #   \cdot\mathbf{n}ds\right)\\ \\
 # & Q_{ext} = Q_{abs} + Q_{sca},
+# \end{align}
 # $$
 #
 # with $Z_0 = \sqrt{\frac{\mu_0}{\varepsilon_0}}$ being the vacuum
@@ -487,9 +521,11 @@ q_abs_analyt, q_sca_analyt, q_ext_analyt = calculate_analytical_efficiencies(
 # of the wire, $\sigma_{gcs} = 2r_w$:
 #
 # $$
+# \begin{align}
 # & q_{abs} = \frac{Q_{abs}}{I_0\sigma_{gcs}} \\
 # & q_{sca} = \frac{Q_{sca}}{I_0\sigma_{gcs}} \\
 # & q_{ext} = q_{abs} + q_{sca}.
+# \end{align}
 # $$
 #
 # We can calculate these values in the following way:
@@ -543,12 +579,12 @@ if domain.comm.rank == 0:
     print()
     print(f"The analytical absorption efficiency is {q_abs_analyt}")
     print(f"The numerical absorption efficiency is {q_abs_fenics}")
-    print(f"The error is {err_abs*100}%")
+    print(f"The error is {err_abs * 100}%")
     print()
     print(f"The analytical scattering efficiency is {q_sca_analyt}")
     print(f"The numerical scattering efficiency is {q_sca_fenics}")
-    print(f"The error is {err_sca*100}%")
+    print(f"The error is {err_sca * 100}%")
     print()
     print(f"The analytical extinction efficiency is {q_ext_analyt}")
     print(f"The numerical extinction efficiency is {q_ext_fenics}")
-    print(f"The error is {err_ext*100}%")
+    print(f"The error is {err_ext * 100}%")

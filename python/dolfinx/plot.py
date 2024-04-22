@@ -22,11 +22,13 @@ from dolfinx import fem, mesh
 #
 # Cell types can be found at
 # https://vtk.org/doc/nightly/html/vtkCellType_8h_source.html
-_first_order_vtk = {mesh.CellType.interval: 3,
-                    mesh.CellType.triangle: 5,
-                    mesh.CellType.quadrilateral: 9,
-                    mesh.CellType.tetrahedron: 10,
-                    mesh.CellType.hexahedron: 12}
+_first_order_vtk = {
+    mesh.CellType.interval: 3,
+    mesh.CellType.triangle: 5,
+    mesh.CellType.quadrilateral: 9,
+    mesh.CellType.tetrahedron: 10,
+    mesh.CellType.hexahedron: 12,
+}
 
 
 @functools.singledispatch
@@ -48,12 +50,8 @@ def vtk_mesh(msh: mesh.Mesh, dim: typing.Optional[int] = None, entities=None):
         dim = msh.topology.dim
 
     tdim = msh.topology.dim
-
-    if len(msh.topology.cell_types) != 1:
-        raise RuntimeError("Multiple cell types")
-    cell_type = _cpp.mesh.cell_entity_type(msh.topology.cell_types[0], dim, 0)
-    assert len(msh.geometry.cmaps) == 1
-    cmap = msh.geometry.cmaps[0]
+    cell_type = _cpp.mesh.cell_entity_type(msh.topology.cell_type, dim, 0)
+    cmap = msh.geometry.cmap
     degree = cmap.degree
     if cell_type == mesh.CellType.prism:
         raise RuntimeError("Plotting of prism meshes not supported")
@@ -82,14 +80,16 @@ def vtk_mesh(msh: mesh.Mesh, dim: typing.Optional[int] = None, entities=None):
     topology[:, 1:] = vtk_topology
 
     # Array holding the cell type (shape) for each cell
-    vtk_type = _first_order_vtk[cell_type] if degree == 1 else _cpp.io.get_vtk_cell_type(cell_type, tdim)
+    vtk_type = (
+        _first_order_vtk[cell_type] if degree == 1 else _cpp.io.get_vtk_cell_type(cell_type, tdim)
+    )
     cell_types = np.full(len(entities), vtk_type)
 
     return topology.reshape(-1), cell_types, msh.geometry.x
 
 
-@vtk_mesh.register(fem.FunctionSpaceBase)
-def _(V: fem.FunctionSpaceBase, entities=None):
+@vtk_mesh.register(fem.FunctionSpace)
+def _(V: fem.FunctionSpace, entities=None):
     """Creates a VTK mesh topology (topology array and array of cell
     types) that is based on the degree-of-freedom coordinates.
 
@@ -108,10 +108,19 @@ def _(V: fem.FunctionSpaceBase, entities=None):
         Topology, type for each cell, and geometry in VTK-ready format.
 
     """
-    if not (V.ufl_element().family() in ['Discontinuous Lagrange', "Lagrange", "DQ", "Q", "DP", "P"]):
-        raise RuntimeError("Can only create meshes from continuous or discontinuous Lagrange spaces")
+    if V.ufl_element().family_name not in [
+        "Discontinuous Lagrange",
+        "Lagrange",
+        "DQ",
+        "Q",
+        "DP",
+        "P",
+    ]:
+        raise RuntimeError(
+            "Can only create meshes from continuous or discontinuous Lagrange spaces"
+        )
 
-    degree = V.ufl_element().degree()
+    degree = V.ufl_element().degree
     if degree == 0:
         raise RuntimeError("Cannot create topology from cellwise constants.")
 
@@ -123,17 +132,17 @@ def _(V: fem.FunctionSpaceBase, entities=None):
 
     dofmap = V.dofmap
     num_dofs_per_cell = V.dofmap.dof_layout.num_dofs
-    if len(msh.topology.cell_types) != 1:
-        raise RuntimeError("Multiple cell types")
-    cell_type = msh.topology.cell_types[0]
+    cell_type = msh.topology.cell_type
     perm = np.argsort(_cpp.io.perm_vtk(cell_type, num_dofs_per_cell))
 
-    vtk_type = _first_order_vtk[cell_type] if degree == 1 else _cpp.io.get_vtk_cell_type(cell_type, tdim)
+    vtk_type = (
+        _first_order_vtk[cell_type] if degree == 1 else _cpp.io.get_vtk_cell_type(cell_type, tdim)
+    )
     cell_types = np.full(len(entities), vtk_type)
 
     topology = np.zeros((len(entities), num_dofs_per_cell + 1), dtype=np.int32)
     topology[:, 0] = num_dofs_per_cell
     dofmap_ = dofmap.list
 
-    topology[:, 1:] = dofmap_[:len(entities), perm]
+    topology[:, 1:] = dofmap_[: len(entities), perm]
     return topology.reshape(1, -1)[0], cell_types, V.tabulate_dof_coordinates()

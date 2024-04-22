@@ -16,19 +16,34 @@ import pytest
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx.cpp.la.petsc import scatter_local_vectors
-from dolfinx.fem import (Function, FunctionSpace, bcs_by_block, dirichletbc,
-                         extract_function_spaces, form,
-                         locate_dofs_topological)
-from dolfinx.fem.petsc import (apply_lifting, apply_lifting_nest,
-                               assemble_matrix, assemble_matrix_block,
-                               assemble_matrix_nest, assemble_vector,
-                               assemble_vector_block, assemble_vector_nest,
-                               create_matrix, create_matrix_block,
-                               create_matrix_nest, create_vector,
-                               create_vector_block, create_vector_nest, set_bc,
-                               set_bc_nest)
-from dolfinx.mesh import (GhostMode, create_unit_cube, create_unit_square,
-                          locate_entities_boundary)
+from dolfinx.fem import (
+    Function,
+    bcs_by_block,
+    dirichletbc,
+    extract_function_spaces,
+    form,
+    functionspace,
+    locate_dofs_topological,
+)
+from dolfinx.fem.petsc import (
+    apply_lifting,
+    apply_lifting_nest,
+    assemble_matrix,
+    assemble_matrix_block,
+    assemble_matrix_nest,
+    assemble_vector,
+    assemble_vector_block,
+    assemble_vector_nest,
+    create_matrix,
+    create_matrix_block,
+    create_matrix_nest,
+    create_vector,
+    create_vector_block,
+    create_vector_nest,
+    set_bc,
+    set_bc_nest,
+)
+from dolfinx.mesh import GhostMode, create_unit_cube, create_unit_square, locate_entities_boundary
 from ufl import derivative, dx, inner
 
 
@@ -54,21 +69,22 @@ def test_matrix_assembly_block_nl():
     p0, p1 = 1, 2
     P0 = element("Lagrange", mesh.basix_cell(), p0)
     P1 = element("Lagrange", mesh.basix_cell(), p1)
-    V0 = FunctionSpace(mesh, P0)
-    V1 = FunctionSpace(mesh, P1)
+    V0 = functionspace(mesh, P0)
+    V1 = functionspace(mesh, P1)
 
     def initial_guess_u(x):
         return np.sin(x[0]) * np.sin(x[1])
 
     def initial_guess_p(x):
-        return -x[0]**2 - x[1]**3
+        return -(x[0] ** 2) - x[1] ** 3
 
     def bc_value(x):
         return np.cos(x[0]) * np.cos(x[1])
 
     facetdim = mesh.topology.dim - 1
-    bndry_facets = locate_entities_boundary(mesh, facetdim, lambda x: np.logical_or(np.isclose(x[0], 0.0),
-                                                                                    np.isclose(x[0], 1.0)))
+    bndry_facets = locate_entities_boundary(
+        mesh, facetdim, lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0)
+    )
 
     u_bc = Function(V1)
     u_bc.interpolate(bc_value)
@@ -89,16 +105,25 @@ def test_matrix_assembly_block_nl():
     F0 = inner(u, v) * dx + inner(p, v) * dx - inner(f, v) * dx
     F1 = inner(u, q) * dx + inner(p, q) * dx - inner(g, q) * dx
 
-    a_block = form([[derivative(F0, u, du), derivative(F0, p, dp)],
-                    [derivative(F1, u, du), derivative(F1, p, dp)]])
+    a_block = form(
+        [
+            [derivative(F0, u, du), derivative(F0, p, dp)],
+            [derivative(F1, u, du), derivative(F1, p, dp)],
+        ]
+    )
     L_block = form([F0, F1])
 
     def blocked():
         """Monolithic blocked"""
         x = create_vector_block(L_block)
-        scatter_local_vectors(x, [u.vector.array_r, p.vector.array_r],
-                              [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
-                               (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
+        scatter_local_vectors(
+            x,
+            [u.x.petsc_vec.array_r, p.x.petsc_vec.array_r],
+            [
+                (u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
+                (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs),
+            ],
+        )
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
         # Ghosts are updated inside assemble_vector_block
@@ -119,8 +144,10 @@ def test_matrix_assembly_block_nl():
         x = create_vector_nest(L_block)
         for x1_soln_pair in zip(x.getNestSubVecs(), (u, p)):
             x1_sub, soln_sub = x1_soln_pair
-            soln_sub.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-            soln_sub.vector.copy(result=x1_sub)
+            soln_sub.x.petsc_vec.ghostUpdate(
+                addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD
+            )
+            soln_sub.x.petsc_vec.copy(result=x1_sub)
             x1_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
         A = assemble_matrix_nest(a_block, bcs=[bc])
@@ -143,7 +170,7 @@ def test_matrix_assembly_block_nl():
     def monolithic():
         """Monolithic version"""
         E = mixed_element([P0, P1])
-        W = FunctionSpace(mesh, E)
+        W = functionspace(mesh, E)
         dU = ufl.TrialFunction(W)
         U = Function(W)
         u0, u1 = ufl.split(U)
@@ -152,8 +179,14 @@ def test_matrix_assembly_block_nl():
         U.sub(0).interpolate(initial_guess_u)
         U.sub(1).interpolate(initial_guess_p)
 
-        F = inner(u0, v0) * dx + inner(u1, v0) * dx + inner(u0, v1) * dx + inner(u1, v1) * dx \
-            - inner(f, v0) * ufl.dx - inner(g, v1) * dx
+        F = (
+            inner(u0, v0) * dx
+            + inner(u1, v0) * dx
+            + inner(u0, v1) * dx
+            + inner(u1, v1) * dx
+            - inner(f, v0) * ufl.dx
+            - inner(g, v1) * dx
+        )
         J = derivative(F, U, dU)
         F, J = form(F), form(J)
 
@@ -162,9 +195,9 @@ def test_matrix_assembly_block_nl():
         A = assemble_matrix(J, bcs=[bc])
         A.assemble()
         b = assemble_vector(F)
-        apply_lifting(b, [J], bcs=[[bc]], x0=[U.vector], scale=-1.0)
+        apply_lifting(b, [J], bcs=[[bc]], x0=[U.x.petsc_vec], scale=-1.0)
         b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-        set_bc(b, [bc], x0=U.vector, scale=-1.0)
+        set_bc(b, [bc], x0=U.x.petsc_vec, scale=-1.0)
         assert A.getType() != "nest"
         Anorm = A.norm()
         bnorm = b.norm()
@@ -182,7 +215,7 @@ def test_matrix_assembly_block_nl():
     assert bnorm2 == pytest.approx(bnorm0, 1.0e-6)
 
 
-class NonlinearPDE_SNESProblem():
+class NonlinearPDE_SNESProblem:
     def __init__(self, F, J, soln_vars, bcs, P=None):
         self.L = F
         self.a = J
@@ -220,9 +253,11 @@ class NonlinearPDE_SNESProblem():
         offset = 0
         x_array = x.getArray(readonly=True)
         for var in self.soln_vars:
-            size_local = var.vector.getLocalSize()
-            var.vector.array[:] = x_array[offset: offset + size_local]
-            var.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+            size_local = var.x.petsc_vec.getLocalSize()
+            var.x.petsc_vec.array[:] = x_array[offset : offset + size_local]
+            var.x.petsc_vec.ghostUpdate(
+                addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD
+            )
             offset += size_local
 
         assemble_vector_block(F, self.L, self.a, bcs=self.bcs, x0=x, scale=-1.0)
@@ -280,11 +315,11 @@ def test_assembly_solve_block_nl():
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 11)
     p = 1
     P = element("Lagrange", mesh.basix_cell(), p)
-    V0 = FunctionSpace(mesh, P)
+    V0 = functionspace(mesh, P)
     V1 = V0.clone()
 
     def bc_val_0(x):
-        return x[0]**2 + x[1]**2
+        return x[0] ** 2 + x[1] ** 2
 
     def bc_val_1(x):
         return np.sin(x[0]) * np.cos(x[1])
@@ -293,11 +328,12 @@ def test_assembly_solve_block_nl():
         return np.sin(x[0]) * np.sin(x[1])
 
     def initial_guess_p(x):
-        return -x[0]**2 - x[1]**3
+        return -(x[0] ** 2) - x[1] ** 3
 
     facetdim = mesh.topology.dim - 1
-    bndry_facets = locate_entities_boundary(mesh, facetdim, lambda x: np.logical_or(np.isclose(x[0], 0.0),
-                                                                                    np.isclose(x[0], 1.0)))
+    bndry_facets = locate_entities_boundary(
+        mesh, facetdim, lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0)
+    )
 
     u_bc0 = Function(V0)
     u_bc0.interpolate(bc_val_0)
@@ -313,10 +349,14 @@ def test_assembly_solve_block_nl():
     v, q = ufl.TestFunction(V0), ufl.TestFunction(V1)
 
     f, g = 1.0, -3.0
-    F = [inner((u**2 + 1) * ufl.grad(u), ufl.grad(v)) * dx - inner(f, v) * dx,
-         inner((p**2 + 1) * ufl.grad(p), ufl.grad(q)) * dx - inner(g, q) * dx]
-    J = [[derivative(F[0], u, du), derivative(F[0], p, dp)],
-         [derivative(F[1], u, du), derivative(F[1], p, dp)]]
+    F = [
+        inner((u**2 + 1) * ufl.grad(u), ufl.grad(v)) * dx - inner(f, v) * dx,
+        inner((p**2 + 1) * ufl.grad(p), ufl.grad(q)) * dx - inner(g, q) * dx,
+    ]
+    J = [
+        [derivative(F[0], u, du), derivative(F[0], p, dp)],
+        [derivative(F[1], u, du), derivative(F[1], p, dp)],
+    ]
     F, J = form(F), form(J)
 
     def blocked_solve():
@@ -333,9 +373,14 @@ def test_assembly_solve_block_nl():
         p.interpolate(initial_guess_p)
 
         x = create_vector_block(F)
-        scatter_local_vectors(x, [u.vector.array_r, p.vector.array_r],
-                              [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
-                               (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
+        scatter_local_vectors(
+            x,
+            [u.x.petsc_vec.array_r, p.x.petsc_vec.array_r],
+            [
+                (u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
+                (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs),
+            ],
+        )
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
         snes.solve(None, x)
         assert snes.getKSP().getConvergedReason() > 0
@@ -372,8 +417,10 @@ def test_assembly_solve_block_nl():
         assert x.getType() == "nest"
         for x_soln_pair in zip(x.getNestSubVecs(), (u, p)):
             x_sub, soln_sub = x_soln_pair
-            soln_sub.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-            soln_sub.vector.copy(result=x_sub)
+            soln_sub.x.petsc_vec.ghostUpdate(
+                addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD
+            )
+            soln_sub.x.petsc_vec.copy(result=x_sub)
             x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
         snes.solve(None, x)
@@ -389,15 +436,18 @@ def test_assembly_solve_block_nl():
     def monolithic_solve():
         """Monolithic version"""
         E = mixed_element([P, P])
-        W = FunctionSpace(mesh, E)
+        W = functionspace(mesh, E)
         U = Function(W)
         dU = ufl.TrialFunction(W)
         u0, u1 = ufl.split(U)
         v0, v1 = ufl.TestFunctions(W)
 
-        F = inner((u0**2 + 1) * ufl.grad(u0), ufl.grad(v0)) * dx \
-            + inner((u1**2 + 1) * ufl.grad(u1), ufl.grad(v1)) * dx \
-            - inner(f, v0) * ufl.dx - inner(g, v1) * dx
+        F = (
+            inner((u0**2 + 1) * ufl.grad(u0), ufl.grad(v0)) * dx
+            + inner((u1**2 + 1) * ufl.grad(u1), ufl.grad(v1)) * dx
+            - inner(f, v0) * ufl.dx
+            - inner(g, v1) * dx
+        )
         J = derivative(F, U, dU)
         F, J = form(F), form(J)
 
@@ -423,7 +473,7 @@ def test_assembly_solve_block_nl():
         U.sub(1).interpolate(initial_guess_p)
 
         x = create_vector(F)
-        x.array = U.vector.array_r
+        x.array[:] = U.x.petsc_vec.array_r
 
         snes.solve(None, x)
         assert snes.getKSP().getConvergedReason() > 0
@@ -439,23 +489,28 @@ def test_assembly_solve_block_nl():
     norm2 = monolithic_solve()
     # FIXME: PETSc nested solver mis-behaves in parallel an single
     # precision. Investigate further.
-    if not ((PETSc.ScalarType == np.float32 or PETSc.ScalarType == np.complex64) and mesh.comm.size > 1):
+    if not (
+        (PETSc.ScalarType == np.float32 or PETSc.ScalarType == np.complex64) and mesh.comm.size > 1
+    ):
         norm1 = nested_solve()
         assert norm1 == pytest.approx(norm0, 1.0e-6)
     assert norm2 == pytest.approx(norm0, 1.0e-6)
 
 
-@pytest.mark.parametrize("mesh", [
-    create_unit_square(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.none),
-    create_unit_square(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.shared_facet),
-    create_unit_cube(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=GhostMode.none),
-    create_unit_cube(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=GhostMode.shared_facet)
-])
+@pytest.mark.parametrize(
+    "mesh",
+    [
+        create_unit_square(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.none),
+        create_unit_square(MPI.COMM_WORLD, 12, 11, ghost_mode=GhostMode.shared_facet),
+        create_unit_cube(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=GhostMode.none),
+        create_unit_cube(MPI.COMM_WORLD, 3, 5, 4, ghost_mode=GhostMode.shared_facet),
+    ],
+)
 def test_assembly_solve_taylor_hood_nl(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
     gdim = mesh.geometry.dim
-    P2 = FunctionSpace(mesh, ("Lagrange", 2, (gdim,)))
-    P1 = FunctionSpace(mesh, ("Lagrange", 1))
+    P2 = functionspace(mesh, ("Lagrange", 2, (gdim,)))
+    P1 = functionspace(mesh, ("Lagrange", 1))
 
     def boundary0(x):
         """Define boundary x = 0"""
@@ -466,20 +521,19 @@ def test_assembly_solve_taylor_hood_nl(mesh):
         return np.isclose(x[0], 1.0)
 
     def initial_guess_u(x):
-        u_init = np.row_stack((np.sin(x[0]) * np.sin(x[1]),
-                               np.cos(x[0]) * np.cos(x[1])))
+        u_init = np.vstack((np.sin(x[0]) * np.sin(x[1]), np.cos(x[0]) * np.cos(x[1])))
         if gdim == 3:
-            u_init = np.row_stack((u_init, np.cos(x[2])))
+            u_init = np.vstack((u_init, np.cos(x[2])))
         return u_init
 
     def initial_guess_p(x):
-        return -x[0]**2 - x[1]**3
+        return -(x[0] ** 2) - x[1] ** 3
 
     u_bc_0 = Function(P2)
-    u_bc_0.interpolate(lambda x: np.row_stack(tuple(x[j] + float(j) for j in range(gdim))))
+    u_bc_0.interpolate(lambda x: np.vstack(tuple(x[j] + float(j) for j in range(gdim))))
 
     u_bc_1 = Function(P2)
-    u_bc_1.interpolate(lambda x: np.row_stack(tuple(np.sin(x[j]) for j in range(gdim))))
+    u_bc_1.interpolate(lambda x: np.vstack(tuple(np.sin(x[j]) for j in range(gdim))))
 
     facetdim = mesh.topology.dim - 1
     bndry_facets0 = locate_entities_boundary(mesh, facetdim, boundary0)
@@ -494,12 +548,15 @@ def test_assembly_solve_taylor_hood_nl(mesh):
     du, dp = ufl.TrialFunction(P2), ufl.TrialFunction(P1)
     v, q = ufl.TestFunction(P2), ufl.TestFunction(P1)
 
-    F = [inner(ufl.grad(u), ufl.grad(v)) * dx + inner(p, ufl.div(v)) * dx,
-         inner(ufl.div(u), q) * dx]
-    J = [[derivative(F[0], u, du), derivative(F[0], p, dp)],
-         [derivative(F[1], u, du), derivative(F[1], p, dp)]]
-    P = [[J[0][0], None],
-         [None, inner(dp, q) * dx]]
+    F = [
+        inner(ufl.grad(u), ufl.grad(v)) * dx + inner(p, ufl.div(v)) * dx,
+        inner(ufl.div(u), q) * dx,
+    ]
+    J = [
+        [derivative(F[0], u, du), derivative(F[0], p, dp)],
+        [derivative(F[1], u, du), derivative(F[1], p, dp)],
+    ]
+    P = [[J[0][0], None], [None, inner(dp, q) * dx]]
     F, J, P = form(F), form(J), form(P)
 
     def blocked():
@@ -519,10 +576,15 @@ def test_assembly_solve_taylor_hood_nl(mesh):
         u.interpolate(initial_guess_u)
         p.interpolate(initial_guess_p)
         x = create_vector_block(F)
-        with u.vector.localForm() as _u, p.vector.localForm() as _p:
-            scatter_local_vectors(x, [_u.array_r, _p.array_r],
-                                  [(u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
-                                   (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs)])
+        with u.x.petsc_vec.localForm() as _u, p.x.petsc_vec.localForm() as _p:
+            scatter_local_vectors(
+                x,
+                [_u.array_r, _p.array_r],
+                [
+                    (u.function_space.dofmap.index_map, u.function_space.dofmap.index_map_bs),
+                    (p.function_space.dofmap.index_map, p.function_space.dofmap.index_map_bs),
+                ],
+            )
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
         snes.solve(None, x)
@@ -559,8 +621,10 @@ def test_assembly_solve_taylor_hood_nl(mesh):
         x = create_vector_nest(F)
         for x1_soln_pair in zip(x.getNestSubVecs(), (u, p)):
             x1_sub, soln_sub = x1_soln_pair
-            soln_sub.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-            soln_sub.vector.copy(result=x1_sub)
+            soln_sub.x.petsc_vec.ghostUpdate(
+                addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD
+            )
+            soln_sub.x.petsc_vec.copy(result=x1_sub)
             x1_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
         x.set(0.0)
@@ -570,9 +634,9 @@ def test_assembly_solve_taylor_hood_nl(mesh):
         Jnorm = nest_matrix_norm(Jmat)
         Fnorm = Fvec.norm()
         xnorm = x.norm()
-        Jmat.destroy()
-        Fvec.destroy()
+        Jmat.destroy(), Fvec.destroy()
         x.destroy()
+        Pmat.destroy()
         return Jnorm, Fnorm, xnorm
 
     def monolithic():
@@ -580,21 +644,28 @@ def test_assembly_solve_taylor_hood_nl(mesh):
         P2_el = element("Lagrange", mesh.basix_cell(), 2, shape=(mesh.geometry.dim,))
         P1_el = element("Lagrange", mesh.basix_cell(), 1)
         TH = mixed_element([P2_el, P1_el])
-        W = FunctionSpace(mesh, TH)
+        W = functionspace(mesh, TH)
         U = Function(W)
         dU = ufl.TrialFunction(W)
         u, p = ufl.split(U)
         du, dp = ufl.split(dU)
         v, q = ufl.TestFunctions(W)
 
-        F = inner(ufl.grad(u), ufl.grad(v)) * dx + inner(p, ufl.div(v)) * dx + inner(ufl.div(u), q) * dx
+        F = (
+            inner(ufl.grad(u), ufl.grad(v)) * dx
+            + inner(p, ufl.div(v)) * dx
+            + inner(ufl.div(u), q) * dx
+        )
         J = derivative(F, U, dU)
         P = inner(ufl.grad(du), ufl.grad(v)) * dx + inner(dp, q) * dx
         F, J, P = form(F), form(J), form(P)
 
         bdofsW0_P2_0 = locate_dofs_topological((W.sub(0), P2), facetdim, bndry_facets0)
         bdofsW0_P2_1 = locate_dofs_topological((W.sub(0), P2), facetdim, bndry_facets1)
-        bcs = [dirichletbc(u_bc_0, bdofsW0_P2_0, W.sub(0)), dirichletbc(u_bc_1, bdofsW0_P2_1, W.sub(0))]
+        bcs = [
+            dirichletbc(u_bc_0, bdofsW0_P2_0, W.sub(0)),
+            dirichletbc(u_bc_1, bdofsW0_P2_1, W.sub(0)),
+        ]
 
         Jmat = create_matrix(J)
         Pmat = create_matrix(P)
@@ -612,7 +683,7 @@ def test_assembly_solve_taylor_hood_nl(mesh):
         U.sub(1).interpolate(initial_guess_p)
 
         x = create_vector(F)
-        x.array = U.vector.array_r
+        x.array[:] = U.x.petsc_vec.array_r
 
         snes.solve(None, x)
         assert snes.getConvergedReason() > 0

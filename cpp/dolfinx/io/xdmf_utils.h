@@ -1,4 +1,4 @@
-// Copyright (C) 2012 Chris N. Richardson
+// Copyright (C) 2012-2024 Chris N. Richardson, Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -79,12 +79,12 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 /// @param[in] topology A mesh topology.
 /// @param[in] nodes_g Global 'input' indices for the mesh, as returned
 /// by Geometry::input_global_indices.
-/// @param[in] num_nodes_g Glocal number of 'geometry; nodes, as
-/// returned by ``Geometry::index_map()->size_global()`.
+/// @param[in] num_nodes_g Global number of geometry nodes, as returned
+/// by `Geometry::index_map()->size_global()`.
 /// @param[in] cmap_dof_layout Coordinate element dof layout, computed
-/// using Geometry::cmaps()[0].create_dof_layout().
+/// using `Geometry::cmap().create_dof_layout()`.
 /// @param[in] xdofmap Dofmap for the mesh geometry (Geometry::dofmap).
-/// @param[in] entity_dim Topological dimension of entities to extract
+/// @param[in] entity_dim Topological dimension of entities to extract.
 /// @param[in] entities Mesh entities defined using global input indices
 /// ('nodes'), typically from an input mesh file, e.g. [gi0, gi1, gi2]
 /// for a triangle. Let [v0, v1, v2] be the vertex indices of some
@@ -96,6 +96,7 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 /// @param[in] data Data associated with each entity in `entities`.
 /// @return (entity-vertex connectivity of owned entities, associated
 /// data (values) with each entity).
+///
 /// @note This function involves parallel distribution and must be
 /// called collectively. Global input indices for entities which are not
 /// owned by current rank could be passed to this function. E.g., rank0
@@ -103,16 +104,20 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 /// this identifies a triangle that is owned by rank1. It will be
 /// distributed and rank1 will receive the (local) cell-vertex
 /// connectivity for this triangle.
-std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
-distribute_entity_data(
-    const mesh::Topology& topology, const std::vector<std::int64_t>& nodes_g,
+template <typename T>
+std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
+    const mesh::Topology& topology, std::span<const std::int64_t> nodes_g,
     std::int64_t num_nodes_g, const fem::ElementDofLayout& cmap_dof_layout,
     MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
         const std::int32_t,
         MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
         xdofmap,
-    int entity_dim, std::span<const std::int64_t> entities,
-    std::span<const std::int32_t> data);
+    int entity_dim,
+    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+        const std::int64_t,
+        MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+        entities,
+    std::span<const T> data);
 
 /// TODO: Document
 template <typename T>
@@ -194,11 +199,11 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
                            hid_t h5_id,
                            std::array<std::int64_t, 2> range = {0, 0})
 {
-  // FIXME: Need to sort out datasset dimensions - can't depend on HDF5
+  // FIXME: Need to sort out dataset dimensions - can't depend on HDF5
   // shape, and a Topology data item is not required to have a
   // 'Dimensions' attribute since the dimensions can be determined from
   // the number of cells and the cell type (for topology, one must
-  // supply cell type + (number of cells or dimensions).
+  // supply cell type + (number of cells or dimensions)).
   //
   // A geometry data item must have 'Dimensions' attribute.
 

@@ -116,8 +116,8 @@ create_level_structure(const graph::AdjacencyList<int>& graph, int s)
     ++l;
   }
 
-  return graph::AdjacencyList<int>(std::move(level_structure),
-                                   std::move(level_offsets));
+  return graph::AdjacencyList(std::move(level_structure),
+                              std::move(level_offsets));
 }
 
 //-----------------------------------------------------------------------------
@@ -130,20 +130,20 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
 {
   common::Timer timer("Gibbs-Poole-Stockmeyer ordering");
 
-  const int n = graph.num_nodes();
+  const std::int32_t n = graph.num_nodes();
 
   // Degree comparison function
   auto cmp_degree = [&graph](int a, int b)
-  { return (graph.num_links(a) < graph.num_links(b)); };
+  { return graph.num_links(a) < graph.num_links(b); };
 
   // ALGORITHM I. Finding endpoints of a pseudo-diameter.
 
   // A. Pick an arbitrary vertex of minimal degree and call it v
-  int v = 0;
-  int dmin = std::numeric_limits<int>::max();
-  for (int i = 0; i < n; ++i)
+  std::int32_t v = 0;
+  std::int32_t dmin = std::numeric_limits<std::int32_t>::max();
+  for (std::int32_t i = 0; i < n; ++i)
   {
-    if (int d = graph.num_links(i); d < dmin and rlabel[i] == -1)
+    if (int d = graph.num_links(i); rlabel[i] == -1 and d < dmin)
     {
       v = i;
       dmin = d;
@@ -155,11 +155,12 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
   graph::AdjacencyList<int> lu(0);
   bool done = false;
   int u = 0;
+  std::vector<int> S;
   while (!done)
   {
     // Sort final level S of Lv into increasing degree order
     auto lv_final = lv.links(lv.num_nodes() - 1);
-    std::vector<int> S(lv_final.size());
+    S.resize(lv_final.size());
     std::partial_sort_copy(lv_final.begin(), lv_final.end(), S.begin(), S.end(),
                            cmp_degree);
 
@@ -170,7 +171,7 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
     // in order of increasing degree.
     for (int s : S)
     {
-      auto lstmp = create_level_structure(graph, s);
+      graph::AdjacencyList<int> lstmp = create_level_structure(graph, s);
       if (lstmp.num_nodes() > lv.num_nodes())
       {
         // Found a deeper level structure, so restart
@@ -199,7 +200,7 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
   }
 
   assert(lv.num_nodes() == lu.num_nodes());
-  int k = lv.num_nodes();
+  const int k = lv.num_nodes();
   LOG(INFO) << "GPS pseudo-diameter:(" << k << ") " << u << "-" << v;
 
   // ALGORITHM II. Minimizing level width.
@@ -225,8 +226,8 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
   {
     for (int w : lu.links(i))
     {
-      if (lvp[w][0] == lvp[w][1])
-        ls[lvp[w][0]].push_back(w);
+      if (auto lvp0 = lvp[w][0]; lvp0 == lvp[w][1])
+        ls[lvp0].push_back(w);
       else
         rg.push_back(w);
     }
@@ -238,7 +239,6 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
 
     // Width of levels with additional entries from rgc
     std::vector<int> wn(k), wh(k), wl(k);
-
     for (const std::vector<int>& r : rgc)
     {
       std::transform(ls.begin(), ls.end(), wn.begin(),
@@ -368,7 +368,7 @@ graph::reorder_gps(const graph::AdjacencyList<std::int32_t>& graph)
   while (count < n)
   {
     rv = gps_reorder_unlabelled(graph, r);
-    assert(rv.size() > 0);
+    assert(!rv.empty());
 
     // Reverse permutation
     for (std::int32_t q : rv)

@@ -9,10 +9,25 @@ import functools
 import typing
 
 from dolfinx import cpp as _cpp
-from dolfinx.cpp.common import (IndexMap, git_commit_hash, has_adios2,  # noqa
-                                has_debug, has_kahip, has_parmetis)
+from dolfinx.cpp.common import (
+    IndexMap,
+    git_commit_hash,
+    has_adios2,
+    has_debug,
+    has_kahip,
+    has_parmetis,
+)
 
-__all__ = ["IndexMap", "Timer", "timed"]
+__all__ = [
+    "IndexMap",
+    "Timer",
+    "timed",
+    "git_commit_hash",
+    "has_adios2",
+    "has_debug",
+    "has_kahip",
+    "has_parmetis",
+]
 
 TimingType = _cpp.common.TimingType
 Reduction = _cpp.common.Reduction
@@ -63,6 +78,8 @@ class Timer:
 
         list_timings(comm, [TimingType.wall, TimingType.user])
     """
+
+    _cpp_object: _cpp.common.Timer
 
     def __init__(self, name: typing.Optional[str] = None):
         if name is None:

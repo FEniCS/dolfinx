@@ -44,8 +44,7 @@ void test_scatter_fwd(int n)
   // Scatter values to ghost and check value is correctly received
   sct.scatter_fwd<std::int64_t>(data_local, data_ghost);
   CHECK((int)data_ghost.size() == n * num_ghosts);
-  CHECK(std::all_of(data_ghost.begin(), data_ghost.end(),
-                    [=](auto i)
+  CHECK(std::all_of(data_ghost.begin(), data_ghost.end(), [=](auto i)
                     { return i == val * ((mpi_rank + 1) % mpi_size); }));
 
   std::vector<MPI_Request> requests
@@ -56,8 +55,7 @@ void test_scatter_fwd(int n)
                                       decltype(sct)::type::p2p);
   sct.scatter_fwd_end(requests);
 
-  CHECK(std::all_of(data_ghost.begin(), data_ghost.end(),
-                    [=](auto i)
+  CHECK(std::all_of(data_ghost.begin(), data_ghost.end(), [=](auto i)
                     { return i == val * ((mpi_rank + 1) % mpi_size); }));
 }
 
@@ -107,16 +105,17 @@ void test_scatter_rev()
   std::vector<MPI_Request> requests(num_requests, MPI_REQUEST_NULL);
   std::vector<std::int64_t> local_buffer(sct.local_buffer_size(), 0);
   std::vector<std::int64_t> remote_buffer(sct.remote_buffer_size(), 0);
-  auto pack_fn = [](const auto& in, const auto& idx, auto& out)
+  auto pack_fn = [](auto&& in, auto&& idx, auto&& out)
   {
     for (std::size_t i = 0; i < idx.size(); ++i)
       out[i] = in[idx[i]];
   };
-  auto unpack_fn = [](const auto& in, const auto& idx, auto& out, auto op)
+  auto unpack_fn = [](auto&& in, auto&& idx, auto&& out, auto op)
   {
     for (std::size_t i = 0; i < idx.size(); ++i)
       out[idx[i]] = op(out[idx[i]], in[i]);
   };
+
   sct.scatter_rev_begin<std::int64_t>(data_ghost, remote_buffer, local_buffer,
                                       pack_fn, requests,
                                       decltype(sct)::type::p2p);

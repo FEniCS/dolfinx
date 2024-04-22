@@ -140,8 +140,8 @@ SparsityPattern::SparsityPattern(
   }
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::insert(const std::span<const std::int32_t>& rows,
-                             const std::span<const std::int32_t>& cols)
+void SparsityPattern::insert(std::span<const std::int32_t> rows,
+                             std::span<const std::int32_t> cols)
 {
   if (!_offsets.empty())
   {
@@ -233,17 +233,18 @@ void SparsityPattern::finalize()
   assert(_index_maps[0]);
   const std::int32_t local_size0 = _index_maps[0]->size_local();
   const std::array local_range0 = _index_maps[0]->local_range();
-  const std::vector<std::int64_t>& ghosts0 = _index_maps[0]->ghosts();
-
-  const std::vector<int>& owners0 = _index_maps[0]->owners();
-  const std::vector<int>& src0 = _index_maps[0]->src();
+  std::span ghosts0 = _index_maps[0]->ghosts();
+  std::span owners0 = _index_maps[0]->owners();
+  std::span src0 = _index_maps[0]->src();
 
   assert(_index_maps[1]);
   const std::int32_t local_size1 = _index_maps[1]->size_local();
   const std::array local_range1 = _index_maps[1]->local_range();
 
-  _col_ghosts = _index_maps[1]->ghosts();
-  _col_ghost_owners = _index_maps[1]->owners();
+  _col_ghosts.assign(_index_maps[1]->ghosts().begin(),
+                     _index_maps[1]->ghosts().end());
+  _col_ghost_owners.assign(_index_maps[1]->owners().begin(),
+                           _index_maps[1]->owners().end());
 
   // Compute size of data to send to each process
   std::vector<int> send_sizes(src0.size(), 0);
@@ -297,7 +298,7 @@ void SparsityPattern::finalize()
   std::vector<std::int64_t> ghost_data_in;
   {
     MPI_Comm comm;
-    const std::vector<int>& dest0 = _index_maps[0]->dest();
+    std::span dest0 = _index_maps[0]->dest();
     MPI_Dist_graph_create_adjacent(
         _index_maps[0]->comm(), dest0.size(), dest0.data(), MPI_UNWEIGHTED,
         src0.size(), src0.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);

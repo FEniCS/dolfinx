@@ -12,26 +12,26 @@
 #    docker build --target dev-env --file dolfinx/docker/Dockerfile.test-env --build-arg PETSC_SLEPC_OPTFLAGS="-O2 -march=native" .
 #
 
-ARG ADIOS2_VERSION=2.9.1
-ARG DOXYGEN_VERSION=1_9_8
-ARG GMSH_VERSION=4_11_1
+ARG ADIOS2_VERSION=2.9.2
+ARG DOXYGEN_VERSION=1_10_0
+ARG GMSH_VERSION=4_12_2
 ARG HDF5_SERIES=1.14
-ARG HDF5_PATCH=2
+ARG HDF5_PATCH=3
 ARG HDF5_FIX=
-ARG KAHIP_VERSION=3.15
-ARG NUMPY_VERSION=1.23.2
-ARG PYBIND11_VERSION=2.11.1
-ARG PETSC_VERSION=3.20.0
-ARG SLEPC_VERSION=3.20.0
+ARG KAHIP_VERSION=3.16
+ARG NUMPY_VERSION=1.26.4
+ARG NANOBIND_VERSION=1.9.2
+ARG PETSC_VERSION=3.21.0
+ARG SLEPC_VERSION=3.21.0
 
-ARG MPICH_VERSION=4.1.2
-ARG OPENMPI_SERIES=4.1
-ARG OPENMPI_PATCH=6
+ARG MPICH_VERSION=4.1.3
+ARG OPENMPI_SERIES=5.0
+ARG OPENMPI_PATCH=3
 
 ########################################
 
 FROM ubuntu:22.04 as dev-env
-LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
+LABEL maintainer="FEniCS Steering Council <fenics-steering-council@googlegroups.com>"
 LABEL description="FEniCS testing and development environment with PETSc real, complex, 32-bit and 64-bit modes"
 
 ARG DOXYGEN_VERSION
@@ -39,7 +39,7 @@ ARG GMSH_VERSION
 ARG HDF5_SERIES
 ARG HDF5_PATCH
 ARG HDF5_FIX
-ARG PYBIND11_VERSION
+ARG NANOBIND_VERSION
 ARG PETSC_VERSION
 ARG SLEPC_VERSION
 ARG ADIOS2_VERSION
@@ -148,15 +148,13 @@ RUN if [ "$MPI" = "mpich" ]; then \
     rm -rf /tmp/*
 
 # Install Python packages (via pip)
-# Install numpy via pip. Exclude binaries to avoid conflicts with libblas
-# (See issue #126 and #1305)
 # - make sure pip/setuptoools are up-to-date before using them
 # - First set of packages are required to build and run DOLFINx Python.
 # - Second set of packages are recommended and/or required to build
 #   documentation or run tests.
 RUN pip3 install --no-cache-dir --upgrade setuptools pip && \
-    pip3 install --no-binary="numpy" --no-cache-dir cffi mpi4py numba numpy==${NUMPY_VERSION} scipy && \
-    pip3 install --no-cache-dir clang-format cppimport cmakelang flake8 isort jupytext matplotlib mypy myst-parser pybind11==${PYBIND11_VERSION} pytest pytest-xdist sphinx sphinx_rtd_theme
+    pip3 install --no-cache-dir cffi mpi4py numba numpy==${NUMPY_VERSION} scikit-build-core[pyproject] && \
+    pip3 install --no-cache-dir breathe clang-format cmakelang jupytext matplotlib mypy myst-parser nanobind==${NANOBIND_VERSION} pytest pytest-xdist ruff scipy sphinx sphinx_rtd_theme types-setuptools
 
 # Install KaHIP
 RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.tar.gz && \

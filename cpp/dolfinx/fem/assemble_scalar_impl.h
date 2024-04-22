@@ -41,9 +41,8 @@ T assemble_cells(mdspan2_t x_dofmap, std::span<const scalar_value_type_t<T>> x,
     std::int32_t c = cells[index];
 
     // Get cell coordinates/geometry
-    auto x_dofs
-        = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
-            submdspan(x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+        x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
@@ -81,9 +80,8 @@ T assemble_exterior_facets(mdspan2_t x_dofmap,
     std::int32_t local_facet = facets[index + 1];
 
     // Get cell coordinates/geometry
-    auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::
-        MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
-            x_dofmap, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+        x_dofmap, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs[i]), 3,
@@ -132,17 +130,15 @@ T assemble_interior_facets(mdspan2_t x_dofmap,
         = {facets[index + 1], facets[index + 3]};
 
     // Get cell geometry
-    auto x_dofs0 = MDSPAN_IMPL_STANDARD_NAMESPACE::
-        MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
-            x_dofmap, cells[0], MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_dofs0 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+        x_dofmap, cells[0], MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     for (std::size_t i = 0; i < x_dofs0.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs0[i]), 3,
                   std::next(cdofs0.begin(), 3 * i));
     }
-    auto x_dofs1 = MDSPAN_IMPL_STANDARD_NAMESPACE::
-        MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
-            x_dofmap, cells[1], MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_dofs1 = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+        x_dofmap, cells[1], MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     for (std::size_t i = 0; i < x_dofs1.size(); ++i)
     {
       std::copy_n(std::next(x.begin(), 3 * x_dofs1[i]), 3,
@@ -196,11 +192,9 @@ T assemble_scalar(
     mesh->topology_mutable()->create_entity_permutations();
     const std::vector<std::uint8_t>& perms
         = mesh->topology()->get_facet_permutations();
-    auto cell_types = mesh->topology()->cell_types();
-    if (cell_types.size() > 1)
-      throw std::runtime_error("Multiple cell types in the assembler");
-    int num_cell_facets = mesh::cell_num_entities(cell_types.back(),
-                                                  mesh->topology()->dim() - 1);
+    mesh::CellType cell_type = mesh->topology()->cell_type();
+    int num_cell_facets
+        = mesh::cell_num_entities(cell_type, mesh->topology()->dim() - 1);
     const std::vector<int> c_offsets = M.coefficient_offsets();
     for (int i : M.integral_ids(IntegralType::interior_facet))
     {

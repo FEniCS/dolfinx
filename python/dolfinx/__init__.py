@@ -7,47 +7,42 @@
 
 # flake8: noqa
 
-# Store dl open flags to restore them after import
-import sys
-
-stored_dlopen_flags = sys.getdlopenflags()
-
-# Developer note: below is related to OpenMPI
-# Fix dlopen flags
-if "linux" in sys.platform:
-    RTLD_NOW = 2
-    RTLD_GLOBAL = 256
-    sys.setdlopenflags(RTLD_NOW | RTLD_GLOBAL)
-del sys
-
-# Reset dl open flags
-# sys.setdlopenflags(stored_dlopen_flags)
-# del sys
-
 import sys
 
 try:
     from petsc4py import PETSc as _PETSc
+
     default_scalar_type = _PETSc.ScalarType  # type: ignore
     default_real_type = _PETSc.RealType  # type: ignore
 except ImportError:
     import numpy as _np
+
     default_scalar_type = _np.float64
     default_real_type = _np.float64
 
 from dolfinx import common
 from dolfinx import cpp as _cpp
-from dolfinx import fem, geometry, graph, io, jit, la, log, mesh, nls, plot
+from dolfinx import fem, geometry, graph, io, jit, la, log, mesh, nls, plot, utils
+
 # Initialise logging
-from dolfinx.common import (TimingType, git_commit_hash, has_debug, has_kahip,
-                            has_parmetis, list_timings, timing)
+from dolfinx.common import (
+    TimingType,
+    git_commit_hash,
+    has_debug,
+    has_kahip,
+    has_parmetis,
+    list_timings,
+    timing,
+)
 from dolfinx.cpp import __version__
 
 _cpp.common.init_logging(sys.argv)
 del _cpp, sys
 
+
 def get_include(user=False):
     import os
+
     d = os.path.dirname(__file__)
     if os.path.exists(os.path.join(d, "wrappers")):
         # Package is installed
@@ -57,9 +52,24 @@ def get_include(user=False):
         return os.path.join(os.path.dirname(d), "src")
 
 
-
 __all__ = [
-    "fem", "common", "geometry", "graph", "io", "jit", "la", "log", "mesh", "nls", "plot",
-    "TimingType", "git_commit_hash", "has_debug", "has_kahip", "has_parmetis", "list_timings",
-    "timing"
+    "fem",
+    "common",
+    "geometry",
+    "graph",
+    "io",
+    "jit",
+    "la",
+    "log",
+    "mesh",
+    "nls",
+    "plot",
+    "utils",
+    "TimingType",
+    "git_commit_hash",
+    "has_debug",
+    "has_kahip",
+    "has_parmetis",
+    "list_timings",
+    "timing",
 ]

@@ -1,6 +1,6 @@
-"""Unit tests for assembly with a numba kernel"""
+"""Unit tests for assembly with Numba and CFFI kernels."""
 
-# Copyright (C) 2018-2019 Chris N. Richardson and Michal Habera
+# Copyright (C) 2018-2014 Chris N. Richardson, Michal Habera and Garth N. Wells
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -15,95 +15,92 @@ import numpy as np
 import pytest
 
 import dolfinx
-from dolfinx import TimingType
+import dolfinx.utils
+import ffcx.codegeneration.utils
+from dolfinx import TimingType, fem, la, list_timings
 from dolfinx import cpp as _cpp
-from dolfinx import (default_real_type, default_scalar_type, fem, la,
-                     list_timings)
-from dolfinx.fem import Form, Function, FunctionSpace, IntegralType
+from dolfinx.fem import Form, Function, IntegralType, form_cpp_class, functionspace
 from dolfinx.mesh import create_unit_square
 
 numba = pytest.importorskip("numba")
+ufcx_signature = ffcx.codegeneration.utils.numba_ufcx_kernel_signature
 
-# Add current directory - required for some Python versions to find cffi
-# compiled modules
 sys.path.append(os.getcwd())
 
-c_signature = numba.types.void(
-    numba.types.CPointer(numba.typeof(default_scalar_type())),
-    numba.types.CPointer(numba.typeof(default_scalar_type())),
-    numba.types.CPointer(numba.typeof(default_scalar_type())),
-    numba.types.CPointer(numba.typeof(default_real_type())),
-    numba.types.CPointer(numba.types.int32),
-    numba.types.CPointer(numba.types.int32))
+
+def tabulate_rank2(dtype, xdtype):
+    @numba.cfunc(ufcx_signature(dtype, xdtype), nopython=True)
+    def tabulate(A_, w_, c_, coords_, entity_local_index, cell_orientation):
+        A = numba.carray(A_, (3, 3), dtype=dtype)
+        coordinate_dofs = numba.carray(coords_, (3, 3), dtype=xdtype)
+
+        # Ke=∫Ωe BTe Be dΩ
+        x0, y0 = coordinate_dofs[0, :2]
+        x1, y1 = coordinate_dofs[1, :2]
+        x2, y2 = coordinate_dofs[2, :2]
+
+        # 2x Element area Ae
+        Ae = abs((x0 - x1) * (y2 - y1) - (y0 - y1) * (x2 - x1))
+        B = np.array([y1 - y2, y2 - y0, y0 - y1, x2 - x1, x0 - x2, x1 - x0], dtype=dtype).reshape(
+            2, 3
+        )
+        A[:, :] = np.dot(B.T, B) / (2 * Ae)
+
+    return tabulate
 
 
-@numba.cfunc(c_signature, nopython=True)
-def tabulate_tensor_A(A_, w_, c_, coords_, entity_local_index, cell_orientation):
-    A = numba.carray(A_, (3, 3), dtype=default_scalar_type)
-    coordinate_dofs = numba.carray(coords_, (3, 3), dtype=dolfinx.default_real_type)
+def tabulate_rank1(dtype, xdtype):
+    @numba.cfunc(ufcx_signature(dtype, xdtype), nopython=True)
+    def tabulate(b_, w_, c_, coords_, local_index, orientation):
+        b = numba.carray(b_, (3), dtype=dtype)
+        coordinate_dofs = numba.carray(coords_, (3, 3), dtype=xdtype)
+        x0, y0 = coordinate_dofs[0, :2]
+        x1, y1 = coordinate_dofs[1, :2]
+        x2, y2 = coordinate_dofs[2, :2]
 
-    # Ke=∫Ωe BTe Be dΩ
-    x0, y0 = coordinate_dofs[0, :2]
-    x1, y1 = coordinate_dofs[1, :2]
-    x2, y2 = coordinate_dofs[2, :2]
+        # 2x Element area Ae
+        Ae = abs((x0 - x1) * (y2 - y1) - (y0 - y1) * (x2 - x1))
+        b[:] = Ae / 6.0
 
-    # 2x Element area Ae
-    Ae = abs((x0 - x1) * (y2 - y1) - (y0 - y1) * (x2 - x1))
-    B = np.array([y1 - y2, y2 - y0, y0 - y1, x2 - x1, x0 - x2, x1 - x0], dtype=default_scalar_type).reshape(2, 3)
-    A[:, :] = np.dot(B.T, B) / (2 * Ae)
-
-
-@numba.cfunc(c_signature, nopython=True)
-def tabulate_tensor_b(b_, w_, c_, coords_, local_index, orientation):
-    b = numba.carray(b_, (3), dtype=default_scalar_type)
-    coordinate_dofs = numba.carray(coords_, (3, 3), dtype=dolfinx.default_real_type)
-    x0, y0 = coordinate_dofs[0, :2]
-    x1, y1 = coordinate_dofs[1, :2]
-    x2, y2 = coordinate_dofs[2, :2]
-
-    # 2x Element area Ae
-    Ae = abs((x0 - x1) * (y2 - y1) - (y0 - y1) * (x2 - x1))
-    b[:] = Ae / 6.0
+    return tabulate
 
 
-@numba.cfunc(c_signature, nopython=True)
-def tabulate_tensor_b_coeff(b_, w_, c_, coords_, local_index, orientation):
-    b = numba.carray(b_, (3), dtype=default_scalar_type)
-    w = numba.carray(w_, (1), dtype=default_scalar_type)
-    coordinate_dofs = numba.carray(coords_, (3, 3), dtype=default_real_type)
-    x0, y0 = coordinate_dofs[0, :2]
-    x1, y1 = coordinate_dofs[1, :2]
-    x2, y2 = coordinate_dofs[2, :2]
+def tabulate_rank1_coeff(dtype, xdtype):
+    @numba.cfunc(ufcx_signature(dtype, xdtype), nopython=True)
+    def tabulate(b_, w_, c_, coords_, local_index, orientation):
+        b = numba.carray(b_, (3), dtype=dtype)
+        w = numba.carray(w_, (1), dtype=dtype)
+        coordinate_dofs = numba.carray(coords_, (3, 3), dtype=xdtype)
+        x0, y0 = coordinate_dofs[0, :2]
+        x1, y1 = coordinate_dofs[1, :2]
+        x2, y2 = coordinate_dofs[2, :2]
 
-    # 2x Element area Ae
-    Ae = abs((x0 - x1) * (y2 - y1) - (y0 - y1) * (x2 - x1))
-    b[:] = w[0] * Ae / 6.0
+        # 2x Element area Ae
+        Ae = abs((x0 - x1) * (y2 - y1) - (y0 - y1) * (x2 - x1))
+        b[:] = w[0] * Ae / 6.0
+
+    return tabulate
 
 
-def test_numba_assembly():
-    if default_scalar_type == np.float32:
-        formtype = _cpp.fem.Form_float32
-    elif default_scalar_type == np.float64:
-        formtype = _cpp.fem.Form_float64
-    elif default_scalar_type == np.complex64:
-        formtype = _cpp.fem.Form_complex64
-    elif default_scalar_type == np.complex128:
-        formtype = _cpp.fem.Form_complex128
-    else:
-        raise RuntimeError("Unknown scalar type")
-
-    mesh = create_unit_square(MPI.COMM_WORLD, 13, 13)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
-
-    cells = range(mesh.topology.index_map(mesh.topology.dim).size_local)
-
-    integrals = {IntegralType.cell: [(-1, tabulate_tensor_A.address, cells),
-                                     (12, tabulate_tensor_A.address, range(0)),
-                                     (2, tabulate_tensor_A.address, range(0))]}
-    a = Form(formtype([V._cpp_object, V._cpp_object], integrals, [], [], False))
-
-    integrals = {IntegralType.cell: [(-1, tabulate_tensor_b.address, cells)]}
-    L = Form(formtype([V._cpp_object], integrals, [], [], False))
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_numba_assembly(dtype):
+    xdtype = np.real(dtype(0)).dtype
+    k2 = tabulate_rank2(dtype, xdtype)
+    k1 = tabulate_rank1(dtype, xdtype)
+    mesh = create_unit_square(MPI.COMM_WORLD, 13, 13, dtype=xdtype)
+    V = functionspace(mesh, ("Lagrange", 1))
+    cells = np.arange(mesh.topology.index_map(mesh.topology.dim).size_local, dtype=np.int32)
+    integrals = {
+        IntegralType.cell: [
+            (-1, k2.address, cells),
+            (2, k2.address, np.arange(0)),
+            (12, k2.address, np.arange(0)),
+        ]
+    }
+    formtype = form_cpp_class(dtype)
+    a = Form(formtype([V._cpp_object, V._cpp_object], integrals, [], [], False, {}, None))
+    integrals = {IntegralType.cell: [(-1, k1.address, cells)]}
+    L = Form(formtype([V._cpp_object], integrals, [], [], False, {}, None))
 
     A = dolfinx.fem.assemble_matrix(a)
     A.scatter_reverse()
@@ -111,51 +108,48 @@ def test_numba_assembly():
     b.scatter_reverse(dolfinx.la.InsertMode.add)
 
     Anorm = np.sqrt(A.squared_norm())
-    bnorm = b.norm()
+    bnorm = la.norm(b)
     assert np.isclose(Anorm, 56.124860801609124)
     assert np.isclose(bnorm, 0.0739710713711999)
 
     list_timings(MPI.COMM_WORLD, [TimingType.wall])
 
 
-def test_coefficient():
-    if default_scalar_type == np.float32:
-        formtype = _cpp.fem.Form_float32
-    elif default_scalar_type == np.float64:
-        formtype = _cpp.fem.Form_float64
-    elif default_scalar_type == np.complex64:
-        formtype = _cpp.fem.Form_complex64
-    elif default_scalar_type == np.complex128:
-        formtype = _cpp.fem.Form_complex128
-    else:
-        raise RuntimeError("Unknown scalar type")
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_coefficient(dtype):
+    xdtype = np.real(dtype(0)).dtype
+    k1 = tabulate_rank1_coeff(dtype, xdtype)
 
-    mesh = create_unit_square(MPI.COMM_WORLD, 13, 13)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
-    DG0 = FunctionSpace(mesh, ("DG", 0))
-    vals = Function(DG0)
-    vals.vector.set(2.0)
+    mesh = create_unit_square(MPI.COMM_WORLD, 13, 13, dtype=xdtype)
+    V = functionspace(mesh, ("Lagrange", 1))
+    DG0 = functionspace(mesh, ("DG", 0))
+    vals = Function(DG0, dtype=dtype)
+    vals.x.array[: vals.x.index_map.size_local] = 2
 
     tdim = mesh.topology.dim
     num_cells = mesh.topology.index_map(tdim).size_local + mesh.topology.index_map(tdim).num_ghosts
-    integrals = {IntegralType.cell: [(1, tabulate_tensor_b_coeff.address, np.arange(num_cells, dtype=np.intc))]}
-    L = Form(formtype([V._cpp_object], integrals, [vals._cpp_object], [], False))
+    integrals = {IntegralType.cell: [(1, k1.address, np.arange(num_cells, dtype=np.int32))]}
+    formtype = form_cpp_class(dtype)
+    L = Form(formtype([V._cpp_object], integrals, [vals._cpp_object], [], False, {}, None))
 
     b = dolfinx.fem.assemble_vector(L)
     b.scatter_reverse(la.InsertMode.add)
-    bnorm = b.norm()
+    bnorm = la.norm(b)
     assert np.isclose(bnorm, 2.0 * 0.0739710713711999)
 
 
 @pytest.mark.skip_in_parallel
 def test_cffi_assembly():
+    pytest.importorskip("cffi")
     mesh = create_unit_square(MPI.COMM_WORLD, 13, 13, dtype=np.float64)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
-
+    V = functionspace(mesh, ("Lagrange", 1))
     if mesh.comm.rank == 0:
         from cffi import FFI
+
         ffibuilder = FFI()
-        ffibuilder.set_source("_cffi_kernelA", r"""
+        ffibuilder.set_source(
+            "_cffi_kernelA",
+            r"""
         #include <math.h>
         void tabulate_tensor_poissonA(double* restrict A, const double* w,
                                     const double* c,
@@ -169,10 +163,14 @@ def test_cffi_assembly():
         // PM* dimensions: [entities][dofs][dofs]
         static const double FE3_C0_D01_Q1[1][1][2] = { { { -1.0, 1.0 } } };
         // Unstructured piecewise computations
-        const double J_c0 = coordinate_dofs[0] * FE3_C0_D01_Q1[0][0][0] + coordinate_dofs[3] * FE3_C0_D01_Q1[0][0][1];
-        const double J_c3 = coordinate_dofs[1] * FE3_C0_D01_Q1[0][0][0] + coordinate_dofs[7] * FE3_C0_D01_Q1[0][0][1];
-        const double J_c1 = coordinate_dofs[0] * FE3_C0_D01_Q1[0][0][0] + coordinate_dofs[6] * FE3_C0_D01_Q1[0][0][1];
-        const double J_c2 = coordinate_dofs[1] * FE3_C0_D01_Q1[0][0][0] + coordinate_dofs[4] * FE3_C0_D01_Q1[0][0][1];
+        const double J_c0 = coordinate_dofs[0] * FE3_C0_D01_Q1[0][0][0]
+          + coordinate_dofs[3] * FE3_C0_D01_Q1[0][0][1];
+        const double J_c3 = coordinate_dofs[1] * FE3_C0_D01_Q1[0][0][0]
+          + coordinate_dofs[7] * FE3_C0_D01_Q1[0][0][1];
+        const double J_c1 = coordinate_dofs[0] * FE3_C0_D01_Q1[0][0][0]
+          + coordinate_dofs[6] * FE3_C0_D01_Q1[0][0][1];
+        const double J_c2 = coordinate_dofs[1] * FE3_C0_D01_Q1[0][0][0]
+          + coordinate_dofs[4] * FE3_C0_D01_Q1[0][0][1];
         double sp[20];
         sp[0] = J_c0 * J_c3;
         sp[1] = J_c1 * J_c2;
@@ -207,10 +205,10 @@ def test_cffi_assembly():
         }
 
         void tabulate_tensor_poissonL(double* restrict A, const double* w,
-                                     const double* c,
-                                     const double* restrict coordinate_dofs,
-                                     const int* entity_local_index,
-                                     const int* cell_orientation)
+                                      const double* c,
+                                      const double* restrict coordinate_dofs,
+                                      const int* entity_local_index,
+                                      const int* cell_orientation)
         {
         // Precomputed values of basis functions and precomputations
         // FE* dimensions: [entities][points][dofs]
@@ -218,10 +216,14 @@ def test_cffi_assembly():
         // PM* dimensions: [entities][dofs][dofs]
         static const double FE4_C0_D01_Q1[1][1][2] = { { { -1.0, 1.0 } } };
         // Unstructured piecewise computations
-        const double J_c0 = coordinate_dofs[0] * FE4_C0_D01_Q1[0][0][0] + coordinate_dofs[3] * FE4_C0_D01_Q1[0][0][1];
-        const double J_c3 = coordinate_dofs[1] * FE4_C0_D01_Q1[0][0][0] + coordinate_dofs[7] * FE4_C0_D01_Q1[0][0][1];
-        const double J_c1 = coordinate_dofs[0] * FE4_C0_D01_Q1[0][0][0] + coordinate_dofs[6] * FE4_C0_D01_Q1[0][0][1];
-        const double J_c2 = coordinate_dofs[1] * FE4_C0_D01_Q1[0][0][0] + coordinate_dofs[4] * FE4_C0_D01_Q1[0][0][1];
+        const double J_c0 = coordinate_dofs[0] * FE4_C0_D01_Q1[0][0][0]
+          + coordinate_dofs[3] * FE4_C0_D01_Q1[0][0][1];
+        const double J_c3 = coordinate_dofs[1] * FE4_C0_D01_Q1[0][0][0]
+          + coordinate_dofs[7] * FE4_C0_D01_Q1[0][0][1];
+        const double J_c1 = coordinate_dofs[0] * FE4_C0_D01_Q1[0][0][0]
+          + coordinate_dofs[6] * FE4_C0_D01_Q1[0][0][1];
+        const double J_c2 = coordinate_dofs[1] * FE4_C0_D01_Q1[0][0][0]
+          + coordinate_dofs[4] * FE4_C0_D01_Q1[0][0][1];
         double sp[4];
         sp[0] = J_c0 * J_c3;
         sp[1] = J_c1 * J_c2;
@@ -231,8 +233,10 @@ def test_cffi_assembly():
         A[1] = 0.1666666666666667 * sp[3];
         A[2] = 0.1666666666666667 * sp[3];
         }
-        """)
-        ffibuilder.cdef("""
+        """,
+        )
+        ffibuilder.cdef(
+            """
         void tabulate_tensor_poissonA(double* restrict A, const double* w,
                                     const double* c,
                                     const double* restrict coordinate_dofs,
@@ -243,22 +247,25 @@ def test_cffi_assembly():
                                     const double* restrict coordinate_dofs,
                                     const int* entity_local_index,
                                     const int* cell_orientation);
-        """)
+        """
+        )
 
         ffibuilder.compile(verbose=True)
 
     mesh.comm.Barrier()
     from _cffi_kernelA import ffi, lib
 
-    cells = range(mesh.topology.index_map(mesh.topology.dim).size_local)
+    cells = np.arange(mesh.topology.index_map(mesh.topology.dim).size_local, dtype=np.int32)
 
     ptrA = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonA"))
     integrals = {IntegralType.cell: [(-1, ptrA, cells)]}
-    a = Form(_cpp.fem.Form_float64([V._cpp_object, V._cpp_object], integrals, [], [], False))
+    a = Form(
+        _cpp.fem.Form_float64([V._cpp_object, V._cpp_object], integrals, [], [], False, {}, None)
+    )
 
     ptrL = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonL"))
     integrals = {IntegralType.cell: [(-1, ptrL, cells)]}
-    L = Form(_cpp.fem.Form_float64([V._cpp_object], integrals, [], [], False))
+    L = Form(_cpp.fem.Form_float64([V._cpp_object], integrals, [], [], False, {}, None))
 
     A = fem.assemble_matrix(a)
     A.scatter_reverse()
@@ -266,4 +273,4 @@ def test_cffi_assembly():
 
     b = fem.assemble_vector(L)
     b.scatter_reverse(la.InsertMode.add)
-    assert np.isclose(b.norm(), 0.0739710713711999)
+    assert np.isclose(la.norm(b), 0.0739710713711999)

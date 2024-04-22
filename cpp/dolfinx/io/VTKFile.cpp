@@ -274,7 +274,7 @@ void add_mesh(std::span<const U> x, std::array<std::size_t, 2> /*xshape*/,
   max_idx -= 1;
   if (!cellmap.ghosts().empty())
   {
-    auto& ghosts = cellmap.ghosts();
+    std::span ghosts = cellmap.ghosts();
     auto minmax = std::minmax_element(ghosts.begin(), ghosts.end());
     min_idx = std::min(min_idx, *minmax.first);
     max_idx = std::max(max_idx, *minmax.second);
@@ -420,7 +420,7 @@ void write_function(
   {
     std::vector<std::int64_t> tmp;
     std::tie(tmp, cshape) = io::extract_vtk_connectivity(
-        mesh0->geometry().dofmap(), topology0->cell_types()[0]);
+        mesh0->geometry().dofmap(), topology0->cell_type());
     cells.assign(tmp.begin(), tmp.end());
     const mesh::Geometry<U>& geometry = mesh0->geometry();
     x.assign(geometry.x().begin(), geometry.x().end());
@@ -443,14 +443,11 @@ void write_function(
   piece_node.append_attribute("NumberOfCells") = cshape[0];
 
   // FIXME
-  auto cell_types = topology0->cell_types();
-  if (cell_types.size() > 1)
-    throw std::runtime_error("Multiple cell types in IO");
-
+  mesh::CellType cell_type = topology0->cell_type();
   // Add mesh data to "Piece" node
   int tdim = topology0->dim();
   add_mesh<U>(x, xshape, x_id, x_ghost, cells, cshape,
-              *topology0->index_map(tdim), cell_types.back(), topology0->dim(),
+              *topology0->index_map(tdim), cell_type, topology0->dim(),
               piece_node);
 
   // FIXME: is this actually setting the first?
@@ -466,7 +463,7 @@ void write_function(
     if (piece_node.child(data_type).empty())
       piece_node.append_child(data_type);
 
-    const int rank = e->value_shape().size();
+    const int rank = _u.get().function_space()->value_shape().size();
     pugi::xml_node data_node = piece_node.child(data_type);
     if (data_node.attribute(tensor_str[rank]).empty())
       data_node.append_attribute(tensor_str[rank]);
@@ -480,7 +477,7 @@ void write_function(
     auto V = _u.get().function_space();
     auto e = V->element();
     assert(e);
-    int rank = e->value_shape().size();
+    int rank = V->value_shape().size();
     std::int32_t num_comp = std::pow(3, rank);
     if (is_cellwise(*e))
     {
@@ -511,7 +508,7 @@ void write_function(
 
       // Function to pack data to 3D with 'zero' padding, typically when
       // a Function is 2D
-      auto pad_data = [num_comp](const auto& V, auto u)
+      auto pad_data = [num_comp](auto&& V, auto u)
       {
         auto dofmap = V.dofmap();
         int bs = dofmap->bs();
@@ -643,7 +640,7 @@ void write_function(
       assert(e);
       std::string d_type = is_cellwise(*e) ? "PCellData" : "PPointData";
       pugi::xml_node data_pnode = grid_node.child(d_type.c_str());
-      const int rank = e->value_shape().size();
+      const int rank = V->value_shape().size();
       constexpr std::array ncomps = {0, 3, 9};
 
       auto add_field = [&](const std::string& name, int size)
@@ -666,14 +663,14 @@ void write_function(
         add_field(_u.get().name + field_ext[0], size);
         add_field(_u.get().name + field_ext[1], size);
       }
+    }
 
-      // Add data for each process to the PVTU object
-      for (int r = 0; r < mpi_size; ++r)
-      {
-        std::filesystem::path vtu = create_vtu_path(r);
-        pugi::xml_node piece_node = grid_node.append_child("Piece");
-        piece_node.append_attribute("Source") = vtu.filename().c_str();
-      }
+    // Add data for each process to the PVTU object
+    for (int r = 0; r < mpi_size; ++r)
+    {
+      std::filesystem::path vtu = create_vtu_path(r);
+      pugi::xml_node piece_node = grid_node.append_child("Piece");
+      piece_node.append_attribute("Source") = vtu.filename().c_str();
     }
 
     // Write PVTU file
@@ -783,18 +780,16 @@ void io::VTKFile::write(const mesh::Mesh<U>& mesh, double time)
   piece_node.append_attribute("NumberOfPoints") = num_points;
   piece_node.append_attribute("NumberOfCells") = num_cells;
 
-  auto cell_types = topology->cell_types();
-  if (cell_types.size() > 1)
-    throw std::runtime_error("Multiple cell types in IO");
+  mesh::CellType cell_type = topology->cell_type();
 
   // Add mesh data to "Piece" node
   const auto [cells, cshape]
-      = extract_vtk_connectivity(mesh.geometry().dofmap(), cell_types[0]);
+      = extract_vtk_connectivity(mesh.geometry().dofmap(), cell_type);
   std::array<std::size_t, 2> xshape = {geometry.x().size() / 3, 3};
   std::vector<std::uint8_t> x_ghost(xshape[0], 0);
   std::fill(std::next(x_ghost.begin(), xmap->size_local()), x_ghost.end(), 1);
   add_mesh(geometry.x(), xshape, geometry.input_global_indices(), x_ghost,
-           cells, cshape, *topology->index_map(tdim), cell_types[0],
+           cells, cshape, *topology->index_map(tdim), cell_type,
            topology->dim(), piece_node);
 
   // Create filepath for a .vtu file

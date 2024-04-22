@@ -28,7 +28,6 @@ class FiniteElement;
 
 namespace dolfinx::fem
 {
-
 /// A CoordinateElement manages coordinate mappings for isoparametric
 /// cells.
 /// @todo A dof layout on a reference cell needs to be defined.
@@ -224,12 +223,10 @@ public:
                            double tol = 1.0e-6, int maxit = 15) const;
 
   /// @brief Permute a list of DOF numbers on a cell.
-  void permute_dofs(const std::span<std::int32_t>& dofs,
-                    std::uint32_t cell_perm) const;
+  void permute(std::span<std::int32_t> dofs, std::uint32_t cell_perm) const;
 
   /// @brief Reverses a DOF permutation
-  void unpermute_dofs(const std::span<std::int32_t>& dofs,
-                      std::uint32_t cell_perm) const;
+  void permute_inv(std::span<std::int32_t> dofs, std::uint32_t cell_perm) const;
 
   /// @brief Indicates whether the geometry DOF numbers on each cell
   /// need permuting.

@@ -15,19 +15,15 @@ import pytest
 
 import ufl
 from dolfinx import la
-from dolfinx.fem import (Function, FunctionSpace, dirichletbc, form,
-                         locate_dofs_topological)
-from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
-                               set_bc)
+from dolfinx.fem import Function, dirichletbc, form, functionspace, locate_dofs_topological
+from dolfinx.fem.petsc import apply_lifting, assemble_matrix, assemble_vector, set_bc
 from dolfinx.mesh import create_unit_square, locate_entities_boundary
-from ufl import (Identity, TestFunction, TrialFunction, dot, dx, grad, inner,
-                 sym, tr)
+from ufl import Identity, TestFunction, TrialFunction, dot, dx, grad, inner, sym, tr
 
 
 def test_krylov_solver_lu():
-
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
     u, v = TrialFunction(V), TestFunction(V)
 
     a = form(inner(u, v) * dx)
@@ -73,7 +69,7 @@ def test_krylov_samg_solver_elasticity():
             basis = [np.asarray(x) for x in vec_local]
 
             # Build null space basis
-            dofs = [V.sub(i).dofmap.list.array for i in range(2)]
+            dofs = [V.sub(i).dofmap.list.array_r for i in range(2)]
             for i in range(2):
                 basis[i][dofs[i]] = 1.0
             x = V.tabulate_dof_coordinates()
@@ -92,13 +88,12 @@ def test_krylov_samg_solver_elasticity():
 
         # Stress computation
         def sigma(v):
-            return 2.0 * mu * sym(grad(v)) + lmbda * tr(sym(
-                grad(v))) * Identity(2)
+            return 2.0 * mu * sym(grad(v)) + lmbda * tr(sym(grad(v))) * Identity(2)
 
         # Define problem
         mesh = create_unit_square(MPI.COMM_WORLD, N, N)
         gdim = mesh.geometry.dim
-        V = FunctionSpace(mesh, ('Lagrange', 1, (gdim,)))
+        V = functionspace(mesh, ("Lagrange", 1, (gdim,)))
         u = TrialFunction(V)
         v = TestFunction(V)
 
@@ -122,7 +117,7 @@ def test_krylov_samg_solver_elasticity():
         u = Function(V)
 
         # Create near null space basis and orthonormalize
-        null_space = build_nullspace(V, u.vector)
+        null_space = build_nullspace(V, u.x.petsc_vec)
 
         # Attached near-null space to matrix
         A.set_near_nullspace(null_space)
@@ -139,7 +134,7 @@ def test_krylov_samg_solver_elasticity():
         solver.setOperators(A)
 
         # Compute solution and return number of iterations
-        return solver.solve(b, u.vector)
+        return solver.solve(b, u.x.petsc_vec)
 
     # Set some multigrid smoother parameters
     opts = PETSc.Options()

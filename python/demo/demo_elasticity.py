@@ -31,13 +31,18 @@ import numpy as np
 import dolfinx
 import ufl
 from dolfinx import la
-from dolfinx.fem import (Expression, Function, FunctionSpaceBase, dirichletbc,
-                         form, functionspace, locate_dofs_topological)
-from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
-                               set_bc)
+from dolfinx.fem import (
+    Expression,
+    Function,
+    FunctionSpace,
+    dirichletbc,
+    form,
+    functionspace,
+    locate_dofs_topological,
+)
+from dolfinx.fem.petsc import apply_lifting, assemble_matrix, assemble_vector, set_bc
 from dolfinx.io import XDMFFile
-from dolfinx.mesh import (CellType, GhostMode, create_box,
-                          locate_entities_boundary)
+from dolfinx.mesh import CellType, GhostMode, create_box, locate_entities_boundary
 from ufl import dx, grad, inner
 
 dtype = PETSc.ScalarType  # type: ignore
@@ -53,7 +58,7 @@ dtype = PETSc.ScalarType  # type: ignore
 # modes.
 
 
-def build_nullspace(V: FunctionSpaceBase):
+def build_nullspace(V: FunctionSpace):
     """Build PETSc nullspace for 3D elasticity"""
 
     # Create vectors that will span the nullspace
@@ -84,7 +89,10 @@ def build_nullspace(V: FunctionSpaceBase):
     dolfinx.cpp.la.orthonormalize(_basis)
     assert dolfinx.cpp.la.is_orthonormal(_basis)
 
-    basis_petsc = [PETSc.Vec().createWithArray(x[:bs * length0], bsize=3, comm=V.mesh.comm) for x in b]  # type: ignore
+    basis_petsc = [
+        PETSc.Vec().createWithArray(x[: bs * length0], bsize=3, comm=V.mesh.comm)  # type: ignore
+        for x in b
+    ]
     return PETSc.NullSpace().create(vectors=basis_petsc)  # type: ignore
 
 
@@ -93,9 +101,13 @@ def build_nullspace(V: FunctionSpaceBase):
 # Create a box Mesh:
 
 
-msh = create_box(MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
-                                  np.array([2.0, 1.0, 1.0])], [16, 16, 16],
-                 CellType.tetrahedron, ghost_mode=GhostMode.shared_facet)
+msh = create_box(
+    MPI.COMM_WORLD,
+    [np.array([0.0, 0.0, 0.0]), np.array([2.0, 1.0, 1.0])],
+    [16, 16, 16],
+    CellType.tetrahedron,
+    ghost_mode=GhostMode.shared_facet,
+)
 
 # Create a centripetal source term $f = \rho \omega^2 [x_0, \, x_1]$:
 
@@ -116,6 +128,8 @@ E = 1.0e9
 def σ(v):
     """Return an expression for the stress σ given a displacement field"""
     return 2.0 * μ * ufl.sym(grad(v)) + λ * ufl.tr(ufl.sym(grad(v))) * ufl.Identity(len(v))
+
+
 # -
 
 # A function space space is created and the elasticity variational
@@ -131,11 +145,12 @@ L = form(inner(f, v) * dx)
 # $x_1 = 1$ by finding all facets on these boundaries, and then creating
 # a Dirichlet boundary condition object.
 
-facets = locate_entities_boundary(msh, dim=2,
-                                  marker=lambda x: np.logical_or(np.isclose(x[0], 0.0),
-                                                                 np.isclose(x[1], 1.0)))
-bc = dirichletbc(np.zeros(3, dtype=dtype),
-                 locate_dofs_topological(V, entity_dim=2, entities=facets), V=V)
+facets = locate_entities_boundary(
+    msh, dim=2, marker=lambda x: np.isclose(x[0], 0.0) | np.isclose(x[1], 1.0)
+)
+bc = dirichletbc(
+    np.zeros(3, dtype=dtype), locate_dofs_topological(V, entity_dim=2, entities=facets), V=V
+)
 
 # ## Assemble and solve
 #
@@ -203,7 +218,7 @@ uh = Function(V)
 # Set a monitor, solve linear system, and display the solver
 # configuration
 solver.setMonitor(lambda _, its, rnorm: print(f"Iteration: {its}, rel. residual: {rnorm}"))
-solver.solve(b, uh.vector)
+solver.solve(b, uh.x.petsc_vec)
 solver.view()
 
 # Scatter forward the solution vector to update ghost values
@@ -251,7 +266,7 @@ with XDMFFile(msh.comm, "out_elasticity/von_mises_stress.xdmf", "w") as file:
 # be called from all MPI ranks), but we print the norm only on rank 0.
 
 # +
-unorm = uh.x.norm()
+unorm = la.norm(uh.x)
 if msh.comm.rank == 0:
     print("Solution vector norm:", unorm)
 # -

@@ -15,15 +15,14 @@ import ufl
 from basix.ufl import element
 from dolfinx import default_real_type, default_scalar_type
 from dolfinx.common import has_adios2
-from dolfinx.fem import Function, FunctionSpace
+from dolfinx.fem import Function, functionspace
 from dolfinx.graph import adjacencylist
-from dolfinx.mesh import (CellType, create_mesh, create_unit_cube,
-                          create_unit_square)
+from dolfinx.mesh import CellType, create_mesh, create_unit_cube, create_unit_square
 
 try:
-    from dolfinx.io import FidesWriter, VTXWriter
+    from dolfinx.io import FidesWriter, VTXMeshPolicy, VTXWriter
 except ImportError:
-    pytest.skip("Test require ADIOS2", allow_module_level=True)
+    pytest.skip("Tests require ADIOS2", allow_module_level=True)
 
 
 def generate_mesh(dim: int, simplex: bool, N: int = 5, dtype=None):
@@ -35,8 +34,7 @@ def generate_mesh(dim: int, simplex: bool, N: int = 5, dtype=None):
         if simplex:
             return create_unit_square(MPI.COMM_WORLD, N, N, dtype=dtype)
         else:
-            return create_unit_square(MPI.COMM_WORLD, 2 * N, N, CellType.quadrilateral,
-                                      dtype=dtype)
+            return create_unit_square(MPI.COMM_WORLD, 2 * N, N, CellType.quadrilateral, dtype=dtype)
     elif dim == 3:
         if simplex:
             return create_unit_cube(MPI.COMM_WORLD, N, N, N, dtype=dtype)
@@ -50,7 +48,7 @@ def generate_mesh(dim: int, simplex: bool, N: int = 5, dtype=None):
 @pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("simplex", [True, False])
 def test_fides_mesh(tempdir, dim, simplex):
-    """ Test writing of a single Fides mesh with changing geometry"""
+    """Test writing of a single Fides mesh with changing geometry"""
     filename = Path(tempdir, "mesh_fides.bp")
     mesh = generate_mesh(dim, simplex)
     with FidesWriter(mesh.comm, filename, mesh) as f:
@@ -66,8 +64,8 @@ def test_two_fides_functions(tempdir, dim, simplex):
     """Test saving two functions with Fides"""
     mesh = generate_mesh(dim, simplex)
     gdim = mesh.geometry.dim
-    v = Function(FunctionSpace(mesh, ("Lagrange", 1, (gdim,))))
-    q = Function(FunctionSpace(mesh, ("Lagrange", 1)))
+    v = Function(functionspace(mesh, ("Lagrange", 1, (gdim,))))
+    q = Function(functionspace(mesh, ("Lagrange", 1)))
     filename = Path(tempdir, "v.bp")
     with FidesWriter(mesh.comm, filename, [v._cpp_object, q]) as f:
         f.write(0)
@@ -77,6 +75,7 @@ def test_two_fides_functions(tempdir, dim, simplex):
             values[0] = x[1]
             values[1] = x[0]
             return values
+
         v.interpolate(vel)
         q.interpolate(lambda x: x[0])
         f.write(1)
@@ -85,10 +84,10 @@ def test_two_fides_functions(tempdir, dim, simplex):
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
 @pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("simplex", [True, False])
-def test_findes_single_function(tempdir, dim, simplex):
+def test_fides_single_function(tempdir, dim, simplex):
     "Test saving a single first order Lagrange functions"
     mesh = generate_mesh(dim, simplex)
-    v = Function(FunctionSpace(mesh, ("Lagrange", 1)))
+    v = Function(functionspace(mesh, ("Lagrange", 1)))
     filename = Path(tempdir, "v.bp")
     writer = FidesWriter(mesh.comm, filename, v)
     writer.write(0)
@@ -102,9 +101,9 @@ def test_fides_function_at_nodes(tempdir, dim, simplex):
     """Test saving P1 functions with Fides (with changing geometry)"""
     mesh = generate_mesh(dim, simplex)
     gdim = mesh.geometry.dim
-    v = Function(FunctionSpace(mesh, ("Lagrange", 1, (gdim,))), dtype=default_scalar_type)
+    v = Function(functionspace(mesh, ("Lagrange", 1, (gdim,))), dtype=default_scalar_type)
     v.name = "v"
-    q = Function(FunctionSpace(mesh, ("Lagrange", 1)))
+    q = Function(functionspace(mesh, ("Lagrange", 1)))
     q.name = "q"
     filename = Path(tempdir, "v.bp")
     if np.issubdtype(default_scalar_type, np.complexfloating):
@@ -115,7 +114,7 @@ def test_fides_function_at_nodes(tempdir, dim, simplex):
     with FidesWriter(mesh.comm, filename, [v, q]) as f:
         for t in [0.1, 0.5, 1]:
             # Only change one function
-            q.interpolate(lambda x: t * (x[0] - 0.5)**2)
+            q.interpolate(lambda x: t * (x[0] - 0.5) ** 2)
             f.write(t)
 
             mesh.geometry.x[:, :2] += 0.1
@@ -132,7 +131,7 @@ def test_second_order_vtx(tempdir):
     filename = Path(tempdir, "mesh_fides.bp")
     points = np.array([[0, 0, 0], [1, 0, 0], [0.5, 0, 0]], dtype=default_real_type)
     cells = np.array([[0, 1, 2]], dtype=np.int32)
-    domain = ufl.Mesh(element("Lagrange", "interval", 2, gdim=points.shape[1], shape=(1,)))
+    domain = ufl.Mesh(element("Lagrange", "interval", 2, shape=(1,), dtype=default_real_type))
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     with VTXWriter(mesh.comm, filename, mesh) as f:
         f.write(0.0)
@@ -157,8 +156,8 @@ def test_vtx_functions_fail(tempdir, dim, simplex):
     "Test for error when elements differ"
     mesh = generate_mesh(dim, simplex)
     gdim = mesh.geometry.dim
-    v = Function(FunctionSpace(mesh, ("Lagrange", 2, (gdim,))))
-    w = Function(FunctionSpace(mesh, ("Lagrange", 1)))
+    v = Function(functionspace(mesh, ("Lagrange", 2, (gdim,))))
+    w = Function(functionspace(mesh, ("Lagrange", 1)))
     filename = Path(tempdir, "v.bp")
     with pytest.raises(RuntimeError):
         VTXWriter(mesh.comm, filename, [v, w])
@@ -169,9 +168,9 @@ def test_vtx_functions_fail(tempdir, dim, simplex):
 def test_vtx_different_meshes_function(tempdir, simplex):
     "Test for error when functions do not share a mesh"
     mesh = generate_mesh(2, simplex)
-    v = Function(FunctionSpace(mesh, ("Lagrange", 1)))
+    v = Function(functionspace(mesh, ("Lagrange", 1)))
     mesh2 = generate_mesh(2, simplex)
-    w = Function(FunctionSpace(mesh2, ("Lagrange", 1)))
+    w = Function(functionspace(mesh2, ("Lagrange", 1)))
     filename = Path(tempdir, "v.bp")
     with pytest.raises(RuntimeError):
         VTXWriter(mesh.comm, filename, [v, w])
@@ -183,7 +182,7 @@ def test_vtx_different_meshes_function(tempdir, simplex):
 def test_vtx_single_function(tempdir, dim, simplex):
     "Test saving a single first order Lagrange functions"
     mesh = generate_mesh(dim, simplex)
-    v = Function(FunctionSpace(mesh, ("Lagrange", 1)))
+    v = Function(functionspace(mesh, ("Lagrange", 1)))
 
     filename = Path(tempdir, "v.bp")
     writer = VTXWriter(mesh.comm, filename, v)
@@ -197,12 +196,7 @@ def test_vtx_single_function(tempdir, dim, simplex):
 
 
 @pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
-@pytest.mark.parametrize("dtype", [
-    np.float32,
-    np.float64,
-    np.complex64,
-    np.complex128
-])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 @pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("simplex", [True, False])
 def test_vtx_functions(tempdir, dtype, dim, simplex):
@@ -210,7 +204,7 @@ def test_vtx_functions(tempdir, dtype, dim, simplex):
     xtype = np.real(dtype(0)).dtype
     mesh = generate_mesh(dim, simplex, dtype=xtype)
     gdim = mesh.geometry.dim
-    V = FunctionSpace(mesh, ("DG", 2, (gdim,)))
+    V = functionspace(mesh, ("DG", 2, (gdim,)))
     v = Function(V, dtype=dtype)
     bs = V.dofmap.index_map_bs
 
@@ -219,9 +213,10 @@ def test_vtx_functions(tempdir, dtype, dim, simplex):
         values[0] = x[1]
         values[1] = x[0]
         return values
+
     v.interpolate(vel)
 
-    W = FunctionSpace(mesh, ("DG", 2))
+    W = functionspace(mesh, ("DG", 2))
     w = Function(W, dtype=v.dtype)
     w.interpolate(lambda x: x[0] + x[1])
 
@@ -250,23 +245,22 @@ def test_save_vtkx_cell_point(tempdir):
     mesh = create_unit_square(MPI.COMM_WORLD, 8, 5)
     P = element("Discontinuous Lagrange", mesh.basix_cell(), 0)
 
-    V = FunctionSpace(mesh, P)
+    V = functionspace(mesh, P)
     u = Function(V)
     u.interpolate(lambda x: 0.5 * x[0])
     u.name = "A"
 
     filename = Path(tempdir, "v.bp")
-    with pytest.raises(RuntimeError):
-        f = VTXWriter(mesh.comm, filename, [u])
-        f.write(0)
-        f.close()
+    f = VTXWriter(mesh.comm, filename, [u])
+    f.write(0)
+    f.close()
 
 
 def test_empty_rank_mesh(tempdir):
     """Test VTXWriter on mesh where some ranks have no cells"""
     comm = MPI.COMM_WORLD
     cell_type = CellType.triangle
-    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, shape=(2,)))
+    domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, shape=(2,), dtype=default_real_type))
 
     def partitioner(comm, nparts, local_graph, num_ghost_nodes):
         """Leave cells on the current rank"""
@@ -275,17 +269,63 @@ def test_empty_rank_mesh(tempdir):
 
     if comm.rank == 0:
         cells = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.int64)
-        cells = adjacencylist(cells)
-        x = np.array([[0., 0.], [1., 0.], [1., 1.], [0., 1.]], dtype=default_real_type)
+        x = np.array([[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]], dtype=default_real_type)
     else:
-        cells = adjacencylist(np.empty((0, 3), dtype=np.int64))
+        cells = np.empty((0, 3), dtype=np.int64)
         x = np.empty((0, 2), dtype=default_real_type)
 
     mesh = create_mesh(comm, cells, x, domain, partitioner)
 
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace(mesh, ("Lagrange", 1))
     u = Function(V)
 
     filename = Path(tempdir, "empty_rank_mesh.bp")
     with VTXWriter(comm, filename, u) as f:
         f.write(0.0)
+
+
+@pytest.mark.skipif(not has_adios2, reason="Requires ADIOS2.")
+@pytest.mark.parametrize("dim", [2, 3])
+@pytest.mark.parametrize("simplex", [True, False])
+@pytest.mark.parametrize("reuse", [True, False])
+def test_vtx_reuse_mesh(tempdir, dim, simplex, reuse):
+    "Test reusage of mesh by VTXWriter"
+    adios2 = pytest.importorskip("adios2")
+
+    mesh = generate_mesh(dim, simplex)
+    v = Function(functionspace(mesh, ("Lagrange", 1)))
+    filename = Path(tempdir, "v.bp")
+    v.name = "v"
+    policy = VTXMeshPolicy.reuse if reuse else VTXMeshPolicy.update
+
+    # Save three steps
+    writer = VTXWriter(mesh.comm, filename, v, "BP4", policy)
+    writer.write(0)
+    v.interpolate(lambda x: 0.5 * x[0])
+    writer.write(1)
+    v.interpolate(lambda x: x[1])
+    writer.write(2)
+    writer.close()
+
+    reuse_variables = ["NumberOfEntities", "NumberOfNodes", "connectivity", "geometry", "types"]
+    target_all = 3  # For all other variables the step count is number of writes
+    target_mesh = (
+        1 if reuse else 3
+    )  # For mesh variables the step count is 1 if reuse else number of writes
+
+    # backwards compatibility adios2 < 2.10.0
+    try:
+        adios_file = adios2.open(str(filename), "r", comm=mesh.comm, engine_type="BP4")
+    except AttributeError:
+        # adios2 >= v2.10.0
+        adios = adios2.Adios(comm=mesh.comm)
+        io = adios.declare_io("TestData")
+        io.set_engine("BP4")
+        adios_file = adios2.Stream(io, str(filename), "r", mesh.comm)
+
+    for name, var in adios_file.available_variables().items():
+        if name in reuse_variables:
+            assert int(var["AvailableStepsCount"]) == target_mesh
+        else:
+            assert int(var["AvailableStepsCount"]) == target_all
+    adios_file.close()

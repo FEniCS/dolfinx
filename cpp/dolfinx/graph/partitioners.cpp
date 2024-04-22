@@ -36,8 +36,7 @@ using namespace dolfinx;
 
 namespace
 {
-
-/// @todo Is is un-documented that the owning rank must come first in
+/// @todo Is it un-documented that the owning rank must come first in
 /// reach list of edges?
 ///
 /// @param[in] comm The communicator
@@ -96,9 +95,9 @@ graph::AdjacencyList<int> compute_destination_ranks(
       dest.push_back((*it)[0]);
 
       // Find iterator to next destination rank and pack send data
-      auto it1 = std::find_if(it, node_to_dest.end(),
-                              [r0 = dest.back()](auto& idx)
-                              { return idx[0] != r0; });
+      auto it1
+          = std::find_if(it, node_to_dest.end(), [r0 = dest.back()](auto& idx)
+                         { return idx[0] != r0; });
       send_sizes.push_back(2 * std::distance(it, it1));
       for (auto itx = it; itx != it1; ++itx)
       {
@@ -183,8 +182,8 @@ graph::AdjacencyList<int> compute_destination_ranks(
   std::vector<int> data(offsets.back());
   {
     std::vector<std::int32_t> pos = offsets;
-    for (auto& x : local_node_to_dest)
-      data[pos[x[0]]++] = x[1];
+    for (auto [x0, x1] : local_node_to_dest)
+      data[pos[x0]++] = x1;
   }
 
   graph::AdjacencyList<int> g(std::move(data), std::move(offsets));
@@ -437,7 +436,6 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     // ranks for each node
     std::vector<std::int32_t> dests;
     std::vector<std::int32_t> offsets(1, 0);
-
     if (ghosting)
     {
       // Exchange halo with node_partition data for ghosts
@@ -506,8 +504,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
     SCOTCH_dgraphExit(&dgrafdat);
     SCOTCH_stratExit(&strat);
 
-    return graph::AdjacencyList<std::int32_t>(std::move(dests),
-                                              std::move(offsets));
+    return graph::AdjacencyList(std::move(dests), std::move(offsets));
   };
 }
 #endif
@@ -530,18 +527,25 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
           std::vector<std::int32_t>(graph.num_nodes(), 0), 1);
     }
 
-    // Build adjacency list data
-    const int rank = dolfinx::MPI::rank(comm);
-
-    // Split communicator in groups (0) without and (1) with parts of
-    // the graph
-    std::vector<idx_t> part(graph.num_nodes());
+    // Note: ParMETIS fails (crashes) if a rank does not have any graph
+    // data. Therefore we split the communicator such that ParMETIS
+    // partitioning happens only on ranks that have data. Ideallt we
+    // wouldn't need to do this.
+    constexpr bool split_comm = true;
     MPI_Comm pcomm = MPI_COMM_NULL;
-    int color = graph.num_nodes() == 0 ? 0 : 1;
-    MPI_Comm_split(comm, color, rank, &pcomm);
+    if (split_comm)
+    {
+      int rank = dolfinx::MPI::rank(comm);
+      int color = graph.num_nodes() > 0 ? 1 : MPI_UNDEFINED;
+      int ierr = MPI_Comm_split(comm, color, rank, &pcomm);
+      dolfinx::MPI::check_error(comm, ierr);
+    }
+    else
+      pcomm = comm;
 
+    std::vector<idx_t> part(graph.num_nodes());
     std::vector<idx_t> node_disp;
-    if (color == 1)
+    if (pcomm != MPI_COMM_NULL)
     {
       // Build adjacency list data
       const int psize = dolfinx::MPI::size(pcomm);
@@ -555,7 +559,7 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
       std::vector<idx_t> offsets(graph.offsets().begin(),
                                  graph.offsets().end());
 
-      // Options and sata for ParMETIS
+      // Options and data for ParMETIS
       std::array<idx_t, 3> opts = {options[0], options[1], options[2]};
       idx_t ncon = 1;
       idx_t* elmwgt = nullptr;
@@ -577,18 +581,19 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
       }
     }
 
-    if (ghosting and graph.num_nodes() > 0)
+    if (ghosting and pcomm != MPI_COMM_NULL)
     {
-      // FIXME: Is it implicit the the first entry is the owner?
+      // FIXME: Is it implicit that the first entry is the owner?
       graph::AdjacencyList<int> dest
           = compute_destination_ranks(pcomm, graph, node_disp, part);
-
-      MPI_Comm_free(&pcomm);
+      if (split_comm)
+        MPI_Comm_free(&pcomm);
       return dest;
     }
     else
     {
-      MPI_Comm_free(&pcomm);
+      if (split_comm and pcomm != MPI_COMM_NULL)
+        MPI_Comm_free(&pcomm);
       return regular_adjacency_list(std::vector<int>(part.begin(), part.end()),
                                     1);
     }
@@ -621,8 +626,7 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
 
     // Build adjacency list data
     common::Timer timer1("KaHIP: build adjacency data");
-    const int size = dolfinx::MPI::size(comm);
-    std::vector<T> node_disp(size + 1, 0);
+    std::vector<T> node_disp(dolfinx::MPI::size(comm) + 1, 0);
     const T num_local_nodes = graph.num_nodes();
     MPI_Allgather(&num_local_nodes, 1, dolfinx::MPI::mpi_type<T>(),
                   node_disp.data() + 1, 1, dolfinx::MPI::mpi_type<T>(), comm);
@@ -645,8 +649,8 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
       return compute_destination_ranks(comm, graph, node_disp, part);
     else
     {
-      return regular_adjacency_list(
-          std::vector<std::int32_t>(part.begin(), part.end()), 1);
+      return regular_adjacency_list(std::vector<int>(part.begin(), part.end()),
+                                    1);
     }
   };
 }

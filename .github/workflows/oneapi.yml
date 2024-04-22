@@ -52,7 +52,7 @@ jobs:
       - name: Configure DOLFINx C++
         run: |
           . /opt/intel/oneapi/setvars.sh
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -DDOLFINX_ENABLE_SCOTCH=off -DDOLFINX_ENABLE_KAHIP=on -DDOLFINX_UFCX_PYTHON=off -B build -S cpp/
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -DDOLFINX_ENABLE_SCOTCH=on -DDOLFINX_ENABLE_KAHIP=on -DDOLFINX_UFCX_PYTHON=off -B build -S cpp/
 
       - name: Build and install DOLFINx C++ library
         run: |
@@ -87,7 +87,7 @@ jobs:
       - name: Build DOLFINx Python interface
         run: |
           . /opt/intel/oneapi/setvars.sh
-          pip -v install python/
+          pip -v install --check-build-dependencies --no-build-isolation python/
       - name: Set default DOLFINx JIT options
         run: |
           mkdir -p ~/.config/dolfinx
@@ -95,18 +95,16 @@ jobs:
       - name: Run DOLFINx demos (Python, serial)
         run: |
           . /opt/intel/oneapi/setvars.sh
-          pip install matplotlib
           pytest -v -n=2 -m serial --durations=10 python/demo/test.py
       - name: Run DOLFINx demos (Python, MPI (np=2))
         run: |
           . /opt/intel/oneapi/setvars.sh
-          pytest -v -m mpi --num-proc=2 python/demo/test.py
+          pytest -m mpi --num-proc=2 python/demo/test.py
       - name: Run DOLFINx Python unit tests (serial)
         run: |
           . /opt/intel/oneapi/setvars.sh
-          pytest -n=auto --durations=50 python/test/unit/
+          pytest -n=auto --durations=50 python/test/unit
       - name: Run DOLFINx Python unit tests (MPI, np=2)
         run: |
           . /opt/intel/oneapi/setvars.sh
-          cd python/test/unit
-          mpiexec -n 2 pytest -vs .
+          mpiexec -n 2 pytest python/test/unit

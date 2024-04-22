@@ -237,8 +237,7 @@ std::vector<T> pack_function_data(const fem::Function<T, U>& u)
 
   // The Function and the mesh must have identical element_dof_layouts
   // (up to the block size)
-  assert(dofmap->element_dof_layout()
-         == geometry.cmaps()[0].create_dof_layout());
+  assert(dofmap->element_dof_layout() == geometry.cmap().create_dof_layout());
 
   int tdim = topology->dim();
   auto cell_map = topology->index_map(tdim);
@@ -250,7 +249,7 @@ std::vector<T> pack_function_data(const fem::Function<T, U>& u)
   std::uint32_t num_vertices
       = vertex_map->size_local() + vertex_map->num_ghosts();
 
-  int rank = V->element()->value_shape().size();
+  int rank = V->value_shape().size();
   std::uint32_t num_components = std::pow(3, rank);
 
   // Get dof array and pack into array (padded where appropriate)
@@ -261,9 +260,8 @@ std::vector<T> pack_function_data(const fem::Function<T, U>& u)
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     auto dofs = dofmap->cell_dofs(c);
-    auto dofs_x
-        = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
-            submdspan(dofmap_x, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto dofs_x = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+        dofmap_x, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     assert(dofs.size() == dofs_x.size());
     for (std::size_t i = 0; i < dofs.size(); ++i)
       for (int j = 0; j < bs; ++j)
@@ -294,7 +292,7 @@ void write_data(adios2::IO& io, adios2::Engine& engine,
   const int gdim = mesh->geometry().dim();
 
   // Vectors and tensor need padding in gdim < 3
-  int rank = V->element()->value_shape().size();
+  int rank = V->value_shape().size();
   bool need_padding = rank > 0 and gdim != 3 ? true : false;
 
   // Get vertex data. If the mesh and function dofmaps are the same we
@@ -384,9 +382,9 @@ void write_mesh(adios2::IO& io, adios2::Engine& engine,
   // cell, and compute 'VTK' connectivity
   int tdim = topology->dim();
   std::int32_t num_cells = topology->index_map(tdim)->size_local();
-  int num_nodes = geometry.cmaps()[0].dim();
+  int num_nodes = geometry.cmap().dim();
   auto [cells, shape] = io::extract_vtk_connectivity(mesh.geometry().dofmap(),
-                                                     topology->cell_types()[0]);
+                                                     topology->cell_type());
 
   // "Put" topology data in the result in the ADIOS2 file
   adios2::Variable local_topology = impl_adios2::define_variable<std::int64_t>(
@@ -430,8 +428,8 @@ public:
     assert(mesh);
     auto topology = mesh->topology();
     assert(topology);
-    mesh::CellType type = topology->cell_types()[0];
-    if (mesh->geometry().cmaps()[0].dim() != mesh::cell_num_entities(type, 0))
+    mesh::CellType type = topology->cell_type();
+    if (mesh->geometry().cmap().dim() != mesh::cell_num_entities(type, 0))
       throw std::runtime_error("Fides only supports lowest-order meshes.");
     impl_fides::initialize_mesh_attributes(*_io, type);
   }
@@ -439,9 +437,11 @@ public:
   /// @brief Create Fides writer for list of functions
   /// @param[in] comm The MPI communicator
   /// @param[in] filename Name of output file
-  /// @param[in] u List of functions. The functions must (1) share the
-  /// same mesh (degree 1) and (2) be degree 1 Lagrange. @note All
-  /// functions in `u` must share the same Mesh
+  /// @param[in] u List of functions. The functions must (i) share the
+  /// same mesh (degree 1) and (ii) be degree 1 Lagrange.
+  /// @note All functions in `u` must share the same Mesh. The element
+  /// family and degree, and degree-of-freedom map (up to the blocksize)
+  /// must be the same for all functions.
   /// @param[in] engine ADIOS2 engine type. See
   /// https://adios2.readthedocs.io/en/latest/engines/engines.html.
   /// @param[in] mesh_policy Controls if the mesh is written to file at
@@ -457,15 +457,15 @@ public:
     if (u.empty())
       throw std::runtime_error("FidesWriter fem::Function list is empty");
 
-    // Extract Mesh from first function
-    auto mesh = std::visit([](auto& u) { return u->function_space()->mesh(); },
-                           u.front());
+    // Extract space and mesh from first function
+    auto V0 = std::visit([](auto& u) { return u->function_space().get(); },
+                         u.front());
+    assert(V0);
+    auto mesh = V0->mesh().get();
     assert(mesh);
 
     // Extract element from first function
-    auto element0 = std::visit([](auto& e)
-                               { return e->function_space()->element().get(); },
-                               u.front());
+    auto element0 = V0->element().get();
     assert(element0);
 
     // Check if function is mixed
@@ -483,7 +483,7 @@ public:
                                "Interpolate Functions before output.");
     }
 
-    // Check if function is DG 0
+    // Raise exception if element is DG 0
     if (element0->space_dimension() / element0->block_size() == 1)
     {
       throw std::runtime_error(
@@ -491,14 +491,12 @@ public:
     }
 
     // Check that all functions are first order Lagrange
-    auto cell_types = mesh->topology()->cell_types();
-    if (cell_types.size() > 1)
-      throw std::runtime_error("Multiple cell types in IO.");
-    int num_vertices_per_cell = mesh::cell_num_entities(cell_types.back(), 0);
+    mesh::CellType cell_type = mesh->topology()->cell_type();
+    int num_vertices_per_cell = mesh::cell_num_entities(cell_type, 0);
     for (auto& v : _u)
     {
       std::visit(
-          [num_vertices_per_cell, element0](auto&& u)
+          [V0, num_vertices_per_cell, element0](auto&& u)
           {
             auto element = u->function_space()->element();
             assert(element);
@@ -516,14 +514,27 @@ public:
               throw std::runtime_error("Only first order Lagrange spaces are "
                                        "supported by FidesWriter");
             }
+
+#ifndef NDEBUG
+            auto dmap0 = V0->dofmap()->map();
+            auto dmap = u->function_space()->dofmap()->map();
+            if (dmap0.size() != dmap.size()
+                or !std::equal(dmap0.data_handle(),
+                               dmap0.data_handle() + dmap0.size(),
+                               dmap.data_handle()))
+            {
+              throw std::runtime_error(
+                  "All functions must have the same dofmap for FideWriter.");
+            }
+#endif
           },
           v);
     }
 
     auto topology = mesh->topology();
     assert(topology);
-    mesh::CellType type = topology->cell_types()[0];
-    if (mesh->geometry().cmaps()[0].dim() != mesh::cell_num_entities(type, 0))
+    mesh::CellType type = topology->cell_type();
+    if (mesh->geometry().cmap().dim() != mesh::cell_num_entities(type, 0))
       throw std::runtime_error("Fides only supports lowest-order meshes.");
     impl_fides::initialize_mesh_attributes(*_io, type);
     impl_fides::initialize_function_attributes<T>(*_io, u);
@@ -579,8 +590,8 @@ public:
 
     for (auto& v : _u)
     {
-      std::visit(
-          [this](auto&& u) { impl_fides::write_data(*_io, *_engine, *u); }, v);
+      std::visit([this](auto&& u)
+                 { impl_fides::write_data(*_io, *_engine, *u); }, v);
     }
 
     _engine->EndStep();
@@ -646,7 +657,7 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
   // Get function data array and information about layout
   assert(u.x());
   std::span<const T> u_vector = u.x()->array();
-  int rank = u.function_space()->element()->value_shape().size();
+  int rank = u.function_space()->value_shape().size();
   std::uint32_t num_comp = std::pow(3, rank);
   std::shared_ptr<const fem::DofMap> dofmap = u.function_space()->dofmap();
   assert(dofmap);
@@ -718,8 +729,8 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
       io, "NumberOfNodes", {adios2::LocalValueDim});
   engine.Put<std::uint32_t>(vertices, num_vertices);
 
-  auto [vtkcells, shape] = io::extract_vtk_connectivity(
-      geometry.dofmap(), topology->cell_types()[0]);
+  auto [vtkcells, shape]
+      = io::extract_vtk_connectivity(geometry.dofmap(), topology->cell_type());
 
   // Add cell metadata
   int tdim = topology->dim();
@@ -729,7 +740,7 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
   adios2::Variable celltype_var
       = impl_adios2::define_variable<std::uint32_t>(io, "types");
   engine.Put<std::uint32_t>(
-      celltype_var, cells::get_vtk_cell_type(topology->cell_types()[0], tdim));
+      celltype_var, cells::get_vtk_cell_type(topology->cell_type(), tdim));
 
   // Pack mesh 'nodes'. Output is written as [N0, v0_0,...., v0_N0, N1,
   // v1_0,...., v1_N1,....], where N is the number of cell nodes and v0,
@@ -768,8 +779,9 @@ void vtx_write_mesh(adios2::IO& io, adios2::Engine& engine,
 /// @param[in] engine The ADIOS2 engine object
 /// @param[in] V The function space
 template <std::floating_point T>
-void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
-                               const fem::FunctionSpace<T>& V)
+std::pair<std::vector<std::int64_t>, std::vector<std::uint8_t>>
+vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
+                          const fem::FunctionSpace<T>& V)
 {
   auto mesh = V.mesh();
   assert(mesh);
@@ -814,7 +826,7 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   engine.Put<std::uint32_t>(vertices, num_dofs);
   engine.Put<std::uint32_t>(elements, vtkshape[0]);
   engine.Put<std::uint32_t>(
-      cell_type, cells::get_vtk_cell_type(topology->cell_types()[0], tdim));
+      cell_type, cells::get_vtk_cell_type(topology->cell_type(), tdim));
   engine.Put(local_geometry, x.data());
   engine.Put(local_topology, cells.data());
 
@@ -827,8 +839,17 @@ void vtx_write_mesh_from_space(adios2::IO& io, adios2::Engine& engine,
   engine.Put(ghost, x_ghost.data());
 
   engine.PerformPuts();
+  return {std::move(x_id), std::move(x_ghost)};
 }
 } // namespace impl_vtx
+
+/// Mesh reuse policy
+enum class VTXMeshPolicy
+{
+  update, ///< Re-write the mesh to file upon every write of a fem::Function
+  reuse   ///< Write the mesh to file only the first time a fem::Function is
+          ///< written to file
+};
 
 /// @brief Writer for meshes and functions using the ADIOS2 VTX format,
 /// see
@@ -853,7 +874,8 @@ public:
   VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
             std::shared_ptr<const mesh::Mesh<T>> mesh,
             std::string engine = "BPFile")
-      : ADIOS2Writer(comm, filename, "VTX mesh writer", engine), _mesh(mesh)
+      : ADIOS2Writer(comm, filename, "VTX mesh writer", engine), _mesh(mesh),
+        _mesh_reuse_policy(VTXMeshPolicy::update), _is_piecewise_constant(false)
   {
     // Define VTK scheme attribute for mesh
     std::string vtk_scheme = impl_vtx::create_vtk_schema({}, {}).str();
@@ -868,22 +890,28 @@ public:
   /// @param[in] filename Name of output file
   /// @param[in] u List of functions. The functions must (1) share the
   /// same mesh and (2) be (discontinuous) Lagrange functions. The
-  /// element family and degree must be the same for all functions.
+  /// element family and degree, and degree-of-freedom map (up to the
+  /// blocksize) must be the same for all functions.
   /// @param[in] engine ADIOS2 engine type.
+  /// @param[in] mesh_policy Controls if the mesh is written to file at
+  /// the first time step only or is re-written (updated) at each time
+  /// step.
   /// @note This format supports arbitrary degree meshes.
   VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
-            const typename adios2_writer::U<T>& u,
-            std::string engine = "BPFile")
+            const typename adios2_writer::U<T>& u, std::string engine,
+            VTXMeshPolicy mesh_policy = VTXMeshPolicy::update)
       : ADIOS2Writer(comm, filename, "VTX function writer", engine),
-        _mesh(impl_adios2::extract_common_mesh<T>(u)), _u(u)
+        _mesh(impl_adios2::extract_common_mesh<T>(u)),
+        _mesh_reuse_policy(mesh_policy), _u(u), _is_piecewise_constant(false)
   {
     if (u.empty())
       throw std::runtime_error("VTXWriter fem::Function list is empty.");
 
-    // Extract element from first function
-    auto element0 = std::visit([](auto& u)
-                               { return u->function_space()->element().get(); },
-                               u.front());
+    // Extract space from first function
+    auto V0 = std::visit([](auto& u) { return u->function_space().get(); },
+                         u.front());
+    assert(V0);
+    auto element0 = V0->element().get();
     assert(element0);
 
     // Check if function is mixed
@@ -905,33 +933,67 @@ public:
 
     // Check if function is DG 0
     if (element0->space_dimension() / element0->block_size() == 1)
-    {
-      throw std::runtime_error(
-          "VTK does not support cell-wise fields. See "
-          "https://gitlab.kitware.com/vtk/vtk/-/issues/18458.");
-    }
+      _is_piecewise_constant = true;
 
     // Check that all functions come from same element type
     for (auto& v : _u)
     {
       std::visit(
-          [element0](auto& u)
+          [V0](auto& u)
           {
             auto element = u->function_space()->element();
             assert(element);
-            if (*element != *element0)
+            if (*element != *V0->element().get())
             {
               throw std::runtime_error("All functions in VTXWriter must have "
                                        "the same element type.");
             }
+#ifndef NDEBUG
+            auto dmap0 = V0->dofmap()->map();
+            auto dmap = u->function_space()->dofmap()->map();
+            if (dmap0.size() != dmap.size()
+                or !std::equal(dmap0.data_handle(),
+                               dmap0.data_handle() + dmap0.size(),
+                               dmap.data_handle()))
+            {
+              throw std::runtime_error(
+                  "All functions must have the same dofmap for VTXWriter.");
+            }
+#endif
           },
           v);
     }
 
     // Define VTK scheme attribute for set of functions
     std::vector<std::string> names = impl_vtx::extract_function_names<T>(u);
-    std::string vtk_scheme = impl_vtx::create_vtk_schema(names, {}).str();
+    std::string vtk_scheme;
+    if (_is_piecewise_constant)
+      vtk_scheme = impl_vtx::create_vtk_schema({}, names).str();
+    else
+      vtk_scheme = impl_vtx::create_vtk_schema(names, {}).str();
+
     impl_adios2::define_attribute<std::string>(*_io, "vtk.xml", vtk_scheme);
+  }
+
+  /// @brief Create a VTX writer for a list of fem::Functions using
+  /// the default ADIOS2 engine.
+  ///
+  /// This format supports arbitrary degree meshes.
+  ///
+  /// @param[in] comm The MPI communicator to open the file on
+  /// @param[in] filename Name of output file
+  /// @param[in] u List of functions. The functions must (1) share the
+  /// same mesh and (2) be (discontinuous) Lagrange functions. The
+  /// element family and degree must be the same for all functions.
+  /// @param[in] mesh_policy Controls if the mesh is written to file at
+  /// the first time step only or is re-written (updated) at each time
+  /// step.
+  /// @note This format supports arbitrary degree meshes.
+  VTXWriter(MPI_Comm comm, const std::filesystem::path& filename,
+            const typename adios2_writer::U<T>& u,
+            VTXMeshPolicy mesh_policy = VTXMeshPolicy::update)
+      : VTXWriter(comm, filename, u, "BPFile", mesh_policy)
+  {
   }
 
   // Copy constructor
@@ -949,34 +1011,64 @@ public:
   // Copy assignment
   VTXWriter& operator=(const VTXWriter&) = delete;
 
-  /// @brief  Write data with a given time
-  /// @param[in] t The time step
+  /// @brief Write data with a given time stamp.
+  /// @param[in] t Time stamp to associate with output.
   void write(double t)
   {
     assert(_io);
-    assert(_engine);
     adios2::Variable var_step
         = impl_adios2::define_variable<double>(*_io, "step");
+
+    assert(_engine);
     _engine->BeginStep();
     _engine->template Put<double>(var_step, t);
 
-    // If we have no functions write the mesh to file
-    if (_u.empty())
+    // If we have no functions or DG functions write the mesh to file
+    if (_is_piecewise_constant or _u.empty())
+    {
       impl_vtx::vtx_write_mesh(*_io, *_engine, *_mesh);
+      if (_is_piecewise_constant)
+      {
+        for (auto& v : _u)
+        {
+          std::visit([&](auto& u)
+                     { impl_vtx::vtx_write_data(*_io, *_engine, *u); }, v);
+        }
+      }
+    }
     else
     {
-      // Write a single mesh for functions as they share finite element
-      std::visit(
-          [&](auto& u) {
-            impl_vtx::vtx_write_mesh_from_space(*_io, *_engine,
-                                                *u->function_space());
-          },
-          _u[0]);
+      if (_mesh_reuse_policy == VTXMeshPolicy::update
+          or !(_io->template InquireVariable<std::int64_t>("connectivity")))
+      {
+        // Write a single mesh for functions as they share finite
+        // element
+        std::tie(_x_id, _x_ghost) = std::visit(
+            [&](auto& u)
+            {
+              return impl_vtx::vtx_write_mesh_from_space(*_io, *_engine,
+                                                         *u->function_space());
+            },
+            _u[0]);
+      }
+      else
+      {
+        // Node global ids
+        adios2::Variable orig_id = impl_adios2::define_variable<std::int64_t>(
+            *_io, "vtkOriginalPointIds", {}, {}, {_x_id.size()});
+        _engine->Put(orig_id, _x_id.data());
+        adios2::Variable ghost = impl_adios2::define_variable<std::uint8_t>(
+            *_io, "vtkGhostType", {}, {}, {_x_ghost.size()});
+        _engine->Put(ghost, _x_ghost.data());
+        _engine->PerformPuts();
+      }
 
       // Write function data for each function to file
       for (auto& v : _u)
-        std::visit(
-            [&](auto& u) { impl_vtx::vtx_write_data(*_io, *_engine, *u); }, v);
+      {
+        std::visit([&](auto& u)
+                   { impl_vtx::vtx_write_data(*_io, *_engine, *u); }, v);
+      }
     }
 
     _engine->EndStep();
@@ -985,6 +1077,15 @@ public:
 private:
   std::shared_ptr<const mesh::Mesh<T>> _mesh;
   adios2_writer::U<T> _u;
+
+  // Control whether the mesh is written to file once or at every time
+  // step
+  VTXMeshPolicy _mesh_reuse_policy;
+  std::vector<std::int64_t> _x_id;
+  std::vector<std::uint8_t> _x_ghost;
+
+  // Special handling of piecewise constant functions
+  bool _is_piecewise_constant;
 };
 
 /// Type deduction

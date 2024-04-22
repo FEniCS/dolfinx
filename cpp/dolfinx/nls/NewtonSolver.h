@@ -6,6 +6,8 @@
 
 #pragma once
 
+#ifdef HAS_PETSC
+
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/la/petsc.h>
 #include <functional>
@@ -35,94 +37,99 @@ public:
   /// @param[in] comm The MPI communicator for the solver
   explicit NewtonSolver(MPI_Comm comm);
 
-  // Move constructor (deleted)
-  NewtonSolver(NewtonSolver&& solver) = delete;
+  /// Move constructor
+  NewtonSolver(NewtonSolver&& solver) = default;
 
   // Copy constructor (deleted)
   NewtonSolver(const NewtonSolver& solver) = delete;
 
+  /// Move assignment constructor
+  NewtonSolver& operator=(NewtonSolver&& solver) = default;
+
   // Assignment operator (deleted)
   NewtonSolver& operator=(const NewtonSolver& solver) = delete;
-
-  // Move assignment constructor (deleted)
-  NewtonSolver& operator=(const NewtonSolver&& solver) = delete;
 
   /// Destructor
   ~NewtonSolver();
 
-  /// Set the function for computing the residual and the vector to the
-  /// assemble the residual into
+  /// @brief Set the function for computing the residual and the vector
+  /// to the assemble the residual into.
   /// @param[in] F Function to compute the residual vector b (x, b)
   /// @param[in] b The vector to assemble to residual into
-  void setF(const std::function<void(const Vec, Vec)>& F, Vec b);
+  void setF(std::function<void(const Vec, Vec)> F, Vec b);
 
-  /// Set the function for computing the Jacobian (dF/dx) and the matrix
-  /// to assemble the residual into
+  /// @brief Set the function for computing the Jacobian (dF/dx) and the
+  /// matrix to assemble the residual into.
   /// @param[in] J Function to compute the Jacobian matrix b (x, A)
   /// @param[in] Jmat The matrix to assemble the Jacobian into
-  void setJ(const std::function<void(const Vec, Mat)>& J, Mat Jmat);
+  void setJ(std::function<void(const Vec, Mat)> J, Mat Jmat);
 
-  /// Set the function for computing the preconditioner matrix (optional)
+  /// @brief Set the function for computing the preconditioner matrix
+  /// (optional).
   /// @param[in] P Function to compute the preconditioner matrix b (x, P)
   /// @param[in] Pmat The matrix to assemble the preconditioner into
-  void setP(const std::function<void(const Vec, Mat)>& P, Mat Pmat);
+  void setP(std::function<void(const Vec, Mat)> P, Mat Pmat);
 
-  /// Get the internal Krylov solver used to solve for the Newton updates
-  /// const version
-  /// The Krylov solver prefix is nls_solve_
+  /// @brief Get the internal Krylov solver used to solve for the Newton
+  /// updates (const version).
+  ///
+  /// The Krylov solver prefix is `nls_solve_`.
+  ///
   /// @return The Krylov solver
   const la::petsc::KrylovSolver& get_krylov_solver() const;
 
-  /// Get the internal Krylov solver used to solve for the Newton updates
-  /// non-const version
-  /// The Krylov solver prefix is nls_solve_
+  /// @brief Get the internal Krylov solver used to solve for the Newton
+  /// updates (non-const version).
+  ///
+  /// The Krylov solver prefix is `nls_solve_`.
+  ///
   /// @return The Krylov solver
   la::petsc::KrylovSolver& get_krylov_solver();
 
-  /// Set the function that is called before the residual or Jacobian
-  /// are computed. It is commonly used to update ghost values.
+  /// @brief Set the function that is called before the residual or
+  /// Jacobian are computed. It is commonly used to update ghost values.
   /// @param[in] form The function to call. It takes the latest solution
-  /// vector @p x as an argument
-  void set_form(const std::function<void(Vec)>& form);
+  /// vector `x` as an argument.
+  void set_form(std::function<void(Vec)> form);
 
-  /// Set function that is called at the end of each Newton iteration to
-  /// test for convergence.
+  /// @brief Set function that is called at the end of each Newton
+  /// iteration to test for convergence.
   /// @param[in] c The function that tests for convergence
-  void set_convergence_check(const std::function<std::pair<double, bool>(
-                                 const NewtonSolver&, const Vec)>& c);
+  void set_convergence_check(
+      std::function<std::pair<double, bool>(const NewtonSolver&, const Vec)> c);
 
-  /// Set function that is called after each Newton iteration to update
-  /// the solution
+  /// @brief Set function that is called after each Newton iteration to
+  /// update the solution.
   /// @param[in] update The function that updates the solution
-  void set_update(const std::function<void(const NewtonSolver& solver,
-                                           const Vec, Vec)>& update);
+  void set_update(
+      std::function<void(const NewtonSolver& solver, const Vec, Vec)> update);
 
-  /// Solve the nonlinear problem \f$`F(x) = 0\f$ for given \f$F\f$ and
-  /// Jacobian \f$\dfrac{\partial F}{\partial x}\f$.
+  /// @brief Solve the nonlinear problem \f$`F(x) = 0\f$ for given
+  /// \f$F\f$ and Jacobian \f$\dfrac{\partial F}{\partial x}\f$.
   ///
   /// @param[in,out] x The vector
   /// @return (number of Newton iterations, whether iteration converged)
   std::pair<int, bool> solve(Vec x);
 
-  /// The number of Newton iterations. It can can called by functions
-  /// that check for convergence during a solve.
+  /// @brief The number of Newton iterations. It can can called by
+  /// functions that check for convergence during a solve.
   /// @return The number of Newton iterations performed
   int iteration() const;
 
-  /// Return number of Krylov iterations elapsed since
-  /// solve started
+  /// @brief Get number of Krylov iterations elapsed since solve
+  /// started.
   /// @return Number of iterations.
   int krylov_iterations() const;
 
-  /// Return current residual
+  /// @brief Get current residual.
   /// @return Current residual
   double residual() const;
 
-  /// Return initial residual
+  /// @brief Return initial residual.
   /// @return Initial residual
   double residual0() const;
 
-  /// Return MPI communicator
+  /// @brief Get MPI communicator.
   MPI_Comm comm() const;
 
   /// Maximum number of iterations
@@ -202,3 +209,5 @@ private:
 };
 } // namespace nls::petsc
 } // namespace dolfinx
+
+#endif

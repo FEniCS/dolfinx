@@ -8,6 +8,7 @@
 *.os
 *.pyc
 *.so
+*.so.*
 *.pc
 *.pyd
 *.def
@@ -16,8 +17,6 @@
 *.dylib
 *.nbi
 *.nbc
-dolfinx/libdolfin.so*
-dolfinx/libdolfinx.so*
 
 # Log files
 *.log
@@ -42,9 +41,6 @@ python/doc/source/generated/
 cpp/dolfinx/common/version.h
 
 # Configuration files
-dolfin.conf
-DOLFINConfig.cmake
-DOLFINConfigVersion.cmake
 dolfinx.conf
 DOLFINXConfig.cmake
 DOLFINXConfigVersion.cmake
@@ -58,20 +54,17 @@ test_*_tempdir
 
 # Tests
 /python/test/unit/**/*.xml
-/cpp/test/unit/mesh/*.{xml,m}
-/cpp/test/unit/parameter/*.{xml,xml.gz}
-/cpp/test/unit/**/*.xml
-/cpp/test/unit/**/*.c
-/cpp/test/unit/function/Projection.h
-/cpp/test/unit/la/forms/ReactionDiffusion.h
-/cpp/test/unit/la/forms/ReactionDiffusionAction.h
+/cpp/test/CTestTestfile.cmake
+/cpp/test/Testing
+/cpp/test/_deps
+/cpp/test/poisson.c
+/cpp/test/poisson.h
+/cpp/test/unittests
 
 .cache
 
 # FFCx generated demo files
 cpp/demo/**/**/*.h
-cpp/demo/documented/cahn-hilliard/CahnHilliard2D.cpp
-cpp/demo/documented/cahn-hilliard/CahnHilliard3D.cpp
 
 # Temporaries
 *~

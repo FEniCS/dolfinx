@@ -41,6 +41,23 @@ bool is_basix_element(const ufcx_finite_element& element)
 }
 //-----------------------------------------------------------------------------
 
+/// Check if an element is a quadrature element (or a blocked element
+/// containing a quadrature element)
+bool is_quadrature_element(const ufcx_finite_element& element)
+{
+  if (element.element_type == ufcx_quadrature_element)
+    return true;
+  else if (element.block_size != 1)
+  {
+    // TODO: what should happen if the element is a blocked element
+    // containing a blocked element containing a quadrature element?
+    return element.sub_elements[0]->element_type == ufcx_quadrature_element;
+  }
+  else
+    return false;
+}
+//-----------------------------------------------------------------------------
+
 /// Check if an element is a custom Basix element (or a blocked element
 /// containing a custom Basix element)
 bool is_basix_custom_element(const ufcx_finite_element& element)
@@ -105,9 +122,10 @@ _extract_sub_element(const FiniteElement<T>& finite_element,
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
 FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
-    : _signature(e.signature), _family(e.family), _space_dim(e.space_dimension),
-      _value_shape(e.value_shape, e.value_shape + e.value_rank),
-      _bs(e.block_size)
+    : _signature(e.signature), _space_dim(e.space_dimension),
+      _reference_value_shape(e.reference_value_shape,
+                             e.reference_value_shape + e.reference_value_rank),
+      _bs(e.block_size), _is_mixed(e.element_type == ufcx_mixed_element)
 {
   const ufcx_shape _shape = e.cell_shape;
   switch (_shape)
@@ -234,7 +252,7 @@ FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
             cell_type, value_shape, wcoeffs, _x, _M, nderivs,
             static_cast<basix::maps::type>(ce->map_type),
             static_cast<basix::sobolev::space>(ce->sobolev_space),
-            ce->discontinuous, ce->highest_complete_degree, ce->highest_degree,
+            ce->discontinuous, ce->embedded_subdegree, ce->embedded_superdegree,
             static_cast<basix::polyset::type>(ce->polyset_type)));
     _needs_dof_transformations
         = !_element->dof_transformations_are_identity()
@@ -260,32 +278,25 @@ FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
         = !_element->dof_transformations_are_identity()
           and _element->dof_transformations_are_permutations();
   }
+
+  if (is_quadrature_element(e))
+  {
+    assert(e.custom_quadrature);
+    ufcx_quadrature_rule* qr = e.custom_quadrature;
+    std::size_t npts = qr->npts;
+    std::size_t tdim = qr->topological_dimension;
+    std::array qshape = {npts, tdim};
+    _points = std::make_pair(std::vector<T>(qshape[0] * qshape[1]), qshape);
+    std::copy_n(qr->points, _points.first.size(), _points.first.begin());
+  }
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
 FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
-                                const std::vector<std::size_t>& value_shape)
-    : _value_shape(element.value_shape())
+                                const std::size_t block_size)
+    : _reference_value_shape(element.value_shape()), _bs(block_size),
+      _is_mixed(false)
 {
-  if (!_value_shape.empty() and !value_shape.empty())
-  {
-    throw std::runtime_error(
-        "Cannot specify value shape for non-scalar base element.");
-  }
-
-  // Set block size
-  if (!value_shape.empty())
-    _value_shape = value_shape;
-
-  // Set block size
-  if (!value_shape.empty())
-  {
-    _bs = std::accumulate(value_shape.begin(), value_shape.end(), 1,
-                          std::multiplies{});
-  }
-  else
-    _bs = 1;
-
   _space_dim = _bs * element.dim();
 
   // Create all sub-elements
@@ -293,9 +304,9 @@ FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
   {
     for (int i = 0; i < _bs; ++i)
     {
-      _sub_elements.push_back(std::make_shared<FiniteElement<T>>(
-          element, std::vector<std::size_t>{}));
+      _sub_elements.push_back(std::make_shared<FiniteElement<T>>(element, 1));
     }
+    _reference_value_shape = {block_size};
   }
 
   _element = std::make_unique<basix::FiniteElement<T>>(element);
@@ -306,20 +317,21 @@ FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
   _needs_dof_permutations
       = !_element->dof_transformations_are_identity()
         and _element->dof_transformations_are_permutations();
+  std::string family;
   switch (_element->family())
   {
   case basix::element::family::P:
-    _family = "Lagrange";
+    family = "Lagrange";
     break;
   case basix::element::family::DPC:
-    _family = "Discontinuous Lagrange";
+    family = "Discontinuous Lagrange";
     break;
   default:
-    _family = "unknown";
+    family = "unknown";
     break;
   }
 
-  _signature = "Basix element " + _family + " " + std::to_string(_bs);
+  _signature = "Basix element " + family + " " + std::to_string(_bs);
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -359,35 +371,22 @@ int FiniteElement<T>::space_dimension() const noexcept
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-int FiniteElement<T>::value_size() const
+std::span<const std::size_t> FiniteElement<T>::reference_value_shape() const
 {
-  return std::accumulate(_value_shape.begin(), _value_shape.end(), 1,
-                         std::multiplies{});
+  return _reference_value_shape;
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
 int FiniteElement<T>::reference_value_size() const
 {
-  return std::accumulate(_value_shape.begin(), _value_shape.end(), 1,
-                         std::multiplies{});
+  return std::accumulate(_reference_value_shape.begin(),
+                         _reference_value_shape.end(), 1, std::multiplies{});
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
 int FiniteElement<T>::block_size() const noexcept
 {
   return _bs;
-}
-//-----------------------------------------------------------------------------
-template <std::floating_point T>
-std::span<const std::size_t> FiniteElement<T>::value_shape() const noexcept
-{
-  return _value_shape;
-}
-//-----------------------------------------------------------------------------
-template <std::floating_point T>
-std::string FiniteElement<T>::family() const noexcept
-{
-  return _family;
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -417,7 +416,7 @@ int FiniteElement<T>::num_sub_elements() const noexcept
 template <std::floating_point T>
 bool FiniteElement<T>::is_mixed() const noexcept
 {
-  return !_sub_elements.empty() and _bs == 1;
+  return _is_mixed;
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -465,6 +464,9 @@ basix::maps::type FiniteElement<T>::map_type() const
 template <std::floating_point T>
 bool FiniteElement<T>::map_ident() const noexcept
 {
+  if (!_element && _points.second[0] > 0)
+    // Quadratute elements must use identity map
+    return true;
   assert(_element);
   return _element->map_type() == basix::maps::type::identity;
 }
@@ -472,6 +474,8 @@ bool FiniteElement<T>::map_ident() const noexcept
 template <std::floating_point T>
 bool FiniteElement<T>::interpolation_ident() const noexcept
 {
+  if (!_element && _points.second[0] > 0)
+    return true;
   assert(_element);
   return _element->interpolation_is_identity();
 }
@@ -480,6 +484,8 @@ template <std::floating_point T>
 std::pair<std::vector<T>, std::array<std::size_t, 2>>
 FiniteElement<T>::interpolation_points() const
 {
+  if (_points.second[0] > 0)
+    return _points;
   if (!_element)
   {
     throw std::runtime_error(
@@ -560,46 +566,45 @@ bool FiniteElement<T>::needs_dof_permutations() const noexcept
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-void FiniteElement<T>::permute_dofs(const std::span<std::int32_t>& doflist,
-                                    std::uint32_t cell_permutation) const
+void FiniteElement<T>::permute(std::span<std::int32_t> doflist,
+                               std::uint32_t cell_permutation) const
 {
-  _element->permute_dofs(doflist, cell_permutation);
+  _element->permute(doflist, cell_permutation);
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-void FiniteElement<T>::unpermute_dofs(const std::span<std::int32_t>& doflist,
-                                      std::uint32_t cell_permutation) const
+void FiniteElement<T>::permute_inv(std::span<std::int32_t> doflist,
+                                   std::uint32_t cell_permutation) const
 {
-  _element->unpermute_dofs(doflist, cell_permutation);
+  _element->permute_inv(doflist, cell_permutation);
 }
 //-----------------------------------------------------------------------------
+/// @cond
 template <std::floating_point T>
-std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
-FiniteElement<T>::get_dof_permutation_function(bool inverse,
-                                               bool scalar_element) const
+std::function<void(std::span<std::int32_t>, std::uint32_t)>
+FiniteElement<T>::dof_permutation_fn(bool inverse, bool scalar_element) const
+/// @endcond
 {
   if (!needs_dof_permutations())
-    return [](const std::span<std::int32_t>&, std::uint32_t) {};
+    return [](std::span<std::int32_t>, std::uint32_t) {};
 
   if (!_sub_elements.empty())
   {
     if (_bs == 1)
     {
       // Mixed element
-      std::vector<
-          std::function<void(const std::span<std::int32_t>&, std::uint32_t)>>
+      std::vector<std::function<void(std::span<std::int32_t>, std::uint32_t)>>
           sub_element_functions;
       std::vector<int> dims;
       for (std::size_t i = 0; i < _sub_elements.size(); ++i)
       {
         sub_element_functions.push_back(
-            _sub_elements[i]->get_dof_permutation_function(inverse));
+            _sub_elements[i]->dof_permutation_fn(inverse));
         dims.push_back(_sub_elements[i]->space_dimension());
       }
 
-      return
-          [dims, sub_element_functions](const std::span<std::int32_t>& doflist,
-                                        std::uint32_t cell_permutation)
+      return [dims, sub_element_functions](std::span<std::int32_t> doflist,
+                                           std::uint32_t cell_permutation)
       {
         std::size_t start = 0;
         for (std::size_t e = 0; e < sub_element_functions.size(); ++e)
@@ -612,15 +617,14 @@ FiniteElement<T>::get_dof_permutation_function(bool inverse,
     }
     else if (!scalar_element)
     {
-      // Vector element
-      std::function<void(const std::span<std::int32_t>&, std::uint32_t)>
-          sub_element_function
-          = _sub_elements[0]->get_dof_permutation_function(inverse);
+      // Blocked element
+      std::function<void(std::span<std::int32_t>, std::uint32_t)>
+          sub_element_function = _sub_elements[0]->dof_permutation_fn(inverse);
       int dim = _sub_elements[0]->space_dimension();
       int bs = _bs;
       return
           [sub_element_function, bs, subdofs = std::vector<std::int32_t>(dim)](
-              const std::span<std::int32_t>& doflist,
+              std::span<std::int32_t> doflist,
               std::uint32_t cell_permutation) mutable
       {
         for (int k = 0; k < bs; ++k)
@@ -637,15 +641,15 @@ FiniteElement<T>::get_dof_permutation_function(bool inverse,
 
   if (inverse)
   {
-    return [this](const std::span<std::int32_t>& doflist,
-                  std::uint32_t cell_permutation)
-    { unpermute_dofs(doflist, cell_permutation); };
+    return
+        [this](std::span<std::int32_t> doflist, std::uint32_t cell_permutation)
+    { permute_inv(doflist, cell_permutation); };
   }
   else
   {
-    return [this](const std::span<std::int32_t>& doflist,
-                  std::uint32_t cell_permutation)
-    { permute_dofs(doflist, cell_permutation); };
+    return
+        [this](std::span<std::int32_t> doflist, std::uint32_t cell_permutation)
+    { permute(doflist, cell_permutation); };
   }
 }
 //-----------------------------------------------------------------------------

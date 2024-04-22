@@ -9,20 +9,28 @@
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
 
+import os
+import sys
+
+sys.path.insert(0, os.path.abspath("."))
+
+import jupytext_process  # isort:skip
+
+
+myst_heading_anchors = 3
+
+jupytext_process.process()
 
 # -- Project information -----------------------------------------------------
 
-project = 'DOLFINx'
-copyright = '2022, FEniCS Project'
-author = 'FEniCS Project'
+project = "DOLFINx"
+copyright = "2022, FEniCS Project"
+author = "FEniCS Project"
 
+# TODO: automate version tagging?
 # The full version, including alpha/beta/rc tags
-release = '0.3.1'
+release = "0.3.1"
 
 
 # -- General configuration ---------------------------------------------------
@@ -30,12 +38,14 @@ release = '0.3.1'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.mathjax',
-              'breathe',
-              ]
+extensions = [
+    "sphinx.ext.mathjax",
+    "myst_parser",
+    "breathe",
+]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -58,13 +68,17 @@ html_theme = "sphinx_rtd_theme"
 # html_static_path = ['_static']
 html_static_path = []
 
+myst_enable_extensions = [
+    "dollarmath",
+    "amsmath",
+]
 
 breathe_projects = {"DOLFINx": "../xml/"}
 breathe_default_project = "DOLFINx"
-breathe_implementation_filename_extensions = ['.c', '.cc', '.cpp']
+breathe_implementation_filename_extensions = [".c", ".cc", ".cpp"]
 
 # Tell sphinx what the primary language being documented is.
-primary_domain = 'cpp'
+primary_domain = "cpp"
 
 # Tell sphinx what the pygments highlight language should be.
-highlight_language = 'cpp'
+highlight_language = "cpp"

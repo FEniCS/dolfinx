@@ -19,14 +19,14 @@ endif()
 include(CheckSymbolExists)
 set(CMAKE_REQUIRED_INCLUDES ${PETSC_INCLUDE_DIRS})
 check_symbol_exists(PETSC_USE_COMPLEX petscsystypes.h PETSC_SCALAR_COMPLEX)
-if (PETSC_SCALAR_COMPLEX EQUAL 1)
+if(PETSC_SCALAR_COMPLEX EQUAL 1)
   message(STATUS "** This demo does not support complex mode")
 else()
   check_symbol_exists(PETSC_USE_REAL_DOUBLE petscsystypes.h PETSC_REAL_DOUBLE)
   if(PETSC_REAL_DOUBLE EQUAL 1)
-    set(SCALAR_TYPE "--scalar_type=double")
+    set(SCALAR_TYPE "--scalar_type=float64")
   else()
-    set(SCALAR_TYPE "--scalar_type=float")
+    set(SCALAR_TYPE "--scalar_type=float32")
   endif()
 
   # Add target to compile UFL files
@@ -40,7 +40,9 @@ else()
 
   set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-  add_executable(${PROJECT_NAME} main.cpp ${CMAKE_CURRENT_BINARY_DIR}/hyperelasticity.c)
+  add_executable(
+    ${PROJECT_NAME} main.cpp ${CMAKE_CURRENT_BINARY_DIR}/hyperelasticity.c
+  )
   target_link_libraries(${PROJECT_NAME} dolfinx)
 
   # Do not throw error for 'multi-line comments' (these are typical in rst which

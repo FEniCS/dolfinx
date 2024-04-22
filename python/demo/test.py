@@ -15,7 +15,7 @@ path = pathlib.Path(__file__).resolve().parent
 
 # Build list of demo programs
 demos = []
-demo_files = list(path.glob('**/*.py'))
+demo_files = list(path.glob("**/*.py"))
 for f in demo_files:
     demos.append((f.parent, f.name))
 

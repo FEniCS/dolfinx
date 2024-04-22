@@ -15,9 +15,16 @@ from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
 from dolfinx.io import XDMFFile
 from dolfinx.io.gmshio import cell_perm_array, ufl_mesh
-from dolfinx.mesh import (CellType, GhostMode, create_mesh, create_submesh,
-                          create_unit_cube, create_unit_interval,
-                          create_unit_square, locate_entities)
+from dolfinx.mesh import (
+    CellType,
+    GhostMode,
+    create_mesh,
+    create_submesh,
+    create_unit_cube,
+    create_unit_interval,
+    create_unit_square,
+    locate_entities,
+)
 
 # Supported XDMF file encoding
 if MPI.COMM_WORLD.size > 1:
@@ -48,8 +55,10 @@ def test_save_and_load_1d_mesh(tempdir, encoding):
     with XDMFFile(MPI.COMM_WORLD, filename, "r", encoding=encoding) as file:
         mesh2 = file.read_mesh()
     assert mesh.topology.index_map(0).size_global == mesh2.topology.index_map(0).size_global
-    assert mesh.topology.index_map(mesh.topology.dim).size_global == mesh2.topology.index_map(
-        mesh.topology.dim).size_global
+    assert (
+        mesh.topology.index_map(mesh.topology.dim).size_global
+        == mesh2.topology.index_map(mesh.topology.dim).size_global
+    )
 
 
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
@@ -69,7 +78,10 @@ def test_save_and_load_2d_mesh(tempdir, encoding, cell_type):
     assert mesh2.name == mesh.name
     topology, topology2 = mesh.topology, mesh2.topology
     assert topology.index_map(0).size_global == topology2.index_map(0).size_global
-    assert topology.index_map(topology.dim).size_global == topology2.index_map(topology.dim).size_global
+    assert (
+        topology.index_map(topology.dim).size_global
+        == topology2.index_map(topology.dim).size_global
+    )
 
 
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
@@ -86,7 +98,10 @@ def test_save_and_load_3d_mesh(tempdir, encoding, cell_type):
 
     topology, topology2 = mesh.topology, mesh2.topology
     assert topology.index_map(0).size_global == topology2.index_map(0).size_global
-    assert topology.index_map(topology.dim).size_global == topology2.index_map(topology.dim).size_global
+    assert (
+        topology.index_map(topology.dim).size_global
+        == topology2.index_map(topology.dim).size_global
+    )
 
 
 @pytest.mark.skipif(default_real_type != np.float64, reason="float32 not supported yet")
@@ -117,19 +132,26 @@ def test_read_write_p2_mesh(tempdir, encoding):
         x = points[srt]
 
         element_types, element_tags, node_tags = model.mesh.getElements(dim=3)
-        name, dim, order, num_nodes, local_coords, num_first_order_nodes = model.mesh.getElementProperties(
-            element_types[0])
+        (
+            name,
+            dim,
+            order,
+            num_nodes,
+            local_coords,
+            num_first_order_nodes,
+        ) = model.mesh.getElementProperties(element_types[0])
         cells = node_tags[0].reshape(-1, num_nodes) - 1
         num_nodes, gmsh_cell_id = MPI.COMM_WORLD.bcast(
-            [cells.shape[1], model.mesh.getElementType("tetrahedron", 2)], root=0)
+            [cells.shape[1], model.mesh.getElementType("tetrahedron", 2)], root=0
+        )
         gmsh.finalize()
     else:
         num_nodes, gmsh_cell_id = MPI.COMM_WORLD.bcast([None, None], root=0)
         cells, x = np.empty([0, num_nodes]), np.empty([0, 3])
 
-    domain = ufl_mesh(gmsh_cell_id, 3)
+    domain = ufl_mesh(gmsh_cell_id, 3, dtype=default_real_type)
     cell_type = _cpp.mesh.to_type(str(domain.ufl_cell()))
-    cells = cells[:, cell_perm_array(cell_type, cells.shape[1])]
+    cells = cells[:, cell_perm_array(cell_type, cells.shape[1])].copy()
 
     mesh = create_mesh(MPI.COMM_WORLD, cells, x, domain)
 
@@ -141,7 +163,10 @@ def test_read_write_p2_mesh(tempdir, encoding):
 
     topology, topology2 = mesh.topology, mesh2.topology
     assert topology.index_map(0).size_global == topology2.index_map(0).size_global
-    assert topology.index_map(topology.dim).size_global == topology2.index_map(topology.dim).size_global
+    assert (
+        topology.index_map(topology.dim).size_global
+        == topology2.index_map(topology.dim).size_global
+    )
 
 
 @pytest.mark.parametrize("d", [2, 3])

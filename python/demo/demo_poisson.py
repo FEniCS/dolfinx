@@ -23,9 +23,11 @@
 # particular boundary conditions reads:
 #
 # $$
-# - \nabla^{2} u &= f \quad {\rm in} \ \Omega, \\
-# u &= 0 \quad {\rm on} \ \Gamma_{D}, \\
-# \nabla u \cdot n &= g \quad {\rm on} \ \Gamma_{N}. \\
+# \begin{align}
+#   - \nabla^{2} u &= f \quad {\rm in} \ \Omega, \\
+#   u &= 0 \quad {\rm on} \ \Gamma_{D}, \\
+#   \nabla u \cdot n &= g \quad {\rm on} \ \Gamma_{N}. \\
+# \end{align}
 # $$
 #
 # where $f$ and $g$ are input data and $n$ denotes the outward directed
@@ -39,8 +41,10 @@
 # where $V$ is a suitable function space and
 #
 # $$
-# a(u, v) &:= \int_{\Omega} \nabla u \cdot \nabla v \, {\rm d} x, \\
-# L(v)    &:= \int_{\Omega} f v \, {\rm d} x + \int_{\Gamma_{N}} g v \, {\rm d} s.
+# \begin{align}
+#   a(u, v) &:= \int_{\Omega} \nabla u \cdot \nabla v \, {\rm d} x, \\
+#   L(v)    &:= \int_{\Omega} f v \, {\rm d} x + \int_{\Gamma_{N}} g v \, {\rm d} s.
+# \end{align}
 # $$
 #
 # The expression $a(u, v)$ is the bilinear form and $L(v)$
@@ -51,7 +55,7 @@
 # In this demo we consider:
 #
 # - $\Omega = [0,2] \times [0,1]$ (a rectangle)
-# - $\Gamma_{D} = \{(0, y) \cup (1, y) \subset \partial \Omega\}$
+# - $\Gamma_{D} = \{(0, y) \cup (2, y) \subset \partial \Omega\}$
 # - $\Gamma_{N} = \{(x, 0) \cup (x, 1) \subset \partial \Omega\}$
 # - $g = \sin(5x)$
 # - $f = 10\exp(-((x - 0.5)^2 + (y - 0.5)^2) / 0.02)$
@@ -82,9 +86,12 @@ from ufl import ds, dx, grad, inner
 # <dolfinx.fem.FunctionSpace>` $V$ on the mesh.
 
 # +
-msh = mesh.create_rectangle(comm=MPI.COMM_WORLD,
-                            points=((0.0, 0.0), (2.0, 1.0)), n=(32, 16),
-                            cell_type=mesh.CellType.triangle)
+msh = mesh.create_rectangle(
+    comm=MPI.COMM_WORLD,
+    points=((0.0, 0.0), (2.0, 1.0)),
+    n=(32, 16),
+    cell_type=mesh.CellType.triangle,
+)
 V = fem.functionspace(msh, ("Lagrange", 1))
 # -
 
@@ -101,9 +108,11 @@ V = fem.functionspace(msh, ("Lagrange", 1))
 # with a 'marker' function that returns `True` for points `x` on the
 # boundary and `False` otherwise.
 
-facets = mesh.locate_entities_boundary(msh, dim=(msh.topology.dim - 1),
-                                       marker=lambda x: np.logical_or(np.isclose(x[0], 0.0),
-                                                                      np.isclose(x[0], 2.0)))
+facets = mesh.locate_entities_boundary(
+    msh,
+    dim=(msh.topology.dim - 1),
+    marker=lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 2.0),
+)
 
 # We now find the degrees-of-freedom that are associated with the
 # boundary facets using {py:func}`locate_dofs_topological
@@ -132,7 +141,7 @@ L = inner(f, v) * dx + inner(g, v) * ds
 # A {py:class}`LinearProblem <dolfinx.fem.petsc.LinearProblem>` object is
 # created that brings together the variational problem, the Dirichlet
 # boundary condition, and which specifies the linear solver. In this
-# case an LU solver us sued. The {py:func}`solve
+# case an LU solver is used. The {py:func}`solve
 # <dolfinx.fem.petsc.LinearProblem.solve>` computes the solution.
 
 # +
@@ -154,6 +163,7 @@ with io.XDMFFile(msh.comm, "out_poisson/poisson.xdmf", "w") as file:
 # +
 try:
     import pyvista
+
     cells, types, x = plot.vtk_mesh(V)
     grid = pyvista.UnstructuredGrid(cells, types, x)
     grid.point_data["u"] = uh.x.array.real

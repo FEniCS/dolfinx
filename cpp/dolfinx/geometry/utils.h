@@ -39,8 +39,6 @@ std::vector<T> shortest_vector(const mesh::Mesh<T>& mesh, int dim,
 {
   const int tdim = mesh.topology()->dim();
   const mesh::Geometry<T>& geometry = mesh.geometry();
-  if (geometry.cmaps().size() > 1)
-    throw std::runtime_error("Mixed topology not supported");
 
   std::span<const T> geom_dofs = geometry.x();
   auto x_dofmap = geometry.dofmap();
@@ -53,10 +51,8 @@ std::vector<T> shortest_vector(const mesh::Mesh<T>& mesh, int dim,
       // Check that we have sent in valid entities, i.e. that they exist in the
       // local dofmap. One gets a cryptical memory segfault if entities is -1
       assert(entities[e] >= 0);
-      auto dofs
-          = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
-              submdspan(x_dofmap, entities[e],
-                        MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+          x_dofmap, entities[e], MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
       std::vector<T> nodes(3 * dofs.size());
       for (std::size_t i = 0; i < dofs.size(); ++i)
       {
@@ -93,11 +89,10 @@ std::vector<T> shortest_vector(const mesh::Mesh<T>& mesh, int dim,
       const int local_cell_entity = std::distance(cell_entities.begin(), it0);
 
       // Tabulate geometry dofs for the entity
-      auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::
-          MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
-              x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+          x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
       const std::vector<int> entity_dofs
-          = geometry.cmaps()[0].create_dof_layout().entity_closure_dofs(
+          = geometry.cmap().create_dof_layout().entity_closure_dofs(
               dim, local_cell_entity);
       std::vector<T> nodes(3 * entity_dofs.size());
       for (std::size_t i = 0; i < entity_dofs.size(); i++)
@@ -510,9 +505,6 @@ std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
                                           std::span<const std::int32_t> cells,
                                           std::array<T, 3> point, T tol)
 {
-  if (mesh.geometry().cmaps().size() > 1)
-    throw std::runtime_error("Mixed topology not supported");
-
   if (cells.empty())
     return -1;
   else
@@ -524,9 +516,8 @@ std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
     std::vector<T> coordinate_dofs(num_nodes * 3);
     for (auto cell : cells)
     {
-      auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::
-          MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
-              x_dofmap, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+          x_dofmap, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
       for (std::size_t i = 0; i < num_nodes; ++i)
       {
         std::copy_n(std::next(geom_dofs.begin(), 3 * dofs[i]), 3,
@@ -673,7 +664,7 @@ graph::AdjacencyList<std::int32_t> compute_colliding_cells(
 /// 3)`
 /// @note Only looks through cells owned by the process
 /// @note A large padding value can increase the runtime of the function by
-/// orders of magnitude, because that for non-colliding cells
+/// orders of magnitude, because for non-colliding cells
 /// one has to determine the closest cell among all processes with an
 /// intersecting bounding box, which is an expensive operation to perform.
 template <std::floating_point T>
@@ -696,7 +687,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
   BoundingBoxTree global_bbtree = bb.create_global_tree(comm);
 
   // Compute collisions:
-  // For each point in `x` get the processes it should be sent to
+  // For each point in `points` get the processes it should be sent to
   graph::AdjacencyList collisions = compute_collisions(global_bbtree, points);
 
   // Get unique list of outgoing ranks
@@ -770,8 +761,6 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
 
   // Get mesh geometry for closest entity
   const mesh::Geometry<T>& geometry = mesh.geometry();
-  if (geometry.cmaps().size() > 1)
-    throw std::runtime_error("Mixed topology not supported");
   std::span<const T> geom_dofs = geometry.x();
   auto x_dofmap = geometry.dofmap();
 
@@ -780,7 +769,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
       = compute_collisions(bb, std::span<const T>(received_points.data(),
                                                   received_points.size()));
 
-  // Each process checks which points collides with a cell on the process
+  // Each process checks which points collide with a cell on the process
   const int rank = dolfinx::MPI::rank(comm);
   std::vector<std::int32_t> cell_indicator(received_points.size() / 3);
   std::vector<std::int32_t> closest_cells(received_points.size() / 3);
@@ -788,7 +777,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
   {
     std::array<T, 3> point;
     std::copy_n(std::next(received_points.begin(), p), 3, point.begin());
-    // Find first collding cell among the cells with colliding bounding boxes
+    // Find first colliding cell among the cells with colliding bounding boxes
     const int colliding_cell = geometry::compute_first_colliding_cell(
         mesh, candidate_collisions.links(p / 3), point,
         10 * std::numeric_limits<T>::epsilon());
@@ -874,9 +863,8 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
       std::int32_t closest_cell = -1;
       for (auto cell : candidate_collisions.links(i))
       {
-        auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::
-            MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
-                x_dofmap, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+        auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+            x_dofmap, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
         std::vector<T> nodes(3 * dofs.size());
         for (std::size_t j = 0; j < dofs.size(); ++j)
         {
@@ -909,7 +897,7 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
       recv_offsets.data(), dolfinx::MPI::mpi_type<T>(), reverse_comm);
 
   // Update point ownership with extrapolation information
-  std::vector<T> closest_distance(unpack_map.size(),
+  std::vector<T> closest_distance(point_owners.size(),
                                   std::numeric_limits<T>::max());
   for (std::size_t i = 0; i < out_ranks.size(); i++)
   {

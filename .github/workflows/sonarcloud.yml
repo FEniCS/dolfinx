@@ -17,7 +17,7 @@ jobs:
     container: fenicsproject/test-env:current-mpich
     env:
       SONAR_SCANNER_VERSION:
-        4.8.0.2856 # Find the latest version at:
+        5.0.1.3006 # Find the latest version at:
         # https://github.com/SonarSource/sonar-scanner-cli/tags
       SONAR_SERVER_URL: "https://sonarcloud.io"
       BUILD_WRAPPER_OUT_DIR: build_wrapper_output_directory # Directory where build-wrapper output will be placed
@@ -31,7 +31,7 @@ jobs:
           apt-get -y update
           apt-get install unzip
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: 17

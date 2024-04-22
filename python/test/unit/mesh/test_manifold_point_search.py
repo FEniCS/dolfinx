@@ -16,7 +16,7 @@ def test_manifold_point_search():
     # Simple two-triangle surface in 3d
     vertices = np.array([[0.0, 0.0, 1.0], [1.0, 1.0, 1.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
     cells = np.array([[0, 1, 2], [0, 1, 3]], dtype=np.int64)
-    domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(2, )))
+    domain = ufl.Mesh(element("Lagrange", "triangle", 1, shape=(2,)))
     mesh = create_mesh(MPI.COMM_WORLD, cells, vertices, domain)
     bb = bb_tree(mesh, mesh.topology.dim)
 
@@ -26,9 +26,12 @@ def test_manifold_point_search():
     colliding_cells = geometry.compute_colliding_cells(mesh, cell_candidates, points)
 
     # Extract vertices of cell
-    indices = _cpp.mesh.entities_to_geometry(mesh._cpp_object, mesh.topology.dim,
-                                             [colliding_cells.links(0)[0],
-                                              colliding_cells.links(1)[0]], False)
+    indices = _cpp.mesh.entities_to_geometry(
+        mesh._cpp_object,
+        mesh.topology.dim,
+        np.array([colliding_cells.links(0)[0], colliding_cells.links(1)[0]]),
+        False,
+    )
     cell_vertices = mesh.geometry.x[indices]
 
     # Compare vertices with input

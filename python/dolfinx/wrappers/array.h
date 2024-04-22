@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Garth N. Wells
+// Copyright (C) 2021-2023 Garth N. Wells
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -6,41 +6,62 @@
 
 #pragma once
 
+#include <array>
+#include <initializer_list>
 #include <memory>
-#include <pybind11/numpy.h>
-#include <pybind11/pybind11.h>
+#include <nanobind/nanobind.h>
+#include <nanobind/ndarray.h>
 #include <vector>
 
-namespace py = pybind11;
+namespace nb = nanobind;
 
 namespace dolfinx_wrappers
 {
 
-/// Create an n-dimensional py::array_t that shares data with a
-/// std::vector. The std::vector owns the data, and the py::array_t
-/// object keeps the std::vector alive.
-/// From https://github.com/pybind/pybind11/issues/1042
-template <typename Sequence, typename U>
-py::array_t<typename Sequence::value_type> as_pyarray(Sequence&& seq, U&& shape)
+template <typename V>
+auto as_nbarray_copy(const V& x, std::size_t ndim, const std::size_t* shape)
 {
-  auto data = seq.data();
-  std::unique_ptr<Sequence> seq_ptr
-      = std::make_unique<Sequence>(std::move(seq));
-  auto capsule = py::capsule(
-      seq_ptr.get(), [](void* p)
-      { std::unique_ptr<Sequence>(reinterpret_cast<Sequence*>(p)); });
-  seq_ptr.release();
-  return py::array(shape, data, capsule);
+  using _V = std::decay_t<V>;
+  using T = typename _V::value_type;
+  T* ptr = new T[x.size()];
+  std::copy(x.begin(), x.end(), ptr);
+  return nb::ndarray<T, nb::numpy>(
+      ptr, ndim, shape,
+      nb::capsule(ptr, [](void* p) noexcept { delete[] (T*)p; }));
 }
 
-/// Create a py::array_t that shares data with a std::vector. The
-/// std::vector owns the data, and the py::array_t object keeps the std::vector
-/// alive.
-// From https://github.com/pybind/pybind11/issues/1042
-template <typename Sequence>
-py::array_t<typename Sequence::value_type> as_pyarray(Sequence&& seq)
+template <typename V>
+auto as_nbarray_copy(const V& x, const std::initializer_list<std::size_t> shape)
 {
-  return as_pyarray(std::move(seq), std::array{seq.size()});
+  return as_nbarray_copy(x, shape.size(), shape.begin());
+}
+
+/// Create an n-dimensional nb::ndarray that shares data with a
+/// std::vector. The std::vector owns the data, and the nb::ndarray
+/// object keeps the std::vector alive.
+template <typename V>
+auto as_nbarray(V&& x, std::size_t ndim, const std::size_t* shape)
+{
+  using _V = std::decay_t<V>;
+  _V* ptr = new _V(std::move(x));
+  return nb::ndarray<typename _V::value_type, nb::numpy>(
+      ptr->data(), ndim, shape,
+      nb::capsule(ptr, [](void* p) noexcept { delete (_V*)p; }));
+}
+
+template <typename V>
+auto as_nbarray(V&& x, const std::initializer_list<std::size_t> shape)
+{
+  return as_nbarray(x, shape.size(), shape.begin());
+}
+
+/// Create a nb::ndarray that shares data with a std::vector. The
+/// std::vector owns the data, and the nb::ndarray object keeps the
+/// std::vector alive.
+template <typename V>
+auto as_nbarray(V&& x)
+{
+  return as_nbarray(std::move(x), {x.size()});
 }
 
 } // namespace dolfinx_wrappers

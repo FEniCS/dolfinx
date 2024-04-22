@@ -30,7 +30,8 @@ if(NOT Catch2_FOUND)
   FetchContent_MakeAvailable(Catch2)
 endif()
 
-add_executable(unittests
+add_executable(
+  unittests
   main.cpp
   vector.cpp
   matrix.cpp
@@ -40,10 +41,15 @@ add_executable(unittests
   common/sort.cpp
   mesh/distributed_mesh.cpp
   common/CIFailure.cpp
-  ${CMAKE_CURRENT_BINARY_DIR}/poisson.c)
+  ${CMAKE_CURRENT_BINARY_DIR}/poisson.c
+)
 target_link_libraries(unittests PRIVATE Catch2::Catch2WithMain dolfinx)
-target_include_directories(unittests PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
-target_compile_options(unittests PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-Wall -Werror -Wextra -pedantic>)
+target_include_directories(
+  unittests PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+)
+target_compile_options(
+  unittests PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-Wall -Werror -Wextra -pedantic>
+)
 
 # Enable testing
 enable_testing()

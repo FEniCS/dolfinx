@@ -9,71 +9,96 @@ on:
 jobs:
   mac-os-build:
     name: macOS Homebrew install and test
-    runs-on: macos-13
+    runs-on: macos-14
     env:
       PETSC_ARCH: arch-darwin-c-opt
       PETSC_DIR: ${{ github.workspace }}/petsc
 
     steps:
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
 
       - name: Install Homebrew dependencies
         run: |
-          # brew install adios2 boost cmake hdf5-mpi ninja open-mpi pkg-config pugixml python # FEniCS
-          brew install boost cmake hdf5-mpi make ninja open-mpi pkg-config pugixml # FEniCS
+          brew install adios2 boost cmake hdf5-mpi make ninja open-mpi pkg-config pugixml # FEniCS
           brew install bison flex # PETSc
 
       - name: Install Python dependencies
         run: |
-          pip install pip --upgrade
-          pip install numpy setuptools wheel
-          pip install cython
-          pip install mpi4py
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install cffi cppimport cython numba numpy pytest pytest-xdist scipy
+          python -m pip install --no-build-isolation mpi4py
 
-      - name: Install minimal PETSc and petsc4y
+      - name: Install minimal PETSc and petsc4py
         run: |
           export PATH="$(brew --prefix bison)/bin:$PATH"
           git clone -b release https://gitlab.com/petsc/petsc.git petsc
           cd petsc
-          ./configure \
+          python ./configure \
             --with-64-bit-indices=no \
             --with-debugging=no \
             --with-fortran-bindings=no \
             --with-scalar-type=real \
             --with-shared-libraries \
             --with-scalar-type=real \
-            -–with-petsc4py=yes \
-            --download-ptscotch
+            --download-metis \
+            --download-parmetis \
+            --download-ptscotch \
+            --download-superlu_dist
           make all
+          cd src/binding/petsc4py
+          arch -arm64 python -m pip install --no-build-isolation --no-cache-dir -v .
 
       - name: Install FEniCSx dependencies
         run: |
-          pip install git+https://github.com/FEniCS/basix.git
-          pip install git+https://github.com/FEniCS/ufl.git
-          pip install git+https://github.com/FEniCS/ffcx.git
+          python -m pip install git+https://github.com/FEniCS/basix.git
+          python -m pip install git+https://github.com/FEniCS/ufl.git
+          python -m pip install git+https://github.com/FEniCS/ffcx.git
 
       - uses: actions/checkout@v4
         with:
           path: dolfinx
 
       - name: Build and install DOLFINx C++ library
+        working-directory: dolfinx
         run: |
-          cmake -G Ninja -B build -S dolfinx/cpp/
+          cmake -G Ninja -B build -S cpp/
           cmake --build build
-          cmake --install build
+          sudo cmake --install build
+
+      - name: Build C++ unit tests
+        working-directory: dolfinx
+        run: |
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
+          cmake --build build/test --parallel 3
+
+      - name: Run C++ unit tests (serial)
+        working-directory: dolfinx
+        run: |
+          cd build/test
+          ctest -V --output-on-failure -R unittests
+      - name: Run C++ unit tests (MPI)
+        working-directory: dolfinx
+        run: |
+          cd build/test
+          mpiexec -np 3 ctest -V --output-on-failure -R unittests
 
       - name: Build and install DOLFINx Python interface
-        env:
-          PYTHONPATH: ${{ github.workspace }}/petsc/${{ env.PETSC_ARCH }}/lib:${{ env.PYTHONPATH }}
+        working-directory: dolfinx
         run: |
-          echo "Path: ${PYTHONPATH}"
-          pip install dolfinx/python/
+          python -m pip install -r python/build-requirements.txt
+          python -m pip install --check-build-dependencies --no-build-isolation python/
+
       - name: Basic test
-        env:
-          PYTHONPATH: ${{ github.workspace }}/petsc/${{ env.PETSC_ARCH }}/lib:${{ env.PYTHONPATH }}
         run: |
           python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
           mpirun -np 2 python -c "import dolfinx; from mpi4py import MPI; dolfinx.mesh.create_rectangle(comm=MPI.COMM_WORLD, points=((0, 0), (2, 1)), n=(32, 16))"
+
+      - name: Run Python unit tests (serial)
+        working-directory: dolfinx
+        run: python3 -m pytest -n=auto --durations=50 python/test/unit/
+      - name: Run Python unit tests (MPI, np=3)
+        working-directory: dolfinx
+        run: mpirun -np 3 python3 -m pytest python/test/unit/

@@ -65,8 +65,10 @@
 # and considering the boundary conditions
 #
 # $$
+# \begin{align}
 # u &= 0 \quad {\rm on} \ \partial\Omega, \\
 # \nabla^{2} u &= 0 \quad {\rm on} \ \partial\Omega,
+# \end{align}
 # $$
 #
 # a weak formulation of the biharmonic problem reads: find $u \in V$ such that
@@ -118,21 +120,23 @@ import ufl
 from dolfinx import fem, io, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
 from dolfinx.mesh import CellType, GhostMode
-from ufl import (CellDiameter, FacetNormal, avg, div, dS, dx, grad, inner,
-                 jump, pi, sin)
+from ufl import CellDiameter, FacetNormal, avg, div, dS, dx, grad, inner, jump, pi, sin
 
 # -
 
 # We begin by using {py:func}`create_rectangle
 # <dolfinx.mesh.create_rectangle>` to create a rectangular
 # {py:class}`Mesh <dolfinx.mesh.Mesh>` of the domain, and creating a
-# finite element {py:class}`FunctionSpaceBase <dolfinx.fem.FunctionSpaceBase>`
+# finite element {py:class}`FunctionSpace <dolfinx.fem.FunctionSpace>`
 # $V$ on the mesh.
 
-msh = mesh.create_rectangle(comm=MPI.COMM_WORLD,
-                            points=((0.0, 0.0), (1.0, 1.0)), n=(32, 32),
-                            cell_type=CellType.triangle,
-                            ghost_mode=GhostMode.shared_facet)
+msh = mesh.create_rectangle(
+    comm=MPI.COMM_WORLD,
+    points=((0.0, 0.0), (1.0, 1.0)),
+    n=(32, 32),
+    cell_type=CellType.triangle,
+    ghost_mode=GhostMode.shared_facet,
+)
 V = fem.functionspace(msh, ("Lagrange", 2))
 
 # The second argument to {py:func}`functionspace
@@ -148,12 +152,14 @@ V = fem.functionspace(msh, ("Lagrange", 2))
 # function that returns `True` for points `x` on the boundary and
 # `False` otherwise.
 
-facets = mesh.locate_entities_boundary(msh, dim=1,
-                                       marker=lambda x: np.logical_or.reduce((
-                                           np.isclose(x[0], 0.0),
-                                           np.isclose(x[0], 1.0),
-                                           np.isclose(x[1], 0.0),
-                                           np.isclose(x[1], 1.0))))
+facets = mesh.locate_entities_boundary(
+    msh,
+    dim=1,
+    marker=lambda x: np.isclose(x[0], 0.0)
+    | np.isclose(x[0], 1.0)
+    | np.isclose(x[1], 0.0)
+    | np.isclose(x[1], 1.0),
+)
 
 # We now find the degrees-of-freedom that are associated with the
 # boundary facets using {py:func}`locate_dofs_topological
@@ -182,7 +188,7 @@ bc = fem.dirichletbc(value=ScalarType(0), dofs=dofs, V=V)
 alpha = ScalarType(8.0)
 h = CellDiameter(msh)
 n = FacetNormal(msh)
-h_avg = (h('+') + h('-')) / 2.0
+h_avg = (h("+") + h("-")) / 2.0
 
 # After that, we can define the variational problem consisting of the bilinear
 # form $a$ and the linear form $L$. The source term is prescribed as
@@ -200,10 +206,12 @@ v = ufl.TestFunction(V)
 x = ufl.SpatialCoordinate(msh)
 f = 4.0 * pi**4 * sin(pi * x[0]) * sin(pi * x[1])
 
-a = inner(div(grad(u)), div(grad(v))) * dx \
-    - inner(avg(div(grad(u))), jump(grad(v), n)) * dS \
-    - inner(jump(grad(u), n), avg(div(grad(v)))) * dS \
+a = (
+    inner(div(grad(u)), div(grad(v))) * dx
+    - inner(avg(div(grad(u))), jump(grad(v), n)) * dS
+    - inner(jump(grad(u), n), avg(div(grad(v)))) * dS
     + alpha / h_avg * inner(jump(grad(u), n), jump(grad(v), n)) * dS
+)
 L = inner(f, v) * dx
 # -
 
@@ -231,6 +239,7 @@ with io.XDMFFile(msh.comm, "out_biharmonic/biharmonic.xdmf", "w") as file:
 # +
 try:
     import pyvista
+
     cells, types, x = plot.vtk_mesh(V)
     grid = pyvista.UnstructuredGrid(cells, types, x)
     grid.point_data["u"] = uh.x.array.real

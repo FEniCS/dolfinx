@@ -3,21 +3,13 @@ version: 2.1
 install-python-components: &install-python-components
   name: Install FEniCS Python components
   command: |
-    git clone https://github.com/FEniCS/basix.git --branch release --single-branch
+    git clone https://github.com/FEniCS/basix.git --branch main --single-branch
     cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -B build-dir -S ./basix/cpp
     cmake --build build-dir --parallel 3
     cmake --install build-dir
     pip3 install ./basix/python
-    pip3 install git+https://github.com/FEniCS/ufl.git@release
-    pip3 install git+https://github.com/FEniCS/ffcx.git@release
-
-flake8-python-code: &flake8-python-code
-  name: Flake8 checks on Python code
-  command: |
-    cd python/
-    python3 -m flake8 dolfinx
-    python3 -m flake8 demo
-    python3 -m flake8 test
+    pip3 install git+https://github.com/FEniCS/ufl.git
+    pip3 install git+https://github.com/FEniCS/ffcx.git
 
 configure-cpp: &configure-cpp
   name: Configure (C++)
@@ -51,11 +43,12 @@ regression-tests-cpp-mpi: &regression-tests-cpp-mpi
     ctest --verbose -R demo -R mpi_3
 
 build-python-interface: &build-python-interface
-  name: Build Python/pybind11 interface
+  name: Build Python/nanobind interface
   command: |
     export CMAKE_BUILD_PARALLEL_LEVEL=2
     cd python
-    pip3 -v install --global-option build --global-option --debug . --user
+    pip3 install -r build-requirements.txt
+    pip3 -v install --config-setting cmake.build-type=Debug --no-build-isolation --user .
 
 demos-python: &demos-python
   name: Run demos (Python, serial)
@@ -80,14 +73,14 @@ unit-tests-python: &unit-tests-python
   name: Run unit tests (Python, serial)
   command: |
     mkdir -p ~/junit
-    cd python/test/unit
-    python3 -m pytest -n=4 --durations=50 --junitxml=~/junit/test-results.xml .
+    cd python/test
+    python3 -m pytest -n=4 --durations=50 --junitxml=~/junit/test-results.xml unit/
 
 unit-tests-python-mpi: &unit-tests-python-mpi
   name: Run unit tests (Python, MPI)
   command: |
-    cd python/test/unit
-    mpirun -np 3 python3 -m pytest .
+    cd python/test
+    mpirun -np 3 python3 -m pytest unit/
 
 jobs:
   build-real:
@@ -100,7 +93,6 @@ jobs:
     steps:
       - checkout
       - run: *install-python-components
-      - run: *flake8-python-code
       - run: *configure-cpp
       - run: *build-install-cpp
 
@@ -130,7 +122,6 @@ jobs:
     steps:
       - checkout
       - run: *install-python-components
-      - run: *flake8-python-code
       - run: *configure-cpp
       - run: *build-install-cpp
 

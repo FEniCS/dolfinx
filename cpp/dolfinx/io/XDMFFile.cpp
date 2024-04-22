@@ -177,15 +177,9 @@ XDMFFile::read_mesh(const fem::CoordinateElement<double>& element,
   auto [x, xshape] = XDMFFile::read_geometry_data(name, xpath);
 
   // Create mesh
-  std::vector<std::int32_t> offset(cshape[0] + 1, 0);
-  for (std::size_t i = 0; i < cshape[0]; ++i)
-    offset[i + 1] = offset[i] + cshape[1];
-
-  graph::AdjacencyList<std::int64_t> cells_adj(std::move(cells),
-                                               std::move(offset));
   const std::vector<double>& _x = std::get<std::vector<double>>(x);
   mesh::Mesh<double> mesh
-      = mesh::create_mesh(_comm.comm(), cells_adj, {element}, _x, xshape, mode);
+      = mesh::create_mesh(_comm.comm(), cells, element, _x, xshape, mode);
   mesh.name = name;
   return mesh;
 }
@@ -355,21 +349,21 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
   std::vector<std::int64_t> entities1 = io::cells::apply_permutation(
       entities, eshape, io::cells::perm_vtk(cell_type, eshape[1]));
 
+  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+      const std::int64_t,
+      MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
+      entities_span(entities1.data(), eshape);
   std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
-      entities_values = xdmf_utils::distribute_entity_data(
+      entities_values = xdmf_utils::distribute_entity_data<std::int32_t>(
           *mesh.topology(), mesh.geometry().input_global_indices(),
           mesh.geometry().index_map()->size_global(),
-          mesh.geometry().cmaps()[0].create_dof_layout(),
-          mesh.geometry().dofmap(), mesh::cell_dim(cell_type), entities1,
-          values);
-
-  auto cell_types = mesh.topology()->cell_types();
-  if (cell_types.size() > 1)
-    throw std::runtime_error("cell type IO");
+          mesh.geometry().cmap().create_dof_layout(), mesh.geometry().dofmap(),
+          mesh::cell_dim(cell_type), entities_span, values);
 
   LOG(INFO) << "XDMF create meshtags";
   std::size_t num_vertices_per_entity = mesh::cell_num_entities(
-      mesh::cell_entity_type(cell_types.back(), mesh::cell_dim(cell_type), 0),
+      mesh::cell_entity_type(mesh.topology()->cell_type(),
+                             mesh::cell_dim(cell_type), 0),
       0);
   const graph::AdjacencyList<std::int32_t> entities_adj
       = graph::regular_adjacency_list(std::move(entities_values.first),

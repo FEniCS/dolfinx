@@ -14,7 +14,7 @@ import basix
 import dolfinx
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx.fem import FunctionSpace, form
+from dolfinx.fem import form, functionspace
 from dolfinx.mesh import CellType, create_unit_cube, create_unit_square
 from ufl import grad, inner
 
@@ -32,7 +32,7 @@ def run_symmetry_test(cell_type, e, form_f):
     else:
         mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type, dtype=dtype)
 
-    space = FunctionSpace(mesh, e)
+    space = functionspace(mesh, e)
     u = ufl.TrialFunction(space)
     v = ufl.TestFunction(space)
     f = form(form_f(u, v), dtype=dtype)
@@ -43,18 +43,34 @@ def run_symmetry_test(cell_type, e, form_f):
     check_symmetry(A, tol)
 
 
-parametrize_elements = pytest.mark.parametrize("cell_type, family", [
-    (CellType.triangle, "Lagrange"), (CellType.triangle, "N1curl"), (CellType.triangle, "RT"),
-    (CellType.triangle, "Regge"),
-    (CellType.quadrilateral, "Lagrange"), (CellType.quadrilateral, "RTCE"), (CellType.quadrilateral, "RTCF"),
-    (CellType.tetrahedron, "Lagrange"), (CellType.tetrahedron, "N1curl"), (CellType.tetrahedron, "RT"),
-    (CellType.tetrahedron, "Regge"),
-    (CellType.hexahedron, "Lagrange"), (CellType.hexahedron, "NCE"), (CellType.hexahedron, "NCF")
-])
-parametrize_lagrange_elements = pytest.mark.parametrize("cell_type, family", [
-    (CellType.triangle, "Lagrange"), (CellType.quadrilateral, "Lagrange"),
-    (CellType.tetrahedron, "Lagrange"), (CellType.hexahedron, "Lagrange")
-])
+parametrize_elements = pytest.mark.parametrize(
+    "cell_type, family",
+    [
+        (CellType.triangle, "Lagrange"),
+        (CellType.triangle, "N1curl"),
+        (CellType.triangle, "RT"),
+        (CellType.triangle, "Regge"),
+        (CellType.quadrilateral, "Lagrange"),
+        (CellType.quadrilateral, "RTCE"),
+        (CellType.quadrilateral, "RTCF"),
+        (CellType.tetrahedron, "Lagrange"),
+        (CellType.tetrahedron, "N1curl"),
+        (CellType.tetrahedron, "RT"),
+        (CellType.tetrahedron, "Regge"),
+        (CellType.hexahedron, "Lagrange"),
+        (CellType.hexahedron, "NCE"),
+        (CellType.hexahedron, "NCF"),
+    ],
+)
+parametrize_lagrange_elements = pytest.mark.parametrize(
+    "cell_type, family",
+    [
+        (CellType.triangle, "Lagrange"),
+        (CellType.quadrilateral, "Lagrange"),
+        (CellType.tetrahedron, "Lagrange"),
+        (CellType.hexahedron, "Lagrange"),
+    ],
+)
 
 
 @pytest.mark.skip_in_parallel
@@ -98,12 +114,16 @@ def test_mass_matrix_dS(cell_type, family, order, sign):
 @pytest.mark.parametrize("order", range(1, 2))
 @pytest.mark.parametrize("sign", ["+", "-"])
 def test_stiffness_matrix_dS(cell_type, family, order, sign):
-    run_symmetry_test(cell_type, (family, order), lambda u, v: inner(grad(u), grad(v))(sign) * ufl.dS)
+    run_symmetry_test(
+        cell_type, (family, order), lambda u, v: inner(grad(u), grad(v))(sign) * ufl.dS
+    )
 
 
 @pytest.mark.skip_in_parallel
-@pytest.mark.parametrize("cell_type", [CellType.triangle, CellType.quadrilateral,
-                                       CellType.tetrahedron, CellType.hexahedron])
+@pytest.mark.parametrize(
+    "cell_type",
+    [CellType.triangle, CellType.quadrilateral, CellType.tetrahedron, CellType.hexahedron],
+)
 @pytest.mark.parametrize("sign", ["+", "-"])
 @pytest.mark.parametrize("order", range(1, 2))
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
@@ -113,10 +133,14 @@ def test_mixed_element_form(cell_type, sign, order, dtype):
     else:
         mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type, dtype=dtype)
 
-    U_el = mixed_element([element(basix.ElementFamily.P, cell_type.name, order),
-                          element(basix.ElementFamily.N1E, cell_type.name, order)])
+    U_el = mixed_element(
+        [
+            element(basix.ElementFamily.P, cell_type.name, order),
+            element(basix.ElementFamily.N1E, cell_type.name, order),
+        ]
+    )
 
-    U = FunctionSpace(mesh, U_el)
+    U = functionspace(mesh, U_el)
     u, p = ufl.TrialFunctions(U)
     v, q = ufl.TestFunctions(U)
     f = form(inner(u, v) * ufl.dx + inner(p, q)(sign) * ufl.dS, dtype=dtype)
@@ -138,10 +162,14 @@ def test_mixed_element_vector_element_form(cell_type, sign, order, dtype):
     else:
         mesh = create_unit_cube(MPI.COMM_WORLD, 2, 2, 2, cell_type, dtype=dtype)
 
-    U_el = mixed_element([element(basix.ElementFamily.P, cell_type.name, order, shape=(mesh.geometry.dim,)),
-                          element(basix.ElementFamily.N1E, cell_type.name, order)])
+    U_el = mixed_element(
+        [
+            element(basix.ElementFamily.P, cell_type.name, order, shape=(mesh.geometry.dim,)),
+            element(basix.ElementFamily.N1E, cell_type.name, order),
+        ]
+    )
 
-    U = FunctionSpace(mesh, U_el)
+    U = functionspace(mesh, U_el)
     u, p = ufl.TrialFunctions(U)
     v, q = ufl.TestFunctions(U)
     f = form(inner(u, v) * ufl.dx + inner(p, q)(sign) * ufl.dS, dtype=dtype)

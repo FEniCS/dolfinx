@@ -5,6 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Linear algebra functionality"""
 
+import typing
 
 import numpy as np
 import numpy.typing as npt
@@ -13,21 +14,44 @@ from dolfinx import cpp as _cpp
 from dolfinx.cpp.common import IndexMap
 from dolfinx.cpp.la import BlockMode, InsertMode, Norm
 
-__all__ = ["orthonormalize", "is_orthonormal", "matrix_csr", "vector",
-           "MatrixCSR", "Norm", "InsertMode", "Vector", "create_petsc_vector"]
+__all__ = [
+    "orthonormalize",
+    "is_orthonormal",
+    "matrix_csr",
+    "vector",
+    "MatrixCSR",
+    "Norm",
+    "InsertMode",
+    "Vector",
+    "create_petsc_vector",
+]
 
 
 class MatrixCSR:
-    def __init__(self, A):
+    _cpp_object: typing.Union[
+        _cpp.la.MatrixCSR_float32,
+        _cpp.la.MatrixCSR_float64,
+        _cpp.la.MatrixCSR_complex64,
+        _cpp.la.MatrixCSR_complex128,
+    ]
+
+    def __init__(
+        self,
+        A: typing.Union[
+            _cpp.la.MatrixCSR_float32,
+            _cpp.la.MatrixCSR_float64,
+            _cpp.la.MatrixCSR_complex64,
+            _cpp.la.MatrixCSR_complex128,
+        ],
+    ):
         """A distributed sparse matrix that uses compressed sparse row storage.
 
-        Args:
-            A: The C++/pybind11 matrix object.
         Note:
             Objects of this type should be created using
-            :func:`matrix_csr` and not created using the class
-            initialiser.
+            :func:`matrix_csr` and not created using this initialiser.
 
+        Args:
+            A: The C++/nanobind matrix object.
         """
         self._cpp_object = A
 
@@ -36,7 +60,6 @@ class MatrixCSR:
 
         Args:
             i: 0 for row map, 1 for column map.
-
         """
         return self._cpp_object.index_map(i)
 
@@ -45,11 +68,23 @@ class MatrixCSR:
         """Block sizes for the matrix."""
         return self._cpp_object.bs
 
-    def add(self, x, rows, cols, bs=1) -> None:
+    def add(
+        self,
+        x: npt.NDArray[np.floating],
+        rows: npt.NDArray[np.int32],
+        cols: npt.NDArray[np.int32],
+        bs: int = 1,
+    ) -> None:
         """Add a block of values in the matrix."""
         self._cpp_object.add(x, rows, cols, bs)
 
-    def set(self, x, rows, cols, bs=1) -> None:
+    def set(
+        self,
+        x: npt.NDArray[np.floating],
+        rows: npt.NDArray[np.int32],
+        cols: npt.NDArray[np.int32],
+        bs: int = 1,
+    ) -> None:
         """Set a block of values in the matrix."""
         self._cpp_object.set(x, rows, cols, bs)
 
@@ -58,7 +93,6 @@ class MatrixCSR:
 
         Args:
             x: The value to set all non-zero entries to.
-
         """
         self._cpp_object.set_value(x)
 
@@ -71,7 +105,6 @@ class MatrixCSR:
 
         Note:
             This operation is collective and requires communication.
-
         """
         return self._cpp_object.squared_norm()
 
@@ -102,21 +135,18 @@ class MatrixCSR:
     def to_scipy(self, ghosted=False):
         """Convert to a SciPy CSR/BSR matrix. Data is shared.
 
-        SciPy must be available.
+        Note:
+            SciPy must be available.
 
         Args:
             ghosted: If ``True`` rows that are ghosted in parallel are
-                included in the return SciPy matrix, otherwise ghost
+                included in the returned SciPy matrix, otherwise ghost
                 rows are not included.
 
         Returns:
             SciPy compressed sparse row (both block sizes equal to one)
             or a SciPy block compressed sparse row matrix.
-
         """
-        from scipy.sparse import bsr_matrix as _bsr
-        from scipy.sparse import csr_matrix as _csr
-
         bs0, bs1 = self._cpp_object.bs
         ncols = self.index_map(1).size_local + self.index_map(1).num_ghosts
         if ghosted:
@@ -125,15 +155,27 @@ class MatrixCSR:
         else:
             nrows = self.index_map(0).size_local
             nnzlocal = self.indptr[nrows]
-            data, indices, indptr = self.data[:(bs0 * bs1) * nnzlocal], self.indices[:nnzlocal], self.indptr[:nrows + 1]
+            data, indices, indptr = (
+                self.data[: (bs0 * bs1) * nnzlocal],
+                self.indices[:nnzlocal],
+                self.indptr[: nrows + 1],
+            )
 
         if bs0 == 1 and bs1 == 1:
+            from scipy.sparse import csr_matrix as _csr
+
             return _csr((data, indices, indptr), shape=(nrows, ncols))
         else:
-            return _bsr((data.reshape(-1, bs0, bs1), indices, indptr), shape=(bs0 * nrows, bs1 * ncols))
+            from scipy.sparse import bsr_matrix as _bsr
+
+            return _bsr(
+                (data.reshape(-1, bs0, bs1), indices, indptr), shape=(bs0 * nrows, bs1 * ncols)
+            )
 
 
-def matrix_csr(sp, block_mode=BlockMode.compact, dtype=np.float64) -> MatrixCSR:
+def matrix_csr(
+    sp: _cpp.la.SparsityPattern, block_mode=BlockMode.compact, dtype: npt.DTypeLike = np.float64
+) -> MatrixCSR:
     """Create a distributed sparse matrix.
 
     The matrix uses compressed sparse row storage.
@@ -145,15 +187,14 @@ def matrix_csr(sp, block_mode=BlockMode.compact, dtype=np.float64) -> MatrixCSR:
 
     Returns:
         A sparse matrix.
-
     """
-    if dtype == np.float32:
+    if np.issubdtype(dtype, np.float32):
         ftype = _cpp.la.MatrixCSR_float32
-    elif dtype == np.float64:
+    elif np.issubdtype(dtype, np.float64):
         ftype = _cpp.la.MatrixCSR_float64
-    elif dtype == np.complex64:
+    elif np.issubdtype(dtype, np.complex64):
         ftype = _cpp.la.MatrixCSR_complex64
-    elif dtype == np.complex128:
+    elif np.issubdtype(dtype, np.complex128):
         ftype = _cpp.la.MatrixCSR_complex128
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
@@ -162,19 +203,43 @@ def matrix_csr(sp, block_mode=BlockMode.compact, dtype=np.float64) -> MatrixCSR:
 
 
 class Vector:
-    def __init__(self, x):
+    _cpp_object: typing.Union[
+        _cpp.la.Vector_float32,
+        _cpp.la.Vector_float64,
+        _cpp.la.Vector_complex64,
+        _cpp.la.Vector_complex128,
+        _cpp.la.Vector_int8,
+        _cpp.la.Vector_int32,
+        _cpp.la.Vector_int64,
+    ]
+
+    def __init__(
+        self,
+        x: typing.Union[
+            _cpp.la.Vector_float32,
+            _cpp.la.Vector_float64,
+            _cpp.la.Vector_complex64,
+            _cpp.la.Vector_complex128,
+            _cpp.la.Vector_int8,
+            _cpp.la.Vector_int32,
+            _cpp.la.Vector_int64,
+        ],
+    ):
         """A distributed vector object.
 
         Args:
-            map: Index map the describes the size and distribution of the vector
-            bs: Block size
+            x: C++ Vector object.
 
         Note:
-            Objects of this type should be created using :func:`vector`
-            and not created using the class initialiser.
-
+            This initialiser is intended for internal library use only.
+            User code should call :func:`vector` to create a vector object.
         """
         self._cpp_object = x
+        self._petsc_x = None
+
+    def __del__(self):
+        if self._petsc_x is not None:
+            self._petsc_x.destroy()
 
     @property
     def index_map(self) -> IndexMap:
@@ -191,6 +256,18 @@ class Vector:
         """Local representation of the vector."""
         return self._cpp_object.array
 
+    @property
+    def petsc_vec(self):
+        """PETSc vector holding the entries of the vector.
+
+        Upon first call, this function creates a PETSc ``Vec`` object
+        that wraps the degree-of-freedom data. The ``Vec`` object is
+        cached and the cached ``Vec`` is returned upon subsequent calls.
+        """
+        if self._petsc_x is None:
+            self._petsc_x = create_petsc_vector_wrap(self)
+        return self._petsc_x
+
     def scatter_forward(self) -> None:
         """Update ghost entries."""
         self._cpp_object.scatter_forward()
@@ -199,25 +276,13 @@ class Vector:
         """Scatter ghost entries to owner.
 
         Args:
-            mode: Control how scattered values are set/accumulated by owner.
-
+            mode: Control how scattered values are set/accumulated by
+                owner.
         """
         self._cpp_object.scatter_reverse(mode)
 
-    def norm(self, type=_cpp.la.Norm.l2) -> np.floating:
-        """Compute a norm of the vector.
 
-        Args:
-            type: Norm type to computed.
-
-        Returns:
-            Computed norm.
-
-        """
-        return self._cpp_object.norm(type)
-
-
-def vector(map, bs=1, dtype=np.float64) -> Vector:
+def vector(map, bs=1, dtype: npt.DTypeLike = np.float64) -> Vector:
     """Create a distributed vector.
 
     Args:
@@ -228,16 +293,21 @@ def vector(map, bs=1, dtype=np.float64) -> Vector:
 
     Returns:
         A distributed vector.
-
     """
-    if dtype == np.float32:
+    if np.issubdtype(dtype, np.float32):
         vtype = _cpp.la.Vector_float32
-    elif dtype == np.float64:
+    elif np.issubdtype(dtype, np.float64):
         vtype = _cpp.la.Vector_float64
-    elif dtype == np.complex64:
+    elif np.issubdtype(dtype, np.complex64):
         vtype = _cpp.la.Vector_complex64
-    elif dtype == np.complex128:
+    elif np.issubdtype(dtype, np.complex128):
         vtype = _cpp.la.Vector_complex128
+    elif np.issubdtype(dtype, np.int8):
+        vtype = _cpp.la.Vector_int8
+    elif np.issubdtype(dtype, np.int32):
+        vtype = _cpp.la.Vector_int32
+    elif np.issubdtype(dtype, np.int64):
+        vtype = _cpp.la.Vector_int64
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
 
@@ -256,9 +326,9 @@ def create_petsc_vector_wrap(x: Vector):
     Note:
         The vector ``x`` must not be destroyed before the returned PETSc
         object.
-
     """
     from petsc4py import PETSc
+
     map = x.index_map
     ghosts = map.ghosts.astype(PETSc.IntType)  # type: ignore
     bs = x.block_size
@@ -274,15 +344,18 @@ def create_petsc_vector(map, bs: int):
             the vector to create.
         bs: Block size of the vector.
 
+    Returns:
+        PETSc Vec object.
     """
     from petsc4py import PETSc
+
     ghosts = map.ghosts.astype(PETSc.IntType)  # type: ignore
     size = (map.size_local * bs, map.size_global * bs)
     return PETSc.Vec().createGhost(ghosts, size=size, bsize=bs, comm=map.comm)  # type: ignore
 
 
 def orthonormalize(basis):
-    """Orthogoalise set of PETSc vectors in-place"""
+    """Orthogonalise set of PETSc vectors in-place."""
     for i, x in enumerate(basis):
         for y in basis[:i]:
             alpha = x.dot(y)
@@ -291,12 +364,25 @@ def orthonormalize(basis):
 
 
 def is_orthonormal(basis, eps: float = 1.0e-12) -> bool:
-    """Check that list of PETSc vectors are orthonormal"""
+    """Check that list of PETSc vectors are orthonormal."""
     for x in basis:
         if abs(x.norm() - 1.0) > eps:
             return False
     for i, x in enumerate(basis[:-1]):
-        for y in basis[i + 1:]:
+        for y in basis[i + 1 :]:
             if abs(x.dot(y)) > eps:
                 return False
     return True
+
+
+def norm(x: Vector, type: _cpp.la.Norm = _cpp.la.Norm.l2) -> np.floating:
+    """Compute a norm of the vector.
+
+    Args:
+        x: Vector to measure.
+        type: Norm type to compute.
+
+    Returns:
+        Computed norm.
+    """
+    return _cpp.la.norm(x._cpp_object, type)

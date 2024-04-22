@@ -10,11 +10,10 @@
 
 namespace dolfinx_wrappers
 {
-
-/// This class wraps the MPI_Comm type for use in the pybind11
-/// generation of python wrappers. MPI_Comm is either a pointer or
-/// an int (MPICH vs OpenMPI) and this cannot be wrapped in a type
-/// safe way with pybind11.
+/// This class wraps the MPI_Comm type for use in the nanobind
+/// generation of python wrappers. MPI_Comm is either a pointer or an
+/// int (MPICH vs OpenMPI) and this cannot be wrapped in a type safe way
+/// with nanobind
 
 class MPICommWrapper
 {

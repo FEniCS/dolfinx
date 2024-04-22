@@ -1,0 +1,108 @@
+# The DOLFINx Python interface must be built without build isolation (PEP517)
+# due to its runtime and build time dependency on system built petsc4py and
+# mpi4py.
+# pip install -r build-requirements.txt
+[build-system]
+requires = [
+      "scikit-build-core[pyproject]>=0.5",
+      "nanobind>=1.8.0",
+      "petsc4py",
+      "mpi4py",
+]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "fenics-dolfinx"
+version = "0.8.0.dev0"
+description = "DOLFINx Python interface"
+readme = "../README.md"
+requires-python = ">=3.9.0"
+license = { file = "../COPYING.LESSER" }
+authors = [
+      { email = "fenics-steering-council@googlegroups.com" },
+      { name = "FEniCS Steering Council" },
+]
+dependencies = [
+      "numpy>=1.21",
+      "cffi",
+      "petsc4py",
+      "mpi4py",
+      "fenics-basix>=0.8.0.dev0,<0.9.0",
+      "fenics-ffcx>=0.8.0.dev0,<0.9.0",
+      "fenics-ufl>=2023.3.0.dev0,<2023.4.0",
+]
+
+[project.optional-dependencies]
+docs = ["markdown", "pyyaml", "sphinx", "sphinx_rtd_theme"]
+lint = ["ruff"]
+optional = ["numba"]
+test = ["pytest", "sympy", "scipy", "matplotlib", "fenics-dolfinx[optional]"]
+ci = [
+      "mypy",
+      "pytest-xdist",
+      "types-setuptools",
+      "fenics-dolfinx[build]",
+      "fenics-dolfinx[docs]",
+      "fenics-dolfinx[lint]",
+      "fenics-dolfinx[optional]",
+      "fenics-dolfinx[test]",
+]
+
+[tool.scikit-build]
+wheel.packages = ["dolfinx"]
+sdist.exclude = ["*.cpp"]
+cmake.build-type = "Release"
+wheel.license-files = ["../COPYING*"]
+
+[tool.pytest]
+junit_family = "xunit2"
+
+[tool.pytest.ini_options]
+markers = ["skip_in_parallel: marks tests that should be run in serial only."]
+
+[tool.mypy]
+# Suggested at https://blog.wolt.com/engineering/2021/09/30/professional-grade-mypy-configuration/
+# Goal would be to make all of the below True long-term
+disallow_untyped_defs = false
+disallow_any_unimported = false
+no_implicit_optional = false
+check_untyped_defs = false
+warn_return_any = false
+warn_unused_ignores = false
+show_error_codes = true
+ignore_missing_imports = true
+
+
+[tool.ruff]
+line-length = 100
+indent-width = 4
+
+[tool.ruff.lint]
+select = [
+      "E", # pycodestyle
+      "W", # pycodestyle
+      "F", # pyflakes
+      "I",   # isort - use standalone isort
+      "RUF", # Ruff-specific rules
+      "UP",  # pyupgrade
+      "ICN", # flake8-import-conventions
+      "NPY", # numpy-specific rules
+      "FLY", # use f-string not static joins
+]
+ignore = ["UP007", "RUF012"]
+allowed-confusables = ["σ"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["basix", "dolfinx", "ffcx", "ufl"]
+known-third-party = ["gmsh", "numba", "numpy", "pytest", "pyvista"]
+section-order = [
+      "future",
+      "standard-library",
+      "mpi",
+      "third-party",
+      "first-party",
+      "local-folder",
+]
+
+[tool.ruff.lint.isort.sections]
+"mpi" = ["mpi4py", "petsc4py"]

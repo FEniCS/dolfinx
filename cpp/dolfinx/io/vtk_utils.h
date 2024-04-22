@@ -85,7 +85,7 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
   // Get the dof coordinates on the reference element and the  mesh
   // coordinate map
   const auto [X, Xshape] = element->interpolation_points();
-  const fem::CoordinateElement<T>& cmap = mesh->geometry().cmaps()[0];
+  const fem::CoordinateElement<T>& cmap = mesh->geometry().cmap();
 
   // Prepare cell geometry
   auto dofmap_x = mesh->geometry().dofmap();
@@ -98,8 +98,11 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
     mesh->topology_mutable()->create_entity_permutations();
     cell_info = std::span(mesh->topology()->get_cell_permutation_info());
   }
+
+  // Transformation from reference element basis function data to
+  // conforming element basis function function
   auto apply_dof_transformation
-      = element->template get_dof_transformation_function<T>();
+      = element->template dof_transformation_fn<T>(fem::doftransform::standard);
 
   using mdspan2_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
       T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
@@ -113,9 +116,9 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
       std::reduce(phi_shape.begin(), phi_shape.end(), 1, std::multiplies{}));
   cmdspan4_t phi_full(phi_b.data(), phi_shape);
   cmap.tabulate(0, X, Xshape, phi_b);
-  auto phi = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
-      submdspan(phi_full, 0, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
-                MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
+  auto phi = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+      phi_full, 0, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
+      MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
 
   // Loop over cells and tabulate dofs
   auto map = topology->index_map(tdim);
@@ -155,7 +158,7 @@ tabulate_lagrange_dof_coordinates(const fem::FunctionSpace<T>& V)
   std::array<std::int64_t, 2> range = map_dofs->local_range();
   std::int32_t size_local = range[1] - range[0];
   std::iota(x_id.begin(), std::next(x_id.begin(), size_local), range[0]);
-  const std::vector<std::int64_t>& ghosts = map_dofs->ghosts();
+  std::span ghosts = map_dofs->ghosts();
   std::copy(ghosts.begin(), ghosts.end(), std::next(x_id.begin(), size_local));
 
   // Ghosts
@@ -208,8 +211,8 @@ vtk_mesh_from_space(const fem::FunctionSpace<T>& V)
   const int element_block_size = V.element()->block_size();
   const std::uint32_t num_nodes
       = V.element()->space_dimension() / element_block_size;
-  const std::vector<std::uint8_t> vtkmap = io::cells::transpose(
-      io::cells::perm_vtk(topology->cell_types()[0], num_nodes));
+  const std::vector<std::uint16_t> vtkmap = io::cells::transpose(
+      io::cells::perm_vtk(topology->cell_type(), num_nodes));
 
   // Extract topology for all local cells as
   // [v0_0, ...., v0_N0, v1_0, ...., v1_N1, ....]
