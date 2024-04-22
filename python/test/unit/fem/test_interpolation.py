@@ -1133,4 +1133,5 @@ def test_submesh_expression_interpolation():
 
     w_exact = Function(W)
     w_exact.interpolate(grad_squared, cells=cells)
-    np.testing.assert_allclose(w.x.array, w_exact.x.array, atol=5e-4)
+    atol = 5 * np.finfo(default_scalar_type).resolution
+    np.testing.assert_allclose(w.x.array, w_exact.x.array, atol=atol)
