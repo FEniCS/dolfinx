@@ -32,7 +32,7 @@ namespace
 /// @param[in] longest_edge Local index of the longest edge in the triangle.
 /// @param[in] uniform If true, the triangle is subdivided into four similar
 /// sub-triangles.
-/// @returns Local indices for each sub-divived triangle
+/// @returns Local indices for each sub-divided triangle
 std::pair<std::array<std::int32_t, 12>, std::size_t>
 get_triangles(std::span<const std::int64_t> indices,
               const std::int32_t longest_edge, bool uniform)
