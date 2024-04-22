@@ -336,11 +336,14 @@ public:
       }
       else if (!scalar_element)
       {
-        // Vector element
+        // Blocked element
+        // The transformation from the right is used here to account for blocked
+        // elements using xyzxyzxyz ordering while data with a block size is
+        // stored in xxxyyyzzz order
         std::function<void(std::span<U>, std::span<const std::uint32_t>,
                            std::int32_t, int)>
             sub_function
-            = _sub_elements[0]->template dof_transformation_fn<U>(ttype);
+            = _sub_elements[0]->template dof_transformation_right_fn<U>(ttype);
         const int ebs = _bs;
         return [ebs, sub_function](std::span<U> data,
                                    std::span<const std::uint32_t> cell_info,
@@ -438,7 +441,10 @@ public:
       }
       else if (!scalar_element)
       {
-        // Vector element
+        // Blocked element
+        // The transformation from the left is used here to account for blocked
+        // elements using xyzxyzxyz ordering while data with a block size is
+        // stored in xxxyyyzzz order
         std::function<void(std::span<U>, std::span<const std::uint32_t>,
                            std::int32_t, int)>
             sub_function

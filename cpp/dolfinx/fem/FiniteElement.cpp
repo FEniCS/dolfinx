@@ -617,9 +617,13 @@ FiniteElement<T>::dof_permutation_fn(bool inverse, bool scalar_element) const
     }
     else if (!scalar_element)
     {
-      // Vector element
+      // Blocked element
+      // The transformation from the right is used here to account for blocked
+      // elements using xyzxyzxyz ordering while data with a block size is
+      // stored in xxxyyyzzz order
       std::function<void(std::span<std::int32_t>, std::uint32_t)>
-          sub_element_function = _sub_elements[0]->dof_permutation_fn(inverse);
+          sub_element_function
+          = _sub_elements[0]->dof_permutation_right_fn(inverse);
       int dim = _sub_elements[0]->space_dimension();
       int bs = _bs;
       return
