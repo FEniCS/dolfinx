@@ -358,13 +358,17 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
   // Get block sizes and dof transformation operators
   const int bs1 = dofmap1->bs();
   const int bs0 = dofmap0->bs();
+
+  // Transform conforming dofs to reference dofs function
   auto apply_dof_transformation = element0->template dof_transformation_fn<T>(
       doftransform::transpose, false);
+
+  // Transform reference dofs to conforming dofs function
   auto apply_inverse_dof_transform
       = element1->template dof_transformation_fn<T>(
           doftransform::inverse_transpose, false);
 
-  // Create working array
+  // Create working arrays
   std::vector<T> local0(element0->space_dimension());
   std::vector<T> local1(element1->space_dimension());
 
@@ -376,20 +380,23 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
   using X = typename dolfinx::scalar_value_type_t<T>;
   for (auto c : cells)
   {
+    // Pack and transform cell dofs to reference ordering
     std::span<const std::int32_t> dofs0 = dofmap0->cell_dofs(c);
     for (std::size_t i = 0; i < dofs0.size(); ++i)
       for (int k = 0; k < bs0; ++k)
         local0[bs0 * i + k] = u0_array[bs0 * dofs0[i] + k];
-
     apply_dof_transformation(local0, cell_info, c, 1);
 
     // FIXME: Get compile-time ranges from Basix
+
     // Apply interpolation operator
     std::fill(local1.begin(), local1.end(), 0);
     for (std::size_t i = 0; i < im_shape[0]; ++i)
       for (std::size_t j = 0; j < im_shape[1]; ++j)
         local1[i] += static_cast<X>(i_m[im_shape[1] * i + j]) * local0[j];
 
+    // Transform cells dofs back to conforming physical ordering and
+    // scatter
     apply_inverse_dof_transform(local1, cell_info, c, 1);
     std::span<const std::int32_t> dofs1 = dofmap1->cell_dofs(c);
     for (std::size_t i = 0; i < dofs1.size(); ++i)
@@ -447,8 +454,14 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
   // Get block sizes and dof transformation operators
   const int bs0 = element0->block_size();
   const int bs1 = element1->block_size();
+
+  // Transform from reference basis function layout to conforming layout
+  // function
   auto apply_dof_transformation0 = element0->template dof_transformation_fn<U>(
       doftransform::standard, false);
+
+  // Transform from reference degree-of-freedom to conforming layout
+  // function
   auto apply_inverse_dof_transform1
       = element1->template dof_transformation_fn<T>(
           doftransform::inverse_transpose, false);
@@ -571,6 +584,8 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
 
     for (std::size_t p = 0; p < Xshape[0]; ++p)
     {
+      // Transform basis function data from reference layout to
+      // conforming layout
       apply_dof_transformation0(
           std::span(basis_reference0_b.data() + p * dim0 * value_size_ref0,
                     dim0 * value_size_ref0),
@@ -639,6 +654,8 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
         mapped_values0, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0,
         MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     interpolation_apply(Pi_1, values, std::span(local1), bs1);
+
+    // Transform from reference dof layout to conforming dof layoyut
     apply_inverse_dof_transform1(local1, cell_info, c, 1);
 
     // Copy local coefficients to the correct position in u dof array
@@ -782,6 +799,8 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
     // Point evaluation element *and* the geometric map is the identity,
     // e.g. not Piola mapped
 
+    // Transform from reference degrees-of-freedom to conforming
+    // degrees-of-freedom function
     auto apply_inv_transpose_dof_transformation
         = element->template dof_transformation_fn<T>(
             doftransform::inverse_transpose, true);
@@ -826,6 +845,8 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
     const std::size_t num_interp_points = Pi.extent(1);
     assert(Pi.extent(0) == num_scalar_dofs);
 
+    // Transform reference degrees-of-freedom to conforming
+    // degrees-of-freedom functions
     auto apply_inv_transpose_dof_transformation
         = element->template dof_transformation_fn<T>(
             doftransform::inverse_transpose, true);
@@ -916,9 +937,9 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
         MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
         MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
 
-    const std::function<void(std::span<T>, std::span<const std::uint32_t>,
-                             std::int32_t, int)>
-        apply_inverse_transpose_dof_transformation
+    // Transform from reference degrees-of-freedom to conforming
+    // degrees-of-freedom
+    auto apply_inverse_transpose_dof_transformation
         = element->template dof_transformation_fn<T>(
             doftransform::inverse_transpose);
 
