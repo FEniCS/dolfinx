@@ -617,7 +617,7 @@ FiniteElement<T>::dof_permutation_fn(bool inverse, bool scalar_element) const
     }
     else if (!scalar_element)
     {
-      // Vector element
+      // Blocked element
       std::function<void(std::span<std::int32_t>, std::uint32_t)>
           sub_element_function = _sub_elements[0]->dof_permutation_fn(inverse);
       int dim = _sub_elements[0]->space_dimension();

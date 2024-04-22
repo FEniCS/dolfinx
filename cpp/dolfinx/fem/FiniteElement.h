@@ -336,7 +336,7 @@ public:
       }
       else if (!scalar_element)
       {
-        // Vector element
+        // Blocked element
         std::function<void(std::span<U>, std::span<const std::uint32_t>,
                            std::int32_t, int)>
             sub_function
@@ -438,7 +438,11 @@ public:
       }
       else if (!scalar_element)
       {
-        // Vector element
+        // Blocked element
+        // The transformation from the left can be used here as blocked
+        // elements use xyzxyzxyz ordering, and so applying the DOF
+        // transformation from the right is equivalent to applying the DOF
+        // transformation from the left to data using xxxyyyzzz ordering
         std::function<void(std::span<U>, std::span<const std::uint32_t>,
                            std::int32_t, int)>
             sub_function
