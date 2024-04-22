@@ -337,9 +337,6 @@ public:
       else if (!scalar_element)
       {
         // Blocked element
-        // The transformation from the right is used here to account for blocked
-        // elements using xyzxyzxyz ordering while data with a block size is
-        // stored in xxxyyyzzz order
         std::function<void(std::span<U>, std::span<const std::uint32_t>,
                            std::int32_t, int)>
             sub_function
