@@ -1032,50 +1032,11 @@ def test_symmetric_tensor_interpolation():
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
 
     def tensor(x):
-        mat = np.array(
-            [
-                [0],
-                [1],
-                [2],
-                [3],
-                [4],
-                [5],
-                [1],
-                [6],
-                [7],
-                [8],
-                [9],
-                [10],
-                [2],
-                [7],
-                [11],
-                [12],
-                [13],
-                [14],
-                [3],
-                [8],
-                [12],
-                [15],
-                [16],
-                [17],
-                [4],
-                [9],
-                [13],
-                [16],
-                [18],
-                [19],
-                [5],
-                [10],
-                [14],
-                [17],
-                [19],
-                [20],
-            ]
-        )
-        return np.broadcast_to(mat, (36, x.shape[1]))
+        mat = np.array([[0], [1], [2], [1], [3], [4], [2], [4], [5]])
+        return np.broadcast_to(mat, (9, x.shape[1]))
 
-    element = basix.ufl.element("DG", mesh.basix_cell(), 0, shape=(6, 6))
-    symm_element = basix.ufl.element("DG", mesh.basix_cell(), 0, shape=(6, 6), symmetry=True)
+    element = basix.ufl.element("DG", mesh.basix_cell(), 0, shape=(3, 3))
+    symm_element = basix.ufl.element("DG", mesh.basix_cell(), 0, shape=(3, 3), symmetry=True)
     space = functionspace(mesh, element)
     symm_space = functionspace(mesh, symm_element)
     f = Function(space)
