@@ -1075,9 +1075,7 @@ def test_symmetric_tensor_interpolation():
         return np.broadcast_to(mat, (36, x.shape[1]))
 
     element = basix.ufl.element("DG", mesh.basix_cell(), 0, shape=(6, 6))
-    symm_element = basix.ufl.element(
-        "DG", mesh.basix_cell(), 0, shape=(6, 6), symmetry=True
-    )
+    symm_element = basix.ufl.element("DG", mesh.basix_cell(), 0, shape=(6, 6), symmetry=True)
     space = functionspace(mesh, element)
     symm_space = functionspace(mesh, symm_element)
     f = Function(space)
