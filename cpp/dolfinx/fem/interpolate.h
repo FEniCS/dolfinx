@@ -813,6 +813,14 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
       // Loop over cells
       for (std::size_t c = 0; c < cells.size(); ++c)
       {
+        // The entries of a symmetric matrix are numbered (for an example 4x4
+        // element):
+        //  0 * * *
+        //  1 2 * *
+        //  3 4 5 *
+        //  6 7 8 9
+        // The loop extracts these elements. In this loop, row is the row of
+        // this matrix, and (k - rowstart) is the column
         std::size_t row = 0;
         std::size_t rowstart = 0;
         const std::int32_t cell = cells[c];
