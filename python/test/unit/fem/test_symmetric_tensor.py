@@ -21,3 +21,25 @@ def test_transpose(degree, symmetry):
 
     form = dolfinx.fem.form(ufl.inner(f - ufl.transpose(f), f - ufl.transpose(f)) * ufl.dx)
     assert np.isclose(dolfinx.fem.assemble_scalar(form), 0) == symmetry
+
+
+def test_interpolation():
+    mesh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 10, 10)
+
+    def tensor(x):
+        mat = np.array([[0], [1], [2], [1], [3], [4], [2], [4], [5]])
+        return np.broadcast_to(mat, (9, x.shape[1]))
+
+    element = basix.ufl.element("DG", mesh.basix_cell(), 0, shape=(3, 3))
+    symm_element = basix.ufl.element("DG", mesh.basix_cell(), 0, shape=(3, 3), symmetry=True)
+    space = dolfinx.fem.functionspace(mesh, element)
+    symm_space = dolfinx.fem.functionspace(mesh, symm_element)
+    f = dolfinx.fem.Function(space)
+    symm_f = dolfinx.fem.Function(symm_space)
+
+    f.interpolate(lambda x: tensor(x))
+    symm_f.interpolate(lambda x: tensor(x))
+
+    l2_error = dolfinx.fem.assemble_scalar(dolfinx.fem.form((f - symm_f) ** 2 * ufl.dx))
+    atol = 10 * np.finfo(dolfinx.default_scalar_type).resolution
+    assert np.isclose(l2_error, 0.0, atol=atol)
