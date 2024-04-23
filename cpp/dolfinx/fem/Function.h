@@ -632,6 +632,8 @@ public:
         = element->template dof_transformation_fn<geometry_type>(
             doftransform::standard);
 
+    // Size of tensor for symmetric elements, unused in non-symmetric case, but placed outside the loop
+    // for pre-computation.
     int matrix_size;
     if (element->symmetric())
     {
