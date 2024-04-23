@@ -15,7 +15,7 @@ import pytest
 import basix
 import ufl
 from basix.ufl import blocked_element, custom_element, element, enriched_element, mixed_element
-from dolfinx import default_real_type
+from dolfinx import default_real_type, default_scalar_type
 from dolfinx.fem import (
     Expression,
     Function,
@@ -29,6 +29,7 @@ from dolfinx.mesh import (
     CellType,
     create_mesh,
     create_rectangle,
+    create_submesh,
     create_unit_cube,
     create_unit_square,
     locate_entities,
@@ -1088,3 +1089,114 @@ def test_symmetric_tensor_interpolation(dtype):
 
     l2_error = assemble_scalar(form((f - symm_f) ** 2 * ufl.dx, dtype=dtype))
     assert np.isclose(l2_error, 0.0, rtol=np.finfo(dtype).eps, atol=np.finfo(dtype).eps)
+
+
+def test_submesh_interpolation():
+    """Test interpolation of a function between a submesh and its parent"""
+    mesh = create_unit_square(MPI.COMM_WORLD, 6, 7)
+
+    def left_locator(x):
+        return x[0] <= 0.5 + 1e-14
+
+    def ref_func(x):
+        return x[0] + x[1] ** 2
+
+    tdim = mesh.topology.dim
+    cells = locate_entities(mesh, tdim, left_locator)
+    submesh, sub_to_parent, _, _ = create_submesh(mesh, tdim, cells)
+
+    V = functionspace(mesh, ("Lagrange", 2))
+    u = Function(V)
+    u.interpolate(ref_func)
+
+    V_sub = functionspace(submesh, ("DG", 3))
+    u_sub = Function(V_sub)
+
+    # Map from parent to sub mesh
+    u_sub.interpolate(u, cell_map=sub_to_parent)
+
+    u_sub_exact = Function(V_sub)
+    u_sub_exact.interpolate(ref_func)
+    atol = 5 * np.finfo(default_scalar_type).resolution
+    np.testing.assert_allclose(u_sub_exact.x.array, u_sub.x.array, atol=atol)
+
+    # Map from sub to parent
+    W = functionspace(mesh, ("DG", 4))
+    w = Function(W)
+
+    cell_imap = mesh.topology.index_map(tdim)
+    num_cells = cell_imap.size_local + cell_imap.num_ghosts
+    parent_to_sub = np.full(num_cells, -1, dtype=np.int32)
+    parent_to_sub[sub_to_parent] = np.arange(len(sub_to_parent))
+
+    # Mapping back needs to be restricted to the subset of cells in the submesh
+    w.interpolate(u_sub_exact, cells=sub_to_parent, cell_map=parent_to_sub)
+
+    w_exact = Function(W)
+    w_exact.interpolate(ref_func, cells=cells)
+
+    np.testing.assert_allclose(w.x.array, w_exact.x.array, atol=atol)
+
+
+def test_submesh_expression_interpolation():
+    """Test interpolation of an expression between a submesh and its parent"""
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 8, cell_type=CellType.quadrilateral)
+
+    def left_locator(x):
+        return x[0] <= 0.5 + 1e-14
+
+    def ref_func(x):
+        return -3 * x[0] ** 2 + x[1] ** 2
+
+    def grad_ref_func(x):
+        values = np.zeros((2, x.shape[1]), dtype=default_scalar_type)
+        values[0] = -6 * x[0]
+        values[1] = 2 * x[1]
+        return values
+
+    def modified_grad(x):
+        grad = grad_ref_func(x)
+        return -0.2 * grad[1], 0.1 * grad[0]
+
+    tdim = mesh.topology.dim
+    cells = locate_entities(mesh, tdim, left_locator)
+    submesh, sub_to_parent, _, _ = create_submesh(mesh, tdim, cells)
+
+    V = functionspace(mesh, ("Lagrange", 2))
+    u = Function(V)
+    u.interpolate(ref_func)
+
+    V_sub = functionspace(submesh, ("N2curl", 1))
+    u_sub = Function(V_sub)
+
+    parent_expr = Expression(ufl.grad(u), V_sub.element.interpolation_points())
+
+    # Map from parent to sub mesh
+
+    u_sub.interpolate(parent_expr, expr_mesh=mesh, cell_map=sub_to_parent)
+
+    u_sub_exact = Function(V_sub)
+    u_sub_exact.interpolate(grad_ref_func)
+    atol = 10 * np.finfo(default_scalar_type).resolution
+    np.testing.assert_allclose(u_sub_exact.x.array, u_sub.x.array, atol=atol)
+
+    # Map from sub to parent
+    W = functionspace(mesh, ("DQ", 1, (mesh.geometry.dim,)))
+    w = Function(W)
+
+    cell_imap = mesh.topology.index_map(tdim)
+    num_cells = cell_imap.size_local + cell_imap.num_ghosts
+    parent_to_sub = np.full(num_cells, -1, dtype=np.int32)
+    parent_to_sub[sub_to_parent] = np.arange(len(sub_to_parent))
+
+    # Map exact solution (based on quadrature points) back to parent mesh
+    sub_vec = ufl.as_vector((-0.2 * u_sub_exact[1], 0.1 * u_sub_exact[0]))
+    sub_expr = Expression(sub_vec, W.element.interpolation_points())
+
+    # Mapping back needs to be restricted to the subset of cells in the submesh
+    w.interpolate(sub_expr, cells=sub_to_parent, expr_mesh=submesh, cell_map=parent_to_sub)
+
+    w_exact = Function(W)
+    w_exact.interpolate(modified_grad, cells=cells)
+    w_exact.x.scatter_forward()
+    np.testing.assert_allclose(w.x.array, w_exact.x.array, atol=atol)
