@@ -74,7 +74,7 @@ comprehensive instructions.
   [WSL2](https://docs.microsoft.com/en-us/windows/wsl/install) and use
   [Ubuntu](#ubuntu-packages).
 - High performance computers: [Spack](#spack) or
-  [from source](#from-source) using system-provided MPI.
+  [from source](#from-source), both using system-provided MPI.
 
 #### conda
 
