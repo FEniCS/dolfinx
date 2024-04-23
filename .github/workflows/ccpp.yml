@@ -85,9 +85,9 @@ jobs:
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
         run: |
-          python3 -m pip install git+https://github.com/FEniCS/ufl.git@${{ github.event.iuts.ufl_ref }}
-          python3 -m pip install git+https://github.com/FEniCS/basix.git@${{ github.event.iuts.basix_ref }}
-          python3 -m pip install git+https://github.com/FEniCS/ffcx.git@${{ github.event.iuts.ffcx_ref }}
+          python3 -m pip install git+https://github.com/FEniCS/ufl.git@${{ github.event.inputs.ufl_ref }}
+          python3 -m pip install git+https://github.com/FEniCS/basix.git@${{ github.event.inputs.basix_ref }}
+          python3 -m pip install git+https://github.com/FEniCS/ffcx.git@${{ github.event.inputs.ffcx_ref }}
 
       - uses: actions/checkout@v4
       
@@ -140,9 +140,9 @@ jobs:
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
         run: |
-          python3 -m pip install git+https://github.com/FEniCS/ufl.git@${{ github.event.iuts.ufl_ref }}
-          python3 -m pip install git+https://github.com/FEniCS/basix.git@${{ github.event.iuts.basix_ref }}
-          python3 -m pip install git+https://github.com/FEniCS/ffcx.git@${{ github.event.iuts.ffcx_ref }}
+          python3 -m pip install git+https://github.com/FEniCS/ufl.git@${{ github.event.inputs.ufl_ref }}
+          python3 -m pip install git+https://github.com/FEniCS/basix.git@${{ github.event.inputs.basix_ref }}
+          python3 -m pip install git+https://github.com/FEniCS/ffcx.git@${{ github.event.inputs.ffcx_ref }}
 
       - name: Configure C++
         run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
