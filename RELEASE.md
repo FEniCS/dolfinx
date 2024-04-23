@@ -9,7 +9,7 @@ Check that all CIs on `main` are running green.
 Check that the `main` documentation looks reasonable at
 https://docs.fenicsproject.org.
 
-The release proceeds in a bottom up manner (Basix, UFL, FFCx, DOLFINx). pypa
+The release proceeds in a bottom up manner (UFL, Basix, FFCx, DOLFINx). pypa
 packages cannot be deleted and should be made a number of days after the
 creation of git tags so that errors can be fixed. GitHub releases can have their
 version notes updated, and can be deleted and remade on new tags (not recommended).
@@ -31,9 +31,25 @@ bumped an entire minor version i.e. `0.+1.0`.
 
 UFL still runs on the year-based release scheme.
 
+### UFL version bump
+
+1. Merge `origin/main` into `release` resolving all conflicts in favour of `main`.
+
+       git pull
+       git checkout release
+       git merge --no-commit origin/main
+       git checkout --theirs origin/main . # files deleted on `main` must be manually git `add`ed
+       git diff origin/main
+
+2. Update the version number in `pyproject.toml`, e.g. `2022.2.0`.
+
+3. Commit and push.
+
+4. Check `git diff origin/main` for obvious errors.
+
 ### Basix version bump
 
-1. Merge `main` into `release` resolving all conflicts in favour of `main`.
+1. Merge `origin/main` into `release` resolving all conflicts in favour of `main`.
 
        git pull
        git checkout release
@@ -51,22 +67,6 @@ UFL still runs on the year-based release scheme.
 5. Commit and push.
 
 6. Check `git diff origin/main` for obvious errors.
-
-### UFL version bump
-
-1. Merge `main` into `release` resolving all conflicts in favour of `main`.
-
-       git pull
-       git checkout release
-       git merge --no-commit main
-       git checkout --theirs origin/main . # files deleted on `main` must be manually git `add`ed
-       git diff main
-
-2. Update the version number in `pyproject.toml`, e.g. `2022.2.0`.
-
-3. Commit and push.
-
-4. Check `git diff origin/main` for obvious errors.
 
 ### FFCx version bump
 
@@ -179,7 +179,7 @@ Use the *Docker update stable* tag workflow to update/link `:stable` to e.g.
 
 https://github.com/FEniCS/dolfinx/actions/workflows/docker-update-stable.yml
 
-### pypa
+### pypi
 
 Wheels can be made using the following actions:
 
@@ -192,8 +192,8 @@ https://github.com/FEniCS/ffcx/actions/workflows/build-wheels.yml
 Both the workflow and the ref should be set to the appropriate tags for each
 component.
 
-It is recommended to first build without publishing, then to test pypa, then to
-the real pypa. Publishing to pypa cannot be revoked.
+It is recommended to first build without publishing, then to test pypi, then to
+the real pypi. Publishing to pypa cannot be revoked.
 
 The DOLFINx wheel builder is experimental and is not used in the release
 process at this time.
@@ -208,12 +208,12 @@ release process you can either:
 
 2. Manually make commits on the `release` branch.
 
-If you want the change to be reflected on `main` long term 1. is preferred.
+If you want the same change to be reflected on `main` option 1. is preferred.
 
 If a mistake is noticed soon after making a tag then you can delete the tag and
-recreate it. It is also possible to recreate GitHub releases. After pypa
-packages are pushed you must create .post0 tags or make minor version bumps, as
-pypa is immutable.
+recreate it. It is also possible to recreate GitHub releases. However, if the 
+mistake was noticed after pypi packages are pushed you must create `*.post0` 
+tags or make a minor version bumps , as pypa is immutable.
 
 ### GitHub releases
 
@@ -236,10 +236,13 @@ Check for any changes on `release` that should be cherry-picked back onto
 
      git checkout main
      git diff release
+     git log
+     git cherry-pick 914ae4
 
-Bump the version numbers on the `main` branch via a PR.
+Bump the version numbers on the `main` branches of UFL, Basix, FFCx, 
+DOLFINx following the instructions above.
 
-## Bug fix patches
+### Bug fix patches
 
 Bug fix versions e.g. `v0.5.1` can be made by cherry picking commits off of
 `main` and bumping the minor version number. Remember to run the DOLFINx
