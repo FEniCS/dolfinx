@@ -47,6 +47,7 @@ def test_interpolation():
 
 
 def test_eval():
+    """Test that eval is correct for a symmetric 3x3 2-tensor is correct."""
     mesh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 10, 10)
 
     mat = np.array([0, 1, 2, 1, 3, 4, 2, 4, 5])
