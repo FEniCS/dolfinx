@@ -819,7 +819,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
         std::span<const std::int32_t> dofs = dofmap->cell_dofs(cell);
         for (int k = 0; k < element_bs; ++k)
         {
-          if (k + row >= matrix_size + rowstart)
+          if (k - rowstart > row)
           {
             ++row;
             rowstart = k;
@@ -827,9 +827,8 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
           // num_scalar_dofs is the number of interpolation points per
           // cell in this case (interpolation matrix is identity)
           std::copy_n(
-              std::next(f.begin(),
-                        (row * matrix_size + row + k - rowstart) * f_shape1
-                            + c * num_scalar_dofs),
+              std::next(f.begin(), (row * matrix_size + k - rowstart) * f_shape1
+                                       + c * num_scalar_dofs),
               num_scalar_dofs, _coeffs.begin());
           apply_inv_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
           for (int i = 0; i < num_scalar_dofs; ++i)
