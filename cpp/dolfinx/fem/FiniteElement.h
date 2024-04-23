@@ -50,7 +50,7 @@ public:
   /// @param[in] element Basix finite element
   /// @param[in] block_size The block size for the element
   FiniteElement(const basix::FiniteElement<geometry_type>& element,
-                const std::size_t block_size);
+                const std::size_t block_size, const bool symmetric = false);
 
   /// Copy constructor
   FiniteElement(const FiniteElement& element) = delete;
@@ -109,6 +109,9 @@ public:
 
   /// The reference value shape
   std::span<const std::size_t> reference_value_shape() const;
+
+  /// Does the element represent a symmetric 2-tensor?
+  bool symmetric() const;
 
   /// @brief Evaluate derivatives of the basis functions up to given order
   /// at points in the reference cell.
@@ -719,6 +722,9 @@ private:
 
   // Indicate whether this is a mixed element
   bool _is_mixed;
+
+  // Indicate whether this element represents a symmetric 2-tensor
+  bool _symmetric;
 
   // Indicate whether the element needs permutations or transformations
   bool _needs_dof_permutations;
