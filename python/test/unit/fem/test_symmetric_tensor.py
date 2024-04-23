@@ -24,6 +24,7 @@ def test_transpose(degree, symmetry):
 
 
 def test_interpolation():
+    """Test that a symmetric 3x3 2-tensor is correctly interpolated."""
     mesh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 10, 10)
 
     def tensor(x):
