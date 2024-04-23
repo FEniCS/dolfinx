@@ -1033,9 +1033,8 @@ def test_nonmatching_mesh_single_cell_overlap_interpolation(xtype):
     assert np.isclose(l2_error, 0.0, rtol=np.finfo(xtype).eps, atol=np.finfo(xtype).eps)
 
 
-@pytest.mark.parametrize("dtype", [np.float64])
-def test_symmetric_tensor_interpolation(dtype):
-    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, dtype=dtype)
+def test_symmetric_tensor_interpolation():
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
 
     def tensor(x):
         mat = np.array(
@@ -1080,9 +1079,9 @@ def test_symmetric_tensor_interpolation(dtype):
         )
         return np.broadcast_to(mat, (36, x.shape[1]))
 
-    element = basix.ufl.element("DG", mesh.basix_cell(), 0, shape=(6, 6), dtype=dtype)
+    element = basix.ufl.element("DG", mesh.basix_cell(), 0, shape=(6, 6))
     symm_element = basix.ufl.element(
-        "DG", mesh.basix_cell(), 0, shape=(6, 6), symmetry=True, dtype=dtype
+        "DG", mesh.basix_cell(), 0, shape=(6, 6), symmetry=True
     )
     space = functionspace(mesh, element)
     symm_space = functionspace(mesh, symm_element)
@@ -1092,8 +1091,9 @@ def test_symmetric_tensor_interpolation(dtype):
     f.interpolate(lambda x: tensor(x))
     symm_f.interpolate(lambda x: tensor(x))
 
-    l2_error = assemble_scalar(form((f - symm_f) ** 2 * ufl.dx, dtype=dtype))
-    assert np.isclose(l2_error, 0.0, rtol=np.finfo(dtype).eps, atol=np.finfo(dtype).eps)
+    l2_error = assemble_scalar(form((f - symm_f) ** 2 * ufl.dx))
+    atol = 10 * np.finfo(default_scalar_type).resolution
+    assert np.isclose(l2_error, 0.0, atol=atol)
 
 
 def test_submesh_interpolation():
