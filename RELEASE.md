@@ -21,7 +21,8 @@ The release process consists of the following steps:
 3. Make git tags on the tip of `release`.
 4. Organise production of release artifacts.
 5. Update version numbers on `main`.
-6. Make GitHub releases (not permanent) pypa releases (permanent!).
+6. Make GitHub releases (not permanent)
+7. pypa releases (permanent!).
 
 ## Version bumping
 
