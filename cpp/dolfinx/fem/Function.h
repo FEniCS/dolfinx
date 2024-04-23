@@ -589,21 +589,20 @@ public:
     auto push_forward_fn
         = element->basix_element().template map_fn<xu_t, xU_t, xJ_t, xK_t>();
 
+    // Transformation function for basis function values
     auto apply_dof_transformation
-        = element
-              ->template get_pre_dof_transformation_function<geometry_type>();
-    const std::size_t num_basis_values = space_dimension * reference_value_size;
+        = element->template dof_transformation_fn<geometry_type>(
+            doftransform::standard);
 
+    const std::size_t num_basis_values = space_dimension * reference_value_size;
     for (std::size_t p = 0; p < cells.size(); ++p)
     {
       const int cell_index = cells[p];
-
-      // Skip negative cell indices
-      if (cell_index < 0)
+      if (cell_index < 0) // Skip negative cell indices
         continue;
 
-      // Permute the reference values to account for the cell's
-      // orientation
+      // Permute the reference basis function values to account for the
+      // cell's orientation
       apply_dof_transformation(
           std::span(basis_derivatives_reference_values_b.data()
                         + p * num_basis_values,

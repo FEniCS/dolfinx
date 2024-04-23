@@ -506,10 +506,10 @@ void assemble_matrix(
   auto element1 = a.function_spaces().at(1)->element();
   assert(element1);
   fem::DofTransformKernel<T> auto P0
-      = element0->template get_pre_dof_transformation_function<T>();
+      = element0->template dof_transformation_fn<T>(doftransform::standard);
   fem::DofTransformKernel<T> auto P1T
-      = element1->template get_post_dof_transformation_function<T>(
-          FiniteElement<U>::doftransform::transpose);
+      = element1->template dof_transformation_right_fn<T>(
+          doftransform::transpose);
 
   std::span<const std::uint32_t> cell_info0;
   std::span<const std::uint32_t> cell_info1;

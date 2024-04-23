@@ -134,7 +134,7 @@ void declare_function_space(nb::module_& m, std::string type)
         .def_prop_ro("space_dimension",
                      &dolfinx::fem::FiniteElement<T>::space_dimension)
         .def(
-            "pre_apply_dof_transformation",
+            "T_apply",
             [](const dolfinx::fem::FiniteElement<T>& self,
                nb::ndarray<T, nb::ndim<1>, nb::c_contig> x,
                nb::ndarray<const std::uint32_t, nb::ndim<1>, nb::c_contig>
@@ -148,14 +148,13 @@ void declare_function_space(nb::module_& m, std::string type)
                   cell_permutations.data(), cell_permutations.size());
               for (std::size_t i = 0; i < cell_permutations.size(); i++)
               {
-                self.pre_apply_dof_transformation(
-                    x_span.subspan(i * data_per_cell, data_per_cell),
-                    perm_span[i], dim);
+                self.T_apply(x_span.subspan(i * data_per_cell, data_per_cell),
+                             perm_span[i], dim);
               }
             },
             nb::arg("x"), nb::arg("cell_permutations"), nb::arg("dim"))
         .def(
-            "pre_apply_transpose_dof_transformation",
+            "Tt_apply",
             [](const dolfinx::fem::FiniteElement<T>& self,
                nb::ndarray<T, nb::ndim<1>, nb::c_contig> x,
                nb::ndarray<const std::uint32_t, nb::ndim<1>, nb::c_contig>
@@ -169,14 +168,13 @@ void declare_function_space(nb::module_& m, std::string type)
                   cell_permutations.data(), cell_permutations.size());
               for (std::size_t i = 0; i < cell_permutations.size(); i++)
               {
-                self.pre_apply_transpose_dof_transformation(
-                    x_span.subspan(i * data_per_cell, data_per_cell),
-                    perm_span[i], dim);
+                self.Tt_apply(x_span.subspan(i * data_per_cell, data_per_cell),
+                              perm_span[i], dim);
               }
             },
             nb::arg("x"), nb::arg("cell_permutations"), nb::arg("dim"))
         .def(
-            "pre_apply_inverse_transpose_dof_transformation",
+            "Tt_inv_apply",
             [](const dolfinx::fem::FiniteElement<T>& self,
                nb::ndarray<T, nb::ndim<1>, nb::c_contig> x,
                nb::ndarray<const std::uint32_t, nb::ndim<1>, nb::c_contig>
@@ -191,14 +189,14 @@ void declare_function_space(nb::module_& m, std::string type)
 
               for (std::size_t i = 0; i < cell_permutations.size(); i++)
               {
-                self.pre_apply_inverse_transpose_dof_transformation(
+                self.Tt_inv_apply(
                     x_span.subspan(i * data_per_cell, data_per_cell),
                     perm_span[i], dim);
               }
             },
             nb::arg("x"), nb::arg("cell_permutations"), nb::arg("dim"))
         .def(
-            "pre_apply_dof_transformation",
+            "T_apply",
             [](const dolfinx::fem::FiniteElement<T>& self,
                nb::ndarray<std::complex<T>, nb::ndim<1>, nb::c_contig> x,
                nb::ndarray<const std::uint32_t, nb::ndim<1>, nb::c_contig>
@@ -213,14 +211,13 @@ void declare_function_space(nb::module_& m, std::string type)
 
               for (std::size_t i = 0; i < cell_permutations.size(); i++)
               {
-                self.pre_apply_dof_transformation(
-                    x_span.subspan(i * data_per_cell, data_per_cell),
-                    perm_span[i], dim);
+                self.T_apply(x_span.subspan(i * data_per_cell, data_per_cell),
+                             perm_span[i], dim);
               }
             },
             nb::arg("x"), nb::arg("cell_permutations"), nb::arg("dim"))
         .def(
-            "pre_apply_transpose_dof_transformation",
+            "Tt_apply",
             [](const dolfinx::fem::FiniteElement<T>& self,
                nb::ndarray<std::complex<T>, nb::ndim<1>, nb::c_contig> x,
                nb::ndarray<const std::uint32_t, nb::ndim<1>, nb::c_contig>
@@ -235,14 +232,13 @@ void declare_function_space(nb::module_& m, std::string type)
 
               for (std::size_t i = 0; i < cell_permutations.size(); i++)
               {
-                self.pre_apply_transpose_dof_transformation(
-                    x_span.subspan(i * data_per_cell, data_per_cell),
-                    perm_span[i], dim);
+                self.Tt_apply(x_span.subspan(i * data_per_cell, data_per_cell),
+                              perm_span[i], dim);
               }
             },
             nb::arg("x"), nb::arg("cell_permutations"), nb::arg("dim"))
         .def(
-            "pre_apply_inverse_transpose_dof_transformation",
+            "Tt_inv_apply",
             [](const dolfinx::fem::FiniteElement<T>& self,
                nb::ndarray<std::complex<T>, nb::ndim<1>, nb::c_contig> x,
                nb::ndarray<const std::uint32_t, nb::ndim<1>, nb::c_contig>
@@ -257,7 +253,7 @@ void declare_function_space(nb::module_& m, std::string type)
 
               for (std::size_t i = 0; i < cell_permutations.size(); i++)
               {
-                self.pre_apply_inverse_transpose_dof_transformation(
+                self.Tt_inv_apply(
                     x_span.subspan(i * data_per_cell, data_per_cell),
                     perm_span[i], dim);
               }
@@ -903,12 +899,12 @@ void declare_real_functions(nb::module_& m)
         dolfinx::fem::ElementDofLayout layout
             = dolfinx::fem::create_element_dof_layout(*p, topology.cell_type());
 
-        std::function<void(std::span<std::int32_t>, std::uint32_t)>
-            unpermute_dofs = nullptr;
+        std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv
+            = nullptr;
         if (element.needs_dof_permutations())
-          unpermute_dofs = element.get_dof_permutation_function(true, true);
+          permute_inv = element.dof_permutation_fn(true, true);
         return dolfinx::fem::create_dofmap(comm.get(), layout, topology,
-                                           unpermute_dofs, nullptr);
+                                           permute_inv, nullptr);
       },
       nb::arg("comm"), nb::arg("dofmap"), nb::arg("topology"),
       nb::arg("element"),
