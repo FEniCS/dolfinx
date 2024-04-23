@@ -638,7 +638,7 @@ def _create_dolfinx_element(
         return CppElement(cell_type, ufl_e.custom_quadrature()[0], ufl_e.block_size)
     else:
         basix_e = ufl_e.basix_element._e
-        return CppElement(basix_e, ufl_e.block_size)
+        return CppElement(basix_e, ufl_e.block_size, ufl_e.symmetric)
 
 
 def functionspace(
