@@ -43,8 +43,9 @@ public:
   /// @brief Create a finite element from a Basix finite element.
   /// @param[in] element Basix finite element
   /// @param[in] block_size The block size for the element
+  /// @param[in] symmetric Is the element a symmetric tensor?
   FiniteElement(const basix::FiniteElement<geometry_type>& element,
-                std::size_t block_size);
+                std::size_t block_size, const bool symmetric = false);
 
   /// @brief Create mixed finite element from a list of finite elements.
   /// @param[in] elements Basix finite elements
@@ -125,6 +126,9 @@ public:
   {
     return _entity_closure_dofs;
   }
+
+  /// Does the element represent a symmetric 2-tensor?
+  bool symmetric() const;
 
   /// @brief Evaluate derivatives of the basis functions up to given order
   /// at points in the reference cell.
@@ -352,7 +356,7 @@ public:
       }
       else if (!scalar_element)
       {
-        // Vector element
+        // Blocked element
         std::function<void(std::span<U>, std::span<const std::uint32_t>,
                            std::int32_t, int)>
             sub_function
@@ -454,7 +458,11 @@ public:
       }
       else if (!scalar_element)
       {
-        // Vector element
+        // Blocked element
+        // The transformation from the left can be used here as blocked
+        // elements use xyzxyzxyz ordering, and so applying the DOF
+        // transformation from the right is equivalent to applying the DOF
+        // transformation from the left to data using xxxyyyzzz ordering
         std::function<void(std::span<U>, std::span<const std::uint32_t>,
                            std::int32_t, int)>
             sub_function
@@ -732,6 +740,9 @@ private:
 
   // Basix Element (nullptr for mixed elements)
   std::unique_ptr<basix::FiniteElement<geometry_type>> _element;
+
+  // Indicate whether this element represents a symmetric 2-tensor
+  bool _symmetric;
 
   // Indicate whether the element needs permutations or transformations
   bool _needs_dof_permutations;

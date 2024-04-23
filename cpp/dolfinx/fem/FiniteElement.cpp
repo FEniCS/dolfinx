@@ -72,8 +72,8 @@ FiniteElement<T>::FiniteElement(mesh::CellType cell_type,
     : _signature("Quadrature element " + std::to_string(pshape[0]) + " "
                  + std::to_string(block_size)),
       _space_dim(pshape[0] * block_size), _reference_value_shape({}),
-      _bs(block_size), _is_mixed(false), _needs_dof_permutations(false),
-      _needs_dof_transformations(false),
+      _bs(block_size), _is_mixed(false), _symmetric(false),
+      _needs_dof_permutations(false), _needs_dof_transformations(false),
       _points(std::vector<T>(points.begin(), points.end()), pshape)
 {
   const int tdim = mesh::cell_dim(cell_type);
@@ -95,11 +95,12 @@ FiniteElement<T>::FiniteElement(mesh::CellType cell_type,
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
 FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
-                                std::size_t block_size)
+                                std::size_t block_size, const bool symmetric)
     : _space_dim(block_size * element.dim()),
       _reference_value_shape(element.value_shape()), _bs(block_size),
       _is_mixed(false),
       _element(std::make_unique<basix::FiniteElement<T>>(element)),
+      _symmetric(symmetric),
       _needs_dof_permutations(
           !_element->dof_transformations_are_identity()
           and _element->dof_transformations_are_permutations()),
@@ -155,7 +156,8 @@ template <std::floating_point T>
 FiniteElement<T>::FiniteElement(
     const std::vector<std::shared_ptr<const FiniteElement<T>>>& elements)
     : _space_dim(0), _sub_elements(elements), _bs(1), _is_mixed(true),
-      _needs_dof_permutations(false), _needs_dof_transformations(false)
+      _symmetric(false), _needs_dof_permutations(false),
+      _needs_dof_transformations(false)
 {
   std::size_t vsize = 0;
   _signature = "Mixed element (";
@@ -244,6 +246,12 @@ std::span<const std::size_t>
 FiniteElement<T>::reference_value_shape() const noexcept
 {
   return _reference_value_shape;
+}
+//-----------------------------------------------------------------------------
+template <std::floating_point T>
+bool FiniteElement<T>::symmetric() const
+{
+  return _symmetric;
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
@@ -487,7 +495,7 @@ FiniteElement<T>::dof_permutation_fn(bool inverse, bool scalar_element) const
     }
     else if (!scalar_element)
     {
-      // Vector element
+      // Blocked element
       std::function<void(std::span<std::int32_t>, std::uint32_t)>
           sub_element_function = _sub_elements[0]->dof_permutation_fn(inverse);
       int dim = _sub_elements[0]->space_dimension();
