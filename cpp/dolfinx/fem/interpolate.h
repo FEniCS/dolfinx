@@ -810,11 +810,11 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
       std::size_t matrix_size = 0;
       while (matrix_size * matrix_size < fshape[0])
         ++matrix_size;
-      std::size_t row = 0;
-      std::size_t rowstart = 0;
       // Loop over cells
       for (std::size_t c = 0; c < cells.size(); ++c)
       {
+        std::size_t row = 0;
+        std::size_t rowstart = 0;
         const std::int32_t cell = cells[c];
         std::span<const std::int32_t> dofs = dofmap->cell_dofs(cell);
         for (int k = 0; k < element_bs; ++k)
