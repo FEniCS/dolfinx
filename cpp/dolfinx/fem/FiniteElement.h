@@ -49,6 +49,7 @@ public:
   /// @brief Create finite element from a Basix finite element.
   /// @param[in] element Basix finite element
   /// @param[in] block_size The block size for the element
+  /// @param[in] symmetric Is the element a symmetric tensor?
   FiniteElement(const basix::FiniteElement<geometry_type>& element,
                 const std::size_t block_size, const bool symmetric = false);
 
