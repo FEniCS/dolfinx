@@ -1031,9 +1031,48 @@ def test_nonmatching_mesh_single_cell_overlap_interpolation(xtype):
 def test_symmetric_tensor_interpolation(dtype):
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
 
-    def tensor(x, tens):
-        tens_reshaped = tens.reshape((6 * 6, 1))
-        return np.broadcast_to(tens_reshaped, (6 * 6, x.shape[1]))
+    def tensor(x):
+        mat = np.array(
+            [
+                [0],
+                [1],
+                [2],
+                [3],
+                [4],
+                [5],
+                [1],
+                [6],
+                [7],
+                [8],
+                [9],
+                [10],
+                [2],
+                [7],
+                [11],
+                [12],
+                [13],
+                [14],
+                [3],
+                [8],
+                [12],
+                [15],
+                [16],
+                [17],
+                [4],
+                [9],
+                [13],
+                [16],
+                [18],
+                [19],
+                [5],
+                [10],
+                [14],
+                [17],
+                [19],
+                [20],
+            ]
+        )
+        return np.broadcast_to(mat, (36, x.shape[1]))
 
     element = basix.ufl.element("DG", mesh.basix_cell(), 0, shape=(6, 6), dtype=dtype)
     symm_element = basix.ufl.element(
@@ -1044,19 +1083,8 @@ def test_symmetric_tensor_interpolation(dtype):
     f = Function(space)
     symm_f = Function(symm_space)
 
-    mat = np.array(
-        [
-            [0, 1, 2, 3, 4, 5],
-            [1, 6, 7, 8, 9, 10],
-            [2, 7, 11, 12, 13, 14],
-            [3, 8, 12, 15, 16, 17],
-            [4, 9, 13, 16, 18, 19],
-            [5, 10, 14, 17, 19, 20],
-        ]
-    )
-
-    f.interpolate(lambda x: tensor(x, mat))
-    symm_f.interpolate(lambda x: tensor(x, mat))
+    f.interpolate(lambda x: tensor(x))
+    symm_f.interpolate(lambda x: tensor(x))
 
     l2_error = assemble_scalar(form((f - symm_f) ** 2 * ufl.dx, dtype=dtype))
     assert np.isclose(l2_error, 0.0, rtol=np.finfo(dtype).eps, atol=np.finfo(dtype).eps)
