@@ -1029,7 +1029,7 @@ def test_nonmatching_mesh_single_cell_overlap_interpolation(xtype):
 
 @pytest.mark.parametrize("dtype", [np.float64])
 def test_symmetric_tensor_interpolation(dtype):
-    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, dtype=dtype)
 
     def tensor(x):
         mat = np.array(
