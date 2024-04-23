@@ -12,7 +12,7 @@ https://docs.fenicsproject.org.
 The release proceeds in a bottom up manner (Basix, UFL, FFCx, DOLFINx). pypa
 packages cannot be deleted and should be made a number of days after the
 creation of git tags so that errors can be fixed. GitHub releases can have their
-version notes updated, and can be deleted remade on new commits (not recommended).
+version notes updated, and can be deleted and remade on new tags (not recommended).
 
 The release process consists of the following steps:
 
