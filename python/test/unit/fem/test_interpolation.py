@@ -1035,9 +1035,7 @@ def test_symmetric_tensor_interpolation(dtype):
         tens_reshaped = tens.reshape((6 * 6, 1))
         return np.broadcast_to(tens_reshaped, (6 * 6, x.shape[1]))
 
-    element = basix.ufl.element(
-        "DG", mesh.basix_cell(), 0, shape=(6, 6), symmetry=True, dtype=dtype
-    )
+    element = basix.ufl.element("DG", mesh.basix_cell(), 0, shape=(6, 6), dtype=dtype)
     symm_element = basix.ufl.element(
         "DG", mesh.basix_cell(), 0, shape=(6, 6), symmetry=True, dtype=dtype
     )
