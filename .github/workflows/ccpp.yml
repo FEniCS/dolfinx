@@ -108,7 +108,7 @@ jobs:
       - name: Run C++ unit tests (MPI)
         run: |
           cd build/test
-          mpiexec - 3 ctest -V --output-on-failure -R unittests
+          mpiexec -np 3 ctest -V --output-on-failure -R unittests
 
       - name: Build Python interface
         run: python3 -m pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
@@ -171,7 +171,7 @@ jobs:
       - name: Run C++ unit tests (MPI)
         run: |
           cd build/test
-          mpiexec - 3 ctest -V --output-on-failure -R unittests
+          mpiexec -np 3 ctest -V --output-on-failure -R unittests
       - name: Build and run C++ regression tests (serial and MPI (np=2))
         run: |
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/demo/ -S cpp/demo/
