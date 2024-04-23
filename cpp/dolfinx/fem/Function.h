@@ -153,7 +153,8 @@ public:
   /// @brief Interpolate a provided Function.
   /// @param[in] v The function to be interpolated
   /// @param[in] cells The cells to interpolate on
-  /// @param[in] cell_map A map from cells in the mesh associated with `this` function to cells in mesh associated with `v`
+  /// @param[in] cell_map A map from cells in the mesh associated with `this`
+  /// function to cells in mesh associated with `v`
   /// @param[in] nmm_interpolation_data Auxiliary data to interpolate on
   /// nonmatching meshes. This data can be generated with
   /// generate_nonmatching_meshes_interpolation_data (optional).
