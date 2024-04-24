@@ -46,7 +46,7 @@ std::int64_t refinement::impl::local_to_global(std::int32_t local_index,
 void refinement::update_logical_edgefunction(
     MPI_Comm comm,
     const std::vector<std::vector<std::int32_t>>& marked_for_update,
-    std::vector<std::int8_t>& marked_edges, const common::IndexMap& map)
+    std::span<std::int8_t> marked_edges, const common::IndexMap& map)
 {
   std::vector<int> send_sizes;
   std::vector<std::int64_t> data_to_send;
