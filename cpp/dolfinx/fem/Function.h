@@ -632,6 +632,15 @@ public:
         = element->template dof_transformation_fn<geometry_type>(
             doftransform::standard);
 
+    // Size of tensor for symmetric elements, unused in non-symmetric case, but
+    // placed outside the loop for pre-computation.
+    int matrix_size;
+    if (element->symmetric())
+    {
+      matrix_size = 0;
+      while (matrix_size * matrix_size < ushape[1])
+        ++matrix_size;
+    }
     const std::size_t num_basis_values = space_dimension * reference_value_size;
     for (std::size_t p = 0; p < cells.size(); ++p)
     {
@@ -667,15 +676,47 @@ public:
         for (int k = 0; k < bs_dof; ++k)
           coefficients[bs_dof * i + k] = _v[bs_dof * dofs[i] + k];
 
-      // Compute expansion
-      for (int k = 0; k < bs_element; ++k)
+      if (element->symmetric())
       {
-        for (std::size_t i = 0; i < space_dimension; ++i)
+        int row = 0;
+        int rowstart = 0;
+        // Compute expansion
+        for (int k = 0; k < bs_element; ++k)
         {
-          for (std::size_t j = 0; j < value_size; ++j)
+          if (k - rowstart > row)
           {
-            u[p * ushape[1] + (j * bs_element + k)]
-                += coefficients[bs_element * i + k] * basis_values(i, j);
+            row++;
+            rowstart = k;
+          }
+          for (std::size_t i = 0; i < space_dimension; ++i)
+          {
+            for (std::size_t j = 0; j < value_size; ++j)
+            {
+              u[p * ushape[1]
+                + (j * bs_element + row * matrix_size + k - rowstart)]
+                  += coefficients[bs_element * i + k] * basis_values(i, j);
+              if (k - rowstart != row)
+              {
+                u[p * ushape[1]
+                  + (j * bs_element + row + matrix_size * (k - rowstart))]
+                    += coefficients[bs_element * i + k] * basis_values(i, j);
+              }
+            }
+          }
+        }
+      }
+      else
+      {
+        // Compute expansion
+        for (int k = 0; k < bs_element; ++k)
+        {
+          for (std::size_t i = 0; i < space_dimension; ++i)
+          {
+            for (std::size_t j = 0; j < value_size; ++j)
+            {
+              u[p * ushape[1] + (j * bs_element + k)]
+                  += coefficients[bs_element * i + k] * basis_values(i, j);
+            }
           }
         }
       }

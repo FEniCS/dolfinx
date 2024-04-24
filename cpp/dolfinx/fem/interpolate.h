@@ -765,6 +765,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 
   const int gdim = mesh->geometry().dim();
   const int tdim = mesh->topology()->dim();
+  const bool symmetric = u.function_space()->symmetric();
 
   if (fshape[0] != (std::size_t)u.function_space()->value_size())
     throw std::runtime_error("Interpolation data has the wrong shape/size.");
@@ -804,23 +805,69 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
         = element->template dof_transformation_fn<T>(
             doftransform::inverse_transpose, true);
 
-    // Loop over cells
-    for (std::size_t c = 0; c < cells.size(); ++c)
+    if (symmetric)
     {
-      const std::int32_t cell = cells[c];
-      std::span<const std::int32_t> dofs = dofmap->cell_dofs(cell);
-      for (int k = 0; k < element_bs; ++k)
+      std::size_t matrix_size = 0;
+      while (matrix_size * matrix_size < fshape[0])
+        ++matrix_size;
+      // Loop over cells
+      for (std::size_t c = 0; c < cells.size(); ++c)
       {
-        // num_scalar_dofs is the number of interpolation points per
-        // cell in this case (interpolation matrix is identity)
-        std::copy_n(std::next(f.begin(), k * f_shape1 + c * num_scalar_dofs),
-                    num_scalar_dofs, _coeffs.begin());
-        apply_inv_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
-        for (int i = 0; i < num_scalar_dofs; ++i)
+        // The entries of a symmetric matrix are numbered (for an example 4x4
+        // element):
+        //  0 * * *
+        //  1 2 * *
+        //  3 4 5 *
+        //  6 7 8 9
+        // The loop extracts these elements. In this loop, row is the row of
+        // this matrix, and (k - rowstart) is the column
+        std::size_t row = 0;
+        std::size_t rowstart = 0;
+        const std::int32_t cell = cells[c];
+        std::span<const std::int32_t> dofs = dofmap->cell_dofs(cell);
+        for (int k = 0; k < element_bs; ++k)
         {
-          const int dof = i * element_bs + k;
-          std::div_t pos = std::div(dof, dofmap_bs);
-          coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = _coeffs[i];
+          if (k - rowstart > row)
+          {
+            ++row;
+            rowstart = k;
+          }
+          // num_scalar_dofs is the number of interpolation points per
+          // cell in this case (interpolation matrix is identity)
+          std::copy_n(
+              std::next(f.begin(), (row * matrix_size + k - rowstart) * f_shape1
+                                       + c * num_scalar_dofs),
+              num_scalar_dofs, _coeffs.begin());
+          apply_inv_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
+          for (int i = 0; i < num_scalar_dofs; ++i)
+          {
+            const int dof = i * element_bs + k;
+            std::div_t pos = std::div(dof, dofmap_bs);
+            coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = _coeffs[i];
+          }
+        }
+      }
+    }
+    else
+    {
+      // Loop over cells
+      for (std::size_t c = 0; c < cells.size(); ++c)
+      {
+        const std::int32_t cell = cells[c];
+        std::span<const std::int32_t> dofs = dofmap->cell_dofs(cell);
+        for (int k = 0; k < element_bs; ++k)
+        {
+          // num_scalar_dofs is the number of interpolation points per
+          // cell in this case (interpolation matrix is identity)
+          std::copy_n(std::next(f.begin(), k * f_shape1 + c * num_scalar_dofs),
+                      num_scalar_dofs, _coeffs.begin());
+          apply_inv_transpose_dof_transformation(_coeffs, cell_info, cell, 1);
+          for (int i = 0; i < num_scalar_dofs; ++i)
+          {
+            const int dof = i * element_bs + k;
+            std::div_t pos = std::div(dof, dofmap_bs);
+            coeffs[dofmap_bs * dofs[pos.quot] + pos.rem] = _coeffs[i];
+          }
         }
       }
     }
@@ -829,6 +876,12 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
   {
     // Not a point evaluation, but the geometric map is the identity,
     // e.g. not Piola mapped
+
+    if (symmetric)
+    {
+      throw std::runtime_error(
+          "Interpolation into this element not supported.");
+    }
 
     const int element_vs = u.function_space()->value_size() / element_bs;
 
@@ -882,6 +935,11 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
   }
   else
   {
+    if (symmetric)
+    {
+      throw std::runtime_error(
+          "Interpolation into this element not supported.");
+    }
     // Get the interpolation points on the reference cells
     const auto [X, Xshape] = element->interpolation_points();
     if (X.empty())

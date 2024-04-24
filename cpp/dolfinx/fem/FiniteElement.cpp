@@ -125,7 +125,8 @@ FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
     : _signature(e.signature), _space_dim(e.space_dimension),
       _reference_value_shape(e.reference_value_shape,
                              e.reference_value_shape + e.reference_value_rank),
-      _bs(e.block_size), _is_mixed(e.element_type == ufcx_mixed_element)
+      _bs(e.block_size), _is_mixed(e.element_type == ufcx_mixed_element),
+      _symmetric(e.symmetric)
 {
   const ufcx_shape _shape = e.cell_shape;
   switch (_shape)
@@ -293,9 +294,10 @@ FiniteElement<T>::FiniteElement(const ufcx_finite_element& e)
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
 FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
-                                const std::size_t block_size)
+                                const std::size_t block_size,
+                                const bool symmetric)
     : _reference_value_shape(element.value_shape()), _bs(block_size),
-      _is_mixed(false)
+      _is_mixed(false), _symmetric(symmetric)
 {
   _space_dim = _bs * element.dim();
 
@@ -374,6 +376,12 @@ template <std::floating_point T>
 std::span<const std::size_t> FiniteElement<T>::reference_value_shape() const
 {
   return _reference_value_shape;
+}
+//-----------------------------------------------------------------------------
+template <std::floating_point T>
+bool FiniteElement<T>::symmetric() const
+{
+  return _symmetric;
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
