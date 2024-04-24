@@ -196,7 +196,7 @@ jobs:
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
 
       - name: Run demos (Python, serial)
-        run: python3 -m pytest -n=4 -m serial --durations=10 python/demo/test.py
+        run: python3 -m pytest -n=3 -m serial --durations=10 python/demo/test.py
       - name: Run demos (Python, MPI (np=3))
         run: python3 -m pytest -m mpi --num-proc=3 python/demo/test.py
 
