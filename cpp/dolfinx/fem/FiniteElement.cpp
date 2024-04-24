@@ -68,7 +68,7 @@ template <std::floating_point T>
 FiniteElement<T>::FiniteElement(mesh::CellType cell_type,
                                 std::span<const geometry_type> points,
                                 std::array<std::size_t, 2> pshape,
-                                std::size_t block_size)
+                                const std::size_t block_size)
     : _signature("Quadrature element " + std::to_string(pshape[0]) + " "
                  + std::to_string(block_size)),
       _space_dim(pshape[0] * block_size), _reference_value_shape({}),
@@ -95,7 +95,8 @@ FiniteElement<T>::FiniteElement(mesh::CellType cell_type,
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
 FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
-                                std::size_t block_size, const bool symmetric)
+                                const std::size_t block_size,
+                                const bool symmetric)
     : _space_dim(block_size * element.dim()),
       _reference_value_shape(element.value_shape()), _bs(block_size),
       _is_mixed(false),
@@ -255,7 +256,7 @@ bool FiniteElement<T>::symmetric() const
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
-int FiniteElement<T>::reference_value_size() const noexcept
+int FiniteElement<T>::reference_value_size() const
 {
   return std::accumulate(_reference_value_shape.begin(),
                          _reference_value_shape.end(), 1, std::multiplies{});

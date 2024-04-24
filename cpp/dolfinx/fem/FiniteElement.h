@@ -45,7 +45,7 @@ public:
   /// @param[in] block_size The block size for the element
   /// @param[in] symmetric Is the element a symmetric tensor?
   FiniteElement(const basix::FiniteElement<geometry_type>& element,
-                std::size_t block_size, const bool symmetric = false);
+                const std::size_t block_size, const bool symmetric = false);
 
   /// @brief Create mixed finite element from a list of finite elements.
   /// @param[in] elements Basix finite elements
@@ -59,7 +59,8 @@ public:
   /// @param[in] pshape Shape of points array
   /// @param[in] block_size The block size for the element
   FiniteElement(mesh::CellType cell_type, std::span<const geometry_type> points,
-                std::array<std::size_t, 2> pshape, std::size_t block_size);
+                std::array<std::size_t, 2> pshape,
+                const std::size_t block_size);
 
   /// Copy constructor
   FiniteElement(const FiniteElement& element) = delete;
@@ -110,7 +111,7 @@ public:
   /// The value size, e.g. 1 for a scalar function, 2 for a 2D vector, 9
   /// for a second-order tensor in 3D, for the reference element
   /// @return The value size for the reference element
-  int reference_value_size() const noexcept;
+  int reference_value_size() const;
 
   /// The reference value shape
   std::span<const std::size_t> reference_value_shape() const noexcept;
