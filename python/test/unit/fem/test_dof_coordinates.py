@@ -18,7 +18,7 @@ def test_dof_coords_2d(degree, dtype):
     x = V.tabulate_dof_coordinates()
     val = u.x.array
     for i in range(len(val)):
-        assert np.isclose(x[i, 0], val[i],  atol=1e-7, rtol=1e-6)
+        assert np.isclose(x[i, 0], val[i], atol=1e-7, rtol=1e-6)
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
