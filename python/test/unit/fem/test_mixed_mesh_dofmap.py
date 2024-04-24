@@ -15,7 +15,7 @@ def create_element_dofmap(mesh, cell_types, degree):
     cpp_elements = []
     for cell_type in cell_types:
         ufl_e = basix.ufl.element("P", cell_type, degree, dtype=np.float64)
-        cpp_elements += [_cpp.fem.FiniteElement_float64(ufl_e.basix_element._e, 1)]
+        cpp_elements += [_cpp.fem.FiniteElement_float64(ufl_e.basix_element._e, 1, False)]
 
     cpp_dofmaps = _cpp.fem.create_dofmaps(mesh.comm, mesh.topology, cpp_elements)
 
