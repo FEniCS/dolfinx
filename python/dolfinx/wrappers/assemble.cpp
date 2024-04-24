@@ -43,40 +43,62 @@ namespace nb = nanobind;
 namespace
 {
 
+dolfinx::la::SparsityPattern
+create_sparsity(const dolfinx::fem::FunctionSpace<U>& V0,
+                const dolfinx::fem::FunctionSpace<U>& V1)
+{
+  assert(V0.mesh());
+  auto mesh = V0.mesh();
+  assert(V1.mesh());
+  assert(mesh == V1.mesh());
+  MPI_Comm comm = mesh->comm();
+
+  auto dofmap0 = V0.dofmap();
+  assert(dofmap0);
+  auto dofmap1 = V1.dofmap();
+  assert(dofmap1);
+
+  // Create and build  sparsity pattern
+  assert(dofmap0->index_map);
+  assert(dofmap1->index_map);
+  dolfinx::la::SparsityPattern sp(
+      comm, {dofmap1->index_map, dofmap0->index_map},
+      {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
+
+  int tdim = mesh->topology()->dim();
+  auto map = mesh->topology()->index_map(tdim);
+  assert(map);
+  std::vector<std::int32_t> c(map->size_local(), 0);
+  std::iota(c.begin(), c.end(), 0);
+  dolfinx::fem::sparsitybuild::cells(sp, {c, c}, {*dofmap1, *dofmap0});
+  sp.finalize();
+
+  return sp;
+}
+
 // Declare assembler function that have multiple scalar types
 template <typename T, typename U>
 void declare_discrete_operators(nb::module_& m)
 {
+  m.def("interpolation_matrix",
+        [](const dolfinx::fem::FunctionSpace<U>& V0,
+           const dolfinx::fem::FunctionSpace<U>& V1)
+        {
+          // Create sparsity
+          auto sp = create_sparsity(V0, V1);
+
+          // Build operator
+          dolfinx::la::MatrixCSR<T> A(sp);
+          dolfinx::fem::interpolation_matrix<T, U>(V0, V1, A.mat_set_values());
+          return A;
+        });
+
   m.def(
       "discrete_gradient",
       [](const dolfinx::fem::FunctionSpace<U>& V0,
          const dolfinx::fem::FunctionSpace<U>& V1)
       {
-        assert(V0.mesh());
-        auto mesh = V0.mesh();
-        assert(V1.mesh());
-        assert(mesh == V1.mesh());
-        MPI_Comm comm = mesh->comm();
-
-        auto dofmap0 = V0.dofmap();
-        assert(dofmap0);
-        auto dofmap1 = V1.dofmap();
-        assert(dofmap1);
-
-        // Create and build  sparsity pattern
-        assert(dofmap0->index_map);
-        assert(dofmap1->index_map);
-        dolfinx::la::SparsityPattern sp(
-            comm, {dofmap1->index_map, dofmap0->index_map},
-            {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
-
-        int tdim = mesh->topology()->dim();
-        auto map = mesh->topology()->index_map(tdim);
-        assert(map);
-        std::vector<std::int32_t> c(map->size_local(), 0);
-        std::iota(c.begin(), c.end(), 0);
-        dolfinx::fem::sparsitybuild::cells(sp, {c, c}, {*dofmap1, *dofmap0});
-        sp.finalize();
+        auto sp = create_sparsity(V0, V1);
 
         // Build operator
         dolfinx::la::MatrixCSR<T> A(sp);
