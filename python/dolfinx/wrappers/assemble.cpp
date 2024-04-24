@@ -43,6 +43,7 @@ namespace nb = nanobind;
 namespace
 {
 
+template <typename U>
 dolfinx::la::SparsityPattern
 create_sparsity(const dolfinx::fem::FunctionSpace<U>& V0,
                 const dolfinx::fem::FunctionSpace<U>& V1)
