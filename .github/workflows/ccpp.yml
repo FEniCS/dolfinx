@@ -108,7 +108,7 @@ jobs:
       - name: Run C++ unit tests (MPI)
         run: |
           cd build/test
-          mpiexec -np 3 ctest -V --output-on-failure -R unittests
+          mpirun -n 3 --map-by :OVERSUBSCRIBE ctest -V --output-on-failure -R unittests
 
       - name: Build Python interface
         run: python3 -m pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
