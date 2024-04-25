@@ -12,7 +12,7 @@
 #    docker build --target dev-env --file dolfinx/docker/Dockerfile.test-env --build-arg PETSC_SLEPC_OPTFLAGS="-O2 -march=native" .
 #
 
-ARG ADIOS2_VERSION=2.9.2
+ARG ADIOS2_VERSION=2.10.0
 ARG DOXYGEN_VERSION=1_10_0
 ARG GMSH_VERSION=4_12_2
 ARG HDF5_SERIES=1.14
