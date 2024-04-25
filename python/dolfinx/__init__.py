@@ -36,10 +36,6 @@ from dolfinx.common import (
 )
 from dolfinx.cpp import __version__
 
-import basix
-
-basix.default_scalar_type = default_real_type
-
 _cpp.common.init_logging(sys.argv)
 del _cpp, sys
 
