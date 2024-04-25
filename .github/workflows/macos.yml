@@ -53,7 +53,7 @@ jobs:
 
       - name: Install FEniCSx dependencies
         run: |
-          python -m pip install git+https://github.com/FEniCS/basix.git@mscroggs/default_scalar_type
+          python -m pip install git+https://github.com/FEniCS/basix.git
           python -m pip install git+https://github.com/FEniCS/ufl.git
           python -m pip install git+https://github.com/FEniCS/ffcx.git
 

@@ -3,7 +3,7 @@ version: 2.1
 install-python-components: &install-python-components
   name: Install FEniCS Python components
   command: |
-    git clone https://github.com/FEniCS/basix.git --branch mscroggs/default_scalar_type --single-branch
+    git clone https://github.com/FEniCS/basix.git --branch main --single-branch
     cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -B build-dir -S ./basix/cpp
     cmake --build build-dir --parallel 3
     cmake --install build-dir
