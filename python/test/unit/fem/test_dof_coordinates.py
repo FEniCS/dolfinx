@@ -7,27 +7,29 @@ from dolfinx.fem import Function, functionspace
 from dolfinx.mesh import create_unit_cube, create_unit_square
 
 
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("degree", range(1, 5))
-def test_dof_coords_2d(degree):
-    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
+def test_dof_coords_2d(degree, dtype):
+    mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, dtype=dtype)
     V = functionspace(mesh, ("Lagrange", degree))
-    u = Function(V)
+    u = Function(V, dtype=dtype)
     u.interpolate(lambda x: x[0])
     u.x.scatter_forward()
     x = V.tabulate_dof_coordinates()
     val = u.x.array
     for i in range(len(val)):
-        assert np.isclose(x[i, 0], val[i], rtol=1e-3)
+        assert np.isclose(x[i, 0], val[i], atol=1e-7, rtol=1e-6)
 
 
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("degree", range(1, 5))
-def test_dof_coords_3d(degree):
-    mesh = create_unit_cube(MPI.COMM_WORLD, 10, 10, 10)
+def test_dof_coords_3d(degree, dtype):
+    mesh = create_unit_cube(MPI.COMM_WORLD, 10, 10, 10, dtype=dtype)
     V = functionspace(mesh, ("Lagrange", degree))
-    u = Function(V)
+    u = Function(V, dtype=dtype)
     u.interpolate(lambda x: x[0])
     u.x.scatter_forward()
     x = V.tabulate_dof_coordinates()
     val = u.x.array
     for i in range(len(val)):
-        assert np.isclose(x[i, 0], val[i], rtol=1e-3)
+        assert np.isclose(x[i, 0], val[i], atol=1e-7, rtol=1e-6)
