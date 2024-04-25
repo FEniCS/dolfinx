@@ -615,7 +615,7 @@ def _create_dolfinx_element(
     ufl_e: ufl.FiniteElementBase,
     dtype: np.dtype,
 ) -> typing.Union[_cpp.fem.FiniteElement_float32, _cpp.fem.FiniteElement_float64]:
-    # TODO: remove this function or move it to element.py?
+    """Create a DOLFINx element from a basix.ufl element."""
     if np.issubdtype(dtype, np.float32):
         CppElement = _cpp.fem.FiniteElement_float32
     elif np.issubdtype(dtype, np.float64):

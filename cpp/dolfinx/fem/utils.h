@@ -358,17 +358,7 @@ Form<T, U> create_form_factory(
   for (std::size_t i = 0; i < spaces.size(); ++i)
   {
     assert(spaces[i]->element());
-    // TODO: replace this with check of hashes
-    /*
-        ufcx_finite_element* ufcx_element = ufcx_form.finite_elements[i];
-        assert(ufcx_element);
-        if (std::string(ufcx_element->signature)
-            != spaces[i]->element()->signature())
-        {
-          throw std::runtime_error(
-              "Cannot create form. Wrong type of function space for argument.");
-        }
-    */
+    // TODO: Hash check of element
   }
 #endif
 
