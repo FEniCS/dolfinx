@@ -29,7 +29,7 @@ import numpy as np
 
 import basix
 import basix.ufl
-from dolfinx import fem, mesh, default_real_type
+from dolfinx import default_real_type, fem, mesh
 from dolfinx.fem.petsc import LinearProblem
 from ufl import SpatialCoordinate, TestFunction, TrialFunction, cos, div, dx, grad, inner, sin
 
