@@ -25,7 +25,7 @@ from scipy.special import jv, jvp
 
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx import default_scalar_type, fem, io, mesh, plot
+from dolfinx import default_real_type, default_scalar_type, fem, io, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
 
 try:
@@ -403,8 +403,8 @@ if have_pyvista:
 # will use Lagrange elements:
 
 degree = 3
-curl_el = element("N1curl", msh.basix_cell(), degree)
-lagr_el = element("Lagrange", msh.basix_cell(), degree)
+curl_el = element("N1curl", msh.basix_cell(), degree, dtype=default_real_type)
+lagr_el = element("Lagrange", msh.basix_cell(), degree, dtype=default_real_type)
 V = fem.functionspace(msh, mixed_element([curl_el, lagr_el]))
 
 # The integration domains of our problem are the following:
@@ -678,7 +678,7 @@ if MPI.COMM_WORLD.rank == 0:
 # assert err_ext < 0.01
 
 if has_vtx:
-    v_dg_el = element("DG", msh.basix_cell(), degree, shape=(3,))
+    v_dg_el = element("DG", msh.basix_cell(), degree, shape=(3,), dtype=default_real_type)
     W = fem.functionspace(msh, v_dg_el)
     Es_dg = fem.Function(W)
     Es_expr = fem.Expression(Esh, W.element.interpolation_points())

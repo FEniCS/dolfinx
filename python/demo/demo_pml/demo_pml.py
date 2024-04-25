@@ -26,7 +26,7 @@ from mesh_wire_pml import generate_mesh_wire
 
 import ufl
 from basix.ufl import element
-from dolfinx import default_scalar_type, fem, mesh, plot
+from dolfinx import default_real_type, default_scalar_type, fem, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
 from dolfinx.io import VTXWriter, gmshio
 
@@ -243,7 +243,7 @@ theta = 0  # Angle of incidence of the background field
 # element to represent the electric field:
 
 degree = 3
-curl_el = element("N1curl", msh.basix_cell(), degree)
+curl_el = element("N1curl", msh.basix_cell(), degree, dtype=default_real_type)
 V = fem.functionspace(msh, curl_el)
 
 # Next, we interpolate $\mathbf{E}_b$ into the function space $V$,
