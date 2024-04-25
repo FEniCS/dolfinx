@@ -70,9 +70,9 @@ target_compile_definitions(dolfinx PUBLIC DOLFINX_VERSION="${DOLFINX_VERSION}")
 
 # pugixml (see https://pugixml.org/docs/manual.html#v1.11)
 if(TARGET pugixml::pugixml)
-  target_link_libraries(dolfinx PUBLIC pugixml::pugixml)
+  target_link_libraries(dolfinx PRIVATE pugixml::pugixml)
 else()
-  target_link_libraries(dolfinx PUBLIC pugixml)
+  target_link_libraries(dolfinx PRIVATE pugixml)
 endif()
 
 # UFCx
@@ -86,14 +86,14 @@ endif()
 target_link_libraries(dolfinx PUBLIC Basix::basix)
 
 # Boost
-target_link_libraries(dolfinx PUBLIC Boost::headers)
-target_link_libraries(dolfinx PUBLIC Boost::timer)
+target_link_libraries(dolfinx PRIVATE Boost::headers)
+target_link_libraries(dolfinx PRIVATE Boost::timer)
 
 # MPI
 target_link_libraries(dolfinx PUBLIC MPI::MPI_CXX)
 
 # HDF5
-target_link_libraries(dolfinx PUBLIC hdf5::hdf5)
+target_link_libraries(dolfinx PRIVATE hdf5::hdf5)
 
 # ------------------------------------------------------------------------------
 # Optional packages
@@ -101,24 +101,24 @@ target_link_libraries(dolfinx PUBLIC hdf5::hdf5)
 # ADIOS2
 if(ADIOS2_FOUND)
   target_compile_definitions(dolfinx PUBLIC HAS_ADIOS2)
-  target_link_libraries(dolfinx PUBLIC adios2::cxx11_mpi)
+  target_link_libraries(dolfinx PRIVATE adios2::cxx11_mpi)
 endif()
 
 # PETSc
 if(DOLFINX_ENABLE_PETSC AND PETSC_FOUND)
-  target_link_libraries(dolfinx PUBLIC PkgConfig::PETSC)
+  target_link_libraries(dolfinx PRIVATE PkgConfig::PETSC)
   target_compile_definitions(dolfinx PUBLIC HAS_PETSC)
 endif()
 
 # SLEPC
 if(DOLFINX_ENABLE_SLEPC AND SLEPC_FOUND)
-  target_link_libraries(dolfinx PUBLIC PkgConfig::SLEPC)
+  target_link_libraries(dolfinx PRIVATE PkgConfig::SLEPC)
   target_compile_definitions(dolfinx PUBLIC HAS_SLEPC)
 endif()
 
 # SCOTCH
 if(DOLFINX_ENABLE_SCOTCH AND SCOTCH_FOUND)
-  target_compile_definitions(dolfinx PUBLIC HAS_PTSCOTCH)
+  target_compile_definitions(dolfinx PRIVATE HAS_PTSCOTCH)
   target_link_libraries(dolfinx PRIVATE ${SCOTCH_LIBRARIES})
   target_include_directories(dolfinx SYSTEM PRIVATE ${SCOTCH_INCLUDE_DIRS})
 endif()
