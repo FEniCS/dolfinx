@@ -15,6 +15,7 @@ import pytest
 
 import ufl
 from basix.ufl import element, mixed_element
+from dolfinx import default_real_type
 from dolfinx.cpp.la.petsc import scatter_local_vectors
 from dolfinx.fem import (
     Function,
@@ -67,8 +68,8 @@ def test_matrix_assembly_block_nl():
     in the nonlinear setting."""
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 8)
     p0, p1 = 1, 2
-    P0 = element("Lagrange", mesh.basix_cell(), p0)
-    P1 = element("Lagrange", mesh.basix_cell(), p1)
+    P0 = element("Lagrange", mesh.basix_cell(), p0, dtype=default_real_type)
+    P1 = element("Lagrange", mesh.basix_cell(), p1, dtype=default_real_type)
     V0 = functionspace(mesh, P0)
     V1 = functionspace(mesh, P1)
 
@@ -314,7 +315,7 @@ def test_assembly_solve_block_nl():
     matrix approaches and test that solution is the same."""
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 11)
     p = 1
-    P = element("Lagrange", mesh.basix_cell(), p)
+    P = element("Lagrange", mesh.basix_cell(), p, dtype=default_real_type)
     V0 = functionspace(mesh, P)
     V1 = V0.clone()
 
@@ -641,8 +642,10 @@ def test_assembly_solve_taylor_hood_nl(mesh):
 
     def monolithic():
         """Monolithic"""
-        P2_el = element("Lagrange", mesh.basix_cell(), 2, shape=(mesh.geometry.dim,))
-        P1_el = element("Lagrange", mesh.basix_cell(), 1)
+        P2_el = element(
+            "Lagrange", mesh.basix_cell(), 2, shape=(mesh.geometry.dim,), dtype=default_real_type
+        )
+        P1_el = element("Lagrange", mesh.basix_cell(), 1, dtype=default_real_type)
         TH = mixed_element([P2_el, P1_el])
         W = functionspace(mesh, TH)
         U = Function(W)

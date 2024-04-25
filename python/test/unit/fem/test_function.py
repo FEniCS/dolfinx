@@ -128,7 +128,7 @@ def test_interpolation_mismatch_rank1(W):
 
 def test_mixed_element_interpolation():
     mesh = create_unit_cube(MPI.COMM_WORLD, 3, 3, 3)
-    el = element("Lagrange", mesh.basix_cell(), 1)
+    el = element("Lagrange", mesh.basix_cell(), 1, dtype=default_real_type)
     V = functionspace(mesh, mixed_element([el, el]))
     u = Function(V)
     with pytest.raises(RuntimeError):

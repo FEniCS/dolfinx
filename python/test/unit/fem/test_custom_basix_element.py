@@ -7,6 +7,7 @@ import pytest
 import basix
 import basix.ufl
 import ufl
+from dolfinx import default_real_type
 from dolfinx.fem import (
     Function,
     assemble_scalar,
@@ -86,7 +87,11 @@ def run_scalar_test(V, degree):
 @pytest.mark.parametrize("degree", range(1, 6))
 def test_basix_element_wrapper(degree):
     ufl_element = basix.ufl.element(
-        basix.ElementFamily.P, basix.CellType.triangle, degree, basix.LagrangeVariant.gll_isaac
+        basix.ElementFamily.P,
+        basix.CellType.triangle,
+        degree,
+        basix.LagrangeVariant.gll_isaac,
+        dtype=default_real_type,
     )
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
     V = functionspace(mesh, ufl_element)
@@ -116,6 +121,7 @@ def test_custom_element_triangle_degree1():
         False,
         1,
         1,
+        dtype=default_real_type,
     )
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
     V = functionspace(mesh, ufl_element)
@@ -154,6 +160,7 @@ def test_custom_element_triangle_degree4():
         False,
         4,
         4,
+        dtype=default_real_type,
     )
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
     V = functionspace(mesh, ufl_element)
@@ -162,9 +169,9 @@ def test_custom_element_triangle_degree4():
 
 def test_custom_element_triangle_degree4_integral():
     pts, wts = basix.make_quadrature(basix.CellType.interval, 10)
-    tab = basix.create_element(basix.ElementFamily.P, basix.CellType.interval, 2).tabulate(0, pts)[
-        0, :, :, 0
-    ]
+    tab = basix.create_element(
+        basix.ElementFamily.P, basix.CellType.interval, 2, dtype=default_real_type
+    ).tabulate(0, pts)[0, :, :, 0]
     wcoeffs = np.eye(15)
     x = [
         [np.array([[0.0, 0.0]]), np.array([[1.0, 0.0]]), np.array([[0.0, 1.0]])],
@@ -202,6 +209,7 @@ def test_custom_element_triangle_degree4_integral():
         False,
         4,
         4,
+        dtype=default_real_type,
     )
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
     V = functionspace(mesh, ufl_element)
@@ -246,6 +254,7 @@ def test_custom_element_quadrilateral_degree1():
         False,
         1,
         1,
+        dtype=default_real_type,
     )
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, CellType.quadrilateral)
     V = functionspace(mesh, ufl_element)
@@ -276,7 +285,9 @@ def test_vector_copy_degree1(cell_type, element_family):
     def func(x):
         return x[:tdim]
 
-    e1 = basix.ufl.element(element_family, getattr(basix.CellType, cell_type.name), 1)
+    e1 = basix.ufl.element(
+        element_family, getattr(basix.CellType, cell_type.name), 1, dtype=default_real_type
+    )
 
     e2 = basix.ufl.custom_element(
         e1._element.cell_type,
@@ -290,6 +301,7 @@ def test_vector_copy_degree1(cell_type, element_family):
         e1._element.discontinuous,
         e1._element.embedded_subdegree,
         e1._element.embedded_superdegree,
+        dtype=default_real_type,
     )
 
     space1 = functionspace(mesh, e1)
@@ -325,7 +337,9 @@ def test_scalar_copy_degree1(cell_type, element_family):
     def func(x):
         return x[0]
 
-    e1 = basix.ufl.element(element_family, getattr(basix.CellType, cell_type.name), 1)
+    e1 = basix.ufl.element(
+        element_family, getattr(basix.CellType, cell_type.name), 1, dtype=default_real_type
+    )
     e2 = basix.ufl.custom_element(
         e1._element.cell_type,
         e1._element.value_shape,
@@ -338,6 +352,7 @@ def test_scalar_copy_degree1(cell_type, element_family):
         e1._element.discontinuous,
         e1._element.embedded_subdegree,
         e1._element.embedded_superdegree,
+        dtype=default_real_type,
     )
 
     space1 = functionspace(mesh, e1)

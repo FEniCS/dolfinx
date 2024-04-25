@@ -12,7 +12,14 @@ import ufl
 @pytest.mark.parametrize("symmetry", [True, False])
 def test_transpose(degree, symmetry):
     mesh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 10, 10)
-    e = basix.ufl.element("Lagrange", "triangle", degree, shape=(2, 2), symmetry=symmetry)
+    e = basix.ufl.element(
+        "Lagrange",
+        "triangle",
+        degree,
+        shape=(2, 2),
+        symmetry=symmetry,
+        dtype=dolfinx.default_real_type,
+    )
 
     space = dolfinx.fem.functionspace(mesh, e)
 
@@ -31,8 +38,12 @@ def test_interpolation():
         mat = np.array([[0], [1], [2], [1], [3], [4], [2], [4], [5]])
         return np.broadcast_to(mat, (9, x.shape[1]))
 
-    element = basix.ufl.element("DG", mesh.basix_cell(), 0, shape=(3, 3))
-    symm_element = basix.ufl.element("DG", mesh.basix_cell(), 0, shape=(3, 3), symmetry=True)
+    element = basix.ufl.element(
+        "DG", mesh.basix_cell(), 0, shape=(3, 3), dtype=dolfinx.default_real_type
+    )
+    symm_element = basix.ufl.element(
+        "DG", mesh.basix_cell(), 0, shape=(3, 3), symmetry=True, dtype=dolfinx.default_real_type
+    )
     space = dolfinx.fem.functionspace(mesh, element)
     symm_space = dolfinx.fem.functionspace(mesh, symm_element)
     f = dolfinx.fem.Function(space)
@@ -55,7 +66,9 @@ def test_eval():
     def tensor(x):
         return np.broadcast_to(mat.reshape((9, 1)), (9, x.shape[1]))
 
-    element = basix.ufl.element("DG", mesh.basix_cell(), 0, shape=(3, 3), symmetry=True)
+    element = basix.ufl.element(
+        "DG", mesh.basix_cell(), 0, shape=(3, 3), symmetry=True, dtype=dolfinx.default_real_type
+    )
     space = dolfinx.fem.functionspace(mesh, element)
     f = dolfinx.fem.Function(space)
 

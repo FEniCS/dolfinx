@@ -15,6 +15,7 @@ import pytest
 import dolfinx
 import ufl
 from basix.ufl import element, mixed_element
+from dolfinx import default_real_type
 from dolfinx.fem import functionspace
 from dolfinx.mesh import (
     CellType,
@@ -43,8 +44,10 @@ def mesh():
 def test_tabulate_dofs(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
-    W0 = element("Lagrange", mesh.basix_cell(), 1)
-    W1 = element("Lagrange", mesh.basix_cell(), 1, shape=(mesh.geometry.dim,))
+    W0 = element("Lagrange", mesh.basix_cell(), 1, dtype=default_real_type)
+    W1 = element(
+        "Lagrange", mesh.basix_cell(), 1, shape=(mesh.geometry.dim,), dtype=default_real_type
+    )
     W = functionspace(mesh, W0 * W1)
 
     L0 = W.sub(0)
@@ -160,7 +163,7 @@ def test_block_size():
         create_unit_cube(MPI.COMM_WORLD, 4, 4, 4, CellType.hexahedron),
     ]
     for mesh in meshes:
-        P2 = element("Lagrange", mesh.basix_cell(), 2)
+        P2 = element("Lagrange", mesh.basix_cell(), 2, dtype=default_real_type)
         V = functionspace(mesh, P2)
         assert V.dofmap.bs == 1
 
@@ -180,8 +183,8 @@ def test_block_size():
 @pytest.mark.skip
 def test_block_size_real():
     mesh = create_unit_interval(MPI.COMM_WORLD, 12)
-    V = element("DG", mesh.basix_cell(), 0)
-    R = element("R", mesh.basix_cell(), 0)
+    V = element("DG", mesh.basix_cell(), 0, dtype=default_real_type)
+    R = element("R", mesh.basix_cell(), 0, dtype=default_real_type)
     X = functionspace(mesh, V * R)
     assert X.dofmap.index_map_bs == 1
 
@@ -198,8 +201,10 @@ def test_local_dimension(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
 
-    v = element("Lagrange", mesh.basix_cell(), 1)
-    q = element("Lagrange", mesh.basix_cell(), 1, shape=(mesh.geometry.dim,))
+    v = element("Lagrange", mesh.basix_cell(), 1, dtype=default_real_type)
+    q = element(
+        "Lagrange", mesh.basix_cell(), 1, shape=(mesh.geometry.dim,), dtype=default_real_type
+    )
     w = v * q
 
     V = functionspace(mesh, v)
@@ -316,7 +321,9 @@ def test_readonly_view_local_to_global_unwoned(mesh):
 def test_higher_order_coordinate_map(points, celltype, order):
     """Computes physical coordinates of a cell, based on the coordinate map."""
     cells = np.array([range(len(points))])
-    domain = ufl.Mesh(element("Lagrange", celltype.name, order, shape=(points.shape[1],)))
+    domain = ufl.Mesh(
+        element("Lagrange", celltype.name, order, shape=(points.shape[1],), dtype=default_real_type)
+    )
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
 
     V = functionspace(mesh, ("Lagrange", 2))
@@ -390,7 +397,9 @@ def test_higher_order_tetra_coordinate_map(order):
             ]
         )
     cells = np.array([range(len(points))])
-    domain = ufl.Mesh(element("Lagrange", celltype.name, order, shape=(3,)))
+    domain = ufl.Mesh(
+        element("Lagrange", celltype.name, order, shape=(3,), dtype=default_real_type)
+    )
     mesh = create_mesh(MPI.COMM_WORLD, cells, points, domain)
     V = functionspace(mesh, ("Lagrange", order))
     X = V.element.interpolation_points()

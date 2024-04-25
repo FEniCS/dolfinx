@@ -345,8 +345,10 @@ def test_mixed_sub_interpolation():
     def f(x):
         return np.vstack((10 + x[0], -10 - x[1], 25 + x[0]))
 
-    P2 = element("Lagrange", mesh.basix_cell(), 2, shape=(mesh.geometry.dim,))
-    P1 = element("Lagrange", mesh.basix_cell(), 1)
+    P2 = element(
+        "Lagrange", mesh.basix_cell(), 2, shape=(mesh.geometry.dim,), dtype=default_real_type
+    )
+    P1 = element("Lagrange", mesh.basix_cell(), 1, dtype=default_real_type)
     for i, P in enumerate((mixed_element([P2, P1]), mixed_element([P1, P2]))):
         W = functionspace(mesh, P)
         U = Function(W)
@@ -397,8 +399,10 @@ def test_mixed_sub_interpolation():
 def test_mixed_interpolation():
     """Test that mixed interpolation raised an exception."""
     mesh = one_cell_mesh(CellType.triangle)
-    A = element("Lagrange", mesh.basix_cell(), 1)
-    B = element("Lagrange", mesh.basix_cell(), 1, shape=(mesh.geometry.dim,))
+    A = element("Lagrange", mesh.basix_cell(), 1, dtype=default_real_type)
+    B = element(
+        "Lagrange", mesh.basix_cell(), 1, shape=(mesh.geometry.dim,), dtype=default_real_type
+    )
     v = Function(functionspace(mesh, mixed_element([A, B])))
     with pytest.raises(RuntimeError):
         v.interpolate(lambda x: (x[1], 2 * x[0], 3 * x[1]))
@@ -765,17 +769,27 @@ def test_interpolate_callable_subset(bound):
 @pytest.mark.parametrize(
     "scalar_element",
     [
-        element("P", "triangle", 1),
-        element("P", "triangle", 2),
-        element("P", "triangle", 3),
-        element("Q", "quadrilateral", 1),
-        element("Q", "quadrilateral", 2),
-        element("Q", "quadrilateral", 3),
-        element("S", "quadrilateral", 1),
-        element("S", "quadrilateral", 2),
-        element("S", "quadrilateral", 3),
-        enriched_element([element("P", "triangle", 1), element("Bubble", "triangle", 3)]),
-        enriched_element([element("P", "quadrilateral", 1), element("Bubble", "quadrilateral", 2)]),
+        element("P", "triangle", 1, dtype=default_real_type),
+        element("P", "triangle", 2, dtype=default_real_type),
+        element("P", "triangle", 3, dtype=default_real_type),
+        element("Q", "quadrilateral", 1, dtype=default_real_type),
+        element("Q", "quadrilateral", 2, dtype=default_real_type),
+        element("Q", "quadrilateral", 3, dtype=default_real_type),
+        element("S", "quadrilateral", 1, dtype=default_real_type),
+        element("S", "quadrilateral", 2, dtype=default_real_type),
+        element("S", "quadrilateral", 3, dtype=default_real_type),
+        enriched_element(
+            [
+                element("P", "triangle", 1, dtype=default_real_type),
+                element("Bubble", "triangle", 3, dtype=default_real_type),
+            ]
+        ),
+        enriched_element(
+            [
+                element("P", "quadrilateral", 1, dtype=default_real_type),
+                element("Bubble", "quadrilateral", 2, dtype=default_real_type),
+            ]
+        ),
     ],
 )
 def test_vector_element_interpolation(scalar_element):
@@ -821,6 +835,7 @@ def test_custom_vector_element():
         False,
         1,
         1,
+        dtype=default_real_type,
     )
 
     V = functionspace(mesh, e)
@@ -846,9 +861,11 @@ def test_mixed_interpolation_permuting(cell_type, order):
     x = ufl.SpatialCoordinate(mesh)
     dgdy = ufl.cos(x[1])
 
-    curl_el = element("N1curl", mesh.basix_cell(), 1)
-    vlag_el = element("Lagrange", mesh.basix_cell(), 1, shape=(mesh.geometry.dim,))
-    lagr_el = element("Lagrange", mesh.basix_cell(), order)
+    curl_el = element("N1curl", mesh.basix_cell(), 1, dtype=default_real_type)
+    vlag_el = element(
+        "Lagrange", mesh.basix_cell(), 1, shape=(mesh.geometry.dim,), dtype=default_real_type
+    )
+    lagr_el = element("Lagrange", mesh.basix_cell(), order, dtype=default_real_type)
 
     V = functionspace(mesh, mixed_element([curl_el, lagr_el]))
     Eb_m = Function(V)
