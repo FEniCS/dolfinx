@@ -29,7 +29,7 @@ import numpy as np
 
 import basix
 import basix.ufl
-from dolfinx import fem, mesh
+from dolfinx import default_real_type, fem, mesh
 from dolfinx.fem.petsc import LinearProblem
 from ufl import SpatialCoordinate, TestFunction, TrialFunction, cos, div, dx, grad, inner, sin
 
@@ -146,6 +146,7 @@ tnt_degree1 = basix.ufl.custom_element(
     False,
     1,
     2,
+    dtype=default_real_type,
 )
 
 # ## Creating higher degree TNT elements
@@ -228,6 +229,7 @@ def create_tnt_quad(degree):
         False,
         degree,
         degree + 1,
+        dtype=default_real_type,
     )
 
 

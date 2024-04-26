@@ -258,7 +258,7 @@ def test_curl_curl_eigenvalue(family, order):
         CellType.triangle,
     )
 
-    e = element(family, basix.CellType.triangle, order)
+    e = element(family, basix.CellType.triangle, order, dtype=default_real_type)
     V = functionspace(mesh, e)
 
     u = ufl.TrialFunction(V)
@@ -329,8 +329,8 @@ def test_biharmonic(family):
 
     e = mixed_element(
         [
-            element(family, basix.CellType.triangle, 1),
-            element(basix.ElementFamily.P, basix.CellType.triangle, 2),
+            element(family, basix.CellType.triangle, 1, dtype=default_real_type),
+            element(basix.ElementFamily.P, basix.CellType.triangle, 2, dtype=default_real_type),
         ]
     )
 

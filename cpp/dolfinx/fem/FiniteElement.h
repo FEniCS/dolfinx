@@ -18,8 +18,6 @@
 #include <utility>
 #include <vector>
 
-struct ufcx_finite_element;
-
 namespace dolfinx::fem
 {
 /// DOF transformation type
@@ -42,16 +40,27 @@ public:
   /// Geometry type of the Mesh that the FunctionSpace is defined on.
   using geometry_type = T;
 
-  /// @brief Create finite element from UFC finite element.
-  /// @param[in] e UFC finite element.
-  explicit FiniteElement(const ufcx_finite_element& e);
-
-  /// @brief Create finite element from a Basix finite element.
+  /// @brief Create a finite element from a Basix finite element.
   /// @param[in] element Basix finite element
   /// @param[in] block_size The block size for the element
   /// @param[in] symmetric Is the element a symmetric tensor?
   FiniteElement(const basix::FiniteElement<geometry_type>& element,
                 const std::size_t block_size, const bool symmetric = false);
+
+  /// @brief Create mixed finite element from a list of finite elements.
+  /// @param[in] elements Basix finite elements
+  FiniteElement(
+      const std::vector<std::shared_ptr<const FiniteElement<geometry_type>>>&
+          elements);
+
+  /// @brief Create a quadrature element
+  /// @param[in] cell_type The cell type
+  /// @param[in] points Quadrature points
+  /// @param[in] pshape Shape of points array
+  /// @param[in] block_size The block size for the element
+  FiniteElement(mesh::CellType cell_type, std::span<const geometry_type> points,
+                std::array<std::size_t, 2> pshape,
+                const std::size_t block_size);
 
   /// Copy constructor
   FiniteElement(const FiniteElement& element) = delete;
@@ -88,10 +97,6 @@ public:
   /// properties.
   std::string signature() const noexcept;
 
-  /// Cell shape
-  /// @return Element cell shape
-  mesh::CellType cell_shape() const noexcept;
-
   /// Dimension of the finite element function space (the number of
   /// degrees-of-freedom for the element)
   /// @return Dimension of the finite element space
@@ -109,7 +114,15 @@ public:
   int reference_value_size() const;
 
   /// The reference value shape
-  std::span<const std::size_t> reference_value_shape() const;
+  std::span<const std::size_t> reference_value_shape() const noexcept;
+
+  /// The local DOFs associated with each subentity of the cell
+  const std::vector<std::vector<std::vector<int>>>&
+  entity_dofs() const noexcept;
+
+  /// The local DOFs associated with the closure of each subentity of the cell
+  const std::vector<std::vector<std::vector<int>>>&
+  entity_closure_dofs() const noexcept;
 
   /// Does the element represent a symmetric 2-tensor?
   bool symmetric() const;
@@ -315,25 +328,25 @@ public:
         // Mixed element
         std::vector<std::function<void(
             std::span<U>, std::span<const std::uint32_t>, std::int32_t, int)>>
-            sub_element_functions;
+            sub_element_fns;
         std::vector<int> dims;
         for (std::size_t i = 0; i < _sub_elements.size(); ++i)
         {
-          sub_element_functions.push_back(
+          sub_element_fns.push_back(
               _sub_elements[i]->template dof_transformation_fn<U>(ttype));
           dims.push_back(_sub_elements[i]->space_dimension());
         }
 
-        return [dims, sub_element_functions](
-                   std::span<U> data, std::span<const std::uint32_t> cell_info,
-                   std::int32_t cell, int block_size)
+        return [dims, sub_element_fns](std::span<U> data,
+                                       std::span<const std::uint32_t> cell_info,
+                                       std::int32_t cell, int block_size)
         {
           std::size_t offset = 0;
-          for (std::size_t e = 0; e < sub_element_functions.size(); ++e)
+          for (std::size_t e = 0; e < sub_element_fns.size(); ++e)
           {
             const std::size_t width = dims[e] * block_size;
-            sub_element_functions[e](data.subspan(offset, width), cell_info,
-                                     cell, block_size);
+            sub_element_fns[e](data.subspan(offset, width), cell_info, cell,
+                               block_size);
             offset += width;
           }
         };
@@ -343,13 +356,12 @@ public:
         // Blocked element
         std::function<void(std::span<U>, std::span<const std::uint32_t>,
                            std::int32_t, int)>
-            sub_function
-            = _sub_elements[0]->template dof_transformation_fn<U>(ttype);
+            sub_fn = _sub_elements[0]->template dof_transformation_fn<U>(ttype);
         const int ebs = _bs;
-        return [ebs, sub_function](std::span<U> data,
-                                   std::span<const std::uint32_t> cell_info,
-                                   std::int32_t cell, int data_block_size)
-        { sub_function(data, cell_info, cell, ebs * data_block_size); };
+        return [ebs, sub_fn](std::span<U> data,
+                             std::span<const std::uint32_t> cell_info,
+                             std::int32_t cell, int data_block_size)
+        { sub_fn(data, cell_info, cell, ebs * data_block_size); };
       }
     }
 
@@ -420,22 +432,22 @@ public:
         // Mixed element
         std::vector<std::function<void(
             std::span<U>, std::span<const std::uint32_t>, std::int32_t, int)>>
-            sub_element_functions;
+            sub_element_fns;
         for (std::size_t i = 0; i < _sub_elements.size(); ++i)
         {
-          sub_element_functions.push_back(
+          sub_element_fns.push_back(
               _sub_elements[i]->template dof_transformation_right_fn<U>(ttype));
         }
 
-        return [this, sub_element_functions](
-                   std::span<U> data, std::span<const std::uint32_t> cell_info,
-                   std::int32_t cell, int block_size)
+        return [this, sub_element_fns](std::span<U> data,
+                                       std::span<const std::uint32_t> cell_info,
+                                       std::int32_t cell, int block_size)
         {
           std::size_t offset = 0;
-          for (std::size_t e = 0; e < sub_element_functions.size(); ++e)
+          for (std::size_t e = 0; e < sub_element_fns.size(); ++e)
           {
-            sub_element_functions[e](data.subspan(offset, data.size() - offset),
-                                     cell_info, cell, block_size);
+            sub_element_fns[e](data.subspan(offset, data.size() - offset),
+                               cell_info, cell, block_size);
             offset += _sub_elements[e]->space_dimension();
           }
         };
@@ -449,18 +461,17 @@ public:
         // transformation from the left to data using xxxyyyzzz ordering
         std::function<void(std::span<U>, std::span<const std::uint32_t>,
                            std::int32_t, int)>
-            sub_function
-            = _sub_elements[0]->template dof_transformation_fn<U>(ttype);
-        return [this, sub_function](std::span<U> data,
-                                    std::span<const std::uint32_t> cell_info,
-                                    std::int32_t cell, int data_block_size)
+            sub_fn = _sub_elements[0]->template dof_transformation_fn<U>(ttype);
+        return [this, sub_fn](std::span<U> data,
+                              std::span<const std::uint32_t> cell_info,
+                              std::int32_t cell, int data_block_size)
         {
           const int ebs = block_size();
           const std::size_t dof_count = data.size() / data_block_size;
           for (int block = 0; block < data_block_size; ++block)
           {
-            sub_function(data.subspan(block * dof_count, dof_count), cell_info,
-                         cell, ebs);
+            sub_fn(data.subspan(block * dof_count, dof_count), cell_info, cell,
+                   ebs);
           }
         };
       }
@@ -706,8 +717,6 @@ public:
 private:
   std::string _signature;
 
-  mesh::CellType _cell_shape;
-
   int _space_dim;
 
   // List of sub-elements (if any)
@@ -724,6 +733,9 @@ private:
   // Indicate whether this is a mixed element
   bool _is_mixed;
 
+  // Basix Element (nullptr for mixed elements)
+  std::unique_ptr<basix::FiniteElement<geometry_type>> _element;
+
   // Indicate whether this element represents a symmetric 2-tensor
   bool _symmetric;
 
@@ -731,8 +743,8 @@ private:
   bool _needs_dof_permutations;
   bool _needs_dof_transformations;
 
-  // Basix Element (nullptr for mixed elements)
-  std::unique_ptr<basix::FiniteElement<geometry_type>> _element;
+  std::vector<std::vector<std::vector<int>>> _entity_dofs;
+  std::vector<std::vector<std::vector<int>>> _entity_closure_dofs;
 
   // Quadrature points of a quadrature element (0 dimensional array for
   // all elements except quadrature elements)
