@@ -220,12 +220,16 @@ def run_dg_test(mesh, V, degree):
 
     # Create linear solver
     solver = PETSc.KSP().create(MPI.COMM_WORLD)
-    solver.setTolerances(rtol=1e-12)
+    solver.setType("preonly")
+    pc = solver.getPC()
+    pc.setType("lu")
+    pc.setFactorSolverType("mumps")
     solver.setOperators(A)
 
     # Solve
     uh = Function(V)
     solver.solve(b, uh.x.petsc_vec)
+    assert solver.getConvergedReason() > 0
     uh.x.scatter_forward()
 
     # Calculate error
