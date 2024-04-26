@@ -84,7 +84,6 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get install catch2 cmake g++ libboost-dev libboost-filesystem-dev libboost-timer-dev libhdf5-mpi-dev libparmetis-dev libpugixml-dev mpi-default-dev ninja-build pkg-config
-          # apt-get install python3-dev python3-pip python3-setuptools
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -130,7 +129,7 @@ jobs:
         run: pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
 
       - name: Install Python test dependencies
-        run: pip install matplotlib pytest
+        run: pip install matplotlib pytest scipy
       - name: Run demos
         run: |
           python python/demo/demo_interpolation-io.py
