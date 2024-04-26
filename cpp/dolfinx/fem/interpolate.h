@@ -31,9 +31,19 @@ class Function;
 template <typename T>
 concept MDSpan = requires(T x, std::size_t idx) {
   x(idx, idx);
-  { x.extent(0) } -> std::integral;
+  {
+    x.extent(0)
+  } -> std::integral;
 
-  { x.extent(1) } -> std::integral;
+  {
+    x.extent(1)
+  } -> std::integral;
+};
+
+enum class InterpolationType
+{
+  unset,      // Interpolation between meshes related with a cell map
+  nonmatching // Interpolation between nonmatching meshes;
 };
 
 /// @brief Compute the evaluation points in the physical space at which
@@ -1182,7 +1192,8 @@ void interpolate(
     const std::tuple<std::span<const std::int32_t>,
                      std::span<const std::int32_t>, std::span<const U>,
                      std::span<const std::int32_t>>& nmm_interpolation_data
-    = {})
+    = {},
+    InterpolationType interpolation_type = InterpolationType::unset)
 {
   assert(u1.function_space());
   assert(u0.function_space());
@@ -1216,7 +1227,7 @@ void interpolate(
                      [&cell_map](std::int32_t c) { return cell_map[c]; });
     }
     // Non-matching meshes
-    if (cells0.empty())
+    if (interpolation_type == InterpolationType::nonmatching)
     {
       impl::interpolate_nonmatching_meshes(u1, u0, cells1,
                                            nmm_interpolation_data);

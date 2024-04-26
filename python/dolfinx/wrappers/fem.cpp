@@ -394,7 +394,8 @@ void declare_objects(nb::module_& m, const std::string& type)
                  nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>,
                  nb::ndarray<const U, nb::ndim<1>, nb::c_contig>,
                  nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>>&
-                 interpolation_data)
+                 interpolation_data,
+             dolfinx::fem::InterpolationType interpolation_type)
           {
             std::tuple<std::span<const std::int32_t>,
                        std::span<const std::int32_t>, std::span<const U>,
@@ -413,10 +414,10 @@ void declare_objects(nb::module_& m, const std::string& type)
                         std::get<3>(interpolation_data).size()));
             self.interpolate(u, std::span(cells.data(), cells.size()),
                              std::span(cell_map.data(), cell_map.size()),
-                             _interpolation_data);
+                             _interpolation_data, interpolation_type);
           },
           nb::arg("u"), nb::arg("cells"), nb::arg("cell_map"),
-          nb::arg("nmm_interpolation_data"),
+          nb::arg("nmm_interpolation_data"), nb::arg("interpolation_type"),
           "Interpolate a finite element function")
       .def(
           "interpolate_ptr",
@@ -455,14 +456,17 @@ void declare_objects(nb::module_& m, const std::string& type)
              const dolfinx::fem::Expression<T, U>& expr,
              nb::ndarray<const std::int32_t, nb::c_contig> cells,
              const dolfinx::mesh::Mesh<U>& expr_mesh,
-             nb::ndarray<const std::int32_t, nb::c_contig> cell_map)
+             nb::ndarray<const std::int32_t, nb::c_contig> cell_map,
+             dolfinx::fem::InterpolationType interpolation_type)
           {
             self.interpolate(expr, std::span(cells.data(), cells.size()),
                              expr_mesh,
-                             std::span(cell_map.data(), cell_map.size()));
+                             std::span(cell_map.data(), cell_map.size()),
+                             interpolation_type);
           },
           nb::arg("expr"), nb::arg("cells"), nb::arg("expr_mesh"),
-          nb::arg("cell_map"), "Interpolate an Expression on a set of cells")
+          nb::arg("cell_map"), nb::arg("interpolation_type"),
+          "Interpolate an Expression on a set of cells")
       .def_prop_ro(
           "x", nb::overload_cast<>(&dolfinx::fem::Function<T, U>::x),
           "Return the vector associated with the finite element Function")
@@ -1221,6 +1225,10 @@ void fem(nb::module_& m)
       .value("interior_facet", dolfinx::fem::IntegralType::interior_facet,
              "exterior facet integral")
       .value("vertex", dolfinx::fem::IntegralType::vertex, "vertex integral");
+
+  nb::enum_<dolfinx::fem::InterpolationType>(m, "InterpolationType")
+      .value("unset", dolfinx::fem::InterpolationType::unset)
+      .value("nonmatching", dolfinx::fem::InterpolationType::nonmatching);
 
   declare_function_space<float>(m, "float32");
   declare_function_space<double>(m, "float64");

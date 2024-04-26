@@ -19,6 +19,8 @@ import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit, la
 from dolfinx.fem import dofmap
+from dolfinx.cpp.fem import InterpolationType
+
 
 if typing.TYPE_CHECKING:
     from mpi4py import MPI as _MPI
@@ -419,6 +421,7 @@ class Function(ufl.Coefficient):
         cell_map: typing.Optional[np.ndarray] = None,
         expr_mesh: typing.Optional[Mesh] = None,
         nmm_interpolation_data: typing.Optional[PointOwnershipData] = None,
+        interpolation_type: InterpolationType = InterpolationType.unset,
     ) -> None:
         """Interpolate an expression
 
@@ -431,8 +434,14 @@ class Function(ufl.Coefficient):
                 than the function is supplied, the mesh associated with this expression has
                 to be provided, along with `cell_map.`
             nmm_interpolation_data: Data needed to interpolate functions defined on other meshes
+            interpolation_type: If interpolation should be done using NMM, this parameter
+            has to be set to `nonmatching`
         """
-        if nmm_interpolation_data is None:
+        if interpolation_type == InterpolationType.nonmatching:
+            if nmm_interpolation_data is None:
+                 raise RuntimeError(
+                     "For non-matching interpolation one has to supply point ownership data")
+        else:
             x_dtype = self.function_space.mesh.geometry.x.dtype
             nmm_interpolation_data = PointOwnershipData(
                 src_owner=np.empty(0, dtype=np.int32),
@@ -446,8 +455,6 @@ class Function(ufl.Coefficient):
             map = mesh.topology.index_map(mesh.topology.dim)
             cells = np.arange(map.size_local + map.num_ghosts, dtype=np.int32)
 
-        if cell_map is None:
-            cell_map = np.empty(0, dtype=np.int32)
 
         @singledispatch
         def _interpolate(u, cells: typing.Optional[np.ndarray] = None):
@@ -461,6 +468,8 @@ class Function(ufl.Coefficient):
                 _cell_map = np.zeros(0, dtype=np.int32)
             else:
                 _cell_map = cell_map
+            self._cpp_object.interpolate(u._cpp_object, cells, _cell_map, nmm_interpolation_data,
+                                         interpolation_type)  # type: ignore
 
         @_interpolate.register(int)
         def _(u_ptr: int, cells: typing.Optional[np.ndarray] = None):
@@ -475,8 +484,7 @@ class Function(ufl.Coefficient):
                 cells: The cells to interpolate over. If `None` then all
                     cells are interpolated over.
             """
-            assert cell_map is not None
-            if len(cell_map) == 0:
+            if cell_map is None:
                 # If cell map is not provided create identity map
                 assert cells is not None
                 expr_cell_map = np.arange(len(cells), dtype=np.int32)
@@ -488,7 +496,8 @@ class Function(ufl.Coefficient):
                 expr_cell_map = cell_map
                 assert expr_mesh is not None
                 mapping_mesh = expr_mesh._cpp_object
-            self._cpp_object.interpolate(expr._cpp_object, cells, mapping_mesh, expr_cell_map)  # type: ignore
+            self._cpp_object.interpolate(expr._cpp_object, cells, mapping_mesh,
+                                         expr_cell_map, interpolation_type)  # type: ignore
 
         try:
             # u is a Function or Expression (or pointer to one)

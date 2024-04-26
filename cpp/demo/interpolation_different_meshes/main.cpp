@@ -75,7 +75,8 @@ int main(int argc, char* argv[])
             *u_hex->function_space()->element(),
             *u_tet->function_space()->mesh(), padding);
     constexpr std::span<const std::int32_t> cell_map;
-    u_hex->interpolate(*u_tet, cell_map, nmm_interpolation_data);
+    u_hex->interpolate(*u_tet, cell_map, nmm_interpolation_data,
+                       fem::InterpolationType::nonmatching);
 
 #ifdef HAS_ADIOS2
     io::VTXWriter<double> write_tet(mesh_tet->comm(), "u_tet.bp", {u_tet});

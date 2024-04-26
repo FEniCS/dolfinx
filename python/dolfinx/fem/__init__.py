@@ -12,7 +12,7 @@ import numpy.typing as npt
 
 from dolfinx.cpp.fem import FiniteElement_float32 as _FiniteElement_float32
 from dolfinx.cpp.fem import FiniteElement_float64 as _FiniteElement_float64
-from dolfinx.cpp.fem import IntegralType, transpose_dofmap
+from dolfinx.cpp.fem import IntegralType, InterpolationType, transpose_dofmap
 from dolfinx.cpp.fem import (
     create_nonmatching_meshes_interpolation_data as _create_nonmatching_meshes_interpolation_data,
 )
@@ -141,6 +141,7 @@ __all__ = [
     "Form",
     "form",
     "IntegralType",
+    "InterpolationType",
     "create_vector",
     "locate_dofs_geometrical",
     "locate_dofs_topological",
