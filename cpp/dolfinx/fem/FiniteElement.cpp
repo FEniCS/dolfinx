@@ -25,7 +25,7 @@ namespace
 template <std::floating_point T>
 std::shared_ptr<const FiniteElement<T>>
 _extract_sub_element(const FiniteElement<T>& finite_element,
-                     const std::vector<int>& component)
+                     std::span<const int> component)
 {
   // Check that a sub system has been specified
   if (component.empty())
