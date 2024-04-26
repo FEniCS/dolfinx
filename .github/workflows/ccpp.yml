@@ -37,7 +37,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install  linting tools
-        run: pip install clang-format cmake-format mypy ruff
+        run: pip install clang-format cmake-format[YAML] mypy ruff
       - name: ruff .py files in C++ code
         run: |
           cd cpp/
