@@ -83,6 +83,7 @@ execute_process(
 if(NOT PETSC4PY_COMMAND_RESULT)
   message(STATUS "Found petsc4py include directory at ${PETSC4PY_INCLUDE_DIR}")
   target_include_directories(cpp PRIVATE ${PETSC4PY_INCLUDE_DIR})
+  target_compile_definitions(cpp PRIVATE HAS_PETSC4PY)
 else()
   message(STATUS "petsc4py not found.")
 endif()

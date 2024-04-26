@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#ifdef HAS_PETSC
+#if defined(HAS_PETSC) &&  defined(HAS_PETSC4PY)
 
 #include "array.h"
 #include "caster_mpi.h"

@@ -6,7 +6,7 @@
 
 #pragma once
 
-#ifdef HAS_PETSC
+#if defined(HAS_PETSC) &&  defined(HAS_PETSC4PY)
 
 #include <nanobind/nanobind.h>
 #include <petsc4py/petsc4py.h>
