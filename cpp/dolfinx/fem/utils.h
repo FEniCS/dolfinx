@@ -251,8 +251,14 @@ ElementDofLayout create_element_dof_layout(const fem::FiniteElement<T>& element,
 
   for (int i = 0; i < element.num_sub_elements(); ++i)
   {
+    // The ith sub-element. For mixed elements this is subelements()[i]. For
+    // blocked elements, the sub-element will always be the same, so we'll use
+    // sub_elements()[0]
     std::shared_ptr<const fem::FiniteElement<T>> sub_e
         = element.sub_elements()[element.block_size() > 1 ? 0 : i];
+    // In a mixed element DOFs are ordered element by element, so the offset to
+    // the next sub-element is sub_e->space_dimension(). Blocked elements use
+    // xxyyzz ordering, so the offset to the next sub-element is 1
     offsets.push_back(
         offsets.back()
         + (element.block_size() > 1 ? 1 : sub_e->space_dimension()));
