@@ -18,9 +18,8 @@ import basix
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit, la
-from dolfinx.fem import dofmap
 from dolfinx.cpp.fem import InterpolationType
-
+from dolfinx.fem import dofmap
 
 if typing.TYPE_CHECKING:
     from mpi4py import MPI as _MPI
@@ -439,8 +438,9 @@ class Function(ufl.Coefficient):
         """
         if interpolation_type == InterpolationType.nonmatching:
             if nmm_interpolation_data is None:
-                 raise RuntimeError(
-                     "For non-matching interpolation one has to supply point ownership data")
+                raise RuntimeError(
+                    "For non-matching interpolation one has to supply point ownership data"
+                )
         else:
             x_dtype = self.function_space.mesh.geometry.x.dtype
             nmm_interpolation_data = PointOwnershipData(
@@ -455,7 +455,6 @@ class Function(ufl.Coefficient):
             map = mesh.topology.index_map(mesh.topology.dim)
             cells = np.arange(map.size_local + map.num_ghosts, dtype=np.int32)
 
-
         @singledispatch
         def _interpolate(u, cells: typing.Optional[np.ndarray] = None):
             """Interpolate a cpp.fem.Function"""
@@ -468,8 +467,9 @@ class Function(ufl.Coefficient):
                 _cell_map = np.zeros(0, dtype=np.int32)
             else:
                 _cell_map = cell_map
-            self._cpp_object.interpolate(u._cpp_object, cells, _cell_map, nmm_interpolation_data,
-                                         interpolation_type)  # type: ignore
+            self._cpp_object.interpolate(
+                u._cpp_object, cells, _cell_map, nmm_interpolation_data, interpolation_type
+            )  # type: ignore
 
         @_interpolate.register(int)
         def _(u_ptr: int, cells: typing.Optional[np.ndarray] = None):
@@ -496,8 +496,9 @@ class Function(ufl.Coefficient):
                 expr_cell_map = cell_map
                 assert expr_mesh is not None
                 mapping_mesh = expr_mesh._cpp_object
-            self._cpp_object.interpolate(expr._cpp_object, cells, mapping_mesh,
-                                         expr_cell_map, interpolation_type)  # type: ignore
+            self._cpp_object.interpolate(
+                expr._cpp_object, cells, mapping_mesh, expr_cell_map, interpolation_type
+            )  # type: ignore
 
         try:
             # u is a Function or Expression (or pointer to one)
