@@ -1,12 +1,13 @@
-# The DOLFINx Python interface must be built without build isolation (PEP517)
-# due to its runtime and build time dependency on system built petsc4py and
-# mpi4py.
+# NOTE: The DOLFINx Python interface must be built without build
+# isolation (PEP517) due to its runtime and build time dependency on
+# system built petsc4py and mpi4py.
+# NOTE: petsc4py is an optional build dependency, therefore we don't
+# list it here.
 # pip install -r build-requirements.txt
 [build-system]
 requires = [
       "scikit-build-core[pyproject]>=0.5",
       "nanobind>=1.8.0",
-      "petsc4py",
       "mpi4py",
 ]
 build-backend = "scikit_build_core.build"
@@ -25,7 +26,6 @@ authors = [
 dependencies = [
       "numpy>=1.21",
       "cffi",
-      "petsc4py",
       "mpi4py",
       "fenics-basix>=0.9.0.dev0,<0.10.0",
       "fenics-ffcx>=0.9.0.dev0,<0.10.0",
@@ -36,6 +36,7 @@ dependencies = [
 docs = ["markdown", "pyyaml", "sphinx", "sphinx_rtd_theme"]
 lint = ["ruff"]
 optional = ["numba"]
+petsc4py = ["petsc4py"]
 test = ["pytest", "sympy", "scipy", "matplotlib", "fenics-dolfinx[optional]"]
 ci = [
       "mypy",
