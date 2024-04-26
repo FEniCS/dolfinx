@@ -25,7 +25,7 @@ namespace
 template <std::floating_point T>
 std::shared_ptr<const FiniteElement<T>>
 _extract_sub_element(const FiniteElement<T>& finite_element,
-                     const std::vector<int>& component)
+                     std::span<const int> component)
 {
   // Check that a sub system has been specified
   if (component.empty())
@@ -74,11 +74,11 @@ FiniteElement<T>::FiniteElement(mesh::CellType cell_type,
       _space_dim(pshape[0] * block_size), _reference_value_shape({}),
       _bs(block_size), _is_mixed(false), _symmetric(false),
       _needs_dof_permutations(false), _needs_dof_transformations(false),
+      _entity_dofs(mesh::cell_dim(cell_type) + 1),
+      _entity_closure_dofs(mesh::cell_dim(cell_type) + 1),
       _points(std::vector<T>(points.begin(), points.end()), pshape)
 {
   const int tdim = mesh::cell_dim(cell_type);
-  _entity_dofs.resize(tdim + 1);
-  _entity_closure_dofs.resize(tdim + 1);
   for (int d = 0; d <= tdim; ++d)
   {
     int num_entities = mesh::cell_num_entities(cell_type, d);
@@ -307,7 +307,7 @@ FiniteElement<T>::sub_elements() const noexcept
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
 std::shared_ptr<const FiniteElement<T>>
-FiniteElement<T>::extract_sub_element(const std::vector<int>& component) const
+FiniteElement<T>::extract_sub_element(std::span<const int> component) const
 {
   // Recursively extract sub element
   auto sub_finite_element = _extract_sub_element(*this, component);
