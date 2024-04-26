@@ -234,6 +234,20 @@ FiniteElement<T>::reference_value_shape() const noexcept
 }
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
+const std::vector<std::vector<std::vector<int>>>&
+FiniteElement<T>::entity_dofs() const noexcept
+{
+  return _entity_dofs;
+}
+//-----------------------------------------------------------------------------
+template <std::floating_point T>
+const std::vector<std::vector<std::vector<int>>>&
+FiniteElement<T>::entity_closure_dofs() const noexcept
+{
+  return _entity_closure_dofs;
+}
+//-----------------------------------------------------------------------------
+template <std::floating_point T>
 bool FiniteElement<T>::symmetric() const
 {
   return _symmetric;

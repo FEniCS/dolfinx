@@ -117,17 +117,12 @@ public:
   std::span<const std::size_t> reference_value_shape() const noexcept;
 
   /// The local DOFs associated with each subentity of the cell
-  const std::vector<std::vector<std::vector<int>>>& entity_dofs() const noexcept
-  {
-    return _entity_dofs;
-  }
+  const std::vector<std::vector<std::vector<int>>>&
+  entity_dofs() const noexcept;
 
   /// The local DOFs associated with the closure of each subentity of the cell
   const std::vector<std::vector<std::vector<int>>>&
-  entity_closure_dofs() const noexcept
-  {
-    return _entity_closure_dofs;
-  }
+  entity_closure_dofs() const noexcept;
 
   /// Does the element represent a symmetric 2-tensor?
   bool symmetric() const;
