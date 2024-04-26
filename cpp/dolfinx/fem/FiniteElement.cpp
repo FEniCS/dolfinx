@@ -109,7 +109,7 @@ FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
           !_element->dof_transformations_are_identity()
           and !_element->dof_transformations_are_permutations()),
       _entity_dofs(element.entity_dofs()),
-      _entity_closure_dofs(element.entity_dofs())
+      _entity_closure_dofs(element.entity_closure_dofs())
 {
   // Create all sub-elements
   if (_bs > 1)
