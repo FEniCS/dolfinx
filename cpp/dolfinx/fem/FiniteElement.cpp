@@ -107,26 +107,10 @@ FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
           and _element->dof_transformations_are_permutations()),
       _needs_dof_transformations(
           !_element->dof_transformations_are_identity()
-          and !_element->dof_transformations_are_permutations())
+          and !_element->dof_transformations_are_permutations()),
+      _entity_dofs(element.entity_dofs()),
+      _entity_closure_dofs(element.entity_closure_dofs())
 {
-  const std::vector<std::vector<std::vector<int>>> ed = element.entity_dofs();
-  const std::vector<std::vector<std::vector<int>>> ecd
-      = element.entity_closure_dofs();
-  _entity_dofs.resize(ed.size());
-  _entity_closure_dofs.resize(ed.size());
-  for (std::size_t i = 0; i < ed.size(); ++i)
-  {
-    _entity_dofs[i].resize(ed[i].size());
-    _entity_closure_dofs[i].resize(ed[i].size());
-    for (std::size_t j = 0; j < ed[i].size(); ++j)
-    {
-      for (std::size_t k : ed[i][j])
-        _entity_dofs[i][j].push_back(k);
-      for (std::size_t k : ecd[i][j])
-        _entity_closure_dofs[i][j].push_back(k);
-    }
-  }
-
   // Create all sub-elements
   if (_bs > 1)
   {
