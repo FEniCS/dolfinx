@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2022 Garth N. Wells, Igor A. Baratta, Massimiliano Leoni
+// Copyright (C) 2020-2024 Garth N. Wells, Igor A. Baratta, Massimiliano Leoni
 // and Jørgen S.Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
@@ -40,6 +40,7 @@ concept MDSpan = requires(T x, std::size_t idx) {
   } -> std::integral;
 };
 
+/// Interpolation type identifier
 enum class InterpolationType
 {
   unset,      // Interpolation between meshes related with a cell map
