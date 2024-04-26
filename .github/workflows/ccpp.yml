@@ -30,9 +30,14 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-latest
-    container: ghcr.io/fenics/test-env:current-openmpi
     steps:
       - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install linting tools
+        run: pip install clang-format cmake-format[YAML] mypy ruff
       - name: ruff .py files in C++ code
         run: |
           cd cpp/
