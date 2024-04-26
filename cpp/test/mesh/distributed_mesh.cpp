@@ -124,7 +124,6 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
   // Read mesh data from file on sub-communicator
   std::vector<T> x;
   std::array<std::size_t, 2> xshape = {0, 2};
-  std::array<std::size_t, 2> cshape = {0, 3};
   std::vector<std::int64_t> cells;
   if (subset_comm != MPI_COMM_NULL)
   {
