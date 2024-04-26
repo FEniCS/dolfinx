@@ -132,7 +132,7 @@ jobs:
         run: python -c "import dolfinx; print(dolfinx.__version__)"
       - name: Run demos
         run: |
-          python python/demo/demo_interpolation-i.py
+          python python/demo/demo_interpolation-io.py
           python python/demo/demo_lagrange_variants.py
       - name: Install Python test dependencies
         run: pip install pytest
