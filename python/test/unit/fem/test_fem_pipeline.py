@@ -223,7 +223,7 @@ def run_dg_test(mesh, V, degree):
     solver.setType("preonly")
     pc = solver.getPC()
     pc.setType("lu")
-    pc.setFactorSolverType("mumps")
+    pc.setFactorSolverType("petsc")
     solver.setOperators(A)
 
     # Solve
