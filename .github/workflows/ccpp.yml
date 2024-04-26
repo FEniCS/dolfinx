@@ -128,14 +128,13 @@ jobs:
         run: pip install mpi4py nanobind scikit-build-core[pyproject]
       - name: Build Python interface
         run: pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
-      - name: Test Python import
-        run: python -c "import dolfinx; print(dolfinx.__version__)"
+
+      - name: Install Python test dependencies
+        run: pip install matplotlib pytest
       - name: Run demos
         run: |
           python python/demo/demo_interpolation-io.py
           python python/demo/demo_lagrange_variants.py
-      - name: Install Python test dependencies
-        run: pip install pytest
       - name: Run unit tests
         run: |
           pytest pytest --ignore=python/test/unit/nls --ignore=python/test/unit/fem   --ignore=python/test/unit/la python/test/unit  python/test/unit/
