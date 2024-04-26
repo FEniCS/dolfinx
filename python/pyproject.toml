@@ -2,7 +2,7 @@
 # isolation (PEP517) due to its runtime and build time dependency on
 # system built petsc4py and mpi4py.
 # NOTE: petsc4py is an optional build dependency, therefore we don't
-# list here.
+# list it here.
 # pip install -r build-requirements.txt
 [build-system]
 requires = [
