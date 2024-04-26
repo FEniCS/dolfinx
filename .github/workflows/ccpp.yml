@@ -124,7 +124,7 @@ jobs:
           cd build/test
           mpirun -n 3 ctest -V --output-on-failure -R unittests
 
-      - name: Install Python dependnecies
+      - name: Install Python build dependencies
         run: pip install scikit-build-core[pyproject] mpi4py nanobind scikit-build-core[pyproject]
       - name: Build Python interface
         run: pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
