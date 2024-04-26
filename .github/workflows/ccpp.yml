@@ -104,7 +104,7 @@ jobs:
       - name: Build and install C++ library
         run: |
           cmake --build build
-          cmake --install build
+          sudo cmake --install build
       - name: Build C++ unit tests
         run: |
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
