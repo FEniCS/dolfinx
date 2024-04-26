@@ -220,9 +220,10 @@ def run_dg_test(mesh, V, degree):
 
     # Create linear solver
     solver = PETSc.KSP().create(MPI.COMM_WORLD)
-    solver.setType("preonly")
+    solver.setType("cg")
     pc = solver.getPC()
-    pc.setType("lu")
+    pc.setType("jacobi")
+    solver.setTolerances(rtol=1e-12, atol=1e-12)
     pc.setFactorSolverType("petsc")
     solver.setOperators(A)
 
