@@ -124,10 +124,12 @@ jobs:
           cd build/test
           mpirun -n 3 ctest -V --output-on-failure -R unittests
 
+      - name: Install Python dependnecies
+        run: pip install scikit-build-core[pyproject] mpi4py nanobind scikit-build-core[pyproject]
       - name: Build Python interface
-        run: python3 -m pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
+        run: pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
       - name: Test Python import
-        run: python3 -c "import dolfinx; print(dolfinx.__version__)"
+        run: python -c "import dolfinx; print(dolfinx.__version__)"
 
   build-with-petsc:
     runs-on: ubuntu-latest
