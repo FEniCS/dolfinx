@@ -69,26 +69,33 @@ jobs:
   build:
     runs-on: ubuntu-latest
     needs: lint
-    container: ghcr.io/fenics/test-env:current-openmpi
     env:
-      SCOTCH_DIR: /usr/local/petsc/linux-gnu-real64-32
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
       PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
 
     steps:
+      - name: Install dependencies
+        run: |
+          apt-get install catch2 cmake g++ libboost-dev libboost-filesystem-dev libboost-timer-dev libhdf5-mpi-dev libparmetis-dev libpugixml-dev mpi-default-dev ninja-build pkg-config
+          # apt-get install python3-dev python3-pip python3-setuptools
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
         run: |
-          python3 -m pip install git+https://github.com/FEniCS/ufl.git
-          python3 -m pip install git+https://github.com/FEniCS/basix.git
-          python3 -m pip install git+https://github.com/FEniCS/ffcx.git
+          pip install git+https://github.com/FEniCS/ufl.git
+          pip install git+https://github.com/FEniCS/basix.git
+          pip install git+https://github.com/FEniCS/ffcx.git
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
         run: |
-          python3 -m pip install git+https://github.com/FEniCS/ufl.git@${{ github.event.inputs.ufl_ref }}
-          python3 -m pip install git+https://github.com/FEniCS/basix.git@${{ github.event.inputs.basix_ref }}
-          python3 -m pip install git+https://github.com/FEniCS/ffcx.git@${{ github.event.inputs.ffcx_ref }}
+          pip install git+https://github.com/FEniCS/ufl.git@${{ github.event.inputs.ufl_ref }}
+          pip install git+https://github.com/FEniCS/basix.git@${{ github.event.inputs.basix_ref }}
+          pip install git+https://github.com/FEniCS/ffcx.git@${{ github.event.inputs.ffcx_ref }}
 
       - uses: actions/checkout@v4
 
