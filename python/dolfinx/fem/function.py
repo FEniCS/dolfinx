@@ -457,7 +457,10 @@ class Function(ufl.Coefficient):
         @_interpolate.register(Function)
         def _(u: Function, cells: typing.Optional[np.ndarray] = None):
             """Interpolate a fem.Function"""
-            self._cpp_object.interpolate(u._cpp_object, cells, cell_map, nmm_interpolation_data)  # type: ignore
+            if cell_map is None:
+                _cell_map = np.zeros(0, dtype=np.int32)
+            else:
+                _cell_map = cell_map
 
         @_interpolate.register(int)
         def _(u_ptr: int, cells: typing.Optional[np.ndarray] = None):
