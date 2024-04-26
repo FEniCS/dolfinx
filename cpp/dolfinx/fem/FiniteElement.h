@@ -179,7 +179,7 @@ public:
 
   /// Extract sub finite element for component
   std::shared_ptr<const FiniteElement<geometry_type>>
-  extract_sub_element(std::span<const int> component) const;
+  extract_sub_element(const std::vector<int>& component) const;
 
   /// @brief Return underlying Basix element (if it exists).
   /// @throws Throws a std::runtime_error is there no Basix element.
