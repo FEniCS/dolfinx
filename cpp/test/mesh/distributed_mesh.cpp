@@ -131,7 +131,7 @@ void test_distributed_mesh(mesh::CellPartitionFunction partitioner)
     io::XDMFFile infile(subset_comm, "mesh.xdmf", "r");
     auto [_cells, _cshape] = infile.read_topology_data("mesh");
     auto [_x, _xshape] = infile.read_geometry_data("mesh");
-    assert(_cshape[1] == cshape[1]);
+    CHECK(_cshape[1] == cshape[1]);
     x = std::move(std::get<std::vector<T>>(_x));
     cells = std::move(_cells);
   }
