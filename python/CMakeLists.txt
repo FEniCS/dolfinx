@@ -84,7 +84,7 @@ if(NOT PETSC4PY_COMMAND_RESULT)
   message(STATUS "Found petsc4py include directory at ${PETSC4PY_INCLUDE_DIR}")
   target_include_directories(cpp PRIVATE ${PETSC4PY_INCLUDE_DIR})
 else()
-  message(FATAL_ERROR "petsc4py could not be found.")
+  message(STATUS "petsc4py not found.")
 endif()
 
 # Check for mpi4py
