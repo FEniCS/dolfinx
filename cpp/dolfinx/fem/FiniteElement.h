@@ -117,13 +117,14 @@ public:
   std::span<const std::size_t> reference_value_shape() const noexcept;
 
   /// The local DOFs associated with each subentity of the cell
-  std::vector<std::vector<std::vector<int>>> entity_dofs() const
+  const std::vector<std::vector<std::vector<int>>>& entity_dofs() const noexcept
   {
     return _entity_dofs;
   }
 
   /// The local DOFs associated with the closure of each subentity of the cell
-  std::vector<std::vector<std::vector<int>>> entity_closure_dofs() const
+  const std::vector<std::vector<std::vector<int>>>&
+  entity_closure_dofs() const noexcept
   {
     return _entity_closure_dofs;
   }
