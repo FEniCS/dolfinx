@@ -126,8 +126,10 @@ def test_interpolation_matrix_petsc(cell_type, p, q, from_lagrange):
         mesh = create_unit_cube(comm, 3, 2, 2, ghost_mode=GhostMode.none, cell_type=cell_type)
         lagrange = "Lagrange" if from_lagrange else "DG"
         nedelec = "Nedelec 1st kind H(curl)"
-    v_el = element(lagrange, mesh.basix_cell(), p, shape=(mesh.geometry.dim,))
-    s_el = element(nedelec, mesh.basix_cell(), q)
+    v_el = element(
+        lagrange, mesh.basix_cell(), p, shape=(mesh.geometry.dim,), dtype=default_real_type
+    )
+    s_el = element(nedelec, mesh.basix_cell(), q, dtype=default_real_type)
     if from_lagrange:
         el0 = v_el
         el1 = s_el

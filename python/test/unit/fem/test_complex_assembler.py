@@ -24,7 +24,7 @@ def test_complex_assembly(complex_dtype):
 
     real_dtype = np.real(complex_dtype(1.0)).dtype
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, dtype=real_dtype)
-    P2 = element("Lagrange", mesh.basix_cell(), 2)
+    P2 = element("Lagrange", mesh.basix_cell(), 2, dtype=real_dtype)
     V = functionspace(mesh, P2)
     u = ufl.TrialFunction(V)
     v = ufl.TestFunction(V)
@@ -78,7 +78,7 @@ def test_complex_assembly_solve(complex_dtype, cg_solver):
     degree = 3
     real_dtype = np.real(complex_dtype(1.0)).dtype
     mesh = create_unit_square(MPI.COMM_WORLD, 20, 20, dtype=real_dtype)
-    P = element("Lagrange", mesh.basix_cell(), degree)
+    P = element("Lagrange", mesh.basix_cell(), degree, dtype=real_dtype)
     V = functionspace(mesh, P)
 
     x = ufl.SpatialCoordinate(mesh)

@@ -283,9 +283,9 @@ def test_matrix_assembly_block(mode):
     structures"""
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 8, ghost_mode=mode)
     p0, p1 = 1, 2
-    P0 = element("Lagrange", mesh.basix_cell(), p0)
-    P1 = element("Lagrange", mesh.basix_cell(), p1)
-    P2 = element("Lagrange", mesh.basix_cell(), p0)
+    P0 = element("Lagrange", mesh.basix_cell(), p0, dtype=default_real_type)
+    P1 = element("Lagrange", mesh.basix_cell(), p1, dtype=default_real_type)
+    P2 = element("Lagrange", mesh.basix_cell(), p0, dtype=default_real_type)
     V0 = functionspace(mesh, P0)
     V1 = functionspace(mesh, P1)
     V2 = functionspace(mesh, P2)
@@ -410,7 +410,7 @@ def test_assembly_solve_block(mode):
     """Solve a two-field mass-matrix like problem with block matrix approaches
     and test that solution is the same"""
     mesh = create_unit_square(MPI.COMM_WORLD, 32, 31, ghost_mode=mode)
-    P = element("Lagrange", mesh.basix_cell(), 1)
+    P = element("Lagrange", mesh.basix_cell(), 1, dtype=default_real_type)
     V0 = functionspace(mesh, P)
     V1 = V0.clone()
 
@@ -674,8 +674,10 @@ def test_assembly_solve_taylor_hood(mesh):
 
     def monolithic_solve():
         """Monolithic (interleaved) solver"""
-        P2_el = element("Lagrange", mesh.basix_cell(), 2, shape=(mesh.geometry.dim,))
-        P1_el = element("Lagrange", mesh.basix_cell(), 1)
+        P2_el = element(
+            "Lagrange", mesh.basix_cell(), 2, shape=(mesh.geometry.dim,), dtype=default_real_type
+        )
+        P1_el = element("Lagrange", mesh.basix_cell(), 1, dtype=default_real_type)
         TH = mixed_element([P2_el, P1_el])
         W = functionspace(mesh, TH)
         (u, p) = ufl.TrialFunctions(W)
@@ -994,13 +996,17 @@ def test_coefficents_non_constant():
     F = form((ufl.inner(u, v) - ufl.inner(x[0] * x[1] ** 2, v)) * dx)
     b0 = petsc_assemble_vector(F)
     b0.assemble()
-    assert np.linalg.norm(b0.array) == pytest.approx(0.0, abs=1.0e-7)
+    assert np.linalg.norm(b0.array) == pytest.approx(
+        0.0, abs=np.sqrt(np.finfo(mesh.geometry.x.dtype).eps)
+    )
 
     # -- Exterior facet integral vector
     F = form((ufl.inner(u, v) - ufl.inner(x[0] * x[1] ** 2, v)) * ds)
     b0 = petsc_assemble_vector(F)
     b0.assemble()
-    assert np.linalg.norm(b0.array) == pytest.approx(0.0, abs=1.0e-7)
+    assert np.linalg.norm(b0.array) == pytest.approx(
+        0.0, abs=np.sqrt(np.finfo(mesh.geometry.x.dtype).eps)
+    )
 
     # -- Interior facet integral vector
     V = functionspace(mesh, ("DG", 3))  # degree 3 so that interpolation is exact
@@ -1019,7 +1025,9 @@ def test_coefficents_non_constant():
     F = form(F)
     b0 = petsc_assemble_vector(F)
     b0.assemble()
-    assert np.linalg.norm(b0.array) == pytest.approx(0.0, abs=1.0e-7)
+    assert np.linalg.norm(b0.array) == pytest.approx(
+        0.0, abs=np.sqrt(np.finfo(mesh.geometry.x.dtype).eps)
+    )
 
     b0.destroy()
 

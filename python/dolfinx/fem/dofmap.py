@@ -11,7 +11,7 @@ class DofMap:
     """Degree-of-freedom map
 
     This class handles the mapping of degrees of freedom. It builds
-    a dof map based on a ufcx_dofmap on a specific mesh.
+    a dof map based on a FiniteElement on a specific mesh.
     """
 
     _cpp_object: _cpp.fem.DofMap

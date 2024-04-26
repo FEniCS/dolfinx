@@ -25,7 +25,7 @@ import matplotlib.pylab as plt
 import basix
 import basix.ufl
 import ufl  # type: ignore
-from dolfinx import fem, mesh
+from dolfinx import default_real_type, fem, mesh
 from ufl import dx
 
 # -
@@ -46,7 +46,11 @@ from ufl import dx
 
 # +
 element = basix.ufl.element(
-    basix.ElementFamily.P, basix.CellType.interval, 10, basix.LagrangeVariant.equispaced
+    basix.ElementFamily.P,
+    basix.CellType.interval,
+    10,
+    basix.LagrangeVariant.equispaced,
+    dtype=default_real_type,
 )
 lattice = basix.create_lattice(basix.CellType.interval, 200, basix.LatticeType.equispaced, True)
 values = element.tabulate(0, lattice)[0, :, :]
@@ -75,7 +79,11 @@ if MPI.COMM_WORLD.size == 1:
 
 # +
 element = basix.ufl.element(
-    basix.ElementFamily.P, basix.CellType.interval, 10, basix.LagrangeVariant.gll_warped
+    basix.ElementFamily.P,
+    basix.CellType.interval,
+    10,
+    basix.LagrangeVariant.gll_warped,
+    dtype=default_real_type,
 )
 values = element.tabulate(0, lattice)[0, :, :]
 if MPI.COMM_WORLD.size == 1:  # Skip this plotting in parallel
@@ -118,7 +126,9 @@ x = ufl.SpatialCoordinate(msh)
 u_exact = saw_tooth(x[0])
 
 for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warped]:
-    ufl_element = basix.ufl.element(basix.ElementFamily.P, basix.CellType.interval, 10, variant)
+    ufl_element = basix.ufl.element(
+        basix.ElementFamily.P, basix.CellType.interval, 10, variant, dtype=default_real_type
+    )
     V = fem.functionspace(msh, ufl_element)
     uh = fem.Function(V)
     uh.interpolate(lambda x: saw_tooth(x[0]))
@@ -157,7 +167,9 @@ for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warp
 
 # +
 for variant in [basix.LagrangeVariant.equispaced, basix.LagrangeVariant.gll_warped]:
-    ufl_element = basix.ufl.element(basix.ElementFamily.P, basix.CellType.interval, 10, variant)
+    ufl_element = basix.ufl.element(
+        basix.ElementFamily.P, basix.CellType.interval, 10, variant, dtype=default_real_type
+    )
     V = fem.functionspace(msh, ufl_element)
     uh = fem.Function(V)
     uh.interpolate(lambda x: saw_tooth(x[0]))
