@@ -1185,6 +1185,8 @@ create_nonmatching_meshes_interpolation_data(const mesh::Mesh<T>& mesh0,
 /// @param[in] nmm_interpolation_data Auxiliary data to interpolate on
 /// nonmatching meshes. This data can be generated with
 /// create_nonmatching_meshes_interpolation_data (optional).
+/// @param[in] interpolation_type Indicator if interpolation is on nonmatching
+/// meshes or meshes with a map between cells
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate(
     Function<T, U>& u1, const Function<T, U>& u0,
