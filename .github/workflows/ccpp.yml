@@ -137,7 +137,7 @@ jobs:
           python python/demo/demo_lagrange_variants.py
       - name: Run unit tests
         run: |
-          pytest pytest --ignore=python/test/unit/nls --ignore=python/test/unit/fem   --ignore=python/test/unit/la python/test/unit  python/test/unit/
+          pytest --ignore=python/test/unit/nls --ignore=python/test/unit/fem   --ignore=python/test/unit/la python/test/unit  python/test/unit/
 
   build-with-petsc:
     runs-on: ubuntu-latest
