@@ -6,7 +6,6 @@
 """Unit tests for the DiscreteOperator class"""
 
 from mpi4py import MPI
-from petsc4py import PETSc
 
 import numpy as np
 import pytest
@@ -15,10 +14,10 @@ import ufl
 from basix.ufl import element
 from dolfinx import default_real_type
 from dolfinx.fem import Expression, Function, assemble_scalar, form, functionspace
-from dolfinx.fem.petsc import discrete_gradient, interpolation_matrix
 from dolfinx.mesh import CellType, GhostMode, create_mesh, create_unit_cube, create_unit_square
 
 
+@pytest.mark.petsc4py
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize(
     "mesh",
@@ -31,6 +30,11 @@ from dolfinx.mesh import CellType, GhostMode, create_mesh, create_unit_cube, cre
 )
 def test_gradient_petsc(mesh):
     """Test discrete gradient computation for lowest order elements."""
+    from petsc4py import PETSc
+
+    from dolfinx.fem.petsc import discrete_gradient
+
+
     V = functionspace(mesh, ("Lagrange", 1))
     W = functionspace(mesh, ("Nedelec 1st kind H(curl)", 1))
     G = discrete_gradient(V, W)
@@ -44,6 +48,7 @@ def test_gradient_petsc(mesh):
     G.destroy()
 
 
+@pytest.mark.petsc4py
 @pytest.mark.parametrize("p", range(1, 4))
 @pytest.mark.parametrize("q", range(1, 4))
 @pytest.mark.parametrize(
@@ -52,6 +57,8 @@ def test_gradient_petsc(mesh):
 )
 def test_gradient_interpolation_petsc(cell_type, p, q):
     """Test discrete gradient computation with verification using Expression."""
+    from dolfinx.fem.petsc import discrete_gradient
+
     comm = MPI.COMM_WORLD
     if cell_type == CellType.triangle:
         mesh = create_unit_square(
@@ -100,6 +107,7 @@ def test_gradient_interpolation_petsc(cell_type, p, q):
     G.destroy()
 
 
+@pytest.mark.petsc4py
 @pytest.mark.parametrize("p", range(1, 4))
 @pytest.mark.parametrize("q", range(1, 4))
 @pytest.mark.parametrize("from_lagrange", [True, False])
@@ -109,6 +117,8 @@ def test_gradient_interpolation_petsc(cell_type, p, q):
 )
 def test_interpolation_matrix_petsc(cell_type, p, q, from_lagrange):
     """Test that discrete interpolation matrix yields the same result as interpolation."""
+    from dolfinx.fem.petsc import interpolation_matrix
+
     comm = MPI.COMM_WORLD
     if cell_type == CellType.triangle:
         mesh = create_unit_square(comm, 7, 5, ghost_mode=GhostMode.none, cell_type=cell_type)
@@ -164,10 +174,13 @@ def test_interpolation_matrix_petsc(cell_type, p, q, from_lagrange):
     G.destroy()
 
 
+@pytest.mark.petsc4py
 @pytest.mark.skip_in_parallel
 def test_nonaffine_discrete_operator_petsc():
     """Check that discrete operator is consistent with normal
     interpolation between non-matching maps on non-affine geometries"""
+    from dolfinx.fem.petsc import interpolation_matrix
+
     points = np.array(
         [
             [0, 0, 0],
