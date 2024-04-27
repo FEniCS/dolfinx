@@ -15,6 +15,8 @@ from mpi4py import MPI
 
 try:
     from petsc4py import PETSc
+
+    from dolfinx.fem.petsc import assemble_matrix
 except ImportError:
     pass
 
@@ -25,7 +27,6 @@ import dolfinx
 import dolfinx.pkgconfig
 import ufl
 from dolfinx.fem import Function, form, functionspace
-from dolfinx.fem.petsc import assemble_matrix
 from dolfinx.mesh import create_unit_square
 from dolfinx.utils import cffi_utils as petsc_cffi
 from dolfinx.utils import ctypes_utils as petsc_ctypes
