@@ -22,7 +22,7 @@ def test_dof_coords_2d(degree, dtype):
     u.interpolate(lambda x: x[0])
     u.x.scatter_forward()
     x = V.tabulate_dof_coordinates()
-    np.allclose(u.x.array, x[:, 0], atol=1e-7, atol=1e-7, rtol=1e-6)
+    np.allclose(u.x.array, x[:, 0], atol=1e-7, rtol=1e-6)
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
