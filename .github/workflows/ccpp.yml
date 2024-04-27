@@ -141,7 +141,6 @@ jobs:
           python -m pytest -n auto \
             --ignore=python/test/unit/nls \
             --ignore=python/test/unit/fem/test_assembler.py \
-            --ignore=python/test/unit/fem/test_custom_assembler.py \
             --ignore=python/test/unit/fem/test_custom_basix_element.py \
             --ignore=python/test/unit/fem/test_petsc_discrete_operators.py \
             --ignore=python/test/unit/fem/test_petsc_nonlinear_assembler.py \
