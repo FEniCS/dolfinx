@@ -1,3 +1,9 @@
+# Copyright (C) 2024 Matthew Scroggs and Garth N. Wells
+#
+# This file is part of DOLFINx (https://www.fenicsproject.org)
+#
+# SPDX-License-Identifier:    LGPL-3.0-or-later
+
 from mpi4py import MPI
 
 import numpy as np
@@ -16,9 +22,7 @@ def test_dof_coords_2d(degree, dtype):
     u.interpolate(lambda x: x[0])
     u.x.scatter_forward()
     x = V.tabulate_dof_coordinates()
-    val = u.x.array
-    for i in range(len(val)):
-        assert np.isclose(x[i, 0], val[i], atol=1e-7, rtol=1e-6)
+    np.allclose(u.x.array, x[:, 0], atol=1e-7, atol=1e-7, rtol=1e-6)
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
@@ -30,6 +34,6 @@ def test_dof_coords_3d(degree, dtype):
     u.interpolate(lambda x: x[0])
     u.x.scatter_forward()
     x = V.tabulate_dof_coordinates()
-    val = u.x.array
-    for i in range(len(val)):
-        assert np.isclose(x[i, 0], val[i], atol=1e-7, rtol=1e-6)
+
+    eps = np.sqrt(np.finfo(dtype).eps)
+    np.allclose(u.x.array, x[:, 0], atol=1e-7, rtol=eps)
