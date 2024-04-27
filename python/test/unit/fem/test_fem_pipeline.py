@@ -58,6 +58,7 @@ def run_scalar_test(mesh, V, degree, cg_solver):
     """Manufactured Poisson problem, solving u = x[1]**p, where p is the
     degree of the Lagrange function space.
     """
+    dtype = mesh.geometry.x.dtype
     u, v = TrialFunction(V), TestFunction(V)
     a = inner(grad(u), grad(v)) * dx
 
@@ -66,7 +67,7 @@ def run_scalar_test(mesh, V, degree, cg_solver):
     a.integrals()[0].metadata()["quadrature_degree"] = (
         ufl.algorithms.estimate_total_polynomial_degree(a)
     )
-    a = form(a)
+    a = form(a, dtype=dtype)
 
     # Source term
     x = SpatialCoordinate(mesh)
@@ -78,9 +79,9 @@ def run_scalar_test(mesh, V, degree, cg_solver):
     L.integrals()[0].metadata()["quadrature_degree"] = (
         ufl.algorithms.estimate_total_polynomial_degree(L)
     )
-    L = form(L)
+    L = form(L, dtype=dtype)
 
-    u_bc = Function(V)
+    u_bc = Function(V, dtype=dtype)
     u_bc.interpolate(lambda x: x[1] ** degree)
 
     # Create Dirichlet boundary condition
@@ -95,18 +96,19 @@ def run_scalar_test(mesh, V, degree, cg_solver):
     b.scatter_reverse(la.InsertMode.add)
     set_bc(b.array, [bc])
 
-    a = form(a)
+    a = form(a, dtype=dtype)
     A = assemble_matrix(a, bcs=[bc])
     A.scatter_reverse()
 
-    uh = Function(V)
+    uh = Function(V, dtype=dtype)
     cg_solver(mesh.comm, A, b, uh.x)
     uh.x.scatter_forward()
 
     M = (u_exact - uh) ** 2 * dx
-    M = form(M)
+    M = form(M, dtype=dtype)
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
-    assert np.isclose(error, 0.0)
+    eps = np.sqrt(np.finfo(dtype).eps)
+    assert np.isclose(error, 0.0, atol=eps)
 
 
 def run_vector_test(mesh, V, degree, cg_solver, maxit=500, rtol=None):
@@ -502,11 +504,12 @@ def test_P_simplex(family, degree, cell_type, datadir, cg_solver):
 @parametrize_cell_types_simplex
 @pytest.mark.parametrize("family", ["Lagrange"])
 @pytest.mark.parametrize("degree", [2, 3, 4])
-def test_P_simplex_built_in(family, degree, cell_type, datadir, cg_solver):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_P_simplex_built_in(family, degree, dtype, cell_type, datadir, cg_solver):
     if cell_type == CellType.tetrahedron:
-        mesh = create_unit_cube(MPI.COMM_WORLD, 5, 5, 5)
+        mesh = create_unit_cube(MPI.COMM_WORLD, 5, 5, 5, dtype=dtype)
     elif cell_type == CellType.triangle:
-        mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
+        mesh = create_unit_square(MPI.COMM_WORLD, 5, 5, dtype=dtype)
     V = functionspace(mesh, (family, degree))
     run_scalar_test(mesh, V, degree, cg_solver)
 
