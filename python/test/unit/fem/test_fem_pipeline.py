@@ -106,7 +106,7 @@ def run_scalar_test(mesh, V, degree, cg_solver):
     M = (u_exact - uh) ** 2 * dx
     M = form(M)
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
-    assert np.abs(error) < 1.0e-7
+    assert np.isclose(error, 0.0)
 
 
 def run_vector_test(mesh, V, degree, cg_solver, maxit=500, rtol=None):
@@ -137,7 +137,7 @@ def run_vector_test(mesh, V, degree, cg_solver, maxit=500, rtol=None):
     M = form(M)
 
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
-    assert np.abs(error) < 1.0e-7
+    assert np.isclose(error, 0.0)
 
 
 def run_dg_test(mesh, V, degree, cg_solver):
@@ -211,7 +211,7 @@ def run_dg_test(mesh, V, degree, cg_solver):
     M = form(M)
 
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
-    assert np.abs(error) < 1.0e-7
+    assert np.isclose(error, 0.0)
 
 
 @pytest.mark.parametrize("family", ["N1curl", "N2curl"])
@@ -255,7 +255,7 @@ def test_petsc_curl_curl_eigenvalue(family, order):
     boundary_dofs = locate_dofs_topological(V, mesh.topology.dim - 1, boundary_facets)
 
     zero_u = Function(V)
-    zero_u.x.array[:] = 0.0
+    zero_u.x.array[:] = 0
     bcs = [dirichletbc(zero_u, boundary_dofs)]
 
     a, b = form(a), form(b)
