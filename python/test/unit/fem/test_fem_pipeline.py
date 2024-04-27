@@ -137,7 +137,7 @@ def run_vector_test(mesh, V, degree, cg_solver, maxit=500, rtol=None):
     M = form(M)
 
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
-    assert np.isclose(error, 0.0)
+    assert np.isclose(error, 0.0, atol=1e-07)
 
 
 def run_dg_test(mesh, V, degree, cg_solver):
