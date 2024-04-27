@@ -1,5 +1,4 @@
 from mpi4py import MPI
-from petsc4py import PETSc
 
 import numpy as np
 import pytest
@@ -7,21 +6,24 @@ import pytest
 import basix
 import basix.ufl
 import ufl
-from dolfinx import default_real_type
+from dolfinx import default_real_type, la
 from dolfinx.fem import (
     Function,
+    apply_lifting,
+    assemble_matrix,
     assemble_scalar,
+    assemble_vector,
     dirichletbc,
     form,
     functionspace,
     locate_dofs_topological,
+    set_bc,
 )
-from dolfinx.fem.petsc import apply_lifting, assemble_matrix, assemble_vector, set_bc
 from dolfinx.mesh import CellType, create_unit_cube, create_unit_square, exterior_facet_indices
 from ufl import SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad, inner
 
 
-def run_scalar_test(V, degree):
+def run_scalar_test(V, degree, cg_solver, rtol=None):
     mesh = V.mesh
     u, v = TrialFunction(V), TestFunction(V)
     a = inner(grad(u), grad(v)) * dx
@@ -56,22 +58,16 @@ def run_scalar_test(V, degree):
     bc = dirichletbc(u_bc, bdofs)
 
     b = assemble_vector(L)
-    apply_lifting(b, [a], bcs=[[bc]])
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    set_bc(b, [bc])
+    apply_lifting(b.array, [a], bcs=[[bc]])
+    b.scatter_reverse(la.InsertMode.add)
+    set_bc(b.array, [bc])
 
     a = form(a)
     A = assemble_matrix(a, bcs=[bc])
-    A.assemble()
-
-    # Create LU linear solver
-    solver = PETSc.KSP().create(MPI.COMM_WORLD)
-    solver.setType(PETSc.KSP.Type.PREONLY)
-    solver.getPC().setType(PETSc.PC.Type.LU)
-    solver.setOperators(A)
+    A.scatter_reverse()
 
     uh = Function(V)
-    solver.solve(b, uh.x.petsc_vec)
+    cg_solver(mesh.comm, A, b, uh.x, rtol=rtol)
     uh.x.scatter_forward()
 
     M = (u_exact - uh) ** 2 * dx
@@ -79,13 +75,9 @@ def run_scalar_test(V, degree):
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
     assert np.abs(error) < 1.0e-6
 
-    solver.destroy()
-    A.destroy()
-    b.destroy()
-
 
 @pytest.mark.parametrize("degree", range(1, 6))
-def test_basix_element_wrapper(degree):
+def test_basix_element_wrapper(degree, cg_solver):
     ufl_element = basix.ufl.element(
         basix.ElementFamily.P,
         basix.CellType.triangle,
@@ -95,10 +87,10 @@ def test_basix_element_wrapper(degree):
     )
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
     V = functionspace(mesh, ufl_element)
-    run_scalar_test(V, degree)
+    run_scalar_test(V, degree, cg_solver)
 
 
-def test_custom_element_triangle_degree1():
+def test_custom_element_triangle_degree1(cg_solver):
     wcoeffs = np.eye(3)
     z = np.zeros((0, 2))
     x = [
@@ -125,10 +117,10 @@ def test_custom_element_triangle_degree1():
     )
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
     V = functionspace(mesh, ufl_element)
-    run_scalar_test(V, 1)
+    run_scalar_test(V, 1, cg_solver)
 
 
-def test_custom_element_triangle_degree4():
+def test_custom_element_triangle_degree4(cg_solver):
     wcoeffs = np.eye(15)
     x = [
         [np.array([[0.0, 0.0]]), np.array([[1.0, 0.0]]), np.array([[0.0, 1.0]])],
@@ -164,10 +156,10 @@ def test_custom_element_triangle_degree4():
     )
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
     V = functionspace(mesh, ufl_element)
-    run_scalar_test(V, 4)
+    run_scalar_test(V, 4, cg_solver)
 
 
-def test_custom_element_triangle_degree4_integral():
+def test_custom_element_triangle_degree4_integral(cg_solver):
     pts, wts = basix.make_quadrature(basix.CellType.interval, 10)
     tab = basix.create_element(
         basix.ElementFamily.P, basix.CellType.interval, 2, dtype=default_real_type
@@ -213,10 +205,10 @@ def test_custom_element_triangle_degree4_integral():
     )
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10)
     V = functionspace(mesh, ufl_element)
-    run_scalar_test(V, 4)
+    run_scalar_test(V, 4, cg_solver, rtol=1e-5)
 
 
-def test_custom_element_quadrilateral_degree1():
+def test_custom_element_quadrilateral_degree1(cg_solver):
     wcoeffs = np.eye(4)
     z = np.zeros((0, 2))
     x = [
@@ -258,7 +250,7 @@ def test_custom_element_quadrilateral_degree1():
     )
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 10, CellType.quadrilateral)
     V = functionspace(mesh, ufl_element)
-    run_scalar_test(V, 1)
+    run_scalar_test(V, 1, cg_solver)
 
 
 @pytest.mark.parametrize(
