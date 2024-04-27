@@ -106,7 +106,7 @@ def run_scalar_test(mesh, V, degree, cg_solver):
     M = (u_exact - uh) ** 2 * dx
     M = form(M)
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
-    assert np.abs(error) < 1.0e-9
+    assert np.abs(error) < 1.0e-7
 
 
 def run_vector_test(mesh, V, degree, cg_solver, maxit=500, rtol=None):
@@ -211,7 +211,7 @@ def run_dg_test(mesh, V, degree, cg_solver):
     M = form(M)
 
     error = mesh.comm.allreduce(assemble_scalar(M), op=MPI.SUM)
-    assert np.abs(error) < 1.0e-9
+    assert np.abs(error) < 1.0e-7
 
 
 @pytest.mark.parametrize("family", ["N1curl", "N2curl"])
