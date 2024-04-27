@@ -30,6 +30,7 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-latest
+    name: Lint
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
@@ -80,6 +81,7 @@ jobs:
       PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe   # Newer OpenMPI
       OMPI_MCA_rmaps_base_oversubscribe: true                 # Older OpenMPI
 
+    name: Build and test
     steps:
       - name: Install dependencies
         run: |
@@ -159,7 +161,7 @@ jobs:
       matrix:
         petsc_arch: [linux-gnu-real32-32, linux-gnu-real64-32, linux-gnu-complex64-32, linux-gnu-complex128-32, linux-gnu-real64-64, linux-gnu-complex128-64]
 
-    name: Build and test with PETSc (${{ matrix.petsc_arch }})
+    name: Test with PETSc (${{ matrix.petsc_arch }})
     steps:
       - uses: actions/checkout@v4
 

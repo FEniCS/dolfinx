@@ -28,7 +28,6 @@ from dolfinx.fem import (
     locate_dofs_topological,
     set_bc,
 )
-from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (
     CellType,
@@ -228,6 +227,8 @@ def test_petsc_curl_curl_eigenvalue(family, order):
 
     petsc4py = pytest.importorskip("petsc4py")  # noqa: F841
     from petsc4py import PETSc
+
+    from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
 
     slepc4py = pytest.importorskip("slepc4py")  # noqa: F841
     from slepc4py import SLEPc
