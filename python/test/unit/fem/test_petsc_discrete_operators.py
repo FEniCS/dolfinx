@@ -34,7 +34,6 @@ def test_gradient_petsc(mesh):
 
     from dolfinx.fem.petsc import discrete_gradient
 
-
     V = functionspace(mesh, ("Lagrange", 1))
     W = functionspace(mesh, ("Nedelec 1st kind H(curl)", 1))
     G = discrete_gradient(V, W)
