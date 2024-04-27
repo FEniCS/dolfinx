@@ -138,7 +138,7 @@ jobs:
           python python/demo/demo_lagrange_variants.py
       - name: Run unit tests
         run: |
-          pytest -n auto \
+          python -m pytest -n auto \
             --ignore=python/test/unit/nls \
             --ignore=python/test/unit/fem/test_assembler.py \
             --ignore=python/test/unit/fem/test_custom_assembler.py \
