@@ -59,7 +59,12 @@ wheel.license-files = ["../COPYING*"]
 junit_family = "xunit2"
 
 [tool.pytest.ini_options]
-markers = ["skip_in_parallel: marks tests that should be run in serial only."]
+markers = [
+            "skip_in_parallel: marks tests that should be run in serial only.",
+            "petsc4py: tests that require PETSc/petsc4py (deselect with '-m \"not petsc4py\"')."
+]
+
+
 
 [tool.mypy]
 # Suggested at https://blog.wolt.com/engineering/2021/09/30/professional-grade-mypy-configuration/

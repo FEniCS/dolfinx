@@ -13,6 +13,11 @@ import time
 
 from mpi4py import MPI
 
+try:
+    from petsc4py import PETSc
+except ImportError:
+    pass
+
 import numpy as np
 import pytest
 
@@ -197,8 +202,6 @@ def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells, dtype):
 @numba.njit(fastmath=True)
 def assemble_petsc_matrix(A, mesh, dofmap, num_cells, set_vals, mode):
     """Assemble P1 mass matrix over a mesh into the PETSc matrix A"""
-    from petsc4py import PETSc
-
     # Mesh data
     v, x = mesh
 
@@ -315,7 +318,6 @@ def test_custom_mesh_loop_rank1(dtype):
 )
 def test_custom_mesh_loop_petsc_rank2(set_vals, backend):
     """Test numba assembler for a bilinear form."""
-    from petsc4py import PETSc
 
     mesh = create_unit_square(MPI.COMM_WORLD, 64, 64)
     V = functionspace(mesh, ("Lagrange", 1))
