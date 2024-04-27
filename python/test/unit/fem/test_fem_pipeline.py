@@ -112,7 +112,7 @@ def run_scalar_test(mesh, V, degree, cg_solver):
 
 
 def run_vector_test(mesh, V, degree, cg_solver, maxit=500, rtol=None):
-    """Projection into H(div/curl) spaces"""
+    """Projection into H(div/curl) spaces."""
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = form(inner(u, v) * dx)
 
@@ -143,9 +143,8 @@ def run_vector_test(mesh, V, degree, cg_solver, maxit=500, rtol=None):
 
 
 def run_dg_test(mesh, V, degree, cg_solver):
-    """Manufactured Poisson problem, solving u = x[component]**n, where n is the
-    degree of the Lagrange function space.
-    """
+    """Manufactured Poisson problem, solving u = x[component]**n, where
+    n is the degree of the Lagrange function space."""
     u, v = TrialFunction(V), TestFunction(V)
 
     # Exact solution
@@ -219,7 +218,7 @@ def run_dg_test(mesh, V, degree, cg_solver):
 @pytest.mark.parametrize("family", ["N1curl", "N2curl"])
 @pytest.mark.parametrize("order", [1])
 def test_petsc_curl_curl_eigenvalue(family, order):
-    """curl curl eigenvalue problem.
+    """curl-curl eigenvalue problem.
 
     Solved using H(curl)-conforming finite element method.
     See https://www-users.cse.umn.edu/~arnold/papers/icm2002.pdf for details.
@@ -302,8 +301,8 @@ def test_petsc_curl_curl_eigenvalue(family, order):
 def test_petsc_biharmonic(family, dtype):
     """Manufactured biharmonic problem.
 
-    Solved using rotated Regge or the Hellan-Herrmann-Johnson (HHJ) mixed
-    finite element method in two-dimensions.
+    Solved using rotated Regge or the Hellan-Herrmann-Johnson (HHJ)
+    mixed finite element method in two-dimensions.
 
     Runs in serial to use the SciPy sparse solvers (to avoid PETSc
     dependency).

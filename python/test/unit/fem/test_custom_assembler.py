@@ -11,10 +11,7 @@ import os
 import pathlib
 import time
 
-import petsc4py.lib
 from mpi4py import MPI
-from petsc4py import PETSc
-from petsc4py import get_config as PETSc_get_config
 
 import numpy as np
 import pytest
@@ -71,7 +68,10 @@ def get_matsetvalues_cffi_api():
     if dolfinx.pkgconfig.exists("dolfinx"):
         dolfinx_pc = dolfinx.pkgconfig.parse("dolfinx")
     else:
-        raise RuntimeError("Could not find DOLFINx pkgconfig file")
+        raise RuntimeError("Could not find DOLFINx pkg-config file")
+
+    import petsc4py.lib
+    from petsc4py import get_config as PETSc_get_config
 
     cffi_support.register_type(ffi.typeof("float _Complex"), numba.types.complex64)
     cffi_support.register_type(ffi.typeof("double _Complex"), numba.types.complex128)
@@ -197,6 +197,8 @@ def assemble_vector_ufc(b, kernel, mesh, dofmap, num_cells, dtype):
 @numba.njit(fastmath=True)
 def assemble_petsc_matrix(A, mesh, dofmap, num_cells, set_vals, mode):
     """Assemble P1 mass matrix over a mesh into the PETSc matrix A"""
+    from petsc4py import PETSc
+
     # Mesh data
     v, x = mesh
 
@@ -302,6 +304,7 @@ def test_custom_mesh_loop_rank1(dtype):
     assert np.linalg.norm(b3.x.array - b0.x.array) == pytest.approx(0.0, abs=1e-8)
 
 
+@pytest.mark.petsc4py
 @pytest.mark.parametrize(
     "set_vals,backend",
     [
@@ -312,6 +315,7 @@ def test_custom_mesh_loop_rank1(dtype):
 )
 def test_custom_mesh_loop_petsc_rank2(set_vals, backend):
     """Test numba assembler for a bilinear form."""
+    from petsc4py import PETSc
 
     mesh = create_unit_square(MPI.COMM_WORLD, 64, 64)
     V = functionspace(mesh, ("Lagrange", 1))
