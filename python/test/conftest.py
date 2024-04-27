@@ -188,7 +188,7 @@ def cg_solver():
             p.array[:nr] = beta * p.array[:nr] + r
 
         raise RuntimeError(
-            f"Solver exceeded max iterations ({maxit}). Relative residual={rnorm/rnorm0}, {rnorm}, {rtol2}."
+            f"Solver exceeded max iterations ({maxit}). Relative residual={rnorm/rnorm0}."
         )
 
     return _cg
