@@ -131,14 +131,14 @@ jobs:
         run: pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
 
       - name: Install Python test dependencies
-        run: pip install matplotlib pytest scipy
+        run: pip install matplotlib pytest pytest-xdist scipy
       - name: Run demos
         run: |
           python python/demo/demo_interpolation-io.py
           python python/demo/demo_lagrange_variants.py
       - name: Run unit tests
         run: |
-          pytest \
+          pytest -n auto \
             --ignore=python/test/unit/nls \
             --ignore=python/test/unit/fem/test_assembler.py \
             --ignore=python/test/unit/fem/test_custom_assembler.py \
