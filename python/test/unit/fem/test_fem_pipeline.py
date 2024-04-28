@@ -277,19 +277,17 @@ def test_petsc_curl_curl_eigenvalue(family, order):
     eps.solve()
 
     num_converged = eps.getConverged()
-    eigenvalues_unsorted = np.zeros(num_converged, dtype=np.complex128)
+    evlas_unsorted = np.zeros(num_converged, dtype=np.complex128)
 
     for i in range(0, num_converged):
-        eigenvalues_unsorted[i] = eps.getEigenvalue(i)
+        evlas_unsorted[i] = eps.getEigenvalue(i)
 
-    assert np.isclose(np.imag(eigenvalues_unsorted), 0.0).all()
-    eigenvalues_sorted = np.sort(np.real(eigenvalues_unsorted))[:-1]
-    eigenvalues_sorted = eigenvalues_sorted[np.logical_not(eigenvalues_sorted < 1e-8)]
+    assert np.isclose(np.imag(evlas_unsorted), 0.0).all()
+    evals_sorted = np.sort(np.real(evlas_unsorted))[:-1]
+    evals_sorted = evals_sorted[np.logical_not(evals_sorted < 1e-8)]
 
-    eigenvalues_exact = np.array([1.0, 1.0, 2.0, 4.0, 4.0, 5.0, 5.0, 8.0, 9.0])
-    assert np.isclose(
-        eigenvalues_sorted[0 : eigenvalues_exact.shape[0]], eigenvalues_exact, rtol=1e-2
-    ).all()
+    evals_exact = np.array([1.0, 1.0, 2.0, 4.0, 4.0, 5.0, 5.0, 8.0, 9.0])
+    assert np.isclose(evals_sorted[0 : evals_exact.shape[0]], evals_exact, rtol=1e-2).all()
 
     eps.destroy()
     A.destroy()
@@ -298,7 +296,7 @@ def test_petsc_curl_curl_eigenvalue(family, order):
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("family", ["HHJ", "Regge"])
-def test_petsc_biharmonic(family, dtype):
+def test_biharmonic(family, dtype):
     """Manufactured biharmonic problem.
 
     Solved using rotated Regge or the Hellan-Herrmann-Johnson (HHJ)
@@ -378,10 +376,11 @@ def test_petsc_biharmonic(family, dtype):
     zero_u.x.array[:] = 0
 
     # Strong (Dirichlet) boundary condition
+    tdim = mesh, mesh.topology.dim
     boundary_facets = locate_entities_boundary(
-        mesh, mesh.topology.dim - 1, lambda x: np.full(x.shape[1], True, dtype=bool)
+        mesh, tdim - 1, lambda x: np.full(x.shape[1], True, dtype=bool)
     )
-    boundary_dofs = locate_dofs_topological((V.sub(1), V_1), mesh.topology.dim - 1, boundary_facets)
+    boundary_dofs = locate_dofs_topological((V.sub(1), V_1), tdim - 1, boundary_facets)
 
     bcs = [dirichletbc(zero_u, boundary_dofs, V.sub(1))]
 
