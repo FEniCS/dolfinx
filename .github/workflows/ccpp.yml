@@ -233,60 +233,7 @@ jobs:
       - name: Run Python unit tests (MPI, np=3)
         run: mpirun -n 3 python3 -m pytest python/test/unit/
 
-      - name: Upload C++ documentation artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: doc-cpp-${{ matrix.petsc_arch }}
-          path: |
-            cpp/doc/html/
-            cpp/doc/build/
-          retention-days: 2
-          if-no-files-found: error
-
-      - name: Upload Python documentation artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: doc-python-${{ matrix.petsc_arch }}
-          path: |
-            python/doc/build/html/
-          retention-days: 2
-          if-no-files-found: error
-
-      - name: Checkout FEniCS/docs
-        if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) && runner.os == 'Linux' }}
-        uses: actions/checkout@v4
-        with:
-          repository: "FEniCS/docs"
-          path: "docs"
-          ssh-key: "${{ secrets.SSH_GITHUB_DOCS_PRIVATE_KEY }}"
-      - name: Set version name
-        if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) && runner.os == 'Linux' }}
-        run: |
-          echo "VERSION_NAME=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
-      - name: Copy documentation into repository
-        if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) && runner.os == 'Linux' }}
-        run: |
-          cd docs
-          git rm -r --ignore-unmatch dolfinx/${{ env.VERSION_NAME }}/cpp
-          git rm -r --ignore-unmatch dolfinx/${{ env.VERSION_NAME }}/python
-          mkdir -p dolfinx/${{ env.VERSION_NAME }}/cpp
-          mkdir -p dolfinx/${{ env.VERSION_NAME }}/cpp/doxygen
-          mkdir -p dolfinx/${{ env.VERSION_NAME }}/python
-          cp -r ../cpp/doc/build/html/* dolfinx/${{ env.VERSION_NAME }}/cpp/
-          cp -r ../cpp/doc/html/* dolfinx/${{ env.VERSION_NAME }}/cpp/doxygen
-          cp -r ../python/doc/build/html/* dolfinx/${{ env.VERSION_NAME }}/python
-      - name: Commit and push documentation to FEniCS/docs
-        if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) && runner.os == 'Linux' && matrix.petsc_arch == 'linux-gnu-real64-32' }}
-        run: |
-          cd docs
-          git config --global user.email "fenics@github.com"
-          git config --global user.name "FEniCS GitHub Actions"
-          git add --all
-          git commit --allow-empty -m "C++/Python FEniCS/dolfinx@${{ github.sha }}"
-          git push
-
   publish-docs:
-    if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) && runner.os == 'Linux' }}
     needs: build-with-petsc
     runs-on: ubuntu-latest
     container: "ghcr.io/fenics/test-env:current-openmpi"
@@ -297,6 +244,7 @@ jobs:
       PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
 
     name: Publish docs
+    if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) && runner.os == 'Linux' }}
     steps:
       - uses: actions/checkout@v4
       - name: Install FEniCS Python components (default branches/tags)
