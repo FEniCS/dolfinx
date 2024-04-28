@@ -28,7 +28,6 @@ from petsc4py import PETSc
 # +
 import numpy as np
 
-import dolfinx
 import ufl
 from dolfinx import la
 from dolfinx.fem import (
