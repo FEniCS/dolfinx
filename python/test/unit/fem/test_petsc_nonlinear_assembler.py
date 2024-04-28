@@ -15,7 +15,6 @@ import pytest
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type
-from dolfinx.cpp.la.petsc import scatter_local_vectors
 from dolfinx.fem import (
     Function,
     bcs_by_block,
@@ -50,6 +49,7 @@ def test_matrix_assembly_block_nl():
     in the nonlinear setting."""
     from petsc4py import PETSc
 
+    from dolfinx.cpp.la.petsc import scatter_local_vectors
     from dolfinx.fem.petsc import (
         apply_lifting,
         apply_lifting_nest,
@@ -333,6 +333,7 @@ def test_assembly_solve_block_nl():
     matrix approaches and test that solution is the same."""
     from petsc4py import PETSc
 
+    from dolfinx.cpp.la.petsc import scatter_local_vectors
     from dolfinx.fem.petsc import (
         create_matrix,
         create_matrix_block,
@@ -541,6 +542,7 @@ def test_assembly_solve_taylor_hood_nl(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
     from petsc4py import PETSc
 
+    from dolfinx.cpp.la.petsc import scatter_local_vectors
     from dolfinx.fem.petsc import (
         create_matrix,
         create_matrix_block,
