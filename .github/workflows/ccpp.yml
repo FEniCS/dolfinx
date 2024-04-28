@@ -225,9 +225,9 @@ jobs:
         run: python3 -m pytest -m mpi --num-proc=3 python/demo/test.py
 
       - name: Run Python unit tests (serial)
-        run: python3 -m pytest -n=auto --durations=50 python/test/unit/
+        run: python3 -m pytest -m "petsc4py" -n=auto --durations=50 python/test/unit/
       - name: Run Python unit tests (MPI, np=3)
-        run: mpirun -n 3 python3 -m pytest python/test/unit/
+        run: mpirun -np 3 python3 -m pytest -m "petsc4py" python/test/unit/
 
       - name: Upload C++ documentation artifact
         uses: actions/upload-artifact@v4
