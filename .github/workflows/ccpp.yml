@@ -129,7 +129,7 @@ jobs:
         run: pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
 
       - name: Install Python test dependencies
-        run: pip ins`tall matplotlib pytest scipy
+        run: pip install matplotlib pytest scipy
       - name: Run demos
         run: |
           python python/demo/demo_interpolation-io.py
@@ -150,30 +150,6 @@ jobs:
             petsc_arch: linux-gnu-real64-32
           - docker_image: "ghcr.io/fenics/test-env:current-mpich"
             petsc_arch: linux-gnu-complex128-32
-        # include:
-        #   - docker_image: "ghcr.io/fenics/test-env:current-openmpi"
-        #     petsc_arch: linux-gnu-real32-32
-        #   - docker_image: "ghcr.io/fenics/test-env:current-openmpi"
-        #     petsc_arch: linux-gnu-real64-32
-        #   - docker_image: "ghcr.io/fenics/test-env:current-openmpi"
-        #     petsc_arch: linux-gnu-complex64-32
-        #   - docker_image: "ghcr.io/fenics/test-env:current-openmpi"
-        #     petsc_arch: linux-gnu-complex128-32
-        #   - docker_image: "ghcr.io/fenics/test-env:current-openmpi"
-        #     petsc_arch: linux-gnu-real32-64
-        #   - docker_image: "ghcr.io/fenics/test-env:current-openmpi"
-        #     petsc_arch: linux-gnu-real64-64
-        #   - docker_image: "ghcr.io/fenics/test-env:current-openmpi"
-        #     petsc_arch: linux-gnu-complex64-64
-        #   - docker_image: "ghcr.io/fenics/test-env:current-openmpi"
-        #     petsc_arch: linux-gnu-complex128-64
-
-        #   - docker_image: "ghcr.io/fenics/test-env:current-mpich"
-        #     petsc_arch: linux-gnu-real64-32
-        #   - docker_image: "ghcr.io/fenics/test-env:current-mpich"
-        #     petsc_arch: linux-gnu-complex128-32
-
-            # container: ghcr.io/fenics/test-env:current-openmpi
     container: ${{ matrix.docker_image }}
     env:
       PETSC_ARCH: ${{ matrix.petsc_arch }}
@@ -181,7 +157,7 @@ jobs:
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
       PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
 
-    name: Build and test (${{ matrix.petsc_arch }})
+    name: Build and test (${{ matrix.petsc_arch }}, ${{ matrix.docker_image }})
     steps:
       - uses: actions/checkout@v4
 
@@ -308,3 +284,82 @@ jobs:
           git add --all
           git commit --allow-empty -m "C++/Python FEniCS/dolfinx@${{ github.sha }}"
           git push
+
+  publish-docs:
+    if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) && runner.os == 'Linux' }}
+    needs: build-with-petsc
+    runs-on: ubuntu-latest
+    container: "ghcr.io/fenics/test-env:current-openmpi"
+    env:
+      PETSC_ARCH: linux-gnu-real64-32
+      OMPI_ALLOW_RUN_AS_ROOT: 1
+      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
+      PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
+
+    name: Publish docs
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install FEniCS Python components (default branches/tags)
+        if: github.event_name != 'workflow_dispatch'
+        run: |
+          python3 -m pip install git+https://github.com/FEniCS/ufl.git
+          python3 -m pip install git+https://github.com/FEniCS/basix.git
+          python3 -m pip install git+https://github.com/FEniCS/ffcx.git
+      - name: Install FEniCS Python components
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          python3 -m pip install git+https://github.com/FEniCS/ufl.git@${{ github.event.inputs.ufl_ref }}
+          python3 -m pip install git+https://github.com/FEniCS/basix.git@${{ github.event.inputs.basix_ref }}
+          python3 -m pip install git+https://github.com/FEniCS/ffcx.git@${{ github.event.inputs.ffcx_ref }}
+
+      - name: Configure C++
+        run: |
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
+          cmake --build build
+          cmake --install build
+
+      - name: Build C++ interface documentation
+        run: |
+          export DOLFINX_VERSION=`cmake -L build | grep DOXYGEN_DOLFINX_VERSION | cut -f2 -d "="`
+          echo $DOLFINX_VERSION
+          cd cpp/doc
+          doxygen Doxyfile
+          make html
+
+      - name: Build Python interface
+        run: |
+          python3 -m pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
+      - name: Build Python interface documentation
+        run: |
+          cd python/doc
+          python3 -m sphinx -W -b html source/ build/html/
+
+      - name: Checkout FEniCS/docs
+        uses: actions/checkout@v4
+        with:
+          repository: "FEniCS/docs"
+          path: "docs"
+          ssh-key: "${{ secrets.SSH_GITHUB_DOCS_PRIVATE_KEY }}"
+      - name: Set version name
+        run: |
+          echo "VERSION_NAME=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+      - name: Copy documentation into repository
+        run: |
+          cd docs
+          git rm -r --ignore-unmatch dolfinx/${{ env.VERSION_NAME }}/cpp
+          git rm -r --ignore-unmatch dolfinx/${{ env.VERSION_NAME }}/python
+          mkdir -p dolfinx/${{ env.VERSION_NAME }}/cpp
+          mkdir -p dolfinx/${{ env.VERSION_NAME }}/cpp/doxygen
+          mkdir -p dolfinx/${{ env.VERSION_NAME }}/python
+          cp -r ../cpp/doc/build/html/* dolfinx/${{ env.VERSION_NAME }}/cpp/
+          cp -r ../cpp/doc/html/* dolfinx/${{ env.VERSION_NAME }}/cpp/doxygen
+          cp -r ../python/doc/build/html/* dolfinx/${{ env.VERSION_NAME }}/python
+      - name: Commit and push documentation to FEniCS/docs
+        run: |
+          cd docs
+          git config --global user.email "fenics@github.com"
+          git config --global user.name "FEniCS GitHub Actions"
+          git add --all
+          git commit --allow-empty -m "C++/Python FEniCS/dolfinx@${{ github.sha }}"
+          git push
+
