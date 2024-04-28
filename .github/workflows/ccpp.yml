@@ -129,7 +129,7 @@ jobs:
         run: pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
 
       - name: Install Python test dependencies
-        run: pip install matplotlib pytest scipy
+        run: pip ins`tall matplotlib pytest scipy
       - name: Run demos
         run: |
           python python/demo/demo_interpolation-io.py
@@ -144,8 +144,36 @@ jobs:
     strategy:
       matrix:
         petsc_arch: [linux-gnu-real32-32, linux-gnu-real64-32, linux-gnu-complex64-32, linux-gnu-complex128-32, linux-gnu-real64-64, linux-gnu-complex128-64]
-        docker_image: ["ghcr.io/fenics/test-env:current-openmpi", "ghcr.io/fenics/test-env:current-mpich"]
-    # container: ghcr.io/fenics/test-env:current-openmpi
+        docker_image: ["ghcr.io/fenics/test-env:current-openmpi"]
+        include:
+          - docker_image: "ghcr.io/fenics/test-env:current-mpich"
+            petsc_arch: linux-gnu-real64-32
+          - docker_image: "ghcr.io/fenics/test-env:current-mpich"
+            petsc_arch: linux-gnu-complex128-32
+        # include:
+        #   - docker_image: "ghcr.io/fenics/test-env:current-openmpi"
+        #     petsc_arch: linux-gnu-real32-32
+        #   - docker_image: "ghcr.io/fenics/test-env:current-openmpi"
+        #     petsc_arch: linux-gnu-real64-32
+        #   - docker_image: "ghcr.io/fenics/test-env:current-openmpi"
+        #     petsc_arch: linux-gnu-complex64-32
+        #   - docker_image: "ghcr.io/fenics/test-env:current-openmpi"
+        #     petsc_arch: linux-gnu-complex128-32
+        #   - docker_image: "ghcr.io/fenics/test-env:current-openmpi"
+        #     petsc_arch: linux-gnu-real32-64
+        #   - docker_image: "ghcr.io/fenics/test-env:current-openmpi"
+        #     petsc_arch: linux-gnu-real64-64
+        #   - docker_image: "ghcr.io/fenics/test-env:current-openmpi"
+        #     petsc_arch: linux-gnu-complex64-64
+        #   - docker_image: "ghcr.io/fenics/test-env:current-openmpi"
+        #     petsc_arch: linux-gnu-complex128-64
+
+        #   - docker_image: "ghcr.io/fenics/test-env:current-mpich"
+        #     petsc_arch: linux-gnu-real64-32
+        #   - docker_image: "ghcr.io/fenics/test-env:current-mpich"
+        #     petsc_arch: linux-gnu-complex128-32
+
+            # container: ghcr.io/fenics/test-env:current-openmpi
     container: ${{ matrix.docker_image }}
     env:
       PETSC_ARCH: ${{ matrix.petsc_arch }}
