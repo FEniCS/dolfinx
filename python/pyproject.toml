@@ -62,6 +62,7 @@ junit_family = "xunit2"
 markers = [
             "skip_in_parallel: marks tests that should be run in serial only.",
             "petsc4py: tests that require PETSc/petsc4py (deselect with '-m \"not petsc4py\"')."
+            "adios2: tests that require Adios2 (deselect with '-m \"not adios2\"')."
 ]
 
 

@@ -136,9 +136,9 @@ jobs:
           python python/demo/demo_interpolation-io.py
           python python/demo/demo_lagrange_variants.py
       - name: Run unit tests
-        run: python -m pytest -n auto python/test/unit
+        run: python -m pytest -n auto -m "not petsc4py" python/test/unit
       - name: Run unit tests (MPI, np=3)
-        run: mpirun -np 3 python -m pytest python/test/unit
+        run: mpirun -np 3 python -m pytest -m "not petsc4py" python/test/unit
 
   build-with-petsc:
     runs-on: ubuntu-latest

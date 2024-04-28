@@ -102,137 +102,134 @@ class NonlinearPDE_SNESProblem:
 
 
 @pytest.mark.petsc4py
-def test_linear_pde():
-    """Test Newton solver for a linear PDE"""
-    from petsc4py import PETSc
+class TestNLS:
+    def test_linear_pde(self):
+        """Test Newton solver for a linear PDE"""
+        from petsc4py import PETSc
 
-    # Create mesh and function space
-    mesh = create_unit_square(MPI.COMM_WORLD, 12, 12)
-    V = functionspace(mesh, ("Lagrange", 1))
-    u = Function(V)
-    v = TestFunction(V)
-    F = inner(10.0, v) * dx - inner(grad(u), grad(v)) * dx
+        # Create mesh and function space
+        mesh = create_unit_square(MPI.COMM_WORLD, 12, 12)
+        V = functionspace(mesh, ("Lagrange", 1))
+        u = Function(V)
+        v = TestFunction(V)
+        F = inner(10.0, v) * dx - inner(grad(u), grad(v)) * dx
 
-    bc = dirichletbc(
-        PETSc.ScalarType(1.0),
-        locate_dofs_geometrical(V, lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0)),
-        V,
-    )
+        bc = dirichletbc(
+            PETSc.ScalarType(1.0),
+            locate_dofs_geometrical(V, lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0)),
+            V,
+        )
 
-    # Create nonlinear problem
-    problem = NonlinearPDEProblem(F, u, bc)
+        # Create nonlinear problem
+        problem = NonlinearPDEProblem(F, u, bc)
 
-    def update(solver, dx, x):
-        x.axpy(-1, dx)
+        def update(solver, dx, x):
+            x.axpy(-1, dx)
 
-    # Create Newton solver and solve
-    solver = _cpp.nls.petsc.NewtonSolver(MPI.COMM_WORLD)
-    solver.setF(problem.F, problem.vector())
-    solver.setJ(problem.J, problem.matrix())
-    solver.set_form(problem.form)
-    solver.set_update(update)
-    solver.atol = 1.0e-8
-    solver.rtol = 1.0e2 * np.finfo(default_real_type).eps
-    n, converged = solver.solve(u.x.petsc_vec)
-    assert converged
-    assert n == 1
+        # Create Newton solver and solve
+        solver = _cpp.nls.petsc.NewtonSolver(MPI.COMM_WORLD)
+        solver.setF(problem.F, problem.vector())
+        solver.setJ(problem.J, problem.matrix())
+        solver.set_form(problem.form)
+        solver.set_update(update)
+        solver.atol = 1.0e-8
+        solver.rtol = 1.0e2 * np.finfo(default_real_type).eps
+        n, converged = solver.solve(u.x.petsc_vec)
+        assert converged
+        assert n == 1
 
-    # Increment boundary condition and solve again
-    bc.g.value[...] = PETSc.ScalarType(2.0)
-    n, converged = solver.solve(u.x.petsc_vec)
-    assert converged
-    assert n == 1
+        # Increment boundary condition and solve again
+        bc.g.value[...] = PETSc.ScalarType(2.0)
+        n, converged = solver.solve(u.x.petsc_vec)
+        assert converged
+        assert n == 1
 
+    def test_nonlinear_pde(self):
+        """Test Newton solver for a simple nonlinear PDE"""
+        from petsc4py import PETSc
 
-@pytest.mark.petsc4py
-def test_nonlinear_pde():
-    """Test Newton solver for a simple nonlinear PDE"""
-    from petsc4py import PETSc
+        mesh = create_unit_square(MPI.COMM_WORLD, 12, 5)
+        V = functionspace(mesh, ("Lagrange", 1))
+        u = Function(V)
+        v = TestFunction(V)
+        F = inner(5.0, v) * dx - ufl.sqrt(u * u) * inner(grad(u), grad(v)) * dx - inner(u, v) * dx
 
-    mesh = create_unit_square(MPI.COMM_WORLD, 12, 5)
-    V = functionspace(mesh, ("Lagrange", 1))
-    u = Function(V)
-    v = TestFunction(V)
-    F = inner(5.0, v) * dx - ufl.sqrt(u * u) * inner(grad(u), grad(v)) * dx - inner(u, v) * dx
+        bc = dirichletbc(
+            PETSc.ScalarType(1.0),
+            locate_dofs_geometrical(V, lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0)),
+            V,
+        )
 
-    bc = dirichletbc(
-        PETSc.ScalarType(1.0),
-        locate_dofs_geometrical(V, lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0)),
-        V,
-    )
+        # Create nonlinear problem
+        problem = NonlinearPDEProblem(F, u, bc)
 
-    # Create nonlinear problem
-    problem = NonlinearPDEProblem(F, u, bc)
+        # Create Newton solver and solve
+        u.x.array[:] = 0.9
+        solver = _cpp.nls.petsc.NewtonSolver(MPI.COMM_WORLD)
+        solver.setF(problem.F, problem.vector())
+        solver.setJ(problem.J, problem.matrix())
+        solver.set_form(problem.form)
+        solver.atol = 1.0e-8
+        solver.rtol = 1.0e2 * np.finfo(default_real_type).eps
+        n, converged = solver.solve(u.x.petsc_vec)
+        assert converged
+        assert n < 6
 
-    # Create Newton solver and solve
-    u.x.array[:] = 0.9
-    solver = _cpp.nls.petsc.NewtonSolver(MPI.COMM_WORLD)
-    solver.setF(problem.F, problem.vector())
-    solver.setJ(problem.J, problem.matrix())
-    solver.set_form(problem.form)
-    solver.atol = 1.0e-8
-    solver.rtol = 1.0e2 * np.finfo(default_real_type).eps
-    n, converged = solver.solve(u.x.petsc_vec)
-    assert converged
-    assert n < 6
+        # Modify boundary condition and solve again
+        bc.g.value[...] = 0.5
+        n, converged = solver.solve(u.x.petsc_vec)
+        assert converged
+        assert n > 0 and n < 6
 
-    # Modify boundary condition and solve again
-    bc.g.value[...] = 0.5
-    n, converged = solver.solve(u.x.petsc_vec)
-    assert converged
-    assert n > 0 and n < 6
+    def test_nonlinear_pde_snes(self):
+        """Test Newton solver for a simple nonlinear PDE"""
+        from petsc4py import PETSc
 
+        from dolfinx.fem.petsc import create_matrix
+        from dolfinx.la import create_petsc_vector
 
-@pytest.mark.petsc4py
-def test_nonlinear_pde_snes():
-    """Test Newton solver for a simple nonlinear PDE"""
-    from petsc4py import PETSc
+        mesh = create_unit_square(MPI.COMM_WORLD, 12, 15)
+        V = functionspace(mesh, ("Lagrange", 1))
+        u = Function(V)
+        v = TestFunction(V)
+        F = inner(5.0, v) * dx - ufl.sqrt(u * u) * inner(grad(u), grad(v)) * dx - inner(u, v) * dx
 
-    from dolfinx.fem.petsc import create_matrix
-    from dolfinx.la import create_petsc_vector
+        u_bc = Function(V)
+        u_bc.x.array[:] = 1.0
+        bc = dirichletbc(
+            u_bc,
+            locate_dofs_geometrical(V, lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0)),
+        )
 
-    mesh = create_unit_square(MPI.COMM_WORLD, 12, 15)
-    V = functionspace(mesh, ("Lagrange", 1))
-    u = Function(V)
-    v = TestFunction(V)
-    F = inner(5.0, v) * dx - ufl.sqrt(u * u) * inner(grad(u), grad(v)) * dx - inner(u, v) * dx
+        # Create nonlinear problem
+        problem = NonlinearPDE_SNESProblem(F, u, bc)
 
-    u_bc = Function(V)
-    u_bc.x.array[:] = 1.0
-    bc = dirichletbc(
-        u_bc,
-        locate_dofs_geometrical(V, lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0)),
-    )
+        u.x.array[:] = 0.9
+        b = create_petsc_vector(V.dofmap.index_map, V.dofmap.index_map_bs)
+        J = create_matrix(problem.a)
 
-    # Create nonlinear problem
-    problem = NonlinearPDE_SNESProblem(F, u, bc)
+        # Create Newton solver and solve
+        snes = PETSc.SNES().create()
+        snes.setFunction(problem.F, b)
+        snes.setJacobian(problem.J, J)
 
-    u.x.array[:] = 0.9
-    b = create_petsc_vector(V.dofmap.index_map, V.dofmap.index_map_bs)
-    J = create_matrix(problem.a)
+        snes.setTolerances(rtol=1.0e-9, max_it=10)
+        snes.getKSP().setType("preonly")
+        snes.getKSP().setTolerances(rtol=1.0e-9)
+        snes.getKSP().getPC().setType("lu")
 
-    # Create Newton solver and solve
-    snes = PETSc.SNES().create()
-    snes.setFunction(problem.F, b)
-    snes.setJacobian(problem.J, J)
+        snes.solve(None, u.x.petsc_vec)
+        assert snes.getConvergedReason() > 0
+        assert snes.getIterationNumber() < 6
 
-    snes.setTolerances(rtol=1.0e-9, max_it=10)
-    snes.getKSP().setType("preonly")
-    snes.getKSP().setTolerances(rtol=1.0e-9)
-    snes.getKSP().getPC().setType("lu")
+        # Modify boundary condition and solve again
+        u_bc.x.array[:] = 0.6
+        snes.solve(None, u.x.petsc_vec)
+        assert snes.getConvergedReason() > 0
+        assert snes.getIterationNumber() < 6
+        # print(snes.getIterationNumber())
+        # print(snes.getFunctionNorm())
 
-    snes.solve(None, u.x.petsc_vec)
-    assert snes.getConvergedReason() > 0
-    assert snes.getIterationNumber() < 6
-
-    # Modify boundary condition and solve again
-    u_bc.x.array[:] = 0.6
-    snes.solve(None, u.x.petsc_vec)
-    assert snes.getConvergedReason() > 0
-    assert snes.getIterationNumber() < 6
-    # print(snes.getIterationNumber())
-    # print(snes.getFunctionNorm())
-
-    snes.destroy()
-    b.destroy()
-    J.destroy()
+        snes.destroy()
+        b.destroy()
+        J.destroy()
