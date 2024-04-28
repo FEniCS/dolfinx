@@ -234,6 +234,7 @@ jobs:
         run: mpirun -n 3 python3 -m pytest python/test/unit/
 
   publish-docs:
+    if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) }}
     needs: build-with-petsc
     runs-on: ubuntu-latest
     container: "ghcr.io/fenics/test-env:current-openmpi"
@@ -244,7 +245,6 @@ jobs:
       PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
 
     name: Publish docs
-    if: ${{ github.repository == 'FEniCS/dolfinx' && ( github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') ) && runner.os == 'Linux' }}
     steps:
       - uses: actions/checkout@v4
       - name: Install FEniCS Python components (default branches/tags)
