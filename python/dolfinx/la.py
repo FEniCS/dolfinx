@@ -356,23 +356,12 @@ def create_petsc_vector(map, bs: int):
 
 def orthonormalize(basis):
     """Orthogonalise set of PETSc vectors in-place."""
-    for i, x in enumerate(basis):
-        for y in basis[:i]:
-            alpha = x.dot(y)
-            x.axpy(-alpha, y)
-        x.normalize()
+    _cpp.la.orthonormalize([x._cpp_object for x in basis])
 
 
 def is_orthonormal(basis, eps: float = 1.0e-12) -> bool:
-    """Check that list of PETSc vectors are orthonormal."""
-    for x in basis:
-        if abs(x.norm() - 1.0) > eps:
-            return False
-    for i, x in enumerate(basis[:-1]):
-        for y in basis[i + 1 :]:
-            if abs(x.dot(y)) > eps:
-                return False
-    return True
+    """Check that list of vectors are orthonormal."""
+    return _cpp.la.is_orthonormal([x._cpp_object for x in basis], eps)
 
 
 def norm(x: Vector, type: _cpp.la.Norm = _cpp.la.Norm.l2) -> np.floating:

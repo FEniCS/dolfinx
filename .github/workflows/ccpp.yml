@@ -137,9 +137,7 @@ jobs:
           python python/demo/demo_lagrange_variants.py
       - name: Run unit tests
         run: |
-          python -m pytest -m "not petsc4py" -v -n auto \
-            --ignore=python/test/unit/la \
-            python/test/unit
+          python -m pytest -m "not petsc4py" -v -n auto python/test/unit
 
   build-with-petsc:
     runs-on: ubuntu-latest
