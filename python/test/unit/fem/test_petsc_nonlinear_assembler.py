@@ -8,7 +8,6 @@
 import math
 
 from mpi4py import MPI
-from petsc4py import PETSc
 
 import numpy as np
 import pytest
@@ -25,24 +24,6 @@ from dolfinx.fem import (
     form,
     functionspace,
     locate_dofs_topological,
-)
-from dolfinx.fem.petsc import (
-    apply_lifting,
-    apply_lifting_nest,
-    assemble_matrix,
-    assemble_matrix_block,
-    assemble_matrix_nest,
-    assemble_vector,
-    assemble_vector_block,
-    assemble_vector_nest,
-    create_matrix,
-    create_matrix_block,
-    create_matrix_nest,
-    create_vector,
-    create_vector_block,
-    create_vector_nest,
-    set_bc,
-    set_bc_nest,
 )
 from dolfinx.mesh import GhostMode, create_unit_cube, create_unit_square, locate_entities_boundary
 from ufl import derivative, dx, inner
@@ -67,6 +48,23 @@ def test_matrix_assembly_block_nl():
     """Test assembly of block matrices and vectors into (a) monolithic
     blocked structures, PETSc Nest structures, and monolithic structures
     in the nonlinear setting."""
+    from petsc4py import PETSc
+
+    from dolfinx.fem.petsc import (
+        apply_lifting,
+        apply_lifting_nest,
+        assemble_matrix,
+        assemble_matrix_block,
+        assemble_matrix_nest,
+        assemble_vector,
+        assemble_vector_block,
+        assemble_vector_nest,
+        create_vector_block,
+        create_vector_nest,
+        set_bc,
+        set_bc_nest,
+    )
+
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 8)
     p0, p1 = 1, 2
     P0 = element("Lagrange", mesh.basix_cell(), p0, dtype=default_real_type)
@@ -226,6 +224,10 @@ class NonlinearPDE_SNESProblem:
         self.soln_vars = soln_vars
 
     def F_mono(self, snes, x, F):
+        from petsc4py import PETSc
+
+        from dolfinx.fem.petsc import apply_lifting, assemble_vector, set_bc
+
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
         with x.localForm() as _x:
             self.soln_vars.x.array[:] = _x.array_r
@@ -237,6 +239,8 @@ class NonlinearPDE_SNESProblem:
         set_bc(F, self.bcs, x, -1.0)
 
     def J_mono(self, snes, x, J, P):
+        from dolfinx.fem.petsc import assemble_matrix
+
         J.zeroEntries()
         assemble_matrix(J, self.a, bcs=self.bcs, diagonal=1.0)
         J.assemble()
@@ -246,6 +250,10 @@ class NonlinearPDE_SNESProblem:
             P.assemble()
 
     def F_block(self, snes, x, F):
+        from petsc4py import PETSc
+
+        from dolfinx.fem.petsc import assemble_vector_block
+
         assert x.getType() != "nest"
         assert F.getType() != "nest"
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
@@ -265,6 +273,8 @@ class NonlinearPDE_SNESProblem:
         assemble_vector_block(F, self.L, self.a, bcs=self.bcs, x0=x, scale=-1.0)
 
     def J_block(self, snes, x, J, P):
+        from dolfinx.fem.petsc import assemble_matrix_block
+
         assert x.getType() != "nest" and J.getType() != "nest" and P.getType() != "nest"
         J.zeroEntries()
         assemble_matrix_block(J, self.a, bcs=self.bcs, diagonal=1.0)
@@ -275,6 +285,10 @@ class NonlinearPDE_SNESProblem:
             P.assemble()
 
     def F_nest(self, snes, x, F):
+        from petsc4py import PETSc
+
+        from dolfinx.fem.petsc import apply_lifting, assemble_vector, set_bc
+
         assert x.getType() == "nest" and F.getType() == "nest"
         # Update solution
         x = x.getNestSubVecs()
@@ -301,6 +315,8 @@ class NonlinearPDE_SNESProblem:
         F.assemble()
 
     def J_nest(self, snes, x, J, P):
+        from dolfinx.fem.petsc import assemble_matrix_nest
+
         assert J.getType() == "nest" and P.getType() == "nest"
         J.zeroEntries()
         assemble_matrix_nest(J, self.a, bcs=self.bcs, diagonal=1.0)
@@ -315,6 +331,17 @@ class NonlinearPDE_SNESProblem:
 def test_assembly_solve_block_nl():
     """Solve a two-field nonlinear diffusion like problem with block
     matrix approaches and test that solution is the same."""
+    from petsc4py import PETSc
+
+    from dolfinx.fem.petsc import (
+        create_matrix,
+        create_matrix_block,
+        create_matrix_nest,
+        create_vector,
+        create_vector_block,
+        create_vector_nest,
+    )
+
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 11)
     p = 1
     P = element("Lagrange", mesh.basix_cell(), p, dtype=default_real_type)
@@ -512,6 +539,17 @@ def test_assembly_solve_block_nl():
 )
 def test_assembly_solve_taylor_hood_nl(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
+    from petsc4py import PETSc
+
+    from dolfinx.fem.petsc import (
+        create_matrix,
+        create_matrix_block,
+        create_matrix_nest,
+        create_vector,
+        create_vector_block,
+        create_vector_nest,
+    )
+
     gdim = mesh.geometry.dim
     P2 = functionspace(mesh, ("Lagrange", 2, (gdim,)))
     P1 = functionspace(mesh, ("Lagrange", 1))

@@ -158,6 +158,7 @@ def test_basic_assembly(mode, dtype):
     assert 4 * normA == pytest.approx(A.squared_norm())
 
 
+@pytest.mark.petsc4py
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_basic_assembly_petsc_matrixcsr(mode):
     from petsc4py import PETSc
