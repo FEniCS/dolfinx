@@ -6,7 +6,6 @@
 """Unit tests for Newton solver assembly"""
 
 from mpi4py import MPI
-from petsc4py import PETSc
 
 import numpy as np
 import pytest
@@ -15,15 +14,6 @@ import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_real_type
 from dolfinx.fem import Function, dirichletbc, form, functionspace, locate_dofs_geometrical
-from dolfinx.fem.petsc import (
-    apply_lifting,
-    assemble_matrix,
-    assemble_vector,
-    create_matrix,
-    create_vector,
-    set_bc,
-)
-from dolfinx.la import create_petsc_vector
 from dolfinx.mesh import create_unit_square
 from ufl import TestFunction, TrialFunction, derivative, dx, grad, inner
 
@@ -39,10 +29,16 @@ class NonlinearPDEProblem:
         self.bc = bc
 
     def form(self, x):
+        from petsc4py import PETSc
+
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     def F(self, x, b):
         """Assemble residual vector."""
+        from petsc4py import PETSc
+
+        from dolfinx.fem.petsc import apply_lifting, assemble_vector, set_bc
+
         with b.localForm() as b_local:
             b_local.set(0.0)
         assemble_vector(b, self.L)
@@ -52,14 +48,20 @@ class NonlinearPDEProblem:
 
     def J(self, x, A):
         """Assemble Jacobian matrix."""
+        from dolfinx.fem.petsc import assemble_matrix
+
         A.zeroEntries()
         assemble_matrix(A, self.a, bcs=[self.bc])
         A.assemble()
 
     def matrix(self):
+        from dolfinx.fem.petsc import create_matrix
+
         return create_matrix(self.a)
 
     def vector(self):
+        from dolfinx.fem.petsc import create_vector
+
         return create_vector(self.L)
 
 
@@ -75,6 +77,10 @@ class NonlinearPDE_SNESProblem:
 
     def F(self, snes, x, F):
         """Assemble residual vector."""
+        from petsc4py import PETSc
+
+        from dolfinx.fem.petsc import apply_lifting, assemble_vector, set_bc
+
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
         x.copy(self.u.x.petsc_vec)
         self.u.x.petsc_vec.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
@@ -88,6 +94,8 @@ class NonlinearPDE_SNESProblem:
 
     def J(self, snes, x, J, P):
         """Assemble Jacobian matrix."""
+        from dolfinx.fem.petsc import assemble_matrix
+
         J.zeroEntries()
         assemble_matrix(J, self.a, bcs=[self.bc])
         J.assemble()
@@ -96,6 +104,8 @@ class NonlinearPDE_SNESProblem:
 @pytest.mark.petsc4py
 def test_linear_pde():
     """Test Newton solver for a linear PDE"""
+    from petsc4py import PETSc
+
     # Create mesh and function space
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12)
     V = functionspace(mesh, ("Lagrange", 1))
@@ -137,6 +147,8 @@ def test_linear_pde():
 @pytest.mark.petsc4py
 def test_nonlinear_pde():
     """Test Newton solver for a simple nonlinear PDE"""
+    from petsc4py import PETSc
+
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 5)
     V = functionspace(mesh, ("Lagrange", 1))
     u = Function(V)
@@ -174,6 +186,11 @@ def test_nonlinear_pde():
 @pytest.mark.petsc4py
 def test_nonlinear_pde_snes():
     """Test Newton solver for a simple nonlinear PDE"""
+    from petsc4py import PETSc
+
+    from dolfinx.fem.petsc import create_matrix
+    from dolfinx.la import create_petsc_vector
+
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 15)
     V = functionspace(mesh, ("Lagrange", 1))
     u = Function(V)
