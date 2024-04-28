@@ -354,12 +354,12 @@ def create_petsc_vector(map, bs: int):
     return PETSc.Vec().createGhost(ghosts, size=size, bsize=bs, comm=map.comm)  # type: ignore
 
 
-def orthonormalize(basis: typing.List[Vector]):
+def orthonormalize(basis: list[Vector]):
     """Orthogonalise set of PETSc vectors in-place."""
     _cpp.la.orthonormalize([x._cpp_object for x in basis])
 
 
-def is_orthonormal(basis: typing.List[Vector], eps: float = 1.0e-12) -> bool:
+def is_orthonormal(basis: list[Vector], eps: float = 1.0e-12) -> bool:
     """Check that list of vectors are orthonormal."""
     return _cpp.la.is_orthonormal([x._cpp_object for x in basis], eps)
 
