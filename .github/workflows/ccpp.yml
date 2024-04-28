@@ -144,7 +144,7 @@ jobs:
     strategy:
       matrix:
         petsc_arch: [linux-gnu-real32-32, linux-gnu-real64-32, linux-gnu-complex64-32, linux-gnu-complex128-32, linux-gnu-real64-64, linux-gnu-complex128-64]
-        docker_image: [ghcr.io/fenics/test-env:current-openmpi, ghcr.io/fenics/test-env:current-mpich]
+        docker_image: ["ghcr.io/fenics/test-env:current-openmpi", "ghcr.io/fenics/test-env:current-mpich"]
     # container: ghcr.io/fenics/test-env:current-openmpi
     container: ${{ matrix.docker_image }}
     env:
