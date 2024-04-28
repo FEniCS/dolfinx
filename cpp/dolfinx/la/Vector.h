@@ -343,7 +343,12 @@ void orthonormalize(std::vector<std::reference_wrapper<V>> basis)
 }
 
 /// @brief Test if basis is orthonormal.
-/// @param[in] basis The set of vectors to check.
+///
+/// Returns true if ||x_i - x_j|| - delta_{ij} < eps fro all i, j, and
+/// otherwise false.
+///
+/// @param[in] basis Set of vectors to check.
+/// @param[in] eps Tolerance.
 /// @return True is basis is orthonormal, otherwise false.
 template <class V>
 bool is_orthonormal(
