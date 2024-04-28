@@ -42,7 +42,7 @@ def generate_mesh(dim: int, simplex: bool, N: int = 5, dtype=None):
 class TestFides:
     @pytest.mark.parametrize("dim", [2, 3])
     @pytest.mark.parametrize("simplex", [True, False])
-    def test_fides_mesh(tempdir, dim, simplex):
+    def test_fides_mesh(self, tempdir, dim, simplex):
         """Test writing of a single Fides mesh with changing geometry."""
         from dolfinx.io import FidesWriter
 
@@ -55,7 +55,7 @@ class TestFides:
 
     @pytest.mark.parametrize("dim", [2, 3])
     @pytest.mark.parametrize("simplex", [True, False])
-    def test_two_fides_functions(tempdir, dim, simplex):
+    def test_two_fides_functions(self, tempdir, dim, simplex):
         """Test saving two functions with Fides."""
         from dolfinx.io import FidesWriter
 
@@ -79,7 +79,7 @@ class TestFides:
 
     @pytest.mark.parametrize("dim", [2, 3])
     @pytest.mark.parametrize("simplex", [True, False])
-    def test_fides_single_function(tempdir, dim, simplex):
+    def test_fides_single_function(self, tempdir, dim, simplex):
         """Test saving a single first order Lagrange functions."""
         from dolfinx.io import FidesWriter
 
@@ -92,7 +92,7 @@ class TestFides:
 
     @pytest.mark.parametrize("dim", [2, 3])
     @pytest.mark.parametrize("simplex", [True, False])
-    def test_fides_function_at_nodes(tempdir, dim, simplex):
+    def test_fides_function_at_nodes(self, tempdir, dim, simplex):
         """Test saving P1 functions with Fides (with changing geometry)."""
         from dolfinx.io import FidesWriter
 
@@ -125,7 +125,7 @@ class TestFides:
 @pytest.mark.adios2
 class TestVTX:
     @pytest.mark.skipif(MPI.COMM_WORLD.size > 1, reason="This test should only be run in serial.")
-    def test_second_order_vtx(tempdir):
+    def test_second_order_vtx(self, tempdir):
         from dolfinx.io import VTXWriter
 
         filename = Path(tempdir, "mesh_fides.bp")
@@ -138,7 +138,7 @@ class TestVTX:
 
     @pytest.mark.parametrize("dim", [2, 3])
     @pytest.mark.parametrize("simplex", [True, False])
-    def test_vtx_mesh(tempdir, dim, simplex):
+    def test_vtx_mesh(self, tempdir, dim, simplex):
         from dolfinx.io import VTXWriter
 
         filename = Path(tempdir, "mesh_vtx.bp")
@@ -150,7 +150,7 @@ class TestVTX:
 
     @pytest.mark.parametrize("dim", [2, 3])
     @pytest.mark.parametrize("simplex", [True, False])
-    def test_vtx_functions_fail(tempdir, dim, simplex):
+    def test_vtx_functions_fail(self, tempdir, dim, simplex):
         """Test for error when elements differ."""
         from dolfinx.io import VTXWriter
 
@@ -163,7 +163,7 @@ class TestVTX:
             VTXWriter(mesh.comm, filename, [v, w])
 
     @pytest.mark.parametrize("simplex", [True, False])
-    def test_vtx_different_meshes_function(tempdir, simplex):
+    def test_vtx_different_meshes_function(self, tempdir, simplex):
         """Test for error when functions do not share a mesh."""
         from dolfinx.io import VTXWriter
 
@@ -177,7 +177,7 @@ class TestVTX:
 
     @pytest.mark.parametrize("dim", [2, 3])
     @pytest.mark.parametrize("simplex", [True, False])
-    def test_vtx_single_function(tempdir, dim, simplex):
+    def test_vtx_single_function(self, tempdir, dim, simplex):
         """Test saving a single first order Lagrange functions."""
         from dolfinx.io import VTXWriter
 
@@ -197,7 +197,7 @@ class TestVTX:
     @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
     @pytest.mark.parametrize("dim", [2, 3])
     @pytest.mark.parametrize("simplex", [True, False])
-    def test_vtx_functions(tempdir, dtype, dim, simplex):
+    def test_vtx_functions(self, tempdir, dtype, dim, simplex):
         """Test saving high order Lagrange functions."""
         from dolfinx.io import VTXWriter
 
@@ -238,7 +238,7 @@ class TestVTX:
 
         f.close()
 
-    def test_save_vtkx_cell_point(tempdir):
+    def test_save_vtkx_cell_point(self, tempdir):
         """Test writing point-wise data."""
         from dolfinx.io import VTXWriter
 
@@ -255,7 +255,7 @@ class TestVTX:
         f.write(0)
         f.close()
 
-    def test_empty_rank_mesh(tempdir):
+    def test_empty_rank_mesh(self, tempdir):
         """Test VTXWriter on mesh where some ranks have no cells."""
         from dolfinx.io import VTXWriter
 
@@ -289,7 +289,7 @@ class TestVTX:
     @pytest.mark.parametrize("dim", [2, 3])
     @pytest.mark.parametrize("simplex", [True, False])
     @pytest.mark.parametrize("reuse", [True, False])
-    def test_vtx_reuse_mesh(tempdir, dim, simplex, reuse):
+    def test_vtx_reuse_mesh(self, tempdir, dim, simplex, reuse):
         """Test reusage of mesh by VTXWriter."""
         from dolfinx.io import VTXMeshPolicy, VTXWriter
 
