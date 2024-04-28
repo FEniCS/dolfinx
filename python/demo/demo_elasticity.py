@@ -85,9 +85,7 @@ def build_nullspace(V: FunctionSpace):
     b[5][dofs[2]] = x1
     b[5][dofs[1]] = -x2
 
-    _basis = [x._cpp_object for x in basis]
-    dolfinx.cpp.la.orthonormalize(_basis)
-    assert dolfinx.cpp.la.is_orthonormal(_basis)
+    la.orthonormalize(basis)
 
     basis_petsc = [
         PETSc.Vec().createWithArray(x[: bs * length0], bsize=3, comm=V.mesh.comm)  # type: ignore
