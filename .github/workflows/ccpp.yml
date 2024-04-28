@@ -140,7 +140,6 @@ jobs:
         run: |
           python -m pytest -m "not petsc4py" -v -n auto \
             --ignore=python/test/unit/nls \
-            --ignore=python/test/unit/fem/test_assembler.py \
             --ignore=python/test/unit/fem/test_petsc_nonlinear_assembler.py \
             --ignore=python/test/unit/la \
             python/test/unit

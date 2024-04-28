@@ -8,7 +8,6 @@
 import math
 
 from mpi4py import MPI
-from petsc4py import PETSc
 
 import numpy as np
 import pytest
@@ -31,16 +30,6 @@ from dolfinx.fem import (
     locate_dofs_geometrical,
     locate_dofs_topological,
 )
-from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
-from dolfinx.fem.petsc import apply_lifting_nest as petsc_apply_lifting_nest
-from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
-from dolfinx.fem.petsc import assemble_matrix_block as petsc_assemble_matrix_block
-from dolfinx.fem.petsc import assemble_matrix_nest as petsc_assemble_matrix_nest
-from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
-from dolfinx.fem.petsc import assemble_vector_block as petsc_assemble_vector_block
-from dolfinx.fem.petsc import assemble_vector_nest as petsc_assemble_vector_nest
-from dolfinx.fem.petsc import set_bc as petsc_set_bc
-from dolfinx.fem.petsc import set_bc_nest as petsc_set_bc_nest
 from dolfinx.mesh import (
     CellType,
     GhostMode,
@@ -171,6 +160,10 @@ def test_basic_assembly(mode, dtype):
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_basic_assembly_petsc_matrixcsr(mode):
+    from petsc4py import PETSc
+
+    from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
+
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     V = functionspace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
@@ -199,8 +192,16 @@ def test_basic_assembly_petsc_matrixcsr(mode):
     A1.destroy()
 
 
+@pytest.mark.petsc4py
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_assembly_bcs(mode):
+    from petsc4py import PETSc
+
+    from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
+    from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
+    from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
+    from dolfinx.fem.petsc import set_bc as petsc_set_bc
+
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     V = functionspace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
@@ -233,10 +234,19 @@ def test_assembly_bcs(mode):
     A.destroy(), b.destroy(), g.destroy()
 
 
+@pytest.mark.petsc4py
 @pytest.mark.skip_in_parallel
 def test_petsc_assemble_manifold():
     """Test assembly of poisson problem on a mesh with topological
-    dimension 1 but embedded in 2D (gdim=2)"""
+    dimension 1 but embedded in 2D (gdim=2).
+    """
+    from petsc4py import PETSc
+
+    from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
+    from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
+    from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
+    from dolfinx.fem.petsc import set_bc as petsc_set_bc
+
     points = np.array(
         [[0.0, 0.0], [0.2, 0.0], [0.4, 0.0], [0.6, 0.0], [0.8, 0.0], [1.0, 0.0]],
         dtype=default_real_type,
@@ -276,11 +286,26 @@ def test_petsc_assemble_manifold():
     A.destroy(), b.destroy()
 
 
+@pytest.mark.petsc4py
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_matrix_assembly_block(mode):
     """Test assembly of block matrices and vectors into (a) monolithic
     blocked structures, PETSc Nest structures, and monolithic
-    structures"""
+    structures.
+    """
+    from petsc4py import PETSc
+
+    from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
+    from dolfinx.fem.petsc import apply_lifting_nest as petsc_apply_lifting_nest
+    from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
+    from dolfinx.fem.petsc import assemble_matrix_block as petsc_assemble_matrix_block
+    from dolfinx.fem.petsc import assemble_matrix_nest as petsc_assemble_matrix_nest
+    from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
+    from dolfinx.fem.petsc import assemble_vector_block as petsc_assemble_vector_block
+    from dolfinx.fem.petsc import assemble_vector_nest as petsc_assemble_vector_nest
+    from dolfinx.fem.petsc import set_bc as petsc_set_bc
+    from dolfinx.fem.petsc import set_bc_nest as petsc_set_bc_nest
+
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 8, ghost_mode=mode)
     p0, p1 = 1, 2
     P0 = element("Lagrange", mesh.basix_cell(), p0, dtype=default_real_type)
@@ -405,10 +430,25 @@ def test_matrix_assembly_block(mode):
     assert bnorm2 == pytest.approx(bnorm0, 1.0e-6)
 
 
+@pytest.mark.petsc4py
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_assembly_solve_block(mode):
     """Solve a two-field mass-matrix like problem with block matrix approaches
-    and test that solution is the same"""
+    and test that solution is the same.
+    """
+    from petsc4py import PETSc
+
+    from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
+    from dolfinx.fem.petsc import apply_lifting_nest as petsc_apply_lifting_nest
+    from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
+    from dolfinx.fem.petsc import assemble_matrix_block as petsc_assemble_matrix_block
+    from dolfinx.fem.petsc import assemble_matrix_nest as petsc_assemble_matrix_nest
+    from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
+    from dolfinx.fem.petsc import assemble_vector_block as petsc_assemble_vector_block
+    from dolfinx.fem.petsc import assemble_vector_nest as petsc_assemble_vector_nest
+    from dolfinx.fem.petsc import set_bc as petsc_set_bc
+    from dolfinx.fem.petsc import set_bc_nest as petsc_set_bc_nest
+
     mesh = create_unit_square(MPI.COMM_WORLD, 32, 31, ghost_mode=mode)
     P = element("Lagrange", mesh.basix_cell(), 1, dtype=default_real_type)
     V0 = functionspace(mesh, P)
@@ -548,6 +588,7 @@ def test_assembly_solve_block(mode):
     assert xnorm2 == pytest.approx(xnorm0, 1.0e-6)
 
 
+@pytest.mark.petsc4py
 @pytest.mark.parametrize(
     "mesh",
     [
@@ -559,6 +600,19 @@ def test_assembly_solve_block(mode):
 )
 def test_assembly_solve_taylor_hood(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
+    from petsc4py import PETSc
+
+    from dolfinx.fem.petsc import apply_lifting as petsc_apply_lifting
+    from dolfinx.fem.petsc import apply_lifting_nest as petsc_apply_lifting_nest
+    from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
+    from dolfinx.fem.petsc import assemble_matrix_block as petsc_assemble_matrix_block
+    from dolfinx.fem.petsc import assemble_matrix_nest as petsc_assemble_matrix_nest
+    from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
+    from dolfinx.fem.petsc import assemble_vector_block as petsc_assemble_vector_block
+    from dolfinx.fem.petsc import assemble_vector_nest as petsc_assemble_vector_nest
+    from dolfinx.fem.petsc import set_bc as petsc_set_bc
+    from dolfinx.fem.petsc import set_bc_nest as petsc_set_bc_nest
+
     gdim = mesh.geometry.dim
     P2 = functionspace(mesh, ("Lagrange", 2, (gdim,)))
     P1 = functionspace(mesh, ("Lagrange", 1))
@@ -749,7 +803,13 @@ def test_assembly_solve_taylor_hood(mesh):
     assert Pnorm2 == pytest.approx(Pnorm1, 1.0e-6)
 
 
+@pytest.mark.petsc4py
 def test_basic_interior_facet_assembly():
+    from petsc4py import PETSc
+
+    from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
+    from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
+
     mesh = create_rectangle(
         MPI.COMM_WORLD,
         [np.array([0.0, 0.0]), np.array([1.0, 1.0])],
@@ -773,6 +833,7 @@ def test_basic_interior_facet_assembly():
     b.destroy()
 
 
+@pytest.mark.petsc4py
 @pytest.mark.parametrize(
     "mesh",
     [
@@ -781,6 +842,11 @@ def test_basic_interior_facet_assembly():
     ],
 )
 def test_symmetry_interior_facet_assembly(mesh):
+    from petsc4py import PETSc
+
+    from dolfinx.fem.petsc import assemble_matrix_block as petsc_assemble_matrix_block
+    from dolfinx.fem.petsc import assemble_vector_block as petsc_assemble_vector_block
+
     def bc(V):
         facetdim = mesh.topology.dim - 1
         bndry_facets = locate_entities_boundary(mesh, facetdim, lambda x: np.isclose(x[0], 0.0))
@@ -918,8 +984,14 @@ def test_lambda_assembler():
     assert np.isclose(s, 1.0)
 
 
+@pytest.mark.petsc4py
 def test_pack_coefficients():
     """Test packing of form coefficients ahead of main assembly call."""
+    from petsc4py import PETSc
+
+    from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
+    from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
+
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 15)
     V = functionspace(mesh, ("Lagrange", 1))
 
@@ -981,8 +1053,11 @@ def test_pack_coefficients():
     A.destroy(), A0.destroy()
 
 
+@pytest.mark.petsc4py
 def test_coefficents_non_constant():
-    "Test packing coefficients with non-constant values"
+    """Test packing coefficients with non-constant values."""
+    from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
+
     mesh = create_unit_square(MPI.COMM_WORLD, 3, 5)
     V = functionspace(mesh, ("Lagrange", 3))  # degree 3 so that interpolation is exact
 
@@ -1070,8 +1145,14 @@ def test_vector_types():
     assert np.linalg.norm(x0.array - x2.array) == pytest.approx(0.0, abs=1e-7)
 
 
+@pytest.mark.petsc4py
 def test_assemble_empty_rank_mesh():
-    """Assembly on mesh where some ranks are empty"""
+    """Assembly on mesh where some ranks are empty."""
+    from petsc4py import PETSc
+
+    from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
+    from dolfinx.fem.petsc import assemble_vector as petsc_assemble_vector
+
     comm = MPI.COMM_WORLD
     cell_type = CellType.triangle
     domain = ufl.Mesh(element("Lagrange", cell_type.name, 1, shape=(2,), dtype=default_real_type))
@@ -1124,9 +1205,14 @@ def test_assemble_empty_rank_mesh():
     ksp.destroy(), b.destroy(), A.destroy()
 
 
+@pytest.mark.petsc4py
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
 def test_matrix_assembly_rectangular(mode):
-    """Test assembly of block rectangular block matrices"""
+    """Test assembly of block rectangular block matrices."""
+    from dolfinx.fem.petsc import assemble_matrix as petsc_assemble_matrix
+    from dolfinx.fem.petsc import assemble_matrix_block as petsc_assemble_matrix_block
+    from dolfinx.fem.petsc import assemble_matrix_nest as petsc_assemble_matrix_nest
+
     msh = create_unit_square(MPI.COMM_WORLD, 4, 8, ghost_mode=mode)
     V0 = functionspace(msh, ("Lagrange", 1))
     V1 = V0.clone()
