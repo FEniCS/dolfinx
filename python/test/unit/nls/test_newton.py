@@ -9,6 +9,7 @@ from mpi4py import MPI
 from petsc4py import PETSc
 
 import numpy as np
+import pytest
 
 import ufl
 from dolfinx import cpp as _cpp
@@ -92,6 +93,7 @@ class NonlinearPDE_SNESProblem:
         J.assemble()
 
 
+@pytest.mark.petsc4py
 def test_linear_pde():
     """Test Newton solver for a linear PDE"""
     # Create mesh and function space
@@ -132,6 +134,7 @@ def test_linear_pde():
     assert n == 1
 
 
+@pytest.mark.petsc4py
 def test_nonlinear_pde():
     """Test Newton solver for a simple nonlinear PDE"""
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 5)
@@ -168,6 +171,7 @@ def test_nonlinear_pde():
     assert n > 0 and n < 6
 
 
+@pytest.mark.petsc4py
 def test_nonlinear_pde_snes():
     """Test Newton solver for a simple nonlinear PDE"""
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 15)

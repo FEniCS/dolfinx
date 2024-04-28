@@ -62,6 +62,7 @@ def nest_matrix_norm(A):
     return math.sqrt(norm)
 
 
+@pytest.mark.petsc4py
 def test_matrix_assembly_block_nl():
     """Test assembly of block matrices and vectors into (a) monolithic
     blocked structures, PETSc Nest structures, and monolithic structures
@@ -310,6 +311,7 @@ class NonlinearPDE_SNESProblem:
             P.assemble()
 
 
+@pytest.mark.petsc4py
 def test_assembly_solve_block_nl():
     """Solve a two-field nonlinear diffusion like problem with block
     matrix approaches and test that solution is the same."""
@@ -498,6 +500,7 @@ def test_assembly_solve_block_nl():
     assert norm2 == pytest.approx(norm0, 1.0e-6)
 
 
+@pytest.mark.petsc4py
 @pytest.mark.parametrize(
     "mesh",
     [

@@ -376,7 +376,7 @@ def test_biharmonic(family, dtype):
     zero_u.x.array[:] = 0
 
     # Strong (Dirichlet) boundary condition
-    tdim = mesh, mesh.topology.dim
+    tdim = mesh.topology.dim
     boundary_facets = locate_entities_boundary(
         mesh, tdim - 1, lambda x: np.full(x.shape[1], True, dtype=bool)
     )
