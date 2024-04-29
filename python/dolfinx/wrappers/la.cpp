@@ -192,15 +192,16 @@ void declare_functions(nb::module_& m)
       nb::arg("basis"));
   m.def(
       "is_orthonormal",
-      [](std::vector<const dolfinx::la::Vector<T>*> basis)
+      [](std::vector<const dolfinx::la::Vector<T>*> basis,
+         dolfinx::scalar_value_type_t<T> eps)
       {
         std::vector<std::reference_wrapper<const dolfinx::la::Vector<T>>>
             _basis;
         for (std::size_t i = 0; i < basis.size(); ++i)
           _basis.push_back(*basis[i]);
-        return dolfinx::la::is_orthonormal(_basis);
+        return dolfinx::la::is_orthonormal(_basis, eps);
       },
-      nb::arg("basis"));
+      nb::arg("basis"), nb::arg("eps"));
 }
 
 } // namespace
