@@ -1042,7 +1042,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 /// which to interpolate. Should be the same as the list used when
 /// calling fem::interpolation_coords.
 /// @param[in] padding Absolute padding of bounding boxes of all
-/// entities on \p mesh1. This is used avoid floating point issues when
+/// entities on `mesh1`. This is used avoid floating point issues when
 /// an interpolation point from `mesh0` is on the surface of a cell in
 /// `mesh1`. This parameter can also be used for extrapolation, i.e. if
 /// cells in `mesh0` is not overlapped by `mesh1`.
