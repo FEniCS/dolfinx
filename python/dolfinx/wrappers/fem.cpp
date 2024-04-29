@@ -132,7 +132,8 @@ void declare_function_space(nb::module_& m, std::string type)
                   cell_type, pdata, {points.shape(0), points.shape(1)},
                   block_size, symmetry);
             },
-            nb::arg("cell_type"), nb::arg("points"), nb::arg("block_size"))
+            nb::arg("cell_type"), nb::arg("points"), nb::arg("block_size"),
+            nb::arg("symmetry"))
         .def("__eq__", &dolfinx::fem::FiniteElement<T>::operator==)
         .def_prop_ro("dtype", [](const dolfinx::fem::FiniteElement<T>&)
                      { return dolfinx_wrappers::numpy_dtype<T>(); })
