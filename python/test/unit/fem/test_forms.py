@@ -9,12 +9,12 @@
 from mpi4py import MPI
 
 import pytest
+
 import basix
 import basix.ufl
 import dolfinx
-
 from dolfinx.fem import extract_function_spaces, form, functionspace
-from dolfinx.fem.forms import form_cpp_class, _ufl_to_dolfinx_domain
+from dolfinx.fem.forms import form_cpp_class
 from dolfinx.mesh import create_unit_square
 from ufl import TestFunction, TrialFunction, dx, inner
 
@@ -60,8 +60,12 @@ def test_incorrect_element():
         pytest.skip("Error will only be thrown for incorrect spaecs in debug mode.")
 
     mesh = create_unit_square(MPI.COMM_WORLD, 32, 31)
-    element = basix.ufl.element("Lagrange", "triangle", 4, lagrange_variant=basix.LagrangeVariant.gll_warped)
-    incorrect_element = basix.ufl.element("Lagrange", "triangle", 4, lagrange_variant=basix.LagrangeVariant.equispaced)
+    element = basix.ufl.element(
+        "Lagrange", "triangle", 4, lagrange_variant=basix.LagrangeVariant.gll_warped
+    )
+    incorrect_element = basix.ufl.element(
+        "Lagrange", "triangle", 4, lagrange_variant=basix.LagrangeVariant.equispaced
+    )
 
     space = functionspace(mesh, element)
     incorrect_space = functionspace(mesh, incorrect_element)
@@ -81,7 +85,8 @@ def test_incorrect_element():
     f = ftype(
         module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)),
         [space._cpp_object, space._cpp_object],
-        [], [],
+        [],
+        [],
         {dolfinx.cpp.fem.IntegralType.cell: []},
         {},
         mesh._cpp_object,
@@ -92,7 +97,8 @@ def test_incorrect_element():
         f = ftype(
             module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)),
             [incorrect_space._cpp_object, space._cpp_object],
-            [], [],
+            [],
+            [],
             {dolfinx.cpp.fem.IntegralType.cell: []},
             {},
             mesh._cpp_object,
@@ -103,7 +109,8 @@ def test_incorrect_element():
         f = ftype(
             module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)),
             [space._cpp_object, incorrect_space._cpp_object],
-            [], [],
+            [],
+            [],
             {dolfinx.cpp.fem.IntegralType.cell: []},
             {},
             mesh._cpp_object,
@@ -114,7 +121,8 @@ def test_incorrect_element():
         f = ftype(
             module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)),
             [incorrect_space._cpp_object, incorrect_space._cpp_object],
-            [], [],
+            [],
+            [],
             {dolfinx.cpp.fem.IntegralType.cell: []},
             {},
             mesh._cpp_object,
