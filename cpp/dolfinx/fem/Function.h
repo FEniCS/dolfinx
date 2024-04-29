@@ -153,48 +153,21 @@ public:
   /// @brief Interpolate a provided Function.
   /// @param[in] v The function to be interpolated
   /// @param[in] cells The cells to interpolate on
-  /// @param[in] cell_map A map from cells in the mesh associated with `this`
-  /// function to cells in mesh associated with `v`
-  /// @param[in] nmm_interpolation_data Auxiliary data to interpolate on
-  /// nonmatching meshes. This data can be generated with
-  /// generate_nonmatching_meshes_interpolation_data (optional).
-  /// @param[in] interpolation_type Indicator if interpolation is on nonmatching
-  /// meshes or meshes with a map between cells
-  void interpolate(
-      const Function<value_type, geometry_type>& v,
-      std::span<const std::int32_t> cells,
-      std::span<const std::int32_t> cell_map,
-      const std::tuple<std::span<const std::int32_t>,
-                       std::span<const std::int32_t>,
-                       std::span<const geometry_type>,
-                       std::span<const std::int32_t>>& nmm_interpolation_data
-      = {},
-      dolfinx::fem::InterpolationType interpolation_type
-      = dolfinx::fem::InterpolationType::unset)
+  /// @param[in] cell_map A map from cells in the mesh associated with \p this
+  /// function to cells in mesh associated with \p v
+  void interpolate(const Function<value_type, geometry_type>& v,
+                   std::span<const std::int32_t> cells,
+                   std::span<const std::int32_t> cell_map)
   {
-    fem::interpolate(*this, v, cells, cell_map, nmm_interpolation_data,
-                     interpolation_type);
+    fem::interpolate(*this, v, cells, cell_map);
   }
 
   /// @brief Interpolate a provided Function.
   /// @param[in] v The function to be interpolated
-  /// @param[in] cell_map Map from cells in self to cell indices in `v`
-  /// @param[in] nmm_interpolation_data Auxiliary data to interpolate on
-  /// nonmatching meshes. This data can be generated with
-  /// generate_nonmatching_meshes_interpolation_data (optional).
-  /// @param[in] interpolation_type Indicator if interpolation is on nonmatching
-  /// meshes or meshes with a map between cells
-  void interpolate(
-      const Function<value_type, geometry_type>& v,
-      std::span<const std::int32_t> cell_map = std::span<const std::int32_t>()
-      = {},
-      const std::tuple<std::span<const std::int32_t>,
-                       std::span<const std::int32_t>,
-                       std::span<const geometry_type>,
-                       std::span<const std::int32_t>>& nmm_interpolation_data
-      = {},
-      dolfinx::fem::InterpolationType interpolation_type
-      = dolfinx::fem::InterpolationType::unset)
+  /// @param[in] cell_map Map from cells in self to cell indices in \p v
+  void interpolate(const Function<value_type, geometry_type>& v,
+                   std::span<const std::int32_t> cell_map
+                   = std::span<const std::int32_t>() = {})
   {
     assert(_function_space);
     assert(_function_space->mesh());
@@ -204,7 +177,7 @@ public:
     std::int32_t num_cells = cell_imap->size_local() + cell_imap->num_ghosts();
     std::vector<std::int32_t> cells(num_cells, 0);
     std::iota(cells.begin(), cells.end(), 0);
-    interpolate(v, cells, cell_map, nmm_interpolation_data, interpolation_type);
+    interpolate(v, cells, cell_map);
   }
 
   /// Interpolate an expression function on a list of cells
@@ -299,16 +272,12 @@ public:
   /// with `u`.
   /// @param[in] cells The cells to interpolate on
   /// @param[in] expr_mesh The mesh to evaluate the expression on
-  /// @param[in] cell_map Map from `cells` to cells in expression
-  /// @param[in] interpolation_type Indicator if interpolation is on nonmatching
-  /// meshes or meshes with a map between cells
+  /// @param[in] cell_map Map from \p cells to cells in expression
   void interpolate(const Expression<value_type, geometry_type>& e,
                    std::span<const std::int32_t> cells,
                    const dolfinx::mesh::Mesh<geometry_type>& expr_mesh,
                    std::span<const std::int32_t> cell_map
-                   = std::span<const std::int32_t>(),
-                   dolfinx::fem::InterpolationType interpolation_type
-                   = dolfinx::fem::InterpolationType::unset)
+                   = std::span<const std::int32_t>())
   {
     // Check that spaces are compatible
     assert(_function_space);
@@ -364,14 +333,11 @@ public:
       cells_expr.insert(cells_expr.end(), cells.begin(), cells.end());
     }
     // If meshes are different and input mapping is given
-    else if (interpolation_type == dolfinx::fem::InterpolationType::unset)
+    else
     {
       std::transform(cells.begin(), cells.end(), std::back_inserter(cells_expr),
                      [&cell_map](std::int32_t c) { return cell_map[c]; });
     }
-    else
-      std::runtime_error(
-          "Expression interpolation with nonmatching meshes is not supported");
 
     e.eval(expr_mesh, cells_expr, fdata, {num_cells, num_points * value_size});
 
@@ -400,14 +366,10 @@ public:
   /// @param[in] expr_mesh Mesh the Expression `e` is defined on.
   /// @param[in] cell_map Map from `cells` to cells in expression if
   /// receiving function is defined on a different mesh than the expression
-  /// @param[in] interpolation_type Indicator if interpolation is on nonmatching
-  /// meshes or meshes with a map between cells
   void interpolate(const Expression<value_type, geometry_type>& e,
                    const dolfinx::mesh::Mesh<geometry_type>& expr_mesh,
                    std::span<const std::int32_t> cell_map
-                   = std::span<const std::int32_t>() = {},
-                   dolfinx::fem::InterpolationType interpolation_type
-                   = dolfinx::fem::InterpolationType::unset)
+                   = std::span<const std::int32_t>() = {})
   {
     assert(_function_space);
     assert(_function_space->mesh());
@@ -417,11 +379,43 @@ public:
     std::int32_t num_cells = cell_imap->size_local() + cell_imap->num_ghosts();
     std::vector<std::int32_t> cells(num_cells, 0);
     std::iota(cells.begin(), cells.end(), 0);
-    interpolate(e, cells, expr_mesh, cell_map, interpolation_type);
+    interpolate(e, cells, expr_mesh, cell_map);
+  }
+
+  /// Interpolate a function defined on a non-matching mesh
+  /// @param[in] v The function to be interpolated
+  /// @param[in] padding Absolute padding for every bounding box on the mesh of
+  /// \p this to determine point ownership
+  /// @brief Evaluate the Function at points.
+  /// @note For repeated interpolation, it is adviced to precompute the
+  /// non-matching interpolation data
+  void
+  interpolate_nonmatching_meshes(const Function<value_type, geometry_type>& v,
+                                 T padding)
+  {
+    fem::interpolate_nonmatching_meshes(*this, v, padding);
+  }
+
+  /// Interpolate a function defined on a non-matching mesh
+  /// @param[in] v The function to be interpolated
+  /// @param cells THe cells in the mesh associated with @p u that will be
+  /// interpolated into
+  /// @param nmm_interpolation_data Data required for associating the
+  /// interpolation points of @p u with cells in @p v
+  /// @note For repeated interpolation, it is adviced to precompute the
+  /// non-matching interpolation data
+  void interpolate_nonmatching_meshes(
+      const Function<value_type, geometry_type>& v,
+      std::span<const std::int32_t> cells,
+      const std::tuple<std::span<const std::int32_t>,
+                       std::span<const std::int32_t>, std::span<const U>,
+                       std::span<const std::int32_t>>& nmm_interpolation_data)
+  {
+    fem::interpolate_nonmatching_meshes(*this, v, cells,
+                                        nmm_interpolation_data);
   }
 
   /// @brief Evaluate the Function at points.
-  ///
   /// @param[in] x The coordinates of the points. It has shape
   /// (num_points, 3) and storage is row-major.
   /// @param[in] xshape The shape of `x`.

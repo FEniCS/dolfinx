@@ -19,7 +19,6 @@ from dolfinx import default_real_type, default_scalar_type
 from dolfinx.fem import (
     Expression,
     Function,
-    InterpolationType,
     assemble_scalar,
     create_nonmatching_meshes_interpolation_data,
     form,
@@ -904,10 +903,10 @@ def test_nonmatching_mesh_interpolation(xtype, cell_type0, cell_type1):
     # Interpolate 3D->2D
     u1 = Function(V1, dtype=xtype)
 
-    u1.interpolate(
+    u1.interpolate_nonmatching_meshes(
         u0,
+        cells,
         nmm_interpolation_data=interpolation_data,
-        interpolation_type=InterpolationType.nonmatching,
     )
     u1.x.scatter_forward()
 
@@ -920,16 +919,7 @@ def test_nonmatching_mesh_interpolation(xtype, cell_type0, cell_type1):
 
     # Interpolate 2D->3D
     u0_2 = Function(V0, dtype=xtype)
-    u0_2.interpolate(
-        u1,
-        nmm_interpolation_data=create_nonmatching_meshes_interpolation_data(
-            u0_2.function_space.mesh,
-            u0_2.function_space.element,
-            u1.function_space.mesh,
-            padding=padding,
-        ),
-        interpolation_type=InterpolationType.nonmatching,
-    )
+    u0_2.interpolate_nonmatching_meshes(u1, padding=padding)
 
     # Check that function values over facets of 3D mesh of the twice
     # interpolated property is preserved
@@ -984,10 +974,9 @@ def test_nonmatching_mesh_single_cell_overlap_interpolation(xtype):
         u2.function_space.mesh, u2.function_space.element, u1.function_space.mesh, padding=padding
     )
 
-    u2.interpolate(
+    u2.interpolate_nonmatching_meshes(
         u1,
         nmm_interpolation_data=u1_2_u2_nmm_data,
-        interpolation_type=InterpolationType.nonmatching,
     )
     u2.x.scatter_forward()
 
@@ -1013,10 +1002,9 @@ def test_nonmatching_mesh_single_cell_overlap_interpolation(xtype):
         u1.function_space.mesh, u1.function_space.element, u2.function_space.mesh, padding=padding
     )
 
-    u1.interpolate(
+    u1.interpolate_nonmatching_meshes(
         u2,
         nmm_interpolation_data=u2_2_u1_nmm_data,
-        interpolation_type=InterpolationType.nonmatching,
     )
     u1.x.scatter_forward()
 

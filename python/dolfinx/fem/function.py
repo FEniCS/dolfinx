@@ -1,4 +1,4 @@
-# Copyright (C) 2009-2023 Chris N. Richardson, Garth N. Wells and Michal Habera
+# Copyright (C) 2009-2024 Chris N. Richardson, Garth N. Wells, Michal Habera and Jørgen S. Dokken
 #
 # This file is part of DOLFINx (https://www.fenicsproject.org)
 #
@@ -18,7 +18,6 @@ import basix
 import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit, la
-from dolfinx.cpp.fem import InterpolationType
 from dolfinx.fem import dofmap
 
 if typing.TYPE_CHECKING:
@@ -413,6 +412,54 @@ class Function(ufl.Coefficient):
             u = np.reshape(u, (-1,))
         return u
 
+    def interpolate_nonmatching_meshes(
+        self,
+        u: Function,
+        cells: typing.Optional[np.ndarray] = None,
+        nmm_interpolation_data: typing.Optional[PointOwnershipData] = None,
+        padding: float = 0.0,
+    ) -> None:
+        """Interpolate a function defined on one mesh to a function defined on another mesh
+
+        Args:
+            u: The Function to interpolate.
+            cells: The cells to interpolate over. If `None` then all
+                cells are interpolated over.
+            nmm_interpolation_data: Data needed to interpolate functions defined on other meshes
+            padding: Absolute padding of bounding boxes for computing
+                non-matching interpolation data
+        """
+        # If interpolation data has not been provided, create it
+        if cells is None and nmm_interpolation_data is None:
+            mesh = self.function_space.mesh
+            map = mesh.topology.index_map(mesh.topology.dim)
+            cells = np.arange(map.size_local + map.num_ghosts, dtype=np.int32)
+            _nmm_d = PointOwnershipData(
+                *_cpp.fem.create_nonmatching_meshes_interpolation_data(
+                    self.function_space.mesh._cpp_object,
+                    self.function_space.element,
+                    u.function_space.mesh._cpp_object,
+                    padding,
+                )
+            )
+            self._cpp_object.interpolate_nonmatching_meshes(u._cpp_object, cells, _nmm_d)  # type: ignore
+        # If interpolation data has been provided, but not list of cells, assume it comes
+        # from the constructor that uses both owned and ghosted cells
+        elif cells is None and nmm_interpolation_data is not None:
+            mesh = self.function_space.mesh
+            map = mesh.topology.index_map(mesh.topology.dim)
+            cells = np.arange(map.size_local + map.num_ghosts, dtype=np.int32)
+            self._cpp_object.interpolate_nonmatching_meshes(
+                u._cpp_object, cells, nmm_interpolation_data
+            )  # type: ignore
+        # If interpolation data has been provided use it
+        else:
+            assert nmm_interpolation_data is not None
+            assert cells is not None
+            self._cpp_object.interpolate_nonmatching_meshes(
+                u._cpp_object, cells, nmm_interpolation_data
+            )  # type: ignore
+
     def interpolate(
         self,
         u: typing.Union[typing.Callable, Expression, Function],
@@ -420,7 +467,6 @@ class Function(ufl.Coefficient):
         cell_map: typing.Optional[np.ndarray] = None,
         expr_mesh: typing.Optional[Mesh] = None,
         nmm_interpolation_data: typing.Optional[PointOwnershipData] = None,
-        interpolation_type: InterpolationType = InterpolationType.unset,
     ) -> None:
         """Interpolate an expression
 
@@ -432,23 +478,7 @@ class Function(ufl.Coefficient):
             expr_mesh: If an Expression with coefficients or constants from another mesh
                 than the function is supplied, the mesh associated with this expression has
                 to be provided, along with `cell_map.`
-            nmm_interpolation_data: Data needed to interpolate functions defined on other meshes
-            interpolation_type: If interpolation should be done using NMM, this parameter
-            has to be set to `nonmatching`
         """
-        if interpolation_type == InterpolationType.nonmatching:
-            if nmm_interpolation_data is None:
-                raise RuntimeError(
-                    "For non-matching interpolation one has to supply point ownership data"
-                )
-        else:
-            x_dtype = self.function_space.mesh.geometry.x.dtype
-            nmm_interpolation_data = PointOwnershipData(
-                src_owner=np.empty(0, dtype=np.int32),
-                dest_owners=np.empty(0, dtype=np.int32),
-                dest_points=np.empty(0, dtype=x_dtype),
-                dest_cells=np.empty(0, dtype=np.int32),
-            )
 
         if cells is None:
             mesh = self.function_space.mesh
@@ -467,9 +497,7 @@ class Function(ufl.Coefficient):
                 _cell_map = np.zeros(0, dtype=np.int32)
             else:
                 _cell_map = cell_map
-            self._cpp_object.interpolate(
-                u._cpp_object, cells, _cell_map, nmm_interpolation_data, interpolation_type
-            )  # type: ignore
+            self._cpp_object.interpolate(u._cpp_object, cells, _cell_map)  # type: ignore
 
         @_interpolate.register(int)
         def _(u_ptr: int, cells: typing.Optional[np.ndarray] = None):
@@ -496,9 +524,7 @@ class Function(ufl.Coefficient):
                 expr_cell_map = cell_map
                 assert expr_mesh is not None
                 mapping_mesh = expr_mesh._cpp_object
-            self._cpp_object.interpolate(
-                expr._cpp_object, cells, mapping_mesh, expr_cell_map, interpolation_type
-            )  # type: ignore
+            self._cpp_object.interpolate(expr._cpp_object, cells, mapping_mesh, expr_cell_map)  # type: ignore
 
         try:
             # u is a Function or Expression (or pointer to one)
