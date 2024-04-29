@@ -58,9 +58,10 @@ public:
   /// @param[in] points Quadrature points
   /// @param[in] pshape Shape of points array
   /// @param[in] block_size The block size for the element
+  /// @param[in] symmetric Is the element a symmetric tensor?
   FiniteElement(mesh::CellType cell_type, std::span<const geometry_type> points,
                 std::array<std::size_t, 2> pshape,
-                const std::size_t block_size);
+                const std::size_t block_size, const bool symmetric = false);
 
   /// Copy constructor
   FiniteElement(const FiniteElement& element) = delete;
