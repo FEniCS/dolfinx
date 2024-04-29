@@ -1082,7 +1082,7 @@ geometry::PointOwnershipData<T> create_nonmatching_meshes_interpolation_data(
 /// interpolated into
 /// @param nmm_interpolation_data Data required for associating the
 /// interpolation points of `u` with cells in `v`. This can be computed with
-/// `create_nonmatching_meshes_interpolation_data`
+/// `fem::create_nonmatching_meshes_interpolation_data`.
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate(Function<T, U>& u, const Function<T, U>& v,
                  std::span<const std::int32_t> cells,

@@ -385,10 +385,11 @@ public:
 
   /// Interpolate a function defined on a non-matching mesh
   /// @param[in] v The function to be interpolated
-  /// @param cells Cells in the mesh associated with `u` that will be
+  /// @param cells Cells in the mesh associated with `this` that will be
   /// interpolated into
   /// @param nmm_interpolation_data Data required for associating the
-  /// interpolation points of @p u with cells in @p v
+  /// interpolation points of `this` with cells in `v`. Can be computed with
+  /// `fem::create_nonmatching_meshes_interpolation_data`.
   void
   interpolate(const Function<value_type, geometry_type>& v,
               std::span<const std::int32_t> cells,
