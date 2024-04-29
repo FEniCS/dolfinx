@@ -41,7 +41,7 @@ jobs:
         with:
           path: ./ffcx
           repository: FEniCS/ffcx
-          ref: main
+          ref: mscroggs/basix-hash
       - name: Install FFCx C interface
         run: |
           . /opt/intel/oneapi/setvars.sh

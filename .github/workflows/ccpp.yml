@@ -94,7 +94,7 @@ jobs:
         run: |
           pip install git+https://github.com/FEniCS/ufl.git
           pip install git+https://github.com/FEniCS/basix.git
-          pip install git+https://github.com/FEniCS/ffcx.git
+          pip install git+https://github.com/FEniCS/ffcx.git@mscroggs/basix-hash
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
         run: |
@@ -160,7 +160,7 @@ jobs:
         run: |
           python3 -m pip install git+https://github.com/FEniCS/ufl.git
           python3 -m pip install git+https://github.com/FEniCS/basix.git
-          python3 -m pip install git+https://github.com/FEniCS/ffcx.git
+          python3 -m pip install git+https://github.com/FEniCS/ffcx.git@mscroggs/basix-hash
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
         run: |

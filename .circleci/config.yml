@@ -9,7 +9,7 @@ install-python-components: &install-python-components
     cmake --install build-dir
     pip3 install ./basix/python
     pip3 install git+https://github.com/FEniCS/ufl.git
-    pip3 install git+https://github.com/FEniCS/ffcx.git
+    pip3 install git+https://github.com/FEniCS/ffcx.git@mscroggs/basix-hash
 
 configure-cpp: &configure-cpp
   name: Configure (C++)
