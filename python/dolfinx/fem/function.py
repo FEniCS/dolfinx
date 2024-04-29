@@ -406,8 +406,8 @@ class Function(ufl.Coefficient):
             u: The Function to interpolate.
             cells: The cells to interpolate over. If `None` then all
                 cells are interpolated over.
-            nmm_interpolation_data: Data needed to interpolate functions defined on other meshes.
-                Can be created with :func:`dolfinx.fem.create_nonmatching_meshes_interpolation_data`.
+            nmm_interpolation_data: Data needed to interpolate functions defined on other meshes,
+                created with :func:`dolfinx.fem.create_nonmatching_meshes_interpolation_data`.
         """
         self._cpp_object.interpolate(u._cpp_object, cells, nmm_interpolation_data._cpp_object)  # type: ignore
 
