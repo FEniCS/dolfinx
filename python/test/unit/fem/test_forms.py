@@ -59,22 +59,20 @@ def test_incorrect_element():
     if not dolfinx.common.has_debug:
         pytest.skip("Error will only be thrown for incorrect spaecs in debug mode.")
 
-    dtype = dolfinx.default_scalar_type
-
     mesh = create_unit_square(MPI.COMM_WORLD, 32, 31)
     element = basix.ufl.element(
         "Lagrange",
         "triangle",
         4,
         lagrange_variant=basix.LagrangeVariant.gll_warped,
-        dtype=dtype,
+        dtype=dolfinx.default_real_type,
     )
     incorrect_element = basix.ufl.element(
         "Lagrange",
         "triangle",
         4,
         lagrange_variant=basix.LagrangeVariant.equispaced,
-        dtype=dtype,
+        dtype=dolfinx.default_real_type,
     )
 
     space = functionspace(mesh, element)
@@ -85,6 +83,7 @@ def test_incorrect_element():
 
     a = inner(u, v) * dx
 
+    dtype = dolfinx.default_scalar_type
     ftype = form_cpp_class(dtype)
 
     ufcx_form, module, code = dolfinx.jit.ffcx_jit(
