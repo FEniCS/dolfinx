@@ -153,8 +153,8 @@ public:
   /// @brief Interpolate a provided Function.
   /// @param[in] v The function to be interpolated
   /// @param[in] cells The cells to interpolate on
-  /// @param[in] cell_map A map from cells in the mesh associated with \p this
-  /// function to cells in mesh associated with \p v
+  /// @param[in] cell_map For cell `i` in the mesh associated with \p this, 
+  /// `cell_map[i]` is the index of the same cell, but in the mesh associated with `v`
   void interpolate(const Function<value_type, geometry_type>& v,
                    std::span<const std::int32_t> cells,
                    std::span<const std::int32_t> cell_map)
@@ -272,7 +272,8 @@ public:
   /// with `u`.
   /// @param[in] cells The cells to interpolate on
   /// @param[in] expr_mesh The mesh to evaluate the expression on
-  /// @param[in] cell_map Map from \p cells to cells in expression
+  /// @param[in] cell_map For cell `i` in the mesh associated with \p this, 
+ /// `cell_map[i]` is the index of the same cell, but in \p expr_mesh
   void interpolate(const Expression<value_type, geometry_type>& e,
                    std::span<const std::int32_t> cells,
                    const dolfinx::mesh::Mesh<geometry_type>& expr_mesh,
@@ -398,7 +399,7 @@ public:
 
   /// Interpolate a function defined on a non-matching mesh
   /// @param[in] v The function to be interpolated
-  /// @param cells THe cells in the mesh associated with @p u that will be
+  /// @param cells Cells in the mesh associated with `u`  that will be
   /// interpolated into
   /// @param nmm_interpolation_data Data required for associating the
   /// interpolation points of @p u with cells in @p v
