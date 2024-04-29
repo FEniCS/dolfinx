@@ -760,11 +760,17 @@ class LinearProblem:
                                                                        "mumps"})
         """
         self._a = _create_form(
-            a, form_compiler_options=form_compiler_options, jit_options=jit_options
+            a,
+            dtype=PETSc.ScalarType,
+            form_compiler_options=form_compiler_options,
+            jit_options=jit_options,
         )
         self._A = create_matrix(self._a)
         self._L = _create_form(
-            L, form_compiler_options=form_compiler_options, jit_options=jit_options
+            L,
+            dtype=PETSc.ScalarType,
+            form_compiler_options=form_compiler_options,
+            jit_options=jit_options,
         )
         self._b = create_vector(self._L)
 

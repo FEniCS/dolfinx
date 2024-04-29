@@ -51,8 +51,8 @@ auto compute_parent_facets(std::span<const std::int32_t> simplex_set)
   static_assert(tdim == 2 or tdim == 3);
   assert(simplex_set.size() % (tdim + 1) == 0);
   using parent_facet_t
-      = std::conditional<tdim == 2, std::array<std::int8_t, 12>,
-                         std::array<std::int8_t, 32>>::type;
+      = std::conditional_t<tdim == 2, std::array<std::int8_t, 12>,
+                           std::array<std::int8_t, 32>>;
   parent_facet_t parent_facet;
   parent_facet.fill(-1);
   assert(simplex_set.size() <= parent_facet.size());

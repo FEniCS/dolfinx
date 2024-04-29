@@ -345,8 +345,10 @@ def test_mixed_sub_interpolation():
     def f(x):
         return np.vstack((10 + x[0], -10 - x[1], 25 + x[0]))
 
-    P2 = element("Lagrange", mesh.basix_cell(), 2, shape=(mesh.geometry.dim,))
-    P1 = element("Lagrange", mesh.basix_cell(), 1)
+    P2 = element(
+        "Lagrange", mesh.basix_cell(), 2, shape=(mesh.geometry.dim,), dtype=default_real_type
+    )
+    P1 = element("Lagrange", mesh.basix_cell(), 1, dtype=default_real_type)
     for i, P in enumerate((mixed_element([P2, P1]), mixed_element([P1, P2]))):
         W = functionspace(mesh, P)
         U = Function(W)
@@ -397,8 +399,10 @@ def test_mixed_sub_interpolation():
 def test_mixed_interpolation():
     """Test that mixed interpolation raised an exception."""
     mesh = one_cell_mesh(CellType.triangle)
-    A = element("Lagrange", mesh.basix_cell(), 1)
-    B = element("Lagrange", mesh.basix_cell(), 1, shape=(mesh.geometry.dim,))
+    A = element("Lagrange", mesh.basix_cell(), 1, dtype=default_real_type)
+    B = element(
+        "Lagrange", mesh.basix_cell(), 1, shape=(mesh.geometry.dim,), dtype=default_real_type
+    )
     v = Function(functionspace(mesh, mixed_element([A, B])))
     with pytest.raises(RuntimeError):
         v.interpolate(lambda x: (x[1], 2 * x[0], 3 * x[1]))
@@ -679,7 +683,7 @@ def test_de_rahm_2D(order):
     x = ufl.SpatialCoordinate(mesh)
     g_ex = ufl.as_vector((1 + x[1], 4 * x[1] + x[0]))
     assert np.abs(assemble_scalar(form(ufl.inner(q - g_ex, q - g_ex) * ufl.dx))) == pytest.approx(
-        0, abs=1e-10
+        0, abs=np.sqrt(np.finfo(mesh.geometry.x.dtype).eps)
     )
 
     V = functionspace(mesh, ("BDM", order - 1))
@@ -691,7 +695,7 @@ def test_de_rahm_2D(order):
     v.interpolate(Expression(curl2D(ufl.grad(w)), V.element.interpolation_points()))
     h_ex = ufl.as_vector((1, -1))
     assert np.abs(assemble_scalar(form(ufl.inner(v - h_ex, v - h_ex) * ufl.dx))) == pytest.approx(
-        0, abs=1.0e-6
+        0, abs=np.sqrt(np.finfo(mesh.geometry.x.dtype).eps)
     )
 
 
@@ -765,17 +769,27 @@ def test_interpolate_callable_subset(bound):
 @pytest.mark.parametrize(
     "scalar_element",
     [
-        element("P", "triangle", 1),
-        element("P", "triangle", 2),
-        element("P", "triangle", 3),
-        element("Q", "quadrilateral", 1),
-        element("Q", "quadrilateral", 2),
-        element("Q", "quadrilateral", 3),
-        element("S", "quadrilateral", 1),
-        element("S", "quadrilateral", 2),
-        element("S", "quadrilateral", 3),
-        enriched_element([element("P", "triangle", 1), element("Bubble", "triangle", 3)]),
-        enriched_element([element("P", "quadrilateral", 1), element("Bubble", "quadrilateral", 2)]),
+        element("P", "triangle", 1, dtype=default_real_type),
+        element("P", "triangle", 2, dtype=default_real_type),
+        element("P", "triangle", 3, dtype=default_real_type),
+        element("Q", "quadrilateral", 1, dtype=default_real_type),
+        element("Q", "quadrilateral", 2, dtype=default_real_type),
+        element("Q", "quadrilateral", 3, dtype=default_real_type),
+        element("S", "quadrilateral", 1, dtype=default_real_type),
+        element("S", "quadrilateral", 2, dtype=default_real_type),
+        element("S", "quadrilateral", 3, dtype=default_real_type),
+        enriched_element(
+            [
+                element("P", "triangle", 1, dtype=default_real_type),
+                element("Bubble", "triangle", 3, dtype=default_real_type),
+            ]
+        ),
+        enriched_element(
+            [
+                element("P", "quadrilateral", 1, dtype=default_real_type),
+                element("Bubble", "quadrilateral", 2, dtype=default_real_type),
+            ]
+        ),
     ],
 )
 def test_vector_element_interpolation(scalar_element):
@@ -821,6 +835,7 @@ def test_custom_vector_element():
         False,
         1,
         1,
+        dtype=default_real_type,
     )
 
     V = functionspace(mesh, e)
@@ -846,9 +861,11 @@ def test_mixed_interpolation_permuting(cell_type, order):
     x = ufl.SpatialCoordinate(mesh)
     dgdy = ufl.cos(x[1])
 
-    curl_el = element("N1curl", mesh.basix_cell(), 1)
-    vlag_el = element("Lagrange", mesh.basix_cell(), 1, shape=(mesh.geometry.dim,))
-    lagr_el = element("Lagrange", mesh.basix_cell(), order)
+    curl_el = element("N1curl", mesh.basix_cell(), 1, dtype=default_real_type)
+    vlag_el = element(
+        "Lagrange", mesh.basix_cell(), 1, shape=(mesh.geometry.dim,), dtype=default_real_type
+    )
+    lagr_el = element("Lagrange", mesh.basix_cell(), order, dtype=default_real_type)
 
     V = functionspace(mesh, mixed_element([curl_el, lagr_el]))
     Eb_m = Function(V)
@@ -873,9 +890,9 @@ def test_nonmatching_mesh_interpolation(xtype, cell_type0, cell_type1):
     def f(x):
         return (7 * x[1], 3 * x[0], x[2] + 0.4)
 
-    el0 = element("Lagrange", mesh0.basix_cell(), 1, shape=(3,))
+    el0 = element("Lagrange", mesh0.basix_cell(), 1, shape=(3,), dtype=xtype)
     V0 = functionspace(mesh0, el0)
-    el1 = element("Lagrange", mesh1.basix_cell(), 1, shape=(3,))
+    el1 = element("Lagrange", mesh1.basix_cell(), 1, shape=(3,), dtype=xtype)
     V1 = functionspace(mesh1, el1)
 
     # Interpolate on 3D mesh
@@ -915,7 +932,12 @@ def test_nonmatching_mesh_interpolation(xtype, cell_type0, cell_type1):
     u1_ex.interpolate(f)
     u1_ex.x.scatter_forward()
 
-    assert np.allclose(u1_ex.x.array, u1.x.array, rtol=1.0e-4, atol=1.0e-6)
+    assert np.allclose(
+        u1_ex.x.array,
+        u1.x.array,
+        rtol=np.sqrt(np.finfo(xtype).eps),
+        atol=np.sqrt(np.finfo(xtype).eps),
+    )
 
     # Interpolate 2D->3D
     u0_2 = Function(V0, dtype=xtype)

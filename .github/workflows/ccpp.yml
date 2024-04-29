@@ -30,9 +30,14 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-latest
-    container: ghcr.io/fenics/test-env:current-openmpi
     steps:
       - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install linting tools
+        run: pip install clang-format cmake-format[YAML] mypy ruff
       - name: ruff .py files in C++ code
         run: |
           cd cpp/
@@ -69,26 +74,33 @@ jobs:
   build:
     runs-on: ubuntu-latest
     needs: lint
-    container: ghcr.io/fenics/test-env:current-openmpi
     env:
-      SCOTCH_DIR: /usr/local/petsc/linux-gnu-real64-32
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
-      PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe
+      PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe   # Newer OpenMPI
+      OMPI_MCA_rmaps_base_oversubscribe: true                 # Older OpenMPI
 
     steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get install catch2 cmake g++ libboost-dev libboost-filesystem-dev libboost-timer-dev libhdf5-mpi-dev libparmetis-dev libpugixml-dev mpi-default-dev ninja-build pkg-config
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
         run: |
-          python3 -m pip install git+https://github.com/FEniCS/ufl.git
-          python3 -m pip install git+https://github.com/FEniCS/basix.git
-          python3 -m pip install git+https://github.com/FEniCS/ffcx.git
+          pip install git+https://github.com/FEniCS/ufl.git
+          pip install git+https://github.com/FEniCS/basix.git
+          pip install git+https://github.com/FEniCS/ffcx.git
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
         run: |
-          python3 -m pip install git+https://github.com/FEniCS/ufl.git@${{ github.event.inputs.ufl_ref }}
-          python3 -m pip install git+https://github.com/FEniCS/basix.git@${{ github.event.inputs.basix_ref }}
-          python3 -m pip install git+https://github.com/FEniCS/ffcx.git@${{ github.event.inputs.ffcx_ref }}
+          pip install git+https://github.com/FEniCS/ufl.git@${{ github.event.inputs.ufl_ref }}
+          pip install git+https://github.com/FEniCS/basix.git@${{ github.event.inputs.basix_ref }}
+          pip install git+https://github.com/FEniCS/ffcx.git@${{ github.event.inputs.ffcx_ref }}
 
       - uses: actions/checkout@v4
 
@@ -97,7 +109,7 @@ jobs:
       - name: Build and install C++ library
         run: |
           cmake --build build
-          cmake --install build
+          sudo cmake --install build
       - name: Build C++ unit tests
         run: |
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
@@ -111,10 +123,20 @@ jobs:
           cd build/test
           mpirun -n 3 ctest -V --output-on-failure -R unittests
 
+      - name: Install Python build dependencies
+        run: pip install mpi4py nanobind scikit-build-core[pyproject]
       - name: Build Python interface
-        run: python3 -m pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
-      - name: Test Python import
-        run: python3 -c "import dolfinx; print(dolfinx.__version__)"
+        run: pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
+
+      - name: Install Python test dependencies
+        run: pip install matplotlib pytest scipy
+      - name: Run demos
+        run: |
+          python python/demo/demo_interpolation-io.py
+          python python/demo/demo_lagrange_variants.py
+      - name: Run unit tests
+        run: |
+          pytest --ignore=python/test/unit/nls --ignore=python/test/unit/fem   --ignore=python/test/unit/la python/test/unit  python/test/unit/
 
   build-with-petsc:
     runs-on: ubuntu-latest

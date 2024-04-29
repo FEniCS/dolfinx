@@ -648,6 +648,38 @@ class ElementMetaData(typing.NamedTuple):
     symmetry: typing.Optional[bool] = None
 
 
+def _create_dolfinx_element(
+    comm: _MPI.Intracomm,
+    cell_type: _cpp.mesh.CellType,
+    ufl_e: ufl.FiniteElementBase,
+    dtype: np.dtype,
+) -> typing.Union[_cpp.fem.FiniteElement_float32, _cpp.fem.FiniteElement_float64]:
+    """Create a DOLFINx element from a basix.ufl element."""
+    if np.issubdtype(dtype, np.float32):
+        CppElement = _cpp.fem.FiniteElement_float32
+    elif np.issubdtype(dtype, np.float64):
+        CppElement = _cpp.fem.FiniteElement_float64
+    else:
+        raise ValueError(f"Unsupported dtype: {dtype}")
+
+    if ufl_e.is_mixed:
+        elements = [
+            _create_dolfinx_element(
+                comm,
+                cell_type,
+                e,
+                dtype,
+            )
+            for e in ufl_e.sub_elements
+        ]
+        return CppElement(elements)
+    elif ufl_e.is_quadrature:
+        return CppElement(cell_type, ufl_e.custom_quadrature()[0], ufl_e.block_size)
+    else:
+        basix_e = ufl_e.basix_element._e
+        return CppElement(basix_e, ufl_e.block_size, ufl_e.is_symmetric)
+
+
 def functionspace(
     mesh: Mesh,
     element: typing.Union[ufl.FiniteElementBase, ElementMetaData, tuple[str, int, tuple, bool]],
@@ -667,6 +699,7 @@ def functionspace(
 
     """
     # Create UFL element
+    dtype = mesh.geometry.x.dtype
     try:
         e = ElementMetaData(*element)
         ufl_e = basix.ufl.element(
@@ -675,6 +708,7 @@ def functionspace(
             e.degree,
             shape=e.shape,
             symmetry=e.symmetry,
+            dtype=dtype,
         )
     except TypeError:
         ufl_e = element  # type: ignore
@@ -687,30 +721,19 @@ def functionspace(
     value_shape = ufl_space.value_shape
 
     # Compile dofmap and element and create DOLFINx objects
-    dtype = mesh.geometry.x.dtype
     if form_compiler_options is None:
         form_compiler_options = dict()
     form_compiler_options["scalar_type"] = dtype
-    (ufcx_element, ufcx_dofmap), module, code = jit.ffcx_jit(
-        mesh.comm,
-        ufl_e,
-        form_compiler_options=form_compiler_options,
-        jit_options=jit_options,
-    )
 
-    ffi = module.ffi
-    if np.issubdtype(dtype, np.float32):
-        cpp_element = _cpp.fem.FiniteElement_float32(
-            ffi.cast("uintptr_t", ffi.addressof(ufcx_element))
-        )
-    elif np.issubdtype(dtype, np.float64):
-        cpp_element = _cpp.fem.FiniteElement_float64(
-            ffi.cast("uintptr_t", ffi.addressof(ufcx_element))
-        )
+    cpp_element = _create_dolfinx_element(
+        mesh.comm,
+        mesh.topology.cell_type,
+        ufl_e,
+        dtype,
+    )
 
     cpp_dofmap = _cpp.fem.create_dofmap(
         mesh.comm,
-        ffi.cast("uintptr_t", ffi.addressof(ufcx_dofmap)),
         mesh.topology,
         cpp_element,
     )

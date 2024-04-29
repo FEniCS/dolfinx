@@ -153,8 +153,13 @@ int main(int argc, char* argv[])
         mesh::CellType::tetrahedron,
         mesh::create_cell_partitioner(mesh::GhostMode::none)));
 
-    auto V = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace(
-        functionspace_form_hyperelasticity_F_form, "u", mesh));
+    auto element = basix::create_element<U>(
+        basix::element::family::P, basix::cell::type::tetrahedron, 1,
+        basix::element::lagrange_variant::unset,
+        basix::element::dpc_variant::unset, false);
+
+    auto V = std::make_shared<fem::FunctionSpace<U>>(
+        fem::create_functionspace(mesh, element, {3}));
 
     auto B = std::make_shared<fem::Constant<T>>(std::vector<T>{0, 0, 0});
     auto traction = std::make_shared<fem::Constant<T>>(std::vector<T>{0, 0, 0});
