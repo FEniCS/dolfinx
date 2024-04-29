@@ -9,8 +9,12 @@
 from mpi4py import MPI
 
 import pytest
+import basix
+import basix.ufl
+import dolfinx
 
 from dolfinx.fem import extract_function_spaces, form, functionspace
+from dolfinx.fem.forms import form_cpp_class, _ufl_to_dolfinx_domain
 from dolfinx.mesh import create_unit_square
 from ufl import TestFunction, TrialFunction, dx, inner
 
@@ -48,3 +52,71 @@ def test_extract_forms():
     assert Vr[1] is V1._cpp_object
     with pytest.raises(AssertionError):
         extract_function_spaces(a, 1)
+
+
+def test_incorrect_element():
+    """Test that an error is raised if an incorrect element is used."""
+    if not dolfinx.common.has_debug:
+        pytest.skip("Error will only be thrown for incorrect spaecs in debug mode.")
+
+    mesh = create_unit_square(MPI.COMM_WORLD, 32, 31)
+    element = basix.ufl.element("Lagrange", "triangle", 4, lagrange_variant=basix.LagrangeVariant.gll_warped)
+    incorrect_element = basix.ufl.element("Lagrange", "triangle", 4, lagrange_variant=basix.LagrangeVariant.equispaced)
+
+    space = functionspace(mesh, element)
+    incorrect_space = functionspace(mesh, incorrect_element)
+
+    u = TrialFunction(space)
+    v = TestFunction(space)
+
+    a = inner(u, v) * dx
+
+    dtype = dolfinx.default_scalar_type
+    ftype = form_cpp_class(dtype)
+
+    ufcx_form, module, code = dolfinx.jit.ffcx_jit(
+        mesh.comm, a, form_compiler_options={"scalar_type": dtype}
+    )
+
+    f = ftype(
+        module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)),
+        [space._cpp_object, space._cpp_object],
+        [], [],
+        {dolfinx.cpp.fem.IntegralType.cell: []},
+        {},
+        mesh._cpp_object,
+    )
+    dolfinx.fem.Form(f, ufcx_form, code)
+
+    with pytest.raises(RuntimeError):
+        f = ftype(
+            module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)),
+            [incorrect_space._cpp_object, space._cpp_object],
+            [], [],
+            {dolfinx.cpp.fem.IntegralType.cell: []},
+            {},
+            mesh._cpp_object,
+        )
+        dolfinx.fem.Form(f, ufcx_form, code)
+
+    with pytest.raises(RuntimeError):
+        f = ftype(
+            module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)),
+            [space._cpp_object, incorrect_space._cpp_object],
+            [], [],
+            {dolfinx.cpp.fem.IntegralType.cell: []},
+            {},
+            mesh._cpp_object,
+        )
+        dolfinx.fem.Form(f, ufcx_form, code)
+
+    with pytest.raises(RuntimeError):
+        f = ftype(
+            module.ffi.cast("uintptr_t", module.ffi.addressof(ufcx_form)),
+            [incorrect_space._cpp_object, incorrect_space._cpp_object],
+            [], [],
+            {dolfinx.cpp.fem.IntegralType.cell: []},
+            {},
+            mesh._cpp_object,
+        )
+        dolfinx.fem.Form(f, ufcx_form, code)

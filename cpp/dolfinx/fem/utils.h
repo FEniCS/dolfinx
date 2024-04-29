@@ -359,12 +359,17 @@ Form<T, U> create_form_factory(
         "Mismatch between number of expected and provided Form constants.");
   }
 
-  // Check argument function spaces
 #ifndef NDEBUG
+  // Check argument function spaces
   for (std::size_t i = 0; i < spaces.size(); ++i)
   {
     assert(spaces[i]->element());
-    // TODO: Hash check of element
+    auto ufcx_element = ufcx_form.finite_elements[i];
+    if (ufcx_element != 0 && ufcx_element != spaces[i]->element()->basix_element().hash())
+    {
+      throw std::runtime_error(
+          "Cannot create form. Elements are different to those used to compile the form.");
+    }
   }
 #endif
 
