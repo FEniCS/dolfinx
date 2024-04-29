@@ -398,10 +398,7 @@ class Function(ufl.Coefficient):
         return u
 
     def interpolate_nonmatching(
-        self,
-        u: Function,
-        cells: npt.NDArray[np.int32],
-        nmm_interpolation_data: PointOwnershipData
+        self, u: Function, cells: npt.NDArray[np.int32], nmm_interpolation_data: PointOwnershipData
     ) -> None:
         """Interpolate a function defined on one mesh to a function defined on another mesh
 
@@ -412,9 +409,7 @@ class Function(ufl.Coefficient):
             nmm_interpolation_data: Data needed to interpolate functions defined on other meshes.
             Can be created with :func:`dolfinx.fem.create_nonmatching_meshes_interpolation_data`.
         """
-        self._cpp_object.interpolate(
-            u._cpp_object, cells, nmm_interpolation_data._cpp_object
-        )  # type: ignore
+        self._cpp_object.interpolate(u._cpp_object, cells, nmm_interpolation_data._cpp_object)  # type: ignore
 
     def interpolate(
         self,

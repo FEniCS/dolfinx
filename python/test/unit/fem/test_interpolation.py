@@ -940,7 +940,7 @@ def test_nonmatching_mesh_interpolation(xtype, cell_type0, cell_type1):
     cells0 = np.arange(num_cells_on_proc, dtype=np.int32)
     interpolation_data1 = create_nonmatching_meshes_interpolation_data(
         V0, V1, cells0, padding=padding
-)
+    )
     u0_2 = Function(V0, dtype=xtype)
     u0_2.interpolate_nonmatching(u1, cells0, interpolation_data1)
 
@@ -1029,8 +1029,7 @@ def test_nonmatching_mesh_single_cell_overlap_interpolation(xtype):
     num_cells1 = cell_map1.size_local + cell_map1.num_ghosts
     cells1 = np.arange(num_cells1, dtype=np.int32)
     u2_2_u1_nmm_data = create_nonmatching_meshes_interpolation_data(
-        u1.function_space, u2.function_space,
-        cells1, padding=padding
+        u1.function_space, u2.function_space, cells1, padding=padding
     )
 
     u1.interpolate_nonmatching(
