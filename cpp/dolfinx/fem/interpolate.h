@@ -1072,8 +1072,8 @@ geometry::PointOwnershipData<T> create_nonmatching_meshes_interpolation_data(
   return geometry::determine_point_ownership<T>(mesh1, x, padding);
 }
 
-/// @brief  Interpolate a finite element function one one grid to a function
-/// defined on another (non-matching) grid.
+/// @brief Interpolate a finite element function defined on a grid to a finite
+/// element function defined on another non-matching grid.
 /// @tparam T The Function scalar type
 /// @tparam U The Mesh geometry scalar type
 /// @param u The function to interpolate into
