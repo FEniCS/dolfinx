@@ -400,7 +400,7 @@ class Function(ufl.Coefficient):
     def interpolate_nonmatching(
         self, u: Function, cells: npt.NDArray[np.int32], nmm_interpolation_data: PointOwnershipData
     ) -> None:
-        """Interpolate a function defined on one mesh to a function defined on another mesh
+        """Interpolate a Function defined on one mesh to a function defined on a different mesh
 
         Args:
             u: The Function to interpolate.
