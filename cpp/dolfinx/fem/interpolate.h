@@ -1104,8 +1104,8 @@ create_nonmatching_meshes_interpolation_data(const mesh::Mesh<T>& mesh0,
       mesh0.geometry(), element0, mesh1, cells, padding);
 }
 
-/// @brief  Interpolate a finite element function one one grid to a function
-/// defined on another (non-matching) grid.
+/// @brief Interpolate a finite element function on one mesh to a function
+/// defined on a different (non-matching) mesh.
 /// @tparam T The Function scalar type
 /// @tparam U The Mesh geometry scalar type
 /// @param u The function to interpolate into
@@ -1140,7 +1140,7 @@ void interpolate_nonmatching_meshes(Function<T, U>& u, const Function<T, U>& v,
 /// @tparam U The Mesh geometry scalar type
 /// @param u The function to interpolate into
 /// @param v The function to interpolate from
-/// @param cells THe cells in the mesh associated with @p u that will be
+/// @param cells Cells in the mesh associated with `u` that will be
 /// interpolated into
 /// @param nmm_interpolation_data Data required for associating the
 /// interpolation points of @p u with cells in @p v
@@ -1164,7 +1164,7 @@ void interpolate_nonmatching_meshes(
     if (result == MPI_UNEQUAL)
     {
       throw std::runtime_error("Interpolation on different meshes is only "
-                               "supported with the same communicator.");
+                               "supported on the same communicator.");
     }
   }
 
