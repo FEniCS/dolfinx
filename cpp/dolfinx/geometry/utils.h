@@ -27,15 +27,17 @@ namespace dolfinx::geometry
 template <std::floating_point T>
 struct PointOwnershipData
 {
+
   const std::vector<std::int32_t>
-      src_owner; //  Ranks owning each point sent into ownership determination
-                 //  for current process
+      src_owner; ///<  Ranks owning each point sent into ownership determination
+                 ///<  for current process
   const std::vector<std::int32_t>
-      dest_owners; // Ranks that sent `dest_points` to current process
-  const std::vector<T> dest_points; // Points that are owned by current process
+      dest_owners; ///< Ranks that sent `dest_points` to current process
+  const std::vector<T>
+      dest_points; ///< Points that are owned by current process
   const std::vector<std::int32_t>
-      dest_cells; // Cell indices (local to process) where each entry of
-                  // `dest_points` is located
+      dest_cells; ///< Cell indices (local to process) where each entry of
+                  ///< `dest_points` is located
 };
 
 /// @brief Compute the shortest vector from a mesh entity to a point.
