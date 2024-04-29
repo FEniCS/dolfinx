@@ -25,6 +25,7 @@
 
 namespace dolfinx::fem
 {
+
 template <dolfinx::scalar T, std::floating_point U>
 class Function;
 
@@ -1051,9 +1052,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 /// of this function, as one has to determine what entity is closest if
 /// there is no intersection.
 template <std::floating_point T>
-std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>, std::vector<T>,
-           std::vector<std::int32_t>>
-create_nonmatching_meshes_interpolation_data(
+geometry::PointOwnershipData<T> create_nonmatching_meshes_interpolation_data(
     const mesh::Geometry<T>& geometry0, const FiniteElement<T>& element0,
     const mesh::Mesh<T>& mesh1, std::span<const std::int32_t> cells, T padding)
 {
@@ -1102,35 +1101,6 @@ create_nonmatching_meshes_interpolation_data(const mesh::Mesh<T>& mesh0,
   std::iota(cells.begin(), cells.end(), 0);
   return create_nonmatching_meshes_interpolation_data(
       mesh0.geometry(), element0, mesh1, cells, padding);
-}
-
-/// @brief Interpolate a finite element function on one mesh to a function
-/// defined on a different (non-matching) mesh.
-/// @tparam T The Function scalar type
-/// @tparam U The Mesh geometry scalar type
-/// @param u The function to interpolate into
-/// @param v The function to interpolate from
-/// @param padding Absolute padding of bounding boxes of all entities on the
-/// mesh of \p u
-/// @note For repeated interpolation, it is adviced to precompute the
-/// non-matching interpolation data with @ref
-/// create_nonmatching_meshes_interpolation_data
-template <dolfinx::scalar T, std::floating_point U>
-void interpolate(Function<T, U>& u, const Function<T, U>& v, T padding)
-{
-  assert(u.function_space());
-  const auto& mesh0 = u.function_space()->mesh();
-  int tdim = mesh0.topology()->dim();
-  auto cell_map = mesh0.topology()->index_map(tdim);
-  assert(cell_map);
-  std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
-  std::vector<std::int32_t> cells(num_cells, 0);
-  std::iota(cells.begin(), cells.end(), 0);
-  const auto nmm_interpolation_data
-      = create_nonmatching_meshes_interpolation_data(
-          u->function_space()->mesh(), u->function_space()->element(),
-          v->function_space()->mesh(), cells, padding);
-  interpolate(u, v, cells, nmm_interpolation_data);
 }
 
 /// @brief  Interpolate a finite element function one one grid to a function

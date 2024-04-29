@@ -385,24 +385,10 @@ public:
 
   /// Interpolate a function defined on a non-matching mesh
   /// @param[in] v The function to be interpolated
-  /// @param[in] padding Absolute padding for every bounding box on the mesh of
-  /// \p this to determine point ownership
-  /// @brief Evaluate the Function at points.
-  /// @note For repeated interpolation, it is adviced to precompute the
-  /// non-matching interpolation data
-  void interpolate(const Function<value_type, geometry_type>& v, T padding)
-  {
-    fem::interpolate(*this, v, padding);
-  }
-
-  /// Interpolate a function defined on a non-matching mesh
-  /// @param[in] v The function to be interpolated
-  /// @param cells Cells in the mesh associated with `u`  that will be
+  /// @param cells Cells in the mesh associated with `u` that will be
   /// interpolated into
   /// @param nmm_interpolation_data Data required for associating the
   /// interpolation points of @p u with cells in @p v
-  /// @note For repeated interpolation, it is adviced to precompute the
-  /// non-matching interpolation data
   void interpolate(
       const Function<value_type, geometry_type>& v,
       std::span<const std::int32_t> cells,

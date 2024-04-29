@@ -906,12 +906,12 @@ def test_nonmatching_mesh_interpolation(xtype, cell_type0, cell_type1):
     num_cells_on_proc = fine_mesh_cell_map.size_local + fine_mesh_cell_map.num_ghosts
     cells = np.arange(num_cells_on_proc, dtype=np.int32)
     interpolation_data = create_nonmatching_meshes_interpolation_data(
-        V1.mesh.geometry, V1.element, V0.mesh, cells, padding=padding
+        V1, V0, cells, padding=padding
     )
     other_interpolation_data = create_nonmatching_meshes_interpolation_data(
-        V1.mesh,
-        V1.element,
-        V0.mesh,
+        V1,
+        V0,
+        cells,
         padding=padding,
     )
     for data_0, data_1 in zip(interpolation_data, other_interpolation_data):
@@ -944,7 +944,7 @@ def test_nonmatching_mesh_interpolation(xtype, cell_type0, cell_type1):
     num_cells_on_proc = cell_map0.size_local + cell_map0.num_ghosts
     cells0 = np.arange(num_cells_on_proc, dtype=np.int32)
     interpolation_data1 = create_nonmatching_meshes_interpolation_data(
-        V0.mesh.geometry, V0.element, V1.mesh, cells0, padding=padding
+        V0, V1, cells0, padding=padding
 )
     u0_2 = Function(V0, dtype=xtype)
     u0_2.interpolate_nonmatching(u1, cells0, interpolation_data1)
@@ -998,12 +998,16 @@ def test_nonmatching_mesh_single_cell_overlap_interpolation(xtype):
     u1.interpolate(f_test1)
     u1.x.scatter_forward()
     padding = 1e-14
+    cell_map2 = mesh2.topology.index_map(mesh2.topology.dim)
+    num_cells2 = cell_map2.size_local + cell_map2.num_ghosts
+    cells2 = np.arange(num_cells2, dtype=np.int32)
     u1_2_u2_nmm_data = create_nonmatching_meshes_interpolation_data(
-        u2.function_space.mesh, u2.function_space.element, u1.function_space.mesh, padding=padding
+        u2.function_space, u1.function_space, cells2, padding=padding
     )
 
     u2.interpolate_nonmatching(
         u1,
+        cells2,
         nmm_interpolation_data=u1_2_u2_nmm_data,
     )
     u2.x.scatter_forward()
@@ -1026,12 +1030,17 @@ def test_nonmatching_mesh_single_cell_overlap_interpolation(xtype):
     u2.interpolate(f_test2)
     u2.x.scatter_forward()
     padding = 1e-14
+    cell_map1 = mesh1.topology.index_map(mesh1.topology.dim)
+    num_cells1 = cell_map1.size_local + cell_map1.num_ghosts
+    cells1 = np.arange(num_cells1, dtype=np.int32)
     u2_2_u1_nmm_data = create_nonmatching_meshes_interpolation_data(
-        u1.function_space.mesh, u1.function_space.element, u2.function_space.mesh, padding=padding
+        u1.function_space, u2.function_space,
+        cells1, padding=padding
     )
 
     u1.interpolate_nonmatching(
         u2,
+        cells1,
         nmm_interpolation_data=u2_2_u1_nmm_data,
     )
     u1.x.scatter_forward()

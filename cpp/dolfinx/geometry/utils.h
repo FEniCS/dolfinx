@@ -21,6 +21,22 @@
 
 namespace dolfinx::geometry
 {
+/// @brief  Information regarding the ownership of points distributed over
+/// multiple processes
+/// @tparam T Mesh geometry floating type
+template <std::floating_point T>
+struct PointOwnershipData
+{
+  std::vector<std::int32_t>
+      src_owner; //  Ranks owning each point sent into ownership determination
+                 //  for current process
+  std::vector<std::int32_t>
+      dest_owners; // Ranks that sent `dest_points` to current process
+  std::vector<T> dest_points; // Points that are owned by current process
+  std::vector<std::int32_t>
+      dest_cells; // Cell indices (local to process) where each entry of
+                  // `dest_points` is located
+};
 
 /// @brief Compute the shortest vector from a mesh entity to a point.
 ///
@@ -668,10 +684,9 @@ graph::AdjacencyList<std::int32_t> compute_colliding_cells(
 /// one has to determine the closest cell among all processes with an
 /// intersecting bounding box, which is an expensive operation to perform.
 template <std::floating_point T>
-std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>, std::vector<T>,
-           std::vector<std::int32_t>>
-determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
-                          T padding)
+PointOwnershipData<T> determine_point_ownership(const mesh::Mesh<T>& mesh,
+                                                std::span<const T> points,
+                                                T padding)
 {
   MPI_Comm comm = mesh.comm();
 
@@ -961,9 +976,12 @@ determine_point_ownership(const mesh::Mesh<T>& mesh, std::span<const T> points,
 
   MPI_Comm_free(&forward_comm);
   MPI_Comm_free(&reverse_comm);
-
-  return std::make_tuple(point_owners, owned_recv_ranks, owned_recv_points,
-                         owned_recv_cells);
+  PointOwnershipData<T> data;
+  data.src_owner = point_owners;
+  data.dest_owners = owned_recv_ranks;
+  data.dest_points = owned_recv_points;
+  data.dest_cells = owned_recv_cells;
+  return data;
 }
 
 } // namespace dolfinx::geometry

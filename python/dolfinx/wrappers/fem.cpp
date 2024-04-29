@@ -1070,30 +1070,6 @@ void declare_real_functions(nb::module_& m)
 
   m.def(
       "create_nonmatching_meshes_interpolation_data",
-      [](const dolfinx::mesh::Mesh<T>& mesh0,
-         const dolfinx::fem::FiniteElement<T>& element0,
-         const dolfinx::mesh::Mesh<T>& mesh1, T padding)
-      {
-        int tdim = mesh0.topology()->dim();
-        auto cell_map = mesh0.topology()->index_map(tdim);
-        assert(cell_map);
-        std::int32_t num_cells
-            = cell_map->size_local() + cell_map->num_ghosts();
-        std::vector<std::int32_t> cells(num_cells, 0);
-        std::iota(cells.begin(), cells.end(), 0);
-        auto [src_owner, dest_owner, dest_points, dest_cells]
-            = dolfinx::fem::create_nonmatching_meshes_interpolation_data(
-                mesh0.geometry(), element0, mesh1,
-                std::span(cells.data(), cells.size()), padding);
-        return std::tuple(dolfinx_wrappers::as_nbarray(std::move(src_owner)),
-                          dolfinx_wrappers::as_nbarray(std::move(dest_owner)),
-                          dolfinx_wrappers::as_nbarray(std::move(dest_points)),
-                          dolfinx_wrappers::as_nbarray(std::move(dest_cells)));
-      },
-      nb::arg("mesh0"), nb::arg("element0"), nb::arg("mesh1"),
-      nb::arg("padding"));
-  m.def(
-      "create_nonmatching_meshes_interpolation_data",
       [](const dolfinx::mesh::Geometry<T>& geometry0,
          const dolfinx::fem::FiniteElement<T>& element0,
          const dolfinx::mesh::Mesh<T>& mesh1,
