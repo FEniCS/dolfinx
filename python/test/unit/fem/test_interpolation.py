@@ -906,16 +906,11 @@ def test_nonmatching_mesh_interpolation(xtype, cell_type0, cell_type1):
     num_cells_on_proc = fine_mesh_cell_map.size_local + fine_mesh_cell_map.num_ghosts
     cells = np.arange(num_cells_on_proc, dtype=np.int32)
     interpolation_data = create_nonmatching_meshes_interpolation_data(
-        V1, V0, cells, padding=padding
-    )
-    other_interpolation_data = create_nonmatching_meshes_interpolation_data(
         V1,
         V0,
         cells,
         padding=padding,
     )
-    for data_0, data_1 in zip(interpolation_data, other_interpolation_data):
-        np.testing.assert_allclose(data_0, data_1)
 
     # Interpolate 3D->2D
     u1 = Function(V1, dtype=xtype)

@@ -389,12 +389,10 @@ public:
   /// interpolated into
   /// @param nmm_interpolation_data Data required for associating the
   /// interpolation points of @p u with cells in @p v
-  void interpolate(
-      const Function<value_type, geometry_type>& v,
-      std::span<const std::int32_t> cells,
-      const std::tuple<std::span<const std::int32_t>,
-                       std::span<const std::int32_t>, std::span<const U>,
-                       std::span<const std::int32_t>>& nmm_interpolation_data)
+  void
+  interpolate(const Function<value_type, geometry_type>& v,
+              std::span<const std::int32_t> cells,
+              const geometry::PointOwnershipData<U>& nmm_interpolation_data)
   {
     fem::interpolate(*this, v, cells, nmm_interpolation_data);
   }

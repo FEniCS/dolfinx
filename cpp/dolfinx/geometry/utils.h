@@ -27,13 +27,13 @@ namespace dolfinx::geometry
 template <std::floating_point T>
 struct PointOwnershipData
 {
-  std::vector<std::int32_t>
+  const std::vector<std::int32_t>
       src_owner; //  Ranks owning each point sent into ownership determination
                  //  for current process
-  std::vector<std::int32_t>
+  const std::vector<std::int32_t>
       dest_owners; // Ranks that sent `dest_points` to current process
-  std::vector<T> dest_points; // Points that are owned by current process
-  std::vector<std::int32_t>
+  const std::vector<T> dest_points; // Points that are owned by current process
+  const std::vector<std::int32_t>
       dest_cells; // Cell indices (local to process) where each entry of
                   // `dest_points` is located
 };
@@ -976,11 +976,10 @@ PointOwnershipData<T> determine_point_ownership(const mesh::Mesh<T>& mesh,
 
   MPI_Comm_free(&forward_comm);
   MPI_Comm_free(&reverse_comm);
-  PointOwnershipData<T> data;
-  data.src_owner = point_owners;
-  data.dest_owners = owned_recv_ranks;
-  data.dest_points = owned_recv_points;
-  data.dest_cells = owned_recv_cells;
+  PointOwnershipData<T> data(
+      std::move(point_owners), std::move(owned_recv_ranks),
+      std::move(owned_recv_points), std::move(owned_recv_cells));
+
   return data;
 }
 

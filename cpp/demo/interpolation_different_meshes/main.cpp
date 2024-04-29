@@ -75,7 +75,7 @@ int main(int argc, char* argv[])
     std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
     std::vector<std::int32_t> cells(num_cells, 0);
     std::iota(cells.begin(), cells.end(), 0);
-    auto nmm_interpolation_data
+    const auto& nmm_interpolation_data
         = fem::create_nonmatching_meshes_interpolation_data(
             u_hex->function_space()->mesh()->geometry(),
             *u_hex->function_space()->element(),

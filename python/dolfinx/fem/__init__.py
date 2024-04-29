@@ -36,6 +36,7 @@ from dolfinx.fem.bcs import (
     locate_dofs_geometrical,
     locate_dofs_topological,
 )
+from dolfinx.geometry import PointOwnershipData as _PointOwnershipData
 from dolfinx.fem.dofmap import DofMap
 from dolfinx.fem.element import CoordinateElement, coordinate_element
 from dolfinx.fem.forms import Form, extract_function_spaces, form, form_cpp_class
@@ -45,7 +46,6 @@ from dolfinx.fem.function import (
     Expression,
     Function,
     FunctionSpace,
-    PointOwnershipData,
     functionspace,
 )
 from dolfinx.la import MatrixCSR as _MatrixCSR
@@ -74,7 +74,7 @@ def create_nonmatching_meshes_interpolation_data(
     V_from: FunctionSpace,
     cells: npt.NDArray[np.int32],
     padding: float = 1e-14,
-) -> PointOwnershipData:
+) -> _PointOwnershipData:
     """Generate data needed to interpolate discrete functions across different meshes.
 
     Args:
@@ -86,10 +86,9 @@ def create_nonmatching_meshes_interpolation_data(
     Returns:
         Data needed to interpolation functions defined on function spaces on the meshes.
     """
-    return PointOwnershipData(
-        *_create_nonmatching_meshes_interpolation_data(
-            V_to.mesh._cpp_object.geometry, V_to.element, V_from.mesh._cpp_object, cells, padding
-        )
+    return _PointOwnershipData(
+        _create_nonmatching_meshes_interpolation_data(
+            V_to.mesh._cpp_object.geometry, V_to.element, V_from.mesh._cpp_object, cells, padding)
     )
 
 

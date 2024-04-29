@@ -1072,37 +1072,6 @@ geometry::PointOwnershipData<T> create_nonmatching_meshes_interpolation_data(
   return geometry::determine_point_ownership<T>(mesh1, x, padding);
 }
 
-/// @brief Generate data needed to interpolate discrete functions
-/// defined on different meshes. Interpolate on all cells in the mesh.
-/// @param[in] mesh0 Mesh of the space to interpolate into
-/// @param[in] element0 Element of the space to interpolate into
-/// @param[in] mesh1 Mesh of the function to interpolate from
-/// @param[in] padding Absolute padding of bounding boxes of all entities on
-/// \p mesh1. This is used avoid floating point issues when an interpolation
-/// point from \p mesh0 is on the surface of a cell in \p mesh1. This parameter
-/// can also be used for extrapolation, i.e. if cells in \p mesh0 is not
-/// overlapped by \p mesh1.
-/// @note Setting the \p padding to a large value will increase runtime of this
-/// function, as one has to determine what entity is closest if there is no
-/// intersection.
-template <std::floating_point T>
-std::tuple<std::vector<std::int32_t>, std::vector<std::int32_t>, std::vector<T>,
-           std::vector<std::int32_t>>
-create_nonmatching_meshes_interpolation_data(const mesh::Mesh<T>& mesh0,
-                                             const FiniteElement<T>& element0,
-                                             const mesh::Mesh<T>& mesh1,
-                                             T padding)
-{
-  int tdim = mesh0.topology()->dim();
-  auto cell_map = mesh0.topology()->index_map(tdim);
-  assert(cell_map);
-  std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
-  std::vector<std::int32_t> cells(num_cells, 0);
-  std::iota(cells.begin(), cells.end(), 0);
-  return create_nonmatching_meshes_interpolation_data(
-      mesh0.geometry(), element0, mesh1, cells, padding);
-}
-
 /// @brief  Interpolate a finite element function one one grid to a function
 /// defined on another (non-matching) grid.
 /// @tparam T The Function scalar type
@@ -1114,12 +1083,9 @@ create_nonmatching_meshes_interpolation_data(const mesh::Mesh<T>& mesh0,
 /// @param nmm_interpolation_data Data required for associating the
 /// interpolation points of @p u with cells in @p v
 template <dolfinx::scalar T, std::floating_point U>
-void interpolate(
-    Function<T, U>& u, const Function<T, U>& v,
-    std::span<const std::int32_t> cells,
-    const std::tuple<std::span<const std::int32_t>,
-                     std::span<const std::int32_t>, std::span<const U>,
-                     std::span<const std::int32_t>>& nmm_interpolation_data)
+void interpolate(Function<T, U>& u, const Function<T, U>& v,
+                 std::span<const std::int32_t> cells,
+                 const geometry::PointOwnershipData<U>& nmm_interpolation_data)
 {
   auto mesh = u.function_space()->mesh();
   assert(mesh);

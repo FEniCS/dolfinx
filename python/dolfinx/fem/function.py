@@ -19,27 +19,12 @@ import ufl
 from dolfinx import cpp as _cpp
 from dolfinx import default_scalar_type, jit, la
 from dolfinx.fem import dofmap
+from dolfinx.geometry import PointOwnershipData
 
 if typing.TYPE_CHECKING:
     from mpi4py import MPI as _MPI
 
     from dolfinx.mesh import Mesh
-
-
-class PointOwnershipData(typing.NamedTuple):
-    """Convenience class for storing data related to the ownership of points.
-
-    Attributes:
-        src_owner: Ranks owning each point sent into ownership determination for current process
-        dest_owners: Ranks that sent `dest_points` to current process
-        dest_points: Points owned by current rank
-        dest_cells: Cell indices (local to process) where each entry of `dest_points` is located
-    """
-
-    src_owner: npt.NDArray[np.int32]
-    dest_owners: npt.NDArray[np.int32]
-    dest_points: npt.NDArray[np.floating]
-    dest_cells: npt.NDArray[np.int32]
 
 
 class Constant(ufl.Constant):
@@ -428,7 +413,7 @@ class Function(ufl.Coefficient):
             Can be created with :func:`dolfinx.fem.create_nonmatching_meshes_interpolation_data`.
         """
         self._cpp_object.interpolate(
-            u._cpp_object, cells, nmm_interpolation_data
+            u._cpp_object, cells, nmm_interpolation_data._cpp_object
         )  # type: ignore
 
     def interpolate(
