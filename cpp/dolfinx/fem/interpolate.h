@@ -1149,8 +1149,9 @@ void interpolate(Function<T, U>& u, const Function<T, U>& v,
 /// @param[in] u0 The function to be interpolated
 /// @param[in] cells1 List of cell indices associated with the mesh of `u1` that
 /// will be interpolated onto
-/// @param[in] cell_map Mapping of cells in mesh associated with `u1` to cells
-/// associated with `u0`
+/// @param[in] cell_map For cell `i` in the mesh associated with `u1`,
+/// `cell_map[i]` is the index of the same cell, but in the mesh associated with
+/// `u0`
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate(Function<T, U>& u1, const Function<T, U>& u0,
                  std::span<const std::int32_t> cells1,
