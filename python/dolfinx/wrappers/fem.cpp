@@ -415,7 +415,7 @@ void declare_objects(nb::module_& m, const std::string& type)
           nb::arg("u"), nb::arg("cells"), nb::arg("cell_map"),
           "Interpolate a finite element function")
       .def(
-          "interpolate_nonmatching_meshes",
+          "interpolate",
           [](dolfinx::fem::Function<T, U>& self,
              dolfinx::fem::Function<T, U>& u,
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells,
@@ -441,8 +441,8 @@ void declare_objects(nb::module_& m, const std::string& type)
                     std::span<const std::int32_t>(
                         std::get<3>(interpolation_data).data(),
                         std::get<3>(interpolation_data).size()));
-            self.interpolate_nonmatching_meshes(
-                u, std::span(cells.data(), cells.size()), _interpolation_data);
+            self.interpolate(u, std::span(cells.data(), cells.size()),
+                             _interpolation_data);
           },
           nb::arg("u"), nb::arg("cells"), nb::arg("nmm_interpolation_data"),
           "Interpolate a finite element function on non-matching meshes")

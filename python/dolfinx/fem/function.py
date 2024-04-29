@@ -412,12 +412,11 @@ class Function(ufl.Coefficient):
             u = np.reshape(u, (-1,))
         return u
 
-    def interpolate_nonmatching_meshes(
+    def interpolate_nonmatching(
         self,
         u: Function,
-        cells: typing.Optional[np.ndarray] = None,
-        nmm_interpolation_data: typing.Optional[PointOwnershipData] = None,
-        padding: float = 0.0,
+        cells: npt.NDArray[np.int32],
+        nmm_interpolation_data: PointOwnershipData
     ) -> None:
         """Interpolate a function defined on one mesh to a function defined on another mesh
 
@@ -425,40 +424,12 @@ class Function(ufl.Coefficient):
             u: The Function to interpolate.
             cells: The cells to interpolate over. If `None` then all
                 cells are interpolated over.
-            nmm_interpolation_data: Data needed to interpolate functions defined on other meshes
-            padding: Absolute padding of bounding boxes for computing
-                non-matching interpolation data
+            nmm_interpolation_data: Data needed to interpolate functions defined on other meshes.
+            Can be created with :func:`dolfinx.fem.create_nonmatching_meshes_interpolation_data`.
         """
-        # If interpolation data has not been provided, create it
-        if cells is None and nmm_interpolation_data is None:
-            mesh = self.function_space.mesh
-            map = mesh.topology.index_map(mesh.topology.dim)
-            cells = np.arange(map.size_local + map.num_ghosts, dtype=np.int32)
-            _nmm_d = PointOwnershipData(
-                *_cpp.fem.create_nonmatching_meshes_interpolation_data(
-                    self.function_space.mesh._cpp_object,
-                    self.function_space.element,
-                    u.function_space.mesh._cpp_object,
-                    padding,
-                )
-            )
-            self._cpp_object.interpolate_nonmatching_meshes(u._cpp_object, cells, _nmm_d)  # type: ignore
-        # If interpolation data has been provided, but not list of cells, assume it comes
-        # from the constructor that uses both owned and ghosted cells
-        elif cells is None and nmm_interpolation_data is not None:
-            mesh = self.function_space.mesh
-            map = mesh.topology.index_map(mesh.topology.dim)
-            cells = np.arange(map.size_local + map.num_ghosts, dtype=np.int32)
-            self._cpp_object.interpolate_nonmatching_meshes(
-                u._cpp_object, cells, nmm_interpolation_data
-            )  # type: ignore
-        # If interpolation data has been provided use it
-        else:
-            assert nmm_interpolation_data is not None
-            assert cells is not None
-            self._cpp_object.interpolate_nonmatching_meshes(
-                u._cpp_object, cells, nmm_interpolation_data
-            )  # type: ignore
+        self._cpp_object.interpolate(
+            u._cpp_object, cells, nmm_interpolation_data
+        )  # type: ignore
 
     def interpolate(
         self,

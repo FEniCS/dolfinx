@@ -153,8 +153,9 @@ public:
   /// @brief Interpolate a provided Function.
   /// @param[in] v The function to be interpolated
   /// @param[in] cells The cells to interpolate on
-  /// @param[in] cell_map For cell `i` in the mesh associated with \p this, 
-  /// `cell_map[i]` is the index of the same cell, but in the mesh associated with `v`
+  /// @param[in] cell_map For cell `i` in the mesh associated with \p this,
+  /// `cell_map[i]` is the index of the same cell, but in the mesh associated
+  /// with `v`
   void interpolate(const Function<value_type, geometry_type>& v,
                    std::span<const std::int32_t> cells,
                    std::span<const std::int32_t> cell_map)
@@ -272,13 +273,12 @@ public:
   /// with `u`.
   /// @param[in] cells The cells to interpolate on
   /// @param[in] expr_mesh The mesh to evaluate the expression on
-  /// @param[in] cell_map For cell `i` in the mesh associated with \p this, 
- /// `cell_map[i]` is the index of the same cell, but in \p expr_mesh
+  /// @param[in] cell_map For cell `i` in the mesh associated with \p this,
+  /// `cell_map[i]` is the index of the same cell, but in \p expr_mesh
   void interpolate(const Expression<value_type, geometry_type>& e,
                    std::span<const std::int32_t> cells,
                    const dolfinx::mesh::Mesh<geometry_type>& expr_mesh,
-                   std::span<const std::int32_t> cell_map
-                   = std::span<const std::int32_t>())
+                   std::span<const std::int32_t> cell_map = {})
   {
     // Check that spaces are compatible
     assert(_function_space);
@@ -390,11 +390,9 @@ public:
   /// @brief Evaluate the Function at points.
   /// @note For repeated interpolation, it is adviced to precompute the
   /// non-matching interpolation data
-  void
-  interpolate_nonmatching_meshes(const Function<value_type, geometry_type>& v,
-                                 T padding)
+  void interpolate(const Function<value_type, geometry_type>& v, T padding)
   {
-    fem::interpolate_nonmatching_meshes(*this, v, padding);
+    fem::interpolate(*this, v, padding);
   }
 
   /// Interpolate a function defined on a non-matching mesh
@@ -405,15 +403,14 @@ public:
   /// interpolation points of @p u with cells in @p v
   /// @note For repeated interpolation, it is adviced to precompute the
   /// non-matching interpolation data
-  void interpolate_nonmatching_meshes(
+  void interpolate(
       const Function<value_type, geometry_type>& v,
       std::span<const std::int32_t> cells,
       const std::tuple<std::span<const std::int32_t>,
                        std::span<const std::int32_t>, std::span<const U>,
                        std::span<const std::int32_t>>& nmm_interpolation_data)
   {
-    fem::interpolate_nonmatching_meshes(*this, v, cells,
-                                        nmm_interpolation_data);
+    fem::interpolate(*this, v, cells, nmm_interpolation_data);
   }
 
   /// @brief Evaluate the Function at points.

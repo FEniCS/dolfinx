@@ -1116,8 +1116,7 @@ create_nonmatching_meshes_interpolation_data(const mesh::Mesh<T>& mesh0,
 /// non-matching interpolation data with @ref
 /// create_nonmatching_meshes_interpolation_data
 template <dolfinx::scalar T, std::floating_point U>
-void interpolate_nonmatching_meshes(Function<T, U>& u, const Function<T, U>& v,
-                                    T padding)
+void interpolate(Function<T, U>& u, const Function<T, U>& v, T padding)
 {
   assert(u.function_space());
   const auto& mesh0 = u.function_space()->mesh();
@@ -1131,7 +1130,7 @@ void interpolate_nonmatching_meshes(Function<T, U>& u, const Function<T, U>& v,
       = create_nonmatching_meshes_interpolation_data(
           u->function_space()->mesh(), u->function_space()->element(),
           v->function_space()->mesh(), cells, padding);
-  interpolate_nonmatching_meshes(u, v, cells, nmm_interpolation_data);
+  interpolate(u, v, cells, nmm_interpolation_data);
 }
 
 /// @brief  Interpolate a finite element function one one grid to a function
@@ -1145,7 +1144,7 @@ void interpolate_nonmatching_meshes(Function<T, U>& u, const Function<T, U>& v,
 /// @param nmm_interpolation_data Data required for associating the
 /// interpolation points of @p u with cells in @p v
 template <dolfinx::scalar T, std::floating_point U>
-void interpolate_nonmatching_meshes(
+void interpolate(
     Function<T, U>& u, const Function<T, U>& v,
     std::span<const std::int32_t> cells,
     const std::tuple<std::span<const std::int32_t>,
