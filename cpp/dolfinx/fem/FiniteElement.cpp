@@ -68,11 +68,11 @@ template <std::floating_point T>
 FiniteElement<T>::FiniteElement(mesh::CellType cell_type,
                                 std::span<const geometry_type> points,
                                 std::array<std::size_t, 2> pshape,
-                                const std::size_t block_size)
+                                std::size_t block_size, bool symmetric)
     : _signature("Quadrature element " + std::to_string(pshape[0]) + " "
                  + std::to_string(block_size)),
       _space_dim(pshape[0] * block_size), _reference_value_shape({}),
-      _bs(block_size), _is_mixed(false), _symmetric(false),
+      _bs(block_size), _is_mixed(false), _symmetric(symmetric),
       _needs_dof_permutations(false), _needs_dof_transformations(false),
       _entity_dofs(mesh::cell_dim(cell_type) + 1),
       _entity_closure_dofs(mesh::cell_dim(cell_type) + 1),
@@ -95,8 +95,7 @@ FiniteElement<T>::FiniteElement(mesh::CellType cell_type,
 //-----------------------------------------------------------------------------
 template <std::floating_point T>
 FiniteElement<T>::FiniteElement(const basix::FiniteElement<T>& element,
-                                const std::size_t block_size,
-                                const bool symmetric)
+                                std::size_t block_size, bool symmetric)
     : _space_dim(block_size * element.dim()),
       _reference_value_shape(element.value_shape()), _bs(block_size),
       _is_mixed(false),

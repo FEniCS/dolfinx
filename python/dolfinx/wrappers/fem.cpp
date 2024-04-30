@@ -125,14 +125,15 @@ void declare_function_space(nb::module_& m, std::string type)
             "__init__",
             [](dolfinx::fem::FiniteElement<T>* self, mesh::CellType cell_type,
                nb::ndarray<T, nb::ndim<2>, nb::numpy> points,
-               std::size_t block_size)
+               std::size_t block_size, bool symmetry)
             {
               std::span<T> pdata(points.data(), points.size());
               new (self) dolfinx::fem::FiniteElement<T>(
                   cell_type, pdata, {points.shape(0), points.shape(1)},
-                  block_size);
+                  block_size, symmetry);
             },
-            nb::arg("cell_type"), nb::arg("points"), nb::arg("block_size"))
+            nb::arg("cell_type"), nb::arg("points"), nb::arg("block_size"),
+            nb::arg("symmetry"))
         .def("__eq__", &dolfinx::fem::FiniteElement<T>::operator==)
         .def_prop_ro("dtype", [](const dolfinx::fem::FiniteElement<T>&)
                      { return dolfinx_wrappers::numpy_dtype<T>(); })
