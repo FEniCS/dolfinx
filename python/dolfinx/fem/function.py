@@ -398,18 +398,19 @@ class Function(ufl.Coefficient):
         return u
 
     def interpolate_nonmatching(
-        self, u: Function, cells: npt.NDArray[np.int32], nmm_interpolation_data: PointOwnershipData
+        self, u: Function, cells: npt.NDArray[np.int32], interpolation_data: PointOwnershipData
     ) -> None:
-        """Interpolate a Function defined on one mesh to a function defined on a different mesh
+        """Interpolate a Function defined on one mesh to a function defined on a different mesh.
 
         Args:
             u: The Function to interpolate.
             cells: The cells to interpolate over. If `None` then all
                 cells are interpolated over.
-            nmm_interpolation_data: Data needed to interpolate functions defined on other meshes,
-                created with :func:`dolfinx.fem.create_interpolation_data`.
+            interpolation_data: Data needed to interpolate functions
+                defined on other meshes. Created by
+                :func:`dolfinx.fem.create_interpolation_data`.
         """
-        self._cpp_object.interpolate(u._cpp_object, cells, nmm_interpolation_data._cpp_object)  # type: ignore
+        self._cpp_object.interpolate(u._cpp_object, cells, interpolation_data._cpp_object)  # type: ignore
 
     def interpolate(
         self,
@@ -417,7 +418,7 @@ class Function(ufl.Coefficient):
         cells: typing.Optional[np.ndarray] = None,
         cell_map: typing.Optional[np.ndarray] = None,
         expr_mesh: typing.Optional[Mesh] = None,
-        nmm_interpolation_data: typing.Optional[PointOwnershipData] = None,
+        interpolation_data: typing.Optional[PointOwnershipData] = None,
     ) -> None:
         """Interpolate an expression
 
@@ -439,7 +440,7 @@ class Function(ufl.Coefficient):
         @singledispatch
         def _interpolate(u, cells: typing.Optional[np.ndarray] = None):
             """Interpolate a cpp.fem.Function"""
-            self._cpp_object.interpolate(u, cells, nmm_interpolation_data)  # type: ignore
+            self._cpp_object.interpolate(u, cells, interpolation_data)  # type: ignore
 
         @_interpolate.register(Function)
         def _(u: Function, cells: typing.Optional[np.ndarray] = None):

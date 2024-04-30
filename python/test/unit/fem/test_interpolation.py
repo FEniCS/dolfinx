@@ -910,11 +910,7 @@ def test_nonmatching_mesh_interpolation(xtype, cell_type0, cell_type1):
     # Interpolate 3D->2D
     u1 = Function(V1, dtype=xtype)
 
-    u1.interpolate_nonmatching(
-        u0,
-        cells,
-        nmm_interpolation_data=interpolation_data,
-    )
+    u1.interpolate_nonmatching(u0, cells, interpolation_data=interpolation_data)
     u1.x.scatter_forward()
 
     # Exact interpolation on 2D mesh
@@ -993,11 +989,7 @@ def test_nonmatching_mesh_single_cell_overlap_interpolation(xtype):
         u2.function_space, u1.function_space, cells2, padding=padding
     )
 
-    u2.interpolate_nonmatching(
-        u1,
-        cells2,
-        nmm_interpolation_data=u1_2_u2_nmm_data,
-    )
+    u2.interpolate_nonmatching(u1, cells2, interpolation_data=u1_2_u2_nmm_data)
     u2.x.scatter_forward()
 
     # interpolate f which is exactly represented on the element
@@ -1025,11 +1017,7 @@ def test_nonmatching_mesh_single_cell_overlap_interpolation(xtype):
         u1.function_space, u2.function_space, cells1, padding=padding
     )
 
-    u1.interpolate_nonmatching(
-        u2,
-        cells1,
-        nmm_interpolation_data=u2_2_u1_nmm_data,
-    )
+    u1.interpolate_nonmatching(u2, cells1, interpolation_data=u2_2_u1_nmm_data)
     u1.x.scatter_forward()
 
     u1_exact = Function(u1.function_space, dtype=xtype)

@@ -383,15 +383,15 @@ public:
   /// @param[in] v The function to be interpolated
   /// @param cells Cells in the mesh associated with `this` that will be
   /// interpolated into
-  /// @param nmm_interpolation_data Data required for associating the
-  /// interpolation points of `this` with cells in `v`. Can be computed with
-  /// `fem::create_interpolation_data`.
+  /// @param interpolation_data Data required for associating the
+  /// interpolation points of `this` with cells in `v`. Can be computed
+  /// with `fem::create_interpolation_data`.
   void
   interpolate(const Function<value_type, geometry_type>& v,
               std::span<const std::int32_t> cells,
-              const geometry::PointOwnershipData<U>& nmm_interpolation_data)
+              const geometry::PointOwnershipData<U>& interpolation_data)
   {
-    fem::interpolate(*this, v, cells, nmm_interpolation_data);
+    fem::interpolate(*this, v, cells, interpolation_data);
   }
 
   /// @brief Evaluate the Function at points.
