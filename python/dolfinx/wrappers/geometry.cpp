@@ -221,13 +221,13 @@ void declare_bbtree(nb::module_& m, std::string type)
       .def_prop_ro("src_owner",
                    [](const dolfinx::geometry::PointOwnershipData<T>& self)
                    {
-                     return nb::ndarray<const std::int32_t, nb::numpy>(
+                     return nb::ndarray<const int, nb::numpy>(
                          self.src_owner.data(), {self.src_owner.size()});
                    })
       .def_prop_ro("dest_owners",
                    [](const dolfinx::geometry::PointOwnershipData<T>& self)
                    {
-                     return nb::ndarray<const std::int32_t, nb::numpy>(
+                     return nb::ndarray<const int, nb::numpy>(
                          self.dest_owners.data(), {self.dest_owners.size()});
                    })
       .def_prop_ro("dest_points",

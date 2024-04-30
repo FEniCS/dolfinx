@@ -506,7 +506,7 @@ compute_collisions(const BoundingBoxTree<T>& tree, std::span<const T> points)
 /// -1 is returned.
 ///
 /// @note `cells` can for instance be found by using
-/// `dolfinx::geometry::compute_collisions` between a bounding box tree for the
+/// `geometry::compute_collisions` between a bounding box tree for the
 /// cells of the mesh and the point.
 ///
 /// @param[in] mesh The mesh
@@ -615,8 +615,8 @@ compute_closest_entity(const BoundingBoxTree<T>& tree,
 /// details.
 ///
 /// @note `candidate_cells` can for instance be found by using
-/// `dolfinx::geometry::compute_collisions` between a bounding box tree and the
-/// set of points.
+/// geometry::compute_collisions between a bounding box tree and the set
+/// of points.
 ///
 /// @param[in] mesh The mesh
 /// @param[in] candidate_cells List of candidate colliding cells for the

@@ -276,7 +276,7 @@ public:
   /// `cell_map[i]` is the index of the same cell, but in \p expr_mesh
   void interpolate(const Expression<value_type, geometry_type>& e,
                    std::span<const std::int32_t> cells,
-                   const dolfinx::mesh::Mesh<geometry_type>& expr_mesh,
+                   const mesh::Mesh<geometry_type>& expr_mesh,
                    std::span<const std::int32_t> cell_map = {})
   {
     // Check that spaces are compatible
@@ -327,13 +327,10 @@ public:
 
     std::vector<std::int32_t> cells_expr;
     cells_expr.reserve(num_cells);
-    // Get mesh and check if mesh is shared
-    if (auto mesh_v = _function_space->mesh(); &expr_mesh == &(*mesh_v))
-    {
+    if (&expr_mesh == _function_space->mesh().get())
       cells_expr.insert(cells_expr.end(), cells.begin(), cells.end());
-    }
-    // If meshes are different and input mapping is given
-    else
+    else // If meshes are different and input mapping is given
+
     {
       std::transform(cells.begin(), cells.end(), std::back_inserter(cells_expr),
                      [&cell_map](std::int32_t c) { return cell_map[c]; });
@@ -367,7 +364,7 @@ public:
   /// @param[in] cell_map Map from `cells` to cells in expression if
   /// receiving function is defined on a different mesh than the expression
   void interpolate(const Expression<value_type, geometry_type>& e,
-                   const dolfinx::mesh::Mesh<geometry_type>& expr_mesh,
+                   const mesh::Mesh<geometry_type>& expr_mesh,
                    std::span<const std::int32_t> cell_map
                    = std::span<const std::int32_t>() = {})
   {
