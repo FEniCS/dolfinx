@@ -179,7 +179,7 @@ public:
     std::vector<std::int32_t> cells(
         cell_imap->size_local() + cell_imap->num_ghosts(), 0);
     std::iota(cells.begin(), cells.end(), 0);
-    interpolate(v, cells, {});
+    interpolate(v, cells, std::span<const std::int32_t>{});
   }
 
   /// @brief Interpolate an expression function over a set of cells.
