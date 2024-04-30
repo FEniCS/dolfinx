@@ -167,8 +167,6 @@ public:
 
   /// @brief Interpolate a Function over all cells.
   /// @param[in] v Function to be interpolated.
-  /// @param[in] cell_map Map from cells in `self` to cell indices in
-  /// `v`.
   void interpolate(const Function<value_type, geometry_type>& v)
   {
     assert(_function_space);
