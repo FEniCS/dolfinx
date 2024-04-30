@@ -359,7 +359,6 @@ Form<T, U> create_form_factory(
         "Mismatch between number of expected and provided Form constants.");
   }
 
-#ifndef NDEBUG
   // Check argument function spaces
   for (std::size_t i = 0; i < spaces.size(); ++i)
   {
@@ -371,7 +370,6 @@ Form<T, U> create_form_factory(
           "Cannot create form. Elements are different to those used to compile the form.");
     }
   }
-#endif
 
   // Extract mesh from FunctionSpace, and check they are the same
   if (!mesh and !spaces.empty())

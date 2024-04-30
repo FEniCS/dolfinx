@@ -56,9 +56,6 @@ def test_extract_forms():
 
 def test_incorrect_element():
     """Test that an error is raised if an incorrect element is used."""
-    if not dolfinx.common.has_debug:
-        pytest.skip("Error will only be thrown for incorrect spaecs in debug mode.")
-
     mesh = create_unit_square(MPI.COMM_WORLD, 32, 31)
     element = basix.ufl.element(
         "Lagrange",
