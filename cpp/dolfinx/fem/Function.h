@@ -150,12 +150,14 @@ public:
   /// @brief Underlying vector
   std::shared_ptr<la::Vector<value_type>> x() { return _x; }
 
-  /// @brief Interpolate a Function.
+  /// @brief Interpolate a Function over a set of cells.
   /// @param[in] v Function to be interpolated.
-  /// @param[in] cells Cells to interpolate on.
+  /// @param[in] cells Cells to interpolate on. These are the indices of
+  /// the cells in the mesh associated with `this`.
   /// @param[in] cell_map For cell `i` in the mesh associated with
-  /// `this`, `cell_map[i]` is the index of the same cell, but in the
-  /// mesh associated with `v`.
+  /// `this`, `cell_map[i]` is the index of the same cell but in the
+  /// mesh associated with `v`. This argument can be empty when `this`
+  /// and for `u` have the same mesh.
   void interpolate(const Function<value_type, geometry_type>& v,
                    std::span<const std::int32_t> cells,
                    std::span<const std::int32_t> cell_map)
@@ -163,12 +165,11 @@ public:
     fem::interpolate(*this, v, cells, cell_map);
   }
 
-  /// @brief Interpolate a Function.
+  /// @brief Interpolate a Function over all cells.
   /// @param[in] v Function to be interpolated.
   /// @param[in] cell_map Map from cells in `self` to cell indices in
   /// `v`.
-  void interpolate(const Function<value_type, geometry_type>& v,
-                   std::span<const std::int32_t> cell_map = {})
+  void interpolate(const Function<value_type, geometry_type>& v)
   {
     assert(_function_space);
     assert(_function_space->mesh());
@@ -178,10 +179,10 @@ public:
     std::vector<std::int32_t> cells(
         cell_imap->size_local() + cell_imap->num_ghosts(), 0);
     std::iota(cells.begin(), cells.end(), 0);
-    interpolate(v, cells, cell_map);
+    interpolate(v, cells, {});
   }
 
-  /// @brief Interpolate an expression function on a list of cells.
+  /// @brief Interpolate an expression function over a set of cells.
   /// @param[in] f Expression function to be interpolated.
   /// @param[in] cells Cells to interpolate on.
   void interpolate(
@@ -363,8 +364,9 @@ public:
   /// @brief Interpolate an Expression (based on UFL) on all cells.
   /// @param[in] e The function to be interpolated
   /// @param[in] expr_mesh Mesh the expression `e` is defined on.
-  /// @param[in] cell_map Map from cells in the mesh of `this` to cells in expression if
-  /// receiving function is defined on a different mesh than the expression
+  /// @param[in] cell_map Map from cells in the mesh of `this` to cells in
+  /// expression if receiving function is defined on a different mesh than the
+  /// expression
   void interpolate(const Expression<value_type, geometry_type>& e,
                    const mesh::Mesh<geometry_type>& expr_mesh,
                    std::span<const std::int32_t> cell_map = {})

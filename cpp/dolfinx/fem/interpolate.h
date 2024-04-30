@@ -1139,13 +1139,13 @@ void interpolate(Function<T, U>& u, const Function<T, U>& v,
 }
 
 /// @brief Interpolate from one finite element Function to another one.
-/// @param[out] u1 The function to interpolate into
-/// @param[in] u0 The function to be interpolated
-/// @param[in] cells1 List of cell indices associated with the mesh of `u1` that
-/// will be interpolated onto
+/// @param[out] u1 Function to interpolate into.
+/// @param[in] u0 Function to be interpolated.
+/// @param[in] cells1 List of cell indices associated with the mesh of
+/// `u1` that will be interpolated onto.
 /// @param[in] cell_map For cell `i` in the mesh associated with `u1`,
-/// `cell_map[i]` is the index of the same cell, but in the mesh associated with
-/// `u0`
+/// `cell_map[i]` is the index of the same cell, but in the mesh
+/// associated with `u0`
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate(Function<T, U>& u1, const Function<T, U>& u0,
                  std::span<const std::int32_t> cells1,
@@ -1171,14 +1171,14 @@ void interpolate(Function<T, U>& u1, const Function<T, U>& u0,
   {
     std::vector<std::int32_t> cells0;
     cells0.reserve(cells1.size());
-    // Get mesh and check that functions share the same mesh
     if (auto mesh_v = u0.function_space()->mesh(); mesh == mesh_v)
     {
+      // Functions share the same mesh
       cells0.insert(cells0.end(), cells1.begin(), cells1.end());
     }
-    // If meshes are different and input mapping is given
-    else if (cell_map.size() > 0)
+    else if (!cell_map.empty())
     {
+      // cell_map given is provided, meshes may use different indexing
       std::transform(cells1.begin(), cells1.end(), std::back_inserter(cells0),
                      [&cell_map](std::int32_t c) { return cell_map[c]; });
     }
@@ -1201,7 +1201,6 @@ void interpolate(Function<T, U>& u1, const Function<T, U>& u0,
     if (element1 == element0 or *element1 == *element0)
     {
       // Same element, different dofmaps (or just a subset of cells)
-
       const int tdim = mesh->topology()->dim();
       auto cell_map1 = mesh->topology()->index_map(tdim);
       assert(cell_map1);
