@@ -1106,7 +1106,7 @@ void interpolate(Function<T, U>& u, const Function<T, U>& v,
 
   auto& dest_ranks = interpolation_data.src_owner;
   auto& src_ranks = interpolation_data.dest_owners;
-  auto& recv_points = interpolation_datad.dest_points;
+  auto& recv_points = interpolation_data.dest_points;
   auto& evaluation_cells = interpolation_data.dest_cells;
 
   // Evaluate the interpolating function where possible

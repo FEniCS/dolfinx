@@ -150,12 +150,12 @@ public:
   /// @brief Underlying vector
   std::shared_ptr<la::Vector<value_type>> x() { return _x; }
 
-  /// @brief Interpolate a provided Function.
-  /// @param[in] v The function to be interpolated
-  /// @param[in] cells The cells to interpolate on
-  /// @param[in] cell_map For cell `i` in the mesh associated with \p this,
-  /// `cell_map[i]` is the index of the same cell, but in the mesh associated
-  /// with `v`
+  /// @brief Interpolate a fem::Function.
+  /// @param[in] v Function to be interpolated.
+  /// @param[in] cells Cells to interpolate on.
+  /// @param[in] cell_map For cell `i` in the mesh associated with
+  /// `this`, `cell_map[i]` is the index of the same cell, but in the
+  /// mesh associated with `v`.
   void interpolate(const Function<value_type, geometry_type>& v,
                    std::span<const std::int32_t> cells,
                    std::span<const std::int32_t> cell_map)
@@ -163,9 +163,10 @@ public:
     fem::interpolate(*this, v, cells, cell_map);
   }
 
-  /// @brief Interpolate a provided Function.
-  /// @param[in] v The function to be interpolated
-  /// @param[in] cell_map Map from cells in self to cell indices in \p v
+  /// @brief Interpolate a provided fem::Function.
+  /// @param[in] v Function to be interpolated.
+  /// @param[in] cell_map Map from cells in `self` to cell indices in
+  /// `v`.
   void interpolate(const Function<value_type, geometry_type>& v,
                    std::span<const std::int32_t> cell_map = {})
   {
