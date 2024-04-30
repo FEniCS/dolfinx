@@ -363,11 +363,12 @@ Form<T, U> create_form_factory(
   for (std::size_t i = 0; i < spaces.size(); ++i)
   {
     assert(spaces[i]->element());
-    auto ufcx_element = ufcx_form.finite_elements[i];
-    if (ufcx_element != 0 && ufcx_element != spaces[i]->element()->basix_element().hash())
+    if (auto ufcx_element = ufcx_form.finite_elements[i];
+        ufcx_element != 0
+        and ufcx_element != spaces[i]->element()->basix_element().hash())
     {
-      throw std::runtime_error(
-          "Cannot create form. Elements are different to those used to compile the form.");
+      throw std::runtime_error("Cannot create form. Elements are different to "
+                               "those used to compile the form.");
     }
   }
 
