@@ -45,7 +45,7 @@ public:
   /// @param[in] block_size The block size for the element
   /// @param[in] symmetric Is the element a symmetric tensor?
   FiniteElement(const basix::FiniteElement<geometry_type>& element,
-                const std::size_t block_size, const bool symmetric = false);
+                std::size_t block_size, bool symmetric = false);
 
   /// @brief Create mixed finite element from a list of finite elements.
   /// @param[in] elements Basix finite elements
@@ -58,9 +58,10 @@ public:
   /// @param[in] points Quadrature points
   /// @param[in] pshape Shape of points array
   /// @param[in] block_size The block size for the element
+  /// @param[in] symmetric Is the element a symmetric tensor?
   FiniteElement(mesh::CellType cell_type, std::span<const geometry_type> points,
-                std::array<std::size_t, 2> pshape,
-                const std::size_t block_size);
+                std::array<std::size_t, 2> pshape, std::size_t block_size,
+                bool symmetric = false);
 
   /// Copy constructor
   FiniteElement(const FiniteElement& element) = delete;
