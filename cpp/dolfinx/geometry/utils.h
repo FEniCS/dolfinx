@@ -21,21 +21,18 @@
 
 namespace dolfinx::geometry
 {
-/// @brief  Information regarding the ownership of points distributed over
-/// multiple processes
-/// @tparam T Mesh geometry floating type
+/// @brief Information on the ownership of points distributed across
+/// processes.
+/// @tparam T Mesh geometry floating type.
 template <std::floating_point T>
 struct PointOwnershipData
 {
-
-  const std::vector<std::int32_t>
-      src_owner; ///<  Ranks owning each point sent into ownership determination
-                 ///<  for current process
-  const std::vector<std::int32_t>
+  std::vector<int> src_owner; ///<  Ranks owning each point sent into ownership
+                              ///<  determination for current process
+  std::vector<int>
       dest_owners; ///< Ranks that sent `dest_points` to current process
-  const std::vector<T>
-      dest_points; ///< Points that are owned by current process
-  const std::vector<std::int32_t>
+  std::vector<T> dest_points; ///< Points that are owned by current process
+  std::vector<std::int32_t>
       dest_cells; ///< Cell indices (local to process) where each entry of
                   ///< `dest_points` is located
 };
@@ -837,7 +834,7 @@ PointOwnershipData<T> determine_point_ownership(const mesh::Mesh<T>& mesh,
                          recv_sizes.data(), recv_offsets.data(), MPI_INT32_T,
                          reverse_comm);
 
-  std::vector<std::int32_t> point_owners(points.size() / 3, -1);
+  std::vector<int> point_owners(points.size() / 3, -1);
   for (std::size_t i = 0; i < unpack_map.size(); i++)
   {
     const std::int32_t pos = unpack_map[i];
@@ -957,7 +954,7 @@ PointOwnershipData<T> determine_point_ownership(const mesh::Mesh<T>& mesh,
                          forward_comm);
 
   // Unpack dest ranks if point owner is this rank
-  std::vector<std::int32_t> owned_recv_ranks;
+  std::vector<int> owned_recv_ranks;
   owned_recv_ranks.reserve(recv_offsets.back());
   std::vector<T> owned_recv_points;
   std::vector<std::int32_t> owned_recv_cells;
@@ -978,11 +975,10 @@ PointOwnershipData<T> determine_point_ownership(const mesh::Mesh<T>& mesh,
 
   MPI_Comm_free(&forward_comm);
   MPI_Comm_free(&reverse_comm);
-  PointOwnershipData<T> data(
-      std::move(point_owners), std::move(owned_recv_ranks),
-      std::move(owned_recv_points), std::move(owned_recv_cells));
-
-  return data;
+  return PointOwnershipData<T>{.src_owner = std::move(point_owners),
+                               .dest_owners = std::move(owned_recv_ranks),
+                               .dest_points = std::move(owned_recv_points),
+                               .dest_cells = std::move(owned_recv_cells)};
 }
 
 } // namespace dolfinx::geometry

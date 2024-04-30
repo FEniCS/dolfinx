@@ -202,17 +202,19 @@ void declare_bbtree(nb::module_& m, std::string type)
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>
                  dest_cells)
           {
-            const std::vector<std::int32_t> _src_owner(
-                src_owner.data(), src_owner.data() + src_owner.size());
-            const std::vector<std::int32_t> _dest_owners(
-                dest_owners.data(), dest_owners.data() + dest_owners.size());
-            const std::vector<T> _dest_points(
-                dest_points.data(), dest_points.data() + dest_points.size());
-            const std::vector<std::int32_t> _dest_cells(
-                dest_cells.data(), dest_cells.data() + dest_cells.size());
-            new (self) dolfinx::geometry::PointOwnershipData<T>(
-                std::move(_src_owner), std::move(_dest_owners),
-                std::move(_dest_points), std::move(_dest_cells));
+            std::vector _src_owner(src_owner.data(),
+                                   src_owner.data() + src_owner.size());
+            std::vector _dest_owners(dest_owners.data(),
+                                     dest_owners.data() + dest_owners.size());
+            std::vector _dest_points(dest_points.data(),
+                                     dest_points.data() + dest_points.size());
+            std::vector _dest_cells(dest_cells.data(),
+                                    dest_cells.data() + dest_cells.size());
+            new (self) dolfinx::geometry::PointOwnershipData<T>{
+                .src_owner = std::move(_src_owner),
+                .dest_owners = std::move(_dest_owners),
+                .dest_points = std::move(_dest_points),
+                .dest_cells = std::move(_dest_cells)};
           },
           nb::arg("src_owner"), nb::arg("dest_owners"), nb::arg("dest_points"),
           nb::arg("dest_cells"))
