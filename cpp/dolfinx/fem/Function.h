@@ -150,7 +150,7 @@ public:
   /// @brief Underlying vector
   std::shared_ptr<la::Vector<value_type>> x() { return _x; }
 
-  /// @brief Interpolate a fem::Function.
+  /// @brief Interpolate a Function.
   /// @param[in] v Function to be interpolated.
   /// @param[in] cells Cells to interpolate on.
   /// @param[in] cell_map For cell `i` in the mesh associated with
@@ -163,7 +163,7 @@ public:
     fem::interpolate(*this, v, cells, cell_map);
   }
 
-  /// @brief Interpolate a provided fem::Function.
+  /// @brief Interpolate a Function.
   /// @param[in] v Function to be interpolated.
   /// @param[in] cell_map Map from cells in `self` to cell indices in
   /// `v`.
@@ -266,7 +266,7 @@ public:
     interpolate(f, cells);
   }
 
-  /// @brief Interpolate a fem::Expression (based on UFL).
+  /// @brief Interpolate an Expression (based on UFL).
   /// @param[in] e Expression to be interpolated. The expression must
   /// have been created using the reference coordinates.
   /// FiniteElement::interpolation_points for the element associated
@@ -360,7 +360,7 @@ public:
                      {value_size, num_cells * num_points}, cells);
   }
 
-  /// @brief Interpolate a fem::Expression (based on UFL) on all cells.
+  /// @brief Interpolate an Expression (based on UFL) on all cells.
   /// @param[in] e The function to be interpolated
   /// @param[in] expr_mesh Mesh the expression `e` is defined on.
   /// @param[in] cell_map Map from `cells` to cells in expression if
@@ -380,7 +380,7 @@ public:
     interpolate(e, cells, expr_mesh, cell_map);
   }
 
-  /// @brief Interpolate a function defined on a non-matching mesh.
+  /// @brief Interpolate a function defined from a non-matching mesh.
   /// @param[in] v Function to be interpolated.
   /// @param cells Cells in the mesh associated with `this` that will be
   /// interpolated into.
