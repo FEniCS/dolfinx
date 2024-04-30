@@ -1049,14 +1049,14 @@ void declare_real_functions(nb::module_& m)
       nb::arg("element"), nb::arg("V"), nb::arg("cells"));
 
   m.def(
-      "create_nonmatching_meshes_interpolation_data",
+      "create_interpolation_data",
       [](const dolfinx::mesh::Geometry<T>& geometry0,
          const dolfinx::fem::FiniteElement<T>& element0,
          const dolfinx::mesh::Mesh<T>& mesh1,
          nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells,
          T padding)
       {
-        return dolfinx::fem::create_nonmatching_meshes_interpolation_data(
+        return dolfinx::fem::create_interpolation_data(
             geometry0, element0, mesh1, std::span(cells.data(), cells.size()),
             padding);
       },

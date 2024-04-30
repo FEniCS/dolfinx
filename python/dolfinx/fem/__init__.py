@@ -9,9 +9,7 @@ import numpy as np
 import numpy.typing as npt
 
 from dolfinx.cpp.fem import IntegralType, transpose_dofmap
-from dolfinx.cpp.fem import (
-    create_nonmatching_meshes_interpolation_data as _create_nonmatching_meshes_interpolation_data,
-)
+from dolfinx.cpp.fem import create_interpolation_data as _create_interpolation_data
 from dolfinx.cpp.fem import create_sparsity_pattern as _create_sparsity_pattern
 from dolfinx.cpp.fem import discrete_gradient as _discrete_gradient
 from dolfinx.fem.assemble import (
@@ -62,7 +60,7 @@ def create_sparsity_pattern(a: Form):
     return _create_sparsity_pattern(a._cpp_object)
 
 
-def create_nonmatching_meshes_interpolation_data(
+def create_interpolation_data(
     V_to: FunctionSpace,
     V_from: FunctionSpace,
     cells: npt.NDArray[np.int32],
@@ -73,14 +71,17 @@ def create_nonmatching_meshes_interpolation_data(
     Args:
         V_to: Function space to interpolate into
         V_from: Function space to interpolate from
-        cells: Indices of the cells associated with `V_to` on which to interpolate into.
-        padding: Absolute padding of bounding boxes of all entities on mesh_to
+        cells: Indices of the cells associated with `V_to` on which to
+            interpolate into.
+        padding: Absolute padding of bounding boxes of all entities on
+            mesh_to
 
     Returns:
-        Data needed to interpolation functions defined on function spaces on the meshes.
+        Data needed to interpolation functions defined on function
+        spaces on the meshes.
     """
     return _PointOwnershipData(
-        _create_nonmatching_meshes_interpolation_data(
+        _create_interpolation_data(
             V_to.mesh._cpp_object.geometry, V_to.element, V_from.mesh._cpp_object, cells, padding
         )
     )
@@ -130,7 +131,7 @@ __all__ = [
     "locate_dofs_topological",
     "extract_function_spaces",
     "transpose_dofmap",
-    "create_nonmatching_meshes_interpolation_data",
+    "create_interpolation_data",
     "CoordinateElement",
     "coordinate_element",
     "form_cpp_class",

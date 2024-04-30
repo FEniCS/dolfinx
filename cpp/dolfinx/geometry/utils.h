@@ -506,15 +506,15 @@ compute_collisions(const BoundingBoxTree<T>& tree, std::span<const T> points)
 /// -1 is returned.
 ///
 /// @note `cells` can for instance be found by using
-/// `geometry::compute_collisions` between a bounding box tree for the
+/// geometry::compute_collisions between a bounding box tree for the
 /// cells of the mesh and the point.
 ///
-/// @param[in] mesh The mesh
-/// @param[in] cells The candidate cells
-/// @param[in] point The point (`shape=(3,)`)
+/// @param[in] mesh The mesh.
+/// @param[in] cells Candidate cells.
+/// @param[in] point The point (`shape=(3,)`).
 /// @param[in] tol Tolerance for accepting a collision (in the squared
-/// distance)
-/// @return The local cell index, -1 if not found
+/// distance).
+/// @return Local cell index, -1 if not found.
 template <std::floating_point T>
 std::int32_t compute_first_colliding_cell(const mesh::Mesh<T>& mesh,
                                           std::span<const std::int32_t> cells,

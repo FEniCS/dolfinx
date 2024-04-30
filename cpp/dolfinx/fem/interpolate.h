@@ -1043,18 +1043,17 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 /// `mesh1`. This parameter can also be used for extrapolation, i.e. if
 /// cells in `mesh0` is not overlapped by `mesh1`.
 ///
-/// @note Setting the \p padding to a large value will increase runtime
-/// of this function, as one has to determine what entity is closest if
-/// there is no intersection.
+/// @note Setting the \p padding to a large value will increase the
+/// runtime of this function, as one has to determine what entity is
+/// closest if there is no intersection.
 template <std::floating_point T>
-geometry::PointOwnershipData<T> create_nonmatching_meshes_interpolation_data(
+geometry::PointOwnershipData<T> create_interpolation_data(
     const mesh::Geometry<T>& geometry0, const FiniteElement<T>& element0,
     const mesh::Mesh<T>& mesh1, std::span<const std::int32_t> cells, T padding)
 {
   // Collect all the points at which values are needed to define the
   // interpolating function
-  std::vector<T> coords
-      = interpolation_coords(element0, geometry0, cells);
+  std::vector<T> coords = interpolation_coords(element0, geometry0, cells);
 
   // Transpose interpolation coords
   std::vector<T> x(coords.size());
@@ -1067,26 +1066,25 @@ geometry::PointOwnershipData<T> create_nonmatching_meshes_interpolation_data(
   return geometry::determine_point_ownership<T>(mesh1, x, padding);
 }
 
-/// @brief Interpolate a finite element function defined on a grid to a finite
-/// element function defined on another non-matching grid.
-/// @tparam T The Function scalar type
-/// @tparam U The Mesh geometry scalar type
-/// @param u The function to interpolate into
-/// @param v The function to interpolate from
+/// @brief Interpolate a finite element function defined on a grid to a
+/// finite element function defined on different (non-matching) grid.
+/// @tparam T Function scalar type.
+/// @tparam U  Mesh geometry scalar type.
+/// @param u Function to interpolate into.
+/// @param v Function to interpolate from.
 /// @param cells Cells in the mesh associated with `u` that will be
-/// interpolated into
-/// @param nmm_interpolation_data Data required for associating the
-/// interpolation points of `u` with cells in `v`. This can be computed with
-/// `fem::create_nonmatching_meshes_interpolation_data`.
+/// interpolated into.
+/// @param interpolation_data Data required for associating the
+/// interpolation points of `u` with cells in `v`. This can be computed
+/// with `fem::create_interpolation_data`.
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate(Function<T, U>& u, const Function<T, U>& v,
                  std::span<const std::int32_t> cells,
-                 const geometry::PointOwnershipData<U>& nmm_interpolation_data)
+                 const geometry::PointOwnershipData<U>& interpolation_data)
 {
   auto mesh = u.function_space()->mesh();
   assert(mesh);
   MPI_Comm comm = mesh->comm();
-
   {
     auto mesh_v = v.function_space()->mesh();
     assert(mesh_v);
@@ -1102,35 +1100,35 @@ void interpolate(Function<T, U>& u, const Function<T, U>& v,
   assert(mesh->topology());
   auto cell_map = mesh->topology()->index_map(mesh->topology()->dim());
   assert(cell_map);
-
   auto element_u = u.function_space()->element();
   assert(element_u);
   const std::size_t value_size = u.function_space()->value_size();
 
-  const auto& [dest_ranks, src_ranks, recv_points, evaluation_cells]
-      = nmm_interpolation_data;
+  auto& dest_ranks = interpolation_data.src_owner;
+  auto& src_ranks = interpolation_data.dest_owners;
+  auto& recv_points = interpolation_datad.dest_points;
+  auto& evaluation_cells = interpolation_data.dest_cells;
 
   // Evaluate the interpolating function where possible
   std::vector<T> send_values(recv_points.size() / 3 * value_size);
   v.eval(recv_points, {recv_points.size() / 3, (std::size_t)3},
          evaluation_cells, send_values, {recv_points.size() / 3, value_size});
 
+  using dextents2 = MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>;
+
   // Send values back to owning process
   std::vector<T> values_b(dest_ranks.size() * value_size);
-  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
-      _send_values(send_values.data(), src_ranks.size(), value_size);
+  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<const T, dextents2> _send_values(
+      send_values.data(), src_ranks.size(), value_size);
   impl::scatter_values(comm, src_ranks, dest_ranks, _send_values,
                        std::span(values_b));
 
   // Transpose received data
-  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
-      values(values_b.data(), dest_ranks.size(), value_size);
+  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<const T, dextents2> values(
+      values_b.data(), dest_ranks.size(), value_size);
   std::vector<T> valuesT_b(value_size * dest_ranks.size());
-  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
-      valuesT(valuesT_b.data(), value_size, dest_ranks.size());
+  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<T, dextents2> valuesT(
+      valuesT_b.data(), value_size, dest_ranks.size());
   for (std::size_t i = 0; i < values.extent(0); ++i)
     for (std::size_t j = 0; j < values.extent(1); ++j)
       valuesT(j, i) = values(i, j);

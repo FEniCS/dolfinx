@@ -75,7 +75,7 @@ int main(int argc, char* argv[])
         cell_map->size_local() + cell_map->num_ghosts(), 0);
     std::iota(cells.begin(), cells.end(), 0);
     geometry::PointOwnershipData<T> interpolation_data
-        = fem::create_nonmatching_meshes_interpolation_data(
+        = fem::create_interpolation_data(
             u_hex->function_space()->mesh()->geometry(),
             *u_hex->function_space()->element(),
             *u_tet->function_space()->mesh(),
