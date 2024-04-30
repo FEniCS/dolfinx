@@ -167,8 +167,7 @@ public:
   /// @param[in] v The function to be interpolated
   /// @param[in] cell_map Map from cells in self to cell indices in \p v
   void interpolate(const Function<value_type, geometry_type>& v,
-                   std::span<const std::int32_t> cell_map
-                   = std::span<const std::int32_t>() = {})
+                   std::span<const std::int32_t> cell_map = {})
   {
     assert(_function_space);
     assert(_function_space->mesh());
