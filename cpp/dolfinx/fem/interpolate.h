@@ -15,7 +15,6 @@
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/types.h>
-#include <dolfinx/geometry/BoundingBoxTree.h>
 #include <dolfinx/geometry/utils.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
@@ -32,7 +31,6 @@ template <typename T>
 concept MDSpan = requires(T x, std::size_t idx) {
   x(idx, idx);
   { x.extent(0) } -> std::integral;
-
   { x.extent(1) } -> std::integral;
 };
 
@@ -40,12 +38,13 @@ concept MDSpan = requires(T x, std::size_t idx) {
 /// an expression should be computed to interpolate it in a finite
 /// element space.
 ///
-/// @param[in] element The element to be interpolated into
-/// @param[in] geometry Mesh geometry
+/// @param[in] element Element to be interpolated into.
+/// @param[in] geometry Mesh geometry.
 /// @param[in] cells Indices of the cells in the mesh to compute
-/// interpolation coordinates for
+/// interpolation coordinates for.
 /// @return The coordinates in the physical space at which to evaluate
-/// an expression. The shape is (3, num_points) and storage is row-major.
+/// an expression. The shape is (3, num_points) and storage is
+/// row-major.
 template <std::floating_point T>
 std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
                                     const mesh::Geometry<T>& geometry,
@@ -151,13 +150,9 @@ using mdspan_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
 /// @note dest_ranks can contain repeated entries
 /// @note dest_ranks might contain -1 (no process owns the point)
 template <dolfinx::scalar T>
-void scatter_values(
-    MPI_Comm comm, std::span<const std::int32_t> src_ranks,
-    std::span<const std::int32_t> dest_ranks,
-    MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-        const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
-        send_values,
-    std::span<T> recv_values)
+void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
+                    std::span<const std::int32_t> dest_ranks,
+                    mdspan_t<const T, 2> send_values, std::span<T> recv_values)
 {
   const std::size_t block_size = send_values.extent(1);
   assert(src_ranks.size() * block_size == send_values.size());
@@ -413,10 +408,10 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
 /// element basis functions for the two elements are mapped differently,
 /// e.g. one may be subject to a Piola mapping and the other to a
 /// standard isoparametric mapping.
-/// @param[out] u1 The function to interpolate to
-/// @param[in] u0 The function to interpolate from
-/// @param[in] cells1 The cells to interpolate on
-/// @param[in] cells0 Equivalent cell in u0 for each cell in u1
+/// @param[out] u1 Function to interpolate to.
+/// @param[in] u0 Function to interpolate from.
+/// @param[in] cells1 Cells to interpolate on.
+/// @param[in] cells0 Equivalent cell in `u0` for each cell in `u1`.
 /// @pre The functions `u1` and `u0` must share the same mesh. This is
 /// not checked by the function.
 template <dolfinx::scalar T, std::floating_point U>
@@ -446,7 +441,6 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
 
   std::span<const std::uint32_t> cell_info0;
   std::span<const std::uint32_t> cell_info1;
-
   if (element1->needs_dof_transformations()
       or element0->needs_dof_transformations())
   {
@@ -529,19 +523,14 @@ void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
   impl::mdspan_t<const U, 2> Pi_1(_Pi_1.data(), pi_shape);
 
   using u_t = impl::mdspan_t<U, 2>;
-  using U_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      const U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-  using J_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      const U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-  using K_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      const U, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+  using U_t = impl::mdspan_t<const U, 2>;
+  using J_t = impl::mdspan_t<const U, 2>;
+  using K_t = impl::mdspan_t<const U, 2>;
   auto push_forward_fn0
       = element0->basix_element().template map_fn<u_t, U_t, J_t, K_t>();
 
-  using v_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      const T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
-  using V_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-      T, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>;
+  using v_t = impl::mdspan_t<const T, 2>;
+  using V_t = impl::mdspan_t<T, 2>;
   auto pull_back_fn1
       = element1->basix_element().template map_fn<V_t, v_t, K_t, J_t>();
 
@@ -1043,7 +1032,7 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
 /// `mesh1`. This parameter can also be used for extrapolation, i.e. if
 /// cells in `mesh0` is not overlapped by `mesh1`.
 ///
-/// @note Setting the \p padding to a large value will increase the
+/// @note Setting the `padding` to a large value will increase the
 /// runtime of this function, as one has to determine what entity is
 /// closest if there is no intersection.
 template <std::floating_point T>
@@ -1178,7 +1167,7 @@ void interpolate(Function<T, U>& u1, const Function<T, U>& u0,
     }
     else if (!cell_map.empty())
     {
-      // cell_map given is provided, meshes may use different indexing
+      // cell_map is provided, meshes may use different indexing
       std::transform(cells1.begin(), cells1.end(), std::back_inserter(cells0),
                      [&cell_map](std::int32_t c) { return cell_map[c]; });
     }
