@@ -68,7 +68,6 @@ int main(int argc, char* argv[])
     u_tet->interpolate(fun);
 
     // Interpolate from u_tet to u_hex
-    constexpr T padding = 1e-8;
     auto cell_map
         = mesh_hex->topology()->index_map(mesh_hex->topology()->dim());
     assert(cell_map);
@@ -80,7 +79,7 @@ int main(int argc, char* argv[])
             u_hex->function_space()->mesh()->geometry(),
             *u_hex->function_space()->element(),
             *u_tet->function_space()->mesh(),
-            std::span<const std::int32_t>(cells), padding);
+            std::span<const std::int32_t>(cells), 1e-8);
     u_hex->interpolate(*u_tet, cells, interpolation_data);
 
 #ifdef HAS_ADIOS2
