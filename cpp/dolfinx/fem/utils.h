@@ -360,13 +360,17 @@ Form<T, U> create_form_factory(
   }
 
   // Check argument function spaces
-#ifndef NDEBUG
   for (std::size_t i = 0; i < spaces.size(); ++i)
   {
     assert(spaces[i]->element());
-    // TODO: Hash check of element
+    if (auto element_hash = ufcx_form.finite_element_hashes[i];
+        element_hash != 0
+        and element_hash != spaces[i]->element()->basix_element().hash())
+    {
+      throw std::runtime_error("Cannot create form. Elements are different to "
+                               "those used to compile the form.");
+    }
   }
-#endif
 
   // Extract mesh from FunctionSpace, and check they are the same
   if (!mesh and !spaces.empty())
