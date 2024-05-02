@@ -7,7 +7,6 @@
 #include "FiniteElement.h"
 #include <algorithm>
 #include <array>
-#include <basix/basix.h>
 #include <dolfinx/common/log.h>
 #include <functional>
 #include <numeric>

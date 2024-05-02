@@ -8,7 +8,7 @@
 
 #include "traits.h"
 #include <array>
-#include <basix/finite-element.h>
+#include <basix/basix.h>
 #include <concepts>
 #include <cstdint>
 #include <dolfinx/mesh/cell_types.h>
