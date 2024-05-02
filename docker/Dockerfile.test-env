@@ -16,7 +16,7 @@ ARG ADIOS2_VERSION=2.10.0
 ARG DOXYGEN_VERSION=1_10_0
 ARG GMSH_VERSION=4_12_2
 ARG HDF5_SERIES=1.14
-ARG HDF5_PATCH=3
+ARG HDF5_PATCH=4
 ARG HDF5_FIX=
 ARG KAHIP_VERSION=3.16
 ARG NUMPY_VERSION=1.26.4
@@ -58,9 +58,6 @@ ARG PETSC_SLEPC_DEBUGGING="no"
 
 # MPI variant. "mpich" or "openmpi".
 ARG MPI="mpich"
-# See https://github.com/pmodels/mpich/issues/5811
-# ARG MPICH_CONFIGURE_OPTIONS="FCFLAGS=-fallow-argument-mismatch FFLAGS=-fallow-argument-mismatch --with-device=ch4:ofi"
-ARG MPICH_CONFIGURE_OPTIONS=""
 
 # Number of build threads to use with make
 ARG BUILD_NP=4
@@ -136,7 +133,7 @@ RUN if [ "$MPI" = "mpich" ]; then \
     wget https://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${MPICH_VERSION}.tar.gz && \
     tar xfz mpich-${MPICH_VERSION}.tar.gz  && \
     cd mpich-${MPICH_VERSION}  && \
-    ./configure ${MPICH_CONFIGURE_OPTIONS} && \
+    ./configure && \
     make -j${BUILD_NP} install; \
     else \
     wget https://download.open-mpi.org/release/open-mpi/v${OPENMPI_SERIES}/openmpi-${OPENMPI_SERIES}.${OPENMPI_PATCH}.tar.gz && \
