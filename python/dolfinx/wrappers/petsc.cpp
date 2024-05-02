@@ -353,8 +353,7 @@ void petsc_nls_module(nb::module_& m)
                    {
                      KSP ksp = self.get_krylov_solver().ksp();
                      PyObject* obj = PyPetscKSP_New(ksp);
-                     PetscObjectDereference((PetscObject)ksp);
-                     return nb::borrow(obj);
+                     return nb::steal(obj);
                    })
       .def("setF", &dolfinx::nls::petsc::NewtonSolver::setF, nb::arg("F"),
            nb::arg("b"))

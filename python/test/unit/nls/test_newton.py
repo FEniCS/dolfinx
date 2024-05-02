@@ -104,7 +104,7 @@ class NonlinearPDE_SNESProblem:
 @pytest.mark.petsc4py
 class TestNLS:
     def test_linear_pde(self):
-        """Test Newton solver for a linear PDE"""
+        """Test Newton solver for a linear PDE."""
         from petsc4py import PETSc
 
         # Create mesh and function space
@@ -143,6 +143,12 @@ class TestNLS:
         n, converged = solver.solve(u.x.petsc_vec)
         assert converged
         assert n == 1
+
+        # Check reference counting
+        ksp = solver.krylov_solver
+        assert ksp.refcount == 2
+        del solver
+        assert ksp.refcount == 1
 
     def test_nonlinear_pde(self):
         """Test Newton solver for a simple nonlinear PDE"""
