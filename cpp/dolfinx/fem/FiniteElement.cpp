@@ -7,7 +7,7 @@
 #include "FiniteElement.h"
 #include <algorithm>
 #include <array>
-#include <basix/finite-element.h>
+#include <basix/finite-element-utils.h>
 #include <basix/interpolation.h>
 #include <basix/polyset.h>
 #include <dolfinx/common/log.h>
