@@ -42,7 +42,7 @@
 // ## C++ program
 
 #include "poisson.h"
-#include <basix/finite-element.h>
+#include <basix/basix.h>
 #include <cmath>
 #include <complex>
 #include <concepts>

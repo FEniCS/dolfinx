@@ -9,7 +9,7 @@
 // This demo shows various methods to define custom cell kernels in C++
 // and have them assembled into DOLFINx linear algebra data structures.
 
-#include <basix/finite-element.h>
+#include <basix/basix.h>
 #include <basix/mdspan.hpp>
 #include <basix/quadrature.h>
 #include <cmath>
