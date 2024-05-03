@@ -69,6 +69,8 @@ jobs:
         with:
           path: dolfinx
 
+      - uses: mpi4py/setup-mpi@v1
+
       - name: Build and install DOLFINx C++ library
         working-directory: dolfinx
         run: |
