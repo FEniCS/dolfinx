@@ -96,7 +96,7 @@ jobs:
         run: |
           pip install git+https://github.com/FEniCS/ufl.git
           pip install git+https://github.com/FEniCS/basix.git
-          pip install git+https://github.com/FEniCS/ffcx.git
+          pip install git+https://github.com/FEniCS/ffcx.git@dokken/unify_irs
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
         run: |
