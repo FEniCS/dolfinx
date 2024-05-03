@@ -65,6 +65,8 @@ jobs:
           cmake --install build-dir --config Release --prefix D:/a/dolfinx/basix-install
           echo "D:/a/dolfinx/basix-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
       
+      - uses: mpi4py/setup-mpi@v1
+      
       - uses: actions/checkout@v4
         with:
           path: dolfinx
