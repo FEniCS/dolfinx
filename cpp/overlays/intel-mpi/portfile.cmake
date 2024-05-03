@@ -1,4 +1,4 @@
-set(INTELMPI_VERSION "latest")
+set(INTELMPI_VERSION "2021.12")
 set(SOURCE_PATH "${CURRENT_BUILDTREES_DIR}/src/intel-mpi-${INTELMPI_VERSION}")
 
 file(TO_NATIVE_PATH "C:/Program Files (x86)/Intel/oneAPI" SDK_SOURCE_DIR)
@@ -8,10 +8,10 @@ message(STATUS "IntelMPI source SDK = ${SDK_SOURCE_DIR}")
 set(SDK_SOURCE_MPI_DIR "${SDK_SOURCE_DIR}/mpi/${INTELMPI_VERSION}")
 
 set(SOURCE_INCLUDE_PATH "${SDK_SOURCE_MPI_DIR}/include")
-set(SOURCE_LIB_PATH "${SDK_SOURCE_MPI_DIR}/lib/release")
-#set(SOURCE_DEBUG_LIB_PATH "${SDK_SOURCE_MPI_DIR}/lib/debug")
-set(SOURCE_BIN_PATH "${SDK_SOURCE_MPI_DIR}/bin/release")
-#set(SOURCE_DEBUG_BIN_PATH "${SDK_SOURCE_MPI_DIR}/bin/debug")
+set(SOURCE_LIB_PATH "${SDK_SOURCE_MPI_DIR}/lib/mpi")
+set(SOURCE_DEBUG_LIB_PATH "${SDK_SOURCE_MPI_DIR}/lib/mpi/debug")
+set(SOURCE_BIN_PATH "${SDK_SOURCE_MPI_DIR}/bin/mpi")
+set(SOURCE_DEBUG_BIN_PATH "${SDK_SOURCE_MPI_DIR}/bin/mpi/debug")
 set(SOURCE_TOOLS_PATH "${SDK_SOURCE_MPI_DIR}/bin")
 set(SOURCE_INCLUDE_FILES
   "${SOURCE_INCLUDE_PATH}/mpi.h"
@@ -52,18 +52,18 @@ file(INSTALL
   )
 
 # Install release library files
-#file(INSTALL
-#  "${SOURCE_LIB_PATH}/impi.lib"
-#  "${SOURCE_LIB_PATH}/impicxx.lib"
-#  DESTINATION "${CURRENT_PACKAGES_DIR}/lib"
-#  )
+file(INSTALL
+  "${SOURCE_LIB_PATH}/impi.lib"
+  "${SOURCE_LIB_PATH}/impicxx.lib"
+  DESTINATION "${CURRENT_PACKAGES_DIR}/lib"
+  )
 
 # Install debug library files
-#file(INSTALL
-#  "${SOURCE_DEBUG_LIB_PATH}/impi.lib"
-#  "${SOURCE_DEBUG_LIB_PATH}/impicxx.lib"
-#  DESTINATION "${CURRENT_PACKAGES_DIR}/debug/lib"
-#  )
+file(INSTALL
+  "${SOURCE_DEBUG_LIB_PATH}/impi.lib"
+  "${SOURCE_DEBUG_LIB_PATH}/impicxx.lib"
+  DESTINATION "${CURRENT_PACKAGES_DIR}/debug/lib"
+  )
 
 # 'libfabric.dll' is not needed for the compilation but it is needed
 # for the runtime and should be in the PATH for 'mpiexec' to work
