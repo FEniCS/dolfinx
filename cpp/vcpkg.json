@@ -10,7 +10,7 @@
       ]
     },
     "lapack",
-    "openmpi",
+    "msmpi",
     "parmetis",
     "pugixml",
     "pkgconf"
