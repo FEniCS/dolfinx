@@ -70,14 +70,14 @@ file(INSTALL
 file(INSTALL
   "${SOURCE_BIN_PATH}/impi.dll"
   "${SOURCE_BIN_PATH}/impi.pdb"
-  "${SDK_SOURCE_MPI_DIR}/libfabric/bin/libfabric.dll"
+  #"${SDK_SOURCE_MPI_DIR}/libfabric/bin/libfabric.dll"
   DESTINATION "${CURRENT_PACKAGES_DIR}/bin"
   )
 
 file(INSTALL
   "${SOURCE_DEBUG_BIN_PATH}/impi.dll"
   "${SOURCE_DEBUG_BIN_PATH}/impi.pdb"
-  "${SDK_SOURCE_MPI_DIR}/libfabric/bin/libfabric.dll"
+  #"${SDK_SOURCE_MPI_DIR}/libfabric/bin/libfabric.dll"
   DESTINATION "${CURRENT_PACKAGES_DIR}/debug/bin"
   )
 

@@ -75,8 +75,7 @@ jobs:
       
       - name: Recurse list MPI
         run: |
-          Get-ChildItem -Recurse "C:/Program Files (x86)/Intel/oneAPI/mpi/latest/bin" 
-          Get-ChildItem -Recurse "C:/Program Files (x86)/Intel/oneAPI/mpi/latest/lib" 
+          Get-ChildItem -Recurse "C:/Program Files (x86)/Intel/oneAPI/mpi/latest" 
 
       - name: Build and install DOLFINx C++ library
         working-directory: dolfinx
