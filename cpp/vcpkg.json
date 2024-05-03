@@ -4,7 +4,14 @@
     "blas",
     "boost-timer",
     "catch2",
+    { "name": "hdf5",
+      "features": [
+        "parallel"
+      ]
+    },
     "lapack",
+    "msmpi",
+    "parmetis",
     "pugixml",
     "pkgconf"
   ]
