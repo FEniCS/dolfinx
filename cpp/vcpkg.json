@@ -10,7 +10,7 @@
       ]
     },
     "lapack",
-    "msmpi",
+    "mpi",
     "parmetis",
     "pugixml",
     "pkgconf"
