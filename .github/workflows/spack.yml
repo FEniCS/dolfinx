@@ -20,7 +20,7 @@ on:
         type: string
       dolfinx_version:
         description: "DOLFINx release branch/tag to test"
-        default: "v0.8.0"
+        default: "0.8.0"
         type: string
 
 jobs:
@@ -90,7 +90,7 @@ jobs:
       - name: Get DOLFINx release code (to access test files)
         uses: actions/checkout@v4
         with:
-          ref:  ${{ github.event.inputs.dolfinx_version }}
+          ref:  v${{ github.event.inputs.dolfinx_version }}
           path: ./dolfinx-release
       - name: Run a C++ test (release version)
         run: |
