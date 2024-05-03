@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.19)
 
 # ------------------------------------------------------------------------------
 # Set project name and version number
-project(DOLFINX VERSION "0.8.0.0")
+project(DOLFINX VERSION "0.9.0.0")
 
 set(DOXYGEN_DOLFINX_VERSION
     ${DOLFINX_VERSION}
@@ -108,9 +108,15 @@ set_package_properties(
 )
 
 if(DOLFINX_ENABLE_PETSC)
-  set(_REQUIRE_PETSC TRUE CACHE BOOL "Is PETSc REQUIRED?")
+  set(_REQUIRE_PETSC
+      TRUE
+      CACHE BOOL "Is PETSc REQUIRED?"
+  )
 else()
-  set(_REQUIRE_PETSC FALSE CACHE BOOL "Is PETSc REQUIRED?")
+  set(_REQUIRE_PETSC
+      FALSE
+      CACHE BOOL "Is PETSc REQUIRED?"
+  )
 endif()
 
 option(DOLFINX_ENABLE_PETSC "Compile with support for PETSc." ON)
@@ -121,7 +127,6 @@ set_package_properties(
   URL "https://petsc.org/"
   PURPOSE "Linear and nonlinear solvers"
 )
-
 
 if(DOLFINX_ENABLE_PARMETIS)
   set(_REQUIRE_PARMETIS
@@ -318,7 +323,7 @@ find_package(HDF5 REQUIRED COMPONENTS C)
 if(NOT HDF5_IS_PARALLEL)
   message(
     FATAL_ERROR
-    "Found serial HDF5 build, MPI HDF5 build required, try setting HDF5_DIR or HDF5_ROOT"
+      "Found serial HDF5 build, MPI HDF5 build required, try setting HDF5_DIR or HDF5_ROOT"
   )
 endif()
 
@@ -333,7 +338,7 @@ set_package_properties(
 # which method UFCx was found
 if(NOT DOLFINX_UFCX_PYTHON)
   # Check in CONFIG mode, i.e. look for installed ufcxConfig.cmake
-  find_package(ufcx 0.7 REQUIRED CONFIG)
+  find_package(ufcx 0.9 REQUIRED CONFIG)
 else()
   # Check in MODULE mode (using FindUFCX.cmake)
   find_package(
@@ -341,7 +346,7 @@ else()
     COMPONENTS Interpreter
     REQUIRED
   )
-  find_package(UFCx 0.7 REQUIRED MODULE)
+  find_package(UFCx 0.9 REQUIRED MODULE)
 endif()
 
 set_package_properties(
@@ -368,7 +373,7 @@ endif()
 if(DOLFINX_ENABLE_PETSC)
   find_package(PkgConfig REQUIRED)
   set(ENV{PKG_CONFIG_PATH}
-    "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}"
+      "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}"
   )
   if(_REQUIRE_PETSC)
     pkg_search_module(PETSC REQUIRED IMPORTED_TARGET PETSc>=3.15 petsc>=3.15)
@@ -378,7 +383,9 @@ if(DOLFINX_ENABLE_PETSC)
 
   # Setting for FeatureSummary
   if(PETSC_FOUND)
-    message(STATUS "Found PETSc version ${PETSC_VERSION}, prefix: ${PETSC_PREFIX}")
+    message(
+      STATUS "Found PETSc version ${PETSC_VERSION}, prefix: ${PETSC_PREFIX}"
+    )
     set_property(GLOBAL APPEND PROPERTY PACKAGES_FOUND PETSc)
   else()
     set_property(GLOBAL APPEND PROPERTY PACKAGES_NOT_FOUND PETSc)
@@ -412,7 +419,10 @@ if(DOLFINX_ENABLE_SLEPC AND PETSC_FOUND)
     set_property(GLOBAL APPEND PROPERTY PACKAGES_NOT_FOUND SLEPc)
   endif()
 elseif(_REQUIRE_SLEPC AND NOT PETSC_FOUND)
-  message(FATAL_ERROR "SLEPc requested, but no configured because PETSc was not found.")
+  message(
+    FATAL_ERROR
+      "SLEPc requested, but no configured because PETSc was not found."
+  )
 endif()
 
 if(DOLFINX_ENABLE_SCOTCH AND _REQUIRE_SCOTCH)

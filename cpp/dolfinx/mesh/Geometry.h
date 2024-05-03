@@ -305,7 +305,7 @@ create_geometry(
     for (std::int32_t cell = 0; cell < num_cells; ++cell)
     {
       std::span dofs(dofmaps.front().data() + cell * d, d);
-      elements.front().unpermute_dofs(dofs, cell_info[cell]);
+      elements.front().permute_inv(dofs, cell_info[cell]);
     }
   }
 
@@ -411,7 +411,7 @@ create_geometry(
     for (std::int32_t cell = 0; cell < num_cells; ++cell)
     {
       std::span dofs(dofmaps.front().data() + cell * d, d);
-      element.unpermute_dofs(dofs, cell_info[cell]);
+      element.permute_inv(dofs, cell_info[cell]);
     }
   }
 

@@ -62,12 +62,6 @@ nanobind_add_module(
   dolfinx/wrappers/refinement.cpp
 )
 
-# Add strict compiler flags include(CheckCXXCompilerFlag)
-# check_cxx_compiler_flag("-Wall -Werror -pedantic" HAVE_PEDANTIC)
-
-# if(HAVE_PEDANTIC) # target_compile_options(cpp PRIVATE
-# -Wall;-Werror;-pedantic) endif()
-
 # Add DOLFINx libraries
 target_link_libraries(cpp PRIVATE dolfinx)
 
@@ -83,8 +77,9 @@ execute_process(
 if(NOT PETSC4PY_COMMAND_RESULT)
   message(STATUS "Found petsc4py include directory at ${PETSC4PY_INCLUDE_DIR}")
   target_include_directories(cpp PRIVATE ${PETSC4PY_INCLUDE_DIR})
+  target_compile_definitions(cpp PRIVATE HAS_PETSC4PY)
 else()
-  message(FATAL_ERROR "petsc4py could not be found.")
+  message(STATUS "petsc4py not found.")
 endif()
 
 # Check for mpi4py

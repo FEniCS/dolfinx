@@ -199,8 +199,6 @@ def ffcx_jit(
     # Switch on type and compile, returning cffi object
     if isinstance(ufl_object, ufl.Form):
         r = ffcx.codegeneration.jit.compile_forms([ufl_object], options=p_ffcx, **p_jit)
-    elif isinstance(ufl_object, ufl.AbstractFiniteElement):
-        r = ffcx.codegeneration.jit.compile_elements([ufl_object], options=p_ffcx, **p_jit)
     elif isinstance(ufl_object, ufl.Mesh):
         r = ffcx.codegeneration.jit.compile_coordinate_maps([ufl_object], options=p_ffcx, **p_jit)
     elif isinstance(ufl_object, tuple) and isinstance(ufl_object[0], ufl.core.expr.Expr):

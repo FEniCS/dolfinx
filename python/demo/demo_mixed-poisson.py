@@ -99,15 +99,15 @@ from petsc4py import PETSc
 import numpy as np
 
 from basix.ufl import element, mixed_element
-from dolfinx import fem, io, mesh
+from dolfinx import default_real_type, fem, io, mesh
 from dolfinx.fem.petsc import LinearProblem
 from ufl import Measure, SpatialCoordinate, TestFunctions, TrialFunctions, div, exp, inner
 
 msh = mesh.create_unit_square(MPI.COMM_WORLD, 32, 32, mesh.CellType.quadrilateral)
 
 k = 1
-Q_el = element("BDMCF", msh.basix_cell(), k)
-P_el = element("DG", msh.basix_cell(), k - 1)
+Q_el = element("BDMCF", msh.basix_cell(), k, dtype=default_real_type)
+P_el = element("DG", msh.basix_cell(), k - 1, dtype=default_real_type)
 V_el = mixed_element([Q_el, P_el])
 V = fem.functionspace(msh, V_el)
 

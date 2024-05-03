@@ -11,13 +11,17 @@ import numpy as np
 import pytest
 
 from basix.ufl import element
-from dolfinx import la
+from dolfinx import default_real_type, la
 from dolfinx.fem import Function, functionspace
 from dolfinx.mesh import create_unit_square
 
 
 @pytest.mark.parametrize(
-    "e", [element("Lagrange", "triangle", 1), element("Lagrange", "triangle", 1, shape=(2,))]
+    "e",
+    [
+        element("Lagrange", "triangle", 1, dtype=default_real_type),
+        element("Lagrange", "triangle", 1, shape=(2,), dtype=default_real_type),
+    ],
 )
 def test_scatter_forward(e):
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
@@ -46,7 +50,11 @@ def test_scatter_forward(e):
 
 
 @pytest.mark.parametrize(
-    "e", [element("Lagrange", "triangle", 1), element("Lagrange", "triangle", 1, shape=(2,))]
+    "e",
+    [
+        element("Lagrange", "triangle", 1, dtype=default_real_type),
+        element("Lagrange", "triangle", 1, shape=(2,), dtype=default_real_type),
+    ],
 )
 def test_scatter_reverse(e):
     comm = MPI.COMM_WORLD
