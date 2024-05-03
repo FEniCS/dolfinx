@@ -139,13 +139,28 @@ endif()
 
 # ------------------------------------------------------------------------------
 # Install dolfinx library and header files
-install(
-  TARGETS dolfinx
-  EXPORT DOLFINXTargets
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT RuntimeExecutables
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT RuntimeLibraries
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT Development
-)
+if (WIN32)
+  install(
+    TARGETS dolfinx
+    EXPORT DOLFINXTargets
+    RUNTIME_DEPENDENCY_SET dependencies
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT RuntimeExecutables
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT RuntimeLibraries
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT Development
+  )
+
+  LIST(APPEND PRE_EXCLUDE_REGEXES "api-ms-.*")
+  LIST(APPEND PRE_EXCLUDE_REGEXES "ext-ms-.*")
+  install(RUNTIME_DEPENDENCY_SET dependencies DESTINATION ${CMAKE_INSTALL_BINDIR} PRE_EXCLUDE_REGEXES ${PRE_EXCLUDE_REGEXES} POST_EXCLUDE_REGEXES ".*system32/.*\\.dll" )
+else()
+  install(
+    TARGETS dolfinx
+    EXPORT DOLFINXTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT RuntimeExecutables
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT RuntimeLibraries
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT Development
+  )
+endif()
 
 # Generate DOLFINTargets.cmake
 install(EXPORT DOLFINXTargets DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dolfinx)
