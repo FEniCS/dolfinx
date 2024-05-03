@@ -18,6 +18,10 @@ on:
         description: "Spack repository branch/tag to test"
         default: "develop"
         type: string
+      dolfinx_version:
+        description: "DOLFINx release branch/tag to test"
+        default: "v0.8.0"
+        type: string
 
 jobs:
   build:
@@ -81,20 +85,19 @@ jobs:
           . ./spack/share/spack/setup-env.sh
           spack env create cpp-release
           spack env activate cpp-release
-          spack add fenics-dolfinx+adios2
+          spack add fenics-dolfinx@${{ github.event.inputs.dolfinx_version }}+adios2
           spack install
       - name: Get DOLFINx release code (to access test files)
         uses: actions/checkout@v4
         with:
-          ref: v0.8.0
-          # ref: v${{ github.event.inputs.spack_branch }}
+          ref:  ${{ github.event.inputs.dolfinx_version }}
           path: ./dolfinx-release
       - name: Run a C++ test (release version)
         run: |
           . ./spack/share/spack/setup-env.sh
           spack env create cpp-release-test
           spack env activate cpp-release-test
-          spack add fenics-dolfinx+adios2 cmake py-fenics-ffcx
+          spack add fenics-dolfinx@${{ github.event.inputs.dolfinx_version }}+adios2 cmake py-fenics-ffcx
           spack install
           cd dolfinx-release/cpp/
           cd demo/poisson
@@ -121,7 +124,7 @@ jobs:
           . ./spack/share/spack/setup-env.sh
           spack env create py-release
           spack env activate py-release
-          spack add py-fenics-dolfinx
+          spack add py-fenics-dolfinx@${{ github.event.inputs.dolfinx_version }}
           spack install -j 4
       - name: Run DOLFINx (Python, release) test
         run: |
