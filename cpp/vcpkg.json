@@ -1,0 +1,18 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "dependencies": [
+    "blas",
+    "boost-timer",
+    "catch2",
+    { "name": "hdf5",
+      "features": [
+        "parallel"
+      ]
+    },
+    "lapack",
+    "msmpi",
+    "parmetis",
+    "pugixml",
+    "pkg-config",
+  ]
+}
