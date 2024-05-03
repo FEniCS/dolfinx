@@ -1,0 +1,8 @@
+{
+  "name": "intel-mpi",
+  "version": "2021.8.0",
+  "port-version": 2,
+  "description": "Intel MPI is a Intel implementation of the Message Passing Interface standard for developing and running parallel applications.",
+  "homepage": "https://www.intel.com/content/www/us/en/developer/tools/oneapi/mpi-library.html",
+  "supports": "windows & !uwp"
+}
