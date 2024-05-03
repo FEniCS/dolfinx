@@ -130,7 +130,7 @@ std::pair<std::vector<T>, std::array<std::size_t, 2>> create_new_geometry(
 void update_logical_edgefunction(
     MPI_Comm comm,
     const std::vector<std::vector<std::int32_t>>& marked_for_update,
-    std::vector<std::int8_t>& marked_edges, const common::IndexMap& map);
+    std::span<std::int8_t> marked_edges, const common::IndexMap& map);
 
 /// @brief Add new vertex for each marked edge, and create
 /// new_vertex_coordinates and global_edge->new_vertex map.

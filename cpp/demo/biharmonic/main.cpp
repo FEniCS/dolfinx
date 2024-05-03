@@ -128,6 +128,7 @@
 // convenience we also include the DOLFINx namespace.
 
 #include "biharmonic.h"
+#include <basix/finite-element.h>
 #include <cmath>
 #include <dolfinx.h>
 #include <dolfinx/common/types.h>
@@ -162,9 +163,14 @@ int main(int argc, char* argv[])
     //    A function space object, which is defined in the generated code,
     //    is created:
 
+    auto element = basix::create_element<U>(
+        basix::element::family::P, basix::cell::type::triangle, 2,
+        basix::element::lagrange_variant::unset,
+        basix::element::dpc_variant::unset, false);
+
     //  Create function space
     auto V = std::make_shared<fem::FunctionSpace<U>>(
-        fem::create_functionspace(functionspace_form_biharmonic_a, "u", mesh));
+        fem::create_functionspace(mesh, element));
 
     // The source function $f$ and the penalty term $\alpha$ are
     // declared:

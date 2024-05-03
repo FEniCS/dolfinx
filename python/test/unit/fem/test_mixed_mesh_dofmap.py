@@ -4,7 +4,6 @@ import numpy as np
 
 import basix
 import dolfinx.cpp as _cpp
-from dolfinx import jit
 from dolfinx.cpp.mesh import Mesh_float64, create_geometry, create_topology
 from dolfinx.fem import coordinate_element
 from dolfinx.fem.dofmap import DofMap
@@ -14,22 +13,11 @@ from dolfinx.mesh import CellType
 
 def create_element_dofmap(mesh, cell_types, degree):
     cpp_elements = []
-    dofmaps = []
     for cell_type in cell_types:
-        ufl_e = basix.ufl.element("P", cell_type, degree)
-        form_compiler_options = {"scalar_type": np.float64}
-        (ufcx_element, ufcx_dofmap), module, code = jit.ffcx_jit(
-            mesh.comm, ufl_e, form_compiler_options=form_compiler_options
-        )
-        ffi = module.ffi
-        cpp_elements += [
-            _cpp.fem.FiniteElement_float64(ffi.cast("uintptr_t", ffi.addressof(ufcx_element)))
-        ]
-        dofmaps += [ufcx_dofmap]
+        ufl_e = basix.ufl.element("P", cell_type, degree, dtype=np.float64)
+        cpp_elements += [_cpp.fem.FiniteElement_float64(ufl_e.basix_element._e, 1, False)]
 
-    cpp_dofmaps = _cpp.fem.create_dofmaps(
-        mesh.comm, [ffi.cast("uintptr_t", ffi.addressof(dm)) for dm in dofmaps], mesh.topology
-    )
+    cpp_dofmaps = _cpp.fem.create_dofmaps(mesh.comm, mesh.topology, cpp_elements)
 
     return (cpp_elements, cpp_dofmaps)
 

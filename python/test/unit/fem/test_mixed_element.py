@@ -12,6 +12,7 @@ import pytest
 import dolfinx
 import ufl
 from basix.ufl import element, mixed_element
+from dolfinx import default_real_type
 from dolfinx.fem import form, functionspace
 from dolfinx.mesh import CellType, GhostMode, create_unit_cube, create_unit_square
 
@@ -32,7 +33,7 @@ def test_mixed_element(rank, family, cell, degree):
 
     shape = (mesh.geometry.dim,) * rank
     norms = []
-    U_el = element(family, cell.cellname(), degree, shape=shape)
+    U_el = element(family, cell.cellname(), degree, shape=shape, dtype=default_real_type)
     for i in range(3):
         U = functionspace(mesh, U_el)
         u = ufl.TrialFunction(U)
@@ -78,8 +79,10 @@ def test_vector_element():
 @pytest.mark.parametrize("d2", range(1, 4))
 def test_element_product(d1, d2):
     mesh = create_unit_square(MPI.COMM_WORLD, 2, 2)
-    P3 = element("Lagrange", mesh.basix_cell(), d1, shape=(mesh.geometry.dim,))
-    P1 = element("Lagrange", mesh.basix_cell(), d2)
+    P3 = element(
+        "Lagrange", mesh.basix_cell(), d1, shape=(mesh.geometry.dim,), dtype=default_real_type
+    )
+    P1 = element("Lagrange", mesh.basix_cell(), d2, dtype=default_real_type)
     TH = mixed_element([P3, P1])
     W = functionspace(mesh, TH)
 

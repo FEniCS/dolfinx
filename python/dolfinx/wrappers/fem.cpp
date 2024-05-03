@@ -107,13 +107,33 @@ void declare_function_space(nb::module_& m, std::string type)
         .def(
             "__init__",
             [](dolfinx::fem::FiniteElement<T>* self,
-               std::uintptr_t ufcx_element)
-            {
-              ufcx_finite_element* p
-                  = reinterpret_cast<ufcx_finite_element*>(ufcx_element);
-              new (self) dolfinx::fem::FiniteElement<T>(*p);
+               basix::FiniteElement<T>& element, std::size_t block_size,
+               bool symmetric) {
+              new (self) dolfinx::fem::FiniteElement<T>(element, block_size,
+                                                        symmetric);
             },
-            nb::arg("ufcx_element"))
+            nb::arg("element"), nb::arg("block_size"), nb::arg("symmetric"))
+        .def(
+            "__init__",
+            [](dolfinx::fem::FiniteElement<T>* self,
+               std::vector<
+                   std::shared_ptr<const dolfinx::fem::FiniteElement<T>>>
+                   elements)
+            { new (self) dolfinx::fem::FiniteElement<T>(elements); },
+            nb::arg("elements"))
+        .def(
+            "__init__",
+            [](dolfinx::fem::FiniteElement<T>* self, mesh::CellType cell_type,
+               nb::ndarray<T, nb::ndim<2>, nb::numpy> points,
+               std::size_t block_size, bool symmetry)
+            {
+              std::span<T> pdata(points.data(), points.size());
+              new (self) dolfinx::fem::FiniteElement<T>(
+                  cell_type, pdata, {points.shape(0), points.shape(1)},
+                  block_size, symmetry);
+            },
+            nb::arg("cell_type"), nb::arg("points"), nb::arg("block_size"),
+            nb::arg("symmetry"))
         .def("__eq__", &dolfinx::fem::FiniteElement<T>::operator==)
         .def_prop_ro("dtype", [](const dolfinx::fem::FiniteElement<T>&)
                      { return dolfinx_wrappers::numpy_dtype<T>(); })
@@ -387,6 +407,8 @@ void declare_objects(nb::module_& m, const std::string& type)
           [](dolfinx::fem::Function<T, U>& self,
              dolfinx::fem::Function<T, U>& u,
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells,
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>
+                 cell_map,
              const std::tuple<
                  nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>,
                  nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>,
@@ -410,9 +432,11 @@ void declare_objects(nb::module_& m, const std::string& type)
                         std::get<3>(interpolation_data).data(),
                         std::get<3>(interpolation_data).size()));
             self.interpolate(u, std::span(cells.data(), cells.size()),
+                             std::span(cell_map.data(), cell_map.size()),
                              _interpolation_data);
           },
-          nb::arg("u"), nb::arg("cells"), nb::arg("nmm_interpolation_data"),
+          nb::arg("u"), nb::arg("cells"), nb::arg("cell_map"),
+          nb::arg("nmm_interpolation_data"),
           "Interpolate a finite element function")
       .def(
           "interpolate_ptr",
@@ -449,10 +473,16 @@ void declare_objects(nb::module_& m, const std::string& type)
           "interpolate",
           [](dolfinx::fem::Function<T, U>& self,
              const dolfinx::fem::Expression<T, U>& expr,
-             nb::ndarray<const std::int32_t, nb::c_contig> cells)
-          { self.interpolate(expr, std::span(cells.data(), cells.size())); },
-          nb::arg("expr"), nb::arg("cells"),
-          "Interpolate an Expression on a set of cells")
+             nb::ndarray<const std::int32_t, nb::c_contig> cells,
+             const dolfinx::mesh::Mesh<U>& expr_mesh,
+             nb::ndarray<const std::int32_t, nb::c_contig> cell_map)
+          {
+            self.interpolate(expr, std::span(cells.data(), cells.size()),
+                             expr_mesh,
+                             std::span(cell_map.data(), cell_map.size()));
+          },
+          nb::arg("expr"), nb::arg("cells"), nb::arg("expr_mesh"),
+          nb::arg("cell_map"), "Interpolate an Expression on a set of cells")
       .def_prop_ro(
           "x", nb::overload_cast<>(&dolfinx::fem::Function<T, U>::x),
           "Return the vector associated with the finite element Function")
@@ -889,15 +919,20 @@ template <typename T>
 void declare_real_functions(nb::module_& m)
 {
   m.def(
+      "create_element_dof_layout",
+      [](const dolfinx::fem::FiniteElement<T>& element,
+         const std::vector<int>& parent_map)
+      { return dolfinx::fem::create_element_dof_layout(element, parent_map); },
+      nb::arg("element"), nb::arg("parent_map"),
+      "Create ElementDofLayout object from a ufc dofmap.");
+  m.def(
       "create_dofmap",
-      [](const dolfinx_wrappers::MPICommWrapper comm, std::uintptr_t dofmap,
+      [](const dolfinx_wrappers::MPICommWrapper comm,
          dolfinx::mesh::Topology& topology,
          const dolfinx::fem::FiniteElement<T>& element)
       {
-        ufcx_dofmap* p = reinterpret_cast<ufcx_dofmap*>(dofmap);
-        assert(p);
         dolfinx::fem::ElementDofLayout layout
-            = dolfinx::fem::create_element_dof_layout(*p, topology.cell_type());
+            = dolfinx::fem::create_element_dof_layout(element);
 
         std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv
             = nullptr;
@@ -906,33 +941,30 @@ void declare_real_functions(nb::module_& m)
         return dolfinx::fem::create_dofmap(comm.get(), layout, topology,
                                            permute_inv, nullptr);
       },
-      nb::arg("comm"), nb::arg("dofmap"), nb::arg("topology"),
-      nb::arg("element"),
-      "Create DofMap object from a pointer to ufcx_dofmap.");
-
+      nb::arg("comm"), nb::arg("topology"), nb::arg("element"),
+      "Create DofMap object from an element.");
   m.def(
       "create_dofmaps",
       [](const dolfinx_wrappers::MPICommWrapper comm,
-         std::vector<std::uintptr_t> ufcx_dofmaps,
-         dolfinx::mesh::Topology& topology)
+         dolfinx::mesh::Topology& topology,
+         std::vector<std::shared_ptr<const dolfinx::fem::FiniteElement<T>>>
+             elements)
       {
         std::vector<dolfinx::fem::ElementDofLayout> layouts;
         int D = topology.dim();
-        assert(ufcx_dofmaps.size() == topology.entity_types(D).size());
-        for (std::size_t i = 0; i < ufcx_dofmaps.size(); ++i)
+        assert(elements.size() == topology.entity_types(D).size());
+        for (std::size_t i = 0; i < elements.size(); ++i)
         {
-          ufcx_dofmap* p = reinterpret_cast<ufcx_dofmap*>(ufcx_dofmaps[i]);
-          assert(p);
-          layouts.push_back(dolfinx::fem::create_element_dof_layout(
-              *p, topology.entity_types(D)[i]));
+          layouts.push_back(
+              dolfinx::fem::create_element_dof_layout(*elements[i]));
         }
 
         return dolfinx::fem::create_dofmaps(comm.get(), layouts, topology,
                                             nullptr, nullptr);
       },
-      nb::arg("comm"), nb::arg("dofmap"), nb::arg("topology"),
+      nb::arg("comm"), nb::arg("topology"), nb::arg("elements"),
       "Create DofMap objects on a mixed topology mesh from pointers to "
-      "ufcx_dofmaps.");
+      "FiniteElements.");
 
   m.def(
       "locate_dofs_topological",
@@ -1094,17 +1126,6 @@ void fem(nb::module_& m)
   declare_cmap<float>(m, "float32");
   declare_cmap<double>(m, "float64");
 
-  m.def(
-      "create_element_dof_layout",
-      [](std::uintptr_t dofmap, const dolfinx::mesh::CellType cell_type,
-         const std::vector<int>& parent_map)
-      {
-        ufcx_dofmap* p = reinterpret_cast<ufcx_dofmap*>(dofmap);
-        return dolfinx::fem::create_element_dof_layout(*p, cell_type,
-                                                       parent_map);
-      },
-      nb::arg("dofmap"), nb::arg("cell_type"), nb::arg("parent_map"),
-      "Create ElementDofLayout object from a ufc dofmap.");
   m.def(
       "build_dofmap",
       [](MPICommWrapper comm, const dolfinx::mesh::Topology& topology,

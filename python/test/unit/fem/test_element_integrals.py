@@ -229,7 +229,7 @@ def test_facet_integral(cell_type, dtype):
             a = form(v * ufl.ds(subdomain_data=marker, subdomain_id=j), dtype=dtype)
             result = assemble_scalar(a)
             out.append(result)
-            assert np.isclose(result, out[0])
+            assert np.isclose(result, out[0], atol=np.finfo(dtype).eps)
 
 
 @pytest.mark.skip_in_parallel
@@ -300,7 +300,7 @@ def test_facet_normals(cell_type, dtype):
                     dtype=dtype,
                 )
                 result = assemble_scalar(a)
-                if np.isclose(result, 1):
+                if np.isclose(result, 1, atol=np.finfo(dtype).eps):
                     ones += 1
                 else:
                     assert np.isclose(result, 0, atol=1.0e-6)
@@ -326,7 +326,7 @@ def test_plus_minus(cell_type, space_type, dtype):
                 a = form(v(pm1) * v(pm2) * ufl.dS, dtype=dtype)
                 results.append(assemble_scalar(a))
     for i, j in combinations(results, 2):
-        assert np.isclose(i, j)
+        assert np.isclose(i, j, atol=np.finfo(dtype).eps)
 
 
 @pytest.mark.skip_in_parallel
@@ -378,7 +378,7 @@ def test_plus_minus_simple_vector(cell_type, pm, dtype):
                     # If no matching point found, fail
                     assert False
 
-                assert np.isclose(results[0][dof0], result[dof1])
+                assert np.isclose(results[0][dof0], result[dof1], atol=np.finfo(dtype).eps)
 
 
 @pytest.mark.skip_in_parallel
@@ -490,7 +490,7 @@ def test_plus_minus_matrix(cell_type, pm1, pm2, dtype):
         # For all dof pairs, check that entries in the matrix agree
         for a, b in dof_order:
             for c, d in dof_order:
-                assert np.isclose(results[0][a, c], result[b, d])
+                assert np.isclose(results[0][a, c], result[b, d], atol=np.finfo(dtype).eps)
 
 
 @pytest.mark.skip(

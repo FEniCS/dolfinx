@@ -167,6 +167,15 @@ public:
   /// `W.sub(1).sub(0) == [1, 0]`.
   std::vector<int> component() const { return _component; }
 
+  /// @brief Indicate whether this function space represents a symmetric
+  /// 2-tensor
+  bool symmetric() const
+  {
+    if (_element)
+      return _element->symmetric();
+    return false;
+  }
+
   /// @brief Tabulate the physical coordinates of all dofs on this
   /// process.
   ///

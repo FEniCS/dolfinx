@@ -153,28 +153,34 @@ public:
   /// @brief Interpolate a provided Function.
   /// @param[in] v The function to be interpolated
   /// @param[in] cells The cells to interpolate on
+  /// @param[in] cell_map A map from cells in the mesh associated with `this`
+  /// function to cells in mesh associated with `v`
   /// @param[in] nmm_interpolation_data Auxiliary data to interpolate on
   /// nonmatching meshes. This data can be generated with
   /// generate_nonmatching_meshes_interpolation_data (optional).
   void interpolate(
       const Function<value_type, geometry_type>& v,
       std::span<const std::int32_t> cells,
+      std::span<const std::int32_t> cell_map,
       const std::tuple<std::span<const std::int32_t>,
                        std::span<const std::int32_t>,
                        std::span<const geometry_type>,
                        std::span<const std::int32_t>>& nmm_interpolation_data
       = {})
   {
-    fem::interpolate(*this, v, cells, nmm_interpolation_data);
+    fem::interpolate(*this, v, cells, cell_map, nmm_interpolation_data);
   }
 
   /// @brief Interpolate a provided Function.
   /// @param[in] v The function to be interpolated
+  /// @param[in] cell_map Map from cells in self to cell indices in `v`
   /// @param[in] nmm_interpolation_data Auxiliary data to interpolate on
   /// nonmatching meshes. This data can be generated with
   /// generate_nonmatching_meshes_interpolation_data (optional).
   void interpolate(
       const Function<value_type, geometry_type>& v,
+      std::span<const std::int32_t> cell_map = std::span<const std::int32_t>()
+      = {},
       const std::tuple<std::span<const std::int32_t>,
                        std::span<const std::int32_t>,
                        std::span<const geometry_type>,
@@ -184,12 +190,12 @@ public:
     assert(_function_space);
     assert(_function_space->mesh());
     int tdim = _function_space->mesh()->topology()->dim();
-    auto cell_map = _function_space->mesh()->topology()->index_map(tdim);
-    assert(cell_map);
-    std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
+    auto cell_imap = _function_space->mesh()->topology()->index_map(tdim);
+    assert(cell_imap);
+    std::int32_t num_cells = cell_imap->size_local() + cell_imap->num_ghosts();
     std::vector<std::int32_t> cells(num_cells, 0);
     std::iota(cells.begin(), cells.end(), 0);
-    interpolate(v, cells, nmm_interpolation_data);
+    interpolate(v, cells, cell_map, nmm_interpolation_data);
   }
 
   /// Interpolate an expression function on a list of cells
@@ -283,8 +289,13 @@ public:
   /// `FiniteElement::interpolation_points()` for the element associated
   /// with `u`.
   /// @param[in] cells The cells to interpolate on
+  /// @param[in] expr_mesh The mesh to evaluate the expression on
+  /// @param[in] cell_map Map from `cells` to cells in expression
   void interpolate(const Expression<value_type, geometry_type>& e,
-                   std::span<const std::int32_t> cells)
+                   std::span<const std::int32_t> cells,
+                   const dolfinx::mesh::Mesh<geometry_type>& expr_mesh,
+                   std::span<const std::int32_t> cell_map
+                   = std::span<const std::int32_t>())
   {
     // Check that spaces are compatible
     assert(_function_space);
@@ -331,8 +342,25 @@ public:
 
     // Evaluate Expression at points
     assert(_function_space->mesh());
-    e.eval(*_function_space->mesh(), cells, fdata,
-           {num_cells, num_points * value_size});
+
+    std::vector<std::int32_t> cells_expr;
+    cells_expr.reserve(num_cells);
+    // Get mesh and check if mesh is shared
+    if (auto mesh_v = _function_space->mesh();
+        expr_mesh.topology() == mesh_v->topology())
+    {
+      cells_expr.insert(cells_expr.end(), cells.begin(), cells.end());
+    }
+    // If meshes are different and input mapping is given
+    else if (!cell_map.empty())
+    {
+      std::transform(cells.begin(), cells.end(), std::back_inserter(cells_expr),
+                     [&cell_map](std::int32_t c) { return cell_map[c]; });
+    }
+    else
+      std::runtime_error("Meshes are different and no cell map is provided");
+
+    e.eval(expr_mesh, cells_expr, fdata, {num_cells, num_points * value_size});
 
     // Reshape evaluated data to fit interpolate
     // Expression returns matrix of shape (num_cells, num_points *
@@ -356,17 +384,27 @@ public:
 
   /// Interpolate an Expression (based on UFL) on all cells
   /// @param[in] e The function to be interpolated
-  void interpolate(const Expression<value_type, geometry_type>& e)
+  /// @param[in] expr_mesh Mesh the Expression `e` is defined on.
+  /// @param[in] cell_map Map from `cells` to cells in expression if
+  /// receiving function is defined on a different mesh than the expression
+  void interpolate(const Expression<value_type, geometry_type>& e,
+                   const dolfinx::mesh::Mesh<geometry_type>& expr_mesh,
+                   std::span<const std::int32_t> cell_map
+                   = std::span<const std::int32_t>() = {})
   {
     assert(_function_space);
     assert(_function_space->mesh());
     const int tdim = _function_space->mesh()->topology()->dim();
-    auto cell_map = _function_space->mesh()->topology()->index_map(tdim);
-    assert(cell_map);
-    std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
+    auto cell_imap = _function_space->mesh()->topology()->index_map(tdim);
+    assert(cell_imap);
+    std::int32_t num_cells = cell_imap->size_local() + cell_imap->num_ghosts();
     std::vector<std::int32_t> cells(num_cells, 0);
     std::iota(cells.begin(), cells.end(), 0);
-    interpolate(e, cells);
+
+    if (cell_map.size() == 0)
+      interpolate(e, cells, expr_mesh, cell_map);
+    else
+      interpolate(e, cells, expr_mesh, std::span(cells.data(), cells.size()));
   }
 
   /// @brief Evaluate the Function at points.
@@ -594,6 +632,15 @@ public:
         = element->template dof_transformation_fn<geometry_type>(
             doftransform::standard);
 
+    // Size of tensor for symmetric elements, unused in non-symmetric case, but
+    // placed outside the loop for pre-computation.
+    int matrix_size;
+    if (element->symmetric())
+    {
+      matrix_size = 0;
+      while (matrix_size * matrix_size < ushape[1])
+        ++matrix_size;
+    }
     const std::size_t num_basis_values = space_dimension * reference_value_size;
     for (std::size_t p = 0; p < cells.size(); ++p)
     {
@@ -629,15 +676,47 @@ public:
         for (int k = 0; k < bs_dof; ++k)
           coefficients[bs_dof * i + k] = _v[bs_dof * dofs[i] + k];
 
-      // Compute expansion
-      for (int k = 0; k < bs_element; ++k)
+      if (element->symmetric())
       {
-        for (std::size_t i = 0; i < space_dimension; ++i)
+        int row = 0;
+        int rowstart = 0;
+        // Compute expansion
+        for (int k = 0; k < bs_element; ++k)
         {
-          for (std::size_t j = 0; j < value_size; ++j)
+          if (k - rowstart > row)
           {
-            u[p * ushape[1] + (j * bs_element + k)]
-                += coefficients[bs_element * i + k] * basis_values(i, j);
+            row++;
+            rowstart = k;
+          }
+          for (std::size_t i = 0; i < space_dimension; ++i)
+          {
+            for (std::size_t j = 0; j < value_size; ++j)
+            {
+              u[p * ushape[1]
+                + (j * bs_element + row * matrix_size + k - rowstart)]
+                  += coefficients[bs_element * i + k] * basis_values(i, j);
+              if (k - rowstart != row)
+              {
+                u[p * ushape[1]
+                  + (j * bs_element + row + matrix_size * (k - rowstart))]
+                    += coefficients[bs_element * i + k] * basis_values(i, j);
+              }
+            }
+          }
+        }
+      }
+      else
+      {
+        // Compute expansion
+        for (int k = 0; k < bs_element; ++k)
+        {
+          for (std::size_t i = 0; i < space_dimension; ++i)
+          {
+            for (std::size_t j = 0; j < value_size; ++j)
+            {
+              u[p * ushape[1] + (j * bs_element + k)]
+                  += coefficients[bs_element * i + k] * basis_values(i, j);
+            }
           }
         }
       }

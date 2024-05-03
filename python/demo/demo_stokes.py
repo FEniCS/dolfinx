@@ -92,7 +92,7 @@ import numpy as np
 
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx import fem, la
+from dolfinx import default_real_type, fem, la
 from dolfinx.fem import (
     Constant,
     Function,
@@ -141,8 +141,8 @@ def lid_velocity_expression(x):
 # piecewise linear basis (scalar).
 
 
-P2 = element("Lagrange", msh.basix_cell(), 2, shape=(msh.geometry.dim,))
-P1 = element("Lagrange", msh.basix_cell(), 1)
+P2 = element("Lagrange", msh.basix_cell(), 2, shape=(msh.geometry.dim,), dtype=default_real_type)
+P1 = element("Lagrange", msh.basix_cell(), 1, dtype=default_real_type)
 V, Q = functionspace(msh, P2), functionspace(msh, P1)
 
 # Boundary conditions for the velocity field are defined:
@@ -282,7 +282,9 @@ def nested_iterative_solver():
     # `scatter_forward`.
     with XDMFFile(MPI.COMM_WORLD, "out_stokes/velocity.xdmf", "w") as ufile_xdmf:
         u.x.scatter_forward()
-        P1 = element("Lagrange", msh.basix_cell(), 1, shape=(msh.geometry.dim,))
+        P1 = element(
+            "Lagrange", msh.basix_cell(), 1, shape=(msh.geometry.dim,), dtype=default_real_type
+        )
         u1 = Function(functionspace(msh, P1))
         u1.interpolate(u)
         ufile_xdmf.write_mesh(msh)

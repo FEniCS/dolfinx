@@ -29,7 +29,7 @@ enum class BlockMode : int
                /// matrix has a block size of (1, 1).
 };
 
-/// Distributed sparse matrix
+/// @brief Distributed sparse matrix.
 ///
 /// The matrix storage format is compressed sparse row. The matrix is
 /// partitioned row-wise across MPI ranks.
@@ -185,6 +185,7 @@ public:
   void set(value_type x) { std::fill(_data.begin(), _data.end(), x); }
 
   /// @brief Set values in the matrix.
+  ///
   /// @note Only entries included in the sparsity pattern used to
   /// initialize the matrix can be set.
   /// @note All indices are local to the calling MPI rank and entries
