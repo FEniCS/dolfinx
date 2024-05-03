@@ -39,6 +39,7 @@ void common(nb::module_& m)
   m.attr("has_debug") = dolfinx::has_debug();
   m.attr("has_parmetis") = dolfinx::has_parmetis();
   m.attr("has_kahip") = dolfinx::has_kahip();
+  m.attr("has_petsc") = dolfinx::has_petsc();
   m.attr("has_slepc") = dolfinx::has_slepc();
   m.attr("has_adios2") = dolfinx::has_adios2();
   m.attr("git_commit_hash") = dolfinx::git_commit_hash();
