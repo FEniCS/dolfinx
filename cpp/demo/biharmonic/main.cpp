@@ -128,7 +128,7 @@
 // convenience we also include the DOLFINx namespace.
 
 #include "biharmonic.h"
-#include <basix/finite-element.h>
+#include <basix/basix.h>
 #include <cmath>
 #include <dolfinx.h>
 #include <dolfinx/common/types.h>

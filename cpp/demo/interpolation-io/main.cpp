@@ -6,7 +6,7 @@
 
 // # Interpolation and IO
 
-#include <basix/finite-element.h>
+#include <basix/basix.h>
 #include <cmath>
 #include <concepts>
 #include <dolfinx/common/log.h>
