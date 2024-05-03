@@ -13,6 +13,6 @@
     "msmpi",
     "parmetis",
     "pugixml",
-    "pkgconfig"
+    "pkgconf"
   ]
 }
