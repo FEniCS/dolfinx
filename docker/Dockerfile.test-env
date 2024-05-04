@@ -151,7 +151,8 @@ RUN if [ "$MPI" = "mpich" ]; then \
 # - Second set of packages are recommended and/or required to build
 #   documentation or run tests.
 RUN pip3 install --break-system-packages --no-cache-dir --upgrade setuptools pip && \
-    pip3 install --break-system-packages --no-cache-dir cffi mpi4py numba numpy==${NUMPY_VERSION} scikit-build-core[pyproject] && \
+    pip3 install --break-system-packages --no-cache-dir cffi numba numpy==${NUMPY_VERSION} scikit-build-core[pyproject] && \
+    pip3 install --break-system-packages --no-cache-dir --no-build-isolation mpi4py && \
     pip3 install --break-system-packages --no-cache-dir breathe clang-format cmakelang jupytext matplotlib mypy myst-parser nanobind==${NANOBIND_VERSION} pytest pytest-xdist ruff scipy sphinx sphinx_rtd_theme types-setuptools
 
 # Install KaHIP
