@@ -3,7 +3,7 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpragmas"
 
-#pragma GCC diagnostic ignored "-Wformat-truncation"
+// #pragma GCC diagnostic ignored "-Wformat-truncation"
 
 #pragma GCC diagnostic ignored "-Wc++98-compat"
 #pragma GCC diagnostic ignored "-Wc++98-compat-pedantic"
