@@ -66,11 +66,7 @@ problem = LinearProblem(
     a,
     L,
     u=uh,
-    petsc_options={
-        "ksp_type": "preonly",
-        "pc_type": "lu",
-        "pc_factor_mat_solver_type": "superlu_dist",
-    },
+    petsc_options={"ksp_type": "preonly", "pc_type": "lu"},
 )
 problem.solve()
 
