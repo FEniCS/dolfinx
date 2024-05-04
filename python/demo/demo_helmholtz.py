@@ -39,7 +39,7 @@ k0 = 4 * np.pi
 deg = 1
 
 # Number of elements in each direction of the mesh
-n_elem = 128
+n_elem = 64
 
 msh = create_unit_square(MPI.COMM_WORLD, n_elem, n_elem)
 
@@ -62,7 +62,12 @@ L = inner(f, v) * dx
 # Compute solution
 uh = Function(V)
 uh.name = "u"
-problem = LinearProblem(a, L, u=uh, petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+problem = LinearProblem(
+    a,
+    L,
+    u=uh,
+    petsc_options={"ksp_type": "preonly", "pc_type": "lu"},
+)
 problem.solve()
 
 # Save solution in XDMF format (to be viewed in ParaView, for example)
