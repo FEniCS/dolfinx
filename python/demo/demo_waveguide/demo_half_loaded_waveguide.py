@@ -52,7 +52,6 @@ from dolfinx import default_real_type, default_scalar_type, fem, io, plot
 from dolfinx.fem.petsc import assemble_matrix
 from dolfinx.mesh import CellType, create_rectangle, exterior_facet_indices, locate_entities
 
-
 try:
     import pyvista
 
