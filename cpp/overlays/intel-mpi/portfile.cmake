@@ -48,7 +48,7 @@ file(INSTALL
 file(INSTALL
   ${SOURCE_INCLUDE_FILES}
   DESTINATION
-  "${CURRENT_PACKAGES_DIR}/include"
+  "${CURRENT_PACKAGES_DIR}/include/mpi"
   )
 
 # Install release library files
