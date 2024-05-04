@@ -3,7 +3,7 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpragmas"
 
-#if defined(__GNUC__) || (defined(__clang__) && (__clang_major__ >= 18))
+#if defined(__clang__) && (__clang_major__ >= 18)
 #pragma GCC diagnostic ignored "-Wformat-truncation"
 #endif
 
