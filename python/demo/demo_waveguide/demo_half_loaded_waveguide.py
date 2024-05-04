@@ -65,6 +65,14 @@ try:
 except ModuleNotFoundError:
     print("slepc4py is required for this demo")
     sys.exit(0)
+
+from petsc4py import PETSc
+
+if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
+    print("This solver fails with PETSc and 64-bit integers becaude of memory errors in MUMPS.")
+    # Note: when PETSc.IntType == np.int32, superlu_dist is used rather
+    # than MUMPS and does not trigger memory failures.
+    sys.exit(0)
 # -
 
 # We now define the domain. It is a rectangular domain with width $w$

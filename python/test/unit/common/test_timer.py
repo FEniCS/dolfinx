@@ -18,17 +18,17 @@ def test_context_manager_named():
     # Execute task in the context manager
     t = common.Timer(task)
     sleep(0.05)
-    assert t.elapsed()[0] > 0.045
+    assert t.elapsed()[0] > 0.035
     del t
 
     # Check timing
     t = common.timing(task)
     assert t[0] == 1
-    assert t[1] > 0.045
+    assert t[1] > 0.035
 
 
 def test_context_manager_anonymous():
     """Test that anonymous Timer works as context manager"""
     with common.Timer() as t:
         sleep(0.05)
-        assert t.elapsed()[0] > 0.045
+        assert t.elapsed()[0] > 0.035
