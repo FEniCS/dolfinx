@@ -127,41 +127,44 @@ class ctypes_utils:
                 MatSetValuesLocal(A, m, rows.ctypes, n, cols.ctypes, data.ctypes, mode)
     """
 
-    import petsc4py.PETSc as _PETSc
+    try:
+        import petsc4py.PETSc as _PETSc
 
-    _lib_ctypes = _ctypes.cdll.LoadLibrary(str(get_petsc_lib()))
+        _lib_ctypes = _ctypes.cdll.LoadLibrary(str(get_petsc_lib()))
 
-    # Note: ctypes does not have complex types, hence we use void* for
-    # scalar data
-    _int = np.ctypeslib.as_ctypes_type(_PETSc.IntType)  # type: ignore
+        # Note: ctypes does not have complex types, hence we use void* for
+        # scalar data
+        _int = np.ctypeslib.as_ctypes_type(_PETSc.IntType)  # type: ignore
 
-    MatSetValuesLocal = _lib_ctypes.MatSetValuesLocal
-    """See PETSc `MatSetValuesLocal
-    <https://petsc.org/release/manualpages/Mat/MatSetValuesLocal>`_
-    documentation."""
-    MatSetValuesLocal.argtypes = [
-        _ctypes.c_void_p,
-        _int,
-        _ctypes.POINTER(_int),
-        _int,
-        _ctypes.POINTER(_int),
-        _ctypes.c_void_p,
-        _ctypes.c_int,
-    ]
+        MatSetValuesLocal = _lib_ctypes.MatSetValuesLocal
+        """See PETSc `MatSetValuesLocal
+        <https://petsc.org/release/manualpages/Mat/MatSetValuesLocal>`_
+        documentation."""
+        MatSetValuesLocal.argtypes = [
+            _ctypes.c_void_p,
+            _int,
+            _ctypes.POINTER(_int),
+            _int,
+            _ctypes.POINTER(_int),
+            _ctypes.c_void_p,
+            _ctypes.c_int,
+        ]
 
-    MatSetValuesBlockedLocal = _lib_ctypes.MatSetValuesBlockedLocal
-    """See PETSc `MatSetValuesBlockedLocal
-    <https://petsc.org/release/manualpages/Mat/MatSetValuesBlockedLocal>`_
-    documentation."""
-    MatSetValuesBlockedLocal.argtypes = [
-        _ctypes.c_void_p,
-        _int,
-        _ctypes.POINTER(_int),
-        _int,
-        _ctypes.POINTER(_int),
-        _ctypes.c_void_p,
-        _ctypes.c_int,
-    ]
+        MatSetValuesBlockedLocal = _lib_ctypes.MatSetValuesBlockedLocal
+        """See PETSc `MatSetValuesBlockedLocal
+        <https://petsc.org/release/manualpages/Mat/MatSetValuesBlockedLocal>`_
+        documentation."""
+        MatSetValuesBlockedLocal.argtypes = [
+            _ctypes.c_void_p,
+            _int,
+            _ctypes.POINTER(_int),
+            _int,
+            _ctypes.POINTER(_int),
+            _ctypes.c_void_p,
+            _ctypes.c_int,
+        ]
+    except ImportError:
+        pass
 
 
 class cffi_utils:

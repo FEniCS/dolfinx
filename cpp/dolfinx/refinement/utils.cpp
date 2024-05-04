@@ -46,7 +46,7 @@ std::int64_t refinement::impl::local_to_global(std::int32_t local_index,
 void refinement::update_logical_edgefunction(
     MPI_Comm comm,
     const std::vector<std::vector<std::int32_t>>& marked_for_update,
-    std::vector<std::int8_t>& marked_edges, const common::IndexMap& map)
+    std::span<std::int8_t> marked_edges, const common::IndexMap& map)
 {
   std::vector<int> send_sizes;
   std::vector<std::int64_t> data_to_send;
@@ -102,9 +102,6 @@ std::vector<std::int64_t>
 refinement::adjust_indices(const common::IndexMap& map, std::int32_t n)
 {
   // NOTE: Is this effectively concatenating index maps?
-
-  // Add in an extra "n" indices at the end of the current local_range
-  // of "index_map", and adjust existing indices to match.
 
   // Get offset for 'n' for this process
   const std::int64_t num_local = n;

@@ -39,7 +39,7 @@ from mesh_wire import generate_mesh_wire
 
 import ufl
 from basix.ufl import element
-from dolfinx import default_scalar_type, fem, io, plot
+from dolfinx import default_real_type, default_scalar_type, fem, io, plot
 from dolfinx.fem.petsc import LinearProblem
 
 try:
@@ -283,7 +283,7 @@ theta = np.pi / 4  # Angle of incidence of the background field
 # represent the electric field
 
 degree = 3
-curl_el = element("N1curl", domain.basix_cell(), degree)
+curl_el = element("N1curl", domain.basix_cell(), degree, dtype=default_real_type)
 V = fem.functionspace(domain, curl_el)
 
 # Next, we can interpolate $\mathbf{E}_b$ into the function space $V$:

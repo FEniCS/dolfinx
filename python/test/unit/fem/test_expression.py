@@ -61,7 +61,9 @@ def test_rank0(dtype):
     b2 = Function(vdP1, dtype=dtype)
     b2.interpolate(lambda x: np.vstack((2.0 * x[0], 4.0 * x[1])))
 
-    assert np.allclose(b2.x.array, b.x.array, rtol=1.0e-5, atol=1.0e-5)
+    assert np.allclose(
+        b2.x.array, b.x.array, rtol=np.sqrt(np.finfo(dtype).eps), atol=np.sqrt(np.finfo(dtype).eps)
+    )
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
@@ -195,7 +197,12 @@ def test_simple_evaluation(dtype):
 
     # Evaluate exact gradient using global points
     grad_f_exact = exact_grad_f(x_evaluated)
-    assert np.allclose(grad_f_evaluated, grad_f_exact, rtol=1.0e-5, atol=1.0e-5)
+    assert np.allclose(
+        grad_f_evaluated,
+        grad_f_exact,
+        rtol=np.sqrt(np.finfo(dtype).eps),
+        atol=np.sqrt(np.finfo(dtype).eps),
+    )
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])

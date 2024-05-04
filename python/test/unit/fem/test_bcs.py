@@ -36,8 +36,8 @@ def test_locate_dofs_geometrical():
     spaces, returns the correct degrees of freedom in each space"""
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 8)
     p0, p1 = 1, 2
-    P0 = element("Lagrange", mesh.basix_cell(), p0)
-    P1 = element("Lagrange", mesh.basix_cell(), p1)
+    P0 = element("Lagrange", mesh.basix_cell(), p0, dtype=default_real_type)
+    P1 = element("Lagrange", mesh.basix_cell(), p1, dtype=default_real_type)
 
     W = functionspace(mesh, mixed_element([P0, P1]))
     V = W.sub(0).collapse()[0]
@@ -292,7 +292,10 @@ def test_mixed_constant_bc(mesh_factory):
         mesh, tdim - 1, lambda x: np.ones(x.shape[1], dtype=bool)
     )
     TH = mixed_element(
-        [element("Lagrange", mesh.basix_cell(), 1), element("Lagrange", mesh.basix_cell(), 2)]
+        [
+            element("Lagrange", mesh.basix_cell(), 1, dtype=default_real_type),
+            element("Lagrange", mesh.basix_cell(), 2, dtype=default_real_type),
+        ]
     )
     W = functionspace(mesh, TH)
     u = Function(W)
@@ -333,8 +336,14 @@ def test_mixed_blocked_constant():
 
     TH = mixed_element(
         [
-            element("Lagrange", mesh.basix_cell(), 1),
-            element("Lagrange", mesh.basix_cell(), 2, shape=(mesh.geometry.dim,)),
+            element("Lagrange", mesh.basix_cell(), 1, dtype=default_real_type),
+            element(
+                "Lagrange",
+                mesh.basix_cell(),
+                2,
+                shape=(mesh.geometry.dim,),
+                dtype=default_real_type,
+            ),
         ]
     )
     W = functionspace(mesh, TH)
