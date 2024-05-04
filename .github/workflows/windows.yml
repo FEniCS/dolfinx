@@ -86,18 +86,6 @@ jobs:
           cmake --install build-dir --config Release --prefix D:/a/dolfinx/dolfinx-install
           echo "D:/a/dolfinx/dolfinx-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
       
-      - name: Look at errors
-        if: always()
-        run: |
-          cat "C:\vcpkg\buildtrees\hdf5\config-x64-windows-dbg-CMakeCache.txt.log"
-          cat "C:\vcpkg\buildtrees\hdf5\config-x64-windows-dbg-out.log"
-          cat "C:\vcpkg\buildtrees\hdf5\config-x64-windows-dbg-err.log"
-      
-      - name: Recurse list vcpkg directory
-        if: always()
-        run: |
-          Get-ChildItem -Recurse "D:/a/dolfinx/dolfinx/dolfinx/build-dir/vcpkg_installed/x64-windows/" 
-      
       - name: Build C++ unit tests
         working-directory: dolfinx
         run: |
