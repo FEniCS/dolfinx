@@ -72,20 +72,20 @@ hid_t io::hdf5::open_file(MPI_Comm comm, const std::filesystem::path& filename,
   {
     if (auto d = filename.parent_path(); !d.empty())
       std::filesystem::create_directories(d);
-    file_id = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
+    file_id = H5Fcreate(filename.string().c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
     if (file_id < 0)
       throw std::runtime_error("Failed to create HDF5 file.");
   }
   else if (mode == "a") // Open file to append, creating if does not exist
   {
     if (std::filesystem::exists(filename))
-      file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
+      file_id = H5Fopen(filename.string().c_str(), H5F_ACC_RDWR, plist_id);
     else
     {
       if (auto d = filename.parent_path(); !d.empty())
         std::filesystem::create_directories(d);
       file_id
-          = H5Fcreate(filename.c_str(), H5F_ACC_EXCL, H5P_DEFAULT, plist_id);
+          = H5Fcreate(filename.string().c_str(), H5F_ACC_EXCL, H5P_DEFAULT, plist_id);
     }
 
     if (file_id < 0)
@@ -98,14 +98,14 @@ hid_t io::hdf5::open_file(MPI_Comm comm, const std::filesystem::path& filename,
   {
     if (std::filesystem::exists(filename))
     {
-      file_id = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, plist_id);
+      file_id = H5Fopen(filename.string().c_str(), H5F_ACC_RDONLY, plist_id);
       if (file_id < 0)
         throw std::runtime_error("Failed to open HDF5 file.");
     }
     else
     {
       throw std::runtime_error("Unable to open HDF5 file. File "
-                               + filename.native() + " does not exist.");
+                               + filename.string() + " does not exist.");
     }
   }
 

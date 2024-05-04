@@ -33,6 +33,7 @@ jobs:
         with:
           repository: "fenics/ffcx"
           path: ffcx
+          ref: "jhale/c11compliance"
 
       - name: Install UFCx header
         working-directory: ffcx
