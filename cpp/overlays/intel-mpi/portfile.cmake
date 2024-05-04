@@ -13,12 +13,11 @@ set(SOURCE_DEBUG_LIB_PATH "${SDK_SOURCE_MPI_DIR}/lib/mpi/debug")
 set(SOURCE_BIN_PATH "${SDK_SOURCE_MPI_DIR}/bin")
 set(SOURCE_DEBUG_BIN_PATH "${SDK_SOURCE_MPI_DIR}/bin/mpi/debug")
 set(SOURCE_TOOLS_PATH "${SDK_SOURCE_MPI_DIR}/bin")
-set(SOURCE_INCLUDE_FILES
-  "${SOURCE_INCLUDE_PATH}/mpi.h"
-  "${SOURCE_INCLUDE_PATH}/mpicxx.h"
-  "${SOURCE_INCLUDE_PATH}/mpif.h"
-  "${SOURCE_INCLUDE_PATH}/mpio.h"
-  "${SOURCE_INCLUDE_PATH}/mpiof.h"
+
+# Get files in include directory
+file(GLOB_RECURSE
+  SOURCE_INCLUDE_FILES
+  ${SOURCE_INCLUDE_PATH}
   )
 
 # Get files in bin directory
