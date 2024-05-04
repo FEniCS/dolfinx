@@ -39,7 +39,7 @@ k0 = 4 * np.pi
 deg = 1
 
 # Number of elements in each direction of the mesh
-n_elem = 128
+n_elem = 64
 
 msh = create_unit_square(MPI.COMM_WORLD, n_elem, n_elem)
 
