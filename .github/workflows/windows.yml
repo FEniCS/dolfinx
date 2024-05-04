@@ -77,9 +77,6 @@ jobs:
         run: |
           Get-ChildItem -Recurse "C:/Program Files (x86)/Intel/oneAPI/mpi/latest" 
       
-      - name: Recurse list vcpkg directory
-        run: |
-          Get-ChildItem -Recurse "D:/a/dolfinx/dolfinx/dolfinx/build-dir/vcpkg_installed/x64-windows/" 
 
       - name: Build and install DOLFINx C++ library
         working-directory: dolfinx
@@ -95,6 +92,11 @@ jobs:
           cat "C:\vcpkg\buildtrees\hdf5\config-x64-windows-dbg-CMakeCache.txt.log"
           cat "C:\vcpkg\buildtrees\hdf5\config-x64-windows-dbg-out.log"
           cat "C:\vcpkg\buildtrees\hdf5\config-x64-windows-dbg-err.log"
+      
+      - name: Recurse list vcpkg directory
+        if: always()
+        run: |
+          Get-ChildItem -Recurse "D:/a/dolfinx/dolfinx/dolfinx/build-dir/vcpkg_installed/x64-windows/" 
       
       - name: Build C++ unit tests
         working-directory: dolfinx
