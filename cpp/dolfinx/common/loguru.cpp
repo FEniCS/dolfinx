@@ -3,7 +3,9 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpragmas"
 
-// #pragma GCC diagnostic ignored "-Wformat-truncation"
+#if defined(__GNUC__) || (defined(__clang__) && (__clang_major__ >= 18))
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+#endif
 
 #pragma GCC diagnostic ignored "-Wc++98-compat"
 #pragma GCC diagnostic ignored "-Wc++98-compat-pedantic"
