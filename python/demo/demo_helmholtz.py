@@ -62,7 +62,16 @@ L = inner(f, v) * dx
 # Compute solution
 uh = Function(V)
 uh.name = "u"
-problem = LinearProblem(a, L, u=uh, petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+problem = LinearProblem(
+    a,
+    L,
+    u=uh,
+    petsc_options={
+        "ksp_type": "preonly",
+        "pc_type": "lu",
+        "pc_factor_mat_solver_type": "superlu_dist",
+    },
+)
 problem.solve()
 
 # Save solution in XDMF format (to be viewed in ParaView, for example)
