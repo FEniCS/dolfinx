@@ -17,6 +17,7 @@ set(SOURCE_TOOLS_PATH "${SDK_SOURCE_MPI_DIR}/bin")
 # Get files in include directory
 file(GLOB_RECURSE
   SOURCE_INCLUDE_FILES
+  LIST_DIRECTORIES TRUE
   "${SOURCE_INCLUDE_PATH}/*"
   )
 
