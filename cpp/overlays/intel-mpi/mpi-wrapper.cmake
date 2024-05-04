@@ -5,8 +5,8 @@ get_filename_component(_IMPORT_PREFIX "${_IMPORT_PREFIX}" PATH)
 # Needed to find 'mpiexec'
 set(ENV{I_MPI_ROOT} "${_IMPORT_PREFIX}/tools/intel-mpi")
 
-set(MPI_C_ADDITIONAL_INCLUDE_DIRS "${_IMPORT_PREFIX}/include" CACHE STRING "MPI C additional include directories" FORCE)
-set(MPI_CXX_ADDITIONAL_INCLUDE_DIRS "${_IMPORT_PREFIX}/include" CACHE STRING "MPI CXX additional include directories" FORCE)
+#set(MPI_C_ADDITIONAL_INCLUDE_DIRS "${_IMPORT_PREFIX}/include" CACHE STRING "MPI C additional include directories" FORCE)
+#set(MPI_CXX_ADDITIONAL_INCLUDE_DIRS "${_IMPORT_PREFIX}/include" CACHE STRING "MPI CXX additional include directories" FORCE)
 
 set(MPI_C_LIB_NAMES "IMPI" CACHE STRING "MPI C lib name" FORCE)
 set(MPI_CXX_LIB_NAMES "IMPI" CACHE STRING "MPI CXX lib name" FORCE)
