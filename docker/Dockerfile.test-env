@@ -318,7 +318,7 @@ RUN apt-get -qq update && \
     make PETSC_ARCH=linux-gnu-complex128-64 ${MAKEFLAGS} all && \
     # Install petsc4py
     cd src/binding/petsc4py && \
-    PETSC_ARCH=linux-gnu-real32-32:linux-gnu-complex64-32:linux-gnu-real64-32:linux-gnu-complex128-32:linux-gnu-real64-64:linux-gnu-complex128-64 pip3 install --break-system-packages --no-cache-dir -v . && \
+    PETSC_ARCH=linux-gnu-real32-32:linux-gnu-complex64-32:linux-gnu-real64-32:linux-gnu-complex128-32:linux-gnu-real64-64:linux-gnu-complex128-64 pip3 install --break-system-packages --no-cache-dir -v --no-build-isolation . && \
     # Cleanup
     apt-get -y purge bison flex && \
     apt-get -y autoremove && \
@@ -359,7 +359,7 @@ RUN git clone -b v${SLEPC_VERSION} https://gitlab.com/slepc/slepc.git ${SLEPC_DI
     make && \
     # Install slepc4py
     cd src/binding/slepc4py && \
-    PETSC_ARCH=linux-gnu-real32-32:linux-gnu-complex64-32:linux-gnu-real64-32:linux-gnu-complex128-32:linux-gnu-real64-64:linux-gnu-complex128-64 pip3 install --break-system-packages --no-cache-dir . && \
+    PETSC_ARCH=linux-gnu-real32-32:linux-gnu-complex64-32:linux-gnu-real64-32:linux-gnu-complex128-32:linux-gnu-real64-64:linux-gnu-complex128-64 pip3 install --break-system-packages --no-cache-dir --no-build-isolation . && \
     rm -rf ${SLEPC_DIR}/CTAGS ${SLEPC_DIR}/TAGS ${SLEPC_DIR}/docs ${SLEPC_DIR}/src/ ${SLEPC_DIR}/**/obj/ ${SLEPC_DIR}/**/test/ && \
     rm -rf /tmp/*
 
