@@ -650,14 +650,8 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   auto x = geometry.x();
 
   const int tdim = topology->dim();
-  // mesh.topology_mutable()->create_entities(dim);
-  // mesh.topology_mutable()->create_connectivity(dim, tdim);
-  // TODO Remove
-  // mesh.topology_mutable()->create_connectivity(dim, 0);
-  // mesh.topology_mutable()->create_connectivity(tdim, 0);
 
   auto xdofs = geometry.dofmap();
-
   auto e_to_c = topology->connectivity(dim, tdim);
   if (!e_to_c)
   {
@@ -671,25 +665,6 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
     throw std::runtime_error(
         "Cell-to-entity connectivity has not been computed.");
   }
-
-  // TODO Remove
-  // auto e_to_v = topology->connectivity(dim, 0);
-  // if (!e_to_v)
-  // {
-  //   throw std::runtime_error(
-  //       "Entity-to-vertex connectivity has not been computed.");
-  // }
-
-  // TODO Remove
-  // auto c_to_v = topology->connectivity(tdim, 0);
-  // if (!e_to_v)
-  // {
-  //   throw std::runtime_error(
-  //       "Cell-to-vertex connectivity has not been computed.");
-  // }
-
-  // const std::size_t num_vertices
-  //     = num_cell_vertices(cell_entity_type(cell_type, dim, 0));
 
   // Get the DOF layout and the number of DOFs per entity
   const fem::CoordinateElement<T>& coord_ele = geometry.cmap();
@@ -726,20 +701,6 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
         xdofs, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     for (std::int32_t entity_dof : permuted_closure_dofs)
       entity_xdofs.push_back(x_c[entity_dof]);
-
-    // Always pick the second cell to be consistent with the e_to_v connectivity
-    // const std::int32_t cell = e_to_c->links(e).back();
-    // auto ev = e_to_v->links(e);
-    // assert(ev.size() == num_vertices);
-    // auto cv = c_to_v->links(cell);
-    // std::span<const std::int32_t> xc(
-    //     xdofs.data_handle() + xdofs.extent(1) * cell, xdofs.extent(1));
-    // for (std::size_t j = 0; j < num_vertices; ++j)
-    // {
-    //   int k = std::distance(cv.begin(), std::find(cv.begin(), cv.end(),
-    //   ev[j])); assert(k < (int)cv.size()); entity_xdofs[i * num_vertices + j]
-    //   = xc[k];
-    // }
 
     // TODO Remove?
     //   if (orient)
