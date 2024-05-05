@@ -1,7 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
   "dependencies": [
-    "blas",
     "boost-algorithm",
     "boost-functional",
     "boost-lexical-cast",
@@ -14,7 +13,6 @@
         "parallel"
       ]
     },
-    "lapack",
     "mpi",
     "parmetis",
     "pugixml",
