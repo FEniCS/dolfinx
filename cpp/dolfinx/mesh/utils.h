@@ -634,11 +634,6 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   auto topology = mesh.topology();
   assert(topology);
 
-  mesh.topology_mutable()->create_entity_permutations();
-  // FIXME Use cell_info
-  const std::vector<std::uint8_t>& perms
-      = mesh.topology()->get_facet_permutations();
-
   CellType cell_type = topology->cell_type();
   if (cell_type == CellType::prism and dim == 2)
     throw std::runtime_error("More work needed for prism cells");
@@ -673,6 +668,12 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   std::vector<std::int32_t> entity_xdofs;
   entity_xdofs.reserve(entities.size() * num_entity_dofs);
   const int num_cell_entities = mesh::cell_num_entities(cell_type, dim);
+
+  mesh.topology_mutable()->create_entity_permutations();
+  // FIXME Use cell_info
+  std::vector<std::uint8_t> perms(num_cell_entities * c_to_e->num_nodes(), 0);
+  if (dim == mesh.topology()->dim() - 1)
+    perms = mesh.topology()->get_facet_permutations();
 
   for (std::size_t i = 0; i < entities.size(); ++i)
   {
