@@ -82,7 +82,7 @@ jobs:
       - name: Build and install DOLFINx C++ library
         working-directory: dolfinx
         run: |
-          cmake -DBasix_DIR=D:/a/dolfinx/basix-install/share/basix -DDOLFINX_UFCX_PYTHON=OFF -Dufcx_DIR=D:/a/dolfinx/ufcx-install/share/ufcx/cmake -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_PORTS=cpp/overlays -B build-dir -S cpp
+          cmake -DBasix_DIR=D:/a/dolfinx/basix-install/share/basix -DDOLFINX_UFCX_PYTHON=OFF -Dufcx_DIR=D:/a/dolfinx/ufcx-install/share/ufcx/cmake -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_PORTS="cpp/.vcpkg-overlay" -B build-dir -S cpp
           cmake --build build-dir --config Release
           cmake --install build-dir --config Release --prefix D:/a/dolfinx/dolfinx-install
           echo "D:/a/dolfinx/dolfinx-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
@@ -90,7 +90,7 @@ jobs:
       - name: Build C++ unit tests
         working-directory: dolfinx
         run: |
-          cmake -B build/test/ -S cpp/test/
+          cmake -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_PORTS="cpp/.vcpkg-overlay" -B build/test/ -S cpp/test/
           cmake --build build/test --parallel 3
 
       - name: Run C++ unit tests (serial)

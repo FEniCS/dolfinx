@@ -1,7 +1,7 @@
 # ------------------------------------------------------------------------------
 # Top level CMakeLists.txt file for DOLFINx
 if (WIN32)
-  cmake_minimum_required(VERSION 3.19)
+  cmake_minimum_required(VERSION 3.21)
 else()
   cmake_minimum_required(VERSION 3.19)
 endif()
@@ -221,7 +221,7 @@ set_package_properties(
 
 # ------------------------------------------------------------------------------
 # Check for MPI
-find_package(MPI REQUIRED)
+find_package(MPI 3 REQUIRED)
 
 # ------------------------------------------------------------------------------
 # Compiler flags
