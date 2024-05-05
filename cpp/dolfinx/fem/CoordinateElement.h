@@ -93,6 +93,10 @@ public:
   void tabulate(int nd, std::span<const T> X, std::array<std::size_t, 2> shape,
                 std::span<T> basis) const;
 
+  void permute_subentity_closure(std::span<std::int32_t> d,
+                                 std::uint32_t cell_info,
+                                 mesh::CellType entity_type) const;
+
   /// Compute Jacobian for a cell with given geometry using the
   /// basis functions and first order derivatives.
   /// @param[in] dphi Derivatives of the basis functions (shape=(tdim,

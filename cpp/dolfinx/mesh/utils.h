@@ -634,6 +634,11 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   auto topology = mesh.topology();
   assert(topology);
 
+  mesh.topology_mutable()->create_entity_permutations();
+  // FIXME Use cell_info
+  const std::vector<std::uint8_t>& perms
+      = mesh.topology()->get_facet_permutations();
+
   CellType cell_type = topology->cell_type();
   if (cell_type == CellType::prism and dim == 2)
     throw std::runtime_error("More work needed for prism cells");
@@ -641,15 +646,18 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
     throw std::runtime_error("Can only orient facets of a tetrahedral mesh");
 
   const Geometry<T>& geometry = mesh.geometry();
+  // TODO Remove?
   auto x = geometry.x();
 
   const int tdim = topology->dim();
-  mesh.topology_mutable()->create_entities(dim);
-  mesh.topology_mutable()->create_connectivity(dim, tdim);
-  mesh.topology_mutable()->create_connectivity(dim, 0);
-  mesh.topology_mutable()->create_connectivity(tdim, 0);
+  // mesh.topology_mutable()->create_entities(dim);
+  // mesh.topology_mutable()->create_connectivity(dim, tdim);
+  // TODO Remove
+  // mesh.topology_mutable()->create_connectivity(dim, 0);
+  // mesh.topology_mutable()->create_connectivity(tdim, 0);
 
   auto xdofs = geometry.dofmap();
+
   auto e_to_c = topology->connectivity(dim, tdim);
   if (!e_to_c)
   {
@@ -657,78 +665,127 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
         "Entity-to-cell connectivity has not been computed.");
   }
 
-  auto e_to_v = topology->connectivity(dim, 0);
-  if (!e_to_v)
+  auto c_to_e = topology->connectivity(tdim, dim);
+  if (!c_to_e)
   {
     throw std::runtime_error(
-        "Entity-to-vertex connectivity has not been computed.");
+        "Cell-to-entity connectivity has not been computed.");
   }
 
-  auto c_to_v = topology->connectivity(tdim, 0);
-  if (!e_to_v)
-  {
-    throw std::runtime_error(
-        "Cell-to-vertex connectivity has not been computed.");
-  }
+  // TODO Remove
+  // auto e_to_v = topology->connectivity(dim, 0);
+  // if (!e_to_v)
+  // {
+  //   throw std::runtime_error(
+  //       "Entity-to-vertex connectivity has not been computed.");
+  // }
 
-  const std::size_t num_vertices
-      = num_cell_vertices(cell_entity_type(cell_type, dim, 0));
-  std::vector<std::int32_t> geometry_idx(entities.size() * num_vertices);
+  // TODO Remove
+  // auto c_to_v = topology->connectivity(tdim, 0);
+  // if (!e_to_v)
+  // {
+  //   throw std::runtime_error(
+  //       "Cell-to-vertex connectivity has not been computed.");
+  // }
+
+  // const std::size_t num_vertices
+  //     = num_cell_vertices(cell_entity_type(cell_type, dim, 0));
+
+  // Get the DOF layout and the number of DOFs per entity
+  const fem::CoordinateElement<T>& coord_ele = geometry.cmap();
+  const fem::ElementDofLayout layout = coord_ele.create_dof_layout();
+  const std::size_t num_entity_dofs = layout.num_entity_closure_dofs(dim);
+  std::vector<std::int32_t> entity_xdofs;
+  entity_xdofs.reserve(entities.size() * num_entity_dofs);
+  const int num_cell_entities = mesh::cell_num_entities(cell_type, dim);
+
   for (std::size_t i = 0; i < entities.size(); ++i)
   {
-    const std::int32_t idx = entities[i];
+    const std::int32_t e = entities[i];
+
+    // Get a cell connected to the entity
+    assert(!e_to_c->links(e).empty());
+    std::int32_t c = e_to_c->links(e).front();
+
+    // Get the local index of the entity
+    std::span<const std::int32_t> cell_entities = c_to_e->links(c);
+    auto it = std::find(cell_entities.begin(), cell_entities.end(), e);
+    assert(it != cell_entities.end());
+    std::size_t local_entity = std::distance(cell_entities.begin(), it);
+
+    std::uint8_t perm = perms[num_cell_entities * c + local_entity];
+
+    std::vector<std::int32_t> permuted_closure_dofs(
+        layout.entity_closure_dofs(dim, local_entity));
+    mesh::CellType entity_type
+        = mesh::cell_entity_type(cell_type, dim, local_entity);
+    coord_ele.permute_subentity_closure(permuted_closure_dofs, perm,
+                                        entity_type);
+
+    auto x_c = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+        xdofs, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    for (std::int32_t entity_dof : permuted_closure_dofs)
+      entity_xdofs.push_back(x_c[entity_dof]);
+
     // Always pick the second cell to be consistent with the e_to_v connectivity
-    const std::int32_t cell = e_to_c->links(idx).back();
-    auto ev = e_to_v->links(idx);
-    assert(ev.size() == num_vertices);
-    auto cv = c_to_v->links(cell);
-    std::span<const std::int32_t> xc(
-        xdofs.data_handle() + xdofs.extent(1) * cell, xdofs.extent(1));
-    for (std::size_t j = 0; j < num_vertices; ++j)
-    {
-      int k = std::distance(cv.begin(), std::find(cv.begin(), cv.end(), ev[j]));
-      assert(k < (int)cv.size());
-      geometry_idx[i * num_vertices + j] = xc[k];
-    }
+    // const std::int32_t cell = e_to_c->links(e).back();
+    // auto ev = e_to_v->links(e);
+    // assert(ev.size() == num_vertices);
+    // auto cv = c_to_v->links(cell);
+    // std::span<const std::int32_t> xc(
+    //     xdofs.data_handle() + xdofs.extent(1) * cell, xdofs.extent(1));
+    // for (std::size_t j = 0; j < num_vertices; ++j)
+    // {
+    //   int k = std::distance(cv.begin(), std::find(cv.begin(), cv.end(),
+    //   ev[j])); assert(k < (int)cv.size()); entity_xdofs[i * num_vertices + j]
+    //   = xc[k];
+    // }
 
-    if (orient)
-    {
-      // Compute cell midpoint
-      std::array<T, 3> midpoint = {0, 0, 0};
-      for (std::int32_t j : xc)
-        for (int k = 0; k < 3; ++k)
-          midpoint[k] += x[3 * j + k];
-      std::transform(midpoint.begin(), midpoint.end(), midpoint.begin(),
-                     [size = xc.size()](auto x) { return x / size; });
+    // TODO Remove?
+    //   if (orient)
+    //   {
+    //     // Compute cell midpoint
+    //     std::array<T, 3> midpoint = {0, 0, 0};
+    //     for (std::int32_t j : xc)
+    //       for (int k = 0; k < 3; ++k)
+    //         midpoint[k] += x[3 * j + k];
+    //     std::transform(midpoint.begin(), midpoint.end(), midpoint.begin(),
+    //                    [size = xc.size()](auto x) { return x / size; });
 
-      // Compute vector triple product of two edges and vector to midpoint
-      std::array<T, 3> p0, p1, p2;
-      std::copy_n(std::next(x.begin(), 3 * geometry_idx[i * num_vertices + 0]),
-                  3, p0.begin());
-      std::copy_n(std::next(x.begin(), 3 * geometry_idx[i * num_vertices + 1]),
-                  3, p1.begin());
-      std::copy_n(std::next(x.begin(), 3 * geometry_idx[i * num_vertices + 2]),
-                  3, p2.begin());
+    //     // Compute vector triple product of two edges and vector to midpoint
+    //     std::array<T, 3> p0, p1, p2;
+    //     std::copy_n(std::next(x.begin(), 3 * entity_xdofs[i * num_vertices +
+    //     0]),
+    //                 3, p0.begin());
+    //     std::copy_n(std::next(x.begin(), 3 * entity_xdofs[i * num_vertices +
+    //     1]),
+    //                 3, p1.begin());
+    //     std::copy_n(std::next(x.begin(), 3 * entity_xdofs[i * num_vertices +
+    //     2]),
+    //                 3, p2.begin());
 
-      std::array<T, 9> a;
-      std::transform(midpoint.begin(), midpoint.end(), p0.begin(), a.begin(),
-                     [](auto x, auto y) { return x - y; });
-      std::transform(p1.begin(), p1.end(), p0.begin(), std::next(a.begin(), 3),
-                     [](auto x, auto y) { return x - y; });
-      std::transform(p2.begin(), p2.end(), p0.begin(), std::next(a.begin(), 6),
-                     [](auto x, auto y) { return x - y; });
+    //     std::array<T, 9> a;
+    //     std::transform(midpoint.begin(), midpoint.end(), p0.begin(),
+    //     a.begin(),
+    //                    [](auto x, auto y) { return x - y; });
+    //     std::transform(p1.begin(), p1.end(), p0.begin(), std::next(a.begin(),
+    //     3),
+    //                    [](auto x, auto y) { return x - y; });
+    //     std::transform(p2.begin(), p2.end(), p0.begin(), std::next(a.begin(),
+    //     6),
+    //                    [](auto x, auto y) { return x - y; });
 
-      // Midpoint direction should be opposite to normal, hence this
-      // should be negative. Switch points if not.
-      if (math::det(a.data(), {3, 3}) > 0.0)
-      {
-        std::swap(geometry_idx[i * num_vertices + 1],
-                  geometry_idx[i * num_vertices + 2]);
-      }
-    }
+    //     // Midpoint direction should be opposite to normal, hence this
+    //     // should be negative. Switch points if not.
+    //     if (math::det(a.data(), {3, 3}) > 0.0)
+    //     {
+    //       std::swap(entity_xdofs[i * num_vertices + 1],
+    //                 entity_xdofs[i * num_vertices + 2]);
+    //     }
+    //   }
   }
 
-  return geometry_idx;
+  return entity_xdofs;
 }
 
 /// Create a function that computes destination rank for mesh cells in

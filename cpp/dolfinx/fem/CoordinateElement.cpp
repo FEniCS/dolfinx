@@ -27,11 +27,10 @@ CoordinateElement<T>::CoordinateElement(
 template <std::floating_point T>
 CoordinateElement<T>::CoordinateElement(mesh::CellType celltype, int degree,
                                         basix::element::lagrange_variant type)
-    : CoordinateElement(std::make_shared<basix::FiniteElement<T>>(
-          basix::create_element<T>(basix::element::family::P,
-                                   mesh::cell_type_to_basix_type(celltype),
-                                   degree, type,
-                                   basix::element::dpc_variant::unset, false)))
+    : CoordinateElement(
+        std::make_shared<basix::FiniteElement<T>>(basix::create_element<T>(
+            basix::element::family::P, mesh::cell_type_to_basix_type(celltype),
+            degree, type, basix::element::dpc_variant::unset, false)))
 {
   // Do nothing
 }
@@ -57,6 +56,16 @@ void CoordinateElement<T>::tabulate(int nd, std::span<const T> X,
 {
   assert(_element);
   _element->tabulate(nd, X, shape, basis);
+}
+//--------------------------------------------------------------------------------
+template <std::floating_point T>
+void CoordinateElement<T>::permute_subentity_closure(
+    std::span<std::int32_t> d, std::uint32_t cell_info,
+    mesh::CellType entity_type) const
+{
+  assert(_element);
+  _element->permute_subentity_closure(
+      d, cell_info, mesh::cell_type_to_basix_type(entity_type));
 }
 //--------------------------------------------------------------------------------
 template <std::floating_point T>
