@@ -989,36 +989,8 @@ create_subgeometry(const Mesh<T>& mesh, int dim,
   // NOTE: Unclear what this return for prisms
   const std::size_t num_entity_dofs = layout.num_entity_closure_dofs(dim);
 
-  std::vector<std::int32_t> x_indices;
-  x_indices.reserve(num_entity_dofs * subentity_to_entity.size());
-  {
-    auto xdofs = geometry.dofmap();
-    const int tdim = topology.dim();
-
-    // Fetch connectivities required to get entity dofs
-    const std::vector<std::vector<std::vector<int>>>& closure_dofs
-        = layout.entity_closure_dofs_all();
-    auto e_to_c = topology.connectivity(dim, tdim);
-    assert(e_to_c);
-    auto c_to_e = topology.connectivity(tdim, dim);
-    assert(c_to_e);
-    for (std::size_t i = 0; i < subentity_to_entity.size(); ++i)
-    {
-      const std::int32_t idx = subentity_to_entity[i];
-      assert(!e_to_c->links(idx).empty());
-      // Always pick the last cell to be consistent with the e_to_v connectivity
-      const std::int32_t cell = e_to_c->links(idx).back();
-      auto cell_entities = c_to_e->links(cell);
-      auto it = std::find(cell_entities.begin(), cell_entities.end(), idx);
-      assert(it != cell_entities.end());
-      std::size_t local_entity = std::distance(cell_entities.begin(), it);
-
-      auto xc = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
-          xdofs, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
-      for (std::int32_t entity_dof : closure_dofs[dim][local_entity])
-        x_indices.push_back(xc[entity_dof]);
-    }
-  }
+  std::vector<std::int32_t> x_indices
+      = entities_to_geometry(mesh, dim, subentity_to_entity, false);
 
   std::vector<std::int32_t> sub_x_dofs = x_indices;
   std::sort(sub_x_dofs.begin(), sub_x_dofs.end());

@@ -317,6 +317,7 @@ def test_cell_circumradius(c0, c1, c5):
 @pytest.mark.skip_in_parallel
 def test_cell_h(c0, c1, c5):
     for c in [c0, c1, c5]:
+        c[0].topology.create_connectivity(c[1], c[1])
         assert c[0].h(c[1], np.array([c[2]]))
 
 
@@ -324,6 +325,7 @@ def test_cell_h_prism():
     N = 3
     mesh = create_unit_cube(MPI.COMM_WORLD, N, N, N, cell_type=CellType.prism)
     tdim = mesh.topology.dim
+    mesh.topology.create_connectivity(tdim, tdim)
     num_cells = mesh.topology.index_map(tdim).size_local
     cells = np.arange(num_cells, dtype=np.int32)
     h = _cpp.mesh.h(mesh._cpp_object, tdim, cells)
@@ -367,6 +369,7 @@ def dirname(request):
 def test_hmin_hmax(_mesh, dtype, hmin, hmax):
     mesh = _mesh(dtype)
     tdim = mesh.topology.dim
+    mesh.topology.create_connectivity(tdim, tdim)
     num_cells = mesh.topology.index_map(tdim).size_local
     h = _cpp.mesh.h(mesh._cpp_object, tdim, np.arange(num_cells))
     assert h.min() == pytest.approx(hmin)
@@ -499,7 +502,6 @@ def boundary_2(x):
 
 
 # TODO Test that submesh of full mesh is a copy of the mesh
-@pytest.mark.skip()
 @pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("n", [3, 6])
 @pytest.mark.parametrize("codim", [0, 1, 2])
@@ -523,7 +525,6 @@ def test_submesh_full(d, n, codim, marker, ghost_mode, simplex):
     submesh_geometry_test(mesh, submesh, entity_map, geom_map, edim)
 
 
-@pytest.mark.skip()
 @pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("n", [3, 6])
 @pytest.mark.parametrize("boundary", [boundary_0, boundary_1, boundary_2])
@@ -637,7 +638,6 @@ def test_boundary_facets(n, d, ghost_mode, dtype):
     assert compute_num_boundary_facets(mesh) == expected_num_boundary_facets
 
 
-@pytest.mark.skip()
 @pytest.mark.parametrize("n", [3, 5])
 @pytest.mark.parametrize("d", [2, 3])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
@@ -668,7 +668,6 @@ def test_submesh_codim_0_boundary_facets(n, d, ghost_mode, dtype):
     assert compute_num_boundary_facets(submesh) == expected_num_boundary_facets
 
 
-@pytest.mark.skip()
 @pytest.mark.parametrize("n", [2, 5])
 @pytest.mark.parametrize("ghost_mode", [GhostMode.none, GhostMode.shared_facet])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
