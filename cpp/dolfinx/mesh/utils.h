@@ -691,16 +691,19 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
 
     std::uint8_t perm = perms[num_cell_entities * c + local_entity];
 
-    std::vector<std::int32_t> permuted_closure_dofs(
+    std::vector<std::int32_t> closure_dofs(
         layout.entity_closure_dofs(dim, local_entity));
-    mesh::CellType entity_type
-        = mesh::cell_entity_type(cell_type, dim, local_entity);
-    coord_ele.permute_subentity_closure(permuted_closure_dofs, perm,
-                                        entity_type);
+    if (dim != topology->dim())
+    {
+      mesh::CellType entity_type
+          = mesh::cell_entity_type(cell_type, dim, local_entity);
+      coord_ele.permute_subentity_closure(closure_dofs, perm,
+                                          entity_type);
+    }
 
     auto x_c = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
         xdofs, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
-    for (std::int32_t entity_dof : permuted_closure_dofs)
+    for (std::int32_t entity_dof : closure_dofs)
       entity_xdofs.push_back(x_c[entity_dof]);
 
     // TODO Remove?
