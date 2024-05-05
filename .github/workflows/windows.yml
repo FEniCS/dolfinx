@@ -90,7 +90,7 @@ jobs:
       - name: Build C++ unit tests
         working-directory: dolfinx
         run: |
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build/test/ -S cpp/test/
+          cmake -B build/test/ -S cpp/test/
           cmake --build build/test --parallel 3
 
       - name: Run C++ unit tests (serial)
