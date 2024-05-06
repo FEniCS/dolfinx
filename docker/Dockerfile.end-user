@@ -38,7 +38,7 @@ ARG PYVISTA_VERSION=0.43.5
 
 # Used to set the correct PYTHONPATH for the real and complex install of
 # DOLFINx
-ARG PYTHON_VERSION=3.10
+ARG PYTHON_VERSION=3.12
 # Base image for end-user images
 ARG BASEIMAGE=ghcr.io/fenics/dolfinx/dev-env:current
 
@@ -89,8 +89,8 @@ ONBUILD RUN cd dolfinx && \
     ninja install && \
     cd ../python && \
     PETSC_ARCH=linux-gnu-real64-32 pip install --break-system-packages -v \
-      --config-settings=cmake.build-type="${DOLFINX_CMAKE_BUILD_TYPE}" --config-settings=install.strip=false --no-build-isolation --check-build-dependencies \
-      --target /usr/local/dolfinx-real/lib/python${PYTHON_VERSION}/dist-packages --no-dependencies --no-cache-dir . && \
+    --config-settings=cmake.build-type="${DOLFINX_CMAKE_BUILD_TYPE}" --config-settings=install.strip=false --no-build-isolation --check-build-dependencies \
+    --target /usr/local/dolfinx-real/lib/python${PYTHON_VERSION}/dist-packages --no-dependencies --no-cache-dir . && \
     git clean -fdx && \
     cd ../ && \
     mkdir -p build-complex && \
@@ -100,8 +100,8 @@ ONBUILD RUN cd dolfinx && \
     . /usr/local/dolfinx-complex/lib/dolfinx/dolfinx.conf && \
     cd ../python && \
     PETSC_ARCH=linux-gnu-complex128-32 pip install --break-system-packages -v \
-      --config-settings=cmake.build-type="${DOLFINX_CMAKE_BUILD_TYPE}" --config-settings=install.strip=false --no-build-isolation --check-build-dependencies \
-      --target /usr/local/dolfinx-complex/lib/python${PYTHON_VERSION}/dist-packages --no-dependencies --no-cache-dir .
+    --config-settings=cmake.build-type="${DOLFINX_CMAKE_BUILD_TYPE}" --config-settings=install.strip=false --no-build-isolation --check-build-dependencies \
+    --target /usr/local/dolfinx-complex/lib/python${PYTHON_VERSION}/dist-packages --no-dependencies --no-cache-dir .
 
 # Real by default.
 ONBUILD ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
