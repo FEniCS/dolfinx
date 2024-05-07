@@ -106,18 +106,18 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
 
 /// @brief Interpolate an expression f(x) in a finite element space.
 ///
-/// @param[out] u The Function object to interpolate into
+/// @tparam T Scalar type
+/// @tparam U Mesh geometry type
+/// @param[out] u Function object to interpolate into
 /// @param[in] f Evaluation of the function `f(x)` at the physical
 /// points `x` given by fem::interpolation_coords. The element used in
 /// fem::interpolation_coords should be the same element as associated
-/// with `u`. The shape of `f` should be (value_size, num_points), with
+/// with `u`. The shape of `f` is  `(value_size, num_points)`, with
 /// row-major storage.
-/// @param[in] fshape The shape of `f`.
+/// @param[in] fshape Shape of `f`.
 /// @param[in] cells Indices of the cells in the mesh on which to
-/// interpolate. Should be the same as the list used when calling
-/// fem::interpolation_coords.
-/// @tparam T Scalar type
-/// @tparam U Mesh geometry type
+/// interpolate. Should be the same as the list of cells used when
+/// calling fem::interpolation_coords.
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate(Function<T, U>& u, std::span<const T> f,
                  std::array<std::size_t, 2> fshape,
@@ -1061,11 +1061,11 @@ geometry::PointOwnershipData<T> create_interpolation_data(
 /// @tparam U  Mesh geometry scalar type.
 /// @param u Function to interpolate into.
 /// @param v Function to interpolate from.
-/// @param cells Cells in the mesh associated with `u` that will be
-/// interpolated into.
+/// @param cells Cells, with indices relative to the mesh associated
+/// with `u`, that will be interpolated into.
 /// @param interpolation_data Data required for associating the
-/// interpolation points of `u` with cells in `v`. This can be computed
-/// with `fem::create_interpolation_data`.
+/// interpolation points of `u` with cells in `v`. This is computed by
+/// fem::create_interpolation_data.
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate(Function<T, U>& u, const Function<T, U>& v,
                  std::span<const std::int32_t> cells,
@@ -1127,14 +1127,18 @@ void interpolate(Function<T, U>& u, const Function<T, U>& v,
                       cells);
 }
 
-/// @brief Interpolate from one finite element Function to another one.
+/// @brief Interpolate from one finite element fem::Function to another
+/// on the same mesh.
+///
+/// Functions may be defined on 'sub-meshes'.
+///
 /// @param[out] u1 Function to interpolate into.
-/// @param[in] u0 Function to be interpolated.
-/// @param[in] cells1 List of cell indices associated with the mesh of
-/// `u1` that will be interpolated onto.
+/// @param[in] u0 Function to b interpolated from.
+/// @param[in] cells1 Cell indices associated with the mesh of `u1` that
+/// will be interpolated onto.
 /// @param[in] cell_map For cell `i` in the mesh associated with `u1`,
 /// `cell_map[i]` is the index of the same cell, but in the mesh
-/// associated with `u0`
+/// associated with `u0`.
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate(Function<T, U>& u1, const Function<T, U>& u0,
                  std::span<const std::int32_t> cells1,
