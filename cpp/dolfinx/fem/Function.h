@@ -162,7 +162,20 @@ public:
                    std::span<const std::int32_t> cells,
                    std::span<const std::int32_t> cell_map)
   {
-    fem::interpolate(*this, v, cells, cell_map);
+    std::vector<std::int32_t> cells_v;
+    cells_v.reserve(cells_v.size());
+    if (v.function_space()->mesh() == this->function_space()->mesh())
+    {
+      // Functions share the same mesh
+      cells_v.insert(cells_v.end(), cells.begin(), cells.end());
+    }
+    else if (!cell_map.empty())
+    {
+      // cell_map is provided, meshes may use different indexing
+      std::transform(cells.begin(), cells.end(), std::back_inserter(cells_v),
+                     [&cell_map](std::int32_t c) { return cell_map[c]; });
+    }
+    fem::interpolate(*this, v, cells, cells_v);
   }
 
   /// @brief Interpolate a Function over all cells.
@@ -177,7 +190,7 @@ public:
     std::vector<std::int32_t> cells(
         cell_imap->size_local() + cell_imap->num_ghosts(), 0);
     std::iota(cells.begin(), cells.end(), 0);
-    interpolate(v, cells, std::span<const std::int32_t>{});
+    interpolate(v, cells, cells);
   }
 
   /// @brief Interpolate an expression function over a set of cells.

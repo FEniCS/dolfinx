@@ -1136,18 +1136,18 @@ void interpolate(Function<T, U>& u, const Function<T, U>& v,
 /// @param[in] u0 Function to b interpolated from.
 /// @param[in] cells1 Cell indices associated with the mesh of `u1` that
 /// will be interpolated onto.
-/// @param[in] cell_map For cell `i` in the mesh associated with `u1`,
-/// `cell_map[i]` is the index of the same cell, but in the mesh
-/// associated with `u0`.
+/// @param[in] cells0 The equivalent cell in the mesh of `u1` for each cell in
+/// `cells0`
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate(Function<T, U>& u1, const Function<T, U>& u0,
                  std::span<const std::int32_t> cells1,
-                 std::span<const std::int32_t> cell_map)
+                 std::span<const std::int32_t> cells0)
 {
   assert(u1.function_space());
   assert(u0.function_space());
   auto mesh = u1.function_space()->mesh();
   assert(mesh);
+  assert(cells0.size() == cells1.size());
 
   auto cell_map0 = mesh->topology()->index_map(mesh->topology()->dim());
   assert(cell_map0);
@@ -1162,20 +1162,6 @@ void interpolate(Function<T, U>& u1, const Function<T, U>& u0,
   }
   else
   {
-    std::vector<std::int32_t> cells0;
-    cells0.reserve(cells1.size());
-    if (auto mesh_v = u0.function_space()->mesh(); mesh == mesh_v)
-    {
-      // Functions share the same mesh
-      cells0.insert(cells0.end(), cells1.begin(), cells1.end());
-    }
-    else if (!cell_map.empty())
-    {
-      // cell_map is provided, meshes may use different indexing
-      std::transform(cells1.begin(), cells1.end(), std::back_inserter(cells0),
-                     [&cell_map](std::int32_t c) { return cell_map[c]; });
-    }
-
     // Get elements and check value shape
     auto fs0 = u0.function_space();
     auto element0 = fs0->element();
