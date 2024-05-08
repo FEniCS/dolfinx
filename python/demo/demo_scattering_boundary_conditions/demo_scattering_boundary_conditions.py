@@ -57,6 +57,14 @@ except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
 
+from petsc4py import PETSc
+
+if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
+    print("This solver fails with PETSc and 64-bit integers becaude of memory errors in MUMPS.")
+    # Note: when PETSc.IntType == np.int32, superlu_dist is used rather
+    # than MUMPS and does not trigger memory failures.
+    sys.exit(0)
+
 # -
 
 # Since we want to solve time-harmonic Maxwell's equation, we need to

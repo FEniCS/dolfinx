@@ -44,6 +44,14 @@ try:
 except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
+
+from petsc4py import PETSc
+
+if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
+    print("This solver fails with PETSc and 64-bit integers becaude of memory errors in MUMPS.")
+    # Note: when PETSc.IntType == np.int32, superlu_dist is used rather
+    # than MUMPS and does not trigger memory failures.
+    sys.exit(0)
 # -
 
 # Since we want to solve time-harmonic Maxwell's equation, we require
@@ -51,7 +59,7 @@ except ModuleNotFoundError:
 
 if not np.issubdtype(default_scalar_type, np.complexfloating):
     print("Demo should only be executed with DOLFINx complex mode")
-    exit(0)
+    sys.exit(0)
 
 
 # Now, let's consider an infinite metallic wire immersed in a background
