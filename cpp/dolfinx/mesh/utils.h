@@ -697,7 +697,17 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
     {
       mesh::CellType entity_type
           = mesh::cell_entity_type(cell_type, dim, local_entity);
-      coord_ele.permute_subentity_closure(closure_dofs, perm, entity_type);
+      // coord_ele.permute_subentity_closure(closure_dofs, perm, entity_type);
+      if (perm == 2)
+        closure_dofs = {2, 0, 1};
+      else if (perm == 4)
+        closure_dofs = {1, 2, 0};
+      else if (perm == 1)
+        closure_dofs = {0, 2, 1};
+      else if (perm == 3)
+        closure_dofs = {1, 0, 2};
+      else if (perm == 5)
+        closure_dofs = {2, 1, 0};
     }
 
     auto x_c = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(

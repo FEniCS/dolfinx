@@ -25,8 +25,6 @@ from dolfinx.mesh import (
     meshtags,
 )
 
-pytest.skip(allow_module_level=True)
-
 
 def assemble(mesh, space, k):
     V = fem.functionspace(mesh, (space, k))
