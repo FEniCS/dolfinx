@@ -38,7 +38,7 @@ ARG PYVISTA_VERSION=0.43.5
 
 # Used to set the correct PYTHONPATH for the real and complex install of
 # DOLFINx
-ARG PYTHON_VERSION=3.10
+ARG PYTHON_VERSION=3.12
 # Base image for end-user images
 ARG BASEIMAGE=ghcr.io/fenics/dolfinx/dev-env:current
 
