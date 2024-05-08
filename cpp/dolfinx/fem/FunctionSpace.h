@@ -167,6 +167,15 @@ public:
   /// `W.sub(1).sub(0) == [1, 0]`.
   std::vector<int> component() const { return _component; }
 
+  /// @brief Indicate whether this function space represents a symmetric
+  /// 2-tensor
+  bool symmetric() const
+  {
+    if (_element)
+      return _element->symmetric();
+    return false;
+  }
+
   /// @brief Tabulate the physical coordinates of all dofs on this
   /// process.
   ///
@@ -259,10 +268,6 @@ public:
       cell_info = std::span(_mesh->topology()->get_cell_permutation_info());
     }
 
-    auto apply_dof_transformation
-        = _element
-              ->template get_pre_dof_transformation_function<geometry_type>();
-
     const std::array<std::size_t, 4> phi_shape
         = cmap.tabulate_shape(0, Xshape[0]);
     std::vector<geometry_type> phi_b(
@@ -273,9 +278,15 @@ public:
         phi_full, 0, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
         MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
 
+    // TODO: Check transform
+    // Basis function reference-to-conforming transformation function
+    auto apply_dof_transformation
+        = _element->template dof_transformation_fn<geometry_type>(
+            doftransform::standard);
+
     for (int c = 0; c < num_cells; ++c)
     {
-      // Extract cell geometry
+      // Extract cell geometry 'dofs'
       auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
           x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
       for (std::size_t i = 0; i < x_dofs.size(); ++i)

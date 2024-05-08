@@ -42,6 +42,7 @@
 // ## C++ program
 
 #include "poisson.h"
+#include <basix/finite-element.h>
 #include <cmath>
 #include <complex>
 #include <concepts>
@@ -137,8 +138,12 @@ void solver(MPI_Comm comm)
   auto mesh = std::make_shared<mesh::Mesh<U>>(mesh::create_rectangle<U>(
       comm, {{{0.0, 0.0}, {1.0, 1.0}}}, {10, 10}, mesh::CellType::triangle,
       mesh::create_cell_partitioner(mesh::GhostMode::none)));
+  auto element = basix::create_element<U>(
+      basix::element::family::P, basix::cell::type::triangle, 2,
+      basix::element::lagrange_variant::unset,
+      basix::element::dpc_variant::unset, false);
   auto V = std::make_shared<fem::FunctionSpace<U>>(
-      fem::create_functionspace(functionspace_form_poisson_M, "ui", mesh));
+      fem::create_functionspace(mesh, element, {}));
 
   // Prepare and set Constants for the bilinear form
   auto f = std::make_shared<fem::Constant<T>>(-6.0);

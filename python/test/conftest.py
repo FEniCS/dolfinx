@@ -141,13 +141,12 @@ def tempdir(request):
     return _create_tempdir(request)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="function", autouse=True)
 def cg_solver():
-    """Simple Conjugate Gradient solver for SPD problems,
-    which can work in serial or parallel for testing use.
-    Not suitable for large problems."""
+    """Conjugate Gradient solver for SPD problems, which can work in
+    serial or parallel for testing use. Not suitable for large
+    problems."""
 
-    # Basic Conjugate Gradient solver
     def _cg(comm, A, b, x, maxit=500, rtol=None):
         rtol2 = 10 * np.finfo(x.array.dtype).eps if rtol is None else rtol**2
 
@@ -156,11 +155,11 @@ def cg_solver():
 
         A_op = A.to_scipy()
         nr = A_op.shape[0]
-        assert nr == A.index_map(0).size_local
+        assert nr == A.index_map(0).size_local * A.block_size[0]
 
         # Create larger ghosted vector based on matrix column space
         # and get initial y = A.x
-        p = dolfinx_vector(A.index_map(1), dtype=x.array.dtype)
+        p = dolfinx_vector(A.index_map(1), bs=A.block_size[1], dtype=x.array.dtype)
         p.array[:nr] = x.array[:nr]
         p.scatter_forward()
         y = A_op @ p.array
@@ -188,6 +187,8 @@ def cg_solver():
                 return
             p.array[:nr] = beta * p.array[:nr] + r
 
-        raise RuntimeError(f"Solver exceeded max iterations ({maxit}).")
+        raise RuntimeError(
+            f"Solver exceeded max iterations ({maxit}). Relative residual={rnorm/rnorm0}."
+        )
 
     return _cg

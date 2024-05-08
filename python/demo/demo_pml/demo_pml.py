@@ -26,7 +26,7 @@ from mesh_wire_pml import generate_mesh_wire
 
 import ufl
 from basix.ufl import element
-from dolfinx import default_scalar_type, fem, mesh, plot
+from dolfinx import default_real_type, default_scalar_type, fem, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
 from dolfinx.io import VTXWriter, gmshio
 
@@ -44,6 +44,14 @@ try:
 except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
+
+from petsc4py import PETSc
+
+if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
+    print("This solver fails with PETSc and 64-bit integers becaude of memory errors in MUMPS.")
+    # Note: when PETSc.IntType == np.int32, superlu_dist is used rather
+    # than MUMPS and does not trigger memory failures.
+    sys.exit(0)
 # -
 
 # Since we want to solve time-harmonic Maxwell's equation, we require
@@ -51,7 +59,7 @@ except ModuleNotFoundError:
 
 if not np.issubdtype(default_scalar_type, np.complexfloating):
     print("Demo should only be executed with DOLFINx complex mode")
-    exit(0)
+    sys.exit(0)
 
 
 # Now, let's consider an infinite metallic wire immersed in a background
@@ -243,7 +251,7 @@ theta = 0  # Angle of incidence of the background field
 # element to represent the electric field:
 
 degree = 3
-curl_el = element("N1curl", msh.basix_cell(), degree)
+curl_el = element("N1curl", msh.basix_cell(), degree, dtype=default_real_type)
 V = fem.functionspace(msh, curl_el)
 
 # Next, we interpolate $\mathbf{E}_b$ into the function space $V$,

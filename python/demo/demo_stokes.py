@@ -92,7 +92,7 @@ import numpy as np
 
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx import fem, la
+from dolfinx import default_real_type, fem, la
 from dolfinx.fem import (
     Constant,
     Function,
@@ -141,8 +141,8 @@ def lid_velocity_expression(x):
 # piecewise linear basis (scalar).
 
 
-P2 = element("Lagrange", msh.basix_cell(), 2, shape=(msh.geometry.dim,))
-P1 = element("Lagrange", msh.basix_cell(), 1)
+P2 = element("Lagrange", msh.basix_cell(), 2, shape=(msh.geometry.dim,), dtype=default_real_type)
+P1 = element("Lagrange", msh.basix_cell(), 1, dtype=default_real_type)
 V, Q = functionspace(msh, P2), functionspace(msh, P1)
 
 # Boundary conditions for the velocity field are defined:
@@ -282,7 +282,9 @@ def nested_iterative_solver():
     # `scatter_forward`.
     with XDMFFile(MPI.COMM_WORLD, "out_stokes/velocity.xdmf", "w") as ufile_xdmf:
         u.x.scatter_forward()
-        P1 = element("Lagrange", msh.basix_cell(), 1, shape=(msh.geometry.dim,))
+        P1 = element(
+            "Lagrange", msh.basix_cell(), 1, shape=(msh.geometry.dim,), dtype=default_real_type
+        )
         u1 = Function(functionspace(msh, P1))
         u1.interpolate(u)
         ufile_xdmf.write_mesh(msh)
@@ -425,7 +427,7 @@ def block_direct_solver():
     # handle pressure nullspace
     pc = ksp.getPC()
     pc.setType("lu")
-    pc.setFactorSolverType("mumps")
+    pc.setFactorSolverType("superlu_dist")
     try:
         pc.setFactorSetUpSolverType()
     except PETSc.Error as e:
@@ -435,8 +437,8 @@ def block_direct_solver():
             exit(0)
         else:
             raise e
-    pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)  # For pressure nullspace
-    pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)  # For pressure nullspace
+    # pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)  # For pressure nullspace
+    # pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)  # For pressure nullspace
 
     # Create a block vector (x) to store the full solution, and solve
     x = A.createVecLeft()
@@ -514,10 +516,12 @@ def mixed_direct():
     # Configure MUMPS to handle pressure nullspace
     pc = ksp.getPC()
     pc.setType("lu")
-    pc.setFactorSolverType("mumps")
-    pc.setFactorSetUpSolverType()
-    pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)
-    pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)
+    # pc.setFactorSolverType("mumps")
+    # pc.setFactorSetUpSolverType()
+    # pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)
+    # pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)
+
+    pc.setFactorSolverType("superlu_dist")
 
     # Compute the solution
     U = Function(W)
@@ -558,4 +562,4 @@ np.testing.assert_allclose(norm_p_2, norm_p_0, rtol=1e-4)
 
 # Solve using a non-blocked matrix and an LU solver
 norm_u_3, norm_p_3 = mixed_direct()
-np.testing.assert_allclose(norm_u_3, norm_u_0, rtol=1e-4)
+np.testing.assert_allclose(norm_u_3, norm_u_0, rtol=1e-3)

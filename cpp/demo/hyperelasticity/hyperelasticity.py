@@ -7,6 +7,7 @@
 from basix.ufl import element
 from ufl import (
     Coefficient,
+    Constant,
     FunctionSpace,
     Identity,
     Mesh,
@@ -15,8 +16,10 @@ from ufl import (
     derivative,
     det,
     diff,
+    ds,
     dx,
     grad,
+    inner,
     ln,
     tr,
     variable,
@@ -39,8 +42,8 @@ v = TestFunction(V)  # Test function
 
 # Functions
 u = Coefficient(V)  # Displacement from previous iteration
-# B = Coefficient(element)        # Body force per unit volume
-# T = Coefficient(element)        # Traction force on the boundary
+B = Constant(mesh, shape=(3,))  # Body force per unit volume
+T = Constant(mesh, shape=(3,))  # Traction force on the boundary
 
 # Now, we can define the kinematic quantities involved in the model:
 
@@ -72,7 +75,7 @@ lmbda = E * nu / ((1 + nu) * (1 - 2 * nu))
 psi = (mu / 2) * (Ic - 3) - mu * ln(J) + (lmbda / 2) * (ln(J)) ** 2
 
 # Total potential energy
-Pi = psi * dx  # - inner(B, u) * dx - inner(T, u) * ds
+Pi = psi * dx - inner(B, u) * dx - inner(T, u) * ds
 
 # First variation of Pi (directional derivative about u in the direction
 # of v)
