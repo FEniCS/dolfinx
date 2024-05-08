@@ -55,6 +55,7 @@ jobs:
           echo "D:/a/dolfinx/basix-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
 
       - name: Install Basix (Python)
+        working-directory: basix
         run: |
           cd python
           python -m pip -v install --no-cache-dir .[ci] --config-settings=cmake.args=-DBasix_DIR=D:/a/basix/install/lib/cmake/basix
