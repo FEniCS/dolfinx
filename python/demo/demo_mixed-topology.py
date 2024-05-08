@@ -169,7 +169,7 @@ xdmf = """<?xml version="1.0"?>
 
 vtk_topology = []
 codes = [9, 8]
-perm = [cell_perm_vtk(CellType.hexahedron, 8), [0, 1, 2, 3, 4, 5]]
+perm = [cell_perm_vtk(CellType.hexahedron, 8), cell_perm_vtk(CellType.prism, 6)]
 
 for i in range(2):
     geom_dm = mesh.geometry.dofmaps(i)
