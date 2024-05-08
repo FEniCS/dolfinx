@@ -98,7 +98,7 @@ jobs:
       - name: Build C++ unit tests
         working-directory: dolfinx
         run: |
-          cmake -DBOOST_UUID_FORCE_AUTO_LINK=ON -DBasix_DIR=D:/a/dolfinx/basix-install/share/basix -DDOLFINX_UFCX_PYTHON=OFF -Dufcx_DIR=D:/a/dolfinx/ufcx-install/share/ufcx/cmake -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_PORTS="cpp/.vcpkg-overlay" -B build/test/ -S cpp/test/
+          cmake -DBasix_DIR=D:/a/dolfinx/basix-install/share/basix -DDOLFINX_UFCX_PYTHON=OFF -Dufcx_DIR=D:/a/dolfinx/ufcx-install/share/ufcx/cmake -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_PORTS="cpp/.vcpkg-overlay" -B build/test/ -S cpp/test/
           cmake --build build/test --parallel 3
 
       - name: Run C++ unit tests (serial)
