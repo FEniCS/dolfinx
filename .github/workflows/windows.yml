@@ -28,7 +28,31 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      
+
+      - uses: actions/checkout@v4
+        with:
+          repository: "fenics/ufl"
+          path: ufl
+
+      - name: Install UFL
+        working-directory: ufl
+        run: |
+          pip install .
+
+      - uses: actions/checkout@v4
+        with:
+          repository: "fenics/basix"
+          path: basix
+
+      - name: Install Basix (C++)
+        working-directory: basix
+        run: |
+          cd cpp
+          cmake -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -B build-dir -S .
+          cmake --build build-dir --config Release
+          cmake --install build-dir --config Release --prefix D:/a/dolfinx/basix-install
+          echo "D:/a/dolfinx/basix-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
+
       - uses: actions/checkout@v4
         with:
           repository: "fenics/ffcx"
@@ -41,31 +65,12 @@ jobs:
           cmake -B build-dir -S cmake/
           cmake --build build-dir --config Release
           cmake --install build-dir --config Release --prefix D:/a/dolfinx/ufcx-install
-      
-      - uses: actions/checkout@v4
-        with:
-          repository: "fenics/ufl"
-          path: ufl
-      
-      - name: Install UFL
-        working-directory: ufl
+
+      - name: Install FFCx
+        working-directory: ffcx
         run: |
           pip install .
 
-      - uses: actions/checkout@v4
-        with:
-          repository: "fenics/basix"
-          path: basix
-      
-      - name: Install Basix (C++)
-        working-directory: basix
-        run: |
-          cd cpp
-          cmake -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -B build-dir -S .
-          cmake --build build-dir --config Release
-          cmake --install build-dir --config Release --prefix D:/a/dolfinx/basix-install
-          echo "D:/a/dolfinx/basix-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
-      
       - uses: actions/checkout@v4
         with:
           path: dolfinx
@@ -73,7 +78,7 @@ jobs:
       - uses: mpi4py/setup-mpi@v1
         with:
           mpi: "intelmpi"
-      
+
       - name: Build and install DOLFINx C++ library
         working-directory: dolfinx
         run: |
@@ -81,7 +86,7 @@ jobs:
           cmake --build build-dir --config Release
           cmake --install build-dir --config Release --prefix D:/a/dolfinx/dolfinx-install
           echo "D:/a/dolfinx/dolfinx-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
-      
+
       - name: Build C++ unit tests
         working-directory: dolfinx
         run: |
