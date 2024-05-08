@@ -296,7 +296,7 @@ find_package(
 
 # Check for Basix Note: Basix may be installed as a standalone C++ library, or
 # in the Basix Python module tree
-if(Python3_Interpreter_FOUND)
+if(Python3_Interpreter_FOUND AND NOT DEFINED Basix_DIR)
   message(STATUS "Checking for basix hints with ${Python3_EXECUTABLE}")
   execute_process(
     COMMAND
