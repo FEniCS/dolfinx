@@ -34,36 +34,36 @@ namespace impl
 {
 template <std::floating_point T>
 Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
-                  std::array<std::size_t, 2> n,
+                  std::array<std::int64_t, 2> n,
                   const CellPartitionFunction& partitioner,
                   DiagonalType diagonal);
 
 template <std::floating_point T>
 Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
-                   std::array<std::size_t, 2> n,
+                   std::array<std::int64_t, 2> n,
                    const CellPartitionFunction& partitioner);
 
 template <std::floating_point T>
 std::vector<T> create_geom(MPI_Comm comm,
                            std::array<std::array<double, 3>, 2> p,
-                           std::array<std::size_t, 3> n);
+                           std::array<std::int64_t, 3> n);
 
 template <std::floating_point T>
 Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
                   std::array<std::array<double, 3>, 2> p,
-                  std::array<std::size_t, 3> n,
+                  std::array<std::int64_t, 3> n,
                   const CellPartitionFunction& partitioner);
 
 template <std::floating_point T>
 Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
                   std::array<std::array<double, 3>, 2> p,
-                  std::array<std::size_t, 3> n,
+                  std::array<std::int64_t, 3> n,
                   const CellPartitionFunction& partitioner);
 
 template <std::floating_point T>
 Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
                     std::array<std::array<double, 3>, 2> p,
-                    std::array<std::size_t, 3> n,
+                    std::array<std::int64_t, 3> n,
                     const CellPartitionFunction& partitioner);
 } // namespace impl
 
@@ -90,7 +90,7 @@ Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
 template <std::floating_point T = double>
 Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
                    std::array<std::array<double, 3>, 2> p,
-                   std::array<std::size_t, 3> n, CellType celltype,
+                   std::array<std::int64_t, 3> n, CellType celltype,
                    CellPartitionFunction partitioner = nullptr)
 {
   if (!partitioner and dolfinx::MPI::size(comm) > 1)
@@ -127,7 +127,7 @@ Mesh<T> create_box(MPI_Comm comm, MPI_Comm subcomm,
 /// @return Mesh
 template <std::floating_point T = double>
 Mesh<T> create_box(MPI_Comm comm, std::array<std::array<double, 3>, 2> p,
-                   std::array<std::size_t, 3> n, CellType celltype,
+                   std::array<std::int64_t, 3> n, CellType celltype,
                    const CellPartitionFunction& partitioner = nullptr)
 {
   return create_box<T>(comm, comm, p, n, celltype, partitioner);
@@ -151,7 +151,7 @@ Mesh<T> create_box(MPI_Comm comm, std::array<std::array<double, 3>, 2> p,
 /// @return Mesh
 template <std::floating_point T = double>
 Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
-                         std::array<std::size_t, 2> n, CellType celltype,
+                         std::array<std::int64_t, 2> n, CellType celltype,
                          CellPartitionFunction partitioner,
                          DiagonalType diagonal = DiagonalType::right)
 {
@@ -185,7 +185,7 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
 /// @return Mesh
 template <std::floating_point T = double>
 Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
-                         std::array<std::size_t, 2> n, CellType celltype,
+                         std::array<std::int64_t, 2> n, CellType celltype,
                          DiagonalType diagonal = DiagonalType::right)
 {
   return create_rectangle<T>(comm, p, n, celltype, nullptr, diagonal);
@@ -204,7 +204,7 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
 /// across MPI ranks.
 /// @return A mesh
 template <std::floating_point T = double>
-Mesh<T> create_interval(MPI_Comm comm, std::size_t nx, std::array<double, 2> p,
+Mesh<T> create_interval(MPI_Comm comm, std::int64_t nx, std::array<double, 2> p,
                         CellPartitionFunction partitioner = nullptr)
 {
   if (!partitioner and dolfinx::MPI::size(comm) > 1)
@@ -237,13 +237,13 @@ Mesh<T> create_interval(MPI_Comm comm, std::size_t nx, std::array<double, 2> p,
 
     // Create vertices
     x.resize(nx + 1);
-    for (std::size_t ix = 0; ix <= nx; ix++)
+    for (std::int64_t ix = 0; ix <= nx; ix++)
       x[ix] = a + ab * static_cast<T>(ix);
 
     // Create intervals
     cells.resize(nx * 2);
-    for (std::size_t ix = 0; ix < nx; ++ix)
-      for (std::size_t j = 0; j < 2; ++j)
+    for (std::int64_t ix = 0; ix < nx; ++ix)
+      for (std::int64_t j = 0; j < 2; ++j)
         cells[2 * ix + j] = ix + j;
 
     return create_mesh(comm, MPI_COMM_SELF, cells, element, MPI_COMM_SELF, x,
@@ -261,7 +261,7 @@ namespace impl
 template <std::floating_point T>
 std::vector<T> create_geom(MPI_Comm comm,
                            std::array<std::array<double, 3>, 2> p,
-                           std::array<std::size_t, 3> n)
+                           std::array<std::int64_t, 3> n)
 {
   // Extract data
   const std::array<double, 3> p0 = p[0];
@@ -327,7 +327,7 @@ std::vector<T> create_geom(MPI_Comm comm,
 template <std::floating_point T>
 Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
                   std::array<std::array<double, 3>, 2> p,
-                  std::array<std::size_t, 3> n,
+                  std::array<std::int64_t, 3> n,
                   const CellPartitionFunction& partitioner)
 {
   common::Timer timer("Build BoxMesh (tetrahedra)");
@@ -349,10 +349,10 @@ Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
     // Create tetrahedra
     for (std::int64_t i = range_c[0]; i < range_c[1]; ++i)
     {
-      const std::size_t iz = i / (nx * ny);
-      const std::size_t j = i % (nx * ny);
-      const std::size_t iy = j / nx;
-      const std::size_t ix = j % nx;
+      const std::int64_t iz = i / (nx * ny);
+      const std::int64_t j = i % (nx * ny);
+      const std::int64_t iy = j / nx;
+      const std::int64_t ix = j % nx;
       const std::int64_t v0 = iz * (nx + 1) * (ny + 1) + iy * (nx + 1) + ix;
       const std::int64_t v1 = v0 + 1;
       const std::int64_t v2 = v0 + (nx + 1);
@@ -377,7 +377,7 @@ Mesh<T> build_tet(MPI_Comm comm, MPI_Comm subcomm,
 template <std::floating_point T>
 mesh::Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
                         std::array<std::array<double, 3>, 2> p,
-                        std::array<std::size_t, 3> n,
+                        std::array<std::int64_t, 3> n,
                         const CellPartitionFunction& partitioner)
 {
   common::Timer timer("Build BoxMesh (hexahedra)");
@@ -422,7 +422,7 @@ mesh::Mesh<T> build_hex(MPI_Comm comm, MPI_Comm subcomm,
 template <std::floating_point T>
 Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
                     std::array<std::array<double, 3>, 2> p,
-                    std::array<std::size_t, 3> n,
+                    std::array<std::int64_t, 3> n,
                     const CellPartitionFunction& partitioner)
 {
   std::vector<T> x;
@@ -437,7 +437,7 @@ Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
     const std::int64_t n_cells = nx * ny * nz;
     std::array range_c = dolfinx::MPI::local_range(
         dolfinx::MPI::rank(comm), n_cells, dolfinx::MPI::size(comm));
-    const std::size_t cell_range = range_c[1] - range_c[0];
+    const std::int64_t cell_range = range_c[1] - range_c[0];
 
     // Create cuboids
 
@@ -469,7 +469,7 @@ Mesh<T> build_prism(MPI_Comm comm, MPI_Comm subcomm,
 
 template <std::floating_point T>
 Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
-                  std::array<std::size_t, 2> n,
+                  std::array<std::int64_t, 2> n,
                   const CellPartitionFunction& partitioner,
                   DiagonalType diagonal)
 {
@@ -481,8 +481,8 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
     const std::array<double, 2> p0 = p[0];
     const std::array<double, 2> p1 = p[1];
 
-    const std::size_t nx = n[0];
-    const std::size_t ny = n[1];
+    const std::int64_t nx = n[0];
+    const std::int64_t ny = n[1];
 
     // Extract minimum and maximum coordinates
     const T x0 = std::min(p0[0], p1[0]);
@@ -512,7 +512,7 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
     }
 
     // Create vertices and cells
-    std::size_t nv, nc;
+    std::int64_t nv, nc;
     switch (diagonal)
     {
     case DiagonalType::crossed:
@@ -528,11 +528,11 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
     cells.reserve(nc * 3);
 
     // Create main vertices
-    std::size_t vertex = 0;
-    for (std::size_t iy = 0; iy <= ny; iy++)
+    std::int64_t vertex = 0;
+    for (std::int64_t iy = 0; iy <= ny; iy++)
     {
       const T x1 = c + cd * static_cast<T>(iy);
-      for (std::size_t ix = 0; ix <= nx; ix++)
+      for (std::int64_t ix = 0; ix <= nx; ix++)
         x.insert(x.end(), {a + ab * static_cast<T>(ix), x1});
     }
 
@@ -540,10 +540,10 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
     switch (diagonal)
     {
     case DiagonalType::crossed:
-      for (std::size_t iy = 0; iy < ny; iy++)
+      for (std::int64_t iy = 0; iy < ny; iy++)
       {
         const T x1 = c + cd * (static_cast<T>(iy) + 0.5);
-        for (std::size_t ix = 0; ix < nx; ix++)
+        for (std::int64_t ix = 0; ix < nx; ix++)
           x.insert(x.end(), {a + ab * (static_cast<T>(ix) + 0.5), x1});
       }
       break;
@@ -556,15 +556,15 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
     {
     case DiagonalType::crossed:
     {
-      for (std::size_t iy = 0; iy < ny; iy++)
+      for (std::int64_t iy = 0; iy < ny; iy++)
       {
-        for (std::size_t ix = 0; ix < nx; ix++)
+        for (std::int64_t ix = 0; ix < nx; ix++)
         {
-          const std::size_t v0 = iy * (nx + 1) + ix;
-          const std::size_t v1 = v0 + 1;
-          const std::size_t v2 = v0 + (nx + 1);
-          const std::size_t v3 = v1 + (nx + 1);
-          const std::size_t vmid = (nx + 1) * (ny + 1) + iy * nx + ix;
+          const std::int64_t v0 = iy * (nx + 1) + ix;
+          const std::int64_t v1 = v0 + 1;
+          const std::int64_t v2 = v0 + (nx + 1);
+          const std::int64_t v3 = v1 + (nx + 1);
+          const std::int64_t vmid = (nx + 1) * (ny + 1) + iy * nx + ix;
 
           // Note that v0 < v1 < v2 < v3 < vmid
           cells.insert(cells.end(), {v0, v1, vmid, v0, v2, vmid, v1, v3, vmid,
@@ -576,7 +576,7 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
     default:
     {
       DiagonalType local_diagonal = diagonal;
-      for (std::size_t iy = 0; iy < ny; iy++)
+      for (std::int64_t iy = 0; iy < ny; iy++)
       {
         // Set up alternating diagonal
         switch (diagonal)
@@ -596,14 +596,13 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
         default:
           break;
         }
-        for (std::size_t ix = 0; ix < nx; ix++)
+        for (std::int64_t ix = 0; ix < nx; ix++)
         {
-          const std::size_t v0 = iy * (nx + 1) + ix;
-          const std::size_t v1 = v0 + 1;
-          const std::size_t v2 = v0 + (nx + 1);
-          const std::size_t v3 = v1 + (nx + 1);
+          const std::int64_t v0 = iy * (nx + 1) + ix;
+          const std::int64_t v1 = v0 + 1;
+          const std::int64_t v2 = v0 + (nx + 1);
+          const std::int64_t v3 = v1 + (nx + 1);
 
-          std::size_t offset = iy * nx + ix;
           switch (local_diagonal)
           {
           case DiagonalType::left:
@@ -643,7 +642,7 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
 
 template <std::floating_point T>
 Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
-                   std::array<std::size_t, 2> n,
+                   std::array<std::int64_t, 2> n,
                    const CellPartitionFunction& partitioner)
 {
   fem::CoordinateElement<T> element(CellType::quadrilateral, 1);
@@ -651,8 +650,8 @@ Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
   std::vector<T> x;
   if (dolfinx::MPI::rank(comm) == 0)
   {
-    const std::size_t nx = n[0];
-    const std::size_t ny = n[1];
+    const std::int64_t nx = n[0];
+    const std::int64_t ny = n[1];
     const T a = p[0][0];
     const T b = p[1][0];
     const T ab = (b - a) / static_cast<T>(nx);
@@ -662,21 +661,21 @@ Mesh<T> build_quad(MPI_Comm comm, const std::array<std::array<double, 2>, 2> p,
 
     // Create vertices
     x.reserve((nx + 1) * (ny + 1) * 2);
-    std::size_t vertex = 0;
-    for (std::size_t ix = 0; ix <= nx; ix++)
+    std::int64_t vertex = 0;
+    for (std::int64_t ix = 0; ix <= nx; ix++)
     {
       T x0 = a + ab * static_cast<T>(ix);
-      for (std::size_t iy = 0; iy <= ny; iy++)
+      for (std::int64_t iy = 0; iy <= ny; iy++)
         x.insert(x.end(), {x0, c + cd * static_cast<T>(iy)});
     }
 
     // Create rectangles
     cells.reserve(nx * ny * 4);
-    for (std::size_t ix = 0; ix < nx; ix++)
+    for (std::int64_t ix = 0; ix < nx; ix++)
     {
-      for (std::size_t iy = 0; iy < ny; iy++)
+      for (std::int64_t iy = 0; iy < ny; iy++)
       {
-        std::size_t i0 = ix * (ny + 1);
+        std::int64_t i0 = ix * (ny + 1);
         cells.insert(cells.end(), {i0 + iy, i0 + iy + 1, i0 + iy + ny + 1,
                                    i0 + iy + ny + 2});
       }
