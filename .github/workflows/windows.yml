@@ -98,16 +98,16 @@ jobs:
       - name: Build C++ unit tests
         working-directory: dolfinx
         run: |
-          cmake -DBasix_DIR=D:/a/dolfinx/basix-install/share/basix -DDOLFINX_UFCX_PYTHON=OFF -Dufcx_DIR=D:/a/dolfinx/ufcx-install/share/ufcx/cmake -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_PORTS="cpp/.vcpkg-overlay" -B build/test/ -S cpp/test/
+          cmake -DBasix_DIR=D:/a/dolfinx/basix-install/share/basix -Dufcx_DIR=D:/a/dolfinx/ufcx-install/share/ufcx/cmake -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_PORTS="cpp/.vcpkg-overlay" -B build/test/ -S cpp/test/
           cmake --build build/test --parallel 3
 
       - name: Run C++ unit tests (serial)
         working-directory: dolfinx
         run: |
           cd build/test
-          ctest -V --output-on-failure -R unittests
+          mpiexec -n 1 ctest -V --output-on-failure -R unittests
       - name: Run C++ unit tests (MPI)
         working-directory: dolfinx
         run: |
           cd build/test
-          mpirun -np 3 ctest -V --output-on-failure -R unittests
+          mpiexec -n 3 ctest -V --output-on-failure -R unittests
