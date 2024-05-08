@@ -7,7 +7,6 @@ import basix
 import dolfinx.cpp as _cpp
 import ffcx
 import ufl
-from dolfinx import jit
 from dolfinx.cpp.mesh import Mesh_float64, create_geometry, create_topology
 from dolfinx.fem import DofMap, coordinate_element
 from dolfinx.io.utils import cell_perm_vtk
@@ -16,28 +15,6 @@ from dolfinx.mesh import CellType
 
 if MPI.COMM_WORLD.size > 1:
     raise RuntimeError("Serial only")
-
-
-def create_element_dofmap(mesh, cell_types, degree):
-    cpp_elements = []
-    dofmaps = []
-    for cell_type in cell_types:
-        ufl_e = basix.ufl.element("P", cell_type, degree)
-        form_compiler_options = {"scalar_type": np.float64}
-        (ufcx_element, ufcx_dofmap), module, code = jit.ffcx_jit(
-            mesh.comm, ufl_e, form_compiler_options=form_compiler_options
-        )
-        ffi = module.ffi
-        cpp_elements += [
-            _cpp.fem.FiniteElement_float64(ffi.cast("uintptr_t", ffi.addressof(ufcx_element)))
-        ]
-        dofmaps += [ufcx_dofmap]
-
-    cpp_dofmaps = _cpp.fem.create_dofmaps(
-        mesh.comm, [ffi.cast("uintptr_t", ffi.addressof(dm)) for dm in dofmaps], mesh.topology
-    )
-
-    return (cpp_elements, cpp_dofmaps)
 
 
 nx = 16
@@ -112,9 +89,14 @@ geom = create_geometry(
 mesh = Mesh_float64(MPI.COMM_WORLD, topology, geom)
 
 # Order 1 dofmaps
-elements, dofmaps = create_element_dofmap(
-    mesh, [basix.CellType.hexahedron, basix.CellType.prism], 1
-)
+elements = [
+    basix.create_element(basix.ElementFamily.P, basix.CellType.hexahedron, 1),
+    basix.create_element(basix.ElementFamily.P, basix.CellType.prism, 1),
+]
+
+cpp_element = [_cpp.fem.FiniteElement_float64(e._e, 1, True) for e in elements]
+
+dofmaps = _cpp.fem.create_dofmaps(mesh.comm, mesh.topology, cpp_element)
 q = [DofMap(dofmaps[0]), DofMap(dofmaps[1])]
 
 # Both dofmaps have the same IndexMap, but different cell_dofs
