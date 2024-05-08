@@ -73,12 +73,8 @@ topology = create_topology(
     boundary_vertices,
 )
 
-entity_types = topology.entity_types
-print(entity_types)
-
 hexahedron = coordinate_element(CellType.hexahedron, 1)
 prism = coordinate_element(CellType.prism, 1)
-print(geomx.shape)
 nodes = np.arange(geomx.shape[0], dtype=np.int64)
 xdofs = np.array(cells[0] + cells[1], dtype=np.int64)
 
@@ -94,9 +90,9 @@ elements = [
     basix.create_element(basix.ElementFamily.P, basix.CellType.prism, 1),
 ]
 
-cpp_element = [_cpp.fem.FiniteElement_float64(e._e, 1, True) for e in elements]
+cpp_elements = [_cpp.fem.FiniteElement_float64(e._e, 1, True) for e in elements]
 
-dofmaps = _cpp.fem.create_dofmaps(mesh.comm, mesh.topology, cpp_element)
+dofmaps = _cpp.fem.create_dofmaps(mesh.comm, mesh.topology, cpp_elements)
 q = [DofMap(dofmaps[0]), DofMap(dofmaps[1])]
 
 # Both dofmaps have the same IndexMap, but different cell_dofs
@@ -104,7 +100,7 @@ q = [DofMap(dofmaps[0]), DofMap(dofmaps[1])]
 sp = _cpp.la.SparsityPattern(MPI.COMM_WORLD, [q[0].index_map, q[0].index_map], [1, 1])
 for ct in range(2):
     num_cells_type = mesh.topology.index_maps(3)[ct].size_local
-    print(ct, num_cells_type)
+    print(f"For cell type {ct}, create sparsity with {num_cells_type} cells.")
     for j in range(num_cells_type):
         cell_dofs_j = q[ct].cell_dofs(j)
         sp.insert(cell_dofs_j, cell_dofs_j)
@@ -112,6 +108,7 @@ sp.finalize()
 
 
 def get_compiled_form(cell_name):
+    print(f"Compiling form for {cell_name}")
     element = basix.ufl.element("Lagrange", cell_name, 1)
     domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_name, 1, shape=(3,)))
     space = ufl.FunctionSpace(domain, element)
@@ -133,7 +130,7 @@ kernels = [
 
 # Assembler
 A = matrix_csr(sp)
-print(A)
+print(f"Assembling into matrix of size {len(A.data)} non-zeros")
 
 # For each cell type
 for ct in range(2):
@@ -159,7 +156,7 @@ A_scipy = A.to_scipy()
 b_scipy = np.ones(A_scipy.shape[1])
 
 x = spsolve(A_scipy, b_scipy)
-print(x)
+print(f"Solution vector norm {np.linalg.norm(x)}")
 
 # I/O
 # Save to XDMF
