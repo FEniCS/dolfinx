@@ -38,7 +38,7 @@ endif()
 if(BASIX_PY_DIR)
   message(STATUS "Adding ${BASIX_PY_DIR} to Basix search hints")
 endif()
-find_dependency(Basix CONFIG HINTS ${BASIX_PY_DIR})
+find_dependency(Basix CONFIG)
 
 # HDF5
 if(NOT TARGET hdf5::hdf5)
