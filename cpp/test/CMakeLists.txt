@@ -34,7 +34,6 @@ endif()
 add_executable(
   unittests
   main.cpp
-  vector.cpp
   matrix.cpp
   io.cpp
   common/sub_systems_manager.cpp
