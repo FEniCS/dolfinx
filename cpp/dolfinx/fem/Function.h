@@ -150,50 +150,29 @@ public:
   /// @brief Underlying vector
   std::shared_ptr<la::Vector<value_type>> x() { return _x; }
 
-  /// @brief Interpolate a Function over a set of cells.
-  /// @param[in] v Function to be interpolated.
-  /// @param[in] cells Cells to interpolate on. These are the indices of
-  /// the cells in the mesh associated with `this`.
-  /// @param[in] cell_map For cell `i` in the mesh associated with
-  /// `this`, `cell_map[i]` is the index of the same cell but in the
-  /// mesh associated with `v`. This argument can be empty when `this`
-  /// and for `u` have the same mesh.
-  void interpolate(const Function<value_type, geometry_type>& v,
-                   std::span<const std::int32_t> cells,
-                   std::span<const std::int32_t> cell_map)
-  {
-    std::vector<std::int32_t> cells_v;
-    cells_v.reserve(cells_v.size());
-    if (v.function_space()->mesh() == this->function_space()->mesh())
-    {
-      // Functions share the same mesh
-      cells_v.insert(cells_v.end(), cells.begin(), cells.end());
-    }
-    else if (!cell_map.empty())
-    {
-      // cell_map is provided, meshes may use different indexing
-      std::transform(cells.begin(), cells.end(), std::back_inserter(cells_v),
-                     [&cell_map](std::int32_t c) { return cell_map[c]; });
-    }
-    fem::interpolate(*this, v, cells, cells_v);
-  }
-
-  /// @brief Interpolate a Function over all cells.
-  /// @param[in] v Function to be interpolated.
-  void interpolate(const Function<value_type, geometry_type>& v)
+  /// @brief Interpolate an expression f(x) on the whole domain.
+  /// @param[in] f Expression to be interpolated
+  void
+  interpolate(const std::function<
+              std::pair<std::vector<value_type>, std::vector<std::size_t>>(
+                  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
+                      const geometry_type,
+                      MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
+                          std::size_t, 3,
+                          MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>)>& f)
   {
     assert(_function_space);
     assert(_function_space->mesh());
-    int tdim = _function_space->mesh()->topology()->dim();
-    auto cell_imap = _function_space->mesh()->topology()->index_map(tdim);
-    assert(cell_imap);
-    std::vector<std::int32_t> cells(
-        cell_imap->size_local() + cell_imap->num_ghosts(), 0);
+    const int tdim = _function_space->mesh()->topology()->dim();
+    auto cell_map = _function_space->mesh()->topology()->index_map(tdim);
+    assert(cell_map);
+    std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
+    std::vector<std::int32_t> cells(num_cells, 0);
     std::iota(cells.begin(), cells.end(), 0);
-    interpolate(v, cells, cells);
+    interpolate(f, cells);
   }
 
-  /// @brief Interpolate an expression function over a set of cells.
+  /// @brief Interpolate an expression f(x) over a set of cells.
   /// @param[in] f Expression function to be interpolated.
   /// @param[in] cells Cells to interpolate on.
   void interpolate(
@@ -256,30 +235,51 @@ public:
                      _fshape, cells);
   }
 
-  /// @brief Interpolate an expression function on the whole domain.
-  /// @param[in] f Expression to be interpolated
-  void
-  interpolate(const std::function<
-              std::pair<std::vector<value_type>, std::vector<std::size_t>>(
-                  MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
-                      const geometry_type,
-                      MDSPAN_IMPL_STANDARD_NAMESPACE::extents<
-                          std::size_t, 3,
-                          MDSPAN_IMPL_STANDARD_NAMESPACE::dynamic_extent>>)>& f)
+  /// @brief Interpolate a Function over all cells.
+  /// @param[in] v Function to be interpolated.
+  void interpolate(const Function<value_type, geometry_type>& v)
   {
     assert(_function_space);
     assert(_function_space->mesh());
-    const int tdim = _function_space->mesh()->topology()->dim();
-    auto cell_map = _function_space->mesh()->topology()->index_map(tdim);
-    assert(cell_map);
-    std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
-    std::vector<std::int32_t> cells(num_cells, 0);
+    int tdim = _function_space->mesh()->topology()->dim();
+    auto cell_imap = _function_space->mesh()->topology()->index_map(tdim);
+    assert(cell_imap);
+    std::vector<std::int32_t> cells(
+        cell_imap->size_local() + cell_imap->num_ghosts(), 0);
     std::iota(cells.begin(), cells.end(), 0);
-    interpolate(f, cells);
+    interpolate(v, cells, cells);
   }
 
-  /// @brief Interpolate an Expression (based on UFL).
-  /// @param[in] e Expression to be interpolated. The expression must
+  /// @brief Interpolate a Function over a subset of cells.
+  /// @param[in] v Function to be interpolated.
+  /// @param[in] cells Cells to interpolate on. These are the indices of
+  /// the cells in the mesh associated with `this`.
+  /// @param[in] cell_map For cell `i` in the mesh associated with
+  /// `this`, `cell_map[i]` is the index of the same cell but in the
+  /// mesh associated with `v`. This argument can be empty when `this`
+  /// and for `u` have the same mesh.
+  void interpolate(const Function<value_type, geometry_type>& v,
+                   std::span<const std::int32_t> cells,
+                   std::span<const std::int32_t> cell_map)
+  {
+    std::vector<std::int32_t> cells_v;
+    cells_v.reserve(cells_v.size());
+    if (v.function_space()->mesh() == this->function_space()->mesh())
+    {
+      // Functions share the same mesh
+      cells_v.insert(cells_v.end(), cells.begin(), cells.end());
+    }
+    else if (!cell_map.empty())
+    {
+      // cell_map is provided, meshes may use different indexing
+      std::transform(cells.begin(), cells.end(), std::back_inserter(cells_v),
+                     [&cell_map](std::int32_t c) { return cell_map[c]; });
+    }
+    fem::interpolate(*this, v, cells, cells_v);
+  }
+
+  /// @brief Interpolate an Expression.
+  /// @param[in] e Expression to be interpolated. The Expression must
   /// have been created using the reference coordinates.
   /// FiniteElement::interpolation_points for the element associated
   /// with `u`.
@@ -372,7 +372,7 @@ public:
                      {value_size, num_cells * num_points}, cells);
   }
 
-  /// @brief Interpolate an Expression (based on UFL) on all cells.
+  /// @brief Interpolate an Expression on all cells.
   /// @param[in] e The function to be interpolated
   /// @param[in] expr_mesh Mesh the expression `e` is defined on.
   /// @param[in] cell_map Map from cells in the mesh of `this` to cells in
@@ -393,11 +393,11 @@ public:
     interpolate(e, cells, expr_mesh, cell_map);
   }
 
-  /// @brief Interpolate a function defined from a non-matching mesh.
+  /// @brief Interpolate a Function defined on a different mesh.
   /// @param[in] v Function to be interpolated.
-  /// @param cells Cells in the mesh associated with `this` that will be
-  /// interpolated into.
-  /// @param interpolation_data Data required for associating the
+  /// @param[in] cells Cells in the mesh associated with `this` to
+  /// interpolate into.
+  /// @param[in] interpolation_data Data required for associating the
   /// interpolation points of `this` with cells in `v`. Can be computed
   /// with `fem::create_interpolation_data`.
   void interpolate(const Function<value_type, geometry_type>& v,
