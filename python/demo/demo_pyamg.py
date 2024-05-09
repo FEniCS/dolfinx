@@ -43,8 +43,9 @@ dtype = np.float64
 mesh = create_rectangle(
     comm=MPI.COMM_WORLD,
     points=((0.0, 0.0), (2.0, 1.0)),
-    n=(320, 160),
+    n=(640, 320),
     cell_type=CellType.triangle,
+    dtype=dtype,
 )
 V = functionspace(mesh, ("Lagrange", 1))
 
@@ -63,8 +64,8 @@ v = ufl.TestFunction(V)
 x = ufl.SpatialCoordinate(mesh)
 f = 10 * ufl.exp(-((x[0] - 0.5) ** 2 + (x[1] - 0.5) ** 2) / 0.02)
 g = ufl.sin(5 * x[0])
-a = form(inner(grad(u), grad(v)) * dx)
-L = form(inner(f, v) * dx + inner(g, v) * ds)
+a = form(inner(grad(u), grad(v)) * dx, dtype=dtype)
+L = form(inner(f, v) * dx + inner(g, v) * ds, dtype=dtype)
 
 A0 = assemble_matrix(a, [bc])
 b = assemble_vector(L)
@@ -72,11 +73,16 @@ apply_lifting(b.array, [a], bcs=[[bc]])
 set_bc(b.array, [bc])
 
 A = csr_matrix((A0.data, A0.indices, A0.indptr))
-uh = fem.Function(V)
-ml = pyamg.ruge_stuben_solver(A)  # construct the multigrid hierarchy
-print(ml)  # print hierarchy information
-uh.vector.array[:] = ml.solve(b.array, tol=1e-10)  # solve Ax=b to a tolerance of 1e-10
-print(f"residual: {np.linalg.norm(b.array - A * uh.vector.array)}")
+uh = fem.Function(V, dtype=dtype)
+ml = pyamg.ruge_stuben_solver(A)
+print(ml)
+
+res = []
+uh.vector.array[:] = ml.solve(
+    b.array, tol=1e-10, residuals=res
+)  # solve Ax=b to a tolerance of 1e-10
+for i, q in enumerate(res):
+    print(f"Iteration {i}, residual= {q}")
 
 with io.XDMFFile(mesh.comm, "out_pyamg/poisson.xdmf", "w") as file:
     file.write_mesh(mesh)
