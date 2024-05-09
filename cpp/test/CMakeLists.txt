@@ -34,8 +34,8 @@ endif()
 add_executable(
   unittests
   main.cpp
-  mesh/distributed_mesh.cpp
   common/sort.cpp
+  common/minimal.cpp
   common/CIFailure.cpp
 )
 target_link_libraries(unittests PRIVATE Catch2::Catch2WithMain dolfinx)
