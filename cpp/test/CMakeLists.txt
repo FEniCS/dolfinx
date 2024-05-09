@@ -34,14 +34,7 @@ endif()
 add_executable(
   unittests
   main.cpp
-  matrix.cpp
-  io.cpp
-  common/sub_systems_manager.cpp
-  common/index_map.cpp
-  common/sort.cpp
-  mesh/distributed_mesh.cpp
   common/CIFailure.cpp
-  ${CMAKE_CURRENT_BINARY_DIR}/poisson.c
 )
 target_link_libraries(unittests PRIVATE Catch2::Catch2WithMain dolfinx)
 # UUID requires bcrypt to be linked on Windows, broken in vcpkg.
