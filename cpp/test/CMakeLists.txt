@@ -34,6 +34,7 @@ endif()
 add_executable(
   unittests
   main.cpp
+  mesh/distributed_mesh.cpp
   common/sort.cpp
   common/CIFailure.cpp
 )
