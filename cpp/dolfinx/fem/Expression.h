@@ -157,20 +157,15 @@ public:
   {
     std::size_t estride;
     if (mesh.topology()->dim() == _x_ref.second[1])
-    {
       estride = 1;
-    }
     else if (mesh.topology()->dim() == _x_ref.second[1] + 1)
-    {
       estride = 2;
-    }
     else
-    {
       throw std::runtime_error("Invalid dimension of evaluation points.");
-    }
+
     // Prepare coefficients and constants
-    const auto [coeffs, cstride] = pack_coefficients(*this, entities, estride);
-    const std::vector<scalar_type> constant_data = pack_constants(*this);
+    auto [coeffs, cstride] = pack_coefficients(*this, entities, estride);
+    std::vector<scalar_type> constant_data = pack_constants(*this);
     auto fn = this->get_tabulate_expression();
 
     // Prepare cell geometry
@@ -179,7 +174,7 @@ public:
     // Get geometry data
     auto& cmap = mesh.geometry().cmap();
 
-    const std::size_t num_dofs_g = cmap.dim();
+    std::size_t num_dofs_g = cmap.dim();
     auto x_g = mesh.geometry().x();
 
     // Create data structures used in evaluation
@@ -227,11 +222,11 @@ public:
     }
 
     // Iterate over cells and 'assemble' into values
-    const int size0 = _x_ref.second[0] * value_size();
+    int size0 = _x_ref.second[0] * value_size();
     std::vector<scalar_type> values_local(size0 * num_argument_dofs, 0);
     for (std::size_t e = 0; e < entities.size() / estride; ++e)
     {
-      const std::int32_t entity = entities[e * estride];
+      std::int32_t entity = entities[e * estride];
       auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
           x_dofmap, entity, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
       for (std::size_t i = 0; i < x_dofs.size(); ++i)

@@ -414,9 +414,9 @@ class Function(ufl.Coefficient):
 
     def interpolate(
         self,
-        u: typing.Union[typing.Callable, Expression, Function],
-        cells: typing.Optional[np.ndarray] = None,
-        cell_map: typing.Optional[np.ndarray] = None,
+        u0: typing.Union[typing.Callable, Expression, Function],
+        cells0: typing.Optional[np.ndarray] = None,
+        cells1: typing.Optional[np.ndarray] = None,
         expr_mesh: typing.Optional[Mesh] = None,
         interpolation_data: typing.Optional[PointOwnershipData] = None,
     ) -> None:
@@ -424,37 +424,39 @@ class Function(ufl.Coefficient):
 
         Args:
             u: The function, Expression or Function to interpolate.
-            cells: The cells to interpolate over. If `None` then all
+            cells0: The cells to interpolate over. If `None` then all
                 cells are interpolated over.
-            cell_map: Mapping from `cells` to to cells in the mesh that `u` is defined over.
+            cell1: Mapping from `cells` to to cells in the mesh that `u` is defined over.
             expr_mesh: If an Expression with coefficients or constants from another mesh
                 than the function is supplied, the mesh associated with this expression has
                 to be provided, along with `cell_map.`
         """
 
-        if cells is None:
+        if cells0 is None:
             mesh = self.function_space.mesh
             map = mesh.topology.index_map(mesh.topology.dim)
-            cells = np.arange(map.size_local + map.num_ghosts, dtype=np.int32)
+            cells0 = np.arange(map.size_local + map.num_ghosts, dtype=np.int32)
 
         @singledispatch
-        def _interpolate(u, cells: typing.Optional[np.ndarray] = None):
+        def _interpolate(u0, cells0: typing.Optional[np.ndarray] = None):
             """Interpolate a cpp.fem.Function"""
-            self._cpp_object.interpolate(u, cells, interpolation_data)  # type: ignore
+            self._cpp_object.interpolate(u0, cells0, interpolation_data)  # type: ignore
 
         @_interpolate.register(Function)
-        def _(u: Function, cells: typing.Optional[np.ndarray] = None):
+        def _(u0: Function, cells0: typing.Optional[np.ndarray] = None):
             """Interpolate a fem.Function"""
-            if cell_map is None:
-                _cell_map = np.zeros(0, dtype=np.int32)
+            if cells1 is None:
+                _cells1 = np.zeros(0, dtype=np.int32)
             else:
-                _cell_map = cell_map
-            self._cpp_object.interpolate(u._cpp_object, cells, _cell_map)  # type: ignore
+                _cells1 = cells1
+            print("0CCCC", cells1)
+            self._cpp_object.interpolate(u0._cpp_object, cells0, cells1)  # type: ignore
+            print("1CCCC")
 
         @_interpolate.register(int)
-        def _(u_ptr: int, cells: typing.Optional[np.ndarray] = None):
+        def _(u0_ptr: int, cells0: typing.Optional[np.ndarray] = None):
             """Interpolate using a pointer to a function f(x)"""
-            self._cpp_object.interpolate_ptr(u_ptr, cells)  # type: ignore
+            self._cpp_object.interpolate_ptr(u0_ptr, cells0)  # type: ignore
 
         @_interpolate.register(Expression)
         def _(expr: Expression, cells: typing.Optional[np.ndarray] = None):
@@ -480,12 +482,12 @@ class Function(ufl.Coefficient):
 
         try:
             # u is a Function or Expression (or pointer to one)
-            _interpolate(u, cells)
+            _interpolate(u0, cells0)
         except TypeError:
-            # u is callable
-            assert callable(u)
-            x = _cpp.fem.interpolation_coords(self._V.element, self._V.mesh.geometry, cells)
-            self._cpp_object.interpolate(np.asarray(u(x), dtype=self.dtype), cells)  # type: ignore
+            # u0 is callable
+            assert callable(u0)
+            x = _cpp.fem.interpolation_coords(self._V.element, self._V.mesh.geometry, cells0)
+            self._cpp_object.interpolate(np.asarray(u0(x), dtype=self.dtype), cells0)  # type: ignore
 
     def copy(self) -> Function:
         """Create a copy of the Function. The function space is shared and the

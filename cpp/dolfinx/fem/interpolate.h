@@ -104,7 +104,8 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
   return x;
 }
 
-/// @brief Interpolate an expression f(x) in a finite element space.
+/// @brief Interpolate an evaluated expression f(x) in a finite element
+/// space.
 ///
 /// @tparam T Scalar type
 /// @tparam U Mesh geometry type
@@ -1153,7 +1154,7 @@ void interpolate(Function<T, U>& u, const Function<T, U>& v,
 /// will be interpolated from. If `cells1[i]` is the index of a cell in
 /// the mesh associated with `u1`, then `cells0[i]` is the index of the
 /// *same* cell but in the mesh associated with `u0`. `cells0` and
-/// `cells1` have be the same size.
+/// `cells1` must be the same size.
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate(Function<T, U>& u1, const Function<T, U>& u0,
                  std::span<const std::int32_t> cells1,

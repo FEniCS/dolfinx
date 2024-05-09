@@ -405,15 +405,14 @@ void declare_objects(nb::module_& m, const std::string& type)
       .def(
           "interpolate",
           [](dolfinx::fem::Function<T, U>& self,
-             dolfinx::fem::Function<T, U>& u,
-             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells,
-             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>
-                 cell_map)
+             dolfinx::fem::Function<T, U>& u0,
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells0,
+             nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> cells1)
           {
-            self.interpolate(u, std::span(cells.data(), cells.size()),
-                             std::span(cell_map.data(), cell_map.size()));
+            self.interpolate(u0, std::span(cells0.data(), cells0.size()),
+                             std::span(cells1.data(), cells1.size()));
           },
-          nb::arg("u"), nb::arg("cells"), nb::arg("cell_map"),
+          nb::arg("u"), nb::arg("cells0"), nb::arg("cells1"),
           "Interpolate a finite element function")
       .def(
           "interpolate",

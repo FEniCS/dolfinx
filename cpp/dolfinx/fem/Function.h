@@ -236,8 +236,8 @@ public:
   }
 
   /// @brief Interpolate a Function over all cells.
-  /// @param[in] v Function to be interpolated.
-  void interpolate(const Function<value_type, geometry_type>& v)
+  /// @param[in] u0 Function to be interpolated.
+  void interpolate(const Function<value_type, geometry_type>& u0)
   {
     assert(_function_space);
     assert(_function_space->mesh());
@@ -247,35 +247,41 @@ public:
     std::vector<std::int32_t> cells(
         cell_imap->size_local() + cell_imap->num_ghosts(), 0);
     std::iota(cells.begin(), cells.end(), 0);
-    interpolate(v, cells, cells);
+    interpolate(u0, cells, cells);
   }
 
   /// @brief Interpolate a Function over a subset of cells.
-  /// @param[in] v Function to be interpolated.
+  ///
+  /// @param[in] u0 Function to be interpolated.
+  /// @param[in] cells0 Cells to interpolate from. These are the indices of
+  /// the cells in the mesh associated with `u0`.
+  /// @param[in] cells1 Cell indices associated with the mesh of `this`
+  /// that will be interpolated to. If `cells0[i]` is the index of a
+  /// cell in the mesh associated with `u0`, then `cells1[i]` is the
+  /// index of the *same* cell but in the mesh associated with `this`.
+  /// This argument can be empty when `this` and `u0` share the same
+  /// mesh. Otherwise the the length of `cells` and the length of
+  /// `cells0` must be the same.
+
+  /// @brief Interpolate a Function over a subset of cells.
+  /// @param[in] u0 Function to be interpolated.
   /// @param[in] cells Cells to interpolate on. These are the indices of
   /// the cells in the mesh associated with `this`.
-  /// @param[in] cell_map For cell `i` in the mesh associated with
-  /// `this`, `cell_map[i]` is the index of the same cell but in the
-  /// mesh associated with `v`. This argument can be empty when `this`
-  /// and for `u` have the same mesh.
-  void interpolate(const Function<value_type, geometry_type>& v,
-                   std::span<const std::int32_t> cells,
-                   std::span<const std::int32_t> cell_map)
+  /// @param[in] cells0 Cell indices associated with the mesh of `u0`
+  /// that will be interpolated from. If `cells[i]` is the index of a
+  /// cell in the mesh associated with `this`, then `cells0[i]` is the
+  /// index of the *same* cell but in the mesh associated with `u0`.
+  /// This argument can be empty when `this` and `u0` share the same
+  /// mesh. Otherwise the the length of `cells` and the length of
+  /// `cells0` must be the same.
+  void interpolate(const Function<value_type, geometry_type>& u0,
+                   std::span<const std::int32_t> cells0,
+                   std::span<const std::int32_t> cells = {})
   {
-    std::vector<std::int32_t> cells_v;
-    cells_v.reserve(cells_v.size());
-    if (v.function_space()->mesh() == this->function_space()->mesh())
-    {
-      // Functions share the same mesh
-      cells_v.insert(cells_v.end(), cells.begin(), cells.end());
-    }
-    else if (!cell_map.empty())
-    {
-      // cell_map is provided, meshes may use different indexing
-      std::transform(cells.begin(), cells.end(), std::back_inserter(cells_v),
-                     [&cell_map](std::int32_t c) { return cell_map[c]; });
-    }
-    fem::interpolate(*this, v, cells, cells_v);
+    if (cells.empty())
+      fem::interpolate(*this, u0, cells0, cells0);
+    else
+      fem::interpolate(*this, u0, cells, cells0);
   }
 
   /// @brief Interpolate an Expression.
@@ -344,7 +350,6 @@ public:
     if (&expr_mesh == _function_space->mesh().get())
       cells_expr.insert(cells_expr.end(), cells.begin(), cells.end());
     else // If meshes are different and input mapping is given
-
     {
       std::transform(cells.begin(), cells.end(), std::back_inserter(cells_expr),
                      [&cell_map](std::int32_t c) { return cell_map[c]; });
