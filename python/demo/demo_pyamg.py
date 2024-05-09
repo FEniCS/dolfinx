@@ -77,10 +77,8 @@ uh = fem.Function(V, dtype=dtype)
 ml = pyamg.ruge_stuben_solver(A)
 print(ml)
 
-res = []
-uh.vector.array[:] = ml.solve(
-    b.array, tol=1e-10, residuals=res
-)  # solve Ax=b to a tolerance of 1e-10
+res: list[float] = []
+uh.vector.array[:] = ml.solve(b.array, tol=1e-10, residuals=res)
 for i, q in enumerate(res):
     print(f"Iteration {i}, residual= {q}")
 
