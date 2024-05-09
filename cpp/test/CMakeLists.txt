@@ -34,6 +34,7 @@ endif()
 add_executable(
   unittests
   main.cpp
+  common/index_map.cpp
   common/CIFailure.cpp
 )
 target_link_libraries(unittests PRIVATE Catch2::Catch2WithMain dolfinx)
