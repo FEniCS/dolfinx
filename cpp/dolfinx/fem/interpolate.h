@@ -110,14 +110,14 @@ std::vector<T> interpolation_coords(const fem::FiniteElement<T>& element,
 /// @tparam U Mesh geometry type
 /// @param[out] u Function object to interpolate into
 /// @param[in] f Evaluation of the function `f(x)` at the physical
-/// points `x` given by fem::interpolation_coords. The element used in
-/// fem::interpolation_coords should be the same element as associated
+/// points `x` given by \ref interpolation_coords. The element used in
+/// \ref interpolation_coords should be the same element as associated
 /// with `u`. The shape of `f` is  `(value_size, num_points)`, with
 /// row-major storage.
 /// @param[in] fshape Shape of `f`.
 /// @param[in] cells Indices of the cells in the mesh on which to
 /// interpolate. Should be the same as the list of cells used when
-/// calling fem::interpolation_coords.
+/// calling \ref interpolation_coords.
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate(Function<T, U>& u, std::span<const T> f,
                  std::array<std::size_t, 2> fshape,
@@ -137,18 +137,18 @@ using mdspan_t = MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
 /// `recv_values` is determined by `dest_ranks`. If the j-th dest rank
 /// is -1, then `recv_values[j*block_size:(j+1)*block_size]) = 0`.
 ///
-/// @param[in] comm The mpi communicator
-/// @param[in] src_ranks The rank owning the values of each row in
-/// send_values
+/// @param[in] comm The MPI communicator
+/// @param[in] src_ranks Rank owning the values of each row in
+/// `send_values`.
 /// @param[in] dest_ranks List of ranks receiving data. Size of array is
 /// how many values we are receiving (not unrolled for block_size).
-/// @param[in] send_values The values to send back to owner. Shape
-/// (src_ranks.size(), block_size).
+/// @param[in] send_values Values to send back to owner. Shape is
+/// `(src_ranks.size(), block_size)`.
 /// @param[in,out] recv_values Array to fill with values.  Shape
-/// (dest_ranks.size(), block_size). Storage is row-major.
+/// `(dest_ranks.size(), block_size)`. Storage is row-major.
 /// @pre It is required that src_ranks are sorted.
-/// @note dest_ranks can contain repeated entries
-/// @note dest_ranks might contain -1 (no process owns the point)
+/// @note `dest_ranks` can contain repeated entries.
+/// @note `dest_ranks` might contain -1 (no process owns the point).
 template <dolfinx::scalar T>
 void scatter_values(MPI_Comm comm, std::span<const std::int32_t> src_ranks,
                     std::span<const std::int32_t> dest_ranks,
@@ -306,15 +306,23 @@ void interpolation_apply(U&& Pi, V&& data, std::span<T> coeffs, int bs)
   }
 }
 
-/// Interpolate from one finite element Function to another on the same
-/// mesh. The function is for cases where the finite element basis
-/// functions are mapped in the same way, e.g. both use the same Piola
-/// map.
-/// @param[out] u1 The function to interpolate to
-/// @param[in] u0 The function to interpolate from
-/// @param[in] cells1 The cells to interpolate on
-/// @param[in] cells0 Equivalent cell in u0 for each cell in u1
-/// @pre The functions `u1` and `u0` must share the same mesh and the
+/// @brief Interpolate from one finite element Function to another on
+/// the same mesh.
+///
+/// The function is for cases where the finite element basis functions
+/// are mapped in the same way, e.g. both use the same Piola map.
+///
+/// @param[out] u1 Function to interpolate into.
+/// @param[in] u0 Function to b interpolated from.
+/// @param[in] cells1 Cell indices associated with the mesh of `u1` that
+/// will be interpolated onto.
+/// @param[in] cells0 Cell indices associated with the mesh of `u0` that
+/// will be interpolated from. If `cells1[i]` is the index of a cell in
+/// the mesh associated with `u1`, then `cells0[i]` is the index of the
+/// *same* cell but in the mesh associated with `u0`. `cells0` and
+/// `cells1` have be the same size.
+///
+/// @pre fem::Functions `u1` and `u0` must share the same mesh and the
 /// elements must share the same basis function map. Neither is checked
 /// by the function.
 template <dolfinx::scalar T, std::floating_point U>
@@ -403,11 +411,14 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
   }
 }
 
-/// Interpolate from one finite element Function to another on the same
-/// mesh. This interpolation function is for cases where the finite
-/// element basis functions for the two elements are mapped differently,
-/// e.g. one may be subject to a Piola mapping and the other to a
-/// standard isoparametric mapping.
+/// @brief Interpolate from one finite element Function to another on
+/// the same mesh.
+///
+/// This interpolation function is for cases where the finite element
+/// basis functions for the two elements are mapped differently, e.g.
+/// one may be subject to a Piola mapping and the other to a standard
+/// isoparametric mapping.
+///
 /// @param[out] u1 Function to interpolate to.
 /// @param[in] u0 Function to interpolate from.
 /// @param[in] cells1 Cells to interpolate on.
@@ -1018,14 +1029,15 @@ void interpolate(Function<T, U>& u, std::span<const T> f,
   }
 }
 
-/// @brief Generate data needed to interpolate discrete functions across
-/// different meshes.
+/// @brief Generate data needed to interpolate finite element Functions
+/// across different meshes.
+///
 /// @param[in] geometry0 Mesh geometry of the space to interpolate into
 /// @param[in] element0 Element of the space to interpolate into
 /// @param[in] mesh1 Mesh of the function to interpolate from
 /// @param[in] cells Indices of the cells in the destination mesh on
 /// which to interpolate. Should be the same as the list used when
-/// calling fem::interpolation_coords.
+/// calling \ref interpolation_coords.
 /// @param[in] padding Absolute padding of bounding boxes of all
 /// entities on `mesh1`. This is used avoid floating point issues when
 /// an interpolation point from `mesh0` is on the surface of a cell in
@@ -1055,14 +1067,14 @@ geometry::PointOwnershipData<T> create_interpolation_data(
   return geometry::determine_point_ownership<T>(mesh1, x, padding);
 }
 
-/// @brief Interpolate a finite element function defined on a grid to a
-/// finite element function defined on different (non-matching) grid.
+/// @brief Interpolate a finite element Function defined on a mesh to a
+/// finite element Function defined on different (non-matching) mesh.
 /// @tparam T Function scalar type.
-/// @tparam U  Mesh geometry scalar type.
+/// @tparam U mesh::Mesh geometry scalar type.
 /// @param u Function to interpolate into.
 /// @param v Function to interpolate from.
-/// @param cells Cells, with indices relative to the mesh associated
-/// with `u`, that will be interpolated into.
+/// @param cells Cells indices relative to the mesh associated with `u`
+/// that will be interpolated into.
 /// @param interpolation_data Data required for associating the
 /// interpolation points of `u` with cells in `v`. This is computed by
 /// fem::create_interpolation_data.
@@ -1127,8 +1139,8 @@ void interpolate(Function<T, U>& u, const Function<T, U>& v,
                       cells);
 }
 
-/// @brief Interpolate from one finite element fem::Function to another
-/// on the same mesh.
+/// @brief Interpolate from one finite element Function to another
+/// Function on the same mesh.
 ///
 /// Interpolation can be performed on a subset of mesh cells and
 /// Functions may be defined on 'sub-meshes'.
