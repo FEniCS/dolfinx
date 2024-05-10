@@ -42,8 +42,8 @@ dtype = np.float64
 
 mesh = create_box(
     comm=MPI.COMM_WORLD,
-    points=((0.0, 0.0, 0.0), (3.0, 2.0, 1.0)),
-    n=(96, 64, 32),
+    points=[(0.0, 0.0, 0.0), (3.0, 2.0, 1.0)],
+    n=[96, 64, 32],
     cell_type=CellType.tetrahedron,
     dtype=dtype,
 )
