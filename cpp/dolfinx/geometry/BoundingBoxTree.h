@@ -34,7 +34,7 @@ std::array<T, 6> compute_bbox_of_entity(const mesh::Mesh<T>& mesh, int dim,
   // FIXME: return of small dynamic array is expensive
   std::span<const std::int32_t> entity(&index, 1);
   const std::vector<std::int32_t> vertex_indices
-      = mesh::entities_to_geometry(mesh, dim, entity, false);
+      = mesh::entities_to_geometry(mesh, dim, entity);
 
   std::array<T, 6> b;
   auto b0 = std::span(b).template subspan<0, 3>();

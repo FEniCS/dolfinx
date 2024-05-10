@@ -30,7 +30,6 @@ def test_manifold_point_search():
         mesh._cpp_object,
         mesh.topology.dim,
         np.array([colliding_cells.links(0)[0], colliding_cells.links(1)[0]]),
-        False,
     )
     cell_vertices = mesh.geometry.x[indices]
 

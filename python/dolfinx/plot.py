@@ -65,7 +65,7 @@ def vtk_mesh(msh: mesh.Mesh, dim: typing.Optional[int] = None, entities=None):
         num_nodes_per_cell = vtk_topology.shape[1]
     else:
         # NOTE: This linearizes higher order geometries
-        geometry_entities = _cpp.mesh.entities_to_geometry(msh._cpp_object, dim, entities, False)
+        geometry_entities = _cpp.mesh.entities_to_geometry(msh._cpp_object, dim, entities)
         if degree > 1:
             warnings.warn("Linearizing topology for higher order sub entities.")
 

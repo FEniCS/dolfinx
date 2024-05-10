@@ -38,7 +38,7 @@ def extract_geometricial_data(mesh, dim, entities):
     mesh_nodes = []
     geom = mesh.geometry
     g_indices = _cpp.mesh.entities_to_geometry(
-        mesh._cpp_object, dim, np.array(entities, dtype=np.int32), False
+        mesh._cpp_object, dim, np.array(entities, dtype=np.int32)
     )
     for cell in g_indices:
         nodes = np.zeros((len(cell), 3), dtype=np.float64)
@@ -73,7 +73,7 @@ def find_colliding_cells(mesh, bbox, dtype):
     colliding_cells = []
     num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
     x_indices = _cpp.mesh.entities_to_geometry(
-        mesh._cpp_object, mesh.topology.dim, np.arange(num_cells, dtype=np.int32), False
+        mesh._cpp_object, mesh.topology.dim, np.arange(num_cells, dtype=np.int32)
     )
     points = mesh.geometry.x
     bounding_box = expand_bbox(bbox, dtype)
@@ -169,7 +169,7 @@ def test_compute_collisions_point_1d(dtype):
     assert len(entities.array) == 1
 
     # Get the vertices of the geometry
-    geom_entities = _cpp.mesh.entities_to_geometry(mesh._cpp_object, tdim, entities.array, False)[0]
+    geom_entities = _cpp.mesh.entities_to_geometry(mesh._cpp_object, tdim, entities.array)[0]
     x = mesh.geometry.x
     cell_vertices = x[geom_entities]
     # Check that we get the cell with correct vertices

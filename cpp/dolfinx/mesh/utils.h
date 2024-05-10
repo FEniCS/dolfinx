@@ -211,7 +211,7 @@ std::vector<T> h(const Mesh<T>& mesh, std::span<const std::int32_t> entities,
 
   // Get the geometry dofs for the vertices of each entity
   const std::vector<std::int32_t> vertex_xdofs
-      = entities_to_geometry(mesh, dim, entities, false);
+      = entities_to_geometry(mesh, dim, entities);
   assert(!entities.empty());
   const std::size_t num_vertices = vertex_xdofs.size() / entities.size();
 
@@ -272,14 +272,8 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
 
   // Find geometry nodes for topology entities
   std::span<const T> x = mesh.geometry().x();
-
-  // Orient cells if they are tetrahedron
-  bool orient = false;
-  if (topology->cell_type() == CellType::tetrahedron)
-    orient = true;
-
   std::vector<std::int32_t> geometry_entities
-      = entities_to_geometry(mesh, dim, entities, orient);
+      = entities_to_geometry(mesh, dim, entities);
 
   const std::size_t shape1 = geometry_entities.size() / entities.size();
   std::vector<T> n(entities.size() * 3);
@@ -388,7 +382,7 @@ std::vector<T> compute_midpoints(const Mesh<T>& mesh, int dim,
   // Build map from entity -> geometry dof
   // FIXME: This assumes a linear geometry.
   const std::vector<std::int32_t> e_to_g
-      = entities_to_geometry(mesh, dim, entities, false);
+      = entities_to_geometry(mesh, dim, entities);
   std::size_t shape1 = e_to_g.size() / entities.size();
 
   std::vector<T> x_mid(entities.size() * 3, 0);
@@ -620,8 +614,6 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
 /// @param[in] dim Topological dimension of the entities of interest.
 /// @param[in] entities Entity indices (local) to compute the vertex
 /// geometry indices for.
-/// @param[in] orient If true, in 3D, reorients facets to have
-/// consistent normal direction.
 /// @return Indices in the geometry array for the entity vertices. The
 /// shape is `(num_entities, num_vertices_per_entity)` and the storage
 /// is row-major. The index `indices[i, j]` is the position in the
@@ -629,7 +621,7 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
 template <std::floating_point T>
 std::vector<std::int32_t>
 entities_to_geometry(const Mesh<T>& mesh, int dim,
-                     std::span<const std::int32_t> entities, bool orient)
+                     std::span<const std::int32_t> entities)
 {
   auto topology = mesh.topology();
   assert(topology);
@@ -637,15 +629,10 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   CellType cell_type = topology->cell_type();
   if (cell_type == CellType::prism and dim == 2)
     throw std::runtime_error("More work needed for prism cells");
-  if (orient and (cell_type != CellType::tetrahedron or dim != 2))
-    throw std::runtime_error("Can only orient facets of a tetrahedral mesh");
-
-  const Geometry<T>& geometry = mesh.geometry();
-  // TODO Remove?
-  auto x = geometry.x();
 
   const int tdim = topology->dim();
 
+  const Geometry<T>& geometry = mesh.geometry();
   auto xdofs = geometry.dofmap();
   auto e_to_c = topology->connectivity(dim, tdim);
   if (!e_to_c)
@@ -701,49 +688,6 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
         xdofs, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     for (std::int32_t entity_dof : closure_dofs)
       entity_xdofs.push_back(x_c[entity_dof]);
-
-    // TODO Remove?
-    //   if (orient)
-    //   {
-    //     // Compute cell midpoint
-    //     std::array<T, 3> midpoint = {0, 0, 0};
-    //     for (std::int32_t j : xc)
-    //       for (int k = 0; k < 3; ++k)
-    //         midpoint[k] += x[3 * j + k];
-    //     std::transform(midpoint.begin(), midpoint.end(), midpoint.begin(),
-    //                    [size = xc.size()](auto x) { return x / size; });
-
-    //     // Compute vector triple product of two edges and vector to midpoint
-    //     std::array<T, 3> p0, p1, p2;
-    //     std::copy_n(std::next(x.begin(), 3 * entity_xdofs[i * num_vertices +
-    //     0]),
-    //                 3, p0.begin());
-    //     std::copy_n(std::next(x.begin(), 3 * entity_xdofs[i * num_vertices +
-    //     1]),
-    //                 3, p1.begin());
-    //     std::copy_n(std::next(x.begin(), 3 * entity_xdofs[i * num_vertices +
-    //     2]),
-    //                 3, p2.begin());
-
-    //     std::array<T, 9> a;
-    //     std::transform(midpoint.begin(), midpoint.end(), p0.begin(),
-    //     a.begin(),
-    //                    [](auto x, auto y) { return x - y; });
-    //     std::transform(p1.begin(), p1.end(), p0.begin(), std::next(a.begin(),
-    //     3),
-    //                    [](auto x, auto y) { return x - y; });
-    //     std::transform(p2.begin(), p2.end(), p0.begin(), std::next(a.begin(),
-    //     6),
-    //                    [](auto x, auto y) { return x - y; });
-
-    //     // Midpoint direction should be opposite to normal, hence this
-    //     // should be negative. Switch points if not.
-    //     if (math::det(a.data(), {3, 3}) > 0.0)
-    //     {
-    //       std::swap(entity_xdofs[i * num_vertices + 1],
-    //                 entity_xdofs[i * num_vertices + 2]);
-    //     }
-    //   }
   }
 
   return entity_xdofs;
@@ -987,7 +931,7 @@ create_subgeometry(const Mesh<T>& mesh, int dim,
   const std::size_t num_entity_dofs = layout.num_entity_closure_dofs(dim);
 
   std::vector<std::int32_t> x_indices
-      = entities_to_geometry(mesh, dim, subentity_to_entity, false);
+      = entities_to_geometry(mesh, dim, subentity_to_entity);
 
   std::vector<std::int32_t> sub_x_dofs = x_indices;
   std::sort(sub_x_dofs.begin(), sub_x_dofs.end());
