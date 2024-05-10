@@ -95,7 +95,8 @@ public:
 
   void permute_subentity_closure(std::span<std::int32_t> d,
                                  std::uint32_t cell_info,
-                                 mesh::CellType entity_type) const;
+                                 mesh::CellType entity_type,
+                                 int entity_index) const;
 
   /// Compute Jacobian for a cell with given geometry using the
   /// basis functions and first order derivatives.

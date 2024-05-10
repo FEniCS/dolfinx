@@ -670,12 +670,8 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   const int num_cell_entities = mesh::cell_num_entities(cell_type, dim);
 
   mesh.topology_mutable()->create_entity_permutations();
-  // std::span<const std::uint32_t> cell_info
-  //     = std::span(mesh.topology()->get_cell_permutation_info());
-  // FIXME Use cell_info
-  std::vector<std::uint8_t> perms(num_cell_entities * c_to_e->num_nodes(), 0);
-  if (dim == mesh.topology()->dim() - 1)
-    perms = mesh.topology()->get_facet_permutations();
+  std::span<const std::uint32_t> cell_info
+      = std::span(mesh.topology()->get_cell_permutation_info());
 
   for (std::size_t i = 0; i < entities.size(); ++i)
   {
@@ -691,15 +687,14 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
     assert(it != cell_entities.end());
     std::size_t local_entity = std::distance(cell_entities.begin(), it);
 
-    std::uint8_t perm = perms[num_cell_entities * c + local_entity];
-
     std::vector<std::int32_t> closure_dofs(
         layout.entity_closure_dofs(dim, local_entity));
     if (dim != topology->dim())
     {
       mesh::CellType entity_type
           = mesh::cell_entity_type(cell_type, dim, local_entity);
-      coord_ele.permute_subentity_closure(closure_dofs, perm, entity_type);
+      coord_ele.permute_subentity_closure(closure_dofs, cell_info[c],
+                                          entity_type, local_entity);
     }
 
     auto x_c = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(

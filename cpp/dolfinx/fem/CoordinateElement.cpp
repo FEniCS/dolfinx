@@ -60,13 +60,14 @@ void CoordinateElement<T>::tabulate(int nd, std::span<const T> X,
 }
 //--------------------------------------------------------------------------------
 template <std::floating_point T>
-void CoordinateElement<T>::permute_subentity_closure(
-    std::span<std::int32_t> d, std::uint32_t cell_info,
-    mesh::CellType entity_type) const
+void CoordinateElement<T>::permute_subentity_closure(std::span<std::int32_t> d,
+                                                     std::uint32_t cell_info,
+                                                     mesh::CellType entity_type,
+                                                     int entity_index) const
 {
   assert(_element);
   _element->permute_subentity_closure_inv(
-      d, cell_info, mesh::cell_type_to_basix_type(entity_type));
+      d, cell_info, mesh::cell_type_to_basix_type(entity_type), entity_index);
 }
 //--------------------------------------------------------------------------------
 template <std::floating_point T>
