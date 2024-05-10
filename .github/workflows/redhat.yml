@@ -60,7 +60,7 @@ jobs:
 
       - name: Build Python interface (editable install)
         run: |
-          python3 -m pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type=Debug --config-settings=build-dir="build" -e python/
+          python3 -m pip -v install --no-build-isolation --config-settings=cmake.build-type=Debug --config-settings=build-dir="build" -e python/
 
       - name: Set default DOLFINx JIT options
         run: |
