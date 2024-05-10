@@ -61,14 +61,9 @@ RUN curl -L -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${HDF5_SERIES
     make -j${BUILD_NP} install && \
     rm -rf /tmp/*
 
-# Install Python packages (via pip)
-# - make sure pip/setuptoools are up-to-date before using them
-# - First set of dependencies for building and running Python DOLFINx
-# - Second set of dependencies for running DOLFINx tests
-RUN python3 -m pip install --no-cache-dir --upgrade pip setuptools && \
-    python3 -m pip install --no-cache-dir cffi numba mpi4py nanobind scikit-build-core[pyproject] wheel && \
-    python3 -m pip install --no-cache-dir pytest pytest-xdist scipy matplotlib
-
+# # Install Python packages (via pip)
+# RUN python3 -m pip install --no-cache-dir --upgrade pip setuptools && \
+#     python3 -m pip install --no-cache-dir mpi4py scikit-build-core[pyproject] wheel && \
 # Build PETSc
 RUN git clone -b v${PETSC_VERSION}  https://gitlab.com/petsc/petsc.git && \
     cd petsc && \
