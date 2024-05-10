@@ -35,16 +35,16 @@ from dolfinx.fem import (
     locate_dofs_topological,
     set_bc,
 )
-from dolfinx.mesh import CellType, create_rectangle, locate_entities_boundary
+from dolfinx.mesh import CellType, create_box, locate_entities_boundary
 from ufl import ds, dx, grad, inner
 
 dtype = np.float64
 
-mesh = create_rectangle(
+mesh = create_box(
     comm=MPI.COMM_WORLD,
-    points=((0.0, 0.0), (2.0, 1.0)),
-    n=(640, 320),
-    cell_type=CellType.triangle,
+    points=((0.0, 0.0, 0.0), (3.0, 2.0, 1.0)),
+    n=(96, 64, 32),
+    cell_type=CellType.tetrahedron,
     dtype=dtype,
 )
 V = functionspace(mesh, ("Lagrange", 1))
@@ -52,10 +52,11 @@ V = functionspace(mesh, ("Lagrange", 1))
 facets = locate_entities_boundary(
     mesh,
     dim=(mesh.topology.dim - 1),
-    marker=lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 2.0),
+    marker=lambda x: np.isclose(x[0], 0.0) | np.isclose(x[0], 3.0),
 )
 
-dofs = locate_dofs_topological(V=V, entity_dim=1, entities=facets)
+tdim = mesh.topology.dim
+dofs = locate_dofs_topological(V=V, entity_dim=tdim - 1, entities=facets)
 
 bc = dirichletbc(value=dtype(0), dofs=dofs, V=V)
 
@@ -78,7 +79,7 @@ ml = pyamg.ruge_stuben_solver(A)
 print(ml)
 
 res: list[float] = []
-uh.vector.array[:] = ml.solve(b.array, tol=1e-10, residuals=res)
+uh.vector.array[:] = ml.solve(b.array, tol=1e-10, residuals=res, accel="cg")
 for i, q in enumerate(res):
     print(f"Iteration {i}, residual= {q}")
 
