@@ -85,7 +85,7 @@ ml = pyamg.ruge_stuben_solver(A)
 print(ml)
 
 res: list[float] = []
-uh.vector.array[:] = ml.solve(b.array, tol=1e-10, residuals=res, accel="cg")
+uh.x.array[:] = ml.solve(b.array, tol=1e-10, residuals=res, accel="cg")
 for i, q in enumerate(res):
     print(f"Iteration {i}, residual= {q}")
 
