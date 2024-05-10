@@ -908,8 +908,7 @@ create_mesh(MPI_Comm comm, std::span<const std::int64_t> cells,
 }
 
 /// @brief Create a sub-geometry for a subset of entities.
-/// @param topology Full mesh topology.
-/// @param geometry Full mesh geometry.
+/// @param mesh The full mesh.
 /// @param dim Topological dimension of the sub-topology.
 /// @param subentity_to_entity Map from sub-topology entity to the
 /// entity in the parent topology.
