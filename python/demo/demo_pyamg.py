@@ -20,7 +20,13 @@ from mpi4py import MPI
 
 # +
 import numpy as np
-import pyamg
+
+try:
+    import pyamg
+except ImportError:
+    print("This demo requires pyamg.")
+    exit(0)
+
 from scipy.sparse import csr_matrix
 
 import ufl
