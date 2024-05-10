@@ -69,6 +69,9 @@ jobs:
           mkdir -p ~/.config/dolfinx
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
 
+      - name: Install test Python dependencies
+        run: python3 -m pip install pytest pytest-xdist
+
       - name: Run demos (Python, serial)
         run: python3 -m pytest -n auto -m serial --durations=10 python/demo/test.py
       - name: Run demos (Python, MPI (np=2))
