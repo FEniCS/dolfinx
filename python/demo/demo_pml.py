@@ -40,7 +40,13 @@ import ufl
 from basix.ufl import element
 from dolfinx import default_real_type, default_scalar_type, fem, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
-from dolfinx.io import VTXWriter, gmshio
+from dolfinx.io import gmshio
+
+try:
+    from dolfinx.io import VTXWriter
+except ModuleNotFoundError:
+    print("This demo requires DOLFINx to be configured with adios2.")
+    exit(0)
 
 try:
     import gmsh
