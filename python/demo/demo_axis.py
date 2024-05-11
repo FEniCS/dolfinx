@@ -62,7 +62,6 @@ try:
     if not dolfinx.has_petsc:
         print("This demo requires DOLFINx to be compiled with PETSc enabled.")
         sys.exit(0)
-
 except ModuleNotFoundError:
     print("This demo requires petsc4py.")
     sys.exit(0)
