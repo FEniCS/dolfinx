@@ -70,7 +70,7 @@ jobs:
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
 
       - name: Install test Python dependencies
-        run: python3 -m pip install numba pytest pytest-xdist scipy
+        run: python3 -m pip install matplotlib numba pytest pytest-xdist scipy
 
       - name: Run demos (Python, serial)
         run: python3 -m pytest -n auto -m serial --durations=10 python/demo/test.py
