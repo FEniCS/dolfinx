@@ -91,7 +91,6 @@ if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
 # the rest of the domain.
 
 
-
 def generate_mesh_wire(
     radius_wire: float,
     radius_dom: float,
