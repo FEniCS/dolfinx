@@ -362,9 +362,9 @@ public:
   /// @brief Interpolate an Expression on all cells.
   /// @param[in] e The function to be interpolated
   /// @param[in] expr_mesh Mesh the expression `e` is defined on.
-  /// @param[in] cell_map Map from cells in the mesh of `this` to cells in
-  /// expression if receiving function is defined on a different mesh than the
-  /// expression
+  /// @param[in] cell_map Map from cells in the mesh of `this` to cells
+  /// in expression if receiving function is defined on a different mesh
+  /// than the expression.
   void interpolate(const Expression<value_type, geometry_type>& e,
                    const mesh::Mesh<geometry_type>& expr_mesh,
                    std::span<const std::int32_t> cell_map = {})
