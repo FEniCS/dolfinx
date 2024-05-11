@@ -163,8 +163,19 @@
 #
 # We begin by importing the required modules and functions
 
+import importlib.util
+
+if importlib.util.find_spec("petsc4py") is not None:
+    import dolfinx
+
+    if not dolfinx.has_petsc:
+        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
+        exit(0)
+else:
+    print("This demo requires petsc4py.")
+    exit(0)
+
 from mpi4py import MPI
-from petsc4py import PETSc
 
 # +
 import numpy as np
@@ -188,6 +199,19 @@ from ufl import (
     inner,
     outer,
 )
+
+try:
+    from petsc4py import PETSc
+
+    import dolfinx
+
+    if not dolfinx.has_petsc:
+        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
+        exit(0)
+except ModuleNotFoundError:
+    print("This demo requires petsc4py.")
+    exit(0)
+
 
 if np.issubdtype(PETSc.ScalarType, np.complexfloating):  # type: ignore
     print("Demo should only be executed with DOLFINx real mode")
