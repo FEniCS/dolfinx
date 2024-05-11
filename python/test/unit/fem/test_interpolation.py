@@ -1054,48 +1054,39 @@ def test_submesh_interpolation():
 
     tdim = mesh.topology.dim
     cells = locate_entities(mesh, tdim, left_locator)
-    submesh, sub_to_parent, _, _ = create_submesh(mesh, tdim, cells)
+    submesh, parent_cells, _, _ = create_submesh(mesh, tdim, cells)
 
     V = functionspace(mesh, ("Lagrange", 2))
-    u = Function(V)
-    u.interpolate(ref_func)
+    u0 = Function(V)
+    u0.interpolate(ref_func)
 
     V1 = functionspace(submesh, ("DG", 3))
     u1 = Function(V1)
 
     # Map from parent to sub mesh
-    foo = np.arange(len(sub_to_parent))
-    print(len(foo), len(sub_to_parent))
-    print(foo)
-    print(sub_to_parent)
-    u1.interpolate(u, cells0=foo, cells1=sub_to_parent)
+    u1.interpolate(u0, cells0=parent_cells, cells1=np.arange(len(parent_cells)))
 
+    u1_exact = Function(V1)
+    u1_exact.interpolate(ref_func)
+    atol = 5 * np.finfo(default_scalar_type).resolution
+    np.testing.assert_allclose(u1_exact.x.array, u1.x.array, atol=atol)
 
-#   u1.interpolate(u, cells0=np.arange(len(sub_to_parent)), cells1=sub_to_parent)
+    # Map from sub to parent
+    W = functionspace(mesh, ("DG", 4))
+    w = Function(W)
 
-# u1_exact = Function(V1)
-# u1_exact.interpolate(ref_func)
-# atol = 5 * np.finfo(default_scalar_type).resolution
-# np.testing.assert_allclose(u1_exact.x.array, u1.x.array, atol=atol)
+    cell_imap = mesh.topology.index_map(tdim)
+    num_cells = cell_imap.size_local + cell_imap.num_ghosts
+    parent_to_sub = np.full(num_cells, -1, dtype=np.int32)
+    parent_to_sub[parent_cells] = np.arange(len(parent_cells))
 
-# # Map from sub to parent
-# W = functionspace(mesh, ("DG", 4))
-# w = Function(W)
+    # Mapping back needs to be restricted to the subset of cells in the submesh
+    w.interpolate(u1_exact, cells0=np.arange(len(parent_cells)), cells1=parent_cells)
 
-# cell_imap = mesh.topology.index_map(tdim)
-# num_cells = cell_imap.size_local + cell_imap.num_ghosts
-# parent_to_sub = np.full(num_cells, -1, dtype=np.int32)
-# parent_to_sub[sub_to_parent] = np.arange(len(sub_to_parent))
+    w_exact = Function(W)
+    w_exact.interpolate(ref_func, cells0=cells)
 
-# # Mapping back needs to be restricted to the subset of cells in the submesh
-# # w.interpolate(u_sub_exact, cells=sub_to_parent, cell_map=parent_to_sub)
-# # w.interpolate(u0_exact, cells=sub_to_parent, cell_map=np.arange(len(sub_to_parent)))
-# w.interpolate(u0_exact, cells=np.arange(len(sub_to_parent), cell_map=sub_to_parent))
-
-# w_exact = Function(W)
-# w_exact.interpolate(ref_func, cells=cells)
-
-# np.testing.assert_allclose(w.x.array, w_exact.x.array, atol=atol)
+    np.testing.assert_allclose(w.x.array, w_exact.x.array, atol=atol)
 
 
 def xtest_submesh_expression_interpolation():

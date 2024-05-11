@@ -449,9 +449,7 @@ class Function(ufl.Coefficient):
                 _cells1 = np.zeros(0, dtype=np.int32)
             else:
                 _cells1 = cells1
-            print("0CCCC", cells1)
             self._cpp_object.interpolate(u0._cpp_object, cells0, cells1)  # type: ignore
-            print("1CCCC")
 
         @_interpolate.register(int)
         def _(u0_ptr: int, cells0: typing.Optional[np.ndarray] = None):
