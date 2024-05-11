@@ -575,7 +575,7 @@ void declare_objects(nb::module_& m, const std::string& type)
       = std::string("create_expression_") + type;
   m.def(
       pymethod_create_expression.c_str(),
-      [](const std::uintptr_t expression,
+      [](std::uintptr_t expression,
          const std::vector<std::shared_ptr<const dolfinx::fem::Function<T, U>>>&
              coefficients,
          const std::vector<std::shared_ptr<const dolfinx::fem::Constant<T>>>&

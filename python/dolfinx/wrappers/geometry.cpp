@@ -35,7 +35,7 @@ void declare_bbtree(nb::module_& m, std::string type)
              const dolfinx::mesh::Mesh<T>& mesh, int dim,
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>
                  entities,
-             double padding = 0.0)
+             double padding)
           {
             new (bbt) dolfinx::geometry::BoundingBoxTree<T>(
                 mesh, dim,
@@ -43,7 +43,7 @@ void declare_bbtree(nb::module_& m, std::string type)
                 padding);
           },
           nb::arg("mesh"), nb::arg("dim"), nb::arg("entities"),
-          nb::arg("padding"))
+          nb::arg("padding") = 0.0)
       .def_prop_ro("num_bboxes",
                    &dolfinx::geometry::BoundingBoxTree<T>::num_bboxes)
       .def(
@@ -202,19 +202,17 @@ void declare_bbtree(nb::module_& m, std::string type)
              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>
                  dest_cells)
           {
-            std::vector _src_owner(src_owner.data(),
-                                   src_owner.data() + src_owner.size());
-            std::vector _dest_owners(dest_owners.data(),
-                                     dest_owners.data() + dest_owners.size());
-            std::vector _dest_points(dest_points.data(),
-                                     dest_points.data() + dest_points.size());
-            std::vector _dest_cells(dest_cells.data(),
-                                    dest_cells.data() + dest_cells.size());
             new (self) dolfinx::geometry::PointOwnershipData<T>{
-                .src_owner = std::move(_src_owner),
-                .dest_owners = std::move(_dest_owners),
-                .dest_points = std::move(_dest_points),
-                .dest_cells = std::move(_dest_cells)};
+                .src_owner = std::vector(src_owner.data(),
+                                         src_owner.data() + src_owner.size()),
+                .dest_owners
+                = std::vector(dest_owners.data(),
+                              dest_owners.data() + dest_owners.size()),
+                .dest_points
+                = std::vector(dest_points.data(),
+                              dest_points.data() + dest_points.size()),
+                .dest_cells = std::vector(
+                    dest_cells.data(), dest_cells.data() + dest_cells.size())};
           },
           nb::arg("src_owner"), nb::arg("dest_owners"), nb::arg("dest_points"),
           nb::arg("dest_cells"))
