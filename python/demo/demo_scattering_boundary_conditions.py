@@ -30,11 +30,32 @@
 # First of all, let's import the modules that will be used:
 
 # +
+import importlib.util
 import sys
 
 from mpi4py import MPI
 
 import numpy as np
+
+if importlib.util.find_spec("petsc4py") is not None:
+    import dolfinx
+
+    if not dolfinx.has_petsc:
+        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
+        exit(0)
+
+    from petsc4py import PETSc
+
+    if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
+        print("This solver fails with PETSc and 64-bit integers becaude of memory errors in MUMPS.")
+        # Note: when PETSc.IntType == np.int32, superlu_dist is used rather
+        # than MUMPS and does not trigger memory failures.
+        exit(0)
+else:
+    print("This demo requires petsc4py.")
+    exit(0)
+
+
 from scipy.special import h2vp, hankel2, jv, jvp
 
 import ufl
@@ -56,13 +77,6 @@ except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
 
-from petsc4py import PETSc
-
-if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
-    print("This solver fails with PETSc and 64-bit integers becaude of memory errors in MUMPS.")
-    # Note: when PETSc.IntType == np.int32, superlu_dist is used rather
-    # than MUMPS and does not trigger memory failures.
-    exit(0)
 
 # -
 # This file defines the `generate_mesh_wire` function, which is used to

@@ -21,6 +21,18 @@
 
 from mpi4py import MPI
 
+try:
+    from petsc4py import PETSc
+
+    import dolfinx
+
+    if not dolfinx.has_petsc:
+        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
+        exit(0)
+except ModuleNotFoundError:
+    print("This demo requires petsc4py.")
+    exit(0)
+
 # +
 import numpy as np
 
@@ -31,16 +43,6 @@ from dolfinx.fem.petsc import LinearProblem
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import create_unit_square
 from ufl import dx, grad, inner
-
-try:
-    from petsc4py import PETSc
-
-    if not dolfinx.has_petsc:
-        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-        exit(0)
-except ModuleNotFoundError:
-    print("This demo requires petsc4py.")
-    exit(0)
 
 # Wavenumber
 k0 = 4 * np.pi
