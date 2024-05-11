@@ -262,26 +262,14 @@ public:
   /// This argument can be empty when `this` and `u0` share the same
   /// mesh. Otherwise the the length of `cells` and the length of
   /// `cells0` must be the same.
-
-  /// @brief Interpolate a Function over a subset of cells.
-  /// @param[in] u0 Function to be interpolated.
-  /// @param[in] cells Cells to interpolate on. These are the indices of
-  /// the cells in the mesh associated with `this`.
-  /// @param[in] cells0 Cell indices associated with the mesh of `u0`
-  /// that will be interpolated from. If `cells[i]` is the index of a
-  /// cell in the mesh associated with `this`, then `cells0[i]` is the
-  /// index of the *same* cell but in the mesh associated with `u0`.
-  /// This argument can be empty when `this` and `u0` share the same
-  /// mesh. Otherwise the the length of `cells` and the length of
-  /// `cells0` must be the same.
   void interpolate(const Function<value_type, geometry_type>& u0,
                    std::span<const std::int32_t> cells0,
-                   std::span<const std::int32_t> cells = {})
+                   std::span<const std::int32_t> cells1 = {})
   {
-    if (cells.empty())
+    if (cells1.empty())
       fem::interpolate(*this, u0, cells0, cells0);
     else
-      fem::interpolate(*this, u0, cells, cells0);
+      fem::interpolate(*this, u0, cells1, cells0);
   }
 
   /// @brief Interpolate an Expression.

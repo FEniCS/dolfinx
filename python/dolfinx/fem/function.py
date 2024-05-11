@@ -419,7 +419,7 @@ class Function(ufl.Coefficient):
         cells1: typing.Optional[np.ndarray] = None,
         expr_mesh: typing.Optional[Mesh] = None,
     ) -> None:
-        """Interpolate an expression
+        """Interpolate an expression.
 
         Args:
             u: The function, Expression or Function to interpolate.
@@ -447,7 +447,7 @@ class Function(ufl.Coefficient):
             self._cpp_object.interpolate(u0, cells0)  # type: ignore
 
         @_interpolate.register(Function)
-        def _(u0: Function, cells0: np.ndarray = None):
+        def _(u0: Function, cells0: np.ndarray):
             """Interpolate a fem.Function"""
             self._cpp_object.interpolate(u0._cpp_object, cells0, cells1)  # type: ignore
 
