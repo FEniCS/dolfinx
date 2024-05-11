@@ -55,7 +55,6 @@ def create_sparsity_pattern(a: Form):
     Note:
         The pattern is not finalised, i.e. the caller is responsible for
         calling ``assemble`` on the sparsity pattern.
-
     """
     return _create_sparsity_pattern(a._cpp_object)
 
