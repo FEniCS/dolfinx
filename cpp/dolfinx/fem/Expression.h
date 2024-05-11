@@ -51,16 +51,18 @@ public:
 
   /// @brief Create an Expression.
   ///
-  /// @note Users should prefer the @ref create_expression factory functions.
+  /// @note Users should prefer the @ref create_expression factory
+  /// functions.
   ///
-  /// @param[in] coefficients Coefficients in the Expression
+  /// @param[in] coefficients Coefficients in the Expression.
   /// @param[in] constants Constants in the Expression
-  /// @param[in] X points on reference cell, `shape=(number of points,
+  /// @param[in] X Points on reference cell, `shape=(number of points,
   /// tdim)` and storage is row-major.
   /// @param[in] Xshape Shape of `X`.
-  /// @param[in] fn function for tabulating expression
-  /// @param[in] value_shape shape of expression evaluated at single point
-  /// @param[in] argument_function_space Function space for Argument
+  /// @param[in] fn Function for tabulating the Expression.
+  /// @param[in] value_shape Shape of Expression evaluated at single
+  /// point.
+  /// @param[in] argument_function_space Function space for Argument.
   Expression(
       const std::vector<std::shared_ptr<
           const Function<scalar_type, geometry_type>>>& coefficients,
@@ -142,14 +144,15 @@ public:
   }
 
   /// @brief Evaluate Expression on cells or facets.
+  ///
   /// @param[in] mesh Cells on which to evaluate the Expression.
-  /// @param[in] entities List of entities to evaluate the expression on. This
-  /// could be either a list of cells or a list of (cell, local facet index)
-  /// tuples. Array is flattened per entity.
-  /// @param[out] values A 2D array to store the result. Caller
-  /// is responsible for correct sizing which should be `(num_cells,
+  /// @param[in] entities List of entities to evaluate the expression
+  /// on. This could be either a list of cells or a list of (cell, local
+  /// @param[out] values A 2D array to store the result. Caller is
+  /// responsible for correct sizing which should be `(num_cells,
   /// num_points * value_size * num_all_argument_dofs columns)`.
-  /// @param[in] vshape The shape of @p values (row-major storage).
+  /// facet index) tuples. Array is flattened per entity.
+  /// @param[in] vshape The shape of `values` (row-major storage).
   void eval(const mesh::Mesh<geometry_type>& mesh,
             std::span<const std::int32_t> entities,
             std::span<scalar_type> values,
