@@ -39,11 +39,27 @@
 # problem:
 
 # +
-import sys
-
 from mpi4py import MPI
 
 import numpy as np
+
+try:
+    from petsc4py import PETSc
+
+    import dolfinx
+
+    if not dolfinx.has_petsc:
+        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
+        exit(0)
+    if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
+        print("This solver fails with PETSc and 64-bit integers becaude of memory errors in MUMPS.")
+        # Note: when PETSc.IntType == np.int32, superlu_dist is used rather
+        # than MUMPS and does not trigger memory failures.
+        exit(0)
+
+except ModuleNotFoundError:
+    print("This demo requires petsc4py.")
+    exit(0)
 
 import ufl
 from basix.ufl import element, mixed_element
@@ -63,15 +79,7 @@ try:
     from slepc4py import SLEPc
 except ModuleNotFoundError:
     print("slepc4py is required for this demo")
-    sys.exit(0)
-
-from petsc4py import PETSc
-
-if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
-    print("This solver fails with PETSc and 64-bit integers becaude of memory errors in MUMPS.")
-    # Note: when PETSc.IntType == np.int32, superlu_dist is used rather
-    # than MUMPS and does not trigger memory failures.
-    sys.exit(0)
+    exit(0)
 # -
 
 # ## Analytical solutions for the half-loaded waveguide

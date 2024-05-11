@@ -22,7 +22,24 @@ from mpi4py import MPI
 import numpy as np
 from scipy.special import jv, jvp
 
-import dolfinx
+try:
+    from petsc4py import PETSc
+
+    import dolfinx
+
+    if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
+        print("This solver fails with PETSc and 64-bit integers becaude of memory errors in MUMPS.")
+        # Note: when PETSc.IntType == np.int32, superlu_dist is used
+        # rather than MUMPS and does not trigger memory failures.
+        exit(0)
+
+    if not dolfinx.has_petsc:
+        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
+        exit(0)
+except ModuleNotFoundError:
+    print("This demo requires petsc4py.")
+    exit(0)
+
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type, default_scalar_type, fem, io, mesh, plot
@@ -49,24 +66,6 @@ try:
 except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
-
-try:
-    from petsc4py import PETSc
-
-    if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
-        print("This solver fails with PETSc and 64-bit integers becaude of memory errors in MUMPS.")
-        # Note: when PETSc.IntType == np.int32, superlu_dist is used rather
-        # than MUMPS and does not trigger memory failures.
-        sys.exit(0)
-
-    if not dolfinx.has_petsc:
-        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-        sys.exit(0)
-except ModuleNotFoundError:
-    print("This demo requires petsc4py.")
-    sys.exit(0)
-
-
 # -
 
 # The time-harmonic Maxwell equation is complex-valued PDE. PETSc must
