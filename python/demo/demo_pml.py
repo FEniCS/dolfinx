@@ -44,7 +44,7 @@ from dolfinx.io import gmshio
 
 try:
     from dolfinx.io import VTXWriter
-except ModuleNotFoundError:
+except ImportError:
     print("This demo requires DOLFINx to be configured with adios2.")
     exit(0)
 
