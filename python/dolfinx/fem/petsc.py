@@ -710,6 +710,7 @@ class LinearProblem:
     Solves of the form :math:`a(u, v) = L(v) \\,  \\forall v \\in V`
     using PETSc as a linear algebra backend.
     """
+
     def __init__(
         self,
         a: ufl.Form,
@@ -858,6 +859,7 @@ class NonlinearProblem:
     Solves problems of the form :math:`F(u, v) = 0 \\ \\forall v \\in V` using
     PETSc as the linear algebra backend.
     """
+
     def __init__(
         self,
         F: ufl.form.Form,
