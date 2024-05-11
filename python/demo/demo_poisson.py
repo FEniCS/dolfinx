@@ -64,8 +64,9 @@
 #
 # The modules that will be used are imported:
 
+import importlib.util
+
 from mpi4py import MPI
-from petsc4py.PETSc import ScalarType  # type: ignore
 
 # +
 import numpy as np
@@ -74,6 +75,17 @@ import ufl
 from dolfinx import fem, io, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
 from ufl import ds, dx, grad, inner
+
+if importlib.util.find_spec("petsc4py") is not None:
+    import dolfinx
+
+    if not dolfinx.has_petsc:
+        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
+        exit(0)
+    from petsc4py.PETSc import ScalarType  # type: ignore
+else:
+    print("This demo requires petsc4py.")
+    exit(0)
 
 # -
 

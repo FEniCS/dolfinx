@@ -25,10 +25,8 @@ from dolfinx.io import XDMFFile, gmshio
 try:
     import gmsh  # type: ignore
 except ImportError:
-    import sys
-
     print("This demo requires gmsh to be installed")
-    sys.exit(0)
+    exit(0)
 # -
 
 # ##  Gmsh model builders

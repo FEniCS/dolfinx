@@ -122,10 +122,10 @@
 import os
 
 from mpi4py import MPI
-from petsc4py import PETSc
 
 import numpy as np
 
+import dolfinx
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type, log, plot
@@ -135,6 +135,16 @@ from dolfinx.io import XDMFFile
 from dolfinx.mesh import CellType, create_unit_square
 from dolfinx.nls.petsc import NewtonSolver
 from ufl import dx, grad, inner
+
+try:
+    from petsc4py import PETSc
+
+    if not dolfinx.has_petsc:
+        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
+        exit(0)
+except ModuleNotFoundError:
+    print("This demo requires petsc4py.")
+    exit(0)
 
 try:
     import pyvista as pv

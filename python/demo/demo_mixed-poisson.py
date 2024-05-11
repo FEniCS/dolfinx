@@ -94,7 +94,6 @@
 # +
 
 from mpi4py import MPI
-from petsc4py import PETSc
 
 import numpy as np
 
@@ -102,6 +101,19 @@ from basix.ufl import element, mixed_element
 from dolfinx import default_real_type, fem, io, mesh
 from dolfinx.fem.petsc import LinearProblem
 from ufl import Measure, SpatialCoordinate, TestFunctions, TrialFunctions, div, exp, inner
+
+try:
+    from petsc4py import PETSc
+
+    import dolfinx
+
+    if not dolfinx.has_petsc:
+        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
+        exit(0)
+except ModuleNotFoundError:
+    print("This demo requires petsc4py.")
+    exit(0)
+
 
 msh = mesh.create_unit_square(MPI.COMM_WORLD, 32, 32, mesh.CellType.quadrilateral)
 
