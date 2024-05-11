@@ -112,6 +112,17 @@
 
 import importlib.util
 
+if importlib.util.find_spec("petsc4py") is not None:
+    import dolfinx
+
+    if not dolfinx.has_petsc:
+        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
+        exit(0)
+    from petsc4py.PETSc import ScalarType  # type: ignore
+else:
+    print("This demo requires petsc4py.")
+    exit(0)
+
 from mpi4py import MPI
 
 # +
@@ -123,15 +134,6 @@ from dolfinx import fem, io, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
 from dolfinx.mesh import CellType, GhostMode
 from ufl import CellDiameter, FacetNormal, avg, div, dS, dx, grad, inner, jump, pi, sin
-
-if importlib.util.find_spec("petsc4py") is not None:
-    if not dolfinx.has_petsc:
-        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
-        exit(0)
-    from petsc4py.PETSc import ScalarType  # type: ignore
-else:
-    print("This demo requires petsc4py.")
-    exit(0)
 
 # -
 
