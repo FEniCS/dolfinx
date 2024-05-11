@@ -53,9 +53,12 @@ try:
         exit(0)
     if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
         print("This solver fails with PETSc and 64-bit integers becaude of memory errors in MUMPS.")
-        # Note: when PETSc.IntType == np.int32, superlu_dist is used rather
-        # than MUMPS and does not trigger memory failures.
+        # Note: when PETSc.IntType == np.int32, superlu_dist is used
+        # rather than MUMPS and does not trigger memory failures.
         exit(0)
+
+    real_type = PETSc.RealType
+    scalar_type = PETSc.ScalarType
 
 except ModuleNotFoundError:
     print("This demo requires petsc4py.")
@@ -63,7 +66,7 @@ except ModuleNotFoundError:
 
 import ufl
 from basix.ufl import element, mixed_element
-from dolfinx import default_real_type, default_scalar_type, fem, io, plot
+from dolfinx import fem, io, plot
 from dolfinx.fem.petsc import assemble_matrix
 from dolfinx.mesh import CellType, create_rectangle, exterior_facet_indices, locate_entities
 
@@ -211,8 +214,8 @@ eps = fem.Function(D)
 cells_v = locate_entities(msh, msh.topology.dim, Omega_v)
 cells_d = locate_entities(msh, msh.topology.dim, Omega_d)
 
-eps.x.array[cells_d] = np.full_like(cells_d, eps_d, dtype=default_scalar_type)
-eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=default_scalar_type)
+eps.x.array[cells_d] = np.full_like(cells_d, eps_d, dtype=scalar_type)
+eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=scalar_type)
 # -
 
 # In order to find the weak form of our problem, the starting point are
@@ -297,8 +300,8 @@ eps.x.array[cells_v] = np.full_like(cells_v, eps_v, dtype=default_scalar_type)
 # `mixed_element`:
 
 degree = 1
-RTCE = element("RTCE", msh.basix_cell(), degree, dtype=default_real_type)
-Q = element("Lagrange", msh.basix_cell(), degree, dtype=default_real_type)
+RTCE = element("RTCE", msh.basix_cell(), degree, dtype=real_type)
+Q = element("Lagrange", msh.basix_cell(), degree, dtype=real_type)
 V = fem.functionspace(msh, mixed_element([RTCE, Q]))
 
 # Now we can define our weak form:
