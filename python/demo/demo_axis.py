@@ -22,6 +22,7 @@ from mpi4py import MPI
 import numpy as np
 from scipy.special import jv, jvp
 
+import dolfinx
 import ufl
 from basix.ufl import element, mixed_element
 from dolfinx import default_real_type, default_scalar_type, fem, io, mesh, plot
@@ -32,13 +33,13 @@ try:
 
     has_vtx = True
 except ImportError:
-    print("VTXWriter not available, solution won't be saved")
+    print("VTXWriter not available, solution will not be saved.")
     has_vtx = False
 
 try:
     import gmsh
 except ModuleNotFoundError:
-    print("This demo requires gmsh to be installed")
+    print("This demo requires gmsh to be installed.")
     sys.exit(0)
 
 try:
@@ -49,13 +50,24 @@ except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
 
-from petsc4py import PETSc
+try:
+    from petsc4py import PETSc
 
-if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
-    print("This solver fails with PETSc and 64-bit integers becaude of memory errors in MUMPS.")
-    # Note: when PETSc.IntType == np.int32, superlu_dist is used rather
-    # than MUMPS and does not trigger memory failures.
+    if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
+        print("This solver fails with PETSc and 64-bit integers becaude of memory errors in MUMPS.")
+        # Note: when PETSc.IntType == np.int32, superlu_dist is used rather
+        # than MUMPS and does not trigger memory failures.
+        sys.exit(0)
+
+    if not dolfinx.has_petsc:
+        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
+        sys.exit(0)
+
+except ModuleNotFoundError:
+    print("This demo requires petsc4py.")
     sys.exit(0)
+
+
 # -
 
 # The time-harmonic Maxwell equation is complex-valued PDE. PETSc must
@@ -87,7 +99,7 @@ def generate_mesh_sphere_axis(
     gmsh.model.occ.addCircle(0, 0, 0, radius_scatt, angle1=-np.pi / 2, angle2=np.pi / 2, tag=3)
     gmsh.model.occ.addCircle(0, 0, 0, radius_dom, angle1=-np.pi / 2, angle2=np.pi / 2, tag=4)
     gmsh.model.occ.addCircle(
-        0, 0, 0, radius_dom + radius_pml, angle1=-np.pi / 2, angle2=pi / 2, tag=5
+        0, 0, 0, radius_dom + radius_pml, angle1=-np.pi / 2, angle2=np.pi / 2, tag=5
     )
 
     gmsh.model.occ.addLine(10, 8, tag=6)
