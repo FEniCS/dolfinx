@@ -285,25 +285,29 @@ public:
   }
 
   /// @brief Interpolate an Expression.
-  /// @param[in] e Expression to be interpolated. The Expression must
+  /// @param[in] e0 Expression to be interpolated. The Expression must
   /// have been created using the reference coordinates.
   /// FiniteElement::interpolation_points for the element associated
   /// with `u`.
-  /// @param[in] cells Cells to interpolate on.
+  /// @param[in] cells0 Cells in `expr_mesh` to interpolate from
   /// @param[in] expr_mesh Mesh to evaluate the expression on.
-  /// @param[in] cell_map For cell `i` in the mesh associated
-  /// with`this`, `cell_map[i]` is the index of the same cell, but in
-  /// `expr_mesh`.
-  void interpolate(const Expression<value_type, geometry_type>& e,
-                   std::span<const std::int32_t> cells,
+  /// @param[in] cells1 For cell `i` in the mesh associated with`this`,
+  /// `cell_map[i]` is the index of the same cell, but in `expr_mesh`.
+  void interpolate(const Expression<value_type, geometry_type>& e0,
+                   std::span<const std::int32_t> cells0,
                    const mesh::Mesh<geometry_type>& expr_mesh,
-                   std::span<const std::int32_t> cell_map = {})
+                   std::span<const std::int32_t> cells1 = {})
   {
+    if (cells1.empty())
+      cells1 = cells0;
+    if (cells0.size() != cells1.size())
+      throw std::runtime_error("Cells lists have different lengths.");
+
     // Check that spaces are compatible
     assert(_function_space);
     assert(_function_space->element());
-    std::size_t value_size = e.value_size();
-    if (e.argument_function_space())
+    std::size_t value_size = e0.value_size();
+    if (e0.argument_function_space())
       throw std::runtime_error("Cannot interpolate Expression with Argument");
 
     if (value_size != _function_space->value_size())
@@ -314,7 +318,7 @@ public:
 
     {
       // Compatibility check
-      auto [X0, shape0] = e.X();
+      auto [X0, shape0] = e0.X();
       auto [X1, shape1] = _function_space->element()->interpolation_points();
       if (shape0 != shape1)
       {
@@ -334,8 +338,8 @@ public:
     }
 
     // Array to hold evaluated Expression
-    std::size_t num_cells = cells.size();
-    std::size_t num_points = e.X().second[0];
+    std::size_t num_cells = cells0.size();
+    std::size_t num_points = e0.X().second[0];
     std::vector<value_type> fdata(num_cells * num_points * value_size);
     MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
         const value_type,
@@ -345,17 +349,7 @@ public:
     // Evaluate Expression at points
     assert(_function_space->mesh());
 
-    std::vector<std::int32_t> cells_expr;
-    cells_expr.reserve(num_cells);
-    if (&expr_mesh == _function_space->mesh().get())
-      cells_expr.insert(cells_expr.end(), cells.begin(), cells.end());
-    else // If meshes are different and input mapping is given
-    {
-      std::transform(cells.begin(), cells.end(), std::back_inserter(cells_expr),
-                     [&cell_map](std::int32_t c) { return cell_map[c]; });
-    }
-
-    e.eval(expr_mesh, cells_expr, fdata, {num_cells, num_points * value_size});
+    e0.eval(expr_mesh, cells0, fdata, {num_cells, num_points * value_size});
 
     // Reshape evaluated data to fit interpolate
     // Expression returns matrix of shape (num_cells, num_points *
@@ -374,7 +368,7 @@ public:
     // Interpolate values into appropriate space
     fem::interpolate(*this,
                      std::span<const value_type>(fdata1.data(), fdata1.size()),
-                     {value_size, num_cells * num_points}, cells);
+                     {value_size, num_cells * num_points}, cells1);
   }
 
   /// @brief Interpolate an Expression on all cells.

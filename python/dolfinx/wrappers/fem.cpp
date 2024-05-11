@@ -460,17 +460,17 @@ void declare_objects(nb::module_& m, const std::string& type)
       .def(
           "interpolate",
           [](dolfinx::fem::Function<T, U>& self,
-             const dolfinx::fem::Expression<T, U>& expr,
-             nb::ndarray<const std::int32_t, nb::c_contig> cells,
+             const dolfinx::fem::Expression<T, U>& e0,
+             nb::ndarray<const std::int32_t, nb::c_contig> cells0,
              const dolfinx::mesh::Mesh<U>& expr_mesh,
-             nb::ndarray<const std::int32_t, nb::c_contig> cell_map)
+             nb::ndarray<const std::int32_t, nb::c_contig> cells1)
           {
-            self.interpolate(expr, std::span(cells.data(), cells.size()),
+            self.interpolate(e0, std::span(cells0.data(), cells0.size()),
                              expr_mesh,
-                             std::span(cell_map.data(), cell_map.size()));
+                             std::span(cells1.data(), cells1.size()));
           },
-          nb::arg("expr"), nb::arg("cells"), nb::arg("expr_mesh"),
-          nb::arg("cell_map"), "Interpolate an Expression on a set of cells")
+          nb::arg("e0"), nb::arg("cells0"), nb::arg("expr_mesh"),
+          nb::arg("cells1"), "Interpolate an Expression on a set of cells")
       .def_prop_ro(
           "x", nb::overload_cast<>(&dolfinx::fem::Function<T, U>::x),
           "Return the vector associated with the finite element Function")

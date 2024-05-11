@@ -418,7 +418,6 @@ class Function(ufl.Coefficient):
         cells0: typing.Optional[np.ndarray] = None,
         cells1: typing.Optional[np.ndarray] = None,
         expr_mesh: typing.Optional[Mesh] = None,
-        interpolation_data: typing.Optional[PointOwnershipData] = None,
     ) -> None:
         """Interpolate an expression
 
@@ -426,10 +425,12 @@ class Function(ufl.Coefficient):
             u: The function, Expression or Function to interpolate.
             cells0: The cells to interpolate over. If `None` then all
                 cells are interpolated over.
-            cell1: Mapping from `cells` to to cells in the mesh that `u` is defined over.
-            expr_mesh: If an Expression with coefficients or constants from another mesh
-                than the function is supplied, the mesh associated with this expression has
-                to be provided, along with `cell_map.`
+            cells1: Mapping from `cells` to to cells in the mesh that `u`
+                is defined over.
+            expr_mesh: If an Expression with coefficients or constants
+                from another mesh than the function is supplied, the
+                mesh associated with this expression has to be provided,
+                along with `cell_map.`
         """
 
         if cells0 is None:
@@ -437,46 +438,38 @@ class Function(ufl.Coefficient):
             map = mesh.topology.index_map(mesh.topology.dim)
             cells0 = np.arange(map.size_local + map.num_ghosts, dtype=np.int32)
 
+        if cells1 is None:
+            cells1 = cells0
+
         @singledispatch
-        def _interpolate(u0, cells0: typing.Optional[np.ndarray] = None):
-            """Interpolate a cpp.fem.Function"""
-            self._cpp_object.interpolate(u0, cells0, interpolation_data)  # type: ignore
+        def _interpolate(u0, cells0: np.ndarray):
+            """Interpolate a cpp.fem.Function."""
+            self._cpp_object.interpolate(u0, cells0)  # type: ignore
 
         @_interpolate.register(Function)
-        def _(u0: Function, cells0: typing.Optional[np.ndarray] = None):
+        def _(u0: Function, cells0: np.ndarray = None):
             """Interpolate a fem.Function"""
-            if cells1 is None:
-                _cells1 = np.zeros(0, dtype=np.int32)
-            else:
-                _cells1 = cells1
             self._cpp_object.interpolate(u0._cpp_object, cells0, cells1)  # type: ignore
 
         @_interpolate.register(int)
-        def _(u0_ptr: int, cells0: typing.Optional[np.ndarray] = None):
+        def _(u0_ptr: int, cells0: np.ndarray):
             """Interpolate using a pointer to a function f(x)"""
             self._cpp_object.interpolate_ptr(u0_ptr, cells0)  # type: ignore
 
         @_interpolate.register(Expression)
-        def _(expr: Expression, cells: typing.Optional[np.ndarray] = None):
-            """Interpolate Expression from a given mesh onto the set of cells
+        def _(e0: Expression, cells0):
+            """Interpolate Expression from a given mesh onto the set of cells.
+
             Args:
                 expr: Expression to interpolate
                 cells: The cells to interpolate over. If `None` then all
                     cells are interpolated over.
             """
-            if cell_map is None:
-                # If cell map is not provided create identity map
-                assert cells is not None
-                expr_cell_map = np.arange(len(cells), dtype=np.int32)
-                assert expr_mesh is None
-                mapping_mesh = self.function_space.mesh._cpp_object
+            if expr_mesh is None:
+                emesh = self.function_space.mesh
             else:
-                # If cell map is provided check that there is a mesh
-                # associated with the expression
-                expr_cell_map = cell_map
-                assert expr_mesh is not None
-                mapping_mesh = expr_mesh._cpp_object
-            self._cpp_object.interpolate(expr._cpp_object, cells, mapping_mesh, expr_cell_map)  # type: ignore
+                emesh = expr_mesh
+            self._cpp_object.interpolate(e0._cpp_object, cells0, emesh._cpp_object, cells1)  # type: ignore
 
         try:
             # u is a Function or Expression (or pointer to one)
