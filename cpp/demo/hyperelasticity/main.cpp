@@ -269,7 +269,7 @@ int main(int argc, char* argv[])
 
     auto sigma = fem::Function<T>(S);
     sigma.name = "cauchy_stress";
-    sigma.interpolate(sigma_expression, *mesh);
+    sigma.interpolate(sigma_expression);
 
     // Save solution in VTK format
     io::VTKFile file_u(mesh->comm(), "u.pvd", "w");

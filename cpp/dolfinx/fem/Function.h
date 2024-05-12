@@ -269,7 +269,7 @@ public:
     if (cells1.empty())
       fem::interpolate(*this, u0, cells0, cells0);
     else
-      fem::interpolate(*this, u0, cells1, cells0);
+      fem::interpolate(*this, u0, cells0, cells1);
   }
 
   /// @brief Interpolate an Expression.
@@ -277,35 +277,61 @@ public:
   /// have been created using the reference coordinates.
   /// FiniteElement::interpolation_points for the element associated
   /// with `u`.
-  /// @param[in] cells0 Cells in `expr_mesh` to interpolate from
-  /// @param[in] expr_mesh Mesh to evaluate the expression on.
+  /// @param[in] cells0 Cells in the mesh associated with `e0` to
+  /// interpolate from.
   /// @param[in] cells1 For cell `i` in the mesh associated with`this`,
   /// `cell_map[i]` is the index of the same cell, but in `expr_mesh`.
   void interpolate(const Expression<value_type, geometry_type>& e0,
                    std::span<const std::int32_t> cells0,
-                   const mesh::Mesh<geometry_type>& expr_mesh,
                    std::span<const std::int32_t> cells1 = {})
   {
-    if (cells1.empty())
+    // Extract mesh
+    const mesh::Mesh<geometry_type>* mesh0 = nullptr;
+    for (auto& c : e0.coefficients())
+    {
+      assert(c);
+      assert(c->function_space());
+      assert(c->function_space()->mesh());
+      if (const mesh::Mesh<geometry_type>* mesh
+          = c->function_space()->mesh().get();
+          !mesh0)
+      {
+        mesh0 = mesh;
+      }
+      else if (mesh != mesh0)
+      {
+        throw std::runtime_error(
+            "Expression coefficient Functions have different meshes.");
+      }
+    }
+
+    // If Expression has no Function coefficients take mesh from `this`.
+    assert(_function_space);
+    assert(_function_space->mesh());
+    if (!mesh0)
+      mesh0 = _function_space->mesh().get();
+
+    // If cells1 is empty and Function and Expression meshes are the
+    // same, make cells1 the same as cells0. Otherwise check that
+    // lengths of cells0 and cells1 are the same.
+    if (cells1.empty() and mesh0 == _function_space->mesh().get())
       cells1 = cells0;
-    if (cells0.size() != cells1.size())
+    else if (cells0.size() != cells1.size())
       throw std::runtime_error("Cells lists have different lengths.");
 
-    // Check that spaces are compatible
-    assert(_function_space);
+    // Check that Function and Expression spaces are compatible
     assert(_function_space->element());
     std::size_t value_size = e0.value_size();
     if (e0.argument_function_space())
-      throw std::runtime_error("Cannot interpolate Expression with Argument");
-
+      throw std::runtime_error("Cannot interpolate Expression with Argument.");
     if (value_size != _function_space->value_size())
     {
       throw std::runtime_error(
-          "Function value size not equal to Expression value size");
+          "Function value size not equal to Expression value size.");
     }
 
+    // Compatibility check
     {
-      // Compatibility check
       auto [X0, shape0] = e0.X();
       auto [X1, shape1] = _function_space->element()->interpolation_points();
       if (shape0 != shape1)
@@ -335,9 +361,8 @@ public:
         f(fdata.data(), num_cells, num_points, value_size);
 
     // Evaluate Expression at points
-    assert(_function_space->mesh());
 
-    e0.eval(expr_mesh, cells0, fdata, {num_cells, num_points * value_size});
+    e0.eval(*mesh0, cells0, fdata, {num_cells, num_points * value_size});
 
     // Reshape evaluated data to fit interpolate
     // Expression returns matrix of shape (num_cells, num_points *
@@ -360,24 +385,20 @@ public:
   }
 
   /// @brief Interpolate an Expression on all cells.
-  /// @param[in] e The function to be interpolated
-  /// @param[in] expr_mesh Mesh the expression `e` is defined on.
-  /// @param[in] cell_map Map from cells in the mesh of `this` to cells
-  /// in expression if receiving function is defined on a different mesh
-  /// than the expression.
-  void interpolate(const Expression<value_type, geometry_type>& e,
-                   const mesh::Mesh<geometry_type>& expr_mesh,
-                   std::span<const std::int32_t> cell_map = {})
+  /// @param[in] e The Expression to be interpolated.
+  void interpolate(const Expression<value_type, geometry_type>& e)
   {
     assert(_function_space);
     assert(_function_space->mesh());
-    const int tdim = _function_space->mesh()->topology()->dim();
+    int tdim = _function_space->mesh()->topology()->dim();
     auto cell_imap = _function_space->mesh()->topology()->index_map(tdim);
     assert(cell_imap);
     std::int32_t num_cells = cell_imap->size_local() + cell_imap->num_ghosts();
+
     std::vector<std::int32_t> cells(num_cells, 0);
     std::iota(cells.begin(), cells.end(), 0);
-    interpolate(e, cells, expr_mesh, cell_map);
+
+    interpolate(e, cells);
   }
 
   /// @brief Interpolate a Function defined on a different mesh.
