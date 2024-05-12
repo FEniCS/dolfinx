@@ -531,12 +531,16 @@ compute_entities_by_key_matching(
 
         // Get entity vertices. Padded with -1 if fewer than
         // max_vertices_per_entity
+        // NOTE Entity vertices are reordered so that their local (to
+        // the process) orientation agrees with their global orientation
         // FIXME This might be better below when the entity to vertex
         // connectivity is computed
         std::vector<std::int32_t> entity_vertices(ev.size());
         for (std::size_t j = 0; j < ev.size(); ++j)
           entity_vertices[j] = vertices[ev[j]];
 
+        // Orient the entities. Simply sort according to global vertex index
+        // for simplices
         std::vector<std::int64_t> global_vertices(entity_vertices.size());
         vertex_index_map.local_to_global(entity_vertices, global_vertices);
 
@@ -545,6 +549,8 @@ compute_entities_by_key_matching(
         std::sort(perm.begin(), perm.end(),
                   [&global_vertices](std::size_t i0, std::size_t i1)
                   { return global_vertices[i0] < global_vertices[i1]; });
+        // For quadrilaterals, the vertex opposite the lowest vertex should
+        // be last
         if (entity_type == mesh::CellType::quadrilateral)
         {
           std::size_t min_vertex_idx = perm[0];
