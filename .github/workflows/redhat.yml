@@ -59,6 +59,9 @@ jobs:
           ctest -V -R demo -R serial
           ctest -V -R demo -R mpi_2
 
+      - name: Install Python dependencies
+        run: |
+          python3 -m pip install cffi numba nanobind scikit-build-core[pyproject] pytest pytest-xdist scipy matplotlib
       - name: Build Python interface (editable install)
         run: |
           python3 -m pip install mpi4py nanobind scikit-build-core[pyproject]

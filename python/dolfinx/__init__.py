@@ -30,6 +30,7 @@ from dolfinx.common import (
     git_commit_hash,
     has_debug,
     has_kahip,
+    has_petsc,
     has_parmetis,
     list_timings,
     timing,
