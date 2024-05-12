@@ -1050,6 +1050,7 @@ def test_nonmatching_mesh_single_cell_overlap_interpolation(xtype):
     assert np.isclose(l2_error, 0.0, rtol=np.finfo(xtype).eps, atol=np.finfo(xtype).eps)
 
 
+@pytest.mark.skip_in_parallel
 def test_submesh_interpolation():
     """Test interpolation of a function between a submesh and its parent"""
     mesh = create_unit_square(MPI.COMM_WORLD, 6, 7)
