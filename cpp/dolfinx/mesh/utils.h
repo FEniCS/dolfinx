@@ -919,15 +919,11 @@ std::pair<Geometry<T>, std::vector<int32_t>>
 create_subgeometry(const Mesh<T>& mesh, int dim,
                    std::span<const std::int32_t> subentity_to_entity)
 {
-  const Topology& topology = *mesh.topology();
-
   const Geometry<T>& geometry = mesh.geometry();
 
   // Get the geometry dofs in the sub-geometry based on the entities in
   // sub-geometry
   const fem::ElementDofLayout layout = geometry.cmap().create_dof_layout();
-  // NOTE: Unclear what this return for prisms
-  const std::size_t num_entity_dofs = layout.num_entity_closure_dofs(dim);
 
   std::vector<std::int32_t> x_indices
       = entities_to_geometry(mesh, dim, subentity_to_entity);
