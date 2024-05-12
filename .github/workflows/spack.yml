@@ -34,6 +34,8 @@ jobs:
       PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe   # Newer OpenMPI
       OMPI_MCA_rmaps_base_oversubscribe: true                 # Older OpenMPI
 
+      DOLFINX_RELEASE_VERSION: "${{ github.event_name != 'workflow_dispatch' && '0.8.0' || github.event.inputs.dolfinx_version }}"
+
     steps:
       - name: Get Spack
         if: github.event_name != 'workflow_dispatch'
@@ -85,19 +87,19 @@ jobs:
           . ./spack/share/spack/setup-env.sh
           spack env create cpp-release
           spack env activate cpp-release
-          spack add fenics-dolfinx@${{ github.event.inputs.dolfinx_version }}+adios2
+          spack add fenics-dolfinx@${DOLFINX_RELEASE_VERSION}+adios2
           spack install
       - name: Get DOLFINx release code (to access test files)
         uses: actions/checkout@v4
         with:
-          ref:  v${{ github.event.inputs.dolfinx_version }}
+          ref:  v${{ env.DOLFINX_RELEASE_VERSION }}
           path: ./dolfinx-release
       - name: Run a C++ test (release version)
         run: |
           . ./spack/share/spack/setup-env.sh
           spack env create cpp-release-test
           spack env activate cpp-release-test
-          spack add fenics-dolfinx@${{ github.event.inputs.dolfinx_version }}+adios2 cmake py-fenics-ffcx
+          spack add fenics-dolfinx@${DOLFINX_RELEASE_VERSION}+adios2 cmake py-fenics-ffcx
           spack install
           cd dolfinx-release/cpp/
           cd demo/poisson
@@ -124,7 +126,7 @@ jobs:
           . ./spack/share/spack/setup-env.sh
           spack env create py-release
           spack env activate py-release
-          spack add py-fenics-dolfinx@${{ github.event.inputs.dolfinx_version }}
+          spack add py-fenics-dolfinx@${DOLFINX_RELEASE_VERSION}
           spack install -j 4
       - name: Run DOLFINx (Python, release) test
         run: |

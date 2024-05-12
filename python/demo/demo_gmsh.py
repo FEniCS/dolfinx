@@ -25,19 +25,16 @@ from dolfinx.io import XDMFFile, gmshio
 try:
     import gmsh  # type: ignore
 except ImportError:
-    import sys
-
     print("This demo requires gmsh to be installed")
-    sys.exit(0)
+    exit(0)
 # -
 
 # ##  Gmsh model builders
 #
 # The following functions add Gmsh meshes to a 'model'.
 
+
 # +
-
-
 def gmsh_sphere(model: gmsh.model, name: str) -> gmsh.model:
     """Create a Gmsh model of a sphere.
 
@@ -74,9 +71,7 @@ def gmsh_sphere_minus_box(model: gmsh.model, name: str) -> gmsh.model:
 
     Returns:
         Gmsh model with a sphere mesh added.
-
     """
-
     model.add(name)
     model.setCurrent(name)
 
@@ -109,7 +104,6 @@ def gmsh_ring(model: gmsh.model, name: str) -> gmsh.model:
 
     Returns:
         Gmsh model with a sphere mesh added.
-
     """
     model.add(name)
     model.setCurrent(name)
@@ -166,7 +160,6 @@ def create_mesh(comm: MPI.Comm, model: gmsh.model, name: str, filename: str, mod
         name: Name (identifier) of the mesh to add.
         filename: XDMF filename.
         mode: XDMF file mode. "w" (write) or "a" (append).
-
     """
     msh, ct, ft = gmshio.model_to_mesh(model, comm, rank=0)
     msh.name = name
