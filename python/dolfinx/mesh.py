@@ -759,22 +759,14 @@ def create_unit_cube(
 def entities_to_geometry(
     mesh: Mesh, dim: int, entities: npt.NDArray[np.int32]
 ) -> npt.NDArray[np.int32]:
-    """Indices in the geometry data for each vertex of the given mesh entities.
-
-    Warning:
-        This function should not be used unless there is no alternative.
-        It may be removed in the future.
+    """Compute the geometric DOFs associated with the closure of the given mesh entities.
 
     Args:
         mesh: The mesh.
         dim: Topological dimension of the entities of interest.
-        entities: Entity indices (local to the process) to determine the
-            vertex geometry indices for.
-        orient: If True, the triangular facets of a 3D mesh will be reordered
-            so that they have a consistent normal direction. This option is likely
-            to be removed in the future.
+        entities: Entity indices (local to the process).
 
     Returns:
-        Indices in the geometry array for the entity vertices.
+        The geometric DOFs associated with the closure of the entities in `entities`.
     """
     return _cpp.mesh.entities_to_geometry(mesh._cpp_object, dim, entities)
