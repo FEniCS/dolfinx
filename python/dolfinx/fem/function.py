@@ -420,14 +420,13 @@ class Function(ufl.Coefficient):
         Args:
             u0: Callable function, Expression or Function to
                interpolate.
-            cells0: Cells in ``u0`` to interpolate over. If ``None``
-                then all cells are interpolated over.
+            cells0: Cells in mesh associated with ``u0`` to interpolate
+                over. If ``None`` then all cells are interpolated over.
             cells1: Cells in the mesh associated with ``self`` to
                 interpolate over. If ``None``, then taken to be the same
                 cells as ``cells0``. If ``cells1`` is not ``None``, then
                 it must have the same length as ``cells0``.
         """
-
         if cells0 is None:
             mesh = self.function_space.mesh
             map = mesh.topology.index_map(mesh.topology.dim)
@@ -443,16 +442,17 @@ class Function(ufl.Coefficient):
 
         @_interpolate.register(Function)
         def _(u0: Function):
-            """Interpolate a fem.Function"""
+            """Interpolate a fem.Function."""
             self._cpp_object.interpolate(u0._cpp_object, cells0, cells1)  # type: ignore
 
         @_interpolate.register(int)
         def _(u0_ptr: int):
-            """Interpolate using a pointer to a function f(x)"""
+            """Interpolate using a pointer to a function f(x)."""
             self._cpp_object.interpolate_ptr(u0_ptr, cells0)  # type: ignore
 
         @_interpolate.register(Expression)
         def _(e0: Expression):
+            """Interpolate a fem.Expression."""
             self._cpp_object.interpolate(e0._cpp_object, cells0, cells1)  # type: ignore
 
         try:
@@ -465,8 +465,13 @@ class Function(ufl.Coefficient):
             self._cpp_object.interpolate(np.asarray(u0(x), dtype=self.dtype), cells0)  # type: ignore
 
     def copy(self) -> Function:
-        """Create a copy of the Function. The function space is shared
-        and the degree-of-freedom vector is copied.
+        """Create a copy of the Function.
+
+        The function space is shared and the degree-of-freedom vector is
+        copied.
+
+        Returns:
+            A new Function with a copy of the degree-of-freedom vector.
         """
         return Function(
             self.function_space, la.Vector(type(self.x._cpp_object)(self.x._cpp_object))
@@ -608,10 +613,10 @@ def functionspace(
     """Create a finite element function space.
 
     Args:
-        mesh: Mesh that space is defined on
-        element: Finite element description
-        form_compiler_options: Options passed to the form compiler
-        jit_options: Options controlling just-in-time compilation
+        mesh: Mesh that space is defined on.
+        element: Finite element description.
+        form_compiler_options: Options passed to the form compiler.
+        jit_options: Options controlling just-in-time compilation.
 
     Returns:
         A function space.
@@ -675,11 +680,12 @@ class FunctionSpace(ufl.FunctionSpace):
 
         Note:
             This initialiser is for internal use and not normally called
-            in user code. Use :func:`functionspace` to create a function space.
+            in user code. Use :func:`functionspace` to create a function
+            space.
 
         Args:
-            mesh: Mesh that space is defined on
-            element: UFL finite element
+            mesh: Mesh that space is defined on.
+            element: UFL finite element.
             cppV: Compiled C++ function space.
         """
         if mesh._cpp_object is not cppV.mesh:
