@@ -421,14 +421,15 @@ void interpolate_same_map(Function<T, U>& u1, const Function<T, U>& u0,
 /// isoparametric mapping.
 ///
 /// @param[out] u1 Function to interpolate to.
-/// @param[in] u0 Function to interpolate from.
 /// @param[in] cells1 Cells to interpolate on.
+/// @param[in] u0 Function to interpolate from.
 /// @param[in] cells0 Equivalent cell in `u0` for each cell in `u1`.
 /// @pre The functions `u1` and `u0` must share the same mesh. This is
 /// not checked by the function.
 template <dolfinx::scalar T, std::floating_point U>
-void interpolate_nonmatching_maps(Function<T, U>& u1, const Function<T, U>& u0,
+void interpolate_nonmatching_maps(Function<T, U>& u1,
                                   std::span<const std::int32_t> cells1,
+                                  const Function<T, U>& u0,
                                   std::span<const std::int32_t> cells0)
 {
   // Get mesh
@@ -1141,7 +1142,7 @@ void interpolate(Function<T, U>& u, const Function<T, U>& v,
 }
 
 /// @brief Interpolate from one finite element Function to another
-/// Function on the same mesh.
+/// Function on the same (sub)mesh.
 ///
 /// Interpolation can be performed on a subset of mesh cells and
 /// Functions may be defined on 'sub-meshes'.
@@ -1241,7 +1242,7 @@ void interpolate(Function<T, U>& u1, std::span<const std::int32_t> cells1,
     else
     {
       //  Different elements with different maps for basis functions
-      impl::interpolate_nonmatching_maps(u1, u0, cells1, cells0);
+      impl::interpolate_nonmatching_maps(u1, cells1, u0, cells0);
     }
   }
 }

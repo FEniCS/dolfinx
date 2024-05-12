@@ -138,20 +138,20 @@ public:
   }
 
   /// @brief Access the function space.
-  /// @return The function space
+  /// @return The function space.
   std::shared_ptr<const FunctionSpace<geometry_type>> function_space() const
   {
     return _function_space;
   }
 
-  /// @brief Underlying vector
+  /// @brief Underlying vector (const version).
   std::shared_ptr<const la::Vector<value_type>> x() const { return _x; }
 
-  /// @brief Underlying vector
+  /// @brief Underlying vector.
   std::shared_ptr<la::Vector<value_type>> x() { return _x; }
 
   /// @brief Interpolate an expression f(x) on the whole domain.
-  /// @param[in] f Expression to be interpolated
+  /// @param[in] f Expression to be interpolated.
   void
   interpolate(const std::function<
               std::pair<std::vector<value_type>, std::vector<std::size_t>>(
@@ -238,7 +238,8 @@ public:
   /// @brief Interpolate a Function over all cells.
   ///
   /// @param[in] u Function to be interpolated.
-  /// @pre The meshes associated with `this`and `u` must be the same.
+  /// @pre The mesh associated with `this` and the mesh associated with
+  /// `u` must be the same mesh::Mesh.
   void interpolate(const Function<value_type, geometry_type>& u)
   {
     assert(_function_space);
@@ -266,8 +267,8 @@ public:
   /// cell in the mesh associated with `u0`, then `cells1[i]` is the
   /// index of the *same* cell but in the mesh associated with `this`.
   /// This argument can be empty when `this` and `u0` share the same
-  /// mesh. Otherwise the the length of `cells` and the length of
-  /// `cells0` must be the same.
+  /// mesh. Otherwise the length of `cells` and the length of `cells0`
+  /// must be the same.
   void interpolate(const Function<value_type, geometry_type>& u0,
                    std::span<const std::int32_t> cells0,
                    std::span<const std::int32_t> cells1 = {})
@@ -277,12 +278,30 @@ public:
     fem::interpolate(*this, cells1, u0, cells0);
   }
 
-  /// @brief Interpolate an Expression.
+  /// @brief Interpolate an Expression on all cells.
+  ///
+  /// @param[in] e Expression to be interpolated.
+  /// @pre If a mesh is associated with Function coefficients of `e`, it
+  /// must be the same as the mesh::Mesh associated with `this`.
+  void interpolate(const Expression<value_type, geometry_type>& e)
+  {
+    assert(_function_space);
+    assert(_function_space->mesh());
+    int tdim = _function_space->mesh()->topology()->dim();
+    auto cell_imap = _function_space->mesh()->topology()->index_map(tdim);
+    assert(cell_imap);
+    std::int32_t num_cells = cell_imap->size_local() + cell_imap->num_ghosts();
+    std::vector<std::int32_t> cells(num_cells, 0);
+    std::iota(cells.begin(), cells.end(), 0);
+    interpolate(e, cells);
+  }
+
+  /// @brief Interpolate an Expression over a subset of cells.
   ///
   /// @param[in] e0 Expression to be interpolated. The Expression must
-  /// have been created using the reference coordinates
+  /// have been created using the reference coordinates created by
   /// FiniteElement::interpolation_points for the element associated
-  /// with `u`.
+  /// with `this`.
   /// @param[in] cells0 Cells in the mesh associated with `e0` to
   /// interpolate from if `e0` has Function coefficients. If no mesh can
   /// be associated with `e0` then the mesh associated with `this` is used.
@@ -291,7 +310,7 @@ public:
   /// cell in the mesh associated with `u0`, then `cells1[i]` is the
   /// index of the *same* cell but in the mesh associated with `this`.
   /// This argument can be empty when `this` and `u0` share the same
-  /// mesh. Otherwise the the length of `cells` and the length of
+  /// mesh. Otherwise the length of `cells` and the length of
   /// `cells0` must be the same.
   void interpolate(const Expression<value_type, geometry_type>& e0,
                    std::span<const std::int32_t> cells0,
@@ -373,14 +392,13 @@ public:
         f(fdata.data(), num_cells, num_points, value_size);
 
     // Evaluate Expression at points
-
     e0.eval(*mesh0, cells0, fdata, {num_cells, num_points * value_size});
 
-    // Reshape evaluated data to fit interpolate
+    // Reshape evaluated data to fit interpolate.
     // Expression returns matrix of shape (num_cells, num_points *
     // value_size), i.e. xyzxyz ordering of dof values per cell per
     // point. The interpolation uses xxyyzz input, ordered for all
-    // points of each cell, i.e. (value_size, num_cells*num_points)
+    // points of each cell, i.e. (value_size, num_cells*num_points).
     std::vector<value_type> fdata1(num_cells * num_points * value_size);
     MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
         value_type, MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 3>>
@@ -394,24 +412,6 @@ public:
     fem::interpolate(*this,
                      std::span<const value_type>(fdata1.data(), fdata1.size()),
                      {value_size, num_cells * num_points}, cells1);
-  }
-
-  /// @brief Interpolate an Expression on all cells.
-  ///
-  /// @param[in] e Expression to be interpolated.
-  /// @pre If a mesh is associated with Function coefficients of `e`, it
-  /// must be the same and the mesh associated with `this`.
-  void interpolate(const Expression<value_type, geometry_type>& e)
-  {
-    assert(_function_space);
-    assert(_function_space->mesh());
-    int tdim = _function_space->mesh()->topology()->dim();
-    auto cell_imap = _function_space->mesh()->topology()->index_map(tdim);
-    assert(cell_imap);
-    std::int32_t num_cells = cell_imap->size_local() + cell_imap->num_ghosts();
-    std::vector<std::int32_t> cells(num_cells, 0);
-    std::iota(cells.begin(), cells.end(), 0);
-    interpolate(e, cells);
   }
 
   /// @brief Interpolate a Function defined on a different mesh.
@@ -433,14 +433,14 @@ public:
   ///
   /// @param[in] x The coordinates of the points. It has shape
   /// (num_points, 3) and storage is row-major.
-  /// @param[in] xshape The shape of `x`.
-  /// @param[in] cells An array of cell indices. cells[i] is the index
-  /// of the cell that contains the point x(i). Negative cell indices
-  /// can be passed, and the corresponding point will be ignored.
-  /// @param[out] u The values at the points. Values are not computed
-  /// for points with a negative cell index. This argument must be
-  /// passed with the correct size. Storage is row-major.
-  /// @param[in] ushape The shape of `u`.
+  /// @param[in] xshape Shape of `x`.
+  /// @param[in] cells Cell indices such that `cells[i]` is the index of
+  /// the cell that contains the point x(i). Negative cell indices can
+  /// be passed, in which case the corresponding point is ignored.
+  /// @param[out] u Values at the points. Values are not computed for
+  /// points with a negative cell index. This argument must be passed
+  /// with the correct size. Storage is row-major.
+  /// @param[in] ushape Shape of `u`.
   void eval(std::span<const geometry_type> x, std::array<std::size_t, 2> xshape,
             std::span<const std::int32_t> cells, std::span<value_type> u,
             std::array<std::size_t, 2> ushape) const
@@ -451,8 +451,8 @@ public:
     assert(x.size() == xshape[0] * xshape[1]);
     assert(u.size() == ushape[0] * ushape[1]);
 
-    // TODO: This could be easily made more efficient by exploiting points
-    // being ordered by the cell to which they belong.
+    // TODO: This could be easily made more efficient by exploiting
+    // points being ordered by the cell to which they belong.
 
     if (xshape[0] != cells.size())
     {
@@ -614,7 +614,6 @@ public:
       {
         // Pull-back physical point xp to reference coordinate Xp
         cmap.pull_back_nonaffine(Xp, xp, coord_dofs);
-
         cmap.tabulate(1, std::span(Xpb.data(), tdim), {1, tdim}, phi_b);
         CoordinateElement<geometry_type>::compute_jacobian(dphi, coord_dofs,
                                                            _J);
@@ -663,6 +662,7 @@ public:
       while (matrix_size * matrix_size < ushape[1])
         ++matrix_size;
     }
+
     const std::size_t num_basis_values = space_dimension * reference_value_size;
     for (std::size_t p = 0; p < cells.size(); ++p)
     {
