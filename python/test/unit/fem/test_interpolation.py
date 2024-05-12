@@ -620,17 +620,17 @@ def test_nedelec_spatial(order, dim):
     f_ex = x
     f = Expression(f_ex, V.element.interpolation_points())
     u.interpolate(f)
-    # assert np.abs(assemble_scalar(form(ufl.inner(u - f_ex, u - f_ex) * ufl.dx))) == pytest.approx(
-    #     0, abs=1e-10
-    # )
+    assert np.abs(assemble_scalar(form(ufl.inner(u - f_ex, u - f_ex) * ufl.dx))) == pytest.approx(
+        0, abs=1e-10
+    )
 
-    # # The target expression is also contained in N2curl space of any
-    # # order
-    # V2 = functionspace(mesh, ("N2curl", 1))
-    # w = Function(V2)
-    # f2 = Expression(f_ex, V2.element.interpolation_points())
-    # w.interpolate(f2)
-    # assert np.abs(assemble_scalar(form(ufl.inner(w - f_ex, w - f_ex) * ufl.dx))) == pytest.approx(0)
+    # The target expression is also contained in N2curl space of any
+    # order
+    V2 = functionspace(mesh, ("N2curl", 1))
+    w = Function(V2)
+    f2 = Expression(f_ex, V2.element.interpolation_points())
+    w.interpolate(f2)
+    assert np.abs(assemble_scalar(form(ufl.inner(w - f_ex, w - f_ex) * ufl.dx))) == pytest.approx(0)
 
 
 @pytest.mark.parametrize("order", [1, 2, 3, 4])
