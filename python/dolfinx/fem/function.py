@@ -418,11 +418,14 @@ class Function(ufl.Coefficient):
         """Interpolate an expression.
 
         Args:
-            u0: Function, Expression or Function to interpolate.
-            cells0: Cells in ``u0`` to interpolate over. If `None` then
-                all cells are interpolated over.
-            cells1: Cells in ``self`` to interpolate over. If ``None``,
-                then taken to be the same cells as ``cells0``.
+            u0: Callable function, Expression or Function to
+               interpolate.
+            cells0: Cells in ``u0`` to interpolate over. If ``None``
+                then all cells are interpolated over.
+            cells1: Cells in the mesh associated with ``self`` to
+                interpolate over. If ``None``, then taken to be the same
+                cells as ``cells0``. If ``cells1`` is not ``None``, then
+                it must have the same length as ``cells0``.
         """
 
         if cells0 is None:
@@ -432,7 +435,6 @@ class Function(ufl.Coefficient):
 
         if cells1 is None:
             cells1 = np.arange(0, dtype=np.int32)
-            # cells1 = cells0
 
         @singledispatch
         def _interpolate(u0):
@@ -463,9 +465,8 @@ class Function(ufl.Coefficient):
             self._cpp_object.interpolate(np.asarray(u0(x), dtype=self.dtype), cells0)  # type: ignore
 
     def copy(self) -> Function:
-        """Create a copy of the Function. The function space is shared and the
-        degree-of-freedom vector is copied.
-
+        """Create a copy of the Function. The function space is shared
+        and the degree-of-freedom vector is copied.
         """
         return Function(
             self.function_space, la.Vector(type(self.x._cpp_object)(self.x._cpp_object))

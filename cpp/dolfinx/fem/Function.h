@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2022 Anders Logg, Garth N. Wells and Massimiliano Leoni
+// Copyright (C) 2003-2024 Anders Logg, Garth N. Wells and Massimiliano Leoni
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -244,10 +244,10 @@ public:
     assert(_function_space);
     assert(_function_space->mesh());
     int tdim = _function_space->mesh()->topology()->dim();
-    auto cell_imap = _function_space->mesh()->topology()->index_map(tdim);
-    assert(cell_imap);
+    auto cell_map = _function_space->mesh()->topology()->index_map(tdim);
+    assert(cell_map);
     std::vector<std::int32_t> cells(
-        cell_imap->size_local() + cell_imap->num_ghosts(), 0);
+        cell_map->size_local() + cell_map->num_ghosts(), 0);
     std::iota(cells.begin(), cells.end(), 0);
     interpolate(u, cells, cells);
   }
@@ -409,10 +409,8 @@ public:
     auto cell_imap = _function_space->mesh()->topology()->index_map(tdim);
     assert(cell_imap);
     std::int32_t num_cells = cell_imap->size_local() + cell_imap->num_ghosts();
-
     std::vector<std::int32_t> cells(num_cells, 0);
     std::iota(cells.begin(), cells.end(), 0);
-
     interpolate(e, cells);
   }
 

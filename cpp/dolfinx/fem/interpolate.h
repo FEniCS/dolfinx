@@ -1157,8 +1157,7 @@ void interpolate(Function<T, U>& u, const Function<T, U>& v,
 /// `cells1` must be the same size.
 template <dolfinx::scalar T, std::floating_point U>
 void interpolate(Function<T, U>& u1, std::span<const std::int32_t> cells1,
-                 const Function<T, U>& u0,
-                 std::span<const std::int32_t> cells0)
+                 const Function<T, U>& u0, std::span<const std::int32_t> cells0)
 {
   if (cells0.size() != cells1.size())
     throw std::runtime_error("Length of cell lists do not match.");
@@ -1203,7 +1202,6 @@ void interpolate(Function<T, U>& u1, std::span<const std::int32_t> cells1,
       const int tdim = mesh->topology()->dim();
       auto cell_map1 = mesh->topology()->index_map(tdim);
       assert(cell_map1);
-
       assert(element1->block_size() == element0->block_size());
 
       // Get dofmaps
