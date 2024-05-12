@@ -50,7 +50,7 @@ public:
   /// Geometry type of the Mesh that the Function is defined on.
   using geometry_type = U;
 
-  /// Create function on given function space
+  /// @brief Create function on given function space.
   /// @param[in] V The function space
   explicit Function(std::shared_ptr<const FunctionSpace<geometry_type>> V)
       : _function_space(V),
@@ -68,16 +68,16 @@ public:
   /// vector.
   ///
   /// @warning This constructor is intended for internal library use
-  /// only
+  /// only.
   ///
-  /// @param[in] V The function space
-  /// @param[in] x The vector
+  /// @param[in] V The function space.
+  /// @param[in] x The vector.
   Function(std::shared_ptr<const FunctionSpace<geometry_type>> V,
            std::shared_ptr<la::Vector<value_type>> x)
       : _function_space(V), _x(x)
   {
-    // We do not check for a subspace since this constructor is used for
-    // creating subfunctions
+    // NOTE: We do not check for a subspace since this constructor is
+    // used for creating subfunctions
 
     // Assertion uses '<=' to deal with sub-functions
     assert(V->dofmap());
@@ -163,11 +163,10 @@ public:
   {
     assert(_function_space);
     assert(_function_space->mesh());
-    const int tdim = _function_space->mesh()->topology()->dim();
-    auto cell_map = _function_space->mesh()->topology()->index_map(tdim);
-    assert(cell_map);
-    std::int32_t num_cells = cell_map->size_local() + cell_map->num_ghosts();
-    std::vector<std::int32_t> cells(num_cells, 0);
+    int tdim = _function_space->mesh()->topology()->dim();
+    auto cmap = _function_space->mesh()->topology()->index_map(tdim);
+    assert(cmap);
+    std::vector<std::int32_t> cells(cmap->size_local() + cmap->num_ghosts(), 0);
     std::iota(cells.begin(), cells.end(), 0);
     interpolate(f, cells);
   }
@@ -245,10 +244,9 @@ public:
     assert(_function_space);
     assert(_function_space->mesh());
     int tdim = _function_space->mesh()->topology()->dim();
-    auto cell_map = _function_space->mesh()->topology()->index_map(tdim);
-    assert(cell_map);
-    std::vector<std::int32_t> cells(
-        cell_map->size_local() + cell_map->num_ghosts(), 0);
+    auto cmap = _function_space->mesh()->topology()->index_map(tdim);
+    assert(cmap);
+    std::vector<std::int32_t> cells(cmap->size_local() + cmap->num_ghosts(), 0);
     std::iota(cells.begin(), cells.end(), 0);
     interpolate(u, cells, cells);
   }
@@ -288,10 +286,9 @@ public:
     assert(_function_space);
     assert(_function_space->mesh());
     int tdim = _function_space->mesh()->topology()->dim();
-    auto cell_imap = _function_space->mesh()->topology()->index_map(tdim);
-    assert(cell_imap);
-    std::int32_t num_cells = cell_imap->size_local() + cell_imap->num_ghosts();
-    std::vector<std::int32_t> cells(num_cells, 0);
+    auto cmap = _function_space->mesh()->topology()->index_map(tdim);
+    assert(cmap);
+    std::vector<std::int32_t> cells(cmap->size_local() + cmap->num_ghosts(), 0);
     std::iota(cells.begin(), cells.end(), 0);
     interpolate(e, cells);
   }
@@ -749,10 +746,10 @@ public:
   std::string name = "u";
 
 private:
-  // The function space
+  // Function space
   std::shared_ptr<const FunctionSpace<geometry_type>> _function_space;
 
-  // The vector of expansion coefficients (local)
+  // Vector of expansion coefficients (local)
   std::shared_ptr<la::Vector<value_type>> _x;
 };
 
