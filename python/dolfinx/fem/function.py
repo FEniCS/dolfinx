@@ -414,7 +414,6 @@ class Function(ufl.Coefficient):
         u0: typing.Union[typing.Callable, Expression, Function],
         cells0: typing.Optional[np.ndarray] = None,
         cells1: typing.Optional[np.ndarray] = None,
-        expr_mesh: typing.Optional[Mesh] = None,
     ) -> None:
         """Interpolate an expression.
 
@@ -424,10 +423,6 @@ class Function(ufl.Coefficient):
                 all cells are interpolated over.
             cells1: Cells in ``self`` to interpolate over. If ``None``,
                 then taken to be the same cells as ``cells0``.
-            expr_mesh: If an Expression with coefficients or constants
-                from another mesh than the function is supplied, the
-                mesh associated with this expression has to be provided,
-                along with `cell_map.`
         """
 
         if cells0 is None:
@@ -456,11 +451,7 @@ class Function(ufl.Coefficient):
 
         @_interpolate.register(Expression)
         def _(e0: Expression):
-            if expr_mesh is None:
-                emesh = self.function_space.mesh
-            else:
-                emesh = expr_mesh
-            self._cpp_object.interpolate(e0._cpp_object, cells0, emesh._cpp_object, cells1)  # type: ignore
+            self._cpp_object.interpolate(e0._cpp_object, cells0, cells1)  # type: ignore
 
         try:
             # u is a Function or Expression (or pointer to one)
