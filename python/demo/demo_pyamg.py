@@ -15,10 +15,9 @@
 #
 # - Solve the Poisson equation with pyamg
 #
-
+# +
 from mpi4py import MPI
 
-# +
 import numpy as np
 
 try:
@@ -44,9 +43,11 @@ from dolfinx.fem import (
 from dolfinx.mesh import CellType, create_box, locate_entities_boundary
 from ufl import ds, dx, grad, inner
 
-dtype = np.float64
 if MPI.COMM_WORLD.size > 1:
-    raise RuntimeError("Only works in serial.")
+    print("This demo works only in serial.")
+    exit(0)
+
+dtype = np.float64
 
 mesh = create_box(
     comm=MPI.COMM_WORLD,
