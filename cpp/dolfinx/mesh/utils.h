@@ -204,6 +204,7 @@ template <std::floating_point T>
 std::vector<T> h(const Mesh<T>& mesh, std::span<const std::int32_t> entities,
                  int dim)
 {
+  mesh.topology_mutable()->create_entity_permutations();
   if (entities.empty())
     return std::vector<T>();
   if (dim == 0)
@@ -260,6 +261,8 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
 {
   auto topology = mesh.topology();
   assert(topology);
+
+  mesh.topology_mutable()->create_entity_permutations();
 
   if (entities.empty())
     return std::vector<T>();
@@ -374,6 +377,8 @@ template <std::floating_point T>
 std::vector<T> compute_midpoints(const Mesh<T>& mesh, int dim,
                                  std::span<const std::int32_t> entities)
 {
+  mesh.topology_mutable()->create_entity_permutations();
+
   if (entities.empty())
     return std::vector<T>();
 
@@ -652,7 +657,6 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   entity_xdofs.reserve(entities.size() * num_entity_dofs);
 
   // Get the cell info, which is needed to permute the closure dofs
-  mesh.topology_mutable()->create_entity_permutations();
   std::span<const std::uint32_t> cell_info
       = std::span(mesh.topology()->get_cell_permutation_info());
 
@@ -1018,6 +1022,7 @@ create_submesh(const Mesh<T>& mesh, int dim,
   mesh.topology_mutable()->create_entities(dim);
   mesh.topology_mutable()->create_connectivity(dim, tdim);
   mesh.topology_mutable()->create_connectivity(tdim, dim);
+  mesh.topology_mutable()->create_entity_permutations();
   auto [geometry, subx_to_x_dofmap]
       = mesh::create_subgeometry(mesh, dim, subentity_to_entity);
 

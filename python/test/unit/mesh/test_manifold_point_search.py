@@ -26,6 +26,7 @@ def test_manifold_point_search():
     colliding_cells = geometry.compute_colliding_cells(mesh, cell_candidates, points)
 
     # Extract vertices of cell
+    mesh.topology.create_entity_permutations()
     indices = _cpp.mesh.entities_to_geometry(
         mesh._cpp_object,
         mesh.topology.dim,
