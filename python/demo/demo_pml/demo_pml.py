@@ -466,7 +466,7 @@ if have_pyvista:
     V_cells, V_types, V_x = plot.vtk_mesh(V_dg)
     V_grid = pyvista.UnstructuredGrid(V_cells, V_types, V_x)
     Esh_values = np.zeros((V_x.shape[0], 3), dtype=np.float64)
-    Esh_values[:, : tdim] = Esh_dg.x.array.reshape(V_x.shape[0], tdim).real
+    Esh_values[:, :tdim] = Esh_dg.x.array.reshape(V_x.shape[0], tdim).real
     V_grid.point_data["u"] = Esh_values
 
     plotter = pyvista.Plotter()
@@ -537,9 +537,7 @@ n_3d = ufl.as_vector((n[0], n[1], 0))
 # efficiency
 marker = fem.Function(D)
 scatt_facets = facet_tags.find(scatt_tag)
-incident_cells = mesh.compute_incident_entities(
-    msh.topology, scatt_facets, tdim - 1, tdim
-)
+incident_cells = mesh.compute_incident_entities(msh.topology, scatt_facets, tdim - 1, tdim)
 
 msh.topology.create_connectivity(tdim, tdim)
 midpoints = mesh.compute_midpoints(msh, tdim, incident_cells)

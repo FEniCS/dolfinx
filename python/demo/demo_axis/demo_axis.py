@@ -509,9 +509,7 @@ gcs = np.pi * radius_sph**2
 # Marker functions for the scattering efficiency integral
 marker = fem.Function(D)
 scatt_facets = facet_tags.find(scatt_tag)
-incident_cells = mesh.compute_incident_entities(
-    msh.topology, scatt_facets, tdim - 1, tdim
-)
+incident_cells = mesh.compute_incident_entities(msh.topology, scatt_facets, tdim - 1, tdim)
 msh.topology.create_connectivity(tdim, tdim)
 midpoints = mesh.compute_midpoints(msh, tdim, incident_cells)
 inner_cells = incident_cells[(midpoints[:, 0] ** 2 + midpoints[:, 1] ** 2) < (radius_scatt) ** 2]
