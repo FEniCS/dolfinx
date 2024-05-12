@@ -436,7 +436,8 @@ class Function(ufl.Coefficient):
             cells0 = np.arange(map.size_local + map.num_ghosts, dtype=np.int32)
 
         if cells1 is None:
-            cells1 = cells0
+            cells1 = np.arange(0, dtype=np.int32)
+            # cells1 = cells0
 
         @singledispatch
         def _interpolate(u0):

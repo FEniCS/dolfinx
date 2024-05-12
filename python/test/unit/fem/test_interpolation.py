@@ -1056,8 +1056,7 @@ def test_submesh_interpolation():
     cells = locate_entities(mesh, tdim, left_locator)
     submesh, parent_cells, _, _ = create_submesh(mesh, tdim, cells)
 
-    V = functionspace(mesh, ("Lagrange", 2))
-    u0 = Function(V)
+    u0 = Function(functionspace(mesh, ("Lagrange", 2)))
     u0.interpolate(ref_func)
 
     V1 = functionspace(submesh, ("DG", 3))
@@ -1075,12 +1074,8 @@ def test_submesh_interpolation():
     W = functionspace(mesh, ("DG", 4))
     w = Function(W)
 
-    cell_imap = mesh.topology.index_map(tdim)
-    num_cells = cell_imap.size_local + cell_imap.num_ghosts
-    parent_to_sub = np.full(num_cells, -1, dtype=np.int32)
-    parent_to_sub[parent_cells] = np.arange(len(parent_cells))
-
-    # Mapping back needs to be restricted to the subset of cells in the submesh
+    # Mapping back needs to be restricted to the subset of cells in the
+    # submesh
     w.interpolate(u1_exact, cells0=np.arange(len(parent_cells)), cells1=parent_cells)
 
     w_exact = Function(W)
