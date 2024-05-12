@@ -93,11 +93,14 @@ public:
   void tabulate(int nd, std::span<const T> X, std::array<std::size_t, 2> shape,
                 std::span<T> basis) const;
 
-  /// @brief TODO
-  /// @param d TODO
-  /// @param cell_info TODO
-  /// @param entity_type TODO
-  /// @param entity_index TODO
+  /// @brief Permute a list of DOF indices associated with the closure of a cell
+  /// sub-entity.
+  /// @param[in,out] d Indices associated with the reference element
+  /// degree-of-freedom (in). Indices associated with each physical
+  /// element degree-of-freedom (out).
+  /// @param cell_info Permutation info for the cell
+  /// @param entity_type The cell type of the sub-entity
+  /// @param entity_index The index of the entity
   void permute_subentity_closure(std::span<std::int32_t> d,
                                  std::uint32_t cell_info,
                                  mesh::CellType entity_type,
