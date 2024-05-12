@@ -604,20 +604,16 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
   return entities;
 }
 
-/// @brief Determine the indices in the geometry data for each vertex of
-/// the given mesh entities.
-///
-/// @warning This function should not be used unless there is no
-/// alternative. It may be removed in the future.
+/// @brief Compute the geometry degrees of freedom associates with
+/// the closure of a given set of entities.
 ///
 /// @param[in] mesh The mesh.
 /// @param[in] dim Topological dimension of the entities of interest.
-/// @param[in] entities Entity indices (local) to compute the vertex
-/// geometry indices for.
-/// @return Indices in the geometry array for the entity vertices. The
-/// shape is `(num_entities, num_vertices_per_entity)` and the storage
-/// is row-major. The index `indices[i, j]` is the position in the
-/// geometry array of the `j`-th vertex of the `entity[i]`.
+/// @param[in] entities Entity indices (local to process).
+/// @return Indices in the geometry array associated with the closure of each
+/// entity in `entities`. The shape is `(num_entities, num_xdofs_per_entity)`
+/// and the storage is row-major. The index `indices[i, j]` is the position in
+/// the geometry array of the `j`-th vertex of the `entity[i]`.
 template <std::floating_point T>
 std::vector<std::int32_t>
 entities_to_geometry(const Mesh<T>& mesh, int dim,
@@ -654,8 +650,8 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   const std::size_t num_entity_dofs = layout.num_entity_closure_dofs(dim);
   std::vector<std::int32_t> entity_xdofs;
   entity_xdofs.reserve(entities.size() * num_entity_dofs);
-  const int num_cell_entities = mesh::cell_num_entities(cell_type, dim);
 
+  // Get the cell info, which is needed to permute the closure dofs
   mesh.topology_mutable()->create_entity_permutations();
   std::span<const std::uint32_t> cell_info
       = std::span(mesh.topology()->get_cell_permutation_info());
@@ -676,6 +672,9 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
 
     std::vector<std::int32_t> closure_dofs(
         layout.entity_closure_dofs(dim, local_entity));
+
+    // Cell sub-entities must be permuted so that their local orientation agrees
+    // with their global orientation
     if (dim != topology->dim())
     {
       mesh::CellType entity_type
@@ -684,6 +683,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
                                           entity_type, local_entity);
     }
 
+    // Extract degrees of freedom
     auto x_c = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
         xdofs, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     for (std::int32_t entity_dof : closure_dofs)
