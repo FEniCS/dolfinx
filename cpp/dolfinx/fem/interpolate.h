@@ -1147,17 +1147,17 @@ void interpolate(Function<T, U>& u, const Function<T, U>& v,
 /// Functions may be defined on 'sub-meshes'.
 ///
 /// @param[out] u1 Function to interpolate into.
-/// @param[in] u0 Function to b interpolated from.
 /// @param[in] cells1 Cell indices associated with the mesh of `u1` that
 /// will be interpolated onto.
+/// @param[in] u0 Function to b interpolated from.
 /// @param[in] cells0 Cell indices associated with the mesh of `u0` that
 /// will be interpolated from. If `cells1[i]` is the index of a cell in
 /// the mesh associated with `u1`, then `cells0[i]` is the index of the
 /// *same* cell but in the mesh associated with `u0`. `cells0` and
 /// `cells1` must be the same size.
 template <dolfinx::scalar T, std::floating_point U>
-void interpolate(Function<T, U>& u1, const Function<T, U>& u0,
-                 std::span<const std::int32_t> cells1,
+void interpolate(Function<T, U>& u1, std::span<const std::int32_t> cells1,
+                 const Function<T, U>& u0,
                  std::span<const std::int32_t> cells0)
 {
   if (cells0.size() != cells1.size())

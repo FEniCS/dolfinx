@@ -236,8 +236,10 @@ public:
   }
 
   /// @brief Interpolate a Function over all cells.
-  /// @param[in] u0 Function to be interpolated.
-  void interpolate(const Function<value_type, geometry_type>& u0)
+  ///
+  /// @param[in] u Function to be interpolated.
+  /// @pre The meshes associated with `this`and `u` must be the same.
+  void interpolate(const Function<value_type, geometry_type>& u)
   {
     assert(_function_space);
     assert(_function_space->mesh());
@@ -247,14 +249,18 @@ public:
     std::vector<std::int32_t> cells(
         cell_imap->size_local() + cell_imap->num_ghosts(), 0);
     std::iota(cells.begin(), cells.end(), 0);
-    interpolate(u0, cells, cells);
+    interpolate(u, cells, cells);
   }
 
   /// @brief Interpolate a Function over a subset of cells.
   ///
+  /// The Function being interpolated from and the Function being
+  /// interpolated into can be defined on different sub-meshes, i.e.
+  /// views into a subset a cells.
+  ///
   /// @param[in] u0 Function to be interpolated.
-  /// @param[in] cells0 Cells to interpolate from. These are the indices of
-  /// the cells in the mesh associated with `u0`.
+  /// @param[in] cells0 Cells to interpolate from. These are the indices
+  /// of the cells in the mesh associated with `u0`.
   /// @param[in] cells1 Cell indices associated with the mesh of `this`
   /// that will be interpolated to. If `cells0[i]` is the index of a
   /// cell in the mesh associated with `u0`, then `cells1[i]` is the
@@ -267,20 +273,26 @@ public:
                    std::span<const std::int32_t> cells1 = {})
   {
     if (cells1.empty())
-      fem::interpolate(*this, u0, cells0, cells0);
-    else
-      fem::interpolate(*this, u0, cells0, cells1);
+      cells1 = cells0;
+    fem::interpolate(*this, cells1, u0, cells0);
   }
 
   /// @brief Interpolate an Expression.
+  ///
   /// @param[in] e0 Expression to be interpolated. The Expression must
-  /// have been created using the reference coordinates.
+  /// have been created using the reference coordinates
   /// FiniteElement::interpolation_points for the element associated
   /// with `u`.
   /// @param[in] cells0 Cells in the mesh associated with `e0` to
-  /// interpolate from.
-  /// @param[in] cells1 For cell `i` in the mesh associated with`this`,
-  /// `cell_map[i]` is the index of the same cell, but in `expr_mesh`.
+  /// interpolate from if `e0` has Function coefficients. If no mesh can
+  /// be associated with `e0` then the mesh associated with `this` is used.
+  /// @param[in] cells1 Cell indices associated with the mesh of `this`
+  /// that will be interpolated to. If `cells0[i]` is the index of a
+  /// cell in the mesh associated with `u0`, then `cells1[i]` is the
+  /// index of the *same* cell but in the mesh associated with `this`.
+  /// This argument can be empty when `this` and `u0` share the same
+  /// mesh. Otherwise the the length of `cells` and the length of
+  /// `cells0` must be the same.
   void interpolate(const Expression<value_type, geometry_type>& e0,
                    std::span<const std::int32_t> cells0,
                    std::span<const std::int32_t> cells1 = {})
@@ -385,7 +397,10 @@ public:
   }
 
   /// @brief Interpolate an Expression on all cells.
-  /// @param[in] e The Expression to be interpolated.
+  ///
+  /// @param[in] e Expression to be interpolated.
+  /// @pre If a mesh is associated with Function coefficients of `e`, it
+  /// must be the same and the mesh associated with `this`.
   void interpolate(const Expression<value_type, geometry_type>& e)
   {
     assert(_function_space);
@@ -402,6 +417,7 @@ public:
   }
 
   /// @brief Interpolate a Function defined on a different mesh.
+  ///
   /// @param[in] v Function to be interpolated.
   /// @param[in] cells Cells in the mesh associated with `this` to
   /// interpolate into.
@@ -416,6 +432,7 @@ public:
   }
 
   /// @brief Evaluate the Function at points.
+  ///
   /// @param[in] x The coordinates of the points. It has shape
   /// (num_points, 3) and storage is row-major.
   /// @param[in] xshape The shape of `x`.

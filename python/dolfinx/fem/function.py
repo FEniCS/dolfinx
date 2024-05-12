@@ -441,7 +441,7 @@ class Function(ufl.Coefficient):
         @singledispatch
         def _interpolate(u0):
             """Interpolate a cpp.fem.Function."""
-            self._cpp_object.interpolate(u0, cells0)  # type: ignore
+            self._cpp_object.interpolate(u0, cells0, cells1)  # type: ignore
 
         @_interpolate.register(Function)
         def _(u0: Function):
