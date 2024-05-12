@@ -40,7 +40,7 @@ template <dolfinx::scalar T,
 class Expression
 {
 public:
-  /// @brief Scalar type
+  /// @brief Scalar type.
   ///
   /// Field type for the Expression, e.g. `double`,
   /// `std::complex<float>`, etc.
@@ -56,8 +56,8 @@ public:
   ///
   /// @param[in] coefficients Coefficients in the Expression.
   /// @param[in] constants Constants in the Expression
-  /// @param[in] X Points on reference cell, `shape=(number of points,
-  /// tdim)` and storage is row-major.
+  /// @param[in] X Points on the reference cell, `shape=(number of
+  /// points, tdim)` and storage is row-major.
   /// @param[in] Xshape Shape of `X`.
   /// @param[in] fn Function for tabulating the Expression.
   /// @param[in] value_shape Shape of Expression evaluated at single
