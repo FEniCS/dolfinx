@@ -22,8 +22,20 @@
 # +
 from pathlib import Path
 
+try:
+    from petsc4py import PETSc
+
+    import dolfinx
+
+    if not dolfinx.has_petsc:
+        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
+        exit(0)
+except ModuleNotFoundError:
+    print("This demo requires petsc4py.")
+    exit(0)
+
+
 from mpi4py import MPI
-from petsc4py import PETSc
 
 import cffi
 import numba
