@@ -765,6 +765,9 @@ def entities_to_geometry(
         mesh: The mesh.
         dim: Topological dimension of the entities of interest.
         entities: Entity indices (local to the process).
+        permute: Permute the DOFs such that they are consistent with the
+                 orientation of `dim`-dimensional mesh entities. This requires
+                 `create_entity_permutations` to be called first.
 
     Returns:
         The geometric DOFs associated with the closure of the entities in `entities`.

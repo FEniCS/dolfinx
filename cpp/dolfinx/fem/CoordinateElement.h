@@ -100,7 +100,7 @@ public:
   /// element degree-of-freedom (out).
   /// @param cell_info Permutation info for the cell
   /// @param entity_type The cell type of the sub-entity
-  /// @param entity_index The index of the entity
+  /// @param entity_index The local (with respect to the cell) index of the entity
   void permute_subentity_closure(std::span<std::int32_t> d,
                                  std::uint32_t cell_info,
                                  mesh::CellType entity_type,
