@@ -55,6 +55,11 @@ nanobind_add_module(
 
 # Add DOLFINx libraries
 target_link_libraries(cpp PRIVATE dolfinx)
+# UUID requires bcrypt to be linked on Windows, broken in vcpkg.
+# https://github.com/microsoft/vcpkg/issues/4481
+if (WIN32)
+  target_link_libraries(cpp PRIVATE bcrypt)
+endif()
 
 # Check for petsc4py
 execute_process(
