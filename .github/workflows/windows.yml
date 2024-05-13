@@ -50,8 +50,8 @@ jobs:
         run: |
           cd cpp
           cmake -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -B build-dir -S .
-          cmake --build build-dir --config Release
-          cmake --install build-dir --config Release --prefix D:/a/dolfinx/basix-install
+          cmake --build build-dir --config Debug 
+          cmake --install build-dir --config Debug --prefix D:/a/dolfinx/basix-install
           echo "D:/a/dolfinx/basix-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
 
       - name: Install Basix (Python)
@@ -71,8 +71,8 @@ jobs:
         working-directory: ffcx
         run: |
           cmake -B build-dir -S cmake/
-          cmake --build build-dir --config Release
-          cmake --install build-dir --config Release --prefix D:/a/dolfinx/ufcx-install
+          cmake --build build-dir --config Debug 
+          cmake --install build-dir --config Debug --prefix D:/a/dolfinx/ufcx-install
 
       - name: Install FFCx
         working-directory: ffcx
@@ -91,15 +91,15 @@ jobs:
         working-directory: dolfinx
         run: |
           cmake -DBasix_DIR=D:/a/dolfinx/basix-install/share/basix -DDOLFINX_UFCX_PYTHON=OFF -Dufcx_DIR=D:/a/dolfinx/ufcx-install/share/ufcx/cmake -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_PORTS="cpp/.vcpkg-overlay" -B build-dir -S cpp
-          cmake --build build-dir --config Release
-          cmake --install build-dir --config Release --prefix D:/a/dolfinx/dolfinx-install
+          cmake --build build-dir --config Debug 
+          cmake --install build-dir --config Debug --prefix D:/a/dolfinx/dolfinx-install
           echo "D:/a/dolfinx/dolfinx-install/bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
 
       - name: Build C++ unit tests
         working-directory: dolfinx
         run: |
           cmake -DBasix_DIR=D:/a/dolfinx/basix-install/share/basix -Dufcx_DIR=D:/a/dolfinx/ufcx-install/share/ufcx/cmake -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_OVERLAY_PORTS="cpp/.vcpkg-overlay" -B build/test/ -S cpp/test/
-          cmake --build build/test --config Release --parallel 3
+          cmake --build build/test --config Debug --parallel 3
 
       - name: Run C++ unit tests (serial)
         working-directory: dolfinx
