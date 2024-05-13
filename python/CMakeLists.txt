@@ -7,6 +7,12 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+if (WIN32)
+    # Windows requires all symbols to be manually exported.
+    # This flag exports all symbols automatically, as in Unix.
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
+endif(WIN32)
+
 find_package(
   Python
   COMPONENTS Interpreter Development
