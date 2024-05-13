@@ -6,6 +6,9 @@
 """Main module for DOLFINx"""
 
 # flake8: noqa
+import os
+
+os.add_dll_directory("D:/a/dolfinx/dolfinx-install/bin")
 
 import sys
 
