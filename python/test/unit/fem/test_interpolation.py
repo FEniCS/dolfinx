@@ -880,7 +880,6 @@ def test_mixed_interpolation_permuting(cell_type, order):
     assert assemble_scalar(form(ufl.dot(diff, diff) * ufl.dx)) == pytest.approx(error)
 
 
-@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("xtype", [np.float64])
 @pytest.mark.parametrize("cell_type0", [CellType.hexahedron, CellType.tetrahedron])
 @pytest.mark.parametrize("cell_type1", [CellType.triangle, CellType.quadrilateral])
@@ -963,7 +962,6 @@ def test_nonmatching_mesh_interpolation(xtype, cell_type0, cell_type1):
     assert np.isclose(assemble_scalar(form(residual, dtype=xtype)), 0)
 
 
-@pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("xtype", [np.float64])
 def test_nonmatching_mesh_single_cell_overlap_interpolation(xtype):
     # mesh2 is contained by a single cell of mesh1. Here we test
@@ -1052,7 +1050,6 @@ def test_nonmatching_mesh_single_cell_overlap_interpolation(xtype):
     assert np.isclose(l2_error, 0.0, rtol=np.finfo(xtype).eps, atol=np.finfo(xtype).eps)
 
 
-@pytest.mark.skip_in_parallel
 def test_submesh_interpolation():
     """Test interpolation of a function between a submesh and its parent"""
     mesh = create_unit_square(MPI.COMM_WORLD, 6, 7)
@@ -1100,7 +1097,6 @@ def test_submesh_interpolation():
     np.testing.assert_allclose(w.x.array, w_exact.x.array, atol=atol)
 
 
-@pytest.mark.skip_in_parallel
 def xtest_submesh_expression_interpolation():
     """Test interpolation of an expression between a submesh and its parent"""
     mesh = create_unit_square(MPI.COMM_WORLD, 10, 8, cell_type=CellType.quadrilateral)
