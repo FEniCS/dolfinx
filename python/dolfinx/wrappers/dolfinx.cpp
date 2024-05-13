@@ -40,10 +40,6 @@ NB_MODULE(cpp, m)
   nb::module_ common = m.def_submodule("common", "Common module");
   dolfinx_wrappers::common(common);
 
-  // Create common submodule [log]
-  nb::module_ log = m.def_submodule("log", "Logging module");
-  dolfinx_wrappers::log(log);
-
   // Create mesh submodule [mesh]
   nb::module_ mesh = m.def_submodule("mesh", "Mesh library module");
   dolfinx_wrappers::mesh(mesh);
