@@ -20,7 +20,6 @@ void assemble(nb::module_& m);
 void fem(nb::module_& m);
 void geometry(nb::module_& m);
 void graph(nb::module_& m);
-void io(nb::module_& m);
 void la(nb::module_& m);
 void mesh(nb::module_& m);
 void nls(nb::module_& m);
