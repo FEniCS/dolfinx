@@ -13,6 +13,7 @@ set(SOURCE_DEBUG_LIB_PATH "${SDK_SOURCE_MPI_DIR}/lib/mpi/debug")
 set(SOURCE_BIN_PATH "${SDK_SOURCE_MPI_DIR}/bin")
 set(SOURCE_DEBUG_BIN_PATH "${SDK_SOURCE_MPI_DIR}/bin/mpi/debug")
 set(SOURCE_TOOLS_PATH "${SDK_SOURCE_MPI_DIR}/bin")
+set(SOURCE_LIBFABRIC_PATH "${SDK_SOURCE_MPI_DIR}/opt/mpi/libfabric/bin")
 
 # Get files in include directory
 file(GLOB_RECURSE
@@ -68,12 +69,14 @@ file(INSTALL
 # 'libfabric.dll' is not needed for the compilation but it is needed
 # for the runtime and should be in the PATH for 'mpiexec' to work
 file(INSTALL
+  "${SOURCE_LIBFABRIC_PATH}/libfabric.dll"
   "${SOURCE_BIN_PATH}/impi.dll"
   "${SOURCE_BIN_PATH}/impi.pdb"
   DESTINATION "${CURRENT_PACKAGES_DIR}/bin"
   )
 
 file(INSTALL
+  "${SOURCE_LIBFABRIC_PATH}/libfabric.dll"
   "${SOURCE_DEBUG_BIN_PATH}/impi.dll"
   "${SOURCE_DEBUG_BIN_PATH}/impi.pdb"
   DESTINATION "${CURRENT_PACKAGES_DIR}/debug/bin"
