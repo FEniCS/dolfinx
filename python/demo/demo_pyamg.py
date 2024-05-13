@@ -14,7 +14,7 @@
 # illustrates how to:
 #
 # - Solve the Poisson equation with pyamg
-#
+
 # +
 from mpi4py import MPI
 
