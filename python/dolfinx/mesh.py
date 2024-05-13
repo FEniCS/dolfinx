@@ -757,7 +757,7 @@ def create_unit_cube(
 
 
 def entities_to_geometry(
-    mesh: Mesh, dim: int, entities: npt.NDArray[np.int32]
+    mesh: Mesh, dim: int, entities: npt.NDArray[np.int32], permute=False
 ) -> npt.NDArray[np.int32]:
     """Compute the geometric DOFs associated with the closure of the given mesh entities.
 
@@ -769,4 +769,4 @@ def entities_to_geometry(
     Returns:
         The geometric DOFs associated with the closure of the entities in `entities`.
     """
-    return _cpp.mesh.entities_to_geometry(mesh._cpp_object, dim, entities)
+    return _cpp.mesh.entities_to_geometry(mesh._cpp_object, dim, entities, permute)

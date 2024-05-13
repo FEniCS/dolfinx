@@ -384,10 +384,11 @@ void declare_mesh(nb::module_& m, std::string type)
   m.def(
       "entities_to_geometry",
       [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
-         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> entities)
+         nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> entities,
+         bool permute)
       {
         std::vector<std::int32_t> idx = dolfinx::mesh::entities_to_geometry(
-            mesh, dim, std::span(entities.data(), entities.size()));
+            mesh, dim, std::span(entities.data(), entities.size()), permute);
 
         auto topology = mesh.topology();
         assert(topology);
@@ -396,7 +397,7 @@ void declare_mesh(nb::module_& m, std::string type)
             cell_entity_type(cell_type, dim, 0));
         return as_nbarray(std::move(idx), {entities.size(), num_vertices});
       },
-      nb::arg("mesh"), nb::arg("dim"), nb::arg("entities"));
+      nb::arg("mesh"), nb::arg("dim"), nb::arg("entities"), nb::arg("permute"));
 
   m.def("create_geometry",
         [](const dolfinx::mesh::Topology& topology,

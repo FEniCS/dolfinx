@@ -33,9 +33,8 @@ std::array<T, 6> compute_bbox_of_entity(const mesh::Mesh<T>& mesh, int dim,
 
   // FIXME: return of small dynamic array is expensive
   std::span<const std::int32_t> entity(&index, 1);
-  mesh.topology_mutable()->create_entity_permutations();
   const std::vector<std::int32_t> vertex_indices
-      = mesh::entities_to_geometry(mesh, dim, entity);
+      = mesh::entities_to_geometry(mesh, dim, entity, false);
 
   std::array<T, 6> b;
   auto b0 = std::span(b).template subspan<0, 3>();
@@ -406,8 +405,7 @@ private:
       for (std::size_t k = 0; k < 3; ++k)
         s << _bbox_coordinates[6 * i + j * 3 + k] << " ";
       if (j == 0)
-        s << "]->"
-          << "[";
+        s << "]->" << "[";
     }
     s << "]\n";
 

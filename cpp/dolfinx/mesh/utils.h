@@ -204,7 +204,6 @@ template <std::floating_point T>
 std::vector<T> h(const Mesh<T>& mesh, std::span<const std::int32_t> entities,
                  int dim)
 {
-  mesh.topology_mutable()->create_entity_permutations();
   if (entities.empty())
     return std::vector<T>();
   if (dim == 0)
@@ -212,7 +211,7 @@ std::vector<T> h(const Mesh<T>& mesh, std::span<const std::int32_t> entities,
 
   // Get the geometry dofs for the vertices of each entity
   const std::vector<std::int32_t> vertex_xdofs
-      = entities_to_geometry(mesh, dim, entities);
+      = entities_to_geometry(mesh, dim, entities, false);
   assert(!entities.empty());
   const std::size_t num_vertices = vertex_xdofs.size() / entities.size();
 
@@ -262,8 +261,6 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
   auto topology = mesh.topology();
   assert(topology);
 
-  mesh.topology_mutable()->create_entity_permutations();
-
   if (entities.empty())
     return std::vector<T>();
 
@@ -276,7 +273,7 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
   // Find geometry nodes for topology entities
   std::span<const T> x = mesh.geometry().x();
   std::vector<std::int32_t> geometry_entities
-      = entities_to_geometry(mesh, dim, entities);
+      = entities_to_geometry(mesh, dim, entities, false);
 
   const std::size_t shape1 = geometry_entities.size() / entities.size();
   std::vector<T> n(entities.size() * 3);
@@ -377,8 +374,6 @@ template <std::floating_point T>
 std::vector<T> compute_midpoints(const Mesh<T>& mesh, int dim,
                                  std::span<const std::int32_t> entities)
 {
-  mesh.topology_mutable()->create_entity_permutations();
-
   if (entities.empty())
     return std::vector<T>();
 
@@ -387,7 +382,7 @@ std::vector<T> compute_midpoints(const Mesh<T>& mesh, int dim,
   // Build map from entity -> geometry dof
   // FIXME: This assumes a linear geometry.
   const std::vector<std::int32_t> e_to_g
-      = entities_to_geometry(mesh, dim, entities);
+      = entities_to_geometry(mesh, dim, entities, false);
   std::size_t shape1 = e_to_g.size() / entities.size();
 
   std::vector<T> x_mid(entities.size() * 3, 0);
@@ -615,6 +610,7 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
 /// @param[in] mesh The mesh.
 /// @param[in] dim Topological dimension of the entities of interest.
 /// @param[in] entities Entity indices (local to process).
+/// @param[in] permute TODO
 /// @return Indices in the geometry array associated with the closure of each
 /// entity in `entities`. The shape is `(num_entities, num_xdofs_per_entity)`
 /// and the storage is row-major. The index `indices[i, j]` is the position in
@@ -622,7 +618,8 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
 template <std::floating_point T>
 std::vector<std::int32_t>
 entities_to_geometry(const Mesh<T>& mesh, int dim,
-                     std::span<const std::int32_t> entities)
+                     std::span<const std::int32_t> entities,
+                     bool permute = false)
 {
   auto topology = mesh.topology();
   assert(topology);
@@ -657,8 +654,9 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   entity_xdofs.reserve(entities.size() * num_entity_dofs);
 
   // Get the cell info, which is needed to permute the closure dofs
-  std::span<const std::uint32_t> cell_info
-      = std::span(mesh.topology()->get_cell_permutation_info());
+  std::span<const std::uint32_t> cell_info;
+  if (dim != topology->dim() and permute)
+    cell_info = std::span(mesh.topology()->get_cell_permutation_info());
 
   for (std::size_t i = 0; i < entities.size(); ++i)
   {
@@ -679,7 +677,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
 
     // Cell sub-entities must be permuted so that their local orientation agrees
     // with their global orientation
-    if (dim != topology->dim())
+    if (dim != topology->dim() and permute)
     {
       mesh::CellType entity_type
           = mesh::cell_entity_type(cell_type, dim, local_entity);
@@ -930,7 +928,7 @@ create_subgeometry(const Mesh<T>& mesh, int dim,
   const fem::ElementDofLayout layout = geometry.cmap().create_dof_layout();
 
   std::vector<std::int32_t> x_indices
-      = entities_to_geometry(mesh, dim, subentity_to_entity);
+      = entities_to_geometry(mesh, dim, subentity_to_entity, true);
 
   std::vector<std::int32_t> sub_x_dofs = x_indices;
   std::sort(sub_x_dofs.begin(), sub_x_dofs.end());

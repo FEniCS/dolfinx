@@ -78,7 +78,7 @@ def submesh_geometry_test(mesh, submesh, entity_map, geom_map, entity_dim):
         assert mesh.geometry.dim == submesh.geometry.dim
 
         mesh.topology.create_entity_permutations()
-        e_to_g = entities_to_geometry(mesh, entity_dim, np.array(entity_map))
+        e_to_g = entities_to_geometry(mesh, entity_dim, np.array(entity_map), True)
         for submesh_entity in range(len(entity_map)):
             submesh_x_dofs = submesh.geometry.dofmap[submesh_entity]
             # e_to_g[i] gets the mesh x_dofs of entities[i], which should
