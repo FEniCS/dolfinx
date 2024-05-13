@@ -114,7 +114,7 @@ jobs:
 
       - name: Install build dependencies
         run: |
-          pip -v install --no-build-isolation mpi4py
+          pip -v install --no-build-isolation --no-binary :all: mpi4py
           pip -v install nanobind scikit-build-core[pyproject]
 
       - name: Install DOLFINx (Python)
