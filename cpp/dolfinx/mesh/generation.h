@@ -542,9 +542,10 @@ Mesh<T> build_tri(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
     case DiagonalType::crossed:
       for (std::int64_t iy = 0; iy < ny; iy++)
       {
-        const T x1 = c + cd * (static_cast<T>(iy) + T(0.5));
+        const T x1 = c + cd * (static_cast<T>(iy) + 0.5);
         for (std::int64_t ix = 0; ix < nx; ix++)
-          x.insert(x.end(), {a + ab * (static_cast<T>(ix) + T(0.5)), x1});
+          const T x0 = a + ab * (static_cast<T>(ix) + 0.5);
+          x.insert(x.end(), {x0, x1});
       }
       break;
     default:
