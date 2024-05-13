@@ -92,7 +92,7 @@ jobs:
       - name: Install Python test dependencies
         run: |
           . /opt/intel/oneapi/setvars.sh
-          pip install pytest pytest-xdist
+          pip install matplotlib pytest pytest-xdist
       - name: Run DOLFINx demos (Python, serial)
         run: |
           . /opt/intel/oneapi/setvars.sh
