@@ -40,7 +40,8 @@ add_executable(
   common/sub_systems_manager.cpp
   common/index_map.cpp
   common/sort.cpp
-  common/distributed_mesh.cpp
+  mesh/distributed_mesh.cpp
+  common/CIFailure.cpp
   common/minimal.cpp
   ${CMAKE_CURRENT_BINARY_DIR}/poisson.c
 )
