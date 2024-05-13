@@ -121,11 +121,13 @@ jobs:
         working-directory: dolfinx
         run: |
           cd python
-          pip -v install --check-build-dependencies --no-build-isolation .[test] --config-settings=cmake.args=-DDOLFINX_DIR=D:/a/dolfinx/dolfinx-install/lib/cmake/dolfinx
+          pip -v install --check-build-dependencies --no-build-isolation .[test] --config-settings=cmake.args=-DDOLFINX_DIR=D:/a/dolfinx/dolfinx-install/lib/cmake/dolfinx --config-settings=cmake.args=-DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake --config-settings=cmake.args=-DVCPKG_OVERLAY_PORTS="../cpp/.vcpkg-overlay"
 
       - name: Run units tests (MPI, np=1)
+        working-directory: dolfinx
         run: |
           mpiexec -n 1 python -m pytest -n auto -m "not petsc4py and not adios2" python/test/unit
       - name: Run units tests (MPI, np=3)
+        working-directory: dolfinx
         run: |
           mpiexec -n 3 python -m pytest -m "not petsc4py and not adios2" python/test/unit
