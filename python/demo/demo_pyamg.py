@@ -26,7 +26,6 @@ except ImportError:
     print("This demo requires pyamg.")
     exit(0)
 
-from scipy.sparse import csr_matrix
 
 import ufl
 from dolfinx import fem, io
@@ -52,7 +51,7 @@ dtype = np.float64
 mesh = create_box(
     comm=MPI.COMM_WORLD,
     points=[(0.0, 0.0, 0.0), (3.0, 2.0, 1.0)],
-    n=[96, 64, 32],
+    n=[60, 40, 20],
     cell_type=CellType.tetrahedron,
     dtype=dtype,
 )
@@ -77,12 +76,11 @@ g = ufl.sin(5 * x[0])
 a = form(inner(grad(u), grad(v)) * dx, dtype=dtype)
 L = form(inner(f, v) * dx + inner(g, v) * ds, dtype=dtype)
 
-A0 = assemble_matrix(a, [bc])
+A = assemble_matrix(a, [bc]).to_scipy()
 b = assemble_vector(L)
 apply_lifting(b.array, [a], bcs=[[bc]])
 set_bc(b.array, [bc])
 
-A = csr_matrix((A0.data, A0.indices, A0.indptr))
 uh = fem.Function(V, dtype=dtype)
 ml = pyamg.ruge_stuben_solver(A)
 print(ml)
