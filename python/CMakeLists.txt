@@ -22,16 +22,7 @@ execute_process(
 list(APPEND CMAKE_PREFIX_PATH "${NB_DIR}")
 find_package(nanobind CONFIG REQUIRED)
 
-execute_process(
-  COMMAND
-    ${Python3_EXECUTABLE} -c
-    "import os, sys, basix; sys.stdout.write(os.path.dirname(basix.__file__))"
-  OUTPUT_VARIABLE BASIX_PY_DIR
-  RESULT_VARIABLE BASIX_PY_COMMAND_RESULT
-  ERROR_VARIABLE BASIX_ERROR_OUT
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-find_package(Basix REQUIRED CONFIG HINTS ${BASIX_PY_DIR})
+find_package(Basix REQUIRED CONFIG)
 
 if(Basix_FOUND)
   message(STATUS "Found Basix at ${Basix_DIR}")
