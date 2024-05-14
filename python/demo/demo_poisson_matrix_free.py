@@ -1,3 +1,5 @@
+import os
+os.add_dll_directory("C:/Program Files (x86)/Intel/oneAPI/mpi/2021.12/opt/mpi/libfabric/bin")
 # ---
 # jupyter:
 #   jupytext:

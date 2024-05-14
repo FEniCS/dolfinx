@@ -142,6 +142,7 @@ void solver(MPI_Comm comm)
       basix::element::family::P, basix::cell::type::triangle, 2,
       basix::element::lagrange_variant::unset,
       basix::element::dpc_variant::unset, false);
+
   auto V = std::make_shared<fem::FunctionSpace<U>>(
       fem::create_functionspace(mesh, element, {}));
 
@@ -244,7 +245,8 @@ void solver(MPI_Comm comm)
 /// Main program
 int main(int argc, char* argv[])
 {
-  using T = PetscScalar;
+  std::cout << "Hi!\n";
+  using T = double;
   using U = typename dolfinx::scalar_value_type_t<T>;
   init_logging(argc, argv);
   MPI_Init(&argc, &argv);

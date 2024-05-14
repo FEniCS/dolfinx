@@ -12,6 +12,7 @@
 #include <array>
 #include <concepts>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <functional>
@@ -170,6 +171,9 @@ public:
     // Extract _mesh from FunctionSpace, and check they are the same
     if (!_mesh and !V.empty())
       _mesh = V[0]->mesh();
+
+    LOG(WARNING) << "Form check mesh";
+
     for (auto& space : V)
     {
       if (_mesh != space->mesh()
@@ -182,6 +186,7 @@ public:
     if (!_mesh)
       throw std::runtime_error("No mesh could be associated with the Form.");
 
+    LOG(WARNING) << "Store kernels";
     // Store kernels, looping over integrals by domain type (dimension)
     for (auto&& [domain_type, data] : integrals)
     {
@@ -197,6 +202,7 @@ public:
         itg.emplace_back(id, kern, std::move(e));
     }
 
+    LOG(WARNING) << "Store entity maps";
     // Store entity maps
     for (auto [msh, map] : entity_maps)
       _entity_maps.insert({msh, std::vector(map.begin(), map.end())});
