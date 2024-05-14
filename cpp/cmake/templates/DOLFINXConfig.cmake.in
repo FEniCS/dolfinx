@@ -9,6 +9,7 @@
 include(CMakeFindDependencyMacro)
 
 find_dependency(MPI REQUIRED)
+find_dependency(glog REQUIRED)
 find_dependency(pugixml)
 
 # Check for Boost

@@ -85,7 +85,7 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
-          sudo apt-get install catch2 cmake g++ libboost-dev libboost-filesystem-dev libboost-timer-dev libhdf5-mpi-dev libparmetis-dev libpugixml-dev mpi-default-dev ninja-build pkg-config
+          sudo apt-get install catch2 cmake g++ libboost-dev libboost-filesystem-dev libboost-timer-dev libgoogle-glog-dev libhdf5-mpi-dev libparmetis-dev libpugixml-dev mpi-default-dev ninja-build pkg-config
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -312,4 +312,3 @@ jobs:
           git add --all
           git commit --allow-empty -m "C++/Python FEniCS/dolfinx@${{ github.sha }}"
           git push
-

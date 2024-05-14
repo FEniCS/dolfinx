@@ -4,12 +4,10 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include <glog/logging.h>
+#include <glog/stl_logging.h>
+
 #pragma once
-
-#define LOGURU_WITH_STREAMS 1
-#define LOGURU_REPLACE_GLOG 1
-
-#include "loguru.hpp"
 
 namespace dolfinx
 {

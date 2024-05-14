@@ -319,7 +319,7 @@ distribute_to_postoffice(MPI_Comm comm, const U& x,
   assert(x.size() % shape[1] == 0);
   const std::int32_t shape0_local = x.size() / shape[1];
 
-  LOG(2) << "Sending data to post offices (distribute_to_postoffice)";
+  VLOG(2) << "Sending data to post offices (distribute_to_postoffice)";
 
   // Post office ranks will receive data from this rank
   std::vector<int> row_to_dest(shape0_local);
@@ -445,7 +445,7 @@ distribute_to_postoffice(MPI_Comm comm, const U& x,
   err = MPI_Comm_free(&neigh_comm);
   dolfinx::MPI::check_error(comm, err);
 
-  LOG(2) << "Completed send data to post offices.";
+  VLOG(2) << "Completed send data to post offices.";
 
   // Convert to local indices
   const std::int64_t r0 = MPI::local_range(rank, shape[0], size)[0];

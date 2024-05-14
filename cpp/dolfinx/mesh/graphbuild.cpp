@@ -107,7 +107,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
     fshape1 = recv_buffer_r[0];
     vrange = {-recv_buffer_r[1], recv_buffer_r[2] + 1};
 
-    LOG(2) << "Max. vertices per facet=" << fshape1 << "\n";
+    VLOG(2) << "Max. vertices per facet=" << fshape1 << "\n";
   }
   const std::int32_t buffer_shape1 = fshape1 + 1;
 
