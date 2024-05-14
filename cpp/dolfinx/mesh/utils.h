@@ -919,9 +919,9 @@ create_mesh(MPI_Comm comm, std::span<const std::int64_t> cells,
 /// geometric information for the subset of entities. The entities may differ in
 /// topological dimension from the original mesh.
 ///
-/// @param mesh The full mesh.
-/// @param dim Topological dimension of the sub-topology.
-/// @param subentity_to_entity Map from sub-topology entity to the
+/// @param[in] mesh The full mesh.
+/// @param[in] dim Topological dimension of the sub-topology.
+/// @param[in] subentity_to_entity Map from sub-topology entity to the
 /// entity in the parent topology.
 /// @return A sub-geometry and a map from sub-geometry coordinate
 /// degree-of-freedom to the coordinate degree-of-freedom in `geometry`.
