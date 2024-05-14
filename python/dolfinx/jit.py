@@ -34,7 +34,7 @@ DOLFINX_DEFAULT_JIT_OPTIONS = {
 
 if sys.platform.startswith("win32"):
     DOLFINX_DEFAULT_JIT_OPTIONS["cffi_extra_compile_args"] = (
-        ["/O2"],
+        ["-O2"],
         "Extra C compiler arguments to pass to CFFI",
     )
 else:
