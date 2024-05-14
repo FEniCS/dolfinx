@@ -81,7 +81,9 @@ if(MPI_CXX_FOUND)
     set(PARMETIS_LIBRARIES ${PARMETIS_LIBRARIES} ${METIS_LIBRARY})
   endif()
   if(GKLIB_LIBRARY)
-    set(PARMETIS_LIBRARIES ${PARMETIS_LIBRARIES} ${METIS_LIBRARY} ${GKLIB_LIBRARY})
+    set(PARMETIS_LIBRARIES ${PARMETIS_LIBRARIES} ${METIS_LIBRARY}
+                           ${GKLIB_LIBRARY}
+    )
   endif()
 
   # Try compiling and running test program

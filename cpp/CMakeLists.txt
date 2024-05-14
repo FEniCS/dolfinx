@@ -1,6 +1,6 @@
 # ------------------------------------------------------------------------------
 # Top level CMakeLists.txt file for DOLFINx
-if (WIN32)
+if(WIN32)
   cmake_minimum_required(VERSION 3.21)
 else()
   cmake_minimum_required(VERSION 3.19)
@@ -25,10 +25,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Do not enable compler-specific extensions
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-if (WIN32)
-    # Windows requires all symbols to be manually exported.
-    # This flag exports all symbols automatically, as in Unix.
-    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
+if(WIN32)
+  # Windows requires all symbols to be manually exported. This flag exports all
+  # symbols automatically, as in Unix.
+  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 endif()
 
 # ------------------------------------------------------------------------------
