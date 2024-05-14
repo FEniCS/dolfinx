@@ -17,6 +17,9 @@ from dolfinx.fem import Function, assemble_matrix, assemble_vector, form, functi
 from dolfinx.mesh import create_unit_square
 from ufl import dx, grad, inner
 
+import sys
+if sys.platform.startswith('win32'):
+    pytest.skip('No Win32 _Complex support', allow_module_level=True)
 
 @pytest.mark.parametrize("complex_dtype", [np.complex64, np.complex128])
 def test_complex_assembly(complex_dtype):
