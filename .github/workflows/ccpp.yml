@@ -129,8 +129,8 @@ jobs:
       - name: Build Python interface
         run: pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
 
-      - name: Install Python test dependencies
-        run: pip install matplotlib pytest pytest-xdist scipy
+      - name: Install Python demo/test dependencies
+        run: pip install matplotlib pyamg pytest pytest-xdist scipy
       - name: Run demos (Python, serial)
         run: python3 -m pytest -n auto -m serial --durations=10 python/demo/test.py
       - name: Run demos (Python, MPI (np=3))
@@ -312,4 +312,3 @@ jobs:
           git add --all
           git commit --allow-empty -m "C++/Python FEniCS/dolfinx@${{ github.sha }}"
           git push
-
