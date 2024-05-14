@@ -914,7 +914,11 @@ create_mesh(MPI_Comm comm, std::span<const std::int64_t> cells,
   }
 }
 
-/// @brief Create a sub-geometry for a subset of entities.
+/// @brief Create a sub-geometry from a mesh and a subset of mesh entities to be
+/// included. A sub-geometry is simply a `Geometry` object containing only the
+/// geometric information for the subset of entities. The entities may differ in
+/// topological dimension from the original mesh.
+///
 /// @param mesh The full mesh.
 /// @param dim Topological dimension of the sub-topology.
 /// @param subentity_to_entity Map from sub-topology entity to the
