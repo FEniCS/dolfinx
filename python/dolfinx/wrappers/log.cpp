@@ -11,51 +11,54 @@
 #include <nanobind/stl/string.h>
 #include <string>
 
+#include <glog/log_severity.h>
+
 namespace nb = nanobind;
+
+enum LogLevel
+{
+  INFO = 0,
+  WARNING = 1,
+  ERROR = 2
+};
 
 namespace dolfinx_wrappers
 {
 void log(nb::module_& m)
 {
   // log level enums
-  nb::enum_<loguru::NamedVerbosity>(m, "LogLevel", nb::is_arithmetic())
-      .value("OFF", loguru::Verbosity_OFF)
-      .value("INFO", loguru::Verbosity_INFO)
-      .value("WARNING", loguru::Verbosity_WARNING)
-      .value("ERROR", loguru::Verbosity_ERROR);
+  nb::enum_<LogLevel>(m, "LogLevel")
+      .value("INFO", google::GLOG_INFO)
+      .value("WARNING", google::GLOG_WARNING)
+      .value("ERROR", google::GLOG_ERROR);
 
   m.def(
-      "set_output_file",
-      [](std::string filename)
-      {
-        loguru::add_file(filename.c_str(), loguru::Truncate,
-                         loguru::Verbosity_INFO);
-      },
+      "set_output_file", [](std::string filename)
+      { google::SetLogDestination(google::INFO, filename.c_str()); },
       nb::arg("filename"));
 
-  m.def(
-      "set_thread_name", [](std::string thread_name)
-      { loguru::set_thread_name(thread_name.c_str()); },
-      nb::arg("thread_name"));
+  // m.def(
+  //     "set_thread_name", [](std::string thread_name)
+  //     { google::LogSeverity::set_thread_name(thread_name.c_str()); },
+  //     nb::arg("thread_name"));
 
   m.def(
-      "set_log_level", [](loguru::NamedVerbosity level)
-      { loguru::g_stderr_verbosity = level; }, nb::arg("level"));
-  m.def("get_log_level",
-        []() { return loguru::NamedVerbosity(loguru::g_stderr_verbosity); });
+      "set_log_level", [](int level) { FLAGS_minloglevel = level; },
+      nb::arg("level"));
+  m.def("get_log_level", []() { return FLAGS_minloglevel; });
   m.def(
       "log",
-      [](loguru::NamedVerbosity level, std::string s)
+      [](int level, std::string s)
       {
         switch (level)
         {
-        case (loguru::Verbosity_INFO):
+        case (google::GLOG_INFO):
           LOG(INFO) << s;
           break;
-        case (loguru::Verbosity_WARNING):
+        case (google::GLOG_WARNING):
           LOG(WARNING) << s;
           break;
-        case (loguru::Verbosity_ERROR):
+        case (google::GLOG_ERROR):
           LOG(ERROR) << s;
           break;
         default:
