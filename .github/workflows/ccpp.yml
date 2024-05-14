@@ -91,6 +91,8 @@ jobs:
           cmake -S . -B build -G "Unix Makefiles"
           cmake --build build
           sudo cmake --build build --target install
+          cd ..
+          sudo rm -rf glog
 
 
       - name: Set up Python
