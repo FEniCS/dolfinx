@@ -655,6 +655,10 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   std::vector<std::int32_t> entity_xdofs;
   entity_xdofs.reserve(entities.size() * num_entity_dofs);
 
+  // Get the element's closure DOFs
+  const std::vector<std::vector<std::vector<int>>>& closure_dofs_all
+      = layout.entity_closure_dofs_all();
+
   // Get the cell info, which is needed to permute the closure dofs
   std::span<const std::uint32_t> cell_info;
   if (dim != topology->dim() and permute)
@@ -674,8 +678,7 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
     assert(it != cell_entities.end());
     std::size_t local_entity = std::distance(cell_entities.begin(), it);
 
-    std::vector<std::int32_t> closure_dofs(
-        layout.entity_closure_dofs(dim, local_entity));
+    std::vector<std::int32_t> closure_dofs(closure_dofs_all[dim][local_entity]);
 
     // Cell sub-entities must be permuted so that their local orientation agrees
     // with their global orientation
