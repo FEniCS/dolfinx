@@ -53,6 +53,7 @@ nanobind_add_module(
   dolfinx/wrappers/graph.cpp
   dolfinx/wrappers/io.cpp
   dolfinx/wrappers/la.cpp
+  dolfinx/wrappers/log.cpp
   dolfinx/wrappers/mesh.cpp
   dolfinx/wrappers/petsc.cpp
   dolfinx/wrappers/refinement.cpp
