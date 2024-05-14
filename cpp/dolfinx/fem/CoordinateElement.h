@@ -93,14 +93,22 @@ public:
   void tabulate(int nd, std::span<const T> X, std::array<std::size_t, 2> shape,
                 std::span<T> basis) const;
 
-  /// @brief Permute a list of DOF indices associated with the closure of a cell
-  /// sub-entity.
+  /// @brief Given the closure DOFs \f$\tilde{d}\f$ of a cell sub-entity in
+  /// reference ordering, this function computes the permuted degrees-of-freedom
+  ///   \f[ d = P \tilde{d},\f]
+  /// ordered to be consistent with the entity's mesh orientation, where
+  /// \f$P\f$ is a permutation matrix. This accounts for orientation
+  /// discrepancies between the entity's cell and mesh orientation. All DOFs are
+  /// rotated and reflected together, unlike `permute`, which considered
+  /// sub-entities independently.
+  ///
   /// @param[in,out] d Indices associated with the reference element
   /// degree-of-freedom (in). Indices associated with each physical
   /// element degree-of-freedom (out).
   /// @param cell_info Permutation info for the cell
   /// @param entity_type The cell type of the sub-entity
-  /// @param entity_index The local (with respect to the cell) index of the entity
+  /// @param entity_index The local (with respect to the cell) index of the
+  /// entity
   void permute_subentity_closure(std::span<std::int32_t> d,
                                  std::uint32_t cell_info,
                                  mesh::CellType entity_type,
