@@ -610,10 +610,10 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
 /// @param[in] mesh The mesh.
 /// @param[in] dim Topological dimension of the entities of interest.
 /// @param[in] entities Entity indices (local to process).
-/// @param[in] permute If `true`, permute the DOFs such that they are consistent with the
-/// orientation of `dim`-dimensional mesh entities. This requires
+/// @param[in] permute If `true`, permute the DOFs such that they are consistent
+/// with the orientation of `dim`-dimensional mesh entities. This requires
 /// `create_entity_permutations` to be called first.
-/// @return Indices in the geometry array associated with the closure of each
+/// @return The geometry DOFs associated with the closure of each
 /// entity in `entities`. The shape is `(num_entities, num_xdofs_per_entity)`
 /// and the storage is row-major. The index `indices[i, j]` is the position in
 /// the geometry array of the `j`-th vertex of the `entity[i]`.
