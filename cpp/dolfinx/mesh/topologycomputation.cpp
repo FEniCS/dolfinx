@@ -531,8 +531,10 @@ compute_entities_by_key_matching(
 
         // Get entity vertices. Padded with -1 if fewer than
         // max_vertices_per_entity
-        // NOTE Entity vertices are reordered so that their local (to
-        // the process) orientation agrees with their global orientation
+        // NOTE Entity orientation is determined by vertex ordering. The
+        // orientation of an entity with respect to the cell may differ from its
+        // global mesh orientation. Hence, we reorder the vertices so that
+        // each entity's orientation agrees with their global orientation.
         // FIXME This might be better below when the entity to vertex
         // connectivity is computed
         std::vector<std::int32_t> entity_vertices(ev.size());
