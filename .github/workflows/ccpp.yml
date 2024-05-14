@@ -85,7 +85,7 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
-          sudo apt-get install catch2 cmake g++ libboost-dev libboost-filesystem-dev libboost-timer-dev libhdf5-mpi-dev libparmetis-dev libpugixml-dev mpi-default-dev ninja-build pkg-config
+          sudo apt-get install catch2 cmake g++ libboost-dev libboost-filesystem-dev libboost-timer-dev libgflags-dev libhdf5-mpi-dev libparmetis-dev libpugixml-dev mpi-default-dev ninja-build pkg-config
           git clone https://github.com/google/glog.git
           cd glog
           cmake -S . -B build -G "Unix Makefiles"
