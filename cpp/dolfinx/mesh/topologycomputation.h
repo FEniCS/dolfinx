@@ -29,7 +29,7 @@ namespace dolfinx::mesh
 class Topology;
 
 /// @brief Compute mesh entities of given topological dimension by
-/// computing entity-to-vertex connectivity (dim, 0), and cell-to-entity
+/// computing entity-to-vertex connectivity `(dim, 0)`, and cell-to-entity
 /// connectivity `(tdim, dim)`. 
 ///
 /// Computed entities are oriented such that their
