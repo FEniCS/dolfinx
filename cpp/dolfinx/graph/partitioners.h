@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include <array>
 #include "partition.h"
+#include <array>
 
 namespace dolfinx::graph
 {

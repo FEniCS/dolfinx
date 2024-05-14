@@ -402,7 +402,6 @@ Form<T, U> create_form_factory(
     mesh->topology_mutable()->create_connectivity(tdim, tdim - 1);
   }
 
-
   // Get list of integral IDs, and load tabulate tensor into memory for
   // each
   using kern_t = std::function<void(T*, const T*, const T*, const U*,
@@ -478,7 +477,6 @@ Form<T, U> create_form_factory(
         needs_facet_permutations = true;
     }
   }
-
 
   // Attach exterior facet kernels
   std::vector<std::int32_t> default_facets_ext;

@@ -72,7 +72,8 @@ hid_t io::hdf5::open_file(MPI_Comm comm, const std::filesystem::path& filename,
   {
     if (auto d = filename.parent_path(); !d.empty())
       std::filesystem::create_directories(d);
-    file_id = H5Fcreate(filename.string().c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
+    file_id = H5Fcreate(filename.string().c_str(), H5F_ACC_TRUNC, H5P_DEFAULT,
+                        plist_id);
     if (file_id < 0)
       throw std::runtime_error("Failed to create HDF5 file.");
   }
@@ -84,8 +85,8 @@ hid_t io::hdf5::open_file(MPI_Comm comm, const std::filesystem::path& filename,
     {
       if (auto d = filename.parent_path(); !d.empty())
         std::filesystem::create_directories(d);
-      file_id
-          = H5Fcreate(filename.string().c_str(), H5F_ACC_EXCL, H5P_DEFAULT, plist_id);
+      file_id = H5Fcreate(filename.string().c_str(), H5F_ACC_EXCL, H5P_DEFAULT,
+                          plist_id);
     }
 
     if (file_id < 0)
