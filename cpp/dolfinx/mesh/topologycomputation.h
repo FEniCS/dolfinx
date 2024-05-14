@@ -30,7 +30,9 @@ class Topology;
 
 /// @brief Compute mesh entities of given topological dimension by
 /// computing entity-to-vertex connectivity (dim, 0), and cell-to-entity
-/// connectivity (tdim, dim). Computed entities are oriented such that their
+/// connectivity `(tdim, dim)`. 
+///
+/// Computed entities are oriented such that their
 /// local (to the process) orientation agrees with their global orientation
 /// @param[in] comm MPI Communicator
 /// @param[in] topology Mesh topology
