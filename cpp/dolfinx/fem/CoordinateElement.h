@@ -105,9 +105,9 @@ public:
   /// @param[in,out] d Indices associated with the reference element
   /// degree-of-freedom (in). Indices associated with each physical
   /// element degree-of-freedom (out).
-  /// @param cell_info Permutation info for the cell
-  /// @param entity_type The cell type of the sub-entity
-  /// @param entity_index The local (with respect to the cell) index of the
+  /// @param[in] cell_info Permutation info for the cell
+  /// @param[in] entity_type The cell type of the sub-entity
+  /// @param[in] entity_index The local (with respect to the cell) index of the
   /// entity
   void permute_subentity_closure(std::span<std::int32_t> d,
                                  std::uint32_t cell_info,
