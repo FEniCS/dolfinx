@@ -17,7 +17,6 @@
 #include "sparsitybuild.h"
 #include <array>
 #include <concepts>
-#include <dolfinx/common/log.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Topology.h>
@@ -347,7 +346,6 @@ Form<T, U> create_form_factory(
                    std::span<const std::int32_t>>& entity_maps,
     std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
 {
-  LOG(WARNING) << "Checks on ufcx_form";
   if (ufcx_form.rank != (int)spaces.size())
     throw std::runtime_error("Wrong number of argument spaces for Form.");
   if (ufcx_form.num_coefficients != (int)coefficients.size())
@@ -374,7 +372,6 @@ Form<T, U> create_form_factory(
     }
   }
 
-  LOG(WARNING) << "Extract mesh from fs";
   // Extract mesh from FunctionSpace, and check they are the same
   if (!mesh and !spaces.empty())
     mesh = spaces[0]->mesh();
@@ -391,7 +388,6 @@ Form<T, U> create_form_factory(
   assert(topology);
   const int tdim = topology->dim();
 
-  LOG(WARNING) << "Get integral offsets";
   const int* integral_offsets = ufcx_form.form_integral_offsets;
   std::vector<int> num_integrals_type(3);
   for (int i = 0; i < 3; ++i)
@@ -406,7 +402,6 @@ Form<T, U> create_form_factory(
     mesh->topology_mutable()->create_connectivity(tdim, tdim - 1);
   }
 
-  LOG(WARNING) << "Get integral IDs";
 
   // Get list of integral IDs, and load tabulate tensor into memory for
   // each
@@ -425,13 +420,10 @@ Form<T, U> create_form_factory(
     auto sd = subdomains.find(IntegralType::cell);
     for (int i = 0; i < num_integrals_type[cell]; ++i)
     {
-      LOG(WARNING) << "Get cell integral " << i;
       const int id = ids[i];
-      LOG(WARNING) << "Get cell integral id:" << id;
       ufcx_integral* integral
           = ufcx_form.form_integrals[integral_offsets[cell] + i];
       assert(integral);
-      LOG(WARNING) << "Assigned to pointer";
 
       kern_t k = nullptr;
       if constexpr (std::is_same_v<T, float>)
@@ -457,7 +449,6 @@ Form<T, U> create_form_factory(
       }
 #endif // __STDC_NO_COMPLEX__
 
-      LOG(WARNING) << "UFCx kernel = " << (bool)k;
       if (!k)
       {
         throw std::runtime_error(
@@ -488,7 +479,6 @@ Form<T, U> create_form_factory(
     }
   }
 
-  LOG(WARNING) << "Finished with cell integrals";
 
   // Attach exterior facet kernels
   std::vector<std::int32_t> default_facets_ext;
@@ -500,7 +490,6 @@ Form<T, U> create_form_factory(
     auto sd = subdomains.find(IntegralType::exterior_facet);
     for (int i = 0; i < num_integrals_type[exterior_facet]; ++i)
     {
-      LOG(WARNING) << "Add facet integrals " << i;
       const int id = ids[i];
       ufcx_integral* integral
           = ufcx_form.form_integrals[integral_offsets[exterior_facet] + i];
@@ -654,8 +643,6 @@ Form<T, U> create_form_factory(
     sd.insert({itg, std::move(x)});
   }
 
-  LOG(WARNING) << "Calling Form<T, U> constructor";
-
   return Form<T, U>(spaces, integrals, coefficients, constants,
                     needs_facet_permutations, entity_maps, mesh);
 }
@@ -685,7 +672,6 @@ Form<T, U> create_form(
     std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
 {
   // Place coefficients in appropriate order
-  LOG(WARNING) << "Add coefficients to form";
   std::vector<std::shared_ptr<const Function<T, U>>> coeff_map;
   for (const std::string& name : get_coefficient_names(ufcx_form))
   {
@@ -700,7 +686,6 @@ Form<T, U> create_form(
 
   // Place constants in appropriate order
 
-  LOG(WARNING) << "Add constants to form";
   std::vector<std::shared_ptr<const Constant<T>>> const_map;
   for (const std::string& name : get_constant_names(ufcx_form))
   {
@@ -742,9 +727,7 @@ Form<T, U> create_form(
         subdomains,
     std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
 {
-  LOG(WARNING) << "Create form with fptr";
   ufcx_form* form = fptr();
-  LOG(WARNING) << "Calling create_form<T,U>";
   Form<T, U> L = create_form<T, U>(*form, spaces, coefficients, constants,
                                    subdomains, mesh);
   std::free(form);
