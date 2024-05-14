@@ -20,8 +20,15 @@ from dolfinx.mesh import create_unit_square
 dolfinx.cpp.common.init_logging(["-v"])
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex), 
-                                   pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex)])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
 def test_rank0(dtype):
     """Test evaluation of UFL expression.
 
@@ -67,8 +74,15 @@ def test_rank0(dtype):
     )
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex), 
-                                   pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex)])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
 def test_rank1_hdiv(dtype):
     """Test rank-1 Expression, i.e. Expression containing Argument
     (TrialFunction).
@@ -129,8 +143,15 @@ def test_rank1_hdiv(dtype):
     assert np.linalg.norm(h2.x.array - h.x.array) == pytest.approx(0.0, abs=1.0e-4)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex), 
-                                   pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex)])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
 def test_simple_evaluation(dtype):
     """Test evaluation of UFL Expression.
 
@@ -208,8 +229,15 @@ def test_simple_evaluation(dtype):
     )
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex), 
-                                   pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex)])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
 def test_assembly_into_quadrature_function(dtype):
     """Test assembly into a Quadrature function.
 
@@ -305,8 +333,15 @@ def test_assembly_into_quadrature_function(dtype):
     assert np.allclose(local, e_exact_eval)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex), 
-                                   pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex)])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
 def test_expression_eval_cells_subset(dtype):
     xtype = dtype(0).real.dtype
     mesh = dolfinx.mesh.create_unit_square(MPI.COMM_WORLD, 2, 4, dtype=xtype)
@@ -338,8 +373,15 @@ def test_expression_eval_cells_subset(dtype):
     assert np.allclose(u_.ravel(), cells)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex), 
-                                   pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex)])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
 def test_expression_comm(dtype):
     xtype = dtype(0).real.dtype
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 4, dtype=xtype)
@@ -368,8 +410,15 @@ def compute_exterior_facet_entities(mesh, facets):
     return integration_entities
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex), 
-                                   pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex)])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
 def test_facet_expression(dtype):
     xtype = dtype(0).real.dtype
     mesh = create_unit_square(MPI.COMM_WORLD, 4, 3, dtype=xtype)

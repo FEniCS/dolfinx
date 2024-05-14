@@ -7,10 +7,12 @@
 """Logging module."""
 
 # Import nanobind wrapped code intp dolfinx.log
-from dolfinx.cpp.log import LogLevel, log,  set_output_file  # noqa
+from dolfinx.cpp.log import LogLevel, log, set_output_file  # noqa
+
 
 def set_log_level(level):
     print(level)
+
 
 def get_log_level():
     return "unknown"

@@ -230,8 +230,15 @@ def assemble_petsc_matrix(A, mesh, dofmap, num_cells, set_vals, mode):
     sink(A_local, dofmap)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex), 
-                                   pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex)])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
 def test_custom_mesh_loop_rank1(dtype):
     mesh = create_unit_square(MPI.COMM_WORLD, 64, 64, dtype=dtype(0).real.dtype)
     V = functionspace(mesh, ("Lagrange", 1))
