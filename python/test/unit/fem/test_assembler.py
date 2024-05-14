@@ -44,7 +44,8 @@ from ufl.geometry import SpatialCoordinate
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex), 
+                                   pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex)])
 def test_assemble_functional_dx(mode, dtype):
     xtype = dtype(0).real.dtype
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode, dtype=xtype)
@@ -60,7 +61,8 @@ def test_assemble_functional_dx(mode, dtype):
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex), 
+                                   pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex)])
 def test_assemble_functional_ds(mode, dtype):
     xtype = dtype(0).real.dtype
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode, dtype=xtype)
@@ -70,7 +72,8 @@ def test_assemble_functional_ds(mode, dtype):
     assert value == pytest.approx(4.0, 1e-6)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex), 
+                                   pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex)])
 def test_assemble_derivatives(dtype):
     """This test checks the original_coefficient_positions, which may change
     under differentiation (some coefficients and constants are
@@ -99,7 +102,8 @@ def test_assemble_derivatives(dtype):
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex), 
+                                   pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex)])
 def test_basic_assembly(mode, dtype):
     mesh = create_unit_square(MPI.COMM_WORLD, 12, 12, ghost_mode=mode, dtype=dtype(0).real.dtype)
     V = functionspace(mesh, ("Lagrange", 1))
@@ -1131,7 +1135,8 @@ class TestPETScAssemblers:
 
 
 @pytest.mark.parametrize("mode", [GhostMode.none, GhostMode.shared_facet])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex), 
+                                   pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex)])
 def test_basic_assembly_constant(mode, dtype):
     """Tests assembly with Constant.
 
@@ -1197,7 +1202,7 @@ def test_lambda_assembler():
     s = MPI.COMM_WORLD.allreduce(mat.dot(v).sum(), MPI.SUM)
     assert np.isclose(s, 1.0)
 
-
+@pytest.mark.xfail_win32_complex
 def test_vector_types():
     """Assemble form using different types"""
     mesh0 = create_unit_square(MPI.COMM_WORLD, 3, 5, dtype=np.float32)

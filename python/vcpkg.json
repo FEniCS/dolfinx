@@ -1,1 +1,22 @@
-../cpp/vcpkg.json
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "dependencies": [
+    "boost-algorithm",
+    "boost-filesystem",
+    "boost-functional",
+    "boost-lexical-cast",
+    "boost-timer",
+    "boost-unordered",
+    "boost-uuid",
+    "catch2",
+    { "name": "hdf5",
+      "features": [
+        "parallel"
+      ]
+    },
+    "mpi",
+    "parmetis",
+    "pugixml",
+    "pkgconf"
+  ]
+}

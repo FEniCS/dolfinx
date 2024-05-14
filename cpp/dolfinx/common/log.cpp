@@ -11,7 +11,7 @@
 //-----------------------------------------------------------------------------
 void dolfinx::init_logging(int argc, char* argv[])
 {
-  loguru::g_stderr_verbosity = loguru::Verbosity_WARNING;
+  //  loguru::g_stderr_verbosity = loguru::Verbosity_WARNING;
 
 #ifdef NDEBUG
   loguru::SignalOptions signals = loguru::SignalOptions::none();

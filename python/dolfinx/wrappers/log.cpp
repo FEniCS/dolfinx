@@ -39,11 +39,11 @@ void log(nb::module_& m)
       { loguru::set_thread_name(thread_name.c_str()); },
       nb::arg("thread_name"));
 
-  m.def(
-      "set_log_level", [](loguru::NamedVerbosity level)
-      { loguru::g_stderr_verbosity = level; }, nb::arg("level"));
-  m.def("get_log_level",
-        []() { return loguru::NamedVerbosity(loguru::g_stderr_verbosity); });
+  // m.def(
+  //    "set_log_level", [](loguru::NamedVerbosity level)
+  //    { loguru::g_stderr_verbosity = level; }, nb::arg("level"));
+  // m.def("get_log_level",
+  // []() { return loguru::NamedVerbosity(loguru::g_stderr_verbosity); });
   m.def(
       "log",
       [](loguru::NamedVerbosity level, std::string s)
