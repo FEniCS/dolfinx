@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <dolfinx/common/log.h>
-#include <dolfinx/common/loguru.hpp>
 #include <dolfinx/mesh/Mesh.h>
 #include <memory>
 #include <nanobind/nanobind.h>

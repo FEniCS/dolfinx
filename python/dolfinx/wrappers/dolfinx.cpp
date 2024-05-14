@@ -20,6 +20,7 @@ void assemble(nb::module_& m);
 void fem(nb::module_& m);
 void geometry(nb::module_& m);
 void graph(nb::module_& m);
+void io(nb::module_& m);
 void la(nb::module_& m);
 void mesh(nb::module_& m);
 void nls(nb::module_& m);
@@ -39,6 +40,10 @@ NB_MODULE(cpp, m)
   // Create common submodule [common]
   nb::module_ common = m.def_submodule("common", "Common module");
   dolfinx_wrappers::common(common);
+
+  // Create common submodule [log]
+  nb::module_ log = m.def_submodule("log", "Logging module");
+  dolfinx_wrappers::log(log);
 
   // Create mesh submodule [mesh]
   nb::module_ mesh = m.def_submodule("mesh", "Mesh library module");
