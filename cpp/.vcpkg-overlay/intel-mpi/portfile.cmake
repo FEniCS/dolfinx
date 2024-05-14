@@ -85,5 +85,5 @@ file(INSTALL
 file(INSTALL "${CMAKE_CURRENT_LIST_DIR}/mpi-wrapper.cmake" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}")
 
 # Handle copyright
-#file(COPY "${SDK_SOURCE_DIR}/licensing/2023.0.0/license.htm" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}")
-#file(WRITE "${CURRENT_PACKAGES_DIR}/share/${PORT}/copyright" "See the accompanying 'licence.htm'")
+file(COPY "${SDK_SOURCE_DIR}/licensing/${INTELMPI_VERSION}/licensing/${INTELMPI_VERSION}/license.htm" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}")
+file(WRITE "${CURRENT_PACKAGES_DIR}/share/${PORT}/copyright" "See the licence.htm file in this directory.")
