@@ -605,7 +605,7 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
 }
 
 /// @brief Compute the geometry degrees of freedom associated with
-/// the closure of a given set of entities.
+/// the closure of a given set of cell entities.
 ///
 /// @param[in] mesh The mesh.
 /// @param[in] dim Topological dimension of the entities of interest.
