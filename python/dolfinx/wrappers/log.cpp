@@ -37,37 +37,37 @@ void log(nb::module_& m)
       { google::SetLogDestination(google::INFO, filename.c_str()); },
       nb::arg("filename"));
 
-   // m.def(
-   //     "set_thread_name",
-   //     [](std::string thread_name)
-   //     { google::InstallPrefixFormatter(&PrefixFormatter); },
-   //     nb::arg("thread_name"));
+  m.def(
+      "set_thread_name",
+      [](std::string thread_name) { // Doing nothing yet
+      },
+      nb::arg("thread_name"));
 
-   m.def(
-       "set_log_level", [](LogLevel level) { FLAGS_minloglevel = level; },
-       nb::arg("level"));
-   m.def("get_log_level",
-         []() { return static_cast<LogLevel>(FLAGS_minloglevel); });
-   m.def(
-       "log",
-       [](LogLevel level, std::string s)
-       {
-         switch (level)
-         {
-         case (LogLevel::INFO):
-           LOG(INFO) << s;
-           break;
-         case (LogLevel::WARNING):
-           LOG(WARNING) << s;
-           break;
-         case (LogLevel::ERROR):
-           LOG(ERROR) << s;
-           break;
-         default:
-           throw std::runtime_error("Log level not supported");
-           break;
-         }
-       },
-       nb::arg("level"), nb::arg("s"));
+  m.def(
+      "set_log_level", [](LogLevel level) { FLAGS_minloglevel = level; },
+      nb::arg("level"));
+  m.def("get_log_level",
+        []() { return static_cast<LogLevel>(FLAGS_minloglevel); });
+  m.def(
+      "log",
+      [](LogLevel level, std::string s)
+      {
+        switch (level)
+        {
+        case (LogLevel::INFO):
+          LOG(INFO) << s;
+          break;
+        case (LogLevel::WARNING):
+          LOG(WARNING) << s;
+          break;
+        case (LogLevel::ERROR):
+          LOG(ERROR) << s;
+          break;
+        default:
+          throw std::runtime_error("Log level not supported");
+          break;
+        }
+      },
+      nb::arg("level"), nb::arg("s"));
 }
 } // namespace dolfinx_wrappers

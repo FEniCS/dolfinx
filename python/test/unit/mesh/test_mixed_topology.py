@@ -2,7 +2,7 @@ from mpi4py import MPI
 
 import numpy as np
 
-# from dolfinx.cpp.log import set_thread_name
+from dolfinx.cpp.log import set_thread_name
 from dolfinx.cpp.mesh import Mesh_float64, create_geometry, create_topology
 from dolfinx.fem import coordinate_element
 from dolfinx.log import LogLevel, set_log_level
@@ -200,7 +200,7 @@ def test_parallel_mixed_mesh():
     x[:, 1] += 1.0 * rank
 
     set_log_level(LogLevel.INFO)
-    # set_thread_name(str(rank))
+    set_thread_name(str(rank))
     geom = create_geometry(
         topology, [tri._cpp_object, quad._cpp_object], nodes, xdofs, x.flatten(), 2
     )

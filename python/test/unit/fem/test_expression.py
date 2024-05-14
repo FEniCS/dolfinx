@@ -17,8 +17,6 @@ from dolfinx import fem, la
 from dolfinx.fem import Constant, Expression, Function, form, functionspace
 from dolfinx.mesh import create_unit_square
 
-dolfinx.cpp.common.init_logging(["-v"])
-
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 def test_rank0(dtype):
