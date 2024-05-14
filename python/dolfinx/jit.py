@@ -8,6 +8,7 @@
 import functools
 import json
 import os
+import sys
 from pathlib import Path
 from typing import Optional
 
@@ -26,11 +27,21 @@ DOLFINX_DEFAULT_JIT_OPTIONS = {
         "Default prefix ~/.cache/ can be changed using XDG_CACHE_HOME environment variable.",
     ),
     "cffi_debug": (False, "CFFI debug mode"),
-    "cffi_extra_compile_args": (["-O2", "-g0"], "Extra C compiler arguments to pass to CFFI"),
     "cffi_verbose": (False, "CFFI verbose mode"),
     "cffi_libraries": (None, "Extra libraries to link"),
     "timeout": (10, "Timeout for JIT compilation"),
 }
+
+if sys.platform.startswith("win32"):
+    DOLFINX_DEFAULT_JIT_OPTIONS["cffi_extra_compile_args"] = (
+        ["/O2"],
+        "Extra C compiler arguments to pass to CFFI",
+    )
+else:
+    DOLFINX_DEFAULT_JIT_OPTIONS["cffi_extra_compile_args"] = (
+        ["-O2", "-g0"],
+        "Extra C compiler arguments to pass to CFFI",
+    )
 
 
 def mpi_jit_decorator(local_jit, *args, **kwargs):
