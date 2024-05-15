@@ -163,7 +163,7 @@ build_basic_dofmaps(
   const std::size_t D = topology.dim();
   const std::size_t num_cell_types = topology.entity_types(D).size();
 
-  LOG(INFO) << "Checking required entities per dimension";
+  spdlog::info("Checking required entities per dimension");
 
   // Find which dimensions (d) and entity types (et) are required
   // and the number of dofs which are required for each (d, et) combination.
@@ -242,7 +242,7 @@ build_basic_dofmaps(
         << (int)required_dim_et[i].second << ")=" << num_entity_dofs_et[i]
         << " ";
     }
-    LOG(INFO) << s.str();
+    spdlog::info("{%s}", s.str());
   }
 #endif
 
@@ -261,8 +261,7 @@ build_basic_dofmaps(
     std::int32_t dofmap_width = element_dof_layouts[i].num_dofs();
     dofs[i].width = dofmap_width;
     dofs[i].array.resize(num_cells * dofmap_width);
-    LOG(INFO) << "Cell type:" << i << ", dofmap:" << num_cells << "x"
-              << dofmap_width;
+    spdlog::info("Cell type: {} dofmap: {}x{}", i, num_cells, dofmap_width);
 
     std::int32_t dofmap_offset = 0;
     for (std::int32_t c = 0; c < num_cells; ++c)
@@ -317,7 +316,7 @@ build_basic_dofmaps(
     }
   }
 
-  LOG(INFO) << "Global index computation";
+  spdlog::info("Global index computation");
 
   // TODO: Put Global index computations in separate function
   // Global index computations
@@ -634,14 +633,14 @@ fem::build_dofmap_data(
               offset]
       = build_basic_dofmaps(topology, element_dof_layouts);
 
-  LOG(INFO) << "Got " << topo_index_maps.size() << " index_maps";
+  spdlog::info("Got {} index_maps", topo_index_maps.size());
 
   // Build re-ordering map for data locality and get number of owned
   // nodes
   const auto [old_to_new, num_owned] = compute_reordering_map(
       node_graphs, dof_entity0, topo_index_maps, reorder_fn);
 
-  LOG(INFO) << "Get global indices";
+  spdlog::info("Get global indices");
 
   // Get global indices for unowned dofs
   const auto [local_to_global_unowned, local_to_global_owner]

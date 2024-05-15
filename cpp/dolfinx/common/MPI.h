@@ -319,7 +319,7 @@ distribute_to_postoffice(MPI_Comm comm, const U& x,
   assert(x.size() % shape[1] == 0);
   const std::int32_t shape0_local = x.size() / shape[1];
 
-  LOG(2) << "Sending data to post offices (distribute_to_postoffice)";
+  spdlog::debug("Sending data to post offices (distribute_to_postoffice)");
 
   // Post office ranks will receive data from this rank
   std::vector<int> row_to_dest(shape0_local);
@@ -374,9 +374,9 @@ distribute_to_postoffice(MPI_Comm comm, const U& x,
 
   // Determine source ranks
   const std::vector<int> src = MPI::compute_graph_edges_nbx(comm, dest);
-  LOG(INFO)
-      << "Number of neighbourhood source ranks in distribute_to_postoffice: "
-      << src.size();
+  spdlog::info(
+      "Number of neighbourhood source ranks in distribute_to_postoffice: {}",
+      src.size());
 
   // Create neighbourhood communicator for sending data to post offices
   MPI_Comm neigh_comm;
@@ -445,7 +445,7 @@ distribute_to_postoffice(MPI_Comm comm, const U& x,
   err = MPI_Comm_free(&neigh_comm);
   dolfinx::MPI::check_error(comm, err);
 
-  LOG(2) << "Completed send data to post offices.";
+  spdlog::debug("Completed send data to post offices.");
 
   // Convert to local indices
   const std::int64_t r0 = MPI::local_range(rank, shape[0], size)[0];
@@ -515,10 +515,10 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
   // me)
   const std::vector<int> dest
       = dolfinx::MPI::compute_graph_edges_nbx(comm, src);
-  LOG(INFO) << "Neighbourhood destination ranks from post office in "
-               "distribute_data (rank, num dests, num dests/mpi_size): "
-            << rank << ", " << dest.size() << ", "
-            << static_cast<double>(dest.size()) / size;
+  spdlog::info(
+      "Neighbourhood destination ranks from post office in "
+      "distribute_data (rank, num dests, num dests/mpi_size): {}, {}, {}",
+      rank, dest.size(), static_cast<double>(dest.size()) / size);
 
   // Create neighbourhood communicator for sending data to post offices
   // (src), and receiving data form my send my post office

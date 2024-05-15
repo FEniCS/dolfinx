@@ -517,7 +517,7 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
                               const graph::AdjacencyList<std::int64_t>& graph,
                               bool ghosting)
   {
-    LOG(INFO) << "Compute graph partition using ParMETIS";
+    spdlog::info("Compute graph partition using ParMETIS");
     common::Timer timer("Compute graph partition (ParMETIS)");
 
     if (nparts == 1 and dolfinx::MPI::size(comm) == 1)

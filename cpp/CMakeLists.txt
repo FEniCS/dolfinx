@@ -213,6 +213,7 @@ set_package_properties(
 # Check for MPI
 find_package(MPI 3 REQUIRED)
 
+find_package(spdlog REQUIRED)
 # ------------------------------------------------------------------------------
 # Compiler flags
 

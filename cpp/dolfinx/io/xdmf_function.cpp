@@ -47,7 +47,7 @@ void xdmf_function::add_function(MPI_Comm comm, const fem::Function<T, U>& u,
                                  double t, pugi::xml_node& xml_node,
                                  hid_t h5_id)
 {
-  LOG(INFO) << "Adding function to node \"" << xml_node.path('/') << "\"";
+  spdlog::info("Adding function to node \"{}\"", xml_node.path('/'));
 
   assert(u.function_space());
   auto mesh = u.function_space()->mesh();
