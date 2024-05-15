@@ -177,7 +177,9 @@ jobs:
           python3 -m pip install --break-system-packages git+https://github.com/FEniCS/ffcx.git@${{ github.event.inputs.ffcx_ref }}
 
       - name: Configure C++
-        run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
+        run: |
+          apt-get install libspdlog-dev
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
 
       - name: Build and install C++ library
         run: |

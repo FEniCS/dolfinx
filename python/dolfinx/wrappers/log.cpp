@@ -22,6 +22,7 @@ void log(nb::module_& m)
   // log level enums
   nb::enum_<spdlog::level::level_enum>(m, "LogLevel", nb::is_arithmetic())
       .value("OFF", spdlog::level::level_enum::off)
+      .value("DEBUG", spdlog::level::level_enum::debug)
       .value("INFO", spdlog::level::level_enum::info)
       .value("WARNING", spdlog::level::level_enum::warn)
       .value("ERROR", spdlog::level::level_enum::err);
