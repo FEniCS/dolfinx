@@ -376,7 +376,7 @@ distribute_to_postoffice(MPI_Comm comm, const U& x,
   const std::vector<int> src = MPI::compute_graph_edges_nbx(comm, dest);
   spdlog::info(
       "Number of neighbourhood source ranks in distribute_to_postoffice: {}",
-      src.size());
+      static_cast<int>(src.size()));
 
   // Create neighbourhood communicator for sending data to post offices
   MPI_Comm neigh_comm;
@@ -518,7 +518,8 @@ distribute_from_postoffice(MPI_Comm comm, std::span<const std::int64_t> indices,
   spdlog::info(
       "Neighbourhood destination ranks from post office in "
       "distribute_data (rank, num dests, num dests/mpi_size): {}, {}, {}",
-      rank, dest.size(), static_cast<double>(dest.size()) / size);
+      rank, static_cast<int>(dest.size()),
+      static_cast<double>(dest.size()) / size);
 
   // Create neighbourhood communicator for sending data to post offices
   // (src), and receiving data form my send my post office
