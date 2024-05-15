@@ -53,7 +53,7 @@ jobs:
         run: |
           . /opt/intel/oneapi/setvars.sh
           apt-get update
-          apt-get install libspdlog-dev
+          apt-get -y install libspdlog-dev
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -DDOLFINX_ENABLE_SCOTCH=on -DDOLFINX_ENABLE_KAHIP=on -DDOLFINX_UFCX_PYTHON=off -B build -S cpp/
 
       - name: Build and install DOLFINx C++ library
