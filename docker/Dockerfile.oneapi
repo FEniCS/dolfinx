@@ -29,6 +29,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libboost-filesystem-dev \
     libboost-timer-dev \
     libpugixml-dev \
+    libspdlog-dev \
     ninja-build \
     pkg-config \
     catch2 \
