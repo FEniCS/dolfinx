@@ -237,10 +237,10 @@ if(HAVE_PIPE)
 endif()
 
 # Add some strict compiler checks
-check_cxx_compiler_flag("-Wall -Werror -Wextra -pedantic -Wno-array-bounds" HAVE_PEDANTIC)
+check_cxx_compiler_flag("-Wall -Werror -Wextra -pedantic -Wno-array-bounds -Wno-stringop-overflow" HAVE_PEDANTIC)
 
 if(HAVE_PEDANTIC)
-  list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -Wall;-Werror;-Wextra;-pedantic;-Wno-array-bounds)
+  list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -Wall;-Werror;-Wextra;-pedantic;-Wno-array-bounds;-Wno-stringop-overflow)
 endif()
 
 # Debug flags
