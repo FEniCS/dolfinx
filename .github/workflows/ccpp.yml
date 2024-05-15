@@ -179,7 +179,7 @@ jobs:
       - name: Configure C++
         run: |
           apt-get update
-          apt-get install libspdlog-dev
+          apt-get install -y libspdlog-dev
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
 
       - name: Build and install C++ library
