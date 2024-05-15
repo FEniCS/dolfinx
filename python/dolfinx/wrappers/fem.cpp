@@ -1156,13 +1156,18 @@ void fem(nb::module_& m)
   m.def(
       "compute_integration_domains",
       [](dolfinx::fem::IntegralType type,
-         const dolfinx::mesh::MeshTags<int>& meshtags)
+         const dolfinx::mesh::Topology& topology,
+         const nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig>
+             entities,
+         int dim,
+         const nb::ndarray<const int, nb::ndim<1>, nb::c_contig> values)
       {
         return dolfinx::fem::compute_integration_domains(
-            type, *meshtags.topology(), meshtags.indices(), meshtags.dim(),
-            meshtags.values());
+            type, topology, std::span(entities.data(), entities.size()), dim,
+            std::span(values.data(), values.size()));
       },
-      nb::arg("integral_type"), nb::arg("meshtags"));
+      nb::arg("integral_type"), nb::arg("topology"), nb::arg("entities"),
+      nb::arg("dim"), nb::arg("values"));
 
   // dolfinx::fem::ElementDofLayout
   nb::class_<dolfinx::fem::ElementDofLayout>(
