@@ -242,7 +242,7 @@ build_basic_dofmaps(
         << (int)required_dim_et[i].second << ")=" << num_entity_dofs_et[i]
         << " ";
     }
-    spdlog::info("{%s}", s.str());
+    spdlog::info("{}", s.str());
   }
 #endif
 
