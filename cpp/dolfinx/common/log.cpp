@@ -22,14 +22,17 @@ void dolfinx::init_logging(int argc, char* argv[])
   logname = std::string(argv[0]);
   google::InitGoogleLogging(logname.c_str());
 
-  // Turn off logging
-  FLAGS_minloglevel = 9999;
+  // Set LogLevel to ERROR, only fatal errors logged by default
+  FLAGS_minloglevel = google::GLOG_ERROR;
 
   // Filter command line arguments, so only those relevant to glog get passed
   // through
   std::vector<char*> argv_filtered;
   std::vector<std::string> allowed_flags
-      = {"--logtostderr", "--logtostdout", "--minloglevel", "--log_dir"};
+      = {"--logtostderr",      "--stderrthreshold", "--colorlogtostderr",
+         "--colorlogtostdout", "--logtostdout",     "--logbuflevel",
+         "--vmodule",          "--minloglevel",     "--log_dir",
+         "--max_log_size"};
   argv_filtered.push_back(argv[0]);
   for (int i = 1; i < argc; ++i)
   {
