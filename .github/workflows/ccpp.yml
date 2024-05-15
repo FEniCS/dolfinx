@@ -129,12 +129,12 @@ jobs:
       - name: Build Python interface
         run: pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
 
-      - name: Install Python test dependencies
-        run: pip install matplotlib pytest pytest-xdist scipy
-      - name: Run demos
-        run: |
-          python python/demo/demo_interpolation-io.py
-          python python/demo/demo_lagrange_variants.py
+      - name: Install Python demo/test dependencies
+        run: pip install matplotlib pyamg pytest pytest-xdist scipy
+      - name: Run demos (Python, serial)
+        run: python3 -m pytest -n auto -m serial --durations=10 python/demo/test.py
+      - name: Run demos (Python, MPI (np=3))
+        run: python3 -m pytest -m mpi --num-proc=3 python/demo/test.py
       - name: Run unit tests
         run: python -m pytest -n auto -m "not petsc4py and not adios2" python/test/unit
       - name: Run unit tests (MPI, np=3)
@@ -312,4 +312,3 @@ jobs:
           git add --all
           git commit --allow-empty -m "C++/Python FEniCS/dolfinx@${{ github.sha }}"
           git push
-
