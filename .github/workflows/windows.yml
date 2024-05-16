@@ -86,10 +86,6 @@ jobs:
       - uses: mpi4py/setup-mpi@v1
         with:
           mpi: "intelmpi"
-      
-      - name: Recurse list MPI
-        run: |
-          Get-ChildItem -Recurse "C:/Program Files (x86)/Intel/oneAPI/" 
 
       - name: Build and install DOLFINx C++ library
         working-directory: dolfinx
