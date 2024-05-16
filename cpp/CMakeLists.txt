@@ -296,7 +296,7 @@ endif()
 # pugixml
 find_package(pugixml REQUIRED)
 
-# Note: When updating Boost version, also update DOLFINXCongif.cmake.in
+# Note: When updating Boost version, also update DOLFINXConfig.cmake.in
 if(DEFINED ENV{BOOST_ROOT} OR DEFINED BOOST_ROOT)
   set(Boost_NO_SYSTEM_PATHS on)
 endif()
@@ -352,7 +352,7 @@ set_package_properties(
   basix PROPERTIES
   TYPE REQUIRED
   DESCRIPTION "FEniCS tabulation library"
-  URL "https://github.com/fenics/basix" HINTS
+  URL "https://github.com/fenics/basix"
 )
 
 # Check for HDF5
