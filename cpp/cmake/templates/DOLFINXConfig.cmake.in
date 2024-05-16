@@ -10,7 +10,7 @@ include(CMakeFindDependencyMacro)
 
 find_dependency(MPI REQUIRED)
 find_dependency(spdlog REQUIRED)
-find_dependency(pugixml)
+find_dependency(pugixml REQUIRED)
 
 # Check for Boost
 if(DEFINED ENV{BOOST_ROOT} OR DEFINED BOOST_ROOT)
