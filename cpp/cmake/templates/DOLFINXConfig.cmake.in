@@ -18,7 +18,7 @@ if(DEFINED ENV{BOOST_ROOT} OR DEFINED BOOST_ROOT)
 endif()
 set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
 set(Boost_VERBOSE TRUE)
-find_dependency(Boost 1.70 REQUIRED COMPONENTS timer filesystem)
+find_dependency(Boost 1.70 REQUIRED COMPONENTS timer)
 
 if(@ufcx_FOUND@)
   find_dependency(ufcx)
@@ -39,7 +39,7 @@ endif()
 if(BASIX_PY_DIR)
   message(STATUS "Adding ${BASIX_PY_DIR} to Basix search hints")
 endif()
-find_dependency(Basix CONFIG)
+find_dependency(Basix CONFIG HINTS ${BASIX_PY_DIR})
 
 # HDF5
 if(NOT TARGET hdf5::hdf5)
