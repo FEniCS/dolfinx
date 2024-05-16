@@ -53,18 +53,20 @@ from ufl import ds, dx, grad, inner
 
 
 # +
-def poisson_problem(dtype: npt.DTypeLike):
+def poisson_problem(dtype: npt.DTypeLike, solver_type: str):
     """Solve a 3D Poisson problem using Ruge-Stuben algebraic multigrid.
 
     Args:
         dtype: Scalar type to use.
     """
+
+    real_type = np.real(dtype(0)).dtype
     mesh = create_box(
         comm=MPI.COMM_WORLD,
         points=[(0.0, 0.0, 0.0), (3.0, 2.0, 1.0)],
         n=[30, 20, 10],
         cell_type=CellType.tetrahedron,
-        dtype=dtype,
+        dtype=real_type,
     )
 
     V = functionspace(mesh, ("Lagrange", 1))
@@ -94,13 +96,20 @@ def poisson_problem(dtype: npt.DTypeLike):
 
     # Create solution function and create AMG solver
     uh = fem.Function(V, dtype=dtype)
-    ml = pyamg.ruge_stuben_solver(A)
+
+    if solver_type == "ruge_stuben":
+        ml = pyamg.ruge_stuben_solver(A)
+    elif solver_type == "smoothed_aggregation":
+        ml = pyamg.smoothed_aggregation_solver(A)
+    else:
+        raise ValueError(f"Invalid multigrid type: {solver_type}")
     print(ml)
 
     # Solve linear systems
     print(f"\nSolve Poisson equation: {dtype.__name__}")
     res: list[float] = []
-    uh.x.array[:] = ml.solve(b.array, tol=1e-10, residuals=res, accel="cg")
+    tol = 1e-10 if real_type == np.float64 else 1e-6
+    uh.x.array[:] = ml.solve(b.array, tol=tol, residuals=res, accel="cg")
     for i, q in enumerate(res):
         print(f"Convergence history: iteration {i}, residual= {q}")
 
@@ -205,7 +214,8 @@ def elasticity_problem(dtype):
 
     print(f"\nLinearised elasticity: {dtype.__name__}")
     res_e: list[float] = []
-    uh.x.array[:] = ml.solve(b.array, tol=1e-10, residuals=res_e, accel="cg")
+    tol = 1e-10 if dtype == np.float64 else 1e-6
+    uh.x.array[:] = ml.solve(b.array, tol=tol, residuals=res_e, accel="cg")
     for i, q in enumerate(res_e):
         print(f"Convergence history: iteration {i}, residual= {q}")
 
@@ -218,8 +228,12 @@ def elasticity_problem(dtype):
 
 
 # Solve Poission problem with different scalar types
-poisson_problem(np.float32)
-poisson_problem(np.float64)
+poisson_problem(np.float32, "ruge_stuben")
+poisson_problem(np.float64, "ruge_stuben")
+
+# For complex, pyamg requires smoothed aggregation multigrid
+poisson_problem(np.complex64, "smoothed_aggregation")
+poisson_problem(np.complex128, "smoothed_aggregation")
 
 # Solve elasticity problem with different scalar types
 elasticity_problem(np.float32)
