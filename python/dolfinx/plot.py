@@ -54,7 +54,7 @@ def vtk_mesh(msh: mesh.Mesh, dim: typing.Optional[int] = None, entities=None):
 
     # Use all local cells if not supplied
     if entities is None:
-        entities = range(msh.topology.index_map(dim).size_local)
+        entities = np.arange(msh.topology.index_map(dim).size_local, dtype=np.int32)
 
     geometry_entities = _cpp.mesh.entities_to_geometry(msh._cpp_object, dim, entities, False)
 
