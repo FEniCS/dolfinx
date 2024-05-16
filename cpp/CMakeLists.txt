@@ -237,10 +237,10 @@ if(HAVE_PIPE)
 endif()
 
 # Add some strict compiler checks
-check_cxx_compiler_flag("-Wall -Werror -Wextra -pedantic -Wno-array-bounds -Wno-stringop-overflow" HAVE_PEDANTIC)
+check_cxx_compiler_flag("-Wall -Werror -Wextra -pedantic" HAVE_PEDANTIC)
 
 if(HAVE_PEDANTIC)
-  list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -Wall;-Werror;-Wextra;-pedantic;-Wno-array-bounds;-Wno-stringop-overflow)
+  list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -Wall;-Werror;-Wextra;-pedantic)
 endif()
 
 # Debug flags
@@ -255,6 +255,12 @@ check_cxx_compiler_flag(-O2 HAVE_O2_OPTIMISATION)
 
 if(HAVE_O2_OPTIMISATION)
   list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -O2)
+endif()
+
+if(CMAKE_COMPILER_IS_GNUCXX)
+  if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "11.4")
+    list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -Wno-array-bounds;-Wno-stringop-overflow)
+  endif()
 endif()
 
 # ------------------------------------------------------------------------------
