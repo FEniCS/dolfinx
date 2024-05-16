@@ -17,6 +17,7 @@
     "mpi",
     "parmetis",
     "pugixml",
-    "pkgconf"
+    "pkgconf",
+    "spdlog"
   ]
 }
