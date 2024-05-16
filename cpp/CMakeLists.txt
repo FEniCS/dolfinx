@@ -257,10 +257,10 @@ if(HAVE_O2_OPTIMISATION)
   list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -O2)
 endif()
 
-if(CMAKE_COMPILER_IS_GNUCXX)
-  if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "11.4")
-    list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -Wno-array-bounds;-Wno-stringop-overflow)
-  endif()
+# Turn off some checks in gcc12 and gcc13 due to false positives with the fmt library
+if(CMAKE_COMPILER_IS_GNUCXX AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "11.4"
+  AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14.0")
+  list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -Wno-array-bounds;-Wno-stringop-overflow)
 endif()
 
 # ------------------------------------------------------------------------------
