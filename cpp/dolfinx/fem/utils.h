@@ -427,7 +427,7 @@ Form<T, U> create_form_factory(
       kern_t k = nullptr;
       if constexpr (std::is_same_v<T, float>)
         k = integral->tabulate_tensor_float32;
-#ifdef __STDC_NO_COMPLEX__
+#ifndef __STDC_NO_COMPLEX__
       else if constexpr (std::is_same_v<T, std::complex<float>>)
       {
         k = reinterpret_cast<void (*)(
@@ -438,7 +438,7 @@ Form<T, U> create_form_factory(
 #endif // __STDC_NO_COMPLEX__
       else if constexpr (std::is_same_v<T, double>)
         k = integral->tabulate_tensor_float64;
-#ifdef __STDC_NO_COMPLEX__
+#ifndef __STDC_NO_COMPLEX__
       else if constexpr (std::is_same_v<T, std::complex<double>>)
       {
         k = reinterpret_cast<void (*)(
@@ -496,7 +496,7 @@ Form<T, U> create_form_factory(
       kern_t k = nullptr;
       if constexpr (std::is_same_v<T, float>)
         k = integral->tabulate_tensor_float32;
-#ifdef __STDC_NO_COMPLEX__
+#ifndef __STDC_NO_COMPLEX__
       else if constexpr (std::is_same_v<T, std::complex<float>>)
       {
         k = reinterpret_cast<void (*)(
@@ -507,7 +507,7 @@ Form<T, U> create_form_factory(
 #endif // __STDC_NO_COMPLEX__
       else if constexpr (std::is_same_v<T, double>)
         k = integral->tabulate_tensor_float64;
-#ifdef __STDC_NO_COMPLEX__
+#ifndef __STDC_NO_COMPLEX__
       else if constexpr (std::is_same_v<T, std::complex<double>>)
       {
         k = reinterpret_cast<void (*)(
@@ -571,7 +571,7 @@ Form<T, U> create_form_factory(
       kern_t k = nullptr;
       if constexpr (std::is_same_v<T, float>)
         k = integral->tabulate_tensor_float32;
-#ifdef __STDC_NO_COMPLEX__
+#ifndef __STDC_NO_COMPLEX__
       else if constexpr (std::is_same_v<T, std::complex<float>>)
       {
         k = reinterpret_cast<void (*)(
@@ -582,7 +582,7 @@ Form<T, U> create_form_factory(
 #endif // __STDC_NO_COMPLEX__
       else if constexpr (std::is_same_v<T, double>)
         k = integral->tabulate_tensor_float64;
-#ifdef __STDC_NO_COMPLEX__
+#ifndef __STDC_NO_COMPLEX__
       else if constexpr (std::is_same_v<T, std::complex<double>>)
       {
         k = reinterpret_cast<void (*)(
@@ -1094,7 +1094,7 @@ Expression<T, U> create_expression(
       tabulate_tensor = nullptr;
   if constexpr (std::is_same_v<T, float>)
     tabulate_tensor = e.tabulate_tensor_float32;
-#ifdef __STDC_NO_COMPLEX__
+#ifndef __STDC_NO_COMPLEX__
   else if constexpr (std::is_same_v<T, std::complex<float>>)
   {
     tabulate_tensor = reinterpret_cast<void (*)(
@@ -1105,7 +1105,7 @@ Expression<T, U> create_expression(
 #endif // __STDC_NO_COMPLEX__
   else if constexpr (std::is_same_v<T, double>)
     tabulate_tensor = e.tabulate_tensor_float64;
-#ifdef __STDC_NO_COMPLEX__
+#ifndef __STDC_NO_COMPLEX__
   else if constexpr (std::is_same_v<T, std::complex<double>>)
   {
     tabulate_tensor = reinterpret_cast<void (*)(
