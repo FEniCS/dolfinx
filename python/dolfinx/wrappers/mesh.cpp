@@ -393,9 +393,8 @@ void declare_mesh(nb::module_& m, std::string type)
         auto topology = mesh.topology();
         assert(topology);
         dolfinx::mesh::CellType cell_type = topology->cell_type();
-        std::size_t num_vertices = dolfinx::mesh::num_cell_vertices(
-            cell_entity_type(cell_type, dim, 0));
-        return as_nbarray(std::move(idx), {entities.size(), num_vertices});
+        return as_nbarray(std::move(idx),
+                          {entities.size(), idx.size() / entities.size()});
       },
       nb::arg("mesh"), nb::arg("dim"), nb::arg("entities"), nb::arg("permute"));
 

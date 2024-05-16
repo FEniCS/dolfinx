@@ -7,7 +7,6 @@
 
 import functools
 import typing
-import warnings
 
 import numpy as np
 
@@ -49,10 +48,7 @@ def vtk_mesh(msh: mesh.Mesh, dim: typing.Optional[int] = None, entities=None):
     if dim is None:
         dim = msh.topology.dim
 
-    tdim = msh.topology.dim
     cell_type = _cpp.mesh.cell_entity_type(msh.topology.cell_type, dim, 0)
-    cmap = msh.geometry.cmap
-    degree = cmap.degree
     if cell_type == mesh.CellType.prism:
         raise RuntimeError("Plotting of prism meshes not supported")
 
@@ -60,19 +56,11 @@ def vtk_mesh(msh: mesh.Mesh, dim: typing.Optional[int] = None, entities=None):
     if entities is None:
         entities = range(msh.topology.index_map(dim).size_local)
 
-    if dim == tdim:
-        vtk_topology = _cpp.io.extract_vtk_connectivity(msh.geometry.dofmap, cell_type)[entities]
-        num_nodes_per_cell = vtk_topology.shape[1]
-    else:
-        # NOTE: This linearizes higher order geometries FIXME no longer true
-        geometry_entities = _cpp.mesh.entities_to_geometry(msh._cpp_object, dim, entities, False)
-        if degree > 1:
-            warnings.warn("Linearizing topology for higher order sub entities.")
+    geometry_entities = _cpp.mesh.entities_to_geometry(msh._cpp_object, dim, entities, False)
 
-        # Get cell data and the DOLFINx -> VTK permutation array
-        num_nodes_per_cell = geometry_entities.shape[1]
-        map_vtk = np.argsort(_cpp.io.perm_vtk(cell_type, num_nodes_per_cell))
-        vtk_topology = geometry_entities[:, map_vtk]
+    num_nodes_per_cell = geometry_entities.shape[1]
+    map_vtk = np.argsort(_cpp.io.perm_vtk(cell_type, num_nodes_per_cell))
+    vtk_topology = geometry_entities[:, map_vtk]
 
     # Create mesh topology
     topology = np.empty((len(entities), num_nodes_per_cell + 1), dtype=np.int32)
@@ -80,9 +68,7 @@ def vtk_mesh(msh: mesh.Mesh, dim: typing.Optional[int] = None, entities=None):
     topology[:, 1:] = vtk_topology
 
     # Array holding the cell type (shape) for each cell
-    vtk_type = (
-        _first_order_vtk[cell_type] if degree == 1 else _cpp.io.get_vtk_cell_type(cell_type, tdim)
-    )
+    vtk_type = _cpp.io.get_vtk_cell_type(cell_type, dim)
     cell_types = np.full(len(entities), vtk_type)
 
     return topology.reshape(-1), cell_types, msh.geometry.x
