@@ -67,7 +67,8 @@ target_compile_definitions(dolfinx PUBLIC DOLFINX_VERSION="${DOLFINX_VERSION}")
 
 # MSVC does not support the optional C99 _Complex type. Consequently, ufcx.h
 # does not contain tabulate_tensor_complex* functions when built with MSVC. On
-# MSVC this macro set and this removes all calls to tabulate_tensor_complex*.
+# MSVC this DOLFINX macro is set and this removes all calls to
+# tabulate_tensor_complex*.
 if(MSVC)
   target_compile_definitions(dolfinx PUBLIC DOLFINX_NO_STDC_COMPLEX_KERNELS)
 endif()
