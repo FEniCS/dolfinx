@@ -257,8 +257,8 @@ public:
       std::tie(_bboxes, _bbox_coordinates)
           = impl_bb::build_from_leaf(leaf_bboxes);
 
-    LOG(INFO) << "Computed bounding box tree with " << num_bboxes()
-              << " nodes for " << entities.size() << " entities.";
+    spdlog::info("Computed bounding box tree with {} nodes for {} entities",
+                 num_bboxes(), entities.size());
   }
 
   /// Constructor
@@ -286,8 +286,8 @@ public:
       impl_bb::_build_from_point(std::span(points), _bboxes, _bbox_coordinates);
     }
 
-    LOG(INFO) << "Computed bounding box tree with " << num_bboxes()
-              << " nodes for " << points.size() << " points.";
+    spdlog::info("Computed bounding box tree with {} nodes for {} points.",
+                 num_bboxes(), points.size());
   }
 
   /// Move constructor
@@ -351,8 +351,8 @@ public:
     BoundingBoxTree global_tree(std::move(global_bboxes),
                                 std::move(global_coords));
 
-    LOG(INFO) << "Computed global bounding box tree with "
-              << global_tree.num_bboxes() << " boxes.";
+    spdlog::info("Computed global bounding box tree with {} boxes.",
+                 global_tree.num_bboxes());
 
     return global_tree;
   }

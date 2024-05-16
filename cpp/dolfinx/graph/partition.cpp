@@ -230,7 +230,7 @@ graph::build::compute_ghost_indices(MPI_Comm comm,
                                     std::span<const std::int64_t> ghost_indices,
                                     std::span<const int> ghost_owners)
 {
-  LOG(INFO) << "Compute ghost indices";
+  spdlog::info("Compute ghost indices");
 
   // Get number of local cells determine global offset
   std::int64_t offset_local = 0;
