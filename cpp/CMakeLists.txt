@@ -82,6 +82,18 @@ add_feature_info(
   "Add paths to linker search and installed rpath."
 )
 
+# Control Basix discovery
+option(
+  DOLFINX_BASIX_PYTHON
+  "Enable Basix discovery using Python. Disable if Basix should be found using CMake."
+  ON
+)
+add_feature_info(
+  DOLFINX_BASIX_PYTHON
+  DOLFINX_BASIX_PYTHON
+  "Enable Basix discovery using Python. Disable if Basix should be found using CMake."
+)
+
 # Control UFCx discovery
 option(
   DOLFINX_UFCX_PYTHON
@@ -91,7 +103,7 @@ option(
 add_feature_info(
   DOLFINX_UFCX_PYTHON
   DOLFINX_UFCX_PYTHON
-  "Enable UFCx discovery using Python. Disable if UFCx should be found using a CMake config file."
+  "Enable UFCx discovery using Python. Disable if UFCx should be found using CMake."
 )
 
 # ------------------------------------------------------------------------------
@@ -267,10 +279,15 @@ if(HAVE_O2_OPTIMISATION)
   list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -O2)
 endif()
 
-# Turn off some checks in gcc12 and gcc13 due to false positives with the fmt library
-if(CMAKE_COMPILER_IS_GNUCXX AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "11.4"
-  AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14.0")
-  list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -Wno-array-bounds;-Wno-stringop-overflow)
+# Turn off some checks in gcc12 and gcc13 due to false positives with the fmt
+# library
+if(CMAKE_COMPILER_IS_GNUCXX
+   AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "11.4"
+   AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14.0"
+)
+  list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS
+       -Wno-array-bounds;-Wno-stringop-overflow
+  )
 endif()
 
 # ------------------------------------------------------------------------------
@@ -294,33 +311,39 @@ set_package_properties(
   URL "http://www.boost.org"
 )
 
-# Use Python for detecting UFCx and Basix
-find_package(
-  Python3
-  COMPONENTS Interpreter
-  QUIET
-)
+# Basix C++ files can be installed as a standalone C++ library, or in the Basix
+# Python module tree.
 
-# Check for Basix Note: Basix may be installed as a standalone C++ library, or
-# in the Basix Python module tree
-if(Python3_Interpreter_FOUND)
-  message(STATUS "Checking for basix hints with ${Python3_EXECUTABLE}")
-  execute_process(
-    COMMAND
-      ${Python3_EXECUTABLE} -c
-      "import basix, os, sys; sys.stdout.write(os.path.dirname(basix.__file__))"
-    OUTPUT_VARIABLE BASIX_PY_DIR
-    RESULT_VARIABLE BASIX_PY_COMMAND_RESULT
-    ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
+# If requested (default), ask the Python interpreter for hints on where to find
+# Basix C++ library.
+if(DOLFINX_BASIX_PYTHON)
+  find_package(
+    Python3
+    COMPONENTS Interpreter
+    QUIET
   )
+
+  if(Python3_Interpreter_FOUND)
+    message(STATUS "Checking for Basix hints with ${Python3_EXECUTABLE}...")
+    execute_process(
+      COMMAND
+        ${Python3_EXECUTABLE} -c
+        "import basix, os, sys; sys.stdout.write(os.path.dirname(basix.__file__))"
+      OUTPUT_VARIABLE BASIX_PY_DIR
+      RESULT_VARIABLE BASIX_PY_COMMAND_RESULT
+      ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+  endif()
 
   if(BASIX_PY_DIR)
     message(STATUS "Adding ${BASIX_PY_DIR} to Basix search hints")
 
-    # Basix installed from manylinux wheel
+    # Basix installed from manylinux wheel requires rpath set.
     if(IS_DIRECTORY ${BASIX_PY_DIR}/../fenics_basix.libs)
       set(CMAKE_INSTALL_RPATH ${BASIX_PY_DIR}/../fenics_basix.libs)
     endif()
+  else()
+    message(STATUS "No Basix search hints found.")
   endif()
 endif()
 
@@ -329,7 +352,7 @@ set_package_properties(
   basix PROPERTIES
   TYPE REQUIRED
   DESCRIPTION "FEniCS tabulation library"
-  URL "https://github.com/fenics/basix"
+  URL "https://github.com/fenics/basix" HINTS ${BASIX_PY_DIR}
 )
 
 # Check for HDF5
@@ -357,7 +380,7 @@ if(NOT DOLFINX_UFCX_PYTHON)
   # Check in CONFIG mode, i.e. look for installed ufcxConfig.cmake
   find_package(ufcx 0.9 REQUIRED CONFIG)
 else()
-  # Check in MODULE mode (using FindUFCX.cmake)
+  # Check in MODULE mode (using FindUFCX.cmake) using Python intepreter.
   find_package(
     Python3
     COMPONENTS Interpreter

@@ -36,6 +36,12 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #=============================================================================
 
+find_package(
+  Python3
+  COMPONENTS Interpreter
+  REQUIRED
+)
+
 message(
   STATUS
     "Asking Python module FFCx for location of UFC... (Python executable: ${Python3_EXECUTABLE})"
