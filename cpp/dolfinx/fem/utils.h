@@ -427,7 +427,7 @@ Form<T, U> create_form_factory(
       kern_t k = nullptr;
       if constexpr (std::is_same_v<T, float>)
         k = integral->tabulate_tensor_float32;
-#ifndef __STDC_NO_COMPLEX__
+#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
       else if constexpr (std::is_same_v<T, std::complex<float>>)
       {
         k = reinterpret_cast<void (*)(
@@ -435,10 +435,10 @@ Form<T, U> create_form_factory(
             const typename scalar_value_type<T>::value_type*, const int*,
             const unsigned char*)>(integral->tabulate_tensor_complex64);
       }
-#endif // __STDC_NO_COMPLEX__
+#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
       else if constexpr (std::is_same_v<T, double>)
         k = integral->tabulate_tensor_float64;
-#ifndef __STDC_NO_COMPLEX__
+#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
       else if constexpr (std::is_same_v<T, std::complex<double>>)
       {
         k = reinterpret_cast<void (*)(
@@ -446,7 +446,7 @@ Form<T, U> create_form_factory(
             const typename scalar_value_type<T>::value_type*, const int*,
             const unsigned char*)>(integral->tabulate_tensor_complex128);
       }
-#endif // __STDC_NO_COMPLEX__
+#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
 
       if (!k)
       {
@@ -496,7 +496,7 @@ Form<T, U> create_form_factory(
       kern_t k = nullptr;
       if constexpr (std::is_same_v<T, float>)
         k = integral->tabulate_tensor_float32;
-#ifndef __STDC_NO_COMPLEX__
+#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
       else if constexpr (std::is_same_v<T, std::complex<float>>)
       {
         k = reinterpret_cast<void (*)(
@@ -504,10 +504,10 @@ Form<T, U> create_form_factory(
             const typename scalar_value_type<T>::value_type*, const int*,
             const unsigned char*)>(integral->tabulate_tensor_complex64);
       }
-#endif // __STDC_NO_COMPLEX__
+#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
       else if constexpr (std::is_same_v<T, double>)
         k = integral->tabulate_tensor_float64;
-#ifndef __STDC_NO_COMPLEX__
+#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
       else if constexpr (std::is_same_v<T, std::complex<double>>)
       {
         k = reinterpret_cast<void (*)(
@@ -515,7 +515,7 @@ Form<T, U> create_form_factory(
             const typename scalar_value_type<T>::value_type*, const int*,
             const unsigned char*)>(integral->tabulate_tensor_complex128);
       }
-#endif // __STDC_NO_COMPLEX__
+#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
       assert(k);
 
       // Build list of entities to assembler over
@@ -571,7 +571,7 @@ Form<T, U> create_form_factory(
       kern_t k = nullptr;
       if constexpr (std::is_same_v<T, float>)
         k = integral->tabulate_tensor_float32;
-#ifndef __STDC_NO_COMPLEX__
+#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
       else if constexpr (std::is_same_v<T, std::complex<float>>)
       {
         k = reinterpret_cast<void (*)(
@@ -579,10 +579,10 @@ Form<T, U> create_form_factory(
             const typename scalar_value_type<T>::value_type*, const int*,
             const unsigned char*)>(integral->tabulate_tensor_complex64);
       }
-#endif // __STDC_NO_COMPLEX__
+#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
       else if constexpr (std::is_same_v<T, double>)
         k = integral->tabulate_tensor_float64;
-#ifndef __STDC_NO_COMPLEX__
+#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
       else if constexpr (std::is_same_v<T, std::complex<double>>)
       {
         k = reinterpret_cast<void (*)(
@@ -590,7 +590,7 @@ Form<T, U> create_form_factory(
             const typename scalar_value_type<T>::value_type*, const int*,
             const unsigned char*)>(integral->tabulate_tensor_complex128);
       }
-#endif // __STDC_NO_COMPLEX__
+#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
       assert(k);
 
       // Build list of entities to assembler over
@@ -1094,7 +1094,7 @@ Expression<T, U> create_expression(
       tabulate_tensor = nullptr;
   if constexpr (std::is_same_v<T, float>)
     tabulate_tensor = e.tabulate_tensor_float32;
-#ifndef __STDC_NO_COMPLEX__
+#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
   else if constexpr (std::is_same_v<T, std::complex<float>>)
   {
     tabulate_tensor = reinterpret_cast<void (*)(
@@ -1102,10 +1102,10 @@ Expression<T, U> create_expression(
         const typename scalar_value_type<T>::value_type*, const int*,
         const unsigned char*)>(e.tabulate_tensor_complex64);
   }
-#endif // __STDC_NO_COMPLEX__
+#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
   else if constexpr (std::is_same_v<T, double>)
     tabulate_tensor = e.tabulate_tensor_float64;
-#ifndef __STDC_NO_COMPLEX__
+#ifndef DOLFINX_NO_STDC_COMPLEX_KERNELS
   else if constexpr (std::is_same_v<T, std::complex<double>>)
   {
     tabulate_tensor = reinterpret_cast<void (*)(
@@ -1113,7 +1113,7 @@ Expression<T, U> create_expression(
         const typename scalar_value_type<T>::value_type*, const int*,
         const unsigned char*)>(e.tabulate_tensor_complex128);
   }
-#endif // __STDC_NO_COMPLEX__
+#endif // DOLFINX_NO_STDC_COMPLEX_KERNELS
   else
     throw std::runtime_error("Type not supported.");
 
