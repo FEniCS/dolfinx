@@ -92,6 +92,8 @@ target_link_libraries(dolfinx PUBLIC Boost::timer)
 # MPI
 target_link_libraries(dolfinx PUBLIC MPI::MPI_CXX)
 
+target_link_libraries(dolfinx PUBLIC spdlog::spdlog)
+
 # HDF5
 target_link_libraries(dolfinx PUBLIC hdf5::hdf5)
 

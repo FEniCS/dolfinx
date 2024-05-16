@@ -102,7 +102,7 @@ allowed-confusables = ["σ"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["basix", "dolfinx", "ffcx", "ufl"]
-known-third-party = ["gmsh", "numba", "numpy", "pytest", "pyvista"]
+known-third-party = ["gmsh", "numba", "numpy", "pytest", "pyvista", "pyamg"]
 section-order = [
       "future",
       "standard-library",

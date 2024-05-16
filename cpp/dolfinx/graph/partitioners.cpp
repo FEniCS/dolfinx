@@ -312,7 +312,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
                                      const AdjacencyList<std::int64_t>& graph,
                                      bool ghosting)
   {
-    LOG(INFO) << "Compute graph partition using PT-SCOTCH";
+    spdlog::info("Compute graph partition using PT-SCOTCH");
     common::Timer timer("Compute graph partition (SCOTCH)");
 
     std::int64_t offset_global = 0;
@@ -517,7 +517,7 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
                               const graph::AdjacencyList<std::int64_t>& graph,
                               bool ghosting)
   {
-    LOG(INFO) << "Compute graph partition using ParMETIS";
+    spdlog::info("Compute graph partition using ParMETIS");
     common::Timer timer("Compute graph partition (ParMETIS)");
 
     if (nparts == 1 and dolfinx::MPI::size(comm) == 1)
@@ -613,7 +613,7 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
              MPI_Comm comm, int nparts,
              const graph::AdjacencyList<std::int64_t>& graph, bool ghosting)
   {
-    LOG(INFO) << "Compute graph partition using (parallel) KaHIP";
+    spdlog::info("Compute graph partition using (parallel) KaHIP");
 
     // KaHIP integer type
     using T = unsigned long long;
