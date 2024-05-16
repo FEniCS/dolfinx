@@ -270,7 +270,7 @@ create_geometry(
         reorder_fn
     = nullptr)
 {
-  LOG(INFO) << "Create Geometry (multiple)";
+  spdlog::info("Create Geometry (multiple)");
 
   assert(std::is_sorted(nodes.begin(), nodes.end()));
   using T = typename std::remove_reference_t<typename U::value_type>;
@@ -285,7 +285,7 @@ create_geometry(
   for (const auto& el : elements)
     dof_layouts.push_back(el.create_dof_layout());
 
-  LOG(INFO) << "Got " << dof_layouts.size() << " dof layouts";
+  spdlog::info("Got {} dof layouts", dof_layouts.size());
 
   //  Build 'geometry' dofmap on the topology
   auto [_dof_index_map, bs, dofmaps]
@@ -309,14 +309,14 @@ create_geometry(
     }
   }
 
-  LOG(INFO) << "Calling compute_local_to_global";
+  spdlog::info("Calling compute_local_to_global");
   // Compute local-to-global map from local indices in dofmap to the
   // corresponding global indices in cells, and pass to function to
   // compute local (dof) to local (position in coords) map from (i)
   // local-to-global for dofs and (ii) local-to-global for entries in
   // coords
 
-  LOG(INFO) << "xdofs.size = " << xdofs.size();
+  spdlog::info("xdofs.size = {}", xdofs.size());
   std::vector<std::int32_t> all_dofmaps;
   std::stringstream s;
   for (auto q : dofmaps)
@@ -324,9 +324,9 @@ create_geometry(
     s << q.size() << " ";
     all_dofmaps.insert(all_dofmaps.end(), q.begin(), q.end());
   }
-  LOG(INFO) << "dofmap sizes = " << s.str();
-  LOG(INFO) << "all_dofmaps.size = " << all_dofmaps.size();
-  LOG(INFO) << "nodes.size = " << nodes.size();
+  spdlog::info("dofmap sizes = {}", s.str());
+  spdlog::info("all_dofmaps.size = {}", all_dofmaps.size());
+  spdlog::info("nodes.size = {}", nodes.size());
 
   const std::vector<std::int32_t> l2l = graph::build::compute_local_to_local(
       graph::build::compute_local_to_global(xdofs, all_dofmaps), nodes);
@@ -347,7 +347,7 @@ create_geometry(
                 std::next(xg.begin(), 3 * i));
   }
 
-  LOG(INFO) << "Creating geometry with " << dofmaps.size() << " dofmaps";
+  spdlog::info("Creating geometry with {} dofmaps", dof_layouts.size());
 
   return Geometry(dof_index_map, std::move(dofmaps), elements, std::move(xg),
                   dim, std::move(igi));

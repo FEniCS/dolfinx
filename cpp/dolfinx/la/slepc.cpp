@@ -97,7 +97,7 @@ void SLEPcEigenSolver::solve(std::int64_t n)
   EPSConvergedReason reason;
   EPSGetConvergedReason(_eps, &reason);
   if (reason < 0)
-    LOG(WARNING) << "Eigenvalue solver did not converge";
+    spdlog::warn("Eigenvalue solver did not converge");
 
   // Report solver status
   PetscInt num_iterations = 0;
@@ -105,8 +105,8 @@ void SLEPcEigenSolver::solve(std::int64_t n)
 
   EPSType eps_type = nullptr;
   EPSGetType(_eps, &eps_type);
-  LOG(INFO) << "Eigenvalue solver (" << eps_type << ") converged in "
-            << num_iterations << " iterations.";
+  spdlog::info("Eigenvalue solver ({}) converged in {} iterations.", eps_type,
+               num_iterations);
 }
 //-----------------------------------------------------------------------------
 std::complex<PetscReal> SLEPcEigenSolver::get_eigenvalue(int i) const

@@ -776,7 +776,7 @@ std::tuple<std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>,
 mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim,
                        int index)
 {
-  LOG(INFO) << "Computing mesh entities of dimension " << dim;
+  spdlog::info("Computing mesh entities of dimension {}", dim);
   const int tdim = topology.dim();
 
   // Vertices must always exist
@@ -827,9 +827,9 @@ mesh::compute_connectivity(const Topology& topology,
                            std::pair<std::int8_t, std::int8_t> d0,
                            std::pair<std::int8_t, std::int8_t> d1)
 {
-  LOG(INFO) << "Requesting connectivity (" << std::to_string(d0.first) << ","
-            << std::to_string(d0.second) << ") - (" << std::to_string(d1.first)
-            << "," << std::to_string(d1.second) << ")";
+  spdlog::info("Requesting connectivity ({}, {}) - ({}, {})",
+               std::to_string(d0.first), std::to_string(d0.second),
+               std::to_string(d1.first), std::to_string(d1.second));
 
   // Return if connectivity has already been computed
   if (topology.connectivity(d0, d1))
@@ -887,8 +887,8 @@ mesh::compute_connectivity(const Topology& topology,
       auto c_d1_d0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
           compute_from_map(*c_d1_0, *c_d0_0));
 
-      LOG(INFO) << "Computing mesh connectivity " << d0.first << " - "
-                << d1.first << " from transpose.";
+      spdlog::info("Computing mesh connectivity {}-{} from transpose.",
+                   d0.first, d1.first);
       auto c_d0_d1 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
           compute_from_transpose(*c_d1_d0, c_d0_0->num_nodes()));
       return {c_d0_d1, c_d1_d0};
@@ -898,8 +898,8 @@ mesh::compute_connectivity(const Topology& topology,
       assert(c_d0_0);
       assert(topology.connectivity(d1, d0));
 
-      LOG(INFO) << "Computing mesh connectivity " << std::to_string(d0.first)
-                << " - " << std::to_string(d1.first) << " from transpose.";
+      spdlog::info("Computing mesh connectivity {}-{} from transpose.",
+                   std::to_string(d0.first), std::to_string(d1.first));
       auto c_d0_d1 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
           compute_from_transpose(*topology.connectivity(d1, d0),
                                  c_d0_0->num_nodes()));

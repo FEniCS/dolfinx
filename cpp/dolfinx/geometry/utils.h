@@ -425,8 +425,8 @@ template <std::floating_point T>
 BoundingBoxTree<T> create_midpoint_tree(const mesh::Mesh<T>& mesh, int tdim,
                                         std::span<const std::int32_t> entities)
 {
-  LOG(INFO) << "Building point search tree to accelerate distance queries for "
-               "a given topological dimension and subset of entities.";
+  spdlog::info("Building point search tree to accelerate distance queries for "
+               "a given topological dimension and subset of entities.");
 
   const std::vector<T> midpoints
       = mesh::compute_midpoints(mesh, tdim, entities);
