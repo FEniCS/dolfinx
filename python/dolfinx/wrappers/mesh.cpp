@@ -218,10 +218,8 @@ void declare_mesh(nb::module_& m, std::string type)
                    nb::overload_cast<>(&dolfinx::mesh::Mesh<T>::topology),
                    "Mesh topology")
       .def_prop_ro(
-          "comm",
-          [](dolfinx::mesh::Mesh<T>& self)
-          { return MPICommWrapper(self.comm()); },
-          nb::keep_alive<0, 1>())
+          "comm", [](dolfinx::mesh::Mesh<T>& self)
+          { return MPICommWrapper(self.comm()); }, nb::keep_alive<0, 1>())
       .def_rw("name", &dolfinx::mesh::Mesh<T>::name);
 
   std::string create_interval("create_interval_" + type);
@@ -301,8 +299,13 @@ void declare_mesh(nb::module_& m, std::string type)
       [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
          nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> entities)
       {
-        return dolfinx::mesh::create_submesh(
+        auto submesh = dolfinx::mesh::create_submesh(
             mesh, dim, std::span(entities.data(), entities.size()));
+        auto _e_map = as_nbarray(std::move(std::get<1>(submesh)));
+        auto _v_map = as_nbarray(std::move(std::get<2>(submesh)));
+        auto _g_map = as_nbarray(std::move(std::get<3>(submesh)));
+        return std::tuple(std::move(std::get<0>(submesh)), _e_map, _v_map,
+                          _g_map);
       },
       nb::arg("mesh"), nb::arg("dim"), nb::arg("entities"));
 
@@ -382,19 +385,18 @@ void declare_mesh(nb::module_& m, std::string type)
       "entities_to_geometry",
       [](const dolfinx::mesh::Mesh<T>& mesh, int dim,
          nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig> entities,
-         bool orient)
+         bool permute)
       {
         std::vector<std::int32_t> idx = dolfinx::mesh::entities_to_geometry(
-            mesh, dim, std::span(entities.data(), entities.size()), orient);
+            mesh, dim, std::span(entities.data(), entities.size()), permute);
 
         auto topology = mesh.topology();
         assert(topology);
         dolfinx::mesh::CellType cell_type = topology->cell_type();
-        std::size_t num_vertices = dolfinx::mesh::num_cell_vertices(
-            cell_entity_type(cell_type, dim, 0));
-        return as_nbarray(std::move(idx), {entities.size(), num_vertices});
+        return as_nbarray(std::move(idx),
+                          {entities.size(), idx.size() / entities.size()});
       },
-      nb::arg("mesh"), nb::arg("dim"), nb::arg("entities"), nb::arg("orient"));
+      nb::arg("mesh"), nb::arg("dim"), nb::arg("entities"), nb::arg("permute"));
 
   m.def("create_geometry",
         [](const dolfinx::mesh::Topology& topology,
@@ -574,10 +576,8 @@ void mesh(nb::module_& m)
            nb::overload_cast<std::int8_t>(
                &dolfinx::mesh::Topology::interprocess_facets, nb::const_))
       .def_prop_ro(
-          "comm",
-          [](dolfinx::mesh::Topology& self)
-          { return MPICommWrapper(self.comm()); },
-          nb::keep_alive<0, 1>());
+          "comm", [](dolfinx::mesh::Topology& self)
+          { return MPICommWrapper(self.comm()); }, nb::keep_alive<0, 1>());
 
   m.def("create_topology",
         [](MPICommWrapper comm,

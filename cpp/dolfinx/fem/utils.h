@@ -239,23 +239,52 @@ la::SparsityPattern create_sparsity_pattern(const Form<T, U>& a)
   return pattern;
 }
 
-/// Create an ElementDofLayout from a ufcx_dofmap
-ElementDofLayout create_element_dof_layout(const ufcx_dofmap& dofmap,
-                                           const mesh::CellType cell_type,
+/// Create an ElementDofLayout from a FiniteElement
+template <std::floating_point T>
+ElementDofLayout create_element_dof_layout(const fem::FiniteElement<T>& element,
                                            const std::vector<int>& parent_map
-                                           = {});
+                                           = {})
+{
+  // Create subdofmaps and compute offset
+  std::vector<int> offsets(1, 0);
+  std::vector<dolfinx::fem::ElementDofLayout> sub_doflayout;
+  int bs = element.block_size();
+  for (int i = 0; i < element.num_sub_elements(); ++i)
+  {
+    // The ith sub-element. For mixed elements this is subelements()[i]. For
+    // blocked elements, the sub-element will always be the same, so we'll use
+    // sub_elements()[0]
+    std::shared_ptr<const fem::FiniteElement<T>> sub_e
+        = element.sub_elements()[bs > 1 ? 0 : i];
+
+    // In a mixed element DOFs are ordered element by element, so the offset to
+    // the next sub-element is sub_e->space_dimension(). Blocked elements use
+    // xxyyzz ordering, so the offset to the next sub-element is 1
+
+    std::vector<int> parent_map_sub(sub_e->space_dimension(), offsets.back());
+    for (std::size_t j = 0; j < parent_map_sub.size(); ++j)
+      parent_map_sub[j] += bs * j;
+    offsets.push_back(offsets.back() + (bs > 1 ? 1 : sub_e->space_dimension()));
+    sub_doflayout.push_back(
+        dolfinx::fem::create_element_dof_layout(*sub_e, parent_map_sub));
+  }
+
+  return ElementDofLayout(bs, element.entity_dofs(),
+                          element.entity_closure_dofs(), parent_map,
+                          sub_doflayout);
+}
 
 /// @brief Create a dof map on mesh
 /// @param[in] comm MPI communicator
 /// @param[in] layout Dof layout on an element
 /// @param[in] topology Mesh topology
-/// @param[in] unpermute_dofs Function to un-permute dofs. `nullptr`
+/// @param[in] permute_inv Function to un-permute dofs. `nullptr`
 /// when transformation is not required.
 /// @param[in] reorder_fn Graph reordering function called on the dofmap
 /// @return A new dof map
 DofMap create_dofmap(
     MPI_Comm comm, const ElementDofLayout& layout, mesh::Topology& topology,
-    std::function<void(std::span<std::int32_t>, std::uint32_t)> unpermute_dofs,
+    std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv,
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
         reorder_fn);
 
@@ -263,7 +292,7 @@ DofMap create_dofmap(
 /// @param[in] comm MPI communicator
 /// @param[in] layouts Dof layout on each element type
 /// @param[in] topology Mesh topology
-/// @param[in] unpermute_dofs Function to un-permute dofs. `nullptr`
+/// @param[in] permute_inv Function to un-permute dofs. `nullptr`
 /// when transformation is not required.
 /// @param[in] reorder_fn Graph reordering function called on the dofmaps
 /// @return The list of new dof maps
@@ -272,7 +301,7 @@ DofMap create_dofmap(
 std::vector<DofMap> create_dofmaps(
     MPI_Comm comm, const std::vector<ElementDofLayout>& layouts,
     mesh::Topology& topology,
-    std::function<void(std::span<std::int32_t>, std::uint32_t)> unpermute_dofs,
+    std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv,
     std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
         reorder_fn);
 
@@ -331,20 +360,17 @@ Form<T, U> create_form_factory(
   }
 
   // Check argument function spaces
-#ifndef NDEBUG
   for (std::size_t i = 0; i < spaces.size(); ++i)
   {
     assert(spaces[i]->element());
-    ufcx_finite_element* ufcx_element = ufcx_form.finite_elements[i];
-    assert(ufcx_element);
-    if (std::string(ufcx_element->signature)
-        != spaces[i]->element()->signature())
+    if (auto element_hash = ufcx_form.finite_element_hashes[i];
+        element_hash != 0
+        and element_hash != spaces[i]->element()->basix_element().hash())
     {
-      throw std::runtime_error(
-          "Cannot create form. Wrong type of function space for argument.");
+      throw std::runtime_error("Cannot create form. Elements are different to "
+                               "those used to compile the form.");
     }
   }
-#endif
 
   // Extract mesh from FunctionSpace, and check they are the same
   if (!mesh and !spaces.empty())
@@ -749,77 +775,15 @@ FunctionSpace<T> create_functionspace(
   // Create a dofmap
   ElementDofLayout layout(_e->block_size(), e.entity_dofs(),
                           e.entity_closure_dofs(), {}, sub_doflayout);
-  std::function<void(std::span<std::int32_t>, std::uint32_t)> unpermute_dofs
+  std::function<void(std::span<std::int32_t>, std::uint32_t)> permute_inv
       = nullptr;
   if (_e->needs_dof_permutations())
-    unpermute_dofs = _e->get_dof_permutation_function(true, true);
+    permute_inv = _e->dof_permutation_fn(true, true);
   assert(mesh);
   assert(mesh->topology());
   auto dofmap = std::make_shared<const DofMap>(create_dofmap(
-      mesh->comm(), layout, *mesh->topology(), unpermute_dofs, reorder_fn));
+      mesh->comm(), layout, *mesh->topology(), permute_inv, reorder_fn));
   return FunctionSpace(mesh, _e, dofmap, _value_shape);
-}
-
-/// @brief Create a FunctionSpace from UFC data.
-/// @param[in] fptr Pointer to a ufcx_function_space_create function.
-/// @param[in] function_name Name of a function whose function space is to
-/// create. Function name is the name of the Python variable for
-/// ufl.Coefficient, ufl.TrialFunction or ufl.TestFunction as defined in
-/// the UFL file.
-/// @param[in] mesh Mesh
-/// @param[in] reorder_fn Graph reordering function to call on the
-/// dofmap. If `nullptr`, the default re-ordering is used.
-/// @return The created function space.
-template <std::floating_point T>
-FunctionSpace<T> create_functionspace(
-    ufcx_function_space* (*fptr)(const char*), const std::string& function_name,
-    std::shared_ptr<mesh::Mesh<T>> mesh,
-    std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>
-        reorder_fn
-    = nullptr)
-{
-  ufcx_function_space* space = fptr(function_name.c_str());
-  if (!space)
-  {
-    throw std::runtime_error(
-        "Could not create UFC function space with function name "
-        + function_name);
-  }
-
-  ufcx_finite_element* ufcx_element = space->finite_element;
-  assert(ufcx_element);
-  std::vector<std::size_t> value_shape(space->value_shape,
-                                       space->value_shape + space->value_rank);
-
-  const auto& geometry = mesh->geometry();
-  auto& cmap = geometry.cmap();
-  if (space->geometry_degree != cmap.degree()
-      or static_cast<basix::cell::type>(space->geometry_basix_cell)
-             != mesh::cell_type_to_basix_type(cmap.cell_shape())
-      or static_cast<basix::element::lagrange_variant>(
-             space->geometry_basix_variant)
-             != cmap.variant())
-  {
-    throw std::runtime_error("UFL mesh and CoordinateElement do not match.");
-  }
-
-  auto element = std::make_shared<FiniteElement<T>>(*ufcx_element);
-  assert(element);
-  ufcx_dofmap* ufcx_map = space->dofmap;
-  assert(ufcx_map);
-  const auto topology = mesh->topology();
-  assert(topology);
-  ElementDofLayout layout
-      = create_element_dof_layout(*ufcx_map, topology->cell_type());
-
-  std::function<void(std::span<std::int32_t>, std::uint32_t)> unpermute_dofs;
-  if (element->needs_dof_permutations())
-    unpermute_dofs = element->get_dof_permutation_function(true, true);
-  return FunctionSpace(
-      mesh, element,
-      std::make_shared<DofMap>(create_dofmap(mesh->comm(), layout, *topology,
-                                             unpermute_dofs, reorder_fn)),
-      value_shape);
 }
 
 /// @private
@@ -875,9 +839,7 @@ void pack(std::span<T> coeffs, std::int32_t cell, int bs, std::span<const T> v,
 template <typename F>
 concept FetchCells = requires(F&& f, std::span<const std::int32_t> v) {
   requires std::invocable<F, std::span<const std::int32_t>>;
-  {
-    f(v)
-  } -> std::convertible_to<std::int32_t>;
+  { f(v) } -> std::convertible_to<std::int32_t>;
 };
 
 /// @brief Pack a single coefficient for a set of active entities.
@@ -907,9 +869,11 @@ void pack_coefficient_entity(std::span<T> c, int cstride,
   auto element = u.function_space()->element();
   assert(element);
   int space_dim = element->space_dimension();
+
+  // Transformation from conforming degrees-of-freedom to reference
+  // degrees-of-freedom
   auto transformation
-      = element->template get_pre_dof_transformation_function<T>(
-          FiniteElement<U>::doftransform::transpose);
+      = element->template dof_transformation_fn<T>(doftransform::transpose);
   const int bs = dofmap.bs();
   switch (bs)
   {

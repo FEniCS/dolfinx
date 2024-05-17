@@ -77,7 +77,8 @@ def submesh_geometry_test(mesh, submesh, entity_map, geom_map, entity_dim):
     if len(entity_map) > 0:
         assert mesh.geometry.dim == submesh.geometry.dim
 
-        e_to_g = entities_to_geometry(mesh, entity_dim, np.array(entity_map), False)
+        mesh.topology.create_entity_permutations()
+        e_to_g = entities_to_geometry(mesh, entity_dim, np.array(entity_map), True)
         for submesh_entity in range(len(entity_map)):
             submesh_x_dofs = submesh.geometry.dofmap[submesh_entity]
             # e_to_g[i] gets the mesh x_dofs of entities[i], which should
@@ -317,6 +318,7 @@ def test_cell_circumradius(c0, c1, c5):
 @pytest.mark.skip_in_parallel
 def test_cell_h(c0, c1, c5):
     for c in [c0, c1, c5]:
+        c[0].topology.create_connectivity(c[1], c[1])
         assert c[0].h(c[1], np.array([c[2]]))
 
 
@@ -324,6 +326,7 @@ def test_cell_h_prism():
     N = 3
     mesh = create_unit_cube(MPI.COMM_WORLD, N, N, N, cell_type=CellType.prism)
     tdim = mesh.topology.dim
+    mesh.topology.create_connectivity(tdim, tdim)
     num_cells = mesh.topology.index_map(tdim).size_local
     cells = np.arange(num_cells, dtype=np.int32)
     h = _cpp.mesh.h(mesh._cpp_object, tdim, cells)
@@ -367,6 +370,7 @@ def dirname(request):
 def test_hmin_hmax(_mesh, dtype, hmin, hmax):
     mesh = _mesh(dtype)
     tdim = mesh.topology.dim
+    mesh.topology.create_connectivity(tdim, tdim)
     num_cells = mesh.topology.index_map(tdim).size_local
     h = _cpp.mesh.h(mesh._cpp_object, tdim, np.arange(num_cells))
     assert h.min() == pytest.approx(hmin)
@@ -485,17 +489,17 @@ def test_unit_hex_mesh_assemble():
 
 
 def boundary_0(x):
-    lr = np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[0], 1.0))
-    tb = np.logical_or(np.isclose(x[1], 0.0), np.isclose(x[1], 1.0))
-    return np.logical_or(lr, tb)
+    lr = np.isclose(x[0], 0.0) | np.isclose(x[0], 1.0)
+    tb = np.isclose(x[1], 0.0) | np.isclose(x[1], 1.0)
+    return lr | tb
 
 
 def boundary_1(x):
-    return np.logical_or(np.isclose(x[0], 1.0), np.isclose(x[1], 1.0))
+    return np.isclose(x[0], 1.0) | np.isclose(x[1], 1.0)
 
 
 def boundary_2(x):
-    return np.logical_and(np.isclose(x[1], 1), x[0] >= 0.5)
+    return np.isclose(x[1], 1) & (x[0] >= 0.5)
 
 
 # TODO Test that submesh of full mesh is a copy of the mesh

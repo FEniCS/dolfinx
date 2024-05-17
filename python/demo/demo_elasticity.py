@@ -23,12 +23,22 @@
 # The required modules are first imported:
 
 from mpi4py import MPI
-from petsc4py import PETSc
+
+try:
+    from petsc4py import PETSc
+
+    import dolfinx
+
+    if not dolfinx.has_petsc:
+        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
+        exit(0)
+except ModuleNotFoundError:
+    print("This demo requires petsc4py.")
+    exit(0)
 
 # +
 import numpy as np
 
-import dolfinx
 import ufl
 from dolfinx import la
 from dolfinx.fem import (
@@ -85,9 +95,7 @@ def build_nullspace(V: FunctionSpace):
     b[5][dofs[2]] = x1
     b[5][dofs[1]] = -x2
 
-    _basis = [x._cpp_object for x in basis]
-    dolfinx.cpp.la.orthonormalize(_basis)
-    assert dolfinx.cpp.la.is_orthonormal(_basis)
+    la.orthonormalize(basis)
 
     basis_petsc = [
         PETSc.Vec().createWithArray(x[: bs * length0], bsize=3, comm=V.mesh.comm)  # type: ignore
@@ -146,7 +154,7 @@ L = form(inner(f, v) * dx)
 # a Dirichlet boundary condition object.
 
 facets = locate_entities_boundary(
-    msh, dim=2, marker=lambda x: np.logical_or(np.isclose(x[0], 0.0), np.isclose(x[1], 1.0))
+    msh, dim=2, marker=lambda x: np.isclose(x[0], 0.0) | np.isclose(x[1], 1.0)
 )
 bc = dirichletbc(
     np.zeros(3, dtype=dtype), locate_dofs_topological(V, entity_dim=2, entities=facets), V=V
@@ -218,7 +226,7 @@ uh = Function(V)
 # Set a monitor, solve linear system, and display the solver
 # configuration
 solver.setMonitor(lambda _, its, rnorm: print(f"Iteration: {its}, rel. residual: {rnorm}"))
-solver.solve(b, uh.vector)
+solver.solve(b, uh.x.petsc_vec)
 solver.view()
 
 # Scatter forward the solution vector to update ghost values

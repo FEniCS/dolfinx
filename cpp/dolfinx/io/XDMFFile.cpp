@@ -45,7 +45,7 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::filesystem::path& filename,
     _h5_id
         = io::hdf5::open_file(_comm.comm(), hdf5_filename, file_mode, mpi_io);
     assert(_h5_id > 0);
-    LOG(INFO) << "Opened HDF5 file with id \"" << _h5_id << "\"";
+    spdlog::info("Opened HDF5 file with id \"{}\"", _h5_id);
   }
   else
   {
@@ -196,7 +196,7 @@ XDMFFile::read_topology_data(std::string name, std::string xpath) const
   if (!grid_node)
     throw std::runtime_error("<Grid> with name '" + name + "' not found.");
 
-  LOG(INFO) << "Read topology data \"" << name << "\" at \"" << xpath << "\"";
+  spdlog::info("Read topology data \"{}\" at {}", name, xpath);
   return xdmf_mesh::read_topology_data(_comm.comm(), _h5_id, grid_node);
 }
 //-----------------------------------------------------------------------------
@@ -213,7 +213,7 @@ XDMFFile::read_geometry_data(std::string name, std::string xpath) const
   if (!grid_node)
     throw std::runtime_error("<Grid> with name '" + name + "' not found.");
 
-  LOG(INFO) << "Read geometry data \"" << name << "\" at \"" << xpath << "\"";
+  spdlog::info("Read geometry data \"{}\" at {}", name, xpath);
   return xdmf_mesh::read_geometry_data(_comm.comm(), _h5_id, grid_node);
 }
 //-----------------------------------------------------------------------------
@@ -247,8 +247,8 @@ void XDMFFile::write_function(const fem::Function<T, U>& u, double t,
   pugi::xml_node mesh_node = _xml_doc->select_node(mesh_xpath.c_str()).node();
   if (!mesh_node)
   {
-    LOG(WARNING) << "No mesh found at '" << mesh_xpath
-                 << "'. Write mesh before function!";
+    spdlog::warn("No mesh found at '{}'. Write mesh before function!",
+                 mesh_xpath);
   }
 
   const std::string ref_path
@@ -325,7 +325,7 @@ mesh::MeshTags<std::int32_t>
 XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
                         std::string xpath)
 {
-  LOG(INFO) << "XDMF read meshtags (" << name << ")";
+  spdlog::info("XDMF read meshtags ({})", name);
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
     throw std::runtime_error("XML node '" + xpath + "' not found.");
@@ -354,13 +354,13 @@ XDMFFile::read_meshtags(const mesh::Mesh<double>& mesh, std::string name,
       MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
       entities_span(entities1.data(), eshape);
   std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
-      entities_values = xdmf_utils::distribute_entity_data(
+      entities_values = xdmf_utils::distribute_entity_data<std::int32_t>(
           *mesh.topology(), mesh.geometry().input_global_indices(),
           mesh.geometry().index_map()->size_global(),
           mesh.geometry().cmap().create_dof_layout(), mesh.geometry().dofmap(),
           mesh::cell_dim(cell_type), entities_span, values);
 
-  LOG(INFO) << "XDMF create meshtags";
+  spdlog::info("XDMF create meshtags");
   std::size_t num_vertices_per_entity = mesh::cell_num_entities(
       mesh::cell_entity_type(mesh.topology()->cell_type(),
                              mesh::cell_dim(cell_type), 0),

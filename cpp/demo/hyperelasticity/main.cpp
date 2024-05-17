@@ -137,8 +137,9 @@ int main(int argc, char* argv[])
   // Set the logging thread name to show the process rank
   int mpi_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
-  std::string thread_name = "RANK " + std::to_string(mpi_rank);
-  loguru::set_thread_name(thread_name.c_str());
+  std::string fmt = "[%Y-%m-%d %H:%M:%S.%e] [RANK " + std::to_string(mpi_rank)
+                    + "] [%l] %v";
+  spdlog::set_pattern(fmt);
   {
     // Inside the `main` function, we begin by defining a tetrahedral
     // mesh of the domain and the function space on this mesh. Here, we
@@ -153,15 +154,25 @@ int main(int argc, char* argv[])
         mesh::CellType::tetrahedron,
         mesh::create_cell_partitioner(mesh::GhostMode::none)));
 
-    auto V = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace(
-        functionspace_form_hyperelasticity_F_form, "u", mesh));
+    auto element = basix::create_element<U>(
+        basix::element::family::P, basix::cell::type::tetrahedron, 1,
+        basix::element::lagrange_variant::unset,
+        basix::element::dpc_variant::unset, false);
+
+    auto V = std::make_shared<fem::FunctionSpace<U>>(
+        fem::create_functionspace(mesh, element, {3}));
+
+    auto B = std::make_shared<fem::Constant<T>>(std::vector<T>{0, 0, 0});
+    auto traction = std::make_shared<fem::Constant<T>>(std::vector<T>{0, 0, 0});
 
     // Define solution function
     auto u = std::make_shared<fem::Function<T>>(V);
-    auto a = std::make_shared<fem::Form<T>>(fem::create_form<T>(
-        *form_hyperelasticity_J_form, {V, V}, {{"u", u}}, {}, {}));
-    auto L = std::make_shared<fem::Form<T>>(fem::create_form<T>(
-        *form_hyperelasticity_F_form, {V}, {{"u", u}}, {}, {}));
+    auto a = std::make_shared<fem::Form<T>>(
+        fem::create_form<T>(*form_hyperelasticity_J_form, {V, V}, {{"u", u}},
+                            {{"B", B}, {"T", traction}}, {}));
+    auto L = std::make_shared<fem::Form<T>>(
+        fem::create_form<T>(*form_hyperelasticity_F_form, {V}, {{"u", u}},
+                            {{"B", B}, {"T", traction}}, {}));
 
     auto u_rotation = std::make_shared<fem::Function<T>>(V);
     u_rotation->interpolate(
@@ -239,7 +250,8 @@ int main(int argc, char* argv[])
     newton_solver.atol = 10 * std::numeric_limits<T>::epsilon();
 
     la::petsc::Vector _u(la::petsc::create_vector_wrap(*u->x()), false);
-    newton_solver.solve(_u.vec());
+    auto [niter, success] = newton_solver.solve(_u.vec());
+    std::cout << "Number of Newton iterations: " << niter << std::endl;
 
     // Compute Cauchy stress. Construct appropriate Basix element for
     // stress.

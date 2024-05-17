@@ -22,8 +22,20 @@
 # +
 from pathlib import Path
 
+try:
+    from petsc4py import PETSc
+
+    import dolfinx
+
+    if not dolfinx.has_petsc:
+        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
+        exit(0)
+except ModuleNotFoundError:
+    print("This demo requires petsc4py.")
+    exit(0)
+
+
 from mpi4py import MPI
-from petsc4py import PETSc
 
 import cffi
 import numba
@@ -163,7 +175,7 @@ set_bc(b, [bc])
 uc = Function(U)
 solver = PETSc.KSP().create(A_cond.getComm())  # type: ignore
 solver.setOperators(A_cond)
-solver.solve(b, uc.vector)
+solver.solve(b, uc.x.petsc_vec)
 
 # Pure displacement based formulation
 a = form(-ufl.inner(sigma_u(u), ufl.grad(v)) * ufl.dx)

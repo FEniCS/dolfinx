@@ -6,10 +6,7 @@
 
 #pragma once
 
-#define LOGURU_WITH_STREAMS 1
-#define LOGURU_REPLACE_GLOG 1
-
-#include "loguru.hpp"
+#include <spdlog/spdlog.h>
 
 namespace dolfinx
 {
@@ -17,15 +14,11 @@ namespace dolfinx
 /// @brief Optional initialisation of the logging backend.
 ///
 /// The log verbosity can be controlled from the command line using
-/// `-dolfinx_loglevel <level>`, where `<level>` is an integer.
-/// Increasing values increase verbosity.
+/// `SPDLOG_LEVEL=<level>`, where `<level>` is info, warn, debug, etc.
 ///
-/// The full `loguru` API can be used in applications to control the log
-/// system. See https://emilk.github.io/loguru/ for the loguru
+/// The full `spdlog` API can be used in applications to control the log
+/// system. See https://github.com/gabime/spdlog for the spdlog
 /// documentation.
-///
-/// @note The logging backend is loguru
-/// (https://github.com/emilk/loguru).
 ///
 /// @param[in] argc Number of command line arguments.
 /// @param[in] argv Command line argument vector.

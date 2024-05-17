@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
+#include <cmath>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -45,70 +46,73 @@ namespace impl
 /// @param simplex_set - index into indices for each child cell
 /// @return mapping from child to parent facets, using cell-local index
 template <int tdim>
-std::vector<std::int8_t>
-compute_parent_facets(std::span<const std::int32_t> simplex_set)
+auto compute_parent_facets(std::span<const std::int32_t> simplex_set)
 {
+  static_assert(tdim == 2 or tdim == 3);
+  assert(simplex_set.size() % (tdim + 1) == 0);
+  using parent_facet_t
+      = std::conditional_t<tdim == 2, std::array<std::int8_t, 12>,
+                           std::array<std::int8_t, 32>>;
+  parent_facet_t parent_facet;
+  parent_facet.fill(-1);
+  assert(simplex_set.size() <= parent_facet.size());
+
+  // Index lookups in 'indices' for the child vertices that occur on
+  // each parent facet in 2D and 3D. In 2D each edge has 3 child
+  // vertices, and in 3D each triangular facet has six child vertices.
+  constexpr std::array<std::array<int, 3>, 3> facet_table_2d{
+      {{1, 2, 3}, {0, 2, 4}, {0, 1, 5}}};
+
+  constexpr std::array<std::array<int, 6>, 4> facet_table_3d{
+      {{1, 2, 3, 4, 5, 6},
+       {0, 2, 3, 4, 7, 8},
+       {0, 1, 3, 5, 7, 9},
+       {0, 1, 2, 6, 8, 9}}};
+
+  const int ncells = simplex_set.size() / (tdim + 1);
+  for (int fpi = 0; fpi < (tdim + 1); ++fpi)
   {
-    assert(simplex_set.size() % (tdim + 1) == 0);
-    std::vector<std::int8_t> parent_facet(simplex_set.size(), -1);
-
-    // Index lookups in 'indices' for the child vertices that occur on
-    // each parent facet in 2D and 3D. In 2D each edge has 3 child
-    // vertices, and in 3D each triangular facet has six child vertices.
-    constexpr std::array<std::array<int, 3>, 3> facet_table_2d{
-        {{1, 2, 3}, {0, 2, 4}, {0, 1, 5}}};
-
-    constexpr std::array<std::array<int, 6>, 4> facet_table_3d{
-        {{1, 2, 3, 4, 5, 6},
-         {0, 2, 3, 4, 7, 8},
-         {0, 1, 3, 5, 7, 9},
-         {0, 1, 2, 6, 8, 9}}};
-
-    const int ncells = simplex_set.size() / (tdim + 1);
-    for (int fpi = 0; fpi < (tdim + 1); ++fpi)
+    // For each child cell, consider all facets
+    for (int cc = 0; cc < ncells; ++cc)
     {
-      // For each child cell, consider all facets
-      for (int cc = 0; cc < ncells; ++cc)
+      for (int fci = 0; fci < (tdim + 1); ++fci)
       {
-        for (int fci = 0; fci < (tdim + 1); ++fci)
+        // Indices of all vertices on child facet, sorted
+        std::array<int, tdim> cf, set_output;
+
+        int num_common_vertices;
+        if constexpr (tdim == 2)
         {
-          // Indices of all vertices on child facet, sorted
-          std::array<int, tdim> cf, set_output;
+          for (int j = 0; j < tdim; ++j)
+            cf[j] = simplex_set[cc * 3 + facet_table_2d[fci][j]];
+          std::sort(cf.begin(), cf.end());
+          auto it = std::set_intersection(facet_table_2d[fpi].begin(),
+                                          facet_table_2d[fpi].end(), cf.begin(),
+                                          cf.end(), set_output.begin());
+          num_common_vertices = std::distance(set_output.begin(), it);
+        }
+        else
+        {
+          for (int j = 0; j < tdim; ++j)
+            cf[j] = simplex_set[cc * 4 + facet_table_3d[fci][j]];
+          std::sort(cf.begin(), cf.end());
+          auto it = std::set_intersection(facet_table_3d[fpi].begin(),
+                                          facet_table_3d[fpi].end(), cf.begin(),
+                                          cf.end(), set_output.begin());
+          num_common_vertices = std::distance(set_output.begin(), it);
+        }
 
-          int num_common_vertices;
-          if constexpr (tdim == 2)
-          {
-            for (int j = 0; j < tdim; ++j)
-              cf[j] = simplex_set[cc * 3 + facet_table_2d[fci][j]];
-            std::sort(cf.begin(), cf.end());
-            auto it = std::set_intersection(
-                facet_table_2d[fpi].begin(), facet_table_2d[fpi].end(),
-                cf.begin(), cf.end(), set_output.begin());
-            num_common_vertices = std::distance(set_output.begin(), it);
-          }
-          else
-          {
-            for (int j = 0; j < tdim; ++j)
-              cf[j] = simplex_set[cc * 4 + facet_table_3d[fci][j]];
-            std::sort(cf.begin(), cf.end());
-            auto it = std::set_intersection(
-                facet_table_3d[fpi].begin(), facet_table_3d[fpi].end(),
-                cf.begin(), cf.end(), set_output.begin());
-            num_common_vertices = std::distance(set_output.begin(), it);
-          }
-
-          if (num_common_vertices == tdim)
-          {
-            assert(parent_facet[cc * (tdim + 1) + fci] == -1);
-            // Child facet "fci" of cell cc, lies on parent facet "fpi"
-            parent_facet[cc * (tdim + 1) + fci] = fpi;
-          }
+        if (num_common_vertices == tdim)
+        {
+          assert(parent_facet[cc * (tdim + 1) + fci] == -1);
+          // Child facet "fci" of cell cc, lies on parent facet "fpi"
+          parent_facet[cc * (tdim + 1) + fci] = fpi;
         }
       }
     }
-
-    return parent_facet;
   }
+
+  return parent_facet;
 }
 
 /// Get the subdivision of an original simplex into smaller simplices,
@@ -116,15 +120,18 @@ compute_parent_facets(std::span<const std::int32_t> simplex_set)
 /// (cell local indexing). A flag indicates if a uniform subdivision is
 /// preferable in 2D.
 ///
-/// @param[in] indices Vector indicating which edges are to be
-///   split (value >=0)
+/// @param[in] indices Vector containing the global indices for the original
+/// vertices and potential new vertices at each edge. Size (num_vertices +
+/// num_edges). If an edge is not refined its corresponding entry is -1
 /// @param[in] longest_edge Vector indicating the longest edge for each
-///   triangle. For tdim=2, one entry, for tdim=3, four entries.
+/// triangle in the cell. For triangular cells (2D) there is only one value,
+/// and for tetrahedra (3D) there are four values, one for each facet. The
+/// values give the local edge indices of the cell.
 /// @param[in] tdim Topological dimension (2 or 3)
-/// @param[in] uniform Make a "uniform" subdivision with all triangles
-///   being similar shape
+/// @param[in] uniform Make a "uniform" subdivision with all triangles being
+/// similar shape
 /// @return
-std::vector<std::int32_t>
+std::pair<std::array<std::int32_t, 32>, std::size_t>
 get_simplices(std::span<const std::int64_t> indices,
               std::span<const std::int32_t> longest_edge, int tdim,
               bool uniform);
@@ -132,11 +139,19 @@ get_simplices(std::span<const std::int64_t> indices,
 /// Propagate edge markers according to rules (longest edge of each
 /// face must be marked, if any edge of face is marked)
 void enforce_rules(MPI_Comm comm, const graph::AdjacencyList<int>& shared_edges,
-                   std::vector<std::int8_t>& marked_edges,
+                   std::span<std::int8_t> marked_edges,
                    const mesh::Topology& topology,
                    std::span<const std::int32_t> long_edge);
 
-/// Get the longest edge of each face (using local mesh index)
+/// @brief Get the longest edge of each face (using local mesh index)
+///
+/// @note Edge ratio ok returns an array in 2D, where it checks if the ratio
+/// between the shortest and longest edge of a cell is bigger than sqrt(2)/2. In
+/// 3D an empty array is returned
+///
+/// @param[in] mesh The mesh
+/// @return A tuple (longest edge, edge ratio ok) where longest edge gives the
+/// local index of the longest edge for each face.
 template <std::floating_point T>
 std::pair<std::vector<std::int32_t>, std::vector<std::int8_t>>
 face_long_edge(const mesh::Mesh<T>& mesh)
@@ -158,7 +173,7 @@ face_long_edge(const mesh::Mesh<T>& mesh)
 
   // Check mesh face quality (may be used in 2D to switch to "uniform"
   // refinement)
-  const T min_ratio = sqrt(2.0) / 2.0;
+  const T min_ratio = std::sqrt(2.0) / 2.0;
   if (tdim == 2)
     edge_ratio_ok.resize(num_faces);
 
@@ -253,27 +268,49 @@ face_long_edge(const mesh::Mesh<T>& mesh)
   return std::pair(std::move(long_edge), std::move(edge_ratio_ok));
 }
 
-/// Convenient interface for both uniform and marker refinement
+/// @brief Convenient interface for both uniform and marker refinement
+///
+/// @note The parent facet map gives you the map from a cell given by parent
+/// cell map to the local index (relative to the cell), e.g. the i-th entry of
+/// parent facets relates to the local facet index of the i-th entry parent
+/// cell.
+///
+/// @param[in] neighbor_comm Neighbourhood communciator scattering owned edges
+/// to processes with ghosts
+/// @param[in] marked_edges A marker for all edges on the process (local +
+/// ghosts) indicating if an edge should be refined
+/// @param[in] shared_edges For each local edge on a process map to ghost
+/// processes
+/// @param[in] mesh The mesh
+/// @param[in] long_edge A map from each face to its longest edge. Index is
+/// local to the process.
+/// @param[in] edge_ratio_ok For each face in a 2D mesh this error contains a
+/// marker indicating if the ratio between smallest and largest edge is bigger
+/// than sqrt(2)/2
+/// @param[in] option Option to compute additional information relating refined
+/// and original mesh entities
+/// @return (0) The new mesh topology, (1) the new flattened mesh geometry, (3)
+/// Shape of the new geometry_shape, (4) Map from new cells to parent cells
+/// and (5) map from refined facets to parent facets.
 template <std::floating_point T>
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<T>,
            std::array<std::size_t, 2>, std::vector<std::int32_t>,
            std::vector<std::int8_t>>
 compute_refinement(MPI_Comm neighbor_comm,
-                   const std::vector<std::int8_t>& marked_edges,
+                   std::span<const std::int8_t> marked_edges,
                    const graph::AdjacencyList<int>& shared_edges,
                    const mesh::Mesh<T>& mesh,
-                   const std::vector<std::int32_t>& long_edge,
-                   const std::vector<std::int8_t>& edge_ratio_ok,
+                   std::span<const std::int32_t> long_edge,
+                   std::span<const std::int8_t> edge_ratio_ok,
                    plaza::Option option)
 {
   int tdim = mesh.topology()->dim();
   int num_cell_edges = tdim * 3 - 3;
   int num_cell_vertices = tdim + 1;
-  bool compute_facets = (option == plaza::Option::parent_facet
-                         or option == plaza::Option::parent_cell_and_facet);
-  bool compute_parent_cell
-      = (option == plaza::Option::parent_cell
-         or option == plaza::Option::parent_cell_and_facet);
+  bool compute_facets = option == plaza::Option::parent_facet
+                        or option == plaza::Option::parent_cell_and_facet;
+  bool compute_parent_cell = option == plaza::Option::parent_cell
+                             or option == plaza::Option::parent_cell_and_facet;
 
   // Make new vertices in parallel
   const auto [new_vertex_map, new_vertex_coords, xshape]
@@ -300,7 +337,7 @@ compute_refinement(MPI_Comm neighbor_comm,
   std::vector<std::int64_t> global_indices
       = adjust_indices(*mesh.topology()->index_map(0), num_new_vertices_local);
 
-  const int num_cells = map_c->size_local();
+  const std::int32_t num_cells = map_c->size_local();
 
   // Iterate over all cells, and refine if cell has a marked edge
   std::vector<std::int64_t> cell_topology;
@@ -369,13 +406,13 @@ compute_refinement(MPI_Comm neighbor_comm,
       }
 
       const bool uniform = (tdim == 2) ? edge_ratio_ok[c] : false;
-
-      // FIXME: this has an expensive dynamic memory allocation
-      simplex_set = get_simplices(indices, longest_edge, tdim, uniform);
+      const auto [simplex_set_b, simplex_set_size]
+          = get_simplices(indices, longest_edge, tdim, uniform);
+      std::span<const std::int32_t> simplex_set(simplex_set_b.data(),
+                                                simplex_set_size);
 
       // Save parent index
       const std::int32_t ncells = simplex_set.size() / num_cell_vertices;
-
       if (compute_parent_cell)
       {
         for (std::int32_t i = 0; i < ncells; ++i)
@@ -384,12 +421,18 @@ compute_refinement(MPI_Comm neighbor_comm,
 
       if (compute_facets)
       {
-        std::vector<std::int8_t> npf;
         if (tdim == 3)
-          npf = compute_parent_facets<3>(simplex_set);
+        {
+          auto npf = compute_parent_facets<3>(simplex_set);
+          parent_facet.insert(parent_facet.end(), npf.begin(),
+                              std::next(npf.begin(), simplex_set.size()));
+        }
         else
-          npf = compute_parent_facets<2>(simplex_set);
-        parent_facet.insert(parent_facet.end(), npf.begin(), npf.end());
+        {
+          auto npf = compute_parent_facets<2>(simplex_set);
+          parent_facet.insert(parent_facet.end(), npf.begin(),
+                              std::next(npf.begin(), simplex_set.size()));
+        }
       }
 
       // Convert from cell local index to mesh index and add to cells
@@ -654,5 +697,4 @@ compute_refinement_data(const mesh::Mesh<T>& mesh,
   return {std::move(cell_adj), std::move(new_vertex_coords), xshape,
           std::move(parent_cell), std::move(parent_facet)};
 }
-
 } // namespace dolfinx::refinement::plaza

@@ -174,15 +174,12 @@ template <typename T>
 void declare_functions(nb::module_& m)
 {
   m.def(
-        "norm",
-        [](const dolfinx::la::Vector<T>& x, dolfinx::la::Norm type)
-        { return dolfinx::la::norm(x, type); },
-        "vector"_a, "type"_a);
+      "norm", [](const dolfinx::la::Vector<T>& x, dolfinx::la::Norm type)
+      { return dolfinx::la::norm(x, type); }, "vector"_a, "type"_a);
   m.def(
       "inner_product",
       [](const dolfinx::la::Vector<T>& x, const dolfinx::la::Vector<T>& y)
-      { return dolfinx::la::inner_product(x, y); },
-      nb::arg("x"), nb::arg("y"));
+      { return dolfinx::la::inner_product(x, y); }, nb::arg("x"), nb::arg("y"));
   m.def(
       "orthonormalize",
       [](std::vector<dolfinx::la::Vector<T>*> basis)
@@ -195,15 +192,16 @@ void declare_functions(nb::module_& m)
       nb::arg("basis"));
   m.def(
       "is_orthonormal",
-      [](std::vector<const dolfinx::la::Vector<T>*> basis)
+      [](std::vector<const dolfinx::la::Vector<T>*> basis,
+         dolfinx::scalar_value_type_t<T> eps)
       {
         std::vector<std::reference_wrapper<const dolfinx::la::Vector<T>>>
             _basis;
         for (std::size_t i = 0; i < basis.size(); ++i)
           _basis.push_back(*basis[i]);
-        return dolfinx::la::is_orthonormal(_basis);
+        return dolfinx::la::is_orthonormal(_basis, eps);
       },
-      nb::arg("basis"));
+      nb::arg("basis"), nb::arg("eps"));
 }
 
 } // namespace

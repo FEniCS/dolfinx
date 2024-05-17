@@ -5,6 +5,8 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#ifdef HAS_PETSC
+
 #include "petsc.h"
 #include "SparsityPattern.h"
 #include "Vector.h"
@@ -36,9 +38,9 @@ void la::petsc::error(int error_code, std::string filename,
   PetscErrorMessage(error_code, &desc, nullptr);
 
   // Log detailed error info
-  DLOG(INFO) << "PETSc error in '" << filename.c_str() << "', '"
-             << petsc_function.c_str() << "'";
-  DLOG(INFO) << "PETSc error code '" << error_code << "' (" << desc << ".";
+  spdlog::info("PETSc error in '{}', '{}'", filename.c_str(),
+               petsc_function.c_str());
+  spdlog::info("PETSc error code '{}' '{}'", error_code, desc);
   throw std::runtime_error("Failed to successfully call PETSc function '"
                            + petsc_function + "'. PETSc error code is: "
                            + std ::to_string(error_code) + ", "
@@ -547,8 +549,9 @@ Vec petsc::Operator::create_vector(std::size_t dim) const
   }
   else
   {
-    LOG(ERROR) << "Cannot initialize PETSc vector to match PETSc matrix. "
-               << "Dimension must be 0 or 1, not " << dim;
+    spdlog::error("Cannot initialize PETSc vector to match PETSc matrix. "
+                  "Dimension must be 0 or 1, not {}",
+                  dim);
     throw std::runtime_error("Invalid dimension");
   }
 
@@ -695,7 +698,7 @@ int petsc::KrylovSolver::solve(Vec x, const Vec b, bool transpose) const
   PetscErrorCode ierr;
 
   // Solve linear system
-  LOG(INFO) << "PETSc Krylov solver starting to solve system.";
+  spdlog::info("PETSc Krylov solver starting to solve system.");
 
   // Solve system
   if (!transpose)
@@ -788,3 +791,5 @@ void petsc::KrylovSolver::set_from_options() const
 //-----------------------------------------------------------------------------
 KSP petsc::KrylovSolver::ksp() const { return _ksp; }
 //-----------------------------------------------------------------------------
+
+#endif

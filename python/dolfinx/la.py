@@ -235,6 +235,11 @@ class Vector:
             User code should call :func:`vector` to create a vector object.
         """
         self._cpp_object = x
+        self._petsc_x = None
+
+    def __del__(self):
+        if self._petsc_x is not None:
+            self._petsc_x.destroy()
 
     @property
     def index_map(self) -> IndexMap:
@@ -250,6 +255,18 @@ class Vector:
     def array(self) -> np.ndarray:
         """Local representation of the vector."""
         return self._cpp_object.array
+
+    @property
+    def petsc_vec(self):
+        """PETSc vector holding the entries of the vector.
+
+        Upon first call, this function creates a PETSc ``Vec`` object
+        that wraps the degree-of-freedom data. The ``Vec`` object is
+        cached and the cached ``Vec`` is returned upon subsequent calls.
+        """
+        if self._petsc_x is None:
+            self._petsc_x = create_petsc_vector_wrap(self)
+        return self._petsc_x
 
     def scatter_forward(self) -> None:
         """Update ghost entries."""
@@ -337,25 +354,14 @@ def create_petsc_vector(map, bs: int):
     return PETSc.Vec().createGhost(ghosts, size=size, bsize=bs, comm=map.comm)  # type: ignore
 
 
-def orthonormalize(basis):
+def orthonormalize(basis: list[Vector]):
     """Orthogonalise set of PETSc vectors in-place."""
-    for i, x in enumerate(basis):
-        for y in basis[:i]:
-            alpha = x.dot(y)
-            x.axpy(-alpha, y)
-        x.normalize()
+    _cpp.la.orthonormalize([x._cpp_object for x in basis])
 
 
-def is_orthonormal(basis, eps: float = 1.0e-12) -> bool:
-    """Check that list of PETSc vectors are orthonormal."""
-    for x in basis:
-        if abs(x.norm() - 1.0) > eps:
-            return False
-    for i, x in enumerate(basis[:-1]):
-        for y in basis[i + 1 :]:
-            if abs(x.dot(y)) > eps:
-                return False
-    return True
+def is_orthonormal(basis: list[Vector], eps: float = 1.0e-12) -> bool:
+    """Check that list of vectors are orthonormal."""
+    return _cpp.la.is_orthonormal([x._cpp_object for x in basis], eps)
 
 
 def norm(x: Vector, type: _cpp.la.Norm = _cpp.la.Norm.l2) -> np.floating:

@@ -230,7 +230,7 @@ graph::build::compute_ghost_indices(MPI_Comm comm,
                                     std::span<const std::int64_t> ghost_indices,
                                     std::span<const int> ghost_owners)
 {
-  LOG(INFO) << "Compute ghost indices";
+  spdlog::info("Compute ghost indices");
 
   // Get number of local cells determine global offset
   std::int64_t offset_local = 0;
@@ -353,9 +353,8 @@ graph::build::compute_ghost_indices(MPI_Comm comm,
   std::transform(send_data.begin(), send_data.end(), new_recv.begin(),
                  old_to_new1.begin(),
                  [](auto idx_old, auto idx_new) ->
-                 typename decltype(old_to_new1)::value_type {
-                   return {idx_old, idx_new};
-                 });
+                 typename decltype(old_to_new1)::value_type
+                 { return {idx_old, idx_new}; });
   std::sort(old_to_new1.begin(), old_to_new1.end());
 
   std::vector<std::int64_t> ghost_global_indices(ghost_indices.size());

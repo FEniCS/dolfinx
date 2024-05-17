@@ -50,7 +50,8 @@ message(STATUS "Checking for package 'SCOTCH-PT'")
 # Check for header file
 find_path(
   SCOTCH_INCLUDE_DIRS ptscotch.h
-  HINTS ${SCOTCH_ROOT}/include $ENV{SCOTCH_ROOT}/include ${PETSC_INCLUDE_DIRS}
+  HINTS ${SCOTCH_DIR}/include $ENV{SCOTCH_DIR}/include ${SCOTCH_ROOT}/include
+        $ENV{SCOTCH_ROOT}/include ${PETSC_INCLUDE_DIRS}
   PATH_SUFFIXES scotch
   DOC "Directory where the SCOTCH-PT header is located"
 )
@@ -59,7 +60,8 @@ find_path(
 find_library(
   SCOTCH_LIBRARY
   NAMES scotch
-  HINTS ${SCOTCH_ROOT}/lib $ENV{SCOTCH_ROOT}/lib ${PETSC_LIBRARY_DIRS}
+  HINTS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib ${SCOTCH_ROOT}/lib
+        $ENV{SCOTCH_ROOT}/lib ${PETSC_LIBRARY_DIRS}
   NO_DEFAULT_PATH
   DOC "The SCOTCH library"
 )
@@ -73,7 +75,8 @@ find_library(
 find_library(
   SCOTCHERR_LIBRARY
   NAMES scotcherr
-  HINTS ${SCOTCH_ROOT}/lib $ENV{SCOTCH_ROOT}/lib
+  HINTS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib ${SCOTCH_ROOT}/lib
+        $ENV{SCOTCH_ROOT}/lib
   NO_DEFAULT_PATH
   DOC "The SCOTCH-ERROR library"
 )
@@ -87,7 +90,8 @@ find_library(
 find_library(
   PTSCOTCH_LIBRARY
   NAMES ptscotch
-  HINTS ${SCOTCH_ROOT}/lib $ENV{SCOTCH_ROOT}/lib ${PETSC_LIBRARY_DIRS}
+  HINTS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib ${SCOTCH_ROOT}/lib
+        $ENV{SCOTCH_ROOT}/lib ${PETSC_LIBRARY_DIRS}
   NO_DEFAULT_PATH
   DOC "The PTSCOTCH library"
 )
@@ -101,7 +105,8 @@ find_library(
 find_library(
   PTESMUMPS_LIBRARY
   NAMES ptesmumps esmumps
-  HINTS ${SCOTCH_ROOT}/lib $ENV{SCOTCH_ROOT}/lib ${PETSC_LIBRARY_DIRS}
+  HINTS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib ${SCOTCH_ROOT}/lib
+        $ENV{SCOTCH_ROOT}/lib ${PETSC_LIBRARY_DIRS}
   NO_DEFAULT_PATH
   DOC "The PTSCOTCH-ESMUMPS library"
 )
@@ -115,7 +120,8 @@ find_library(
 find_library(
   PTSCOTCHERR_LIBRARY
   NAMES ptscotcherr
-  HINTS ${SCOTCH_ROOT}/lib $ENV{SCOTCH_ROOT}/lib ${PETSC_LIBRARY_DIRS}
+  HINTS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib ${SCOTCH_ROOT}/lib
+        $ENV{SCOTCH_ROOT}/lib ${PETSC_LIBRARY_DIRS}
   NO_DEFAULT_PATH
   DOC "The PTSCOTCH-ERROR library"
 )
@@ -374,6 +380,6 @@ endif()
 
 # Standard package handling
 find_package_handle_standard_args(
-  SCOTCH "SCOTCH could not be found. Be sure to set SCOTCH_ROOT."
+  SCOTCH "SCOTCH could not be found. Be sure to set SCOTCH_DIR."
   SCOTCH_LIBRARIES SCOTCH_INCLUDE_DIRS SCOTCH_TEST_RUNS
 )

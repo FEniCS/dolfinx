@@ -288,8 +288,7 @@ auto norm(const V& x, Norm type = Norm::l2)
   {
     std::int32_t size_local = x.bs() * x.index_map()->size_local();
     std::span<const T> data = x.array().subspan(0, size_local);
-    auto max_pos = std::max_element(data.begin(), data.end(),
-                                    [](T a, T b)
+    auto max_pos = std::max_element(data.begin(), data.end(), [](T a, T b)
                                     { return std::norm(a) < std::norm(b); });
     auto local_linf = std::abs(*max_pos);
     decltype(local_linf) linf = 0;
@@ -344,22 +343,28 @@ void orthonormalize(std::vector<std::reference_wrapper<V>> basis)
 }
 
 /// @brief Test if basis is orthonormal.
-/// @param[in] basis The set of vectors to check.
+///
+/// Returns true if ||x_i - x_j|| - delta_{ij} < eps fro all i, j, and
+/// otherwise false.
+///
+/// @param[in] basis Set of vectors to check.
+/// @param[in] eps Tolerance.
 /// @return True is basis is orthonormal, otherwise false.
 template <class V>
-bool is_orthonormal(std::vector<std::reference_wrapper<const V>> basis)
+bool is_orthonormal(
+    std::vector<std::reference_wrapper<const V>> basis,
+    dolfinx::scalar_value_type_t<typename V::value_type> eps
+    = std::numeric_limits<
+        dolfinx::scalar_value_type_t<typename V::value_type>>::epsilon())
 {
   using T = typename V::value_type;
-  using U = typename dolfinx::scalar_value_type_t<T>;
-
-  // auto tol = std::sqrt(T(std::numeric_limits<U>::epsilon()));
   for (std::size_t i = 0; i < basis.size(); i++)
   {
     for (std::size_t j = i; j < basis.size(); j++)
     {
       T delta_ij = (i == j) ? T(1) : T(0);
       auto dot_ij = inner_product(basis[i].get(), basis[j].get());
-      if (std::norm(delta_ij - dot_ij) > std::numeric_limits<U>::epsilon())
+      if (std::norm(delta_ij - dot_ij) > eps)
         return false;
     }
   }

@@ -121,8 +121,19 @@
 # +
 import os
 
+try:
+    from petsc4py import PETSc
+
+    import dolfinx
+
+    if not dolfinx.has_petsc:
+        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
+        exit(0)
+except ModuleNotFoundError:
+    print("This demo requires petsc4py.")
+    exit(0)
+
 from mpi4py import MPI
-from petsc4py import PETSc
 
 import numpy as np
 
@@ -163,7 +174,7 @@ theta = 0.5  # time stepping family, e.g. theta=1 -> backward Euler, theta=0.5 -
 # using a pair of linear Lagrange elements.
 
 msh = create_unit_square(MPI.COMM_WORLD, 96, 96, CellType.triangle)
-P1 = element("Lagrange", msh.basix_cell(), 1)
+P1 = element("Lagrange", msh.basix_cell(), 1, dtype=default_real_type)
 ME = functionspace(msh, mixed_element([P1, P1]))
 
 # Trial and test functions of the space `ME` are now defined:
@@ -267,11 +278,11 @@ option_prefix = ksp.getOptionsPrefix()
 opts[f"{option_prefix}ksp_type"] = "preonly"
 opts[f"{option_prefix}pc_type"] = "lu"
 sys = PETSc.Sys()  # type: ignore
-# For factorisation prefer MUMPS, then superlu_dist, then default.
-if sys.hasExternalPackage("mumps"):
-    opts[f"{option_prefix}pc_factor_mat_solver_type"] = "mumps"
-elif sys.hasExternalPackage("superlu_dist"):
+# For factorisation prefer superlu_dist, then MUMPS, then default
+if sys.hasExternalPackage("superlu_dist"):
     opts[f"{option_prefix}pc_factor_mat_solver_type"] = "superlu_dist"
+elif sys.hasExternalPackage("mumps"):
+    opts[f"{option_prefix}pc_factor_mat_solver_type"] = "mumps"
 ksp.setFromOptions()
 # -
 
