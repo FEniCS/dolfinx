@@ -64,8 +64,7 @@ T assemble_exterior_facets(
     int num_cell_facets, std::span<const std::int32_t> facets,
     FEkernel<T> auto fn, std::span<const T> constants,
     std::span<const T> coeffs, int cstride,
-    const std::function<std::uint8_t(std::size_t)>& get_perm,
-    const std::function<std::uint8_t(std::size_t)>& get_facet_perm)
+    const std::function<std::uint8_t(std::size_t)>& get_perm)
 {
   T value(0);
   if (facets.empty())
@@ -92,11 +91,11 @@ T assemble_exterior_facets(
 
     // Permutations
     const int perm_idx = cell * num_cell_facets + local_facet;
-    const std::array<std::uint8_t, 2> perm{get_perm(perm_idx), 0};
+    const std::uint8_t perm{get_perm(perm_idx)};
 
     const T* coeff_cell = coeffs.data() + index / 2 * cstride;
     fn(&value, coeff_cell, constants.data(), coordinate_dofs.data(),
-       &local_facet, perm.data());
+       &local_facet, &perm);
   }
 
   return value;
@@ -182,7 +181,6 @@ T assemble_scalar(
   }
 
   std::function<std::uint8_t(std::size_t)> get_perm;
-  std::function<std::uint8_t(std::size_t)> get_facet_perm;
   if (M.needs_facet_permutations())
   {
     mesh->topology_mutable()->create_entity_permutations();
@@ -191,10 +189,7 @@ T assemble_scalar(
     get_perm = [&perms](std::size_t i) { return perms[i]; };
   }
   else
-  {
     get_perm = [](std::size_t) { return 0; };
-    get_facet_perm = [](std::size_t) { return 0; };
-  }
 
   mesh::CellType cell_type = mesh->topology()->cell_type();
   int num_cell_facets
@@ -207,7 +202,7 @@ T assemble_scalar(
         = coefficients.at({IntegralType::exterior_facet, i});
     value += impl::assemble_exterior_facets(
         x_dofmap, x, num_cell_facets, M.domain(IntegralType::exterior_facet, i),
-        fn, constants, coeffs, cstride, get_perm, get_facet_perm);
+        fn, constants, coeffs, cstride, get_perm);
   }
 
   for (int i : M.integral_ids(IntegralType::interior_facet))

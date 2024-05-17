@@ -198,8 +198,7 @@ void assemble_exterior_facets(
     std::span<const T> coeffs, int cstride, std::span<const T> constants,
     std::span<const std::uint32_t> cell_info0,
     std::span<const std::uint32_t> cell_info1,
-    const std::function<std::uint8_t(std::size_t)>& get_perm,
-    const std::function<std::uint8_t(std::size_t)>& get_facet_perm)
+    const std::function<std::uint8_t(std::size_t)>& get_perm)
 {
   if (facets.empty())
     return;
@@ -239,12 +238,12 @@ void assemble_exterior_facets(
 
     // Permutations
     const int perm_idx = cell * num_cell_facets + local_facet;
-    const std::array<std::uint8_t, 2> perm{get_perm(perm_idx), 0};
+    const std::uint8_t perm{get_perm(perm_idx)};
 
     // Tabulate tensor
     std::fill(Ae.begin(), Ae.end(), 0);
     kernel(Ae.data(), coeffs.data() + index / 2 * cstride, constants.data(),
-           coordinate_dofs.data(), &local_facet, perm.data());
+           coordinate_dofs.data(), &local_facet, &perm);
 
     P0(_Ae, cell_info0, cell0, ndim1);
     P1T(_Ae, cell_info1, cell1, ndim0);
@@ -541,7 +540,6 @@ void assemble_matrix(
   }
 
   std::function<std::uint8_t(std::size_t)> get_perm;
-  std::function<std::uint8_t(std::size_t)> get_facet_perm;
   if (a.needs_facet_permutations())
   {
     mesh->topology_mutable()->create_entity_permutations();
@@ -550,10 +548,7 @@ void assemble_matrix(
     get_perm = [&perms](std::size_t i) { return perms[i]; };
   }
   else
-  {
     get_perm = [](std::size_t) { return 0; };
-    get_facet_perm = [](std::size_t) { return 0; };
-  }
 
   mesh::CellType cell_type = mesh->topology()->cell_type();
   int num_cell_facets
@@ -570,7 +565,7 @@ void assemble_matrix(
         {dofs0, bs0, a.domain(IntegralType::exterior_facet, i, *mesh0)}, P0,
         {dofs1, bs1, a.domain(IntegralType::exterior_facet, i, *mesh1)}, P1T,
         bc0, bc1, fn, coeffs, cstride, constants, cell_info0, cell_info1,
-        get_perm, get_facet_perm);
+        get_perm);
   }
 
   for (int i : a.integral_ids(IntegralType::interior_facet))
