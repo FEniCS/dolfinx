@@ -44,7 +44,7 @@ find_package(
 
 message(
   STATUS
-    "Asking Python module FFCx for location of UFC... (Python executable: ${Python3_EXECUTABLE})"
+    "Asking Python module FFCx for location of ufcx.h..."
 )
 
 # Get include path
@@ -54,7 +54,7 @@ execute_process(
     "import ffcx.codegeneration, sys; sys.stdout.write(ffcx.codegeneration.get_include_path())"
   OUTPUT_VARIABLE UFCX_INCLUDE_DIR
 )
-# TODO: CMake 3.20 has more moddern cmake_path.
+# TODO: CMake 3.20 has more modern cmake_path.
 file(TO_CMAKE_PATH "${UFCX_INCLUDE_DIR}" UFCX_INCLUDE_DIR)
 
 # Get ufcx.h version
