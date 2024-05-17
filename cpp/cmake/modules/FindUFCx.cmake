@@ -54,6 +54,8 @@ execute_process(
     "import ffcx.codegeneration, sys; sys.stdout.write(ffcx.codegeneration.get_include_path())"
   OUTPUT_VARIABLE UFCX_INCLUDE_DIR
 )
+# TODO: CMake 3.20 has more moddern cmake_path.
+file(TO_CMAKE_PATH "${UFCX_INCLUDE_DIR}" UFCX_INCLUDE_DIR)
 
 # Get ufcx.h version
 if(UFCX_INCLUDE_DIR)
