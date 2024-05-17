@@ -353,6 +353,7 @@ public:
         // Get the codimension of the mesh
         const int tdim = _mesh->topology()->dim();
         const int codim = tdim - mesh.topology()->dim();
+        assert(codim >= 0);
 
         if (codim == 0)
         {
@@ -363,9 +364,8 @@ public:
                                    {entity_map[entities[i]], entities[i + 1]});
           }
         }
-        else
+        else if (codim == 1)
         {
-          assert(codim == 1);
           // In this case, the entity maps take facets in (`_mesh`) to cells in
           // `mesh`, so we need to get the facet number from the (cell,
           // local_facet pair) first.
@@ -381,6 +381,8 @@ public:
                                    {entity_map[facet], entities[i + 1]});
           }
         }
+        else
+          throw std::runtime_error("Codimension > 1 not supported.");
         break;
       }
       case IntegralType::interior_facet:

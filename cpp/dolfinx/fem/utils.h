@@ -1006,6 +1006,7 @@ void pack_coefficients(const Form<T, U>& form, IntegralType integral_type,
         // don't pack them.
         const int codim
             = form.mesh()->topology()->dim() - mesh->topology()->dim();
+        assert(codim >= 0);
         if (codim != 0)
           continue;
 
