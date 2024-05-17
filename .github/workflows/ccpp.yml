@@ -271,6 +271,7 @@ jobs:
           export DOLFINX_VERSION=`cmake -L build | grep DOXYGEN_DOLFINX_VERSION | cut -f2 -d "="`
           echo $DOLFINX_VERSION
           cd cpp/doc
+          python3 -m pip install -r doc-requirements.txt
           doxygen Doxyfile
           make html
 
