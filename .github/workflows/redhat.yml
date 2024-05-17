@@ -32,10 +32,7 @@ jobs:
           python3 -m pip install git+https://github.com/FEniCS/ffcx.git
 
       - name: Configure C++
-        run: |
-          dnf install -y spdlog-devel
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
-
+        run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
       - name: Build and install C++ library
         run: |
           cmake --build build
