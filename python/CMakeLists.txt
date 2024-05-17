@@ -28,12 +28,6 @@ execute_process(
 list(APPEND CMAKE_PREFIX_PATH "${NB_DIR}")
 find_package(nanobind CONFIG REQUIRED)
 
-find_package(Basix REQUIRED CONFIG)
-
-if(Basix_FOUND)
-  message(STATUS "Found Basix at ${Basix_DIR}")
-endif()
-
 find_package(DOLFINX REQUIRED CONFIG)
 
 if(DOLFINX_FOUND)
