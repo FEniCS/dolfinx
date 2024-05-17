@@ -62,31 +62,28 @@ std::vector<std::bitset<BITSETSIZE>> compute_face_permutations_simplex(
       }
 
       // Number of rotations
-      std::uint8_t min_v = 0;
-      for (int v = 1; v < 3; ++v)
-        if (e_vertices[v] < e_vertices[min_v])
-          min_v = v;
+      std::uint8_t min_v = std::distance(
+          e_vertices.begin(),
+          std::min_element(e_vertices.begin(), e_vertices.end()));
 
       // pre is the number of the next vertex clockwise from the lowest
       // numbered vertex
-      const int pre = min_v == 0 ? e_vertices[3 - 1] : e_vertices[min_v - 1];
+      const int pre = e_vertices[(min_v + 2) % 3];
 
       // post is the number of the next vertex anticlockwise from the
       // lowest numbered vertex
-      const int post = min_v == 3 - 1 ? e_vertices[0] : e_vertices[min_v + 1];
+      const int post = e_vertices[(min_v + 1) % 3];
 
-      std::uint8_t g_min_v = 0;
-      for (int v = 1; v < 3; ++v)
-        if (vertices[v] < vertices[g_min_v])
-          g_min_v = v;
+      std::uint8_t g_min_v = std::distance(
+          vertices.begin(), std::min_element(vertices.begin(), vertices.end()));
 
       // pre is the number of the next vertex clockwise from the lowest
       // numbered vertex
-      const int g_pre = g_min_v == 0 ? vertices[3 - 1] : vertices[g_min_v - 1];
+      const int g_pre = vertices[(g_min_v + 2) % 3];
 
       // post is the number of the next vertex anticlockwise from the
       // lowest numbered vertex
-      const int g_post = g_min_v == 3 - 1 ? vertices[0] : vertices[g_min_v + 1];
+      const int g_post = vertices[(g_min_v + 1) % 3];
 
       std::uint8_t rots = 0;
       if (g_post > g_pre)
@@ -126,7 +123,7 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
       vertices.resize(f_to_v.links(face).size());
       im.local_to_global(f_to_v.links(face), vertices);
 
-      // Orient that triangle so the lowest numbered vertex is the
+      // Orient that quadrilateral so the lowest numbered vertex is the
       // origin, and the next vertex anticlockwise from the lowest has a
       // lower number than the next vertex clockwise. Find the index of
       // the lowest numbered vertex
@@ -143,81 +140,51 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
         e_vertices[j] = std::distance(cell_vertices.begin(), it);
       }
 
-      // Number of rotations
-      std::uint8_t min_v = 0;
-      for (int v = 1; v < 4; ++v)
-        if (e_vertices[v] < e_vertices[min_v])
-          min_v = v;
+      // Find minimum local cell vertex on facet
+      std::uint8_t min_v = std::distance(
+          e_vertices.begin(),
+          std::min_element(e_vertices.begin(), e_vertices.end()));
+
+      // Table of next and previous vertices
+      const std::array<std::int8_t, 4> _pre = {2, 0, 3, 1};
 
       // pre is the (local) number of the next vertex clockwise from the
       // lowest numbered vertex
-      int pre = 2;
+      std::int32_t pre = e_vertices[_pre[min_v]];
 
       // post is the (local) number of the next vertex anticlockwise
       // from the lowest numbered vertex
-      int post = 1;
+      std::int32_t post = e_vertices[_pre[3 - min_v]];
 
-      assert(min_v < 4);
-      switch (min_v)
-      {
-      case 1:
-        pre = 0;
-        post = 3;
-        break;
-      case 2:
-        pre = 3;
-        post = 0;
-        min_v = 3;
-        break;
-      case 3:
-        pre = 1;
-        post = 2;
-        min_v = 2;
-        break;
-      }
+      // If min_v is 2 or 3, swap. Why?
+      if (min_v == 2 or min_v == 3)
+        min_v = 5 - min_v;
 
-      std::uint8_t g_min_v = 0;
-      for (int v = 1; v < 4; ++v)
-        if (vertices[v] < vertices[g_min_v])
-          g_min_v = v;
+      // Find minimum global vertex in facet
+      std::uint8_t g_min_v = std::distance(
+          vertices.begin(), std::min_element(vertices.begin(), vertices.end()));
 
       // rots is the number of rotations to get the lowest numbered
       // vertex to the origin
+
       // pre is the (local) number of the next vertex clockwise from the
       // lowest numbered vertex
-      int g_pre = 2;
+      std::int64_t g_pre = vertices[_pre[g_min_v]];
 
       // post is the (local) number of the next vertex anticlockwise
       // from the lowest numbered vertex
-      int g_post = 1;
+      std::int64_t g_post = vertices[_pre[3 - g_min_v]];
 
-      assert(g_min_v < 4);
-      switch (g_min_v)
-      {
-      case 1:
-        g_pre = 0;
-        g_post = 3;
-        break;
-      case 2:
-        g_pre = 3;
-        g_post = 0;
-        g_min_v = 3;
-        break;
-      case 3:
-        g_pre = 1;
-        g_post = 2;
-        g_min_v = 2;
-        break;
-      }
+      if (g_min_v == 2 or g_min_v == 3)
+        g_min_v = 5 - g_min_v;
 
       std::uint8_t rots = 0;
-      if (vertices[g_post] > vertices[g_pre])
-        rots = min_v <= g_min_v ? g_min_v - min_v : g_min_v + 4 - min_v;
+      if (g_post > g_pre)
+        rots = (g_min_v - min_v + 4) % 4;
       else
-        rots = g_min_v <= min_v ? min_v - g_min_v : min_v + 4 - g_min_v;
+        rots = (min_v - g_min_v + 4) % 4;
 
-      face_perm[c][3 * i] = (e_vertices[post] > e_vertices[pre])
-                            == (vertices[g_post] < vertices[g_pre]);
+      face_perm[c][3 * i] = (post > pre) == (g_post < g_pre);
       face_perm[c][3 * i + 1] = rots % 2;
       face_perm[c][3 * i + 2] = rots / 2;
     }
