@@ -35,17 +35,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install pyvista
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends libgl1-mesa-dev xvfb  # pyvista
+          python3 -m pip install pyvista==${PYVISTA_VERSION}
+          apt-get install -y --no-install-recommends python3-pyqt5 libgl1-mesa-glx  # pyvistaqt
+          python3 -m pip install pyvistaqt==${PYVISTA_QT_VERSION}
+
       - name: Install FEniCS Python components
         run: |
           python3 -m pip install git+https://github.com/FEniCS/ufl.git
           python3 -m pip install git+https://github.com/FEniCS/basix.git
           python3 -m pip install git+https://github.com/FEniCS/ffcx.git
-          apt-get update
-          apt-get install -y --no-install-recommends libgl1-mesa-dev xvfb  # pyvista
-          apt-get install -y --no-install-recommends python3-pyqt5 libgl1-mesa-glx  # pyvistaqt
-          python3 -m pip install pyvista==${PYVISTA_VERSION}
-          python3 -m pip install pyvistaqt==${PYVISTA_QT_VERSION}
-          python3 -m pip install matplotlib ipython
 
       - name: Configure C++
         run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
@@ -55,7 +57,9 @@ jobs:
           cmake --install build
 
       - name: Build Python interface
-        run: pip -v install --check-build-dependencies --config-settings=build-dir="build" --config-settings=cmake.build-type="Debug" --no-build-isolation python/
+        run: |
+          python3 -m pip install -r python/build-requirements.txt
+          python3 -m pip -v install --check-build-dependencies --config-settings=build-dir="build" --config-settings=cmake.build-type="Debug" --no-build-isolation "python/[demos]"
 
       - name: Run pyvista demos (Python, serial)
         run: python3 -m pytest -v -n=2 -m serial --durations=10 python/demo/test.py

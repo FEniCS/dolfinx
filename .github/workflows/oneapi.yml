@@ -87,12 +87,9 @@ jobs:
       - name: Build DOLFINx Python interface
         run: |
           . /opt/intel/oneapi/setvars.sh
-          pip install mpi4py nanobind scikit-build-core[pyproject]
-          pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" python/
-      - name: Install Python test dependencies
-        run: |
-          . /opt/intel/oneapi/setvars.sh
-          pip install matplotlib pytest pytest-xdist
+          pip install -r python/build-requirements.txt
+          pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" "python/[demos,tests]"
+
       - name: Run DOLFINx demos (Python, serial)
         run: |
           . /opt/intel/oneapi/setvars.sh
@@ -101,6 +98,7 @@ jobs:
         run: |
           . /opt/intel/oneapi/setvars.sh
           pytest -m mpi --num-proc=2 python/demo/test.py
+
       - name: Run DOLFINx Python unit tests (serial)
         run: |
           . /opt/intel/oneapi/setvars.sh

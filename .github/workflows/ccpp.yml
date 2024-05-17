@@ -127,7 +127,7 @@ jobs:
       - name: Install Python build dependencies
         run: pip install -r python/build-requirements.txt
       - name: Build Python interface
-        run: pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[ci]'
+        run: pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" "python/[demos,test]"
 
       - name: Run demos (Python, serial)
         run: python3 -m pytest -n auto -m serial --durations=10 python/demo/test.py
@@ -211,7 +211,8 @@ jobs:
 
       - name: Build Python interface
         run: |
-          python3 -m pip install --break-system-packages --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
+          python3 -m pip install -r python/build-requirements.txt
+          python3 -m pip install --break-system-packages --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" "python/[ci]"
       - name: Build Python interface documentation
         run: |
           cd python/doc
@@ -275,7 +276,8 @@ jobs:
 
       - name: Build Python interface
         run: |
-          python3 -m pip install --break-system-packages --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
+          python3 -m pip install -r python/build-requirements.txt
+          python3 -m pip install --break-system-packages --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" "python/[docs]"
       - name: Build Python interface documentation
         run: |
           cd python/doc

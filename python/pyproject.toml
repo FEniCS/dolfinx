@@ -40,18 +40,17 @@ docs = ["jupytext", "markdown", "myst-parser", "pyyaml", "sphinx", "sphinx_rtd_t
 # Signposting gmsh dependency (demos, test, optional)
 gmsh = ["gmsh"]
 # To lint the Python code
-lint = ["ruff"]
+lint = ["ruff", "mypy", "types-setuptools"]
 # Optional dependencies used in core library
 optional = ["numba"]
 # Signposting petsc4py dependency (demos, test, optional)
 petsc4py = ["petsc4py"]
+# Signposting pyvista dependency (demos)
+pyvista = ["pyvista"]
 # To run all tests
-test = ["pytest", "scipy", "numba"]
+test = ["pytest", "pytest-xdist", "scipy", "numba"]
 # Dependencies to execute typical CI run.
 ci = [
-      "mypy",
-      "pytest-xdist",
-      "types-setuptools",
       "fenics-dolfinx[demos]",
       "fenics-dolfinx[docs]",
       "fenics-dolfinx[lint]",
