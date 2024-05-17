@@ -991,7 +991,6 @@ create_subgeometry(const Mesh<T>& mesh, int dim,
                                      geometry.cmap().variant());
 
   // Sub-geometry input_global_indices
-  // TODO: Check this
   const std::vector<std::int64_t>& igi = geometry.input_global_indices();
   std::vector<std::int64_t> sub_igi;
   sub_igi.reserve(subx_to_x_dofmap.size());
