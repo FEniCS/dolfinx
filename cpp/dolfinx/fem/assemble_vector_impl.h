@@ -229,6 +229,7 @@ void _lift_bc_cells(
 /// @param b The vector to modify
 /// @param x_dofmap Dofmap for the mesh geometry.
 /// @param x Mesh geometry (coordinates).
+/// @param num_cell_facets Number of cell facets
 /// @param kernel Kernel function to execute over each cell.
 /// @param facets Facet indices (in the integration domain mesh) to
 /// execute the kernel over.
@@ -254,6 +255,7 @@ void _lift_bc_cells(
 /// applied
 /// @param x0 The vector used in the lifting
 /// @param scale The scaling to apply
+/// @param get_perm Function to get the facet permutations
 template <dolfinx::scalar T, int _bs = -1>
 void _lift_bc_exterior_facets(
     std::span<T> b, mdspan2_t x_dofmap,
@@ -692,6 +694,7 @@ void assemble_cells(
 /// @param b The vector to accumulate into
 /// @param x_dofmap Dofmap for the mesh geometry.
 /// @param x Mesh geometry (coordinates).
+/// @param num_cell_facets Number of cell facets
 /// @param facets Facets (in the integration domain mesh) to
 /// execute the kernel over.
 /// @param dofmap Test function (row) degree-of-freedom data holding
@@ -703,6 +706,7 @@ void assemble_cells(
 /// @param cstride The coefficient stride
 /// @param cell_info0 The cell permutation information for the test function
 /// mesh
+/// @param get_perm Function to get the facet permutations
 template <dolfinx::scalar T, int _bs = -1>
 void assemble_exterior_facets(
     fem::DofTransformKernel<T> auto P0, std::span<T> b, mdspan2_t x_dofmap,

@@ -163,6 +163,7 @@ void assemble_cells(
 /// matrix.
 /// @param x_dofmap Dofmap for the mesh geometry.
 /// @param x Mesh geometry (coordinates).
+/// @param num_cell_facets Number of cell facets
 /// @param facets Facet indices (in the integration domain mesh) to
 /// execute the kernel over.
 /// @param dofmap0 Test function (row) degree-of-freedom data holding
@@ -185,6 +186,7 @@ void assemble_cells(
 /// mesh
 /// @param cell_info1 The cell permutation information for the trial function
 /// mesh
+/// @param get_perm Function to get the facet permutations
 template <dolfinx::scalar T>
 void assemble_exterior_facets(
     la::MatSet<T> auto mat_set, mdspan2_t x_dofmap,
