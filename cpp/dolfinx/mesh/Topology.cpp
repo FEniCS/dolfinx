@@ -10,7 +10,6 @@
 #include "topologycomputation.h"
 #include "utils.h"
 #include <algorithm>
-#include <common/Scatterer.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/sort.h>
@@ -926,69 +925,6 @@ void Topology::create_entity_permutations()
   _cell_permutations = std::move(cell_permutations);
 }
 //-----------------------------------------------------------------------------
-// TODO Rename create_cell_perms_for_facets
-void Topology::create_full_cell_permutations()
-{
-  if (_full_cell_perms_created)
-    return;
-
-  const int tdim = this->dim();
-
-  // Create a topology for the facets
-  // FIXME Can this be avoided?
-  const int fdim = tdim - 1;
-  const mesh::CellType facet_cell_type
-      = mesh::cell_entity_type(this->cell_type(), fdim, 0);
-  Topology facet_topology(this->comm(), facet_cell_type);
-  facet_topology.set_index_map(0, this->index_map(0));
-  facet_topology.set_index_map(fdim, this->index_map(fdim));
-  facet_topology.set_connectivity(
-      std::make_shared<graph::AdjacencyList<std::int32_t>>(
-          *this->connectivity(0, 0)),
-      0, 0);
-  facet_topology.set_connectivity(
-      std::make_shared<graph::AdjacencyList<std::int32_t>>(
-          *this->connectivity(fdim, 0)),
-      fdim, 0);
-  facet_topology.create_connectivity(fdim, fdim);
-
-  auto perms = mesh::compute_cell_permutations(facet_topology);
-
-  // FIXME Can this be avoided?
-  auto facet_imap = this->index_map(fdim);
-  assert(facet_imap);
-  common::Scatterer scatterer(*facet_imap, 1);
-  scatterer.scatter_fwd(
-      std::span<const std::uint8_t>(perms.begin(),
-                                    perms.begin() + facet_imap->size_local()),
-      std::span<std::uint8_t>(perms.begin() + facet_imap->size_local(),
-                              perms.end()));
-
-  // Repackage so permutations can be accessed from (cell, local_facet) pairs
-  // FIXME Should this be done in another function? It makes more sense to
-  // access them by facet number, but they are currently only used in the
-  // assembler, where they need to be accessed by (cell, local_facet) pairs.
-  mesh::CellType cell_type = this->cell_type();
-  int num_cell_facets = mesh::cell_num_entities(cell_type, fdim);
-  auto cell_imap = this->index_map(tdim);
-  const int num_cells = cell_imap->size_local() + cell_imap->num_ghosts();
-  _full_cell_permutations
-      = std::vector<std::uint8_t>(num_cells * num_cell_facets);
-  this->create_connectivity(tdim, fdim);
-  auto c_to_f = this->connectivity(tdim, fdim);
-  for (std::size_t c = 0; c < num_cells; ++c)
-  {
-    for (std::size_t lf = 0; lf < num_cell_facets; ++lf)
-    {
-      _full_cell_permutations[c * num_cell_facets + lf]
-          = perms[c_to_f->links(c)[lf]];
-    }
-  }
-
-  // FIXME Avoid
-  _full_cell_perms_created = true;
-}
-//-----------------------------------------------------------------------------
 std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
 Topology::connectivity(int d0, int d1) const
 {
@@ -1053,19 +989,6 @@ const std::vector<std::uint32_t>& Topology::get_cell_permutation_info() const
   }
 
   return _cell_permutations;
-}
-//-----------------------------------------------------------------------------
-const std::vector<std::uint8_t>& Topology::get_full_cell_permutations() const
-{
-  if (auto i_map = this->index_map(this->dim() - 1);
-      !i_map
-      or (_full_cell_permutations.empty()
-          and i_map->size_local() + i_map->num_ghosts() > 0))
-  {
-    throw std::runtime_error(
-        "create_full_cell_permutations must be called before using this data.");
-  }
-  return _full_cell_permutations;
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::uint8_t>& Topology::get_facet_permutations() const
@@ -1487,37 +1410,6 @@ mesh::create_subtopology(const Topology& topology, int dim,
       sub_e_to_v_vec.push_back(v_sub);
     }
     sub_e_to_v_offsets.push_back(sub_e_to_v_vec.size());
-  }
-
-  // If codim != 0, the process owning the entities should send the
-  // entity to vertex map to process ghosting the entities to ensure
-  // that the submesh ghost cells are orientated consistently. If
-  // codim = 0, the mesh should have been created so that this is the
-  // case (TODO double check this)
-  if (!(topology.dim() == dim))
-  {
-    // Convert sub_e_to_v_vec from local to global vertex numbering
-    std::vector<std::int64_t> sub_e_to_global_v_vec(sub_e_to_v_vec.size(), 0);
-    submap0->local_to_global(sub_e_to_v_vec, sub_e_to_global_v_vec);
-
-    // Scatter forward to send global vertices of owned entity vertices
-    // to ghost entities
-    common::Scatterer scatterer(*submap, num_vertices_per_entity);
-    std::vector<std::int64_t> ghost_vertices(
-        num_vertices_per_entity * submap->num_ghosts(), 0);
-    scatterer.scatter_fwd(
-        std::span<const std::int64_t>(sub_e_to_global_v_vec.begin(),
-                                      sub_e_to_global_v_vec.begin()
-                                          + num_vertices_per_entity
-                                                * submap->size_local()),
-        std::span<std::int64_t>(ghost_vertices));
-
-    // Convert received global vertices back to local numbering and overwrite
-    // ghosts in sub_e_to_v_vec
-    std::span<std::int32_t> ghost_vertices_local(
-        sub_e_to_v_vec.begin() + num_vertices_per_entity * submap->size_local(),
-        sub_e_to_v_vec.end());
-    submap0->global_to_local(ghost_vertices, ghost_vertices_local);
   }
 
   auto sub_e_to_v = std::make_shared<graph::AdjacencyList<std::int32_t>>(

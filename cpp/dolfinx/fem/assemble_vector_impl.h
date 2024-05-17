@@ -333,7 +333,7 @@ void _lift_bc_exterior_facets(
 
     // Permutations
     const int perm_idx = cell * num_cell_facets + local_facet;
-    const std::array perm{get_perm(perm_idx), get_facet_perm(perm_idx)};
+    const std::array<std::uint8_t, 2> perm{get_perm(perm_idx), 0};
 
     const T* coeff_array = coeffs.data() + index / 2 * cstride;
     Ae.resize(num_rows * num_cols);
@@ -749,7 +749,7 @@ void assemble_exterior_facets(
 
     // Permutations
     const int perm_idx = cell * num_cell_facets + local_facet;
-    const std::array perm{get_perm(perm_idx), get_facet_perm(perm_idx)};
+    const std::array<std::uint8_t, 2> perm{get_perm(perm_idx), 0};
 
     // Tabulate element vector
     std::fill(be.begin(), be.end(), 0);
@@ -1002,11 +1002,6 @@ void lift_bc(std::span<T> b, const Form<T, U>& a, mdspan2_t x_dofmap,
     const std::vector<std::uint8_t>& perms
         = mesh->topology()->get_facet_permutations();
     get_perm = [&perms](std::size_t i) { return perms[i]; };
-
-    mesh->topology_mutable()->create_full_cell_permutations();
-    const std::vector<std::uint8_t>& facet_perms
-        = mesh->topology()->get_full_cell_permutations();
-    get_facet_perm = [&facet_perms](std::size_t i) { return facet_perms[i]; };
   }
   else
   {
@@ -1208,11 +1203,6 @@ void assemble_vector(
     const std::vector<std::uint8_t>& perms
         = mesh->topology()->get_facet_permutations();
     get_perm = [&perms](std::size_t i) { return perms[i]; };
-
-    mesh->topology_mutable()->create_full_cell_permutations();
-    const std::vector<std::uint8_t>& facet_perms
-        = mesh->topology()->get_full_cell_permutations();
-    get_facet_perm = [&facet_perms](std::size_t i) { return facet_perms[i]; };
   }
   else
   {
