@@ -59,6 +59,56 @@ compute_triangle_rot_reflect(const std::vector<std::int32_t>& e_vertices,
   return {(post > pre) == (g_post < g_pre), rots};
 }
 //-----------------------------------------------------------------------------
+std::pair<std::int8_t, std::int8_t>
+compute_quad_rot_reflect(const std::vector<std::int32_t>& e_vertices,
+                         const std::vector<std::int64_t>& vertices)
+{
+  // Find minimum local cell vertex on facet
+  std::uint8_t min_v
+      = std::distance(e_vertices.begin(),
+                      std::min_element(e_vertices.begin(), e_vertices.end()));
+
+  // Table of next and previous vertices
+  const std::array<std::int8_t, 4> _pre = {2, 0, 3, 1};
+
+  // pre is the (local) number of the next vertex clockwise from the
+  // lowest numbered vertex
+  std::int32_t pre = e_vertices[_pre[min_v]];
+
+  // post is the (local) number of the next vertex anticlockwise
+  // from the lowest numbered vertex
+  std::int32_t post = e_vertices[_pre[3 - min_v]];
+
+  // If min_v is 2 or 3, swap. Why?
+  if (min_v == 2 or min_v == 3)
+    min_v = 5 - min_v;
+
+  // Find minimum global vertex in facet
+  std::uint8_t g_min_v = std::distance(
+      vertices.begin(), std::min_element(vertices.begin(), vertices.end()));
+
+  // rots is the number of rotations to get the lowest numbered
+  // vertex to the origin
+
+  // pre is the (local) number of the next vertex clockwise from the
+  // lowest numbered vertex
+  std::int64_t g_pre = vertices[_pre[g_min_v]];
+
+  // post is the (local) number of the next vertex anticlockwise
+  // from the lowest numbered vertex
+  std::int64_t g_post = vertices[_pre[3 - g_min_v]];
+
+  if (g_min_v == 2 or g_min_v == 3)
+    g_min_v = 5 - g_min_v;
+
+  std::uint8_t rots = 0;
+  if (g_post > g_pre)
+    rots = (g_min_v - min_v + 4) % 4;
+  else
+    rots = (min_v - g_min_v + 4) % 4;
+  return {(post > pre) == (g_post < g_pre), rots};
+}
+//-----------------------------------------------------------------------------
 template <int BITSETSIZE>
 std::vector<std::bitset<BITSETSIZE>>
 compute_triangle_face_permutations(const mesh::Topology& topology,
@@ -114,58 +164,86 @@ compute_triangle_face_permutations(const mesh::Topology& topology,
     }
   }
 
-        return face_perm;
+  return face_perm;
 }
 //-----------------------------------------------------------------------------
-std::pair<std::int8_t, std::int8_t>
-compute_quad_rot_reflect(const std::vector<std::int32_t>& e_vertices,
-                         const std::vector<std::int64_t>& vertices)
+template <int BITSETSIZE>
+std::vector<std::bitset<BITSETSIZE>>
+compute_triangle_quad_face_permutations(const mesh::Topology& topology,
+                                        const common::IndexMap& im)
 {
-        // Find minimum local cell vertex on facet
-        std::uint8_t min_v = std::distance(
-            e_vertices.begin(),
-            std::min_element(e_vertices.begin(), e_vertices.end()));
+  // If faces have been computed, the below should exist
+  int tdim = topology.dim();
+  auto c_to_v = topology.connectivity(tdim, 0);
+  assert(c_to_v);
+  std::array c_to_f = {topology.connectivity({tdim, 0}, {2, 0}),
+                       topology.connectivity({tdim, 0}, {2, 1})};
+  std::array f_to_v = {topology.connectivity({2, 0}, {0, 0}),
+                       topology.connectivity({2, 1}, {0, 0})};
 
-        // Table of next and previous vertices
-        const std::array<std::int8_t, 4> _pre = {2, 0, 3, 1};
+  // Get face types of the cell and mesh
+  std::vector<mesh::CellType> mesh_face_types = topology.entity_types(2);
+  mesh::CellType mesh_cell_type = topology.cell_type();
+  std::vector<int> cell_face_types(mesh::cell_num_entities(mesh_cell_type, 2));
+  for (std::size_t i = 0; i < cell_face_types.size(); ++i)
+  {
+    if (mesh::cell_facet_type(mesh_cell_type, i) == mesh_face_types[0])
+      cell_face_types[i] = 0;
+    else
+      cell_face_types[i] = 1;
+  }
 
-        // pre is the (local) number of the next vertex clockwise from the
-        // lowest numbered vertex
-        std::int32_t pre = e_vertices[_pre[min_v]];
+  const std::int32_t num_cells = c_to_v->num_nodes();
+  std::vector<std::bitset<BITSETSIZE>> face_perm(num_cells, 0);
+  std::vector<std::int64_t> cell_vertices, vertices;
 
-        // post is the (local) number of the next vertex anticlockwise
-        // from the lowest numbered vertex
-        std::int32_t post = e_vertices[_pre[3 - min_v]];
+  // Store local vertex indices here
+  std::vector<std::int32_t> e_vertices;
 
-        // If min_v is 2 or 3, swap. Why?
-        if (min_v == 2 or min_v == 3)
-          min_v = 5 - min_v;
+  for (int t = 0; t < 2; ++t)
+  {
+    for (int c = 0; c < num_cells; ++c)
+    {
+      cell_vertices.resize(c_to_v->links(c).size());
+      im.local_to_global(c_to_v->links(c), cell_vertices);
 
-        // Find minimum global vertex in facet
-        std::uint8_t g_min_v
-            = std::distance(vertices.begin(),
-                            std::min_element(vertices.begin(), vertices.end()));
+      auto cell_faces = c_to_f[t]->links(c);
+      for (std::size_t i = 0; i < cell_faces.size(); ++i)
+      {
+        // Get the face
+        const int face = cell_faces[i];
+        e_vertices.resize(f_to_v[t]->num_links(face));
+        vertices.resize(f_to_v[t]->num_links(face));
+        im.local_to_global(f_to_v[t]->links(face), vertices);
 
-        // rots is the number of rotations to get the lowest numbered
-        // vertex to the origin
+        // Orient that triangle so the lowest numbered vertex is the
+        // origin, and the next vertex anticlockwise from the lowest has a
+        // lower number than the next vertex clockwise. Find the index of
+        // the lowest numbered vertex
 
-        // pre is the (local) number of the next vertex clockwise from the
-        // lowest numbered vertex
-        std::int64_t g_pre = vertices[_pre[g_min_v]];
+        // Find iterators pointing to cell vertex given a vertex on facet
+        for (std::size_t j = 0; j < vertices.size(); ++j)
+        {
+          auto it = std::find(cell_vertices.begin(), cell_vertices.end(),
+                              vertices[j]);
+          // Get the actual local vertex indices
+          e_vertices[j] = std::distance(cell_vertices.begin(), it);
+        }
 
-        // post is the (local) number of the next vertex anticlockwise
-        // from the lowest numbered vertex
-        std::int64_t g_post = vertices[_pre[3 - g_min_v]];
+        // FIXME - which is t = 0? quads or triangles?
+        auto [refl, rots]
+            = (t == 0) ? compute_triangle_rot_reflect(e_vertices, vertices)
+                       : compute_quad_rot_reflect(e_vertices, vertices);
 
-        if (g_min_v == 2 or g_min_v == 3)
-          g_min_v = 5 - g_min_v;
+        // FIXME i is not correct here
+        face_perm[c][3 * i] = refl;
+        face_perm[c][3 * i + 1] = rots % 2;
+        face_perm[c][3 * i + 2] = rots / 2;
+      }
+    }
+  }
 
-        std::uint8_t rots = 0;
-        if (g_post > g_pre)
-          rots = (g_min_v - min_v + 4) % 4;
-        else
-          rots = (min_v - g_min_v + 4) % 4;
-        return {(post > pre) == (g_post < g_pre), rots};
+  return face_perm;
 }
 //-----------------------------------------------------------------------------
 template <int BITSETSIZE>
@@ -290,13 +368,6 @@ compute_face_permutations(const mesh::Topology& topology)
 
   mesh::CellType cell_type = topology.cell_type();
 
-  // Get face types of the cell and mesh
-  std::vector<mesh::CellType> mesh_face_types = topology.entity_types(2);
-  std::vector<mesh::CellType> cell_face_types(
-      mesh::cell_num_entities(cell_type, 2));
-  for (std::size_t i = 0; i < cell_face_types.size(); ++i)
-    cell_face_types[i] = mesh::cell_facet_type(cell_type, i);
-
   if (cell_type == mesh::CellType::tetrahedron)
   {
     return compute_triangle_face_permutations<BITSETSIZE>(topology, *im);
@@ -306,6 +377,12 @@ compute_face_permutations(const mesh::Topology& topology)
     return compute_quad_face_permutations<BITSETSIZE>(*c_to_v, *c_to_f, *f_to_v,
                                                       *im);
   }
+  else if (cell_type == mesh::CellType::prism)
+  {
+    return compute_triangle_quad_face_permutations<BITSETSIZE>(topology, *im);
+  }
+  else
+    throw std::runtime_error("Cannot compute permutations");
 }
 //-----------------------------------------------------------------------------
 } // namespace
