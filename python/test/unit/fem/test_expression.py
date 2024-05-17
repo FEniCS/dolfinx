@@ -17,7 +17,7 @@ from dolfinx import fem, la
 from dolfinx.fem import Constant, Expression, Function, form, functionspace
 from dolfinx.mesh import create_unit_square
 
-dolfinx.cpp.common.init_logging(["-v"])
+dolfinx.cpp.log.set_log_level(dolfinx.cpp.log.LogLevel.DEBUG)
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])

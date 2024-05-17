@@ -137,8 +137,9 @@ int main(int argc, char* argv[])
   // Set the logging thread name to show the process rank
   int mpi_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
-  std::string thread_name = "RANK " + std::to_string(mpi_rank);
-  loguru::set_thread_name(thread_name.c_str());
+  std::string fmt = "[%Y-%m-%d %H:%M:%S.%e] [RANK " + std::to_string(mpi_rank)
+                    + "] [%l] %v";
+  spdlog::set_pattern(fmt);
   {
     // Inside the `main` function, we begin by defining a tetrahedral
     // mesh of the domain and the function space on this mesh. Here, we

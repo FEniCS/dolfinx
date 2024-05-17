@@ -87,6 +87,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     liblapack-dev \
     libopenblas-dev \
     libpugixml-dev \
+    libspdlog-dev \
     ninja-build \
     pkg-config \
     python3-dev \

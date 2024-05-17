@@ -1041,7 +1041,7 @@ Topology mesh::create_topology(
   assert(ghost_owners.size() == cells.size());
   assert(original_cell_index.size() == cells.size());
 
-  LOG(INFO) << "Create topology (generalised)";
+  spdlog::info("Create topology (generalised)");
   // Check cell data consistency and compile spans of owned and ghost cells
   std::vector<std::int32_t> num_local_cells(cell_type.size());
   std::vector<std::span<const std::int64_t>> owned_cells;
@@ -1327,7 +1327,7 @@ mesh::create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
                       std::span<const int> ghost_owners, CellType cell_type,
                       std::span<const std::int64_t> boundary_vertices)
 {
-  LOG(INFO) << "Create topology (single cell type)";
+  spdlog::info("Create topology (single cell type)");
 
   return create_topology(comm, {cell_type}, {cells}, {original_cell_index},
                          {ghost_owners}, boundary_vertices);
@@ -1430,7 +1430,7 @@ std::vector<std::int32_t>
 mesh::entities_to_index(const Topology& topology, int dim,
                         std::span<const std::int32_t> entities)
 {
-  LOG(INFO) << "Build list of mesh entity indices from the entity vertices.";
+  spdlog::info("Build list of mesh entity indices from the entity vertices.");
 
   // Tagged entity topological dimension
   auto map_e = topology.index_map(dim);

@@ -213,6 +213,7 @@ set_package_properties(
 # Check for MPI
 find_package(MPI 3 REQUIRED)
 
+find_package(spdlog REQUIRED)
 # ------------------------------------------------------------------------------
 # Compiler flags
 
@@ -254,6 +255,12 @@ check_cxx_compiler_flag(-O2 HAVE_O2_OPTIMISATION)
 
 if(HAVE_O2_OPTIMISATION)
   list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -O2)
+endif()
+
+# Turn off some checks in gcc12 and gcc13 due to false positives with the fmt library
+if(CMAKE_COMPILER_IS_GNUCXX AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "11.4"
+  AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14.0")
+  list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -Wno-array-bounds;-Wno-stringop-overflow)
 endif()
 
 # ------------------------------------------------------------------------------
