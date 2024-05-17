@@ -211,7 +211,7 @@ jobs:
 
       - name: Build Python interface
         run: |
-          python3 -m pip install -r python/build-requirements.txt
+          python3 -m pip install --break-system-packages -r python/build-requirements.txt
           python3 -m pip install --break-system-packages --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" "python/[ci]"
       - name: Build Python interface documentation
         run: |
@@ -271,13 +271,13 @@ jobs:
           export DOLFINX_VERSION=`cmake -L build | grep DOXYGEN_DOLFINX_VERSION | cut -f2 -d "="`
           echo $DOLFINX_VERSION
           cd cpp/doc
-          python3 -m pip install -r doc-requirements.txt
+          python3 -m pip install --break-system-packages -r doc-requirements.txt
           doxygen Doxyfile
           make html
 
       - name: Build Python interface
         run: |
-          python3 -m pip install -r python/build-requirements.txt
+          python3 -m pip install --break-system-packages -r python/build-requirements.txt
           python3 -m pip install --break-system-packages --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" "python/[docs]"
       - name: Build Python interface documentation
         run: |
