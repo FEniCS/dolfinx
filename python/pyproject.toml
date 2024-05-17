@@ -33,20 +33,30 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-docs = ["markdown", "pyyaml", "sphinx", "sphinx_rtd_theme"]
+# Run demos
+demos = ["pyamg", "matplotlib", "numba", "scipy"]
+# Build Python documentation
+docs = ["jupytext", "markdown", "myst-parser", "pyyaml", "sphinx", "sphinx_rtd_theme", "fenics-dolfinx[demos]"]
+# Signposting gmsh dependency (demos, test, optional)
+gmsh = ["gmsh"]
+# To lint the Python code
 lint = ["ruff"]
+# Optional dependencies used in core library
 optional = ["numba"]
+# Signposting petsc4py dependency (demos, test, optional)
 petsc4py = ["petsc4py"]
-test = ["pytest", "sympy", "scipy", "matplotlib", "fenics-dolfinx[optional]"]
+# To run all tests
+test = ["pytest", "scipy", "numba"]
+# Dependencies to execute typical CI run.
 ci = [
       "mypy",
       "pytest-xdist",
       "types-setuptools",
-      "fenics-dolfinx[build]",
+      "fenics-dolfinx[demos]",
       "fenics-dolfinx[docs]",
       "fenics-dolfinx[lint]",
-      "fenics-dolfinx[optional]",
       "fenics-dolfinx[test]",
+      "fenics-dolfinx[optional]",
 ]
 
 [tool.scikit-build]

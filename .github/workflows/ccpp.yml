@@ -125,12 +125,10 @@ jobs:
           mpirun -n 3 ctest -V --output-on-failure -R unittests
 
       - name: Install Python build dependencies
-        run: pip install mpi4py nanobind scikit-build-core[pyproject]
+        run: pip install -r python/build-requirements.txt
       - name: Build Python interface
-        run: pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
+        run: pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" 'python/[ci]'
 
-      - name: Install Python demo/test dependencies
-        run: pip install matplotlib pyamg pytest pytest-xdist scipy
       - name: Run demos (Python, serial)
         run: python3 -m pytest -n auto -m serial --durations=10 python/demo/test.py
       - name: Run demos (Python, MPI (np=3))

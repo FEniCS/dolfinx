@@ -22,7 +22,6 @@ RUN dnf -y update && \
     dnf -y install \
     bison \
     boost-devel \
-    boost-filesystem \
     boost-timer \
     boost-program-options \
     cmake \

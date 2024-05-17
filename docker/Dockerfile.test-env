@@ -147,16 +147,12 @@ RUN if [ "$MPI" = "mpich" ]; then \
     rm -rf /tmp/*
 
 # Install Python packages (via pip)
-# - make sure pip/setuptoools are up-to-date before using them
-# - First set of packages are required to build and run DOLFINx Python.
-# - Second set of packages are recommended and/or required to build
-#   documentation or run tests.
-# - Final set of packages are required to build petsc4py
+# - Make sure pip/setuptools are up-to-date before using them.
+# - Install tools needed to build petsc4py.
+# - Install mpi4py.
 RUN pip3 install --break-system-packages --no-cache-dir --upgrade setuptools pip && \
-    pip3 install --break-system-packages --no-cache-dir cffi numba numpy==${NUMPY_VERSION} scikit-build-core[pyproject] && \
-    pip3 install --break-system-packages --no-cache-dir --no-build-isolation mpi4py && \
-    pip3 install --break-system-packages --no-cache-dir breathe clang-format cmakelang jupytext matplotlib mypy myst-parser nanobind==${NANOBIND_VERSION} pytest pytest-xdist ruff scipy pyamg sphinx sphinx_rtd_theme types-setuptools && \
-    pip3 install --break-system-packages --no-cache-dir cython wheel
+    pip3 install --break-system-packages --no-cache-dir cython wheel && \
+    pip3 install --break-system-packages --no-cache-dir --no-build-isolation mpi4py
 
 # Install KaHIP
 RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.tar.gz && \
@@ -189,7 +185,7 @@ RUN wget -nc --quiet https://github.com/ornladios/ADIOS2/archive/v${ADIOS2_VERSI
 
 # Install GMSH
 RUN git clone -b gmsh_${GMSH_VERSION} --single-branch --depth 1 https://gitlab.onelab.info/gmsh/gmsh.git && \
-    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_BUILD_DYNAMIC=1  -DENABLE_OPENMP=1 -B build-dir -S gmsh && \
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_BUILD_DYNAMIC=1 -DENABLE_OPENMP=1 -B build-dir -S gmsh && \
     cmake --build build-dir && \
     cmake --install build-dir && \
     rm -rf /tmp/*

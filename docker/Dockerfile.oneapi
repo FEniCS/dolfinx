@@ -26,7 +26,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     cmake \
     gnupg \
     libboost-dev \
-    libboost-filesystem-dev \
     libboost-timer-dev \
     libpugixml-dev \
     libspdlog-dev \
@@ -65,7 +64,6 @@ RUN . /opt/intel/oneapi/setvars.sh && \
     rm -rf /tmp/*
 
 # Install HDF5
-# Note: HDF5 CMake install has numerous bugs and inconsistencies. Test carefully.
 # HDF5 overrides CMAKE_INSTALL_PREFIX by default, hence it is set
 # below to ensure that HDF5 is installed into a path where it can be
 # found.
