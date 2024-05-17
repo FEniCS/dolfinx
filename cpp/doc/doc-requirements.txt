@@ -2,4 +2,4 @@ breathe
 jupytext
 myst-parser
 sphinx
-sphinx-rtd-theme
+sphinx_rtd_theme
