@@ -1,7 +1,4 @@
-# TODO Tidy, update, and simplify demo
-
 # Solve Poisson's equation using an HDG scheme.
-
 
 import sys
 
@@ -10,7 +7,6 @@ from petsc4py import PETSc
 
 import numpy as np
 
-import basix
 import ufl
 from dolfinx import fem, io, mesh
 from dolfinx.cpp.mesh import cell_num_entities
@@ -30,7 +26,7 @@ def norm_L2(comm, v, measure=ufl.dx):
     )
 
 
-def compute_cell_boundary_integration_entities(msh):
+def compute_cell_boundary_facets(msh):
     """
     Compute the integration entities for integrals around the
     boundaries of all cells in msh.
@@ -44,14 +40,11 @@ def compute_cell_boundary_integration_entities(msh):
     """
     tdim = msh.topology.dim
     fdim = tdim - 1
-    num_cell_facets = cell_num_entities(msh.topology.cell_type, fdim)
-    # FIXME Do this efficiently with numpy
-    cell_boundary_facets = []
-    # Loop over each cell in the mesh
-    for cell in range(msh.topology.index_map(tdim).size_local):
-        # Add each facet of the cell to the list
-        for local_facet in range(num_cell_facets):
-            cell_boundary_facets.extend([cell, local_facet])
+    n_f = cell_num_entities(msh.topology.cell_type, fdim)
+    n_c = msh.topology.index_map(tdim).size_local
+    cell_boundary_facets = np.vstack(
+        (np.repeat(np.arange(n_c), n_f), np.tile(np.arange(n_f), n_c))
+    ).T.flatten()
     return cell_boundary_facets
 
 
@@ -80,10 +73,10 @@ comm = MPI.COMM_WORLD
 rank = comm.rank
 
 # Number of elements in each direction
-n = 16
+n = 8
 
 # Create the mesh
-msh = mesh.create_unit_square(comm, n, n, ghost_mode=mesh.GhostMode.none)
+msh = mesh.create_unit_cube(comm, n, n, n, ghost_mode=mesh.GhostMode.none)
 
 # We need to create a broken Lagrange space defined over the facets of the
 # mesh. To do so, we require a sub-mesh of the all facets. We begin by
@@ -118,7 +111,7 @@ dx_c = ufl.Measure("dx", domain=msh)
 # We need to define an integration measure to integrate around the
 # boundary of each cell. The integration entities can be computed
 # using the following convenience function.
-cell_boundary_facets = compute_cell_boundary_integration_entities(msh)
+cell_boundary_facets = compute_cell_boundary_facets(msh)
 cell_boundaries = 1  # A tag
 # Create the measure
 ds_c = ufl.Measure("ds", subdomain_data=[(cell_boundaries, cell_boundary_facets)], domain=msh)
@@ -135,7 +128,7 @@ entity_maps = {facet_mesh._cpp_object: mesh_to_facet_mesh}
 # Define forms
 h = ufl.CellDiameter(msh)
 n = ufl.FacetNormal(msh)
-gamma = 16.0 * k**2 / h
+gamma = 16.0 * k**2 / h  # Scaled penalty parameter
 
 x = ufl.SpatialCoordinate(msh)
 c = 1.0 + 0.1 * ufl.sin(ufl.pi * x[0]) * ufl.sin(ufl.pi * x[1])
@@ -155,6 +148,7 @@ a_01 = fem.form(
 )
 a_11 = fem.form(gamma * inner(c * ubar, vbar) * ds_c(cell_boundaries), entity_maps=entity_maps)
 
+# Manufacture a source term
 f = -div(c * grad(u_e(x)))
 
 L_0 = fem.form(inner(f, v) * dx_c)
@@ -167,14 +161,12 @@ L = [L_0, L_1]
 # Apply Dirichlet boundary conditions
 # We begin by locating the boundary facets of msh
 msh_boundary_facets = mesh.locate_entities_boundary(msh, fdim, boundary)
-# Since the bonndary condition is enforced in the facet space, we must
+# Since the boundary condition is enforced in the facet space, we must
 # use the mesh_to_facet_mesh map to get the corresponding facets in
 # facet_mesh
 facet_mesh_boundary_facets = mesh_to_facet_mesh[msh_boundary_facets]
 # Get the dofs and apply the bondary condition
-facet_mesh.topology.create_connectivity(
-    fdim, fdim
-)  # FIXME Why isn't this being created automatically?
+facet_mesh.topology.create_connectivity(fdim, fdim)
 dofs = fem.locate_dofs_topological(Vbar, fdim, facet_mesh_boundary_facets)
 bc = fem.dirichletbc(PETSc.ScalarType(0.0), dofs, Vbar)
 
