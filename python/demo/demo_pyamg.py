@@ -58,6 +58,7 @@ def poisson_problem(dtype: npt.DTypeLike, solver_type: str):
 
     Args:
         dtype: Scalar type to use.
+        solver_type: pyamg solver type, either "ruge_stuben" or "smoothed_aggregation"
     """
 
     real_type = np.real(dtype(0)).dtype
