@@ -60,8 +60,8 @@ jobs:
 
       - name: Build Python interface (editable install)
         run: |
-          python3 -m pip install python/build-requirements.txt
-          python3 -m pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type=Debug --config-settings=build-dir="build" -e "python/[ci]"
+          python3 -m pip install -r python/build-requirements.txt
+          python3 -m pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type=Debug --config-settings=build-dir="build" -e "python/[demos,test]"
 
       - name: Set default DOLFINx JIT options
         run: |
