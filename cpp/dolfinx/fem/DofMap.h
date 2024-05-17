@@ -146,12 +146,11 @@ public:
   /// @param[in] reorder_fn Graph re-ordering function to apply to the
   /// dof data
   /// @return The collapsed dofmap
-  std::pair<DofMap, std::vector<std::int32_t>> collapse(
-      MPI_Comm comm, const mesh::Topology& topology,
-      const std::function<std::vector<int>(
-          const graph::AdjacencyList<std::int32_t>&)>& reorder_fn
-      = [](const graph::AdjacencyList<std::int32_t>& g)
-      { return graph::reorder_gps(g); }) const;
+  std::pair<DofMap, std::vector<std::int32_t>>
+  collapse(MPI_Comm comm, const mesh::Topology& topology,
+           std::function<std::vector<int>(
+               const graph::AdjacencyList<std::int32_t>&)>&& reorder_fn
+           = nullptr) const;
 
   /// @brief Get dofmap data
   /// @return The adjacency list with dof indices for each cell
