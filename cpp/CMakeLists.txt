@@ -65,6 +65,9 @@ add_feature_info(
   BUILD_SHARED_LIBS BUILD_SHARED_LIBS "Build DOLFINx with shared libraries."
 )
 
+option(INSTALL_RUNTIME_DEPENDENCIES "Include runtime dependencies in install (Windows-only)" OFF)
+add_feature_info(INSTALL_RUNTIME_DEPENDENCIES INSTALL_RUNTIME_DEPENDENCIES "Include runtime dependencies in install (Windows-only)")
+
 option(DOLFINX_SKIP_BUILD_TESTS
        "Skip build tests for testing usability of dependency packages." OFF
 )
