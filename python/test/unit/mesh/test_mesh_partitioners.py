@@ -121,6 +121,7 @@ def test_custom_partitioner(tempdir, Nx, cell_type):
         mesh.topology.index_map(tdim).size_global == new_mesh.topology.index_map(tdim).size_global
     )
     num_cells = new_mesh.topology.index_map(tdim).size_local
+    new_mesh.topology.create_connectivity(tdim, tdim)
     cell_midpoints = compute_midpoints(new_mesh, tdim, np.arange(num_cells))
     assert num_cells > 0
     assert np.all(cell_midpoints[:, 0] >= mpi_comm.rank)
