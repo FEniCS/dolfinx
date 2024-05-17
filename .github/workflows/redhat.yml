@@ -33,7 +33,6 @@ jobs:
 
       - name: Configure C++
         run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
-
       - name: Build and install C++ library
         run: |
           cmake --build build

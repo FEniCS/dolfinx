@@ -9,6 +9,8 @@
 #include <memory>
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/string.h>
+#include <spdlog/sinks/basic_file_sink.h>
+
 #include <string>
 
 namespace nb = nanobind;
@@ -18,45 +20,58 @@ namespace dolfinx_wrappers
 void log(nb::module_& m)
 {
   // log level enums
-  nb::enum_<loguru::NamedVerbosity>(m, "LogLevel", nb::is_arithmetic())
-      .value("OFF", loguru::Verbosity_OFF)
-      .value("INFO", loguru::Verbosity_INFO)
-      .value("WARNING", loguru::Verbosity_WARNING)
-      .value("ERROR", loguru::Verbosity_ERROR);
+  nb::enum_<spdlog::level::level_enum>(m, "LogLevel", nb::is_arithmetic())
+      .value("OFF", spdlog::level::level_enum::off)
+      .value("DEBUG", spdlog::level::level_enum::debug)
+      .value("INFO", spdlog::level::level_enum::info)
+      .value("WARNING", spdlog::level::level_enum::warn)
+      .value("ERROR", spdlog::level::level_enum::err);
 
   m.def(
       "set_output_file",
       [](std::string filename)
       {
-        loguru::add_file(filename.c_str(), loguru::Truncate,
-                         loguru::Verbosity_INFO);
+        try
+        {
+          auto logger = spdlog::basic_logger_mt("dolfinx", filename.c_str());
+          spdlog::set_default_logger(logger);
+        }
+        catch (const spdlog::spdlog_ex& ex)
+        {
+          std::cout << "Log init failed: " << ex.what() << std::endl;
+        }
       },
       nb::arg("filename"));
 
   m.def(
-      "set_thread_name", [](std::string thread_name)
-      { loguru::set_thread_name(thread_name.c_str()); },
+      "set_thread_name",
+      [](std::string thread_name)
+      {
+        std::string fmt
+            = "[%Y-%m-%d %H:%M:%S.%e] [" + thread_name + "] [%l] %v";
+        spdlog::set_pattern(fmt);
+      },
       nb::arg("thread_name"));
 
   m.def(
-      "set_log_level", [](loguru::NamedVerbosity level)
-      { loguru::g_stderr_verbosity = level; }, nb::arg("level"));
-  m.def("get_log_level",
-        []() { return loguru::NamedVerbosity(loguru::g_stderr_verbosity); });
+      "set_log_level",
+      [](spdlog::level::level_enum level) { spdlog::set_level(level); },
+      nb::arg("level"));
+  m.def("get_log_level", []() { return spdlog::get_level(); });
   m.def(
       "log",
-      [](loguru::NamedVerbosity level, std::string s)
+      [](spdlog::level::level_enum level, std::string s)
       {
         switch (level)
         {
-        case (loguru::Verbosity_INFO):
-          LOG(INFO) << s;
+        case (spdlog::level::level_enum::info):
+          spdlog::info(s.c_str());
           break;
-        case (loguru::Verbosity_WARNING):
-          LOG(WARNING) << s;
+        case (spdlog::level::level_enum::warn):
+          spdlog::warn(s.c_str());
           break;
-        case (loguru::Verbosity_ERROR):
-          LOG(ERROR) << s;
+        case (spdlog::level::level_enum::err):
+          spdlog::error(s.c_str());
           break;
         default:
           throw std::runtime_error("Log level not supported");

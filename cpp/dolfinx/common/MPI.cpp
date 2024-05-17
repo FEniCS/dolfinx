@@ -94,10 +94,10 @@ void dolfinx::MPI::check_error(MPI_Comm comm, int code)
 std::vector<int>
 dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm, std::span<const int> edges)
 {
-  LOG(INFO)
-      << "Computing communication graph edges (using PCX algorithm). Number "
-         "of input edges: "
-      << edges.size();
+  spdlog::info(
+      "Computing communication graph edges (using PCX algorithm). Number "
+      "of input edges: {}",
+      static_cast<int>(edges.size()));
 
   // Build array with '0' for no outedge and '1' for an outedge for each
   // rank
@@ -151,9 +151,9 @@ dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm, std::span<const int> edges)
     }
   }
 
-  LOG(INFO) << "Finished graph edge discovery using PCX algorithm. Number "
-               "of discovered edges "
-            << other_ranks.size();
+  spdlog::info("Finished graph edge discovery using PCX algorithm. Number "
+               "of discovered edges {}",
+               static_cast<int>(other_ranks.size()));
 
   return other_ranks;
 }
@@ -161,10 +161,10 @@ dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm, std::span<const int> edges)
 std::vector<int>
 dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
 {
-  LOG(INFO)
-      << "Computing communication graph edges (using NBX algorithm). Number "
-         "of input edges: "
-      << edges.size();
+  spdlog::info(
+      "Computing communication graph edges (using NBX algorithm). Number "
+      "of input edges: {}",
+      static_cast<int>(edges.size()));
 
   // Start non-blocking synchronised send
   std::vector<MPI_Request> send_requests(edges.size());
@@ -232,9 +232,9 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
     }
   }
 
-  LOG(INFO) << "Finished graph edge discovery using NBX algorithm. Number "
-               "of discovered edges "
-            << other_ranks.size();
+  spdlog::info("Finished graph edge discovery using NBX algorithm. Number "
+               "of discovered edges {}",
+               static_cast<int>(other_ranks.size()));
 
   return other_ranks;
 }

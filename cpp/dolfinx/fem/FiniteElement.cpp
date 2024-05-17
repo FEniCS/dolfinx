@@ -308,8 +308,8 @@ FiniteElement<T>::extract_sub_element(const std::vector<int>& component) const
 {
   // Recursively extract sub element
   auto sub_finite_element = _extract_sub_element(*this, component);
-  DLOG(INFO) << "Extracted finite element for sub-system: "
-             << sub_finite_element->signature().c_str();
+  spdlog::debug("Extracted finite element for sub-system: {}",
+                sub_finite_element->signature().c_str());
   return sub_finite_element;
 }
 //-----------------------------------------------------------------------------

@@ -91,7 +91,7 @@ mesh::create_cell_partitioner(mesh::GhostMode ghost_mode,
                               const graph::AdjacencyList<std::int64_t>& cells)
              -> graph::AdjacencyList<std::int32_t>
   {
-    LOG(INFO) << "Compute partition of cells across ranks";
+    spdlog::info("Compute partition of cells across ranks");
 
     // Compute distributed dual graph (for the cells on this process)
     const graph::AdjacencyList dual_graph

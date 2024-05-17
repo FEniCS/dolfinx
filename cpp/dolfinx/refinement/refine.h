@@ -40,9 +40,9 @@ mesh::Mesh<T> refine(const mesh::Mesh<T>& mesh, bool redistribute = true)
   const int D = topology->dim();
   const std::int64_t n0 = topology->index_map(D)->size_global();
   const std::int64_t n1 = refined_mesh.topology()->index_map(D)->size_global();
-  LOG(INFO) << "Number of cells increased from " << n0 << " to " << n1 << " ("
-            << 100.0 * (static_cast<double>(n1) / static_cast<double>(n0) - 1.0)
-            << "%% increase).";
+  spdlog::info(
+      "Number of cells increased from {} to {} ({}% increase).", n0, n1,
+      100.0 * (static_cast<double>(n1) / static_cast<double>(n0) - 1.0));
 
   return refined_mesh;
 }
@@ -77,9 +77,9 @@ mesh::Mesh<T> refine(const mesh::Mesh<T>& mesh,
   const int D = topology->dim();
   const std::int64_t n0 = topology->index_map(D)->size_global();
   const std::int64_t n1 = refined_mesh.topology()->index_map(D)->size_global();
-  LOG(INFO) << "Number of cells increased from " << n0 << " to " << n1 << " ("
-            << 100.0 * (static_cast<double>(n1) / static_cast<double>(n0) - 1.0)
-            << "%% increase).";
+  spdlog::info(
+      "Number of cells increased from {} to {} ({}% increase).", n0, n1,
+      100.0 * (static_cast<double>(n1) / static_cast<double>(n0) - 1.0));
 
   return refined_mesh;
 }
