@@ -10,9 +10,7 @@ and rendered using reStructured text with
 ## Requirements
 
 - [Doxygen](https://www.doxygen.nl/)
-- [Sphinx](https://www.sphinx-doc.org/)
-- [Breathe](https://breathe.readthedocs.io/)
-
+- Python dependencies listed in `doc-requirements.txt`.
 
 ## Building
 

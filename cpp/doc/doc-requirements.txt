@@ -1,0 +1,5 @@
+breathe
+jupytext
+myst-parser
+sphinx
+sphinx-rtd-theme
