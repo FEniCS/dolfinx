@@ -113,9 +113,9 @@ jobs:
           mpiexec -n 3 ctest -V --output-on-failure -R unittests
 
       - name: Install build dependencies
+        working-directory: dolfinx
         run: |
-          pip -v install --no-binary :all: mpi4py
-          pip -v install nanobind scikit-build-core[pyproject]
+          pip -v install --no-binary mpi4py -r python/build-requirements.txt
 
       - name: Install DOLFINx (Python)
         working-directory: dolfinx
@@ -133,6 +133,8 @@ jobs:
           mpiexec -n 3 python -m pytest -m "not petsc4py and not adios2" python/test/unit
       
       - name: Run Python demos (serial)
-        run: python3 -m pytest -n auto -m serial --durations=10 python/demo/test.py
+        run: |
+          pip install pyamg matplotlib numba scipy # TO REMOVE
+          python3 -m pytest -n auto -m serial --durations=10 python/demo/test.py
       - name: Run Python demos (MPI, np=3)
         run: python3 -m pytest -m mpi --num-proc=3 python/demo/test.py
