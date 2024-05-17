@@ -88,7 +88,7 @@ jobs:
         run: |
           . /opt/intel/oneapi/setvars.sh
           pip install -r python/build-requirements.txt
-          pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" "python/[demos,tests]"
+          pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" "python/[demos,test]"
 
       - name: Run DOLFINx demos (Python, serial)
         run: |
