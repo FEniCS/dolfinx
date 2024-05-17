@@ -47,7 +47,7 @@ optional = ["numba"]
 petsc4py = ["petsc4py"]
 # Signposting pyvista dependency (demos)
 pyvista = ["pyvista"]
-# To run all tests
+# To run broad subset of tests
 test = ["pytest", "pytest-xdist", "scipy", "numba"]
 # Dependencies to execute typical CI run.
 ci = [
