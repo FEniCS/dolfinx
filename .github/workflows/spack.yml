@@ -54,7 +54,7 @@ jobs:
       - name: Install Spack requirements
         run: |
           apt-get -y update
-          apt-get install -y bzip2 curl file git gzip make patch python3-minimal tar xz-utils
+          apt-get install -y bzip2 curl file git gzip make patch python3-minimal tar unzip xz-utils
           apt-get install -y g++ gfortran  # compilers
 
       - name: Build DOLFINx (C++) development version via Spack
