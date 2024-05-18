@@ -158,6 +158,9 @@ compute_triangle_quad_face_permutations(const mesh::Topology& topology,
     spdlog::info("Computing permutations for face type {}", t);
     if (!face_type_indices[t].empty())
     {
+      auto compute_refl_rots = (mesh_face_types[t] == mesh::CellType::triangle)
+                                   ? compute_triangle_rot_reflect
+                                   : compute_quad_rot_reflect;
       for (int c = 0; c < num_cells; ++c)
       {
         cell_vertices.resize(c_to_v->links(c).size());
@@ -186,17 +189,7 @@ compute_triangle_quad_face_permutations(const mesh::Topology& topology,
             e_vertices[j] = std::distance(cell_vertices.begin(), it);
           }
 
-          std::int8_t refl, rots;
-          if (mesh_face_types[t] == mesh::CellType::triangle)
-          {
-            std::tie(refl, rots)
-                = compute_triangle_rot_reflect(e_vertices, vertices);
-          }
-          else
-          {
-            std::tie(refl, rots)
-                = compute_quad_rot_reflect(e_vertices, vertices);
-          }
+          auto [refl, rots] = compute_refl_rots(e_vertices, vertices);
 
           int fi = face_type_indices[t][i];
           face_perm[c][3 * fi] = refl;
