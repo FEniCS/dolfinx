@@ -111,87 +111,39 @@ compute_quad_rot_reflect(const std::vector<std::int32_t>& e_vertices,
 //-----------------------------------------------------------------------------
 template <int BITSETSIZE>
 std::vector<std::bitset<BITSETSIZE>>
-compute_triangle_face_permutations(const mesh::Topology& topology,
-                                   const common::IndexMap& im)
-{
-  // If faces have been computed, the below should exist
-  int tdim = topology.dim();
-  auto c_to_v = topology.connectivity(tdim, 0);
-  assert(c_to_v);
-  auto c_to_f = topology.connectivity({tdim, 0}, {2, 0});
-  assert(c_to_f);
-  auto f_to_v = topology.connectivity({2, 0}, {0, 0});
-  assert(f_to_v);
-
-  const std::int32_t num_cells = c_to_v->num_nodes();
-  std::vector<std::bitset<BITSETSIZE>> face_perm(num_cells, 0);
-  std::vector<std::int64_t> cell_vertices, vertices;
-
-  // Store local vertex indices here
-  std::vector<std::int32_t> e_vertices;
-
-  for (int c = 0; c < num_cells; ++c)
-  {
-    cell_vertices.resize(c_to_v->links(c).size());
-    im.local_to_global(c_to_v->links(c), cell_vertices);
-    auto cell_faces = c_to_f->links(c);
-    for (std::size_t i = 0; i < cell_faces.size(); ++i)
-    {
-      // Get the face
-      const int face = cell_faces[i];
-      e_vertices.resize(f_to_v->num_links(face));
-      vertices.resize(f_to_v->num_links(face));
-      im.local_to_global(f_to_v->links(face), vertices);
-
-      // Orient that triangle so the lowest numbered vertex is the
-      // origin, and the next vertex anticlockwise from the lowest has a
-      // lower number than the next vertex clockwise. Find the index of
-      // the lowest numbered vertex
-
-      // Find iterators pointing to cell vertex given a vertex on facet
-      for (std::size_t j = 0; j < vertices.size(); ++j)
-      {
-        auto it = std::find(cell_vertices.begin(), cell_vertices.end(),
-                            vertices[j]);
-        // Get the actual local vertex indices
-        e_vertices[j] = std::distance(cell_vertices.begin(), it);
-      }
-
-      auto [refl, rots] = compute_triangle_rot_reflect(e_vertices, vertices);
-      face_perm[c][3 * i] = refl;
-      face_perm[c][3 * i + 1] = rots % 2;
-      face_perm[c][3 * i + 2] = rots / 2;
-    }
-  }
-
-  return face_perm;
-}
-//-----------------------------------------------------------------------------
-template <int BITSETSIZE>
-std::vector<std::bitset<BITSETSIZE>>
 compute_triangle_quad_face_permutations(const mesh::Topology& topology,
-                                        const common::IndexMap& im)
+                                        int cell_index)
 {
-  // If faces have been computed, the below should exist
-  int tdim = topology.dim();
-  auto c_to_v = topology.connectivity(tdim, 0);
-  assert(c_to_v);
-  std::array c_to_f = {topology.connectivity({tdim, 0}, {2, 0}),
-                       topology.connectivity({tdim, 0}, {2, 1})};
-  std::array f_to_v = {topology.connectivity({2, 0}, {0, 0}),
-                       topology.connectivity({2, 1}, {0, 0})};
+  std::vector<mesh::CellType> cell_types = topology.entity_types(3);
+  mesh::CellType cell_type = cell_types.at(cell_index);
 
   // Get face types of the cell and mesh
   std::vector<mesh::CellType> mesh_face_types = topology.entity_types(2);
-  mesh::CellType mesh_cell_type = topology.cell_type();
-  std::vector<int> cell_face_types(mesh::cell_num_entities(mesh_cell_type, 2));
+  std::vector<mesh::CellType> cell_face_types(
+      mesh::cell_num_entities(cell_type, 2));
   for (std::size_t i = 0; i < cell_face_types.size(); ++i)
+    cell_face_types[i] = mesh::cell_facet_type(cell_type, i);
+
+  // Connectivity for each face type
+  std::vector<std::shared_ptr<const graph::AdjacencyList<std::int32_t>>> c_to_f;
+  std::vector<std::shared_ptr<const graph::AdjacencyList<std::int32_t>>> f_to_v;
+
+  // Create mapping for each face type to cell-local face index
+  int tdim = topology.dim();
+  std::vector<std::vector<int>> face_type_indices(mesh_face_types.size());
+  for (std::size_t i = 0; i < mesh_face_types.size(); ++i)
   {
-    if (mesh::cell_facet_type(mesh_cell_type, i) == mesh_face_types[0])
-      cell_face_types[i] = 0;
-    else
-      cell_face_types[i] = 1;
+    for (std::size_t j = 0; j < cell_face_types.size(); ++j)
+    {
+      if (mesh_face_types[i] == cell_face_types[j])
+        face_type_indices[i].push_back(j);
+    }
+    c_to_f.push_back(topology.connectivity({tdim, cell_index}, {2, i}));
+    f_to_v.push_back(topology.connectivity({2, i}, {0, 0}));
   }
+
+  auto c_to_v = topology.connectivity({tdim, cell_index}, {0, 0});
+  assert(c_to_v);
 
   const std::int32_t num_cells = c_to_v->num_nodes();
   std::vector<std::bitset<BITSETSIZE>> face_perm(num_cells, 0);
@@ -199,100 +151,63 @@ compute_triangle_quad_face_permutations(const mesh::Topology& topology,
 
   // Store local vertex indices here
   std::vector<std::int32_t> e_vertices;
+  auto im = topology.index_map(0);
 
-  for (int t = 0; t < 2; ++t)
+  for (std::size_t t = 0; t < face_type_indices.size(); ++t)
   {
-    for (int c = 0; c < num_cells; ++c)
+    spdlog::info("Computing permutations for face type {}", t);
+    if (!face_type_indices[t].empty())
     {
-      cell_vertices.resize(c_to_v->links(c).size());
-      im.local_to_global(c_to_v->links(c), cell_vertices);
-
-      auto cell_faces = c_to_f[t]->links(c);
-      for (std::size_t i = 0; i < cell_faces.size(); ++i)
+      for (int c = 0; c < num_cells; ++c)
       {
-        // Get the face
-        const int face = cell_faces[i];
-        e_vertices.resize(f_to_v[t]->num_links(face));
-        vertices.resize(f_to_v[t]->num_links(face));
-        im.local_to_global(f_to_v[t]->links(face), vertices);
+        cell_vertices.resize(c_to_v->links(c).size());
+        im->local_to_global(c_to_v->links(c), cell_vertices);
 
-        // Orient that triangle so the lowest numbered vertex is the
-        // origin, and the next vertex anticlockwise from the lowest has a
-        // lower number than the next vertex clockwise. Find the index of
-        // the lowest numbered vertex
-
-        // Find iterators pointing to cell vertex given a vertex on facet
-        for (std::size_t j = 0; j < vertices.size(); ++j)
+        auto cell_faces = c_to_f[t]->links(c);
+        for (std::size_t i = 0; i < cell_faces.size(); ++i)
         {
-          auto it = std::find(cell_vertices.begin(), cell_vertices.end(),
-                              vertices[j]);
-          // Get the actual local vertex indices
-          e_vertices[j] = std::distance(cell_vertices.begin(), it);
+          // Get the face
+          const int face = cell_faces[i];
+          e_vertices.resize(f_to_v[t]->num_links(face));
+          vertices.resize(f_to_v[t]->num_links(face));
+          im->local_to_global(f_to_v[t]->links(face), vertices);
+
+          // Orient that triangle or quadrilateral so the lowest numbered
+          // vertex is the origin, and the next vertex anticlockwise from
+          // the lowest has a lower number than the next vertex clockwise.
+          // Find the index of the lowest numbered vertex.
+
+          // Find iterators pointing to cell vertex given a vertex on facet
+          for (std::size_t j = 0; j < vertices.size(); ++j)
+          {
+            auto it = std::find(cell_vertices.begin(), cell_vertices.end(),
+                                vertices[j]);
+            // Get the actual local vertex indices
+            e_vertices[j] = std::distance(cell_vertices.begin(), it);
+          }
+
+          std::int8_t refl, rots;
+          if (mesh_face_types[t] == mesh::CellType::triangle)
+          {
+            std::tie(refl, rots)
+                = compute_triangle_rot_reflect(e_vertices, vertices);
+          }
+          else
+          {
+            std::tie(refl, rots)
+                = compute_quad_rot_reflect(e_vertices, vertices);
+          }
+
+          int fi = face_type_indices[t][i];
+          face_perm[c][3 * fi] = refl;
+          face_perm[c][3 * fi + 1] = rots % 2;
+          face_perm[c][3 * fi + 2] = rots / 2;
         }
-
-        // FIXME - which is t = 0? quads or triangles?
-        auto [refl, rots]
-            = (t == 0) ? compute_triangle_rot_reflect(e_vertices, vertices)
-                       : compute_quad_rot_reflect(e_vertices, vertices);
-
-        // FIXME i is not correct here
-        face_perm[c][3 * i] = refl;
-        face_perm[c][3 * i + 1] = rots % 2;
-        face_perm[c][3 * i + 2] = rots / 2;
       }
     }
   }
 
   return face_perm;
-}
-//-----------------------------------------------------------------------------
-template <int BITSETSIZE>
-std::vector<std::bitset<BITSETSIZE>>
-compute_quad_face_permutations(const graph::AdjacencyList<std::int32_t>& c_to_v,
-                               const graph::AdjacencyList<std::int32_t>& c_to_f,
-                               const graph::AdjacencyList<std::int32_t>& f_to_v,
-                               const common::IndexMap& im)
-{
-        const std::int32_t num_cells = c_to_v.num_nodes();
-        std::vector<std::bitset<BITSETSIZE>> face_perm(num_cells, 0);
-        std::vector<std::int64_t> cell_vertices, vertices;
-        std::vector<std::int32_t> e_vertices;
-        for (int c = 0; c < num_cells; ++c)
-        {
-          cell_vertices.resize(c_to_v.links(c).size());
-          im.local_to_global(c_to_v.links(c), cell_vertices);
-
-          auto cell_faces = c_to_f.links(c);
-          for (std::size_t i = 0; i < cell_faces.size(); ++i)
-          {
-            // Get the face
-            const int face = cell_faces[i];
-            vertices.resize(f_to_v.num_links(face));
-            e_vertices.resize(vertices.size());
-            im.local_to_global(f_to_v.links(face), vertices);
-
-            // Orient that quadrilateral so the lowest numbered vertex is the
-            // origin, and the next vertex anticlockwise from the lowest has a
-            // lower number than the next vertex clockwise. Find the index of
-            // the lowest numbered vertex
-
-            // Find iterators pointing to cell vertex given a vertex on facet
-            for (std::size_t j = 0; j < e_vertices.size(); ++j)
-            {
-              auto it = std::find(cell_vertices.begin(), cell_vertices.end(),
-                                  vertices[j]);
-              // Get the actual local vertex indices
-              e_vertices[j] = std::distance(cell_vertices.begin(), it);
-            }
-
-            auto [refl, rots] = compute_quad_rot_reflect(e_vertices, vertices);
-            face_perm[c][3 * i] = refl;
-            face_perm[c][3 * i + 1] = rots % 2;
-            face_perm[c][3 * i + 2] = rots / 2;
-          }
-        }
-
-        return face_perm;
 }
 //-----------------------------------------------------------------------------
 template <int BITSETSIZE>
@@ -355,34 +270,13 @@ compute_face_permutations(const mesh::Topology& topology)
   if (!topology.index_map(2))
     throw std::runtime_error("Faces have not been computed.");
 
-  // If faces have been computed, the below should exist
-  auto c_to_v = topology.connectivity(tdim, 0);
-  assert(c_to_v);
-  auto c_to_f = topology.connectivity(tdim, 2);
-  assert(c_to_f);
-  auto f_to_v = topology.connectivity(2, 0);
-  assert(f_to_v);
-
-  auto im = topology.index_map(0);
-  assert(im);
-
-  mesh::CellType cell_type = topology.cell_type();
-
-  if (cell_type == mesh::CellType::tetrahedron)
+  if (topology.entity_types(3).size() > 1)
   {
-    return compute_triangle_face_permutations<BITSETSIZE>(topology, *im);
+    throw std::runtime_error(
+        "Cannot compute permutations for mixed topology mesh.");
   }
-  else if (cell_type == mesh::CellType::hexahedron)
-  {
-    return compute_quad_face_permutations<BITSETSIZE>(*c_to_v, *c_to_f, *f_to_v,
-                                                      *im);
-  }
-  else if (cell_type == mesh::CellType::prism)
-  {
-    return compute_triangle_quad_face_permutations<BITSETSIZE>(topology, *im);
-  }
-  else
-    throw std::runtime_error("Cannot compute permutations");
+
+  return compute_triangle_quad_face_permutations<BITSETSIZE>(topology, 0);
 }
 //-----------------------------------------------------------------------------
 } // namespace
