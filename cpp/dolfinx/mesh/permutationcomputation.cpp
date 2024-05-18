@@ -10,6 +10,8 @@
 #include <algorithm>
 #include <bitset>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/Timer.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/graph/AdjacencyList.h>
 
 namespace
@@ -31,22 +33,22 @@ compute_triangle_rot_reflect(const std::vector<std::int32_t>& e_vertices,
       = std::distance(e_vertices.begin(),
                       std::min_element(e_vertices.begin(), e_vertices.end()));
 
-  // pre is the number of the next vertex clockwise from the lowest
+  // pre is the (local) number of the next vertex clockwise from the lowest
   // numbered vertex
   const int pre = e_vertices[(min_v + 2) % 3];
 
-  // post is the number of the next vertex anticlockwise from the
+  // post is the (local) number of the next vertex anticlockwise from the
   // lowest numbered vertex
   const int post = e_vertices[(min_v + 1) % 3];
 
   std::uint8_t g_min_v = std::distance(
       vertices.begin(), std::min_element(vertices.begin(), vertices.end()));
 
-  // pre is the number of the next vertex clockwise from the lowest
+  // g_pre is the (global) number of the next vertex clockwise from the lowest
   // numbered vertex
   const int g_pre = vertices[(g_min_v + 2) % 3];
 
-  // post is the number of the next vertex anticlockwise from the
+  // g_post is the (global) number of the next vertex anticlockwise from the
   // lowest numbered vertex
   const int g_post = vertices[(g_min_v + 1) % 3];
 
@@ -69,15 +71,18 @@ compute_quad_rot_reflect(const std::vector<std::int32_t>& e_vertices,
                       std::min_element(e_vertices.begin(), e_vertices.end()));
 
   // Table of next and previous vertices
-  const std::array<std::int8_t, 4> _pre = {2, 0, 3, 1};
+  // 0 - 2
+  // |   |
+  // 1 - 3
+  const std::array<std::int8_t, 4> prev = {2, 0, 3, 1};
 
   // pre is the (local) number of the next vertex clockwise from the
   // lowest numbered vertex
-  std::int32_t pre = e_vertices[_pre[min_v]];
+  std::int32_t pre = e_vertices[prev[min_v]];
 
   // post is the (local) number of the next vertex anticlockwise
   // from the lowest numbered vertex
-  std::int32_t post = e_vertices[_pre[3 - min_v]];
+  std::int32_t post = e_vertices[prev[3 - min_v]];
 
   // If min_v is 2 or 3, swap. Why?
   if (min_v == 2 or min_v == 3)
@@ -90,13 +95,13 @@ compute_quad_rot_reflect(const std::vector<std::int32_t>& e_vertices,
   // rots is the number of rotations to get the lowest numbered
   // vertex to the origin
 
-  // pre is the (local) number of the next vertex clockwise from the
+  // g_pre is the (global) number of the next vertex clockwise from the
   // lowest numbered vertex
-  std::int64_t g_pre = vertices[_pre[g_min_v]];
+  std::int64_t g_pre = vertices[prev[g_min_v]];
 
-  // post is the (local) number of the next vertex anticlockwise
+  // g_post is the (global) number of the next vertex anticlockwise
   // from the lowest numbered vertex
-  std::int64_t g_post = vertices[_pre[3 - g_min_v]];
+  std::int64_t g_post = vertices[prev[3 - g_min_v]];
 
   if (g_min_v == 2 or g_min_v == 3)
     g_min_v = 5 - g_min_v;
@@ -148,8 +153,6 @@ compute_triangle_quad_face_permutations(const mesh::Topology& topology,
   const std::int32_t num_cells = c_to_v->num_nodes();
   std::vector<std::bitset<BITSETSIZE>> face_perm(num_cells, 0);
   std::vector<std::int64_t> cell_vertices, vertices;
-
-  // Store local vertex indices here
   std::vector<std::int32_t> e_vertices;
   auto im = topology.index_map(0);
 
@@ -189,8 +192,10 @@ compute_triangle_quad_face_permutations(const mesh::Topology& topology,
             e_vertices[j] = std::distance(cell_vertices.begin(), it);
           }
 
+          // Compute reflections and rotations for this face type
           auto [refl, rots] = compute_refl_rots(e_vertices, vertices);
 
+          // Store bits for this face
           int fi = face_type_indices[t][i];
           face_perm[c][3 * fi] = refl;
           face_perm[c][3 * fi + 1] = rots % 2;
@@ -278,6 +283,7 @@ compute_face_permutations(const mesh::Topology& topology)
 std::pair<std::vector<std::uint8_t>, std::vector<std::uint32_t>>
 mesh::compute_entity_permutations(const mesh::Topology& topology)
 {
+  common::Timer t_perm("Compute entity permutations");
   const int tdim = topology.dim();
   CellType cell_type = topology.cell_type();
   const std::int32_t num_cells = topology.connectivity(tdim, 0)->num_nodes();
@@ -288,6 +294,7 @@ mesh::compute_entity_permutations(const mesh::Topology& topology)
   std::int32_t used_bits = 0;
   if (tdim > 2)
   {
+    spdlog::info("Compute face permutations");
     const int faces_per_cell = cell_num_entities(cell_type, 2);
     const auto face_perm = compute_face_permutations<_BITSETSIZE>(topology);
     for (int c = 0; c < num_cells; ++c)
@@ -309,6 +316,7 @@ mesh::compute_entity_permutations(const mesh::Topology& topology)
 
   if (tdim > 1)
   {
+    spdlog::info("Compute edge permutations");
     const int edges_per_cell = cell_num_entities(cell_type, 1);
     const auto edge_perm = compute_edge_reflections<_BITSETSIZE>(topology);
     for (int c = 0; c < num_cells; ++c)
