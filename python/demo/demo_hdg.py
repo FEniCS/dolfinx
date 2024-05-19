@@ -1,5 +1,21 @@
-# Solve Poisson's equation using an HDG scheme.
+# ---
+# jupyter:
+#   jupytext:
+#     text_representation:
+#       extension: .py
+#       format_name: light
+#       format_version: '1.5'
+#       jupytext_version: 1.13.6
+# ---
 
+# # HDG scheme for the Poisson equation
+#
+# This demo is implemented in {download}`demo_hdg.py`. It
+# illustrates how to:
+#
+# - Solve Poisson's equation using an HDG scheme.
+
+# +
 import sys
 
 from mpi4py import MPI
