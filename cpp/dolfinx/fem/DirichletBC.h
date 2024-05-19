@@ -244,9 +244,7 @@ std::array<std::vector<std::int32_t>, 2> locate_dofs_geometrical(
 }
 
 /// Object for setting (strong) Dirichlet boundary conditions
-///
-///     \f$u = g \ \text{on} \ G\f$,
-///
+/// \f[u = g \ \text{on} \ G,\f]
 /// where \f$u\f$ is the solution to be computed, \f$g\f$ is a function
 /// and \f$G\f$ is a sub domain of the mesh.
 ///
