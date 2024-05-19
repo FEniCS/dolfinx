@@ -25,6 +25,7 @@ if importlib.util.find_spec("petsc4py") is not None:
         print("This demo requires DOLFINx to be compiled with PETSc enabled.")
         exit(0)
     from petsc4py import PETSc
+
     from dolfinx.fem.petsc import assemble_matrix_block, assemble_vector_block
 
 else:
