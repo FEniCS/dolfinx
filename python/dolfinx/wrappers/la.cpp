@@ -18,6 +18,7 @@
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
 #include <nanobind/stl/complex.h>
+#include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/vector.h>
 #include <span>
@@ -39,21 +40,14 @@ enum class PyInsertMode
 template <typename T>
 void declare_objects(nb::module_& m, const std::string& type)
 {
-  auto dtype = numpy_dtype<T>();
-
   // dolfinx::la::Vector
   std::string pyclass_vector_name = std::string("Vector_") + type;
   nb::class_<dolfinx::la::Vector<T>>(m, pyclass_vector_name.c_str())
       .def(nb::init<std::shared_ptr<const dolfinx::common::IndexMap>, int>(),
            nb::arg("map"), nb::arg("bs"))
       .def(nb::init<const dolfinx::la::Vector<T>&>(), nb::arg("vec"))
-      .def_prop_ro("dtype", [dtype](const dolfinx::la::Vector<T>& self)
-                   { return dtype; })
-      .def(
-          "norm",
-          [](const dolfinx::la::Vector<T>& self, dolfinx::la::Norm type)
-          { return dolfinx::la::norm(self, type); },
-          "type"_a = dolfinx::la::Norm::l2)
+      .def_prop_ro("dtype", [](const dolfinx::la::Vector<T>&)
+                   { return dolfinx_wrappers::numpy_dtype<T>(); })
       .def_prop_ro("index_map", &dolfinx::la::Vector<T>::index_map)
       .def_prop_ro("bs", &dolfinx::la::Vector<T>::bs)
       .def_prop_ro(
@@ -91,8 +85,8 @@ void declare_objects(nb::module_& m, const std::string& type)
                     dolfinx::la::BlockMode>(),
            nb::arg("p"),
            nb::arg("block_mode") = dolfinx::la::BlockMode::compact)
-      .def_prop_ro("dtype", [dtype](const dolfinx::la::MatrixCSR<T>& self)
-                   { return dtype; })
+      .def_prop_ro("dtype", [](const dolfinx::la::MatrixCSR<T>&)
+                   { return dolfinx_wrappers::numpy_dtype<T>(); })
       .def_prop_ro("bs", &dolfinx::la::MatrixCSR<T>::block_size)
       .def("squared_norm", &dolfinx::la::MatrixCSR<T>::squared_norm)
       .def("index_map", &dolfinx::la::MatrixCSR<T>::index_map)
@@ -180,10 +174,12 @@ template <typename T>
 void declare_functions(nb::module_& m)
 {
   m.def(
+      "norm", [](const dolfinx::la::Vector<T>& x, dolfinx::la::Norm type)
+      { return dolfinx::la::norm(x, type); }, "vector"_a, "type"_a);
+  m.def(
       "inner_product",
       [](const dolfinx::la::Vector<T>& x, const dolfinx::la::Vector<T>& y)
-      { return dolfinx::la::inner_product(x, y); },
-      nb::arg("x"), nb::arg("y"));
+      { return dolfinx::la::inner_product(x, y); }, nb::arg("x"), nb::arg("y"));
   m.def(
       "orthonormalize",
       [](std::vector<dolfinx::la::Vector<T>*> basis)
@@ -196,15 +192,16 @@ void declare_functions(nb::module_& m)
       nb::arg("basis"));
   m.def(
       "is_orthonormal",
-      [](std::vector<const dolfinx::la::Vector<T>*> basis)
+      [](std::vector<const dolfinx::la::Vector<T>*> basis,
+         dolfinx::scalar_value_type_t<T> eps)
       {
         std::vector<std::reference_wrapper<const dolfinx::la::Vector<T>>>
             _basis;
         for (std::size_t i = 0; i < basis.size(); ++i)
           _basis.push_back(*basis[i]);
-        return dolfinx::la::is_orthonormal(_basis);
+        return dolfinx::la::is_orthonormal(_basis, eps);
       },
-      nb::arg("basis"));
+      nb::arg("basis"), nb::arg("eps"));
 }
 
 } // namespace
@@ -286,6 +283,9 @@ void la(nb::module_& m)
           nb::rv_policy::reference_internal);
 
   // Declare objects that are templated over type
+  declare_objects<std::int8_t>(m, "int8");
+  declare_objects<std::int32_t>(m, "int32");
+  declare_objects<std::int64_t>(m, "int64");
   declare_objects<float>(m, "float32");
   declare_objects<double>(m, "float64");
   declare_objects<std::complex<float>>(m, "complex64");

@@ -201,7 +201,7 @@ gps_reorder_unlabelled(const graph::AdjacencyList<std::int32_t>& graph,
 
   assert(lv.num_nodes() == lu.num_nodes());
   const int k = lv.num_nodes();
-  LOG(INFO) << "GPS pseudo-diameter:(" << k << ") " << u << "-" << v;
+  spdlog::info("GPS pseudo-diameter:({}) {}-{}", k, u, v);
 
   // ALGORITHM II. Minimizing level width.
 
@@ -368,7 +368,7 @@ graph::reorder_gps(const graph::AdjacencyList<std::int32_t>& graph)
   while (count < n)
   {
     rv = gps_reorder_unlabelled(graph, r);
-    assert(rv.size() > 0);
+    assert(!rv.empty());
 
     // Reverse permutation
     for (std::int32_t q : rv)

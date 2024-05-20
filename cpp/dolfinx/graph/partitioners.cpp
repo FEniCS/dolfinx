@@ -95,9 +95,9 @@ graph::AdjacencyList<int> compute_destination_ranks(
       dest.push_back((*it)[0]);
 
       // Find iterator to next destination rank and pack send data
-      auto it1 = std::find_if(it, node_to_dest.end(),
-                              [r0 = dest.back()](auto& idx)
-                              { return idx[0] != r0; });
+      auto it1
+          = std::find_if(it, node_to_dest.end(), [r0 = dest.back()](auto& idx)
+                         { return idx[0] != r0; });
       send_sizes.push_back(2 * std::distance(it, it1));
       for (auto itx = it; itx != it1; ++itx)
       {
@@ -312,7 +312,7 @@ graph::partition_fn graph::scotch::partitioner(graph::scotch::strategy strategy,
                                      const AdjacencyList<std::int64_t>& graph,
                                      bool ghosting)
   {
-    LOG(INFO) << "Compute graph partition using PT-SCOTCH";
+    spdlog::info("Compute graph partition using PT-SCOTCH");
     common::Timer timer("Compute graph partition (SCOTCH)");
 
     std::int64_t offset_global = 0;
@@ -517,7 +517,7 @@ graph::partition_fn graph::parmetis::partitioner(double imbalance,
                               const graph::AdjacencyList<std::int64_t>& graph,
                               bool ghosting)
   {
-    LOG(INFO) << "Compute graph partition using ParMETIS";
+    spdlog::info("Compute graph partition using ParMETIS");
     common::Timer timer("Compute graph partition (ParMETIS)");
 
     if (nparts == 1 and dolfinx::MPI::size(comm) == 1)
@@ -613,7 +613,7 @@ graph::partition_fn graph::kahip::partitioner(int mode, int seed,
              MPI_Comm comm, int nparts,
              const graph::AdjacencyList<std::int64_t>& graph, bool ghosting)
   {
-    LOG(INFO) << "Compute graph partition using (parallel) KaHIP";
+    spdlog::info("Compute graph partition using (parallel) KaHIP");
 
     // KaHIP integer type
     using T = unsigned long long;

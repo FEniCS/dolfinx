@@ -309,9 +309,8 @@ get_local_indexing(MPI_Comm comm, const common::IndexMap& vertex_map,
           std::transform(
               entity.begin(), entity.end(),
               std::back_inserter(shared_entity_to_global_vertices_data),
-              [idx](auto v) -> std::pair<std::int32_t, std::int64_t> {
-                return {idx, v};
-              });
+              [idx](auto v) -> std::pair<std::int32_t, std::int64_t>
+              { return {idx, v}; });
         }
         else
           recv_index.push_back(-1);
@@ -532,10 +531,41 @@ compute_entities_by_key_matching(
 
         // Get entity vertices. Padded with -1 if fewer than
         // max_vertices_per_entity
+        // NOTE Entity orientation is determined by vertex ordering. The
+        // orientation of an entity with respect to the cell may differ from its
+        // global mesh orientation. Hence, we reorder the vertices so that
+        // each entity's orientation agrees with their global orientation.
+        // FIXME This might be better below when the entity to vertex
+        // connectivity is computed
+        std::vector<std::int32_t> entity_vertices(ev.size());
+        for (std::size_t j = 0; j < ev.size(); ++j)
+          entity_vertices[j] = vertices[ev[j]];
+
+        // Orient the entities. Simply sort according to global vertex index
+        // for simplices
+        std::vector<std::int64_t> global_vertices(entity_vertices.size());
+        vertex_index_map.local_to_global(entity_vertices, global_vertices);
+
+        std::vector<std::size_t> perm(global_vertices.size());
+        std::iota(perm.begin(), perm.end(), 0);
+        std::sort(perm.begin(), perm.end(),
+                  [&global_vertices](std::size_t i0, std::size_t i1)
+                  { return global_vertices[i0] < global_vertices[i1]; });
+        // For quadrilaterals, the vertex opposite the lowest vertex should
+        // be last
+        if (entity_type == mesh::CellType::quadrilateral)
+        {
+          std::size_t min_vertex_idx = perm[0];
+          std::size_t opposite_vertex_index = 3 - min_vertex_idx;
+          auto it = std::find(perm.begin(), perm.end(), opposite_vertex_index);
+          assert(it != perm.end());
+          std::rotate(it, it + 1, perm.end());
+        }
+
         for (std::size_t j = 0; j < ev.size(); ++j)
           entity_list[(cell_type_offsets[k] + idx) * num_vertices_per_entity
                       + j]
-              = vertices[ev[j]];
+              = entity_vertices[perm[j]];
       }
     }
   }
@@ -579,8 +609,7 @@ compute_entities_by_key_matching(
           });
 
       // Set entity unique index
-      std::for_each(it, it1,
-                    [&entity_index, entity_count](auto idx)
+      std::for_each(it, it1, [&entity_index, entity_count](auto idx)
                     { entity_index[idx] = entity_count; });
 
       // Advance iterator and increment entity
@@ -635,7 +664,7 @@ compute_entities_by_key_matching(
   for (std::size_t k = 0; k < cell_lists.size(); ++k)
   {
 
-    if (cell_type_entities[k].size() > 0)
+    if (!cell_type_entities[k].empty())
     {
       std::vector tmp(std::next(local_index.begin(), cell_type_offsets[k]),
                       std::next(local_index.begin(), cell_type_offsets[k + 1]));
@@ -747,7 +776,7 @@ std::tuple<std::vector<std::shared_ptr<graph::AdjacencyList<std::int32_t>>>,
 mesh::compute_entities(MPI_Comm comm, const Topology& topology, int dim,
                        int index)
 {
-  LOG(INFO) << "Computing mesh entities of dimension " << dim;
+  spdlog::info("Computing mesh entities of dimension {}", dim);
   const int tdim = topology.dim();
 
   // Vertices must always exist
@@ -798,9 +827,9 @@ mesh::compute_connectivity(const Topology& topology,
                            std::pair<std::int8_t, std::int8_t> d0,
                            std::pair<std::int8_t, std::int8_t> d1)
 {
-  LOG(INFO) << "Requesting connectivity (" << std::to_string(d0.first) << ","
-            << std::to_string(d0.second) << ") - (" << std::to_string(d1.first)
-            << "," << std::to_string(d1.second) << ")";
+  spdlog::info("Requesting connectivity ({}, {}) - ({}, {})",
+               std::to_string(d0.first), std::to_string(d0.second),
+               std::to_string(d1.first), std::to_string(d1.second));
 
   // Return if connectivity has already been computed
   if (topology.connectivity(d0, d1))
@@ -858,8 +887,8 @@ mesh::compute_connectivity(const Topology& topology,
       auto c_d1_d0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
           compute_from_map(*c_d1_0, *c_d0_0));
 
-      LOG(INFO) << "Computing mesh connectivity " << d0.first << " - "
-                << d1.first << " from transpose.";
+      spdlog::info("Computing mesh connectivity {}-{} from transpose.",
+                   d0.first, d1.first);
       auto c_d0_d1 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
           compute_from_transpose(*c_d1_d0, c_d0_0->num_nodes()));
       return {c_d0_d1, c_d1_d0};
@@ -869,8 +898,8 @@ mesh::compute_connectivity(const Topology& topology,
       assert(c_d0_0);
       assert(topology.connectivity(d1, d0));
 
-      LOG(INFO) << "Computing mesh connectivity " << std::to_string(d0.first)
-                << " - " << std::to_string(d1.first) << " from transpose.";
+      spdlog::info("Computing mesh connectivity {}-{} from transpose.",
+                   std::to_string(d0.first), std::to_string(d1.first));
       auto c_d0_d1 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
           compute_from_transpose(*topology.connectivity(d1, d0),
                                  c_d0_0->num_nodes()));

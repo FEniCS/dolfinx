@@ -4,6 +4,8 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#if defined(HAS_PETSC) && defined(HAS_PETSC4PY)
+
 #include "array.h"
 #include "caster_mpi.h"
 #include "caster_petsc.h"
@@ -70,7 +72,7 @@ void declare_petsc_discrete_operators(nb::module_& m)
         assert(map);
         std::vector<std::int32_t> c(map->size_local(), 0);
         std::iota(c.begin(), c.end(), 0);
-        dolfinx::fem::sparsitybuild::cells(sp, c, {*dofmap1, *dofmap0});
+        dolfinx::fem::sparsitybuild::cells(sp, {c, c}, {*dofmap1, *dofmap0});
         sp.finalize();
 
         // Build operator
@@ -111,7 +113,7 @@ void declare_petsc_discrete_operators(nb::module_& m)
         assert(map);
         std::vector<std::int32_t> c(map->size_local(), 0);
         std::iota(c.begin(), c.end(), 0);
-        dolfinx::fem::sparsitybuild::cells(sp, c, {*dofmap1, *dofmap0});
+        dolfinx::fem::sparsitybuild::cells(sp, {c, c}, {*dofmap1, *dofmap0});
         sp.finalize();
 
         // Build operator
@@ -351,8 +353,7 @@ void petsc_nls_module(nb::module_& m)
                    {
                      KSP ksp = self.get_krylov_solver().ksp();
                      PyObject* obj = PyPetscKSP_New(ksp);
-                     PetscObjectDereference((PetscObject)ksp);
-                     return nb::borrow(obj);
+                     return nb::steal(obj);
                    })
       .def("setF", &dolfinx::nls::petsc::NewtonSolver::setF, nb::arg("F"),
            nb::arg("b"))
@@ -413,3 +414,4 @@ void petsc(nb::module_& m_fem, nb::module_& m_la, nb::module_& m_nls)
   petsc_nls_module(petsc_nls_mod);
 }
 } // namespace dolfinx_wrappers
+#endif

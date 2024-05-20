@@ -75,7 +75,7 @@ void declare_discrete_operators(nb::module_& m)
         assert(map);
         std::vector<std::int32_t> c(map->size_local(), 0);
         std::iota(c.begin(), c.end(), 0);
-        dolfinx::fem::sparsitybuild::cells(sp, c, {*dofmap1, *dofmap0});
+        dolfinx::fem::sparsitybuild::cells(sp, {c, c}, {*dofmap1, *dofmap0});
         sp.finalize();
 
         // Build operator
@@ -132,8 +132,7 @@ void declare_assembly_functions(nb::module_& m)
       },
       nb::arg("form"), "Pack constants for a Form.");
   m.def(
-      "pack_constants",
-      [](const dolfinx::fem::Expression<T, U>& e)
+      "pack_constants", [](const dolfinx::fem::Expression<T, U>& e)
       { return dolfinx_wrappers::as_nbarray(dolfinx::fem::pack_constants(e)); },
       nb::arg("e"), "Pack constants for an Expression.");
 
@@ -330,9 +329,9 @@ void declare_assembly_functions(nb::module_& m)
           _x0.emplace_back(x.data(), x.size());
 
         std::vector<std::span<const T>> _constants;
-        std::transform(
-            constants.begin(), constants.end(), std::back_inserter(_constants),
-            [](auto& c) { return std::span<const T>(c.data(), c.size()); });
+        std::transform(constants.begin(), constants.end(),
+                       std::back_inserter(_constants), [](auto& c)
+                       { return std::span<const T>(c.data(), c.size()); });
 
         std::vector<std::map<std::pair<dolfinx::fem::IntegralType, int>,
                              std::pair<std::span<const T>, int>>>

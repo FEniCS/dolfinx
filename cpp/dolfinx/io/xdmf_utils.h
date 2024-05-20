@@ -1,4 +1,4 @@
-// Copyright (C) 2012 Chris N. Richardson
+// Copyright (C) 2012-2024 Chris N. Richardson, Jørgen S. Dokken
 //
 // This file is part of DOLFINx (https://www.fenicsproject.org)
 //
@@ -84,7 +84,7 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 /// @param[in] cmap_dof_layout Coordinate element dof layout, computed
 /// using `Geometry::cmap().create_dof_layout()`.
 /// @param[in] xdofmap Dofmap for the mesh geometry (Geometry::dofmap).
-/// @param[in] entity_dim Topological dimension of entities to extract
+/// @param[in] entity_dim Topological dimension of entities to extract.
 /// @param[in] entities Mesh entities defined using global input indices
 /// ('nodes'), typically from an input mesh file, e.g. [gi0, gi1, gi2]
 /// for a triangle. Let [v0, v1, v2] be the vertex indices of some
@@ -104,8 +104,8 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 /// this identifies a triangle that is owned by rank1. It will be
 /// distributed and rank1 will receive the (local) cell-vertex
 /// connectivity for this triangle.
-std::pair<std::vector<std::int32_t>, std::vector<std::int32_t>>
-distribute_entity_data(
+template <typename T>
+std::pair<std::vector<std::int32_t>, std::vector<T>> distribute_entity_data(
     const mesh::Topology& topology, std::span<const std::int64_t> nodes_g,
     std::int64_t num_nodes_g, const fem::ElementDofLayout& cmap_dof_layout,
     MDSPAN_IMPL_STANDARD_NAMESPACE::mdspan<
@@ -117,7 +117,7 @@ distribute_entity_data(
         const std::int64_t,
         MDSPAN_IMPL_STANDARD_NAMESPACE::dextents<std::size_t, 2>>
         entities,
-    std::span<const std::int32_t> data);
+    std::span<const T> data);
 
 /// TODO: Document
 template <typename T>
@@ -199,11 +199,11 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
                            hid_t h5_id,
                            std::array<std::int64_t, 2> range = {0, 0})
 {
-  // FIXME: Need to sort out datasset dimensions - can't depend on HDF5
+  // FIXME: Need to sort out dataset dimensions - can't depend on HDF5
   // shape, and a Topology data item is not required to have a
   // 'Dimensions' attribute since the dimensions can be determined from
   // the number of cells and the cell type (for topology, one must
-  // supply cell type + (number of cells or dimensions).
+  // supply cell type + (number of cells or dimensions)).
   //
   // A geometry data item must have 'Dimensions' attribute.
 

@@ -89,9 +89,9 @@ if _cpp.common.has_adios2:
                 except AttributeError:
                     dtype = output[0].function_space.mesh.geometry.x.dtype  # type: ignore
 
-            if dtype == np.float32:
+            if np.issubdtype(dtype, np.float32):
                 _vtxwriter = _cpp.io.VTXWriter_float32
-            elif dtype == np.float64:
+            elif np.issubdtype(dtype, np.float64):
                 _vtxwriter = _cpp.io.VTXWriter_float64
 
             try:
@@ -162,9 +162,9 @@ if _cpp.common.has_adios2:
                 except AttributeError:
                     dtype = output[0].function_space.mesh.geometry.x.dtype  # type: ignore
 
-            if dtype == np.float32:
+            if np.issubdtype(dtype, np.float32):
                 _fides_writer = _cpp.io.FidesWriter_float32
-            elif dtype == np.float64:
+            elif np.issubdtype(dtype, np.float64):
                 _fides_writer = _cpp.io.FidesWriter_float64
 
             try:
@@ -282,6 +282,24 @@ class XDMFFile(_cpp.io.XDMFFile):
 
 
 def distribute_entity_data(
-    mesh: Mesh, entity_dim: int, entities: npt.NDArray[np.int64], values: npt.NDArray[np.int32]
-) -> tuple[npt.NDArray[np.int64], npt.NDArray[np.int32]]:
-    return _cpp.io.distribute_entity_data(mesh._cpp_object, entity_dim, entities, values)
+    mesh: Mesh, entity_dim: int, entities: npt.NDArray[np.int64], values: np.ndarray
+) -> tuple[npt.NDArray[np.int64], np.ndarray]:
+    """Given a set of mesh entities and values, distribute them to the process that owns the entity.
+
+    The entities are described by the global vertex indices of the mesh. These entity indices are
+    using the original input ordering.
+
+    Returns:
+        Entities owned by the process (and their local entity-to-vertex indices) and the
+        corresponding values.
+    """
+    return _cpp.io.distribute_entity_data(
+        mesh.topology,
+        mesh.geometry.input_global_indices,
+        mesh.geometry.index_map().size_global,
+        mesh.geometry.cmap.create_dof_layout(),
+        mesh.geometry.dofmap,
+        entity_dim,
+        entities,
+        values,
+    )

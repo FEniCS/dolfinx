@@ -174,7 +174,7 @@ class MatrixCSR:
 
 
 def matrix_csr(
-    sp: _cpp.la.SparsityPattern, block_mode=BlockMode.compact, dtype=np.float64
+    sp: _cpp.la.SparsityPattern, block_mode=BlockMode.compact, dtype: npt.DTypeLike = np.float64
 ) -> MatrixCSR:
     """Create a distributed sparse matrix.
 
@@ -188,13 +188,13 @@ def matrix_csr(
     Returns:
         A sparse matrix.
     """
-    if dtype == np.float32:
+    if np.issubdtype(dtype, np.float32):
         ftype = _cpp.la.MatrixCSR_float32
-    elif dtype == np.float64:
+    elif np.issubdtype(dtype, np.float64):
         ftype = _cpp.la.MatrixCSR_float64
-    elif dtype == np.complex64:
+    elif np.issubdtype(dtype, np.complex64):
         ftype = _cpp.la.MatrixCSR_complex64
-    elif dtype == np.complex128:
+    elif np.issubdtype(dtype, np.complex128):
         ftype = _cpp.la.MatrixCSR_complex128
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
@@ -208,6 +208,9 @@ class Vector:
         _cpp.la.Vector_float64,
         _cpp.la.Vector_complex64,
         _cpp.la.Vector_complex128,
+        _cpp.la.Vector_int8,
+        _cpp.la.Vector_int32,
+        _cpp.la.Vector_int64,
     ]
 
     def __init__(
@@ -217,6 +220,9 @@ class Vector:
             _cpp.la.Vector_float64,
             _cpp.la.Vector_complex64,
             _cpp.la.Vector_complex128,
+            _cpp.la.Vector_int8,
+            _cpp.la.Vector_int32,
+            _cpp.la.Vector_int64,
         ],
     ):
         """A distributed vector object.
@@ -229,6 +235,11 @@ class Vector:
             User code should call :func:`vector` to create a vector object.
         """
         self._cpp_object = x
+        self._petsc_x = None
+
+    def __del__(self):
+        if self._petsc_x is not None:
+            self._petsc_x.destroy()
 
     @property
     def index_map(self) -> IndexMap:
@@ -245,6 +256,18 @@ class Vector:
         """Local representation of the vector."""
         return self._cpp_object.array
 
+    @property
+    def petsc_vec(self):
+        """PETSc vector holding the entries of the vector.
+
+        Upon first call, this function creates a PETSc ``Vec`` object
+        that wraps the degree-of-freedom data. The ``Vec`` object is
+        cached and the cached ``Vec`` is returned upon subsequent calls.
+        """
+        if self._petsc_x is None:
+            self._petsc_x = create_petsc_vector_wrap(self)
+        return self._petsc_x
+
     def scatter_forward(self) -> None:
         """Update ghost entries."""
         self._cpp_object.scatter_forward()
@@ -257,17 +280,6 @@ class Vector:
                 owner.
         """
         self._cpp_object.scatter_reverse(mode)
-
-    def norm(self, type: _cpp.la.Norm = _cpp.la.Norm.l2) -> np.floating:
-        """Compute a norm of the vector.
-
-        Args:
-            type: Norm type to compute.
-
-        Returns:
-            Computed norm.
-        """
-        return self._cpp_object.norm(type)
 
 
 def vector(map, bs=1, dtype: npt.DTypeLike = np.float64) -> Vector:
@@ -282,14 +294,20 @@ def vector(map, bs=1, dtype: npt.DTypeLike = np.float64) -> Vector:
     Returns:
         A distributed vector.
     """
-    if dtype == np.float32:
+    if np.issubdtype(dtype, np.float32):
         vtype = _cpp.la.Vector_float32
-    elif dtype == np.float64:
+    elif np.issubdtype(dtype, np.float64):
         vtype = _cpp.la.Vector_float64
-    elif dtype == np.complex64:
+    elif np.issubdtype(dtype, np.complex64):
         vtype = _cpp.la.Vector_complex64
-    elif dtype == np.complex128:
+    elif np.issubdtype(dtype, np.complex128):
         vtype = _cpp.la.Vector_complex128
+    elif np.issubdtype(dtype, np.int8):
+        vtype = _cpp.la.Vector_int8
+    elif np.issubdtype(dtype, np.int32):
+        vtype = _cpp.la.Vector_int32
+    elif np.issubdtype(dtype, np.int64):
+        vtype = _cpp.la.Vector_int64
     else:
         raise NotImplementedError(f"Type {dtype} not supported.")
 
@@ -336,22 +354,24 @@ def create_petsc_vector(map, bs: int):
     return PETSc.Vec().createGhost(ghosts, size=size, bsize=bs, comm=map.comm)  # type: ignore
 
 
-def orthonormalize(basis):
+def orthonormalize(basis: list[Vector]):
     """Orthogonalise set of PETSc vectors in-place."""
-    for i, x in enumerate(basis):
-        for y in basis[:i]:
-            alpha = x.dot(y)
-            x.axpy(-alpha, y)
-        x.normalize()
+    _cpp.la.orthonormalize([x._cpp_object for x in basis])
 
 
-def is_orthonormal(basis, eps: float = 1.0e-12) -> bool:
-    """Check that list of PETSc vectors are orthonormal."""
-    for x in basis:
-        if abs(x.norm() - 1.0) > eps:
-            return False
-    for i, x in enumerate(basis[:-1]):
-        for y in basis[i + 1 :]:
-            if abs(x.dot(y)) > eps:
-                return False
-    return True
+def is_orthonormal(basis: list[Vector], eps: float = 1.0e-12) -> bool:
+    """Check that list of vectors are orthonormal."""
+    return _cpp.la.is_orthonormal([x._cpp_object for x in basis], eps)
+
+
+def norm(x: Vector, type: _cpp.la.Norm = _cpp.la.Norm.l2) -> np.floating:
+    """Compute a norm of the vector.
+
+    Args:
+        x: Vector to measure.
+        type: Norm type to compute.
+
+    Returns:
+        Computed norm.
+    """
+    return _cpp.la.norm(x._cpp_object, type)

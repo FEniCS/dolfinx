@@ -26,7 +26,7 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
                                   const mesh::Geometry<U>& geometry, int dim,
                                   std::span<const std::int32_t> entities)
 {
-  LOG(INFO) << "Adding topology data to node \"" << xml_node.path('/') << "\"";
+  spdlog::info("Adding topology data to node {}", xml_node.path('/'));
 
   const int tdim = topology.dim();
 
@@ -73,9 +73,8 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
     for (std::int32_t c : entities)
     {
       assert(c < (std::int32_t)x_dofmap.extent(0));
-      auto xdofs = MDSPAN_IMPL_STANDARD_NAMESPACE::
-          MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
-              x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto xdofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+          x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
       for (std::size_t i = 0; i < x_dofmap.extent(1); ++i)
       {
         std::int64_t global_index = xdofs[vtk_map[i]];
@@ -117,9 +116,8 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
       // Get geometry dofs for the entity
       const std::vector<int>& entity_dofs_e = entity_dofs[local_cell_entity];
 
-      auto xdofs = MDSPAN_IMPL_STANDARD_NAMESPACE::
-          MDSPAN_IMPL_PROPOSED_NAMESPACE::submdspan(
-              x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto xdofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+          x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
       for (std::size_t i = 0; i < entity_dofs_e.size(); ++i)
       {
         std::int64_t global_index = xdofs[entity_dofs_e[vtk_map[i]]];
@@ -163,7 +161,7 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
                                   hid_t h5_id, std::string path_prefix,
                                   const mesh::Geometry<U>& geometry)
 {
-  LOG(INFO) << "Adding geometry data to node \"" << xml_node.path('/') << "\"";
+  spdlog::info("Adding geometry data to node \"{}\"", xml_node.path('/'));
   auto map = geometry.index_map();
   assert(map);
 
@@ -216,7 +214,7 @@ template <std::floating_point U>
 void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
                          const mesh::Mesh<U>& mesh, const std::string& name)
 {
-  LOG(INFO) << "Adding mesh to node \"" << xml_node.path('/') << "\"";
+  spdlog::info("Adding mesh to node \"{}\"", xml_node.path('/'));
 
   // Add grid node and attributes
   pugi::xml_node grid_node = xml_node.append_child("Grid");

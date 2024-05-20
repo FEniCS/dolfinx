@@ -5,20 +5,23 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the KrylovSolver interface"""
 
-
 from mpi4py import MPI
 
 import numpy as np
 import pytest
 
 from basix.ufl import element
-from dolfinx import la
+from dolfinx import default_real_type, la
 from dolfinx.fem import Function, functionspace
 from dolfinx.mesh import create_unit_square
 
 
 @pytest.mark.parametrize(
-    "e", [element("Lagrange", "triangle", 1), element("Lagrange", "triangle", 1, shape=(2,))]
+    "e",
+    [
+        element("Lagrange", "triangle", 1, dtype=default_real_type),
+        element("Lagrange", "triangle", 1, shape=(2,), dtype=default_real_type),
+    ],
 )
 def test_scatter_forward(e):
     mesh = create_unit_square(MPI.COMM_WORLD, 5, 5)
@@ -47,7 +50,11 @@ def test_scatter_forward(e):
 
 
 @pytest.mark.parametrize(
-    "e", [element("Lagrange", "triangle", 1), element("Lagrange", "triangle", 1, shape=(2,))]
+    "e",
+    [
+        element("Lagrange", "triangle", 1, dtype=default_real_type),
+        element("Lagrange", "triangle", 1, shape=(2,), dtype=default_real_type),
+    ],
 )
 def test_scatter_reverse(e):
     comm = MPI.COMM_WORLD
@@ -77,3 +84,31 @@ def test_scatter_reverse(e):
     # rank on all processes
     all_count1 = MPI.COMM_WORLD.allreduce(u.x.array.sum(), op=MPI.SUM)
     assert all_count1 == (all_count0 + bs * ghost_count)
+
+
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        np.complex64,
+        np.complex128,
+        np.int8,
+        np.int32,
+        np.int64,
+    ],
+)
+def test_vector_from_index_map_scatter_forward(dtype):
+    comm = MPI.COMM_WORLD
+    mesh = create_unit_square(comm, 5, 5)
+
+    for d in range(mesh.topology.dim):
+        mesh.topology.create_entities(d)
+        im = mesh.topology.index_map(d)
+        vector = la.vector(im, dtype=dtype)
+        vector.array[: im.size_local] = np.arange(*im.local_range, dtype=dtype)
+        vector.scatter_forward()
+        global_idxs = im.local_to_global(np.arange(im.size_local + im.num_ghosts, dtype=np.int32))
+        global_idxs = np.asarray(global_idxs, dtype)
+
+        assert np.all(vector.array == global_idxs)

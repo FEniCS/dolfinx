@@ -18,15 +18,23 @@ on:
         description: "Spack repository branch/tag to test"
         default: "develop"
         type: string
+      dolfinx_version:
+        description: "DOLFINx release branch/tag to test"
+        default: "0.8.0"
+        type: string
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: ubuntu:latest
+    container: ubuntu:24.04
 
     env:
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
+      PRTE_MCA_rmaps_default_mapping_policy: :oversubscribe   # Newer OpenMPI
+      OMPI_MCA_rmaps_base_oversubscribe: true                 # Older OpenMPI
+
+      DOLFINX_RELEASE_VERSION: "${{ github.event_name != 'workflow_dispatch' && '0.8.0' || github.event.inputs.dolfinx_version }}"
 
     steps:
       - name: Get Spack
@@ -46,7 +54,7 @@ jobs:
       - name: Install Spack requirements
         run: |
           apt-get -y update
-          apt-get install -y bzip2 curl file git gzip make patch python3-minimal tar xz-utils
+          apt-get install -y bzip2 curl file git gzip make patch python3-minimal tar unzip xz-utils
           apt-get install -y g++ gfortran  # compilers
 
       - name: Build DOLFINx (C++) development version via Spack
@@ -71,35 +79,33 @@ jobs:
           cd demo/poisson
           cmake .
           export VERBOSE=1
-          make -j2
+          make -j 4
           mpirun -np 2 ./demo_poisson
-
 
       - name: Build DOLFINx (C++) release version via Spack
         run: |
           . ./spack/share/spack/setup-env.sh
           spack env create cpp-release
           spack env activate cpp-release
-          spack add fenics-dolfinx+adios2
+          spack add fenics-dolfinx@${DOLFINX_RELEASE_VERSION}+adios2
           spack install
       - name: Get DOLFINx release code (to access test files)
         uses: actions/checkout@v4
         with:
-          ref: v0.7.2
-          # ref: v${{ github.event.inputs.spack_branch }}
+          ref:  v${{ env.DOLFINX_RELEASE_VERSION }}
           path: ./dolfinx-release
       - name: Run a C++ test (release version)
         run: |
           . ./spack/share/spack/setup-env.sh
           spack env create cpp-release-test
           spack env activate cpp-release-test
-          spack add fenics-dolfinx+adios2 cmake py-fenics-ffcx
+          spack add fenics-dolfinx@${DOLFINX_RELEASE_VERSION}+adios2 cmake py-fenics-ffcx
           spack install
           cd dolfinx-release/cpp/
           cd demo/poisson
           cmake .
           export VERBOSE=1
-          make -j2
+          make -j 4
           mpirun -np 2 ./demo_poisson
 
       - name: Build DOLFINx (Python, development)
@@ -115,16 +121,15 @@ jobs:
           spack env activate py-main
           mpirun -np 2 python3 ./dolfinx-main/python/demo/demo_elasticity.py
 
-      # Disabled due to capicty issues on Actions and LTO with pybind11
-      # - name: Build DOLFINx (Python, release version)
-      #   run: |
-      #     . ./spack/share/spack/setup-env.sh
-      #     spack env create py-release
-      #     spack env activate py-release
-      #     spack add py-fenics-dolfinx
-      #     spack install -j 2
-      # - name: Run DOLFINx (Python, release) test
-      #   run: |
-      #     . ./spack/share/spack/setup-env.sh
-      #     spack env activate py-release
-      #     mpirun -np 2 python3 ./dolfinx-release/python/demo/demo_elasticity.py
+      - name: Build DOLFINx (Python, release version)
+        run: |
+          . ./spack/share/spack/setup-env.sh
+          spack env create py-release
+          spack env activate py-release
+          spack add py-fenics-dolfinx@${DOLFINX_RELEASE_VERSION}
+          spack install -j 4
+      - name: Run DOLFINx (Python, release) test
+        run: |
+          . ./spack/share/spack/setup-env.sh
+          spack env activate py-release
+          mpirun -np 2 python3 ./dolfinx-release/python/demo/demo_elasticity.py

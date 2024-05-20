@@ -257,8 +257,8 @@ public:
       std::tie(_bboxes, _bbox_coordinates)
           = impl_bb::build_from_leaf(leaf_bboxes);
 
-    LOG(INFO) << "Computed bounding box tree with " << num_bboxes()
-              << " nodes for " << entities.size() << " entities.";
+    spdlog::info("Computed bounding box tree with {} nodes for {} entities",
+                 num_bboxes(), entities.size());
   }
 
   /// Constructor
@@ -269,7 +269,7 @@ public:
   /// each entity by.
   BoundingBoxTree(const mesh::Mesh<T>& mesh, int tdim, T padding = 0)
       : BoundingBoxTree::BoundingBoxTree(
-          mesh, tdim, range(mesh.topology_mutable(), tdim), padding)
+            mesh, tdim, range(mesh.topology_mutable(), tdim), padding)
   {
     // Do nothing
   }
@@ -286,8 +286,8 @@ public:
       impl_bb::_build_from_point(std::span(points), _bboxes, _bbox_coordinates);
     }
 
-    LOG(INFO) << "Computed bounding box tree with " << num_bboxes()
-              << " nodes for " << points.size() << " points.";
+    spdlog::info("Computed bounding box tree with {} nodes for {} points.",
+                 num_bboxes(), points.size());
   }
 
   /// Move constructor
@@ -351,8 +351,8 @@ public:
     BoundingBoxTree global_tree(std::move(global_bboxes),
                                 std::move(global_coords));
 
-    LOG(INFO) << "Computed global bounding box tree with "
-              << global_tree.num_bboxes() << " boxes.";
+    spdlog::info("Computed global bounding box tree with {} boxes.",
+                 global_tree.num_bboxes());
 
     return global_tree;
   }
@@ -405,8 +405,7 @@ private:
       for (std::size_t k = 0; k < 3; ++k)
         s << _bbox_coordinates[6 * i + j * 3 + k] << " ";
       if (j == 0)
-        s << "]->"
-          << "[";
+        s << "]->" << "[";
     }
     s << "]\n";
 

@@ -29,15 +29,16 @@ def locate_dofs_geometrical(
     """Locate degrees-of-freedom geometrically using a marker function.
 
     Args:
-        V: Function space(s) in which to search for degree-of-freedom indices.
-        marker: A function that takes an array of points ``x`` with shape
-            ``(gdim, num_points)`` and returns an array of booleans of
-            length ``num_points``, evaluating to ``True`` for entities whose
-            degree-of-freedom should be returned.
+        V: Function space(s) in which to search for degree-of-freedom
+            indices.
+        marker: A function that takes an array of points ``x`` with
+            shape ``(gdim, num_points)`` and returns an array of
+            booleans of length ``num_points``, evaluating to ``True``
+            for entities whose degree-of-freedom should be returned.
 
     Returns:
-        An array of degree-of-freedom indices (local to the process)
-        for degrees-of-freedom whose coordinate evaluates to True for the
+        An array of degree-of-freedom indices (local to the process) for
+        degrees-of-freedom whose coordinate evaluates to True for the
         marker function.
 
         If ``V`` is a list of two function spaces, then a 2-D array of
@@ -45,9 +46,7 @@ def locate_dofs_geometrical(
 
         Returned degree-of-freedom indices are unique and ordered by the
         first column.
-
     """
-
     try:
         return _cpp.fem.locate_dofs_geometrical(V._cpp_object, marker)  # type: ignore
     except AttributeError:
@@ -64,11 +63,14 @@ def locate_dofs_topological(
     """Locate degrees-of-freedom belonging to mesh entities topologically.
 
     Args:
-        V: Function space(s) in which to search for degree-of-freedom indices.
-        entity_dim: Topological dimension of entities where degrees-of-freedom are located.
-        entities: Indices of mesh entities of dimension ``entity_dim`` where
+        V: Function space(s) in which to search for degree-of-freedom
+            indices.
+        entity_dim: Topological dimension of entities where
             degrees-of-freedom are located.
-        remote: True to return also "remotely located" degree-of-freedom indices.
+        entities: Indices of mesh entities of dimension ``entity_dim``
+            where degrees-of-freedom are located.
+        remote: True to return also "remotely located" degree-of-freedom
+            indices.
 
     Returns:
         An array of degree-of-freedom indices (local to the process) for
@@ -80,7 +82,6 @@ def locate_dofs_topological(
         Returned degree-of-freedom indices are unique and ordered by the
         first column.
     """
-
     _entities = np.asarray(entities, dtype=np.int32)
     try:
         return _cpp.fem.locate_dofs_topological(V._cpp_object, entity_dim, _entities, remote)  # type: ignore
@@ -110,13 +111,14 @@ class DirichletBC:
 
         Args:
             value: Lifted boundary values function.
-            dofs: Local indices of degrees of freedom in function space to which
-                boundary condition applies. Expects array of size (number of
-                dofs, 2) if function space of the problem, ``V`` is passed.
-                Otherwise assumes function space of the problem is the same
-                of function space of boundary values function.
-            V: Function space of a problem to which boundary conditions are applied.
-
+            dofs: Local indices of degrees of freedom in function space
+                to which boundary condition applies. Expects array of
+                size (number of dofs, 2) if function space of the
+                problem, ``V`` is passed. Otherwise assumes function
+                space of the problem is the same of function space of
+                boundary values function.
+            V: Function space of a problem to which boundary conditions
+                are applied.
         """
         self._cpp_object = bc
 
@@ -141,32 +143,31 @@ def dirichletbc(
 
     Args:
         value: Lifted boundary values function. It must have a ``dtype``
-        property.
+            property.
         dofs: Local indices of degrees of freedom in function space to
             which boundary condition applies. Expects array of size
             (number of dofs, 2) if function space of the problem, ``V``,
             is passed. Otherwise assumes function space of the problem
             is the same of function space of boundary values function.
-        V: Function space of a problem to which boundary conditions are applied.
+        V: Function space of a problem to which boundary conditions are
+            applied.
 
     Returns:
         A representation of the boundary condition for modifying linear
         systems.
-
     """
-
     if isinstance(value, numbers.Number):
         value = np.asarray(value)
 
     try:
         dtype = value.dtype
-        if dtype == np.float32:
+        if np.issubdtype(dtype, np.float32):
             bctype = _cpp.fem.DirichletBC_float32
-        elif dtype == np.float64:
+        elif np.issubdtype(dtype, np.float64):
             bctype = _cpp.fem.DirichletBC_float64
-        elif dtype == np.complex64:
+        elif np.issubdtype(dtype, np.complex64):
             bctype = _cpp.fem.DirichletBC_complex64
-        elif dtype == np.complex128:
+        elif np.issubdtype(dtype, np.complex128):
             bctype = _cpp.fem.DirichletBC_complex128
         else:
             raise NotImplementedError(f"Type {value.dtype} not supported.")
@@ -204,11 +205,10 @@ def bcs_by_block(
     DirichletBC objects ``bcs``, return a list where the ith entry is
     the list of DirichletBC objects whose space is contained in
     ``space[i]``.
-
     """
 
     def _bc_space(V, bcs):
-        "Return list of bcs that have the same space as V"
+        """Return list of bcs that have the same space as V"""
         return [bc for bc in bcs if V.contains(bc.function_space)]
 
     return [_bc_space(V, bcs) if V is not None else [] for V in spaces]

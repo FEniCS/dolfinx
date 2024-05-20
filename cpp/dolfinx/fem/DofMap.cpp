@@ -60,9 +60,8 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   std::vector<std::int32_t> sub_imap_to_imap;
   if (bs_view == 1)
   {
-    auto [_index_map, _sub_imap_to_imap]
-        = dolfinx::common::create_sub_index_map(*dofmap_view.index_map,
-                                                dofs_view);
+    auto [_index_map, _sub_imap_to_imap] = common::create_sub_index_map(
+        *dofmap_view.index_map, dofs_view, common::IndexMapOrder::preserve);
     index_map = std::make_shared<common::IndexMap>(std::move(_index_map));
     sub_imap_to_imap = std::move(_sub_imap_to_imap);
   }
@@ -73,9 +72,8 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
     std::transform(dofs_view.begin(), dofs_view.end(),
                    std::back_inserter(indices),
                    [bs_view](auto idx) { return idx / bs_view; });
-    auto [_index_map, _sub_imap_to_imap]
-        = dolfinx::common::create_sub_index_map(*dofmap_view.index_map,
-                                                indices);
+    auto [_index_map, _sub_imap_to_imap] = common::create_sub_index_map(
+        *dofmap_view.index_map, indices, common::IndexMapOrder::preserve);
     index_map = std::make_shared<common::IndexMap>(std::move(_index_map));
     sub_imap_to_imap = std::move(_sub_imap_to_imap);
   }
@@ -132,8 +130,8 @@ graph::AdjacencyList<std::int32_t> fem::transpose_dofmap(
   std::vector<int> num_local_contributions(max_index + 1, 0);
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
-    auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
-        submdspan(dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+        dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     for (std::size_t d = 0; d < dofmap.extent(1); ++d)
       num_local_contributions[dofs[d]]++;
   }
@@ -148,8 +146,8 @@ graph::AdjacencyList<std::int32_t> fem::transpose_dofmap(
   int cell_offset = 0;
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
-    auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
-        submdspan(dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+        dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     for (std::size_t d = 0; d < dofmap.extent(1); ++d)
       data[pos[dofs[d]]++] = cell_offset++;
   }
@@ -210,9 +208,15 @@ DofMap DofMap::extract_sub_dofmap(std::span<const int> component) const
 //-----------------------------------------------------------------------------
 std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
     MPI_Comm comm, const mesh::Topology& topology,
-    const std::function<std::vector<int>(
-        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn) const
+    std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>&&
+        reorder_fn) const
 {
+  if (!reorder_fn)
+  {
+    reorder_fn = [](const graph::AdjacencyList<std::int32_t>& g)
+    { return graph::reorder_gps(g); };
+  }
+
   // Create new dofmap
   auto create_subdofmap = [](MPI_Comm comm, auto index_map_bs, auto& layout,
                              auto& topology, auto& reorder_fn, auto& dmap)

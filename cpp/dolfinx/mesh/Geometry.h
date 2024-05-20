@@ -270,7 +270,7 @@ create_geometry(
         reorder_fn
     = nullptr)
 {
-  LOG(INFO) << "Create Geometry (multiple)";
+  spdlog::info("Create Geometry (multiple)");
 
   assert(std::is_sorted(nodes.begin(), nodes.end()));
   using T = typename std::remove_reference_t<typename U::value_type>;
@@ -285,7 +285,7 @@ create_geometry(
   for (const auto& el : elements)
     dof_layouts.push_back(el.create_dof_layout());
 
-  LOG(INFO) << "Got " << dof_layouts.size() << " dof layouts";
+  spdlog::info("Got {} dof layouts", dof_layouts.size());
 
   //  Build 'geometry' dofmap on the topology
   auto [_dof_index_map, bs, dofmaps]
@@ -295,7 +295,7 @@ create_geometry(
       = std::make_shared<common::IndexMap>(std::move(_dof_index_map));
 
   // If the mesh has higher order geometry, permute the dofmap
-  if (elements.first().needs_dof_permutations())
+  if (elements.front().needs_dof_permutations())
   {
     const std::int32_t num_cells
         = topology.connectivity(topology.dim(), 0)->num_nodes();
@@ -305,18 +305,18 @@ create_geometry(
     for (std::int32_t cell = 0; cell < num_cells; ++cell)
     {
       std::span dofs(dofmaps.front().data() + cell * d, d);
-      elements.front().unpermute_dofs(dofs, cell_info[cell]);
+      elements.front().permute_inv(dofs, cell_info[cell]);
     }
   }
 
-  LOG(INFO) << "Calling compute_local_to_global";
+  spdlog::info("Calling compute_local_to_global");
   // Compute local-to-global map from local indices in dofmap to the
   // corresponding global indices in cells, and pass to function to
   // compute local (dof) to local (position in coords) map from (i)
   // local-to-global for dofs and (ii) local-to-global for entries in
   // coords
 
-  LOG(INFO) << "xdofs.size = " << xdofs.size();
+  spdlog::info("xdofs.size = {}", xdofs.size());
   std::vector<std::int32_t> all_dofmaps;
   std::stringstream s;
   for (auto q : dofmaps)
@@ -324,9 +324,9 @@ create_geometry(
     s << q.size() << " ";
     all_dofmaps.insert(all_dofmaps.end(), q.begin(), q.end());
   }
-  LOG(INFO) << "dofmap sizes = " << s.str();
-  LOG(INFO) << "all_dofmaps.size = " << all_dofmaps.size();
-  LOG(INFO) << "nodes.size = " << nodes.size();
+  spdlog::info("dofmap sizes = {}", s.str());
+  spdlog::info("all_dofmaps.size = {}", all_dofmaps.size());
+  spdlog::info("nodes.size = {}", nodes.size());
 
   const std::vector<std::int32_t> l2l = graph::build::compute_local_to_local(
       graph::build::compute_local_to_global(xdofs, all_dofmaps), nodes);
@@ -343,11 +343,11 @@ create_geometry(
   std::vector<T> xg(3 * shape0, 0);
   for (std::size_t i = 0; i < shape0; ++i)
   {
-    std::copy_n(std::next(x.cbegin(), shape1 * l2l[i]), shape1,
+    std::copy_n(std::next(x.begin(), shape1 * l2l[i]), shape1,
                 std::next(xg.begin(), 3 * i));
   }
 
-  LOG(INFO) << "Creating geometry with " << dofmaps.size() << " dofmaps";
+  spdlog::info("Creating geometry with {} dofmaps", dof_layouts.size());
 
   return Geometry(dof_index_map, std::move(dofmaps), elements, std::move(xg),
                   dim, std::move(igi));
@@ -411,7 +411,7 @@ create_geometry(
     for (std::int32_t cell = 0; cell < num_cells; ++cell)
     {
       std::span dofs(dofmaps.front().data() + cell * d, d);
-      element.unpermute_dofs(dofs, cell_info[cell]);
+      element.permute_inv(dofs, cell_info[cell]);
     }
   }
 
@@ -441,122 +441,6 @@ create_geometry(
 
   return Geometry(dof_index_map, std::move(dofmaps.front()), {element},
                   std::move(xg), dim, std::move(igi));
-}
-
-/// @brief Create a sub-geometry for a subset of entities.
-/// @param topology Full mesh topology.
-/// @param geometry Full mesh geometry.
-/// @param dim Topological dimension of the sub-topology.
-/// @param subentity_to_entity Map from sub-topology entity to the
-/// entity in the parent topology.
-/// @return A sub-geometry and a map from sub-geometry coordinate
-/// degree-of-freedom to the coordinate degree-of-freedom in `geometry`.
-template <std::floating_point T>
-std::pair<Geometry<T>, std::vector<int32_t>>
-create_subgeometry(const Topology& topology, const Geometry<T>& geometry,
-                   int dim, std::span<const std::int32_t> subentity_to_entity)
-{
-  // Get the geometry dofs in the sub-geometry based on the entities in
-  // sub-geometry
-  const fem::ElementDofLayout layout = geometry.cmap().create_dof_layout();
-  // NOTE: Unclear what this return for prisms
-  const std::size_t num_entity_dofs = layout.num_entity_closure_dofs(dim);
-
-  std::vector<std::int32_t> x_indices;
-  x_indices.reserve(num_entity_dofs * subentity_to_entity.size());
-  {
-    auto xdofs = geometry.dofmap();
-    const int tdim = topology.dim();
-
-    // Fetch connectivities required to get entity dofs
-    const std::vector<std::vector<std::vector<int>>>& closure_dofs
-        = layout.entity_closure_dofs_all();
-    auto e_to_c = topology.connectivity(dim, tdim);
-    assert(e_to_c);
-    auto c_to_e = topology.connectivity(tdim, dim);
-    assert(c_to_e);
-    for (std::size_t i = 0; i < subentity_to_entity.size(); ++i)
-    {
-      const std::int32_t idx = subentity_to_entity[i];
-      assert(!e_to_c->links(idx).empty());
-      // Always pick the last cell to be consistent with the e_to_v connectivity
-      const std::int32_t cell = e_to_c->links(idx).back();
-      auto cell_entities = c_to_e->links(cell);
-      auto it = std::find(cell_entities.begin(), cell_entities.end(), idx);
-      assert(it != cell_entities.end());
-      std::size_t local_entity = std::distance(cell_entities.begin(), it);
-
-      auto xc = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
-          submdspan(xdofs, cell, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
-      for (std::int32_t entity_dof : closure_dofs[dim][local_entity])
-        x_indices.push_back(xc[entity_dof]);
-    }
-  }
-
-  std::vector<std::int32_t> sub_x_dofs = x_indices;
-  std::sort(sub_x_dofs.begin(), sub_x_dofs.end());
-  sub_x_dofs.erase(std::unique(sub_x_dofs.begin(), sub_x_dofs.end()),
-                   sub_x_dofs.end());
-
-  // Get the sub-geometry dofs owned by this process
-  auto x_index_map = geometry.index_map();
-  assert(x_index_map);
-
-  std::shared_ptr<common::IndexMap> sub_x_dof_index_map;
-  std::vector<std::int32_t> subx_to_x_dofmap;
-  {
-    auto [map, new_to_old]
-        = common::create_sub_index_map(*x_index_map, sub_x_dofs, true);
-    sub_x_dof_index_map = std::make_shared<common::IndexMap>(std::move(map));
-    subx_to_x_dofmap = std::move(new_to_old);
-  }
-
-  // Create sub-geometry coordinates
-  std::span<const T> x = geometry.x();
-  std::int32_t sub_num_x_dofs = subx_to_x_dofmap.size();
-  std::vector<T> sub_x(3 * sub_num_x_dofs);
-  for (int i = 0; i < sub_num_x_dofs; ++i)
-  {
-    std::copy_n(std::next(x.begin(), 3 * subx_to_x_dofmap[i]), 3,
-                std::next(sub_x.begin(), 3 * i));
-  }
-
-  // Create geometry to sub-geometry  map
-  std::vector<std::int32_t> x_to_subx_dof_map(
-      x_index_map->size_local() + x_index_map->num_ghosts(), -1);
-  for (std::size_t i = 0; i < subx_to_x_dofmap.size(); ++i)
-    x_to_subx_dof_map[subx_to_x_dofmap[i]] = i;
-
-  // Create sub-geometry dofmap
-  std::vector<std::int32_t> sub_x_dofmap;
-  sub_x_dofmap.reserve(x_indices.size());
-  std::transform(x_indices.cbegin(), x_indices.cend(),
-                 std::back_inserter(sub_x_dofmap),
-                 [&x_to_subx_dof_map](auto x_dof)
-                 {
-                   assert(x_to_subx_dof_map[x_dof] != -1);
-                   return x_to_subx_dof_map[x_dof];
-                 });
-
-  // Create sub-geometry coordinate element
-  CellType sub_coord_cell
-      = cell_entity_type(geometry.cmap().cell_shape(), dim, 0);
-  fem::CoordinateElement<T> sub_cmap(sub_coord_cell, geometry.cmap().degree(),
-                                     geometry.cmap().variant());
-
-  // Sub-geometry input_global_indices
-  // TODO: Check this
-  const std::vector<std::int64_t>& igi = geometry.input_global_indices();
-  std::vector<std::int64_t> sub_igi;
-  sub_igi.reserve(subx_to_x_dofmap.size());
-  std::transform(subx_to_x_dofmap.begin(), subx_to_x_dofmap.end(),
-                 std::back_inserter(sub_igi),
-                 [&igi](std::int32_t sub_x_dof) { return igi[sub_x_dof]; });
-
-  // Create geometry
-  return {Geometry(sub_x_dof_index_map, std::move(sub_x_dofmap), {sub_cmap},
-                   std::move(sub_x), geometry.dim(), std::move(sub_igi)),
-          std::move(subx_to_x_dofmap)};
 }
 
 } // namespace dolfinx::mesh

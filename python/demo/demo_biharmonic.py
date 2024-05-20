@@ -110,12 +110,25 @@
 #
 # We first import the modules and functions that the program uses:
 
+import importlib.util
+
+if importlib.util.find_spec("petsc4py") is not None:
+    import dolfinx
+
+    if not dolfinx.has_petsc:
+        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
+        exit(0)
+    from petsc4py.PETSc import ScalarType  # type: ignore
+else:
+    print("This demo requires petsc4py.")
+    exit(0)
+
 from mpi4py import MPI
-from petsc4py.PETSc import ScalarType  # type: ignore
 
 # +
 import numpy as np
 
+import dolfinx
 import ufl
 from dolfinx import fem, io, mesh, plot
 from dolfinx.fem.petsc import LinearProblem
@@ -155,9 +168,10 @@ V = fem.functionspace(msh, ("Lagrange", 2))
 facets = mesh.locate_entities_boundary(
     msh,
     dim=1,
-    marker=lambda x: np.logical_or.reduce(
-        (np.isclose(x[0], 0.0), np.isclose(x[0], 1.0), np.isclose(x[1], 0.0), np.isclose(x[1], 1.0))
-    ),
+    marker=lambda x: np.isclose(x[0], 0.0)
+    | np.isclose(x[0], 1.0)
+    | np.isclose(x[1], 0.0)
+    | np.isclose(x[1], 1.0),
 )
 
 # We now find the degrees-of-freedom that are associated with the

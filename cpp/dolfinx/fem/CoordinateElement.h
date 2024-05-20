@@ -93,6 +93,27 @@ public:
   void tabulate(int nd, std::span<const T> X, std::array<std::size_t, 2> shape,
                 std::span<T> basis) const;
 
+  /// @brief Given the closure DOFs \f$\tilde{d}\f$ of a cell sub-entity in
+  /// reference ordering, this function computes the permuted degrees-of-freedom
+  ///   \f[ d = P \tilde{d},\f]
+  /// ordered to be consistent with the entity's mesh orientation, where
+  /// \f$P\f$ is a permutation matrix. This accounts for orientation
+  /// discrepancies between the entity's cell and mesh orientation. All DOFs are
+  /// rotated and reflected together, unlike `permute`, which considered
+  /// sub-entities independently.
+  ///
+  /// @param[in,out] d Indices associated with the reference element
+  /// degree-of-freedom (in). Indices associated with each physical
+  /// element degree-of-freedom (out).
+  /// @param[in] cell_info Permutation info for the cell
+  /// @param[in] entity_type The cell type of the sub-entity
+  /// @param[in] entity_index The local (with respect to the cell) index of the
+  /// entity
+  void permute_subentity_closure(std::span<std::int32_t> d,
+                                 std::uint32_t cell_info,
+                                 mesh::CellType entity_type,
+                                 int entity_index) const;
+
   /// Compute Jacobian for a cell with given geometry using the
   /// basis functions and first order derivatives.
   /// @param[in] dphi Derivatives of the basis functions (shape=(tdim,
@@ -223,12 +244,10 @@ public:
                            double tol = 1.0e-6, int maxit = 15) const;
 
   /// @brief Permute a list of DOF numbers on a cell.
-  void permute_dofs(const std::span<std::int32_t>& dofs,
-                    std::uint32_t cell_perm) const;
+  void permute(std::span<std::int32_t> dofs, std::uint32_t cell_perm) const;
 
   /// @brief Reverses a DOF permutation
-  void unpermute_dofs(const std::span<std::int32_t>& dofs,
-                      std::uint32_t cell_perm) const;
+  void permute_inv(std::span<std::int32_t> dofs, std::uint32_t cell_perm) const;
 
   /// @brief Indicates whether the geometry DOF numbers on each cell
   /// need permuting.

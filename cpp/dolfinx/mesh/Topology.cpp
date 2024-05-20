@@ -155,9 +155,9 @@ determine_sharing_ranks(MPI_Comm comm, std::span<const std::int64_t> indices)
     while (it != indices_list.end())
     {
       // Find iterator to next different global index
-      auto it1 = std::find_if(it, indices_list.end(),
-                              [idx0 = (*it)[0]](auto& idx)
-                              { return idx[0] != idx0; });
+      auto it1
+          = std::find_if(it, indices_list.end(), [idx0 = (*it)[0]](auto& idx)
+                         { return idx[0] != idx0; });
 
       // Number of times index is repeated
       std::size_t num = std::distance(it, it1);
@@ -541,9 +541,8 @@ std::vector<std::array<std::int64_t, 3>> exchange_ghost_indexing(
     std::vector<std::pair<int, std::int64_t>> owner_to_ghost;
     std::transform(map0.ghosts().begin(), map0.ghosts().end(),
                    map0.owners().begin(), std::back_inserter(owner_to_ghost),
-                   [](auto idx, auto r) -> std::pair<int, std::int64_t> {
-                     return {r, idx};
-                   });
+                   [](auto idx, auto r) -> std::pair<int, std::int64_t>
+                   { return {r, idx}; });
     std::sort(owner_to_ghost.begin(), owner_to_ghost.end());
 
     // Build send buffer (the second component of each pair in
@@ -745,7 +744,7 @@ Topology::Topology(MPI_Comm comm, const std::vector<CellType>& cell_types)
     : _comm(comm), _entity_types({mesh::CellType::point}),
       _entity_type_offsets({0, 1})
 {
-  assert(cell_types.size() > 0);
+  assert(!cell_types.empty());
   std::int8_t tdim = cell_dim(cell_types[0]);
   assert(tdim > 0);
   for (auto ct : cell_types)
@@ -1042,7 +1041,7 @@ Topology mesh::create_topology(
   assert(ghost_owners.size() == cells.size());
   assert(original_cell_index.size() == cells.size());
 
-  LOG(INFO) << "Create topology (generalised)";
+  spdlog::info("Create topology (generalised)");
   // Check cell data consistency and compile spans of owned and ghost cells
   std::vector<std::int32_t> num_local_cells(cell_type.size());
   std::vector<std::span<const std::int64_t>> owned_cells;
@@ -1242,16 +1241,14 @@ Topology mesh::create_topology(
       owned_vertices.begin(), owned_vertices.end(),
       local_vertex_indices.begin(),
       std::back_inserter(global_to_local_vertices),
-      [](auto idx0, auto idx1) -> std::pair<std::int64_t, std::int32_t> {
-        return {idx0, idx1};
-      });
+      [](auto idx0, auto idx1) -> std::pair<std::int64_t, std::int32_t>
+      { return {idx0, idx1}; });
   std::transform(
       unowned_vertices.begin(), unowned_vertices.end(),
       local_vertex_indices_unowned.begin(),
       std::back_inserter(global_to_local_vertices),
-      [](auto idx0, auto idx1) -> std::pair<std::int64_t, std::int32_t> {
-        return {idx0, idx1};
-      });
+      [](auto idx0, auto idx1) -> std::pair<std::int64_t, std::int32_t>
+      { return {idx0, idx1}; });
   std::sort(global_to_local_vertices.begin(), global_to_local_vertices.end());
 
   std::vector<std::vector<std::int32_t>> _cells_local_idx(cells.size());
@@ -1330,7 +1327,7 @@ mesh::create_topology(MPI_Comm comm, std::span<const std::int64_t> cells,
                       std::span<const int> ghost_owners, CellType cell_type,
                       std::span<const std::int64_t> boundary_vertices)
 {
-  LOG(INFO) << "Create topology (single cell type)";
+  spdlog::info("Create topology (single cell type)");
 
   return create_topology(comm, {cell_type}, {cells}, {original_cell_index},
                          {ghost_owners}, boundary_vertices);
@@ -1376,7 +1373,7 @@ mesh::create_subtopology(const Topology& topology, int dim,
     std::pair<common::IndexMap, std::vector<int32_t>> map_data
         = common::create_sub_index_map(
             *map0, compute_incident_entities(topology, subentities, dim, 0),
-            true);
+            common::IndexMapOrder::any, true);
     submap0 = std::make_shared<common::IndexMap>(std::move(map_data.first));
     subvertices0 = std::move(map_data.second);
   }
@@ -1433,7 +1430,7 @@ std::vector<std::int32_t>
 mesh::entities_to_index(const Topology& topology, int dim,
                         std::span<const std::int32_t> entities)
 {
-  LOG(INFO) << "Build list of mesh entity indices from the entity vertices.";
+  spdlog::info("Build list of mesh entity indices from the entity vertices.");
 
   // Tagged entity topological dimension
   auto map_e = topology.index_map(dim);

@@ -140,8 +140,8 @@ SparsityPattern::SparsityPattern(
   }
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::insert(const std::span<const std::int32_t>& rows,
-                             const std::span<const std::int32_t>& cols)
+void SparsityPattern::insert(std::span<const std::int32_t> rows,
+                             std::span<const std::int32_t> cols)
 {
   if (!_offsets.empty())
   {
@@ -382,8 +382,8 @@ void SparsityPattern::finalize()
   _edges.shrink_to_fit();
 
   // Column count increased due to received rows from other processes
-  LOG(INFO) << "Column ghost size increased from "
-            << _index_maps[1]->ghosts().size() << " to " << _col_ghosts.size();
+  spdlog::info("Column ghost size increased from {} to {}",
+               _index_maps[1]->ghosts().size(), _col_ghosts.size());
 }
 //-----------------------------------------------------------------------------
 std::int64_t SparsityPattern::num_nonzeros() const

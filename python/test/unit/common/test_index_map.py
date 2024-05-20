@@ -9,6 +9,7 @@ import math
 from mpi4py import MPI
 
 import numpy as np
+import pytest
 
 import dolfinx
 from dolfinx import cpp as _cpp
@@ -192,3 +193,54 @@ def test_create_submap_owner_change():
         np.arange(sub_imap.size_local + sub_imap.num_ghosts, dtype=np.int32)
     )
     assert np.array_equal(global_indices, np.arange(comm.rank * 2, comm.rank * 2 + 3))
+
+
+def test_sub_index_map_multiple_possible_owners():
+    """Check that creating a submap doesn't crash when an index need to change owner and
+    there are multiple possible new owners"""
+    comm = MPI.COMM_WORLD
+
+    if comm.size < 3:
+        pytest.skip("Test requires 3 or more processes")
+
+    # Create an index map with an index on process 2 that is ghosted by processes 0 and 1
+    if comm.rank == 0:
+        local_size = 1
+        ghosts = np.array([2], dtype=np.int64)
+        owners = np.array([2], dtype=np.int32)
+        submap_indices = np.array([0, 1], dtype=np.int32)
+        # NOTE: This assumes that the lowest ranking process takes ownership of the index
+        # in the submap
+        submap_size_local_expected = 2
+        submap_num_ghosts_expected = 0
+    elif comm.rank == 1:
+        local_size = 1
+        ghosts = np.array([2], dtype=np.int64)
+        owners = np.array([2], dtype=np.int32)
+        submap_indices = np.array([0, 1], dtype=np.int32)
+        submap_size_local_expected = 1
+        submap_num_ghosts_expected = 1
+    elif comm.rank == 2:
+        local_size = 1
+        ghosts = np.array([], dtype=np.int64)
+        owners = np.array([], dtype=np.int32)
+        submap_indices = np.array([], dtype=np.int32)
+        submap_size_local_expected = 0
+        submap_num_ghosts_expected = 0
+    else:
+        local_size = 0
+        ghosts = np.array([], dtype=np.int64)
+        owners = np.array([], dtype=np.int32)
+        submap_indices = np.array([], dtype=np.int32)
+        submap_size_local_expected = 0
+        submap_num_ghosts_expected = 0
+
+    imap = dolfinx.common.IndexMap(comm, local_size, ghosts, owners)
+
+    # Create a submap where both processes 0 and 1 include the index on process 2,
+    # but process 2 does not include it
+    sub_imap = _cpp.common.create_sub_index_map(imap, submap_indices, True)[0]
+
+    assert sub_imap.size_global == 3
+    assert sub_imap.size_local == submap_size_local_expected
+    assert sub_imap.num_ghosts == submap_num_ghosts_expected

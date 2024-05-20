@@ -94,10 +94,10 @@ void dolfinx::MPI::check_error(MPI_Comm comm, int code)
 std::vector<int>
 dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm, std::span<const int> edges)
 {
-  LOG(INFO)
-      << "Computing communication graph edges (using PCX algorithm). Number "
-         "of input edges: "
-      << edges.size();
+  spdlog::info(
+      "Computing communication graph edges (using PCX algorithm). Number "
+      "of input edges: {}",
+      static_cast<int>(edges.size()));
 
   // Build array with '0' for no outedge and '1' for an outedge for each
   // rank
@@ -116,10 +116,10 @@ dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm, std::span<const int> edges)
   dolfinx::MPI::check_error(comm, err);
 
   std::vector<MPI_Request> send_requests(edges.size());
-  std::byte send_buffer;
+  std::vector<std::byte> send_buffer(edges.size());
   for (std::size_t e = 0; e < edges.size(); ++e)
   {
-    int err = MPI_Isend(&send_buffer, 1, MPI_BYTE, edges[e],
+    int err = MPI_Isend(send_buffer.data() + e, 1, MPI_BYTE, edges[e],
                         static_cast<int>(tag::consensus_pcx), comm,
                         &send_requests[e]);
     dolfinx::MPI::check_error(comm, err);
@@ -151,9 +151,9 @@ dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm, std::span<const int> edges)
     }
   }
 
-  LOG(INFO) << "Finished graph edge discovery using PCX algorithm. Number "
-               "of discovered edges "
-            << other_ranks.size();
+  spdlog::info("Finished graph edge discovery using PCX algorithm. Number "
+               "of discovered edges {}",
+               static_cast<int>(other_ranks.size()));
 
   return other_ranks;
 }
@@ -161,17 +161,17 @@ dolfinx::MPI::compute_graph_edges_pcx(MPI_Comm comm, std::span<const int> edges)
 std::vector<int>
 dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
 {
-  LOG(INFO)
-      << "Computing communication graph edges (using NBX algorithm). Number "
-         "of input edges: "
-      << edges.size();
+  spdlog::info(
+      "Computing communication graph edges (using NBX algorithm). Number "
+      "of input edges: {}",
+      static_cast<int>(edges.size()));
 
   // Start non-blocking synchronised send
   std::vector<MPI_Request> send_requests(edges.size());
-  std::byte send_buffer;
+  std::vector<std::byte> send_buffer(edges.size());
   for (std::size_t e = 0; e < edges.size(); ++e)
   {
-    int err = MPI_Issend(&send_buffer, 1, MPI_BYTE, edges[e],
+    int err = MPI_Issend(send_buffer.data() + e, 1, MPI_BYTE, edges[e],
                          static_cast<int>(tag::consensus_pex), comm,
                          &send_requests[e]);
     dolfinx::MPI::check_error(comm, err);
@@ -232,9 +232,9 @@ dolfinx::MPI::compute_graph_edges_nbx(MPI_Comm comm, std::span<const int> edges)
     }
   }
 
-  LOG(INFO) << "Finished graph edge discovery using NBX algorithm. Number "
-               "of discovered edges "
-            << other_ranks.size();
+  spdlog::info("Finished graph edge discovery using NBX algorithm. Number "
+               "of discovered edges {}",
+               static_cast<int>(other_ranks.size()));
 
   return other_ranks;
 }

@@ -25,6 +25,15 @@ bool dolfinx::has_debug()
 #endif
 }
 //-------------------------------------------------------------------------
+bool dolfinx::has_petsc()
+{
+#ifdef HAS_PETSC
+  return true;
+#else
+  return false;
+#endif
+}
+//-------------------------------------------------------------------------
 bool dolfinx::has_slepc()
 {
 #ifdef HAS_SLEPC

@@ -39,6 +39,7 @@ void common(nb::module_& m)
   m.attr("has_debug") = dolfinx::has_debug();
   m.attr("has_parmetis") = dolfinx::has_parmetis();
   m.attr("has_kahip") = dolfinx::has_kahip();
+  m.attr("has_petsc") = dolfinx::has_petsc();
   m.attr("has_slepc") = dolfinx::has_slepc();
   m.attr("has_adios2") = dolfinx::has_adios2();
   m.attr("git_commit_hash") = dolfinx::git_commit_hash();
@@ -91,10 +92,8 @@ void common(nb::module_& m)
           nb::arg("comm"), nb::arg("local_size"), nb::arg("dest_src"),
           nb::arg("ghosts"), nb::arg("ghost_owners"))
       .def_prop_ro(
-          "comm",
-          [](const dolfinx::common::IndexMap& self)
-          { return MPICommWrapper(self.comm()); },
-          nb::keep_alive<0, 1>())
+          "comm", [](const dolfinx::common::IndexMap& self)
+          { return MPICommWrapper(self.comm()); }, nb::keep_alive<0, 1>())
       .def_prop_ro("size_local", &dolfinx::common::IndexMap::size_local)
       .def_prop_ro("size_global", &dolfinx::common::IndexMap::size_global)
       .def_prop_ro("num_ghosts", &dolfinx::common::IndexMap::num_ghosts)
@@ -189,7 +188,7 @@ void common(nb::module_& m)
       {
         auto [map, submap_to_map] = dolfinx::common::create_sub_index_map(
             imap, std::span(indices.data(), indices.size()),
-            allow_owner_change);
+            dolfinx::common::IndexMapOrder::any, allow_owner_change);
         return std::pair(std::move(map), dolfinx_wrappers::as_nbarray(
                                              std::move(submap_to_map)));
       },

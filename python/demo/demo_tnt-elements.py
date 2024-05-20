@@ -20,6 +20,18 @@
 #
 # We begin this demo by importing the required modules.
 
+import importlib.util
+
+if importlib.util.find_spec("petsc4py") is not None:
+    import dolfinx
+
+    if not dolfinx.has_petsc:
+        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
+        exit(0)
+else:
+    print("This demo requires petsc4py.")
+    exit(0)
+
 from mpi4py import MPI
 
 # +
@@ -29,7 +41,7 @@ import numpy as np
 
 import basix
 import basix.ufl
-from dolfinx import fem, mesh
+from dolfinx import default_real_type, fem, mesh
 from dolfinx.fem.petsc import LinearProblem
 from ufl import SpatialCoordinate, TestFunction, TrialFunction, cos, div, dx, grad, inner, sin
 
@@ -146,6 +158,7 @@ tnt_degree1 = basix.ufl.custom_element(
     False,
     1,
     2,
+    dtype=default_real_type,
 )
 
 # ## Creating higher degree TNT elements
@@ -228,6 +241,7 @@ def create_tnt_quad(degree):
         False,
         degree,
         degree + 1,
+        dtype=default_real_type,
     )
 
 

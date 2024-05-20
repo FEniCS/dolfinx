@@ -9,6 +9,7 @@
 include(CMakeFindDependencyMacro)
 
 find_dependency(MPI REQUIRED)
+find_dependency(spdlog REQUIRED)
 find_dependency(pugixml)
 
 # Check for Boost
@@ -50,13 +51,14 @@ if(NOT TARGET hdf5::hdf5)
   endif()
 endif()
 
-set(PETSC_SCALAR_COMPLEX @HAVE_PETSC_SCALAR_COMPLEX@)
-if(NOT TARGET PkgConfig::PETSC)
-  find_package(PkgConfig REQUIRED)
-  set(ENV{PKG_CONFIG_PATH}
-      "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}"
-  )
-  pkg_search_module(PETSC REQUIRED IMPORTED_TARGET PETSc petsc)
+if(@PETSC_FOUND@)
+  if(NOT TARGET PkgConfig::PETSC)
+    find_package(PkgConfig REQUIRED)
+    set(ENV{PKG_CONFIG_PATH}
+        "$ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig:$ENV{PETSC_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}"
+    )
+    pkg_search_module(PETSC REQUIRED IMPORTED_TARGET PETSc petsc)
+  endif()
 endif()
 
 if(@SLEPC_FOUND@)

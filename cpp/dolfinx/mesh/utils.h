@@ -135,8 +135,8 @@ compute_vertex_coords_boundary(const mesh::Mesh<T>& mesh, int dim,
     assert(it != cell_vertices.end());
     const int local_pos = std::distance(cell_vertices.begin(), it);
 
-    auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
-        submdspan(x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+        x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     for (std::size_t j = 0; j < 3; ++j)
       x_vertices[j * vertices.size() + i] = x_nodes[3 * dofs[local_pos] + j];
     vertex_to_pos[v] = i;
@@ -166,16 +166,15 @@ std::vector<std::int32_t> exterior_facet_indices(const Topology& topology);
 ///
 /// @param[in] comm MPI Communicator
 /// @param[in] nparts Number of partitions
-/// @param[in] tdim Topological dimension
+/// @param[in] cell_type Type of cell in mesh
 /// @param[in] cells Cells on this process. The ith entry in list
 /// contains the global indices for the cell vertices. Each cell can
 /// appear only once across all processes. The cell vertex indices are
 /// not necessarily contiguous globally, i.e. the maximum index across
 /// all processes can be greater than the number of vertices. High-order
 /// 'nodes', e.g. mid-side points, should not be included.
-/// @param[in] ghost_mode How to overlap the cell partitioning: none,
-/// shared_facet or shared_vertex
 /// @return Destination ranks for each cell on this process
+/// @note Cells can have multiple destination ranks, when ghosted.
 using CellPartitionFunction = std::function<graph::AdjacencyList<std::int32_t>(
     MPI_Comm comm, int nparts, CellType cell_type,
     const graph::AdjacencyList<std::int64_t>& cells)>;
@@ -220,7 +219,7 @@ std::vector<T> h(const Mesh<T>& mesh, std::span<const std::int32_t> entities,
   std::span<const T> x = mesh.geometry().x();
 
   // Function to compute the length of (p0 - p1)
-  auto delta_norm = [](const auto& p0, const auto& p1)
+  auto delta_norm = [](auto&& p0, auto&& p1)
   {
     T norm = 0;
     for (std::size_t i = 0; i < 3; ++i)
@@ -273,14 +272,8 @@ std::vector<T> cell_normals(const Mesh<T>& mesh, int dim,
 
   // Find geometry nodes for topology entities
   std::span<const T> x = mesh.geometry().x();
-
-  // Orient cells if they are tetrahedron
-  bool orient = false;
-  if (topology->cell_type() == CellType::tetrahedron)
-    orient = true;
-
   std::vector<std::int32_t> geometry_entities
-      = entities_to_geometry(mesh, dim, entities, orient);
+      = entities_to_geometry(mesh, dim, entities, false);
 
   const std::size_t shape1 = geometry_entities.size() / entities.size();
   std::vector<T> n(entities.size() * 3);
@@ -435,9 +428,8 @@ compute_vertex_coords(const mesh::Mesh<T>& mesh)
   std::vector<std::int32_t> vertex_to_node(num_vertices);
   for (int c = 0; c < c_to_v->num_nodes(); ++c)
   {
-    auto x_dofs
-        = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
-            submdspan(x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+        x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     auto vertices = c_to_v->links(c);
     for (std::size_t i = 0; i < vertices.size(); ++i)
       vertex_to_node[vertices[i]] = x_dofs[i];
@@ -534,8 +526,8 @@ std::vector<std::int32_t> locate_entities(const Mesh<T>& mesh, int dim,
 /// owned boundary facet and evaluate to true for the provided geometric
 /// marking function.
 ///
-/// An entity is considered marked if the marker function evaluates to true
-/// for all of its vertices.
+/// An entity is considered marked if the marker function evaluates to
+/// true for all of its vertices.
 ///
 /// @note For vertices and edges, in parallel this function will not
 /// necessarily mark all entities that are on the exterior boundary. For
@@ -612,26 +604,24 @@ std::vector<std::int32_t> locate_entities_boundary(const Mesh<T>& mesh, int dim,
   return entities;
 }
 
-/// @brief Determine the indices in the geometry data for each vertex of
-/// the given mesh entities.
+/// @brief Compute the geometry degrees of freedom associated with
+/// the closure of a given set of cell entities.
 ///
-/// @warning This function should not be used unless there is no
-/// alternative. It may be removed in the future.
-///
-/// @param[in] mesh The mesh
-/// @param[in] dim Topological dimension of the entities of interest
-/// @param[in] entities Entity indices (local) to compute the vertex
-/// geometry indices for
-/// @param[in] orient If true, in 3D, reorients facets to have
-/// consistent normal direction
-/// @return Indices in the geometry array for the entity vertices. The
-/// shape is `(num_entities, num_vertices_per_entity)` and the storage
-/// is row-major. The index `indices[i, j]` is the position in the
-/// geometry array of the `j`-th vertex of the `entity[i]`.
+/// @param[in] mesh The mesh.
+/// @param[in] dim Topological dimension of the entities of interest.
+/// @param[in] entities Entity indices (local to process).
+/// @param[in] permute If `true`, permute the DOFs such that they are consistent
+/// with the orientation of `dim`-dimensional mesh entities. This requires
+/// `create_entity_permutations` to be called first.
+/// @return The geometry DOFs associated with the closure of each
+/// entity in `entities`. The shape is `(num_entities, num_xdofs_per_entity)`
+/// and the storage is row-major. The index `indices[i, j]` is the position in
+/// the geometry array of the `j`-th vertex of the `entity[i]`.
 template <std::floating_point T>
 std::vector<std::int32_t>
 entities_to_geometry(const Mesh<T>& mesh, int dim,
-                     std::span<const std::int32_t> entities, bool orient)
+                     std::span<const std::int32_t> entities,
+                     bool permute = false)
 {
   auto topology = mesh.topology();
   assert(topology);
@@ -639,18 +629,10 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
   CellType cell_type = topology->cell_type();
   if (cell_type == CellType::prism and dim == 2)
     throw std::runtime_error("More work needed for prism cells");
-  if (orient and (cell_type != CellType::tetrahedron or dim != 2))
-    throw std::runtime_error("Can only orient facets of a tetrahedral mesh");
-
-  const Geometry<T>& geometry = mesh.geometry();
-  auto x = geometry.x();
 
   const int tdim = topology->dim();
-  mesh.topology_mutable()->create_entities(dim);
-  mesh.topology_mutable()->create_connectivity(dim, tdim);
-  mesh.topology_mutable()->create_connectivity(dim, 0);
-  mesh.topology_mutable()->create_connectivity(tdim, 0);
 
+  const Geometry<T>& geometry = mesh.geometry();
   auto xdofs = geometry.dofmap();
   auto e_to_c = topology->connectivity(dim, tdim);
   if (!e_to_c)
@@ -659,78 +641,63 @@ entities_to_geometry(const Mesh<T>& mesh, int dim,
         "Entity-to-cell connectivity has not been computed.");
   }
 
-  auto e_to_v = topology->connectivity(dim, 0);
-  if (!e_to_v)
+  auto c_to_e = topology->connectivity(tdim, dim);
+  if (!c_to_e)
   {
     throw std::runtime_error(
-        "Entity-to-vertex connectivity has not been computed.");
+        "Cell-to-entity connectivity has not been computed.");
   }
 
-  auto c_to_v = topology->connectivity(tdim, 0);
-  if (!e_to_v)
-  {
-    throw std::runtime_error(
-        "Cell-to-vertex connectivity has not been computed.");
-  }
+  // Get the DOF layout and the number of DOFs per entity
+  const fem::CoordinateElement<T>& coord_ele = geometry.cmap();
+  const fem::ElementDofLayout layout = coord_ele.create_dof_layout();
+  const std::size_t num_entity_dofs = layout.num_entity_closure_dofs(dim);
+  std::vector<std::int32_t> entity_xdofs;
+  entity_xdofs.reserve(entities.size() * num_entity_dofs);
 
-  const std::size_t num_vertices
-      = num_cell_vertices(cell_entity_type(cell_type, dim, 0));
-  std::vector<std::int32_t> geometry_idx(entities.size() * num_vertices);
+  // Get the element's closure DOFs
+  const std::vector<std::vector<std::vector<int>>>& closure_dofs_all
+      = layout.entity_closure_dofs_all();
+
+  // Get the cell info, which is needed to permute the closure dofs
+  std::span<const std::uint32_t> cell_info;
+  if (dim != topology->dim() and permute)
+    cell_info = std::span(mesh.topology()->get_cell_permutation_info());
+
   for (std::size_t i = 0; i < entities.size(); ++i)
   {
-    const std::int32_t idx = entities[i];
-    // Always pick the second cell to be consistent with the e_to_v connectivity
-    const std::int32_t cell = e_to_c->links(idx).back();
-    auto ev = e_to_v->links(idx);
-    assert(ev.size() == num_vertices);
-    auto cv = c_to_v->links(cell);
-    std::span<const std::int32_t> xc(
-        xdofs.data_handle() + xdofs.extent(1) * cell, xdofs.extent(1));
-    for (std::size_t j = 0; j < num_vertices; ++j)
+    const std::int32_t e = entities[i];
+
+    // Get a cell connected to the entity
+    assert(!e_to_c->links(e).empty());
+    std::int32_t c = e_to_c->links(e).front();
+
+    // Get the local index of the entity
+    std::span<const std::int32_t> cell_entities = c_to_e->links(c);
+    auto it = std::find(cell_entities.begin(), cell_entities.end(), e);
+    assert(it != cell_entities.end());
+    std::size_t local_entity = std::distance(cell_entities.begin(), it);
+
+    std::vector<std::int32_t> closure_dofs(closure_dofs_all[dim][local_entity]);
+
+    // Cell sub-entities must be permuted so that their local orientation agrees
+    // with their global orientation
+    if (dim != topology->dim() and permute)
     {
-      int k = std::distance(cv.begin(), std::find(cv.begin(), cv.end(), ev[j]));
-      assert(k < (int)cv.size());
-      geometry_idx[i * num_vertices + j] = xc[k];
+      mesh::CellType entity_type
+          = mesh::cell_entity_type(cell_type, dim, local_entity);
+      coord_ele.permute_subentity_closure(closure_dofs, cell_info[c],
+                                          entity_type, local_entity);
     }
 
-    if (orient)
-    {
-      // Compute cell midpoint
-      std::array<T, 3> midpoint = {0, 0, 0};
-      for (std::int32_t j : xc)
-        for (int k = 0; k < 3; ++k)
-          midpoint[k] += x[3 * j + k];
-      std::transform(midpoint.begin(), midpoint.end(), midpoint.begin(),
-                     [size = xc.size()](auto x) { return x / size; });
-
-      // Compute vector triple product of two edges and vector to midpoint
-      std::array<T, 3> p0, p1, p2;
-      std::copy_n(std::next(x.begin(), 3 * geometry_idx[i * num_vertices + 0]),
-                  3, p0.begin());
-      std::copy_n(std::next(x.begin(), 3 * geometry_idx[i * num_vertices + 1]),
-                  3, p1.begin());
-      std::copy_n(std::next(x.begin(), 3 * geometry_idx[i * num_vertices + 2]),
-                  3, p2.begin());
-
-      std::array<T, 9> a;
-      std::transform(midpoint.begin(), midpoint.end(), p0.begin(), a.begin(),
-                     [](auto x, auto y) { return x - y; });
-      std::transform(p1.begin(), p1.end(), p0.begin(), std::next(a.begin(), 3),
-                     [](auto x, auto y) { return x - y; });
-      std::transform(p2.begin(), p2.end(), p0.begin(), std::next(a.begin(), 6),
-                     [](auto x, auto y) { return x - y; });
-
-      // Midpoint direction should be opposite to normal, hence this
-      // should be negative. Switch points if not.
-      if (math::det(a.data(), {3, 3}) > 0.0)
-      {
-        std::swap(geometry_idx[i * num_vertices + 1],
-                  geometry_idx[i * num_vertices + 2]);
-      }
-    }
+    // Extract degrees of freedom
+    auto x_c = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+        xdofs, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    for (std::int32_t entity_dof : closure_dofs)
+      entity_xdofs.push_back(x_c[entity_dof]);
   }
 
-  return geometry_idx;
+  return entity_xdofs;
 }
 
 /// Create a function that computes destination rank for mesh cells in
@@ -759,7 +726,7 @@ compute_incident_entities(const Topology& topology,
 /// distribution of the mesh.
 ///
 /// From mesh input data that is distributed across processes, a
-/// distributed a mesh::Mesh is created. If the partitioning function is
+/// distributed mesh::Mesh is created. If the partitioning function is
 /// not callable, i.e. it does not store a callable function, no
 /// re-distribution of cells is done.
 ///
@@ -845,7 +812,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
       = extract_topology(celltype, doflayout, cells1.array());
 
   // Build local dual graph for owned cells to (i) get list of vertices
-  // on the process boundary and (ii) and apply re-ordering to cells for
+  // on the process boundary and (ii) apply re-ordering to cells for
   // locality
   std::vector<std::int64_t> boundary_v;
   {
@@ -947,6 +914,96 @@ create_mesh(MPI_Comm comm, std::span<const std::int64_t> cells,
   }
 }
 
+/// @brief Create a sub-geometry from a mesh and a subset of mesh entities to be
+/// included. A sub-geometry is simply a `Geometry` object containing only the
+/// geometric information for the subset of entities. The entities may differ in
+/// topological dimension from the original mesh.
+///
+/// @param[in] mesh The full mesh.
+/// @param[in] dim Topological dimension of the sub-topology.
+/// @param[in] subentity_to_entity Map from sub-topology entity to the
+/// entity in the parent topology.
+/// @return A sub-geometry and a map from sub-geometry coordinate
+/// degree-of-freedom to the coordinate degree-of-freedom in `geometry`.
+template <std::floating_point T>
+std::pair<Geometry<T>, std::vector<int32_t>>
+create_subgeometry(const Mesh<T>& mesh, int dim,
+                   std::span<const std::int32_t> subentity_to_entity)
+{
+  const Geometry<T>& geometry = mesh.geometry();
+
+  // Get the geometry dofs in the sub-geometry based on the entities in
+  // sub-geometry
+  const fem::ElementDofLayout layout = geometry.cmap().create_dof_layout();
+
+  std::vector<std::int32_t> x_indices
+      = entities_to_geometry(mesh, dim, subentity_to_entity, true);
+
+  std::vector<std::int32_t> sub_x_dofs = x_indices;
+  std::sort(sub_x_dofs.begin(), sub_x_dofs.end());
+  sub_x_dofs.erase(std::unique(sub_x_dofs.begin(), sub_x_dofs.end()),
+                   sub_x_dofs.end());
+
+  // Get the sub-geometry dofs owned by this process
+  auto x_index_map = geometry.index_map();
+  assert(x_index_map);
+
+  std::shared_ptr<common::IndexMap> sub_x_dof_index_map;
+  std::vector<std::int32_t> subx_to_x_dofmap;
+  {
+    auto [map, new_to_old] = common::create_sub_index_map(
+        *x_index_map, sub_x_dofs, common::IndexMapOrder::any, true);
+    sub_x_dof_index_map = std::make_shared<common::IndexMap>(std::move(map));
+    subx_to_x_dofmap = std::move(new_to_old);
+  }
+
+  // Create sub-geometry coordinates
+  std::span<const T> x = geometry.x();
+  std::int32_t sub_num_x_dofs = subx_to_x_dofmap.size();
+  std::vector<T> sub_x(3 * sub_num_x_dofs);
+  for (int i = 0; i < sub_num_x_dofs; ++i)
+  {
+    std::copy_n(std::next(x.begin(), 3 * subx_to_x_dofmap[i]), 3,
+                std::next(sub_x.begin(), 3 * i));
+  }
+
+  // Create geometry to sub-geometry  map
+  std::vector<std::int32_t> x_to_subx_dof_map(
+      x_index_map->size_local() + x_index_map->num_ghosts(), -1);
+  for (std::size_t i = 0; i < subx_to_x_dofmap.size(); ++i)
+    x_to_subx_dof_map[subx_to_x_dofmap[i]] = i;
+
+  // Create sub-geometry dofmap
+  std::vector<std::int32_t> sub_x_dofmap;
+  sub_x_dofmap.reserve(x_indices.size());
+  std::transform(x_indices.cbegin(), x_indices.cend(),
+                 std::back_inserter(sub_x_dofmap),
+                 [&x_to_subx_dof_map](auto x_dof)
+                 {
+                   assert(x_to_subx_dof_map[x_dof] != -1);
+                   return x_to_subx_dof_map[x_dof];
+                 });
+
+  // Create sub-geometry coordinate element
+  CellType sub_coord_cell
+      = cell_entity_type(geometry.cmap().cell_shape(), dim, 0);
+  fem::CoordinateElement<T> sub_cmap(sub_coord_cell, geometry.cmap().degree(),
+                                     geometry.cmap().variant());
+
+  // Sub-geometry input_global_indices
+  const std::vector<std::int64_t>& igi = geometry.input_global_indices();
+  std::vector<std::int64_t> sub_igi;
+  sub_igi.reserve(subx_to_x_dofmap.size());
+  std::transform(subx_to_x_dofmap.begin(), subx_to_x_dofmap.end(),
+                 std::back_inserter(sub_igi),
+                 [&igi](std::int32_t sub_x_dof) { return igi[sub_x_dof]; });
+
+  // Create geometry
+  return {Geometry(sub_x_dof_index_map, std::move(sub_x_dofmap), {sub_cmap},
+                   std::move(sub_x), geometry.dim(), std::move(sub_igi)),
+          std::move(subx_to_x_dofmap)};
+}
+
 /// @brief Create a new mesh consisting of a subset of entities in a
 /// mesh.
 /// @param[in] mesh The mesh
@@ -971,8 +1028,9 @@ create_submesh(const Mesh<T>& mesh, int dim,
   mesh.topology_mutable()->create_entities(dim);
   mesh.topology_mutable()->create_connectivity(dim, tdim);
   mesh.topology_mutable()->create_connectivity(tdim, dim);
-  auto [geometry, subx_to_x_dofmap] = mesh::create_subgeometry(
-      *mesh.topology(), mesh.geometry(), dim, subentity_to_entity);
+  mesh.topology_mutable()->create_entity_permutations();
+  auto [geometry, subx_to_x_dofmap]
+      = mesh::create_subgeometry(mesh, dim, subentity_to_entity);
 
   return {Mesh(mesh.comm(), std::make_shared<Topology>(std::move(topology)),
                std::move(geometry)),

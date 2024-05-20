@@ -30,24 +30,44 @@
 # First of all, let's import the modules that will be used:
 
 # +
+import importlib.util
 import sys
 
 from mpi4py import MPI
 
-from analytical_efficiencies_wire import calculate_analytical_efficiencies
-from mesh_wire import generate_mesh_wire
+import numpy as np
+
+if importlib.util.find_spec("petsc4py") is not None:
+    import dolfinx
+
+    if not dolfinx.has_petsc:
+        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
+        exit(0)
+
+    from petsc4py import PETSc
+
+    if PETSc.IntType == np.int64 and MPI.COMM_WORLD.size > 1:
+        print("This solver fails with PETSc and 64-bit integers becaude of memory errors in MUMPS.")
+        # Note: when PETSc.IntType == np.int32, superlu_dist is used rather
+        # than MUMPS and does not trigger memory failures.
+        exit(0)
+else:
+    print("This demo requires petsc4py.")
+    exit(0)
+
+
+from scipy.special import h2vp, hankel2, jv, jvp
 
 import ufl
 from basix.ufl import element
-from dolfinx import default_scalar_type, fem, io, plot
+from dolfinx import default_real_type, default_scalar_type, fem, io, plot
 from dolfinx.fem.petsc import LinearProblem
 
 try:
     import gmsh
 except ModuleNotFoundError:
     print("This demo requires gmsh to be installed")
-    sys.exit(0)
-import numpy as np
+    exit(0)
 
 try:
     import pyvista
@@ -57,7 +77,182 @@ except ModuleNotFoundError:
     print("pyvista and pyvistaqt are required to visualise the solution")
     have_pyvista = False
 
+
 # -
+# This file defines the `generate_mesh_wire` function, which is used to
+# generate the mesh used for scattering boundary conditions demo. The
+# mesh is made up by a central circle representing the wire, and an
+# external circle, which represents the external boundary of our domain,
+# where scattering boundary conditions are applied. The
+# `generate_mesh_wire` function takes as input:
+
+# - `radius_wire`: the radius of the wire
+# - `radius_dom`: the radius of the external boundary
+# - `in_wire_size`: the mesh size at a distance `0.8 * radius_wire` from
+#   the origin
+# - `on_wire_size`: the mesh size on the wire boundary
+# - `bkg_size`: the mesh size at a distance `0.9 * radius_dom` from the
+#   origin
+# - `boundary_size`: the mesh size on the external boundary
+# - `au_tag`: the tag of the physical group representing the wire
+# - `bkg_tag`: the tag of the physical group representing the background
+# - `boundary_tag`: the tag of the physical group representing the
+#   boundary
+#
+# In particular, `bkg_size` and `boundary_size` are necessary to set a
+# finer mesh on the external boundary (to improve the accuracy of the
+# scattering efficiency calculation) while keenp.ping a coarser size over
+# the rest of the domain.
+
+
+def generate_mesh_wire(
+    radius_wire: float,
+    radius_dom: float,
+    in_wire_size: float,
+    on_wire_size: float,
+    bkg_size: float,
+    boundary_size: float,
+    au_tag: int,
+    bkg_tag: int,
+    boundary_tag: int,
+):
+    gmsh.model.add("wire")
+
+    # A dummy boundary is added for setting a finer mesh
+    gmsh.model.occ.addCircle(0.0, 0.0, 0.0, radius_wire * 0.8, angle1=0.0, angle2=2 * np.pi, tag=1)
+    gmsh.model.occ.addCircle(0.0, 0.0, 0.0, radius_wire, angle1=0, angle2=2 * np.pi, tag=2)
+
+    # A dummy boundary is added for setting a finer mesh
+    gmsh.model.occ.addCircle(0.0, 0.0, 0.0, radius_dom * 0.9, angle1=0.0, angle2=2 * np.pi, tag=3)
+    gmsh.model.occ.addCircle(0.0, 0.0, 0.0, radius_dom, angle1=0.0, angle2=2 * np.pi, tag=4)
+
+    gmsh.model.occ.addCurveLoop([1], tag=1)
+    gmsh.model.occ.addPlaneSurface([1], tag=1)
+
+    gmsh.model.occ.addCurveLoop([2], tag=2)
+    gmsh.model.occ.addCurveLoop([1], tag=3)
+    gmsh.model.occ.addPlaneSurface([2, 3], tag=2)
+
+    gmsh.model.occ.addCurveLoop([3], tag=4)
+    gmsh.model.occ.addCurveLoop([2], tag=5)
+    gmsh.model.occ.addPlaneSurface([4, 5], tag=3)
+
+    gmsh.model.occ.addCurveLoop([4], tag=6)
+    gmsh.model.occ.addCurveLoop([3], tag=7)
+    gmsh.model.occ.addPlaneSurface([6, 7], tag=4)
+
+    gmsh.model.occ.synchronize()
+
+    gmsh.model.addPhysicalGroup(2, [1, 2], tag=au_tag)
+    gmsh.model.addPhysicalGroup(2, [3, 4], tag=bkg_tag)
+
+    gmsh.model.addPhysicalGroup(1, [4], tag=boundary_tag)
+
+    gmsh.model.mesh.setSize([(0, 1)], size=in_wire_size)
+    gmsh.model.mesh.setSize([(0, 2)], size=on_wire_size)
+    gmsh.model.mesh.setSize([(0, 3)], size=bkg_size)
+    gmsh.model.mesh.setSize([(0, 4)], size=boundary_size)
+
+    gmsh.model.mesh.generate(2)
+
+    return gmsh.model
+
+
+# This file contains a function for the calculation of the
+# absorption, scattering and extinction efficiencies of a wire
+# being hit normally by a TM-polarized electromagnetic wave.
+#
+# The formula are taken from:
+# Milton Kerker, "The Scattering of Light and Other Electromagnetic Radiation",
+# Chapter 6, Elsevier, 1969.
+#
+# ## Implementation
+# First of all, let's define the parameters of the problem:
+#
+# - $n = \sqrt{\varepsilon}$: refractive index of the wire,
+# - $n_b$: refractive index of the background medium,
+# - $m = n/n_b$: relative refractive index of the wire,
+# - $\lambda_0$: wavelength of the electromagnetic wave,
+# - $r_w$: radius of the cross-section of the wire,
+# - $\alpha = 2\pi r_w n_b/\lambda_0$.
+#
+# Now, let's define the $a_\nu$ coefficients as:
+#
+# $$
+# \begin{equation}
+# a_\nu=\frac{J_\nu(\alpha) J_\nu^{\prime}(m \alpha)-m J_\nu(m \alpha)
+# J_\nu^{\prime}(\alpha)}{H_\nu^{(2)}(\alpha) J_\nu^{\prime}(m \alpha)
+# -m J_\nu(m \alpha) H_\nu^{(2){\prime}}(\alpha)}
+# \end{equation}
+# $$
+#
+# where:
+# - $J_\nu(x)$: $\nu$-th order Bessel function of the first kind,
+# - $J_\nu^{\prime}(x)$: first derivative with respect to $x$ of
+# the $\nu$-th order Bessel function of the first kind,
+# - $H_\nu^{(2)}(x)$: $\nu$-th order Hankel function of the second kind,
+# - $H_\nu^{(2){\prime}}(x)$: first derivative with respect to $x$ of
+# the $\nu$-th order Hankel function of the second kind.
+#
+# We can now calculate the scattering, extinction and absorption
+# efficiencies as:
+#
+# $$
+# & q_{\mathrm{sca}}=(2 / \alpha)\left[\left|a_0\right|^{2}
+# +2 \sum_{\nu=1}^{\infty}\left|a_\nu\right|^{2}\right] \\
+# & q_{\mathrm{ext}}=(2 / \alpha) \operatorname{Re}\left[ a_0
+# +2 \sum_{\nu=1}^{\infty} a_\nu\right] \\
+# & q_{\mathrm{abs}} = q_{\mathrm{ext}} - q_{\mathrm{sca}}
+# $$
+
+# The functions that we import from `scipy.special` correspond to:
+#
+# - `jv(nu, x)` ⟷ $J_\nu(x)$,
+# - `jvp(nu, x, 1)` ⟷ $J_\nu^{\prime}(x)$,
+# - `hankel2(nu, x)` ⟷ $H_\nu^{(2)}(x)$,
+# - `h2vp(nu, x, 1)` ⟷ $H_\nu^{(2){\prime}}(x)$.
+#
+# Next, we define a function for calculating the analytical efficiencies
+# in Python. The inputs of the function are:
+#
+# - `eps` ⟷ $\varepsilon$,
+# - `n_bkg` ⟷ $n_b$,
+# - `wl0` ⟷ $\lambda_0$,
+# - `radius_wire` ⟷ $r_w$.
+#
+# We also define a nested function for the calculation of $a_l$. For the
+# final calculation of the efficiencies, the summation over the different
+# orders of the Bessel functions is truncated at $\nu=50$.
+
+
+# +
+def compute_a(nu: int, m: complex, alpha: float) -> float:
+    J_nu_alpha = jv(nu, alpha)
+    J_nu_malpha = jv(nu, m * alpha)
+    J_nu_alpha_p = jvp(nu, alpha, 1)
+    J_nu_malpha_p = jvp(nu, m * alpha, 1)
+
+    H_nu_alpha = hankel2(nu, alpha)
+    H_nu_alpha_p = h2vp(nu, alpha, 1)
+
+    a_nu_num = J_nu_alpha * J_nu_malpha_p - m * J_nu_malpha * J_nu_alpha_p
+    a_nu_den = H_nu_alpha * J_nu_malpha_p - m * J_nu_malpha * H_nu_alpha_p
+    return a_nu_num / a_nu_den
+
+
+def calculate_analytical_efficiencies(
+    eps: complex, n_bkg: float, wl0: float, radius_wire: float, num_n: int = 50
+) -> tuple[float, float, float]:
+    m = np.sqrt(np.conj(eps)) / n_bkg
+    alpha = 2 * np.pi * radius_wire / wl0 * n_bkg
+    c = 2 / alpha
+    q_ext = c * np.real(compute_a(0, m, alpha))
+    q_sca = c * np.abs(compute_a(0, m, alpha)) ** 2
+    for nu in range(1, num_n + 1):
+        q_ext += c * 2 * np.real(compute_a(nu, m, alpha))
+        q_sca += c * 2 * np.abs(compute_a(nu, m, alpha)) ** 2
+    return q_ext - q_sca, q_sca, q_ext
+
 
 # Since we want to solve time-harmonic Maxwell's equation, we need to
 # solve a complex-valued PDE, and therefore need to use PETSc compiled
@@ -283,7 +478,7 @@ theta = np.pi / 4  # Angle of incidence of the background field
 # represent the electric field
 
 degree = 3
-curl_el = element("N1curl", domain.basix_cell(), degree)
+curl_el = element("N1curl", domain.basix_cell(), degree, dtype=default_real_type)
 V = fem.functionspace(domain, curl_el)
 
 # Next, we can interpolate $\mathbf{E}_b$ into the function space $V$:

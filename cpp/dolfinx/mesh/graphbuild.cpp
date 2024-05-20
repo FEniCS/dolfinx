@@ -48,7 +48,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
     std::size_t shape1, std::span<const std::int32_t> cells,
     const graph::AdjacencyList<std::int32_t>& local_graph)
 {
-  LOG(INFO) << "Build nonlocal part of mesh dual graph";
+  spdlog::info("Build nonlocal part of mesh dual graph");
   common::Timer timer("Compute non-local part of mesh dual graph");
 
   // TODO: Two possible straightforward optimisations:
@@ -107,7 +107,7 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
     fshape1 = recv_buffer_r[0];
     vrange = {-recv_buffer_r[1], recv_buffer_r[2] + 1};
 
-    LOG(2) << "Max. vertices per facet=" << fshape1 << "\n";
+    spdlog::debug("Max. vertices per facet={}", fshape1);
   }
   const std::int32_t buffer_shape1 = fshape1 + 1;
 
@@ -141,9 +141,9 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
         dest.push_back((*it)[0]);
 
         // Find iterator to next global rank
-        auto it1 = std::find_if(it, dest_to_index.end(),
-                                [r = dest.back()](auto& idx)
-                                { return idx[0] != r; });
+        auto it1
+            = std::find_if(it, dest_to_index.end(), [r = dest.back()](auto& idx)
+                           { return idx[0] != r; });
 
         // Store number of items for current rank
         num_items_per_dest.push_back(std::distance(it, it1));
@@ -162,11 +162,12 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
   // Determine source ranks
   const std::vector<int> src
       = dolfinx::MPI::compute_graph_edges_nbx(comm, dest);
-  LOG(INFO) << "Number of destination and source ranks in non-local dual graph "
-               "construction, and ratio to total number of ranks: "
-            << dest.size() << ", " << src.size() << ", "
-            << static_cast<double>(dest.size()) / num_ranks << ", "
-            << static_cast<double>(src.size()) / num_ranks;
+  spdlog::info("Number of destination and source ranks in non-local dual graph "
+               "construction, and ratio to total number of ranks: {}, {}, "
+               "{}, {}",
+               dest.size(), src.size(),
+               static_cast<double>(dest.size()) / num_ranks,
+               static_cast<double>(src.size()) / num_ranks);
 
   // Create neighbourhood communicator for sending data to
   // post offices
@@ -353,7 +354,7 @@ std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
 mesh::build_local_dual_graph(CellType celltype,
                              std::span<const std::int64_t> cells)
 {
-  LOG(INFO) << "Build local part of mesh dual graph";
+  spdlog::info("Build local part of mesh dual graph");
   common::Timer timer("Compute local part of mesh dual graph");
 
   if (cells.empty())
@@ -488,7 +489,7 @@ graph::AdjacencyList<std::int64_t>
 mesh::build_dual_graph(MPI_Comm comm, CellType celltype,
                        const graph::AdjacencyList<std::int64_t>& cells)
 {
-  LOG(INFO) << "Building mesh dual graph";
+  spdlog::info("Building mesh dual graph");
 
   // Compute local part of dual graph (cells are graph nodes, and edges
   // are connections by facet)
@@ -500,9 +501,9 @@ mesh::build_dual_graph(MPI_Comm comm, CellType celltype,
   graph::AdjacencyList graph
       = compute_nonlocal_dual_graph(comm, facets, shape1, fcells, local_graph);
 
-  LOG(INFO) << "Graph edges (local: " << local_graph.offsets().back()
-            << ", non-local: "
-            << graph.offsets().back() - local_graph.offsets().back() << ")";
+  spdlog::info("Graph edges (local: {}, non-local: {})",
+               local_graph.offsets().back(),
+               graph.offsets().back() - local_graph.offsets().back());
 
   return graph;
 }

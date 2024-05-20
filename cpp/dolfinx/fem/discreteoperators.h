@@ -101,9 +101,8 @@ void discrete_gradient(mesh::Topology& topology,
       tdim * phi0.extent(1), phi0.extent(2));
 
   // Get inverse DOF transform function
-  auto apply_inverse_dof_transform
-      = e1.template get_pre_dof_transformation_function<T>(
-          FiniteElement<U>::doftransform::inverse_transpose, false);
+  auto apply_inverse_dof_transform = e1.template dof_transformation_fn<T>(
+      doftransform::inverse_transpose, false);
 
   // Generate cell permutations
   topology.create_entity_permutations();
@@ -186,11 +185,9 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   const int bs0 = e0->block_size();
   const int bs1 = e1->block_size();
   auto apply_dof_transformation0
-      = e0->template get_pre_dof_transformation_function<U>(
-          FiniteElement<U>::doftransform::standard, false);
-  auto apply_inverse_dof_transform1
-      = e1->template get_pre_dof_transformation_function<T>(
-          FiniteElement<U>::doftransform::inverse_transpose, false);
+      = e0->template dof_transformation_fn<U>(doftransform::standard, false);
+  auto apply_inverse_dof_transform1 = e1->template dof_transformation_fn<T>(
+      doftransform::inverse_transpose, false);
 
   // Get sizes of elements
   const std::size_t space_dim0 = e0->space_dimension();
@@ -235,8 +232,7 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   // Clamp values
   std::transform(basis_derivatives_reference0_b.begin(),
                  basis_derivatives_reference0_b.end(),
-                 basis_derivatives_reference0_b.begin(),
-                 [atol = 1e-14](auto x)
+                 basis_derivatives_reference0_b.begin(), [atol = 1e-14](auto x)
                  { return std::abs(x) < atol ? 0.0 : x; });
 
   // Create working arrays
@@ -297,9 +293,8 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     // Get cell geometry (coordinate dofs)
-    auto x_dofs
-        = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
-            submdspan(x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+    auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+        x_dofmap, c, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
     for (std::size_t i = 0; i < x_dofs.size(); ++i)
     {
       for (std::size_t j = 0; j < gdim; ++j)
@@ -310,17 +305,16 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
     std::fill(J_b.begin(), J_b.end(), 0);
     for (std::size_t p = 0; p < Xshape[0]; ++p)
     {
-      auto dphi
-          = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
-              submdspan(phi, std::pair(1, tdim + 1), p,
-                        MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
-      auto _J = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
-          submdspan(J, p, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
-                    MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto dphi = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+          phi, std::pair(1, tdim + 1), p,
+          MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, 0);
+      auto _J = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+          J, p, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
+          MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
       cmap.compute_jacobian(dphi, coord_dofs, _J);
-      auto _K = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
-          submdspan(K, p, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
-                    MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto _K = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+          K, p, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
+          MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
       cmap.compute_jacobian_inverse(_J, _K);
       detJ[p] = cmap.compute_jacobian_determinant(_J, det_scratch);
     }
@@ -342,19 +336,18 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
 
     for (std::size_t p = 0; p < basis0.extent(0); ++p)
     {
-      auto _u = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
-          submdspan(basis0, p, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
-                    MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
-      auto _U = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
-          submdspan(basis_reference0, p,
-                    MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
-                    MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
-      auto _K = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
-          submdspan(K, p, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
-                    MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
-      auto _J = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
-          submdspan(J, p, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
-                    MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto _u = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+          basis0, p, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
+          MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto _U = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+          basis_reference0, p, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
+          MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto _K = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+          K, p, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
+          MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto _J = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+          J, p, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
+          MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
       push_forward_fn0(_u, _U, _J, detJ[p], _K);
     }
 
@@ -368,20 +361,18 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
     // Pull back the physical values to the reference of output space
     for (std::size_t p = 0; p < basis_values.extent(0); ++p)
     {
-      auto _u = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
-          submdspan(basis_values, p,
-                    MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
-                    MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
-      auto _U = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
-          submdspan(mapped_values, p,
-                    MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
-                    MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
-      auto _K = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
-          submdspan(K, p, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
-                    MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
-      auto _J = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
-          submdspan(J, p, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
-                    MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto _u = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+          basis_values, p, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
+          MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto _U = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+          mapped_values, p, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
+          MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto _K = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+          K, p, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
+          MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+      auto _J = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+          J, p, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent,
+          MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
       pull_back_fn1(_U, _u, _K, 1.0 / detJ[p], _J);
     }
 
@@ -401,11 +392,9 @@ void interpolation_matrix(const FunctionSpace<U>& V0,
     {
       for (std::size_t i = 0; i < mapped_values.extent(1); ++i)
       {
-        auto values
-            = MDSPAN_IMPL_STANDARD_NAMESPACE::MDSPAN_IMPL_PROPOSED_NAMESPACE::
-                submdspan(mapped_values,
-                          MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, i,
-                          MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
+        auto values = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
+            mapped_values, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent, i,
+            MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
         impl::interpolation_apply(Pi_1, values, std::span(local1), bs1);
         for (std::size_t j = 0; j < local1.size(); j++)
           Ab[space_dim0 * j + i] = local1[j];

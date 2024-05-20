@@ -11,10 +11,14 @@ import os
 import pathlib
 import time
 
-import petsc4py.lib
 from mpi4py import MPI
-from petsc4py import PETSc
-from petsc4py import get_config as PETSc_get_config
+
+try:
+    from petsc4py import PETSc
+
+    from dolfinx.fem.petsc import assemble_matrix
+except ImportError:
+    pass
 
 import numpy as np
 import pytest
@@ -23,7 +27,6 @@ import dolfinx
 import dolfinx.pkgconfig
 import ufl
 from dolfinx.fem import Function, form, functionspace
-from dolfinx.fem.petsc import assemble_matrix
 from dolfinx.mesh import create_unit_square
 from dolfinx.utils import cffi_utils as petsc_cffi
 from dolfinx.utils import ctypes_utils as petsc_ctypes
@@ -71,7 +74,10 @@ def get_matsetvalues_cffi_api():
     if dolfinx.pkgconfig.exists("dolfinx"):
         dolfinx_pc = dolfinx.pkgconfig.parse("dolfinx")
     else:
-        raise RuntimeError("Could not find DOLFINx pkgconfig file")
+        raise RuntimeError("Could not find DOLFINx pkg-config file")
+
+    import petsc4py.lib
+    from petsc4py import get_config as PETSc_get_config
 
     cffi_support.register_type(ffi.typeof("float _Complex"), numba.types.complex64)
     cffi_support.register_type(ffi.typeof("double _Complex"), numba.types.complex128)
@@ -262,8 +268,8 @@ def test_custom_mesh_loop_rank1(dtype):
     #     assemble_vector_parallel(b, x_dofs, x, dofmap_t.array, dofmap_t.offsets, num_owned_cells)
     #     end = time.time()
     #     print("Time (numba parallel, pass {}): {}".format(i, end - start))
-    # btmp.vector.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    # assert (btmp.vector - b0.vector).norm() == pytest.approx(0.0)
+    # btmp.x.petsc_vec.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    # assert (btmp.x.petsc_vec - b0.x.petsc_vec).norm() == pytest.approx(0.0)
 
     # Test against generated code and general assembler
     v = ufl.TestFunction(V)
@@ -302,6 +308,7 @@ def test_custom_mesh_loop_rank1(dtype):
     assert np.linalg.norm(b3.x.array - b0.x.array) == pytest.approx(0.0, abs=1e-8)
 
 
+@pytest.mark.petsc4py
 @pytest.mark.parametrize(
     "set_vals,backend",
     [

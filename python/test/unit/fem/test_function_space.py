@@ -36,8 +36,10 @@ def W(mesh):
 
 @pytest.fixture
 def Q(mesh):
-    W = element("Lagrange", mesh.basix_cell(), 1, shape=(mesh.geometry.dim,))
-    V = element("Lagrange", mesh.basix_cell(), 1)
+    W = element(
+        "Lagrange", mesh.basix_cell(), 1, shape=(mesh.geometry.dim,), dtype=default_real_type
+    )
+    V = element("Lagrange", mesh.basix_cell(), 1, dtype=default_real_type)
     return functionspace(mesh, mixed_element([W, V]))
 
 
@@ -168,6 +170,8 @@ def test_collapse(W, V):
         Function(W.sub(1))
 
     Ws = [W.sub(i).collapse() for i in range(W.num_sub_spaces)]
+    for Wi, _ in Ws:
+        assert np.allclose(Wi.dofmap.index_map.ghosts, W.dofmap.index_map.ghosts)
 
     msh = W.mesh
     cell_imap = msh.topology.index_map(msh.topology.dim)
@@ -181,9 +185,9 @@ def test_collapse(W, V):
                 new_to_old = Ws[k][1]
                 assert dof * bs + k == new_to_old[new_dof]
 
-    f_0 = Function(Ws[0][0])
-    f_1 = Function(V)
-    assert f_0.x.index_map.size_global == f_1.x.index_map.size_global
+    f0 = Function(Ws[0][0])
+    f1 = Function(V)
+    assert f0.x.index_map.size_global == f1.x.index_map.size_global
 
 
 def test_argument_equality(mesh, V, V2, W, W2):
@@ -238,7 +242,7 @@ def test_argument_equality(mesh, V, V2, W, W2):
 
 def test_cell_mismatch(mesh):
     """Test that cell mismatch raises early enough from UFL"""
-    e = element("P", "triangle", 1)
+    e = element("P", "triangle", 1, dtype=default_real_type)
     with pytest.raises(BaseException):
         functionspace(mesh, e)
 
@@ -265,7 +269,7 @@ def test_vector_function_space_cell_type():
 
     # Create a mesh containing a single interval living in 2D
     cell = Cell("interval")
-    domain = Mesh(element("Lagrange", "interval", 1, shape=(1,)))
+    domain = Mesh(element("Lagrange", "interval", 1, shape=(1,), dtype=default_real_type))
     cells = np.array([[0, 1]], dtype=np.int64)
     x = np.array([[0.0, 0.0], [1.0, 1.0]])
     mesh = create_mesh(comm, cells, x, domain)

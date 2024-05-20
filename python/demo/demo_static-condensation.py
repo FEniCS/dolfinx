@@ -22,8 +22,20 @@
 # +
 from pathlib import Path
 
+try:
+    from petsc4py import PETSc
+
+    import dolfinx
+
+    if not dolfinx.has_petsc:
+        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
+        exit(0)
+except ModuleNotFoundError:
+    print("This demo requires petsc4py.")
+    exit(0)
+
+
 from mpi4py import MPI
-from petsc4py import PETSc
 
 import cffi
 import numba
@@ -49,7 +61,7 @@ from dolfinx.jit import ffcx_jit
 from dolfinx.mesh import locate_entities_boundary, meshtags
 from ffcx.codegeneration.utils import numba_ufcx_kernel_signature as ufcx_signature
 
-if PETSc.RealType == np.float32:  # type: ignore
+if np.issubdtype(PETSc.RealType, np.float32):  # type: ignore
     print("float32 not yet supported for this demo.")
     exit(0)
 
@@ -151,7 +163,7 @@ def tabulate_A(A_, w_, c_, coords_, entity_local_index, permutation=ffi.NULL):
 formtype = form_cpp_class(PETSc.ScalarType)  # type: ignore
 cells = np.arange(msh.topology.index_map(msh.topology.dim).size_local)
 integrals = {IntegralType.cell: [(-1, tabulate_A.address, cells)]}
-a_cond = Form(formtype([U._cpp_object, U._cpp_object], integrals, [], [], False, None))
+a_cond = Form(formtype([U._cpp_object, U._cpp_object], integrals, [], [], False, {}, None))
 
 A_cond = assemble_matrix(a_cond, bcs=[bc])
 A_cond.assemble()
@@ -163,7 +175,7 @@ set_bc(b, [bc])
 uc = Function(U)
 solver = PETSc.KSP().create(A_cond.getComm())  # type: ignore
 solver.setOperators(A_cond)
-solver.solve(b, uc.vector)
+solver.solve(b, uc.x.petsc_vec)
 
 # Pure displacement based formulation
 a = form(-ufl.inner(sigma_u(u), ufl.grad(v)) * ufl.dx)

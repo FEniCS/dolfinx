@@ -24,13 +24,23 @@ using namespace dolfinx::refinement;
 namespace
 {
 //-----------------------------------------------------------------------------
-// 2D version of subdivision allowing for uniform subdivision (flag)
-std::vector<std::int32_t> get_triangles(std::span<const std::int64_t> indices,
-                                        const std::int32_t longest_edge,
-                                        bool uniform)
+/// 2D version of subdivision allowing for uniform subdivision (flag)
+/// @param[in] indices Vector containing the
+/// global indices for the original vertices and potential new vertices at each
+/// edge. If an edge is not refined its corresponding entry is -1. Size
+/// `num_vertices + num_edges`
+/// @param[in] longest_edge Local index of the longest edge in the triangle.
+/// @param[in] uniform If true, the triangle is subdivided into four similar
+/// sub-triangles.
+/// @returns Local indices for each sub-divived triangle
+std::pair<std::array<std::int32_t, 12>, std::size_t>
+get_triangles(std::span<const std::int64_t> indices,
+              const std::int32_t longest_edge, bool uniform)
 {
-  // v0 and v1 are at ends of longest_edge (e2) opposite vertex has same
-  // index as longest_edge
+  // NOTE: The assumption below is based on the UFC ordering of a triangle, i.e.
+  // that the N-th edge of a triangle is the edge where the N-th vertex is not
+  // part of the set. v0 and v1 are at ends of longest_edge (e2) opposite vertex
+  // has same index as longest_edge
   const std::int32_t v0 = (longest_edge + 1) % 3;
   const std::int32_t v1 = (longest_edge + 2) % 3;
   const std::int32_t v2 = longest_edge;
@@ -43,39 +53,32 @@ std::vector<std::int32_t> get_triangles(std::span<const std::int64_t> indices,
 
   // If all edges marked, consider uniform refinement
   if (uniform and indices[e0] >= 0 and indices[e1] >= 0)
-    return {e0, e1, v2, e1, e2, v0, e2, e0, v1, e2, e1, e0};
+    return {{e0, e1, v2, e1, e2, v0, e2, e0, v1, e2, e1, e0}, 12};
 
-  // Break each half of triangle into one or two sub-triangles
-  std::vector<std::int32_t> tri_set;
-  if (indices[e0] >= 0)
-    tri_set = {e2, v2, e0, e2, e0, v1};
+  if (indices[e0] >= 0 and indices[e1] >= 0)
+    return {{e2, v2, e0, e2, e0, v1, e2, v2, e1, e2, e1, v0}, 12};
+  else if (indices[e0] >= 0 and indices[e1] < 0)
+    return {{e2, v2, e0, e2, e0, v1, e2, v2, v0}, 9};
+  else if (indices[e0] < 0 and indices[e1] >= 0)
+    return {{e2, v2, v1, e2, v2, e1, e2, e1, v0}, 9};
   else
-    tri_set = {e2, v2, v1};
-
-  if (indices[e1] >= 0)
-  {
-    tri_set.insert(tri_set.end(), {e2, v2, e1});
-    tri_set.insert(tri_set.end(), {e2, e1, v0});
-  }
-  else
-    tri_set.insert(tri_set.end(), {e2, v2, v0});
-
-  return tri_set;
+    return {{e2, v2, v1, e2, v2, v0}, 6};
 }
+
 //-----------------------------------------------------------------------------
 // 3D version of subdivision
-std::vector<std::int32_t>
+std::pair<std::array<std::int32_t, 32>, std::size_t>
 get_tetrahedra(std::span<const std::int64_t> indices,
                std::span<const std::int32_t> longest_edge)
 {
   // Connectivity matrix for ten possible points (4 vertices + 6 edge
-  // midpoints) ordered {v0, v1, v2, v3, e0, e1, e2, e3, e4, e5} Only need
-  // upper triangle, but sometimes it is easier just to insert both entries
-  // (j,i) and (i,j).
+  // midpoints) ordered {v0, v1, v2, v3, e0, e1, e2, e3, e4, e5} Only
+  // need upper triangle, but sometimes it is easier just to insert both
+  // entries (j,i) and (i,j).
   bool conn[10][10] = {};
 
   // Edge connectivity to vertices (and by extension facets)
-  static const std::int32_t edges[6][2]
+  constexpr std::int32_t edges[6][2]
       = {{2, 3}, {1, 3}, {1, 2}, {0, 3}, {0, 2}, {0, 1}};
 
   // Iterate through cell edges
@@ -138,30 +141,43 @@ get_tetrahedra(std::span<const std::int64_t> indices,
   }
 
   // Iterate through all possible new vertices
-  std::vector<std::int32_t> facet_set, tet_set;
+  std::array<std::int32_t, 32> tet_set;
+  tet_set.fill(-1);
+  std::size_t tet_set_size = 0;
   for (std::int32_t i = 0; i < 10; ++i)
   {
     for (std::int32_t j = i + 1; j < 10; ++j)
     {
       if (conn[i][j])
       {
-        facet_set.clear();
+        std::array<std::int32_t, 10> facet_set_b;
+        std::span<std::int32_t> facet_set(facet_set_b.data(), 0);
         for (std::int32_t k = j + 1; k < 10; ++k)
         {
           if (conn[i][k] and conn[j][k])
           {
             // Note that i < j < m < k
-            for (const std::int32_t& m : facet_set)
+            for (std::int32_t m : facet_set)
+            {
               if (conn[m][k])
-                tet_set.insert(tet_set.end(), {i, j, m, k});
-            facet_set.push_back(k);
+              {
+                assert(tet_set_size + 4 <= tet_set.size());
+                tet_set[tet_set_size++] = i;
+                tet_set[tet_set_size++] = j;
+                tet_set[tet_set_size++] = m;
+                tet_set[tet_set_size++] = k;
+              }
+            }
+
+            facet_set = std::span(facet_set.data(), facet_set.size() + 1);
+            facet_set.back() = k;
           }
         }
       }
     }
   }
 
-  return tet_set;
+  return {std::move(tet_set), tet_set_size};
 }
 //-----------------------------------------------------------------------------
 } // namespace
@@ -169,7 +185,7 @@ get_tetrahedra(std::span<const std::int64_t> indices,
 //-----------------------------------------------------------------------------
 void plaza::impl::enforce_rules(MPI_Comm comm,
                                 const graph::AdjacencyList<int>& shared_edges,
-                                std::vector<std::int8_t>& marked_edges,
+                                std::span<std::int8_t> marked_edges,
                                 const mesh::Topology& topology,
                                 std::span<const std::int32_t> long_edge)
 {
@@ -232,7 +248,7 @@ void plaza::impl::enforce_rules(MPI_Comm comm,
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int32_t>
+std::pair<std::array<std::int32_t, 32>, std::size_t>
 plaza::impl::get_simplices(std::span<const std::int64_t> indices,
                            std::span<const std::int32_t> longest_edge, int tdim,
                            bool uniform)
@@ -240,7 +256,10 @@ plaza::impl::get_simplices(std::span<const std::int64_t> indices,
   if (tdim == 2)
   {
     assert(longest_edge.size() == 1);
-    return get_triangles(indices, longest_edge[0], uniform);
+    auto [_d, size] = get_triangles(indices, longest_edge[0], uniform);
+    std::array<std::int32_t, 32> d;
+    std::copy_n(_d.begin(), size, d.begin());
+    return {d, size};
   }
   else if (tdim == 3)
   {
