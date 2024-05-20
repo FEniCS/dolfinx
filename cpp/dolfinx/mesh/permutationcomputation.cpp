@@ -84,7 +84,13 @@ compute_quad_rot_reflect(const std::vector<std::int32_t>& e_vertices,
   // from the lowest numbered vertex
   std::int32_t post = e_vertices[prev[3 - min_v]];
 
-  // If min_v is 2 or 3, swap. Why?
+  // If min_v is 2 or 3, swap:
+  // 0 - 2       0 - 3
+  // |   |       |   |
+  // 1 - 3       1 - 2
+  // Because of the dolfinx ordering (left), in order to compute the number of
+  // anti-clockwise rotations required correctly, min_v is altered to give the
+  // ordering on the right.
   if (min_v == 2 or min_v == 3)
     min_v = 5 - min_v;
 
@@ -212,7 +218,6 @@ template <int BITSETSIZE>
 std::vector<std::bitset<BITSETSIZE>>
 compute_edge_reflections(const mesh::Topology& topology)
 {
-
   mesh::CellType cell_type = topology.cell_type();
   const int tdim = topology.dim();
   const int edges_per_cell = cell_num_entities(cell_type, 1);
@@ -233,7 +238,7 @@ compute_edge_reflections(const mesh::Topology& topology)
   std::vector<std::int64_t> cell_vertices, vertices;
   for (int c = 0; c < c_to_v->num_nodes(); ++c)
   {
-    cell_vertices.resize(c_to_v->links(c).size());
+    cell_vertices.resize(c_to_v->num_links(c));
     im->local_to_global(c_to_v->links(c), cell_vertices);
     auto cell_edges = c_to_e->links(c);
     for (int i = 0; i < edges_per_cell; ++i)
@@ -263,17 +268,18 @@ template <int BITSETSIZE>
 std::vector<std::bitset<BITSETSIZE>>
 compute_face_permutations(const mesh::Topology& topology)
 {
-  const int tdim = topology.dim();
-  assert(tdim > 2);
-  if (!topology.index_map(2))
-    throw std::runtime_error("Faces have not been computed.");
-
   if (topology.entity_types(3).size() > 1)
   {
     throw std::runtime_error(
         "Cannot compute permutations for mixed topology mesh.");
   }
 
+  const int tdim = topology.dim();
+  assert(tdim > 2);
+  if (!topology.index_map(2))
+    throw std::runtime_error("Faces have not been computed.");
+
+  // Compute face permutations for first cell type in the topology
   return compute_triangle_quad_face_permutations<BITSETSIZE>(topology, 0);
 }
 //-----------------------------------------------------------------------------
