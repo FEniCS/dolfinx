@@ -1,4 +1,5 @@
 
+#include "superlu.h"
 #include "superlu_ddefs.h"
 #include "superlu_sdefs.h"
 #include "superlu_zdefs.h"
@@ -170,3 +171,126 @@ template int superlu_solver(MPI_Comm,
                             const la::MatrixCSR<std::complex<double>>&,
                             const la::Vector<std::complex<double>>&,
                             la::Vector<std::complex<double>>&, bool);
+
+template <typename T>
+SuperLUSolver<T>::SuperLUSolver(MPI_Comm comm, bool verbose)
+    : _comm(comm), _verbose(verbose)
+{
+  int size = dolfinx::MPI::size(comm);
+
+  int nprow = size;
+  int npcol = 1;
+  _grid = std::make_shared<gridinfo_t>();
+  superlu_gridinit(MPI_COMM_WORLD, nprow, npcol, (gridinfo_t*)_grid.get());
+}
+
+template <typename T>
+SuperLUSolver<T>::~SuperLUSolver()
+{
+  if (_A)
+    Destroy_SuperMatrix_Store_dist((SuperMatrix*)_A.get());
+  superlu_gridexit((gridinfo_t*)_grid.get());
+}
+
+template <typename T>
+void SuperLUSolver<T>::set_operator(const la::MatrixCSR<T>& Amat)
+{
+  spdlog::info("Set operator");
+  // Global size
+  m = Amat.index_map(0)->size_global();
+  int n = Amat.index_map(1)->size_global();
+  if (m != n)
+    throw std::runtime_error("Can't solve non-square system");
+
+  // Number of local rows
+  m_loc = Amat.num_owned_rows();
+
+  // First row
+  int first_row = Amat.index_map(0)->local_range()[0];
+
+  // Local number of non-zeros
+  int nnz_loc = Amat.row_ptr()[m_loc];
+  cols.resize(nnz_loc);
+  rowptr.resize(m_loc + 1);
+
+  // Copy row_ptr from int64
+  std::copy(Amat.row_ptr().begin(),
+            std::next(Amat.row_ptr().begin(), m_loc + 1), rowptr.begin());
+
+  // Convert local to global indices (and cast to int_t)
+  std::vector<std::int64_t> global_col_indices(
+      Amat.index_map(1)->global_indices());
+  std::transform(Amat.cols().begin(), std::next(Amat.cols().begin(), nnz_loc),
+                 cols.begin(),
+                 [&](std::int64_t local_index)
+                 { return global_col_indices[local_index]; });
+
+  _A = std::make_shared<SuperMatrix>();
+  auto Amatdata = const_cast<T*>(Amat.values().data());
+  if constexpr (std::is_same_v<T, double>)
+  {
+    dCreate_CompRowLoc_Matrix_dist((SuperMatrix*)_A.get(), m, n, nnz_loc, m_loc,
+                                   first_row, Amatdata, cols.data(),
+                                   rowptr.data(), SLU_NR_loc, SLU_D, SLU_GE);
+  }
+  spdlog::info("Done set operator");
+}
+
+template <typename T>
+int SuperLUSolver<T>::solve(const la::Vector<T>& bvec, la::Vector<T>& uvec)
+{
+  // RHS
+  int ldb = m_loc;
+  int nrhs = 1;
+
+  superlu_dist_options_t options;
+  set_default_options_dist(&options);
+  options.DiagInv = YES;
+  options.ReplaceTinyPivot = YES;
+  if (!_verbose)
+    options.PrintStat = NO;
+
+  int info = 0;
+  SuperLUStat_t stat;
+  PStatInit(&stat);
+
+  // Copy b to u (SuperLU replaces RHS with solution)
+  std::copy(bvec.array().begin(), std::next(bvec.array().begin(), m_loc),
+            uvec.mutable_array().begin());
+
+  if constexpr (std::is_same_v<T, double>)
+  {
+    spdlog::info("Start solve");
+    std::vector<T> berr(nrhs);
+    dScalePermstruct_t ScalePermstruct;
+    dLUstruct_t LUstruct;
+    dScalePermstructInit(m, m, &ScalePermstruct);
+    dLUstructInit(m, &LUstruct);
+    dSOLVEstruct_t SOLVEstruct;
+
+    spdlog::info("Call pdgssvx");
+    pdgssvx(&options, (SuperMatrix*)_A.get(), &ScalePermstruct,
+            uvec.mutable_array().data(), ldb, nrhs, (gridinfo_t*)_grid.get(),
+            &LUstruct, &SOLVEstruct, berr.data(), &stat, &info);
+
+    dScalePermstructFree(&ScalePermstruct);
+    dLUstructFree(&LUstruct);
+    spdlog::info("Solve finalize");
+    dSolveFinalize(&options, &SOLVEstruct);
+  }
+  if (info)
+  {
+    std::cout << "ERROR: INFO = " << info << " returned from p*gssvx()\n"
+              << std::flush;
+  }
+
+  if (_verbose)
+    PStatPrint(&options, &stat, (gridinfo_t*)_grid.get());
+  PStatFree(&stat);
+
+  // Update ghosts in u
+  uvec.scatter_fwd();
+  return info;
+}
+
+template class SuperLUSolver<double>;

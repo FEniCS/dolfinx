@@ -115,14 +115,17 @@ int main(int argc, char* argv[])
     fem::set_bc<T, U>(b.mutable_array(), {bc});
 
     // Solver: A.u = b
-    // dolfinx::common::Timer tfac("[MUMPS Factorize]");
-    // superlu_Solver<T> LU(mesh->comm());
-    // LU.set_operator(A);
-    // tfac.stop();
+    dolfinx::common::Timer tfac("[SuperLU Factorize]");
+    SuperLUSolver<T> LU(mesh->comm(), true);
+    LU.set_operator(A);
+    tfac.stop();
 
     dolfinx::common::Timer tsolve("[SuperLU Solve]");
-    superlu_solver(mesh->comm(), A, b, *u.x(), true);
+    // superlu_solver(mesh->comm(), A, b, *u.x(), true);
+    LU.solve(b, *u.x());
     tsolve.stop();
+
+    spdlog::info("u.norm = {}", dolfinx::la::norm(*u.x()));
 
     // Save solution in VTK format
     io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
