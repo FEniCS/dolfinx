@@ -19,18 +19,22 @@ endif()
 enable_language(Fortran)
 find_package(MPI REQUIRED)
 
-if (DEFINED SCALAR)
-  set(C_SCALAR ${SCALAR})
+if(DEFINED SCALAR)
   set(CPP_SCALAR ${SCALAR})
-  if(${SCALAR} STREQUAL "complex")
-    set(C_SCALAR "double _Complex")
+
+  if(${SCALAR} STREQUAL "float64")
+    set(CPP_SCALAR "double")
+  elseif(${SCALAR} STREQUAL "float32")
+    set(CPP_SCALAR "float")
+  elseif(${SCALAR} STREQUAL "complex128")
     set(CPP_SCALAR "std::complex<double>")
-  elseif(${SCALAR} STREQUAL "scomplex")
-    set(C_SCALAR "float _Complex")
+  elseif(${SCALAR} STREQUAL "complex64")
     set(CPP_SCALAR "std::complex<float>")
+  else()
+    message(FATAL_ERROR "Unrecognised SCALAR type: ${SCALAR}")
   endif()
 
-  message(STATUS "C_SCALAR=${C_SCALAR}")
+  message(STATUS "SCALAR=${SCALAR}")
   message(STATUS "CPP_SCALAR=${CPP_SCALAR}")
 else()
     message(FATAL_ERROR "SCALAR should be defined in CMake. e.g. -DSCALAR=float [or double or complex]")
@@ -38,7 +42,7 @@ endif()
 
 # Add target to compile UFL files
 add_compile_definitions(SCALAR=${CPP_SCALAR})
-set(SCALAR_TYPE "--scalar_type=${C_SCALAR}")
+set(SCALAR_TYPE "--scalar_type=${SCALAR}")
 
 add_custom_command(
   OUTPUT poisson.c
@@ -54,7 +58,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 add_executable(${PROJECT_NAME} mumps.cpp main.cpp ${CMAKE_CURRENT_BINARY_DIR}/poisson.c)
 target_link_directories(${PROJECT_NAME} PUBLIC ${PETSC_LIBRARY_DIRS})
 target_link_libraries(${PROJECT_NAME} PUBLIC ${MPI_Fortran_LIBRARIES})
-target_link_libraries(${PROJECT_NAME} PUBLIC dolfinx zmumps cmumps dmumps smumps gfortran mumps_common metis scalapack parmetis blas lapack pord)
+target_link_libraries(${PROJECT_NAME} PUBLIC dolfinx zmumps cmumps dmumps smumps mumps_common metis scalapack parmetis blas lapack pord)
 
 # Do not throw error for 'multi-line comments' (these are typical in rst which
 # includes LaTeX)
