@@ -1,5 +1,5 @@
-#include "mumps.h"
 #include "poisson.h"
+#include "superlu.h"
 
 #include <cmath>
 #include <dolfinx.h>
@@ -20,12 +20,17 @@ int main(int argc, char* argv[])
   MPI_Init(&argc, &argv);
   dolfinx::init_logging(argc, argv);
 
+  spdlog::set_level(spdlog::level::info);
+
   {
     // Create mesh and function space
     auto part = mesh::create_cell_partitioner(mesh::GhostMode::shared_facet);
     auto mesh = std::make_shared<mesh::Mesh<U>>(mesh::create_box<U>(
         MPI_COMM_WORLD, {{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}}}, {32, 32, 320},
         mesh::CellType::tetrahedron, part));
+
+    int tdim = mesh->topology()->dim();
+    mesh->topology()->create_entities(tdim - 1);
 
     auto element = basix::create_element<U>(
         basix::element::family::P, basix::cell::type::tetrahedron, 1,
@@ -49,7 +54,7 @@ int main(int argc, char* argv[])
     // Define boundary condition
 
     auto facets = mesh::locate_entities_boundary(
-        *mesh, 1,
+        *mesh, tdim - 1,
         [](auto x)
         {
           using U = typename decltype(x)::value_type;
@@ -64,7 +69,7 @@ int main(int argc, char* argv[])
           return marker;
         });
     const auto bdofs = fem::locate_dofs_topological(
-        *V->mesh()->topology_mutable(), *V->dofmap(), 1, facets);
+        *V->mesh()->topology_mutable(), *V->dofmap(), tdim - 1, facets);
     auto bc = std::make_shared<const fem::DirichletBC<T, U>>(0.0, bdofs, V);
 
     f->interpolate(
@@ -110,13 +115,13 @@ int main(int argc, char* argv[])
     fem::set_bc<T, U>(b.mutable_array(), {bc});
 
     // Solver: A.u = b
-    dolfinx::common::Timer tfac("[MUMPS Factorize]");
-    MUMPSLUSolver<T> LU(mesh->comm());
-    LU.set_operator(A);
-    tfac.stop();
+    // dolfinx::common::Timer tfac("[MUMPS Factorize]");
+    // superlu_Solver<T> LU(mesh->comm());
+    // LU.set_operator(A);
+    // tfac.stop();
 
-    dolfinx::common::Timer tsolve("[MUMPS Solve]");
-    LU.solve(b, *u.x());
+    dolfinx::common::Timer tsolve("[SuperLU Solve]");
+    superlu_solver(mesh->comm(), A, b, *u.x(), true);
     tsolve.stop();
 
     // Save solution in VTK format
