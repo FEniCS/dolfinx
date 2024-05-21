@@ -229,12 +229,9 @@ def form(
                                 subdomain._cpp_object.topology,
                                 subdomain.find(id),
                                 subdomain.dim,
-                                subdomain.values[subdomain.values == id],
                             )
-                            if len(integration_entities) > 0:
-                                domains.extend(integration_entities)
-                            else:
-                                domains.append((id, []))
+                            domains.append((id, integration_entities))
+
                         except TypeError:
                             pass  # If subdomain id is "everywhere"
 

@@ -128,11 +128,9 @@ std::vector<std::string> fem::get_constant_names(const ufcx_form& ufcx_form)
                                       + ufcx_form.num_constants);
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair<int, std::vector<std::int32_t>>>
-fem::compute_integration_domains(fem::IntegralType integral_type,
-                                 const mesh::Topology& topology,
-                                 std::span<const std::int32_t> entities,
-                                 int dim, std::span<const int> values)
+std::vector<std::int32_t> fem::compute_integration_domains(
+    fem::IntegralType integral_type, const mesh::Topology& topology,
+    std::span<const std::int32_t> entities, int dim)
 {
   const int tdim = topology.dim();
   if ((integral_type == IntegralType::cell ? tdim : tdim - 1) != dim)
@@ -147,16 +145,13 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
     auto it1 = std::lower_bound(it0, entities.end(),
                                 topology.index_map(dim)->size_local());
     entities = entities.first(std::distance(it0, it1));
-    values = values.first(std::distance(it0, it1));
   }
 
   std::vector<std::int32_t> entity_data;
-  std::vector<int> values1;
   switch (integral_type)
   {
   case IntegralType::cell:
     entity_data.insert(entity_data.begin(), entities.begin(), entities.end());
-    values1.insert(values1.begin(), values.begin(), values.end());
     break;
   default:
     auto f_to_c = topology.connectivity(tdim - 1, tdim);
@@ -189,7 +184,6 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
         auto facet
             = impl::get_cell_facet_pairs<1>(f, f_to_c->links(f), *c_to_f);
         entity_data.insert(entity_data.end(), facet.begin(), facet.end());
-        values1.push_back(values[pos]);
       }
     }
     break;
@@ -205,7 +199,6 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
           auto facets
               = impl::get_cell_facet_pairs<2>(f, f_to_c->links(f), *c_to_f);
           entity_data.insert(entity_data.end(), facets.begin(), facets.end());
-          values1.push_back(values[j]);
         }
       }
     }
@@ -215,42 +208,6 @@ fem::compute_integration_domains(fem::IntegralType integral_type,
           "Cannot compute integration domains. Integral type not supported.");
     }
   }
-
-  // Build permutation that sorts by meshtag value
-  std::vector<std::int32_t> perm(values1.size());
-  std::iota(perm.begin(), perm.end(), 0);
-  std::stable_sort(perm.begin(), perm.end(), [&values1](auto p0, auto p1)
-                   { return values1[p0] < values1[p1]; });
-
-  std::size_t shape = 1;
-  if (integral_type == IntegralType::exterior_facet)
-    shape = 2;
-  else if (integral_type == IntegralType::interior_facet)
-    shape = 4;
-  std::vector<std::pair<int, std::vector<std::int32_t>>> integrals;
-  {
-    // Iterator to mark the start of the group
-    auto p0 = perm.begin();
-    while (p0 != perm.end())
-    {
-      auto id0 = values1[*p0];
-      auto p1 = std::find_if_not(p0, perm.end(), [id0, &values1](auto idx)
-                                 { return id0 == values1[idx]; });
-
-      std::vector<std::int32_t> data;
-      data.reserve(shape * std::distance(p0, p1));
-      for (auto it = p0; it != p1; ++it)
-      {
-        auto e_it0 = std::next(entity_data.begin(), (*it) * shape);
-        auto e_it1 = std::next(e_it0, shape);
-        data.insert(data.end(), e_it0, e_it1);
-      }
-
-      integrals.push_back({id0, std::move(data)});
-      p0 = p1;
-    }
-  }
-
-  return integrals;
+  return entity_data;
 }
 //-----------------------------------------------------------------------------
