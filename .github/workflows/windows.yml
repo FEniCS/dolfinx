@@ -135,6 +135,9 @@ jobs:
       - name: Run Python demos (serial)
         run: |
           pip install pyamg matplotlib numba scipy # TO REMOVE
-          python3 -m pytest -n auto -m serial --durations=10 python/demo/test.py
+          cd python/demo
+          python3 -m pytest -n auto -m serial --durations=10 test.py
       - name: Run Python demos (MPI, np=3)
-        run: python3 -m pytest -m mpi --num-proc=3 python/demo/test.py
+        run: |
+          cd python/demo
+          python3 -m pytest -m mpi --num-proc=3 --mpiexec mpiexec test.py
