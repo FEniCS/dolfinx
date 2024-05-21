@@ -178,9 +178,7 @@ std::vector<std::int32_t> fem::compute_integration_domains(
                             bfacets.end(), std::back_inserter(facets));
       for (auto f : facets)
       {
-        auto index_it = std::lower_bound(entities.begin(), entities.end(), f);
-        assert(index_it != entities.end() and *index_it == f);
-        std::size_t pos = std::distance(entities.begin(), index_it);
+        // Get the facet as a pair of (cell, local facet)
         auto facet
             = impl::get_cell_facet_pairs<1>(f, f_to_c->links(f), *c_to_f);
         entity_data.insert(entity_data.end(), facet.begin(), facet.end());
