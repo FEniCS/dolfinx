@@ -41,7 +41,7 @@ jobs:
         with:
           path: ./ffcx
           repository: FEniCS/ffcx
-          ref: dokken/unify_irs
+          ref: main
       - name: Install FFCx C interface
         run: |
           . /opt/intel/oneapi/setvars.sh
