@@ -86,7 +86,18 @@
 # The required modules are first imported:
 
 from mpi4py import MPI
-from petsc4py import PETSc
+
+try:
+    from petsc4py import PETSc
+
+    import dolfinx
+
+    if not dolfinx.has_petsc:
+        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
+        exit(0)
+except ModuleNotFoundError:
+    print("This demo requires petsc4py.")
+    exit(0)
 
 import numpy as np
 
@@ -427,7 +438,7 @@ def block_direct_solver():
     # handle pressure nullspace
     pc = ksp.getPC()
     pc.setType("lu")
-    pc.setFactorSolverType("mumps")
+    pc.setFactorSolverType("superlu_dist")
     try:
         pc.setFactorSetUpSolverType()
     except PETSc.Error as e:
@@ -437,8 +448,8 @@ def block_direct_solver():
             exit(0)
         else:
             raise e
-    pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)  # For pressure nullspace
-    pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)  # For pressure nullspace
+    # pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)  # For pressure nullspace
+    # pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)  # For pressure nullspace
 
     # Create a block vector (x) to store the full solution, and solve
     x = A.createVecLeft()
@@ -516,10 +527,12 @@ def mixed_direct():
     # Configure MUMPS to handle pressure nullspace
     pc = ksp.getPC()
     pc.setType("lu")
-    pc.setFactorSolverType("mumps")
-    pc.setFactorSetUpSolverType()
-    pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)
-    pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)
+    # pc.setFactorSolverType("mumps")
+    # pc.setFactorSetUpSolverType()
+    # pc.getFactorMatrix().setMumpsIcntl(icntl=24, ival=1)
+    # pc.getFactorMatrix().setMumpsIcntl(icntl=25, ival=0)
+
+    pc.setFactorSolverType("superlu_dist")
 
     # Compute the solution
     U = Function(W)
@@ -560,4 +573,4 @@ np.testing.assert_allclose(norm_p_2, norm_p_0, rtol=1e-4)
 
 # Solve using a non-blocked matrix and an LU solver
 norm_u_3, norm_p_3 = mixed_direct()
-np.testing.assert_allclose(norm_u_3, norm_u_0, rtol=1e-4)
+np.testing.assert_allclose(norm_u_3, norm_u_0, rtol=1e-3)

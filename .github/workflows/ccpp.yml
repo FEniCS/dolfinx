@@ -85,7 +85,7 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
-          sudo apt-get install catch2 cmake g++ libboost-dev libboost-filesystem-dev libboost-timer-dev libhdf5-mpi-dev libparmetis-dev libpugixml-dev mpi-default-dev ninja-build pkg-config
+          sudo apt-get install catch2 cmake g++ libboost-dev libboost-filesystem-dev libboost-timer-dev libhdf5-mpi-dev libparmetis-dev libpugixml-dev libspdlog-dev mpi-default-dev ninja-build pkg-config
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -127,14 +127,14 @@ jobs:
       - name: Install Python build dependencies
         run: pip install mpi4py nanobind scikit-build-core[pyproject]
       - name: Build Python interface
-        run: pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
+        run: pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
 
-      - name: Install Python test dependencies
-        run: pip install matplotlib pytest pytest-xdist scipy
-      - name: Run demos
-        run: |
-          python python/demo/demo_interpolation-io.py
-          python python/demo/demo_lagrange_variants.py
+      - name: Install Python demo/test dependencies
+        run: pip install matplotlib pyamg pytest pytest-xdist scipy
+      - name: Run demos (Python, serial)
+        run: python3 -m pytest -n auto -m serial --durations=10 python/demo/test.py
+      - name: Run demos (Python, MPI (np=3))
+        run: python3 -m pytest -m mpi --num-proc=3 python/demo/test.py
       - name: Run unit tests
         run: python -m pytest -n auto -m "not petsc4py and not adios2" python/test/unit
       - name: Run unit tests (MPI, np=3)
@@ -166,19 +166,19 @@ jobs:
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
         run: |
-          python3 -m pip install git+https://github.com/FEniCS/ufl.git
-          python3 -m pip install git+https://github.com/FEniCS/basix.git
-          python3 -m pip install git+https://github.com/FEniCS/ffcx.git@dokken/unify_irs
+          python3 -m pip install --break-system-packages git+https://github.com/FEniCS/ufl.git
+          python3 -m pip install --break-system-packages git+https://github.com/FEniCS/basix.git
+          python3 -m pip install --break-system-packages git+https://github.com/FEniCS/ffcx.git@dokken/unify_irs
+
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
         run: |
-          python3 -m pip install git+https://github.com/FEniCS/ufl.git@${{ github.event.inputs.ufl_ref }}
-          python3 -m pip install git+https://github.com/FEniCS/basix.git@${{ github.event.inputs.basix_ref }}
-          python3 -m pip install git+https://github.com/FEniCS/ffcx.git@${{ github.event.inputs.ffcx_ref }}
+          python3 -m pip install --break-system-packages git+https://github.com/FEniCS/ufl.git@${{ github.event.inputs.ufl_ref }}
+          python3 -m pip install --break-system-packages git+https://github.com/FEniCS/basix.git@${{ github.event.inputs.basix_ref }}
+          python3 -m pip install --break-system-packages git+https://github.com/FEniCS/ffcx.git@${{ github.event.inputs.ffcx_ref }}
 
       - name: Configure C++
         run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
-
       - name: Build and install C++ library
         run: |
           cmake --build build
@@ -214,7 +214,7 @@ jobs:
 
       - name: Build Python interface
         run: |
-          python3 -m pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
+          python3 -m pip install --break-system-packages --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
       - name: Build Python interface documentation
         run: |
           cd python/doc
@@ -252,15 +252,15 @@ jobs:
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
         run: |
-          python3 -m pip install git+https://github.com/FEniCS/ufl.git
-          python3 -m pip install git+https://github.com/FEniCS/basix.git
-          python3 -m pip install git+https://github.com/FEniCS/ffcx.git
+          python3 -m pip install --break-system-packages git+https://github.com/FEniCS/ufl.git
+          python3 -m pip install --break-system-packages git+https://github.com/FEniCS/basix.git
+          python3 -m pip install --break-system-packages git+https://github.com/FEniCS/ffcx.git
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
         run: |
-          python3 -m pip install git+https://github.com/FEniCS/ufl.git@${{ github.event.inputs.ufl_ref }}
-          python3 -m pip install git+https://github.com/FEniCS/basix.git@${{ github.event.inputs.basix_ref }}
-          python3 -m pip install git+https://github.com/FEniCS/ffcx.git@${{ github.event.inputs.ffcx_ref }}
+          python3 -m pip install --break-system-packages git+https://github.com/FEniCS/ufl.git@${{ github.event.inputs.ufl_ref }}
+          python3 -m pip install --break-system-packages git+https://github.com/FEniCS/basix.git@${{ github.event.inputs.basix_ref }}
+          python3 -m pip install --break-system-packages git+https://github.com/FEniCS/ffcx.git@${{ github.event.inputs.ffcx_ref }}
 
       - name: Configure C++
         run: |
@@ -278,7 +278,7 @@ jobs:
 
       - name: Build Python interface
         run: |
-          python3 -m pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
+          python3 -m pip install --break-system-packages --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
       - name: Build Python interface documentation
         run: |
           cd python/doc
@@ -312,4 +312,3 @@ jobs:
           git add --all
           git commit --allow-empty -m "C++/Python FEniCS/dolfinx@${{ github.sha }}"
           git push
-

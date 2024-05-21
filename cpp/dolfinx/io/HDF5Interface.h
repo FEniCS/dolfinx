@@ -283,7 +283,7 @@ std::vector<T> read_dataset(hid_t dset_id, std::array<std::int64_t, 2> range,
   if (rank < 1)
     throw std::runtime_error("Failed to get rank of data space.");
   else if (rank > 2)
-    LOG(WARNING) << "io::hdf5::read_dataset untested for rank > 2.";
+    spdlog::warn("io::hdf5::read_dataset untested for rank > 2.");
 
   // Allocate data for shape
   std::vector<hsize_t> shape(rank);
@@ -345,7 +345,7 @@ std::vector<T> read_dataset(hid_t dset_id, std::array<std::int64_t, 2> range,
   auto timer_end = std::chrono::system_clock::now();
   std::chrono::duration<double> dt = (timer_end - timer_start);
   double data_rate = data.size() * sizeof(T) / (1e6 * dt.count());
-  LOG(INFO) << "HDF5 Read data rate: " << data_rate << "MB/s";
+  spdlog::info("HDF5 Read data rate: {} MB/s", data_rate);
 
   return data;
 }
