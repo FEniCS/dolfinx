@@ -200,7 +200,7 @@ def form(
         ]
         constants = [c._cpp_object for c in form.constants()]
 
-        # Make map from integral_type to the meshtag indices of interest
+        # Make map from integral_type to subdomain id
         subdomain_ids = {type: [] for type in sd.get(domain).keys()}
         for integral in form.integrals():
             if integral.subdomain_data() is not None:
