@@ -255,6 +255,11 @@ std::vector<T> pack_function_data(const fem::Function<T, U>& u)
                                    std::multiplies{});
   if (num_components < std::pow(3, rank))
     num_components = std::pow(3, rank);
+  else if (num_components > std::pow(3, rank))
+  {
+    throw std::runtime_error(
+        "Fides does not support tensors larger than pow(3, rank)");
+  }
 
   // Get dof array and pack into array (padded where appropriate)
   auto dofmap_x = geometry.dofmap();
@@ -306,6 +311,11 @@ void write_data(adios2::IO& io, adios2::Engine& engine,
   {
     num_components = std::pow(3, rank);
     need_padding = true;
+  }
+  else if (num_components > std::pow(3, rank))
+  {
+    throw std::runtime_error(
+        "Fides does not support tensors larger than pow(3, rank)");
   }
 
   // Get vertex data. If the mesh and function dofmaps are the same we
