@@ -444,9 +444,9 @@ def create_submesh(msh: Mesh, dim: int, entities: npt.NDArray[np.int32]):
     """Create a mesh based on a subset of entities from an existing mesh.
 
     Args:
-        mesh: Input mesh
-        dim: Topological dimension of the entities to extract
-        entities: Indices of entities in ``msh`` to extract
+        mesh: Mesh to create the sub-mesh from.
+        dim: Topological dimension of the entities in ``msh`` to include in the sub-mesh.
+        entities: Indices of entities in ``msh`` to include in the sub-mesh.
     Returns:
         A quadruplet containing the submesh and three maps from the submesh to
         the parent mesh. The first map is the entity map, the second map the
