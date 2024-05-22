@@ -90,7 +90,50 @@ void declare_discrete_operators(nb::module_& m)
 
           // Build operator
           dolfinx::la::MatrixCSR<T> A(sp);
-          dolfinx::fem::interpolation_matrix<T, U>(V0, V1, A.mat_set_values());
+
+          auto [bs0, bs1] = A.block_size();
+          if (bs0 == 1 and bs1 == 1)
+          {
+            dolfinx::fem::interpolation_matrix<T, U>(
+                V0, V1, A.template mat_set_values<1, 1>());
+          }
+          else if (bs0 == 2 and bs1 == 1)
+          {
+            dolfinx::fem::interpolation_matrix<T, U>(
+                V0, V1, A.template mat_set_values<2, 1>());
+          }
+          else if (bs0 == 1 and bs1 == 2)
+          {
+            dolfinx::fem::interpolation_matrix<T, U>(
+                V0, V1, A.template mat_set_values<1, 2>());
+          }
+          else if (bs0 == 2 and bs1 == 2)
+          {
+            dolfinx::fem::interpolation_matrix<T, U>(
+                V0, V1, A.template mat_set_values<2, 2>());
+          }
+          else if (bs0 == 3 and bs1 == 1)
+          {
+            dolfinx::fem::interpolation_matrix<T, U>(
+                V0, V1, A.template mat_set_values<3, 1>());
+          }
+          else if (bs0 == 1 and bs1 == 3)
+          {
+            dolfinx::fem::interpolation_matrix<T, U>(
+                V0, V1, A.template mat_set_values<1, 3>());
+          }
+          else if (bs0 == 3 and bs1 == 3)
+          {
+            dolfinx::fem::interpolation_matrix<T, U>(
+                V0, V1, A.template mat_set_values<3, 3>());
+          }
+          else
+          {
+            throw std::runtime_error(
+                "Interpolation matrix not supported between block sizes "
+                + std::to_string(bs0) + " and " + std::to_string(bs1));
+          }
+
           return A;
         });
 

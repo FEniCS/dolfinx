@@ -114,7 +114,7 @@ def interpolation_matrix(space0: FunctionSpace, space1: FunctionSpace) -> _Matri
     Returns:
         Interpolation matrix
     """
-    return _interpolation_matrix(space0._cpp_object, space1._cpp_object)
+    return _MatrixCSR(_interpolation_matrix(space0._cpp_object, space1._cpp_object))
 
 
 __all__ = [
