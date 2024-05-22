@@ -65,9 +65,7 @@ __all__ = [
 def _extract_function_spaces(a: list[list[Form]]):
     """From a rectangular array of bilinear forms, extract the function
     spaces for each block row and block column.
-
     """
-
     assert len({len(cols) for cols in a}) == 1, "Array of function spaces is not rectangular"
 
     # Extract (V0, V1) pair for each block in 'a'
@@ -98,21 +96,20 @@ def _extract_function_spaces(a: list[list[Form]]):
 
 
 def create_vector(L: Form) -> PETSc.Vec:
-    """Create a PETSc vector that is compaible with a linear form.
+    """Create a PETSc vector that is compatible with a linear form.
 
     Args:
         L: A linear form.
 
     Returns:
         A PETSc vector with a layout that is compatible with ``L``.
-
     """
     dofmap = L.function_spaces[0].dofmap
     return create_petsc_vector(dofmap.index_map, dofmap.index_map_bs)
 
 
 def create_vector_block(L: list[Form]) -> PETSc.Vec:
-    """Create a PETSc vector (blocked) that is compaible with a list of linear forms.
+    """Create a PETSc vector (blocked) that is compatible with a list of linear forms.
 
     Args:
         L: List of linear forms.
@@ -137,7 +134,6 @@ def create_vector_nest(L: list[Form]) -> PETSc.Vec:
     Returns:
         A PETSc nested vector (``VecNest``) with a layout that is
         compatible with ``L``.
-
     """
     maps = [
         (form.function_spaces[0].dofmap.index_map, form.function_spaces[0].dofmap.index_map_bs)
@@ -158,7 +154,6 @@ def create_matrix(a: Form, mat_type=None) -> PETSc.Mat:
 
     Returns:
         A PETSc matrix with a layout that is compatible with ``a``.
-
     """
     if mat_type is None:
         return _cpp.fem.petsc.create_matrix(a._cpp_object)
@@ -175,7 +170,6 @@ def create_matrix_block(a: list[list[Form]]) -> PETSc.Mat:
     Returns:
         A PETSc matrix with a blocked layout that is compatible with
         ``a``.
-
     """
     _a = [[None if form is None else form._cpp_object for form in arow] for arow in a]
     return _cpp.fem.petsc.create_matrix_block(_a)
@@ -189,7 +183,6 @@ def create_matrix_nest(a: list[list[Form]]) -> PETSc.Mat:
 
     Returns:
         A PETSc matrix (``MatNest``) that is compatible with ``a``.
-
     """
     _a = [[None if form is None else form._cpp_object for form in arow] for arow in a]
     return _cpp.fem.petsc.create_matrix_nest(_a)
@@ -211,7 +204,6 @@ def assemble_vector(L: typing.Any, constants=None, coeffs=None) -> PETSc.Vec:
 
     Returns:
         An assembled vector.
-
     """
     b = create_petsc_vector(
         L.function_spaces[0].dofmap.index_map, L.function_spaces[0].dofmap.index_map_bs
@@ -236,7 +228,6 @@ def _assemble_vector_vec(b: PETSc.Vec, L: Form, constants=None, coeffs=None) -> 
 
     Returns:
         An assembled vector.
-
     """
     with b.localForm() as b_local:
         _assemble._assemble_vector_array(b_local.array_w, L, constants, coeffs)
@@ -246,9 +237,9 @@ def _assemble_vector_vec(b: PETSc.Vec, L: Form, constants=None, coeffs=None) -> 
 @functools.singledispatch
 def assemble_vector_nest(L: typing.Any, constants=None, coeffs=None) -> PETSc.Vec:
     """Assemble linear forms into a new nested PETSc (``VecNest``) vector.
+
     The returned vector is not finalised, i.e. ghost values are not
     accumulated on the owning processes.
-
     """
     maps = [
         (form.function_spaces[0].dofmap.index_map, form.function_spaces[0].dofmap.index_map_bs)
@@ -265,10 +256,10 @@ def assemble_vector_nest(L: typing.Any, constants=None, coeffs=None) -> PETSc.Ve
 def _assemble_vector_nest_vec(
     b: PETSc.Vec, L: list[Form], constants=None, coeffs=None
 ) -> PETSc.Vec:
-    """Assemble linear forms into a nested PETSc (``VecNest``) vector. The
-    vector is not zeroed before assembly and it is not finalised, i.e.
-    ghost values are not accumulated on the owning processes.
+    """Assemble linear forms into a nested PETSc (``VecNest``) vector.
 
+    The vector is not zeroed before assembly and it is not finalised,
+    i.e. ghost values are not accumulated on the owning processes.
     """
     constants = [None] * len(L) if constants is None else constants
     coeffs = [None] * len(L) if coeffs is None else coeffs
@@ -291,9 +282,9 @@ def assemble_vector_block(
     constants_a=None,
     coeffs_a=None,
 ) -> PETSc.Vec:
-    """Assemble linear forms into a monolithic vector. The vector is not
-    finalised, i.e. ghost values are not accumulated.
+    """Assemble linear forms into a monolithic vector.
 
+    The vector is not finalised, i.e. ghost values are not accumulated.
     """
     maps = [
         (form.function_spaces[0].dofmap.index_map, form.function_spaces[0].dofmap.index_map_bs)
@@ -320,10 +311,10 @@ def _assemble_vector_block_vec(
     constants_a=None,
     coeffs_a=None,
 ) -> PETSc.Vec:
-    """Assemble linear forms into a monolithic vector. The vector is not
-    zeroed and it is not finalised, i.e. ghost values are not
-    accumulated.
+    """Assemble linear forms into a monolithic vector.
 
+    The vector is not zeroed and it is not finalised, i.e. ghost values
+    are not accumulated.
     """
     maps = [
         (form.function_spaces[0].dofmap.index_map, form.function_spaces[0].dofmap.index_map_bs)
@@ -402,8 +393,10 @@ def _assemble_vector_block_vec(
 def assemble_matrix(
     a: typing.Any, bcs: list[DirichletBC] = [], diagonal: float = 1.0, constants=None, coeffs=None
 ):
-    """Assemble bilinear form into a matrix. The returned matrix is not
-    finalised, i.e. ghost values are not accumulated.
+    """Assemble bilinear form into a matrix.
+
+    The returned matrix is not finalised, i.e. ghost values are not
+    accumulated.
 
     Note:
         The returned matrix is not 'assembled', i.e. ghost contributions
@@ -419,7 +412,6 @@ def assemble_matrix(
 
     Returns:
         Matrix representing the bilinear form.
-
     """
     A = _cpp.fem.petsc.create_matrix(a._cpp_object)
     assemble_matrix_mat(A, a, bcs, diagonal, constants, coeffs)
@@ -435,9 +427,10 @@ def assemble_matrix_mat(
     constants=None,
     coeffs=None,
 ) -> PETSc.Mat:
-    """Assemble bilinear form into a matrix. The returned matrix is not
-    finalised, i.e. ghost values are not accumulated.
+    """Assemble bilinear form into a matrix.
 
+    The returned matrix is not finalised, i.e. ghost values are not
+    accumulated.
     """
     constants = _pack_constants(a._cpp_object) if constants is None else constants
     coeffs = _pack_coefficients(a._cpp_object) if coeffs is None else coeffs
@@ -474,7 +467,6 @@ def assemble_matrix_nest(
     Returns:
         PETSc matrix (``MatNest``) representing the block of bilinear
         forms.
-
     """
     _a = [[None if form is None else form._cpp_object for form in arow] for arow in a]
     A = _cpp.fem.petsc.create_matrix_nest(_a, mat_types)
@@ -507,7 +499,6 @@ def _assemble_matrix_nest_mat(
     Returns:
         PETSc matrix (``MatNest``) representing the block of bilinear
         forms.
-
     """
     constants = (
         [[form and _pack_constants(form._cpp_object) for form in forms] for forms in a]
@@ -661,8 +652,8 @@ def apply_lifting_nest(
     coeffs=None,
 ) -> PETSc.Vec:
     """Apply the function :func:`dolfinx.fem.apply_lifting` to each sub-vector
-    in a nested PETSc Vector."""
-
+    in a nested PETSc Vector.
+    """
     x0 = [] if x0 is None else x0.getNestSubVecs()
     bcs1 = _bcs_by_block(_extract_spaces(a, 1), bcs)
     constants = (
@@ -718,7 +709,6 @@ class LinearProblem:
 
     Solves of the form :math:`a(u, v) = L(v) \\,  \\forall v \\in V`
     using PETSc as a linear algebra backend.
-
     """
 
     def __init__(
@@ -760,11 +750,17 @@ class LinearProblem:
                                                                        "mumps"})
         """
         self._a = _create_form(
-            a, form_compiler_options=form_compiler_options, jit_options=jit_options
+            a,
+            dtype=PETSc.ScalarType,
+            form_compiler_options=form_compiler_options,
+            jit_options=jit_options,
         )
         self._A = create_matrix(self._a)
         self._L = _create_form(
-            L, form_compiler_options=form_compiler_options, jit_options=jit_options
+            L,
+            dtype=PETSc.ScalarType,
+            form_compiler_options=form_compiler_options,
+            jit_options=jit_options,
         )
         self._b = create_vector(self._L)
 
@@ -862,7 +858,6 @@ class NonlinearProblem:
 
     Solves problems of the form :math:`F(u, v) = 0 \\ \\forall v \\in V` using
     PETSc as the linear algebra backend.
-
     """
 
     def __init__(
@@ -883,7 +878,7 @@ class NonlinearProblem:
             J: UFL representation of the Jacobian (Optional)
             form_compiler_options: Options used in FFCx
                 compilation of this form. Run ``ffcx --help`` at the
-                commandline to see all available options.
+                command line to see all available options.
             jit_options: Options used in CFFI JIT compilation of C
                 code generated by FFCx. See ``python/dolfinx/jit.py``
                 for all available options. Takes priority over all
@@ -892,7 +887,6 @@ class NonlinearProblem:
         Example::
 
             problem = LinearProblem(F, u, [bc0, bc1])
-
         """
         self._L = _create_form(
             F, form_compiler_options=form_compiler_options, jit_options=jit_options
@@ -925,7 +919,6 @@ class NonlinearProblem:
 
         Args:
            x: The vector containing the latest solution
-
         """
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
@@ -935,7 +928,6 @@ class NonlinearProblem:
         Args:
             x: The vector containing the latest solution
             b: Vector to assemble the residual into
-
         """
         # Reset the residual vector
         with b.localForm() as b_local:
@@ -952,7 +944,6 @@ class NonlinearProblem:
 
         Args:
             x: The vector containing the latest solution
-
         """
         A.zeroEntries()
         assemble_matrix_mat(A, self._a, self.bcs)
@@ -962,16 +953,17 @@ class NonlinearProblem:
 def discrete_gradient(space0: _FunctionSpace, space1: _FunctionSpace) -> PETSc.Mat:
     """Assemble a discrete gradient operator.
 
-    The discrete gradient operator interpolates the gradient of
-    a H1 finite element function into a H(curl) space. It is assumed that
-    the H1 space uses an identity map and the H(curl) space uses a covariant Piola map.
+    The discrete gradient operator interpolates the gradient of a H1
+    finite element function into a H(curl) space. It is assumed that the
+    H1 space uses an identity map and the H(curl) space uses a covariant
+    Piola map.
 
     Args:
-        space0: H1 space to interpolate the gradient from
-        space1: H(curl) space to interpolate into
+        space0: H1 space to interpolate the gradient from.
+        space1: H(curl) space to interpolate into.
 
     Returns:
-        Discrete gradient operator
+        Discrete gradient operator.
     """
     return _discrete_gradient(space0._cpp_object, space1._cpp_object)
 
@@ -980,9 +972,10 @@ def interpolation_matrix(space0: _FunctionSpace, space1: _FunctionSpace) -> PETS
     """Assemble an interpolation operator matrix.
 
     Args:
-        space0: Space to interpolate from
-        space1: Space to interpolate into
+        space0: Space to interpolate from.
+        space1: Space to interpolate into.
+
     Returns:
-        Interpolation matrix
+        Interpolation matrix.
     """
     return _interpolation_matrix(space0._cpp_object, space1._cpp_object)

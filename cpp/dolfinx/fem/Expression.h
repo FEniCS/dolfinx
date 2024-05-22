@@ -40,7 +40,7 @@ template <dolfinx::scalar T,
 class Expression
 {
 public:
-  /// @brief Scalar type
+  /// @brief Scalar type.
   ///
   /// Field type for the Expression, e.g. `double`,
   /// `std::complex<float>`, etc.
@@ -51,16 +51,18 @@ public:
 
   /// @brief Create an Expression.
   ///
-  /// @note Users should prefer the @ref create_expression factory functions.
+  /// @note Users should prefer the @ref create_expression factory
+  /// functions.
   ///
-  /// @param[in] coefficients Coefficients in the Expression
+  /// @param[in] coefficients Coefficients in the Expression.
   /// @param[in] constants Constants in the Expression
-  /// @param[in] X points on reference cell, `shape=(number of points,
-  /// tdim)` and storage is row-major.
+  /// @param[in] X Points on the reference cell, `shape=(number of
+  /// points, tdim)` and storage is row-major.
   /// @param[in] Xshape Shape of `X`.
-  /// @param[in] fn function for tabulating expression
-  /// @param[in] value_shape shape of expression evaluated at single point
-  /// @param[in] argument_function_space Function space for Argument
+  /// @param[in] fn Function for tabulating the Expression.
+  /// @param[in] value_shape Shape of Expression evaluated at single
+  /// point.
+  /// @param[in] argument_function_space Function space for Argument.
   Expression(
       const std::vector<std::shared_ptr<
           const Function<scalar_type, geometry_type>>>& coefficients,
@@ -142,14 +144,15 @@ public:
   }
 
   /// @brief Evaluate Expression on cells or facets.
+  ///
   /// @param[in] mesh Cells on which to evaluate the Expression.
-  /// @param[in] entities List of entities to evaluate the expression on. This
-  /// could be either a list of cells or a list of (cell, local facet index)
-  /// tuples. Array is flattened per entity.
-  /// @param[out] values A 2D array to store the result. Caller
-  /// is responsible for correct sizing which should be `(num_cells,
+  /// @param[in] entities List of entities to evaluate the expression
+  /// on. This could be either a list of cells or a list of (cell, local
+  /// @param[out] values A 2D array to store the result. Caller is
+  /// responsible for correct sizing which should be `(num_cells,
   /// num_points * value_size * num_all_argument_dofs columns)`.
-  /// @param[in] vshape The shape of @p values (row-major storage).
+  /// facet index) tuples. Array is flattened per entity.
+  /// @param[in] vshape The shape of `values` (row-major storage).
   void eval(const mesh::Mesh<geometry_type>& mesh,
             std::span<const std::int32_t> entities,
             std::span<scalar_type> values,
@@ -157,20 +160,15 @@ public:
   {
     std::size_t estride;
     if (mesh.topology()->dim() == _x_ref.second[1])
-    {
       estride = 1;
-    }
     else if (mesh.topology()->dim() == _x_ref.second[1] + 1)
-    {
       estride = 2;
-    }
     else
-    {
       throw std::runtime_error("Invalid dimension of evaluation points.");
-    }
+
     // Prepare coefficients and constants
-    const auto [coeffs, cstride] = pack_coefficients(*this, entities, estride);
-    const std::vector<scalar_type> constant_data = pack_constants(*this);
+    auto [coeffs, cstride] = pack_coefficients(*this, entities, estride);
+    std::vector<scalar_type> constant_data = pack_constants(*this);
     auto fn = this->get_tabulate_expression();
 
     // Prepare cell geometry
@@ -179,7 +177,7 @@ public:
     // Get geometry data
     auto& cmap = mesh.geometry().cmap();
 
-    const std::size_t num_dofs_g = cmap.dim();
+    std::size_t num_dofs_g = cmap.dim();
     auto x_g = mesh.geometry().x();
 
     // Create data structures used in evaluation
@@ -227,11 +225,11 @@ public:
     }
 
     // Iterate over cells and 'assemble' into values
-    const int size0 = _x_ref.second[0] * value_size();
+    int size0 = _x_ref.second[0] * value_size();
     std::vector<scalar_type> values_local(size0 * num_argument_dofs, 0);
     for (std::size_t e = 0; e < entities.size() / estride; ++e)
     {
-      const std::int32_t entity = entities[e * estride];
+      std::int32_t entity = entities[e * estride];
       auto x_dofs = MDSPAN_IMPL_STANDARD_NAMESPACE::submdspan(
           x_dofmap, entity, MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent);
       for (std::size_t i = 0; i < x_dofs.size(); ++i)

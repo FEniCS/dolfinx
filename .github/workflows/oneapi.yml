@@ -87,11 +87,12 @@ jobs:
       - name: Build DOLFINx Python interface
         run: |
           . /opt/intel/oneapi/setvars.sh
-          pip -v install --check-build-dependencies --no-build-isolation python/
-      - name: Set default DOLFINx JIT options
+          pip install mpi4py nanobind scikit-build-core[pyproject]
+          pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" python/
+      - name: Install Python test dependencies
         run: |
-          mkdir -p ~/.config/dolfinx
-          echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
+          . /opt/intel/oneapi/setvars.sh
+          pip install matplotlib pytest pytest-xdist
       - name: Run DOLFINx demos (Python, serial)
         run: |
           . /opt/intel/oneapi/setvars.sh

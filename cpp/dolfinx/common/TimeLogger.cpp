@@ -25,7 +25,7 @@ void TimeLogger::register_timing(std::string task, double wall, double user,
   std::string line = "Elapsed wall, usr, sys time: " + std::to_string(wall)
                      + ", " + std::to_string(user) + ", "
                      + std::to_string(system) + " (" + task + ")";
-  DLOG(INFO) << line;
+  spdlog::debug(line.c_str());
 
   // Store values for summary
   if (auto it = _timings.find(task); it != _timings.end())

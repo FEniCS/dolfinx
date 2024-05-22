@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.19)
 
 # ------------------------------------------------------------------------------
 # Set project name and version number
-project(DOLFINX VERSION "0.8.0.0")
+project(DOLFINX VERSION "0.9.0.0")
 
 set(DOXYGEN_DOLFINX_VERSION
     ${DOLFINX_VERSION}
@@ -213,6 +213,7 @@ set_package_properties(
 # Check for MPI
 find_package(MPI 3 REQUIRED)
 
+find_package(spdlog REQUIRED)
 # ------------------------------------------------------------------------------
 # Compiler flags
 
@@ -254,6 +255,12 @@ check_cxx_compiler_flag(-O2 HAVE_O2_OPTIMISATION)
 
 if(HAVE_O2_OPTIMISATION)
   list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -O2)
+endif()
+
+# Turn off some checks in gcc12 and gcc13 due to false positives with the fmt library
+if(CMAKE_COMPILER_IS_GNUCXX AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "11.4"
+  AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14.0")
+  list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -Wno-array-bounds;-Wno-stringop-overflow)
 endif()
 
 # ------------------------------------------------------------------------------
@@ -338,7 +345,7 @@ set_package_properties(
 # which method UFCx was found
 if(NOT DOLFINX_UFCX_PYTHON)
   # Check in CONFIG mode, i.e. look for installed ufcxConfig.cmake
-  find_package(ufcx 0.7 REQUIRED CONFIG)
+  find_package(ufcx 0.9 REQUIRED CONFIG)
 else()
   # Check in MODULE mode (using FindUFCX.cmake)
   find_package(
@@ -346,7 +353,7 @@ else()
     COMPONENTS Interpreter
     REQUIRED
   )
-  find_package(UFCx 0.7 REQUIRED MODULE)
+  find_package(UFCx 0.9 REQUIRED MODULE)
 endif()
 
 set_package_properties(

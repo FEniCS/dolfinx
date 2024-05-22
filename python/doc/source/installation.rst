@@ -32,19 +32,20 @@ C++ core
 .. rubric:: Required
 
 - C++ compiler (supporting the C++20 standard)
+- `Basix <https://github.com/FEniCS/basix>`_
 - `Boost <https://www.boost.org>`_, with the following compiled Boost
   components
 
   - timer
 
 - `CMake <https://cmake.org>`_ [build dependency]
-- `pkg-config <https://www.freedesktop.org/wiki/Software/pkg-config/>`_
-- `Basix <https://github.com/FEniCS/basix>`_
-- `pugixml <https://pugixml.org/>`_
-- UFCx [``ufcx.h``, provided by FFCx]
-- MPI
 - HDF5 (with MPI support enabled)
+- MPI
 - `PETSc <https://petsc.org/>`_ [1]_
+- `pkg-config <https://www.freedesktop.org/wiki/Software/pkg-config/>`_
+- `pugixml <https://pugixml.org/>`_
+- `spdlog <https://github.com/gabime/spdlog/>`_
+- UFCx [``ufcx.h``, provided by FFCx]
 - At least one of ParMETIS [2]_, KaHIP or PT-SCOTCH [2]_
 
 From ParMETIS, KaHIP or PT-SCOTCH, ParMETIS is recommended.
@@ -65,9 +66,9 @@ Below are additional requirements for the Python interface.
 
 - Python
 - FFCx, UFL and Basix (https://github.com/FEniCS/).
+- mpi4py
 - nanobind (https://github.com/wjakob/nanobind)
 - NumPy (https://www.numpy.org)
-- mpi4py
 - petsc4py
 - scikit-build-core[pyproject] (https://scikit-build-core.readthedocs.io)
 

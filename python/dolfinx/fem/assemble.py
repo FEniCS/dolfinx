@@ -40,7 +40,6 @@ def pack_constants(
 
     Returns:
         A `constant` array for each form.
-
     """
 
     def _pack(form):
@@ -95,13 +94,14 @@ def create_vector(L: Form) -> la.Vector:
 
 def create_matrix(a: Form, block_mode: typing.Optional[la.BlockMode] = None) -> la.MatrixCSR:
     """Create a sparse matrix that is compatible with a given bilinear form.
+
     Args:
         a: Bilinear form to assemble.
         block_mode: Block mode of the CSR matrix. If ``None``, default
-        is used.
+            is used.
+
     Returns:
         Assembled sparse matrix.
-
     """
     sp = dolfinx.fem.create_sparsity_pattern(a)
     sp.finalize()
@@ -135,7 +135,6 @@ def assemble_scalar(M: Form, constants=None, coeffs=None):
 
         To compute the functional value on the whole domain, the output
         of this function is typically summed across all MPI ranks.
-
     """
     constants = constants or _pack_constants(M._cpp_object)
     coeffs = coeffs or _pack_coefficients(M._cpp_object)
@@ -174,7 +173,6 @@ def _assemble_vector_form(L: Form, constants=None, coeffs=None) -> la.Vector:
         accumulated on the owning processes. Calling
         :func:`dolfinx.la.Vector.scatter_reverse` on the
         return vector can accumulate ghost contributions.
-
     """
     b = create_vector(L)
     b.array[:] = 0
@@ -207,7 +205,6 @@ def _assemble_vector_array(b: np.ndarray, L: Form, constants=None, coeffs=None):
         accumulated on the owning processes. Calling
         :func:`dolfinx.la.Vector.scatter_reverse` on the
         return vector can accumulate ghost contributions.
-
     """
     constants = _pack_constants(L._cpp_object) if constants is None else constants
     coeffs = _pack_coefficients(L._cpp_object) if coeffs is None else coeffs
@@ -248,7 +245,6 @@ def assemble_matrix(
     Note:
         The returned matrix is not finalised, i.e. ghost values are not
         accumulated.
-
     """
     bcs = [] if bcs is None else bcs
     A: la.MatrixCSR = create_matrix(a, block_mode)
@@ -284,7 +280,6 @@ def _assemble_matrix_csr(
     Note:
         The returned matrix is not finalised, i.e. ghost values are not
         accumulated.
-
     """
     bcs = [] if bcs is None else [bc._cpp_object for bc in bcs]
     constants = _pack_constants(a._cpp_object) if constants is None else constants
@@ -359,7 +354,6 @@ def set_bc(
     Only local (owned) entries are set, hence communication after
     calling this function is not required unless ghost entries need to
     be updated to the boundary condition value.
-
     """
     _bcs = [bc._cpp_object for bc in bcs]
     if x0 is None:

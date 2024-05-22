@@ -35,7 +35,7 @@ PDEs (advanced)
    demos/demo_biharmonic.md
    demos/demo_types.md
    demos/demo_poisson_matrix_free.md
-   
+   demos/demo_pyamg.md
 
 
 Nonlinear problems
@@ -111,3 +111,4 @@ List of all demos
    demos/demo_axis.md
    demos/demo_navier-stokes.md
    demos/demo_mixed-poisson.md
+   demos/demo_pyamg.md

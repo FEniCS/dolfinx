@@ -137,8 +137,9 @@ int main(int argc, char* argv[])
   // Set the logging thread name to show the process rank
   int mpi_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
-  std::string thread_name = "RANK " + std::to_string(mpi_rank);
-  loguru::set_thread_name(thread_name.c_str());
+  std::string fmt = "[%Y-%m-%d %H:%M:%S.%e] [RANK " + std::to_string(mpi_rank)
+                    + "] [%l] %v";
+  spdlog::set_pattern(fmt);
   {
     // Inside the `main` function, we begin by defining a tetrahedral
     // mesh of the domain and the function space on this mesh. Here, we
@@ -153,8 +154,13 @@ int main(int argc, char* argv[])
         mesh::CellType::tetrahedron,
         mesh::create_cell_partitioner(mesh::GhostMode::none)));
 
-    auto V = std::make_shared<fem::FunctionSpace<U>>(fem::create_functionspace(
-        functionspace_form_hyperelasticity_F_form, "u", mesh));
+    auto element = basix::create_element<U>(
+        basix::element::family::P, basix::cell::type::tetrahedron, 1,
+        basix::element::lagrange_variant::unset,
+        basix::element::dpc_variant::unset, false);
+
+    auto V = std::make_shared<fem::FunctionSpace<U>>(
+        fem::create_functionspace(mesh, element, {3}));
 
     auto B = std::make_shared<fem::Constant<T>>(std::vector<T>{0, 0, 0});
     auto traction = std::make_shared<fem::Constant<T>>(std::vector<T>{0, 0, 0});
@@ -264,7 +270,7 @@ int main(int argc, char* argv[])
 
     auto sigma = fem::Function<T>(S);
     sigma.name = "cauchy_stress";
-    sigma.interpolate(sigma_expression, *mesh);
+    sigma.interpolate(sigma_expression);
 
     // Save solution in VTK format
     io::VTKFile file_u(mesh->comm(), "u.pvd", "w");
