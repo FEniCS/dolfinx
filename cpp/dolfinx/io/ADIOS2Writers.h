@@ -249,8 +249,12 @@ std::vector<T> pack_function_data(const fem::Function<T, U>& u)
   std::uint32_t num_vertices
       = vertex_map->size_local() + vertex_map->num_ghosts();
 
-  int rank = V->value_shape().size();
-  std::uint32_t num_components = std::pow(3, rank);
+  auto value_shape = u.function_space()->value_shape();
+  int rank = value_shape.size();
+  int num_components = std::reduce(value_shape.begin(), value_shape.end(), 1,
+                                   std::multiplies{});
+  if (num_components < std::pow(3, rank))
+    num_components = std::pow(3, rank);
 
   // Get dof array and pack into array (padded where appropriate)
   auto dofmap_x = geometry.dofmap();
@@ -291,9 +295,18 @@ void write_data(adios2::IO& io, adios2::Engine& engine,
   assert(mesh);
   const int gdim = mesh->geometry().dim();
 
-  // Vectors and tensor need padding in gdim < 3
-  int rank = V->value_shape().size();
-  bool need_padding = rank > 0 and gdim != 3 ? true : false;
+  // Pad to 3D if vector/tensor is product of dimensions is smaller than
+  // 3**rank to ensure that we can visualize them correctly in Paraview
+  auto value_shape = u.function_space()->value_shape();
+  int rank = value_shape.size();
+  int num_components = std::reduce(value_shape.begin(), value_shape.end(), 1,
+                                   std::multiplies{});
+  bool need_padding = false;
+  if (num_components < std::pow(3, rank))
+  {
+    num_components = std::pow(3, rank);
+    need_padding = true;
+  }
 
   // Get vertex data. If the mesh and function dofmaps are the same we
   // can work directly with the dof array.
@@ -320,7 +333,6 @@ void write_data(adios2::IO& io, adios2::Engine& engine,
       = vertex_map->size_local() + vertex_map->num_ghosts();
 
   // Write each real and imaginary part of the function
-  std::uint32_t num_components = std::pow(3, rank);
   assert(data.size() % num_components == 0);
   if constexpr (std::is_scalar_v<T>)
   {
@@ -657,8 +669,16 @@ void vtx_write_data(adios2::IO& io, adios2::Engine& engine,
   // Get function data array and information about layout
   assert(u.x());
   std::span<const T> u_vector = u.x()->array();
-  int rank = u.function_space()->value_shape().size();
-  std::uint32_t num_comp = std::pow(3, rank);
+
+  // Pad to 3D if vector/tensor is product of dimensions is smaller than
+  // 3**rank to ensure that we can visualize them correctly in Paraview
+  auto value_shape = u.function_space()->value_shape();
+  int rank = value_shape.size();
+  int num_comp = std::reduce(value_shape.begin(), value_shape.end(), 1,
+                             std::multiplies{});
+  if (num_comp < std::pow(3, rank))
+    num_comp = std::pow(3, rank);
+
   std::shared_ptr<const fem::DofMap> dofmap = u.function_space()->dofmap();
   assert(dofmap);
   std::shared_ptr<const common::IndexMap> index_map = dofmap->index_map;

@@ -477,14 +477,16 @@ void write_function(
     auto V = _u.get().function_space();
     auto e = V->element();
     assert(e);
-    int rank = V->value_shape().size();
-    int num_components = std::reduce(
-        V->value_shape().begin(), V->value_shape().end(), 1, std::multiplies{});
 
-    // Pad to 3D if vector is 1 or 2D, to ensure that we can visualize them
-    // correctly in Paraview
-    if (rank == 1 && V->value_shape().front() < 3)
-      num_components = 3;
+    // Pad to 3D if vector/tensor is product of dimensions is smaller than
+    // 3**rank to ensure that we can visualize them correctly in Paraview
+    auto value_shape = V->value_shape();
+    int rank = value_shape.size();
+    int num_components = std::reduce(value_shape.begin(), value_shape.end(), 1,
+                                     std::multiplies{});
+    if (num_components < std::pow(3, rank))
+      num_components = std::pow(3, rank);
+
     if (is_cellwise(*e))
     {
       // -- Cell-wise data
@@ -651,15 +653,15 @@ void write_function(
       assert(e);
       std::string d_type = is_cellwise(*e) ? "PCellData" : "PPointData";
       pugi::xml_node data_pnode = grid_node.child(d_type.c_str());
-      int num_components
-          = std::reduce(V->value_shape().begin(), V->value_shape().end(), 1,
-                        std::multiplies{});
 
-      // Pad to 3D if vector is 1 or 2D, to ensure that we can visualize them
-      // correctly in Paraview
-      const int rank = V->value_shape().size();
-      if (rank == 1 && V->value_shape().front() < 3)
-        num_components = 3;
+      // Pad to 3D if vector/tensor is product of dimensions is smaller than
+      // 3**rank to ensure that we can visualize them correctly in Paraview
+      auto value_shape = V->value_shape();
+      int rank = value_shape.size();
+      int num_components = std::reduce(value_shape.begin(), value_shape.end(),
+                                       1, std::multiplies{});
+      if (num_components < std::pow(3, rank))
+        num_components = std::pow(3, rank);
 
       auto add_field = [&](const std::string& name, int size)
       {
