@@ -298,7 +298,6 @@ void write_data(adios2::IO& io, adios2::Engine& engine,
   assert(dofmap);
   auto mesh = V->mesh();
   assert(mesh);
-  const int gdim = mesh->geometry().dim();
 
   // Pad to 3D if vector/tensor is product of dimensions is smaller than
   // 3**rank to ensure that we can visualize them correctly in Paraview
