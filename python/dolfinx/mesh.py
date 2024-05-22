@@ -440,17 +440,18 @@ def create_mesh(
     return Mesh(mesh, domain)
 
 
-def create_submesh(msh: Mesh, dim: int, entities: npt.NDArray[np.int32]):
-    """Create a mesh based on a subset of entities from an existing mesh.
+def create_submesh(
+    msh: Mesh, dim: int, entities: npt.NDArray[np.int32]
+) -> tuple[Mesh, npt.NDArray[np.int32], npt.NDArray[np.int32], npt.NDArray[np.int32]]:
+    """Create a mesh with specified entities from another mesh.
 
     Args:
         mesh: Mesh to create the sub-mesh from.
         dim: Topological dimension of the entities in ``msh`` to include in the sub-mesh.
         entities: Indices of entities in ``msh`` to include in the sub-mesh.
     Returns:
-        A quadruplet containing the submesh and three maps from the submesh to
-        the parent mesh. The first map is the entity map, the second map the
-        vertex map (topology), and the third map is the node map (geometry).
+        The (1) sub mesh, (2) entity map, (3) vertex map and (4) node map (geometry).
+        Each of the maps a local index of the sub mesh to a local index of ``msh``.
     """
     submsh, entity_map, vertex_map, geom_map = _cpp.mesh.create_submesh(
         msh._cpp_object, dim, entities
