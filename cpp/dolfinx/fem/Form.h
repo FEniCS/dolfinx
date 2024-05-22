@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <array>
 #include <concepts>
+#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -122,6 +123,9 @@ public:
   /// Scalar type
   using scalar_type = T;
 
+  /// Geometry type
+  using geometry_type = U;
+
   /// @brief Create a finite element form.
   ///
   /// @note User applications will normally call a factory function
@@ -153,17 +157,20 @@ public:
   template <typename X>
     requires std::is_convertible_v<
                  std::remove_cvref_t<X>,
-                 std::map<IntegralType, std::vector<integral_data<T, U>>>>
-  Form(const std::vector<std::shared_ptr<const FunctionSpace<U>>>& V,
-       X&& integrals,
-       const std::vector<std::shared_ptr<const Function<scalar_type, U>>>&
-           coefficients,
-       const std::vector<std::shared_ptr<const Constant<scalar_type>>>&
-           constants,
-       bool needs_facet_permutations,
-       const std::map<std::shared_ptr<const mesh::Mesh<U>>,
-                      std::span<const std::int32_t>>& entity_maps,
-       std::shared_ptr<const mesh::Mesh<U>> mesh = nullptr)
+                 std::map<IntegralType, std::vector<integral_data<
+                                            scalar_type, geometry_type>>>>
+  Form(
+      const std::vector<std::shared_ptr<const FunctionSpace<geometry_type>>>& V,
+      X&& integrals,
+      const std::vector<
+          std::shared_ptr<const Function<scalar_type, geometry_type>>>&
+          coefficients,
+      const std::vector<std::shared_ptr<const Constant<scalar_type>>>&
+          constants,
+      bool needs_facet_permutations,
+      const std::map<std::shared_ptr<const mesh::Mesh<geometry_type>>,
+                     std::span<const std::int32_t>>& entity_maps,
+      std::shared_ptr<const mesh::Mesh<geometry_type>> mesh = nullptr)
       : _function_spaces(V), _coefficients(coefficients), _constants(constants),
         _mesh(mesh), _needs_facet_permutations(needs_facet_permutations)
   {
@@ -191,7 +198,7 @@ public:
         throw std::runtime_error("Integral IDs not sorted");
       }
 
-      std::vector<integral_data<T, U>>& itg
+      std::vector<integral_data<scalar_type, geometry_type>>& itg
           = _integrals[static_cast<std::size_t>(domain_type)];
       for (auto&& [id, kern, e] : data)
         itg.emplace_back(id, kern, std::move(e));
@@ -220,11 +227,14 @@ public:
 
   /// @brief Extract common mesh for the form.
   /// @return The mesh.
-  std::shared_ptr<const mesh::Mesh<U>> mesh() const { return _mesh; }
+  std::shared_ptr<const mesh::Mesh<geometry_type>> mesh() const
+  {
+    return _mesh;
+  }
 
   /// @brief Function spaces for all arguments.
   /// @return Function spaces.
-  const std::vector<std::shared_ptr<const FunctionSpace<U>>>&
+  const std::vector<std::shared_ptr<const FunctionSpace<geometry_type>>>&
   function_spaces() const
   {
     return _function_spaces;
@@ -232,11 +242,11 @@ public:
 
   /// @brief Get the kernel function for integral `i` on given domain
   /// type.
-  /// @param[in] type Integral type
-  /// @param[in] i Domain identifier (index)
-  /// @return Function to call for tabulate_tensor
-  std::function<void(T*, const T*, const T*, const U*, const int*,
-                     const uint8_t*)>
+  /// @param[in] type Integral type.
+  /// @param[in] i Domain identifier (index).
+  /// @return Function to call for `tabulate_tensor`.
+  std::function<void(scalar_type*, const scalar_type*, const scalar_type*,
+                     const geometry_type*, const int*, const uint8_t*)>
   kernel(IntegralType type, int i) const
   {
     const auto& integrals = _integrals[static_cast<std::size_t>(type)];
@@ -325,11 +335,11 @@ public:
   /// @param mesh The mesh the entities are numbered with respect to.
   /// @return List of active entities in `mesh` for the given integral.
   std::vector<std::int32_t> domain(IntegralType type, int i,
-                                   const mesh::Mesh<U>& mesh) const
+                                   const mesh::Mesh<geometry_type>& mesh) const
   {
     // Hack to avoid passing shared pointer to this function
-    std::shared_ptr<const mesh::Mesh<U>> msh_ptr(&mesh,
-                                                 [](const mesh::Mesh<U>*) {});
+    std::shared_ptr<const mesh::Mesh<geometry_type>> msh_ptr(
+        &mesh, [](const mesh::Mesh<geometry_type>*) {});
 
     std::span<const std::int32_t> entities = domain(type, i);
     if (msh_ptr == _mesh)
@@ -370,7 +380,9 @@ public:
   }
 
   /// @brief Access coefficients.
-  const std::vector<std::shared_ptr<const Function<T, U>>>& coefficients() const
+  const std::vector<
+      std::shared_ptr<const Function<scalar_type, geometry_type>>>&
+  coefficients() const
   {
     return _coefficients;
   }
@@ -397,33 +409,38 @@ public:
   }
 
   /// @brief Access constants.
-  const std::vector<std::shared_ptr<const Constant<T>>>& constants() const
+  const std::vector<std::shared_ptr<const Constant<scalar_type>>>&
+  constants() const
   {
     return _constants;
   }
 
 private:
   // Function spaces (one for each argument)
-  std::vector<std::shared_ptr<const FunctionSpace<U>>> _function_spaces;
+  std::vector<std::shared_ptr<const FunctionSpace<geometry_type>>>
+      _function_spaces;
 
   // Integrals. Array index is
   // static_cast<std::size_t(IntegralType::foo)
-  std::array<std::vector<integral_data<T, U>>, 4> _integrals;
+  std::array<std::vector<integral_data<scalar_type, geometry_type>>, 4>
+      _integrals;
 
   // Form coefficients
-  std::vector<std::shared_ptr<const Function<T, U>>> _coefficients;
+  std::vector<std::shared_ptr<const Function<scalar_type, geometry_type>>>
+      _coefficients;
 
   // Constants associated with the Form
-  std::vector<std::shared_ptr<const Constant<T>>> _constants;
+  std::vector<std::shared_ptr<const Constant<scalar_type>>> _constants;
 
   // The mesh
-  std::shared_ptr<const mesh::Mesh<U>> _mesh;
+  std::shared_ptr<const mesh::Mesh<geometry_type>> _mesh;
 
   // True if permutation data needs to be passed into these integrals
   bool _needs_facet_permutations;
 
   // Entity maps (see Form documentation)
-  std::map<std::shared_ptr<const mesh::Mesh<U>>, std::vector<std::int32_t>>
+  std::map<std::shared_ptr<const mesh::Mesh<geometry_type>>,
+           std::vector<std::int32_t>>
       _entity_maps;
 }; // namespace dolfinx::fem
 } // namespace dolfinx::fem

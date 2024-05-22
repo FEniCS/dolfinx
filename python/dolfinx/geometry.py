@@ -29,7 +29,36 @@ __all__ = [
     "compute_collisions_points",
     "compute_distance_gjk",
     "create_midpoint_tree",
+    "PointOwnershipData",
 ]
+
+
+class PointOwnershipData:
+    """Convenience class for storing data related to the ownership of points."""
+
+    _cpp_object: typing.Union[
+        _cpp.geometry.PointOwnershipData_float32, _cpp.geometry.PointOwnershipData_float64
+    ]
+
+    def __init__(self, ownership_data):
+        """Wrap a C++ PointOwnershipData."""
+        self._cpp_object = ownership_data
+
+    def src_owner(self) -> npt.NDArray[np.int32]:
+        """Ranks owning each point sent into ownership determination for current process"""
+        return self._cpp_object.src_owner
+
+    def dest_owner(self) -> npt.NDArray[np.int32]:
+        """Ranks that sent `dest_points` to current process"""
+        return self._cpp_object.dest_owners
+
+    def dest_points(self) -> npt.NDArray[np.floating]:
+        """Points owned by current rank"""
+        return self._cpp_object.dest_points
+
+    def dest_cells(self) -> npt.NDArray[np.int32]:
+        """Cell indices (local to process) where each entry of `dest_points` is located"""
+        return self._cpp_object.dest_cells
 
 
 class BoundingBoxTree:

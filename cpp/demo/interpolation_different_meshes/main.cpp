@@ -68,14 +68,19 @@ int main(int argc, char* argv[])
     u_tet->interpolate(fun);
 
     // Interpolate from u_tet to u_hex
-    constexpr T padding = 1e-8;
-    auto nmm_interpolation_data
-        = fem::create_nonmatching_meshes_interpolation_data(
-            *u_hex->function_space()->mesh(),
+    auto cell_map
+        = mesh_hex->topology()->index_map(mesh_hex->topology()->dim());
+    assert(cell_map);
+    std::vector<std::int32_t> cells(
+        cell_map->size_local() + cell_map->num_ghosts(), 0);
+    std::iota(cells.begin(), cells.end(), 0);
+    geometry::PointOwnershipData<T> interpolation_data
+        = fem::create_interpolation_data(
+            u_hex->function_space()->mesh()->geometry(),
             *u_hex->function_space()->element(),
-            *u_tet->function_space()->mesh(), padding);
-    constexpr std::span<const std::int32_t> cell_map;
-    u_hex->interpolate(*u_tet, cell_map, nmm_interpolation_data);
+            *u_tet->function_space()->mesh(),
+            std::span<const std::int32_t>(cells), 1e-8);
+    u_hex->interpolate(*u_tet, cells, interpolation_data);
 
 #ifdef HAS_ADIOS2
     io::VTXWriter<double> write_tet(mesh_tet->comm(), "u_tet.bp", {u_tet});

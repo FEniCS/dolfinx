@@ -97,7 +97,7 @@ void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
                   const mesh::Geometry<U>& geometry, pugi::xml_node& xml_node,
                   hid_t h5_id, const std::string& name)
 {
-  LOG(INFO) << "XDMF: add meshtags (" << name << ")";
+  spdlog::info("XDMF: add meshtags ({})", name.c_str());
   // Get mesh
   const int dim = meshtags.dim();
   std::shared_ptr<const common::IndexMap> entity_map

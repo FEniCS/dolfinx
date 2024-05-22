@@ -208,9 +208,15 @@ DofMap DofMap::extract_sub_dofmap(std::span<const int> component) const
 //-----------------------------------------------------------------------------
 std::pair<DofMap, std::vector<std::int32_t>> DofMap::collapse(
     MPI_Comm comm, const mesh::Topology& topology,
-    const std::function<std::vector<int>(
-        const graph::AdjacencyList<std::int32_t>&)>& reorder_fn) const
+    std::function<std::vector<int>(const graph::AdjacencyList<std::int32_t>&)>&&
+        reorder_fn) const
 {
+  if (!reorder_fn)
+  {
+    reorder_fn = [](const graph::AdjacencyList<std::int32_t>& g)
+    { return graph::reorder_gps(g); };
+  }
+
   // Create new dofmap
   auto create_subdofmap = [](MPI_Comm comm, auto index_map_bs, auto& layout,
                              auto& topology, auto& reorder_fn, auto& dmap)

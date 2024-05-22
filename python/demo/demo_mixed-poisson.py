@@ -93,8 +93,19 @@
 
 # +
 
+try:
+    from petsc4py import PETSc
+
+    import dolfinx
+
+    if not dolfinx.has_petsc:
+        print("This demo requires DOLFINx to be compiled with PETSc enabled.")
+        exit(0)
+except ModuleNotFoundError:
+    print("This demo requires petsc4py.")
+    exit(0)
+
 from mpi4py import MPI
-from petsc4py import PETSc
 
 import numpy as np
 
@@ -162,7 +173,11 @@ problem = LinearProblem(
     a,
     L,
     bcs=bcs,
-    petsc_options={"ksp_type": "preonly", "pc_type": "lu", "pc_factor_mat_solver_type": "mumps"},
+    petsc_options={
+        "ksp_type": "preonly",
+        "pc_type": "lu",
+        "pc_factor_mat_solver_type": "superlu_dist",
+    },
 )
 try:
     w_h = problem.solve()

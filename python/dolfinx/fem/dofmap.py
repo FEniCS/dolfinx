@@ -23,10 +23,10 @@ class DofMap:
         """Cell local-global dof map
 
         Args:
-            cell: The cell index
+            cell: The cell index.
 
         Returns:
-            Local-global dof map for the cell (using process-local indices)
+            Local-global dof map for the cell (using process-local indices).
         """
         return self._cpp_object.cell_dofs(cell_index)
 
@@ -37,20 +37,20 @@ class DofMap:
 
     @property
     def dof_layout(self):
-        """Layout of dofs on an element"""
+        """Layout of dofs on an element."""
         return self._cpp_object.dof_layout
 
     @property
     def index_map(self):
-        """Index map that described the parallel distribution of the dofmap"""
+        """Index map that described the parallel distribution of the dofmap."""
         return self._cpp_object.index_map
 
     @property
     def index_map_bs(self):
-        """Block size of the index map"""
+        """Block size of the index map."""
         return self._cpp_object.index_map_bs
 
     @property
     def list(self):
-        """Adjacency list with dof indices for each cell"""
+        """Adjacency list with dof indices for each cell."""
         return self._cpp_object.map()
