@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include <dolfinx/common/Table.h>
-#include <dolfinx/common/timing.h>
+#include "Table.h"
+#include "timing.h"
 #include <map>
 #include <mpi.h>
 #include <set>

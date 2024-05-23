@@ -194,17 +194,17 @@ Mesh<T> create_rectangle(MPI_Comm comm, std::array<std::array<double, 2>, 2> p,
 /// @brief Interval mesh of the 1D line `[a, b]`.
 ///
 /// Given `n` cells in the axial direction, the total number of
-/// intervals will be `n` and the total number of vertices will be `n +
-/// 1`.
+/// intervals will be `n` and the total number of vertices will be
+/// `n + 1`.
 ///
-/// @param[in] comm MPI communicator to build the mesh on
-/// @param[in] nx Number of cells
-/// @param[in] p End points of the interval
+/// @param[in] comm MPI communicator to build the mesh on.
+/// @param[in] n Number of cells.
+/// @param[in] p End points of the interval.
 /// @param[in] partitioner Partitioning function for distributing cells
 /// across MPI ranks.
-/// @return A mesh
+/// @return A mesh.
 template <std::floating_point T = double>
-Mesh<T> create_interval(MPI_Comm comm, std::size_t nx, std::array<double, 2> p,
+Mesh<T> create_interval(MPI_Comm comm, std::size_t n, std::array<double, 2> p,
                         CellPartitionFunction partitioner = nullptr)
 {
   if (!partitioner and dolfinx::MPI::size(comm) > 1)
@@ -217,7 +217,7 @@ Mesh<T> create_interval(MPI_Comm comm, std::size_t nx, std::array<double, 2> p,
   {
     const T a = p[0];
     const T b = p[1];
-    const T ab = (b - a) / static_cast<T>(nx);
+    const T ab = (b - a) / static_cast<T>(n);
 
     if (std::abs(a - b) < std::numeric_limits<double>::epsilon())
     {
@@ -231,18 +231,18 @@ Mesh<T> create_interval(MPI_Comm comm, std::size_t nx, std::array<double, 2> p,
           "Interval length is negative. Check order of arguments.");
     }
 
-    if (nx < 1)
+    if (n < 1)
       throw std::runtime_error(
           "Number of points on interval must be at least 1");
 
     // Create vertices
-    x.resize(nx + 1);
-    for (std::size_t ix = 0; ix <= nx; ix++)
+    x.resize(n + 1);
+    for (std::size_t ix = 0; ix <= n; ix++)
       x[ix] = a + ab * static_cast<T>(ix);
 
     // Create intervals
-    cells.resize(nx * 2);
-    for (std::size_t ix = 0; ix < nx; ++ix)
+    cells.resize(n * 2);
+    for (std::size_t ix = 0; ix < n; ++ix)
       for (std::size_t j = 0; j < 2; ++j)
         cells[2 * ix + j] = ix + j;
 

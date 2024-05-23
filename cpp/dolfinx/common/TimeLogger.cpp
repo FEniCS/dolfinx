@@ -5,8 +5,8 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "TimeLogger.h"
-#include <dolfinx/common/MPI.h>
-#include <dolfinx/common/log.h>
+#include "MPI.h"
+#include "log.h"
 #include <iostream>
 #include <variant>
 

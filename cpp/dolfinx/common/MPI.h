@@ -6,14 +6,14 @@
 
 #pragma once
 
+#include "Timer.h"
+#include "log.h"
+#include "types.h"
 #include <algorithm>
 #include <array>
 #include <cassert>
 #include <complex>
 #include <cstdint>
-#include <dolfinx/common/Timer.h>
-#include <dolfinx/common/log.h>
-#include <dolfinx/common/types.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <numeric>
 #include <set>
