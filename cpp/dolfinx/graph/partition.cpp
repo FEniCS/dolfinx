@@ -5,12 +5,12 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "partition.h"
+#include "AdjacencyList.h"
 #include "partitioners.h"
 #include <algorithm>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
-#include <dolfinx/graph/AdjacencyList.h>
 #include <map>
 #include <memory>
 
