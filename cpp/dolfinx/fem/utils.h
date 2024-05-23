@@ -90,8 +90,7 @@ get_cell_facet_pairs(std::int32_t f, std::span<const std::int32_t> cells,
 /// integrals `entities` are the cell indices. For exterior facet
 /// integrals, `entities` is a list of `(cell_index, local_facet_index)`
 /// pairs. For interior facet integrals, `entities` is a list of
-/// `(cell_index0, local_facet_index0, cell_index1,
-/// local_facet_index1)`.
+/// `(cell_index0, local_facet_index0, cell_index1, local_facet_index1)`.
 ///
 /// @note Owned mesh entities only are returned. Ghost entities are not
 /// included.
