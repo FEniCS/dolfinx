@@ -256,7 +256,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Update nanobind
-        run: python3 -m pip install nanobind --upgrade
+        run: python3 -m pip install --break-system-packages nanobind --upgrade
 
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
