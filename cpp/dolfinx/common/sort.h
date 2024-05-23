@@ -6,10 +6,10 @@
 
 #pragma once
 
+#include "Timer.h"
 #include <algorithm>
 #include <bitset>
 #include <cstdint>
-#include <dolfinx/common/Timer.h>
 #include <numeric>
 #include <span>
 #include <type_traits>

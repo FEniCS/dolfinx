@@ -12,6 +12,7 @@ from dolfinx.cpp.fem import IntegralType, transpose_dofmap
 from dolfinx.cpp.fem import create_interpolation_data as _create_interpolation_data
 from dolfinx.cpp.fem import create_sparsity_pattern as _create_sparsity_pattern
 from dolfinx.cpp.fem import discrete_gradient as _discrete_gradient
+from dolfinx.cpp.fem import interpolation_matrix as _interpolation_matrix
 from dolfinx.fem.assemble import (
     apply_lifting,
     assemble_matrix,
@@ -101,6 +102,19 @@ def discrete_gradient(space0: FunctionSpace, space1: FunctionSpace) -> _MatrixCS
         Discrete gradient operator
     """
     return _discrete_gradient(space0._cpp_object, space1._cpp_object)
+
+
+def interpolation_matrix(space0: FunctionSpace, space1: FunctionSpace) -> _MatrixCSR:
+    """Assemble an interpolation matrix for two function spaces on the same mesh.
+
+    Args:
+        space0: space to interpolate from
+        space1: space to interpolate into
+
+    Returns:
+        Interpolation matrix
+    """
+    return _MatrixCSR(_interpolation_matrix(space0._cpp_object, space1._cpp_object))
 
 
 __all__ = [

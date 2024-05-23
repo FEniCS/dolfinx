@@ -27,7 +27,7 @@ namespace sparsitybuild
 ///
 /// Inserts the rectangular blocks of indices `dofmap[0][cells[0][i]] x
 /// dofmap[1][cells[1][i]]` into the sparsity pattern, i.e. entries
-/// (dofmap[0][cells[0][i]][k0], dofmap[0][cells[0][i]][k1])` will
+/// `(dofmap[0][cells[0][i]][k0], dofmap[0][cells[0][i]][k1])` will
 /// appear in the sparsity pattern.
 ///
 /// @param pattern Sparsity pattern to insert into.
@@ -51,6 +51,7 @@ void cells(la::SparsityPattern& pattern,
 /// list of `(cell0, cell1)` pairs for each interior facet to index into
 /// `dofmap[i]`. `cells[0]` and `cells[1]` must have the same size.
 /// @param[in] dofmaps Dofmaps to use in building the sparsity pattern.
+///
 /// @note The sparsity pattern is not finalised.
 void interior_facets(
     la::SparsityPattern& pattern,

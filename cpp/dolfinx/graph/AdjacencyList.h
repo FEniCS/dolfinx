@@ -17,7 +17,6 @@
 
 namespace dolfinx::graph
 {
-
 /// This class provides a static adjacency list data structure. It is
 /// commonly used to store directed graphs. For each node in the
 /// contiguous list of nodes [0, 1, 2, ..., n) it stores the connected
