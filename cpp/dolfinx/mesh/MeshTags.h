@@ -139,8 +139,8 @@ MeshTags<T> create_meshtags(std::shared_ptr<const Topology> topology, int dim,
                             const graph::AdjacencyList<std::int32_t>& entities,
                             std::span<const T> values)
 {
-  LOG(INFO)
-      << "Building MeshTags object from tagged entities (defined by vertices).";
+  spdlog::info(
+      "Building MeshTags object from tagged entities (defined by vertices).");
 
   // Compute the indices of the topology entities (index is set to -1 if
   // it can't be found)

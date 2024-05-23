@@ -194,7 +194,7 @@ def form(
         # its C++ object.
         original_coeffs = form.coefficients()
         coeffs = [
-            original_coeffs[ufcx_form.original_coefficient_position[i]]._cpp_object
+            original_coeffs[ufcx_form.original_coefficient_positions[i]]._cpp_object
             for i in range(ufcx_form.num_coefficients)
         ]
         constants = [c._cpp_object for c in form.constants()]
@@ -256,12 +256,14 @@ def extract_function_spaces(
     ],
     index: int = 0,
 ) -> typing.Iterable[typing.Union[None, function.FunctionSpace]]:
-    """Extract common function spaces from an array of forms. If `forms`
-    is a list of linear form, this function returns of list of the
-    corresponding test functions. If `forms` is a 2D array of bilinear
-    forms, for index=0 the list common test function space for each row
-    is returned, and if index=1 the common trial function spaces for
-    each column are returned."""
+    """Extract common function spaces from an array of forms.
+
+    If `forms` is a list of linear form, this function returns of list
+    of the corresponding test functions. If `forms` is a 2D array of
+    bilinear forms, for index=0 the list common test function space for
+    each row is returned, and if index=1 the common trial function
+    spaces for each column are returned.
+    """
     _forms = np.array(forms)
     if _forms.ndim == 0:
         raise RuntimeError("Expected an array for forms, not a single form")
