@@ -24,17 +24,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install nanobind from source
-        run: |
-          git clone https://github.com/wjakob/nanobind.git /tmp/nanobind-src
-          cd /tmp/nanobind-src
-          git submodule update --init --recursive
-          cmake -D NB_TEST=off .
-          python3 -m pip install .
-          rm -rf /tmp/nanobind-src
       - name: Install Python dependencies
         run: |
-          python3 -m pip install mpi4py scikit-build-core[pyproject]
+          python3 -m pip install mpi4py nanobind scikit-build-core[pyproject] --upgrade
 
       - name: Install FEniCS Python components
         run: |

@@ -91,16 +91,8 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install nanobind from source
-        run: |
-          git clone https://github.com/wjakob/nanobind.git /tmp/nanobind-src
-          cd /tmp/nanobind-src
-          git submodule update --init --recursive
-          cmake -D NB_TEST=off .
-          python3 -m pip install .
-          rm -rf /tmp/nanobind-src
       - name: Install Python build dependencies
-        run: pip install mpi4py scikit-build-core[pyproject]
+        run: pip install mpi4py nanobind scikit-build-core[pyproject] --upgrade
 
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
