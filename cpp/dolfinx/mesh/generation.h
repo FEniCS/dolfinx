@@ -217,7 +217,7 @@ Mesh<T> create_interval(MPI_Comm comm, std::size_t n, std::array<double, 2> p,
   {
     const T a = p[0];
     const T b = p[1];
-    const T ab = (b - a) / static_cast<T>(nx);
+    const T ab = (b - a) / static_cast<T>(n);
 
     if (std::abs(a - b) < std::numeric_limits<double>::epsilon())
     {
