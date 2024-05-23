@@ -118,27 +118,27 @@ Pyramid:                     Pyramid13:
 namespace dolfinx::io::cells
 {
 
-/// Permutation array to map from VTK to DOLFINx node ordering
+/// @brief Permutation array to map from VTK to DOLFINx node ordering.
 ///
 /// @param[in] type The cell shape
 /// @param[in] num_nodes The number of cell 'nodes'
 /// @return Permutation array @p for permuting from VTK ordering to
-/// DOLFINx ordering, i.e. `a_dolfin[i] = a_vtk[p[i]]
+/// DOLFINx ordering, i.e. `a_dolfin[i] = a_vtk[p[i]]`.
 /// @details If `p = [0, 2, 1, 3]` and `a = [10, 3, 4, 7]`, then `a_p
 /// =[a[p[0]], a[p[1]], a[p[2]], a[p[3]]] = [10, 4, 3, 7]`
 std::vector<std::uint16_t> perm_vtk(mesh::CellType type, int num_nodes);
 
-/// Permutation array to map from Gmsh to DOLFINx node ordering
+/// @brief Permutation array to map from Gmsh to DOLFINx node ordering.
 ///
 /// @param[in] type The cell shape
 /// @param[in] num_nodes
 /// @return Permutation array @p for permuting from Gmsh ordering to
-/// DOLFINx ordering, i.e. `a_dolfin[i] = a_gmsh[p[i]]
+/// DOLFINx ordering, i.e. `a_dolfin[i] = a_gmsh[p[i]]`.
 /// @details If `p = [0, 2, 1, 3]` and `a = [10, 3, 4, 7]`, then `a_p
 /// =[a[p[0]], a[p[1]], a[p[2]], a[p[3]]] = [10, 4, 3, 7]`
 std::vector<std::uint16_t> perm_gmsh(mesh::CellType type, int num_nodes);
 
-/// Compute the transpose of a re-ordering map
+/// @brief Compute the transpose of a re-ordering map.
 ///
 /// @param[in] map A re-ordering map
 /// @return Transpose of the `map`. E.g., is `map = {1, 2, 3, 0}`, the

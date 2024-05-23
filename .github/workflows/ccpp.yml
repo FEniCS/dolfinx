@@ -188,6 +188,7 @@ jobs:
           python3 -m pip install --break-system-packages git+https://github.com/FEniCS/ufl.git
           python3 -m pip install --break-system-packages --no-build-isolation git+https://github.com/FEniCS/basix.git
           python3 -m pip install --break-system-packages git+https://github.com/FEniCS/ffcx.git
+
       - name: Install FEniCS Python components
         if: github.event_name == 'workflow_dispatch'
         run: |
