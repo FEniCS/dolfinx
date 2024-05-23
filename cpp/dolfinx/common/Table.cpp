@@ -5,8 +5,8 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Table.h"
+#include "MPI.h"
 #include <array>
-#include <dolfinx/common/MPI.h>
 #include <functional>
 #include <iostream>
 #include <map>
