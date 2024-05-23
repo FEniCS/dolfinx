@@ -40,7 +40,7 @@ jobs:
       - name: Install Basix
         run: |
           . /opt/intel/oneapi/setvars.sh
-          pip install --no-build-isolation git+https://github.com/FEniCS/basix.git
+          pip install git+https://github.com/FEniCS/basix.git
 
       - name: Clone FFCx
         uses: actions/checkout@v4
