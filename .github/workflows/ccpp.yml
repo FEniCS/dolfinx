@@ -153,7 +153,6 @@ jobs:
             petsc_arch: linux-gnu-real64-32
           - docker_image: "ghcr.io/fenics/test-env:current-mpich"
             petsc_arch: linux-gnu-complex128-32
-      fail-fast: false
     container: ${{ matrix.docker_image }}
     env:
       PETSC_ARCH: ${{ matrix.petsc_arch }}
