@@ -43,40 +43,106 @@ namespace nb = nanobind;
 namespace
 {
 
+template <typename U>
+dolfinx::la::SparsityPattern
+create_sparsity(const dolfinx::fem::FunctionSpace<U>& V0,
+                const dolfinx::fem::FunctionSpace<U>& V1)
+{
+  assert(V0.mesh());
+  auto mesh = V0.mesh();
+  assert(V1.mesh());
+  assert(mesh == V1.mesh());
+  MPI_Comm comm = mesh->comm();
+
+  auto dofmap0 = V0.dofmap();
+  assert(dofmap0);
+  auto dofmap1 = V1.dofmap();
+  assert(dofmap1);
+
+  // Create and build  sparsity pattern
+  assert(dofmap0->index_map);
+  assert(dofmap1->index_map);
+  dolfinx::la::SparsityPattern sp(
+      comm, {dofmap1->index_map, dofmap0->index_map},
+      {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
+
+  int tdim = mesh->topology()->dim();
+  auto map = mesh->topology()->index_map(tdim);
+  assert(map);
+  std::vector<std::int32_t> c(map->size_local(), 0);
+  std::iota(c.begin(), c.end(), 0);
+  dolfinx::fem::sparsitybuild::cells(sp, {c, c}, {*dofmap1, *dofmap0});
+  sp.finalize();
+
+  return sp;
+}
+
 // Declare assembler function that have multiple scalar types
 template <typename T, typename U>
 void declare_discrete_operators(nb::module_& m)
 {
+  m.def("interpolation_matrix",
+        [](const dolfinx::fem::FunctionSpace<U>& V0,
+           const dolfinx::fem::FunctionSpace<U>& V1)
+        {
+          // Create sparsity
+          auto sp = create_sparsity(V0, V1);
+
+          // Build operator
+          dolfinx::la::MatrixCSR<T> A(sp);
+
+          auto [bs0, bs1] = A.block_size();
+          if (bs0 == 1 and bs1 == 1)
+          {
+            dolfinx::fem::interpolation_matrix<T, U>(
+                V0, V1, A.template mat_set_values<1, 1>());
+          }
+          else if (bs0 == 2 and bs1 == 1)
+          {
+            dolfinx::fem::interpolation_matrix<T, U>(
+                V0, V1, A.template mat_set_values<2, 1>());
+          }
+          else if (bs0 == 1 and bs1 == 2)
+          {
+            dolfinx::fem::interpolation_matrix<T, U>(
+                V0, V1, A.template mat_set_values<1, 2>());
+          }
+          else if (bs0 == 2 and bs1 == 2)
+          {
+            dolfinx::fem::interpolation_matrix<T, U>(
+                V0, V1, A.template mat_set_values<2, 2>());
+          }
+          else if (bs0 == 3 and bs1 == 1)
+          {
+            dolfinx::fem::interpolation_matrix<T, U>(
+                V0, V1, A.template mat_set_values<3, 1>());
+          }
+          else if (bs0 == 1 and bs1 == 3)
+          {
+            dolfinx::fem::interpolation_matrix<T, U>(
+                V0, V1, A.template mat_set_values<1, 3>());
+          }
+          else if (bs0 == 3 and bs1 == 3)
+          {
+            dolfinx::fem::interpolation_matrix<T, U>(
+                V0, V1, A.template mat_set_values<3, 3>());
+          }
+          else
+          {
+            throw std::runtime_error(
+                "Interpolation matrix not supported between block sizes "
+                + std::to_string(bs0) + " and " + std::to_string(bs1));
+          }
+
+          return A;
+        });
+
   m.def(
       "discrete_gradient",
       [](const dolfinx::fem::FunctionSpace<U>& V0,
          const dolfinx::fem::FunctionSpace<U>& V1)
       {
-        assert(V0.mesh());
-        auto mesh = V0.mesh();
-        assert(V1.mesh());
-        assert(mesh == V1.mesh());
-        MPI_Comm comm = mesh->comm();
-
-        auto dofmap0 = V0.dofmap();
-        assert(dofmap0);
-        auto dofmap1 = V1.dofmap();
-        assert(dofmap1);
-
-        // Create and build  sparsity pattern
-        assert(dofmap0->index_map);
-        assert(dofmap1->index_map);
-        dolfinx::la::SparsityPattern sp(
-            comm, {dofmap1->index_map, dofmap0->index_map},
-            {dofmap1->index_map_bs(), dofmap0->index_map_bs()});
-
-        int tdim = mesh->topology()->dim();
-        auto map = mesh->topology()->index_map(tdim);
-        assert(map);
-        std::vector<std::int32_t> c(map->size_local(), 0);
-        std::iota(c.begin(), c.end(), 0);
-        dolfinx::fem::sparsitybuild::cells(sp, {c, c}, {*dofmap1, *dofmap0});
-        sp.finalize();
+        auto sp = create_sparsity(V0, V1);
 
         // Build operator
         dolfinx::la::MatrixCSR<T> A(sp);
@@ -296,12 +362,13 @@ void declare_assembly_functions(nb::module_& m)
                         std::span<const std::int32_t> cols,
                         std::span<const T> data)
         {
-          return fin(nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig,
-                                 nb::numpy>(rows.data(), {rows.size()}),
-                     nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig,
-                                 nb::numpy>(cols.data(), {cols.size()}),
-                     nb::ndarray<const T, nb::ndim<2>, nb::c_contig, nb::numpy>(
-                         data.data(), {data.size()}));
+          return fin(
+              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig,
+                          nb::numpy>(rows.data(), {rows.size()}, nb::handle()),
+              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig,
+                          nb::numpy>(cols.data(), {cols.size()}, nb::handle()),
+              nb::ndarray<const T, nb::ndim<2>, nb::c_contig, nb::numpy>(
+                  data.data(), {data.size()}, nb::handle()));
         };
         dolfinx::fem::assemble_matrix(f, form, bcs);
       },

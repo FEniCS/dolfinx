@@ -8,7 +8,7 @@
 
 #include <algorithm>
 #include <boost/functional/hash.hpp>
-#include <dolfinx/common/MPI.h>
+#include "MPI.h"
 #include <mpi.h>
 #include <utility>
 #include <vector>
