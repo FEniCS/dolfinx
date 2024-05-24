@@ -20,7 +20,6 @@ ARG HDF5_PATCH=3
 ARG HDF5_FIX=
 ARG KAHIP_VERSION=3.16
 ARG NUMPY_VERSION=1.26.4
-ARG NANOBIND_VERSION=2.0.0
 ARG PETSC_VERSION=3.21.1
 ARG SLEPC_VERSION=3.21.1
 
@@ -146,15 +145,9 @@ RUN if [ "$MPI" = "mpich" ]; then \
     rm -rf /tmp/*
 
 # Install Python packages (via pip)
-# - make sure pip/setuptoools are up-to-date before using them
-# - First set of packages are required to build and run DOLFINx Python.
-# - Second set of packages are recommended and/or required to build
-#   documentation or run tests.
-# - Final set of packages are required to build petsc4py
-RUN pip3 install --break-system-packages --no-cache-dir --upgrade setuptools pip && \
-    pip3 install --break-system-packages --no-cache-dir cffi numba numpy==${NUMPY_VERSION} scikit-build-core[pyproject] && \
-    pip3 install --break-system-packages --no-cache-dir --no-build-isolation mpi4py && \
-    pip3 install --break-system-packages --no-cache-dir breathe clang-format cmakelang jupytext matplotlib mypy myst-parser nanobind==${NANOBIND_VERSION} pytest pytest-xdist ruff scipy pyamg sphinx sphinx_rtd_theme types-setuptools
+RUN pip3 install --break-system-packages --no-cache-dir --upgrade pip && \
+    pip3 install --break-system-packages --no-cache-dir numpy==${NUMPY_VERSION} && \
+    pip3 install --break-system-packages --no-cache-dir mpi4py
 
 # Install KaHIP
 RUN wget -nc --quiet https://github.com/kahip/kahip/archive/v${KAHIP_VERSION}.tar.gz && \
