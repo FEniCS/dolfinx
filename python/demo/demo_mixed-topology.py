@@ -115,18 +115,29 @@ def get_compiled_form(cell_name):
     u, v = ufl.TrialFunction(space), ufl.TestFunction(space)
     k = 0.1
     a = (ufl.inner(ufl.grad(u), ufl.grad(v)) + k * u * v) * ufl.dx
-    forms = [a]
-    return ffcx.codegeneration.jit.compile_forms(forms, options={"scalar_type": np.float64})
+    return ffcx.codegeneration.jit.compile_forms([a], options={"scalar_type": np.float64})
 
 
-cf_hex, module, _ = get_compiled_form("hexahedron")
-cf_prism, module, _ = get_compiled_form("prism")
+# cf_hex, module, _ = get_compiled_form("hexahedron")
+# cf_prism, module, _ = get_compiled_form("prism")
+# ffi = module.ffi
+# kernels = [
+#     getattr(cf_cell[0].form_integrals[0], "tabulate_tensor_float64")
+#     for cf_cell in [cf_hex, cf_prism]
+# ]
+
+a = []
+for cell_name in ["hexahedron", "prism"]:
+    print(f"Compiling form for {cell_name}")
+    element = basix.ufl.element("Lagrange", cell_name, 1)
+    domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_name, 1, shape=(3,)))
+    space = ufl.FunctionSpace(domain, element)
+    u, v = ufl.TrialFunction(space), ufl.TestFunction(space)
+    k = 12.0
+    a += [(ufl.inner(ufl.grad(u), ufl.grad(v)) - k**2 * u * v) * ufl.dx]
+w, module, _ = ffcx.codegeneration.jit.compile_forms(a, options={"scalar_type": np.float64})
+kernels = [getattr(w[i].form_integrals[0], "tabulate_tensor_float64") for i in range(2)]
 ffi = module.ffi
-kernels = [
-    getattr(cf_cell[0].form_integrals[0], "tabulate_tensor_float64")
-    for cf_cell in [cf_hex, cf_prism]
-]
-
 
 # Assembler
 A = matrix_csr(sp)
@@ -164,39 +175,59 @@ xdmf = """<?xml version="1.0"?>
 <!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>
 <Xdmf Version="3.0" xmlns:xi="https://www.w3.org/2001/XInclude">
   <Domain>
-    <Grid Name="mesh" GridType="Uniform">
+    <Grid Name="mesh" GridType="Collection" CollectionType="spatial">
+
 """
 
 vtk_topology = []
-codes = [9, 8]
 perm = [cell_perm_vtk(CellType.hexahedron, 8), cell_perm_vtk(CellType.prism, 6)]
 
-for i in range(2):
-    geom_dm = mesh.geometry.dofmaps(i)
-    for c in geom_dm:
-        vtk_topology += [codes[i]]
-        vtk_topology += list(c[perm[i]])
+geom_dm = mesh.geometry.dofmaps(0)
+for c in geom_dm:
+    vtk_topology += list(c[perm[0]])
 
 xdmf += f"""
-      <Topology TopologyType="Mixed">
-        <DataItem Dimensions="{len(vtk_topology)}" Precision="4" NumberType="Int" Format="XML">
+      <Grid Name="hex" GridType="Uniform">
+        <Topology TopologyType="Hexahedron">
+          <DataItem Dimensions="{geom_dm.shape[0]} 8" Precision="4" NumberType="Int" Format="XML">
           {" ".join(str(val) for val in vtk_topology)}
-        </DataItem>
-      </Topology>"""
+          </DataItem>
+        </Topology>
+        <Geometry GeometryType="XYZ" NumberType="float" Rank="2" Precision="8">
+          <DataItem Dimensions="{mesh.geometry.x.shape[0]} 3" Format="XML">
+            {" ".join(str(val) for val in mesh.geometry.x.flatten())}
+          </DataItem>
+        </Geometry>
+        <Attribute Name="u" Center="Node" NumberType="float" Precision="8">
+          <DataItem Dimensions="{len(x)}" Format="XML">
+            {" ".join(str(val) for val in x)}
+          </DataItem>
+       </Attribute>
+      </Grid>"""
+
+vtk_topology = []
+geom_dm = mesh.geometry.dofmaps(1)
+for c in geom_dm:
+    vtk_topology += list(c[perm[1]])
 
 xdmf += f"""
-      <Geometry GeometryType="XYZ" NumberType="float" Rank="2" Precision="8">
-        <DataItem Dimensions="{mesh.geometry.x.shape[0]} 3" Format="XML">
-          {" ".join(str(val) for val in mesh.geometry.x.flatten())}
-        </DataItem>
-      </Geometry>"""
-
-xdmf += f"""
-      <Attribute Name="u" Center="Node" NumberType="float" Precision="8">
-        <DataItem Dimensions="{len(x)}" Format="XML">
-          {" ".join(str(val) for val in x)}
-        </DataItem>
-      </Attribute>"""
+      <Grid Name="prism" GridType="Uniform">
+        <Topology TopologyType="Wedge">
+          <DataItem Dimensions="{geom_dm.shape[0]} 6" Precision="4" NumberType="Int" Format="XML">
+          {" ".join(str(val) for val in vtk_topology)}
+          </DataItem>
+        </Topology>
+        <Geometry GeometryType="XYZ" NumberType="float" Rank="2" Precision="8">
+          <DataItem Dimensions="{mesh.geometry.x.shape[0]} 3" Format="XML">
+            {" ".join(str(val) for val in mesh.geometry.x.flatten())}
+          </DataItem>
+        </Geometry>
+        <Attribute Name="u" Center="Node" NumberType="float" Precision="8">
+          <DataItem Dimensions="{len(x)}" Format="XML">
+            {" ".join(str(val) for val in x)}
+          </DataItem>
+        </Attribute>
+      </Grid>"""
 
 xdmf += """
     </Grid>
