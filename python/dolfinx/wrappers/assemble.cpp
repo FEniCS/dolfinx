@@ -362,12 +362,13 @@ void declare_assembly_functions(nb::module_& m)
                         std::span<const std::int32_t> cols,
                         std::span<const T> data)
         {
-          return fin(nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig,
-                                 nb::numpy>(rows.data(), {rows.size()}),
-                     nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig,
-                                 nb::numpy>(cols.data(), {cols.size()}),
-                     nb::ndarray<const T, nb::ndim<2>, nb::c_contig, nb::numpy>(
-                         data.data(), {data.size()}));
+          return fin(
+              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig,
+                          nb::numpy>(rows.data(), {rows.size()}, nb::handle()),
+              nb::ndarray<const std::int32_t, nb::ndim<1>, nb::c_contig,
+                          nb::numpy>(cols.data(), {cols.size()}, nb::handle()),
+              nb::ndarray<const T, nb::ndim<2>, nb::c_contig, nb::numpy>(
+                  data.data(), {data.size()}, nb::handle()));
         };
         dolfinx::fem::assemble_matrix(f, form, bcs);
       },
