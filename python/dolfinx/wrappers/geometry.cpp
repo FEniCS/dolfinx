@@ -235,8 +235,7 @@ void declare_bbtree(nb::module_& m, std::string type)
                    {
                      return nb::ndarray<const T, nb::numpy>(
                          self.dest_points.data(),
-                         {self.dest_points.size() / 3, 3},
-                         nb::handle());
+                         {self.dest_points.size() / 3, 3}, nb::handle());
                    })
       .def_prop_ro("dest_cells",
                    [](const dolfinx::geometry::PointOwnershipData<T>& self)

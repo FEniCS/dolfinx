@@ -145,9 +145,8 @@ void declare_objects(nb::module_& m, const std::string& type)
           "data",
           [](dolfinx::la::MatrixCSR<T>& self)
           {
-            return nb::ndarray<T, nb::numpy>(self.values().data(),
-                                             {self.values().size()},
-                                             nb::handle());
+            return nb::ndarray<T, nb::numpy>(
+                self.values().data(), {self.values().size()}, nb::handle());
           },
           nb::rv_policy::reference_internal)
       .def_prop_ro(
@@ -163,9 +162,8 @@ void declare_objects(nb::module_& m, const std::string& type)
           [](dolfinx::la::MatrixCSR<T>& self)
           {
             std::span<const std::int64_t> array = self.row_ptr();
-            return nb::ndarray<const std::int64_t, nb::numpy>(array.data(),
-                                                              {array.size()},
-                                                              nb::handle());
+            return nb::ndarray<const std::int64_t, nb::numpy>(
+                array.data(), {array.size()}, nb::handle());
           },
           nb::rv_policy::reference_internal)
       .def("scatter_rev_begin", &dolfinx::la::MatrixCSR<T>::scatter_rev_begin)

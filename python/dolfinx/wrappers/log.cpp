@@ -54,9 +54,8 @@ void log(nb::module_& m)
       nb::arg("thread_name"));
 
   m.def(
-      "set_log_level",
-      [](spdlog::level::level_enum level) { spdlog::set_level(level); },
-      nb::arg("level"));
+      "set_log_level", [](spdlog::level::level_enum level)
+      { spdlog::set_level(level); }, nb::arg("level"));
   m.def("get_log_level", []() { return spdlog::get_level(); });
   m.def(
       "log",
