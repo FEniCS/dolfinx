@@ -82,7 +82,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     g++ \
     gfortran \
     libboost-dev \
-    libboost-filesystem-dev \
     libboost-timer-dev \
     liblapack-dev \
     libopenblas-dev \
