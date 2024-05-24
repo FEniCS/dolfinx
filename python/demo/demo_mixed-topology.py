@@ -106,26 +106,6 @@ for ct in range(2):
         sp.insert(cell_dofs_j, cell_dofs_j)
 sp.finalize()
 
-
-def get_compiled_form(cell_name):
-    print(f"Compiling form for {cell_name}")
-    element = basix.ufl.element("Lagrange", cell_name, 1)
-    domain = ufl.Mesh(basix.ufl.element("Lagrange", cell_name, 1, shape=(3,)))
-    space = ufl.FunctionSpace(domain, element)
-    u, v = ufl.TrialFunction(space), ufl.TestFunction(space)
-    k = 0.1
-    a = (ufl.inner(ufl.grad(u), ufl.grad(v)) + k * u * v) * ufl.dx
-    return ffcx.codegeneration.jit.compile_forms([a], options={"scalar_type": np.float64})
-
-
-# cf_hex, module, _ = get_compiled_form("hexahedron")
-# cf_prism, module, _ = get_compiled_form("prism")
-# ffi = module.ffi
-# kernels = [
-#     getattr(cf_cell[0].form_integrals[0], "tabulate_tensor_float64")
-#     for cf_cell in [cf_hex, cf_prism]
-# ]
-
 a = []
 for cell_name in ["hexahedron", "prism"]:
     print(f"Compiling form for {cell_name}")
