@@ -153,7 +153,7 @@ dx_f = ufl.Measure("dx", domain=facet_mesh)
 # 'inverse' of facet_mesh_to_mesh, which we compute as follows:
 mesh_to_facet_mesh = np.full(num_facets, -1)
 mesh_to_facet_mesh[facet_mesh_to_mesh] = np.arange(len(facet_mesh_to_mesh))
-entity_maps = {facet_mesh._cpp_object: mesh_to_facet_mesh}
+entity_maps = {facet_mesh: mesh_to_facet_mesh}
 
 # Define forms
 h = ufl.CellDiameter(msh)

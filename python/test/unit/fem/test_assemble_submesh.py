@@ -250,7 +250,7 @@ def test_mixed_dom_codim_0(n, k, space, integral_type):
     num_cells = cell_imap.size_local + cell_imap.num_ghosts
     msh_to_smsh = np.full(num_cells, -1)
     msh_to_smsh[smsh_to_msh] = np.arange(len(smsh_to_msh))
-    entity_maps = {smsh._cpp_object: np.array(msh_to_smsh, dtype=np.int32)}
+    entity_maps = {smsh: np.array(msh_to_smsh, dtype=np.int32)}
     a0 = fem.form(a_ufl(u, q, f, g, measure_msh), entity_maps=entity_maps)
     A0 = fem.assemble_matrix(a0, bcs=[bc])
     A0.scatter_reverse()
@@ -274,7 +274,7 @@ def test_mixed_dom_codim_0(n, k, space, integral_type):
 
     # Entity maps must map cells in smsh (the integration domain mesh) to
     # cells in msh
-    entity_maps = {msh._cpp_object: np.array(smsh_to_msh, dtype=np.int32)}
+    entity_maps = {msh: np.array(smsh_to_msh, dtype=np.int32)}
     a1 = fem.form(a_ufl(u, q, f, g, measure_smsh), entity_maps=entity_maps)
     A1 = fem.assemble_matrix(a1, bcs=[bc])
     A1.scatter_reverse()
@@ -366,7 +366,7 @@ def test_mixed_dom_codim_1(n, k):
     num_facets = facet_imap.size_local + facet_imap.num_ghosts
     msh_to_smsh = np.full(num_facets, -1)
     msh_to_smsh[smsh_to_msh] = np.arange(len(smsh_to_msh))
-    entity_maps = {smsh._cpp_object: msh_to_smsh}
+    entity_maps = {smsh: msh_to_smsh}
 
     # Create forms and compare
     a1 = fem.form(a_ufl(u, vbar, f, g, ds), entity_maps=entity_maps)
