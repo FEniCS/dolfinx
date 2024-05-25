@@ -127,15 +127,17 @@ io::impl_vtx::create_vtk_schema(const std::vector<std::string>& point_data,
 
   pugi::xml_node xml_pointdata = piece.append_child("PointData");
 
-  // Stepping info for time dependency
-  pugi::xml_node item_time = xml_pointdata.append_child("DataArray");
-  item_time.append_attribute("Name") = "TIME";
-  item_time.append_child(pugi::node_pcdata).set_value("step");
-
   pugi::xml_node item_idx = xml_pointdata.append_child("DataArray");
   item_idx.append_attribute("Name") = "vtkOriginalPointIds";
   pugi::xml_node item_ghost = xml_pointdata.append_child("DataArray");
   item_ghost.append_attribute("Name") = "vtkGhostType";
+  if (!point_data.empty())
+  {
+    // Stepping info for time dependency
+    pugi::xml_node item_time = xml_pointdata.append_child("DataArray");
+    item_time.append_attribute("Name") = "TIME";
+    item_time.append_child(pugi::node_pcdata).set_value("step");
+  }
   for (auto& name : point_data)
   {
     pugi::xml_node item = xml_pointdata.append_child("DataArray");
@@ -143,15 +145,18 @@ io::impl_vtx::create_vtk_schema(const std::vector<std::string>& point_data,
   }
 
   // -- CellData
-
+  pugi::xml_node xml_celldata = piece.append_child("CellData");
   if (!cell_data.empty())
   {
-    pugi::xml_node xml_celldata = piece.append_child("CellData");
-    for (auto& name : cell_data)
-    {
-      pugi::xml_node item = xml_celldata.append_child("DataArray");
-      item.append_attribute("Name") = name.c_str();
-    }
+    // Stepping info for time dependency
+    pugi::xml_node item_time = xml_celldata.append_child("DataArray");
+    item_time.append_attribute("Name") = "TIME";
+    item_time.append_child(pugi::node_pcdata).set_value("step");
+  }
+  for (auto& name : cell_data)
+  {
+    pugi::xml_node item = xml_celldata.append_child("DataArray");
+    item.append_attribute("Name") = name.c_str();
   }
 
   std::stringstream ss;
