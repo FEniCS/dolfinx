@@ -77,10 +77,10 @@ ONBUILD ARG DOLFINX_CMAKE_BUILD_TYPE="Release"
 ONBUILD RUN cd basix && cmake -G Ninja -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -B build-dir -S ./cpp && \
     cmake --build build-dir && \
     cmake --install build-dir && \
-    pip install --break-system-packages ./python && \
-    cd ../ufl && pip install --break-system-packages --no-cache-dir . && \
-    cd ../ffcx && pip install --break-system-packages --no-cache-dir . && \
-    cd ../ && pip install --break-system-packages --no-cache-dir ipython
+    pip install ./python && \
+    cd ../ufl && pip install --no-cache-dir . && \
+    cd ../ffcx && pip install --no-cache-dir . && \
+    cd ../ && pip install --no-cache-dir ipython
 
 ONBUILD RUN cd dolfinx && \
     mkdir -p build-real && \
@@ -88,7 +88,7 @@ ONBUILD RUN cd dolfinx && \
     PETSC_ARCH=linux-gnu-real64-32 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/usr/local/dolfinx-real -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} ../cpp && \
     ninja install && \
     cd ../python && \
-    PETSC_ARCH=linux-gnu-real64-32 pip install --break-system-packages -v \
+    PETSC_ARCH=linux-gnu-real64-32 pip install -v \
       --config-settings=cmake.build-type="${DOLFINX_CMAKE_BUILD_TYPE}" --config-settings=install.strip=false --no-build-isolation --check-build-dependencies \
       --target /usr/local/dolfinx-real/lib/python${PYTHON_VERSION}/dist-packages --no-dependencies --no-cache-dir . && \
     git clean -fdx && \
@@ -99,7 +99,7 @@ ONBUILD RUN cd dolfinx && \
     ninja install && \
     . /usr/local/dolfinx-complex/lib/dolfinx/dolfinx.conf && \
     cd ../python && \
-    PETSC_ARCH=linux-gnu-complex128-32 pip install --break-system-packages -v \
+    PETSC_ARCH=linux-gnu-complex128-32 pip install -v \
       --config-settings=cmake.build-type="${DOLFINX_CMAKE_BUILD_TYPE}" --config-settings=install.strip=false --no-build-isolation --check-build-dependencies \
       --target /usr/local/dolfinx-complex/lib/python${PYTHON_VERSION}/dist-packages --no-dependencies --no-cache-dir .
 
@@ -148,7 +148,7 @@ ARG PYVISTA_VERSION
 
 WORKDIR /root
 
-RUN pip install --break-system-packages --no-cache-dir jupyter jupyterlab
+RUN pip install --no-cache-dir jupyter jupyterlab
 
 # pyvista dependencies from apt
 RUN apt-get -qq update && \
