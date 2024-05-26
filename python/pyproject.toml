@@ -7,7 +7,7 @@
 [build-system]
 requires = [
       "scikit-build-core[pyproject]>=0.5",
-      "nanobind>=1.8.0",
+      "nanobind>=2.0.0",
       "mpi4py",
 ]
 build-backend = "scikit_build_core.build"

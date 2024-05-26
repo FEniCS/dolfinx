@@ -122,8 +122,8 @@ void declare_meshtags(nb::module_& m, std::string type)
           "values",
           [](dolfinx::mesh::MeshTags<T>& self)
           {
-            return nb::ndarray<const T, nb::numpy>(self.values().data(),
-                                                   {self.values().size()});
+            return nb::ndarray<const T, nb::numpy>(
+                self.values().data(), {self.values().size()}, nb::handle());
           },
           nb::rv_policy::reference_internal)
       .def_prop_ro(
@@ -131,7 +131,7 @@ void declare_meshtags(nb::module_& m, std::string type)
           [](dolfinx::mesh::MeshTags<T>& self)
           {
             return nb::ndarray<const std::int32_t, nb::numpy>(
-                self.indices().data(), {self.indices().size()});
+                self.indices().data(), {self.indices().size()}, nb::handle());
           },
           nb::rv_policy::reference_internal)
       .def("find", [](dolfinx::mesh::MeshTags<T>& self, T value)
@@ -161,7 +161,8 @@ void declare_mesh(nb::module_& m, std::string type)
           {
             auto dofs = self.dofmap();
             return nb::ndarray<const std::int32_t, nb::numpy>(
-                dofs.data_handle(), {dofs.extent(0), dofs.extent(1)});
+                dofs.data_handle(), {dofs.extent(0), dofs.extent(1)},
+                nb::handle());
           },
           nb::rv_policy::reference_internal)
       .def(
@@ -170,7 +171,8 @@ void declare_mesh(nb::module_& m, std::string type)
           {
             auto dofs = self.dofmap(i);
             return nb::ndarray<const std::int32_t, nb::numpy>(
-                dofs.data_handle(), {dofs.extent(0), dofs.extent(1)});
+                dofs.data_handle(), {dofs.extent(0), dofs.extent(1)},
+                nb::handle());
           },
           nb::rv_policy::reference_internal, nb::arg("i"),
           "Get the geometry dofmap associated with coordinate element i (mixed "
@@ -180,8 +182,8 @@ void declare_mesh(nb::module_& m, std::string type)
           "x",
           [](dolfinx::mesh::Geometry<T>& self)
           {
-            return nb::ndarray<T, nb::numpy>(self.x().data(),
-                                             {self.x().size() / 3, 3});
+            return nb::ndarray<T, nb::numpy>(
+                self.x().data(), {self.x().size() / 3, 3}, nb::handle());
           },
           nb::rv_policy::reference_internal,
           "Return coordinates of all geometry points. Each row is the "
@@ -196,7 +198,7 @@ void declare_mesh(nb::module_& m, std::string type)
             const std::vector<std::int64_t>& id_to_global
                 = self.input_global_indices();
             return nb::ndarray<const std::int64_t, nb::numpy>(
-                id_to_global.data(), {id_to_global.size()});
+                id_to_global.data(), {id_to_global.size()}, nb::handle());
           },
           nb::rv_policy::reference_internal);
 
@@ -350,7 +352,7 @@ void declare_mesh(nb::module_& m, std::string type)
         auto cpp_marker = [&marker](auto x)
         {
           nb::ndarray<const T, nb::ndim<2>, nb::numpy> x_view(
-              x.data_handle(), {x.extent(0), x.extent(1)});
+              x.data_handle(), {x.extent(0), x.extent(1)}, nb::handle());
           auto marked = marker(x_view);
           return std::vector<std::int8_t>(marked.data(),
                                           marked.data() + marked.size());
@@ -371,7 +373,7 @@ void declare_mesh(nb::module_& m, std::string type)
         auto cpp_marker = [&marker](auto x)
         {
           nb::ndarray<const T, nb::ndim<2>, nb::numpy> x_view(
-              x.data_handle(), {x.extent(0), x.extent(1)});
+              x.data_handle(), {x.extent(0), x.extent(1)}, nb::handle());
           auto marked = marker(x_view);
           return std::vector<std::int8_t>(marked.data(),
                                           marked.data() + marked.size());
@@ -507,8 +509,8 @@ void mesh(nb::module_& m)
           [](const dolfinx::mesh::Topology& self)
           {
             const std::vector<std::uint8_t>& p = self.get_facet_permutations();
-            return nb::ndarray<const std::uint8_t, nb::numpy>(p.data(),
-                                                              {p.size()});
+            return nb::ndarray<const std::uint8_t, nb::numpy>(
+                p.data(), {p.size()}, nb::handle());
           },
           nb::rv_policy::reference_internal)
       .def(
@@ -517,8 +519,8 @@ void mesh(nb::module_& m)
           {
             const std::vector<std::uint32_t>& p
                 = self.get_cell_permutation_info();
-            return nb::ndarray<const std::uint32_t, nb::numpy>(p.data(),
-                                                               {p.size()});
+            return nb::ndarray<const std::uint32_t, nb::numpy>(
+                p.data(), {p.size()}, nb::handle());
           },
           nb::rv_policy::reference_internal)
       .def_prop_ro("dim", &dolfinx::mesh::Topology::dim,
@@ -531,7 +533,7 @@ void mesh(nb::module_& m)
               throw std::runtime_error("Mixed topology unsupported");
             return nb::ndarray<const std::int64_t, nb::numpy>(
                 self.original_cell_index[0].data(),
-                {self.original_cell_index[0].size()});
+                {self.original_cell_index[0].size()}, nb::handle());
           },
           nb::rv_policy::reference_internal)
       .def("connectivity",
