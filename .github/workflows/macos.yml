@@ -22,7 +22,7 @@ jobs:
 
       - name: Install Homebrew dependencies
         run: |
-          brew install adios2 boost cmake hdf5-mpi make ninja open-mpi pkg-config pugixml # FEniCS
+          brew install adios2 boost cmake hdf5-mpi make ninja open-mpi pkg-config pugixml spdlog # FEniCS
           brew install bison flex # PETSc
 
       - name: Install Python dependencies
@@ -32,7 +32,7 @@ jobs:
           python -m pip install --no-build-isolation mpi4py
 
       - name: Install minimal PETSc and petsc4py
-        continue-on-error: true
+        # continue-on-error: true
         run: |
           export PATH="$(brew --prefix bison)/bin:$PATH"
           git clone -b release https://gitlab.com/petsc/petsc.git petsc
@@ -52,9 +52,9 @@ jobs:
           cd src/binding/petsc4py
           arch -arm64 python -m pip -v install --no-build-isolation --no-cache-dir .
 
-      - name: PETSc debug
-        if: always()
-        run: cat petsc/configure.log
+      # - name: PETSc debug
+      #   if: always()
+      #   run: cat petsc/configure.log
 
       - name: Install FEniCSx dependencies
         run: |
