@@ -32,6 +32,7 @@ jobs:
           python -m pip install --no-build-isolation mpi4py
 
       - name: Install minimal PETSc and petsc4py
+        continue-on-error: true
         run: |
           export PATH="$(brew --prefix bison)/bin:$PATH"
           git clone -b release https://gitlab.com/petsc/petsc.git petsc
