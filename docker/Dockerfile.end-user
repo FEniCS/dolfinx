@@ -53,6 +53,8 @@ RUN chmod +x /usr/local/bin/dolfinx-*-mode
 
 ONBUILD WORKDIR /src
 
+ONBUILD ARG NANOBIND_VERSION=2.0.0
+
 # This leaves the sources inside the container. This is a limitation of
 # Docker. There is some trickery in the intermediate and DOLFINx
 # containers that can be used to remove this source if needed, see
@@ -71,6 +73,8 @@ ONBUILD ADD dolfinx/docker/ffcx_options.json /root/.config/ffcx/ffcx_options.jso
 # They are safe defaults.
 # CMake build type for DOLFINx C++ build. See CMake documentation.
 ONBUILD ARG DOLFINX_CMAKE_BUILD_TYPE="Release"
+
+ONBUILD RUN pip install nanobind==${NANOBIND_VERSION} scikit-build-core[pyproject]
 
 # The dolfinx-onbuild container expects to have folders basix/ ufl/
 # ffcx/ and dolfinx/ mounted/shared at /src.
@@ -103,7 +107,7 @@ ONBUILD RUN cd dolfinx && \
       --config-settings=cmake.build-type="${DOLFINX_CMAKE_BUILD_TYPE}" --config-settings=install.strip=false --no-build-isolation --check-build-dependencies \
       --target /usr/local/dolfinx-complex/lib/python${PYTHON_VERSION}/dist-packages --no-dependencies --no-cache-dir .
 
-# Real by default.
+# Real by default
 ONBUILD ENV PKG_CONFIG_PATH=/usr/local/dolfinx-real/lib/pkgconfig:$PKG_CONFIG_PATH \
     CMAKE_PREFIX_PATH=/usr/local/dolfinx-real/lib/cmake:$CMAKE_PREFIX_PATH \
     PETSC_ARCH=linux-gnu-real64-32 \
