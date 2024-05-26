@@ -34,6 +34,7 @@
 #    echo "FROM dolfinx/dolfinx-onbuild:nightly" | docker build -f- .
 #
 
+ARG NANOBIND_VERSION=2.0.0
 ARG PYVISTA_VERSION=0.43.5
 
 # Used to set the correct PYTHONPATH for the real and complex install of
@@ -51,11 +52,10 @@ ADD dolfinx/docker/dolfinx-real-mode /usr/local/bin/dolfinx-real-mode
 ADD dolfinx/docker/dolfinx-complex-mode /usr/local/bin/dolfinx-complex-mode
 RUN chmod +x /usr/local/bin/dolfinx-*-mode
 
-ARG NANOBIND_VERSION=2.0.0
-RUN pip install --no-cache nanobind==${NANOBIND_VERSION} scikit-build-core[pyproject]
+ARG NANOBIND_VERSION
+ONBUILD RUN pip install --no-cache nanobind==${NANOBIND_VERSION} scikit-build-core[pyproject]
 
 ONBUILD WORKDIR /src
-
 
 # This leaves the sources inside the container. This is a limitation of
 # Docker. There is some trickery in the intermediate and DOLFINx
@@ -126,6 +126,9 @@ FROM ${BASEIMAGE} as dolfinx
 LABEL description="DOLFINx in 32-bit integer real and complex modes"
 
 ARG PYTHON_VERSION
+
+# ARG NANOBIND_VERSION
+# RUN pip install --no-cache nanobind==${NANOBIND_VERSION} scikit-build-core[pyproject]
 
 # This layer manually copies the build artifacts from intermediate into
 # dev-env to make the final image. This is a workaround for a well known
