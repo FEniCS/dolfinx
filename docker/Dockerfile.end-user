@@ -43,7 +43,7 @@ ARG PYTHON_VERSION=3.12
 ARG BASEIMAGE=ghcr.io/fenics/dolfinx/dev-env:current
 
 FROM ${BASEIMAGE} as dolfinx-onbuild
-LABEL description="DOLFINx in 32-bit real and complex modes (onbuild)"
+LABEL description="DOLFINx in 32-bit integer real and complex modes (onbuild)"
 
 ARG PYTHON_VERSION
 
@@ -51,9 +51,11 @@ ADD dolfinx/docker/dolfinx-real-mode /usr/local/bin/dolfinx-real-mode
 ADD dolfinx/docker/dolfinx-complex-mode /usr/local/bin/dolfinx-complex-mode
 RUN chmod +x /usr/local/bin/dolfinx-*-mode
 
+ARG NANOBIND_VERSION=2.0.0
+RUN pip install --no-cache nanobind==${NANOBIND_VERSION} scikit-build-core[pyproject]
+
 ONBUILD WORKDIR /src
 
-ONBUILD ARG NANOBIND_VERSION=2.0.0
 
 # This leaves the sources inside the container. This is a limitation of
 # Docker. There is some trickery in the intermediate and DOLFINx
@@ -73,8 +75,6 @@ ONBUILD ADD dolfinx/docker/ffcx_options.json /root/.config/ffcx/ffcx_options.jso
 # They are safe defaults.
 # CMake build type for DOLFINx C++ build. See CMake documentation.
 ONBUILD ARG DOLFINX_CMAKE_BUILD_TYPE="Release"
-
-ONBUILD RUN pip install nanobind==${NANOBIND_VERSION} scikit-build-core[pyproject]
 
 # The dolfinx-onbuild container expects to have folders basix/ ufl/
 # ffcx/ and dolfinx/ mounted/shared at /src.
@@ -123,7 +123,7 @@ FROM dolfinx-onbuild as intermediate
 ########################################
 
 FROM ${BASEIMAGE} as dolfinx
-LABEL description="DOLFINx in 32-bit real and complex modes"
+LABEL description="DOLFINx in 32-bit integer real and complex modes"
 
 ARG PYTHON_VERSION
 
@@ -167,8 +167,8 @@ RUN apt-get -qq update && \
 # Trame is preferred backend for pyvista
 RUN dpkgArch="$(dpkg --print-architecture)"; \
     case "$dpkgArch" in amd64) \
-    pip install --no-cache-dir --break-system-packages pyvista[trame]==${PYVISTA_VERSION} && \
-    pip install --no-cache-dir --break-system-packages matplotlib && \
+    pip install --no-cache-dir pyvista[trame]==${PYVISTA_VERSION} && \
+    pip install --no-cache-dir matplotlib && \
     pip cache purge ;; \
     esac;
 
