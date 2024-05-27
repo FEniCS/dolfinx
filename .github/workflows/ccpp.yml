@@ -164,8 +164,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Update nanobind
-        run: python3 -m pip install --break-system-packages nanobind --upgrade
+      - name: Install required Python packages (docs)
+        run: python3 -m pip install --break-system-packages breathe jupytext myst_parser sphinx sphinx_rtd_theme
 
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
@@ -216,11 +216,15 @@ jobs:
           ctest -V -R demo -R serial
           ctest -V -R demo -R mpi_2
 
+      - name: Install required Python (build Python interface)
+        run: python3 -m pip install --break-system-packages nanobind scikit-build-core[pyproject]
+
       - name: Build Python interface
         run: |
           python3 -m pip install --break-system-packages --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
       - name: Build Python interface documentation
         run: |
+          python3 -m pip install --break-system-packages matplotlib
           cd python/doc
           python3 -m sphinx -W -b html source/ build/html/
 
@@ -229,6 +233,8 @@ jobs:
           mkdir -p ~/.config/dolfinx
           echo '{ "cffi_extra_compile_args": ["-g0", "-O0" ] }' > ~/.config/dolfinx/dolfinx_jit_options.json
 
+      - name: Install Python demo/test dependencies
+        run: python3 -m pip install --break-system-packages matplotlib numba pyamg pytest pytest-xdist scipy
       - name: Run demos (Python, serial)
         run: python3 -m pytest -n auto -m serial --durations=10 python/demo/test.py
       - name: Run demos (Python, MPI (np=3))
@@ -254,8 +260,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Update nanobind
-        run: python3 -m pip install --break-system-packages nanobind --upgrade
+      - name: Install required Python packages (C++ docs)
+        run: python3 -m pip install --break-system-packages breathe jupytext myst_parser sphinx sphinx_rtd_theme
 
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
@@ -284,11 +290,15 @@ jobs:
           doxygen Doxyfile
           make html
 
+      - name: Install required Python (build Python interface)
+        run: python3 -m pip install --break-system-packages nanobind scikit-build-core[pyproject]
+
       - name: Build Python interface
         run: |
           python3 -m pip install --break-system-packages --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
       - name: Build Python interface documentation
         run: |
+          python3 -m pip install --break-system-packages matplotlib
           cd python/doc
           python3 -m sphinx -W -b html source/ build/html/
 
