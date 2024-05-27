@@ -85,11 +85,14 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
-          sudo apt-get install catch2 cmake g++ libboost-dev libboost-filesystem-dev libboost-timer-dev libhdf5-mpi-dev libparmetis-dev libpugixml-dev libspdlog-dev mpi-default-dev ninja-build pkg-config
+          sudo apt-get install catch2 cmake g++ libboost-dev libboost-timer-dev libhdf5-mpi-dev libparmetis-dev libpugixml-dev libspdlog-dev mpi-default-dev ninja-build pkg-config
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      - name: Install Python build dependencies
+        run: pip install mpi4py nanobind scikit-build-core[pyproject] --upgrade
 
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
@@ -124,8 +127,6 @@ jobs:
           cd build/test
           mpirun -n 3 ctest -V --output-on-failure -R unittests
 
-      - name: Install Python build dependencies
-        run: pip install mpi4py nanobind scikit-build-core[pyproject]
       - name: Build Python interface
         run: pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
 
@@ -162,6 +163,9 @@ jobs:
     name: Build and test (${{ matrix.petsc_arch }}, ${{ matrix.docker_image }})
     steps:
       - uses: actions/checkout@v4
+
+      - name: Update nanobind
+        run: python3 -m pip install --break-system-packages nanobind --upgrade
 
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
@@ -249,6 +253,10 @@ jobs:
     name: Publish docs
     steps:
       - uses: actions/checkout@v4
+
+      - name: Update nanobind
+        run: python3 -m pip install --break-system-packages nanobind --upgrade
+
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
         run: |

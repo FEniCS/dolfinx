@@ -24,6 +24,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Python dependencies
+        run: |
+          python3 -m pip install mpi4py nanobind scikit-build-core[pyproject] --upgrade
+
       - name: Install FEniCS Python components
         run: |
           python3 -m pip install --no-cache-dir --upgrade pip setuptools
@@ -60,10 +64,9 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          python3 -m pip install cffi numba nanobind scikit-build-core[pyproject] pytest pytest-xdist scipy matplotlib
+          python3 -m pip install cffi numba scikit-build-core[pyproject] pytest pytest-xdist scipy matplotlib
       - name: Build Python interface (editable install)
         run: |
-          python3 -m pip install mpi4py nanobind scikit-build-core[pyproject]
           python3 -m pip install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type=Debug --config-settings=build-dir="build" -e python/
 
       - name: Set default DOLFINx JIT options

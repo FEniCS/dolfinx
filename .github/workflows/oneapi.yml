@@ -31,6 +31,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Python dependencies
+        run: |
+          . /opt/intel/oneapi/setvars.sh
+          python3 -m pip install mpi4py nanobind scikit-build-core[pyproject] --upgrade
+
       - name: Install Basix
         run: |
           . /opt/intel/oneapi/setvars.sh
@@ -87,7 +92,6 @@ jobs:
       - name: Build DOLFINx Python interface
         run: |
           . /opt/intel/oneapi/setvars.sh
-          pip install mpi4py nanobind scikit-build-core[pyproject]
           pip -v install --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Developer" python/
       - name: Install Python test dependencies
         run: |
