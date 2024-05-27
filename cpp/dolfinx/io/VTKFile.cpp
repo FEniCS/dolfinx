@@ -110,12 +110,12 @@ void add_pvtu_mesh(pugi::xml_node& node)
 
 /// Add float data to a pugixml node
 /// @param[in] name The name of the data array
-/// @param[in] num_components Number of components in the field. If scalar this
-/// is zero.
+/// @param[in] num_components An array indicating the value shape of `values`
 /// @param[in] values The data array to add
 /// @param[in,out] data_node The XML node to add data to
 template <typename T>
-void add_data_float(const std::string& name, int num_components,
+void add_data_float(const std::string& name,
+                    std::span<const std::size_t> num_components,
                     std::span<const T> values, pugi::xml_node& node)
 {
   static_assert(std::is_floating_point_v<T>, "Scalar must be a float");
@@ -127,8 +127,8 @@ void add_data_float(const std::string& name, int num_components,
   field_node.append_attribute("type") = type.c_str();
   field_node.append_attribute("Name") = name.c_str();
   field_node.append_attribute("format") = "ascii";
-  if (num_components > 0)
-    field_node.append_attribute("NumberOfComponents") = num_components;
+  if (!num_components.empty())
+    field_node.append_attribute("NumberOfComponents") = num_components.front();
 
   field_node.append_child(pugi::node_pcdata)
       .set_value(container_to_string(values, 16).str().c_str());
@@ -140,12 +140,12 @@ void add_data_float(const std::string& name, int num_components,
 /// real and one complex), with suffixes from `field_ext` added to the
 /// name
 /// @param[in] name The name of the data array
-/// @param[in] num_components Number of components in the values. If scalar this
-/// is zero.
+/// @param[in] num_components An array indicating the value shape of `values`
 /// @param[in] values The data array to add
 /// @param[in,out] data_node The XML node to add data to
 template <typename T>
-void add_data(const std::string& name, int num_components,
+void add_data(const std::string& name,
+              std::span<const std::size_t> num_components,
               std::span<const T> values, pugi::xml_node& node)
 {
   if constexpr (std::is_scalar_v<T>)
@@ -486,6 +486,10 @@ void write_function(
                                      std::multiplies{});
     if (num_components < std::pow(3, rank))
       num_components = std::pow(3, rank);
+    // Create array to store number of (padded) components in field
+    std::vector<std::size_t> component_vector(int(rank > 0 ? 1 : 0));
+    if (rank > 0)
+      component_vector[0] = num_components;
 
     if (is_cellwise(*e))
     {
@@ -505,8 +509,8 @@ void write_function(
             data[num_components * c + k] = u_vector[bs * dofs[i] + k];
       }
 
-      add_data(_u.get().name, num_components, std::span<const T>(data),
-               data_node);
+      add_data(_u.get().name, std::span<const std::size_t>(component_vector),
+               std::span<const T>(data), data_node);
     }
     else
     {
@@ -538,14 +542,16 @@ void write_function(
       {
         // -- Identical spaces
         if (mesh0->geometry().dim() == 3)
-          add_data(_u.get().name, num_components, _u.get().x()->array(),
-                   data_node);
+          add_data(_u.get().name,
+                   std::span<const std::size_t>(component_vector),
+                   _u.get().x()->array(), data_node);
         else
         {
           // Pad with zeros and then add
           auto data = pad_data(*V, _u.get().x()->array());
-          add_data(_u.get().name, num_components, std::span<const T>(data),
-                   data_node);
+          add_data(_u.get().name,
+                   std::span<const std::size_t>(component_vector),
+                   std::span<const T>(data), data_node);
         }
       }
       else if (*e == *element0)
@@ -579,14 +585,16 @@ void write_function(
 
         // Pack/add data
         if (mesh0->geometry().dim() == 3)
-          add_data(_u.get().name, num_components, std::span<const T>(u),
-                   data_node);
+          add_data(_u.get().name,
+                   std::span<const std::size_t>(component_vector),
+                   std::span<const T>(u), data_node);
         else
         {
           // Pad with zeros and then add
           auto data = pad_data(*V, _u.get().x()->array());
-          add_data(_u.get().name, num_components, std::span<const T>(data),
-                   data_node);
+          add_data(_u.get().name,
+                   std::span<const std::size_t>(component_vector),
+                   std::span<const T>(data), data_node);
         }
       }
       else
@@ -656,7 +664,7 @@ void write_function(
 
       // Pad to 3D if vector/tensor is product of dimensions is smaller than
       // 3**rank to ensure that we can visualize them correctly in Paraview
-      std::span<const std::size_t>  value_shape = V->value_shape();
+      std::span<const std::size_t> value_shape = V->value_shape();
       int rank = value_shape.size();
       int num_components = std::reduce(value_shape.begin(), value_shape.end(),
                                        1, std::multiplies{});
