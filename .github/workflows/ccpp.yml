@@ -224,6 +224,7 @@ jobs:
           python3 -m pip install --break-system-packages --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
       - name: Build Python interface documentation
         run: |
+          python3 -m pip install --break-system-packages matplotlib
           cd python/doc
           python3 -m sphinx -W -b html source/ build/html/
 
@@ -295,6 +296,7 @@ jobs:
           python3 -m pip install --break-system-packages --check-build-dependencies --no-build-isolation --config-settings=cmake.build-type="Debug" python/
       - name: Build Python interface documentation
         run: |
+          python3 -m pip install --break-system-packages matplotlib
           cd python/doc
           python3 -m sphinx -W -b html source/ build/html/
 
