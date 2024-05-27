@@ -164,8 +164,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Update nanobind
-        run: python3 -m pip install --break-system-packages nanobind --upgrade
+      - name: Install required Python packages
+        run: python3 -m pip install --break-system-packages breathe sphinx sphinx_rtd_theme
 
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
@@ -254,8 +254,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Update nanobind
-        run: python3 -m pip install --break-system-packages nanobind --upgrade
+      - name: Install required Python packages
+        run: python3 -m pip install --break-system-packages breathe sphinx sphinx_rtd_theme
 
       - name: Install FEniCS Python components (default branches/tags)
         if: github.event_name != 'workflow_dispatch'
