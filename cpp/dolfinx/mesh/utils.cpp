@@ -94,8 +94,9 @@ mesh::create_cell_partitioner(mesh::GhostMode ghost_mode,
     spdlog::info("Compute partition of cells across ranks");
 
     // Compute distributed dual graph (for the cells on this process)
+    std::vector<std::span<const std::int64_t>> cell_array = {cells.array()};
     const graph::AdjacencyList dual_graph
-        = build_dual_graph(comm, cell_type, cells);
+        = build_dual_graph(comm, std::vector{cell_type}, cell_array);
 
     // Just flag any kind of ghosting for now
     bool ghosting = (ghost_mode != GhostMode::none);

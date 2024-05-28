@@ -61,8 +61,9 @@ build_local_dual_graph(CellType celltype, std::span<const std::int64_t> cells);
 /// x]`, where `v_i` is a vertex global index, `x` is a padding value
 /// (all padding values will be equal).
 ///
-/// @note The return data will likely change once we support mixed
-/// topology meshes.
+/// @note The cell indexing stacks the cells from each cell type consecutively,
+/// i.e. if there are n cells of type 0 and m cells of type 1, then cells are
+/// numbered 0..(n-1) and n..(n+m-1) respectively in the dual graph.
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
            std::size_t, std::vector<std::int32_t>>
 build_local_dual_graph(std::vector<CellType> celltype,
@@ -80,8 +81,12 @@ build_local_dual_graph(std::vector<CellType> celltype,
 /// @param[in] cells Collection of cells, defined by the cell vertices
 /// from which to build the dual graph
 /// @return The dual graph
+// graph::AdjacencyList<std::int64_t>
+// build_dual_graph(MPI_Comm comm, CellType celltype,
+//                  std::span<const std::int64_t> cells);
+
 graph::AdjacencyList<std::int64_t>
-build_dual_graph(MPI_Comm comm, CellType celltype,
-                 const graph::AdjacencyList<std::int64_t>& cells);
+build_dual_graph(MPI_Comm comm, const std::vector<CellType>& celltype,
+                 const std::vector<std::span<const std::int64_t>>& cells);
 
 } // namespace dolfinx::mesh

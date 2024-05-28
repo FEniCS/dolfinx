@@ -640,17 +640,39 @@ mesh::build_local_dual_graph(std::vector<CellType> celltype,
           std::move(local_cells)};
 }
 //-----------------------------------------------------------------------------
+// graph::AdjacencyList<std::int64_t>
+// mesh::build_dual_graph(MPI_Comm comm, CellType celltype,
+//                        std::span<const std::int64_t> cells)
+// {
+//   spdlog::info("Building mesh dual graph");
+
+//   // Compute local part of dual graph (cells are graph nodes, and edges
+//   // are connections by facet)
+//   auto [local_graph, facets, shape1, fcells]
+//       = mesh::build_local_dual_graph(celltype, cells);
+
+//   // Extend with nonlocal edges and convert to global indices
+//   graph::AdjacencyList graph
+//       = compute_nonlocal_dual_graph(comm, facets, shape1, fcells,
+//       local_graph);
+
+//   spdlog::info("Graph edges (local: {}, non-local: {})",
+//                local_graph.offsets().back(),
+//                graph.offsets().back() - local_graph.offsets().back());
+
+//   return graph;
+// }
+//-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int64_t>
-mesh::build_dual_graph(MPI_Comm comm, CellType celltype,
-                       const graph::AdjacencyList<std::int64_t>& cells)
+mesh::build_dual_graph(MPI_Comm comm, const std::vector<CellType>& celltype,
+                       const std::vector<std::span<const std::int64_t>>& cells)
 {
   spdlog::info("Building mesh dual graph");
 
   // Compute local part of dual graph (cells are graph nodes, and edges
   // are connections by facet)
   auto [local_graph, facets, shape1, fcells]
-      = mesh::build_local_dual_graph(celltype, cells.array());
-  assert(local_graph.num_nodes() == cells.num_nodes());
+      = mesh::build_local_dual_graph(celltype, cells);
 
   // Extend with nonlocal edges and convert to global indices
   graph::AdjacencyList graph
