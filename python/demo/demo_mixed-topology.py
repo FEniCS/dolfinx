@@ -14,7 +14,8 @@ from dolfinx.la import matrix_csr
 from dolfinx.mesh import CellType
 
 if MPI.COMM_WORLD.size > 1:
-    raise RuntimeError("Serial only")
+    print("This demo works in serial only")
+    exit(0)
 
 
 nx = 16
