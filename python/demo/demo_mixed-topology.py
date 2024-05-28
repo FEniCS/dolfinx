@@ -21,8 +21,8 @@ nx = 16
 ny = 16
 nz = 16
 n_cells = nx * ny * nz
-cells = [[], []]
-orig_idx = [[], []]
+cells: list = [[], []]
+orig_idx: list = [[], []]
 idx = 0
 for i in range(n_cells):
     iz = i // (nx * ny)
@@ -61,8 +61,8 @@ for v in range(n_points):
     geom += [[ix / nx, iy / ny, iz / nz]]
 geomx = np.array(geom, dtype=np.float64)
 
-ghost_owners = [[], []]
-boundary_vertices = []
+ghost_owners: list = [[], []]
+boundary_vertices: list = []
 
 topology = create_topology(
     MPI.COMM_SELF,
