@@ -72,6 +72,8 @@ ONBUILD ADD dolfinx/docker/ffcx_options.json /root/.config/ffcx/ffcx_options.jso
 # CMake build type for DOLFINx C++ build. See CMake documentation.
 ONBUILD ARG DOLFINX_CMAKE_BUILD_TYPE="Release"
 
+ONBUILD RUN pip3 install --break-system-packages --no-cache-dir --no-build-isolation nanobind scikit-build-core[pyproject]
+
 # The dolfinx-onbuild container expects to have folders basix/ ufl/
 # ffcx/ and dolfinx/ mounted/shared at /src.
 ONBUILD RUN cd basix && cmake -G Ninja -DCMAKE_BUILD_TYPE=${DOLFINX_CMAKE_BUILD_TYPE} -B build-dir -S ./cpp && \
