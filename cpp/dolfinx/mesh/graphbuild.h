@@ -30,7 +30,7 @@ enum class CellType;
 /// @return
 /// 1. Local dual graph
 /// 2. Facets, defined by their vertices, that are shared by only one
-/// cell on this rank. The logically 2D is array flattened (row-major).
+/// cell on this rank. The logically 2D array is flattened (row-major).
 /// 3. The number of columns for the facet data array (2).
 /// 4. The attached cell (local index) to each returned facet in (2).
 ///
@@ -43,6 +43,30 @@ enum class CellType;
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
            std::size_t, std::vector<std::int32_t>>
 build_local_dual_graph(CellType celltype, std::span<const std::int64_t> cells);
+
+/// @brief Compute the local part of the dual graph (cell-cell
+/// connections via facets) and facets with only one attached cell.
+///
+/// @param[in] celltype List of cell types.
+/// @param[in] cells Lists of cell vertices (stored as flattened lists for each
+/// cell type).
+/// @return
+/// 1. Local dual graph
+/// 2. Facets, defined by their vertices, that are shared by only one
+/// cell on this rank. The logically 2D array is flattened (row-major).
+/// 3. The number of columns for the facet data array (2).
+/// 4. The attached cell (local index) to each returned facet in (2).
+///
+/// Each row of the returned data (2) contains `[v0, ... v_(n-1), x, ..,
+/// x]`, where `v_i` is a vertex global index, `x` is a padding value
+/// (all padding values will be equal).
+///
+/// @note The return data will likely change once we support mixed
+/// topology meshes.
+std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
+           std::size_t, std::vector<std::int32_t>>
+build_local_dual_graph(std::vector<CellType> celltype,
+                       std::vector<std::span<const std::int64_t>> cells);
 
 /// @brief Build distributed mesh dual graph (cell-cell connections via
 /// facets) from minimal mesh data.
