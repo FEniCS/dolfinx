@@ -464,6 +464,20 @@ void mesh(nb::module_& m)
       nb::arg("comm"), nb::arg("cell_type"), nb::arg("cells"),
       "Build dual graph for cells");
 
+  m.def(
+      "build_dual_graph",
+      [](const MPICommWrapper comm,
+         std::vector<dolfinx::mesh::CellType>& cell_types,
+         const std::vector<std::vector<std::int64_t>>& cells)
+      {
+        std::vector<std::span<const std::int64_t>> cell_span(cells.begin(),
+                                                             cells.end());
+        return dolfinx::mesh::build_dual_graph(comm.get(), cell_types,
+                                               cell_span);
+      },
+      nb::arg("comm"), nb::arg("cell_types"), nb::arg("cells"),
+      "Build dual graph for cells");
+
   // dolfinx::mesh::GhostMode enums
   nb::enum_<dolfinx::mesh::GhostMode>(m, "GhostMode")
       .value("none", dolfinx::mesh::GhostMode::none)
