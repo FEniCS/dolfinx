@@ -357,14 +357,23 @@ mesh::build_local_dual_graph(
   spdlog::info("Build local part of mesh dual graph (mixed)");
   common::Timer timer("Compute local part of mesh dual graph (mixed)");
 
-  if (cells.empty())
+  std::size_t ncells_local
+      = std::accumulate(cells.begin(), cells.end(), 0,
+                        [](std::size_t s, std::span<const std::int64_t> c)
+                        { return s + c.size(); });
+
+  if (ncells_local == 0)
   {
     // Empty mesh on this process
     return {graph::AdjacencyList<std::int32_t>(0), std::vector<std::int64_t>(),
             0, std::vector<std::int32_t>()};
   }
 
-  assert(cells.size() == celltypes.size());
+  if (cells.size() != celltypes.size())
+  {
+    throw std::runtime_error(
+        "Number of cell types must match number of cell arrays.");
+  };
 
   // Create indexing offset for each cell type
   // and determine max number of vertices per facet
@@ -380,11 +389,11 @@ mesh::build_local_dual_graph(
     cell_offsets.push_back(cell_offsets.back() + num_cells);
     facet_count += mesh::cell_num_entities(celltypes[j], tdim - 1) * num_cells;
 
-    graph::AdjacencyList<int> cell_facets
+    graph::AdjacencyList<std::int32_t> cell_facets
         = mesh::get_entity_vertices(celltypes[j], tdim - 1);
 
     // Determine maximum number of vertices for facet
-    for (int i = 0; i < cell_facets.num_nodes(); ++i)
+    for (std::int32_t i = 0; i < cell_facets.num_nodes(); ++i)
     {
       max_vertices_per_facet
           = std::max(max_vertices_per_facet, cell_facets.num_links(i));
