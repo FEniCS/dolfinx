@@ -44,8 +44,8 @@ enum class CellType;
 /// numbered 0..(n-1) and n..(n+m-1) respectively in the dual graph.
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
            std::size_t, std::vector<std::int32_t>>
-build_local_dual_graph(std::vector<CellType> celltypes,
-                       std::vector<std::span<const std::int64_t>> cells);
+build_local_dual_graph(std::span<const CellType> celltypes,
+                       const std::vector<std::span<const std::int64_t>>& cells);
 
 /// @brief Build distributed mesh dual graph (cell-cell connections via
 /// facets) from minimal mesh data.
@@ -60,7 +60,7 @@ build_local_dual_graph(std::vector<CellType> celltypes,
 /// from which to build the dual graph, as flattened arrays for each cell type.
 /// @return The dual graph
 graph::AdjacencyList<std::int64_t>
-build_dual_graph(MPI_Comm comm, const std::vector<CellType>& celltypes,
+build_dual_graph(MPI_Comm comm, std::span<const CellType> celltypes,
                  const std::vector<std::span<const std::int64_t>>& cells);
 
 } // namespace dolfinx::mesh

@@ -350,8 +350,9 @@ graph::AdjacencyList<std::int64_t> compute_nonlocal_dual_graph(
 //-----------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
            std::size_t, std::vector<std::int32_t>>
-mesh::build_local_dual_graph(std::vector<CellType> celltypes,
-                             std::vector<std::span<const std::int64_t>> cells)
+mesh::build_local_dual_graph(
+    std::span<const CellType> celltypes,
+    const std::vector<std::span<const std::int64_t>>& cells)
 {
   spdlog::info("Build local part of mesh dual graph (mixed)");
   common::Timer timer("Compute local part of mesh dual graph (mixed)");
@@ -370,7 +371,7 @@ mesh::build_local_dual_graph(std::vector<CellType> celltypes,
   std::vector<std::int32_t> cell_offsets = {0};
   int max_vertices_per_facet = 0;
   int facet_count = 0;
-  int tdim = mesh::cell_dim(celltypes[0]);
+  int tdim = mesh::cell_dim(celltypes.front());
   for (std::size_t j = 0; j < cells.size(); ++j)
   {
     assert(tdim == mesh::cell_dim(celltypes[j]));
@@ -504,7 +505,7 @@ mesh::build_local_dual_graph(std::vector<CellType> celltypes,
 }
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int64_t>
-mesh::build_dual_graph(MPI_Comm comm, const std::vector<CellType>& celltypes,
+mesh::build_dual_graph(MPI_Comm comm, std::span<const CellType> celltypes,
                        const std::vector<std::span<const std::int64_t>>& cells)
 {
   spdlog::info("Building mesh dual graph");
