@@ -823,8 +823,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
       cell_offsets[i] = cell_offsets[i - 1] + num_cell_vertices;
     auto [graph, unmatched_facets, max_v, facet_attached_cells]
         = build_local_dual_graph(
-            celltype,
-            std::span(cells1_v.data(), num_owned_cells * num_cell_vertices));
+            std::vector{celltype},
+            {std::span(cells1_v.data(), num_owned_cells * num_cell_vertices)});
     const std::vector<int> remap = graph::reorder_gps(graph);
 
     // Create re-ordered cell lists (leaves ghosts unchanged)
