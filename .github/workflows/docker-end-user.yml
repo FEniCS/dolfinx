@@ -177,6 +177,7 @@ jobs:
         if: ${{ !contains(github.event.inputs.dockerfile, 'dummy') }}
         run: |
           docker run --rm docker.io/dolfinx/dolfinx:${{ env.TAG }} ls /
+          docker run --rm docker.io/dolfinx/dolfinx:${{ env.TAG }} pip list -v
           docker run --rm docker.io/dolfinx/dolfinx:${{ env.TAG }} python -c "import ufl"
           # docker run --rm docker.io/dolfinx/dolfinx:${{ env.TAG }} \
           #   python3 -c "import dolfinx; from dolfinx.fem import functionspace; from dolfinx.mesh import create_unit_square; from mpi4py import MPI; mesh = create_unit_square(MPI.COMM_WORLD, 10, 10); V = functionspace(mesh, ('Lagrange', 1));"
