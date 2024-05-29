@@ -469,10 +469,15 @@ void mesh(nb::module_& m)
       "build_dual_graph",
       [](const MPICommWrapper comm,
          std::vector<dolfinx::mesh::CellType>& cell_types,
-         const std::vector<std::vector<std::int64_t>>& cells)
+         const std::vector<
+             nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>>& cells)
       {
-        std::vector<std::span<const std::int64_t>> cell_span(cells.begin(),
-                                                             cells.end());
+        std::vector<std::span<const std::int64_t>> cell_span(cells.size());
+        for (std::size_t i = 0; i < cells.size(); ++i)
+        {
+          cell_span[i]
+              = std::span<const std::int64_t>(cells[i].data(), cells[i].size());
+        }
         return dolfinx::mesh::build_dual_graph(comm.get(), cell_types,
                                                cell_span);
       },
