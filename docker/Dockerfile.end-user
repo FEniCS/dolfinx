@@ -45,6 +45,9 @@ ARG BASEIMAGE=ghcr.io/fenics/dolfinx/dev-env:current
 FROM ${BASEIMAGE} as dolfinx-onbuild
 LABEL description="DOLFINx in 32-bit real and complex modes (onbuild)"
 
+RUN ls / && \
+    pip list -v
+
 ARG PYTHON_VERSION
 
 ADD dolfinx/docker/dolfinx-real-mode /usr/local/bin/dolfinx-real-mode
@@ -124,6 +127,9 @@ FROM ${BASEIMAGE} as dolfinx
 LABEL description="DOLFINx in 32-bit real and complex modes"
 
 ARG PYTHON_VERSION
+
+RUN ls / && \
+    pip list -v
 
 # This layer manually copies the build artifacts from intermediate into
 # dev-env to make the final image. This is a workaround for a well known
