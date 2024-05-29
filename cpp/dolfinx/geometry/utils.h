@@ -671,7 +671,6 @@ graph::AdjacencyList<std::int32_t> compute_colliding_cells(
 /// points. dest_owner is a list of ranks corresponding to dest_points,
 /// the points that this process owns. dest_cells contains the
 /// corresponding cell for each entry in dest_points.
-
 ///
 /// @note `dest_owner` is sorted
 /// @note Returns -1 if no colliding process is found

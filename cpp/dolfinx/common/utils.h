@@ -6,9 +6,9 @@
 
 #pragma once
 
+#include "MPI.h"
 #include <algorithm>
 #include <boost/functional/hash.hpp>
-#include <dolfinx/common/MPI.h>
 #include <mpi.h>
 #include <utility>
 #include <vector>
@@ -16,12 +16,14 @@
 /// Generic tools
 namespace dolfinx::common
 {
-/// Sort two arrays based on the values in array `indices`. Any
-/// duplicate indices and the corresponding value are removed. In the
-/// case of duplicates, the entry with the smallest value is retained.
-/// @param[in] indices Array of indices
-/// @param[in] values Array of values
-/// @return Sorted (indices, values), with sorting based on indices
+///@brief Sort two arrays based on the values in array `indices`.
+///
+/// Any duplicate indices and the corresponding value are removed. In
+/// the case of duplicates, the entry with the smallest value is
+/// retained.
+/// @param[in] indices Array of indices.
+/// @param[in] values Array of values.
+/// @return Sorted (indices, values), with sorting based on indices.
 template <typename U, typename V>
 std::pair<std::vector<typename U::value_type>,
           std::vector<typename V::value_type>>

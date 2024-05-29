@@ -6,9 +6,9 @@
 
 #pragma once
 
+#include "AdjacencyList.h"
 #include <algorithm>
 #include <cstdint>
-#include <dolfinx/graph/AdjacencyList.h>
 #include <functional>
 #include <mpi.h>
 #include <span>
@@ -19,7 +19,6 @@
 
 namespace dolfinx::graph
 {
-
 /// @brief Signature of functions for computing the parallel
 /// partitioning of a distributed graph.
 /// @param[in] comm MPI Communicator that the graph is distributed
