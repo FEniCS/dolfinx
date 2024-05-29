@@ -16,6 +16,7 @@ import dolfinx.graph
 import ufl
 from basix.ufl import element
 from dolfinx import default_real_type
+from dolfinx.cpp.mesh import cell_num_vertices
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import (
     CellType,
@@ -150,11 +151,12 @@ def test_asymmetric_partitioner():
         x = np.zeros((0, 2), dtype=np.float64)
 
     # Send cells to self, and if on process 1, also send to process 0.
-    def partitioner(comm, n, m, topo):
+    def partitioner(comm, n, cell_type, topo):
         r = comm.Get_rank()
         dests = []
         offsets = [0]
-        for i in range(topo.num_nodes):
+        num_cells = len(topo) // cell_num_vertices(cell_type)
+        for i in range(num_cells):
             dests.append(r)
             if r == 1:
                 dests.append(0)

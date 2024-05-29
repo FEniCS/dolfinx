@@ -57,24 +57,19 @@ auto create_cell_partitioner_py(Functor p)
 {
   return [p](dolfinx_wrappers::MPICommWrapper comm, int n,
              dolfinx::mesh::CellType cell_type,
-             const dolfinx::graph::AdjacencyList<std::int64_t>& cells)
+             const std::vector<std::int64_t>& cells)
   { return p(comm.get(), n, cell_type, cells); };
 }
-
-using PythonPartitioningFunction
-    = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
-        dolfinx_wrappers::MPICommWrapper, int, dolfinx::mesh::CellType,
-        const dolfinx::graph::AdjacencyList<std::int64_t>&)>;
 
 using PythonCellPartitionFunction
     = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
         dolfinx_wrappers::MPICommWrapper, int, dolfinx::mesh::CellType,
-        const dolfinx::graph::AdjacencyList<std::int64_t>&)>;
+        const std::vector<std::int64_t>&)>;
 
 using CppCellPartitionFunction
     = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
         MPI_Comm, int, dolfinx::mesh::CellType,
-        const dolfinx::graph::AdjacencyList<std::int64_t>&)>;
+        const std::vector<std::int64_t>&)>;
 
 /// Wrap a Python cell graph partitioning function as a C++ function
 CppCellPartitionFunction
@@ -83,7 +78,7 @@ create_cell_partitioner_cpp(const PythonCellPartitionFunction& p)
   if (p)
   {
     return [p](MPI_Comm comm, int n, dolfinx::mesh::CellType cell_type,
-               const dolfinx::graph::AdjacencyList<std::int64_t>& cells)
+               const std::vector<std::int64_t>& cells)
     { return p(dolfinx_wrappers::MPICommWrapper(comm), n, cell_type, cells); };
   }
   else
@@ -271,14 +266,14 @@ void declare_mesh(nb::module_& m, std::string type)
          nb::ndarray<const std::int64_t, nb::ndim<2>, nb::c_contig> cells,
          const dolfinx::fem::CoordinateElement<T>& element,
          nb::ndarray<const T, nb::c_contig> x,
-         const PythonPartitioningFunction& p)
+         const PythonCellPartitionFunction& p)
       {
         std::size_t shape1 = x.ndim() == 1 ? 1 : x.shape(1);
         if (p)
         {
           auto p_wrap
               = [p](MPI_Comm comm, int n, dolfinx::mesh::CellType cell_type,
-                    const dolfinx::graph::AdjacencyList<std::int64_t>& cells)
+                    const std::vector<std::int64_t>& cells)
           { return p(MPICommWrapper(comm), n, cell_type, cells); };
           return dolfinx::mesh::create_mesh(
               comm.get(), comm.get(), std::span(cells.data(), cells.size()),
