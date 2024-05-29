@@ -50,10 +50,6 @@ ARG PYTHON_VERSION
 ADD dolfinx/docker/dolfinx-real-mode /usr/local/bin/dolfinx-real-mode
 ADD dolfinx/docker/dolfinx-complex-mode /usr/local/bin/dolfinx-complex-mode
 RUN chmod +x /usr/local/bin/dolfinx-*-mode
-RUN echo "Test A" && \
-    ls / && \
-    pip list -v && \
-    echo "End test A"
 
 ONBUILD WORKDIR /src
 
@@ -129,11 +125,6 @@ LABEL description="DOLFINx in 32-bit real and complex modes"
 
 ARG PYTHON_VERSION
 
-RUN echo "Test B" && \
-    ls / && \
-    pip list -v && \
-    echo "Test B"
-
 # This layer manually copies the build artifacts from intermediate into
 # dev-env to make the final image. This is a workaround for a well known
 # limitation of Docker that you cannot cleanup after an ADD operation.
@@ -142,11 +133,6 @@ RUN echo "Test B" && \
 COPY --from=intermediate /usr/local /usr/local
 COPY --from=intermediate /root/.config /root/.config
 COPY --from=intermediate /dolfinx-env /dolfinx-env
-
-RUN echo "Test C" && \
-    ls / && \
-    pip list -v && \
-    echo "Test C"
 
 # Real by default.
 # Note that because we inherit from dev-env we do not inherit these ENV from
