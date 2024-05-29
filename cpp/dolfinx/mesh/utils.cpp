@@ -87,14 +87,16 @@ mesh::CellPartitionFunction
 mesh::create_cell_partitioner(mesh::GhostMode ghost_mode,
                               const graph::partition_fn& partfn)
 {
-  return [partfn, ghost_mode](MPI_Comm comm, int nparts, CellType cell_type,
-                              const std::vector<std::int64_t>& cells)
+  return [partfn, ghost_mode](
+             MPI_Comm comm, int nparts, const std::vector<CellType>& cell_type,
+             const std::vector<std::vector<std::int64_t>>& cells)
              -> graph::AdjacencyList<std::int32_t>
   {
     spdlog::info("Compute partition of cells across ranks");
 
     // Compute distributed dual graph (for the cells on this process)
-    std::vector<std::span<const std::int64_t>> cell_array = {cells};
+    std::vector<std::span<const std::int64_t>> cell_array(cells.begin(),
+                                                          cells.end());
     const graph::AdjacencyList dual_graph
         = build_dual_graph(comm, std::vector{cell_type}, cell_array);
 

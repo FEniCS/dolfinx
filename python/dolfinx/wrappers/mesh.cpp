@@ -56,20 +56,21 @@ template <typename Functor>
 auto create_cell_partitioner_py(Functor p)
 {
   return [p](dolfinx_wrappers::MPICommWrapper comm, int n,
-             dolfinx::mesh::CellType cell_type,
-             const std::vector<std::int64_t>& cells)
-  { return p(comm.get(), n, cell_type, cells); };
+             const std::vector<dolfinx::mesh::CellType>& cell_types,
+             const std::vector<std::vector<std::int64_t>>& cells)
+  { return p(comm.get(), n, cell_types, cells); };
 }
 
 using PythonCellPartitionFunction
     = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
-        dolfinx_wrappers::MPICommWrapper, int, dolfinx::mesh::CellType,
-        const std::vector<std::int64_t>&)>;
+        dolfinx_wrappers::MPICommWrapper, int,
+        const std::vector<dolfinx::mesh::CellType>&,
+        const std::vector<std::vector<std::int64_t>>&)>;
 
 using CppCellPartitionFunction
     = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
-        MPI_Comm, int, dolfinx::mesh::CellType,
-        const std::vector<std::int64_t>&)>;
+        MPI_Comm, int, const std::vector<dolfinx::mesh::CellType>& q,
+        const std::vector<std::vector<std::int64_t>>&)>;
 
 /// Wrap a Python cell graph partitioning function as a C++ function
 CppCellPartitionFunction
@@ -77,9 +78,10 @@ create_cell_partitioner_cpp(const PythonCellPartitionFunction& p)
 {
   if (p)
   {
-    return [p](MPI_Comm comm, int n, dolfinx::mesh::CellType cell_type,
-               const std::vector<std::int64_t>& cells)
-    { return p(dolfinx_wrappers::MPICommWrapper(comm), n, cell_type, cells); };
+    return [p](MPI_Comm comm, int n,
+               const std::vector<dolfinx::mesh::CellType>& cell_types,
+               const std::vector<std::vector<std::int64_t>>& cells)
+    { return p(dolfinx_wrappers::MPICommWrapper(comm), n, cell_types, cells); };
   }
   else
     return nullptr;
@@ -272,9 +274,10 @@ void declare_mesh(nb::module_& m, std::string type)
         if (p)
         {
           auto p_wrap
-              = [p](MPI_Comm comm, int n, dolfinx::mesh::CellType cell_type,
-                    const std::vector<std::int64_t>& cells)
-          { return p(MPICommWrapper(comm), n, cell_type, cells); };
+              = [p](MPI_Comm comm, int n,
+                    const std::vector<dolfinx::mesh::CellType>& cell_types,
+                    const std::vector<std::vector<std::int64_t>>& cells)
+          { return p(MPICommWrapper(comm), n, cell_types, cells); };
           return dolfinx::mesh::create_mesh(
               comm.get(), comm.get(), std::span(cells.data(), cells.size()),
               element, comm.get(), std::span(x.data(), x.size()),

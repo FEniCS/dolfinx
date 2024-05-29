@@ -176,8 +176,8 @@ std::vector<std::int32_t> exterior_facet_indices(const Topology& topology);
 /// @return Destination ranks for each cell on this process
 /// @note Cells can have multiple destination ranks, when ghosted.
 using CellPartitionFunction = std::function<graph::AdjacencyList<std::int32_t>(
-    MPI_Comm comm, int nparts, CellType cell_type,
-    const std::vector<std::int64_t>& cells)>;
+    MPI_Comm comm, int nparts, const std::vector<CellType>& cell_types,
+    const std::vector<std::vector<std::int64_t>>& cells)>;
 
 /// @brief Extract topology from cell data, i.e. extract cell vertices.
 /// @param[in] cell_type The cell shape
@@ -783,7 +783,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     {
       int size = dolfinx::MPI::size(comm);
       auto t = extract_topology(element.cell_shape(), doflayout, cells);
-      dest = partitioner(commt, size, celltype, t);
+      dest = partitioner(commt, size, {celltype}, {t});
     }
 
     // Distribute cells (topology, includes higher-order 'nodes') to
