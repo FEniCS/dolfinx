@@ -40,7 +40,7 @@ enum class CellType;
 /// (all padding values will be equal).
 ///
 /// @note The cell indexing stacks the cells from each cell type consecutively,
-/// i.e. if there are n cells of type 0 and m cells of type 1, then cells are
+/// i.e. if there are `n` cells of type `0` and `m` cells of type `1`, then cells are
 /// numbered 0..(n-1) and n..(n+m-1) respectively in the dual graph.
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
            std::size_t, std::vector<std::int32_t>>
