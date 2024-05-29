@@ -457,8 +457,31 @@ void mesh(nb::module_& m)
       "build_dual_graph",
       [](const MPICommWrapper comm, dolfinx::mesh::CellType cell_type,
          const dolfinx::graph::AdjacencyList<std::int64_t>& cells)
-      { return dolfinx::mesh::build_dual_graph(comm.get(), cell_type, cells); },
+      {
+        std::vector<dolfinx::mesh::CellType> c = {cell_type};
+        return dolfinx::mesh::build_dual_graph(comm.get(), std::span{c},
+                                               {cells.array()});
+      },
       nb::arg("comm"), nb::arg("cell_type"), nb::arg("cells"),
+      "Build dual graph for cells");
+
+  m.def(
+      "build_dual_graph",
+      [](const MPICommWrapper comm,
+         std::vector<dolfinx::mesh::CellType>& cell_types,
+         const std::vector<
+             nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>>& cells)
+      {
+        std::vector<std::span<const std::int64_t>> cell_span(cells.size());
+        for (std::size_t i = 0; i < cells.size(); ++i)
+        {
+          cell_span[i]
+              = std::span<const std::int64_t>(cells[i].data(), cells[i].size());
+        }
+        return dolfinx::mesh::build_dual_graph(comm.get(), cell_types,
+                                               cell_span);
+      },
+      nb::arg("comm"), nb::arg("cell_types"), nb::arg("cells"),
       "Build dual graph for cells");
 
   // dolfinx::mesh::GhostMode enums
