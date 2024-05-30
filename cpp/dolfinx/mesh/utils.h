@@ -177,7 +177,7 @@ std::vector<std::int32_t> exterior_facet_indices(const Topology& topology);
 /// @note Cells can have multiple destination ranks, when ghosted.
 using CellPartitionFunction = std::function<graph::AdjacencyList<std::int32_t>(
     MPI_Comm comm, int nparts, const std::vector<CellType>& cell_types,
-    const std::vector<std::vector<std::int64_t>>& cells)>;
+    const std::vector<std::span<const std::int64_t>>& cells)>;
 
 /// @brief Extract topology from cell data, i.e. extract cell vertices.
 /// @param[in] cell_type The cell shape

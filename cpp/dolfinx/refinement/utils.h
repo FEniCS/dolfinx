@@ -292,7 +292,7 @@ mesh::Mesh<T> partition(const mesh::Mesh<T>& old_mesh,
   {
     auto partitioner
         = [](MPI_Comm comm, int, const std::vector<mesh::CellType>& cell_types,
-             const std::vector<std::vector<std::int64_t>>& cell_topology)
+             const std::vector<std::span<const std::int64_t>>& cell_topology)
     {
       const int mpi_rank = MPI::rank(comm);
       int num_cell_vertices = mesh::num_cell_vertices(cell_types.front());
