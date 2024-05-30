@@ -57,9 +57,7 @@ auto create_cell_partitioner_py(Functor p)
 {
   return [p](dolfinx_wrappers::MPICommWrapper comm, int n,
              const std::vector<dolfinx::mesh::CellType>& cell_types,
-             std::vector<
-                 nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>>
-                 cells_nb)
+             std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb)
   {
     std::vector<std::span<const std::int64_t>> cells(cells_nb.size());
     std::transform(cells_nb.begin(), cells_nb.end(), cells.begin(),
@@ -70,11 +68,11 @@ auto create_cell_partitioner_py(Functor p)
   };
 }
 
-using PythonCellPartitionFunction = std::function<dolfinx::graph::AdjacencyList<
-    std::int32_t>(
-    dolfinx_wrappers::MPICommWrapper, int,
-    const std::vector<dolfinx::mesh::CellType>&,
-    std::vector<nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>>)>;
+using PythonCellPartitionFunction
+    = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
+        dolfinx_wrappers::MPICommWrapper, int,
+        const std::vector<dolfinx::mesh::CellType>&,
+        std::vector<nb::ndarray<const std::int64_t, nb::numpy>>)>;
 
 using CppCellPartitionFunction
     = std::function<dolfinx::graph::AdjacencyList<std::int32_t>(
@@ -91,15 +89,14 @@ create_cell_partitioner_cpp(const PythonCellPartitionFunction& p)
                const std::vector<dolfinx::mesh::CellType>& cell_types,
                const std::vector<std::span<const std::int64_t>>& cells)
     {
-      std::vector<nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>>
-          cells_nb(cells.size());
-      std::transform(
-          cells.begin(), cells.end(), cells_nb.begin(),
-          [](auto c)
-          {
-            return nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>(
-                c.data(), {c.size()}, nb::handle());
-          });
+      std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb(
+          cells.size());
+      std::transform(cells.begin(), cells.end(), cells_nb.begin(),
+                     [](auto c)
+                     {
+                       return nb::ndarray<const std::int64_t, nb::numpy>(
+                           c.data(), {c.size()}, nb::handle());
+                     });
 
       return p(dolfinx_wrappers::MPICommWrapper(comm), n, cell_types, cells_nb);
     };
@@ -299,14 +296,12 @@ void declare_mesh(nb::module_& m, std::string type)
                     const std::vector<dolfinx::mesh::CellType>& cell_types,
                     const std::vector<std::span<const std::int64_t>>& cells)
           {
-            std::vector<
-                nb::ndarray<const std::int64_t, nb::ndim<1>, nb::c_contig>>
-                cells_nb(cells.size());
+            std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb(
+                cells.size());
             std::transform(cells.begin(), cells.end(), cells_nb.begin(),
                            [](auto c)
                            {
-                             return nb::ndarray<const std::int64_t, nb::ndim<1>,
-                                                nb::c_contig>(
+                             return nb::ndarray<const std::int64_t, nb::numpy>(
                                  c.data(), {c.size()}, nb::handle());
                            });
             return p(MPICommWrapper(comm), n, cell_types, cells_nb);
