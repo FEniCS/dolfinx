@@ -59,8 +59,8 @@ auto create_cell_partitioner_py(Functor p)
              const std::vector<dolfinx::mesh::CellType>& cell_types,
              std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb)
   {
-    std::vector<std::span<const std::int64_t>> cells(cells_nb.size());
-    std::transform(cells_nb.begin(), cells_nb.end(), cells.begin(),
+    std::vector<std::span<const std::int64_t>> cells;
+    std::transform(cells_nb.begin(), cells_nb.end(), std::back_inserter(cells),
                    [](auto c) {
                      return std::span<const std::int64_t>(c.data(), c.size());
                    });
@@ -89,9 +89,8 @@ create_cell_partitioner_cpp(const PythonCellPartitionFunction& p)
                const std::vector<dolfinx::mesh::CellType>& cell_types,
                const std::vector<std::span<const std::int64_t>>& cells)
     {
-      std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb(
-          cells.size());
-      std::transform(cells.begin(), cells.end(), cells_nb.begin(),
+      std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb;
+      std::transform(cells.begin(), cells.end(), std::back_inserter(cells_nb),
                      [](auto c)
                      {
                        return nb::ndarray<const std::int64_t, nb::numpy>(
@@ -296,9 +295,9 @@ void declare_mesh(nb::module_& m, std::string type)
                     const std::vector<dolfinx::mesh::CellType>& cell_types,
                     const std::vector<std::span<const std::int64_t>>& cells)
           {
-            std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb(
-                cells.size());
-            std::transform(cells.begin(), cells.end(), cells_nb.begin(),
+            std::vector<nb::ndarray<const std::int64_t, nb::numpy>> cells_nb;
+            std::transform(cells.begin(), cells.end(),
+                           std::back_inserter(cells_nb),
                            [](auto c)
                            {
                              return nb::ndarray<const std::int64_t, nb::numpy>(
