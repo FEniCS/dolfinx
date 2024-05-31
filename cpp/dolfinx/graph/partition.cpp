@@ -224,6 +224,169 @@ graph::build::distribute(MPI_Comm comm,
           global_indices0, ghost_index_owner};
 }
 //-----------------------------------------------------------------------------
+std::tuple<std::vector<std::int64_t>, std::vector<std::int64_t>,
+           std::vector<int>>
+graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
+                         int shape1,
+                         const graph::AdjacencyList<std::int32_t>& destinations)
+{
+  common::Timer timer("Distribute fixed size nodes to destination ranks");
+
+  int rank = dolfinx::MPI::rank(comm);
+  std::int64_t num_owned = destinations.num_nodes();
+  assert(list.size() % shape1 == 0);
+  assert(list.size() / shape1 == (std::size_t)num_owned);
+
+  // Get global offset for converting local index to global index for
+  // nodes in 'list'
+  std::int64_t offset_global = 0;
+  MPI_Exscan(&num_owned, &offset_global, 1, MPI_INT64_T, MPI_SUM, comm);
+
+  // Buffer size (max number of edges + 2 for owning rank,
+  // and node global index)
+  const std::size_t buffer_shape1 = shape1 + 2;
+
+  // Build (dest, index, owning rank) list and sort
+  std::vector<std::array<int, 3>> dest_to_index;
+  dest_to_index.reserve(destinations.array().size());
+  for (std::int32_t i = 0; i < destinations.num_nodes(); ++i)
+  {
+    auto di = destinations.links(i);
+    for (auto d : di)
+      dest_to_index.push_back({d, i, di[0]});
+  }
+  std::sort(dest_to_index.begin(), dest_to_index.end());
+
+  // Build list of unique dest ranks and count number of rows to send to
+  // each dest (by neighbourhood rank)
+  std::vector<int> dest;
+  std::vector<std::int32_t> num_items_per_dest;
+  {
+    auto it = dest_to_index.begin();
+    while (it != dest_to_index.end())
+    {
+      // Store global rank and find iterator to next global rank
+      dest.push_back((*it)[0]);
+      auto it1
+          = std::find_if(it, dest_to_index.end(),
+                         [r = dest.back()](auto& idx) { return idx[0] != r; });
+
+      // Store number of items for current rank
+      num_items_per_dest.push_back(std::distance(it, it1));
+
+      // Advance iterator
+      it = it1;
+    }
+  }
+
+  // Determine source ranks. Sort ranks to make distribution
+  // deterministic.
+  std::vector<int> src = dolfinx::MPI::compute_graph_edges_nbx(comm, dest);
+  std::sort(src.begin(), src.end());
+
+  // Create neighbourhood communicator
+  MPI_Comm neigh_comm;
+  MPI_Dist_graph_create_adjacent(comm, src.size(), src.data(), MPI_UNWEIGHTED,
+                                 dest.size(), dest.data(), MPI_UNWEIGHTED,
+                                 MPI_INFO_NULL, false, &neigh_comm);
+
+  // Send number of nodes to receivers
+  std::vector<int> num_items_recv(src.size());
+  num_items_per_dest.reserve(1);
+  num_items_recv.reserve(1);
+  MPI_Request request_size;
+  MPI_Ineighbor_alltoall(num_items_per_dest.data(), 1, MPI_INT,
+                         num_items_recv.data(), 1, MPI_INT, neigh_comm,
+                         &request_size);
+
+  // Compute send displacements
+  std::vector<std::int32_t> send_disp(num_items_per_dest.size() + 1, 0);
+  std::partial_sum(num_items_per_dest.begin(), num_items_per_dest.end(),
+                   std::next(send_disp.begin()));
+
+  // Pack send buffer
+  std::vector<std::int64_t> send_buffer(buffer_shape1 * send_disp.back(), -1);
+  {
+    assert(send_disp.back() == (std::int32_t)dest_to_index.size());
+    for (std::size_t i = 0; i < dest_to_index.size(); ++i)
+    {
+      const std::array<int, 3>& dest_data = dest_to_index[i];
+      const std::size_t pos = dest_data[1];
+
+      std::span b(send_buffer.data() + i * buffer_shape1, buffer_shape1);
+      std::span row(list.data() + pos * shape1, shape1);
+      std::copy(row.begin(), row.end(), b.begin());
+
+      auto info = b.last(2);
+      info[0] = dest_data[2];        // Owning rank
+      info[1] = pos + offset_global; // Original global index
+    }
+  }
+
+  // Prepare receive displacement
+  MPI_Wait(&request_size, MPI_STATUS_IGNORE);
+  std::vector<std::int32_t> recv_disp(num_items_recv.size() + 1, 0);
+  std::partial_sum(num_items_recv.begin(), num_items_recv.end(),
+                   std::next(recv_disp.begin()));
+
+  // Send/receive data facet
+  MPI_Datatype compound_type;
+  MPI_Type_contiguous(buffer_shape1, MPI_INT64_T, &compound_type);
+  MPI_Type_commit(&compound_type);
+  std::vector<std::int64_t> recv_buffer(buffer_shape1 * recv_disp.back());
+  MPI_Neighbor_alltoallv(send_buffer.data(), num_items_per_dest.data(),
+                         send_disp.data(), compound_type, recv_buffer.data(),
+                         num_items_recv.data(), recv_disp.data(), compound_type,
+                         neigh_comm);
+  MPI_Type_free(&compound_type);
+  MPI_Comm_free(&neigh_comm);
+
+  // Unpack receive buffer
+  std::vector<int> ghost_index_owner;
+
+  std::vector<std::int64_t> data0, data1;
+  data0.reserve(shape1 * recv_disp.back());
+  data1.reserve(shape1 * recv_disp.back());
+
+  std::vector<std::int64_t> global_indices0, global_indices1;
+  global_indices0.reserve(recv_disp.back());
+  global_indices1.reserve(recv_disp.back());
+  spdlog::debug("Received {} data on {} [{}]", recv_disp.back(), rank, shape1);
+  for (std::size_t p = 0; p < recv_disp.size() - 1; ++p)
+  {
+    for (std::int32_t i = recv_disp[p]; i < recv_disp[p + 1]; ++i)
+    {
+      std::span row(recv_buffer.data() + i * buffer_shape1, buffer_shape1);
+      auto info = row.last(2);
+      int owner = info[0];
+      std::int64_t orig_global_index = info[1];
+      auto edges = row.first(shape1);
+      if (owner == rank)
+      {
+        data0.insert(data0.end(), edges.begin(), edges.end());
+        global_indices0.push_back(orig_global_index);
+      }
+      else
+      {
+        data1.insert(data1.end(), edges.begin(), edges.end());
+        global_indices1.push_back(orig_global_index);
+        ghost_index_owner.push_back(info[0]);
+      }
+    }
+  }
+
+  data0.insert(data0.end(), data1.begin(), data1.end());
+  global_indices0.insert(global_indices0.end(), global_indices1.begin(),
+                         global_indices1.end());
+
+  data0.shrink_to_fit();
+  global_indices0.shrink_to_fit();
+  ghost_index_owner.shrink_to_fit();
+  spdlog::debug("data0.size = {}", data0.size());
+
+  return {data0, global_indices0, ghost_index_owner};
+}
+//-----------------------------------------------------------------------------
 std::vector<std::int64_t>
 graph::build::compute_ghost_indices(MPI_Comm comm,
                                     std::span<const std::int64_t> owned_indices,
