@@ -341,50 +341,53 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
   MPI_Type_free(&compound_type);
   MPI_Comm_free(&neigh_comm);
 
-  // Unpack receive buffer
-  std::vector<int> ghost_index_owner;
-
-  std::vector<std::int64_t> data0, data1;
-  data0.reserve(shape1 * recv_disp.back());
-  data1.reserve(shape1 * recv_disp.back());
-
-  std::vector<std::int64_t> global_indices0, global_indices1;
-  global_indices0.reserve(recv_disp.back());
-  global_indices1.reserve(recv_disp.back());
   spdlog::debug("Received {} data on {} [{}]", recv_disp.back(), rank, shape1);
-  for (std::size_t p = 0; p < recv_disp.size() - 1; ++p)
+
+  // Count number of owned entries
+  std::int32_t num_owned_r = 0;
+  for (std::int32_t i = 0; i < recv_disp.back(); ++i)
   {
-    for (std::int32_t i = recv_disp[p]; i < recv_disp[p + 1]; ++i)
-    {
-      std::span row(recv_buffer.data() + i * buffer_shape1, buffer_shape1);
-      auto info = row.last(2);
-      int owner = info[0];
-      std::int64_t orig_global_index = info[1];
-      auto edges = row.first(shape1);
-      if (owner == rank)
-      {
-        data0.insert(data0.end(), edges.begin(), edges.end());
-        global_indices0.push_back(orig_global_index);
-      }
-      else
-      {
-        data1.insert(data1.end(), edges.begin(), edges.end());
-        global_indices1.push_back(orig_global_index);
-        ghost_index_owner.push_back(info[0]);
-      }
-    }
+    std::span row(recv_buffer.data() + i * buffer_shape1, buffer_shape1);
+    auto info = row.last(2);
+    int owner = info[0];
+    if (owner == rank)
+      num_owned_r++;
   }
 
-  data0.insert(data0.end(), data1.begin(), data1.end());
-  global_indices0.insert(global_indices0.end(), global_indices1.begin(),
-                         global_indices1.end());
+  // Unpack receive buffer
+  std::vector<std::int64_t> data(shape1 * recv_disp.back());
+  std::vector<std::int64_t> global_indices(recv_disp.back());
+  std::vector<int> ghost_index_owner(recv_disp.back() - num_owned_r);
 
-  data0.shrink_to_fit();
-  global_indices0.shrink_to_fit();
-  ghost_index_owner.shrink_to_fit();
-  spdlog::debug("data0.size = {}", data0.size());
+  std::int32_t i_owned = 0;
+  std::int32_t i_ghost = 0;
+  for (std::int32_t i = 0; i < recv_disp.back(); ++i)
+  {
+    std::span row(recv_buffer.data() + i * buffer_shape1, buffer_shape1);
+    auto info = row.last(2);
+    int owner = info[0];
+    std::int64_t orig_global_index = info[1];
+    auto edges = row.first(shape1);
+    if (owner == rank)
+    {
+      std::copy(edges.begin(), edges.end(),
+                std::next(data.begin(), i_owned * shape1));
+      global_indices[i_owned] = orig_global_index;
+      ++i_owned;
+    }
+    else
+    {
+      std::copy(edges.begin(), edges.end(),
+                std::next(data.begin(), (i_ghost + num_owned_r) * shape1));
+      global_indices[i_ghost + num_owned_r] = orig_global_index;
+      ghost_index_owner[i_ghost] = owner;
+      ++i_ghost;
+    }
+  }
+  assert(i_owned == num_owned_r);
 
-  return {data0, global_indices0, ghost_index_owner};
+  spdlog::debug("data.size = {}", data.size());
+  return {data, global_indices, ghost_index_owner};
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int64_t>
