@@ -88,7 +88,7 @@ mesh::create_cell_partitioner(mesh::GhostMode ghost_mode,
                               const graph::partition_fn& partfn)
 {
   return [partfn, ghost_mode](
-             MPI_Comm comm, int nparts, const std::vector<CellType>& cell_type,
+             MPI_Comm comm, int nparts, const std::vector<CellType>& cell_types,
              const std::vector<std::span<const std::int64_t>>& cells)
              -> graph::AdjacencyList<std::int32_t>
   {
@@ -96,7 +96,7 @@ mesh::create_cell_partitioner(mesh::GhostMode ghost_mode,
 
     // Compute distributed dual graph (for the cells on this process)
     const graph::AdjacencyList dual_graph
-        = build_dual_graph(comm, cell_type, cells);
+        = build_dual_graph(comm, cell_types, cells);
 
     // Just flag any kind of ghosting for now
     bool ghosting = (ghost_mode != GhostMode::none);

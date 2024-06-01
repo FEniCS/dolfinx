@@ -166,13 +166,12 @@ std::vector<std::int32_t> exterior_facet_indices(const Topology& topology);
 ///
 /// @param[in] comm MPI Communicator
 /// @param[in] nparts Number of partitions
-/// @param[in] cell_types List of types of cell in mesh
-/// @param[in] cells List of flattened arrays of cells of each type on this
-/// process, in the same order as `cell_types`, which must be the same length.
-/// Each array of cells is a row-major flattened 2D array of shape [num_cells,
-/// num_vertices_per_cell], containing the global indices for the cell vertices.
-/// Each cell can appear only once across all processes. The cell vertex indices
-/// are not necessarily contiguous globally, i.e. the maximum index across all
+/// @param[in] cell_types Cell types in the mesh
+/// @param[in] cells Lists of cells of each cell type. cells[i] is a flattened
+/// row major 2D array of shape (num_cells, num_cell_vertices) for cell_types[i]
+/// on this process, containing the global indices for the cell vertices. Each
+/// cell can appear only once across all processes. The cell vertex indices are
+/// not necessarily contiguous globally, i.e. the maximum index across all
 /// processes can be greater than the number of vertices. High-order 'nodes',
 /// e.g. mid-side points, should not be included.
 /// @return Destination ranks for each cell on this process
