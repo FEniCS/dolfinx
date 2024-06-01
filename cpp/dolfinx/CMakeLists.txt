@@ -121,8 +121,7 @@ endif()
 # SCOTCH
 if(DOLFINX_ENABLE_SCOTCH AND SCOTCH_FOUND)
   target_compile_definitions(dolfinx PUBLIC HAS_PTSCOTCH)
-  target_link_libraries(dolfinx PRIVATE ${SCOTCH_LIBRARIES})
-  target_include_directories(dolfinx SYSTEM PRIVATE ${SCOTCH_INCLUDE_DIRS})
+  target_link_libraries(dolfinx PRIVATE SCOTCH::ptscotch)
 endif()
 
 # ParMETIS
