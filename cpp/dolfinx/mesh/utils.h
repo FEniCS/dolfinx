@@ -166,18 +166,19 @@ std::vector<std::int32_t> exterior_facet_indices(const Topology& topology);
 ///
 /// @param[in] comm MPI Communicator
 /// @param[in] nparts Number of partitions
-/// @param[in] cell_type Type of cell in mesh
-/// @param[in] cells Cells on this process. The ith entry in list
-/// contains the global indices for the cell vertices. Each cell can
-/// appear only once across all processes. The cell vertex indices are
-/// not necessarily contiguous globally, i.e. the maximum index across
-/// all processes can be greater than the number of vertices. High-order
-/// 'nodes', e.g. mid-side points, should not be included.
+/// @param[in] cell_types Cell types in the mesh
+/// @param[in] cells Lists of cells of each cell type. cells[i] is a flattened
+/// row major 2D array of shape (num_cells, num_cell_vertices) for cell_types[i]
+/// on this process, containing the global indices for the cell vertices. Each
+/// cell can appear only once across all processes. The cell vertex indices are
+/// not necessarily contiguous globally, i.e. the maximum index across all
+/// processes can be greater than the number of vertices. High-order 'nodes',
+/// e.g. mid-side points, should not be included.
 /// @return Destination ranks for each cell on this process
 /// @note Cells can have multiple destination ranks, when ghosted.
 using CellPartitionFunction = std::function<graph::AdjacencyList<std::int32_t>(
-    MPI_Comm comm, int nparts, CellType cell_type,
-    const graph::AdjacencyList<std::int64_t>& cells)>;
+    MPI_Comm comm, int nparts, const std::vector<CellType>& cell_types,
+    const std::vector<std::span<const std::int64_t>>& cells)>;
 
 /// @brief Extract topology from cell data, i.e. extract cell vertices.
 /// @param[in] cell_type The cell shape
@@ -782,10 +783,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     if (commt != MPI_COMM_NULL)
     {
       int size = dolfinx::MPI::size(comm);
-      auto t = graph::regular_adjacency_list(
-          extract_topology(element.cell_shape(), doflayout, cells),
-          num_cell_vertices);
-      dest = partitioner(commt, size, celltype, t);
+      auto t = extract_topology(element.cell_shape(), doflayout, cells);
+      dest = partitioner(commt, size, {celltype}, {t});
     }
 
     // Distribute cells (topology, includes higher-order 'nodes') to
