@@ -434,9 +434,9 @@ endif()
 
 if(DOLFINX_ENABLE_SCOTCH)
   find_package(SCOTCH CONFIG)
-  if (_REQUIRE_SCOTCH)
+  if (NOT SCOTCH_FOUND AND _REQUIRE_SCOTCH)
     find_package(SCOTCH REQUIRED)
-  else()
+  elseif(NOT SCOTCH_FOUND)
     find_package(SCOTCH)
   endif()
 
