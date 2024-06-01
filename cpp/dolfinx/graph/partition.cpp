@@ -227,15 +227,15 @@ graph::build::distribute(MPI_Comm comm,
 std::tuple<std::vector<std::int64_t>, std::vector<std::int64_t>,
            std::vector<int>>
 graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
-                         int shape1,
+                         std::array<std::size_t, 2> shape,
                          const graph::AdjacencyList<std::int32_t>& destinations)
 {
   common::Timer timer("Distribute fixed size nodes to destination ranks");
 
+  assert(list.size() == shape[0] * shape[1]);
+  assert(destinations.num_nodes() == (std::int32_t)shape[0]);
   int rank = dolfinx::MPI::rank(comm);
   std::int64_t num_owned = destinations.num_nodes();
-  assert(list.size() % shape1 == 0);
-  assert(list.size() / shape1 == (std::size_t)num_owned);
 
   // Get global offset for converting local index to global index for
   // nodes in 'list'
@@ -244,7 +244,7 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
 
   // Buffer size (max number of edges + 2 for owning rank,
   // and node global index)
-  const std::size_t buffer_shape1 = shape1 + 2;
+  const std::size_t buffer_shape1 = shape[1] + 2;
 
   // Build (dest, index, owning rank) list and sort
   std::vector<std::array<int, 3>> dest_to_index;
@@ -314,7 +314,7 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
       const std::size_t pos = dest_data[1];
 
       std::span b(send_buffer.data() + i * buffer_shape1, buffer_shape1);
-      std::span row(list.data() + pos * shape1, shape1);
+      std::span row(list.data() + pos * shape[1], shape[1]);
       std::copy(row.begin(), row.end(), b.begin());
 
       auto info = b.last(2);
@@ -341,7 +341,8 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
   MPI_Type_free(&compound_type);
   MPI_Comm_free(&neigh_comm);
 
-  spdlog::debug("Received {} data on {} [{}]", recv_disp.back(), rank, shape1);
+  spdlog::debug("Received {} data on {} [{}]", recv_disp.back(), rank,
+                shape[1]);
 
   // Count number of owned entries
   std::int32_t num_owned_r = 0;
@@ -355,7 +356,7 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
   }
 
   // Unpack receive buffer
-  std::vector<std::int64_t> data(shape1 * recv_disp.back());
+  std::vector<std::int64_t> data(shape[1] * recv_disp.back());
   std::vector<std::int64_t> global_indices(recv_disp.back());
   std::vector<int> ghost_index_owner(recv_disp.back() - num_owned_r);
 
@@ -367,18 +368,18 @@ graph::build::distribute(MPI_Comm comm, std::span<const std::int64_t> list,
     auto info = row.last(2);
     int owner = info[0];
     std::int64_t orig_global_index = info[1];
-    auto edges = row.first(shape1);
+    auto edges = row.first(shape[1]);
     if (owner == rank)
     {
       std::copy(edges.begin(), edges.end(),
-                std::next(data.begin(), i_owned * shape1));
+                std::next(data.begin(), i_owned * shape[1]));
       global_indices[i_owned] = orig_global_index;
       ++i_owned;
     }
     else
     {
       std::copy(edges.begin(), edges.end(),
-                std::next(data.begin(), (i_ghost + num_owned_r) * shape1));
+                std::next(data.begin(), (i_ghost + num_owned_r) * shape[1]));
       global_indices[i_ghost + num_owned_r] = orig_global_index;
       ghost_index_owner[i_ghost] = owner;
       ++i_ghost;

@@ -762,7 +762,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   const fem::ElementDofLayout doflayout = element.create_dof_layout();
 
   const int num_cell_vertices = mesh::num_cell_vertices(element.cell_shape());
-  const int num_cell_nodes = doflayout.num_dofs();
+  std::size_t num_cell_nodes = doflayout.num_dofs();
 
   // Note: `extract_topology` extracts topology data, i.e. just the
   // vertices. For P1 geometry this should just be the identity
@@ -790,8 +790,10 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 
     // Distribute cells (topology, includes higher-order 'nodes') to
     // destination rank
-    std::tie(cells1, original_idx1, ghost_owners)
-        = graph::build::distribute(comm, cells, num_cell_nodes, dest);
+    assert(cells1.size() % num_cell_nodes == 0);
+    std::size_t num_cells = cells1.size() / num_cell_nodes;
+    std::tie(cells1, original_idx1, ghost_owners) = graph::build::distribute(
+        comm, cells, {num_cells, num_cell_nodes}, dest);
     spdlog::info("Got {} cells from distribution", cells1.size());
   }
   else
