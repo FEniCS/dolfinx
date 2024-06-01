@@ -122,6 +122,9 @@ endif()
 if(DOLFINX_ENABLE_SCOTCH AND SCOTCH_FOUND)
   target_compile_definitions(dolfinx PUBLIC HAS_PTSCOTCH)
   target_link_libraries(dolfinx PRIVATE SCOTCH::ptscotch)
+  if (TARGET SCOTCH::scotcherr)
+    target_link_libraries(dolfinx PRIVATE SCOTCH::scotcherr)
+  endif()
 endif()
 
 # ParMETIS
