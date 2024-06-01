@@ -1,10 +1,6 @@
 # ------------------------------------------------------------------------------
 # Top level CMakeLists.txt file for DOLFINx
-if(WIN32)
-  cmake_minimum_required(VERSION 3.21)
-else()
-  cmake_minimum_required(VERSION 3.19)
-endif()
+cmake_minimum_required(VERSION 3.21)
 
 # ------------------------------------------------------------------------------
 # Set project name and version number
