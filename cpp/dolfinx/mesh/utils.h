@@ -763,7 +763,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   const fem::ElementDofLayout doflayout = element.create_dof_layout();
 
   const int num_cell_vertices = mesh::num_cell_vertices(element.cell_shape());
-  const int num_cell_nodes = doflayout.num_dofs();
+  std::size_t num_cell_nodes = doflayout.num_dofs();
 
   // Note: `extract_topology` extracts topology data, i.e. just the
   // vertices. For P1 geometry this should just be the identity
@@ -773,12 +773,12 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   // `extract_topology` could be skipped for 'P1 geometry' elements
 
   // -- Partition topology across ranks of comm
-  graph::AdjacencyList<std::int64_t> cells1(0);
-  // std::vector<std::int64_t> cells1;
+  std::vector<std::int64_t> cells1;
   std::vector<std::int64_t> original_idx1;
   std::vector<int> ghost_owners;
   if (partitioner)
   {
+    spdlog::info("Using partitioner with {} cell data", cells.size());
     graph::AdjacencyList<std::int32_t> dest(0);
     if (commt != MPI_COMM_NULL)
     {
@@ -789,26 +789,29 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 
     // Distribute cells (topology, includes higher-order 'nodes') to
     // destination rank
-    std::vector<int> src;
-    auto _cells = graph::regular_adjacency_list(
-        std::vector(cells.begin(), cells.end()), num_cell_nodes);
-    std::tie(cells1, src, original_idx1, ghost_owners)
-        = graph::build::distribute(comm, _cells, dest);
+    assert(cells.size() % num_cell_nodes == 0);
+    std::size_t num_cells = cells.size() / num_cell_nodes;
+    std::tie(cells1, original_idx1, ghost_owners) = graph::build::distribute(
+        comm, cells, {num_cells, num_cell_nodes}, dest);
+    spdlog::debug("Got {} cells from distribution", cells1.size());
   }
   else
   {
-    cells1 = graph::regular_adjacency_list(
-        std::vector(cells.begin(), cells.end()), num_cell_nodes);
-    std::int64_t offset(0), num_owned(cells1.num_nodes());
+    cells1 = std::vector<std::int64_t>(cells.begin(), cells.end());
+    assert(cells1.size() % num_cell_nodes == 0);
+    std::int64_t offset = 0;
+    std::int64_t num_owned = cells1.size() / num_cell_nodes;
     MPI_Exscan(&num_owned, &offset, 1, MPI_INT64_T, MPI_SUM, comm);
-    original_idx1.resize(cells1.num_nodes());
+    original_idx1.resize(num_owned);
     std::iota(original_idx1.begin(), original_idx1.end(), offset);
   }
 
   // Extract cell 'topology', i.e. extract the vertices for each cell
   // and discard any 'higher-order' nodes
   std::vector<std::int64_t> cells1_v
-      = extract_topology(celltype, doflayout, cells1.array());
+      = extract_topology(celltype, doflayout, cells1);
+  spdlog::info("Extract basic topology: {}->{}", cells1.size(),
+               cells1_v.size());
 
   // Build local dual graph for owned cells to (i) get list of vertices
   // on the process boundary and (ii) apply re-ordering to cells for
@@ -820,6 +823,7 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     std::vector<std::int32_t> cell_offsets(num_owned_cells + 1, 0);
     for (std::size_t i = 1; i < cell_offsets.size(); ++i)
       cell_offsets[i] = cell_offsets[i - 1] + num_cell_vertices;
+    spdlog::info("Build local dual graph");
     auto [graph, unmatched_facets, max_v, facet_attached_cells]
         = build_local_dual_graph(
             std::vector{celltype},
@@ -835,8 +839,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
                 std::next(_original_idx.begin(), num_owned_cells));
     impl::reorder_list(
         std::span(cells1_v.data(), remap.size() * num_cell_vertices), remap);
-    impl::reorder_list(
-        std::span(cells1.array().data(), remap.size() * num_cell_nodes), remap);
+    impl::reorder_list(std::span(cells1.data(), remap.size() * num_cell_nodes),
+                       remap);
     original_idx1 = _original_idx;
 
     // Boundary vertices are marked as 'unknown'
@@ -865,15 +869,15 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 
   // Build list of unique (global) node indices from cells1 and
   // distribute coordinate data
-  std::vector<std::int64_t> nodes1 = cells1.array();
+  std::vector<std::int64_t> nodes1 = cells1;
   dolfinx::radix_sort(std::span(nodes1));
   nodes1.erase(std::unique(nodes1.begin(), nodes1.end()), nodes1.end());
   std::vector coords
       = dolfinx::MPI::distribute_data(comm, nodes1, commg, x, xshape[1]);
 
   // Create geometry object
-  Geometry geometry = create_geometry(topology, element, nodes1, cells1.array(),
-                                      coords, xshape[1]);
+  Geometry geometry
+      = create_geometry(topology, element, nodes1, cells1, coords, xshape[1]);
 
   return Mesh(comm, std::make_shared<Topology>(std::move(topology)),
               std::move(geometry));
