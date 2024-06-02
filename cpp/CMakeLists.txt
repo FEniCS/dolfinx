@@ -432,10 +432,20 @@ elseif(_REQUIRE_SLEPC AND NOT PETSC_FOUND)
   )
 endif()
 
-if(DOLFINX_ENABLE_SCOTCH AND _REQUIRE_SCOTCH)
-  find_package(SCOTCH REQUIRED)
-elseif(DOLFINX_ENABLE_SCOTCH)
-  find_package(SCOTCH)
+if(DOLFINX_ENABLE_SCOTCH)
+  find_package(SCOTCH CONFIG) # Attempt to find in CONFIG mode
+  if (NOT SCOTCH_FOUND)
+    if (_REQUIRE_SCOTCH)  # If not found in CONFIG mode, try MODULE mode
+      find_package(SCOTCH REQUIRED)
+    else()
+      find_package(SCOTCH)
+    endif()
+  endif()
+
+  if (TARGET SCOTCH::scotch AND NOT TARGET SCOTCH::ptscotch)
+    message(STATUS "SCOTCH found, but not PT-SCOTCH (parallel). Not enabling SCOTCH.")
+    set(SCOTCH_FOUND FALSE)
+  endif()
 endif()
 
 if(DOLFINX_ENABLE_PARMETIS AND _REQUIRE_PARMETIS)
