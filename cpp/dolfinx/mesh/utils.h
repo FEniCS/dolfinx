@@ -790,11 +790,11 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
 
     // Distribute cells (topology, includes higher-order 'nodes') to
     // destination rank
-    assert(cells1.size() % num_cell_nodes == 0);
-    std::size_t num_cells = cells1.size() / num_cell_nodes;
+    assert(cells.size() % num_cell_nodes == 0);
+    std::size_t num_cells = cells.size() / num_cell_nodes;
     std::tie(cells1, original_idx1, ghost_owners) = graph::build::distribute(
         comm, cells, {num_cells, num_cell_nodes}, dest);
-    spdlog::info("Got {} cells from distribution", cells1.size());
+    spdlog::debug("Got {} cells from distribution", cells1.size());
   }
   else
   {
