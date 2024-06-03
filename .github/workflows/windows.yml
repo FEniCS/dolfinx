@@ -37,7 +37,6 @@ jobs:
         with:
           repository: "fenics/basix"
           path: basix
-          ref: "jhale/dolfinx-windows-build" 
 
       - name: Insert add_dll_directory calls into Basix
         working-directory: basix/python/basix
