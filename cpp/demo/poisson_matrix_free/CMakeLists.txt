@@ -9,7 +9,6 @@ project(${PROJECT_NAME} LANGUAGES C CXX)
 
 # Set C++20 standard
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_C_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -36,9 +35,6 @@ else()
     set(SCALAR_TYPE "--scalar_type=float32")
   endif()
 endif()
-
-set(SCALAR_TYPE "--scalar_type=float64")
-
 add_custom_command(
   OUTPUT poisson.c
   COMMAND ffcx ${CMAKE_CURRENT_SOURCE_DIR}/poisson.py ${SCALAR_TYPE}
