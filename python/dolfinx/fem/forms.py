@@ -205,7 +205,9 @@ def form(
         for integral in form.integrals():
             if integral.subdomain_data() is not None:
                 subdomain_ids[integral.integral_type()].append(integral.subdomain_id())
-        subdomain_ids = {key: list(chain(values)) for key, values in subdomain_ids.items()}
+        subdomain_ids = {
+            itg_type: list(chain(marker_ids)) for itg_type, marker_ids in subdomain_ids.items()
+        }
 
         # NOTE Could remove this and let the user convert meshtags by
         # calling compute_integration_domains themselves
