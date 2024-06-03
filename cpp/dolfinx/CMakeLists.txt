@@ -130,7 +130,7 @@ endif()
 if(DOLFINX_ENABLE_SCOTCH AND SCOTCH_FOUND)
   target_compile_definitions(dolfinx PUBLIC HAS_PTSCOTCH)
   target_link_libraries(dolfinx PRIVATE SCOTCH::ptscotch)
-  if (TARGET SCOTCH::scotcherr)
+  if(TARGET SCOTCH::scotcherr)
     target_link_libraries(dolfinx PRIVATE SCOTCH::scotcherr)
   endif()
 endif()
@@ -151,7 +151,7 @@ endif()
 
 # ------------------------------------------------------------------------------
 # Install dolfinx library and header files
-if (WIN32)
+if(WIN32)
   install(
     TARGETS dolfinx
     EXPORT DOLFINXTargets
@@ -161,10 +161,21 @@ if (WIN32)
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT Development
   )
 
-  if (INSTALL_RUNTIME_DEPENDENCIES)
-    LIST(APPEND PRE_EXCLUDE_REGEXES "api-ms-.*")
-    LIST(APPEND PRE_EXCLUDE_REGEXES "ext-ms-.*")
-    install(RUNTIME_DEPENDENCY_SET dependencies DESTINATION ${CMAKE_INSTALL_BINDIR} PRE_EXCLUDE_REGEXES ${PRE_EXCLUDE_REGEXES} POST_EXCLUDE_REGEXES ".*system32/.*\\.dll" DIRECTORIES $<TARGET_FILE_DIR:Basix::basix>)
+  if(INSTALL_RUNTIME_DEPENDENCIES)
+    list(APPEND PRE_EXCLUDE_REGEXES "api-ms-.*")
+    list(APPEND PRE_EXCLUDE_REGEXES "ext-ms-.*")
+    install(
+      RUNTIME_DEPENDENCY_SET
+      dependencies
+      DESTINATION
+      ${CMAKE_INSTALL_BINDIR}
+      PRE_EXCLUDE_REGEXES
+      ${PRE_EXCLUDE_REGEXES}
+      POST_EXCLUDE_REGEXES
+      ".*system32/.*\\.dll"
+      DIRECTORIES
+      $<TARGET_FILE_DIR:Basix::basix>
+    )
   endif()
 else()
   install(

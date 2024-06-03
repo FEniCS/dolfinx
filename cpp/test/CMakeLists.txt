@@ -47,15 +47,14 @@ add_executable(
 target_link_libraries(unittests PRIVATE Catch2::Catch2WithMain dolfinx)
 # UUID requires bcrypt to be linked on Windows, broken in vcpkg.
 # https://github.com/microsoft/vcpkg/issues/4481
-if (WIN32)
+if(WIN32)
   target_link_libraries(unittests PRIVATE bcrypt)
 endif()
 target_include_directories(
   unittests PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
 )
 
-# Add some strict compiler checks only on C++ part (Developer)
-# Note that .c files (e.g. FFCx) are built using the C compiler.
+# Add some strict compiler checks only on C++ part (Developer).
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag("-Wall -Werror -Wextra -pedantic" HAVE_PEDANTIC)
 
@@ -64,7 +63,9 @@ if(HAVE_PEDANTIC)
 endif()
 
 target_compile_options(
-  unittests PRIVATE $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
+  unittests
+  PRIVATE
+    $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
 )
 
 # Enable testing

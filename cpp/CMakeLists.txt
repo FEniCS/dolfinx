@@ -61,11 +61,16 @@ add_feature_info(
   BUILD_SHARED_LIBS BUILD_SHARED_LIBS "Build DOLFINx with shared libraries."
 )
 
-# If libdolfinx links to a symbol contained in an external dll, that dll will
-# be installed alongside libdolfinx. This excludes system dlls included with
+# If libdolfinx links to a symbol contained in an external dll, that dll will be
+# installed alongside libdolfinx. This excludes system dlls included with
 # Windows.
-option(INSTALL_RUNTIME_DEPENDENCIES "Include runtime dependencies in install (Windows-only)" OFF)
-add_feature_info(INSTALL_RUNTIME_DEPENDENCIES INSTALL_RUNTIME_DEPENDENCIES "Include runtime dependencies in install (Windows-only)")
+option(INSTALL_RUNTIME_DEPENDENCIES
+       "Include runtime dependencies in install (Windows-only)" OFF
+)
+add_feature_info(
+  INSTALL_RUNTIME_DEPENDENCIES INSTALL_RUNTIME_DEPENDENCIES
+  "Include runtime dependencies in install (Windows-only)"
+)
 
 option(DOLFINX_SKIP_BUILD_TESTS
        "Skip build tests for testing usability of dependency packages." OFF
@@ -471,16 +476,18 @@ endif()
 
 if(DOLFINX_ENABLE_SCOTCH)
   find_package(SCOTCH CONFIG) # Attempt to find in CONFIG mode
-  if (NOT SCOTCH_FOUND)
-    if (_REQUIRE_SCOTCH)  # If not found in CONFIG mode, try MODULE mode
+  if(NOT SCOTCH_FOUND)
+    if(_REQUIRE_SCOTCH) # If not found in CONFIG mode, try MODULE mode
       find_package(SCOTCH REQUIRED)
     else()
       find_package(SCOTCH)
     endif()
   endif()
 
-  if (TARGET SCOTCH::scotch AND NOT TARGET SCOTCH::ptscotch)
-    message(STATUS "SCOTCH found, but not PT-SCOTCH (parallel). Not enabling SCOTCH.")
+  if(TARGET SCOTCH::scotch AND NOT TARGET SCOTCH::ptscotch)
+    message(
+      STATUS "SCOTCH found, but not PT-SCOTCH (parallel). Not enabling SCOTCH."
+    )
     set(SCOTCH_FOUND FALSE)
   endif()
 endif()
