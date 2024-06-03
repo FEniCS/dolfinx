@@ -7,10 +7,10 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-if (WIN32)
-    # Windows requires all symbols to be manually exported.
-    # This flag exports all symbols automatically, as in Unix.
-    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
+if(WIN32)
+  # Windows requires all symbols to be manually exported. This flag exports all
+  # symbols automatically, as in Unix.
+  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 endif(WIN32)
 
 find_package(
@@ -57,7 +57,7 @@ nanobind_add_module(
 target_link_libraries(cpp PRIVATE dolfinx)
 # UUID requires bcrypt to be linked on Windows, broken in vcpkg.
 # https://github.com/microsoft/vcpkg/issues/4481
-if (WIN32)
+if(WIN32)
   target_link_libraries(cpp PRIVATE bcrypt)
 endif()
 
