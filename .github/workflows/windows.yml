@@ -85,7 +85,7 @@ jobs:
           path: dolfinx
 
       - name: Insert add_dll_directory calls into DOLFINx
-        working-directory: basix/python/basix
+        working-directory: dolfinx/python/dolfinx
         run: |
           (Get-Content __init__.py).Replace('# WINDOWSDLL', 'import os; os.add_dll_directory("D:/a/dolfinx/dolfinx-install/bin"); os.add_dll_directory("C:/Program Files (x86)/Intel/oneAPI/mpi/2021.12/opt/mpi/libfabric/bin")') | Set-Content __init__.py
           Get-Content __init__.py
