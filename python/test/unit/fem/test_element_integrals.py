@@ -38,6 +38,16 @@ parametrize_cell_types = pytest.mark.parametrize(
     ],
 )
 
+parametrize_dtypes = pytest.mark.parametrize(
+    "dtype",
+    [
+        np.float32,
+        np.float64,
+        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
+        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
+    ],
+)
+
 
 def unit_cell_points(cell_type, dtype):
     if cell_type == CellType.interval:
@@ -186,15 +196,7 @@ def two_unit_cells(cell_type, dtype, agree=False, random_order=True, return_orde
 
 @pytest.mark.skip_in_parallel
 @parametrize_cell_types
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        np.float32,
-        np.float64,
-        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
-        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
-    ],
-)
+@parametrize_dtypes
 def test_facet_integral(cell_type, dtype):
     """Test that the integral of a function over a facet is correct"""
     xtype = np.real(dtype(0)).dtype
@@ -242,15 +244,7 @@ def test_facet_integral(cell_type, dtype):
 
 @pytest.mark.skip_in_parallel
 @parametrize_cell_types
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        np.float32,
-        np.float64,
-        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
-        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
-    ],
-)
+@parametrize_dtypes
 def test_facet_normals(cell_type, dtype):
     """Test that FacetNormal is outward facing"""
     xtype = np.real(dtype(0)).dtype
@@ -326,15 +320,7 @@ def test_facet_normals(cell_type, dtype):
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("space_type", ["Lagrange", "DG"])
 @parametrize_cell_types
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        np.float32,
-        np.float64,
-        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
-        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
-    ],
-)
+@parametrize_dtypes
 def test_plus_minus(cell_type, space_type, dtype):
     """Test that ('+') and ('-') give the same value for continuous functions"""
     xtype = np.real(dtype(0)).dtype
@@ -356,15 +342,7 @@ def test_plus_minus(cell_type, space_type, dtype):
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("pm", ["+", "-"])
 @parametrize_cell_types
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        np.float32,
-        np.float64,
-        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
-        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
-    ],
-)
+@parametrize_dtypes
 def test_plus_minus_simple_vector(cell_type, pm, dtype):
     """Test that ('+') and ('-') match up with the correct DOFs for DG functions"""
     xtype = np.real(dtype(0)).dtype
@@ -417,15 +395,7 @@ def test_plus_minus_simple_vector(cell_type, pm, dtype):
 @pytest.mark.parametrize("pm1", ["+", "-"])
 @pytest.mark.parametrize("pm2", ["+", "-"])
 @parametrize_cell_types
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        np.float32,
-        np.float64,
-        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
-        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
-    ],
-)
+@parametrize_dtypes
 def test_plus_minus_vector(cell_type, pm1, pm2, dtype):
     """Test that ('+') and ('-') match up with the correct DOFs for DG functions"""
     xtype = np.real(dtype(0)).dtype
@@ -480,15 +450,7 @@ def test_plus_minus_vector(cell_type, pm1, pm2, dtype):
 @pytest.mark.parametrize("pm1", ["+", "-"])
 @pytest.mark.parametrize("pm2", ["+", "-"])
 @parametrize_cell_types
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        np.float32,
-        np.float64,
-        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
-        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
-    ],
-)
+@parametrize_dtypes
 def test_plus_minus_matrix(cell_type, pm1, pm2, dtype):
     """Test that ('+') and ('-') match up with the correct DOFs for DG functions"""
     xtype = np.real(dtype(0)).dtype
@@ -547,15 +509,7 @@ def test_plus_minus_matrix(cell_type, pm1, pm2, dtype):
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("order", [1, 2])
 @pytest.mark.parametrize("space_type", ["N1curl", "N2curl"])
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        np.float32,
-        np.float64,
-        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
-        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
-    ],
-)
+@parametrize_dtypes
 def test_curl(space_type, order, dtype):
     """Test that curl is consistent for different cell permutations of a tetrahedron."""
     xtype = np.real(dtype(0)).dtype
@@ -628,15 +582,7 @@ def create_quad_mesh(offset, dtype):
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("k", [0, 1, 2])
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        np.float32,
-        np.float64,
-        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
-        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
-    ],
-)
+@parametrize_dtypes
 def test_div_general_quads_mat(k, dtype):
     """Tests that assembling inner(u, div(w)) * dx, where u is from a
     "DQ" space and w is from an "RTCF" space, gives the same matrix for
@@ -665,15 +611,7 @@ def test_div_general_quads_mat(k, dtype):
 
 @pytest.mark.skip_in_parallel
 @pytest.mark.parametrize("k", [0, 1, 2])
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        np.float32,
-        np.float64,
-        pytest.param(np.complex64, marks=pytest.mark.xfail_win32_complex),
-        pytest.param(np.complex128, marks=pytest.mark.xfail_win32_complex),
-    ],
-)
+@parametrize_dtypes
 def test_div_general_quads_vec(k, dtype):
     """Tests that assembling inner(1, div(w)) * dx, where w is from an
     "RTCF" space, gives the same matrix for square and trapezoidal
