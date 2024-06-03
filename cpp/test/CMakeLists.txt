@@ -47,7 +47,7 @@ add_executable(
 target_link_libraries(unittests PRIVATE Catch2::Catch2WithMain dolfinx)
 # UUID requires bcrypt to be linked on Windows, broken in vcpkg.
 # https://github.com/microsoft/vcpkg/issues/4481
-if (WIN32)
+if (WIN32 AND DEFINED VCPKG_HOST_TRIPLET)
   target_link_libraries(unittests PRIVATE bcrypt)
 endif()
 target_include_directories(
