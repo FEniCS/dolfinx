@@ -55,6 +55,7 @@ target_include_directories(
 )
 
 # Add some strict compiler checks (Developer)
+include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag("-Wall -Werror -Wextra -pedantic" HAVE_PEDANTIC)
 
 if(HAVE_PEDANTIC)
