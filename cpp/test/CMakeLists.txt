@@ -54,7 +54,8 @@ target_include_directories(
   unittests PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
 )
 
-# Add some strict compiler checks (Developer)
+# Add some strict compiler checks only on C++ part (Developer)
+# Note that .c files (e.g. FFCx) are built using the C compiler.
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag("-Wall -Werror -Wextra -pedantic" HAVE_PEDANTIC)
 
@@ -63,7 +64,7 @@ if(HAVE_PEDANTIC)
 endif()
 
 target_compile_options(
-	unittests PRIVATE $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
+  unittests PRIVATE $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
 )
 
 # Enable testing
