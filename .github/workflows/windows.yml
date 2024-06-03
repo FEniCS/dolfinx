@@ -120,7 +120,7 @@ jobs:
         working-directory: dolfinx
         run: |
           cd python
-          pip -v install --check-build-dependencies --no-build-isolation .[test] --config-settings=cmake.args=-DBasix_DIR=D:/a/dolfinx/basix-install/lib/cmake/basix --config-settings=cmake.args=-Dufcx_DIR=D:/a/dolfinx/ufcx-install/share/ufcx/cmake --config-settings=cmake.args=-DDOLFINX_DIR=D:/a/dolfinx/dolfinx-install/lib/cmake/dolfinx --config-settings=cmake.args=-DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake --config-settings=cmake.args=-DVCPKG_OVERLAY_PORTS="../cpp/.vcpkg-overlay"
+          pip -v install --check-build-dependencies --no-build-isolation .[test] --config-settings=cmake.args=-DBasix_DIR=D:/a/dolfinx/basix-install/lib/cmake/basix;-Dufcx_DIR=D:/a/dolfinx/ufcx-install/share/ufcx/cmake;-DDOLFINX_DIR=D:/a/dolfinx/dolfinx-install/lib/cmake/dolfinx;-DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake;-DVCPKG_OVERLAY_PORTS="../cpp/.vcpkg-overlay"
 
       - name: Run units tests (Python, serial)
         working-directory: dolfinx
