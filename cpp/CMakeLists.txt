@@ -87,25 +87,25 @@ add_feature_info(
 # Control Basix discovery
 option(
   DOLFINX_BASIX_PYTHON
-  "Enable Basix discovery using Python. Disable if Basix should be found using CMake."
+  "Ask Python basix module for hint where to find Basix C++ install using CONFIG mode."
   ON
 )
 add_feature_info(
   DOLFINX_BASIX_PYTHON
   DOLFINX_BASIX_PYTHON
-  "Enable Basix discovery using Python. Disable if Basix should be found using CMake."
+  "Ask Python basix module for hint where to find Basix C++ install using CONFIG mode."
 )
 
 # Control UFCx discovery
 option(
   DOLFINX_UFCX_PYTHON
-  "Enable UFCx discovery using Python. Disable if UFCx should be found using CMake."
+  "Ask Python FFCx module where to find ufcx.h header using MODULE mode. Otherwise use CONFIG mode."
   ON
 )
 add_feature_info(
   DOLFINX_UFCX_PYTHON
   DOLFINX_UFCX_PYTHON
-  "Enable UFCx discovery using Python. Disable if UFCx should be found using CMake."
+  "Ask Python FFCx module where to find ufcx.h header using MODULE mode. Otherwise use CONFIG mode."
 )
 
 # ------------------------------------------------------------------------------
@@ -379,7 +379,7 @@ set_package_properties(
 )
 
 # Check for UFC Note: we use the case (ufcx vs UFCx) elsewhere to determine by
-# which method UFCx was found
+# which method UFCx was found.
 if(NOT DOLFINX_UFCX_PYTHON)
   # Check in CONFIG mode, i.e. look for installed ufcxConfig.cmake
   find_package(ufcx 0.9 REQUIRED CONFIG)
