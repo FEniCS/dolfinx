@@ -17,6 +17,8 @@
     "parmetis",
     "pugixml",
     "pkgconf",
-    "spdlog"
+    "spdlog",
+    "vcpkg-cmake",
+    "vcpkg-cmake-config"
   ]
 }
