@@ -39,11 +39,16 @@ jobs:
         run: |
           pip install .
 
+      - name: Checkout Basix
       - uses: actions/checkout@v4
         with:
           repository: "fenics/basix"
           path: basix
-          ref: "jhale/dolfinx-windows-build"
+
+      - name: Insert add_dll_directory calls
+        working-directory: basix/python/basix
+        run: |
+          (Get-Content __init__.py).Replace('# WINDOWSDLL', 'import os; os.add_dll_directory("D:/a/dolfinx/basix-install/bin")') | Set-Content __init__.py
 
       - name: Install Basix (C++)
         working-directory: basix
