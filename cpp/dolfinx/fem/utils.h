@@ -100,8 +100,6 @@ get_cell_facet_pairs(std::int32_t f, std::span<const std::int32_t> cells,
 /// @param[in] entities List of tagged mesh entities
 /// @param[in] dim Topological dimension of tagged entities
 /// @return List of integration entities
-/// @pre The topological dimension of the integral entity type and the
-/// topological dimension of mesh tag data must be equal.
 /// @pre For facet integrals, the topology facet-to-cell and
 /// cell-to-facet connectivity must be computed before calling this
 /// function.
