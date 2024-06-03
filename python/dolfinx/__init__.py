@@ -7,6 +7,7 @@
 
 # flake8: noqa
 
+import sys
 # Template placeholder for injecting Windows dll directories in CI
 # WINDOWSDLL
 
