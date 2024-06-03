@@ -69,6 +69,26 @@ std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
 distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
            const graph::AdjacencyList<std::int32_t>& destinations);
 
+/// @brief Distribute fixed size nodes to destination ranks.
+///
+/// The global index of each node is assumed to be the local index plus
+/// the offset for this rank.
+///
+/// @param[in] comm MPI Communicator
+/// @param[in] list A flattened 2D row major array
+/// @param[in] shape The shape of the array
+/// @param[in] destinations Destination ranks for the ith row of the
+/// array. The first rank is the 'owner' of the node.
+/// @return
+/// 1. Received list for this process
+/// 2. Original global index for each node
+/// 3. Owner rank of ghost nodes
+std::tuple<std::vector<std::int64_t>, std::vector<std::int64_t>,
+           std::vector<int>>
+distribute(MPI_Comm comm, std::span<const std::int64_t> list,
+           std::array<std::size_t, 2> shape,
+           const graph::AdjacencyList<std::int32_t>& destinations);
+
 /// @brief Take a set of distributed input global indices, including
 /// ghosts, and determine the new global indices after remapping.
 ///
