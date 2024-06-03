@@ -71,7 +71,9 @@ comprehensive instructions.
   [docker](#docker-images) or [conda](#conda). See also [Spack](#spack).
 - Windows: [docker](#docker-images), or install
   [WSL2](https://docs.microsoft.com/en-us/windows/wsl/install) and use
-  [Ubuntu](#ubuntu-packages).
+  [Ubuntu](#ubuntu-packages). Native build (advanced) from source using
+  [vcpkg](https://learn.microsoft.com/en-gb/vcpkg/) following
+  `.github/workflows/windows.yml`.
 - High performance computers: [Spack](#spack) or
   [from source](#from-source), both using system-provided MPI.
 
@@ -86,6 +88,11 @@ conda activate fenicsx-env
 conda install -c conda-forge fenics-dolfinx mpich pyvista
 ```
 
+Windows conda packages are currently in beta testing and can be installed using
+```shell
+conda install -c minrk/label/fenics-windows -c conda-forge fenics-dolfinx=0.9.0.dev
+```
+
 conda is distributed with [Anaconda](https://www.anaconda.com/) and
 [Miniconda](https://docs.conda.io/en/latest/miniconda.html). The recipe
 is hosted on
@@ -94,10 +101,6 @@ is hosted on
 | Name | Downloads | Version | Platforms |
 | --- | --- | --- | --- |
 | [![Conda Recipe](https://img.shields.io/badge/recipe-fenics--dolfinx-green.svg)](https://anaconda.org/conda-forge/fenics-dolfinx) | [![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/fenics-dolfinx.svg)](https://anaconda.org/conda-forge/fenics-dolfinx) | [![Conda Version](https://img.shields.io/conda/vn/conda-forge/fenics-dolfinx.svg)](https://anaconda.org/conda-forge/fenics-dolfinx) | [![Conda Platforms](https://img.shields.io/conda/pn/conda-forge/fenics-dolfinx.svg)](https://anaconda.org/conda-forge/fenics-dolfinx) |
-
-> **Note**
-> Windows packages are not available. This is due to some DOLFINx
-> dependencies not supporting Windows.
 
 #### Ubuntu packages
 
