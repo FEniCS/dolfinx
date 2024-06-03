@@ -53,9 +53,19 @@ endif()
 target_include_directories(
   unittests PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
 )
-#target_compile_options(
-#  unittests PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-Wall -Werror -Wextra -pedantic>
-#)
+
+# Add some strict compiler checks on Unix
+if (UNIX)
+  check_cxx_compiler_flag("-Wall -Werror -Wextra -pedantic" HAVE_PEDANTIC)
+
+  if(HAVE_PEDANTIC)
+    list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -Wall;-Werror;-Wextra;-pedantic)
+  endif()
+
+  target_compile_options(
+    unittests PRIVATE $<$<CONFIG:Developer>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
+  )
+endif()
 
 # Enable testing
 enable_testing()
