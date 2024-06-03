@@ -205,12 +205,12 @@ def form(
         for integral in form.integrals():
             if integral.subdomain_data() is not None:
                 subdomain_ids[integral.integral_type()].append(integral.subdomain_id())
-        subdomain_ids = {
-            itg_type: list(chain(marker_ids)) for itg_type, marker_ids in subdomain_ids.items()
-        }
+        # Chain and sort subdomain ids
+        for itg_type, marker_ids in subdomain_ids.items():
+            flattened_ids = list(chain(marker_ids))
+            flattened_ids.sort()
+            subdomain_ids[itg_type] = flattened_ids
 
-        # NOTE Could remove this and let the user convert meshtags by
-        # calling compute_integration_domains themselves
         def get_integration_domains(integral_type, subdomain, subdomain_ids):
             """Get integration domains from subdomain data"""
             if subdomain is None:
