@@ -5,7 +5,7 @@ def pytest_addoption(parser):
     parser.addoption(
         "--mpiexec",
         action="store",
-        default="mpirun",
+        default="mpiexec",
         help="Name of program to run MPI, e.g. mpiexec",
     )
     parser.addoption("--num-proc", action="store", default=1, help="Number of MPI processes to use")
