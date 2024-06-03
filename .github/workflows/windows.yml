@@ -42,6 +42,7 @@ jobs:
         working-directory: basix/python/basix
         run: |
           (Get-Content __init__.py).Replace('# WINDOWSDLL', 'import os; os.add_dll_directory("D:/a/dolfinx/basix-install/bin")') | Set-Content __init__.py
+          Get-Content __init__.py
 
       - name: Install Basix (C++)
         working-directory: basix
@@ -86,6 +87,7 @@ jobs:
         working-directory: basix/python/basix
         run: |
           (Get-Content __init__.py).Replace('# WINDOWSDLL', 'import os; os.add_dll_directory("D:/a/dolfinx/dolfinx-install/bin"); os.add_dll_directory("C:/Program Files (x86)/Intel/oneAPI/mpi/2021.12/opt/mpi/libfabric/bin")') | Set-Content __init__.py
+          Get-Content __init__.py
 
       - uses: mpi4py/setup-mpi@v1
         with:
