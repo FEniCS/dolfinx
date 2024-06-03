@@ -6,13 +6,9 @@
 """Main module for DOLFINx"""
 
 # flake8: noqa
-import os
-import sys
 
-if sys.platform.startswith("win32"):
-    os.add_dll_directory("D:/a/dolfinx/dolfinx-install/bin")  # type: ignore
-    os.add_dll_directory("C:/Program Files (x86)/Intel/oneAPI/mpi/2021.12/opt/mpi/libfabric/bin")  # type: ignore
-
+# Template placeholder for injecting Windows dll directories in CI
+# WINDOWSDLL
 
 try:
     from petsc4py import PETSc as _PETSc
