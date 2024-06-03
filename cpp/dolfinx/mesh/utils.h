@@ -990,14 +990,25 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
   }
   else
   {
-    throw std::runtime_error("Not yet supported");
-    //   cells1 = std::vector<std::int64_t>(cells.begin(), cells.end());
-    //   assert(cells1.size() % num_cell_nodes == 0);
-    //   std::int64_t offset = 0;
-    //   std::int64_t num_owned = cells1.size() / num_cell_nodes;
-    //   MPI_Exscan(&num_owned, &offset, 1, MPI_INT64_T, MPI_SUM, comm);
-    //   original_idx1.resize(num_owned);
-    //   std::iota(original_idx1.begin(), original_idx1.end(), offset);
+    // No partitioning, construct a global index
+    std::int64_t num_owned = 0;
+    for (std::int32_t i = 0; i < num_cell_types; ++i)
+    {
+      cells1[i] = std::vector<std::int64_t>(cells[i].begin(), cells[i].end());
+      std::int32_t num_cell_nodes = doflayouts[i].num_dofs();
+      assert(cells1[i].size() % num_cell_nodes == 0);
+      original_idx1[i].resize(cells1[i].size() / num_cell_nodes);
+      num_owned += original_idx1[i].size();
+    }
+    // Add on global offset
+    std::int64_t global_offset = 0;
+    MPI_Exscan(&num_owned, &global_offset, 1, MPI_INT64_T, MPI_SUM, comm);
+    for (std::int32_t i = 0; i < num_cell_types; ++i)
+    {
+      std::iota(original_idx1[i].begin(), original_idx1[i].end(),
+                global_offset);
+      global_offset += original_idx1[i].size();
+    }
   }
 
   // Extract cell 'topology', i.e. extract the vertices for each cell
