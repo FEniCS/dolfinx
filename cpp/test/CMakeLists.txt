@@ -63,7 +63,7 @@ if(HAVE_PEDANTIC)
 endif()
 
 target_compile_options(
-  unittests PRIVATE $<$<CONFIG:Developer>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
+	unittests PRIVATE $<$<AND:$<CONFIG:Developer>,$<COMPILE_LANGUAGE:CXX>>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
 )
 
 # Enable testing
