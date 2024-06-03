@@ -57,7 +57,7 @@ nanobind_add_module(
 target_link_libraries(cpp PRIVATE dolfinx)
 # UUID requires bcrypt to be linked on Windows, broken in vcpkg.
 # https://github.com/microsoft/vcpkg/issues/4481
-if (WIN32 AND DEFINED VCPKG_HOST_TRIPLET)
+if (WIN32)
   target_link_libraries(cpp PRIVATE bcrypt)
 endif()
 

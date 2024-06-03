@@ -47,25 +47,23 @@ add_executable(
 target_link_libraries(unittests PRIVATE Catch2::Catch2WithMain dolfinx)
 # UUID requires bcrypt to be linked on Windows, broken in vcpkg.
 # https://github.com/microsoft/vcpkg/issues/4481
-if (WIN32 AND DEFINED VCPKG_HOST_TRIPLET)
+if (WIN32)
   target_link_libraries(unittests PRIVATE bcrypt)
 endif()
 target_include_directories(
   unittests PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
 )
 
-# Add some strict compiler checks on Unix
-if (UNIX)
-  check_cxx_compiler_flag("-Wall -Werror -Wextra -pedantic" HAVE_PEDANTIC)
+# Add some strict compiler checks (Developer)
+check_cxx_compiler_flag("-Wall -Werror -Wextra -pedantic" HAVE_PEDANTIC)
 
-  if(HAVE_PEDANTIC)
-    list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -Wall;-Werror;-Wextra;-pedantic)
-  endif()
-
-  target_compile_options(
-    unittests PRIVATE $<$<CONFIG:Developer>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
-  )
+if(HAVE_PEDANTIC)
+  list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -Wall;-Werror;-Wextra;-pedantic)
 endif()
+
+target_compile_options(
+  unittests PRIVATE $<$<CONFIG:Developer>:${DOLFINX_CXX_DEVELOPER_FLAGS}>
+)
 
 # Enable testing
 enable_testing()
