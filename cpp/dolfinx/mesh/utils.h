@@ -1023,8 +1023,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
       std::int32_t num_cell_vertices = mesh::num_cell_vertices(celltypes[i]);
       std::int32_t num_owned_cells
           = cells1_v[i].size() / num_cell_vertices - ghost_owners[i].size();
-      cells1_v_local_cells[i]
-          = std::span(cells1_v[i].data(), num_owned_cells * num_cell_vertices);
+      cells1_v_local_cells.push_back(
+          std::span(cells1_v[i].data(), num_owned_cells * num_cell_vertices));
     }
     spdlog::info("Build local dual graph");
     auto [graph, unmatched_facets, max_v, facet_attached_cells]
@@ -1057,6 +1057,8 @@ Mesh<typename std::remove_reference_t<typename U::value_type>> create_mesh(
     if (!boundary_v.empty() > 0 and boundary_v[0] == -1)
       boundary_v.erase(boundary_v.begin());
   }
+
+  spdlog::debug("Got {} boundary vertices", boundary_v.size());
 
   // Create Topology
 
