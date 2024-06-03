@@ -61,6 +61,9 @@ add_feature_info(
   BUILD_SHARED_LIBS BUILD_SHARED_LIBS "Build DOLFINx with shared libraries."
 )
 
+# If libdolfinx links to a symbol contained in an external dll, that dll will
+# be installed alongside libdolfinx. This excludes system dlls included with
+# Windows.
 option(INSTALL_RUNTIME_DEPENDENCIES "Include runtime dependencies in install (Windows-only)" OFF)
 add_feature_info(INSTALL_RUNTIME_DEPENDENCIES INSTALL_RUNTIME_DEPENDENCIES "Include runtime dependencies in install (Windows-only)")
 
