@@ -87,7 +87,7 @@ conda activate fenicsx-env
 conda install -c conda-forge fenics-dolfinx mpich pyvista
 ```
 
-Windows conda packages are currently in beta testing and can be installed using
+Windows conda packages are currently in beta testing and can be installed using:
 ```shell
 conda create -n fenicsx-env
 conda activate fenicsx-env
