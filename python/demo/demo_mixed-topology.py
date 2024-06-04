@@ -7,83 +7,67 @@ import basix
 import dolfinx.cpp as _cpp
 import ffcx
 import ufl
-from dolfinx.cpp.mesh import Mesh_float64, create_geometry, create_topology
+from dolfinx.cpp.mesh import GhostMode, create_cell_partitioner, create_mesh
 from dolfinx.fem import DofMap, coordinate_element
 from dolfinx.io.utils import cell_perm_vtk
 from dolfinx.la import matrix_csr
 from dolfinx.mesh import CellType
 
-if MPI.COMM_WORLD.size > 1:
-    print("This demo works in serial only")
-    exit(0)
-
-
 nx = 16
 ny = 16
 nz = 16
 n_cells = nx * ny * nz
+
 cells: list = [[], []]
 orig_idx: list = [[], []]
-idx = 0
-for i in range(n_cells):
-    iz = i // (nx * ny)
-    j = i % (nx * ny)
-    iy = j // nx
-    ix = j % nx
-
-    v0 = (iz * (ny + 1) + iy) * (nx + 1) + ix
-    v1 = v0 + 1
-    v2 = v0 + (nx + 1)
-    v3 = v1 + (nx + 1)
-    v4 = v0 + (nx + 1) * (ny + 1)
-    v5 = v1 + (nx + 1) * (ny + 1)
-    v6 = v2 + (nx + 1) * (ny + 1)
-    v7 = v3 + (nx + 1) * (ny + 1)
-    if ix < nx / 2:
-        cells[0] += [v0, v1, v2, v3, v4, v5, v6, v7]
-        orig_idx[0] += [idx]
-        idx += 1
-    else:
-        cells[1] += [v0, v1, v2, v4, v5, v6]
-        orig_idx[1] += [idx]
-        idx += 1
-        cells[1] += [v1, v2, v3, v5, v6, v7]
-        orig_idx[1] += [idx]
-        idx += 1
-
-n_points = (nx + 1) * (ny + 1) * (nz + 1)
-sqxy = (nx + 1) * (ny + 1)
 geom = []
-for v in range(n_points):
-    iz = v // sqxy
-    p = v % sqxy
-    iy = p // (nx + 1)
-    ix = p % (nx + 1)
-    geom += [[ix / nx, iy / ny, iz / nz]]
+
+if MPI.COMM_WORLD.rank == 0:
+    idx = 0
+    for i in range(n_cells):
+        iz = i // (nx * ny)
+        j = i % (nx * ny)
+        iy = j // nx
+        ix = j % nx
+
+        v0 = (iz * (ny + 1) + iy) * (nx + 1) + ix
+        v1 = v0 + 1
+        v2 = v0 + (nx + 1)
+        v3 = v1 + (nx + 1)
+        v4 = v0 + (nx + 1) * (ny + 1)
+        v5 = v1 + (nx + 1) * (ny + 1)
+        v6 = v2 + (nx + 1) * (ny + 1)
+        v7 = v3 + (nx + 1) * (ny + 1)
+        if ix < nx / 2:
+            cells[0] += [v0, v1, v2, v3, v4, v5, v6, v7]
+            orig_idx[0] += [idx]
+            idx += 1
+        else:
+            cells[1] += [v0, v1, v2, v4, v5, v6]
+            orig_idx[1] += [idx]
+            idx += 1
+            cells[1] += [v1, v2, v3, v5, v6, v7]
+            orig_idx[1] += [idx]
+            idx += 1
+
+    n_points = (nx + 1) * (ny + 1) * (nz + 1)
+    sqxy = (nx + 1) * (ny + 1)
+    for v in range(n_points):
+        iz = v // sqxy
+        p = v % sqxy
+        iy = p // (nx + 1)
+        ix = p % (nx + 1)
+        geom += [[ix / nx, iy / ny, iz / nz]]
+
+cells_np = [np.array(c) for c in cells]
 geomx = np.array(geom, dtype=np.float64)
-
-ghost_owners: list = [[], []]
-boundary_vertices: list = []
-
-topology = create_topology(
-    MPI.COMM_SELF,
-    [CellType.hexahedron, CellType.prism],
-    cells,
-    orig_idx,
-    ghost_owners,
-    boundary_vertices,
-)
-
 hexahedron = coordinate_element(CellType.hexahedron, 1)
 prism = coordinate_element(CellType.prism, 1)
-nodes = np.arange(geomx.shape[0], dtype=np.int64)
-xdofs = np.array(cells[0] + cells[1], dtype=np.int64)
 
-geom = create_geometry(
-    topology, [hexahedron._cpp_object, prism._cpp_object], nodes, xdofs, geomx.flatten(), 3
+part = create_cell_partitioner(GhostMode.none)
+mesh = create_mesh(
+    MPI.COMM_WORLD, cells_np, [hexahedron._cpp_object, prism._cpp_object], geomx, part
 )
-
-mesh = Mesh_float64(MPI.COMM_WORLD, topology, geom)
 
 # Order 1 dofmaps
 elements = [
