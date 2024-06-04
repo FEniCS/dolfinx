@@ -31,9 +31,6 @@ bool has_petsc();
 /// Return true if DOLFINx is compiled with SLEPc
 bool has_slepc();
 
-/// Return true if DOLFINx is compiled with Scotch
-bool has_scotch();
-
 /// Return true if DOLFINx is compiled with ParMETIS
 bool has_parmetis();
 
